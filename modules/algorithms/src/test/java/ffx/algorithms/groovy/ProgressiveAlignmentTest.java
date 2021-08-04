@@ -35,11 +35,11 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.groovy;
+package ffx.algorithms.groovy;
 
 import static org.junit.Assert.assertEquals;
 
-import ffx.potential.utils.PotentialTest;
+import ffx.algorithms.misc.AlgorithmsTest;
 import org.junit.Test;
 
 /**
@@ -48,7 +48,7 @@ import org.junit.Test;
  * @author Aaron J. Nessler
  */
 
-public class ProgressiveAlignmentTest extends PotentialTest {
+public class ProgressiveAlignmentTest extends AlgorithmsTest {
 
   private final double tolerance = 0.001;
 
@@ -59,13 +59,13 @@ public class ProgressiveAlignmentTest extends PotentialTest {
   public void testBaseProgressiveAlignment() {
 
     // Set-up the input arguments for the CrystalSuperpose script.
-    String[] args = {"src/main/java/ffx/potential/structures/C23.arc"};
+    String[] args = {"src/main/java/ffx/algorithms/structures/C23.arc"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Construct and evaluate the CrystalSuperpose script.
     SuperposeCrystals SuperposeCrystals = new SuperposeCrystals(binding).run();
-    potentialScript = SuperposeCrystals;
+    algorithmsScript = SuperposeCrystals;
     assertEquals(0.0000, SuperposeCrystals.distMatrix[0][0], tolerance);
     assertEquals(0.2016, SuperposeCrystals.distMatrix[0][1], tolerance);
     assertEquals(0.2211, SuperposeCrystals.distMatrix[0][2], tolerance);
@@ -77,6 +77,29 @@ public class ProgressiveAlignmentTest extends PotentialTest {
     assertEquals(0.0000, SuperposeCrystals.distMatrix[2][2], tolerance);
   }
 
+  /** Tests the CrystalSuperpose script. */
+  @Test
+  public void testBaseProgressiveAlignmentNoHydrogen() {
+
+    // Set-up the input arguments for the CrystalSuperpose script.
+    String[] args = {"--nh", "src/main/java/ffx/algorithms/structures/C23.arc"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the CrystalSuperpose script.
+    SuperposeCrystals SuperposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = SuperposeCrystals;
+    assertEquals(0.0000, SuperposeCrystals.distMatrix[0][0], tolerance);
+    assertEquals(0.1901, SuperposeCrystals.distMatrix[0][1], tolerance);
+    assertEquals(0.2098, SuperposeCrystals.distMatrix[0][2], tolerance);
+    assertEquals(0.1901, SuperposeCrystals.distMatrix[1][0], tolerance);
+    assertEquals(0.0000, SuperposeCrystals.distMatrix[1][1], tolerance);
+    assertEquals(0.0863, SuperposeCrystals.distMatrix[1][2], tolerance);
+    assertEquals(0.2098, SuperposeCrystals.distMatrix[2][0], tolerance);
+    assertEquals(0.0863, SuperposeCrystals.distMatrix[2][1], tolerance);
+    assertEquals(0.0000, SuperposeCrystals.distMatrix[2][2], tolerance);
+  }
+
   @Test
   public void testProgressiveAlignmentHelp() {
     // Set-up the input arguments for the CrystalSuperpose script.
@@ -85,6 +108,6 @@ public class ProgressiveAlignmentTest extends PotentialTest {
 
     // Construct and evaluate the CrystalSuperpose script.
     SuperposeCrystals SuperposeCrystals = new SuperposeCrystals(binding).run();
-    potentialScript = SuperposeCrystals;
+    algorithmsScript = SuperposeCrystals;
   }
 }

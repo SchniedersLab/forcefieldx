@@ -42,8 +42,8 @@ import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import ffx.potential.nonbonded.implicit.ConnollyRegion
 import ffx.potential.nonbonded.implicit.GaussVol
-import picocli.CommandLine
 import picocli.CommandLine.Command
+import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
@@ -65,49 +65,49 @@ class Volume extends PotentialScript {
   /**
    * -c or --connolly Use the Connolly algorithm to compute volume and surface area (instead of GaussVol).
    */
-  @CommandLine.Option(names = ['-c', '--connolly'], paramLabel = "false",
+  @Option(names = ['-c', '--connolly'], paramLabel = "false",
       description = "Use the Connolly algorithm to compute solvent excluded volume and solvent accessible surface area.")
   private boolean connolly = false
 
   /**
    * -m or --molecular For Connolly, compute molecular volume and surface area (instead of SEV/SASA).
    */
-  @CommandLine.Option(names = ['-m', '--molecular'], paramLabel = "false",
+  @Option(names = ['-m', '--molecular'], paramLabel = "false",
       description = "For Connolly, compute molecular volume and surface area (instead of SEV/SASA).")
   private boolean molecular = false
 
   /**
    * --vdW or --vanDerWaals For Connolly, compute van der Waals volume and surface area (instead of SEV/SASA).
    */
-  @CommandLine.Option(names = ['--vdW', '--vanDerWaals'], paramLabel = "false",
+  @Option(names = ['--vdW', '--vanDerWaals'], paramLabel = "false",
       description = "For Connolly, compute van der Waals volume and surface area (instead of SEV/SASA)")
   private boolean vdW = false
 
   /**
    * -p or --probe For Connolly, set the exclude radius (SASA) or probe (molecular surface). Ignored for vdW.
    */
-  @CommandLine.Option(names = ['-p', '--probe'], paramLabel = "1.4",
+  @Option(names = ['-p', '--probe'], paramLabel = "1.4",
       description = "For Connolly, set the exclude radius (SASA) or probe radius (molecular surface). Ignored for vdW.")
   private double probe = 1.4
 
   /**
    * -y or --includeHydrogen Include Hydrogen in calculation volume and surface area.
    */
-  @CommandLine.Option(names = ['-y', '--includeHydrogen'], paramLabel = "false",
+  @Option(names = ['-y', '--includeHydrogen'], paramLabel = "false",
       description = "Include Hydrogen in calculation volume and surface area.")
   private boolean includeHydrogen = false
 
   /**
    * -s or --sigma Use sigma radii instead of Rmin.
    */
-  @CommandLine.Option(names = ['-s', '--sigma'], paramLabel = "false",
+  @Option(names = ['-s', '--sigma'], paramLabel = "false",
       description = "Use sigma radii instead of Rmin.")
   private boolean sigma = false
 
   /**
    * -o or --offset For GaussVol, add an offset to all atomic radii.
    */
-  @CommandLine.Option(names = ['-o', '--offset'], paramLabel = "0.0",
+  @Option(names = ['-o', '--offset'], paramLabel = "0.0",
       description = "Add an offset to all atomic radii for GaussVol volume and surface area.")
   private double offset = 0.0
 
@@ -115,7 +115,7 @@ class Volume extends PotentialScript {
    * -v or --verbose enables printing out all energy components for multi-snapshot files (
    * the first snapshot is always printed verbosely).
    */
-  @CommandLine.Option(names = ['-v', '--verbose'], paramLabel = "false",
+  @Option(names = ['-v', '--verbose'], paramLabel = "false",
       description = "Print out all components of volume of molecule and offset.")
   private boolean verbose = false
 

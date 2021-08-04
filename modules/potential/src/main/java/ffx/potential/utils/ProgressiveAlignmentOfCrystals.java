@@ -100,29 +100,11 @@ public class ProgressiveAlignmentOfCrystals {
    */
   private static final Logger logger = Logger
       .getLogger(ProgressiveAlignmentOfCrystals.class.getName());
+
   /**
-   * Parallel Java world communicator.
+   * SystemFilter containing structures for crystal 1.
    */
-  private Comm world = null;
-  /**
-   * Number of processors available (typically called size).
-   */
-  private final int numProc;
-  /**
-   * Rank of this process.
-   */
-  private final int rank;
-  /**
-   * The distances array stores communicated parameters for each process (dimensions compatible with
-   * comparable calc). (i.e. crystal comparisons). Currently the array is of size [number of
-   * Processes][comparisons/processes].
-   */
-  private final double[][] distances;
-  /**
-   * Each parameter array is wrapped inside a Parallel Java DoubleBuf for the All-Gather
-   * communication calls.
-   */
-  private final DoubleBuf[] buffers;
+  SystemFilter baseFilter;
   /**
    * Number of structures stored in SystemFilter for crystal 1.
    */
@@ -131,6 +113,10 @@ public class ProgressiveAlignmentOfCrystals {
    * Label for the first crystal.
    */
   private final String baseLabel;
+  /**
+   * SystemFilter containing structures for crystal 2.
+   */
+  SystemFilter targetFilter;
   /**
    * Number of structures stored in SystemFilter for crystal 2.
    */
@@ -142,39 +128,49 @@ public class ProgressiveAlignmentOfCrystals {
   /** Label to use for the RSMD logging */
   private String rmsdLabel;
   /**
-   * Matrix to store comparisons (human readable mxn matrix).
+   * Matrix of RMSD values [baseSize][targetSize].
    */
   public final double[][] distMatrix;
   /**
-   * Array of distance comparisons this process is responsible for.
+   * The default restart row is 0. A larger value may be set by the "readMatrix" method
+   * if a restart is requested.
    */
-  private static double[] values;
+  private int restartRow = 0;
   /**
-   * Wrapper used to share the "values" parameter with the rest of the processes.
+   * The default restart column is 0. A larger value may be set by the "readMatrix" method
+   * if a restart is requested.
    */
-  private static DoubleBuf myBuf;
-  /**
-   * Temporary output file to store comparison values if restart is needed.
-   */
-  private static File myFile;
-  /**
-   * SystemFilter containing structures for crystal 1.
-   */
-  SystemFilter systemFilter;
-  /**
-   * SystemFilter containing structures for crystal 2.
-   */
-  SystemFilter systemFilter2;
+  private int restartColumn = 0;
 
   /**
-   * Time between comparisons.
+   * Parallel Java world communicator.
    */
-  private long interTime;
-
+  private final Comm world;
   /**
-   * Minimum amount of time for a single comparison.
+   * Number of processes.
    */
-  private double minTime = Double.MAX_VALUE;
+  private final int numProc;
+  /**
+   * Rank of this process.
+   */
+  private final int rank;
+  /**
+   * The distances arrays store an RSMD values from each process.
+   * The array is of size [numProc][1].
+   */
+  private final double[][] distances;
+  /**
+   * Each distance is wrapped inside a DoubleBuf for MPI communication.
+   */
+  private final DoubleBuf[] buffers;
+  /**
+   * Convenience reference to the RMSD value for this process.
+   */
+  private final double[] myDistance;
+  /**
+   * Convenience reference for the DoubleBuf of this process.
+   */
+  private final DoubleBuf myBuffer;
 
   /**
    * If molecules between two crystals match below this tolerance, it is assumed they are paired.
@@ -184,39 +180,31 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Constructor for the ProgressiveAlignmentOfCrystals class.
    *
-   * @param systemFilter SystemFilter containing a set of crystal structures to compare.
-   * @param systemFilter2 SystemFilter containing the other set of crystals to compare.
+   * @param baseFilter SystemFilter containing a set of crystal structures to compare.
+   * @param targetFilter SystemFilter containing the other set of crystals to compare.
    */
-  public ProgressiveAlignmentOfCrystals(SystemFilter systemFilter, SystemFilter systemFilter2) {
-    this.systemFilter = systemFilter;
-    this.systemFilter2 = systemFilter2;
-
-    try {
-      // Set up the communication variables for Parallel Java communication between nodes.
-      world = Comm.world();
-    } catch (IllegalStateException ise) {
-      // Behavior is just to keep index = 0.
-    }
-
-    if (world != null) {
-      // Number of processes is equal to world size (often called size).
-      numProc = world.size();
-      // Each processor gets its own rank (ID of sorts).
-      rank = world.rank();
-      logger.info(format(" Number of Processors: %d", numProc));
-    } else {
-      numProc = 1;
-      rank = 0;
-    }
+  public ProgressiveAlignmentOfCrystals(SystemFilter baseFilter, SystemFilter targetFilter) {
+    this.baseFilter = baseFilter;
+    this.targetFilter = targetFilter;
 
     // Number of models to be evaluated.
-    baseSize = systemFilter.countNumModels();
-    baseLabel = getName(systemFilter.getFile().getAbsolutePath());
-    targetSize = systemFilter2.countNumModels();
-    targetLabel = getName(systemFilter2.getFile().getAbsolutePath());
+    baseSize = baseFilter.countNumModels();
+    baseLabel = getName(baseFilter.getFile().getAbsolutePath());
+    targetSize = targetFilter.countNumModels();
+    targetLabel = getName(targetFilter.getFile().getAbsolutePath());
 
     logger.info(format(" %s conformations: %d", baseLabel, baseSize));
     logger.info(format(" %s conformations: %d", targetLabel, targetSize));
+
+    world = Comm.world();
+    // Number of processes is equal to world size (often called size).
+    numProc = world.size();
+    // Each processor gets its own rank (ID of sorts).
+    rank = world.rank();
+    if (numProc > 1) {
+      logger.info(format(" Number of MPI Processes:  %d", numProc));
+      logger.info(format(" Rank of this MPI Process: %d", rank));
+    }
 
     // Distance matrix to store compared values (dimensions are "human readable" [m x n]).
     distMatrix = new double[baseSize][targetSize];
@@ -225,15 +213,13 @@ public class ProgressiveAlignmentOfCrystals {
       fill(distMatrix[i], -1.0);
     }
 
-    // Allocate array to hold distances computed by each process (some may be unused).
-    int size = (int) ceil((baseSize * targetSize) / (double) numProc);
-    logger.info(format(" Distances Size: %d", size));
-    distances = new double[numProc][size];
+    distances = new double[numProc][1];
 
-    // Initialize array as -1.0 as -1.0 is not a viable RMSD.
+    // Initialize each distance as -1.0.
     for (int i = 0; i < numProc; i++) {
       fill(distances[i], -1.0);
     }
+
     // DoubleBuf is a wrapper used by Comm to transfer data between processors.
     buffers = new DoubleBuf[numProc];
     for (int i = 0; i < numProc; i++) {
@@ -241,9 +227,8 @@ public class ProgressiveAlignmentOfCrystals {
     }
 
     // Reference to each processors individual task (for convenience).
-    values = distances[rank];
-    myBuf = buffers[rank];
-    myFile = new File(rank + ".log");
+    myDistance = distances[rank];
+    myBuffer = buffers[rank];
   }
 
   /**
@@ -256,151 +241,110 @@ public class ProgressiveAlignmentOfCrystals {
    * @param inflatedAU Minimum number of asymmetric units in inflated crystal
    * @param numSearch Number of loops to search for mirrors in first system.
    * @param numSearch2 Number of loops to search for mirrors in second system.
-   * @param write Write out distance matrix to a file (dist.txt).
    * @param force Compare regardless of single molecule RMSD.
    * @param symmetric Perform 2 sided calculation (A vs B; B vs A)
    * @param save Save out PDBs of the resulting superposition.
+   * @param restart Try to restart from a previous job.
+   * @param write Save out a PAC RMSD file.
+   * @param pacFileName The filename to use.
    */
   public double[][] comparisons(int nAtoms, List<Integer> comparisonAtoms, int nAU, int inflatedAU,
-      int numSearch, int numSearch2, boolean write, boolean force, boolean symmetric, boolean save) {
+      int numSearch, int numSearch2, boolean force, boolean symmetric, boolean save, boolean restart,
+      boolean write, String pacFileName) {
 
-    /*
-      Ideally comparisons should be symmetric (i.e., the RMSD between two crystals indepedent of order).
-      The prioritization of molecules for pairing depends on which system is first, unless symmetric == true.
-      Then prioritization is based on whichever crystal has the closest 2nd and 3rd asymmetric unit to the center.
-
-      Parallel Java Environment file records the number of nodes being used for the calculation.
-      If it is present, then the previous job did not finish, and this run should pick up where the last one left off.
-      The first node is responsible for determining restart information...
-     */
-
-    if (rank == 0) {
-      File env = new File("pjenv.log");
-      int procCount = -1;
-      if (env.exists()) {
-        try {
-          // If exists, record number of processes from previous calculation.
-          BufferedReader br = new BufferedReader(new FileReader(env));
-          procCount = Integer.parseInt(br.readLine());
-          br.close();
-          if (!env.delete()) {
-            logger.warning(" Could not delete PJ environment file.");
-          }
-        } catch (Exception ex) {
-          logger.warning(" PJ environment file exists but was not found.");
-          logger.info(ex.toString());
-        }
+    if (restart) {
+      readMatrix(pacFileName);
+    } else {
+      File file = new File(pacFileName);
+      if (file.exists() && file.delete()) {
+          logger.info(format(" PAC RMSD file (%s) was deleted.", pacFileName));
+          logger.info(" To restart from a previous run, use the '-r' flag.");
       }
-
-      // Create new file to record current number of processes.
-      try {
-        if (env.createNewFile()) {
-          BufferedWriter bw = new BufferedWriter(new FileWriter(env));
-          bw.write(Integer.toString(numProc));
-          bw.close();
-        } else {
-          logger.warning(" Could not create the PJ environment file.");
-        }
-      } catch (Exception ex) {
-        logger.warning(" Could not create new PJ environment file.");
-        logger.info(ex.toString());
-      }
-
-      // If a previous job was found, gather comparison outputs and add them to oldDistances.
-      double[][] oldDistances;
-      if (procCount > 0) {
-        oldDistances = new double[procCount][(int) ceil((baseSize * targetSize) / (double) numProc)];
-        for (int i = 0; i < procCount; i++) {
-          try {
-            BufferedReader br = new BufferedReader(new FileReader(i + ".log"));
-            String data;
-            while ((data = br.readLine()) != null) {
-              String[] tokens = data.trim().split(" +");
-              for (int j = 0; j < tokens.length; j++) {
-                oldDistances[i][j] = Double.parseDouble(tokens[j]);
-              }
-            }
-          } catch (Exception ex) {
-            logger.warning(format(" Processor temporary output file not found: .%d.log", i));
-            logger.info(ex.toString());
-          }
-        }
-      } else {
-        // If procCount was not updated based on previous file, oldDistances equals current distances.
-        oldDistances = distances;
-      }
-      // If continuing old calculation, add previous values to distMatrix. Otherwise should all be zeroes...
-      updateMatrix(oldDistances, distMatrix);
-      // Update distances with previous values.
-      updateDistances(distMatrix, distances);
-      env.deleteOnExit();
     }
 
-    // The world.scatter call is a barrier that syncs up all processes.
-    try {
-      world.scatter(0, buffers, myBuf);
-    } catch (Exception ex) {
-      logger.info(ex.toString());
-    }
+    // Minimum amount of time for a single comparison.
+    double minTime = Double.MAX_VALUE;
 
+    // Label for logging.
     rmsdLabel = format("RMSD_%d", nAU);
 
-    for (int baseCount = 0; baseCount < baseSize; baseCount++) {
-      for (int targetCount = 0; targetCount < targetSize; targetCount++) {
-        if ((baseCount * targetSize + targetCount) % numProc == rank) {
-          long time = -System.nanoTime();
-          logger.info(format("\n Comparing Model %d of %s\n with      Model %d of %s",
-              baseCount + 1, baseLabel, targetCount + 1, targetLabel));
+    // restartRow and restartColumn are initialized to zero when this class was constructed.
+    // They are updated by the "readMatrix" method if a restart is requested.
 
-          double rmsd = compare(nAtoms, comparisonAtoms, nAU, inflatedAU, numSearch, numSearch2, force, symmetric, save);
+    // Read ahead to the base starting conformation.
+    for (int row = 0; row < restartRow; row++) {
+      baseFilter.readNext(false, false);
+    }
 
-          // Is there a better way to store/send rmsd values?
-          int procIndex = floorDiv(baseCount * targetSize + targetCount, numProc);
-          values[procIndex] = rmsd;
+    // Read ahead to the target starting conformation.
+    if (restartColumn > 0) {
+      logger.info(format(" Restart Column %d > 0 is not supported.", restartColumn));
+      restartColumn = 0;
+    }
 
-          time += System.nanoTime();
-          double timeSec = time * 1.0e-9;
-          logger.info(format("\n PAC %s: %7.4f Angstroms (%6.3f sec)", rmsdLabel, rmsd, timeSec));
+    // Padding of the target array size is required for parallelization.
+    // Target conformations are parallelized over available nodes.
+    int paddedTargetSize = targetSize;
+    int pad = targetSize % numProc;
+    if (pad != 0) {
+      paddedTargetSize = targetSize - pad + numProc;
+      logger.info(format(" Target size %d vs. Padded size %d", targetSize, paddedTargetSize));
+    }
 
-          if (timeSec < minTime) {
-            minTime = timeSec;
+    for (int row = restartRow; row < baseSize; row++) {
+      // Initialize the distance this rank is responsible for to zero.
+      myDistance[0] = -1.0;
+      for (int column = restartColumn; column < paddedTargetSize; column++) {
+        // Make sure this is not a padded value of column.
+        if (column < targetSize) {
+          int targetRank = column % numProc;
+          if (targetRank == rank) {
+            long time = -System.nanoTime();
+            logger.info(
+                format("\n Comparing Model %d of %s\n with      Model %d of %s", row + 1, baseLabel,
+                    column + 1, targetLabel));
+
+            // Compute the PAC RMSD.
+            double rmsd = compare(nAtoms, comparisonAtoms, nAU, inflatedAU, numSearch, numSearch2,
+                force, symmetric, save);
+            myDistance[0] = rmsd;
+
+            time += System.nanoTime();
+            double timeSec = time * 1.0e-9;
+
+            logger.info(format(" PAC %s: %12s %7.4f A (%5.3f sec)", rmsdLabel, "", rmsd, timeSec));
+
+            // Record the fastest comparison.
+            if (timeSec < minTime) {
+              minTime = timeSec;
+            }
           }
+          targetFilter.readNext(false, false);
         }
-        // Check for termination request.
-        systemFilter2.readNext(false, false);
+
+        // Every numProc iterations, send the results of each rank.
+        if ((column + 1) % numProc == 0) {
+          gatherRMSDs(row, column);
+        }
       }
-      systemFilter2.readNext(true, false);
-      systemFilter.readNext(false, false);
-    }
+      restartColumn = 0;
+      targetFilter.readNext(true, false);
+      baseFilter.readNext(false, false);
 
-    logger.info(format("\n Minimum PAC time: %7.4f", minTime));
-
-    systemFilter.closeReader();
-    systemFilter2.closeReader();
-    // Gather all parameters from the other processes.
-    if (world != null) {
-      try {
-        world.allGather(myBuf, buffers);
-      } catch (IOException ex) {
-        String message = " Progressive Alignment Algorithm allGather failed.";
-        logger.log(Level.SEVERE, message, ex);
+      // Write out this row.
+      if (rank == 0 && write) {
+        writeRow(row, pacFileName);
       }
     }
 
-    // Update the distance matrix.
-    updateMatrix(distances, distMatrix);
-
-    // Save out the distance matrix.
-    if (write) {
-      writeMatrix(distMatrix, baseSize, targetSize);
+    if (minTime < Double.MAX_VALUE) {
+      logger.info(format("\n Minimum PAC time: %7.4f", minTime));
     }
 
-    // All comparisons have finished for this node. Therefore delete stored values.
-    if (!myFile.delete()) {
-      logger.warning(format(" Process (%d) output file could not be deleted.", rank));
-    }
+    baseFilter.closeReader();
+    targetFilter.closeReader();
 
-    // Print out human readable matrix (fewer sig fig to better display on screen).
+    // Print the PAC RMSD matrix.
     if (baseSize > 1 || targetSize > 1) {
       StringBuilder sBPrint = new StringBuilder();
       for (double[] row : distMatrix) {
@@ -409,7 +353,7 @@ public class ProgressiveAlignmentOfCrystals {
         }
         sBPrint.append("\n");
       }
-      logger.info("\n Distance Matrix:\n" + sBPrint);
+      logger.info("\n PAC RMSD Matrix:\n" + sBPrint);
     }
 
     // Return distMatrix for validation if this is for the test script
@@ -434,7 +378,7 @@ public class ProgressiveAlignmentOfCrystals {
       int numSearch, int numSearch2, boolean force, boolean symmetric, boolean save) {
 
     logger.fine(format(" Number of copies to compare: %4d", nAU));
-    MolecularAssembly baseAssembly = systemFilter.getActiveMolecularSystem();
+    MolecularAssembly baseAssembly = baseFilter.getActiveMolecularSystem();
     MolecularAssembly baseSphere = generateInflatedSphere(baseAssembly, inflatedAU);
 
     int nBaseMols;
@@ -489,11 +433,11 @@ public class ProgressiveAlignmentOfCrystals {
       }
     }
 
-    MolecularAssembly molecularAssembly = systemFilter2.getActiveMolecularSystem();
+    MolecularAssembly molecularAssembly = targetFilter.getActiveMolecularSystem();
 
     MolecularAssembly targetSphere = generateInflatedSphere(molecularAssembly, inflatedAU);
 
-    logger.info(format(" %10s RMSD_1  RMSD_3 %7s", "", rmsdLabel));
+    logger.info(format("\n Trial      RMSD_1  RMSD_3 %7s", rmsdLabel));
     int nTargetMols;
     if (targetSphere.getMolecules() != null && targetSphere.getChainNames() != null) {
       nTargetMols = targetSphere.getMolecules().size() + targetSphere.getChainNames().length;
@@ -843,14 +787,6 @@ public class ProgressiveAlignmentOfCrystals {
           "\n If you really need a value try the -f flag.");
     }
 
-    try {
-      BufferedWriter myWriter = new BufferedWriter(new FileWriter(myFile, true));
-      myWriter.write(bestRMSD + "  ");
-      myWriter.close();
-    } catch (Exception ex) {
-      logger.info(ex.toString());
-    }
-
     // Logging to check number of RMSD values determined.
     StringBuilder dblOut = new StringBuilder();
     for (Double dbl : crystalCheckRMSDs) {
@@ -860,8 +796,8 @@ public class ProgressiveAlignmentOfCrystals {
 
     int numUnique = crystalCheckRMSDs.size();
     if (numUnique > 4) {
-      logger.warning(format(
-          " PAC determined %2d unique values. Please increase the number of inflated molecules.\n %s",
+      logger.info(format(
+          " PAC determined %2d unique values. Consider increasing the number of inflated molecules.\n %s",
           numUnique, message));
     } else {
       logger.fine(message);
@@ -871,83 +807,81 @@ public class ProgressiveAlignmentOfCrystals {
   }
 
   /**
-   * Update human readable matrix (dimensions m x n) with parallel java compatible array (dimensions
-   * numProc x values).
-   *
-   * @param distances Parallel java compatible array (numProc x numComparisons/numProc).
-   * @param distMatrix Human readable array (m x n crystals for comparison).
-   */
-  private static void updateMatrix(double[][] distances, double[][] distMatrix) {
-    int baseSize = distMatrix.length;
-    int targetSize = distMatrix[0].length;
-    int numProc = distances.length;
-    int numValues = distances[0].length;
-    // Create n x n matrix for printing...
-    for (int i = 0; i < numProc; i++) {
-      for (int j = 0; j < numValues; j++) {
-        int k = Math.floorDiv(i + j * numProc, targetSize);
-        int l = (i + j * numProc) % targetSize;
-        // When discrepancies between the sizes of distMatrix and distances, distances will be larger.
-        //   Some values in distances may be zero (no calulation).
-        if (k < baseSize && l < targetSize) {
-          distMatrix[k][l] = distances[i][j];
-        }
-      }
-    }
-  }
-
-  /**
-   * Update human readable matrix (dimensions m x n) with parallel java compatible array (dimensions
-   * numProc x values).
-   *
-   * @param distMatrix Human readable array (m x n crystals for comparison).
-   * @param distances Parallel java compatible array (numProc x numComparisons/numProc).
-   */
-  private static void updateDistances(double[][] distMatrix, double[][] distances) {
-    int baseSize = distMatrix.length;
-    int targetSize = distMatrix[0].length;
-    int numProc = distances.length;
-    // Create n x n matrix for printing...
-    for (int i = 0; i < baseSize; i++) {
-      for (int j = 0; j < targetSize; j++) {
-        int k = (i * targetSize + j) % numProc;
-        int l = Math.floorDiv(i * targetSize + j, numProc);
-        distances[k][l] = distMatrix[i][j];
-      }
-    }
-  }
-
-  /**
    * Write out human readable distance array to file.
    *
-   * @param distMatrix Array to write out to file.
+   * @param filename The PAC RMSD matrix file to read from.
    */
-  private static void writeMatrix(double[][] distMatrix, int baseCount, int targetCount) {
-    // Create formatted string builder to contain output.
-    StringBuilder sB = new StringBuilder();
-    int baseValue = 0;
-    int targetValue = 0;
-    for (double[] row : distMatrix) {
-      for (double col : row) {
-        sB.append(col).append("  ");
-        if (++targetValue > targetCount) {
-          if (++baseValue > baseCount) {
-            break;
-          } else {
-            targetValue = 0;
-          }
+  public void readMatrix(String filename) {
+    restartRow = 0;
+    restartColumn = 0;
+    int nRow = distMatrix.length;
+    int nColumn = distMatrix[0].length;
+
+    try (BufferedReader bw = new BufferedReader(new FileReader(filename))) {
+      // Loop over the distance matrix rows.
+      for (; restartRow < nRow; restartRow++) {
+        double[] row = distMatrix[restartRow];
+        String rowString = bw.readLine();
+        // Split the RMSD values based on 1 or more spaces between them.
+        String[] tokens = rowString.trim().split(" +");
+        int nTokens = tokens.length;
+        // Loop over
+        for (restartColumn = 0; restartColumn < nTokens; restartColumn++) {
+          row[restartColumn] = Double.parseDouble(tokens[restartColumn]);
+        }
+        if (nTokens != nColumn) {
+          logger.fine(
+              format(" Row %d of the PAC RMSD matrix is not complete (%d found of %d expected).",
+                  restartRow + 1, nTokens, nColumn));
+          restartColumn = nTokens;
+          break;
         }
       }
-      sB.append("\n");
-    }
-    // Print output to file.
-    try {
-      File distTxt = new File("dist.txt");
-      FileWriter fw = new FileWriter(distTxt);
-      fw.write(sB.toString());
-      fw.close();
     } catch (Exception e) {
-      logger.info(e.toString());
+      if (restartRow != nRow) {
+        logger.fine(format(" Row %d of the PAC RMSD matrix has no entries.", restartRow));
+        restartColumn = 0;
+      } else {
+        logger.info(" Exception reading in PAC RMSD matrix:\n " + e);
+      }
+    }
+
+    if (restartRow == nRow && restartColumn == nColumn) {
+      logger.info(format(" Complete distance matrix found (%d x %d).", restartRow, restartColumn));
+    } else {
+      logger.info(format(" Incomplete distance matrix found.\n Restarting at row %d, column %d.",
+          restartRow + 1, restartColumn + 1));
+    }
+  }
+
+  private void gatherRMSDs(int row, int column) {
+    try {
+      logger.info(" Receiving results.");
+      world.allGather(myBuffer, buffers);
+      for (int i = 0; i < numProc; i++) {
+        int c = (column + 1) - numProc + i;
+        if (c < targetSize) {
+          distMatrix[row][c] = distances[i][0];
+          logger.info(format(" %d %d %16.8f", row, c, distances[i][0]));
+        }
+      }
+    } catch (Exception e) {
+      logger.severe(" Exception collecting distance values." + e);
+    }
+  }
+
+  private void writeRow(int row, String filename) {
+    try (FileWriter fw = new FileWriter(filename, true);
+        BufferedWriter bw = new BufferedWriter(fw)) {
+      for (int col = 0; col < targetSize; col++) {
+        bw.append(format("%16.14f", distMatrix[row][col]));
+        if (col < targetSize - 1) {
+          bw.append(" ");
+        }
+      }
+      bw.append("\n");
+    } catch (Exception e) {
+      logger.info(" Exception writing PAC RMSD file: " + e);
     }
   }
 
@@ -1708,16 +1642,4 @@ public class ProgressiveAlignmentOfCrystals {
     pdbfilter.writeFile(saveLocationPDB, false);
   }
 
-  /**
-   * Logs time since this interface was created and the last time this method was called.
-   */
-  public double time(boolean print) {
-    long currTime = System.nanoTime();
-    double elapsed = (currTime - interTime) * 1.0E-9;
-    interTime = currTime;
-    if (print) {
-      logger.info(format(" Time since last timer call: %f", elapsed));
-    }
-    return elapsed;
-  }
 }

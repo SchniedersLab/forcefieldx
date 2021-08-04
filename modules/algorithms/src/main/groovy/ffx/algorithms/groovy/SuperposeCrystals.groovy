@@ -35,10 +35,11 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.potential.groovy
+package ffx.algorithms.groovy
 
+import ffx.algorithms.cli.AlgorithmsScript
+import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
-import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.utils.ProgressiveAlignmentOfCrystals
 import picocli.CommandLine.Command
@@ -46,6 +47,9 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
+import static java.util.Arrays.asList
+import static org.apache.commons.io.FilenameUtils.getBaseName
+import static org.apache.commons.io.FilenameUtils.getFullPath
 
 /**
  * Quantifies the similarity of input crystals based on progressive alignments.
@@ -62,93 +66,100 @@ import static java.lang.String.format
  * <br>
  * ffxc test.CrystalSuperpose &lt;filename&gt &lt;filename&gt;
  */
-@Command(description = " Compare crystal polymorphs based on a RMSD of aligned crystal coordinates.", name = "ffxc test.CrystalSuperpose")
-class SuperposeCrystals extends PotentialScript {
+@Command(description = " Compare crystal polymorphs based on a RMSD of aligned crystal coordinates.", name = "ffxc CrystalSuperpose")
+class SuperposeCrystals extends AlgorithmsScript {
 
   /**
    * --nm or --numMolecules Number of asymmetric units to include from each crystal in RMSD comparison.
    */
   @Option(names = ['--na', '--numAU'], paramLabel = '20', defaultValue = '20',
-      description = 'Set the number of asymmetric units to include in final RMSD comparison.')
+      description = 'Set the number of asymmetric units to include in final PAC RMSD.')
   int nAU
 
   /**
    * --ia or --inflatedAU Number of asymmetric units in the inflated sphere.
    */
   @Option(names = ['--ia', '--inflatedAU'], paramLabel = '200', defaultValue = '200',
-      description = 'Specifies the number asymmetric units in the inflated crystal.')
+      description = 'Specifies the number asymmetric units in the expanded crystal.')
   int inflatedAU
 
   /**
    * --ns or --numSearch The number of molecules to loop through in first system.
    */
   @Option(names = ['--ns', '--numSearch'], paramLabel = '5', defaultValue = '5',
-      description = 'Set the number of asymmetric units to search in first system (mirror check).')
+      description = 'Set the number of asymmetric units to search in the 1st system to check for mirrored conformations.')
   int numSearch
 
   /**
    * --ns2 or --numSearch2 Number of molecules to loop through in second system.
    */
   @Option(names = ['--ns2', '--numSearch2'], paramLabel = '5', defaultValue = '5',
-      description = 'Set the number of asymmetric units to search in second system (mirror check).')
+      description = 'Set the number of asymmetric units to search in the 2nd system to check for mirrored conformations.')
   int numSearch2
 
   /**
-   * --nms or --noMirrorSearch Do not loop over molecules to check for mirrored coordinates.
+   * --nms or --noMirrorSearch Do not loop over asymmetric units to check for mirrored conformations.
    */
   @Option(names = ['--nms', '--noMirrorSearch'], paramLabel = "false", defaultValue = "false",
-      description = 'Loop over structures looking for mirrors.')
+      description = 'Do not loop over asymmetric units to check for mirrored conformations.')
   private static boolean noMirrorSearch
 
   /**
-   * -w or --write Write out a distance matrix for each comparison.
+   * -w or --write Write out the PAC RMSD matrix.
    */
   @Option(names = ['-w', '--write'], paramLabel = "false", defaultValue = "false",
-      description = 'Write an RMSD matrix to a text file.')
+      description = 'Write out the PAC RMSD matrix.')
   private static boolean write
+
+  /**
+   * -r or --restart Attempt to restart from a previously written PAC RMSD matrix.
+   */
+  @Option(names = ['-r', '--restart'], paramLabel = "false", defaultValue = "false",
+      description = 'Attempt to restart from a previously written PAC RMSD matrix.')
+  private static boolean restart
 
   /**
    * --sp or --savePDB Save out a PDB.
    */
   @Option(names = ['--sp', '--savePDB'], paramLabel = "false", defaultValue = "false",
       description = 'Save a PDB file for the superposed crystal.')
-  private static boolean save
+  private static boolean savePDB
 
   /**
    * -f or --force Perform comparison even if a single asymmetric unit from each crystal differs
    */
   @Option(names = ['-f', '--force'], paramLabel = "false", defaultValue = "false",
-      description = 'Force comparison regardless of single asymmetric unit RMSD.')
+      description = 'Force PAC comparison regardless of single asymmetric unit RMSD.')
   private static boolean force
 
   /**
-   * --nh or --noHydrogens Perform comparison without hydrogen atoms.
+   * --nh or --noHydrogen PAC RMSD will not include hydrogen atoms.
    */
-  @Option(names = ['--nh', '--noHydrogens'], paramLabel = "false", defaultValue = "false",
-      description = 'Crystal RMSD calculated without hydrogen atoms.')
+  @Option(names = ['--nh', '--noHydrogen'], paramLabel = "false", defaultValue = "false",
+      description = 'PAC RMSD will not include hydrogen atoms.')
   private static boolean noHydrogens
 
   // TODO finish implementing symmetric flag.
   /**
-   * --sym or --symmetric Enforce symmetric RMSD distance matrix.
+   * --sym or --symmetric Enforce generation of a symmetric PAC RMSD matrix.
    */
   @Option(names = ['--sym', '--symmetric'], paramLabel = "false", defaultValue = "false",
-      description = 'Attempt to enforce symmetric output matrix.')
+      description = 'Enforce generation of a symmetric PAC RMSD matrix.')
   private static boolean symmetric
 
   // TODO use the default FFX selection criteria.
   /**
-   * --da or --desiredAtoms Select individual atoms to calculate RMSD, rather than using all atoms.
+   * --da or --desiredAtoms Select atoms to be used for the PAC RMSD, rather than using all atoms.
    */
   @Option(names = ['--da', '--desiredAtoms'], arity = "1..*", paramLabel = "atom indices",
-      description = 'Set atoms to be used for the RMSD, rather than using all atoms.')
+      description = 'Select atoms to be used for the PAC RMSD, rather than using all atoms.')
   private int[] desiredAtoms = null
 
   /**
    * The final argument(s) should be two or more filenames (same file twice if comparing same structures).
    */
   @Parameters(arity = "1..2", paramLabel = "files",
-      description = 'Atomic coordinate files to compare in XYZ format.')
+      description = 'Atomic coordinate file(s) to compare in XYZ format.')
   List<String> filenames = null
 
   /**
@@ -191,78 +202,80 @@ class SuperposeCrystals extends PotentialScript {
       return this
     }
 
+    // SystemFilter containing structures stored in file 0.
+    SystemFilter baseFilter
+    // SystemFilter containing structures stored in file 1 (or file 0 if file 1 does not exist).
+    SystemFilter targetFilter
+
+    algorithmFunctions.openAll(filenames.get(0))
+    baseFilter = algorithmFunctions.getFilter()
+    // Example atoms to determine single molecule characteristics (e.g. number of atoms, hydrogen, etc.)
+    MolecularAssembly activeAssembly = baseFilter.getActiveMolecularSystem()
+    List<Atom> baseAtoms = activeAssembly.getAtomList()
+    // Number of atoms in asymmetric unit.
+    int nAtoms = baseAtoms.size()
+
     // Number of files to read in.
     int numFiles = filenames.size()
-
-    // System Filter containing structures stored in file 0.
-    SystemFilter systemFilter
-    // System Filter containing structures stored in file 1.
-    SystemFilter systemFilter2
-
-    // If only one file compare structures within to self. Otherwise compare structures between files 0 and 1.
     if (numFiles == 1) {
-      potentialFunctions.openAll(filenames.get(0))
-      systemFilter = potentialFunctions.getFilter()
-      //Need to reinitialize a new filter object
-      potentialFunctions.openAll(filenames.get(0))
-      systemFilter2 = potentialFunctions.getFilter()
+      logger.info(
+          "\n PAC will be applied between all pairs of conformations within the supplied file.\n")
+      // If only one file is supplied, compare all structures in that file to each other.
+      algorithmFunctions.openAll(filenames.get(0))
+      targetFilter = algorithmFunctions.getFilter()
     } else {
-      potentialFunctions.openAll(filenames.get(0))
-      systemFilter = potentialFunctions.getFilter()
-      potentialFunctions.openAll(filenames.get(1))
-      systemFilter2 = potentialFunctions.getFilter()
+      // Otherwise, compare structures from first file those in the second.
+      logger.info(
+          "\n PAC will compare all conformations in the first file to all those in the second file.\n")
+      algorithmFunctions.openAll(filenames.get(1))
+      targetFilter = algorithmFunctions.getFilter()
     }
 
-    // Example atoms to determine single molecule characteristics (e.g. number of atoms, hydrogen, etc.)
-    final List<Atom> exampleAtoms = systemFilter.getActiveMolecularSystem().getAtomList()
-
-    // Number of atoms in asymmetric unit.
-    int nAtoms = exampleAtoms.size()
-
-    // If comparison atoms are not specified, use all atoms.
-    Integer[] comparisonAtoms
+    Integer[] pacAtoms
     if (desiredAtoms != null) {
-      comparisonAtoms = new int[desiredAtoms.length]
+      pacAtoms = new int[desiredAtoms.length]
       for (int i = 0; i < desiredAtoms.size(); i++) {
-        comparisonAtoms[i] = desiredAtoms[i] - 1
-        if (comparisonAtoms[i] < 0 || comparisonAtoms[i] >= nAtoms) {
-          logger.severe(" Selected atoms are outside of molecular size.")
+        pacAtoms[i] = desiredAtoms[i] - 1
+        if (pacAtoms[i] < 0 || pacAtoms[i] >= nAtoms) {
+          logger.info(
+              format(" A requested atom for the PAC RMSD is invalid (%d).", pacAtoms[i]))
           return this
         }
       }
     } else {
-      //TODO implement no hydrgoens && centerAtoms
+      // TODO implement no hydrgoens && centerAtoms
       if (noHydrogens) {
         int n = 0
         for (int i = 0; i < nAtoms; i++) {
-          if (!exampleAtoms.get(i).isHydrogen()) {
+          if (!baseAtoms.get(i).isHydrogen()) {
             n++
           }
         }
-        comparisonAtoms = new int[n]
+        pacAtoms = new int[n]
         n = 0
         for (int i = 0; i < nAtoms; i++) {
-          if (!exampleAtoms.get(i).isHydrogen()) {
-            comparisonAtoms[n++] = i
+          if (!baseAtoms.get(i).isHydrogen()) {
+            pacAtoms[n++] = i
           }
         }
       } else {
-        comparisonAtoms = new int[nAtoms]
+        // If comparison atoms are not specified, use all atoms.
+        pacAtoms = new int[nAtoms]
         for (int i = 0; i < nAtoms; i++) {
-          comparisonAtoms[i] = i
+          pacAtoms[i] = i
         }
       }
     }
 
-    // Number of atoms being included for comparison.
-    int compareAtomsSize = comparisonAtoms.size()
-    logger.info(format(" Number of atoms being compared: %3d of %3d\n", compareAtomsSize, nAtoms))
+    // Number of atoms included in the PAC RMSD.
+    int nPACAtoms = pacAtoms.size()
+    logger.info(format("\n %3d atoms will be used for PAC RMSD out of %3d.\n", nPACAtoms, nAtoms))
 
-    // Current method to save PDB only works when using all atoms...
-    if (compareAtomsSize != nAtoms && save) {
-      save = false
-        // TODO: It seems like this restriction can be fixed.
-      logger.warning(" Saving a PDB is not compatible with subsets of atoms (--nh and --da).")
+    // Current method to save PDB only works when using all atoms.
+    // TODO: Overcome this restriction.
+    if (nAtoms != nPACAtoms && savePDB) {
+      savePDB = false
+      logger.info(" Saving a PDB is currently not compatible with a subset of atoms.")
     }
 
     // If search is desired ensure inner loop will be used. Else use single comparison.
@@ -271,13 +284,18 @@ class SuperposeCrystals extends PotentialScript {
       numSearch2 = 1
     }
 
-    ProgressiveAlignmentOfCrystals progressiveAlignmentOfCrystals =
-        new ProgressiveAlignmentOfCrystals(systemFilter, systemFilter2)
+    // Compare structures in baseFilter and targetFilter.
+    ProgressiveAlignmentOfCrystals pac = new ProgressiveAlignmentOfCrystals(baseFilter, targetFilter)
 
-      // Compare structures in SystemFilter and SystemFilter2.
-    distMatrix = progressiveAlignmentOfCrystals.
-        comparisons(nAtoms, Arrays.asList(comparisonAtoms), nAU, inflatedAU,
-            numSearch, numSearch2, write, force, symmetric, save)
+    // Define the filename to use for the PAC RMSD values.
+    String basename = getBaseName(filenames.get(0))
+    String path = getFullPath(filenames.get(0))
+    String pacFilename = path + basename + ".txt"
+
+    ArrayList<Integer> pacList = asList(pacAtoms)
+    distMatrix = pac.comparisons(nAtoms, pacList, nAU, inflatedAU,
+        numSearch, numSearch2, force, symmetric, savePDB, restart, write, pacFilename)
+
 
     return this
   }
