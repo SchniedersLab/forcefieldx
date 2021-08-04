@@ -135,11 +135,11 @@ public class ProgressiveAlignmentOfCrystals {
    */
   private int restartRow = 0;
   /**
-   * The default restart column is 0. A larger value may be set by the "readMatrix" method if a
-   * restart is requested.
+   * The default restart column is 0. Larger values being set by the "readMatrix" method during
+   * restarts are not currently supported. A restart must begin from the beginning of a row
+   * for simplicity.
    */
   private int restartColumn = 0;
-
   /**
    * Parallel Java world communicator.
    */
@@ -168,11 +168,10 @@ public class ProgressiveAlignmentOfCrystals {
    * Convenience reference for the DoubleBuf of this process.
    */
   private final DoubleBuf myBuffer;
-
   /**
    * If molecules between two crystals match below this tolerance, it is assumed they are paired.
    */
-  private static final double matchTolerance = 1.0E-4;
+  private static final double MATCH_TOLERANCE = 1.0E-4;
 
   /**
    * Constructor for the ProgressiveAlignmentOfCrystals class.
@@ -262,9 +261,6 @@ public class ProgressiveAlignmentOfCrystals {
     // Minimum amount of time for a single comparison.
     double minTime = Double.MAX_VALUE;
 
-    // Label for logging.
-    rmsdLabel = format("RMSD_%d", nAU);
-
     // restartRow and restartColumn are initialized to zero when this class was constructed.
     // They are updated by the "readMatrix" method if a restart is requested.
 
@@ -283,6 +279,10 @@ public class ProgressiveAlignmentOfCrystals {
       logger.fine(format(" Target size %d vs. Padded size %d", targetSize, paddedTargetSize));
     }
 
+    // Label for logging.
+    rmsdLabel = format("RMSD_%d", nAU);
+
+    // Loop over conformations in the base assembly.
     for (int row = restartRow; row < baseSize; row++) {
       // Initialize the distance this rank is responsible for to zero.
       myDistance[0] = -1.0;
@@ -1045,7 +1045,7 @@ public class ProgressiveAlignmentOfCrystals {
           minDist = dist;
           minIndex = target;
         }
-        if (abs(minDist) < matchTolerance) {
+        if (abs(minDist) < MATCH_TOLERANCE) {
           // If distance between center of masses us 0 that's as good as it gets assuming no internal overlaps.
           break;
         }
@@ -1286,113 +1286,6 @@ public class ProgressiveAlignmentOfCrystals {
     expandedAssembly.setCenter(cartCenter);
 
     return expandedAssembly;
-  }
-
-  /**
-   * Orient coordinates so that the second index is on the x axis, and the third index is on the X-Y
-   * plane. First index should be at the origin (0, 0, 0).
-   *
-   * @param coordsXYZ An array of XYZ positions (e.g. [x0, y0, z0, x1, y1, z1, x2, y2, z2]
-   * @param atomIndices Indices for three desired sets from the XYZ list (e.g. [0, 1, 2]). Index
-   *     0 should be at origin.
-   */
-  public static void standardOrientation(double[] coordsXYZ, int[] atomIndices) {
-    // Used in QEtoXYZ.groovy which is not ready for git which is why this method appears unused.
-    int numCoords = coordsXYZ.length / 3;
-    double[] atomCoords = new double[3 * 3];
-    atomCoords[0] = coordsXYZ[atomIndices[0]];
-    atomCoords[1] = coordsXYZ[atomIndices[0] + 1];
-    atomCoords[2] = coordsXYZ[atomIndices[0] + 2];
-    atomCoords[3] = coordsXYZ[atomIndices[1]];
-    atomCoords[4] = coordsXYZ[atomIndices[1] + 1];
-    atomCoords[5] = coordsXYZ[atomIndices[1] + 2];
-    atomCoords[6] = coordsXYZ[atomIndices[2]];
-    atomCoords[7] = coordsXYZ[atomIndices[2] + 1];
-    atomCoords[8] = coordsXYZ[atomIndices[2] + 2];
-
-    // TODO: Delete coordsXYZOrig?
-    double[] coordsXYZOrig = new double[numCoords * 3];
-    for (int i = 0; i < numCoords; i++) {
-      int atomIndex = i * 3;
-      coordsXYZOrig[atomIndex] = coordsXYZ[atomIndex];
-      coordsXYZOrig[atomIndex + 1] = coordsXYZ[atomIndex + 1];
-      coordsXYZOrig[atomIndex + 2] = coordsXYZ[atomIndex + 2];
-    }
-
-    // TODO: Delete atomsCoordsOrig?
-    double[] atomsCoordsOrig = new double[3 * 3];
-    arraycopy(atomCoords, 0, atomsCoordsOrig, 0, 9);
-
-    logger.fine(
-        format(" START: N1:\t%16.15f %16.15f %16.15f", atomCoords[0], atomCoords[1], atomCoords[2]));
-    logger.fine(
-        format(" START: N2:\t%16.15f %16.15f %16.15f", atomCoords[3], atomCoords[4], atomCoords[5]));
-    logger.fine(
-        format(" START: N3:\t%16.15f %16.15f %16.15f", atomCoords[6], atomCoords[7], atomCoords[8]));
-
-    double p1n2 = coordsXYZ[atomIndices[1]];
-    double q1n2 = coordsXYZ[atomIndices[1] + 1];
-    double r1n2 = coordsXYZ[atomIndices[1] + 2];
-
-    // Calculation of sigma, phai, and cita angles needed to get specified atoms to desired loci
-    double cita0 = acos(p1n2 / sqrt(p1n2 * p1n2 + q1n2 * q1n2));
-    double phai0 = acos(sqrt(p1n2 * p1n2 + q1n2 * q1n2) /
-        sqrt(p1n2 * p1n2 + q1n2 * q1n2 + r1n2 * r1n2));
-    if (q1n2 < 0.0) {
-      cita0 = -cita0;
-    }
-
-    for (int i = 0; i < numCoords; i++) {
-      int atomIndex = i * 3;
-      double ptmp = coordsXYZ[atomIndex] * cos(cita0) + coordsXYZ[atomIndex + 1] * sin(cita0);
-      double qtmp = -coordsXYZ[atomIndex] * sin(cita0) + coordsXYZ[atomIndex + 1] * cos(cita0);
-      coordsXYZ[atomIndex] = ptmp;
-      coordsXYZ[atomIndex + 1] = qtmp;
-    }
-
-    p1n2 = coordsXYZ[atomIndices[1]];
-    q1n2 = coordsXYZ[atomIndices[1] + 1];
-
-    if (r1n2 > 0.0) {
-      phai0 = -phai0;
-    }
-
-    for (int i = 0; i < numCoords; i++) {
-      int atomIndex = i * 3;
-      double ptmp = coordsXYZ[atomIndex] * cos(phai0) - coordsXYZ[atomIndex + 2] * sin(phai0);
-      double rtmp = coordsXYZ[atomIndex] * sin(phai0) + coordsXYZ[atomIndex + 2] * cos(phai0);
-      coordsXYZ[atomIndex] = ptmp;
-      coordsXYZ[atomIndex + 2] = rtmp;
-    }
-
-    p1n2 = coordsXYZ[atomIndices[1]];
-    r1n2 = coordsXYZ[atomIndices[1] + 2];
-    double p1n3 = coordsXYZ[atomIndices[2]];
-    double q1n3 = coordsXYZ[atomIndices[2] + 1];
-    double r1n3 = coordsXYZ[atomIndices[2] + 2];
-
-    double sigma0 = acos(q1n3 / sqrt(q1n3 * q1n3 + r1n3 * r1n3));
-    if (r1n3 < 0.0) {
-      sigma0 = -sigma0;
-    }
-
-    for (int i = 0; i < numCoords; i++) {
-      int atomIndex = i * 3;
-      double qtmp = coordsXYZ[atomIndex + 1] * cos(sigma0) + coordsXYZ[atomIndex + 2] * sin(sigma0);
-      double rtmp = -coordsXYZ[atomIndex + 1] * sin(sigma0) + coordsXYZ[atomIndex + 2] * cos(sigma0);
-      coordsXYZ[atomIndex + 1] = qtmp;
-      coordsXYZ[atomIndex + 2] = rtmp;
-    }
-
-    q1n2 = coordsXYZ[atomIndices[1] + 1];
-    r1n2 = coordsXYZ[atomIndices[1] + 2];
-    q1n3 = coordsXYZ[atomIndices[2] + 1];
-    r1n3 = coordsXYZ[atomIndices[2] + 2];
-
-    logger.finer(
-        format(" DONE N1: %16.15f %16.15f %16.15f", atomCoords[0], atomCoords[1], atomCoords[2]));
-    logger.finer(format(" DONE N2: %16.15f %16.15f %16.15f", p1n2, q1n2, r1n2));
-    logger.finer(format(" DONE N3: %16.15f %16.15f %16.15f", p1n3, q1n3, r1n3));
   }
 
   /**
@@ -1645,4 +1538,110 @@ public class ProgressiveAlignmentOfCrystals {
     pdbfilter.writeFile(saveLocationPDB, false);
   }
 
+  /**
+   * Orient coordinates so that the second index is on the x axis, and the third index is on the X-Y
+   * plane. First index should be at the origin (0, 0, 0).
+   *
+   * @param coordsXYZ An array of XYZ positions (e.g. [x0, y0, z0, x1, y1, z1, x2, y2, z2]
+   * @param atomIndices Indices for three desired sets from the XYZ list (e.g. [0, 1, 2]). Index
+   *     0 should be at origin.
+   */
+  public static void standardOrientation(double[] coordsXYZ, int[] atomIndices) {
+    // Used in QEtoXYZ.groovy which is not ready for git which is why this method appears unused.
+    int numCoords = coordsXYZ.length / 3;
+    double[] atomCoords = new double[3 * 3];
+    atomCoords[0] = coordsXYZ[atomIndices[0]];
+    atomCoords[1] = coordsXYZ[atomIndices[0] + 1];
+    atomCoords[2] = coordsXYZ[atomIndices[0] + 2];
+    atomCoords[3] = coordsXYZ[atomIndices[1]];
+    atomCoords[4] = coordsXYZ[atomIndices[1] + 1];
+    atomCoords[5] = coordsXYZ[atomIndices[1] + 2];
+    atomCoords[6] = coordsXYZ[atomIndices[2]];
+    atomCoords[7] = coordsXYZ[atomIndices[2] + 1];
+    atomCoords[8] = coordsXYZ[atomIndices[2] + 2];
+
+    // TODO: Delete coordsXYZOrig?
+    double[] coordsXYZOrig = new double[numCoords * 3];
+    for (int i = 0; i < numCoords; i++) {
+      int atomIndex = i * 3;
+      coordsXYZOrig[atomIndex] = coordsXYZ[atomIndex];
+      coordsXYZOrig[atomIndex + 1] = coordsXYZ[atomIndex + 1];
+      coordsXYZOrig[atomIndex + 2] = coordsXYZ[atomIndex + 2];
+    }
+
+    // TODO: Delete atomsCoordsOrig?
+    double[] atomsCoordsOrig = new double[3 * 3];
+    arraycopy(atomCoords, 0, atomsCoordsOrig, 0, 9);
+
+    logger.fine(
+        format(" START: N1:\t%16.15f %16.15f %16.15f", atomCoords[0], atomCoords[1], atomCoords[2]));
+    logger.fine(
+        format(" START: N2:\t%16.15f %16.15f %16.15f", atomCoords[3], atomCoords[4], atomCoords[5]));
+    logger.fine(
+        format(" START: N3:\t%16.15f %16.15f %16.15f", atomCoords[6], atomCoords[7], atomCoords[8]));
+
+    double p1n2 = coordsXYZ[atomIndices[1]];
+    double q1n2 = coordsXYZ[atomIndices[1] + 1];
+    double r1n2 = coordsXYZ[atomIndices[1] + 2];
+
+    // Calculation of sigma, phai, and cita angles needed to get specified atoms to desired loci
+    double cita0 = acos(p1n2 / sqrt(p1n2 * p1n2 + q1n2 * q1n2));
+    double phai0 = acos(sqrt(p1n2 * p1n2 + q1n2 * q1n2) /
+        sqrt(p1n2 * p1n2 + q1n2 * q1n2 + r1n2 * r1n2));
+    if (q1n2 < 0.0) {
+      cita0 = -cita0;
+    }
+
+    for (int i = 0; i < numCoords; i++) {
+      int atomIndex = i * 3;
+      double ptmp = coordsXYZ[atomIndex] * cos(cita0) + coordsXYZ[atomIndex + 1] * sin(cita0);
+      double qtmp = -coordsXYZ[atomIndex] * sin(cita0) + coordsXYZ[atomIndex + 1] * cos(cita0);
+      coordsXYZ[atomIndex] = ptmp;
+      coordsXYZ[atomIndex + 1] = qtmp;
+    }
+
+    p1n2 = coordsXYZ[atomIndices[1]];
+    q1n2 = coordsXYZ[atomIndices[1] + 1];
+
+    if (r1n2 > 0.0) {
+      phai0 = -phai0;
+    }
+
+    for (int i = 0; i < numCoords; i++) {
+      int atomIndex = i * 3;
+      double ptmp = coordsXYZ[atomIndex] * cos(phai0) - coordsXYZ[atomIndex + 2] * sin(phai0);
+      double rtmp = coordsXYZ[atomIndex] * sin(phai0) + coordsXYZ[atomIndex + 2] * cos(phai0);
+      coordsXYZ[atomIndex] = ptmp;
+      coordsXYZ[atomIndex + 2] = rtmp;
+    }
+
+    p1n2 = coordsXYZ[atomIndices[1]];
+    r1n2 = coordsXYZ[atomIndices[1] + 2];
+    double p1n3 = coordsXYZ[atomIndices[2]];
+    double q1n3 = coordsXYZ[atomIndices[2] + 1];
+    double r1n3 = coordsXYZ[atomIndices[2] + 2];
+
+    double sigma0 = acos(q1n3 / sqrt(q1n3 * q1n3 + r1n3 * r1n3));
+    if (r1n3 < 0.0) {
+      sigma0 = -sigma0;
+    }
+
+    for (int i = 0; i < numCoords; i++) {
+      int atomIndex = i * 3;
+      double qtmp = coordsXYZ[atomIndex + 1] * cos(sigma0) + coordsXYZ[atomIndex + 2] * sin(sigma0);
+      double rtmp = -coordsXYZ[atomIndex + 1] * sin(sigma0) + coordsXYZ[atomIndex + 2] * cos(sigma0);
+      coordsXYZ[atomIndex + 1] = qtmp;
+      coordsXYZ[atomIndex + 2] = rtmp;
+    }
+
+    q1n2 = coordsXYZ[atomIndices[1] + 1];
+    r1n2 = coordsXYZ[atomIndices[1] + 2];
+    q1n3 = coordsXYZ[atomIndices[2] + 1];
+    r1n3 = coordsXYZ[atomIndices[2] + 2];
+
+    logger.finer(
+        format(" DONE N1: %16.15f %16.15f %16.15f", atomCoords[0], atomCoords[1], atomCoords[2]));
+    logger.finer(format(" DONE N2: %16.15f %16.15f %16.15f", p1n2, q1n2, r1n2));
+    logger.finer(format(" DONE N3: %16.15f %16.15f %16.15f", p1n3, q1n3, r1n3));
+  }
 }
