@@ -43,6 +43,7 @@ import static org.apache.commons.math3.util.FastMath.max;
 
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
+import ffx.potential.parameters.TitrationUtils;
 
 /**
  * The Rotamer Class usually represents one immutable amino acid Rotamer. It is additionally being
@@ -56,22 +57,36 @@ public class Rotamer {
 
   /** Torsions chi 1-4 are used for amino acids and nucleic acids. */
   public final double chi1;
-
   public final double chi2;
   public final double chi3;
   public final double chi4;
+
   /** Torsions chi 5-7 are only currently used for nucleic acids. */
   public final double chi5;
+  final double chi6;
+  final double chi7;
 
   public final double[] angles;
   public final double[] sigmas;
   public final int length;
-  public final AminoAcid3 name;
-  final double chi6;
-  final double chi7;
   final ResidueState originalState;
   final boolean isState;
+  /**
+   * The N.A. name of this residue (or null for a A.A.).
+   */
   private final NucleicAcid3 nucleicName;
+  /**
+   * The A.A. name of this residue (or null for a N.A.).
+   */
+  public final AminoAcid3 name;
+  /**
+   * If this flag is set, application of a rotamer requires updating force field parameters.
+   */
+  public final boolean isTitrating;
+  /**
+   * The TitrationUtils handles application of rotamer specific force field parameters.
+   */
+  private TitrationUtils titrationUtils = null;
 
   /**
    * Constructs a Rotamer from a Residue, an array of torsions, and optionally an array of torsion
@@ -127,6 +142,7 @@ public class Rotamer {
     length = nChi;
     originalState = null;
     isState = false;
+    isTitrating = false;
   }
 
   /**
@@ -153,6 +169,40 @@ public class Rotamer {
     nucleicName = null;
     originalState = null;
     isState = false;
+    isTitrating = false;
+  }
+
+  /**
+   * Constructor for Rotamer.
+   *
+   * @param name a {@link AminoAcid3} object.
+   * @param titrationUtils Use to apply rotamer specific force field parameters.
+   * @param values a double.
+   */
+  public Rotamer(AminoAcid3 name, TitrationUtils titrationUtils, double... values) {
+    length = values.length / 2;
+    angles = new double[max(length, 4)];
+    sigmas = new double[max(length, 4)];
+    for (int i = 0; i < length; i++) {
+      int ii = 2 * i;
+      angles[i] = values[ii];
+      sigmas[i] = values[ii + 1];
+    }
+    this.name = name;
+    chi1 = angles[0];
+    chi2 = angles[1];
+    chi3 = angles[2];
+    chi4 = angles[3];
+    chi5 = chi6 = chi7 = 0;
+    nucleicName = null;
+    originalState = null;
+    isState = false;
+    if (titrationUtils != null) {
+      this.isTitrating = true;
+      this.titrationUtils = titrationUtils;
+    } else {
+      this.isTitrating = false;
+    }
   }
 
   /**
@@ -181,6 +231,7 @@ public class Rotamer {
     chi7 = angles[6];
     originalState = null;
     isState = false;
+    isTitrating = false;
   }
 
   /**
@@ -208,6 +259,7 @@ public class Rotamer {
     chi7 = angles[6];
     originalState = null;
     isState = false;
+    isTitrating = false;
   }
 
   /**
@@ -235,6 +287,7 @@ public class Rotamer {
     nucleicName = null;
     originalState = residueState;
     isState = true;
+    isTitrating = false;
   }
 
   /**
@@ -264,6 +317,7 @@ public class Rotamer {
     chi7 = angles[6];
     originalState = residueState;
     isState = true;
+    isTitrating = false;
   }
 
   /**
@@ -292,6 +346,16 @@ public class Rotamer {
     chi7 = angles[6];
     originalState = residueState;
     isState = true;
+    isTitrating = false;
+  }
+
+  /**
+   * Update force field parameters for force field dependent rotamers.
+   *
+   * @param residue Residue to update.
+   */
+  public void updateParameters(Residue residue) {
+    titrationUtils.updateResidueParameters(residue, this);
   }
 
   /**
@@ -302,10 +366,7 @@ public class Rotamer {
    * @return Original-coordinates rotamer.
    */
   public static Rotamer defaultRotamerFactory(Residue res) {
-    ResidueState origState = res.storeState();
-    double[] chi = RotamerLibrary.measureRotamer(res, false);
-    double[] sigmas = new double[chi.length];
-    return new Rotamer(res, chi, sigmas);
+    return stateToRotamer(res.storeState());
   }
 
   /**
@@ -316,7 +377,14 @@ public class Rotamer {
    */
   static Rotamer stateToRotamer(ResidueState resState) {
     Residue res = resState.getStateResidue();
-    double[] vals = RotamerLibrary.measureRotamer(res, false);
+    double[] chi = RotamerLibrary.measureRotamer(res, false);
+    double[] vals = new double[chi.length*2];
+    for (int i=0; i<chi.length; i++) {
+      int index = i*2;
+      vals[index] = chi[i];
+      vals[index+1] = 0.0;
+    }
+
     switch (res.getResidueType()) {
       case AA:
         return new Rotamer(res.getAminoAcid3(), resState, vals);

@@ -46,7 +46,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.bonded.Loop;
+import ffx.potential.utils.Loop;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
