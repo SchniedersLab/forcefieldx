@@ -36,6 +36,7 @@ package ffx.potential.bonded;
 import static org.junit.Assert.assertArrayEquals;
 
 import ffx.potential.MolecularAssembly;
+import ffx.potential.utils.Loop;
 import ffx.potential.utils.PotentialsUtils;
 import java.io.File;
 import java.util.Arrays;

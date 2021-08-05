@@ -35,13 +35,19 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.bonded;
+package ffx.potential.utils;
 
 import static ffx.potential.bonded.BondedUtils.determineIntxyz;
 import static java.lang.System.arraycopy;
 
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.Angle;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;

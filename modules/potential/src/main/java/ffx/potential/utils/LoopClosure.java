@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.bonded;
+package ffx.potential.utils;
 
 import static ffx.numerics.math.DoubleMath.X;
 import static ffx.numerics.math.DoubleMath.dot;
@@ -52,6 +52,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.tan;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
+import ffx.potential.bonded.SturmMethod;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.util.FastMath;

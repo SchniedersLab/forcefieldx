@@ -38,7 +38,7 @@
 package ffx.potential.groovy.test
 
 import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.ConstantPhUtils
+import ffx.potential.parameters.TitrationUtils
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.ForceFieldFilter
@@ -129,7 +129,7 @@ class SaveAsConstantPhPDB extends PotentialScript {
       logger.info(format(" Save failed for %s", activeAssembly))
     }
 
-    ConstantPhUtils constantPhUtils = new ConstantPhUtils(forceField)
+    TitrationUtils constantPhUtils = new TitrationUtils(forceField)
 
     return this
   }

@@ -41,9 +41,9 @@ import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
-import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
 import ffx.potential.parameters.ForceField;
 import java.util.ArrayList;
@@ -415,16 +415,8 @@ public class MultiResidue extends Residue {
       Rotamer[] allRotamers;
       if (originalRotamer != null) {
         allRotamers = new Rotamer[nRots + 1];
-        int index;
-
-        if (origAtEnd) {
-          index = 0;
-          allRotamers[allRotamers.length - 1] = originalRotamer;
-        } else {
-          index = 1;
-          allRotamers[0] = originalRotamer;
-        }
-
+        int index = 1;
+        allRotamers[0] = originalRotamer;
         for (Rotamer[] rotamersI : usual) {
           int nrotamers = rotamersI.length;
           arraycopy(rotamersI, 0, allRotamers, index, nrotamers);

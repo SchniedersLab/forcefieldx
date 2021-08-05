@@ -36,214 +36,212 @@
 //
 //******************************************************************************
 
-package ffx.algorithms.groovy
+package ffx.potential.groovy
 
-import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
-import ffx.potential.bonded.PolymerUtils
-import ffx.potential.cli.PotentialScript
-import ffx.potential.parsers.PDBFilter
-import ffx.potential.utils.PotentialsUtils
 import ffx.potential.bonded.Residue
-import picocli.CommandLine
+import ffx.potential.bonded.Residue.ResidueType
+import ffx.potential.cli.PotentialScript
+import ffx.potential.utils.PotentialsUtils
+import picocli.CommandLine.Command
+import picocli.CommandLine.Parameters
+
 import static ffx.numerics.math.DoubleMath.dist
 import static java.lang.String.format
-import org.apache.commons.io.FilenameUtils
+import static org.apache.commons.io.FilenameUtils.getBaseName
+import static org.apache.commons.io.FilenameUtils.getFullPath
+import static org.apache.commons.math3.util.FastMath.abs
 
-@CommandLine.Command(description = " Fix chain breaks in a pdb file.", name = "ffxc ChainBreaks")
+@Command(description = " Fix chain breaks in a pdb file.", name = "ffxc ChainBreaks")
 class ChainBreaks extends PotentialScript {
 
-    /**
-     * The final argument(s) should be one or more filenames.
-     */
-    @CommandLine.Parameters(arity = "1", paramLabel = "files",
-            description = 'The atomic coordinate file in PDB or XYZ format.')
-    private List<String> filenames = null
+  /**
+   * The final argument(s) should be one or more filenames.
+   */
+  @Parameters(arity = "1", paramLabel = "file",
+      description = 'The atomic coordinate file in PDB or XYZ format.')
+  private String filename = null
 
-    MolecularAssembly molecularAssembly
+  List<String> chainBreaks = new ArrayList<>()
+  List<double[]> newCoordinates
+  PotentialsUtils potentialsUtils = new PotentialsUtils()
+
+  /**
+   * ChainBreaks constructor.
+   */
+  ChainBreaks() {
+    this(new Binding())
+  }
+
+  /**
+   * ChainBreaks constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  ChainBreaks(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * Execute the script.
+   */
+  @Override
+  ChainBreaks run() {
+    // Init the context and bind variables.
+    if (!init()) {
+      return null
+    }
+
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
+      logger.info(helpString())
+      return null
+    }
+
+    List<Residue> residues = activeAssembly.getResidueList()
+    chainBreaks = findChainBreaks(residues, 3)
+    logger.info(format(" Fixing Chain Breaks in %s", filename))
+    String pdbName = getBaseName(filename)
+    String newPDBpath = getFullPath(filename).replace(filename, "") + pdbName + "_edited.pdb"
+    logger.info(format(" Saving New Coordinates to:\n %s", newPDBpath))
+
+    File newPDBFile = new File(newPDBpath)
+    potentialsUtils.saveAsPDB(activeAssembly, newPDBFile, false, false)
+
+    return this
+  }
+
+  private List<String> findChainBreaks(List<Residue> residues, double cutoff) {
+    List<List<Residue>> subChains = new ArrayList<>()
     List<String> chainBreaks = new ArrayList<>()
-    List<double[]> newCoordinates
-    PotentialsUtils potentialsUtils = new PotentialsUtils()
 
-
-
-
-    /**
-     * ChainBreaks constructor.
-     */
-    ChainBreaks() {
-        this(new Binding())
-    }
-
-    /**
-     * ChainBreaks constructor.
-     * @param binding The Groovy Binding to use.
-     */
-    ChainBreaks(Binding binding) {
-        super(binding)
-    }
-
-    /**
-     * Execute the script.
-     */
-    @Override
-    ChainBreaks run() {
-
-        if (!init()) {
-            return this
+    // Chain-start atom: N (amino) / O5* (nucleic)
+    // Chain-end atom:   C (amino) / O3* (nucleic)
+    ResidueType rType = residues.get(0).getResidueType()
+    String startAtName
+    String endAtName
+    switch (rType) {
+      case ResidueType.AA:
+        startAtName = "N"
+        endAtName = "C"
+        break
+      case ResidueType.NA:
+        boolean namedStar =
+            residues.stream()
+                .flatMap((Residue r) -> r.getAtomList().stream())
+                .anyMatch((Atom a) -> a.getName() == "O5*")
+        if (namedStar) {
+          startAtName = "O5*"
+          endAtName = "O3*"
+        } else {
+          startAtName = "O5\'"
+          endAtName = "O3\'"
         }
-
-        molecularAssembly = potentialFunctions.open(filenames.get(0))
-        List<Residue> residues = molecularAssembly.getResidueList()
-        chainBreaks = findChainBreaks(residues, 3)
-        logger.info(format(" Fixing Chain Breaks in %s", filenames.get(0)))
-        String pdbName = FilenameUtils.getBaseName(filenames.get(0))
-        String newPDBpath = FilenameUtils.getFullPath(filenames.get(0)).replace(filenames.get(0),"")  + pdbName + "_edited.pdb"
-        File newPDBFile = new File (newPDBpath)
-        logger.info(format(" Saving New Coordinates to %s", filenames.get(0).replace(".pdb", "") + "_edited.pdb"))
-        potentialsUtils.saveAsPDB(molecularAssembly, newPDBFile, false, false)
-        
-        return this
-
-
+        break
+      case ResidueType.UNK:
+      default:
+        logger.fine(
+            " Not attempting to find chain breaks for chain with residue "
+                + residues.get(0).toString())
+        List<List<Residue>> retList = new ArrayList<>()
+        retList.add(residues)
+        // TODO: Rose -- should this return null?
+        return retList
     }
 
-    private List<String> findChainBreaks(List<Residue> residues, double cutoff) {
-        List<List<Residue>> subChains = new ArrayList<>()
-        List<String> chainBreaks = new ArrayList<>()
+    List<Residue> subChain = null
+    Residue previousResidue = null
+    Atom priorEndAtom = null
 
-        // Chain-start atom: N (amino)/O5* (nucleic)
-        // Chain-end atom:   C (amino)/O3* (nucleic)
-        Residue.ResidueType rType = residues.get(0).getResidueType();
-        String startAtName;
-        String endAtName;
-        switch (rType) {
-            case Residue.ResidueType.AA:
-                startAtName = "N";
-                endAtName = "C";
-                break;
-            case Residue.ResidueType.NA:
-                boolean namedStar =
-                        residues.stream()
-                                .flatMap((Residue r) -> r.getAtomList().stream())
-                                .anyMatch((Atom a) -> a.getName().equals("O5*"));
-                if (namedStar) {
-                    startAtName = "O5*";
-                    endAtName = "O3*";
-                } else {
-                    startAtName = "O5\'";
-                    endAtName = "O3\'";
-                }
-                break;
-            case Residue.ResidueType.UNK:
-            default:
-                logger.fine(
-                        " Not attempting to find chain breaks for chain with residue "
-                                + residues.get(0).toString());
-                List<List<Residue>> retList = new ArrayList<>();
-                retList.add(residues);
-                return retList;
+    for (Residue residue : residues) {
+      List<Atom> resAtoms = residue.getAtomList()
+      if (priorEndAtom == null) {
+        // Initialization.
+        subChain = new ArrayList<>()
+        subChain.add(residue)
+        subChains.add(subChain)
+      } else {
+        // Find the start atom of the current residue.
+        Atom startAtom = null
+        for (Atom a : resAtoms) {
+          if (a.getName().equalsIgnoreCase(startAtName)) {
+            startAtom = a
+            break
+          }
         }
-
-        List<Residue> subChain = null;
-        Residue previousResidue = null;
-        Atom priorEndAtom = null;
-
-        for (Residue residue : residues) {
-            List<Atom> resAtoms = residue.getAtomList();
-            if (priorEndAtom == null) {
-                // Initialization.
-                subChain = new ArrayList<>();
-                subChain.add(residue);
-                subChains.add(subChain);
-            } else {
-                // Find the start atom of the current residue.
-                Atom startAtom = null;
-                for (Atom a : resAtoms) {
-                    if (a.getName().equalsIgnoreCase(startAtName)) {
-                        startAtom = a;
-                        break;
-                    }
-                }
-                if (startAtom == null) {
-                    subChain.add(residue);
-                    continue;
-                }
-                // Compute the distance between the previous carbonyl carbon and the current nitrogen.
-                double r = dist(priorEndAtom.getXYZ(null), startAtom.getXYZ(null));
-
-                if (r > cutoff) {
-                    // Start a new chain.
-                    subChain = new ArrayList<>()
-                    subChain.add(residue)
-                    subChains.add(subChain)
-                    char ch1 = previousResidue.getChainID()
-                    char ch2 = residue.getChainID();
-                    chainBreaks.add("C " + previousResidue.toString() + " N " + residue.toString())
-
-                    fixChainBreaks(priorEndAtom.getXYZ(null), startAtom.getXYZ(null))
-                    priorEndAtom.setXYZ(newCoordinates.get(0))
-                    startAtom.setXYZ(newCoordinates.get(1))
-
-                } else {
-                    // Continue the current chain.
-                    subChain.add(residue)
-                }
-            }
-
-            // Save the carbonyl carbon.
-            for (Atom a : resAtoms) {
-                if (a.getName().equalsIgnoreCase(endAtName)) {
-                    priorEndAtom = a
-                    break
-                }
-            }
-            previousResidue = residue
+        if (startAtom == null) {
+          subChain.add(residue)
+          continue
         }
+        // Compute the distance between the previous carbonyl carbon and the current nitrogen.
+        double r = dist(priorEndAtom.getXYZ(null), startAtom.getXYZ(null))
 
-        return chainBreaks
+        if (r > cutoff) {
+          // Start a new chain.
+          subChain = new ArrayList<>()
+          subChain.add(residue)
+          subChains.add(subChain)
+          chainBreaks.add("C " + previousResidue.toString() + " N " + residue.toString())
+          fixChainBreaks(priorEndAtom.getXYZ(null), startAtom.getXYZ(null))
+          priorEndAtom.setXYZ(newCoordinates.get(0))
+          startAtom.setXYZ(newCoordinates.get(1))
+        } else {
+          // Continue the current chain.
+          subChain.add(residue)
+        }
+      }
+
+      // Save the carbonyl carbon.
+      for (Atom a : resAtoms) {
+        if (a.getName().equalsIgnoreCase(endAtName)) {
+          priorEndAtom = a
+          break
+        }
+      }
+      previousResidue = residue
     }
 
-    private void fixChainBreaks(double[] cCoordinates, double[] nCoordinates){
-        logger.info("Generating new coordinates")
-        newCoordinates = new ArrayList<>()
-        double distance = dist(cCoordinates,nCoordinates)
-        while (distance > 3){
-            double dx = Math.abs((cCoordinates[0] - nCoordinates[0]) / 4)
-            double dy = Math.abs((cCoordinates[1] - nCoordinates[1]) / 4)
-            double dz = Math.abs((cCoordinates[2] - nCoordinates[2]) / 4)
+    return chainBreaks
+  }
 
-            if (cCoordinates[0] > nCoordinates[0]){
-                cCoordinates[0] = cCoordinates[0] - dx
-                nCoordinates[0] = nCoordinates[0] + dx
-            } else if (cCoordinates[0] < nCoordinates[0]){
-                cCoordinates[0] = cCoordinates[0] + dx
-                nCoordinates[0] = nCoordinates[0] - dx
-            }
+  private void fixChainBreaks(double[] cCoordinates, double[] nCoordinates) {
+    logger.info(" Generating new coordinates.")
+    newCoordinates = new ArrayList<>()
+    double distance = dist(cCoordinates, nCoordinates)
+    while (distance > 3) {
+      double dx = abs((cCoordinates[0] - nCoordinates[0]) / 4.0)
+      double dy = abs((cCoordinates[1] - nCoordinates[1]) / 4.0)
+      double dz = abs((cCoordinates[2] - nCoordinates[2]) / 4.0)
 
-            if (cCoordinates[1] > nCoordinates[1]){
-                cCoordinates[1] = cCoordinates[1] - dy
-                nCoordinates[1] = nCoordinates[1] + dy
-            } else if (cCoordinates[1] < nCoordinates[1]){
-                cCoordinates[1] = cCoordinates[1] + dy
-                nCoordinates[1] = nCoordinates[1] - dy
-            }
+      if (cCoordinates[0] > nCoordinates[0]) {
+        cCoordinates[0] = cCoordinates[0] - dx
+        nCoordinates[0] = nCoordinates[0] + dx
+      } else if (cCoordinates[0] < nCoordinates[0]) {
+        cCoordinates[0] = cCoordinates[0] + dx
+        nCoordinates[0] = nCoordinates[0] - dx
+      }
 
-            if (cCoordinates[2] > nCoordinates[2]){
-                cCoordinates[2] = cCoordinates[2] - dz
-                nCoordinates[2] = nCoordinates[2] + dz
-            } else if (cCoordinates[2] < nCoordinates[0]){
-                cCoordinates[2] = cCoordinates[2] + dz
-                nCoordinates[2] = nCoordinates[2] - dz
-            }
+      if (cCoordinates[1] > nCoordinates[1]) {
+        cCoordinates[1] = cCoordinates[1] - dy
+        nCoordinates[1] = nCoordinates[1] + dy
+      } else if (cCoordinates[1] < nCoordinates[1]) {
+        cCoordinates[1] = cCoordinates[1] + dy
+        nCoordinates[1] = nCoordinates[1] - dy
+      }
 
-            distance = dist(cCoordinates,nCoordinates)
-        }
-        newCoordinates.add(cCoordinates)
-        newCoordinates.add(nCoordinates)
+      if (cCoordinates[2] > nCoordinates[2]) {
+        cCoordinates[2] = cCoordinates[2] - dz
+        nCoordinates[2] = nCoordinates[2] + dz
+      } else if (cCoordinates[2] < nCoordinates[0]) {
+        cCoordinates[2] = cCoordinates[2] + dz
+        nCoordinates[2] = nCoordinates[2] - dz
+      }
 
+      distance = dist(cCoordinates, nCoordinates)
     }
-
+    newCoordinates.add(cCoordinates)
+    newCoordinates.add(nCoordinates)
+  }
 
 }
 

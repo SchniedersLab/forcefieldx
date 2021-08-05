@@ -35,18 +35,17 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.bonded;
+package ffx.potential.parameters;
 
 import static ffx.potential.bonded.AminoAcidUtils.AA_CB;
 import static ffx.potential.bonded.BondedUtils.findAtomType;
 import static java.lang.String.format;
 
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
-import ffx.potential.parameters.AtomType;
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.MultipoleType;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.Rotamer;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
-import ffx.potential.parameters.PolarizeType;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,9 +56,9 @@ import java.util.logging.Logger;
  * @author Andrew Thiel
  * @since 1.0
  */
-public class ConstantPhUtils {
+public class TitrationUtils {
 
-  private static final Logger logger = Logger.getLogger(ConstantPhUtils.class.getName());
+  private static final Logger logger = Logger.getLogger(TitrationUtils.class.getName());
 
   private static final MultipoleType zeroMultipoleType =
       new MultipoleType(MultipoleType.zeroM, new int[] {0, 0, 0},
@@ -310,6 +309,7 @@ public class ConstantPhUtils {
   private final AtomType[][] lysAtomTypes = new AtomType[nLysStates][nLysTypes];
   private final MultipoleType[][] lysMultipoleTypes = new MultipoleType[nLysStates][nLysTypes];
   private final PolarizeType[][] lysPolarizeTypes = new PolarizeType[nLysStates][nLysTypes];
+  private final VDWType[][] lysVDWTypes = new VDWType[nLysStates][nLysTypes];
 
   /**
    * Histidine atom types.
@@ -319,6 +319,7 @@ public class ConstantPhUtils {
   private final AtomType[][] hisAtomTypes = new AtomType[nHisStates][nHisTypes];
   private final MultipoleType[][] hisMultipoleTypes = new MultipoleType[nHisStates][nHisTypes];
   private final PolarizeType[][] hisPolarizeTypes = new PolarizeType[nHisStates][nHisTypes];
+  private final VDWType[][] hisVDWTypes = new VDWType[nHisStates][nHisTypes];
 
   /**
    * Aspartic acid atom types.
@@ -328,6 +329,7 @@ public class ConstantPhUtils {
   private final AtomType[][] aspAtomTypes = new AtomType[nAspStates][nAspTypes];
   private final MultipoleType[][] aspMultipoleTypes = new MultipoleType[nAspStates][nAspTypes];
   private final PolarizeType[][] aspPolarizeTypes = new PolarizeType[nAspStates][nAspTypes];
+  private final VDWType[][] aspVDWTypes = new VDWType[nAspStates][nAspTypes];
 
   /**
    * Glutamic acid atom types.
@@ -337,34 +339,125 @@ public class ConstantPhUtils {
   private final AtomType[][] gluAtomTypes = new AtomType[nGluStates][nGluTypes];
   private final MultipoleType[][] gluMultipoleTypes = new MultipoleType[nGluStates][nGluTypes];
   private final PolarizeType[][] gluPolarizeTypes = new PolarizeType[nGluStates][nGluTypes];
+  private final VDWType[][] gluVDWTypes = new VDWType[nGluStates][nGluTypes];
 
   private final ForceField forceField;
 
-  public ConstantPhUtils(ForceField forceField) {
+  public TitrationUtils(ForceField forceField) {
     this.forceField = forceField;
 
     // Populate the Lysine types.
     constructLYSState(AA_CB[AminoAcid3.LYS.ordinal()], LysStates.LYS);
     constructLYSState(AA_CB[AminoAcid3.LYD.ordinal()], LysStates.LYD);
-    checkMultipoleFrames("LYS", lysAtomTypes, lysPolarizeTypes, lysMultipoleTypes);
+    checkMultipoleFrames("LYS", lysAtomTypes, lysPolarizeTypes, lysMultipoleTypes, lysVDWTypes);
 
     // Populate the Histidine types.
     constructHISState(AA_CB[AminoAcid3.HIS.ordinal()], HisStates.HIS);
     constructHISState(AA_CB[AminoAcid3.HID.ordinal()], HisStates.HID);
     constructHISState(AA_CB[AminoAcid3.HIE.ordinal()], HisStates.HIE);
-    checkMultipoleFrames("HIS", hisAtomTypes, hisPolarizeTypes, hisMultipoleTypes);
+    checkMultipoleFrames("HIS", hisAtomTypes, hisPolarizeTypes, hisMultipoleTypes, hisVDWTypes);
 
     // Populate the Aspartic acid types.
     constructASPState(AA_CB[AminoAcid3.ASP.ordinal()], AspStates.ASP);
     constructASPState(AA_CB[AminoAcid3.ASH.ordinal()], AspStates.ASH1); // First ASH Tautomer
     constructASPState(AA_CB[AminoAcid3.ASH.ordinal()], AspStates.ASH2); // Second ASH Tautomer
-    checkMultipoleFrames("ASP", aspAtomTypes, aspPolarizeTypes, aspMultipoleTypes);
+    checkMultipoleFrames("ASP", aspAtomTypes, aspPolarizeTypes, aspMultipoleTypes, aspVDWTypes);
 
     // Populate the Glutamic acid types.
     constructGLUState(AA_CB[AminoAcid3.GLU.ordinal()], GluStates.GLU);
     constructGLUState(AA_CB[AminoAcid3.GLH.ordinal()], GluStates.GLH1); // First GLH Tautomer
     constructGLUState(AA_CB[AminoAcid3.GLH.ordinal()], GluStates.GLH2); // Second GLH Tautomer
-    checkMultipoleFrames("GLU", gluAtomTypes, gluPolarizeTypes, gluMultipoleTypes);
+    checkMultipoleFrames("GLU", gluAtomTypes, gluPolarizeTypes, gluMultipoleTypes, gluVDWTypes);
+  }
+
+  /**
+   * Update force field parameters for the side-chain atoms of the given residue based on the rotamer
+   * amino acid type.
+   *
+   * @param residue Residue to update.
+   * @param rotamer Rotamer that contains the amino acid residue identity.
+   */
+  public void updateResidueParameters(Residue residue, Rotamer rotamer) {
+    switch (residue.getAminoAcid3()) {
+      case ASH:
+        // Assume ASP types
+        int aspIndex = AspStates.ASP.ordinal();
+        if (rotamer.name == AminoAcid3.ASH) {
+          // Use ASH2 types
+          aspIndex = AspStates.ASH2.ordinal();
+        }
+        for (AspartateAtomNames atomName : AspartateAtomNames.values()) {
+          if (atomName.name().equals("HD1")) {
+            // Skip the HD1 atom name (used only for ASD during constant pH).
+            continue;
+          }
+          int atomIndex = atomName.ordinal();
+          Atom atom = (Atom) residue.getAtomNode(atomName.name());
+          atom.setAtomType(aspAtomTypes[aspIndex][atomIndex]);
+          atom.setMultipoleType(aspMultipoleTypes[aspIndex][atomIndex]);
+          atom.setPolarizeType(aspPolarizeTypes[aspIndex][atomIndex]);
+          atom.setVDWType(aspVDWTypes[aspIndex][atomIndex]);
+        }
+        break;
+      case GLH:
+        // Assume GLU types
+        int gluIndex = GluStates.GLU.ordinal();
+        if (rotamer.name == AminoAcid3.GLH) {
+          // Use GLH2 types
+          gluIndex = GluStates.GLH2.ordinal();
+        }
+        for (GlutamateAtomNames atomName : GlutamateAtomNames.values()) {
+          if (atomName.name().equals("HE1")) {
+            // Skip the HE1 atom name (used only for GLD during constant pH).
+            continue;
+          }
+          int atomIndex = atomName.ordinal();
+          Atom atom = (Atom) residue.getAtomNode(atomName.name());
+          atom.setAtomType(gluAtomTypes[gluIndex][atomIndex]);
+          atom.setMultipoleType(gluMultipoleTypes[gluIndex][atomIndex]);
+          atom.setPolarizeType(gluPolarizeTypes[gluIndex][atomIndex]);
+          atom.setVDWType(gluVDWTypes[gluIndex][atomIndex]);
+        }
+        break;
+      case LYS:
+        // Assume LYS types
+        int lysIndex = LysStates.LYS.ordinal();
+        if (rotamer.name == AminoAcid3.LYD) {
+          // Use LYD types
+          lysIndex = LysStates.LYD.ordinal();
+        }
+        for (LysineAtomNames atomName : LysineAtomNames.values()) {
+          int atomIndex = atomName.ordinal();
+          Atom atom = (Atom) residue.getAtomNode(atomName.name());
+          atom.setAtomType(lysAtomTypes[lysIndex][atomIndex]);
+          atom.setMultipoleType(lysMultipoleTypes[lysIndex][atomIndex]);
+          atom.setPolarizeType(lysPolarizeTypes[lysIndex][atomIndex]);
+          atom.setVDWType(lysVDWTypes[lysIndex][atomIndex]);
+        }
+        break;
+      case HIS:
+        // Assume HIS types.
+        int hisIndex = HisStates.HIS.ordinal();
+        switch (rotamer.name) {
+          case HIE:
+            hisIndex = HisStates.HIE.ordinal();
+            break;
+          case HID:
+            hisIndex = HisStates.HID.ordinal();
+        }
+        for (HistidineAtomNames atomName : HistidineAtomNames.values()) {
+          int atomIndex = atomName.ordinal();
+          Atom atom = (Atom) residue.getAtomNode(atomName.name());
+          atom.setAtomType(hisAtomTypes[hisIndex][atomIndex]);
+          atom.setMultipoleType(hisMultipoleTypes[hisIndex][atomIndex]);
+          atom.setPolarizeType(hisPolarizeTypes[hisIndex][atomIndex]);
+          atom.setVDWType(hisVDWTypes[hisIndex][atomIndex]);
+        }
+        break;
+      default:
+        logger.severe(
+            format(" Non-titrating residue encountered %s with rotamer %s.", residue, rotamer));
+    }
   }
 
   public double[] getMultipole(AminoAcid3 aminoAcid3, int atomIndex,
@@ -382,23 +475,29 @@ public class ConstantPhUtils {
         double[] hid = hisMultipoleTypes[HisStates.HID.ordinal()][atomIndex].getMultipole();
         double[] hie = hisMultipoleTypes[HisStates.HIE.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
-          multipole[i] = titrationLambda * his[i] + (1.0 - titrationLambda) * (tautomerLambda * hid[i] + (1 - tautomerLambda) * hie[i]);
+          multipole[i] =
+              titrationLambda * his[i] + (1.0 - titrationLambda) * (tautomerLambda * hid[i]
+                  + (1 - tautomerLambda) * hie[i]);
         }
         break;
       case ASD:
-        double[] asp =  aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
+        double[] asp = aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
         double[] ash1 = aspMultipoleTypes[AspStates.ASH1.ordinal()][atomIndex].getMultipole();
         double[] ash2 = aspMultipoleTypes[AspStates.ASH2.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
-          multipole[i] = titrationLambda * (tautomerLambda * ash1[i] + (1 - tautomerLambda) * ash2[i]) + (1.0 - titrationLambda) * asp[i];
+          multipole[i] =
+              titrationLambda * (tautomerLambda * ash1[i] + (1 - tautomerLambda) * ash2[i])
+                  + (1.0 - titrationLambda) * asp[i];
         }
         break;
       case GLD:
-        double[] glu =  gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
+        double[] glu = gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
         double[] glh1 = gluMultipoleTypes[GluStates.GLH1.ordinal()][atomIndex].getMultipole();
         double[] glh2 = gluMultipoleTypes[GluStates.GLH2.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
-          multipole[i] = titrationLambda * (tautomerLambda * glh1[i] + (1 - tautomerLambda) * glh2[i]) + (1.0 - titrationLambda) * glu[i];
+          multipole[i] =
+              titrationLambda * (tautomerLambda * glh1[i] + (1 - tautomerLambda) * glh2[i])
+                  + (1.0 - titrationLambda) * glu[i];
         }
         break;
       default:
@@ -426,7 +525,7 @@ public class ConstantPhUtils {
         }
         break;
       case ASD:
-        double[] asp =  aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
+        double[] asp = aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
         double[] ash1 = aspMultipoleTypes[AspStates.ASH1.ordinal()][atomIndex].getMultipole();
         double[] ash2 = aspMultipoleTypes[AspStates.ASH2.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
@@ -434,7 +533,7 @@ public class ConstantPhUtils {
         }
         break;
       case GLD:
-        double[] glu =  gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
+        double[] glu = gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
         double[] glh1 = gluMultipoleTypes[GluStates.GLH1.ordinal()][atomIndex].getMultipole();
         double[] glh2 = gluMultipoleTypes[GluStates.GLH2.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
@@ -459,7 +558,7 @@ public class ConstantPhUtils {
         }
         break;
       case ASD:
-        double[] asp =  aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
+        double[] asp = aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
         double[] ash1 = aspMultipoleTypes[AspStates.ASH1.ordinal()][atomIndex].getMultipole();
         double[] ash2 = aspMultipoleTypes[AspStates.ASH2.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
@@ -467,7 +566,7 @@ public class ConstantPhUtils {
         }
         break;
       case GLD:
-        double[] glu =  gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
+        double[] glu = gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
         double[] glh1 = gluMultipoleTypes[GluStates.GLH1.ordinal()][atomIndex].getMultipole();
         double[] glh2 = gluMultipoleTypes[GluStates.GLH2.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
@@ -492,17 +591,20 @@ public class ConstantPhUtils {
         double his = hisPolarizeTypes[HisStates.HIS.ordinal()][atomIndex].polarizability;
         double hid = hisPolarizeTypes[HisStates.HID.ordinal()][atomIndex].polarizability;
         double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
-        return titrationLambda * his + (1.0 - titrationLambda) * (tautomerLambda * hid + (1 - tautomerLambda) * hie);
+        return titrationLambda * his + (1.0 - titrationLambda) * (tautomerLambda * hid
+            + (1 - tautomerLambda) * hie);
       case ASD:
-        double asp =  aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
+        double asp = aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
         double ash1 = aspPolarizeTypes[AspStates.ASH1.ordinal()][atomIndex].polarizability;
         double ash2 = aspPolarizeTypes[AspStates.ASH2.ordinal()][atomIndex].polarizability;
-        return titrationLambda * (tautomerLambda * ash1 + (1 - tautomerLambda) * ash2) + (1.0 - titrationLambda) * asp;
+        return titrationLambda * (tautomerLambda * ash1 + (1 - tautomerLambda) * ash2)
+            + (1.0 - titrationLambda) * asp;
       case GLD:
-        double glu =  gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
+        double glu = gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
         double glh1 = gluPolarizeTypes[GluStates.GLH1.ordinal()][atomIndex].polarizability;
         double glh2 = gluPolarizeTypes[GluStates.GLH2.ordinal()][atomIndex].polarizability;
-        return titrationLambda * (tautomerLambda * glh1 + (1 - tautomerLambda) * glh2) + (1.0 - titrationLambda) * glu;
+        return titrationLambda * (tautomerLambda * glh1 + (1 - tautomerLambda) * glh2)
+            + (1.0 - titrationLambda) * glu;
       default:
         return defaultPolarizability;
     }
@@ -521,12 +623,12 @@ public class ConstantPhUtils {
         double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
         return his - (tautomerLambda * hid + (1 - tautomerLambda) * hie);
       case ASD:
-        double asp =  aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
+        double asp = aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
         double ash1 = aspPolarizeTypes[AspStates.ASH1.ordinal()][atomIndex].polarizability;
         double ash2 = aspPolarizeTypes[AspStates.ASH2.ordinal()][atomIndex].polarizability;
         return (tautomerLambda * ash1 + (1 - tautomerLambda) * ash2) - asp;
       case GLD:
-        double glu =  gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
+        double glu = gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
         double glh1 = gluPolarizeTypes[GluStates.GLH1.ordinal()][atomIndex].polarizability;
         double glh2 = gluPolarizeTypes[GluStates.GLH2.ordinal()][atomIndex].polarizability;
         return (tautomerLambda * glh1 + (1 - tautomerLambda) * glh2) - glu;
@@ -544,12 +646,12 @@ public class ConstantPhUtils {
         double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
         return titrationLambda * his + (1.0 - titrationLambda) * (hid - hie);
       case ASD:
-        double asp =  aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
+        double asp = aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
         double ash1 = aspPolarizeTypes[AspStates.ASH1.ordinal()][atomIndex].polarizability;
         double ash2 = aspPolarizeTypes[AspStates.ASH2.ordinal()][atomIndex].polarizability;
         return titrationLambda * (ash1 - ash2) + (1.0 - titrationLambda) * asp;
       case GLD:
-        double glu =  gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
+        double glu = gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
         double glh1 = gluPolarizeTypes[GluStates.GLH1.ordinal()][atomIndex].polarizability;
         double glh2 = gluPolarizeTypes[GluStates.GLH2.ordinal()][atomIndex].polarizability;
         return titrationLambda * (glh1 - glh2) + (1.0 - titrationLambda) * glu;
@@ -569,12 +671,15 @@ public class ConstantPhUtils {
         // Zero out the MultipoleType and Polarizetype.
         hisMultipoleTypes[state][index] = zeroMultipoleType;
         hisPolarizeTypes[state][index] = zeroPolarizeType;
+        hisVDWTypes[state][index] = forceField.getVDWType(Integer.toString(0));
       } else {
         int biotype = biotypeCB + offset;
         hisAtomTypes[state][index] = findAtomType(biotype, forceField);
         String key = hisAtomTypes[state][index].getKey();
         hisMultipoleTypes[state][index] = forceField.getMultipoleTypeBeginsWith(key);
         hisPolarizeTypes[state][index] = forceField.getPolarizeType(key);
+        int atomClass = hisAtomTypes[state][index].atomClass;
+        hisVDWTypes[state][index] = forceField.getVDWType("" + atomClass);
         if (hisMultipoleTypes[state][index] == null || hisPolarizeTypes[state][index] == null) {
           logger.severe(format(" A multipole could not be assigned for Lys atom %s.\n %s\n",
               atomName, hisAtomTypes[state][index]));
@@ -594,12 +699,15 @@ public class ConstantPhUtils {
         // Zero out the MultipoleType and Polarizetype.
         lysMultipoleTypes[state][index] = zeroMultipoleType;
         lysPolarizeTypes[state][index] = zeroPolarizeType;
+        lysVDWTypes[state][index] = forceField.getVDWType(Integer.toString(0));
       } else {
         int biotype = biotypeCB + offset;
         lysAtomTypes[state][index] = findAtomType(biotype, forceField);
         String key = lysAtomTypes[state][index].getKey();
         lysMultipoleTypes[state][index] = forceField.getMultipoleTypeBeginsWith(key);
         lysPolarizeTypes[state][index] = forceField.getPolarizeType(key);
+        int atomClass = lysAtomTypes[state][index].atomClass;
+        lysVDWTypes[state][index] = forceField.getVDWType("" + atomClass);
         if (lysMultipoleTypes[state][index] == null || lysPolarizeTypes[state][index] == null) {
           logger.severe(format(" A multipole could not be assigned for Lys atom %s.\n %s\n",
               atomName, lysAtomTypes[state][index]));
@@ -619,14 +727,17 @@ public class ConstantPhUtils {
         // Zero out the MultipoleType and Polarizetype.
         aspMultipoleTypes[state][index] = zeroMultipoleType;
         aspPolarizeTypes[state][index] = zeroPolarizeType;
+        aspVDWTypes[state][index] = forceField.getVDWType(Integer.toString(0));
       } else {
         int biotype = biotypeCB + offset;
         aspAtomTypes[state][index] = findAtomType(biotype, forceField);
         String key = aspAtomTypes[state][index].getKey();
         aspMultipoleTypes[state][index] = forceField.getMultipoleTypeBeginsWith(key);
         aspPolarizeTypes[state][index] = forceField.getPolarizeType(key);
+        int atomClass = aspAtomTypes[state][index].atomClass;
+        aspVDWTypes[state][index] = forceField.getVDWType("" + atomClass);
         if (aspMultipoleTypes[state][index] == null || aspPolarizeTypes[state][index] == null) {
-          logger.severe(format(" A multipole could not be assigned for Asp atom %s.\n %s\n",
+          logger.severe(format(" A force field type could not be assigned for Asp atom %s.\n %s\n",
               atomName, aspAtomTypes[state][index]));
         }
       }
@@ -644,12 +755,15 @@ public class ConstantPhUtils {
         // Zero out the MultipoleType and Polarizetype.
         gluMultipoleTypes[state][index] = zeroMultipoleType;
         gluPolarizeTypes[state][index] = zeroPolarizeType;
+        gluVDWTypes[state][index] = forceField.getVDWType(Integer.toString(0));
       } else {
         int biotype = biotypeCB + offset;
         gluAtomTypes[state][index] = findAtomType(biotype, forceField);
         String key = gluAtomTypes[state][index].getKey();
         gluMultipoleTypes[state][index] = forceField.getMultipoleTypeBeginsWith(key);
         gluPolarizeTypes[state][index] = forceField.getPolarizeType(key);
+        int atomClass = gluAtomTypes[state][index].atomClass;
+        gluVDWTypes[state][index] = forceField.getVDWType("" + atomClass);
         if (gluMultipoleTypes[state][index] == null || gluPolarizeTypes[state][index] == null) {
           logger.severe(format(" A multipole could not be assigned for Glu atom %s.\n %s\n",
               atomName, gluAtomTypes[state][index]));
@@ -658,27 +772,41 @@ public class ConstantPhUtils {
     }
   }
 
-  private void checkMultipoleFrames(String label, AtomType[][] atomTypes,
-      PolarizeType[][] polarizeTypes, MultipoleType[][] multipoleTypes) {
+  private void checkMultipoleFrames(String label,
+      AtomType[][] atomTypes, PolarizeType[][] polarizeTypes, MultipoleType[][] multipoleTypes, VDWType[][] vdwTypes) {
     int states = multipoleTypes.length;
     int types = multipoleTypes[0].length;
     StringBuilder sb = new StringBuilder();
     for (int t = 0; t < types; t++) {
       MultipoleFrameDefinition frame0 = multipoleTypes[0][t].frameDefinition;
+      double eps0 = vdwTypes[0][t].wellDepth;
+      double rad0 = vdwTypes[0][t].radius;
       sb.append(format("\n %s Type %d\n", label, t));
-      sb.append(
-          format(" %s\n  %s\n  %s\n", atomTypes[0][t], polarizeTypes[0][t], multipoleTypes[0][t]));
+      sb.append(format(" %s\n  %s\n  %s\n  %s\n",
+          atomTypes[0][t], polarizeTypes[0][t], multipoleTypes[0][t], vdwTypes[0][t]));
       for (int s = 1; s < states; s++) {
-        sb.append(
-            format(" %s\n  %s\n  %s\n", atomTypes[s][t], polarizeTypes[s][t], multipoleTypes[s][t]));
+        sb.append(format(" %s\n  %s\n  %s\n  %s\n",
+            atomTypes[s][t], polarizeTypes[s][t], multipoleTypes[s][t], vdwTypes[s][t]));
         MultipoleFrameDefinition frame = multipoleTypes[s][t].frameDefinition;
+
         if (!frame0.equals(frame)) {
-          StringBuilder sb2 = new StringBuilder("\n Incompatible atom types:\n");
-          sb2.append(format(" %s\n  %s\n  %s\n", atomTypes[0][t], polarizeTypes[0][t],
-              multipoleTypes[0][t]));
-          sb2.append(format(" %s\n  %s\n  %s\n", atomTypes[s][t], polarizeTypes[s][t],
-              multipoleTypes[s][t]));
-          logger.severe(sb2.toString());
+          StringBuilder sb2 = new StringBuilder("\n Incompatible multipole frames:\n");
+          sb2.append(format(" %s\n  %s\n  %s\n",
+              atomTypes[0][t], polarizeTypes[0][t], multipoleTypes[0][t]));
+          sb2.append(format(" %s\n  %s\n  %s\n",
+              atomTypes[s][t], polarizeTypes[s][t], multipoleTypes[s][t]));
+          logger.warning(sb2.toString());
+        }
+
+        if (atomTypes[0][t].atomicNumber != 1) {
+          double epsS = vdwTypes[s][t].wellDepth;
+          double radS = vdwTypes[s][t].radius;
+          if (epsS != eps0 || radS != rad0) {
+            StringBuilder sb2 = new StringBuilder("\n Incompatible vdW types:\n");
+            sb2.append(format(" %s\n  %s\n", atomTypes[0][t], vdwTypes[0][t]));
+            sb2.append(format(" %s\n  %s\n", atomTypes[s][t], vdwTypes[s][t]));
+            logger.info(sb2.toString());
+          }
         }
       }
     }

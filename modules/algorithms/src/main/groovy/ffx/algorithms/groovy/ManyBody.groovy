@@ -131,6 +131,7 @@ class ManyBody extends AlgorithmsScript {
     if (monteCarloTesting) {
       rotamerOptimization.setMonteCarloTesting(true)
     }
+
     manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
     ArrayList<Residue> residueList = rotamerOptimization.getResidues()
