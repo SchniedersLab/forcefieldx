@@ -44,6 +44,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.numerics.math.DoubleMath;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
 import java.util.logging.Logger;
@@ -144,14 +145,10 @@ public class Torsion extends BondedTerm implements LambdaInterface {
         format(
             "No TorsionType for key: %s\n %s -> %s\n %s -> %s\n %s -> %s\n %s -> %s",
             key,
-            a0.toString(),
-            a0.getAtomType().toString(),
-            a1.toString(),
-            a1.getAtomType().toString(),
-            a2.toString(),
-            a2.getAtomType().toString(),
-            a3.toString(),
-            a3.getAtomType().toString()));
+            a0, a0.getAtomType().toString(),
+            a1, a1.getAtomType().toString(),
+            a2, a2.getAtomType().toString(),
+            a3, a3.getAtomType().toString()));
   }
 
   /**
@@ -242,6 +239,19 @@ public class Torsion extends BondedTerm implements LambdaInterface {
       return true;
     }
     return (a0 == atoms[3] && a1 == atoms[2] && a2 == atoms[1] && a3 == atoms[0]);
+  }
+
+  /**
+   * Compute the torsional angle in degrees.
+   * @return The torsion in degrees.
+   */
+  public double measure() {
+    double angle = DoubleMath.dihedralAngle(
+        atoms[0].getXYZ(null),
+        atoms[1].getXYZ(null),
+        atoms[2].getXYZ(null),
+        atoms[3].getXYZ(null));
+    return toDegrees(angle);
   }
 
   /**

@@ -382,7 +382,7 @@ public class TitrationUtils {
       case ASH:
         // Assume ASP types
         int aspIndex = AspStates.ASP.ordinal();
-        if (rotamer.name == AminoAcid3.ASH) {
+        if (rotamer.aminoAcid3 == AminoAcid3.ASH) {
           // Use ASH2 types
           aspIndex = AspStates.ASH2.ordinal();
         }
@@ -402,7 +402,7 @@ public class TitrationUtils {
       case GLH:
         // Assume GLU types
         int gluIndex = GluStates.GLU.ordinal();
-        if (rotamer.name == AminoAcid3.GLH) {
+        if (rotamer.aminoAcid3 == AminoAcid3.GLH) {
           // Use GLH2 types
           gluIndex = GluStates.GLH2.ordinal();
         }
@@ -422,7 +422,7 @@ public class TitrationUtils {
       case LYS:
         // Assume LYS types
         int lysIndex = LysStates.LYS.ordinal();
-        if (rotamer.name == AminoAcid3.LYD) {
+        if (rotamer.aminoAcid3 == AminoAcid3.LYD) {
           // Use LYD types
           lysIndex = LysStates.LYD.ordinal();
         }
@@ -438,7 +438,7 @@ public class TitrationUtils {
       case HIS:
         // Assume HIS types.
         int hisIndex = HisStates.HIS.ordinal();
-        switch (rotamer.name) {
+        switch (rotamer.aminoAcid3) {
           case HIE:
             hisIndex = HisStates.HIE.ordinal();
             break;

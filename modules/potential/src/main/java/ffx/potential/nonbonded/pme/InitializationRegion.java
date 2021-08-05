@@ -375,9 +375,7 @@ public class InitializationRegion extends ParallelRegion {
             elecScale = 0.0;
           }
 
-          double[] in = (esvTerm && isAtomTitrating[ii])
-              ? atom.getEsvMultipole().getMultipole()
-              : localMultipole[ii];
+          double[] in = atom.getMultipoleType().getMultipole();
 
           if (rotateMultipoles) {
             // Local frame origin is the location of the current atomic multipole atom.

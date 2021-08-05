@@ -297,16 +297,10 @@ public class EliminatedRotamers {
 
     eliminatedSingles[i][ri] = true;
 
-    // adds eliminatedSingles indices to arraylist
-    /*if (eliminatedSingles[i][ri]) {
-        eliminatedResidue.add(i);
-        eliminatedRotamer.add(ri);
-    }*/
     if (verbose) {
-      rO.logIfMaster(
-          format(
-              " Rotamer (%8s,%2d) eliminated (%2d left).",
-              residues[i].toFormattedString(false, true), ri, rotCount));
+      Rotamer[] rotamers = residues[i].getRotamers(library);
+      rO.logIfMaster(format(" Rotamer (%8s,%2d) eliminated (%2d left).",
+              residues[i].toString(rotamers[ri]), ri, rotCount));
     }
     int eliminatedPairs = eliminateRotamerPairs(residues, i, ri, verbose);
     if (eliminatedPairs > 0 && verbose) {
@@ -328,21 +322,12 @@ public class EliminatedRotamers {
 
     if (!check(i, ri, j, rj)) {
       eliminatedPairs[i][ri][j][rj] = true;
-      // adds eliminatedPairs indices to arraylist
-      /*if (eliminatedPairs[i][ri][j][rj]) {
-          eliminatedResidue1.add(i);
-          eliminatedRotamer1.add(ri);
-          eliminatedResidue2.add(j);
-          eliminatedRotamer2.add(rj);
-      }*/
       if (verbose) {
-        rO.logIfMaster(
-            format(
-                "  Rotamer pair eliminated: [(%8s,%2d) (%8s,%2d)]",
-                residues[i].toFormattedString(false, true),
-                ri,
-                residues[j].toFormattedString(false, true),
-                rj));
+        Rotamer[] rotI = residues[i].getRotamers(library);
+        Rotamer[] rotJ = residues[j].getRotamers(library);
+        rO.logIfMaster(format("  Rotamer pair eliminated: [(%8s,%2d) (%8s,%2d)]",
+                residues[i].toString(rotI[ri]), ri,
+                residues[j].toString(rotJ[rj]), rj));
       }
       return true;
     } else {
@@ -383,10 +368,10 @@ public class EliminatedRotamers {
 
     Residue residuei = residues[i];
     Residue residuej = residues[j];
-    Rotamer[] rotsi = residuei.getRotamers(library);
-    Rotamer[] rotsj = residuej.getRotamers(library);
-    int lenri = rotsi.length;
-    int lenrj = rotsj.length;
+    Rotamer[] rotI = residuei.getRotamers(library);
+    Rotamer[] rotJ = residuej.getRotamers(library);
+    int lenri = rotI.length;
+    int lenrj = rotJ.length;
     boolean eliminated = false;
 
     // Now check ris with no remaining pairs to j.
@@ -404,16 +389,11 @@ public class EliminatedRotamers {
       if (!pairRemaining) {
         if (eliminateRotamer(residues, i, ri, print)) {
           eliminated = true;
-          rO.logIfMaster(
-              format(
-                  " Eliminating rotamer %s-%d with no remaining pairs to residue %s.",
-                  residuei.toFormattedString(false, true), ri, residuej));
+          rO.logIfMaster(format(" Eliminating rotamer %s-%d with no remaining pairs to residue %s.",
+                  residuei.toString(rotI[ri]), ri, residuej));
         } else {
-          rO.logIfMaster(
-              format(
-                  " Already eliminated rotamer %s-%d with no remaining pairs to residue %s.",
-                  residuei.toFormattedString(false, true), ri, residuej),
-              Level.WARNING);
+          rO.logIfMaster(format(" Already eliminated rotamer %s-%d with no remaining pairs to residue %s.",
+                  residuei.toString(rotI[ri]), ri, residuej), Level.WARNING);
         }
       }
     }
@@ -433,16 +413,11 @@ public class EliminatedRotamers {
       if (!pairRemaining) {
         if (eliminateRotamer(residues, j, rj, print)) {
           eliminated = true;
-          rO.logIfMaster(
-              format(
-                  " Eliminating rotamer %s-%d with no remaining pairs to residue %s.",
-                  residuej.toFormattedString(false, true), rj, residuei));
+          rO.logIfMaster(format(" Eliminating rotamer %s-%d with no remaining pairs to residue %s.",
+                  residuej.toString(rotJ[rj]), rj, residuei));
         } else {
-          rO.logIfMaster(
-              format(
-                  " Already eliminated rotamer J %s-%d with no remaining pairs to residue %s.",
-                  residuej.toFormattedString(false, true), rj, residuei),
-              Level.WARNING);
+          rO.logIfMaster(format(" Already eliminated rotamer J %s-%d with no remaining pairs to residue %s.",
+                  residuej.toString(rotJ[rj]), rj, residuei), Level.WARNING);
         }
       }
     }
@@ -530,15 +505,15 @@ public class EliminatedRotamers {
     int nResidues = residues.length;
 
     for (int i = 0; i < nResidues - 1; i++) {
-      Residue resi = residues[i];
-      Rotamer[] rotsi = resi.getRotamers(library);
-      int lenri = rotsi.length;
-      int indI = allResiduesList.indexOf(resi);
+      Residue residueI = residues[i];
+      Rotamer[] rotI = residueI.getRotamers(library);
+      int lenri = rotI.length;
+      int indI = allResiduesList.indexOf(residueI);
       for (int j = i + 1; j < nResidues; j++) {
-        Residue resj = residues[j];
-        Rotamer[] rotsj = resj.getRotamers(library);
-        int lenrj = rotsj.length;
-        int indJ = allResiduesList.indexOf(resj);
+        Residue residueJ = residues[j];
+        Rotamer[] rotJ = residueJ.getRotamers(library);
+        int lenrj = rotJ.length;
+        int indJ = allResiduesList.indexOf(residueJ);
 
         double minPair = Double.MAX_VALUE;
         int minRI = -1;
@@ -573,14 +548,14 @@ public class EliminatedRotamers {
 
         // Calculate all the modifiers to the pair clash elimination threshold.
         double threshold = pairClashThreshold;
-        if (resi instanceof MultiResidue) {
+        if (residueI instanceof MultiResidue) {
           threshold += multiResPairClashAddn;
         }
-        if (resj instanceof MultiResidue) {
+        if (residueJ instanceof MultiResidue) {
           threshold += multiResPairClashAddn;
         }
         int numNARes =
-            (resi.getResidueType() == NA ? 1 : 0) + (resj.getResidueType() == NA ? 1 : 0);
+            (residueI.getResidueType() == NA ? 1 : 0) + (residueJ.getResidueType() == NA ? 1 : 0);
         switch (numNARes) {
           case 0:
             break;
@@ -612,17 +587,9 @@ public class EliminatedRotamers {
               rO.logIfMaster(
                   format(
                       " Pruning pair %s-%d %s-%d by %s-%d %s-%d; energy %s > " + "%s + %s",
-                      resi.toFormattedString(false, true),
-                      ri,
-                      resj.toFormattedString(false, true),
-                      rj,
-                      resi.toFormattedString(false, true),
-                      minRI,
-                      resj.toFormattedString(false, true),
-                      minRJ,
-                      rO.formatEnergy(pairEnergy),
-                      rO.formatEnergy(threshold),
-                      rO.formatEnergy(minPair)));
+                      residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
+                      residueI.toString(rotI[minRI]), minRI, residueJ.toString(rotJ[minRJ]), minRJ,
+                      rO.formatEnergy(pairEnergy), rO.formatEnergy(threshold), rO.formatEnergy(minPair)));
             }
           }
         }
@@ -656,10 +623,8 @@ public class EliminatedRotamers {
         }
       }
 
-      double energyToPrune =
-          (residue instanceof MultiResidue) ? multiResClashThreshold : clashThreshold;
-      energyToPrune =
-          (residue.getResidueType() == NA) ? energyToPrune * nucleicPruningFactor : energyToPrune;
+      double energyToPrune = (residue instanceof MultiResidue) ? multiResClashThreshold : clashThreshold;
+      energyToPrune = (residue.getResidueType() == NA) ? energyToPrune * nucleicPruningFactor : energyToPrune;
       energyToPrune += minEnergy;
 
       for (int ri = 0; ri < nrot; ri++) {
@@ -668,11 +633,9 @@ public class EliminatedRotamers {
             rO.logIfMaster(
                 format(
                     "  Rotamer (%7s,%2d) self-energy %s pruned by (%7s,%2d) %s.",
-                    residue,
-                    ri,
+                    residue.toString(rotamers[ri]), ri,
                     rO.formatEnergy(eE.getSelf(i, ri)),
-                    residue,
-                    minRot,
+                    residue.toString(rotamers[minRot]), minRot,
                     rO.formatEnergy(minEnergy)));
           }
         }
@@ -733,13 +696,13 @@ public class EliminatedRotamers {
 
     // Validate pairs
     for (int i = 0; i < nres; i++) {
-      Residue residuei = residues[i];
-      Rotamer[] rotamersi = residuei.getRotamers(library);
-      int ni = rotamersi.length;
+      Residue residueI = residues[i];
+      Rotamer[] rotI = residueI.getRotamers(library);
+      int ni = rotI.length;
       for (int j = i + 1; j < nres; j++) {
-        Residue residuej = residues[j];
-        Rotamer[] rotamersj = residuej.getRotamers(library);
-        int nj = rotamersj.length;
+        Residue residueJ = residues[j];
+        Rotamer[] rotJ = residueJ.getRotamers(library);
+        int nj = rotJ.length;
         boolean valid = false;
         for (int ri = 0; ri < ni; ri++) {
           for (int rj = 0; rj < nj; rj++) {
@@ -749,10 +712,8 @@ public class EliminatedRotamers {
           }
         }
         if (!valid) {
-          logger.severe(
-              format(
-                  " Coding error: all pairs for %s with residue %s eliminated.",
-                  residuei.toFormattedString(false, true), residuej));
+          logger.severe(format(" Coding error: all pairs for %s with residue %s eliminated.",
+                  residueI.toFormattedString(false, true), residueJ));
         }
       }
     }
@@ -774,9 +735,7 @@ public class EliminatedRotamers {
       Residue residuei = residues[i];
       Rotamer[] rotamersi = residuei.getRotamers(library);
       int lenri = rotamersi.length; // Length rotamers i
-      rO.logIfMaster(
-          format(
-              " %3d Residue %7s with %2d rotamers.",
+      rO.logIfMaster(format(" %3d Residue %7s with %2d rotamers.",
               i + 1, residuei.toFormattedString(false, true), lenri));
       eliminatedSingles[i] = new boolean[lenri];
       eliminatedPairs[i] = new boolean[lenri][][];

@@ -95,7 +95,6 @@ public class EnergyExpansion {
   private final double singularityThreshold;
   /** Indicates if the Potential is an OpenMMForceFieldEnergy. */
   private final boolean potentialIsOpenMM;
-
   private final RotamerOptimization rO;
   private final DistanceMatrix dM;
   private final EliminatedRotamers eR;
@@ -874,9 +873,8 @@ public class EnergyExpansion {
       try {
         backboneEnergy = rO.computeBackboneEnergy(residues);
       } catch (ArithmeticException ex) {
-        logger.severe(
-            format(
-                " Exception %s in calculating backbone energy; FFX shutting down.", ex.toString()));
+        logger.severe(format(
+                " Exception %s in calculating backbone energy; FFX shutting down.", ex));
       }
       rO.logIfMaster(format(" Backbone energy:  %s\n", rO.formatEnergy(backboneEnergy)));
 
@@ -965,12 +963,9 @@ public class EnergyExpansion {
               setSelf(i, ri, energy);
               if (verbose) {
                 rO.logIfMaster(
-                    format(
-                        " From restart file: Self energy %3d (%8s,%2d): %s",
-                        i,
-                        residues[i].toFormattedString(false, true),
-                        ri,
-                        rO.formatEnergy(energy)));
+                    format(" From restart file: Self energy %3d (%8s,%2d): %s",
+                        i, residues[i].toFormattedString(false, true),
+                        ri, rO.formatEnergy(energy)));
               }
             } catch (Exception e) {
               if (verbose) {
@@ -1033,11 +1028,9 @@ public class EnergyExpansion {
             double energy = Double.parseDouble(tok[5]);
             try {
               // When a restart file is generated using a large cutoff, but a new simulation is
-              // being done
-              // with a smaller cutoff, the two-body distance needs to be checked. If the two-body
+              // being done with a smaller cutoff, the two-body distance needs to be checked. If the two-body
               // distance is larger than the cutoff, then the two residues are not considered
-              // 'neighbors'
-              // so that pair should not be added to the pairs map.
+              // 'neighbors' so that pair should not be added to the pairs map.
               if (rO.checkNeighboringPair(i, j)) {
                 // If inside the cutoff, set energy to previously computed value.
                 // Gather distances and indices for printing.
@@ -1060,13 +1053,9 @@ public class EnergyExpansion {
                     distString = format("%10.3f", dist);
                   }
 
-                  logger.fine(
-                      format(
-                          " Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
-                          residueI.toFormattedString(false, true),
-                          ri,
-                          residueJ.toFormattedString(false, true),
-                          rj,
+                  logger.fine(format(" Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
+                          residueI.toFormattedString(false, true), ri,
+                          residueJ.toFormattedString(false, true), rj,
                           rO.formatEnergy(get2Body(i, ri, j, rj)),
                           distString,
                           resDistString));
@@ -1075,10 +1064,8 @@ public class EnergyExpansion {
                 logger.fine(
                     format(
                         "Ignoring a pair-energy from outside the cutoff: 2-energy [(%8s,%2d),(%8s,%2d)]: %12.4f",
-                        residues[i].toFormattedString(false, true),
-                        ri,
-                        residues[j].toFormattedString(false, true),
-                        rj,
+                        residues[i].toFormattedString(false, true), ri,
+                        residues[j].toFormattedString(false, true), rj,
                         energy));
               }
 
@@ -1086,10 +1073,8 @@ public class EnergyExpansion {
                 rO.logIfMaster(
                     format(
                         " From restart file: Pair energy [(%8s,%2d),(%8s,%2d)]: %12.4f",
-                        residues[i].toFormattedString(false, true),
-                        ri,
-                        residues[j].toFormattedString(false, true),
-                        rj,
+                        residues[i].toFormattedString(false, true), ri,
+                        residues[j].toFormattedString(false, true), rj,
                         energy));
               }
             } catch (Exception e) {
