@@ -48,7 +48,7 @@ import org.junit.Test;
  * @author Aaron J. Nessler
  * @author Mallory R. Tollefson
  */
-public class CrystalMinTest extends AlgorithmsTest {
+public class MinimizeCrystalsTest extends AlgorithmsTest {
 
   /** Tests convergence criteria flag of the CrystalMin class. */
   @Test
@@ -59,7 +59,7 @@ public class CrystalMinTest extends AlgorithmsTest {
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Construct and evaluate the script.
-    CrystalMin xtalMin = new CrystalMin(binding).run();
+    MinimizeCrystals xtalMin = new MinimizeCrystals(binding).run();
     algorithmsScript = xtalMin;
 
     double expectedPotentialEnergy = -32.72657252765883;
@@ -78,7 +78,7 @@ public class CrystalMinTest extends AlgorithmsTest {
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Construct and evaluate the script.
-    CrystalMin xtalMin = new CrystalMin(binding).run();
+    MinimizeCrystals xtalMin = new MinimizeCrystals(binding).run();
     algorithmsScript = xtalMin;
 
     double expectedPotentialEnergy = -32.535694367226576;
@@ -99,7 +99,7 @@ public class CrystalMinTest extends AlgorithmsTest {
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Construct and evaluate the script.
-    CrystalMin xtalMin = new CrystalMin(binding).run();
+    MinimizeCrystals xtalMin = new MinimizeCrystals(binding).run();
     algorithmsScript = xtalMin;
 
     double expectedPotentialEnergy = -32.54442936288904;
@@ -116,7 +116,7 @@ public class CrystalMinTest extends AlgorithmsTest {
     binding.setVariable("args", args);
 
     // Construct and evaluate the script.
-    CrystalMin xtalMin = new CrystalMin(binding).run();
+    MinimizeCrystals xtalMin = new MinimizeCrystals(binding).run();
     algorithmsScript = xtalMin;
   }
 
@@ -131,7 +131,7 @@ public class CrystalMinTest extends AlgorithmsTest {
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Construct and evaluate the script.
-    CrystalMin xtalMin = new CrystalMin(binding).run();
+    MinimizeCrystals xtalMin = new MinimizeCrystals(binding).run();
     algorithmsScript = xtalMin;
 
     double expectedPotentialEnergy = -32.63130589380454;

@@ -37,54 +37,43 @@
 // ******************************************************************************
 package ffx.potential.groovy;
 
-import ffx.potential.groovy.CIFtoXYZ;
+import ffx.potential.groovy.XYZtoQE;
 import ffx.potential.utils.PotentialTest;
 import org.junit.Test;
 
 /**
- * Tests test.CIFtoXYZ command to determine that files are being translated correctly. Based on
- * SaveAsPDBTest.java
+ * Tests test.XYZtoQE command to test saving an XYZ file to QE format.
  *
  * @author Aaron J. Nessler
  */
 
-public class CIFtoXYZTest extends PotentialTest {
+public class XYZtoQETest extends PotentialTest {
 
-  /** Tests the CIFtoXYZ script. */
+  private final double tolerance = 0.001;
+  //TODO: add more tests with more parameters
+
+  /** Tests the XYZtoQE script. */
   @Test
-  public void testCIFtoXYZ() {
-    // Set-up the input arguments for the CIFtoXYZ script.
-    String[] args = {"src/main/java/ffx/potential/structures/CBZ16.cif",
-        "src/main/java/ffx/potential/structures/cbz.xyz"};
+  public void testXYZtoQE() {
+    // Set-up the input arguments for the SaveAsPDB script.
+    String[] args = {"src/main/java/ffx/potential/structures/cbz.xyz"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    // Construct and evaluate the CIFtoXYZ script.
-    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
-    potentialScript = cifToXYZ;
+    // Construct and evaluate the XYZtoQE script.
+    XYZtoQE xyzToQE = new XYZtoQE(binding).run();
+    potentialScript = xyzToQE;
+    // TODO validate output.
   }
 
   @Test
-  public void testCIFtoXYZNoHydrogen() {
-    // Set-up the input arguments for the CIFtoXYZ script.
-    String[] args = {"src/main/java/ffx/potential/structures/CBZ03.cif",
-        "src/main/java/ffx/potential/structures/cbz.xyz"};
-    binding.setVariable("args", args);
-    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
-
-    // Construct and evaluate the CIFtoXYZ script.
-    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
-    potentialScript = cifToXYZ;
-  }
-
-  @Test
-  public void testCIFtoXYZHelp() {
-    // Set-up the input arguments for the CIFtoXYZ script.
+  public void testXYZtoQEHelp() {
+    // Set-up the input arguments for the XYZtoQE script.
     String[] args = {"-h"};
     binding.setVariable("args", args);
 
-    // Construct and evaluate the CIFtoXYZ script.
-    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
-    potentialScript = cifToXYZ;
+    // Construct and evaluate the XYZtoQE script.
+    XYZtoQE xyzToQE = new XYZtoQE(binding).run();
+    potentialScript = xyzToQE;
   }
 }

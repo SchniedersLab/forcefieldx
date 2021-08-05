@@ -37,54 +37,42 @@
 // ******************************************************************************
 package ffx.potential.groovy;
 
-import ffx.potential.groovy.CIFtoXYZ;
 import ffx.potential.utils.PotentialTest;
 import org.junit.Test;
 
 /**
- * Tests test.CIFtoXYZ command to determine that files are being translated correctly. Based on
- * SaveAsPDBTest.java
+ * Tests the Cluster command to assess clustering based on distances.
  *
  * @author Aaron J. Nessler
  */
+public class ClusterTest extends PotentialTest {
 
-public class CIFtoXYZTest extends PotentialTest {
+  private final double tolerance = 0.001;
 
-  /** Tests the CIFtoXYZ script. */
+  //TODO: add more tests with more parameters
+
+  /** Tests the Cluster script. */
   @Test
-  public void testCIFtoXYZ() {
-    // Set-up the input arguments for the CIFtoXYZ script.
-    String[] args = {"src/main/java/ffx/potential/structures/CBZ16.cif",
-        "src/main/java/ffx/potential/structures/cbz.xyz"};
+  public void testBaseCluster() {
+    // Set-up the input arguments for the Cluser script.
+    String[] args = {"-a", "0", "-k", "10", "-r", "src/main/java/ffx/potential/structures/dist.txt"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    // Construct and evaluate the CIFtoXYZ script.
-    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
-    potentialScript = cifToXYZ;
+    // Construct and evaluate the Cluster script.
+    Cluster cluster = new Cluster(binding).run();
+    potentialScript = cluster;
+    // TODO validate output.
   }
 
   @Test
-  public void testCIFtoXYZNoHydrogen() {
-    // Set-up the input arguments for the CIFtoXYZ script.
-    String[] args = {"src/main/java/ffx/potential/structures/CBZ03.cif",
-        "src/main/java/ffx/potential/structures/cbz.xyz"};
-    binding.setVariable("args", args);
-    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
-
-    // Construct and evaluate the CIFtoXYZ script.
-    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
-    potentialScript = cifToXYZ;
-  }
-
-  @Test
-  public void testCIFtoXYZHelp() {
-    // Set-up the input arguments for the CIFtoXYZ script.
+  public void testClusterHelp() {
+    // Set-up the input arguments for the Cluster script.
     String[] args = {"-h"};
     binding.setVariable("args", args);
 
-    // Construct and evaluate the CIFtoXYZ script.
-    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
-    potentialScript = cifToXYZ;
+    // Construct and evaluate the Cluster script.
+    Cluster cluster = new Cluster(binding).run();
+    potentialScript = cluster;
   }
 }

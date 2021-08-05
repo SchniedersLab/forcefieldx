@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.potential.groovy.test
+package ffx.potential.groovy
 
 import ffx.crystal.Crystal
 import ffx.crystal.SpaceGroup
@@ -74,9 +74,11 @@ import static ffx.numerics.math.DoubleMath.dihedralAngle
 import static ffx.potential.bonded.BondedUtils.intxyz
 import static ffx.potential.parsers.PDBFilter.toPDBAtomLine
 import static java.lang.String.format
+import static org.openscience.cdk.tools.periodictable.PeriodicTable.getSymbol
 
 /**
- * The CIFtoXYZ script converts a CIF file to XYZ file with atom types.
+ * The CIFtoXYZ script converts a CIF file to an XYZ file including atom types.
+ * TODO: Move CIF parsing into a parsers.CIFFilter class.
  * <br>
  * Usage:
  * <br>
@@ -89,21 +91,21 @@ class CIFtoXYZ extends PotentialScript {
    * --sg or --spaceGroupNumber Override the CIF space group.
    */
   @Option(names = ['--sg', '--spaceGroupNumber'], paramLabel = "-1", defaultValue = "-1",
-          description = 'Override the CIF space group.')
-  private int sgNum = -1
+      description = 'Override the CIF space group.')
+  private int sgNum
 
   /**
    * --name or --spaceGroupName Override the CIF space group.
    */
   @Option(names = ['--name', '--spaceGroupName'], paramLabel = "", defaultValue = "",
-          description = 'Override the CIF space group.')
-  private String sgName = ""
+      description = 'Override the CIF space group.')
+  private String sgName
 
   /**
    * The final argument(s) should be a CIF file and an XYZ file with atom types.
    */
-  @Parameters(arity = "2..*", paramLabel = "files",
-          description = "A CIF file and an XYZ file (currently limited to one molecule).")
+  @Parameters(arity = "1..2", paramLabel = "files",
+      description = "A CIF file and an XYZ file (currently limited to a single molecule).")
   List<String> filenames = null
 
   /**
@@ -139,7 +141,7 @@ class CIFtoXYZ extends PotentialScript {
 
     CifCoreFile cifFile
     Path path
-    if (filenames != null && filenames.size() > 0) {
+    if (filenames != null && filenames.size() == 2) {
       path = Paths.get(filenames.get(0))
       cifFile = CifIO.readFromPath(path).as(StandardSchemata.CIF_CORE)
     } else {
@@ -165,7 +167,7 @@ class CIFtoXYZ extends PotentialScript {
       logger.info(format(" Chemical component: %s", nameCommon.get(0)))
     }
 
-    // Determine the sapce group.
+    // Determine the space group.
     Symmetry symmetry = firstBlock.symmetry
     if (sgNum == -1 && sgName == "") {
       if (symmetry.intTablesNumber.rowCount > 0) {
@@ -183,6 +185,7 @@ class CIFtoXYZ extends PotentialScript {
         logger.info(format(" Command line space group name: %s", sgName))
       }
     }
+
     SpaceGroup sg
     if (sgNum != -1) {
       sg = SpaceGroupDefinitions.spaceGroupFactory(sgNum)
@@ -190,7 +193,7 @@ class CIFtoXYZ extends PotentialScript {
       sg = SpaceGroupDefinitions.spaceGroupFactory(sgName)
     }
 
-    // Fall to back to P1
+    // Fall back to P1.
     if (sg == null) {
       logger.info(" The space group could not be determined from the CIF file (using P1).")
       sg = SpaceGroupDefinitions.spaceGroupFactory(1)
@@ -237,11 +240,11 @@ class CIFtoXYZ extends PotentialScript {
       double[] xyz = [x, y, z]
       crystal.toCartesianCoordinates(xyz, xyz)
       atoms[i] = new Atom(i + 1, label.get(i), altLoc, xyz, resName, resID, chain, occupancy,
-              bfactor, segID)
+          bfactor, segID)
       atoms[i].setHetero(true)
     }
 
-    // Determine where to save resutls.
+    // Determine where to save results.
     File saveDir = baseDir
     File cif = new File(modelFilename)
     String cifName = cif.getAbsolutePath()
@@ -262,7 +265,8 @@ class CIFtoXYZ extends PotentialScript {
       activeAssembly = assemblies[0]
       Atom[] xyzAtoms = activeAssembly.getAtomArray()
       int nXYZAtoms = xyzAtoms.length
-      //Used to determine if CIF sturcture is missing hydrogens later on...
+
+      // Used to determine if the CIF structure is missing hydrogen later on.
       int numHydrogens = 0
       for (Atom atom in xyzAtoms) {
         if (atom.isHydrogen()) {
@@ -275,7 +279,7 @@ class CIFtoXYZ extends PotentialScript {
         AtomContainer xyzCDKAtoms = new AtomContainer()
         for (int i = 0; i < nAtoms; i++) {
           cifCDKAtoms.addAtom(new org.openscience.cdk.Atom(symbols[i],
-                  new Point3d(atoms[i].getXYZ(null))))
+              new Point3d(atoms[i].getXYZ(null))))
         }
         AtomContainer nullCDKAtoms = new AtomContainer()
 
@@ -286,12 +290,12 @@ class CIFtoXYZ extends PotentialScript {
         }
         cifCDKAtoms.remove(nullCDKAtoms)
 
-        for (int i = 0; i < nXYZAtoms; i++) {
-          xyzCDKAtoms.addAtom(new org.openscience.cdk.Atom(xyzAtoms[i].getAtomType().name,
-                  new Point3d(xyzAtoms[i].getXYZ(null))))
+        for (Atom atom : xyzAtoms) {
+          String atomName = getSymbol(atom.getAtomType().atomicNumber)
+          xyzCDKAtoms.addAtom(new org.openscience.cdk.Atom(atomName, new Point3d(atom.getXYZ(null))))
         }
 
-        // Add known XYZ bonds. A limitation is all are given a Bond order of 1.
+        // Add known XYZ bonds; a limitation is that bonds all are given a Bond order of 1.
         ArrayList<Bond> bonds = activeAssembly.getBondList()
         Order order = Order.SINGLE
         int xyzBonds = bonds.size()
@@ -301,8 +305,8 @@ class CIFtoXYZ extends PotentialScript {
 
         // Assign CDK atom types for the XYZ molecule.
         AtomTypeFactory factory = AtomTypeFactory.getInstance(
-                "org/openscience/cdk/config/data/jmol_atomtypes.txt",
-                xyzCDKAtoms.getBuilder())
+            "org/openscience/cdk/config/data/jmol_atomtypes.txt",
+            xyzCDKAtoms.getBuilder())
 
         for (IAtom atom : xyzCDKAtoms.atoms()) {
           String atomTypeName = atom.getAtomTypeName()
@@ -320,8 +324,9 @@ class CIFtoXYZ extends PotentialScript {
 
         // Compute bonds for CIF molecule.
         factory = AtomTypeFactory.getInstance(
-                "org/openscience/cdk/config/data/jmol_atomtypes.txt",
-                cifCDKAtoms.getBuilder())
+            "org/openscience/cdk/config/data/jmol_atomtypes.txt",
+            cifCDKAtoms.getBuilder())
+
         for (IAtom atom : cifCDKAtoms.atoms()) {
           String atomTypeName = atom.getAtomTypeName()
           if (atomTypeName == null || atomTypeName.length() == 0) {
@@ -344,7 +349,7 @@ class CIFtoXYZ extends PotentialScript {
         // Number of bonds matches.
         if (cifBonds == xyzBonds) {
           Pattern pattern =
-                  VentoFoggia.findIdentical(xyzCDKAtoms, AtomMatcher.forElement(), BondMatcher.forAny())
+              VentoFoggia.findIdentical(xyzCDKAtoms, AtomMatcher.forElement(), BondMatcher.forAny())
           int[] p = pattern.match(cifCDKAtoms)
           if (p != null && p.length == nAtoms) {
             // Used matched atoms to update the positions of the XYZ file atoms.
@@ -362,9 +367,10 @@ class CIFtoXYZ extends PotentialScript {
 
         } else if ((cifBonds + numHydrogens) % xyzBonds == 0) {
           // Hydrogens most likely missing from file.
-          logger.info(" CIF may contain implicit hydrogens, attempting to patch...")
+          logger.info(" CIF may contain implicit hydrogen -- attempting to patch.")
           // Match heavy atoms between CIF and XYZ
-          Pattern pattern = VentoFoggia.findSubstructure(cifCDKAtoms, AtomMatcher.forElement(), BondMatcher.forAny())
+          Pattern pattern = VentoFoggia.
+              findSubstructure(cifCDKAtoms, AtomMatcher.forElement(), BondMatcher.forAny())
           int[] p = pattern.match(xyzCDKAtoms)
           if (p != null && p.length == nAtoms) {
             // Used matched atoms to update the positions of the XYZ file atoms.
@@ -392,7 +398,8 @@ class CIFtoXYZ extends PotentialScript {
                       if (atom1_2 != null && !atom1_2.isHydrogen()) {
                         angle0_2 = angle.angleType.angle[0]
                       }
-                      if (angle0_2 != 0) { //if angle1_3 is found then no need to look for another atom.
+                      if (angle0_2 != 0) {
+                        //if angle1_3 is found then no need to look for another atom.
                         break
                       }
                     }
@@ -404,15 +411,10 @@ class CIFtoXYZ extends PotentialScript {
                       atom2_3 = bonds2[0].get1_2(atom1_2)
                     }
                     double diAng =
-                            dihedralAngle(
-                                    hydrogen.getXYZ(null),
-                                    atom1.getXYZ(null),
-                                    atom1_2.getXYZ(null),
-                                    atom2_3.getXYZ(null))
-                    intxyz(hydrogen, atom1, bond0.bondType.distance, atom1_2, angle0_2, atom2_3, Math.toDegrees(diAng), 0)
-//                    logger.info(format("0: %s\n1: %s\n0_1: %f\n2: %s\n0_2: %f\n3: %s\n0_3: %f\n",
-//                            hydrogen.toString(), atom1.toString(), bond0.bondType.distance, atom1_2.toString(), angle0_2,
-//                            atom2_3.toString(), diAng))
+                        dihedralAngle(hydrogen.getXYZ(null), atom1.getXYZ(null),
+                            atom1_2.getXYZ(null), atom2_3.getXYZ(null))
+                    intxyz(hydrogen, atom1, bond0.bondType.distance, atom1_2, angle0_2, atom2_3,
+                        Math.toDegrees(diAng), 0)
                     break
                   default:
                     // H-C-C
@@ -425,7 +427,8 @@ class CIFtoXYZ extends PotentialScript {
                       if (proposedAtom != null && !proposedAtom.isHydrogen()) {
                         proposedAngle = angle.angleType.angle[0]
                       }
-                      if (proposedAngle != 0) { //if angle1_3 is found then no need to look for another atom.
+                      if (proposedAngle != 0) {
+                        // If angle1_3 is found then no need to look for another atom.
                         if (angle0_2 != 0) {
                           atom1_2 = proposedAtom
                           angle0_3 = proposedAngle
@@ -439,9 +442,6 @@ class CIFtoXYZ extends PotentialScript {
                       }
                     }
                     intxyz(hydrogen, atom1, bond0.bondType.distance, atom1_2, angle0_2, atom1_2B, angle0_3, 1)
-//                    logger.info(format("0: %s\n1: %s\n0_1: %f\n2: %s\n0_2: %f\n3: %s\n0_3: %f\n",
-//                            hydrogen.toString(), atom1.toString(), bond0.bondType.distance, atom1_2.toString(), angle0_2,
-//                            atom1_2B.toString(), angle0_3))
                 }
               }
             }
@@ -451,12 +451,12 @@ class CIFtoXYZ extends PotentialScript {
           }
         } else {
           logger.info(format(" CIF (%d) and XYZ (%d) have a different number of bonds.", cifBonds,
-                  xyzBonds))
+              xyzBonds))
           savePDB = true
         }
       } else {
         logger.info(format(" CIF (%d) and XYZ (%d) files have different numbers of atoms.", nAtoms,
-                nXYZAtoms))
+            nXYZAtoms))
         savePDB = true
       }
     }

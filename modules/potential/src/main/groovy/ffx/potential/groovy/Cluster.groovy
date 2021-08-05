@@ -42,12 +42,13 @@ import com.apporiented.algorithm.clustering.ClusteringAlgorithm
 import com.apporiented.algorithm.clustering.CompleteLinkageStrategy
 import com.apporiented.algorithm.clustering.DefaultClusteringAlgorithm
 import com.apporiented.algorithm.clustering.visualization.DendrogramPanel
+import ffx.crystal.Crystal
+import ffx.potential.ForceFieldEnergy
 import ffx.potential.cli.PotentialScript
+import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
-import org.apache.commons.math3.ml.clustering.CentroidCluster
-import org.apache.commons.math3.ml.clustering.Clusterable
-import org.apache.commons.math3.ml.clustering.KMeansPlusPlusClusterer
-import org.apache.commons.math3.ml.clustering.MultiKMeansPlusPlusClusterer
+import ffx.potential.parsers.XYZFilter
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -58,8 +59,7 @@ import java.util.List
 import java.util.logging.Level
 
 import static java.lang.String.format
-import static org.apache.commons.math3.util.FastMath.pow
-import static org.apache.commons.math3.util.FastMath.sqrt
+import static ffx.potential.utils.Cluster.kMeansCluster
 
 /**
  * The Cluster script clusters structures utilizing RMSD.
@@ -99,13 +99,6 @@ class Cluster extends PotentialScript {
   Boolean readIn = false
 
   /**
-   * -numI or --numIterations The number of times each kmeans cluster should be determined.
-   */
-  @Option(names = ['--numI', '--numIterations'], paramLabel = "1", defaultValue = "1",
-      description = "Number of repetitions for each kmeans cluster.")
-  private int numIterations = 1
-
-  /**
    * -s or --start Atom number where RMSD calculation of structure will begin.
    */
   @Option(names = ['-s', '--start'], paramLabel = "1", defaultValue = "1",
@@ -128,10 +121,17 @@ class Cluster extends PotentialScript {
   private double treeDistance = 2.0
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * -w or --write Write out an archive of a representative structure from each cluster.
    */
-  @Parameters(arity = "1", paramLabel = "files",
-      description = 'The RMSD distance matrix.')
+  @Option(names = ['-w', '--write'], paramLabel = "false", defaultValue = "false",
+          description = 'Write an archive containing a representative from each cluster (algorithm=0).')
+  private static boolean write = false
+
+  /**
+   * The final argument(s) should be one or two filenames.
+   */
+  @Parameters(arity = "1..2", paramLabel = "files",
+      description = 'The RMSD distance matrix (and an arc of the structures if using write (-w) flag.')
   List<String> filenames = null
 
   /**
@@ -197,8 +197,22 @@ class Cluster extends PotentialScript {
     }
 
     // Either use kmeans clustering or hierarchical agglomerative clustering.
-    if (algorithm == 0 || algorithm == 1) {
-      kmeansCluster(distMatrix)
+    if (algorithm == 0) {
+      int distMatrixLength = distMatrix.size()
+      // Ensure cluster are within bounds
+      if (maxClusters <= 0 || maxClusters > distMatrixLength - 1) {
+        logger.warning(format(" Cluster of size %3d is out of bounds, using max cluster size of %3d.",
+                maxClusters, distMatrixLength - 1));
+        maxClusters = distMatrixLength - 1
+      }
+      //Array representing indecies of structures that represent their cluster.
+      int[] repStructs = new int[maxClusters]
+      kMeansCluster(distMatrix, maxClusters, repStructs)
+      if(write) {
+        writeStructures(repStructs)
+      }
+    } else if (algorithm == 1) {
+      kMeansCluster(distMatrix, maxClusters)
     } else if (algorithm == 2) {
       hierarchicalAgglomerativeCluster(distMatrix)
     } else {
@@ -208,70 +222,63 @@ class Cluster extends PotentialScript {
     return this
   }
 
-  private void kmeansCluster(ArrayList<double[]> distMatrix) {
-    // Input the RMSD matrix to the clustering algorithm
-    // Use the org.apache.commons.math3.ml.clustering package.
-    int minClusters = 1
-
-    if (maxClusters <= 0 || maxClusters > distMatrix.size() - 1) {
-      maxClusters = distMatrix.size() - 1
-    }
-
-    double[] twss = new double[distMatrix.size() - 1]
-    if (algorithm == 0) {
-      minClusters = maxClusters
-      twss = new double[1]
-    }
-
-    for (int i = 0; i < twss.size(); i++) {
-      twss[i] = Double.MAX_VALUE
-    }
-    for (int clusters = minClusters; clusters <= maxClusters; clusters++) {
-      logger.info(format("%d Clusters:", clusters))
-      for (int k = 0; k < numIterations; k++) {
-        double currentTWSS = 0
-        KMeansPlusPlusClusterer<ClusterWrapper> kClust1 = new KMeansPlusPlusClusterer<ClusterWrapper>(
-            clusters, 10000)
-        List<ClusterWrapper> myClusterables = new ArrayList<ClusterWrapper>()
-        int id = 0
-        for (double[] i : distMatrix) {
-          myClusterables.add(new ClusterWrapper(i, id))
-          id++
-        }
-        List<CentroidCluster<ClusterWrapper>> kClusters = kClust1.cluster(myClusterables)
-
-        if (algorithm == 1) {
-          MultiKMeansPlusPlusClusterer<ClusterWrapper> kClust2 = new MultiKMeansPlusPlusClusterer<>(
-              kClust1, 10000)
-          kClusters = kClust2.cluster(myClusterables)
-        }
-
-        // TODO: Output the clusters in a useful way.
-        //Temp output method prints to screen
-        for (int i = 0; i < kClusters.size(); i++) {
-          double wss = 0 // Reset cluster within distance
-          double[] sum = new double[kClusters.get(0).getPoints()[0].getPoint().size()]
-          for (ClusterWrapper clusterWrapper : kClusters.get(i).getPoints()) {
-            double[] distArray = clusterWrapper.getPoint()
-            // Implement WSS
-            for (int j = 0; j < sum.size(); j++) {
-              wss += pow(distArray[j] - kClusters.get(i).getCenter().getPoint()[j], 2)
-            }
-          }
-          wss = sqrt(wss)
-          currentTWSS += wss
-        }
-        if (algorithm == 1 && currentTWSS < twss[clusters - 1]) {
-          twss[clusters - 1] = currentTWSS
-        }
+  /**
+   * Write out structures corresponding to the representative of each cluster.
+   * @param distMatrix Distances between structures (metric to determine clusters).
+   * @param repStructs Array list for index of representative structures.
+   */
+  private void writeStructures(int[] repStructs){
+    String coordFileName = filenames.get(1);
+    potentialFunctions.openAll(coordFileName)
+    SystemFilter systemFilter = potentialFunctions.getFilter()
+    activeAssembly = systemFilter.getActiveMolecularSystem()
+    String fileName = FilenameUtils.getName(coordFileName)
+    String ext = FilenameUtils.getExtension(fileName)
+    fileName = FilenameUtils.removeExtension(fileName)
+    File saveFile
+    SystemFilter writeFilter
+    if (ext.toUpperCase().contains("XYZ")) {
+      saveFile = new File(fileName + ".xyz")
+      writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
+              activeAssembly.getProperties())
+      potentialFunctions.saveAsXYZ(activeAssembly, saveFile)
+    } else if (ext.toUpperCase().contains("ARC")) {
+      saveFile = new File(fileName + ".arc")
+      saveFile = potentialFunctions.versionFile(saveFile)
+      writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
+              activeAssembly.getProperties())
+      logger.info("SaveFile: " + saveFile.getAbsolutePath())
+      saveFile.createNewFile()
+    } else {
+      saveFile = new File(fileName + ".pdb")
+      saveFile = potentialFunctions.versionFile(saveFile)
+      writeFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
+              activeAssembly.getProperties())
+      int numModels = systemFilter.countNumModels()
+      if (numModels > 1) {
+        writeFilter.setModelNumbering(0)
       }
-      logger.info(format("Total WSS: %f\n", twss[clusters - 1]))
+      writeFilter.writeFile(saveFile, true, false, false)
     }
-    if (algorithm == 0) {
-      double[] d2TWSS = new double[twss.size() - 2]
-      for (int i = 1; i < twss.size() - 1; i++) {
-        d2TWSS[i - 1] = twss[i + 1] - 2 * twss[i] + twss[i - 1]
-        logger.info(format("Second Derivative: %f", d2TWSS[i - 1]))
+
+    if (systemFilter instanceof XYZFilter || systemFilter instanceof PDBFilter) {
+      int structNum = 0
+      do {
+        if (repStructs.contains(structNum++)) {
+          Crystal crystal = activeAssembly.getCrystal()
+          ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
+          forceFieldEnergy.setCrystal(crystal)
+          if (systemFilter instanceof PDBFilter) {
+            saveFile.append("ENDMDL\n")
+            PDBFilter pdbFilter = (PDBFilter) systemFilter
+            pdbFilter.writeFile(saveFile, true, false, false)
+          } else if (systemFilter instanceof XYZFilter) {
+            writeFilter.writeFile(saveFile, true)
+          }
+        }
+      } while (systemFilter.readNext())
+      if (systemFilter instanceof PDBFilter) {
+        saveFile.append("END\n")
       }
     }
   }
@@ -488,7 +495,7 @@ class Cluster extends PotentialScript {
       if (data == null) {
         logger.severe("No data in RMSD file.")
       }
-      String[] tokens = data.trim().split("\t")
+      String[] tokens = data.trim().split(" +")
       // Expect a n x n matrix of distance values.
       nDim = tokens.size()
       for (int i = 0; i < nDim; i++) {
@@ -499,7 +506,7 @@ class Cluster extends PotentialScript {
         distMatrix.add(tokens2)
         data = br.readLine()
         if (data != null) {
-          tokens = data.trim().split("\t")
+          tokens = data.trim().split(" +")
         }
       }
       br.close()
@@ -550,56 +557,6 @@ class Cluster extends PotentialScript {
     }
 
     return distMatrix
-  }
-
-  private class ClusterWrapper implements Clusterable {
-
-    private double[] point
-    private final int UUID
-
-    ClusterWrapper(double[] distances, int ID) {
-      this.point = distances
-      UUID = ID
-    }
-
-    double[] getPoint() {
-      return point
-    }
-
-    int getUUID() {
-      return UUID
-    }
-
-    /* Min-Max normalization of distances (not important if all inputs are on the same scale)
-          double minimumDist=0;
-          double maximumDist=0;
-          for (double[] distArray in distMatrix){
-              for (double dist in distArray){
-                  if( minimumDist>dist){
-                      minimumDist = dist;
-                  }
-                  if(maximumDist<dist){
-                      maximumDist = dist;
-                  }
-              }
-          }
-          for(int i = 0; i<distMatrix.size(); i++) {
-              for (int j = 0; j < distMatrix.get(i).size(); j++) {
-                  distMatrix.get(i)[j] = (distMatrix.get(i)[j] - minimumDist) / (maximumDist - minimumDist);
-              }
-          }
-
-          if (logger.isLoggable(Level.FINEST)) {
-              logger.finest(String.format("\nNormalized Matrix:\n"));
-              String tempString2 = "";
-              for (double[] i : distMatrix) {
-                  for (int j = 0; j < nDim; j++) {
-                      tempString2 += String.format("%f\t", i[j]);
-                  }
-                  tempString2 += "\n";
-              }
-              logger.finest(tempString2);
-          } */
   }
 }
 
