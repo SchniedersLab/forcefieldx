@@ -40,12 +40,17 @@ package ffx.potential.parameters;
 import static ffx.potential.bonded.AminoAcidUtils.AA_CB;
 import static ffx.potential.bonded.BondedUtils.findAtomType;
 import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.log;
 
+import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
+import ffx.utilities.Constants;
+
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -59,6 +64,8 @@ import java.util.logging.Logger;
 public class TitrationUtils {
 
   private static final Logger logger = Logger.getLogger(TitrationUtils.class.getName());
+
+  private static final double LOG10 = log(10.0);
 
   private static final MultipoleType zeroMultipoleType =
       new MultipoleType(MultipoleType.zeroM, new int[] {0, 0, 0},
@@ -342,6 +349,8 @@ public class TitrationUtils {
   private final VDWType[][] gluVDWTypes = new VDWType[nGluStates][nGluTypes];
 
   private final ForceField forceField;
+
+  private HashMap<AminoAcid3, Double> rotamerPhBiasMap = new HashMap<>();
 
   public TitrationUtils(ForceField forceField) {
     this.forceField = forceField;
@@ -813,6 +822,100 @@ public class TitrationUtils {
 
     if (logger.isLoggable(Level.FINE)) {
       logger.fine(sb.toString());
+    }
+  }
+
+
+  public void setRotamerPhBias(double temperature, double pH){
+    /*
+     * Set ASH pH bias as sum of Fmod and acidostat energy
+     */
+      rotamerPhBiasMap.put(AminoAcid3.ASH, 0.0);
+
+    /*
+     * Set ASP pH bias as sum of Fmod and acidostat energy
+     */
+    double acidostat = LOG10 * Constants.R * temperature * (Titration.ASHtoASP.pKa - pH);
+    double fMod = Titration.ASHtoASP.refEnergy;
+    rotamerPhBiasMap.put(AminoAcid3.ASP, acidostat+fMod);
+
+    /*
+     * Set ASH pH bias as sum of Fmod and acidostat energy
+     */
+    rotamerPhBiasMap.put(AminoAcid3.GLH, 0.0);
+
+    /*
+     * Set GLU pH bias as sum of Fmod and acidostat energy
+     */
+    acidostat = LOG10 * Constants.R * temperature * (Titration.GLHtoGLU.pKa - pH);
+    fMod = Titration.GLHtoGLU.refEnergy;
+    rotamerPhBiasMap.put(AminoAcid3.GLU, acidostat+fMod);
+
+    /*
+     * Set LYS pH bias as sum of Fmod and acidostat energy
+     */
+    rotamerPhBiasMap.put(AminoAcid3.LYS, 0.0);
+
+    /*
+     * Set LYD pH bias as sum of Fmod and acidostat energy
+     */
+    acidostat = LOG10 * Constants.R * temperature * (Titration.LYStoLYD.pKa - pH);
+    fMod = Titration.LYStoLYD.refEnergy;
+    rotamerPhBiasMap.put(AminoAcid3.LYD, acidostat+fMod);
+
+    /*
+     * Set HIS pH bias as sum of Fmod and acidostat energy
+     */
+    rotamerPhBiasMap.put(AminoAcid3.HIS, 0.0);
+
+    /*
+     * Set HID pH bias as sum of Fmod and acidostat energy
+     */
+    acidostat = LOG10 * Constants.R * temperature * (Titration.HIStoHID.pKa - pH);
+    fMod = Titration.HIStoHID.refEnergy;
+    rotamerPhBiasMap.put(AminoAcid3.HID, acidostat+fMod);
+
+    /*
+     * Set HIE pH bias as sum of Fmod and acidostat energy
+     */
+    acidostat = LOG10 * Constants.R * temperature * (Titration.HIStoHIE.pKa - pH);
+    fMod = Titration.HIStoHIE.refEnergy;
+    rotamerPhBiasMap.put(AminoAcid3.HIE, acidostat+fMod);
+  }
+
+  public double getRotamerPhBias(AminoAcid3 AA3){
+    return rotamerPhBiasMap.getOrDefault(AA3, 0.0);
+  }
+
+  /**
+   * Amino acid protonation reactions. Constructors below specify intrinsic pKa and reference free
+   * energy of protonation, obtained via (OST) metadynamics on capped monomers.
+   */
+  public enum Titration {
+    //ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
+    ASHtoASP(3.90, -53.188, 0.0, AminoAcidUtils.AminoAcid3.ASH, AminoAcidUtils.AminoAcid3.ASP),
+    GLHtoGLU(4.25, -59.390, 0.0, AminoAcidUtils.AminoAcid3.GLH, AminoAcidUtils.AminoAcid3.GLU),
+    LYStoLYD(10.53, 53.390, 0.0, AminoAcidUtils.AminoAcid3.LYS, AminoAcidUtils.AminoAcid3.LYD),
+    //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
+    HIStoHID(6.00, 42.923, 0.0, AminoAcidUtils.AminoAcid3.HIS, AminoAcidUtils.AminoAcid3.HID),
+    HIStoHIE(6.00, 42.923, 0.0, AminoAcidUtils.AminoAcid3.HIS, AminoAcidUtils.AminoAcid3.HIE);
+    //TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
+    //TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
+
+    public final double pKa;
+    public final double refEnergy;
+    public final double lambdaIntercept;
+    public final AminoAcid3 protForm;
+    public final AminoAcid3 deprotForm;
+
+    /** Invoked by Enum; use the factory method to obtain instances. */
+    Titration(double pKa, double refEnergy, double lambdaIntercept, AminoAcid3 protForm, AminoAcid3 deprotForm)
+    {
+      this.pKa = pKa;
+      this.refEnergy = refEnergy;
+      this.lambdaIntercept = lambdaIntercept;
+      this.protForm = protForm;
+      this.deprotForm = deprotForm;
     }
   }
 

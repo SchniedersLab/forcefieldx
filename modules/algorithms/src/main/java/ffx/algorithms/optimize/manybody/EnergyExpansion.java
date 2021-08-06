@@ -44,10 +44,7 @@ import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergyOpenMM;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.bonded.*;
 import ffx.potential.utils.EnergyException;
 import java.io.File;
 import java.io.IOException;
@@ -689,6 +686,14 @@ public class EnergyExpansion {
       }
     } finally {
       rO.turnOffResidue(residues[i]);
+    }
+
+    Rotamer[] rotamers = residues[i].getRotamers(library);
+
+    if (rotamers[ri].isTitrating){
+      logger.info(residues[i].getName());
+       double bias = rotamers[ri].getRotamerPhBias();
+       energy += bias;
     }
 
     return energy;
