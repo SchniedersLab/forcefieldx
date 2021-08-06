@@ -45,6 +45,8 @@ import edu.rit.pj.WorkerIntegerForLoop;
 import edu.rit.pj.WorkerRegion;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.Rotamer;
+import ffx.potential.bonded.RotamerLibrary;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

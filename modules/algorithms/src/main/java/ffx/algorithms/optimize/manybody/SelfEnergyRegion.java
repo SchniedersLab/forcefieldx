@@ -146,10 +146,8 @@ public class SelfEnergyRegion extends WorkerRegion {
         for (int ri = 0; ri < rotamers.length; ri++) {
           logger.info(
               format(
-                  " Self energy %8s %-2d: %s",
-                  residues[i].toFormattedString(false, true),
-                  ri,
-                  rO.formatEnergy(eE.getSelf(i, ri))));
+                  " Self energy %8s %-2d: %s", residues[i].toString(rotamers[ri]),
+                  ri, rO.formatEnergy(eE.getSelf(i, ri))));
         }
       }
     }
@@ -247,24 +245,19 @@ public class SelfEnergyRegion extends WorkerRegion {
         if (i >= 0 && ri >= 0) {
           if (!eR.check(i, ri)) {
             long time = -System.nanoTime();
+            Rotamer[] rotamers = residues[i].getRotamers(library);
             double selfEnergy;
             try {
               selfEnergy = eE.computeSelfEnergy(residues, i, ri);
               time += System.nanoTime();
-              logger.info(
-                  format(
-                      " Self %8s %-2d: %s in %6.4f (sec).",
-                      residues[i].toFormattedString(false, true),
-                      ri,
-                      rO.formatEnergy(selfEnergy),
-                      time * 1.0e-9));
+              logger.info(format(" Self %8s %-2d: %s in %6.4f (sec).",
+                      residues[i].toString(rotamers[ri]),
+                      ri, rO.formatEnergy(selfEnergy), time * 1.0e-9));
             } catch (ArithmeticException ex) {
               selfEnergy = Double.NaN;
               time += System.nanoTime();
-              logger.info(
-                  format(
-                      " Self %8s %-2d:\t    pruned in %6.4f (sec).",
-                      residues[i].toFormattedString(false, true), ri, time * 1.0e-9));
+              logger.info(format(" Self %8s %-2d:\t    pruned in %6.4f (sec).",
+                      residues[i].toString(rotamers[ri]), ri, time * 1.0e-9));
             }
             myBuffer.put(2, selfEnergy);
           }

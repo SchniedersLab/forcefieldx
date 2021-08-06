@@ -181,6 +181,11 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   /** 3-letter nucleic acid code. */
   private NucleicAcid3 na;
   /**
+   * If this is set, then ASP, GLU, LYS and HIS Rotamers will be titratable.
+   */
+  private TitrationUtils titrationUtils = null;
+
+  /**
    * These arrays store default coordinates for certain atoms in nucleic acid Residues. C1', O4', and
    * C4' are the critical sugar atoms off which every other atom is drawn when applyRotamer is
    * called. The backbone corrections, however, move these atoms, so they must be reverted to their
@@ -363,6 +368,10 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     }
     setCenter(getMultiScaleCenter(false));
     setFinalized(true);
+  }
+
+  public void setTitrationUtils(TitrationUtils titrationUtils) {
+    this.titrationUtils = titrationUtils;
   }
 
   /**
@@ -665,17 +674,6 @@ public class Residue extends MSGroup implements Comparable<Residue> {
    * @return An array of Rotamer.
    */
   public Rotamer[] getRotamers(RotamerLibrary library) {
-    return getRotamers(library, null);
-  }
-
-  /**
-   * Gets the Rotamers for this residue, potentially incorporating the original coordinates if
-   * RotamerLibrary's original coordinates rotamer flag has been set.
-   *
-   * @param library Rotamer library to use
-   * @return An array of Rotamer.
-   */
-  public Rotamer[] getRotamers(RotamerLibrary library, TitrationUtils titrationUtils) {
 
     // If the rotamers for this residue have been cached, return them.
     if (rotamers != null) {
@@ -684,24 +682,19 @@ public class Residue extends MSGroup implements Comparable<Residue> {
 
     // Obtain rotamers for this residue from the RotamerLibrary.
     Rotamer[] libRotamers = library.getRotamers(this, titrationUtils);
+    rotamers = libRotamers;
 
-    // If not using original coordinates as a rotamer,
-    // or if library has no rotamers for this residue, we're done.
-    if (!library.getUsingOrigCoordsRotamer() || libRotamers == null) {
-      rotamers = libRotamers;
-      return rotamers;
-    }
-
-    // Define the current coordinates as a new rotamer.
-    Rotamer originalRotamer = Rotamer.defaultRotamerFactory(this);
-
-    // Add the new rotamer to those from the library and cache the result.
-    int libRots = libRotamers.length;
-    rotamers = new Rotamer[libRots + 1];
-    // First rotamer is the original conformation.
-    rotamers[0] = originalRotamer;
-    // Copy in the library.
-    if (libRots > 0) {
+    // Add the original coordinates as a rotamer if requested
+    // (unless the library has no rotamers for this residue).
+    if (library.getUsingOrigCoordsRotamer() && rotamers != null) {
+      // Define the current coordinates as a new rotamer.
+      Rotamer originalRotamer = Rotamer.defaultRotamerFactory(this, titrationUtils);
+      // Add the new rotamer to those from the library and cache the result.
+      int libRots = libRotamers.length;
+      rotamers = new Rotamer[libRots + 1];
+      // First rotamer is the original conformation.
+      rotamers[0] = originalRotamer;
+      // Copy in the library.
       arraycopy(libRotamers, 0, rotamers, 1, libRots);
     }
 
@@ -939,6 +932,19 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     }
     sb.append(this);
     return sb.toString();
+  }
+
+  /**
+   * A descriptive string based on a given rotamer.
+   *
+   * <p>[chain ID]ResNumber-RotamerName.
+   *
+   * @param rotamer The rotamer to use.
+   *
+   * @return A descriptive string.
+   */
+  public String toString(Rotamer rotamer) {
+    return "" + chainID + resNumber + "-" + rotamer.getName();
   }
 
   /** {@inheritDoc} */

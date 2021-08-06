@@ -37,8 +37,6 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static java.lang.System.arraycopy;
-import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.max;
 
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
@@ -46,8 +44,9 @@ import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
 import ffx.potential.parameters.TitrationUtils;
 
 /**
- * The Rotamer Class usually represents one immutable amino acid Rotamer. It is additionally being
- * extended to represent one nucleic acid Rotamer.
+ * The Rotamer Class usually represents one immutable amino acid Rotamer.
+ * <p>
+ * It is additionally being extended to represent one nucleic acid Rotamer.
  *
  * @author Ava M. Lynn
  * @author Jacob M. Litman
@@ -60,179 +59,46 @@ public class Rotamer {
   public final double chi2;
   public final double chi3;
   public final double chi4;
-
   /** Torsions chi 5-7 are only currently used for nucleic acids. */
   public final double chi5;
   final double chi6;
   final double chi7;
-
-  public final double[] angles;
-  public final double[] sigmas;
-  public final int length;
-  final ResidueState originalState;
-  final boolean isState;
   /**
-   * The N.A. name of this residue (or null for a A.A.).
+   * An array of chi angles for this rotamer.
    */
-  private final NucleicAcid3 nucleicName;
+  public final double[] angles;
+  /**
+   * An array of sigmas for each chi angle.
+   */
+  public final double[] sigmas;
+  /**
+   * Number of chi/sigma values.
+   */
+  public final int length;
+  /**
+   * Residue state used to initialize the rotamer.
+   */
+  public ResidueState originalState;
+  /**
+   * Flag to indicate the rotamer was initialized from a Residue state.
+   */
+  public boolean isState;
   /**
    * The A.A. name of this residue (or null for a N.A.).
    */
-  public final AminoAcid3 name;
+  public AminoAcid3 aminoAcid3;
+  /**
+   * The N.A. name of this residue (or null for a A.A.).
+   */
+  public NucleicAcid3 nucleicAcid3;
   /**
    * If this flag is set, application of a rotamer requires updating force field parameters.
    */
-  public final boolean isTitrating;
+  public boolean isTitrating;
   /**
    * The TitrationUtils handles application of rotamer specific force field parameters.
    */
   private TitrationUtils titrationUtils = null;
-
-  /**
-   * Constructs a Rotamer from a Residue, an array of torsions, and optionally an array of torsion
-   * bin widths. Intended to be agnostic to AA vs. NA vs. other, and not require explicitly passed-in
-   * sigmas.
-   *
-   * @param res Residue to construct rotamer for
-   * @param chis Torsion angles
-   * @param sigmas Torsion angle bin widths (optional)
-   */
-  public Rotamer(Residue res, double[] chis, double[] sigmas) {
-    int nChi = chis.length;
-    angles = new double[nChi];
-    fill(angles, 0);
-    arraycopy(chis, 0, angles, 0, nChi);
-
-    // Hooray,
-    double[] tempVals = new double[7];
-    fill(tempVals, 0);
-    arraycopy(chis, 0, tempVals, 0, nChi);
-
-    chi1 = tempVals[0];
-    chi2 = tempVals[1];
-    chi3 = tempVals[2];
-    chi4 = tempVals[3];
-    chi5 = tempVals[4];
-    chi6 = tempVals[5];
-    chi7 = tempVals[6];
-
-    this.sigmas = new double[nChi];
-    if (sigmas != null) {
-      arraycopy(sigmas, 0, this.sigmas, 0, nChi);
-    } else {
-      fill(sigmas, 0);
-    }
-
-    switch (res.getResidueType()) {
-      case AA:
-        this.name = res.getAminoAcid3();
-        this.nucleicName = null;
-        break;
-      case NA:
-        this.name = null;
-        this.nucleicName = res.getNucleicAcid3();
-        break;
-      case UNK:
-      default:
-        this.name = null;
-        this.nucleicName = null;
-        break;
-    }
-
-    length = nChi;
-    originalState = null;
-    isState = false;
-    isTitrating = false;
-  }
-
-  /**
-   * Constructor for Rotamer.
-   *
-   * @param name a {@link AminoAcid3} object.
-   * @param values a double.
-   */
-  public Rotamer(AminoAcid3 name, double... values) {
-    length = values.length / 2;
-    angles = new double[max(length, 4)];
-    sigmas = new double[max(length, 4)];
-    for (int i = 0; i < length; i++) {
-      int ii = 2 * i;
-      angles[i] = values[ii];
-      sigmas[i] = values[ii + 1];
-    }
-    this.name = name;
-    chi1 = angles[0];
-    chi2 = angles[1];
-    chi3 = angles[2];
-    chi4 = angles[3];
-    chi5 = chi6 = chi7 = 0;
-    nucleicName = null;
-    originalState = null;
-    isState = false;
-    isTitrating = false;
-  }
-
-  /**
-   * Constructor for Rotamer.
-   *
-   * @param name a {@link AminoAcid3} object.
-   * @param titrationUtils Use to apply rotamer specific force field parameters.
-   * @param values a double.
-   */
-  public Rotamer(AminoAcid3 name, TitrationUtils titrationUtils, double... values) {
-    length = values.length / 2;
-    angles = new double[max(length, 4)];
-    sigmas = new double[max(length, 4)];
-    for (int i = 0; i < length; i++) {
-      int ii = 2 * i;
-      angles[i] = values[ii];
-      sigmas[i] = values[ii + 1];
-    }
-    this.name = name;
-    chi1 = angles[0];
-    chi2 = angles[1];
-    chi3 = angles[2];
-    chi4 = angles[3];
-    chi5 = chi6 = chi7 = 0;
-    nucleicName = null;
-    originalState = null;
-    isState = false;
-    if (titrationUtils != null) {
-      this.isTitrating = true;
-      this.titrationUtils = titrationUtils;
-    } else {
-      this.isTitrating = false;
-    }
-  }
-
-  /**
-   * Constructor for Rotamer.
-   *
-   * @param name a {@link NucleicAcid3} object.
-   * @param values a double.
-   */
-  public Rotamer(NucleicAcid3 name, double... values) {
-    length = values.length / 2;
-    angles = new double[max(length, 7)];
-    sigmas = new double[max(length, 7)];
-    nucleicName = name;
-    this.name = null;
-    for (int i = 0; i < length; i++) {
-      int ii = 2 * i;
-      angles[i] = values[ii];
-      sigmas[i] = values[ii + 1];
-    }
-    chi1 = angles[0];
-    chi2 = angles[1];
-    chi3 = angles[2];
-    chi4 = angles[3];
-    chi5 = angles[4];
-    chi6 = angles[5];
-    chi7 = angles[6];
-    originalState = null;
-    isState = false;
-    isTitrating = false;
-  }
 
   /**
    * Constructor for unknown residue types.
@@ -243,9 +109,9 @@ public class Rotamer {
     length = values.length / 2;
     angles = new double[max(length, 7)];
     sigmas = new double[max(length, 7)];
-    nucleicName = null;
-    this.name = null;
-    for (int i = 0; i < length; i++) {
+    nucleicAcid3 = null;
+    aminoAcid3 = null;
+    for (int i = 0; i < values.length / 2; i++) {
       int ii = 2 * i;
       angles[i] = values[ii];
       sigmas[i] = values[ii + 1];
@@ -265,59 +131,40 @@ public class Rotamer {
   /**
    * Constructor for Rotamer.
    *
-   * @param name a {@link AminoAcid3} object.
-   * @param residueState a {@link ffx.potential.bonded.ResidueState} object.
+   * @param aminoAcid3 a {@link AminoAcid3} object.
    * @param values a double.
    */
-  public Rotamer(AminoAcid3 name, ResidueState residueState, double... values) {
-    length = values.length / 2;
-    angles = new double[max(length, 4)];
-    sigmas = new double[max(length, 4)];
-    for (int i = 0; i < length; i++) {
-      int ii = 2 * i;
-      angles[i] = values[ii];
-      sigmas[i] = values[ii + 1];
-    }
-    this.name = name;
-    chi1 = angles[0];
-    chi2 = angles[1];
-    chi3 = angles[2];
-    chi4 = angles[3];
-    chi5 = chi6 = chi7 = 0;
-    nucleicName = null;
-    originalState = residueState;
-    isState = true;
-    isTitrating = false;
+  public Rotamer(AminoAcid3 aminoAcid3, double... values) {
+    this(values);
+    this.aminoAcid3 = aminoAcid3;
   }
 
   /**
    * Constructor for Rotamer.
    *
-   * @param name a {@link NucleicAcid3} object.
-   * @param residueState a {@link ffx.potential.bonded.ResidueState} object.
+   * @param nucleicAcid3 a {@link NucleicAcid3} object.
    * @param values a double.
    */
-  public Rotamer(NucleicAcid3 name, ResidueState residueState, double... values) {
-    length = values.length / 2;
-    angles = new double[max(length, 7)];
-    sigmas = new double[max(length, 7)];
-    nucleicName = name;
-    this.name = null;
-    for (int i = 0; i < length; i++) {
-      int ii = 2 * i;
-      angles[i] = values[ii];
-      sigmas[i] = values[ii + 1];
+  public Rotamer(NucleicAcid3 nucleicAcid3, double... values) {
+    this(values);
+    this.nucleicAcid3 = nucleicAcid3;
+  }
+
+  /**
+   * Constructor for Rotamer.
+   *
+   * @param aminoAcid3 a {@link AminoAcid3} object.
+   * @param titrationUtils Use to apply rotamer specific force field parameters.
+   * @param values a double.
+   */
+  public Rotamer(AminoAcid3 aminoAcid3, TitrationUtils titrationUtils, double... values) {
+    this(aminoAcid3, values);
+    if (titrationUtils != null) {
+      this.isTitrating = true;
+      this.titrationUtils = titrationUtils;
+    } else {
+      this.isTitrating = false;
     }
-    chi1 = angles[0];
-    chi2 = angles[1];
-    chi3 = angles[2];
-    chi4 = angles[3];
-    chi5 = angles[4];
-    chi6 = angles[5];
-    chi7 = angles[6];
-    originalState = residueState;
-    isState = true;
-    isTitrating = false;
   }
 
   /**
@@ -327,26 +174,79 @@ public class Rotamer {
    * @param values a double.
    */
   public Rotamer(ResidueState residueState, double... values) {
-    length = values.length / 2;
-    angles = new double[max(length, 7)];
-    sigmas = new double[max(length, 7)];
-    nucleicName = null;
-    this.name = null;
-    for (int i = 0; i < length; i++) {
-      int ii = 2 * i;
-      angles[i] = values[ii];
-      sigmas[i] = values[ii + 1];
-    }
-    chi1 = angles[0];
-    chi2 = angles[1];
-    chi3 = angles[2];
-    chi4 = angles[3];
-    chi5 = angles[4];
-    chi6 = angles[5];
-    chi7 = angles[6];
-    originalState = residueState;
+    this(values);
     isState = true;
-    isTitrating = false;
+    originalState = residueState;
+  }
+
+  /**
+   * Constructor for unknown residue types.
+   *
+   * @param residueState a {@link ffx.potential.bonded.ResidueState} object.
+   * @param values a double.
+   */
+  public Rotamer(ResidueState residueState, TitrationUtils titrationUtils, double... values) {
+    this(residueState, values);
+    if (titrationUtils != null) {
+      this.titrationUtils = titrationUtils;
+      isTitrating = true;
+    }
+  }
+
+  /**
+   * Constructor for Rotamer.
+   *
+   * @param aminoAcid3 a {@link AminoAcid3} object.
+   * @param residueState a {@link ffx.potential.bonded.ResidueState} object.
+   * @param values a double.
+   */
+  public Rotamer(AminoAcid3 aminoAcid3, ResidueState residueState, double... values) {
+    this(residueState, values);
+    this.aminoAcid3 = aminoAcid3;
+  }
+
+  /**
+   * Constructor for Rotamer.
+   *
+   * @param aminoAcid3 a {@link AminoAcid3} object.
+   * @param residueState a {@link ffx.potential.bonded.ResidueState} object.
+   * @param values a double.
+   */
+  public Rotamer(AminoAcid3 aminoAcid3, ResidueState residueState, TitrationUtils titrationUtils,
+      double... values) {
+    this(aminoAcid3, residueState, values);
+    if (titrationUtils != null) {
+      this.titrationUtils = titrationUtils;
+      isTitrating = true;
+    }
+  }
+
+  /**
+   * Constructor for Rotamer.
+   *
+   * @param nucleicAcid3 a {@link NucleicAcid3} object.
+   * @param residueState a {@link ffx.potential.bonded.ResidueState} object.
+   * @param values a double.
+   */
+  public Rotamer(NucleicAcid3 nucleicAcid3, ResidueState residueState, double... values) {
+    this(residueState, values);
+    this.nucleicAcid3 = nucleicAcid3;
+  }
+
+  /**
+   * Constructor for Rotamer.
+   *
+   * @param nucleicAcid3 a {@link NucleicAcid3} object.
+   * @param residueState a {@link ffx.potential.bonded.ResidueState} object.
+   * @param values a double.
+   */
+  public Rotamer(NucleicAcid3 nucleicAcid3, ResidueState residueState, TitrationUtils titrationUtils,
+      double... values) {
+    this(nucleicAcid3, residueState, values);
+    if (titrationUtils != null) {
+      this.titrationUtils = titrationUtils;
+      isTitrating = true;
+    }
   }
 
   /**
@@ -359,40 +259,40 @@ public class Rotamer {
   }
 
   /**
-   * Factory method to construct an original-coordinates Rotamer from a residue. Intended to address
-   * a bug in decompose-original.
+   * Factory method to construct an original-coordinates Rotamer from a residue.
    *
-   * @param res Residue to construct default rotamer for.
-   * @return Original-coordinates rotamer.
+   * @param residue Residue to construct a default rotamer for.
+   * @return Rotamer based on the coordinates of the residue.
    */
-  public static Rotamer defaultRotamerFactory(Residue res) {
-    return stateToRotamer(res.storeState());
+  public static Rotamer defaultRotamerFactory(Residue residue) {
+    return defaultRotamerFactory(residue, null);
   }
 
   /**
-   * Constructs a Rotamer from a ResidueState.
+   * Factory method to construct an original-coordinates Rotamer from a residue.
    *
-   * @param resState Residue state to be represented by this Rotamer.
-   * @return A Rotamer wrapping a ResidueState.
+   * @param residue Residue to construct a default rotamer for.
+   * @return Rotamer based on the coordinates of the residue.
    */
-  static Rotamer stateToRotamer(ResidueState resState) {
-    Residue res = resState.getStateResidue();
-    double[] chi = RotamerLibrary.measureRotamer(res, false);
-    double[] vals = new double[chi.length*2];
-    for (int i=0; i<chi.length; i++) {
-      int index = i*2;
+  public static Rotamer defaultRotamerFactory(Residue residue, TitrationUtils titrationUtils) {
+    ResidueState resState = residue.storeState();
+    double[] chi = RotamerLibrary.measureRotamer(residue, false);
+
+    double[] vals = new double[chi.length * 2];
+    for (int i = 0; i < chi.length; i++) {
+      int index = i * 2;
       vals[index] = chi[i];
-      vals[index+1] = 0.0;
+      vals[index + 1] = 0.0;
     }
 
-    switch (res.getResidueType()) {
+    switch (residue.getResidueType()) {
       case AA:
-        return new Rotamer(res.getAminoAcid3(), resState, vals);
+        return new Rotamer(residue.getAminoAcid3(), resState, titrationUtils, vals);
       case NA:
-        return new Rotamer(res.getNucleicAcid3(), resState, vals);
+        return new Rotamer(residue.getNucleicAcid3(), resState, titrationUtils, vals);
       case UNK:
       default:
-        return new Rotamer(resState, vals);
+        return new Rotamer(resState, titrationUtils, vals);
     }
   }
 
@@ -403,7 +303,7 @@ public class Rotamer {
    */
   public String toAngleString() {
     StringBuilder sb = new StringBuilder();
-    int n = angles.length;
+    int n = max(4,length);
     for (int i = 0; i < n; i++) {
       sb.append(String.format(" %6.1f %4.1f", angles[i], sigmas[i]));
     }
@@ -413,16 +313,21 @@ public class Rotamer {
   /** {@inheritDoc} */
   @Override
   public String toString() {
-    StringBuilder sb;
-    if (name != null) {
-      sb = new StringBuilder(name.toString());
-    } else {
-      sb = new StringBuilder(nucleicName.toString());
-    }
-    int n = angles.length;
+    StringBuilder sb = new StringBuilder(getName());
+    int n = max(4,length);
     for (int i = 0; i < n; i++) {
       sb.append(String.format(" %6.1f %4.1f", angles[i], sigmas[i]));
     }
     return sb.toString();
+  }
+
+  public String getName() {
+    if (aminoAcid3 != null) {
+      return  aminoAcid3.toString();
+    } else if (nucleicAcid3 != null){
+      return nucleicAcid3.toString();
+    } else {
+      return "";
+    }
   }
 }

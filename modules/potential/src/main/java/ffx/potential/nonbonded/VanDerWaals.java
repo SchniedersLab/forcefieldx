@@ -1455,6 +1455,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
           coordinates[i3 + YY] = atom.getY();
           coordinates[i3 + ZZ] = atom.getZ();
           use[i] = atom.getUse();
+          atomClass[i] = atom.getVDWType().atomClass;
         }
         if (gradient) {
           grad.reset(threadID, lb, ub);

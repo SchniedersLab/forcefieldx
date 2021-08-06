@@ -169,14 +169,10 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
               if (eR.check(j, rj) || eR.check(i, ri, j, rj)) {
                 continue;
               }
-              logger.info(
-                  format(
-                      " Pair energy %8s %-2d, %8s %-2d: %s",
-                      residues[i].toFormattedString(false, true),
-                      ri,
-                      residues[j].toFormattedString(false, true),
-                      rj,
-                      rO.formatEnergy(eE.get2Body(i, ri, j, rj))));
+              logger.info(format(" Pair energy %8s %-2d, %8s %-2d: %s",
+                  residues[i].toString(roti[ri]), ri,
+                  residues[j].toString(rotj[rj]), rj,
+                  rO.formatEnergy(eE.get2Body(i, ri, j, rj))));
             }
           }
         }
@@ -248,6 +244,8 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
           if (!eR.check(i, ri) || !eR.check(j, rj) || !eR.check(i, ri, j, rj)) {
             Residue residueI = residues[i];
             Residue residueJ = residues[j];
+            Rotamer[] rotI = residues[i].getRotamers(library);
+            Rotamer[] rotJ = residues[j].getRotamers(library);
             int indexI = allResiduesList.indexOf(residueI);
             int indexJ = allResiduesList.indexOf(residueJ);
             double resDist = dM.getResidueDistance(indexI, ri, indexJ, rj);
@@ -266,60 +264,34 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
             if (dist < superpositionThreshold) {
               // Set the energy to NaN for superposed atoms.
               twoBodyEnergy = Double.NaN;
-              logger.info(
-                  format(
-                      " Pair %8s %-2d, %8s %-2d:\t    NaN at %13.6f Ang (%s Ang by residue) < %5.3f Ang",
-                      residueI.toFormattedString(false, true),
-                      ri,
-                      residueJ.toFormattedString(false, true),
-                      rj,
-                      dist,
-                      resDist,
-                      superpositionThreshold));
+              logger.info(format(
+                  " Pair %8s %-2d, %8s %-2d:\t    NaN at %13.6f Ang (%s Ang by residue) < %5.3f Ang",
+                  residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
+                  dist, resDist, superpositionThreshold));
             } else if (dM.checkPairDistThreshold(indexI, ri, indexJ, rj)) {
               // Set the two-body energy to 0.0 for separation distances larger than the two-body
               // cutoff.
               twoBodyEnergy = 0.0;
               time += System.nanoTime();
-              logger.info(
-                  format(
-                      " Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
-                      residueI.toFormattedString(false, true),
-                      ri,
-                      residueJ.toFormattedString(false, true),
-                      rj,
-                      rO.formatEnergy(twoBodyEnergy),
-                      distString,
-                      resDistString,
-                      time * 1.0e-9));
+              logger.info(format(
+                  " Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
+                  residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
+                  rO.formatEnergy(twoBodyEnergy), distString, resDistString, time * 1.0e-9));
             } else {
               try {
                 twoBodyEnergy = eE.compute2BodyEnergy(residues, i, ri, j, rj);
                 time += System.nanoTime();
-                logger.info(
-                    format(
-                        " Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
-                        residueI.toFormattedString(false, true),
-                        ri,
-                        residueJ.toFormattedString(false, true),
-                        rj,
-                        rO.formatEnergy(twoBodyEnergy),
-                        distString,
-                        resDistString,
-                        time * 1.0e-9));
+                logger.info(format(
+                    " Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
+                    residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
+                    rO.formatEnergy(twoBodyEnergy), distString, resDistString, time * 1.0e-9));
               } catch (ArithmeticException ex) {
                 twoBodyEnergy = Double.NaN;
                 time += System.nanoTime();
-                logger.info(
-                    format(
-                        " Pair %8s %-2d, %8s %-2d:              NaN at %s Ang (%s Ang by residue) in %6.4f (sec).",
-                        residueI.toFormattedString(false, true),
-                        ri,
-                        residueJ.toFormattedString(false, true),
-                        rj,
-                        distString,
-                        resDistString,
-                        time * 1.0e-9));
+                logger.info(format(
+                    " Pair %8s %-2d, %8s %-2d:              NaN at %s Ang (%s Ang by residue) in %6.4f (sec).",
+                    residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
+                    distString, resDistString, time * 1.0e-9));
               }
             }
             myBuffer.put(4, twoBodyEnergy);

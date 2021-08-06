@@ -145,36 +145,30 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
     // Print what we've got so far.
     if (master && verbose) {
       for (int i = 0; i < residues.length; i++) {
-        Residue resi = residues[i];
-        Rotamer[] roti = resi.getRotamers(library);
-        for (int ri = 0; ri < roti.length; ri++) {
+        Residue resI = residues[i];
+        Rotamer[] rotI = resI.getRotamers(library);
+        for (int ri = 0; ri < rotI.length; ri++) {
           if (eR.check(i, ri)) {
             continue;
           }
           for (int j = i + 1; j < residues.length; j++) {
-            Residue resj = residues[j];
-            Rotamer[] rotj = resj.getRotamers(library);
-            for (int rj = 0; rj < rotj.length; rj++) {
+            Residue resJ = residues[j];
+            Rotamer[] rotJ = resJ.getRotamers(library);
+            for (int rj = 0; rj < rotJ.length; rj++) {
               if (eR.check(j, rj) || eR.check(i, ri, j, rj)) {
                 continue;
               }
               for (int k = j + 1; k < residues.length; k++) {
-                Residue resk = residues[k];
-                Rotamer[] rotk = resk.getRotamers(library);
-                for (int rk = 0; rk < rotk.length; rk++) {
+                Residue resK = residues[k];
+                Rotamer[] rotK = resK.getRotamers(library);
+                for (int rk = 0; rk < rotK.length; rk++) {
                   if (eR.check(k, rk) || eR.check(i, ri, k, rk) || eR.check(j, rj, k, rk)) {
                     continue;
                   }
-                  logger.info(
-                      format(
-                          " 3-Body energy %8s %-2d, %8s %-2d, %8s %-2d: %s",
-                          resi.toFormattedString(false, true),
-                          ri,
-                          resj.toFormattedString(false, true),
-                          rj,
-                          resk.toFormattedString(false, true),
-                          rk,
-                          rO.formatEnergy(eE.get3Body(residues, i, ri, j, rj, k, rk))));
+                  logger.info(format(" 3-Body energy %8s %-2d, %8s %-2d, %8s %-2d: %s",
+                      resI.toString(rotI[ri]), ri, resJ.toString(rotJ[rj]), rj,
+                      resK.toString(rotK[rk]), rk,
+                      rO.formatEnergy(eE.get3Body(residues, i, ri, j, rj, k, rk))));
                 }
               }
             }
@@ -259,6 +253,10 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
             Residue residueJ = residues[j];
             Residue residueK = residues[k];
 
+            Rotamer[] rotI = residueI.getRotamers(library);
+            Rotamer[] rotJ = residueJ.getRotamers(library);
+            Rotamer[] rotK = residueK.getRotamers(library);
+
             int indexI = allResiduesList.indexOf(residueI);
             int indexJ = allResiduesList.indexOf(residueJ);
             int indexK = allResiduesList.indexOf(residueK);
@@ -283,68 +281,38 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
             double threeBodyEnergy;
             if (minDist < superpositionThreshold) {
               threeBodyEnergy = Double.NaN;
-              logger.info(
-                  format(
+              logger.info(format(
                       " 3-Body %8s %-2d, %8s %-2d, %8s %-2d:\t    NaN      at %13.6f Ang (%s Ang by residue) < %5.3f Ang.",
-                      residueI.toFormattedString(false, true),
-                      ri,
-                      residueJ.toFormattedString(false, true),
-                      rj,
-                      residueK.toFormattedString(false, true),
-                      rk,
-                      minDist,
-                      resDistString,
-                      superpositionThreshold));
+                      residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
+                      residueK.toString(rotK[rk]), rk,
+                      minDist, resDistString, superpositionThreshold));
             } else if (dM.checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
               // Set the two-body energy to 0.0 for separation distances larger than the two-body
               // cutoff.
               threeBodyEnergy = 0.0;
               time += System.nanoTime();
-              logger.fine(
-                  format(
-                      " 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
-                      residueI.toFormattedString(false, true),
-                      ri,
-                      residueJ.toFormattedString(false, true),
-                      rj,
-                      residueK.toFormattedString(false, true),
-                      rk,
-                      rO.formatEnergy(threeBodyEnergy),
-                      distString,
-                      resDistString,
-                      time * 1.0e-9));
+              logger.fine(format(
+                  " 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
+                      residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
+                      residueK.toString(rotK[rk]), rk,
+                      rO.formatEnergy(threeBodyEnergy), distString, resDistString, time * 1.0e-9));
             } else {
               try {
                 threeBodyEnergy = eE.compute3BodyEnergy(residues, i, ri, j, rj, k, rk);
                 time += System.nanoTime();
-                logger.info(
-                    format(
-                        " 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
-                        residueI.toFormattedString(false, true),
-                        ri,
-                        residueJ.toFormattedString(false, true),
-                        rj,
-                        residueK.toFormattedString(false, true),
-                        rk,
-                        rO.formatEnergy(threeBodyEnergy),
-                        distString,
-                        resDistString,
-                        time * 1.0e-9));
+                logger.info(format(
+                    " 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
+                    residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
+                    residueK.toString(rotK[rk]), rk,
+                    rO.formatEnergy(threeBodyEnergy), distString, resDistString, time * 1.0e-9));
               } catch (ArithmeticException ex) {
                 threeBodyEnergy = Double.NaN;
                 time += System.nanoTime();
-                logger.info(
-                    format(
-                        " 3-Body %8s %-2d, %8s %-2d, %8s %-2d:\t    NaN      at %s Ang (%s Ang by residue) in %6.4f (sec).",
-                        residueI.toFormattedString(false, true),
-                        ri,
-                        residueJ.toFormattedString(false, true),
-                        rj,
-                        residueK.toFormattedString(false, true),
-                        rk,
-                        distString,
-                        resDistString,
-                        time * 1.0e-9));
+                logger.info(format(
+                    " 3-Body %8s %-2d, %8s %-2d, %8s %-2d:\t    NaN      at %s Ang (%s Ang by residue) in %6.4f (sec).",
+                    residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
+                    residueK.toString(rotK[rk]), rk,
+                    distString, resDistString, time * 1.0e-9));
               }
             }
             myBuffer.put(6, threeBodyEnergy);
