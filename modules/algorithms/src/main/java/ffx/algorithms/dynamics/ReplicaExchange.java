@@ -86,7 +86,10 @@ public class ReplicaExchange implements Terminatable {
   private final int[] temp2Rank;
   private final int[] rank2Temp;
   private double[] temperatures;
-  private final int[] acceptedCount;
+  private final int[] tempAcceptedCount;
+  private final int[] rankAcceptedCount;
+  private final int[] tempTrialCount;
+  boolean monteCarlo;
 
   /**
    * ReplicaExchange constructor.
@@ -97,9 +100,10 @@ public class ReplicaExchange implements Terminatable {
    * @param exponent a double to set temperature ladder
    */
   public ReplicaExchange(
-      MolecularDynamics molecularDynamics, AlgorithmListener listener, double temperature, double exponent) {
+      MolecularDynamics molecularDynamics, AlgorithmListener listener, double temperature, double exponent, boolean monteCarlo) {
 
     this.replica = molecularDynamics;
+    this.monteCarlo = monteCarlo;
 
     // MolecularAssembly[] molecularAssemblies = molecularDynamics.getAssemblies();
     // CompositeConfiguration properties = molecularAssemblies[0].getProperties()
@@ -116,7 +120,9 @@ public class ReplicaExchange implements Terminatable {
     temperatures = new double[nReplicas];
     temp2Rank = new int[nReplicas];
     rank2Temp = new int[nReplicas];
-    acceptedCount = new int[nReplicas];
+    tempAcceptedCount = new int[nReplicas];
+    rankAcceptedCount = new int [nReplicas];
+    tempTrialCount = new int[nReplicas];
 
     setExponentialTemperatureLadder(temperature, exponent);
 
@@ -208,51 +214,81 @@ public class ReplicaExchange implements Terminatable {
 
   /** All processes complete the exchanges identically given the same Random number seed. */
   private void exchange(int cycle) {
-    for (int i = 0; i < nReplicas - 1; i++) {
+    int start;
+    int increment;
+    if (monteCarlo) {
+      // 1 M.C. trial per temperature (except for those at the ends of the ladder).
+      start = cycle % 2;
+      increment = 2;
+    } else {
+      // 2 M.C. trials per temperature (except for those at the ends of the ladder).
+      start = 0;
+      increment = 1;
+    }
+    // Loop over temperatures
+    for (int temperature = start; temperature < nReplicas - 1; temperature += increment) {
 
-      int i1 = temp2Rank[i];
-      int i2 = temp2Rank[i + 1];
+      // Ranks for temperatures A and B
+      int rankA = temp2Rank[temperature];
+      int rankB = temp2Rank[temperature + 1];
 
-      double tempA = parameters[i1][0];
-      double tempB = parameters[i2][0];
+      // Load temperature, beta and energy for each rank.
+      double tempA = parameters[rankA][0];
+      double tempB = parameters[rankB][0];
       double betaA = KCAL_TO_GRAM_ANG2_PER_PS2 / (tempA * kB);
       double betaB = KCAL_TO_GRAM_ANG2_PER_PS2 / (tempB * kB);
-      double energyA = parameters[i1][1];
-      double energyB = parameters[i2][1];
+      double energyA = parameters[rankA][1];
+      double energyB = parameters[rankB][1];
 
       // Compute the change in energy over kT (E/kT) for the Metropolis criteria.
       double deltaE = (energyA - energyB) * (betaB - betaA);
-
       // If the Metropolis criteria is satisfied, do the switch.
+
+      //Count the number of trials for each temp
+      tempTrialCount[temperature]++;
       if (deltaE < 0.0 || random.nextDouble() < exp(-deltaE)) {
-        acceptedCount[i]++;
+        tempAcceptedCount[temperature]++;
+        double tempAcceptance = tempAcceptedCount[temperature] * 100.0 / (tempTrialCount[temperature]);
+
+        double rankAcceptance;
+        if (tempA < tempB){
+          rankAcceptedCount[rankA]++;
+          rankAcceptance = rankAcceptedCount[rankA] * 100.0 / (tempTrialCount[temperature]);
+        } else {
+          rankAcceptedCount[rankB]++;
+          rankAcceptance = rankAcceptedCount[rankB] * 100.0 / (tempTrialCount[temperature + 1]);
+        }
 
         // Swap temperature and energy values.
-        parameters[i1][0] = tempB;
-        parameters[i2][0] = tempA;
+        parameters[rankA][0] = tempB;
+        parameters[rankB][0] = tempA;
 
-        parameters[i1][1] = energyB;
-        parameters[i2][1] = energyA;
+        parameters[rankA][1] = energyB;
+        parameters[rankB][1] = energyA;
 
         // Map temperatures to process ranks.
-        temp2Rank[i] = i2;
-        temp2Rank[i + 1] = i1;
+        temp2Rank[temperature] = rankB;
+        temp2Rank[temperature + 1] = rankA;
+
+
 
         // Map ranks to temperatures.
-        rank2Temp[i1] = i + 1;
-        rank2Temp[i2] = i;
+        rank2Temp[rankA] = temperature + 1;
+        rank2Temp[rankB] = temperature;
 
-        double acceptance = acceptedCount[i] * 100.0 / (cycle + 1);
+
+
         logger.info(
             String.format(
-                " RepEx accepted (%5.1f%%) for %6.2f (%d) and %6.2f (%d) for dE=%10.4f.",
-                acceptance, tempA, i1, tempB, i2, deltaE));
+                " RepEx accepted (%5.1f%%) (%5.1f%%) for %6.2f (%d) and %6.2f (%d) for dE=%10.4f.",
+                tempAcceptance, rankAcceptance, tempA, rankA, tempB, rankB, deltaE));
       } else {
-        double acceptance = acceptedCount[i] * 100.0 / (cycle + 1);
+        double tempAcceptance = tempAcceptedCount[temperature] * 100.0 / (tempTrialCount[temperature]);
+        double rankAcceptance = rankAcceptedCount[temperature] * 100.0 / (tempTrialCount[temperature]);
         logger.info(
             String.format(
-                " RepEx rejected (%5.1f%%) for %6.2f (%d) and %6.2f (%d) for dE=%10.4f.",
-                acceptance, tempA, i1, tempB, i2, deltaE));
+                " RepEx rejected (%5.1f%%) (f%5.1f%%) for %6.2f (%d) and %6.2f (%d) for dE=%10.4f.",
+                tempAcceptance, rankAcceptance, tempA, rankA, tempB, rankB, deltaE));
       }
     }
   }

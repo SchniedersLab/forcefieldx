@@ -174,7 +174,7 @@ class Dynamics extends AlgorithmsScript {
                     dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temperature, true, dyn)
 
         } else {
-            logger.info("\n Running replica exchange molecular dynamics on " + modelFilename)
+            logger.info("\n Running replica exchange molecular dynamics on " + filename)
             int rank = (size > 1) ? world.rank() : 0
             logger.info("Rank:" + rank.toString())
 
@@ -210,7 +210,7 @@ class Dynamics extends AlgorithmsScript {
 
             molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
             ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener,
-                    dynamicsOptions.temperature, repEx.exponent)
+                    dynamicsOptions.temperature, repEx.exponent, repEx.monteCarlo)
 
             long totalSteps = dynamicsOptions.steps
             int nSteps = repEx.replicaSteps
