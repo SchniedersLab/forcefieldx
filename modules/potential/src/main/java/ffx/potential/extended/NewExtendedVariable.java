@@ -37,23 +37,17 @@
 // ******************************************************************************
 package ffx.potential.extended;
 
-import edu.rit.pj.reduction.SharedDouble;
 import ffx.numerics.switching.MultiplicativeSwitch;
-import ffx.potential.bonded.*;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.Atom.Descriptions;
-import ffx.potential.extended.ExtendedSystem.ExtendedSystemConfig;
-import ffx.potential.parameters.MultipoleType;
+import ffx.potential.bonded.*;
+import ffx.potential.extended.NewExtendedSystem.NewExtendedSystemConfig;
+import ffx.potential.parameters.ForceField;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.logging.Level;
 
-import static ffx.potential.extended.TitrationUtils.isTitratableHydrogen;
-import static ffx.potential.parameters.MultipoleType.zeroM;
 import static ffx.utilities.Constants.kB;
-import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
@@ -65,50 +59,30 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * @author Stephen LuCore
  * @since 1.0
  */
-public abstract class ExtendedVariable {
+public abstract class NewExtendedVariable {
 
     /**
      * Constant <code>logger</code>
      */
-    protected static final Logger logger = Logger.getLogger(ExtendedVariable.class.getName());
+    protected static final Logger logger = Logger.getLogger(NewExtendedVariable.class.getName());
 
     /**
      * Index of this ESV in the list of ESVs.
      */
     public final int esvIndex;
     /**
-     * (1-L); side-chain only; permanently disconnected from assembly
+     * Atoms affected by this extended variable
      */
-    protected final List<Atom> atomsBackground;
-    /**
-     * All foreground atoms except titrating hydrogens
-     */
-    protected final List<Atom> atomsShared;
-    /**
-     * Titrating (and thus foreground) atoms.
-     */
-    protected final List<Atom> atomsUnshared;
-    /**
-     * Bonded dUdL reduction target.
-     */
-    protected final SharedDouble bondedDeriv = new SharedDouble();
-    /**
-     * Foreground dUdL by term.
-     */
-    protected final HashMap<Class<? extends BondedTerm>, SharedDouble> fgBondedDerivDecomp;
-    /**
-     *  Background dUdL by term.
-     */
-    protected final HashMap<Class<? extends BondedTerm>, SharedDouble> bgBondedDerivDecomp;
+    protected final List<Atom> atomsExtended;
     /**
      * Maps multipole end points of this ESV's lambda path.
      */
-    protected final HashMap<Atom, Atom> fg2bg = new HashMap<>();
+    protected final AminoAcidUtils.AminoAcid3 aminoAcid3;
     /**
      * TODO: Replace ExtendedSystemConfig with an instance of normal
      * FFX Properties.
      */
-    protected final ExtendedSystemConfig config;
+    protected final NewExtendedSystemConfig config;
     /**
      * ESVs travel on {0,1}.
      */
@@ -158,171 +132,39 @@ public abstract class ExtendedVariable {
      */
     protected double dlSwitch;
     /**
-     * Foreground bonded energy and derivative handling.
+     * Utils for setting ESV multipoles and derivs
      */
-    protected final List<BondedTerm> bondedFg;
-    /**
-     * Background bonded energy and derivative handling.
-     */
-    protected final List<BondedTerm> bondedBg;
-    /**
-     * Modified to contain all applicable bonded terms.
-     */
-    protected final MSNode termNode;
+    ConstantPhUtils constantPhUtils;
 
     /**
      * Prefer ExtendedSystem::populate to manual ESV creation.
      *
-     * @param multiRes:      from TitrationUtils.titrationFactory()
+     * @param residue:      from TitrationUtils.titrationFactory()
      * @param initialLambda: (optional) starting position of the extended particle
-     * @param esvSystem      a {@link ffx.potential.extended.ExtendedSystem} object.
+     * @param esvSystem      a {@link ExtendedSystem} object.
      */
-    public ExtendedVariable(ExtendedSystem esvSystem, MultiResidue multiRes, double initialLambda) {
+    public NewExtendedVariable(NewExtendedSystem esvSystem, Residue residue, double initialLambda) {
         this.esvIndex = esvSystem.requestIndexing();
         this.config = esvSystem.config;
         this.discrBiasMag = config.discrBias;
         this.switchingFunction = new MultiplicativeSwitch(1.0, 0.0);
+        this.aminoAcid3 = residue.getAminoAcid3();
 
         MolecularAssembly molecularAssembly = esvSystem.getMolecularAssembly();
+        ForceField forceField = molecularAssembly.getForceField();
+        constantPhUtils = new ConstantPhUtils(forceField);
         CompositeConfiguration properties = molecularAssembly.getProperties();
         this.thetaMass = properties.getDouble("esv.mass",ExtendedSystem.THETA_MASS);
         setInitialLambda(initialLambda);
 
-        Residue residueForeground = multiRes.getActive();
-        termNode = residueForeground.getTermNode();
-        Residue residueBackground = multiRes.getInactive().get(0);
-
-        List<Atom> backbone = new ArrayList<>();
-        List<Atom> atomsForeground = new ArrayList<>();
-        atomsBackground = new ArrayList<>();
-        atomsShared = new ArrayList<>();
-        atomsUnshared = new ArrayList<>();
-
-        if (config.decomposeBonded) {
-            fgBondedDerivDecomp = new HashMap<>();
-            bgBondedDerivDecomp = new HashMap<>();
-        } else {
-            fgBondedDerivDecomp = null;
-            bgBondedDerivDecomp = null;
-        }
-
-        // Fill the atom lists.
-        List<String> backboneNames = Arrays.asList("N", "CA", "C", "O", "HA", "H");
-
-        for (String bbName : backboneNames) {
-            Atom bb = (Atom) residueForeground.getAtomNode(bbName);
-            if (bb != null) {
-                backbone.add(bb);
-            }
-        }
-        for (Atom fg : residueForeground.getAtomList()) {
-            if (!backbone.contains(fg)) {
-                atomsForeground.add(fg);
-                Atom bg = residueBackground.getAtomByName(fg.getName(), true);
-                if (bg == null) {
-                    atomsUnshared.add(fg);
-                    /* The following check ought to be safely removable if you've
-                     * defined ExtendedVariables that are not TitrationESVs.      */
-                    assert (isTitratableHydrogen(fg));
-                    if (!isTitratableHydrogen(fg)) {
-                        logger.warning(
-                                format(
-                                        "ExtendedVariable could not identify a companion for foreground atom %s.", fg));
-                        throw new IllegalStateException();
-                    }
-                } else {
-                    atomsShared.add(fg);
-                    fg2bg.put(fg, bg);
-                }
-            }
-        }
-        for (Atom a0 : residueBackground.getAtomList()) {
-            if (!backbone.contains(a0)) {
-                assert (!atomsForeground.contains(a0));
-                assert (!isTitratableHydrogen(a0));
-                if (atomsForeground.contains(a0) || isTitratableHydrogen(a0)) {
-                    logger.warning(format("a0: %s", a0.describe(Descriptions.XyzIndex_Name)));
-                    logger.warning("Error: inappropriate background atom.");
-                    throw new IllegalStateException();
-                }
-                atomsBackground.add(a0);
-                a0.setBackground();
-            }
-        }
-
-        /* Assign foreground atom indices to their corresponding background atoms. */
-        if (config.cloneXyzIndices) {
-            for (Atom fg : fg2bg.keySet()) {
-                fg2bg.get(fg).setXyzIndex(fg.getXyzIndex());
-            }
-        }
-
-        // Fill bonded term list and set all esvLambda values.
-        bondedFg = residueForeground.getDescendants(BondedTerm.class);
-        bondedBg = residueBackground.getDescendants(BondedTerm.class);
-        if (config.bonded) {
-            MSNode extendedTermNode = new MSNode(format("Extended (%d)", bondedBg.size()));
-            for (MSNode node : residueBackground.getTermNode().getChildList()) {
-                extendedTermNode.add(node);
-            }
-            multiRes.getActive().getTermNode().add(extendedTermNode);
-            updateBondedLambdas();
-        }
+        atomsExtended = new ArrayList<>();
+        atomsExtended.addAll(residue.getAtomList());
 
         /* Background atoms don't get automatically typed by PME since they're
          * disconnected from the molecular assembly; must be done manually. */
         if (config.electrostatics) {
-            esvSystem.initializeBackgroundMultipoles(atomsBackground);
             updateMultipoleTypes();
         }
-
-        describe();
-    }
-
-    /**
-     * List all the atoms and bonded terms associated with each end state.
-     */
-    public final void describe() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(format(" %s\n", this));
-        sb.append(format("   %-50s %-50s\n", "Shared Atoms", "(Background)"));
-        for (Atom ai : atomsShared) {
-            sb.append(
-                    format(
-                            "     %-50s %-50s\n",
-                            ai.describe(Descriptions.Default).trim(),
-                            fg2bg.get(ai).describe(Descriptions.Trim)));
-        }
-        sb.append("   Unshared Atoms\n");
-        for (Atom atom : atomsUnshared) {
-            sb.append(format("%s\n", atom));
-        }
-        sb.append(format("   %-50s %-50s\n", "Bonded Terms", "(Background)"));
-        MSNode extendedNode =
-                termNode.getChildList().stream()
-                        .filter(node -> node.toString().contains("Extended"))
-                        .findAny()
-                        .orElse(null);
-        for (MSNode term : termNode.getChildList()) {
-            if (term == extendedNode) {
-                continue;
-            }
-            MSNode background =
-                    (extendedNode == null)
-                            ? null
-                            : extendedNode.getChildList().stream()
-                            .filter(
-                                    node ->
-                                            node.toString()
-                                                    .startsWith(
-                                                            term.toString().substring(0, term.toString().indexOf("("))))
-                            .findAny()
-                            .orElse(null);
-            String bgTermString = (background != null) ? background.toString() : "";
-            sb.append(format("     %-50s %-50s\n", term.toString(), bgTermString));
-        }
-        logger.info(sb.toString());
-
     }
 
     /**
@@ -356,7 +198,7 @@ public abstract class ExtendedVariable {
     /**
      * getName.
      *
-     * @return a {@link java.lang.String} object.
+     * @return a {@link String} object.
      */
     public String getName() {
         return String.format("Esv%d", esvIndex);
@@ -390,7 +232,7 @@ public abstract class ExtendedVariable {
 
     /**
      * First pass setting of lambda to initialize theta and theta velocity
-     * @param lambda
+     * @param lambda a double
      */
     private void setInitialLambda(double lambda) {
         setTheta(Math.asin(Math.sqrt(lambda)));
@@ -405,8 +247,8 @@ public abstract class ExtendedVariable {
 
     /**
      * Used when a manual setting of lambda is needed; not during Langevin dynamics
-     * @param lambda
-     * @param updateComponents
+     * @param lambda a double
+     * @param updateComponents a boolean
      */
     private void setLambda(double lambda, boolean updateComponents) {
         setTheta(Math.asin(Math.sqrt(lambda)));
@@ -416,8 +258,8 @@ public abstract class ExtendedVariable {
     /**
      * Used to update lambda during dynamics, does not update theta value.
      * Bias update from Eq. 3 of "All-Atom Continuous Constant pH Molecular Dynamics..." J. Shen 2016.
-     * @param lambda
-     * @param updateComponents
+     * @param lambda a double
+     * @param updateComponents a boolean
      */
     protected void updateLambda(double lambda, boolean updateComponents) {
         this.lambda = lambda;
@@ -427,7 +269,6 @@ public abstract class ExtendedVariable {
         dDiscrBiasdL = -8.0 * discrBiasMag * (lambda - 0.5);
         if (updateComponents) {
             updateMultipoleTypes();
-            updateBondedLambdas();
         }
     }
 
@@ -461,11 +302,6 @@ public abstract class ExtendedVariable {
      * Invoked by ExtendedSystem after lambda changes.
      */
     protected abstract void updateMultipoleTypes();
-
-    /**
-     * Scales bonded terms based on lambda. Currently off.
-     */
-    protected abstract void updateBondedLambdas();
 
     /**
      * getLambdaSwitch.
@@ -504,66 +340,11 @@ public abstract class ExtendedVariable {
     }
 
     /**
-     * getBackgroundForAtom.
-     *
-     * @param foreground a {@link ffx.potential.bonded.Atom} object.
-     * @return a {@link ffx.potential.bonded.Atom} object.
-     */
-    protected Atom getBackgroundForAtom(Atom foreground) {
-        return fg2bg.get(foreground);
-    }
-
-    /**
      * viewUnsharedAtoms.
      *
-     * @return a {@link java.util.List} object.
+     * @return a {@link List} object.
      */
-    protected List<Atom> viewUnsharedAtoms() {
-        return Collections.unmodifiableList(atomsUnshared);
-    }
-
-    /**
-     * viewSharedAtoms.
-     *
-     * @return a {@link java.util.List} object.
-     */
-    protected List<Atom> viewSharedAtoms() {
-        return Collections.unmodifiableList(atomsShared);
-    }
-
-    /**
-     * viewBackgroundAtoms.
-     *
-     * @return a {@link java.util.List} object.
-     */
-    protected List<Atom> viewBackgroundAtoms() {
-        return Collections.unmodifiableList(atomsBackground);
-    }
-
-    /**
-     * Getter for the field <code>bondedDeriv</code>.
-     *
-     * @return a double.
-     */
-    protected double getBondedDeriv() {
-        return bondedDeriv.get();
-    }
-
-    /**
-     * getBondedDerivDecomp.
-     *
-     * @return a {@link java.util.HashMap} object.
-     */
-    protected HashMap<Class<? extends BondedTerm>, SharedDouble> getBondedDerivDecomp() {
-        return fgBondedDerivDecomp;
-    }
-
-    /**
-     * getBackgroundBondedDerivDecomp.
-     *
-     * @return a {@link java.util.HashMap} object.
-     */
-    protected HashMap<Class<? extends BondedTerm>, SharedDouble> getBackgroundBondedDerivDecomp() {
-        return bgBondedDerivDecomp;
+    protected List<Atom> viewExtendedAtoms() {
+        return Collections.unmodifiableList(atomsExtended);
     }
 }
