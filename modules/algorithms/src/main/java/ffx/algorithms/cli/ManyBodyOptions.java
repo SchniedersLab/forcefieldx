@@ -193,7 +193,7 @@ public class ManyBodyOptions {
     if (prop != null) {
       titrate = Boolean.parseBoolean(prop);
     }
-    TitrationUtils titrationUtils = null;
+    TitrationUtils titrationUtils;
     if (titrate) {
       logger.info(" Turing on ASP, GLU, LYS and HIS titration rotamers.");
       titrationUtils = new TitrationUtils(activeAssembly.getForceField());

@@ -286,15 +286,19 @@ public class ProgressiveAlignmentOfCrystals {
     for (int row = restartRow; row < baseSize; row++) {
       // Initialize the distance this rank is responsible for to zero.
       myDistance[0] = -1.0;
+      // Base unit cell for logging.
+      Crystal baseCrystal = baseFilter.getActiveMolecularSystem().getCrystal().getUnitCell();
       for (int column = restartColumn; column < paddedTargetSize; column++) {
         // Make sure this is not a padded value of column.
         if (column < targetSize) {
           int targetRank = column % numProc;
           if (targetRank == rank) {
             long time = -System.nanoTime();
+            Crystal targetCrystal = targetFilter.getActiveMolecularSystem().getCrystal().getUnitCell();
             logger.info(
-                format("\n Comparing Model %d of %s\n with      Model %d of %s", row + 1, baseLabel,
-                    column + 1, targetLabel));
+                format("\n Comparing Model %d (%s) of %s\n with      Model %d (%s) of %s",
+                    row + 1, baseCrystal.toShortString(), baseLabel,
+                    column + 1, targetCrystal.toShortString(), targetLabel));
 
             // Compute the PAC RMSD.
             double rmsd = compare(nAtoms, comparisonAtoms, nAU, inflatedAU, numSearch, numSearch2,

@@ -16,16 +16,16 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class SynchronousSend {
+public class SendSynchronous {
 
-  private static final Logger logger = Logger.getLogger(SynchronousSend.class.getName());
+  private static final Logger logger = Logger.getLogger(SendSynchronous.class.getName());
 
   /** Parallel Java world communicator. */
-  protected final Comm world;
+  protected final Comm world = Comm.world();
   /** Rank of this process. */
-  protected final int rank;
+  protected final int rank = world.rank();
   /** Number of processes. */
-  private final int numProc;
+  private final int numProc = world.size();
   /**
    * The counts array stores [Lambda, dU/dL, temper] for each process. Therefore the array is of size
    * [numProc][3].
@@ -46,25 +46,22 @@ public class SynchronousSend {
    * myCountsBuf is a convenience pointer for this process to countsBuf[rank].
    */
   private final DoubleBuf myCountsBuf;
-  private boolean independentWalkers;
-  /** The histograms to update. */
+  /**
+   * The histograms to update.
+   */
   private Histogram[] histograms;
-  /** Map from ranks to histograms */
+  /**
+   * Map from ranks to histograms.
+   */
   private int[] rankToHistogramMap;
 
   /**
-   * Constructor.
+   * Synchronous Communication Constructor.
    *
    * @param histograms An array of Bias Histograms.
    * @param rankToHistogramMap A map from process rank to Histogram.
-   * @param independentWalkers If true, each walker has its own Histogram.
    */
-  public SynchronousSend(
-      Histogram[] histograms, int[] rankToHistogramMap, boolean independentWalkers) {
-    world = Comm.world();
-    numProc = world.size();
-    rank = world.rank();
-    // Use synchronous communication.
+  public SendSynchronous(Histogram[] histograms, int[] rankToHistogramMap) {
     counts = new double[numProc][3];
     countsBuf = new DoubleBuf[numProc];
     for (int i = 0; i < numProc; i++) {
@@ -75,7 +72,6 @@ public class SynchronousSend {
 
     this.histograms = histograms;
     this.rankToHistogramMap = rankToHistogramMap;
-    this.independentWalkers = independentWalkers;
   }
 
   public int getHistogramIndex() {
@@ -95,7 +91,6 @@ public class SynchronousSend {
     myCounts[0] = lambda;
     myCounts[1] = dUdL;
     myCounts[2] = temperingWeight;
-
     try {
       world.allGather(myCountsBuf, countsBuf);
     } catch (IOException ex) {
@@ -106,13 +101,13 @@ public class SynchronousSend {
     // Increment the Recursion Kernel(s) based on the input of each walker.
     for (int i = 0; i < numProc; i++) {
 
-      // Only include this walkers bias.
-      if (independentWalkers && i != rank) {
-        continue;
-      }
-
       int his = rankToHistogramMap[i];
       Histogram currentHistogram = histograms[his];
+
+      // Only include this walkers bias.
+      if (currentHistogram.getIndependentWalkers() && i != rank) {
+        continue;
+      }
 
       double walkerLambda = counts[i][0];
       double walkerdUdL = counts[i][1];
@@ -142,10 +137,6 @@ public class SynchronousSend {
   public void setHistograms(Histogram[] histograms, int[] rankToHistogramMap) {
     this.histograms = histograms;
     this.rankToHistogramMap = rankToHistogramMap;
-  }
-
-  public void setIndependentWalkers(boolean independentWalkers) {
-    this.independentWalkers = independentWalkers;
   }
 
   /**

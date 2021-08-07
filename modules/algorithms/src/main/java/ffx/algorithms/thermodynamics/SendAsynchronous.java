@@ -55,9 +55,9 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-class AsynchronousSend extends Thread {
+class SendAsynchronous extends Thread {
 
-  private static final Logger logger = Logger.getLogger(AsynchronousSend.class.getName());
+  private static final Logger logger = Logger.getLogger(SendAsynchronous.class.getName());
   /**
    * Storage to send a recursion count. [rank, lambda, dU/dL, weight].
    */
@@ -96,7 +96,7 @@ class AsynchronousSend extends Thread {
    *
    * @param histogram Histogram instance.
    */
-  AsynchronousSend(Histogram histogram) {
+  SendAsynchronous(Histogram histogram) {
     this.histogram = histogram;
     // Send.
     sendCount = new double[4];
@@ -114,7 +114,7 @@ class AsynchronousSend extends Thread {
         histogram.world.receive(null, receiveCountBuf);
       } catch (InterruptedIOException ioe) {
         String message =
-            " AsynchronousSend was interrupted at world.receive; "
+            " SendAsynchronous was interrupted at world.receive; "
                 + "future message passing may be in an error state.";
         logger.log(Level.WARNING, message, ioe);
         break;
@@ -123,21 +123,21 @@ class AsynchronousSend extends Thread {
         logger.log(Level.WARNING, message, e);
       }
 
-      // 4x NaN is a message (usually sent by the same process) indicating that it is time to shut
-      // down.
+      // 4x NaN is a message (usually sent by the same process)
+      // indicating that it is time to shut down.
       boolean terminateSignal = stream(receiveCount).allMatch(Double::isNaN);
       if (terminateSignal) {
         logger.info(" Termination signal received -- finishing execution.");
         break;
       }
 
-      int rank = (int) round(receiveCount[0]);
+      int countRank = (int) round(receiveCount[0]);
       double lambda = receiveCount[1];
       double dUdL = receiveCount[2];
       double weight = receiveCount[3];
 
       // If independent, only add bias values from this walker
-      if (histogram.getIndependentWalkers() && histogram.getRank() != rank) {
+      if (histogram.getIndependentWalkers() && countRank != rank) {
         continue;
       }
 
@@ -153,7 +153,7 @@ class AsynchronousSend extends Thread {
 
       // Check if we have been interrupted.
       if (isInterrupted()) {
-        logger.log(Level.INFO, " AsynchronousSend was interrupted -- finishing execution.");
+        logger.log(Level.INFO, " SendAsynchronous was interrupted -- finishing execution.");
         // No pending message receipt, so no warning.
         break;
       }
