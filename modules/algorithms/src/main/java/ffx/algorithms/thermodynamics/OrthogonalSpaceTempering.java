@@ -2391,6 +2391,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
           }
         }
       } else {
+        // Check the recursion kernel size.
+        checkRecursionKernelSize(currentdUdL);
+
         int lambdaBin = indexForLambda(currentLambda);
         int dUdLBin = binFordUdL(currentdUdL);
         try {

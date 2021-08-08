@@ -82,28 +82,28 @@ class Cluster extends PotentialScript {
    */
   @Option(names = ['-a', '--algorithm'], paramLabel = "0", defaultValue = "0",
       description = "Algorithm to be used during clustering: kmeans (0), multikmeans (1), hierarchical (2)")
-  int algorithm = 0
+  int algorithm
 
   /**
-   * -k or --clusters Clustering algorithm to use.
+   * -k or --clusters Maximum number of kmeans clusters.
    */
   @Option(names = ['-k', '--clusters'], paramLabel = "0", defaultValue = "0",
-      description = "Maximum number of kmeans clusters for the input data.")
-  private int maxClusters = 0
+      description = "Maximum number of kmeans clusters.")
+  private int maxClusters
 
   /**
-   * -r or --readInDistMat The algorithm should read in a provided distance matrix rather than the matrix being generated on the fly.
+   * -r or --readInDistMat Read in an NxN distance matrix.
    */
   @Option(names = ['-r', '--readInDistMat'], paramLabel = "false", defaultValue = "false",
-      description = "Tells algorithm to read in the distance matrix from an input file.")
-  Boolean readIn = false
+      description = "Read in an NxN distance matrix.")
+  Boolean readIn
 
   /**
    * -s or --start Atom number where RMSD calculation of structure will begin.
    */
   @Option(names = ['-s', '--start'], paramLabel = "1", defaultValue = "1",
       description = 'Starting atom to include in the RMSD calculation.')
-  private String start = "1"
+  private String start
 
   /**
    * -f or --final Atom number where RMSD calculation of structure will end.
@@ -113,19 +113,20 @@ class Cluster extends PotentialScript {
   private String finish = Integer.MAX_VALUE.toString()
 
   /**
-   * --clusDis or --clusterDistance Distance value for dividing clusters from hierarchical tree.
+   * --td or --treeDistance
+   * Distance value for dividing clusters from hierarchical tree.
    * The Dill Group at Stony Brook University uses a value of 2.0.
    */
-  @Option(names = ['--treeDis', '--treeDistance'], paramLabel = "2.0", defaultValue = "2.0",
+  @Option(names = ['--td', '--treeDistance'], paramLabel = "2.0", defaultValue = "2.0",
       description = "The distance value where a hierarchical tree should be divided into clusters.")
-  private double treeDistance = 2.0
+  private double treeDistance
 
   /**
    * -w or --write Write out an archive of a representative structure from each cluster.
    */
   @Option(names = ['-w', '--write'], paramLabel = "false", defaultValue = "false",
           description = 'Write an archive containing a representative from each cluster (algorithm=0).')
-  private static boolean write = false
+  private static boolean write
 
   /**
    * The final argument(s) should be one or two filenames.
@@ -327,11 +328,11 @@ class Cluster extends PotentialScript {
       counter++
     }
 
-    //Print out size of each cluster.
-    System.out.println("==========Cluster Sizes==========")
+    // Print out size of each cluster.
+    logger.info(" ========== Cluster Sizes ========== ")
     counter = 0
     for (List cluster : clusterList) {
-      System.out.println(" Cluster " + counter + " Size: " + cluster.size())
+      logger.info(" Cluster " + counter + " Size: " + cluster.size())
       counter++
     }
 
@@ -353,9 +354,8 @@ class Cluster extends PotentialScript {
     }
 
     if (!sortedIds.isEmpty()) {
-      System.out.println(" Some models from clustering not found while parsing: "
-          + Arrays.asList(
-          sortedIds))
+      logger.info(" Some models from clustering not found while parsing: "
+          + Arrays.asList(sortedIds))
     }
   }
 
