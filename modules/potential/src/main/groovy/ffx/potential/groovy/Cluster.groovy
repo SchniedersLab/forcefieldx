@@ -58,8 +58,9 @@ import java.awt.*
 import java.util.List
 import java.util.logging.Level
 
-import static java.lang.String.format
 import static ffx.potential.utils.Cluster.kMeansCluster
+import static java.lang.String.format
+import static org.apache.commons.math3.util.FastMath.floorDiv
 
 /**
  * The Cluster script clusters structures utilizing RMSD.
@@ -78,11 +79,18 @@ class Cluster extends PotentialScript {
 
   /**
    * -a or --algorithm Clustering algorithm to use.
-   * Choices are kmeans (0), multikmeans (1), and hierarchical (2).
+   * Algorithm: Multi-K-Means++ (0) or Hierarchical (1)
    */
   @Option(names = ['-a', '--algorithm'], paramLabel = "0", defaultValue = "0",
-      description = "Algorithm to be used during clustering: kmeans (0), multikmeans (1), hierarchical (2)")
-  int algorithm
+      description = "Algorithm: Multi-K-Means++ (0) or Hierarchical (1)")
+  private int algorithm
+
+  /**
+   * -t or --trials Number of trials for Multi-K-Means.
+   */
+  @Option(names = ['-t', '--trials'], paramLabel = "1", defaultValue = "1",
+      description = "Number of trials for Multi-K-Means.")
+  private int trials
 
   /**
    * -k or --clusters Maximum number of kmeans clusters.
@@ -96,7 +104,7 @@ class Cluster extends PotentialScript {
    */
   @Option(names = ['-r', '--readInDistMat'], paramLabel = "false", defaultValue = "false",
       description = "Read in an NxN distance matrix.")
-  Boolean readIn
+  private boolean readIn
 
   /**
    * -s or --start Atom number where RMSD calculation of structure will begin.
@@ -113,6 +121,13 @@ class Cluster extends PotentialScript {
   private String finish = Integer.MAX_VALUE.toString()
 
   /**
+   * --rs or --randomSeed Set the random seed for deterministic clustering.
+   */
+  @Option(names = ['--rs', '--randomSeed'], paramLabel = "-1", defaultValue = "-1",
+      description = 'Set the random seed for deterministic clustering (-1 uses the current time).')
+  private long randomSeed
+
+  /**
    * --td or --treeDistance
    * Distance value for dividing clusters from hierarchical tree.
    * The Dill Group at Stony Brook University uses a value of 2.0.
@@ -125,15 +140,15 @@ class Cluster extends PotentialScript {
    * -w or --write Write out an archive of a representative structure from each cluster.
    */
   @Option(names = ['-w', '--write'], paramLabel = "false", defaultValue = "false",
-          description = 'Write an archive containing a representative from each cluster (algorithm=0).')
-  private static boolean write
+      description = 'Write an archive containing a representative from each cluster (algorithm=0).')
+  private boolean write
 
   /**
    * The final argument(s) should be one or two filenames.
    */
   @Parameters(arity = "1..2", paramLabel = "files",
       description = 'The RMSD distance matrix (and an arc of the structures if using write (-w) flag.')
-  List<String> filenames = null
+  private List<String> filenames = null
 
   /**
    * Generated list of clusters.
@@ -197,24 +212,27 @@ class Cluster extends PotentialScript {
       distMatrix = calcDistanceMatrix(distMatrix, file)
     }
 
-    // Either use kmeans clustering or hierarchical agglomerative clustering.
+    // Either use Multi-K-Means++ or Hierarchical agglomerative clustering.
     if (algorithm == 0) {
-      int distMatrixLength = distMatrix.size()
+      int dim = distMatrix.size()
       // Ensure cluster are within bounds
-      if (maxClusters <= 0 || maxClusters > distMatrixLength - 1) {
-        logger.warning(format(" Cluster of size %3d is out of bounds, using max cluster size of %3d.",
-                maxClusters, distMatrixLength - 1));
-        maxClusters = distMatrixLength - 1
+      if (maxClusters <= 0 || maxClusters >= dim) {
+        int newSize = floorDiv(dim, 2)
+        logger.warning(format(
+            " Cluster of size %3d is out of bounds, using max cluster size of %3d.", maxClusters,
+            newSize))
+        maxClusters = newSize
       }
-      //Array representing indecies of structures that represent their cluster.
+      // Array representing indices of structures that represent their cluster.
       int[] repStructs = new int[maxClusters]
-      kMeansCluster(distMatrix, maxClusters, repStructs)
-      if(write) {
+      if (randomSeed == -1) {
+        randomSeed = System.nanoTime()
+      }
+      kMeansCluster(distMatrix, maxClusters, trials, repStructs, randomSeed, true)
+      if (write) {
         writeStructures(repStructs)
       }
     } else if (algorithm == 1) {
-      kMeansCluster(distMatrix, maxClusters)
-    } else if (algorithm == 2) {
       hierarchicalAgglomerativeCluster(distMatrix)
     } else {
       logger.severe("Clustering algorithm has not been set.")
@@ -228,8 +246,8 @@ class Cluster extends PotentialScript {
    * @param distMatrix Distances between structures (metric to determine clusters).
    * @param repStructs Array list for index of representative structures.
    */
-  private void writeStructures(int[] repStructs){
-    String coordFileName = filenames.get(1);
+  private void writeStructures(int[] repStructs) {
+    String coordFileName = filenames.get(1)
     potentialFunctions.openAll(coordFileName)
     SystemFilter systemFilter = potentialFunctions.getFilter()
     activeAssembly = systemFilter.getActiveMolecularSystem()
@@ -241,20 +259,20 @@ class Cluster extends PotentialScript {
     if (ext.toUpperCase().contains("XYZ")) {
       saveFile = new File(fileName + ".xyz")
       writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
-              activeAssembly.getProperties())
+          activeAssembly.getProperties())
       potentialFunctions.saveAsXYZ(activeAssembly, saveFile)
     } else if (ext.toUpperCase().contains("ARC")) {
       saveFile = new File(fileName + ".arc")
       saveFile = potentialFunctions.versionFile(saveFile)
       writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
-              activeAssembly.getProperties())
+          activeAssembly.getProperties())
       logger.info("SaveFile: " + saveFile.getAbsolutePath())
       saveFile.createNewFile()
     } else {
       saveFile = new File(fileName + ".pdb")
       saveFile = potentialFunctions.versionFile(saveFile)
       writeFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
-              activeAssembly.getProperties())
+          activeAssembly.getProperties())
       int numModels = systemFilter.countNumModels()
       if (numModels > 1) {
         writeFilter.setModelNumbering(0)
@@ -278,6 +296,7 @@ class Cluster extends PotentialScript {
           }
         }
       } while (systemFilter.readNext())
+
       if (systemFilter instanceof PDBFilter) {
         saveFile.append("END\n")
       }
@@ -484,9 +503,8 @@ class Cluster extends PotentialScript {
     int nDim = 0
 
     // Read in the RMSD matrix.
-    try {
-      FileReader fr = new FileReader(file)
-      BufferedReader br = new BufferedReader(fr)
+    try (FileReader fr = new FileReader(file)
+        BufferedReader br = new BufferedReader(fr)) {
       String data = br.readLine()
       // Check for blank lines at the top of the file
       while (data != null && data.trim() == "") {
@@ -509,25 +527,26 @@ class Cluster extends PotentialScript {
           tokens = data.trim().split(" +")
         }
       }
-      br.close()
-      fr.close()
     } catch (IOException e) {
       logger.severe(e.toString())
     }
+
     if (distMatrix == null) {
       logger.severe("Input read attempt failed.")
     }
+
     if (logger.isLoggable(Level.FINEST)) {
-      logger.finest(String.format("Original Distance Matrix:\n"))
+      logger.finest(format(" Original Distance Matrix:\n"))
       String tempString = ""
       for (double[] i : distMatrix) {
         for (int j = 0; j < nDim; j++) {
-          tempString += String.format("%f\t", i[j])
+          tempString += format("%f\t", i[j])
         }
         tempString += "\n"
       }
       logger.finest(tempString)
     }
+
     return distMatrix
   }
 
