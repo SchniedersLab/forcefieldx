@@ -230,7 +230,7 @@ class Cluster extends PotentialScript {
 
     String saveName = filenames.get(1)
     File saveFile = new File(potentialFunctions.versionFile(saveName))
-    logger.info(format("\n Save representative cluster members to %s.", saveFile.toString()))
+    logger.info(format("\n Saving representative cluster members to %s.", saveFile.toString()))
 
     MolecularAssembly[] molecularAssemblies = potentialFunctions.openAll(saveName)
     activeAssembly = molecularAssemblies[0]
@@ -248,6 +248,7 @@ class Cluster extends PotentialScript {
       return
     }
 
+    logger.info("\n Conformations")
     int structNum = 0
     do {
       if (repStructs.contains(structNum)) {

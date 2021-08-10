@@ -216,11 +216,9 @@ public class Clustering {
     }
 
     if (verbose) {
-      logger.info(
-          format(" Mean RMSD within clusters: \t %6.4f A.", meanClusterRMSD / nClusters));
+      logger.info(format(" Mean RMSD within clusters: \t %6.4f A.", meanClusterRMSD / nClusters));
       double sumOfClusterVariances = sumOfClusterVariances(clusters);
-      logger.info(
-          format(" Sum of cluster variances:  \t %6.4f A.\n", sumOfClusterVariances));
+      logger.info(format(" Mean cluster variance:     \t %6.4f A.\n", sumOfClusterVariances / nClusters));
     }
 
   }
