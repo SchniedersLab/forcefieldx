@@ -40,24 +40,24 @@ package ffx.potential.groovy
 
 import ffx.crystal.Crystal
 import ffx.potential.ForceFieldEnergy
+import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
-import org.apache.commons.io.FilenameUtils
+import ffx.potential.utils.Clustering.Conformation
+import org.apache.commons.math3.ml.clustering.CentroidCluster
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static ffx.potential.parsers.DistanceMatrixFilter.readDistanceMatrix
-import static ffx.potential.utils.Clustering.kMeansClustering
-import static ffx.potential.utils.Clustering.hierarchicalClustering
+import static ffx.potential.utils.Clustering.*
 import static java.lang.String.format
 import static org.apache.commons.math3.util.FastMath.floorDiv
 
 /**
  * The Cluster script clusters structures utilizing RMSD.
- * TODO: Create a unit test for the Cluster script.
  *
  * @author Aaron J. Nessler
  * @author Mallory R. Tollefson
@@ -100,13 +100,12 @@ class Cluster extends PotentialScript {
   private long randomSeed
 
   /**
-   * --td or --treeDistance
-   * Distance value for dividing clusters from hierarchical tree.
-   * The Dill Group at Stony Brook University uses a value of 2.0.
+   * --td or --threshold
+   * RMSD value for dividing clusters from a hierarchical tree.
    */
-  @Option(names = ['--td', '--treeDistance'], paramLabel = "2.0", defaultValue = "2.0",
-      description = "The distance value where a hierarchical tree should be divided into clusters.")
-  private double treeDistance
+  @Option(names = ['--td', '--threshold'], paramLabel = "2.0", defaultValue = "2.0",
+      description = "The distance value where a hierarchical tree flattened into clusters.")
+  private double threshold
 
   /**
    * -w or --write Write out an archive of a representative structure from each cluster.
@@ -125,7 +124,7 @@ class Cluster extends PotentialScript {
   /**
    * Generated list of clusters.
    */
-  private final List<List<String>> clusterList = new ArrayList<>()
+  private List<CentroidCluster<Conformation>> clusterList
 
   /**
    * Cluster constructor.
@@ -146,7 +145,7 @@ class Cluster extends PotentialScript {
    * Return the Clusters.
    * @return Returns the generated clusters.
    */
-  List<List<String>> getClusterList() {
+  List<CentroidCluster<Conformation>> getClusterList() {
     return clusterList
   }
 
@@ -168,21 +167,19 @@ class Cluster extends PotentialScript {
 
     List<double[]> distMatrix = new ArrayList<double[]>()
 
-      String filename = filenames.get(0)
-      if (!readDistanceMatrix(filename, distMatrix)) {
-        logger.info(format(" Distance matrix %s could not be read in.", filename));
-        return this
-      }
-
-    boolean verbose = true;
+    String filename = filenames.get(0)
+    if (!readDistanceMatrix(filename, distMatrix)) {
+      logger.info(format(" Distance matrix %s could not be read in.", filename));
+      return this
+    }
 
     // Either use Multi-K-Means++ or Hierarchical agglomerative clustering.
     switch (algorithm) {
       case 1:
         // Hierarchical clustering.
         logger.info(" Performing Hierarchical Clustering")
-        logger.info(format("  Cluster separation distance: %6.4f A.\n", treeDistance))
-        hierarchicalClustering(distMatrix, treeDistance, verbose)
+        logger.info(format("  Cluster separation threshold: %6.4f A.\n", threshold))
+        clusterList = hierarchicalClustering(distMatrix, threshold)
         break
       default:
         // K-Means++ and Multi K-Means++.
@@ -203,12 +200,15 @@ class Cluster extends PotentialScript {
           logger.info(format("  Random seed:        %d", randomSeed))
         }
         logger.info(format("  Number of trials:   %d\n", trials))
+        clusterList = kMeansClustering(distMatrix, maxClusters, trials, randomSeed)
+    }
 
-        int[] repStructs = new int[maxClusters]
-        kMeansClustering(distMatrix, maxClusters, trials, repStructs, randomSeed, verbose)
-        if (write) {
-          writeStructures(repStructs)
-        }
+    boolean verbose = true
+    List<Integer> repStructs = new ArrayList<>()
+    analyzeClusters(clusterList, repStructs, verbose)
+
+    if (write) {
+      writeStructures(repStructs)
     }
 
     return this
@@ -219,63 +219,68 @@ class Cluster extends PotentialScript {
    * @param distMatrix Distances between structures (metric to determine clusters).
    * @param repStructs Array list for index of representative structures.
    */
-  private void writeStructures(int[] repStructs) {
-    String coordFileName = filenames.get(1)
-    potentialFunctions.openAll(coordFileName)
+  private void writeStructures(List<Integer> repStructs) {
+    if (filenames.size() < 2) {
+      logger.info(" Please supply the ARC or PDB file that corresponds to the distance matrix.")
+      return
+    }
+
+    // Turn off nonbonded terms.
+    System.setProperty("vdwterm", "false");
+
+    String saveName = filenames.get(1)
+    File saveFile = new File(potentialFunctions.versionFile(saveName))
+    logger.info(format("\n Save representative cluster members to %s.", saveFile.toString()))
+
+    MolecularAssembly[] molecularAssemblies = potentialFunctions.openAll(saveName)
+    activeAssembly = molecularAssemblies[0]
+
     SystemFilter systemFilter = potentialFunctions.getFilter()
-    activeAssembly = systemFilter.getActiveMolecularSystem()
-    String fileName = FilenameUtils.getName(coordFileName)
-    String ext = FilenameUtils.getExtension(fileName)
-    fileName = FilenameUtils.removeExtension(fileName)
-    File saveFile
     SystemFilter writeFilter
-    if (ext.toUpperCase().contains("XYZ")) {
-      saveFile = new File(fileName + ".xyz")
-      writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
-      potentialFunctions.saveAsXYZ(activeAssembly, saveFile)
-    } else if (ext.toUpperCase().contains("ARC")) {
-      saveFile = new File(fileName + ".arc")
-      saveFile = potentialFunctions.versionFile(saveFile)
-      writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
-          activeAssembly.getProperties())
-      logger.info(" Saving to file: " + saveFile.getAbsolutePath())
-      saveFile.createNewFile()
-    } else {
-      saveFile = new File(fileName + ".pdb")
-      saveFile = potentialFunctions.versionFile(saveFile)
+    if (systemFilter instanceof PDBFilter) {
       writeFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
           activeAssembly.getProperties())
-      int numModels = systemFilter.countNumModels()
-      if (numModels > 1) {
-        writeFilter.setModelNumbering(0)
-      }
-      writeFilter.writeFile(saveFile, true, false, false)
+    } else if (systemFilter instanceof XYZFilter) {
+      writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
+          activeAssembly.getProperties())
+    } else {
+      logger.info(" Unknown file type.")
+      return
     }
 
-    if (systemFilter instanceof XYZFilter || systemFilter instanceof PDBFilter) {
-      int structNum = 0
-      do {
-        if (repStructs.contains(structNum++)) {
-          Crystal crystal = activeAssembly.getCrystal()
-          ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
-          forceFieldEnergy.setCrystal(crystal)
-          if (systemFilter instanceof PDBFilter) {
-            saveFile.append("ENDMDL\n")
-            PDBFilter pdbFilter = (PDBFilter) systemFilter
-            pdbFilter.writeFile(saveFile, true, false, false)
-          } else if (systemFilter instanceof XYZFilter) {
-            writeFilter.writeFile(saveFile, true)
-          }
+    int structNum = 0
+    do {
+      if (repStructs.contains(structNum)) {
+        int clusterNum = repStructs.indexOf(structNum)
+        // Make sure the crystal is is updated.
+        Crystal crystal = activeAssembly.getCrystal()
+        ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
+        forceFieldEnergy.setCrystal(crystal)
+        if (crystal.aperiodic()) {
+          logger.info(format(" Conformation %d, Cluster %d)", structNum + 1, clusterNum + 1))
+        } else {
+          logger.info(format(" Conformation %d, Cluster %d (%s)", structNum + 1, clusterNum + 1,
+              crystal.getUnitCell().toShortString()))
         }
-      } while (systemFilter.readNext())
-
-      if (systemFilter instanceof PDBFilter) {
-        saveFile.append("END\n")
+        if (systemFilter instanceof PDBFilter) {
+          PDBFilter pdbFilter = (PDBFilter) writeFilter
+          pdbFilter.writeFile(saveFile, true, false, false)
+        } else if (systemFilter instanceof XYZFilter) {
+          XYZFilter xyzFilter = (XYZFilter) writeFilter
+          String[] message = new String[1]
+          message[0] = format(" Conformation %d, Cluster %d ", structNum + 1, clusterNum + 1)
+          xyzFilter.writeFile(saveFile, true, message)
+        }
       }
+      structNum++
+    } while (systemFilter.readNext(false, false))
+
+    if (systemFilter instanceof PDBFilter) {
+      saveFile.append("END\n")
     }
+
+    systemFilter.closeReader()
   }
-
-
 }
 
 

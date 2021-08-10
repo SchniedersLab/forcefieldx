@@ -42,8 +42,8 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import com.apporiented.algorithm.clustering.Cluster;
 import com.apporiented.algorithm.clustering.ClusteringAlgorithm;
-import com.apporiented.algorithm.clustering.CompleteLinkageStrategy;
 import com.apporiented.algorithm.clustering.DefaultClusteringAlgorithm;
+import com.apporiented.algorithm.clustering.SingleLinkageStrategy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -76,13 +76,11 @@ public class Clustering {
    * @param distMatrix Coordinate input serves as the data points.
    * @param maxClusters Number of clusters to use (k).
    * @param numTrials Number of trials for the Multi K-Means++ algorithm.
-   * @param repStructs Identity of representative structures to write to archive.
    * @param seed The seed to use for clustering (-1 uses the current system time).
-   * @param verbose If true, log cluster results.
    * @return The clusters.
    */
   public static List<CentroidCluster<Conformation>> kMeansClustering(List<double[]> distMatrix,
-      int maxClusters, int numTrials, int[] repStructs, long seed, boolean verbose) {
+      int maxClusters, int numTrials, long seed) {
     // Square distance matrix size (dim x dim).
     int dim = distMatrix.size();
     List<Conformation> conformationList = new ArrayList<>();
@@ -112,12 +110,7 @@ public class Clustering {
         new MultiKMeansPlusPlusClusterer<>(kMeansPlusPlusClusterer, numTrials);
 
     // Perform the clustering.
-    List<CentroidCluster<Conformation>> clusters = multiKMeansPlusPlusClusterer.cluster(
-        conformationList);
-
-    analyzeClusters(clusters, repStructs, verbose);
-
-    return clusters;
+    return multiKMeansPlusPlusClusterer.cluster(conformationList);
   }
 
   /**
@@ -125,80 +118,30 @@ public class Clustering {
    * a dendrogram is printed of the clustered results. A PDB file for the centroid of each cluster is
    * saved.
    *
-   * @param distMatrix An ArrayList<double[]> that holds the distance matrix.
-   * @param treeDistance the distance used to separate clusters.
-   * @param verbose If true, log cluster results.
+   * @param distanceMatrix An ArrayList<double[]> that holds the distance matrix.
+   * @param threshold the distance used to separate clusters.
    * @return Return a list of CentroidClusters.
    */
   public static List<CentroidCluster<Conformation>> hierarchicalClustering(
-      List<double[]> distMatrix, double treeDistance, boolean verbose) {
+      List<double[]> distanceMatrix, double threshold) {
 
-    // Convert the distance matrix to a double[][] for the clustering algorithm.
-    int distMatrixLength = distMatrix.size();
+    // Convert the distanceMatrix to a double[][] for the clustering algorithm.
+    int dim = distanceMatrix.size();
 
-    double[][] distMatrixArray = new double[distMatrixLength][distMatrixLength];
-    String[] names = new String[distMatrixLength];
-    for (int i = 0; i < distMatrixLength; i++) {
-      distMatrixArray[i] = distMatrix.get(i);
-      // Set names of the clustered elements equal to the model number in the arc/pdb
-      // by creating string of sequential numbers.
+    double[][] distMatrixArray = new double[dim][];
+    String[] names = new String[dim];
+    for (int i = 0; i < dim; i++) {
+      distMatrixArray[i] = distanceMatrix.get(i);
       names[i] = Integer.toString(i);
     }
 
     // Cluster the data.
-    // Note that the "cluster" object is actually the root node for the tree.
     ClusteringAlgorithm clusteringAlgorithm = new DefaultClusteringAlgorithm();
-    Cluster rootNode = clusteringAlgorithm.performClustering(distMatrixArray,
-        names, new CompleteLinkageStrategy());
+    List<Cluster> clusterList = clusteringAlgorithm.performFlatClustering(distMatrixArray, names,
+        new SingleLinkageStrategy(), threshold);
 
-    // Separate clusters based on the user-supplied treeDistance and fill the clusterList with lists holding
-    // the model numbers that belong to a particular cluster.
-    List<List<String>> clusterList = new ArrayList<>();
-    parseClusters(clusterList, rootNode, false, treeDistance);
-
-    List<CentroidCluster<Conformation>> clusters = stringClustersToCentroidClusters(distMatrixArray,
-        clusterList);
-
-    int[] repStructs = new int[clusters.size()];
-
-    analyzeClusters(clusters, repStructs, verbose);
-
-    return clusters;
-  }
-
-  /**
-   * This method adds node names to a cluster list to indicate which nodes belong to a particular
-   * cluster. Clusters from the hierarchical tree are determined based on the treeDistance cutoff.
-   *
-   * @param clusterList The list of clusters to populate.
-   * @param rootNode The cluster object being iterated over.
-   * @param isCluster A boolean indicating that a cluster has been identified based on the
-   *     treeDistance cutoff. The isCluster is set to true once for each cluster.
-   * @param treeDistance The tree distance cut-off between clusters.
-   */
-  private static void parseClusters(List<List<String>> clusterList, Cluster rootNode,
-      boolean isCluster, double treeDistance) {
-
-    double distance = rootNode.getDistanceValue();
-    List<Cluster> children = rootNode.getChildren();
-
-    if (!isCluster && (distance <= treeDistance)) {
-      isCluster = true;
-      List<String> clusterSubList = new ArrayList<>();
-      clusterList.add(clusterSubList);
-      parseClusters(clusterList, rootNode, isCluster, treeDistance);
-    } else if (!children.isEmpty()) {
-      for (Cluster child : children) {
-        parseClusters(clusterList, child, isCluster, treeDistance);
-      }
-    } else {
-      int clusterListSize = clusterList.size();
-      if (clusterListSize != 0) {
-        clusterList.get(clusterListSize - 1).add(rootNode.getName());
-      } else {
-        logger.severe(" SEVERE: A node cannot be added to the tree.");
-      }
-    }
+    // Convert the cluster format to CentroidClusters
+    return clustersToCentroidClusters(distMatrixArray, clusterList);
   }
 
   /**
@@ -208,7 +151,7 @@ public class Clustering {
    * @param repStructs Store a representative conformation for each cluster.
    * @param verbose If true, use verbose printing.
    */
-  public static void analyzeClusters(List<CentroidCluster<Conformation>> clusters, int[] repStructs,
+  public static void analyzeClusters(List<CentroidCluster<Conformation>> clusters, List<Integer> repStructs,
       boolean verbose) {
     // Number of clusters.
     int nClusters = clusters.size();
@@ -254,14 +197,18 @@ public class Clustering {
       }
 
       // Calculate the RMSD within the cluster.
-      double clusterRMSD = clusterRMSD(conformations);
-      meanClusterRMSD += clusterRMSD;
-      sb.append(format("\n  RMSD within the cluster:\t %6.4f A.\n", clusterRMSD));
+      if (nConformers > 1) {
+        double clusterRMSD = clusterRMSD(conformations);
+        meanClusterRMSD += clusterRMSD;
+        sb.append(format("\n  RMSD within the cluster:\t %6.4f A.\n", clusterRMSD));
 
-      // minID contains the index for the representative conformer.
-      // TODO: Use energy/density as an alternative than centroid distance.
-      repStructs[i] = minID;
-      sb.append(format("  Minimum RMSD conformer %d:\t %6.4f A.\n", minID + 1, minRMS));
+        // minID contains the index for the representative conformer.
+        sb.append(format("  Minimum RMSD conformer %d:\t %6.4f A.\n", minID + 1, minRMS));
+      } else {
+        sb.append("\n");
+      }
+
+      repStructs.add(minID);
 
       if (verbose) {
         logger.info(sb.toString());
@@ -325,25 +272,29 @@ public class Clustering {
    * Convert clusters defined by a List of Strings to Apache Math style CentroidClusters.
    *
    * @param distMatrixArray Distance matrix.
-   * @param stringClusters Input Lists of Strings.
+   * @param clusterList Input List of Clusters.
    * @return Return a List of CentroidClusters.
    */
-  private static List<CentroidCluster<Conformation>> stringClustersToCentroidClusters(
-      double[][] distMatrixArray, List<List<String>> stringClusters) {
+  private static List<CentroidCluster<Conformation>> clustersToCentroidClusters(
+      double[][] distMatrixArray, List<Cluster> clusterList) {
 
     List<CentroidCluster<Conformation>> centroidClusters = new ArrayList<>();
     int dim = distMatrixArray.length;
 
     // Loop over clusters defined by lists of Strings.
-    for (List<String> node : stringClusters) {
+    for (Cluster cluster : clusterList) {
+
+      List<String> names = new ArrayList<>();
+      collectNames(cluster, names);
+
       // Collect conformations for this cluster.
       List<Conformation> conformations = new ArrayList<>();
-      for (String index : node) {
-        int i1 = Integer.parseInt(index);
-        conformations.add(new Conformation(distMatrixArray[i1], i1));
+      for (String name : names) {
+        int index = Integer.parseInt(name);
+        conformations.add(new Conformation(distMatrixArray[index], index));
       }
 
-      // Compute their centroid.
+      // Compute its centroid.
       Conformation centroid = centroidOf(conformations, dim);
 
       // Create a new CentroidCluster and add the conformations.
@@ -355,6 +306,23 @@ public class Clustering {
     }
     return centroidClusters;
   }
+
+  /**
+   * Collect the names of each leaf in Cluster.
+   *
+   * @param cluster The cluster to operate on.
+   * @param names A List of leaf names.
+   */
+  private static void collectNames(Cluster cluster, List<String> names) {
+    if (cluster.isLeaf()) {
+      names.add(cluster.getName());
+    } else {
+      for (Cluster c : cluster.getChildren()) {
+        collectNames(c, names);
+      }
+    }
+  }
+
 
   /**
    * Computes the centroid for a set of points.
