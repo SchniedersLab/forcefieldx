@@ -195,8 +195,9 @@ public class ManyBodyOptions {
     }
     TitrationUtils titrationUtils;
     if (titrate) {
-      logger.info(" Turing on ASP, GLU, LYS and HIS titration rotamers.");
+      logger.info(" Turning on ASP, GLU, LYS and HIS titration rotamers.");
       titrationUtils = new TitrationUtils(activeAssembly.getForceField());
+      titrationUtils.setRotamerPhBias(298.15, 7.4);
       List<Residue> residues = activeAssembly.getResidueList();
       for (Residue residue : residues) {
         residue.setTitrationUtils(titrationUtils);

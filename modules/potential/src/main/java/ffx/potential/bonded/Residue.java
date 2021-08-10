@@ -374,6 +374,10 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     this.titrationUtils = titrationUtils;
   }
 
+  public TitrationUtils getTitrationUtils(){
+    return titrationUtils;
+  }
+
   /**
    * getAminoAcid3.
    *

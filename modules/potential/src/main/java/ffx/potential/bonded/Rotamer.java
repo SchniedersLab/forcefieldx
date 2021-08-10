@@ -330,4 +330,8 @@ public class Rotamer {
       return "";
     }
   }
+
+  public double getRotamerPhBias(){
+    return titrationUtils.getRotamerPhBias(aminoAcid3);
+  }
 }
