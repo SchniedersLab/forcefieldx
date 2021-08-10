@@ -38,10 +38,6 @@
 
 package ffx.potential.groovy
 
-import com.apporiented.algorithm.clustering.ClusteringAlgorithm
-import com.apporiented.algorithm.clustering.CompleteLinkageStrategy
-import com.apporiented.algorithm.clustering.DefaultClusteringAlgorithm
-import com.apporiented.algorithm.clustering.visualization.DendrogramPanel
 import ffx.crystal.Crystal
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.cli.PotentialScript
@@ -53,12 +49,9 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import javax.swing.*
-import java.awt.*
-import java.util.List
-import java.util.logging.Level
-
-import static ffx.potential.utils.Cluster.kMeansCluster
+import static ffx.potential.parsers.DistanceMatrixFilter.readDistanceMatrix
+import static ffx.potential.utils.Clustering.kMeansClustering
+import static ffx.potential.utils.Clustering.hierarchicalClustering
 import static java.lang.String.format
 import static org.apache.commons.math3.util.FastMath.floorDiv
 
@@ -100,27 +93,6 @@ class Cluster extends PotentialScript {
   private int maxClusters
 
   /**
-   * -r or --readInDistMat Read in an NxN distance matrix.
-   */
-  @Option(names = ['-r', '--readInDistMat'], paramLabel = "false", defaultValue = "false",
-      description = "Read in an NxN distance matrix.")
-  private boolean readIn
-
-  /**
-   * -s or --start Atom number where RMSD calculation of structure will begin.
-   */
-  @Option(names = ['-s', '--start'], paramLabel = "1", defaultValue = "1",
-      description = 'Starting atom to include in the RMSD calculation.')
-  private String start
-
-  /**
-   * -f or --final Atom number where RMSD calculation of structure will end.
-   */
-  @Option(names = ['-f', '--final'], paramLabel = "nAtoms",
-      description = 'Final atom to include in the RMSD calculation.')
-  private String finish = Integer.MAX_VALUE.toString()
-
-  /**
    * --rs or --randomSeed Set the random seed for deterministic clustering.
    */
   @Option(names = ['--rs', '--randomSeed'], paramLabel = "-1", defaultValue = "-1",
@@ -147,7 +119,7 @@ class Cluster extends PotentialScript {
    * The final argument(s) should be one or two filenames.
    */
   @Parameters(arity = "1..2", paramLabel = "files",
-      description = 'The RMSD distance matrix (and an arc of the structures if using write (-w) flag.')
+      description = 'The RMSD distance matrix and optionally an archive of structures (if using --write flag).')
   private List<String> filenames = null
 
   /**
@@ -194,48 +166,49 @@ class Cluster extends PotentialScript {
       return this
     }
 
-    ArrayList<double[]> distMatrix = new ArrayList<double[]>()
+    List<double[]> distMatrix = new ArrayList<double[]>()
 
-    // Either read in the distance matrix or calculate the distance matrix on the fly.
-    if (readIn) {
-      distMatrix = readInDistanceMatrix(distMatrix)
-    } else {
-      File file = null
-      if (filenames != null && filenames.size() > 0) {
-        activeAssembly = potentialFunctions.open(filenames.get(0))
-        file = new File(filenames.get(0))
-      } else if (activeAssembly == null) {
-        logger.info(helpString())
-        return null
+      String filename = filenames.get(0)
+      if (!readDistanceMatrix(filename, distMatrix)) {
+        logger.info(format(" Distance matrix %s could not be read in.", filename));
+        return this
       }
 
-      distMatrix = calcDistanceMatrix(distMatrix, file)
-    }
+    boolean verbose = true;
 
     // Either use Multi-K-Means++ or Hierarchical agglomerative clustering.
-    if (algorithm == 0) {
-      int dim = distMatrix.size()
-      // Ensure cluster are within bounds
-      if (maxClusters <= 0 || maxClusters >= dim) {
-        int newSize = floorDiv(dim, 2)
-        logger.warning(format(
-            " Cluster of size %3d is out of bounds, using max cluster size of %3d.", maxClusters,
-            newSize))
-        maxClusters = newSize
-      }
-      // Array representing indices of structures that represent their cluster.
-      int[] repStructs = new int[maxClusters]
-      if (randomSeed == -1) {
-        randomSeed = System.nanoTime()
-      }
-      kMeansCluster(distMatrix, maxClusters, trials, repStructs, randomSeed, true)
-      if (write) {
-        writeStructures(repStructs)
-      }
-    } else if (algorithm == 1) {
-      hierarchicalAgglomerativeCluster(distMatrix)
-    } else {
-      logger.severe("Clustering algorithm has not been set.")
+    switch (algorithm) {
+      case 1:
+        // Hierarchical clustering.
+        logger.info(" Performing Hierarchical Clustering")
+        logger.info(format("  Cluster separation distance: %6.4f A.\n", treeDistance))
+        hierarchicalClustering(distMatrix, treeDistance, verbose)
+        break
+      default:
+        // K-Means++ and Multi K-Means++.
+        logger.info(" Performing K-Means++ Clustering")
+
+        // Ensure cluster are within bounds
+        int dim = distMatrix.size()
+        if (maxClusters <= 0 || maxClusters >= dim) {
+          int newSize = floorDiv(dim, 2)
+          maxClusters = newSize
+        }
+        logger.info(format("  Number of clusters: %d", maxClusters))
+
+        // Array representing indices of structures that represent their cluster.
+        if (randomSeed == -1) {
+          randomSeed = System.nanoTime()
+        } else {
+          logger.info(format("  Random seed:        %d", randomSeed))
+        }
+        logger.info(format("  Number of trials:   %d\n", trials))
+
+        int[] repStructs = new int[maxClusters]
+        kMeansClustering(distMatrix, maxClusters, trials, repStructs, randomSeed, verbose)
+        if (write) {
+          writeStructures(repStructs)
+        }
     }
 
     return this
@@ -258,15 +231,14 @@ class Cluster extends PotentialScript {
     SystemFilter writeFilter
     if (ext.toUpperCase().contains("XYZ")) {
       saveFile = new File(fileName + ".xyz")
-      writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
-          activeAssembly.getProperties())
+      writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
       potentialFunctions.saveAsXYZ(activeAssembly, saveFile)
     } else if (ext.toUpperCase().contains("ARC")) {
       saveFile = new File(fileName + ".arc")
       saveFile = potentialFunctions.versionFile(saveFile)
       writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
           activeAssembly.getProperties())
-      logger.info("SaveFile: " + saveFile.getAbsolutePath())
+      logger.info(" Saving to file: " + saveFile.getAbsolutePath())
       saveFile.createNewFile()
     } else {
       saveFile = new File(fileName + ".pdb")
@@ -303,280 +275,7 @@ class Cluster extends PotentialScript {
     }
   }
 
-  /**
-   * This method performs hierarchical clustering on a distance matrix. If the system isn't headless, a dendrogram
-   * is printed of the clustered results. A PDB file for the centroid of each cluster is saved.
-   *
-   * @param distMatrix An ArrayList<double[]> that holds the distance matrix.
-   */
-  private void hierarchicalAgglomerativeCluster(ArrayList<double[]> distMatrix) {
-    //Convert the distance matrix to a double[][] for the clustering algorithm.
-    int distMatrixLength = distMatrix.size()
-    double[][] distMatrixArray = new double[distMatrixLength][distMatrixLength]
-    String[] names = new String[distMatrixLength]
-    for (int i = 0; i < distMatrixLength; i++) {
-      distMatrixArray[i] = distMatrix.get(i)
-      //Set names of the clustered elements equal to the model number in the arc/pdb
-      // by creating string of sequential numbers.
-      names[i] = i.toString()
-    }
 
-    //Cluster the data. Note that the "cluster" object is actually the root node for the tree.
-    ClusteringAlgorithm clusteringAlgorithm = new DefaultClusteringAlgorithm()
-    com.apporiented.algorithm.clustering.Cluster rootNode =
-        clusteringAlgorithm.performClustering(distMatrixArray,
-            names, new CompleteLinkageStrategy())
-
-    //Separate clusters based on the user-supplied treeDistance and fill the clusterList with lists holding
-    //the model numbers that belong to a particular cluster.
-    parseClusters(rootNode)
-
-    //If the system is headless, skip all graphical components. Otherwise print the dendrogram.
-    printDendrogram(rootNode)
-
-    //Find the index for the centroid of each cluster in the clusterList.
-    ArrayList<Integer> indicesOfCentroids = findCentroids(distMatrixArray)
-    HashMap<Integer, Integer> pdbsToWrite = new HashMap<Integer, Integer>(indicesOfCentroids.size())
-
-    //Get and store the index of each centroid in context of ALL models, not just the index relative to the cluster
-    //the centroid belongs to.
-    int counter = 0
-    for (Integer centroidIndex : indicesOfCentroids) {
-      ArrayList<String> cluster = clusterList.get(counter)
-      pdbsToWrite.put(Integer.valueOf(cluster.get(centroidIndex)), counter)
-      counter++
-    }
-
-    // Print out size of each cluster.
-    logger.info(" ========== Cluster Sizes ========== ")
-    counter = 0
-    for (List cluster : clusterList) {
-      logger.info(" Cluster " + counter + " Size: " + cluster.size())
-      counter++
-    }
-
-    //Write out PDB files for each centroid structure of each cluster.
-    final Map<Integer, Integer> sortedIds = pdbsToWrite.toSorted()
-    SystemFilter systemFilter = potentialFunctions.getFilter()
-    if (!sortedIds.isEmpty() && sortedIds.containsKey(0)) {
-      String fileName = "centroid" + sortedIds.get(0).toString()
-      potentialFunctions.saveAsPDB(activeAssembly, new File(fileName + ".pdb"))
-      sortedIds.remove(0)
-    }
-    while ((!sortedIds.isEmpty()) && systemFilter.readNext()) {
-      int modelNumber = systemFilter.getSnapshot() - 1
-      if (sortedIds.containsKey(modelNumber)) {
-        String fileName = "centroid" + sortedIds.get(modelNumber).toString()
-        potentialFunctions.saveAsPDB(activeAssembly, new File(fileName + ".pdb"))
-        sortedIds.remove(modelNumber)
-      }
-    }
-
-    if (!sortedIds.isEmpty()) {
-      logger.info(" Some models from clustering not found while parsing: "
-          + Arrays.asList(sortedIds))
-    }
-  }
-
-  /**
-   * This method finds the centroid for each cluster in the clusterList. The index for the location of
-   * the centroid of each cluster is returned.
-   *
-   * @param distMatrixArray The all vs. all distance matrix of RMSD values for each model/node in the hierarchical tree.
-   * @return An ArrayList<Integer> containing the index for the centroid of each cluster in the clusterList.
-   */
-  private ArrayList<Integer> findCentroids(double[][] distMatrixArray) {
-    // Find the centroid of each cluster.
-    ArrayList<Integer> indicesOfCentroids = new ArrayList<Integer>()
-    // Loop through every cluster.
-    for (ArrayList<String> clusterNodes : clusterList) {
-      ArrayList<Double> rmsds = new ArrayList<>()
-      // Loop through every node in a cluster.
-      for (String node1 : clusterNodes) {
-        double rmsd = 0
-        int counter = 0
-        // Loop through every node in a cluster again for comparison.
-        for (String node2 : clusterNodes) {
-          if (node1 != node2) {
-            // Find the rmsd of the two nodes from the all vs. all distance matrix of rmsds
-            // and add it to the total.
-            rmsd += distMatrixArray[node1.toInteger()][node2.toInteger()]
-            counter++
-          }
-        }
-        //Calculate the average rmsd for a node to all other nodes in a cluster.
-        rmsd = rmsd / counter
-        rmsds.add(rmsd.toDouble())
-      }
-      //Find minimum average rmsd a node has to all other nodes in a cluster. This node is the centroid of the cluster.
-      Double minimum = Collections.min(rmsds)
-      indicesOfCentroids.add(rmsds.indexOf(minimum).toInteger())
-    }
-    return indicesOfCentroids
-  }
-
-  /**
-   * This method prints a dendrogram to the screen if the system is not headless.
-   *
-   * @param cluster The root cluster of the hierarchical tree.
-   */
-  private static void printDendrogram(com.apporiented.algorithm.clustering.Cluster cluster) {
-    String headless = System.getProperty("java.awt.headless")
-    if (!headless) {
-      JFrame frame = new JFrame()
-      frame.setSize(400, 300)
-      frame.setLocation(400, 300)
-      frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
-      JPanel content = new JPanel()
-      DendrogramPanel dp = new DendrogramPanel()
-      frame.setContentPane(content)
-      content.setBackground(Color.red)
-      content.setLayout(new BorderLayout())
-      content.add(dp, BorderLayout.CENTER)
-      dp.setBackground(Color.WHITE)
-      dp.setLineColor(Color.BLACK)
-      dp.setScaleValueDecimals(0)
-      dp.setScaleValueInterval(1)
-      dp.setShowDistances(false)
-      dp.setModel(cluster)
-      frame.setVisible(true)
-    }
-  }
-
-  /**
-   * This method parses clusters in the hierarchical tree and can print the model that belongs to each cluster.
-   *
-   * @param root The root node of the hierarchical tree.
-   */
-  private void parseClusters(final com.apporiented.algorithm.clustering.Cluster root) {
-    populateChildren(root, false)
-    // Print out 0 indexed model numbers that belong to each cluster.
-    /*
-        for (final List<String> curCluster : clusterList) {
-        System.out.println("==========Iterating over next cluster==========")
-        for (final String element : curCluster) {
-            System.out.println(element)
-        }
-    }
-    */
-  }
-
-  /**
-   * This method adds node names to a cluster list to indicate which nodes belong to a particular cluster. Clusters
-   * from the hierarchical tree are determined based on the treeDistance cutoff.
-   *
-   * @param rootNode The cluster object being iterated over.
-   * @param curCluster A boolean indicating that a cluster has been identified based on the treeDistance cutoff.
-   * The curCluster is set to true once for each cluster.
-   */
-  private void populateChildren(final com.apporiented.algorithm.clustering.Cluster rootNode,
-      boolean curCluster) {
-    final double distance = rootNode.getDistanceValue()
-    final List<com.apporiented.algorithm.clustering.Cluster> children = rootNode.getChildren()
-    if (!curCluster && (distance <= treeDistance)) {
-      curCluster = true
-      List<String> clusterSubList = new ArrayList<>()
-      clusterList.add(clusterSubList)
-      populateChildren(rootNode, curCluster)
-    } else if (!children.empty) {
-      for (final com.apporiented.algorithm.clustering.Cluster child : children) {
-        populateChildren(child, curCluster)
-      }
-    } else {
-      final int clusterListSize = clusterList.size()
-      if (clusterListSize != 0) {
-        clusterList.get(clusterListSize - 1).add(rootNode.getName())
-      } else {
-        logger.severe(" SEVERE: A node cannot be added to the tree.")
-      }
-    }
-  }
-
-  /**
-   * This method reads in the distance matrix from an input file.
-   *
-   * @param distMatrix An empty ArrayList<double[]> to hold the distance matrix values.
-   * @return ArrayList < double [ ] >   that holds all values for the read in distance matrix.
-   */
-  private ArrayList<double[]> readInDistanceMatrix(ArrayList<double[]> distMatrix) {
-    File file = new File(filenames.get(0))
-    int nDim = 0
-
-    // Read in the RMSD matrix.
-    try (FileReader fr = new FileReader(file)
-        BufferedReader br = new BufferedReader(fr)) {
-      String data = br.readLine()
-      // Check for blank lines at the top of the file
-      while (data != null && data.trim() == "") {
-        data = br.readLine()
-      }
-      if (data == null) {
-        logger.severe("No data in RMSD file.")
-      }
-      String[] tokens = data.trim().split(" +")
-      // Expect a n x n matrix of distance values.
-      nDim = tokens.size()
-      for (int i = 0; i < nDim; i++) {
-        double[] tokens2 = new double[nDim]
-        for (int j = 0; j < nDim; j++) {
-          tokens2[j] = tokens[j].toDouble()
-        }
-        distMatrix.add(tokens2)
-        data = br.readLine()
-        if (data != null) {
-          tokens = data.trim().split(" +")
-        }
-      }
-    } catch (IOException e) {
-      logger.severe(e.toString())
-    }
-
-    if (distMatrix == null) {
-      logger.severe("Input read attempt failed.")
-    }
-
-    if (logger.isLoggable(Level.FINEST)) {
-      logger.finest(format(" Original Distance Matrix:\n"))
-      String tempString = ""
-      for (double[] i : distMatrix) {
-        for (int j = 0; j < nDim; j++) {
-          tempString += format("%f\t", i[j])
-        }
-        tempString += "\n"
-      }
-      logger.finest(tempString)
-    }
-
-    return distMatrix
-  }
-
-  /**
-   * This method calculates the distance matrix of all molecular assemblies in an arc/multiple model file.
-   *
-   * @param distMatrix An empty ArrayList<double[]> to hold the distance matrix values.
-   * @return ArrayList < double [ ] >     that holds all values for the read in distance matrix.
-   */
-  private ArrayList<double[]> calcDistanceMatrix(ArrayList<double[]> distMatrix, File file) {
-    //Prepare the superpose object and binding.
-    Binding binding = new Binding()
-    Superpose superpose = new Superpose()
-    superpose.setBinding(binding)
-
-    // Set-up the input arguments for the Superpose script.
-    String[] args = ["--aS", "2", "-A", "-s", start, "-f", finish, "--store", "-v", file]
-    binding.setVariable("args", args)
-
-    // Evaluate the superpose script to get the distance matrix of RMSD values.
-    superpose.run()
-    double[][] tempDistMatrix = superpose.getDistanceMatrix()
-    int matrixLength = tempDistMatrix.length
-
-    for (int i = 0; i < matrixLength; i++) {
-      distMatrix.add(tempDistMatrix[i])
-    }
-
-    return distMatrix
-  }
 }
 
 
