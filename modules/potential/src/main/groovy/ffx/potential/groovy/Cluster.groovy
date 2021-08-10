@@ -111,14 +111,14 @@ class Cluster extends PotentialScript {
    * -w or --write Write out an archive of a representative structure from each cluster.
    */
   @Option(names = ['-w', '--write'], paramLabel = "false", defaultValue = "false",
-      description = 'Write an archive containing a representative from each cluster (algorithm=0).')
+      description = 'Write an archive containing a representative from each cluster.')
   private boolean write
 
   /**
    * The final argument(s) should be one or two filenames.
    */
   @Parameters(arity = "1..2", paramLabel = "files",
-      description = 'The RMSD distance matrix and optionally an archive of structures (if using --write flag).')
+      description = 'The RMSD distance matrix and optionally the corresponding structure archive (required for --write).')
   private List<String> filenames = null
 
   /**
@@ -169,7 +169,7 @@ class Cluster extends PotentialScript {
 
     String filename = filenames.get(0)
     if (!readDistanceMatrix(filename, distMatrix)) {
-      logger.info(format(" Distance matrix %s could not be read in.", filename));
+      logger.info(format(" The distance matrix %s could not be read in.", filename))
       return this
     }
 
@@ -204,11 +204,11 @@ class Cluster extends PotentialScript {
     }
 
     boolean verbose = true
-    List<Integer> repStructs = new ArrayList<>()
-    analyzeClusters(clusterList, repStructs, verbose)
+    List<Integer> representativeConformer = new ArrayList<>()
+    analyzeClusters(clusterList, representativeConformer, verbose)
 
     if (write) {
-      writeStructures(repStructs)
+      writeStructures(representativeConformer)
     }
 
     return this
@@ -221,7 +221,7 @@ class Cluster extends PotentialScript {
    */
   private void writeStructures(List<Integer> repStructs) {
     if (filenames.size() < 2) {
-      logger.info(" Please supply the ARC or PDB file that corresponds to the distance matrix.")
+      logger.info(" Please supply an ARC or PDB file corresponding to the distance matrix.")
       return
     }
 
