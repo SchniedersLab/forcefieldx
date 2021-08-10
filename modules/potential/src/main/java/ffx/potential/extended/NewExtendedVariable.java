@@ -56,7 +56,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * objects themselves. b. PME and vdW scaling and derivatives are handled inside these classes'
  * inner loops. Softcoring follows the same form used by OST lambda.
  *
- * @author Stephen LuCore
+ * @author Andrew Thiel
  * @since 1.0
  */
 public abstract class NewExtendedVariable {

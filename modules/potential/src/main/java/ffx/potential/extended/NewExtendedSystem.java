@@ -43,7 +43,6 @@ import ffx.potential.PotentialComponent;
 import ffx.potential.bonded.*;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.VanDerWaals;
-import ffx.potential.parameters.ForceField;
 import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
@@ -53,8 +52,10 @@ import java.util.logging.Logger;
 
 import static ffx.potential.extended.ExtUtils.prop;
 import static ffx.potential.extended.TitrationUtils.isTitratableHydrogen;
+import static ffx.utilities.Constants.kB;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.sin;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * ExtendedSystem class.
@@ -74,6 +75,8 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
     public static final double THETA_MASS = 1.0; //Atomic Mass Units
 
     public static final double THETA_FRICTION = 5.0; // psec^-1
+
+    public static final double DISCR_BIAS = 1.0; // kcal/mol
 
     /**
      * Constant <code>esvSystemActive=false</code>
@@ -119,53 +122,60 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
      * PME instance.
      */
     private final ParticleMeshEwaldQI particleMeshEwaldQI;
+
     /**
-     * Count of ESV variables. TODO: Repalce wtih esvList.size()?
+     * Array of booleans that is initialized to match the number of atoms in the molecular assembly
+     * noting whether the atom is extended.
      */
-    private int indexer = 0;
-    //TODO: Create data structure to map titration and tautomer ESVs back to an atom.
-    /**
-     * Extended Variable list for tirating and tautomerizing atoms.
-     * 1st dimension refers to Atom that has the ESV
-     * 2nd dimension refers to ESV type: [0] = titrationESV, [1]=tautomerESV
-     */
-    private final NewExtendedVariable[][] esvsForAtom;
+    private final boolean[] isExtended;
     /**
      * System PH.
      */
-    private double constantSystemPh = 7.0;
+    private double constantSystemPh = 7.4;
     /**
      * Number of ESV.
      */
     private int numESVs;
-    /**
-     * List of ESV instances.
-     */
-    private List<NewExtendedVariable> esvList;
+
     /**
      * Target system temperature.
      */
     private double currentTemperature = Constants.ROOM_TEMPERATURE;
+
+    private List<Residue> titratingResidueList;
+    private List<Residue> tautomerizingResidueList;
+    private List<Residue> extendedResidueList;
+
+    private double initialTitrationLambda = 1.0;
+    private double initialTautomerLambda = 1.0;
+    private double[] lambdaArray;
+
     /**
      * Current value of theta for each ESV.
      */
-    public double[] theta_position;
+    public double[] thetaPosition;
     /**
      * Current theta velocity for each ESV.
      */
-    public double[] theta_velocity;
+    public double[] thetaVelocity;
     /**
      * Current theta acceleration for each ESV.
      */
-    public double[] theta_accel;
+    public double[] thetaAccel;
     /**
-     * Mass of each theta particle.
+     * Mass of each theta particle. Different theta mass for each particle are not supported.
      */
-    public double[] theta_mass;
+    public double[] thetaMassArray;
+    /**
+     * The system defined theta mass of the fictional particle. Used to fill theta mass array.
+     */
+    private double thetaMass;
     /**
      * Friction for the ESV system
      */
     public final double thetaFriction;
+
+    private final double discrBiasMag;
 
     //TODO: Loop over protonation ESVs to sum the discr, acidostat, and Fmod energy terms.
     //TODO: Collect partial derivs for each term. Keep all in one place.
@@ -196,86 +206,218 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
 
         CompositeConfiguration properties = molecularAssembly.getProperties();
         thetaFriction = properties.getDouble("esv.friction", NewExtendedSystem.THETA_FRICTION);
-
+        thetaMass = properties.getDouble("esv.mass", NewExtendedSystem.THETA_MASS);
+        discrBiasMag = properties.getDouble("discretize.bias", DISCR_BIAS);
         vanDerWaals = forceFieldEnergy.getVdwNode();
         particleMeshEwaldQI = forceFieldEnergy.getPmeQiNode();
 
-        esvList = new ArrayList<>();
+        titratingResidueList = new ArrayList<>();
+        tautomerizingResidueList = new ArrayList<>();
+        extendedResidueList = new ArrayList<>();
         // Initialize atom arrays with the existing assembly.
         Atom[] atoms = mola.getAtomArray();
-        esvsForAtom = new NewExtendedVariable[atoms.length][2];
+        isExtended = new boolean[atoms.length];
     }
 
     /**
      * Prefer ExtendedSystem::populate to manual ESV creation.
      *
-     * @param esv a {@link NewExtendedVariable} object.
+     * @param residue a {@link Residue} object.
      */
-    public void addVariable(NewExtendedVariable esv) {
+    public void addVariable(Residue residue) {
         esvSystemActive = true;
-        if (esvList == null) {
-            esvList = new ArrayList<>();
+        if(isTitrable(residue)){
+            titratingResidueList.add(residue);
+            if(isTautomer(residue)) {
+                tautomerizingResidueList.add(residue);
+            }
+            extendAtoms(residue);
+            updateListeners();
         }
-        if (esvList.contains(esv)) {
-            logger.warning(format("Attempted to add duplicate variable %s to system.", esv));
+        else{
+            logger.warning(format("The residue %s is not supported for titration", residue.getAminoAcid3().name()));
             return;
         }
-        esvList.add(esv);
 
-        numESVs = esvList.size();
+
+    }
+
+    private void extendAtoms(Residue residue){
+        List<Atom> currentAtomList = residue.getAtomList();
         Atom[] atoms = molecularAssembly.getAtomArray();
         for (int i = 0; i < atoms.length; i++) {
-            if(esv instanceof NewTitrationESV){
-                if(esv.viewExtendedAtoms().contains(atoms[i])){
-                    esvsForAtom[i][0] = esv;
-                }
+            if (currentAtomList.contains(atoms[i])) {
+                this.isExtended[i] = true;
             }
-            if(esv instanceof NewTautomerESV){
-                if(esv.viewExtendedAtoms().contains(atoms[i])){
-                    esvsForAtom[i][1] = esv;
-                }
+        }
+    }
+
+    public void createMDThetaArrays() {
+        extendedResidueList = titratingResidueList;
+        extendedResidueList.addAll(tautomerizingResidueList);
+        int size = extendedResidueList.size();
+
+        lambdaArray = new double[size];
+        thetaPosition = new double[size];
+        thetaVelocity = new double[size];
+        thetaAccel = new double[size];
+        thetaMassArray = new double[size];
+
+        //Theta masses should always be the same for each ESV
+        Arrays.fill(thetaMassArray, thetaMass);
+
+        for (int i=0; i< extendedResidueList.size(); i++){
+            if(i < titratingResidueList.size()){
+                lambdaArray[i] = initialTitrationLambda;
+                thetaPosition[i] = Math.asin(Math.sqrt(initialTitrationLambda));
+                Random random = new Random();
+                thetaVelocity[i] = random.nextGaussian() * sqrt(kB * 298.15 / thetaMass);
+                double dUdTheta = getDerivative(i)* sin(2*thetaPosition[i]);
+                thetaAccel[i] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
             }
+            else{
+                lambdaArray[i] = initialTautomerLambda;
+                thetaPosition[i] = Math.asin(Math.sqrt(initialTautomerLambda));
+                Random random = new Random();
+                thetaVelocity[i] = random.nextGaussian() * sqrt(kB * 298.15 / thetaMass);
+                double dUdTheta = getDerivative(i)* sin(2*thetaPosition[i]);
+                thetaAccel[i] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
+            }
+        }
+    }
+
+    public boolean isExtended(int i) {
+        return isExtended[i];
+    }
+
+    public boolean isExtended(Residue residue){
+        return extendedResidueList.contains(residue);
+    }
+
+    private Residue getResidueFromAtom(int atomIndex){
+        Atom atom = molecularAssembly.getAtomList().get(atomIndex);
+        int residueIndex = atom.getResidueNumber();
+        return molecularAssembly.getResidueList().get(residueIndex);
+    }
+
+    private boolean isTitrable(Residue residue){
+        AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
+        if(AA3 == AminoAcidUtils.AminoAcid3.ASP || AA3 == AminoAcidUtils.AminoAcid3.ASD || AA3 == AminoAcidUtils.AminoAcid3.ASH ||
+                AA3 == AminoAcidUtils.AminoAcid3.GLU || AA3 == AminoAcidUtils.AminoAcid3.GLD || AA3 == AminoAcidUtils.AminoAcid3.GLH ||
+                AA3 == AminoAcidUtils.AminoAcid3.HIS || AA3 == AminoAcidUtils.AminoAcid3.HID || AA3 == AminoAcidUtils.AminoAcid3.HIE ||
+                AA3 == AminoAcidUtils.AminoAcid3.LYS || AA3 == AminoAcidUtils.AminoAcid3.LYD){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+    private boolean isTautomer(Residue residue){
+        AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
+        if(AA3 == AminoAcidUtils.AminoAcid3.ASP || AA3 == AminoAcidUtils.AminoAcid3.ASD || AA3 == AminoAcidUtils.AminoAcid3.ASH ||
+            AA3 == AminoAcidUtils.AminoAcid3.GLU || AA3 == AminoAcidUtils.AminoAcid3.GLD || AA3 == AminoAcidUtils.AminoAcid3.GLH ||
+            AA3 == AminoAcidUtils.AminoAcid3.HIS || AA3 == AminoAcidUtils.AminoAcid3.HID || AA3 == AminoAcidUtils.AminoAcid3.HIE){
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+
+    public void setTitrationLambda(int resIndex, double lambda){
+        Residue residue = molecularAssembly.getResidueList().get(resIndex);
+        if(titratingResidueList.contains(residue)){
+            int index = titratingResidueList.indexOf(residue);
+            thetaPosition[index] = Math.asin(Math.sqrt(lambda));
+            lambdaArray[index] = lambda;
+            updateListeners();
+        }
+        else{
+            logger.warning(format("This residue %s is not titrating.", residue.getName()));
+        }
+    }
+
+    public void setTautomerLambda(int resIndex, double lambda){
+        Residue residue = molecularAssembly.getResidueList().get(resIndex);
+        if(tautomerizingResidueList.contains(residue)){
+            // The correct index in the theta arrays for tautomer coordinates is after the titration list.
+            // So titrationList.size() + tautomerIndex should match with appropriate spot in thetaPosition, etc.
+            int index = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
+            thetaPosition[index] = Math.asin(Math.sqrt(lambda));
+            lambdaArray[index] = lambda;
+            updateListeners();
+        }
+        else{
+            logger.warning(format("This residue %s does not have any titrating tautomers.", residue.getName()));
+        }
+    }
+
+    private void updateLambdas(){
+        for(int i = 0; i < extendedResidueList.size(); i++){
+            double sinTheta = Math.sin(thetaPosition[i]);
+            lambdaArray[i] = sinTheta * sinTheta;
         }
         updateListeners();
     }
 
-    public void createMDThetaArrays() {
-        theta_position = new double[numESVs];
-        theta_velocity = new double[numESVs];
-        theta_accel = new double[numESVs];
-        theta_mass = new double[numESVs];
-
-        //Theta masses should always be the same for each ESV
-        double mass = getEsv(0).getThetaMass();
-        Arrays.fill(theta_mass, mass);
-        collectThetaValues();
-    }
-
-    public MolecularAssembly getMolecularAssembly() {
-        return molecularAssembly;
-    }
-
-    /**
-     * Iterate over all Extended Variables in Extended System and collect thetas, velocities, and accelerations into arrays.
-     */
-    public void collectThetaValues() {
-        for (NewExtendedVariable esv : esvList) {
-            theta_position[esv.getEsvIndex()] = esv.getTheta();
-            theta_velocity[esv.getEsvIndex()] = esv.getThetaVelocity();
-            theta_accel[esv.getEsvIndex()] = esv.getThetaAccel();
-      /*logger.info(format("ESV: %d Theta: %g, Theta_v: %g, Theta_a: %g",
-              esv.getEsvIndex(),esv.getTheta(),esv.getTheta_velocity(),esv.getTheta_accel()));*/
+    public double getTitrationLambda(int i) {
+        if(isExtended(i)){
+            Residue residue = getResidueFromAtom(i);
+            int index = titratingResidueList.indexOf(residue);
+            return lambdaArray[index];
+        }
+        else{
+            return Defaults.lambda;
         }
     }
 
-    /**
-     * Send all theta information stored in Extended System arrays back to respective Extended Variables.
-     */
-    public void setThetaValues() {
-        for (NewExtendedVariable esv : esvList) {
-            esv.setTheta(theta_position[esv.getEsvIndex()]);
-            esv.setThetaVelocity(theta_velocity[esv.getEsvIndex()]);
-            esv.setThetaAccel(theta_accel[esv.getEsvIndex()]);
+    public double getTautomerLambda(int i){
+        if(isExtended(i)){
+            Residue residue = getResidueFromAtom(i);
+            if(tautomerizingResidueList.contains(residue)){
+                int index = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
+                return lambdaArray[index];
+            }
+            else{
+                return Defaults.lambda;
+            }
+        }
+        else{
+            return Defaults.lambda;
+        }
+    }
+
+    private double getDiscrBias(){
+        double discrBias = 0.0;
+        for(int i=0; i <extendedResidueList.size();i++){
+            double lambda = lambdaArray[i];
+            double bias = - 4.0 * discrBiasMag * (lambda - 0.5) * (lambda - 0.5);
+            discrBias += bias;
+        }
+        return discrBias;
+    }
+
+    private double[] getDiscrBiasDeriv(){
+        double[] discrBiasDeriv = new double[extendedResidueList.size()];
+        for(int i=0; i <extendedResidueList.size(); i++){
+            double lambda = lambdaArray[i];
+            discrBiasDeriv[i] = -8.0 * discrBiasMag * (lambda - 0.5);
+        }
+        return discrBiasDeriv;
+    }
+
+    private double getPhBias(){
+        double pHBias = 0.0;
+        for(Residue residue : titratingResidueList){
+            int titrationResIndex = titratingResidueList.indexOf(residue);
+            double titrationLambda = lambdaArray[titrationResIndex];
+            double pKa1 = ConstantPhUtils.
+            if(isTautomer(residue)){
+                int tautomerResIndex = tautomerizingResidueList.indexOf(residue);
+                double tautomerLambda = lambdaArray[tautomerResIndex+titratingResidueList.size()];
+            }
+
         }
     }
 
@@ -284,13 +426,13 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
      *
      * @return a {@link String} object.
      */
-    public String getBiasDecomposition() {
+    /*public String getBiasDecomposition() {
         if (!config.biasTerm) {
             return "";
         }
         double discrBias = 0.0;
         double phBias = 0.0;
-        for (NewExtendedVariable esv : esvList) {
+        for (Residue residue : extendedResidueList) {
             discrBias += esv.getDiscrBias();
             if (esv instanceof NewTitrationESV) {
                 phBias += ((NewTitrationESV) esv).getPhBias(currentTemperature);
@@ -298,7 +440,7 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
         }
         return format("    %-16s %16.8f\n", "Discretizer", discrBias)
                 + format("    %-16s %16.8f\n", "Acidostat", phBias);
-    }
+    }*/
 
     /**
      * getBiasEnergy.
@@ -593,39 +735,6 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
         return molecularAssembly.getMoleculeNumbers();
     }
 
-    /**
-     * getLambda.
-     *
-     * @param i a int.
-     * @return a double.
-     */
-    public double[] getLambda(int i) {
-        double[] lambdas = new double[2];
-        for(int j=0; j < 2; j++){
-            if(esvsForAtom[i][j] != null){
-                lambdas[j] = esvsForAtom[i][j].lambda;
-            }
-            else{
-                lambdas[j] = Defaults.lambda;
-            }
-        }
-        return lambdas;
-    }
-
-    public double getTitrationLambda(int i){
-        if(esvsForAtom[i][0] != null){
-             return esvsForAtom[i][0].lambda;
-        }
-           return 1.0;
-    }
-
-    public double getTautomerLambda(int i){
-        if(esvsForAtom[i][1] != null){
-            return esvsForAtom[i][1].lambda;
-        }
-        return 1.0;
-    }
-
 
     /**
      * getLambdaList.
@@ -704,26 +813,11 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
     }
 
     /**
-     * Whether the Atom at extendedAtoms[i] is affected by an ESV of this system.
-     *
-     * @param i a int.
-     * @return a boolean.
-     */
-    //TODO: break up into isTitrating and isTautomer
-    public boolean isExtended(int i) {
-        return (esvsForAtom[i][0] != null || esvsForAtom[i][1] != null);
-    }
-
-    public boolean isTitrating(int i) {return (esvsForAtom[i][0] != null);}
-
-    public boolean isTautomer(int i) {return (esvsForAtom[i][1] != null);}
-
-    /**
      * Processes lambda values based on propagation of theta value from Stochastic integrator in Molecular dynamics
      */
     public void preForce() {
         for (NewExtendedVariable esv : esvList) {
-            double sinTheta = sin(theta_position[esv.getEsvIndex()]);
+            double sinTheta = sin(thetaPosition[esv.getEsvIndex()]);
             double oldLambda = esv.getLambda();
             esv.updateLambda(sinTheta * sinTheta, true);
             updateListeners();
@@ -742,23 +836,9 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
         double[] dEdTheta = new double[dEdL.length];
         for (NewExtendedVariable esv : esvList) {
             int esvIndex = esv.getEsvIndex();
-            dEdTheta[esvIndex] = dEdL[esvIndex] * sin(2 * theta_position[esvIndex]);
+            dEdTheta[esvIndex] = dEdL[esvIndex] * sin(2 * thetaPosition[esvIndex]);
         }
         return dEdTheta;
-    }
-
-    /**
-     * setLambda.
-     *
-     * @param esvId  a int.
-     * @param lambda a double.
-     */
-    public void setLambda(int esvId, double lambda) {
-        if (esvId >= numESVs) {
-            logger.warning("Requested an invalid ESV id.");
-        }
-        getEsv(esvId).setLambda(lambda);
-        updateListeners();
     }
 
     /**
