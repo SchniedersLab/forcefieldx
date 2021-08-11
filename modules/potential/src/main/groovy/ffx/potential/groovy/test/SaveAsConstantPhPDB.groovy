@@ -38,7 +38,7 @@
 package ffx.potential.groovy.test
 
 import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.ConstantPhUtils
+import ffx.potential.parameters.TitrationUtils
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.ForceFieldFilter
@@ -116,20 +116,21 @@ class SaveAsConstantPhPDB extends PotentialScript {
 
     // Configure the base directory if it has not been set.
     File saveDir = baseDir
-    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+    if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
       saveDir = new File(FilenameUtils.getFullPath(filename))
     }
 
-    String dirName = saveDir.toString() + File.separator
+    String dirName = saveDir.absolutePath + File.separator
     String fileName = FilenameUtils.getName(filename)
-    fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
-    File modelFile = new File(dirName + fileName)
+    fileName = FilenameUtils.removeExtension(fileName)
+    File modelFile = new File(dirName + fileName + ".pdb")
+    modelFile = potentialFunctions.versionFile(modelFile)
 
     if (!pdbFilter.writeFile(modelFile, false, false, true)) {
       logger.info(format(" Save failed for %s", activeAssembly))
     }
 
-    ConstantPhUtils constantPhUtils = new ConstantPhUtils(forceField)
+    TitrationUtils constantPhUtils = new TitrationUtils(forceField)
 
     return this
   }

@@ -35,59 +35,44 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.algorithms.misc;
+package ffx.potential.groovy;
 
-import edu.rit.pj.Comm;
-import ffx.algorithms.cli.AlgorithmsScript;
-import ffx.utilities.FFXTest;
-import groovy.lang.Binding;
-import java.util.logging.Level;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import ffx.potential.utils.PotentialTest;
+import org.junit.Test;
 
 /**
- * Base class for Algorithm tests.
+ * Tests the Cluster command to assess clustering based on distances.
  *
- * @author Michael J. Schnieders
+ * @author Aaron J. Nessler
  */
-public class AlgorithmsTest extends FFXTest {
+public class ClusterTest extends PotentialTest {
 
-  public AlgorithmsScript algorithmsScript;
-  public Binding binding;
+  private final double tolerance = 0.001;
 
-  /** Initialize the PJ communication layer. */
-  @BeforeClass
-  public static void beforeClass() {
-    FFXTest.beforeClass();
-    try {
-      Comm.world();
-    } catch (IllegalStateException ise) {
-      try {
-        String[] args = new String[0];
-        Comm.init(args);
-      } catch (Exception e) {
-        String message = " Exception starting up the Parallel Java communication layer.";
-        logger.log(Level.WARNING, message, e.toString());
-      }
-    }
+  //TODO: add more tests with more parameters
+
+  /** Tests the Cluster script. */
+  @Test
+  public void testBaseCluster() {
+    // Set-up the input arguments for the Cluser script.
+    String[] args = {"-a", "0", "-k", "10", "-r", "src/main/java/ffx/potential/structures/dist.txt"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the Cluster script.
+    Cluster cluster = new Cluster(binding).run();
+    potentialScript = cluster;
+    // TODO validate output.
   }
 
-  @Override
-  @Before
-  public void beforeTest() {
-    super.beforeTest();
-    binding = new Binding();
-  }
+  @Test
+  public void testClusterHelp() {
+    // Set-up the input arguments for the Cluster script.
+    String[] args = {"-h"};
+    binding.setVariable("args", args);
 
-  @Override
-  @After
-  public void afterTest() {
-    super.afterTest();
-    // The script could be null if the test was skipped (e.g. no CUDA environment for OpenMM).
-    if (algorithmsScript != null) {
-      algorithmsScript.destroyPotentials();
-    }
+    // Construct and evaluate the Cluster script.
+    Cluster cluster = new Cluster(binding).run();
+    potentialScript = cluster;
   }
-
 }

@@ -2569,15 +2569,14 @@ public class RotamerOptimization implements Terminatable {
       }
 
       logIfMaster(" Final rotamers:");
-      logIfMaster(
-          format("%17s %10s %11s %12s %11s", "Residue", "Chi 1", "Chi 2", "Chi 3", "Chi 4"));
+      logIfMaster(format("%17s %10s %11s %12s %11s", "Residue", "Chi 1", "Chi 2", "Chi 3", "Chi 4"));
       for (int i = 0; i < nResidues; i++) {
         Residue residue = residues[i];
         Rotamer[] rotamers = residue.getRotamers(library);
         int ri = optimum[i];
         Rotamer rotamer = rotamers[ri];
         logIfMaster(
-            format(" %c (%7s,%2d) %s", residue.getChainID(), residue, ri, rotamer.toAngleString()));
+            format(" %c (%7s,%2d) %s", residue.getChainID(), residue.toString(rotamer), ri, rotamer.toAngleString()));
         RotamerLibrary.applyRotamer(residue, rotamer);
       }
       logIfMaster("\n");
@@ -2586,27 +2585,25 @@ public class RotamerOptimization implements Terminatable {
       double sumPairEnergy = 0;
       double sumTrimerEnergy = 0;
       for (int i = 0; i < nResidues; i++) {
+        Residue residue = residues[i];
+        Rotamer[] rotamers = residue.getRotamers(library);
         int ri = optimum[i];
         sumSelfEnergy += eE.getSelf(i, ri);
-        logIfMaster(
-            format(
-                " Final self Energy (%8s,%2d): %12.4f",
-                residues[i].toFormattedString(false, true), ri, eE.getSelf(i, ri)));
+        logIfMaster(format(" Final self Energy (%8s,%2d): %12.4f",
+                residue.toString(rotamers[ri]), ri, eE.getSelf(i, ri)));
       }
       for (int i = 0; i < nResidues - 1; i++) {
+        Residue residueI = residues[i];
+        Rotamer[] rotI = residueI.getRotamers(library);
         int ri = optimum[i];
         for (int j = i + 1; j < nResidues; j++) {
+          Residue residueJ = residues[j];
+          Rotamer[] rotJ = residueJ.getRotamers(library);
           int rj = optimum[j];
           sumPairEnergy += eE.get2Body(i, ri, j, rj);
           if (eE.get2Body(i, ri, j, rj) > 10.0) {
-            logIfMaster(
-                format(
-                    " Large Final Pair Energy (%8s,%2d) (%8s,%2d): %12.4f",
-                    residues[i].toFormattedString(false, true),
-                    ri,
-                    residues[j].toFormattedString(false, true),
-                    rj,
-                    eE.get2Body(i, ri, j, rj)));
+            logIfMaster(format(" Large Final Pair Energy (%8s,%2d) (%8s,%2d): %12.4f",
+                residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj, eE.get2Body(i, ri, j, rj)));
           }
         }
       }
@@ -2958,10 +2955,9 @@ public class RotamerOptimization implements Terminatable {
       Rotamer[] rotamers = residue.getRotamers(library);
       int ri = optimum[i];
       Rotamer rotamer = rotamers[ri];
-      logIfMaster(
-          format(
-              " %3d %c (%7s,%2d) %s %12.4f ",
-              i + 1, residue.getChainID(), residue, ri, rotamer.toAngleString(), residueEnergy[i]));
+      logIfMaster(format(" %3d %c (%7s,%2d) %s %12.4f ",
+              i + 1, residue.getChainID(), residue.toString(rotamers[ri]),
+              ri, rotamer.toAngleString(), residueEnergy[i]));
       RotamerLibrary.applyRotamer(residue, rotamer);
     }
     logIfMaster("\n");

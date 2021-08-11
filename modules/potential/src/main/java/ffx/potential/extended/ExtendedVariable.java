@@ -79,96 +79,96 @@ public abstract class ExtendedVariable {
     /**
      * (1-L); side-chain only; permanently disconnected from assembly
      */
-    private final List<Atom> atomsBackground;
+    protected final List<Atom> atomsBackground;
     /**
      * All foreground atoms except titrating hydrogens
      */
-    private final List<Atom> atomsShared;
+    protected final List<Atom> atomsShared;
     /**
      * Titrating (and thus foreground) atoms.
      */
-    private final List<Atom> atomsUnshared;
+    protected final List<Atom> atomsUnshared;
     /**
      * Bonded dUdL reduction target.
      */
-    private final SharedDouble bondedDeriv = new SharedDouble();
+    protected final SharedDouble bondedDeriv = new SharedDouble();
     /**
      * Foreground dUdL by term.
      */
-    private final HashMap<Class<? extends BondedTerm>, SharedDouble> fgBondedDerivDecomp;
+    protected final HashMap<Class<? extends BondedTerm>, SharedDouble> fgBondedDerivDecomp;
     /**
      *  Background dUdL by term.
      */
-    private final HashMap<Class<? extends BondedTerm>, SharedDouble> bgBondedDerivDecomp;
+    protected final HashMap<Class<? extends BondedTerm>, SharedDouble> bgBondedDerivDecomp;
     /**
      * Maps multipole end points of this ESV's lambda path.
      */
-    private final HashMap<Atom, Atom> fg2bg = new HashMap<>();
+    protected final HashMap<Atom, Atom> fg2bg = new HashMap<>();
     /**
      * TODO: Replace ExtendedSystemConfig with an instance of normal
      * FFX Properties.
      */
-    private final ExtendedSystemConfig config;
+    protected final ExtendedSystemConfig config;
     /**
      * ESVs travel on {0,1}.
      */
-    private double lambda = 0.0;
+    protected double lambda = 0.0;
     /**
      * Propagates lambda particle via:
      * lambda = sin(theta)^2
      */
-    private double theta = 0.0;
+    protected double theta = 0.0;
     /**
      * Velocity of the theta particle (radian/psec).
      */
-    private double thetaVelocity = 0.0;
+    protected double thetaVelocity = 0.0;
     /**
      * Acceleration of the theta particle (radian/psec^2).
      */
-    private double thetaAccel = 0.0;
+    protected double thetaAccel = 0.0;
     /**
      * Mass of the theta particle (amu).
      */
-    private final double thetaMass;
+    protected final double thetaMass;
     /**
      * Magnitude of the discretization bias (kcal/mol).
      */
-    private final double discrBiasMag;
+    protected final double discrBiasMag;
     /**
      * Discretization bias.
      */
-    private double discrBias;
+    protected double discrBias;
     /**
      * Discretization bias chain rule derivative.
      */
-    private double dDiscrBiasdL;
+    protected double dDiscrBiasdL;
     /**
      * Sigmoidal switching function.
      *
      * Maps lambda -> S(lambda) which has a flatter derivatiuve near zero/unity.
      * Properties: {S(0)=0, S(1)=1, dS(0)=0, dS(1)=0, S(1-L)=1-S(L)}.
      */
-    private final MultiplicativeSwitch switchingFunction;
+    protected final MultiplicativeSwitch switchingFunction;
     /**
      * Switched lambda value.
      */
-    private double lSwitch;
+    protected double lSwitch;
     /**
      * Switched lambda chain rule derivative.
      */
-    private double dlSwitch;
+    protected double dlSwitch;
     /**
      * Foreground bonded energy and derivative handling.
      */
-    private final List<BondedTerm> bondedFg;
+    protected final List<BondedTerm> bondedFg;
     /**
      * Background bonded energy and derivative handling.
      */
-    private final List<BondedTerm> bondedBg;
+    protected final List<BondedTerm> bondedBg;
     /**
      * Modified to contain all applicable bonded terms.
      */
-    private final MSNode termNode;
+    protected final MSNode termNode;
 
     /**
      * Prefer ExtendedSystem::populate to manual ESV creation.
@@ -396,7 +396,11 @@ public abstract class ExtendedVariable {
         setTheta(Math.asin(Math.sqrt(lambda)));
         Random random = new Random();
         setThetaVelocity(random.nextGaussian() * sqrt(kB * 298.15 / thetaMass));
-        updateLambda(lambda, false);
+        this.lambda = lambda;
+        this.lSwitch = (config.allowLambdaSwitch) ? switchingFunction.taper(lambda) : lambda;
+        this.dlSwitch = (config.allowLambdaSwitch) ? switchingFunction.dtaper(lambda) : 1.0;
+        discrBias = - 4.0 * discrBiasMag * (lambda - 0.5) * (lambda - 0.5);
+        dDiscrBiasdL = -8.0 * discrBiasMag * (lambda - 0.5);
     }
 
     /**
@@ -419,7 +423,7 @@ public abstract class ExtendedVariable {
         this.lambda = lambda;
         this.lSwitch = (config.allowLambdaSwitch) ? switchingFunction.taper(lambda) : lambda;
         this.dlSwitch = (config.allowLambdaSwitch) ? switchingFunction.dtaper(lambda) : 1.0;
-        discrBias = discrBiasMag - 4.0 * discrBiasMag * (lambda - 0.5) * (lambda - 0.5);
+        discrBias = - 4.0 * discrBiasMag * (lambda - 0.5) * (lambda - 0.5);
         dDiscrBiasdL = -8.0 * discrBiasMag * (lambda - 0.5);
         if (updateComponents) {
             updateMultipoleTypes();
@@ -456,86 +460,12 @@ public abstract class ExtendedVariable {
     /**
      * Invoked by ExtendedSystem after lambda changes.
      */
-    protected final void updateMultipoleTypes() {
-        if (!config.electrostatics) {
-            return;
-        }
-        /* If not softcoring unshared atoms, then scale them as well
-         * (with an implied zero-multipole background atom).	  */
-        List<Atom> iterate = ExtUtils.joinedListView(atomsShared, atomsUnshared);
+    protected abstract void updateMultipoleTypes();
 
-        for (Atom fg : iterate) {
-            //            MultipoleType Ptype, Utype;
-            Atom bg = fg2bg.get(fg);
-            final MultipoleType Ptype = fg.getMultipoleType();
-            final MultipoleType Utype;
-            if (bg == null) {
-                if (atomsUnshared.contains(fg)) {
-                    Utype = new MultipoleType(zeroM, Ptype.frameAtomTypes, Ptype.frameDefinition, false);
-                } else {
-                    logger.warning("Error @ESV.updateMultipoles: bg null && !unshared.");
-                    Utype = null;
-                }
-            } else {
-                Utype = bg.getMultipoleType();
-            }
-            MultipoleType[] types = new MultipoleType[]{Ptype, Utype};
-            double[] mWeights, mdotWeights;
-            if (config.allowLambdaSwitch && config.nonlinearMultipoles) {
-                mWeights = new double[]{lSwitch, 1.0 - lSwitch};
-                mdotWeights = new double[]{dlSwitch, -dlSwitch};
-            } else {
-                mWeights = new double[]{lambda, 1.0 - lambda};
-                mdotWeights = new double[]{1.0, -1.0};
-            }
-            if (Ptype == null) {
-                // Multipoles not yet defined.
-                continue;
-            }
-            StringBuilder sb = new StringBuilder();
-            if (Utype == null) {
-                sb.append("Error @ESV.updateMultipoleTypes: bgType null.");
-                sb.append(format("   fg: %s, '%s'", fg, fg.getName()));
-                sb.append(" Background atoms available for match: ");
-                for (Atom debug : atomsBackground) {
-                    sb.append(format("   bg: %s, '%s'", debug.toString(), debug.getName()));
-                }
-                logger.warning(sb.toString());
-                continue;
-            }
-            final MultipoleType esvType;
-            final MultipoleType esvDotType;
-            try {
-                esvType = MultipoleType.weightMultipoleTypes(types, mWeights, Ptype.frameAtomTypes);
-                esvDotType = MultipoleType.weightMultipoleTypes(types, mdotWeights, Ptype.frameAtomTypes);
-            } catch (IllegalArgumentException ex) {
-                logger.warning(
-                        format(
-                                "Multipole scaling failed for fg,bg atoms: %s %s",
-                                fg.describe(Descriptions.Trim), bg.describe(Descriptions.Trim)));
-                throw ex;
-            }
-            if (esvType == null || esvDotType == null) {
-                logger.severe("Error @ESV.updateMultipoleTypes: M or Mdot null.");
-            }
-            if (isTitratableHydrogen(fg)) {
-                final double scaledAlpha = fg.getPolarizeType().polarizability * getLambda();
-                fg.setEsv(this, esvType, esvDotType, scaledAlpha);
-            } else {
-                fg.setEsv(this, esvType, esvDotType);
-            }
-
-            if (logger.isLoggable(Level.FINE)) {
-                sb.append(format(" Assigning ESV MultipoleTypes for atom %s\n",
-                        fg.describe(Descriptions.Resnum_Name)));
-                sb.append(format("  U: %.2f*%s\n", lambda, Ptype.toCompactBohrString()));
-                sb.append(format("  P: %.2f*%s\n", 1.0 - lambda, Utype.toCompactBohrString()));
-                sb.append(format("  M:      %s\n", fg.getEsvMultipole().toCompactBohrString()));
-                sb.append(format("  Mdot:   %s\n", fg.getEsvMultipoleDot().toCompactBohrString()));
-                logger.info(sb.toString());
-            }
-        }
-    }
+    /**
+     * Scales bonded terms based on lambda. Currently off.
+     */
+    protected abstract void updateBondedLambdas();
 
     /**
      * getLambdaSwitch.
@@ -608,65 +538,6 @@ public abstract class ExtendedVariable {
      */
     protected List<Atom> viewBackgroundAtoms() {
         return Collections.unmodifiableList(atomsBackground);
-    }
-
-    /**
-     * Scales bonded terms based on lambda. Currently off.
-     */
-    private void updateBondedLambdas() {
-        if (!config.bonded) {
-            return;
-        }
-        bondedDeriv.set(0.0);
-        double Sl = getLambdaSwitch();
-        double dSldL = getSwitchDeriv();
-        for (BondedTerm bt1 : bondedFg) {
-            boolean attachExtended = true;
-            Sl = getLambdaSwitch();
-            dSldL = getSwitchDeriv();
-            Atom[] atoms = bt1.getAtomArray();
-            for (Atom unshared : atomsUnshared) {
-                for (Atom atom : atoms) {
-                    if (atom.equals(unshared)) {
-                        // logger.info(" Unshared Atom Bonded Term: " + bt1);
-                        //Sl = 1.0;
-                        //dSldL = 1.0;
-                        attachExtended = false;
-                        break;
-                    }
-                }
-            }
-            if (attachExtended) {
-                if (config.decomposeBonded) {
-                    //bt1.attachExtendedVariable(Sl, dSldL, bondedDeriv, fgBondedDerivDecomp);
-                    fgBondedDerivDecomp.clear();
-                } else {
-                    //bt1.attachExtendedVariable(Sl, dSldL, bondedDeriv);
-                }
-            }
-        }
-
-        for (BondedTerm bt0 : bondedBg) {
-            Sl = getLambdaSwitch();
-            dSldL = getSwitchDeriv();
-            Atom[] atoms = bt0.getAtomArray();
-            for (Atom unshared : atomsUnshared) {
-                for (Atom atom : atoms) {
-                    if (atom.equals(unshared)) {
-                        logger.info(" Background Unshared Atom Bonded Term: " + bt0);
-                        // Sl = 0.0;
-                        // dSldL = -1.0;
-                        break;
-                    }
-                }
-            }
-            if (config.decomposeBonded) {
-                //bt0.attachExtendedVariable(1.0 - Sl, -dSldL, bondedDeriv, bgBondedDerivDecomp);
-                bgBondedDerivDecomp.clear();
-            } else {
-                //bt0.attachExtendedVariable(1.0 - Sl, -dSldL, bondedDeriv);
-            }
-        }
     }
 
     /**

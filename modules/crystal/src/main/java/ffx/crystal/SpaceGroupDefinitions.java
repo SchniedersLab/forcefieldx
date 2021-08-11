@@ -7894,6 +7894,24 @@ public class SpaceGroupDefinitions {
               new SymOp(SymOp.Rot_mX_mY_Z, SymOp.Tr_12_0_12),
               new SymOp(SymOp.Rot_mX_mY_mZ, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_X_Y_mZ, SymOp.Tr_12_0_12));
+    } else if (name.equalsIgnoreCase("P21/n")) {
+      spaceGroup =
+              new SpaceGroup(
+                      14,
+                      4,
+                      4,
+                      "P21/n",
+                      "PG2/m",
+                      "P 1 21/n 1",
+                      MONOCLINIC,
+                      MONOCLINIC_LATTICE,
+                      L121,
+                      new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
+                      new double[] {-1.0, -1.0, -1.0},
+                      new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mX_Y_mZ, SymOp.Tr_12_12_12),
+                      new SymOp(SymOp.Rot_mX_mY_mZ, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_X_mY_Z, SymOp.Tr_12_12_12));
     } else if (name.equalsIgnoreCase("R3")) {
       spaceGroup =
           new SpaceGroup(
@@ -8100,6 +8118,8 @@ public class SpaceGroupDefinitions {
       return -1;
     }
     String n = name.trim();
+    // Many CIF files have extraneous parenthesis (e.g. "P2(1)/c")
+    n = n.replaceAll("[()]", "");
     int num = SpaceGroupInfo.spaceGroupNames.length;
     for (int i = 0; i < num; i++) {
       String s1 = SpaceGroupInfo.spaceGroupNames[i];

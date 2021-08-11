@@ -371,15 +371,11 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
     load();
 
     // Run the optimization.
-    // RotamerLibrary rLib = RotamerLibrary.getDefaultLibrary();
-    /*rLib.setLibrary(RotamerLibrary.ProteinLibrary.Richardson);
-    rLib.setUseOrigCoordsRotamer(useOriginalRotamers);*/
     RotamerLibrary rLib = new RotamerLibrary(useOriginalRotamers);
 
     int counter = 1;
     List<Residue> residueList = new ArrayList<>();
     Polymer[] polymers = molecularAssembly.getChains();
-    int nPolymers = polymers.length;
     for (Polymer polymer : polymers) {
       List<Residue> residues = polymer.getResidues();
       for (int i = 0; i < endResID; i++) {

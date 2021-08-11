@@ -46,6 +46,7 @@ import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.parameters.TitrationUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -186,6 +187,22 @@ public class ManyBodyOptions {
   public void setResidues(MolecularAssembly activeAssembly) {
     List<String> resList = new ArrayList<>();
     addListResidues(resList);
+
+    String prop = System.getProperty("ro-titrate");
+    boolean titrate = false;
+    if (prop != null) {
+      titrate = Boolean.parseBoolean(prop);
+    }
+    TitrationUtils titrationUtils = null;
+    if (titrate) {
+      logger.info(" Turning on ASP, GLU, LYS and HIS titration rotamers.");
+      titrationUtils = new TitrationUtils(activeAssembly.getForceField());
+      titrationUtils.setRotamerPhBias(298.15, 7.4);
+      List<Residue> residues = activeAssembly.getResidueList();
+      for (Residue residue : residues) {
+        residue.setTitrationUtils(titrationUtils);
+      }
+    }
 
     int counter = 1;
     if (group.algorithm != 5) {

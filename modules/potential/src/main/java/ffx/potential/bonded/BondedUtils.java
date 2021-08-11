@@ -948,7 +948,7 @@ public class BondedUtils {
    * @param chiral 0, 1, -1, or 3.
    * @return A double[] with XYZ coordinates at which an atom would be placed.
    */
-  static double[] determineIntxyz(
+  public static double[] determineIntxyz(
       double[] ia,
       double bond,
       double[] ib,

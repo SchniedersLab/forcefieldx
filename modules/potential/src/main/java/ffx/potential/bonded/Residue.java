@@ -46,6 +46,7 @@ import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid1;
 import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.TitrationUtils;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -70,9 +71,6 @@ import org.jogamp.vecmath.Point3d;
  */
 public class Residue extends MSGroup implements Comparable<Residue> {
 
-  /** Constant <code>origAtEnd=</code> */
-  static final boolean origAtEnd;
-
   private static final Logger logger = Logger.getLogger(Residue.class.getName());
   /** Compare residues first on seg ID, then residue number, then residue type, then name. */
   private static final Comparator<Residue> resComparator =
@@ -87,8 +85,6 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   private static final HashMap<AminoAcid3, Color3f> AA3Color = new HashMap<>();
   /** Constant <code>SSTypeColor</code> */
   private static final HashMap<SSType, Color3f> SSTypeColor = new HashMap<>();
-  /** Flag to indicate use of original coordinates as a rotamer. */
-  private static final boolean addOrigRot;
   /** Constant <code>Ramachandran="new String[17]"</code> */
   public static String[] Ramachandran = new String[17];
 
@@ -96,19 +92,6 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   private static final Point2d point2d = new Point2d();
 
   static {
-    String origAtEndStr = System.getProperty("ro-origAtEnd");
-    if (origAtEndStr != null) {
-      origAtEnd = Boolean.parseBoolean(origAtEndStr);
-    } else {
-      origAtEnd = false;
-    }
-    String origRotStr = System.getProperty("ro-addOrigRot");
-    if (origRotStr != null) {
-      addOrigRot = Boolean.parseBoolean(origRotStr);
-    } else {
-      addOrigRot = false;
-    }
-
     NA3Color.put(NucleicAcidUtils.NucleicAcid3.ADE, RendererCache.RED);
     NA3Color.put(NucleicAcidUtils.NucleicAcid3.CYT, RendererCache.MAGENTA);
     NA3Color.put(NucleicAcidUtils.NucleicAcid3.GUA, RendererCache.BLUE);
@@ -197,6 +180,11 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   private AminoAcid3 aa;
   /** 3-letter nucleic acid code. */
   private NucleicAcid3 na;
+  /**
+   * If this is set, then ASP, GLU, LYS and HIS Rotamers will be titratable.
+   */
+  private TitrationUtils titrationUtils = null;
+
   /**
    * These arrays store default coordinates for certain atoms in nucleic acid Residues. C1', O4', and
    * C4' are the critical sugar atoms off which every other atom is drawn when applyRotamer is
@@ -380,6 +368,14 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     }
     setCenter(getMultiScaleCenter(false));
     setFinalized(true);
+  }
+
+  public void setTitrationUtils(TitrationUtils titrationUtils) {
+    this.titrationUtils = titrationUtils;
+  }
+
+  public TitrationUtils getTitrationUtils(){
+    return titrationUtils;
   }
 
   /**
@@ -688,93 +684,22 @@ public class Residue extends MSGroup implements Comparable<Residue> {
       return rotamers;
     }
 
-    // Return rotamers for this residue from the RotamerLibrary.
-    Rotamer[] libRotamers = library.getRotamers(this);
+    // Obtain rotamers for this residue from the RotamerLibrary.
+    Rotamer[] libRotamers = library.getRotamers(this, titrationUtils);
+    rotamers = libRotamers;
 
-    /*
-     If there are no rotamers, and addOrigRot is true, return an array with
-     only an original-coordinates rotamer. Else if there are no rotamers,
-     return (null) library rotamers. If there are rotamers, and original
-     coordinates are turned off, return (filled) library rotamers. Else,
-     continue generating the rotamers array.
-    */
-    if (libRotamers == null) {
-      if (addOrigRot) {
-        rotamers = new Rotamer[1];
-        ResidueState origState = this.storeState();
-        double[] chi = RotamerLibrary.measureRotamer(this, false);
-        switch (residueType) {
-          case AA:
-            AminoAcid3 aa3 = AminoAcidUtils.AminoAcid3.UNK;
-            try {
-              aa3 = AminoAcidUtils.AminoAcid3.valueOf(getName());
-            } catch (Exception e) {
-              //
-            }
-            Rotamer originalRotamer =
-                new Rotamer(aa3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
-            rotamers[0] = originalRotamer;
-            break;
-          case NA:
-            NucleicAcid3 na3 = NucleicAcidUtils.NucleicAcid3.UNK;
-            try {
-              na3 = NucleicAcidUtils.NucleicAcid3.valueOf(getName());
-            } catch (Exception e) {
-              //
-            }
-            originalRotamer =
-                new Rotamer(
-                    na3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5],
-                    0);
-            rotamers[0] = originalRotamer;
-            break;
-          default:
-            rotamers = libRotamers; // Resets to null.
-        }
-        return rotamers;
-      } else {
-        // No rotamers for this residue.
-        return null;
-      }
-    } else if (!library.getUsingOrigCoordsRotamer()) {
-      return libRotamers;
-    }
-
-    // Define the current coordinates as a new rotamer.
-    ResidueState origState = storeState();
-    double[] chi = RotamerLibrary.measureRotamer(this, false);
-    Rotamer originalRotamer;
-    switch (residueType) {
-      case AA:
-        AminoAcid3 aa3 = this.getAminoAcid3();
-        originalRotamer = new Rotamer(aa3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0);
-        break;
-      case NA:
-        NucleicAcid3 na3 = this.getNucleicAcid3();
-        originalRotamer =
-            new Rotamer(
-                na3, origState, chi[0], 0, chi[1], 0, chi[2], 0, chi[3], 0, chi[4], 0, chi[5], 0);
-        break;
-      default:
-        double[] rotaValues = new double[chi.length * 2];
-        for (int i = 0; i < chi.length; i++) {
-          int ii = i * 2;
-          rotaValues[ii] = chi[i];
-          rotaValues[ii + 1] = 0.0;
-        }
-        originalRotamer = new Rotamer(origState, rotaValues);
-        break;
-    }
-
-    // Add the new rotamer to those from the library and cache the result.
-    int nRots = libRotamers.length;
-    rotamers = new Rotamer[nRots + 1];
-    if (origAtEnd) {
-      arraycopy(libRotamers, 0, rotamers, 0, nRots);
-      rotamers[rotamers.length - 1] = originalRotamer;
-    } else {
-      arraycopy(libRotamers, 0, rotamers, 1, nRots);
+    // Add the original coordinates as a rotamer if requested
+    // (unless the library has no rotamers for this residue).
+    if (library.getUsingOrigCoordsRotamer() && rotamers != null) {
+      // Define the current coordinates as a new rotamer.
+      Rotamer originalRotamer = Rotamer.defaultRotamerFactory(this, titrationUtils);
+      // Add the new rotamer to those from the library and cache the result.
+      int libRots = libRotamers.length;
+      rotamers = new Rotamer[libRots + 1];
+      // First rotamer is the original conformation.
       rotamers[0] = originalRotamer;
+      // Copy in the library.
+      arraycopy(libRotamers, 0, rotamers, 1, libRots);
     }
 
     return rotamers;
@@ -1011,6 +936,19 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     }
     sb.append(this);
     return sb.toString();
+  }
+
+  /**
+   * A descriptive string based on a given rotamer.
+   *
+   * <p>[chain ID]ResNumber-RotamerName.
+   *
+   * @param rotamer The rotamer to use.
+   *
+   * @return A descriptive string.
+   */
+  public String toString(Rotamer rotamer) {
+    return "" + chainID + resNumber + "-" + rotamer.getName();
   }
 
   /** {@inheritDoc} */

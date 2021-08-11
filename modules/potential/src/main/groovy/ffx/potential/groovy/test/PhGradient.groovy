@@ -48,6 +48,7 @@ import ffx.potential.cli.GradientOptions
 import ffx.potential.cli.PotentialScript
 import ffx.potential.extended.ExtendedSystem
 import ffx.potential.extended.ExtendedVariable
+import ffx.potential.extended.TautomerESV
 import ffx.potential.extended.TitrationESV
 import ffx.potential.extended.TitrationUtils
 import ffx.potential.utils.PotentialsUtils
@@ -152,13 +153,24 @@ class PhGradient extends PotentialScript {
 
     ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly)
     List<ExtendedVariable> titratingESVs = new ArrayList<>()
+    List<ExtendedVariable> tautomerESVs = new ArrayList<>()
     esvSystem.setConstantPh(pH)
 
     for (Residue res : titrating) {
       MultiResidue multi = TitrationUtils.titratingMultiresidueFactory(activeAssembly, res)
       TitrationESV esv = new TitrationESV(esvSystem, multi)
       titratingESVs.add(esv)
-
+      if(esvSystem.config.tautomer){
+        AminoAcidUtils.AminoAcid3 currentAA3 = AminoAcidUtils.AminoAcid3.valueOf(res.getName())
+        if (currentAA3 == AminoAcidUtils.AminoAcid3.HIS || currentAA3 == AminoAcidUtils.AminoAcid3.HID
+                || currentAA3 == AminoAcidUtils.AminoAcid3.HIE || currentAA3 == AminoAcidUtils.AminoAcid3.ASH
+                || currentAA3 == AminoAcidUtils.AminoAcid3.ASP || currentAA3 == AminoAcidUtils.AminoAcid3.GLH
+                || currentAA3 == AminoAcidUtils.AminoAcid3.GLU){
+          TautomerESV tautomerESV = new TautomerESV(esvSystem, multi);
+          tautomerESVs.add(tautomerESV);
+          esvSystem.addVariable(tautomerESV);
+        }
+      }
       for (Residue background : multi.getInactive()) {
         inactivateResidue(background)
       }

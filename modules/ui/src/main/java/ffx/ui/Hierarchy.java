@@ -476,7 +476,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener, Tre
       for (int i = 0; i < parent.getChildCount(); i++) {
         MSNode node = (MSNode) parent.getChildAt(i);
         if (node.getName().equals(name)) {
-          logger.info(" Parent already has a node with the name " + name);
+          logger.fine(" Parent already has a node with the name " + name);
         }
       }
 
@@ -771,6 +771,5 @@ public final class Hierarchy extends JTree implements TreeSelectionListener, Tre
 
   @Override
   public void treeStructureChanged(TreeModelEvent e) {
-    logger.info(" Structure Changed: " + e);
   }
 }

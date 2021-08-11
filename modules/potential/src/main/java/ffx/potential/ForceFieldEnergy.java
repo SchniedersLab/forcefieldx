@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential;
 
+import static ffx.crystal.LatticeSystem.HEXAGONAL_LATTICE;
+import static ffx.crystal.LatticeSystem.RHOMBOHEDRAL_LATTICE;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
@@ -52,12 +54,7 @@ import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
-import ffx.crystal.Crystal;
-import ffx.crystal.CrystalPotential;
-import ffx.crystal.NCSCrystal;
-import ffx.crystal.ReplicatesCrystal;
-import ffx.crystal.SpaceGroup;
-import ffx.crystal.SymOp;
+import ffx.crystal.*;
 import ffx.numerics.Constraint;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
@@ -567,20 +564,25 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     double a, b, c, alpha, beta, gamma;
     boolean aperiodic;
     try {
-      a = forceField.getDouble("A_AXIS");
-      aperiodic = false;
-      b = forceField.getDouble("B_AXIS", a);
-      c = forceField.getDouble("C_AXIS", a);
-      alpha = forceField.getDouble("ALPHA", 90.0);
-      beta = forceField.getDouble("BETA", 90.0);
-      gamma = forceField.getDouble("GAMMA", 90.0);
-      spacegroup = forceField.getString("SPACEGROUP", "P 1");
-      if (a == 1.0 && b == 1.0 && c == 1.0) {
-        String message = " A-, B-, and C-axis values equal to 1.0.";
-        logger.info(message);
-        throw new Exception(message);
-      }
-    } catch (Exception e) {
+        spacegroup = forceField.getString("SPACEGROUP", "P 1");
+        SpaceGroup sg = SpaceGroupDefinitions.spaceGroupFactory(spacegroup);
+        LatticeSystem latticeSystem = sg.latticeSystem;
+        a = forceField.getDouble("A_AXIS");
+        aperiodic = false;
+        b = forceField.getDouble("B_AXIS", latticeSystem.getDefaultBAxis(a));
+        c = forceField.getDouble("C_AXIS", latticeSystem.getDefaultCAxis(a, b));
+        alpha = forceField.getDouble("ALPHA", latticeSystem.getDefaultAlpha());
+        beta = forceField.getDouble("BETA", latticeSystem.getDefaultBeta());
+        gamma = forceField.getDouble("GAMMA", latticeSystem.getDefaultGamma());
+        if (!sg.latticeSystem.validParameters(a, b, c, alpha, beta, gamma)) {
+          logger.severe(" Check lattice parameters.");
+        }
+        if (a == 1.0 && b == 1.0 && c == 1.0) {
+          String message = " A-, B-, and C-axis values equal to 1.0.";
+          logger.info(message);
+          throw new Exception(message);
+        }
+      } catch (Exception e) {
       logger.info(" The system will be treated as aperiodic.");
       aperiodic = true;
 

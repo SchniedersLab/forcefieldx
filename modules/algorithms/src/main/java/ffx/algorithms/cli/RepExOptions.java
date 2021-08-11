@@ -38,11 +38,15 @@ public class RepExOptions {
     group.exponent = exponent;
   }
 
+  public void setMonteCarlo(boolean monteCarlo) {group.monteCarlo = monteCarlo;}
+
+  public boolean getMonteCarlo(){return group.monteCarlo;}
+
 
   private static class RepExOptionGroup {
 
     /**
-     * -r or --repEx to execute temperature replica exchange.
+     * -x or --repEx to execute temperature replica exchange.
      */
     @Option(
         names = {"-x", "--repEx"},
@@ -70,6 +74,15 @@ public class RepExOptions {
         defaultValue = "0.05",
         description = "Exponent to set the exponential temperature ladder.")
     private double exponent = 0.05;
+
+    /**
+     * --oMC or --oneMonteCarlo executes 1 Monte Carlo move for each temperature in each cycle
+     */
+    @Option(
+            names = {"--oMC", "--oneMonteCarlo"},
+            paramLabel = "false",
+            description = "Execute 1 Monte Carlo move for each temperature in each cycle")
+    boolean monteCarlo = false;
 
   }
 }

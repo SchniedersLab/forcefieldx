@@ -40,6 +40,14 @@ package ffx.crystal;
 /**
  * Enumeration of the 7 crystal systems.
  *
+ * TRICLINIC: a&ne;b&ne;c &alpha;&ne;&beta;&ne;&gamma;&ne;90&deg;
+ * MONOCLINIC: a&ne;b&ne;c &alpha;&eq;&gamma;&eq;90&deg;&ne;&beta;
+ * ORTHORHOMBIC: a&ne;b&ne;c &alpha;&eq;&beta;&eq;&gamma;&eq;90&deg;
+ * TETRAGONAL: a&eq;b&ne;c &alpha;&eq;&beta;&eq;&gamma;&eq;90&deg;
+ * TRIGONAL: a&eq;b&eq;c &alpha;&eq;&beta;&eq;&gamma;&ne;90&deg;
+ * HEXAGONAL: a&eq;b&ne;c &alpha;&eq;&beta;&eq;90&deg;, &gamma;&eq;120&deg;
+ * CUBIC: a&eq;b&eq;c &alpha;&eq;&beta;&eq;&gamma;&eq;90&deg;
+ *
  * @author Michael J. Schnieders
  * @since 1.0
  */

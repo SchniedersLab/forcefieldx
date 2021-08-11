@@ -36,7 +36,7 @@
 //
 //******************************************************************************
 
-package ffx.potential.groovy.test
+package ffx.potential.groovy
 
 import ffx.crystal.Crystal
 import ffx.potential.bonded.Atom
@@ -65,65 +65,65 @@ class XYZtoQE extends PotentialScript {
   /**
    * --ns or --numSteps Number of structural optimization steps performed in this run.
    */
-  @Option(names = ['--ns', '--nstep'], paramLabel = "50", defaultValue = "50",
+  @Option(names = ['--ns', '--nstep'], paramLabel = "500", defaultValue = "500",
       description = 'Number of structural optimization steps performed in this run.')
-  private int nstep = 50
+  private int nStep
 
   /**
    * --ec or --etot_conv_thr Convergence threshold on total energy (a.u) for ionic minimization.
    */
   @Option(names = ['--ec', '--etot_conv_thr'], paramLabel = "1.0e-6", defaultValue = "1.0e-6",
       description = 'Convergence threshold on total energy (a.u) for ionic minimization.')
-  private double etot_conv_thr = 1.0e-6
+  private double etotConvThr
 
   /**
    * --ef or --forc_conv_thr Convergence threshold on forces (a.u) for ionic minimization.
    */
   @Option(names = ['--ef', '--forc_conv_thr'], paramLabel = "1.0e-4", defaultValue = "1.0e-4",
       description = 'Convergence threshold on forces (a.u) for ionic minimization.')
-  private double forc_conv_thr = 1.0e-4
+  private double forcConvThr
 
   /**
    * --ke or --ecutwfc Kinetic energy cutoff (Ry) for wavefunctions.
    */
   @Option(names = ['--ke', '--ecutwfc'], paramLabel = "50.0", defaultValue = "50.0",
       description = 'Kinetic energy cutoff (Ry) for wavefunctions.')
-  private double ecutwfc = 50.0
+  private double ecutwfc
 
   /**
    * --rho or --ecutrho Kinetic energy cutoff (Ry) for charge density and potential.
    */
-  @Option(names = ['--rho', '--ecutrho'], paramLabel = "200.0", defaultValue = "200.0",
+  @Option(names = ['--rho', '--ecutrho'], paramLabel = "500.0", defaultValue = "500.0",
       description = 'Kinetic energy cutoff (Ry) for charge density and potential.')
-  private double ecutrho = 200.0
+  private double ecutrho
 
   /**
    * --em or --electron_maxstep Maximum number of iterations in a scf step.
    */
-  @Option(names = ['--em', '--electron_maxstep'], paramLabel = "100", defaultValue = "100",
+  @Option(names = ['--em', '--electron_maxstep'], paramLabel = "1500", defaultValue = "1500",
       description = 'Maximum number of iterations in a scf step.')
-  private int electron_maxstep = 100
+  private int electronMaxstep
 
   /**
-   * --ct or --conv_thr Convergence threshold for self consistency.
+   * --ct or --convThr Convergence threshold for self consistency.
    */
   @Option(names = ['--ct', '--conv_thr'], paramLabel = "1.0e-8", defaultValue = "1.0e-8",
       description = 'Convergence threshold for self consistency.')
-  private double conv_thr = 1.0e-8
+  private double convThr
 
   /**
    * --mb or --mixing_beta Mixing factor for self-consistency.
    */
-  @Option(names = ['--mb', '--mixing_beta'], paramLabel = "0.7", defaultValue = "0.7",
+  @Option(names = ['--mb', '--mixing_beta'], paramLabel = "0.5", defaultValue = "0.5",
       description = 'Mixing factor for self-consistency.')
-  private double mixing_beta = 0.7
+  private double mixingBeta
 
   /**
-   * --hx or --hexagonal Perform QE caclulation on hexagonal rather than rhombohedral representation
+   * --hx or --hexagonal Perform QE calculation on hexagonal rather than rhombohedral representation
    */
   @Option(names = ['--hx', '--hexagonal'], paramLabel = "true", defaultValue = "true",
       description = 'Perform QE on hexagonal system.')
-  private boolean hexagonal = true
+  private boolean hexagonal
 
   /**
    * The final argument(s) should be one or more filenames.
@@ -170,9 +170,6 @@ class XYZtoQE extends PotentialScript {
 
     logger.info(format("\n Converting %s to QE format\n", filename))
 
-    // TODO: Is this call necessary?
-    activeAssembly.computeFractionalCoordinates()
-
     File saveDir = baseDir
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
       saveDir = new File(getFullPath(filename))
@@ -209,7 +206,7 @@ class XYZtoQE extends PotentialScript {
         "\tetot_conv_thr = %6.4E,\n" +
         "\tforc_conv_thr = %6.4E,\n" +
         "\tnstep = %d,\n" +
-        "/\n", name, etot_conv_thr, forc_conv_thr, nstep))
+        "/\n", name, etotConvThr, forcConvThr, nStep))
     // structural information on the system under investigation
     bwQE.write(format("&SYSTEM\n" +
         "\tspace_group = " + crystal.spaceGroup.number + ",\n" +
@@ -240,7 +237,7 @@ class XYZtoQE extends PotentialScript {
         "\tconv_thr = %6.4E,\n" +
         "\tscf_must_converge = .TRUE.,\n" +
         "\tmixing_beta = %5.3f,\n" +
-        "/\n", electron_maxstep, conv_thr, mixing_beta))
+        "/\n", electronMaxstep, convThr, mixingBeta))
     // ionic variables: relaxation, dynamics
     bwQE.write("&IONS\n" +
         "\tion_dynamics = 'bfgs',\n" +
@@ -260,13 +257,15 @@ class XYZtoQE extends PotentialScript {
 
     bwQE.write("ATOMIC_POSITIONS crystal_sg\n" +
         atomicPositions + "\n")
-    //Set-Up K_Points Card
+
+    // Set-Up K_Points Card
+    // TODO: add explanations for k-point choices.
     int k1
     int k2
     int k3
     if (xtalA < 5) {
       k1 = 8
-    } else if (xtalA <= 8) {
+    } else if (xtalA <= 7) {
       k1 = 6
     } else if (xtalA <= 12) {
       k1 = 4
@@ -276,7 +275,7 @@ class XYZtoQE extends PotentialScript {
 
     if (xtalB < 5) {
       k2 = 8
-    } else if (xtalB <= 8) {
+    } else if (xtalB <= 7) {
       k2 = 6
     } else if (xtalB <= 12) {
       k2 = 4
@@ -286,7 +285,7 @@ class XYZtoQE extends PotentialScript {
 
     if (xtalC < 5) {
       k3 = 8
-    } else if (xtalC <= 8) {
+    } else if (xtalC <= 7) {
       k3 = 6
     } else if (xtalC <= 12) {
       k3 = 4
