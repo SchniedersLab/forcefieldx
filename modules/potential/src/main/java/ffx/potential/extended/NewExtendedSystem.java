@@ -35,6 +35,7 @@
 // exception statement from your version.
 //
 // ******************************************************************************
+
 package ffx.potential.extended;
 
 import ffx.potential.ForceFieldEnergy;
@@ -54,13 +55,12 @@ import static ffx.potential.extended.ExtUtils.prop;
 import static ffx.potential.extended.TitrationUtils.isTitratableHydrogen;
 import static ffx.utilities.Constants.kB;
 import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.sin;
-import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.*;
 
 /**
  * ExtendedSystem class.
  *
- * @author Stephen LuCore
+ * @author Andrew Thiel
  * @since 1.0
  */
 public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
@@ -72,11 +72,13 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
 
     private static final Logger logger = Logger.getLogger(NewExtendedSystem.class.getName());
 
-    public static final double THETA_MASS = 1.0; //Atomic Mass Units
+    private static final double THETA_MASS = 1.0; //Atomic Mass Units
 
-    public static final double THETA_FRICTION = 5.0; // psec^-1
+    private static final double THETA_FRICTION = 5.0; // psec^-1
 
-    public static final double DISCR_BIAS = 1.0; // kcal/mol
+    private static final double DISCR_BIAS = 1.0; // kcal/mol
+
+    private static final double LOG10 = log(10.0);
 
     /**
      * Constant <code>esvSystemActive=false</code>
@@ -132,22 +134,19 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
      * System PH.
      */
     private double constantSystemPh = 7.4;
-    /**
-     * Number of ESV.
-     */
-    private int numESVs;
 
     /**
      * Target system temperature.
      */
     private double currentTemperature = Constants.ROOM_TEMPERATURE;
 
-    private List<Residue> titratingResidueList;
-    private List<Residue> tautomerizingResidueList;
+    private final List<Residue> titratingResidueList;
+    private final List<Residue> tautomerizingResidueList;
     private List<Residue> extendedResidueList;
 
-    private double initialTitrationLambda = 1.0;
-    private double initialTautomerLambda = 1.0;
+    double initialTitrationLambda;
+    double initialTautomerLambda;
+
     private double[] lambdaArray;
 
     /**
@@ -169,7 +168,7 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
     /**
      * The system defined theta mass of the fictional particle. Used to fill theta mass array.
      */
-    private double thetaMass;
+    private final double thetaMass;
     /**
      * Friction for the ESV system
      */
@@ -179,15 +178,6 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
 
     //TODO: Loop over protonation ESVs to sum the discr, acidostat, and Fmod energy terms.
     //TODO: Collect partial derivs for each term. Keep all in one place.
-
-    /**
-     * Construct extended system with a default configuration and/or system properties.
-     *
-     * @param mola a {@link MolecularAssembly} object.
-     */
-    public NewExtendedSystem(MolecularAssembly mola) {
-        this(mola, new NewExtendedSystemConfig());
-    }
 
     /**
      * Construct extended system with the provided configuration.
@@ -208,6 +198,8 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
         thetaFriction = properties.getDouble("esv.friction", NewExtendedSystem.THETA_FRICTION);
         thetaMass = properties.getDouble("esv.mass", NewExtendedSystem.THETA_MASS);
         discrBiasMag = properties.getDouble("discretize.bias", DISCR_BIAS);
+        initialTitrationLambda = properties.getDouble("lambda.titration.initial", 1.0);
+        initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 1.0);
         vanDerWaals = forceFieldEnergy.getVdwNode();
         particleMeshEwaldQI = forceFieldEnergy.getPmeQiNode();
 
@@ -236,10 +228,7 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
         }
         else{
             logger.warning(format("The residue %s is not supported for titration", residue.getAminoAcid3().name()));
-            return;
         }
-
-
     }
 
     private void extendAtoms(Residue residue){
@@ -266,24 +255,25 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
         //Theta masses should always be the same for each ESV
         Arrays.fill(thetaMassArray, thetaMass);
 
+
+
         for (int i=0; i< extendedResidueList.size(); i++){
             if(i < titratingResidueList.size()){
-                lambdaArray[i] = initialTitrationLambda;
-                thetaPosition[i] = Math.asin(Math.sqrt(initialTitrationLambda));
-                Random random = new Random();
-                thetaVelocity[i] = random.nextGaussian() * sqrt(kB * 298.15 / thetaMass);
-                double dUdTheta = getDerivative(i)* sin(2*thetaPosition[i]);
-                thetaAccel[i] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
+                initializeThetaArrays(i, initialTitrationLambda);
             }
             else{
-                lambdaArray[i] = initialTautomerLambda;
-                thetaPosition[i] = Math.asin(Math.sqrt(initialTautomerLambda));
-                Random random = new Random();
-                thetaVelocity[i] = random.nextGaussian() * sqrt(kB * 298.15 / thetaMass);
-                double dUdTheta = getDerivative(i)* sin(2*thetaPosition[i]);
-                thetaAccel[i] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
+                initializeThetaArrays(i, initialTautomerLambda);
             }
         }
+    }
+
+    private void initializeThetaArrays(int index, double lambda){
+        lambdaArray[index] = initialTautomerLambda;
+        thetaPosition[index] = Math.asin(Math.sqrt(initialTautomerLambda));
+        Random random = new Random();
+        thetaVelocity[index] = random.nextGaussian() * sqrt(kB * 298.15 / thetaMass);
+        double dUdTheta = getDerivative(index)* sin(2*thetaPosition[index]);
+        thetaAccel[index] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
     }
 
     public boolean isExtended(int i) {
@@ -292,12 +282,6 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
 
     public boolean isExtended(Residue residue){
         return extendedResidueList.contains(residue);
-    }
-
-    private Residue getResidueFromAtom(int atomIndex){
-        Atom atom = molecularAssembly.getAtomList().get(atomIndex);
-        int residueIndex = atom.getResidueNumber();
-        return molecularAssembly.getResidueList().get(residueIndex);
     }
 
     private boolean isTitrable(Residue residue){
@@ -388,37 +372,225 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
         }
     }
 
-    private double getDiscrBias(){
+    private Residue getResidueFromAtom(int atomIndex){
+        Atom atom = molecularAssembly.getAtomList().get(atomIndex);
+        int residueIndex = atom.getResidueNumber();
+        return molecularAssembly.getResidueList().get(residueIndex);
+    }
+
+    public double getTitrationLambda(Residue residue){
+        if(titratingResidueList.contains(residue)){
+            int resIndex = titratingResidueList.indexOf(residue);
+            return lambdaArray[resIndex];
+        }
+        else{
+            return Defaults.lambda;
+        }
+    }
+
+    public double getTautomerLambda(Residue residue){
+        if(tautomerizingResidueList.contains(residue)){
+            int resIndex = tautomerizingResidueList.indexOf(residue);
+            return lambdaArray[titratingResidueList.size()+resIndex];
+        }
+        else{
+            return Defaults.lambda;
+        }
+    }
+
+    public double getBiasEnergy(double temperature){
+        double biasEnergySum = 0.0;
+        for(Residue residue : titratingResidueList){
+            biasEnergySum += getPhBias(temperature, residue);
+            biasEnergySum += getDiscrBias(residue);
+        }
+        return biasEnergySum;
+    }
+
+    public double[] getBiasDeriv(double temperature){
+        double[] biasDeriv = new double[extendedResidueList.size()];
+        for(int i=0; i < extendedResidueList.size(); i++){
+            Residue residue = extendedResidueList.get(i);
+            if(i<titratingResidueList.size()){
+                biasDeriv[i] = getDiscrBiasDeriv(residue, false);
+                biasDeriv[i] += getPhBiasDeriv(temperature,residue,false);
+            }
+            else{
+                biasDeriv[i] = getDiscrBiasDeriv(residue, true);
+                biasDeriv[i] += getPhBiasDeriv(temperature,residue,true);
+            }
+        }
+        return biasDeriv;
+    }
+
+    private double getDiscrBias(Residue residue){
         double discrBias = 0.0;
-        for(int i=0; i <extendedResidueList.size();i++){
-            double lambda = lambdaArray[i];
-            double bias = - 4.0 * discrBiasMag * (lambda - 0.5) * (lambda - 0.5);
-            discrBias += bias;
+        double titrationLambda = getTitrationLambda(residue);
+        discrBias = - 4.0 * discrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
+        if(isTautomer(residue)){
+            double tautomerLambda = getTautomerLambda(residue);
+            discrBias += - 4.0 * discrBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
         }
         return discrBias;
     }
 
-    private double[] getDiscrBiasDeriv(){
-        double[] discrBiasDeriv = new double[extendedResidueList.size()];
-        for(int i=0; i <extendedResidueList.size(); i++){
-            double lambda = lambdaArray[i];
-            discrBiasDeriv[i] = -8.0 * discrBiasMag * (lambda - 0.5);
+    private double getDiscrBiasDeriv(Residue residue, boolean isTautomerDeriv){
+        double discrBiasDeriv = 0.0;
+        if(isTautomerDeriv){
+            double tautomerLambda = getTautomerLambda(residue);
+            discrBiasDeriv = -8.0 * discrBiasMag * (tautomerLambda - 0.5);
+        }
+        else{
+            double titrationLambda = getTitrationLambda(residue);
+            discrBiasDeriv = -8.0 * discrBiasMag * (titrationLambda - 0.5);
         }
         return discrBiasDeriv;
     }
 
-    private double getPhBias(){
+    private double getPhBias(double temperature, Residue residue){
         double pHBias = 0.0;
-        for(Residue residue : titratingResidueList){
-            int titrationResIndex = titratingResidueList.indexOf(residue);
-            double titrationLambda = lambdaArray[titrationResIndex];
-            double pKa1 = ConstantPhUtils.
-            if(isTautomer(residue)){
-                int tautomerResIndex = tautomerizingResidueList.indexOf(residue);
-                double tautomerLambda = lambdaArray[tautomerResIndex+titratingResidueList.size()];
-            }
+        AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
+        double titrationLambda = getTitrationLambda(residue);
+        switch(AA3) {
+            case ASD:
+            case ASH:
+            case ASP:
+                double pKa1 = ffx.potential.parameters.TitrationUtils.Titration.ASHtoASP.pKa;
+                double pKa2 = pKa1;
+                double tautomerLambda = getTautomerLambda(residue);
+                pHBias = LOG10 * Constants.R * temperature * (1.0-titrationLambda)
+                        * (tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2 - constantSystemPh));
+                break;
 
+            case GLD:
+            case GLH:
+            case GLU:
+                pKa1 = ffx.potential.parameters.TitrationUtils.Titration.GLHtoGLU.pKa;
+                pKa2 = pKa1;
+                tautomerLambda = getTautomerLambda(residue);
+                pHBias = LOG10 * Constants.R * temperature * (1.0-titrationLambda)
+                        * (tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2 - constantSystemPh));
+                break;
+
+            case HIS:
+            case HID:
+            case HIE:
+                pKa1 = ffx.potential.parameters.TitrationUtils.Titration.HIStoHID.pKa;
+                pKa2 = ffx.potential.parameters.TitrationUtils.Titration.HIStoHIE.pKa;
+                tautomerLambda = getTautomerLambda(residue);
+                pHBias = LOG10 * Constants.R * temperature * (1.0-titrationLambda)
+                        * (tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2 - constantSystemPh));
+                break;
+
+            case LYS:
+            case LYD:
+                pKa1 = ffx.potential.parameters.TitrationUtils.Titration.LYStoLYD.pKa;
+                pHBias = LOG10 * Constants.R * temperature * (1.0-titrationLambda) * (pKa1 - constantSystemPh);
+                break;
+            default:
+                break;
         }
+        return pHBias;
+    }
+
+    private double getPhBiasDeriv(double temperature, Residue residue, boolean isTautomerDeriv){
+        double pHBiasDeriv = 0.0;
+        AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
+        double titrationLambda = getTitrationLambda(residue);
+        switch(AA3) {
+            case ASD:
+            case ASH:
+            case ASP:
+                double pKa1 = ffx.potential.parameters.TitrationUtils.Titration.ASHtoASP.pKa;
+                double pKa2 = pKa1;
+                double tautomerLambda = getTautomerLambda(residue);
+                if(isTautomerDeriv){
+                    pHBiasDeriv = LOG10 * Constants.R * temperature * (1.0-titrationLambda)
+                            * ((pKa1 - constantSystemPh) - (pKa2 - constantSystemPh));
+                }
+                else{
+                    pHBiasDeriv = LOG10 * Constants.R * temperature * -1.0
+                            * (tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2 - constantSystemPh));
+                }
+                break;
+
+            case GLD:
+            case GLH:
+            case GLU:
+                pKa1 = ffx.potential.parameters.TitrationUtils.Titration.GLHtoGLU.pKa;
+                pKa2 = pKa1;
+                tautomerLambda = getTautomerLambda(residue);
+                if(isTautomerDeriv){
+                    pHBiasDeriv = LOG10 * Constants.R * temperature * (1.0-titrationLambda)
+                            * ((pKa1 - constantSystemPh) - (pKa2 - constantSystemPh));
+                }
+                else{
+                    pHBiasDeriv = LOG10 * Constants.R * temperature * -1.0
+                            * (tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2 - constantSystemPh));
+                }
+                break;
+
+            case HIS:
+            case HID:
+            case HIE:
+                pKa1 = ffx.potential.parameters.TitrationUtils.Titration.HIStoHID.pKa;
+                pKa2 = ffx.potential.parameters.TitrationUtils.Titration.HIStoHIE.pKa;
+                tautomerLambda = getTautomerLambda(residue);
+                if(isTautomerDeriv){
+                    pHBiasDeriv = LOG10 * Constants.R * temperature * (1.0-titrationLambda)
+                            * ((pKa1 - constantSystemPh) - (pKa2 - constantSystemPh));
+                }
+                else{
+                    pHBiasDeriv = LOG10 * Constants.R * temperature * -1.0
+                            * (tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2 - constantSystemPh));
+                }
+                break;
+
+            case LYS:
+            case LYD:
+                pKa1 = ffx.potential.parameters.TitrationUtils.Titration.LYStoLYD.pKa;
+                pHBiasDeriv = LOG10 * Constants.R * temperature * -1.0 * (pKa1 - constantSystemPh);
+                break;
+            default:
+                break;
+        }
+        return pHBiasDeriv;
+    }
+
+    private double getModelBias(Residue residue){
+        //TODO: Fill out model bias with appropriate bivariate polynomial for each tautomer
+        double modelBias = 0.0;
+        AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
+        double titrationLambda = getTitrationLambda(residue);
+        switch (AA3){
+            case ASD:
+            case ASH:
+            case ASP:
+                double refEnergy = ffx.potential.parameters.TitrationUtils.Titration.ASHtoASP.pKa;
+                double lambdaIntercept = ffx.potential.parameters.TitrationUtils.Titration.ASHtoASP.lambdaIntercept;
+                modelBias = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
+            case GLD:
+            case GLH:
+            case GLU:
+                refEnergy = ffx.potential.parameters.TitrationUtils.Titration.GLHtoGLU.refEnergy;
+                lambdaIntercept = ffx.potential.parameters.TitrationUtils.Titration.GLHtoGLU.lambdaIntercept;
+                modelBias = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
+            case HIS:
+            case HID:
+            case HIE:
+                refEnergy = ffx.potential.parameters.TitrationUtils.Titration.HIStoHID.refEnergy;
+                lambdaIntercept = ffx.potential.parameters.TitrationUtils.Titration.HIStoHID.lambdaIntercept;
+                modelBias = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
+            case LYS:
+            case LYD:
+                refEnergy = ffx.potential.parameters.TitrationUtils.Titration.LYStoLYD.refEnergy;
+                lambdaIntercept = ffx.potential.parameters.TitrationUtils.Titration.LYStoLYD.lambdaIntercept;
+                modelBias = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
+                break;
+            default:
+                break;
+        }
+        return modelBias;
     }
 
     /**
@@ -441,54 +613,6 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
         return format("    %-16s %16.8f\n", "Discretizer", discrBias)
                 + format("    %-16s %16.8f\n", "Acidostat", phBias);
     }*/
-
-    /**
-     * getBiasEnergy.
-     *
-     * @return a double.
-     */
-    public final double getBiasEnergy() {
-        return getBiasEnergy(currentTemperature);
-    }
-
-    /**
-     * Get ESV biases such as discretization, pH, etc. This method public and final for
-     * error-checking; new ESVs should override biasEnergy().
-     *
-     * @param temperature a double.
-     * @return a double.
-     */
-    public final double getBiasEnergy(double temperature) {
-        if (!config.biasTerm) {
-            return 0.0;
-        }
-        if (esvList == null || esvList.isEmpty()) {
-            logger.warning("Requested energy from empty/null esvSystem.");
-            return 0.0;
-        }
-        if (config.forceRoomTemp) {
-            return biasEnergy(Constants.ROOM_TEMPERATURE);
-        } else {
-            return biasEnergy(temperature);
-        }
-    }
-
-    private double biasEnergy(double temperature) {
-        double biasEnergySum = 0.0;
-        for (NewExtendedVariable esv : this) {
-            biasEnergySum += esv.getTotalBias(temperature, false);
-        }
-        return biasEnergySum;
-    }
-
-    /**
-     * Getter for the field <code>config</code>.
-     *
-     * @return a {@link NewExtendedSystem.NewExtendedSystemConfig} object.
-     */
-    public NewExtendedSystemConfig getConfig() {
-        return config;
-    }
 
     /**
      * getConstantPh.
@@ -675,30 +799,6 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
     }
 
     /**
-     * getEsv.
-     *
-     * @param esvID a int.
-     * @return a {@link NewExtendedVariable} object.
-     */
-    public NewExtendedVariable getEsv(int esvID) {
-        return esvList.get(esvID);
-    }
-
-    /**
-     * getEsvForAtom.
-     *
-     * @param i a int.
-     * @return a {@link NewExtendedVariable} object.
-     */
-    public NewExtendedVariable[] getEsvForAtom(int i) {
-        NewExtendedVariable[] newExtendedVariable = new NewExtendedVariable[2];
-        newExtendedVariable[0] = esvsForAtom[i][0];
-        newExtendedVariable[1] = esvsForAtom[i][1];
-
-        return newExtendedVariable;
-    }
-
-    /**
      * getEsvIndex.
      *
      * @param i a int.
@@ -756,50 +856,12 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
     }
 
     /**
-     * getLambdaSwitch.
-     *
-     * @param i a int.
-     * @return a double.
-     */
-    public double[] getLambdaSwitch(int i) {
-        double[] lambdaSwitch = new double[2];
-        for(int j=0; j < 2; j++){
-            if(esvsForAtom[i][j] != null){
-                lambdaSwitch[j] = esvsForAtom[i][j].getLambdaSwitch();
-            }
-            else{
-                lambdaSwitch[j] = Defaults.lambdaSwitch;
-            }
-        }
-        return lambdaSwitch;
-    }
-
-    /**
      * getNumESVs
      *
      * @return a int num of ESVs
      */
     public int getNumESVs() {
         return numESVs;
-    }
-
-    /**
-     * getSwitchDeriv.
-     *
-     * @param i a int.
-     * @return a double.
-     */
-    public double[] getSwitchDeriv(int i) {
-        double[] lambdaSwitchDeriv = new double[2];
-        for(int j=0; j < 2; j++){
-            if(esvsForAtom[i][j] != null){
-                lambdaSwitchDeriv[j] = esvsForAtom[i][j].getSwitchDeriv();
-            }
-            else{
-                lambdaSwitchDeriv[j] = Defaults.switchDeriv;
-            }
-        }
-        return lambdaSwitchDeriv;
     }
 
     /**
@@ -851,29 +913,6 @@ public class NewExtendedSystem implements Iterable<NewExtendedVariable> {
         if (config.electrostatics) {
             particleMeshEwaldQI.updateEsvLambda();
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>Allows simple iteration over ESV via "for (ExtendedVariable : ExtendedSystem)".
-     */
-    @Override
-    public Iterator<NewExtendedVariable> iterator() {
-        return esvList.iterator();
-    }
-
-    /**
-     * size.
-     *
-     * @return a int.
-     */
-    public int size() {
-        return esvList.size();
-    }
-
-    int requestIndexing() {
-        return indexer++;
     }
 
     /**
