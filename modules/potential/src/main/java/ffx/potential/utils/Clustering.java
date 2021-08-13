@@ -151,7 +151,8 @@ public class Clustering {
    * @param repStructs Store a representative conformation for each cluster.
    * @param verbose If true, use verbose printing.
    */
-  public static void analyzeClusters(List<CentroidCluster<Conformation>> clusters, List<Integer> repStructs,
+  public static void analyzeClusters(List<CentroidCluster<Conformation>> clusters,
+      List<Integer> repStructs,
       boolean verbose) {
     // Number of clusters.
     int nClusters = clusters.size();
@@ -163,8 +164,13 @@ public class Clustering {
 
       List<Conformation> conformations = clusterI.getPoints();
       int nConformers = conformations.size();
-      StringBuilder sb = new StringBuilder(
-          format(" Cluster %d with %d conformations\n  Conformations:", i + 1, nConformers));
+      StringBuilder sb;
+      if (nConformers == 1) {
+        sb = new StringBuilder(format(" Cluster %d with conformation:", i + 1));
+      } else {
+        sb = new StringBuilder(
+            format(" Cluster %d with %d conformations\n  Conformations:", i + 1, nConformers));
+      }
 
       double minRMS = Double.MAX_VALUE;
       int minID = -1;
@@ -218,7 +224,8 @@ public class Clustering {
     if (verbose) {
       logger.info(format(" Mean RMSD within clusters: \t %6.4f A.", meanClusterRMSD / nClusters));
       double sumOfClusterVariances = sumOfClusterVariances(clusters);
-      logger.info(format(" Mean cluster variance:     \t %6.4f A.\n", sumOfClusterVariances / nClusters));
+      logger.info(
+          format(" Mean cluster variance:     \t %6.4f A.\n", sumOfClusterVariances / nClusters));
     }
 
   }

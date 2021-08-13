@@ -49,6 +49,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -221,6 +222,16 @@ public class DistanceMatrixFilter {
     }
 
     return sb.toString();
+  }
+
+  /**
+   * Convert a distance matrix to a String.
+   *
+   * @param distanceMatrix The distance matrix.
+   * @return Return a String representation (or null if the distanceMatrix is null).
+   */
+  public static String toDistanceMatrixString(double[][] distanceMatrix) {
+    return toDistanceMatrixString(Arrays.asList(distanceMatrix));
   }
 
   /**

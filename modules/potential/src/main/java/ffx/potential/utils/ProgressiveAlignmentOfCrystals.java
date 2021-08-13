@@ -39,6 +39,7 @@ package ffx.potential.utils;
 
 import static ffx.crystal.Crystal.mod;
 import static ffx.numerics.math.DoubleMath.dist;
+import static ffx.potential.parsers.DistanceMatrixFilter.toDistanceMatrixString;
 import static ffx.potential.parsers.DistanceMatrixFilter.writeDistanceMatrixRow;
 import static ffx.potential.utils.Superpose.applyRotation;
 import static ffx.potential.utils.Superpose.applyTranslation;
@@ -151,7 +152,8 @@ public class ProgressiveAlignmentOfCrystals {
    */
   private final int rank;
   /**
-   * The distances arrays store an RSMD values from each process. The array is of size [numProc][1].
+   * The distances matrix stores a single RSMD value from each process.
+   * The array is of size [numProc][1].
    */
   private final double[][] distances;
   /**
@@ -322,6 +324,7 @@ public class ProgressiveAlignmentOfCrystals {
           gatherRMSDs(row, column);
         }
       }
+
       restartColumn = 0;
       targetFilter.readNext(true, false);
       baseFilter.readNext(false, false);
@@ -341,14 +344,7 @@ public class ProgressiveAlignmentOfCrystals {
 
     // Print the PAC RMSD matrix.
     if (baseSize > 1 || targetSize > 1) {
-      StringBuilder sBPrint = new StringBuilder();
-      for (double[] row : distMatrix) {
-        for (double col : row) {
-          sBPrint.append(format(" %7.4f", col));
-        }
-        sBPrint.append("\n");
-      }
-      logger.info("\n PAC RMSD Matrix:\n" + sBPrint);
+      logger.info("\n" + toDistanceMatrixString(distMatrix));
     }
 
     // Return distMatrix for validation if this is for the test script
@@ -802,15 +798,13 @@ public class ProgressiveAlignmentOfCrystals {
   }
 
   /**
-   * Write out human readable distance array to file.
+   * Read in the distance matrix.
    *
    * @param filename The PAC RMSD matrix file to read from.
    */
   private void readMatrix(String filename) {
     restartRow = 0;
     restartColumn = 0;
-    int nRow = distMatrix.length;
-    int nColumn = distMatrix[0].length;
 
     DistanceMatrixFilter distanceMatrixFilter = new DistanceMatrixFilter();
     if (distanceMatrixFilter.readDistanceMatrix(filename, distMatrix)) {
@@ -818,6 +812,8 @@ public class ProgressiveAlignmentOfCrystals {
       restartColumn = distanceMatrixFilter.getRestartColumn();
     }
 
+    int nRow = distMatrix.length;
+    int nColumn = distMatrix[0].length;
     if (restartRow == nRow && restartColumn == nColumn) {
       logger.info(format(" Complete distance matrix found (%d x %d).", restartRow, restartColumn));
     } else {

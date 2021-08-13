@@ -35,9 +35,9 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.groovy;
+package ffx.algorithms.groovy;
 
-import ffx.potential.utils.PotentialTest;
+import ffx.algorithms.misc.AlgorithmsTest;
 import org.junit.Test;
 
 /**
@@ -46,7 +46,7 @@ import org.junit.Test;
  *
  * @author Aaron J. Nessler
  */
-public class ClusteringTest extends PotentialTest {
+public class ClusteringTest extends AlgorithmsTest {
 
   /** Tests the Cluster script. */
   @Test
@@ -58,7 +58,7 @@ public class ClusteringTest extends PotentialTest {
 
     // Construct and evaluate the Cluster script.
     Cluster cluster = new Cluster(binding).run();
-    potentialScript = cluster;
+    algorithmsScript = cluster;
     // TODO validate output.
   }
 
@@ -70,6 +70,6 @@ public class ClusteringTest extends PotentialTest {
 
     // Construct and evaluate the Cluster script.
     Cluster cluster = new Cluster(binding).run();
-    potentialScript = cluster;
+    algorithmsScript = cluster;
   }
 }

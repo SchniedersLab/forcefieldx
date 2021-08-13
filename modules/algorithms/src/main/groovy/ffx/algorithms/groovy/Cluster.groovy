@@ -36,12 +36,12 @@
 //
 //******************************************************************************
 
-package ffx.potential.groovy
+package ffx.algorithms.groovy
 
+import ffx.algorithms.cli.AlgorithmsScript
 import ffx.crystal.Crystal
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
-import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
@@ -68,7 +68,7 @@ import static org.apache.commons.math3.util.FastMath.floorDiv
  * ffxc Cluster [options] &lt;filename&gt;
  */
 @Command(description = " Cluster structures using an RMSD matrix.", name = "ffxc Cluster")
-class Cluster extends PotentialScript {
+class Cluster extends AlgorithmsScript {
 
   /**
    * -a or --algorithm Clustering algorithm to use.
@@ -226,16 +226,16 @@ class Cluster extends PotentialScript {
     }
 
     // Turn off nonbonded terms.
-    System.setProperty("vdwterm", "false");
+    System.setProperty("vdwterm", "false")
 
     String saveName = filenames.get(1)
-    File saveFile = new File(potentialFunctions.versionFile(saveName))
+    File saveFile = new File(algorithmFunctions.versionFile(saveName))
     logger.info(format("\n Saving representative cluster members to %s.", saveFile.toString()))
 
-    MolecularAssembly[] molecularAssemblies = potentialFunctions.openAll(saveName)
+    MolecularAssembly[] molecularAssemblies = algorithmFunctions.openAll(saveName)
     activeAssembly = molecularAssemblies[0]
 
-    SystemFilter systemFilter = potentialFunctions.getFilter()
+    SystemFilter systemFilter = algorithmFunctions.getFilter()
     SystemFilter writeFilter
     if (systemFilter instanceof PDBFilter) {
       writeFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
