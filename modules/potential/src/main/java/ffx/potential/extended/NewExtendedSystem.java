@@ -52,7 +52,6 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import static ffx.potential.extended.ExtUtils.prop;
-import static ffx.potential.extended.TitrationUtils.isTitratableHydrogen;
 import static ffx.utilities.Constants.kB;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.*;
@@ -333,27 +332,17 @@ public class NewExtendedSystem  {
 
     private boolean isTitrable(Residue residue){
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
-        if(AA3 == AminoAcidUtils.AminoAcid3.ASP || AA3 == AminoAcidUtils.AminoAcid3.ASD || AA3 == AminoAcidUtils.AminoAcid3.ASH ||
+        return AA3 == AminoAcidUtils.AminoAcid3.ASP || AA3 == AminoAcidUtils.AminoAcid3.ASD || AA3 == AminoAcidUtils.AminoAcid3.ASH ||
                 AA3 == AminoAcidUtils.AminoAcid3.GLU || AA3 == AminoAcidUtils.AminoAcid3.GLD || AA3 == AminoAcidUtils.AminoAcid3.GLH ||
                 AA3 == AminoAcidUtils.AminoAcid3.HIS || AA3 == AminoAcidUtils.AminoAcid3.HID || AA3 == AminoAcidUtils.AminoAcid3.HIE ||
-                AA3 == AminoAcidUtils.AminoAcid3.LYS || AA3 == AminoAcidUtils.AminoAcid3.LYD){
-            return true;
-        }
-        else{
-            return false;
-        }
+                AA3 == AminoAcidUtils.AminoAcid3.LYS || AA3 == AminoAcidUtils.AminoAcid3.LYD;
     }
 
     private boolean isTautomer(Residue residue){
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
-        if(AA3 == AminoAcidUtils.AminoAcid3.ASP || AA3 == AminoAcidUtils.AminoAcid3.ASD || AA3 == AminoAcidUtils.AminoAcid3.ASH ||
-            AA3 == AminoAcidUtils.AminoAcid3.GLU || AA3 == AminoAcidUtils.AminoAcid3.GLD || AA3 == AminoAcidUtils.AminoAcid3.GLH ||
-            AA3 == AminoAcidUtils.AminoAcid3.HIS || AA3 == AminoAcidUtils.AminoAcid3.HID || AA3 == AminoAcidUtils.AminoAcid3.HIE){
-            return true;
-        }
-        else{
-            return false;
-        }
+        return AA3 == AminoAcidUtils.AminoAcid3.ASP || AA3 == AminoAcidUtils.AminoAcid3.ASD || AA3 == AminoAcidUtils.AminoAcid3.ASH ||
+                AA3 == AminoAcidUtils.AminoAcid3.GLU || AA3 == AminoAcidUtils.AminoAcid3.GLD || AA3 == AminoAcidUtils.AminoAcid3.GLH ||
+                AA3 == AminoAcidUtils.AminoAcid3.HIS || AA3 == AminoAcidUtils.AminoAcid3.HID || AA3 == AminoAcidUtils.AminoAcid3.HIE;
     }
 
     public double getTitrationLambda(int i) {
@@ -458,24 +447,16 @@ public class NewExtendedSystem  {
         return biasEnergySum;
     }
 
-    public double[] getBiasDeriv(double temperature){
-        double[] biasDeriv = new double[extendedResidueList.size()];
-        for(int i=0; i < extendedResidueList.size(); i++){
-            Residue residue = extendedResidueList.get(i);
-            if(i<titratingResidueList.size()){
-                biasDeriv[i] = getDiscrBiasDeriv(residue, false);
-                biasDeriv[i] += getPhBiasDeriv(temperature,residue,false);
-            }
-            else{
-                biasDeriv[i] = getDiscrBiasDeriv(residue, true);
-                biasDeriv[i] += getPhBiasDeriv(temperature,residue,true);
-            }
-        }
+    public double getTotalBiasDeriv(double temperature, Residue residue, boolean isTautomerDeriv){
+        double biasDeriv;
+        biasDeriv = getDiscrBiasDeriv(residue, isTautomerDeriv);
+        biasDeriv += getPhBiasDeriv(temperature,residue,isTautomerDeriv);
+
         return biasDeriv;
     }
 
     private double getDiscrBias(Residue residue){
-        double discrBias = 0.0;
+        double discrBias;
         double titrationLambda = getTitrationLambda(residue);
         discrBias = - 4.0 * discrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
         if(isTautomer(residue)){
@@ -486,7 +467,7 @@ public class NewExtendedSystem  {
     }
 
     private double getDiscrBiasDeriv(Residue residue, boolean isTautomerDeriv){
-        double discrBiasDeriv = 0.0;
+        double discrBiasDeriv;
         if(isTautomerDeriv){
             double tautomerLambda = getTautomerLambda(residue);
             discrBiasDeriv = -8.0 * discrBiasMag * (tautomerLambda - 0.5);
@@ -644,6 +625,46 @@ public class NewExtendedSystem  {
         return modelBias;
     }
 
+    private double getModelBiasDeriv(Residue residue, boolean isTautomerDeriv){
+        double modelBiasDeriv = 0.0;
+        AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
+        double titrationLambda = getTitrationLambda(residue);
+        switch (AA3){
+            case ASD:
+            case ASH:
+            case ASP:
+                double refEnergy = ffx.potential.parameters.TitrationUtils.Titration.ASHtoASP.pKa;
+                double lambdaIntercept = ffx.potential.parameters.TitrationUtils.Titration.ASHtoASP.lambdaIntercept;
+                modelBiasDeriv = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
+            case GLD:
+            case GLH:
+            case GLU:
+                refEnergy = ffx.potential.parameters.TitrationUtils.Titration.GLHtoGLU.refEnergy;
+                lambdaIntercept = ffx.potential.parameters.TitrationUtils.Titration.GLHtoGLU.lambdaIntercept;
+                modelBiasDeriv = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
+            case HIS:
+            case HID:
+            case HIE:
+                refEnergy = ffx.potential.parameters.TitrationUtils.Titration.HIStoHID.refEnergy;
+                lambdaIntercept = ffx.potential.parameters.TitrationUtils.Titration.HIStoHID.lambdaIntercept;
+                double coeff0;
+                double coeff1;
+                double coeff2;
+                double coeff3;
+                double coeff4;
+                modelBiasDeriv = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
+            case LYS:
+            case LYD:
+                refEnergy = ffx.potential.parameters.TitrationUtils.Titration.LYStoLYD.refEnergy;
+                lambdaIntercept = ffx.potential.parameters.TitrationUtils.Titration.LYStoLYD.lambdaIntercept;
+                modelBiasDeriv = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
+                break;
+            default:
+                break;
+        }
+        return modelBiasDeriv;
+    }
+
     /**
      * getBiasDecomposition.
      *
@@ -748,7 +769,7 @@ public class NewExtendedSystem  {
         double esvDeriv = 0.0;
         final String format = " %-20.20s %2.2s %9.4f";
         if (config.biasTerm) {
-            final double dBias = esv.getTotalBiasDeriv(temperature, false);
+            final double dBias = getTotalBiasDeriv(temperature, false);
             if (p) {
                 sb.append(format("  Biases: %9.4f", dBias));
             }
@@ -756,11 +777,9 @@ public class NewExtendedSystem  {
             if (p) {
                 sb.append(format("    Discretizer: %9.4f", dDiscr));
             }
-            if (esv instanceof NewTitrationESV) {
-                final double dPh = ((NewTitrationESV) esv).getPhBiasDeriv(temperature);
-                if (p) {
-                    sb.append(format("    Acidostat: %9.4f", dPh));
-                }
+            final double dPh = getPhBiasDeriv(temperature);
+            if (p) {
+                sb.append(format("    Acidostat: %9.4f", dPh));
             }
             esvDeriv += dBias;
         }

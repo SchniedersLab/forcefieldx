@@ -889,16 +889,18 @@ public class TitrationUtils {
 
   /**
    * Amino acid protonation reactions. Constructors below specify intrinsic pKa and reference free
-   * energy of protonation, obtained via (OST) metadynamics on capped monomers.
+   * energy of protonation, obtained via (OST) metadynamics on capped monomers. pKa values from
+   * Huang, Yandong, et al. "All-atom continuous constant pH molecular dynamics with particle mesh Ewald and titratable water."
+   * Journal of chemical theory and computation 12.11 (2016): 5411-5421.
    */
   public enum Titration {
     //ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
-    ASHtoASP(3.90, -53.188, 0.0, AminoAcidUtils.AminoAcid3.ASH, AminoAcidUtils.AminoAcid3.ASP),
-    GLHtoGLU(4.25, -59.390, 0.0, AminoAcidUtils.AminoAcid3.GLH, AminoAcidUtils.AminoAcid3.GLU),
-    LYStoLYD(10.53, 53.390, 0.0, AminoAcidUtils.AminoAcid3.LYS, AminoAcidUtils.AminoAcid3.LYD),
+    ASHtoASP(4.00, -53.188, 0.0, AminoAcidUtils.AminoAcid3.ASH, AminoAcidUtils.AminoAcid3.ASP),
+    GLHtoGLU(4.40, -59.390, 0.0, AminoAcidUtils.AminoAcid3.GLH, AminoAcidUtils.AminoAcid3.GLU),
+    LYStoLYD(10.40, 53.390, 0.0, AminoAcidUtils.AminoAcid3.LYS, AminoAcidUtils.AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
-    HIStoHID(6.00, 42.923, 0.0, AminoAcidUtils.AminoAcid3.HIS, AminoAcidUtils.AminoAcid3.HID),
-    HIStoHIE(6.00, 42.923, 0.0, AminoAcidUtils.AminoAcid3.HIS, AminoAcidUtils.AminoAcid3.HIE);
+    HIStoHID(7.00, 42.923, 0.0, AminoAcidUtils.AminoAcid3.HIS, AminoAcidUtils.AminoAcid3.HID),
+    HIStoHIE(6.60, 42.923, 0.0, AminoAcidUtils.AminoAcid3.HIS, AminoAcidUtils.AminoAcid3.HIE);
     //TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     //TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
 
