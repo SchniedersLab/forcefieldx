@@ -674,9 +674,10 @@ public class PhGradientTest extends PotentialTest {
     // Configure input arguments for the PhGradient script.
     logger.info(" Testing endstate energy for " + info + "at lambdas: " + key);
 
-    // Choose a random Atom to test XYZ gradient.
+    // Choose a random Atom (1..111) to test XYZ gradient.
     Random random = new Random();
-    String randomAtom = Integer.toString(random.nextInt(111));
+    String randomAtom = Integer.toString(random.nextInt(110) + 1);
+
     String[] args = {"-v", "-d", "0.000001", "--ga", randomAtom, filename};
     binding.setVariable("args", args);
     // Construct and evaluate the Volume script.
@@ -691,88 +692,47 @@ public class PhGradientTest extends PotentialTest {
     assertEquals(info + " Angle Energy", angleEnergy, energyAndInteractionList[2], tolerance);
     assertEquals(info + " Angle Count", nAngles, (int) energyAndInteractionList[3]);
     // Stretch-Bend Energy
-    assertEquals(
-        info + " Stretch-Bend Energy",
-        stretchBendEnergy,
-        energyAndInteractionList[4],
+    assertEquals(info + " Stretch-Bend Energy", stretchBendEnergy, energyAndInteractionList[4],
         tolerance);
-    assertEquals(
-        info + " Stretch-Bend Count", nStretchBends, (int) energyAndInteractionList[5]);
+    assertEquals(info + " Stretch-Bend Count", nStretchBends, (int) energyAndInteractionList[5]);
     // Urey-Bradley Energy
-    assertEquals(
-        info + " Urey-Bradley Energy",
-        ureyBradleyEnergy,
-        energyAndInteractionList[6],
+    assertEquals(info + " Urey-Bradley Energy", ureyBradleyEnergy, energyAndInteractionList[6],
         tolerance);
-    assertEquals(
-        info + " Urey-Bradley Count", nUreyBradleys, (int) energyAndInteractionList[7]);
+    assertEquals(info + " Urey-Bradley Count", nUreyBradleys, (int) energyAndInteractionList[7]);
     // Out-of-Plane Bend
-    assertEquals(
-        info + " Out-of-Plane Bend Energy",
-        outOfPlaneBendEnergy,
-        energyAndInteractionList[8],
-        tolerance);
-    assertEquals(
-        info + " Out-of-Plane Bend Count",
-        nOutOfPlaneBends,
+    assertEquals(info + " Out-of-Plane Bend Energy", outOfPlaneBendEnergy,
+        energyAndInteractionList[8], tolerance);
+    assertEquals(info + " Out-of-Plane Bend Count", nOutOfPlaneBends,
         (int) energyAndInteractionList[9]);
     // Torsional Angle
-    assertEquals(
-        info + " Torsion Energy", torsionEnergy, energyAndInteractionList[10], tolerance);
+    assertEquals(info + " Torsion Energy", torsionEnergy, energyAndInteractionList[10], tolerance);
     assertEquals(info + " Torsion Count", nTorsions, (int) energyAndInteractionList[11]);
     // Improper Torsional Angle
-    assertEquals(
-        info + " Improper Torsion Energy",
-        improperTorsionEnergy,
-        energyAndInteractionList[12],
-        tolerance);
-    assertEquals(
-        info + " Improper Torsion Count",
-        nImproperTorsions,
+    assertEquals(info + " Improper Torsion Energy", improperTorsionEnergy,
+        energyAndInteractionList[12], tolerance);
+    assertEquals(info + " Improper Torsion Count", nImproperTorsions,
         (int) energyAndInteractionList[13]);
     // Pi-Orbital Torsion
-    assertEquals(
-        info + " Pi-OrbitalTorsion Energy",
-        piOrbitalTorsionEnergy,
-        energyAndInteractionList[14],
-        tolerance);
-    assertEquals(
-        info + " Pi-OrbitalTorsion Count",
-        nPiOrbitalTorsions,
+    assertEquals(info + " Pi-OrbitalTorsion Energy", piOrbitalTorsionEnergy,
+        energyAndInteractionList[14], tolerance);
+    assertEquals(info + " Pi-OrbitalTorsion Count", nPiOrbitalTorsions,
         (int) energyAndInteractionList[15]);
     // Torsion-Torsion
-    assertEquals(
-        info + " Torsion-Torsion Energy",
-        torsionTorsionEnergy,
-        energyAndInteractionList[16],
-        tolerance);
-    assertEquals(
-        info + " Torsion-Torsion Count",
-        nTorsionTorsions,
+    assertEquals(info + " Torsion-Torsion Energy", torsionTorsionEnergy,
+        energyAndInteractionList[16], tolerance);
+    assertEquals(info + " Torsion-Torsion Count", nTorsionTorsions,
         (int) energyAndInteractionList[17]);
     // van Der Waals
-    assertEquals(
-        info + " van Der Waals Energy",
-        vanDerWaalsEnergy,
-        energyAndInteractionList[18],
+    assertEquals(info + " van Der Waals Energy", vanDerWaalsEnergy, energyAndInteractionList[18],
         tolerance);
-    assertEquals(
-        info + " van Der Waals Count", nVanDerWaals, (int) energyAndInteractionList[19]);
+    assertEquals(info + " van Der Waals Count", nVanDerWaals, (int) energyAndInteractionList[19]);
     // Permanent Multipoles
-    assertEquals(
-        info + " Permanent Multipole Energy",
-        permanentEnergy,
-        energyAndInteractionList[20],
+    assertEquals(info + " Permanent Multipole Energy", permanentEnergy, energyAndInteractionList[20],
         tolerance);
-    assertEquals(
-        info + " Permanent Multipole Count",
-        nPermanent,
+    assertEquals(info + " Permanent Multipole Count", nPermanent,
         (int) energyAndInteractionList[21]);
     // Polarization Energy
-    assertEquals(
-        info + " Polarization Energy",
-        polarizationEnergy,
-        energyAndInteractionList[22],
+    assertEquals(info + " Polarization Energy", polarizationEnergy, energyAndInteractionList[22],
         tolerance);
     assertEquals(info + " Polarization Count", nPolar, (int) energyAndInteractionList[23]);
     // Extended System Bias
