@@ -42,7 +42,6 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.PotentialComponent;
 import ffx.potential.bonded.*;
-import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.utilities.Constants;
@@ -258,31 +257,35 @@ public class NewExtendedSystem  {
         Arrays.fill(titrationIndexMap, -1);
         Arrays.fill(tautomerIndexMap, -1);
 
-        //Fill titration and tautomer lists with appropriate residues.
+        // Cycle through each residue to determine if it is titratable or tautomerizing.
+        // If a residue is one of these, add to titration or tautomer lists.
+        // Next, loop through all atoms and check to see if the atom belongs to this residue.
+        // If the atom does belong to this residue, set all corresponding variables in the respective titration or tautomer array (size = numAtoms).
+        // Store the index of the residue in the respective list into a map array (size = numAtoms).
         List<Residue> residueList = molecularAssembly.getResidueList();
-        for(Residue residue : residueList){
-            if(isTitrable(residue)){
-                titratingResidueList.add(residue);
-                if(isTautomer(residue)){
-                    tautomerizingResidueList.add(residue);
-                }
-            }
-        }
-        //Initialize titration and tautomer arrays by looping through all atoms and determining if
-        // that atom belongs to an titrating or tautomerizing residue.
-        //TODO: Make more readable.
-        for (int i = 0; i < numAtoms; i++) {
-            Residue residue = getResidueFromAtom(i);
+        for (Residue residue : residueList) {
             if (isTitrable(residue)) {
-                this.isTitrating[i] = true;
-                titrationLambdas[i] = initialTitrationLambda;
-                int titrationIndex = titratingResidueList.indexOf(residue);
-                titrationIndexMap[i] = titrationIndex;
+                titratingResidueList.add(residue);
+                List<Atom> atomList = residue.getAtomList();
+                for (int i = 0; i < numAtoms; i++) {
+                    if (atomList.contains(atoms[i])) {
+                        isTitrating[i] = true;
+                        titrationLambdas[i] = initialTitrationLambda;
+                        int titrationIndex = titratingResidueList.indexOf(residue);
+                        titrationIndexMap[i] = titrationIndex;
+                    }
+                }
+                // If is a tautomer, it must also be titrating.
                 if (isTautomer(residue)) {
-                    this.isTautomerizing[i] = true;
-                    tautomerLambdas[i] = initialTautomerLambda;
-                    int tautomerIndex = tautomerizingResidueList.indexOf(residue);
-                    tautomerIndexMap[i] = tautomerIndex;
+                    tautomerizingResidueList.add(residue);
+                    for (int i = 0; i < numAtoms; i++) {
+                        if (atomList.contains(atoms[i])) {
+                            isTautomerizing[i] = true;
+                            tautomerLambdas[i] = initialTautomerLambda;
+                            int tautomerIndex = tautomerizingResidueList.indexOf(residue);
+                            tautomerIndexMap[i] = tautomerIndex;
+                        }
+                    }
                 }
             }
         }
@@ -301,20 +304,13 @@ public class NewExtendedSystem  {
         //Theta masses should always be the same for each ESV
         Arrays.fill(thetaMassArray, thetaMass);
 
-        for (int i=0; i< extendedResidueList.size(); i++){
-            if(i < titratingResidueList.size()){
+        for (int i = 0; i < extendedResidueList.size(); i++) {
+            if (i < titratingResidueList.size()) {
                 initializeThetaArrays(i, initialTitrationLambda);
-            }
-            else{
+            } else {
                 initializeThetaArrays(i, initialTautomerLambda);
             }
         }
-    }
-
-    private Residue getResidueFromAtom(int atomIndex){
-        Atom atom = molecularAssembly.getAtomList().get(atomIndex);
-        int residueIndex = atom.getResidueNumber();
-        return molecularAssembly.getResidueList().get(residueIndex);
     }
 
     private void initializeThetaArrays(int index, double lambda){
@@ -332,21 +328,14 @@ public class NewExtendedSystem  {
 
     public boolean isExtended(Residue residue){ return extendedResidueList.contains(residue); }
 
-    //TODO: Replace with check from enum
-    private boolean isTitrable(Residue residue){
+    public boolean isTitrable(Residue residue){
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
-        return  AA3 == AminoAcid3.ASP || AA3 == AminoAcid3.ASD || AA3 == AminoAcid3.ASH ||
-                AA3 == AminoAcid3.GLU || AA3 == AminoAcid3.GLD || AA3 == AminoAcid3.GLH ||
-                AA3 == AminoAcid3.HIS || AA3 == AminoAcid3.HID || AA3 == AminoAcid3.HIE ||
-                AA3 == AminoAcid3.LYS || AA3 == AminoAcid3.LYD;
+        return  AA3.isConstantPhTitratable;
     }
 
-    //TODO: Replace with check from enum
-    private boolean isTautomer(Residue residue){
+    public boolean isTautomer(Residue residue){
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
-        return AA3 ==  AminoAcid3.ASP || AA3 == AminoAcid3.ASD || AA3 == AminoAcid3.ASH ||
-                AA3 == AminoAcid3.GLU || AA3 == AminoAcid3.GLD || AA3 == AminoAcid3.GLH ||
-                AA3 == AminoAcid3.HIS || AA3 == AminoAcid3.HID || AA3 == AminoAcid3.HIE;
+        return AA3.isConstantPhTautomer;
     }
 
     public double getTitrationLambda(int i) {
@@ -416,29 +405,23 @@ public class NewExtendedSystem  {
     }
 
     //TODO: rename preForce?
-    //TODO: Do two for loops: 1st loop , update extended lambdas; 2nd loop pull in lambdas in titration or tautomer array[numAtoms]
     //This will prevent recalculating multiple sinTheta*sinTheta that are the same number.
-    private void updateLambdas(){
-        for(int i=0; i<molecularAssembly.getAtomArray().length; i++){
+    private void updateLambdas() {
+        for (int i = 0; i < extendedResidueList.size(); i++) {
+            double sinTheta = Math.sin(thetaPosition[i]);
+            double oldLambda = extendedLambdas[i];
+            extendedLambdas[i] = sinTheta * sinTheta;
+            logger.info(format(" Propagating Extended Residue[%d]: %g --> %g ",
+                    i, oldLambda, extendedLambdas[i]));
+        }
+        for (int i = 0; i < molecularAssembly.getAtomArray().length; i++) {
             int mappedTitrationIndex = titrationIndexMap[i];
             int mappedTautomerIndex = tautomerIndexMap[i];
-            if(mappedTitrationIndex != -1){
-                double sinTitrationTheta = Math.sin(thetaPosition[mappedTitrationIndex]);
-                double oldTitrationLambda = titrationLambdas[i];
-                extendedLambdas[mappedTitrationIndex] = sinTitrationTheta;
-                titrationLambdas[i] = sinTitrationTheta * sinTitrationTheta;
-                double newTitrationLambda = titrationLambdas[i];
-                logger.info(format(" Propagating Titration ESV[%d]: %g --> %g ",
-                        mappedTitrationIndex, oldTitrationLambda, newTitrationLambda));
+            if (mappedTitrationIndex != -1) {
+                titrationLambdas[i] = extendedLambdas[mappedTitrationIndex];
             }
-            if(mappedTautomerIndex != -1){
-                double sinTautomerTheta = Math.sin(thetaPosition[titratingResidueList.size() + mappedTautomerIndex]);
-                double oldTautomerLambda = titrationLambdas[i];
-                extendedLambdas[titratingResidueList.size()+ mappedTautomerIndex] = tautomerLambdas[i];
-                tautomerLambdas[i] = sinTautomerTheta * sinTautomerTheta;
-                double newTautomerLambda = tautomerLambdas[i];
-                logger.info(format(" Propagating Titration ESV[%d]: %g --> %g ",
-                        mappedTautomerIndex, oldTautomerLambda, newTautomerLambda));
+            if (mappedTautomerIndex != -1) {
+                tautomerLambdas[i] = extendedLambdas[mappedTautomerIndex + titratingResidueList.size()];
             }
         }
         updateListeners();

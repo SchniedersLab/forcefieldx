@@ -3074,28 +3074,28 @@ public class AminoAcidUtils {
     ILE(8, true),
     SER(6),
     THR(7),
-    CYS(6, false, false, false),
+    CYS(6, false, false, false, false),
     CYX(6),
-    CYD(6, false, false, true),
+    CYD(6, false, false, false, true),
     PRO(7),
     PHE(11, true),
-    TYR(12, true, false, false),
-    TYD(12, true, false, true),
+    TYR(12, true, false, false, false),
+    TYD(12, true, false, false, true),
     TRP(14, true),
-    HIS(10, true, true, false),
-    HID(10, true, true, true),
-    HIE(10, true, true, true),
-    ASP(8, true, true, false),
-    ASH(8, true, true, true),
-    ASD(8, true, true, true),
+    HIS(10, true, true, true, false),
+    HID(10, true, false, false, true),
+    HIE(10, true, false, false, true),
+    ASP(8, true, false, false, false),
+    ASH(8, true, false, false, true),
+    ASD(8, true, true, true, true),
     ASN(8, true),
-    GLU(9, true, true, false),
-    GLH(9, true, true, true),
-    GLD(9, true, true, true),
+    GLU(9, true, false, false, false),
+    GLH(9, true, false, false, true),
+    GLD(9, true, true, true, true),
     GLN(9, true),
     MET(8, true),
-    LYS(9, true, true, false),
-    LYD(9, true, true, true),
+    LYS(9, true, true, false, false),
+    LYD(9, true, false, false, true),
     ARG(11, true),
     ORN(8),
     AIB(6),
@@ -3110,30 +3110,34 @@ public class AminoAcidUtils {
 
     public final int heavyAtoms;
     public final boolean useWithMultiResidue;
-    public final boolean isTitratable;
+    public final boolean isConstantPhTitratable;
+    public final boolean isConstantPhTautomer;
     public final boolean nonStandardProtonation;
 
     AminoAcid3(int heavyAtoms) {
       this.heavyAtoms = heavyAtoms;
       useWithMultiResidue = false;
-      isTitratable = false;
+      isConstantPhTitratable = false;
+      isConstantPhTautomer =  false;
       nonStandardProtonation = false;
     }
 
     AminoAcid3(int heavyAtoms, boolean useWithMultiResidue) {
       this.heavyAtoms = heavyAtoms;
       this.useWithMultiResidue = useWithMultiResidue;
-      isTitratable = false;
+      isConstantPhTitratable = false;
+      isConstantPhTautomer =  false;
       nonStandardProtonation = false;
     }
 
-    AminoAcid3(int heavyAtoms, boolean useWithMultiResidue, boolean isTitratable,
-        boolean nonStandardProtonation) {
+    AminoAcid3(int heavyAtoms, boolean useWithMultiResidue, boolean isConstantPhTitratable, boolean isConstantPhTautomer,
+               boolean nonStandardProtonation) {
       this.heavyAtoms = heavyAtoms;
       this.useWithMultiResidue = useWithMultiResidue;
-      this.isTitratable = isTitratable;
+      this.isConstantPhTitratable = isConstantPhTitratable;
+      this.isConstantPhTautomer = isConstantPhTautomer;
       this.nonStandardProtonation = nonStandardProtonation;
-      if (nonStandardProtonation && !this.isTitratable) {
+      if (nonStandardProtonation && !this.isConstantPhTitratable) {
         throw new IllegalArgumentException(
             format(
                 " Amino acid class %s cannot be both nonstandard and non-titratable!", this));
