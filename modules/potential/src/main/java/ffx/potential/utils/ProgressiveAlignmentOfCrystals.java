@@ -39,6 +39,8 @@ package ffx.potential.utils;
 
 import static ffx.crystal.Crystal.mod;
 import static ffx.numerics.math.DoubleMath.dist;
+import static ffx.potential.parsers.DistanceMatrixFilter.toDistanceMatrixString;
+import static ffx.potential.parsers.DistanceMatrixFilter.writeDistanceMatrixRow;
 import static ffx.potential.utils.Superpose.applyRotation;
 import static ffx.potential.utils.Superpose.applyTranslation;
 import static ffx.potential.utils.Superpose.calculateRotation;
@@ -67,14 +69,11 @@ import ffx.potential.Utilities;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parsers.DistanceMatrixFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.utilities.DoubleIndexPair;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -136,8 +135,8 @@ public class ProgressiveAlignmentOfCrystals {
   private int restartRow = 0;
   /**
    * The default restart column is 0. Larger values being set by the "readMatrix" method during
-   * restarts are not currently supported. A restart must begin from the beginning of a row
-   * for simplicity.
+   * restarts are not currently supported. A restart must begin from the beginning of a row for
+   * simplicity.
    */
   private int restartColumn = 0;
   /**
@@ -153,7 +152,8 @@ public class ProgressiveAlignmentOfCrystals {
    */
   private final int rank;
   /**
-   * The distances arrays store an RSMD values from each process. The array is of size [numProc][1].
+   * The distances matrix stores a single RSMD value from each process.
+   * The array is of size [numProc][1].
    */
   private final double[][] distances;
   /**
@@ -286,15 +286,20 @@ public class ProgressiveAlignmentOfCrystals {
     for (int row = restartRow; row < baseSize; row++) {
       // Initialize the distance this rank is responsible for to zero.
       myDistance[0] = -1.0;
+      // Base unit cell for logging.
+      Crystal baseCrystal = baseFilter.getActiveMolecularSystem().getCrystal().getUnitCell();
       for (int column = restartColumn; column < paddedTargetSize; column++) {
         // Make sure this is not a padded value of column.
         if (column < targetSize) {
           int targetRank = column % numProc;
           if (targetRank == rank) {
             long time = -System.nanoTime();
+            Crystal targetCrystal = targetFilter.getActiveMolecularSystem().getCrystal()
+                .getUnitCell();
             logger.info(
-                format("\n Comparing Model %d of %s\n with      Model %d of %s", row + 1, baseLabel,
-                    column + 1, targetLabel));
+                format("\n Comparing Model %d (%s) of %s\n with      Model %d (%s) of %s",
+                    row + 1, baseCrystal.toShortString(), baseLabel,
+                    column + 1, targetCrystal.toShortString(), targetLabel));
 
             // Compute the PAC RMSD.
             double rmsd = compare(nAtoms, comparisonAtoms, nAU, inflatedAU, numSearch, numSearch2,
@@ -319,13 +324,14 @@ public class ProgressiveAlignmentOfCrystals {
           gatherRMSDs(row, column);
         }
       }
+
       restartColumn = 0;
       targetFilter.readNext(true, false);
       baseFilter.readNext(false, false);
 
       // Write out this row.
       if (rank == 0 && write) {
-        writeRow(row, pacFileName);
+        writeDistanceMatrixRow(pacFileName, distMatrix[row]);
       }
     }
 
@@ -338,14 +344,7 @@ public class ProgressiveAlignmentOfCrystals {
 
     // Print the PAC RMSD matrix.
     if (baseSize > 1 || targetSize > 1) {
-      StringBuilder sBPrint = new StringBuilder();
-      for (double[] row : distMatrix) {
-        for (double col : row) {
-          sBPrint.append(format(" %7.4f", col));
-        }
-        sBPrint.append("\n");
-      }
-      logger.info("\n PAC RMSD Matrix:\n" + sBPrint);
+      logger.info("\n" + toDistanceMatrixString(distMatrix));
     }
 
     // Return distMatrix for validation if this is for the test script
@@ -764,7 +763,8 @@ public class ProgressiveAlignmentOfCrystals {
           }
           addLooseUnequal(crystalCheckRMSDs, round(rmsdSymOp, 6));
         } else {
-          logger.finer(format(" Center molecule %2d has an RMSD of %7.4f and was skipped.", m, checkRMSD0));
+          logger.finer(
+              format(" Center molecule %2d has an RMSD of %7.4f and was skipped.", m, checkRMSD0));
         }
       }
     }
@@ -798,49 +798,26 @@ public class ProgressiveAlignmentOfCrystals {
   }
 
   /**
-   * Write out human readable distance array to file.
+   * Read in the distance matrix.
    *
    * @param filename The PAC RMSD matrix file to read from.
    */
   private void readMatrix(String filename) {
     restartRow = 0;
     restartColumn = 0;
-    int nRow = distMatrix.length;
-    int nColumn = distMatrix[0].length;
 
-    try (BufferedReader bw = new BufferedReader(new FileReader(filename))) {
-      // Loop over the distance matrix rows.
-      for (; restartRow < nRow; restartRow++) {
-        double[] row = distMatrix[restartRow];
-        String rowString = bw.readLine();
-        // Split the RMSD values based on 1 or more spaces between them.
-        String[] tokens = rowString.trim().split(" +");
-        int nTokens = tokens.length;
-        // Loop over
-        for (restartColumn = 0; restartColumn < nTokens; restartColumn++) {
-          row[restartColumn] = Double.parseDouble(tokens[restartColumn]);
-        }
-        if (nTokens != nColumn) {
-          logger.info(
-              format(" Row %d of the PAC RMSD matrix is not complete (%d found of %d expected).",
-                  restartRow + 1, nTokens, nColumn));
-          logger.info(" The incomplete row in the PAC RMSD matrix file should be deleted.");
-          restartColumn = 0;
-          break;
-        }
-      }
-    } catch (Exception e) {
-      if (restartRow != nRow) {
-        logger.info(format(" Row %d of the PAC RMSD matrix has no entries.", restartRow));
-        restartColumn = 0;
-      } else {
-        logger.info(" Exception reading in PAC RMSD matrix:\n " + e);
-      }
+    DistanceMatrixFilter distanceMatrixFilter = new DistanceMatrixFilter();
+    if (distanceMatrixFilter.readDistanceMatrix(filename, distMatrix)) {
+      restartRow = distanceMatrixFilter.getRestartRow();
+      restartColumn = distanceMatrixFilter.getRestartColumn();
     }
 
+    int nRow = distMatrix.length;
+    int nColumn = distMatrix[0].length;
     if (restartRow == nRow && restartColumn == nColumn) {
       logger.info(format(" Complete distance matrix found (%d x %d).", restartRow, restartColumn));
     } else {
+      restartColumn = 0;
       logger.info(format(" Incomplete distance matrix found.\n Restarting at row %d, column %d.",
           restartRow + 1, restartColumn + 1));
     }
@@ -865,27 +842,6 @@ public class ProgressiveAlignmentOfCrystals {
       }
     } catch (Exception e) {
       logger.severe(" Exception collecting distance values." + e);
-    }
-  }
-
-  /**
-   * Write one row of the PAC RMSD matrix.
-   *
-   * @param row Current row of the PAC RMSD matrix.
-   * @param filename Filename to write to.
-   */
-  private void writeRow(int row, String filename) {
-    try (FileWriter fw = new FileWriter(filename, true);
-        BufferedWriter bw = new BufferedWriter(fw)) {
-      for (int column = 0; column < targetSize; column++) {
-        bw.write(format("%16.14f", distMatrix[row][column]));
-        if (column < targetSize - 1) {
-          bw.write(" ");
-        }
-      }
-      bw.write("\n");
-    } catch (Exception e) {
-      logger.info(" Exception writing PAC RMSD file: " + e);
     }
   }
 

@@ -44,7 +44,6 @@ import ffx.potential.cli.TimerOptions
 import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy
 import ffx.xray.cli.XrayOptions
-import ffx.xray.parsers.DiffractionFile
 import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -112,6 +111,7 @@ class Timer extends AlgorithmsScript {
       logger.info(helpString())
       return this
     } else {
+      assemblies = [activeAssembly]
       modelfilename = activeAssembly.getFile().getAbsolutePath()
     }
 
@@ -122,18 +122,15 @@ class Timer extends AlgorithmsScript {
     xrayOptions.setProperties(parseResult, properties)
 
     // Set up diffraction data (can be multiple files)
-    List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
 
-    DiffractionData diffractionData = new DiffractionData(assemblies, properties,
-        xrayOptions.solventModel,
-        diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]))
-
+    DiffractionData diffractionData =
+        xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
     diffractionData.scaleBulkFit()
     diffractionData.printStats()
 
     algorithmFunctions.energy(assemblies[0])
 
-    refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
+    refinementEnergy = xrayOptions.toXrayEnergy(diffractionData, assemblies, algorithmFunctions)
     int n = refinementEnergy.getNumberOfVariables()
     double[] x = new double[n]
     double[] g = new double[n]
@@ -172,6 +169,6 @@ class Timer extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList(refinementEnergy)
+        Collections.singletonList((Potential) refinementEnergy)
   }
 }

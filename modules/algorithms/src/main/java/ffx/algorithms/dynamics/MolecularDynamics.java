@@ -45,6 +45,7 @@ import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
 import edu.rit.pj.Comm;
+import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
 import ffx.algorithms.dynamics.integrators.BetterBeeman;
@@ -70,6 +71,7 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
+import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
@@ -1838,29 +1840,26 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
   /**
    * A simple container class to hold all the infrastructure associated with a MolecularAssembly for
-   * MolecularDynamics; assembly, properties, archive and PDB files, PDB and XYZ filters. Direct
-   * access to package-private members breaks encapsulation a bit, but the private inner class
-   * shouldn't be used externally anyways.
+   * MolecularDynamics.
    */
   protected static class AssemblyInfo {
 
     private final MolecularAssembly assembly;
     CompositeConfiguration compositeConfiguration;
     File archiveFile = null;
+    XYZFilter xyzFilter = null;
     File pdbFile;
     PDBFilter pdbFilter;
-    XYZFilter xyzFilter = null;
 
     AssemblyInfo(MolecularAssembly assembly) {
       this.assembly = assembly;
-      pdbFile = this.assembly.getFile();
-      compositeConfiguration = this.assembly.getProperties();
-      pdbFilter =
-          new PDBFilter(
-              this.assembly.getFile(),
-              this.assembly,
-              this.assembly.getForceField(),
-              this.assembly.getProperties());
+      pdbFile = SystemFilter.version(assembly.getFile());
+      compositeConfiguration = assembly.getProperties();
+      pdbFilter = new PDBFilter(pdbFile, assembly,
+              assembly.getForceField(),
+              assembly.getProperties());
+      // Turn on use of MODEL records.
+      pdbFilter.setModelNumbering(0);
     }
 
     public MolecularAssembly getAssembly() {

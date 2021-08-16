@@ -45,7 +45,6 @@ import ffx.xray.DiffractionData
 import ffx.xray.RefinementMinimize
 import ffx.xray.RefinementMinimize.RefinementMode
 import ffx.xray.cli.XrayOptions
-import ffx.xray.parsers.DiffractionFile
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
@@ -133,8 +132,8 @@ class Minimize extends AlgorithmsScript {
       logger.info(helpString())
       return this
     } else {
-      modelfilename = activeAssembly.getFile().getAbsolutePath()
       assemblies = [activeAssembly]
+      modelfilename = activeAssembly.getFile().getAbsolutePath()
     }
 
     logger.info("\n Running xray.Minimize on " + modelfilename)
@@ -148,12 +147,7 @@ class Minimize extends AlgorithmsScript {
     xrayOptions.setProperties(parseResult, properties)
 
     // Set up diffraction data (can be multiple files)
-    List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
-
-    diffractionData = new DiffractionData(assemblies, properties,
-        xrayOptions.solventModel,
-        diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]))
-
+    diffractionData = xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
     diffractionData.scaleBulkFit()
     diffractionData.printStats()
 
@@ -261,12 +255,9 @@ class Minimize extends AlgorithmsScript {
     } else {
       return Arrays.stream(assemblies).
           filter {a -> a != null
-          }.
-          map {a -> a.getPotentialEnergy()
-          }.
-          filter {e -> e != null
-          }.
-          collect(Collectors.toList())
+          }.map {a -> a.getPotentialEnergy()
+      }.filter {e -> e != null
+      }.collect(Collectors.toList())
     }
   }
 

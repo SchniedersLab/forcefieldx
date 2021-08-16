@@ -164,7 +164,7 @@ class Histogram extends AlgorithmsScript {
     if (orthogonalSpaceTempering == null) {
       potentials = Collections.emptyList()
     } else {
-      potentials = Collections.singletonList(orthogonalSpaceTempering)
+      potentials = Collections.singletonList((Potential) orthogonalSpaceTempering)
     }
     return potentials
   }

@@ -223,10 +223,12 @@ class Scheduler extends AlgorithmsScript {
 
     String java = javaHome + "/bin/java"
     String ffx = ffxHome + "/bin/ffx-all-1.0.0-beta.jar"
-    args = "-Xmx" + memory
+
+    // args = "-Xmx" + memory
+    String arg = "-Xmx" + memory
 
     if (v) {
-      args = args + " -Dpj.log='true'"
+      arg += " -Dpj.log='true'"
     }
 
     // Create an entry for each process
@@ -238,7 +240,7 @@ class Scheduler extends AlgorithmsScript {
             + node + " "
             + java + " "
             + ffx + " "
-            + args + "\n")
+            + arg + "\n")
         i++
       }
     }

@@ -262,7 +262,7 @@ class CIFtoXYZ extends PotentialScript {
       MolecularAssembly[] assemblies = potentialFunctions.openAll(filenames.get(1))
       System.clearProperty("mpoleterm")
 
-      activeAssembly = assemblies[0]
+      setActiveAssembly(assemblies[0])
       Atom[] xyzAtoms = activeAssembly.getAtomArray()
       int nXYZAtoms = xyzAtoms.length
 
@@ -296,7 +296,7 @@ class CIFtoXYZ extends PotentialScript {
         }
 
         // Add known XYZ bonds; a limitation is that bonds all are given a Bond order of 1.
-        ArrayList<Bond> bonds = activeAssembly.getBondList()
+        List<Bond> bonds = activeAssembly.getBondList()
         Order order = Order.SINGLE
         int xyzBonds = bonds.size()
         for (Bond bond : bonds) {
@@ -341,7 +341,10 @@ class CIFtoXYZ extends PotentialScript {
           factory.configure(atom)
         }
 
-        RebondTool rebonder = new RebondTool(2.0, 0.5, 0.5)
+        double maxCovalentRadius = 2.0
+        double minBondDistance = 0.5
+        double bondTolerance = 0.5
+        RebondTool rebonder = new RebondTool(maxCovalentRadius, minBondDistance, bondTolerance)
         rebonder.rebond(cifCDKAtoms)
 
         int cifBonds = cifCDKAtoms.bondCount

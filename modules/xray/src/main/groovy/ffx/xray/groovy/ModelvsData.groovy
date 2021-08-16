@@ -42,7 +42,6 @@ import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.xray.DiffractionData
 import ffx.xray.cli.XrayOptions
-import ffx.xray.parsers.DiffractionFile
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
@@ -87,7 +86,7 @@ class ModelvsData extends AlgorithmsScript {
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
   private List<String> filenames
-  private DiffractionData diffractiondata
+  private DiffractionData diffractionData
   private MolecularAssembly[] assemblies
 
   /**
@@ -123,6 +122,7 @@ class ModelvsData extends AlgorithmsScript {
       logger.info(helpString())
       return this
     } else {
+      assemblies = [activeAssembly]
       modelfilename = activeAssembly.getFile().getAbsolutePath()
     }
 
@@ -133,27 +133,22 @@ class ModelvsData extends AlgorithmsScript {
     xrayOptions.setProperties(parseResult, properties)
 
     // Set up diffraction data (can be multiple files)
-    List<DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies)
-
-    diffractiondata = new DiffractionData(assemblies, properties,
-        xrayOptions.solventModel,
-        diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
-
-    diffractiondata.scaleBulkFit()
-    diffractiondata.printStats()
+    diffractionData = xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
+    diffractionData.scaleBulkFit()
+    diffractionData.printStats()
 
     algorithmFunctions.energy(assemblies[0])
 
     if (mtz) {
-      diffractiondata.writeData(FilenameUtils.removeExtension(modelfilename) + "_ffx.mtz")
+      diffractionData.writeData(FilenameUtils.removeExtension(modelfilename) + "_ffx.mtz")
     }
 
     if (maps) {
-      diffractiondata.writeMaps(FilenameUtils.removeExtension(modelfilename) + "_ffx")
+      diffractionData.writeMaps(FilenameUtils.removeExtension(modelfilename) + "_ffx")
     }
 
     if (timings) {
-      diffractiondata.timings()
+      diffractionData.timings()
     }
 
     return this
@@ -164,19 +159,15 @@ class ModelvsData extends AlgorithmsScript {
     if (assemblies == null) {
       return new ArrayList<Potential>()
     } else {
-      return Arrays.stream(assemblies).
-          filter {a -> a != null
-          }.
-          map {a -> a.getPotentialEnergy()
-          }.
-          filter {e -> e != null
-          }.
-          collect(Collectors.toList())
+      return Arrays.stream(assemblies).filter {a -> a != null
+      }.map {a -> a.getPotentialEnergy()
+      }.filter {e -> e != null
+      }.collect(Collectors.toList())
     }
   }
 
   @Override
   boolean destroyPotentials() {
-    return diffractiondata == null ? true : diffractiondata.destroy()
+    return diffractionData == null ? true : diffractionData.destroy()
   }
 }

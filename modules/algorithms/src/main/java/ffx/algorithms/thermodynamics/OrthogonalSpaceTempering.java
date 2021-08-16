@@ -1455,11 +1455,11 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     /**
      * Send OST counts asynchronously.
      */
-    private final AsynchronousSend asynchronousSend;
+    private final SendAsynchronous sendAsynchronous;
     /**
      * Send OST counts synchronously.
      */
-    private final SynchronousSend synchronousSend;
+    private final SendSynchronous sendSynchronous;
     /**
      * Relative path to the histogram restart file. Assumption: a Histogram object will never change
      * its histogram or lambda files.
@@ -1637,9 +1637,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       rank = world.rank();
       if (asynchronous) {
         // Use asynchronous communication.
-        asynchronousSend = new AsynchronousSend(this);
-        asynchronousSend.start();
-        synchronousSend = null;
+        sendAsynchronous = new SendAsynchronous(this);
+        sendAsynchronous.start();
+        sendSynchronous = null;
       } else {
         Histogram[] histograms = new Histogram[numProc];
         int[] rankToHistogramMap = new int[numProc];
@@ -1647,8 +1647,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
           histograms[i] = this;
           rankToHistogramMap[i] = 0;
         }
-        synchronousSend = new SynchronousSend(histograms, rankToHistogramMap, independentWalkers);
-        asynchronousSend = null;
+        sendSynchronous = new SendSynchronous(histograms, rankToHistogramMap);
+        sendAsynchronous = null;
       }
       lastReceivedLambda = getLambda();
       if (discreteLambda) {
@@ -1755,8 +1755,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      *
      * @return The SynchronousSend, if any.
      */
-    public Optional<SynchronousSend> getSynchronousSend() {
-      return Optional.ofNullable(synchronousSend);
+    public Optional<SendSynchronous> getSynchronousSend() {
+      return Optional.ofNullable(sendSynchronous);
     }
 
     public void setHalfThetaVelocity(double halfThetaV) {
@@ -2391,9 +2391,17 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
           }
         }
       } else {
+        // Check the recursion kernel size.
+        checkRecursionKernelSize(currentdUdL);
+
         int lambdaBin = indexForLambda(currentLambda);
         int dUdLBin = binFordUdL(currentdUdL);
-        recursionKernel[lambdaBin][dUdLBin] += value;
+        try {
+          recursionKernel[lambdaBin][dUdLBin] += value;
+        } catch (IndexOutOfBoundsException e) {
+          logger.warning(format(" Count skipped in addToRecursionKernelValue due to an index out of bounds exception.\n L=%10.8f (%d), dU/dL=%10.8f (%d) and count=%10.8f",
+              currentLambda, lambdaBin, currentdUdL, dUdLBin, value));
+        }
       }
 
       if (updateFreeEnergy) {
@@ -2918,9 +2926,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     void addBias(double dUdL, double[] x, double[] gradient) {
       // Communicate adding the bias to all walkers.
       if (asynchronous) {
-        asynchronousSend.send(lambda, dUdL, temperingWeight);
+        sendAsynchronous.send(lambda, dUdL, temperingWeight);
       } else {
-        synchronousSend.send(lambda, dUdL, temperingWeight);
+        sendSynchronous.send(lambda, dUdL, temperingWeight);
       }
 
       // Update the free energy estimate.
@@ -2999,7 +3007,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     }
 
     void destroy() {
-      if (asynchronousSend != null && asynchronousSend.isAlive()) {
+      if (sendAsynchronous != null && sendAsynchronous.isAlive()) {
         double[] killMessage = new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
         DoubleBuf killBuf = DoubleBuf.buffer(killMessage);
         try {
@@ -3009,7 +3017,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
           logger.fine(
               format(
                   " Receive thread alive %b status %s",
-                  asynchronousSend.isAlive(), asynchronousSend.getState()));
+                  sendAsynchronous.isAlive(), sendAsynchronous.getState()));
         } catch (Exception ex) {
           String message =
               format(
@@ -3028,7 +3036,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       if (asynchronous) {
         return writeIndependent ? rank : 0;
       } else {
-        return synchronousSend.getHistogramIndex();
+        return sendSynchronous.getHistogramIndex();
       }
     }
 

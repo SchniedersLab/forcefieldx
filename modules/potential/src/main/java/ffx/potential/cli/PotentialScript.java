@@ -104,6 +104,17 @@ public abstract class PotentialScript extends FFXScript {
   }
 
   /**
+   * Set the Active Assembly. This is a work-around for a strange Groovy static compilation
+   * bug where direct assignment of activeAssembly in Groovy scripts that extend PotentialScript
+   * fails (a NPE results).
+   *
+   * @param molecularAssembly The MolecularAssembly that should be active.
+   */
+  public void setActiveAssembly(MolecularAssembly molecularAssembly) {
+    activeAssembly = molecularAssembly;
+  }
+
+  /**
    * Returns a List of all Potential objects associated with this script. Should be written to
    * tolerate nulls, as many tests run help() and exit without instantiating their Potentials.
    *

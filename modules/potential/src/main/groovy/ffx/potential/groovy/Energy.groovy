@@ -103,14 +103,14 @@ class Energy extends PotentialScript {
    * --dc or --densityCutoff Collect structures above a specified density.
    */
   @Option(names = ['--dc', '--densityCutoff'], paramLabel = "0.0", defaultValue = "0.0",
-          description = "Create ARC file of structures above a specified density.")
+      description = "Create ARC file of structures above a specified density.")
   private double dCutoff = 0.0
 
   /**
    * --ec or --energyCutOff Collect structures below a specified energy range from the minimum energy.
    */
   @Option(names = ['--ec', '--energyCutoff'], paramLabel = "0.0", defaultValue = "0.0",
-          description = "Create ARC file of structures within a specified energy of the lowest energy structure.")
+      description = "Create ARC file of structures within a specified energy of the lowest energy structure.")
   private double eCutoff = 0.0
 
   /**
@@ -217,9 +217,9 @@ class Energy extends PotentialScript {
         forceFieldEnergy.getCoordinates(x)
         if (verbose) {
           logger.info(format(" Snapshot %4d", index))
-          if(!crystal.aperiodic()){
+          if (!crystal.aperiodic()) {
             logger.info(format("\n Density:                                %6.3f (g/cc)",
-                    crystal.getDensity(activeAssembly.getMass())))
+                crystal.getDensity(activeAssembly.getMass())))
           }
           energy = forceFieldEnergy.energy(x, true)
         } else {
@@ -246,11 +246,10 @@ class Energy extends PotentialScript {
       }
 
       // If cutoffs have been selected create an ARC or PDB to store structures that satisfy cutoff
-      if((eCutoff>0.0 || dCutoff>0.0) && numModels > 1) {
+      if ((eCutoff > 0.0 || dCutoff > 0.0) && numModels > 1) {
         systemFilter.readNext(true)
         activeAssembly = systemFilter.getActiveMolecularSystem()
-        String modelFilename = filenames.get(0)
-        String fileName = FilenameUtils.getName(modelFilename)
+        String fileName = FilenameUtils.getName(filename)
         String ext = FilenameUtils.getExtension(fileName)
         fileName = FilenameUtils.removeExtension(fileName)
         File saveFile
@@ -258,20 +257,20 @@ class Energy extends PotentialScript {
         if (ext.toUpperCase().contains("XYZ")) {
           saveFile = new File(fileName + ".xyz")
           writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
-                  activeAssembly.getProperties())
+              activeAssembly.getProperties())
           potentialFunctions.saveAsXYZ(activeAssembly, saveFile)
         } else if (ext.toUpperCase().contains("ARC")) {
           saveFile = new File(fileName + ".arc")
           saveFile = potentialFunctions.versionFile(saveFile)
           writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
-                  activeAssembly.getProperties())
+              activeAssembly.getProperties())
           logger.info("SaveFile: " + saveFile.getAbsolutePath())
           saveFile.createNewFile()
         } else {
           saveFile = new File(fileName + ".pdb")
           saveFile = potentialFunctions.versionFile(saveFile)
           writeFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
-                  activeAssembly.getProperties())
+              activeAssembly.getProperties())
           if (numModels > 1) {
             writeFilter.setModelNumbering(0)
           }
@@ -282,13 +281,15 @@ class Energy extends PotentialScript {
         if (systemFilter instanceof XYZFilter || systemFilter instanceof PDBFilter) {
           int structNum = 0
           if (eCutoff > 0.0) {
-            logger.info(format("Lowest Energy of: %16.4f\n Saving structures with energy below: %16.4f", lowestEnergy,
+            logger.info(
+                format("Lowest Energy of: %16.4f\n Saving structures with energy below: %16.4f",
+                    lowestEnergy,
                     lowestEnergy + eCutoff))
           }
 
           do {
             if (dCutoff > 0.0 && eCutoff > 0.0) {
-              if(energies[structNum] < lowestEnergy + eCutoff && densities[structNum] > dCutoff) {
+              if (energies[structNum] < lowestEnergy + eCutoff && densities[structNum] > dCutoff) {
                 if (systemFilter instanceof PDBFilter) {
                   PDBFilter pdbFilter = (PDBFilter) systemFilter
                   pdbFilter.writeFile(saveFile, true, false, false)
@@ -298,7 +299,7 @@ class Energy extends PotentialScript {
                 }
               }
             } else if (dCutoff > 0.0) {
-              if(densities[structNum] > dCutoff) {
+              if (densities[structNum] > dCutoff) {
                 if (systemFilter instanceof PDBFilter) {
                   PDBFilter pdbFilter = (PDBFilter) systemFilter
                   pdbFilter.writeFile(saveFile, true, false, false)
@@ -308,7 +309,7 @@ class Energy extends PotentialScript {
                 }
               }
             } else if (eCutoff > 0.0) {
-              if(energies[structNum] < lowestEnergy + eCutoff) {
+              if (energies[structNum] < lowestEnergy + eCutoff) {
                 if (systemFilter instanceof PDBFilter) {
                   PDBFilter pdbFilter = (PDBFilter) systemFilter
                   pdbFilter.writeFile(saveFile, true, false, false)
@@ -377,7 +378,7 @@ class Energy extends PotentialScript {
     if (forceFieldEnergy == null) {
       potentials = Collections.emptyList()
     } else {
-      potentials = Collections.singletonList(forceFieldEnergy)
+      potentials = Collections.singletonList((Potential) forceFieldEnergy)
     }
     return potentials
   }
