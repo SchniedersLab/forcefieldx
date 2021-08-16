@@ -63,7 +63,7 @@ import org.apache.commons.math3.random.RandomGenerator;
  */
 public class Clustering {
 
-  private static final Logger logger = Logger.getLogger(PotentialsUtils.class.getName());
+  private static final Logger log = Logger.getLogger(PotentialsUtils.class.getName());
 
   /**
    * Number of iterations for k-means clustering
@@ -88,7 +88,7 @@ public class Clustering {
       double[] row = distMatrix.get(i);
       // Check that the input data is appropriate.
       if (row.length != dim) {
-        logger.severe(format(" Row %d of the distance matrix (%d x %d) has %d columns.",
+        log.severe(format(" Row %d of the distance matrix (%d x %d) has %d columns.",
             i, dim, dim, row.length));
       }
       conformationList.add(new Conformation(row, i));
@@ -217,14 +217,14 @@ public class Clustering {
       repStructs.add(minID);
 
       if (verbose) {
-        logger.info(sb.toString());
+        log.info(sb.toString());
       }
     }
 
     if (verbose) {
-      logger.info(format(" Mean RMSD within clusters: \t %6.4f A.", meanClusterRMSD / nClusters));
+      log.info(format(" Mean RMSD within clusters: \t %6.4f A.", meanClusterRMSD / nClusters));
       double sumOfClusterVariances = sumOfClusterVariances(clusters);
-      logger.info(
+      log.info(
           format(" Mean cluster variance:     \t %6.4f A.\n", sumOfClusterVariances / nClusters));
     }
 

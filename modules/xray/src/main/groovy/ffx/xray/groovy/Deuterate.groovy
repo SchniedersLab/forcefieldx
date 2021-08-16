@@ -98,6 +98,7 @@ class Deuterate extends AlgorithmsScript {
       logger.info(helpString())
       return this
     } else {
+      assemblies = [activeAssembly]
       modelfilename = activeAssembly.getFile().getAbsolutePath()
     }
 
@@ -118,7 +119,7 @@ class Deuterate extends AlgorithmsScript {
         }
       }
 
-      ArrayList<MSNode> waters = assemblies[i].getWaters()
+      List<MSNode> waters = assemblies[i].getWaters()
       for (MSNode node : waters) {
         Molecule water = (Molecule) node
         water.setName("DOD")

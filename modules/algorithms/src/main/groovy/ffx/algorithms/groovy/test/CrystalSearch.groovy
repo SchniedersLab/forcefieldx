@@ -37,330 +37,341 @@
 //******************************************************************************
 package ffx.algorithms.groovy.test
 
+import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.optimize.Minimize
 import ffx.crystal.Crystal
+import ffx.crystal.SpaceGroup
+import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
-import groovy.cli.picocli.CliBuilder
+import ffx.utilities.Constants
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation
+import picocli.CommandLine.Command
+import picocli.CommandLine.Option
+import picocli.CommandLine.Parameters
 
-// Default convergence criteria.
-double eps = 1.0;
+/**
+ * The CrystalSearch script searches for minimum energy polymorphs for a given space group.
+ * <br>
+ * Usage:
+ * <br>
+ * ffxc test.CrystalSearch [options] &lt;filename&gt;
+ */
+@Command(description = " Search for minimum energy polymoprhs for a given space group.", name = "ffxc test.CrystalSearch")
+class CrystalSearch extends AlgorithmsScript {
 
-// Default number of trials.
-int nTrials = 10;
+  /**
+   * -e or --eps Minimization convergence criteria (Kcal/mol/Ang).
+   */
+  @Option(names = ["-e", "--eps"], paramLabel = "1.0", defaultValue = "1.0",
+      description = "Minimization convergence criteria (Kcal/mol/Ang).")
+  double eps
 
-// Create the command line parser.
-def cli = new CliBuilder(usage: ' ffxc test.crystalSearch [options] <filename1>');
-cli.h(longOpt: 'help', 'Print this help message.');
-cli.e(longOpt: 'eps', args: 1, argName: '1.0', 'RMS gradient convergence criteria');
-cli.t(longOpt: 'trials', args: 1, argName: '10', 'Number of random trials');
+  /**
+   * -t or --trials Number of random trials.
+   */
+  @Option(names = ["-t", "--trials"], paramLabel = "10", defaultValue = "10",
+      description = "Number of random trials.")
+  int nTrials
 
-// The p flag is set to Direct automatically unless user specifies otherwise.
-// this is necessary since SCF does not always converge for "bad" moves/rotations
-cli.p(longOpt: 'polarization', args: 1, argName: 'Direct',
-    'polarization model: [none / direct / mutual]');
-def options = cli.parse(args);
+  /**
+   * A PDB or XYZ filename.
+   */
+  @Parameters(arity = "1", paramLabel = "file",
+      description = "A PDB or XYZ input file.")
+  private String filename
 
-List<String> arguments = options.arguments();
-if (options.h || arguments == null || arguments.size() < 1) {
-  return cli.usage();
-}
-
-// Read in the first command line file.
-String filename = arguments.get(0);
-
-// Load convergence criteria.
-if (options.e) {
-  eps = Double.parseDouble(options.e);
-}
-
-// Load number of trials
-if (options.t) {
-  nTrials = Integer.parseInt(options.t);
-}
-
-//Set polarization scheme
-if (options.p) {
-  System.setProperty("polarization", options.p);
-}
-
-// Open the file.
-systems = open(filename);
-Crystal crystal = systems[0].getCrystal().getUnitCell();
-
-logger.info("\n Searching for " + filename);
-logger.info(" RMS gradient convergence criteria: " + eps);
-
-MolecularAssembly molecularAssembly = (MolecularAssembly) active;
-ForceFieldEnergy forceFieldEnergy = active.getPotentialEnergy();
-Minimize minimize = new Minimize(active, sh);
-Atom[] atoms = molecularAssembly.getAtomArray();
-spaceGroup = crystal.spaceGroup;
-double nSymm = 4;
-//spaceGroup.getNumberOfSymOps();
-
-//Allocate memory for Translate array
-double[] translate = new double[3];
-
-//Allocate memory for COM
-double[] com = new double[3];
-
-// Used to label trial number
-int counter = 1;
-
-//Avogadro #
-final double avogadro = 6.02214129e23;
-
-// Determine the number of atoms in molecule
-int nAtoms = atoms.length;
-
-//Allocate memory for mass of atoms
-//variable used in determining crystal density
-double mass = 0.0;
-
-// Create object "random" used to generate randome doubles
-Random random = new Random()
-
-// Allocate memory for the atom coordinates after translation, rotation, and minimization
-double[][] newAtoms = new double[nAtoms][3];
-
-// Allocate temporary memory for the axis coordinates for each atom
-double[] finalCoords = new double[3];
-
-// Allocate memory for the best atom coordinates from all conducted trials
-double[][] bestAtoms = new double[nAtoms][3];
-
-double[][] originalAtoms = new double[nAtoms][3];
-
-double[] bestCrystalParameters = new double[6];
-
-//Allocate memory for unit cell axis lengths and angles
-double a;
-double b;
-double c;
-double alpha;
-double beta;
-double gamma;
-
-//Use "a" length to set apropriate translation vectors
-double max = 0.5;
-double min = -max;
-
-//Allocate memory for variable used in comparision with density of crystal
-double minDensity = 0.8;
-double maxDensity = 1.3;
-
-//Boolean used to escape while loop
-boolean likelyDensity = false;
-
-// Function to provide random doubles
-def getRandomNumber(double maxShift, double minShift, rando) {
-  double rand = minShift + (maxShift - minShift) * rando.nextDouble();
-  return rand;
-}
-
-// Function to get atomic coordinates after minimization
-def double[][] getAtomicCoordinates(Atom[] x, numberOfAtoms) {
-  double[] Coords = new double[3]
-  double[][] atomCoords = new double[numberOfAtoms][3]
-  for (j = 0; j < numberOfAtoms; j++) {
-    Coords[0] = x[j].getX();
-    Coords[1] = x[j].getY();
-    Coords[2] = x[j].getZ();
-    for (k = 0; k < 3; k++) {
-      atomCoords[j][k] = Coords[k];
-    }
-  }
-  return atomCoords;
-}
-
-//Proper documentation can be found in ffx.algoritms.barostat for the density() function.
-def double density(mass, nSymm, avogadro, unitCell) {
-  double density = (mass * nSymm / avogadro) * (1.0e24 / unitCell.volume);
-//    logger.info(" The variables used in density calculation are: " + mass + " " + nSymm + " " + unitCell.volume + " " + density);
-  return density;
-
-}
-
-/**********************************************************************
- *      Translate the center of mass of the molecule to the origin
- **********************************************************************/
-
-// This allows for proper rotation of molecule and only needs to be conducted 
-// once.   
-
-// Assign the center of mass as an array to 0.0
-com[0] = 0.0;
-com[1] = 0.0;
-com[2] = 0.0;
-
-// Loop over each atom to find the average X, Y, and Z values
-for (atom in atoms) {
-  com[0] = com[0] + atom.getX();
-  com[1] = com[1] + atom.getY();
-  com[2] = com[2] + atom.getZ();
-}
-
-// Divide average coordinate value by the number of atoms
-com[0] = com[0] / nAtoms;
-com[1] = com[1] / nAtoms;
-com[2] = com[2] / nAtoms;
-
-// Calculate the translation vector for the center of mass
-crystal.toPrimaryCell(com, translate);
-translate[0] = translate[0] - com[0];
-translate[1] = translate[1] - com[1];
-translate[2] = translate[2] - com[2];
-
-// Move each atom and calculate the total mass of the molecule
-for (atom in atoms) {
-  atom.move(translate);
-  mass += atom.getMass();
-}
-
-// For each trial apply a rotation and translation.
-for (int i = 0; i < nTrials; i++) {
-
-  /****************************************************
-   Randomly assign lattice parameters for crystal
-   ****************************************************/
-  while (likelyDensity != true) {
-    a = getRandomNumber(14, 8, random);
-    b = getRandomNumber(14, 8, random);
-    c = getRandomNumber(14, 8, random);
-
-    //Monoclinic Space group settings require alpha and gamma = 90
-    alpha = 90;
-    //getRandomNumber(180, 20, random);
-    beta = getRandomNumber(150, 140, random);
-    gamma = 90;
-    //getRandomNumber(180, 20, random);
-
-//    logger.info("The crystal parameters are: " + a + " " + b + " " + c + " " + alpha+ " " + beta + " " + gamma + " " + nSymm)
-    crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
-    double den = density(mass, nSymm, avogadro, crystal);
-//    logger.info("The crystal density is: " + den + " and mass is = " + mass);
-    if (den > minDensity && den < maxDensity) {
-      likelyDensity = true;
-    }
-  }
-  logger.info("---------------------- Trial Number: " + counter + " ----------------------");
-  counter++;
-  logger.info("Cell parameters: " + a + ' ' + b + ' ' + c + ' ' + beta);
-  // Set likelyDensity to false so that on next trial run it will generate new unit
-  // cell parameters.
-  likelyDensity = false;
-
-  // Apply the proposed boundary condition.
-  forceFieldEnergy.setCrystal(crystal);
-
-  /***********************************************
-   Apply rotation algorithm
-   ***********************************************/
-
-  // Generate random Quaternion. In order to be random it can not be evenly distributed along the angle due to spherical rotation pattern.    
-  s = random.nextDouble();
-  σ1 = Math.sqrt(1 - s);
-  σ2 = Math.sqrt(s);
-  θ1 = 2 * Math.PI * random.nextDouble();
-  θ2 = 2 * Math.PI * random.nextDouble();
-  w = Math.cos(θ2) * σ2;
-  x = Math.sin(θ1) * σ1;
-  y = Math.cos(θ1) * σ1;
-  z = Math.sin(θ2) * σ2;
-
-  // Create object for rotation of molecule based on quaternion
-  Rotation rotation = new Rotation(w, x, y, z, true)
-
-  // Apply rotation to atoms
-  for (j = 0; j < nAtoms; j++) {
-    atoms[j].rotate(rotation.getMatrix());
+  /**
+   * CrystalSearch Constructor.
+   */
+  CrystalSearch() {
+    this(new Binding())
   }
 
-  /************************************************************************
-   Generate a random TRANSLATION vector i times for the a, b, and c axis
-   ************************************************************************/
-
-  double d = getRandomNumber(max, min, random);
-  double e = getRandomNumber(max, min, random);
-  double f = getRandomNumber(max, min, random);
-
-  double[] translation = [d, e, f];
-  logger.info("Translation vector: " + translation);
-  // Apply the translation to each atom in the molecule
-  for (k = 0; k < nAtoms; k++) {
-    atoms[k].move(translation);
+  /**
+   * CrystalSearch Constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  CrystalSearch(Binding binding) {
+    super(binding)
   }
 
-  // Minimize the current atom configuration
-  g = minimize.minimize(eps);
+  // Function to provide random doubles
+  private static double getRandomNumber(double maxShift, double minShift, Random rando) {
+    double rand = minShift + (maxShift - minShift) * rando.nextDouble()
+    return rand
+  }
 
-  // Gather the new minimized atom coordinates
-  newAtoms = getAtomicCoordinates(atoms, nAtoms)
 
-  // Determine the energy associated with the current configuration
-  energy = forceFieldEnergy.energy(false, true);
-
-  // If first trial hold onto energy regardless of value for future comparison
-  if (i == 0) {
-    energy2 = energy;
-    for (l = 0; l < nAtoms; l++) {
-      for (m = 0; m < 3; m++) {
-        originalAtoms[l][m] = newAtoms[l][m];
+  // Function to get atomic coordinates after minimization
+  private static double[][] getAtomicCoordinates(Atom[] x, int numberOfAtoms) {
+    double[] Coords = new double[3]
+    double[][] atomCoords = new double[numberOfAtoms][3]
+    for (int j = 0; j < numberOfAtoms; j++) {
+      Coords[0] = x[j].getX()
+      Coords[1] = x[j].getY()
+      Coords[2] = x[j].getZ()
+      for (int k = 0; k < 3; k++) {
+        atomCoords[j][k] = Coords[k]
       }
     }
+    return atomCoords
   }
 
-  // If new energy is lower than previous energy, store new energy.
-  else if (energy < energy2) {
-    energy2 = energy;
-    for (l = 0; l < nAtoms; l++) {
-      for (m = 0; m < 3; m++) {
-        bestAtoms[l][m] = newAtoms[l][m];
+  private static double density(double mass, int nSymm, Crystal unitCell) {
+    double density = (mass * nSymm / Constants.AVOGADRO) * (1.0e24 / unitCell.volume)
+    return density
+  }
+
+  /**
+   * Execute the script.
+   */
+  @Override
+  CrystalSearch run() {
+
+    if (!init()) {
+      return this
+    }
+
+    // Load the MolecularAssembly.
+    MolecularAssembly molecularAssembly = getActiveAssembly(filename)
+    if (molecularAssembly == null) {
+      logger.info(helpString())
+      return this
+    }
+
+    Crystal crystal = molecularAssembly.getCrystal().getUnitCell()
+
+    logger.info("\n Searching for " + filename)
+    logger.info(" RMS gradient convergence criteria: " + eps)
+
+    ForceFieldEnergy forceFieldEnergy = molecularAssembly.getPotentialEnergy()
+    Minimize minimize = new Minimize(molecularAssembly, null)
+    Atom[] atoms = molecularAssembly.getAtomArray()
+    int nSymm = 4
+
+    //Allocate memory for Translate array
+    double[] translate = new double[3]
+
+    //Allocate memory for COM
+    double[] com = new double[3]
+
+    // Used to label trial number
+    int counter = 1
+
+    // Avogadro #
+    final double avogadro = Constants.AVOGADRO
+
+    // Determine the number of atoms in molecule
+    int nAtoms = atoms.length
+
+    // Allocate memory for mass of atoms
+    // Variable used in determining crystal density
+    double mass = 0.0
+
+    // Create object "random" used to generate randome doubles
+    Random random = new Random()
+
+    // Allocate memory for the atom coordinates after translation, rotation, and minimization
+    double[][] newAtoms = new double[nAtoms][3]
+
+    // Allocate temporary memory for the axis coordinates for each atom
+    double[] finalCoords = new double[3]
+
+    // Allocate memory for the best atom coordinates from all conducted trials
+    double[][] bestAtoms = new double[nAtoms][3]
+
+    double[][] originalAtoms = new double[nAtoms][3]
+
+    double[] bestCrystalParameters = new double[6]
+
+    // Allocate memory for unit cell axis lengths and angles
+    double a
+    double b
+    double c
+    double alpha
+    double beta
+    double gamma
+
+    // Use "a" length to set apropriate translation vectors
+    double max = 0.5
+    double min = -max
+
+    //Allocate memory for variable used in comparision with density of crystal
+    double minDensity = 0.8
+    double maxDensity = 1.3
+
+    // Boolean used to escape while loop
+    boolean likelyDensity = false
+
+    // Translate the center of mass of the molecule to the origin
+    // This allows for proper rotation of molecule and only needs to be conducted once.
+
+    // Assign the center of mass as an array to 0.0
+    com[0] = 0.0
+    com[1] = 0.0
+    com[2] = 0.0
+
+    // Loop over each atom to find the average X, Y, and Z values
+    for (atom in atoms) {
+      com[0] = com[0] + atom.getX()
+      com[1] = com[1] + atom.getY()
+      com[2] = com[2] + atom.getZ()
+    }
+
+    // Divide average coordinate value by the number of atoms
+    com[0] = com[0] / nAtoms
+    com[1] = com[1] / nAtoms
+    com[2] = com[2] / nAtoms
+
+    // Calculate the translation vector for the center of mass
+    crystal.toPrimaryCell(com, translate)
+    translate[0] = translate[0] - com[0]
+    translate[1] = translate[1] - com[1]
+    translate[2] = translate[2] - com[2]
+
+    // Move each atom and calculate the total mass of the molecule
+    for (atom in atoms) {
+      atom.move(translate)
+      mass += atom.getMass()
+    }
+
+    double energy2 = Double.MAX_VALUE
+
+    // For each trial apply a rotation and translation.
+    for (int i = 0; i < nTrials; i++) {
+
+      // Randomly assign lattice parameters for crystal
+      while (!likelyDensity) {
+        a = getRandomNumber(14, 8, random)
+        b = getRandomNumber(14, 8, random)
+        c = getRandomNumber(14, 8, random)
+
+        // Monoclinic Space group settings require alpha and gamma = 90
+        alpha = 90
+        beta = getRandomNumber(150, 140, random)
+        gamma = 90
+
+        crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma)
+        double den = density(mass, nSymm, crystal)
+        if (den > minDensity && den < maxDensity) {
+          likelyDensity = true
+        }
       }
-      if (bestAtoms[l] == [0, 0, 0]) {
-        logger.severe("Atoms are saving incorrectly as [0,0,0]");
+
+      logger.info("---------------------- Trial Number: " + counter + " ----------------------")
+      counter++
+      logger.info("Cell parameters: " + a + ' ' + b + ' ' + c + ' ' + beta)
+
+      // Set likelyDensity to false so that on next trial run it will generate new unit
+      // cell parameters.
+      likelyDensity = false
+
+      // Apply the proposed boundary condition.
+      forceFieldEnergy.setCrystal(crystal)
+
+      // Apply rotation algorithm
+      // Generate random Quaternion. In order to be random it can not be evenly distributed along the angle due to spherical rotation pattern.
+      double s = random.nextDouble()
+      double σ1 = Math.sqrt(1 - s)
+      double σ2 = Math.sqrt(s)
+      double θ1 = 2 * Math.PI * random.nextDouble()
+      double θ2 = 2 * Math.PI * random.nextDouble()
+      double w = Math.cos(θ2) * σ2
+      double x = Math.sin(θ1) * σ1
+      double y = Math.cos(θ1) * σ1
+      double z = Math.sin(θ2) * σ2
+
+      // Create object for rotation of molecule based on quaternion
+      Rotation rotation = new Rotation(w, x, y, z, true)
+
+      // Apply rotation to atoms
+      for (int j = 0; j < nAtoms; j++) {
+        atoms[j].rotate(rotation.getMatrix())
+      }
+
+      // Generate a random TRANSLATION vector i times for the a, b, and c axis
+
+      double d = getRandomNumber(max, min, random)
+      double e = getRandomNumber(max, min, random)
+      double f = getRandomNumber(max, min, random)
+
+      double[] translation = [d, e, f]
+      logger.info("Translation vector: " + translation)
+      // Apply the translation to each atom in the molecule
+      for (int k = 0; k < nAtoms; k++) {
+        atoms[k].move(translation)
+      }
+
+      // Minimize the current atom configuration
+      Potential g = minimize.minimize(eps)
+
+      // Gather the new minimized atom coordinates
+      newAtoms = getAtomicCoordinates(atoms, nAtoms)
+
+      // Determine the energy associated with the current configuration
+      double energy = forceFieldEnergy.energy(false, true)
+
+      // If first trial hold onto energy regardless of value for future comparison
+      if (i == 0) {
+        energy2 = energy
+        for (int l = 0; l < nAtoms; l++) {
+          for (int m = 0; m < 3; m++) {
+            originalAtoms[l][m] = newAtoms[l][m]
+          }
+        }
+      } else if (energy < energy2) {
+        // If new energy is lower than previous energy, store new energy.
+        energy2 = energy
+        for (int l = 0; l < nAtoms; l++) {
+          for (int m = 0; m < 3; m++) {
+            bestAtoms[l][m] = newAtoms[l][m]
+          }
+          if (bestAtoms[l] == [0, 0, 0]) {
+            logger.severe("Atoms are saving incorrectly as [0,0,0]")
+          }
+        }
+        bestCrystalParameters = [a, b, c, alpha, beta, gamma]
+      }
+      // After running 1,000 trials coords were like 180, 93,100 so i believe the tranlations were summed.
+      for (int n = 0; n < nAtoms; n++) {
+        finalCoords[0] = originalAtoms[n][0]
+        finalCoords[1] = originalAtoms[n][1]
+        finalCoords[2] = originalAtoms[n][2]
+        atoms[n].moveTo(finalCoords[0], finalCoords[1], finalCoords[2])
+      }
+      // If the energy is not lower than previously stored energy and its the last trial
+      // then we need to retrieve the lowest energy snapshot
+      if (i == nTrials - 1) {
+        for (int n = 0; n < nAtoms; n++) {
+          finalCoords[0] = bestAtoms[n][0]
+          finalCoords[1] = bestAtoms[n][1]
+          finalCoords[2] = bestAtoms[n][2]
+          atoms[n].moveTo(finalCoords[0], finalCoords[1], finalCoords[2])
+        }
+        crystal.changeUnitCellParameters(bestCrystalParameters[0], bestCrystalParameters[1],
+            bestCrystalParameters[2], bestCrystalParameters[3], bestCrystalParameters[4],
+            bestCrystalParameters[5])
+        forceFieldEnergy.setCrystal(crystal)
+        if (finalCoords == [0, 0, 0]) {
+          logger.severe("Atoms are saving incorrectly as [0,0,0]")
+        }
+        logger.info("Final energy is " + energy2)
       }
     }
-    bestCrystalParameters = [a, b, c, alpha, beta, gamma];
-//        logger.info("The crystal parameter is "+bestCrystalParameters[0]);
-  }
-  // After running 1,000 trials coords were like 180, 93,100 so i believe the tranlations were summed.
-  for (n = 0; n < nAtoms; n++) {
-    finalCoords[0] = originalAtoms[n][0];
-    finalCoords[1] = originalAtoms[n][1];
-    finalCoords[2] = originalAtoms[n][2];
-    atoms[n].moveTo(finalCoords[0], finalCoords[1], finalCoords[2]);
-  }
-  // If the energy is not lower than previously stored energy and its the last trial 
-  // then we need to retrieve the lowest energy snapshot
-  if (i == nTrials - 1) {
-    for (n = 0; n < nAtoms; n++) {
-      finalCoords[0] = bestAtoms[n][0];
-      finalCoords[1] = bestAtoms[n][1];
-      finalCoords[2] = bestAtoms[n][2];
-      atoms[n].moveTo(finalCoords[0], finalCoords[1], finalCoords[2]);
-    }
-    crystal.changeUnitCellParameters(bestCrystalParameters[0], bestCrystalParameters[1],
-        bestCrystalParameters[2], bestCrystalParameters[3], bestCrystalParameters[4],
-        bestCrystalParameters[5]);
-    forceFieldEnergy.setCrystal(crystal);
-    if (finalCoords == [0, 0, 0]) {
-      logger.severe("Atoms are saving incorrectly as [0,0,0]");
-    }
-    logger.info("Final energy is " + energy2);
-  }
-}
 
-// Save lowest energy snapshot
-String ext = FilenameUtils.getExtension(filename);
-filename = FilenameUtils.removeExtension(filename);
+    // Save lowest energy snapshot
+    String ext = FilenameUtils.getExtension(filename)
+    filename = FilenameUtils.removeExtension(filename)
 
-if (ext.toUpperCase().contains("XYZ")) {
-  saveAsXYZ(new File(filename + ".xyz"));
-} else {
-  saveAsPDB(systems, new File(filename + ".pdb"));
+    if (ext.toUpperCase().contains("XYZ")) {
+      algorithmFunctions.saveAsXYZ(molecularAssembly, new File(filename + ".xyz"))
+    } else {
+      algorithmFunctions.saveAsPDB(molecularAssembly, new File(filename + ".pdb"))
+    }
+
+    return this
+  }
 }

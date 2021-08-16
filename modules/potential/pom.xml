@@ -22,6 +22,7 @@
                 <mkdir dir="${project.build.outputDirectory}"/>
                 <groovyc destdir="${project.build.outputDirectory}"
                   srcdir="${basedir}/src/main/groovy/"
+                  configscript="${basedir}/src/config/config.groovy"
                   listfiles="false" verbose="true"
                   targetBytecode="${targetVersion}"
                   stacktrace="true" parameters="true">

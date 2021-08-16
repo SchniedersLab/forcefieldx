@@ -126,7 +126,7 @@ class ManyBody extends AlgorithmsScript {
     x = refinementEnergy.getCoordinates(x)
     refinementEnergy.energy(x, true)
 
-    ArrayList<Residue> residueList = rotamerOptimization.getResidues()
+    List<Residue> residueList = rotamerOptimization.getResidues()
     RotamerLibrary.measureRotamers(residueList, false)
 
     if (manyBody.algorithm == 1) {
@@ -169,6 +169,6 @@ class ManyBody extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList(refinementEnergy)
+        Collections.singletonList((Potential) refinementEnergy)
   }
 }

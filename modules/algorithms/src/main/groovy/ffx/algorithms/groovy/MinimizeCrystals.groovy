@@ -176,28 +176,30 @@ class MinimizeCrystals extends AlgorithmsScript {
     String ext = FilenameUtils.getExtension(name)
     name = FilenameUtils.removeExtension(name)
     File saveFile
-    SystemFilter writeFilter
+    PDBFilter pdbFilter = null
+    XYZFilter xyzFilter = null
+
     if (ext.toUpperCase().contains("XYZ")) {
       saveFile = new File(dirName + name + ".xyz")
-      writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
+      xyzFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
           activeAssembly.getProperties())
       algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
     } else if (ext.toUpperCase().contains("ARC")) {
       saveFile = new File(dirName + name + ".arc")
       saveFile = algorithmFunctions.versionFile(saveFile)
-      writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
+      xyzFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
           activeAssembly.getProperties())
       algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
     } else {
       saveFile = new File(dirName + name + ".pdb")
       saveFile = algorithmFunctions.versionFile(saveFile)
-      writeFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
+      pdbFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
           activeAssembly.getProperties())
       int numModels = systemFilter.countNumModels()
       if (numModels > 1) {
-        writeFilter.setModelNumbering(0)
+        pdbFilter.setModelNumbering(0)
       }
-      writeFilter.writeFile(saveFile, true, false, false)
+      pdbFilter.writeFile(saveFile, true, false, false)
     }
 
     if (systemFilter instanceof XYZFilter || systemFilter instanceof PDBFilter) {
@@ -205,13 +207,13 @@ class MinimizeCrystals extends AlgorithmsScript {
         if (systemFilter instanceof PDBFilter) {
           saveFile.append("ENDMDL\n")
           runMinimize()
-          PDBFilter pdbFilter = (PDBFilter) writeFilter
           pdbFilter.writeFile(saveFile, true, false, false)
         } else if (systemFilter instanceof XYZFilter) {
           runMinimize()
-          writeFilter.writeFile(saveFile, true)
+          xyzFilter.writeFile(saveFile, true)
         }
       }
+
       if (systemFilter instanceof PDBFilter) {
         saveFile.append("END\n")
       }
@@ -268,7 +270,7 @@ class MinimizeCrystals extends AlgorithmsScript {
     if (xtalEnergy == null) {
       potentials = Collections.emptyList()
     } else {
-      potentials = Collections.singletonList(xtalEnergy)
+      potentials = Collections.singletonList((Potential) xtalEnergy)
     }
     return potentials
   }

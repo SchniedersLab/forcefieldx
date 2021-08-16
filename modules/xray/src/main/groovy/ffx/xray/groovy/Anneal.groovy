@@ -115,11 +115,13 @@ class Anneal extends AlgorithmsScript {
     String modelFilename
     MolecularAssembly[] assemblies
     if (filenames != null && filenames.size() > 0) {
-      assemblies = algorithmFunctions.open(filenames.get(0))
+      assemblies = algorithmFunctions.openAll(filenames.get(0))
       activeAssembly = assemblies[0]
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return
+      return this
+    } else {
+      assemblies = [activeAssembly]
     }
 
     modelFilename = activeAssembly.getFile().getAbsolutePath()
@@ -134,8 +136,7 @@ class Anneal extends AlgorithmsScript {
 
     // Differs between regular Anneal and x-ray Anneal.
     CompositeConfiguration properties = activeAssembly.getProperties()
-    DiffractionData diffractionData =
-        xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
+    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
     potential = xrayOptions.toXrayEnergy(diffractionData, assemblies, algorithmFunctions)
     simulatedAnnealing = anneal.createAnnealer(dynamics, activeAssembly,
         potential, properties,
@@ -173,7 +174,7 @@ class Anneal extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList(refinementEnergy)
+        Collections.singletonList((Potential) refinementEnergy)
   }
 }
 

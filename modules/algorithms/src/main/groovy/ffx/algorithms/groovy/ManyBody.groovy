@@ -72,7 +72,7 @@ class ManyBody extends AlgorithmsScript {
   private String filename
 
   ForceFieldEnergy potentialEnergy
-  boolean testing = null
+  boolean testing = false
   boolean monteCarloTesting = false
 
   /**
@@ -134,7 +134,7 @@ class ManyBody extends AlgorithmsScript {
 
     manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
-    ArrayList<Residue> residueList = rotamerOptimization.getResidues()
+    List<Residue> residueList = rotamerOptimization.getResidues()
 
     boolean master = true
     if (Comm.world().size() > 1) {
@@ -205,7 +205,7 @@ class ManyBody extends AlgorithmsScript {
     if (potentialEnergy == null) {
       potentials = Collections.emptyList()
     } else {
-      potentials = Collections.singletonList(potentialEnergy)
+      potentials = Collections.singletonList((Potential) potentialEnergy)
     }
     return potentials
   }

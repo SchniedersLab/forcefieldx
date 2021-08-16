@@ -39,7 +39,7 @@ package ffx.potential.groovy.test
 
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.bonded.AminoAcidUtils
+import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.MultiResidue
 import ffx.potential.bonded.Residue
@@ -59,6 +59,7 @@ import picocli.CommandLine.Parameters
 import java.util.stream.IntStream
 
 import static ffx.potential.extended.TitrationUtils.inactivateResidue
+import static ffx.potential.extended.TitrationUtils.openFullyProtonated
 import static ffx.utilities.StringUtils.parseAtomRanges
 import static java.lang.String.format
 import static org.apache.commons.math3.util.FastMath.abs
@@ -134,14 +135,12 @@ class PhGradient extends PotentialScript {
     TitrationUtils.initDiscountPreloadProperties()
 
     if (filename != null) {
-      activeAssembly = TitrationUtils.
-          openFullyProtonated(new File(filename), (PotentialsUtils) potentialFunctions)
+      setActiveAssembly(openFullyProtonated(new File(filename), (PotentialsUtils) potentialFunctions))
     } else if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
 
-    // Set the filename.
     filename = activeAssembly.getFile().getAbsolutePath()
 
     logger.info("\n Testing the atomic coordinate gradient of " + filename + "\n")
@@ -190,18 +189,20 @@ class PhGradient extends PotentialScript {
 
     // Collect atoms to test.
     List<Integer> atomsToTest
-    if (gradientOptions.gradientAtoms.equalsIgnoreCase("NONE")) {
+    String gradAtoms = gradientOptions.getGradientAtoms()
+    logger.info(" Parsing " + gradAtoms)
+    if (gradAtoms.equalsIgnoreCase("NONE")) {
       logger.info(" The gradient of no atoms will be evaluated.")
       return this
-    } else if (gradientOptions.gradientAtoms.equalsIgnoreCase("ALL")) {
+    } else if (gradAtoms.equalsIgnoreCase("ALL")) {
       logger.info(" Checking gradient for all active atoms.\n")
       atomsToTest = new ArrayList<>()
-      IntStream.range(0, nAtoms).forEach(val -> atomsToTest.add(val))
+      for (int i=0; i<nAtoms; i++) {
+        atomsToTest.add(i)
+      }
     } else {
-      atomsToTest = parseAtomRanges(" Gradient atoms", gradientOptions.gradientAtoms, nAtoms)
-      logger.info(
-          " Checking gradient for active atoms in the range: " + gradientOptions.gradientAtoms +
-              "\n")
+      atomsToTest = parseAtomRanges(" Gradient atoms", gradAtoms, nAtoms)
+      logger.info(" Checking gradient for active atoms in the range: " + gradAtoms + "\n")
     }
 
     // Map selected atom numbers to active atom numbers
@@ -396,7 +397,7 @@ class PhGradient extends PotentialScript {
   private void printPermutations(ExtendedSystem esvSystem, int numESVs, ForceFieldEnergy energy,
       double[] x) {
     for (int i = 0; i < numESVs; i++) {
-      esvSystem.setLambda(i, 0.0)
+      esvSystem.setLambda(i, (double) 0.0)
     }
     energy.getCoordinates(x)
     printPermutationsR(esvSystem, numESVs - 1, energy, x)
@@ -469,7 +470,7 @@ class PhGradient extends PotentialScript {
     if (energy == null) {
       potentials = Collections.emptyList()
     } else {
-      potentials = Collections.singletonList(energy)
+      potentials = Collections.singletonList((Potential) energy)
     }
     return potentials
   }

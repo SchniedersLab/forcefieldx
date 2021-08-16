@@ -376,8 +376,7 @@ public class TitrationUtils {
    * @param structure a {@link java.io.File} object.
    * @return a {@link ffx.potential.MolecularAssembly} object.
    */
-  public static MolecularAssembly openFullyProtonated(
-      File structure) {
+  public static MolecularAssembly openFullyProtonated(File structure) {
     PotentialsUtils utils = new PotentialsUtils();
     return openFullyProtonated(structure, utils);
   }
@@ -388,8 +387,7 @@ public class TitrationUtils {
    * @param structure a {@link java.io.File} object.
    * @return a {@link ffx.potential.MolecularAssembly} object.
    */
-  public static MolecularAssembly openFullyProtonated(
-      File structure, PotentialsUtils utils) {
+  public static MolecularAssembly openFullyProtonated(File structure, PotentialsUtils utils) {
     String name = format("%s-prot", FilenameUtils.removeExtension(structure.getName()));
     MolecularAssembly mola = new MolecularAssembly(name);
     mola.setFile(structure);
@@ -406,7 +404,10 @@ public class TitrationUtils {
       }
     }
 
-    return utils.openWithMutations(structure, mutations);
+    MolecularAssembly molecularAssembly = utils.openWithMutations(structure, mutations);
+    logger.info(" MolecularAssembly (openFullyProtonated) " + molecularAssembly);
+
+    return molecularAssembly;
   }
 
   /**

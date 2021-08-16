@@ -219,20 +219,28 @@ class Superpose extends AlgorithmsScript {
       String helixChar = "H"
       String sheetChar = "E"
 
-      ArrayList<ArrayList<Integer>> helices =
+      List<List<Integer>> helices =
           extractSecondaryElement(secondaryStructure, helixChar, 2)
-      ArrayList<ArrayList<Integer>> sheets =
+      List<List<Integer>> sheets =
           extractSecondaryElement(secondaryStructure, sheetChar, 2)
 
       atomIndexStream = atomIndexStream.filter({int i ->
         Atom atom = atoms[i]
         int resNum = atom.getResidueNumber() - 1
-        boolean isHelix = (helices.stream().filter({
-          return resNum >= it.get(0) && resNum <= it.get(1)
-        }).count() != 0)
-        boolean isSheet = (sheets.stream().filter({
-          return resNum >= it.get(0) && resNum <= it.get(1)
-        }).count() != 0)
+        boolean isHelix = false
+        for (List<Integer> helix : helices) {
+          if (resNum >= helix.get(0) && resNum <= helix.get(1)) {
+            isHelix = true
+            break
+          }
+        }
+        boolean isSheet = false
+        for (List<Integer> sheet : sheets) {
+          if (resNum >= sheet.get(0) && resNum <= sheet.get(1)) {
+            isSheet = true
+            break
+          }
+        }
         return isHelix || isSheet
       })
     }
@@ -314,10 +322,10 @@ class Superpose extends AlgorithmsScript {
    * to create a secondary element.
    * @return ArrayList<ArrayList<Integer> > Contains starting and ending residues for each secondary element.
    */
-  static ArrayList<ArrayList<Integer>> extractSecondaryElement(String ss, String elementType,
+  static List<List<Integer>> extractSecondaryElement(String ss, String elementType,
       int minNumResidues) {
     // Will hold starting and ending indices for all found secondary elements of the requested type.
-    ArrayList<ArrayList<Integer>> allElements = new ArrayList<ArrayList<Integer>>()
+    List<List<Integer>> allElements = new ArrayList<>()
     // Track of the most recent index to have a character matching the requested elementType.
     int lastMatch = 0
     // Iterates through each index in the secondary structure string.
@@ -342,7 +350,7 @@ class Superpose extends AlgorithmsScript {
                 if (elementLength > minNumResidues) {
                   // If secondary element is above minimum length, store starting and ending indices
                   // of secondary element.
-                  ArrayList<Integer> currentElement = new ArrayList<Integer>()
+                  List<Integer> currentElement = new ArrayList<>()
                   currentElement.add((Integer) elementStartIndex)
                   currentElement.add((Integer) lastMatch)
                   allElements.add(currentElement)
@@ -363,7 +371,7 @@ class Superpose extends AlgorithmsScript {
             if (j == lastMatch + 1) {
               int elementLength = j - elementStartIndex
               if (elementLength > minNumResidues) {
-                ArrayList<Integer> currentElement = new ArrayList<Integer>()
+                List<Integer> currentElement = new ArrayList<>()
                 currentElement.add((Integer) elementStartIndex)
                 currentElement.add((Integer) lastMatch)
                 allElements.add(currentElement)

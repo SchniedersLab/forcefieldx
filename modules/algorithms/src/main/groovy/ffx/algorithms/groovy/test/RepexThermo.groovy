@@ -211,6 +211,7 @@ class RepexThermo extends Thermodynamics {
     sb.append(" with histogram replica exchange for ")
 
     potential = (CrystalPotential) topologyOptions.assemblePotential(topologies, threadsAvail, sb)
+
     LambdaInterface linter = (LambdaInterface) potential
     logger.info(sb.toString())
 
@@ -315,8 +316,9 @@ class RepexThermo extends Thermodynamics {
   @Override
   List<Potential> getPotentials() {
     if (repExOST == null) {
-      return potential == null ? Collections.emptyList() : Collections.singletonList(potential)
+      return
+      potential == null ? Collections.emptyList() : Collections.singletonList((Potential) potential)
     }
-    return Collections.singletonList(repExOST.getOST())
+    return Collections.singletonList((Potential) repExOST.getOST())
   }
 }

@@ -236,12 +236,13 @@ class Cluster extends AlgorithmsScript {
     activeAssembly = molecularAssemblies[0]
 
     SystemFilter systemFilter = algorithmFunctions.getFilter()
-    SystemFilter writeFilter
+    PDBFilter pdbFilter = null
+    XYZFilter xyzFilter = null
     if (systemFilter instanceof PDBFilter) {
-      writeFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
+      pdbFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
           activeAssembly.getProperties())
     } else if (systemFilter instanceof XYZFilter) {
-      writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
+      xyzFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
           activeAssembly.getProperties())
     } else {
       logger.info(" Unknown file type.")
@@ -264,10 +265,8 @@ class Cluster extends AlgorithmsScript {
               crystal.getUnitCell().toShortString()))
         }
         if (systemFilter instanceof PDBFilter) {
-          PDBFilter pdbFilter = (PDBFilter) writeFilter
           pdbFilter.writeFile(saveFile, true, false, false)
         } else if (systemFilter instanceof XYZFilter) {
-          XYZFilter xyzFilter = (XYZFilter) writeFilter
           String[] message = new String[1]
           message[0] = format(" Conformation %d, Cluster %d ", structNum + 1, clusterNum + 1)
           xyzFilter.writeFile(saveFile, true, message)

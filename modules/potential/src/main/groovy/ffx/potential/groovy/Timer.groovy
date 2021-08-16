@@ -157,7 +157,7 @@ class Timer extends PotentialScript {
     if (energy == null) {
       potentials = Collections.emptyList()
     } else {
-      potentials = Collections.singletonList(energy)
+      potentials = Collections.singletonList((Potential) energy)
     }
     return potentials
   }

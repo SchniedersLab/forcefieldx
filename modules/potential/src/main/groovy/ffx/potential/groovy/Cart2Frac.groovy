@@ -133,8 +133,8 @@ class Cart2Frac extends PotentialScript {
     filename = activeAssembly.getFile().getAbsolutePath()
 
     int num = molecularAssemblies.length
-    cartCoordinates = new double[num]
-    fracCoordinates = new double[num]
+    cartCoordinates = new double[num][][]
+    fracCoordinates = new double[num][][]
 
     // Loop over each system.
     for (int i = 0; i < num; i++) {
