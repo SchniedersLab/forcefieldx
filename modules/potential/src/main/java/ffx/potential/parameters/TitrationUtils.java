@@ -895,12 +895,12 @@ public class TitrationUtils {
    */
   public enum Titration {
     //ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
-    ASHtoASP(4.00, -53.188, 0.0, AminoAcidUtils.AminoAcid3.ASH, AminoAcidUtils.AminoAcid3.ASP),
-    GLHtoGLU(4.40, -59.390, 0.0, AminoAcidUtils.AminoAcid3.GLH, AminoAcidUtils.AminoAcid3.GLU),
-    LYStoLYD(10.40, 53.390, 0.0, AminoAcidUtils.AminoAcid3.LYS, AminoAcidUtils.AminoAcid3.LYD),
+    ASHtoASP(4.00, -53.188, 0.0, AminoAcid3.ASH, AminoAcid3.ASP),
+    GLHtoGLU(4.40, -59.390, 0.0, AminoAcid3.GLH, AminoAcid3.GLU),
+    LYStoLYD(10.40, 53.390, 0.0, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
-    HIStoHID(7.00, 42.923, 0.0, AminoAcidUtils.AminoAcid3.HIS, AminoAcidUtils.AminoAcid3.HID),
-    HIStoHIE(6.60, 42.923, 0.0, AminoAcidUtils.AminoAcid3.HIS, AminoAcidUtils.AminoAcid3.HIE);
+    HIStoHID(7.00, 42.923, 0.0, AminoAcid3.HIS, AminoAcid3.HID),
+    HIStoHIE(6.60, 42.923, 0.0, AminoAcid3.HIS, AminoAcid3.HIE);
     //TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     //TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
 

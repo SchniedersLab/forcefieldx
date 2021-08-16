@@ -42,6 +42,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.PotentialComponent;
 import ffx.potential.bonded.*;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.utilities.Constants;
@@ -252,8 +253,8 @@ public class NewExtendedSystem  {
 
         Arrays.fill(isTitrating,false);
         Arrays.fill(isTautomerizing, false);
-        Arrays.fill(titrationLambdas, initialTitrationLambda);
-        Arrays.fill(tautomerLambdas, initialTautomerLambda);
+        Arrays.fill(titrationLambdas, 1.0);
+        Arrays.fill(tautomerLambdas, 1.0);
         Arrays.fill(titrationIndexMap, -1);
         Arrays.fill(tautomerIndexMap, -1);
 
@@ -269,6 +270,7 @@ public class NewExtendedSystem  {
         }
         //Initialize titration and tautomer arrays by looping through all atoms and determining if
         // that atom belongs to an titrating or tautomerizing residue.
+        //TODO: Make more readable.
         for (int i = 0; i < numAtoms; i++) {
             Residue residue = getResidueFromAtom(i);
             if (isTitrable(residue)) {
@@ -286,7 +288,7 @@ public class NewExtendedSystem  {
         }
 
         //Concatenate titratingResidueList and tautomerizingResidueList
-        extendedResidueList = titratingResidueList;
+        extendedResidueList.addAll(titratingResidueList);
         extendedResidueList.addAll(tautomerizingResidueList);
         //Arrays that are sent to integrator are based on extendedResidueList size
         int size = extendedResidueList.size();
@@ -330,19 +332,21 @@ public class NewExtendedSystem  {
 
     public boolean isExtended(Residue residue){ return extendedResidueList.contains(residue); }
 
+    //TODO: Replace with check from enum
     private boolean isTitrable(Residue residue){
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
-        return AA3 == AminoAcidUtils.AminoAcid3.ASP || AA3 == AminoAcidUtils.AminoAcid3.ASD || AA3 == AminoAcidUtils.AminoAcid3.ASH ||
-                AA3 == AminoAcidUtils.AminoAcid3.GLU || AA3 == AminoAcidUtils.AminoAcid3.GLD || AA3 == AminoAcidUtils.AminoAcid3.GLH ||
-                AA3 == AminoAcidUtils.AminoAcid3.HIS || AA3 == AminoAcidUtils.AminoAcid3.HID || AA3 == AminoAcidUtils.AminoAcid3.HIE ||
-                AA3 == AminoAcidUtils.AminoAcid3.LYS || AA3 == AminoAcidUtils.AminoAcid3.LYD;
+        return  AA3 == AminoAcid3.ASP || AA3 == AminoAcid3.ASD || AA3 == AminoAcid3.ASH ||
+                AA3 == AminoAcid3.GLU || AA3 == AminoAcid3.GLD || AA3 == AminoAcid3.GLH ||
+                AA3 == AminoAcid3.HIS || AA3 == AminoAcid3.HID || AA3 == AminoAcid3.HIE ||
+                AA3 == AminoAcid3.LYS || AA3 == AminoAcid3.LYD;
     }
 
+    //TODO: Replace with check from enum
     private boolean isTautomer(Residue residue){
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
-        return AA3 == AminoAcidUtils.AminoAcid3.ASP || AA3 == AminoAcidUtils.AminoAcid3.ASD || AA3 == AminoAcidUtils.AminoAcid3.ASH ||
-                AA3 == AminoAcidUtils.AminoAcid3.GLU || AA3 == AminoAcidUtils.AminoAcid3.GLD || AA3 == AminoAcidUtils.AminoAcid3.GLH ||
-                AA3 == AminoAcidUtils.AminoAcid3.HIS || AA3 == AminoAcidUtils.AminoAcid3.HID || AA3 == AminoAcidUtils.AminoAcid3.HIE;
+        return AA3 ==  AminoAcid3.ASP || AA3 == AminoAcid3.ASD || AA3 == AminoAcid3.ASH ||
+                AA3 == AminoAcid3.GLU || AA3 == AminoAcid3.GLD || AA3 == AminoAcid3.GLH ||
+                AA3 == AminoAcid3.HIS || AA3 == AminoAcid3.HID || AA3 == AminoAcid3.HIE;
     }
 
     public double getTitrationLambda(int i) {
@@ -412,6 +416,8 @@ public class NewExtendedSystem  {
     }
 
     //TODO: rename preForce?
+    //TODO: Do two for loops: 1st loop , update extended lambdas; 2nd loop pull in lambdas in titration or tautomer array[numAtoms]
+    //This will prevent recalculating multiple sinTheta*sinTheta that are the same number.
     private void updateLambdas(){
         for(int i=0; i<molecularAssembly.getAtomArray().length; i++){
             int mappedTitrationIndex = titrationIndexMap[i];
@@ -438,6 +444,7 @@ public class NewExtendedSystem  {
         updateListeners();
     }
 
+    //TODO: wrap all biasing terms into one switch statement a return an array of all the biasing energies and derivs.
     public double getBiasEnergy(double temperature){
         double biasEnergySum = 0.0;
         for(Residue residue : titratingResidueList){
@@ -601,18 +608,21 @@ public class NewExtendedSystem  {
                 double refEnergy = ffx.potential.parameters.TitrationUtils.Titration.ASHtoASP.pKa;
                 double lambdaIntercept = ffx.potential.parameters.TitrationUtils.Titration.ASHtoASP.lambdaIntercept;
                 modelBias = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
+                break;
             case GLD:
             case GLH:
             case GLU:
                 refEnergy = ffx.potential.parameters.TitrationUtils.Titration.GLHtoGLU.refEnergy;
                 lambdaIntercept = ffx.potential.parameters.TitrationUtils.Titration.GLHtoGLU.lambdaIntercept;
                 modelBias = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
+                break;
             case HIS:
             case HID:
             case HIE:
                 refEnergy = ffx.potential.parameters.TitrationUtils.Titration.HIStoHID.refEnergy;
                 lambdaIntercept = ffx.potential.parameters.TitrationUtils.Titration.HIStoHID.lambdaIntercept;
                 modelBias = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
+                break;
             case LYS:
             case LYD:
                 refEnergy = ffx.potential.parameters.TitrationUtils.Titration.LYStoLYD.refEnergy;
@@ -636,12 +646,14 @@ public class NewExtendedSystem  {
                 double refEnergy = ffx.potential.parameters.TitrationUtils.Titration.ASHtoASP.pKa;
                 double lambdaIntercept = ffx.potential.parameters.TitrationUtils.Titration.ASHtoASP.lambdaIntercept;
                 modelBiasDeriv = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
+                break;
             case GLD:
             case GLH:
             case GLU:
                 refEnergy = ffx.potential.parameters.TitrationUtils.Titration.GLHtoGLU.refEnergy;
                 lambdaIntercept = ffx.potential.parameters.TitrationUtils.Titration.GLHtoGLU.lambdaIntercept;
                 modelBiasDeriv = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
+                break;
             case HIS:
             case HID:
             case HIE:
@@ -653,6 +665,7 @@ public class NewExtendedSystem  {
                 double coeff3;
                 double coeff4;
                 modelBiasDeriv = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
+                break;
             case LYS:
             case LYD:
                 refEnergy = ffx.potential.parameters.TitrationUtils.Titration.LYStoLYD.refEnergy;
