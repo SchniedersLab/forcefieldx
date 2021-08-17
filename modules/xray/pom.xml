@@ -54,13 +54,13 @@
                                 </taskdef>
                                 <mkdir dir="${project.build.outputDirectory}"/>
                                 <groovyc destdir="${project.build.outputDirectory}"
-                                         configscript="${basedir}/src/config/config.groovy"
                                          srcdir="${basedir}/src/main/groovy/"
                                          listfiles="false" verbose="true"
                                          targetBytecode="${targetVersion}"
                                          stacktrace="true" parameters="true">
                                     <classpath refid="maven.compile.classpath"/>
                                 </groovyc>
+                                <!-- configscript="${basedir}/src/config/config.groovy" -->
                             </target>
                         </configuration>
                         <goals>
