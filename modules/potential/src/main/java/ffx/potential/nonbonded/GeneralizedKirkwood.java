@@ -251,6 +251,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /** Maximum Sneck scaling parameter value */
   private double sneck;
   private final boolean adjustedSneck;
+  private int adjustmentScheme;
   /** If true, the descreening integral includes the tanh correction to better approximate molecular surface */
   private final boolean tanhCorrection;
   private double beta0;
@@ -396,6 +397,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     neckCorrection = forceField.getBoolean("NECK_CORRECTION",false);
     sneck = forceField.getDouble("SNECK",DEFAULT_SNECK);
     adjustedSneck = forceField.getBoolean("ADJUSTED_SNECK",true);
+    adjustmentScheme = forceField.getInteger("ADJUSTMENT_SCHEME",0);
     tanhCorrection = forceField.getBoolean("TANH_CORRECTION",false);
     beta0 = forceField.getDouble("BETA0",DEFAULT_BETA0);
     beta1 = forceField.getDouble("BETA1",DEFAULT_BETA1);
@@ -580,6 +582,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     logger.info(format("   Use Neck Correction:                %8B", neckCorrection));
     logger.info(format("   Sneck:                              %8.4f",sneck));
     logger.info(format("   Adjusted Sneck:                     %8B",adjustedSneck));
+    logger.info(format("   Adjustment Scheme:                  %8d",adjustmentScheme));
     logger.info(format("   Use Tanh Correction                 %8B",tanhCorrection));
     if(tanhCorrection){
       logger.info(format("    Beta0:                             %8.4f",beta0));
@@ -1415,8 +1418,23 @@ public class GeneralizedKirkwood implements LambdaInterface {
             // Sneck for lone ions or molecules like methane, which are not descreened by any other atoms
             neckScale[i] = 1.00;
           } else {
-            neckScale[i] = sneck * (5.0 - numBoundHeavyAtoms) / 4.0;
-            //neckScale[i] = Math.pow(sneck,(5.0-numBoundHeavyAtoms)/4.0);
+            switch(adjustmentScheme){
+              case 0:
+                neckScale[i] = sneck * (5.0 - numBoundHeavyAtoms) / 4.0;
+                break;
+              case 1:
+                neckScale[i] = sneck * (4.0 - numBoundHeavyAtoms) / 4.0;
+                break;
+              case 2:
+                if(numBoundHeavyAtoms == 4){
+                  neckScale[i] = sneck / 10.0;
+                } else {
+                  neckScale[i] = sneck * (5.0 - numBoundHeavyAtoms) / 4.0;
+                }
+                break;
+              default:
+                neckScale[i] = sneck * (5.0 - numBoundHeavyAtoms) / 4.0;
+            }
           }
         } else{
           // Non-adjusted Sneck - set neckScale to the max (input) Sneck value for all non-hydrogen atoms
