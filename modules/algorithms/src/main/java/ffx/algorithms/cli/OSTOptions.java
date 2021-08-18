@@ -295,6 +295,7 @@ public class OSTOptions {
             dynamicsOptions,
             lambdaParticleOptions,
             group.independentWalkers,
+            group.metaDynamics,
             async);
 
     OrthogonalSpaceTempering orthogonalSpaceTempering =
@@ -413,6 +414,7 @@ public class OSTOptions {
     histogramSettings.dt = dynamicsOptions.getDt() * Constants.FSEC_TO_PSEC;
     histogramSettings.setWriteIndependent(writeIndependent);
     histogramSettings.setIndependentWalkers(group.independentWalkers);
+    histogramSettings.setMetaDynamics(group.metaDynamics);
     histogramSettings.asynchronous = async;
     if (overrideHistogram || !histogramRestartFile.exists()) {
       histogramSettings.setBiasMag(getBiasMag(index));
@@ -634,6 +636,19 @@ public class OSTOptions {
   }
 
   /**
+   * Use a MetaDynamics style bias.
+   *
+   * @return Returns true if each Walker has their own histogram.
+   */
+  public boolean isMetaDynamics() {
+    return group.metaDynamics;
+  }
+
+  public void setMetaDynamics(boolean metaDynamics) {
+    group.metaDynamics = metaDynamics;
+  }
+
+  /**
    * The Dama et al tempering rate parameter, in multiples of kBT.
    *
    * @return Returns the tempering rate.
@@ -739,8 +754,15 @@ public class OSTOptions {
     @Option(
         names = {"--iW", "--independentWalkers"},
         defaultValue = "false",
-        description = "Enforces that each walker maintains their own histogram. ")
+        description = "Enforces that each walker maintains their own histogram.")
     private boolean independentWalkers;
+
+    /** --meta or --metaDynamics Use a 1D metadynamics bias. */
+    @Option(
+        names = {"--meta", "--metaDynamics"},
+        defaultValue = "false",
+        description = "Use a 1D metadynamics style bias.")
+    private boolean metaDynamics;
 
     /** --tp or --temperingRate sets the Dama et al tempering rate parameter, in multiples of kBT. */
     @Option(

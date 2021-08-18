@@ -37,53 +37,54 @@
 // ******************************************************************************
 package ffx.potential.groovy;
 
-import ffx.potential.groovy.test.CIFtoXYZ;
+import ffx.potential.groovy.CIFtoXYZ;
 import ffx.potential.utils.PotentialTest;
 import org.junit.Test;
 
 /**
- * Tests test.CIFtoXYZ command to determine that files are being translated correctly.
- *  Based on SaveAsPDBTest.java
+ * Tests test.CIFtoXYZ command to determine that files are being translated correctly. Based on
+ * SaveAsPDBTest.java
  *
  * @author Aaron J. Nessler
  */
 
-public class CIFtoXYZTest extends PotentialTest{
-    /** Tests the CIFtoXYZ script. */
-    @Test
-    public void testCIFtoXYZwHydrogen() {
-        // Set-up the input arguments for the SaveAsPDB script.
-        String[] args = {"src/main/java/ffx/potential/structures/CBZ16.cif",
-                "src/main/java/ffx/potential/structures/cbz.xyz"};
-        binding.setVariable("args", args);
-        binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+public class CIFtoXYZTest extends PotentialTest {
 
-        // Construct and evaluate the SaveAsPDB script.
-        CIFtoXYZ ciFtoXYZ = new CIFtoXYZ(binding).run();
-        potentialScript = ciFtoXYZ;
-    }
+  /** Tests the CIFtoXYZ script. */
+  @Test
+  public void testCIFtoXYZ() {
+    // Set-up the input arguments for the CIFtoXYZ script.
+    String[] args = {"src/main/java/ffx/potential/structures/CBZ16.cif",
+        "src/main/java/ffx/potential/structures/cbz.xyz"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    @Test
-    public void testCIFtoXYZw_oHydrogen() {
-        // Set-up the input arguments for the SaveAsPDB script.
-        String[] args = {"src/main/java/ffx/potential/structures/CBZ03.cif",
-                "src/main/java/ffx/potential/structures/cbz.xyz"};
-        binding.setVariable("args", args);
-        binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+    // Construct and evaluate the CIFtoXYZ script.
+    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
+    potentialScript = cifToXYZ;
+  }
 
-        // Construct and evaluate the SaveAsPDB script.
-        CIFtoXYZ ciFtoXYZ = new CIFtoXYZ(binding).run();
-        potentialScript = ciFtoXYZ;
-    }
+  @Test
+  public void testCIFtoXYZNoHydrogen() {
+    // Set-up the input arguments for the CIFtoXYZ script.
+    String[] args = {"src/main/java/ffx/potential/structures/CBZ03.cif",
+        "src/main/java/ffx/potential/structures/cbz.xyz"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    @Test
-    public void testCIFtoXYZHelp() {
-        // Set-up the input arguments for the SaveAsPDB script.
-        String[] args = {"-h"};
-        binding.setVariable("args", args);
+    // Construct and evaluate the CIFtoXYZ script.
+    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
+    potentialScript = cifToXYZ;
+  }
 
-        // Construct and evaluate the SaveAsPDB script.
-        CIFtoXYZ ciFtoXYZ = new CIFtoXYZ(binding).run();
-        potentialScript = ciFtoXYZ;
-    }
+  @Test
+  public void testCIFtoXYZHelp() {
+    // Set-up the input arguments for the CIFtoXYZ script.
+    String[] args = {"-h"};
+    binding.setVariable("args", args);
+
+    // Construct and evaluate the CIFtoXYZ script.
+    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
+    potentialScript = cifToXYZ;
+  }
 }

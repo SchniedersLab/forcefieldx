@@ -40,10 +40,11 @@ package ffx.algorithms.misc;
 import ffx.algorithms.AlgorithmListener;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
-import ffx.potential.bonded.ResidueEnumerations.NucleicAcid3;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parsers.PDBFilter;
@@ -180,11 +181,11 @@ public class GenerateRotamers {
    * Sets a standard amino acid to be the baseline for rotamer generation. For example, use TYR as a
    * baseline for phosphotyrosine.
    *
-   * @param aa3 a {@link ffx.potential.bonded.ResidueEnumerations.AminoAcid3} object.
+   * @param aa3 a {@link AminoAcid3} object.
    */
   public void setBaselineAARes(AminoAcid3 aa3) {
     this.baselineAAres = aa3;
-    if (aa3 == AminoAcid3.UNK) {
+    if (aa3 == AminoAcidUtils.AminoAcid3.UNK) {
       boolean orig = library.getUsingOrigCoordsRotamer();
       library.setUseOrigCoordsRotamer(false);
       baselineRotamers = residue.getRotamers(library);

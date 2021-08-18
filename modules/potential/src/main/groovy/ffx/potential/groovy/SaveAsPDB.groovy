@@ -37,7 +37,6 @@
 //******************************************************************************
 package ffx.potential.groovy
 
-import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.SaveOptions
 import ffx.potential.parsers.PDBFilter
@@ -72,11 +71,11 @@ class SaveAsPDB extends PotentialScript {
   private int writeSnapshot = 0
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument is an XYZ or ARC coordinate file.
    */
-  @Parameters(arity = "1", paramLabel = "files",
-      description = 'The atomic coordinate file in PDB or XYZ format.')
-  List<String> filenames = null
+  @Parameters(arity = "1", paramLabel = "file",
+      description = 'The atomic coordinate file in XYZ or ARC format.')
+  private String filename = null
 
   /**
    * SaveAsPDB Constructor.
@@ -99,32 +98,32 @@ class SaveAsPDB extends PotentialScript {
   @Override
   SaveAsPDB run() {
 
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    SystemFilter openFilter = null
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
-      openFilter = potentialFunctions.getFilter()
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
 
-    String modelFilename = activeAssembly.getFile().getAbsolutePath()
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+    SystemFilter openFilter = potentialFunctions.getFilter()
 
-    logger.info("\n Saving PDB for " + modelFilename)
+    logger.info("\n Saving PDB for " + filename)
 
     // Configure the base directory if it has not been set.
     File saveDir = baseDir
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+      saveDir = new File(FilenameUtils.getFullPath(filename))
     }
 
     String dirName = saveDir.toString() + File.separator
-    String fileName = FilenameUtils.getName(modelFilename)
+    String fileName = FilenameUtils.getName(filename)
     fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
     File modelFile = new File(dirName + fileName)
 

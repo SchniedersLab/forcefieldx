@@ -111,7 +111,7 @@ class LambdaGradient extends PotentialScript {
   /**
    * The final argument(s) should be one or more filenames.
    */
-  @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
+  @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate files in PDB or XYZ format.')
   List<String> filenames = null
 
   private int threadsAvail = ParallelTeam.getDefaultThreadCount()
@@ -161,23 +161,17 @@ class LambdaGradient extends PotentialScript {
     int numParallel = topologyOptions.getNumParallel(threadsAvail, nArgs)
     threadsPer = (int) (threadsAvail / numParallel)
 
-    // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
-    /* Checking nArgs == 1 should only be done for scripts that imply some sort of lambda scaling.
-       The Minimize script, for example, may be running on a single, unscaled physical topology. */
-    boolean lambdaTerm = (
-        nArgs == 1 || alchemicalOptions.hasSoftcore() || topologyOptions.hasSoftcore())
-
+    // Turn on computation of lambda derivatives if softcore atoms exist or this is a single topology.
+    boolean lambdaTerm = (nArgs == 1 || alchemicalOptions.hasSoftcore() || topologyOptions.hasSoftcore())
     if (lambdaTerm) {
       System.setProperty("lambdaterm", "true")
     }
-
-    alchemicalOptions.getInitialLambda()
 
     // Relative free energies via the DualTopologyEnergy class require different
     // default OST parameters than absolute free energies.
     if (nArgs >= 2) {
       // Ligand vapor electrostatics are not calculated. This cancels when the
-      // difference between protein and water environments is considered.
+      // difference between protein and water environments are considered.
       System.setProperty("ligand-vapor-elec", "false")
     }
 
@@ -185,14 +179,13 @@ class LambdaGradient extends PotentialScript {
 
     // Read in files.
     if (!arguments || arguments.isEmpty()) {
-      MolecularAssembly mola = potentialFunctions.getActiveAssembly()
-      if (mola == null) {
+      if (activeAssembly == null) {
         logger.info(helpString())
         return this
       }
       arguments = new ArrayList<>()
-      arguments.add(mola.getFile().getName())
-      topologyList.add(alchemicalOptions.processFile(topologyOptions, mola, 0))
+      arguments.add(activeAssembly.getFile().getName())
+      topologyList.add(alchemicalOptions.processFile(topologyOptions, activeAssembly, 0))
     } else {
       logger.info(format(" Initializing %d topologies...", nArgs))
       for (int i = 0; i < nArgs; i++) {
@@ -386,7 +379,9 @@ class LambdaGradient extends PotentialScript {
       } else if (gradientOptions.gradientAtoms.equalsIgnoreCase("ALL")) {
         logger.info(" Checking gradient for all active atoms.\n")
         degreesOfFreedomToTest = new ArrayList<>()
-        IntStream.range(0, nAtoms).forEach(val -> degreesOfFreedomToTest.add(val))
+        for (int i=0; i<nAtoms; i++) {
+          degreesOfFreedomToTest.add(i)
+        }
       } else {
         degreesOfFreedomToTest =
             parseAtomRanges(" Gradient atoms", gradientOptions.gradientAtoms, nAtoms)

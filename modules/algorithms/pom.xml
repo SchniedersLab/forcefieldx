@@ -39,6 +39,7 @@
                   stacktrace="true" parameters="true">
                   <classpath refid="maven.compile.classpath"/>
                 </groovyc>
+                <!-- configscript="${basedir}/src/config/config.groovy" -->
               </target>
             </configuration>
             <goals>

@@ -80,7 +80,7 @@ public class RepExOST {
   private static final int mainLoopTag = 2020;
   private final OrthogonalSpaceTempering orthogonalSpaceTempering;
   private final OrthogonalSpaceTempering.Histogram[] allHistograms;
-  private final SynchronousSend[] synchronousSends;
+  private final SendSynchronous[] sendSynchronous;
   private final LongConsumer algoRun;
   private final MolecularDynamics molecularDynamics;
   private final DynamicsOptions dynamicsOptions;
@@ -211,12 +211,12 @@ public class RepExOST {
     double timestep = dynamicsOptions.getDt() * Constants.FSEC_TO_PSEC;
     stepsBetweenExchanges = Math.max(1, (int) (repexInterval / timestep));
 
-    synchronousSends =
+    sendSynchronous =
         Arrays.stream(allHistograms)
             .map(OrthogonalSpaceTempering.Histogram::getSynchronousSend)
             .map(Optional::get)
-            .toArray(SynchronousSend[]::new);
-    if (synchronousSends.length < 1) {
+            .toArray(SendSynchronous[]::new);
+    if (sendSynchronous.length < 1) {
       throw new IllegalArgumentException(" No SynchronousSend objects were found!");
     }
 
@@ -224,8 +224,8 @@ public class RepExOST {
     // TODO: Properly back-copy instead of assuming everything is in order at the start.
     histoToRank = Arrays.copyOf(rankToHisto, size);
 
-    Arrays.stream(synchronousSends)
-        .forEach((SynchronousSend ss) -> ss.setHistograms(allHistograms, rankToHisto));
+    Arrays.stream(sendSynchronous)
+        .forEach((SendSynchronous ss) -> ss.setHistograms(allHistograms, rankToHisto));
 
     totalSwaps = new long[numPairs];
     acceptedSwaps = new long[numPairs];
@@ -494,7 +494,7 @@ public class RepExOST {
     /* TODO: If there is ever a case where an algorithm will not update coordinates itself at the start, we have to
      * update coordinates here (from the OST we used to be running on to the new OST). */
 
-    for (SynchronousSend send : synchronousSends) {
+    for (SendSynchronous send : sendSynchronous) {
       send.updateRanks(rankToHisto);
     }
   }

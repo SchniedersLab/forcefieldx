@@ -172,7 +172,7 @@ public class ForceField {
   /**
    * Get for the URL for the named force field.
    *
-   * @param forceField a {@link ffx.potential.parameters.ForceField.ForceFieldName} object.
+   * @param forceField a {@link ForceField.ForceFieldName} object.
    * @return a {@link java.net.URL} object.
    */
   public static URL getForceFieldURL(ForceFieldName forceField) {
@@ -610,7 +610,7 @@ public class ForceField {
   /**
    * getForceFieldTypeCount
    *
-   * @param type a {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
+   * @param type a {@link ForceField.ForceFieldType} object.
    * @return a int.
    */
   @SuppressWarnings("unchecked")
@@ -683,6 +683,29 @@ public class ForceField {
    */
   public MultipoleType getMultipoleType(String key) {
     return multipoleTypes.get(key);
+  }
+
+  /**
+   * Fine the MultipoleType whose key begins with the supplied String.
+   * If there are more than one MultipoleTypes that begin with the key, null is returned.
+   * @param key The key to search for.
+   * @return The MultipoleType if one and only one match is found.
+   */
+  public MultipoleType getMultipoleTypeBeginsWith(String key) {
+    int count = 0;
+    MultipoleType multipoleType = null;
+    for (String s : multipoleTypes.keySet()) {
+      if (s.startsWith(key + " ")){
+        count++;
+        multipoleType = multipoleTypes.get(s);
+      }
+    }
+
+    if (count == 1) {
+      return multipoleType;
+    }
+
+    return null;
   }
 
   /**

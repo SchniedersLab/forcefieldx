@@ -37,12 +37,413 @@
 // ******************************************************************************
 package ffx.potential.utils;
 
+import static ffx.potential.parsers.DistanceMatrixFilter.writeDistanceMatrixRow;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.fill;
+import static org.apache.commons.io.FilenameUtils.concat;
+import static org.apache.commons.io.FilenameUtils.getBaseName;
+import static org.apache.commons.io.FilenameUtils.getFullPath;
+import static org.apache.commons.io.FilenameUtils.getPath;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import edu.rit.mp.DoubleBuf;
+import edu.rit.pj.Comm;
+import ffx.numerics.math.Double3;
+import ffx.potential.AssemblyState;
+import ffx.potential.ForceFieldEnergy;
+import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Atom;
+import ffx.potential.parsers.DistanceMatrixFilter;
+import ffx.potential.parsers.SystemFilter;
+import ffx.potential.parsers.XYZFilter;
+import java.io.File;
+import java.util.logging.Logger;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
 
 public class Superpose {
+
+  /**
+   * Logger for the Superpose Class.
+   */
+  private static final Logger logger = Logger.getLogger(Superpose.class.getName());
+
+  private final SystemFilter baseFilter;
+  private final SystemFilter targetFilter;
+
+  private final int baseSize;
+  private final int targetSize;
+
+  private int restartRow;
+  private int restartColumn;
+  private double[][] distMatrix;
+
+  /**
+   * Parallel Java world communicator.
+   */
+  private final Comm world;
+  /**
+   * Number of processes.
+   */
+  private final int numProc;
+  /**
+   * Rank of this process.
+   */
+  private final int rank;
+  /**
+   * The distances matrix stores a single RSMD value from each process. The array is of size
+   * [numProc][1].
+   */
+  private final double[][] distances;
+  /**
+   * Each distance is wrapped inside a DoubleBuf for MPI communication.
+   */
+  private final DoubleBuf[] buffers;
+  /**
+   * Convenience reference to the RMSD value for this process.
+   */
+  private final double[] myDistance;
+  /**
+   * Convenience reference for the DoubleBuf of this process.
+   */
+  private final DoubleBuf myBuffer;
+
+  public Superpose(SystemFilter baseFilter, SystemFilter targetFilter) {
+    this.baseFilter = baseFilter;
+    this.targetFilter = targetFilter;
+
+    // Number of models to be evaluated.
+    baseSize = baseFilter.countNumModels();
+    targetSize = targetFilter.countNumModels();
+
+    // Initialize the distance matrix.
+    distMatrix = new double[baseSize][targetSize];
+
+    world = Comm.world();
+    // Number of processes is equal to world size (often called size).
+    numProc = world.size();
+    // Each processor gets its own rank (ID of sorts).
+    rank = world.rank();
+    if (numProc > 1) {
+      logger.info(format(" Number of MPI Processes:  %d", numProc));
+      logger.info(format(" Rank of this MPI Process: %d", rank));
+    }
+
+    // Distance matrix to store compared values (dimensions are "human readable" [m x n]).
+    distMatrix = new double[baseSize][targetSize];
+    // Initialize array as -1.0 as -1.0 is not a viable RMSD.
+    for (int i = 0; i < baseSize; i++) {
+      fill(distMatrix[i], -1.0);
+    }
+
+    distances = new double[numProc][1];
+
+    // Initialize each distance as -1.0.
+    for (int i = 0; i < numProc; i++) {
+      fill(distances[i], -1.0);
+    }
+
+    // DoubleBuf is a wrapper used by Comm to transfer data between processors.
+    buffers = new DoubleBuf[numProc];
+    for (int i = 0; i < numProc; i++) {
+      buffers[i] = DoubleBuf.buffer(distances[i]);
+    }
+
+    // Reference to each processors individual task (for convenience).
+    myDistance = distances[rank];
+    myBuffer = buffers[rank];
+  }
+
+  /**
+   * This method calculates the all versus all RMSD of a multiple model pdb/arc file.
+   *
+   * @param usedIndices List of atom indices in use.
+   * @param dRMSD Compute dRMSDs in addition to RMSD.
+   * @param verbose Verbose logging.
+   * @param restart Attempt to restart from an RMSD matrix.
+   * @param write Write out an RMSD file.
+   * @param saveSnapshots Save superposed snapshots.
+   */
+  public void calculateRMSDs(int[] usedIndices, boolean dRMSD, boolean verbose, boolean restart,
+      boolean write, boolean saveSnapshots) {
+
+    String filename = baseFilter.getFile().getAbsolutePath();
+
+    // Prepare to write out superposed snapshots.
+    File targetOutputFile = null;
+    SystemFilter targetOutputFilter = null;
+    if (saveSnapshots) {
+      String targetOutputName = concat(getPath(filename), getBaseName(filename) + "_superposed.arc");
+      targetOutputFile = SystemFilter.version(new File(targetOutputName));
+      MolecularAssembly targetAssembly = targetFilter.getActiveMolecularSystem();
+      targetOutputFilter = new XYZFilter(targetOutputFile, targetAssembly,
+          targetAssembly.getForceField(),
+          targetAssembly.getProperties());
+    }
+
+    String matrixFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt");
+    if (restart) {
+      // Define the filename to use for the RMSD values.
+      readMatrix(matrixFilename);
+    } else {
+      File file = new File(matrixFilename);
+      if (file.exists() && file.delete()) {
+        logger.info(format(" RMSD file (%s) was deleted.", matrixFilename));
+        logger.info(" To restart from a previous run, use the '-r' flag.");
+      }
+    }
+
+    // Number of atoms used for the superposition
+    int nUsed = usedIndices.length;
+    int nUsedVars = nUsed * 3;
+
+    // Load atomic coordinates for the base system.
+    MolecularAssembly baseMolecularAssembly = baseFilter.getActiveMolecularSystem();
+    ForceFieldEnergy baseForceFieldEnergy = baseMolecularAssembly.getPotentialEnergy();
+    int nVars = baseForceFieldEnergy.getNumberOfVariables();
+    double[] baseCoords = new double[nVars];
+    baseForceFieldEnergy.getCoordinates(baseCoords);
+    double[] baseUsedCoords = new double[nUsedVars];
+
+    // Load an array for mass weighting.
+    Atom[] atoms = baseMolecularAssembly.getAtomArray();
+    double[] mass = new double[nUsed];
+    for (int i = 0; i < nUsed; i++) {
+      mass[i] = atoms[usedIndices[i]].getMass();
+    }
+
+    // Allocate space for the superposition
+    MolecularAssembly targetMolecularAssembly = targetFilter.getActiveMolecularSystem();
+    ForceFieldEnergy targetForceFieldEnergy = targetMolecularAssembly.getPotentialEnergy();
+    double[] targetCoords = new double[nVars];
+    double[] targetUsedCoords = new double[nUsedVars];
+
+    // Read ahead to the base starting conformation.
+    for (int row = 0; row < restartRow; row++) {
+      baseFilter.readNext(false, false);
+    }
+
+    // Padding of the target array size (inner loop limit) is for parallelization.
+    // Target conformations are parallelized over available nodes.
+    // For example, if numProc = 8 and targetSize = 12, then paddedTargetSize = 16.
+    int paddedTargetSize = targetSize;
+    int extra = targetSize % numProc;
+    if (extra != 0) {
+      paddedTargetSize = targetSize - extra + numProc;
+      logger.fine(format(" Target size %d vs. Padded size %d", targetSize, paddedTargetSize));
+    }
+
+    // Loop over base structures.
+    for (int row = restartRow; row < baseSize; row++) {
+
+      // Initialize the distance this rank is responsible for to zero.
+      myDistance[0] = -1.0;
+
+      if (row == restartRow) {
+        if (dRMSD) {
+          logger.info(
+              "\n Coordinate RMSD\n Snapshots       Original   After Translation   After Rotation     dRMSD");
+        } else if (verbose) {
+          logger.info(
+              "\n Coordinate RMSD\n Snapshots       Original   After Translation   After Rotation");
+        }
+      }
+
+      // Loop over target structures.
+      for (int column = restartColumn; column < paddedTargetSize; column++) {
+
+        // Make sure this is not a padded value of column.
+        if (column < targetSize) {
+          int targetRank = column % numProc;
+          if (targetRank == rank) {
+            if (row == column) {
+              // Fill the diagonal.
+              myDistance[0] = 0.0;
+              if (verbose) {
+                logger.info(format(" %6d  %6d  %s                             %8.5f",
+                    row + 1, column + 1, "Diagonal", myDistance[0]));
+              }
+            } else if (row >= column) {
+              // Fill the lower triangle from the upper triangle.
+              myDistance[0] = distMatrix[column][row];
+              if (verbose) {
+                logger.info(format(" %6d  %6d  %s                  %8.5f",
+                    row + 1, column + 1, "From Upper Triangle", myDistance[0]));
+              }
+            } else {
+              // Calculate an upper triangle entry.
+
+              // Load base coordinates.
+              baseForceFieldEnergy.getCoordinates(baseCoords);
+
+              // Save the current coordinates of the target
+              AssemblyState origStateB = new AssemblyState(targetMolecularAssembly);
+
+              // Load the target coordinates.
+              targetForceFieldEnergy.getCoordinates(targetCoords);
+
+              copyCoordinates(usedIndices, baseCoords, baseUsedCoords);
+              copyCoordinates(usedIndices, targetCoords, targetUsedCoords);
+
+              double origRMSD = rmsd(baseUsedCoords, targetUsedCoords, mass);
+
+              // Calculate the translation on only the used subset, but apply it to the entire structure.
+              applyTranslation(baseCoords, calculateTranslation(baseUsedCoords, mass));
+              applyTranslation(targetCoords, calculateTranslation(targetUsedCoords, mass));
+              // Copy the applied translation to baseUsedCoords and targetUsedCoords.
+              copyCoordinates(usedIndices, baseCoords, baseUsedCoords);
+              copyCoordinates(usedIndices, targetCoords, targetUsedCoords);
+              double translatedRMSD = rmsd(baseUsedCoords, targetUsedCoords, mass);
+
+              // Calculate the rotation on only the used subset, but apply it to the entire structure.
+              applyRotation(targetCoords, calculateRotation(baseUsedCoords, targetUsedCoords, mass));
+              // Copy the applied rotation to targetUsedCoords.
+              copyCoordinates(usedIndices, targetCoords, targetUsedCoords);
+              double rotatedRMSD = rmsd(baseUsedCoords, targetUsedCoords, mass);
+
+              if (dRMSD) {
+                double disRMSD = calcDRMSD(baseUsedCoords, targetUsedCoords, nUsed * 3);
+                logger.info(format(" %6d  %6d  %8.5f            %8.5f         %8.5f  %8.5f",
+                    row + 1, column + 1, origRMSD, translatedRMSD, rotatedRMSD, disRMSD));
+              } else if (verbose) {
+                logger.info(format(" %6d  %6d  %8.5f            %8.5f         %8.5f",
+                    row + 1, column + 1, origRMSD, translatedRMSD, rotatedRMSD));
+              }
+
+              // Store the RMSD result.
+              myDistance[0] = rotatedRMSD;
+
+              // Save a PDB snapshot.
+              if (saveSnapshots && numProc == 1) {
+                MolecularAssembly molecularAssembly = targetOutputFilter.getActiveMolecularSystem();
+                molecularAssembly.getPotentialEnergy().setCoordinates(targetCoords);
+                targetOutputFilter.writeFile(targetOutputFile, true);
+                origStateB.revertState();
+              }
+            }
+          }
+
+          // Read ahead to the next target structure.
+          targetFilter.readNext(false, false);
+        }
+
+        // Every numProc iterations, send the results of each rank.
+        if ((column + 1) % numProc == 0) {
+          gatherRMSDs(row, column);
+        }
+      }
+
+      // Reset the starting column.
+      restartColumn = 0;
+
+      // Reset the targetFilter and read the first structure.
+      targetFilter.readNext(true, false);
+
+      // Read the next base structure.
+      baseFilter.readNext(false, false);
+
+      // Only Rank 0 writes the distance matrix.
+      if (rank == 0 && write) {
+        writeDistanceMatrixRow(matrixFilename, distMatrix[row]);
+      }
+    }
+
+    baseFilter.closeReader();
+    targetFilter.closeReader();
+  }
+
+  /**
+   * This method calls <code>world.AllGather</code> to collect numProc PAC RMSD values.
+   *
+   * @param row Current row of the PAC RMSD matrix.
+   * @param column Current column of the PAC RMSD matrix.
+   */
+  private void gatherRMSDs(int row, int column) {
+    try {
+      logger.finer(" Receiving results.");
+      world.allGather(myBuffer, buffers);
+      for (int i = 0; i < numProc; i++) {
+        int c = (column + 1) - numProc + i;
+        if (c < targetSize) {
+          distMatrix[row][c] = distances[i][0];
+          logger.finer(format(" %d %d %16.8f", row, c, distances[i][0]));
+        }
+      }
+    } catch (Exception e) {
+      logger.severe(" Exception collecting distance values." + e);
+    }
+  }
+
+  /**
+   * Read in the distance matrix.
+   *
+   * @param filename The PAC RMSD matrix file to read from.
+   */
+  private void readMatrix(String filename) {
+    restartRow = 0;
+    restartColumn = 0;
+
+    DistanceMatrixFilter distanceMatrixFilter = new DistanceMatrixFilter();
+    if (distanceMatrixFilter.readDistanceMatrix(filename, distMatrix)) {
+      restartRow = distanceMatrixFilter.getRestartRow();
+      restartColumn = distanceMatrixFilter.getRestartColumn();
+    }
+
+    int nRow = distMatrix.length;
+    int nColumn = distMatrix[0].length;
+    if (restartRow == nRow && restartColumn == nColumn) {
+      logger.info(format(" Complete distance matrix found (%d x %d).", restartRow, restartColumn));
+    } else {
+      restartColumn = 0;
+      logger.info(format(" Incomplete distance matrix found.\n Restarting at row %d, column %d.",
+          restartRow + 1, restartColumn + 1));
+    }
+  }
+
+  /**
+   * Copy coordinates from the entire system to the used subset.
+   *
+   * @param usedIndices Mapping from the xUsed array to its source in x.
+   * @param x All atomic coordinates.
+   * @param xUsed The used subset of coordinates.
+   */
+  public static void copyCoordinates(int[] usedIndices, double[] x, double[] xUsed) {
+    int nUsed = usedIndices.length;
+    for (int u = 0; u < nUsed; u++) {
+      int u3 = 3 * u;
+      int i3 = 3 * usedIndices[u];
+      arraycopy(x, i3, xUsed, u3, 3);
+    }
+  }
+
+  /**
+   * Calculates the dRMSD between to sets of coordinates.
+   *
+   * @param xUsed A double array containing the xyz coordinates for multiple atoms.
+   * @param x2Used A double array containing the xyz coordinates for multiple atoms.
+   * @param nUsed The number of atoms that dRMSD is calculated on.
+   * @return A double containing the dRMSD value.
+   */
+  public static double calcDRMSD(double[] xUsed, double[] x2Used, int nUsed) {
+    double disRMSD = 0.0;
+    int counter = 0;
+    for (int i = 0; i < nUsed; i = i + 3) {
+      Double3 xi = new Double3(xUsed[i], xUsed[i + 1], xUsed[i + 2]);
+      Double3 x2i = new Double3(x2Used[i], x2Used[i + 1], x2Used[i + 2]);
+      for (int j = i + 3; j < nUsed; j = j + 3) {
+        Double3 xj = new Double3(xUsed[j], xUsed[j + 1], xUsed[j + 2]);
+        Double3 x2j = new Double3(x2Used[j], x2Used[j + 1], x2Used[j + 2]);
+        double dis1 = xi.sub(xj).length();
+        double dis2 = x2i.sub(x2j).length();
+        double diff = dis1 - dis2;
+        disRMSD += diff * diff;
+        counter++;
+      }
+    }
+    disRMSD = disRMSD / counter;
+    return sqrt(disRMSD);
+  }
 
   /**
    * Minimize the RMS distance between two sets of atoms using quaternions and a pre-calculated

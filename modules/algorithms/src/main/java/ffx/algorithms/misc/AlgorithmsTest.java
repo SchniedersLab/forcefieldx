@@ -56,7 +56,6 @@ public class AlgorithmsTest extends FFXTest {
   public AlgorithmsScript algorithmsScript;
   public Binding binding;
 
-
   /** Initialize the PJ communication layer. */
   @BeforeClass
   public static void beforeClass() {

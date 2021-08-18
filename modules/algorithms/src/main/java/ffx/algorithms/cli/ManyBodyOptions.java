@@ -44,9 +44,9 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.parameters.TitrationUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -188,6 +188,22 @@ public class ManyBodyOptions {
     List<String> resList = new ArrayList<>();
     addListResidues(resList);
 
+    String prop = System.getProperty("ro-titrate");
+    boolean titrate = false;
+    if (prop != null) {
+      titrate = Boolean.parseBoolean(prop);
+    }
+    TitrationUtils titrationUtils;
+    if (titrate) {
+      logger.info(" Turning on ASP, GLU, LYS and HIS titration rotamers.");
+      titrationUtils = new TitrationUtils(activeAssembly.getForceField());
+      titrationUtils.setRotamerPhBias(298.15, 7.4);
+      List<Residue> residues = activeAssembly.getResidueList();
+      for (Residue residue : residues) {
+        residue.setTitrationUtils(titrationUtils);
+      }
+    }
+
     int counter = 1;
     if (group.algorithm != 5) {
       if (allStartResID > 0) {
@@ -263,7 +279,7 @@ public class ManyBodyOptions {
             if (p.getChainID() == chainID) {
               List<Residue> rs = p.getResidues();
               for (Residue r : rs) {
-                if (ignoreNA && r.getResidueType() == ResidueType.NA) {
+                if (ignoreNA && r.getResidueType() == Residue.ResidueType.NA) {
                   continue;
                 }
                 if (r.getResidueNumber() == i) {
@@ -285,7 +301,7 @@ public class ManyBodyOptions {
         for (Polymer p : polymers) {
           List<Residue> rs = p.getResidues();
           for (Residue r : rs) {
-            if (ignoreNA && r.getResidueType() == ResidueType.NA) {
+            if (ignoreNA && r.getResidueType() == Residue.ResidueType.NA) {
               continue;
             }
             Rotamer[] rotamers = r.getRotamers(rotamerLibrary);

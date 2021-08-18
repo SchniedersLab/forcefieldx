@@ -70,7 +70,7 @@ import picocli.CommandLine.ParseResult;
 public abstract class FFXScript extends Script {
 
   /** The logger for this class. */
-  protected static final Logger logger = Logger.getLogger(FFXScript.class.getName());
+  public static final Logger logger = Logger.getLogger(FFXScript.class.getName());
 
   /**
    * Unix shells are able to evaluate PicoCLI ANSI color codes, but right now the FFX GUI Shell does

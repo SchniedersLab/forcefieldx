@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
+import javax.swing.tree.TreeNode;
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Material;
 import org.jogamp.vecmath.Color3f;
@@ -58,9 +59,6 @@ import org.jogamp.vecmath.Color3f;
  * @since 1.0
  */
 public class Polymer extends MSGroup {
-
-  /** Constant <code>MultiScaleLevel=3</code> */
-  public static final int MultiScaleLevel = 3;
 
   /** Constant <code>polymerColor</code> */
   private static final Map<Integer, Color3f> polymerColor = new HashMap<>();
@@ -83,9 +81,9 @@ public class Polymer extends MSGroup {
   /** Flag to indicate the residues in the polymer should be joined. */
   private boolean link = false;
   /** The number of this Polymer. */
-  private int polymerNumber;
+  private final int polymerNumber;
   /** The ChainID of this Polymer. */
-  private Character chainID;
+  private final Character chainID;
 
   /**
    * Polymer constructor.
@@ -148,7 +146,7 @@ public class Polymer extends MSGroup {
       }
     }
 
-    getAtomNode().insert(residue, childIndex);
+    residueNode.insert(residue, childIndex);
 
     residue.setChainID(chainID);
 
@@ -164,15 +162,16 @@ public class Polymer extends MSGroup {
     Residue residue = multiResidue.getActive();
     MSNode residueNode = getAtomNode();
     int index = residueNode.getIndex(residue);
+
     if (index < 0) {
       System.err.println(
           "WARNING!  Polymer::addMultiResidue did not find a corresponding Residue on Polymer.");
       residueNode.add(multiResidue);
     } else {
-      residueNode.remove(index);
+      residue.removeFromParent();
       residueNode.insert(multiResidue, index);
+      multiResidue.add(residue);
     }
-    multiResidue.add(residue);
   }
 
   /**
@@ -201,10 +200,10 @@ public class Polymer extends MSGroup {
     Joint joint = null;
     double[] da = new double[3];
     double[] db = new double[3];
-    for (Enumeration e = residue1.getAtomNode().children(); e.hasMoreElements(); ) {
+    for (Enumeration<TreeNode> e = residue1.getAtomNode().children(); e.hasMoreElements(); ) {
       Atom a1 = (Atom) e.nextElement();
       a1.getXYZ(da);
-      for (Enumeration e2 = residue2.getAtomNode().children(); e2.hasMoreElements(); ) {
+      for (Enumeration<TreeNode> e2 = residue2.getAtomNode().children(); e2.hasMoreElements(); ) {
         Atom a2 = (Atom) e2.nextElement();
         a2.getXYZ(db);
         double d1 = DoubleMath.dist(da, db);
@@ -230,8 +229,12 @@ public class Polymer extends MSGroup {
    */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     Polymer polymer = (Polymer) o;
     return polymerNumber == polymer.polymerNumber && Objects.equals(getName(), polymer.getName());
   }
@@ -258,9 +261,9 @@ public class Polymer extends MSGroup {
     // Join the residues in the Polymer
     if (link) {
       Residue residue = getFirstResidue();
-      if (residue.residueType == ResidueType.AA) {
+      if (residue.residueType == Residue.ResidueType.AA) {
         getAtomNode().setName("Amino Acids " + "(" + residues.size() + ")");
-      } else if (residue.residueType == ResidueType.NA) {
+      } else if (residue.residueType == Residue.ResidueType.NA) {
         getAtomNode().setName("Nucleic Acids " + "(" + residues.size() + ")");
       } else {
         getAtomNode().setName("Residues " + "(" + residues.size() + ")");
@@ -274,8 +277,8 @@ public class Polymer extends MSGroup {
         if (a.getNumBonds() > 0) {
           for (Bond b : a.getBonds()) {
             if (!b.sameGroup() && b.getParent() == null) {
-              Residue r1 = (Residue) a.getMSNode(Residue.class);
-              Residue r2 = (Residue) b.get1_2(a).getMSNode(Residue.class);
+              Residue r1 = a.getMSNode(Residue.class);
+              Residue r2 = b.get1_2(a).getMSNode(Residue.class);
               j = createJoint(b, r1, r2, forceField);
               joints.add(j);
             }
@@ -283,7 +286,7 @@ public class Polymer extends MSGroup {
         }
       }
 
-      if (residue.residueType == ResidueType.AA) {
+      if (residue.residueType == Residue.ResidueType.AA) {
         getTermNode().setName("Peptide Bonds " + "(" + joints.getChildCount() + ")");
       } else {
         getTermNode().setName("Linkages " + "(" + joints.getChildCount() + ")");
@@ -386,7 +389,7 @@ public class Polymer extends MSGroup {
       }
     }
     // Fall back for non-ordered children
-    for (Enumeration e = getAtomNode().children(); e.hasMoreElements(); ) {
+    for (Enumeration<TreeNode> e = getAtomNode().children(); e.hasMoreElements(); ) {
       Residue r = (Residue) e.nextElement();
       if (r.getResidueNumber() == resNum) {
         return r;
@@ -417,8 +420,8 @@ public class Polymer extends MSGroup {
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
   public Residue getResidue(
-      String resName, int resNum, boolean create, Residue.ResidueType defaultRT) {
-    for (Enumeration e = getAtomNode().children(); e.hasMoreElements(); ) {
+      String resName, int resNum, boolean create, ResidueType defaultRT) {
+    for (Enumeration<TreeNode> e = getAtomNode().children(); e.hasMoreElements(); ) {
       Residue r = (Residue) e.nextElement();
       if (r.getResidueNumber() == resNum && r.getName().equalsIgnoreCase(resName)) {
         return r;
@@ -431,11 +434,11 @@ public class Polymer extends MSGroup {
     resName = resName.toUpperCase();
     if (resName.length() == 1) {
       try {
-        ResidueEnumerations.NucleicAcid1.valueOf(resName);
+        NucleicAcidUtils.NucleicAcid1.valueOf(resName);
         residue = new Residue(resName, resNum, Residue.ResidueType.NA, chainID, getName());
       } catch (Exception e) {
         try {
-          ResidueEnumerations.AminoAcid1.valueOf(resName);
+          AminoAcidUtils.AminoAcid1.valueOf(resName);
           residue = new Residue(resName, resNum, Residue.ResidueType.AA, chainID, getName());
         } catch (Exception ex) {
           //
@@ -443,11 +446,11 @@ public class Polymer extends MSGroup {
       }
     } else if (resName.length() >= 2) {
       try {
-        ResidueEnumerations.NucleicAcid3.valueOf(resName);
+        NucleicAcidUtils.NucleicAcid3.valueOf(resName);
         residue = new Residue(resName, resNum, Residue.ResidueType.NA, chainID, getName());
       } catch (Exception e) {
         try {
-          ResidueEnumerations.AminoAcid3.valueOf(resName);
+          AminoAcidUtils.AminoAcid3.valueOf(resName);
           residue = new Residue(resName, resNum, Residue.ResidueType.AA, chainID, getName());
         } catch (Exception ex) {
           //
@@ -468,7 +471,7 @@ public class Polymer extends MSGroup {
    */
   public List<Residue> getResidues() {
     List<Residue> residues = new ArrayList<>();
-    for (Enumeration e = getAtomNode().children(); e.hasMoreElements(); ) {
+    for (Enumeration<TreeNode> e = getAtomNode().children(); e.hasMoreElements(); ) {
       Residue r = (Residue) e.nextElement();
       residues.add(r);
     }
@@ -494,7 +497,7 @@ public class Polymer extends MSGroup {
       MSGroup atomGroup = (MSGroup) node;
       atomGroup.setColor(newColorModel, color, mat);
     }
-    for (Enumeration e = getTermNode().children(); e.hasMoreElements(); ) {
+    for (Enumeration<TreeNode> e = getTermNode().children(); e.hasMoreElements(); ) {
       Joint joint = (Joint) e.nextElement();
       joint.setColor(newColorModel);
     }
@@ -507,7 +510,7 @@ public class Polymer extends MSGroup {
       MSGroup atomGroup = (MSGroup) node;
       atomGroup.setView(newViewModel, newShapes);
     }
-    for (Enumeration e = getTermNode().children(); e.hasMoreElements(); ) {
+    for (Enumeration<TreeNode> e = getTermNode().children(); e.hasMoreElements(); ) {
       Joint joint = (Joint) e.nextElement();
       joint.setView(newViewModel, newShapes);
     }

@@ -48,16 +48,19 @@ import ffx.potential.bonded.Polymer
 import ffx.potential.cli.PotentialScript
 import ffx.potential.utils.ConvexHullOps
 import ffx.utilities.Constants
+import ffx.utilities.FFXScript
 import org.apache.commons.configuration2.Configuration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import java.util.logging.Logger
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.stream.Collectors
 
+import static org.apache.commons.math3.util.FastMath.round
 import static java.lang.String.format
 
 /**
@@ -119,11 +122,11 @@ class Solvator extends PotentialScript {
   private String seedString = null
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument is an atomic coordinate file in PDB or XYZ format.
    */
-  @Parameters(arity = "1", paramLabel = "files",
+  @Parameters(arity = "1", paramLabel = "file",
       description = 'The atomic coordinate file in PDB or XYZ format.')
-  List<String> filenames = null
+  String filename = null
 
   private MolecularAssembly solute
   private MolecularAssembly solvent
@@ -160,6 +163,8 @@ class Solvator extends PotentialScript {
    */
   @Override
   Solvator run() {
+
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
@@ -170,16 +175,14 @@ class Solvator extends PotentialScript {
     }
 
     // Reduce cutoff distances to avoid ill behavior caused by default aperiodic 900-1000A cutoffs.
-    String nlistCuts = Double.toString(2.0 * boundary)
-    logger.info(" Setting vdW and ewald cutoffs to " + nlistCuts +
-        " Angstroms to avoid issues with default aperiodic cutoffs.")
+    double twoBoundary = 2.0 * boundary
+    String nlistCuts = Double.toString(twoBoundary)
     System.setProperty("vdw-cutoff", nlistCuts)
     System.setProperty("ewald-cutoff", nlistCuts)
 
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [potentialFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
@@ -333,9 +336,12 @@ class Solvator extends PotentialScript {
     double[][] solventCOMs = new double[nSolventMols][]
     for (int i = 0; i < nSolventMols; i++) {
       List<Atom> moleculeAtoms = solventEntities[i].getAtomList()
-      double totMass = moleculeAtoms.stream().mapToDouble({
-        it.getAtomType().atomicWeight
-      }).sum()
+
+      double totMass = 0.0
+      for (Atom atom : moleculeAtoms) {
+        totMass += atom.getMass()
+      }
+
       double invMass = 1.0 / totMass
       double[] com = new double[3]
       Arrays.fill(com, 0)
@@ -451,9 +457,13 @@ class Solvator extends PotentialScript {
               newAtomArray[atI] = newAtom
             }
 
-            boolean overlapFound = Arrays.stream(newAtomArray).
-                anyMatch({Atom a -> ddc.checkClashes(a, boundary)
-                })
+            boolean overlapFound = false;
+            for (Atom atom : newAtomArray) {
+              if (ddc.checkClashes(atom, boundary)) {
+                overlapFound = true
+                break;
+              }
+            }
 
             if (overlapFound) {
               logger.fine(
@@ -555,7 +565,8 @@ class Solvator extends PotentialScript {
         int nIons = (int) Math.ceil(ionsPermM * ia.conc)
         if (nIons > newMolecules.size()) {
           // @formatter:off
-          logger.severe(" Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nIons} ions!")
+          logger.severe(
+              " Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nIons} ions!")
           // @formatter:on
         }
         logger.info(format(" Number of ions to place: %d\n", nIons))
@@ -571,14 +582,16 @@ class Solvator extends PotentialScript {
       logger.info(" Charge before neutralization is ${initialCharge}")
       if (initialCharge > 0) {
         if (neutAnion == null) {
-          logger.info(" No counter-anion specified; system will be cationic at charge ${initialCharge}")
+          logger.info(
+              " No counter-anion specified; system will be cationic at charge ${initialCharge}")
         } else {
           logger.info(" Neutralizing system with ${neutAnion.toString()}")
           double charge = neutAnion.charge
-          int nAnions = (int) Math.round(-1.0 * (initialCharge / charge))
+          int nAnions = (int) round((double) -1.0 * (initialCharge / charge))
           double netCharge = initialCharge + (nAnions * charge)
           if (nAnions > newMolecules.size()) {
-            logger.severe(" Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nAnions} counter-anions!")
+            logger.severe(
+                " Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nAnions} counter-anions!")
           }
           for (int i = 0; i < nAnions; i++) {
             Atom[] newIon = swapIon(newMolecules, neutAnion, currXYZIndex, ionChain, ionResSeq++)
@@ -591,14 +604,16 @@ class Solvator extends PotentialScript {
         }
       } else if (initialCharge < 0) {
         if (neutCation == null) {
-          logger.info(" No counter-cation specified; system will be anionic at charge ${initialCharge}")
+          logger.info(
+              " No counter-cation specified; system will be anionic at charge ${initialCharge}")
         } else {
           logger.info(" Neutralizing system with ${neutCation.toString()}")
           double charge = neutCation.charge
-          int nCations = (int) Math.round(-1.0 * (initialCharge / charge))
+          int nCations = (int) round((double) -1.0 * (initialCharge / charge))
           double netCharge = initialCharge + (nCations * charge)
           if (nCations > newMolecules.size()) {
-            logger.severe(" Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nCations} counter-cations!")
+            logger.severe(
+                " Insufficient solvent molecules remain (${newMolecules.size()}) to add ${nCations} counter-cations!")
             // @formatter:on
           }
           for (int i = 0; i < nCations; i++) {
@@ -667,11 +682,15 @@ class Solvator extends PotentialScript {
    * neighboring domains for possible clashes.
    */
   private class DomainDecomposition {
+
+    /** The logger for this class. */
+    public static final Logger logger = Logger.getLogger(DomainDecomposition.class.getName())
+
     // Solute atoms belonging in each domain.
     private final Atom[][][][] domains
     // Solute atoms in that domain and all surrounding domains.
     private final Atom[][][][] withAdjacent
-    private final nX, nY, nZ
+    private final int nX, nY, nZ
     private final double domainLength
     private final Crystal crystal
 
@@ -686,9 +705,10 @@ class Solvator extends PotentialScript {
      * @return All neighboring domain indices in this axis accounting for wraparound.
      */
     private static final Set<Integer> neighborsWithWraparound(int i, int nI) {
-      List<Integer> boxesI = new ArrayList<>(3)
+      List<Integer> boxesI = new ArrayList<Integer>(3)
       boxesI.add(i)
-      // Account for wraparound, and for box[nX-1] possibly being undersized (and thus needing to include box[nX-2])
+      // Account for wraparound, and for box[nX-1] possibly being
+      // undersized (and thus needing to include box[nX-2])
       if (i == 0) {
         boxesI.add(nI - 1)
         boxesI.add(nI - 2)
@@ -704,12 +724,15 @@ class Solvator extends PotentialScript {
         boxesI.add(i - 1)
         boxesI.add(i + 1)
       }
+
       // Eliminate out-of-bounds values and duplicate values.
-      return boxesI.stream().
-          filter({
-            it >= 0 && it < nI
-          }).
-          collect(Collectors.toSet())
+      Set<Integer> set = new HashSet<>()
+      for (Integer n : boxesI) {
+        if (n >= 0 && n < nI) {
+          set.add(n)
+        }
+      }
+      return set
     }
 
     DomainDecomposition(double boundary, Atom[] soluteAtoms, Crystal crystal) {
@@ -829,6 +852,10 @@ class Solvator extends PotentialScript {
   }
 
   private class IonAddition {
+
+    /** The logger for this class. */
+    public static final Logger logger = Logger.getLogger(IonAddition.class.getName());
+
     // Once again, modestly bad practice by exposing these fields.
     final double conc
     final boolean toNeutralize

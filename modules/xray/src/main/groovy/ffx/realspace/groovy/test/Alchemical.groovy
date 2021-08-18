@@ -92,7 +92,7 @@ class Alchemical extends AlgorithmsScript {
    */
   @Option(names = ["--itype", "--iontype"], paramLabel = 'null',
       description = 'Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.')
-  String[] iontype = null
+  String[] ionType = null
 
   /**
    * --N or --neutralize Adds more of the selected ion in order to neutralize the crystal's charge.
@@ -223,8 +223,8 @@ class Alchemical extends AlgorithmsScript {
 
     double crystalCharge = activeAssembly.getCharge(true)
     logger.info(" Overall crystal charge: " + crystalCharge)
-    ArrayList<MSNode> ions = assemblies[0].getIons()
-    ArrayList<MSNode> waters = assemblies[0].getWaters()
+    List<MSNode> ions = assemblies[0].getIons()
+    List<MSNode> waters = assemblies[0].getWaters()
 
     // Consider the option of creating a composite lambda gradient from vapor phase to crystal phase
     if (!onlyWaters) {
@@ -255,7 +255,7 @@ class Alchemical extends AlgorithmsScript {
               ionCharge += atom.multipoleType.getCharge()
             }
             logger.info("Ion charge is: " + ionCharge.toString())
-            int numIons = (int) -1 * (Math.ceil(crystalCharge / ionCharge))
+            int numIons = (int) (-1 * (Math.ceil(crystalCharge / ionCharge)))
             if (numIons > 0) {
               logger.info(numIons + " " + msNode.getAtomList().name
                   + " ions needed to neutralize the crystal.")
@@ -282,7 +282,7 @@ class Alchemical extends AlgorithmsScript {
 
     // Lambdize waters for position optimization
     if (!onlyIons) {
-      logger.info(waters.size + " water molecules in this PDB.")
+      logger.info(waters.size() + " water molecules in this PDB.")
       if (waters == null || waters.size() == 0) {
         logger.info("\n Please add water to the PDB file to scan with.")
         return
@@ -299,7 +299,7 @@ class Alchemical extends AlgorithmsScript {
     }
 
     RefinementEnergy refinementEnergy =
-            realSpaceOptions.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
+        realSpaceOptions.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
 
     refinementEnergy.setLambda(lambda)
 
@@ -307,7 +307,7 @@ class Alchemical extends AlgorithmsScript {
 
     CompositeConfiguration props = assemblies[0].getProperties()
     HistogramSettings hOps = new HistogramSettings(histogramRestart, lambdaRestart.toString(),
-            props)
+        props)
     OrthogonalSpaceTempering orthogonalSpaceTempering = new OrthogonalSpaceTempering(
         refinementEnergy, refinementEnergy, lambdaRestart,
         hOps, props, dynamicsOptions.getTemperature(), dynamicsOptions.getDt(),
@@ -320,13 +320,13 @@ class Alchemical extends AlgorithmsScript {
     // Create the MolecularDynamics instance.
 
     MolecularDynamics molDyn = new MolecularDynamics(assemblies[0], orthogonalSpaceTempering,
-            assemblies[0].getProperties(),
-            null, thermostat, integrator)
+        assemblies[0].getProperties(),
+        null, thermostat, integrator)
 
     algorithmFunctions.energy(assemblies[0])
     molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt, dynamicsOptions.report,
-            dynamicsOptions.write, dynamicsOptions.temperature, true,
-            fileType, dynamicsOptions.write, dyn)
+        dynamicsOptions.write, dynamicsOptions.temperature, true,
+        fileType, dynamicsOptions.write, dyn)
     logger.info(" Searching for low energy coordinates")
     OptimizationParameters opt = orthogonalSpaceTempering.getOptimizationParameters()
     double[] lowEnergyCoordinates = opt.getOptimumCoordinates()
@@ -342,6 +342,6 @@ class Alchemical extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     return orthogonalSpaceTempering == null ? Collections.emptyList() :
-            Collections.singletonList(orthogonalSpaceTempering)
+        Collections.singletonList((Potential) orthogonalSpaceTempering)
   }
 }

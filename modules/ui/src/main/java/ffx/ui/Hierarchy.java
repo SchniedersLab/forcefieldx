@@ -42,17 +42,22 @@ import ffx.potential.bonded.MSRoot;
 import ffx.potential.bonded.ROLSP;
 import ffx.potential.bonded.RendererCache;
 import java.awt.Color;
+import java.awt.GraphicsEnvironment;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.logging.Logger;
 import javax.swing.JLabel;
 import javax.swing.JTree;
+import javax.swing.SwingUtilities;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultTreeSelectionModel;
 import javax.swing.tree.RowMapper;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 /**
@@ -61,13 +66,14 @@ import javax.swing.tree.TreePath;
  *
  * @author Michael J. Schnieders
  */
-public final class Hierarchy extends JTree implements TreeSelectionListener {
+public final class Hierarchy extends JTree implements TreeSelectionListener, TreeModelListener {
 
   private static final Logger logger = Logger.getLogger(Hierarchy.class.getName());
   private final MSRoot root;
   private final MainPanel mainPanel;
   private final ArrayList<MSNode> activeNodes = new ArrayList<>();
   private DefaultTreeModel hierarchyModel;
+  private DefaultTreeCellRenderer treeCellRenderer;
   private DefaultTreeSelectionModel treeSelectionModel;
   // Reference to the active FFXSystem
   private FFXSystem activeSystem = null;
@@ -77,19 +83,20 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
   private JLabel step = null;
   private JLabel energy = null;
   private ArrayList<TreePath> newPaths = new ArrayList<>();
-  private ArrayList<TreePath> removedPaths = new ArrayList<>();
   private ArrayList<TreePath> previousPaths = new ArrayList<>();
-  private TreePath nullPath = null;
+  private final ArrayList<TreePath> removedPaths = new ArrayList<>();
+  private final TreePath nullPath = null;
 
   /**
    * The Default Constructor initializes JTree properties, then updates is representation based on
    * the Structure of the Tree that extends from the Root argument.
    *
-   * @param f a {@link ffx.ui.MainPanel} object.
+   * @param mainPanel a {@link ffx.ui.MainPanel} object.
    */
-  Hierarchy(MainPanel f) {
-    mainPanel = f;
-    root = mainPanel.getDataRoot();
+  Hierarchy(MainPanel mainPanel) {
+    super(mainPanel.getDataRoot());
+    this.mainPanel = mainPanel;
+    root = this.mainPanel.getDataRoot();
     initTree();
   }
 
@@ -191,7 +198,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
       }
       FFXSystem[] systems = new FFXSystem[childCount];
       int index = 0;
-      for (Enumeration e = root.children(); e.hasMoreElements(); ) {
+      for (Enumeration<TreeNode> e = root.children(); e.hasMoreElements(); ) {
         systems[index++] = (FFXSystem) e.nextElement();
       }
       return systems;
@@ -259,7 +266,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
       MSNode lastNode = (MSNode) getLastSelectedPathComponent();
       if (lastNode != null) {
         activeNode = lastNode;
-        FFXSystem s = (FFXSystem) activeNode.getMSNode(FFXSystem.class);
+        FFXSystem s = activeNode.getMSNode(FFXSystem.class);
         if (s != null) {
           setActive(s);
         }
@@ -469,7 +476,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
       for (int i = 0; i < parent.getChildCount(); i++) {
         MSNode node = (MSNode) parent.getChildAt(i);
         if (node.getName().equals(name)) {
-          logger.info(" Parent already has a node with the name " + name);
+          logger.fine(" Parent already has a node with the name " + name);
         }
       }
 
@@ -539,7 +546,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
       }
       FFXSystem[] systems = new FFXSystem[childCount - 1];
       int index = 0;
-      for (Enumeration e = root.children(); e.hasMoreElements(); ) {
+      for (Enumeration<TreeNode> e = root.children(); e.hasMoreElements(); ) {
         FFXSystem system = (FFXSystem) e.nextElement();
         if (system != getActive()) {
           systems[index++] = system;
@@ -551,6 +558,9 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
 
   /** Initialize the Tree representation based on the Root data node */
   private void initTree() {
+    if (!GraphicsEnvironment.isHeadless() && !SwingUtilities.isEventDispatchThread()) {
+      logger.severe(" Initialization of Hierarchy outside EDT.");
+    }
     addTreeSelectionListener(this);
     setExpandsSelectedPaths(true);
     setScrollsOnExpand(true);
@@ -558,14 +568,17 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     setEditable(false);
     putClientProperty("JTree.lineStyle", "Angled");
     setShowsRootHandles(true);
-    DefaultTreeCellRenderer tcr = new DefaultTreeCellRenderer();
-    tcr.setBackgroundSelectionColor(Color.yellow);
-    tcr.setBorderSelectionColor(Color.black);
-    tcr.setTextSelectionColor(Color.black);
-    setCellRenderer(tcr);
+    treeCellRenderer = new DefaultTreeCellRenderer();
+    treeCellRenderer.setBackgroundSelectionColor(Color.yellow);
+    treeCellRenderer.setBorderSelectionColor(Color.black);
+    treeCellRenderer.setTextSelectionColor(Color.black);
+    setCellRenderer(treeCellRenderer);
     hierarchyModel = new DefaultTreeModel(root);
-    treeSelectionModel = new DefaultTreeSelectionModel();
+    root.setUserObject(hierarchyModel);
     setModel(hierarchyModel);
+    hierarchyModel.addTreeModelListener(this);
+    // Store a reference to the DefaultTreeModel, so it can be updated if nodes are added/removed.
+    treeSelectionModel = new DefaultTreeSelectionModel();
     setSelectionModel(treeSelectionModel);
     setRootVisible(false);
   }
@@ -628,8 +641,11 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
       */
       if (nodeToRemove instanceof FFXSystem) {
         hierarchyModel = new DefaultTreeModel(root);
-        treeSelectionModel = new DefaultTreeSelectionModel();
+        // Store a reference to the DefaultTreeModel, so it can be updated if nodes are added/removed.
+        root.setUserObject(hierarchyModel);
         setModel(hierarchyModel);
+        hierarchyModel.addTreeModelListener(this);
+        treeSelectionModel = new DefaultTreeSelectionModel();
         setSelectionModel(treeSelectionModel);
       }
 
@@ -739,5 +755,21 @@ public final class Hierarchy extends JTree implements TreeSelectionListener {
     } else {
       energy.setText("");
     }
+  }
+
+  @Override
+  public void treeNodesChanged(TreeModelEvent e) {
+  }
+
+  @Override
+  public void treeNodesInserted(TreeModelEvent e) {
+  }
+
+  @Override
+  public void treeNodesRemoved(TreeModelEvent e) {
+  }
+
+  @Override
+  public void treeStructureChanged(TreeModelEvent e) {
   }
 }

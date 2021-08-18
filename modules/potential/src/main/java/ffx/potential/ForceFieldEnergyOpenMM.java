@@ -46,10 +46,10 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationFor
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationForce_setNonbondedMethod;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationForce_setParticleParameters;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationForce_updateParametersInContext;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle_1;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_create;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setIncludeCavityTerm;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters_1;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSoluteDielectric;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSolventDielectric;
@@ -3691,18 +3691,16 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       for (int i = 0; i < nAtoms; i++) {
         MultipoleType multipoleType = atoms[i].getMultipoleType();
-        double vdwSize = descreenRadius[i] * overlapScale[i];
-        double overlap = vdwSize / baseRadius[i];
-        OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle(
-            amoebaGeneralizedKirkwoodForce,
-            multipoleType.charge,
-            OpenMM_NmPerAngstrom * baseRadius[i],
-            overlap);
+        double base = baseRadius[i] * OpenMM_NmPerAngstrom;
+        double descreen = descreenRadius[i] * OpenMM_NmPerAngstrom;
+        double overlap = overlapScale[i];
+        OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle_1(
+            amoebaGeneralizedKirkwoodForce, multipoleType.charge, base, overlap, descreen);
 
         if (logger.isLoggable(Level.FINE)) {
           logger.fine(
-              format("   %s %8.6f %8.6f %5.3f %5.3f",
-                  atoms[i].toString(), baseRadius[i], descreenRadius[i], overlapScale[i], overlap));
+              format("   %s %8.6f %8.6f %5.3f",
+                  atoms[i].toString(), baseRadius[i], descreenRadius[i], overlapScale[i]));
         }
       }
 
@@ -4525,20 +4523,17 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           lambdaScale = 1.0;
         }
 
-        // Handle use of vdW descreening.
-        double vdwSize = descreenRadius[index] * overlapScale[index];
-        double overlap = vdwSize / baseRadii[index];
+        double baseSize = baseRadii[index] * OpenMM_NmPerAngstrom;
+        double descreenSize = descreenRadius[index] * OpenMM_NmPerAngstrom;
 
         chargeUseFactor *= lambdaScale;
         double overlapScaleUseFactor = nea ? 1.0 : chargeUseFactor;
+        double overlap = overlapScale[index] * overlapScaleUseFactor;
 
         MultipoleType multipoleType = atom.getMultipoleType();
-        OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters(
+        OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters_1(
             amoebaGeneralizedKirkwoodForce,
-            index,
-            multipoleType.charge * chargeUseFactor,
-            OpenMM_NmPerAngstrom * baseRadii[index],
-            overlap * overlapScaleUseFactor);
+            index, multipoleType.charge * chargeUseFactor, baseSize, overlap, descreenSize);
       }
 
       //        OpenMM Bug: Surface Area is not Updated by "updateParametersInContext"

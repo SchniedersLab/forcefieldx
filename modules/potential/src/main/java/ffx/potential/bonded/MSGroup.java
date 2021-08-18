@@ -56,7 +56,7 @@ import org.jogamp.vecmath.Color3f;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@SuppressWarnings({"serial", "CloneableImplementsClone"})
+@SuppressWarnings({"CloneableImplementsClone"})
 public abstract class MSGroup extends MSNode {
 
   private static final Logger logger = Logger.getLogger(MSGroup.class.getName());
@@ -102,7 +102,7 @@ public abstract class MSGroup extends MSNode {
   private MSNode torsionTorsionNode = new MSNode("Torsion-Torsions");
   private MSNode improperTorsionNode = new MSNode("Improper Torsions");
   /** List of Joints. */
-  private List<Joint> joints = new ArrayList<>();
+  private final List<Joint> joints = new ArrayList<>();
   /** Whether the terms are current. */
   private boolean finalized;
   /** Center of the MultiScaleGroup */
@@ -385,11 +385,6 @@ public abstract class MSGroup extends MSNode {
     termNode.setName("Valence Terms (" + numberOfValenceTerms + ")");
   }
 
-  /** clearJoints. */
-  public void clearJoints() {
-    joints.clear();
-  }
-
   /** constructValenceTerms */
   public void constructValenceTerms() {
     MSNode b = new MSNode("Bonds");
@@ -401,8 +396,8 @@ public abstract class MSGroup extends MSNode {
     List<Atom> atomList = getAtomList();
     for (Atom a1 : atomList) {
       index++;
-      for (ListIterator li = atomList.listIterator(index); li.hasNext(); ) {
-        Atom a2 = (Atom) li.next();
+      for (ListIterator<Atom> li = atomList.listIterator(index); li.hasNext(); ) {
+        Atom a2 = li.next();
         a1.getXYZ(da);
         a2.getXYZ(db);
         double d1 = DoubleMath.dist(da, db);
@@ -813,7 +808,7 @@ public abstract class MSGroup extends MSNode {
    *
    * @return a {@link java.util.List} object.
    */
-  public List getDangelingAtoms() {
+  public List<Atom> getDangelingAtoms() {
     return dangelingatoms;
   }
 
@@ -923,8 +918,7 @@ public abstract class MSGroup extends MSNode {
     for (Atom a : atomNode.getAtomList()) {
       a.print();
     }
-    for (ROLS m : bondNode.getBondList()) {
-      Bond b = (Bond) m;
+    for (Bond b : bondNode.getBondList()) {
       b.print();
     }
   }

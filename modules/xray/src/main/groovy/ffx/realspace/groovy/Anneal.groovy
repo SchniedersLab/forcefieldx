@@ -166,6 +166,6 @@ class Anneal extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     return
-    refinementEnergy == null ? Collections.emptyList() : Collections.singletonList(refinementEnergy)
+    refinementEnergy == null ? Collections.emptyList() : Collections.singletonList((Potential) refinementEnergy)
   }
 }

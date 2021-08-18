@@ -190,4 +190,127 @@ public enum LatticeSystem {
         return false;
     }
   }
+
+  /**
+   * Check that the lattice parameters satisfy the restrictions of the lattice systems.
+   *
+   * @param a the a-axis length.
+   * @param b the b-axis length.
+   * @param c the c-axis length.
+   * @param alpha the alpha angle.
+   * @param beta the beta angle.
+   * @param gamma the gamma angle.
+   * @return True if the restrictions are satisfied, false otherwise.
+   */
+  public double[] fixParameters(double a, double b, double c, double alpha, double beta,
+                                 double gamma) {
+    double[] parameters = {a,b,c,alpha,beta,gamma};
+    switch (this) {
+      case TRICLINIC_LATTICE:
+        // No restrictions.
+        return parameters;
+      case MONOCLINIC_LATTICE:
+        // alpha = gamma = 90
+        parameters[3] = 90.0;
+        parameters[5] = 90.0;
+        return parameters;
+      case ORTHORHOMBIC_LATTICE:
+        // alpha = beta = gamma = 90
+        parameters[3] = 90.0;
+        parameters[4] = 90.0;
+        parameters[5] = 90.0;
+        return parameters;
+      case TETRAGONAL_LATTICE:
+        // a = b, alpha = beta = gamma = 90
+        double ab = (parameters[0] + parameters[1])/2;
+        parameters[0] = ab;
+        parameters[1] = ab;
+        parameters[3] = 90.0;
+        parameters[4] = 90.0;
+        parameters[5] = 90.0;
+        return parameters;
+      case RHOMBOHEDRAL_LATTICE:
+        // a = b = c, alpha = beta = gamma.
+        double abc = (parameters[0] + parameters[1] + parameters[2])/3;
+        double angles = (parameters[3] + parameters[4] + parameters[5])/3;
+        parameters[0] = abc;
+        parameters[1] = abc;
+        parameters[2] = abc;
+        parameters[3] = angles;
+        parameters[4] = angles;
+        parameters[5] = angles;
+        return parameters;
+        case HEXAGONAL_LATTICE:
+        // a = b, alpha = beta = 90, gamma = 120
+          ab = (parameters[0] + parameters[1])/2;
+          parameters[0] = ab;
+          parameters[1] = ab;
+          parameters[3] = 90.0;
+          parameters[4] = 90.0;
+          parameters[5] = 120.0;
+          return parameters;
+      case CUBIC_LATTICE:
+        // a = b = c; alpha = beta = gamma = 90
+        abc = (parameters[0] + parameters[1] + parameters[2])/3;
+        parameters[0] = abc;
+        parameters[1] = abc;
+        parameters[2] = abc;
+        parameters[3] = 90.0;
+        parameters[4] = 90.0;
+        parameters[5] = 90.0;
+        return parameters;
+      default:
+        assert (2 != 2);
+        return parameters;
+    }
+  }
+
+  /**
+   * Returns the default b-axis for the lattice system.
+   *
+   * @return default b-axis value
+   */
+  public double getDefaultBAxis(double aaxis) {
+    return aaxis;
+  }
+
+  /**
+   * Returns the default c-axis for the lattice system.
+   *
+   * @return default c-axis value
+   */
+  public double getDefaultCAxis(double aaxis, double baxis) {
+    return (aaxis+baxis)/2;
+  }
+
+  /**
+   * Returns the default alpha for the lattice system.
+   *
+   * @return default alpha value
+   */
+  public double getDefaultAlpha() {
+    return 90.0;
+  }
+
+  /**
+   * Returns the default beta for the lattice system.
+   *
+   * @return default beta value
+   */
+  public double getDefaultBeta() {
+    return 90.0;
+  }
+
+  /**
+   * Returns the default gamma for the lattice system.
+   *
+   * @return default gamma value
+   */
+  public double getDefaultGamma() {
+    double gamma = 90.0;
+    if(this==HEXAGONAL_LATTICE){
+      gamma = 120.0;
+    }
+    return gamma;
+  }
 }

@@ -6455,7 +6455,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
               if (frame[ii] == MultipoleType.MultipoleFrameDefinition.ZTHENX
                   && referenceSites.length == 3) {
                 needsChiralInversion =
-                    checkMultipoleChirality(in, frame[ii], localOrigin, frameCoords);
+                    checkMultipoleChirality(frame[ii], localOrigin, frameCoords);
                 if (needsChiralInversion) {
                   localDipole[1] = -localDipole[1];
                   localQuadrupole[0][1] = -localQuadrupole[0][1];

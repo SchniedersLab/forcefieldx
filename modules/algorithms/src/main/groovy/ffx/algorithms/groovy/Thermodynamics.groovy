@@ -115,12 +115,12 @@ class Thermodynamics extends AlgorithmsScript {
   @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
   List<String> filenames = null
 
-  int threadsAvail = ParallelTeam.getDefaultThreadCount()
-  int threadsPer = threadsAvail
-  MolecularAssembly[] topologies
-  CrystalPotential potential
-  OrthogonalSpaceTempering orthogonalSpaceTempering = null
-  Configuration additionalProperties
+  public int threadsAvail = ParallelTeam.getDefaultThreadCount()
+  public int threadsPer = threadsAvail
+  public MolecularAssembly[] topologies
+  public CrystalPotential potential
+  public OrthogonalSpaceTempering orthogonalSpaceTempering = null
+  public Configuration additionalProperties
 
   /**
    * Sets an optional Configuration with additional properties.
@@ -191,10 +191,11 @@ class Thermodynamics extends AlgorithmsScript {
     int rank = (size > 1) ? world.rank() : 0
 
     // Segment of code for MultiDynamics and OST.
-    List<File> structureFiles = arguments.stream().
-        map {fn -> new File(new File(FilenameUtils.normalize(fn)).getAbsolutePath())
-        }.
-        collect(Collectors.toList())
+    List<File> structureFiles = new ArrayList<>()
+    for (String argument : arguments) {
+      File file = new File(FilenameUtils.normalize(argument))
+      structureFiles.add(file)
+    }
 
     File firstStructure = structureFiles.get(0)
     String filePathNoExtension = firstStructure.getAbsolutePath().replaceFirst(~/\.[^.]+$/, "")
@@ -332,10 +333,10 @@ class Thermodynamics extends AlgorithmsScript {
       if (potential == null) {
         potentials = Collections.emptyList()
       } else {
-        potentials = Collections.singletonList(potential)
+        potentials = Collections.singletonList((Potential) potential)
       }
     } else {
-      potentials = Collections.singletonList(orthogonalSpaceTempering)
+      potentials = Collections.singletonList((Potential) orthogonalSpaceTempering)
     }
     return potentials
   }

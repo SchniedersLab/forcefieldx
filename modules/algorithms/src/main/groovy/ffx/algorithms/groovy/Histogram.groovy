@@ -42,7 +42,6 @@ import ffx.algorithms.cli.OSTOptions
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.MolecularAssembly
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
@@ -66,10 +65,11 @@ class Histogram extends AlgorithmsScript {
   boolean pmf = false
 
   /**
-   * One or more filenames.
+   * An XYZ or PDB input file.
    */
-  @Parameters(arity = "1..*", paramLabel = "files", description = "XYZ or PDB input files.")
-  private List<String> filenames
+  @Parameters(arity = "1", paramLabel = "file",
+      description = "XYZ or PDB input file.")
+  private String filename
 
   private OrthogonalSpaceTempering orthogonalSpaceTempering
   private File saveDir = null
@@ -95,25 +95,24 @@ class Histogram extends AlgorithmsScript {
   @Override
   Histogram run() {
 
+    // Init the context and bind variables.
     if (!init()) {
       return this
     }
 
-    String modelFilename
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
-      modelFilename = filenames.get(0)
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
-    } else {
-      modelFilename = activeAssembly.getFile().getAbsolutePath()
     }
 
-    println("\n Evaluating Histogram for " + modelFilename)
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
 
-    File structureFile = new File(FilenameUtils.normalize(modelFilename))
+    println("\n Evaluating Histogram for " + filename)
+
+    File structureFile = new File(FilenameUtils.normalize(filename))
     structureFile = new File(structureFile.getAbsolutePath())
     String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
     File histogramRestart = new File(baseFilename + ".his")
@@ -125,9 +124,8 @@ class Histogram extends AlgorithmsScript {
     // Print the current energy
     energy.energy(true, true)
 
-    modelFilename = activeAssembly.getFile().getAbsolutePath()
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(FilenameUtils.getFullPath(modelFilename))
+      saveDir = new File(FilenameUtils.getFullPath(filename))
     }
 
     orthogonalSpaceTempering = OSTOptions.
@@ -137,7 +135,7 @@ class Histogram extends AlgorithmsScript {
     if (pmf) {
       orthogonalSpaceTempering.setMolecularAssembly(activeAssembly)
       OrthogonalSpaceTempering.Histogram histogram = orthogonalSpaceTempering.getHistogram()
-      histogram.updateFLambda(false, true)
+      histogram.updateFreeEnergyEstimate(false, true)
       StringBuffer sb = histogram.evaluateTotalPMF()
 
       String dirName = saveDir.toString() + File.separator
@@ -166,7 +164,7 @@ class Histogram extends AlgorithmsScript {
     if (orthogonalSpaceTempering == null) {
       potentials = Collections.emptyList()
     } else {
-      potentials = Collections.singletonList(orthogonalSpaceTempering)
+      potentials = Collections.singletonList((Potential) orthogonalSpaceTempering)
     }
     return potentials
   }

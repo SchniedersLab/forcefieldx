@@ -8,6 +8,7 @@ import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
+import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.configuration2.Configuration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine
@@ -42,6 +43,20 @@ class SortArc extends AlgorithmsScript {
             description = "If set, auto-determine lambda values and subdirectories (overrides other flags).")
     private int nWindows = -1
 
+    @Option(names = ["--bT", '--sortByTemp'], paramLabel = "false",
+            description = "If set, sort archive files by temperature values")
+    private boolean sortTemp = false
+
+    @Option(names = ["--sT", '--startTemp'], paramLabel = "298.15",
+            defaultValue = "298.15",
+            description = "Sets the starting temperature for the exponential temperature ladder if sorting by temperature.")
+    private double lowTemperature = 298.15
+
+    @Option(names = ["--ex", '--exponent'], paramLabel = "0.5",
+            defaultValue = "0.5",
+            description = "Sets the exponent for the exponential temperature ladder if sorting by temperature.")
+    private double exponent = 0.05
+
     /**
      * The final argument(s) should be filenames for lambda windows in order..
      */
@@ -50,12 +65,14 @@ class SortArc extends AlgorithmsScript {
     List<String> filenames = null
 
     private double[] lambdaValues
+    private double[] temperatureValues
     private SystemFilter[] openers
     private SystemFilter[][] writers
     private String[] files
-    private Configuration additionalProperties
+    private CompositeConfiguration additionalProperties
     private List<String> windowFiles = new ArrayList<>()
     MolecularAssembly[] topologies
+    MolecularAssembly ma
     private int threadsAvail = ParallelTeam.getDefaultThreadCount()
     private int threadsPer = threadsAvail
 
@@ -64,7 +81,7 @@ class SortArc extends AlgorithmsScript {
      * Sets an optional Configuration with additional properties.
      * @param additionalProps
      */
-    void setProperties(Configuration additionalProps) {
+    void setProperties(CompositeConfiguration additionalProps) {
         this.additionalProperties = additionalProps
     }
 
@@ -93,7 +110,6 @@ class SortArc extends AlgorithmsScript {
         files = new String[nTopology]
         for (int i = 0; i < nTopology; i++) {
             files[i] = filenames.get(i)
-            logger.info(files[i])
         }
 
         if (nWindows != -1) {
@@ -105,9 +121,15 @@ class SortArc extends AlgorithmsScript {
                 }
 
             }
+
             lambdaValues = new double[nWindows]
+            temperatureValues = new double[nWindows]
             for (int i = 0; i < nWindows; i++) {
-                lambdaValues[i] = alchemical.getInitialLambda(nWindows, i, false);
+                if (sortTemp) {
+                    temperatureValues[i] = lowTemperature * Math.exp(exponent * i);
+                } else {
+                    lambdaValues[i] = alchemical.getInitialLambda(nWindows, i, false);
+                }
             }
         }
 
@@ -124,19 +146,12 @@ class SortArc extends AlgorithmsScript {
 
 
         for (int j = 0; j < nTopology; j++) {
-            logger.info("Directory path " + directoryPath)
-            logger.info("the full path is" + FilenameUtils.getFullPath(files[j]))
             String archiveName = FilenameUtils.getBaseName(files[j]) + ".arc"
-
             for (int i = 0; i < nWindows; i++) {
                 archiveFullPaths[i][j] = directoryPath + i + File.separator + archiveName
-
                 File arcFile = new File(archiveFullPaths[i][j])
                 arcFiles[i][j] = arcFile
-                boolean fileExist = arcFile.exists()
-                logger.info(archiveFullPaths[i][j] + ": " + fileExist.toString())
                 archiveNewPath[i][j] = directoryPath + i + File.separator + FilenameUtils.getBaseName(files[j]) + "_E" + i + ".arc"
-                logger.info(archiveNewPath[i][j])
                 saveFile[i][j] = new File(archiveNewPath[i][j])
             }
         }
@@ -166,19 +181,26 @@ class SortArc extends AlgorithmsScript {
 
         topologies = new MolecularAssembly[nTopology]
         for (int j = 0; j < nTopology; j++) {
-            MolecularAssembly ma =
-                    alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[j], j)
+            if(filenames[j].contains(".pdb")){
+                ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, archiveFullPaths[0][j], j)
+            } else {
+                ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[j], j)
+            }
             topologies[j] = ma
             openers[j] = algorithmFunctions.getFilter()
 
             for (int i = 0; i < nWindows; i++) {
                 File arc = saveFile[i][j]
-                logger.info(saveFile[i][j].toString())
                 writers[i][j] = new XYZFilter(arc, topologies[j], topologies[j].getForceField(), additionalProperties)
             }
         }
 
-        double tolerance = 1.0e-4
+        double tolerance
+        if (sortTemp){
+            tolerance = 1.0e-2
+        } else {
+            tolerance = 1.0e-4
+        }
 
         for (int j = 0; j < nTopology; j++) {
 
@@ -199,21 +221,30 @@ class SortArc extends AlgorithmsScript {
                     String remarkLine = openers[j].getRemarkLines()
 
 
-
                     double lambda = 0
+                    double temp = 0
                     if (remarkLine.contains(" Lambda: ")) {
                         String[] tokens = remarkLine.split(" +")
                         for (int p = 0; p < tokens.length; p++) {
                             if (tokens[p].startsWith("Lambda")) {
                                 lambda = Double.parseDouble(tokens[p + 1])
                             }
+                            if (tokens[p].startsWith("Temp")) {
+                                temp = Double.parseDouble(tokens[p + 1])
+                            }
                         }
 
                     }
 
-                    for(int k=0; k<nWindows; k++){
-                        double diff = Math.abs(lambdaValues[k] - lambda)
-                        if (diff < tolerance ) {
+                    double diff
+                    for (int k = 0; k < nWindows; k++) {
+                        if (sortTemp) {
+                            diff = Math.abs(temperatureValues[k] - temp)
+                        } else {
+                            diff = Math.abs(lambdaValues[k] - lambda)
+                        }
+
+                        if (diff < tolerance) {
                             writers[k][j].writeFile(saveFile[k][j], true, remarkLine)
                             //set topology back to archive being read in
                             topologies[j].setFile(arcFiles[i][j])

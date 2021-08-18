@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <document
-    xmlns="http://maven.apache.org/XDOC/2.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+        xmlns="http://maven.apache.org/XDOC/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
         <title>NPT Polymorph Search</title>
         <author email="aaron-nessler@uiowa.edu">Aaron Nessler</author>
@@ -10,96 +10,117 @@
     <body>
         <section name="Thermodynamic Organic Crystal Polymorph Search">
             <p>The majority of polymorph search algorithms are based on searching a potential energy surface over
-            space groups, unit cell parameters and molecular coordinates. Here we present a novel thermodynamic search
-            procedure that samples the phase space of polymorphs at a prescribed temperature and pressure (i.e. NPT).</p>
+                space groups, unit cell parameters and molecular coordinates. Here we present a novel thermodynamic
+                search
+                procedure that samples the phase space of polymorphs at a prescribed temperature and pressure (i.e.
+                NPT).
+            </p>
             <p>The general procedure for the thermodynamic polymorph search is as follows:
             </p>
             <ol>
                 <li>Prepare space groups with random starting coordinates.</li>
-                <li>Setup and run a <i>Thermodynamics</i> command.</li>
+                <li>Setup and run a <i>Thermodynamics</i> command.
+                </li>
             </ol>
             <subsection name="Preparation of Space Group Simulation Directories">
                 <p>To perform the polymorph search in each target space group,
                     a input coordinate file in XYZ (or PDB) format is needed.
-                    In this example, we are using carbamazepine (CBZ).</p>
+                    In this example, we are using carbamazepine (CBZ).
+                </p>
                 <source>
-                    30  CBZ.xyz
-                    1   O      1.056327    2.681279   -1.205416   415    14
-                    2   N      0.013517    0.882342   -0.199472   407     4     5    14
-                    3   N     -1.208192    2.632570   -1.309045   409    14    29    30
-                    4   C      1.239504    0.196002    0.163542   402     2     6    10
-                    5   C     -1.188951    0.163264    0.185422   402     2     7    11
-                    6   C      1.574003   -1.017457   -0.500887   406     4     8    12
-                    7   C     -1.513347   -1.052206   -0.479181   406     5     9    13
-                    8   C      0.707998   -1.587940   -1.539462   404     6     9    19
-                    9   C     -0.651244   -1.601238   -1.531369   404     7     8    20
-                    10  C      2.078718    0.718406    1.168788   408     4    15    21
-                    11  C     -2.003096    0.649430    1.228952   408     5    16    22
-                    12  C      2.765145   -1.677153   -0.111878   403     6    17    23
-                    13  C     -2.689226   -1.732175   -0.079161   403     7    18    24
-                    14  C      0.015450    2.092212   -0.925575   401     1     2     3
-                    15  C      3.252341    0.045038    1.527667   405    10    17    25
-                    16  C     -3.159986   -0.045033    1.601550   405    11    18    26
-                    17  C      3.597157   -1.157107    0.884816   410    12    15    27
-                    18  C     -3.505835   -1.238789    0.943487   410    13    16    28
-                    19  H      1.213457   -2.006500   -2.410769   414     8
-                    20  H     -1.157318   -2.032494   -2.396149   414     9
-                    21  H      1.805364    1.654177    1.653179   412    10
-                    22  H     -1.722357    1.572906    1.732896   412    11
-                    23  H      3.038054   -2.613634   -0.600567   417    12
-                    24  H     -2.954555   -2.669119   -0.570959   417    13
-                    25  H      3.896980    0.457503    2.301469   416    15
-                    26  H     -3.786286    0.338775    2.404700   416    16
-                    27  H      4.508661   -1.683532    1.163694   413    17
-                    28  H     -4.401250   -1.784798    1.236556   413    18
-                    29  H     -1.190268    3.504894   -1.820183   411     3
-                    30  H     -2.085532    2.148253   -1.167517   411     3
+                    30 CBZ.xyz
+                    1 O 1.056327 2.681279 -1.205416 415 14
+                    2 N 0.013517 0.882342 -0.199472 407 4 5 14
+                    3 N -1.208192 2.632570 -1.309045 409 14 29 30
+                    4 C 1.239504 0.196002 0.163542 402 2 6 10
+                    5 C -1.188951 0.163264 0.185422 402 2 7 11
+                    6 C 1.574003 -1.017457 -0.500887 406 4 8 12
+                    7 C -1.513347 -1.052206 -0.479181 406 5 9 13
+                    8 C 0.707998 -1.587940 -1.539462 404 6 9 19
+                    9 C -0.651244 -1.601238 -1.531369 404 7 8 20
+                    10 C 2.078718 0.718406 1.168788 408 4 15 21
+                    11 C -2.003096 0.649430 1.228952 408 5 16 22
+                    12 C 2.765145 -1.677153 -0.111878 403 6 17 23
+                    13 C -2.689226 -1.732175 -0.079161 403 7 18 24
+                    14 C 0.015450 2.092212 -0.925575 401 1 2 3
+                    15 C 3.252341 0.045038 1.527667 405 10 17 25
+                    16 C -3.159986 -0.045033 1.601550 405 11 18 26
+                    17 C 3.597157 -1.157107 0.884816 410 12 15 27
+                    18 C -3.505835 -1.238789 0.943487 410 13 16 28
+                    19 H 1.213457 -2.006500 -2.410769 414 8
+                    20 H -1.157318 -2.032494 -2.396149 414 9
+                    21 H 1.805364 1.654177 1.653179 412 10
+                    22 H -1.722357 1.572906 1.732896 412 11
+                    23 H 3.038054 -2.613634 -0.600567 417 12
+                    24 H -2.954555 -2.669119 -0.570959 417 13
+                    25 H 3.896980 0.457503 2.301469 416 15
+                    26 H -3.786286 0.338775 2.404700 416 16
+                    27 H 4.508661 -1.683532 1.163694 413 17
+                    28 H -4.401250 -1.784798 1.236556 413 18
+                    29 H -1.190268 3.504894 -1.820183 411 3
+                    30 H -2.085532 2.148253 -1.167517 411 3
                 </source>
-                <p>The property file (analogous to a TINKER keyword file) specifies the space group, (starting) unit cell information, and
+                <p>The property file (analogous to a TINKER keyword file) specifies the space group, (starting) unit
+                    cell information, and
                     AMOEBA parameters for the molecule. The latter can be generated using the PolType program
-                    developed in the lab of Pengyu Ren (in this case carbamazepine AMOEBA parameters are contained in CBZ.patch).
+                    developed in the lab of Pengyu Ren (in this case carbamazepine AMOEBA parameters are contained in
+                    CBZ.patch).
                     It is important to specify a space group (e.g. P1) and unit cell parameters so that the FFX
                     PrepareSpaceGroups command recognizes the system as respecting periodic boundary conditions.
                 </p>
                 <source>
                     parameters /Absolute/path/to/CBZ.patch
                     spacegroup P1
-                    a-axis  10.0
-                    b-axis  10.0
-                    c-axis  10.0
-                    alpha   90.0
-                    beta    90.0
-                    gamma   90.0
+                    a-axis 10.0
+                    b-axis 10.0
+                    c-axis 10.0
+                    alpha 90.0
+                    beta 90.0
+                    gamma 90.0
                     heavy-hydrogen true
                 </source>
                 <p>FFX handles the creation of space groups through the PrepareSpaceGroups command seen below.
                     For the purpose of this example, we will search for known carbamazepine polymorphs archived at the
                     Cambridge Crystallography Data Centre <a href="https://www.ccdc.cam.ac.uk">(CCDC)</a>.
                     First, we will search in the space group P21/c
-                    <a href="https://www.ccdc.cam.ac.uk/structures/Search?Compound=carbamazepine&amp;DatabaseToSearch=Published">(CBMZPN01)</a>.
-                    Other helpful flags can be identified for the creation of space groups by using the following command: ffxc PrepareSpaceGroups -h.
+                    <a href="https://www.ccdc.cam.ac.uk/structures/Search?Compound=carbamazepine&amp;DatabaseToSearch=Published">
+                        (CBMZPN01)</a>.
+                    Other helpful flags can be identified for the creation of space groups by using the following
+                    command: ffxc PrepareSpaceGroups -h.
                 </p>
                 <source>ffxc PrepareSpaceGroups --sg=P21/c CBZ.xyz</source>
-                <p>Each of the space groups identified by the PrepareSpaceGroups command should now have their own subdirectories. Each subdirectory
-                    contains a space group specific property file and coordinate file. As long as an absolute path the CBZ.patch file was given,
+                <p>Each of the space groups identified by the PrepareSpaceGroups command should now have their own
+                    subdirectories. Each subdirectory
+                    contains a space group specific property file and coordinate file. As long as an absolute path the
+                    CBZ.patch file was given,
                     no further files are needed in each space group subdirectory.
                 </p>
             </subsection>
             <subsection name="Thermodynamic Polymorph Search for a Space Group">
                 <p>The Thermodynamics command is used to perform a polymorph search in each space group.
                     The algorithm operates in the NPT ensemble, and alchemically modulates intermolecular
-                    interactions using a lambda (L) state variable. At L=0, all intermolecular interactions are zero (i.e. vacuum), while at
-                    L=1, all intermolecular interactions (including between space group symmetry mates) are full strength (i.e. crystalline).
-                    The Orthogonal Space Random Walk algorithm is used to sample the thermodynamic path between vacuum and crystalline end
-                    states, including fully flexible sampling of atomic coordinates and unit cell parameters fluctuations under control of
-                    a Monte Carlo barostat. Hundreds to thousands of transitions between the vacuum and crystalline phases
+                    interactions using a lambda (L) state variable. At L=0, all intermolecular interactions are zero
+                    (i.e. vacuum), while at
+                    L=1, all intermolecular interactions (including between space group symmetry mates) are full
+                    strength (i.e. crystalline).
+                    The Orthogonal Space Random Walk algorithm is used to sample the thermodynamic path between vacuum
+                    and crystalline end
+                    states, including fully flexible sampling of atomic coordinates and unit cell parameters
+                    fluctuations under control of
+                    a Monte Carlo barostat. Hundreds to thousands of transitions between the vacuum and crystalline
+                    phases
                     for the specified molecule are simualted.
-                    <img src="images/lambdaPath.png" height="1126" width="1500" alt="lambda" />
-                    The above image depicts the alchemical thermodynamic path traversed during a simulation. Both ends of
-                    the lambda path are physical states, with 0 defining a molecule in vacuum and 1 defining the crystalline
+                    <img src="images/lambdaPath.png" height="1126" width="1500" alt="lambda"/>
+                    The above image depicts the alchemical thermodynamic path traversed during a simulation. Both ends
+                    of
+                    the lambda path are physical states, with 0 defining a molecule in vacuum and 1 defining the
+                    crystalline
                     state, while intermediate lambda values are alchemical.
                 </p>
-                <source>ffxc Thermodynamics -d 2 -r 0.01 -l 0.0 -n 50000000 -Q 0 -i stochastic --rsym 2.0 --ruc 1.0 -t 298 --s1 1 --f1 30 -p 1.0 --bM=0.002 -o CBZ.xyz</source>
+                <source>ffxc Thermodynamics -Dmdmove-full=true -Dlambda-bin-width=0.02 -Dost-opt-energy-window=10.0 --iW
+                    --minD=1.1 -Dpolarization=direct -d 2.0 -r 0.1 -l 0.0 -n 1000000 -Q 0 -i stochastic --rsym 2.0 --ruc
+                    1.25 -t 298.5 --ac ALL -p 1.0 --bM=0.0001 -o CBZ.xyz
+                </source>
                 <table>
                     <thead>
                         <tr>
@@ -109,19 +130,43 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td>-d 2</td>
+                            <td>-Dmdmove-full=true</td>
+                            <td>Turns on the orthagonal space tempering algorithm.</td>
+                        </tr>
+                        <tr>
+                            <td>-Dlambda-bin-width=0.02</td>
+                            <td>Determines the amount of change in the state variable lambda.</td>
+                        </tr>
+                        <tr>
+                            <td>-Dost-opt-energy-window=10.0</td>
+                            <td>Structures within 10.0 kcal/mol of the minimum energy will be saved.</td>
+                        </tr>
+                        <tr>
+                            <td>--iW</td>
+                            <td>Enforces that each walker maintains its own histogram.</td>
+                        </tr>
+                        <tr>
+                            <td>--minD=1.1</td>
+                            <td>Specify the minimum allowable density to be 1.1 (g/cc).</td>
+                        </tr>
+                        <tr>
+                            <td>-Dpolarization=direct</td>
+                            <td>Determines behavior for atomic polarizability.</td>
+                        </tr>
+                        <tr>
+                            <td>-d 2.0</td>
                             <td>Time step in femtoseconds (2 assumes use of the heavy-hydrogen property).</td>
                         </tr>
                         <tr>
-                            <td>-r 0.01</td>
+                            <td>-r 0.1</td>
                             <td>Interval to report thermodynamics (psec).</td>
                         </tr>
                         <tr>
                             <td>-l 0.0</td>
-                            <td>Initial lambda value (L=0 specifies vacuum).</td>
+                            <td>Initial lambda value (L=0 specifies vacuum in this case).</td>
                         </tr>
                         <tr>
-                            <td>-n 50000000</td>
+                            <td>-n 1000000</td>
                             <td>Number of MD steps.</td>
                         </tr>
                         <tr>
@@ -134,31 +179,31 @@
                         </tr>
                         <tr>
                             <td>--rsym 2.0</td>
-                            <td>Apply a random Cartesian symmetry operator with a random translation in the range -X .. X; less than 0 disables.</td>
+                            <td>Apply a random Cartesian symmetry operator with a random translation in the range -X ..
+                                X; less than 0 disables.
+                            </td>
                         </tr>
                         <tr>
-                            <td>--ruc 1.0</td>
+                            <td>--ruc 1.25</td>
                             <td>Apply random unit cell axes to achieve the specified density (g/cc).</td>
                         </tr>
                         <tr>
-                            <td>-t 298</td>
+                            <td>-t 298.5</td>
                             <td>Temperature (kelvin).</td>
                         </tr>
                         <tr>
-                            <td>--s1 1</td>
-                            <td>First softcore atom.</td>
-                        </tr>
-                        <tr>
-                            <td>--f1 30</td>
-                            <td>Final softcore atom. Note that all atoms must be specified for polymoprh searches.</td>
+                            <td>--ac ALL</td>
+                            <td>Specify alchemical atoms for simulation.</td>
                         </tr>
                         <tr>
                             <td>-p 1.0</td>
-                            <td>Specify use of a MC Barostat at the given pressure (atm); the default 0 disables NPT and will not
-                                search unit cell parameters (only atomic coordinates).</td>
+                            <td>Specify use of a MC Barostat at the given pressure (atm); the default 0 disables NPT and
+                                will not
+                                search unit cell parameters (only atomic coordinates).
+                            </td>
                         </tr>
                         <tr>
-                            <td>--bM 0.002</td>
+                            <td>--bM 0.0001</td>
                             <td>OST Gaussian bias magnitude (kcal/mol).</td>
                         </tr>
                         <tr>
@@ -167,17 +212,38 @@
                         </tr>
                     </tbody>
                 </table>
-                <p>The successful use of this setup for the Thermodynamics command will produce multiple optimized coordinate files with
-                    unit cell parameters contained in the second line (i.e. CBZ_opt.xyz_#). These files can be concatenated together into an archive file (i.e. CBZ.arc).
+                <p>The successful use of this setup for the Thermodynamics command will produce multiple optimized
+                    coordinate files with
+                    unit cell parameters contained in the second line (i.e. CBZ_opt.xyz_#). These files can be
+                    concatenated together into an archive file (i.e. CBZ.arc).
                     Although each optimized file is a proposed polymorph for the specified molecule, those with the
                     lowest potential energies and favorable densities are strongest candidates.
                     Redundant structures can be found via tight minimization; those in the same
                     energy well will optimize to similar potential energies. A minimization over coordinates and
                     unit cell parameters can be performed using the following command:
                 </p>
-                <source>ffxc CrystalMin -e 0.001 CBZ.arc</source>
+                <source>ffxc CrystalMin -ce 0.001 CBZ.arc</source>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Flag</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>-c</td>
+                            <td>Optimize coordinates in addition to lattice parameters.</td>
+                        </tr>
+                        <tr>
+                            <td>-e=0.001</td>
+                            <td>Specify convergence criteria.</td>
+                        </tr>
+                    </tbody>
+                </table>
                 <p>
-                    At this point, a series of ab initio polymorphs for a desired molecule have been produced, limited by the quality
+                    At this point, a series of ab initio polymorphs for a desired molecule have been produced, limited
+                    by the quality
                     of the AMOEBA force field parameters and/or convergence of the sampling.
                 </p>
             </subsection>
@@ -187,56 +253,69 @@
                     should produce logging that alternates between the following:
                 </p>
                 <source>
-                    <!-- Data examples from Argon/H-3/0.log -->
-                    L=0.0000 (  0) F_LU=    0.0000 F_LB=    0.0000 F_L=    0.0000 V_L=    0.0000
-
-                        Time      Kinetic    Potential        Total     Temp      CPU
-                        psec     kcal/mol     kcal/mol     kcal/mol        K      sec
-
-                                   26.6484       0.1138      26.7623   298.00
-                    L=0.0000 (  0) F_LU=   -0.0000 F_LB=   -0.0000 F_L=   -0.0000 V_L=    0.0111
-                    1.000e-02      16.7993      15.1093      31.9086   187.86    0.529
-                    L=0.0000 (  0) F_LU=   -0.0000 F_LB=   -0.0000 F_L=   -0.0000 V_L=   -0.0193
-                    2.000e-02      21.7378      15.9050      37.6428   243.09    0.189
-                    Density: 1.002 UC:  17.66  17.66  26.08  90.00  90.00 120.00 MCS: 100.0
-                    L=0.0000 (  0) F_LU=   -0.0000 F_LB=   -0.0000 F_L=   -0.0000 V_L=   -0.0265
-                    3.000e-02      18.1365      21.5613      39.6978   202.81    0.244
-                    L=0.0000 (  0) F_LU=   -0.0000 F_LB=   -0.0000 F_L=   -0.0000 V_L=   -0.0477
-                    4.000e-02      28.6036      19.8058      48.4094   319.86    0.177
-                    Density: 1.028 UC:  17.44  17.44  26.08  90.00  90.00 120.00 MCS: 100.0
-                    L=0.0000 (  0) F_LU=   -0.0000 F_LB=   -0.0001 F_L=   -0.0001 V_L=   -0.0648
-                    Density: 1.025 UC:  17.47  17.47  26.08  90.00  90.00 120.00 MCS: 100.0
-                    L=0.0000 (  0) F_LU=   -0.0000 F_LB=   -0.0004 F_L=   -0.0004 V_L=   -0.0798
-                    Density: 1.010 UC:  17.59  17.59  26.08  90.00  90.00 120.00 MCS: 100.0
-                    5.000e-02      19.2624      24.6501      43.9125   215.40    0.570
-                    L=0.0000 (  0) F_LU=   -0.0000 F_LB=   -0.0011 F_L=   -0.0011 V_L=   -0.0968
-                    6.000e-02      25.5734      26.0941      51.6676   285.98    0.161
-                    L=0.0000 (  0) F_LU=   -0.0000 F_LB=   -0.0021 F_L=   -0.0021 V_L=   -0.1126
-                    The free energy is       0.0000 kcal/mol (Total Weight: 9.00e+00, Tempering: 1.0000, Counts:            5).
-                         .           .            .             .          .        .
-                         .           .            .             .          .        .
-                         .           .            .             .          .        .
-                    L=0.9921 (198) F_LU= -120.8454 F_LB=  150.3598 F_L=   29.5143 V_L=    0.0180
-                    1.026e+04      26.1851      25.8415      52.0266   292.82    0.201
-                    L=0.9921 (198) F_LU= -125.2092 F_LB=  182.4758 F_L=   57.2666 V_L=   -0.0111
-                    The free energy is     -16.5726 kcal/mol (Total Weight: 2.49e+06, Tempering: 0.1356, Counts:       513225).
-                    1.026e+04      23.5763      25.3871      48.9634   263.65    0.269
-                    L=0.9922 (198) F_LU= -114.4444 F_LB=  152.2761 F_L=   37.8317 V_L=    0.0080
-                    1.026e+04      24.3690      26.5158      50.8847   272.51    0.201
-                    L=0.9922 (198) F_LU= -110.6628 F_LB=  146.7209 F_L=   36.0581 V_L=   -0.0002
+                    <!-- Data examples from Argon/ACE/0.log -->
+                         Time      Kinetic    Potential        Total     Temp      CPU
+                         psec     kcal/mol     kcal/mol     kcal/mol        K      sec
+                                    7.9140     -11.4425      -3.5285   295.00
+                    The free energy is      -2.2174 kcal/mol (Total Weight: 1.18e+05, Tempering: 0.9996, Counts:            0).
+                    L=0.0000 (  0) F_LU=   -0.0000 F_LB=   -0.0001 F_L=   -0.0001 V_L=    0.0570
+                    1.000e-01      14.7908      -5.3560       9.4348   551.33    4.895
+                    L=0.0002 (  0) F_LU=   -0.0000 F_LB=   -0.0009 F_L=   -0.0009 V_L=    0.0873
+                    2.000e-01       4.9389      -5.9505      -1.0116   184.10    2.345
+                    The free energy is      -2.2174 kcal/mol (Total Weight: 1.18e+05, Tempering: 0.9996, Counts:           24).
+                    L=0.0005 (  0) F_LU=   -0.0000 F_LB=   -0.0024 F_L=   -0.0024 V_L=    0.0998
+                    3.000e-01       8.9068      -4.6493       4.2575   332.01    2.689
+                    L=0.0013 (  0) F_LU=   -0.0000 F_LB=   -0.0065 F_L=   -0.0065 V_L=    0.0814
+                    4.000e-01       8.0651      -6.6926       1.3725   300.63    2.314
+                    The free energy is      -2.2174 kcal/mol (Total Weight: 1.18e+05, Tempering: 0.9996, Counts:           49).
+                    L=0.0023 (  0) F_LU=   -0.0001 F_LB=   -0.0120 F_L=   -0.0121 V_L=    0.1067
+                    L=0.0026 (  0) F_LU=   -0.0002 F_LB=   -0.0142 F_L=   -0.0143 V_L=   -0.0318
+                    5.000e-01      11.0130      -6.7040       4.3090   410.51    2.749
+                    L=0.0022 (  0) F_LU=   -0.0001 F_LB=   -0.0122 F_L=   -0.0123 V_L=   -0.0651
+                    6.000e-01       7.0453      -1.7482       5.2970   262.62    2.302
+                     .               .            .            .          .       .
+                     .               .            .            .          .       .
+                     .               .            .            .          .       .
+                    8.400e+00       9.8824     -15.0173      -5.1349   368.37   29.656
+                    L=0.9832 ( 49) F_LU=  -58.7961 F_LB=   66.6668 F_L=    7.8707 V_L=   -0.1075
+                    8.500e+00       6.1456     -15.2336      -9.0880   229.08   18.744
+                    L=0.9811 ( 49) F_LU=  -63.0950 F_LB=   66.7767 F_L=    3.6817 V_L=   -0.0536
+                    The free energy is      -1.8853 kcal/mol (Total Weight: 1.21e+05, Tempering: 1.0000, Counts:         1024).
+                    8.600e+00       7.4795     -12.4058      -4.9263   278.80   18.998
+                    L=0.9801 ( 49) F_LU=  -58.8955 F_LB=   66.6010 F_L=    7.7055 V_L=   -0.0124
+                    8.700e+00       9.6898     -11.6549      -1.9651   361.19   16.484
+                    L=0.9809 ( 49) F_LU=  -68.7993 F_LB=   61.7536 F_L=   -7.0458 V_L=   -0.0155
+                    8.800e+00       9.2525     -17.4102      -8.1578   344.89   18.014
+                    The free energy is      -1.8854 kcal/mol (Total Weight: 1.21e+05, Tempering: 1.0000, Counts:         1049).
+                    L=0.9802 ( 49) F_LU=  -64.6803 F_LB=   65.4695 F_L=    0.7893 V_L=   -0.0401
                 </source>
                 <p>
-                    The above section monitors the advancement of the stochastic dynamics simulation with respect to time.
+                    The above section monitors the advancement of the stochastic dynamics simulation with respect to
+                    time.
                     &quot;L&quot; indicates the current lambda value and its discrete bin in parentheses.
-                    The lambda value evolve between zero (i.e. denoting no intermolecular interactions in vacuum) and one
-                    (i.e. the molecule is subject to full crystalline periodic boundary conditions in the defined space group).
+                    The lambda value evolve between zero (i.e. denoting no intermolecular interactions in vacuum) and
+                    one
+                    (i.e. the molecule is subject to full crystalline periodic boundary conditions in the defined space
+                    group).
                 </p>
-                    <ul>
-                        <li><i>F_LU</i> is the partial derivative of the force field with respect to lambda.</li>
-                        <li><i>F_LB</i> is the partial derivative of the orthogonal space bias with respect to lambda.</li>
-                        <li><i>F_L</i> is the sum of F_LU and F_LB.</li>
-                        <li><i>V_L</i> is the velocity of the lambda particle.</li>
-                    </ul>
+                <ul>
+                    <li>
+                        <i>F_LU</i>
+                        is the partial derivative of the force field with respect to lambda.
+                    </li>
+                    <li>
+                        <i>F_LB</i>
+                        is the partial derivative of the orthogonal space bias with respect to lambda.
+                    </li>
+                    <li>
+                        <i>F_L</i>
+                        is the sum of F_LU and F_LB.
+                    </li>
+                    <li>
+                        <i>V_L</i>
+                        is the velocity of the lambda particle.
+                    </li>
+                </ul>
                 <p>
                     The column labels at the top of this section correlate to the numeric rows that do not have
                     alternative labels.
@@ -245,55 +324,84 @@
                     accepted (MCA) are also listed in this section.
                 </p>
                 <source>
-                    <!-- Data examples from Argon/H-3/0.log -->
+                    <!-- Data examples from Argon/ACE/0.log -->
                     Weight   Lambda      dU/dL Bins  &lt;dU/dL&gt;    g(L)  f(L,&lt;dU/dL&gt;) Bias    dG(L) Bias+dG(L)
-                    1.58e+03 0.00125    -1.0     1.0     0.00    -0.00     3.66     3.66     0.00       3.66
-                    2.13e+02 0.00500    -1.0     1.0     0.00    -0.00     3.29     3.29     0.00       3.29
-                    8.90e+01 0.01000    -1.0     1.0     0.00    -0.00     2.36     2.36     0.00       2.36
-                    4.80e+01 0.01500    -1.0     1.0     0.00    -0.00     1.38     1.38     0.00       1.38
-                    3.90e+01 0.02000    -1.0     1.0     0.00    -0.00     0.71     0.71     0.00       0.71
-                    3.30e+01 0.02500    -1.0     1.0     0.00    -0.00     0.35     0.35     0.00       0.35
-                    3.30e+01 0.03000    -1.0     1.0     0.00    -0.00     0.18     0.18     0.00       0.18
-                    3.30e+01 0.03500    -1.0     1.0     0.00    -0.00     0.16     0.16     0.00       0.16
-                    2.50e+01 0.04000    -1.0     1.0     0.00    -0.00     0.14     0.14     0.00       0.14
-                    2.60e+01 0.04500    -1.0     1.0     0.00    -0.00     0.14     0.14     0.00       0.14
-                    2.60e+01 0.05000    -1.0     1.0     0.00    -0.00     0.13     0.13     0.00       0.13
-                    2.60e+01 0.05500    -1.0     1.0     0.00    -0.00     0.13     0.13     0.00       0.13
-                    2.40e+01 0.06000    -1.0     1.0     0.00    -0.00     0.13     0.13     0.00       0.13
-                    2.50e+01 0.06500    -1.0     1.0     0.00    -0.00     0.12     0.12     0.00       0.12
-                    2.70e+01 0.07000    -1.0     1.0     0.00    -0.00     0.12     0.12     0.00       0.12
-                    2.90e+01 0.07500    -1.0     3.0     0.99    -0.00     0.11     0.10     0.00       0.11
-                    1.90e+01 0.08000    -1.0     1.0     0.00    -0.00     0.10     0.09     0.00       0.10
-                    1.30e+01 0.08500    -1.0     3.0     0.99    -0.01     0.08     0.07     0.01       0.08
-                    1.00e+01 0.09000    -1.0     3.0     0.99    -0.01     0.07     0.05     0.01       0.07
-                    .        .           .       .       .        .        .        .        .          .
-                    .        .           .       .       .        .        .        .        .          .
-                    .        .           .       .       .        .        .        .        .          .
-                    6.19e+03 0.97000  -121.0     3.0   -54.72     6.69     5.03    11.72    -6.82       4.90
-                    7.30e+03 0.97500  -125.0     3.0   -57.55     6.97     5.03    12.00    -7.11       4.89
-                    6.82e+03 0.98000  -133.0     3.0   -60.79     7.26     5.01    12.27    -7.42       4.86
-                    6.89e+03 0.98500  -139.0     1.0   -64.65     7.58     5.09    12.66    -7.74       4.92
-                    6.31e+03 0.99000  -149.0    -1.0   -68.74     7.91     5.34    13.25    -8.08       5.17
-                    6.85e+03 0.99500  -157.0    -5.0   -71.95     8.26     5.65    13.92    -8.44       5.47
-                    1.10e+04 0.99875  -167.0    -5.0   -73.17     8.53     5.78    14.31    -8.63       5.69
+                    5.90e+02 0.00500    -1.0     1.0     0.00    -0.00     0.03     0.03     0.00       0.03
+                    4.57e+02 0.02000    -1.0     1.0     0.00    -0.00     0.03     0.03     0.00       0.03
+                    6.52e+02 0.04000    -1.0     1.0     0.00    -0.00     0.02     0.02     0.00       0.02
+                    3.23e+02 0.06000    -1.0     1.0     0.00    -0.00     0.02     0.02     0.00       0.02
+                    1.25e+02 0.08000    -1.0     1.0     0.00    -0.00     0.01     0.01     0.00       0.01
+                    1.24e+02 0.10000    -1.0     1.0     0.00    -0.00     0.01     0.01     0.00       0.01
+                    1.31e+02 0.12000    -1.0     1.0     0.00    -0.00     0.01     0.01     0.00       0.01
+                    2.20e+02 0.14000    -1.0     1.0     0.00    -0.00     0.01     0.01     0.00       0.01
+                    2.70e+02 0.16000    -1.0     1.0     0.00    -0.00     0.01     0.01     0.00       0.01
+                    3.06e+02 0.18000    -1.0     1.0     0.00    -0.00     0.01     0.01     0.00       0.01
+                    2.31e+02 0.20000    -1.0     1.0     0.00    -0.00     0.01     0.01     0.00       0.01
+                    1.25e+02 0.22000    -1.0     1.0     0.00    -0.00     0.01     0.01     0.00       0.01
+                    1.48e+02 0.24000    -1.0     3.0     1.00    -0.01     0.01    -0.00     0.02       0.02
+                    8.70e+01 0.26000    -1.0     3.0     1.00    -0.03     0.01    -0.02     0.04       0.02
+                    4.30e+01 0.28000    -1.0     3.0     1.00    -0.05     0.00    -0.05     0.06       0.01
+                    6.60e+01 0.30000    -1.0     3.0     1.00    -0.07     0.00    -0.07     0.08       0.01
+                    8.50e+01 0.32000    -1.0     7.0     3.00    -0.11     0.00    -0.11     0.14       0.03
+                    4.40e+01 0.34000    -1.0     7.0     3.00    -0.17     0.00    -0.17     0.20       0.03
+                    1.32e+02 0.36000    -1.0    13.0     6.00    -0.26     0.00    -0.26     0.32       0.06
+                     .        .           .       .       .        .        .        .        .          .
+                     .        .           .       .       .        .        .        .        .          .
+                     .        .           .       .       .        .        .        .        .          .
+                    3.12e+03 0.88000   -43.0     3.0   -20.29    -2.70     0.04    -2.66     2.50      -0.16
+                    3.58e+03 0.90000   -49.0     5.0   -22.49    -2.28     0.04    -2.23     2.05      -0.18
+                    5.22e+03 0.92000   -61.0     5.0   -28.89    -1.76     0.06    -1.71     1.47      -0.23
+                    6.59e+03 0.94000   -71.0    -5.0   -39.91    -1.07     0.08    -0.99     0.67      -0.32
+                    8.29e+03 0.96000   -77.0    -7.0   -45.94    -0.22     0.13    -0.09    -0.24      -0.33
+                    1.27e+04 0.98000   -93.0   -11.0   -55.95     0.80     0.30     1.10    -1.36      -0.26
+                    6.43e+04 0.99500  -107.0    -9.0   -60.32     1.67     0.42     2.08    -1.97       0.12
                 </source>
                 <p>
-                    This section displays a summary of the orthogonal space histogram, which contains all information necessary
+                    This section displays a summary of the orthogonal space histogram, which contains all information
+                    necessary
                     to compute free energy differences.
                 </p>
-                    <ul>
-                        <li><i>Weight</i> is the integral of the bias added over all dU/dL bins at a fixed lambda.</li>
-                        <li><i>Lambda</i> displays the mean lambda value for each lambda bin.</li>
-                        <li><i>dU/dL Bins</i> display the min/max of the instantaneous dU/dL sampled for each lambda bin.</li>
-                        <li><i>&lt;dU/dL&gt;</i> gives the thermodynamic average of dU/dL (i.e. the force used during thermodynamic integration).</li>
-                        <li><i>g(L)</i> is the 1D bias orthogonal space bias for a given lambda.</li>
-                        <li><i>f(L,&lt;dU/dL&gt;)</i> is the 2D bias evaluated at (lambda, &lt;dU/dL&gt;).</li>
-                        <li><i>Bias</i> is the sum of the 1D and 2D bias columns.</li>
-                        <li><i>dG(L)</i> is the free energy difference from L=0 to the current lambda bin.</li>
-                        <li><i>Bias+dG(L)</i> is the sum of the Bias and dG(L) for the current lambda bin.</li>
-                    </ul>
+                <ul>
+                    <li>
+                        <i>Weight</i>
+                        is the integral of the bias added over all dU/dL bins at a fixed lambda.
+                    </li>
+                    <li>
+                        <i>Lambda</i>
+                        displays the mean lambda value for each lambda bin.
+                    </li>
+                    <li>
+                        <i>dU/dL Bins</i>
+                        display the min/max of the instantaneous dU/dL sampled for each lambda bin.
+                    </li>
+                    <li>
+                        <i>&lt;dU/dL&gt;</i>
+                        gives the thermodynamic average of dU/dL (i.e. the force used during thermodynamic integration).
+                    </li>
+                    <li>
+                        <i>g(L)</i>
+                        is the 1D orthogonal space bias for a given lambda.
+                    </li>
+                    <li>
+                        <i>f(L,&lt;dU/dL&gt;)</i>
+                        is the 2D bias evaluated at (lambda, &lt;dU/dL&gt;).
+                    </li>
+                    <li>
+                        <i>Bias</i>
+                        is the sum of the 1D and 2D bias columns.
+                    </li>
+                    <li>
+                        <i>dG(L)</i>
+                        is the free energy difference from L=0 to the current lambda bin.
+                    </li>
+                    <li>
+                        <i>Bias+dG(L)</i>
+                        is the sum of the Bias and dG(L) for the current lambda bin.
+                    </li>
+                </ul>
                 <p>
-                    As a simulation converges, the sum <i>Bias+dG(L)</i> approaches a constant and a random walk along lambda results.
+                    As a simulation converges, the sum <i>Bias+dG(L)</i> approaches a constant and a random walk along
+                    lambda results.
                 </p>
                 <table>
                     <thead>
@@ -347,36 +455,64 @@
                     <tbody>
                         <tr>
                             <td>P21/c</td>
-                            <td><a href="/parameters/CBZ_p21_c.xyz">CBZ_p21_c.xyz</a></td>
-                            <td><a href="/parameters/CBZ_p21_c.properties">CBZ_p21_c.properties</a></td>
-                            <td><a href="/parameters/CBZ.patch">CBZ.patch</a></td>
+                            <td>
+                                <a href="/parameters/CBZ_p21_c.xyz">CBZ_p21_c.xyz</a>
+                            </td>
+                            <td>
+                                <a href="/parameters/CBZ_p21_c.properties">CBZ_p21_c.properties</a>
+                            </td>
+                            <td>
+                                <a href="/parameters/CBZ.patch">CBZ.patch</a>
+                            </td>
                         </tr>
                         <tr>
                             <td>Pbca</td>
-                            <td><a href="/parameters/CBZ_pbca.xyz">CBZ_pbca.xyz</a></td>
-                            <td><a href="/parameters/CBZ_pbca.properties">CBZ_pbca.properties</a></td>
-                            <td><a href="/parameters/CBZ.patch">CBZ.patch</a></td>
+                            <td>
+                                <a href="/parameters/CBZ_pbca.xyz">CBZ_pbca.xyz</a>
+                            </td>
+                            <td>
+                                <a href="/parameters/CBZ_pbca.properties">CBZ_pbca.properties</a>
+                            </td>
+                            <td>
+                                <a href="/parameters/CBZ.patch">CBZ.patch</a>
+                            </td>
                         </tr>
                         <tr>
                             <td>C2/c</td>
-                            <td><a href="/parameters/CBZ_c2_c.xyz">CBZ_c2_c.xyz</a></td>
-                            <td><a href="/parameters/CBZ_c2_c.properties">CBZ_c2_c.properties</a></td>
-                            <td><a href="/parameters/CBZ.patch">CBZ.patch</a></td>
+                            <td>
+                                <a href="/parameters/CBZ_c2_c.xyz">CBZ_c2_c.xyz</a>
+                            </td>
+                            <td>
+                                <a href="/parameters/CBZ_c2_c.properties">CBZ_c2_c.properties</a>
+                            </td>
+                            <td>
+                                <a href="/parameters/CBZ.patch">CBZ.patch</a>
+                            </td>
                         </tr>
                         <tr>
                             <td>H-3</td>
-                            <td><a href="/parameters/CBZ_h-3.xyz">CBZ_h-3.xyz</a></td>
-                            <td><a href="/parameters/CBZ_h-3.properties">CBZ_h-3.properties</a></td>
-                            <td><a href="/parameters/CBZ.patch">CBZ.patch</a></td>
+                            <td>
+                                <a href="/parameters/CBZ_h-3.xyz">CBZ_h-3.xyz</a>
+                            </td>
+                            <td>
+                                <a href="/parameters/CBZ_h-3.properties">CBZ_h-3.properties</a>
+                            </td>
+                            <td>
+                                <a href="/parameters/CBZ.patch">CBZ.patch</a>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             </subsection>
             <subsection name="References:">
-                <p><i>
-                    34th Annual Meeting of the Academy of Pharmaceutical Science and Technology, June 16-18 2019, Toyama, Japan, Prospects for applying in-silico
-                    crystal structure prediction to drug development. Hiroomi Nagata*, Okimasa Okada*, Aaron Nessler**, and Michael Schnieders**.
-                </i></p>
+                <p>
+                    <i>
+                        34th Annual Meeting of the Academy of Pharmaceutical Science and Technology, June 16-18 2019,
+                        Toyama, Japan, Prospects for applying in-silico
+                        crystal structure prediction to drug development. Hiroomi Nagata*, Okimasa Okada*, Aaron
+                        Nessler**, and Michael Schnieders**.
+                    </i>
+                </p>
                 <p>
                     Mitsubishi Tanabe Pharma Corporation*
                 </p>

@@ -1,4 +1,7 @@
 
+# Check the Lysine NZ multipole frame and multipole components.
+
+
       ##############################
       ##                          ##
       ##  Force Field Definition  ##
@@ -500,6 +503,7 @@ atom        360  101    Cl-   "Chloride Ion Cl-"            17    35.453    0
       ################################
 
 
+vdw           0               0.0000     0.0000
 vdw           1               3.7100     0.1100
 vdw           2               3.8200     0.1010
 vdw           3               3.8200     0.1060
@@ -7966,3 +7970,138 @@ biotype    2004    K       "Potassium Ion"                   353
 biotype    2005    MG      "Magnesium Ion"                   357
 biotype    2006    CA      "Calcium Ion"                     358
 biotype    2007    CL      "Chloride Ion"                    360
+
+# ASD
+atom        401    8    C     "ASD CB"             6    12.011    4
+atom        402    9    H     "ASD HB"             1     1.008    1
+atom        403   32    C     "ASD CG"             6    12.011    3
+atom        404   34    OH    "ASD OD"             8    15.999    2
+atom        405   35    HO    "ASD HD"             1     1.008    1
+
+# GLD
+atom        406    8    C     "GLD CB"             6    12.011    4
+atom        407    9    H     "GLD HB"             1     1.008    1
+atom        408    8    C     "GLD CG"             6    12.011    4
+atom        409    9    H     "GLD HG"             1     1.008    1
+atom        410   32    C     "GLD CD"             6    12.011    3
+atom        411   34    O     "GLD OE"             8    15.999    2
+atom        412   35    H     "GLD HE"             8     1.008    1
+
+# OD1-CG-OD2, OE1-CD-OE2
+anglep     34     32     34  122.30  121.50
+
+# OD1-CG-OD2-HD2, OE1-CD-OE2-HE2
+torsion    34    32    34    35  -1.200   0.000 1   5.390 180.000 2   0.400   0.000 3
+
+multipole    12    8  401               0.08514 
+                                        0.02910    0.00000    0.05267 
+                                        0.04149 
+                                        0.00000   -0.00658 
+                                       -0.00600    0.00000   -0.03491
+multipole   401    8  403              -0.17303 
+                                        0.44945    0.00000    0.30728 
+                                       -0.07251 
+                                        0.00000   -0.67903 
+                                        0.08175    0.00000    0.75154
+multipole   402  401  403               0.10446 
+                                       -0.08174    0.00000   -0.18518 
+                                       -0.00080 
+                                        0.00000    0.13227 
+                                       -0.04979    0.00000   -0.13147
+multipole   403  404  405               0.85923 
+                                        0.11304    0.00000    0.10040 
+                                        0.31104 
+                                        0.00000   -0.30726 
+                                       -0.25489    0.00000   -0.00378
+multipole   404  403  405              -0.43939 
+                                        0.21541    0.00000   -0.02221 
+                                        0.36981 
+                                        0.00000   -0.36139 
+                                       -0.26932    0.00000   -0.00842
+multipole   405  404  403               0.24242 
+                                       -0.05297    0.00000   -0.03262 
+                                       -0.15414 
+                                        0.00000   -0.15395 
+                                       -0.00414    0.00000    0.30809
+multipole    12    8  406               0.08514 
+                                        0.02910    0.00000    0.05267 
+                                        0.04149 
+                                        0.00000   -0.00658 
+                                       -0.00600    0.00000   -0.03491
+
+multipole   406    8  408              -0.10668 
+                                        0.29642    0.00000    0.28365 
+                                        0.39855 
+                                        0.00000   -0.41154 
+                                        0.04273    0.00000    0.01299
+multipole   407  406    8               0.09513 
+                                       -0.05887    0.00000   -0.04640 
+                                       -0.03611 
+                                        0.00000   -0.02016 
+                                       -0.01670    0.00000    0.05627
+multipole   408  406  410              -0.23637 
+                                        0.34729    0.00000    0.09253 
+                                       -0.40537 
+                                        0.00000   -0.00346 
+                                       -0.52649    0.00000    0.40883
+multipole   409  408  409               0.10600 
+                                       -0.20910    0.00000   -0.08841 
+                                       -0.14892 
+                                        0.00000    0.17218 
+                                       -0.34482    0.00000   -0.02326
+multipole   410  411  412               0.90086 
+                                        0.11874    0.00000    0.10181 
+                                       -0.08663 
+                                        0.00000    0.03649 
+                                       -0.12175    0.00000    0.05014
+multipole   411  410  411              -0.53100 
+                                        0.05936    0.00000   -0.00202 
+                                        0.03421 
+                                        0.00000    0.00132 
+                                        0.18532    0.00000   -0.03553
+multipole   412  411  410               0.24071 
+                                       -0.19323    0.00000   -0.29128 
+                                        0.07422 
+                                        0.00000    0.09278 
+                                       -0.19140    0.00000   -0.16700
+
+# ASD
+polarize    401          1.3340     0.3900    402  403
+polarize    402          0.4960     0.3900    401
+polarize    403          1.3340     0.3900    401  404
+polarize    404          0.8370     0.3900    403  405
+polarize    405          0.4960     0.3900    405
+# GLD
+polarize    406          1.3340     0.3900    407
+polarize    407          0.4960     0.3900    406
+polarize    408          1.3340     0.3900    409  410
+polarize    409          0.4960     0.3900    408
+polarize    410          1.3340     0.3900    408  411
+polarize    411          0.8370     0.3900    410  412
+polarize    412          0.4960     0.3900    411
+
+biotype     800    N       "ASD (COHOH)"              7
+biotype     801    CA      "ASD (COHOH)"              8
+biotype     802    C       "ASD (COHOH)"              9
+biotype     803    HN      "ASD (COHOH)"             10
+biotype     804    O       "ASD (COHOH)"             11
+biotype     805    HA      "ASD (COHOH)"             12
+biotype     806    CB      "ASD (COHOH)"            401
+biotype     807    HB      "ASD (COHOH)"            402
+biotype     808    CG      "ASD (COHOH)"            403
+biotype     809    OD      "ASD (COHOH)"            404
+biotype     810    HD      "ASD (COHOH)"            405
+biotype     811    N       "GLD (COHOH)"              7
+biotype     812    CA      "GLD (COHOH)"              8
+biotype     813    C       "GLD (COHOH)"              9
+biotype     814    HN      "GLD (COHOH)"             10
+biotype     815    O       "GLD (COHOH)"             11
+biotype     816    HA      "GLD (COHOH)"             12
+biotype     817    CB      "GLD (COHOH)"            406
+biotype     818    HB      "GLD (COHOH)"            407
+biotype     819    CG      "GLD (COHOH)"            408
+biotype     820    HG      "GLD (COHOH)"            409
+biotype     821    CD      "GLD (COHOH)"            410
+biotype     822    OE      "GLD (COHOH)"            411
+biotype     823    HE      "GLD (COHOH)"            412
+

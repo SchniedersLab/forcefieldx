@@ -67,37 +67,45 @@ class MutatePDB extends AlgorithmsScript {
   /**
    * -r or --resid Residue number.
    */
-  @Option(names = ['--resid', '-r'], paramLabel = '1',
+  @Option(names = ['--resid', '-r'], paramLabel = '1', defaultValue = "1",
       description = 'Residue number.')
-  int resID = 1
+  int resID
+
   /**
    * -n or --resname New residue name.
    */
-  @Option(names = ['--resname', '-n'], paramLabel = 'ALA',
+  @Option(names = ['--resname', '-n'], paramLabel = 'ALA', defaultValue = 'ALA',
       description = 'New residue name.')
-  String resName = "ALA"
+  String resName
+
   /**
    * -ch or --chain Single character chain name (default is ' '). If only one chain exists, that chain will be mutated.
    */
-  @Option(names = ['--chain', '--ch'], paramLabel = ' ',
+  @Option(names = ['--chain', '--ch'], paramLabel = ' ', defaultValue = ' ',
       description = 'Single character chain name (default is \' \').')
-  Character chain = ' '
+  Character chain
+
   /**
    * -R or --rotamer Rotamer number to apply.
    */
-  @Option(names = ['--rotamer', '-R'], paramLabel = '-1', description = 'Rotamer number to apply.')
-  int rotamer = -1
+  @Option(names = ['--rotamer', '-R'], paramLabel = '-1', defaultValue = "-1",
+      description = 'Rotamer number to apply.')
+  int rotamer
+
   /**
    * --allChains  Mutate all copies of a chain in a multimeric protein.
    */
-  @Option(names = ['--allChains'], paramLabel = 'false', description = 'Mutate all copies of a chains in a multimeric protein.')
-  boolean allChains = false
+  @Option(names = ['--allChains'], paramLabel = 'false', defaultValue = 'false',
+      description = 'Mutate all copies of a chains in a multimeric protein.')
+  boolean allChains
 
   /**
-   * One or more filenames.
+   * A PDB filename.
    */
-  @Parameters(arity = "1", paramLabel = "files", description = "A PDB input files.")
-  private List<String> filenames
+  @Parameters(arity = "1", paramLabel = "file",
+      description = "A PDB input file.")
+  private String filename
+
   private ForceFieldEnergy forceFieldEnergy
 
   /**
@@ -125,17 +133,16 @@ class MutatePDB extends AlgorithmsScript {
       return this
     }
 
+    // The "false" assembly provides access to the chainIDs without compromising the mutated molecular assembly.
     // Used if --allChains is true.
-    // The false assembly provides access to the chainIDs without compromising the mutated molecular assembly.
-    MolecularAssembly falseAssembly
-    // Set false assembly.
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
-      falseAssembly = assemblies[0]
-    } else if (falseAssembly == null) {
+
+    // Load the MolecularAssembly.
+    MolecularAssembly falseAssembly = getActiveAssembly(filename)
+    if (falseAssembly == null) {
       logger.info(helpString())
       return this
     }
+
     // For every chain, mutate the residue.
     Polymer[] chains = falseAssembly.getChains()
 
@@ -151,7 +158,6 @@ class MutatePDB extends AlgorithmsScript {
     logger.info("\n Mutating residue number " + resID + " of chain " + chain + " to " + resName)
 
     // Read in command line.
-    String filename = filenames.get(0)
     File structureFile = new File(filename)
     int index = filename.lastIndexOf(".")
     String name = filename.substring(0, index)
@@ -215,7 +221,7 @@ class MutatePDB extends AlgorithmsScript {
     if (forceFieldEnergy == null) {
       potentials = Collections.emptyList()
     } else {
-      potentials = Collections.singletonList(forceFieldEnergy)
+      potentials = Collections.singletonList((Potential) forceFieldEnergy)
     }
     return potentials
   }

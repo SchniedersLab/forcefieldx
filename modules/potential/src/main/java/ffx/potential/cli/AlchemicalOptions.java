@@ -92,15 +92,6 @@ public class AlchemicalOptions {
   }
 
   /**
-   * -l or --lambda sets the initial lambda value.
-   *
-   * @return Returns the initial value of lambda.
-   */
-  public double getInitialLambda() {
-    return getInitialLambda(false);
-  }
-
-  /**
    * --ac or --alchemicalAtoms Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N]."
    *
    * @return Returns alchemical atoms.
@@ -119,35 +110,13 @@ public class AlchemicalOptions {
   }
 
   /**
-   * Gets the initial value of lambda.
+   * -l or --lambda sets the initial lambda value.
    *
-   * @param size The number of processes.
-   * @param rank THe rank of this process.
-   * @param quiet No logging if quiet.
-   * @return Initial lambda.
+   * @return Returns the initial value of lambda.
    */
-  //assume initial lambda is not set
-  //how to handle is we get nWindows and lambda
-  //nWindows is size and rank is the window you're looking at (0 - nWindows-1)
-  public double getInitialLambda(int size, int rank, boolean quiet) {
-    double initialLambda = group.initialLambda;
-    if (initialLambda < 0.0 || initialLambda > 1.0) {
-      if (rank == 0 || size < 2) {
-        initialLambda = 0.0;
-      } else if (rank == size - 1) {
-        initialLambda = 1.0;
-      } else {
-        double dL = 1.0 / (size - 1);
-        initialLambda = dL * rank;
-      }
-
-      if (!quiet) {
-        logger.info(format(" Setting lambda to %5.3f.", initialLambda));
-      }
-    }
-    return initialLambda;
+  public double getInitialLambda() {
+    return getInitialLambda(false);
   }
-
 
   /**
    * Gets the initial value of lambda.
@@ -168,6 +137,38 @@ public class AlchemicalOptions {
    */
   public double getInitialLambda(int size, int rank) {
     return getInitialLambda(size, rank, false);
+  }
+
+  /**
+   * Gets the initial value of lambda.
+   *
+   * @param size The number of processes.
+   * @param rank The rank of this process.
+   * @param quiet No logging if quiet.
+   * @return Initial lambda.
+   */
+  public double getInitialLambda(int size, int rank, boolean quiet) {
+
+    // Assume initial lambda is not set
+    // How to handle is we get nWindows and lambda
+    // nWindows is size and rank is the window you're looking at (0 - nWindows-1)
+
+    double initialLambda = group.initialLambda;
+    if (initialLambda < 0.0 || initialLambda > 1.0) {
+      if (rank == 0 || size < 2) {
+        initialLambda = 0.0;
+      } else if (rank == size - 1) {
+        initialLambda = 1.0;
+      } else {
+        double dL = 1.0 / (size - 1);
+        initialLambda = dL * rank;
+      }
+
+      if (!quiet) {
+        logger.info(format(" Setting lambda to %5.3f.", initialLambda));
+      }
+    }
+    return initialLambda;
   }
 
   /**

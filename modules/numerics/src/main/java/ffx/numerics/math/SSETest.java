@@ -37,13 +37,14 @@
 // ******************************************************************************
 package ffx.numerics.math;
 
+import static java.lang.Math.fma;
 import static org.apache.commons.math3.util.FastMath.floor;
 
 import java.util.Random;
 
 /**
  * java -cp target/numerics-1.0.0-beta.jar -XX:+UnlockDiagnosticVMOptions -XX:+PrintAssembly
- * -Djava.libraryath=hsdis-amd64.dylib ffx.numerics.SSETest
+ * -Djava.libraryath=hsdis-amd64.dylib ffx.numerics.math.SSETest
  *
  * @author M. J. Schnieders
  */
@@ -146,6 +147,7 @@ public class SSETest {
     double[] y = new double[m];
     for (int i = 0; i < m; i++) {
       for (int j = 0; j < n; j++) {
+        // y[i] = fma(A[i][j], x[j], y[i]);
         y[i] += A[i][j] * x[j];
       }
     }
@@ -171,9 +173,11 @@ public class SSETest {
       for (int j = 0; j < ub; j += 8) {
         int ptr = idx + j;
         y[i] +=
-            A[ptr] * x[j] + A[ptr + 1] * x[j + 1] + A[ptr + 2] * x[j + 2] + A[ptr + 3] * x[j + 3];
-        acc +=
-            A[ptr + 4] * x[j + 4]
+            A[ptr] * x[j]
+                + A[ptr + 1] * x[j + 1]
+                + A[ptr + 2] * x[j + 2]
+                + A[ptr + 3] * x[j + 3];
+        acc += A[ptr + 4] * x[j + 4]
                 + A[ptr + 5] * x[j + 5]
                 + A[ptr + 6] * x[j + 6]
                 + A[ptr + 7] * x[j + 7];

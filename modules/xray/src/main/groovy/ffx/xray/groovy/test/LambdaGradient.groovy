@@ -48,11 +48,14 @@ import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy
 import ffx.xray.RefinementMinimize.RefinementMode
 import ffx.xray.cli.XrayOptions
-import ffx.xray.parsers.DiffractionFile
 import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
+
+import java.util.stream.IntStream
+
+import static ffx.utilities.StringUtils.parseAtomRanges
 
 /**
  * The X-ray test Lambda Gradient script.
@@ -131,20 +134,14 @@ class LambdaGradient extends AlgorithmsScript {
     xrayOptions.setProperties(parseResult, properties)
 
     // Set up diffraction data (can be multiple files)
-    List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
-    DiffractionData diffractionData = new DiffractionData(assemblies, properties,
-        xrayOptions.solventModel,
-        diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]))
-
+    DiffractionData diffractionData =
+        xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
     diffractionData.scaleBulkFit()
     diffractionData.printStats()
 
-    refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
+    refinementEnergy = xrayOptions.toXrayEnergy(diffractionData, assemblies, algorithmFunctions)
     Potential potential = refinementEnergy
     LambdaInterface lambdaInterface = refinementEnergy
-
-    // First atom to test.
-    int atomID = gradientOptions.atomID - 1
 
     // Finite-difference step size in Angstroms.
     double step = gradientOptions.dx
@@ -278,7 +275,23 @@ class LambdaGradient extends AlgorithmsScript {
     int nFailures = 0
     double avGrad = 0.0
 
-    for (int i = atomID; i < nAtoms; i++) {
+    // Collect atoms to test.
+    List<Integer> atomsToTest
+    if (gradientOptions.gradientAtoms.equalsIgnoreCase("NONE")) {
+      logger.info(" The gradient of no atoms will be evaluated.")
+      return this
+    } else if (gradientOptions.gradientAtoms.equalsIgnoreCase("ALL")) {
+      logger.info(" Checking gradient for all active atoms.\n")
+      atomsToTest = new ArrayList<>()
+      IntStream.range(0, nAtoms).forEach(val -> atomsToTest.add(val))
+    } else {
+      atomsToTest = parseAtomRanges(" Gradient atoms", gradientOptions.gradientAtoms, nAtoms)
+      logger.info(
+          " Checking gradient for active atoms in the range: " + gradientOptions.gradientAtoms +
+              "\n")
+    }
+
+    for (int i : atomsToTest) {
       int i3 = i * 3
       int i0 = i3 + 0
       int i1 = i3 + 1
@@ -443,7 +456,7 @@ class LambdaGradient extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList(refinementEnergy)
+        Collections.singletonList((Potential) refinementEnergy)
   }
 }
 

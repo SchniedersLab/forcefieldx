@@ -155,8 +155,8 @@ public class AlgorithmsScript extends FFXScript {
   }
 
   /**
-   * Gets a File in the save directory with the same name as the input file. Can just be the
-   * original file if saveDir was never set, which is the case for production runs.'
+   * Gets a File in the save directory with the same name as the input file. Can just be the original
+   * file if saveDir was never set, which is the case for production runs.'
    *
    * @param file File to find a save location for.
    * @return File to save to
@@ -170,4 +170,52 @@ public class AlgorithmsScript extends FFXScript {
       return new File(newName);
     }
   }
+
+  /**
+   * If a filename is supplied, open it and return the MolecularAssembly. Otherwise, the current
+   * activeAssembly is returned (which may be null).
+   *
+   * @param filename Filename to open.
+   * @return The active assembly.
+   */
+  public MolecularAssembly getActiveAssembly(String filename) {
+    if (filename != null) {
+      // Open the supplied file.
+      MolecularAssembly[] assemblies = {algorithmFunctions.open(filename)};
+      activeAssembly = assemblies[0];
+    }
+    return activeAssembly;
+  }
+
+  /**
+   * If a filename is supplied, open it and return the MolecularAssemblies. Otherwise, the current
+   * activeAssembly is returned (which may be null).
+   *
+   * @param filename Filename to open.
+   * @return The active assemblies.
+   */
+  public MolecularAssembly[] getActiveAssemblies(String filename) {
+    MolecularAssembly[] assemblies;
+    if (filename != null) {
+      // Open the supplied file.
+      assemblies = algorithmFunctions.openAll(filename);
+      activeAssembly = assemblies[0];
+      return assemblies;
+    } else {
+      assemblies = new MolecularAssembly[] {activeAssembly};
+    }
+    return assemblies;
+  }
+
+  /**
+   * Set the Active Assembly. This is a work-around for a strange Groovy static compilation bug where
+   * direct assignment of activeAssembly in Groovy scripts that extend AlgorithmsScript fails (a NPE
+   * results).
+   *
+   * @param molecularAssembly The MolecularAssembly that should be active.
+   */
+  public void setActiveAssembly(MolecularAssembly molecularAssembly) {
+    activeAssembly = molecularAssembly;
+  }
+
 }
