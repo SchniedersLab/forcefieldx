@@ -294,27 +294,38 @@ public class ProgressiveAlignmentOfCrystals {
           int targetRank = column % numProc;
           if (targetRank == rank) {
             long time = -System.nanoTime();
-            Crystal targetCrystal = targetFilter.getActiveMolecularSystem().getCrystal()
-                .getUnitCell();
-            logger.info(
-                format("\n Comparing Model %d (%s) of %s\n with      Model %d (%s) of %s",
+            Crystal targetCrystal = targetFilter.getActiveMolecularSystem().getCrystal().getUnitCell();
+            logger.info(format("\n Comparing Model %d (%s) of %s\n with      Model %d (%s) of %s",
                     row + 1, baseCrystal.toShortString(), baseLabel,
                     column + 1, targetCrystal.toShortString(), targetLabel));
 
-            // Compute the PAC RMSD.
-            double rmsd = compare(nAtoms, comparisonAtoms, nAU, inflatedAU, numSearch, numSearch2,
-                force, symmetric, save);
+            double rmsd;
+            if (row == column) {
+              // Fill the diagonal.
+              rmsd = 0.0;
+              // Log the final result.
+              logger.info(format(" PAC %s: %12s %7.4f A", rmsdLabel, "", rmsd));
+            } else if (row >= column) {
+              // Fill the lower triangle from the upper triangle.
+              rmsd = distMatrix[column][row];
+              // Log the final result.
+              logger.info(format(" PAC %s: %12s %7.4f A", rmsdLabel, "", rmsd));
+            } else {
+              // Compute the PAC RMSD.
+              rmsd = compare(nAtoms, comparisonAtoms, nAU, inflatedAU, numSearch, numSearch2,
+                  force, symmetric, save);
+              time += System.nanoTime();
+              double timeSec = time * 1.0e-9;
+              // Record the fastest comparison.
+              if (timeSec < minTime) {
+                minTime = timeSec;
+              }
+              // Log the final result.
+              logger.info(format(" PAC %s: %12s %7.4f A (%5.3f sec)", rmsdLabel, "", rmsd, timeSec));
+            }
             myDistance[0] = rmsd;
 
-            time += System.nanoTime();
-            double timeSec = time * 1.0e-9;
 
-            logger.info(format(" PAC %s: %12s %7.4f A (%5.3f sec)", rmsdLabel, "", rmsd, timeSec));
-
-            // Record the fastest comparison.
-            if (timeSec < minTime) {
-              minTime = timeSec;
-            }
           }
           targetFilter.readNext(false, false);
         }
