@@ -153,8 +153,11 @@ class PrepareSpaceGroups extends PotentialScript {
       return this
     }
 
-    // Turn off periodic PME.
-    System.setProperty("ewald-alpha", "0.0")
+    // Turn off electrostatic interactions.
+    System.setProperty("mpoleterm", "false")
+
+    // Make sure an a-axis value is set.
+    System.setProperty("a-axis", "10.0")
 
     // Load the MolecularAssembly.
     activeAssembly = getActiveAssembly(filename)
@@ -236,6 +239,10 @@ class PrepareSpaceGroups extends PotentialScript {
       crystal.setDensity(density, mass)
       double cutoff2 = energy.getCutoffPlusBuffer() * 2.0
       crystal = replicatesCrystalFactory(crystal, cutoff2)
+      
+      // Turn off special position checks.
+      crystal.setSpecialPositionCutoff(0.0)
+      crystal.getUnitCell().setSpecialPositionCutoff(0.0)
       energy.setCrystal(crystal)
 
       if (symScalar > 0.0) {
@@ -305,7 +312,8 @@ class PrepareSpaceGroups extends PotentialScript {
       }
     }
 
-    System.clearProperty("ewald-alpha")
+    System.clearProperty("mpoleterm")
+    System.clearProperty("a-axis")
 
     return this
   }
