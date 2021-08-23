@@ -150,9 +150,6 @@ public class BornGradRegion extends ParallelRegion {
      */
     private boolean tanhCorrection = false;
     private double[] tanhInputIi;
-    private double beta0;
-    private double beta1;
-    private double beta2;
 
     public BornGradRegion(int nt, boolean perfectHCTScale) {
         bornCRLoop = new BornCRLoop[nt];
@@ -190,9 +187,6 @@ public class BornGradRegion extends ParallelRegion {
             double descreenOffset,
             boolean tanhCorrection,
             double[] tanhInputIi,
-            double beta0,
-            double beta1,
-            double beta2,
             boolean[] use,
             double cut2,
             boolean nativeEnvironmentApproximation,
@@ -211,9 +205,6 @@ public class BornGradRegion extends ParallelRegion {
         this.descreenOffset = descreenOffset;
         this.tanhCorrection = tanhCorrection;
         this.tanhInputIi = tanhInputIi;
-        this.beta0 = beta0;
-        this.beta1 = beta1;
-        this.beta2 = beta2;
         this.use = use;
         this.cut2 = cut2;
         this.nativeEnvironmentApproximation = nativeEnvironmentApproximation;

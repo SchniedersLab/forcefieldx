@@ -126,7 +126,6 @@ public class BornRadiiRegion extends ParallelRegion {
   private double beta0;
   private double beta1;
   private double beta2;
-  private double[] bornAfterTanh;
   private double[] tanhInputIi;
 
   public BornRadiiRegion(int nt, ForceField forceField, boolean perfectHCTScale) {
@@ -136,7 +135,6 @@ public class BornRadiiRegion extends ParallelRegion {
     }
     ecavTot = new SharedDouble(0.0);
     verboseRadii = forceField.getBoolean("VERBOSE_BORN_RADII", false);
-    bornAfterTanh = new double[400];
     this.perfectHCTScale = perfectHCTScale;
     if (verboseRadii) {
       logger.info(" Verbose Born radii.");
@@ -177,8 +175,6 @@ public class BornRadiiRegion extends ParallelRegion {
           }
         } else {
           born[i] = 1.0 / pow(sum / PI4_3, oneThird);
-          //if(i<2){System.out.println("Born after tanh : "+born[i]);}
-          //bornAfterTanh[i] = 1.0 / pow(sum, oneThird);
           if (born[i] < baseRi) {
             born[i] = baseRi;
             if (verboseRadii) {
