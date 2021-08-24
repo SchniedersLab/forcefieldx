@@ -50,6 +50,25 @@ import java.util.logging.Logger;
  * <p>
  * Inputs: radius of atom i (rho i) and radius of atom j (rho j) Outputs: Aij and Bij
  * (interpolated/extrapolated from pre-determined tables)
+ * <p>
+ * Aij and Bij are constants used in the approximation of the 1/r^6 integral over pairwise neck regions described
+ * in Aguilar et. al. 2010. The neck integral approximation is as follows:
+ * <p>
+ *     neck_integral(rij, rho i, rho j) = Aij * (rij - Bij)^4 * (rho i + rho j + 2 * rho w - rij)^4
+ * </p>
+ * Where rij is the separation distance between atoms i and j with radii rho i and rho j, respectively, and rho w
+ * is the radius of water (1.4 A).
+ * <p>
+ * Aij and Bij are determined for a set of discrete radii based on benchmark PB calculations of the maximum separation
+ * distance and neck integral value.
+ * Bij is set as 2*(maximum rij) - (rho i + rho j + 2 * rho w) and
+ * Aij is set such that the value of the neck integral approximation at the maximum separation distance matches
+ * the maximum neck integral value calculated using PB.
+ * <p>
+ * Citations:
+ *   Aguilar, B.; Shadrach, R.; Onufriev, A. V. Reducing the
+ *   secondary structure bias in the generalized Born model via R6 effective
+ *   radii. J. Chem. Theory Comput. 2010, 6, 3613−3630.
  *
  * @author Rae A. Corrigan
  * @since 1.0
