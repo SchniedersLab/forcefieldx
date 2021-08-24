@@ -97,6 +97,7 @@ class ForEachDir extends AlgorithmsScript {
     if (script != null) {
       logger.info(format(" The %s will be run in each subdirectory.", script))
     } else {
+      logger.info(format(" %s was not recognized.", unmatched.get(0)))
       return this
     }
 

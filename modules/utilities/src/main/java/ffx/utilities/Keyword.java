@@ -37,6 +37,9 @@
 // ******************************************************************************
 package ffx.utilities;
 
+import static java.lang.String.format;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -130,8 +133,33 @@ public class Keyword {
     properties.addConfiguration(systemConfiguration);
 
     // Structure specific options are 2md.
-    if (file != null) {
-      String structureBasename = FilenameUtils.removeExtension(file.getAbsolutePath());
+    // -Dkey=file.key takes precedence over using the structure file name.
+    if (properties.containsKey("key")) {
+      String keyString = properties.getString("key");
+      File keyFile = new File(keyString);
+      if (keyFile.exists() && keyFile.canRead()) {
+        try {
+          FileBasedConfigurationBuilder<PropertiesConfiguration> builder =
+              new FileBasedConfigurationBuilder<>(PropertiesConfiguration.class)
+                  .configure(
+                      new Parameters()
+                          .properties()
+                          .setFile(keyFile)
+                          .setThrowExceptionOnMissing(true)
+                          .setIncludesAllowed(false));
+          PropertiesConfiguration propertyConfiguration = builder.getConfiguration();
+          propertyConfiguration.setHeader(
+              "Structure properties from (" + keyString + ").");
+          properties.addConfiguration(propertyConfiguration);
+          properties.addProperty("propertyFile", keyFile.getCanonicalPath());
+        } catch (ConfigurationException | IOException e) {
+          logger.log(Level.INFO, " Error loading {0}.", keyFile);
+        }
+      } else {
+        logger.severe(format(" Keyword file supplied at the command line does not exist: %s.", keyString));
+      }
+    } else if (file != null) {
+      String structureBasename = removeExtension(file.getAbsolutePath());
       String propertyFilename =
           (new File(structureBasename + ".properties").exists())
               ? structureBasename + ".properties"
@@ -151,7 +179,6 @@ public class Keyword {
                             .properties()
                             .setFile(structurePropFile)
                             .setThrowExceptionOnMissing(true)
-                            // .setListDelimiterHandler(new DefaultListDelimiterHandler(','))
                             .setIncludesAllowed(false));
             PropertiesConfiguration propertyConfiguration = builder.getConfiguration();
             propertyConfiguration.setHeader(
@@ -215,11 +242,11 @@ public class Keyword {
     if (logger.isLoggable(Level.FINE)) {
       Iterator<String> i = properties.getKeys();
       StringBuilder sb = new StringBuilder();
-      sb.append(String.format("\n %-30s %s\n", "Property", "Value"));
+      sb.append(format("\n %-30s %s\n", "Property", "Value"));
       while (i.hasNext()) {
         String s = i.next();
         sb.append(
-            String.format(" %-30s %s\n", s, Arrays.toString(properties.getList(s).toArray())));
+            format(" %-30s %s\n", s, Arrays.toString(properties.getList(s).toArray())));
       }
       logger.fine(sb.toString());
     }
