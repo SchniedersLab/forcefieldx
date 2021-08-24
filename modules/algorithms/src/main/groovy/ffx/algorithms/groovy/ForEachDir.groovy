@@ -41,6 +41,7 @@ import edu.rit.pj.Comm
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
 import ffx.utilities.FFXScript
+import picocli.CommandLine.Unmatched
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
@@ -58,12 +59,14 @@ import static org.apache.commons.io.FilenameUtils.*
 @Command(description = " Run an FFX command in a series of sub-directories.", name = "ffxc ForEachDir")
 class ForEachDir extends AlgorithmsScript {
 
+  @Unmatched
+  List<String> unmatched = null
+
   /**
    * The final argument(s) should be one or more filenames.
    */
-  @Parameters(arity = "2..*", paramLabel = "command",
-      description = "The first argument is an FFX command. Subsequent values are passed to the command as arguments. For each command argument, the string SUBDIR is replaced with the path to the current sub-directory.")
-  List<String> parameters = null
+  // @Parameters(arity = "2..*", paramLabel = "command", description = "The first argument is an FFX command. Subsequent values are passed to the command as arguments. For each command argument, the string SUBDIR is replaced with the path to the current sub-directory.")
+  // List<String> parameters = null
 
   /**
    * Minimize Constructor.
@@ -90,7 +93,7 @@ class ForEachDir extends AlgorithmsScript {
       return this
     }
 
-    Class<? extends FFXScript> script = getScript(parameters.get(0))
+    Class<? extends FFXScript> script = getScript(unmatched.get(0))
     if (script != null) {
       logger.info(format(" The %s will be run in each subdirectory.", script))
     } else {
@@ -107,7 +110,7 @@ class ForEachDir extends AlgorithmsScript {
     }
 
     // Remove the command.
-    parameters.remove(0)
+    unmatched.remove(0)
 
     File cwd = new File(".")
     List<File> directories = []
@@ -124,7 +127,8 @@ class ForEachDir extends AlgorithmsScript {
           String path = normalize(dir.getAbsolutePath())
           logger.info(format(" Current Directory: %s", path))
           List<String> dirParameters = new ArrayList<>()
-          for (String arg : parameters) {
+          // Pass along the unmatched parameters
+          for (String arg : unmatched) {
             if (arg.containsIgnoreCase("SUBDIR")) {
               arg = arg.replaceFirst("SUBDIR", "")
               arg = concat(path, getName(arg))
