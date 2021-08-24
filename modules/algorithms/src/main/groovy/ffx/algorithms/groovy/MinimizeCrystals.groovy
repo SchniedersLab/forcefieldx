@@ -58,14 +58,14 @@ import picocli.CommandLine.Parameters
 import static org.apache.commons.math3.util.FastMath.abs
 
 /**
- * The CrystalMin script uses a limited-memory BFGS algorithm to minimize the
+ * The MinimizeCrystals script uses a limited-memory BFGS algorithm to minimize the
  * energy of a crystal, including both coordinates and unit cell parameters.
  * <br>
  * Usage:
  * <br>
- * ffxc CrystalMin [options] &lt;filename&gt;
+ * ffxc MinimizeCrystals [options] &lt;filename&gt;
  */
-@Command(description = " Minimize crystal unit cell parameters.", name = "ffxc CrystalMin")
+@Command(description = " Minimize crystal unit cell parameters.", name = "ffxc MinimizeCrystals")
 class MinimizeCrystals extends AlgorithmsScript {
 
   @Mixin

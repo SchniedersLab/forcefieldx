@@ -213,10 +213,12 @@ class SuperposeCrystals extends AlgorithmsScript {
     atomSelectionOptions.setActiveAtoms(activeAssembly)
 
     // Number of files to read in.
+    boolean isSymmetric = false
     int numFiles = filenames.size()
     if (numFiles == 1) {
       logger.info(
           "\n PAC will be applied between all pairs of conformations within the supplied file.\n")
+      isSymmetric = true
       // If only one file is supplied, compare all structures in that file to each other.
       algorithmFunctions.openAll(filenames.get(0))
       targetFilter = algorithmFunctions.getFilter()
@@ -268,7 +270,7 @@ class SuperposeCrystals extends AlgorithmsScript {
     }
 
     // Compare structures in baseFilter and targetFilter.
-    ProgressiveAlignmentOfCrystals pac = new ProgressiveAlignmentOfCrystals(baseFilter, targetFilter)
+    ProgressiveAlignmentOfCrystals pac = new ProgressiveAlignmentOfCrystals(baseFilter, targetFilter, isSymmetric)
 
     // Define the filename to use for the PAC RMSD values.
     String filename = filenames.get(0)

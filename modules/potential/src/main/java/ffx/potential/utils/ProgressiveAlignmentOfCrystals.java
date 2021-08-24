@@ -119,6 +119,11 @@ public class ProgressiveAlignmentOfCrystals {
    */
   private final int targetSize;
   /**
+   * If this flag is true, then the RMSD matrix is symmetric (e.g., comparing an archive of
+   * structures to itself).
+   */
+  private final boolean isSymmetric;
+  /**
    * Label for the second crystal.
    */
   private final String targetLabel;
@@ -179,15 +184,19 @@ public class ProgressiveAlignmentOfCrystals {
    * @param baseFilter SystemFilter containing a set of crystal structures to compare.
    * @param targetFilter SystemFilter containing the other set of crystals to compare.
    */
-  public ProgressiveAlignmentOfCrystals(SystemFilter baseFilter, SystemFilter targetFilter) {
+  public ProgressiveAlignmentOfCrystals(SystemFilter baseFilter, SystemFilter targetFilter
+  , boolean isSymmetric) {
     this.baseFilter = baseFilter;
     this.targetFilter = targetFilter;
+    this.isSymmetric = isSymmetric;
 
     // Number of models to be evaluated.
     baseSize = baseFilter.countNumModels();
     baseLabel = getName(baseFilter.getFile().getAbsolutePath());
     targetSize = targetFilter.countNumModels();
     targetLabel = getName(targetFilter.getFile().getAbsolutePath());
+
+    assert !isSymmetric || (baseSize == targetSize);
 
     logger.info(format(" %s conformations: %d", baseLabel, baseSize));
     logger.info(format(" %s conformations: %d", targetLabel, targetSize));
@@ -300,12 +309,12 @@ public class ProgressiveAlignmentOfCrystals {
                     column + 1, targetCrystal.toShortString(), targetLabel));
 
             double rmsd;
-            if (row == column) {
+            if (isSymmetric && row == column) {
               // Fill the diagonal.
               rmsd = 0.0;
               // Log the final result.
               logger.info(format(" PAC %s: %12s %7.4f A", rmsdLabel, "", rmsd));
-            } else if (row >= column) {
+            } else if (isSymmetric && row >= column) {
               // Fill the lower triangle from the upper triangle.
               rmsd = distMatrix[column][row];
               // Log the final result.
