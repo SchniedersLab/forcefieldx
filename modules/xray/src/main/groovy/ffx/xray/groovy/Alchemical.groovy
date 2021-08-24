@@ -96,7 +96,7 @@ class Alchemical extends AlgorithmsScript {
    */
   @Option(names = ["--itype", "--iontype"], paramLabel = 'null',
       description = 'Specify which ion to run optimization on. If none is specified, default behavior chooses the first ion found in the PDB file.')
-  String[] iontype = null
+  String[] ionType = null
 
   /**
    * -N or --neutralize Adds more of the selected ion in order to neutralize the crystal's charge.
@@ -170,17 +170,15 @@ class Alchemical extends AlgorithmsScript {
     String modelfilename
     MolecularAssembly[] assemblies
     if (filenames != null && filenames.size() > 0) {
-      assemblies = algorithmFunctions.open(filenames.get(0))
+      assemblies = algorithmFunctions.openAll(filenames.get(0))
       activeAssembly = assemblies[0]
       modelfilename = filenames.get(0)
     } else if (activeAssembly == null) {
       logger.info(helpString())
-      return
+      return this
     } else {
       modelfilename = activeAssembly.getFile().getAbsolutePath()
-      assemblies = {
-        activeAssembly
-      }
+      assemblies = [ activeAssembly ]
     }
 
     logger.info("\n Running Alchemical Changes on " + modelfilename)
@@ -236,8 +234,8 @@ class Alchemical extends AlgorithmsScript {
 
     double crystalCharge = activeAssembly.getCharge(true)
     logger.info(" Overall crystal charge: " + crystalCharge)
-    ArrayList<MSNode> ions = assemblies[0].getIons()
-    ArrayList<MSNode> waters = assemblies[0].getWaters()
+    List<MSNode> ions = assemblies[0].getIons()
+    List<MSNode> waters = assemblies[0].getWaters()
 
 //      Consider the option of creating a composite lambda gradient from vapor phase to crystal phase
     if (!onlyWaters) {
@@ -268,7 +266,7 @@ class Alchemical extends AlgorithmsScript {
               ionCharge += atom.multipoleType.getCharge()
             }
             logger.info("Ion charge is: " + ionCharge.toString())
-            int numIons = (int) -1 * (Math.ceil(crystalCharge / ionCharge))
+            int numIons = (int) (-1 * (Math.ceil(crystalCharge / ionCharge)))
             if (numIons > 0) {
               logger.info(numIons + " " + msNode.getAtomList().name
                   + " ions needed to neutralize the crystal.")
@@ -310,17 +308,11 @@ class Alchemical extends AlgorithmsScript {
     CompositeConfiguration properties = assemblies[0].getProperties()
     xrayOptions.setProperties(parseResult, properties)
 
-    // Set up diffraction data (can be multiple files)
-    List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
-    DiffractionData diffractionData = new DiffractionData(assemblies, properties,
-        xrayOptions.solventModel,
-        diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]))
-
+    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
     diffractionData.scaleBulkFit()
     diffractionData.printStats()
 
-    RefinementEnergy refinementEnergy = new RefinementEnergy(diffractionData,
-        xrayOptions.refinementMode)
+    RefinementEnergy refinementEnergy = xrayOptions.toXrayEnergy(diffractionData, assemblies, algorithmFunctions)
     double[] x = new double[refinementEnergy.getNumberOfVariables()]
     x = refinementEnergy.getCoordinates(x)
     refinementEnergy.energy(x, true)
@@ -366,6 +358,6 @@ class Alchemical extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     return orthogonalSpaceTempering == null ? Collections.emptyList() :
-        Collections.singletonList(orthogonalSpaceTempering)
+        Collections.singletonList((Potential) orthogonalSpaceTempering)
   }
 }

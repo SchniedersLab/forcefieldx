@@ -35,33 +35,30 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.groovy;
+package ffx.algorithms.groovy;
 
-import ffx.potential.utils.PotentialTest;
+import ffx.algorithms.misc.AlgorithmsTest;
 import org.junit.Test;
 
 /**
  * Tests the Cluster command to assess clustering based on distances.
+ * TODO: add more tests with more parameters
  *
  * @author Aaron J. Nessler
  */
-public class ClusterTest extends PotentialTest {
-
-  private final double tolerance = 0.001;
-
-  //TODO: add more tests with more parameters
+public class ClusteringTest extends AlgorithmsTest {
 
   /** Tests the Cluster script. */
   @Test
   public void testBaseCluster() {
-    // Set-up the input arguments for the Cluser script.
-    String[] args = {"-a", "0", "-k", "10", "-r", "src/main/java/ffx/potential/structures/dist.txt"};
+    // Set-up the input arguments for the Cluster script.
+    String[] args = {"-a", "0", "-k", "10", "src/main/java/ffx/potential/structures/dist.txt"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Construct and evaluate the Cluster script.
     Cluster cluster = new Cluster(binding).run();
-    potentialScript = cluster;
+    algorithmsScript = cluster;
     // TODO validate output.
   }
 
@@ -73,6 +70,6 @@ public class ClusterTest extends PotentialTest {
 
     // Construct and evaluate the Cluster script.
     Cluster cluster = new Cluster(binding).run();
-    potentialScript = cluster;
+    algorithmsScript = cluster;
   }
 }

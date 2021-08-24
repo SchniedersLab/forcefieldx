@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential.utils;
 
+import static ffx.utilities.TinkerUtils.version;
+
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.SystemFilter;
@@ -64,6 +66,7 @@ import java.util.logging.Logger;
  * @since 1.0
  */
 public interface PotentialsFunctions {
+
   /** Constant <code>logger</code> */
   Logger logger = Logger.getLogger(PotentialsFunctions.class.getName());
 
@@ -176,8 +179,8 @@ public interface PotentialsFunctions {
   MolecularAssembly[] openAll(String[] files);
 
   /**
-   * Opens a file and returns all created MolecularAssembly objects, setting any underlying
-   * Potential to use a certain number of threads. Default implementation simply ignores nThreads.
+   * Opens a file and returns all created MolecularAssembly objects, setting any underlying Potential
+   * to use a certain number of threads. Default implementation simply ignores nThreads.
    *
    * @param file Filename to open
    * @param nThreads Use non-default num threads
@@ -287,14 +290,6 @@ public interface PotentialsFunctions {
     if (file == null) {
       throw new IllegalArgumentException("File must not be null!");
     }
-    int counter = 1;
-    String filename = file.getName();
-    while (file.exists() && counter < 1000) {
-      file = new File(String.format("%s_%d", filename, counter++));
-    }
-    if (file.exists()) {
-      throw new IllegalArgumentException(String.format("Could not version file %s", filename));
-    }
-    return file;
+    return version(file);
   }
 }

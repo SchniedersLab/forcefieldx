@@ -94,9 +94,9 @@ public class XrayOptions extends DataRefinementOptions {
   @ArgGroup(heading = "%n X-ray Bulk Solvent Options%n", validate = false)
   public BulkSolventGroup solventGroup = new BulkSolventGroup();
   /** The refinement mode to use. */
-  RefinementMode refinementMode = RefinementMode.COORDINATES;
+  public RefinementMode refinementMode = RefinementMode.COORDINATES;
   /** The SolventModel to use. */
-  SolventModel solventModel = SolventModel.POLYNOMIAL;
+  public SolventModel solventModel = SolventModel.POLYNOMIAL;
 
   /** Parse options. */
   public void init() {

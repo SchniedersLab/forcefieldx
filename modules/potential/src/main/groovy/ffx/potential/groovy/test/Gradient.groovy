@@ -140,7 +140,9 @@ class Gradient extends PotentialScript {
     } else if (gradientOptions.gradientAtoms.equalsIgnoreCase("ALL")) {
       logger.info(" Checking gradient for all active atoms.\n")
       atomsToTest = new ArrayList<>()
-      IntStream.range(0, nAtoms).forEach(val -> atomsToTest.add(val))
+      for (int i=0; i<nAtoms; i++) {
+        atomsToTest.add(i)
+      }
     } else {
       atomsToTest = parseAtomRanges(" Gradient atoms", gradientOptions.gradientAtoms, nAtoms)
       logger.info(
@@ -280,7 +282,7 @@ class Gradient extends PotentialScript {
     if (energy == null) {
       potentials = Collections.emptyList()
     } else {
-      potentials = Collections.singletonList(energy)
+      potentials = Collections.singletonList((Potential) energy)
     }
     return potentials
   }

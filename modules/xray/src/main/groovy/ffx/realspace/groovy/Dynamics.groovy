@@ -143,6 +143,6 @@ class Dynamics extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     return refinementEnergy == null ? Collections.emptyList() :
-            Collections.singletonList(refinementEnergy)
+            Collections.singletonList((Potential) refinementEnergy)
   }
 }

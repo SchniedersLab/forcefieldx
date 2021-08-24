@@ -1653,7 +1653,7 @@ public final class PDBFilter extends SystemFilter {
       return false;
     }
     if (vdwH) {
-      logger.info(" Printing hydrogens to van der Waals centers instead of nuclear locations.");
+      logger.info(" Printing hydrogen to van der Waals centers instead of nuclear locations.");
     }
     if (nSymOp != 0) {
       logger.info(
@@ -2035,9 +2035,13 @@ public final class PDBFilter extends SystemFilter {
         resID++;
       }
 
+      if (model != null) {
+        bw.write("ENDMDL");
+        bw.newLine();
+      }
+
       if (writeEnd) {
-        String end = model != null ? "ENDMDL" : "END";
-        bw.write(end);
+        bw.write("END");
         bw.newLine();
       }
     } catch (Exception e) {

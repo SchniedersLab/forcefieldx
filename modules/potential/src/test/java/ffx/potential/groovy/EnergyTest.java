@@ -393,7 +393,7 @@ public class EnergyTest extends PotentialTest {
                 748,
                 -8.62910979,
                 748,
-                -62.58502136469313,
+                -59.70833911386979,
                 903,
                 false
             },

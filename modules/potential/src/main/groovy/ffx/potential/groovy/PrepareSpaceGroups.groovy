@@ -42,7 +42,6 @@ import ffx.crystal.SpaceGroup
 import ffx.crystal.SymOp
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import org.apache.commons.configuration2.CompositeConfiguration
@@ -153,8 +152,11 @@ class PrepareSpaceGroups extends PotentialScript {
       return this
     }
 
-    // Turn off periodic PME.
-    System.setProperty("ewald-alpha", "0.0")
+    // Turn off electrostatic interactions.
+    System.setProperty("mpoleterm", "false")
+
+    // Make sure an a-axis value is set.
+    System.setProperty("a-axis", "10.0")
 
     // Load the MolecularAssembly.
     activeAssembly = getActiveAssembly(filename)
@@ -236,6 +238,10 @@ class PrepareSpaceGroups extends PotentialScript {
       crystal.setDensity(density, mass)
       double cutoff2 = energy.getCutoffPlusBuffer() * 2.0
       crystal = replicatesCrystalFactory(crystal, cutoff2)
+
+      // Turn off special position checks.
+      crystal.setSpecialPositionCutoff(0.0)
+      crystal.getUnitCell().setSpecialPositionCutoff(0.0)
       energy.setCrystal(crystal)
 
       if (symScalar > 0.0) {
@@ -270,20 +276,11 @@ class PrepareSpaceGroups extends PotentialScript {
                 String[] tokens = line.split(" +")
                 if (tokens != null && tokens.length > 1) {
                   String first = tokens[0].toLowerCase()
-                  if (first == "a-axis") {
-                    keyWriter.println(format("a-axis %12.8f", crystal.a))
-                  } else if (first == "b-axis") {
-                    keyWriter.println(format("b-axis %12.8f", crystal.b))
-                  } else if (first == "c-axis") {
-                    keyWriter.println(format("c-axis %12.8f", crystal.c))
-                  } else if (first == "alpha") {
-                    keyWriter.println(format("alpha %12.8f", crystal.alpha))
-                  } else if (first == "beta") {
-                    keyWriter.println(format("beta %12.8f", crystal.beta))
-                  } else if (first == "gamma") {
-                    keyWriter.println(format("gamma %12.8f", crystal.gamma))
-                  } else if (first == "spacegroup") {
-                    keyWriter.println(format("spacegroup %s", spacegroup.shortName))
+                  if (first == "a-axis" || first == "b-axis" || first == "c-axis" ||
+                      first == "alpha" || first == "beta" || first == "gamma" ||
+                      first == "spacegroup") {
+                    // This line is skipped, and updated below.
+                    logger.fine(format(" Updating : %s", line))
                   } else if (first == "parameters") {
                     if (tokens.length > 1) {
                       keyWriter.println(format("parameters ../%s", tokens[1]))
@@ -298,6 +295,14 @@ class PrepareSpaceGroups extends PotentialScript {
                 }
               }
             }
+            // Update the space group and unit cell parameters.
+            keyWriter.println(format("spacegroup %s", spacegroup.shortName))
+            keyWriter.println(format("a-axis %12.8f", crystal.a))
+            keyWriter.println(format("b-axis %12.8f", crystal.b))
+            keyWriter.println(format("c-axis %12.8f", crystal.c))
+            keyWriter.println(format("alpha  %12.8f", crystal.alpha))
+            keyWriter.println(format("beta   %12.8f", crystal.beta))
+            keyWriter.println(format("gamma  %12.8f", crystal.gamma))
           } catch (IOException ex) {
             logger.warning(" Exception writing keyfile." + ex.toString())
           }
@@ -305,7 +310,8 @@ class PrepareSpaceGroups extends PotentialScript {
       }
     }
 
-    System.clearProperty("ewald-alpha")
+    System.clearProperty("mpoleterm")
+    System.clearProperty("a-axis")
 
     return this
   }
@@ -316,7 +322,7 @@ class PrepareSpaceGroups extends PotentialScript {
     if (energy == null) {
       potentials = Collections.emptyList()
     } else {
-      potentials = Collections.singletonList(energy)
+      potentials = Collections.singletonList((Potential) energy)
     }
     return potentials
   }

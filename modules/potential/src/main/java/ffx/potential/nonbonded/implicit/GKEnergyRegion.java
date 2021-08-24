@@ -148,6 +148,7 @@ public class GKEnergyRegion extends ParallelRegion {
   private AtomicDoubleArray sharedBornGrad;
   /** Self-energy for each atom */
   private AtomicDoubleArray selfEnergy;
+  private double[] finishedSelfEnergies;
   /** Cross-term energy for each atom */
   private AtomicDoubleArray crossEnergy;
 
@@ -192,6 +193,8 @@ public class GKEnergyRegion extends ParallelRegion {
 //    for(int i = 0; i < selfEnergy.size(); i++){
 //      logger.info("Self Energy from GK Region for atom "+i+" :   "+selfEnergy.get(i));
 //    }
+    int nAtoms = atoms.length;
+    selfEnergy.reduce(0, nAtoms - 1);
     return selfEnergy;
   }
 
@@ -275,8 +278,10 @@ public class GKEnergyRegion extends ParallelRegion {
       if(logger.isLoggable(Level.FINE)){logger.info(" Generalized Kirkwood Self-Energies and Cross-Energies\n");}
       double selfSum = 0.0;
       double crossSum = 0.0;
+      finishedSelfEnergies = new double[nAtoms];
       for (int i=0; i<nAtoms; i++) {
         double self = selfEnergy.get(i);
+        finishedSelfEnergies[i] = self;
         double cross = crossEnergy.get(i);
         if(logger.isLoggable(Level.FINE)){logger.info(format("GKSELF   %5d %16.8f %16.8f", i, self, cross));}
         selfSum += self;

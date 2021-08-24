@@ -370,10 +370,10 @@ class BAR extends AlgorithmsScript {
     }
 
     double[] currentLambdas
-    double[][] energyLow = new double[nWindows]
-    double[][] energyAt = new double[nWindows]
-    double[][] energyHigh = new double[nWindows]
-    double[][] volume = new double[nWindows]
+    double[][] energyLow = new double[nWindows][]
+    double[][] energyAt = new double[nWindows][]
+    double[][] energyHigh = new double[nWindows][]
+    double[][] volume = new double[nWindows][]
     double[][] energy
     double[] energyMean = new double[nWindows]
     double[] energySD = new double[nWindows]

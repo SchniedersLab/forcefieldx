@@ -52,6 +52,10 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
+import java.util.stream.IntStream
+
+import static ffx.utilities.StringUtils.parseAtomRanges
+
 /**
  * The Real Space Annealing script.
  * <br>
@@ -106,7 +110,7 @@ class LambdaGradient extends AlgorithmsScript {
     String modelfilename
     MolecularAssembly[] assemblies
     if (filenames != null && filenames.size() > 0) {
-      assemblies = algorithmFunctions.open(filenames.get(0))
+      assemblies = algorithmFunctions.openAll(filenames.get(0))
       activeAssembly = assemblies[0]
       modelfilename = filenames.get(0)
     } else if (activeAssembly == null) {
@@ -122,10 +126,11 @@ class LambdaGradient extends AlgorithmsScript {
 
     logger.info("\n Testing lambda derivatives for " + modelfilename)
 
-    List<RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, assemblies)
+    List<RealSpaceFile> mapfiles = realSpaceOptions.processData(filenames, activeAssembly)
+    RealSpaceFile[] mapFileArray = mapfiles.toArray(new RealSpaceFile[0])
 
     RealSpaceData realspacedata = new RealSpaceData(activeAssembly, activeAssembly.getProperties(),
-        activeAssembly.getParallelTeam(), mapfiles.toArray(new RealSpaceFile[mapfiles.size()]))
+        activeAssembly.getParallelTeam(), mapFileArray)
 
     RefinementEnergy refinementEnergy = new RefinementEnergy(realspacedata,
         realSpaceOptions.refinementMode)
@@ -134,7 +139,7 @@ class LambdaGradient extends AlgorithmsScript {
 
     // Turn off checks for overlapping atoms, which is expected for lambda=0.
     ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
-    forceFieldEnergy.getCrystal().setSpecialPositionCutoff(0.0)
+    forceFieldEnergy.getCrystal().setSpecialPositionCutoff((double) 0.0)
 
     // Reset the number of variables for the case of dual topology.
     int n = potential.getNumberOfVariables()
@@ -145,7 +150,7 @@ class LambdaGradient extends AlgorithmsScript {
 
     // Number of independent atoms.
     assert (n % 3 == 0)
-    int nAtoms = n / 3
+    int nAtoms = (int) (n / 3)
 
     // Compute the Lambda = 0.0 energy.
     double lambda = 0.0
@@ -196,7 +201,8 @@ class LambdaGradient extends AlgorithmsScript {
       for (int i = 0; i < n; i++) {
         lambdaGrad[i] = 0.0
       }
-      potential.getdEdXdL(lambdaGrad)
+
+      lambdaInterface.getdEdXdL(lambdaGrad)
 
       // Calculate the finite-difference dEdLambda, d2EdLambda2 and dEdLambdadX
       lambdaInterface.setLambda(lambda + step)
@@ -272,9 +278,23 @@ class LambdaGradient extends AlgorithmsScript {
     int nFailures = 0
     double avGrad = 0.0
 
-    int firstAtom = gradientOptions.atomID - 1
 
-    for (int i = firstAtom; i < nAtoms; i++) {
+    // Collect atoms to test.
+    List<Integer> atomsToTest
+    if (gradientOptions.gradientAtoms.equalsIgnoreCase("NONE")) {
+      logger.info(" The gradient of no atoms will be evaluated.")
+      return this
+    } else if (gradientOptions.gradientAtoms.equalsIgnoreCase("ALL")) {
+      logger.info(" Checking gradient for all active atoms.\n")
+      atomsToTest = new ArrayList<>()
+      IntStream.range(0, nAtoms).forEach(val -> atomsToTest.add(val))
+    } else {
+      atomsToTest = parseAtomRanges(" Gradient atoms", gradientOptions.gradientAtoms, nAtoms)
+      logger.info(
+          " Checking gradient for active atoms in the range: " + gradientOptions.gradientAtoms + "\n")
+    }
+
+    for (int i : atomsToTest) {
       int i3 = i * 3
       int i0 = i3 + 0
       int i1 = i3 + 1

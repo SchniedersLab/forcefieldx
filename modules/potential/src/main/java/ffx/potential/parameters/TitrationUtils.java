@@ -49,7 +49,6 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.utilities.Constants;
-
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -95,21 +94,21 @@ public class TitrationUtils {
     /**
      * Biotype offset relative to the CB biotype for charged aspartate (ASP).
      */
-    private int offsetASP;
+    private final int offsetASP;
 
     /**
      * Biotype offset relative to the CB biotype for neutral aspartic acid protonated on OD1 (ASH1).
      * <p>
      * This is set to negative -1 for the OD2 hydrogen.
      */
-    private int offsetASH1;
+    private final int offsetASH1;
 
     /**
      * Biotype offset relative to the CB biotype for neutral aspartic acid protonated on OD2 (ASH2).
      * <p>
      * This is set to negative -1 for the OD1 hydrogen.
      */
-    private int offsetASH2;
+    private final int offsetASH2;
 
     public int getOffset(AspStates state) {
       if (state == AspStates.ASP) {
@@ -156,7 +155,7 @@ public class TitrationUtils {
     /**
      * Biotype offset relative to the CB biotype for charged Glutamate (GLU).
      */
-    private int offsetGLU;
+    private final int offsetGLU;
 
     /**
      * Biotype offset relative to the CB biotype for neutral Glutamate acid protonated on OE1
@@ -164,7 +163,7 @@ public class TitrationUtils {
      * <p>
      * This is set to negative -1 for the OE2 hydrogen.
      */
-    private int offsetGLH1;
+    private final int offsetGLH1;
 
     /**
      * Biotype offset relative to the CB biotype for neutral Glutamate acid protonated on OE2
@@ -172,7 +171,7 @@ public class TitrationUtils {
      * <p>
      * This is set to negative -1 for the OE1 hydrogen.
      */
-    private int offsetGLH2;
+    private final int offsetGLH2;
 
     public int getOffset(GluStates state) {
       if (state == GluStates.GLU) {
@@ -214,12 +213,12 @@ public class TitrationUtils {
     /**
      * Biotype offset relative to the CB biotype for LYS.
      */
-    private int offsetLYS;
+    private final int offsetLYS;
 
     /**
      * Biotype offset relative to the CB biotype for LYD.
      */
-    private int offsetLYD;
+    private final int offsetLYD;
 
     public int getOffsetLYS(LysStates state) {
       if (state == LysStates.LYS) {
@@ -266,7 +265,7 @@ public class TitrationUtils {
     /**
      * Biotype offset relative to the CB biotype for charged histidine (HIS).
      */
-    private int offsetHIS;
+    private final int offsetHIS;
 
     /**
      * Biotype offset relative to the CB biotype for neutral histidine protonated on the delta
@@ -274,7 +273,7 @@ public class TitrationUtils {
      * <p>
      * This is set to negative -1 for the epsilon hydrogen.
      */
-    private int offsetHID;
+    private final int offsetHID;
 
     /**
      * Biotype offset relative to the CB biotype for neutral histidine protonated the epsilon
@@ -282,7 +281,7 @@ public class TitrationUtils {
      * <p>
      * This is set to negative -1 for the delta hydrogen.
      */
-    private int offsetHIE;
+    private final int offsetHIE;
 
     public int getOffsetHIS(HisStates state) {
       if (state == HisStates.HIS) {
@@ -350,7 +349,7 @@ public class TitrationUtils {
 
   private final ForceField forceField;
 
-  private HashMap<AminoAcid3, Double> rotamerPhBiasMap = new HashMap<>();
+  private final HashMap<AminoAcid3, Double> rotamerPhBiasMap = new HashMap<>();
 
   public TitrationUtils(ForceField forceField) {
     this.forceField = forceField;
@@ -782,7 +781,8 @@ public class TitrationUtils {
   }
 
   private void checkMultipoleFrames(String label,
-      AtomType[][] atomTypes, PolarizeType[][] polarizeTypes, MultipoleType[][] multipoleTypes, VDWType[][] vdwTypes) {
+      AtomType[][] atomTypes, PolarizeType[][] polarizeTypes, MultipoleType[][] multipoleTypes,
+      VDWType[][] vdwTypes) {
     int states = multipoleTypes.length;
     int types = multipoleTypes[0].length;
     StringBuilder sb = new StringBuilder();
@@ -825,19 +825,18 @@ public class TitrationUtils {
     }
   }
 
-
-  public void setRotamerPhBias(double temperature, double pH){
+  public void setRotamerPhBias(double temperature, double pH) {
     /*
      * Set ASH pH bias as sum of Fmod and acidostat energy
      */
-      rotamerPhBiasMap.put(AminoAcid3.ASH, 0.0);
+    rotamerPhBiasMap.put(AminoAcid3.ASH, 0.0);
 
     /*
      * Set ASP pH bias as sum of Fmod and acidostat energy
      */
     double acidostat = LOG10 * Constants.R * temperature * (Titration.ASHtoASP.pKa - pH);
     double fMod = Titration.ASHtoASP.refEnergy;
-    rotamerPhBiasMap.put(AminoAcid3.ASP, acidostat+fMod);
+    rotamerPhBiasMap.put(AminoAcid3.ASP, acidostat - fMod);
 
     /*
      * Set ASH pH bias as sum of Fmod and acidostat energy
@@ -849,7 +848,7 @@ public class TitrationUtils {
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.GLHtoGLU.pKa - pH);
     fMod = Titration.GLHtoGLU.refEnergy;
-    rotamerPhBiasMap.put(AminoAcid3.GLU, acidostat+fMod);
+    rotamerPhBiasMap.put(AminoAcid3.GLU, acidostat - fMod);
 
     /*
      * Set LYS pH bias as sum of Fmod and acidostat energy
@@ -861,7 +860,7 @@ public class TitrationUtils {
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.LYStoLYD.pKa - pH);
     fMod = Titration.LYStoLYD.refEnergy;
-    rotamerPhBiasMap.put(AminoAcid3.LYD, acidostat+fMod);
+    rotamerPhBiasMap.put(AminoAcid3.LYD, acidostat - fMod);
 
     /*
      * Set HIS pH bias as sum of Fmod and acidostat energy
@@ -873,30 +872,33 @@ public class TitrationUtils {
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.HIStoHID.pKa - pH);
     fMod = Titration.HIStoHID.refEnergy;
-    rotamerPhBiasMap.put(AminoAcid3.HID, acidostat+fMod);
+    rotamerPhBiasMap.put(AminoAcid3.HID, acidostat - fMod);
 
     /*
      * Set HIE pH bias as sum of Fmod and acidostat energy
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.HIStoHIE.pKa - pH);
     fMod = Titration.HIStoHIE.refEnergy;
-    rotamerPhBiasMap.put(AminoAcid3.HIE, acidostat+fMod);
+    rotamerPhBiasMap.put(AminoAcid3.HIE, acidostat - fMod);
   }
 
-  public double getRotamerPhBias(AminoAcid3 AA3){
+  public double getRotamerPhBias(AminoAcid3 AA3) {
     return rotamerPhBiasMap.getOrDefault(AA3, 0.0);
+  }
+
+  public double getTotalRotamerPhBias(Rotamer[] rotamers) {
+    double total = 0.0;
+    for (Rotamer r : rotamers) {
+      if (r.isTitrating) {
+        total += getRotamerPhBias(r.aminoAcid3);
+      }
+    }
+    return total;
   }
 
   /**
    * Amino acid protonation reactions. Constructors below specify intrinsic pKa and reference free
    * energy of protonation, obtained via (OST) metadynamics on capped monomers.
-   * pKa values from
-   * Nozaki, Yasuhiko, and Charles Tanford. "[84] Examination of titration behavior."
-   * Methods in enzymology. Vol. 11. Academic Press, 1967. 715-734.
-   *
-   * HIS to HID/HIE pKa values from
-   * Bashford, Donald, et al. "Electrostatic calculations of side-chain pKa values in myoglobin and comparison with NMR data for histidines."
-   * Biochemistry 32.31 (1993): 8045-8056.
    */
   public enum Titration {
     //ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),

@@ -60,7 +60,7 @@ import static org.apache.commons.math3.util.FastMath.pow
     name = "ffxc Volume")
 class Volume extends PotentialScript {
 
-  private static final double rminToSigma = 1.0 / pow(2.0, 1.0 / 6.0)
+  private static final double rminToSigma = 1.0 / pow((double) 2.0, (double) 1.0 / 6.0)
 
   /**
    * -c or --connolly Use the Connolly algorithm to compute volume and surface area (instead of GaussVol).
@@ -272,7 +272,8 @@ class Volume extends PotentialScript {
       connollyRegion.setProbe(probe)
       connollyRegion.runVolume()
 
-      if (vdW || (probe == 0.0 && exclude == new Double(0.0))) {
+      double zero = 0.0
+      if (vdW || (probe == zero && exclude == new Double(zero))) {
         logger.info("\n Connolly van der Waals Surface Area and Volume\n")
       } else if (!molecular) {
         logger.info("\n Connolly Solvent Accessible Surface Area and Solvent Excluded Volume\n")

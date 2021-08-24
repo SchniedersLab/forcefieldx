@@ -179,7 +179,7 @@ class EnergyOpenMM extends PotentialScript {
     if (forceFieldEnergy == null) {
       potentials = Collections.emptyList()
     } else {
-      potentials = Collections.singletonList(forceFieldEnergy)
+      potentials = Collections.singletonList((Potential) forceFieldEnergy)
     }
     return potentials
   }

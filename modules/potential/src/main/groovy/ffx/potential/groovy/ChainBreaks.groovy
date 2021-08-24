@@ -143,10 +143,7 @@ class ChainBreaks extends PotentialScript {
         logger.fine(
             " Not attempting to find chain breaks for chain with residue "
                 + residues.get(0).toString())
-        List<List<Residue>> retList = new ArrayList<>()
-        retList.add(residues)
-        // TODO: Rose -- should this return null?
-        return retList
+        return null
     }
 
     List<Residue> subChain = null

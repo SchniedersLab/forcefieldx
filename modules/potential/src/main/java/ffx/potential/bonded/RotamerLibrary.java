@@ -42,7 +42,6 @@ import static ffx.potential.bonded.BondedUtils.intxyz;
 import static java.lang.String.format;
 
 import ffx.crystal.Crystal;
-import ffx.numerics.math.DoubleMath;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
@@ -929,7 +928,6 @@ public class RotamerLibrary {
           logger.log(Level.WARNING, message, e);
         }
         break;
-
       case NA:
         try {
           nRot = measureNARotamer(residue, chi, print);
@@ -940,7 +938,6 @@ public class RotamerLibrary {
         break;
       default:
         try {
-          nRot = -1;
           measureUNKRotamer(residue, chi, print);
         } catch (ArrayIndexOutOfBoundsException e) {
           String message = "Array passed to measureRotamer was not of sufficient size.";
@@ -2492,11 +2489,11 @@ public class RotamerLibrary {
    *
    * @param resName Residue containing CZ.
    * @param CZ CZ to be placed.
-   * @param CG
-   * @param CE1
-   * @param CD1
-   * @param CE2
-   * @param CD2
+   * @param CG CG atom.
+   * @param CE1 CE1 atom.
+   * @param CD1 CE2 atom.
+   * @param CE2 CE2 atom.
+   * @param CD2 CD2 atom.
    */
   private static void applyCZ(
       AminoAcid3 resName, Atom CZ, Atom CG, Atom CE1, Atom CD1, Atom CE2, Atom CD2) {
@@ -2900,11 +2897,8 @@ public class RotamerLibrary {
     if (rotamer.isState) {
       residue.revertState(rotamer.originalState);
     } else {
-      logger.warning(
-          format(
-              " Attempting to apply a ResidueState for "
-                  + "a torsion-based rotamer %s for residue %s",
-              rotamer, residue));
+      logger.warning(format(" Attempting to apply a ResidueState for "
+                  + "a torsion-based rotamer %s for residue %s", rotamer, residue));
     }
   }
 
@@ -2913,11 +2907,11 @@ public class RotamerLibrary {
    *
    * @param resName Residue containing CZ.
    * @param CZ CZ to be placed.
-   * @param CG
-   * @param CE1
-   * @param CD1
-   * @param CE2
-   * @param CD2
+   * @param CG CG atom.
+   * @param CE1 CE1 atom.
+   * @param CD1 CD1 atom.
+   * @param CE2 CE2 atom.
+   * @param CD2 CD2 atom.
    * @return Mean coordinates for CZ based on internal geometry.
    */
   private static double[] drawCZ(
@@ -3473,7 +3467,6 @@ public class RotamerLibrary {
         break;
       case CYS:
       case CYD:
-        aminoAcidRotamerCache[n] = null;
         aminoAcidRotamerCache[n] = new Rotamer[3];
         aminoAcidRotamerCache[n][0] = new Rotamer(name, -65.2, 10.1);
         aminoAcidRotamerCache[n][1] = new Rotamer(name, -179.6, 9.5);
@@ -3936,7 +3929,6 @@ public class RotamerLibrary {
         break;
       case CYS:
       case CYD:
-        aminoAcidRotamerCache[n] = null;
         aminoAcidRotamerCache[n] = new Rotamer[3];
         aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0);
         aminoAcidRotamerCache[n][1] = new Rotamer(name, -177, 0);
@@ -4491,27 +4483,23 @@ public class RotamerLibrary {
     }
 
     /**
-     * Converts an integer to a corresponding ProteinLibrary. Deprecated in favor of using the actual
-     * name.
+     * Converts an integer to a corresponding ProteinLibrary.
      *
      * @param library Index of the library.
      * @return A ProteinLibrary.
      * @throws IllegalArgumentException If no matching ProteinLibrary found.
      */
-    @Deprecated
     public static ProteinLibrary intToProteinLibrary(int library) throws IllegalArgumentException {
       return int2Library(library);
     }
 
     /**
-     * Converts an integer to a corresponding ProteinLibrary. Wrapped by deprecated
-     * intToProteinLibrary.
+     * Converts an integer to a corresponding ProteinLibrary.
      *
      * @param library Index of the library.
      * @return A ProteinLibrary.
      * @throws IllegalArgumentException If no matching ProteinLibrary found.
      */
-    @Deprecated
     private static ProteinLibrary int2Library(int library) throws IllegalArgumentException {
       for (ProteinLibrary lib : ProteinLibrary.values()) {
         if (library == lib.oldIntegerConstant) {

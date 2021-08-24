@@ -39,6 +39,8 @@
 //******************************************************************************
 package edu.rit.pj.cluster;
 
+import static java.lang.Long.parseLong;
+
 /**
  * Class Constants contains various constants used in the PJ cluster middleware.
  *
@@ -69,13 +71,33 @@ public class Constants {
     public static final int WEB_PORT = 8080;
 
     /**
-     * The lease renewal interval (60 seconds).
+     * The lease renewal interval (default is 60 seconds).
      */
-    public static final long LEASE_RENEW_INTERVAL = 60000L;
+    public static final long LEASE_RENEW_INTERVAL;
 
     /**
-     * The lease expiration interval (150 seconds).
+     * The lease expiration interval (default is 150 seconds).
      */
-    public static final long LEASE_EXPIRE_INTERVAL = 150000L;
+    public static final long LEASE_EXPIRE_INTERVAL;
+
+    static {
+        long renew;
+        try {
+            String leaseRenew = System.getProperty("pj.renew", "60000");
+            renew = parseLong(leaseRenew);
+        } catch (Exception e) {
+            renew = 60000L;
+        }
+        LEASE_RENEW_INTERVAL = renew;
+
+        long expire;
+        try {
+            String leaseExpire = System.getProperty("pj.expire", "150000");
+            expire = parseLong(leaseExpire);
+        } catch (Exception e) {
+            expire = 150000L;
+        }
+        LEASE_EXPIRE_INTERVAL = expire;
+    }
 
 }

@@ -8,6 +8,7 @@ import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
+import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.configuration2.Configuration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine
@@ -68,7 +69,7 @@ class SortArc extends AlgorithmsScript {
     private SystemFilter[] openers
     private SystemFilter[][] writers
     private String[] files
-    private Configuration additionalProperties
+    private CompositeConfiguration additionalProperties
     private List<String> windowFiles = new ArrayList<>()
     MolecularAssembly[] topologies
     MolecularAssembly ma
@@ -80,7 +81,7 @@ class SortArc extends AlgorithmsScript {
      * Sets an optional Configuration with additional properties.
      * @param additionalProps
      */
-    void setProperties(Configuration additionalProps) {
+    void setProperties(CompositeConfiguration additionalProps) {
         this.additionalProperties = additionalProps
     }
 

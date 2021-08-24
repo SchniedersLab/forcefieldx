@@ -379,7 +379,9 @@ class LambdaGradient extends PotentialScript {
       } else if (gradientOptions.gradientAtoms.equalsIgnoreCase("ALL")) {
         logger.info(" Checking gradient for all active atoms.\n")
         degreesOfFreedomToTest = new ArrayList<>()
-        IntStream.range(0, nAtoms).forEach(val -> degreesOfFreedomToTest.add(val))
+        for (int i=0; i<nAtoms; i++) {
+          degreesOfFreedomToTest.add(i)
+        }
       } else {
         degreesOfFreedomToTest =
             parseAtomRanges(" Gradient atoms", gradientOptions.gradientAtoms, nAtoms)

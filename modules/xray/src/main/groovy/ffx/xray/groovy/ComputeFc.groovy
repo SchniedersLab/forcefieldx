@@ -42,7 +42,6 @@ import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.xray.DiffractionData
 import ffx.xray.cli.XrayOptions
-import ffx.xray.parsers.DiffractionFile
 import ffx.xray.parsers.MTZWriter
 import ffx.xray.parsers.MTZWriter.MTZType
 import org.apache.commons.configuration2.CompositeConfiguration
@@ -88,7 +87,7 @@ class ComputeFc extends AlgorithmsScript {
   private List<String> filenames
 
   private MolecularAssembly[] assemblies
-  private DiffractionData diffractiondata
+  private DiffractionData diffractionData
 
   @Override
   ComputeFc run() {
@@ -108,6 +107,7 @@ class ComputeFc extends AlgorithmsScript {
       logger.info(helpString())
       return this
     } else {
+      assemblies = [activeAssembly]
       modelfilename = activeAssembly.getFile().getAbsolutePath()
     }
 
@@ -116,24 +116,20 @@ class ComputeFc extends AlgorithmsScript {
     xrayOptions.setProperties(parseResult, properties)
 
     // Set up diffraction data (can be multiple files)
-    List<DiffractionData> diffractionfiles = xrayOptions.processData(filenames, assemblies)
-
-    diffractiondata = new DiffractionData(assemblies, assemblies[0].getProperties(),
-        xrayOptions.solventModel,
-        diffractionfiles.toArray(new DiffractionFile[diffractionfiles.size()]))
+    diffractionData = xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
 
     logger.info("\n Running xray.ComputeFc on " + modelfilename)
 
     // Compute structure factors
-    diffractiondata.computeAtomicDensity()
+    diffractionData.computeAtomicDensity()
+    diffractionData.reflectionList
 
     // Output Fcs
-    MTZWriter mtzwriter = new MTZWriter(diffractiondata.reflectionlist[0],
-        diffractiondata.refinementdata[0],
+    MTZWriter mtzWriter = new MTZWriter(diffractionData.reflectionList[0],
+        diffractionData.refinementData[0],
         FilenameUtils.getBaseName(modelfilename) + "_fc.mtz", MTZType.FCONLY)
 
-    mtzwriter.write()
-
+    mtzWriter.write()
     return this
   }
 
@@ -142,19 +138,15 @@ class ComputeFc extends AlgorithmsScript {
     if (assemblies == null) {
       return new ArrayList<Potential>()
     } else {
-      return Arrays.stream(assemblies).
-          filter {a -> a != null
-          }.
-          map {a -> a.getPotentialEnergy()
-          }.
-          filter {e -> e != null
-          }.
-          collect(Collectors.toList())
+      return Arrays.stream(assemblies).filter {a -> a != null
+      }.map {a -> a.getPotentialEnergy()
+      }.filter {e -> e != null
+      }.collect(Collectors.toList())
     }
   }
 
   @Override
   boolean destroyPotentials() {
-    return diffractiondata == null ? true : diffractiondata.destroy()
+    return diffractionData == null ? true : diffractionData.destroy()
   }
 }

@@ -177,6 +177,7 @@ class CIFtoXYZ extends PotentialScript {
       if (symmetry.spaceGroupNameH_M.rowCount > 0) {
         sgName = symmetry.spaceGroupNameH_M.get(0)
         logger.info(format(" CIF Hermann–Mauguin Space Group: %s", sgName))
+        sgName = sgName.replaceAll(" +", "")
       }
     } else {
       if (sgNum != -1) {
@@ -187,10 +188,12 @@ class CIFtoXYZ extends PotentialScript {
     }
 
     SpaceGroup sg
-    if (sgNum != -1) {
+    logger.info(" SGNAME: " + sgName)
+    sg = SpaceGroupDefinitions.spaceGroupFactory(sgName)
+    logger.info(" Short Name: " + sg.shortName)
+    logger.info(" PDB Name: " + sg.pdbName)
+    if (sg == null) {
       sg = SpaceGroupDefinitions.spaceGroupFactory(sgNum)
-    } else {
-      sg = SpaceGroupDefinitions.spaceGroupFactory(sgName)
     }
 
     // Fall back to P1.
@@ -208,6 +211,7 @@ class CIFtoXYZ extends PotentialScript {
     double gamma = cell.angleGamma.get(0)
 
     Crystal crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName)
+    logger.info(" NEW XTAL INFO:")
     logger.info(crystal.toString())
 
     AtomSite atomSite = firstBlock.atomSite
@@ -262,7 +266,7 @@ class CIFtoXYZ extends PotentialScript {
       MolecularAssembly[] assemblies = potentialFunctions.openAll(filenames.get(1))
       System.clearProperty("mpoleterm")
 
-      activeAssembly = assemblies[0]
+      setActiveAssembly(assemblies[0])
       Atom[] xyzAtoms = activeAssembly.getAtomArray()
       int nXYZAtoms = xyzAtoms.length
 
@@ -296,7 +300,7 @@ class CIFtoXYZ extends PotentialScript {
         }
 
         // Add known XYZ bonds; a limitation is that bonds all are given a Bond order of 1.
-        ArrayList<Bond> bonds = activeAssembly.getBondList()
+        List<Bond> bonds = activeAssembly.getBondList()
         Order order = Order.SINGLE
         int xyzBonds = bonds.size()
         for (Bond bond : bonds) {
@@ -341,7 +345,10 @@ class CIFtoXYZ extends PotentialScript {
           factory.configure(atom)
         }
 
-        RebondTool rebonder = new RebondTool(2.0, 0.5, 0.5)
+        double maxCovalentRadius = 2.0
+        double minBondDistance = 0.5
+        double bondTolerance = 0.5
+        RebondTool rebonder = new RebondTool(maxCovalentRadius, minBondDistance, bondTolerance)
         rebonder.rebond(cifCDKAtoms)
 
         int cifBonds = cifCDKAtoms.bondCount

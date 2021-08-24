@@ -49,6 +49,7 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
+import static org.apache.commons.io.FilenameUtils.concat
 import static org.apache.commons.io.FilenameUtils.getBaseName
 import static org.apache.commons.io.FilenameUtils.getFullPath
 
@@ -270,9 +271,8 @@ class SuperposeCrystals extends AlgorithmsScript {
     ProgressiveAlignmentOfCrystals pac = new ProgressiveAlignmentOfCrystals(baseFilter, targetFilter)
 
     // Define the filename to use for the PAC RMSD values.
-    String basename = getBaseName(filenames.get(0))
-    String path = getFullPath(filenames.get(0))
-    String pacFilename = path + basename + ".txt"
+    String filename = filenames.get(0)
+    String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt")
 
     distMatrix = pac.comparisons(nAtoms, atomList, numAU, numInflatedAU,
         numSearch, numSearch2, force, symmetric, savePDB, restart, write, pacFilename)

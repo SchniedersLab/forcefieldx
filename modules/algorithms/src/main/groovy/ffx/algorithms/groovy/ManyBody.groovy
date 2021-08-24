@@ -50,6 +50,7 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
 import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard
+import static java.lang.String.format
 
 /**
  * The ManyBody script performs a discrete optimization using a many-body expansion and elimination expressions.
@@ -72,7 +73,7 @@ class ManyBody extends AlgorithmsScript {
   private String filename
 
   ForceFieldEnergy potentialEnergy
-  boolean testing = null
+  boolean testing = false
   boolean monteCarloTesting = false
 
   /**
@@ -134,7 +135,7 @@ class ManyBody extends AlgorithmsScript {
 
     manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
-    ArrayList<Residue> residueList = rotamerOptimization.getResidues()
+    List<Residue> residueList = rotamerOptimization.getResidues()
 
     boolean master = true
     if (Comm.world().size() > 1) {
@@ -166,20 +167,17 @@ class ManyBody extends AlgorithmsScript {
         algorithm = RotamerOptimization.Algorithm.BOX
         break
       default:
-        throw new IllegalArgumentException(String.
+        throw new IllegalArgumentException(
             format(" Algorithm choice was %d, not in range 1-5!", manyBody.getAlgorithmNumber()))
     }
     rotamerOptimization.optimize(algorithm)
 
     if (master) {
-      logger.info(" Final Minimum Energy")
-
       File modelFile = saveDirFile(activeAssembly.getFile())
       algorithmFunctions.saveAsPDB(activeAssembly, modelFile)
+      logger.info("\n Final Minimum Energy\n")
       algorithmFunctions.energy(activeAssembly)
     }
-
-    //manyBody.saveEliminatedRotamers();
 
     if (priorGKwarn == null) {
       System.clearProperty("gk-suppressWarnings")
@@ -205,7 +203,7 @@ class ManyBody extends AlgorithmsScript {
     if (potentialEnergy == null) {
       potentials = Collections.emptyList()
     } else {
-      potentials = Collections.singletonList(potentialEnergy)
+      potentials = Collections.singletonList((Potential) potentialEnergy)
     }
     return potentials
   }

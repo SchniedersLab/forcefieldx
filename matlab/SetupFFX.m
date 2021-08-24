@@ -1,11 +1,14 @@
 % 
 % JDK VERSION
 %
-% As of Matlab 2020a, Force Field X support depends on using JDK/JRE version 10.
+% As of Matlab 20201, Force Field X support depends on using JDK/JRE version 10.
 % Please install JDK 10 from Oracle or from Adopt Open JDK:
 % https://www.oracle.com/java/technologies/java-archive-javase10-downloads.html
 % - or -
 % https://adoptopenjdk.net/releases.html?variant=openjdk10
+%
+% Note that with JDK/JRE version 11 Matlab starts up (on MacOS),
+% but crashes if FFX is called.
 %
 % Please then set the MATLAB_JAVA environment variable
 % For csh / tcsh
@@ -19,7 +22,7 @@
 % The restart Matlab from the command line (the GUI shortcut will not pick up
 % the environment variable). 
 % For example, on MacOS
-% /Applications/MATLAB_R2020a.app/bin/matlab
+% /Applications/MATLAB_R2021a.app/bin/matlab
 %
 % To check the current Matlab JRE, use the command
 
@@ -53,3 +56,4 @@ cd(prefdir)
 edit javaclasspath.txt
 
 % Matlab must be restarted for the new static classpath to take effect.
+

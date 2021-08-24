@@ -49,7 +49,6 @@ import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy
 import ffx.xray.RefinementMinimize.RefinementMode
 import ffx.xray.cli.XrayOptions
-import ffx.xray.parsers.DiffractionFile
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
@@ -106,13 +105,14 @@ class ManyBody extends AlgorithmsScript {
     String filename
     MolecularAssembly[] assemblies
     if (filenames != null && filenames.size() > 0) {
-      assemblies = algorithmFunctions.open(filenames.get(0))
-      activeAssembly = assemblies[0]
+      assemblies = algorithmFunctions.openAll(filenames.get(0))
+      setActiveAssembly(assemblies[0])
       filename = filenames.get(0)
     } else if (activeAssembly == null) {
       logger.info(helpString())
       return this
     } else {
+      assemblies = [activeAssembly]
       filename = activeAssembly.getFile().getAbsolutePath()
     }
 
@@ -128,11 +128,8 @@ class ManyBody extends AlgorithmsScript {
     xrayOptions.setProperties(parseResult, properties)
 
     // Set up diffraction data (can be multiple files)
-    List<DiffractionData> diffractionFiles = xrayOptions.processData(filenames, assemblies)
-    DiffractionData diffractionData = new DiffractionData(assemblies, properties,
-        xrayOptions.solventModel,
-        diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]))
-
+    DiffractionData diffractionData =
+        xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
     diffractionData.scaleBulkFit()
     diffractionData.printStats()
 
@@ -141,7 +138,8 @@ class ManyBody extends AlgorithmsScript {
       logger.info(" Refinement mode set to COORDINATES.")
       xrayOptions.refinementMode = RefinementMode.COORDINATES
     }
-    refinementEnergy = new RefinementEnergy(diffractionData, xrayOptions.refinementMode)
+
+    refinementEnergy = xrayOptions.toXrayEnergy(diffractionData, assemblies, algorithmFunctions)
     refinementEnergy.setScaling(null)
     int n = refinementEnergy.getNumberOfVariables()
     double[] x = new double[n]
@@ -153,7 +151,7 @@ class ManyBody extends AlgorithmsScript {
         refinementEnergy, algorithmListener)
     manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
-    ArrayList<Residue> residueList = rotamerOptimization.getResidues()
+    List<Residue> residueList = rotamerOptimization.getResidues()
     RotamerLibrary.measureRotamers(residueList, false)
 
     if (manyBody.algorithm == 1) {
@@ -184,14 +182,12 @@ class ManyBody extends AlgorithmsScript {
       String ext = FilenameUtils.getExtension(filename)
       filename = FilenameUtils.removeExtension(filename)
       if (ext.toUpperCase().contains("XYZ")) {
-        algorithmFunctions.saveAsXYZ(assemblies, new File(filename + ".xyz"))
+        algorithmFunctions.saveAsXYZ(activeAssembly, new File(filename + ".xyz"))
       } else {
         File modelFile = saveDirFile(activeAssembly.getFile())
         algorithmFunctions.saveAsPDB(activeAssembly, modelFile)
       }
     }
-
-    //manyBody.saveEliminatedRotamers()
 
     return this
   }
@@ -199,7 +195,7 @@ class ManyBody extends AlgorithmsScript {
   @Override
   List<Potential> getPotentials() {
     return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList(refinementEnergy)
+        Collections.singletonList((Potential) refinementEnergy)
   }
 }
 

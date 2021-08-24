@@ -70,7 +70,7 @@ class CIF2MTZ extends AlgorithmsScript {
   private ArrayList<String> filenames = null
 
   private MolecularAssembly[] systems
-  private DiffractionRefinementData refinementdata
+  private DiffractionRefinementData refinementData
 
   /**
    * CIF2MTZ constructor.
@@ -103,17 +103,17 @@ class CIF2MTZ extends AlgorithmsScript {
     logger.info("\n Running CIF2MTZ on " + cif)
 
     // Use PotentialsFunctions methods instead of Groovy method closures to do work.
-    systems = algorithmFunctions.open(pdb)
+    systems = algorithmFunctions.openAll(pdb)
 
-    CIFFilter ciffilter = new CIFFilter()
+    CIFFilter cifFilter = new CIFFilter()
     ReflectionList reflectionlist =
-        ciffilter.getReflectionList(new File(cif), systems[0].getProperties())
+        cifFilter.getReflectionList(new File(cif), systems[0].getProperties())
 
     if (reflectionlist == null) {
       println(" Using crystal information from the PDB file to generate MTZ file.")
 
       Crystal crystal = systems[0].getCrystal().getUnitCell()
-      double res = ciffilter.getResolution(new File(cif), crystal)
+      double res = cifFilter.getResolution(new File(cif), crystal)
       if (res < 0.0) {
         println(" Resolution could not be determined from the PDB and CIF files.")
         return this
@@ -123,10 +123,10 @@ class CIF2MTZ extends AlgorithmsScript {
       reflectionlist = new ReflectionList(crystal, resolution, systems[0].getProperties())
     }
 
-    refinementdata = new DiffractionRefinementData(systems[0].getProperties(), reflectionlist)
-    ciffilter.readFile(new File(cif), reflectionlist, refinementdata, systems[0].getProperties())
+    refinementData = new DiffractionRefinementData(systems[0].getProperties(), reflectionlist)
+    cifFilter.readFile(new File(cif), reflectionlist, refinementData, systems[0].getProperties())
 
-    MTZWriter mtzwriter = new MTZWriter(reflectionlist, refinementdata,
+    MTZWriter mtzwriter = new MTZWriter(reflectionlist, refinementData,
         FilenameUtils.removeExtension(cif) + ".mtz", MTZType.DATAONLY)
     mtzwriter.write()
 
@@ -139,12 +139,9 @@ class CIF2MTZ extends AlgorithmsScript {
       return new ArrayList<Potential>()
     } else {
       return Arrays.stream(systems).filter {a -> a != null
-      }.
-          map {a -> a.getPotentialEnergy()
-          }.
-          filter {e -> e != null
-          }.
-          collect(Collectors.toList())
+      }.map {a -> a.getPotentialEnergy()
+      }.filter {e -> e != null
+      }.collect(Collectors.toList())
     }
   }
 }

@@ -167,7 +167,6 @@ class XYZtoQE extends PotentialScript {
 
     // Set the filename.
     filename = activeAssembly.getFile().getAbsolutePath()
-
     logger.info(format("\n Converting %s to QE format\n", filename))
 
     File saveDir = baseDir
