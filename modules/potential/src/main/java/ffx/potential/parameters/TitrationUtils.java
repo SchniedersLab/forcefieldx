@@ -889,9 +889,14 @@ public class TitrationUtils {
 
   /**
    * Amino acid protonation reactions. Constructors below specify intrinsic pKa and reference free
-   * energy of protonation, obtained via (OST) metadynamics on capped monomers. pKa values from
-   * Huang, Yandong, et al. "All-atom continuous constant pH molecular dynamics with particle mesh Ewald and titratable water."
-   * Journal of chemical theory and computation 12.11 (2016): 5411-5421.
+   * energy of protonation, obtained via (OST) metadynamics on capped monomers.
+   * pKa values from
+   * Nozaki, Yasuhiko, and Charles Tanford. "[84] Examination of titration behavior."
+   * Methods in enzymology. Vol. 11. Academic Press, 1967. 715-734.
+   *
+   * HIS to HID/HIE pKa values from
+   * Bashford, Donald, et al. "Electrostatic calculations of side-chain pKa values in myoglobin and comparison with NMR data for histidines."
+   * Biochemistry 32.31 (1993): 8045-8056.
    */
   public enum Titration {
     //ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
@@ -899,8 +904,11 @@ public class TitrationUtils {
     GLHtoGLU(4.40, -59.390, 0.0, AminoAcid3.GLH, AminoAcid3.GLU),
     LYStoLYD(10.40, 53.390, 0.0, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
-    HIStoHID(7.00, 42.923, 0.0, AminoAcid3.HIS, AminoAcid3.HID),
-    HIStoHIE(6.60, 42.923, 0.0, AminoAcid3.HIS, AminoAcid3.HIE);
+    //HE1 is the proton that is lost
+    HIStoHID(7.00, 34.00, 0.0, AminoAcid3.HIS, AminoAcid3.HID),
+    //HD1 is the proton that is lost
+    HIStoHIE(6.60, 30.00, 0.0, AminoAcid3.HIS, AminoAcid3.HIE),
+    HIDtoHIE(0.00, -4.00, 0.0, AminoAcid3.HID, AminoAcid3.HIE);
     //TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     //TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
 
