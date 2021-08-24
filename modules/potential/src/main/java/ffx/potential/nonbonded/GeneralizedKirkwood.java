@@ -59,6 +59,7 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.nonbonded.implicit.BornGradRegion;
 import ffx.potential.nonbonded.implicit.BornRadiiRegion;
+import ffx.potential.nonbonded.implicit.BornTanhRescaling;
 import ffx.potential.nonbonded.implicit.ChandlerCavitation;
 import ffx.potential.nonbonded.implicit.ConnollyRegion;
 import ffx.potential.nonbonded.implicit.DispersionRegion;
@@ -71,7 +72,6 @@ import ffx.potential.nonbonded.implicit.SurfaceAreaRegion;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.SoluteRadii;
-import uk.ac.manchester.tornado.api.type.annotations.Atomic;
 
 import java.util.HashMap;
 import java.util.logging.Level;
@@ -566,10 +566,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     initializationRegion = new InitializationRegion(threadCount);
-    bornRadiiRegion = new BornRadiiRegion(threadCount, forceField, perfectHCTScale);
+    bornRadiiRegion = new BornRadiiRegion(threadCount, forceField, neckCorrection, tanhCorrection, perfectHCTScale);
     permanentGKFieldRegion = new PermanentGKFieldRegion(threadCount, forceField);
     inducedGKFieldRegion = new InducedGKFieldRegion(threadCount, forceField);
-    bornGradRegion = new BornGradRegion(threadCount, perfectHCTScale);
+    bornGradRegion = new BornGradRegion(threadCount, neckCorrection, tanhCorrection, perfectHCTScale);
     gkEnergyRegion =
         new GKEnergyRegion(threadCount, forceField, polarization, nonPolar, surfaceTension, probe);
 
@@ -657,6 +657,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
       return;
     }
     try {
+      if (tanhCorrection) {
+        BornTanhRescaling.setBeta0(beta0);
+        BornTanhRescaling.setBeta1(beta1);
+        BornTanhRescaling.setBeta2(beta2);
+      }
       bornRadiiRegion.init(
           atoms,
           crystal,
@@ -665,12 +670,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
           baseRadius,
           descreenRadius,
           overlapScale,
-          neckCorrection,
           neckScale,
-          tanhCorrection,
-          beta0,
-          beta1,
-          beta2,
           descreenOffset,
           use,
           cut2,
@@ -1205,11 +1205,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
             baseRadius,
             descreenRadius,
             overlapScale,
-            neckCorrection,
             neckScale,
             descreenOffset,
-            tanhCorrection,
-            bornRadiiRegion.getTanhInputIi(),
+            bornRadiiRegion.getUnscaledBornIntegral(),
             use,
             cut2,
             nativeEnvironmentApproximation,

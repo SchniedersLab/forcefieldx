@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
+import static ffx.potential.nonbonded.implicit.BornTanhRescaling.tanhRescalingChainRule;
+import static ffx.potential.nonbonded.implicit.NeckIntegral.getNeckConstants;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
@@ -45,7 +47,6 @@ import static org.apache.commons.math3.util.FastMath.*;
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
-import edu.rit.pj.reduction.SharedDoubleArray;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray;
@@ -149,13 +150,26 @@ public class BornGradRegion extends ParallelRegion {
      * Flag for using tanh correction, default to false for now.
      */
     private boolean tanhCorrection = false;
-    private double[] tanhInputIi;
+    /**
+     * This is the Born Integral prior to rescaling with a tanh function, which is a quantity
+     * needed for the computing the derivative of the energy with respect to atomic coordinates.
+     */
+    private double[] unscaledBornIntegral;
 
-    public BornGradRegion(int nt, boolean perfectHCTScale) {
+    /**
+     * Compute the gradient due to changes in Born radii.
+     * @param nt Number of threads.
+     * @param neckCorrection Include a neck correction.
+     * @param tanhCorrection Include a tanh correction.
+     * @param perfectHCTScale Use "perfect" HCT scale factors.
+     */
+    public BornGradRegion(int nt, boolean neckCorrection, boolean tanhCorrection, boolean perfectHCTScale) {
         bornCRLoop = new BornCRLoop[nt];
         for (int i = 0; i < nt; i++) {
             bornCRLoop[i] = new BornCRLoop();
         }
+        this.neckCorrection = neckCorrection;
+        this.tanhCorrection = tanhCorrection;
         this.perfectHCTScale = perfectHCTScale;
     }
 
@@ -182,11 +196,9 @@ public class BornGradRegion extends ParallelRegion {
             double[] baseRadius,
             double[] descreenRadius,
             double[] overlapScale,
-            boolean neckCorrection,
             double[] neckScale,
             double descreenOffset,
-            boolean tanhCorrection,
-            double[] tanhInputIi,
+            double[] unscaledBornIntegral,
             boolean[] use,
             double cut2,
             boolean nativeEnvironmentApproximation,
@@ -200,11 +212,9 @@ public class BornGradRegion extends ParallelRegion {
         this.baseRadius = baseRadius;
         this.descreenRadius = descreenRadius;
         this.overlapScale = overlapScale;
-        this.neckCorrection = neckCorrection;
         this.neckScale = neckScale;
         this.descreenOffset = descreenOffset;
-        this.tanhCorrection = tanhCorrection;
-        this.tanhInputIi = tanhInputIi;
+        this.unscaledBornIntegral = unscaledBornIntegral;
         this.use = use;
         this.cut2 = cut2;
         this.nativeEnvironmentApproximation = nativeEnvironmentApproximation;
@@ -227,7 +237,7 @@ public class BornGradRegion extends ParallelRegion {
             term[i] = PI4_3 / (rbi * rbi * rbi);
             term[i] = factor / pow(term[i], (4.0 * oneThird));
             if (tanhCorrection) {
-                term[i] = term[i] * BornRescalingTanh.getTanhContribution(tanhInputIi[i], baseRadius[i]);
+                term[i] = term[i] * tanhRescalingChainRule(unscaledBornIntegral[i], baseRadius[i]);
             }
         }
     }
@@ -399,7 +409,7 @@ public class BornGradRegion extends ParallelRegion {
             }
 
             // Get Aij and Bij
-            double[] constants = NeckIntegralOnufriev.NeckIntegralOnufrievConstants.run(radius, radiusK);
+            double[] constants = getNeckConstants(radius, radiusK);
             //logger.info(format("Grad Inputs: Ri %2.4f Rk %2.4f\nGrad Outputs: Aij %2.4f Bij %2.4f",radius,radiusK,constants[0],constants[1]));
 
             double Aij = constants[0];
