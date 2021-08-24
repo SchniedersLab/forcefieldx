@@ -48,8 +48,17 @@ import java.util.logging.Logger;
 /**
  * Rescale the Born radius integral to account for interstitial spaces.
  * <p>
- * Ri^-1 = (rhoi^-3 - rhoi^-3*tanh(beta0*Psi*rhoi^3 - beta1*(Psi*rhoi^3)^2 +
- * beta2*(Psi*rhoi^3)^3)^(1/3)
+ * Ri^-1 = [rhoi^-3 - (4*pi/3(rhoi^-3 - 50^-3)) *
+ *         tanh(beta0*Psi*rhoi^3 - beta1*(Psi*rhoi^3)^2 + beta2*(Psi*rhoi^3)^3)]^(1/3)
+ * <p>
+ * Citations:
+ *   Aguilar, B.; Shadrach, R.; Onufriev, A. V. Reducing the
+ *   secondary structure bias in the generalized Born model via R6 effective
+ *   radii. J. Chem. Theory Comput. 2010, 6, 3613−3630.
+ *
+ *   Onufriev, A.; Bashford, D.; Case, D. Exploring protein native
+ *   states and large-scale conformational changes with a modified
+ *   generalized born model. Proteins 2004, 55, 383−394.
  *
  * @author Rae A. Corrigan
  * @since 1.0
