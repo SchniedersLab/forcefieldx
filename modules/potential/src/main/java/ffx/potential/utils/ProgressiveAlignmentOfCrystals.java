@@ -81,6 +81,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 /**
@@ -149,6 +150,10 @@ public class ProgressiveAlignmentOfCrystals {
    */
   private final Comm world;
   /**
+   * If false, do not use MPI communication.
+   */
+  private final boolean useMPI;
+  /**
    * Number of processes.
    */
   private final int numProc;
@@ -201,18 +206,29 @@ public class ProgressiveAlignmentOfCrystals {
     logger.info(format(" %s conformations: %d", baseLabel, baseSize));
     logger.info(format(" %s conformations: %d", targetLabel, targetSize));
 
-    world = Comm.world();
-    // Number of processes is equal to world size (often called size).
-    numProc = world.size();
-    // Each processor gets its own rank (ID of sorts).
-    rank = world.rank();
+    // Distance matrix to store compared values (dimensions are "human readable" [m x n]).
+    distMatrix = new double[baseSize][targetSize];
+
+    CompositeConfiguration properties = baseFilter.getActiveMolecularSystem().getProperties();
+    useMPI = properties.getBoolean("pj.use.mpi", true );
+
+    if (useMPI) {
+      world = Comm.world();
+      // Number of processes is equal to world size (often called size).
+      numProc = world.size();
+      // Each processor gets its own rank (ID of sorts).
+      rank = world.rank();
+    } else {
+      world = null;
+      numProc = 1;
+      rank = 0;
+    }
+
     if (numProc > 1) {
       logger.info(format(" Number of MPI Processes:  %d", numProc));
       logger.info(format(" Rank of this MPI Process: %d", rank));
     }
 
-    // Distance matrix to store compared values (dimensions are "human readable" [m x n]).
-    distMatrix = new double[baseSize][targetSize];
     // Initialize array as -1.0 as -1.0 is not a viable RMSD.
     for (int i = 0; i < baseSize; i++) {
       fill(distMatrix[i], -1.0);
@@ -333,7 +349,6 @@ public class ProgressiveAlignmentOfCrystals {
               logger.info(format(" PAC %s: %12s %7.4f A (%5.3f sec)", rmsdLabel, "", rmsd, timeSec));
             }
             myDistance[0] = rmsd;
-
 
           }
           targetFilter.readNext(false, false);
@@ -850,18 +865,22 @@ public class ProgressiveAlignmentOfCrystals {
    * @param column Current column of the PAC RMSD matrix.
    */
   private void gatherRMSDs(int row, int column) {
-    try {
-      logger.finer(" Receiving results.");
-      world.allGather(myBuffer, buffers);
-      for (int i = 0; i < numProc; i++) {
-        int c = (column + 1) - numProc + i;
-        if (c < targetSize) {
-          distMatrix[row][c] = distances[i][0];
-          logger.finer(format(" %d %d %16.8f", row, c, distances[i][0]));
+    if (useMPI) {
+      try {
+        logger.finer(" Receiving results.");
+        world.allGather(myBuffer, buffers);
+        for (int i = 0; i < numProc; i++) {
+          int c = (column + 1) - numProc + i;
+          if (c < targetSize) {
+            distMatrix[row][c] = distances[i][0];
+            logger.finer(format(" %d %d %16.8f", row, c, distances[i][0]));
+          }
         }
+      } catch (Exception e) {
+        logger.severe(" Exception collecting distance values." + e);
       }
-    } catch (Exception e) {
-      logger.severe(" Exception collecting distance values." + e);
+    } else {
+      distMatrix[row][column] = myDistance[0];
     }
   }
 

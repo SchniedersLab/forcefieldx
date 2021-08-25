@@ -93,6 +93,9 @@ class ForEachDir extends AlgorithmsScript {
       return this
     }
 
+    // Set a flag to avoid double use of MPI in downstream commands.
+    System.setProperty("pj.use.mpi", "false")
+
     Class<? extends FFXScript> script = getScript(unmatched.get(0))
     if (script != null) {
       logger.info(format(" The %s will be run in each subdirectory.", script))
@@ -135,7 +138,6 @@ class ForEachDir extends AlgorithmsScript {
               arg = concat(path, getName(arg))
             }
             dirParameters.add(arg)
-            logger.info(format(" Arg: " + arg))
           }
 
           // Create a Binding for command line arguments.
@@ -149,6 +151,9 @@ class ForEachDir extends AlgorithmsScript {
         }
       }
     }
+
+    // Clear the pj.use.mpi flag.
+    System.clearProperty("pj.use.mpi")
 
     return this
   }
