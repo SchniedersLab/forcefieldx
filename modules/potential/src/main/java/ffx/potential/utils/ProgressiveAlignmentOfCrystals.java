@@ -64,6 +64,8 @@ import edu.rit.pj.Comm;
 import ffx.crystal.Crystal;
 import ffx.crystal.ReplicatesCrystal;
 import ffx.crystal.SymOp;
+import ffx.numerics.math.RunningStatistics;
+import ffx.numerics.math.SummaryStatistics;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.Atom;
@@ -378,9 +380,23 @@ public class ProgressiveAlignmentOfCrystals {
     targetFilter.closeReader();
 
     // Print the PAC RMSD matrix.
-    if (baseSize > 1 || targetSize > 1) {
+    if (!write) {
+      logger.info("\n" + toDistanceMatrixString(distMatrix));
+    } else if (baseSize > 1 || targetSize > 1) {
       logger.info("\n" + toDistanceMatrixString(distMatrix));
     }
+
+    // Log some RMSD stats.
+    RunningStatistics runningStatistics = new RunningStatistics();
+    for (int i=0; i<baseSize; i++) {
+      for (int j=0; j<targetSize; j++) {
+        runningStatistics.addValue(distMatrix[i][j]);
+      }
+    }
+    logger.info(format(" RMSD Minimum:  %8.6f", runningStatistics.getMin()));
+    logger.info(format(" RMSD Maximum:  %8.6f", runningStatistics.getMax()));
+    logger.info(format(" RMSD Mean:     %8.6f", runningStatistics.getMean()));
+    logger.info(format(" RMSD Variance: %8.6f", runningStatistics.getVariance()));
 
     // Return distMatrix for validation if this is for the test script
     return distMatrix;
