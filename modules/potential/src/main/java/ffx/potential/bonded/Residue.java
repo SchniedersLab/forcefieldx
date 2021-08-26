@@ -374,7 +374,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     this.titrationUtils = titrationUtils;
   }
 
-  public TitrationUtils getTitrationUtils(){
+  public TitrationUtils getTitrationUtils() {
     return titrationUtils;
   }
 
@@ -653,7 +653,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   }
 
   /**
-   * getRotamer.
+   * Get the current rotamer.
    *
    * @return a {@link ffx.potential.bonded.Rotamer} object.
    */
@@ -662,7 +662,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   }
 
   /**
-   * setRotamer.
+   * Set the current rotamer.
    *
    * @param rotamer a {@link ffx.potential.bonded.Rotamer} object.
    */
@@ -671,18 +671,24 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   }
 
   /**
-   * Gets the Rotamers for this residue, potentially incorporating the original coordinates if
+   * Return all currently set rotamers.
+   *
+   * @return All current rotamers for this residue.
+   */
+  public Rotamer[] getRotamers() {
+    return rotamers;
+  }
+
+  /**
+   * Resets the rotamers for this residue, potentially incorporating the original coordinates if
    * RotamerLibrary's original coordinates rotamer flag has been set.
+   * <p>
+   * Any rotamers that were set previously are deleted.
    *
    * @param library Rotamer library to use
    * @return An array of Rotamer.
    */
-  public Rotamer[] getRotamers(RotamerLibrary library) {
-
-    // If the rotamers for this residue have been cached, return them.
-    if (rotamers != null) {
-      return rotamers;
-    }
+  public Rotamer[] setRotamers(RotamerLibrary library) {
 
     // Obtain rotamers for this residue from the RotamerLibrary.
     Rotamer[] libRotamers = library.getRotamers(this, titrationUtils);
@@ -692,14 +698,15 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     // (unless the library has no rotamers for this residue).
     if (library.getUsingOrigCoordsRotamer() && rotamers != null) {
       // Define the current coordinates as a new rotamer.
-      Rotamer originalRotamer = Rotamer.defaultRotamerFactory(this, titrationUtils);
-      // Add the new rotamer to those from the library and cache the result.
+      Rotamer[] originalRotamers = Rotamer.defaultRotamerFactory(this, titrationUtils);
+      int nOrig = originalRotamers.length;
+      // Add the original rotamers to those from the library and cache the result.
       int libRots = libRotamers.length;
-      rotamers = new Rotamer[libRots + 1];
-      // First rotamer is the original conformation.
-      rotamers[0] = originalRotamer;
+      rotamers = new Rotamer[libRots + nOrig];
+      // First rotamers are the original conformation.
+      arraycopy(originalRotamers, 0, rotamers, 0, nOrig);
       // Copy in the library.
-      arraycopy(libRotamers, 0, rotamers, 1, libRots);
+      arraycopy(libRotamers, 0, rotamers, nOrig, libRots);
     }
 
     return rotamers;
@@ -944,7 +951,6 @@ public class Residue extends MSGroup implements Comparable<Residue> {
    * <p>[chain ID]ResNumber-RotamerName.
    *
    * @param rotamer The rotamer to use.
-   *
    * @return A descriptive string.
    */
   public String toString(Rotamer rotamer) {
@@ -958,6 +964,17 @@ public class Residue extends MSGroup implements Comparable<Residue> {
       shortString = "" + resNumber + "-" + getName();
     }
     return shortString;
+  }
+
+  /**
+   * Add an array of rotamers to this Residue's cached array of rotamers.
+   *
+   * @param rotamers The rotamers to add.
+   */
+  void addRotamers(Rotamer[] rotamers) {
+    for (Rotamer rotamer : rotamers) {
+      addRotamer(rotamer);
+    }
   }
 
   /**

@@ -212,7 +212,7 @@ public class ManyBodyOptions {
         for (Polymer polymer : polymers) {
           List<Residue> residues = polymer.getResidues();
           for (Residue residue : residues) {
-            Rotamer[] rotamers = residue.getRotamers(rotamerLibrary);
+            Rotamer[] rotamers = residue.setRotamers(rotamerLibrary);
             if (rotamers != null) {
               int nrot = rotamers.length;
               if (nrot == 1) {
@@ -245,7 +245,7 @@ public class ManyBodyOptions {
               for (Residue r : rs) {
                 if (r.getResidueNumber() == i) {
                   residueList.add(r);
-                  Rotamer[] rotamers = r.getRotamers(rotamerLibrary);
+                  Rotamer[] rotamers = r.setRotamers(rotamerLibrary);
                   if (rotamers != null) {
                     n++;
                   }
@@ -284,7 +284,7 @@ public class ManyBodyOptions {
                 }
                 if (r.getResidueNumber() == i) {
                   residueList.add(r);
-                  Rotamer[] rotamers = r.getRotamers(rotamerLibrary);
+                  Rotamer[] rotamers = r.setRotamers(rotamerLibrary);
                   if (rotamers != null) {
                     n++;
                   }
@@ -304,7 +304,7 @@ public class ManyBodyOptions {
             if (ignoreNA && r.getResidueType() == Residue.ResidueType.NA) {
               continue;
             }
-            Rotamer[] rotamers = r.getRotamers(rotamerLibrary);
+            Rotamer[] rotamers = r.setRotamers(rotamerLibrary);
             if (rotamers != null) {
               int nrot = rotamers.length;
               if (nrot == 1) {
