@@ -297,22 +297,22 @@ public class Rotamer {
           case ASH:
           case ASP:
             Rotamer[] rotamers = new Rotamer[2];
-            rotamers[0] = new Rotamer(AminoAcid3.ASH, resState, titrationUtils, vals);
-            rotamers[1] = new Rotamer(AminoAcid3.ASP, resState, titrationUtils, vals);
+            rotamers[0] = new Rotamer(AminoAcid3.ASP, resState, titrationUtils, vals);
+            rotamers[1] = new Rotamer(AminoAcid3.ASH, resState, titrationUtils, vals);
             return rotamers;
           case GLH:
           case GLU:
             rotamers = new Rotamer[2];
-            rotamers[0] = new Rotamer(AminoAcid3.GLH, resState, titrationUtils, vals);
-            rotamers[1] = new Rotamer(AminoAcid3.GLU, resState, titrationUtils, vals);
+            rotamers[0] = new Rotamer(AminoAcid3.GLU, resState, titrationUtils, vals);
+            rotamers[1] = new Rotamer(AminoAcid3.GLH, resState, titrationUtils, vals);
             return rotamers;
           case HID:
           case HIE:
           case HIS:
             rotamers = new Rotamer[3];
-            rotamers[0] = new Rotamer(AminoAcid3.HID, resState, titrationUtils, vals);
-            rotamers[1] = new Rotamer(AminoAcid3.HIE, resState, titrationUtils, vals);
-            rotamers[2] = new Rotamer(AminoAcid3.HIS, resState, titrationUtils, vals);
+            rotamers[0] = new Rotamer(AminoAcid3.HIS, resState, titrationUtils, vals);
+            rotamers[1] = new Rotamer(AminoAcid3.HID, resState, titrationUtils, vals);
+            rotamers[2] = new Rotamer(AminoAcid3.HIE, resState, titrationUtils, vals);
             return rotamers;
           case LYS:
           case LYD:
