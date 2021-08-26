@@ -42,7 +42,6 @@ import static org.apache.commons.math3.util.FastMath.random;
 import static org.junit.Assert.assertEquals;
 
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.groovy.Energy;
 import ffx.potential.groovy.test.Gradient;
 import ffx.potential.groovy.test.LambdaGradient;
 import ffx.potential.utils.PotentialTest;
@@ -69,6 +68,10 @@ public class EnergyTest extends PotentialTest {
   private final int nImproperTorsions;
   private final int nPiOrbitalTorsions;
   private final int nTorsionTorsions;
+
+  private final int nStretchTorsions;
+  private final int nAngleTorsions;
+
   private final int nVanDerWaals;
   private final int nPermanent;
   private final int nPolar;
@@ -82,6 +85,10 @@ public class EnergyTest extends PotentialTest {
   private final double improperTorsionEnergy;
   private final double piOrbitalTorsionEnergy;
   private final double torsionTorsionEnergy;
+
+  private final double stretchTorsionEnergy;
+  private final double angleTorsionEnergy;
+
   private final double vanDerWaalsEnergy;
   private final double permanentEnergy;
   private final double polarizationEnergy;
@@ -112,6 +119,10 @@ public class EnergyTest extends PotentialTest {
       int nPiOrbitalTorsions,
       double torsionTorsionEnergy,
       int nTorsionTorsions,
+      double stretchTorsionEnergy,
+      int nStretchTorsions,
+      double angleTorsionEnergy,
+      int nAngleTorsions,
       double vanDerWaalsEnergy,
       int nVanDerWaals,
       double permanentEnergy,
@@ -142,6 +153,12 @@ public class EnergyTest extends PotentialTest {
     this.nPiOrbitalTorsions = nPiOrbitalTorsions;
     this.torsionTorsionEnergy = torsionTorsionEnergy;
     this.nTorsionTorsions = nTorsionTorsions;
+
+    this.stretchTorsionEnergy = stretchTorsionEnergy;
+    this.nStretchTorsions = nStretchTorsions;
+    this.angleTorsionEnergy = angleTorsionEnergy;
+    this.nAngleTorsions = nAngleTorsions;
+
     this.vanDerWaalsEnergy = vanDerWaalsEnergy;
     this.nVanDerWaals = nVanDerWaals;
     this.permanentEnergy = permanentEnergy;
@@ -162,6 +179,8 @@ public class EnergyTest extends PotentialTest {
             + improperTorsionEnergy
             + piOrbitalTorsionEnergy
             + torsionTorsionEnergy
+            + stretchTorsionEnergy
+            + angleTorsionEnergy
             + vanDerWaalsEnergy
             + permanentEnergy
             + polarizationEnergy
@@ -194,6 +213,10 @@ public class EnergyTest extends PotentialTest {
                 370,
                 -560.99576469,
                 268,
+                0.0,
+                0,
+                0.0,
+                0,
                 4003.27183547,
                 741643,
                 -12303.93157019,
@@ -227,6 +250,10 @@ public class EnergyTest extends PotentialTest {
                 1480,
                 -2243.98305878,
                 1072,
+                0.0,
+                0,
+                0.0,
+                0,
                 16013.08734188,
                 2966572,
                 -49215.72628076,
@@ -259,6 +286,10 @@ public class EnergyTest extends PotentialTest {
                 292,
                 -41.99981847,
                 147,
+                0.0,
+                0,
+                0.0,
+                0,
                 31718.84803063,
                 3480619,
                 -78751.36662993,
@@ -287,6 +318,10 @@ public class EnergyTest extends PotentialTest {
                 169,
                 0.15162117,
                 20,
+                0.0,
+                0,
+                0.0,
+                0,
                 0.0,
                 0,
                 0.0,
@@ -323,6 +358,10 @@ public class EnergyTest extends PotentialTest {
                 66,
                 -23.33097186,
                 4,
+                0.0,
+                0,
+                0.0,
+                0,
                 312.82576484,
                 203926,
                 -1208.54202510,
@@ -353,6 +392,10 @@ public class EnergyTest extends PotentialTest {
                 0,
                 0.09663007,
                 10,
+                0.0,
+                0,
+                0.0,
+                0,
                 0.0,
                 0,
                 20.45106694,
@@ -387,6 +430,10 @@ public class EnergyTest extends PotentialTest {
                 4,
                 1.95288364,
                 3,
+                0.0,
+                0,
+                0.0,
+                0,
                 20.39805900,
                 748,
                 -78.53945229,
@@ -415,6 +462,10 @@ public class EnergyTest extends PotentialTest {
                 875,
                 1.59062194,
                 101,
+                0.0,
+                0,
+                0.0,
+                0,
                 0.0,
                 0,
                 0.0,
@@ -451,6 +502,10 @@ public class EnergyTest extends PotentialTest {
                 0,
                 0.0,
                 0,
+                0.0,
+                0,
+                0.0,
+                0,
                 91224.14951970,
                 40511,
                 -665.41688158,
@@ -479,6 +534,10 @@ public class EnergyTest extends PotentialTest {
                 875,
                 0.92410847,
                 97,
+                0.0,
+                0,
+                0.0,
+                0,
                 0.0,
                 0,
                 0.0,
@@ -515,6 +574,10 @@ public class EnergyTest extends PotentialTest {
                 106,
                 -31.48011891,
                 71,
+                0.0,
+                0,
+                0.0,
+                0,
                 12862.34983956,
                 1482946,
                 -32736.92207773,
@@ -547,6 +610,10 @@ public class EnergyTest extends PotentialTest {
                 0,
                 0.0,
                 0,
+                0.0,
+                0,
+                0.0,
+                0,
                 4860.41072437,
                 2279196,
                 -40036.04804903,
@@ -573,6 +640,10 @@ public class EnergyTest extends PotentialTest {
                 24,
                 -8.01262794,
                 38,
+                0.0,
+                0,
+                0.0,
+                0,
                 0.0,
                 0,
                 0.0,
@@ -611,6 +682,10 @@ public class EnergyTest extends PotentialTest {
                 0,
                 0.0,
                 0,
+                0.0,
+                0,
+                0.0,
+                0,
                 -4.816366774263829,
                 32644,
                 -45.55012417320137,
@@ -637,6 +712,10 @@ public class EnergyTest extends PotentialTest {
                 21,
                 -3.72750990,
                 35,
+                0.0,
+                0,
+                0.0,
+                0,
                 0.0,
                 0,
                 0.0,
@@ -675,6 +754,10 @@ public class EnergyTest extends PotentialTest {
                 0,
                 0.0,
                 0,
+                0.0,
+                0,
+                0.0,
+                0,
                 0.76621272,
                 7832,
                 -32.02011297249507,
@@ -707,6 +790,10 @@ public class EnergyTest extends PotentialTest {
                 0,
                 0.0,
                 0,
+                0.0,
+                0,
+                0.0,
+                0,
                 -5.792072251098926,
                 20384,
                 -25.42173449818894,
@@ -716,7 +803,92 @@ public class EnergyTest extends PotentialTest {
                 0.0,
                 0,
                 false
+            },
+            {
+                "RNA with GK from Corrigan et al (2021)",
+                "ffx/potential/structures/1mis.xyz",
+                522, // Atoms
+                60.88950457, // Bond
+                562,
+                136.35249695, // Angle
+                998,
+                2.43194433, // Stretch-Bend
+                848,
+                0.0, // Urey-Bradley
+                0,
+                0.10282386, // Out-of-Plane
+                294,
+                79.48824698, // Torsion
+                1492,
+                0.0, // Improper Torsion
+                0,
+                0.45934575, // Pi-Orbital Torsion
+                96,
+                0.0,  // Torsion-Torsion
+                0,
+                -3.02691282, // Stretch-Torsion
+                44,
+                -4.54517111, // Angle-Torsion
+                72,
+                218.31775844, // vdW
+                134421,
+                875.03795766, // Permanent
+                134421,
+                -238.72700000, // Polarization
+                134421,
+                -3228.36542246, // Solvation
+                136503,
+                false
+            },
+//            Bond Stretching        281.75870048          906        0.006 ( 0.02653)
+//            Angle Bending          235.11731039         1626        0.003 ( 2.93470)
+//            Stretch-Bend           -12.11600646         1455        0.001
+//            Out-of-Plane Bend       28.91012526          597        0.004
+//            Torsional Angle         69.15283653         2391        0.001
+//            Pi-Orbital Torsion      27.49698981          109        0.000
+//            Torsion-Torsion        -36.43950083            6        0.000
+//            Van der Waals          473.23759467       394854        0.045
+//            Atomic Multipoles    -1188.66271426       394854
+//            Polarization          -241.77223440       394854        1.337
+//            Solvation            -1167.34034977       398278
+//            Total Potential      -1530.65724859  (Kcal/mole)        1.406 (sec)
+            {
+                "Protein with GK from Corrigan et al (2021)",
+                "ffx/potential/structures/1bpi.xyz",
+                892, // Atoms
+                281.75870048, // Bond
+                906,
+                235.11731039, // Angle
+                1626,
+                -12.11600646, // Stretch-Bend
+                1455,
+                0.0, // Urey-Bradley
+                0,
+                28.91012526, // Out-of-Plane
+                597,
+                69.15283653, // Torsion
+                2391,
+                0.0, // Improper Torsion
+                0,
+                27.49698981, // Pi-Orbital Torsion
+                109,
+                -36.43950083,  // Torsion-Torsion
+                6,
+                0.0, // Stretch-Torsion
+                0,
+                0.0, // Angle-Torsion
+                0,
+                473.23759467, // vdW
+                394854,
+                -1188.66271426, // Permanent
+                394854,
+                -241.77223440, // Polarization
+                394854,
+                -1167.34034977, // Solvation
+                398278,
+                false
             }
+
         });
   }
 
@@ -742,89 +914,62 @@ public class EnergyTest extends PotentialTest {
     assertEquals(info + " Angle Energy", angleEnergy, forceFieldEnergy.getAngleEnergy(), tolerance);
     assertEquals(info + " Angle Count", nAngles, forceFieldEnergy.getNumberofAngles());
     // Stretch-Bend Energy
-    assertEquals(
-        info + " Stretch-Bend Energy",
-        stretchBendEnergy,
-        forceFieldEnergy.getStrenchBendEnergy(),
-        tolerance);
-    assertEquals(
-        info + " Stretch-Bend Count", nStretchBends, forceFieldEnergy.getNumberofStretchBends());
+    assertEquals(info + " Stretch-Bend Energy", stretchBendEnergy,
+        forceFieldEnergy.getStrenchBendEnergy(), tolerance);
+    assertEquals(info + " Stretch-Bend Count", nStretchBends,
+        forceFieldEnergy.getNumberofStretchBends());
     // Urey-Bradley Energy
-    assertEquals(
-        info + " Urey-Bradley Energy",
-        ureyBradleyEnergy,
-        forceFieldEnergy.getUreyBradleyEnergy(),
-        tolerance);
+    assertEquals(info + " Urey-Bradley Energy", ureyBradleyEnergy,
+        forceFieldEnergy.getUreyBradleyEnergy(), tolerance);
     assertEquals(
         info + " Urey-Bradley Count", nUreyBradleys, forceFieldEnergy.getNumberofUreyBradleys());
     // Out-of-Plane Bend
-    assertEquals(
-        info + " Out-of-Plane Bend Energy",
-        outOfPlaneBendEnergy,
-        forceFieldEnergy.getOutOfPlaneBendEnergy(),
-        tolerance);
-    assertEquals(
-        info + " Out-of-Plane Bend Count",
-        nOutOfPlaneBends,
+    assertEquals(info + " Out-of-Plane Bend Energy", outOfPlaneBendEnergy,
+        forceFieldEnergy.getOutOfPlaneBendEnergy(), tolerance);
+    assertEquals(info + " Out-of-Plane Bend Count", nOutOfPlaneBends,
         forceFieldEnergy.getNumberofOutOfPlaneBends());
     // Torsional Angle
-    assertEquals(
-        info + " Torsion Energy", torsionEnergy, forceFieldEnergy.getTorsionEnergy(), tolerance);
+    assertEquals(info + " Torsion Energy", torsionEnergy, forceFieldEnergy.getTorsionEnergy(), tolerance);
     assertEquals(info + " Torsion Count", nTorsions, forceFieldEnergy.getNumberofTorsions());
     // Improper Torsional Angle
-    assertEquals(
-        info + " Improper Torsion Energy",
-        improperTorsionEnergy,
-        forceFieldEnergy.getImproperTorsionEnergy(),
-        tolerance);
-    assertEquals(
-        info + " Improper Torsion Count",
-        nImproperTorsions,
+    assertEquals(info + " Improper Torsion Energy", improperTorsionEnergy,
+        forceFieldEnergy.getImproperTorsionEnergy(), tolerance);
+    assertEquals(info + " Improper Torsion Count", nImproperTorsions,
         forceFieldEnergy.getNumberofImproperTorsions());
     // Pi-Orbital Torsion
-    assertEquals(
-        info + " Pi-OrbitalTorsion Energy",
-        piOrbitalTorsionEnergy,
-        forceFieldEnergy.getPiOrbitalTorsionEnergy(),
-        tolerance);
-    assertEquals(
-        info + " Pi-OrbitalTorsion Count",
-        nPiOrbitalTorsions,
+    assertEquals(info + " Pi-OrbitalTorsion Energy", piOrbitalTorsionEnergy,
+        forceFieldEnergy.getPiOrbitalTorsionEnergy(), tolerance);
+    assertEquals(info + " Pi-OrbitalTorsion Count", nPiOrbitalTorsions,
         forceFieldEnergy.getNumberofPiOrbitalTorsions());
     // Torsion-Torsion
-    assertEquals(
-        info + " Torsion-Torsion Energy",
-        torsionTorsionEnergy,
-        forceFieldEnergy.getTorsionTorsionEnergy(),
-        tolerance);
-    assertEquals(
-        info + " Torsion-Torsion Count",
-        nTorsionTorsions,
+    assertEquals(info + " Torsion-Torsion Energy", torsionTorsionEnergy,
+        forceFieldEnergy.getTorsionTorsionEnergy(), tolerance);
+    assertEquals(info + " Torsion-Torsion Count", nTorsionTorsions,
         forceFieldEnergy.getNumberofTorsionTorsions());
+    // Stretch-Torsion
+    assertEquals(info + " Stretch-Torsion Energy", stretchTorsionEnergy,
+        forceFieldEnergy.getStretchTorsionEnergy(), tolerance);
+    assertEquals(info + " Stretch-Torsion Count", nStretchTorsions,
+        forceFieldEnergy.getNumberofStretchTorsions());
+    // Angle-Torsion
+    assertEquals(info + " Angle-Torsion Energy", angleTorsionEnergy,
+        forceFieldEnergy.getAngleTorsionEnergy(), tolerance);
+    assertEquals(info + " Angle-Torsion Count", nAngleTorsions,
+        forceFieldEnergy.getNumberofAngleTorsions());
     // van Der Waals
-    assertEquals(
-        info + " van Der Waals Energy",
-        vanDerWaalsEnergy,
-        forceFieldEnergy.getVanDerWaalsEnergy(),
-        tolerance);
-    assertEquals(
-        info + " van Der Waals Count", nVanDerWaals, forceFieldEnergy.getVanDerWaalsInteractions());
+    assertEquals(info + " van Der Waals Energy", vanDerWaalsEnergy,
+        forceFieldEnergy.getVanDerWaalsEnergy(), tolerance);
+    assertEquals(info + " van Der Waals Count", nVanDerWaals,
+        forceFieldEnergy.getVanDerWaalsInteractions());
     // Permanent Multipoles
     assertEquals(
-        info + " Permanent Multipole Energy",
-        permanentEnergy,
-        forceFieldEnergy.getPermanentMultipoleEnergy(),
-        tolerance);
-    assertEquals(
-        info + " Permanent Multipole Count",
-        nPermanent,
+        info + " Permanent Multipole Energy", permanentEnergy,
+        forceFieldEnergy.getPermanentMultipoleEnergy(), tolerance);
+    assertEquals(info + " Permanent Multipole Count", nPermanent,
         forceFieldEnergy.getPermanentInteractions());
     // Polarization Energy
-    assertEquals(
-        info + " Polarization Energy",
-        polarizationEnergy,
-        forceFieldEnergy.getPolarizationEnergy(),
-        tolerance);
+    assertEquals(info + " Polarization Energy", polarizationEnergy,
+        forceFieldEnergy.getPolarizationEnergy(), tolerance);
     assertEquals(info + " Polarization Count", nPolar, forceFieldEnergy.getPermanentInteractions());
     // GK Energy
     assertEquals(info + " Solvation", gkEnergy, forceFieldEnergy.getSolvationEnergy(), tolerance);
