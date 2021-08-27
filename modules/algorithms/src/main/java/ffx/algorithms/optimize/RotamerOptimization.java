@@ -2303,7 +2303,12 @@ public class RotamerOptimization implements Terminatable {
         }
         double newE = Double.NaN;
         try {
-          newE = currentEnergy(rList) + rotamer.getRotamerPhBias();
+          if (rotamer.isTitrating){
+            newE = currentEnergy(rList) + rotamer.getRotamerPhBias();
+          } else {
+            newE = currentEnergy(rList);
+          }
+
         } catch (ArithmeticException ex) {
           logger.fine(format(
               " Exception %s in energy calculations during independent for %s-%d", ex, residue, j));
