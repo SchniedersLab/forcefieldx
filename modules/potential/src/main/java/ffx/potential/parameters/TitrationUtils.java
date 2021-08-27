@@ -900,6 +900,13 @@ public class TitrationUtils {
   /**
    * Amino acid protonation reactions. Constructors below specify intrinsic pKa and reference free
    * energy of protonation, obtained via (OST) metadynamics on capped monomers.
+   * pKa values from
+   *    Nozaki, Yasuhiko, and Charles Tanford. "[84] Examination of titration behavior."
+   *    Methods in enzymology. Vol. 11. Academic Press, 1967. 715-734.
+   *
+   * HIS to HID/HIE pKa values from
+   *    Bashford, Donald, et al. "Electrostatic calculations of side-chain pKa values in myoglobin and comparison with NMR data for histidines."
+   *    Biochemistry 32.31 (1993): 8045-8056.
    */
   public enum Titration {
     //ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
@@ -907,8 +914,9 @@ public class TitrationUtils {
     GLHtoGLU(4.25, -59.390, 0.0, AminoAcidUtils.AminoAcid3.GLH, AminoAcidUtils.AminoAcid3.GLU),
     LYStoLYD(10.53, 53.390, 0.0, AminoAcidUtils.AminoAcid3.LYS, AminoAcidUtils.AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
-    HIStoHID(6.00, 42.923, 0.0, AminoAcidUtils.AminoAcid3.HIS, AminoAcidUtils.AminoAcid3.HID),
-    HIStoHIE(6.00, 42.923, 0.0, AminoAcidUtils.AminoAcid3.HIS, AminoAcidUtils.AminoAcid3.HIE);
+    HIStoHID(7.00, 34.00, 0.0, AminoAcidUtils.AminoAcid3.HIS, AminoAcidUtils.AminoAcid3.HID),
+    HIStoHIE(6.60, 30.00, 0.0, AminoAcidUtils.AminoAcid3.HIS, AminoAcidUtils.AminoAcid3.HIE),
+    HIDtoHIE(0.00, -4.00, 0.0, AminoAcidUtils.AminoAcid3.HID, AminoAcidUtils.AminoAcid3.HIE);
 
     // TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     // TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
