@@ -38,12 +38,8 @@
 package ffx.potential.nonbonded.implicit;
 
 import static org.apache.commons.math3.util.FastMath.PI;
-import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.copySign;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.tanh;
-
-import java.util.logging.Logger;
 
 /**
  * Rescale the Born radius integral to account for interstitial spaces.
@@ -72,9 +68,8 @@ public class BornTanhRescaling {
   /**
    * 1/50^3 where 50 Angstroms is the maximum Born radius
    */
-  private static final double recipMaxBornRadius3 = 1.0 / pow(MAX_BORN_RADIUS, 3.0);
+  private static final double recipMaxBornRadius3 = pow(MAX_BORN_RADIUS, -3.0);
   private static final double PI4_3 = 4.0 / 3.0 * PI;
-
   /**
    * Tanh coefficients from Corrigan et al.
    */
@@ -92,14 +87,12 @@ public class BornTanhRescaling {
   public static double tanhRescaling(double Ii, double rhoi) {
     // Set up tanh function components
     double rhoi3 = rhoi * rhoi * rhoi;
-    double rhoi3Psi = rhoi3 * abs(Ii);
+    double rhoi3Psi = rhoi3 * Ii;
     double rhoi6Psi2 = rhoi3Psi * rhoi3Psi;
     double rhoi9Psi3 = rhoi6Psi2 * rhoi3Psi;
     // If the output of the tanh function is 1.0, then the Born radius will be MaxBornRadius
     double tanh_constant = PI4_3 * ((1.0 / rhoi3) - recipMaxBornRadius3);
-    double input = beta0 * rhoi3Psi - beta1 * rhoi6Psi2 + beta2 * rhoi9Psi3;
-    double output = copySign(tanh(input), Ii);
-    return tanh_constant * output;
+    return tanh_constant * tanh(beta0 * rhoi3Psi - beta1 * rhoi6Psi2 + beta2 * rhoi9Psi3);
   }
 
   /**
@@ -112,17 +105,15 @@ public class BornTanhRescaling {
    */
   public static double tanhRescalingChainRule(double Ii, double rhoi) {
     double rhoi3 = rhoi * rhoi * rhoi;
-    double rhoi3Psi = rhoi3 * abs(Ii);
+    double rhoi3Psi = rhoi3 * Ii;
     double rhoi6Psi2 = rhoi3Psi * rhoi3Psi;
     double rhoi9Psi3 = rhoi6Psi2 * rhoi3Psi;
-    double rhoi6Psi = rhoi3 * rhoi3 * abs(Ii);
+    double rhoi6Psi = rhoi3 * rhoi3 * Ii;
     double rhoi9Psi2 = rhoi6Psi2 * rhoi3;
-    // If the output of the tanh function is 1.0, then the Born radius will be MaxBornRadius
-    double tanh_constant = PI4_3 * ((1.0 / rhoi3) - recipMaxBornRadius3);
-    double input = beta0 * rhoi3Psi - beta1 * rhoi6Psi2 + beta2 * rhoi9Psi3;
-    double chainRuleTerm = beta0 * rhoi3 - 2.0 * beta1 * rhoi6Psi + 3.0 * beta2 * rhoi9Psi2;
-    double tanhTerm = tanh(input);
+    double tanhTerm = tanh(beta0 * rhoi3Psi - beta1 * rhoi6Psi2 + beta2 * rhoi9Psi3);
     double tanh2 = tanhTerm * tanhTerm;
+    double chainRuleTerm = beta0 * rhoi3 - 2.0 * beta1 * rhoi6Psi + 3.0 * beta2 * rhoi9Psi2;
+    double tanh_constant = PI4_3 * ((1.0 / rhoi3) - recipMaxBornRadius3);
     return tanh_constant * chainRuleTerm * (1.0 - tanh2);
   }
 

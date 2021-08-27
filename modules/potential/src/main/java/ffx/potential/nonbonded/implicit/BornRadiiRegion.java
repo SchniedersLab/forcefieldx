@@ -70,6 +70,7 @@ public class BornRadiiRegion extends ParallelRegion {
   private static final Logger logger = Logger.getLogger(BornRadiiRegion.class.getName());
   private static final double oneThird = 1.0 / 3.0;
   private static final double PI4_3 = 4.0 / 3.0 * PI;
+  private static final double INVERSE_PI4_3 = 1.0 / PI4_3;
   private static final double PI_12 = PI / 12.0;
   private final BornRadiiLoop[] bornRadiiLoop;
   /** An ordered array of atoms in the system. */
@@ -166,51 +167,41 @@ public class BornRadiiRegion extends ParallelRegion {
       if (!use[i]) {
         born[i] = baseRi;
       } else {
-        double soluteIntegral = sharedBorn.get(i);
+        // A positive integral of 1/r^6 over the solute outside atom i.
+        double soluteIntegral = -sharedBorn.get(i);
         if (tanhCorrection) {
-          // Set tanh beta constants based on input values and/or defaults
+          // Scale up the integral to account for interstitial spaces.
           unscaledBornIntegral[i] = soluteIntegral;
           soluteIntegral = tanhRescaling(soluteIntegral, baseRi);
         }
-        double sum = PI4_3 / (baseRi * baseRi * baseRi) + soluteIntegral;
+        // The total integral assumes no solute outside atom i, then subtracts away solute descreening.
+        double sum = PI4_3 / (baseRi * baseRi * baseRi) - soluteIntegral;
+        // Due to solute atomic overlaps, in rare cases the sum can be less than zero.
         if (sum <= 0.0) {
           born[i] = bigRadius;
           if (verboseRadii) {
-            logger.info(
-                format(
-                    " Born soluteIntegral < 0 for atom %d; set Born radius to %12.6f (Base Radius: %2.6f)",
-                    i + 1, born[i], baseRadius[i]));
+            logger.info(format(" Born Integral < 0 for atom %d; set Born radius to %12.6f (Base Radius: %12.6f)", i + 1, born[i], baseRadius[i]));
           }
         } else {
-          born[i] = 1.0 / pow(sum / PI4_3, oneThird);
+          born[i] = pow(INVERSE_PI4_3 * sum, -oneThird);
           if (born[i] < baseRi) {
             born[i] = baseRi;
             if (verboseRadii) {
-              logger.info(
-                  format(" Born radius < Base Radius for atom %d: set Born radius to %12.6f", i + 1,
-                      baseRi));
+              logger.info(format(" Born radius < Base Radius for atom %d: set Born radius to %12.6f", i + 1, baseRi));
             }
           } else if (born[i] > bigRadius) {
             born[i] = bigRadius;
             if (verboseRadii) {
-              logger.info(
-                  format(" Born radius > 50.0 Angstroms for atom %d: set Born radius to %12.6f",
-                      i + 1,
-                      baseRi));
+              logger.info(format(" Born radius > 50.0 Angstroms for atom %d: set Born radius to %12.6f", i + 1, baseRi));
             }
           } else if (isInfinite(born[i]) || isNaN(born[i])) {
-            if (verboseRadii) {
-              logger.info(
-                  format(" Born radius NaN / Infinite for atom %d; set Born radius to %12.6f", i + 1,
-                      baseRi));
-            }
             born[i] = baseRi;
+            if (verboseRadii) {
+              logger.info(format(" Born radius NaN / Infinite for atom %d; set Born radius to %12.6f", i + 1, baseRi));
+            }
           } else {
             if (verboseRadii) {
-              logger.info(
-                  format(" Set Born radius for atom %d to %12.6f " +
-                      "(Base Radius: %2.6f)", i + 1, born[i], baseRi)
-              );
+              logger.info(format(" Set Born radius for atom %d to %12.6f (Base Radius: %2.6f)", i + 1, born[i], baseRi));
             }
           }
         }
@@ -307,12 +298,6 @@ public class BornRadiiRegion extends ParallelRegion {
 
     @Override
     public void run(int lb, int ub) {
-      // The descreening integral is initialized to the limit of the atom alone in solvent.
-      for (int i = lb; i <= ub; i++) {
-        final double baseRi = baseRadius[i];
-        //localBorn[i] = PI4_3 / (baseRi * baseRi * baseRi);
-        localBorn[i] = 0;
-      }
       int nSymm = crystal.spaceGroup.symOps.size();
       if (nSymm == 0) {
         nSymm = 1;
