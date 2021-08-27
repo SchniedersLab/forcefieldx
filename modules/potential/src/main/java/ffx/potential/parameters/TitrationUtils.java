@@ -910,9 +910,9 @@ public class TitrationUtils {
    */
   public enum Titration {
     //ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
-    ASHtoASP(3.90, -53.188, 0.0, AminoAcidUtils.AminoAcid3.ASH, AminoAcidUtils.AminoAcid3.ASP),
-    GLHtoGLU(4.25, -59.390, 0.0, AminoAcidUtils.AminoAcid3.GLH, AminoAcidUtils.AminoAcid3.GLU),
-    LYStoLYD(10.53, 53.390, 0.0, AminoAcidUtils.AminoAcid3.LYS, AminoAcidUtils.AminoAcid3.LYD),
+    ASHtoASP(4.00, -53.188, 0.0, AminoAcidUtils.AminoAcid3.ASH, AminoAcidUtils.AminoAcid3.ASP),
+    GLHtoGLU(4.40, -59.390, 0.0, AminoAcidUtils.AminoAcid3.GLH, AminoAcidUtils.AminoAcid3.GLU),
+    LYStoLYD(10.40, 53.390, 0.0, AminoAcidUtils.AminoAcid3.LYS, AminoAcidUtils.AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
     HIStoHID(7.00, 34.00, 0.0, AminoAcidUtils.AminoAcid3.HIS, AminoAcidUtils.AminoAcid3.HID),
     HIStoHIE(6.60, 30.00, 0.0, AminoAcidUtils.AminoAcid3.HIS, AminoAcidUtils.AminoAcid3.HIE),
