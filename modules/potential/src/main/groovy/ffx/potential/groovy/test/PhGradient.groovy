@@ -40,6 +40,7 @@ package ffx.potential.groovy.test
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.AminoAcidUtils
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.MultiResidue
 import ffx.potential.bonded.Residue

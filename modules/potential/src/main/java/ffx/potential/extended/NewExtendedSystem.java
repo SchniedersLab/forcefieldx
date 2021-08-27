@@ -43,7 +43,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.*;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.VanDerWaals;
-import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.TitrationUtils;
 import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -61,7 +60,7 @@ import static org.apache.commons.math3.util.FastMath.*;
  * @author Andrew Thiel
  * @since 1.0
  */
-public class NewExtendedSystem  {
+public class NewExtendedSystem {
 
     private static final Logger logger = Logger.getLogger(NewExtendedSystem.class.getName());
 
@@ -174,22 +173,22 @@ public class NewExtendedSystem  {
     private final boolean doVDW;
     private final boolean doElectrostatics;
 
-    private static final int discrBias = 0;
-    private static final int pHBias = 1;
-    private static final int modelBias = 2;
-    private static final int dDiscr_dTitr = 3;
-    private static final int dPh_dTitr = 4;
-    private static final int dModel_dTitr = 5;
-    private static final int dDiscr_dTaut = 6;
-    private static final int dPh_dTaut = 7;
-    private static final int dModel_dTaut = 8;
+    private static final int discrBiasIndex = 0;
+    private static final int pHBiasIndex = 1;
+    private static final int modelBiasIndex = 2;
+    private static final int dDiscr_dTitrIndex = 3;
+    private static final int dPh_dTitrIndex = 4;
+    private static final int dModel_dTitrIndex = 5;
+    private static final int dDiscr_dTautIndex = 6;
+    private static final int dPh_dTautIndex = 7;
+    private static final int dModel_dTautIndex = 8;
     //TODO: Loop over protonation ESVs to sum the discr, acidostat, and Fmod energy terms.
     //TODO: Collect partial derivs for each term. Keep all in one place.
 
     /**
      * Construct extended system with the provided configuration.
      *
-     * @param mola   a {@link MolecularAssembly} object.
+     * @param mola a {@link MolecularAssembly} object.
      */
     public NewExtendedSystem(MolecularAssembly mola) {
         this.molecularAssembly = mola;
@@ -294,28 +293,34 @@ public class NewExtendedSystem  {
         }
     }
 
-    private void initializeThetaArrays(int index, double lambda){
+    private void initializeThetaArrays(int index, double lambda) {
         extendedLambdas[index] = lambda;
         thetaPosition[index] = Math.asin(Math.sqrt(lambda));
         Random random = new Random();
         thetaVelocity[index] = random.nextGaussian() * sqrt(kB * 298.15 / thetaMass);
         double dUdL = getBiasDerivs()[index];
-        double dUdTheta = dUdL * sin(2*thetaPosition[index]);
+        double dUdTheta = dUdL * sin(2 * thetaPosition[index]);
         thetaAccel[index] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
     }
 
-    public boolean isTitrating(int atomIndex) { return isTitrating[atomIndex]; }
-
-    public boolean isTautomerizing(int atomIndex){ return isTautomerizing[atomIndex]; }
-
-    public boolean isExtended(Residue residue){ return extendedResidueList.contains(residue); }
-
-    public boolean isTitrable(Residue residue){
-        AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
-        return  AA3.isConstantPhTitratable;
+    public boolean isTitrating(int atomIndex) {
+        return isTitrating[atomIndex];
     }
 
-    public boolean isTautomer(Residue residue){
+    public boolean isTautomerizing(int atomIndex) {
+        return isTautomerizing[atomIndex];
+    }
+
+    public boolean isExtended(Residue residue) {
+        return extendedResidueList.contains(residue);
+    }
+
+    public boolean isTitrable(Residue residue) {
+        AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
+        return AA3.isConstantPhTitratable;
+    }
+
+    public boolean isTautomer(Residue residue) {
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
         return AA3.isConstantPhTautomer;
     }
@@ -324,44 +329,42 @@ public class NewExtendedSystem  {
         return titrationLambdas[i];
     }
 
-    public double getTautomerLambda(int i){
+    public double getTautomerLambda(int i) {
         return tautomerLambdas[i];
     }
 
-    public double getTitrationLambda(Residue residue){
-        if(titratingResidueList.contains(residue)){
+    public double getTitrationLambda(Residue residue) {
+        if (titratingResidueList.contains(residue)) {
             int resIndex = titratingResidueList.indexOf(residue);
             return extendedLambdas[resIndex];
-        }
-        else{
+        } else {
             return 1.0;
         }
     }
 
-    public double getTautomerLambda(Residue residue){
-        if(tautomerizingResidueList.contains(residue)){
+    public double getTautomerLambda(Residue residue) {
+        if (tautomerizingResidueList.contains(residue)) {
             int resIndex = tautomerizingResidueList.indexOf(residue);
-            return extendedLambdas[titratingResidueList.size()+resIndex];
-        }
-        else{
+            return extendedLambdas[titratingResidueList.size() + resIndex];
+        } else {
             return 1.0;
         }
     }
 
-    public List<Residue> getTitratingResidueList(){
+    public List<Residue> getTitratingResidueList() {
         return titratingResidueList;
     }
 
-    public List<Residue> getTautomerizingResidueList(){
+    public List<Residue> getTautomerizingResidueList() {
         return tautomerizingResidueList;
     }
 
-    public List<Residue> getExtendedResidueList(){
+    public List<Residue> getExtendedResidueList() {
         return extendedResidueList;
     }
 
-    public void setTitrationLambda(Residue residue, double lambda){
-        if(titratingResidueList.contains(residue)){
+    public void setTitrationLambda(Residue residue, double lambda) {
+        if (titratingResidueList.contains(residue)) {
             int index = titratingResidueList.indexOf(residue);
             extendedLambdas[index] = lambda;
             thetaPosition[index] = Math.asin(Math.sqrt(lambda));
@@ -371,14 +374,13 @@ public class NewExtendedSystem  {
                 titrationLambdas[atomIndex] = lambda;
             }
             updateListeners();
-        }
-        else{
+        } else {
             logger.warning(format("This residue %s is not titrating.", residue.getName()));
         }
     }
 
-    public void setTautomerLambda(Residue residue, double lambda){
-        if(tautomerizingResidueList.contains(residue)){
+    public void setTautomerLambda(Residue residue, double lambda) {
+        if (tautomerizingResidueList.contains(residue)) {
             // The correct index in the theta arrays for tautomer coordinates is after the titration list.
             // So titrationList.size() + tautomerIndex should match with appropriate spot in thetaPosition, etc.
             int index = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
@@ -390,8 +392,7 @@ public class NewExtendedSystem  {
                 tautomerLambdas[atomIndex] = lambda;
             }
             updateListeners();
-        }
-        else{
+        } else {
             logger.warning(format("This residue %s does not have any titrating tautomers.", residue.getName()));
         }
     }
@@ -413,34 +414,34 @@ public class NewExtendedSystem  {
                 titrationLambdas[i] = extendedLambdas[mappedTitrationIndex];
             }
             if (mappedTautomerIndex != -1) {
-                tautomerLambdas[i] = extendedLambdas[mappedTautomerIndex ];
+                tautomerLambdas[i] = extendedLambdas[mappedTautomerIndex];
             }
         }
         updateListeners();
     }
 
-    public double getBiasEnergy(){
+    public double getBiasEnergy() {
         double totalBiasEnergy = 0.0;
         //Do not double count residues in tautomer list.
-        for(Residue residue : titratingResidueList){
+        for (Residue residue : titratingResidueList) {
             double[] biasTerms = getBiasTerms(residue);
-            double biasEnergy = biasTerms[discrBias] + biasTerms[pHBias] + biasTerms[modelBias];
+            double biasEnergy = biasTerms[discrBiasIndex] + biasTerms[pHBiasIndex] - biasTerms[modelBiasIndex];
             totalBiasEnergy += biasEnergy;
         }
         return totalBiasEnergy;
     }
 
-    public double[] getBiasDerivs(){
-        double[] totalBiasDerivs = new double [extendedResidueList.size()];
-        for (Residue residue : titratingResidueList){
+    public double[] getBiasDerivs() {
+        double[] totalBiasDerivs = new double[extendedResidueList.size()];
+        for (Residue residue : titratingResidueList) {
             int resTitrIndex = titratingResidueList.indexOf(residue);
             double[] biasTerms = getBiasTerms(residue);
             //Sum up titration derivs
-            totalBiasDerivs[resTitrIndex] = biasTerms[dDiscr_dTitr] + biasTerms[dPh_dTitr] + biasTerms[dModel_dTitr];
+            totalBiasDerivs[resTitrIndex] = biasTerms[dDiscr_dTitrIndex] + biasTerms[dPh_dTitrIndex] - biasTerms[dModel_dTitrIndex];
             //Sum up tautomer derivs
-            if(isTautomer(residue)){
+            if (isTautomer(residue)) {
                 int resTautIndex = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
-                totalBiasDerivs[resTautIndex] = biasTerms[dDiscr_dTaut] + biasTerms[dPh_dTaut] + biasTerms[dModel_dTaut];
+                totalBiasDerivs[resTautIndex] = biasTerms[dDiscr_dTautIndex] + biasTerms[dPh_dTautIndex] - biasTerms[dModel_dTautIndex];
             }
         }
         return totalBiasDerivs;
@@ -467,8 +468,6 @@ public class NewExtendedSystem  {
             case ASP:
                 // Discr Bias & Derivs
                 double tautomerLambda = getTautomerLambda(residue);
-                double tautomerLambdaSquared = tautomerLambda * tautomerLambda;
-                double titrationLambdaSquared = titrationLambda * titrationLambda;
                 discrBias = -4.0 * discrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
                 discrBias += -4.0 * discrBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
                 dDiscr_dTitr = -8.0 * discrBiasMag * (titrationLambda - 0.5);
@@ -487,27 +486,15 @@ public class NewExtendedSystem  {
                 // Model Bias & Derivs
                 double refEnergy = TitrationUtils.Titration.ASHtoASP.refEnergy;
                 double lambdaIntercept = TitrationUtils.Titration.ASHtoASP.lambdaIntercept;
-                double coeff0 = 2.0 * (refEnergy - lambdaIntercept);
-                double coeff1 = refEnergy;
-                double coeff2 = -2.0 * refEnergy * lambdaIntercept;
-                // mod(L,x) = a0*L*x^2 + a1*L^2 + a2*L
-                modelBias =  coeff0 * titrationLambda * tautomerLambdaSquared
-                          +  coeff1 * titrationLambdaSquared
-                          +  coeff2 * titrationLambda;
-                // dMod/dL = a0*x^2 + a1*2*L + a2
-                dMod_dTitr = coeff0 * tautomerLambdaSquared
-                           + coeff1 * 2.0 * titrationLambda
-                           + coeff2;
-                // dMod/dx = a0*2*x*L
-                dMod_dTaut = coeff0 * 2 * tautomerLambda * titrationLambda;
+                modelBias = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
+                dMod_dTitr = 2.0 * refEnergy * (titrationLambda - lambdaIntercept);
+                dMod_dTaut = 0.0;
                 break;
             case GLD:
             case GLH:
             case GLU:
                 // Discr Bias & Derivs
                 tautomerLambda = getTautomerLambda(residue);
-                tautomerLambdaSquared = tautomerLambda * tautomerLambda;
-                titrationLambdaSquared = titrationLambda * titrationLambda;
                 discrBias = -4.0 * discrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
                 discrBias += -4.0 * discrBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
                 dDiscr_dTitr = -8.0 * discrBiasMag * (titrationLambda - 0.5);
@@ -526,27 +513,16 @@ public class NewExtendedSystem  {
                 // Model Bias & Derivs
                 refEnergy = TitrationUtils.Titration.GLHtoGLU.refEnergy;
                 lambdaIntercept = TitrationUtils.Titration.GLHtoGLU.lambdaIntercept;
-                coeff0 = 2.0 * (refEnergy - lambdaIntercept);
-                coeff1 = refEnergy;
-                coeff2 = -2.0 * refEnergy * lambdaIntercept;
-                // mod(L,x) = a0*L*x^2 + a1*L^2 + a2*L
-                modelBias =  coeff0 * titrationLambda * tautomerLambdaSquared
-                        +  coeff1 * titrationLambdaSquared
-                        +  coeff2 * titrationLambda;
-                // dMod/dL = a0*x^2 + a1*2*L + a2
-                dMod_dTitr = coeff0 * tautomerLambdaSquared
-                        + coeff1 * 2.0 * titrationLambda
-                        + coeff2;
-                // dMod/dx = a0*2*x*L
-                dMod_dTaut = coeff0 * 2 * tautomerLambda * titrationLambda;
+                modelBias = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
+                dMod_dTitr = 2.0 * refEnergy * (titrationLambda - lambdaIntercept);
+                dMod_dTaut = 0.0;
                 break;
             case HIS:
             case HID:
             case HIE:
                 // Discr Bias & Derivs
                 tautomerLambda = getTautomerLambda(residue);
-                tautomerLambdaSquared = tautomerLambda * tautomerLambda;
-                titrationLambdaSquared = titrationLambda * titrationLambda;
+                double tautomerLambdaSquared = tautomerLambda * tautomerLambda;
                 discrBias = -4.0 * discrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
                 discrBias += -4.0 * discrBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
                 dDiscr_dTitr = -8.0 * discrBiasMag * (titrationLambda - 0.5);
@@ -559,6 +535,7 @@ public class NewExtendedSystem  {
                 pKa2 = TitrationUtils.Titration.HIStoHID.pKa;
                 pHBias = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda)
                         * (tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2 - constantSystemPh));
+                logger.info(format("Log10*R*T: %6.8f", LOG10 * Constants.R * currentTemperature));
                 dPh_dTitr = LOG10 * Constants.R * currentTemperature * -1.0
                         * (tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2 - constantSystemPh));
                 dPh_dTaut = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda)
@@ -574,14 +551,16 @@ public class NewExtendedSystem  {
 
                 double coeff4 = -2 * refEnergyHID * lambdaInterceptHID;
                 double coeff3 = -2 * refEnergyHIE * lambdaInterceptHIE - coeff4;
-                coeff0 = refEnergyHIDtoHIE;
-                coeff1 = -2 * refEnergyHIDtoHIE * lambdaInterceptHIDtoHIE - coeff3;
-                coeff2 = refEnergyHID;
-                modelBias = titrationLambdaSquared * (coeff0 * tautomerLambdaSquared + coeff1 * tautomerLambda + coeff2)
-                          + titrationLambda * (coeff3 * tautomerLambda + coeff4);
-                dMod_dTitr = 2 * titrationLambda * (coeff0 * tautomerLambdaSquared + coeff1 * tautomerLambda + coeff2)
+                double coeff0 = refEnergyHIDtoHIE;
+                double coeff1 = -2 * refEnergyHIDtoHIE * lambdaInterceptHIDtoHIE - coeff3;
+                double coeff2 = refEnergyHID;
+                double oneMinusTitrationLambda = (1 - titrationLambda);
+                double oneMinusTitrationLambdaSquared = (1 - titrationLambda) * (1 - titrationLambda);
+                modelBias = oneMinusTitrationLambdaSquared * (coeff0 * tautomerLambdaSquared + coeff1 * tautomerLambda + coeff2)
+                        + oneMinusTitrationLambda * (coeff3 * tautomerLambda + coeff4);
+                dMod_dTitr = 2 * oneMinusTitrationLambda * (coeff0 * tautomerLambdaSquared + coeff1 * tautomerLambda + coeff2)
                         + (coeff3 * tautomerLambda + coeff4);
-                dMod_dTaut = 2* coeff0 * tautomerLambda * titrationLambdaSquared + coeff1*titrationLambdaSquared + coeff3*titrationLambda;
+                dMod_dTaut = 2 * coeff0 * tautomerLambda * oneMinusTitrationLambdaSquared + coeff1 * oneMinusTitrationLambdaSquared + coeff3 * oneMinusTitrationLambda;
                 break;
             case LYS:
             case LYD:
@@ -632,21 +611,19 @@ public class NewExtendedSystem  {
      *
      * @return a {@link String} object.
      */
-    /*public String getBiasDecomposition() {
-        if (!config.biasTerm) {
-            return "";
-        }
+    public String getBiasDecomposition() {
         double discrBias = 0.0;
         double phBias = 0.0;
+        double modelBias = 0.0;
         for (Residue residue : extendedResidueList) {
-            discrBias += esv.getDiscrBias();
-            if (esv instanceof NewTitrationESV) {
-                phBias += ((NewTitrationESV) esv).getPhBias(currentTemperature);
-            }
+            discrBias += getBiasTerms(residue)[discrBiasIndex];
+            phBias += getBiasTerms(residue)[pHBiasIndex];
+            modelBias -= getBiasTerms(residue)[modelBiasIndex];
         }
         return format("    %-16s %16.8f\n", "Discretizer", discrBias)
-                + format("    %-16s %16.8f\n", "Acidostat", phBias);
-    }*/
+                + format("    %-16s %16.8f\n", "Acidostat", phBias)
+                + format("    %-16s %16.8f\n", "Fmod", modelBias);
+    }
 
     /**
      * getConstantPh.
@@ -705,8 +682,14 @@ public class NewExtendedSystem  {
         }
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < extendedResidueList.size(); i++) {
+            if (i == 0) {
+                sb.append("Titration Lambdas: ");
+            }
             if (i > 0) {
                 sb.append(", ");
+            }
+            if (i == titratingResidueList.size()) {
+                sb.append("\n Tautomer Lambdas: ");
             }
             sb.append(format("%6.4f", extendedLambdas[i]));
         }
@@ -738,7 +721,7 @@ public class NewExtendedSystem  {
     public double[] postForce() {
         double[] dEdL = NewExtendedSystem.this.getBiasDerivs();
         double[] dEdTheta = new double[dEdL.length];
-        for (int i=0; i < extendedResidueList.size(); i++) {
+        for (int i = 0; i < extendedResidueList.size(); i++) {
             dEdTheta[i] = dEdL[i] * sin(2 * thetaPosition[i]);
         }
         return dEdTheta;

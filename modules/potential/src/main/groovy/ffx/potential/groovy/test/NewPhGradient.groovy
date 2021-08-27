@@ -158,10 +158,10 @@ class NewPhGradient extends PotentialScript {
     List<Residue> tautomerResidues = esvSystem.getTautomerizingResidueList()
 
     //energy.attachExtendedSystem(esvSystem)
-    logger.info(format(" Extended system with %d residues.", esvSystem.extendedResidueList.size()))
+    int numESVs = esvSystem.extendedResidueList.size()
+    logger.info(format(" Extended system with %d residues.", numESVs))
 
     // Set all ESV variables to 0.5
-    int numESVs = esvSystem.extendedResidueList.size()
     for (Residue residue : extendedResidues) {
       esvSystem.setTitrationLambda(residue, esvLambda)
       esvSystem.setTautomerLambda(residue, esvLambda)
@@ -422,11 +422,12 @@ class NewPhGradient extends PotentialScript {
     }
 
     if (print) {
-      if (numESVs <= 4) {
+      if (titratingResidues.size() <= 4) {
         String lambdaList = esvSystem.getLambdaList()
         logger.info(format("Lambda List: %s", lambdaList))
         energy.energy(x, true)
-        printPermutations(esvSystem, numESVs, energy, x)
+        logger.info(getBiasDecomposition(esvSystem))
+        printPermutations(esvSystem, titratingResidues.size(), energy, x)
       }
     }
 
@@ -456,6 +457,7 @@ class NewPhGradient extends PotentialScript {
 
         //Add ForceFieldEnergy to hashmap for testing. Protonation endstates used as key in map.
         energy.energy(x, true)
+        logger.info(getBiasDecomposition(esvSystem))
 
         // Bond Energy
         energyAndInteractionList[0] = energy.getBondEnergy()
@@ -502,6 +504,19 @@ class NewPhGradient extends PotentialScript {
         logger.info(format("\n"))
       }
     }
+  }
+
+  private String getBiasDecomposition(NewExtendedSystem esvSystem) {
+    double discrBias = 0.0
+    double phBias = 0.0
+    double modelBias = 0.0
+    for (Residue residue : esvSystem.getTitratingResidueList()) {
+      discrBias += esvSystem.getBiasTerms(residue)[0]
+      phBias += esvSystem.getBiasTerms(residue)[1]
+      modelBias += esvSystem.getBiasTerms(residue)[2]
+      logger.info(format("Residue: %s Fmod Term: %6.8f", residue.name,esvSystem.getBiasTerms(residue)[2]))
+    }
+    return format("    %-16s %16.8f\n", "Discretizer", discrBias)+ format("    %-16s %16.8f\n", "Acidostat", phBias)+ format("    %-16s %16.8f\n", "Fmod", modelBias)
   }
 
   @Override
