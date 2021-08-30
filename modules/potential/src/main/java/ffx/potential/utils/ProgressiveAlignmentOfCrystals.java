@@ -419,7 +419,6 @@ public class ProgressiveAlignmentOfCrystals {
   private double compare(int nAtoms, List<Integer> comparisonAtoms, int nAU, int inflatedAU,
       int numSearch, int numSearch2, boolean force, boolean symmetric, boolean save) {
 
-    logger.finer(format(" Number of copies to compare: %4d", nAU));
     MolecularAssembly baseAssembly = baseFilter.getActiveMolecularSystem();
     MolecularAssembly baseSphere = generateInflatedSphere(baseAssembly, inflatedAU);
 
@@ -436,8 +435,10 @@ public class ProgressiveAlignmentOfCrystals {
     }
 
     if (logger.isLoggable(Level.FINER)) {
-      logger.finer(format(" Number entities in base sphere: %3d", nBaseMols));
+      logger.finer(format(" Number of copies to compare:    %4d", nAU));
+      logger.finer(format(" Number entities in base sphere: %4d", nBaseMols));
     }
+
     // Save coordinates from expanded sphere and save out central molecule coordinates.
     Atom[] baseAtoms = baseSphere.getAtomArray();
 
