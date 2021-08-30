@@ -129,15 +129,18 @@ class SaveAsConstantPhPDB extends PotentialScript {
 
     // Configure the base directory if it has not been set.
     File saveDir = baseDir
-    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
+    logger.info(baseDir.toString())
+    if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
       saveDir = new File(FilenameUtils.getFullPath(filename))
     }
 
-    String dirName = saveDir.toString() + File.separator
-    String fileName = FilenameUtils.getName(filename)
-    fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
-    File modelFile = new File(dirName + fileName)
-
+    String dirName = saveDir.absolutePath + File.separator
+    logger.info("Directory Name: " + dirName)
+    String fileName = FilenameUtils.getBaseName(filename)
+    logger.info("File Name: " + fileName)
+    File modelFile = new File(dirName + fileName + ".pdb")
+    logger.info("Model Name: " + modelFile.toString())
+    modelFile = potentialFunctions.versionFile(modelFile)
 
 
     if (!pdbFilter.writeFile(modelFile, false, false, true)) {
