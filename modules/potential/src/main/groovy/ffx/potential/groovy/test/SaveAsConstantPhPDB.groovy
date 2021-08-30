@@ -135,14 +135,9 @@ class SaveAsConstantPhPDB extends PotentialScript {
 
     String dirName = saveDir.toString() + File.separator
     String fileName = FilenameUtils.getName(filename)
-    File modelFile
-    if (rotamerTitration) {
-      fileName = FilenameUtils.removeExtension(fileName) + ".pdb_1"
-      modelFile = new File(dirName + fileName)
-    } else {
-      fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
-      modelFile = new File(dirName + fileName)
-    }
+    fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
+    File modelFile = new File(dirName + fileName)
+
 
 
     if (!pdbFilter.writeFile(modelFile, false, false, true)) {
