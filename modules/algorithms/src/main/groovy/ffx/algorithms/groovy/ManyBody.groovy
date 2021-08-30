@@ -43,8 +43,9 @@ import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.bonded.Residue
-import ffx.potential.bonded.RotamerLibrary
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3
+import ffx.potential.bonded.*
+import ffx.potential.parsers.PDBFilter
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
@@ -172,11 +173,65 @@ class ManyBody extends AlgorithmsScript {
     }
     rotamerOptimization.optimize(algorithm)
 
+    boolean isTitrating = false
+    Set<Atom> excludeAtoms = new HashSet<>()
+    int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
+    int i = 0
+    for (Residue residue : residueList) {
+      Rotamer rotamer = residue.getRotamers()[optimalRotamers[i++]]
+      RotamerLibrary.applyRotamer(residue, rotamer)
+      if (rotamer.isTitrating) {
+        isTitrating = true
+        AminoAcid3 aa3 = rotamer.aminoAcid3
+        residue.setName(aa3.name())
+        switch (aa3) {
+          case AminoAcid3.HID:
+            // No HE2
+            Atom HE2 = residue.getAtomByName("HE2", true)
+            excludeAtoms.add(HE2)
+            break
+          case AminoAcid3.HIE:
+            // No HD1
+            Atom HD1 = residue.getAtomByName("HD1", true)
+            excludeAtoms.add(HD1)
+            break
+          case AminoAcid3.ASP:
+            // No HD2
+            Atom HD2 = residue.getAtomByName("HD2", true)
+            excludeAtoms.add(HD2)
+            break
+          case AminoAcid3.GLU:
+            // No HE2
+            Atom HE2 = residue.getAtomByName("HE2", true)
+            excludeAtoms.add(HE2)
+            break
+          case AminoAcid3.LYD:
+            // No HZ3
+            Atom HZ3 = residue.getAtomByName("HZ3", true)
+            excludeAtoms.add(HZ3)
+            break
+          default:
+            // Do nothing.
+            break
+        }
+      }
+    }
+
     if (master) {
       File modelFile = saveDirFile(activeAssembly.getFile())
-      algorithmFunctions.saveAsPDB(activeAssembly, modelFile)
+      PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, null, null)
+      if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
+        logger.info(format(" Save failed for %s", activeAssembly))
+      }
       logger.info("\n Final Minimum Energy\n")
-      algorithmFunctions.energy(activeAssembly)
+      ForceFieldEnergy forceFieldEnergy = algorithmFunctions.energy(activeAssembly)
+      double energy = forceFieldEnergy.getTotalEnergy()
+
+      if (isTitrating) {
+        double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList, optimalRotamers)
+        logger.info(format("\n  Rotamer pH Bias    %16.8f", phBias))
+        logger.info(format("  Potential with Bias%16.8f", phBias + energy))
+      }
     }
 
     if (priorGKwarn == null) {
