@@ -97,7 +97,12 @@ class SaveAsConstantPhPDB extends PotentialScript {
       return this
     }
 
-    logger.info("\n Adding constant pH protons to: " + filename + "\n")
+    if (rotamerTitration){
+      logger.info("\n Adding rotamer optimization with titration protons to : " + filename + "\n")
+    } else {
+      logger.info("\n Adding constant pH protons to: " + filename + "\n")
+    }
+
 
     // Read in command line.
     File structureFile = new File(filename)
@@ -117,7 +122,7 @@ class SaveAsConstantPhPDB extends PotentialScript {
     } else {
       pdbFilter.setConstantPH(true)
     }
-    
+
     pdbFilter.readFile()
     pdbFilter.applyAtomProperties()
     activeAssembly.finalize(true, forceField)
@@ -130,8 +135,15 @@ class SaveAsConstantPhPDB extends PotentialScript {
 
     String dirName = saveDir.toString() + File.separator
     String fileName = FilenameUtils.getName(filename)
-    fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
-    File modelFile = new File(dirName + fileName)
+    File modelFile
+    if (rotamerTitration) {
+      fileName = FilenameUtils.removeExtension(fileName) + ".pdb_1"
+      modelFile = new File(dirName + fileName)
+    } else {
+      fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
+      modelFile = new File(dirName + fileName)
+    }
+
 
     if (!pdbFilter.writeFile(modelFile, false, false, true)) {
       logger.info(format(" Save failed for %s", activeAssembly))
