@@ -40,7 +40,7 @@ package ffx.potential.nonbonded;
 import static ffx.numerics.atomic.AtomicDoubleArray.atomicDoubleArrayFactory;
 import static ffx.potential.nonbonded.implicit.DispersionRegion.DEFAULT_DISPERSION_OFFSET;
 import static ffx.potential.parameters.ForceField.toEnumForm;
-import static ffx.potential.parameters.SoluteRadii.applyGKRadii;
+import static ffx.potential.parameters.SoluteType.setSoluteRadii;
 import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.utilities.Constants.dWater;
 import static java.lang.String.format;
@@ -71,8 +71,9 @@ import ffx.potential.nonbonded.implicit.PermanentGKFieldRegion;
 import ffx.potential.nonbonded.implicit.SurfaceAreaRegion;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.SoluteRadii;
 
+import ffx.potential.parameters.SoluteType;
+import ffx.potential.parameters.SoluteType.SOLUTE_RADII_TYPE;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -263,7 +264,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Empirical scaling of the Bondi radii.
      */
-    private double bondiScale;
+    private final double bondiScale;
     /**
      * Volume to surface area cross-over point (A).
      */
@@ -275,7 +276,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * The requested permittivity.
      */
-    private double epsilon;
+    private final double epsilon;
     /**
      * Array of Atoms being considered.
      */
@@ -288,6 +289,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      * Cartesian coordinates of each atom.
      */
     private double[] x, y, z;
+    /**
+     *
+     */
+    private SOLUTE_RADII_TYPE soluteRadiiType;
     /**
      * Base radius of each atom.
      */
@@ -411,11 +416,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Atomic GK field array.
      */
-    private AtomicDoubleArray3D fieldGK;
+    private final AtomicDoubleArray3D fieldGK;
     /**
      * Atomic GK field chain-rule array.
      */
-    private AtomicDoubleArray3D fieldGKCR;
+    private final AtomicDoubleArray3D fieldGKCR;
     /**
      * Neighbor lists for each atom and symmetry operator.
      */
@@ -490,7 +495,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Forces all atoms to be considered during Born radius updates.
      */
-    private boolean nativeEnvironmentApproximation;
+    private final boolean nativeEnvironmentApproximation;
 
     /**
      * Constructor for GeneralizedKirkwood.
@@ -534,8 +539,20 @@ public class GeneralizedKirkwood implements LambdaInterface {
                             atomicDoubleArrayImpl));
         }
 
+        String gkRadius = forceField.getString("GK_RADIUS", "SOLUTE");
+        try {
+            soluteRadiiType = SOLUTE_RADII_TYPE.valueOf(gkRadius.trim().toUpperCase());
+        } catch (Exception e) {
+            soluteRadiiType = SOLUTE_RADII_TYPE.SOLUTE;
+        }
+
         // Define default Bondi scale factor, and HCT overlap scale factors.
-        bondiScale = forceField.getDouble("SOLUTE_SCALE", DEFAULT_SOLUTE_SCALE);
+        if (soluteRadiiType != SOLUTE_RADII_TYPE.SOLUTE) {
+            bondiScale = forceField.getDouble("SOLUTE_SCALE", DEFAULT_SOLUTE_SCALE);
+        } else {
+            // Default Bondi scale factor for Solute Radii is 1.0.
+            bondiScale = forceField.getDouble("SOLUTE_SCALE", 1.0);
+        }
         gkOverlapScale = forceField.getDouble("HCT_SCALE", DEFAULT_HCT_SCALE);
         elementHCTScale = forceField.getBoolean("ELEMENT_HCT_SCALE", false);
         descreenWithVDW = forceField.getBoolean("DESCREEN_VDW", true);
@@ -546,10 +563,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             perfectHCTScale = false;
         }
         descreenOffset = forceField.getDouble("DESCREEN_OFFSET", 0.0);
-        /**
-         * If true, the descreening integral includes the neck correction to better approximate molecular
-         * surface
-         */
+        // If true, the descreening integral includes the neck correction to better approximate molecular surface.
         boolean neckCorrection = forceField.getBoolean("NECK_CORRECTION", false);
         sneck = forceField.getDouble("SNECK", DEFAULT_SNECK);
         chemicallyAwareSneck = forceField.getBoolean("CHEMICALLY_AWARE_SNECK", true);
@@ -594,7 +608,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             nonpolarModel = getNonPolarModel(cavModel);
         } catch (Exception ex) {
             nonpolarModel = NonPolar.NONE;
-            logger.warning(format(" Error parsing non-polar model (set to NONE) %s", ex.toString()));
+            logger.warning(format(" Error parsing non-polar model (set to NONE) %s", ex));
         }
         nonPolar = nonpolarModel;
 
@@ -609,10 +623,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
         cut2 = cutoff * cutoff;
         lambdaTerm = forceField.getBoolean("GK_LAMBDATERM", forceField.getBoolean("LAMBDATERM", false));
 
-    /*
-     If polarization lambda exponent is set to 0.0, then we're running
-     Dual-Topology and the GK energy will be scaled with the overall system lambda value.
-    */
+        /*
+         If polarization lambda exponent is set to 0.0, then we're running
+         Dual-Topology and the GK energy will be scaled with the overall system lambda value.
+        */
         double polLambdaExp = forceField.getDouble("POLARIZATION_LAMBDA_EXPONENT", 3.0);
         if (polLambdaExp == 0.0) {
             lambdaTerm = false;
@@ -731,6 +745,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 new GKEnergyRegion(threadCount, forceField, polarization, nonPolar, surfaceTension, probe);
 
         logger.info("  Continuum Solvation ");
+        logger.info(format("   Radii:                              %8s", soluteRadiiType));
         logger.info(format("   Generalized Kirkwood Cut-Off:       %8.4f (A)", cutoff));
         logger.info(format("   GKC:                                %8.4f",
                 forceField.getDouble("GKC", DEFAULT_GKC)));
@@ -764,7 +779,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
             logger.info(format("    HCT-S:                             %8.4f", hct_s));
         }
 
-        SoluteRadii.logRadiiSource(forceField);
         logger.info(
                 format("   Non-Polar Model:                  %10s", nonPolar.toString().replace('_', '-')));
 
@@ -821,12 +835,18 @@ public class GeneralizedKirkwood implements LambdaInterface {
         if (fixedRadii) {
             return;
         }
+
+        // The solute radii can change during titration based rotamer optimization.
+        applySoluteRadii();
+
+        // Update tanh correction parameters.
+        if (tanhCorrection) {
+            BornTanhRescaling.setBeta0(beta0);
+            BornTanhRescaling.setBeta1(beta1);
+            BornTanhRescaling.setBeta2(beta2);
+        }
+
         try {
-            if (tanhCorrection) {
-                BornTanhRescaling.setBeta0(beta0);
-                BornTanhRescaling.setBeta1(beta1);
-                BornTanhRescaling.setBeta2(beta2);
-            }
             bornRadiiRegion.init(
                     atoms,
                     crystal,
@@ -1178,8 +1198,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
         }
         initAtomArrays();
-        //logger.info("Set HCT Element Scale Factors to: "+elementHCT.get("N")+" "+elementHCT.get("C")+" "+
-        //      elementHCT.get("H")+" "+elementHCT.get("O")+" "+elementHCT.get("P")+" "+elementHCT.get("S"));
     }
 
     /**
@@ -1224,7 +1242,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             try {
                 gaussVol.setRadiiAndVolumes(radii, volume);
             } catch (Exception e) {
-                logger.severe(" Exception creating GaussVol: " + e.toString());
+                logger.severe(" Exception creating GaussVol: " + e);
             }
         }
     }
@@ -1480,10 +1498,56 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         fill(use, true);
 
-        applyGKRadii(forceField, bondiScale, atoms, baseRadius);
+        setSoluteRadii(forceField, atoms, soluteRadiiType);
+        applySoluteRadii();
 
-        // Set default HCT overlap scale factor.
+        if (dispersionRegion != null) {
+            dispersionRegion.allocate(atoms);
+        }
+
+        if (surfaceAreaRegion != null) {
+            surfaceAreaRegion.init();
+        }
+
+        if (chandlerCavitation != null) {
+            GaussVol gaussVol = chandlerCavitation.getGaussVol();
+            if (gaussVol != null) {
+                boolean[] isHydrogen = new boolean[nAtoms];
+                double[] radii = new double[nAtoms];
+                double[] volume = new double[nAtoms];
+                double[] gamma = new double[nAtoms];
+                double fourThirdsPI = 4.0 / 3.0 * PI;
+                int index = 0;
+                for (Atom atom : atoms) {
+                    isHydrogen[index] = atom.isHydrogen();
+                    radii[index] = atom.getVDWType().radius / 2.0;
+                    radii[index] += offset;
+                    volume[index] = fourThirdsPI * pow(radii[index], 3);
+                    gamma[index] = 1.0;
+                    index++;
+                }
+                try {
+                    gaussVol.setGammas(gamma);
+                    gaussVol.setRadiiAndVolumes(radii, volume);
+                    gaussVol.setIsHydrogen(isHydrogen);
+                } catch (Exception e) {
+                    logger.severe(" Exception creating GaussVol: " + e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Apply solute radii definitions used to calculate Born radii.
+     */
+    public void applySoluteRadii() {
+        // Set base radii and default HCT overlap scale factor.
         for (int i = 0; i < nAtoms; i++) {
+            SoluteType soluteType = atoms[i].getSoluteType();
+            if (soluteType == null) {
+                logger.info(format(" No solute type for: %s", atoms[i]));
+            }
+            baseRadius[i] = soluteType.gkDiameter * 0.5 * bondiScale;
             overlapScale[i] = gkOverlapScale;
             // Use element specific HCT scaling factors
             if (elementHCTScale) {
@@ -1499,8 +1563,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 if (elementHCTScaleFactors.get(elementName) != null && notIon) {
                     overlapScale[i] = elementHCTScaleFactors.get(elementName);
                 } else {
-                    logger.info("Element-specific HCT scale factor not found for atom " + i + " of element "
-                            + atomName);
+                    logger.info("Element-specific HCT scale factor not found for atom " + i + " of element " + atomName);
                     overlapScale[i] = gkOverlapScale;
                 }
             }
@@ -1536,7 +1599,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
             }
         }
 
-        // Set up HCT overlap scale factors and any requested radii overrides.
+        // Set up HCT overlap scale factors, descreen radii, and any requested radii overrides.
         for (int i = 0; i < nAtoms; i++) {
             AtomType atomType = atoms[i].getAtomType();
             if (radiiOverride.containsKey(atomType.type)) {
@@ -1544,23 +1607,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 // Remove default bondiFactor, and apply override.
                 baseRadius[i] = baseRadius[i] * override / bondiScale;
                 logger.info(
-                        format(
-                                " Scaling %s (atom type %d) to %7.4f (Bondi factor %7.4f)",
-                                atoms[i], atomType.type, baseRadius[i], override));
+                    format(
+                        " Scaling %s (atom type %d) to %7.4f (Bondi factor %7.4f)",
+                        atoms[i], atomType.type, baseRadius[i], override));
                 descreenRadius[i] = baseRadius[i];
             }
 
             // Apply the descreenWithVDW flag.
             if (descreenWithVDW) {
                 descreenRadius[i] = atoms[i].getVDWType().radius / 2.0;
-
-                // The descreening will be with a scaled size = vdW radius * overlapScale.
-                // double vdwSize = atoms[i].getVDWType().radius / 2.0 * overlapScale[i];
-                // The code will descreen with a fit baseRadius whose size is different from the vdW radius.
-                // Define a per atom "overlapScale" to compensate.
-                // perAtomScaleFactor * baseRadius = vdwSize
-                // perAtomScaleFactor = vdwSize / baseRadius
-                // overlapScale[i] = vdwSize / baseRadius[i];
             }
 
             // Apply the descreenWithHydrogen flag.
@@ -1571,13 +1626,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
         // Set Sneck scaling parameters based on atom type and number of bound non-hydrogen atoms.
         for (int i = 0; i < nAtoms; i++) {
-            int numBoundHeavyAtoms = 0;
-            // Hydrogen atoms aren't used in descreening.
+            // If the overlap scale factor is zero, then so is the neck overlap.
             if (overlapScale[i] == 0.0) {
                 neckScale[i] = 0.0;
             } else {
                 if (chemicallyAwareSneck) {
                     // Determine number of bound heavy atoms for each non-hydrogen atom if chemically aware Sneck is being used
+                    int numBoundHeavyAtoms = 0;
                     for (Atom boundAtom : atoms[i].get12List()) {
                         if (!boundAtom.isHydrogen()) {
                             numBoundHeavyAtoms++;
@@ -1586,48 +1641,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
                     // Use this number to determine Sneck scaling parameter
                     if (numBoundHeavyAtoms == 0) {
                         // Sneck for lone ions or molecules like methane, which are not descreened by any other atoms
-                        neckScale[i] = 1.00;
+                        neckScale[i] = 1.0;
                     } else {
                         neckScale[i] = sneck * (5.0 - numBoundHeavyAtoms) / 4.0;
                     }
                 } else {
                     // Non-chemically aware Sneck - set neckScale to the max (input) Sneck value for all non-hydrogen atoms
                     neckScale[i] = sneck;
-                }
-            }
-        }
-
-        if (dispersionRegion != null) {
-            dispersionRegion.allocate(atoms);
-        }
-
-        if (surfaceAreaRegion != null) {
-            surfaceAreaRegion.init();
-        }
-
-        if (chandlerCavitation != null) {
-            GaussVol gaussVol = chandlerCavitation.getGaussVol();
-            if (gaussVol != null) {
-                boolean[] isHydrogen = new boolean[nAtoms];
-                double[] radii = new double[nAtoms];
-                double[] volume = new double[nAtoms];
-                double[] gamma = new double[nAtoms];
-                double fourThirdsPI = 4.0 / 3.0 * PI;
-                int index = 0;
-                for (Atom atom : atoms) {
-                    isHydrogen[index] = atom.isHydrogen();
-                    radii[index] = atom.getVDWType().radius / 2.0;
-                    radii[index] += offset;
-                    volume[index] = fourThirdsPI * pow(radii[index], 3);
-                    gamma[index] = 1.0;
-                    index++;
-                }
-                try {
-                    gaussVol.setGammas(gamma);
-                    gaussVol.setRadiiAndVolumes(radii, volume);
-                    gaussVol.setIsHydrogen(isHydrogen);
-                } catch (Exception e) {
-                    logger.severe(" Exception creating GaussVol: " + e.toString());
                 }
             }
         }
