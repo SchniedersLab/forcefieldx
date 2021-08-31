@@ -82,14 +82,14 @@ public class TitrationUtils {
 
   /** Constant <code>AspartateAtomNames</code> */
   private enum AspartateAtomNames {
-    CB(0, 0, 0),
-    HB2(1, 1, 1),
-    HB3(1, 1, 1),
-    CG(2, 2, 2),
-    OD1(3, 4, 3),
-    OD2(3, 3, 4),
-    HD1(-1, 5, -1),
-    HD2(-1, -1, 5);
+    CB(0, 0, 0, 0),
+    HB2(1, 1, 1, 0),
+    HB3(1, 1, 1, 0),
+    CG(2, 2, 2, 0),
+    OD1(3, 4, 3, 0),
+    OD2(3, 3, 4, 0),
+    HD1(-1, 5, -1, 1),
+    HD2(-1, -1, 5, -1);
 
     /**
      * Biotype offset relative to the CB biotype for charged aspartate (ASP).
@@ -110,6 +110,8 @@ public class TitrationUtils {
      */
     private final int offsetASH2;
 
+    private final int tautomerDirection;
+
     public int getOffset(AspStates state) {
       if (state == AspStates.ASP) {
         return offsetASP;
@@ -127,10 +129,11 @@ public class TitrationUtils {
      * @param offsetASH1 Biotype relative to the CB biotype for ASH.
      * @param offsetASH2 Biotype relative to the CB biotype for ASH.
      */
-    AspartateAtomNames(int offsetASP, int offsetASH1, int offsetASH2) {
+    AspartateAtomNames(int offsetASP, int offsetASH1, int offsetASH2, int tautomerDirection) {
       this.offsetASP = offsetASP;
       this.offsetASH1 = offsetASH1;
       this.offsetASH2 = offsetASH2;
+      this.tautomerDirection = tautomerDirection;
     }
   }
 
@@ -140,17 +143,17 @@ public class TitrationUtils {
 
   /** Constant <code>GlutamateAtomNames</code> */
   private enum GlutamateAtomNames {
-    CB(0, 0, 0),
-    HB2(1, 1, 1),
-    HB3(1, 1, 1),
-    CG(2, 2, 2),
-    HG2(3, 3, 3),
-    HG3(3, 3, 3),
-    CD(4, 4, 4),
-    OE1(5, 6, 5),
-    OE2(5, 5, 6),
-    HE1(-1, 7, -1),
-    HE2(-1, -1, 7);
+    CB(0, 0, 0, 0),
+    HB2(1, 1, 1, 0),
+    HB3(1, 1, 1, 0),
+    CG(2, 2, 2, 0),
+    HG2(3, 3, 3, 0),
+    HG3(3, 3, 3, 0),
+    CD(4, 4, 4, 0),
+    OE1(5, 6, 5, 0),
+    OE2(5, 5, 6, 0),
+    HE1(-1, 7, -1, 1),
+    HE2(-1, -1, 7, -1);
 
     /**
      * Biotype offset relative to the CB biotype for charged Glutamate (GLU).
@@ -173,6 +176,8 @@ public class TitrationUtils {
      */
     private final int offsetGLH2;
 
+    private final int tautomerDirection;
+
     public int getOffset(GluStates state) {
       if (state == GluStates.GLU) {
         return offsetGLU;
@@ -190,10 +195,11 @@ public class TitrationUtils {
      * @param offsetGLH1 Biotype relative to the CB biotype for GLH.
      * @param offsetGLH2 Biotype relative to the CB biotype for GLH.
      */
-    GlutamateAtomNames(int offsetGLU, int offsetGLH1, int offsetGLH2) {
+    GlutamateAtomNames(int offsetGLU, int offsetGLH1, int offsetGLH2, int tautomerDirection) {
       this.offsetGLU = offsetGLU;
       this.offsetGLH1 = offsetGLH1;
       this.offsetGLH2 = offsetGLH2;
+      this.tautomerDirection = tautomerDirection;
     }
   }
 
