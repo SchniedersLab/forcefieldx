@@ -105,15 +105,22 @@ public class NewExtendedSystem {
      */
     private final boolean[] isTautomerizing;
     /**
-     * Array of doubles that is initialized to match the number of atoms in the molecular assembly.
+     * Array of ints that is initialized to match the number of atoms in the molecular assembly.
      * Elements correspond to residue index in the titratingResidueList. Only set for titrating residues, -1 otherwise.
      */
     private final int[] titrationIndexMap;
     /**
-     * Array of doubles that is initialized to match the number of atoms in the molecular assembly.
+     * Array of ints that is initialized to match the number of atoms in the molecular assembly.
      * Elements correspond to residue index in the tautomerizingResidueList. Only set for tautomerizing residues, -1 otherwise.
      */
     private final int[] tautomerIndexMap;
+    /**
+     * Array of ints that is initialized to match the number of atoms in the molecular assembly.
+     * 1 indicates that the tautomer lambda direction is normal.
+     * 0 indicates that the tautomer lambda direction is reversed (1-x).
+     * -1 indicates that the atom is not a tautomerizing atom.
+     */
+    public final int[] tautomerDirections;
     /**
      * Array of doubles that is initialized to match the number of atoms in the molecular assembly.
      * Only elements that match a titrating atom will have their lambda updated.
@@ -231,6 +238,7 @@ public class NewExtendedSystem {
         tautomerLambdas = new double[atoms.length];
         titrationIndexMap = new int[atoms.length];
         tautomerIndexMap = new int[atoms.length];
+        tautomerDirections = new int[atoms.length];
 
         Arrays.fill(isTitrating, false);
         Arrays.fill(isTautomerizing, false);
@@ -238,6 +246,7 @@ public class NewExtendedSystem {
         Arrays.fill(tautomerLambdas, 1.0);
         Arrays.fill(titrationIndexMap, -1);
         Arrays.fill(tautomerIndexMap, -1);
+        Arrays.fill(tautomerDirections, -1);
 
         // Cycle through each residue to determine if it is titratable or tautomerizing.
         // If a residue is one of these, add to titration or tautomer lists.
@@ -265,6 +274,9 @@ public class NewExtendedSystem {
                         tautomerLambdas[atomIndex] = initialTautomerLambda;
                         int tautomerIndex = tautomerizingResidueList.indexOf(residue);
                         tautomerIndexMap[atomIndex] = tautomerIndex;
+                        /*if(atom.getAtomType()){
+                            tautomerDirections[atomIndex] = 0;
+                        }*/
                     }
                 }
             }
@@ -486,8 +498,8 @@ public class NewExtendedSystem {
                 // Model Bias & Derivs
                 double refEnergy = TitrationUtils.Titration.ASHtoASP.refEnergy;
                 double lambdaIntercept = TitrationUtils.Titration.ASHtoASP.lambdaIntercept;
-                modelBias = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
-                dMod_dTitr = 2.0 * refEnergy * (titrationLambda - lambdaIntercept);
+                modelBias = refEnergy * ((1-titrationLambda) - lambdaIntercept) * ((1-titrationLambda) - lambdaIntercept);
+                dMod_dTitr = -2.0 * refEnergy * ((1-titrationLambda) - lambdaIntercept);
                 dMod_dTaut = 0.0;
                 break;
             case GLD:
@@ -513,8 +525,8 @@ public class NewExtendedSystem {
                 // Model Bias & Derivs
                 refEnergy = TitrationUtils.Titration.GLHtoGLU.refEnergy;
                 lambdaIntercept = TitrationUtils.Titration.GLHtoGLU.lambdaIntercept;
-                modelBias = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
-                dMod_dTitr = 2.0 * refEnergy * (titrationLambda - lambdaIntercept);
+                modelBias = refEnergy * ((1-titrationLambda) - lambdaIntercept) * ((1-titrationLambda) - lambdaIntercept);
+                dMod_dTitr = -2.0 * refEnergy * ((1-titrationLambda) - lambdaIntercept);
                 dMod_dTaut = 0.0;
                 break;
             case HIS:
@@ -535,7 +547,6 @@ public class NewExtendedSystem {
                 pKa2 = TitrationUtils.Titration.HIStoHID.pKa;
                 pHBias = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda)
                         * (tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2 - constantSystemPh));
-                logger.info(format("Log10*R*T: %6.8f", LOG10 * Constants.R * currentTemperature));
                 dPh_dTitr = LOG10 * Constants.R * currentTemperature * -1.0
                         * (tautomerLambda * (pKa1 - constantSystemPh) + (1.0 - tautomerLambda) * (pKa2 - constantSystemPh));
                 dPh_dTaut = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda)
@@ -558,8 +569,8 @@ public class NewExtendedSystem {
                 double oneMinusTitrationLambdaSquared = (1 - titrationLambda) * (1 - titrationLambda);
                 modelBias = oneMinusTitrationLambdaSquared * (coeff0 * tautomerLambdaSquared + coeff1 * tautomerLambda + coeff2)
                         + oneMinusTitrationLambda * (coeff3 * tautomerLambda + coeff4);
-                dMod_dTitr = 2 * oneMinusTitrationLambda * (coeff0 * tautomerLambdaSquared + coeff1 * tautomerLambda + coeff2)
-                        + (coeff3 * tautomerLambda + coeff4);
+                dMod_dTitr = -2 * oneMinusTitrationLambda * (coeff0 * tautomerLambdaSquared + coeff1 * tautomerLambda + coeff2)
+                        - (coeff3 * tautomerLambda + coeff4);
                 dMod_dTaut = 2 * coeff0 * tautomerLambda * oneMinusTitrationLambdaSquared + coeff1 * oneMinusTitrationLambdaSquared + coeff3 * oneMinusTitrationLambda;
                 break;
             case LYS:
@@ -578,8 +589,8 @@ public class NewExtendedSystem {
                 // Model Bias & Derivs
                 refEnergy = TitrationUtils.Titration.LYStoLYD.refEnergy;
                 lambdaIntercept = TitrationUtils.Titration.LYStoLYD.lambdaIntercept;
-                modelBias = refEnergy * (titrationLambda - lambdaIntercept) * (titrationLambda - lambdaIntercept);
-                dMod_dTitr = 2.0 * refEnergy * (titrationLambda - lambdaIntercept);
+                modelBias = refEnergy * ((1-titrationLambda) - lambdaIntercept) * ((1-titrationLambda) - lambdaIntercept);
+                dMod_dTitr = -2.0 * refEnergy * ((1-titrationLambda) - lambdaIntercept);
                 dMod_dTaut = 0.0;
                 break;
             default:

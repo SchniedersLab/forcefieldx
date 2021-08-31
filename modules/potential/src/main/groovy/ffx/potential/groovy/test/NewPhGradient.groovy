@@ -327,11 +327,11 @@ class NewPhGradient extends PotentialScript {
 
     // Check the dU/dL_i analytic results vs. finite-differences for extended system variables.
     // Loop over extended system variables
-    for (int i; i < titratingResidues.size(); i++) {
-      double eMinusTitr
-      double ePlusTitr
-      double eMinusTaut
-      double ePlusTaut
+    for (int i=0; i < titratingResidues.size(); i++) {
+      double eMinusTitr=0.0
+      double ePlusTitr=0.0
+      double eMinusTaut=0.0
+      double ePlusTaut=0.0
       Residue residue = titratingResidues.get(i)
       int tautomerIndex = tautomerResidues.indexOf(residue) + titratingResidues.size()
       // Calculate backward finite difference if very close to lambda=1
@@ -513,8 +513,8 @@ class NewPhGradient extends PotentialScript {
     for (Residue residue : esvSystem.getTitratingResidueList()) {
       discrBias += esvSystem.getBiasTerms(residue)[0]
       phBias += esvSystem.getBiasTerms(residue)[1]
-      modelBias += esvSystem.getBiasTerms(residue)[2]
-      logger.info(format("Residue: %s Fmod Term: %6.8f", residue.name,esvSystem.getBiasTerms(residue)[2]))
+      modelBias -= esvSystem.getBiasTerms(residue)[2]
+      logger.info(format("Residue: %s Fmod Term: %6.8f", residue.name,-esvSystem.getBiasTerms(residue)[2]))
     }
     return format("    %-16s %16.8f\n", "Discretizer", discrBias)+ format("    %-16s %16.8f\n", "Acidostat", phBias)+ format("    %-16s %16.8f\n", "Fmod", modelBias)
   }
