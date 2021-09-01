@@ -104,6 +104,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import ffx.utilities.Resources;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
@@ -3758,6 +3760,7 @@ public class RotamerOptimization implements Terminatable {
       energyWorkerTeam.execute(selfEnergyRegion);
       long singlesTime = System.nanoTime() - energyStartTime;
       logIfMaster(format(" Time for single energies: %12.4g", (singlesTime * 1.0E-9)));
+      Resources.logResources();
 
       if (loaded < 2) {
         eE.allocate2BodyJobMap(residues, nResidues, false);
@@ -3785,9 +3788,11 @@ public class RotamerOptimization implements Terminatable {
       energyWorkerTeam.execute(twoBodyEnergyRegion);
       long pairsTime = System.nanoTime() - (singlesTime + energyStartTime);
 
+
       long triplesTime = 0;
       long quadsTime = 0;
       logIfMaster(format(" Time for 2-body energies:   %12.4g", (pairsTime * 1.0E-9)));
+      Resources.logResources();
 
       if (threeBodyTerm) {
         if (loaded < 3) {
@@ -3815,6 +3820,7 @@ public class RotamerOptimization implements Terminatable {
         energyWorkerTeam.execute(threeBodyEnergyRegion);
         triplesTime = System.nanoTime() - (pairsTime + singlesTime + energyStartTime);
         logIfMaster(format(" Time for 3-Body energies: %12.4g", (triplesTime * 1.0E-9)));
+        Resources.logResources();
       }
 
       if (compute4BodyEnergy) {
