@@ -40,9 +40,6 @@ package ffx.potential.nonbonded.implicit;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.floor;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -51,24 +48,21 @@ import java.util.logging.Logger;
  * Inputs: radius of atom i (rho i) and radius of atom j (rho j) Outputs: Aij and Bij
  * (interpolated/extrapolated from pre-determined tables)
  * <p>
- * Aij and Bij are constants used in the approximation of the 1/r^6 integral over pairwise neck regions described
- * in Aguilar et. al. 2010. The neck integral approximation is as follows:
+ * Aij and Bij are constants used in the approximation of the 1/r^6 integral over pairwise neck
+ * regions described in Aguilar et. al. 2010. The neck integral approximation is as follows:
  * <p>
- *     neck_integral(rij, rho i, rho j) = Aij * (rij - Bij)^4 * (rho i + rho j + 2 * rho w - rij)^4
+ * neck_integral(rij, rho i, rho j) = Aij * (rij - Bij)^4 * (rho i + rho j + 2 * rho w - rij)^4
  * </p>
- * Where rij is the separation distance between atoms i and j with radii rho i and rho j, respectively, and rho w
- * is the radius of water (1.4 A).
+ * Where rij is the separation distance between atoms i and j with radii rho i and rho j,
+ * respectively, and rho w is the radius of water (1.4 A).
  * <p>
- * Aij and Bij are determined for a set of discrete radii based on benchmark PB calculations of the maximum separation
- * distance and neck integral value.
- * Bij is set as 2*(maximum rij) - (rho i + rho j + 2 * rho w) and
- * Aij is set such that the value of the neck integral approximation at the maximum separation distance matches
- * the maximum neck integral value calculated using PB.
+ * Aij and Bij are determined for a set of discrete radii based on benchmark PB calculations of the
+ * maximum separation distance and neck integral value. Bij is set as 2*(maximum rij) - (rho i + rho
+ * j + 2 * rho w) and Aij is set such that the value of the neck integral approximation at the
+ * maximum separation distance matches the maximum neck integral value calculated using PB.
  * <p>
- * Citations:
- *   Aguilar, B.; Shadrach, R.; Onufriev, A. V. Reducing the
- *   secondary structure bias in the generalized Born model via R6 effective
- *   radii. J. Chem. Theory Comput. 2010, 6, 3613−3630.
+ * Citations: Aguilar, B.; Shadrach, R.; Onufriev, A. V. Reducing the secondary structure bias in the
+ * generalized Born model via R6 effective radii. J. Chem. Theory Comput. 2010, 6, 3613−3630.
  *
  * @author Rae A. Corrigan
  * @since 1.0
@@ -87,15 +81,39 @@ public class NeckIntegral {
    * For values outside the studied range, extrapolation is performed. For value within the studied
    * range, but not at stored points, interpolation is performed.
    */
-  private static final List<Double> benchmarkedRadii = new ArrayList<>(
-      Arrays.asList(0.80, 0.85, 0.90, 0.95, 1.00, 1.05, 1.10, 1.15, 1.20, 1.25, 1.30, 1.35, 1.40,
-          1.45, 1.50, 1.55, 1.60, 1.65, 1.70, 1.75, 1.80, 1.85, 1.90, 1.95, 2.00, 2.05, 2.10, 2.15,
-          2.20, 2.25, 2.30, 2.35, 2.40, 2.45, 2.50));
+  private static final double[] radArray = {
+      0.80, 0.85, 0.90, 0.95, 1.00, 1.05, 1.10, 1.15, 1.20, 1.25, 1.30, 1.35, 1.40,
+      1.45, 1.50, 1.55, 1.60, 1.65, 1.70, 1.75, 1.80, 1.85, 1.90, 1.95, 2.00, 2.05,
+      2.10, 2.15, 2.20, 2.25, 2.30, 2.35, 2.40, 2.45, 2.50};
 
   private static final double MINIMUM_RADIUS = 0.80;
   private static final double MAXIMUM_RADIUS = 2.50;
   private static final double SPACING = 0.05;
-  private static final int NUM_POINTS = benchmarkedRadii.size();
+  private static final int NUM_POINTS = radArray.length;
+
+  /**
+   * Get the Table indices based on the supplied radius value.
+   *
+   * @param rho Radius value (A).
+   * @return The Aij/Bij Table indices for one dimension.
+   */
+  private static int[] getBounds(double rho) {
+    double calculateIndex = (rho - MINIMUM_RADIUS) / SPACING;
+    int below = (int) floor(calculateIndex);
+    int above = below + 1;
+
+    if (above >= NUM_POINTS) {
+      // Extrapolate up from the top table values.
+      below = NUM_POINTS - 1;
+      above = NUM_POINTS - 2;
+    } else if (below < 0) {
+      // If below is less than 0, extrapolate down from the bottom table values.
+      below = 0;
+      above = 1;
+    }
+
+    return new int[] {below, above};
+  }
 
 
   /**
@@ -106,7 +124,7 @@ public class NeckIntegral {
    * <p>
    * Usage is as follows: AijAguilarOnufriev[decreened][descreener]
    */
-  private static final double[][] AijAguilarOnufriev = {
+  private static final double[][] Aij = {
       {0.0003097050, 0.0007592239, 0.0005110285, 0.0004876772, 0.0002423650, 0.0000780510,
           0.0000576579, 0.0000566673, 0.0000369030, 0.0000371710, 0.0000262412, 0.0000188790,
           0.0000254270, 0.0000139580, 0.0000137429, 0.0000132076, 0.0000098954, 0.0000059126,
@@ -326,7 +344,7 @@ public class NeckIntegral {
    * Bij is a (non-symmetric) 35x35 array of parameterized constants last updated 09 Apr 21 by Rae
    * Corrigan.
    */
-  private static final double[][] BijAguilarOnufriev = {
+  private static final double[][] Bij = {
       {-1.20, -0.25, -0.30, -0.15, -0.40, -0.85, -0.90, -0.75, -0.80, -0.65, -0.70, -0.75, -0.40,
           -0.65, -0.50, -0.35, -0.40, -0.65, 0.10, -0.15, -0.20, -0.25, 0.10, 0.25, 0.20, 0.15, 0.30,
           0.25, 0.40, 0.55, 0.90, 0.45, 0.40, 0.75, 0.70},
@@ -440,69 +458,28 @@ public class NeckIntegral {
     int[] boundsI = getBounds(rhoDescreened);
     int[] boundsJ = getBounds(rhoDescreening);
 
+    int lowI = boundsI[0];
+    int highI = boundsI[1];
+    int lowJ = boundsJ[0];
+    int highJ = boundsJ[1];
+
     // Interpolate/Extrapolate Aij and Bij constant values
-    double Aij = interpolate(boundsI[0], boundsI[1], boundsJ[0], boundsJ[1],
-        rhoDescreened, rhoDescreening, true);
-    double Bij = interpolate(boundsI[0], boundsI[1], boundsJ[0], boundsJ[1],
-        rhoDescreened, rhoDescreening, false);
+    double aij = interpolate2D(radArray[lowI], radArray[highI], radArray[lowJ], radArray[highJ],
+        rhoDescreened, rhoDescreening, Aij[lowI][lowJ], Aij[highI][lowJ], Aij[lowI][highJ],
+        Aij[highI][highJ]);
+    double bij = interpolate2D(radArray[lowI], radArray[highI], radArray[lowJ], radArray[highJ],
+        rhoDescreened, rhoDescreening, Bij[lowI][lowJ], Bij[highI][lowJ], Bij[lowI][highJ],
+        Bij[highI][highJ]);
 
     // Never let Aij be negative.
-    if (Aij < 0.0) {
-      logger.warning(format(" Aij is less than zero in NeckIntegral for radii: %16.8f %16.8f.", rhoDescreened, rhoDescreening));
-      Aij = 0.0;
+    if (aij < 0.0) {
+      logger.warning(
+          format(" Aij is less than zero in NeckIntegral for radii: %16.8f %16.8f.", rhoDescreened,
+              rhoDescreening));
+      aij = 0.0;
     }
 
-    return new double[] {Aij, Bij};
-  }
-
-  /**
-   * Get the Table indices based on the supplied radius value.
-   *
-   * @param rho Radius value (A).
-   *
-   * @return The Aij/Bij Table indices for one dimension.
-   */
-  private static int[] getBounds(double rho) {
-    double calculateIndex = (rho - MINIMUM_RADIUS) / SPACING;
-    int below = (int) floor(calculateIndex);
-    int above = below + 1;
-
-    if (above >= NUM_POINTS) {
-      // Extrapolate up from the top table values.
-      below = NUM_POINTS - 1;
-      above = NUM_POINTS - 2;
-    } else if (below < 0) {
-      // If below is less than 0, extrapolate down from the bottom table values.
-      below = 0;
-      above = 1;
-    }
-
-    return new int[] {below, above};
-  }
-
-  private static double interpolate(int lowI, int highI, int lowJ, int highJ, double descreenedI, double descreenerJ, boolean Aij) {
-    double constant;
-
-    if (Aij) {
-      // 2D Interpolation of Aij
-      constant = interpolate2D(
-          benchmarkedRadii.get(lowI), benchmarkedRadii.get(highI),
-          benchmarkedRadii.get(lowJ), benchmarkedRadii.get(highJ), descreenedI, descreenerJ,
-          AijAguilarOnufriev[lowI][lowJ],
-          AijAguilarOnufriev[highI][lowJ],
-          AijAguilarOnufriev[lowI][highJ],
-          AijAguilarOnufriev[highI][highJ]);
-    } else {
-      // 2D Interpolation of Bij
-      constant = interpolate2D(
-          benchmarkedRadii.get(lowI), benchmarkedRadii.get(highI),
-          benchmarkedRadii.get(lowJ), benchmarkedRadii.get(highJ), descreenedI, descreenerJ,
-          BijAguilarOnufriev[lowI][lowJ],
-          BijAguilarOnufriev[highI][lowJ],
-          BijAguilarOnufriev[lowI][highJ],
-          BijAguilarOnufriev[highI][highJ]);
-    }
-    return constant;
+    return new double[] {aij, bij};
   }
 
   private static double interpolate1D(double y1, double y2, double y, double fxy1, double fxy2) {

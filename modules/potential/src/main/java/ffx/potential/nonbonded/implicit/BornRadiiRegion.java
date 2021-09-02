@@ -311,19 +311,22 @@ public class BornRadiiRegion extends ParallelRegion {
           if (!nativeEnvironmentApproximation && !use[i]) {
             continue;
           }
-          final double baseRi = max(baseRadius[i], descreenRadius[i]) + descreenOffset;
+          final double integralStartI = max(baseRadius[i], descreenRadius[i]) + descreenOffset;
           final double descreenRi = descreenRadius[i];
           final double xi = x[i];
           final double yi = y[i];
           final double zi = z[i];
           int[] list = neighborLists[iSymOp][i];
           for (int k : list) {
-            final double baseRk = max(baseRadius[k], descreenRadius[k]) + descreenOffset;
+            final double integralStartK = max(baseRadius[k], descreenRadius[k]) + descreenOffset;
             final double descreenRk = descreenRadius[k];
-            assert (descreenRk > 0.0);
             if (!nativeEnvironmentApproximation && !use[k]) {
               continue;
             }
+
+            // No necks will be computed unless the overlapScale is greater than 0.0 (e.g., for hydrogen).
+            double mixedNeckScale = 0.5 * (neckScale[i] + neckScale[k]);
+
             if (i != k) {
               final double xr = xyz[0][k] - xi;
               final double yr = xyz[1][k] - yi;
@@ -335,22 +338,22 @@ public class BornRadiiRegion extends ParallelRegion {
               final double r = sqrt(r2);
               // Atom i being descreeened by atom k.
               double sk = overlapScale[k];
-              // Non-descreening atoms (such as hydrogens) will have an sk of 0.0
+              // Non-descreening atoms (such as hydrogen) will have an sk of 0.0
               if (sk > 0.0) {
-                double descreenIK = descreen(r, r2, baseRi, descreenRk, sk);
+                double descreenIK = descreen(r, r2, integralStartI, descreenRk, sk);
                 localBorn[i] += descreenIK;
                 if (neckCorrection) {
-                  localBorn[i] += neckDescreen(r, baseRi, descreenRk, neckScale[i]);
+                  localBorn[i] += neckDescreen(r, integralStartI, descreenRk, mixedNeckScale);
                 }
               }
 
               // Atom k being descreeened by atom i.
               double si = overlapScale[i];
               if (si > 0.0) {
-                double descreenKI = descreen(r, r2, baseRk, descreenRi, si);
+                double descreenKI = descreen(r, r2, integralStartK, descreenRi, si);
                 localBorn[k] += descreenKI;
                 if (neckCorrection) {
-                  localBorn[k] += neckDescreen(r, baseRk, descreenRi, neckScale[k]);
+                  localBorn[k] += neckDescreen(r, integralStartK, descreenRi, mixedNeckScale);
                 }
               }
 
@@ -366,9 +369,9 @@ public class BornRadiiRegion extends ParallelRegion {
               // Atom i being descreeened by atom k.
               double sk = overlapScale[k];
               if (sk > 0.0) {
-                localBorn[i] += descreen(r, r2, baseRi, descreenRk, sk);
+                localBorn[i] += descreen(r, r2, integralStartI, descreenRk, sk);
                 if (neckCorrection) {
-                  localBorn[i] += neckDescreen(r, baseRi, descreenRk, neckScale[i]);
+                  localBorn[i] += neckDescreen(r, integralStartI, descreenRk, mixedNeckScale);
                 }
               }
               // For symmetry mates, atom k is not descreeened by atom i.
