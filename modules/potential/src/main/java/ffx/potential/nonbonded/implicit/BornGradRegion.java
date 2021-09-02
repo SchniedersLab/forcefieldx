@@ -297,7 +297,7 @@ public class BornGradRegion extends ParallelRegion {
                         throw new EnergyException(
                                 format(" %s\n Born radii CR %d %8.3f", atoms[i], i, bornGrad), true);
                     }
-                    final double baseRi = max(baseRadius[i], descreenRadius[i]) + descreenOffset;
+                    final double integralStartI = max(baseRadius[i], descreenRadius[i]) + descreenOffset;
                     final double descreenRi = descreenRadius[i];
                     final double xi = x[i];
                     final double yi = y[i];
@@ -308,8 +308,10 @@ public class BornGradRegion extends ParallelRegion {
                         if (!nativeEnvironmentApproximation && !use[k]) {
                             continue;
                         }
-                        final double baseRk = max(baseRadius[k], descreenRadius[k]) + descreenOffset;
+                        final double integralStartK = max(baseRadius[k], descreenRadius[k]) + descreenOffset;
                         final double descreenRk = descreenRadius[k];
+                        double mixedNeckScale =  0.5 * (neckScale[i] + neckScale[k]);
+
                         if (k != i) {
                             dx_local[0] = xyz[0][k] - xi;
                             dx_local[1] = xyz[1][k] - yi;
@@ -326,18 +328,14 @@ public class BornGradRegion extends ParallelRegion {
                             // Atom i being descreeened by atom k.
                             double sk = overlapScale[k];
                             if (sk > 0.0 && rbi < 50.0 && descreenRk > 0.0) {
-                                double de = descreenDerivative(r, r2, baseRi, descreenRk, sk);
-                                // TODO: Add neck contribution to atom i being descreeened by atom k.
+                                double de = descreenDerivative(r, r2, integralStartI, descreenRk, sk);
                                 if (neckCorrection) {
-                                    //logger.info("Neck Correction true in BornGradRegion");
-                                    de += neckDescreenDerivative(r, baseRi, descreenRk, neckScale[i]);
+                                    de += neckDescreenDerivative(r, integralStartI, descreenRk, mixedNeckScale);
                                 }
                                 if (isInfinite(de) || isNaN(de)) {
-                                    logger.warning(
-                                            format(" Born radii chain rule term is unstable %d %d %16.8f", i, k, de));
+                                    logger.warning(format(" Born radii chain rule term is unstable %d %d %16.8f", i, k, de));
                                 }
                                 double dbr = term[i] * de / r;
-                                //double dbr = termi * de / r;
                                 de = dbr * sharedBornGrad.get(i);
                                 incrementGradient(i, k, de, xr, yr, zr, transOp);
                             }
@@ -346,18 +344,14 @@ public class BornGradRegion extends ParallelRegion {
                             double rbk = born[k];
                             double si = overlapScale[i];
                             if (si > 0.0 && rbk < 50.0 && descreenRi > 0.0) {
-                                double de = descreenDerivative(r, r2, baseRk, descreenRi, si);
-                                // TODO: Add neck contribution to atom k being descreeened by atom i.
+                                double de = descreenDerivative(r, r2, integralStartK, descreenRi, si);
                                 if (neckCorrection) {
-                                    //logger.info("Neck Correction true in BornGradRegion");
-                                    de += neckDescreenDerivative(r, baseRk, descreenRi, neckScale[k]);
+                                    de += neckDescreenDerivative(r, integralStartK, descreenRi, mixedNeckScale);
                                 }
                                 if (isInfinite(de) || isNaN(de)) {
-                                    logger.warning(
-                                            format(" Born radii chain rule term is unstable %d %d %16.8f", k, i, de));
+                                    logger.warning(format(" Born radii chain rule term is unstable %d %d %16.8f", k, i, de));
                                 }
                                 double dbr = term[k] * de / r;
-                                //double dbr = termk * de / r;
                                 de = dbr * sharedBornGrad.get(k);
                                 incrementGradient(i, k, de, xr, yr, zr, transOp);
                             }
@@ -373,11 +367,9 @@ public class BornGradRegion extends ParallelRegion {
                                 final double zr = dx_local[2];
                                 final double r = sqrt(r2);
                                 // Atom i being descreeened by atom k.
-                                double de = descreenDerivative(r, r2, baseRi, descreenRk, sk);
-                                // TODO: Add neck contribution to atom i being descreeened by atom k.
+                                double de = descreenDerivative(r, r2, integralStartI, descreenRk, sk);
                                 if (neckCorrection) {
-                                    //logger.info("Neck Correction true in BornGradRegion");
-                                    de += neckDescreenDerivative(r, baseRi, descreenRk, neckScale[i]);
+                                    de += neckDescreenDerivative(r, integralStartI, descreenRk, mixedNeckScale);
                                 }
                                 if (isInfinite(de) || isNaN(de)) {
                                     logger.warning(
@@ -385,7 +377,6 @@ public class BornGradRegion extends ParallelRegion {
                                                     k, de));
                                 }
                                 double dbr = term[i] * de / r;
-                                //double dbr = termi * de / r;
                                 de = dbr * sharedBornGrad.get(i);
                                 incrementGradient(i, k, de, xr, yr, zr, transOp);
                                 // For symmetry mates, atom k is not descreeened by atom i.

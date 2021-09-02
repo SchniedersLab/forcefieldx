@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.logging.Logger;
 import javax.swing.tree.TreeNode;
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Material;
@@ -59,6 +60,8 @@ import org.jogamp.vecmath.Color3f;
  * @since 1.0
  */
 public class Polymer extends MSGroup {
+
+  private static final Logger logger = Logger.getLogger(Polymer.class.getName());
 
   /** Constant <code>polymerColor</code> */
   private static final Map<Integer, Color3f> polymerColor = new HashMap<>();
@@ -350,25 +353,24 @@ public class Polymer extends MSGroup {
    *     creating Ramachandran plots
    */
   public List<List<Torsion>> getPhiPsiList() {
-    MSNode dihedrals;
-    ListIterator<MSNode> li, lj;
     List<List<Torsion>> phipsi = new ArrayList<>();
     List<Torsion> phi = new ArrayList<>();
     List<Torsion> psi = new ArrayList<>();
     phipsi.add(phi);
     phipsi.add(psi);
-    MSNode joints = getTermNode();
-    for (li = joints.getChildListIterator(); li.hasNext(); ) {
-      dihedrals = ((Joint) li.next()).getTorsions();
-      for (lj = dihedrals.getChildListIterator(); lj.hasNext(); ) {
-        Torsion d = (Torsion) lj.next();
-        String s = d.getID();
+    for (Residue residue : this.getResidues()) {
+      for (Torsion torsion : residue.getTorsionList()) {
+        Atom[] atoms = torsion.atoms;
+        StringBuilder s = new StringBuilder(atoms[0].getName());
+        for (int i=1; i<4; i++) {
+          s.append("-").append(atoms[i].getName());
+        }
         // Phi
-        if (s.equals("C-N-CA-C") || s.equals("C-CA-N-C")) {
-          phi.add(d);
+        if (s.toString().equals("C-N-CA-C") || s.toString().equals("C-CA-N-C")) {
+          phi.add(torsion);
         } // Psi
-        else if (s.equals("N-C-CA-N") || s.equals("N-CA-C-N")) {
-          psi.add(d);
+        else if (s.toString().equals("N-C-CA-N") || s.toString().equals("N-CA-C-N")) {
+          psi.add(torsion);
         }
       }
     }
