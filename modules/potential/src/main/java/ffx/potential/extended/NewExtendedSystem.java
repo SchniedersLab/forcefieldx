@@ -99,6 +99,8 @@ public class NewExtendedSystem {
      * noting whether the atom is titrating.
      */
     private final boolean[] isTitrating;
+
+    private final boolean[] isTitratingHydrogen;
     /**
      * Array of booleans that is initialized to match the number of atoms in the molecular assembly
      * noting whether the atom is tautomerizing.
@@ -233,6 +235,7 @@ public class NewExtendedSystem {
         Atom[] atoms = mola.getAtomArray();
 
         isTitrating = new boolean[atoms.length];
+        isTitratingHydrogen = new boolean[atoms.length];
         isTautomerizing = new boolean[atoms.length];
         titrationLambdas = new double[atoms.length];
         tautomerLambdas = new double[atoms.length];
@@ -241,12 +244,13 @@ public class NewExtendedSystem {
         tautomerDirections = new int[atoms.length];
 
         Arrays.fill(isTitrating, false);
+        Arrays.fill(isTitratingHydrogen, false);
         Arrays.fill(isTautomerizing, false);
         Arrays.fill(titrationLambdas, 1.0);
         Arrays.fill(tautomerLambdas, 1.0);
         Arrays.fill(titrationIndexMap, -1);
         Arrays.fill(tautomerIndexMap, -1);
-        Arrays.fill(tautomerDirections, -1);
+        Arrays.fill(tautomerDirections, 0);
 
         // Cycle through each residue to determine if it is titratable or tautomerizing.
         // If a residue is one of these, add to titration or tautomer lists.
@@ -264,6 +268,7 @@ public class NewExtendedSystem {
                     titrationLambdas[atomIndex] = initialTitrationLambda;
                     int titrationIndex = titratingResidueList.indexOf(residue);
                     titrationIndexMap[atomIndex] = titrationIndex;
+                    isTitratingHydrogen[atomIndex] = TitrationUtils.isTitratingHydrogen(residue.getAminoAcid3(), atom);
                 }
                 // If is a tautomer, it must also be titrating.
                 if (isTautomer(residue)) {
@@ -274,9 +279,7 @@ public class NewExtendedSystem {
                         tautomerLambdas[atomIndex] = initialTautomerLambda;
                         int tautomerIndex = tautomerizingResidueList.indexOf(residue);
                         tautomerIndexMap[atomIndex] = tautomerIndex;
-                        /*if(atom.getAtomType()){
-                            tautomerDirections[atomIndex] = 0;
-                        }*/
+                        tautomerDirections[atomIndex] = TitrationUtils.getTitratingHydrogenDirection(residue.getAminoAcid3(), atom);
                     }
                 }
             }
@@ -317,6 +320,10 @@ public class NewExtendedSystem {
 
     public boolean isTitrating(int atomIndex) {
         return isTitrating[atomIndex];
+    }
+
+    public boolean isTitratingHydrogen(int atomIndex) {
+        return isTitratingHydrogen[atomIndex];
     }
 
     public boolean isTautomerizing(int atomIndex) {
@@ -422,10 +429,10 @@ public class NewExtendedSystem {
         for (int i = 0; i < molecularAssembly.getAtomArray().length; i++) {
             int mappedTitrationIndex = titrationIndexMap[i];
             int mappedTautomerIndex = tautomerIndexMap[i] + titratingResidueList.size();
-            if (mappedTitrationIndex != -1) {
+            if (isTitrating(i) && mappedTitrationIndex != -1) {
                 titrationLambdas[i] = extendedLambdas[mappedTitrationIndex];
             }
-            if (mappedTautomerIndex != -1) {
+            if (isTautomerizing(i) && mappedTautomerIndex >= titratingResidueList.size()) {
                 tautomerLambdas[i] = extendedLambdas[mappedTautomerIndex];
             }
         }

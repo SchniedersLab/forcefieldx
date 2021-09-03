@@ -42,7 +42,6 @@ import static ffx.potential.bonded.BondedUtils.findAtomType;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.log;
 
-import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
@@ -253,20 +252,20 @@ public class TitrationUtils {
   /** Constant <code>HistidineAtoms</code> */
   public enum HistidineAtomNames {
     // HIS, HID, HIE
-    CB(0, 0, 0),
-    HB2(1, 1, 1),
-    HB3(1, 1, 1),
-    CG(2, 2, 2),
-    ND1(3, 3, 3),
+    CB (0, 0, 0, 0),
+    HB2(1, 1, 1, 0),
+    HB3(1, 1, 1, 0),
+    CG (2, 2, 2, 0),
+    ND1(3, 3, 3, 0),
     // No HD1 proton for HIE; HIE HD1 offset is -1.
-    HD1(4, 4, -1),
-    CD2(5, 5, 4),
-    HD2(6, 6, 5),
-    CE1(7, 7, 6),
-    HE1(8, 8, 7),
-    NE2(9, 9, 8),
+    HD1(4, 4, -1, -1),
+    CD2(5, 5, 4, 0),
+    HD2(6, 6, 5, 0),
+    CE1(7, 7, 6, 0),
+    HE1(8, 8, 7, 0),
+    NE2(9, 9, 8, 0),
     // No HE2 proton for HID; HID HE2 offset is -1
-    HE2(10, -1, 9);
+    HE2(10, -1, 9, 1);
 
     /**
      * Biotype offset relative to the CB biotype for charged histidine (HIS).
@@ -289,6 +288,8 @@ public class TitrationUtils {
      */
     private final int offsetHIE;
 
+    private int tautomerDirection;
+
     public int getOffsetHIS(HisStates state) {
       if (state == HisStates.HIS) {
         return offsetHIS;
@@ -306,10 +307,11 @@ public class TitrationUtils {
      * @param offsetHID Biotype relative to the CB biotype for HID.
      * @param offsetHIE Biotype relative to the CB biotype for HIE.
      */
-    HistidineAtomNames(int offsetHIS, int offsetHID, int offsetHIE) {
+    HistidineAtomNames(int offsetHIS, int offsetHID, int offsetHIE, int tautomerDirection) {
       this.offsetHIS = offsetHIS;
       this.offsetHID = offsetHID;
       this.offsetHIE = offsetHIE;
+      this.tautomerDirection = tautomerDirection;
     }
   }
 
@@ -675,6 +677,91 @@ public class TitrationUtils {
     }
   }
 
+  public double getVdwPrefactor(AminoAcid3 AA3, boolean isTitratingHydrogen, double titrationLambda,
+                                double tautomerLambda, int tautomerDirection) {
+    double prefactor = 1.0;
+    if (isTitratingHydrogen) {
+      switch (AA3) {
+        case ASD:
+        case GLD:
+          if (tautomerDirection == 1) {
+            prefactor = titrationLambda * tautomerLambda;
+          } else if (tautomerDirection == -1) {
+            prefactor = titrationLambda * (1 - tautomerLambda);
+          }
+          break;
+        case HIS:
+          if (tautomerDirection == 1) {
+            prefactor = (1 - titrationLambda) * tautomerLambda + titrationLambda;
+          } else if (tautomerDirection == -1) {
+            prefactor = (1 - titrationLambda) * (1 - tautomerLambda) + titrationLambda;
+          }
+          break;
+        case LYS:
+          prefactor = titrationLambda;
+          break;
+      }
+    }
+    return prefactor;
+  }
+
+  public static boolean isTitratingHydrogen(AminoAcid3 aminoAcid3, Atom atom){
+    boolean isTitratingHydrogen = false;
+    String atomName = atom.getName();
+    switch (aminoAcid3) {
+      case ASD:
+        if (atomName.equals(AspartateAtomNames.HD1.name()) || atomName.equals(AspartateAtomNames.HD2.name())) {
+          isTitratingHydrogen = true;
+        }
+        break;
+      case GLD:
+        if (atomName.equals(GlutamateAtomNames.HE1.name()) || atomName.equals(GlutamateAtomNames.HE2.name())) {
+          isTitratingHydrogen = true;
+        }
+        break;
+      case HIS:
+        if (atomName.equals(HistidineAtomNames.HD1.name()) || atomName.equals(HistidineAtomNames.HE2.name())) {
+          isTitratingHydrogen = true;
+        }
+        break;
+      case LYS:
+        if (atomName.equals(LysineAtomNames.HZ3.name())) {
+          isTitratingHydrogen = true;
+        }
+        break;
+    }
+    return isTitratingHydrogen;
+  }
+
+  public static int getTitratingHydrogenDirection(AminoAcid3 aminoAcid3, Atom atom) {
+    int tautomerDirection = 0;
+    String atomName = atom.getName();
+    switch (aminoAcid3) {
+      case ASD:
+        if (atomName.equals(AspartateAtomNames.HD1.name())) {
+          tautomerDirection = AspartateAtomNames.HD1.tautomerDirection;
+        } else if (atomName.equals(AspartateAtomNames.HD2.name())) {
+          tautomerDirection = AspartateAtomNames.HD2.tautomerDirection;
+        }
+        break;
+      case GLD:
+        if (atomName.equals(GlutamateAtomNames.HE1.name())) {
+          tautomerDirection = GlutamateAtomNames.HE1.tautomerDirection;
+        } else if (atomName.equals(GlutamateAtomNames.HE2.name())) {
+          tautomerDirection = GlutamateAtomNames.HE2.tautomerDirection;
+        }
+        break;
+      case HIS:
+        if (atomName.equals(HistidineAtomNames.HD1.name())) {
+          tautomerDirection = HistidineAtomNames.HD1.tautomerDirection;
+        } else if (atomName.equals(HistidineAtomNames.HE2.name())) {
+          tautomerDirection = HistidineAtomNames.HE2.tautomerDirection;
+        }
+        break;
+    }
+    return tautomerDirection;
+  }
+
   private void constructHISState(int biotypeCB, HisStates hisState) {
     int state = hisState.ordinal();
     for (HistidineAtomNames atomName : HistidineAtomNames.values()) {
@@ -905,6 +992,13 @@ public class TitrationUtils {
   /**
    * Amino acid protonation reactions. Constructors below specify intrinsic pKa and reference free
    * energy of protonation, obtained via (OST) metadynamics on capped monomers.
+   * pKa values from
+   *    Nozaki, Yasuhiko, and Charles Tanford. "[84] Examination of titration behavior."
+   *    Methods in enzymology. Vol. 11. Academic Press, 1967. 715-734.
+   *
+   * HIS to HID/HIE pKa values from
+   *    Bashford, Donald, et al. "Electrostatic calculations of side-chain pKa values in myoglobin and comparison with NMR data for histidines."
+   *    Biochemistry 32.31 (1993): 8045-8056.
    */
   public enum Titration {
     //ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
