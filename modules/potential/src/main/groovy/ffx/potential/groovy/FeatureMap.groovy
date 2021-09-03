@@ -1,10 +1,3 @@
-import ffx.potential.GetProteinFeatures
-import ffx.potential.bonded.AminoAcidUtils
-import ffx.potential.bonded.Residue
-import ffx.potential.cli.PotentialScript
-import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine
-
 //******************************************************************************
 //
 // Title:       Force Field X.
@@ -42,11 +35,20 @@ import picocli.CommandLine
 // exception statement from your version.
 //
 //******************************************************************************
+
+import ffx.potential.bonded.Polymer
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
-
+import ffx.potential.GetProteinFeatures
+import ffx.potential.bonded.AminoAcidUtils
+import ffx.potential.bonded.Residue
+import ffx.potential.cli.PotentialScript
+import org.apache.commons.io.FilenameUtils
+import picocli.CommandLine
 import java.nio.file.Files
 import java.nio.file.Paths
+import ffx.potential.bonded.Torsion
+
 
 
 @Command(description = " Create a Feature Map for a given protein structure", name = "ffxc ffx.potential.FeatureMap")
@@ -100,42 +102,28 @@ class FeatureMap extends PotentialScript {
 
         residues = activeAssembly.getResidueList()
 
-        GetProteinFeatures getProteinFeatures = new GetProteinFeatures()
-        /*int resNum = residue.getResidueNumber
-        int numRes = residues.size()
-        polarity = new int[numRes]
-        acidity = new int[numRes]
-        secondaryStructure = new int[numRes]
-        surfaceArea = new int[numRes]*/
+        Polymer polymer = activeAssembly.getChain("a")
+        List<List<Torsion>> torsions = polymer.getPhiPsiList()
+        GetProteinFeatures getProteinFeatures = new GetProteinFeatures(torsions)
+
 
         String fileDir = FilenameUtils.getFullPath(filename).replace("filename", "")
         String baseName = FilenameUtils.getBaseName(filename)
         String featureFileName = fileDir + baseName + ".csv"
-        /*(PrintWriter writer = new PrintWriter(
-                Files.newBufferedWriter(Paths.get(featureFileName)))) {
-                for (int i = 0; i < residues.size(); i++){
-                    getProteinFeatures.setFeatures(residues.get(i))
-                    String[] features = getProteinFeatures.getFeatures()
-                    for (int j=0; j<features.length; j++){
-                        writer.printf("%1\$20s\\t%2\$3s\\t\\t%3\$3s\\t\\t%4\$3s")
-                    }
-                }
-        }*/
-
         try {
             FileWriter fos = new FileWriter(featureFileName)
             PrintWriter dos = new PrintWriter(fos)
-            dos.println("Residue\t\tPosition\t\tPolarity\t\tAcidity\t\tSecondary Structure\t\tSurface Area")
+            dos.println("Residue\tPosition\tPolarity\tAcidity\tSecondary Structure\tSurface Area")
             for (int i = 0; i < residues.size(); i++) {
-                getProteinFeatures.setFeatures(residues.get(i))
+                getProteinFeatures.saveFeatures(residues.get(i), i)
                 String[] features = getProteinFeatures.getFeatures()
-                dos.printf("%120s\t%23s\t\t%33s\t\t%43s",
-                        features[0], features[1], features[2], features[3])
+                for (int j=0; j<features.length; j++){
+                    dos.print(features[j] + "\t")
+                }
+                dos.println()
             }
             dos.close()
             fos.close()
-
-
         } catch (IOException e) {
             logger.info("Could Not Write Tab Delimited File")
         }
