@@ -115,7 +115,7 @@ class FeatureMap extends PotentialScript {
             PrintWriter dos = new PrintWriter(fos)
             dos.println("Residue\tPosition\tPolarity\tAcidity\tSecondary Structure\tSurface Area")
             for (int i = 0; i < residues.size(); i++) {
-                getProteinFeatures.saveFeatures(residues.get(i), i)
+                getProteinFeatures.saveFeatures(residues.get(i))
                 String[] features = getProteinFeatures.getFeatures()
                 for (int j=0; j<features.length; j++){
                     dos.print(features[j] + "\t")
