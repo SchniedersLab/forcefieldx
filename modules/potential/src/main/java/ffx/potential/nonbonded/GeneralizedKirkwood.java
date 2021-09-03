@@ -1657,7 +1657,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         for(int i = 0; i < nAtoms; i++){
             if(atoms[i].isHydrogen()){
                 int heavyAtomIndex = atoms[i].get12List().get(0).getIndex();
-                neckScale[i] = neckScale[heavyAtomIndex];
+                neckScale[i] = neckScale[heavyAtomIndex-1];
             }
         }
     }
