@@ -1651,6 +1651,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 }
             }
         }
+        // Set hydrogen atom neck scaling factors to match those of their heavy atom binding partner
+        // By default, hydrogen atoms don't descreen other atoms, but when they are descreened, their
+        //    contribution to the mixed neck value should match that of the heavy atom they're bound to
+        for(int i = 0; i < nAtoms; i++){
+            if(atoms[i].isHydrogen()){
+                int heavyAtomIndex = atoms[i].get12List().get(0).getIndex();
+                neckScale[i] = neckScale[heavyAtomIndex];
+            }
+        }
     }
 
     public void setSneck(double sneck_input) {
