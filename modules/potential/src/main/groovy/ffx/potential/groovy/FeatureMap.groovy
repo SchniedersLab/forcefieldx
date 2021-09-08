@@ -101,10 +101,7 @@ class FeatureMap extends PotentialScript {
         }
 
         residues = activeAssembly.getResidueList()
-
-        Polymer polymer = activeAssembly.getChain("a")
-        List<List<Torsion>> torsions = polymer.getPhiPsiList()
-        GetProteinFeatures getProteinFeatures = new GetProteinFeatures(torsions)
+        GetProteinFeatures getProteinFeatures = new GetProteinFeatures()
 
 
         String fileDir = FilenameUtils.getFullPath(filename).replace("filename", "")
@@ -113,7 +110,7 @@ class FeatureMap extends PotentialScript {
         try {
             FileWriter fos = new FileWriter(featureFileName)
             PrintWriter dos = new PrintWriter(fos)
-            dos.println("Residue\tPosition\tPolarity\tAcidity\tSecondary Structure\tSurface Area")
+            dos.println("Residue\tPosition\tPolarity\tAcidity\tSecondary Structure\tPhi\tPsi\tSurface Area")
             for (int i = 0; i < residues.size(); i++) {
                 getProteinFeatures.saveFeatures(residues.get(i))
                 String[] features = getProteinFeatures.getFeatures()
