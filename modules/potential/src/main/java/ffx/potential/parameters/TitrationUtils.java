@@ -677,32 +677,48 @@ public class TitrationUtils {
     }
   }
 
-  public double getVdwPrefactor(AminoAcid3 AA3, boolean isTitratingHydrogen, double titrationLambda,
+  public double[] getVdwPrefactor(AminoAcid3 AA3, boolean isTitratingHydrogen, double titrationLambda,
                                 double tautomerLambda, int tautomerDirection) {
+    double[] vdwPrefactorAndDerivs = new double[3];
     double prefactor = 1.0;
+    double titrationDeriv = 0.0;
+    double tautomerDeriv = 0.0;
     if (isTitratingHydrogen) {
       switch (AA3) {
         case ASD:
         case GLD:
           if (tautomerDirection == 1) {
             prefactor = titrationLambda * tautomerLambda;
+            titrationDeriv = tautomerLambda;
+            tautomerDeriv = titrationLambda;
           } else if (tautomerDirection == -1) {
-            prefactor = titrationLambda * (1 - tautomerLambda);
+            prefactor = titrationLambda * (1.0 - tautomerLambda);
+            titrationDeriv = (1.0 - tautomerLambda);
+            tautomerDeriv = -titrationLambda;
           }
           break;
         case HIS:
           if (tautomerDirection == 1) {
-            prefactor = (1 - titrationLambda) * tautomerLambda + titrationLambda;
+            prefactor = (1.0 - titrationLambda) * tautomerLambda + titrationLambda;
+            titrationDeriv = -tautomerLambda + 1.0;
+            tautomerDeriv = (1-titrationLambda) + titrationLambda;
           } else if (tautomerDirection == -1) {
-            prefactor = (1 - titrationLambda) * (1 - tautomerLambda) + titrationLambda;
+            prefactor = (1.0 - titrationLambda) * (1.0 - tautomerLambda) + titrationLambda;
+            titrationDeriv = -(1.0 - tautomerLambda) + 1.0;
+            tautomerDeriv = -(1.0 - titrationLambda) + titrationLambda;
           }
           break;
         case LYS:
           prefactor = titrationLambda;
+          titrationDeriv = 1.0;
+          tautomerDeriv = 0.0;
           break;
       }
     }
-    return prefactor;
+    vdwPrefactorAndDerivs[0] = prefactor;
+    vdwPrefactorAndDerivs[1] = titrationDeriv;
+    vdwPrefactorAndDerivs[2] = tautomerDeriv;
+    return vdwPrefactorAndDerivs;
   }
 
   public static boolean isTitratingHydrogen(AminoAcid3 aminoAcid3, Atom atom){
