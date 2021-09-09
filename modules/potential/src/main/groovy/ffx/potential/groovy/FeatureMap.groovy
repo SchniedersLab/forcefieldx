@@ -36,7 +36,12 @@
 //
 //******************************************************************************
 
+
+import edu.rit.pj.cluster.Configuration
+import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Polymer
+import ffx.potential.nonbonded.implicit.SurfaceAreaRegion
+import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 import ffx.potential.GetProteinFeatures
@@ -100,9 +105,30 @@ class FeatureMap extends PotentialScript {
             return null
         }
 
-        residues = activeAssembly.getResidueList()
-        GetProteinFeatures getProteinFeatures = new GetProteinFeatures()
 
+        //surface-tension 1.0
+        //cavmodel CAV
+        //gkterm true
+
+        /*CompositeConfiguration properties = activeAssembly.getProperties()
+        System.setProperty("gkterm", "true")
+        System.setProperty("cavmodel", "CAV")
+        System.setProperty("surface-tension", "1.0")*/
+
+        //add getter to generalized kirkwood
+        //sum surface area of all atoms and compare to total surface area
+        ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
+
+
+        int nVars = forceFieldEnergy.getNumberOfVariables()
+        double[] x = new double[nVars]
+        forceFieldEnergy.getCoordinates(x)
+        forceFieldEnergy.energy(x)
+        double[] surfaceArea = forceFieldEnergy.getGK().getSurfaceAreaRegion().getArea()
+
+
+        residues = activeAssembly.getResidueList()
+        GetProteinFeatures getProteinFeatures = new GetProteinFeatures(surfaceArea)
 
         String fileDir = FilenameUtils.getFullPath(filename).replace("filename", "")
         String baseName = FilenameUtils.getBaseName(filename)
@@ -110,10 +136,10 @@ class FeatureMap extends PotentialScript {
         try {
             FileWriter fos = new FileWriter(featureFileName)
             PrintWriter dos = new PrintWriter(fos)
-            dos.println("Residue\tPosition\tPolarity\tAcidity\tSecondary Structure\tPhi\tPsi\tSurface Area")
+            dos.println("Residue\tPosition\tPolarity\tAcidity\tSecondary Structure\tPhi\tPsi\tOmega\tSurface Area")
             for (int i = 0; i < residues.size(); i++) {
-                getProteinFeatures.saveFeatures(residues.get(i))
-                String[] features = getProteinFeatures.getFeatures()
+                //getProteinFeatures.saveFeatures(residues.get(i))
+                String[] features = getProteinFeatures.saveFeatures(residues.get(i))
                 for (int j=0; j<features.length; j++){
                     dos.print(features[j] + "\t")
                 }

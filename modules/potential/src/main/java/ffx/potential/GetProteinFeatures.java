@@ -2,26 +2,28 @@ package ffx.potential;
 
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
+import ffx.potential.nonbonded.VanDerWaals;
 
 import java.util.*;
 
 public class GetProteinFeatures {
     private static final HashMap<AminoAcid3,String> polarityMap = new HashMap<>();
     private static final HashMap<AminoAcid3, String> acidityMap = new HashMap<>();
-    private final String[] features = new String[7];
     private static final NavigableMap<Double, String> phiToStructure = new TreeMap<>();
     private static final NavigableMap<Double, String> psiToStructure = new TreeMap<>();
     private double phi;
     private double psi;
+    private double omega;
+    private double[] surfaceAreaArray;
+    private int surfaceAreaIndex = 0;
 
 
 
-    public GetProteinFeatures() {
-
+    public GetProteinFeatures(double[] surfaceAreaArray) {
+        this.surfaceAreaArray = surfaceAreaArray;
     }
-
-
 
     static{
         //Map residue to its polarity
@@ -97,10 +99,14 @@ public class GetProteinFeatures {
         psiToStructure.put(150.0, "Beta Sheet");
         //psiToStructure.put(150.0, "Anti-Parallel Beta Sheet");
         psiToStructure.put(180.0, "Extended");
+
+        //Surface area build model compounds on tinker protein tools
+        //map exposed surface area to standard from model compounds
+        
     }
 
-
-    public void saveFeatures(Residue residue){
+    public String[] saveFeatures(Residue residue){
+        String[] features = new String[9];
         String name = residue.getName();
         //index = res[0].getResidueNumber() - 1;
         AminoAcid3 aa3 = residue.getAminoAcid3();
@@ -108,6 +114,7 @@ public class GetProteinFeatures {
         String structure = "";
         String phiString = "";
         String psiString = "";
+        String omegaString = "";
         if (residue.getNextResidue() == null){
             //Since phi, psi angles are determined between two residues, the first and last residue will not have values
             //and are default labeled as Extended Secondary Structure
@@ -115,17 +122,27 @@ public class GetProteinFeatures {
             getPhi(residue);
             phiString = String.valueOf(phi);
             psiString = null;
+            omegaString = null;
         } else if (residue.getPreviousResidue() == null) {
             structure = "Extended";
+            getPsi(residue);
+            getOmega(residue);
             psiString = String.valueOf(psi);
+            omegaString = String.valueOf(omega);
             phiString = null;
         } else {
             getPhi(residue);
             getPsi(residue);
+            getOmega(residue);
             phiString = String.valueOf(phi);
             psiString = String.valueOf(psi);
+            omegaString = String.valueOf(omega);
             structure = getSecondaryStructure();
         }
+
+        double surfaceArea = getSurfaceArea(residue);
+        String surfaceAreaString = String.valueOf(surfaceArea);
+
         features[0] = name;
         features[1] = String.valueOf(residue.getResidueNumber());
         features[2] = polarityMap.get(aa3);
@@ -133,12 +150,11 @@ public class GetProteinFeatures {
         features[4] = structure;
         features[5] = phiString;
         features[6] = psiString;
-    }
+        features[7] = omegaString;
+        features[8] = surfaceAreaString;
 
-    public String[] getFeatures(){
         return features;
     }
-
 
     public void getPhi(Residue currentRes){
         Residue previousRes = currentRes.getPreviousResidue();
@@ -163,6 +179,19 @@ public class GetProteinFeatures {
                 currentRes.getAtomByName("CA", true).getXYZ(caCoor),
                 currentRes.getAtomByName("C", true).getXYZ(cCoor),
                 nextRes.getAtomByName("N", true).getXYZ(n2Coor))) * 180/Math.PI;
+    }
+
+    public void getOmega(Residue currentRes){
+        //res[0] is always current Res
+        Residue nextRes = currentRes.getNextResidue();
+        double[] ca1Coor = new double[3];
+        double[] cCoor = new double[3];
+        double[] nCoor = new double[3];
+        double[] ca2Coor = new double[3];
+        omega = (DoubleMath.dihedralAngle(currentRes.getAtomByName("CA", true).getXYZ(ca1Coor),
+                currentRes.getAtomByName("C", true).getXYZ(cCoor),
+                currentRes.getAtomByName("N", true).getXYZ(nCoor),
+                nextRes.getAtomByName("CA", true).getXYZ(ca2Coor))) * 180/Math.PI;
     }
 
     //Data on phi,psi and secondary structure correlations is from Tamar Schlick's
@@ -191,15 +220,27 @@ public class GetProteinFeatures {
             String highPsiStruct = psiToStructure.get(highPsiKey);
             if (lowPsiStruct.equals("Extended") || highPsiStruct.equals("Extended")){
                 secondaryStructure = "Extended";
-            } else if (lowPsiStruct.equals("Beta Sheet")){
-                secondaryStructure = highPsiStruct;
-            } else if (highPsiStruct.equals("Beta Sheet")){
-                secondaryStructure = lowPsiStruct;
             } else {
                 secondaryStructure = lowPsiStruct;
             }
         }        return secondaryStructure;
     }
+
+    public double getSurfaceArea(Residue residue){
+        List<Atom> atoms = residue.getAtomList();
+        int nAtoms = atoms.size();
+        int endIndex = surfaceAreaIndex + nAtoms;
+        double sumResidueArea = 0.0;
+
+        for (int i=surfaceAreaIndex; i<endIndex; i++){
+            sumResidueArea += surfaceAreaArray[i];
+        }
+        surfaceAreaIndex += nAtoms;
+
+        return sumResidueArea;
+    }
+
+
 
 
 }

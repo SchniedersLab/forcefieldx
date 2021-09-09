@@ -997,6 +997,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
         return fieldGKCR;
     }
 
+    public SurfaceAreaRegion getSurfaceAreaRegion() {return surfaceAreaRegion;}
+
     /**
      * Returns the GK component of the solvation energy.
      *
