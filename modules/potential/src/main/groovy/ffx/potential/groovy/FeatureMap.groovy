@@ -54,6 +54,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import ffx.potential.bonded.Torsion
 
+import static java.lang.String.format
 
 
 @Command(description = " Create a Feature Map for a given protein structure", name = "ffxc ffx.potential.FeatureMap")
@@ -105,26 +106,15 @@ class FeatureMap extends PotentialScript {
             return null
         }
 
-
-        //surface-tension 1.0
-        //cavmodel CAV
-        //gkterm true
-
-        /*CompositeConfiguration properties = activeAssembly.getProperties()
-        System.setProperty("gkterm", "true")
-        System.setProperty("cavmodel", "CAV")
-        System.setProperty("surface-tension", "1.0")*/
-
-        //add getter to generalized kirkwood
         //sum surface area of all atoms and compare to total surface area
         ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
-
 
         int nVars = forceFieldEnergy.getNumberOfVariables()
         double[] x = new double[nVars]
         forceFieldEnergy.getCoordinates(x)
         forceFieldEnergy.energy(x)
         double[] surfaceArea = forceFieldEnergy.getGK().getSurfaceAreaRegion().getArea()
+
 
 
         residues = activeAssembly.getResidueList()
@@ -136,7 +126,7 @@ class FeatureMap extends PotentialScript {
         try {
             FileWriter fos = new FileWriter(featureFileName)
             PrintWriter dos = new PrintWriter(fos)
-            dos.println("Residue\tPosition\tPolarity\tAcidity\tSecondary Structure\tPhi\tPsi\tOmega\tSurface Area")
+            dos.println("Residue\tPosition\tPolarity\tAcidity\tSecondary Structure\tPhi\tPsi\tOmega\tSurface Area\tNormalized SA")
             for (int i = 0; i < residues.size(); i++) {
                 //getProteinFeatures.saveFeatures(residues.get(i))
                 String[] features = getProteinFeatures.saveFeatures(residues.get(i))
@@ -150,6 +140,9 @@ class FeatureMap extends PotentialScript {
         } catch (IOException e) {
             logger.info("Could Not Write Tab Delimited File")
         }
+
+        logger.info(format("\n Total SurfacAreaRegion Solvent Accessible Surface Area: %1.6f", forceFieldEnergy.getGK().getSurfaceAreaRegion().getEnergy()))
+        logger.info(format("\n Total Calculated Solvent Accessible Surface Area: %1.6f", getProteinFeatures.getTotalSurfaceArea()))
 
 
     }
