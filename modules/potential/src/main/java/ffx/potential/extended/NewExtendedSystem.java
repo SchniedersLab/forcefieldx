@@ -41,6 +41,7 @@ package ffx.potential.extended;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.*;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parameters.TitrationUtils;
@@ -148,19 +149,19 @@ public class NewExtendedSystem {
     /**
      * Current value of theta for each ESV.
      */
-    public double[] thetaPosition;
+    private double[] thetaPosition;
     /**
      * Current theta velocity for each ESV.
      */
-    public double[] thetaVelocity;
+    private double[] thetaVelocity;
     /**
      * Current theta acceleration for each ESV.
      */
-    public double[] thetaAccel;
+    private double[] thetaAccel;
     /**
      * Mass of each theta particle. Different theta mass for each particle are not supported.
      */
-    public double[] thetaMassArray;
+    private double[] thetaMassArray;
     /**
      * The system defined theta mass of the fictional particle. Used to fill theta mass array.
      */
@@ -168,7 +169,7 @@ public class NewExtendedSystem {
     /**
      * Friction for the ESV system
      */
-    public final double thetaFriction;
+    private final double thetaFriction;
     /**
      * Array of lambda values that matches residues in extendedResidueList
      */
@@ -382,6 +383,28 @@ public class NewExtendedSystem {
         return extendedResidueList;
     }
 
+    public double[] getThetaPosition() {
+        return thetaPosition;
+    }
+
+    public double[] getThetaVelocity() {
+        return thetaVelocity;
+    }
+
+    public double[] getThetaAccel() {
+        return thetaAccel;
+    }
+
+    public double[] getThetaMassArray() {
+        return thetaMassArray;
+    }
+
+    public double getThetaFriction() {
+        return thetaFriction;
+    }
+
+    public double[] getExtendedLambdas(){return extendedLambdas;}
+
     public void setTitrationLambda(Residue residue, double lambda) {
         if (titratingResidueList.contains(residue)) {
             int index = titratingResidueList.indexOf(residue);
@@ -418,7 +441,7 @@ public class NewExtendedSystem {
 
     //TODO: rename preForce?
     //This will prevent recalculating multiple sinTheta*sinTheta that are the same number.
-    private void updateLambdas() {
+    public void updateLambdas() {
         for (int i = 0; i < extendedResidueList.size(); i++) {
             double sinTheta = Math.sin(thetaPosition[i]);
             double oldLambda = extendedLambdas[i];
@@ -569,9 +592,9 @@ public class NewExtendedSystem {
 
                 double coeff4 = -2 * refEnergyHID * lambdaInterceptHID;
                 double coeff3 = -2 * refEnergyHIE * lambdaInterceptHIE - coeff4;
-                double coeff0 = refEnergyHIDtoHIE;
-                double coeff1 = -2 * refEnergyHIDtoHIE * lambdaInterceptHIDtoHIE - coeff3;
                 double coeff2 = refEnergyHID;
+                double coeff1 = -2 * refEnergyHIDtoHIE * lambdaInterceptHIDtoHIE - coeff3;
+                double coeff0 = refEnergyHIDtoHIE;
                 double oneMinusTitrationLambda = (1 - titrationLambda);
                 double oneMinusTitrationLambdaSquared = (1 - titrationLambda) * (1 - titrationLambda);
                 modelBias = oneMinusTitrationLambdaSquared * (coeff0 * tautomerLambdaSquared + coeff1 * tautomerLambda + coeff2)
@@ -622,6 +645,28 @@ public class NewExtendedSystem {
         biasEnergyAndDerivs[7] = dPh_dTaut;
         biasEnergyAndDerivs[8] = dMod_dTaut;
         return biasEnergyAndDerivs;
+    }
+
+    public double[] getVdwPrefactorTerms(int atomi, int atomj){
+        double[] prefactorTerms = new double[3];
+        int mappedTitrationIndexi = titrationIndexMap[atomi];
+        AminoAcid3 AA3i = extendedResidueList.get(mappedTitrationIndexi).getAminoAcid3();
+        double titrationLambdai = titrationLambdas[atomi];
+        double tautomerLambdai = tautomerLambdas[atomi];
+        int tautomerDirectioni = tautomerDirections[atomi];
+        double[] prefactori = TitrationUtils.getVdwPrefactor(AA3i, isTitratingHydrogen(atomi),titrationLambdai, tautomerLambdai, tautomerDirectioni);
+
+        int mappedTitrationIndexj = titrationIndexMap[atomj];
+        AminoAcid3 AA3j = extendedResidueList.get(mappedTitrationIndexj).getAminoAcid3();
+        double titrationLambdaj = titrationLambdas[atomj];
+        double tautomerLambdaj = tautomerLambdas[atomj];
+        int tautomerDirectionj = tautomerDirections[atomj];
+        double[] prefactorj = TitrationUtils.getVdwPrefactor(AA3j, isTitratingHydrogen(atomj),titrationLambdaj, tautomerLambdaj, tautomerDirectionj);
+
+        prefactorTerms[0] = prefactori[0]*prefactorj[0];
+        prefactorTerms[1] = prefactori[1]*prefactorj[0];
+        prefactorTerms[2] = prefactori[2]*prefactorj[0];
+        return prefactorTerms;
     }
 
     /**

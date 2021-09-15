@@ -677,7 +677,7 @@ public class TitrationUtils {
     }
   }
 
-  public double[] getVdwPrefactor(AminoAcid3 AA3, boolean isTitratingHydrogen, double titrationLambda,
+  public static double[] getVdwPrefactor(AminoAcid3 AA3, boolean isTitratingHydrogen, double titrationLambda,
                                 double tautomerLambda, int tautomerDirection) {
     double[] vdwPrefactorAndDerivs = new double[3];
     double prefactor = 1.0;
