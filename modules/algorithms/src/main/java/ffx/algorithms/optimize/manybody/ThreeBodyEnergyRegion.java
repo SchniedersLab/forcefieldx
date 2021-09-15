@@ -146,21 +146,21 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
     if (master && verbose) {
       for (int i = 0; i < residues.length; i++) {
         Residue resI = residues[i];
-        Rotamer[] rotI = resI.getRotamers(library);
+        Rotamer[] rotI = resI.getRotamers();
         for (int ri = 0; ri < rotI.length; ri++) {
           if (eR.check(i, ri)) {
             continue;
           }
           for (int j = i + 1; j < residues.length; j++) {
             Residue resJ = residues[j];
-            Rotamer[] rotJ = resJ.getRotamers(library);
+            Rotamer[] rotJ = resJ.getRotamers();
             for (int rj = 0; rj < rotJ.length; rj++) {
               if (eR.check(j, rj) || eR.check(i, ri, j, rj)) {
                 continue;
               }
               for (int k = j + 1; k < residues.length; k++) {
                 Residue resK = residues[k];
-                Rotamer[] rotK = resK.getRotamers(library);
+                Rotamer[] rotK = resK.getRotamers();
                 for (int rk = 0; rk < rotK.length; rk++) {
                   if (eR.check(k, rk) || eR.check(i, ri, k, rk) || eR.check(j, rj, k, rk)) {
                     continue;
@@ -253,9 +253,9 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
             Residue residueJ = residues[j];
             Residue residueK = residues[k];
 
-            Rotamer[] rotI = residueI.getRotamers(library);
-            Rotamer[] rotJ = residueJ.getRotamers(library);
-            Rotamer[] rotK = residueK.getRotamers(library);
+            Rotamer[] rotI = residueI.getRotamers();
+            Rotamer[] rotJ = residueJ.getRotamers();
+            Rotamer[] rotK = residueK.getRotamers();
 
             int indexI = allResiduesList.indexOf(residueI);
             int indexJ = allResiduesList.indexOf(residueJ);

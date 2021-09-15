@@ -1169,11 +1169,11 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
                   " Minimum: %12.6f %s (%12.6f g/cc) optimized from %12.6f at step %d.",
                   minEnergy, uc.toShortString(), density, startingEnergy, energyCount));
         }
-      } catch (EnergyException ex) {
+      } catch (Exception ex) {
         String message = ex.getMessage();
         logger.info(
             format(
-                " Energy exception minimizing coordinates at lambda=%8.6f\n %s.", lambda, message));
+                " Exception minimizing coordinates at lambda=%8.6f\n %s.", lambda, message));
         logger.info(" Sampling will continue.");
       }
 

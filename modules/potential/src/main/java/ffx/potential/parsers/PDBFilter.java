@@ -177,6 +177,10 @@ public final class PDBFilter extends SystemFilter {
    */
   private boolean constantPH = false;
   /**
+   * If true, read in titratable residues in their protonated form.
+   */
+  private boolean rotamerTitration = false;
+  /**
    * List of residue to rename for constantPH simulations.
    */
   private static final HashMap<AminoAcid3, AminoAcid3> constantPHResidueMap = new HashMap<>();
@@ -193,7 +197,21 @@ public final class PDBFilter extends SystemFilter {
     constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.GLU, AminoAcidUtils.AminoAcid3.GLD);
     constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.GLH, AminoAcidUtils.AminoAcid3.GLD);
   }
-
+  /**
+   * List of residue to rename for rotamer titration simulations.
+   */
+  private static final HashMap<AminoAcid3, AminoAcid3> rotamerResidueMap = new HashMap<>();
+  static {
+    // Lysine
+    rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.LYD, AminoAcidUtils.AminoAcid3.LYS);
+    // Histidine
+    rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.HID, AminoAcidUtils.AminoAcid3.HIS);
+    rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.HIE, AminoAcidUtils.AminoAcid3.HIS);
+    // Aspartate
+    rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.ASP, AminoAcidUtils.AminoAcid3.ASH);
+    // Glutamate
+    rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.GLU, AminoAcidUtils.AminoAcid3.GLH);
+  }
 
   /**
    * Constructor for PDBFilter.
@@ -339,6 +357,10 @@ public final class PDBFilter extends SystemFilter {
 
   public void setConstantPH(boolean constantPH) {
     this.constantPH = constantPH;
+  }
+
+  public void setRotamerTitration(boolean rotamerTitration) {
+    this.rotamerTitration = rotamerTitration;
   }
 
   /** clearSegIDs */
@@ -846,6 +868,21 @@ public final class PDBFilter extends SystemFilter {
                       String atomName = name.toUpperCase();
                       AminoAcid3 aa3PH = constantPHResidueMap.get(aa3);
                       resName = aa3PH.name();
+                      if (constantPhBackboneNames.contains(atomName)) {
+                        logger.info(format(" %s-%d %s", resName, resSeq, atomName));
+                      } else if (!atomName.startsWith("H") ) {
+                        logger.info(format(" %s-%d %s", resName, resSeq, atomName));
+                      } else {
+                        logger.info(format(" %s-%d %s skipped", resName, resSeq, atomName));
+                        break;
+                      }
+                    }
+                  } else if (rotamerTitration){
+                    AminoAcid3 aa3 = AminoAcidUtils.AminoAcid3.valueOf(resName.toUpperCase());
+                    if (rotamerResidueMap.containsKey(aa3)) {
+                      String atomName = name.toUpperCase();
+                      AminoAcid3 aa3rotamer = rotamerResidueMap.get(aa3);
+                      resName = aa3rotamer.name();
                       if (constantPhBackboneNames.contains(atomName)) {
                         logger.info(format(" %s-%d %s", resName, resSeq, atomName));
                       } else if (!atomName.startsWith("H") ) {

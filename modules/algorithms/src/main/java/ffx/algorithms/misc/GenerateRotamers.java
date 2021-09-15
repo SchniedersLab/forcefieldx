@@ -188,7 +188,7 @@ public class GenerateRotamers {
     if (aa3 == AminoAcidUtils.AminoAcid3.UNK) {
       boolean orig = library.getUsingOrigCoordsRotamer();
       library.setUseOrigCoordsRotamer(false);
-      baselineRotamers = residue.getRotamers(library);
+      baselineRotamers = residue.setRotamers(library);
       library.setUseOrigCoordsRotamer(orig);
     } else {
       baselineRotamers = library.getRotamers(aa3);

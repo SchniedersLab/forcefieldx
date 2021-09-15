@@ -157,14 +157,14 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
     if (master && verbose) {
       for (int i = 0; i < residues.length; i++) {
         Residue resi = residues[i];
-        Rotamer[] roti = resi.getRotamers(library);
+        Rotamer[] roti = resi.getRotamers();
         for (int ri = 0; ri < roti.length; ri++) {
           if (eR.check(i, ri)) {
             continue;
           }
           for (int j = i + 1; j < residues.length; j++) {
             Residue resj = residues[j];
-            Rotamer[] rotj = resj.getRotamers(library);
+            Rotamer[] rotj = resj.getRotamers();
             for (int rj = 0; rj < rotj.length; rj++) {
               if (eR.check(j, rj) || eR.check(i, ri, j, rj)) {
                 continue;
@@ -244,8 +244,8 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
           if (!eR.check(i, ri) || !eR.check(j, rj) || !eR.check(i, ri, j, rj)) {
             Residue residueI = residues[i];
             Residue residueJ = residues[j];
-            Rotamer[] rotI = residues[i].getRotamers(library);
-            Rotamer[] rotJ = residues[j].getRotamers(library);
+            Rotamer[] rotI = residues[i].getRotamers();
+            Rotamer[] rotJ = residues[j].getRotamers();
             int indexI = allResiduesList.indexOf(residueI);
             int indexJ = allResiduesList.indexOf(residueJ);
             double resDist = dM.getResidueDistance(indexI, ri, indexJ, rj);

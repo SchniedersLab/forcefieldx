@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.algorithms.optimize.manybody;
 
+import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
 import static java.lang.String.format;
 
 import ffx.algorithms.AlgorithmListener;
@@ -241,7 +242,7 @@ public class EnergyExpansion {
     for (int i = 0; i < nResidues; i++) {
       Residue resi = residues[i];
       int indexI = allResiduesList.indexOf(resi);
-      Rotamer[] roti = resi.getRotamers(library);
+      Rotamer[] roti = resi.getRotamers();
       int[] nI = resNeighbors[i];
       int lenNI = nI.length;
       twoBodyEnergy[i] = new double[roti.length][lenNI][];
@@ -256,7 +257,7 @@ public class EnergyExpansion {
           if (rO.checkNeighboringPair(i, j)) {
             Residue resj = residues[j];
             int indexJ = allResiduesList.indexOf(resj);
-            Rotamer[] rotj = resj.getRotamers(library);
+            Rotamer[] rotj = resj.getRotamers();
             twoBodyEnergy[i][ri][indJ] = new double[rotj.length];
             for (int rj = 0; rj < rotj.length; rj++) {
               if (eR.checkToJ(i, ri, j, rj)) {
@@ -296,7 +297,7 @@ public class EnergyExpansion {
     for (int i = 0; i < nResidues; i++) {
       Residue resi = residues[i];
       int indexI = allResiduesList.indexOf(resi);
-      Rotamer[] roti = resi.getRotamers(library);
+      Rotamer[] roti = resi.getRotamers();
       int lenri = roti.length;
       int[] nI = resNeighbors[i];
       int lenNI = nI.length;
@@ -311,7 +312,7 @@ public class EnergyExpansion {
           int j = nI[indJ];
           Residue resj = residues[j];
           int indexJ = allResiduesList.indexOf(resj);
-          Rotamer[] rotj = resj.getRotamers(library);
+          Rotamer[] rotj = resj.getRotamers();
           int lenrj = rotj.length;
           int[] nJ = resNeighbors[j];
           int lenNJ = nJ.length;
@@ -326,7 +327,7 @@ public class EnergyExpansion {
               int k = nJ[indK];
               Residue resk = residues[k];
               int indexK = allResiduesList.indexOf(resk);
-              Rotamer[] rotk = resk.getRotamers(library);
+              Rotamer[] rotk = resk.getRotamers();
               int lenrk = rotk.length;
               threeBodyEnergy[i][ri][indJ][rj][indK] = new double[lenrk];
 
@@ -364,14 +365,14 @@ public class EnergyExpansion {
     int quadJobIndex = 0;
     for (int i = 0; i < nResidues; i++) {
       Residue resi = residues[i];
-      Rotamer[] roti = resi.getRotamers(library);
+      Rotamer[] roti = resi.getRotamers();
       for (int ri = 0; ri < roti.length; ri++) {
         if (eR.check(i, ri)) {
           continue;
         }
         for (int j = i + 1; j < nResidues; j++) {
           Residue resj = residues[j];
-          Rotamer[] rotj = resj.getRotamers(library);
+          Rotamer[] rotj = resj.getRotamers();
           for (int rj = 0; rj < rotj.length; rj++) {
             /*if (check(j, rj) || check(i, ri, j, rj)) {
             continue;
@@ -381,7 +382,7 @@ public class EnergyExpansion {
             }
             for (int k = j + 1; k < nResidues; k++) {
               Residue resk = residues[k];
-              Rotamer[] rotk = resk.getRotamers(library);
+              Rotamer[] rotk = resk.getRotamers();
               for (int rk = 0; rk < rotk.length; rk++) {
                 /*if (check(k, rk) || check(i, ri, k, rk) || check(j, rj, k, rk) || check(i, ri, j, rj, k, rk)) {
                 continue;
@@ -391,7 +392,7 @@ public class EnergyExpansion {
                 }
                 for (int l = k + 1; l < nResidues; l++) {
                   Residue resl = residues[l];
-                  Rotamer[] rotl = resl.getRotamers(library);
+                  Rotamer[] rotl = resl.getRotamers();
                   for (int rl = 0; rl < rotl.length; rl++) {
                     if (eR.checkToL(i, ri, j, rj, k, rk, l, rl)) {
                       continue;
@@ -445,7 +446,7 @@ public class EnergyExpansion {
     selfEnergy = new double[nResidues][];
     for (int i = 0; i < nResidues; i++) {
       Residue resi = residues[i];
-      Rotamer[] roti = resi.getRotamers(library);
+      Rotamer[] roti = resi.getRotamers();
       selfEnergy[i] = new double[roti.length];
       for (int ri = 0; ri < roti.length; ri++) {
         if (!eR.check(i, ri)) {
@@ -689,7 +690,7 @@ public class EnergyExpansion {
       rO.turnOffResidue(residues[i]);
     }
 
-    Rotamer[] rotamers = residues[i].getRotamers(library);
+    Rotamer[] rotamers = residues[i].getRotamers();
 
 
     if (rotamers[ri].isTitrating) {
@@ -715,7 +716,7 @@ public class EnergyExpansion {
     double total = 0.0;
     int n = residues.size();
     for (int i = 0; i < n; i++) {
-      Rotamer[] rot = residues.get(i).getRotamers(library);
+      Rotamer[] rot = residues.get(i).getRotamers();
       int ri = rotamers[i];
       if (rot[ri].isTitrating) {
         total += rot[ri].getRotamerPhBias();
@@ -1299,7 +1300,7 @@ public class EnergyExpansion {
       return 0.0;
     }
 
-    Rotamer[] rotamers = residues[j].getRotamers(library);
+    Rotamer[] rotamers = residues[j].getRotamers();
     int nr = rotamers.length;
     double energy = Double.MAX_VALUE;
     for (int jr = 0; jr < nr; jr++) {
@@ -1330,7 +1331,7 @@ public class EnergyExpansion {
     if (i < 0 || i >= n) {
       return 0.0;
     }
-    Rotamer[] rotamers = residues[i].getRotamers(library);
+    Rotamer[] rotamers = residues[i].getRotamers();
     int nr = rotamers.length;
     double energy = Double.MAX_VALUE;
     for (int ni = 0; ni < nr; ni++) {
@@ -1380,7 +1381,7 @@ public class EnergyExpansion {
         continue;
       }
       Residue resk = residues[k];
-      Rotamer[] rotsk = resk.getRotamers(library);
+      Rotamer[] rotsk = resk.getRotamers();
       int lenrk = rotsk.length;
       double[] minMaxK = new double[2];
       minMaxK[0] = Double.MAX_VALUE;
@@ -1483,7 +1484,7 @@ public class EnergyExpansion {
    */
   public boolean minMaxPairEnergy(Residue[] residues, double[] minMax, int i, int ri, int j) {
     Residue residuej = residues[j];
-    Rotamer[] rotamersj = residuej.getRotamers(library);
+    Rotamer[] rotamersj = residuej.getRotamers();
     int lenrj = rotamersj.length;
     boolean valid = false;
     minMax[0] = Double.MAX_VALUE;
@@ -1756,8 +1757,8 @@ public class EnergyExpansion {
 
   public void turnOnResidue(Residue residue, int ri) {
     turnOnAtoms(residue);
-    Rotamer[] rotamers = residue.getRotamers(library);
-    RotamerLibrary.applyRotamer(residue, rotamers[ri]);
+    Rotamer[] rotamers = residue.getRotamers();
+    applyRotamer(residue, rotamers[ri]);
   }
 
   /**
@@ -1781,7 +1782,7 @@ public class EnergyExpansion {
         continue;
       }
       Residue residuek = residues[k];
-      Rotamer[] romatersk = residuek.getRotamers(library);
+      Rotamer[] romatersk = residuek.getRotamers();
       int lenrk = romatersk.length;
       double currentMin = Double.MAX_VALUE;
       double currentMax = Double.MIN_VALUE;
@@ -1878,7 +1879,7 @@ public class EnergyExpansion {
         continue;
       }
       Residue resl = residues[l];
-      Rotamer[] rotsl = resl.getRotamers(library);
+      Rotamer[] rotsl = resl.getRotamers();
       int lenrl = rotsl.length;
 
       // Find min/max rl for residue l.
@@ -1944,7 +1945,7 @@ public class EnergyExpansion {
    * @param residue Residue to apply a default rotamer for.
    */
   private void applyDefaultRotamer(Residue residue) {
-    RotamerLibrary.applyRotamer(residue, residue.getRotamers(library)[0]);
+    applyRotamer(residue, residue.getRotamers()[0]);
   }
 
   private int nameToNumber(String residueString, Residue[] residues) throws NumberFormatException {

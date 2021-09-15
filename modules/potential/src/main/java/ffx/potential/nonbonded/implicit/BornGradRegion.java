@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
+import static ffx.potential.nonbonded.implicit.BornTanhRescaling.tanhRescalingChainRule;
+import static ffx.potential.nonbonded.implicit.NeckIntegral.getNeckConstants;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
@@ -45,7 +47,6 @@ import static org.apache.commons.math3.util.FastMath.*;
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
-import edu.rit.pj.reduction.SharedDoubleArray;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray;
@@ -149,13 +150,26 @@ public class BornGradRegion extends ParallelRegion {
      * Flag for using tanh correction, default to false for now.
      */
     private boolean tanhCorrection = false;
-    private double[] tanhInputIi;
+    /**
+     * This is the Born Integral prior to rescaling with a tanh function, which is a quantity
+     * needed for the computing the derivative of the energy with respect to atomic coordinates.
+     */
+    private double[] unscaledBornIntegral;
 
-    public BornGradRegion(int nt, boolean perfectHCTScale) {
+    /**
+     * Compute the gradient due to changes in Born radii.
+     * @param nt Number of threads.
+     * @param neckCorrection Include a neck correction.
+     * @param tanhCorrection Include a tanh correction.
+     * @param perfectHCTScale Use "perfect" HCT scale factors.
+     */
+    public BornGradRegion(int nt, boolean neckCorrection, boolean tanhCorrection, boolean perfectHCTScale) {
         bornCRLoop = new BornCRLoop[nt];
         for (int i = 0; i < nt; i++) {
             bornCRLoop[i] = new BornCRLoop();
         }
+        this.neckCorrection = neckCorrection;
+        this.tanhCorrection = tanhCorrection;
         this.perfectHCTScale = perfectHCTScale;
     }
 
@@ -182,11 +196,9 @@ public class BornGradRegion extends ParallelRegion {
             double[] baseRadius,
             double[] descreenRadius,
             double[] overlapScale,
-            boolean neckCorrection,
             double[] neckScale,
             double descreenOffset,
-            boolean tanhCorrection,
-            double[] tanhInputIi,
+            double[] unscaledBornIntegral,
             boolean[] use,
             double cut2,
             boolean nativeEnvironmentApproximation,
@@ -200,11 +212,9 @@ public class BornGradRegion extends ParallelRegion {
         this.baseRadius = baseRadius;
         this.descreenRadius = descreenRadius;
         this.overlapScale = overlapScale;
-        this.neckCorrection = neckCorrection;
         this.neckScale = neckScale;
         this.descreenOffset = descreenOffset;
-        this.tanhCorrection = tanhCorrection;
-        this.tanhInputIi = tanhInputIi;
+        this.unscaledBornIntegral = unscaledBornIntegral;
         this.use = use;
         this.cut2 = cut2;
         this.nativeEnvironmentApproximation = nativeEnvironmentApproximation;
@@ -227,7 +237,7 @@ public class BornGradRegion extends ParallelRegion {
             term[i] = PI4_3 / (rbi * rbi * rbi);
             term[i] = factor / pow(term[i], (4.0 * oneThird));
             if (tanhCorrection) {
-                term[i] = term[i] * BornRescalingTanh.getTanhContribution(tanhInputIi[i], baseRadius[i]);
+                term[i] = term[i] * tanhRescalingChainRule(unscaledBornIntegral[i], baseRadius[i]);
             }
         }
     }
@@ -287,7 +297,7 @@ public class BornGradRegion extends ParallelRegion {
                         throw new EnergyException(
                                 format(" %s\n Born radii CR %d %8.3f", atoms[i], i, bornGrad), true);
                     }
-                    final double baseRi = max(baseRadius[i], descreenRadius[i]) + descreenOffset;
+                    final double integralStartI = max(baseRadius[i], descreenRadius[i]) + descreenOffset;
                     final double descreenRi = descreenRadius[i];
                     final double xi = x[i];
                     final double yi = y[i];
@@ -298,8 +308,10 @@ public class BornGradRegion extends ParallelRegion {
                         if (!nativeEnvironmentApproximation && !use[k]) {
                             continue;
                         }
-                        final double baseRk = max(baseRadius[k], descreenRadius[k]) + descreenOffset;
+                        final double integralStartK = max(baseRadius[k], descreenRadius[k]) + descreenOffset;
                         final double descreenRk = descreenRadius[k];
+                        double mixedNeckScale =  0.5 * (neckScale[i] + neckScale[k]);
+
                         if (k != i) {
                             dx_local[0] = xyz[0][k] - xi;
                             dx_local[1] = xyz[1][k] - yi;
@@ -316,18 +328,14 @@ public class BornGradRegion extends ParallelRegion {
                             // Atom i being descreeened by atom k.
                             double sk = overlapScale[k];
                             if (sk > 0.0 && rbi < 50.0 && descreenRk > 0.0) {
-                                double de = descreenDerivative(r, r2, baseRi, descreenRk, sk);
-                                // TODO: Add neck contribution to atom i being descreeened by atom k.
+                                double de = descreenDerivative(r, r2, integralStartI, descreenRk, sk);
                                 if (neckCorrection) {
-                                    //logger.info("Neck Correction true in BornGradRegion");
-                                    de += neckDescreenDerivative(r, baseRi, descreenRk, neckScale[i]);
+                                    de += neckDescreenDerivative(r, integralStartI, descreenRk, mixedNeckScale);
                                 }
                                 if (isInfinite(de) || isNaN(de)) {
-                                    logger.warning(
-                                            format(" Born radii chain rule term is unstable %d %d %16.8f", i, k, de));
+                                    logger.warning(format(" Born radii chain rule term is unstable %d %d %16.8f", i, k, de));
                                 }
                                 double dbr = term[i] * de / r;
-                                //double dbr = termi * de / r;
                                 de = dbr * sharedBornGrad.get(i);
                                 incrementGradient(i, k, de, xr, yr, zr, transOp);
                             }
@@ -336,18 +344,14 @@ public class BornGradRegion extends ParallelRegion {
                             double rbk = born[k];
                             double si = overlapScale[i];
                             if (si > 0.0 && rbk < 50.0 && descreenRi > 0.0) {
-                                double de = descreenDerivative(r, r2, baseRk, descreenRi, si);
-                                // TODO: Add neck contribution to atom k being descreeened by atom i.
+                                double de = descreenDerivative(r, r2, integralStartK, descreenRi, si);
                                 if (neckCorrection) {
-                                    //logger.info("Neck Correction true in BornGradRegion");
-                                    de += neckDescreenDerivative(r, baseRk, descreenRi, neckScale[k]);
+                                    de += neckDescreenDerivative(r, integralStartK, descreenRi, mixedNeckScale);
                                 }
                                 if (isInfinite(de) || isNaN(de)) {
-                                    logger.warning(
-                                            format(" Born radii chain rule term is unstable %d %d %16.8f", k, i, de));
+                                    logger.warning(format(" Born radii chain rule term is unstable %d %d %16.8f", k, i, de));
                                 }
                                 double dbr = term[k] * de / r;
-                                //double dbr = termk * de / r;
                                 de = dbr * sharedBornGrad.get(k);
                                 incrementGradient(i, k, de, xr, yr, zr, transOp);
                             }
@@ -363,11 +367,9 @@ public class BornGradRegion extends ParallelRegion {
                                 final double zr = dx_local[2];
                                 final double r = sqrt(r2);
                                 // Atom i being descreeened by atom k.
-                                double de = descreenDerivative(r, r2, baseRi, descreenRk, sk);
-                                // TODO: Add neck contribution to atom i being descreeened by atom k.
+                                double de = descreenDerivative(r, r2, integralStartI, descreenRk, sk);
                                 if (neckCorrection) {
-                                    //logger.info("Neck Correction true in BornGradRegion");
-                                    de += neckDescreenDerivative(r, baseRi, descreenRk, neckScale[i]);
+                                    de += neckDescreenDerivative(r, integralStartI, descreenRk, mixedNeckScale);
                                 }
                                 if (isInfinite(de) || isNaN(de)) {
                                     logger.warning(
@@ -375,7 +377,6 @@ public class BornGradRegion extends ParallelRegion {
                                                     k, de));
                                 }
                                 double dbr = term[i] * de / r;
-                                //double dbr = termi * de / r;
                                 de = dbr * sharedBornGrad.get(i);
                                 incrementGradient(i, k, de, xr, yr, zr, transOp);
                                 // For symmetry mates, atom k is not descreeened by atom i.
@@ -399,7 +400,7 @@ public class BornGradRegion extends ParallelRegion {
             }
 
             // Get Aij and Bij
-            double[] constants = NeckIntegralOnufriev.NeckIntegralOnufrievConstants.run(radius, radiusK);
+            double[] constants = getNeckConstants(radius, radiusK);
             //logger.info(format("Grad Inputs: Ri %2.4f Rk %2.4f\nGrad Outputs: Aij %2.4f Bij %2.4f",radius,radiusK,constants[0],constants[1]));
 
             double Aij = constants[0];

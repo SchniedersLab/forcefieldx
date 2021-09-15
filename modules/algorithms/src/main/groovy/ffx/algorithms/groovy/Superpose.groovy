@@ -177,9 +177,11 @@ class Superpose extends AlgorithmsScript {
     SystemFilter targetFilter
     // Number of files to read in.
     int numFiles = filenames.size()
+    boolean isSymmetric = false
     if (numFiles == 1) {
       logger.info(
           "\n Superpose will be applied between all pairs of conformations within the supplied file.\n")
+      isSymmetric = true
       // If only one file is supplied, compare all structures in that file to each other.
       algorithmFunctions.openAll(filenames.get(0))
       targetFilter = algorithmFunctions.getFilter()
@@ -253,8 +255,7 @@ class Superpose extends AlgorithmsScript {
       case "HEAVY":
       case "0":
         // Filter only for heavy (non-hydrogen) atoms.
-        atomIndexStream = atomIndexStream.filter({int i -> atoms[i].isHeavy()
-        })
+        atomIndexStream = atomIndexStream.filter({int i -> atoms[i].isHeavy()})
         selectionType = "Heavy Atoms"
         break
       case "ALL":
@@ -304,7 +305,7 @@ class Superpose extends AlgorithmsScript {
 
     // Compute the RMSD values.
     ffx.potential.utils.Superpose superpose =
-        new ffx.potential.utils.Superpose(baseFilter, targetFilter)
+        new ffx.potential.utils.Superpose(baseFilter, targetFilter, isSymmetric)
 
     // Do the superpositions.
     superpose.calculateRMSDs(usedIndices, dRMSD, verbose, restart, write, saveSnapshots)

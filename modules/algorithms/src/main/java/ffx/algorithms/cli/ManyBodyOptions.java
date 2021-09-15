@@ -188,16 +188,11 @@ public class ManyBodyOptions {
     List<String> resList = new ArrayList<>();
     addListResidues(resList);
 
-    String prop = System.getProperty("ro-titrate");
-    boolean titrate = false;
-    if (prop != null) {
-      titrate = Boolean.parseBoolean(prop);
-    }
     TitrationUtils titrationUtils;
-    if (titrate) {
-      logger.info(" Turning on ASP, GLU, LYS and HIS titration rotamers.");
+    if (group.titrationPH > 0.0 && group.titrationPH <= 14.0) {
+      logger.info(format(" Turning on ASP, GLU, LYS and HIS titration rotamers at pH %5.2f", group.titrationPH));
       titrationUtils = new TitrationUtils(activeAssembly.getForceField());
-      titrationUtils.setRotamerPhBias(298.15, 7.4);
+      titrationUtils.setRotamerPhBias(298.15, group.titrationPH);
       List<Residue> residues = activeAssembly.getResidueList();
       for (Residue residue : residues) {
         residue.setTitrationUtils(titrationUtils);
@@ -212,7 +207,7 @@ public class ManyBodyOptions {
         for (Polymer polymer : polymers) {
           List<Residue> residues = polymer.getResidues();
           for (Residue residue : residues) {
-            Rotamer[] rotamers = residue.getRotamers(rotamerLibrary);
+            Rotamer[] rotamers = residue.setRotamers(rotamerLibrary);
             if (rotamers != null) {
               int nrot = rotamers.length;
               if (nrot == 1) {
@@ -245,7 +240,7 @@ public class ManyBodyOptions {
               for (Residue r : rs) {
                 if (r.getResidueNumber() == i) {
                   residueList.add(r);
-                  Rotamer[] rotamers = r.getRotamers(rotamerLibrary);
+                  Rotamer[] rotamers = r.setRotamers(rotamerLibrary);
                   if (rotamers != null) {
                     n++;
                   }
@@ -284,7 +279,7 @@ public class ManyBodyOptions {
                 }
                 if (r.getResidueNumber() == i) {
                   residueList.add(r);
-                  Rotamer[] rotamers = r.getRotamers(rotamerLibrary);
+                  Rotamer[] rotamers = r.setRotamers(rotamerLibrary);
                   if (rotamers != null) {
                     n++;
                   }
@@ -304,7 +299,7 @@ public class ManyBodyOptions {
             if (ignoreNA && r.getResidueType() == Residue.ResidueType.NA) {
               continue;
             }
-            Rotamer[] rotamers = r.getRotamers(rotamerLibrary);
+            Rotamer[] rotamers = r.setRotamers(rotamerLibrary);
             if (rotamers != null) {
               int nrot = rotamers.length;
               if (nrot == 1) {
@@ -1127,22 +1122,15 @@ public class ManyBodyOptions {
         description = "Print energy decomposition for the input structure (no optimization!).")
     private boolean decompose;
 
-    //    /**
-    //     * --sO or --sequence Choose a list of individual residues to sequence
-    //     * optimize (example: A2.A3.A5).
-    //     */
-    //    @Option(names = {"--sO", "--sequence"}, paramLabel = "none",
-    //            description = "Choose a list of individual residues to sequence optimize (example:
-    // A2.A3.A5)")
-    //    String sequence = "none";
-    //    /**
-    //     * --tO or --titrationOptimization Optimize the titration states for a list
-    //     * of residues (example: H2.H3.H5).
-    //     */
-    //    @Option(names = {"--tO", "--titrationOptimization"}, paramLabel = "none",
-    //            description = "Optimize the titration states for a list of residues (example:
-    // H2.H3.H5).")
-    //    String titrationOptimization = "none";
+    /**
+     * --pH or --titrationPH Optimize the titration state of ASP, GLU, HIS and LYS residues.
+     */
+    @Option(
+        names = {"--pH", "--titrationPH"},
+        paramLabel = "0",
+        defaultValue = "0",
+        description = " Optimize the titration state of ASP, GLU, HIS and LYS residues at the given pH (pH = 0 turns off titration")
+    private double titrationPH;
 
     /**
      * --mC or --monteCarlo Follow elimination criteria with 'n' Monte Carlo steps, or enumerate all

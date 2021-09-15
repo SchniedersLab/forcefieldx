@@ -212,6 +212,8 @@ public class SurfaceAreaRegion extends ParallelRegion {
     return sharedSurfaceArea.get();
   }
 
+  public double[] getArea() {return area;}
+
   public final void init() {
     if (overlapCounts == null || overlapCounts.length < nAtoms) {
       overlapCounts = new Integer[nAtoms];

@@ -37,21 +37,19 @@
 // ******************************************************************************
 package ffx.potential.nonbonded;
 
-import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
-import ffx.potential.nonbonded.implicit.NeckIntegralOnufriev;
+import ffx.potential.nonbonded.implicit.NeckIntegral;
 import ffx.potential.utils.PotentialTest;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
-public class NeckIntegralOnufrievTest extends PotentialTest{
-    @Test
-    public void testSettingConstants(){
-        // ri: 1.3550 rj: 2.0550 Aij: 0.0000040327 Bij 0.4100
-        double[] constants = NeckIntegralOnufriev.NeckIntegralOnufrievConstants.run(1.355, 2.055);
-        assertEquals(constants[0],0.0000040327,0.00000001);
-        assertEquals(constants[1],0.4100,0.001);
-    }
+public class NeckIntegralTest extends PotentialTest {
+
+  @Test
+  public void testSettingConstants() {
+    // ri: 1.3550 rj: 2.0550 Aij: 0.0000040327 Bij 0.4100
+    double[] constants = NeckIntegral.getNeckConstants(1.355, 2.055);
+    assertEquals(constants[0], 0.0000040327, 0.00000001);
+    assertEquals(constants[1], 0.4100, 0.001);
+  }
 }

@@ -264,7 +264,7 @@ public class Rotamer {
    * @param residue Residue to construct a default rotamer for.
    * @return Rotamer based on the coordinates of the residue.
    */
-  public static Rotamer defaultRotamerFactory(Residue residue) {
+  public static Rotamer[] defaultRotamerFactory(Residue residue) {
     return defaultRotamerFactory(residue, null);
   }
 
@@ -274,7 +274,7 @@ public class Rotamer {
    * @param residue Residue to construct a default rotamer for.
    * @return Rotamer based on the coordinates of the residue.
    */
-  public static Rotamer defaultRotamerFactory(Residue residue, TitrationUtils titrationUtils) {
+  public static Rotamer[] defaultRotamerFactory(Residue residue, TitrationUtils titrationUtils) {
     ResidueState resState = residue.storeState();
     double[] chi = RotamerLibrary.measureRotamer(residue, false);
 
@@ -287,12 +287,53 @@ public class Rotamer {
 
     switch (residue.getResidueType()) {
       case AA:
-        return new Rotamer(residue.getAminoAcid3(), resState, titrationUtils, vals);
+        // Only one rotamer for non-titrating cases.
+        if (titrationUtils == null) {
+          Rotamer[] rotamers = new Rotamer[1];
+          rotamers[0] = new Rotamer(residue.getAminoAcid3(), resState, titrationUtils, vals);
+          return rotamers;
+        }
+        switch (residue.getAminoAcid3()) {
+          case ASH:
+          case ASP:
+            Rotamer[] rotamers = new Rotamer[2];
+            rotamers[0] = new Rotamer(AminoAcid3.ASP, resState, titrationUtils, vals);
+            rotamers[1] = new Rotamer(AminoAcid3.ASH, resState, titrationUtils, vals);
+            return rotamers;
+          case GLH:
+          case GLU:
+            rotamers = new Rotamer[2];
+            rotamers[0] = new Rotamer(AminoAcid3.GLU, resState, titrationUtils, vals);
+            rotamers[1] = new Rotamer(AminoAcid3.GLH, resState, titrationUtils, vals);
+            return rotamers;
+          case HID:
+          case HIE:
+          case HIS:
+            rotamers = new Rotamer[3];
+            rotamers[0] = new Rotamer(AminoAcid3.HIS, resState, titrationUtils, vals);
+            rotamers[1] = new Rotamer(AminoAcid3.HID, resState, titrationUtils, vals);
+            rotamers[2] = new Rotamer(AminoAcid3.HIE, resState, titrationUtils, vals);
+            return rotamers;
+          case LYS:
+          case LYD:
+            rotamers = new Rotamer[2];
+            rotamers[0] = new Rotamer(AminoAcid3.LYS, resState, titrationUtils, vals);
+            rotamers[1] = new Rotamer(AminoAcid3.LYD, resState, titrationUtils, vals);
+            return rotamers;
+          default:
+            rotamers = new Rotamer[1];
+            rotamers[0] = new Rotamer(residue.getAminoAcid3(), resState, titrationUtils, vals);
+            return rotamers;
+        }
       case NA:
-        return new Rotamer(residue.getNucleicAcid3(), resState, titrationUtils, vals);
+        Rotamer[] rotamers = new Rotamer[1];
+        rotamers[0] = new Rotamer(residue.getNucleicAcid3(), resState, titrationUtils, vals);
+        return rotamers;
       case UNK:
       default:
-        return new Rotamer(resState, titrationUtils, vals);
+        rotamers = new Rotamer[1];
+        rotamers[0] = new Rotamer(resState, titrationUtils, vals);
+        return rotamers;
     }
   }
 
@@ -303,7 +344,7 @@ public class Rotamer {
    */
   public String toAngleString() {
     StringBuilder sb = new StringBuilder();
-    int n = max(4,length);
+    int n = max(4, length);
     for (int i = 0; i < n; i++) {
       sb.append(String.format(" %6.1f %4.1f", angles[i], sigmas[i]));
     }
@@ -314,7 +355,7 @@ public class Rotamer {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder(getName());
-    int n = max(4,length);
+    int n = max(4, length);
     for (int i = 0; i < n; i++) {
       sb.append(String.format(" %6.1f %4.1f", angles[i], sigmas[i]));
     }
@@ -323,15 +364,15 @@ public class Rotamer {
 
   public String getName() {
     if (aminoAcid3 != null) {
-      return  aminoAcid3.toString();
-    } else if (nucleicAcid3 != null){
+      return aminoAcid3.toString();
+    } else if (nucleicAcid3 != null) {
       return nucleicAcid3.toString();
     } else {
       return "";
     }
   }
 
-  public double getRotamerPhBias(){
+  public double getRotamerPhBias() {
     return titrationUtils.getRotamerPhBias(aminoAcid3);
   }
 }

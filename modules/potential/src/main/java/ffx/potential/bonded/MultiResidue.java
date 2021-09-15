@@ -383,11 +383,13 @@ public class MultiResidue extends Residue {
 
   /** {@inheritDoc} */
   @Override
-  public Rotamer[] getRotamers(RotamerLibrary library) {
-    if (rotamers != null) {
-      return rotamers;
-    }
+  public Rotamer[] getRotamers() {
+    return rotamers;
+  }
 
+  /** {@inheritDoc} */
+  @Override
+  public Rotamer[] setRotamers(RotamerLibrary library) {
     List<Rotamer[]> usual = new ArrayList<>();
     int nRots = 0;
 
