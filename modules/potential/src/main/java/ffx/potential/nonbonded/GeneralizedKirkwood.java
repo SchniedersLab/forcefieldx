@@ -45,9 +45,7 @@ import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.utilities.Constants.dWater;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.PI;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.pow;
+import static org.apache.commons.math3.util.FastMath.*;
 
 import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
@@ -368,7 +366,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Element-specific HCT overlap scale factors
      */
-    private final HashMap<String, Double> elementHCTScaleFactors;
+    private final HashMap<Integer, Double> elementHCTScaleFactors;
     /**
      * Born radius of each atom.
      */
@@ -579,12 +577,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
         double hct_p = forceField.getDouble("HCT_P", DEFAULT_HCT_P);
         double hct_s = forceField.getDouble("HCT_S", DEFAULT_HCT_S);
         // Add default values for all elements
-        elementHCTScaleFactors.put("H", hct_h);
-        elementHCTScaleFactors.put("C", hct_c);
-        elementHCTScaleFactors.put("N", hct_n);
-        elementHCTScaleFactors.put("O", hct_o);
-        elementHCTScaleFactors.put("P", hct_p);
-        elementHCTScaleFactors.put("S", hct_s);
+        elementHCTScaleFactors.put(1, hct_h);
+        elementHCTScaleFactors.put(6, hct_c);
+        elementHCTScaleFactors.put(7, hct_n);
+        elementHCTScaleFactors.put(8, hct_o);
+        elementHCTScaleFactors.put(15, hct_p);
+        elementHCTScaleFactors.put(16, hct_s);
 
         // Process any radii override values.
         String radiiProp = forceField.getString("GK_RADIIOVERRIDE", null);
@@ -1191,12 +1189,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
      *
      * @param elementHCT HashMap containing element name keys and scale factor values
      */
-    public void setElementHCTScaleFactors(HashMap<String, Double> elementHCT) {
-        for (String element : elementHCT.keySet()) {
-            if (elementHCTScaleFactors.containsKey(element.toUpperCase())) {
-                elementHCTScaleFactors.replace(element.toUpperCase(), elementHCT.get(element));
+    public void setElementHCTScaleFactors(HashMap<Integer, Double> elementHCT) {
+        for (int atomicNumber : elementHCT.keySet()) {
+            if (elementHCTScaleFactors.containsKey(atomicNumber)) {
+                elementHCTScaleFactors.replace(atomicNumber, elementHCT.get(atomicNumber));
             } else {
-                logger.info("No HCT scale factor set for element: " + element);
+                logger.info("No HCT scale factor set for element: " + atomicNumber);
             }
         }
         initAtomArrays();
@@ -1554,16 +1552,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
             // Use element specific HCT scaling factors
             if (elementHCTScale) {
                 Atom atom = atoms[i];
+                int atomicNumber = atom.getAtomicNumber();
                 String atomName = atom.getName();
-                char elementChar = (atomName.charAt(0));
-                String elementName = Character.toString(elementChar);
-                boolean notIon = true;
-                if (atomName.contains("-") || atomName.contains("+")) {
-                    logger.info("Ion found: " + atomName);
-                    notIon = false;
-                }
-                if (elementHCTScaleFactors.get(elementName) != null && notIon) {
-                    overlapScale[i] = elementHCTScaleFactors.get(elementName);
+                if (elementHCTScaleFactors.get(atomicNumber) != null) {
+                    overlapScale[i] = elementHCTScaleFactors.get(atomicNumber);
                 } else {
                     logger.info("Element-specific HCT scale factor not found for atom " + i + " of element " + atomName);
                     overlapScale[i] = gkOverlapScale;
