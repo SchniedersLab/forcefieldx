@@ -3344,9 +3344,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       vdWClassForNoInteraction = 0;
       // Add vdW parameters to the force and record their type.
       vdwClassToOpenMMType = new HashMap<>();
-      for (int i = 0; i < nAtoms; i++) {
-        Atom atom = atoms[i];
-        VDWType vdwType = atom.getVDWType();
+
+      Map<String, VDWType> vdwTypes = forceField.getVDWTypes();
+
+      for (VDWType vdwType : vdwTypes.values()) {
         int atomClass = vdwType.atomClass;
         if (!vdwClassToOpenMMType.containsKey(atomClass)) {
           double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
