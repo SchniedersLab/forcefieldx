@@ -711,8 +711,10 @@ public class TitrationUtils {
         int atomClass = hisAtomTypes[state][index].atomClass;
         hisVDWTypes[state][index] = forceField.getVDWType("" + atomClass);
         hisSoluteTypes[state][index] = getSoluteType(forceField, hisAtomTypes[state][index], hisVDWTypes[state][index]);
-        if (hisMultipoleTypes[state][index] == null || hisPolarizeTypes[state][index] == null) {
-          logger.severe(format(" A multipole could not be assigned for Lys atom %s.\n %s\n",
+        if (hisMultipoleTypes[state][index] == null
+            || hisPolarizeTypes[state][index] == null
+            || hisSoluteTypes[state][index] == null) {
+          logger.severe(format(" Titration parameters could not be assigned for Lys atom %s.\n %s\n",
               atomName, hisAtomTypes[state][index]));
         }
       }
@@ -741,8 +743,10 @@ public class TitrationUtils {
         int atomClass = lysAtomTypes[state][index].atomClass;
         lysVDWTypes[state][index] = forceField.getVDWType("" + atomClass);
         lysSoluteTypes[state][index] = getSoluteType(forceField, lysAtomTypes[state][index], lysVDWTypes[state][index]);
-        if (lysMultipoleTypes[state][index] == null || lysPolarizeTypes[state][index] == null) {
-          logger.severe(format(" A multipole could not be assigned for Lys atom %s.\n %s\n",
+        if (lysMultipoleTypes[state][index] == null
+            || lysPolarizeTypes[state][index] == null
+            || lysSoluteTypes[state][index] == null) {
+          logger.severe(format(" Titration parameters could not be assigned for Lys atom %s.\n %s\n",
               atomName, lysAtomTypes[state][index]));
         }
       }
@@ -771,8 +775,10 @@ public class TitrationUtils {
         int atomClass = aspAtomTypes[state][index].atomClass;
         aspVDWTypes[state][index] = forceField.getVDWType("" + atomClass);
         aspSoluteTypes[state][index] = getSoluteType(forceField, aspAtomTypes[state][index], aspVDWTypes[state][index]);
-        if (aspMultipoleTypes[state][index] == null || aspPolarizeTypes[state][index] == null) {
-          logger.severe(format(" A force field type could not be assigned for Asp atom %s.\n %s\n",
+        if (aspMultipoleTypes[state][index] == null
+            || aspPolarizeTypes[state][index] == null
+            || aspSoluteTypes[state][index] == null) {
+          logger.severe(format(" Titration parameters could not be assigned for Asp atom %s.\n %s\n",
               atomName, aspAtomTypes[state][index]));
         }
       }
@@ -801,8 +807,10 @@ public class TitrationUtils {
         int atomClass = gluAtomTypes[state][index].atomClass;
         gluVDWTypes[state][index] = forceField.getVDWType("" + atomClass);
         gluSoluteTypes[state][index] = getSoluteType(forceField, gluAtomTypes[state][index], gluVDWTypes[state][index]);
-        if (gluMultipoleTypes[state][index] == null || gluPolarizeTypes[state][index] == null) {
-          logger.severe(format(" A multipole could not be assigned for Glu atom %s.\n %s\n",
+        if (gluMultipoleTypes[state][index] == null
+            || gluPolarizeTypes[state][index] == null
+            || gluSoluteTypes[state][index] == null) {
+          logger.severe(format(" Titration parameters could not be assigned for Glu atom %s.\n %s\n",
               atomName, gluAtomTypes[state][index]));
         }
       }
@@ -855,15 +863,25 @@ public class TitrationUtils {
   }
 
   private SoluteType getSoluteType(ForceField forceField, AtomType atomType, VDWType vdwType) {
-    switch(soluteRadiiType ) {
+    SoluteType soluteType = SoluteType.getCensusSoluteType(atomType.atomicNumber);
+    switch(soluteRadiiType) {
       case SOLUTE:
-        return SoluteType.getFitSoluteType(forceField, atomType.type);
+        SoluteType type = SoluteType.getFitSoluteType(forceField, atomType.type);
+        if (type != null) {
+          soluteType = type;
+        }
+        break;
       case VDW:
-        return SoluteType.getVDWSoluteType(vdwType);
-      case CONSENSUS:
-        return SoluteType.getCensusSoluteType(atomType.atomicNumber);
+        type = SoluteType.getVDWSoluteType(vdwType);
+        if (type != null) {
+          soluteType = type;
+        }
+        break;
     }
-    return null;
+    if (soluteType == null) {
+      logger.severe(format(" No solute type (%s) for %d:\n  \"%s\"\n  %s", soluteRadiiType, atomType.type, atomType, vdwType));
+    }
+    return soluteType;
   }
 
   public void setRotamerPhBias(double temperature, double pH) {
