@@ -151,7 +151,12 @@ class ForEachFile extends AlgorithmsScript {
           // Create a new instance of the script and run it.
           Script groovyScript = script.getDeclaredConstructor().newInstance()
           groovyScript.setBinding(binding)
-          groovyScript.run()
+
+          try {
+            groovyScript.run()
+          } catch (Exception e) {
+            logger.info(format(" Exception for file: %s", path))
+          }
         }
       }
     }
