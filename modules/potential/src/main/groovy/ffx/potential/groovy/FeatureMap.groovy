@@ -44,7 +44,7 @@ import ffx.potential.nonbonded.implicit.SurfaceAreaRegion
 import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
-import ffx.potential.GetProteinFeatures
+import ffx.potential.utils.GetProteinFeatures
 import ffx.potential.bonded.AminoAcidUtils
 import ffx.potential.bonded.Residue
 import ffx.potential.cli.PotentialScript
@@ -98,13 +98,16 @@ class FeatureMap extends PotentialScript {
         if (!init()) {
             return null
         }
-
+        System.setProperty("gkterm", "true")
+        System.setProperty("cavmodel", "CAV")
+        System.setProperty("surface-tension", "1.0")
         // Load the MolecularAssembly.
         activeAssembly = getActiveAssembly(filename)
         if (activeAssembly == null) {
             logger.info(helpString())
             return null
         }
+
 
         //sum surface area of all atoms and compare to total surface area
         ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
@@ -113,12 +116,9 @@ class FeatureMap extends PotentialScript {
         double[] x = new double[nVars]
         forceFieldEnergy.getCoordinates(x)
         forceFieldEnergy.energy(x)
-        double[] surfaceArea = forceFieldEnergy.getGK().getSurfaceAreaRegion().getArea()
-
-
 
         residues = activeAssembly.getResidueList()
-        GetProteinFeatures getProteinFeatures = new GetProteinFeatures(surfaceArea)
+        GetProteinFeatures getProteinFeatures = new GetProteinFeatures()
 
         String fileDir = FilenameUtils.getFullPath(filename).replace("filename", "")
         String baseName = FilenameUtils.getBaseName(filename)
@@ -129,7 +129,9 @@ class FeatureMap extends PotentialScript {
             dos.println("Residue\tPosition\tPolarity\tAcidity\tSecondary Structure\tPhi\tPsi\tOmega\tSurface Area\tNormalized SA")
             for (int i = 0; i < residues.size(); i++) {
                 //getProteinFeatures.saveFeatures(residues.get(i))
-                String[] features = getProteinFeatures.saveFeatures(residues.get(i))
+                double residueSurfaceArea =
+                        forceFieldEnergy.getGK().getSurfaceAreaRegion().getResidueSurfaceArea(residues.get(i))
+                String[] features = getProteinFeatures.saveFeatures(residues.get(i), residueSurfaceArea)
                 for (int j=0; j<features.length; j++){
                     dos.print(features[j] + "\t")
                 }
