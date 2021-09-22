@@ -1,4 +1,4 @@
-package ffx.potential;
+package ffx.potential.utils;
 
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
@@ -17,13 +17,11 @@ public class GetProteinFeatures {
     private double phi;
     private double psi;
     private double omega;
-    private final double[] surfaceAreaArray;
-    private int surfaceAreaIndex = 0;
     private double totalSurfaceArea = 0.0;
 
 
-    public GetProteinFeatures(double[] surfaceAreaArray) {
-        this.surfaceAreaArray = surfaceAreaArray;
+    public GetProteinFeatures() {
+
     }
 
     static {
@@ -131,7 +129,7 @@ public class GetProteinFeatures {
         standardSurfaceArea.put(AminoAcid3.VAL, 171.89211);
     }
 
-    public String[] saveFeatures(Residue residue) {
+    public String[] saveFeatures(Residue residue, double surfaceArea) {
         String[] features = new String[10];
         String name = residue.getName();
         AminoAcid3 aa3 = residue.getAminoAcid3();
@@ -166,8 +164,7 @@ public class GetProteinFeatures {
             structure = getSecondaryStructure();
         }
 
-
-        double surfaceArea = getSurfaceArea(residue);
+        totalSurfaceArea += surfaceArea;
         String surfaceAreaString = String.valueOf(surfaceArea);
 
         double standSurfaceArea = standardSurfaceArea.getOrDefault(residue.getAminoAcid3(), 0.0);
@@ -261,7 +258,7 @@ public class GetProteinFeatures {
         return secondaryStructure;
     }
 
-    public double getSurfaceArea(Residue residue) {
+    /*public double getSurfaceArea(Residue residue) {
         List<Atom> atoms = residue.getAtomList();
         int nAtoms = atoms.size();
         int endIndex = surfaceAreaIndex + nAtoms;
@@ -274,7 +271,7 @@ public class GetProteinFeatures {
         totalSurfaceArea += sumResidueArea;
 
         return sumResidueArea;
-    }
+    }*/
 
     public double getTotalSurfaceArea(){
         return totalSurfaceArea;
