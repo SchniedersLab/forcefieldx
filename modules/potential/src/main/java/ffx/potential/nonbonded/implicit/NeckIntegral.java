@@ -122,6 +122,8 @@ public class NeckIntegral {
    * Aij is a (non-symmetric) 35x35 array of parameterized constants last updated 09 Apr 21 by Rae
    * Corrigan.
    * <p>
+   * The units of the Aij matrix are Angstroms^(-11).
+   * <p>
    * Usage is as follows: AijAguilarOnufriev[decreened][descreener]
    */
   private static final double[][] Aij = {
@@ -339,10 +341,12 @@ public class NeckIntegral {
 
   /**
    * A position offset parameter for the Neck integral, parameterized by two input atomic radii
-   * sizes.
+   * sizes (in Angstroms).
    * <p>
    * Bij is a (non-symmetric) 35x35 array of parameterized constants last updated 09 Apr 21 by Rae
    * Corrigan.
+   * <p>
+   * The units of the Bij matrix are Angstroms.
    */
   private static final double[][] Bij = {
       {-1.20, -0.25, -0.30, -0.15, -0.40, -0.85, -0.90, -0.75, -0.80, -0.65, -0.70, -0.75, -0.40,

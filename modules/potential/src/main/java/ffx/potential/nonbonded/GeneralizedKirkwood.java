@@ -162,15 +162,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Default value of beta0 for tanh scaling
      */
-    private static final double DEFAULT_BETA0 = 0.4694;
+    private static final double DEFAULT_BETA0 = 0.3900;
     /**
      * Default value of beta1 for tanh scaling
      */
-    private static final double DEFAULT_BETA1 = 0.0391;
+    private static final double DEFAULT_BETA1 = 0.0290;
     /**
      * Default value of beta2 for tanh scaling
      */
-    private static final double DEFAULT_BETA2 = 0.0008;
+    private static final double DEFAULT_BETA2 = 0.0009;
     /**
      * Default surface tension for apolar models without an explicit dispersion term. This is lower
      * than CAVDISP, since the favorable dispersion term is implicitly included.
@@ -336,6 +336,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      */
     private double sneck;
     /**
+     * Apply a neck correction during descreening.
+     */
+    private final boolean neckCorrection;
+    /**
      * Use the Corrigan et al chemically aware neck correction;
      * atoms with more heavy atom bonds are less capable of forming interstitial necks.
      */
@@ -368,7 +372,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     /**
      * Element-specific HCT overlap scale factors
      */
-    private final HashMap<String, Double> elementHCTScaleFactors;
+    private final HashMap<Integer, Double> elementHCTScaleFactors;
     /**
      * Born radius of each atom.
      */
@@ -564,27 +568,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
         }
         descreenOffset = forceField.getDouble("DESCREEN_OFFSET", 0.0);
         // If true, the descreening integral includes the neck correction to better approximate molecular surface.
-        boolean neckCorrection = forceField.getBoolean("NECK_CORRECTION", false);
+        neckCorrection = forceField.getBoolean("NECK_CORRECTION", false);
         sneck = forceField.getDouble("SNECK", DEFAULT_SNECK);
         chemicallyAwareSneck = forceField.getBoolean("CHEMICALLY_AWARE_SNECK", true);
         tanhCorrection = forceField.getBoolean("TANH_CORRECTION", false);
         beta0 = forceField.getDouble("BETA0", DEFAULT_BETA0);
         beta1 = forceField.getDouble("BETA1", DEFAULT_BETA1);
         beta2 = forceField.getDouble("BETA2", DEFAULT_BETA2);
-        elementHCTScaleFactors = new HashMap<>();
-        double hct_h = forceField.getDouble("HCT_H", DEFAULT_HCT_SCALE);
-        double hct_c = forceField.getDouble("HCT_C", DEFAULT_HCT_C);
-        double hct_n = forceField.getDouble("HCT_N", DEFAULT_HCT_N);
-        double hct_o = forceField.getDouble("HCT_O", DEFAULT_HCT_O);
-        double hct_p = forceField.getDouble("HCT_P", DEFAULT_HCT_P);
-        double hct_s = forceField.getDouble("HCT_S", DEFAULT_HCT_S);
         // Add default values for all elements
-        elementHCTScaleFactors.put("H", hct_h);
-        elementHCTScaleFactors.put("C", hct_c);
-        elementHCTScaleFactors.put("N", hct_n);
-        elementHCTScaleFactors.put("O", hct_o);
-        elementHCTScaleFactors.put("P", hct_p);
-        elementHCTScaleFactors.put("S", hct_s);
+        elementHCTScaleFactors = new HashMap<>();
+        elementHCTScaleFactors.put(1, forceField.getDouble("HCT_H", DEFAULT_HCT_SCALE));
+        elementHCTScaleFactors.put(6, forceField.getDouble("HCT_C", DEFAULT_HCT_C));
+        elementHCTScaleFactors.put(7, forceField.getDouble("HCT_N", DEFAULT_HCT_N));
+        elementHCTScaleFactors.put(8, forceField.getDouble("HCT_O", DEFAULT_HCT_O));
+        elementHCTScaleFactors.put(15, forceField.getDouble("HCT_P", DEFAULT_HCT_P));
+        elementHCTScaleFactors.put(16, forceField.getDouble("HCT_S", DEFAULT_HCT_S));
 
         // Process any radii override values.
         String radiiProp = forceField.getString("GK_RADIIOVERRIDE", null);
@@ -771,12 +769,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 forceField.getDouble("HCT-SCALE", DEFAULT_HCT_SCALE)));
         if (elementHCTScale) {
             logger.info(format("   Element-Specific HCT Scale Factors: %8B", elementHCTScale));
-            logger.info(format("    HCT-H:                             %8.4f", hct_h));
-            logger.info(format("    HCT-C:                             %8.4f", hct_c));
-            logger.info(format("    HCT-N:                             %8.4f", hct_n));
-            logger.info(format("    HCT-O:                             %8.4f", hct_o));
-            logger.info(format("    HCT-P:                             %8.4f", hct_p));
-            logger.info(format("    HCT-S:                             %8.4f", hct_s));
+            logger.info(format("    HCT-H:                             %8.4f", elementHCTScaleFactors.get(1)));
+            logger.info(format("    HCT-C:                             %8.4f", elementHCTScaleFactors.get(6)));
+            logger.info(format("    HCT-N:                             %8.4f", elementHCTScaleFactors.get(7)));
+            logger.info(format("    HCT-O:                             %8.4f", elementHCTScaleFactors.get(8)));
+            logger.info(format("    HCT-P:                             %8.4f", elementHCTScaleFactors.get(15)));
+            logger.info(format("    HCT-S:                             %8.4f", elementHCTScaleFactors.get(16)));
         }
 
         logger.info(
@@ -1089,6 +1087,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
         return neckScale;
     }
 
+    public boolean getTanhCorrection() {
+        return tanhCorrection;
+    }
+
     /**
      * Returns the probe radius (typically 1.4 Angstroms).
      *
@@ -1191,10 +1193,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
      *
      * @param elementHCT HashMap containing element name keys and scale factor values
      */
-    public void setElementHCTScaleFactors(HashMap<String, Double> elementHCT) {
-        for (String element : elementHCT.keySet()) {
-            if (elementHCTScaleFactors.containsKey(element.toUpperCase())) {
-                elementHCTScaleFactors.replace(element.toUpperCase(), elementHCT.get(element));
+    public void setElementHCTScaleFactors(HashMap<Integer, Double> elementHCT) {
+        for (Integer element : elementHCT.keySet()) {
+            if (elementHCTScaleFactors.containsKey(element)) {
+                elementHCTScaleFactors.replace(element, elementHCT.get(element));
             } else {
                 logger.info("No HCT scale factor set for element: " + element);
             }
@@ -1554,18 +1556,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
             // Use element specific HCT scaling factors
             if (elementHCTScale) {
                 Atom atom = atoms[i];
-                String atomName = atom.getName();
-                char elementChar = (atomName.charAt(0));
-                String elementName = Character.toString(elementChar);
-                boolean notIon = true;
-                if (atomName.contains("-") || atomName.contains("+")) {
-                    logger.info("Ion found: " + atomName);
-                    notIon = false;
-                }
-                if (elementHCTScaleFactors.get(elementName) != null && notIon) {
-                    overlapScale[i] = elementHCTScaleFactors.get(elementName);
+                int atomicNumber = atom.getAtomicNumber();
+                if (elementHCTScaleFactors.containsKey(atomicNumber)) {
+                    overlapScale[i] = elementHCTScaleFactors.get(atomicNumber);
                 } else {
-                    logger.info("Element-specific HCT scale factor not found for atom " + i + " of element " + atomName);
+                    logger.fine(format(" No element-specific HCT scale factor for %s", atom));
                     overlapScale[i] = gkOverlapScale;
                 }
             }
@@ -1629,7 +1624,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         // Set Sneck scaling parameters based on atom type and number of bound non-hydrogen atoms.
         for (int i = 0; i < nAtoms; i++) {
             // If the overlap scale factor is zero, then so is the neck overlap.
-            if (overlapScale[i] == 0.0) {
+            if (!neckCorrection || overlapScale[i] == 0.0) {
                 neckScale[i] = 0.0;
             } else {
                 if (chemicallyAwareSneck) {

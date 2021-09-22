@@ -247,7 +247,7 @@ public class ForceField {
     }
     if (treeMap.containsKey(type.key)) {
       if (treeMap.get(type.key).toString().equalsIgnoreCase(type.toString())) {
-        // Ignore this type if its identical to an existing type.
+        // Ignore this type if it's identical to an existing type.
         return;
       }
       logger.log(
