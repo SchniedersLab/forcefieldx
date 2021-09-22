@@ -41,6 +41,7 @@ import edu.rit.pj.Comm
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
 import ffx.utilities.FFXScript
+import picocli.CommandLine.Option
 import picocli.CommandLine.Command
 import picocli.CommandLine.Unmatched
 
@@ -62,8 +63,15 @@ class ForEachFile extends AlgorithmsScript {
    * --ext or --filetype Only apply the command to files with given filetype (ARC, XYZ, PDB, etc).
    */
   // @Option(names = ['--ext', '--filetype'], paramLabel = 'ext',
-  //    description = 'Only apply the command to files with given filetype (ARC, XYZ, PDB, etc).')
+  //     description = 'Only apply the command to files with given filetype (ARC, XYZ, PDB, etc).')
   // String ext = null
+
+  /**
+   * --recurse Maximum recursion level (0 only includes the current directory).
+   */
+  @Option(names = ['--recurse'], defaultValue = "0", paramLabel = "0",
+      description = 'Maximum recursion level (0 only includes the current directory).')
+  int recurse
 
   /**
    * The final argument(s) should be one or more filenames.
@@ -121,7 +129,7 @@ class ForEachFile extends AlgorithmsScript {
 
     File cwd = new File(".")
     List<File> files = []
-    cwd.traverse(type: FILES, maxDepth: 0) {
+    cwd.traverse(type: FILES, maxDepth: recurse) {
       files.add(it)
     }
 
