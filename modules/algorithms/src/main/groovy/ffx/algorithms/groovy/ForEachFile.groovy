@@ -141,6 +141,8 @@ class ForEachFile extends AlgorithmsScript {
 //            }
             dirParameters.add(arg)
           }
+          // Add the current file.
+          dirParameters.add(path)
 
           // Create a Binding for command line arguments.
           Binding binding = new Binding()
