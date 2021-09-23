@@ -74,6 +74,13 @@ class ForEachFile extends AlgorithmsScript {
   int recurse
 
   /**
+   * --regex Evaluate files that match a Regular expression (.* includes all files).
+   */
+  @Option(names = ['--regex'], paramLabel = ".*", defaultValue = ".*",
+      description = 'Evaluate files that match a Regular expression (\'.*\' matches all files).')
+  String regex
+
+  /**
    * The final argument(s) should be one or more filenames.
    */
   @Unmatched
@@ -127,11 +134,15 @@ class ForEachFile extends AlgorithmsScript {
     // Remove the ForEachFile command.
     unmatched.remove(0)
 
+    // Collect the files.
     File cwd = new File(".")
     List<File> files = []
-    cwd.traverse(type: FILES, maxDepth: recurse) {
+    cwd.traverse(type: FILES, maxDepth: recurse, nameFilter: ~/$regex/) {
       files.add(it)
     }
+
+    // Sort the files.
+    Collections.sort(files)
 
     int numFiles = files.size()
     for (int i=0; i<numFiles; i++) {
@@ -143,10 +154,6 @@ class ForEachFile extends AlgorithmsScript {
           List<String> dirParameters = new ArrayList<>()
           // Pass along the unmatched parameters
           for (String arg : unmatched) {
-//            if (arg.containsIgnoreCase("SUBDIR")) {
-//              arg = arg.replaceFirst("SUBDIR", "")
-//              arg = concat(path, getName(arg))
-//            }
             dirParameters.add(arg)
           }
           // Add the current file.
