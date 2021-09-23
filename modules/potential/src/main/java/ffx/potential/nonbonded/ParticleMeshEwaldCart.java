@@ -92,6 +92,7 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ELEC_FORM;
 import ffx.potential.parameters.ForceField.ForceFieldType;
+import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.utils.EnergyException;
@@ -2394,6 +2395,15 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             sb.append(format("\n  1-3 %s --> %s", a2, aType2));
           }
         }
+
+        List<MultipoleType> multipoleTypes = forceField.getMultipoleTypes("" + atom.getAtomType().getKey());
+        if (multipoleTypes != null || !multipoleTypes.isEmpty()) {
+          sb.append("\n Similar Multipole types:");
+          for (MultipoleType multipoleType : multipoleTypes) {
+            sb.append(format("\n %s", multipoleType));
+          }
+        }
+
         logger.log(Level.SEVERE, sb.toString());
       }
     }
