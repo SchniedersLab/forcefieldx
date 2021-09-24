@@ -145,7 +145,6 @@ class Dynamics extends AlgorithmsScript {
         // Set active atoms.
         atomSelectionOptions.setActiveAtoms(activeAssembly)
 
-
         potential = activeAssembly.getPotentialEnergy()
         double[] x = new double[potential.getNumberOfVariables()]
         potential.getCoordinates(x)
@@ -178,36 +177,23 @@ class Dynamics extends AlgorithmsScript {
             int rank = (size > 1) ? world.rank() : 0
             logger.info("Rank:" + rank.toString())
 
-            List<File> structureFiles = files.stream().
-                    map { fn -> new File(new File(FilenameUtils.normalize(fn)).getAbsolutePath())
-                    }.
-                    collect(Collectors.toList())
-
-            File firstStructure = structureFiles.get(0)
-            String filePathNoExtension = firstStructure.getAbsolutePath().replaceFirst(~/\.[^.]+$/, "")
-
-            String withRankName = filePathNoExtension
-
-            List<File> rankedFiles = new ArrayList<>(nFiles)
-            String rankDirName = FilenameUtils.getFullPath(filePathNoExtension)
-            rankDirName = format("%s%d", rankDirName, rank)
-            File rankDirectory = new File(rankDirName)
-
+            File structureFile = new File(filename)
+            String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
+            File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank))
             if (!rankDirectory.exists()) {
                 rankDirectory.mkdir()
             }
-            rankDirName = rankDirName + File.separator
-            withRankName = format("%s%s", rankDirName, FilenameUtils.getName(filePathNoExtension))
-            logger.info("With Rank Name:" + withRankName)
 
-            for (File structureFile : structureFiles) {
-                rankedFiles.add(new File(format("%s%s", rankDirName,
-                        FilenameUtils.getName(structureFile.getName()))))
-            }
-            structureFiles = rankedFiles
-            logger.info("ranked Files:" + rankedFiles.get(0))
+            // TODO: finish setting up restart support.
+            String withRankName = rankDirectory.getPath() + File.separator + baseFilename
             File dyn = new File(withRankName + ".dyn")
+            if (!dyn.exists()) {
+                dyn = null
+            }
 
+            final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
+            logger.info("Set activeAssembly filename: " + newMolAssemblyFile)
+            activeAssembly.setFile(new File(newMolAssemblyFile))
             molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
             ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener,
                     dynamicsOptions.temperature, repEx.exponent, repEx.monteCarlo)
