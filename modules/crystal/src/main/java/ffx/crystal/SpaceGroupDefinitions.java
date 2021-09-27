@@ -7869,7 +7869,8 @@ public class SpaceGroupDefinitions {
   }
 
   /**
-   * Alternative space group definitions.
+   * Alternative space group definitions have the same space group numbers as other space groups, but contain a
+   *  different axis of symmetry (e.g. P21/a vs P21/c) or are described using different lattice systems (e.g. H3 vs R3).
    *
    * @param name Space group name.
    * @return Return the created SpaceGroup instance.
@@ -8118,7 +8119,7 @@ public class SpaceGroupDefinitions {
       return -1;
     }
     String n = name.trim();
-    // Many CIF files have extraneous parenthesis (e.g. "P2(1)/c")
+    // Many CIF files have extraneous parenthesis not found in PDB or FFX SG formats (e.g. "P2(1)/c").
     n = n.replaceAll("[()]", "");
     int num = SpaceGroupInfo.spaceGroupNames.length;
     for (int i = 0; i < num; i++) {

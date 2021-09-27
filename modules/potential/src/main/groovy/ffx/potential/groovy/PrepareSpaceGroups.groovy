@@ -185,9 +185,12 @@ class PrepareSpaceGroups extends PotentialScript {
     }
 
     for (int num = 1; num <= 230; num++) {
-      SpaceGroup spacegroup = spaceGroupFactory(num)
+      SpaceGroup spacegroup = spaceGroupFactory(num);
+      // Statistics for alternative space groups are not listed, spacegroup is used for statistics, spacegroup2 is
+      //   used for alternative space group names/symmetry operations.
+      SpaceGroup spacegroup2;
       if (sg) {
-        SpaceGroup spacegroup2 = spaceGroupFactory(sg)
+        spacegroup2 = spaceGroupFactory(sg)
         if (spacegroup2 == null) {
           logger.info(format("\n Space group %s was not recognized.\n", sg))
           return this
@@ -195,6 +198,8 @@ class PrepareSpaceGroups extends PotentialScript {
         if (spacegroup2.number != spacegroup.number) {
           continue
         }
+      }else{
+        spacegroup2=spacegroup;
       }
 
       if (chiral && !spacegroup.respectsChirality()) {
@@ -214,10 +219,10 @@ class PrepareSpaceGroups extends PotentialScript {
       }
 
       logger.info(format("\n Preparing %s (CSD percent: %7.4f, PDB Rank: %d)",
-          spacegroup.shortName, getCCDCPercent(num), getPDBRank(spacegroup)))
+          spacegroup2.shortName, getCCDCPercent(num), getPDBRank(spacegroup)))
 
       // Create the directory.
-      String sgDirName = spacegroup.shortName.replace('/', '_')
+      String sgDirName = spacegroup2.shortName.replace('/', '_')
 
       File baseDir = baseDir
       File sgDir
@@ -232,9 +237,9 @@ class PrepareSpaceGroups extends PotentialScript {
         sgDir.mkdir()
       }
 
-      double[] abc = spacegroup.latticeSystem.resetUnitCellParams()
+      double[] abc = spacegroup2.latticeSystem.resetUnitCellParams()
       Crystal crystal = new Crystal(abc[0], abc[1], abc[2], abc[3], abc[4], abc[5],
-          spacegroup.shortName)
+          spacegroup2.shortName)
       crystal.setDensity(density, mass)
       double cutoff2 = energy.getCutoffPlusBuffer() * 2.0
       crystal = replicatesCrystalFactory(crystal, cutoff2)
@@ -283,7 +288,12 @@ class PrepareSpaceGroups extends PotentialScript {
                     logger.fine(format(" Updating : %s", line))
                   } else if (first == "parameters") {
                     if (tokens.length > 1) {
-                      keyWriter.println(format("parameters ../%s", tokens[1]))
+                      if(tokens[1].startsWith("/") || tokens[1].startsWith("\\")){
+                        //Absolute path specified, therefore do not modify.
+                        keyWriter.println(format("parameters %s", tokens[1]))
+                      }else {
+                        keyWriter.println(format("parameters ../%s", tokens[1]))
+                      }
                     } else {
                       logger.warning("Parameter file may not have been specified")
                     }
@@ -296,7 +306,7 @@ class PrepareSpaceGroups extends PotentialScript {
               }
             }
             // Update the space group and unit cell parameters.
-            keyWriter.println(format("spacegroup %s", spacegroup.shortName))
+            keyWriter.println(format("spacegroup %s", spacegroup2.shortName))
             keyWriter.println(format("a-axis %12.8f", crystal.a))
             keyWriter.println(format("b-axis %12.8f", crystal.b))
             keyWriter.println(format("c-axis %12.8f", crystal.c))
