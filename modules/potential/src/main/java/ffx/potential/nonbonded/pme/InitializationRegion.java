@@ -375,13 +375,19 @@ public class InitializationRegion extends ParallelRegion {
             elecScale = 0.0;
           }
 
-          double[] in = atom.getMultipoleType().getMultipole();
+          MultipoleType multipoleType = atom.getMultipoleType();
+          double[] in = multipoleType.getMultipole();
+          // Update the frame
+          frame[ii] = multipoleType.frameDefinition;
+          // Update the axis defining atom.
+          axisAtom[ii] = atom.getAxisAtomIndices();
 
           if (rotateMultipoles) {
             // Local frame origin is the location of the current atomic multipole atom.
             localOrigin[0] = x[ii];
             localOrigin[1] = y[ii];
             localOrigin[2] = z[ii];
+
             // Collect coordinates of the frame defining atoms.
             int[] referenceSites = axisAtom[ii];
             int nSites = 0;

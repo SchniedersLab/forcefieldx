@@ -238,6 +238,13 @@ public class RotamerLibrary {
           break;
       }
     }
+
+    // If the rotamer represents a titration state, update force field parameters for the
+    // side-chain atoms of the residue.
+    if (rotamer.isTitrating) {
+      rotamer.updateParameters(residue);
+    }
+
   }
 
   /**
@@ -1108,7 +1115,7 @@ public class RotamerLibrary {
         logger.warning(format(" Could not set residue %s for multi-residue %s", name, residue));
       }
     } else {
-      name = residue.getAminoAcid3();
+      name = rotamer.aminoAcid3;
     }
     switch (name) {
       case VAL: {
@@ -2475,13 +2482,6 @@ public class RotamerLibrary {
       default:
         break;
     }
-
-    // If the rotamer represents a titration state, update force field parameters for the
-    // side-chain atoms of the residue.
-    if (rotamer.isTitrating) {
-      rotamer.updateParameters(residue);
-    }
-
   }
 
   /**

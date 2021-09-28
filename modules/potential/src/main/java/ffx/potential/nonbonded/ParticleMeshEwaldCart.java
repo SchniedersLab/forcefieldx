@@ -248,7 +248,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
   private double[] polarizability;
   /** 1-2, 1-3, 1-4 and 1-5 connectivity lists. */
   private int[][] mask12;
-
   private int[][] mask13;
   private int[][] mask14;
   private int[][] mask15;

@@ -46,6 +46,8 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3
 import ffx.potential.bonded.*
 import ffx.potential.parsers.PDBFilter
+import ffx.potential.parsers.XYZFilter
+import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
@@ -114,7 +116,8 @@ class ManyBody extends AlgorithmsScript {
       return this
     }
 
-    if (Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "false"))) {
+    CompositeConfiguration properties = activeAssembly.getProperties()
+    if (properties.getBoolean("standardizeAtomNames", false)) {
       renameAtomsToPDBStandard(activeAssembly)
     }
 
@@ -176,6 +179,7 @@ class ManyBody extends AlgorithmsScript {
     boolean isTitrating = false
     Set<Atom> excludeAtoms = new HashSet<>()
     int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
+
     int i = 0
     for (Residue residue : residueList) {
       Rotamer rotamer = residue.getRotamers()[optimalRotamers[i++]]
@@ -218,19 +222,23 @@ class ManyBody extends AlgorithmsScript {
     }
 
     if (master) {
-      File modelFile = saveDirFile(activeAssembly.getFile())
-      PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, null, null)
-      if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
-        logger.info(format(" Save failed for %s", activeAssembly))
-      }
-      logger.info("\n Final Minimum Energy\n")
+      logger.info(" Final Minimum Energy\n")
+
       ForceFieldEnergy forceFieldEnergy = algorithmFunctions.energy(activeAssembly)
       double energy = forceFieldEnergy.getTotalEnergy()
-
       if (isTitrating) {
         double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList, optimalRotamers)
         logger.info(format("\n  Rotamer pH Bias    %16.8f", phBias))
-        logger.info(format("  Potential with Bias%16.8f", phBias + energy))
+        logger.info(format("  Potential with Bias%16.8f\n", phBias + energy))
+      }
+
+      // Prevent residues from being renamed based on the existence of hydrogen
+      // atoms (i.e. hydrogen that excluded from being written out).
+      properties.setProperty("standardizeAtomNames", "false")
+      File modelFile = saveDirFile(activeAssembly.getFile())
+      PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(), properties)
+      if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
+        logger.info(format(" Save failed for %s", activeAssembly))
       }
     }
 

@@ -105,7 +105,6 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
   private final boolean intramolecularSoftcore;
   /** Dimensions of [nsymm][nAtoms][3] */
   public double[][][] inducedDipole;
-
   public double[][][] inducedDipoleCR;
   /** Polarization groups. */
   protected int[][] ip11;
@@ -149,7 +148,6 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
   private double[] thole;
   /** Masking of 1-2, 1-3, 1-4 and 1-5 interactions. */
   private int[][] mask12;
-
   private int[][] mask13;
   private int[][] mask14;
   private int[][] mask15;

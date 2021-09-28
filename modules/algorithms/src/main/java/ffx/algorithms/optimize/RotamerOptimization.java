@@ -1728,7 +1728,7 @@ public class RotamerOptimization implements Terminatable {
   public void turnOnResidue(Residue residue, int ri) {
     turnOnAtoms(residue);
     Rotamer[] rotamers = residue.getRotamers();
-    RotamerLibrary.applyRotamer(residue, rotamers[ri]);
+    applyRotamer(residue, rotamers[ri]);
   }
 
   /** ONLY FOR UNIT TESTING. Sets a boolean to turn the pair elimination criteria off. */
