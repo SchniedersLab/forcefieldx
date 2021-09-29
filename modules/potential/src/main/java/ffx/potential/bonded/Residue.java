@@ -92,51 +92,51 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   private static final Point2d point2d = new Point2d();
 
   static {
-    NA3Color.put(NucleicAcidUtils.NucleicAcid3.ADE, RendererCache.RED);
-    NA3Color.put(NucleicAcidUtils.NucleicAcid3.CYT, RendererCache.MAGENTA);
-    NA3Color.put(NucleicAcidUtils.NucleicAcid3.GUA, RendererCache.BLUE);
-    NA3Color.put(NucleicAcidUtils.NucleicAcid3.URI, RendererCache.YELLOW);
-    NA3Color.put(NucleicAcidUtils.NucleicAcid3.DAD, RendererCache.RED);
-    NA3Color.put(NucleicAcidUtils.NucleicAcid3.DCY, RendererCache.MAGENTA);
-    NA3Color.put(NucleicAcidUtils.NucleicAcid3.DGU, RendererCache.BLUE);
-    NA3Color.put(NucleicAcidUtils.NucleicAcid3.DTY, RendererCache.ORANGE);
-    NA3Color.put(NucleicAcidUtils.NucleicAcid3.MP1, RendererCache.GREEN);
-    NA3Color.put(NucleicAcidUtils.NucleicAcid3.DP2, RendererCache.GREEN);
-    NA3Color.put(NucleicAcidUtils.NucleicAcid3.TP3, RendererCache.GREEN);
-    NA3Color.put(NucleicAcidUtils.NucleicAcid3.UNK, RendererCache.CYAN);
+    NA3Color.put(NucleicAcid3.ADE, RendererCache.RED);
+    NA3Color.put(NucleicAcid3.CYT, RendererCache.MAGENTA);
+    NA3Color.put(NucleicAcid3.GUA, RendererCache.BLUE);
+    NA3Color.put(NucleicAcid3.URI, RendererCache.YELLOW);
+    NA3Color.put(NucleicAcid3.DAD, RendererCache.RED);
+    NA3Color.put(NucleicAcid3.DCY, RendererCache.MAGENTA);
+    NA3Color.put(NucleicAcid3.DGU, RendererCache.BLUE);
+    NA3Color.put(NucleicAcid3.DTY, RendererCache.ORANGE);
+    NA3Color.put(NucleicAcid3.MP1, RendererCache.GREEN);
+    NA3Color.put(NucleicAcid3.DP2, RendererCache.GREEN);
+    NA3Color.put(NucleicAcid3.TP3, RendererCache.GREEN);
+    NA3Color.put(NucleicAcid3.UNK, RendererCache.CYAN);
 
-    AA3Color.put(AminoAcidUtils.AminoAcid3.ALA, RendererCache.GRAY);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.ARG, RendererCache.BLUE);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.ASN, RendererCache.BLUE);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.ASP, RendererCache.RED);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.CYS, RendererCache.YELLOW);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.GLN, RendererCache.BLUE);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.GLU, RendererCache.RED);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.GLH, RendererCache.RED);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.GLD, RendererCache.RED);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.GLY, RendererCache.GRAY);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.ILE, RendererCache.GRAY);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.LEU, RendererCache.GRAY);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.LYS, RendererCache.BLUE);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.MET, RendererCache.YELLOW);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.PHE, RendererCache.GREEN);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.PRO, RendererCache.ORANGE);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.SER, RendererCache.BLUE);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.THR, RendererCache.BLUE);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.TRP, RendererCache.GREEN);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.TYR, RendererCache.GREEN);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.VAL, RendererCache.GRAY);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.HIS, RendererCache.BLUE);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.HIE, RendererCache.BLUE);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.HID, RendererCache.BLUE);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.ORN, RendererCache.ORANGE);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.AIB, RendererCache.ORANGE);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.PCA, RendererCache.ORANGE);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.FOR, RendererCache.RED);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.ACE, RendererCache.RED);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.NH2, RendererCache.BLUE);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.NME, RendererCache.BLUE);
-    AA3Color.put(AminoAcidUtils.AminoAcid3.UNK, RendererCache.MAGENTA);
+    AA3Color.put(AminoAcid3.ALA, RendererCache.GRAY);
+    AA3Color.put(AminoAcid3.ARG, RendererCache.BLUE);
+    AA3Color.put(AminoAcid3.ASN, RendererCache.BLUE);
+    AA3Color.put(AminoAcid3.ASP, RendererCache.RED);
+    AA3Color.put(AminoAcid3.CYS, RendererCache.YELLOW);
+    AA3Color.put(AminoAcid3.GLN, RendererCache.BLUE);
+    AA3Color.put(AminoAcid3.GLU, RendererCache.RED);
+    AA3Color.put(AminoAcid3.GLH, RendererCache.RED);
+    AA3Color.put(AminoAcid3.GLD, RendererCache.RED);
+    AA3Color.put(AminoAcid3.GLY, RendererCache.GRAY);
+    AA3Color.put(AminoAcid3.ILE, RendererCache.GRAY);
+    AA3Color.put(AminoAcid3.LEU, RendererCache.GRAY);
+    AA3Color.put(AminoAcid3.LYS, RendererCache.BLUE);
+    AA3Color.put(AminoAcid3.MET, RendererCache.YELLOW);
+    AA3Color.put(AminoAcid3.PHE, RendererCache.GREEN);
+    AA3Color.put(AminoAcid3.PRO, RendererCache.ORANGE);
+    AA3Color.put(AminoAcid3.SER, RendererCache.BLUE);
+    AA3Color.put(AminoAcid3.THR, RendererCache.BLUE);
+    AA3Color.put(AminoAcid3.TRP, RendererCache.GREEN);
+    AA3Color.put(AminoAcid3.TYR, RendererCache.GREEN);
+    AA3Color.put(AminoAcid3.VAL, RendererCache.GRAY);
+    AA3Color.put(AminoAcid3.HIS, RendererCache.BLUE);
+    AA3Color.put(AminoAcid3.HIE, RendererCache.BLUE);
+    AA3Color.put(AminoAcid3.HID, RendererCache.BLUE);
+    AA3Color.put(AminoAcid3.ORN, RendererCache.ORANGE);
+    AA3Color.put(AminoAcid3.AIB, RendererCache.ORANGE);
+    AA3Color.put(AminoAcid3.PCA, RendererCache.ORANGE);
+    AA3Color.put(AminoAcid3.FOR, RendererCache.RED);
+    AA3Color.put(AminoAcid3.ACE, RendererCache.RED);
+    AA3Color.put(AminoAcid3.NH2, RendererCache.BLUE);
+    AA3Color.put(AminoAcid3.NME, RendererCache.BLUE);
+    AA3Color.put(AminoAcid3.UNK, RendererCache.MAGENTA);
 
     SSTypeColor.put(SSType.NONE, RendererCache.WHITE);
     SSTypeColor.put(SSType.SHEET, RendererCache.PINK);
@@ -269,6 +269,17 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     finalize(true, forceField);
   }
 
+  @Override
+  public void setName(String name) {
+    super.setName(name);
+    if (residueType != null) {
+      assignResidueType();
+    }
+    for (Atom atom : getAtomList()) {
+      atom.setResName(name);
+    }
+  }
+
   /**
    * {@inheritDoc}
    *
@@ -374,7 +385,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     this.titrationUtils = titrationUtils;
   }
 
-  public TitrationUtils getTitrationUtils(){
+  public TitrationUtils getTitrationUtils() {
     return titrationUtils;
   }
 
@@ -387,11 +398,8 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     if (this.residueType != ResidueType.AA) {
       throw new IllegalArgumentException(
           String.format(" This residue is " + "not an amino acid: %s", this));
-    } else if (aa == AminoAcidUtils.AminoAcid3.UNK) {
-      logger.fine(String.format("UNK stored for residue with name: %s", getName()));
-      return AminoAcidUtils.AminoAcid3.UNK;
     }
-    return AminoAcidUtils.AminoAcid3.valueOf(getName());
+    return aa;
   }
 
   /**
@@ -512,16 +520,9 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   public NucleicAcid3 getNucleicAcid3() {
     if (this.residueType != ResidueType.NA) {
       throw new IllegalArgumentException(
-          String.format(" This residue is " + "not a nucleic acid: %s", this));
-    } else if (na == NucleicAcidUtils.NucleicAcid3.UNK) {
-      return NucleicAcidUtils.NucleicAcid3.UNK;
+          String.format(" This residue is not a nucleic acid: %s", this));
     }
-
-    try {
-      return NucleicAcidUtils.NucleicAcid3.valueOf(getName());
-    } catch (Exception e) {
-      return NucleicAcidUtils.NucleicAcid3.UNK;
-    }
+    return na;
   }
 
   /**
@@ -653,7 +654,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   }
 
   /**
-   * getRotamer.
+   * Get the current rotamer.
    *
    * @return a {@link ffx.potential.bonded.Rotamer} object.
    */
@@ -662,7 +663,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   }
 
   /**
-   * setRotamer.
+   * Set the current rotamer.
    *
    * @param rotamer a {@link ffx.potential.bonded.Rotamer} object.
    */
@@ -671,18 +672,24 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   }
 
   /**
-   * Gets the Rotamers for this residue, potentially incorporating the original coordinates if
+   * Return all currently set rotamers.
+   *
+   * @return All current rotamers for this residue.
+   */
+  public Rotamer[] getRotamers() {
+    return rotamers;
+  }
+
+  /**
+   * Resets the rotamers for this residue, potentially incorporating the original coordinates if
    * RotamerLibrary's original coordinates rotamer flag has been set.
+   * <p>
+   * Any rotamers that were set previously are deleted.
    *
    * @param library Rotamer library to use
    * @return An array of Rotamer.
    */
-  public Rotamer[] getRotamers(RotamerLibrary library) {
-
-    // If the rotamers for this residue have been cached, return them.
-    if (rotamers != null) {
-      return rotamers;
-    }
+  public Rotamer[] setRotamers(RotamerLibrary library) {
 
     // Obtain rotamers for this residue from the RotamerLibrary.
     Rotamer[] libRotamers = library.getRotamers(this, titrationUtils);
@@ -692,14 +699,15 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     // (unless the library has no rotamers for this residue).
     if (library.getUsingOrigCoordsRotamer() && rotamers != null) {
       // Define the current coordinates as a new rotamer.
-      Rotamer originalRotamer = Rotamer.defaultRotamerFactory(this, titrationUtils);
-      // Add the new rotamer to those from the library and cache the result.
+      Rotamer[] originalRotamers = Rotamer.defaultRotamerFactory(this, titrationUtils);
+      int nOrig = originalRotamers.length;
+      // Add the original rotamers to those from the library and cache the result.
       int libRots = libRotamers.length;
-      rotamers = new Rotamer[libRots + 1];
-      // First rotamer is the original conformation.
-      rotamers[0] = originalRotamer;
+      rotamers = new Rotamer[libRots + nOrig];
+      // First rotamers are the original conformation.
+      arraycopy(originalRotamers, 0, rotamers, 0, nOrig);
       // Copy in the library.
-      arraycopy(libRotamers, 0, rotamers, 1, libRots);
+      arraycopy(libRotamers, 0, rotamers, nOrig, libRots);
     }
 
     return rotamers;
@@ -944,7 +952,6 @@ public class Residue extends MSGroup implements Comparable<Residue> {
    * <p>[chain ID]ResNumber-RotamerName.
    *
    * @param rotamer The rotamer to use.
-   *
    * @return A descriptive string.
    */
   public String toString(Rotamer rotamer) {
@@ -958,6 +965,17 @@ public class Residue extends MSGroup implements Comparable<Residue> {
       shortString = "" + resNumber + "-" + getName();
     }
     return shortString;
+  }
+
+  /**
+   * Add an array of rotamers to this Residue's cached array of rotamers.
+   *
+   * @param rotamers The rotamers to add.
+   */
+  void addRotamers(Rotamer[] rotamers) {
+    for (Rotamer rotamer : rotamers) {
+      addRotamer(rotamer);
+    }
   }
 
   /**

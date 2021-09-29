@@ -42,7 +42,6 @@ import ffx.crystal.SpaceGroup
 import ffx.crystal.SymOp
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import org.apache.commons.configuration2.CompositeConfiguration
@@ -153,8 +152,11 @@ class PrepareSpaceGroups extends PotentialScript {
       return this
     }
 
-    // Turn off periodic PME.
-    System.setProperty("ewald-alpha", "0.0")
+    // Turn off electrostatic interactions.
+    System.setProperty("mpoleterm", "false")
+
+    // Make sure an a-axis value is set.
+    System.setProperty("a-axis", "10.0")
 
     // Load the MolecularAssembly.
     activeAssembly = getActiveAssembly(filename)
@@ -183,9 +185,12 @@ class PrepareSpaceGroups extends PotentialScript {
     }
 
     for (int num = 1; num <= 230; num++) {
-      SpaceGroup spacegroup = spaceGroupFactory(num)
+      SpaceGroup spacegroup = spaceGroupFactory(num);
+      // Statistics for alternative space groups are not listed, spacegroup is used for statistics, spacegroup2 is
+      //   used for alternative space group names/symmetry operations.
+      SpaceGroup spacegroup2;
       if (sg) {
-        SpaceGroup spacegroup2 = spaceGroupFactory(sg)
+        spacegroup2 = spaceGroupFactory(sg)
         if (spacegroup2 == null) {
           logger.info(format("\n Space group %s was not recognized.\n", sg))
           return this
@@ -193,6 +198,8 @@ class PrepareSpaceGroups extends PotentialScript {
         if (spacegroup2.number != spacegroup.number) {
           continue
         }
+      }else{
+        spacegroup2=spacegroup;
       }
 
       if (chiral && !spacegroup.respectsChirality()) {
@@ -212,10 +219,10 @@ class PrepareSpaceGroups extends PotentialScript {
       }
 
       logger.info(format("\n Preparing %s (CSD percent: %7.4f, PDB Rank: %d)",
-          spacegroup.shortName, getCCDCPercent(num), getPDBRank(spacegroup)))
+          spacegroup2.shortName, getCCDCPercent(num), getPDBRank(spacegroup)))
 
       // Create the directory.
-      String sgDirName = spacegroup.shortName.replace('/', '_')
+      String sgDirName = spacegroup2.shortName.replace('/', '_')
 
       File baseDir = baseDir
       File sgDir
@@ -230,12 +237,16 @@ class PrepareSpaceGroups extends PotentialScript {
         sgDir.mkdir()
       }
 
-      double[] abc = spacegroup.latticeSystem.resetUnitCellParams()
+      double[] abc = spacegroup2.latticeSystem.resetUnitCellParams()
       Crystal crystal = new Crystal(abc[0], abc[1], abc[2], abc[3], abc[4], abc[5],
-          spacegroup.shortName)
+          spacegroup2.shortName)
       crystal.setDensity(density, mass)
       double cutoff2 = energy.getCutoffPlusBuffer() * 2.0
       crystal = replicatesCrystalFactory(crystal, cutoff2)
+
+      // Turn off special position checks.
+      crystal.setSpecialPositionCutoff(0.0)
+      crystal.getUnitCell().setSpecialPositionCutoff(0.0)
       energy.setCrystal(crystal)
 
       if (symScalar > 0.0) {
@@ -270,23 +281,19 @@ class PrepareSpaceGroups extends PotentialScript {
                 String[] tokens = line.split(" +")
                 if (tokens != null && tokens.length > 1) {
                   String first = tokens[0].toLowerCase()
-                  if (first == "a-axis") {
-                    keyWriter.println(format("a-axis %12.8f", crystal.a))
-                  } else if (first == "b-axis") {
-                    keyWriter.println(format("b-axis %12.8f", crystal.b))
-                  } else if (first == "c-axis") {
-                    keyWriter.println(format("c-axis %12.8f", crystal.c))
-                  } else if (first == "alpha") {
-                    keyWriter.println(format("alpha %12.8f", crystal.alpha))
-                  } else if (first == "beta") {
-                    keyWriter.println(format("beta %12.8f", crystal.beta))
-                  } else if (first == "gamma") {
-                    keyWriter.println(format("gamma %12.8f", crystal.gamma))
-                  } else if (first == "spacegroup") {
-                    keyWriter.println(format("spacegroup %s", spacegroup.shortName))
+                  if (first == "a-axis" || first == "b-axis" || first == "c-axis" ||
+                      first == "alpha" || first == "beta" || first == "gamma" ||
+                      first == "spacegroup") {
+                    // This line is skipped, and updated below.
+                    logger.fine(format(" Updating : %s", line))
                   } else if (first == "parameters") {
                     if (tokens.length > 1) {
-                      keyWriter.println(format("parameters ../%s", tokens[1]))
+                      if(tokens[1].startsWith("/") || tokens[1].startsWith("\\")){
+                        //Absolute path specified, therefore do not modify.
+                        keyWriter.println(format("parameters %s", tokens[1]))
+                      }else {
+                        keyWriter.println(format("parameters ../%s", tokens[1]))
+                      }
                     } else {
                       logger.warning("Parameter file may not have been specified")
                     }
@@ -298,6 +305,14 @@ class PrepareSpaceGroups extends PotentialScript {
                 }
               }
             }
+            // Update the space group and unit cell parameters.
+            keyWriter.println(format("spacegroup %s", spacegroup2.shortName))
+            keyWriter.println(format("a-axis %12.8f", crystal.a))
+            keyWriter.println(format("b-axis %12.8f", crystal.b))
+            keyWriter.println(format("c-axis %12.8f", crystal.c))
+            keyWriter.println(format("alpha  %12.8f", crystal.alpha))
+            keyWriter.println(format("beta   %12.8f", crystal.beta))
+            keyWriter.println(format("gamma  %12.8f", crystal.gamma))
           } catch (IOException ex) {
             logger.warning(" Exception writing keyfile." + ex.toString())
           }
@@ -305,7 +320,8 @@ class PrepareSpaceGroups extends PotentialScript {
       }
     }
 
-    System.clearProperty("ewald-alpha")
+    System.clearProperty("mpoleterm")
+    System.clearProperty("a-axis")
 
     return this
   }

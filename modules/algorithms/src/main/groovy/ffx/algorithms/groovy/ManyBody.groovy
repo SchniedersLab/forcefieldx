@@ -43,13 +43,17 @@ import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.bonded.Residue
-import ffx.potential.bonded.RotamerLibrary
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3
+import ffx.potential.bonded.*
+import ffx.potential.parsers.PDBFilter
+import ffx.potential.parsers.XYZFilter
+import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
 import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard
+import static java.lang.String.format
 
 /**
  * The ManyBody script performs a discrete optimization using a many-body expansion and elimination expressions.
@@ -112,7 +116,8 @@ class ManyBody extends AlgorithmsScript {
       return this
     }
 
-    if (Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "false"))) {
+    CompositeConfiguration properties = activeAssembly.getProperties()
+    if (properties.getBoolean("standardizeAtomNames", false)) {
       renameAtomsToPDBStandard(activeAssembly)
     }
 
@@ -166,20 +171,76 @@ class ManyBody extends AlgorithmsScript {
         algorithm = RotamerOptimization.Algorithm.BOX
         break
       default:
-        throw new IllegalArgumentException(String.
+        throw new IllegalArgumentException(
             format(" Algorithm choice was %d, not in range 1-5!", manyBody.getAlgorithmNumber()))
     }
     rotamerOptimization.optimize(algorithm)
 
-    if (master) {
-      logger.info(" Final Minimum Energy")
+    boolean isTitrating = false
+    Set<Atom> excludeAtoms = new HashSet<>()
+    int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
 
-      File modelFile = saveDirFile(activeAssembly.getFile())
-      algorithmFunctions.saveAsPDB(activeAssembly, modelFile)
-      algorithmFunctions.energy(activeAssembly)
+    int i = 0
+    for (Residue residue : residueList) {
+      Rotamer rotamer = residue.getRotamers()[optimalRotamers[i++]]
+      RotamerLibrary.applyRotamer(residue, rotamer)
+      if (rotamer.isTitrating) {
+        isTitrating = true
+        AminoAcid3 aa3 = rotamer.aminoAcid3
+        residue.setName(aa3.name())
+        switch (aa3) {
+          case AminoAcid3.HID:
+            // No HE2
+            Atom HE2 = residue.getAtomByName("HE2", true)
+            excludeAtoms.add(HE2)
+            break
+          case AminoAcid3.HIE:
+            // No HD1
+            Atom HD1 = residue.getAtomByName("HD1", true)
+            excludeAtoms.add(HD1)
+            break
+          case AminoAcid3.ASP:
+            // No HD2
+            Atom HD2 = residue.getAtomByName("HD2", true)
+            excludeAtoms.add(HD2)
+            break
+          case AminoAcid3.GLU:
+            // No HE2
+            Atom HE2 = residue.getAtomByName("HE2", true)
+            excludeAtoms.add(HE2)
+            break
+          case AminoAcid3.LYD:
+            // No HZ3
+            Atom HZ3 = residue.getAtomByName("HZ3", true)
+            excludeAtoms.add(HZ3)
+            break
+          default:
+            // Do nothing.
+            break
+        }
+      }
     }
 
-    //manyBody.saveEliminatedRotamers();
+    if (master) {
+      logger.info(" Final Minimum Energy\n")
+
+      ForceFieldEnergy forceFieldEnergy = algorithmFunctions.energy(activeAssembly)
+      double energy = forceFieldEnergy.getTotalEnergy()
+      if (isTitrating) {
+        double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList, optimalRotamers)
+        logger.info(format("\n  Rotamer pH Bias    %16.8f", phBias))
+        logger.info(format("  Potential with Bias%16.8f\n", phBias + energy))
+      }
+
+      // Prevent residues from being renamed based on the existence of hydrogen
+      // atoms (i.e. hydrogen that excluded from being written out).
+      properties.setProperty("standardizeAtomNames", "false")
+      File modelFile = saveDirFile(activeAssembly.getFile())
+      PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(), properties)
+      if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
+        logger.info(format(" Save failed for %s", activeAssembly))
+      }
+    }
 
     if (priorGKwarn == null) {
       System.clearProperty("gk-suppressWarnings")

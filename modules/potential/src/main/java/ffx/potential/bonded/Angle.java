@@ -53,10 +53,14 @@ import ffx.numerics.Constraint;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.math.Double3;
 import ffx.potential.parameters.AngleType;
+import ffx.potential.parameters.AtomType;
+import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import org.apache.commons.math3.util.FastMath;
 
 /**
  * The Angle class represents an angle formed between three linearly bonded atoms.
@@ -116,21 +120,55 @@ public class Angle extends BondedTerm {
      * Log that no AngleType exists.
      *
      * @param a1  Atom 1.
-     * @param ac  Atom 2.
+     * @param a2  Atom 2.
      * @param a3  Atom 3.
      * @param key The class key.
      */
-    public static void logNoAngleType(Atom a1, Atom ac, Atom a3, String key) {
-        logger.severe(
-                format(
-                        "No AngleType for key: %s\n %s -> %s\n %s -> %s\n %s -> %s",
-                        key,
-                        a1.toString(),
-                        a1.getAtomType().toString(),
-                        ac.toString(),
-                        ac.getAtomType().toString(),
-                        a3.toString(),
-                        a3.getAtomType().toString()));
+    public static void logNoAngleType(Atom a1, Atom a2, Atom a3, String key, ForceField forceField) {
+        AtomType atomType1 = a1.getAtomType();
+        AtomType atomType2 = a2.getAtomType();
+        AtomType atomType3 = a3.getAtomType();
+        StringBuilder sb = new StringBuilder(
+            format("No AngleType for key: %s\n %s -> %s\n %s -> %s\n %s -> %s",
+                        key, a1, atomType1, a2, atomType2, a3, atomType3));
+        int c1 = atomType1.atomClass;
+        int c2 = atomType2.atomClass;
+        int c3 = atomType3.atomClass;
+        List<AtomType> types1 = forceField.getSimilarAtomTypes(atomType1);
+        List<AtomType> types2 = forceField.getSimilarAtomTypes(atomType2);
+        List<AtomType> types3 = forceField.getSimilarAtomTypes(atomType3);
+        List<AngleType> angleTypes = new ArrayList<>();
+        boolean match = false;
+        for (AtomType type1 : types1) {
+            for (AtomType type2 : types2) {
+                // Similar angle type must have the same class for the central atom.
+                if (type2.atomClass != c2) {
+                    continue;
+                }
+                for (AtomType type3 : types3) {
+                    // Similar angle type must match at least one class for the distal atoms.
+                    if ((type1.atomClass != c1) && (type1.atomClass != c3) &&
+                        (type3.atomClass != c1) && (type3.atomClass != c3)) {
+                        continue;
+                    }
+                    int[] c = new int[3];
+                    c[0] = type1.atomClass;
+                    c[1] = type2.atomClass;
+                    c[2] = type3.atomClass;
+                    String closeKey = AngleType.sortKey(c);
+                    AngleType angleType = forceField.getAngleType(closeKey);
+                    if (angleType != null && !angleTypes.contains(angleType)) {
+                        if (!match) {
+                            match = true;
+                            sb.append("\n Similar Angle Types:");
+                        }
+                        angleTypes.add(angleType);
+                        sb.append(format("\n  %s", angleType));
+                    }
+                }
+            }
+        }
+        logger.severe(sb.toString());
     }
 
     /**
@@ -153,7 +191,7 @@ public class Angle extends BondedTerm {
         String key = AngleType.sortKey(c);
         AngleType angleType = forceField.getAngleType(key);
         if (angleType == null) {
-            logNoAngleType(a1, ac, a3, key);
+            logNoAngleType(a1, ac, a3, key, forceField);
             return null;
         }
         newAngle.setAngleType(angleType);

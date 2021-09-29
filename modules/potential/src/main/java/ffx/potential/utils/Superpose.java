@@ -71,6 +71,7 @@ public class Superpose {
 
   private final SystemFilter baseFilter;
   private final SystemFilter targetFilter;
+  private final boolean isSymmetric;
 
   private final int baseSize;
   private final int targetSize;
@@ -109,9 +110,11 @@ public class Superpose {
    */
   private final DoubleBuf myBuffer;
 
-  public Superpose(SystemFilter baseFilter, SystemFilter targetFilter) {
+
+  public Superpose(SystemFilter baseFilter, SystemFilter targetFilter, boolean isSymmetric) {
     this.baseFilter = baseFilter;
     this.targetFilter = targetFilter;
+    this.isSymmetric = isSymmetric;
 
     // Number of models to be evaluated.
     baseSize = baseFilter.countNumModels();
@@ -257,14 +260,14 @@ public class Superpose {
         if (column < targetSize) {
           int targetRank = column % numProc;
           if (targetRank == rank) {
-            if (row == column) {
+            if (isSymmetric && row == column) {
               // Fill the diagonal.
               myDistance[0] = 0.0;
               if (verbose) {
                 logger.info(format(" %6d  %6d  %s                             %8.5f",
                     row + 1, column + 1, "Diagonal", myDistance[0]));
               }
-            } else if (row >= column) {
+            } else if (isSymmetric && row >= column) {
               // Fill the lower triangle from the upper triangle.
               myDistance[0] = distMatrix[column][row];
               if (verbose) {

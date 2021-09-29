@@ -187,15 +187,14 @@ class CIFtoXYZ extends PotentialScript {
     }
 
     SpaceGroup sg
-    if (sgNum != -1) {
+    sg = SpaceGroupDefinitions.spaceGroupFactory(sgName)
+    if (sg == null) {
       sg = SpaceGroupDefinitions.spaceGroupFactory(sgNum)
-    } else {
-      sg = SpaceGroupDefinitions.spaceGroupFactory(sgName)
     }
 
     // Fall back to P1.
     if (sg == null) {
-      logger.info(" The space group could not be determined from the CIF file (using P1).")
+      logger.warning(" The space group could not be determined from the CIF file (using P1).")
       sg = SpaceGroupDefinitions.spaceGroupFactory(1)
     }
 
@@ -208,6 +207,7 @@ class CIFtoXYZ extends PotentialScript {
     double gamma = cell.angleGamma.get(0)
 
     Crystal crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName)
+    logger.info(" New crystal:")
     logger.info(crystal.toString())
 
     AtomSite atomSite = firstBlock.atomSite

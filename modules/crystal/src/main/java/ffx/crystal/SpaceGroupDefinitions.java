@@ -7869,14 +7869,15 @@ public class SpaceGroupDefinitions {
   }
 
   /**
-   * Alternative space group definitions.
+   * Alternative space group definitions have the same space group numbers as other space groups, but contain a
+   *  different axis of symmetry (e.g. P21/a vs P21/c) or are described using different lattice systems (e.g. H3 vs R3).
    *
    * @param name Space group name.
    * @return Return the created SpaceGroup instance.
    */
   static SpaceGroup getAlternativeSpaceGroup(String name) {
     SpaceGroup spaceGroup = null;
-    if (name.equalsIgnoreCase("P21/a")) {
+    if (name.equalsIgnoreCase("P21/a") || name.equalsIgnoreCase("P 1 21/a 1")) {
       spaceGroup =
           new SpaceGroup(
               14,
@@ -7894,7 +7895,7 @@ public class SpaceGroupDefinitions {
               new SymOp(SymOp.Rot_mX_mY_Z, SymOp.Tr_12_0_12),
               new SymOp(SymOp.Rot_mX_mY_mZ, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_X_Y_mZ, SymOp.Tr_12_0_12));
-    } else if (name.equalsIgnoreCase("P21/n")) {
+    } else if (name.equalsIgnoreCase("P21/n") || name.equalsIgnoreCase("P 1 21/n 1")) {
       spaceGroup =
               new SpaceGroup(
                       14,
@@ -7912,7 +7913,7 @@ public class SpaceGroupDefinitions {
                       new SymOp(SymOp.Rot_mX_Y_mZ, SymOp.Tr_12_12_12),
                       new SymOp(SymOp.Rot_mX_mY_mZ, SymOp.Tr_0_0_0),
                       new SymOp(SymOp.Rot_X_mY_Z, SymOp.Tr_12_12_12));
-    } else if (name.equalsIgnoreCase("R3")) {
+    } else if (name.equalsIgnoreCase("R3") || name.equalsIgnoreCase("R 3")) {
       spaceGroup =
           new SpaceGroup(
               146,
@@ -7929,7 +7930,7 @@ public class SpaceGroupDefinitions {
               new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_Z_X_Y, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_Y_Z_X, SymOp.Tr_0_0_0));
-    } else if (name.equalsIgnoreCase("R-3")) {
+    } else if (name.equalsIgnoreCase("R-3") || name.equalsIgnoreCase("R -3")) {
       spaceGroup =
           new SpaceGroup(
               148,
@@ -7949,7 +7950,7 @@ public class SpaceGroupDefinitions {
               new SymOp(SymOp.Rot_mX_mY_mZ, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_mZ_mX_mY, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_mY_mZ_mX, SymOp.Tr_0_0_0));
-    } else if (name.equalsIgnoreCase("R32")) {
+    } else if (name.equalsIgnoreCase("R32")  || name.equalsIgnoreCase("R 3 2")) {
       spaceGroup =
           new SpaceGroup(
               155,
@@ -7969,7 +7970,7 @@ public class SpaceGroupDefinitions {
               new SymOp(SymOp.Rot_mY_mX_mZ, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_mZ_mY_mX, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_mX_mZ_mY, SymOp.Tr_0_0_0));
-    } else if (name.equalsIgnoreCase("R3m")) {
+    } else if (name.equalsIgnoreCase("R3m")  || name.equalsIgnoreCase("R 3 m")) {
       spaceGroup =
           new SpaceGroup(
               160,
@@ -7989,7 +7990,7 @@ public class SpaceGroupDefinitions {
               new SymOp(SymOp.Rot_Y_X_Z, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_Z_Y_X, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_X_Z_Y, SymOp.Tr_0_0_0));
-    } else if (name.equalsIgnoreCase("R3c")) {
+    } else if (name.equalsIgnoreCase("R3c")  || name.equalsIgnoreCase("R 3 c")) {
       spaceGroup =
           new SpaceGroup(
               161,
@@ -8009,7 +8010,7 @@ public class SpaceGroupDefinitions {
               new SymOp(SymOp.Rot_Y_X_Z, SymOp.Tr_12_12_12),
               new SymOp(SymOp.Rot_Z_Y_X, SymOp.Tr_12_12_12),
               new SymOp(SymOp.Rot_X_Z_Y, SymOp.Tr_12_12_12));
-    } else if (name.equalsIgnoreCase("R-3m")) {
+    } else if (name.equalsIgnoreCase("R-3m")  || name.equalsIgnoreCase("R -3 2/m")) {
       spaceGroup =
           new SpaceGroup(
               166,
@@ -8035,7 +8036,7 @@ public class SpaceGroupDefinitions {
               new SymOp(SymOp.Rot_Y_X_Z, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_Z_Y_X, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_X_Z_Y, SymOp.Tr_0_0_0));
-    } else if (name.equalsIgnoreCase("R-3c")) {
+    } else if (name.equalsIgnoreCase("R-3c") || name.equalsIgnoreCase("R -3 2/c")) {
       spaceGroup =
           new SpaceGroup(
               167,
@@ -8118,7 +8119,7 @@ public class SpaceGroupDefinitions {
       return -1;
     }
     String n = name.trim();
-    // Many CIF files have extraneous parenthesis (e.g. "P2(1)/c")
+    // Many CIF files have extraneous parenthesis not found in PDB or FFX SG formats (e.g. "P2(1)/c").
     n = n.replaceAll("[()]", "");
     int num = SpaceGroupInfo.spaceGroupNames.length;
     for (int i = 0; i < num; i++) {

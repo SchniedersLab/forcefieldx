@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
+import static ffx.potential.nonbonded.implicit.BornTanhRescaling.tanhRescaling;
+import static ffx.potential.nonbonded.implicit.NeckIntegral.getNeckConstants;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
@@ -68,8 +70,8 @@ public class BornRadiiRegion extends ParallelRegion {
   private static final Logger logger = Logger.getLogger(BornRadiiRegion.class.getName());
   private static final double oneThird = 1.0 / 3.0;
   private static final double PI4_3 = 4.0 / 3.0 * PI;
+  private static final double INVERSE_PI4_3 = 1.0 / PI4_3;
   private static final double PI_12 = PI / 12.0;
-  private static final double DEFAULT_SNECK = 0.4058;
   private final BornRadiiLoop[] bornRadiiLoop;
   /** An ordered array of atoms in the system. */
   protected Atom[] atoms;
@@ -92,6 +94,11 @@ public class BornRadiiRegion extends ParallelRegion {
    * J. Phys. Chem., 100, 19824-19839 (1996).
    */
   private double[] overlapScale;
+  /**
+   * Sneck scaling parameter for each atom. Set based on maximum Sneck scaling parameter and number
+   * of bound non-hydrogen atoms
+   */
+  private double[] neckScale;
   /** Born radius of each atom. */
   private double[] born;
   /** Flag to indicate if an atom should be included. */
@@ -102,26 +109,49 @@ public class BornRadiiRegion extends ParallelRegion {
   private boolean nativeEnvironmentApproximation;
   /** If true, the descreening integral includes overlaps with the volume of the descreened atom */
   private final boolean perfectHCTScale;
+  private double descreenOffset = 0.0;
 
   private SharedDoubleArray sharedBorn;
   private SharedDouble ecavTot;
+  /**
+   * Boolean indicating whether or not to print all Born radii for an input molecular system. This is
+   * turned off after the first round of printing.
+   */
   private boolean verboseRadii;
-  private boolean neckCorrection;
-  private boolean tanhCorrection;
-  private double Sneck;
-  private BornRescalingTanh bornRescalingTanh;
+  /**
+   * Boolean indicating whether or not to use the neck volume correction for the implicit solvent
+   */
+  private final boolean neckCorrection;
+  /**
+   * Boolean indicating whether or not to use the tanh volume correction for the implicit solvent
+   */
+  private final boolean tanhCorrection;
+  /**
+   * This is the Born Integral prior to rescaling with a tanh function, which is a quantity needed
+   * for the computing the derivative of the energy with respect to atomic coordinates.
+   */
+  private double[] unscaledBornIntegral;
 
-  public BornRadiiRegion(int nt, ForceField forceField, boolean perfectHCTScale) {
+  /**
+   * BornRadiiRegion Constructor.
+   *
+   * @param nt Number of threads.
+   * @param forceField The ForceField in use.
+   * @param neckCorrection Perform a neck correction.
+   * @param tanhCorrection Perform a tanh correction.
+   * @param perfectHCTScale Use "perfect" HCT scale factors.
+   */
+  public BornRadiiRegion(int nt, ForceField forceField, boolean neckCorrection,
+      boolean tanhCorrection, boolean perfectHCTScale) {
     bornRadiiLoop = new BornRadiiLoop[nt];
     for (int i = 0; i < nt; i++) {
       bornRadiiLoop[i] = new BornRadiiLoop();
     }
     ecavTot = new SharedDouble(0.0);
     verboseRadii = forceField.getBoolean("VERBOSE_BORN_RADII", false);
-    neckCorrection = forceField.getBoolean("NECK_CORRECTION", false);
-    tanhCorrection = forceField.getBoolean("TANH_CORRECTION", false);
-    Sneck = forceField.getDouble("SNECK", DEFAULT_SNECK);
     this.perfectHCTScale = perfectHCTScale;
+    this.neckCorrection = neckCorrection;
+    this.tanhCorrection = tanhCorrection;
     if (verboseRadii) {
       logger.info(" Verbose Born radii.");
     }
@@ -130,55 +160,48 @@ public class BornRadiiRegion extends ParallelRegion {
   @Override
   public void finish() {
     int nAtoms = atoms.length;
-    double bigRadius = 50.0;
+    unscaledBornIntegral = new double[atoms.length];
+    double bigRadius = BornTanhRescaling.MAX_BORN_RADIUS;
     for (int i = 0; i < nAtoms; i++) {
       final double baseRi = baseRadius[i];
       if (!use[i]) {
         born[i] = baseRi;
       } else {
-        double sum = sharedBorn.get(i);
+        // A positive integral of 1/r^6 over the solute outside atom i.
+        double soluteIntegral = -sharedBorn.get(i);
+        if (tanhCorrection) {
+          // Scale up the integral to account for interstitial spaces.
+          unscaledBornIntegral[i] = soluteIntegral;
+          soluteIntegral = tanhRescaling(soluteIntegral, baseRi);
+        }
+        // The total integral assumes no solute outside atom i, then subtracts away solute descreening.
+        double sum = PI4_3 / (baseRi * baseRi * baseRi) - soluteIntegral;
+        // Due to solute atomic overlaps, in rare cases the sum can be less than zero.
         if (sum <= 0.0) {
           born[i] = bigRadius;
           if (verboseRadii) {
-            logger.info(
-                format(
-                    " Born integral < 0 for atom %d; set Born radius to %12.6f (Base Radius: %2.6f)",
-                    i + 1, born[i], baseRadius[i]));
+            logger.info(format(" Born Integral < 0 for atom %d; set Born radius to %12.6f (Base Radius: %12.6f)", i + 1, born[i], baseRadius[i]));
           }
         } else {
-          // TODO: Fix tanh correction
-          if (tanhCorrection) {
-            //sum = BornRescalingTanh.Tanh.rescale(sum, baseRi);
-          }
-          born[i] = 1.0 / pow(sum / PI4_3, oneThird);
+          born[i] = pow(INVERSE_PI4_3 * sum, -oneThird);
           if (born[i] < baseRi) {
             born[i] = baseRi;
             if (verboseRadii) {
-              logger.info(
-                  format(" Born radius < Base Radius for atom %d: set Born radius to %12.6f", i + 1,
-                      baseRi));
+              logger.info(format(" Born radius < Base Radius for atom %d: set Born radius to %12.6f", i + 1, baseRi));
             }
           } else if (born[i] > bigRadius) {
             born[i] = bigRadius;
             if (verboseRadii) {
-              logger.info(
-                  format(" Born radius > 50.0 Angstroms for atom %d: set Born radius to %12.6f",
-                      i + 1,
-                      baseRi));
+              logger.info(format(" Born radius > 50.0 Angstroms for atom %d: set Born radius to %12.6f", i + 1, baseRi));
             }
           } else if (isInfinite(born[i]) || isNaN(born[i])) {
-            if (verboseRadii) {
-              logger.info(
-                  format(" Born radius NaN / Infinite for atom %d; set Born radius to %12.6f", i + 1,
-                      baseRi));
-            }
             born[i] = baseRi;
+            if (verboseRadii) {
+              logger.info(format(" Born radius NaN / Infinite for atom %d; set Born radius to %12.6f", i + 1, baseRi));
+            }
           } else {
             if (verboseRadii) {
-              logger.info(
-                  format(" Set Born radius for atom %d to %12.6f " +
-                      "(Base Radius: %2.6f)", i + 1, born[i], baseRi)
-              );
+              logger.info(format(" Set Born radius for atom %d to %12.6f (Base Radius: %2.6f)", i + 1, born[i], baseRi));
             }
           }
         }
@@ -199,6 +222,8 @@ public class BornRadiiRegion extends ParallelRegion {
       double[] baseRadius,
       double[] descreenRadius,
       double[] overlapScale,
+      double[] neckScale,
+      double descreenOffset,
       boolean[] use,
       double cut2,
       boolean nativeEnvironmentApproximation,
@@ -210,6 +235,8 @@ public class BornRadiiRegion extends ParallelRegion {
     this.baseRadius = baseRadius;
     this.descreenRadius = descreenRadius;
     this.overlapScale = overlapScale;
+    this.neckScale = neckScale;
+    this.descreenOffset = descreenOffset;
     this.use = use;
     this.cut2 = cut2;
     this.nativeEnvironmentApproximation = nativeEnvironmentApproximation;
@@ -238,6 +265,14 @@ public class BornRadiiRegion extends ParallelRegion {
     }
   }
 
+  public double[] getBorn() {
+    return born;
+  }
+
+  public double[] getUnscaledBornIntegral() {
+    return unscaledBornIntegral;
+  }
+
   /**
    * Compute Born radii for a range of atoms via the Grycuk method.
    *
@@ -263,11 +298,6 @@ public class BornRadiiRegion extends ParallelRegion {
 
     @Override
     public void run(int lb, int ub) {
-      // The descreening integral is initialized to the limit of the atom alone in solvent.
-      for (int i = lb; i <= ub; i++) {
-        final double baseRi = baseRadius[i];
-        localBorn[i] = PI4_3 / (baseRi * baseRi * baseRi);
-      }
       int nSymm = crystal.spaceGroup.symOps.size();
       if (nSymm == 0) {
         nSymm = 1;
@@ -281,19 +311,22 @@ public class BornRadiiRegion extends ParallelRegion {
           if (!nativeEnvironmentApproximation && !use[i]) {
             continue;
           }
-          final double baseRi = max(baseRadius[i], descreenRadius[i]);
+          final double integralStartI = max(baseRadius[i], descreenRadius[i]) + descreenOffset;
           final double descreenRi = descreenRadius[i];
           final double xi = x[i];
           final double yi = y[i];
           final double zi = z[i];
           int[] list = neighborLists[iSymOp][i];
           for (int k : list) {
-            final double baseRk = max(baseRadius[k], descreenRadius[k]);
+            final double integralStartK = max(baseRadius[k], descreenRadius[k]) + descreenOffset;
             final double descreenRk = descreenRadius[k];
-            assert (descreenRk > 0.0);
             if (!nativeEnvironmentApproximation && !use[k]) {
               continue;
             }
+
+            // No necks will be computed unless the overlapScale is greater than 0.0 (e.g., for hydrogen).
+            double mixedNeckScale = 0.5 * (neckScale[i] + neckScale[k]);
+
             if (i != k) {
               final double xr = xyz[0][k] - xi;
               final double yr = xyz[1][k] - yi;
@@ -305,39 +338,23 @@ public class BornRadiiRegion extends ParallelRegion {
               final double r = sqrt(r2);
               // Atom i being descreeened by atom k.
               double sk = overlapScale[k];
+              // Non-descreening atoms (such as hydrogen) will have an sk of 0.0
               if (sk > 0.0) {
-                double descreenIK = descreen(r, r2, baseRi, descreenRk, sk);
+                double descreenIK = descreen(r, r2, integralStartI, descreenRk, sk);
                 localBorn[i] += descreenIK;
-//                if (is_12or13) {
-//                  logger.info(format(" Descreen %d %d %16.8f", i + 1, k + 1, descreenIK));
-//                }
-              }
-              if (neckCorrection && !atoms[k].isHydrogen()) {
-                // TODO: Add neck contribution to atom i being descreeened by atom k.
-                /*if(neckDescreen(r,baseRi,baseRk) != 0.0) {
-                  logger.info(
-                          format("Modify local Born for atom %d with neck from %d by %2.8f",
-                                  i + 1, k + 1, neckDescreen(r, baseRi, baseRk)));
-                }*/
-                localBorn[i] += neckDescreen(r, baseRi, baseRk);
+                if (neckCorrection) {
+                  localBorn[i] += neckDescreen(r, integralStartI, descreenRk, mixedNeckScale);
+                }
               }
 
               // Atom k being descreeened by atom i.
               double si = overlapScale[i];
               if (si > 0.0) {
-                double descreenKI = descreen(r, r2, baseRk, descreenRi, si);
+                double descreenKI = descreen(r, r2, integralStartK, descreenRi, si);
                 localBorn[k] += descreenKI;
-//                if (is_12or13) {
-//                  logger.info(format(" Descreen %d %d %16.8f", k + 1, i + 1, descreenKI));
-//                }
-              }
-              if (neckCorrection && !atoms[i].isHydrogen()) {
-                // TODO: Add neck contribution to atom k being descreeened by atom i.
-               /* if(neckDescreen(r,baseRk,baseRi) != 0.0) {
-                  logger.info(format("Modify local Born for atom %d with neck from %d by %2.8f",
-                          k + 1, i + 1, neckDescreen(r, baseRk, baseRi)));
-                }*/
-                localBorn[k] += neckDescreen(r, baseRk, baseRi);
+                if (neckCorrection) {
+                  localBorn[k] += neckDescreen(r, integralStartK, descreenRi, mixedNeckScale);
+                }
               }
 
             } else if (iSymOp > 0) {
@@ -352,13 +369,11 @@ public class BornRadiiRegion extends ParallelRegion {
               // Atom i being descreeened by atom k.
               double sk = overlapScale[k];
               if (sk > 0.0) {
-                localBorn[i] += descreen(r, r2, baseRi, descreenRk, sk);
+                localBorn[i] += descreen(r, r2, integralStartI, descreenRk, sk);
+                if (neckCorrection) {
+                  localBorn[i] += neckDescreen(r, integralStartI, descreenRk, mixedNeckScale);
+                }
               }
-              if (neckCorrection && !atoms[k].isHydrogen()) {
-                // TODO: Add neck contribution to atom i being descreeened by atom k.
-                localBorn[i] += neckDescreen(r, baseRi, baseRk);
-              }
-
               // For symmetry mates, atom k is not descreeened by atom i.
             }
           }
@@ -381,38 +396,31 @@ public class BornRadiiRegion extends ParallelRegion {
      * @param r atomic separation.
      * @param radius base radius of the atom being descreened.
      * @param radiusK radius of the atom doing the descreening.
+     * @param sneck Sneck scaling factor, scaled based on number of bound non-hydrogen atoms.
      * @return this contribution to the descreening integral.
      */
-    private double neckDescreen(double r, double radius, double radiusK) {
-      double neckIntegral;
+    private double neckDescreen(double r, double radius, double radiusK, double sneck) {
       double radiusWater = 1.4;
 
-      // Get Aij and Bij from Aguilar/Onufriev 2010 paper
-      double[] constants = NeckIntegralOnufriev.NeckIntegralOnufrievConstants.run(radius, radiusK);
+      // If atoms are too widely separated there is no neck formed.
+      if (r > radius + radiusK + 2.0 * radiusWater) {
+        return 0.0;
+      }
+
+      // Get Aij and Bij based on parameterization by Corrigan et al.
+      double[] constants = getNeckConstants(radius, radiusK);
 
       double Aij = constants[0];
       double Bij = constants[1];
 
-      logger.info(format("Aij: %2.8f Bij: %2.8f", Aij, Bij));
-      if (r > radius + radiusK + 2 * radiusWater || Bij > r) {
-        return 0.0;
-      }
-
-      // If a neck is formed, Aij can never be zero
-      if (Aij <= 0.000000000) {
-        // Set to minimum in Aij matrix
-        Aij = 0.0000161523;
-      }
-
-      /*logger.info(format("For atom rad. %2.3f descreened by atom rad. %2.3f, Aij: %2.8f Bij: %2.8f",
-              radius,radiusK,Aij,Bij));*/
       double rMinusBij = r - Bij;
-      double radiiMinusr = radius + radiusK + 2 * radiusWater - r;
+      double radiiMinusr = radius + radiusK + 2.0 * radiusWater - r;
       double power1 = rMinusBij * rMinusBij * rMinusBij * rMinusBij;
       double power2 = radiiMinusr * radiiMinusr * radiiMinusr * radiiMinusr;
 
-      // Use Aij and Bij to get neck integral using Equation 13 from Aguilar/Onufriev 2010 paper
-      neckIntegral = Aij * power1 * power2 * Sneck;
+      // Use Aij and Bij to get neck integral using Equations 13 and 14 from Aguilar/Onufriev 2010 paper
+      // Sneck may be based on the number of heavy atoms bound to the atom being descreened.
+      double neckIntegral = sneck * Aij * power1 * power2;
 
       return -neckIntegral;
     }

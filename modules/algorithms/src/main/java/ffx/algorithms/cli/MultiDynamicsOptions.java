@@ -300,7 +300,7 @@ public class MultiDynamicsOptions {
       for (Polymer p : molecularAssembly.getChains()) {
         if (p.getChainID() == chainID) {
           for (Residue r : p.getResidues()) {
-            if (r.getResidueNumber() == resNum && r.getRotamers(rLib) != null) {
+            if (r.getResidueNumber() == resNum && r.setRotamers(rLib) != null) {
               residueList.add(r);
             }
           }

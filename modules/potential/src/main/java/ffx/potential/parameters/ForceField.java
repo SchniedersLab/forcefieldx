@@ -40,6 +40,7 @@ package ffx.potential.parameters;
 import static java.lang.String.format;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumMap;
@@ -247,7 +248,7 @@ public class ForceField {
     }
     if (treeMap.containsKey(type.key)) {
       if (treeMap.get(type.key).toString().equalsIgnoreCase(type.toString())) {
-        // Ignore this type if its identical to an existing type.
+        // Ignore this type if it's identical to an existing type.
         return;
       }
       logger.log(
@@ -459,6 +460,23 @@ public class ForceField {
     }
     return null;
   }
+
+  /**
+   * Getter for the field <code>atomTypes</code>.
+   *
+   * @param atomType AtomType to find similar examples of.
+   * @return Similar atom types.
+   */
+  public List<AtomType> getSimilarAtomTypes(AtomType atomType) {
+    List<AtomType> types = new ArrayList<>();
+    for (AtomType type : atomTypes.values()) {
+      if (type.atomicNumber == atomType.atomicNumber && type.valence == atomType.valence) {
+        types.add(type);
+      }
+    }
+    return types;
+  }
+
 
   /**
    * Getter for the field <code>atomTypes</code>.
@@ -686,8 +704,8 @@ public class ForceField {
   }
 
   /**
-   * Fine the MultipoleType whose key begins with the supplied String.
-   * If there are more than one MultipoleTypes that begin with the key, null is returned.
+   * Find the MultipoleType whose key begins with the supplied String.
+   * If there are more than one MultipoleType that begins with the key, null is returned.
    * @param key The key to search for.
    * @return The MultipoleType if one and only one match is found.
    */
@@ -706,6 +724,23 @@ public class ForceField {
     }
 
     return null;
+  }
+
+  /**
+   * Find each MultipoleType whose key begins with the supplied String.
+   *
+   * @param key The key to search for.
+   * @return The MultipoleTypes found.
+   */
+  public List<MultipoleType> getMultipoleTypes(String key) {
+    List<MultipoleType> list = new ArrayList<>();
+    for (String s : multipoleTypes.keySet()) {
+      if (s.startsWith(key + " ")){
+        list.add(multipoleTypes.get(s));
+      }
+    }
+
+    return list;
   }
 
   /**

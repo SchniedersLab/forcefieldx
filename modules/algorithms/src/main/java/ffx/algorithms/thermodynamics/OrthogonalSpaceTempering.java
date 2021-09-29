@@ -38,6 +38,7 @@
 package ffx.algorithms.thermodynamics;
 
 import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationType.SIMPSONS;
+import static ffx.potential.parsers.SystemFilter.version;
 import static ffx.utilities.Constants.R;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
@@ -1162,18 +1163,17 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
           double mass = molecularAssembly.getMass();
           Crystal crystal = molecularAssembly.getCrystal();
           double density = crystal.getDensity(mass);
-          optimizationFilter.writeFile(optimizationFile, false);
+          optimizationFilter.writeFile(optimizationFile, true);
           Crystal uc = crystal.getUnitCell();
-          logger.info(
-              format(
+          logger.info(format(
                   " Minimum: %12.6f %s (%12.6f g/cc) optimized from %12.6f at step %d.",
                   minEnergy, uc.toShortString(), density, startingEnergy, energyCount));
         }
-      } catch (EnergyException ex) {
+      } catch (Exception ex) {
         String message = ex.getMessage();
         logger.info(
             format(
-                " Energy exception minimizing coordinates at lambda=%8.6f\n %s.", lambda, message));
+                " Exception minimizing coordinates at lambda=%8.6f\n %s.", lambda, message));
         logger.info(" Sampling will continue.");
       }
 
@@ -1217,16 +1217,20 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       this.doOptimization = doOptimization;
       OrthogonalSpaceTempering.this.molecularAssembly = molecularAssembly;
       File file = molecularAssembly.getFile();
-
       String fileName = FilenameUtils.removeExtension(file.getAbsolutePath());
       String ext = FilenameUtils.getExtension(file.getAbsolutePath());
       if (optimizationFilter == null) {
         if (ext.toUpperCase().contains("XYZ")) {
-          optimizationFile = new File(fileName + "_opt.xyz");
-          optimizationFilter = new XYZFilter(optimizationFile, molecularAssembly, null, null);
+          optimizationFile = new File(fileName + "_opt.arc");
+          optimizationFilter = new XYZFilter(optimizationFile, molecularAssembly,
+              molecularAssembly.getForceField(), molecularAssembly.getProperties());
         } else {
           optimizationFile = new File(fileName + "_opt.pdb");
-          optimizationFilter = new PDBFilter(optimizationFile, molecularAssembly, null, null);
+          PDBFilter pdbFilter = new PDBFilter(optimizationFile, molecularAssembly,
+              molecularAssembly.getForceField(), molecularAssembly.getProperties());
+          int models = pdbFilter.countNumModels();
+          pdbFilter.setModelNumbering(models);
+          optimizationFilter = pdbFilter;
         }
       }
     }

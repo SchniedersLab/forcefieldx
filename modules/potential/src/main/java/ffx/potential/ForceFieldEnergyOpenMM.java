@@ -54,6 +54,7 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirk
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSoluteDielectric;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSolventDielectric;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSurfaceAreaFactor;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_Covalent12;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaMultipoleForce_CovalentType.OpenMM_AmoebaMultipoleForce_Covalent13;
@@ -3343,9 +3344,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       vdWClassForNoInteraction = 0;
       // Add vdW parameters to the force and record their type.
       vdwClassToOpenMMType = new HashMap<>();
-      for (int i = 0; i < nAtoms; i++) {
-        Atom atom = atoms[i];
-        VDWType vdwType = atom.getVDWType();
+
+      Map<String, VDWType> vdwTypes = forceField.getVDWTypes();
+
+      for (VDWType vdwType : vdwTypes.values()) {
         int atomClass = vdwType.atomClass;
         if (!vdwClassToOpenMMType.containsKey(atomClass)) {
           double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
@@ -3684,6 +3686,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       double[] overlapScale = gk.getOverlapScale();
       double[] baseRadius = gk.getBaseRadii();
       double[] descreenRadius = gk.getDescreenRadii();
+      double[] neckFactor = gk.getNeckScale();
 
       if (logger.isLoggable(Level.FINE)) {
         logger.fine("   GK Base Radii  Descreen Radius  Overlap Scale  Overlap");
@@ -3694,8 +3697,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         double base = baseRadius[i] * OpenMM_NmPerAngstrom;
         double descreen = descreenRadius[i] * OpenMM_NmPerAngstrom;
         double overlap = overlapScale[i];
+        double neck = neckFactor[i];
         OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle_1(
-            amoebaGeneralizedKirkwoodForce, multipoleType.charge, base, overlap, descreen);
+            amoebaGeneralizedKirkwoodForce, multipoleType.charge, base, overlap, descreen, neck);
 
         if (logger.isLoggable(Level.FINE)) {
           logger.fine(
@@ -3706,6 +3710,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius(
           amoebaGeneralizedKirkwoodForce, gk.getProbeRadius() * OpenMM_NmPerAngstrom);
+
+      int tanhRescale = 0;
+      if (gk.getTanhCorrection()) {
+         tanhRescale = 1;
+      }
+      OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling(amoebaGeneralizedKirkwoodForce, tanhRescale);
 
       NonPolar nonpolar = gk.getNonPolarModel();
       switch (nonpolar) {
@@ -4508,6 +4518,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       double[] overlapScale = gk.getOverlapScale();
       double[] baseRadii = gk.getBaseRadii();
       double[] descreenRadius = gk.getDescreenRadii();
+      double[] neckFactors = gk.getNeckScale();
 
       boolean nea = gk.getNativeEnvironmentApproximation();
 
@@ -4529,11 +4540,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         chargeUseFactor *= lambdaScale;
         double overlapScaleUseFactor = nea ? 1.0 : chargeUseFactor;
         double overlap = overlapScale[index] * overlapScaleUseFactor;
+        double neckFactor = neckFactors[index] * overlapScaleUseFactor;
 
         MultipoleType multipoleType = atom.getMultipoleType();
         OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters_1(
             amoebaGeneralizedKirkwoodForce,
-            index, multipoleType.charge * chargeUseFactor, baseSize, overlap, descreenSize);
+            index, multipoleType.charge * chargeUseFactor, baseSize, overlap, descreenSize, neckFactor);
       }
 
       //        OpenMM Bug: Surface Area is not Updated by "updateParametersInContext"

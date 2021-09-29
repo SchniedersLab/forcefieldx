@@ -51,6 +51,7 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
+import ffx.potential.parameters.SoluteType;
 import ffx.potential.parameters.VDWType;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -437,6 +438,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   private MultipoleType multipoleType = null;
   private PolarizeType polarizeType = null;
   private VDWType vdwType = null;
+  private SoluteType soluteType = null;
   private double[] globalDipole = null;
   private double[][] globalQuadrupole = null;
   private boolean applyState = false;
@@ -1912,6 +1914,24 @@ public class Atom extends MSNode implements Comparable<Atom> {
    */
   public void setVDWType(VDWType vdwType) {
     this.vdwType = vdwType;
+  }
+
+  /**
+   * getSoluteType
+   *
+   * @return a {@link ffx.potential.parameters.SoluteType} object.
+   */
+  public SoluteType getSoluteType() {
+    return soluteType;
+  }
+
+  /**
+   * setSoluteType
+   *
+   * @param soluteType a {@link ffx.potential.parameters.SoluteType} object.
+   */
+  public void setSoluteType(SoluteType soluteType) {
+    this.soluteType = soluteType;
   }
 
   /**

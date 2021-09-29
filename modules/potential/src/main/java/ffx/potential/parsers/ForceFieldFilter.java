@@ -486,7 +486,6 @@ public class ForceFieldFilter {
         case SOLUTE:
           // SOLUTE lines can't be split on #'s because of SMARTS strings syntax
           baseType = SoluteType.parse(originalInput, originalInput.trim().split(" +"));
-          // baseType = SoluteType.parse(input, tokens);
           break;
         default:
           logger.log(Level.WARNING, "ForceField type recognized, but not stored:{0}", type);

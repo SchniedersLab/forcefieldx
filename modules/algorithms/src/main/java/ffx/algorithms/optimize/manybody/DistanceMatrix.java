@@ -66,8 +66,8 @@ import org.apache.commons.math3.util.FastMath;
  * Calculates a residue-residue distance matrix.
  *
  * <p>Residue-residue distance is defined as the shortest atom-atom distance in any possible
- * rotamer-rotamer pair if the residues are neighbors (central atom-central atom distances are
- * within a cutoff). Otherewise, distances are set to a default of Double.MAX_VALUE.
+ * rotamer-rotamer pair if the residues are neighbors (central atom-central atom distances are within
+ * a cutoff). Otherewise, distances are set to a default of Double.MAX_VALUE.
  *
  * <p>The intent of using a neighbor list is to avoid tediously searching rotamer- rotamer pairs
  * when two residues are so far apart we will never need the exact distance. We use the distance
@@ -208,8 +208,8 @@ public class DistanceMatrix {
   }
 
   /**
-   * Checks if the i,ri,j,rj,k,rk,l,rl quad exceeds the 3-body threshold, or if any component
-   * exceeds the pair/triple distance thresholds.
+   * Checks if the i,ri,j,rj,k,rk,l,rl quad exceeds the 3-body threshold, or if any component exceeds
+   * the pair/triple distance thresholds.
    *
    * @param i A residue index.
    * @param ri A rotamer index for i.
@@ -446,7 +446,7 @@ public class DistanceMatrix {
         if (rO.checkIfForced(residuei)) {
           lengthRi = 1;
         } else {
-          lengthRi = residuei.getRotamers(library).length;
+          lengthRi = residuei.getRotamers().length;
         }
       } catch (IndexOutOfBoundsException ex) {
         if (useForcedResidues) {
@@ -470,7 +470,7 @@ public class DistanceMatrix {
             if (rO.checkIfForced(residuej)) {
               lengthRj = 1;
             } else {
-              lengthRj = residuej.getRotamers(library).length;
+              lengthRj = residuej.getRotamers().length;
             }
           } catch (IndexOutOfBoundsException ex) {
             if (useForcedResidues) {
@@ -632,8 +632,8 @@ public class DistanceMatrix {
   }
 
   /**
-   * Returns the RMS separation distance of three 2-body distances. Defaults to Double.MAX_VALUE
-   * when there are pair distances outside cutoffs.
+   * Returns the RMS separation distance of three 2-body distances. Defaults to Double.MAX_VALUE when
+   * there are pair distances outside cutoffs.
    *
    * @param i Residue i
    * @param ri Rotamer for i
@@ -683,8 +683,8 @@ public class DistanceMatrix {
   }
 
   /**
-   * Evaluates the pairwise distance between two residues' rotamers under any symmetry operator;
-   * does "lazy loading" for the distance matrix.
+   * Evaluates the pairwise distance between two residues' rotamers under any symmetry operator; does
+   * "lazy loading" for the distance matrix.
    *
    * @param i Residue i
    * @param ri Rotamer for i
@@ -694,7 +694,7 @@ public class DistanceMatrix {
    */
   private double evaluateDistance(int i, int ri, int j, int rj) {
     Residue resi = allResiduesArray[i];
-    Rotamer[] rotamersI = resi.getRotamers(library);
+    Rotamer[] rotamersI = resi.getRotamers();
     Rotamer roti = rotamersI[ri];
     double[][] xi;
     if (roti.equals(resi.getRotamer())) {
@@ -707,7 +707,7 @@ public class DistanceMatrix {
     }
 
     Residue resj = allResiduesArray[j];
-    Rotamer[] rotamersJ = resj.getRotamers(library);
+    Rotamer[] rotamersJ = resj.getRotamers();
     Rotamer rotj = rotamersJ[rj];
     double[][] xj;
     if (rotj.equals(resj.getRotamer())) {

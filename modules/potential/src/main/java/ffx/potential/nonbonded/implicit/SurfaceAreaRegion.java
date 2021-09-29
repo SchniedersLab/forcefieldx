@@ -54,8 +54,11 @@ import edu.rit.pj.reduction.SharedBooleanArray;
 import edu.rit.pj.reduction.SharedDouble;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Residue;
 import ffx.potential.parameters.VDWType;
 import ffx.potential.utils.EnergyException;
+
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -210,6 +213,18 @@ public class SurfaceAreaRegion extends ParallelRegion {
 
   public double getEnergy() {
     return sharedSurfaceArea.get();
+  }
+
+  public double[] getArea() {return area;}
+
+  public double getResidueSurfaceArea(Residue residue) {
+    List<Atom> atoms = residue.getAtomList();
+    double residueArea = 0.0;
+    for (Atom atom : atoms) {
+      int i = atom.getXyzIndex() - 1;
+      residueArea += area[i];
+    }
+    return residueArea;
   }
 
   public final void init() {

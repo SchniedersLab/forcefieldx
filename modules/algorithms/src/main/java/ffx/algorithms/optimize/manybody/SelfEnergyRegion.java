@@ -142,7 +142,7 @@ public class SelfEnergyRegion extends WorkerRegion {
     if (master && verbose) {
       for (int i = 0; i < residues.length; i++) {
         Residue residue = residues[i];
-        Rotamer[] rotamers = residue.getRotamers(library);
+        Rotamer[] rotamers = residue.getRotamers();
         for (int ri = 0; ri < rotamers.length; ri++) {
           logger.info(
               format(
@@ -245,7 +245,7 @@ public class SelfEnergyRegion extends WorkerRegion {
         if (i >= 0 && ri >= 0) {
           if (!eR.check(i, ri)) {
             long time = -System.nanoTime();
-            Rotamer[] rotamers = residues[i].getRotamers(library);
+            Rotamer[] rotamers = residues[i].getRotamers();
             double selfEnergy;
             try {
               selfEnergy = eE.computeSelfEnergy(residues, i, ri);

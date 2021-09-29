@@ -46,6 +46,7 @@ import ffx.potential.parsers.PDBFilter
 import ffx.utilities.Keyword
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
+import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
@@ -61,6 +62,9 @@ import static java.lang.String.format
 @Command(description = " Test the potential energy gradient.", name = "ffxc test.Gradient")
 class SaveAsConstantPhPDB extends PotentialScript {
 
+  @CommandLine.Option(names = ["--rt", "--rotamerTitration"], paramLabel = "false",
+          description = "Prepare PDB for rotamer optimization with titration states.")
+  boolean rotamerTitration = false
   /**
    * The final argument should be a PDB coordinate file.
    */
@@ -93,7 +97,12 @@ class SaveAsConstantPhPDB extends PotentialScript {
       return this
     }
 
-    logger.info("\n Adding constant pH protons to: " + filename + "\n")
+    if (rotamerTitration){
+      logger.info("\n Adding rotamer optimization with titration protons to : " + filename + "\n")
+    } else {
+      logger.info("\n Adding constant pH protons to: " + filename + "\n")
+    }
+
 
     // Read in command line.
     File structureFile = new File(filename)
@@ -108,7 +117,11 @@ class SaveAsConstantPhPDB extends PotentialScript {
     activeAssembly.setForceField(forceField)
 
     PDBFilter pdbFilter = new PDBFilter(structureFile, activeAssembly, forceField, properties)
-    pdbFilter.setConstantPH(true)
+    if (rotamerTitration){
+      pdbFilter.setRotamerTitration(true)
+    } else {
+      pdbFilter.setConstantPH(true)
+    }
 
     pdbFilter.readFile()
     pdbFilter.applyAtomProperties()
@@ -121,8 +134,7 @@ class SaveAsConstantPhPDB extends PotentialScript {
     }
 
     String dirName = saveDir.absolutePath + File.separator
-    String fileName = FilenameUtils.getName(filename)
-    fileName = FilenameUtils.removeExtension(fileName)
+    String fileName = FilenameUtils.getBaseName(filename)
     File modelFile = new File(dirName + fileName + ".pdb")
     modelFile = potentialFunctions.versionFile(modelFile)
 

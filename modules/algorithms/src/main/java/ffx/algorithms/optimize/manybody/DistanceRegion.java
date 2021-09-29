@@ -158,7 +158,7 @@ public class DistanceRegion extends ParallelRegion {
         // Loop over residues.
         for (int i = lb; i <= ub; i++) {
           Residue residuei = allResiduesArray[i];
-          Rotamer[] rotamersi = residuei.getRotamers(library);
+          Rotamer[] rotamersi = residuei.getRotamers();
           int lengthRi;
           boolean forcedResidueI = false;
           try {
@@ -192,7 +192,7 @@ public class DistanceRegion extends ParallelRegion {
               }
 
               Residue residuej = allResiduesArray[j];
-              Rotamer[] rotamersj = residuej.getRotamers(library);
+              Rotamer[] rotamersj = residuej.getRotamers();
               int lengthRj;
               boolean forcedResidueJ = false;
               try {
