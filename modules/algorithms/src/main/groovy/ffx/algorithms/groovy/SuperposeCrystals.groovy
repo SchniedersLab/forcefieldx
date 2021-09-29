@@ -66,7 +66,7 @@ import static org.apache.commons.io.FilenameUtils.getFullPath
  * <br>
  * Usage:
  * <br>
- * ffxc test.CrystalSuperpose &lt;filename&gt &lt;filename&gt;
+ * ffxc test.SuperposeCrystals &lt;filename&gt &lt;filename&gt;
  */
 @Command(description = " Compare crystal polymorphs based on a RMSD of aligned crystal coordinates.", name = "ffxc SuperposeCrystals")
 class SuperposeCrystals extends AlgorithmsScript {
@@ -298,8 +298,8 @@ class SuperposeCrystals extends AlgorithmsScript {
     String filename = filenames.get(0)
     String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt")
 
-    distMatrix = pac.comparisons(atomList, numAU, numInflatedAU,
-        numSearch, numSearch2, zPrime, full, savePDB, restart, write, lineCheck, pacFilename)
+    distMatrix = pac.comparisons(nAtoms, atomList, numAU, numInflatedAU,
+        numSearch, numSearch2, full, savePDB, restart, write, lineCheck, pacFilename)
 
     return this
   }

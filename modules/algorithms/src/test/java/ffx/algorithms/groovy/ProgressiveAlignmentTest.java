@@ -68,12 +68,12 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     algorithmsScript = SuperposeCrystals;
     assertEquals(0.0000, SuperposeCrystals.distMatrix[0][0], tolerance);
     assertEquals(0.2006, SuperposeCrystals.distMatrix[0][1], tolerance);
-    assertEquals(0.2611, SuperposeCrystals.distMatrix[0][2], tolerance);
+    assertEquals(0.2189, SuperposeCrystals.distMatrix[0][2], tolerance);
     assertEquals(0.2006, SuperposeCrystals.distMatrix[1][0], tolerance);
     assertEquals(0.0000, SuperposeCrystals.distMatrix[1][1], tolerance);
-    assertEquals(0.1150, SuperposeCrystals.distMatrix[1][2], tolerance);
-    assertEquals(0.2611, SuperposeCrystals.distMatrix[2][0], tolerance);
-    assertEquals(0.1150, SuperposeCrystals.distMatrix[2][1], tolerance);
+    assertEquals(0.0909, SuperposeCrystals.distMatrix[1][2], tolerance);
+    assertEquals(0.2189, SuperposeCrystals.distMatrix[2][0], tolerance);
+    assertEquals(0.0909, SuperposeCrystals.distMatrix[2][1], tolerance);
     assertEquals(0.0000, SuperposeCrystals.distMatrix[2][2], tolerance);
   }
 
@@ -91,12 +91,12 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     algorithmsScript = SuperposeCrystals;
     assertEquals(0.0000, SuperposeCrystals.distMatrix[0][0], tolerance);
     assertEquals(0.1890, SuperposeCrystals.distMatrix[0][1], tolerance);
-    assertEquals(0.2509, SuperposeCrystals.distMatrix[0][2], tolerance);
+    assertEquals(0.2075, SuperposeCrystals.distMatrix[0][2], tolerance);
     assertEquals(0.1890, SuperposeCrystals.distMatrix[1][0], tolerance);
     assertEquals(0.0000, SuperposeCrystals.distMatrix[1][1], tolerance);
-    assertEquals(0.1158, SuperposeCrystals.distMatrix[1][2], tolerance);
-    assertEquals(0.2509, SuperposeCrystals.distMatrix[2][0], tolerance);
-    assertEquals(0.1158, SuperposeCrystals.distMatrix[2][1], tolerance);
+    assertEquals(0.0896, SuperposeCrystals.distMatrix[1][2], tolerance);
+    assertEquals(0.2075, SuperposeCrystals.distMatrix[2][0], tolerance);
+    assertEquals(0.0896, SuperposeCrystals.distMatrix[2][1], tolerance);
     assertEquals(0.0000, SuperposeCrystals.distMatrix[2][2], tolerance);
   }
 
