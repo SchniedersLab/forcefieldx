@@ -565,7 +565,7 @@ public class PolymerUtils {
       String key = BondType.sortKey(c);
       BondType bondType = forceField.getBondType(key);
       if (bondType == null) {
-        logNoBondType(a1, a2, key);
+        logNoBondType(a1, a2, key, forceField);
       } else {
         bond.setBondType(bondType);
       }

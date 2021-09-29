@@ -177,7 +177,6 @@ class CIFtoXYZ extends PotentialScript {
       if (symmetry.spaceGroupNameH_M.rowCount > 0) {
         sgName = symmetry.spaceGroupNameH_M.get(0)
         logger.info(format(" CIF Hermann–Mauguin Space Group: %s", sgName))
-        sgName = sgName.replaceAll(" +", "")
       }
     } else {
       if (sgNum != -1) {
@@ -188,17 +187,14 @@ class CIFtoXYZ extends PotentialScript {
     }
 
     SpaceGroup sg
-    logger.info(" SGNAME: " + sgName)
     sg = SpaceGroupDefinitions.spaceGroupFactory(sgName)
-    logger.info(" Short Name: " + sg.shortName)
-    logger.info(" PDB Name: " + sg.pdbName)
     if (sg == null) {
       sg = SpaceGroupDefinitions.spaceGroupFactory(sgNum)
     }
 
     // Fall back to P1.
     if (sg == null) {
-      logger.info(" The space group could not be determined from the CIF file (using P1).")
+      logger.warning(" The space group could not be determined from the CIF file (using P1).")
       sg = SpaceGroupDefinitions.spaceGroupFactory(1)
     }
 
@@ -211,7 +207,7 @@ class CIFtoXYZ extends PotentialScript {
     double gamma = cell.angleGamma.get(0)
 
     Crystal crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName)
-    logger.info(" NEW XTAL INFO:")
+    logger.info(" New crystal:")
     logger.info(crystal.toString())
 
     AtomSite atomSite = firstBlock.atomSite

@@ -41,23 +41,44 @@ import edu.rit.pj.Comm
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
 import ffx.utilities.FFXScript
-import picocli.CommandLine.Unmatched
+import picocli.CommandLine.Option
 import picocli.CommandLine.Command
-import picocli.CommandLine.Parameters
+import picocli.CommandLine.Unmatched
 
-import static groovy.io.FileType.DIRECTORIES
+import static groovy.io.FileType.FILES
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.*
 
 /**
- * Run an FFX command in a series of sub-directories sequentially or in parallel.
+ * Run an FFX command in on a series of files.
  * <br>
  * Usage:
  * <br>
- * ffxc ForEachDir [command] [options] &lt;filename [file2...]&gt;
+ * ffxc ForEachFile [command] [options] &lt;filename [file2...]&gt;
  */
-@Command(description = " Run an FFX command in a series of sub-directories.", name = "ffxc ForEachDir")
-class ForEachDir extends AlgorithmsScript {
+@Command(description = " Run an FFX command on a series of files in the current directory.", name = "ffxc ForEachFile")
+class ForEachFile extends AlgorithmsScript {
+
+  /**
+   * --ext or --filetype Only apply the command to files with given filetype (ARC, XYZ, PDB, etc).
+   */
+  // @Option(names = ['--ext', '--filetype'], paramLabel = 'ext',
+  //     description = 'Only apply the command to files with given filetype (ARC, XYZ, PDB, etc).')
+  // String ext = null
+
+  /**
+   * --recurse Maximum recursion level (0 only includes the current directory).
+   */
+  @Option(names = ['--recurse'], defaultValue = "0", paramLabel = "0",
+      description = 'Maximum recursion level (0 only includes the current directory).')
+  int recurse
+
+  /**
+   * --regex Evaluate files that match a Regular expression (.* includes all files).
+   */
+  @Option(names = ['--regex'], paramLabel = ".*", defaultValue = ".*",
+      description = 'Evaluate files that match a Regular expression (\'.*\' matches all files).')
+  String regex
 
   /**
    * The final argument(s) should be one or more filenames.
@@ -68,7 +89,7 @@ class ForEachDir extends AlgorithmsScript {
   /**
    * Minimize Constructor.
    */
-  ForEachDir() {
+  ForEachFile() {
     this(new Binding())
   }
 
@@ -76,7 +97,7 @@ class ForEachDir extends AlgorithmsScript {
    * Minimize Constructor.
    * @param binding The Groovy Binding to use.
    */
-  ForEachDir(Binding binding) {
+  ForEachFile(Binding binding) {
     super(binding)
   }
 
@@ -84,7 +105,7 @@ class ForEachDir extends AlgorithmsScript {
    * {@inheritDoc}
    */
   @Override
-  ForEachDir run() {
+  ForEachFile run() {
 
     if (!init()) {
       return this
@@ -95,7 +116,7 @@ class ForEachDir extends AlgorithmsScript {
 
     Class<? extends FFXScript> script = getScript(unmatched.get(0))
     if (script != null) {
-      logger.info(format(" The %s will be run in each subdirectory.", script))
+      logger.info(format(" The %s will be run on each file.", script))
     } else {
       logger.info(format(" %s was not recognized.", unmatched.get(0)))
       return this
@@ -110,32 +131,33 @@ class ForEachDir extends AlgorithmsScript {
       logger.info(format(" Rank of this process: %d", rank))
     }
 
-    // Remove the ForEachDir command.
+    // Remove the ForEachFile command.
     unmatched.remove(0)
 
+    // Collect the files.
     File cwd = new File(".")
-    List<File> directories = []
-    cwd.traverse(type: DIRECTORIES, maxDepth: 0) {
-      directories.add(it)
+    List<File> files = []
+    cwd.traverse(type: FILES, maxDepth: recurse, nameFilter: ~/$regex/) {
+      files.add(it)
     }
 
-    int numDir = directories.size()
+    // Sort the files.
+    Collections.sort(files)
 
-    for (int i=0; i<numDir; i++) {
+    int numFiles = files.size()
+    for (int i=0; i<numFiles; i++) {
       if (i % numProc == rank) {
-        File dir = directories.get(i)
-        if (dir.exists()) {
-          String path = normalize(dir.getAbsolutePath())
-          logger.info(format(" Current Directory: %s", path))
+        File file = files.get(i)
+        if (file.exists()) {
+          String path = normalize(file.getAbsolutePath())
+          logger.info(format(" Current File: %s", path))
           List<String> dirParameters = new ArrayList<>()
           // Pass along the unmatched parameters
           for (String arg : unmatched) {
-            if (arg.containsIgnoreCase("SUBDIR")) {
-              arg = arg.replaceFirst("SUBDIR", "")
-              arg = concat(path, getName(arg))
-            }
             dirParameters.add(arg)
           }
+          // Add the current file.
+          dirParameters.add(path)
 
           // Create a Binding for command line arguments.
           Binding binding = new Binding()
@@ -144,7 +166,12 @@ class ForEachDir extends AlgorithmsScript {
           // Create a new instance of the script and run it.
           Script groovyScript = script.getDeclaredConstructor().newInstance()
           groovyScript.setBinding(binding)
-          groovyScript.run()
+
+          try {
+            groovyScript.run()
+          } catch (Exception e) {
+            logger.info(format(" Exception for file: %s", path))
+          }
         }
       }
     }

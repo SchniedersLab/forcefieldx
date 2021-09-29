@@ -191,6 +191,9 @@ class Dynamics extends AlgorithmsScript {
                 dyn = null
             }
 
+            final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
+            logger.info("Set activeAssembly filename: " + newMolAssemblyFile)
+            activeAssembly.setFile(new File(newMolAssemblyFile))
             molDyn = dynamicsOptions.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
             ReplicaExchange replicaExchange = new ReplicaExchange(molDyn, algorithmListener,
                     dynamicsOptions.temperature, repEx.exponent, repEx.monteCarlo)

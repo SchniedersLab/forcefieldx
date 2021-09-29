@@ -39,6 +39,7 @@ package ffx.potential.parameters;
 
 import static ffx.potential.bonded.AminoAcidUtils.AA_CB;
 import static ffx.potential.bonded.BondedUtils.findAtomType;
+import static ffx.potential.parameters.MultipoleType.assignAxisAtoms;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.log;
 
@@ -361,7 +362,7 @@ public class TitrationUtils {
   private final PolarizeType[][] gluPolarizeTypes = new PolarizeType[nGluStates][nGluTypes];
   private final VDWType[][] gluVDWTypes = new VDWType[nGluStates][nGluTypes];
   private final SoluteType[][] gluSoluteTypes = new SoluteType[nGluStates][nGluTypes];
-  
+
   private final ForceField forceField;
   private final SOLUTE_RADII_TYPE soluteRadiiType;
 
@@ -413,6 +414,7 @@ public class TitrationUtils {
   public void updateResidueParameters(Residue residue, Rotamer rotamer) {
     switch (residue.getAminoAcid3()) {
       case ASH:
+      case ASP:
         // Assume ASP types
         int aspIndex = AspStates.ASP.ordinal();
         if (rotamer.aminoAcid3 == AminoAcid3.ASH) {
@@ -428,11 +430,14 @@ public class TitrationUtils {
           Atom atom = (Atom) residue.getAtomNode(atomName.name());
           atom.setAtomType(aspAtomTypes[aspIndex][atomIndex]);
           atom.setMultipoleType(aspMultipoleTypes[aspIndex][atomIndex]);
+          assignAxisAtoms(atom);
           atom.setPolarizeType(aspPolarizeTypes[aspIndex][atomIndex]);
           atom.setVDWType(aspVDWTypes[aspIndex][atomIndex]);
           atom.setSoluteType(aspSoluteTypes[aspIndex][atomIndex]);
+          // logger.info(format(" %s %s", atomName, atom.getVDWType()));
         }
         break;
+      case GLU:
       case GLH:
         // Assume GLU types
         int gluIndex = GluStates.GLU.ordinal();
@@ -449,12 +454,14 @@ public class TitrationUtils {
           Atom atom = (Atom) residue.getAtomNode(atomName.name());
           atom.setAtomType(gluAtomTypes[gluIndex][atomIndex]);
           atom.setMultipoleType(gluMultipoleTypes[gluIndex][atomIndex]);
+          assignAxisAtoms(atom);
           atom.setPolarizeType(gluPolarizeTypes[gluIndex][atomIndex]);
           atom.setVDWType(gluVDWTypes[gluIndex][atomIndex]);
           atom.setSoluteType(gluSoluteTypes[gluIndex][atomIndex]);
         }
         break;
       case LYS:
+      case LYD:
         // Assume LYS types
         int lysIndex = LysStates.LYS.ordinal();
         if (rotamer.aminoAcid3 == AminoAcid3.LYD) {
@@ -466,12 +473,15 @@ public class TitrationUtils {
           Atom atom = (Atom) residue.getAtomNode(atomName.name());
           atom.setAtomType(lysAtomTypes[lysIndex][atomIndex]);
           atom.setMultipoleType(lysMultipoleTypes[lysIndex][atomIndex]);
+          assignAxisAtoms(atom);
           atom.setPolarizeType(lysPolarizeTypes[lysIndex][atomIndex]);
           atom.setVDWType(lysVDWTypes[lysIndex][atomIndex]);
           atom.setSoluteType(lysSoluteTypes[lysIndex][atomIndex]);
         }
         break;
       case HIS:
+      case HIE:
+      case HID:
         // Assume HIS types.
         int hisIndex = HisStates.HIS.ordinal();
         switch (rotamer.aminoAcid3) {
@@ -486,6 +496,7 @@ public class TitrationUtils {
           Atom atom = (Atom) residue.getAtomNode(atomName.name());
           atom.setAtomType(hisAtomTypes[hisIndex][atomIndex]);
           atom.setMultipoleType(hisMultipoleTypes[hisIndex][atomIndex]);
+          assignAxisAtoms(atom);
           atom.setPolarizeType(hisPolarizeTypes[hisIndex][atomIndex]);
           atom.setVDWType(hisVDWTypes[hisIndex][atomIndex]);
           atom.setSoluteType(hisSoluteTypes[hisIndex][atomIndex]);
@@ -819,9 +830,12 @@ public class TitrationUtils {
         hisPolarizeTypes[state][index] = forceField.getPolarizeType(key);
         int atomClass = hisAtomTypes[state][index].atomClass;
         hisVDWTypes[state][index] = forceField.getVDWType("" + atomClass);
-        hisSoluteTypes[state][index] = getSoluteType(forceField, hisAtomTypes[state][index], hisVDWTypes[state][index]);
-        if (hisMultipoleTypes[state][index] == null || hisPolarizeTypes[state][index] == null) {
-          logger.severe(format(" A multipole could not be assigned for Lys atom %s.\n %s\n",
+        hisSoluteTypes[state][index] = getSoluteType(forceField, hisAtomTypes[state][index],
+            hisVDWTypes[state][index]);
+        if (hisMultipoleTypes[state][index] == null
+            || hisPolarizeTypes[state][index] == null
+            || hisSoluteTypes[state][index] == null) {
+          logger.severe(format(" Titration parameters could not be assigned for Lys atom %s.\n %s\n",
               atomName, hisAtomTypes[state][index]));
         }
       }
@@ -849,9 +863,12 @@ public class TitrationUtils {
         lysPolarizeTypes[state][index] = forceField.getPolarizeType(key);
         int atomClass = lysAtomTypes[state][index].atomClass;
         lysVDWTypes[state][index] = forceField.getVDWType("" + atomClass);
-        lysSoluteTypes[state][index] = getSoluteType(forceField, lysAtomTypes[state][index], lysVDWTypes[state][index]);
-        if (lysMultipoleTypes[state][index] == null || lysPolarizeTypes[state][index] == null) {
-          logger.severe(format(" A multipole could not be assigned for Lys atom %s.\n %s\n",
+        lysSoluteTypes[state][index] = getSoluteType(forceField, lysAtomTypes[state][index],
+            lysVDWTypes[state][index]);
+        if (lysMultipoleTypes[state][index] == null
+            || lysPolarizeTypes[state][index] == null
+            || lysSoluteTypes[state][index] == null) {
+          logger.severe(format(" Titration parameters could not be assigned for Lys atom %s.\n %s\n",
               atomName, lysAtomTypes[state][index]));
         }
       }
@@ -879,9 +896,12 @@ public class TitrationUtils {
         aspPolarizeTypes[state][index] = forceField.getPolarizeType(key);
         int atomClass = aspAtomTypes[state][index].atomClass;
         aspVDWTypes[state][index] = forceField.getVDWType("" + atomClass);
-        aspSoluteTypes[state][index] = getSoluteType(forceField, aspAtomTypes[state][index], aspVDWTypes[state][index]);
-        if (aspMultipoleTypes[state][index] == null || aspPolarizeTypes[state][index] == null) {
-          logger.severe(format(" A force field type could not be assigned for Asp atom %s.\n %s\n",
+        aspSoluteTypes[state][index] = getSoluteType(forceField, aspAtomTypes[state][index],
+            aspVDWTypes[state][index]);
+        if (aspMultipoleTypes[state][index] == null
+            || aspPolarizeTypes[state][index] == null
+            || aspSoluteTypes[state][index] == null) {
+          logger.severe(format(" Titration parameters could not be assigned for Asp atom %s.\n %s\n",
               atomName, aspAtomTypes[state][index]));
         }
       }
@@ -909,9 +929,12 @@ public class TitrationUtils {
         gluPolarizeTypes[state][index] = forceField.getPolarizeType(key);
         int atomClass = gluAtomTypes[state][index].atomClass;
         gluVDWTypes[state][index] = forceField.getVDWType("" + atomClass);
-        gluSoluteTypes[state][index] = getSoluteType(forceField, gluAtomTypes[state][index], gluVDWTypes[state][index]);
-        if (gluMultipoleTypes[state][index] == null || gluPolarizeTypes[state][index] == null) {
-          logger.severe(format(" A multipole could not be assigned for Glu atom %s.\n %s\n",
+        gluSoluteTypes[state][index] = getSoluteType(forceField, gluAtomTypes[state][index],
+            gluVDWTypes[state][index]);
+        if (gluMultipoleTypes[state][index] == null
+            || gluPolarizeTypes[state][index] == null
+            || gluSoluteTypes[state][index] == null) {
+          logger.severe(format(" Titration parameters could not be assigned for Glu atom %s.\n %s\n",
               atomName, gluAtomTypes[state][index]));
         }
       }
@@ -964,15 +987,27 @@ public class TitrationUtils {
   }
 
   private SoluteType getSoluteType(ForceField forceField, AtomType atomType, VDWType vdwType) {
-    switch(soluteRadiiType ) {
+    SoluteType soluteType = SoluteType.getCensusSoluteType(atomType.atomicNumber);
+    switch (soluteRadiiType) {
       case SOLUTE:
-        return SoluteType.getFitSoluteType(forceField, atomType.type);
+        SoluteType type = SoluteType.getFitSoluteType(forceField, atomType.type);
+        if (type != null) {
+          soluteType = type;
+        }
+        break;
       case VDW:
-        return SoluteType.getVDWSoluteType(vdwType);
-      case CONSENSUS:
-        return SoluteType.getCensusSoluteType(atomType.atomicNumber);
+        type = SoluteType.getVDWSoluteType(vdwType);
+        if (type != null) {
+          soluteType = type;
+        }
+        break;
     }
-    return null;
+    if (soluteType == null) {
+      logger.severe(
+          format(" No solute type (%s) for %d:\n  \"%s\"\n  %s", soluteRadiiType, atomType.type,
+              atomType, vdwType));
+    }
+    return soluteType;
   }
 
   public void setRotamerPhBias(double temperature, double pH) {
@@ -1048,14 +1083,13 @@ public class TitrationUtils {
 
   /**
    * Amino acid protonation reactions. Constructors below specify intrinsic pKa and reference free
-   * energy of protonation, obtained via (OST) metadynamics on capped monomers.
-   * pKa values from
-   *    Nozaki, Yasuhiko, and Charles Tanford. "[84] Examination of titration behavior."
-   *    Methods in enzymology. Vol. 11. Academic Press, 1967. 715-734.
-   *
-   * HIS to HID/HIE pKa values from
-   *    Bashford, Donald, et al. "Electrostatic calculations of side-chain pKa values in myoglobin and comparison with NMR data for histidines."
-   *    Biochemistry 32.31 (1993): 8045-8056.
+   * energy of protonation, obtained via (OST) metadynamics on capped monomers. pKa values from
+   * Nozaki, Yasuhiko, and Charles Tanford. "[84] Examination of titration behavior." Methods in
+   * enzymology. Vol. 11. Academic Press, 1967. 715-734.
+   * <p>
+   * HIS to HID/HIE pKa values from Bashford, Donald, et al. "Electrostatic calculations of
+   * side-chain pKa values in myoglobin and comparison with NMR data for histidines." Biochemistry
+   * 32.31 (1993): 8045-8056.
    */
   public enum Titration {
     //ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),

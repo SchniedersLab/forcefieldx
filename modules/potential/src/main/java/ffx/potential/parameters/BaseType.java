@@ -136,7 +136,7 @@ public abstract class BaseType {
    * @since 1.0
    */
   public void print() {
-    System.out.println(toString());
+    System.out.println(this);
   }
 
   /**

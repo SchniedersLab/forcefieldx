@@ -66,16 +66,16 @@ import static org.apache.commons.io.FilenameUtils.getFullPath
  * <br>
  * Usage:
  * <br>
- * ffxc test.CrystalSuperpose &lt;filename&gt &lt;filename&gt;
+ * ffxc test.SuperposeCrystals &lt;filename&gt &lt;filename&gt;
  */
-@Command(description = " Compare crystal polymorphs based on a RMSD of aligned crystal coordinates.", name = "ffxc CrystalSuperpose")
+@Command(description = " Compare crystal polymorphs based on a RMSD of aligned crystal coordinates.", name = "ffxc SuperposeCrystals")
 class SuperposeCrystals extends AlgorithmsScript {
 
   @Mixin
   AtomSelectionOptions atomSelectionOptions
 
   /**
-   * --nm or --numMolecules Number of asymmetric units to include from each crystal in RMSD comparison.
+   * --na or --numAU Number of asymmetric units to include from each crystal in RMSD comparison.
    */
   @Option(names = ['--na', '--numAU'], paramLabel = '20', defaultValue = '20',
       description = 'Set the number of asymmetric units to include in final PAC RMSD.')
@@ -84,7 +84,7 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * --ni or --numInflatedAU Number of asymmetric units in the inflated sphere.
    */
-  @Option(names = ['--ni', '--numInflatedAU'], paramLabel = '200', defaultValue = '200',
+  @Option(names = ['--ni', '--numInflatedAU'], paramLabel = '500', defaultValue = '500',
       description = 'Specifies the number asymmetric units in the expanded crystal.')
   int numInflatedAU
 
@@ -101,6 +101,13 @@ class SuperposeCrystals extends AlgorithmsScript {
   @Option(names = ['--ns2', '--numSearch2'], paramLabel = '5', defaultValue = '5',
       description = 'Set the number of asymmetric units to search in the 2nd system to check for mirrored conformations.')
   int numSearch2
+
+  /**
+   * -- or -- Number of molecules in the asymmetric unit.
+   */
+  @Option(names = ['--zp', '--zPrime'], paramLabel = '1', defaultValue = '1',
+          description = 'Set the number of species within the asymmetric unit (Z\').')
+  int zPrime
 
   /**
    * --nms or --noMirrorSearch Do not loop over asymmetric units to check for mirrored conformations.
@@ -131,11 +138,18 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean savePDB
 
   /**
-   * -f or --force Perform comparison even if a single asymmetric unit from each crystal differs
+   * -f or --full Perform the full comparison (takes considerably longer, but more information returned).
    */
-  @Option(names = ['-f', '--force'], paramLabel = "false", defaultValue = "false",
-      description = 'Force PAC comparison regardless of single asymmetric unit RMSD.')
-  private static boolean force
+  @Option(names = ['-f', '--full'], paramLabel = "false", defaultValue = "false",
+      description = 'Use the full number of comparisons (tradeoff between speed and information returned).')
+  private static boolean full
+
+  /**
+   * --ac or --alphaCarbons PAC RMSD will only include alpha carbons.
+   */
+  @Option(names = ['--ac', '--alphaCarbons'], paramLabel = "false", defaultValue = "false",
+          description = 'PAC RMSD will only include alpha carbons.')
+  private static boolean alphaCarbons
 
   /**
    * --nh or --noHydrogen PAC RMSD will not include hydrogen atoms.
@@ -151,6 +165,13 @@ class SuperposeCrystals extends AlgorithmsScript {
   @Option(names = ['--sym', '--symmetric'], paramLabel = "false", defaultValue = "false",
       description = 'Enforce generation of a symmetric PAC RMSD matrix.')
   private static boolean symmetric
+
+  /**
+   * --lc or --lineCheck Prioritize molecules w/o averaging center of masses.
+   */
+  @Option(names = ['--lc', '--lineCheck'], paramLabel = "false", defaultValue = "false",
+          description = 'Simply check if prioritized molecules are in a line.')
+  private static boolean lineCheck
 
   /**
    * The final argument(s) should be two or more filenames (same file twice if comparing same structures).
@@ -239,7 +260,15 @@ class SuperposeCrystals extends AlgorithmsScript {
     for (int i = 0; i < nAtoms; i++) {
       Atom atom = baseAtoms[i]
       if (atom.isActive()) {
-        if (!noHydrogen || !atom.isHydrogen()) {
+        String atomName = atom.getName()
+        int atomAtNum = atom.getAtomicNumber()
+        boolean proteinCheck = atomName == "CA" && atomAtNum == 6
+        boolean aminoCheck = (atomName == "N1" || atomName == "N9") && atomAtNum == 7
+        if(alphaCarbons){
+          if(proteinCheck||aminoCheck){
+            atomList.add(i)
+          }
+        }else if (!noHydrogen || !atom.isHydrogen()) {
           atomList.add(i)
         }
       }
@@ -248,20 +277,13 @@ class SuperposeCrystals extends AlgorithmsScript {
     }
 
     if (atomList.size() < 1) {
-      logger.info("\n No atoms will were selected for the PAC RMSD.")
+      logger.info("\n No atoms were selected for the PAC RMSD.")
       return this
     }
 
     // Number of atoms included in the PAC RMSD.
     int nPACAtoms = atomList.size()
     logger.info(format("\n %d atoms will be used for the PAC RMSD out of %d.\n", nPACAtoms, nAtoms))
-
-    // Current method to save PDB only works when using all atoms.
-    // TODO: Overcome this restriction.
-    if (nAtoms != nPACAtoms && savePDB) {
-      savePDB = false
-      logger.info(" Saving a PDB is currently not compatible with a subset of atoms.")
-    }
 
     // If search is desired ensure inner loop will be used. Else use single comparison.
     if (noMirrorSearch) {
@@ -277,7 +299,7 @@ class SuperposeCrystals extends AlgorithmsScript {
     String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt")
 
     distMatrix = pac.comparisons(nAtoms, atomList, numAU, numInflatedAU,
-        numSearch, numSearch2, force, symmetric, savePDB, restart, write, pacFilename)
+        numSearch, numSearch2, full, savePDB, restart, write, lineCheck, pacFilename)
 
     return this
   }

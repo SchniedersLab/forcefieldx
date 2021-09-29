@@ -283,7 +283,7 @@ public class INTFilter extends SystemFilter {
             String key = BondType.sortKey(c);
             BondType bondType = forceField.getBondType(key);
             if (bondType == null) {
-              logNoBondType(atom1, atom2, key);
+              logNoBondType(atom1, atom2, key, forceField);
             } else {
               bond.setBondType(bondType);
             }
@@ -299,7 +299,7 @@ public class INTFilter extends SystemFilter {
           String key = BondType.sortKey(c);
           BondType bondType = forceField.getBondType(key);
           if (bondType == null) {
-            logNoBondType(atom1, atom2, key);
+            logNoBondType(atom1, atom2, key, forceField);
           } else {
             bond.setBondType(bondType);
           }

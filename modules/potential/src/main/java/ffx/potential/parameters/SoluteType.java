@@ -264,23 +264,31 @@ public final class SoluteType extends BaseType implements Comparator<String> {
     return soluteType;
   }
 
-  public static void setSoluteRadii(ForceField forceField, Atom[] atoms, SOLUTE_RADII_TYPE soluteRadiiType) {
-    for (Atom atom : atoms) {
-      // Begin by setting the base radius to a consensus radius.
-      SoluteType soluteType = getCensusSoluteType(atom.getAtomicNumber());
-      // Overwrite consensus radii with VDW or SOLUTE radii.
-      if (soluteRadiiType == SOLUTE_RADII_TYPE.VDW) {
-        SoluteType type = getVDWSoluteType(atom.getVDWType());
-        if (type != null) {
-          soluteType = type;
-        }
-      } else if (soluteRadiiType == SOLUTE_RADII_TYPE.SOLUTE) {
-        SoluteType type = getFitSoluteType(forceField, atom.getAtomType().type);
-        if (type != null) {
-          soluteType = type;
-        }
+  public static SoluteType getSoluteType(Atom atom, ForceField forceField, SOLUTE_RADII_TYPE soluteRadiiType) {
+    // Begin by setting the base radius to a consensus radius.
+    SoluteType soluteType = getCensusSoluteType(atom.getAtomicNumber());
+    // Overwrite consensus radii with VDW or SOLUTE radii.
+    if (soluteRadiiType == SOLUTE_RADII_TYPE.VDW) {
+      SoluteType type = getVDWSoluteType(atom.getVDWType());
+      if (type != null) {
+        soluteType = type;
       }
-      atom.setSoluteType(soluteType);
+    } else if (soluteRadiiType == SOLUTE_RADII_TYPE.SOLUTE) {
+      SoluteType type = getFitSoluteType(forceField, atom.getAtomType().type);
+      if (type != null) {
+        soluteType = type;
+      }
+    }
+    return soluteType;
+  }
+
+  public static void setSoluteRadii(ForceField forceField, Atom[] atoms, SOLUTE_RADII_TYPE soluteRadiiType) {
+
+    Map<String, SoluteType> types = forceField.getSoluteTypes();
+    logger.info(format(" Number of Solute Types %d", types.size()));
+
+    for (Atom atom : atoms) {
+      atom.setSoluteType(getSoluteType(atom, forceField, soluteRadiiType));
     }
   }
 

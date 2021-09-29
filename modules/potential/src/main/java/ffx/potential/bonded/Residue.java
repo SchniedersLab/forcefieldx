@@ -269,6 +269,17 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     finalize(true, forceField);
   }
 
+  @Override
+  public void setName(String name) {
+    super.setName(name);
+    if (residueType != null) {
+      assignResidueType();
+    }
+    for (Atom atom : getAtomList()) {
+      atom.setResName(name);
+    }
+  }
+
   /**
    * {@inheritDoc}
    *
@@ -387,11 +398,8 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     if (this.residueType != ResidueType.AA) {
       throw new IllegalArgumentException(
           String.format(" This residue is " + "not an amino acid: %s", this));
-    } else if (aa == AminoAcidUtils.AminoAcid3.UNK) {
-      logger.fine(String.format("UNK stored for residue with name: %s", getName()));
-      return AminoAcidUtils.AminoAcid3.UNK;
     }
-    return AminoAcidUtils.AminoAcid3.valueOf(getName());
+    return aa;
   }
 
   /**
@@ -512,16 +520,9 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   public NucleicAcid3 getNucleicAcid3() {
     if (this.residueType != ResidueType.NA) {
       throw new IllegalArgumentException(
-          String.format(" This residue is " + "not a nucleic acid: %s", this));
-    } else if (na == NucleicAcidUtils.NucleicAcid3.UNK) {
-      return NucleicAcidUtils.NucleicAcid3.UNK;
+          String.format(" This residue is not a nucleic acid: %s", this));
     }
-
-    try {
-      return NucleicAcidUtils.NucleicAcid3.valueOf(getName());
-    } catch (Exception e) {
-      return NucleicAcidUtils.NucleicAcid3.UNK;
-    }
+    return na;
   }
 
   /**
