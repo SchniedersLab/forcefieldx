@@ -41,42 +41,46 @@ import edu.rit.pj.Comm
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
 import ffx.utilities.FFXScript
-import picocli.CommandLine.Option
 import picocli.CommandLine.Command
+import picocli.CommandLine.Option
 import picocli.CommandLine.Unmatched
 
 import static groovy.io.FileType.FILES
 import static java.lang.String.format
-import static org.apache.commons.io.FilenameUtils.*
+import static org.apache.commons.io.FilenameUtils.normalize
 
 /**
- * Run an FFX command in on a series of files.
+ * Run an FFX command in on a series of files. Parallel Java across nodes is supported.
+ *
+ * Recursion through the directory structure is supported to a supplied level using the
+ * --recurse flag (0 only includes the current directory).
+ *
+ * Files can be selected using a regular expression -- the default matches all
+ * files (".*").
+ *
+ * To control placement of the variable file on the command line, the "FILE" string can be used. If
+ * present, it is replaced with the current file. If absent, the current file is last argument
+ * to the FFX command.
+ *
  * <br>
  * Usage:
  * <br>
- * ffxc ForEachFile [command] [options] &lt;filename [file2...]&gt;
+ * ffxc ForEachFile Command [options] &ltFILE&gt;
  */
-@Command(description = " Run an FFX command on a series of files in the current directory.", name = "ffxc ForEachFile")
+@Command(description = " Run an FFX command on a series of files.", name = "ffxc ForEachFile")
 class ForEachFile extends AlgorithmsScript {
 
   /**
-   * --ext or --filetype Only apply the command to files with given filetype (ARC, XYZ, PDB, etc).
+   * -r --recurse Maximum recursion level (0 only includes the current directory).
    */
-  // @Option(names = ['--ext', '--filetype'], paramLabel = 'ext',
-  //     description = 'Only apply the command to files with given filetype (ARC, XYZ, PDB, etc).')
-  // String ext = null
-
-  /**
-   * --recurse Maximum recursion level (0 only includes the current directory).
-   */
-  @Option(names = ['--recurse'], defaultValue = "0", paramLabel = "0",
+  @Option(names = ['-r', '--recurse'], defaultValue = "0", paramLabel = "0",
       description = 'Maximum recursion level (0 only includes the current directory).')
   int recurse
 
   /**
-   * --regex Evaluate files that match a Regular expression (.* includes all files).
+   * --regex --fileSelectionRegex Evaluate files that match a Regular expression (.* includes all files).
    */
-  @Option(names = ['--regex'], paramLabel = ".*", defaultValue = ".*",
+  @Option(names = ['--regex', "--fileSelectionRegex"], paramLabel = ".*", defaultValue = ".*",
       description = 'Evaluate files that match a Regular expression (\'.*\' matches all files).')
   String regex
 
@@ -122,7 +126,7 @@ class ForEachFile extends AlgorithmsScript {
       return this
     }
 
-    Comm world= Comm.world()
+    Comm world = Comm.world()
     int numProc = world.size()
     int rank = world.rank()
 
@@ -145,23 +149,32 @@ class ForEachFile extends AlgorithmsScript {
     Collections.sort(files)
 
     int numFiles = files.size()
-    for (int i=0; i<numFiles; i++) {
+    for (int i = 0; i < numFiles; i++) {
       if (i % numProc == rank) {
         File file = files.get(i)
         if (file.exists()) {
           String path = normalize(file.getAbsolutePath())
           logger.info(format(" Current File: %s", path))
-          List<String> dirParameters = new ArrayList<>()
+          List<String> commandArgs = new ArrayList<>()
           // Pass along the unmatched parameters
+          boolean foundFile = false
           for (String arg : unmatched) {
-            dirParameters.add(arg)
+            if (arg.equalsIgnoreCase("FILE")) {
+              // Replace FILE with the current file path.
+              commandArgs.add(path)
+              foundFile = true;
+            } else {
+              commandArgs.add(arg)
+            }
           }
-          // Add the current file.
-          dirParameters.add(path)
+          if (!foundFile) {
+            // Add the current file as the final argument.
+            commandArgs.add(path)
+          }
 
           // Create a Binding for command line arguments.
           Binding binding = new Binding()
-          binding.setVariable("args", dirParameters)
+          binding.setVariable("args", commandArgs)
 
           // Create a new instance of the script and run it.
           Script groovyScript = script.getDeclaredConstructor().newInstance()
