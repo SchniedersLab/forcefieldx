@@ -210,7 +210,7 @@ class NewProtonMDDriver extends AlgorithmsScript {
 
       //Gather derivatives
       potential.getCoordinates(x)
-      pe = potential.energyAndGradient(x, g, true)
+      pe = potential.energyAndGradient(x, g, false)
       pe += esvSystem.getBiasEnergy()
       //Put derivatives in terms of theta
       dEdL = esvSystem.postForce()
@@ -231,11 +231,15 @@ class NewProtonMDDriver extends AlgorithmsScript {
       //Degrees of freedom for theta particle on unit circle??
       ke *= 0.5 / KCAL_TO_GRAM_ANG2_PER_PS2
       totalEnergy = pe + ke
-      logger.info(
-              format("Potential Energy: %16.8f Kinetic Energy %16.8f Total Energy: %16.8f", pe, ke,
-                      totalEnergy))
-      logger.info(format("Current Temperature: %g", currentTemperature))
-      logger.info(format(" %7.3e %s", totalSimTime, esvSystem.getLambdaList()))
+      long report = (long) (dynamics.report * 1000)
+      if(step % report == 0){
+        logger.info(format(" %7.3e\n %s", totalSimTime, esvSystem.getLambdaList()))
+        logger.info(
+                format("Potential Energy: %16.8f Kinetic Energy %16.8f Total Energy: %16.8f", pe, ke,
+                        totalEnergy))
+        //logger.info(format("Current Temperature: %g", currentTemperature))
+      }
+
     }
 
     return this

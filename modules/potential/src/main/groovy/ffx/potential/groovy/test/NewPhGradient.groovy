@@ -365,7 +365,7 @@ class NewPhGradient extends PotentialScript {
         if(esvSystem.isTautomer(residue)){
           esvSystem.setTautomerLambda(residue, esvLambda + 2 * step)
           ePlusTaut = energy.energy(x)
-          ePlusTaut += esvSystem.getBiasEnergy();
+          ePlusTaut += esvSystem.getBiasEnergy()
           esvSystem.setTautomerLambda(residue, esvLambda)
           eMinusTaut = energy.energy(x)
           eMinusTaut += esvSystem.getBiasEnergy()

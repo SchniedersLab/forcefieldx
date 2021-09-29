@@ -446,8 +446,8 @@ public class NewExtendedSystem {
             double sinTheta = Math.sin(thetaPosition[i]);
             double oldLambda = extendedLambdas[i];
             extendedLambdas[i] = sinTheta * sinTheta;
-            logger.info(format(" Propagating Extended Residue[%d]: %g --> %g ",
-                    i, oldLambda, extendedLambdas[i]));
+            /*logger.info(format(" Propagating Extended Residue[%d]: %g --> %g ",
+                    i, oldLambda, extendedLambdas[i]));*/
         }
         for (int i = 0; i < molecularAssembly.getAtomArray().length; i++) {
             int mappedTitrationIndex = titrationIndexMap[i];

@@ -1059,9 +1059,10 @@ public class TitrationUtils {
    */
   public enum Titration {
     //ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
-    ASHtoASP(4.00, -53.188, 0.0, AminoAcid3.ASH, AminoAcid3.ASP),
-    GLHtoGLU(4.40, -59.390, 0.0, AminoAcid3.GLH, AminoAcid3.GLU),
-    LYStoLYD(10.40, 53.390, 0.0, AminoAcid3.LYS, AminoAcid3.LYD),
+    ASHtoASP(4.00, -65.870, 0.0, AminoAcid3.ASH, AminoAcid3.ASP),
+    GLHtoGLU(4.40, -70.390, 0.0, AminoAcid3.GLH, AminoAcid3.GLU),
+    //LYStoLYD(10.40, 45.270, 0.0, AminoAcid3.LYS, AminoAcid3.LYD),
+    LYStoLYD(10.40, 57.71, 0.10746, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
     //HE1 is the proton that is lost
     HIStoHID(7.00, 34.00, 0.0, AminoAcid3.HIS, AminoAcid3.HID),
