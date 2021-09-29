@@ -54,6 +54,7 @@ import java.util.logging.Logger;
 import static ffx.utilities.Constants.kB;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.*;
+import edu.rit.pj.reduction.SharedDouble;
 
 /**
  * ExtendedSystem class.
@@ -134,6 +135,10 @@ public class NewExtendedSystem {
      * Only elements that match a tautomerizing atom will have their lambda updated.
      */
     public final double[] tautomerLambdas;
+
+    public final SharedDouble[] totalEsvDerivs;
+
+    public final AminoAcid3[] residueNames;
     /**
      * List of titrating residues.
      */
@@ -243,6 +248,7 @@ public class NewExtendedSystem {
         titrationIndexMap = new int[atoms.length];
         tautomerIndexMap = new int[atoms.length];
         tautomerDirections = new int[atoms.length];
+        residueNames = new AminoAcid3[atoms.length];
 
         Arrays.fill(isTitrating, false);
         Arrays.fill(isTitratingHydrogen, false);
@@ -252,6 +258,7 @@ public class NewExtendedSystem {
         Arrays.fill(titrationIndexMap, -1);
         Arrays.fill(tautomerIndexMap, -1);
         Arrays.fill(tautomerDirections, 0);
+        Arrays.fill(residueNames, AminoAcid3.UNK);
 
         // Cycle through each residue to determine if it is titratable or tautomerizing.
         // If a residue is one of these, add to titration or tautomer lists.
@@ -265,6 +272,7 @@ public class NewExtendedSystem {
                 List<Atom> atomList = residue.getSideChainAtoms();
                 for (Atom atom : atomList) {
                     int atomIndex = atom.getIndex();
+                    residueNames[atomIndex] = residue.getAminoAcid3();
                     isTitrating[atomIndex] = true;
                     titrationLambdas[atomIndex] = initialTitrationLambda;
                     int titrationIndex = titratingResidueList.indexOf(residue);
@@ -296,6 +304,7 @@ public class NewExtendedSystem {
         thetaVelocity = new double[size];
         thetaAccel = new double[size];
         thetaMassArray = new double[size];
+        totalEsvDerivs = new SharedDouble[size];
 
         //Theta masses should always be the same for each ESV
         Arrays.fill(thetaMassArray, thetaMass);
@@ -404,6 +413,58 @@ public class NewExtendedSystem {
     }
 
     public double[] getExtendedLambdas(){return extendedLambdas;}
+
+    public void getVdwPrefactor(int atomIndex, double[] vdwPrefactorAndDerivs) {
+        double prefactor = 1.0;
+        double titrationDeriv = 0.0;
+        double tautomerDeriv = 0.0;
+        if (!isTitratingHydrogen(atomIndex)) {
+            vdwPrefactorAndDerivs[0] = prefactor;
+            vdwPrefactorAndDerivs[1] = titrationDeriv;
+            vdwPrefactorAndDerivs[2] = tautomerDeriv;
+            return;
+        }
+        AminoAcid3 AA3 = residueNames[atomIndex];
+        switch (AA3) {
+            case ASD:
+            case GLD:
+                if (tautomerDirections[atomIndex] == 1) {
+                    prefactor = titrationLambdas[atomIndex] * tautomerLambdas[atomIndex];
+                    titrationDeriv = tautomerLambdas[atomIndex];
+                    tautomerDeriv = titrationLambdas[atomIndex];
+                } else if (tautomerDirections[atomIndex] == -1) {
+                    prefactor = titrationLambdas[atomIndex] * (1.0 - tautomerLambdas[atomIndex]);
+                    titrationDeriv = (1.0 - tautomerLambdas[atomIndex]);
+                    tautomerDeriv = -titrationLambdas[atomIndex];
+                }
+                break;
+            case HIS:
+                if (tautomerDirections[atomIndex] == 1) {
+                    prefactor = (1.0 - titrationLambdas[atomIndex]) * tautomerLambdas[atomIndex] + titrationLambdas[atomIndex];
+                    titrationDeriv = -tautomerLambdas[atomIndex] + 1.0;
+                    tautomerDeriv = (1 - titrationLambdas[atomIndex]) + titrationLambdas[atomIndex];
+                } else if (tautomerDirections[atomIndex] == -1) {
+                    prefactor = (1.0 - titrationLambdas[atomIndex]) * (1.0 - tautomerLambdas[atomIndex]) + titrationLambdas[atomIndex];
+                    titrationDeriv = -(1.0 - tautomerLambdas[atomIndex]) + 1.0;
+                    tautomerDeriv = -(1.0 - titrationLambdas[atomIndex]) + titrationLambdas[atomIndex];
+                }
+                break;
+            case LYS:
+                prefactor = titrationLambdas[atomIndex];
+                titrationDeriv = 1.0;
+                tautomerDeriv = 0.0;
+                break;
+        }
+        vdwPrefactorAndDerivs[0] = prefactor;
+        vdwPrefactorAndDerivs[1] = titrationDeriv;
+        vdwPrefactorAndDerivs[2] = tautomerDeriv;
+    }
+
+    //vdwEnergy without any proton scaling
+    public void addVdwDeriv(int atomI, int atomJ, double vdwEnergy, double[] vdwPrefactorAndDerivI, double[] vdwPrefactorAndDerivJ){
+        int titrationEsvIndex = titrationIndexMap[atomI];
+        //totalEsvDerivs[]
+    }
 
     public void setTitrationLambda(Residue residue, double lambda) {
         if (titratingResidueList.contains(residue)) {
@@ -645,28 +706,6 @@ public class NewExtendedSystem {
         biasEnergyAndDerivs[7] = dPh_dTaut;
         biasEnergyAndDerivs[8] = dMod_dTaut;
         return biasEnergyAndDerivs;
-    }
-
-    public double[] getVdwPrefactorTerms(int atomi, int atomj){
-        double[] prefactorTerms = new double[3];
-        int mappedTitrationIndexi = titrationIndexMap[atomi];
-        AminoAcid3 AA3i = extendedResidueList.get(mappedTitrationIndexi).getAminoAcid3();
-        double titrationLambdai = titrationLambdas[atomi];
-        double tautomerLambdai = tautomerLambdas[atomi];
-        int tautomerDirectioni = tautomerDirections[atomi];
-        double[] prefactori = TitrationUtils.getVdwPrefactor(AA3i, isTitratingHydrogen(atomi),titrationLambdai, tautomerLambdai, tautomerDirectioni);
-
-        int mappedTitrationIndexj = titrationIndexMap[atomj];
-        AminoAcid3 AA3j = extendedResidueList.get(mappedTitrationIndexj).getAminoAcid3();
-        double titrationLambdaj = titrationLambdas[atomj];
-        double tautomerLambdaj = tautomerLambdas[atomj];
-        int tautomerDirectionj = tautomerDirections[atomj];
-        double[] prefactorj = TitrationUtils.getVdwPrefactor(AA3j, isTitratingHydrogen(atomj),titrationLambdaj, tautomerLambdaj, tautomerDirectionj);
-
-        prefactorTerms[0] = prefactori[0]*prefactorj[0];
-        prefactorTerms[1] = prefactori[1]*prefactorj[0];
-        prefactorTerms[2] = prefactori[2]*prefactorj[0];
-        return prefactorTerms;
     }
 
     /**
