@@ -103,7 +103,7 @@ class SuperposeCrystals extends AlgorithmsScript {
   int numSearch2
 
   /**
-   * -- or -- Number of molecules in the asymmetric unit.
+   * --zp or --zPrime Number of molecules in the asymmetric unit (NOT FUNCTIONAL YET).
    */
   @Option(names = ['--zp', '--zPrime'], paramLabel = '1', defaultValue = '1',
           description = 'Set the number of species within the asymmetric unit (Z\').')
@@ -167,11 +167,11 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean symmetric
 
   /**
-   * --lc or --lineCheck Prioritize molecules w/o averaging center of masses.
+   * --sa or --saveAres Save out PDB in ARES input format.
    */
-  @Option(names = ['--lc', '--lineCheck'], paramLabel = "false", defaultValue = "false",
-          description = 'Simply check if prioritized molecules are in a line.')
-  private static boolean lineCheck
+  @Option(names = ['--sa', '--saveAres'], paramLabel = "false", defaultValue = "false",
+          description = 'Final structures for each comparison will be written out in ARES input format.')
+  private static boolean ares
 
   /**
    * The final argument(s) should be two or more filenames (same file twice if comparing same structures).
@@ -298,8 +298,13 @@ class SuperposeCrystals extends AlgorithmsScript {
     String filename = filenames.get(0)
     String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt")
 
-    distMatrix = pac.comparisons(nAtoms, atomList, numAU, numInflatedAU,
-        numSearch, numSearch2, full, savePDB, restart, write, lineCheck, pacFilename)
+    // To save in ARES format a PDB must be written out.
+    if(ares){
+      savePDB = true;
+    }
+
+    distMatrix = pac.comparisons(atomList, numAU, numInflatedAU,
+        numSearch, numSearch2, full, savePDB, restart, write, ares, pacFilename)
 
     return this
   }
