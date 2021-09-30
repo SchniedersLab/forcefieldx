@@ -14,14 +14,13 @@
                 For all operating systems, the Java Runtime Environment must be present.
             </p>
             <subsection name="Prerequisite: Install Java">
-                <p>Please install version ${targetVersion} or later of the Java Runtime Environment from
-                    <a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html" target="_blank"> Oracle</a>.
+                <p>Please install version ${targetVersion} or later of the Java Development Kit (JDK) from
+                    <a href="https://adoptopenjdk.net" target="_blank"> AdoptOpenJDK</a>.
                     Detailed Java installation instructions for
-                    <a href="http://docs.oracle.com/javase/8/docs/technotes/guides/install/install_overview.html">
+                    <a href="https://docs.oracle.com/en/java/javase/17/install/overview-jdk-installation.html">
                         Linux, Mac OS, and  Microsoft Windows are available.</a>
                 </p>
             </subsection>
-            <td></td>
             <subsection name="Linux">
                 <table>
                     <tr>
@@ -35,7 +34,7 @@
                                 <li>
                                     <p>In a shell execute:</p>
                                     <source>echo $JAVA_HOME</source>
-                                    <p>If <code>JAVA_HOME</code> is not set or the JRE version is less than ${targetVersion},
+                                    <p>If <code>JAVA_HOME</code> is not set or the JDK version is less than ${targetVersion},
                                         then follow the instructions above to install Java and/or set the
                                         <code>JAVA_HOME</code> environment variable.
                                     </p>
@@ -79,12 +78,12 @@
                     </tr>
                 </table>
             </subsection>
-            <subsection name="Mac OS">
+            <subsection name="MacOS">
                 <table>
                     <tr>
                         <td bgcolor="white">
                             <p align="left">
-                                <img src="images/mac.png" alt="MAC OS" />
+                                <img src="images/mac.png" alt="MacOS" />
                             </p>
                         </td>
                         <td>
@@ -93,7 +92,7 @@
                                     <p>Type "<code>echo $JAVA_HOME</code>" in a shell. The result should resemble this:
                                         <source>
                                             echo $JAVA_HOME
-                                            /Library/Java/JavaVirtualMachines/jdk1.8.0_20.jdk/Contents/Home
+                                          /Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home/bin/java
                                         </source>
                                         If the version is less than ${targetVersion}, then please follow the instructions above
                                         to install Java and/or set the <code>JAVA_HOME</code> environment variable.
