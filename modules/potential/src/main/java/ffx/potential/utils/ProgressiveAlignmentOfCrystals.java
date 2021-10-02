@@ -53,11 +53,11 @@ import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 import static org.apache.commons.io.FilenameUtils.getName;
 import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.cbrt;
-import static org.apache.commons.math3.util.FastMath.cos;
-import static org.apache.commons.math3.util.FastMath.sin;
-import static org.apache.commons.math3.util.FastMath.sqrt;
+//import static org.apache.commons.math3.util.FastMath.cos;
+//import static org.apache.commons.math3.util.FastMath.sin;
+//import static org.apache.commons.math3.util.FastMath.acos;
+//import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
@@ -68,7 +68,7 @@ import ffx.numerics.math.RunningStatistics;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
+//import ffx.potential.bonded.Bond;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.DistanceMatrixFilter;
 import ffx.potential.parsers.PDBFilter;
@@ -78,10 +78,9 @@ import ffx.utilities.DoubleIndexPair;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -93,7 +92,7 @@ import org.apache.commons.io.FilenameUtils;
  * Class ProgressiveAlignmentOfCrystals holds the majority of the functionality necessary to quantify
  * crystal similarity following the PACCOM method.
  *
- * @author Aaron J. Nessler, Okimasa OKADA and Michael J. Schnieders
+ * @author Okimasa OKADA, Aaron J. Nessler,  and Michael J. Schnieders
  * @since 1.0
  */
 public class ProgressiveAlignmentOfCrystals {
@@ -275,7 +274,7 @@ public class ProgressiveAlignmentOfCrystals {
      * @param pacFileName     The filename to use.
      */
     public double[][] comparisons(List<Integer> comparisonAtoms, int nAU, int inflatedAU,
-                                  int numSearch, int numSearch2, boolean full, boolean save, boolean restart,
+                                  int numSearch, int numSearch2, int zPrime, boolean full, boolean save, boolean restart,
                                   boolean write, boolean ares, String pacFileName) {
 
         if (restart) {
@@ -349,7 +348,7 @@ public class ProgressiveAlignmentOfCrystals {
                             if (!full && targetCrystal.spaceGroup.respectsChirality()) {
                                 numSearch2 = 1;
                             }
-                            rmsd = compare(comparisonAtoms, nAU, inflatedAU, numSearch, numSearch2,
+                            rmsd = compare(comparisonAtoms, nAU, inflatedAU, numSearch, numSearch2, zPrime,
                                     full, save, ares);
                             time += System.nanoTime();
                             double timeSec = time * 1.0e-9;
@@ -415,11 +414,6 @@ public class ProgressiveAlignmentOfCrystals {
         return distMatrix;
     }
 
-    private static double timer(long time1) {
-        long time2 = System.nanoTime();
-        return (time2 - time1) * 1.0E-9;
-    }
-
     /**
      * Perform single comparison between two crystals.
      *
@@ -433,27 +427,57 @@ public class ProgressiveAlignmentOfCrystals {
      * @return the computed RMSD.
      */
     private double compare(List<Integer> comparisonAtoms, int nAU, int inflatedAU,
-                           int numSearch, int numSearch2, boolean full, boolean save, boolean ares) {
+                           int numSearch, int numSearch2, int zPrime, boolean full, boolean save, boolean ares) {
         // TODO: Does PAC work for a combination of molecules and polymers?
         // Number of atoms being used in comparisons
         int compareAtomsSize = comparisonAtoms.size();
-        // Number of used coordinates for atoms in one AU.
-        int nCoords = compareAtomsSize * 3;
 
         MolecularAssembly baseAssembly = baseFilter.getActiveMolecularSystem();
         baseAssembly.moveAllIntoUnitCell();
-        double[] mass = new double[compareAtomsSize];
-        double[] reducedBaseCoords = reduceSystem(baseAssembly, comparisonAtoms, mass);
-        double massSum = 0;
-        for(double value: mass){
-            massSum+=value;
+        int z;
+        if (zPrime > 0) {
+            z = zPrime;
+        } else if (baseAssembly.getMolecules() != null && baseAssembly.getChainNames() != null) {
+            z = baseAssembly.getMolecules().size() + baseAssembly.getChainNames().length;
+        } else if (baseAssembly.getChainNames() != null) {
+            z = baseAssembly.getChainNames().length;
+        } else if (baseAssembly.getMolecules() != null) {
+            z = baseAssembly.getMolecules().size();
+        } else {
+            logger.warning(" Number of species in asymmetric unit was not determined. Setting Z'=1. Use --zp flag to set manually.");
+            z = 1;
         }
+        logger.finer(format(" Number of species in asymmetric unit (Z'): %d", z));
+
+        double[] massStart = new double[compareAtomsSize];
+        double[] reducedBaseCoords = reduceSystem(baseAssembly, comparisonAtoms, massStart);
         Crystal baseXtal = baseAssembly.getCrystal();
-        double[] baseXYZOrig = generateInflatedSphere(baseXtal, reducedBaseCoords, mass, inflatedAU);
+        double[] baseXYZOrig = generateInflatedSphere(baseXtal, reducedBaseCoords, massStart, inflatedAU);
 
-        int nBaseMols = baseXYZOrig.length/nCoords;
+        MolecularAssembly targetAssembly = targetFilter.getActiveMolecularSystem();
+        targetAssembly.moveAllIntoUnitCell();
+        double[] reducedTargetCoords = reduceSystem(targetAssembly, comparisonAtoms, massStart);
+        Crystal targetXtal = targetAssembly.getCrystal();
+        double[] targetXYZOrig = generateInflatedSphere(targetXtal, reducedTargetCoords, massStart, inflatedAU);
 
-        double[] mass3 = new double[compareAtomsSize * 3];
+        if (z > 1) {
+            compareAtomsSize /= z;
+        }
+        double[] mass = new double[compareAtomsSize];
+        arraycopy(massStart, 0, mass, 0, compareAtomsSize);
+
+        // Number of used coordinates for atoms in one AU.
+        int nCoords = compareAtomsSize * 3;
+
+        int nBaseMols = baseXYZOrig.length / nCoords;
+        int nTargetMols = targetXYZOrig.length / nCoords;
+        if (logger.isLoggable(Level.FINER)) {
+            logger.finer(format(" Number of copies to compare:    %4d", nAU));
+            logger.finer(format(" Number entities in base sphere: %4d", nBaseMols));
+            logger.finer(format(" Number entities in target sphere: %d", nTargetMols));
+        }
+
+        double[] mass3 = new double[nCoords];
         for (int i = 0; i < 3; i++) {
             arraycopy(mass, 0, mass3, i * compareAtomsSize, compareAtomsSize);
         }
@@ -470,6 +494,12 @@ public class ProgressiveAlignmentOfCrystals {
         if (logger.isLoggable(Level.FINER)) {
             logger.finer(" Prioritize Base System.");
         }
+
+        double massSum = 0;
+        for (double value : mass) {
+            massSum += value;
+        }
+
         double[][] baseCoMOrig = new double[nBaseMols][3];
         centerOfMass(baseCoMOrig, baseXYZOrig, mass, massSum);
         prioritizeReplicates(compareAtomsSize, baseXYZOrig, mass, massSum, nBaseMols, baseCoMOrig, molDist1);
@@ -481,19 +511,6 @@ public class ProgressiveAlignmentOfCrystals {
             for (int i = 0; i < printSize; i++) {
                 logger.finer(format(" %d\t%16.8f", molDist1[i].getIndex(), molDist1[i].getDoubleValue()));
             }
-        }
-
-        MolecularAssembly targetAssembly = targetFilter.getActiveMolecularSystem();
-        targetAssembly.moveAllIntoUnitCell();
-        double[] reducedTargetCoords = reduceSystem(targetAssembly, comparisonAtoms, mass);
-        Crystal targetXtal = targetAssembly.getCrystal();
-        double[] targetXYZOrig = generateInflatedSphere(targetXtal, reducedTargetCoords, mass, inflatedAU);
-
-        int nTargetMols = targetXYZOrig.length/nCoords;
-        if (logger.isLoggable(Level.FINER)) {
-            logger.finer(format(" Number of copies to compare:    %4d", nAU));
-            logger.finer(format(" Number entities in base sphere: %4d", nBaseMols));
-            logger.finer(format(" Number entities in target sphere: %d", nTargetMols));
         }
 
         // Translate system to the origin.
@@ -516,9 +533,6 @@ public class ProgressiveAlignmentOfCrystals {
             }
         }
 
-        double bestRMSD = Double.MAX_VALUE;
-        List<Double> crystalCheckRMSDs = new ArrayList<>();
-
         // TODO determine better numSearch/numSearch2 (exhaustive not excessive?)
         //  Frank-Kasper phases of metallic ions can reach a coordination number of 16...
 
@@ -528,103 +542,131 @@ public class ProgressiveAlignmentOfCrystals {
 
         //Determine if AUs in first system are same hand as center most in first.
         logger.finer(" Base Search Handedness:");
-        boolean[] match1 = new boolean[numSearch];
+        List<Boolean> match1b = new ArrayList<>();
         double[] base0XYZ = new double[nCoords];
         arraycopy(baseXYZOrig, molDist1[0].getIndex() * nCoords, base0XYZ, 0, nCoords);
-        for (int i = 0; i < numSearch; i++) {
+        int index = 0;
+        int match1count = 0;
+        List<Integer> baseindices = new ArrayList<>();
+
+        while (Collections.frequency(match1b, true) < numSearch || Collections.frequency(match1b, false) < numSearch) {
             double[] baseCheckMol = new double[nCoords];
-            arraycopy(baseXYZOrig, molDist1[i].getIndex() * nCoords, baseCheckMol, 0, nCoords);
+            arraycopy(baseXYZOrig, molDist1[match1count].getIndex() * nCoords, baseCheckMol, 0, nCoords);
             double value = doMoleculesMatch(base0XYZ, baseCheckMol, mass);
-            match1[i] = value < MATCH_TOLERANCE;
-            logger.finer(format(" %d %4.4f %b", i, value, match1[i]));
+            boolean check = value < MATCH_TOLERANCE;
+            if ((Collections.frequency(match1b, true) < numSearch && check) || (Collections.frequency(match1b, false) < numSearch && !check)) {
+                match1b.add(check);
+                logger.finer(format(" %d %4.4f %b", index, value, match1b.get(index)));
+                baseindices.add( match1count);
+            }
+            if(baseXtal.spaceGroup.respectsChirality() && match1b.size()==numSearch){
+                break;
+            }
+            match1count++;
+            if(!(match1count < nBaseMols)){
+                logger.warning(" Only one handedness detected in base crystal.");
+                match1b.add(check);
+                baseindices.add( match1count);
+                break;
+            }
         }
+        Boolean[] match1 = new Boolean[match1b.size()];
+        match1b.toArray(match1);
+        Integer[] baseIndices = new Integer[baseindices.size()];
+        baseindices.toArray(baseIndices);
 
         // Determine if AUs in second system are same hand as center most in first
         double highOrLow = -1;
-        boolean[] matchT1 = new boolean[numSearch2];
-        boolean countDone = false;
-        int count = 0;
+        double high = -1;
         logger.finer(" Target Search Handedness:");
-        for (int i = 0; i < numSearch2; i++) {
+        int matchTcount = 0;
+        List<Boolean> match1t = new ArrayList<>();
+        List<Integer> targetindices = new ArrayList<>();
+
+        boolean handDone = false;
+        while (Collections.frequency(match1t, true) < numSearch2 || (Collections.frequency(match1t, false) < numSearch2 || targetXtal.spaceGroup.respectsChirality())) {
             double[] targetCheckMol = new double[nCoords];
-            arraycopy(targetXYZOrig, molDist2[i].getIndex() * nCoords, targetCheckMol, 0, nCoords);
+            arraycopy(targetXYZOrig, molDist2[matchTcount].getIndex() * nCoords, targetCheckMol, 0, nCoords);
             double value = doMoleculesMatch(base0XYZ, targetCheckMol, mass);
-            logger.finer(format(" %d %4.17f", i, value));
-            if (i == 0) {
+            logger.finer(format(" %d %4.17f", matchTcount, value));
+            if (matchTcount == 0) {
                 // Starting value
                 highOrLow = value;
             }
+            boolean check = abs(highOrLow - value) < MATCH_TOLERANCE;
             // value is same as starting value... not sure if High or Low.
-            if (!countDone && abs(highOrLow - value) < MATCH_TOLERANCE) {
-                count++;
-                // All out of search replicates... continue in expanded sphere.
-                if (count == numSearch2) {
-                    for (int j = numSearch2; j < nTargetMols; j++) {
-                        targetCheckMol = new double[nCoords];
-                        arraycopy(targetXYZOrig, molDist2[j].getIndex() * nCoords, targetCheckMol, 0, nCoords);
-                        value = doMoleculesMatch(base0XYZ, targetCheckMol, mass);
-                        logger.finer(format(" %d %4.17f", i, value));
-                        // Second value found, therefore can determine High or Low
-                        if (!(abs(highOrLow - value) < MATCH_TOLERANCE)) {
-                            countDone = true;
-                            if (highOrLow > value) {
-                                for (int k = 0; k < numSearch2; k++) {
-                                    matchT1[k] = false;
-                                }
-                            } else {
-                                for (int k = 0; k < numSearch2; k++) {
-                                    matchT1[k] = true;
-                                }
-                                highOrLow = value;
-                            }
-                            break;
-                        }
-                    }
-                    // Looped through everything... must be one handedness.
-                    if (!countDone) {
-                        // Therefore everything must be less.
-                        highOrLow = Double.MAX_VALUE;
-                        for (int k = 0; k < numSearch2; k++) {
-                            matchT1[k] = true;
-                        }
-                    }
+
+            // Second value has been encountered. Determine if High or Low.
+            if (handDone) {
+                if(value>high){
+                    high = value;
                 }
-                // Second value has been encountered. Determine if High or Low.
-            } else if (!countDone) {
-                countDone = true;
+                if (high - MATCH_TOLERANCE > value && Collections.frequency(match1t, true) < numSearch2) {
+                    match1t.add(true);
+                    targetindices.add(matchTcount);
+                } else if (Collections.frequency(match1t, false) < numSearch2) {
+                    match1t.add(false);
+                    targetindices.add(matchTcount);
+                }
+            } else if (!check) {
+                handDone = true;
                 if (highOrLow > value) {
-                    for (int j = 0; j < count; j++) {
-                        matchT1[j] = false;
+                    for (int i = 0; i < Math.min(matchTcount, numSearch2); i++) {
+                        match1t.add(false);
+                        targetindices.add(i);
                     }
-                    matchT1[count] = true;
+                    match1t.add(true);
+                    targetindices.add(matchTcount);
+                    high = highOrLow;
                 } else {
-                    for (int j = 0; j < count; j++) {
-                        matchT1[j] = true;
+                    for (int i = 0; i < Math.min(matchTcount, numSearch2); i++) {
+                        match1t.add(true);
+                        targetindices.add(i);
                     }
-                    matchT1[count] = false;
+                    match1t.add(false);
+                    targetindices.add(matchTcount);
                     // Want highOrLow to be the High value in the end.
-                    highOrLow = value;
+                    high = value;
                 }
-            } else {
-                matchT1[i] = highOrLow - MATCH_TOLERANCE > value;
+            }
+            if(targetXtal.spaceGroup.respectsChirality()){
+                match1t.add(true);
+                targetindices.add(matchTcount);
+                if(match1t.size()==numSearch2) {
+                    break;
+                }
+            }
+            matchTcount++;
+            if(!(matchTcount < nTargetMols)){
+                logger.warning(" Only one handedness detected in target crystal.");
+                match1t.add(true);
+                targetindices.add(matchTcount);
+                break;
             }
         }
+        Boolean[] matchT1 = new Boolean[match1t.size()];
+        match1t.toArray(matchT1);
+        Integer[] targetIndices = new Integer[targetindices.size()];
+        targetindices.toArray(targetIndices);
+
         for (int i = 0; i < numSearch2; i++) {
             logger.finer(format(" %d %b", i, matchT1[i]));
         }
 
-        boolean found = false;
         boolean foundt = false;
         boolean foundf = false;
         double[] bestBaseNMols = new double[nAU * nCoords];
         double[] bestTargetNMols = new double[nAU * nCoords];
+        double bestRMSD = Double.MAX_VALUE;
+        List<Double> crystalCheckRMSDs = new ArrayList<>();
 
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(format("\n Trial      RMSD_1  RMSD_3 %7s", rmsdLabel));
         }
 
-        for (int l = 0; l < numSearch; l++) {
-            if (full || (!foundt && match1[l] || !foundf && !match1[l])) {
+        int baseBooleanIndex = 0;
+        for (int l : baseIndices) {
+            if (full || (!foundt && match1[baseBooleanIndex] || !foundf && !match1[baseBooleanIndex])) {
                 // Place rest of comparison code here.
                 double[] baseXYZ = new double[nBaseMols * nCoords];
                 double[][] baseCoM = new double[nBaseMols][3];
@@ -682,9 +724,9 @@ public class ProgressiveAlignmentOfCrystals {
                     matchN[i] = value < MATCH_TOLERANCE;
                     logger.finer(format(" %d %4.4f %b", i, value, matchN[i]));
                 }
-
-                for (int m = 0; m < numSearch2; m++) {
-                    if (full || match1[l] == matchT1[m] && (!foundt && match1[l] || !foundf && !match1[l])) {
+                int targetBooleanIndex = 0;
+                for(int m: targetIndices) {
+                    if (full || match1[baseBooleanIndex] == matchT1[targetBooleanIndex] && (!foundt && match1[baseBooleanIndex] || !foundf && !match1[baseBooleanIndex])) {
                         double[] targetXYZ = new double[nTargetMols * nCoords];
                         double[][] targetCoM = new double[nTargetMols][3];
                         arraycopy(targetXYZOrig, 0, targetXYZ, 0, targetXYZOrig.length);
@@ -793,23 +835,15 @@ public class ProgressiveAlignmentOfCrystals {
                             double[] target1of3Mols = new double[nCoords];
                             arraycopy(target3Mols, i * nCoords, target1of3Mols, 0, nCoords);
                             double value = doMoleculesMatch(base0XYZ, target1of3Mols, mass);
-                            matchT3[i] = highOrLow - MATCH_TOLERANCE > value;
+                            matchT3[i] = high - MATCH_TOLERANCE > value;
                             logger.finer(format(" %d %4.4f %b", i, value, matchT3[i]));
                             if (match3[i] != matchT3[i]) {
                                 hand3Match = false;
-//                                if(!full){
-//                                    break;
-//                                }
                             }
                         }
-//                        if(!full && !hand3Match){
-//                            continue;
-//                        }
 
                         //Update center of masses with the second rot (only one crystal moves).
                         centerOfMass(targetCoM, targetXYZ, mass, massSum);
-
-                        //TODO reprioritize based on center 3 molecules
                         reprioritizeReplicates(compareAtomsSize, targetXYZ, mass, massSum, nTargetMols, targetCoM,
                                 molDist2_2, center);
                         // Rotations 1 and 2 have been completed and both systems should be overlapped
@@ -848,18 +882,12 @@ public class ProgressiveAlignmentOfCrystals {
                             double[] target1ofNMols = new double[nCoords];
                             arraycopy(targetNMols, i * nCoords, target1ofNMols, 0, nCoords);
                             double value = doMoleculesMatch(base0XYZ, target1ofNMols, mass);
-                            matchTN[i] = highOrLow - MATCH_TOLERANCE > value;
+                            matchTN[i] = high - MATCH_TOLERANCE > value;
                             logger.finer(format(" %d %4.4f %b", i, value, matchTN[i]));
                             if (matchN[i] != matchTN[i]) {
                                 handNMatch = false;
-//                                if(!full){
-//                                    break;
-//                                }
                             }
                         }
-//                        if(!full && !handNMatch){
-//                            continue;
-//                        }
 
                         translate(baseNMols, massN, targetNMols, massN);
                         rotate(baseNMols, targetNMols, massN);
@@ -876,58 +904,55 @@ public class ProgressiveAlignmentOfCrystals {
 
                         double rmsdSymOp = rmsd(baseNMols, targetNMols, massN);
                         if (logger.isLoggable(Level.FINE)) {
-                            int countTrue3 = 0;
-                            for (boolean value : match3) {
-                                if (value) {
-                                    countTrue3++;
+                            boolean handednessMatches = match1[baseBooleanIndex] == matchT1[targetBooleanIndex] && hand3Match && handNMatch;
+                            String output = format(" %2d of %2d: %7.4f %7.4f %7.4f", baseBooleanIndex * numSearch2 + targetBooleanIndex + 1,
+                                    numSearch * numSearch2, checkRMSD1, checkRMSD2, rmsdSymOp);
+
+                            if(logger.isLoggable(Level.FINER)){
+                                int countTrue3 = 0;
+                                for (boolean value : match3) {
+                                    if (value) {
+                                        countTrue3++;
+                                    }
                                 }
-                            }
-                            int countTrueTarget3 = 0;
-                            for (boolean value : matchT3) {
-                                if (value) {
-                                    countTrueTarget3++;
+                                int countTrueTarget3 = 0;
+                                for (boolean value : matchT3) {
+                                    if (value) {
+                                        countTrueTarget3++;
+                                    }
                                 }
-                            }
-                            int countTrueN = 0;
-                            for (boolean value : matchN) {
-                                if (value) {
-                                    countTrueN++;
+                                int countTrueN = 0;
+                                for (boolean value : matchN) {
+                                    if (value) {
+                                        countTrueN++;
+                                    }
                                 }
-                            }
-                            int countTrueTargetN = 0;
-                            for (boolean value : matchTN) {
-                                if (value) {
-                                    countTrueTargetN++;
+                                int countTrueTargetN = 0;
+                                for (boolean value : matchTN) {
+                                    if (value) {
+                                        countTrueTargetN++;
+                                    }
                                 }
-                            }
-                            char b1;
-                            if (match1[l]) {
-                                b1 = 't';
-                            } else {
-                                b1 = 'f';
-                            }
-                            char t1;
-                            if (matchT1[m]) {
-                                t1 = 't';
-                            } else {
-                                t1 = 'f';
+                                char b1;
+                                if (match1[baseBooleanIndex]) {
+                                    b1 = 't';
+                                } else {
+                                    b1 = 'f';
+                                }
+                                char t1;
+                                if (matchT1[targetBooleanIndex]) {
+                                    t1 = 't';
+                                } else {
+                                    t1 = 'f';
+                                }
+                                output += format(" %c%c b%dt%d b%dt%d", b1, t1, countTrue3, countTrueTarget3,
+                                        countTrueN, countTrueTargetN);;
                             }
 
-                            boolean handednessMatches = match1[l] == matchT1[m] && hand3Match && handNMatch;
-                            String output = format(" %2d of %2d: %c%c %7.4f b%dt%d %7.4f b%dt%d %7.8f", l * numSearch2 + m + 1,
-                                    numSearch * numSearch2, b1, t1, checkRMSD1, countTrue3, countTrueTarget3, checkRMSD2,
-                                    countTrueN, countTrueTargetN, rmsdSymOp);
-
-                            if (!found && handednessMatches) {
-                                output += "**HM";
-                                found = true;
-                            }
-                            if (!foundt && match1[l] && handednessMatches) {
-                                output += "**tt";
+                            if (!foundt && match1[baseBooleanIndex] && handednessMatches) {
                                 foundt = true;
                             }
-                            if (!foundf && !match1[l] && handednessMatches) {
-                                output += "**ff";
+                            if (!foundf && !match1[baseBooleanIndex] && handednessMatches) {
                                 foundf = true;
                             }
                             logger.fine(output);
@@ -946,25 +971,26 @@ public class ProgressiveAlignmentOfCrystals {
                         }
                         addLooseUnequal(crystalCheckRMSDs, rmsdSymOp);
                     }
+                    targetBooleanIndex++;
                 }
             }
+            baseBooleanIndex++;
         }
 
         double finalRMSD = Double.NaN;
         if (bestRMSD < Double.MAX_VALUE) {
             finalRMSD = bestRMSD;
         } else {
-            logger.warning(" This RMSD was filtered out! " +
-                    "Check if molecules are the same and have the same atom ordering." +
-                    "\n If you really want a value try the -f flag.");
-            // TODO: Double.NaN causes an error in RunningStatistics... Set to max value for now...
-            finalRMSD = Double.MAX_VALUE;
+            logger.warning(" This RMSD was filtered out! Try the -f flag." +
+                    "\nAlternatively increase --ns and/or --ns2.");
+            // TODO: Double.NaN causes an error in RunningStatistics... Set to -2.0 for now...
+            finalRMSD = -2.0;
         }
         if (save) {
-            saveAssemblyPDB(baseAssembly, bestBaseNMols, comparisonAtoms, "_c1",
+            saveAssemblyPDB(baseAssembly, bestBaseNMols, comparisonAtoms, "_r" + rank + "_c1",
                     0.000, ares, baseXtal.getDensity(massSum));
-            saveAssemblyPDB(targetAssembly, bestTargetNMols, comparisonAtoms, "_c2",
-                    finalRMSD, ares,  targetXtal.getDensity(massSum));
+            saveAssemblyPDB(targetAssembly, bestTargetNMols, comparisonAtoms, "_r" + rank + "_c2",
+                    finalRMSD, ares, targetXtal.getDensity(massSum));
         }
 
         // Logging to check number of RMSD values determined.
@@ -986,7 +1012,7 @@ public class ProgressiveAlignmentOfCrystals {
             logger.fine(message);
         }
 
-        logger.info(format(" "));
+        logger.info(" ");
 
         return finalRMSD;
     }
@@ -1208,13 +1234,13 @@ public class ProgressiveAlignmentOfCrystals {
         }
     }
 
-    private static double[] reduceSystem(MolecularAssembly assembly, List<Integer> comparisonAtoms, double[] mass){
+    private static double[] reduceSystem(MolecularAssembly assembly, List<Integer> comparisonAtoms, double[] mass) {
         Atom[] atoms = assembly.getAtomArray();
         // Collect asymmetric unit atomic coordinates.
         double[] reducedCoords = new double[comparisonAtoms.size() * 3];
         int coordIndex = 0;
         int massIndex = 0;
-        for (Integer value: comparisonAtoms) {
+        for (Integer value : comparisonAtoms) {
             Atom atom = atoms[value];
             double m = atom.getMass();
             mass[massIndex++] = m;
@@ -1229,8 +1255,8 @@ public class ProgressiveAlignmentOfCrystals {
      * Generate and expanded sphere of asymetric unit with the intention of observing a crystals
      * distribution of replicates rather to facilitate comparisons that go beyond lattice parameters.
      *
-     * @param crystal Crystal to define expansion.
-     * @param inflatedAU        Minimum number of replicates desired in resultant sphere.
+     * @param crystal    Crystal to define expansion.
+     * @param inflatedAU Minimum number of replicates desired in resultant sphere.
      * @return double[] containing the coordinates for the expanded crystal.
      */
     private static double[] generateInflatedSphere(Crystal crystal, double[] reducedCoords, double[] mass,
@@ -1291,7 +1317,7 @@ public class ProgressiveAlignmentOfCrystals {
             double[] centerOfMass = new double[3];
             int index = 0;
             double totalMass = 0.0;
-            for (double m: mass) {
+            for (double m : mass) {
                 centerOfMass[0] += xS[iSym][index] * m;
                 centerOfMass[1] += yS[iSym][index] * m;
                 centerOfMass[2] += zS[iSym][index++] * m;
@@ -1449,7 +1475,7 @@ public class ProgressiveAlignmentOfCrystals {
         Arrays.sort(molDists);
 
         if (logger.isLoggable(Level.FINER)) {
-            int numCheck = 7;
+            int numCheck = Math.min(7, molDists.length);
             double[][] targetMol = new double[coordsXYZ.length / (nAtoms * 3)][3];
             centerOfMass(targetMol, coordsXYZ, mass, massSum);
             for (int i = 0; i < numCheck; i++) {
@@ -1557,19 +1583,6 @@ public class ProgressiveAlignmentOfCrystals {
     }
 
     /**
-     * Round a value to a given number of decimal places.
-     *
-     * @param value  Value to be rounded.
-     * @param places Desired number of decimal places.
-     * @return Rounded value.
-     */
-    private static double round(double value, int places) {
-        BigDecimal bd = new BigDecimal(Double.toString(value));
-        bd = bd.setScale(places, RoundingMode.HALF_UP);
-        return bd.doubleValue();
-    }
-
-    /**
      * Add a value to a list of long if its difference to all listed values is greater than the
      * tolerance.
      *
@@ -1603,7 +1616,7 @@ public class ProgressiveAlignmentOfCrystals {
         }
         // Save aperiodic system of n_mol closest atoms for visualization
         MolecularAssembly currentAssembly = new MolecularAssembly(molecularAssembly.getName());
-        List<Bond> bondList = molecularAssembly.getBondList();
+//        List<Bond> bondList = molecularAssembly.getBondList();
         ArrayList<Atom> newAtomList = new ArrayList<>();
         Atom[] atoms = molecularAssembly.getAtomArray();
         int atomIndex = 0;
@@ -1621,7 +1634,7 @@ public class ProgressiveAlignmentOfCrystals {
                 xyz[2] = coords[n * compareAtomsSize * 3 + atomValue + 2];
                 Atom atom = new Atom(atomIndex++, a.getName(), a.getAtomType(), xyz);
                 atomList.add(atom);
-                atomValue+=3;
+                atomValue += 3;
             }
             // Create a new set of Bonds for each SymOp molecule
 //            for (Bond bond : bondList) {
@@ -1661,7 +1674,9 @@ public class ProgressiveAlignmentOfCrystals {
             try {
                 BufferedWriter bw = new BufferedWriter(new FileWriter(saveLocationPDB, true));
                 bw.append(format("rms %4.4f\n", finalRMSD));
-                bw.append(format("score %4.4f\n", density));
+                //May not be needed. Energy would likely be a better value, but might take more time...
+                bw.append(format("density %4.4f\n", density));
+                bw.append(format("energy %4.4f\n", molecularAssembly.getPotentialEnergy().energy()));
                 bw.close();
             } catch (Exception ex) {
                 logger.info(ex.toString());
@@ -1669,112 +1684,112 @@ public class ProgressiveAlignmentOfCrystals {
         }
     }
 
-    /**
-     * Orient coordinates so that the second index is on the x axis, and the third index is on the X-Y
-     * plane. First index should be at the origin (0, 0, 0).
-     *
-     * @param coordsXYZ   An array of XYZ positions (e.g. [x0, y0, z0, x1, y1, z1, x2, y2, z2]
-     * @param atomIndices Indices for three desired sets from the XYZ list (e.g. [0, 1, 2]). Index
-     *                    0 should be at origin.
-     */
-    public static void standardOrientation(double[] coordsXYZ, int[] atomIndices) {
-        // Used in QEtoXYZ.groovy which is not ready for git which is why this method appears unused.
-        int numCoords = coordsXYZ.length / 3;
-        double[] atomCoords = new double[3 * 3];
-        atomCoords[0] = coordsXYZ[atomIndices[0]];
-        atomCoords[1] = coordsXYZ[atomIndices[0] + 1];
-        atomCoords[2] = coordsXYZ[atomIndices[0] + 2];
-        atomCoords[3] = coordsXYZ[atomIndices[1]];
-        atomCoords[4] = coordsXYZ[atomIndices[1] + 1];
-        atomCoords[5] = coordsXYZ[atomIndices[1] + 2];
-        atomCoords[6] = coordsXYZ[atomIndices[2]];
-        atomCoords[7] = coordsXYZ[atomIndices[2] + 1];
-        atomCoords[8] = coordsXYZ[atomIndices[2] + 2];
-
-        // TODO: Delete coordsXYZOrig?
-        double[] coordsXYZOrig = new double[numCoords * 3];
-        for (int i = 0; i < numCoords; i++) {
-            int atomIndex = i * 3;
-            coordsXYZOrig[atomIndex] = coordsXYZ[atomIndex];
-            coordsXYZOrig[atomIndex + 1] = coordsXYZ[atomIndex + 1];
-            coordsXYZOrig[atomIndex + 2] = coordsXYZ[atomIndex + 2];
-        }
-
-        // TODO: Delete atomsCoordsOrig?
-        double[] atomsCoordsOrig = new double[3 * 3];
-        arraycopy(atomCoords, 0, atomsCoordsOrig, 0, 9);
-
-        logger.fine(
-                format(" START: N1:\t%16.15f %16.15f %16.15f", atomCoords[0], atomCoords[1], atomCoords[2]));
-        logger.fine(
-                format(" START: N2:\t%16.15f %16.15f %16.15f", atomCoords[3], atomCoords[4], atomCoords[5]));
-        logger.fine(
-                format(" START: N3:\t%16.15f %16.15f %16.15f", atomCoords[6], atomCoords[7], atomCoords[8]));
-
-        double p1n2 = coordsXYZ[atomIndices[1]];
-        double q1n2 = coordsXYZ[atomIndices[1] + 1];
-        double r1n2 = coordsXYZ[atomIndices[1] + 2];
-
-        // Calculation of sigma, phai, and cita angles needed to get specified atoms to desired loci
-        double cita0 = acos(p1n2 / sqrt(p1n2 * p1n2 + q1n2 * q1n2));
-        double phai0 = acos(sqrt(p1n2 * p1n2 + q1n2 * q1n2) /
-                sqrt(p1n2 * p1n2 + q1n2 * q1n2 + r1n2 * r1n2));
-        if (q1n2 < 0.0) {
-            cita0 = -cita0;
-        }
-
-        for (int i = 0; i < numCoords; i++) {
-            int atomIndex = i * 3;
-            double ptmp = coordsXYZ[atomIndex] * cos(cita0) + coordsXYZ[atomIndex + 1] * sin(cita0);
-            double qtmp = -coordsXYZ[atomIndex] * sin(cita0) + coordsXYZ[atomIndex + 1] * cos(cita0);
-            coordsXYZ[atomIndex] = ptmp;
-            coordsXYZ[atomIndex + 1] = qtmp;
-        }
-
-        p1n2 = coordsXYZ[atomIndices[1]];
-        q1n2 = coordsXYZ[atomIndices[1] + 1];
-
-        if (r1n2 > 0.0) {
-            phai0 = -phai0;
-        }
-
-        for (int i = 0; i < numCoords; i++) {
-            int atomIndex = i * 3;
-            double ptmp = coordsXYZ[atomIndex] * cos(phai0) - coordsXYZ[atomIndex + 2] * sin(phai0);
-            double rtmp = coordsXYZ[atomIndex] * sin(phai0) + coordsXYZ[atomIndex + 2] * cos(phai0);
-            coordsXYZ[atomIndex] = ptmp;
-            coordsXYZ[atomIndex + 2] = rtmp;
-        }
-
-        p1n2 = coordsXYZ[atomIndices[1]];
-        r1n2 = coordsXYZ[atomIndices[1] + 2];
-        double p1n3 = coordsXYZ[atomIndices[2]];
-        double q1n3 = coordsXYZ[atomIndices[2] + 1];
-        double r1n3 = coordsXYZ[atomIndices[2] + 2];
-
-        double sigma0 = acos(q1n3 / sqrt(q1n3 * q1n3 + r1n3 * r1n3));
-        if (r1n3 < 0.0) {
-            sigma0 = -sigma0;
-        }
-
-        for (int i = 0; i < numCoords; i++) {
-            int atomIndex = i * 3;
-            double qtmp = coordsXYZ[atomIndex + 1] * cos(sigma0) + coordsXYZ[atomIndex + 2] * sin(sigma0);
-            double rtmp = -coordsXYZ[atomIndex + 1] * sin(sigma0) + coordsXYZ[atomIndex + 2] * cos(sigma0);
-            coordsXYZ[atomIndex + 1] = qtmp;
-            coordsXYZ[atomIndex + 2] = rtmp;
-        }
-
-        q1n2 = coordsXYZ[atomIndices[1] + 1];
-        r1n2 = coordsXYZ[atomIndices[1] + 2];
-        q1n3 = coordsXYZ[atomIndices[2] + 1];
-        r1n3 = coordsXYZ[atomIndices[2] + 2];
-
-        if (logger.isLoggable(Level.FINER)) {
-            logger.finer(
-                    format(" DONE N1: %16.15f %16.15f %16.15f", atomCoords[0], atomCoords[1], atomCoords[2]));
-            logger.finer(format(" DONE N2: %16.15f %16.15f %16.15f", p1n2, q1n2, r1n2));
-            logger.finer(format(" DONE N3: %16.15f %16.15f %16.15f", p1n3, q1n3, r1n3));
-        }
-    }
+//    /**
+//     * Orient coordinates so that the second index is on the x axis, and the third index is on the X-Y
+//     * plane. First index should be at the origin (0, 0, 0).
+//     *
+//     * @param coordsXYZ   An array of XYZ positions (e.g. [x0, y0, z0, x1, y1, z1, x2, y2, z2]
+//     * @param atomIndices Indices for three desired sets from the XYZ list (e.g. [0, 1, 2]). Index
+//     *                    0 should be at origin.
+//     */
+//    public static void standardOrientation(double[] coordsXYZ, int[] atomIndices) {
+//        // Used in QEtoXYZ.groovy which is not ready for git which is why this method appears unused.
+//        int numCoords = coordsXYZ.length / 3;
+//        double[] atomCoords = new double[3 * 3];
+//        atomCoords[0] = coordsXYZ[atomIndices[0]];
+//        atomCoords[1] = coordsXYZ[atomIndices[0] + 1];
+//        atomCoords[2] = coordsXYZ[atomIndices[0] + 2];
+//        atomCoords[3] = coordsXYZ[atomIndices[1]];
+//        atomCoords[4] = coordsXYZ[atomIndices[1] + 1];
+//        atomCoords[5] = coordsXYZ[atomIndices[1] + 2];
+//        atomCoords[6] = coordsXYZ[atomIndices[2]];
+//        atomCoords[7] = coordsXYZ[atomIndices[2] + 1];
+//        atomCoords[8] = coordsXYZ[atomIndices[2] + 2];
+//
+//        // TODO: Delete coordsXYZOrig?
+//        double[] coordsXYZOrig = new double[numCoords * 3];
+//        for (int i = 0; i < numCoords; i++) {
+//            int atomIndex = i * 3;
+//            coordsXYZOrig[atomIndex] = coordsXYZ[atomIndex];
+//            coordsXYZOrig[atomIndex + 1] = coordsXYZ[atomIndex + 1];
+//            coordsXYZOrig[atomIndex + 2] = coordsXYZ[atomIndex + 2];
+//        }
+//
+//        // TODO: Delete atomsCoordsOrig?
+//        double[] atomsCoordsOrig = new double[3 * 3];
+//        arraycopy(atomCoords, 0, atomsCoordsOrig, 0, 9);
+//
+//        logger.fine(
+//                format(" START: N1:\t%16.15f %16.15f %16.15f", atomCoords[0], atomCoords[1], atomCoords[2]));
+//        logger.fine(
+//                format(" START: N2:\t%16.15f %16.15f %16.15f", atomCoords[3], atomCoords[4], atomCoords[5]));
+//        logger.fine(
+//                format(" START: N3:\t%16.15f %16.15f %16.15f", atomCoords[6], atomCoords[7], atomCoords[8]));
+//
+//        double p1n2 = coordsXYZ[atomIndices[1]];
+//        double q1n2 = coordsXYZ[atomIndices[1] + 1];
+//        double r1n2 = coordsXYZ[atomIndices[1] + 2];
+//
+//        // Calculation of sigma, phai, and cita angles needed to get specified atoms to desired loci
+//        double cita0 = acos(p1n2 / sqrt(p1n2 * p1n2 + q1n2 * q1n2));
+//        double phai0 = acos(sqrt(p1n2 * p1n2 + q1n2 * q1n2) /
+//                sqrt(p1n2 * p1n2 + q1n2 * q1n2 + r1n2 * r1n2));
+//        if (q1n2 < 0.0) {
+//            cita0 = -cita0;
+//        }
+//
+//        for (int i = 0; i < numCoords; i++) {
+//            int atomIndex = i * 3;
+//            double ptmp = coordsXYZ[atomIndex] * cos(cita0) + coordsXYZ[atomIndex + 1] * sin(cita0);
+//            double qtmp = -coordsXYZ[atomIndex] * sin(cita0) + coordsXYZ[atomIndex + 1] * cos(cita0);
+//            coordsXYZ[atomIndex] = ptmp;
+//            coordsXYZ[atomIndex + 1] = qtmp;
+//        }
+//
+//        p1n2 = coordsXYZ[atomIndices[1]];
+//        q1n2 = coordsXYZ[atomIndices[1] + 1];
+//
+//        if (r1n2 > 0.0) {
+//            phai0 = -phai0;
+//        }
+//
+//        for (int i = 0; i < numCoords; i++) {
+//            int atomIndex = i * 3;
+//            double ptmp = coordsXYZ[atomIndex] * cos(phai0) - coordsXYZ[atomIndex + 2] * sin(phai0);
+//            double rtmp = coordsXYZ[atomIndex] * sin(phai0) + coordsXYZ[atomIndex + 2] * cos(phai0);
+//            coordsXYZ[atomIndex] = ptmp;
+//            coordsXYZ[atomIndex + 2] = rtmp;
+//        }
+//
+//        p1n2 = coordsXYZ[atomIndices[1]];
+//        r1n2 = coordsXYZ[atomIndices[1] + 2];
+//        double p1n3 = coordsXYZ[atomIndices[2]];
+//        double q1n3 = coordsXYZ[atomIndices[2] + 1];
+//        double r1n3 = coordsXYZ[atomIndices[2] + 2];
+//
+//        double sigma0 = acos(q1n3 / sqrt(q1n3 * q1n3 + r1n3 * r1n3));
+//        if (r1n3 < 0.0) {
+//            sigma0 = -sigma0;
+//        }
+//
+//        for (int i = 0; i < numCoords; i++) {
+//            int atomIndex = i * 3;
+//            double qtmp = coordsXYZ[atomIndex + 1] * cos(sigma0) + coordsXYZ[atomIndex + 2] * sin(sigma0);
+//            double rtmp = -coordsXYZ[atomIndex + 1] * sin(sigma0) + coordsXYZ[atomIndex + 2] * cos(sigma0);
+//            coordsXYZ[atomIndex + 1] = qtmp;
+//            coordsXYZ[atomIndex + 2] = rtmp;
+//        }
+//
+//        q1n2 = coordsXYZ[atomIndices[1] + 1];
+//        r1n2 = coordsXYZ[atomIndices[1] + 2];
+//        q1n3 = coordsXYZ[atomIndices[2] + 1];
+//        r1n3 = coordsXYZ[atomIndices[2] + 2];
+//
+//        if (logger.isLoggable(Level.FINER)) {
+//            logger.finer(
+//                    format(" DONE N1: %16.15f %16.15f %16.15f", atomCoords[0], atomCoords[1], atomCoords[2]));
+//            logger.finer(format(" DONE N2: %16.15f %16.15f %16.15f", p1n2, q1n2, r1n2));
+//            logger.finer(format(" DONE N3: %16.15f %16.15f %16.15f", p1n3, q1n3, r1n3));
+//        }
+//    }
 }

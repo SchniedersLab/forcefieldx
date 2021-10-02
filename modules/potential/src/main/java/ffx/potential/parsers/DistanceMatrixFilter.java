@@ -212,7 +212,7 @@ public class DistanceMatrixFilter {
     for (double[] row : distanceMatrix) {
       sb.append("  ");
       for (int j = 0; j < row.length; j++) {
-        if(row[j]==Double.MAX_VALUE){
+        if(row[j]==-2.0){
           sb.append(format("%6.4f", Double.NaN));
         }else {
           sb.append(format("%6.4f", row[j]));
