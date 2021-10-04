@@ -56,6 +56,8 @@ import edu.rit.pj.reduction.SharedDouble;
 import ffx.numerics.atomic.AtomicDoubleArray;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.potential.bonded.Atom;
+import ffx.potential.parameters.ForceField;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -119,6 +121,15 @@ public class GaussVol {
   private static final double VOLMINB = 0.1 * ANG3;
   /** Minimum volume. TODO: Should this be set closer to VOLMINA? */
   private static final double MIN_GVOL = Double.MIN_VALUE;
+
+  /**
+   * Default offset applied to radii for use with Gaussian Volumes to correct for not including
+   * hydrogen atoms.
+   */
+  public static final double DEFAULT_GAUSSVOL_RADII_OFFSET = 0.0;
+
+  private static final double RMIN_TO_SIGMA = 1.0 / pow((double) 2.0, (double) 1.0 / 6.0);
+
   // private static double MIN_GVOL = 1.0e-12;
   // Output Variables
   private final GaussVolRegion gaussVolRegion;
@@ -129,6 +140,15 @@ public class GaussVol {
   private final AtomicDoubleArray freeVolume;
   private final AtomicDoubleArray selfVolume;
   private final ParallelTeam parallelTeam;
+
+  private final double vdwRadiiOffset;
+  private final boolean includeHydrogen;
+  private final boolean useSigma;
+
+  /**
+   * Array of Atoms in the system.
+   */
+  private final Atom[] atoms;
   /** Number of atoms. */
   private final int nAtoms;
   /**
@@ -139,22 +159,22 @@ public class GaussVol {
    * All atomic radii with a small offset added, which are used to compute surface area using a
    * finite-difference approach.
    */
-  private double[] radiiOffset;
+  private final double[] radiiOffset;
   /** Atomic volumes for all atoms, which are computed from atomic radii. */
   private double[] volumes;
   /** Atomic "self" volumes for all atoms, which are computed from the radii plus offset array. */
-  private double[] volumeOffset;
+  private final double[] volumeOffset;
   /** Surface tension -- in our implementation these values are kept at 1.0. */
-  private double[] gammas;
+  private final double[] gammas;
   /**
    * Flag to denote if an atom is a hydrogen, which results in it not contributing to the volume or
    * S.A.
    */
-  private boolean[] ishydrogen;
+  private final boolean[] ishydrogen;
   /**
    * The self-volume fraction is the self-volume divided by the volume that ignores overlaps.
    */
-  private double[] selfVolumeFraction;
+  private final double[] selfVolumeFraction;
   /** The Gaussian Overlap Tree. */
   private final GaussianOverlapTree tree;
   /** Maximum depth that the tree reaches */
@@ -179,32 +199,44 @@ public class GaussVol {
   /**
    * Creates/Initializes a GaussVol instance.
    *
-   * @param nAtoms The number of atoms.
-   * @param radii Atomic radii.
-   * @param volumes Atomic volumes.
-   * @param gammas Atomic surface tensions.
-   * @param ishydrogen True if the atom is a hydrogen.
+   * @param atoms The atoms to examine.
+   * @param forceField The ForceField in use.
    * @param parallelTeam ParallelTeam for Parallal jobs.
    */
   public GaussVol(
-      int nAtoms,
-      double[] radii,
-      double[] volumes,
-      double[] gammas,
-      boolean[] ishydrogen,
+      Atom[] atoms,
+      ForceField forceField,
       ParallelTeam parallelTeam) {
+    this.atoms = atoms;
+    nAtoms = atoms.length;
     tree = new GaussianOverlapTree(nAtoms);
-    this.nAtoms = nAtoms;
-    this.radii = radii;
-    this.volumes = volumes;
-    this.gammas = gammas;
-    this.ishydrogen = ishydrogen;
+    this.radii = new double[nAtoms];
+    this.volumes = new double[nAtoms];
+    this.gammas = new double[nAtoms];
+    this.ishydrogen = new boolean[nAtoms];
 
     radiiOffset = new double[nAtoms];
     volumeOffset = new double[nAtoms];
     selfVolumeFraction = new double[nAtoms];
+
     double fourThirdsPI = 4.0 / 3.0 * PI;
+    vdwRadiiOffset = forceField.getDouble("GAUSSVOL_RADII_OFFSET", DEFAULT_GAUSSVOL_RADII_OFFSET);
+    includeHydrogen = forceField.getBoolean("GAUSSVOL_HYDROGEN", false);
+    useSigma = forceField.getBoolean("GAUSSVOL_USE_SIGMA", false);
+
     for (int i = 0; i < nAtoms; i++) {
+      Atom atom = atoms[i];
+      ishydrogen[i] = atom.isHydrogen();
+      if (includeHydrogen) {
+        ishydrogen[i] = false;
+      }
+      radii[i] = atom.getVDWType().radius / 2.0;
+      if (useSigma) {
+        radii[i] *= RMIN_TO_SIGMA;
+      }
+      radii[i] += vdwRadiiOffset;
+      volumes[i] = fourThirdsPI * pow(radii[i], 3);
+      gammas[i] = 1.0;
       if (radii[i] != 0.0 && !ishydrogen[i]) {
         radiiOffset[i] = radii[i] + offset;
         volumeOffset[i] = fourThirdsPI * pow(radiiOffset[i], 3);
@@ -513,59 +545,9 @@ public class GaussVol {
     return volumeGradient;
   }
 
-  /**
-   * Set gamma values.
-   *
-   * @param gammas Gamma values (kcal/mol/A^2).
-   * @throws Exception If the array length does not match the number of atoms.
-   */
-  public void setGammas(double[] gammas) throws Exception {
-    if (nAtoms == gammas.length) {
-      this.gammas = gammas;
-    } else {
-      throw new Exception(" setGammas: number of atoms does not match");
-    }
-  }
-
-  /**
-   * Set the isHydrogen flag.
-   *
-   * @param isHydrogen Per atom flag to indicate if its a hydrogen.
-   * @throws Exception If the array length does not match the number of atoms.
-   */
-  public void setIsHydrogen(boolean[] isHydrogen) throws Exception {
-    if (nAtoms == isHydrogen.length) {
-      this.ishydrogen = isHydrogen;
-    } else {
-      throw new Exception(" setIsHydrogen: number of atoms does not match");
-    }
-  }
-
-  /**
-   * Set radii and volumes.
-   *
-   * @param radii Atomic radii (Angstroms).
-   * @param volumes Atomic volumes (Angstroms^3).
-   * @throws Exception If the array length does not match the number of atoms.
-   */
-  public void setRadiiAndVolumes(double[] radii, double[] volumes) throws Exception {
-    if (nAtoms == radii.length) {
-      this.radii = radii;
-      radiiOffset = new double[nAtoms];
-      volumeOffset = new double[nAtoms];
-      double fourThirdsPI = 4.0 / 3.0 * PI;
-      for (int i = 0; i < nAtoms; i++) {
-        radiiOffset[i] = radii[i] + offset;
-        volumeOffset[i] = fourThirdsPI * pow(radiiOffset[i], 3);
-      }
-    } else {
-      throw new Exception(" setRadii: number of atoms does not match");
-    }
-
-    if (nAtoms == volumes.length) {
-      this.volumes = volumes;
-    } else {
-      throw new Exception(" setVolumes: number of atoms does not match");
+  public void allocate(Atom[] atoms) throws Exception {
+    if (atoms.length != this.atoms.length) {
+      throw new Exception(" allocate: number of atoms does not match");
     }
   }
 
@@ -1397,11 +1379,12 @@ public class GaussVol {
   /** Use instances of the GaussianOverlapTree to compute the GaussVol volume in parallel. */
   private class GaussVolRegion extends ParallelRegion {
 
-    private GaussianOverlapTree[] localTree;
-    private ComputeTreeLoop[] computeTreeLoops;
-    private ComputeVolumeLoop[] computeVolumeLoops;
-    private RescanTreeLoop[] rescanTreeLoops;
-    private ReductionLoop[] reductionLoops;
+    private final InitGaussVol[] initGaussVol;
+    private final GaussianOverlapTree[] localTree;
+    private final ComputeTreeLoop[] computeTreeLoops;
+    private final ComputeVolumeLoop[] computeVolumeLoops;
+    private final RescanTreeLoop[] rescanTreeLoops;
+    private final ReductionLoop[] reductionLoops;
     private int mode = 0;
     private double[][] coordinates = null;
 
@@ -1411,6 +1394,7 @@ public class GaussVol {
      * @param nThreads Number of threads.
      */
     public GaussVolRegion(int nThreads) {
+      initGaussVol = new InitGaussVol[nThreads];
       localTree = new GaussianOverlapTree[nThreads];
       computeTreeLoops = new ComputeTreeLoop[nThreads];
       computeVolumeLoops = new ComputeVolumeLoop[nThreads];
@@ -1435,6 +1419,7 @@ public class GaussVol {
     public void run() throws Exception {
       int threadIndex = getThreadIndex();
       if (computeTreeLoops[threadIndex] == null) {
+        initGaussVol[threadIndex] = new InitGaussVol();
         localTree[threadIndex] = new GaussianOverlapTree(nAtoms);
         computeTreeLoops[threadIndex] = new ComputeTreeLoop();
         computeVolumeLoops[threadIndex] = new ComputeVolumeLoop();
@@ -1443,10 +1428,12 @@ public class GaussVol {
       }
       try {
         if (mode == 0) {
+          execute(0, nAtoms - 1, initGaussVol[threadIndex]);
           execute(1, nAtoms, computeTreeLoops[threadIndex]);
           execute(1, nAtoms, computeVolumeLoops[threadIndex]);
           execute(0, nAtoms - 1, reductionLoops[threadIndex]);
         } else {
+          execute(0, nAtoms - 1, initGaussVol[threadIndex]);
           execute(1, nAtoms, rescanTreeLoops[threadIndex]);
           execute(1, nAtoms, computeVolumeLoops[threadIndex]);
           execute(0, nAtoms - 1, reductionLoops[threadIndex]);
@@ -1457,6 +1444,30 @@ public class GaussVol {
       } catch (Exception e) {
         String message = "Fatal exception computing tree in thread: " + threadIndex + "\n";
         logger.log(Level.SEVERE, message, e);
+      }
+    }
+
+    private class InitGaussVol extends IntegerForLoop {
+
+      @Override
+      public void run(int first, int last) throws Exception {
+        double fourThirdsPI = 4.0 / 3.0 * PI;
+        for (int i = first; i <= last; i++) {
+          Atom atom = atoms[i];
+          ishydrogen[i] = atom.isHydrogen();
+          if (includeHydrogen) {
+            ishydrogen[i] = false;
+          }
+          radii[i] = atom.getVDWType().radius / 2.0;
+          if (useSigma) {
+            radii[i] *= RMIN_TO_SIGMA;
+          }
+          radii[i] += vdwRadiiOffset;
+          volumes[i] = fourThirdsPI * pow(radii[i], 3);
+          gammas[i] = 1.0;
+          radiiOffset[i] = radii[i] + offset;
+          volumeOffset[i] = fourThirdsPI * pow(radiiOffset[i], 3);
+        }
       }
     }
 

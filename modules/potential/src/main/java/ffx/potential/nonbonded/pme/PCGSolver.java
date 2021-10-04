@@ -135,11 +135,9 @@ public class PCGSolver {
   private Crystal crystal;
   /** Dimensions of [nsymm][nAtoms][3] */
   private double[][][] inducedDipole;
-
   private double[][][] inducedDipoleCR;
   /** Direct induced dipoles. */
   private double[][] directDipole;
-
   private double[][] directDipoleCR;
 
   /** Field array. */

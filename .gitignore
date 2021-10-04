@@ -33,4 +33,5 @@ website/
 
 velocity.log
 
+bin/build.properties
 modules/ffx-all/dependency-reduced-pom.xml

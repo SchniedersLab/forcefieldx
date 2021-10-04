@@ -35,119 +35,105 @@
 // exception statement from your version.
 //
 //******************************************************************************
+package ffx.potential.groovy
 
-
-import edu.rit.pj.cluster.Configuration
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.bonded.Polymer
-import ffx.potential.nonbonded.implicit.SurfaceAreaRegion
-import org.apache.commons.configuration2.CompositeConfiguration
-import picocli.CommandLine.Command
-import picocli.CommandLine.Parameters
-import ffx.potential.utils.GetProteinFeatures
-import ffx.potential.bonded.AminoAcidUtils
 import ffx.potential.bonded.Residue
 import ffx.potential.cli.PotentialScript
+import ffx.potential.utils.GetProteinFeatures
 import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine
-import java.nio.file.Files
-import java.nio.file.Paths
-import ffx.potential.bonded.Torsion
+import picocli.CommandLine.Command
+import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
 
-
-@Command(description = " Create a Feature Map for a given protein structure", name = "ffxc ffx.potential.FeatureMap")
+@Command(description = " Create a Feature Map for a given protein structure", name = "ffxc FeatureMap")
 class FeatureMap extends PotentialScript {
 
-    /**
-     * The final argument(s) should be one or more filenames.
-     */
-    @Parameters(arity = "1", paramLabel = "file",
-            description = 'The atomic coordinate file in PDB or XYZ format.')
-    private String filename = null
+  /**
+   * The final argument(s) should be one or more filenames.
+   */
+  @Parameters(arity = "1", paramLabel = "file",
+      description = 'The atomic coordinate file in PDB or XYZ format.')
+  private String filename = null
 
-    private List<Residue> residues
-    private int[] polarity
-    private int[] acidity
-    private int[] secondaryStructure
-    private double[] surfaceArea
+  private List<Residue> residues
 
+  /**
+   * ffx.potential.FeatureMap constructor.
+   */
+  FeatureMap() {
+    this(new Binding())
+  }
 
-    /**
-     * ffx.potential.FeatureMap constructor.
-     */
-    FeatureMap() {
-        this(new Binding())
+  /**
+   * ffx.potential.FeatureMap constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  FeatureMap(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * ffx.potential.FeatureMap the script.
+   */
+  @Override
+  FeatureMap run() {
+    // Init the context and bind variables.
+    if (!init()) {
+      return null
+    }
+    System.setProperty("gkterm", "true")
+    System.setProperty("cavmodel", "CAV")
+    System.setProperty("surface-tension", "1.0")
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
+      logger.info(helpString())
+      return null
     }
 
-    /**
-     * ffx.potential.FeatureMap constructor.
-     * @param binding The Groovy Binding to use.
-     */
-    FeatureMap(Binding binding) {
-        super(binding)
+    //sum surface area of all atoms and compare to total surface area
+    ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
+
+    int nVars = forceFieldEnergy.getNumberOfVariables()
+    double[] x = new double[nVars]
+    forceFieldEnergy.getCoordinates(x)
+    forceFieldEnergy.energy(x)
+
+    residues = activeAssembly.getResidueList()
+    GetProteinFeatures getProteinFeatures = new GetProteinFeatures()
+
+    String fileDir = FilenameUtils.getFullPath(filename).replace("filename", "")
+    String baseName = FilenameUtils.getBaseName(filename)
+    String featureFileName = fileDir + baseName + ".csv"
+    try {
+      FileWriter fos = new FileWriter(featureFileName)
+      PrintWriter dos = new PrintWriter(fos)
+      dos.println(
+          "Residue\tPosition\tPolarity\tAcidity\tSecondary Structure\tPhi\tPsi\tOmega\tSurface Area\tNormalized SA")
+      for (int i = 0; i < residues.size(); i++) {
+        double residueSurfaceArea =
+            forceFieldEnergy.getGK().getSurfaceAreaRegion().getResidueSurfaceArea(residues.get(i))
+        String[] features = getProteinFeatures.saveFeatures(residues.get(i), residueSurfaceArea)
+        for (int j = 0; j < features.length; j++) {
+          dos.print(features[j] + "\t")
+        }
+        dos.println()
+      }
+      dos.close()
+      fos.close()
+    } catch (IOException e) {
+      logger.info("Could Not Write Tab Delimited File")
     }
 
-    /**
-     * ffx.potential.FeatureMap the script.
-     */
-    @Override
-    FeatureMap run() {
-        // Init the context and bind variables.
-        if (!init()) {
-            return null
-        }
-        System.setProperty("gkterm", "true")
-        System.setProperty("cavmodel", "CAV")
-        System.setProperty("surface-tension", "1.0")
-        // Load the MolecularAssembly.
-        activeAssembly = getActiveAssembly(filename)
-        if (activeAssembly == null) {
-            logger.info(helpString())
-            return null
-        }
+    logger.info(format("\n Total SurfacAreaRegion Solvent Accessible Surface Area: %1.6f",
+        forceFieldEnergy.getGK().getSurfaceAreaRegion().getEnergy()))
+    logger.info(format("\n Total Calculated Solvent Accessible Surface Area: %1.6f",
+        getProteinFeatures.getTotalSurfaceArea()))
 
 
-        //sum surface area of all atoms and compare to total surface area
-        ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
-
-        int nVars = forceFieldEnergy.getNumberOfVariables()
-        double[] x = new double[nVars]
-        forceFieldEnergy.getCoordinates(x)
-        forceFieldEnergy.energy(x)
-
-        residues = activeAssembly.getResidueList()
-        GetProteinFeatures getProteinFeatures = new GetProteinFeatures()
-
-        String fileDir = FilenameUtils.getFullPath(filename).replace("filename", "")
-        String baseName = FilenameUtils.getBaseName(filename)
-        String featureFileName = fileDir + baseName + ".csv"
-        try {
-            FileWriter fos = new FileWriter(featureFileName)
-            PrintWriter dos = new PrintWriter(fos)
-            dos.println("Residue\tPosition\tPolarity\tAcidity\tSecondary Structure\tPhi\tPsi\tOmega\tSurface Area\tNormalized SA")
-            for (int i = 0; i < residues.size(); i++) {
-                //getProteinFeatures.saveFeatures(residues.get(i))
-                double residueSurfaceArea =
-                        forceFieldEnergy.getGK().getSurfaceAreaRegion().getResidueSurfaceArea(residues.get(i))
-                String[] features = getProteinFeatures.saveFeatures(residues.get(i), residueSurfaceArea)
-                for (int j=0; j<features.length; j++){
-                    dos.print(features[j] + "\t")
-                }
-                dos.println()
-            }
-            dos.close()
-            fos.close()
-        } catch (IOException e) {
-            logger.info("Could Not Write Tab Delimited File")
-        }
-
-        logger.info(format("\n Total SurfacAreaRegion Solvent Accessible Surface Area: %1.6f", forceFieldEnergy.getGK().getSurfaceAreaRegion().getEnergy()))
-        logger.info(format("\n Total Calculated Solvent Accessible Surface Area: %1.6f", getProteinFeatures.getTotalSurfaceArea()))
-
-
-    }
+  }
 
 
 }
