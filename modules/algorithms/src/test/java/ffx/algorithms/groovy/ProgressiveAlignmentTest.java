@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.algorithms.groovy;
 
+import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.misc.AlgorithmsTest;
@@ -64,17 +65,13 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Construct and evaluate the CrystalSuperpose script.
-    SuperposeCrystals SuperposeCrystals = new SuperposeCrystals(binding).run();
-    algorithmsScript = SuperposeCrystals;
-    assertEquals(0.0000, SuperposeCrystals.distMatrix[0][0], tolerance);
-    assertEquals(0.2006, SuperposeCrystals.distMatrix[0][1], tolerance);
-    assertEquals(0.2189, SuperposeCrystals.distMatrix[0][2], tolerance);
-    assertEquals(0.2006, SuperposeCrystals.distMatrix[1][0], tolerance);
-    assertEquals(0.0000, SuperposeCrystals.distMatrix[1][1], tolerance);
-    assertEquals(0.0909, SuperposeCrystals.distMatrix[1][2], tolerance);
-    assertEquals(0.2189, SuperposeCrystals.distMatrix[2][0], tolerance);
-    assertEquals(0.0909, SuperposeCrystals.distMatrix[2][1], tolerance);
-    assertEquals(0.0000, SuperposeCrystals.distMatrix[2][2], tolerance);
+    SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = superposeCrystals;
+
+    // Only off-diagonal values.
+    assertEquals(3, superposeCrystals.runningStatistics.getCount());
+    // Mean RMSD for 3 comparisons.
+    assertEquals(0.17020197, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   /** Tests the CrystalSuperpose script without hydrogens. */
@@ -87,17 +84,13 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Construct and evaluate the CrystalSuperpose script.
-    SuperposeCrystals SuperposeCrystals = new SuperposeCrystals(binding).run();
-    algorithmsScript = SuperposeCrystals;
-    assertEquals(0.0000, SuperposeCrystals.distMatrix[0][0], tolerance);
-    assertEquals(0.1890, SuperposeCrystals.distMatrix[0][1], tolerance);
-    assertEquals(0.2075, SuperposeCrystals.distMatrix[0][2], tolerance);
-    assertEquals(0.1890, SuperposeCrystals.distMatrix[1][0], tolerance);
-    assertEquals(0.0000, SuperposeCrystals.distMatrix[1][1], tolerance);
-    assertEquals(0.0896, SuperposeCrystals.distMatrix[1][2], tolerance);
-    assertEquals(0.2075, SuperposeCrystals.distMatrix[2][0], tolerance);
-    assertEquals(0.0896, SuperposeCrystals.distMatrix[2][1], tolerance);
-    assertEquals(0.0000, SuperposeCrystals.distMatrix[2][2], tolerance);
+    SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = superposeCrystals;
+
+    // Only off-diagonal values.
+    assertEquals(3, superposeCrystals.runningStatistics.getCount());
+    // Mean RMSD for 3 comparisons.
+    assertEquals( 0.16246859, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   /** Tests the CrystalSuperpose script in Sohncke group. */
@@ -111,9 +104,10 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Construct and evaluate the CrystalSuperpose script.
-    SuperposeCrystals SuperposeCrystals = new SuperposeCrystals(binding).run();
-    algorithmsScript = SuperposeCrystals;
-    assertEquals(0.066147, SuperposeCrystals.distMatrix[0][0], tolerance);
+    SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = superposeCrystals;
+
+    assertEquals(0.066147, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   /** Tests the CrystalSuperpose script on tricky handedness case. */
@@ -127,9 +121,10 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Construct and evaluate the CrystalSuperpose script.
-    SuperposeCrystals SuperposeCrystals = new SuperposeCrystals(binding).run();
-    algorithmsScript = SuperposeCrystals;
-    assertEquals(0.114188, SuperposeCrystals.distMatrix[0][0], tolerance);
+    SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = superposeCrystals;
+
+    assertEquals(0.114188, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   /** Tests the CrystalSuperpose script on asymmetric unit greater than one. */
@@ -142,17 +137,13 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Construct and evaluate the CrystalSuperpose script.
-    SuperposeCrystals SuperposeCrystals = new SuperposeCrystals(binding).run();
-    algorithmsScript = SuperposeCrystals;
-    assertEquals(0.0000, SuperposeCrystals.distMatrix[0][0], tolerance);
-    assertEquals(0.3394, SuperposeCrystals.distMatrix[0][1], tolerance);
-    assertEquals(0.3693, SuperposeCrystals.distMatrix[0][2], tolerance);
-    assertEquals(0.3394, SuperposeCrystals.distMatrix[1][0], tolerance);
-    assertEquals(0.0000, SuperposeCrystals.distMatrix[1][1], tolerance);
-    assertEquals(0.1990, SuperposeCrystals.distMatrix[1][2], tolerance);
-    assertEquals(0.3693, SuperposeCrystals.distMatrix[2][0], tolerance);
-    assertEquals(0.1990, SuperposeCrystals.distMatrix[2][1], tolerance);
-    assertEquals(0.0000, SuperposeCrystals.distMatrix[2][2], tolerance);
+    SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = superposeCrystals;
+
+    // Only off-diagonal values.
+    assertEquals(3, superposeCrystals.runningStatistics.getCount());
+    // Mean RMSD for 3 comparisons.
+    assertEquals( 0.30708315, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   @Test

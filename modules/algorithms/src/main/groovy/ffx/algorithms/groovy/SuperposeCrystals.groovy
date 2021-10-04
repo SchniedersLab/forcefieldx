@@ -38,6 +38,7 @@
 package ffx.algorithms.groovy
 
 import ffx.algorithms.cli.AlgorithmsScript
+import ffx.numerics.math.RunningStatistics
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.AtomSelectionOptions
@@ -183,7 +184,7 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * CrystalSuperpose Test requires a public variable containing observables to test.
    */
-  public double[][] distMatrix
+  public RunningStatistics runningStatistics
 
   /**
    * CrystalSuperpose Constructor.
@@ -300,10 +301,10 @@ class SuperposeCrystals extends AlgorithmsScript {
 
     // To save in ARES format a PDB must be written out.
     if(ares){
-      savePDB = true;
+      savePDB = true
     }
 
-    distMatrix = pac.comparisons(atomList, numAU, numInflatedAU,
+    runningStatistics = pac.comparisons(atomList, numAU, numInflatedAU,
         numSearch, numSearch2, zPrime, full, savePDB, restart, write, ares, pacFilename)
 
     return this
