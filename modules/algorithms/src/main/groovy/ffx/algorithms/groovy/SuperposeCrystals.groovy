@@ -89,24 +89,24 @@ class SuperposeCrystals extends AlgorithmsScript {
   int numInflatedAU
 
   /**
-   * --ns or --numSearch The number of molecules to loop through in first system.
+   * --ns or --numSearch Number of molecules for each handedness in the first crystal.
    */
-  @Option(names = ['--ns', '--numSearch'], paramLabel = '5', defaultValue = '5',
-      description = 'Set the number of asymmetric units to search in the 1st system to check for mirrored conformations.')
+  @Option(names = ['--ns', '--numSearch'], paramLabel = '3', defaultValue = '3',
+      description = 'Set the number of asymmetric units to search in the 1st crystal to check for mirrored conformations.')
   int numSearch
 
   /**
-   * --ns2 or --numSearch2 Number of molecules to loop through in second system.
+   * --ns2 or --numSearch2 Number of molecules for each handedness in the second crystal.
    */
-  @Option(names = ['--ns2', '--numSearch2'], paramLabel = '5', defaultValue = '5',
-      description = 'Set the number of asymmetric units to search in the 2nd system to check for mirrored conformations.')
+  @Option(names = ['--ns2', '--numSearch2'], paramLabel = '3', defaultValue = '3',
+      description = 'Set the number of asymmetric units to search in the 2nd crystal to check for mirrored conformations.')
   int numSearch2
 
   /**
-   * --zp or --zPrime Number of molecules in the asymmetric unit (NOT FUNCTIONAL YET).
+   * --zp or --zPrime Overrides number of molecules in the asymmetric unit.
    */
-  @Option(names = ['--zp', '--zPrime'], paramLabel = '1', defaultValue = '1',
-          description = 'Set the number of species within the asymmetric unit (Z\').')
+  @Option(names = ['--zp', '--zPrime'], paramLabel = '-1', defaultValue = '-1',
+          description = 'Number of species in asymmetric unit should be detected by default (Z\'). This flag should only be used if the default detection fails.')
   int zPrime
 
   /**
@@ -304,7 +304,7 @@ class SuperposeCrystals extends AlgorithmsScript {
     }
 
     distMatrix = pac.comparisons(atomList, numAU, numInflatedAU,
-        numSearch, numSearch2, full, savePDB, restart, write, ares, pacFilename)
+        numSearch, numSearch2, zPrime, full, savePDB, restart, write, ares, pacFilename)
 
     return this
   }

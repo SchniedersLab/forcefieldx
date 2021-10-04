@@ -54,7 +54,7 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
 
   // TODO: add more tests with more parameters
 
-  /** Tests the CrystalSuperpose script. */
+  /** Tests the CrystalSuperpose script with default settings.. */
   @Test
   public void testBaseProgressiveAlignment() {
 
@@ -77,7 +77,7 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     assertEquals(0.0000, SuperposeCrystals.distMatrix[2][2], tolerance);
   }
 
-  /** Tests the CrystalSuperpose script. */
+  /** Tests the CrystalSuperpose script without hydrogens. */
   @Test
   public void testBaseProgressiveAlignmentNoHydrogen() {
 
@@ -97,6 +97,61 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     assertEquals(0.0896, SuperposeCrystals.distMatrix[1][2], tolerance);
     assertEquals(0.2075, SuperposeCrystals.distMatrix[2][0], tolerance);
     assertEquals(0.0896, SuperposeCrystals.distMatrix[2][1], tolerance);
+    assertEquals(0.0000, SuperposeCrystals.distMatrix[2][2], tolerance);
+  }
+
+  /** Tests the CrystalSuperpose script in Sohncke group. */
+  @Test
+  public void testBaseProgressiveAlignmentSohnckeGroup() {
+
+    // Set-up the input arguments for the CrystalSuperpose script.
+    String[] args = {"--nh", "src/main/java/ffx/algorithms/structures/dap.xyz",
+            "src/main/java/ffx/algorithms/structures/dap.xyz_close"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the CrystalSuperpose script.
+    SuperposeCrystals SuperposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = SuperposeCrystals;
+    assertEquals(0.066147, SuperposeCrystals.distMatrix[0][0], tolerance);
+  }
+
+  /** Tests the CrystalSuperpose script on tricky handedness case. */
+  @Test
+  public void testBaseProgressiveAlignmentHandedness() {
+
+    // Set-up the input arguments for the CrystalSuperpose script.
+    String[] args = {"--nh", "src/main/java/ffx/algorithms/structures/dap2.xyz",
+            "src/main/java/ffx/algorithms/structures/dap2.xyz_2"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the CrystalSuperpose script.
+    SuperposeCrystals SuperposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = SuperposeCrystals;
+    assertEquals(0.114188, SuperposeCrystals.distMatrix[0][0], tolerance);
+  }
+
+  /** Tests the CrystalSuperpose script on asymmetric unit greater than one. */
+  @Test
+  public void testBaseProgressiveAlignmentZPrime2() {
+
+    // Set-up the input arguments for the CrystalSuperpose script.
+    String[] args = {"--nh", "src/main/java/ffx/algorithms/structures/XAFPAY02.arc"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the CrystalSuperpose script.
+    SuperposeCrystals SuperposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = SuperposeCrystals;
+    assertEquals(0.0000, SuperposeCrystals.distMatrix[0][0], tolerance);
+    assertEquals(0.3394, SuperposeCrystals.distMatrix[0][1], tolerance);
+    assertEquals(0.3693, SuperposeCrystals.distMatrix[0][2], tolerance);
+    assertEquals(0.3394, SuperposeCrystals.distMatrix[1][0], tolerance);
+    assertEquals(0.0000, SuperposeCrystals.distMatrix[1][1], tolerance);
+    assertEquals(0.1990, SuperposeCrystals.distMatrix[1][2], tolerance);
+    assertEquals(0.3693, SuperposeCrystals.distMatrix[2][0], tolerance);
+    assertEquals(0.1990, SuperposeCrystals.distMatrix[2][1], tolerance);
     assertEquals(0.0000, SuperposeCrystals.distMatrix[2][2], tolerance);
   }
 
