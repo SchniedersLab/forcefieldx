@@ -174,6 +174,17 @@ class Cluster extends AlgorithmsScript {
     DistanceMatrixFilter distanceMatrixFilter = new DistanceMatrixFilter()
     RunningStatistics runningStatistics = distanceMatrixFilter.readDistanceMatrix(filename, distMatrix)
 
+    logger.info(" RMSD Distance Matrix Statistics")
+    logger.info(format(" RMSD Minimum:  %8.6f", runningStatistics.getMin()))
+    logger.info(format(" RMSD Maximum:  %8.6f", runningStatistics.getMax()))
+    logger.info(format(" RMSD Mean:     %8.6f", runningStatistics.getMean()))
+    double variance = runningStatistics.getVariance()
+    if (!Double.isNaN(variance)) {
+      logger.info(format(" RMSD Variance: %8.6f\n", variance))
+    } else {
+      logger.info("")
+    }
+
     if (runningStatistics == null) {
       logger.info(format(" The distance matrix %s could not be read in.", filename))
       return this

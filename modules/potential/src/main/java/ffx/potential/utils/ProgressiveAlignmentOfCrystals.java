@@ -1041,7 +1041,7 @@ public class ProgressiveAlignmentOfCrystals {
 
     DistanceMatrixFilter distanceMatrixFilter = new DistanceMatrixFilter();
     RunningStatistics runningStatistics = distanceMatrixFilter.readDistanceMatrix(
-        filename, isSymmetric, expectedRows, expectedColumns);
+        filename, expectedRows, expectedColumns);
 
     if (runningStatistics != null && runningStatistics.getCount() > 0) {
       restartRow = distanceMatrixFilter.getRestartRow();
@@ -1087,7 +1087,7 @@ public class ProgressiveAlignmentOfCrystals {
             distRow[c] = distances[i][0];
             if (!isSymmetric) {
               runningStatistics.addValue(distRow[c]);
-            } else if (c > row) {
+            } else if (c >= row) {
               // Only collect stats for the upper triangle.
               runningStatistics.addValue(distRow[c]);
             }
@@ -1101,7 +1101,7 @@ public class ProgressiveAlignmentOfCrystals {
       distRow[column] = myDistance[0];
       if (!isSymmetric) {
         runningStatistics.addValue(distRow[column]);
-      } else if (column > row) {
+      } else if (column >= row) {
         // Only collect stats for the upper triangle.
         runningStatistics.addValue(distRow[column]);
       }

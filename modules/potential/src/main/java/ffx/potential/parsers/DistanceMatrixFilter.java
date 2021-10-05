@@ -39,6 +39,7 @@ package ffx.potential.parsers;
 
 import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 
 import ffx.numerics.math.RunningStatistics;
 import java.io.BufferedReader;
@@ -101,11 +102,38 @@ public class DistanceMatrixFilter {
    */
   public RunningStatistics readDistanceMatrix(String filename, List<double[]> distanceList) {
     fillDistanceMatrix = true;
-    RunningStatistics runningStatistics = readDistanceMatrix(filename, true, -1, -1);
+    RunningStatistics runningStatistics = readDistanceMatrix(filename, -1, -1);
     if (distanceMatrix != null) {
-      Collections.addAll(distanceList, distanceMatrix);
-      distanceMatrix = null;
+      int size = distanceMatrix[0].length;
+      boolean square = true;
+      for (int i = 0; i < size; i++) {
+        if (distanceMatrix[i] == null || distanceMatrix[i].length != size) {
+          square = false;
+          break;
+        }
+      }
+      // The full NxN matrix has been read in.
+      if (square) {
+        // Add all rows of the distanceMatrix into the list
+        Collections.addAll(distanceList, distanceMatrix);
+      } else {
+        // Assume only the upper triangle has been read in.
+        for (int i = 0; i < size; i++) {
+          double[] row = new double[size];
+          // Fill the lower triangle from previous rows.
+          for (int j = 0; j < i; j++) {
+            double[] previousRow = distanceList.get(j);
+            row[j] = previousRow[i];
+          }
+          // Fill the upper triangle using the current row of the distanceMatrix.
+          arraycopy(distanceMatrix[i], 0, row, i, size - i);
+          distanceList.add(row);
+        }
+      }
     }
+
+    // Reset the DistanceMatrixFilter for reuse.
+    distanceMatrix = null;
     fillDistanceMatrix = false;
     return runningStatistics;
   }
@@ -114,13 +142,12 @@ public class DistanceMatrixFilter {
    * Read in the distance matrix from a file.
    *
    * @param filename The filename to read from.
-   * @param isSymmetric If true, expect to read a diagonal matrix.
    * @param expectedRows The number of rows to expect.
    * @param expectedColumns The number of columns to expect.
    * @return Statistics for the parsed values.
    */
   public RunningStatistics readDistanceMatrix(
-      String filename, boolean isSymmetric, int expectedRows, int expectedColumns) {
+      String filename, int expectedRows, int expectedColumns) {
 
     if (filename == null) {
       return null;
@@ -177,10 +204,7 @@ public class DistanceMatrixFilter {
         double[] row = new double[nColumns];
         for (int j = 0; j < nColumns; j++) {
           row[j] = parseDouble(tokens[j]);
-          // Skip the diagonal entries (0.0) for stats.
-          if (!isSymmetric || j > 0) {
-            runningStatistics.addValue(row[j]);
-          }
+          runningStatistics.addValue(row[j]);
         }
 
         // Are we storing all rows?
@@ -199,19 +223,6 @@ public class DistanceMatrixFilter {
         }
 
         nColumns = tokens.length;
-
-        int expected = expectedColumns;
-        int rowsReadIn = i + 1;
-        if (isSymmetric) {
-          // If the RMSD file only stores the upper triangle, the number of expected entries
-          // is decreased by the number of rows read in.
-          expected = expectedColumns - rowsReadIn;
-        }
-        if (nColumns != expected) {
-          logger.info(format("\n Unexpected number of entries (%d) for row %d of the RMSD file %s.",
-              nColumns, rowsReadIn + 1, distanceMatrixFile));
-          break;
-        }
       }
       return runningStatistics;
 
