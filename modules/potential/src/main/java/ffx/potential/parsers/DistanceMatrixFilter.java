@@ -39,8 +39,6 @@ package ffx.potential.parsers;
 
 import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-import static org.apache.commons.math3.util.FastMath.min;
 
 import ffx.numerics.math.RunningStatistics;
 import java.io.BufferedReader;
@@ -49,8 +47,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -72,6 +70,8 @@ public class DistanceMatrixFilter {
 
   private int nRows = 0;
   private int nColumns = 0;
+  private boolean fillDistanceMatrix = false;
+  private double[][] distanceMatrix = null;
 
   /**
    * Get the number of rows read in.
@@ -92,18 +92,35 @@ public class DistanceMatrixFilter {
   }
 
   /**
+   * Read in the distance matrix from a file. This method is used from the Clustering code, where the
+   * size of the distance matrix is unknown, and the full N^2 matrix is needed.
+   *
+   * @param filename The filename to read from.
+   * @param distanceList The distance matrix (if null, only the last row is returned).
+   * @return Statistics for the parsed values.
+   */
+  public RunningStatistics readDistanceMatrix(String filename, List<double[]> distanceList) {
+    fillDistanceMatrix = true;
+    RunningStatistics runningStatistics = readDistanceMatrix(filename, true, -1, -1);
+    if (distanceMatrix != null) {
+      Collections.addAll(distanceList, distanceMatrix);
+      distanceMatrix = null;
+    }
+    fillDistanceMatrix = false;
+    return runningStatistics;
+  }
+
+  /**
    * Read in the distance matrix from a file.
    *
    * @param filename The filename to read from.
    * @param isSymmetric If true, expect to read a diagonal matrix.
    * @param expectedRows The number of rows to expect.
    * @param expectedColumns The number of columns to expect.
-   * @param distanceMatrix The distance matrix (if null, only the last row is returned).
    * @return Statistics for the parsed values.
    */
-  public RunningStatistics readDistanceMatrix(String filename,
-      boolean isSymmetric, int expectedRows, int expectedColumns,
-      double[][] distanceMatrix) {
+  public RunningStatistics readDistanceMatrix(
+      String filename, boolean isSymmetric, int expectedRows, int expectedColumns) {
 
     if (filename == null) {
       return null;
@@ -133,11 +150,24 @@ public class DistanceMatrixFilter {
       String[] tokens = data.trim().split(" +");
       nColumns = tokens.length;
 
+      // If the expectedRows is unknown (i.e. this is called from the Cluster script), set
+      // the number of rows to the initial number of parsed tokens.
+      if (expectedRows == -1) {
+        expectedRows = nColumns;
+      }
+      if (expectedColumns == -1) {
+        expectedColumns = nColumns;
+      }
+
       if (nColumns != expectedColumns) {
         logger.info(
             format("\n Unexpected number of entries (%d) in the first row of the RMSD file %s.",
                 nColumns, distanceMatrixFile));
         return null;
+      }
+
+      if (fillDistanceMatrix) {
+        distanceMatrix = new double[expectedRows][];
       }
 
       RunningStatistics runningStatistics = new RunningStatistics();
@@ -264,7 +294,8 @@ public class DistanceMatrixFilter {
    * @param firstColumn The first column of the distance matrix row to write.
    * @return a boolean.
    */
-  public static boolean writeDistanceMatrixRow(String filename, double[] distanceMatrixRow, int firstColumn) {
+  public static boolean writeDistanceMatrixRow(String filename, double[] distanceMatrixRow,
+      int firstColumn) {
 
     if (filename == null) {
       return false;

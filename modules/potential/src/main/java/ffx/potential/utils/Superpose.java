@@ -408,8 +408,8 @@ public class Superpose {
     restartColumn = 0;
 
     DistanceMatrixFilter distanceMatrixFilter = new DistanceMatrixFilter();
-    RunningStatistics runningStatistics = distanceMatrixFilter.readDistanceMatrix(filename,
-        isSymmetric, expectedRows, expectedColumns, null);
+    RunningStatistics runningStatistics = distanceMatrixFilter.readDistanceMatrix(
+        filename, isSymmetric, expectedRows, expectedColumns);
 
     if (runningStatistics != null && runningStatistics.getCount() > 0) {
       restartRow = distanceMatrixFilter.getRestartRow();

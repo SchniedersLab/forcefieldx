@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.algorithms.groovy;
 
-import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.misc.AlgorithmsTest;
@@ -90,7 +89,7 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     // Only off-diagonal values.
     assertEquals(3, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 3 comparisons.
-    assertEquals( 0.16246859, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.16246859, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   /** Tests the CrystalSuperpose script in Sohncke group. */
@@ -99,7 +98,7 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
 
     // Set-up the input arguments for the CrystalSuperpose script.
     String[] args = {"--nh", "src/main/java/ffx/algorithms/structures/dap.xyz",
-            "src/main/java/ffx/algorithms/structures/dap.xyz_close"};
+        "src/main/java/ffx/algorithms/structures/dap.xyz_close"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -116,7 +115,7 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
 
     // Set-up the input arguments for the CrystalSuperpose script.
     String[] args = {"--nh", "src/main/java/ffx/algorithms/structures/dap2.xyz",
-            "src/main/java/ffx/algorithms/structures/dap2.xyz_2"};
+        "src/main/java/ffx/algorithms/structures/dap2.xyz_2"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -143,7 +142,7 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     // Only off-diagonal values.
     assertEquals(3, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 3 comparisons.
-    assertEquals( 0.30708315, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.302567, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   @Test
