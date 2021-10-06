@@ -116,6 +116,10 @@ public class ProgressiveAlignmentOfCrystals {
    */
   private final int targetSize;
   /**
+   * The amount of work per row for each process.
+   */
+  private final int numWorkItems;
+  /**
    * If this flag is true, then the RMSD matrix is symmetric (e.g., comparing an archive of
    * structures to itself).
    */
@@ -171,7 +175,7 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Convenience reference to the RMSD value for this process.
    */
-  private final double[] myDistance;
+  private final double[] myDistances;
   /**
    * Convenience reference for the DoubleBuf of this process.
    */
@@ -222,29 +226,41 @@ public class ProgressiveAlignmentOfCrystals {
       rank = 0;
     }
 
+    // Padding of the target array size (inner loop limit) is for parallelization.
+    // Target conformations are parallelized over available nodes.
+    // For example, if numProc = 8 and targetSize = 12, then paddedTargetSize = 16.
+    int extra = targetSize % numProc;
+    int paddedTargetSize = targetSize;
+    if (extra != 0) {
+      paddedTargetSize = targetSize - extra + numProc;
+    }
+    numWorkItems = paddedTargetSize / numProc;
+
     if (numProc > 1) {
       logger.info(format(" Number of MPI Processes:  %d", numProc));
       logger.info(format(" Rank of this MPI Process: %d", rank));
+      logger.fine(format(" Work per process per row: %d", numWorkItems));
     }
 
     // Initialize array as -1.0 as -1.0 is not a viable RMSD.
     fill(distRow, -1.0);
 
-    distances = new double[numProc][1];
+    // Each process will complete the following amount of work per row.
+    distances = new double[numProc][numWorkItems];
 
     // Initialize each distance as -1.0.
     for (int i = 0; i < numProc; i++) {
       fill(distances[i], -1.0);
     }
 
-    // DoubleBuf is a wrapper used by Comm to transfer data between processors.
+    // DoubleBuf is a wrapper used by MPI Comm methods to transfer data between processors.
     buffers = new DoubleBuf[numProc];
     for (int i = 0; i < numProc; i++) {
       buffers[i] = DoubleBuf.buffer(distances[i]);
     }
 
-    // Reference to each processors individual task (for convenience).
-    myDistance = distances[rank];
+    // Convenience reference to the storage for each process.
+    myDistances = distances[rank];
     myBuffer = buffers[rank];
   }
 
@@ -305,76 +321,61 @@ public class ProgressiveAlignmentOfCrystals {
       baseFilter.readNext(false, false);
     }
 
-    // Padding of the target array size (inner loop limit) is for parallelization.
-    // Target conformations are parallelized over available nodes.
-    // For example, if numProc = 8 and targetSize = 12, then paddedTargetSize = 16.
-    int paddedTargetSize = targetSize;
-    int extra = targetSize % numProc;
-    if (extra != 0) {
-      paddedTargetSize = targetSize - extra + numProc;
-      logger.fine(format(" Target size %d vs. Padded size %d", targetSize, paddedTargetSize));
-    }
-
     // Label for logging.
     rmsdLabel = format("RMSD_%d", nAU);
 
     // Loop over conformations in the base assembly.
     for (int row = restartRow; row < baseSize; row++) {
       // Initialize the distance this rank is responsible for to zero.
-      myDistance[0] = -1.0;
+      fill(myDistances, -1.0);
+      int myIndex = 0;
       // Base unit cell for logging.
       baseCrystal = baseFilter.getActiveMolecularSystem().getCrystal().getUnitCell();
-      for (int column = restartColumn; column < paddedTargetSize; column++) {
-        // Make sure this is not a padded value of column.
-        if (column < targetSize) {
-          int targetRank = column % numProc;
-          if (targetRank == rank) {
-            long time = -System.nanoTime();
-            targetCrystal = targetFilter.getActiveMolecularSystem().getCrystal().getUnitCell();
-
-            double rmsd;
-            if (isSymmetric && row == column) {
-              logger.info(format("\n Comparing Model %d (%s) of %s\n with      Model %d (%s) of %s",
-                  row + 1, baseCrystal.toShortString(), baseLabel,
-                  column + 1, targetCrystal.toShortString(), targetLabel));
-              // Fill the diagonal.
-              rmsd = 0.0;
-              // Log the final result.
-              logger.info(format(" PAC %s: %12s %7.4f A", rmsdLabel, "", rmsd));
-            } else if (isSymmetric && row > column) {
-              // Do not compute lower triangle values.
-              rmsd = -1.0;
-            } else {
-              logger.info(format("\n Comparing Model %d (%s) of %s\n with      Model %d (%s) of %s",
-                  row + 1, baseCrystal.toShortString(), baseLabel,
-                  column + 1, targetCrystal.toShortString(), targetLabel));
-              // Compute the PAC RMSD.
-              rmsd = compare(comparisonAtoms, nAU, inflatedAU, numSearch, numSearch2, zPrime,
-                  full, save, ares);
-              time += System.nanoTime();
-              double timeSec = time * 1.0e-9;
-              // Record the fastest comparison.
-              if (timeSec < minTime) {
-                minTime = timeSec;
-              }
-              // Log the final result.
-              logger.info(format(" PAC %s: %12s %7.4f A (%5.3f sec)", rmsdLabel, "", rmsd, timeSec));
+      for (int column = restartColumn; column < targetSize; column++) {
+        int targetRank = column % numProc;
+        if (targetRank == rank) {
+          long time = -System.nanoTime();
+          targetCrystal = targetFilter.getActiveMolecularSystem().getCrystal().getUnitCell();
+          double rmsd;
+          if (isSymmetric && row == column) {
+            logger.info(format("\n Comparing Model %d (%s) of %s\n with      Model %d (%s) of %s",
+                row + 1, baseCrystal.toShortString(), baseLabel,
+                column + 1, targetCrystal.toShortString(), targetLabel));
+            // Fill the diagonal.
+            rmsd = 0.0;
+            // Log the final result.
+            logger.info(format(" PAC %s: %12s %7.4f A", rmsdLabel, "", rmsd));
+          } else if (isSymmetric && row > column) {
+            // Do not compute lower triangle values.
+            rmsd = -1.0;
+          } else {
+            logger.info(format("\n Comparing Model %d (%s) of %s\n with      Model %d (%s) of %s",
+                row + 1, baseCrystal.toShortString(), baseLabel,
+                column + 1, targetCrystal.toShortString(), targetLabel));
+            // Compute the PAC RMSD.
+            rmsd = compare(comparisonAtoms, nAU, inflatedAU, numSearch, numSearch2, zPrime,
+                full, save, ares);
+            time += System.nanoTime();
+            double timeSec = time * 1.0e-9;
+            // Record the fastest comparison.
+            if (timeSec < minTime) {
+              minTime = timeSec;
             }
-            myDistance[0] = rmsd;
-
+            // Log the final result.
+            logger.info(format(" PAC %s: %12s %7.4f A (%5.3f sec)", rmsdLabel, "", rmsd, timeSec));
           }
-          targetFilter.readNext(false, false);
+          myDistances[myIndex] = rmsd;
+          myIndex++;
         }
-
-        // Every numProc iterations, send the results of each rank.
-        if ((column + 1) % numProc == 0) {
-          gatherRMSDs(row, column, runningStatistics);
-        }
+        targetFilter.readNext(false, false);
       }
 
       restartColumn = 0;
       targetFilter.readNext(true, false);
       baseFilter.readNext(false, false);
+
+      // Gather RMSDs for this row.
+      gatherRMSDs(row, runningStatistics);
 
       // Write out this row.
       if (rank == 0 && write) {
@@ -1074,27 +1075,30 @@ public class ProgressiveAlignmentOfCrystals {
    * This method calls <code>world.AllGather</code> to collect numProc PAC RMSD values.
    *
    * @param row Current row of the PAC RMSD matrix.
-   * @param column Current column of the PAC RMSD matrix.
+   * @param runningStatistics Stats for the RMSDs.
    */
-  private void gatherRMSDs(int row, int column, RunningStatistics runningStatistics) {
+  private void gatherRMSDs(int row, RunningStatistics runningStatistics) {
     if (useMPI) {
       try {
         if (logger.isLoggable(Level.FINER)) {
           logger.finer(" Receiving results.");
         }
         world.allGather(myBuffer, buffers);
-        for (int i = 0; i < numProc; i++) {
-          int c = (column + 1) - numProc + i;
-          if (c < targetSize) {
-            distRow[c] = distances[i][0];
-            if (!isSymmetric) {
-              runningStatistics.addValue(distRow[c]);
-            } else if (c >= row) {
-              // Only collect stats for the upper triangle.
-              runningStatistics.addValue(distRow[c]);
-            }
-            if (logger.isLoggable(Level.FINER)) {
-              logger.finer(format(" %d %d %16.8f", row, c, distances[i][0]));
+        for (int workItem = 0; workItem < numWorkItems; workItem++) {
+          for (int proc = 0; proc < numProc; proc++) {
+            int column = numProc * workItem + proc;
+            // Do not include padded results.
+            if (column < targetSize) {
+              distRow[column] = distances[proc][workItem];
+              if (!isSymmetric) {
+                runningStatistics.addValue(distRow[column]);
+              } else if (column >= row) {
+                // Only collect stats for the upper triangle.
+                runningStatistics.addValue(distRow[column]);
+              }
+              if (logger.isLoggable(Level.FINER)) {
+                logger.finer(format(" %d %d %16.8f", row, column, distances[proc][workItem]));
+              }
             }
           }
         }
@@ -1102,12 +1106,14 @@ public class ProgressiveAlignmentOfCrystals {
         logger.severe(" Exception collecting distance values." + e);
       }
     } else {
-      distRow[column] = myDistance[0];
-      if (!isSymmetric) {
-        runningStatistics.addValue(distRow[column]);
-      } else if (column >= row) {
-        // Only collect stats for the upper triangle.
-        runningStatistics.addValue(distRow[column]);
+      for (int i = 0; i < targetSize; i++) {
+        distRow[i] = myDistances[i];
+        if (!isSymmetric) {
+          runningStatistics.addValue(distRow[i]);
+        } else if (i >= row) {
+          // Only collect stats for the upper triangle.
+          runningStatistics.addValue(distRow[i]);
+        }
       }
     }
   }
