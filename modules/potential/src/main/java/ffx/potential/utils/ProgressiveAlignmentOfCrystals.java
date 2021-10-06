@@ -1079,7 +1079,9 @@ public class ProgressiveAlignmentOfCrystals {
   private void gatherRMSDs(int row, int column, RunningStatistics runningStatistics) {
     if (useMPI) {
       try {
-        logger.finer(" Receiving results.");
+        if (logger.isLoggable(Level.FINER)) {
+          logger.finer(" Receiving results.");
+        }
         world.allGather(myBuffer, buffers);
         for (int i = 0; i < numProc; i++) {
           int c = (column + 1) - numProc + i;
@@ -1091,7 +1093,9 @@ public class ProgressiveAlignmentOfCrystals {
               // Only collect stats for the upper triangle.
               runningStatistics.addValue(distRow[c]);
             }
-            logger.finer(format(" %d %d %16.8f", row, c, distances[i][0]));
+            if (logger.isLoggable(Level.FINER)) {
+              logger.finer(format(" %d %d %16.8f", row, c, distances[i][0]));
+            }
           }
         }
       } catch (Exception e) {

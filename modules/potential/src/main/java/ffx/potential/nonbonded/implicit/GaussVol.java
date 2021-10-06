@@ -225,25 +225,7 @@ public class GaussVol {
     useSigma = forceField.getBoolean("GAUSSVOL_USE_SIGMA", false);
 
     for (int i = 0; i < nAtoms; i++) {
-      Atom atom = atoms[i];
-      ishydrogen[i] = atom.isHydrogen();
-      if (includeHydrogen) {
-        ishydrogen[i] = false;
-      }
-      radii[i] = atom.getVDWType().radius / 2.0;
-      if (useSigma) {
-        radii[i] *= RMIN_TO_SIGMA;
-      }
-      radii[i] += vdwRadiiOffset;
-      volumes[i] = fourThirdsPI * pow(radii[i], 3);
-      gammas[i] = 1.0;
-      if (radii[i] != 0.0 && !ishydrogen[i]) {
-        radiiOffset[i] = radii[i] + offset;
-        volumeOffset[i] = fourThirdsPI * pow(radiiOffset[i], 3);
-      } else {
-        radiiOffset[i] = 0.0;
-        volumeOffset[i] = 0.0;
-      }
+      updateAtom(i);
     }
 
     this.parallelTeam = parallelTeam;
@@ -737,6 +719,24 @@ public class GaussVol {
               dv1[2],
               sfp));
     }
+  }
+
+  public void updateAtom(int i) {
+    double fourThirdsPI = 4.0 / 3.0 * PI;
+    Atom atom = atoms[i];
+    ishydrogen[i] = atom.isHydrogen();
+    if (includeHydrogen) {
+      ishydrogen[i] = false;
+    }
+    radii[i] = atom.getVDWType().radius / 2.0;
+    if (useSigma) {
+      radii[i] *= RMIN_TO_SIGMA;
+    }
+    radii[i] += vdwRadiiOffset;
+    volumes[i] = fourThirdsPI * pow(radii[i], 3);
+    gammas[i] = 1.0;
+    radiiOffset[i] = radii[i] + offset;
+    volumeOffset[i] = fourThirdsPI * pow(radiiOffset[i], 3);
   }
 
   /** Gaussian Overlap Tree. */
@@ -1451,22 +1451,8 @@ public class GaussVol {
 
       @Override
       public void run(int first, int last) throws Exception {
-        double fourThirdsPI = 4.0 / 3.0 * PI;
         for (int i = first; i <= last; i++) {
-          Atom atom = atoms[i];
-          ishydrogen[i] = atom.isHydrogen();
-          if (includeHydrogen) {
-            ishydrogen[i] = false;
-          }
-          radii[i] = atom.getVDWType().radius / 2.0;
-          if (useSigma) {
-            radii[i] *= RMIN_TO_SIGMA;
-          }
-          radii[i] += vdwRadiiOffset;
-          volumes[i] = fourThirdsPI * pow(radii[i], 3);
-          gammas[i] = 1.0;
-          radiiOffset[i] = radii[i] + offset;
-          volumeOffset[i] = fourThirdsPI * pow(radiiOffset[i], 3);
+          updateAtom(i);
         }
       }
     }
