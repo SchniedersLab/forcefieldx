@@ -4647,8 +4647,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       // for (int i=0; i<nAtoms; i++) {
       //  gaussVol.updateAtom(i);
       // }
-
       double[] rad = gaussVol.getRadii();
+
       for (Atom atom : atoms) {
         int index = atom.getXyzIndex() - 1;
         double useFactor = 1.0;

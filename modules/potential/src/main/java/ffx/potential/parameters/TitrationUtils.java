@@ -436,7 +436,6 @@ public class TitrationUtils {
           atom.setPolarizeType(aspPolarizeTypes[aspIndex][atomIndex]);
           atom.setVDWType(aspVDWTypes[aspIndex][atomIndex]);
           atom.setSoluteType(aspSoluteTypes[aspIndex][atomIndex]);
-          atom.setUse(!atomName.name().equals("HD2") || aminoAcid3 != ASP);
         }
         break;
       case GLU:
@@ -460,7 +459,6 @@ public class TitrationUtils {
           atom.setPolarizeType(gluPolarizeTypes[gluIndex][atomIndex]);
           atom.setVDWType(gluVDWTypes[gluIndex][atomIndex]);
           atom.setSoluteType(gluSoluteTypes[gluIndex][atomIndex]);
-          atom.setUse(!atomName.name().equals("HE2") || aminoAcid3 != GLU);
         }
         break;
       case LYS:
@@ -480,7 +478,6 @@ public class TitrationUtils {
           atom.setPolarizeType(lysPolarizeTypes[lysIndex][atomIndex]);
           atom.setVDWType(lysVDWTypes[lysIndex][atomIndex]);
           atom.setSoluteType(lysSoluteTypes[lysIndex][atomIndex]);
-          atom.setUse(!atomName.name().equals("HZ3") || aminoAcid3 != LYD);
         }
         break;
       case HIS:
@@ -504,8 +501,6 @@ public class TitrationUtils {
           atom.setPolarizeType(hisPolarizeTypes[hisIndex][atomIndex]);
           atom.setVDWType(hisVDWTypes[hisIndex][atomIndex]);
           atom.setSoluteType(hisSoluteTypes[hisIndex][atomIndex]);
-          atom.setUse((!atomName.name().equals("HD1") || aminoAcid3 != HIE) &&
-              (!atomName.name().equals("HE2") || aminoAcid3 != HID));
         }
         break;
       default:
@@ -998,14 +993,13 @@ public class TitrationUtils {
    */
   public enum Titration {
     //ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
-    ASHtoASP(4.00, -53.188, 0.0, ASH, ASP),
-    GLHtoGLU(4.40, -59.390, 0.0, GLH, GLU),
-    LYStoLYD(10.40, 53.390, 0.0, LYS, LYD),
+    ASHtoASP(4.00, -66.87, 0.0, ASH, ASP),
+    GLHtoGLU(4.40, -81.50, 0.0, GLH, GLU),
+    LYStoLYD(10.40, 41.50, 0.0, LYS, LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
-    HIStoHID(7.00, 34.00, 0.0, HIS, HID),
-    HIStoHIE(6.60, 30.00, 0.0, HIS, HIE),
-    HIDtoHIE(0.00, -4.00, 0.0, HID, HIE);
-
+    HIStoHID(7.00, 36.00, 0.0, HIS, HID),
+    HIStoHIE(6.60, 36.00, 0.0, HIS, HIE),
+    HIDtoHIE(0.00,  0.00, 0.0, HID, HIE);
     // TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     // TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
 
