@@ -135,9 +135,15 @@ public class NewExtendedSystem {
      * Only elements that match a tautomerizing atom will have their lambda updated.
      */
     public final double[] tautomerLambdas;
-
-    public final SharedDouble[] totalEsvDerivs;
-
+    /**
+     * Shared double that is initialized to match the number of ESVs in the system.
+     * Once reduced, will equal either dU_Titr/dLambda or dU_Taut/dLambda for specific ESV
+     */
+    public final SharedDouble[] totalVdwDerivs;
+    /**
+     * Array of AminoAcid3 initialized  to match the number of atoms in the system.
+     * Used to know how to apply vdW or electrostatic ESV terms for the atom.
+     */
     public final AminoAcid3[] residueNames;
     /**
      * List of titrating residues.
@@ -304,7 +310,7 @@ public class NewExtendedSystem {
         thetaVelocity = new double[size];
         thetaAccel = new double[size];
         thetaMassArray = new double[size];
-        totalEsvDerivs = new SharedDouble[size];
+        totalVdwDerivs = new SharedDouble[size];
 
         //Theta masses should always be the same for each ESV
         Arrays.fill(thetaMassArray, thetaMass);
@@ -323,7 +329,7 @@ public class NewExtendedSystem {
         thetaPosition[index] = Math.asin(Math.sqrt(lambda));
         Random random = new Random();
         thetaVelocity[index] = random.nextGaussian() * sqrt(kB * 298.15 / thetaMass);
-        double dUdL = getBiasDerivs()[index];
+        double dUdL = getDerivatives()[index];
         double dUdTheta = dUdL * sin(2 * thetaPosition[index]);
         thetaAccel[index] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
     }
@@ -414,6 +420,42 @@ public class NewExtendedSystem {
 
     public double[] getExtendedLambdas(){return extendedLambdas;}
 
+    public double[] getDerivatives(){
+        int numESVs = extendedResidueList.size();
+        double[] esvDeriv = new double[numESVs];
+
+        //Bias Terms
+        double[] biasDerivComponents =  new double[9];
+        for (Residue residue : titratingResidueList) {
+            int resTitrIndex = titratingResidueList.indexOf(residue);
+            getBiasTerms(residue, biasDerivComponents);
+            //Sum up titration derivs
+            esvDeriv[resTitrIndex] += biasDerivComponents[dDiscr_dTitrIndex] + biasDerivComponents[dPh_dTitrIndex] - biasDerivComponents[dModel_dTitrIndex];
+            //Sum up tautomer derivs
+            if (isTautomer(residue)) {
+                int resTautIndex = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
+                esvDeriv[resTautIndex] += biasDerivComponents[dDiscr_dTautIndex] + biasDerivComponents[dPh_dTautIndex] - biasDerivComponents[dModel_dTautIndex];
+            }
+
+            if(doVDW){
+                //TODO: Add vdW
+                esvDeriv[resTitrIndex] += getVdwDeriv(resTitrIndex);
+
+                if(isTautomer(residue)){
+
+                }
+            }
+
+            if (doElectrostatics) {
+                //TODO: Add electrostatics
+            }
+        }
+
+
+
+        return esvDeriv;
+    }
+
     public void getVdwPrefactor(int atomIndex, double[] vdwPrefactorAndDerivs) {
         double prefactor = 1.0;
         double titrationDeriv = 0.0;
@@ -460,11 +502,34 @@ public class NewExtendedSystem {
         vdwPrefactorAndDerivs[2] = tautomerDeriv;
     }
 
+    //TODO: Figure out how to prevent double counting!
     //vdwEnergy without any proton scaling
     public void addVdwDeriv(int atomI, int atomJ, double vdwEnergy, double[] vdwPrefactorAndDerivI, double[] vdwPrefactorAndDerivJ){
+        if(!isTitratingHydrogen(atomI)){
+            return;
+        }
+
+        //Sum up dU/dL for titration ESV if atom i is titrating hydrogen
+        //Sum up dU/dL for tautomer ESV if atom i is titrating hydrogen
         int titrationEsvIndex = titrationIndexMap[atomI];
-        //totalEsvDerivs[]
+        int tautomerEsvIndex =  tautomerIndexMap[atomI];
+        double dTitr_dLambda;
+        double dTaut_dLambda;
+
+        if(isTitratingHydrogen(atomJ) && tautomerIndexMap[atomJ] == tautomerEsvIndex){
+            dTitr_dLambda = 0.5 * vdwPrefactorAndDerivI[1] * vdwPrefactorAndDerivJ[0];
+            dTaut_dLambda = 0.5 * vdwPrefactorAndDerivI[2] * vdwPrefactorAndDerivJ[0];
+        }
+        else{
+            dTitr_dLambda = vdwPrefactorAndDerivI[1] * vdwPrefactorAndDerivJ[0];
+            dTaut_dLambda = vdwPrefactorAndDerivI[2] * vdwPrefactorAndDerivJ[0];
+        }
+
+        totalVdwDerivs[titrationEsvIndex].addAndGet(dTitr_dLambda);
+        totalVdwDerivs[tautomerEsvIndex].addAndGet(dTaut_dLambda);
     }
+
+    public double getVdwDeriv(int esvID){ return totalVdwDerivs[esvID].get(); }
 
     public void setTitrationLambda(Residue residue, double lambda) {
         if (titratingResidueList.contains(residue)) {
@@ -525,35 +590,19 @@ public class NewExtendedSystem {
 
     public double getBiasEnergy() {
         double totalBiasEnergy = 0.0;
+        double[] biasEnergyComponents =  new double[9];
         //Do not double count residues in tautomer list.
         for (Residue residue : titratingResidueList) {
-            double[] biasTerms = getBiasTerms(residue);
-            double biasEnergy = biasTerms[discrBiasIndex] + biasTerms[pHBiasIndex] - biasTerms[modelBiasIndex];
+            getBiasTerms(residue, biasEnergyComponents);
+            double biasEnergy = biasEnergyComponents[discrBiasIndex] + biasEnergyComponents[pHBiasIndex] - biasEnergyComponents[modelBiasIndex];
             totalBiasEnergy += biasEnergy;
         }
         return totalBiasEnergy;
     }
 
-    public double[] getBiasDerivs() {
-        double[] totalBiasDerivs = new double[extendedResidueList.size()];
-        for (Residue residue : titratingResidueList) {
-            int resTitrIndex = titratingResidueList.indexOf(residue);
-            double[] biasTerms = getBiasTerms(residue);
-            //Sum up titration derivs
-            totalBiasDerivs[resTitrIndex] = biasTerms[dDiscr_dTitrIndex] + biasTerms[dPh_dTitrIndex] - biasTerms[dModel_dTitrIndex];
-            //Sum up tautomer derivs
-            if (isTautomer(residue)) {
-                int resTautIndex = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
-                totalBiasDerivs[resTautIndex] = biasTerms[dDiscr_dTautIndex] + biasTerms[dPh_dTautIndex] - biasTerms[dModel_dTautIndex];
-            }
-        }
-        return totalBiasDerivs;
-    }
-
     //TODO: wrap all biasing terms into one switch statement a return an array of all the biasing energies and derivs.
     //TODO: Fill out model bias with appropriate bivariate polynomial for each tautomer
-    public double[] getBiasTerms(Residue residue) {
-        double[] biasEnergyAndDerivs = new double[9];
+    public void getBiasTerms(Residue residue, double[] biasEnergyAndDerivs) {
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
         double titrationLambda = getTitrationLambda(residue);
         double discrBias;
@@ -705,7 +754,6 @@ public class NewExtendedSystem {
         biasEnergyAndDerivs[6] = dDiscr_dTaut;
         biasEnergyAndDerivs[7] = dPh_dTaut;
         biasEnergyAndDerivs[8] = dMod_dTaut;
-        return biasEnergyAndDerivs;
     }
 
     /**
@@ -717,10 +765,12 @@ public class NewExtendedSystem {
         double discrBias = 0.0;
         double phBias = 0.0;
         double modelBias = 0.0;
+        double[] biasEnergyAndDerivs = new double[9];
         for (Residue residue : extendedResidueList) {
-            discrBias += getBiasTerms(residue)[discrBiasIndex];
-            phBias += getBiasTerms(residue)[pHBiasIndex];
-            modelBias -= getBiasTerms(residue)[modelBiasIndex];
+            getBiasTerms(residue, biasEnergyAndDerivs);
+            discrBias += biasEnergyAndDerivs[discrBiasIndex];
+            phBias += biasEnergyAndDerivs[pHBiasIndex];
+            modelBias -= biasEnergyAndDerivs[modelBiasIndex];
         }
         return format("    %-16s %16.8f\n", "Discretizer", discrBias)
                 + format("    %-16s %16.8f\n", "Acidostat", phBias)
@@ -821,7 +871,7 @@ public class NewExtendedSystem {
      * @return dE/dL a double[]
      */
     public double[] postForce() {
-        double[] dEdL = NewExtendedSystem.this.getBiasDerivs();
+        double[] dEdL = NewExtendedSystem.this.getDerivatives();
         double[] dEdTheta = new double[dEdL.length];
         for (int i = 0; i < extendedResidueList.size(); i++) {
             dEdTheta[i] = dEdL[i] * sin(2 * thetaPosition[i]);
