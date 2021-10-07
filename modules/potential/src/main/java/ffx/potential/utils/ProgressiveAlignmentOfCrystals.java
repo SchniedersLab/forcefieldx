@@ -50,6 +50,7 @@ import static ffx.potential.utils.Superpose.translate;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
+import static java.util.Arrays.sort;
 import static org.apache.commons.io.FilenameUtils.getName;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.cbrt;
@@ -72,7 +73,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -239,7 +239,7 @@ public class ProgressiveAlignmentOfCrystals {
     if (numProc > 1) {
       logger.info(format(" Number of MPI Processes:  %d", numProc));
       logger.info(format(" Rank of this MPI Process: %d", rank));
-      logger.fine(format(" Work per process per row: %d", numWorkItems));
+      logger.info(format(" Work per process per row: %d", numWorkItems));
     }
 
     // Initialize array as -1.0 as -1.0 is not a viable RMSD.
@@ -1006,7 +1006,7 @@ public class ProgressiveAlignmentOfCrystals {
     StringBuilder dblOut = new StringBuilder();
     Double[] uniqueRMSDs = new Double[crystalCheckRMSDs.size()];
     crystalCheckRMSDs.toArray(uniqueRMSDs);
-    Arrays.sort(uniqueRMSDs);
+    sort(uniqueRMSDs);
     for (double dbl : uniqueRMSDs) {
       dblOut.append(" ").append(format("%4.4f", dbl));
     }
@@ -1416,12 +1416,7 @@ public class ProgressiveAlignmentOfCrystals {
 
     // Sort the molecules by their distance from the center.
     // Note that the smallest distances are first in the array after the sort.
-
-    // The problem with parallelSort is that we don't have control over how many threads it
-    // will use. If we MPI parallelize PAC over many processes on one node,
-    // the parallelSort of each process cannot try to use all threads of the node.
-    // Arrays.parallelSort(molsDists);
-    Arrays.sort(molsDists);
+    sort(molsDists);
 
     if (logger.isLoggable(Level.FINEST)) {
       logger.finest("\n Copy  SymOp        Distance");
@@ -1529,7 +1524,7 @@ public class ProgressiveAlignmentOfCrystals {
       molDists[i] = new DoubleIndexPair(i, dist(coordCenter, moleculeCenter));
     }
     // Reorder based on distance to AU closest to Index.
-    Arrays.sort(molDists);
+    sort(molDists);
 
     if (logger.isLoggable(Level.FINER)) {
       int numCheck = Math.min(7, molDists.length);
@@ -1586,7 +1581,7 @@ public class ProgressiveAlignmentOfCrystals {
       molDists2[i] = new DoubleIndexPair(molDists[i].getIndex(), dist(avgCenter, moleculeCenter));
     }
     //Reorder based on center point between center-most AU to all atom center and closest AU to center-most AU.
-    Arrays.sort(molDists2);
+    sort(molDists2);
     arraycopy(molDists2, 0, molDists, 0, nMols);
 //        }
   }
@@ -1628,7 +1623,7 @@ public class ProgressiveAlignmentOfCrystals {
       molDists2[i] = new DoubleIndexPair(molDists[i].getIndex(), dist(avgCenter, moleculeCenter));
     }
     //Reorder based on center point between center-most AU to all atom center and closest AU to center-most AU.
-    Arrays.sort(molDists2);
+    sort(molDists2);
     arraycopy(molDists2, 0, molDists, 0, nMols);
 
     if (logger.isLoggable(Level.FINER)) {

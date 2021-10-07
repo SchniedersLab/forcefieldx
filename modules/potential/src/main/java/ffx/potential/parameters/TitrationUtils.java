@@ -413,6 +413,10 @@ public class TitrationUtils {
    * @param rotamer Rotamer that contains the amino acid residue identity.
    */
   public void updateResidueParameters(Residue residue, Rotamer rotamer) {
+    if (!rotamer.isTitrating) {
+      return;
+    }
+
     AminoAcid3 aminoAcid3 = residue.getAminoAcid3();
     switch (aminoAcid3) {
       case ASH:
@@ -504,8 +508,7 @@ public class TitrationUtils {
         }
         break;
       default:
-        logger.severe(
-            format(" Non-titrating residue encountered %s with rotamer %s.", residue, rotamer));
+        logger.severe(format(" No support for titrating residue %s with rotamer %s.", residue, rotamer));
     }
   }
 
