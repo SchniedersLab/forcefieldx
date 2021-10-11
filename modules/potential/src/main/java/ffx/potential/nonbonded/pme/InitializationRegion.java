@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -123,14 +123,14 @@ public class InitializationRegion extends ParallelRegion {
   private MultipoleFrameDefinition[] frame;
   /** Multipole frame defining atoms. */
   private int[][] axisAtom;
-  /** Permanent multipoles in their local frame. */
-  private double[][] localMultipole;
   /** Dimensions of [nsymm][nAtoms][10] */
   private double[][][] globalMultipole;
   /** Dimensions of [nsymm][nAtoms][10] */
   private double[][][] titrationMultipole;
   /** Polarizability of each atom */
   private double[] polarizability;
+  private double[] thole;
+  private double[] ipdamp;
   /**
    * The "use" array can be employed to turn off atoms for computing the electrostatic
    * energy of sub-structures.
@@ -192,10 +192,11 @@ public class InitializationRegion extends ParallelRegion {
       Crystal crystal,
       MultipoleFrameDefinition[] frame,
       int[][] axisAtom,
-      double[][] localMultipole,
       double[][][] globalMultipole,
       double[][][] titrationMultipole,
       double[] polarizability,
+      double[] thole,
+      double[] ipdamp,
       boolean[] use,
       int[][][] neighborLists,
       int[][][] realSpaceLists,
@@ -213,10 +214,11 @@ public class InitializationRegion extends ParallelRegion {
     this.crystal = crystal;
     this.frame = frame;
     this.axisAtom = axisAtom;
-    this.localMultipole = localMultipole;
     this.globalMultipole = globalMultipole;
     this.titrationMultipole = titrationMultipole;
     this.polarizability = polarizability;
+    this.thole = thole;
+    this.ipdamp = ipdamp;
     this.use = use;
     this.neighborLists = neighborLists;
     this.realSpaceLists = realSpaceLists;
@@ -512,8 +514,17 @@ public class InitializationRegion extends ParallelRegion {
           PolarizeType polarizeType = atoms[ii].getPolarizeType();
           if (polarizeType != null) {
             polarizability[ii] = polarizeType.polarizability * polarizabilityScale * elecScale;
+            thole[ii] = polarizeType.thole;
+            ipdamp[ii] = polarizeType.pdamp;
+            if (!(ipdamp[ii] > 0.0)) {
+              ipdamp[ii] = Double.POSITIVE_INFINITY;
+            } else {
+              ipdamp[ii] = 1.0 / ipdamp[ii];
+            }
           } else {
             polarizability[ii] = 0.0;
+            thole[ii] = 0.0;
+            ipdamp[ii] = Double.POSITIVE_INFINITY;
           }
         }
       }

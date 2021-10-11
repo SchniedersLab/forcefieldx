@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -46,6 +46,7 @@ import edu.rit.pj.ParallelTeam;
 import ffx.numerics.atomic.AtomicDoubleArray;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
+import ffx.potential.nonbonded.GeneralizedKirkwood;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,6 +59,14 @@ import java.util.logging.Logger;
 public class InitializationRegion extends ParallelRegion {
 
   private static final Logger logger = Logger.getLogger(InitializationRegion.class.getName());
+
+  /**
+   * Reference to the GK instance so that parameters can be updated.
+   */
+  private GeneralizedKirkwood generalizedKirkwood;
+  /**
+   * Initialization loops.
+   */
   private final InitializationLoop[] initializationLoop;
   /** Array of atoms. */
   private Atom[] atoms;
@@ -89,11 +98,13 @@ public class InitializationRegion extends ParallelRegion {
   }
 
   public void init(
+      GeneralizedKirkwood generalizedKirkwood,
       Atom[] atoms,
       boolean lambdaTerm,
       AtomicDoubleArray3D grad,
       AtomicDoubleArray3D torque,
       AtomicDoubleArray sharedBornGrad) {
+    this.generalizedKirkwood = generalizedKirkwood;
     this.atoms = atoms;
     this.lambdaTerm = lambdaTerm;
     this.grad = grad;
@@ -117,6 +128,7 @@ public class InitializationRegion extends ParallelRegion {
   }
 
   private class InitializationLoop extends IntegerForLoop {
+
     private int threadID;
 
     @Override
@@ -126,6 +138,9 @@ public class InitializationRegion extends ParallelRegion {
       sharedBornGrad.reset(threadID, lb, ub);
       if (lambdaTerm) {
         for (int i = lb; i <= ub; i++) {
+          // Update GK parameters.
+          generalizedKirkwood.udpateSoluteParameters(i);
+
           if (!atoms[i].applyLambda()) {
             logger.warning(format(" Atom %s is not alchemical.", atoms[i].toString()));
             logger.warning(" Alchemical GK calculations require all atoms to be alchemical.");

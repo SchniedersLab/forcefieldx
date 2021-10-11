@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -51,7 +51,6 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.reduction.DoubleOp;
-import edu.rit.pj.reduction.SharedDouble;
 import edu.rit.pj.reduction.SharedDoubleArray;
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
@@ -110,9 +109,10 @@ public class BornRadiiRegion extends ParallelRegion {
   /** If true, the descreening integral includes overlaps with the volume of the descreened atom */
   private final boolean perfectHCTScale;
   private double descreenOffset = 0.0;
-
+  /**
+   * The Born radius for each atom.
+   */
   private SharedDoubleArray sharedBorn;
-  private SharedDouble ecavTot;
   /**
    * Boolean indicating whether or not to print all Born radii for an input molecular system. This is
    * turned off after the first round of printing.
@@ -147,7 +147,6 @@ public class BornRadiiRegion extends ParallelRegion {
     for (int i = 0; i < nt; i++) {
       bornRadiiLoop[i] = new BornRadiiLoop();
     }
-    ecavTot = new SharedDouble(0.0);
     verboseRadii = forceField.getBoolean("VERBOSE_BORN_RADII", false);
     this.perfectHCTScale = perfectHCTScale;
     this.neckCorrection = neckCorrection;
@@ -180,35 +179,45 @@ public class BornRadiiRegion extends ParallelRegion {
         if (sum <= 0.0) {
           born[i] = bigRadius;
           if (verboseRadii) {
-            logger.info(format(" Born Integral < 0 for atom %d; set Born radius to %12.6f (Base Radius: %12.6f)", i + 1, born[i], baseRadius[i]));
+            logger.info(format(
+                " Born Integral < 0 for atom %d; set Born radius to %12.6f (Base Radius: %12.6f)",
+                i + 1, born[i], baseRadius[i]));
           }
         } else {
           born[i] = pow(INVERSE_PI4_3 * sum, -oneThird);
           if (born[i] < baseRi) {
             born[i] = baseRi;
             if (verboseRadii) {
-              logger.info(format(" Born radius < Base Radius for atom %d: set Born radius to %12.6f", i + 1, baseRi));
+              logger.info(
+                  format(" Born radius < Base Radius for atom %d: set Born radius to %12.6f", i + 1,
+                      baseRi));
             }
           } else if (born[i] > bigRadius) {
             born[i] = bigRadius;
             if (verboseRadii) {
-              logger.info(format(" Born radius > 50.0 Angstroms for atom %d: set Born radius to %12.6f", i + 1, baseRi));
+              logger.info(
+                  format(" Born radius > 50.0 Angstroms for atom %d: set Born radius to %12.6f",
+                      i + 1, baseRi));
             }
           } else if (isInfinite(born[i]) || isNaN(born[i])) {
             born[i] = baseRi;
             if (verboseRadii) {
-              logger.info(format(" Born radius NaN / Infinite for atom %d; set Born radius to %12.6f", i + 1, baseRi));
+              logger.info(
+                  format(" Born radius NaN / Infinite for atom %d; set Born radius to %12.6f", i + 1,
+                      baseRi));
             }
           } else {
             if (verboseRadii) {
-              logger.info(format(" Set Born radius for atom %d to %12.6f (Base Radius: %2.6f)", i + 1, born[i], baseRi));
+              logger.info(
+                  format(" Set Born radius for atom %d to %12.6f (Base Radius: %2.6f)", i + 1,
+                      born[i], baseRi));
             }
           }
         }
       }
     }
     if (verboseRadii) {
-      // This could get very verbose if printed at each step.
+      // Only log the Born radii once.
       logger.info(" Disabling verbose radii printing.");
       verboseRadii = false;
     }
@@ -281,19 +290,13 @@ public class BornRadiiRegion extends ParallelRegion {
   private class BornRadiiLoop extends IntegerForLoop {
 
     private double[] localBorn;
-    private double ecav;
     // Extra padding to avert cache interference.
     private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
     private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
-    BornRadiiLoop() {
-      ecav = 0.0;
-    }
-
     @Override
     public void finish() {
       sharedBorn.reduce(localBorn, DoubleOp.SUM);
-      ecavTot.addAndGet(ecav);
     }
 
     @Override

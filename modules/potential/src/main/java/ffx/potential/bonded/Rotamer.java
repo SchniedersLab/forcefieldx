@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -321,18 +321,21 @@ public class Rotamer {
             rotamers[1] = new Rotamer(AminoAcid3.LYD, resState, titrationUtils, vals);
             return rotamers;
           default:
+            // Null TitrationUtils reference to indicates this residue does not support titration.
             rotamers = new Rotamer[1];
-            rotamers[0] = new Rotamer(residue.getAminoAcid3(), resState, titrationUtils, vals);
+            rotamers[0] = new Rotamer(residue.getAminoAcid3(), resState, null, vals);
             return rotamers;
         }
       case NA:
+        // Null TitrationUtils reference to indicates this residue does not support titration.
         Rotamer[] rotamers = new Rotamer[1];
-        rotamers[0] = new Rotamer(residue.getNucleicAcid3(), resState, titrationUtils, vals);
+        rotamers[0] = new Rotamer(residue.getNucleicAcid3(), resState, null, vals);
         return rotamers;
       case UNK:
       default:
+        // Null TitrationUtils reference to indicates this residue does not support titration.
         rotamers = new Rotamer[1];
-        rotamers[0] = new Rotamer(resState, titrationUtils, vals);
+        rotamers[0] = new Rotamer(resState, null, vals);
         return rotamers;
     }
   }

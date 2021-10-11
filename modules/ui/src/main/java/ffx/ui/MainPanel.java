@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -148,7 +148,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
       " ______________________________________________________________________________\n";
   /** Constant */
   public static final String title = "        FORCE FIELD X - Software for Molecular Biophysics \n";
-  /** Attempts to initialize version, date, and SCM versioning from target/ffx-mvn.properties. */
+  /** Attempts to initialize version, date, and SCM versioning from bin/build.properties. */
   public static final String aboutString;
   /** Constant <code>KEYWORDS=1</code> */
   static final int KEYWORDS = 1;
@@ -187,7 +187,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
 
   static {
     var basedir = System.getProperty("basedir");
-    var mvnProps = new File(basedir + "/target/ffx-mvn.properties");
+    var mvnProps = new File(basedir + "/bin/build.properties");
     var commitVersion = version + "-unknown";
     var commitDate = date;
     var commitSCM = "";
@@ -243,9 +243,13 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
             + commitDate
             + " \n"
             + commitSCM // Will contain its own spacing/newline, or be empty.
-            + "\n        Copyright (c)  Michael J. Schnieders    2001-2020 \n"
-            + "        Portions Copyright (c)  Timothy D. Fenn 2009-2020 \n"
-            + "        Portions Copyright (c)  Jacob M. Litman 2015-2020 \n"
+            + "\n        Copyright (c)  Michael J. Schnieders  2001-2021 \n"
+            + "        Portions Copyright (c):\n"
+            + "          Timothy D. Fenn      2009-2021 \n"
+            + "          Jacob M. Litman      2015-2021 \n"
+            + "          Rae A. Corrigan      2019-2021 \n"
+            + "          Guowei Qi            2019-2021 \n"
+            + "          Mallory R. Tollefson 2019-2021 \n"
             + "\n"
             + "        All Rights Reserved \n"
             + "\n"

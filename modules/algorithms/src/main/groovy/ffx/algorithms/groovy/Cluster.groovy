@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -40,6 +40,7 @@ package ffx.algorithms.groovy
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.crystal.Crystal
+import ffx.numerics.math.RunningStatistics
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.parsers.PDBFilter
@@ -51,7 +52,8 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import static ffx.potential.parsers.DistanceMatrixFilter.readDistanceMatrix
+import ffx.potential.parsers.DistanceMatrixFilter
+
 import static ffx.potential.utils.Clustering.*
 import static java.lang.String.format
 import static org.apache.commons.math3.util.FastMath.floorDiv
@@ -168,7 +170,22 @@ class Cluster extends AlgorithmsScript {
     List<double[]> distMatrix = new ArrayList<double[]>()
 
     String filename = filenames.get(0)
-    if (!readDistanceMatrix(filename, distMatrix)) {
+
+    DistanceMatrixFilter distanceMatrixFilter = new DistanceMatrixFilter()
+    RunningStatistics runningStatistics = distanceMatrixFilter.readDistanceMatrix(filename, distMatrix)
+
+    logger.info(" RMSD Distance Matrix Statistics")
+    logger.info(format(" RMSD Minimum:  %8.6f", runningStatistics.getMin()))
+    logger.info(format(" RMSD Maximum:  %8.6f", runningStatistics.getMax()))
+    logger.info(format(" RMSD Mean:     %8.6f", runningStatistics.getMean()))
+    double variance = runningStatistics.getVariance()
+    if (!Double.isNaN(variance)) {
+      logger.info(format(" RMSD Variance: %8.6f\n", variance))
+    } else {
+      logger.info("")
+    }
+
+    if (runningStatistics == null) {
       logger.info(format(" The distance matrix %s could not be read in.", filename))
       return this
     }

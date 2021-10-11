@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -724,10 +724,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         crystal,
         frame,
         axisAtom,
-        localMultipole,
         globalMultipole,
         dMultipoledTirationESV,
         polarizability,
+        thole,
+        ipdamp,
         use,
         neighborLists,
         realSpaceNeighborParameters.realSpaceLists,

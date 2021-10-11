@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2019.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -38,6 +38,7 @@
 package ffx.algorithms.groovy
 
 import ffx.algorithms.cli.AlgorithmsScript
+import ffx.numerics.math.RunningStatistics
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.AtomSelectionOptions
@@ -89,24 +90,24 @@ class SuperposeCrystals extends AlgorithmsScript {
   int numInflatedAU
 
   /**
-   * --ns or --numSearch The number of molecules to loop through in first system.
+   * --ns or --numSearch Number of molecules for each handedness in the first crystal.
    */
-  @Option(names = ['--ns', '--numSearch'], paramLabel = '5', defaultValue = '5',
-      description = 'Set the number of asymmetric units to search in the 1st system to check for mirrored conformations.')
+  @Option(names = ['--ns', '--numSearch'], paramLabel = '3', defaultValue = '3',
+      description = 'Set the number of asymmetric units to search in the 1st crystal to check for mirrored conformations.')
   int numSearch
 
   /**
-   * --ns2 or --numSearch2 Number of molecules to loop through in second system.
+   * --ns2 or --numSearch2 Number of molecules for each handedness in the second crystal.
    */
-  @Option(names = ['--ns2', '--numSearch2'], paramLabel = '5', defaultValue = '5',
-      description = 'Set the number of asymmetric units to search in the 2nd system to check for mirrored conformations.')
+  @Option(names = ['--ns2', '--numSearch2'], paramLabel = '3', defaultValue = '3',
+      description = 'Set the number of asymmetric units to search in the 2nd crystal to check for mirrored conformations.')
   int numSearch2
 
   /**
-   * -- or -- Number of molecules in the asymmetric unit.
+   * --zp or --zPrime Overrides number of molecules in the asymmetric unit.
    */
-  @Option(names = ['--zp', '--zPrime'], paramLabel = '1', defaultValue = '1',
-          description = 'Set the number of species within the asymmetric unit (Z\').')
+  @Option(names = ['--zp', '--zPrime'], paramLabel = '-1', defaultValue = '-1',
+          description = 'Number of species in asymmetric unit should be detected by default (Z\'). This flag should only be used if the default detection fails.')
   int zPrime
 
   /**
@@ -167,11 +168,11 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean symmetric
 
   /**
-   * --lc or --lineCheck Prioritize molecules w/o averaging center of masses.
+   * --sa or --saveAres Save out PDB in ARES input format.
    */
-  @Option(names = ['--lc', '--lineCheck'], paramLabel = "false", defaultValue = "false",
-          description = 'Simply check if prioritized molecules are in a line.')
-  private static boolean lineCheck
+  @Option(names = ['--sa', '--saveAres'], paramLabel = "false", defaultValue = "false",
+          description = 'Final structures for each comparison will be written out in ARES input format.')
+  private static boolean ares
 
   /**
    * The final argument(s) should be two or more filenames (same file twice if comparing same structures).
@@ -183,7 +184,7 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * CrystalSuperpose Test requires a public variable containing observables to test.
    */
-  public double[][] distMatrix
+  public RunningStatistics runningStatistics
 
   /**
    * CrystalSuperpose Constructor.
@@ -298,8 +299,13 @@ class SuperposeCrystals extends AlgorithmsScript {
     String filename = filenames.get(0)
     String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt")
 
-    distMatrix = pac.comparisons(nAtoms, atomList, numAU, numInflatedAU,
-        numSearch, numSearch2, full, savePDB, restart, write, lineCheck, pacFilename)
+    // To save in ARES format a PDB must be written out.
+    if(ares){
+      savePDB = true
+    }
+
+    runningStatistics = pac.comparisons(atomList, numAU, numInflatedAU,
+        numSearch, numSearch2, zPrime, full, savePDB, restart, write, ares, pacFilename)
 
     return this
   }
