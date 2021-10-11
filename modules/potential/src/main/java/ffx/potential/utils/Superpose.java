@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -50,6 +50,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
 import ffx.numerics.math.Double3;
+import ffx.numerics.math.RunningStatistics;
 import ffx.potential.AssemblyState;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -78,7 +79,7 @@ public class Superpose {
 
   private int restartRow;
   private int restartColumn;
-  private double[][] distMatrix;
+  private double[] distRow;
 
   /**
    * Parallel Java world communicator.
@@ -120,8 +121,9 @@ public class Superpose {
     baseSize = baseFilter.countNumModels();
     targetSize = targetFilter.countNumModels();
 
-    // Initialize the distance matrix.
-    distMatrix = new double[baseSize][targetSize];
+    // Initialize the distance matrix row.
+    distRow = new double[targetSize];
+    fill(distRow, -1.0);
 
     world = Comm.world();
     // Number of processes is equal to world size (often called size).
@@ -131,13 +133,6 @@ public class Superpose {
     if (numProc > 1) {
       logger.info(format(" Number of MPI Processes:  %d", numProc));
       logger.info(format(" Rank of this MPI Process: %d", rank));
-    }
-
-    // Distance matrix to store compared values (dimensions are "human readable" [m x n]).
-    distMatrix = new double[baseSize][targetSize];
-    // Initialize array as -1.0 as -1.0 is not a viable RMSD.
-    for (int i = 0; i < baseSize; i++) {
-      fill(distMatrix[i], -1.0);
     }
 
     distances = new double[numProc][1];
@@ -185,11 +180,17 @@ public class Superpose {
           targetAssembly.getProperties());
     }
 
+
     String matrixFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt");
+    RunningStatistics runningStatistics;
     if (restart) {
       // Define the filename to use for the RMSD values.
-      readMatrix(matrixFilename);
+      runningStatistics = readMatrix(matrixFilename, isSymmetric, baseSize, targetSize);
+      if (runningStatistics == null) {
+        runningStatistics = new RunningStatistics();
+      }
     } else {
+      runningStatistics = new RunningStatistics();
       File file = new File(matrixFilename);
       if (file.exists() && file.delete()) {
         logger.info(format(" RMSD file (%s) was deleted.", matrixFilename));
@@ -267,13 +268,9 @@ public class Superpose {
                 logger.info(format(" %6d  %6d  %s                             %8.5f",
                     row + 1, column + 1, "Diagonal", myDistance[0]));
               }
-            } else if (isSymmetric && row >= column) {
-              // Fill the lower triangle from the upper triangle.
-              myDistance[0] = distMatrix[column][row];
-              if (verbose) {
-                logger.info(format(" %6d  %6d  %s                  %8.5f",
-                    row + 1, column + 1, "From Upper Triangle", myDistance[0]));
-              }
+            } else if (isSymmetric && row > column) {
+              // Skip the calculation of the lower triangle.
+              myDistance[0] = -1.0;
             } else {
               // Calculate an upper triangle entry.
 
@@ -333,7 +330,7 @@ public class Superpose {
 
         // Every numProc iterations, send the results of each rank.
         if ((column + 1) % numProc == 0) {
-          gatherRMSDs(row, column);
+          gatherRMSDs(row, column, runningStatistics);
         }
       }
 
@@ -348,12 +345,24 @@ public class Superpose {
 
       // Only Rank 0 writes the distance matrix.
       if (rank == 0 && write) {
-        writeDistanceMatrixRow(matrixFilename, distMatrix[row]);
+        int firstColumn = 0;
+        if (isSymmetric) {
+          firstColumn = row;
+        }
+        writeDistanceMatrixRow(matrixFilename, distRow, firstColumn);
       }
     }
 
     baseFilter.closeReader();
     targetFilter.closeReader();
+
+    logger.info(format(" RMSD Minimum:  %8.6f", runningStatistics.getMin()));
+    logger.info(format(" RMSD Maximum:  %8.6f", runningStatistics.getMax()));
+    logger.info(format(" RMSD Mean:     %8.6f", runningStatistics.getMean()));
+    double variance = runningStatistics.getVariance();
+    if (!Double.isNaN(variance)) {
+      logger.info(format(" RMSD Variance: %8.6f", variance));
+    }
   }
 
   /**
@@ -361,16 +370,23 @@ public class Superpose {
    *
    * @param row Current row of the PAC RMSD matrix.
    * @param column Current column of the PAC RMSD matrix.
+   * @param runningStatistics Stats.
    */
-  private void gatherRMSDs(int row, int column) {
+  private void gatherRMSDs(int row, int column, RunningStatistics runningStatistics) {
     try {
       logger.finer(" Receiving results.");
       world.allGather(myBuffer, buffers);
       for (int i = 0; i < numProc; i++) {
         int c = (column + 1) - numProc + i;
         if (c < targetSize) {
-          distMatrix[row][c] = distances[i][0];
-          logger.finer(format(" %d %d %16.8f", row, c, distances[i][0]));
+            distRow[c] = distances[i][0];
+            if (!isSymmetric) {
+              runningStatistics.addValue(distRow[c]);
+            } else if (c > row) {
+              // Only collect stats for the upper triangle.
+              runningStatistics.addValue(distRow[c]);
+            }
+            logger.finer(format(" %d %d %16.8f", row, c, distances[i][0]));
         }
       }
     } catch (Exception e) {
@@ -382,26 +398,43 @@ public class Superpose {
    * Read in the distance matrix.
    *
    * @param filename The PAC RMSD matrix file to read from.
+   * @param isSymmetric Is the distance matrix symmetric.
+   * @param expectedRows The expected number of rows.
+   * @param expectedColumns The expected number of columns.
+   * @return Stats for all read in distance matrix values.
    */
-  private void readMatrix(String filename) {
+  private RunningStatistics readMatrix(String filename, boolean isSymmetric, int expectedRows, int expectedColumns) {
     restartRow = 0;
     restartColumn = 0;
 
     DistanceMatrixFilter distanceMatrixFilter = new DistanceMatrixFilter();
-    if (distanceMatrixFilter.readDistanceMatrix(filename, distMatrix)) {
+    RunningStatistics runningStatistics = distanceMatrixFilter.readDistanceMatrix(
+        filename, expectedRows, expectedColumns);
+
+    if (runningStatistics != null && runningStatistics.getCount() > 0) {
       restartRow = distanceMatrixFilter.getRestartRow();
       restartColumn = distanceMatrixFilter.getRestartColumn();
+
+      if (isSymmetric) {
+        // Only the diagonal entry (0.0) is on the last row for a symmetric matrix.
+        if (restartRow == expectedRows && restartColumn == 1) {
+          logger.info(format(" Complete symmetric distance matrix found (%d x %d).", restartRow,
+              restartRow));
+        } else {
+          restartColumn = 0;
+          logger.info(format(" Incomplete symmetric distance matrix found.\n Restarting at row %d, column %d.",
+              restartRow + 1, restartColumn + 1));
+        }
+      } else if (restartRow == expectedRows && restartColumn == expectedColumns) {
+        logger.info(format(" Complete distance matrix found (%d x %d).", restartRow, restartColumn));
+      } else {
+        restartColumn = 0;
+        logger.info(format(" Incomplete distance matrix found.\n Restarting at row %d, column %d.",
+            restartRow + 1, restartColumn + 1));
+      }
     }
 
-    int nRow = distMatrix.length;
-    int nColumn = distMatrix[0].length;
-    if (restartRow == nRow && restartColumn == nColumn) {
-      logger.info(format(" Complete distance matrix found (%d x %d).", restartRow, restartColumn));
-    } else {
-      restartColumn = 0;
-      logger.info(format(" Incomplete distance matrix found.\n Restarting at row %d, column %d.",
-          restartRow + 1, restartColumn + 1));
-    }
+    return runningStatistics;
   }
 
   /**

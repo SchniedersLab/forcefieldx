@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -122,14 +122,13 @@ public final class AtomType extends BaseType implements Comparator<String> {
         int type = parseInt(tokens[index++]);
         // Atom Class
         int atomClass;
-        // The following try/catch is a nasty hack to check for one of the
-        // the following two cases:
+        // The following try/catch checks for one of the following two cases:
         //
         // NUMBER TYPE CLASS IDENTIFIER ... (example is OPLSAA)
         // vs.
         // NUMBER TYPE IDENTIFIER ... (example is OPLSUA)
         //
-        // If there is no atom class, a harmless exception will be caught
+        // If there is no atom class, the exception will be caught
         // and the atomClass field will remain equal to null.
         try {
           atomClass = parseInt(tokens[index]);

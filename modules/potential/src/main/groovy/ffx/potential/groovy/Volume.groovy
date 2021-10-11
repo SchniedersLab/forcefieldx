@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -42,6 +42,7 @@ import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import ffx.potential.nonbonded.implicit.ConnollyRegion
 import ffx.potential.nonbonded.implicit.GaussVol
+import ffx.potential.parameters.ForceField
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -176,35 +177,29 @@ class Volume extends PotentialScript {
 
     if (!connolly) {
       // Input
-      double[] radii = new double[nAtoms]
-      boolean[] isHydrogen = new boolean[nAtoms]
-      double[] volume = new double[nAtoms]
-      double[] gamma = new double[nAtoms]
       double[][] positions = new double[nAtoms][3]
-
-      Arrays.fill(gamma, 1.0)
-      double fourThirdsPI = 4.0 / 3.0 * Math.PI
       int index = 0
       for (Atom atom : atoms) {
-        isHydrogen[index] = atom.isHydrogen()
-        if (includeHydrogen) {
-          isHydrogen[index] = false
-        }
-        radii[index] = atom.getVDWType().radius / 2.0
-        if (sigma) {
-          radii[index] *= rminToSigma
-        }
-        radii[index] += offset
-        volume[index] = fourThirdsPI * pow(radii[index], 3)
         positions[index][0] = atom.getX()
         positions[index][1] = atom.getY()
         positions[index][2] = atom.getZ()
         index++
       }
 
+      ForceField forceField = activeAssembly.getForceField();
+      if (includeHydrogen) {
+        forceField.addProperty("GAUSSVOL_HYDROGEN", "true")
+      }
+      if (sigma) {
+        forceField.addProperty("GAUSSVOL_USE_SIGMA", "true")
+      }
+      if (offset > 0.0) {
+        forceField.addProperty("GAUSSVOL_RADII_OFFSET", Double.toString(offset))
+      }
+
       // Run Volume calculation to get vdw volume of molecule
       ParallelTeam parallelTeam = new ParallelTeam()
-      GaussVol gaussVol = new GaussVol(nAtoms, radii, volume, gamma, isHydrogen, parallelTeam)
+      GaussVol gaussVol = new GaussVol(atoms, activeAssembly.getForceField(), parallelTeam)
       gaussVol.computeVolumeAndSA(positions)
 
       if (verbose) {
@@ -212,8 +207,7 @@ class Volume extends PotentialScript {
         logger.info(
             format(" Total number of overlaps in tree: %d", gaussVol.getTotalNumberOfOverlaps()))
 
-        //gaussVol.printTree()
-
+        double[] radii = gaussVol.getRadii();
         index = 0
         for (Atom atom : atoms) {
           logger.info(" Radius for atom " + atom.name + ": " + radii[index] + "\n")

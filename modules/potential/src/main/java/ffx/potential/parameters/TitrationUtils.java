@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -38,6 +38,15 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.bonded.AminoAcidUtils.AA_CB;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.ASH;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.ASP;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.GLH;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.GLU;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.HID;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.HIE;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.HIS;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.LYD;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.LYS;
 import static ffx.potential.bonded.BondedUtils.findAtomType;
 import static ffx.potential.parameters.MultipoleType.assignAxisAtoms;
 import static java.lang.String.format;
@@ -69,12 +78,12 @@ public class TitrationUtils {
 
   private static final MultipoleType zeroMultipoleType =
       new MultipoleType(MultipoleType.zeroM, new int[] {0, 0, 0},
-          MultipoleFrameDefinition.ZTHENX, false);
+          MultipoleFrameDefinition.NONE, false);
 
   private static final PolarizeType zeroPolarizeType =
       new PolarizeType(0, 0.0, 0.39, new int[] {0});
 
-  private static final SoluteType zeroSoluteType = new SoluteType(0, 2.0);
+  private static final SoluteType zeroSoluteType = new SoluteType(0, 1.0);
 
   private static final AtomType deprotonatedAtomType = new AtomType(0, 0,
       "H", "\"Deprotonated Hydrogen\"", 1, 1.0080, 1);
@@ -381,26 +390,26 @@ public class TitrationUtils {
     soluteRadiiType = tempType;
 
     // Populate the Lysine types.
-    constructLYSState(AA_CB[AminoAcid3.LYS.ordinal()], LysStates.LYS);
-    constructLYSState(AA_CB[AminoAcid3.LYD.ordinal()], LysStates.LYD);
+    constructLYSState(AA_CB[LYS.ordinal()], LysStates.LYS);
+    constructLYSState(AA_CB[LYD.ordinal()], LysStates.LYD);
     checkMultipoleFrames("LYS", lysAtomTypes, lysPolarizeTypes, lysMultipoleTypes, lysVDWTypes);
 
     // Populate the Histidine types.
-    constructHISState(AA_CB[AminoAcid3.HIS.ordinal()], HisStates.HIS);
-    constructHISState(AA_CB[AminoAcid3.HID.ordinal()], HisStates.HID);
-    constructHISState(AA_CB[AminoAcid3.HIE.ordinal()], HisStates.HIE);
+    constructHISState(AA_CB[HIS.ordinal()], HisStates.HIS);
+    constructHISState(AA_CB[HID.ordinal()], HisStates.HID);
+    constructHISState(AA_CB[HIE.ordinal()], HisStates.HIE);
     checkMultipoleFrames("HIS", hisAtomTypes, hisPolarizeTypes, hisMultipoleTypes, hisVDWTypes);
 
     // Populate the Aspartic acid types.
-    constructASPState(AA_CB[AminoAcid3.ASP.ordinal()], AspStates.ASP);
-    constructASPState(AA_CB[AminoAcid3.ASH.ordinal()], AspStates.ASH1); // First ASH Tautomer
-    constructASPState(AA_CB[AminoAcid3.ASH.ordinal()], AspStates.ASH2); // Second ASH Tautomer
+    constructASPState(AA_CB[ASP.ordinal()], AspStates.ASP);
+    constructASPState(AA_CB[ASH.ordinal()], AspStates.ASH1); // First ASH Tautomer
+    constructASPState(AA_CB[ASH.ordinal()], AspStates.ASH2); // Second ASH Tautomer
     checkMultipoleFrames("ASP", aspAtomTypes, aspPolarizeTypes, aspMultipoleTypes, aspVDWTypes);
 
     // Populate the Glutamic acid types.
-    constructGLUState(AA_CB[AminoAcid3.GLU.ordinal()], GluStates.GLU);
-    constructGLUState(AA_CB[AminoAcid3.GLH.ordinal()], GluStates.GLH1); // First GLH Tautomer
-    constructGLUState(AA_CB[AminoAcid3.GLH.ordinal()], GluStates.GLH2); // Second GLH Tautomer
+    constructGLUState(AA_CB[GLU.ordinal()], GluStates.GLU);
+    constructGLUState(AA_CB[GLH.ordinal()], GluStates.GLH1); // First GLH Tautomer
+    constructGLUState(AA_CB[GLH.ordinal()], GluStates.GLH2); // Second GLH Tautomer
     checkMultipoleFrames("GLU", gluAtomTypes, gluPolarizeTypes, gluMultipoleTypes, gluVDWTypes);
   }
 
@@ -412,12 +421,17 @@ public class TitrationUtils {
    * @param rotamer Rotamer that contains the amino acid residue identity.
    */
   public void updateResidueParameters(Residue residue, Rotamer rotamer) {
-    switch (residue.getAminoAcid3()) {
+    if (!rotamer.isTitrating) {
+      return;
+    }
+
+    AminoAcid3 aminoAcid3 = residue.getAminoAcid3();
+    switch (aminoAcid3) {
       case ASH:
       case ASP:
         // Assume ASP types
         int aspIndex = AspStates.ASP.ordinal();
-        if (rotamer.aminoAcid3 == AminoAcid3.ASH) {
+        if (rotamer.aminoAcid3 == ASH) {
           // Use ASH2 types
           aspIndex = AspStates.ASH2.ordinal();
         }
@@ -434,14 +448,13 @@ public class TitrationUtils {
           atom.setPolarizeType(aspPolarizeTypes[aspIndex][atomIndex]);
           atom.setVDWType(aspVDWTypes[aspIndex][atomIndex]);
           atom.setSoluteType(aspSoluteTypes[aspIndex][atomIndex]);
-          // logger.info(format(" %s %s", atomName, atom.getVDWType()));
         }
         break;
       case GLU:
       case GLH:
         // Assume GLU types
         int gluIndex = GluStates.GLU.ordinal();
-        if (rotamer.aminoAcid3 == AminoAcid3.GLH) {
+        if (rotamer.aminoAcid3 == GLH) {
           // Use GLH2 types
           gluIndex = GluStates.GLH2.ordinal();
         }
@@ -464,7 +477,7 @@ public class TitrationUtils {
       case LYD:
         // Assume LYS types
         int lysIndex = LysStates.LYS.ordinal();
-        if (rotamer.aminoAcid3 == AminoAcid3.LYD) {
+        if (rotamer.aminoAcid3 == LYD) {
           // Use LYD types
           lysIndex = LysStates.LYD.ordinal();
         }
@@ -503,8 +516,7 @@ public class TitrationUtils {
         }
         break;
       default:
-        logger.severe(
-            format(" Non-titrating residue encountered %s with rotamer %s.", residue, rotamer));
+        logger.severe(format(" No support for titrating residue %s with rotamer %s.", residue, rotamer));
     }
   }
 
@@ -972,57 +984,57 @@ public class TitrationUtils {
     /*
      * Set ASH pH bias as sum of Fmod and acidostat energy
      */
-    rotamerPhBiasMap.put(AminoAcid3.ASH, 0.0);
+    rotamerPhBiasMap.put(ASH, 0.0);
 
     /*
      * Set ASP pH bias as sum of Fmod and acidostat energy
      */
     double acidostat = LOG10 * Constants.R * temperature * (Titration.ASHtoASP.pKa - pH);
-    double fMod = Titration.ASHtoASP.refEnergy;
-    rotamerPhBiasMap.put(AminoAcid3.ASP, acidostat - fMod);
+    double fMod = Titration.ASHtoASP.freeEnergyDiff;
+    rotamerPhBiasMap.put(ASP, acidostat - fMod);
 
     /*
      * Set ASH pH bias as sum of Fmod and acidostat energy
      */
-    rotamerPhBiasMap.put(AminoAcid3.GLH, 0.0);
+    rotamerPhBiasMap.put(GLH, 0.0);
 
     /*
      * Set GLU pH bias as sum of Fmod and acidostat energy
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.GLHtoGLU.pKa - pH);
-    fMod = Titration.GLHtoGLU.refEnergy;
-    rotamerPhBiasMap.put(AminoAcid3.GLU, acidostat - fMod);
+    fMod = Titration.GLHtoGLU.freeEnergyDiff;
+    rotamerPhBiasMap.put(GLU, acidostat - fMod);
 
     /*
      * Set LYS pH bias as sum of Fmod and acidostat energy
      */
-    rotamerPhBiasMap.put(AminoAcid3.LYS, 0.0);
+    rotamerPhBiasMap.put(LYS, 0.0);
 
     /*
      * Set LYD pH bias as sum of Fmod and acidostat energy
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.LYStoLYD.pKa - pH);
-    fMod = Titration.LYStoLYD.refEnergy;
-    rotamerPhBiasMap.put(AminoAcid3.LYD, acidostat - fMod);
+    fMod = Titration.LYStoLYD.freeEnergyDiff;
+    rotamerPhBiasMap.put(LYD, acidostat - fMod);
 
     /*
      * Set HIS pH bias as sum of Fmod and acidostat energy
      */
-    rotamerPhBiasMap.put(AminoAcid3.HIS, 0.0);
+    rotamerPhBiasMap.put(HIS, 0.0);
 
     /*
      * Set HID pH bias as sum of Fmod and acidostat energy
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.HIStoHID.pKa - pH);
-    fMod = Titration.HIStoHID.refEnergy;
-    rotamerPhBiasMap.put(AminoAcid3.HID, acidostat - fMod);
+    fMod = Titration.HIStoHID.freeEnergyDiff;
+    rotamerPhBiasMap.put(HID, acidostat - fMod);
 
     /*
      * Set HIE pH bias as sum of Fmod and acidostat energy
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.HIStoHIE.pKa - pH);
-    fMod = Titration.HIStoHIE.refEnergy;
-    rotamerPhBiasMap.put(AminoAcid3.HIE, acidostat - fMod);
+    fMod = Titration.HIStoHIE.freeEnergyDiff;
+    rotamerPhBiasMap.put(HIE, acidostat - fMod);
   }
 
   public double getRotamerPhBias(AminoAcid3 AA3) {
@@ -1051,30 +1063,32 @@ public class TitrationUtils {
    */
   public enum Titration {
     //ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
-    ASHtoASP(4.00, -65.870, 0.0, AminoAcid3.ASH, AminoAcid3.ASP),
-    GLHtoGLU(4.40, -70.390, 0.0, AminoAcid3.GLH, AminoAcid3.GLU),
+
+    ASHtoASP(4.00, -66.87, 43.9250, 1.23836, AminoAcid3.ASH, AminoAcid3.ASP),
+    GLHtoGLU(4.40, -81.50, -70.3900, 0.0, AminoAcid3.GLH, AminoAcid3.GLU),
     //LYStoLYD(10.40, 45.270, 0.0, AminoAcid3.LYS, AminoAcid3.LYD),
-    LYStoLYD(10.40, 57.71, 0.10746, AminoAcid3.LYS, AminoAcid3.LYD),
+    LYStoLYD(10.40, 41.50, 57.7100, 0.10746, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
     //HE1 is the proton that is lost
-    HIStoHID(7.00, 34.00, 0.0, AminoAcid3.HIS, AminoAcid3.HID),
+    HIStoHID(7.00, 36.00, 42.4030, 0.10048, AminoAcid3.HIS, AminoAcid3.HID),
     //HD1 is the proton that is lost
-    HIStoHIE(6.60, 30.60, 0.0, AminoAcid3.HIS, AminoAcid3.HIE),
-    HIDtoHIE(0.00, -3.40, 0.0, AminoAcid3.HID, AminoAcid3.HIE);
+    HIStoHIE(6.60, 36.00, 40.2215, 0.11638, AminoAcid3.HIS, AminoAcid3.HIE),
+    HIDtoHIE(0.00, 0.00, -3.40, 0.0, AminoAcid3.HID, AminoAcid3.HIE);
     //TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     //TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
 
-
     public final double pKa;
+    public final double freeEnergyDiff;
     public final double refEnergy;
     public final double lambdaIntercept;
     public final AminoAcid3 protForm;
     public final AminoAcid3 deprotForm;
 
     /** Invoked by Enum; use the factory method to obtain instances. */
-    Titration(double pKa, double refEnergy, double lambdaIntercept, AminoAcid3 protForm, AminoAcid3 deprotForm)
+    Titration(double pKa, double freeEnergyDiff, double refEnergy, double lambdaIntercept, AminoAcid3 protForm, AminoAcid3 deprotForm)
     {
       this.pKa = pKa;
+      this.freeEnergyDiff = freeEnergyDiff;
       this.refEnergy = refEnergy;
       this.lambdaIntercept = lambdaIntercept;
       this.protForm = protForm;

@@ -438,7 +438,7 @@
         <executions>
           <execution>
             <configuration>
-              <outputFile>${basedir}/target/ffx-mvn.properties</outputFile>
+              <outputFile>${basedir}/bin/build.properties</outputFile>
             </configuration>
             <goals>
               <goal>write-project-properties</goal>

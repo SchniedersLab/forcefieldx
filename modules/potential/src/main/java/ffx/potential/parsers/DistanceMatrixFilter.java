@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -40,16 +40,16 @@ package ffx.potential.parsers;
 import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
-import static org.apache.commons.math3.util.FastMath.min;
 
+import ffx.numerics.math.RunningStatistics;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -71,6 +71,8 @@ public class DistanceMatrixFilter {
 
   private int nRows = 0;
   private int nColumns = 0;
+  private boolean fillDistanceMatrix = false;
+  private double[][] distanceMatrix = null;
 
   /**
    * Get the number of rows read in.
@@ -83,6 +85,7 @@ public class DistanceMatrixFilter {
 
   /**
    * Get the number of columns in the last row that was read in.
+   *
    * @return The number of columns in the last row that was read in.
    */
   public int getRestartColumn() {
@@ -90,66 +93,69 @@ public class DistanceMatrixFilter {
   }
 
   /**
-   * Read in the distance matrix from a file.
+   * Read in the distance matrix from a file. This method is used from the Clustering code, where the
+   * size of the distance matrix is unknown, and the full N^2 matrix is needed.
    *
    * @param filename The filename to read from.
-   * @param distanceMatrix An allocated distance matrix.
-   * @return True if reading in the matrix is successful.
+   * @param distanceList The distance matrix (if null, only the last row is returned).
+   * @return Statistics for the parsed values.
    */
-  public boolean readDistanceMatrix(String filename, double[][] distanceMatrix) {
-    if (distanceMatrix == null) {
-      logger.info(" The first dimension of the distance matrix was not allocated.");
-      return false;
-    }
-
-    // The maximum number of rows we can read in.
-    int maxRows = distanceMatrix.length;
-
-    List<double[]> list = new ArrayList<>();
-    boolean success = readDistanceMatrix(filename, list);
-
-    if (success) {
-      nRows = list.size();
-      if (nRows > maxRows) {
-        logger.info(format(" Ignoring some rows of the distance matrix (%d > %d).", nRows, maxRows));
-        nRows = maxRows;
-      }
-      for (int r = 0; r < nRows; r++) {
-        double[] src = list.get(r);
-        double[] dest = distanceMatrix[r];
-        int n = src.length;
-        if (src.length != dest.length) {
-          logger.info(format(
-              " Unexpected length for row %d: (file row length %d vs. distanceMatrix row length %d).",
-              r, src.length, dest.length));
-          n = min(src.length, dest.length);
-          logger.info(format(" Reading %d entries for row %d.", n, r));
+  public RunningStatistics readDistanceMatrix(String filename, List<double[]> distanceList) {
+    fillDistanceMatrix = true;
+    RunningStatistics runningStatistics = readDistanceMatrix(filename, -1, -1);
+    if (distanceMatrix != null) {
+      int size = distanceMatrix[0].length;
+      boolean square = true;
+      for (int i = 0; i < size; i++) {
+        if (distanceMatrix[i] == null || distanceMatrix[i].length != size) {
+          square = false;
+          break;
         }
-        nColumns = n;
-        arraycopy(src, 0, dest, 0, n);
       }
-      return true;
+      // The full NxN matrix has been read in.
+      if (square) {
+        // Add all rows of the distanceMatrix into the list
+        Collections.addAll(distanceList, distanceMatrix);
+      } else {
+        // Assume only the upper triangle has been read in.
+        for (int i = 0; i < size; i++) {
+          double[] row = new double[size];
+          // Fill the lower triangle from previous rows.
+          for (int j = 0; j < i; j++) {
+            double[] previousRow = distanceList.get(j);
+            row[j] = previousRow[i];
+          }
+          // Fill the upper triangle using the current row of the distanceMatrix.
+          arraycopy(distanceMatrix[i], 0, row, i, size - i);
+          distanceList.add(row);
+        }
+      }
     }
 
-    return false;
+    // Reset the DistanceMatrixFilter for reuse.
+    distanceMatrix = null;
+    fillDistanceMatrix = false;
+    return runningStatistics;
   }
 
   /**
    * Read in the distance matrix from a file.
    *
    * @param filename The filename to read from.
-   * @param distanceMatrix a list containing rows of the distance matrix.
-   * @return True if reading in the matrix is successful.
+   * @param expectedRows The number of rows to expect.
+   * @param expectedColumns The number of columns to expect.
+   * @return Statistics for the parsed values.
    */
-  public static boolean readDistanceMatrix(String filename, List<double[]> distanceMatrix) {
+  public RunningStatistics readDistanceMatrix(
+      String filename, int expectedRows, int expectedColumns) {
 
     if (filename == null) {
-      return false;
+      return null;
     }
 
     File distanceMatrixFile = new File(filename);
     if (!distanceMatrixFile.exists() || !distanceMatrixFile.canRead()) {
-      return false;
+      return null;
     }
 
     // Read in the RMSD matrix.
@@ -165,18 +171,48 @@ public class DistanceMatrixFilter {
 
       if (data == null) {
         logger.info(format("\n No data in RMSD file %s.", distanceMatrixFile));
-        return false;
+        return null;
       }
 
       String[] tokens = data.trim().split(" +");
-      // Expect a n x n matrix of distance values.
-      int nColumns = tokens.length;
-      for (int i = 0; i < nColumns; i++) {
+      nColumns = tokens.length;
+
+      // If the expectedRows is unknown (i.e. this is called from the Cluster script), set
+      // the number of rows to the initial number of parsed tokens.
+      if (expectedRows == -1) {
+        expectedRows = nColumns;
+      }
+      if (expectedColumns == -1) {
+        expectedColumns = nColumns;
+      }
+
+      if (nColumns != expectedColumns) {
+        logger.info(
+            format("\n Unexpected number of entries (%d) in the first row of the RMSD file %s.",
+                nColumns, distanceMatrixFile));
+        return null;
+      }
+
+      if (fillDistanceMatrix) {
+        distanceMatrix = new double[expectedRows][];
+      }
+
+      RunningStatistics runningStatistics = new RunningStatistics();
+
+      // Loop over the number of expected rows.
+      for (int i = 0; i < expectedRows; i++) {
         double[] row = new double[nColumns];
         for (int j = 0; j < nColumns; j++) {
           row[j] = parseDouble(tokens[j]);
+          runningStatistics.addValue(row[j]);
         }
-        distanceMatrix.add(row);
+
+        // Are we storing all rows?
+        if (distanceMatrix != null && distanceMatrix.length > i) {
+          distanceMatrix[i] = row;
+        }
+
+        nRows = i + 1;
 
         // Read the next line.
         data = br.readLine();
@@ -188,12 +224,12 @@ public class DistanceMatrixFilter {
 
         nColumns = tokens.length;
       }
+      return runningStatistics;
+
     } catch (IOException e) {
       logger.info(format(" Exception reading %s:\n %s", distanceMatrixFile, e));
-      return false;
+      return null;
     }
-
-    return true;
   }
 
   /**
@@ -212,9 +248,9 @@ public class DistanceMatrixFilter {
     for (double[] row : distanceMatrix) {
       sb.append("  ");
       for (int j = 0; j < row.length; j++) {
-        if(row[j]==Double.MAX_VALUE){
+        if (row[j] == -2.0) {
           sb.append(format("%6.4f", Double.NaN));
-        }else {
+        } else {
           sb.append(format("%6.4f", row[j]));
         }
         if (j == row.length - 1) {
@@ -252,7 +288,7 @@ public class DistanceMatrixFilter {
     }
 
     for (double[] row : distanceMatrix) {
-      boolean success = writeDistanceMatrixRow(filename, row);
+      boolean success = writeDistanceMatrixRow(filename, row, 0);
       if (!success) {
         return false;
       }
@@ -266,9 +302,11 @@ public class DistanceMatrixFilter {
    *
    * @param filename The filename to write to.
    * @param distanceMatrixRow A row of the distance matrix.
+   * @param firstColumn The first column of the distance matrix row to write.
    * @return a boolean.
    */
-  public static boolean writeDistanceMatrixRow(String filename, double[] distanceMatrixRow) {
+  public static boolean writeDistanceMatrixRow(String filename, double[] distanceMatrixRow,
+      int firstColumn) {
 
     if (filename == null) {
       return false;
@@ -285,7 +323,7 @@ public class DistanceMatrixFilter {
     try (FileWriter fw = new FileWriter(distanceMatrixFile, true);
         BufferedWriter bw = new BufferedWriter(fw)) {
       int nColumn = distanceMatrixRow.length;
-      for (int column = 0; column < nColumn; column++) {
+      for (int column = firstColumn; column < nColumn; column++) {
         bw.write(format("%16.14f", distanceMatrixRow[column]));
         if (column < nColumn - 1) {
           bw.write(" ");

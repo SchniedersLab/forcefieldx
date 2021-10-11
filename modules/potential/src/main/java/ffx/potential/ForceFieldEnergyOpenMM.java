@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -4398,7 +4398,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private void updateAmoebaMultipoleForce(Atom[] atoms) {
       ParticleMeshEwald pme = getPmeNode();
-      int[][] axisAtom = pme.getAxisAtoms();
       double quadrupoleConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
       double polarityConversion =
           OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
@@ -4416,6 +4415,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int index = atom.getXyzIndex() - 1;
         MultipoleType multipoleType = atom.getMultipoleType();
         PolarizeType polarType = atom.getPolarizeType();
+        int[] axisAtoms = atom.getAxisAtomIndices();
 
         double useFactor = 1.0;
         if (!atom.getUse() || !atom.getElectrostatics()) {
@@ -4470,13 +4470,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int zaxis = 1;
         int xaxis = 1;
         int yaxis = 1;
-        int[] refAtoms = axisAtom[index];
-        if (refAtoms != null) {
-          zaxis = refAtoms[0];
-          if (refAtoms.length > 1) {
-            xaxis = refAtoms[1];
-            if (refAtoms.length > 2) {
-              yaxis = refAtoms[2];
+
+        if (axisAtoms != null) {
+          zaxis = axisAtoms[0];
+          if (axisAtoms.length > 1) {
+            xaxis = axisAtoms[1];
+            if (axisAtoms.length > 2) {
+              yaxis = axisAtoms[2];
             }
           }
         } else {
@@ -4515,6 +4515,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     private void updateAmoebaGeneralizedKirkwoodForce(Atom[] atoms) {
       GeneralizedKirkwood gk = getGK();
+
+      for (int i=0; i<nAtoms; i++) {
+        gk.udpateSoluteParameters(i);
+      }
+
       double[] overlapScale = gk.getOverlapScale();
       double[] baseRadii = gk.getBaseRadii();
       double[] descreenRadius = gk.getDescreenRadii();
@@ -4639,7 +4644,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
               / OpenMM_NmPerAngstrom
               / OpenMM_NmPerAngstrom;
 
+      // for (int i=0; i<nAtoms; i++) {
+      //  gaussVol.updateAtom(i);
+      // }
       double[] rad = gaussVol.getRadii();
+
       for (Atom atom : atoms) {
         int index = atom.getXyzIndex() - 1;
         double useFactor = 1.0;
