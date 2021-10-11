@@ -1060,7 +1060,7 @@ public class TitrationUtils {
     HIStoHID(7.00, 34.00, 0.0, AminoAcid3.HIS, AminoAcid3.HID),
     //HD1 is the proton that is lost
     HIStoHIE(6.60, 30.60, 0.0, AminoAcid3.HIS, AminoAcid3.HIE),
-    HIDtoHIE(0.00, -4.00, 0.0, AminoAcid3.HID, AminoAcid3.HIE);
+    HIDtoHIE(0.00, -3.40, 0.0, AminoAcid3.HID, AminoAcid3.HIE);
     //TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     //TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
 
