@@ -429,9 +429,9 @@ public class NewExtendedSystem {
         for (Residue residue : titratingResidueList) {
             int resTitrIndex = titratingResidueList.indexOf(residue);
             getBiasTerms(residue, biasDerivComponents);
-            //Sum up titration derivs
+            //Sum up titration bias derivs
             esvDeriv[resTitrIndex] += biasDerivComponents[dDiscr_dTitrIndex] + biasDerivComponents[dPh_dTitrIndex] - biasDerivComponents[dModel_dTitrIndex];
-            //Sum up tautomer derivs
+            //Sum up tautomer bias derivs
             if (isTautomer(residue)) {
                 int resTautIndex = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
                 esvDeriv[resTautIndex] += biasDerivComponents[dDiscr_dTautIndex] + biasDerivComponents[dPh_dTautIndex] - biasDerivComponents[dModel_dTautIndex];
@@ -440,9 +440,10 @@ public class NewExtendedSystem {
             if(doVDW){
                 //TODO: Add vdW
                 esvDeriv[resTitrIndex] += getVdwDeriv(resTitrIndex);
-
+                //Sum up tautomer bias derivs
                 if(isTautomer(residue)){
-
+                    int resTautIndex = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
+                    esvDeriv[resTautIndex] += getVdwDeriv(resTautIndex);
                 }
             }
 
@@ -484,11 +485,11 @@ public class NewExtendedSystem {
                 if (tautomerDirections[atomIndex] == 1) {
                     prefactor = (1.0 - titrationLambdas[atomIndex]) * tautomerLambdas[atomIndex] + titrationLambdas[atomIndex];
                     titrationDeriv = -tautomerLambdas[atomIndex] + 1.0;
-                    tautomerDeriv = (1 - titrationLambdas[atomIndex]) + titrationLambdas[atomIndex];
+                    tautomerDeriv = (1 - titrationLambdas[atomIndex]);
                 } else if (tautomerDirections[atomIndex] == -1) {
                     prefactor = (1.0 - titrationLambdas[atomIndex]) * (1.0 - tautomerLambdas[atomIndex]) + titrationLambdas[atomIndex];
-                    titrationDeriv = -(1.0 - tautomerLambdas[atomIndex]) + 1.0;
-                    tautomerDeriv = -(1.0 - titrationLambdas[atomIndex]) + titrationLambdas[atomIndex];
+                    titrationDeriv = tautomerLambdas[atomIndex];
+                    tautomerDeriv = -(1.0 - titrationLambdas[atomIndex]);
                 }
                 break;
             case LYS:
@@ -516,14 +517,8 @@ public class NewExtendedSystem {
         double dTitr_dLambda;
         double dTaut_dLambda;
 
-        if(isTitratingHydrogen(atomJ) && tautomerIndexMap[atomJ] == tautomerEsvIndex){
-            dTitr_dLambda = 0.5 * vdwPrefactorAndDerivI[1] * vdwPrefactorAndDerivJ[0];
-            dTaut_dLambda = 0.5 * vdwPrefactorAndDerivI[2] * vdwPrefactorAndDerivJ[0];
-        }
-        else{
-            dTitr_dLambda = vdwPrefactorAndDerivI[1] * vdwPrefactorAndDerivJ[0];
-            dTaut_dLambda = vdwPrefactorAndDerivI[2] * vdwPrefactorAndDerivJ[0];
-        }
+        dTitr_dLambda = vdwPrefactorAndDerivI[1] * vdwPrefactorAndDerivJ[0] * vdwEnergy;
+        dTaut_dLambda = vdwPrefactorAndDerivI[2] * vdwPrefactorAndDerivJ[0] * vdwEnergy;
 
         totalVdwDerivs[titrationEsvIndex].addAndGet(dTitr_dLambda);
         totalVdwDerivs[tautomerEsvIndex].addAndGet(dTaut_dLambda);
