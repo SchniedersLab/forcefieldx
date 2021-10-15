@@ -46,6 +46,8 @@ import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.cli.PotentialScript;
+import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TitrationUtils;
 import java.io.File;
 import java.io.IOException;
@@ -53,6 +55,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
+
+import ffx.potential.parsers.ForceFieldFilter;
+import ffx.potential.parsers.PDBFilter;
+import ffx.potential.utils.PotentialsFunctions;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.ArgGroup;
@@ -66,7 +72,7 @@ import picocli.CommandLine.Option;
  * @author Mallory R. Tollefson
  * @since 1.0
  */
-public class ManyBodyOptions {
+public class ManyBodyOptions extends PotentialScript{
 
   private static final Logger logger = Logger.getLogger(ManyBodyOptions.class.getName());
 
@@ -130,7 +136,7 @@ public class ManyBodyOptions {
    * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
    */
   public void initRotamerOptimization(
-      RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly) {
+          RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly, String fileName) {
     this.rotamerOptimization = rotamerOptimization;
 
     boolean useOrigCoordsRotamer = !group.noOriginal;
@@ -171,7 +177,7 @@ public class ManyBodyOptions {
     }
     setSelection();
     setForcedResidue();
-    setResidues(activeAssembly);
+    setResidues(activeAssembly, fileName);
     setRotOptProperties();
   }
 
@@ -184,18 +190,46 @@ public class ManyBodyOptions {
    *
    * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
    */
-  public void setResidues(MolecularAssembly activeAssembly) {
+  public void setResidues(MolecularAssembly activeAssembly, String fileName) {
     List<String> resList = new ArrayList<>();
     addListResidues(resList);
+    List<String> resNumberList = new ArrayList<>();
 
     TitrationUtils titrationUtils;
     if (group.titrationPH > 0.0 && group.titrationPH <= 14.0) {
+      CompositeConfiguration properties = activeAssembly.getProperties();
+      ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
+      ForceField forceField = forceFieldFilter.parse();
       logger.info(format(" Turning on ASP, GLU, LYS and HIS titration rotamers at pH %5.2f", group.titrationPH));
       titrationUtils = new TitrationUtils(activeAssembly.getForceField());
       titrationUtils.setRotamerPhBias(298.15, group.titrationPH);
       List<Residue> residues = activeAssembly.getResidueList();
+
+
       for (Residue residue : residues) {
         residue.setTitrationUtils(titrationUtils);
+        resNumberList.add(String.valueOf(residue.getResidueNumber()));
+      }
+      /*
+      Protonate titratable residues in the residue list and save as a new pdb. Then, read in the new
+      pdb for optimization on those residues.
+       */
+      File structureFile = new File(fileName);
+      int index = fileName.lastIndexOf(".");
+      String name = fileName.substring(0, index);
+      PDBFilter pdbFilter = new PDBFilter(structureFile, activeAssembly, forceField, properties, resNumberList);
+      pdbFilter.setRotamerTitration(true);
+      pdbFilter.readFile();
+      pdbFilter.applyAtomProperties();
+      activeAssembly.finalize(true, forceField);
+      String saveDir = FilenameUtils.getFullPath(fileName);
+      String dirName = saveDir + File.separator;
+      String protFileName = FilenameUtils.getBaseName(fileName);
+      File modelFile = new File(dirName + protFileName + ".pdb");
+      modelFile = potentialFunctions.versionFile(modelFile);
+
+      if (!pdbFilter.writeFile(modelFile, false, false, true)) {
+        logger.info(format(" Save failed for %s", activeAssembly));
       }
     }
 

@@ -155,6 +155,7 @@ public final class PDBFilter extends SystemFilter {
   private boolean mutate = false;
 
   private List<Mutation> mutations = null;
+  private List<String> resNumberList = null;
   /** Flag to indicate if missing fields should be printed (i.e. missing B-factors). */
   private boolean printMissingFields = true;
   /** Number of symmetry operators in the current crystal. */
@@ -271,6 +272,28 @@ public final class PDBFilter extends SystemFilter {
     bondList = new ArrayList<>();
     this.fileType = FileType.PDB;
     readFile = file;
+  }
+
+  /**
+   * Constructor for PDBFilter with list of residues.
+   *
+   * @param file a {@link java.io.File} object.
+   * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
+   */
+  public PDBFilter(
+          File file,
+          MolecularAssembly molecularAssembly,
+          ForceField forceField,
+          CompositeConfiguration properties,
+          List<String> resNumberList) {
+    super(file, molecularAssembly, forceField, properties);
+    bondList = new ArrayList<>();
+    this.fileType = FileType.PDB;
+    readFile = files.get(0);
+    this.resNumberList = resNumberList;
   }
 
   /**
@@ -879,7 +902,7 @@ public final class PDBFilter extends SystemFilter {
                     }
                   } else if (rotamerTitration){
                     AminoAcid3 aa3 = AminoAcidUtils.AminoAcid3.valueOf(resName.toUpperCase());
-                    if (rotamerResidueMap.containsKey(aa3)) {
+                    if (rotamerResidueMap.containsKey(aa3) && resNumberList.contains(String.valueOf(resSeq))) {
                       String atomName = name.toUpperCase();
                       AminoAcid3 aa3rotamer = rotamerResidueMap.get(aa3);
                       resName = aa3rotamer.name();

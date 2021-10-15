@@ -45,6 +45,7 @@ import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3
 import ffx.potential.bonded.*
+import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.XYZFilter
 import org.apache.commons.configuration2.CompositeConfiguration
@@ -137,7 +138,7 @@ class ManyBody extends AlgorithmsScript {
       rotamerOptimization.setMonteCarloTesting(true)
     }
 
-    manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
+    manyBody.initRotamerOptimization(rotamerOptimization,activeAssembly, filename )
 
     List<Residue> residueList = rotamerOptimization.getResidues()
 
