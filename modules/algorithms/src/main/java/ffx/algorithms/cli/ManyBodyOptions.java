@@ -72,7 +72,7 @@ import picocli.CommandLine.Option;
  * @author Mallory R. Tollefson
  * @since 1.0
  */
-public class ManyBodyOptions extends PotentialScript{
+public class ManyBodyOptions{
 
   private static final Logger logger = Logger.getLogger(ManyBodyOptions.class.getName());
 
@@ -224,9 +224,8 @@ public class ManyBodyOptions extends PotentialScript{
       activeAssembly.finalize(true, forceField);
       String saveDir = FilenameUtils.getFullPath(fileName);
       String dirName = saveDir + File.separator;
-      String protFileName = FilenameUtils.getBaseName(fileName);
+      String protFileName = FilenameUtils.getBaseName(fileName) + "_prot";
       File modelFile = new File(dirName + protFileName + ".pdb");
-      modelFile = potentialFunctions.versionFile(modelFile);
 
       if (!pdbFilter.writeFile(modelFile, false, false, true)) {
         logger.info(format(" Save failed for %s", activeAssembly));
