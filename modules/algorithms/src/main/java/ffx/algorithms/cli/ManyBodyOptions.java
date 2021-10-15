@@ -198,8 +198,7 @@ public class ManyBodyOptions{
     TitrationUtils titrationUtils;
     if (group.titrationPH > 0.0 && group.titrationPH <= 14.0) {
       CompositeConfiguration properties = activeAssembly.getProperties();
-      ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties);
-      ForceField forceField = forceFieldFilter.parse();
+      ForceField forceField = activeAssembly.getForceField();
       logger.info(format(" Turning on ASP, GLU, LYS and HIS titration rotamers at pH %5.2f", group.titrationPH));
       titrationUtils = new TitrationUtils(activeAssembly.getForceField());
       titrationUtils.setRotamerPhBias(298.15, group.titrationPH);
@@ -217,6 +216,7 @@ public class ManyBodyOptions{
       File structureFile = new File(fileName);
       int index = fileName.lastIndexOf(".");
       String name = fileName.substring(0, index);
+      logger.info("\n Adding rotamer optimization with titration protons to : " + fileName + "\n");
       PDBFilter pdbFilter = new PDBFilter(structureFile, activeAssembly, forceField, properties, resNumberList);
       pdbFilter.setRotamerTitration(true);
       pdbFilter.readFile();
