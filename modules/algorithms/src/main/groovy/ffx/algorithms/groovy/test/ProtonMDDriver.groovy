@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
 //
 // This file is part of Force Field X.
 //
@@ -42,27 +42,17 @@ import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.dynamics.integrators.Stochastic
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.AminoAcidUtils
 import ffx.potential.bonded.Residue
-import ffx.potential.bonded.AminoAcidUtils
 import ffx.potential.cli.WriteoutOptions
 import ffx.potential.extended.ExtendedSystem
-import ffx.potential.extended.ExtendedVariable
-import ffx.potential.extended.TautomerESV
-import ffx.potential.extended.TitrationESV
-import ffx.potential.extended.TitrationUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import static ffx.potential.extended.TitrationUtils.inactivateResidue
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2
 import static ffx.utilities.Constants.kB
 import static java.lang.String.format
-import static org.apache.commons.math3.util.FastMath.sin
-import static org.apache.commons.math3.util.FastMath.sqrt
 
 /**
  * The Dynamics script implements molecular and stochastic dynamics algorithms.
@@ -84,14 +74,14 @@ class ProtonMDDriver extends AlgorithmsScript {
    * --pH or --constantPH Constant pH value for molecular dynamics.
    */
   @Option(names = ['--pH', '--constantPH'], paramLabel = '7.4',
-      description = 'Constant pH value for molecular dynamics')
+          description = 'Constant pH value for molecular dynamics')
   double pH = 7.4
 
   /**
    * One or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files",
-      description = "XYZ or PDB input files.")
+          description = "XYZ or PDB input files.")
   private List<String> filenames
 
   /**
@@ -131,15 +121,9 @@ class ProtonMDDriver extends AlgorithmsScript {
       return this
     }
 
-    TitrationUtils.initDiscountPreloadProperties()
-
     String modelFilename
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly molecularAssembly =
-          TitrationUtils.openFullyProtonated(new File(filenames.get(0)))
-      MolecularAssembly[] assemblies = [molecularAssembly]
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    activeAssembly = getActiveAssembly(filenames[0])
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     } else {
@@ -147,7 +131,6 @@ class ProtonMDDriver extends AlgorithmsScript {
     }
 
     // Select all possible titrating residues.
-    List<Residue> titrating = TitrationUtils.chooseTitratables(activeAssembly)
     potential = activeAssembly.getPotentialEnergy()
     double currentTemperature = dynamics.temperature
     double pe = 0
@@ -155,60 +138,42 @@ class ProtonMDDriver extends AlgorithmsScript {
     double totalEnergy = 0
 
     ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly)
-    List<ExtendedVariable> titratingESVs = new ArrayList<>()
-    List<ExtendedVariable> tautomerESVs = new ArrayList<>()
     esvSystem.setConstantPh(pH)
-    for (Residue res : titrating) {
-      ffx.potential.bonded.MultiResidue multi =
-          TitrationUtils.titratingMultiresidueFactory(activeAssembly, res)
-      TitrationESV esv = new TitrationESV(esvSystem, multi)
-      titratingESVs.add(esv)
-      for (Residue background : multi.getInactive()) {
-        inactivateResidue(background)
-      }
-      esvSystem.addVariable(esv)
-      if(esvSystem.config.tautomer){
-        AminoAcidUtils.AminoAcid3 currentAA3 = AminoAcidUtils.AminoAcid3.valueOf(res.getName());
-        if (currentAA3 == AminoAcidUtils.AminoAcid3.HIS || currentAA3 == AminoAcidUtils.AminoAcid3.HID
-                || currentAA3 == AminoAcidUtils.AminoAcid3.HIE || currentAA3 == AminoAcidUtils.AminoAcid3.ASH
-                || currentAA3 == AminoAcidUtils.AminoAcid3.ASP || currentAA3 == AminoAcidUtils.AminoAcid3.GLH
-                || currentAA3 == AminoAcidUtils.AminoAcid3.GLU){
-          TautomerESV tautomerESV = new TautomerESV(esvSystem, multi);
-          tautomerESVs.add(tautomerESV);
-          esvSystem.addVariable(tautomerESV);
-        }
-      }
-    }
+    List<Residue> extendedResidues = esvSystem.getExtendedResidueList()
+    List<Residue> titratingResidues = esvSystem.getTitratingResidueList()
+    List<Residue> tautomerResidues = esvSystem.getTautomerizingResidueList()
+
+    //energy.attachExtendedSystem(esvSystem)
+    int numESVs = extendedResidues.size()
+    logger.info(format(" Extended system with %d residues.", numESVs))
 
     ForceFieldEnergy forceFieldEnergy = (ForceFieldEnergy) potential
-    forceFieldEnergy.attachExtendedSystem(esvSystem)
-    logger.info(format(" Extended system with %d residues.", titratingESVs.size()))
+    logger.info(format(" Extended system with %d residues.", numESVs))
 
     //Initialize thetaMass from ExtendedSystem
-    int numberOfESVVariables = titratingESVs.size()
-    double[] theta_mass = new double[numberOfESVVariables]
-    for (int i = 0; i < numberOfESVVariables; i++) {
-      theta_mass[i] = 1
-    }
+    double[] theta_mass = esvSystem.getThetaMassArray()
 
     // Initialize theta based on starting lambda
-    double[] theta = new double[numberOfESVVariables]
-    for (int i = 0; i < numberOfESVVariables; i++) {
-      theta[i] = Math.asin(Math.sqrt(esvSystem.getEsv(i).getLambda()))
-      logger.info(format("i: %d , lambda: %g", i, esvSystem.getEsv(i).getLambda()))
+    double[] theta = esvSystem.getThetaPosition()
+    for (int i=0; i < theta.size(); i++) {
+      logger.info(format("i: %d , lambda: %g", i, esvSystem.getExtendedLambdas()[i]))
       logger.info(format("i: %d , theta: %g", i, theta[i]))
     }
 
     //Read in esvSystem derivatives
-    double[] dEdL = new double[numberOfESVVariables]
-
-    Random random = new Random()
+    double[] dEdL = new double[numESVs]
 
     //Initialize theta velocity to Maxwell distribution based on temperature in radians/psec
-    double[] theta_v = new double[numberOfESVVariables]
-    for (int i = 0; i < numberOfESVVariables; i++) {
-      //theta_v[i] = random.nextGaussian() * sqrt(kB * 298.15 / theta_mass[i])
-      theta_v[i] = sqrt(kB * 298.15 / theta_mass[i])
+    double[] theta_v = esvSystem.getThetaVelocity()
+    for (int i = 0; i < theta_v.size(); i++) {
+      logger.info(format("i: %d , theta_v: %g", i, theta_v[i]))
+    }
+
+    //Initialize acceleration based on gradient in radians/psec^2
+    //double[] esvDerivs = esvSystem.derivatives
+    double[] theta_a = esvSystem.getThetaAccel()
+    for (int i = 0; i < theta_a.size(); i++) {
+      logger.info(format("i: %d , theta_a: %g", i, theta_a[i]))
     }
 
     double[] x = new double[potential.getNumberOfVariables()]
@@ -216,16 +181,8 @@ class ProtonMDDriver extends AlgorithmsScript {
     potential.getCoordinates(x)
     double initialEnergy = potential.energyAndGradient(x, g, true)
 
-    //Initialize acceleration based on gradient in radians/psec^2
-    double[] esvDerivs = esvSystem.derivatives
-    double[] theta_a = new double[numberOfESVVariables]
-    for (int i = 0; i < numberOfESVVariables; i++) {
-      dEdL[i] = esvDerivs[i] * sin(2 * theta[i])
-      theta_a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * dEdL[i] / theta_mass[i]
-    }
-
-    stochasticIntegrator = new Stochastic((double) 0.0, numberOfESVVariables, theta, theta_v,
-        theta_a, theta_mass)
+    stochasticIntegrator = new Stochastic((double) 0.0, numESVs, theta, theta_v,
+            theta_a, theta_mass)
     logger.info("\n Running lambda dynamics on " + modelFilename)
     logger.info(format("%s", esvSystem.getLambdaList()))
 
@@ -238,30 +195,20 @@ class ProtonMDDriver extends AlgorithmsScript {
 
       //Do half step integration operation
       stochasticIntegrator.preForce(potential)
-
-      //Update ESV lambda from new theta values
-      for (int i = 0; i < numberOfESVVariables; i++) {
-        double sinTheta = sin(theta[i])
-        //esvSystem.setLambda(i, sinTheta * sinTheta)
-        esvSystem.getEsv(i).updateLambda(sinTheta * sinTheta, true)
-        esvSystem.updateListeners()
-      }
+      esvSystem.preForce()
 
       //Gather derivatives
       potential.getCoordinates(x)
-      pe = potential.energyAndGradient(x, g, true)
-      esvDerivs = esvSystem.derivatives
-
+      pe = potential.energyAndGradient(x, g, false)
+      pe += esvSystem.getBiasEnergy()
       //Put derivatives in terms of theta
-      for (int i = 0; i < numberOfESVVariables; i++) {
-        dEdL[i] = esvDerivs[i] * sin(2 * theta[i])
-      }
+      dEdL = esvSystem.postForce()
       //Do full step integration operation
       stochasticIntegrator.postForce(dEdL)
 
       //Update Kinetic Energy
       ke = 0
-      for (int i = 0; i < numberOfESVVariables; i++) {
+      for (int i = 0; i < numESVs; i++) {
         //Compute temperature of theta particles
         double v2 = theta_v[i] * theta_v[i]
         double e = theta_mass[i] * v2
@@ -269,15 +216,19 @@ class ProtonMDDriver extends AlgorithmsScript {
       }
 
       // Log the current state every printFrequency steps.
-      currentTemperature = ke / (kB * numberOfESVVariables)
+      currentTemperature = ke / (kB * numESVs)
       //Degrees of freedom for theta particle on unit circle??
       ke *= 0.5 / KCAL_TO_GRAM_ANG2_PER_PS2
       totalEnergy = pe + ke
-      logger.info(
-          format("Potential Energy: %16.8f Kinetic Energy %16.8f Total Energy: %16.8f", pe, ke,
-              totalEnergy))
-      logger.info(format("Current Temperature: %g", currentTemperature))
-      logger.info(format(" %7.3e %s", totalSimTime, esvSystem.getLambdaList()))
+      long report = (long) (dynamics.report * 1000)
+      if(step % report == 0){
+        logger.info(format(" %7.3e\n %s", totalSimTime, esvSystem.getLambdaList()))
+        logger.info(
+                format("Potential Energy: %16.8f Kinetic Energy %16.8f Total Energy: %16.8f", pe, ke,
+                        totalEnergy))
+        //logger.info(format("Current Temperature: %g", currentTemperature))
+      }
+
     }
 
     return this

@@ -237,14 +237,14 @@ class Gradient extends PotentialScript {
       avGrad += grad2
 
       if (len > gradientTolerance) {
-        logger.info(format(" %s\n Failed: %10.6f\n", a0.toString(), len)
-            + format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2])
-            + format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]))
+        logger.info(format(" %s\n Failed: %10.6f\n", a0.toString(), len) +
+                format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2]) +
+                format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]))
         ++nFailures
       } else {
-        logger.info(format(" %s\n Passed: %10.6f\n", a0.toString(), len)
-            + format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2])
-            + format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]))
+        logger.info(format(" %s\n Passed: %10.6f\n", a0.toString(), len) +
+                format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2]) +
+                format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]))
       }
 
       if (grad2 > expGrad2) {

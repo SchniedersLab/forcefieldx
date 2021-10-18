@@ -45,7 +45,7 @@ import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Residue
 import ffx.potential.cli.WriteoutOptions
-import ffx.potential.extended.TitrationUtils
+
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin

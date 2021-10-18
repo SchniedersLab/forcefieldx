@@ -378,7 +378,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     }
     esvTerm = true;
     esvSystem = system;
-    numESVs = esvSystem.size();
+    numESVs = esvSystem.getExtendedResidueList().size();
 
     // Launch shared lambda/esvLambda initializers if missed (ie. !lambdaTerm) in constructor.
     vdwLambdaAlpha = forceField.getDouble("VDW_LAMBDA_ALPHA", 0.05);
@@ -830,7 +830,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     if (!esvTerm) {
       return; // TODO: figure out when/why this is happening
     }
-    numESVs = esvSystem.size();
+    numESVs = esvSystem.getExtendedResidueList().size();
     if (esvLambdaSwitch == null || esvLambdaSwitch.length < nAtoms) {
       esvLambdaSwitch = new double[nAtoms];
       esvSwitchDeriv = new double[nAtoms];

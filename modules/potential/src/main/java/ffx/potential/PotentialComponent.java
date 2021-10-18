@@ -77,8 +77,9 @@ public enum PotentialComponent {
   Bias(Topology),
   OSRW(Bias),
   pHMD(Bias),
-  Acidostat(pHMD),
-  Discretizer(pHMD),
+  pHBias(pHMD),
+  ModelBias(pHMD),
+  DiscretizeBias(pHMD),
   XRay(Topology),
   ;
 

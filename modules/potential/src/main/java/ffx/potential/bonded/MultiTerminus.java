@@ -45,7 +45,6 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.extended.TitrationUtils.TitrationType;
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;

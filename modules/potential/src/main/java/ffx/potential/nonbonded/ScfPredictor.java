@@ -40,7 +40,6 @@ package ffx.potential.nonbonded;
 import static ffx.numerics.math.ScalarMath.binomial;
 import static java.util.Arrays.fill;
 
-import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
 import ffx.potential.parameters.ForceField;
 import java.util.logging.Level;

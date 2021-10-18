@@ -37,8 +37,6 @@
 // ******************************************************************************
 package ffx.potential;
 
-import static ffx.crystal.LatticeSystem.HEXAGONAL_LATTICE;
-import static ffx.crystal.LatticeSystem.RHOMBOHEDRAL_LATTICE;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
@@ -1980,8 +1978,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return restrainEnergy;
       case pHMD:
       case Bias:
-      case Discretizer:
-      case Acidostat:
+      case DiscretizeBias:
+      case ModelBias:
+      case pHBias:
         return (esvTerm) ? esvSystem.getEnergyComponent(component) : 0.0;
       case XRay:
       default:
@@ -2958,13 +2957,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /** Need to remove degrees of freedom that are lost to prevent heating. */
   public void reInit() {
     int[] molecule;
-    if (esvTerm) {
-      atoms = esvSystem.getExtendedAndBackgroundAtoms();
-      molecule = esvSystem.getExtendedAndBackgroundMolecule();
-    } else {
-      atoms = molecularAssembly.getAtomArray();
-      molecule = molecularAssembly.getMoleculeNumbers();
-    }
+    atoms = molecularAssembly.getAtomArray();
+    molecule = molecularAssembly.getMoleculeNumbers();
     nAtoms = atoms.length;
 
     xyz = new double[nAtoms * 3];

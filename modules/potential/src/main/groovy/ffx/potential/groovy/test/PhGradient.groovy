@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
 //
 // This file is part of Force Field X.
 //
@@ -39,20 +39,13 @@ package ffx.potential.groovy.test
 
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.AminoAcidUtils
 import ffx.potential.bonded.Atom
-import ffx.potential.bonded.MultiResidue
 import ffx.potential.bonded.Residue
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.GradientOptions
 import ffx.potential.cli.PotentialScript
 import ffx.potential.extended.ExtendedSystem
-import ffx.potential.extended.ExtendedVariable
-import ffx.potential.extended.TautomerESV
-import ffx.potential.extended.TitrationESV
-import ffx.potential.extended.TitrationUtils
-import ffx.potential.utils.PotentialsUtils
+
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
@@ -60,8 +53,6 @@ import picocli.CommandLine.Parameters
 
 import java.util.stream.IntStream
 
-import static ffx.potential.extended.TitrationUtils.inactivateResidue
-import static ffx.potential.extended.TitrationUtils.openFullyProtonated
 import static ffx.utilities.StringUtils.parseAtomRanges
 import static java.lang.String.format
 import static org.apache.commons.math3.util.FastMath.abs
@@ -133,57 +124,34 @@ class PhGradient extends PotentialScript {
     if (!init()) {
       return this
     }
-
-    TitrationUtils.initDiscountPreloadProperties()
-
-    if (filename != null) {
-      setActiveAssembly(openFullyProtonated(new File(filename), (PotentialsUtils) potentialFunctions))
-    } else if (activeAssembly == null) {
-      logger.info(helpString())
-      return this
+      activeAssembly = getActiveAssembly(filename)
+      if (activeAssembly == null) {
+        logger.info(helpString())
+        return this
     }
 
+    // Set the filename.
     filename = activeAssembly.getFile().getAbsolutePath()
 
     logger.info("\n Testing the atomic coordinate gradient of " + filename + "\n")
 
     // Select all possible titrating residues.
-    List<Residue> titrating = TitrationUtils.chooseTitratables(activeAssembly)
     energy = activeAssembly.getPotentialEnergy()
 
     ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly)
-    List<ExtendedVariable> titratingESVs = new ArrayList<>()
-    List<ExtendedVariable> tautomerESVs = new ArrayList<>()
     esvSystem.setConstantPh(pH)
+    List<Residue> extendedResidues = esvSystem.getExtendedResidueList()
+    List<Residue> titratingResidues = esvSystem.getTitratingResidueList()
+    List<Residue> tautomerResidues = esvSystem.getTautomerizingResidueList()
 
-    for (Residue res : titrating) {
-      MultiResidue multi = TitrationUtils.titratingMultiresidueFactory(activeAssembly, res)
-      TitrationESV esv = new TitrationESV(esvSystem, multi)
-      titratingESVs.add(esv)
-      if(esvSystem.config.tautomer){
-        AminoAcidUtils.AminoAcid3 currentAA3 = AminoAcidUtils.AminoAcid3.valueOf(res.getName())
-        if (currentAA3 == AminoAcidUtils.AminoAcid3.HIS || currentAA3 == AminoAcidUtils.AminoAcid3.HID
-                || currentAA3 == AminoAcidUtils.AminoAcid3.HIE || currentAA3 == AminoAcidUtils.AminoAcid3.ASH
-                || currentAA3 == AminoAcidUtils.AminoAcid3.ASP || currentAA3 == AminoAcidUtils.AminoAcid3.GLH
-                || currentAA3 == AminoAcidUtils.AminoAcid3.GLU){
-          TautomerESV tautomerESV = new TautomerESV(esvSystem, multi);
-          tautomerESVs.add(tautomerESV);
-          esvSystem.addVariable(tautomerESV);
-        }
-      }
-      for (Residue background : multi.getInactive()) {
-        inactivateResidue(background)
-      }
-      esvSystem.addVariable(esv)
-    }
-
-    energy.attachExtendedSystem(esvSystem)
-    logger.info(format(" Extended system with %d residues.", titratingESVs.size()))
+    //energy.attachExtendedSystem(esvSystem)
+    int numESVs = esvSystem.extendedResidueList.size()
+    logger.info(format(" Extended system with %d residues.", numESVs))
 
     // Set all ESV variables to 0.5
-    int numESVs = titratingESVs.size()
-    for (int i = 0; i < numESVs; i++) {
-      esvSystem.setLambda(i, esvLambda)
+    for (Residue residue : extendedResidues) {
+      esvSystem.setTitrationLambda(residue, esvLambda)
+      esvSystem.setTautomerLambda(residue, esvLambda)
     }
 
     Atom[] atoms = activeAssembly.getAtomArray()
@@ -202,20 +170,18 @@ class PhGradient extends PotentialScript {
 
     // Collect atoms to test.
     List<Integer> atomsToTest
-    String gradAtoms = gradientOptions.getGradientAtoms()
-    logger.info(" Parsing " + gradAtoms)
-    if (gradAtoms.equalsIgnoreCase("NONE")) {
+    if (gradientOptions.gradientAtoms.equalsIgnoreCase("NONE")) {
       logger.info(" The gradient of no atoms will be evaluated.")
       return this
-    } else if (gradAtoms.equalsIgnoreCase("ALL")) {
+    } else if (gradientOptions.gradientAtoms.equalsIgnoreCase("ALL")) {
       logger.info(" Checking gradient for all active atoms.\n")
       atomsToTest = new ArrayList<>()
-      for (int i=0; i<nAtoms; i++) {
-        atomsToTest.add(i)
-      }
+      IntStream.range(0, nAtoms).forEach(val -> atomsToTest.add(val))
     } else {
-      atomsToTest = parseAtomRanges(" Gradient atoms", gradAtoms, nAtoms)
-      logger.info(" Checking gradient for active atoms in the range: " + gradAtoms + "\n")
+      atomsToTest = parseAtomRanges(" Gradient atoms", gradientOptions.gradientAtoms, nAtoms)
+      logger.info(
+          " Checking gradient for active atoms in the range: " + gradientOptions.gradientAtoms +
+              "\n")
     }
 
     // Map selected atom numbers to active atom numbers
@@ -306,14 +272,14 @@ class PhGradient extends PotentialScript {
       avGrad += grad2
 
       if (len > gradientTolerance) {
-        logger.info(format(" %s\n Failed: %10.6f\n", a0.toString(), len)
-            + format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2])
-            + format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]))
+        logger.info(format(" %s\n Failed: %10.6f\n", a0.toString(), len) +
+                format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2]) +
+                format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]))
         ++nFailures
       } else {
-        logger.info(format(" %s\n Passed: %10.6f\n", a0.toString(), len)
-            + format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2])
-            + format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]))
+        logger.info(format(" %s\n Passed: %10.6f\n", a0.toString(), len) +
+                format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2]) +
+                format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]))
       }
 
       if (grad2 > expGrad2) {
@@ -342,65 +308,113 @@ class PhGradient extends PotentialScript {
       logger.info(format(" RMS gradient: %10.6f", avGrad))
     }
 
-    // Set all ESV variables to 0.5
-    //int numESVs = titratingESVs.size()
-    for (int i = 0; i < numESVs; i++) {
-      esvSystem.setLambda(i, esvLambda)
-    }
-
     energy.getCoordinates(x)
     energy.energyAndGradient(x, g)
-    double[] esvDerivs = esvSystem.derivatives
+    double[] esvDerivs = esvSystem.getBiasDerivs()
 
     // Check the dU/dL_i analytic results vs. finite-differences for extended system variables.
     // Loop over extended system variables
-    for (int i = 0; i < numESVs; i++) {
-      double eMinus
-      double ePlus
+    for (int i=0; i < titratingResidues.size(); i++) {
+      double eMinusTitr=0.0
+      double ePlusTitr=0.0
+      double eMinusTaut=0.0
+      double ePlusTaut=0.0
+      Residue residue = titratingResidues.get(i)
+      int tautomerIndex = tautomerResidues.indexOf(residue) + titratingResidues.size()
       // Calculate backward finite difference if very close to lambda=1
       if (esvLambda + step > 1) {
-        esvSystem.setLambda(i, esvLambda - 2 * step)
-        eMinus = energy.energy(x)
-        esvSystem.setLambda(i, esvLambda)
-        ePlus = energy.energy(x)
+        esvSystem.setTitrationLambda(residue, esvLambda - 2 * step)
+        eMinusTitr = energy.energy(x)
+        eMinusTitr += esvSystem.getBiasEnergy()
+        esvSystem.setTitrationLambda(residue, esvLambda)
+        ePlusTitr = energy.energy(x)
+        ePlusTitr += esvSystem.getBiasEnergy()
+
+        if(esvSystem.isTautomer(residue)){
+          esvSystem.setTautomerLambda(residue, esvLambda - 2 * step)
+          eMinusTaut = energy.energy(x)
+          eMinusTaut += esvSystem.getBiasEnergy()
+          esvSystem.setTautomerLambda(residue, esvLambda)
+          ePlusTaut = energy.energy(x)
+          ePlusTaut += esvSystem.getBiasEnergy()
+        }
       }
 
       // Calculate forward finite difference if very close to lambda=0
       else if (esvLambda - step < 0) {
-        esvSystem.setLambda(i, esvLambda + 2 * step)
-        ePlus = energy.energy(x)
-        esvSystem.setLambda(i, esvLambda)
-        eMinus = energy.energy(x)
+        esvSystem.setTitrationLambda(residue, esvLambda + 2 * step)
+        ePlusTitr = energy.energy(x)
+        ePlusTitr += esvSystem.getBiasEnergy()
+        esvSystem.setTitrationLambda(residue, esvLambda)
+        eMinusTitr = energy.energy(x)
+        eMinusTitr += esvSystem.getBiasEnergy()
+
+        if(esvSystem.isTautomer(residue)){
+          esvSystem.setTautomerLambda(residue, esvLambda + 2 * step)
+          ePlusTaut = energy.energy(x)
+          ePlusTaut += esvSystem.getBiasEnergy()
+          esvSystem.setTautomerLambda(residue, esvLambda)
+          eMinusTaut = energy.energy(x)
+          eMinusTaut += esvSystem.getBiasEnergy()
+        }
       }
 
       // Calculate central finite difference
       else {
-        esvSystem.setLambda(i, esvLambda + step)
-        ePlus = energy.energy(x)
-        esvSystem.setLambda(i, esvLambda - step)
-        eMinus = energy.energy(x)
-        esvSystem.setLambda(i, esvLambda)
+        esvSystem.setTitrationLambda(residue, esvLambda + step)
+        ePlusTitr = energy.energy(x)
+        ePlusTitr += esvSystem.getBiasEnergy();
+        esvSystem.setTitrationLambda(residue, esvLambda - step)
+        eMinusTitr = energy.energy(x)
+        eMinusTitr += esvSystem.getBiasEnergy()
+        esvSystem.setTitrationLambda(residue, esvLambda)
+
+        if(esvSystem.isTautomer(residue)){
+          esvSystem.setTautomerLambda(residue, esvLambda + step)
+          ePlusTaut = energy.energy(x)
+          ePlusTaut += esvSystem.getBiasEnergy();
+          esvSystem.setTautomerLambda(residue, esvLambda - step)
+          eMinusTaut = energy.energy(x)
+          eMinusTaut += esvSystem.getBiasEnergy()
+          esvSystem.setTautomerLambda(residue, esvLambda)
+        }
       }
 
-      double fdDeriv = (ePlus - eMinus) / width
-      double error = abs(fdDeriv - esvDerivs[i])
+      double fdDerivTitr = (ePlusTitr - eMinusTitr) / width
+      double errorTitr = abs(fdDerivTitr - esvDerivs[i])
 
-      if (error > gradientTolerance) {
-        logger.info(format(" ESV %d\n Failed: %10.6f\n", i, error)
-            + format(" Analytic: %12.4f vs. Numeric: %12.4f\n", esvDerivs[i], fdDeriv))
+
+
+      if (errorTitr > gradientTolerance) {
+        logger.info(format(" Residue: %s ESV %d\n Failed: %10.6f\n", residue.toString(), i, errorTitr) +
+                format(" Analytic: %12.4f vs. Numeric: %12.4f\n", esvDerivs[i], fdDerivTitr))
         ++nESVFailures
       } else {
-        logger.info(format(" ESV %d\n Passed: %10.6f\n", i, error)
-            + format(" Analytic: %12.4f vs. Numeric: %12.4f\n", esvDerivs[i], fdDeriv))
+        logger.info(format(" Residue: %s ESV %d\n Passed: %10.6f\n", residue.toString(), i, errorTitr) +
+                format(" Analytic: %12.4f vs. Numeric: %12.4f\n", esvDerivs[i], fdDerivTitr))
+      }
+
+      if(esvSystem.isTautomer(residue)){
+        double fdDerivTaut = (ePlusTaut - eMinusTaut) / width
+        double errorTaut = abs(fdDerivTaut - esvDerivs[tautomerIndex])
+        if (errorTaut > gradientTolerance) {
+          logger.info(format(" Residue: %s (Tautomer) ESV %d\n Failed: %10.6f\n", residue.toString(), tautomerIndex, errorTaut) +
+                  format(" Analytic: %12.4f vs. Numeric: %12.4f\n", esvDerivs[tautomerIndex], fdDerivTaut))
+          ++nESVFailures
+        } else {
+          logger.info(format(" Residue: %s (Tautomer) ESV %d\n Passed: %10.6f\n", residue.toString(), tautomerIndex, errorTaut) +
+                  format(" Analytic: %12.4f vs. Numeric: %12.4f\n", esvDerivs[tautomerIndex], fdDerivTaut))
+        }
       }
     }
 
     if (print) {
-      if (numESVs <= 4) {
+      if (titratingResidues.size() <= 4) {
         String lambdaList = esvSystem.getLambdaList()
         logger.info(format("Lambda List: %s", lambdaList))
         energy.energy(x, true)
-        printPermutations(esvSystem, numESVs, energy, x)
+        logger.info(esvSystem.getBiasDecomposition())
+        printPermutations(esvSystem, titratingResidues.size(), energy, x)
       }
     }
 
@@ -408,18 +422,19 @@ class PhGradient extends PotentialScript {
   }
 
   private void printPermutations(ExtendedSystem esvSystem, int numESVs, ForceFieldEnergy energy,
-      double[] x) {
-    for (int i = 0; i < numESVs; i++) {
-      esvSystem.setLambda(i, (double) 0.0)
+                                 double[] x) {
+    for (Residue residue : esvSystem.getTitratingResidueList()) {
+      esvSystem.setTitrationLambda(residue, 0.0)
     }
     energy.getCoordinates(x)
     printPermutationsR(esvSystem, numESVs - 1, energy, x)
   }
 
   private void printPermutationsR(ExtendedSystem esvSystem, int esvID, ForceFieldEnergy energy,
-      double[] x) {
+                                  double[] x) {
     for (int i = 0; i <= 1; i++) {
-      esvSystem.setLambda(esvID, (double) i)
+      Residue residue = esvSystem.getTitratingResidueList().get(esvID)
+      esvSystem.setTitrationLambda(residue, (double) i)
       if (esvID != 0) {
         printPermutationsR(esvSystem, esvID - 1, energy, x)
       } else {
@@ -429,6 +444,7 @@ class PhGradient extends PotentialScript {
 
         //Add ForceFieldEnergy to hashmap for testing. Protonation endstates used as key in map.
         energy.energy(x, true)
+        logger.info(esvSystem.getBiasDecomposition())
 
         // Bond Energy
         energyAndInteractionList[0] = energy.getBondEnergy()
@@ -483,7 +499,7 @@ class PhGradient extends PotentialScript {
     if (energy == null) {
       potentials = Collections.emptyList()
     } else {
-      potentials = Collections.singletonList((Potential) energy)
+      potentials = Collections.singletonList(energy)
     }
     return potentials
   }

@@ -39,7 +39,6 @@ package ffx.potential.groovy;
 
 import static org.junit.Assert.assertEquals;
 
-import ffx.potential.groovy.test.PhGradient;
 import ffx.potential.utils.PotentialTest;
 import java.util.Arrays;
 import java.util.Collection;
