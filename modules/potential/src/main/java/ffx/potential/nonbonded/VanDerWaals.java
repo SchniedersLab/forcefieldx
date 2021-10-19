@@ -1846,14 +1846,14 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
                 taper = multiplicativeSwitch.taper(r, r2, r3, r4, r5);
                 dtaper = multiplicativeSwitch.dtaper(r, r2, r3, r4);
               }
-              eik *= taper;
-              final double eik_preswitch = eik;
+
+              final double eik_preswitch = eik * taper;
               // TODO: Add an explanation for the ESV Lambda Switch
               if (esvi || esvk) {
                 eik *= esvLambdaSwitch[i] * esvLambdaSwitch[k];
               }
-
-              e += eik;
+              
+              e += eik * taper;
               count++;
               if (!gradient && !soft) {
                 continue;
@@ -2079,8 +2079,8 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
                   taper = multiplicativeSwitch.taper(r, r2, r3, r4, r5);
                   dtaper = multiplicativeSwitch.dtaper(r, r2, r3, r4);
                 }
-                final double eik_preswitch = eik;
 
+                final double eik_preswitch = eik;
                 if (esvi || esvk) {
                   eik *= esvLambdaSwitch[i] * esvLambdaSwitch[k];
                 }
@@ -2109,11 +2109,11 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
                 double drdx = dx_local[0] * ir;
                 double drdy = dx_local[1] * ir;
                 double drdz = dx_local[2] * ir;
-                dedr = (eik * dtaper + dedr * taper);
+                dedr = selfScale * (eik * dtaper + dedr * taper);
                 if (gradient) {
-                  double dedx = selfScale * dedr * drdx;
-                  double dedy = selfScale * dedr * drdy;
-                  double dedz = selfScale * dedr * drdz;
+                  double dedx = dedr * drdx;
+                  double dedy = dedr * drdy;
+                  double dedz = dedr * drdz;
                   gxi += dedx * redv;
                   gyi += dedy * redv;
                   gzi += dedz * redv;
