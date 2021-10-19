@@ -105,7 +105,7 @@ public class ExtendedSystem {
      * Shared double that is initialized to match the number of ESVs in the system.
      * Once reduced, will equal either dU_Titr/dLambda or dU_Taut/dLambda for specific ESV
      */
-    public final SharedDouble[] totalVdwDerivs;
+    public final SharedDouble[] esvVdwDerivs;
     /**
      * Array of AminoAcid3 initialized  to match the number of atoms in the system.
      * Used to know how to apply vdW or electrostatic ESV terms for the atom.
@@ -306,7 +306,7 @@ public class ExtendedSystem {
         thetaVelocity = new double[size];
         thetaAccel = new double[size];
         thetaMassArray = new double[size];
-        totalVdwDerivs = new SharedDouble[size];
+        esvVdwDerivs = new SharedDouble[size];
 
         //Theta masses should always be the same for each ESV
         Arrays.fill(thetaMassArray, thetaMass);
@@ -328,6 +328,12 @@ public class ExtendedSystem {
         double dUdL = getDerivatives()[index];
         double dUdTheta = dUdL * sin(2 * thetaPosition[index]);
         thetaAccel[index] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
+    }
+
+    public void initEsvVdw(){
+        for (int i = 0; i < extendedResidueList.size(); i++) {
+            esvVdwDerivs[i].set(0.0);
+        }
     }
 
     public boolean isTitrating(int atomIndex) {
@@ -411,7 +417,7 @@ public class ExtendedSystem {
     /**
      * Update all theta (lambda) postions after each move from the Stochastic integrator
      */
-    public void updateLambdas() {
+    private void updateLambdas() {
         //This will prevent recalculating multiple sinTheta*sinTheta that are the same number.
         for (int i = 0; i < extendedResidueList.size(); i++) {
             double sinTheta = Math.sin(thetaPosition[i]);
@@ -858,8 +864,8 @@ public class ExtendedSystem {
         dTitr_dLambda = vdwPrefactorAndDerivI[1] * vdwPrefactorAndDerivJ[0] * vdwEnergy;
         dTaut_dLambda = vdwPrefactorAndDerivI[2] * vdwPrefactorAndDerivJ[0] * vdwEnergy;
 
-        totalVdwDerivs[titrationEsvIndex].addAndGet(dTitr_dLambda);
-        totalVdwDerivs[tautomerEsvIndex].addAndGet(dTaut_dLambda);
+        esvVdwDerivs[titrationEsvIndex].addAndGet(dTitr_dLambda);
+        esvVdwDerivs[tautomerEsvIndex].addAndGet(dTaut_dLambda);
     }
 
     /**
@@ -868,7 +874,7 @@ public class ExtendedSystem {
      * @return
      */
     public double getVdwDeriv(int esvID) {
-        return totalVdwDerivs[esvID].get();
+        return esvVdwDerivs[esvID].get();
     }
 
     /**
@@ -923,9 +929,6 @@ public class ExtendedSystem {
      * updateListeners.
      */
     private void updateListeners() {
-        if (doVDW) {
-            vanDerWaals.updateEsvLambda();
-        }
         if (doElectrostatics) {
             particleMeshEwaldQI.updateEsvLambda();
         }
