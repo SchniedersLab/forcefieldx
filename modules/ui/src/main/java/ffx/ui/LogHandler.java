@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.ui;
 
-import static ffx.potential.extended.ExtUtils.prop;
 
 import ffx.ui.MainPanel.ExitStatus;
 import ffx.utilities.LoggerSevereError;

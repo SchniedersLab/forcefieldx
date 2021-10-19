@@ -849,7 +849,7 @@ public class ExtendedSystem {
      * @param vdwPrefactorAndDerivI
      * @param vdwPrefactorAndDerivJ
      */
-    public void addVdwDeriv(int atomI, int atomJ, double vdwEnergy, double[] vdwPrefactorAndDerivI, double[] vdwPrefactorAndDerivJ) {
+    public void addVdwDeriv(int atomI, double vdwEnergy, double[] vdwPrefactorAndDerivI, double vdwPrefactorJ) {
         if (!isTitratingHydrogen(atomI)) {
             return;
         }
@@ -861,8 +861,8 @@ public class ExtendedSystem {
         double dTitr_dLambda;
         double dTaut_dLambda;
 
-        dTitr_dLambda = vdwPrefactorAndDerivI[1] * vdwPrefactorAndDerivJ[0] * vdwEnergy;
-        dTaut_dLambda = vdwPrefactorAndDerivI[2] * vdwPrefactorAndDerivJ[0] * vdwEnergy;
+        dTitr_dLambda = vdwPrefactorAndDerivI[1] * vdwPrefactorJ * vdwEnergy;
+        dTaut_dLambda = vdwPrefactorAndDerivI[2] * vdwPrefactorJ * vdwEnergy;
 
         esvVdwDerivs[titrationEsvIndex].addAndGet(dTitr_dLambda);
         esvVdwDerivs[tautomerEsvIndex].addAndGet(dTaut_dLambda);

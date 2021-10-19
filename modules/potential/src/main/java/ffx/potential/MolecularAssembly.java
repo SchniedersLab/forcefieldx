@@ -39,7 +39,6 @@ package ffx.potential;
 
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.DoubleMath.sub;
-import static ffx.potential.extended.ExtUtils.prop;
 import static java.lang.String.format;
 
 import edu.rit.pj.ParallelTeam;

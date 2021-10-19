@@ -101,7 +101,6 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Torsion;
-import ffx.potential.extended.ExtUtils;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.ReciprocalSpace.FFTMethod;
 import ffx.potential.nonbonded.ScfPredictor.PredictorMode;
@@ -608,12 +607,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     reciprocalSpaceTerm = forceField.getBoolean("RECIPTERM", true);
 
     /** Instantiate the requested SCF predictor; default is a 6th-order least squares method. */
-    PredictorMode predictorMode =
-        ExtUtils.prop(PredictorMode.class, "scf-predictor", PredictorMode.NONE);
-    int predictorOrder = ExtUtils.prop("scf-predictor-order", 6);
-    if (predictorMode != PredictorMode.NONE) {
-      scfPredictor = new ScfPredictor(predictorMode, predictorOrder, forceField);
-    }
+    PredictorMode predictorMode = PredictorMode.NONE;
 
     String algorithm = forceField.getString("SCF_ALGORITHM", "CG");
     try {
@@ -974,7 +968,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     // Set object handles.
     esvTerm = true;
     esvSystem = system;
-    numESVs = esvSystem.size();
+    numESVs = esvSystem.getExtendedResidueList().size();
     // Update atoms and reinitialize arrays.
     /* Only include ExtH atoms in the PME arrays.
      * The background heavy atoms have their multipoles interpolated into
@@ -1003,6 +997,9 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
 
     updateEsvLambda();
     logger.info(format(" Attached extended system (%d variables) to PME.\n", numESVs));
+    if(reciprocalSpace != null){
+      reciprocalSpace.attachExtendedSystem();
+    }
   }
 
   /** {@inheritDoc} */
