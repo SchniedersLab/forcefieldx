@@ -43,6 +43,7 @@ import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
+import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3
 import ffx.potential.bonded.*
 import ffx.potential.parameters.ForceField
@@ -112,6 +113,7 @@ class ManyBody extends AlgorithmsScript {
 
     // Load the MolecularAssembly.
     activeAssembly = getActiveAssembly(filename)
+
     if (activeAssembly == null) {
       logger.info(helpString())
       return this
@@ -138,7 +140,7 @@ class ManyBody extends AlgorithmsScript {
       rotamerOptimization.setMonteCarloTesting(true)
     }
 
-    manyBody.initRotamerOptimization(rotamerOptimization,activeAssembly, filename )
+    manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly, filename)
 
     List<Residue> residueList = rotamerOptimization.getResidues()
 

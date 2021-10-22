@@ -167,7 +167,7 @@ public class GetProteinFeatures {
     }
 
     public String[] saveFeatures(Residue residue, double surfaceArea) {
-        String[] features = new String[10];
+        String[] features = new String[11];
         String name = residue.getName();
         AminoAcid3 aa3 = residue.getAminoAcid3();
         String acid = acidityMap.getOrDefault(aa3, null);
@@ -209,6 +209,7 @@ public class GetProteinFeatures {
         if(standSurfaceArea != 0.0){
             normalizedSA = String.valueOf(surfaceArea / standSurfaceArea);
         }
+        String confidence =  String.valueOf(getConfidenceScore(residue));
 
         features[0] = name;
         features[1] = String.valueOf(residue.getResidueNumber());
@@ -220,6 +221,7 @@ public class GetProteinFeatures {
         features[7] = omegaString;
         features[8] = surfaceAreaString;
         features[9] = normalizedSA;
+        features[10] = confidence;
 
         return features;
     }
@@ -312,6 +314,12 @@ public class GetProteinFeatures {
 
     public double getTotalSurfaceArea(){
         return totalSurfaceArea;
+    }
+
+    public double getConfidenceScore(Residue currentRes){
+        double bFactor = 0;
+        bFactor = currentRes.getAtomByName("CA", true).getTempFactor();
+        return bFactor;
     }
 
 

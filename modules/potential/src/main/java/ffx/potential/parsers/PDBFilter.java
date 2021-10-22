@@ -275,9 +275,9 @@ public final class PDBFilter extends SystemFilter {
   }
 
   /**
-   * Constructor for PDBFilter with list of residues.
+   * Constructor for PDBFilter with residue numbers.
    *
-   * @param file a {@link java.io.File} object.
+   * @param file a {@link java.util.List} object.
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
    * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
@@ -292,9 +292,10 @@ public final class PDBFilter extends SystemFilter {
     super(file, molecularAssembly, forceField, properties);
     bondList = new ArrayList<>();
     this.fileType = FileType.PDB;
-    readFile = files.get(0);
+    this.readFile = file;
     this.resNumberList = resNumberList;
   }
+
 
   /**
    * Simple method useful for converting files to PDB format.
@@ -504,6 +505,7 @@ public final class PDBFilter extends SystemFilter {
   /** Parse the PDB File */
   @Override
   public boolean readFile() {
+    logger.info("Executing read file");
     remarkLines = new ArrayList<>();
     // First atom is #1, to match xyz file format
     int xyzIndex = 1;
