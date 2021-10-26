@@ -146,7 +146,8 @@ class PhGradient extends PotentialScript {
 
     //energy.attachExtendedSystem(esvSystem)
     int numESVs = esvSystem.extendedResidueList.size()
-    logger.info(format(" Extended system with %d residues.", numESVs))
+    energy.attachExtendedSystem(esvSystem)
+    logger.info(format(" Attached extended system with %d residues.", numESVs))
 
     // Set all ESV variables to 0.5
     for (Residue residue : extendedResidues) {
@@ -310,7 +311,7 @@ class PhGradient extends PotentialScript {
 
     energy.getCoordinates(x)
     energy.energyAndGradient(x, g)
-    double[] esvDerivs = esvSystem.getBiasDerivs()
+    double[] esvDerivs = esvSystem.getDerivatives()
 
     // Check the dU/dL_i analytic results vs. finite-differences for extended system variables.
     // Loop over extended system variables
@@ -325,18 +326,14 @@ class PhGradient extends PotentialScript {
       if (esvLambda + step > 1) {
         esvSystem.setTitrationLambda(residue, esvLambda - 2 * step)
         eMinusTitr = energy.energy(x)
-        eMinusTitr += esvSystem.getBiasEnergy()
         esvSystem.setTitrationLambda(residue, esvLambda)
         ePlusTitr = energy.energy(x)
-        ePlusTitr += esvSystem.getBiasEnergy()
 
         if(esvSystem.isTautomer(residue)){
           esvSystem.setTautomerLambda(residue, esvLambda - 2 * step)
           eMinusTaut = energy.energy(x)
-          eMinusTaut += esvSystem.getBiasEnergy()
           esvSystem.setTautomerLambda(residue, esvLambda)
           ePlusTaut = energy.energy(x)
-          ePlusTaut += esvSystem.getBiasEnergy()
         }
       }
 
@@ -344,18 +341,14 @@ class PhGradient extends PotentialScript {
       else if (esvLambda - step < 0) {
         esvSystem.setTitrationLambda(residue, esvLambda + 2 * step)
         ePlusTitr = energy.energy(x)
-        ePlusTitr += esvSystem.getBiasEnergy()
         esvSystem.setTitrationLambda(residue, esvLambda)
         eMinusTitr = energy.energy(x)
-        eMinusTitr += esvSystem.getBiasEnergy()
 
         if(esvSystem.isTautomer(residue)){
           esvSystem.setTautomerLambda(residue, esvLambda + 2 * step)
           ePlusTaut = energy.energy(x)
-          ePlusTaut += esvSystem.getBiasEnergy()
           esvSystem.setTautomerLambda(residue, esvLambda)
           eMinusTaut = energy.energy(x)
-          eMinusTaut += esvSystem.getBiasEnergy()
         }
       }
 
@@ -363,19 +356,15 @@ class PhGradient extends PotentialScript {
       else {
         esvSystem.setTitrationLambda(residue, esvLambda + step)
         ePlusTitr = energy.energy(x)
-        ePlusTitr += esvSystem.getBiasEnergy();
         esvSystem.setTitrationLambda(residue, esvLambda - step)
         eMinusTitr = energy.energy(x)
-        eMinusTitr += esvSystem.getBiasEnergy()
         esvSystem.setTitrationLambda(residue, esvLambda)
 
         if(esvSystem.isTautomer(residue)){
           esvSystem.setTautomerLambda(residue, esvLambda + step)
           ePlusTaut = energy.energy(x)
-          ePlusTaut += esvSystem.getBiasEnergy();
           esvSystem.setTautomerLambda(residue, esvLambda - step)
           eMinusTaut = energy.energy(x)
-          eMinusTaut += esvSystem.getBiasEnergy()
           esvSystem.setTautomerLambda(residue, esvLambda)
         }
       }

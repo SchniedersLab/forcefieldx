@@ -109,7 +109,7 @@ public class ScfPredictor {
       if (predictorMode == PredictorMode.LS) {
         leastSquaresPredictor = new LeastSquaresPredictor(eps);
       }
-      if (ff.getBoolean("LAMBDATERM", false) || ExtendedSystem.esvSystemActive) {
+      if (ff.getBoolean("LAMBDATERM", false) ) {
         predictorInducedDipole = new double[3][predictorOrder][nAtoms][3];
         predictorInducedDipoleCR = new double[3][predictorOrder][nAtoms][3];
       } else {

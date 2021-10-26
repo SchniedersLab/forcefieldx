@@ -1734,7 +1734,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
       return;
     }
     // Query ExtendedSystem to create local preloads of all lambda quantities.
-    numESVs = esvSystem.size();
+    numESVs = esvSystem.getExtendedResidueList().size();
     if (esvLambda == null || esvLambda.length < nAtoms) {
       esvAtomsScaled = new boolean[nAtoms];
       esvAtomsScaledAlpha = new boolean[nAtoms];
@@ -1747,10 +1747,10 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     }
     /* Preload components for permanent electrostatics. */
     for (int i = 0; i < nAtoms; i++) {
-      esvAtomsScaled[i] = esvSystem.isExtended(i);
-      esvAtomsScaledAlpha[i] = esvSystem.isAlphaScaled(i);
-      esvLambda[i] = esvSystem.getLambda(i);
-      esvIndex[i] = (esvSystem.getEsvIndex(i) != null) ? esvSystem.getEsvIndex(i) : null;
+      esvAtomsScaled[i] = esvSystem.isTitrating(i);
+      esvAtomsScaledAlpha[i] = esvSystem.isTitratingHydrogen(i);
+      esvLambda[i] = esvSystem.titrationLambdas[i];
+      esvIndex[i] =  esvSystem.getTitrationESVIndex(i);
     }
 
     // For atoms with both a foreground and background multipole, preload interpolated multipole and

@@ -73,6 +73,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.ReciprocalSpace.FFTMethod;
 import ffx.potential.nonbonded.pme.DirectRegion;
 import ffx.potential.nonbonded.pme.ExpandInducedDipolesRegion;
@@ -3420,7 +3421,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     // Set object handles.
     esvTerm = true;
     extendedSystem = system;
-    numESVs = extendedSystem.size();
+    numESVs = extendedSystem.getExtendedResidueList().size();
 
     // Update atoms and reinitialize arrays for consistency with the ExtendedSystem.
     setAtoms(extendedSystem.getExtendedAtoms(), extendedSystem.getExtendedMolecule());
@@ -3471,7 +3472,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     }
 
     // Query ExtendedSystem to create local preloads of all lambda quantities.
-    numESVs = extendedSystem.size();
+    numESVs = extendedSystem.getExtendedResidueList().size();
     if (perAtomTitrationESV == null || perAtomTitrationESV.length < nAtoms) {
       isAtomTitrating = new boolean[nAtoms];
       perAtomTitrationESV = new double[nAtoms];
@@ -3488,9 +3489,9 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     }
 
     for (int i = 0; i < nAtoms; i++) {
-      isAtomTitrating[i] = extendedSystem.isExtended(i);
-      perAtomTitrationESV[i] = extendedSystem.getLambda(i);
-      perAtomESVIndex[i] = extendedSystem.getEsvIndex(i);
+      isAtomTitrating[i] = extendedSystem.isTitrating(i);
+      perAtomTitrationESV[i] = extendedSystem.titrationLambdas[i];
+      perAtomESVIndex[i] = extendedSystem.getTitrationESVIndex(i);
       Atom ai = atoms[i];
       if (ai.getPolarizeType() == null) {
         logger.warning("Null polarize type during ESV init.");

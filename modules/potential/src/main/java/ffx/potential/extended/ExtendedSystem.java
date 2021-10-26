@@ -125,13 +125,19 @@ public class ExtendedSystem {
     private final ParticleMeshEwaldQI particleMeshEwaldQI;
     /**
      * Array of booleans that is initialized to match the number of atoms in the molecular assembly
-     * noting whether the atom is titrating.
+     * noting whether the atom is titrating. Note that any side chain atom that belongs to a titrating residue
+     * will be flagged as titrating for purposes of scaling electrostatic parameters.
      */
     private final boolean[] isTitrating;
+    /**
+     * Array of booleans that is initialized to match the number of atoms in the assembly to note whether an atom is
+     * specifically a titrating hydrogen.
+     */
     private final boolean[] isTitratingHydrogen;
     /**
      * Array of booleans that is initialized to match the number of atoms in the molecular assembly
-     * noting whether the atom is tautomerizing.
+     * noting whether the atom is tautomerizing. Note that any side chain atom that belongs to a tautomerizing residue
+     * will be flagged as tautomerizing for purposes of scaling electrostatic parameters.
      */
     private final boolean[] isTautomerizing;
     /**
@@ -175,6 +181,7 @@ public class ExtendedSystem {
     // Controls for turning of certain terms for testing.
     private final boolean doVDW;
     private final boolean doElectrostatics;
+    private final boolean doBias;
     /**
      * System PH.
      */
@@ -199,8 +206,6 @@ public class ExtendedSystem {
      * Mass of each theta particle. Different theta mass for each particle are not supported.
      */
     private double[] thetaMassArray;
-    //TODO: Loop over protonation ESVs to sum the discr, acidostat, and Fmod energy terms.
-    //TODO: Collect partial derivs for each term. Keep all in one place.
 
     /**
      * Construct extended system with the provided configuration.
@@ -222,10 +227,10 @@ public class ExtendedSystem {
         double initialTitrationLambda = properties.getDouble("lambda.titration.initial", 1.0);
         double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 1.0);
 //        boolean bonded = properties.getBoolean("esv.bonded", false);
-        doVDW = properties.getBoolean("esv.vanDerWaals", true);
-        doElectrostatics = properties.getBoolean("esv.electrostatics", true);
+        doVDW = properties.getBoolean("esv.vdW", true);
+        doElectrostatics = properties.getBoolean("esv.elec", true);
+        doBias = properties.getBoolean("esv.bias", true);
 //        boolean polarization = properties.getBoolean("esv.polarization", true);
-//        boolean biasTerm = properties.getBoolean("esv.biasTerm", true);
 //        boolean verbose = properties.getBoolean("esv.verbose", false);
 //        boolean decomposeBonded = properties.getBoolean("esv.decomposeBonded", false);
 //        boolean decomposeDeriv = properties.getBoolean("esv.decomposeDeriv", false);
@@ -307,6 +312,9 @@ public class ExtendedSystem {
         thetaAccel = new double[size];
         thetaMassArray = new double[size];
         esvVdwDerivs = new SharedDouble[size];
+        for(int i=0; i < size; i++){
+            esvVdwDerivs[i] = new SharedDouble(0.0);
+        }
 
         //Theta masses should always be the same for each ESV
         Arrays.fill(thetaMassArray, thetaMass);
@@ -320,12 +328,20 @@ public class ExtendedSystem {
         }
     }
 
+    /**
+     * During constructor, initialize arrays that will hold theta positions, velocities, and accelerations.
+     * Positions determined from starting lambda.
+     * Velocities randomly set according to Maxwell Boltzmann Distribution based on temperature.
+     * Accelerations determined from initial forces.
+     * @param index index of ExtendedResidueList for which to set these values.
+     * @param lambda starting lambda value for each ESV.
+     */
     private void initializeThetaArrays(int index, double lambda) {
         extendedLambdas[index] = lambda;
         thetaPosition[index] = Math.asin(Math.sqrt(lambda));
         Random random = new Random();
         thetaVelocity[index] = random.nextGaussian() * sqrt(kB * 298.15 / thetaMass);
-        double dUdL = getDerivatives()[index];
+        double dUdL = 0.0;//getDerivatives()[index];
         double dUdTheta = dUdL * sin(2 * thetaPosition[index]);
         thetaAccel[index] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
     }
@@ -369,6 +385,10 @@ public class ExtendedSystem {
         } else {
             return 1.0;
         }
+    }
+
+    public int getTitrationESVIndex(int i){
+        return titrationIndexMap[i];
     }
 
     public double getTautomerLambda(Residue residue) {
@@ -523,18 +543,20 @@ public class ExtendedSystem {
     public double[] getDerivatives() {
         int numESVs = extendedResidueList.size();
         double[] esvDeriv = new double[numESVs];
-
-        //Bias Terms
         double[] biasDerivComponents = new double[9];
+
         for (Residue residue : titratingResidueList) {
             int resTitrIndex = titratingResidueList.indexOf(residue);
-            getBiasTerms(residue, biasDerivComponents);
-            //Sum up titration bias derivs
-            esvDeriv[resTitrIndex] += biasDerivComponents[dDiscr_dTitrIndex] + biasDerivComponents[dPh_dTitrIndex] - biasDerivComponents[dModel_dTitrIndex];
-            //Sum up tautomer bias derivs
-            if (isTautomer(residue)) {
-                int resTautIndex = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
-                esvDeriv[resTautIndex] += biasDerivComponents[dDiscr_dTautIndex] + biasDerivComponents[dPh_dTautIndex] - biasDerivComponents[dModel_dTautIndex];
+            //Bias Terms
+            if (doBias){
+                getBiasTerms(residue, biasDerivComponents);
+                //Sum up titration bias derivs
+                esvDeriv[resTitrIndex] += biasDerivComponents[dDiscr_dTitrIndex] + biasDerivComponents[dPh_dTitrIndex] - biasDerivComponents[dModel_dTitrIndex];
+                //Sum up tautomer bias derivs
+                if (isTautomer(residue)) {
+                    int resTautIndex = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
+                    esvDeriv[resTautIndex] += biasDerivComponents[dDiscr_dTautIndex] + biasDerivComponents[dPh_dTautIndex] - biasDerivComponents[dModel_dTautIndex];
+                }
             }
 
             if (doVDW) {
@@ -589,6 +611,10 @@ public class ExtendedSystem {
         double dPh_dTaut;
         double dMod_dTitr;
         double dMod_dTaut;
+        //If bias terms shouldn't be computed, set AA3 to UNK so that default case executes and all terms are set to zero.
+        if(!doBias){
+            AA3 = AminoAcid3.UNK;
+        }
         switch (AA3) {
             case ASD:
             case ASH:
@@ -799,7 +825,7 @@ public class ExtendedSystem {
         double prefactor = 1.0;
         double titrationDeriv = 0.0;
         double tautomerDeriv = 0.0;
-        if (!isTitratingHydrogen(atomIndex)) {
+        if (!isTitratingHydrogen(atomIndex) || !doVDW) {
             vdwPrefactorAndDerivs[0] = prefactor;
             vdwPrefactorAndDerivs[1] = titrationDeriv;
             vdwPrefactorAndDerivs[2] = tautomerDeriv;
@@ -844,10 +870,9 @@ public class ExtendedSystem {
     /**
      * Add van der Waals deriv to appropriate dU/dL term.
      * @param atomI
-     * @param atomJ
      * @param vdwEnergy van der Waals energy calculated with no titration/tautomer scaling
      * @param vdwPrefactorAndDerivI
-     * @param vdwPrefactorAndDerivJ
+     * @param vdwPrefactorJ
      */
     public void addVdwDeriv(int atomI, double vdwEnergy, double[] vdwPrefactorAndDerivI, double vdwPrefactorJ) {
         if (!isTitratingHydrogen(atomI)) {
@@ -857,7 +882,7 @@ public class ExtendedSystem {
         //Sum up dU/dL for titration ESV if atom i is titrating hydrogen
         //Sum up dU/dL for tautomer ESV if atom i is titrating hydrogen
         int titrationEsvIndex = titrationIndexMap[atomI];
-        int tautomerEsvIndex = tautomerIndexMap[atomI];
+        int tautomerEsvIndex = tautomerIndexMap[atomI] + titratingResidueList.size();
         double dTitr_dLambda;
         double dTaut_dLambda;
 
@@ -865,7 +890,9 @@ public class ExtendedSystem {
         dTaut_dLambda = vdwPrefactorAndDerivI[2] * vdwPrefactorJ * vdwEnergy;
 
         esvVdwDerivs[titrationEsvIndex].addAndGet(dTitr_dLambda);
-        esvVdwDerivs[tautomerEsvIndex].addAndGet(dTaut_dLambda);
+        if(tautomerEsvIndex != -1){
+            esvVdwDerivs[tautomerEsvIndex].addAndGet(dTaut_dLambda);
+        }
     }
 
     /**

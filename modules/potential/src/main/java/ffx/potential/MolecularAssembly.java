@@ -103,8 +103,7 @@ import org.jogamp.vecmath.Vector3d;
 public class MolecularAssembly extends MSGroup {
 
   /** Constant <code>atomIndexing</code> */
-  public static final Indexing atomIndexing =
-      prop(Indexing.class, "sys.atomIndexing", Indexing.XYZ);
+  public static final Indexing atomIndexing = Indexing.XYZ;
 
   private static final Logger logger = Logger.getLogger(MolecularAssembly.class.getName());
   private static final double[] a = new double[3];

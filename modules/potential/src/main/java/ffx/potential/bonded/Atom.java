@@ -444,7 +444,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
 
   /* Extended System handling */
   private boolean esvTerm = false;
-  private ExtendedVariable esv = null;
   private Double scaledPolarizability = null;
   private Double unscaledPolarizability = null;
   private MultipoleType esvMultipole;
@@ -1171,15 +1170,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
    */
   public double getEpsilon() {
     return 1.0;
-  }
-
-  /**
-   * The (single) ExtendedVariable of which this atom is a part (or null otherwise).
-   *
-   * @return a {@link ffx.potential.extended.ExtendedVariable} object.
-   */
-  public ExtendedVariable getEsv() {
-    return esv;
   }
 
   /**
@@ -2609,41 +2599,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
       return;
     }
     moveTo(trajectory.get(cycle - 1));
-  }
-
-  /**
-   * Setter for the field <code>esv</code>.
-   *
-   * @param esv a {@link ffx.potential.extended.ExtendedVariable} object.
-   * @param type a {@link ffx.potential.parameters.MultipoleType} object.
-   * @param dotType a {@link ffx.potential.parameters.MultipoleType} object.
-   * @param scaledAlpha a {@link java.lang.Double} object.
-   */
-  public final void setEsv(
-      ExtendedVariable esv, MultipoleType type, MultipoleType dotType, Double scaledAlpha) {
-    if (esv == null || (esvTerm && esv != this.esv)) {
-      logger.severe(
-          format(
-              "Error attaching ESV to atom (multiples not supported): %s %s %s\n",
-              this, this.esv, esv));
-    }
-    this.esv = esv;
-    esvMultipole = type;
-    esvMultipoleDot = dotType;
-    unscaledPolarizability = getPolarizeType().polarizability;
-    scaledPolarizability = (scaledAlpha != null) ? scaledAlpha : unscaledPolarizability;
-    esvTerm = true;
-  }
-
-  /**
-   * Setter for the field <code>esv</code>.
-   *
-   * @param esv a {@link ffx.potential.extended.ExtendedVariable} object.
-   * @param type a {@link ffx.potential.parameters.MultipoleType} object.
-   * @param dotType a {@link ffx.potential.parameters.MultipoleType} object.
-   */
-  public final void setEsv(ExtendedVariable esv, MultipoleType type, MultipoleType dotType) {
-    setEsv(esv, type, dotType, null);
   }
 
   /**
