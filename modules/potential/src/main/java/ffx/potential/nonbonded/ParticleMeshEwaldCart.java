@@ -716,7 +716,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     // Expand coordinates and rotate multipoles into the global frame.
     initializationRegion.init(
         lambdaTerm,
-        esvTerm,
+        extendedSystem,
         isAtomTitrating,
         lambdaScaleMultipoles,
         atoms,
@@ -726,6 +726,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         axisAtom,
         globalMultipole,
         dMultipoledTirationESV,
+        dMultipoledTautomerESV,
         polarizability,
         thole,
         ipdamp,
@@ -3423,6 +3424,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     extendedSystem = system;
     numESVs = extendedSystem.getExtendedResidueList().size();
 
+
     // Update atoms and reinitialize arrays for consistency with the ExtendedSystem.
     setAtoms(extendedSystem.getExtendedAtoms(), extendedSystem.getExtendedMolecule());
 
@@ -3459,6 +3461,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
    * is not under titration ESV control).
    */
   double[][][] dMultipoledTirationESV = null;
+  double[][][] dMultipoledTautomerESV = null;
 
   /**
    * OST and ESV specific factors that effect real space interactions.
@@ -3486,6 +3489,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     if (dMultipoledTirationESV == null || dMultipoledTirationESV.length != nSymm
         || dMultipoledTirationESV[0].length != nAtoms) {
       dMultipoledTirationESV = new double[nSymm][nAtoms][10];
+      dMultipoledTautomerESV = new double[nSymm][nAtoms][10];
     }
 
     for (int i = 0; i < nAtoms; i++) {

@@ -66,6 +66,7 @@ import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
+import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.MaskingInterface;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
@@ -120,6 +121,10 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
   private int[][] axisAtom;
   /** Dimensions of [nsymm][nAtoms][10] */
   private double[][][] globalMultipole;
+  private double[][][] titrationMultipole;
+  private double[][][] tautomerMultipole;
+
+  private ExtendedSystem extendedSystem = null;
   /**
    * When computing the polarization energy at Lambda there are 3 pieces.
    *
@@ -348,10 +353,13 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
   public void init(
       Atom[] atoms,
       Crystal crystal,
+      ExtendedSystem extendedSystem,
       double[][][] coordinates,
       MultipoleFrameDefinition[] frame,
       int[][] axisAtom,
       double[][][] globalMultipole,
+      double[][][] titrationMultipole,
+      double[][][] tautomerMultipole,
       double[][][] inducedDipole,
       double[][][] inducedDipoleCR,
       boolean[] use,
@@ -386,6 +394,8 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
     this.frame = frame;
     this.axisAtom = axisAtom;
     this.globalMultipole = globalMultipole;
+    this.titrationMultipole = titrationMultipole;
+    this.tautomerMultipole = tautomerMultipole;
     this.inducedDipole = inducedDipole;
     this.inducedDipoleCR = inducedDipoleCR;
     this.use = use;
@@ -904,20 +914,9 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
             if (ei != 0.0) {
               permanentEnergy += ei;
               count++;
-              //                            if (i == 0 && k > 1159 && k < 1180) {
-              //                                log(i, k, r, ei * electric, count, permanentEnergy *
-              // electric);
-              //                                if (k == 1175) {
-              //                                    logger.info(atoms[k].toString());
-              //                                    logger.info(format("Axis %d %d", axisAtom[k][0]
-              // + 1, axisAtom[k][1] + 1));
-              //                                    logger.info(format("Scale %6.3f D: %6.3f P:
-              // %6.3f", scale, scaled, scalep));
-              //                                    logger.info(" " +
-              // atoms[k].getMultipoleType().toString());
-              //                                }
-              //                            }
             }
+            //TODO: Aggregate dU/dtitr and dU/dtaut by resetting multipole parameters with appropriate mdots.
+            // These values will be stored in sharedDoubles Follow pseudocode. 
           }
           if (polarization != ParticleMeshEwald.Polarization.NONE && doPolarization) {
             // Polarization does not use the softcore tensors.

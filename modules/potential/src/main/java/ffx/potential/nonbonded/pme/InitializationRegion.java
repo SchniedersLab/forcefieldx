@@ -59,10 +59,13 @@ import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
+import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.PolarizeType;
+import ffx.potential.parameters.TitrationUtils;
+
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -103,6 +106,8 @@ public class InitializationRegion extends ParallelRegion {
    * on/off.
    */
   private boolean lambdaTerm;
+
+  private ExtendedSystem esvSystem;
   /**
    * If esvTerm is true, the electrostatics of some atoms are being titrated.
    */
@@ -127,6 +132,7 @@ public class InitializationRegion extends ParallelRegion {
   private double[][][] globalMultipole;
   /** Dimensions of [nsymm][nAtoms][10] */
   private double[][][] titrationMultipole;
+  private double[][][] tautomerMultipole;
   /** Polarizability of each atom */
   private double[] polarizability;
   private double[] thole;
@@ -184,7 +190,7 @@ public class InitializationRegion extends ParallelRegion {
 
   public void init(
       boolean lambdaTerm,
-      boolean esvTerm,
+      ExtendedSystem esvSystem,
       boolean[] isAtomTitrating,
       double lambdaScaleMultipoles,
       Atom[] atoms,
@@ -194,6 +200,7 @@ public class InitializationRegion extends ParallelRegion {
       int[][] axisAtom,
       double[][][] globalMultipole,
       double[][][] titrationMultipole,
+      double[][][] tautomerMultipole,
       double[] polarizability,
       double[] thole,
       double[] ipdamp,
@@ -206,7 +213,10 @@ public class InitializationRegion extends ParallelRegion {
       AtomicDoubleArray3D lambdaGrad,
       AtomicDoubleArray3D lambdaTorque) {
     this.lambdaTerm = lambdaTerm;
-    this.esvTerm = esvTerm;
+    this.esvSystem = esvSystem;
+    if(esvSystem != null) {
+      this.esvTerm = true;
+    }
     this.isAtomTitrating = isAtomTitrating;
     this.lambdaScaleMultipoles = lambdaScaleMultipoles;
     this.atoms = atoms;
@@ -216,6 +226,7 @@ public class InitializationRegion extends ParallelRegion {
     this.axisAtom = axisAtom;
     this.globalMultipole = globalMultipole;
     this.titrationMultipole = titrationMultipole;
+    this.tautomerMultipole = tautomerMultipole;
     this.polarizability = polarizability;
     this.thole = thole;
     this.ipdamp = ipdamp;
@@ -379,6 +390,13 @@ public class InitializationRegion extends ParallelRegion {
 
           MultipoleType multipoleType = atom.getMultipoleType();
           double[] in = multipoleType.getMultipole();
+          if(esvTerm){
+            double[] esvIn = new double[10];
+            System.arraycopy(in, 0, esvIn, 0, in.length);
+            double titrationLambda = esvSystem.titrationLambdas[ii];
+            double tautomerLambda = esvSystem.tautomerLambdas[ii];
+            in = esvSystem.getTitrationUtils().getMultipole(atom, titrationLambda, tautomerLambda, esvIn);
+          }
           // Update the frame
           frame[ii] = multipoleType.frameDefinition;
           // Update the axis defining atom.
@@ -451,21 +469,77 @@ public class InitializationRegion extends ParallelRegion {
             out[t101] = quadrupole[0][2] * quadrupoleScale * elecScale;
             out[t011] = quadrupole[1][2] * quadrupoleScale * elecScale;
             /* For ESV atoms, also rotate and scale the Mdot multipole. */
-            if (esvTerm && isAtomTitrating[ii]) {
-              final MultipoleType esvMultipoleDot = atom.getEsvMultipoleDot();
-              final double mdotCharge = esvMultipoleDot.getCharge();
-              final double[] mdotDipole = esvMultipoleDot.getDipole();
-              final double[][] mdotQuad = esvMultipoleDot.getQuadrupole();
+            if (esvTerm) {
+              double[] esvMultipoleTitrDot = new double[10];
+              double[] esvMultipoleTautDot = new double[10];
+              double titrationLambda = esvSystem.titrationLambdas[ii];
+              double tautomerLambda = esvSystem.tautomerLambdas[ii];
+              esvMultipoleTitrDot = esvSystem.getTitrationUtils().getMultipoleTitrationDeriv(atom, titrationLambda,
+                      tautomerLambda, esvMultipoleTitrDot);
+              esvMultipoleTautDot = esvSystem.getTitrationUtils().getMultipoleTautomerDeriv(atom, titrationLambda,
+                      tautomerLambda, esvMultipoleTautDot);
+              double tempCharge = esvMultipoleTitrDot[0];
+              // Load the dipole for rotation.
+              tempDipole[0] = esvMultipoleTitrDot[t100];
+              tempDipole[1] = esvMultipoleTitrDot[t010];
+              tempDipole[2] = esvMultipoleTitrDot[t001];
+              // Load the quadrupole for rotation.
+              tempQuadrupole[0][0] = esvMultipoleTitrDot[t200];
+              tempQuadrupole[1][1] = esvMultipoleTitrDot[t020];
+              tempQuadrupole[2][2] = esvMultipoleTitrDot[t002];
+              tempQuadrupole[0][1] = esvMultipoleTitrDot[t110];
+              tempQuadrupole[0][2] = esvMultipoleTitrDot[t101];
+              tempQuadrupole[1][2] = esvMultipoleTitrDot[t011];
+              tempQuadrupole[1][0] = esvMultipoleTitrDot[t110];
+              tempQuadrupole[2][0] = esvMultipoleTitrDot[t101];
+              tempQuadrupole[2][1] = esvMultipoleTitrDot[t011];
               if (needsChiralInversion) {
-                mdotDipole[1] = -mdotDipole[1];
-                mdotQuad[0][1] = -mdotQuad[0][1];
-                mdotQuad[1][0] = -mdotQuad[1][0];
-                mdotQuad[1][2] = -mdotQuad[1][2];
-                mdotQuad[2][1] = -mdotQuad[2][1];
+                tempDipole[1] = -tempDipole[1];
+                tempQuadrupole[0][1] = -tempQuadrupole[0][1];
+                tempQuadrupole[1][0] = -tempQuadrupole[1][0];
+                tempQuadrupole[1][2] = -tempQuadrupole[1][2];
+                tempQuadrupole[2][1] = -tempQuadrupole[2][1];
               }
-              rotateMultipole(rotmat, mdotDipole, mdotQuad, dipole, quadrupole);
+              rotateMultipole(rotmat, tempDipole, tempQuadrupole, dipole, quadrupole);
               out = titrationMultipole[iSymm][ii];
-              out[t000] = mdotCharge * chargeScale * elecScale;
+              out[t000] = tempCharge * chargeScale * elecScale;
+              // Load the dipole in the global frame.
+              out[t100] = dipole[0] * dipoleScale * elecScale;
+              out[t010] = dipole[1] * dipoleScale * elecScale;
+              out[t001] = dipole[2] * dipoleScale * elecScale;
+              // Load the quadrupole in the global frame.
+              out[t200] = quadrupole[0][0] * quadrupoleScale * elecScale;
+              out[t020] = quadrupole[1][1] * quadrupoleScale * elecScale;
+              out[t002] = quadrupole[2][2] * quadrupoleScale * elecScale;
+              out[t110] = quadrupole[0][1] * quadrupoleScale * elecScale;
+              out[t101] = quadrupole[0][2] * quadrupoleScale * elecScale;
+              out[t011] = quadrupole[1][2] * quadrupoleScale * elecScale;
+
+              tempCharge = esvMultipoleTautDot[0];
+              // Load the dipole for rotation.
+              tempDipole[0] = esvMultipoleTautDot[t100];
+              tempDipole[1] = esvMultipoleTautDot[t010];
+              tempDipole[2] = esvMultipoleTautDot[t001];
+              // Load the quadrupole for rotation.
+              tempQuadrupole[0][0] = esvMultipoleTautDot[t200];
+              tempQuadrupole[1][1] = esvMultipoleTautDot[t020];
+              tempQuadrupole[2][2] = esvMultipoleTautDot[t002];
+              tempQuadrupole[0][1] = esvMultipoleTautDot[t110];
+              tempQuadrupole[0][2] = esvMultipoleTautDot[t101];
+              tempQuadrupole[1][2] = esvMultipoleTautDot[t011];
+              tempQuadrupole[1][0] = esvMultipoleTautDot[t110];
+              tempQuadrupole[2][0] = esvMultipoleTautDot[t101];
+              tempQuadrupole[2][1] = esvMultipoleTautDot[t011];
+              if (needsChiralInversion) {
+                tempDipole[1] = -tempDipole[1];
+                tempQuadrupole[0][1] = -tempQuadrupole[0][1];
+                tempQuadrupole[1][0] = -tempQuadrupole[1][0];
+                tempQuadrupole[1][2] = -tempQuadrupole[1][2];
+                tempQuadrupole[2][1] = -tempQuadrupole[2][1];
+              }
+              rotateMultipole(rotmat, tempDipole, tempQuadrupole, dipole, quadrupole);
+              out = tautomerMultipole[iSymm][ii];
+              out[t000] = tempCharge * chargeScale * elecScale;
               // Load the dipole in the global frame.
               out[t100] = dipole[0] * dipoleScale * elecScale;
               out[t010] = dipole[1] * dipoleScale * elecScale;
@@ -494,9 +568,29 @@ public class InitializationRegion extends ParallelRegion {
             out[t011] = in[t011] * quadrupoleScale * elecScale;
             /* For ESV atoms, also rotate and scale the Mdot multipole. */
             if (esvTerm && isAtomTitrating[ii]) {
-              final MultipoleType esvMultipoleDot = atom.getEsvMultipoleDot();
-              in = esvMultipoleDot.getMultipole();
+              double[] esvMultipoleTitrDot = new double[10];
+              double[] esvMultipoleTautDot = new double[10];
+              double titrationLambda = esvSystem.titrationLambdas[ii];
+              double tautomerLambda = esvSystem.tautomerLambdas[ii];
+              esvMultipoleTitrDot = esvSystem.getTitrationUtils().getMultipoleTitrationDeriv(atom, titrationLambda,
+                      tautomerLambda, esvMultipoleTitrDot);
+              esvMultipoleTautDot = esvSystem.getTitrationUtils().getMultipoleTautomerDeriv(atom, titrationLambda,
+                      tautomerLambda, esvMultipoleTautDot);
+              in = esvMultipoleTitrDot;
               out = titrationMultipole[iSymm][ii];
+              out[t000] = in[t000] * chargeScale * elecScale;
+              out[t100] = in[t100] * dipoleScale * elecScale;
+              out[t010] = in[t010] * dipoleScale * elecScale;
+              out[t001] = in[t001] * dipoleScale * elecScale;
+              out[t200] = in[t200] * quadrupoleScale * elecScale;
+              out[t020] = in[t020] * quadrupoleScale * elecScale;
+              out[t002] = in[t002] * quadrupoleScale * elecScale;
+              out[t110] = in[t110] * quadrupoleScale * elecScale;
+              out[t101] = in[t101] * quadrupoleScale * elecScale;
+              out[t011] = in[t011] * quadrupoleScale * elecScale;
+
+              in = esvMultipoleTautDot;
+              out = tautomerMultipole[iSymm][ii];
               out[t000] = in[t000] * chargeScale * elecScale;
               out[t100] = in[t100] * dipoleScale * elecScale;
               out[t010] = in[t010] * dipoleScale * elecScale;

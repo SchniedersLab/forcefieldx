@@ -45,6 +45,7 @@ import ffx.potential.bonded.*;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.VanDerWaals;
+import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TitrationUtils;
 import ffx.utilities.Constants;
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -115,6 +116,11 @@ public class ExtendedSystem {
      * MolecularAssembly instance.
      */
     private final MolecularAssembly molecularAssembly;
+    /**
+     * Titration Utils instance. This instance is the master copy that will be distributed to electrostatics classes
+     * when an Extended System is attached.
+     */
+    private final TitrationUtils titrationUtils;
     /**
      * VanDerWaals instance.
      */
@@ -215,12 +221,14 @@ public class ExtendedSystem {
     public ExtendedSystem(MolecularAssembly mola) {
         this.molecularAssembly = mola;
 
+        ForceField forceField = mola.getForceField();
         ForceFieldEnergy forceFieldEnergy = mola.getPotentialEnergy();
         if (forceFieldEnergy == null) {
             logger.severe("No potential energy found?");
         }
 
         CompositeConfiguration properties = molecularAssembly.getProperties();
+        titrationUtils = new TitrationUtils(forceField);
         thetaFriction = properties.getDouble("esv.friction", ExtendedSystem.THETA_FRICTION);
         thetaMass = properties.getDouble("esv.mass", ExtendedSystem.THETA_MASS);
         discrBiasMag = properties.getDouble("discretize.bias.magnitude", DISCR_BIAS);
@@ -920,6 +928,14 @@ public class ExtendedSystem {
      */
     public void setConstantPh(double pH) {
         constantSystemPh = pH;
+    }
+
+    /**
+     *
+     * @return titrationUtils master copy from ExtendedSystem.
+     */
+    public TitrationUtils getTitrationUtils(){
+        return titrationUtils;
     }
 
     /**

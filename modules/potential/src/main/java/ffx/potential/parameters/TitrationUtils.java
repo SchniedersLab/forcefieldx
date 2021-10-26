@@ -520,10 +520,24 @@ public class TitrationUtils {
     }
   }
 
-  public double[] getMultipole(AminoAcid3 aminoAcid3, int atomIndex,
+  public double[] getMultipole(Atom atom,
       double titrationLambda, double tautomerLambda, double[] multipole) {
+    /*
+    Step 1: retrieve the atomName from atom instance.
+    Step 2: retrieve the oridnal from the atom instance + residueType
+     */
+
+    AminoAcid3 aminoAcid3;
+    try{
+      aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
+    } catch (Exception exception){
+      return multipole;
+    }
+    String atomName = atom.getName();
+
     switch (aminoAcid3) {
       case LYS:
+        int atomIndex =  LysineAtomNames.valueOf(atomName).ordinal();
         double[] lys = lysMultipoleTypes[LysStates.LYS.ordinal()][atomIndex].getMultipole();
         double[] lyd = lysMultipoleTypes[LysStates.LYD.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
@@ -531,6 +545,7 @@ public class TitrationUtils {
         }
         break;
       case HIS:
+        atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
         double[] his = hisMultipoleTypes[HisStates.HIS.ordinal()][atomIndex].getMultipole();
         double[] hid = hisMultipoleTypes[HisStates.HID.ordinal()][atomIndex].getMultipole();
         double[] hie = hisMultipoleTypes[HisStates.HIE.ordinal()][atomIndex].getMultipole();
@@ -541,6 +556,7 @@ public class TitrationUtils {
         }
         break;
       case ASD:
+        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
         double[] asp = aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
         double[] ash1 = aspMultipoleTypes[AspStates.ASH1.ordinal()][atomIndex].getMultipole();
         double[] ash2 = aspMultipoleTypes[AspStates.ASH2.ordinal()][atomIndex].getMultipole();
@@ -551,6 +567,7 @@ public class TitrationUtils {
         }
         break;
       case GLD:
+        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
         double[] glu = gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
         double[] glh1 = gluMultipoleTypes[GluStates.GLH1.ordinal()][atomIndex].getMultipole();
         double[] glh2 = gluMultipoleTypes[GluStates.GLH2.ordinal()][atomIndex].getMultipole();
@@ -566,10 +583,18 @@ public class TitrationUtils {
     return multipole;
   }
 
-  public double[] getMultipoleTitrationDeriv(AminoAcid3 aminoAcid3, int atomIndex,
+  public double[] getMultipoleTitrationDeriv(Atom atom,
       double titrationLambda, double tautomerLambda, double[] multipole) {
+    AminoAcid3 aminoAcid3;
+    try{
+      aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
+    } catch (Exception exception){
+      return multipole;
+    }
+    String atomName = atom.getName();
     switch (aminoAcid3) {
       case LYS:
+        int atomIndex =  LysineAtomNames.valueOf(atomName).ordinal();
         double[] lys = lysMultipoleTypes[LysStates.LYS.ordinal()][atomIndex].getMultipole();
         double[] lyd = lysMultipoleTypes[LysStates.LYD.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
@@ -577,6 +602,7 @@ public class TitrationUtils {
         }
         break;
       case HIS:
+        atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
         double[] his = hisMultipoleTypes[HisStates.HIS.ordinal()][atomIndex].getMultipole();
         double[] hid = hisMultipoleTypes[HisStates.HID.ordinal()][atomIndex].getMultipole();
         double[] hie = hisMultipoleTypes[HisStates.HIE.ordinal()][atomIndex].getMultipole();
@@ -585,6 +611,7 @@ public class TitrationUtils {
         }
         break;
       case ASD:
+        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
         double[] asp = aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
         double[] ash1 = aspMultipoleTypes[AspStates.ASH1.ordinal()][atomIndex].getMultipole();
         double[] ash2 = aspMultipoleTypes[AspStates.ASH2.ordinal()][atomIndex].getMultipole();
@@ -593,6 +620,7 @@ public class TitrationUtils {
         }
         break;
       case GLD:
+        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
         double[] glu = gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
         double[] glh1 = gluMultipoleTypes[GluStates.GLH1.ordinal()][atomIndex].getMultipole();
         double[] glh2 = gluMultipoleTypes[GluStates.GLH2.ordinal()][atomIndex].getMultipole();
@@ -606,10 +634,18 @@ public class TitrationUtils {
     return multipole;
   }
 
-  public double[] getMultipoleTautomerDeriv(AminoAcid3 aminoAcid3, int atomIndex,
+  public double[] getMultipoleTautomerDeriv(Atom atom,
       double titrationLambda, double tautomerLambda, double[] multipole) {
+    AminoAcid3 aminoAcid3;
+    try{
+      aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
+    } catch (Exception exception){
+      return multipole;
+    }
+    String atomName = atom.getName();
     switch (aminoAcid3) {
       case HIS:
+        int atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
         double[] his = hisMultipoleTypes[HisStates.HIS.ordinal()][atomIndex].getMultipole();
         double[] hid = hisMultipoleTypes[HisStates.HID.ordinal()][atomIndex].getMultipole();
         double[] hie = hisMultipoleTypes[HisStates.HIE.ordinal()][atomIndex].getMultipole();
@@ -618,6 +654,7 @@ public class TitrationUtils {
         }
         break;
       case ASD:
+        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
         double[] asp = aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
         double[] ash1 = aspMultipoleTypes[AspStates.ASH1.ordinal()][atomIndex].getMultipole();
         double[] ash2 = aspMultipoleTypes[AspStates.ASH2.ordinal()][atomIndex].getMultipole();
@@ -626,6 +663,7 @@ public class TitrationUtils {
         }
         break;
       case GLD:
+        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
         double[] glu = gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
         double[] glh1 = gluMultipoleTypes[GluStates.GLH1.ordinal()][atomIndex].getMultipole();
         double[] glh2 = gluMultipoleTypes[GluStates.GLH2.ordinal()][atomIndex].getMultipole();
@@ -640,26 +678,37 @@ public class TitrationUtils {
     return multipole;
   }
 
-  public double getPolarizability(AminoAcid3 aminoAcid3, int atomIndex,
+  public double getPolarizability(Atom atom,
       double titrationLambda, double tautomerLambda, double defaultPolarizability) {
+    AminoAcid3 aminoAcid3;
+    try{
+      aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
+    } catch (Exception exception){
+      return defaultPolarizability;
+    }
+    String atomName = atom.getName();
     switch (aminoAcid3) {
       case LYS:
+        int atomIndex =  LysineAtomNames.valueOf(atomName).ordinal();
         double lys = lysPolarizeTypes[LysStates.LYS.ordinal()][atomIndex].polarizability;
         double lyd = lysPolarizeTypes[LysStates.LYD.ordinal()][atomIndex].polarizability;
         return titrationLambda * lys + (1.0 - titrationLambda) * lyd;
       case HIS:
+        atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
         double his = hisPolarizeTypes[HisStates.HIS.ordinal()][atomIndex].polarizability;
         double hid = hisPolarizeTypes[HisStates.HID.ordinal()][atomIndex].polarizability;
         double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
         return titrationLambda * his + (1.0 - titrationLambda) * (tautomerLambda * hid
             + (1 - tautomerLambda) * hie);
       case ASD:
+        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
         double asp = aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
         double ash1 = aspPolarizeTypes[AspStates.ASH1.ordinal()][atomIndex].polarizability;
         double ash2 = aspPolarizeTypes[AspStates.ASH2.ordinal()][atomIndex].polarizability;
         return titrationLambda * (tautomerLambda * ash1 + (1 - tautomerLambda) * ash2)
             + (1.0 - titrationLambda) * asp;
       case GLD:
+        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
         double glu = gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
         double glh1 = gluPolarizeTypes[GluStates.GLH1.ordinal()][atomIndex].polarizability;
         double glh2 = gluPolarizeTypes[GluStates.GLH2.ordinal()][atomIndex].polarizability;
