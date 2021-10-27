@@ -137,7 +137,7 @@ public class ManyBodyOptions{
   public void initRotamerOptimization(
           RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly, String fileName) {
     this.rotamerOptimization = rotamerOptimization;
-
+    logger.info("Init rotopt");
     boolean useOrigCoordsRotamer = !group.noOriginal;
     if (group.decompose) {
       useOrigCoordsRotamer = true;
@@ -174,49 +174,18 @@ public class ManyBodyOptions{
     if (group.algorithm == 0) {
       setAlgorithm(activeAssembly);
     }
+    logger.info("call setSelection");
     setSelection();
+    logger.info("call setForcedResidue");
     setForcedResidue();
+    logger.info("Call setResidue");
     setResidues(activeAssembly, fileName);
+    logger.info("call set rotopt prop");
     setRotOptProperties();
   }
 
   public void setOriginalCoordinates(boolean useOrig) {
     group.noOriginal = !useOrig;
-  }
-
-  public void saveAsTitratablePDB(MolecularAssembly activeAssembly, String fileName, List<Residue> residues){
-    PotentialsUtils potentialsUtils = new PotentialsUtils();
-    potentialsUtils.close(activeAssembly);
-    MolecularAssembly titrateAssembly = potentialsUtils.open(fileName);
-    CompositeConfiguration properties = titrateAssembly.getProperties();
-    ForceField forceField = titrateAssembly.getForceField();
-
-    List<String> resNumberList = new ArrayList<>();
-    for (Residue residue : residues) {
-      resNumberList.add(String.valueOf(residue.getResidueNumber()));
-    }
-    File structureFile = new File(fileName);
-
-    int index = fileName.lastIndexOf(".");
-    String name = fileName.substring(0, index);
-    logger.info("\n Adding rotamer optimization with titration protons to : " + fileName + "\n");
-    PDBFilter protFilter = new PDBFilter(
-            structureFile, titrateAssembly, forceField, properties, resNumberList);
-    protFilter.setRotamerTitration(true);
-    protFilter.readFile();
-    protFilter.applyAtomProperties();
-    activeAssembly.finalize(true, forceField);
-    logger.info("Read file sucessfully");
-
-    //String saveDir = System. getProperty("user. dir");
-    //logger.info("Save Directory = " + saveDir);
-    //String dirName = saveDir + File.separator;
-    String protFileName = FilenameUtils.getBaseName(fileName) + "_prot.pdb";
-    logger.info("Save File = " + protFileName);
-    File modelFile = new File(protFileName);
-    if (!protFilter.writeFile(modelFile, false, false, true)) {
-      logger.info(format(" Save failed for %s", activeAssembly));
-    }
   }
 
   /**
@@ -225,6 +194,7 @@ public class ManyBodyOptions{
    * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
    */
   public void setResidues(MolecularAssembly activeAssembly, String fileName) {
+    logger.info("Enter setResidues");
     List<String> resList = new ArrayList<>();
     addListResidues(resList);
 
@@ -245,7 +215,7 @@ public class ManyBodyOptions{
     int counter = 1;
     if (group.algorithm != 5) {
       if (allStartResID > 0) {
-        List<Residue> residueList = new ArrayList<>();
+        List<Residue> residueList = getResidues(activeAssembly);
         Polymer[] polymers = activeAssembly.getChains();
         for (Polymer polymer : polymers) {
           List<Residue> residues = polymer.getResidues();
@@ -269,10 +239,11 @@ public class ManyBodyOptions{
             counter++;
           }
         }
+
         rotamerOptimization.setResidues(residueList);
 
       } else if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
-        List<Residue> residueList = new ArrayList<>();
+        List<Residue> residueList = getResidues(activeAssembly);
         Polymer[] polymers = activeAssembly.getChains();
         int n = 0;
         for (String s : resList) {
@@ -294,7 +265,7 @@ public class ManyBodyOptions{
           }
         }
         rotamerOptimization.setResiduesIgnoreNull(residueList);
-        if (n < 1) {
+        if (residueList == null) {
           return;
         }
       } else if (!residueGroup.chain.equalsIgnoreCase("-1")) {
@@ -397,7 +368,67 @@ public class ManyBodyOptions{
         rotamerOptimization.setBoxEnd(boxEnd);
       }
     }
-    saveAsTitratablePDB(activeAssembly, fileName,  rotamerOptimization.getResidues());
+
+  }
+
+  public List<Residue> getResidues(MolecularAssembly activeAssembly){
+    List<String> resList = new ArrayList<>();
+    addListResidues(resList);
+    List<Residue> residueList = new ArrayList<>();
+    int counter = 1;
+    if (allStartResID > 0) {
+      Polymer[] polymers = activeAssembly.getChains();
+      for (Polymer polymer : polymers) {
+        List<Residue> residues = polymer.getResidues();
+        for (Residue residue : residues) {
+          Rotamer[] rotamers = residue.setRotamers(rotamerLibrary);
+          if (rotamers != null) {
+            int nrot = rotamers.length;
+            if (nrot == 1) {
+              RotamerLibrary.applyRotamer(residue, rotamers[0]);
+            }
+            if (counter >= allStartResID) {
+              residueList.add(residue);
+            }
+          } else if (!group.forceResidues.equalsIgnoreCase("none")) {
+            if (counter >= allStartResID
+                    && counter >= forceResiduesStart
+                    && counter <= forceResiduesEnd) {
+              residueList.add(residue);
+            }
+          }
+          counter++;
+        }
+      }
+      //rotamerOptimization.setResidues(residueList);
+
+    } else if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
+      Polymer[] polymers = activeAssembly.getChains();
+      int n = 0;
+      for (String s : resList) {
+        Character chainID = s.charAt(0);
+        int i = Integer.parseInt(s.substring(1));
+        for (Polymer p : polymers) {
+          if (p.getChainID() == chainID) {
+            List<Residue> rs = p.getResidues();
+            for (Residue r : rs) {
+              if (r.getResidueNumber() == i) {
+                residueList.add(r);
+                Rotamer[] rotamers = r.setRotamers(rotamerLibrary);
+                if (rotamers != null) {
+                  n++;
+                }
+              }
+            }
+          }
+        }
+      }
+      //if (n < 1){
+      //  residueList = null;
+      //}
+      //rotamerOptimization.setResiduesIgnoreNull(residueList);
+    }
+    return residueList;
   }
 
   /**
@@ -504,7 +535,7 @@ public class ManyBodyOptions{
 
   /** Set allStartResID, boxStart and boxEnd */
   private void setSelection() {
-
+    logger.info("Enter set selection");
     // Chain, Residue and/or Box selections.
     // Internal machinery indexed 0 to (n-1)
     setStartAndEndDefault();
@@ -575,6 +606,7 @@ public class ManyBodyOptions{
 
   /** setForcedResidue. */
   private void setForcedResidue() {
+    logger.info("enter set forced residue");
     // Force residues.
     forceResiduesStart = -1;
     forceResiduesEnd = -1;
@@ -664,6 +696,7 @@ public class ManyBodyOptions{
 
   /** Sets the standard values for properties in rotamer optimization. */
   private void setRotOptProperties() {
+    logger.info("enter set rotopt properties");
     // General
     rotamerOptimization.setTwoBodyCutoff(energyGroup.twoBodyCutoff);
     rotamerOptimization.setThreeBodyCutoff(energyGroup.threeBodyCutoff);

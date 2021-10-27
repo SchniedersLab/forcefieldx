@@ -412,8 +412,8 @@ public class RotamerOptimization implements Terminatable {
     verbose = properties.getBoolean("verbose", false);
 
     // Set the default 2-body Cutoff to the van der Waals cutoff.
-    ForceFieldEnergy forceFieldEnegy = molecularAssembly.getPotentialEnergy();
-    VanDerWaals vdW = forceFieldEnegy.getVdwNode();
+    ForceFieldEnergy forceFieldEnergy = molecularAssembly.getPotentialEnergy();
+    VanDerWaals vdW = forceFieldEnergy.getVdwNode();
     if (vdW != null) {
       NonbondedCutoff nonBondedCutoff = vdW.getNonbondedCutoff();
       twoBodyCutoffDist = nonBondedCutoff.off;

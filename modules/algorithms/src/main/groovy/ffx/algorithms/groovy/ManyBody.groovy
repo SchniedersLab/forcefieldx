@@ -49,6 +49,7 @@ import ffx.potential.bonded.*
 import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.XYZFilter
+import ffx.potential.utils.PotentialsUtils
 import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -125,10 +126,38 @@ class ManyBody extends AlgorithmsScript {
     }
 
     activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
-    potentialEnergy = activeAssembly.getPotentialEnergy()
+
+
+    // if rotamer optimization with titration, create new molecular assembly with additional protons
+    PotentialsUtils potentialsUtils = new PotentialsUtils()
+    ForceField forceField = activeAssembly.getForceField()
+
+    List<String> resNumberList = new ArrayList<>()
+    List<Character> chainList = new ArrayList<>()
+    List<Residue> residues = manyBody.getResidues(activeAssembly)
+    for (Residue residue : residues) {
+      resNumberList.add(String.valueOf(residue.getResidueNumber()))
+      chainList.add(residue.getChainID())
+    }
+
+    potentialsUtils.close(activeAssembly)
+    MolecularAssembly titrateAssembly = new MolecularAssembly(filename)
+    titrateAssembly.setForceField(forceField)
+
+    File structureFile = new File(filename);
+    logger.info("\n Adding rotamer optimization with titration protons to : " + filename + "\n")
+    PDBFilter protFilter = new PDBFilter(
+            structureFile, titrateAssembly, forceField, forceField.getProperties(), resNumberList);
+    protFilter.setRotamerTitration(true)
+    protFilter.readFile()
+    protFilter.applyAtomProperties()
+    titrateAssembly.finalize(true, forceField)
+    potentialEnergy = ForceFieldEnergy.energyFactory(titrateAssembly)
+    titrateAssembly.setFile(structureFile)
+    logger.info("Read file successfully")
 
     RotamerOptimization rotamerOptimization = new RotamerOptimization(
-        activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener)
+        titrateAssembly, potentialEnergy, algorithmListener)
 
     testing = getTesting()
     if (testing) {
@@ -140,7 +169,9 @@ class ManyBody extends AlgorithmsScript {
       rotamerOptimization.setMonteCarloTesting(true)
     }
 
-    manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly, filename)
+
+
+    manyBody.initRotamerOptimization(rotamerOptimization, titrateAssembly, filename)
 
     List<Residue> residueList = rotamerOptimization.getResidues()
 
@@ -151,9 +182,9 @@ class ManyBody extends AlgorithmsScript {
         master = false
       }
     }
-
-    algorithmFunctions.energy(activeAssembly)
-
+    logger.info("About to calc energy")
+    algorithmFunctions.energy(titrateAssembly)
+    logger.info("About to measure rotamers")
     RotamerLibrary.measureRotamers(residueList, false)
 
     RotamerOptimization.Algorithm algorithm
@@ -227,7 +258,7 @@ class ManyBody extends AlgorithmsScript {
     if (master) {
       logger.info(" Final Minimum Energy\n")
 
-      ForceFieldEnergy forceFieldEnergy = algorithmFunctions.energy(activeAssembly)
+      ForceFieldEnergy forceFieldEnergy = algorithmFunctions.energy(titrateAssembly)
       double energy = forceFieldEnergy.getTotalEnergy()
       if (isTitrating) {
         double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList, optimalRotamers)
@@ -238,10 +269,10 @@ class ManyBody extends AlgorithmsScript {
       // Prevent residues from being renamed based on the existence of hydrogen
       // atoms (i.e. hydrogen that excluded from being written out).
       properties.setProperty("standardizeAtomNames", "false")
-      File modelFile = saveDirFile(activeAssembly.getFile())
-      PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(), properties)
+      File modelFile = saveDirFile(titrateAssembly.getFile())
+      PDBFilter pdbFilter = new PDBFilter(modelFile, titrateAssembly, titrateAssembly.getForceField(), properties)
       if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
-        logger.info(format(" Save failed for %s", activeAssembly))
+        logger.info(format(" Save failed for %s", titrateAssembly))
       }
     }
 
