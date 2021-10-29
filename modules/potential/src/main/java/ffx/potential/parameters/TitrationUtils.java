@@ -432,8 +432,15 @@ public class TitrationUtils {
             // Skip the HD1 atom name (used only for ASD during constant pH).
             continue;
           }
+          if(atomName.name().equals("HD2") && rotamer.aminoAcid3 == ASP){
+            // Skip the HD2 atom name if rotamer is ASP (used only for ASD during constant pH).
+            continue;
+          }
           int atomIndex = atomName.ordinal();
           Atom atom = (Atom) residue.getAtomNode(atomName.name());
+          if(atom == null){
+            logger.warning("Atom is null");
+          }
           atom.setAtomType(aspAtomTypes[aspIndex][atomIndex]);
           atom.setMultipoleType(aspMultipoleTypes[aspIndex][atomIndex]);
           assignAxisAtoms(atom);
@@ -457,6 +464,9 @@ public class TitrationUtils {
           }
           int atomIndex = atomName.ordinal();
           Atom atom = (Atom) residue.getAtomNode(atomName.name());
+          if(atom == null){
+            logger.warning("Atom is null");
+          }
           atom.setAtomType(gluAtomTypes[gluIndex][atomIndex]);
           atom.setMultipoleType(gluMultipoleTypes[gluIndex][atomIndex]);
           assignAxisAtoms(atom);
@@ -476,6 +486,9 @@ public class TitrationUtils {
         for (LysineAtomNames atomName : LysineAtomNames.values()) {
           int atomIndex = atomName.ordinal();
           Atom atom = (Atom) residue.getAtomNode(atomName.name());
+          if(atom == null){
+            logger.warning("Atom is null");
+          }
           atom.setAtomType(lysAtomTypes[lysIndex][atomIndex]);
           atom.setMultipoleType(lysMultipoleTypes[lysIndex][atomIndex]);
           assignAxisAtoms(atom);
@@ -499,6 +512,9 @@ public class TitrationUtils {
         for (HistidineAtomNames atomName : HistidineAtomNames.values()) {
           int atomIndex = atomName.ordinal();
           Atom atom = (Atom) residue.getAtomNode(atomName.name());
+          if(atom == null){
+            logger.warning("Atom is null");
+          }
           atom.setAtomType(hisAtomTypes[hisIndex][atomIndex]);
           atom.setMultipoleType(hisMultipoleTypes[hisIndex][atomIndex]);
           assignAxisAtoms(atom);

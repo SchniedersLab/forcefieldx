@@ -131,16 +131,23 @@ class ManyBody extends AlgorithmsScript {
     // if rotamer optimization with titration, create new molecular assembly with additional protons
     PotentialsUtils potentialsUtils = new PotentialsUtils()
     ForceField forceField = activeAssembly.getForceField()
+    potentialEnergy = activeAssembly.getPotentialEnergy()
+    potentialEnergy.energy(false, true)
 
     List<String> resNumberList = new ArrayList<>()
     List<Character> chainList = new ArrayList<>()
     List<Residue> residues = manyBody.getResidues(activeAssembly)
+    if (residues.isEmpty()){
+      logger.info("Residue list is empty")
+    }
+
     for (Residue residue : residues) {
       resNumberList.add(String.valueOf(residue.getResidueNumber()))
+      logger.info("Residue number:" + String.valueOf(residue.getResidueNumber()))
       chainList.add(residue.getChainID())
     }
 
-    potentialsUtils.close(activeAssembly)
+    //potentialsUtils.close(activeAssembly)
     MolecularAssembly titrateAssembly = new MolecularAssembly(filename)
     titrateAssembly.setForceField(forceField)
 
@@ -148,14 +155,23 @@ class ManyBody extends AlgorithmsScript {
     logger.info("\n Adding rotamer optimization with titration protons to : " + filename + "\n")
     PDBFilter protFilter = new PDBFilter(
             structureFile, titrateAssembly, forceField, forceField.getProperties(), resNumberList);
-    protFilter.setRotamerTitration(true)
+    if(manyBody.group.titrationPH != 0){
+      protFilter.setRotamerTitration(true)
+    }
     protFilter.readFile()
     protFilter.applyAtomProperties()
     titrateAssembly.finalize(true, forceField)
     potentialEnergy = ForceFieldEnergy.energyFactory(titrateAssembly)
+    potentialEnergy.energy(false, true)
     titrateAssembly.setFile(structureFile)
     logger.info("Read file successfully")
 
+    for(Residue residue: titrateAssembly.getResidueList()){
+      logger.info("Residue Name:" + residue.getName() + " " + residue.getResidueNumber())
+      for(Atom atom : residue.getAtomList()){
+        logger.info("Atom Name:" + atom.getName())
+      }
+    }
     RotamerOptimization rotamerOptimization = new RotamerOptimization(
         titrateAssembly, potentialEnergy, algorithmListener)
 

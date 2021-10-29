@@ -174,13 +174,9 @@ public class ManyBodyOptions{
     if (group.algorithm == 0) {
       setAlgorithm(activeAssembly);
     }
-    logger.info("call setSelection");
     setSelection();
-    logger.info("call setForcedResidue");
     setForcedResidue();
-    logger.info("Call setResidue");
     setResidues(activeAssembly, fileName);
-    logger.info("call set rotopt prop");
     setRotOptProperties();
   }
 
@@ -194,7 +190,6 @@ public class ManyBodyOptions{
    * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
    */
   public void setResidues(MolecularAssembly activeAssembly, String fileName) {
-    logger.info("Enter setResidues");
     List<String> resList = new ArrayList<>();
     addListResidues(resList);
 
@@ -372,61 +367,30 @@ public class ManyBodyOptions{
   }
 
   public List<Residue> getResidues(MolecularAssembly activeAssembly){
-    List<String> resList = new ArrayList<>();
-    addListResidues(resList);
     List<Residue> residueList = new ArrayList<>();
-    int counter = 1;
-    if (allStartResID > 0) {
-      Polymer[] polymers = activeAssembly.getChains();
-      for (Polymer polymer : polymers) {
-        List<Residue> residues = polymer.getResidues();
-        for (Residue residue : residues) {
-          Rotamer[] rotamers = residue.setRotamers(rotamerLibrary);
-          if (rotamers != null) {
-            int nrot = rotamers.length;
-            if (nrot == 1) {
-              RotamerLibrary.applyRotamer(residue, rotamers[0]);
-            }
-            if (counter >= allStartResID) {
-              residueList.add(residue);
-            }
-          } else if (!group.forceResidues.equalsIgnoreCase("none")) {
-            if (counter >= allStartResID
-                    && counter >= forceResiduesStart
-                    && counter <= forceResiduesEnd) {
-              residueList.add(residue);
-            }
-          }
-          counter++;
+    int counter = 0;
+    List<Residue> residues = activeAssembly.getResidueList();
+    if (residueGroup.all > -1) {
+      counter = residueGroup.all;
+      for(Residue residue : residues){
+        if (residue.getResidueNumber() == counter){
+          residueList.add(residue);
+          counter += 1;
         }
       }
-      //rotamerOptimization.setResidues(residueList);
+    } else if (residueGroup.start > -1) {
+      counter = residueGroup.start;
+      for(Residue residue : residues){
+        if (counter == residueGroup.finish + 1){
+          break;
+        }else if (residue.getResidueNumber() == counter){
+          residueList.add(residue);
+          counter += 1;
 
-    } else if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
-      Polymer[] polymers = activeAssembly.getChains();
-      int n = 0;
-      for (String s : resList) {
-        Character chainID = s.charAt(0);
-        int i = Integer.parseInt(s.substring(1));
-        for (Polymer p : polymers) {
-          if (p.getChainID() == chainID) {
-            List<Residue> rs = p.getResidues();
-            for (Residue r : rs) {
-              if (r.getResidueNumber() == i) {
-                residueList.add(r);
-                Rotamer[] rotamers = r.setRotamers(rotamerLibrary);
-                if (rotamers != null) {
-                  n++;
-                }
-              }
-            }
-          }
         }
       }
-      //if (n < 1){
-      //  residueList = null;
-      //}
-      //rotamerOptimization.setResiduesIgnoreNull(residueList);
+    } else {
+      residueList = residues;
     }
     return residueList;
   }
@@ -535,7 +499,6 @@ public class ManyBodyOptions{
 
   /** Set allStartResID, boxStart and boxEnd */
   private void setSelection() {
-    logger.info("Enter set selection");
     // Chain, Residue and/or Box selections.
     // Internal machinery indexed 0 to (n-1)
     setStartAndEndDefault();
@@ -606,7 +569,6 @@ public class ManyBodyOptions{
 
   /** setForcedResidue. */
   private void setForcedResidue() {
-    logger.info("enter set forced residue");
     // Force residues.
     forceResiduesStart = -1;
     forceResiduesEnd = -1;
@@ -696,7 +658,6 @@ public class ManyBodyOptions{
 
   /** Sets the standard values for properties in rotamer optimization. */
   private void setRotOptProperties() {
-    logger.info("enter set rotopt properties");
     // General
     rotamerOptimization.setTwoBodyCutoff(energyGroup.twoBodyCutoff);
     rotamerOptimization.setThreeBodyCutoff(energyGroup.threeBodyCutoff);
