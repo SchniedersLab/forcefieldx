@@ -341,6 +341,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
     @Override
     public void run(int lb, int ub) throws Exception {
 
+      //TODO: copy from PMEQI the self energy for the titr & taut mdots to contribute to eSelfDeriv
       // Permanent multipole self energy and gradient.
       for (int i = lb; i <= ub; i++) {
         if (use[i]) {
@@ -371,6 +372,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
           final double[] mpole = multipole[i];
           final double[] fmpole = fracMultipoles[i];
 
+          //TODO: Copy from PMEQI the eRecip term for ESV scaled terms. Add to shared double gradient.
           double e =
               mpole[t000] * phi[t000]
                   + mpole[t100] * phi[t100]

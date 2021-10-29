@@ -107,6 +107,8 @@ public class ExtendedSystem {
      * Once reduced, will equal either dU_Titr/dLambda or dU_Taut/dLambda for specific ESV
      */
     public final SharedDouble[] esvVdwDerivs;
+
+    public final SharedDouble[] esvPermRealDerivs;
     /**
      * Array of AminoAcid3 initialized  to match the number of atoms in the system.
      * Used to know how to apply vdW or electrostatic ESV terms for the atom.
@@ -320,8 +322,10 @@ public class ExtendedSystem {
         thetaAccel = new double[size];
         thetaMassArray = new double[size];
         esvVdwDerivs = new SharedDouble[size];
+        esvPermRealDerivs = new SharedDouble[size];
         for(int i=0; i < size; i++){
             esvVdwDerivs[i] = new SharedDouble(0.0);
+            esvPermRealDerivs[i] = new SharedDouble(0.0);
         }
 
         //Theta masses should always be the same for each ESV
@@ -357,6 +361,12 @@ public class ExtendedSystem {
     public void initEsvVdw(){
         for (int i = 0; i < extendedResidueList.size(); i++) {
             esvVdwDerivs[i].set(0.0);
+        }
+    }
+
+    public void initEsvPermReal(){
+        for (int i = 0; i < extendedResidueList.size(); i++) {
+            esvPermRealDerivs[i].set(0.0);
         }
     }
 
@@ -900,6 +910,17 @@ public class ExtendedSystem {
         esvVdwDerivs[titrationEsvIndex].addAndGet(dTitr_dLambda);
         if(tautomerEsvIndex != -1){
             esvVdwDerivs[tautomerEsvIndex].addAndGet(dTaut_dLambda);
+        }
+    }
+
+    public void addPermRealDeriv(int atomI, double permanentPairEnergy){
+        //Sum up dU/dL for titration ESV if atom i is titrating hydrogen
+        //Sum up dU/dL for tautomer ESV if atom i is titrating hydrogen
+        int titrationEsvIndex = titrationIndexMap[atomI];
+        int tautomerEsvIndex = tautomerIndexMap[atomI] + titratingResidueList.size();
+        esvPermRealDerivs[titrationEsvIndex].addAndGet(permanentPairEnergy);
+        if(tautomerEsvIndex != -1){
+            esvPermRealDerivs[tautomerEsvIndex].addAndGet(permanentPairEnergy);
         }
     }
 

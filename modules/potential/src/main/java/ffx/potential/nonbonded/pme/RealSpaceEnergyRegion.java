@@ -916,7 +916,97 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
               count++;
             }
             //TODO: Aggregate dU/dtitr and dU/dtaut by resetting multipole parameters with appropriate mdots.
-            // These values will be stored in sharedDoubles Follow pseudocode. 
+            // These values will be stored in sharedDoubles Follow pseudocode.
+
+            //TODO: abstract out set multipole method to simplify loading and unloading multipoles. Do not include induced dipoles yet.
+            if(extendedSystem.isTitrating(i)){
+              final double[][] titrMpole = titrationMultipole[0];
+              final double[] titrMultipolei = titrMpole[i];
+              double titrdUdL;
+              ci   = titrMultipolei[t000];
+              dix  = titrMultipolei[t100];
+              diy  = titrMultipolei[t010];
+              diz  = titrMultipolei[t001];
+              qixx = titrMultipolei[t200] * oneThird;
+              qiyy = titrMultipolei[t020] * oneThird;
+              qizz = titrMultipolei[t002] * oneThird;
+              qixy = titrMultipolei[t110] * oneThird;
+              qixz = titrMultipolei[t101] * oneThird;
+              qiyz = titrMultipolei[t011] * oneThird;
+              uix  = inducedDipolei[0];
+              uiy  = inducedDipolei[1];
+              uiz  = inducedDipolei[2];
+              pix  = inducedDipolepi[0];
+              piy  = inducedDipolepi[1];
+              piz  = inducedDipolepi[2];
+
+              if(extendedSystem.isTitrating(k)){
+                final double[] titrMultipolek = titrMpole[k];
+                ck   = titrMultipolek[t000];
+                dkx  = titrMultipolek[t100];
+                dky  = titrMultipolek[t010];
+                dkz  = titrMultipolek[t001];
+                qkxx = titrMultipolek[t200] * oneThird;
+                qkyy = titrMultipolek[t020] * oneThird;
+                qkzz = titrMultipolek[t002] * oneThird;
+                qkxy = titrMultipolek[t110] * oneThird;
+                qkxz = titrMultipolek[t101] * oneThird;
+                qkyz = titrMultipolek[t011] * oneThird;
+                ukx  = inducedDipolek[0];
+                uky  = inducedDipolek[1];
+                ukz  = inducedDipolek[2];
+                pkx  = inducedDipolepk[0];
+                pky  = inducedDipolepk[1];
+                pkz  = inducedDipolepk[2];
+              }
+              titrdUdL = permanentPair();
+              extendedSystem.addPermRealDeriv(i, titrdUdL);
+
+              if(extendedSystem.isTautomerizing(i)){
+                final double[][] tautMpole = tautomerMultipole[0];
+                final double[] tautMultipolei = tautMpole[i];
+                double tautdUdL;
+                ci   = tautMultipolei[t000];
+                dix  = tautMultipolei[t100];
+                diy  = tautMultipolei[t010];
+                diz  = tautMultipolei[t001];
+                qixx = tautMultipolei[t200] * oneThird;
+                qiyy = tautMultipolei[t020] * oneThird;
+                qizz = tautMultipolei[t002] * oneThird;
+                qixy = tautMultipolei[t110] * oneThird;
+                qixz = tautMultipolei[t101] * oneThird;
+                qiyz = tautMultipolei[t011] * oneThird;
+                uix  = inducedDipolei[0];
+                uiy  = inducedDipolei[1];
+                uiz  = inducedDipolei[2];
+                pix  = inducedDipolepi[0];
+                piy  = inducedDipolepi[1];
+                piz  = inducedDipolepi[2];
+
+                if(extendedSystem.isTitrating(k)){
+                  final double[] titrMultipolek = titrMpole[k];
+                  ck   = titrMultipolek[t000];
+                  dkx  = titrMultipolek[t100];
+                  dky  = titrMultipolek[t010];
+                  dkz  = titrMultipolek[t001];
+                  qkxx = titrMultipolek[t200] * oneThird;
+                  qkyy = titrMultipolek[t020] * oneThird;
+                  qkzz = titrMultipolek[t002] * oneThird;
+                  qkxy = titrMultipolek[t110] * oneThird;
+                  qkxz = titrMultipolek[t101] * oneThird;
+                  qkyz = titrMultipolek[t011] * oneThird;
+                  ukx  = inducedDipolek[0];
+                  uky  = inducedDipolek[1];
+                  ukz  = inducedDipolek[2];
+                  pkx  = inducedDipolepk[0];
+                  pky  = inducedDipolepk[1];
+                  pkz  = inducedDipolepk[2];
+                }
+                tautdUdL = permanentPair();
+                extendedSystem.addPermRealDeriv(i, tautdUdL);
+              }
+            }
+
           }
           if (polarization != ParticleMeshEwald.Polarization.NONE && doPolarization) {
             // Polarization does not use the softcore tensors.
