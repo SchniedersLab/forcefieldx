@@ -156,6 +156,7 @@ public final class PDBFilter extends SystemFilter {
 
   private List<Mutation> mutations = null;
   private List<String> resNumberList = null;
+  private List<Character> chainList = null;
   /** Flag to indicate if missing fields should be printed (i.e. missing B-factors). */
   private boolean printMissingFields = true;
   /** Number of symmetry operators in the current crystal. */
@@ -294,6 +295,7 @@ public final class PDBFilter extends SystemFilter {
     this.fileType = FileType.PDB;
     this.readFile = file;
     this.resNumberList = resNumberList;
+    //this.chainList = chainList;
   }
 
 

@@ -129,7 +129,6 @@ class ManyBody extends AlgorithmsScript {
 
 
     // if rotamer optimization with titration, create new molecular assembly with additional protons
-    PotentialsUtils potentialsUtils = new PotentialsUtils()
     ForceField forceField = activeAssembly.getForceField()
     potentialEnergy = activeAssembly.getPotentialEnergy()
     potentialEnergy.energy(false, true)
@@ -143,19 +142,17 @@ class ManyBody extends AlgorithmsScript {
 
     for (Residue residue : residues) {
       resNumberList.add(String.valueOf(residue.getResidueNumber()))
-      logger.info("Residue number:" + String.valueOf(residue.getResidueNumber()))
       chainList.add(residue.getChainID())
     }
 
-    //potentialsUtils.close(activeAssembly)
     MolecularAssembly titrateAssembly = new MolecularAssembly(filename)
     titrateAssembly.setForceField(forceField)
 
     File structureFile = new File(filename);
-    logger.info("\n Adding rotamer optimization with titration protons to : " + filename + "\n")
     PDBFilter protFilter = new PDBFilter(
             structureFile, titrateAssembly, forceField, forceField.getProperties(), resNumberList);
     if(manyBody.group.titrationPH != 0){
+      logger.info("\n Adding rotamer optimization with titration protons to : " + filename + "\n")
       protFilter.setRotamerTitration(true)
     }
     protFilter.readFile()
@@ -164,14 +161,7 @@ class ManyBody extends AlgorithmsScript {
     potentialEnergy = ForceFieldEnergy.energyFactory(titrateAssembly)
     potentialEnergy.energy(false, true)
     titrateAssembly.setFile(structureFile)
-    logger.info("Read file successfully")
 
-    for(Residue residue: titrateAssembly.getResidueList()){
-      logger.info("Residue Name:" + residue.getName() + " " + residue.getResidueNumber())
-      for(Atom atom : residue.getAtomList()){
-        logger.info("Atom Name:" + atom.getName())
-      }
-    }
     RotamerOptimization rotamerOptimization = new RotamerOptimization(
         titrateAssembly, potentialEnergy, algorithmListener)
 
@@ -185,8 +175,6 @@ class ManyBody extends AlgorithmsScript {
       rotamerOptimization.setMonteCarloTesting(true)
     }
 
-
-
     manyBody.initRotamerOptimization(rotamerOptimization, titrateAssembly, filename)
 
     List<Residue> residueList = rotamerOptimization.getResidues()
@@ -198,9 +186,7 @@ class ManyBody extends AlgorithmsScript {
         master = false
       }
     }
-    logger.info("About to calc energy")
     algorithmFunctions.energy(titrateAssembly)
-    logger.info("About to measure rotamers")
     RotamerLibrary.measureRotamers(residueList, false)
 
     RotamerOptimization.Algorithm algorithm
