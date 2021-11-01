@@ -390,6 +390,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
     // Input
     this.atoms = atoms;
     this.crystal = crystal;
+    this.extendedSystem = extendedSystem;
     this.coordinates = coordinates;
     this.frame = frame;
     this.axisAtom = axisAtom;
@@ -922,7 +923,8 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
             if(extendedSystem.isTitrating(i)){
               final double[][] titrMpole = titrationMultipole[0];
               final double[] titrMultipolei = titrMpole[i];
-              double titrdUdL;
+              double titrdUdL = 0.0;
+              double tautdUdL = 0.0;
               ci   = titrMultipolei[t000];
               dix  = titrMultipolei[t100];
               diy  = titrMultipolei[t010];
@@ -960,12 +962,10 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                 pkz  = inducedDipolepk[2];
               }
               titrdUdL = permanentPair();
-              extendedSystem.addPermRealDeriv(i, titrdUdL);
 
               if(extendedSystem.isTautomerizing(i)){
                 final double[][] tautMpole = tautomerMultipole[0];
                 final double[] tautMultipolei = tautMpole[i];
-                double tautdUdL;
                 ci   = tautMultipolei[t000];
                 dix  = tautMultipolei[t100];
                 diy  = tautMultipolei[t010];
@@ -1003,10 +1003,9 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                   pkz  = inducedDipolepk[2];
                 }
                 tautdUdL = permanentPair();
-                extendedSystem.addPermRealDeriv(i, tautdUdL);
               }
+              extendedSystem.addPermElecDeriv(i, titrdUdL, tautdUdL);
             }
-
           }
           if (polarization != ParticleMeshEwald.Polarization.NONE && doPolarization) {
             // Polarization does not use the softcore tensors.

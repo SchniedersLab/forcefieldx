@@ -708,6 +708,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       sharedd2EdLambda2.set(0.0);
     }
 
+    if(esvTerm){
+      extendedSystem.initEsvPermReal();
+    }
+
     alchemicalParameters.doPermanentRealSpace = true;
     alchemicalParameters.permanentScale = 1.0;
     alchemicalParameters.doPolarization = true;
@@ -1657,8 +1661,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       reciprocalEnergyRegion.init(
           atoms,
           crystal,
+          extendedSystem,
           use,
           globalMultipole,
+          dMultipoledTirationESV,
+          dMultipoledTautomerESV,
           cartesianMultipolePhi,
           inputDipole,
           inputDipoleCR,
@@ -1687,10 +1694,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     realSpaceEnergyRegion.init(
         atoms,
         crystal,
+        extendedSystem,
         coordinates,
         frame,
         axisAtom,
         globalMultipole,
+        dMultipoledTirationESV,
+        dMultipoledTautomerESV,
         inputDipole,
         inputDipoleCR,
         use,
@@ -1748,8 +1758,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         reciprocalEnergyRegion.init(
             atoms,
             crystal,
+            extendedSystem,
             use,
             globalMultipole,
+            dMultipoledTirationESV,
+            dMultipoledTautomerESV,
             cartesianMultipolePhi,
             vacuumInducedDipole,
             vacuumInducedDipoleCR,
@@ -1776,10 +1789,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       realSpaceEnergyRegion.init(
           atoms,
           crystal,
+          extendedSystem,
           coordinates,
           frame,
           axisAtom,
           globalMultipole,
+          dMultipoledTirationESV,
+          dMultipoledTautomerESV,
           vacuumInducedDipole,
           vacuumInducedDipoleCR,
           use,
@@ -1819,8 +1835,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         reciprocalEnergyRegion.init(
             atoms,
             crystal,
+            extendedSystem,
             use,
             globalMultipole,
+            dMultipoledTirationESV,
+            dMultipoledTautomerESV,
             cartesianMultipolePhi,
             inducedDipole,
             inducedDipoleCR,
@@ -1847,10 +1866,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       realSpaceEnergyRegion.init(
           atoms,
           crystal,
+          extendedSystem,
           coordinates,
           frame,
           axisAtom,
           globalMultipole,
+          dMultipoledTirationESV,
+          dMultipoledTautomerESV,
           inducedDipole,
           inducedDipoleCR,
           use,

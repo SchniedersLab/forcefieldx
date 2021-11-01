@@ -69,6 +69,7 @@ import ffx.crystal.Crystal;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.multipole.MultipoleTensor;
 import ffx.potential.bonded.Atom;
+import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.nonbonded.ParticleMeshEwaldCart.AlchemicalParameters;
@@ -142,6 +143,10 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
   private boolean[] use;
   /** Dimensions of [nsymm][nAtoms][10] */
   private double[][][] globalMultipole;
+  private double[][][] titrationMultipole;
+  private double[][][] tautomerMultipole;
+
+  private ExtendedSystem extendedSystem = null;
 
   private double[][] cartMultipolePhi;
   private double[][] cartesianDipolePhi;
@@ -242,8 +247,11 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
   public void init(
       Atom[] atoms,
       Crystal crystal,
+      ExtendedSystem extendedSystem,
       boolean[] use,
       double[][][] globalMultipole,
+      double[][][] titrationMultipole,
+      double[][][] tautomerMultipole,
       double[][] cartMultipolePhi,
       double[][][] inducedDipole,
       double[][][] inducedDipoleCR,
@@ -262,8 +270,11 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
       AlchemicalParameters alchemicalParameters) {
     this.atoms = atoms;
     this.crystal = crystal;
+    this.extendedSystem = extendedSystem;
     this.use = use;
     this.globalMultipole = globalMultipole;
+    this.titrationMultipole = titrationMultipole;
+    this.tautomerMultipole = tautomerMultipole;
     this.cartMultipolePhi = cartMultipolePhi;
     this.inducedDipole = inducedDipole;
     this.inducedDipoleCR = inducedDipoleCR;
@@ -354,6 +365,45 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
                   + in[t002] * in[t002]
                   + 2.0 * (in[t110] * in[t110] + in[t101] * in[t101] + in[t011] * in[t011]);
           eSelf += aewald1 * (cii + aewald2 * (dii / 3.0 + 2.0 * aewald2 * qii / 45.0));
+
+          if (extendedSystem.isTitrating(i)) {
+            double[] indot = titrationMultipole[0][i];
+            double ciidot = indot[t000] * in[t000];
+            double diidot =
+                    indot[t100] * in[t100] + indot[t010] * in[t010] + indot[t001] * in[t001];
+            double qiidot =
+                    indot[t200] * in[t200]
+                            + indot[t020] * in[t020]
+                            + indot[t002] * in[t002]
+                            + 2.0
+                            * (indot[t110] * in[t110]
+                            + indot[t101] * in[t101]
+                            + indot[t011] * in[t011]);
+            double eSelfTitrDot =
+                    2.0
+                            * aewald1
+                            * (ciidot + aewald2 * (diidot / 3.0 + 2.0 * aewald2 * qiidot / 45.0));
+            double eSelfTautDot = 0.0;
+            if (extendedSystem.isTautomerizing(i)) {
+              indot = tautomerMultipole[0][i];
+              ciidot = indot[t000] * in[t000];
+              diidot =
+                      indot[t100] * in[t100] + indot[t010] * in[t010] + indot[t001] * in[t001];
+              qiidot =
+                      indot[t200] * in[t200]
+                              + indot[t020] * in[t020]
+                              + indot[t002] * in[t002]
+                              + 2.0
+                              * (indot[t110] * in[t110]
+                              + indot[t101] * in[t101]
+                              + indot[t011] * in[t011]);
+              eSelfTautDot =
+                      2.0
+                              * aewald1
+                              * (ciidot + aewald2 * (diidot / 3.0 + 2.0 * aewald2 * qiidot / 45.0));
+            }
+            extendedSystem.addPermElecDeriv(i, eSelfTitrDot, eSelfTautDot);
+          }
         }
       }
       if (lambdaTerm) {
@@ -387,6 +437,23 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
                                   + mpole[t101] * phi[t101]
                                   + mpole[t011] * phi[t011]));
           eRecip += e;
+          if (extendedSystem.isTitrating(i)) {
+            final double mpoleDot[] = titrationMultipole[0][i];
+            final double edot =
+                    mpoleDot[t000] * phi[t000]
+                            + mpoleDot[t100] * phi[t100]
+                            + mpoleDot[t010] * phi[t010]
+                            + mpoleDot[t001] * phi[t001]
+                            + oneThird
+                            * (mpoleDot[t200] * phi[t200]
+                            + mpoleDot[t020] * phi[t020]
+                            + mpoleDot[t002] * phi[t002]
+                            + 2.0
+                            * (mpoleDot[t110] * phi[t110]
+                            + mpoleDot[t101] * phi[t101]
+                            + mpoleDot[t011] * phi[t011]));
+            esvPermRecipDeriv_local[esvIndex[i]] += 2.0 * edot;
+          }
           if (gradient || lambdaTerm) {
             final double[] fPhi = fracMultipolePhi[i];
             double gx =

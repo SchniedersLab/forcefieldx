@@ -913,14 +913,14 @@ public class ExtendedSystem {
         }
     }
 
-    public void addPermRealDeriv(int atomI, double permanentPairEnergy){
+    public void addPermElecDeriv(int atomI, double titrationEnergy, double tautomerEnergy){
         //Sum up dU/dL for titration ESV if atom i is titrating hydrogen
         //Sum up dU/dL for tautomer ESV if atom i is titrating hydrogen
         int titrationEsvIndex = titrationIndexMap[atomI];
         int tautomerEsvIndex = tautomerIndexMap[atomI] + titratingResidueList.size();
-        esvPermRealDerivs[titrationEsvIndex].addAndGet(permanentPairEnergy);
+        esvPermRealDerivs[titrationEsvIndex].addAndGet(titrationEnergy);
         if(tautomerEsvIndex != -1){
-            esvPermRealDerivs[tautomerEsvIndex].addAndGet(permanentPairEnergy);
+            esvPermRealDerivs[tautomerEsvIndex].addAndGet(tautomerEnergy);
         }
     }
 
