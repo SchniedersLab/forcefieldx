@@ -402,7 +402,8 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
                               * aewald1
                               * (ciidot + aewald2 * (diidot / 3.0 + 2.0 * aewald2 * qiidot / 45.0));
             }
-            extendedSystem.addPermElecDeriv(i, eSelfTitrDot, eSelfTautDot);
+            double factor = permanentScale;
+            extendedSystem.addPermElecDeriv(i, eSelfTitrDot*factor, eSelfTautDot*factor);
           }
         }
       }
@@ -438,8 +439,8 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
                                   + mpole[t011] * phi[t011]));
           eRecip += e;
           if (extendedSystem.isTitrating(i)) {
-            final double mpoleDot[] = titrationMultipole[0][i];
-            final double edot =
+            double mpoleDot[] = titrationMultipole[0][i];
+            double edotTitr =
                     mpoleDot[t000] * phi[t000]
                             + mpoleDot[t100] * phi[t100]
                             + mpoleDot[t010] * phi[t010]
@@ -452,7 +453,25 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
                             * (mpoleDot[t110] * phi[t110]
                             + mpoleDot[t101] * phi[t101]
                             + mpoleDot[t011] * phi[t011]));
-            esvPermRecipDeriv_local[esvIndex[i]] += 2.0 * edot;
+            double edotTaut = 0.0;
+            if(extendedSystem.isTautomerizing(i)){
+              mpoleDot = tautomerMultipole[0][i];
+              edotTaut =
+                      mpoleDot[t000] * phi[t000]
+                              + mpoleDot[t100] * phi[t100]
+                              + mpoleDot[t010] * phi[t010]
+                              + mpoleDot[t001] * phi[t001]
+                              + oneThird
+                              * (mpoleDot[t200] * phi[t200]
+                              + mpoleDot[t020] * phi[t020]
+                              + mpoleDot[t002] * phi[t002]
+                              + 2.0
+                              * (mpoleDot[t110] * phi[t110]
+                              + mpoleDot[t101] * phi[t101]
+                              + mpoleDot[t011] * phi[t011]));
+            }
+            double factor = permanentScale * electric;
+            extendedSystem.addPermElecDeriv(i,2.0 * edotTitr* factor, 2.0 * edotTaut* factor);
           }
           if (gradient || lambdaTerm) {
             final double[] fPhi = fracMultipolePhi[i];
