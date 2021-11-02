@@ -193,6 +193,9 @@ public class Crystal {
    * @param sg The space group symbol.
    */
   public Crystal(double a, double b, double c, double alpha, double beta, double gamma, String sg) {
+    // Crystal SpaceGroup and LatticeSystem are final variables. Temp variable to delay assigning.
+    SpaceGroup tempSG = SpaceGroupDefinitions.spaceGroupFactory(sg);
+    LatticeSystem tempLS = tempSG.latticeSystem;
     this.a = a;
     this.b = b;
     this.c = c;
@@ -200,14 +203,11 @@ public class Crystal {
     this.beta = beta;
     this.gamma = gamma;
     aperiodic = false;
-    spaceGroup = SpaceGroupDefinitions.spaceGroupFactory(sg);
-    crystalSystem = spaceGroup.crystalSystem;
-    latticeSystem = spaceGroup.latticeSystem;
-
-    if (!latticeSystem.validParameters(a, b, c, alpha, beta, gamma)) {
+    if (!tempLS.validParameters(a, b, c, alpha, beta, gamma)) {
+      // Invalid parameters... Start error/warning log and try to fix.
       StringBuilder sb = new StringBuilder(
-          " The proposed lattice parameters for " + spaceGroup.pdbName
-              + " do not satisfy the " + latticeSystem +
+          " The proposed lattice parameters for " + tempSG.pdbName
+              + " do not satisfy the " + tempLS +
               " lattice system restrictions and were ignored.\n");
       sb.append(format("  A-axis:                              %18.15e\n", a));
       sb.append(format("  B-axis:                              %18.15e\n", b));
@@ -215,7 +215,61 @@ public class Crystal {
       sb.append(format("  Alpha:                               %18.15e\n", alpha));
       sb.append(format("  Beta:                                %18.15e\n", beta));
       sb.append(format("  Gamma:                               %18.15e\n", gamma));
-      logger.severe(sb.toString());
+      if(tempLS == LatticeSystem.HEXAGONAL_LATTICE || tempLS == LatticeSystem.RHOMBOHEDRAL_LATTICE) {
+        // Try to convert between hexagonal and rhombohedral lattices to fix crystal.
+        Crystal convertedCrystal = SpaceGroupConversions.hrConversion(this, sg);
+        this.a = convertedCrystal.a;
+        this.b = convertedCrystal.b;
+        this.c = convertedCrystal.c;
+        this.alpha = convertedCrystal.alpha;
+        this.beta = convertedCrystal.beta;
+        this.gamma = convertedCrystal.gamma;
+        spaceGroup = convertedCrystal.spaceGroup;
+        crystalSystem = spaceGroup.crystalSystem;
+        latticeSystem = spaceGroup.latticeSystem;
+        sb.append(" Converted ").append(tempSG.pdbName).append(" to ").append(spaceGroup.pdbName);
+        if (!latticeSystem.validParameters(this.a, this.b, this.c, this.alpha, this.beta, this.gamma)) {
+          // Converted space group is still invalid... Print error message.
+          sb.append(" The proposed lattice parameters for ")
+                  .append(spaceGroup.pdbName)
+                  .append(" do not satisfy the ")
+                  .append(latticeSystem)
+                  .append(" lattice system restrictions and were ignored.\n");
+          sb.append(format("  A-axis:                              %18.15e\n", this.a));
+          sb.append(format("  B-axis:                              %18.15e\n", this.b));
+          sb.append(format("  C-axis:                              %18.15e\n", this.c));
+          sb.append(format("  Alpha:                               %18.15e\n", this.alpha));
+          sb.append(format("  Beta:                                %18.15e\n", this.beta));
+          sb.append(format("  Gamma:                               %18.15e\n", this.gamma));
+          logger.severe(sb.toString());
+        }else{
+          // Successfully converted space group between hexagonal and rhombohedral. Inform user.
+          logger.warning(sb.toString());
+        }
+      }else{
+        // Invalid lattice parameters. Update Crystal as much as possible, then print error message.
+        this.a = a;
+        this.b = b;
+        this.c = c;
+        this.alpha = alpha;
+        this.beta = beta;
+        this.gamma = gamma;
+        spaceGroup = SpaceGroupDefinitions.spaceGroupFactory(sg);
+        crystalSystem = spaceGroup.crystalSystem;
+        latticeSystem = spaceGroup.latticeSystem;
+        logger.severe(sb.toString());
+      }
+    }else{
+      // Valid parameters, update crystal and continue.
+      this.a = a;
+      this.b = b;
+      this.c = c;
+      this.alpha = alpha;
+      this.beta = beta;
+      this.gamma = gamma;
+      spaceGroup = SpaceGroupDefinitions.spaceGroupFactory(sg);
+      crystalSystem = spaceGroup.crystalSystem;
+      latticeSystem = spaceGroup.latticeSystem;
     }
 
     for (int i = 0; i < 6; i++) {
