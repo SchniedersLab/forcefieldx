@@ -135,14 +135,20 @@ class ManyBody extends AlgorithmsScript {
 
     List<String> resNumberList = new ArrayList<>()
     List<Character> chainList = new ArrayList<>()
-    List<Residue> residues = manyBody.getResidues(activeAssembly)
+    List<Residue> residues = new ArrayList<>()
+    if (manyBody.residueGroup.start > -1 || manyBody.residueGroup.all > -1) {
+      residues = manyBody.getResidues(activeAssembly)
+    } else {
+      residues = activeAssembly.getResidueList()
+    }
+            //manyBody.getResidues(activeAssembly)
+
     if (residues.isEmpty()){
       logger.info("Residue list is empty")
     }
 
     for (Residue residue : residues) {
       resNumberList.add(String.valueOf(residue.getResidueNumber()))
-      chainList.add(residue.getChainID())
     }
 
     MolecularAssembly titrateAssembly = new MolecularAssembly(filename)
@@ -175,7 +181,7 @@ class ManyBody extends AlgorithmsScript {
       rotamerOptimization.setMonteCarloTesting(true)
     }
 
-    manyBody.initRotamerOptimization(rotamerOptimization, titrateAssembly, filename)
+    manyBody.initRotamerOptimization(rotamerOptimization, titrateAssembly)
 
     List<Residue> residueList = rotamerOptimization.getResidues()
 

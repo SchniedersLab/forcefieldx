@@ -135,7 +135,7 @@ public class ManyBodyOptions{
    * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
    */
   public void initRotamerOptimization(
-          RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly, String fileName) {
+          RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly) {
     this.rotamerOptimization = rotamerOptimization;
     logger.info("Init rotopt");
     boolean useOrigCoordsRotamer = !group.noOriginal;
@@ -176,7 +176,7 @@ public class ManyBodyOptions{
     }
     setSelection();
     setForcedResidue();
-    setResidues(activeAssembly, fileName);
+    setResidues(activeAssembly);
     setRotOptProperties();
   }
 
@@ -189,28 +189,25 @@ public class ManyBodyOptions{
    *
    * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
    */
-  public void setResidues(MolecularAssembly activeAssembly, String fileName) {
+  public void setResidues(MolecularAssembly activeAssembly) {
     List<String> resList = new ArrayList<>();
     addListResidues(resList);
 
     TitrationUtils titrationUtils;
     if (group.titrationPH > 0.0 && group.titrationPH <= 14.0) {
       logger.info(format(" Turning on ASP, GLU, LYS and HIS titration rotamers at pH %5.2f", group.titrationPH));
-
       titrationUtils = new TitrationUtils(activeAssembly.getForceField());
       titrationUtils.setRotamerPhBias(298.15, group.titrationPH);
       List<Residue> residues = activeAssembly.getResidueList();
-
       for (Residue residue : residues) {
         residue.setTitrationUtils(titrationUtils);
       }
-
     }
 
     int counter = 1;
     if (group.algorithm != 5) {
       if (allStartResID > 0) {
-        List<Residue> residueList = getResidues(activeAssembly);
+        List<Residue> residueList = new ArrayList<>();
         Polymer[] polymers = activeAssembly.getChains();
         for (Polymer polymer : polymers) {
           List<Residue> residues = polymer.getResidues();
@@ -226,19 +223,17 @@ public class ManyBodyOptions{
               }
             } else if (!group.forceResidues.equalsIgnoreCase("none")) {
               if (counter >= allStartResID
-                  && counter >= forceResiduesStart
-                  && counter <= forceResiduesEnd) {
+                      && counter >= forceResiduesStart
+                      && counter <= forceResiduesEnd) {
                 residueList.add(residue);
               }
             }
             counter++;
           }
         }
-
         rotamerOptimization.setResidues(residueList);
-
       } else if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
-        List<Residue> residueList = getResidues(activeAssembly);
+        List<Residue> residueList = new ArrayList<>();
         Polymer[] polymers = activeAssembly.getChains();
         int n = 0;
         for (String s : resList) {
@@ -260,7 +255,7 @@ public class ManyBodyOptions{
           }
         }
         rotamerOptimization.setResiduesIgnoreNull(residueList);
-        if (residueList == null) {
+        if (n < 1) {
           return;
         }
       } else if (!residueGroup.chain.equalsIgnoreCase("-1")) {
@@ -363,7 +358,6 @@ public class ManyBodyOptions{
         rotamerOptimization.setBoxEnd(boxEnd);
       }
     }
-
   }
 
   public List<Residue> getResidues(MolecularAssembly activeAssembly){
@@ -383,14 +377,12 @@ public class ManyBodyOptions{
       for(Residue residue : residues){
         if (counter == residueGroup.finish + 1){
           break;
-        }else if (residue.getResidueNumber() == counter){
+        } else if (residue.getResidueNumber() == counter) {
           residueList.add(residue);
           counter += 1;
 
         }
       }
-    } else {
-      residueList = residues;
     }
     return residueList;
   }
