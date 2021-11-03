@@ -142,7 +142,7 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
 
-    assertEquals(0.1512836, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.15354157, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   @Test

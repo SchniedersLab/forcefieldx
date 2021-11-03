@@ -46,6 +46,9 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import java.util.logging.Logger;
 
+/**
+ * This class holds the functionality to convert between equivalent space groups.
+ */
 public class SpaceGroupConversions {
 
   /**
@@ -56,19 +59,18 @@ public class SpaceGroupConversions {
   /**
    * Convert between hexagonal and rhombohedral space groups.
    *
-   * @param crystal Crystal to be converted.
+   * @param crystal Crystal parameters to be converted.
+   * @param spaceGroup Current space group name.
    * @return Converted crystal.
    */
-  public static Crystal hrConversion(Crystal crystal) {
-    // Read in starting space group.
-    SpaceGroup spaceGroup = crystal.spaceGroup;
-    Crystal newXtal;
-    //Name for target space group.
+  public static Crystal hrConversion(Crystal crystal, String spaceGroup) {
+    //Name for converted space group.
     String xtalName = "";
     // Going from hexagonal to rhombohedral (true), or visa versa (false).
     boolean hexStart = false;
     // Determine starting space group.
-    switch (spaceGroup.shortName) {
+    SpaceGroup currentSG = SpaceGroupDefinitions.spaceGroupFactory(spaceGroup);
+    switch (currentSG.shortName) {
       case ("H3"):
         logger.info(" Converting from H3 to R3:");
         xtalName = "R3";
@@ -134,32 +136,39 @@ public class SpaceGroupConversions {
         break;
       default:
         logger.severe(format(" Unable to determine converted version for space group: %s",
-            spaceGroup.shortName));
+            spaceGroup));
         return crystal;
     }
 
-    // Convert
+    // Hexagonal and Rhombohedral space groups are frequently treated synonymously, therefore check if mislabeled.
+    double aCurrent = crystal.a;
+    double bCurrent = crystal.b;
+    double cCurrent = crystal.c;
+    double alphaCurrent = crystal.alpha;
+    double betaCurrent = crystal.beta;
+    double gammaCurrent = crystal.gamma;
     if (hexStart) {
       //Hexagonal aH = bH, alpha = beta = 90 gamma = 120
-      double aH = crystal.a;
-      double cH = crystal.c;
-      // Found from Wolfram Alpha Widgets
-      // (https://www.wolframalpha.com/widgets/gallery/view.jsp?id=2e9fcd6fd4b51d718872c02272648444)
+      if(LatticeSystem.RHOMBOHEDRAL_LATTICE.validParameters(aCurrent, bCurrent, cCurrent, alphaCurrent, betaCurrent, gammaCurrent)){
+        logger.info(" Crystal already has valid lattice parameters for new space group " + xtalName);
+        return new Crystal(aCurrent, bCurrent, cCurrent, alphaCurrent, betaCurrent, gammaCurrent, xtalName);
+      }
 
-      double aR = sqrt(1.0 / 9.0 * (pow(cH, 2) + 3 * pow(aH, 2)));
-      double aRAlpha = acos((2 * pow(cH, 2) - 3 * pow(aH, 2)) /
-          (2 * pow(cH, 2) + 6 * pow(aH, 2))) / PI * 180;
+      double aR = sqrt(1.0 / 9.0 * (pow(cCurrent, 2) + 3 * pow(aCurrent, 2)));
+      double aRAlpha = acos((2 * pow(cCurrent, 2) - 3 * pow(aCurrent, 2)) /
+          (2 * pow(cCurrent, 2) + 6 * pow(aCurrent, 2))) / PI * 180;
 
-      newXtal = new Crystal(aR, aR, aR, aRAlpha, aRAlpha, aRAlpha, xtalName);
+      return new Crystal(aR, aR, aR, aRAlpha, aRAlpha, aRAlpha, xtalName);
     } else {
-      double aR = crystal.a;
-      double aRAlpha = crystal.alpha;
+      if(LatticeSystem.HEXAGONAL_LATTICE.validParameters(aCurrent, bCurrent, cCurrent, alphaCurrent, betaCurrent, gammaCurrent)){
+        logger.info(" Crystal already has valid lattice parameters for new space group " + xtalName);
+        return new Crystal(aCurrent, bCurrent, cCurrent, alphaCurrent, betaCurrent, gammaCurrent, xtalName);
+      }
 
-      double aH = 2 * pow(aR, 2) * (1 - cos(aRAlpha / 180 * PI));
-      double cH = sqrt(3 * pow(aR, 2) * (1 + 2 * cos(aRAlpha / 180 * PI)));
+      double aH = 2 * pow(aCurrent, 2) * (1 - cos(alphaCurrent / 180 * PI));
+      double cH = sqrt(3 * pow(aCurrent, 2) * (1 + 2 * cos(alphaCurrent / 180 * PI)));
 
-      newXtal = new Crystal(aH, aH, cH, 90.00, 90.00, 120.00, xtalName);
+      return new Crystal(aH, aH, cH, 90.00, 90.00, 120.00, xtalName);
     }
-    return newXtal;
   }
 }
