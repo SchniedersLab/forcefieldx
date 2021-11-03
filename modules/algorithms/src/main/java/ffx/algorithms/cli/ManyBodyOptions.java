@@ -42,10 +42,9 @@ import static java.lang.String.format;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.bonded.*;
+import ffx.potential.cli.PotentialScript;
+import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TitrationUtils;
 import java.io.File;
 import java.io.IOException;
@@ -53,7 +52,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
+
+import ffx.potential.parsers.ForceFieldFilter;
+import ffx.potential.parsers.PDBFilter;
+import ffx.potential.utils.PotentialsFunctions;
+import ffx.potential.utils.PotentialsUtils;
 import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
@@ -66,7 +71,7 @@ import picocli.CommandLine.Option;
  * @author Mallory R. Tollefson
  * @since 1.0
  */
-public class ManyBodyOptions {
+public class ManyBodyOptions{
 
   private static final Logger logger = Logger.getLogger(ManyBodyOptions.class.getName());
 
@@ -130,9 +135,9 @@ public class ManyBodyOptions {
    * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
    */
   public void initRotamerOptimization(
-      RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly) {
+          RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly) {
     this.rotamerOptimization = rotamerOptimization;
-
+    logger.info("Init rotopt");
     boolean useOrigCoordsRotamer = !group.noOriginal;
     if (group.decompose) {
       useOrigCoordsRotamer = true;
@@ -218,8 +223,8 @@ public class ManyBodyOptions {
               }
             } else if (!group.forceResidues.equalsIgnoreCase("none")) {
               if (counter >= allStartResID
-                  && counter >= forceResiduesStart
-                  && counter <= forceResiduesEnd) {
+                      && counter >= forceResiduesStart
+                      && counter <= forceResiduesEnd) {
                 residueList.add(residue);
               }
             }
@@ -355,6 +360,33 @@ public class ManyBodyOptions {
     }
   }
 
+  public List<Residue> getResidues(MolecularAssembly activeAssembly){
+    List<Residue> residueList = new ArrayList<>();
+    int counter = 0;
+    List<Residue> residues = activeAssembly.getResidueList();
+    if (residueGroup.all > -1) {
+      counter = residueGroup.all;
+      for(Residue residue : residues){
+        if (residue.getResidueNumber() == counter){
+          residueList.add(residue);
+          counter += 1;
+        }
+      }
+    } else if (residueGroup.start > -1) {
+      counter = residueGroup.start;
+      for(Residue residue : residues){
+        if (counter == residueGroup.finish + 1){
+          break;
+        } else if (residue.getResidueNumber() == counter) {
+          residueList.add(residue);
+          counter += 1;
+
+        }
+      }
+    }
+    return residueList;
+  }
+
   /**
    * This method sets the algorithm by default. If no parameters are given, the default algorithm
    * value 0. When the default algorithm is 0, a specific algorithm number (1-5) needs to be
@@ -459,7 +491,6 @@ public class ManyBodyOptions {
 
   /** Set allStartResID, boxStart and boxEnd */
   private void setSelection() {
-
     // Chain, Residue and/or Box selections.
     // Internal machinery indexed 0 to (n-1)
     setStartAndEndDefault();

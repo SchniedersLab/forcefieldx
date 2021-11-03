@@ -155,6 +155,8 @@ public final class PDBFilter extends SystemFilter {
   private boolean mutate = false;
 
   private List<Mutation> mutations = null;
+  private List<String> resNumberList = null;
+  private List<Character> chainList = null;
   /** Flag to indicate if missing fields should be printed (i.e. missing B-factors). */
   private boolean printMissingFields = true;
   /** Number of symmetry operators in the current crystal. */
@@ -272,6 +274,30 @@ public final class PDBFilter extends SystemFilter {
     this.fileType = FileType.PDB;
     readFile = file;
   }
+
+  /**
+   * Constructor for PDBFilter with residue numbers.
+   *
+   * @param file a {@link java.util.List} object.
+   * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
+   */
+  public PDBFilter(
+          File file,
+          MolecularAssembly molecularAssembly,
+          ForceField forceField,
+          CompositeConfiguration properties,
+          List<String> resNumberList) {
+    super(file, molecularAssembly, forceField, properties);
+    bondList = new ArrayList<>();
+    this.fileType = FileType.PDB;
+    this.readFile = file;
+    this.resNumberList = resNumberList;
+    //this.chainList = chainList;
+  }
+
 
   /**
    * Simple method useful for converting files to PDB format.
@@ -481,6 +507,7 @@ public final class PDBFilter extends SystemFilter {
   /** Parse the PDB File */
   @Override
   public boolean readFile() {
+    logger.info("Executing read file");
     remarkLines = new ArrayList<>();
     // First atom is #1, to match xyz file format
     int xyzIndex = 1;
@@ -879,7 +906,7 @@ public final class PDBFilter extends SystemFilter {
                     }
                   } else if (rotamerTitration){
                     AminoAcid3 aa3 = AminoAcidUtils.AminoAcid3.valueOf(resName.toUpperCase());
-                    if (rotamerResidueMap.containsKey(aa3)) {
+                    if (rotamerResidueMap.containsKey(aa3) && resNumberList.contains(String.valueOf(resSeq))) {
                       String atomName = name.toUpperCase();
                       AminoAcid3 aa3rotamer = rotamerResidueMap.get(aa3);
                       resName = aa3rotamer.name();
