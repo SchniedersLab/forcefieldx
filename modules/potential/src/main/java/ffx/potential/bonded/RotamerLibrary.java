@@ -2985,7 +2985,7 @@ public class RotamerLibrary {
       if (resMap.containsKey(atomString)) {
         return resMap.get(atomString);
       } else {
-        logger.fine(
+        logger.finest(
             format(" Could not find an ideal-geometry angle for %s %s-%s-%s", resName, a1, a2, a3));
         return angleFromForceField(a1, a2, a3);
       }
