@@ -471,7 +471,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
                               + mpoleDot[t011] * phi[t011]));
             }
             double factor = permanentScale * electric;
-            extendedSystem.addPermElecDeriv(i,2.0 * edotTitr* factor, 2.0 * edotTaut* factor);
+            extendedSystem.addPermElecDeriv(i,edotTitr * factor, edotTaut * factor);
           }
           if (gradient || lambdaTerm) {
             final double[] fPhi = fracMultipolePhi[i];

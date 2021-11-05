@@ -765,16 +765,10 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
         final double[] globalMultipolei = mpole[i];
         final double[] inducedDipolei = ind[i];
         final double[] inducedDipolepi = indp[i];
-        ci = globalMultipolei[t000];
-        dix = globalMultipolei[t100];
-        diy = globalMultipolei[t010];
-        diz = globalMultipolei[t001];
-        qixx = globalMultipolei[t200] * oneThird;
-        qiyy = globalMultipolei[t020] * oneThird;
-        qizz = globalMultipolei[t002] * oneThird;
-        qixy = globalMultipolei[t110] * oneThird;
-        qixz = globalMultipolei[t101] * oneThird;
-        qiyz = globalMultipolei[t011] * oneThird;
+        setMultipoleI(globalMultipolei[t000], globalMultipolei[t100], globalMultipolei[t010], globalMultipolei[t001],
+                globalMultipolei[t200] * oneThird, globalMultipolei[t020] * oneThird,
+                globalMultipolei[t002] * oneThird, globalMultipolei[t110] * oneThird,
+                globalMultipolei[t101] * oneThird, globalMultipolei[t011] * oneThird);
         uix = inducedDipolei[0];
         uiy = inducedDipolei[1];
         uiz = inducedDipolei[2];
@@ -822,16 +816,10 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
           final double[] globalMultipolek = neighborMultipole[k];
           final double[] inducedDipolek = neighborInducedDipole[k];
           final double[] inducedDipolepk = neighborInducedDipolep[k];
-          ck = globalMultipolek[t000];
-          dkx = globalMultipolek[t100];
-          dky = globalMultipolek[t010];
-          dkz = globalMultipolek[t001];
-          qkxx = globalMultipolek[t200] * oneThird;
-          qkyy = globalMultipolek[t020] * oneThird;
-          qkzz = globalMultipolek[t002] * oneThird;
-          qkxy = globalMultipolek[t110] * oneThird;
-          qkxz = globalMultipolek[t101] * oneThird;
-          qkyz = globalMultipolek[t011] * oneThird;
+          setMultipoleK(globalMultipolek[t000], globalMultipolek[t100], globalMultipolek[t010], globalMultipolek[t001],
+          globalMultipolek[t200] * oneThird, globalMultipolek[t020] * oneThird,
+          globalMultipolek[t002] * oneThird, globalMultipolek[t110] * oneThird,
+          globalMultipolek[t101] * oneThird, globalMultipolek[t011] * oneThird);
           ukx = inducedDipolek[0];
           uky = inducedDipolek[1];
           ukz = inducedDipolek[2];
@@ -896,7 +884,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
             ddsc7z = temp7 * ddsc5z;
           }
           if (doPermanentRealSpace) {
-            double ei = permanentPair();
+            double ei = permanentPair(gradient, lambdaTerm);
             if (isNaN(ei) || isInfinite(ei)) {
               String message =
                   format(
@@ -920,92 +908,68 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
             // These values will be stored in sharedDoubles Follow pseudocode.
 
             //TODO: abstract out set multipole method to simplify loading and unloading multipoles. Do not include induced dipoles yet.
-            if(extendedSystem.isTitrating(i)){
-              final double[][] titrMpole = titrationMultipole[0];
-              final double[] titrMultipolei = titrMpole[i];
+            //boolean gradientBak = gradient;
+            //boolean lambdaTermBak = lambdaTerm;
+            //gradient = false;
+            //lambdaTerm = false;
+            if(extendedSystem.isTitrating(i)) {
               double titrdUdL = 0.0;
               double tautdUdL = 0.0;
-              ci   = titrMultipolei[t000];
-              dix  = titrMultipolei[t100];
-              diy  = titrMultipolei[t010];
-              diz  = titrMultipolei[t001];
-              qixx = titrMultipolei[t200] * oneThird;
-              qiyy = titrMultipolei[t020] * oneThird;
-              qizz = titrMultipolei[t002] * oneThird;
-              qixy = titrMultipolei[t110] * oneThird;
-              qixz = titrMultipolei[t101] * oneThird;
-              qiyz = titrMultipolei[t011] * oneThird;
-              uix  = inducedDipolei[0];
-              uiy  = inducedDipolei[1];
-              uiz  = inducedDipolei[2];
-              pix  = inducedDipolepi[0];
-              piy  = inducedDipolepi[1];
-              piz  = inducedDipolepi[2];
-
-              if(extendedSystem.isTitrating(k)){
-                final double[] titrMultipolek = titrMpole[k];
-                ck   = titrMultipolek[t000];
-                dkx  = titrMultipolek[t100];
-                dky  = titrMultipolek[t010];
-                dkz  = titrMultipolek[t001];
-                qkxx = titrMultipolek[t200] * oneThird;
-                qkyy = titrMultipolek[t020] * oneThird;
-                qkzz = titrMultipolek[t002] * oneThird;
-                qkxy = titrMultipolek[t110] * oneThird;
-                qkxz = titrMultipolek[t101] * oneThird;
-                qkyz = titrMultipolek[t011] * oneThird;
-                ukx  = inducedDipolek[0];
-                uky  = inducedDipolek[1];
-                ukz  = inducedDipolek[2];
-                pkx  = inducedDipolepk[0];
-                pky  = inducedDipolepk[1];
-                pkz  = inducedDipolepk[2];
-              }
-              titrdUdL = permanentPair();
+              final double[][] titrMpole = titrationMultipole[0];
+              final double[] titrMultipolei = titrMpole[i];
+              setMultipoleI(titrMultipolei[t000], titrMultipolei[t100], titrMultipolei[t010], titrMultipolei[t001],
+                      titrMultipolei[t200] * oneThird, titrMultipolei[t020] * oneThird,
+                      titrMultipolei[t002] * oneThird, titrMultipolei[t110] * oneThird,
+                      titrMultipolei[t101] * oneThird, titrMultipolei[t011] * oneThird);
+              titrdUdL = permanentPair(false, false);
 
               if(extendedSystem.isTautomerizing(i)){
                 final double[][] tautMpole = tautomerMultipole[0];
                 final double[] tautMultipolei = tautMpole[i];
-                ci   = tautMultipolei[t000];
-                dix  = tautMultipolei[t100];
-                diy  = tautMultipolei[t010];
-                diz  = tautMultipolei[t001];
-                qixx = tautMultipolei[t200] * oneThird;
-                qiyy = tautMultipolei[t020] * oneThird;
-                qizz = tautMultipolei[t002] * oneThird;
-                qixy = tautMultipolei[t110] * oneThird;
-                qixz = tautMultipolei[t101] * oneThird;
-                qiyz = tautMultipolei[t011] * oneThird;
-                uix  = inducedDipolei[0];
-                uiy  = inducedDipolei[1];
-                uiz  = inducedDipolei[2];
-                pix  = inducedDipolepi[0];
-                piy  = inducedDipolepi[1];
-                piz  = inducedDipolepi[2];
+                setMultipoleI(tautMultipolei[t000], tautMultipolei[t100], tautMultipolei[t010], tautMultipolei[t001],
+                        tautMultipolei[t200] * oneThird, tautMultipolei[t020] * oneThird,
+                        tautMultipolei[t002] * oneThird, tautMultipolei[t110] * oneThird,
+                        tautMultipolei[t101] * oneThird, tautMultipolei[t011] * oneThird);
 
-                if(extendedSystem.isTitrating(k)){
-                  final double[] titrMultipolek = titrMpole[k];
-                  ck   = titrMultipolek[t000];
-                  dkx  = titrMultipolek[t100];
-                  dky  = titrMultipolek[t010];
-                  dkz  = titrMultipolek[t001];
-                  qkxx = titrMultipolek[t200] * oneThird;
-                  qkyy = titrMultipolek[t020] * oneThird;
-                  qkzz = titrMultipolek[t002] * oneThird;
-                  qkxy = titrMultipolek[t110] * oneThird;
-                  qkxz = titrMultipolek[t101] * oneThird;
-                  qkyz = titrMultipolek[t011] * oneThird;
-                  ukx  = inducedDipolek[0];
-                  uky  = inducedDipolek[1];
-                  ukz  = inducedDipolek[2];
-                  pkx  = inducedDipolepk[0];
-                  pky  = inducedDipolepk[1];
-                  pkz  = inducedDipolepk[2];
-                }
-                tautdUdL = permanentPair();
+                tautdUdL = permanentPair(false, false);
               }
-              extendedSystem.addPermElecDeriv(i, titrdUdL, tautdUdL);
+              extendedSystem.addPermElecDeriv(i, titrdUdL * electric, tautdUdL * electric);
             }
+            //Reset Multipoles between titration and tautomer ESVs
+            setMultipoleI(globalMultipolei[t000], globalMultipolei[t100], globalMultipolei[t010], globalMultipolei[t001],
+                    globalMultipolei[t200] * oneThird, globalMultipolei[t020] * oneThird,
+                    globalMultipolei[t002] * oneThird, globalMultipolei[t110] * oneThird,
+                    globalMultipolei[t101] * oneThird, globalMultipolei[t011] * oneThird);
+
+            if(extendedSystem.isTitrating(k)){
+              double titrdUdL = 0.0;
+              double tautdUdL = 0.0;
+              final double[][] titrNeighborMpole = titrationMultipole[iSymm];
+              final double[] titrMultipolek = titrNeighborMpole[k];
+              setMultipoleK(titrMultipolek[t000], titrMultipolek[t100], titrMultipolek[t010], titrMultipolek[t001],
+                      titrMultipolek[t200] * oneThird, titrMultipolek[t020] * oneThird,
+                      titrMultipolek[t002] * oneThird, titrMultipolek[t110] * oneThird,
+                      titrMultipolek[t101] * oneThird, titrMultipolek[t011] * oneThird);
+              titrdUdL = permanentPair(false, false);
+
+              if(extendedSystem.isTautomerizing(k)) {
+                final double[][] tautNeighborMpole = tautomerMultipole[iSymm];
+                final double[] tautMultipolek = tautNeighborMpole[k];
+                setMultipoleK(tautMultipolek[t000], tautMultipolek[t100], tautMultipolek[t010], tautMultipolek[t001],
+                        tautMultipolek[t200] * oneThird, tautMultipolek[t020] * oneThird,
+                        tautMultipolek[t002] * oneThird, tautMultipolek[t110] * oneThird,
+                        tautMultipolek[t101] * oneThird, tautMultipolek[t011] * oneThird);
+
+                tautdUdL = permanentPair(false, false);
+              }
+              extendedSystem.addPermElecDeriv(k,titrdUdL * electric, tautdUdL * electric);
+            }
+            setMultipoleK(globalMultipolek[t000], globalMultipolek[t100], globalMultipolek[t010], globalMultipolek[t001],
+                    globalMultipolek[t200] * oneThird, globalMultipolek[t020] * oneThird,
+                    globalMultipolek[t002] * oneThird, globalMultipolek[t110] * oneThird,
+                    globalMultipolek[t101] * oneThird, globalMultipolek[t011] * oneThird);
+            //gradient = gradientBak;
+            //lambdaTerm = lambdaTermBak;
           }
           if (polarization != ParticleMeshEwald.Polarization.NONE && doPolarization) {
             // Polarization does not use the softcore tensors.
@@ -1101,7 +1065,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
      *
      * @return the permanent multipole energy.
      */
-    private double permanentPair() {
+    private double permanentPair(boolean gradientLocal, boolean lambdaTermLocal) {
       final double dixdkx = diy * dkz - diz * dky;
       final double dixdky = diz * dkx - dix * dkz;
       final double dixdkz = dix * dky - diy * dkx;
@@ -1198,7 +1162,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                   + (gl3 + gl5) * rr7
                   + gl4 * rr9);
       final double e = selfScale * l2 * (ereal - efix);
-      if (gradient) {
+      if (gradientLocal) {
         final double gf1 =
             bn1 * gl0 + bn2 * (gl1 + gl6) + bn3 * (gl2 + gl7 + gl8) + bn4 * (gl3 + gl5) + bn5 * gl4;
         final double gf2 = -ck * bn1 + sc4 * bn2 - sc6 * bn3;
@@ -1383,7 +1347,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
           ltzk_local[k] += prefactor * ttm3z;
         }
       }
-      if (lambdaTerm && soft) {
+      if (lambdaTermLocal && soft) {
         double dRealdL =
             gl0 * bn1 + (gl1 + gl6) * bn2 + (gl2 + gl7 + gl8) * bn3 + (gl3 + gl5) * bn4 + gl4 * bn5;
         double d2RealdL2 =
@@ -2076,6 +2040,52 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
         ltzk_local[k] += scalar * ttm3iz;
       }
       return polarizationScale * e;
+    }
+
+    private void setMultipoleI(
+            double ci,
+            double dix,
+            double diy,
+            double diz,
+            double qixx,
+            double qiyy,
+            double qizz,
+            double qixy,
+            double qixz,
+            double qiyz){
+      this.ci = ci;
+      this.dix = dix;
+      this.diy = diy;
+      this.diz = diz;
+      this.qixx = qixx;
+      this.qiyy = qiyy;
+      this.qizz = qizz;
+      this.qixy = qixy;
+      this.qixz = qixz;
+      this.qiyz = qiyz;
+    }
+
+    private void setMultipoleK(
+            double ck,
+            double dkx,
+            double dky,
+            double dkz,
+            double qkxx,
+            double qkyy,
+            double qkzz,
+            double qkxy,
+            double qkxz,
+            double qkyz){
+      this.ck = ck;
+      this.dkx = dkx;
+      this.dky = dky;
+      this.dkz = dkz;
+      this.qkxx = qkxx;
+      this.qkyy = qkyy;
+      this.qkzz = qkzz;
+      this.qkxy = qkxy;
+      this.qkxz = qkxz;
+      this.qkyz = qkyz;
     }
   }
 }

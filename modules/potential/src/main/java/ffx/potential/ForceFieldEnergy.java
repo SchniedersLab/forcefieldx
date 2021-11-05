@@ -1347,10 +1347,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       if (particleMeshEwald == null) {
         logger.warning("Null PME during ESV setup.");
       }
-      if (!(particleMeshEwald instanceof ParticleMeshEwaldQI)) {
+      if (!(particleMeshEwald instanceof ParticleMeshEwaldCart)) {
         logger.severe("Extended systems can attach only to Quasi-Internal PME. Try -Dpme-qi=true.");
       }
-      ((ParticleMeshEwaldQI) particleMeshEwald).attachExtendedSystem(system);
+      ((ParticleMeshEwaldCart) particleMeshEwald).attachExtendedSystem(system);
     }
     if (crystal != null) {
       crystal.setSpecialPositionCutoff(0.0);

@@ -721,7 +721,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     initializationRegion.init(
         lambdaTerm,
         extendedSystem,
-        isAtomTitrating,
         lambdaScaleMultipoles,
         atoms,
         coordinates,
@@ -1197,10 +1196,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       // Lambda factors are different for OST and ESV interactions.
       lambdaFactors = new LambdaFactors[maxThreads];
       for (int i = 0; i < maxThreads; i++) {
-        if (esvTerm) {
+        /*if (esvTerm) {
           // Invoked every time through inner loops.
           lambdaFactors[i] = new LambdaFactorsESV();
-        } else if (lambdaTerm) {
+        } else */
+          if (lambdaTerm) {
           // Invoked on calls to setLambda().
           lambdaFactors[i] = new LambdaFactorsOST();
         } else {
@@ -3449,7 +3449,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
     // Update atoms and reinitialize arrays for consistency with the ExtendedSystem.
     setAtoms(extendedSystem.getExtendedAtoms(), extendedSystem.getExtendedMolecule());
-
+    // Allocate space for dM/dTitratonESV
+    if (dMultipoledTirationESV == null || dMultipoledTirationESV.length != nSymm
+            || dMultipoledTirationESV[0].length != nAtoms) {
+      dMultipoledTirationESV = new double[nSymm][nAtoms][10];
+      dMultipoledTautomerESV = new double[nSymm][nAtoms][10];
+    }
     // Allocate shared derivative storage.
     dUPermRealdEsv = new SharedDouble[numESVs];
     dUPermRecipdEsv = new SharedDouble[numESVs];
@@ -3460,7 +3465,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       dUPermSelfdEsv[i] = new SharedDouble(0.0);
     }
 
-    updateEsvLambda();
+    //updateEsvLambda();
     logger.info(format(" Attached extended system (%d variables) to PME.\n", numESVs));
   }
 
@@ -3516,7 +3521,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
 
     for (int i = 0; i < nAtoms; i++) {
       isAtomTitrating[i] = extendedSystem.isTitrating(i);
-      perAtomTitrationESV[i] = extendedSystem.titrationLambdas[i];
+      perAtomTitrationESV[i] = extendedSystem.getTitrationLambda(i);
       perAtomESVIndex[i] = extendedSystem.getTitrationESVIndex(i);
       Atom ai = atoms[i];
       if (ai.getPolarizeType() == null) {

@@ -66,6 +66,7 @@ import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.TitrationUtils;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -112,10 +113,7 @@ public class InitializationRegion extends ParallelRegion {
    * If esvTerm is true, the electrostatics of some atoms are being titrated.
    */
   private boolean esvTerm;
-  /**
-   * Flag to indicate if each atom is titrating.
-   */
-  boolean[] isAtomTitrating;
+
   /** Scale multipole moments by a lambda scale factor. */
   private double lambdaScaleMultipoles;
   /** An ordered array of atoms in the system. */
@@ -191,7 +189,6 @@ public class InitializationRegion extends ParallelRegion {
   public void init(
       boolean lambdaTerm,
       ExtendedSystem esvSystem,
-      boolean[] isAtomTitrating,
       double lambdaScaleMultipoles,
       Atom[] atoms,
       double[][][] coordinates,
@@ -217,7 +214,6 @@ public class InitializationRegion extends ParallelRegion {
     if(esvSystem != null) {
       this.esvTerm = true;
     }
-    this.isAtomTitrating = isAtomTitrating;
     this.lambdaScaleMultipoles = lambdaScaleMultipoles;
     this.atoms = atoms;
     this.coordinates = coordinates;
@@ -390,11 +386,13 @@ public class InitializationRegion extends ParallelRegion {
 
           MultipoleType multipoleType = atom.getMultipoleType();
           double[] in = multipoleType.getMultipole();
-          if(esvTerm){
+          if(esvSystem.isTitrating(ii)){
             double[] esvIn = new double[10];
             System.arraycopy(in, 0, esvIn, 0, in.length);
-            double titrationLambda = esvSystem.titrationLambdas[ii];
-            double tautomerLambda = esvSystem.tautomerLambdas[ii];
+            double titrationLambda = esvSystem.getTitrationLambda(ii);
+            double tautomerLambda = esvSystem.getTautomerLambda(ii);
+            /*logger.info(String.format("ESV: %d, Atom: %s AtomNum: %d, titrationLambda: %6.8f, tautomerLambda: %6.8f",
+                    esvSystem.getTitrationESVIndex(ii), atom.getName(), ii, titrationLambda, tautomerLambda));*/
             in = esvSystem.getTitrationUtils().getMultipole(atom, titrationLambda, tautomerLambda, esvIn);
           }
           // Update the frame
@@ -469,11 +467,11 @@ public class InitializationRegion extends ParallelRegion {
             out[t101] = quadrupole[0][2] * quadrupoleScale * elecScale;
             out[t011] = quadrupole[1][2] * quadrupoleScale * elecScale;
             /* For ESV atoms, also rotate and scale the Mdot multipole. */
-            if (esvTerm) {
+            if (esvSystem.isTitrating(ii)) {
               double[] esvMultipoleTitrDot = new double[10];
               double[] esvMultipoleTautDot = new double[10];
-              double titrationLambda = esvSystem.titrationLambdas[ii];
-              double tautomerLambda = esvSystem.tautomerLambdas[ii];
+              double titrationLambda = esvSystem.getTitrationLambda(ii);
+              double tautomerLambda = esvSystem.getTautomerLambda(ii);
               esvMultipoleTitrDot = esvSystem.getTitrationUtils().getMultipoleTitrationDeriv(atom, titrationLambda,
                       tautomerLambda, esvMultipoleTitrDot);
               esvMultipoleTautDot = esvSystem.getTitrationUtils().getMultipoleTautomerDeriv(atom, titrationLambda,
@@ -567,15 +565,12 @@ public class InitializationRegion extends ParallelRegion {
             out[t101] = in[t101] * quadrupoleScale * elecScale;
             out[t011] = in[t011] * quadrupoleScale * elecScale;
             /* For ESV atoms, also rotate and scale the Mdot multipole. */
-            if (esvTerm && isAtomTitrating[ii]) {
+            if (esvSystem.isTitrating(ii)) {
               double[] esvMultipoleTitrDot = new double[10];
-              double[] esvMultipoleTautDot = new double[10];
-              double titrationLambda = esvSystem.titrationLambdas[ii];
-              double tautomerLambda = esvSystem.tautomerLambdas[ii];
+              double titrationLambda = esvSystem.getTitrationLambda(ii);
+              double tautomerLambda = esvSystem.getTautomerLambda(ii);
               esvMultipoleTitrDot = esvSystem.getTitrationUtils().getMultipoleTitrationDeriv(atom, titrationLambda,
                       tautomerLambda, esvMultipoleTitrDot);
-              esvMultipoleTautDot = esvSystem.getTitrationUtils().getMultipoleTautomerDeriv(atom, titrationLambda,
-                      tautomerLambda, esvMultipoleTautDot);
               in = esvMultipoleTitrDot;
               out = titrationMultipole[iSymm][ii];
               out[t000] = in[t000] * chargeScale * elecScale;
@@ -589,6 +584,9 @@ public class InitializationRegion extends ParallelRegion {
               out[t101] = in[t101] * quadrupoleScale * elecScale;
               out[t011] = in[t011] * quadrupoleScale * elecScale;
 
+              double[] esvMultipoleTautDot = new double[10];
+              esvMultipoleTautDot = esvSystem.getTitrationUtils().getMultipoleTautomerDeriv(atom, titrationLambda,
+                      tautomerLambda, esvMultipoleTautDot);
               in = esvMultipoleTautDot;
               out = tautomerMultipole[iSymm][ii];
               out[t000] = in[t000] * chargeScale * elecScale;

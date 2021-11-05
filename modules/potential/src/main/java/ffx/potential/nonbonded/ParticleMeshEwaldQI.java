@@ -1749,7 +1749,7 @@ public class ParticleMeshEwaldQI extends ParticleMeshEwald {
     for (int i = 0; i < nAtoms; i++) {
       esvAtomsScaled[i] = esvSystem.isTitrating(i);
       esvAtomsScaledAlpha[i] = esvSystem.isTitratingHydrogen(i);
-      esvLambda[i] = esvSystem.titrationLambdas[i];
+      esvLambda[i] = esvSystem.getTitrationLambda(i);
       esvIndex[i] =  esvSystem.getTitrationESVIndex(i);
     }
 

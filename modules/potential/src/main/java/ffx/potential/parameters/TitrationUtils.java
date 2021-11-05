@@ -551,8 +551,8 @@ public class TitrationUtils {
         double[] hie = hisMultipoleTypes[HisStates.HIE.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
           multipole[i] =
-              titrationLambda * his[i] + (1.0 - titrationLambda) * (tautomerLambda * hid[i]
-                  + (1 - tautomerLambda) * hie[i]);
+              titrationLambda * his[i] + (1.0 - titrationLambda) * (tautomerLambda * hie[i]
+                  + (1 - tautomerLambda) * hid[i]);
         }
         break;
       case ASD:
@@ -607,7 +607,7 @@ public class TitrationUtils {
         double[] hid = hisMultipoleTypes[HisStates.HID.ordinal()][atomIndex].getMultipole();
         double[] hie = hisMultipoleTypes[HisStates.HIE.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
-          multipole[i] = his[i] - (tautomerLambda * hid[i] + (1 - tautomerLambda) * hie[i]);
+          multipole[i] = his[i] - (tautomerLambda * hie[i] + (1 - tautomerLambda) * hid[i]);
         }
         break;
       case ASD:
@@ -650,7 +650,7 @@ public class TitrationUtils {
         double[] hid = hisMultipoleTypes[HisStates.HID.ordinal()][atomIndex].getMultipole();
         double[] hie = hisMultipoleTypes[HisStates.HIE.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
-          multipole[i] = titrationLambda * his[i] + (1.0 - titrationLambda) * (hid[i] - hie[i]);
+          multipole[i] = (1.0 - titrationLambda) * (hie[i] - hid[i]);
         }
         break;
       case ASD:
@@ -659,7 +659,7 @@ public class TitrationUtils {
         double[] ash1 = aspMultipoleTypes[AspStates.ASH1.ordinal()][atomIndex].getMultipole();
         double[] ash2 = aspMultipoleTypes[AspStates.ASH2.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
-          multipole[i] = titrationLambda * (ash1[i] - ash2[i]) + (1.0 - titrationLambda) * asp[i];
+          multipole[i] = titrationLambda * (ash1[i] - ash2[i]);
         }
         break;
       case GLD:
@@ -668,7 +668,7 @@ public class TitrationUtils {
         double[] glh1 = gluMultipoleTypes[GluStates.GLH1.ordinal()][atomIndex].getMultipole();
         double[] glh2 = gluMultipoleTypes[GluStates.GLH2.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
-          multipole[i] = titrationLambda * (glh1[i] - glh2[i]) + (1.0 - titrationLambda) * glu[i];
+          multipole[i] = titrationLambda * (glh1[i] - glh2[i]);
         }
         break;
       case LYS: // No tautomers for LYS.

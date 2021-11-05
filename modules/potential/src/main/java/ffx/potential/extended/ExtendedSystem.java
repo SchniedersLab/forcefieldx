@@ -88,27 +88,27 @@ public class ExtendedSystem {
     /**
      * Array of ints that is initialized to match the number of atoms in the molecular assembly.
      * 1 indicates that the tautomer lambda direction is normal.
-     * 0 indicates that the tautomer lambda direction is reversed (1-x).
-     * -1 indicates that the atom is not a tautomerizing atom.
+     * -1 indicates that the tautomer lambda direction is reversed (1-x).
+     * 0 indicates that the atom is not a tautomerizing atom.
      */
     public final int[] tautomerDirections;
     /**
      * Array of doubles that is initialized to match the number of atoms in the molecular assembly.
      * Only elements that match a titrating atom will have their lambda updated.
      */
-    public final double[] titrationLambdas;
+    private final double[] titrationLambdas;
     /**
      * Array of doubles that is initialized to match the number of atoms in the molecular assembly.
      * Only elements that match a tautomerizing atom will have their lambda updated.
      */
-    public final double[] tautomerLambdas;
+    private final double[] tautomerLambdas;
     /**
      * Shared double that is initialized to match the number of ESVs in the system.
      * Once reduced, will equal either dU_Titr/dLambda or dU_Taut/dLambda for specific ESV
      */
-    public final SharedDouble[] esvVdwDerivs;
+    private final SharedDouble[] esvVdwDerivs;
 
-    public final SharedDouble[] esvPermRealDerivs;
+    private final SharedDouble[] esvPermRealDerivs;
     /**
      * Array of AminoAcid3 initialized  to match the number of atoms in the system.
      * Used to know how to apply vdW or electrostatic ESV terms for the atom.
@@ -271,7 +271,7 @@ public class ExtendedSystem {
         Arrays.fill(isTitratingHydrogen, false);
         Arrays.fill(isTautomerizing, false);
         Arrays.fill(titrationLambdas, 1.0);
-        Arrays.fill(tautomerLambdas, 1.0);
+        Arrays.fill(tautomerLambdas, 0.0);
         Arrays.fill(titrationIndexMap, -1);
         Arrays.fill(tautomerIndexMap, -1);
         Arrays.fill(tautomerDirections, 0);
@@ -405,6 +405,10 @@ public class ExtendedSystem {
         }
     }
 
+    public double getTitrationLambda(int atomIndex){
+        return titrationLambdas[atomIndex];
+    }
+
     public int getTitrationESVIndex(int i){
         return titrationIndexMap[i];
     }
@@ -418,6 +422,14 @@ public class ExtendedSystem {
         }
     }
 
+    public double getTautomerLambda(int atomIndex){
+        return tautomerLambdas[atomIndex];
+    }
+
+    public int getTautomerESVIndex(int i){
+        return tautomerIndexMap[i];
+    }
+
     public void setTitrationLambda(Residue residue, double lambda) {
         if (titratingResidueList.contains(residue)) {
             int index = titratingResidueList.indexOf(residue);
@@ -428,7 +440,6 @@ public class ExtendedSystem {
                 int atomIndex = atom.getIndex();
                 titrationLambdas[atomIndex] = lambda;
             }
-            updateListeners();
         } else {
             logger.warning(format("This residue %s is not titrating.", residue.getName()));
         }
@@ -446,7 +457,6 @@ public class ExtendedSystem {
                 int atomIndex = atom.getIndex();
                 tautomerLambdas[atomIndex] = lambda;
             }
-            updateListeners();
         } else {
             logger.warning(format("This residue %s does not have any titrating tautomers.", residue.getName()));
         }
@@ -472,7 +482,6 @@ public class ExtendedSystem {
                 tautomerLambdas[i] = extendedLambdas[mappedTautomerIndex];
             }
         }
-        updateListeners();
     }
 
     public List<Residue> getTitratingResidueList() {
@@ -588,7 +597,12 @@ public class ExtendedSystem {
             }
 
             if (doElectrostatics) {
-                //TODO: Add electrostatics
+                esvDeriv[resTitrIndex] += getPermElecDeriv(resTitrIndex);
+                //Sum up tautomer bias derivs
+                if (isTautomer(residue)) {
+                    int resTautIndex = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
+                    esvDeriv[resTautIndex] += getPermElecDeriv(resTautIndex);
+                }
             }
         }
 
@@ -908,7 +922,7 @@ public class ExtendedSystem {
         dTaut_dLambda = vdwPrefactorAndDerivI[2] * vdwPrefactorJ * vdwEnergy;
 
         esvVdwDerivs[titrationEsvIndex].addAndGet(dTitr_dLambda);
-        if(tautomerEsvIndex != -1){
+        if(tautomerEsvIndex >= titratingResidueList.size()){
             esvVdwDerivs[tautomerEsvIndex].addAndGet(dTaut_dLambda);
         }
     }
@@ -919,7 +933,7 @@ public class ExtendedSystem {
         int titrationEsvIndex = titrationIndexMap[atomI];
         int tautomerEsvIndex = tautomerIndexMap[atomI] + titratingResidueList.size();
         esvPermRealDerivs[titrationEsvIndex].addAndGet(titrationEnergy);
-        if(tautomerEsvIndex != -1){
+        if(tautomerEsvIndex >= titratingResidueList.size()){
             esvPermRealDerivs[tautomerEsvIndex].addAndGet(tautomerEnergy);
         }
     }
@@ -932,6 +946,8 @@ public class ExtendedSystem {
     public double getVdwDeriv(int esvID) {
         return esvVdwDerivs[esvID].get();
     }
+
+    public double getPermElecDeriv(int esvID){return esvPermRealDerivs[esvID].get();}
 
     /**
      * getConstantPh.
@@ -987,15 +1003,6 @@ public class ExtendedSystem {
             dEdTheta[i] = dEdL[i] * sin(2 * thetaPosition[i]);
         }
         return dEdTheta;
-    }
-
-    /**
-     * updateListeners.
-     */
-    private void updateListeners() {
-        if (doElectrostatics) {
-            particleMeshEwaldQI.updateEsvLambda();
-        }
     }
 
     /*private void updateMultipoleTypes() {
