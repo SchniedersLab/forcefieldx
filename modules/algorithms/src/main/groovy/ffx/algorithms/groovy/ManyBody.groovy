@@ -50,6 +50,7 @@ import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.XYZFilter
 import ffx.potential.utils.PotentialsUtils
+import ffx.potential.parameters.TitrationUtils
 import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -133,7 +134,6 @@ class ManyBody extends AlgorithmsScript {
     potentialEnergy.energy(false, true)
 
     List<String> resNumberList = new ArrayList<>()
-    // List<Character> chainList = new ArrayList<>()
     List<Residue> residues
     if (manyBody.residueGroup.start > -1 || manyBody.residueGroup.all > -1) {
       residues = manyBody.getResidues(activeAssembly)
@@ -143,6 +143,7 @@ class ManyBody extends AlgorithmsScript {
 
     if (residues.isEmpty()){
       logger.info("Residue list is empty")
+      return
     }
 
     for (Residue residue : residues) {
@@ -165,6 +166,20 @@ class ManyBody extends AlgorithmsScript {
     potentialEnergy = ForceFieldEnergy.energyFactory(activeAssembly)
     potentialEnergy.energy(false, true)
     activeAssembly.setFile(structureFile)
+
+    if (manyBody.group.titrationPH != 0){
+      TitrationUtils titrationUtils
+      titrationUtils = new TitrationUtils(activeAssembly.getForceField())
+      titrationUtils.setRotamerPhBias(298.15, manyBody.group.titrationPH)
+      for(Residue residue: activeAssembly.getResidueList()){
+        String resName = residue.getName()
+        if(resNumberList.contains(residue.getResidueNumber())){
+          if(resName == "ASH" || resName == "GLH" || resName == "LYS" || resName == "HIS"){
+            residue.setTitrationUtils(titrationUtils)
+          }
+        }
+      }
+    }
 
     RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly, potentialEnergy, algorithmListener)
 
