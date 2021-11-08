@@ -507,7 +507,6 @@ public final class PDBFilter extends SystemFilter {
   /** Parse the PDB File */
   @Override
   public boolean readFile() {
-    logger.info("Executing read file");
     remarkLines = new ArrayList<>();
     // First atom is #1, to match xyz file format
     int xyzIndex = 1;

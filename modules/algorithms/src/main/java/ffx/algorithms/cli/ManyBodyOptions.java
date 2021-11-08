@@ -137,7 +137,6 @@ public class ManyBodyOptions{
   public void initRotamerOptimization(
           RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly) {
     this.rotamerOptimization = rotamerOptimization;
-    logger.info("Init rotopt");
     boolean useOrigCoordsRotamer = !group.noOriginal;
     if (group.decompose) {
       useOrigCoordsRotamer = true;
