@@ -192,17 +192,6 @@ public class ManyBodyOptions{
     List<String> resList = new ArrayList<>();
     addListResidues(resList);
 
-    TitrationUtils titrationUtils;
-    if (group.titrationPH > 0.0 && group.titrationPH <= 14.0) {
-      logger.info(format(" Turning on ASP, GLU, LYS and HIS titration rotamers at pH %5.2f", group.titrationPH));
-      titrationUtils = new TitrationUtils(activeAssembly.getForceField());
-      titrationUtils.setRotamerPhBias(298.15, group.titrationPH);
-      List<Residue> residues = activeAssembly.getResidueList();
-      for (Residue residue : residues) {
-        residue.setTitrationUtils(titrationUtils);
-      }
-    }
-
     int counter = 1;
     if (group.algorithm != 5) {
       if (allStartResID > 0) {
