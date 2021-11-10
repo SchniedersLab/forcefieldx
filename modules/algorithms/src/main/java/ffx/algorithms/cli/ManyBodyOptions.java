@@ -137,7 +137,6 @@ public class ManyBodyOptions{
   public void initRotamerOptimization(
           RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly) {
     this.rotamerOptimization = rotamerOptimization;
-    logger.info("Init rotopt");
     boolean useOrigCoordsRotamer = !group.noOriginal;
     if (group.decompose) {
       useOrigCoordsRotamer = true;
@@ -192,17 +191,6 @@ public class ManyBodyOptions{
   public void setResidues(MolecularAssembly activeAssembly) {
     List<String> resList = new ArrayList<>();
     addListResidues(resList);
-
-    TitrationUtils titrationUtils;
-    if (group.titrationPH > 0.0 && group.titrationPH <= 14.0) {
-      logger.info(format(" Turning on ASP, GLU, LYS and HIS titration rotamers at pH %5.2f", group.titrationPH));
-      titrationUtils = new TitrationUtils(activeAssembly.getForceField());
-      titrationUtils.setRotamerPhBias(298.15, group.titrationPH);
-      List<Residue> residues = activeAssembly.getResidueList();
-      for (Residue residue : residues) {
-        residue.setTitrationUtils(titrationUtils);
-      }
-    }
 
     int counter = 1;
     if (group.algorithm != 5) {
