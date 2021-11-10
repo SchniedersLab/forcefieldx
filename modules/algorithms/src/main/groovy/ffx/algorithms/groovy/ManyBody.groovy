@@ -173,7 +173,7 @@ class ManyBody extends AlgorithmsScript {
       titrationUtils.setRotamerPhBias(298.15, manyBody.group.titrationPH)
       for(Residue residue: activeAssembly.getResidueList()){
         String resName = residue.getName()
-        if(resNumberList.contains(residue.getResidueNumber())){
+        if(resNumberList.contains(residue.getResidueNumber().toString())){
           if(resName == "ASH" || resName == "GLH" || resName == "LYS" || resName == "HIS"){
             residue.setTitrationUtils(titrationUtils)
           }
