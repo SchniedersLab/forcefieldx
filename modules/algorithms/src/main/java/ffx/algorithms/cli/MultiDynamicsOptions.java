@@ -359,10 +359,22 @@ public class MultiDynamicsOptions {
     group.distributeWalkersString = distributeWalkersString;
   }
 
+  public int getFirstDir() {
+    return group.firstDir;
+  }
+
   /**
    * Collection of Multi-Walker Dynamics Options.
    */
   private static class MultiDynamicsOptionGroup {
+
+    /** --firstDir The first directory to use for multiple walker jobs. */
+    @Option(
+        names = {"--firstDir"},
+        defaultValue = "0",
+        paramLabel = "0",
+        description = "The first directory to use for multiple walker jobs.")
+    private int firstDir;
 
     /** -y or --synchronous sets synchronous walker communication (not recommended) */
     @Option(

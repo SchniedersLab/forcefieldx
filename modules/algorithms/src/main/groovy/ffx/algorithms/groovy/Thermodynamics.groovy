@@ -207,7 +207,7 @@ class Thermodynamics extends AlgorithmsScript {
     if (size > 1) {
       List<File> rankedFiles = new ArrayList<>(nArgs)
       String rankDirName = FilenameUtils.getFullPath(filePathNoExtension)
-      rankDirName = format("%s%d", rankDirName, rank)
+      rankDirName = format("%s%d", rankDirName, rank + multiDynamicsOptions.getFirstDir())
       File rankDirectory = new File(rankDirName)
       if (!rankDirectory.exists()) {
         rankDirectory.mkdir()
