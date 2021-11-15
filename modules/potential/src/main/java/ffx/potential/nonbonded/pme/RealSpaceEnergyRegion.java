@@ -1033,26 +1033,23 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
               final double[][] titrMpole = titrationMultipole[0];
               final double[] titrMultipolei = titrMpole[i];
               setMultipoleI(titrMultipolei);
-              setMultipoleK(zeropole);
               if(extendedSystem.isTitrating(k) && extendedSystem.getTitrationESVIndex(k)==extendedSystem.getTitrationESVIndex(i)){
                 final double[][] titrNeighborMpole = titrationMultipole[iSymm];
                 final double[] titrMultipolek = titrNeighborMpole[k];
                 setMultipoleK(titrMultipolek);
+              } else{
+                setMultipoleK(zeropole);
               }
               titrdUdL = polarizationPair(false, false);
               //Swap induced dipoles and masking rules
               setInducedI(inducedDipolepi);
               setInducedK(inducedDipolepk);
-              setInducedpI(inducedDipolei);
-              setInducedpK(inducedDipolek);
               scaled = maskingp_local[k];
               scalep = maskingd_local[k];
               titrdUdL += polarizationPair(false, false);
               //Reset
               setInducedI(inducedDipolei);
               setInducedK(inducedDipolek);
-              setInducedpI(inducedDipolepi);
-              setInducedpK(inducedDipolepk);
               scalep = maskingp_local[k];
               scaled = maskingd_local[k];
 
@@ -1060,25 +1057,22 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                 final double[][] tautMpole = tautomerMultipole[0];
                 final double[] tautMultipolei = tautMpole[i];
                 setMultipoleI(tautMultipolei);
-                setMultipoleK(zeropole);
-                if(extendedSystem.isTitrating(k) && extendedSystem.getTitrationESVIndex(k)==extendedSystem.getTitrationESVIndex(i)){
+                if(extendedSystem.isTautomerizing(k) && extendedSystem.getTautomerESVIndex(k)==extendedSystem.getTautomerESVIndex(i)){
                   final double[][] tautNeighborMpole = tautomerMultipole[iSymm];
                   final double[] tautMultipolek = tautNeighborMpole[k];
                   setMultipoleK(tautMultipolek);
+                } else{
+                  setMultipoleK(zeropole);
                 }
                 tautdUdL = polarizationPair(false, false);
                 setInducedI(inducedDipolepi);
                 setInducedK(inducedDipolepk);
-                setInducedpI(inducedDipolei);
-                setInducedpK(inducedDipolek);
                 scaled = maskingp_local[k];
                 scalep = maskingd_local[k];
                 tautdUdL += polarizationPair(false, false);
                 //Reset
                 setInducedI(inducedDipolei);
                 setInducedK(inducedDipolek);
-                setInducedpI(inducedDipolepi);
-                setInducedpK(inducedDipolepk);
                 scalep = maskingp_local[k];
                 scaled = maskingd_local[k];
               }
@@ -1099,16 +1093,12 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
               //Swap induced dipoles and masking rules
               setInducedI(inducedDipolepi);
               setInducedK(inducedDipolepk);
-              setInducedpI(inducedDipolei);
-              setInducedpK(inducedDipolek);
               scaled = maskingp_local[k];
               scalep = maskingd_local[k];
               titrdUdL += polarizationPair(false, false);
               //Reset
               setInducedI(inducedDipolei);
               setInducedK(inducedDipolek);
-              setInducedpI(inducedDipolepi);
-              setInducedpK(inducedDipolepk);
               scalep = maskingp_local[k];
               scaled = maskingd_local[k];
 
@@ -1116,25 +1106,23 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                 final double[][] tautNeighborMpole = tautomerMultipole[iSymm];
                 final double[] tautMultipolek = tautNeighborMpole[k];
                 setMultipoleK(tautMultipolek);
-                tautdUdL = permanentPair(false, false);
+                tautdUdL = polarizationPair(false, false);
                 //Swap induced dipoles and masking rules
                 setInducedI(inducedDipolepi);
                 setInducedK(inducedDipolepk);
-                setInducedpI(inducedDipolei);
-                setInducedpK(inducedDipolek);
                 scaled = maskingp_local[k];
                 scalep = maskingd_local[k];
                 tautdUdL += polarizationPair(false, false);
                 //Reset
                 setInducedI(inducedDipolei);
                 setInducedK(inducedDipolek);
-                setInducedpI(inducedDipolepi);
-                setInducedpK(inducedDipolepk);
                 scalep = maskingp_local[k];
                 scaled = maskingd_local[k];
               }
               extendedSystem.addIndElecDeriv(k,titrdUdL * electric, tautdUdL * electric);
             }
+            setMultipoleI(globalMultipolei);
+            setMultipoleK(globalMultipolek);
           }
         }
         if (iSymm == 0) {
