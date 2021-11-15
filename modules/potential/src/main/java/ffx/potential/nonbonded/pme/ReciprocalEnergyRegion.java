@@ -147,6 +147,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
   private double[][][] tautomerMultipole;
 
   private ExtendedSystem extendedSystem = null;
+  private boolean esvTerm = false;
 
   private double[][] cartMultipolePhi;
   private double[][] cartesianDipolePhi;
@@ -248,6 +249,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
       Atom[] atoms,
       Crystal crystal,
       ExtendedSystem extendedSystem,
+      boolean esvTerm,
       boolean[] use,
       double[][][] globalMultipole,
       double[][][] titrationMultipole,
@@ -271,6 +273,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
     this.atoms = atoms;
     this.crystal = crystal;
     this.extendedSystem = extendedSystem;
+    this.esvTerm = esvTerm;
     this.use = use;
     this.globalMultipole = globalMultipole;
     this.titrationMultipole = titrationMultipole;
@@ -366,7 +369,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
                   + 2.0 * (in[t110] * in[t110] + in[t101] * in[t101] + in[t011] * in[t011]);
           eSelf += aewald1 * (cii + aewald2 * (dii / 3.0 + 2.0 * aewald2 * qii / 45.0));
 
-          if (extendedSystem.isTitrating(i)) {
+          if (esvTerm && extendedSystem.isTitrating(i)) {
             double[] indot = titrationMultipole[0][i];
             double ciidot = indot[t000] * in[t000];
             double diidot =
@@ -438,7 +441,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
                                   + mpole[t101] * phi[t101]
                                   + mpole[t011] * phi[t011]));
           eRecip += e;
-          if (extendedSystem.isTitrating(i)) {
+          if (esvTerm && extendedSystem.isTitrating(i)) {
             double mpoleDot[] = titrationMultipole[0][i];
             double edotTitr =
                     mpoleDot[t000] * phi[t000]

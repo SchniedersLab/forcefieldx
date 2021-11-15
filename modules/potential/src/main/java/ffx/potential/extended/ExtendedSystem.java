@@ -108,7 +108,8 @@ public class ExtendedSystem {
      */
     private final SharedDouble[] esvVdwDerivs;
 
-    private final SharedDouble[] esvPermRealDerivs;
+    private final SharedDouble[] esvPermElecDerivs;
+    private final SharedDouble[] esvIndElecDerivs;
     /**
      * Array of AminoAcid3 initialized  to match the number of atoms in the system.
      * Used to know how to apply vdW or electrostatic ESV terms for the atom.
@@ -190,6 +191,7 @@ public class ExtendedSystem {
     private final boolean doVDW;
     private final boolean doElectrostatics;
     private final boolean doBias;
+    private final boolean doPolarization;
     /**
      * System PH.
      */
@@ -240,7 +242,7 @@ public class ExtendedSystem {
         doVDW = properties.getBoolean("esv.vdW", true);
         doElectrostatics = properties.getBoolean("esv.elec", true);
         doBias = properties.getBoolean("esv.bias", true);
-//        boolean polarization = properties.getBoolean("esv.polarization", true);
+        doPolarization = properties.getBoolean("esv.polarization", true);
 //        boolean verbose = properties.getBoolean("esv.verbose", false);
 //        boolean decomposeBonded = properties.getBoolean("esv.decomposeBonded", false);
 //        boolean decomposeDeriv = properties.getBoolean("esv.decomposeDeriv", false);
@@ -322,10 +324,12 @@ public class ExtendedSystem {
         thetaAccel = new double[size];
         thetaMassArray = new double[size];
         esvVdwDerivs = new SharedDouble[size];
-        esvPermRealDerivs = new SharedDouble[size];
+        esvPermElecDerivs = new SharedDouble[size];
+        esvIndElecDerivs =  new SharedDouble[size];
         for(int i=0; i < size; i++){
             esvVdwDerivs[i] = new SharedDouble(0.0);
-            esvPermRealDerivs[i] = new SharedDouble(0.0);
+            esvPermElecDerivs[i] = new SharedDouble(0.0);
+            esvIndElecDerivs[i] = new SharedDouble(0.0);
         }
 
         //Theta masses should always be the same for each ESV
@@ -364,9 +368,15 @@ public class ExtendedSystem {
         }
     }
 
-    public void initEsvPermReal(){
+    public void initEsvPermElec(){
         for (int i = 0; i < extendedResidueList.size(); i++) {
-            esvPermRealDerivs[i].set(0.0);
+            esvPermElecDerivs[i].set(0.0);
+        }
+    }
+
+    public void initEsvIndElec(){
+        for (int i = 0; i < extendedResidueList.size(); i++) {
+            esvIndElecDerivs[i].set(0.0);
         }
     }
 
@@ -603,7 +613,15 @@ public class ExtendedSystem {
                     int resTautIndex = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
                     esvDeriv[resTautIndex] += getPermElecDeriv(resTautIndex);
                 }
+                if(doPolarization){
+                    esvDeriv[resTitrIndex] += getIndElecDeriv(resTitrIndex);
+                    if(isTautomer(residue)){
+                        int resTautIndex = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
+                        esvDeriv[resTautIndex] += getIndElecDeriv(resTautIndex);
+                    }
+                }
             }
+
         }
 
 
@@ -928,13 +946,20 @@ public class ExtendedSystem {
     }
 
     public void addPermElecDeriv(int atomI, double titrationEnergy, double tautomerEnergy){
-        //Sum up dU/dL for titration ESV if atom i is titrating hydrogen
-        //Sum up dU/dL for tautomer ESV if atom i is titrating hydrogen
         int titrationEsvIndex = titrationIndexMap[atomI];
         int tautomerEsvIndex = tautomerIndexMap[atomI] + titratingResidueList.size();
-        esvPermRealDerivs[titrationEsvIndex].addAndGet(titrationEnergy);
+        esvPermElecDerivs[titrationEsvIndex].addAndGet(titrationEnergy);
         if(tautomerEsvIndex >= titratingResidueList.size()){
-            esvPermRealDerivs[tautomerEsvIndex].addAndGet(tautomerEnergy);
+            esvPermElecDerivs[tautomerEsvIndex].addAndGet(tautomerEnergy);
+        }
+    }
+
+    public void addIndElecDeriv(int atomI, double titrationEnergy, double tautomerEnergy){
+        int titrationEsvIndex = titrationIndexMap[atomI];
+        int tautomerEsvIndex = tautomerIndexMap[atomI] + titratingResidueList.size();
+        esvIndElecDerivs[titrationEsvIndex].addAndGet(titrationEnergy);
+        if(tautomerEsvIndex >= titratingResidueList.size()){
+            esvIndElecDerivs[tautomerEsvIndex].addAndGet(tautomerEnergy);
         }
     }
 
@@ -947,7 +972,9 @@ public class ExtendedSystem {
         return esvVdwDerivs[esvID].get();
     }
 
-    public double getPermElecDeriv(int esvID){return esvPermRealDerivs[esvID].get();}
+    public double getPermElecDeriv(int esvID){return esvPermElecDerivs[esvID].get();}
+
+    public double getIndElecDeriv(int esvID){return esvIndElecDerivs[esvID].get();}
 
     /**
      * getConstantPh.

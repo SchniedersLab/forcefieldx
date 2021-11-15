@@ -709,7 +709,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     }
 
     if(esvTerm){
-      extendedSystem.initEsvPermReal();
+      extendedSystem.initEsvPermElec();
+      extendedSystem.initEsvIndElec();
     }
 
     alchemicalParameters.doPermanentRealSpace = true;
@@ -1662,6 +1663,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
           atoms,
           crystal,
           extendedSystem,
+          esvTerm,
           use,
           globalMultipole,
           dMultipoledTirationESV,
@@ -1695,6 +1697,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         atoms,
         crystal,
         extendedSystem,
+        esvTerm,
         coordinates,
         frame,
         axisAtom,
@@ -1759,6 +1762,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             atoms,
             crystal,
             extendedSystem,
+            esvTerm,
             use,
             globalMultipole,
             dMultipoledTirationESV,
@@ -1790,6 +1794,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
           atoms,
           crystal,
           extendedSystem,
+          esvTerm,
           coordinates,
           frame,
           axisAtom,
@@ -1836,6 +1841,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
             atoms,
             crystal,
             extendedSystem,
+            esvTerm,
             use,
             globalMultipole,
             dMultipoledTirationESV,
@@ -1867,6 +1873,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
           atoms,
           crystal,
           extendedSystem,
+          esvTerm,
           coordinates,
           frame,
           axisAtom,

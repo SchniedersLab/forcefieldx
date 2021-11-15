@@ -386,7 +386,7 @@ public class InitializationRegion extends ParallelRegion {
 
           MultipoleType multipoleType = atom.getMultipoleType();
           double[] in = multipoleType.getMultipole();
-          if(esvSystem.isTitrating(ii)){
+          if(esvTerm && esvSystem.isTitrating(ii)){
             double[] esvIn = new double[10];
             System.arraycopy(in, 0, esvIn, 0, in.length);
             double titrationLambda = esvSystem.getTitrationLambda(ii);
@@ -467,7 +467,7 @@ public class InitializationRegion extends ParallelRegion {
             out[t101] = quadrupole[0][2] * quadrupoleScale * elecScale;
             out[t011] = quadrupole[1][2] * quadrupoleScale * elecScale;
             /* For ESV atoms, also rotate and scale the Mdot multipole. */
-            if (esvSystem.isTitrating(ii)) {
+            if (esvTerm && esvSystem.isTitrating(ii)) {
               double[] esvMultipoleTitrDot = new double[10];
               double[] esvMultipoleTautDot = new double[10];
               double titrationLambda = esvSystem.getTitrationLambda(ii);

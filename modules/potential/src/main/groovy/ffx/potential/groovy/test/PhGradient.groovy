@@ -324,6 +324,7 @@ class PhGradient extends PotentialScript {
       int tautomerIndex = tautomerResidues.indexOf(residue) + titratingResidues.size()
       // Calculate backward finite difference if very close to lambda=1
       if (esvLambda + step > 1) {
+        logger.info("Backward finite difference being applied. Consider using a smaller step size than the default in this case.\n")
         esvSystem.setTitrationLambda(residue, esvLambda - 2 * step)
         eMinusTitr = energy.energy(x)
         esvSystem.setTitrationLambda(residue, esvLambda)
@@ -339,6 +340,7 @@ class PhGradient extends PotentialScript {
 
       // Calculate forward finite difference if very close to lambda=0
       else if (esvLambda - step < 0) {
+        logger.info("Forward finite difference being applied. Consider using a smaller step size than the default in this case.\n")
         esvSystem.setTitrationLambda(residue, esvLambda + 2 * step)
         ePlusTitr = energy.energy(x)
         esvSystem.setTitrationLambda(residue, esvLambda)
