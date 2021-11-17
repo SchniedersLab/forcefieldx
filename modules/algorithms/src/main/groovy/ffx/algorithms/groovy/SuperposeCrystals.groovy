@@ -117,6 +117,13 @@ class SuperposeCrystals extends AlgorithmsScript {
   int zPrime2
 
   /**
+   * --sc or --symCheck Avoid ambiguous symmetry regions.
+   */
+  @Option(names = ['--sc', '--symCheck'], paramLabel = "false", defaultValue = "false",
+          description = 'Ignore atoms with the same bonded environment.')
+  private static boolean symCheck
+
+  /**
    * -w or --write Write out the RMSD matrix.
    */
   @Option(names = ['-w', '--write'], paramLabel = "false", defaultValue = "false",
@@ -256,7 +263,7 @@ class SuperposeCrystals extends AlgorithmsScript {
     }
 
     runningStatistics = pac.comparisons(numAU, numInflatedAU, numSearch, numSearch2, zPrime, zPrime2, alphaCarbons,
-        noHydrogen, exhaustive, savePDB, restart, write, ares, pacFilename)
+        noHydrogen, symCheck, exhaustive, savePDB, restart, write, ares, pacFilename)
 
     return this
   }
