@@ -337,23 +337,10 @@ public class ProgressiveAlignmentOfCrystals {
 
     // Collect selected atoms.
     ArrayList<Integer> atomList = new ArrayList<>();
-    for (int i = 0; i < nAtoms; i++) {
-      Atom atom = baseAtoms[i];
-      if (atom.isActive()) {
-        String atomName = atom.getName();
-        int atomAtNum = atom.getAtomicNumber();
-        boolean proteinCheck = atomName.equals("CA") && atomAtNum == 6;
-        boolean aminoCheck = (atomName.equals("N1") || atomName.equals("N9")) && atomAtNum == 7;
-        if(alphaCarbons){
-          if(proteinCheck||aminoCheck){
-            atomList.add(i);
-          }
-        }else if (!noHydrogen || !atom.isHydrogen()) {
-          atomList.add(i);
-        }
-      }
-      // Reset all atoms to active once the selection is recorded.
-      atom.setActive(true);
+    determineActiveAtoms(baseAssembly, atomList, alphaCarbons, noHydrogen);
+
+    for(int i = 0; i<atomList.size(); i++){
+      logger.info(format(" AtomList[%d]: %d", i, atomList.get(i)));
     }
 
     if (atomList.size() < 1) {
@@ -365,7 +352,7 @@ public class ProgressiveAlignmentOfCrystals {
       // Remove atoms that are at non-unique positions (Might be mislabeled).
       environmentCheck(baseAssembly, atomList);
       if(atomList.size() < 1){
-        logger.info("\n Symmetry check removed remaining atoms from first crystal. Rerun without \"symCheck\".");
+        logger.info("\n Symmetry check removed remaining atoms from first crystal. Rerun without --sc.");
         return null;
       }
     }
@@ -377,23 +364,10 @@ public class ProgressiveAlignmentOfCrystals {
 
     // Collect selected atoms.
     ArrayList<Integer> atomList2 = new ArrayList<>();
-    for (int i = 0; i < nAtoms2; i++) {
-      Atom atom = targetAtoms[i];
-      if (atom.isActive()) {
-        String atomName = atom.getName();
-        int atomAtNum = atom.getAtomicNumber();
-        boolean proteinCheck = atomName.equals("CA") && atomAtNum == 6;
-        boolean aminoCheck = (atomName.equals("N1") || atomName.equals("N9")) && atomAtNum == 7;
-        if(alphaCarbons){
-          if(proteinCheck||aminoCheck){
-            atomList2.add(i);
-          }
-        }else if (!noHydrogen || !atom.isHydrogen()) {
-          atomList2.add(i);
-        }
-      }
-      // Reset all atoms to active once the selection is recorded.
-      atom.setActive(true);
+    determineActiveAtoms(targetAssembly, atomList2, alphaCarbons, noHydrogen);
+
+    for(int i = 0; i<atomList2.size(); i++){
+      logger.info(format(" AtomList2[%d]: %d", i, atomList2.get(i)));
     }
     if (atomList2.size() < 1) {
       logger.info("\n No atoms were selected for the PAC RMSD in second crystal.");
@@ -405,7 +379,7 @@ public class ProgressiveAlignmentOfCrystals {
       // Remove atoms that are at non-unique positions (Might be mislabeled).
       environmentCheck(targetAssembly, atomList2);
       if(atomList2.size() < 1){
-        logger.warning("\n Symmetry check removed remaining atoms from second crystal. Rerun without \"symCheck\".");
+        logger.warning("\n Symmetry check removed remaining atoms from second crystal. Rerun without --sc.");
         return null;
       }
     }
@@ -548,6 +522,7 @@ public class ProgressiveAlignmentOfCrystals {
     Crystal baseXtal = baseAssembly.getCrystal();
     double[] baseXYZOrig = generateInflatedSphere(baseXtal, reducedBaseCoords, massStart,
             inflatedAU);
+
     //Remove atoms not used in comparisons from the original molecular assembly (crystal 2).
     MolecularAssembly targetAssembly = targetFilter.getActiveMolecularSystem();
     targetAssembly.moveAllIntoUnitCell();
@@ -564,10 +539,11 @@ public class ProgressiveAlignmentOfCrystals {
     if (!Arrays.equals(mass, massTemp)) {
       if (logger.isLoggable(Level.FINER)) {
         for (int i = 0; i < compareAtomsSize; i++) {
-          logger.finer(format("Mass: %4.4f MassTemp: %4.4f", mass[i], massTemp[i]));
+          logger.finer(format(" Masses of Crystal 1 (%d): %4.4f Masses of Crystal 2 (%d): %4.4f",
+                  compareAtomsSize, mass[i], compareAtomsSize2, massTemp[i]));
         }
       }
-      logger.warning("Atom masses are not equivalent between crystals.\n " +
+      logger.warning(" Atom masses are not equivalent between crystals.\n " +
               "Ensure atom ordering is same in both inputs.");
     }
     // Remove duplicated atoms from Z' > 1.
@@ -579,10 +555,10 @@ public class ProgressiveAlignmentOfCrystals {
     if (!Arrays.equals(comparisonAtoms, comparisonAtoms2)) {
       if (logger.isLoggable(Level.FINER)) {
         for (int i = 0; i < compareAtomsSize; i++) {
-          logger.finer(format("compAtoms: %d compAtoms: %d", comparisonAtoms[i], comparisonAtoms2[i]));
+          logger.finer(format(" Atoms to compare Crystal 1: %d Crystal 2: %d", comparisonAtoms[i], comparisonAtoms2[i]));
         }
       }
-      logger.warning("Atoms to compare are not equivalent between crystals.\n " +
+      logger.warning(" Atoms to compare are not equivalent between crystals.\n " +
               "Ensure atom ordering is same in both inputs.");
     }
 
@@ -930,7 +906,7 @@ public class ProgressiveAlignmentOfCrystals {
           DoubleIndexPair[] matchMols = new DoubleIndexPair[Math.max(3, nAU)];
           matchMolecules(matchMols, baseCoM, targetCoM, molDist1_2, molDist2_2);
 
-          //TODO remove following?
+          //TODO Make following finer logging.
           for (int i = 0; i < nAU; i++) {
             int offset = i * nCoords;
             int molIndex = matchMols[i].getIndex() * nCoords;
@@ -1442,6 +1418,35 @@ public class ProgressiveAlignmentOfCrystals {
       reducedCoords[coordIndex++] = atom.getZ();
     }
     return reducedCoords;
+  }
+
+  /**
+   * Determine the indices of the atoms from the assembly that are active for this comparison.
+   * @param assembly Assembly of interest to compare.
+   * @param indices Array list containing atom indices that will be used for this comparison.
+   */
+  private static void determineActiveAtoms(MolecularAssembly assembly, ArrayList<Integer> indices, boolean alphaCarbons,
+                                           boolean noHydrogen){
+    Atom[] atoms = assembly.getAtomArray();
+    int nAtoms = atoms.length;
+    for (int i = 0; i < nAtoms; i++) {
+      Atom atom = atoms[i];
+      if (atom.isActive()) {
+        String atomName = atom.getName();
+        int atomAtNum = atom.getAtomicNumber();
+        boolean proteinCheck = atomName.equals("CA") && atomAtNum == 6;
+        boolean aminoCheck = (atomName.equals("N1") || atomName.equals("N9")) && atomAtNum == 7;
+        if (alphaCarbons) {
+          if (proteinCheck || aminoCheck) {
+            indices.add(i);
+          }
+        } else if (!noHydrogen || !atom.isHydrogen()) {
+          indices.add(i);
+        }
+      }
+      // Reset all atoms to active once the selection is recorded.
+      atom.setActive(true);
+    }
   }
 
   /**

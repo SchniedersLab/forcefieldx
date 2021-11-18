@@ -249,6 +249,7 @@ class SuperposeCrystals extends AlgorithmsScript {
       algorithmFunctions.openAll(filenames.get(1))
       targetFilter = algorithmFunctions.getFilter()
     }
+    atomSelectionOptions.setActiveAtoms(targetFilter.getActiveMolecularSystem())
 
     // Compare structures in baseFilter and targetFilter.
     ProgressiveAlignmentOfCrystals pac = new ProgressiveAlignmentOfCrystals(baseFilter, targetFilter, isSymmetric)
