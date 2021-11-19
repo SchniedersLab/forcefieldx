@@ -280,7 +280,7 @@ public class ProgressiveAlignmentOfCrystals {
    * @param zPrime2 Number of asymmetric units in second crystal.
    * @param alphaCarbons Perform comparisons on only alpha carbons.
    * @param noHydrogen Perform comparisons without hydrogen atoms.
-   * @param symCheck Only use unique atom environments (prevents mislabeled symmetries).
+   * @param removeEq Only use unique atom environments (prevents mislabeled symmetries).
    * @param exhaustive Perform exhaustive number of comparisons (takes longer, but more information
    *     returned).
    * @param save Save out PDBs of the resulting superposition.
@@ -290,9 +290,10 @@ public class ProgressiveAlignmentOfCrystals {
    * @param pacFileName The filename to use.
    * @return RunningStatistics Statistics for comparisons performed.
    */
-  public RunningStatistics comparisons(int nAU, int inflatedAU, int numSearch, int numSearch2,
-      int zPrime, int zPrime2, boolean alphaCarbons, boolean noHydrogen, boolean symCheck, boolean exhaustive, boolean save, boolean restart,
-      boolean write, boolean machineLearning, String pacFileName) {
+  public RunningStatistics comparisons(int nAU, int inflatedAU, int numSearch, int numSearch2, int zPrime, int zPrime2,
+                                       boolean alphaCarbons, boolean noHydrogen, boolean massWeighted, boolean removeEq,
+                                       boolean exhaustive, boolean save, boolean restart, boolean write,
+                                       boolean machineLearning, String pacFileName) {
 
     RunningStatistics runningStatistics;
     if (restart) {
@@ -339,16 +340,12 @@ public class ProgressiveAlignmentOfCrystals {
     ArrayList<Integer> atomList = new ArrayList<>();
     determineActiveAtoms(baseAssembly, atomList, alphaCarbons, noHydrogen);
 
-    for(int i = 0; i<atomList.size(); i++){
-      logger.info(format(" AtomList[%d]: %d", i, atomList.get(i)));
-    }
-
     if (atomList.size() < 1) {
       logger.info("\n No atoms were selected for the PAC RMSD in first crystal.");
       return null;
     }
 
-    if(symCheck){
+    if(removeEq){
       // Remove atoms that are at non-unique positions (Might be mislabeled).
       environmentCheck(baseAssembly, atomList);
       if(atomList.size() < 1){
@@ -366,16 +363,13 @@ public class ProgressiveAlignmentOfCrystals {
     ArrayList<Integer> atomList2 = new ArrayList<>();
     determineActiveAtoms(targetAssembly, atomList2, alphaCarbons, noHydrogen);
 
-    for(int i = 0; i<atomList2.size(); i++){
-      logger.info(format(" AtomList2[%d]: %d", i, atomList2.get(i)));
-    }
     if (atomList2.size() < 1) {
       logger.info("\n No atoms were selected for the PAC RMSD in second crystal.");
       return null;
     }
 
 
-    if(symCheck){
+    if(removeEq){
       // Remove atoms that are at non-unique positions (Might be mislabeled).
       environmentCheck(targetAssembly, atomList2);
       if(atomList2.size() < 1){
@@ -441,7 +435,7 @@ public class ProgressiveAlignmentOfCrystals {
                 column + 1, targetCrystal.toShortString(), targetLabel));
             // Compute the PAC RMSD.
             rmsd = compare(comparisonAtoms, comparisonAtoms2, compareAtomsSize, compareAtomsSize2, nAU, inflatedAU,
-                numSearch, numSearch2, z1, z2, exhaustive, save, machineLearning);
+                numSearch, numSearch2, z1, z2, massWeighted, exhaustive, save, machineLearning);
             time += System.nanoTime();
             double timeSec = time * 1.0e-9;
             // Record the fastest comparison.
@@ -511,14 +505,14 @@ public class ProgressiveAlignmentOfCrystals {
    */
   private double compare(int[] comparisonAtomsStart, int[] comparisonAtoms2Start, int compareAtomsSize,
       int compareAtomsSize2, int nAU, int inflatedAU, int numSearch, int numSearch2, int zPrime, int zPrime2,
-      boolean exhaustive, boolean save, boolean machineLearning) {
+      boolean massWeighted, boolean exhaustive, boolean save, boolean machineLearning) {
     // TODO: Does PAC work for a combination of molecules and polymers?
 
     //Remove atoms not used in comparisons from the original molecular assembly (crystal 1).
     MolecularAssembly baseAssembly = baseFilter.getActiveMolecularSystem();
     baseAssembly.moveAllIntoUnitCell();
     double[] massStart = new double[comparisonAtomsStart.length];
-    double[] reducedBaseCoords = reduceSystem(baseAssembly, comparisonAtomsStart, massStart);
+    double[] reducedBaseCoords = reduceSystem(baseAssembly, comparisonAtomsStart, massStart, massWeighted);
     Crystal baseXtal = baseAssembly.getCrystal();
     double[] baseXYZOrig = generateInflatedSphere(baseXtal, reducedBaseCoords, massStart,
             inflatedAU);
@@ -527,7 +521,7 @@ public class ProgressiveAlignmentOfCrystals {
     MolecularAssembly targetAssembly = targetFilter.getActiveMolecularSystem();
     targetAssembly.moveAllIntoUnitCell();
     double[] massStart2 = new double[comparisonAtoms2Start.length];
-    double[] reducedTargetCoords = reduceSystem(targetAssembly, comparisonAtoms2Start, massStart2);
+    double[] reducedTargetCoords = reduceSystem(targetAssembly, comparisonAtoms2Start, massStart2, massWeighted);
     Crystal targetXtal = targetAssembly.getCrystal();
     double[] targetXYZOrig = generateInflatedSphere(targetXtal, reducedTargetCoords, massStart2,
             inflatedAU);
@@ -1402,8 +1396,8 @@ public class ProgressiveAlignmentOfCrystals {
    * @param mass Mass of atoms within asymmetric unit (filling values).
    * @return Linear coordinates for only atoms of interest.
    */
-  private static double[] reduceSystem(MolecularAssembly assembly, int[] comparisonAtoms,
-      double[] mass) {
+  private static double[] reduceSystem(MolecularAssembly assembly, int[] comparisonAtoms, double[] mass,
+                                       boolean massWeighted) {
     Atom[] atoms = assembly.getAtomArray();
     // Collect asymmetric unit atomic coordinates.
     double[] reducedCoords = new double[comparisonAtoms.length * 3];
@@ -1412,7 +1406,7 @@ public class ProgressiveAlignmentOfCrystals {
     for (Integer value : comparisonAtoms) {
       Atom atom = atoms[value];
       double m = atom.getMass();
-      mass[massIndex++] = m;
+      mass[massIndex++] = (massWeighted)? m : 1.0;
       reducedCoords[coordIndex++] = atom.getX();
       reducedCoords[coordIndex++] = atom.getY();
       reducedCoords[coordIndex++] = atom.getZ();
@@ -1578,7 +1572,7 @@ public class ProgressiveAlignmentOfCrystals {
   }
 
   /**
-   * Generate and expanded sphere of asymetric unit with the intention of observing a crystals
+   * Generate and expanded sphere of asymmetric unit with the intention of observing a crystals
    * distribution of replicates rather to facilitate comparisons that go beyond lattice parameters.
    *
    * @param crystal Crystal to define expansion.
@@ -1909,7 +1903,7 @@ public class ProgressiveAlignmentOfCrystals {
    */
   private static void saveAssemblyPDB(MolecularAssembly molecularAssembly, double[] coords,
       int[] comparisonAtoms, String description) {
-    String fileName = FilenameUtils.removeExtension(molecularAssembly.getName());
+    String fileName = FilenameUtils.removeExtension(molecularAssembly.getFile().getName());
     File saveLocationPDB = PDBFilter.version(new File(fileName + description + ".pdb"));
     // Save aperiodic system of n_mol closest atoms for visualization
     MolecularAssembly currentAssembly = new MolecularAssembly(molecularAssembly.getName());
@@ -1969,7 +1963,7 @@ public class ProgressiveAlignmentOfCrystals {
   private static void saveAssemblyPDB(MolecularAssembly molecularAssembly, double[] coords,
                                       int[] comparisonAtoms, String description, double finalRMSD) {
     saveAssemblyPDB(molecularAssembly, coords, comparisonAtoms, description);
-    String fileName = FilenameUtils.removeExtension(molecularAssembly.getName());
+    String fileName = FilenameUtils.removeExtension(molecularAssembly.getFile().getName());
     try {
       // Needs same name as PDB so follow PDB format.
       File csv = PDBFilter.version(new File(fileName + description + ".csv"));
