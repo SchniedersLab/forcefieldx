@@ -60,6 +60,8 @@ import ffx.potential.bonded.Rotamer;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.SoluteType.SOLUTE_RADII_TYPE;
 import ffx.utilities.Constants;
+import org.apache.commons.configuration2.CompositeConfiguration;
+
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -366,12 +368,13 @@ public class TitrationUtils {
 
   private final ForceField forceField;
   private final SOLUTE_RADII_TYPE soluteRadiiType;
+  CompositeConfiguration properties;
 
   private final HashMap<AminoAcid3, Double> rotamerPhBiasMap = new HashMap<>();
 
   public TitrationUtils(ForceField forceField) {
     this.forceField = forceField;
-
+    properties = forceField.getProperties();
     String gkRadius = forceField.getString("GK_RADIUS", "SOLUTE");
     SOLUTE_RADII_TYPE tempType;
     try {
@@ -939,8 +942,8 @@ public class TitrationUtils {
      * Set ASP pH bias as sum of Fmod and acidostat energy
      */
     double acidostat = LOG10 * Constants.R * temperature * (Titration.ASHtoASP.pKa - pH);
-    double fMod = Titration.ASHtoASP.refEnergy;
-    rotamerPhBiasMap.put(ASP, acidostat - fMod);
+    double aspfMod = properties.getDouble("aMod", Titration.ASHtoASP.refEnergy);
+    rotamerPhBiasMap.put(ASP, acidostat - aspfMod);
 
     /*
      * Set ASH pH bias as sum of Fmod and acidostat energy
@@ -951,8 +954,8 @@ public class TitrationUtils {
      * Set GLU pH bias as sum of Fmod and acidostat energy
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.GLHtoGLU.pKa - pH);
-    fMod = Titration.GLHtoGLU.refEnergy;
-    rotamerPhBiasMap.put(GLU, acidostat - fMod);
+    double glufMod = properties.getDouble("gMod",Titration.GLHtoGLU.refEnergy);
+    rotamerPhBiasMap.put(GLU, acidostat - glufMod);
 
     /*
      * Set LYS pH bias as sum of Fmod and acidostat energy
@@ -963,8 +966,8 @@ public class TitrationUtils {
      * Set LYD pH bias as sum of Fmod and acidostat energy
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.LYStoLYD.pKa - pH);
-    fMod = Titration.LYStoLYD.refEnergy;
-    rotamerPhBiasMap.put(LYD, acidostat - fMod);
+    double lydfMod = properties.getDouble("lMod",Titration.LYStoLYD.refEnergy);
+    rotamerPhBiasMap.put(LYD, acidostat - lydfMod);
 
     /*
      * Set HIS pH bias as sum of Fmod and acidostat energy
@@ -975,15 +978,15 @@ public class TitrationUtils {
      * Set HID pH bias as sum of Fmod and acidostat energy
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.HIStoHID.pKa - pH);
-    fMod = Titration.HIStoHID.refEnergy;
-    rotamerPhBiasMap.put(HID, acidostat - fMod);
+    double hidfMod = properties.getDouble("hdMod",Titration.HIStoHID.refEnergy);
+    rotamerPhBiasMap.put(HID, acidostat - hidfMod);
 
     /*
      * Set HIE pH bias as sum of Fmod and acidostat energy
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.HIStoHIE.pKa - pH);
-    fMod = Titration.HIStoHIE.refEnergy;
-    rotamerPhBiasMap.put(HIE, acidostat - fMod);
+    double hiefMod = properties.getDouble("hieMod",Titration.HIStoHIE.refEnergy);
+    rotamerPhBiasMap.put(HIE, acidostat - hiefMod);
   }
 
   public double getRotamerPhBias(AminoAcid3 AA3) {
@@ -1013,7 +1016,7 @@ public class TitrationUtils {
   public enum Titration {
     //ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
     ASHtoASP(4.00, -66.87, 0.0, ASH, ASP),
-    GLHtoGLU(4.40, -95.87, 0.0, GLH, GLU),
+    GLHtoGLU(4.40, -81.87, 0.0, GLH, GLU),
     LYStoLYD(10.40, 41.50, 0.0, LYS, LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
     HIStoHID(7.00, 36.00, 0.0, HIS, HID),
