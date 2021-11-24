@@ -254,7 +254,7 @@ public class Crystal {
         this.alpha = alpha;
         this.beta = beta;
         this.gamma = gamma;
-        spaceGroup = SpaceGroupDefinitions.spaceGroupFactory(sg);
+        spaceGroup = tempSG;
         crystalSystem = spaceGroup.crystalSystem;
         latticeSystem = spaceGroup.latticeSystem;
         logger.severe(sb.toString());
@@ -267,7 +267,7 @@ public class Crystal {
       this.alpha = alpha;
       this.beta = beta;
       this.gamma = gamma;
-      spaceGroup = SpaceGroupDefinitions.spaceGroupFactory(sg);
+      spaceGroup = tempSG;
       crystalSystem = spaceGroup.crystalSystem;
       latticeSystem = spaceGroup.latticeSystem;
     }

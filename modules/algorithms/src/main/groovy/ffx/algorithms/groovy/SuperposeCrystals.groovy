@@ -117,6 +117,13 @@ class SuperposeCrystals extends AlgorithmsScript {
   int zPrime2
 
   /**
+   * --re or --removeEquivalent Remove atoms with equivalent bonded environments.
+   */
+  @Option(names = ['--re', '--removeEquivalent'], paramLabel = "false", defaultValue = "false",
+          description = 'Ignore atoms with similar bonded environment .')
+  private static boolean renameEq
+
+  /**
    * -w or --write Write out the RMSD matrix.
    */
   @Option(names = ['-w', '--write'], paramLabel = "false", defaultValue = "false",
@@ -159,11 +166,18 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean noHydrogen
 
   /**
-   * --sa or --saveAres Save out PDB in ARES input format.
+   * --sm or --saveMachineLearning Save out PDB and CSV for machine learning.
    */
-  @Option(names = ['--sa', '--saveAres'], paramLabel = "false", defaultValue = "false",
-          description = 'Final structures for each comparison will be written out in ARES input format.')
-  private static boolean ares
+  @Option(names = ['--sm', '--saveMachineLearning'], paramLabel = "false", defaultValue = "false",
+          description = 'Final structures for each comparison will be written out with RMSD in a CSV.')
+  private static boolean machineLearning
+
+  /**
+   * --mw or --massWeighted Weight atomic masses for comparison.
+   */
+  @Option(names = ['--mw', '--massWeighted'], paramLabel = "false", defaultValue = "false",
+          description = 'Weight atomic masses for the comparison.')
+  private static boolean massWeighted
 
   /**
    * The final argument(s) should be two or more filenames (same file twice if comparing same structures).
@@ -242,6 +256,7 @@ class SuperposeCrystals extends AlgorithmsScript {
       algorithmFunctions.openAll(filenames.get(1))
       targetFilter = algorithmFunctions.getFilter()
     }
+    atomSelectionOptions.setActiveAtoms(targetFilter.getActiveMolecularSystem())
 
     // Compare structures in baseFilter and targetFilter.
     ProgressiveAlignmentOfCrystals pac = new ProgressiveAlignmentOfCrystals(baseFilter, targetFilter, isSymmetric)
@@ -251,12 +266,12 @@ class SuperposeCrystals extends AlgorithmsScript {
     String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt")
 
     // To save in ARES format a PDB must be written out.
-    if(ares){
+    if(machineLearning){
       savePDB = true
     }
 
     runningStatistics = pac.comparisons(numAU, numInflatedAU, numSearch, numSearch2, zPrime, zPrime2, alphaCarbons,
-        noHydrogen, exhaustive, savePDB, restart, write, ares, pacFilename)
+        noHydrogen, massWeighted, renameEq, exhaustive, savePDB, restart, write, machineLearning, pacFilename)
 
     return this
   }

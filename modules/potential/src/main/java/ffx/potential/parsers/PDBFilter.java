@@ -1388,7 +1388,6 @@ public final class PDBFilter extends SystemFilter {
     if (pdbAtoms != activeMolecularAssembly.getAtomArray().length) {
       numberAtoms(activeMolecularAssembly);
     }
-
     return true;
   }
 
@@ -1746,9 +1745,11 @@ public final class PDBFilter extends SystemFilter {
       model.append(repeat(" ", 65));
     }
     activeMolecularAssembly.setFile(newFile);
-    activeMolecularAssembly.setName(newFile.getName());
+    if(activeMolecularAssembly.getName() == null){
+      activeMolecularAssembly.setName(newFile.getName());
+    }
     if (logWrites) {
-      logger.log(Level.INFO, " Saving {0}", activeMolecularAssembly.getName());
+      logger.log(Level.INFO, " Saving {0}", newFile.getName());
     }
 
     try (FileWriter fw = new FileWriter(newFile, append); BufferedWriter bw = new BufferedWriter(
