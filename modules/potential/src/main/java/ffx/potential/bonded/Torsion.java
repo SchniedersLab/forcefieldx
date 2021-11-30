@@ -50,6 +50,7 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.DoubleUnaryOperator;
 import java.util.logging.Logger;
 
 /**

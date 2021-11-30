@@ -4791,7 +4791,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
           for (int j = 0; j < nTerms; j++) {
             double forceConstant =
-                    OpenMM_KJPerKcal * rt.units * torsionType.amplitude[j] * rt.mapLambda(lambda);
+                    OpenMM_KJPerKcal * rt.units * torsionType.amplitude[j] * rt.mapLambda(getLambda());
             OpenMM_PeriodicTorsionForce_setTorsionParameters(
                     rtOMM,
                     index++,
