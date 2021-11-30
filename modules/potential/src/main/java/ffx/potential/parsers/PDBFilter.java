@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -50,19 +50,21 @@ import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.repeat;
+import static org.apache.commons.math3.util.FastMath.min;
 
 import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroupInfo;
 import ffx.crystal.SymOp;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
+import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.ResidueEnumerations.AminoAcid3;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.Hybrid36;
 import ffx.utilities.StringUtils;
@@ -101,10 +103,14 @@ public final class PDBFilter extends SystemFilter {
 
   private static final Logger logger = Logger.getLogger(PDBFilter.class.getName());
   private static final Set<String> backboneNames;
+  private static final Set<String> constantPhBackboneNames;
 
   static {
     String[] names = {"C", "CA", "N", "O", "OXT", "OT2"};
     backboneNames = Set.of(names);
+
+    String[] constantPhNames = {"C", "CA", "N", "O", "OXT", "OT2", "H", "HA", "H1", "H2", "H3"};
+    constantPhBackboneNames = Set.of(constantPhNames);
   }
 
   /** Map of SEQRES entries. */
@@ -149,6 +155,8 @@ public final class PDBFilter extends SystemFilter {
   private boolean mutate = false;
 
   private List<Mutation> mutations = null;
+  private List<String> resNumberList = null;
+  private List<Character> chainList = null;
   /** Flag to indicate if missing fields should be printed (i.e. missing B-factors). */
   private boolean printMissingFields = true;
   /** Number of symmetry operators in the current crystal. */
@@ -165,6 +173,47 @@ public final class PDBFilter extends SystemFilter {
   private final File readFile;
   private List<String> remarkLines = Collections.emptyList();
   private double lastReadLambda = Double.NaN;
+
+  /**
+   * If true, read in titratable residues in their fully protonated form.
+   */
+  private boolean constantPH = false;
+  /**
+   * If true, read in titratable residues in their protonated form.
+   */
+  private boolean rotamerTitration = false;
+  /**
+   * List of residue to rename for constantPH simulations.
+   */
+  private static final HashMap<AminoAcid3, AminoAcid3> constantPHResidueMap = new HashMap<>();
+  static {
+    // Lysine
+    constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.LYD, AminoAcidUtils.AminoAcid3.LYS);
+    // Histidine
+    constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.HID, AminoAcidUtils.AminoAcid3.HIS);
+    constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.HIE, AminoAcidUtils.AminoAcid3.HIS);
+    // Aspartate
+    constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.ASP, AminoAcidUtils.AminoAcid3.ASD);
+    constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.ASH, AminoAcidUtils.AminoAcid3.ASD);
+    // Glutamate
+    constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.GLU, AminoAcidUtils.AminoAcid3.GLD);
+    constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.GLH, AminoAcidUtils.AminoAcid3.GLD);
+  }
+  /**
+   * List of residue to rename for rotamer titration simulations.
+   */
+  private static final HashMap<AminoAcid3, AminoAcid3> rotamerResidueMap = new HashMap<>();
+  static {
+    // Lysine
+    rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.LYD, AminoAcidUtils.AminoAcid3.LYS);
+    // Histidine
+    rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.HID, AminoAcidUtils.AminoAcid3.HIS);
+    rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.HIE, AminoAcidUtils.AminoAcid3.HIS);
+    // Aspartate
+    rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.ASP, AminoAcidUtils.AminoAcid3.ASH);
+    // Glutamate
+    rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.GLU, AminoAcidUtils.AminoAcid3.GLH);
+  }
 
   /**
    * Constructor for PDBFilter.
@@ -227,6 +276,30 @@ public final class PDBFilter extends SystemFilter {
   }
 
   /**
+   * Constructor for PDBFilter with residue numbers.
+   *
+   * @param file a {@link java.util.List} object.
+   * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
+   * @param forceField a {@link ffx.potential.parameters.ForceField} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
+   */
+  public PDBFilter(
+          File file,
+          MolecularAssembly molecularAssembly,
+          ForceField forceField,
+          CompositeConfiguration properties,
+          List<String> resNumberList) {
+    super(file, molecularAssembly, forceField, properties);
+    bondList = new ArrayList<>();
+    this.fileType = FileType.PDB;
+    this.readFile = file;
+    this.resNumberList = resNumberList;
+    //this.chainList = chainList;
+  }
+
+
+  /**
    * Simple method useful for converting files to PDB format.
    *
    * @param atom a {@link ffx.potential.bonded.Atom} object.
@@ -279,7 +352,7 @@ public final class PDBFilter extends SystemFilter {
         logger.info(
             format(
                 " XYZ coordinate %8.3f for atom %s overflowed PDB format and is truncated to %s.",
-                xyz[i], atom.toString(), newValue));
+                xyz[i], atom, newValue));
         decimals.append(newValue);
       }
     }
@@ -289,7 +362,7 @@ public final class PDBFilter extends SystemFilter {
       logger.severe(
           format(
               " Occupancy %6.2f for atom %s must be between 0 and 1.",
-              atom.getOccupancy(), atom.toString()));
+              atom.getOccupancy(), atom));
     }
     try {
       decimals.append(StringUtils.fwFpDec(atom.getTempFactor(), 6, 2));
@@ -298,7 +371,7 @@ public final class PDBFilter extends SystemFilter {
       logger.info(
           format(
               " B-factor %6.2f for atom %s overflowed the PDB format and is truncated to %s.",
-              atom.getTempFactor(), atom.toString(), newValue));
+              atom.getTempFactor(), atom, newValue));
       decimals.append(newValue);
     }
 
@@ -306,6 +379,14 @@ public final class PDBFilter extends SystemFilter {
     sb.replace(78, 80, format("%2d", 0));
     sb.append("\n");
     return sb.toString();
+  }
+
+  public void setConstantPH(boolean constantPH) {
+    this.constantPH = constantPH;
+  }
+
+  public void setRotamerTitration(boolean rotamerTitration) {
+    this.rotamerTitration = rotamerTitration;
   }
 
   /** clearSegIDs */
@@ -323,7 +404,7 @@ public final class PDBFilter extends SystemFilter {
           br.close();
         } catch (IOException ex) {
           logger.warning(
-              format(" Exception in closing system %s: %s", system.toString(), ex.toString()));
+              format(" Exception in closing system %s: %s", system.toString(), ex));
         }
       }
     }
@@ -417,6 +498,9 @@ public final class PDBFilter extends SystemFilter {
    * @param mutations a {@link java.util.List} object.
    */
   public void mutate(List<Mutation> mutations) {
+    if (this.mutations == null) {
+      this.mutations = new ArrayList<>();
+    }
     this.mutations.addAll(mutations);
   }
 
@@ -788,8 +872,6 @@ public final class PDBFilter extends SystemFilter {
                     for (Mutation mtn : mutations) {
                       if (chainID == mtn.chainChar && resSeq == mtn.resID) {
                         String atomName = name.toUpperCase();
-                      /*if (atomName.equals("N") || atomName.equals("C")
-                      || atomName.equals("O") || atomName.equals("CA")) {*/
                         if (backboneNames.contains(atomName)) {
                           printAtom = true;
                           resName = mtn.resName;
@@ -803,6 +885,38 @@ public final class PDBFilter extends SystemFilter {
                     }
                     if (doBreak) {
                       break;
+                    }
+                  }
+
+                  if (constantPH) {
+                    AminoAcid3 aa3 = AminoAcidUtils.AminoAcid3.valueOf(resName.toUpperCase());
+                    if (constantPHResidueMap.containsKey(aa3)) {
+                      String atomName = name.toUpperCase();
+                      AminoAcid3 aa3PH = constantPHResidueMap.get(aa3);
+                      resName = aa3PH.name();
+                      if (constantPhBackboneNames.contains(atomName)) {
+                        logger.info(format(" %s-%d %s", resName, resSeq, atomName));
+                      } else if (!atomName.startsWith("H") ) {
+                        logger.info(format(" %s-%d %s", resName, resSeq, atomName));
+                      } else {
+                        logger.info(format(" %s-%d %s skipped", resName, resSeq, atomName));
+                        break;
+                      }
+                    }
+                  } else if (rotamerTitration){
+                    AminoAcid3 aa3 = AminoAcidUtils.AminoAcid3.valueOf(resName.toUpperCase());
+                    if (rotamerResidueMap.containsKey(aa3) && resNumberList.contains(String.valueOf(resSeq))) {
+                      String atomName = name.toUpperCase();
+                      AminoAcid3 aa3rotamer = rotamerResidueMap.get(aa3);
+                      resName = aa3rotamer.name();
+                      if (constantPhBackboneNames.contains(atomName)) {
+                        logger.info(format(" %s-%d %s", resName, resSeq, atomName));
+                      } else if (!atomName.startsWith("H") ) {
+                        logger.info(format(" %s-%d %s", resName, resSeq, atomName));
+                      } else {
+                        logger.info(format(" %s-%d %s skipped", resName, resSeq, atomName));
+                        break;
+                      }
                     }
                   }
                   d = new double[3];
@@ -980,10 +1094,7 @@ public final class PDBFilter extends SystemFilter {
                 double alpha = parseDouble(line.substring(33, 40).trim());
                 double beta = parseDouble(line.substring(40, 47).trim());
                 double gamma = parseDouble(line.substring(47, 54).trim());
-                int limit = 66;
-                if (line.length() < 66) {
-                  limit = line.length();
-                }
+                int limit = min(line.length(), 66);
                 String sg = line.substring(55, limit).trim();
                 properties.addProperty("a-axis", aaxis);
                 properties.addProperty("b-axis", baxis);
@@ -1277,7 +1388,6 @@ public final class PDBFilter extends SystemFilter {
     if (pdbAtoms != activeMolecularAssembly.getAtomArray().length) {
       numberAtoms(activeMolecularAssembly);
     }
-
     return true;
   }
 
@@ -1417,7 +1527,7 @@ public final class PDBFilter extends SystemFilter {
                         Level.WARNING,
                         format(
                             " No " + "known segment ID corresponds to " + "chain ID %s",
-                            chainID.toString()));
+                            chainID));
                     break;
                   }
 
@@ -1427,7 +1537,7 @@ public final class PDBFilter extends SystemFilter {
                         Level.WARNING,
                         format(
                             " " + "Multiple segment IDs correspond to" + "chain ID %s; assuming %s",
-                            chainID.toString(), segID));
+                            chainID, segID));
                   }
 
                   int resSeq = Hybrid36.decode(4, line.substring(22, 26));
@@ -1463,7 +1573,7 @@ public final class PDBFilter extends SystemFilter {
                     returnedAtom.getXYZ(retXYZ);
                   } else {
                     String message =
-                        format(" Could not find atom %s in assembly", newAtom.toString());
+                        format(" Could not find atom %s in assembly", newAtom);
                     if (dieOnMissingAtom) {
                       logger.severe(message);
                     } else {
@@ -1503,7 +1613,7 @@ public final class PDBFilter extends SystemFilter {
         logger.info(
             format(
                 " Exception in parsing frame %d of %s:" + " %s",
-                modelsRead, system.toString(), ex.toString()));
+                modelsRead, system.toString(), ex));
       }
     }
     return false;
@@ -1605,7 +1715,7 @@ public final class PDBFilter extends SystemFilter {
       return false;
     }
     if (vdwH) {
-      logger.info(" Printing hydrogens to van der Waals centers instead of nuclear locations.");
+      logger.info(" Printing hydrogen to van der Waals centers instead of nuclear locations.");
     }
     if (nSymOp != 0) {
       logger.info(
@@ -1635,9 +1745,11 @@ public final class PDBFilter extends SystemFilter {
       model.append(repeat(" ", 65));
     }
     activeMolecularAssembly.setFile(newFile);
-    activeMolecularAssembly.setName(newFile.getName());
+    if(activeMolecularAssembly.getName() == null){
+      activeMolecularAssembly.setName(newFile.getName());
+    }
     if (logWrites) {
-      logger.log(Level.INFO, " Saving {0}", activeMolecularAssembly.getName());
+      logger.log(Level.INFO, " Saving {0}", newFile.getName());
     }
 
     try (FileWriter fw = new FileWriter(newFile, append); BufferedWriter bw = new BufferedWriter(
@@ -1987,13 +2099,17 @@ public final class PDBFilter extends SystemFilter {
         resID++;
       }
 
+      if (model != null) {
+        bw.write("ENDMDL");
+        bw.newLine();
+      }
+
       if (writeEnd) {
-        String end = model != null ? "ENDMDL" : "END";
-        bw.write(end);
+        bw.write("END");
         bw.newLine();
       }
     } catch (Exception e) {
-      String message = "Exception writing to file: " + saveFile.toString();
+      String message = "Exception writing to file: " + saveFile;
       logger.log(Level.WARNING, message, e);
       return false;
     }
@@ -2048,7 +2164,7 @@ public final class PDBFilter extends SystemFilter {
       bw.write(header);
       bw.newLine();
     } catch (Exception e) {
-      String message = " Exception writing to file: " + saveFile.toString();
+      String message = " Exception writing to file: " + saveFile;
       logger.log(Level.WARNING, message, e);
       return false;
     }
@@ -2190,7 +2306,7 @@ public final class PDBFilter extends SystemFilter {
                 " XYZ %d coordinate %8.3f for atom %s "
                     + "overflowed bounds of 8.3f string specified by PDB "
                     + "format; truncating value to %s",
-                i, xyz[i], atom.toString(), newValue));
+                i, xyz[i], atom, newValue));
         decimals.append(newValue);
       }
     }
@@ -2200,7 +2316,7 @@ public final class PDBFilter extends SystemFilter {
       logger.severe(
           format(
               " Occupancy %f for atom %s is impossible; " + "value must be between 0 and 1",
-              atom.getOccupancy(), atom.toString()));
+              atom.getOccupancy(), atom));
     }
     try {
       decimals.append(StringUtils.fwFpDec(atom.getTempFactor(), 6, 2));
@@ -2211,7 +2327,7 @@ public final class PDBFilter extends SystemFilter {
               " Atom temp factor %6.2f for atom %s overflowed "
                   + "bounds of 6.2f string specified by PDB format; truncating "
                   + "value to %s",
-              atom.getTempFactor(), atom.toString(), newValue));
+              atom.getTempFactor(), atom, newValue));
       decimals.append(newValue);
     }
     sb.replace(30, 66, decimals.toString());
@@ -2309,7 +2425,7 @@ public final class PDBFilter extends SystemFilter {
         logger.log(Level.WARNING, format("Invalid mutation target: %s.", newResName));
       }
       try {
-        AminoAcid3.valueOf(newResName);
+        AminoAcidUtils.AminoAcid3.valueOf(newResName);
       } catch (IllegalArgumentException ex) {
         logger.log(Level.WARNING, format("Invalid mutation target: %s.", newResName));
       }

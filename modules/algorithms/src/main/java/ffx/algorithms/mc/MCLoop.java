@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -46,7 +46,7 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.bonded.Loop;
+import ffx.potential.utils.Loop;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;

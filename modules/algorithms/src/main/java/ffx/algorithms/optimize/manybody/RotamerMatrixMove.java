@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -98,7 +98,7 @@ public class RotamerMatrixMove implements MCMove {
     for (int i = 0; i < nRes; i++) {
       ArrayList<Integer> resAllowed = new ArrayList<>();
 
-      int lenri = residues[i].getRotamers(rotamerLibrary).length;
+      int lenri = residues[i].getRotamers().length;
       for (int ri = 0; ri < lenri; ri++) {
         if (!eliminatedRotamers.check(i, ri)) {
           resAllowed.add(ri);

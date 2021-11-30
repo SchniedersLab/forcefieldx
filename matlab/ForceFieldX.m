@@ -5,7 +5,7 @@
 % Matlab Java syntax is available here:
 % https://www.mathworks.com/help/matlab/using-java-libraries-in-matlab.html
 %
-% All JDK 10 classes and FFX classes can now be imported.
+% Both JDK 10 and FFX classes can now be imported.
 
 import java.util.ArrayList
 import groovy.lang.Binding

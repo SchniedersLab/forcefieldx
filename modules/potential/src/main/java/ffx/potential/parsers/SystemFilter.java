@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -268,7 +268,7 @@ public abstract class SystemFilter {
       if (vers == Versioning.PREFIX_ABSOLUTE || vers == Versioning.POSTFIX_ABSOLUTE) {
         return versionAbsolute(file, (vers == Versioning.PREFIX_ABSOLUTE));
       } else {
-        return version(file, (vers == Versioning.PREFIX_ABSOLUTE));
+        return version(file, (vers == Versioning.PREFIX));
       }
     }
   }

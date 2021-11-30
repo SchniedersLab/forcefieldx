@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -92,7 +92,12 @@ public class Crystal {
   private static final int ZZ = 2;
   /** The space group of the crystal. */
   public final SpaceGroup spaceGroup;
-  /** Matrix to convert from fractional to Cartesian coordinates. */
+  /**
+   * Matrix to convert from fractional to Cartesian coordinates.
+   * <br>a-axis vector is the first row of A^(-1).
+   * <br>b-axis vector is the second row of A^(-1).
+   * <br>c-axis vector is the third row of A^(-1).
+   */
   public final double[][] Ai = new double[3][3];
   /** The direct space metric matrix. */
   public final double[][] G = new double[3][3];
@@ -135,23 +140,23 @@ public class Crystal {
   /** Entries in the Ai array. */
   public double Ai00, Ai01, Ai02, Ai10, Ai11, Ai12, Ai20, Ai21, Ai22;
   /** Change in the volume with respect to a. */
-  double dVdA;
+  public double dVdA;
   /** Change in the volume with respect to b. */
-  double dVdB;
+  public double dVdB;
   /** Change in the volume with respect to c. */
-  double dVdC;
+  public double dVdC;
   /**
    * Change in the volume with respect to alpha (in Radians). This is set to zero if alpha is fixed.
    */
-  double dVdAlpha;
+  public double dVdAlpha;
   /**
    * Change in the volume with respect to beta (in Radians). This is set to zero if beta is fixed.
    */
-  double dVdBeta;
+  public double dVdBeta;
   /**
    * Change in the volume with respect to gamma (in Radians). This is set to zero if gamma is fixed.
    */
-  double dVdGamma;
+  public double dVdGamma;
   /**
    * For some finite-difference calculations, it's currently necessary to remove lattice system
    * restrictions.
@@ -188,6 +193,9 @@ public class Crystal {
    * @param sg The space group symbol.
    */
   public Crystal(double a, double b, double c, double alpha, double beta, double gamma, String sg) {
+    // Crystal SpaceGroup and LatticeSystem are final variables. Temp variable to delay assigning.
+    SpaceGroup tempSG = SpaceGroupDefinitions.spaceGroupFactory(sg);
+    LatticeSystem tempLS = tempSG.latticeSystem;
     this.a = a;
     this.b = b;
     this.c = c;
@@ -195,14 +203,11 @@ public class Crystal {
     this.beta = beta;
     this.gamma = gamma;
     aperiodic = false;
-    spaceGroup = SpaceGroupDefinitions.spaceGroupFactory(sg);
-    crystalSystem = spaceGroup.crystalSystem;
-    latticeSystem = spaceGroup.latticeSystem;
-
-    if (!latticeSystem.validParameters(a, b, c, alpha, beta, gamma)) {
+    if (!tempLS.validParameters(a, b, c, alpha, beta, gamma)) {
+      // Invalid parameters... Start error/warning log and try to fix.
       StringBuilder sb = new StringBuilder(
-          " The proposed lattice parameters for " + spaceGroup.pdbName
-              + " do not satisfy the " + latticeSystem +
+          " The proposed lattice parameters for " + tempSG.pdbName
+              + " do not satisfy the " + tempLS +
               " lattice system restrictions and were ignored.\n");
       sb.append(format("  A-axis:                              %18.15e\n", a));
       sb.append(format("  B-axis:                              %18.15e\n", b));
@@ -210,7 +215,61 @@ public class Crystal {
       sb.append(format("  Alpha:                               %18.15e\n", alpha));
       sb.append(format("  Beta:                                %18.15e\n", beta));
       sb.append(format("  Gamma:                               %18.15e\n", gamma));
-      logger.severe(sb.toString());
+      if(tempLS == LatticeSystem.HEXAGONAL_LATTICE || tempLS == LatticeSystem.RHOMBOHEDRAL_LATTICE) {
+        // Try to convert between hexagonal and rhombohedral lattices to fix crystal.
+        Crystal convertedCrystal = SpaceGroupConversions.hrConversion(this, sg);
+        this.a = convertedCrystal.a;
+        this.b = convertedCrystal.b;
+        this.c = convertedCrystal.c;
+        this.alpha = convertedCrystal.alpha;
+        this.beta = convertedCrystal.beta;
+        this.gamma = convertedCrystal.gamma;
+        spaceGroup = convertedCrystal.spaceGroup;
+        crystalSystem = spaceGroup.crystalSystem;
+        latticeSystem = spaceGroup.latticeSystem;
+        sb.append(" Converted ").append(tempSG.pdbName).append(" to ").append(spaceGroup.pdbName);
+        if (!latticeSystem.validParameters(this.a, this.b, this.c, this.alpha, this.beta, this.gamma)) {
+          // Converted space group is still invalid... Print error message.
+          sb.append(" The proposed lattice parameters for ")
+                  .append(spaceGroup.pdbName)
+                  .append(" do not satisfy the ")
+                  .append(latticeSystem)
+                  .append(" lattice system restrictions and were ignored.\n");
+          sb.append(format("  A-axis:                              %18.15e\n", this.a));
+          sb.append(format("  B-axis:                              %18.15e\n", this.b));
+          sb.append(format("  C-axis:                              %18.15e\n", this.c));
+          sb.append(format("  Alpha:                               %18.15e\n", this.alpha));
+          sb.append(format("  Beta:                                %18.15e\n", this.beta));
+          sb.append(format("  Gamma:                               %18.15e\n", this.gamma));
+          logger.severe(sb.toString());
+        }else{
+          // Successfully converted space group between hexagonal and rhombohedral. Inform user.
+          logger.warning(sb.toString());
+        }
+      }else{
+        // Invalid lattice parameters. Update Crystal as much as possible, then print error message.
+        this.a = a;
+        this.b = b;
+        this.c = c;
+        this.alpha = alpha;
+        this.beta = beta;
+        this.gamma = gamma;
+        spaceGroup = tempSG;
+        crystalSystem = spaceGroup.crystalSystem;
+        latticeSystem = spaceGroup.latticeSystem;
+        logger.severe(sb.toString());
+      }
+    }else{
+      // Valid parameters, update crystal and continue.
+      this.a = a;
+      this.b = b;
+      this.c = c;
+      this.alpha = alpha;
+      this.beta = beta;
+      this.gamma = gamma;
+      spaceGroup = tempSG;
+      crystalSystem = spaceGroup.crystalSystem;
+      latticeSystem = spaceGroup.latticeSystem;
     }
 
     for (int i = 0; i < 6; i++) {
@@ -987,6 +1046,33 @@ public class Crystal {
   }
 
   /**
+   * This method should be called to update the unit cell parameters of a crystal. The proposed
+   * parameters will only be accepted if symmetry restrictions are satisfied. If so, all Crystal
+   * variables that depend on the unit cell parameters will be updated.
+   * <p>
+   * If the new parameters are accepted, the target asymmetric unit volume is achieved by uniformly
+   * scaling all lattice lengths.
+   *
+   * @param a length of the a-axis.
+   * @param b length of the b-axis.
+   * @param c length of the c-axis.
+   * @param alpha Angle between b-axis and c-axis.
+   * @param beta Angle between a-axis and c-axis.
+   * @param gamma Angle between a-axis and b-axis.
+   * @param targetAUVolume Target asymmetric unit volume.
+   * @return The method return true if the parameters are accepted, false otherwise.
+   */
+  public boolean changeUnitCellParametersAndVolume(
+      double a, double b, double c, double alpha, double beta, double gamma, double targetAUVolume) {
+    if (changeUnitCellParameters(a, b, c, alpha, beta, gamma)) {
+      double currentAUVolume = volume / getNumSymOps();
+      double scale = cbrt(targetAUVolume / currentAUVolume);
+      return changeUnitCellParameters(scale * a, scale * b, scale * c, alpha, beta, gamma);
+    }
+    return false;
+  }
+
+  /**
    * Two crystals are equal only if all unit cell parameters are exactly the same.
    *
    * @param o the Crystal to compare to.
@@ -1252,6 +1338,32 @@ public class Crystal {
   }
 
   /**
+   * Reflect proposed angles to be within 0 and 180 degrees.
+   *
+   * @param angle Proposed angle in radians.
+   * @return value of mirrored angle in radians.
+   */
+  public static double mirrorRadians(double angle) {
+    double angleDegrees = angle * 180 / PI;
+    return mirrorDegrees(angleDegrees) * PI / 180;
+  }
+
+  /**
+   * Reflect proposed angles to be within 0 and 180 degrees.
+   *
+   * @param angle Proposed angle in radians.
+   * @return value of mirrored angle in radians.
+   */
+  public static double mirrorDegrees(double angle) {
+    if (angle > 180.0) {
+      angle = 180.0 - (angle - 180.0);
+    } else if (angle < 0.0) {
+      angle = 0.0 - angle;
+    }
+    return angle;
+  }
+
+  /**
    * Strain the unit cell vectors.
    *
    * @param dStrain a 3x3 matrix of unitless Strain percentages.
@@ -1303,14 +1415,7 @@ public class Crystal {
     this.aperiodic = aperiodic;
   }
 
-  /**
-   * Set the unit cell vectors.
-   *
-   * @param cellVectors 3x3 matrix of cell vectors.
-   * @return True if the perturbation of cell vectors succeeds.
-   */
-  public boolean setCellVectors(double[][] cellVectors) {
-
+  public double[] getCellParametersFromVectors(double[][] cellVectors) {
     // Update a-, b-, and c-axis lengths.
     double aa = length(cellVectors[0]);
     double bb = length(cellVectors[1]);
@@ -1321,7 +1426,43 @@ public class Crystal {
     double bbeta = toDegrees(acos(dot(cellVectors[0], cellVectors[2]) / (aa * cc)));
     double ggamma = toDegrees(acos(dot(cellVectors[0], cellVectors[1]) / (aa * bb)));
 
-    return changeUnitCellParameters(aa, bb, cc, aalpha, bbeta, ggamma);
+    // Load and return new cell parameters.
+    double[] params = new double[6];
+    params[0] = aa;
+    params[1] = bb;
+    params[2] = cc;
+    params[3] = aalpha;
+    params[4] = bbeta;
+    params[5] = ggamma;
+    return params;
+  }
+
+  /**
+   * Set the unit cell vectors.
+   *
+   * @param cellVectors 3x3 matrix of cell vectors.
+   * @return True if the perturbation of cell vectors succeeds.
+   */
+  public boolean setCellVectors(double[][] cellVectors) {
+    double[] p = getCellParametersFromVectors(cellVectors);
+    return changeUnitCellParameters(p[0], p[1], p[2], p[3], p[4], p[5]);
+  }
+
+  /**
+   * Set the unit cell vectors. Scale lattice lengths if necessary to hit the target volume.
+   *
+   * @param cellVectors 3x3 matrix of cell vectors.
+   * @param targetAUVolume the target volume for the new cell Vectors.
+   * @return True if the perturbation of cell vectors succeeds.
+   */
+  public boolean setCellVectorsAndVolume(double[][] cellVectors, double targetAUVolume) {
+    if (setCellVectors(cellVectors)) {
+      double currentAUVolume = volume / getNumSymOps();
+      double scale = cbrt(targetAUVolume / currentAUVolume);
+      return changeUnitCellParameters(scale * a, scale * b, scale * c, alpha, beta, gamma);
+    } else {
+      return false;
+    }
   }
 
   public void setDensity(double dens, double mass) {
@@ -1496,9 +1637,15 @@ public class Crystal {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("\n Unit Cell\n");
-    sb.append(format("  A-axis:                              %8.3f\n", a));
-    sb.append(format("  B-axis:                              %8.3f\n", b));
-    sb.append(format("  C-axis:                              %8.3f\n", c));
+    sb.append(
+        format("  A-axis:                              %8.3f (%8.3f, %8.3f, %8.3f)\n", a, Ai00, Ai01,
+            Ai02));
+    sb.append(
+        format("  B-axis:                              %8.3f (%8.3f, %8.3f, %8.3f)\n", b, Ai10, Ai11,
+            Ai12));
+    sb.append(
+        format("  C-axis:                              %8.3f (%8.3f, %8.3f, %8.3f)\n", c, Ai20, Ai21,
+            Ai22));
     sb.append(format("  Alpha:                               %8.3f\n", alpha));
     sb.append(format("  Beta:                                %8.3f\n", beta));
     sb.append(format("  Gamma:                               %8.3f\n", gamma));

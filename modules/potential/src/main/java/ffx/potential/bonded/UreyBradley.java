@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -126,8 +126,11 @@ public class UreyBradley extends BondedTerm {
             * rigidScale
             * ureyBradleyType.forceConstant
             * dv2
-            * (1.0 + cubic * dv + quartic * dv2)
-            * esvLambda;
+            * (1.0 + cubic * dv + quartic * dv2);
+    if (esvTerm) {
+      setEsvDeriv(energy * dedesvChain);
+      energy = energy * esvLambda;
+    }
     if (gradient) {
       var deddt =
           2.0
@@ -145,10 +148,6 @@ public class UreyBradley extends BondedTerm {
       var ic = atomC.getIndex() - 1;
       grad.add(threadID, ia, vac.scaleI(de));
       grad.sub(threadID, ic, vac);
-    }
-    if (esvTerm) {
-      var esvLambdaInv = (esvLambda != 0.0) ? 1 / esvLambda : 1.0;
-      setEsvDeriv(energy * dedesvChain * esvLambdaInv);
     }
     return energy;
   }

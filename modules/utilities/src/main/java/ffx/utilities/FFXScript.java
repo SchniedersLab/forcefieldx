@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -70,7 +70,7 @@ import picocli.CommandLine.ParseResult;
 public abstract class FFXScript extends Script {
 
   /** The logger for this class. */
-  protected static final Logger logger = Logger.getLogger(FFXScript.class.getName());
+  public static final Logger logger = Logger.getLogger(FFXScript.class.getName());
 
   /**
    * Unix shells are able to evaluate PicoCLI ANSI color codes, but right now the FFX GUI Shell does

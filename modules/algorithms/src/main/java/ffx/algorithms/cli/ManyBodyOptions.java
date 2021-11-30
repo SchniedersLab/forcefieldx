@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -42,18 +42,23 @@ import static java.lang.String.format;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
-import ffx.potential.bonded.Polymer;
-import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Residue.ResidueType;
-import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.RotamerLibrary;
+import ffx.potential.bonded.*;
+import ffx.potential.cli.PotentialScript;
+import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.TitrationUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
+
+import ffx.potential.parsers.ForceFieldFilter;
+import ffx.potential.parsers.PDBFilter;
+import ffx.potential.utils.PotentialsFunctions;
+import ffx.potential.utils.PotentialsUtils;
 import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
@@ -66,7 +71,7 @@ import picocli.CommandLine.Option;
  * @author Mallory R. Tollefson
  * @since 1.0
  */
-public class ManyBodyOptions {
+public class ManyBodyOptions{
 
   private static final Logger logger = Logger.getLogger(ManyBodyOptions.class.getName());
 
@@ -130,9 +135,8 @@ public class ManyBodyOptions {
    * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
    */
   public void initRotamerOptimization(
-      RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly) {
+          RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly) {
     this.rotamerOptimization = rotamerOptimization;
-
     boolean useOrigCoordsRotamer = !group.noOriginal;
     if (group.decompose) {
       useOrigCoordsRotamer = true;
@@ -196,7 +200,7 @@ public class ManyBodyOptions {
         for (Polymer polymer : polymers) {
           List<Residue> residues = polymer.getResidues();
           for (Residue residue : residues) {
-            Rotamer[] rotamers = residue.getRotamers(rotamerLibrary);
+            Rotamer[] rotamers = residue.setRotamers(rotamerLibrary);
             if (rotamers != null) {
               int nrot = rotamers.length;
               if (nrot == 1) {
@@ -207,8 +211,8 @@ public class ManyBodyOptions {
               }
             } else if (!group.forceResidues.equalsIgnoreCase("none")) {
               if (counter >= allStartResID
-                  && counter >= forceResiduesStart
-                  && counter <= forceResiduesEnd) {
+                      && counter >= forceResiduesStart
+                      && counter <= forceResiduesEnd) {
                 residueList.add(residue);
               }
             }
@@ -229,7 +233,7 @@ public class ManyBodyOptions {
               for (Residue r : rs) {
                 if (r.getResidueNumber() == i) {
                   residueList.add(r);
-                  Rotamer[] rotamers = r.getRotamers(rotamerLibrary);
+                  Rotamer[] rotamers = r.setRotamers(rotamerLibrary);
                   if (rotamers != null) {
                     n++;
                   }
@@ -263,12 +267,12 @@ public class ManyBodyOptions {
             if (p.getChainID() == chainID) {
               List<Residue> rs = p.getResidues();
               for (Residue r : rs) {
-                if (ignoreNA && r.getResidueType() == ResidueType.NA) {
+                if (ignoreNA && r.getResidueType() == Residue.ResidueType.NA) {
                   continue;
                 }
                 if (r.getResidueNumber() == i) {
                   residueList.add(r);
-                  Rotamer[] rotamers = r.getRotamers(rotamerLibrary);
+                  Rotamer[] rotamers = r.setRotamers(rotamerLibrary);
                   if (rotamers != null) {
                     n++;
                   }
@@ -285,10 +289,10 @@ public class ManyBodyOptions {
         for (Polymer p : polymers) {
           List<Residue> rs = p.getResidues();
           for (Residue r : rs) {
-            if (ignoreNA && r.getResidueType() == ResidueType.NA) {
+            if (ignoreNA && r.getResidueType() == Residue.ResidueType.NA) {
               continue;
             }
-            Rotamer[] rotamers = r.getRotamers(rotamerLibrary);
+            Rotamer[] rotamers = r.setRotamers(rotamerLibrary);
             if (rotamers != null) {
               int nrot = rotamers.length;
               if (nrot == 1) {
@@ -342,6 +346,33 @@ public class ManyBodyOptions {
         rotamerOptimization.setBoxEnd(boxEnd);
       }
     }
+  }
+
+  public List<Residue> getResidues(MolecularAssembly activeAssembly){
+    List<Residue> residueList = new ArrayList<>();
+    int counter = 0;
+    List<Residue> residues = activeAssembly.getResidueList();
+    if (residueGroup.all > -1) {
+      counter = residueGroup.all;
+      for(Residue residue : residues){
+        if (residue.getResidueNumber() == counter){
+          residueList.add(residue);
+          counter += 1;
+        }
+      }
+    } else if (residueGroup.start > -1) {
+      counter = residueGroup.start;
+      for(Residue residue : residues){
+        if (counter == residueGroup.finish + 1){
+          break;
+        } else if (residue.getResidueNumber() == counter) {
+          residueList.add(residue);
+          counter += 1;
+
+        }
+      }
+    }
+    return residueList;
   }
 
   /**
@@ -448,7 +479,6 @@ public class ManyBodyOptions {
 
   /** Set allStartResID, boxStart and boxEnd */
   private void setSelection() {
-
     // Chain, Residue and/or Box selections.
     // Internal machinery indexed 0 to (n-1)
     setStartAndEndDefault();
@@ -1111,22 +1141,15 @@ public class ManyBodyOptions {
         description = "Print energy decomposition for the input structure (no optimization!).")
     private boolean decompose;
 
-    //    /**
-    //     * --sO or --sequence Choose a list of individual residues to sequence
-    //     * optimize (example: A2.A3.A5).
-    //     */
-    //    @Option(names = {"--sO", "--sequence"}, paramLabel = "none",
-    //            description = "Choose a list of individual residues to sequence optimize (example:
-    // A2.A3.A5)")
-    //    String sequence = "none";
-    //    /**
-    //     * --tO or --titrationOptimization Optimize the titration states for a list
-    //     * of residues (example: H2.H3.H5).
-    //     */
-    //    @Option(names = {"--tO", "--titrationOptimization"}, paramLabel = "none",
-    //            description = "Optimize the titration states for a list of residues (example:
-    // H2.H3.H5).")
-    //    String titrationOptimization = "none";
+    /**
+     * --pH or --titrationPH Optimize the titration state of ASP, GLU, HIS and LYS residues.
+     */
+    @Option(
+        names = {"--pH", "--titrationPH"},
+        paramLabel = "0",
+        defaultValue = "0",
+        description = " Optimize the titration state of ASP, GLU, HIS and LYS residues at the given pH (pH = 0 turns off titration")
+    private double titrationPH;
 
     /**
      * --mC or --monteCarlo Follow elimination criteria with 'n' Monte Carlo steps, or enumerate all

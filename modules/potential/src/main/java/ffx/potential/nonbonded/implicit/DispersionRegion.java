@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -112,8 +112,6 @@ public class DispersionRegion extends ParallelRegion {
   private boolean gradient = false;
   /** Gradient array for each thread. */
   private AtomicDoubleArray3D grad;
-
-  private double[] cDisp;
   /** Where the dispersion integral begins for each atom (A): Rmin + dispersionOffset */
   private double dispersionOffest;
   /**
@@ -178,9 +176,6 @@ public class DispersionRegion extends ParallelRegion {
    */
   public void allocate(Atom[] atoms) {
     this.atoms = atoms;
-    int nAtoms = atoms.length;
-    cDisp = new double[nAtoms];
-    maxDispersionEnergy();
   }
 
   /**
@@ -190,8 +185,6 @@ public class DispersionRegion extends ParallelRegion {
    */
   public void setDispersionOffest(double dispersionOffest) {
     this.dispersionOffest = dispersionOffest;
-    // Update the maximum dispersion energy.
-    maxDispersionEnergy();
   }
 
   /**
@@ -285,32 +278,6 @@ public class DispersionRegion extends ParallelRegion {
   }
 
   /**
-   * Compute the maximum Dispersion energy for each atom in isolation. The loss of dispersion energy
-   * due to descreening of other atoms is then calculated in the DispersionLoop.
-   */
-  private void maxDispersionEnergy() {
-    int nAtoms = atoms.length;
-    for (int i = 0; i < nAtoms; i++) {
-      VDWType type = atoms[i].getVDWType();
-      double epsi = type.wellDepth;
-      double rmini = type.radius / 2.0;
-      if (rmini > 0.0 && epsi > 0.0) {
-        double emixo = getCombinedEps(EPSO, epsi, epsilonRule);
-        double rmixo = getCombinedRadius(RMINO, rmini, radiusRule);
-        // Start of integration of dispersion for atom i with water oxygen.
-        double riO = rmixo / 2.0 + dispersionOffest;
-        cDisp[i] = tailCorrection(riO, emixo, rmixo);
-        double emixh = getCombinedEps(EPSH, epsi, epsilonRule);
-        double rmixh = getCombinedRadius(RMINH, rmini, radiusRule);
-        // Start of integration of dispersion for atom i with water hydrogen.
-        double riH = rmixh / 2.0 + dispersionOffest;
-        cDisp[i] += 2.0 * tailCorrection(riH, emixh, rmixh);
-      }
-      cDisp[i] = SLEVY * AWATER * cDisp[i];
-    }
-  }
-
-  /**
    * Compute Dispersion energy for a range of atoms via pairwise descreening.
    *
    * @since 1.0
@@ -342,8 +309,26 @@ public class DispersionRegion extends ParallelRegion {
           continue;
         }
 
-        // Begin with the limit of atom alone in solvent.
-        edisp += cDisp[i];
+        //  Compute the limit of atom alone in solvent.
+        VDWType type = atoms[i].getVDWType();
+        double epsi = type.wellDepth;
+        double rmini = type.radius / 2.0;
+        double cDisp = 0.0;
+        if (rmini > 0.0 && epsi > 0.0) {
+          double emixo = getCombinedEps(EPSO, epsi, epsilonRule);
+          double rmixo = getCombinedRadius(RMINO, rmini, radiusRule);
+          // Start of integration of dispersion for atom i with water oxygen.
+          double riO = rmixo / 2.0 + dispersionOffest;
+          cDisp = tailCorrection(riO, emixo, rmixo);
+          double emixh = getCombinedEps(EPSH, epsi, epsilonRule);
+          double rmixh = getCombinedRadius(RMINH, rmini, radiusRule);
+          // Start of integration of dispersion for atom i with water hydrogen.
+          double riH = rmixh / 2.0 + dispersionOffest;
+          cDisp += 2.0 * tailCorrection(riH, emixh, rmixh);
+          cDisp = SLEVY * AWATER * cDisp;
+        }
+
+        edisp += cDisp;
 
         // Now descreen over neighbors.
         double sum = 0.0;

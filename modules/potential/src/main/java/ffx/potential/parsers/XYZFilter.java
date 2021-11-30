@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -241,7 +241,7 @@ public class XYZFilter extends SystemFilter {
       try {
         bufferedReader.close();
       } catch (IOException ex) {
-        logger.warning(format(" Exception in closing XYZ filter: %s", ex.toString()));
+        logger.warning(format(" Exception in closing XYZ filter: %s", ex));
       }
     }
   }
@@ -485,7 +485,7 @@ public class XYZFilter extends SystemFilter {
             String key = BondType.sortKey(c);
             BondType bondType = forceField.getBondType(key);
             if (bondType == null) {
-              logNoBondType(atom1, atom2, key);
+              logNoBondType(atom1, atom2, key, forceField);
             } else {
               bond.setBondType(bondType);
             }
@@ -538,7 +538,7 @@ public class XYZFilter extends SystemFilter {
         }
         snapShot = 1;
       } else if (resetPosition){
-        //Reset the reader to the beginning of the file. Do not skip reading the first entry if resetPostion is true.
+        // Reset the reader to the beginning of the file. Do not skip reading the first entry if resetPostion is true.
         bufferedReader = new BufferedReader(new FileReader(currentFile));
         snapShot = 0;
       }
@@ -629,14 +629,16 @@ public class XYZFilter extends SystemFilter {
       newFile = version(saveFile);
     }
     activeMolecularAssembly.setFile(newFile);
-    activeMolecularAssembly.setName(newFile.getName());
+    if(activeMolecularAssembly.getName() == null){
+      activeMolecularAssembly.setName(newFile.getName());
+    }
 
     try (FileWriter fw = new FileWriter(newFile, append && newFile.exists());
         BufferedWriter bw = new BufferedWriter(fw)) {
       // XYZ File First Line
       int numberOfAtoms = activeMolecularAssembly.getAtomList().size();
       StringBuilder sb =
-          new StringBuilder(format("%7d  %s", numberOfAtoms, activeMolecularAssembly.toString()));
+          new StringBuilder(format("%7d  %s", numberOfAtoms, activeMolecularAssembly.getName()));
       if (extraLines != null) {
         for (String line : extraLines) {
           line = line.replaceAll("\n", " ");

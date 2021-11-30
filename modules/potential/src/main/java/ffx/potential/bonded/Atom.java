@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -51,6 +51,7 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.PolarizeType;
+import ffx.potential.parameters.SoluteType;
 import ffx.potential.parameters.VDWType;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -437,13 +438,19 @@ public class Atom extends MSNode implements Comparable<Atom> {
   private MultipoleType multipoleType = null;
   private PolarizeType polarizeType = null;
   private VDWType vdwType = null;
+  private SoluteType soluteType = null;
   private double[] globalDipole = null;
   private double[][] globalQuadrupole = null;
   private boolean applyState = false;
+
+  /* Extended System handling */
   private boolean esvTerm = false;
   private ExtendedVariable esv = null;
   private Double scaledPolarizability = null;
   private Double unscaledPolarizability = null;
+  private MultipoleType esvMultipole;
+  private MultipoleType esvMultipoleDot;
+
   private int moleculeNumber = 0;
   private ViewModel viewModel = ViewModel.INVISIBLE;
   private ViewModel polygonType = ViewModel.FILL;
@@ -459,9 +466,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   private double scale = 1.0;
   /** "stale" is True if this Atom's J3D transforms need to be updated before making it visible */
   private boolean stale = false;
-  /* Extended System handling */
-  private MultipoleType esvMultipole;
-  private MultipoleType esvMultipoleDot;
+
 
   /**
    * Default constructor.
@@ -1912,6 +1917,24 @@ public class Atom extends MSNode implements Comparable<Atom> {
   }
 
   /**
+   * getSoluteType
+   *
+   * @return a {@link ffx.potential.parameters.SoluteType} object.
+   */
+  public SoluteType getSoluteType() {
+    return soluteType;
+  }
+
+  /**
+   * setSoluteType
+   *
+   * @param soluteType a {@link ffx.potential.parameters.SoluteType} object.
+   */
+  public void setSoluteType(SoluteType soluteType) {
+    this.soluteType = soluteType;
+  }
+
+  /**
    * Getter for the field <code>velocity</code>.
    *
    * @param velocity an array of double.
@@ -2866,15 +2889,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
             globalQuadrupole[2][2],
             "                 "));
     return multipoleBuffer.toString();
-  }
-
-  /**
-   * Replaced by describe(Descriptions.XyzIndex_Name. Formats with XYZ index followed by atom name.
-   *
-   * @return A short string representation of this.
-   */
-  public String toShortString() {
-    return describe(Descriptions.XyzIndex_Name);
   }
 
   /** {@inheritDoc} */

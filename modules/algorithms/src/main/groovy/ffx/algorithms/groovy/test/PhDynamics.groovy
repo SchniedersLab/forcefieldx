@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -152,10 +152,7 @@ class PhDynamics extends AlgorithmsScript {
 
     molDyn = dynamics.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
 
-    PhMD.Distribution distribution = PhMD.Distribution.CONTINUOUS
-    // No MC steps yet.
-    int mcStepFrequency = 10
-    PhMD phmd = new PhMD(distribution, activeAssembly, molDyn, titrating, pH, mcStepFrequency)
+    PhMD phmd = new PhMD(activeAssembly, molDyn, titrating, pH)
 
     // Restart File
     File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")

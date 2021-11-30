@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -48,6 +48,7 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
+import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.exp;
@@ -74,6 +75,7 @@ import ffx.potential.nonbonded.ParticleMeshEwaldCart.RealSpaceNeighborParameters
 import ffx.potential.nonbonded.ParticleMeshEwaldCart.ScaleParameters;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.parameters.ForceField;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -100,7 +102,6 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
   private final boolean intramolecularSoftcore;
   /** Dimensions of [nsymm][nAtoms][3] */
   public double[][][] inducedDipole;
-
   public double[][][] inducedDipoleCR;
   /** Polarization groups. */
   protected int[][] ip11;
@@ -147,12 +148,10 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
   private boolean[] use;
   /** Molecule number for each atom. */
   private int[] molecule;
-
   private double[] ipdamp;
   private double[] thole;
   /** Masking of 1-2, 1-3 and 1-4 interactions. */
   private int[][] mask12;
-
   private int[][] mask13;
   private int[][] mask14;
   /** The current LambdaMode of this PME instance (or OFF for no lambda dependence). */

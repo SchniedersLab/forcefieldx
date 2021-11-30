@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -59,7 +59,7 @@ public class FFXSystem extends MolecularAssembly {
   // Key file for this system
   private File keyFile;
   private Hashtable<String, Keyword> keywords = new Hashtable<String, Keyword>();
-  private CompositeConfiguration properties;
+  private final CompositeConfiguration properties;
   private String commandDescription;
   // Archive
   private Trajectory trajectory = null;

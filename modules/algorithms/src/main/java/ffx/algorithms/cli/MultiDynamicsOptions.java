@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -300,7 +300,7 @@ public class MultiDynamicsOptions {
       for (Polymer p : molecularAssembly.getChains()) {
         if (p.getChainID() == chainID) {
           for (Residue r : p.getResidues()) {
-            if (r.getResidueNumber() == resNum && r.getRotamers(rLib) != null) {
+            if (r.getResidueNumber() == resNum && r.setRotamers(rLib) != null) {
               residueList.add(r);
             }
           }
@@ -359,10 +359,22 @@ public class MultiDynamicsOptions {
     group.distributeWalkersString = distributeWalkersString;
   }
 
+  public int getFirstDir() {
+    return group.firstDir;
+  }
+
   /**
    * Collection of Multi-Walker Dynamics Options.
    */
   private static class MultiDynamicsOptionGroup {
+
+    /** --firstDir The first directory to use for multiple walker jobs. */
+    @Option(
+        names = {"--firstDir"},
+        defaultValue = "0",
+        paramLabel = "0",
+        description = "The first directory to use for multiple walker jobs.")
+    private int firstDir;
 
     /** -y or --synchronous sets synchronous walker communication (not recommended) */
     @Option(

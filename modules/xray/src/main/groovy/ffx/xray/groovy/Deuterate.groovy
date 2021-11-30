@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -98,6 +98,7 @@ class Deuterate extends AlgorithmsScript {
       logger.info(helpString())
       return this
     } else {
+      assemblies = [activeAssembly]
       modelfilename = activeAssembly.getFile().getAbsolutePath()
     }
 
@@ -118,7 +119,7 @@ class Deuterate extends AlgorithmsScript {
         }
       }
 
-      ArrayList<MSNode> waters = assemblies[i].getWaters()
+      List<MSNode> waters = assemblies[i].getWaters()
       for (MSNode node : waters) {
         Molecule water = (Molecule) node
         water.setName("DOD")

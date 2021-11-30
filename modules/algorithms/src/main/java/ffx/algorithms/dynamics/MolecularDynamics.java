@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -45,6 +45,7 @@ import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
 import edu.rit.pj.Comm;
+import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
 import ffx.algorithms.dynamics.integrators.BetterBeeman;
@@ -70,6 +71,7 @@ import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
+import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
@@ -218,6 +220,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
   private MonteCarloNotification mcNotification = MonteCarloNotification.NEVER;
   /** ESV System. */
   private ExtendedSystem esvSystem;
+  /** ESV Stochastic integrator. */
+  private Stochastic esvIntegrator;
+  /** ESV Adiabatic thermostat. */
+  private Adiabatic esvThermostat;
   /** Frequency to print ESV info. */
   private int printEsvFrequency = -1;
   /** If asked to perform dynamics with a null dynamics file, write here. */
@@ -590,6 +596,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
       logger.warning("An ExtendedSystem is already attached to this MD!");
     }
     esvSystem = system;
+    esvSystem.createMDThetaArrays();
+    this.esvIntegrator = new Stochastic(esvSystem.thetaFriction, esvSystem.getNumESVs(),esvSystem.theta_position,
+            esvSystem.theta_velocity, esvSystem.theta_accel, esvSystem.theta_mass);
+    this.esvThermostat = new Adiabatic(esvSystem.getNumESVs(),esvSystem.theta_position, esvSystem.theta_velocity, esvSystem.theta_mass, potential.getVariableTypes());
     printEsvFrequency = printFrequency;
     logger.info(
         format(" Attached extended system (%s) to molecular dynamics.", esvSystem.toString()));
@@ -1206,6 +1216,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
       String lamString = format("Lambda: %.8f", ((LambdaInterface) potential).getLambda());
       linesList.add(lamString);
     }
+
+    String tempString = format("Temp: %.2f", thermostat.getTargetTemperature());
+    linesList.add(tempString);
+
     Comm world = Comm.world();
     if (world != null && world.size() > 1) {
       String rankString = format("Rank: %d", world.rank());
@@ -1569,6 +1583,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
       // Do the half-step integration operation.
       integrator.preForce(potential);
+      if (esvSystem != null) {
+        esvIntegrator.preForce(potential);
+        //preForce processes theta values after
+        esvSystem.preForce();
+      }
 
       // Compute the potential energy and gradients.
       double priorPE = currentPotentialEnergy;
@@ -1590,24 +1609,39 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
       // Do the full-step integration operation.
       integrator.postForce(gradient);
+      if (esvSystem != null) {
+        double[] dEdL = esvSystem.postForce();
+        esvIntegrator.postForce(dEdL);
+      }
 
       // Compute the full-step kinetic energy.
       thermostat.computeKineticEnergy();
+
 
       // Do the full-step thermostat operation.
       thermostat.fullStep(dt);
 
       // Recompute the kinetic energy after the full-step thermostat operation.
       thermostat.computeKineticEnergy();
+      if (esvSystem != null) {
+        //Adiabatic thermostat does nothing at half step.
+        esvThermostat.computeKineticEnergy();
+      }
 
-      // Remove center of mass motion ever ~100 steps.
+      // Remove center of mass motion every ~100 steps.
       int removeCOMMotionFrequency = 100;
       if (thermostat.getRemoveCenterOfMassMotion() && step % removeCOMMotionFrequency == 0) {
         thermostat.centerOfMassMotion(true, false);
+        /*if(esvSystem != null){
+          esvThermostat.centerOfMassMotion(true,false);
+        }*/
       }
 
       // Collect current kinetic energy, temperature, and total energy.
       currentKineticEnergy = thermostat.getKineticEnergy();
+      if (esvSystem != null) {
+        currentKineticEnergy += esvThermostat.getKineticEnergy();
+      }
       currentTemperature = thermostat.getCurrentTemperature();
       currentTotalEnergy = currentKineticEnergy + currentPotentialEnergy;
 
@@ -1618,7 +1652,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
       // Update extended system variables if present.
       if (esvSystem != null) {
-        esvSystem.propagateESVs(currentTemperature, dt, step * dt);
+        esvSystem.setThetaValues();
+        esvSystem.collectThetaValues();
       }
 
       // Log the current state every printFrequency steps.
@@ -1801,29 +1836,26 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
   /**
    * A simple container class to hold all the infrastructure associated with a MolecularAssembly for
-   * MolecularDynamics; assembly, properties, archive and PDB files, PDB and XYZ filters. Direct
-   * access to package-private members breaks encapsulation a bit, but the private inner class
-   * shouldn't be used externally anyways.
+   * MolecularDynamics.
    */
   protected static class AssemblyInfo {
 
     private final MolecularAssembly assembly;
     CompositeConfiguration compositeConfiguration;
     File archiveFile = null;
+    XYZFilter xyzFilter = null;
     File pdbFile;
     PDBFilter pdbFilter;
-    XYZFilter xyzFilter = null;
 
     AssemblyInfo(MolecularAssembly assembly) {
       this.assembly = assembly;
-      pdbFile = this.assembly.getFile();
-      compositeConfiguration = this.assembly.getProperties();
-      pdbFilter =
-          new PDBFilter(
-              this.assembly.getFile(),
-              this.assembly,
-              this.assembly.getForceField(),
-              this.assembly.getProperties());
+      pdbFile = SystemFilter.version(assembly.getFile());
+      compositeConfiguration = assembly.getProperties();
+      pdbFilter = new PDBFilter(pdbFile, assembly,
+              assembly.getForceField(),
+              assembly.getProperties());
+      // Turn on use of MODEL records.
+      pdbFilter.setModelNumbering(0);
     }
 
     public MolecularAssembly getAssembly() {

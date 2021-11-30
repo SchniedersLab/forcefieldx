@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -65,10 +65,10 @@ public class BarostatOptions {
    * (particularly at or near vapor states).
    */
   public static final String DEFAULT_MIN_DENSITY = "0.75";
-  /** Default width of proposed unit cell side length moves (uniformly distributed) in Angstroms. */
-  public static final String DEFAULT_MAX_SIDE_MOVE = "0.25";
   /** Default width of proposed crystal angle moves (uniformly distributed) in degrees. */
   public static final String DEFAULT_MAX_ANGLE_MOVE = "0.5";
+  /** Default size of proposed unit cell volume moves (uniformly distributed) in Angstroms^3. */
+  public static final String DEFAULT_MAX_VOLUME_MOVE = "1.0";
   /** Default mean number of MD steps (Poisson distribution) between barostat move proposals. */
   public static final String DEFAULT_BAROSTAT_INTERVAL = "10";
   /**
@@ -132,8 +132,8 @@ public class BarostatOptions {
                 dens, group.maxD));
         barostat.setDensity(group.maxD);
       }
-      barostat.setMaxSideMove(group.maxSM);
       barostat.setMaxAngleMove(group.maxAM);
+      barostat.setMaxVolumeMove(group.maxV);
       barostat.setMeanBarostatInterval(group.barInt);
       return barostat;
     } else {
@@ -195,17 +195,12 @@ public class BarostatOptions {
   }
 
   /**
-   * The width of proposed unit cell side length moves (uniformly distributed) in Angstroms.
+   * The volume of a proposed unit cell volume moves (uniformly distributed) in Angstroms^3.
    *
-   * @return Returns the maximum cell side length move.
+   * @return Returns the maximum volume move.
    */
-  public double getMaxSM() {
-    return group.maxSM;
-  }
-  
-
-  public void setMaxSM(double maxSM) {
-    group.maxSM = maxSM;
+  public double getMaxV() {
+    return group.maxV;
   }
 
   /**
@@ -219,6 +214,10 @@ public class BarostatOptions {
 
   public void setMaxAM(double maxAM) {
     group.maxAM = maxAM;
+  }
+
+  public void setMaxV(double maxV) {
+    group.maxV = maxV;
   }
 
   /**
@@ -284,28 +283,23 @@ public class BarostatOptions {
         defaultValue = DEFAULT_MIN_DENSITY,
         description = "Specify the minimum density accepted by the MC Barostat (g/cc).")
     private double minD;
+    @Option(
+            names = {"--maxAM", "--maxAngleMove"},
+            paramLabel = DEFAULT_MAX_ANGLE_MOVE,
+            defaultValue = DEFAULT_MAX_ANGLE_MOVE,
+            description =
+                    "Sets the width of proposed crystal angle moves (uniformly distributed) in degrees.")
+    private double maxAM;
     /**
-     * --maxSM or --maxSideMove Sets the width of proposed unit cell side length moves (uniformly
-     * distributed) in Angstroms.
+     * --maxV or --maxVolumeMove Sets the volume move size (uniformly distributed) in Angstroms^3.
      */
     @Option(
-        names = {"--maxSM", "--maxSideMove"},
-        paramLabel = DEFAULT_MAX_SIDE_MOVE,
-        defaultValue = DEFAULT_MAX_SIDE_MOVE,
+        names = {"--maxV", "--maxVolumeMove"},
+        paramLabel = DEFAULT_MAX_VOLUME_MOVE,
+        defaultValue = DEFAULT_MAX_VOLUME_MOVE,
         description =
             "Default width of proposed unit cell side length moves (uniformly distributed) in Angstroms.")
-    private double maxSM;
-    /**
-     * --maxAM or --maxAngleMove Sets the width of proposed crystal angle moves (uniformly
-     * distributed) in degrees.
-     */
-    @Option(
-        names = {"--maxAM", "--maxAngleMove"},
-        paramLabel = DEFAULT_MAX_ANGLE_MOVE,
-        defaultValue = DEFAULT_MAX_ANGLE_MOVE,
-        description =
-            "Sets the width of proposed crystal angle moves (uniformly distributed) in degrees.")
-    private double maxAM;
+    private double maxV;
     /**
      * --barInt or --meanBarostatInterval Sets the mean number of MD steps (Poisson distribution)
      * between barostat move proposals.

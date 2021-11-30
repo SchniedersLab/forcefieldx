@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential;
 
+import static ffx.crystal.LatticeSystem.HEXAGONAL_LATTICE;
+import static ffx.crystal.LatticeSystem.RHOMBOHEDRAL_LATTICE;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
@@ -52,12 +54,7 @@ import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
-import ffx.crystal.Crystal;
-import ffx.crystal.CrystalPotential;
-import ffx.crystal.NCSCrystal;
-import ffx.crystal.ReplicatesCrystal;
-import ffx.crystal.SpaceGroup;
-import ffx.crystal.SymOp;
+import ffx.crystal.*;
 import ffx.numerics.Constraint;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
@@ -205,6 +202,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   protected double[] optimizationScaling = null;
   /** Indicates only bonded energy terms effected by Lambda should be evaluated. */
   boolean lambdaBondedTerms = false;
+  /** Indicates all bonded energy terms should be evaluated if lambdaBondedTerms is true. */
+  boolean lambdaAllBondedTerms = false;
+
   /** Flag to indicate proper shutdown of the ForceFieldEnergy. */
   boolean destroyed = false;
   /**
@@ -553,20 +553,25 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     double a, b, c, alpha, beta, gamma;
     boolean aperiodic;
     try {
-      a = forceField.getDouble("A_AXIS");
-      aperiodic = false;
-      b = forceField.getDouble("B_AXIS", a);
-      c = forceField.getDouble("C_AXIS", a);
-      alpha = forceField.getDouble("ALPHA", 90.0);
-      beta = forceField.getDouble("BETA", 90.0);
-      gamma = forceField.getDouble("GAMMA", 90.0);
-      spacegroup = forceField.getString("SPACEGROUP", "P 1");
-      if (a == 1.0 && b == 1.0 && c == 1.0) {
-        String message = " A-, B-, and C-axis values equal to 1.0.";
-        logger.info(message);
-        throw new Exception(message);
-      }
-    } catch (Exception e) {
+        spacegroup = forceField.getString("SPACEGROUP", "P 1");
+        SpaceGroup sg = SpaceGroupDefinitions.spaceGroupFactory(spacegroup);
+        LatticeSystem latticeSystem = sg.latticeSystem;
+        a = forceField.getDouble("A_AXIS");
+        aperiodic = false;
+        b = forceField.getDouble("B_AXIS", latticeSystem.getDefaultBAxis(a));
+        c = forceField.getDouble("C_AXIS", latticeSystem.getDefaultCAxis(a, b));
+        alpha = forceField.getDouble("ALPHA", latticeSystem.getDefaultAlpha());
+        beta = forceField.getDouble("BETA", latticeSystem.getDefaultBeta());
+        gamma = forceField.getDouble("GAMMA", latticeSystem.getDefaultGamma());
+        if (!sg.latticeSystem.validParameters(a, b, c, alpha, beta, gamma)) {
+          logger.severe(" Check lattice parameters.");
+        }
+        if (a == 1.0 && b == 1.0 && c == 1.0) {
+          String message = " A-, B-, and C-axis values equal to 1.0.";
+          logger.info(message);
+          throw new Exception(message);
+        }
+      } catch (Exception e) {
       logger.info(" The system will be treated as aperiodic.");
       aperiodic = true;
 
@@ -936,10 +941,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       improperTorsions = null;
     }
 
-    logger.info("\n Non-Bonded Terms");
-
     int[] molecule = molecularAssembly.getMoleculeNumbers();
     if (vanderWaalsTerm) {
+      logger.info("\n Non-Bonded Terms");
       if (!tornadoVM) {
         vanderWaals =
             new VanDerWaals(
@@ -3789,9 +3793,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * Setter for the field <code>lambdaBondedTerms</code>.
    *
    * @param lambdaBondedTerms a boolean.
+   * @param lambdaAllBondedTerms a boolean.
    */
-  void setLambdaBondedTerms(boolean lambdaBondedTerms) {
+  void setLambdaBondedTerms(boolean lambdaBondedTerms, boolean lambdaAllBondedTerms) {
     this.lambdaBondedTerms = lambdaBondedTerms;
+    this.lambdaAllBondedTerms = lambdaAllBondedTerms;
   }
 
   /**
@@ -4549,7 +4555,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
            * If it is scaled internally by lambda, we assume that the energy term is not meant to be internally complemented.
            * In that case, we skip evaluation into restraintEnergy.
            */
-          boolean used = !lambdaBondedTerms || (term.applyLambda() && !term.isLambdaScaled());
+          boolean used = !lambdaBondedTerms || lambdaAllBondedTerms || (term.applyLambda() && !term.isLambdaScaled());
           if (used) {
             localEnergy += term.energy(gradient, threadID, grad, lambdaGrad);
             if (computeRMSD) {

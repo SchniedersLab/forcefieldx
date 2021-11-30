@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -135,11 +135,9 @@ public class PCGSolver {
   private Crystal crystal;
   /** Dimensions of [nsymm][nAtoms][3] */
   private double[][][] inducedDipole;
-
   private double[][][] inducedDipoleCR;
   /** Direct induced dipoles. */
   private double[][] directDipole;
-
   private double[][] directDipoleCR;
 
   /** Field array. */

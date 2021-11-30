@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -486,7 +486,6 @@ public class ForceFieldFilter {
         case SOLUTE:
           // SOLUTE lines can't be split on #'s because of SMARTS strings syntax
           baseType = SoluteType.parse(originalInput, originalInput.trim().split(" +"));
-          // baseType = SoluteType.parse(input, tokens);
           break;
         default:
           logger.log(Level.WARNING, "ForceField type recognized, but not stored:{0}", type);

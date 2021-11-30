@@ -1,3 +1,40 @@
+//******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+//******************************************************************************
 package ffx.crystal;
 
 import static java.lang.Integer.parseInt;
@@ -38,9 +75,15 @@ public class SpaceGroupInfo {
 
   /**
    * Space group frequency ranking for the 807,190 CSD structures for which the space group is fully
-   * defined. Statistics for enantiomorphous space groups are as reported in the CSD. 631,404 (78.2
-   * %) of structures adopt centrosymmetric space groups, 175,787 (21.8 %) adopt non-centrosymmetric
-   * space groups, and 132,700 (16.4 %) structures adopt Sohncke space groups (as of January 2016.
+   * defined. Statistics for enantiomorphous space groups are as reported in the CSD.
+   * <p>
+   * 631,404 (78.2%) of structures adopt centrosymmetric space groups.
+   * <p>
+   * 175,787 (21.8 %) adopt non-centrosymmetric space groups.
+   * <p>
+   * 132,700 (16.4 %) structures adopt Sohncke space groups.
+   * <p>
+   * As of January 2016.
    */
   public static final double[] csdPercent = {
       0.9492, 24.5313, 0.0176, 5.1773, 0.8456, 0.0026, 0.4270, 0.0363, 1.0468, 0.0136, 0.4984,
@@ -103,8 +146,6 @@ public class SpaceGroupInfo {
       "P 41 3 2", "I 41 3 2", "P -4 3 m", "F -4 3 m", "I -4 3 m", "P -4 3 n", "F -4 3 c", "I -4 3 d",
       "P 4/m -3 2/m", "P 4/n -3 2/n", "P 42/m -3 2/n", "P 42/n -3 2/m", "F 4/m -3 2/m",
       "F 4/m -3 2/c", "F 41/d -3 2/m", "F 41/d -3 2/c", "I 4/m -3 2/m", "I 41/a -3 2/d"};
-
-  private static final String[] alternativeSpaceGroupNames = {"P21/a"};
 
   static {
     rank.put("P 21 21 21", "1");
@@ -220,6 +261,7 @@ public class SpaceGroupInfo {
 
   /**
    * Return the given space group representation in the CCDC.
+   *
    * @param spaceGroup The space group (from 1 to 230).
    * @return Return the percentage.
    */
@@ -261,13 +303,13 @@ public class SpaceGroupInfo {
   }
 
   /**
-   * Sohncke groups respect chiral molecules (i.e. non-enantiogenic) and include space group numbers:
+   * Sohncke groups respect chiral molecules (i.e., non-enantiogenic) and include space group numbers:
    * 1, 3-5, 16-24, 75-80, 89-98, 143-146, 149-155, 168-173, 177-182, 195-199 and 207-214.
    *
    * @param number Space group number.
    * @return true if the space group is a Sohncke Group.
    */
-  public static boolean sohnckeGroup(int number) {
+  public static boolean isSohnckeGroup(int number) {
     if (number == 1) {
       return true;
     } else if (isBetween(number, 3, 5)) {
@@ -288,10 +330,8 @@ public class SpaceGroupInfo {
       return true;
     } else if (isBetween(number, 195, 199)) {
       return true;
-    } else if (isBetween(number, 207, 214)) {
-      return true;
+    } else {
+      return isBetween(number, 207, 214);
     }
-
-    return false;
   }
 }

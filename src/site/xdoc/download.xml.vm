@@ -21,7 +21,7 @@
         </ul>
         <p>System requirement:</p>
         <ul>
-          <li>Java Runtime Environment (JRE) versions 10 through 14 are supported.</li>
+          <li>Java Runtime Environment (JRE) versions 10 through 17 are supported.</li>
         </ul>
         <table>
           <thead>

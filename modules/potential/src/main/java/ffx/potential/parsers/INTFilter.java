@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -283,7 +283,7 @@ public class INTFilter extends SystemFilter {
             String key = BondType.sortKey(c);
             BondType bondType = forceField.getBondType(key);
             if (bondType == null) {
-              logNoBondType(atom1, atom2, key);
+              logNoBondType(atom1, atom2, key, forceField);
             } else {
               bond.setBondType(bondType);
             }
@@ -299,7 +299,7 @@ public class INTFilter extends SystemFilter {
           String key = BondType.sortKey(c);
           BondType bondType = forceField.getBondType(key);
           if (bondType == null) {
-            logNoBondType(atom1, atom2, key);
+            logNoBondType(atom1, atom2, key, forceField);
           } else {
             bond.setBondType(bondType);
           }

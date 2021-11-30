@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -54,9 +54,13 @@ import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.math.Double3;
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.RendererCache.ViewModel;
+import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
+import ffx.potential.parameters.ForceField;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Geometry;
@@ -159,16 +163,44 @@ public class Bond extends BondedTerm {
    * @param a1 Atom 1.
    * @param a2 Atom 2.
    * @param key The class key.
+   * @param forceField The force field in use.
    */
-  public static void logNoBondType(Atom a1, Atom a2, String key) {
-    logger.severe(
-        format(
-            "No BondType for key: %s\n %s -> %s\n %s -> %s",
-            key,
-            a1.toString(),
-            a1.getAtomType().toString(),
-            a2.toString(),
-            a2.getAtomType().toString()));
+  public static void logNoBondType(Atom a1, Atom a2, String key, ForceField forceField) {
+    AtomType atomType1 = a1.getAtomType();
+    AtomType atomType2 = a2.getAtomType();
+    StringBuilder sb = new StringBuilder(
+        format(" No BondType for key: %s\n %s -> %s\n %s -> %s", key,
+        a1, atomType1, a2, atomType2));
+    int c1 = atomType1.atomClass;
+    int c2 = atomType2.atomClass;
+    List<AtomType> types1 = forceField.getSimilarAtomTypes(atomType1);
+    List<AtomType> types2 = forceField.getSimilarAtomTypes(atomType2);
+    List<BondType> bondTypes = new ArrayList<>();
+    boolean match = false;
+    for (AtomType type1 : types1) {
+      for (AtomType type2 : types2) {
+        // Similar bond type must match at least one class.
+        if ((type1.atomClass != c1) && (type1.atomClass != c2) &&
+            (type2.atomClass != c1) && (type2.atomClass != c2)) {
+          continue;
+        }
+        int[] c = new int[2];
+        c[0] = type1.atomClass;
+        c[1] = type2.atomClass;
+        String closeKey = BondType.sortKey(c);
+        BondType bondType = forceField.getBondType(closeKey);
+        if (bondType != null && !bondTypes.contains(bondType)) {
+          if (!match) {
+            match = true;
+            sb.append("\n Similar Bond Types:");
+          }
+          bondTypes.add(bondType);
+          sb.append(format("\n  %s", bondType));
+        }
+      }
+    }
+
+    logger.severe(sb.toString());
   }
 
   /** {@inheritDoc} */
@@ -211,7 +243,7 @@ public class Bond extends BondedTerm {
     var vb = atomB.getXYZ();
     var vab = va.sub(vb);
     value = vab.length();
-    var prefactor = units * rigidScale * bondType.forceConstant * esvLambda;
+    var prefactor = units * rigidScale * bondType.forceConstant;
     // dv is deviation from ideal
     var dv = value - bondType.distance;
     if (bondType.bondFunction.hasFlatBottom()) {
@@ -227,9 +259,13 @@ public class Bond extends BondedTerm {
       case FLAT_BOTTOM_QUARTIC:
         {
           energy = prefactor * dv2 * (1.0 + cubic * dv + quartic * dv2);
+          if (esvTerm) {
+            setEsvDeriv(energy * dedesvChain);
+            energy = energy * esvLambda;
+          }
           if (gradient) {
             // Compute the magnitude of the gradient.
-            var dedr = 2.0 * prefactor * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
+            var dedr = 2.0 * prefactor * esvLambda * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
             computeGradient(threadID, grad, atomA, atomB, vab, dedr);
           }
           break;
@@ -239,19 +275,19 @@ public class Bond extends BondedTerm {
       default:
         {
           energy = prefactor * dv2;
+          if (esvTerm) {
+            setEsvDeriv(energy * dedesvChain);
+            energy = energy * esvLambda;
+          }
           if (gradient) {
             // Compute the magnitude of the gradient.
-            var dedr = 2.0 * prefactor * dv;
+            var dedr = 2.0 * prefactor * esvLambda * dv;
             computeGradient(threadID, grad, atomA, atomB, vab, dedr);
           }
           break;
         }
     }
     value = dv;
-    if (esvTerm) {
-      final var esvLambdaInv = (esvLambda != 0.0) ? 1 / esvLambda : 1.0;
-      setEsvDeriv(energy * dedesvChain * esvLambdaInv);
-    }
     return energy;
   }
 

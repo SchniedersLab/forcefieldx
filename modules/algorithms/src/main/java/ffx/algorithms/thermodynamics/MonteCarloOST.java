@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -181,7 +181,7 @@ public class MonteCarloOST extends BoltzmannMC {
     if (discreteLambda) {
       lambdaMove.setContinuous(false);
       // Set the move size to the Lambda bin width.
-      lambdaMove.setMoveSize(orthogonalSpaceTempering.getHistogram().dL);
+      lambdaMove.setMoveSize(orthogonalSpaceTempering.getHistogram().lambdaBinWidth);
     }
 
     // Changing the value of lambda will be handled by this class, as well as adding the time
@@ -748,11 +748,11 @@ public class MonteCarloOST extends BoltzmannMC {
    */
   public void setLambdaStdDev(double stdDev) {
     if (!lambdaMove.isContinuous()) {
-      if (stdDev != orthogonalSpaceTempering.getHistogram().dL) {
+      if (stdDev != orthogonalSpaceTempering.getHistogram().lambdaBinWidth) {
         logger.info(
             format(
                 " Requested Lambda step size change %6.4f is not equal to OST bin width %6.4f.",
-                stdDev, orthogonalSpaceTempering.getHistogram().dL));
+                stdDev, orthogonalSpaceTempering.getHistogram().lambdaBinWidth));
         return;
       }
     }

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -44,13 +44,20 @@ import ffx.algorithms.optimize.RotamerOptimization
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.Residue
-import ffx.potential.bonded.RotamerLibrary
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3
+import ffx.potential.bonded.*
+import ffx.potential.parameters.ForceField
+import ffx.potential.parsers.PDBFilter
+import ffx.potential.parsers.XYZFilter
+import ffx.potential.utils.PotentialsUtils
+import ffx.potential.parameters.TitrationUtils
+import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
 import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard
+import static java.lang.String.format
 
 /**
  * The ManyBody script performs a discrete optimization using a many-body expansion and elimination expressions.
@@ -66,13 +73,14 @@ class ManyBody extends AlgorithmsScript {
   ManyBodyOptions manyBody
 
   /**
-   * One or more filenames.
+   * An XYZ or PDB input file.
    */
-  @Parameters(arity = "1..*", paramLabel = "files", description = "PDB input file.")
-  private List<String> filenames
+  @Parameters(arity = "1", paramLabel = "file",
+      description = "XYZ or PDB input file.")
+  private String filename
 
   ForceFieldEnergy potentialEnergy
-  boolean testing = null
+  boolean testing = false
   boolean monteCarloTesting = false
 
   /**
@@ -105,24 +113,75 @@ class ManyBody extends AlgorithmsScript {
       System.setProperty("gk-suppressWarnings", "true")
     }
 
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = [algorithmFunctions.open(filenames.get(0))]
-      activeAssembly = assemblies[0]
-      if (Boolean.parseBoolean(System.getProperty("standardizeAtomNames", "false"))) {
-        renameAtomsToPDBStandard(activeAssembly)
-      }
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
     }
 
+    CompositeConfiguration properties = activeAssembly.getProperties()
+    if (properties.getBoolean("standardizeAtomNames", false)) {
+      renameAtomsToPDBStandard(activeAssembly)
+    }
+
     activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
+
+    // If rotamer optimization with titration, create new molecular assembly with additional protons
+    ForceField forceField = activeAssembly.getForceField()
     potentialEnergy = activeAssembly.getPotentialEnergy()
+    potentialEnergy.energy(false, true)
 
-    // End rotamer adding code
+    List<String> resNumberList = new ArrayList<>()
+    List<Residue> residues
+    if (manyBody.residueGroup.start > -1 || manyBody.residueGroup.all > -1) {
+      residues = manyBody.getResidues(activeAssembly)
+    } else {
+      residues = activeAssembly.getResidueList()
+    }
 
-    RotamerOptimization rotamerOptimization = new RotamerOptimization(
-        activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener)
+    if (residues.isEmpty()){
+      logger.info("Residue list is empty")
+      return
+    }
+
+    for (Residue residue : residues) {
+      resNumberList.add(String.valueOf(residue.getResidueNumber()))
+    }
+
+    activeAssembly = new MolecularAssembly(filename)
+
+    activeAssembly.setForceField(forceField)
+
+    File structureFile = new File(filename)
+    PDBFilter protFilter = new PDBFilter(structureFile, activeAssembly, forceField, forceField.getProperties(), resNumberList)
+    if(manyBody.group.titrationPH != 0){
+      logger.info("\n Adding rotamer optimization with titration protons to : " + filename + "\n")
+      protFilter.setRotamerTitration(true)
+    }
+    protFilter.readFile()
+    protFilter.applyAtomProperties()
+    activeAssembly.finalize(true, forceField)
+    potentialEnergy = ForceFieldEnergy.energyFactory(activeAssembly)
+    potentialEnergy.energy(false, true)
+    activeAssembly.setFile(structureFile)
+
+    if (manyBody.group.titrationPH != 0){
+      TitrationUtils titrationUtils
+      titrationUtils = new TitrationUtils(activeAssembly.getForceField())
+      titrationUtils.setRotamerPhBias(298.15, manyBody.group.titrationPH)
+      for(Residue residue: activeAssembly.getResidueList()){
+        String resName = residue.getName()
+        if(resNumberList.contains(residue.getResidueNumber())){
+          if(resName == "ASH" || resName == "GLH" || resName == "LYS" || resName == "HIS"){
+            residue.setTitrationUtils(titrationUtils)
+          }
+        }
+      }
+    }
+
+    RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly, potentialEnergy, algorithmListener)
 
     testing = getTesting()
     if (testing) {
@@ -133,9 +192,10 @@ class ManyBody extends AlgorithmsScript {
     if (monteCarloTesting) {
       rotamerOptimization.setMonteCarloTesting(true)
     }
+
     manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
-    ArrayList<Residue> residueList = rotamerOptimization.getResidues()
+    List<Residue> residueList = rotamerOptimization.getResidues()
 
     boolean master = true
     if (Comm.world().size() > 1) {
@@ -146,7 +206,6 @@ class ManyBody extends AlgorithmsScript {
     }
 
     algorithmFunctions.energy(activeAssembly)
-
     RotamerLibrary.measureRotamers(residueList, false)
 
     RotamerOptimization.Algorithm algorithm
@@ -167,20 +226,74 @@ class ManyBody extends AlgorithmsScript {
         algorithm = RotamerOptimization.Algorithm.BOX
         break
       default:
-        throw new IllegalArgumentException(String.
+        throw new IllegalArgumentException(
             format(" Algorithm choice was %d, not in range 1-5!", manyBody.getAlgorithmNumber()))
     }
     rotamerOptimization.optimize(algorithm)
 
-    if (master) {
-      logger.info(" Final Minimum Energy")
+    boolean isTitrating = false
+    Set<Atom> excludeAtoms = new HashSet<>()
+    int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
 
-      File modelFile = saveDirFile(activeAssembly.getFile())
-      algorithmFunctions.saveAsPDB(activeAssembly, modelFile)
-      algorithmFunctions.energy(activeAssembly)
+    int i = 0
+    for (Residue residue : residueList) {
+      Rotamer rotamer = residue.getRotamers()[optimalRotamers[i++]]
+      RotamerLibrary.applyRotamer(residue, rotamer)
+      if (rotamer.isTitrating) {
+        isTitrating = true
+        AminoAcid3 aa3 = rotamer.aminoAcid3
+        residue.setName(aa3.name())
+        switch (aa3) {
+          case AminoAcid3.HID:
+            // No HE2
+            Atom HE2 = residue.getAtomByName("HE2", true)
+            excludeAtoms.add(HE2)
+            break
+          case AminoAcid3.HIE:
+            // No HD1
+            Atom HD1 = residue.getAtomByName("HD1", true)
+            excludeAtoms.add(HD1)
+            break
+          case AminoAcid3.ASP:
+            // No HD2
+            Atom HD2 = residue.getAtomByName("HD2", true)
+            excludeAtoms.add(HD2)
+            break
+          case AminoAcid3.GLU:
+            // No HE2
+            Atom HE2 = residue.getAtomByName("HE2", true)
+            excludeAtoms.add(HE2)
+            break
+          case AminoAcid3.LYD:
+            // No HZ3
+            Atom HZ3 = residue.getAtomByName("HZ3", true)
+            excludeAtoms.add(HZ3)
+            break
+          default:
+            // Do nothing.
+            break
+        }
+      }
     }
 
-    //manyBody.saveEliminatedRotamers();
+    if (master) {
+      logger.info(" Final Minimum Energy")
+      double energy = potentialEnergy.energy(false, true)
+      if (isTitrating) {
+        double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList, optimalRotamers)
+        logger.info(format("\n  Rotamer pH Bias    %16.8f", phBias))
+        logger.info(format("  Potential with Bias%16.8f\n", phBias + energy))
+      }
+
+      // Prevent residues from being renamed based on the existence of hydrogen
+      // atoms (i.e. hydrogen that excluded from being written out).
+      properties.setProperty("standardizeAtomNames", "false")
+      File modelFile = saveDirFile(activeAssembly.getFile())
+      PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(), properties)
+      if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
+        logger.info(format(" Save failed for %s", activeAssembly))
+      }
+    }
 
     if (priorGKwarn == null) {
       System.clearProperty("gk-suppressWarnings")
@@ -206,7 +319,7 @@ class ManyBody extends AlgorithmsScript {
     if (potentialEnergy == null) {
       potentials = Collections.emptyList()
     } else {
-      potentials = Collections.singletonList(potentialEnergy)
+      potentials = Collections.singletonList((Potential) potentialEnergy)
     }
     return potentials
   }

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -544,6 +544,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
   protected final void setEsvDeriv(double dEdEsv) {
     if (esvTerm) {
       esvDerivLocal = dEdEsv;
+      //logger.info(String.format("%s: %6.8f", this, dEdEsv));
     }
   }
 

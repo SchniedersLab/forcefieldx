@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -38,13 +38,13 @@
 package ffx.potential.groovy
 
 import edu.rit.pj.ParallelTeam
-import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import ffx.potential.nonbonded.implicit.ConnollyRegion
 import ffx.potential.nonbonded.implicit.GaussVol
-import picocli.CommandLine
+import ffx.potential.parameters.ForceField
 import picocli.CommandLine.Command
+import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
@@ -61,54 +61,54 @@ import static org.apache.commons.math3.util.FastMath.pow
     name = "ffxc Volume")
 class Volume extends PotentialScript {
 
-  private static final double rminToSigma = 1.0 / pow(2.0, 1.0 / 6.0)
+  private static final double rminToSigma = 1.0 / pow((double) 2.0, (double) 1.0 / 6.0)
 
   /**
    * -c or --connolly Use the Connolly algorithm to compute volume and surface area (instead of GaussVol).
    */
-  @CommandLine.Option(names = ['-c', '--connolly'], paramLabel = "false",
+  @Option(names = ['-c', '--connolly'], paramLabel = "false",
       description = "Use the Connolly algorithm to compute solvent excluded volume and solvent accessible surface area.")
   private boolean connolly = false
 
   /**
    * -m or --molecular For Connolly, compute molecular volume and surface area (instead of SEV/SASA).
    */
-  @CommandLine.Option(names = ['-m', '--molecular'], paramLabel = "false",
+  @Option(names = ['-m', '--molecular'], paramLabel = "false",
       description = "For Connolly, compute molecular volume and surface area (instead of SEV/SASA).")
   private boolean molecular = false
 
   /**
    * --vdW or --vanDerWaals For Connolly, compute van der Waals volume and surface area (instead of SEV/SASA).
    */
-  @CommandLine.Option(names = ['--vdW', '--vanDerWaals'], paramLabel = "false",
+  @Option(names = ['--vdW', '--vanDerWaals'], paramLabel = "false",
       description = "For Connolly, compute van der Waals volume and surface area (instead of SEV/SASA)")
   private boolean vdW = false
 
   /**
    * -p or --probe For Connolly, set the exclude radius (SASA) or probe (molecular surface). Ignored for vdW.
    */
-  @CommandLine.Option(names = ['-p', '--probe'], paramLabel = "1.4",
+  @Option(names = ['-p', '--probe'], paramLabel = "1.4",
       description = "For Connolly, set the exclude radius (SASA) or probe radius (molecular surface). Ignored for vdW.")
   private double probe = 1.4
 
   /**
    * -y or --includeHydrogen Include Hydrogen in calculation volume and surface area.
    */
-  @CommandLine.Option(names = ['-y', '--includeHydrogen'], paramLabel = "false",
+  @Option(names = ['-y', '--includeHydrogen'], paramLabel = "false",
       description = "Include Hydrogen in calculation volume and surface area.")
   private boolean includeHydrogen = false
 
   /**
    * -s or --sigma Use sigma radii instead of Rmin.
    */
-  @CommandLine.Option(names = ['-s', '--sigma'], paramLabel = "false",
+  @Option(names = ['-s', '--sigma'], paramLabel = "false",
       description = "Use sigma radii instead of Rmin.")
   private boolean sigma = false
 
   /**
    * -o or --offset For GaussVol, add an offset to all atomic radii.
    */
-  @CommandLine.Option(names = ['-o', '--offset'], paramLabel = "0.0",
+  @Option(names = ['-o', '--offset'], paramLabel = "0.0",
       description = "Add an offset to all atomic radii for GaussVol volume and surface area.")
   private double offset = 0.0
 
@@ -116,16 +116,17 @@ class Volume extends PotentialScript {
    * -v or --verbose enables printing out all energy components for multi-snapshot files (
    * the first snapshot is always printed verbosely).
    */
-  @CommandLine.Option(names = ['-v', '--verbose'], paramLabel = "false",
+  @Option(names = ['-v', '--verbose'], paramLabel = "false",
       description = "Print out all components of volume of molecule and offset.")
   private boolean verbose = false
 
+
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument is an atomic coordinate file in PDB or XYZ format.
    */
-  @Parameters(arity = "1", paramLabel = "files",
+  @Parameters(arity = "1", paramLabel = "file",
       description = 'The atomic coordinate file in PDB or XYZ format.')
-  List<String> filenames = null
+  String filename = null
 
   /**
    * JUnit Testing Variables
@@ -153,55 +154,52 @@ class Volume extends PotentialScript {
    */
   @Override
   Volume run() {
+
+    // Init the context and bind variables.
     if (!init()) {
       return null
     }
 
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly[] assemblies = potentialFunctions.openAll(filenames.get(0))
-      activeAssembly = assemblies[0]
-    } else if (activeAssembly == null) {
+    // Load the MolecularAssembly.
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return null
     }
 
-    String modelFilename = activeAssembly.getFile().getAbsolutePath()
-    logger.info("\n Calculating volume and surface area for " + modelFilename)
+    // Set the filename.
+    filename = activeAssembly.getFile().getAbsolutePath()
+
+    logger.info("\n Calculating volume and surface area for " + filename)
 
     Atom[] atoms = activeAssembly.getAtomArray()
     int nAtoms = atoms.length
 
     if (!connolly) {
       // Input
-      double[] radii = new double[nAtoms]
-      boolean[] isHydrogen = new boolean[nAtoms]
-      double[] volume = new double[nAtoms]
-      double[] gamma = new double[nAtoms]
       double[][] positions = new double[nAtoms][3]
-
-      Arrays.fill(gamma, 1.0)
-      double fourThirdsPI = 4.0 / 3.0 * Math.PI
       int index = 0
       for (Atom atom : atoms) {
-        isHydrogen[index] = atom.isHydrogen()
-        if (includeHydrogen) {
-          isHydrogen[index] = false
-        }
-        radii[index] = atom.getVDWType().radius / 2.0
-        if (sigma) {
-          radii[index] *= rminToSigma
-        }
-        radii[index] += offset
-        volume[index] = fourThirdsPI * pow(radii[index], 3)
         positions[index][0] = atom.getX()
         positions[index][1] = atom.getY()
         positions[index][2] = atom.getZ()
         index++
       }
 
+      ForceField forceField = activeAssembly.getForceField();
+      if (includeHydrogen) {
+        forceField.addProperty("GAUSSVOL_HYDROGEN", "true")
+      }
+      if (sigma) {
+        forceField.addProperty("GAUSSVOL_USE_SIGMA", "true")
+      }
+      if (offset > 0.0) {
+        forceField.addProperty("GAUSSVOL_RADII_OFFSET", Double.toString(offset))
+      }
+
       // Run Volume calculation to get vdw volume of molecule
       ParallelTeam parallelTeam = new ParallelTeam()
-      GaussVol gaussVol = new GaussVol(nAtoms, radii, volume, gamma, isHydrogen, parallelTeam)
+      GaussVol gaussVol = new GaussVol(atoms, activeAssembly.getForceField(), parallelTeam)
       gaussVol.computeVolumeAndSA(positions)
 
       if (verbose) {
@@ -209,8 +207,7 @@ class Volume extends PotentialScript {
         logger.info(
             format(" Total number of overlaps in tree: %d", gaussVol.getTotalNumberOfOverlaps()))
 
-        //gaussVol.printTree()
-
+        double[] radii = gaussVol.getRadii();
         index = 0
         for (Atom atom : atoms) {
           logger.info(" Radius for atom " + atom.name + ": " + radii[index] + "\n")
@@ -269,7 +266,8 @@ class Volume extends PotentialScript {
       connollyRegion.setProbe(probe)
       connollyRegion.runVolume()
 
-      if (vdW || (probe == 0.0 && exclude == new Double(0.0))) {
+      double zero = 0.0
+      if (vdW || (probe == zero && exclude == new Double(zero))) {
         logger.info("\n Connolly van der Waals Surface Area and Volume\n")
       } else if (!molecular) {
         logger.info("\n Connolly Solvent Accessible Surface Area and Solvent Excluded Volume\n")

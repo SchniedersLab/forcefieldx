@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -44,10 +44,12 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.numerics.math.DoubleMath;
+import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
-
-import java.util.function.DoubleUnaryOperator;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -147,19 +149,73 @@ public class Torsion extends BondedTerm implements LambdaInterface {
    * @param a3 Atom 3.
    * @param key The class key.
    */
-  public static void logNoTorsionType(Atom a0, Atom a1, Atom a2, Atom a3, String key) {
-    logger.severe(
+  public static void logNoTorsionType(Atom a0, Atom a1, Atom a2, Atom a3, String key,
+      ForceField forceField) {
+    AtomType atomType0 = a0.getAtomType();
+    AtomType atomType1 = a1.getAtomType();
+    AtomType atomType2 = a2.getAtomType();
+    AtomType atomType3 = a3.getAtomType();
+    StringBuilder sb = new StringBuilder(
         format(
             "No TorsionType for key: %s\n %s -> %s\n %s -> %s\n %s -> %s\n %s -> %s",
-            key,
-            a0.toString(),
-            a0.getAtomType().toString(),
-            a1.toString(),
-            a1.getAtomType().toString(),
-            a2.toString(),
-            a2.getAtomType().toString(),
-            a3.toString(),
-            a3.getAtomType().toString()));
+            key, a0, atomType0, a1, atomType1, a2, atomType2, a3, atomType3));
+    if (matchTorsions(a0, a1, a2, a3, forceField, sb, true) <= 0) {
+      matchTorsions(a0, a1, a2, a3, forceField, sb, false);
+    }
+    logger.severe(sb.toString());
+  }
+
+  private static int matchTorsions(Atom a0, Atom a1, Atom a2, Atom a3,
+      ForceField forceField, StringBuilder sb, boolean strict) {
+    AtomType atomType0 = a0.getAtomType();
+    AtomType atomType1 = a1.getAtomType();
+    AtomType atomType2 = a2.getAtomType();
+    AtomType atomType3 = a3.getAtomType();
+    int c0 = atomType0.atomClass;
+    int c1 = atomType1.atomClass;
+    int c2 = atomType2.atomClass;
+    int c3 = atomType3.atomClass;
+    List<AtomType> types0 = forceField.getSimilarAtomTypes(atomType0);
+    List<AtomType> types1 = forceField.getSimilarAtomTypes(atomType1);
+    List<AtomType> types2 = forceField.getSimilarAtomTypes(atomType2);
+    List<AtomType> types3 = forceField.getSimilarAtomTypes(atomType3);
+    List<TorsionType> torsionTypes = new ArrayList<>();
+    boolean match = false;
+    for (AtomType type1 : types1) {
+      for (AtomType type2 : types2) {
+        // Match both inner atom classes.
+        if ((type1.atomClass == c1 && type2.atomClass == c2) ||
+            (type1.atomClass == c2 && type2.atomClass == c1)) {
+          for (AtomType type0 : types0) {
+            for (AtomType type3 : types3) {
+              // Match one distal atom class.
+              if (strict) {
+                if ((type0.atomClass != c0) && (type0.atomClass != c3) &&
+                    (type3.atomClass != c0) && (type3.atomClass != c3)) {
+                  continue;
+                }
+              }
+              int[] c = new int[4];
+              c[0] = type0.atomClass;
+              c[1] = type1.atomClass;
+              c[2] = type2.atomClass;
+              c[3] = type3.atomClass;
+              String closeKey = TorsionType.sortKey(c);
+              TorsionType torsionType = forceField.getTorsionType(closeKey);
+              if (torsionType != null && !torsionTypes.contains(torsionType)) {
+                if (!match) {
+                  match = true;
+                  sb.append("\n Similar Angle Types:");
+                }
+                torsionTypes.add(torsionType);
+                sb.append(format("\n  %s", torsionType));
+              }
+            }
+          }
+        }
+      }
+    }
+    return torsionTypes.size();
   }
 
   /**
@@ -172,7 +228,8 @@ public class Torsion extends BondedTerm implements LambdaInterface {
    * @param forceField Force Field parameters to use.
    * @return A torsion type if it exists.
    */
-  private static TorsionType getTorsionType(int c0, int c1, int c2, int c3, ForceField forceField) {
+  private static TorsionType getTorsionType(int c0, int c1, int c2, int c3, ForceField
+      forceField) {
     int[] c = {c0, c1, c2, c3};
     String key = TorsionType.sortKey(c);
     return forceField.getTorsionType(key);
@@ -225,7 +282,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
     if (torsionType == null) {
       int[] c = {c0, c1, c2, c3};
       String key = TorsionType.sortKey(c);
-      logNoTorsionType(a0, a1, a2, a3, key);
+      logNoTorsionType(a0, a1, a2, a3, key, forceField);
       return null;
     }
 
@@ -250,6 +307,20 @@ public class Torsion extends BondedTerm implements LambdaInterface {
       return true;
     }
     return (a0 == atoms[3] && a1 == atoms[2] && a2 == atoms[1] && a3 == atoms[0]);
+  }
+
+  /**
+   * Compute the torsional angle in degrees.
+   *
+   * @return The torsion in degrees.
+   */
+  public double measure() {
+    double angle = DoubleMath.dihedralAngle(
+        atoms[0].getXYZ(null),
+        atoms[1].getXYZ(null),
+        atoms[2].getXYZ(null),
+        atoms[3].getXYZ(null));
+    return toDegrees(angle);
   }
 
   /**
@@ -344,8 +415,8 @@ public class Torsion extends BondedTerm implements LambdaInterface {
   }
 
   /**
-   * If the specified atom is not a central atom of <b>this</b> torsion, the atom at the opposite
-   * end is returned. These atoms are said to be 1-4 to each other.
+   * If the specified atom is not a central atom of <b>this</b> torsion, the atom at the opposite end
+   * is returned. These atoms are said to be 1-4 to each other.
    *
    * @param a Atom
    * @return Atom

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -97,17 +97,15 @@ public class BoxOptCell {
    * @param crystal A Crystal.
    * @param symOp A symmetry operator to apply.
    * @param variableOnly If using only variable (protein side-chain, nucleic acid backbone) atoms.
-   * @param rotamerLibrary RotamerLibrary to apply.
    * @return If contained inside this BoxOptCell.
    */
   public boolean anyRotamerInsideCell(
       Residue residue,
       Crystal crystal,
       SymOp symOp,
-      boolean variableOnly,
-      RotamerLibrary rotamerLibrary) {
+      boolean variableOnly) {
     ResidueState incomingState = residue.storeState();
-    Rotamer[] rotamers = residue.getRotamers(rotamerLibrary);
+    Rotamer[] rotamers = residue.getRotamers();
     boolean inside =
         Arrays.stream(rotamers)
             .anyMatch(

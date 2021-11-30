@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -70,7 +70,8 @@ public class UniformBSpline {
   /**
    * Generate uniform b-Spline coefficients.
    *
-   * @param x A double in the range [0.0, 1.0].
+   * @param x A double in the range [0.0, 1.0] where 0.5 is over a grid point (0.0 is half way to
+   * the previous grid point, and 1.0 is half way to the next grid point).
    * @param order b-Spline order (degree + 1).
    * @param coefficients b-Spline coefficients (n coefficients for order n).
    * @since 1.0

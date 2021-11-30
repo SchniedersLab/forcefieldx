@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -40,6 +40,7 @@ package ffx.potential.parameters;
 import static java.lang.String.format;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumMap;
@@ -122,7 +123,7 @@ public class ForceField {
     bioTypes = new TreeMap<>(new BioType(0, null, null, 0, null));
     bondTypes = new TreeMap<>(new BondType(new int[2], 0, 0, null));
     chargeTypes = new TreeMap<>(new ChargeType(0, 0));
-    soluteTypes = new TreeMap<>(new SoluteType(0, 0.0, 0.0));
+    soluteTypes = new TreeMap<>(new SoluteType(0, 0.0, 0.0, 0.0));
     multipoleTypes = new TreeMap<>(new MultipoleType(new double[10], null, null, false));
     outOfPlaneBendTypes = new TreeMap<>(new OutOfPlaneBendType(new int[4], 0));
     piTorsionTypes = new TreeMap<>(new PiTorsionType(new int[2], 0));
@@ -172,7 +173,7 @@ public class ForceField {
   /**
    * Get for the URL for the named force field.
    *
-   * @param forceField a {@link ffx.potential.parameters.ForceField.ForceFieldName} object.
+   * @param forceField a {@link ForceField.ForceFieldName} object.
    * @return a {@link java.net.URL} object.
    */
   public static URL getForceFieldURL(ForceFieldName forceField) {
@@ -247,7 +248,7 @@ public class ForceField {
     }
     if (treeMap.containsKey(type.key)) {
       if (treeMap.get(type.key).toString().equalsIgnoreCase(type.toString())) {
-        // Ignore this type if its identical to an existing type.
+        // Ignore this type if it's identical to an existing type.
         return;
       }
       logger.log(
@@ -463,6 +464,23 @@ public class ForceField {
   /**
    * Getter for the field <code>atomTypes</code>.
    *
+   * @param atomType AtomType to find similar examples of.
+   * @return Similar atom types.
+   */
+  public List<AtomType> getSimilarAtomTypes(AtomType atomType) {
+    List<AtomType> types = new ArrayList<>();
+    for (AtomType type : atomTypes.values()) {
+      if (type.atomicNumber == atomType.atomicNumber && type.valence == atomType.valence) {
+        types.add(type);
+      }
+    }
+    return types;
+  }
+
+
+  /**
+   * Getter for the field <code>atomTypes</code>.
+   *
    * @param moleculeName a {@link java.lang.String} object.
    * @return a {@link java.util.HashMap} object.
    */
@@ -610,7 +628,7 @@ public class ForceField {
   /**
    * getForceFieldTypeCount
    *
-   * @param type a {@link ffx.potential.parameters.ForceField.ForceFieldType} object.
+   * @param type a {@link ForceField.ForceFieldType} object.
    * @return a int.
    */
   @SuppressWarnings("unchecked")
@@ -683,6 +701,46 @@ public class ForceField {
    */
   public MultipoleType getMultipoleType(String key) {
     return multipoleTypes.get(key);
+  }
+
+  /**
+   * Find the MultipoleType whose key begins with the supplied String.
+   * If there are more than one MultipoleType that begins with the key, null is returned.
+   * @param key The key to search for.
+   * @return The MultipoleType if one and only one match is found.
+   */
+  public MultipoleType getMultipoleTypeBeginsWith(String key) {
+    int count = 0;
+    MultipoleType multipoleType = null;
+    for (String s : multipoleTypes.keySet()) {
+      if (s.startsWith(key + " ")){
+        count++;
+        multipoleType = multipoleTypes.get(s);
+      }
+    }
+
+    if (count == 1) {
+      return multipoleType;
+    }
+
+    return null;
+  }
+
+  /**
+   * Find each MultipoleType whose key begins with the supplied String.
+   *
+   * @param key The key to search for.
+   * @return The MultipoleTypes found.
+   */
+  public List<MultipoleType> getMultipoleTypes(String key) {
+    List<MultipoleType> list = new ArrayList<>();
+    for (String s : multipoleTypes.keySet()) {
+      if (s.startsWith(key + " ")){
+        list.add(multipoleTypes.get(s));
+      }
+    }
+
+    return list;
   }
 
   /**

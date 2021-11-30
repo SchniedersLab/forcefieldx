@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -38,14 +38,15 @@
 package ffx.potential.groovy
 
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.AminoAcidUtils
 import ffx.potential.bonded.Atom
-import ffx.potential.bonded.ResidueEnumerations
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.PDBFilter
 import org.apache.commons.io.FilenameUtils
 import org.biojava.nbio.core.sequence.ProteinSequence
 import org.biojava.nbio.core.sequence.io.FastaReaderHelper
 import picocli.CommandLine.Command
+import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static ffx.potential.parsers.PDBFilter.toPDBAtomLine
@@ -66,9 +67,16 @@ class RGNtoPDB extends PotentialScript {
   /**
    * The final argument(s) should be an RGN output file and a sequence file in FASTA format.
    */
-  @Parameters(arity = "2", paramLabel = "files",
-      description = 'RGN output and a FASTA file.')
+  @Parameters(arity = "2..3", paramLabel = "files",
+      description = 'The RGN output and a FASTA file.')
   List<String> filenames = null
+
+  /**
+   * --pN or --proteinNet boolean to indicate whether the tertiary is from RGN output or from a ProteinNet file.
+   */
+  @Option(names = ["--pN", "--proteinNet"], paramLabel = 'false',
+      description = 'Indicates whether the tertiary format follows RGN output or ProteinNet input.')
+  boolean proteinNet = false
 
   /**
    * RGNtoPDB Constructor.
@@ -122,7 +130,11 @@ class RGNtoPDB extends PotentialScript {
     int lineNumber = 0
     while (lineNumber < 5) {
       lines[lineNumber] = cr.readLine().trim()
-      tokenizedLines[lineNumber] = lines[lineNumber].split(" +")
+      if (!proteinNet) {
+        tokenizedLines[lineNumber] = lines[lineNumber].split(" +")
+      } else {
+        tokenizedLines[lineNumber] = lines[lineNumber].split("\t")
+      }
       lineNumber++
     }
     cr.close()
@@ -135,6 +147,23 @@ class RGNtoPDB extends PotentialScript {
     if (remainder != 0) {
       logger.info(format(" RGN record %d atoms are not divisible by 3 (%d atoms left).", remainder))
       return null
+    }
+
+    boolean includeBFactors = false
+    String[] bfactorLines = new String[sequence.length()]
+    if (filenames.size() == 3) {
+      String bfactorName = filenames.get(2)
+      includeBFactors = true
+
+      logger.info("\n Opening BFactors " + bfactorName)
+      File bfactorFile = new File(bfactorName)
+      BufferedReader reader = new BufferedReader(new FileReader(bfactorFile))
+      lineNumber = 0
+      while (lineNumber < sequence.length()) {
+        bfactorLines[lineNumber] = reader.readLine().trim()
+        lineNumber++
+      }
+      reader.close()
     }
 
     // Configure the base directory if it has not been set.
@@ -162,6 +191,10 @@ class RGNtoPDB extends PotentialScript {
         int resID = i + 1
         String oneLetterResidue = sequence.charAt(i)
         String resName = convertToThreeLetter(oneLetterResidue)
+
+        if (includeBFactors) {
+          bfactor = parseDouble(bfactorLines[i])
+        }
 
         // Write N
         xyz[0] = parseDouble(tokenizedLines[2][atomNumber]) / 100.0
@@ -204,7 +237,7 @@ class RGNtoPDB extends PotentialScript {
    * @return The three letter amino acid code.
    */
   private static String convertToThreeLetter(String res) {
-    ResidueEnumerations.AminoAcid3 aminoAcid3 = ResidueEnumerations.getAminoAcid3From1(res)
+    AminoAcidUtils.AminoAcid3 aminoAcid3 = AminoAcidUtils.getAminoAcid3From1(res)
     return aminoAcid3.toString()
   }
 

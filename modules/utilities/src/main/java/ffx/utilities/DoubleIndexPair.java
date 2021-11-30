@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2020.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.utilities;
 
+import static java.lang.String.format;
+
 /**
  * DoubleIndexPair class.
  *
@@ -67,6 +69,13 @@ public class DoubleIndexPair implements Comparable<DoubleIndexPair> {
       return 0;
     }
     return Double.compare(doubleValue, o.doubleValue);
+  }
+
+  /**
+   * Returns a string containing the index and double value.
+   */
+  public String toString() {
+    return format(" %6d %16.8f", index, doubleValue);
   }
 
   /**
