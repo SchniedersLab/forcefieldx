@@ -116,12 +116,13 @@ class SuperposeCrystals extends AlgorithmsScript {
           description = 'Number of species in asymmetric unit of second crystal.')
   int zPrime2
 
-  /**
-   * --re or --removeEquivalent Remove atoms with equivalent bonded environments.
-   */
-  @Option(names = ['--re', '--removeEquivalent'], paramLabel = "false", defaultValue = "false",
-          description = 'Ignore atoms with similar bonded environment .')
-  private static boolean renameEq
+  // "Horrible Hack" to automatically select only atoms that can be reordered by Reorder.groovy.
+//  /**
+//   * --re or --removeEquivalent Remove atoms with equivalent bonded environments.
+//   */
+//  @Option(names = ['--re', '--removeEquivalent'], paramLabel = "false", defaultValue = "false",
+//          description = 'Ignore atoms with similar bonded environment .')
+//  private static boolean removeEquivalent
 
   /**
    * -w or --write Write out the RMSD matrix.
@@ -178,6 +179,13 @@ class SuperposeCrystals extends AlgorithmsScript {
   @Option(names = ['--mw', '--massWeighted'], paramLabel = "false", defaultValue = "false",
           description = 'Weight atomic masses for the comparison.')
   private static boolean massWeighted
+
+  /**
+   * --ld or --lowDensity Prioritize low density crystal.
+   */
+  @Option(names = ['--ld', '--lowDensity'], paramLabel = "false", defaultValue = "false",
+          description = 'Prioritize crystals with lower density.')
+  private static boolean lowDensity
 
   /**
    * The final argument(s) should be two or more filenames (same file twice if comparing same structures).
@@ -271,7 +279,7 @@ class SuperposeCrystals extends AlgorithmsScript {
     }
 
     runningStatistics = pac.comparisons(numAU, numInflatedAU, numSearch, numSearch2, zPrime, zPrime2, alphaCarbons,
-        noHydrogen, massWeighted, renameEq, exhaustive, savePDB, restart, write, machineLearning, pacFilename)
+        noHydrogen, massWeighted, lowDensity, false, exhaustive, savePDB, restart, write, machineLearning, pacFilename)
 
     return this
   }
