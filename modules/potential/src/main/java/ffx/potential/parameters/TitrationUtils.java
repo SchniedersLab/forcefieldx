@@ -52,7 +52,6 @@ import static ffx.potential.parameters.MultipoleType.assignAxisAtoms;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.log;
 
-import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
@@ -430,16 +429,13 @@ public class TitrationUtils {
         for (AspartateAtomNames atomName : AspartateAtomNames.values()) {
           if (atomName.name().equals("HD1")) {
             // Skip the HD1 atom name (used only for ASD during constant pH).
-            continue;
-          }
-          if(atomName.name().equals("HD2") && rotamer.aminoAcid3 == ASP){
-            // Skip the HD2 atom name if rotamer is ASP (used only for ASD during constant pH).
+            // This atom should not be present in the residue for ASH/ASP rot opt.
             continue;
           }
           int atomIndex = atomName.ordinal();
           Atom atom = (Atom) residue.getAtomNode(atomName.name());
-          if(atom == null){
-            logger.warning("Atom is null");
+          if (atom == null) {
+            logger.warning(" Atom is null for " + atomName);
           }
           atom.setAtomType(aspAtomTypes[aspIndex][atomIndex]);
           atom.setMultipoleType(aspMultipoleTypes[aspIndex][atomIndex]);
@@ -460,12 +456,13 @@ public class TitrationUtils {
         for (GlutamateAtomNames atomName : GlutamateAtomNames.values()) {
           if (atomName.name().equals("HE1")) {
             // Skip the HE1 atom name (used only for GLD during constant pH).
+            // This atom should not be present in the residue for GLH/GLU rot opt.
             continue;
           }
           int atomIndex = atomName.ordinal();
           Atom atom = (Atom) residue.getAtomNode(atomName.name());
-          if(atom == null){
-            logger.warning("Atom is null");
+          if (atom == null) {
+            logger.warning(" Atom is null for " + atomName);
           }
           atom.setAtomType(gluAtomTypes[gluIndex][atomIndex]);
           atom.setMultipoleType(gluMultipoleTypes[gluIndex][atomIndex]);
@@ -486,8 +483,8 @@ public class TitrationUtils {
         for (LysineAtomNames atomName : LysineAtomNames.values()) {
           int atomIndex = atomName.ordinal();
           Atom atom = (Atom) residue.getAtomNode(atomName.name());
-          if(atom == null){
-            logger.warning("Atom is null");
+          if (atom == null) {
+            logger.warning(" Atom is null for " + atomName);
           }
           atom.setAtomType(lysAtomTypes[lysIndex][atomIndex]);
           atom.setMultipoleType(lysMultipoleTypes[lysIndex][atomIndex]);
@@ -512,8 +509,8 @@ public class TitrationUtils {
         for (HistidineAtomNames atomName : HistidineAtomNames.values()) {
           int atomIndex = atomName.ordinal();
           Atom atom = (Atom) residue.getAtomNode(atomName.name());
-          if(atom == null){
-            logger.warning("Atom is null");
+          if (atom == null) {
+            logger.warning(" Atom is null for " + atomName);
           }
           atom.setAtomType(hisAtomTypes[hisIndex][atomIndex]);
           atom.setMultipoleType(hisMultipoleTypes[hisIndex][atomIndex]);
@@ -524,7 +521,8 @@ public class TitrationUtils {
         }
         break;
       default:
-        logger.severe(format(" No support for titrating residue %s with rotamer %s.", residue, rotamer));
+        logger.severe(
+            format(" No support for titrating residue %s with rotamer %s.", residue, rotamer));
     }
   }
 
@@ -1018,7 +1016,7 @@ public class TitrationUtils {
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
     HIStoHID(7.00, 36.00, 0.0, HIS, HID),
     HIStoHIE(6.60, 36.00, 0.0, HIS, HIE),
-    HIDtoHIE(0.00,  0.00, 0.0, HID, HIE);
+    HIDtoHIE(0.00, 0.00, 0.0, HID, HIE);
     // TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     // TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
 
