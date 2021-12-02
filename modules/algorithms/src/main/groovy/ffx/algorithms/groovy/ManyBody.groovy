@@ -133,7 +133,7 @@ class ManyBody extends AlgorithmsScript {
     potentialEnergy = activeAssembly.getPotentialEnergy()
     potentialEnergy.energy(false, true)
 
-    List<String> resNumberList = new ArrayList<>()
+    List<Integer> resNumberList = new ArrayList<>()
     List<Residue> residues
     if (manyBody.residueGroup.start > -1 || manyBody.residueGroup.all > -1) {
       residues = manyBody.getResidues(activeAssembly)
@@ -147,7 +147,7 @@ class ManyBody extends AlgorithmsScript {
     }
 
     for (Residue residue : residues) {
-      resNumberList.add(String.valueOf(residue.getResidueNumber()))
+      resNumberList.add(residue.getResidueNumber())
     }
 
     activeAssembly = new MolecularAssembly(filename)

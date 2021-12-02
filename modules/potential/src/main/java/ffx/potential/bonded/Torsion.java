@@ -50,6 +50,7 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.DoubleUnaryOperator;
 import java.util.logging.Logger;
 
 /**
@@ -71,6 +72,8 @@ public class Torsion extends BondedTerm implements LambdaInterface {
   private double dEdL = 0.0;
   /** Flag to indicate lambda dependence. */
   private boolean lambdaTerm = false;
+  /** Maps global lambda to either itself or 1 - global lambda. */
+  private final DoubleUnaryOperator lambdaMapper;
 
   /**
    * Torsion constructor.
@@ -84,6 +87,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
     bonds[1] = an1.getCommonBond(an2);
     bonds[0] = an1.getOtherBond(bonds[1]);
     bonds[2] = an2.getOtherBond(bonds[1]);
+    lambdaMapper = (double d) -> d;
     initialize();
   }
 
@@ -106,6 +110,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
       bonds[1] = bonds[2];
       bonds[2] = temp;
     }
+    lambdaMapper = (double d) -> d;
     initialize();
   }
 
@@ -122,6 +127,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
     bonds[0] = b1;
     bonds[1] = b2;
     bonds[2] = b3;
+    lambdaMapper = (double d) -> d;
     initialize();
   }
 
@@ -132,6 +138,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
    */
   public Torsion(String n) {
     super(n);
+    lambdaMapper = (double d) -> d;
   }
 
   /**
@@ -435,11 +442,9 @@ public class Torsion extends BondedTerm implements LambdaInterface {
   @Override
   public void setLambda(double lambda) {
     if (applyAllLambda()) {
-      this.lambda = lambda;
       lambdaTerm = true;
-    } else {
-      this.lambda = 1.0;
     }
+    this.lambda = lambdaTerm ? lambdaMapper.applyAsDouble(lambda) : 1.0;
   }
 
   /** {@inheritDoc} */

@@ -7877,7 +7877,8 @@ public class SpaceGroupDefinitions {
    */
   static SpaceGroup getAlternativeSpaceGroup(String name) {
     SpaceGroup spaceGroup = null;
-    if (name.equalsIgnoreCase("P21/a") || name.equalsIgnoreCase("P 1 21/a 1")) {
+    name = name.replaceAll(" +", "");
+    if (name.equalsIgnoreCase("P21/a") || name.equalsIgnoreCase("P121/a1")) {
       spaceGroup =
           new SpaceGroup(
               14,
@@ -7895,7 +7896,7 @@ public class SpaceGroupDefinitions {
               new SymOp(SymOp.Rot_mX_mY_Z, SymOp.Tr_12_0_12),
               new SymOp(SymOp.Rot_mX_mY_mZ, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_X_Y_mZ, SymOp.Tr_12_0_12));
-    } else if (name.equalsIgnoreCase("P21/n") || name.equalsIgnoreCase("P 1 21/n 1")) {
+    } else if (name.equalsIgnoreCase("P21/n") || name.equalsIgnoreCase("P121/n1")) {
       spaceGroup =
               new SpaceGroup(
                       14,
@@ -7913,6 +7914,24 @@ public class SpaceGroupDefinitions {
                       new SymOp(SymOp.Rot_mX_Y_mZ, SymOp.Tr_12_12_12),
                       new SymOp(SymOp.Rot_mX_mY_mZ, SymOp.Tr_0_0_0),
                       new SymOp(SymOp.Rot_X_mY_Z, SymOp.Tr_12_12_12));
+    } else if (name.equalsIgnoreCase("P21212A") || name.equalsIgnoreCase("P 21 21 2 A")) {
+      spaceGroup =
+              new SpaceGroup(
+                      18,
+                      4,
+                      4,
+                      "P21212A",
+                      "PG222",
+                      "P 21 21 2 A",
+                      ORTHORHOMBIC,
+                      ORTHORHOMBIC_LATTICE,
+                      L222,
+                      new ASULimit[] {ASULimit.LT, ASULimit.LTE, ASULimit.LT},
+                      new double[] {1.0, f14, 1.0},
+                      new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mX_mY_Z, SymOp.Tr_12_12_0),
+                      new SymOp(SymOp.Rot_mX_Y_mZ, SymOp.Tr_0_12_0),
+                      new SymOp(SymOp.Rot_X_mY_mZ, SymOp.Tr_12_0_0));
     } else if (name.equalsIgnoreCase("R3") || name.equalsIgnoreCase("R 3")) {
       spaceGroup =
           new SpaceGroup(
@@ -8010,7 +8029,7 @@ public class SpaceGroupDefinitions {
               new SymOp(SymOp.Rot_Y_X_Z, SymOp.Tr_12_12_12),
               new SymOp(SymOp.Rot_Z_Y_X, SymOp.Tr_12_12_12),
               new SymOp(SymOp.Rot_X_Z_Y, SymOp.Tr_12_12_12));
-    } else if (name.equalsIgnoreCase("R-3m")  || name.equalsIgnoreCase("R -3 2/m")) {
+    } else if (name.equalsIgnoreCase("R-3m")  || name.equalsIgnoreCase("R-32/m")) {
       spaceGroup =
           new SpaceGroup(
               166,
@@ -8036,7 +8055,7 @@ public class SpaceGroupDefinitions {
               new SymOp(SymOp.Rot_Y_X_Z, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_Z_Y_X, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_X_Z_Y, SymOp.Tr_0_0_0));
-    } else if (name.equalsIgnoreCase("R-3c") || name.equalsIgnoreCase("R -3 2/c")) {
+    } else if (name.equalsIgnoreCase("R-3c") || name.equalsIgnoreCase("R-32/c")) {
       spaceGroup =
           new SpaceGroup(
               167,
@@ -8100,9 +8119,12 @@ public class SpaceGroupDefinitions {
    * @since 1.0
    */
   public static SpaceGroup spaceGroupFactory(String name) {
-    SpaceGroup spaceGroup = spaceGroupFactory(spaceGroupNumber(name));
+    String n = name.trim();
+    // Many CIF files have extraneous parenthesis not found in PDB or FFX SG formats (e.g. "P2(1)/c").
+    n = n.replaceAll("[()]", "");
+    SpaceGroup spaceGroup = spaceGroupFactory(spaceGroupNumber(n));
     if (spaceGroup == null) {
-      spaceGroup = getAlternativeSpaceGroup(name);
+      spaceGroup = getAlternativeSpaceGroup(n);
     }
     return spaceGroup;
   }
@@ -8119,8 +8141,6 @@ public class SpaceGroupDefinitions {
       return -1;
     }
     String n = name.trim();
-    // Many CIF files have extraneous parenthesis not found in PDB or FFX SG formats (e.g. "P2(1)/c").
-    n = n.replaceAll("[()]", "");
     int num = SpaceGroupInfo.spaceGroupNames.length;
     for (int i = 0; i < num; i++) {
       String s1 = SpaceGroupInfo.spaceGroupNames[i];

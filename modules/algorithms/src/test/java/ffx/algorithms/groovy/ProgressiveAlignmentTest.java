@@ -70,7 +70,7 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     // Only off-diagonal values.
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
-    assertEquals(0.0851007, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.11101375, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   /** Tests the CrystalSuperpose script without hydrogens. */
@@ -89,7 +89,7 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     // Only off-diagonal values.
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
-    assertEquals(0.0810508, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.0825499, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   /** Tests the CrystalSuperpose script in Sohncke group. */
@@ -142,7 +142,7 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
 
-    assertEquals(0.15354157, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.1509703, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   @Test

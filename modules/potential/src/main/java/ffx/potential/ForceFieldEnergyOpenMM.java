@@ -298,19 +298,7 @@ import edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_NonbondedMethod;
 import edu.uiowa.jopenmm.OpenMMUtils;
 import edu.uiowa.jopenmm.OpenMM_Vec3;
 import ffx.crystal.Crystal;
-import ffx.potential.bonded.Angle;
-import ffx.potential.bonded.AngleTorsion;
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond;
-import ffx.potential.bonded.ImproperTorsion;
-import ffx.potential.bonded.OutOfPlaneBend;
-import ffx.potential.bonded.PiOrbitalTorsion;
-import ffx.potential.bonded.RestraintBond;
-import ffx.potential.bonded.StretchBend;
-import ffx.potential.bonded.StretchTorsion;
-import ffx.potential.bonded.Torsion;
-import ffx.potential.bonded.TorsionTorsion;
-import ffx.potential.bonded.UreyBradley;
+import ffx.potential.bonded.*;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
@@ -644,6 +632,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       return 0.0;
     }
 
+    // ZE BUG: updateParameters only gets called for energy(), not energyAndGradient().
+
+
     // Un-scale the coordinates.
     unscaleCoordinates(x);
 
@@ -950,6 +941,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
    * @param atoms Atoms in this list are considered.
    */
   public void updateParameters(Atom[] atoms) {
+    if (atoms == null) {
+      atoms = this.atoms;
+    }
     system.updateParameters(atoms);
   }
 
@@ -1595,6 +1589,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     private PointerByReference commRemover = null;
     /** OpenMM AMOEBA Torsion Force. */
     private PointerByReference amoebaTorsionForce = null;
+    private PointerByReference[] restraintTorsions = null;
     /** OpenMM Improper Torsion Force. */
     private PointerByReference amoebaImproperTorsionForce = null;
     /** OpenMM AMOEBA van der Waals Force. */
@@ -1710,7 +1705,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       vdwLambdaTerm = forceField.getBoolean("VDW_LAMBDATERM", vdwLambdaTerm);
       torsionLambdaTerm = forceField.getBoolean("TORSION_LAMBDATERM", torsionLambdaTerm);
 
-      lambdaTerm = (elecLambdaTerm || vdwLambdaTerm || torsionLambdaTerm);
+      if (!forceField.getBoolean("LAMBDATERM", false)) {
+        lambdaTerm = (elecLambdaTerm || vdwLambdaTerm || torsionLambdaTerm);
+      } else {
+        lambdaTerm = true;
+      }
 
       VanDerWaals vdW = ForceFieldEnergyOpenMM.super.getVdwNode();
       if (vdW != null) {
@@ -1819,6 +1818,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       setDefaultPeriodicBoxVectors();
 
+      addRestraintTorsions();
+
       if (vdW != null) {
         logger.info("\n Non-Bonded Terms\n");
         VanDerWaalsForm vdwForm = vdW.getVDWForm();
@@ -1854,6 +1855,39 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (useMeld) {
           logger.info(format(" Meld scale factor:              %6.3f", meldScaleFactor));
         }
+      }
+    }
+
+    private void addRestraintTorsions() {
+      if (rTors != null && rTors.length > 0) {
+        int nRT = rTors.length;
+        restraintTorsions = new PointerByReference[nRT];
+        for (int i = 0; i < nRT; i++) {
+          PointerByReference rtOMM = OpenMM_PeriodicTorsionForce_create();
+          RestraintTorsion rt = rTors[i];
+          int a1 = rt.getAtom(0).getXyzIndex() - 1;
+          int a2 = rt.getAtom(1).getXyzIndex() - 1;
+          int a3 = rt.getAtom(2).getXyzIndex() - 1;
+          int a4 = rt.getAtom(3).getXyzIndex() - 1;
+          int nTerms = rt.torsionType.terms;
+          for (int j = 0; j < nTerms; j++) {
+            OpenMM_PeriodicTorsionForce_addTorsion(
+                    rtOMM,
+                    a1,
+                    a2,
+                    a3,
+                    a4,
+                    j + 1,
+                    rt.torsionType.phase[j] * OpenMM_RadiansPerDegree,
+                    OpenMM_KJPerKcal * rt.units * rt.torsionType.amplitude[j]);
+          }
+          int fGroup = forceField.getInteger("TORSION_FORCE_GROUP", 0);
+
+          OpenMM_Force_setForceGroup(rtOMM, fGroup);
+          OpenMM_System_addForce(system, rtOMM);
+          restraintTorsions[i] = rtOMM;
+        }
+        logger.info(format(" Added %d restraint torsions to OpenMM.", nRT));
       }
     }
 
@@ -2098,6 +2132,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (amoebaImproperTorsionForce != null) {
           updateImproperTorsionForce();
         }
+      }
+      
+      if (restraintTorsions != null && restraintTorsions.length > 0) {
+        updateRestraintTorsions();
       }
 
       if (atoms == null || atoms.length == 0) {
@@ -4729,6 +4767,48 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       if (context.contextPointer != null) {
         OpenMM_PeriodicTorsionForce_updateParametersInContext(
             amoebaTorsionForce, context.contextPointer);
+      }
+    }
+    
+    private void updateRestraintTorsions() {
+      // update restraint torsions ONLY here.
+      // Only update parameters if torsions are being scaled by lambda.
+
+      // Check if this system has torsions.
+
+      int nRT = restraintTorsions.length;
+      for (int i = 0; i < nRT; i++) {
+        RestraintTorsion rt = rTors[i];
+        PointerByReference rtOMM = restraintTorsions[i];
+        if (rt.applyLambda()) {
+          int index = 0;
+          TorsionType torsionType = rt.torsionType;
+          int nTerms = torsionType.phase.length;
+          int a1 = rt.getAtom(0).getXyzIndex() - 1;
+          int a2 = rt.getAtom(1).getXyzIndex() - 1;
+          int a3 = rt.getAtom(2).getXyzIndex() - 1;
+          int a4 = rt.getAtom(3).getXyzIndex() - 1;
+
+          for (int j = 0; j < nTerms; j++) {
+            double forceConstant =
+                    OpenMM_KJPerKcal * rt.units * torsionType.amplitude[j] * rt.mapLambda(getLambda());
+            OpenMM_PeriodicTorsionForce_setTorsionParameters(
+                    rtOMM,
+                    index++,
+                    a1,
+                    a2,
+                    a3,
+                    a4,
+                    j + 1,
+                    torsionType.phase[j] * OpenMM_RadiansPerDegree,
+                    forceConstant);
+          }
+        }
+
+        if (context.contextPointer != null) {
+          OpenMM_PeriodicTorsionForce_updateParametersInContext(
+                  rtOMM, context.contextPointer);
+        }
       }
     }
 

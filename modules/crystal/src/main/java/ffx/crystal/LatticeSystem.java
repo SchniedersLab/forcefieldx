@@ -90,7 +90,9 @@ public enum LatticeSystem {
     double alpha = 60.0 + random() * 60.0;
     double beta = 60.0 + random() * 60.0;
     double gamma = 60.0 + random() * 60.0;
-    double[] params = {0.1 + random(), 0.1 + random(), 0.1 + random(), alpha, beta, gamma};
+    double[] params = {0.25 + random(), 0.25 + random(), 0.25 + random(), alpha, beta, gamma};
+    double ab = 0.5 * (params[0] + params[1]);
+    double abc = (params[0] + params[1] + params[2]) / 3.0;
     switch (this) {
       case TRICLINIC_LATTICE:
         break;
@@ -107,7 +109,6 @@ public enum LatticeSystem {
         break;
       case TETRAGONAL_LATTICE:
         // a = b, alpha = beta = gamma = 90
-        double ab = 0.5 * (params[0] + params[1]);
         params[0] = ab;
         params[1] = ab;
         params[3] = 90.0;
@@ -116,7 +117,6 @@ public enum LatticeSystem {
         break;
       case RHOMBOHEDRAL_LATTICE:
         // a = b = c, alpha = beta = gamma.
-        double abc = (params[0] + params[1] + params[2]) / 3.0;
         double angles = (params[3] + params[4] + params[5]) / 3.0;
         params[0] = abc;
         params[1] = abc;
@@ -127,7 +127,6 @@ public enum LatticeSystem {
         break;
       case HEXAGONAL_LATTICE:
         // a = b, alpha = beta = 90, gamma = 120
-        ab = 0.5 * (params[0] + params[1]);
         params[0] = ab;
         params[1] = ab;
         params[3] = 90.0;
@@ -137,7 +136,6 @@ public enum LatticeSystem {
       case CUBIC_LATTICE:
       default:
         // a = b = c, alpha = beta = gamma = 90
-        abc = (params[0] + params[1] + params[2]) / 3.0;
         params[0] = abc;
         params[1] = abc;
         params[2] = abc;
@@ -192,19 +190,21 @@ public enum LatticeSystem {
   }
 
   /**
-   * Check that the lattice parameters satisfy the restrictions of the lattice systems.
+   * Change the lattice parameters to satisfy the restrictions of the lattice system.
    *
-   * @param a the a-axis length.
-   * @param b the b-axis length.
-   * @param c the c-axis length.
-   * @param alpha the alpha angle.
-   * @param beta the beta angle.
-   * @param gamma the gamma angle.
-   * @return True if the restrictions are satisfied, false otherwise.
+   * @param a the proposed a-axis length.
+   * @param b the proposed b-axis length.
+   * @param c the proposed c-axis length.
+   * @param alpha the proposed alpha angle.
+   * @param beta the proposed beta angle.
+   * @param gamma the proposed gamma angle.
+   * @return Adjusted parameters if the restrictions are satisfied, original parameters otherwise.
    */
   public double[] fixParameters(double a, double b, double c, double alpha, double beta,
                                  double gamma) {
     double[] parameters = {a,b,c,alpha,beta,gamma};
+    double ab = (parameters[0] + parameters[1])/2;
+    double abc = (parameters[0] + parameters[1] + parameters[2])/3;
     switch (this) {
       case TRICLINIC_LATTICE:
         // No restrictions.
@@ -222,7 +222,6 @@ public enum LatticeSystem {
         return parameters;
       case TETRAGONAL_LATTICE:
         // a = b, alpha = beta = gamma = 90
-        double ab = (parameters[0] + parameters[1])/2;
         parameters[0] = ab;
         parameters[1] = ab;
         parameters[3] = 90.0;
@@ -231,7 +230,6 @@ public enum LatticeSystem {
         return parameters;
       case RHOMBOHEDRAL_LATTICE:
         // a = b = c, alpha = beta = gamma.
-        double abc = (parameters[0] + parameters[1] + parameters[2])/3;
         double angles = (parameters[3] + parameters[4] + parameters[5])/3;
         parameters[0] = abc;
         parameters[1] = abc;
@@ -242,7 +240,6 @@ public enum LatticeSystem {
         return parameters;
         case HEXAGONAL_LATTICE:
         // a = b, alpha = beta = 90, gamma = 120
-          ab = (parameters[0] + parameters[1])/2;
           parameters[0] = ab;
           parameters[1] = ab;
           parameters[3] = 90.0;
@@ -251,7 +248,6 @@ public enum LatticeSystem {
           return parameters;
       case CUBIC_LATTICE:
         // a = b = c; alpha = beta = gamma = 90
-        abc = (parameters[0] + parameters[1] + parameters[2])/3;
         parameters[0] = abc;
         parameters[1] = abc;
         parameters[2] = abc;
@@ -268,6 +264,7 @@ public enum LatticeSystem {
   /**
    * Returns the default b-axis for the lattice system.
    *
+   * @param aaxis the a-axis length is the best guess for b-axis.
    * @return default b-axis value
    */
   public double getDefaultBAxis(double aaxis) {
