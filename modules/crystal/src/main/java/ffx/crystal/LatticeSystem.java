@@ -90,7 +90,7 @@ public enum LatticeSystem {
     double alpha = 60.0 + random() * 60.0;
     double beta = 60.0 + random() * 60.0;
     double gamma = 60.0 + random() * 60.0;
-    double[] params = {0.1 + random(), 0.1 + random(), 0.1 + random(), alpha, beta, gamma};
+    double[] params = {0.25 + random(), 0.25 + random(), 0.25 + random(), alpha, beta, gamma};
     double ab = 0.5 * (params[0] + params[1]);
     double abc = (params[0] + params[1] + params[2]) / 3.0;
     switch (this) {
