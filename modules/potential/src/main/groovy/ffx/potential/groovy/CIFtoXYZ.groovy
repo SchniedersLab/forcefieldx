@@ -191,7 +191,7 @@ class CIFtoXYZ extends PotentialScript {
             Chemical chemical = block.chemical
             Column nameCommon = chemical.nameCommon
             Column nameSystematic = chemical.nameSystematic
-            int rowCount = nameCommon.rowCount
+            int rowCount = nameCommon.getRowCount()
             if (rowCount > 1) {
                 logger.info(" Chemical components")
                 for (int i = 0; i < rowCount; i++) {
@@ -204,17 +204,17 @@ class CIFtoXYZ extends PotentialScript {
             // Determine the space group.
             Symmetry symmetry = block.symmetry
             if (sgNum == -1 && sgName == "") {
-                if (symmetry.getIntTablesNumber().rowCount > 0) {
+                if (symmetry.getIntTablesNumber().getRowCount() > 0) {
                     sgNum = symmetry.getIntTablesNumber().get(0)
                     logger.info(format(" CIF International Tables Number: %d", sgNum))
                 }
-                if (symmetry.getSpaceGroupNameH_M().rowCount > 0) {
+                if (symmetry.getSpaceGroupNameH_M().getRowCount() > 0) {
                     sgName = symmetry.getSpaceGroupNameH_M().get(0)
                     logger.info(format(" CIF Hermann–Mauguin Space Group: %s", sgName))
-                }else if(block.getSpaceGroup().getNameH_MFull().rowCount > 0){
+                }else if(block.getSpaceGroup().getNameH_MFull().getRowCount() > 0){
                     sgName = block.getSpaceGroup().getNameH_MFull().get(0)
                     logger.info(format(" CIF Hermann–Mauguin Space Group: %s", sgName))
-                }else if(block.getSpaceGroup().getNameH_MAlt().rowCount > 0){
+                }else if(block.getSpaceGroup().getNameH_MAlt().getRowCount() > 0){
                     sgName = block.getSpaceGroup().getNameH_MAlt().get(0)
                     logger.info(format(" CIF Hermann–Mauguin Space Group: %s", sgName))
                 }
@@ -287,6 +287,10 @@ class CIFtoXYZ extends PotentialScript {
             Column fractZ = atomSite.fractZ
 
             int nAtoms = label.getRowCount()
+            if(nAtoms < 1){
+                logger.warning(" CIF file did not contain coordinates.")
+                continue
+            }
             logger.info(format("\n Number of Atoms: %d", nAtoms))
             Atom[] atoms = new Atom[nAtoms]
 
@@ -302,7 +306,11 @@ class CIFtoXYZ extends PotentialScript {
 
             // Loop over atoms.
             for (int i = 0; i < nAtoms; i++) {
-                symbols[i] = typeSymbol.get(i)
+                if(typeSymbol.getRowCount() > 0){
+                    symbols[i] = typeSymbol.get(i)
+                }else{
+                    symbols[i] = getAtomElement(label.get(i))
+                }
                 double x = fractX.get(i)
                 double y = fractY.get(i)
                 double z = fractZ.get(i)
@@ -602,8 +610,8 @@ class CIFtoXYZ extends PotentialScript {
                             savePDB = true
                         }
                     } else {
-                        logger.warning(format(" CIF (%d) and XYZ (%d) have a different number of bonds.", cifBonds,
-                                xyzBonds))
+                        logger.warning(format(" CIF (%d) and XYZ ([%dH+%d=]%d) have a different number of bonds.", cifBonds,
+                                numHydrogens, xyzBonds-numHydrogens, xyzBonds))
                         savePDB = true
                     }
                     cifCDKAtoms.add(cifCDKAtomsArr[i])
@@ -758,7 +766,17 @@ class CIFtoXYZ extends PotentialScript {
      * @return String specifying atom element.
      */
     private static String getAtomElement(Atom atom) {
-        return atom.getName().replaceAll("_", "").replaceAll("-", "").replaceAll(" +", "").split("[0-9]")[0]
+        return getAtomElement(atom.getName())
+    }
+
+    /**
+     * Parse atom name to determine atomic element.
+     *
+     * @param atom Atom whose element we desire
+     * @return String specifying atom element.
+     */
+    private static String getAtomElement(String name) {
+        return name.replaceAll("[()]","").replaceAll("_", "").replaceAll("-", "").replaceAll(" +", "").split("[0-9]")[0]
     }
 
     /**

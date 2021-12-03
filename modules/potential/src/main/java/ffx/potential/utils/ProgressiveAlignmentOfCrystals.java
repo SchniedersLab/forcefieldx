@@ -293,9 +293,10 @@ public class ProgressiveAlignmentOfCrystals {
      * @return RunningStatistics Statistics for comparisons performed.
      */
     public RunningStatistics comparisons(int nAU, int inflatedAU, int numSearch, int numSearch2, int zPrime, int zPrime2,
-                                         boolean alphaCarbons, boolean noHydrogen, boolean massWeighted, boolean lowDensity,
-                                         boolean removeEquivalent, boolean exhaustive, boolean save, boolean restart, boolean write,
-                                         boolean machineLearning, String pacFileName) {
+                                         boolean alphaCarbons, boolean noHydrogen, boolean massWeighted, boolean fileOrder,
+                                         boolean lowDensity, boolean removeEquivalent, boolean exhaustive, boolean save,
+                                         boolean restart, boolean write, boolean machineLearning, int prioritization,
+                                         String pacFileName) {
 
         RunningStatistics runningStatistics;
         if (restart) {
@@ -351,7 +352,7 @@ public class ProgressiveAlignmentOfCrystals {
             // Remove atoms that are at non-unique positions (Might be mislabeled).
             environmentCheck(baseAssembly, atomList);
             if (atomList.size() < 1) {
-                logger.info("\n Symmetry check removed remaining atoms from first crystal. Rerun without --sc.");
+                logger.info("\n Symmetry check removed remaining atoms from first crystal. Rerun without --re.");
                 return null;
             }
         }
@@ -414,12 +415,20 @@ public class ProgressiveAlignmentOfCrystals {
             int myIndex = 0;
             // Base unit cell for logging.
             baseCrystal = baseFilter.getActiveMolecularSystem().getCrystal().getUnitCell();
+            if(baseCrystal.aperiodic()){
+                logger.warning(" Base structure does not have a crystal.");
+                continue;
+            }
             for (int column = restartColumn; column < targetSize; column++) {
                 int targetRank = column % numProc;
                 if (targetRank == rank) {
                     long time = -System.nanoTime();
                     targetCrystal = targetFilter.getActiveMolecularSystem().getCrystal().getUnitCell();
-                    double rmsd;
+                    if(targetCrystal.aperiodic()){
+                        logger.warning(" Target structure does not have a crystal.");
+                        continue;
+                    }
+                    double rmsd = -2.0;
                     if (isSymmetric && row == column) {
                         logger.info(format("\n Comparing Model %d (%s) of %s\n with      Model %d (%s) of %s",
                                 row + 1, baseCrystal.toShortString(), baseLabel,
@@ -430,14 +439,14 @@ public class ProgressiveAlignmentOfCrystals {
                         logger.info(format(" PAC %s: %12s %7.4f A", rmsdLabel, "", rmsd));
                     } else if (isSymmetric && row > column) {
                         // Do not compute lower triangle values.
-                        rmsd = -1.0;
+                        rmsd = -3.0;
                     } else {
                         logger.info(format("\n Comparing Model %d (%s) of %s\n with      Model %d (%s) of %s",
                                 row + 1, baseCrystal.toShortString(), baseLabel,
                                 column + 1, targetCrystal.toShortString(), targetLabel));
                         // Compute the PAC RMSD.
                         rmsd = compare(comparisonAtoms, comparisonAtoms2, compareAtomsSize, compareAtomsSize2, nAU, inflatedAU,
-                                numSearch, numSearch2, z1, z2, massWeighted, lowDensity, exhaustive, save, machineLearning);
+                                numSearch, numSearch2, z1, z2, row * targetSize + column, massWeighted, fileOrder, lowDensity, exhaustive, save, machineLearning, prioritization);
                         time += System.nanoTime();
                         double timeSec = time * 1.0e-9;
                         // Record the fastest comparison.
@@ -507,7 +516,7 @@ public class ProgressiveAlignmentOfCrystals {
      */
     private double compare(int[] comparisonAtomsStart, int[] comparisonAtoms2Start, int compareAtomsSize,
                            int compareAtomsSize2, int nAU, int inflatedAU, int numSearch, int numSearch2, int zPrime, int zPrime2,
-                           boolean massWeighted, boolean lowDensity, boolean exhaustive, boolean save, boolean machineLearning) {
+                           int compNum, boolean massWeighted, boolean fileOrder, boolean lowDensity, boolean exhaustive, boolean save, boolean machineLearning, int prioritization) {
         // TODO: Does PAC work for a combination of molecules and polymers?
 
         //Remove atoms not used in comparisons from the original molecular assembly (crystal 1).
@@ -520,7 +529,7 @@ public class ProgressiveAlignmentOfCrystals {
 
         MolecularAssembly staticAssembly;
         MolecularAssembly mobileAssembly;
-        if (densityCheck) {
+        if (densityCheck || fileOrder) {
             staticAssembly = baseFilter.getActiveMolecularSystem();
             mobileAssembly = targetFilter.getActiveMolecularSystem();
         } else {
@@ -595,7 +604,7 @@ public class ProgressiveAlignmentOfCrystals {
         }
 
         // Translate asymmetric unit of 0th index (closest to all atom center) to the origin.
-        translateAUtoOrigin(baseXYZOrig, mass);
+        translateAUtoOrigin(baseXYZOrig, mass, 0);
 
         DoubleIndexPair[] molDist1 = new DoubleIndexPair[nBaseMols];
         if (logger.isLoggable(Level.FINER)) {
@@ -609,8 +618,7 @@ public class ProgressiveAlignmentOfCrystals {
         // Center of Masses for crystal 1.
         double[][] baseCoMOrig = new double[nBaseMols][3];
         centerOfMass(baseCoMOrig, baseXYZOrig, mass, massSum);
-        prioritizeReplicates(compareAtomsSize, baseXYZOrig, mass, massSum, nBaseMols, baseCoMOrig,
-                molDist1);
+        prioritizeReplicates(baseXYZOrig, mass, massSum, baseCoMOrig, molDist1, 0, prioritization);
 
         //Used for debugging. can be removed.
         if (logger.isLoggable(Level.FINEST)) {
@@ -622,7 +630,7 @@ public class ProgressiveAlignmentOfCrystals {
         }
 
         // Translate system to the origin.
-        translateAUtoOrigin(targetXYZOrig, mass);
+        translateAUtoOrigin(targetXYZOrig, mass, 0);
 
         DoubleIndexPair[] molDist2 = new DoubleIndexPair[nTargetMols];
         // Reorder molDist2 as we shift a different molecule (m) to the center each loop.
@@ -631,8 +639,7 @@ public class ProgressiveAlignmentOfCrystals {
         }
         double[][] targetCoMOrig = new double[nTargetMols][3];
         centerOfMass(targetCoMOrig, targetXYZOrig, mass, massSum);
-        prioritizeReplicates(compareAtomsSize2, targetXYZOrig, mass, massSum, nTargetMols, targetCoMOrig,
-                molDist2);
+        prioritizeReplicates(targetXYZOrig, mass, massSum, targetCoMOrig, molDist2, 0, prioritization);
 
         if (logger.isLoggable(Level.FINEST)) {
             int printSize = 20;
@@ -659,7 +666,7 @@ public class ProgressiveAlignmentOfCrystals {
 
         //Determine number of conformations in first crystal
         // TODO: change below to while(baseDiff.size() < baseSearchValue) when convinced
-        int numConfCheck = (exhaustive) ? nBaseMols : baseSearchValue;
+        int numConfCheck = (exhaustive || numSearch > 1) ? nBaseMols : baseSearchValue;
         while (basediff.size() < numConfCheck) {
             double[] baseCheckMol = new double[nCoords];
             arraycopy(baseXYZOrig, molDist1[index].getIndex() * nCoords, baseCheckMol, 0,
@@ -697,7 +704,7 @@ public class ProgressiveAlignmentOfCrystals {
         // Determine number of conformations in second.
         index = 0;
         // TODO: change below to while(baseDiff.size() < baseSearchValue) when convinced
-        numConfCheck = (exhaustive) ? nTargetMols : targetSearchValue;
+        numConfCheck = (exhaustive || numSearch2 > 1) ? nTargetMols : targetSearchValue;
         while (targetdiff.size() < numConfCheck) {
             double[] targetCheckMol = new double[nCoords];
             arraycopy(targetXYZOrig, molDist2[index].getIndex() * nCoords, targetCheckMol, 0, nCoords);
@@ -767,9 +774,12 @@ public class ProgressiveAlignmentOfCrystals {
             arraycopy(baseCoMOrig, 0, baseCoM, 0, baseCoMOrig.length);
             int center = molDist1[baseIndices[l]].getIndex();
             DoubleIndexPair[] molDist1_2 = new DoubleIndexPair[nBaseMols];
-            //Re-prioritize based on center-most molecule.
-            prioritizeReplicates(compareAtomsSize, baseXYZ, mass, massSum, nBaseMols, baseCoM,
-                    molDist1_2, center);
+            //Re-prioritize based on center-most molecule if different from first prioritization.
+            if(center != 0){
+                prioritizeReplicates(baseXYZ, mass, massSum, baseCoM, molDist1_2, center, prioritization);
+            }else{
+                arraycopy(molDist1, 0, molDist1_2, 0, nBaseMols);
+            }
 
             // Determine densest base3Mols. Use that going forward.
             //Translate base system based on center-most molecule
@@ -844,12 +854,15 @@ public class ProgressiveAlignmentOfCrystals {
                     center = molDist2[targetIndices[m]].getIndex();
                     DoubleIndexPair[] molDist2_2 = new DoubleIndexPair[nTargetMols];
 
-                    //Re-prioritize based on center most molecule.
+                    //Re-prioritize based on center most molecule if different from first prioritization.
                     if (logger.isLoggable(Level.FINER)) {
                         logger.finer(" Re-prioritize target system.");
                     }
-                    prioritizeReplicates(compareAtomsSize2, targetXYZ, mass, massSum, nTargetMols, targetCoM,
-                            molDist2_2, center);
+                    if(m!=0){
+                        prioritizeReplicates(targetXYZ, mass, massSum, targetCoM, molDist2_2, center, prioritization);
+                    }else{
+                        arraycopy(molDist2, 0, molDist2_2, 0, nTargetMols);
+                    }
 
                     if (logger.isLoggable(Level.FINER)) {
                         logger.finer(" Rotation 1:");
@@ -1032,10 +1045,10 @@ public class ProgressiveAlignmentOfCrystals {
                     rotate(baseNMols, targetNMols, massN);
 
                     double rmsdSymOp = rmsd(baseNMols, targetNMols, massN);
-                    if (logger.isLoggable(Level.FINE)) {
+                    if(logger.isLoggable(Level.FINE)){
                         String output = format(" %2d of %2d: %7.4f (%7.4f) %7.4f (%7.4f) %7.4f",
-                                l * targetSearchValue * numSearch2 + m + 1,
-                                baseSearchValue * numSearch * targetSearchValue * numSearch2, checkRMSD1, n1RMSD, checkRMSD2, n3RMSD, rmsdSymOp);
+                                l * numSearch2 + m + 1,
+                                numSearch * numSearch2, checkRMSD1, n1RMSD, checkRMSD2, n3RMSD, rmsdSymOp);
 
                         if (logger.isLoggable(Level.FINER)) {
                             //TODO fix conformation comparisons (target system find first available match base has individual
@@ -1043,11 +1056,10 @@ public class ProgressiveAlignmentOfCrystals {
                                     Objects.equals(baseIndices[l], targetBaseIndices[m]) && hand3Match
                                             && handNMatch;
                             output += format(" %d=%d", baseIndices[l], targetIndices[m]);
-
-                            if (save) {
+                            if (logger.isLoggable(Level.FINEST) && save) {
                                 int loop = l * targetSearchValue + m + 1;
-                                saveAssemblyPDB(staticAssembly, baseNMols, comparisonAtoms, "_" + loop + "_c1");
-                                saveAssemblyPDB(mobileAssembly, targetNMols, comparisonAtoms, "_" + loop + "_c2");
+                                saveAssemblyPDB(staticAssembly, baseNMols, comparisonAtoms, "_" + loop + "_c1", compNum);
+                                saveAssemblyPDB(mobileAssembly, targetNMols, comparisonAtoms, "_" + loop + "_c2", compNum);
                             }
                         }
                         logger.fine(output);
@@ -1069,16 +1081,16 @@ public class ProgressiveAlignmentOfCrystals {
         } else {
             logger.warning(" This RMSD was filtered out! Try the --ex flag." +
                     "\nAlternatively increase --ns and/or --ns2.");
-            // TODO: Double.NaN causes an error in RunningStatistics... Set to -2.0 for now...
-            finalRMSD = -2.0;
+            // TODO: Double.NaN causes an error in RunningStatistics... Set to -4.0 for now...
+            finalRMSD = -4.0;
         }
         if (save) {
             if (machineLearning) {
-                saveAssemblyPDB(staticAssembly, bestBaseNMols, comparisonAtoms, "_r" + rank + "_c1", 0.000);
-                saveAssemblyPDB(mobileAssembly, bestTargetNMols, comparisonAtoms, "_r" + rank + "_c2", finalRMSD);
+                saveAssemblyPDB(staticAssembly, bestBaseNMols, comparisonAtoms, "_c1", 0.000, compNum);
+                saveAssemblyPDB(mobileAssembly, bestTargetNMols, comparisonAtoms, "_c2", finalRMSD, compNum);
             } else {
-                saveAssemblyPDB(staticAssembly, bestBaseNMols, comparisonAtoms, "_r" + rank + "_c1");
-                saveAssemblyPDB(mobileAssembly, bestTargetNMols, comparisonAtoms, "_r" + rank + "_c2");
+                saveAssemblyPDB(staticAssembly, bestBaseNMols, comparisonAtoms, "_c1", compNum);
+                saveAssemblyPDB(mobileAssembly, bestTargetNMols, comparisonAtoms, "_c2", compNum);
             }
         }
 
@@ -1255,16 +1267,6 @@ public class ProgressiveAlignmentOfCrystals {
         // Rotate the target molecule onto the base molecule.
         double[][] rotation = calculateRotation(baseXYZ, targetMol, mass);
         applyRotation(targetXYZ, rotation);
-    }
-
-    /**
-     * Translate asymmetric unit to the origin (assumes ordered by distance to center).
-     *
-     * @param baseXYZ Coordinates of the system
-     * @param mass    Masses of atoms in one asymmetric unit.
-     */
-    private static void translateAUtoOrigin(double[] baseXYZ, double[] mass) {
-        translateAUtoOrigin(baseXYZ, mass, 0);
     }
 
     /**
@@ -1777,121 +1779,196 @@ public class ProgressiveAlignmentOfCrystals {
     }
 
     /**
-     * Prioritize asymmetric units within the system based on distance to center-most (0th index).
-     *
-     * @param nAtoms         Number of atoms being compared in asymmetric unit.
-     * @param coordsXYZ      Coordinates for expanded crystal.
-     * @param mass           Mass of atoms within asymmetric unit.
-     * @param massSum        Sum of atomic masses within asymmetric unit.
-     * @param nMols          Number of asymmetric units in expanded crystal.
-     * @param centerOfMasses Center of masses for each replicate within inflated crystal.
-     * @param molDists       DoubleIndexPair of distances from center most asymmetric unit to asymmetric
-     *                       unit at index.
-     */
-    private static void prioritizeReplicates(int nAtoms, double[] coordsXYZ, double[] mass,
-                                             double massSum, int nMols, double[][] centerOfMasses, DoubleIndexPair[] molDists) {
-        // AUs added to system based on distance to center of all atoms. 0th AU should be closest to all atom center.
-        prioritizeReplicates(nAtoms, coordsXYZ, mass, massSum, nMols, centerOfMasses, molDists, 0);
-    }
-
-    /**
      * Prioritize asymmetric units within the system based on distance to specified index.
      *
-     * @param nAtoms         Number of atoms being compared in asymmetric unit.
-     * @param coordsXYZ      Coordinates for expanded crystal.
-     * @param mass           Mass of atoms within asymmetric unit.
+     * @param coordsXYZ      Coordinates for expanded crystal (should contain 3 * nAtoms * nMols entries).
+     * @param mass           Mass of atoms within asymmetric unit (should contain one mass per atom in asym unit).
      * @param massSum        Sum of atomic masses within asymmetric unit.
-     * @param nMols          Number of molecules in expanded crystal.
      * @param centerOfMasses Center of masses for each replicate within inflated crystal.
      * @param molDists       Prioritization of molecules in expanded system on distance to center-most
      *                       molecule.
      * @param index          Index of molecules to be center.
      */
-    private static void prioritizeReplicates(int nAtoms, double[] coordsXYZ, double[] mass,
-                                             double massSum, int nMols, double[][] centerOfMasses, DoubleIndexPair[] molDists, int index) {
+    private static void prioritizeReplicates(double[] coordsXYZ, double[] mass,
+                                             double massSum, double[][] centerOfMasses,
+                                             DoubleIndexPair[] molDists, int index, int prioritization) {
         // Find AU to be treated as the new center.
-        double[] coordCenter = centerOfMasses[index];
-        for (int i = 0; i < nMols; i++) {
-            double[] moleculeCenter = centerOfMasses[i];
-            molDists[i] = new DoubleIndexPair(i, dist(coordCenter, moleculeCenter));
-        }
-        // Reorder based on distance to AU closest to Index.
-        sort(molDists);
-
-        if (logger.isLoggable(Level.FINEST)) {
-            int numCheck = Math.min(5, molDists.length);
-            double[][] targetMol = new double[coordsXYZ.length / (nAtoms * 3)][3];
-            centerOfMass(targetMol, coordsXYZ, mass, massSum);
-            for (int i = 0; i < numCheck; i++) {
-                logger.finest(format(" 1AU Rank %d Target: %d Index: %d Dist %4.4f (%4.4f %4.4f %4.4f)", i, index,
-                        molDists[i].getIndex(),
-                        molDists[i].getDoubleValue(), targetMol[molDists[i].getIndex()][0],
-                        targetMol[molDists[i].getIndex()][1], targetMol[molDists[i].getIndex()][2]));
+        // AUs added to system based on distance to center of all atoms. Index = 0 AU should be closest to all atom center.
+        int nAtoms = mass.length;
+        int nMols = coordsXYZ.length/(nAtoms*3);
+        if(prioritization == 0){
+            // Prioritize based on closest atomic distances.
+            int centerIndex = index * nAtoms * 3;
+            for(int i = 0; i<nMols; i++){
+                double tempDist = Double.MAX_VALUE;
+                int molIndex = i * nAtoms * 3;
+                for(int j = 0; j<nAtoms; j++) {
+                    int centerAtomIndex = j * 3;
+                    double[] centerXYZ = {coordsXYZ[centerIndex + centerAtomIndex],
+                            coordsXYZ[centerIndex + centerAtomIndex + 1],
+                            coordsXYZ[centerIndex + centerAtomIndex + 2]};
+                    for(int k =0; k<nAtoms; k++){
+                        int atomIndex = k * 3;
+                        double[] xyz = {coordsXYZ[molIndex + atomIndex],
+                        coordsXYZ[molIndex + atomIndex + 1],
+                        coordsXYZ[molIndex + atomIndex + 2]};
+                        double currDist = dist(centerXYZ, xyz);
+                        if(currDist < tempDist){
+                            tempDist = currDist;
+                        }
+                        if(abs(tempDist) < MATCH_TOLERANCE){
+                            break;
+                        }
+                    }
+                    if(abs(tempDist) < MATCH_TOLERANCE){
+                        break;
+                    }
+                }
+                molDists[i] = new DoubleIndexPair(i, tempDist);
             }
-        }
+            // Sort so the smallest distance is at position 0.
+            Arrays.sort(molDists);
 
-        // Molecules in crystal sorted based on distance to center of mass of center most molecule
-        // Want the first two molecules chosen in this manner, but third molecule to be closest to both
-        // Assigning distance from molDists ensures correct ordering of center most molecule.
-        DoubleIndexPair[] molDists2 = new DoubleIndexPair[nMols];
-        molDists2[0] = new DoubleIndexPair(molDists[0].getIndex(), molDists[0].getDoubleValue());
-
-        double[] avgCenter = new double[3];
-        avgCenter[0] =
-                (centerOfMasses[molDists[0].getIndex()][0] + centerOfMasses[molDists[1].getIndex()][0]) / 2;
-        avgCenter[1] =
-                (centerOfMasses[molDists[0].getIndex()][1] + centerOfMasses[molDists[1].getIndex()][1]) / 2;
-        avgCenter[2] =
-                (centerOfMasses[molDists[0].getIndex()][2] + centerOfMasses[molDists[1].getIndex()][2]) / 2;
-
-        for (int i = 1; i < nMols; i++) {
-            double[] moleculeCenter = centerOfMasses[molDists[i].getIndex()];
-            molDists2[i] = new DoubleIndexPair(molDists[i].getIndex(), dist(avgCenter, moleculeCenter));
-        }
-        sort(molDists2);
-        if (logger.isLoggable(Level.FINEST)) {
-            int numCheck = Math.min(5, molDists2.length);
-            double[][] targetMol = new double[coordsXYZ.length / (nAtoms * 3)][3];
-            centerOfMass(targetMol, coordsXYZ, mass, massSum);
-            for (int i = 0; i < numCheck; i++) {
-                logger.finest(format(" 2AU Rank %d Target: %d Index: %d Dist %4.4f (%4.4f %4.4f %4.4f)", i, index,
-                        molDists2[i].getIndex(),
-                        molDists2[i].getDoubleValue(), targetMol[molDists2[i].getIndex()][0],
-                        targetMol[molDists2[i].getIndex()][1], targetMol[molDists2[i].getIndex()][2]));
+            if (logger.isLoggable(Level.FINEST)) {
+                int numCheck = Math.min(5, molDists.length);
+                double[][] targetMol = new double[coordsXYZ.length / (nAtoms * 3)][3];
+                centerOfMass(targetMol, coordsXYZ, mass, massSum);
+                for (int i = 0; i < numCheck; i++) {
+                    logger.finest(format(" 1AU value %d Target: %d Index: %d Dist %4.4f (%4.4f %4.4f %4.4f)", i, index,
+                            molDists[i].getIndex(),
+                            molDists[i].getDoubleValue(), targetMol[molDists[i].getIndex()][0],
+                            targetMol[molDists[i].getIndex()][1], targetMol[molDists[i].getIndex()][2]));
+                }
             }
-        }
-        // Molecules in crystal sorted based on distance to center of mass of center 2 most molecule
-        // Want the first three molecules chosen in this manner, but rest to be closest to all three
-        // Assigning distance from molDists2 ensures correct ordering of center most molecule.
-        DoubleIndexPair[] molDists3 = new DoubleIndexPair[nMols];
-        molDists3[0] = new DoubleIndexPair(molDists2[0].getIndex(), molDists2[0].getDoubleValue());
-        molDists3[1] = new DoubleIndexPair(molDists2[1].getIndex(), molDists2[1].getDoubleValue());
-        avgCenter = new double[3];
-        for (int i = 0; i < 3; i++) {
-            avgCenter[0] += centerOfMasses[molDists2[i].getIndex()][0];
-            avgCenter[1] += centerOfMasses[molDists2[i].getIndex()][1];
-            avgCenter[2] += centerOfMasses[molDists2[i].getIndex()][2];
-        }
-        for (int i = 0; i < 3; i++) {
-            avgCenter[i] /= 3;
-        }
+        }else if(prioritization ==1){
+            // Prioritize based on geometric center/center of mass
+            double[] coordCenter = centerOfMasses[index];
+            for (int i = 0; i < nMols; i++) {
+                double[] moleculeCenter = centerOfMasses[i];
+                molDists[i] = new DoubleIndexPair(i, dist(coordCenter, moleculeCenter));
+            }
+            // Reorder based on distance to AU closest to Index.
+            sort(molDists);
 
-        for (int i = 2; i < nMols; i++) {
-            double[] moleculeCenter = centerOfMasses[molDists2[i].getIndex()];
-            molDists3[i] = new DoubleIndexPair(molDists2[i].getIndex(), dist(avgCenter, moleculeCenter));
-        }
-        //Reorder based on center point between center-most AU to all atom center and closest AU to center-most AU.
-        Arrays.sort(molDists3);
-        arraycopy(molDists3, 0, molDists, 0, nMols);
-        if (logger.isLoggable(Level.FINEST)) {
-            int numCheck = Math.min(5, molDists3.length);
-            double[][] targetMol = new double[coordsXYZ.length / (nAtoms * 3)][3];
-            centerOfMass(targetMol, coordsXYZ, mass, massSum);
-            for (int i = 0; i < numCheck; i++) {
-                logger.finest(format(" 3AU Rank %d Target: %d Index: %d Dist %4.4f (%4.4f %4.4f %4.4f)", i, index,
-                        molDists3[i].getIndex(),
-                        molDists3[i].getDoubleValue(), targetMol[molDists3[i].getIndex()][0],
-                        targetMol[molDists3[i].getIndex()][1], targetMol[molDists3[i].getIndex()][2]));
+            if (logger.isLoggable(Level.FINEST)) {
+                int numCheck = Math.min(5, molDists.length);
+                double[][] targetMol = new double[coordsXYZ.length / (nAtoms * 3)][3];
+                centerOfMass(targetMol, coordsXYZ, mass, massSum);
+                for (int i = 0; i < numCheck; i++) {
+                    logger.finest(format(" 1AU Rank %d Target: %d Index: %d Dist %4.4f (%4.4f %4.4f %4.4f)", i, index,
+                            molDists[i].getIndex(),
+                            molDists[i].getDoubleValue(), targetMol[molDists[i].getIndex()][0],
+                            targetMol[molDists[i].getIndex()][1], targetMol[molDists[i].getIndex()][2]));
+                }
+            }
+
+            // Molecules in crystal sorted based on distance to center of mass of center most molecule
+            // Want the first two molecules chosen in this manner, but third molecule to be closest to both
+            // Assigning distance from molDists ensures correct ordering of center most molecule.
+            DoubleIndexPair[] molDists2 = new DoubleIndexPair[nMols];
+            molDists2[0] = new DoubleIndexPair(molDists[0].getIndex(), molDists[0].getDoubleValue());
+
+            double[] avgCenter = new double[3];
+            avgCenter[0] =
+                    (centerOfMasses[molDists[0].getIndex()][0] + centerOfMasses[molDists[1].getIndex()][0]) / 2;
+            avgCenter[1] =
+                    (centerOfMasses[molDists[0].getIndex()][1] + centerOfMasses[molDists[1].getIndex()][1]) / 2;
+            avgCenter[2] =
+                    (centerOfMasses[molDists[0].getIndex()][2] + centerOfMasses[molDists[1].getIndex()][2]) / 2;
+
+            for (int i = 1; i < nMols; i++) {
+                double[] moleculeCenter = centerOfMasses[molDists[i].getIndex()];
+                molDists2[i] = new DoubleIndexPair(molDists[i].getIndex(), dist(avgCenter, moleculeCenter));
+            }
+            sort(molDists2);
+            if (logger.isLoggable(Level.FINEST)) {
+                int numCheck = Math.min(5, molDists2.length);
+                double[][] targetMol = new double[coordsXYZ.length / (nAtoms * 3)][3];
+                centerOfMass(targetMol, coordsXYZ, mass, massSum);
+                for (int i = 0; i < numCheck; i++) {
+                    logger.finest(format(" 2AU Rank %d Target: %d Index: %d Dist %4.4f (%4.4f %4.4f %4.4f)", i, index,
+                            molDists2[i].getIndex(),
+                            molDists2[i].getDoubleValue(), targetMol[molDists2[i].getIndex()][0],
+                            targetMol[molDists2[i].getIndex()][1], targetMol[molDists2[i].getIndex()][2]));
+                }
+            }
+            // Molecules in crystal sorted based on distance to center of mass of center 2 most molecule
+            // Want the first three molecules chosen in this manner, but rest to be closest to all three
+            // Assigning distance from molDists2 ensures correct ordering of center most molecule.
+            DoubleIndexPair[] molDists3 = new DoubleIndexPair[nMols];
+            molDists3[0] = new DoubleIndexPair(molDists2[0].getIndex(), molDists2[0].getDoubleValue());
+            molDists3[1] = new DoubleIndexPair(molDists2[1].getIndex(), molDists2[1].getDoubleValue());
+            avgCenter = new double[3];
+            for (int i = 0; i < 3; i++) {
+                avgCenter[0] += centerOfMasses[molDists2[i].getIndex()][0];
+                avgCenter[1] += centerOfMasses[molDists2[i].getIndex()][1];
+                avgCenter[2] += centerOfMasses[molDists2[i].getIndex()][2];
+            }
+            for (int i = 0; i < 3; i++) {
+                avgCenter[i] /= 3;
+            }
+
+            for (int i = 2; i < nMols; i++) {
+                double[] moleculeCenter = centerOfMasses[molDists2[i].getIndex()];
+                molDists3[i] = new DoubleIndexPair(molDists2[i].getIndex(), dist(avgCenter, moleculeCenter));
+            }
+            //Reorder based on center point between center-most AU to all atom center and closest AU to center-most AU.
+            Arrays.sort(molDists3);
+            arraycopy(molDists3, 0, molDists, 0, nMols);
+            if (logger.isLoggable(Level.FINEST)) {
+                int numCheck = Math.min(5, molDists3.length);
+                double[][] targetMol = new double[coordsXYZ.length / (nAtoms * 3)][3];
+                centerOfMass(targetMol, coordsXYZ, mass, massSum);
+                for (int i = 0; i < numCheck; i++) {
+                    logger.finest(format(" 3AU Rank %d Target: %d Index: %d Dist %4.4f (%4.4f %4.4f %4.4f)", i, index,
+                            molDists3[i].getIndex(),
+                            molDists3[i].getDoubleValue(), targetMol[molDists3[i].getIndex()][0],
+                            targetMol[molDists3[i].getIndex()][1], targetMol[molDists3[i].getIndex()][2]));
+                }
+            }
+        }else if(prioritization == 2){
+            // Prioritize based on minimum distance between the farthest atom.
+            int centerIndex = index * nAtoms * 3;
+            for(int i = 0; i<nMols; i++){
+                double tempDist = 0.0;
+                int molIndex = i * nAtoms * 3;
+                for(int j = 0; j<nAtoms; j++) {
+                    int centerAtomIndex = j * 3;
+                    double[] centerXYZ = {coordsXYZ[centerIndex + centerAtomIndex],
+                            coordsXYZ[centerIndex + centerAtomIndex + 1],
+                            coordsXYZ[centerIndex + centerAtomIndex + 2]};
+                    for(int k =0; k<nAtoms; k++){
+                        int atomIndex = k * 3;
+                        double[] xyz = {coordsXYZ[molIndex + atomIndex],
+                                coordsXYZ[molIndex + atomIndex + 1],
+                                coordsXYZ[molIndex + atomIndex + 2]};
+                        double currDist = dist(centerXYZ, xyz);
+                        if(currDist > tempDist){
+                            tempDist = currDist;
+                        }
+                        if(abs(tempDist) < MATCH_TOLERANCE){
+                            break;
+                        }
+                    }
+                    if(abs(tempDist) < MATCH_TOLERANCE){
+                        break;
+                    }
+                }
+                molDists[i] = new DoubleIndexPair(i, tempDist);
+            }
+            // Sort so the smallest distance is at position 0.
+            Arrays.sort(molDists);
+
+            if (logger.isLoggable(Level.FINEST)) {
+                int numCheck = Math.min(5, molDists.length);
+                double[][] targetMol = new double[coordsXYZ.length / (nAtoms * 3)][3];
+                centerOfMass(targetMol, coordsXYZ, mass, massSum);
+                for (int i = 0; i < numCheck; i++) {
+                    logger.finest(format(" 1AU value %d Target: %d Index: %d Dist %4.4f (%4.4f %4.4f %4.4f)", i, index,
+                            molDists[i].getIndex(),
+                            molDists[i].getDoubleValue(), targetMol[molDists[i].getIndex()][0],
+                            targetMol[molDists[i].getIndex()][1], targetMol[molDists[i].getIndex()][2]));
+                }
             }
         }
     }
@@ -1927,9 +2004,9 @@ public class ProgressiveAlignmentOfCrystals {
      * @param description       Unique identifier that will be added to PDB file name.
      */
     private static void saveAssemblyPDB(MolecularAssembly molecularAssembly, double[] coords,
-                                        int[] comparisonAtoms, String description) {
+                                        int[] comparisonAtoms, String description, int compNum) {
         String fileName = FilenameUtils.removeExtension(molecularAssembly.getFile().getName());
-        File saveLocationPDB = PDBFilter.version(new File(fileName + description + ".pdb"));
+        File saveLocationPDB = new File(fileName + description + ".pdb");
         // Save aperiodic system of n_mol closest atoms for visualization
         MolecularAssembly currentAssembly = new MolecularAssembly(molecularAssembly.getName());
         ArrayList<Atom> newAtomList = new ArrayList<>();
@@ -1974,7 +2051,8 @@ public class ProgressiveAlignmentOfCrystals {
         currentAssembly.setFile(molecularAssembly.getFile());
         PDBFilter pdbfilter = new PDBFilter(saveLocationPDB, currentAssembly, forceField,
                 currentAssembly.getProperties());
-        pdbfilter.writeFile(saveLocationPDB, false);
+        pdbfilter.setModelNumbering(compNum);
+        pdbfilter.writeFile(saveLocationPDB, true, false, false);
     }
 
     /**
@@ -1987,8 +2065,8 @@ public class ProgressiveAlignmentOfCrystals {
      * @param finalRMSD         RMSD to be saved to CSV file.
      */
     private static void saveAssemblyPDB(MolecularAssembly molecularAssembly, double[] coords,
-                                        int[] comparisonAtoms, String description, double finalRMSD) {
-        saveAssemblyPDB(molecularAssembly, coords, comparisonAtoms, description);
+                                        int[] comparisonAtoms, String description, double finalRMSD, int compNum) {
+        saveAssemblyPDB(molecularAssembly, coords, comparisonAtoms, description, compNum);
         String fileName = FilenameUtils.removeExtension(molecularAssembly.getFile().getName());
         try {
             // Needs same name as PDB so follow PDB format.

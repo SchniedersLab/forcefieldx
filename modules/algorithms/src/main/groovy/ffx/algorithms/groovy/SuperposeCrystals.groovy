@@ -117,12 +117,12 @@ class SuperposeCrystals extends AlgorithmsScript {
   int zPrime2
 
   // "Horrible Hack" to automatically select only atoms that can be reordered by Reorder.groovy.
-//  /**
-//   * --re or --removeEquivalent Remove atoms with equivalent bonded environments.
-//   */
-//  @Option(names = ['--re', '--removeEquivalent'], paramLabel = "false", defaultValue = "false",
-//          description = 'Ignore atoms with similar bonded environment .')
-//  private static boolean removeEquivalent
+  /**
+   * --re or --removeEquivalent Remove atoms with equivalent bonded environments (experimental flag).
+   */
+  @Option(names = ['--re', '--removeEquivalent'], paramLabel = "false", defaultValue = "false",
+          description = 'Ignore atoms with similar bonded environment (experimental flag).')
+  private static boolean removeEquivalent
 
   /**
    * -w or --write Write out the RMSD matrix.
@@ -179,6 +179,20 @@ class SuperposeCrystals extends AlgorithmsScript {
   @Option(names = ['--mw', '--massWeighted'], paramLabel = "false", defaultValue = "false",
           description = 'Weight atomic masses for the comparison.')
   private static boolean massWeighted
+
+  /**
+   * --pm or --priorityMethod Molecule priority based on single (0), average (1), or complete (2) linkage.
+   */
+  @Option(names = ['--pm', '--priorityMethod'], paramLabel = '1', defaultValue = '1',
+          description = 'Molecules prioritized based on single (0), average (1), or complete (2) linkage.')
+  int prioritization
+
+  /**
+   * --fo or --fileOrder Prioritize crystals based on file input order.
+   */
+  @Option(names = ['--fo', '--fileOrder'], paramLabel = "false", defaultValue = "false",
+          description = 'Prioritize crystals based on file input order (supersedes density priority).')
+  private static boolean fileOrder
 
   /**
    * --ld or --lowDensity Prioritize low density crystal.
@@ -278,8 +292,20 @@ class SuperposeCrystals extends AlgorithmsScript {
       savePDB = true
     }
 
+    if(prioritization == 0){
+      logger.finer(" Single linkage will be used.")
+    }else if(prioritization == 2){
+      logger.finer(" Complete linkage will be used.")
+    }else if(prioritization == 1){
+      logger.finer(" Average linkage will be used.")
+    }else{
+      logger.warning("Prioritization method specified incorrectly (--pm {0, 1, 2}). Using default of average linkage.")
+      prioritization = 1
+    }
+
     runningStatistics = pac.comparisons(numAU, numInflatedAU, numSearch, numSearch2, zPrime, zPrime2, alphaCarbons,
-        noHydrogen, massWeighted, lowDensity, false, exhaustive, savePDB, restart, write, machineLearning, pacFilename)
+        noHydrogen, massWeighted, fileOrder, lowDensity, removeEquivalent, exhaustive, savePDB, restart, write,
+            machineLearning, prioritization, pacFilename)
 
     return this
   }
