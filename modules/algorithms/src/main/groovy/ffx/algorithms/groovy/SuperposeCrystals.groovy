@@ -181,11 +181,11 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean massWeighted
 
   /**
-   * --pm or --priorityMethod Molecule priority based on single (0), average (1), or complete (2) linkage.
+   * -l or --linkage Molecule priority based on single (0), average (1), or complete (2) linkage.
    */
-  @Option(names = ['--pm', '--priorityMethod'], paramLabel = '1', defaultValue = '1',
+  @Option(names = ['-l', '--linkage'], paramLabel = '0', defaultValue = '0',
           description = 'Molecules prioritized based on single (0), average (1), or complete (2) linkage.')
-  int prioritization
+  int linkage
 
   /**
    * --fo or --fileOrder Prioritize crystals based on file input order.
@@ -292,20 +292,20 @@ class SuperposeCrystals extends AlgorithmsScript {
       savePDB = true
     }
 
-    if(prioritization == 0){
+    if(linkage == 0){
       logger.finer(" Single linkage will be used.")
-    }else if(prioritization == 2){
+    }else if(linkage == 2){
       logger.finer(" Complete linkage will be used.")
-    }else if(prioritization == 1){
+    }else if(linkage == 1){
       logger.finer(" Average linkage will be used.")
     }else{
       logger.warning("Prioritization method specified incorrectly (--pm {0, 1, 2}). Using default of average linkage.")
-      prioritization = 1
+      linkage = 1
     }
 
     runningStatistics = pac.comparisons(numAU, numInflatedAU, numSearch, numSearch2, zPrime, zPrime2, alphaCarbons,
         noHydrogen, massWeighted, fileOrder, lowDensity, removeEquivalent, exhaustive, savePDB, restart, write,
-            machineLearning, prioritization, pacFilename)
+            machineLearning, linkage, pacFilename)
 
     return this
   }

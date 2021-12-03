@@ -295,7 +295,7 @@ public class ProgressiveAlignmentOfCrystals {
     public RunningStatistics comparisons(int nAU, int inflatedAU, int numSearch, int numSearch2, int zPrime, int zPrime2,
                                          boolean alphaCarbons, boolean noHydrogen, boolean massWeighted, boolean fileOrder,
                                          boolean lowDensity, boolean removeEquivalent, boolean exhaustive, boolean save,
-                                         boolean restart, boolean write, boolean machineLearning, int prioritization,
+                                         boolean restart, boolean write, boolean machineLearning, int linkage,
                                          String pacFileName) {
 
         RunningStatistics runningStatistics;
@@ -446,7 +446,7 @@ public class ProgressiveAlignmentOfCrystals {
                                 column + 1, targetCrystal.toShortString(), targetLabel));
                         // Compute the PAC RMSD.
                         rmsd = compare(comparisonAtoms, comparisonAtoms2, compareAtomsSize, compareAtomsSize2, nAU, inflatedAU,
-                                numSearch, numSearch2, z1, z2, row * targetSize + column, massWeighted, fileOrder, lowDensity, exhaustive, save, machineLearning, prioritization);
+                                numSearch, numSearch2, z1, z2, row * targetSize + column, massWeighted, fileOrder, lowDensity, exhaustive, save, machineLearning, linkage);
                         time += System.nanoTime();
                         double timeSec = time * 1.0e-9;
                         // Record the fastest comparison.
@@ -516,7 +516,7 @@ public class ProgressiveAlignmentOfCrystals {
      */
     private double compare(int[] comparisonAtomsStart, int[] comparisonAtoms2Start, int compareAtomsSize,
                            int compareAtomsSize2, int nAU, int inflatedAU, int numSearch, int numSearch2, int zPrime, int zPrime2,
-                           int compNum, boolean massWeighted, boolean fileOrder, boolean lowDensity, boolean exhaustive, boolean save, boolean machineLearning, int prioritization) {
+                           int compNum, boolean massWeighted, boolean fileOrder, boolean lowDensity, boolean exhaustive, boolean save, boolean machineLearning, int linkage) {
         // TODO: Does PAC work for a combination of molecules and polymers?
 
         //Remove atoms not used in comparisons from the original molecular assembly (crystal 1).
@@ -618,7 +618,7 @@ public class ProgressiveAlignmentOfCrystals {
         // Center of Masses for crystal 1.
         double[][] baseCoMOrig = new double[nBaseMols][3];
         centerOfMass(baseCoMOrig, baseXYZOrig, mass, massSum);
-        prioritizeReplicates(baseXYZOrig, mass, massSum, baseCoMOrig, molDist1, 0, prioritization);
+        prioritizeReplicates(baseXYZOrig, mass, massSum, baseCoMOrig, molDist1, 0, linkage);
 
         //Used for debugging. can be removed.
         if (logger.isLoggable(Level.FINEST)) {
@@ -639,7 +639,7 @@ public class ProgressiveAlignmentOfCrystals {
         }
         double[][] targetCoMOrig = new double[nTargetMols][3];
         centerOfMass(targetCoMOrig, targetXYZOrig, mass, massSum);
-        prioritizeReplicates(targetXYZOrig, mass, massSum, targetCoMOrig, molDist2, 0, prioritization);
+        prioritizeReplicates(targetXYZOrig, mass, massSum, targetCoMOrig, molDist2, 0, linkage);
 
         if (logger.isLoggable(Level.FINEST)) {
             int printSize = 20;
@@ -774,9 +774,9 @@ public class ProgressiveAlignmentOfCrystals {
             arraycopy(baseCoMOrig, 0, baseCoM, 0, baseCoMOrig.length);
             int center = molDist1[baseIndices[l]].getIndex();
             DoubleIndexPair[] molDist1_2 = new DoubleIndexPair[nBaseMols];
-            //Re-prioritize based on center-most molecule if different from first prioritization.
+            //Re-prioritize based on center-most molecule if different from first linkage.
             if(center != 0){
-                prioritizeReplicates(baseXYZ, mass, massSum, baseCoM, molDist1_2, center, prioritization);
+                prioritizeReplicates(baseXYZ, mass, massSum, baseCoM, molDist1_2, center, linkage);
             }else{
                 arraycopy(molDist1, 0, molDist1_2, 0, nBaseMols);
             }
@@ -854,12 +854,12 @@ public class ProgressiveAlignmentOfCrystals {
                     center = molDist2[targetIndices[m]].getIndex();
                     DoubleIndexPair[] molDist2_2 = new DoubleIndexPair[nTargetMols];
 
-                    //Re-prioritize based on center most molecule if different from first prioritization.
+                    //Re-prioritize based on center most molecule if different from first linkage.
                     if (logger.isLoggable(Level.FINER)) {
                         logger.finer(" Re-prioritize target system.");
                     }
                     if(m!=0){
-                        prioritizeReplicates(targetXYZ, mass, massSum, targetCoM, molDist2_2, center, prioritization);
+                        prioritizeReplicates(targetXYZ, mass, massSum, targetCoM, molDist2_2, center, linkage);
                     }else{
                         arraycopy(molDist2, 0, molDist2_2, 0, nTargetMols);
                     }
@@ -915,7 +915,7 @@ public class ProgressiveAlignmentOfCrystals {
 
                     // At this point both systems have completed first rotation/translation
                     //  Therefore both center-most molecules should be overlapped.
-                    // TODO could have prioritization favor closest distance from molDist12 or molDist22 (was symmetric flag).
+                    // TODO could have linkage favor closest distance from molDist12 or molDist22 (was symmetric flag).
                     if (logger.isLoggable(Level.FINER)) {
                         logger.finer(" Match molecules between systems");
                     }
@@ -1338,8 +1338,9 @@ public class ProgressiveAlignmentOfCrystals {
         for (int i = 0; i < desiredMols; i++) {
             double minDist = Double.MAX_VALUE;
             Integer minIndex = -1;
+            double[] baseXYZ = baseCoM[molDist12[i].getIndex()];
             for (Integer target : targetIndex) {
-                double dist = dist(baseCoM[molDist12[i].getIndex()], targetCoM[target]);
+                double dist = dist(baseXYZ, targetCoM[target]);
                 if (dist < minDist) {
                     minDist = dist;
                     minIndex = target;
@@ -1353,15 +1354,15 @@ public class ProgressiveAlignmentOfCrystals {
             if (!targetIndex.remove(minIndex)) {
                 logger.warning(format(" Index value of %d was not found (%4.4f).", minIndex, minDist));
             }
-            if (logger.isLoggable(Level.FINEST)) {
-                logger.finest(
+            if (logger.isLoggable(Level.FINER)) {
+                logger.finer(
                         format(" Base position:   %d: %8.4f %8.4f %8.4f", i, baseCoM[molDist12[i].getIndex()][0],
                                 baseCoM[molDist12[i].getIndex()][1],
                                 baseCoM[molDist12[i].getIndex()][2]));
-                logger.finest(format(" Match Distance:  %d: %8.4f", i, matchMols[i].getDoubleValue()));
-                logger.finest(format(" Target position: %d: %8.4f %8.4f %8.4f", i,
-                        targetCoM[molDist22[i].getIndex()][0],
-                        targetCoM[molDist22[i].getIndex()][1], targetCoM[molDist22[i].getIndex()][2]));
+                logger.finer(format(" Match Distance:  %d: %8.4f", i, matchMols[i].getDoubleValue()));
+                logger.finer(format(" Target position: %d: %8.4f %8.4f %8.4f", i,
+                        targetCoM[matchMols[i].getIndex()][0],
+                        targetCoM[matchMols[i].getIndex()][1], targetCoM[matchMols[i].getIndex()][2]));
             }
         }
     }
@@ -1791,12 +1792,12 @@ public class ProgressiveAlignmentOfCrystals {
      */
     private static void prioritizeReplicates(double[] coordsXYZ, double[] mass,
                                              double massSum, double[][] centerOfMasses,
-                                             DoubleIndexPair[] molDists, int index, int prioritization) {
+                                             DoubleIndexPair[] molDists, int index, int linkage) {
         // Find AU to be treated as the new center.
         // AUs added to system based on distance to center of all atoms. Index = 0 AU should be closest to all atom center.
         int nAtoms = mass.length;
         int nMols = coordsXYZ.length/(nAtoms*3);
-        if(prioritization == 0){
+        if(linkage == 0){
             // Prioritize based on closest atomic distances.
             int centerIndex = index * nAtoms * 3;
             for(int i = 0; i<nMols; i++){
@@ -1840,7 +1841,7 @@ public class ProgressiveAlignmentOfCrystals {
                             targetMol[molDists[i].getIndex()][1], targetMol[molDists[i].getIndex()][2]));
                 }
             }
-        }else if(prioritization ==1){
+        }else if(linkage ==1){
             // Prioritize based on geometric center/center of mass
             double[] coordCenter = centerOfMasses[index];
             for (int i = 0; i < nMols; i++) {
@@ -1926,7 +1927,7 @@ public class ProgressiveAlignmentOfCrystals {
                             targetMol[molDists3[i].getIndex()][1], targetMol[molDists3[i].getIndex()][2]));
                 }
             }
-        }else if(prioritization == 2){
+        }else if(linkage == 2){
             // Prioritize based on minimum distance between the farthest atom.
             int centerIndex = index * nAtoms * 3;
             for(int i = 0; i<nMols; i++){
