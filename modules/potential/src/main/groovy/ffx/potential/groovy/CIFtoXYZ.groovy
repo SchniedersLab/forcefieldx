@@ -80,6 +80,7 @@ import javax.vecmath.Point3d
 import java.nio.file.Path
 import java.nio.file.Paths
 
+import static ffx.crystal.SpaceGroupConversions.hrConversion
 import static ffx.numerics.math.DoubleMath.dihedralAngle
 import static ffx.numerics.math.DoubleMath.dist
 import static ffx.potential.bonded.BondedUtils.intxyz
@@ -254,20 +255,30 @@ class CIFtoXYZ extends PotentialScript {
             } else {
                 if (fixLattice) {
                     logger.warning(" Attempting to patch disagreement between lattice system and lattice parameters.")
-                    double[] newLatticeParameters = latticeSystem.fixParameters(a, b, c, alpha, beta, gamma)
-                    if (newLatticeParameters == latticeParameters) {
-                        logger.warning(" Conversion Failed: The proposed lattice parameters for " + sg.pdbName
-                                + " do not satisfy the " + latticeSystem + ".")
-                        numFailed++
-                        continue
-                    } else {
-                        a = newLatticeParameters[0]
-                        b = newLatticeParameters[1]
-                        c = newLatticeParameters[2]
-                        alpha = newLatticeParameters[3]
-                        beta = newLatticeParameters[4]
-                        gamma = newLatticeParameters[5]
-                        crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName)
+                    boolean fixed = false
+                    if(latticeSystem == LatticeSystem.HEXAGONAL_LATTICE || latticeSystem == LatticeSystem.RHOMBOHEDRAL_LATTICE) {
+                        crystal = hrConversion(a, b, c, alpha, beta, gamma, sg)
+                        latticeSystem = crystal.spaceGroup.latticeSystem
+                        if (latticeSystem.validParameters(crystal.a, crystal.b, crystal.c, crystal.alpha, crystal.beta, crystal.gamma)) {
+                            fixed=true
+                        }
+                    }
+                    if(!fixed) {
+                        double[] newLatticeParameters = latticeSystem.fixParameters(a, b, c, alpha, beta, gamma)
+                        if (newLatticeParameters == latticeParameters) {
+                            logger.warning(" Conversion Failed: The proposed lattice parameters for " + sg.pdbName
+                                    + " do not satisfy the " + latticeSystem + ".")
+                            numFailed++
+                            continue
+                        } else {
+                            a = newLatticeParameters[0]
+                            b = newLatticeParameters[1]
+                            c = newLatticeParameters[2]
+                            alpha = newLatticeParameters[3]
+                            beta = newLatticeParameters[4]
+                            gamma = newLatticeParameters[5]
+                            crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName)
+                        }
                     }
                 } else {
                     logger.warning(" Conversion Failed: The proposed lattice parameters for " + sg.pdbName
@@ -289,6 +300,7 @@ class CIFtoXYZ extends PotentialScript {
             int nAtoms = label.getRowCount()
             if(nAtoms < 1){
                 logger.warning(" CIF file did not contain coordinates.")
+                numFailed++
                 continue
             }
             logger.info(format("\n Number of Atoms: %d", nAtoms))
@@ -648,6 +660,7 @@ class CIFtoXYZ extends PotentialScript {
 
             File saveFile
             if (savePDB) {
+                numFailed++
                 // Save a PDB file if there is no XYZ file supplied.
                 fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
                 saveFile = new File(dirName + fileName)

@@ -60,16 +60,29 @@ public class SpaceGroupConversions {
    * Convert between hexagonal and rhombohedral space groups.
    *
    * @param crystal Crystal parameters to be converted.
-   * @param spaceGroup Current space group name.
    * @return Converted crystal.
    */
-  public static Crystal hrConversion(Crystal crystal, String spaceGroup) {
+  public static Crystal hrConversion(Crystal crystal) {
+    return hrConversion(crystal.a, crystal.b, crystal.c, crystal.alpha, crystal.beta, crystal.gamma, crystal.spaceGroup);
+  }
+
+  /**
+   * Convert between hexagonal and rhombohedral space groups.
+   * @param a proposed axis length
+   * @param b proposed axis length
+   * @param c proposed axis length
+   * @param alpha proposed angle
+   * @param beta proposed angle
+   * @param gamma proposed angle
+   * @param currentSG Space group to be converted
+   * @return Converted crystal satisfying other lattice system.
+   */
+  public static Crystal hrConversion(double a, double b, double c, double alpha, double beta, double gamma, SpaceGroup currentSG) {
     //Name for converted space group.
     String xtalName = "";
     // Going from hexagonal to rhombohedral (true), or visa versa (false).
     boolean hexStart = false;
     // Determine starting space group.
-    SpaceGroup currentSG = SpaceGroupDefinitions.spaceGroupFactory(spaceGroup);
     switch (currentSG.shortName) {
       case ("H3"):
         logger.info(" Converting from H3 to R3:");
@@ -136,37 +149,31 @@ public class SpaceGroupConversions {
         break;
       default:
         logger.severe(format(" Unable to determine converted version for space group: %s",
-            spaceGroup));
-        return crystal;
+            currentSG));
+        return new Crystal(a, b, c, alpha, beta, gamma, currentSG.shortName);
     }
 
     // Hexagonal and Rhombohedral space groups are frequently treated synonymously, therefore check if mislabeled.
-    double aCurrent = crystal.a;
-    double bCurrent = crystal.b;
-    double cCurrent = crystal.c;
-    double alphaCurrent = crystal.alpha;
-    double betaCurrent = crystal.beta;
-    double gammaCurrent = crystal.gamma;
     if (hexStart) {
       //Hexagonal aH = bH, alpha = beta = 90 gamma = 120
-      if(LatticeSystem.RHOMBOHEDRAL_LATTICE.validParameters(aCurrent, bCurrent, cCurrent, alphaCurrent, betaCurrent, gammaCurrent)){
+      if(LatticeSystem.RHOMBOHEDRAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)){
         logger.info(" Crystal already has valid lattice parameters for new space group " + xtalName);
-        return new Crystal(aCurrent, bCurrent, cCurrent, alphaCurrent, betaCurrent, gammaCurrent, xtalName);
+        return new Crystal(a, b, c, alpha, beta, gamma, xtalName);
       }
 
-      double aR = sqrt(1.0 / 9.0 * (pow(cCurrent, 2) + 3 * pow(aCurrent, 2)));
-      double aRAlpha = acos((2 * pow(cCurrent, 2) - 3 * pow(aCurrent, 2)) /
-          (2 * pow(cCurrent, 2) + 6 * pow(aCurrent, 2))) / PI * 180;
+      double aR = sqrt(1.0 / 9.0 * (pow(c, 2) + 3 * pow(a, 2)));
+      double aRAlpha = acos((2 * pow(c, 2) - 3 * pow(a, 2)) /
+          (2 * pow(c, 2) + 6 * pow(a, 2))) / PI * 180;
 
       return new Crystal(aR, aR, aR, aRAlpha, aRAlpha, aRAlpha, xtalName);
     } else {
-      if(LatticeSystem.HEXAGONAL_LATTICE.validParameters(aCurrent, bCurrent, cCurrent, alphaCurrent, betaCurrent, gammaCurrent)){
+      if(LatticeSystem.HEXAGONAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)){
         logger.info(" Crystal already has valid lattice parameters for new space group " + xtalName);
-        return new Crystal(aCurrent, bCurrent, cCurrent, alphaCurrent, betaCurrent, gammaCurrent, xtalName);
+        return new Crystal(a, b, c, alpha, beta, gamma, xtalName);
       }
 
-      double aH = 2 * pow(aCurrent, 2) * (1 - cos(alphaCurrent / 180 * PI));
-      double cH = sqrt(3 * pow(aCurrent, 2) * (1 + 2 * cos(alphaCurrent / 180 * PI)));
+      double aH = 2 * pow(a, 2) * (1 - cos(alpha / 180 * PI));
+      double cH = sqrt(3 * pow(a, 2) * (1 + 2 * cos(alpha / 180 * PI)));
 
       return new Crystal(aH, aH, cH, 90.00, 90.00, 120.00, xtalName);
     }

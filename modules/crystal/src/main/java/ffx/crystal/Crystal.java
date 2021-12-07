@@ -217,7 +217,7 @@ public class Crystal {
       sb.append(format("  Gamma:                               %18.15e\n", gamma));
       if(tempLS == LatticeSystem.HEXAGONAL_LATTICE || tempLS == LatticeSystem.RHOMBOHEDRAL_LATTICE) {
         // Try to convert between hexagonal and rhombohedral lattices to fix crystal.
-        Crystal convertedCrystal = SpaceGroupConversions.hrConversion(this, sg);
+        Crystal convertedCrystal = SpaceGroupConversions.hrConversion(a, b, c, alpha, beta, gamma, tempSG);
         this.a = convertedCrystal.a;
         this.b = convertedCrystal.b;
         this.c = convertedCrystal.c;
