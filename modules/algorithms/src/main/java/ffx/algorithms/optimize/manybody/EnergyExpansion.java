@@ -64,6 +64,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.configuration2.CompositeConfiguration;
+import org.openscience.cdk.interfaces.IDoubleBondStereochemistry;
 
 public class EnergyExpansion {
 
@@ -489,7 +490,11 @@ public class EnergyExpansion {
       if (algorithmListener != null) {
         algorithmListener.algorithmUpdate(molecularAssembly);
       }
-      double subtract = -backboneEnergy - getSelf(i, ri) - getSelf(j, rj);
+      Rotamer[] rot_i = residues[i].getRotamers();
+      Rotamer[] rot_j = residues[j].getRotamers();
+      double subtract = -backboneEnergy - getSelf(i, ri, rot_i[ri], true) - getSelf(j, rj, rot_j[rj], true);
+
+      //double subtract = -backboneEnergy - getSelf(i, ri) - getSelf(j, rj);
       energy = rO.currentEnergy(residues) + subtract;
       if (potentialIsOpenMM && energy < ommRecalculateThreshold) {
         logger.warning(
@@ -533,6 +538,9 @@ public class EnergyExpansion {
     turnOnResidue(residues[i], ri);
     turnOnResidue(residues[j], rj);
     turnOnResidue(residues[k], rk);
+    Rotamer[] rot_i = residues[i].getRotamers();
+    Rotamer[] rot_j = residues[j].getRotamers();
+    Rotamer[] rot_k = residues[k].getRotamers();
     double energy;
     try {
       if (algorithmListener != null) {
@@ -540,9 +548,9 @@ public class EnergyExpansion {
       }
       double subtract =
           -backboneEnergy
-              - getSelf(i, ri)
-              - getSelf(j, rj)
-              - getSelf(k, rk)
+              - getSelf(i, ri, rot_i[ri], true)
+              - getSelf(j, rj, rot_j[rj], true)
+              - getSelf(k, rk, rot_k[rk], true)
               - get2Body(i, ri, j, rj)
               - get2Body(i, ri, k, rk)
               - get2Body(j, rj, k, rk);
@@ -728,6 +736,7 @@ public class EnergyExpansion {
     return total;
   }
 
+
   /**
    * Return a previously computed 2-body energy.
    *
@@ -879,6 +888,29 @@ public class EnergyExpansion {
       throw npe;
     }
   }
+
+  /**
+   * Return a previously computed self-energy.
+   *
+   * @param i Residue i.
+   * @param ri Rotamer ri of residue i.
+   * @return The self-energy.
+   */
+  public double getSelf(int i, int ri, Rotamer rot, boolean excludeFMod) {
+    try {
+      double totalSelf;
+      if (rot.isTitrating && excludeFMod){
+        totalSelf = selfEnergy[i][ri] - rot.getRotamerPhBias();
+      } else {
+        totalSelf = selfEnergy[i][ri];
+      }
+      return totalSelf;
+    } catch (NullPointerException npe) {
+      logger.info(format(" NPE for self energy (%3d,%2d).", i, ri));
+      throw npe;
+    }
+  }
+
 
   public Map<Integer, Integer[]> getSelfEnergyMap() {
     return selfEnergyMap;
