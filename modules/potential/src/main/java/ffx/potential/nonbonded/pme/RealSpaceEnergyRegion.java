@@ -126,6 +126,11 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
   private double[][][] titrationMultipole;
   private double[][][] tautomerMultipole;
 
+  AtomicDoubleArray3D field;
+  AtomicDoubleArray3D fieldCR;
+  private double[] dPolardTitrationESV;
+  private double[] dPolardTautomerESV;
+
   private ExtendedSystem extendedSystem = null;
   private boolean esvTerm = false;
   /**
@@ -366,6 +371,10 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
       double[][][] tautomerMultipole,
       double[][][] inducedDipole,
       double[][][] inducedDipoleCR,
+      AtomicDoubleArray3D field,
+      AtomicDoubleArray3D fieldCR,
+      double[] dPolardTitrationESV,
+      double[] dPolardTautomerESV,
       boolean[] use,
       int[] molecule,
       int[][] ip11,
@@ -404,6 +413,10 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
     this.tautomerMultipole = tautomerMultipole;
     this.inducedDipole = inducedDipole;
     this.inducedDipoleCR = inducedDipoleCR;
+    this.field = field;
+    this.fieldCR = fieldCR;
+    this.dPolardTitrationESV = dPolardTitrationESV;
+    this.dPolardTautomerESV = dPolardTautomerESV;
     this.use = use;
     this.molecule = molecule;
     this.ip11 = ip11;
@@ -1076,6 +1089,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                 scalep = maskingp_local[k];
                 scaled = maskingd_local[k];
               }
+
               extendedSystem.addIndElecDeriv(i, titrdUdL * electric, tautdUdL * electric);
             }
 
@@ -1125,6 +1139,20 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
             setMultipoleK(globalMultipolek);
           }
         }
+        /*if(polarization != ParticleMeshEwald.Polarization.NONE && doPolarization && esvTerm && extendedSystem.isTitrating(i)){
+          double fix = field.getX(i) * dPolardTitrationESV[i] * fieldCR.getX(i);
+          double fiy = field.getY(i) * dPolardTitrationESV[i] * fieldCR.getY(i);
+          double fiz = field.getZ(i) * dPolardTitrationESV[i] * fieldCR.getZ(i);
+          double titrdUdL = fix + fiy + fiz;
+          double tautdUdL = 0.0;
+          if(extendedSystem.isTautomerizing(i)){
+            fix = field.getX(i) * dPolardTautomerESV[i] * fieldCR.getX(i);
+            fiy = field.getY(i) * dPolardTautomerESV[i] * fieldCR.getY(i);
+            fiz = field.getZ(i) * dPolardTautomerESV[i] * fieldCR.getZ(i);
+            tautdUdL = fix + fiy + fiz;
+          }
+          extendedSystem.addIndElecDeriv(i, titrdUdL * electric, tautdUdL * electric);
+        }*/
         if (iSymm == 0) {
           removeMask(i, null, masking_local, maskingp_local, maskingd_local);
         }

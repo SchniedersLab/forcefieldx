@@ -714,8 +714,8 @@ public class TitrationUtils {
         double his = hisPolarizeTypes[HisStates.HIS.ordinal()][atomIndex].polarizability;
         double hid = hisPolarizeTypes[HisStates.HID.ordinal()][atomIndex].polarizability;
         double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
-        return titrationLambda * his + (1.0 - titrationLambda) * (tautomerLambda * hid
-            + (1 - tautomerLambda) * hie);
+        return titrationLambda * his + (1.0 - titrationLambda) * (tautomerLambda * hie
+            + (1 - tautomerLambda) * hid);
       case ASD:
         atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
         double asp = aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
@@ -735,24 +735,35 @@ public class TitrationUtils {
     }
   }
 
-  public double getPolarizabilityTitrationDeriv(AminoAcid3 aminoAcid3, int atomIndex,
+  public double getPolarizabilityTitrationDeriv(Atom atom,
       double titrationLambda, double tautomerLambda) {
+    AminoAcid3 aminoAcid3;
+    try{
+      aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
+    } catch (Exception exception){
+      return 0.0;
+    }
+    String atomName = atom.getName();
     switch (aminoAcid3) {
       case LYS:
+        int atomIndex =  LysineAtomNames.valueOf(atomName).ordinal();
         double lys = lysPolarizeTypes[LysStates.LYS.ordinal()][atomIndex].polarizability;
         double lyd = lysPolarizeTypes[LysStates.LYD.ordinal()][atomIndex].polarizability;
         return lys - lyd;
       case HIS:
+        atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
         double his = hisPolarizeTypes[HisStates.HIS.ordinal()][atomIndex].polarizability;
         double hid = hisPolarizeTypes[HisStates.HID.ordinal()][atomIndex].polarizability;
         double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
-        return his - (tautomerLambda * hid + (1 - tautomerLambda) * hie);
+        return his - (tautomerLambda * hie + (1 - tautomerLambda) * hid);
       case ASD:
+        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
         double asp = aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
         double ash1 = aspPolarizeTypes[AspStates.ASH1.ordinal()][atomIndex].polarizability;
         double ash2 = aspPolarizeTypes[AspStates.ASH2.ordinal()][atomIndex].polarizability;
         return (tautomerLambda * ash1 + (1 - tautomerLambda) * ash2) - asp;
       case GLD:
+        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
         double glu = gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
         double glh1 = gluPolarizeTypes[GluStates.GLH1.ordinal()][atomIndex].polarizability;
         double glh2 = gluPolarizeTypes[GluStates.GLH2.ordinal()][atomIndex].polarizability;
@@ -762,20 +773,30 @@ public class TitrationUtils {
     }
   }
 
-  public double getPolarizabilityTautomerDeriv(AminoAcid3 aminoAcid3, int atomIndex,
+  public double getPolarizabilityTautomerDeriv(Atom atom,
       double titrationLambda, double tautomerLambda) {
+    AminoAcid3 aminoAcid3;
+    try{
+      aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
+    } catch (Exception exception){
+      return 0.0;
+    }
+    String atomName = atom.getName();
     switch (aminoAcid3) {
       case HIS:
+        int atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
         double his = hisPolarizeTypes[HisStates.HIS.ordinal()][atomIndex].polarizability;
         double hid = hisPolarizeTypes[HisStates.HID.ordinal()][atomIndex].polarizability;
         double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
-        return titrationLambda * his + (1.0 - titrationLambda) * (hid - hie);
+        return titrationLambda * his + (1.0 - titrationLambda) * (hie - hid);
       case ASD:
+        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
         double asp = aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
         double ash1 = aspPolarizeTypes[AspStates.ASH1.ordinal()][atomIndex].polarizability;
         double ash2 = aspPolarizeTypes[AspStates.ASH2.ordinal()][atomIndex].polarizability;
         return titrationLambda * (ash1 - ash2) + (1.0 - titrationLambda) * asp;
       case GLD:
+        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
         double glu = gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
         double glh1 = gluPolarizeTypes[GluStates.GLH1.ordinal()][atomIndex].polarizability;
         double glh2 = gluPolarizeTypes[GluStates.GLH2.ordinal()][atomIndex].polarizability;

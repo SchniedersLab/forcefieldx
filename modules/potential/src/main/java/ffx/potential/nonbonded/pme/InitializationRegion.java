@@ -133,6 +133,8 @@ public class InitializationRegion extends ParallelRegion {
   private double[][][] tautomerMultipole;
   /** Polarizability of each atom */
   private double[] polarizability;
+  private double[] titrationPolarizability;
+  private double[] tautomerPolarizability;
   private double[] thole;
   private double[] ipdamp;
   /**
@@ -199,6 +201,8 @@ public class InitializationRegion extends ParallelRegion {
       double[][][] titrationMultipole,
       double[][][] tautomerMultipole,
       double[] polarizability,
+      double[] titrationPolarizability,
+      double[] tautomerPolarizability,
       double[] thole,
       double[] ipdamp,
       boolean[] use,
@@ -224,6 +228,8 @@ public class InitializationRegion extends ParallelRegion {
     this.titrationMultipole = titrationMultipole;
     this.tautomerMultipole = tautomerMultipole;
     this.polarizability = polarizability;
+    this.titrationPolarizability = titrationPolarizability;
+    this.tautomerPolarizability = tautomerPolarizability;
     this.thole = thole;
     this.ipdamp = ipdamp;
     this.use = use;
@@ -606,6 +612,14 @@ public class InitializationRegion extends ParallelRegion {
           PolarizeType polarizeType = atoms[ii].getPolarizeType();
           if (polarizeType != null) {
             polarizability[ii] = polarizeType.polarizability * polarizabilityScale * elecScale;
+            if(esvTerm && esvSystem.isTitrating(ii)){
+              double titrationLambda = esvSystem.getTitrationLambda(ii);
+              double tautomerLambda = esvSystem.getTautomerLambda(ii);
+              double esvPolarizability = polarizability[ii];
+              polarizability[ii] = esvSystem.getTitrationUtils().getPolarizability(atom, titrationLambda, tautomerLambda, esvPolarizability);
+              titrationPolarizability[ii] = esvSystem.getTitrationUtils().getPolarizabilityTitrationDeriv(atom, titrationLambda, tautomerLambda);
+              tautomerPolarizability[ii] =  esvSystem.getTitrationUtils().getPolarizabilityTautomerDeriv(atom, titrationLambda, tautomerLambda);
+            }
             thole[ii] = polarizeType.thole;
             ipdamp[ii] = polarizeType.pdamp;
             if (!(ipdamp[ii] > 0.0)) {

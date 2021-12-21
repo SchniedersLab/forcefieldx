@@ -613,7 +613,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
         shareddEdLambda.addAndGet(dEdLSign * dlPowPol * eSelf);
         sharedd2EdLambda2.addAndGet(dEdLSign * d2lPowPol * eSelf);
       }
-      if (gradient) {
+      if (gradient || esvTerm) {
         for (int i = lb; i <= ub; i++) {
           if (use[i]) {
             final double[] indi = ind[i];
@@ -638,6 +638,18 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
               double factor = dEdLSign * dlPowPol;
               lambdaTorque.add(threadID, i, factor * tix, factor * tiy, factor * tiz);
             }
+            if(esvTerm && extendedSystem.isTitrating(i)){
+              double[] titrDot = titrationMultipole[0][i];
+              double indiDotMdot = uix * titrDot[t100] + uiy * titrDot[t010] + uiz * titrDot[t001];
+              double dIndSelfTitrdLi = 2.0 * aewald3 * indiDotMdot;
+              double dIndSelfTautdLi = 0.0;
+              if(extendedSystem.isTautomerizing(i)){
+                double[] tautDot = tautomerMultipole[0][i];
+                indiDotMdot = uix * tautDot[t100] + uiy * tautDot[t010] + uiz * tautDot[t001];
+                dIndSelfTautdLi = 2.0 * aewald3 * indiDotMdot;
+              }
+              extendedSystem.addIndElecDeriv(i, dIndSelfTitrdLi * polarizationScale, dIndSelfTautdLi * polarizationScale);
+            }
           }
         }
       }
@@ -651,7 +663,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
           final double indy = findi[1];
           final double indz = findi[2];
           eRecip += indx * fPhi[t100] + indy * fPhi[t010] + indz * fPhi[t001];
-          if (gradient) {
+          if (gradient || esvTerm) {
             final double[] iPhi = cartesianDipolePhi[i];
             final double[] iCRPhi = cartesianDipolePhiCR[i];
             final double[] fiPhi = fracInducedDipolePhi[i];
@@ -786,6 +798,41 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
               double factor = dEdLSign * dlPowPol;
               lambdaGrad.add(threadID, i, factor * dfx, factor * dfy, factor * dfz);
               lambdaTorque.add(threadID, i, factor * tqx, factor * tqy, factor * tqz);
+            }
+            if(esvTerm && extendedSystem.isTitrating(i)){
+              final double[] mTitrDot = titrationMultipole[0][i];
+              double eTitrDot =
+                      mTitrDot[t000] * sPhi[t000]
+                              + mTitrDot[t100] * sPhi[t100]
+                              + mTitrDot[t010] * sPhi[t010]
+                              + mTitrDot[t001] * sPhi[t001]
+                              + oneThird
+                              * (mTitrDot[t200] * sPhi[t200]
+                              + mTitrDot[t020] * sPhi[t020]
+                              + mTitrDot[t002] * sPhi[t002]
+                              + 2.0
+                              * (mTitrDot[t110] * sPhi[t110]
+                              + mTitrDot[t101] * sPhi[t101]
+                              + mTitrDot[t011] * sPhi[t011]));
+              double eTautDot = 0.0;
+              if(extendedSystem.isTautomerizing(i)){
+                final double[] mTautDot = tautomerMultipole[0][i];
+                eTautDot =
+                        mTautDot[t000] * sPhi[t000]
+                                + mTautDot[t100] * sPhi[t100]
+                                + mTautDot[t010] * sPhi[t010]
+                                + mTautDot[t001] * sPhi[t001]
+                                + oneThird
+                                * (mTautDot[t200] * sPhi[t200]
+                                + mTautDot[t020] * sPhi[t020]
+                                + mTautDot[t002] * sPhi[t002]
+                                + 2.0
+                                * (mTautDot[t110] * sPhi[t110]
+                                + mTautDot[t101] * sPhi[t101]
+                                + mTautDot[t011] * sPhi[t011]));
+              }
+              double factor = polarizationScale * electric;
+              extendedSystem.addIndElecDeriv(i,eTitrDot * factor, eTautDot * factor);
             }
           }
         }
