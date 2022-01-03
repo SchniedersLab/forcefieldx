@@ -613,9 +613,9 @@ public class InitializationRegion extends ParallelRegion {
           PolarizeType polarizeType = atoms[ii].getPolarizeType();
           if (polarizeType != null) {
             polarizability[ii] = polarizeType.polarizability * polarizabilityScale * elecScale;
-            titrationPolarizability[ii] = 0.0;
-            tautomerPolarizability[ii] = 0.0;
             if(esvTerm && esvSystem.isTitrating(ii) && esvSystem.isTitratingHydrogen(ii)){
+              titrationPolarizability[ii] = 0.0;
+              tautomerPolarizability[ii] = 0.0;
               double titrationLambda = esvSystem.getTitrationLambda(ii);
               double tautomerLambda = esvSystem.getTautomerLambda(ii);
               double esvPolarizability = polarizability[ii];
