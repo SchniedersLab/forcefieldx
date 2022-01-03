@@ -51,7 +51,7 @@ import java.util.logging.Logger;
 /**
  * PhMD class.
  *
- * @author Stephen D. LuCore
+ * @author Andrew Thiel
  */
 public class PhMD  {
   private static final Logger logger = Logger.getLogger(PhMD.class.getName());
