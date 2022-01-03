@@ -733,7 +733,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         dMultipoledTautomerESV,
         polarizability,
         dPolardTitrationESV,
-        dPolardTitrationESV,
+        dPolardTautomerESV,
         thole,
         ipdamp,
         use,
@@ -1135,6 +1135,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       cartesianMultipolePhi = new double[nAtoms][tensorCount];
       directDipole = new double[nAtoms][3];
       directDipoleCR = new double[nAtoms][3];
+      directField = new double[nAtoms][3];
+      directFieldCR = new double[nAtoms][3];
       vacuumDirectDipole = new double[nAtoms][3];
       vacuumDirectDipoleCR = new double[nAtoms][3];
       if (optRegion != null) {
@@ -1582,20 +1584,38 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       // Compute induced dipoles.
       selfConsistentField(logger.isLoggable(Level.FINE));
 
-      for(int i=0; i<nAtoms; i++){
-        if(polarization != ParticleMeshEwald.Polarization.NONE && esvTerm && extendedSystem.isTitrating(i)){
-          double fix = field.getX(i) * dPolardTitrationESV[i] * fieldCR.getX(i);
-          double fiy = field.getY(i) * dPolardTitrationESV[i] * fieldCR.getY(i);
-          double fiz = field.getZ(i) * dPolardTitrationESV[i] * fieldCR.getZ(i);
+
+      for(int i = 0; i < nAtoms; i++){
+        if(polarization != ParticleMeshEwald.Polarization.NONE && esvTerm && extendedSystem.isTitrating(i) && extendedSystem.isTitratingHydrogen(i)){
+          double dx = field.getX(i);
+          double dy = field.getY(i);
+          double dz = field.getZ(i);
+          double dxCR = fieldCR.getX(i);
+          double dyCR = fieldCR.getY(i);
+          double dzCR = fieldCR.getZ(i);
+          //Add back permanent multipole field to total field for extended system derivatives if mutual polarization is used
+          if(polarization == Polarization.MUTUAL) {
+            dx += directField[i][0];
+            dy += directField[i][1];
+            dz += directField[i][2];
+            dxCR += directFieldCR[i][0];
+            dyCR += directFieldCR[i][1];
+            dzCR += directFieldCR[i][2];
+          }
+          double fix = dx * dPolardTitrationESV[i] * dxCR;
+          double fiy = dy * dPolardTitrationESV[i] * dyCR;
+          double fiz = dz * dPolardTitrationESV[i] * dzCR;
           double titrdUdL = fix + fiy + fiz;
           double tautdUdL = 0.0;
           if(extendedSystem.isTautomerizing(i)){
-            fix = field.getX(i) * dPolardTautomerESV[i] * fieldCR.getX(i);
-            fiy = field.getY(i) * dPolardTautomerESV[i] * fieldCR.getY(i);
-            fiz = field.getZ(i) * dPolardTautomerESV[i] * fieldCR.getZ(i);
+            fix = dx * dPolardTautomerESV[i] * dxCR;
+            fiy = dy * dPolardTautomerESV[i] * dyCR;
+            fiz = dz * dPolardTautomerESV[i] * dzCR;
             tautdUdL = fix + fiy + fiz;
           }
-          extendedSystem.addIndElecDeriv(i, titrdUdL * electric, tautdUdL * electric);
+          //logger.info(format("Index i: %d Polarizability: %6.8f TitrDeriv: %6.8f TautDeriv: %6.8f",
+                 // i, polarizability[i], dPolardTitrationESV[i], dPolardTautomerESV[i]));
+          extendedSystem.addIndElecDeriv(i, titrdUdL * electric * -0.5, tautdUdL * electric * -0.5);
         }
       }
       if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
@@ -2088,7 +2108,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         inducedDipole,
         inducedDipoleCR,
         directDipole,
-        directDipoleCR);
+        directDipoleCR,
+        directField,
+        directFieldCR
+    );
     directRegion.executeWith(parallelTeam);
 
     // Return unless mutual polarization is selected.

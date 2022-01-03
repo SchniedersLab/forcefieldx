@@ -788,7 +788,9 @@ public class TitrationUtils {
         double his = hisPolarizeTypes[HisStates.HIS.ordinal()][atomIndex].polarizability;
         double hid = hisPolarizeTypes[HisStates.HID.ordinal()][atomIndex].polarizability;
         double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
-        return titrationLambda * his + (1.0 - titrationLambda) * (hie - hid);
+        //titrationLambda * his + (1.0 - titrationLambda) * (tautomerLambda * hie
+        //            + (1 - tautomerLambda) * hid);
+        return  (1.0 - titrationLambda) * (hie - hid);
       case ASD:
         atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
         double asp = aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;

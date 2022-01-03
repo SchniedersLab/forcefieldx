@@ -290,7 +290,8 @@ public class ExtendedSystem {
                 titratingResidueList.add(residue);
                 List<Atom> atomList = residue.getSideChainAtoms();
                 for (Atom atom : atomList) {
-                    int atomIndex = atom.getIndex();
+                    int atomIndex = atom.getArrayIndex();
+                    logger.info(format("Atom: %s AtomIndex: %d", atom, atomIndex));
                     residueNames[atomIndex] = residue.getAminoAcid3();
                     isTitrating[atomIndex] = true;
                     titrationLambdas[atomIndex] = initialTitrationLambda;
@@ -302,7 +303,7 @@ public class ExtendedSystem {
                 if (isTautomer(residue)) {
                     tautomerizingResidueList.add(residue);
                     for (Atom atom : atomList) {
-                        int atomIndex = atom.getIndex();
+                        int atomIndex = atom.getArrayIndex();
                         isTautomerizing[atomIndex] = true;
                         tautomerLambdas[atomIndex] = initialTautomerLambda;
                         int tautomerIndex = tautomerizingResidueList.indexOf(residue);
@@ -447,7 +448,7 @@ public class ExtendedSystem {
             thetaPosition[index] = Math.asin(Math.sqrt(lambda));
             List<Atom> currentAtomList = residue.getSideChainAtoms();
             for (Atom atom : currentAtomList) {
-                int atomIndex = atom.getIndex();
+                int atomIndex = atom.getArrayIndex();
                 titrationLambdas[atomIndex] = lambda;
             }
         } else {
@@ -464,7 +465,7 @@ public class ExtendedSystem {
             thetaPosition[index] = Math.asin(Math.sqrt(lambda));
             List<Atom> currentAtomList = residue.getSideChainAtoms();
             for (Atom atom : currentAtomList) {
-                int atomIndex = atom.getIndex();
+                int atomIndex = atom.getArrayIndex();
                 tautomerLambdas[atomIndex] = lambda;
             }
         } else {

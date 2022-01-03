@@ -49,6 +49,7 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
+import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.max;
 
 import edu.rit.pj.IntegerForLoop;
@@ -612,14 +613,18 @@ public class InitializationRegion extends ParallelRegion {
           PolarizeType polarizeType = atoms[ii].getPolarizeType();
           if (polarizeType != null) {
             polarizability[ii] = polarizeType.polarizability * polarizabilityScale * elecScale;
-            if(esvTerm && esvSystem.isTitrating(ii)){
+            titrationPolarizability[ii] = 0.0;
+            tautomerPolarizability[ii] = 0.0;
+            if(esvTerm && esvSystem.isTitrating(ii) && esvSystem.isTitratingHydrogen(ii)){
               double titrationLambda = esvSystem.getTitrationLambda(ii);
               double tautomerLambda = esvSystem.getTautomerLambda(ii);
               double esvPolarizability = polarizability[ii];
               polarizability[ii] = esvSystem.getTitrationUtils().getPolarizability(atom, titrationLambda, tautomerLambda, esvPolarizability);
-              titrationPolarizability[ii] = esvSystem.getTitrationUtils().getPolarizabilityTitrationDeriv(atom, titrationLambda, tautomerLambda);
+              double titrationDeriv = esvSystem.getTitrationUtils().getPolarizabilityTitrationDeriv(atom, titrationLambda, tautomerLambda);
+              titrationPolarizability[ii] = titrationDeriv;
               tautomerPolarizability[ii] =  esvSystem.getTitrationUtils().getPolarizabilityTautomerDeriv(atom, titrationLambda, tautomerLambda);
             }
+
             thole[ii] = polarizeType.thole;
             ipdamp[ii] = polarizeType.pdamp;
             if (!(ipdamp[ii] > 0.0)) {
