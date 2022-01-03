@@ -41,13 +41,13 @@ import edu.rit.pj.Comm
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
 import ffx.utilities.FFXScript
-import picocli.CommandLine.Unmatched
 import picocli.CommandLine.Command
-import picocli.CommandLine.Parameters
+import picocli.CommandLine.Unmatched
 
 import static groovy.io.FileType.DIRECTORIES
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.*
+import static org.apache.commons.lang3.math.NumberUtils.isParsable
 
 /**
  * Run an FFX command in a series of sub-directories sequentially or in parallel.
@@ -118,6 +118,20 @@ class ForEachDir extends AlgorithmsScript {
     cwd.traverse(type: DIRECTORIES, maxDepth: 0) {
       directories.add(it)
     }
+
+    Collections.sort(directories, new Comparator<File>() {
+      @Override
+      int compare(File o1, File o2) {
+        String s1 = o1.getName()
+        String s2 = o2.getName()
+        if (isParsable(s1) && isParsable(s2)) {
+          // Numeric comparison
+          return Double.valueOf(s1).compareTo(Double.valueOf(s2))
+        }
+        // Fall back to String comparison
+        return s1.compareTo(s2)
+      }
+    })
 
     int numDir = directories.size()
 

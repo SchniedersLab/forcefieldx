@@ -309,7 +309,7 @@ public class SpaceGroupInfo {
    * @param number Space group number.
    * @return true if the space group is a Sohncke Group.
    */
-  public static boolean sohnckeGroup(int number) {
+  public static boolean isSohnckeGroup(int number) {
     if (number == 1) {
       return true;
     } else if (isBetween(number, 3, 5)) {
@@ -330,10 +330,8 @@ public class SpaceGroupInfo {
       return true;
     } else if (isBetween(number, 195, 199)) {
       return true;
-    } else if (isBetween(number, 207, 214)) {
-      return true;
+    } else {
+      return isBetween(number, 207, 214);
     }
-
-    return false;
   }
 }

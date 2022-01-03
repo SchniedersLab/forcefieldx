@@ -40,7 +40,6 @@ package ffx.algorithms.groovy
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.math.RunningStatistics
 import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.Atom
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.utils.ProgressiveAlignmentOfCrystals
@@ -49,7 +48,6 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.concat
 import static org.apache.commons.io.FilenameUtils.getBaseName
 import static org.apache.commons.io.FilenameUtils.getFullPath
@@ -59,9 +57,9 @@ import static org.apache.commons.io.FilenameUtils.getFullPath
  * This script is based off of the PACCOM code created by Okimasa Okada.
  *
  * @author Okimasa OKADA
- * @author Aaron J. Nessler and Michael J. Schnieders
  * created by Okimasa OKADA 2017/3/31
  * revised by Okimasa OKADA 2019/2/25
+ * @author Aaron J. Nessler and Michael J. Schnieders
  * ported to FFX by Aaron Nessler and Micheal Schnieders 2020
  * revised by Aaron Nessler and Michael Schnieders 2021
  * <br>
@@ -69,7 +67,8 @@ import static org.apache.commons.io.FilenameUtils.getFullPath
  * <br>
  * ffxc test.SuperposeCrystals &lt;filename&gt &lt;filename&gt;
  */
-@Command(description = " Compare crystal polymorphs based on a RMSD of aligned crystal coordinates.", name = "ffxc SuperposeCrystals")
+@Command(description = " Determine the RMSD for crystal polymorphs using the Progressive Alignment of Crystals (PAC) algorithm.",
+        name = "ffxc SuperposeCrystals")
 class SuperposeCrystals extends AlgorithmsScript {
 
   @Mixin
@@ -79,7 +78,7 @@ class SuperposeCrystals extends AlgorithmsScript {
    * --na or --numAU Number of asymmetric units to include from each crystal in RMSD comparison.
    */
   @Option(names = ['--na', '--numAU'], paramLabel = '20', defaultValue = '20',
-      description = 'Set the number of asymmetric units to include in final PAC RMSD.')
+      description = 'Set the number of asymmetric units to include in final RMSD.')
   int numAU
 
   /**
@@ -90,45 +89,53 @@ class SuperposeCrystals extends AlgorithmsScript {
   int numInflatedAU
 
   /**
-   * --ns or --numSearch Number of molecules for each handedness in the first crystal.
+   * --ns or --numSearch Number of asymmetric units for each handedness in the first crystal.
    */
-  @Option(names = ['--ns', '--numSearch'], paramLabel = '3', defaultValue = '3',
-      description = 'Set the number of asymmetric units to search in the 1st crystal to check for mirrored conformations.')
+  @Option(names = ['--ns', '--numSearch'], paramLabel = '1', defaultValue = '1',
+      description = 'Set the number of asymmetric units to search in the 1st crystal to check for additional conformations.')
   int numSearch
 
   /**
-   * --ns2 or --numSearch2 Number of molecules for each handedness in the second crystal.
+   * --ns2 or --numSearch2 Number asymmetric units for each handedness in the second crystal.
    */
-  @Option(names = ['--ns2', '--numSearch2'], paramLabel = '3', defaultValue = '3',
-      description = 'Set the number of asymmetric units to search in the 2nd crystal to check for mirrored conformations.')
+  @Option(names = ['--ns2', '--numSearch2'], paramLabel = '1', defaultValue = '1',
+      description = 'Set the number of asymmetric units to search in the 2nd crystal to check for additional conformations.')
   int numSearch2
 
   /**
-   * --zp or --zPrime Overrides number of molecules in the asymmetric unit.
+   * --zp or --zPrime Overrides number of species in the asymmetric unit.
    */
   @Option(names = ['--zp', '--zPrime'], paramLabel = '-1', defaultValue = '-1',
-          description = 'Number of species in asymmetric unit should be detected by default (Z\'). This flag should only be used if the default detection fails.')
+          description = 'Number of species in asymmetric unit of first crystal.')
   int zPrime
 
   /**
-   * --nms or --noMirrorSearch Do not loop over asymmetric units to check for mirrored conformations.
+   * --zp2 or --zPrime2 Overrides number of species in the asymmetric unit.
    */
-  @Option(names = ['--nms', '--noMirrorSearch'], paramLabel = "false", defaultValue = "false",
-      description = 'Do not loop over asymmetric units to check for mirrored conformations.')
-  private static boolean noMirrorSearch
+  @Option(names = ['--zp2', '--zPrime2'], paramLabel = '-1', defaultValue = '-1',
+          description = 'Number of species in asymmetric unit of second crystal.')
+  int zPrime2
+
+  // "Horrible Hack" to automatically select only atoms that can be reordered by Reorder.groovy.
+  /**
+   * --re or --removeEquivalent Remove atoms with equivalent bonded environments (experimental flag).
+   */
+  @Option(names = ['--re', '--removeEquivalent'], paramLabel = "false", defaultValue = "false",
+          description = 'Ignore atoms with similar bonded environment (experimental flag).')
+  private static boolean removeEquivalent
 
   /**
-   * -w or --write Write out the PAC RMSD matrix.
+   * -w or --write Write out the RMSD matrix.
    */
   @Option(names = ['-w', '--write'], paramLabel = "false", defaultValue = "false",
-      description = 'Write out the PAC RMSD matrix.')
+      description = 'Write out the RMSD matrix.')
   private static boolean write
 
   /**
-   * -r or --restart Attempt to restart from a previously written PAC RMSD matrix.
+   * -r or --restart Attempt to restart from a previously written RMSD matrix.
    */
   @Option(names = ['-r', '--restart'], paramLabel = "false", defaultValue = "false",
-      description = 'Attempt to restart from a previously written PAC RMSD matrix.')
+      description = 'Attempt to restart from a previously written RMSD matrix.')
   private static boolean restart
 
   /**
@@ -139,40 +146,60 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean savePDB
 
   /**
-   * -f or --full Perform the full comparison (takes considerably longer, but more information returned).
+   * --ex or --exhaustive Perform an exhaustive comparison to handle multiple conformations (more expensive, but may find lower RMSD).
    */
-  @Option(names = ['-f', '--full'], paramLabel = "false", defaultValue = "false",
-      description = 'Use the full number of comparisons (tradeoff between speed and information returned).')
-  private static boolean full
+  @Option(names = ['--ex', '--exhaustive'], paramLabel = "false", defaultValue = "false",
+      description = 'Perform an exhaustive comparison to handle multiple conformations (more expensive, but may find lower RMSD).')
+  private static boolean exhaustive
 
   /**
-   * --ac or --alphaCarbons PAC RMSD will only include alpha carbons.
+   * --ac or --alphaCarbons Protein RMSD will only include alpha carbons.
    */
   @Option(names = ['--ac', '--alphaCarbons'], paramLabel = "false", defaultValue = "false",
-          description = 'PAC RMSD will only include alpha carbons.')
+          description = 'Protein RMSD will only include alpha carbons for comparison.')
   private static boolean alphaCarbons
 
   /**
-   * --nh or --noHydrogen PAC RMSD will not include hydrogen atoms.
+   * --nh or --noHydrogen RMSD will not include hydrogen atoms.
    */
   @Option(names = ['--nh', '--noHydrogen'], paramLabel = "false", defaultValue = "false",
-      description = 'PAC RMSD will not include hydrogen atoms.')
+      description = 'RMSD will not include hydrogen atoms.')
   private static boolean noHydrogen
 
-  // TODO finish implementing symmetric flag.
   /**
-   * --sym or --symmetric Enforce generation of a symmetric PAC RMSD matrix.
+   * --sm or --saveMachineLearning Save out PDB and CSV for machine learning.
    */
-  @Option(names = ['--sym', '--symmetric'], paramLabel = "false", defaultValue = "false",
-      description = 'Enforce generation of a symmetric PAC RMSD matrix.')
-  private static boolean symmetric
+  @Option(names = ['--sm', '--saveMachineLearning'], paramLabel = "false", defaultValue = "false",
+          description = 'Final structures for each comparison will be written out with RMSD in a CSV.')
+  private static boolean machineLearning
 
   /**
-   * --sa or --saveAres Save out PDB in ARES input format.
+   * --mw or --massWeighted Weight atomic masses for comparison.
    */
-  @Option(names = ['--sa', '--saveAres'], paramLabel = "false", defaultValue = "false",
-          description = 'Final structures for each comparison will be written out in ARES input format.')
-  private static boolean ares
+  @Option(names = ['--mw', '--massWeighted'], paramLabel = "false", defaultValue = "false",
+          description = 'Weight atomic masses for the comparison.')
+  private static boolean massWeighted
+
+  /**
+   * -l or --linkage Molecule priority based on single (0), average (1), or complete (2) linkage.
+   */
+  @Option(names = ['-l', '--linkage'], paramLabel = '0', defaultValue = '0',
+          description = 'Molecules prioritized based on single (0), average (1), or complete (2) linkage.')
+  int linkage
+
+  /**
+   * --fo or --fileOrder Prioritize crystals based on file input order.
+   */
+  @Option(names = ['--fo', '--fileOrder'], paramLabel = "false", defaultValue = "false",
+          description = 'Prioritize crystals based on file input order (supersedes density priority).')
+  private static boolean fileOrder
+
+  /**
+   * --ld or --lowDensity Prioritize low density crystal.
+   */
+  @Option(names = ['--ld', '--lowDensity'], paramLabel = "false", defaultValue = "false",
+          description = 'Prioritize crystals with lower density.')
+  private static boolean lowDensity
 
   /**
    * The final argument(s) should be two or more filenames (same file twice if comparing same structures).
@@ -251,61 +278,34 @@ class SuperposeCrystals extends AlgorithmsScript {
       algorithmFunctions.openAll(filenames.get(1))
       targetFilter = algorithmFunctions.getFilter()
     }
-
-    // Atom array from the 1st assembly.
-    Atom[] baseAtoms = activeAssembly.getAtomArray()
-    int nAtoms = baseAtoms.size()
-
-    // Collect selected atoms.
-    ArrayList<Integer> atomList = new ArrayList<>()
-    for (int i = 0; i < nAtoms; i++) {
-      Atom atom = baseAtoms[i]
-      if (atom.isActive()) {
-        String atomName = atom.getName()
-        int atomAtNum = atom.getAtomicNumber()
-        boolean proteinCheck = atomName == "CA" && atomAtNum == 6
-        boolean aminoCheck = (atomName == "N1" || atomName == "N9") && atomAtNum == 7
-        if(alphaCarbons){
-          if(proteinCheck||aminoCheck){
-            atomList.add(i)
-          }
-        }else if (!noHydrogen || !atom.isHydrogen()) {
-          atomList.add(i)
-        }
-      }
-      // Reset all atoms to active once the selection is recorded.
-      atom.setActive(true)
-    }
-
-    if (atomList.size() < 1) {
-      logger.info("\n No atoms were selected for the PAC RMSD.")
-      return this
-    }
-
-    // Number of atoms included in the PAC RMSD.
-    int nPACAtoms = atomList.size()
-    logger.info(format("\n %d atoms will be used for the PAC RMSD out of %d.\n", nPACAtoms, nAtoms))
-
-    // If search is desired ensure inner loop will be used. Else use single comparison.
-    if (noMirrorSearch) {
-      numSearch = 1
-      numSearch2 = 1
-    }
+    atomSelectionOptions.setActiveAtoms(targetFilter.getActiveMolecularSystem())
 
     // Compare structures in baseFilter and targetFilter.
     ProgressiveAlignmentOfCrystals pac = new ProgressiveAlignmentOfCrystals(baseFilter, targetFilter, isSymmetric)
 
-    // Define the filename to use for the PAC RMSD values.
+    // Define the filename to use for the RMSD values.
     String filename = filenames.get(0)
     String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt")
 
     // To save in ARES format a PDB must be written out.
-    if(ares){
+    if(machineLearning){
       savePDB = true
     }
 
-    runningStatistics = pac.comparisons(atomList, numAU, numInflatedAU,
-        numSearch, numSearch2, zPrime, full, savePDB, restart, write, ares, pacFilename)
+    if(linkage == 0){
+      logger.finer(" Single linkage will be used.")
+    }else if(linkage == 2){
+      logger.finer(" Complete linkage will be used.")
+    }else if(linkage == 1){
+      logger.finer(" Average linkage will be used.")
+    }else{
+      logger.warning("Prioritization method specified incorrectly (--pm {0, 1, 2}). Using default of average linkage.")
+      linkage = 1
+    }
+
+    runningStatistics = pac.comparisons(numAU, numInflatedAU, numSearch, numSearch2, zPrime, zPrime2, alphaCarbons,
+        noHydrogen, massWeighted, fileOrder, lowDensity, removeEquivalent, exhaustive, savePDB, restart, write,
+            machineLearning, linkage, pacFilename)
 
     return this
   }

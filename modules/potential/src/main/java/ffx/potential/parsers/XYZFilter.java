@@ -629,14 +629,16 @@ public class XYZFilter extends SystemFilter {
       newFile = version(saveFile);
     }
     activeMolecularAssembly.setFile(newFile);
-    activeMolecularAssembly.setName(newFile.getName());
+    if(activeMolecularAssembly.getName() == null){
+      activeMolecularAssembly.setName(newFile.getName());
+    }
 
     try (FileWriter fw = new FileWriter(newFile, append && newFile.exists());
         BufferedWriter bw = new BufferedWriter(fw)) {
       // XYZ File First Line
       int numberOfAtoms = activeMolecularAssembly.getAtomList().size();
       StringBuilder sb =
-          new StringBuilder(format("%7d  %s", numberOfAtoms, activeMolecularAssembly.toString()));
+          new StringBuilder(format("%7d  %s", numberOfAtoms, activeMolecularAssembly.getName()));
       if (extraLines != null) {
         for (String line : extraLines) {
           line = line.replaceAll("\n", " ");

@@ -56,7 +56,26 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
 
   /** Tests the CrystalSuperpose script with default settings.. */
   @Test
-  public void testBaseProgressiveAlignment() {
+  public void testBaseAverageProgressiveAlignment() {
+
+    // Set-up the input arguments for the CrystalSuperpose script.
+    String[] args = {"-l", "1","src/main/java/ffx/algorithms/structures/C23.arc"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the CrystalSuperpose script.
+    SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = superposeCrystals;
+
+    // Only off-diagonal values.
+    assertEquals(6, superposeCrystals.runningStatistics.getCount());
+    // Mean RMSD for 6 comparisons.
+    assertEquals(0.11101375, superposeCrystals.runningStatistics.getMean(), tolerance);
+  }
+
+  /** Tests the CrystalSuperpose script with default settings.. */
+  @Test
+  public void testBaseSingleProgressiveAlignment() {
 
     // Set-up the input arguments for the CrystalSuperpose script.
     String[] args = {"src/main/java/ffx/algorithms/structures/C23.arc"};
@@ -70,12 +89,31 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     // Only off-diagonal values.
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
-    assertEquals(0.0851007, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.113573, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   /** Tests the CrystalSuperpose script without hydrogens. */
   @Test
-  public void testBaseProgressiveAlignmentNoHydrogen() {
+  public void testBaseAverageProgressiveAlignmentNoHydrogen() {
+
+    // Set-up the input arguments for the CrystalSuperpose script.
+    String[] args = {"--nh", "-l", "1", "src/main/java/ffx/algorithms/structures/C23.arc"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the CrystalSuperpose script.
+    SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = superposeCrystals;
+
+    // Only off-diagonal values.
+    assertEquals(6, superposeCrystals.runningStatistics.getCount());
+    // Mean RMSD for 6 comparisons.
+    assertEquals(0.0825498666, superposeCrystals.runningStatistics.getMean(), tolerance);
+  }
+
+  /** Tests the CrystalSuperpose script without hydrogens. */
+  @Test
+  public void testBaseSingleProgressiveAlignmentNoHydrogen() {
 
     // Set-up the input arguments for the CrystalSuperpose script.
     String[] args = {"--nh", "src/main/java/ffx/algorithms/structures/C23.arc"};
@@ -89,12 +127,29 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     // Only off-diagonal values.
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
-    assertEquals(0.0810508, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.088094, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   /** Tests the CrystalSuperpose script in Sohncke group. */
   @Test
-  public void testBaseProgressiveAlignmentSohnckeGroup() {
+  public void testBaseAverageProgressiveAlignmentSohnckeGroup() {
+
+    // Set-up the input arguments for the CrystalSuperpose script.
+    String[] args = {"--nh", "-l", "1", "src/main/java/ffx/algorithms/structures/dap.xyz",
+            "src/main/java/ffx/algorithms/structures/dap.xyz_close"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the CrystalSuperpose script.
+    SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = superposeCrystals;
+
+    assertEquals(0.066147, superposeCrystals.runningStatistics.getMean(), tolerance);
+  }
+
+  /** Tests the CrystalSuperpose script in Sohncke group. */
+  @Test
+  public void testBaseSingleProgressiveAlignmentSohnckeGroup() {
 
     // Set-up the input arguments for the CrystalSuperpose script.
     String[] args = {"--nh", "src/main/java/ffx/algorithms/structures/dap.xyz",
@@ -106,12 +161,29 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
     algorithmsScript = superposeCrystals;
 
-    assertEquals(0.066147, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.073036, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   /** Tests the CrystalSuperpose script on tricky handedness case. */
   @Test
-  public void testBaseProgressiveAlignmentHandedness() {
+  public void testBaseAverageProgressiveAlignmentHandedness() {
+
+    // Set-up the input arguments for the CrystalSuperpose script.
+    String[] args = {"--nh", "-l", "1", "src/main/java/ffx/algorithms/structures/dap2.xyz",
+            "src/main/java/ffx/algorithms/structures/dap2.xyz_2"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the CrystalSuperpose script.
+    SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = superposeCrystals;
+
+    assertEquals(0.114188, superposeCrystals.runningStatistics.getMean(), tolerance);
+  }
+
+  /** Tests the CrystalSuperpose script on tricky handedness case. */
+  @Test
+  public void testBaseSingleProgressiveAlignmentHandedness() {
 
     // Set-up the input arguments for the CrystalSuperpose script.
     String[] args = {"--nh", "src/main/java/ffx/algorithms/structures/dap2.xyz",
@@ -123,12 +195,31 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
     algorithmsScript = superposeCrystals;
 
-    assertEquals(0.114188, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.099021, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   /** Tests the CrystalSuperpose script on asymmetric unit greater than one. */
   @Test
-  public void testBaseProgressiveAlignmentZPrime2() {
+  public void testBaseAverageProgressiveAlignmentZPrime2() {
+
+    // Set-up the input arguments for the CrystalSuperpose script.
+    String[] args = {"--nh", "-l", "1", "src/main/java/ffx/algorithms/structures/XAFPAY02.arc"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the CrystalSuperpose script.
+    SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = superposeCrystals;
+
+    assertEquals(6, superposeCrystals.runningStatistics.getCount());
+    // Mean RMSD for 6 comparisons.
+
+    assertEquals(0.1509703, superposeCrystals.runningStatistics.getMean(), tolerance);
+  }
+
+  /** Tests the CrystalSuperpose script on asymmetric unit greater than one. */
+  @Test
+  public void testBaseSingleProgressiveAlignmentZPrime2() {
 
     // Set-up the input arguments for the CrystalSuperpose script.
     String[] args = {"--nh", "src/main/java/ffx/algorithms/structures/XAFPAY02.arc"};
@@ -142,7 +233,7 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
 
-    assertEquals(0.1512836, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.143013, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   @Test

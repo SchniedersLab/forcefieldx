@@ -111,7 +111,7 @@ class FeatureMap extends PotentialScript {
       FileWriter fos = new FileWriter(featureFileName)
       PrintWriter dos = new PrintWriter(fos)
       dos.println(
-          "Residue\tPosition\tPolarity\tAcidity\tSecondary Structure\tPhi\tPsi\tOmega\tSurface Area\tNormalized SA")
+          "Residue\tPosition\tPolarity\tAcidity\tSecondary Structure\tPhi\tPsi\tOmega\tSurface Area\tNormalized SA\tConfidence Score")
       for (int i = 0; i < residues.size(); i++) {
         double residueSurfaceArea =
             forceFieldEnergy.getGK().getSurfaceAreaRegion().getResidueSurfaceArea(residues.get(i))

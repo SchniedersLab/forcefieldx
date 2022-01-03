@@ -37,7 +37,7 @@
 // ******************************************************************************
 package ffx.crystal;
 
-import static ffx.crystal.SpaceGroupInfo.sohnckeGroup;
+import static ffx.crystal.SpaceGroupInfo.isSohnckeGroup;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -127,7 +127,7 @@ public class SpaceGroup {
     this.asuLimitOperators = asuLimitOperators;
     this.asuLimits = asuLimits;
     this.pdbName = pdbName;
-    this.respectsChirality = sohnckeGroup(number);
+    this.respectsChirality = isSohnckeGroup(number);
     this.symOps = new ArrayList<>(Arrays.asList(symOps));
 
     // ToDo: Crystal systems are subdivided into crystal classes. This info needs to be added to

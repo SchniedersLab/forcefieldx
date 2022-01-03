@@ -43,10 +43,14 @@ import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
+import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3
 import ffx.potential.bonded.*
+import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.XYZFilter
+import ffx.potential.utils.PotentialsUtils
+import ffx.potential.parameters.TitrationUtils
 import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -111,6 +115,7 @@ class ManyBody extends AlgorithmsScript {
 
     // Load the MolecularAssembly.
     activeAssembly = getActiveAssembly(filename)
+
     if (activeAssembly == null) {
       logger.info(helpString())
       return this
@@ -122,10 +127,61 @@ class ManyBody extends AlgorithmsScript {
     }
 
     activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
-    potentialEnergy = activeAssembly.getPotentialEnergy()
 
-    RotamerOptimization rotamerOptimization = new RotamerOptimization(
-        activeAssembly, activeAssembly.getPotentialEnergy(), algorithmListener)
+    // If rotamer optimization with titration, create new molecular assembly with additional protons
+    ForceField forceField = activeAssembly.getForceField()
+    potentialEnergy = activeAssembly.getPotentialEnergy()
+    potentialEnergy.energy(false, true)
+
+    List<Integer> resNumberList = new ArrayList<>()
+    List<Residue> residues
+    if (manyBody.residueGroup.start > -1 || manyBody.residueGroup.all > -1) {
+      residues = manyBody.getResidues(activeAssembly)
+    } else {
+      residues = activeAssembly.getResidueList()
+    }
+
+    if (residues.isEmpty()){
+      logger.info("Residue list is empty")
+      return
+    }
+
+    for (Residue residue : residues) {
+      resNumberList.add(residue.getResidueNumber())
+    }
+
+    activeAssembly = new MolecularAssembly(filename)
+
+    activeAssembly.setForceField(forceField)
+
+    File structureFile = new File(filename)
+    PDBFilter protFilter = new PDBFilter(structureFile, activeAssembly, forceField, forceField.getProperties(), resNumberList)
+    if(manyBody.group.titrationPH != 0){
+      logger.info("\n Adding rotamer optimization with titration protons to : " + filename + "\n")
+      protFilter.setRotamerTitration(true)
+    }
+    protFilter.readFile()
+    protFilter.applyAtomProperties()
+    activeAssembly.finalize(true, forceField)
+    potentialEnergy = ForceFieldEnergy.energyFactory(activeAssembly)
+    potentialEnergy.energy(false, true)
+    activeAssembly.setFile(structureFile)
+
+    if (manyBody.group.titrationPH != 0){
+      TitrationUtils titrationUtils
+      titrationUtils = new TitrationUtils(activeAssembly.getForceField())
+      titrationUtils.setRotamerPhBias(298.15, manyBody.group.titrationPH)
+      for(Residue residue: activeAssembly.getResidueList()){
+        String resName = residue.getName()
+        if(resNumberList.contains(residue.getResidueNumber())){
+          if(resName == "ASH" || resName == "GLH" || resName == "LYS" || resName == "HIS"){
+            residue.setTitrationUtils(titrationUtils)
+          }
+        }
+      }
+    }
+
+    RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly, potentialEnergy, algorithmListener)
 
     testing = getTesting()
     if (testing) {
@@ -150,7 +206,6 @@ class ManyBody extends AlgorithmsScript {
     }
 
     algorithmFunctions.energy(activeAssembly)
-
     RotamerLibrary.measureRotamers(residueList, false)
 
     RotamerOptimization.Algorithm algorithm
@@ -222,10 +277,8 @@ class ManyBody extends AlgorithmsScript {
     }
 
     if (master) {
-      logger.info(" Final Minimum Energy\n")
-
-      ForceFieldEnergy forceFieldEnergy = algorithmFunctions.energy(activeAssembly)
-      double energy = forceFieldEnergy.getTotalEnergy()
+      logger.info(" Final Minimum Energy")
+      double energy = potentialEnergy.energy(false, true)
       if (isTitrating) {
         double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList, optimalRotamers)
         logger.info(format("\n  Rotamer pH Bias    %16.8f", phBias))

@@ -268,7 +268,7 @@ public abstract class SystemFilter {
       if (vers == Versioning.PREFIX_ABSOLUTE || vers == Versioning.POSTFIX_ABSOLUTE) {
         return versionAbsolute(file, (vers == Versioning.PREFIX_ABSOLUTE));
       } else {
-        return version(file, (vers == Versioning.PREFIX_ABSOLUTE));
+        return version(file, (vers == Versioning.PREFIX));
       }
     }
   }

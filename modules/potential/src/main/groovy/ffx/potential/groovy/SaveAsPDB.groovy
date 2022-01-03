@@ -186,9 +186,9 @@ class SaveAsPDB extends PotentialScript {
     if (openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter)
         && numModels > 1) {
       saveFilter.setModelNumbering(1)
+      saveFile.append("ENDMDL\n")
       try {
         while (openFilter.readNext(false)) {
-          saveFile.append("ENDMDL\n")
           saveOptions.preSaveOperations(activeAssembly)
           saveFilter.writeFile(saveFile, true, true, false)
         }
