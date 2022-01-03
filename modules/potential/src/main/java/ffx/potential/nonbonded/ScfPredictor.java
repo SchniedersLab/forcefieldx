@@ -40,7 +40,6 @@ package ffx.potential.nonbonded;
 import static ffx.numerics.math.ScalarMath.binomial;
 import static java.util.Arrays.fill;
 
-import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
 import ffx.potential.parameters.ForceField;
 import java.util.logging.Level;
@@ -110,7 +109,7 @@ public class ScfPredictor {
       if (predictorMode == PredictorMode.LS) {
         leastSquaresPredictor = new LeastSquaresPredictor(eps);
       }
-      if (ff.getBoolean("LAMBDATERM", false) || ExtendedSystem.esvSystemActive) {
+      if (ff.getBoolean("LAMBDATERM", false) ) {
         predictorInducedDipole = new double[3][predictorOrder][nAtoms][3];
         predictorInducedDipoleCR = new double[3][predictorOrder][nAtoms][3];
       } else {

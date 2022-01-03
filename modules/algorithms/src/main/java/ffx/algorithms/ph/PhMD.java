@@ -37,19 +37,14 @@
 // ******************************************************************************
 package ffx.algorithms.ph;
 
-import static ffx.potential.extended.TitrationUtils.findResiduePolymer;
-import static ffx.potential.extended.TitrationUtils.inactivateResidue;
+
 import static java.lang.String.format;
 
 import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.bonded.*;
 import ffx.potential.extended.*;
-import ffx.potential.extended.TitrationUtils.TitrationConfig;
 import ffx.potential.parameters.ForceField;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -78,17 +73,11 @@ public class PhMD  {
    */
   private final ForceFieldEnergy forceFieldEnergy;
 
-  private final TitrationConfig titrationConfig;
   /** The MolecularDynamics object controlling the simulation. */
   private MolecularDynamics molecularDynamics;
   /** The current MD step. */
   private int stepCount = 0;
-  /** Residues selected by user. */
-  private final List<Residue> chosenResidues;
 
-  private final List<MultiTerminus> titratingTermini = new ArrayList<>();
-  private final List<ExtendedVariable> titratingESVs = new ArrayList<>();
-  private final List<ExtendedVariable> tautomerESVs = new ArrayList<>();
 
   private ExtendedSystem esvSystem;
 
@@ -98,66 +87,26 @@ public class PhMD  {
    * @param molecularAssembly the molecular assembly
    * @param pH the simulation pH
    * @param molecularDynamics a {@link MolecularDynamics} object.
-   * @param titrating a {@link java.util.List} object.
    */
   public PhMD(
       MolecularAssembly molecularAssembly,
       MolecularDynamics molecularDynamics,
-      List<Residue> titrating,
       double pH) {
-    this.titrationConfig = new TitrationConfig();
     this.molecularAssembly = molecularAssembly;
     this.molecularDynamics = molecularDynamics;
     this.forceField = molecularAssembly.getForceField();
     this.forceFieldEnergy = molecularAssembly.getPotentialEnergy();
     this.pH = pH;
-    this.chosenResidues = titrating;
 
     reInitialize(true, false);
     readyup();
   }
 
   private void readyup() {
-    // Create MultiTerminus objects to wrap termini.
-    if (titrationConfig.titrateTermini) {
-      for (Residue res : molecularAssembly.getResidueList()) {
-        if (res.getPreviousResidue() == null || res.getNextResidue() == null) {
-          MultiTerminus multiTerminus =
-              new MultiTerminus(res, forceField, forceFieldEnergy, molecularAssembly);
-          Polymer polymer = findResiduePolymer(res, molecularAssembly);
-          polymer.addMultiTerminus(res, multiTerminus);
-          reInitialize(true, false);
-          titratingTermini.add(multiTerminus);
-          logger.info(String.format(" Titrating: %s", multiTerminus));
-        }
-      }
-    }
-
-    /* Create containers for titratables: MultiResidues for discrete, ExtendedVariables for continuous. */
     esvSystem = new ExtendedSystem(molecularAssembly);
     esvSystem.setConstantPh(pH);
-    for (Residue res : chosenResidues) {
-        MultiResidue multi = TitrationUtils.titratingMultiresidueFactory(molecularAssembly, res);
-        TitrationESV esv = new TitrationESV(esvSystem, multi);
-        titratingESVs.add(esv);
-        for (Residue background : multi.getInactive()) {
-          inactivateResidue(background);
-        }
-        esvSystem.addVariable(esv);
-        if(esvSystem.config.tautomer){
-          AminoAcidUtils.AminoAcid3 currentAA3 = AminoAcidUtils.AminoAcid3.valueOf(res.getName());
-          if (currentAA3 == AminoAcidUtils.AminoAcid3.HIS || currentAA3 == AminoAcidUtils.AminoAcid3.HID
-                  || currentAA3 == AminoAcidUtils.AminoAcid3.HIE || currentAA3 == AminoAcidUtils.AminoAcid3.ASH
-                  || currentAA3 == AminoAcidUtils.AminoAcid3.ASP || currentAA3 == AminoAcidUtils.AminoAcid3.GLH
-                  || currentAA3 == AminoAcidUtils.AminoAcid3.GLU){
-            TautomerESV tautomerESV = new TautomerESV(esvSystem, multi);
-            tautomerESVs.add(tautomerESV);
-            esvSystem.addVariable(tautomerESV);
-          }
-        }
-    }
     forceFieldEnergy.attachExtendedSystem(esvSystem);
-    logger.info(format(" Continuous pHMD readied with %d residues.", titratingESVs.size()));
+    logger.info(format(" Continuous pHMD readied with %d residues.", esvSystem.getExtendedResidueList().size()));
     molecularDynamics.attachExtendedSystem(esvSystem, 100);
   }
 

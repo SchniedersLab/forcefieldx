@@ -138,6 +138,7 @@ class SaveAsConstantPhPDB extends PotentialScript {
     File modelFile = new File(dirName + fileName + ".pdb")
     modelFile = potentialFunctions.versionFile(modelFile)
 
+
     if (!pdbFilter.writeFile(modelFile, false, false, true)) {
       logger.info(format(" Save failed for %s", activeAssembly))
     }

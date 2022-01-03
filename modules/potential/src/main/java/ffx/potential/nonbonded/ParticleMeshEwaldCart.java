@@ -708,6 +708,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       sharedd2EdLambda2.set(0.0);
     }
 
+    if(esvTerm){
+      extendedSystem.initEsvPermElec();
+      extendedSystem.initEsvIndElec();
+    }
+
     alchemicalParameters.doPermanentRealSpace = true;
     alchemicalParameters.permanentScale = 1.0;
     alchemicalParameters.doPolarization = true;
@@ -716,8 +721,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     // Expand coordinates and rotate multipoles into the global frame.
     initializationRegion.init(
         lambdaTerm,
-        esvTerm,
-        isAtomTitrating,
+        extendedSystem,
         lambdaScaleMultipoles,
         atoms,
         coordinates,
@@ -726,7 +730,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         axisAtom,
         globalMultipole,
         dMultipoledTirationESV,
+        dMultipoledTautomerESV,
         polarizability,
+        dPolardTitrationESV,
+        dPolardTautomerESV,
         thole,
         ipdamp,
         use,
@@ -1128,6 +1135,8 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       cartesianMultipolePhi = new double[nAtoms][tensorCount];
       directDipole = new double[nAtoms][3];
       directDipoleCR = new double[nAtoms][3];
+      directField = new double[nAtoms][3];
+      directFieldCR = new double[nAtoms][3];
       vacuumDirectDipole = new double[nAtoms][3];
       vacuumDirectDipoleCR = new double[nAtoms][3];
       if (optRegion != null) {
@@ -1192,10 +1201,11 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       // Lambda factors are different for OST and ESV interactions.
       lambdaFactors = new LambdaFactors[maxThreads];
       for (int i = 0; i < maxThreads; i++) {
-        if (esvTerm) {
+        /*if (esvTerm) {
           // Invoked every time through inner loops.
           lambdaFactors[i] = new LambdaFactorsESV();
-        } else if (lambdaTerm) {
+        } else */
+          if (lambdaTerm) {
           // Invoked on calls to setLambda().
           lambdaFactors[i] = new LambdaFactorsOST();
         } else {
@@ -1548,7 +1558,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
   private double computeEnergy(boolean print) {
     // Find the permanent multipole potential, field, etc.
     permanentMultipoleField();
-
     // Compute Born radii if necessary.
     if (generalizedKirkwoodTerm) {
       pmeTimings.bornRadiiTotal -= System.nanoTime();
@@ -1575,6 +1584,40 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       // Compute induced dipoles.
       selfConsistentField(logger.isLoggable(Level.FINE));
 
+
+      for(int i = 0; i < nAtoms; i++){
+        if(polarization != ParticleMeshEwald.Polarization.NONE && esvTerm && extendedSystem.isTitrating(i) && extendedSystem.isTitratingHydrogen(i)){
+          double dx = field.getX(i);
+          double dy = field.getY(i);
+          double dz = field.getZ(i);
+          double dxCR = fieldCR.getX(i);
+          double dyCR = fieldCR.getY(i);
+          double dzCR = fieldCR.getZ(i);
+          //Add back permanent multipole field to total field for extended system derivatives if mutual polarization is used
+          if(polarization == Polarization.MUTUAL) {
+            dx += directField[i][0];
+            dy += directField[i][1];
+            dz += directField[i][2];
+            dxCR += directFieldCR[i][0];
+            dyCR += directFieldCR[i][1];
+            dzCR += directFieldCR[i][2];
+          }
+          double fix = dx * dPolardTitrationESV[i] * dxCR;
+          double fiy = dy * dPolardTitrationESV[i] * dyCR;
+          double fiz = dz * dPolardTitrationESV[i] * dzCR;
+          double titrdUdL = fix + fiy + fiz;
+          double tautdUdL = 0.0;
+          if(extendedSystem.isTautomerizing(i)){
+            fix = dx * dPolardTautomerESV[i] * dxCR;
+            fiy = dy * dPolardTautomerESV[i] * dyCR;
+            fiz = dz * dPolardTautomerESV[i] * dzCR;
+            tautdUdL = fix + fiy + fiz;
+          }
+          //logger.info(format("Index i: %d Polarizability: %6.8f TitrDeriv: %6.8f TautDeriv: %6.8f",
+                 // i, polarizability[i], dPolardTitrationESV[i], dPolardTautomerESV[i]));
+          extendedSystem.addIndElecDeriv(i, titrdUdL * electric * -0.5, tautdUdL * electric * -0.5);
+        }
+      }
       if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
         if (gradient && polarization == Polarization.DIRECT) {
           reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
@@ -1656,8 +1699,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       reciprocalEnergyRegion.init(
           atoms,
           crystal,
+          extendedSystem,
+          esvTerm,
           use,
           globalMultipole,
+          dMultipoledTirationESV,
+          dMultipoledTautomerESV,
           cartesianMultipolePhi,
           inputDipole,
           inputDipoleCR,
@@ -1686,12 +1733,20 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     realSpaceEnergyRegion.init(
         atoms,
         crystal,
+        extendedSystem,
+        esvTerm,
         coordinates,
         frame,
         axisAtom,
         globalMultipole,
+        dMultipoledTirationESV,
+        dMultipoledTautomerESV,
         inputDipole,
         inputDipoleCR,
+        field,
+        fieldCR,
+        dPolardTitrationESV,
+        dPolardTautomerESV,
         use,
         molecule,
         ip11,
@@ -1747,8 +1802,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         reciprocalEnergyRegion.init(
             atoms,
             crystal,
+            extendedSystem,
+            esvTerm,
             use,
             globalMultipole,
+            dMultipoledTirationESV,
+            dMultipoledTautomerESV,
             cartesianMultipolePhi,
             vacuumInducedDipole,
             vacuumInducedDipoleCR,
@@ -1775,12 +1834,20 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       realSpaceEnergyRegion.init(
           atoms,
           crystal,
+          extendedSystem,
+          esvTerm,
           coordinates,
           frame,
           axisAtom,
           globalMultipole,
+          dMultipoledTirationESV,
+          dMultipoledTautomerESV,
           vacuumInducedDipole,
           vacuumInducedDipoleCR,
+          field,
+          fieldCR,
+          dPolardTitrationESV,
+          dPolardTautomerESV,
           use,
           molecule,
           ip11,
@@ -1818,8 +1885,12 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         reciprocalEnergyRegion.init(
             atoms,
             crystal,
+            extendedSystem,
+            esvTerm,
             use,
             globalMultipole,
+            dMultipoledTirationESV,
+            dMultipoledTautomerESV,
             cartesianMultipolePhi,
             inducedDipole,
             inducedDipoleCR,
@@ -1846,12 +1917,20 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
       realSpaceEnergyRegion.init(
           atoms,
           crystal,
+          extendedSystem,
+          esvTerm,
           coordinates,
           frame,
           axisAtom,
           globalMultipole,
+          dMultipoledTirationESV,
+          dMultipoledTautomerESV,
           inducedDipole,
           inducedDipoleCR,
+          field,
+          fieldCR,
+          dPolardTitrationESV,
+          dPolardTautomerESV,
           use,
           molecule,
           ip11,
@@ -2029,7 +2108,10 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
         inducedDipole,
         inducedDipoleCR,
         directDipole,
-        directDipoleCR);
+        directDipoleCR,
+        directField,
+        directFieldCR
+    );
     directRegion.executeWith(parallelTeam);
 
     // Return unless mutual polarization is selected.
@@ -3399,20 +3481,6 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
   private int numESVs = 0;
 
   /**
-   * The partial derivative of the permanent multipole real space energy with respect to each ESV.
-   */
-  SharedDouble[] dUPermRealdEsv = null;
-  /**
-   * The partial derivative of the permanent multipole reciprocal space energy with respect to each
-   * ESV.
-   */
-  SharedDouble[] dUPermRecipdEsv = null;
-  /**
-   * The partial derivative of the permanent multipole self energy with respect to each ESV.
-   */
-  SharedDouble[] dUPermSelfdEsv = null;
-
-  /**
    * Attach system with extended variable such as titrations.
    *
    * @param system a {@link ffx.potential.extended.ExtendedSystem} object.
@@ -3421,22 +3489,24 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     // Set object handles.
     esvTerm = true;
     extendedSystem = system;
-    numESVs = extendedSystem.size();
+    numESVs = extendedSystem.getExtendedResidueList().size();
+
 
     // Update atoms and reinitialize arrays for consistency with the ExtendedSystem.
     setAtoms(extendedSystem.getExtendedAtoms(), extendedSystem.getExtendedMolecule());
-
-    // Allocate shared derivative storage.
-    dUPermRealdEsv = new SharedDouble[numESVs];
-    dUPermRecipdEsv = new SharedDouble[numESVs];
-    dUPermSelfdEsv = new SharedDouble[numESVs];
-    for (int i = 0; i < numESVs; i++) {
-      dUPermRealdEsv[i] = new SharedDouble(0.0);
-      dUPermRecipdEsv[i] = new SharedDouble(0.0);
-      dUPermSelfdEsv[i] = new SharedDouble(0.0);
+    // Allocate space for dM/dTitratonESV
+    if (dMultipoledTirationESV == null || dMultipoledTirationESV.length != nSymm
+            || dMultipoledTirationESV[0].length != nAtoms) {
+      dMultipoledTirationESV = new double[nSymm][nAtoms][10];
+      dMultipoledTautomerESV = new double[nSymm][nAtoms][10];
     }
 
-    updateEsvLambda();
+    if(dPolardTitrationESV == null || dPolardTitrationESV.length != nAtoms){
+      dPolardTitrationESV = new double[nAtoms];
+      dPolardTautomerESV = new double[nAtoms];
+    }
+
+    //updateEsvLambda();
     logger.info(format(" Attached extended system (%d variables) to PME.\n", numESVs));
   }
 
@@ -3455,11 +3525,18 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
   Integer[] perAtomESVIndex = null;
 
   /**
-   * The partial derivative of each multipole with respect to its titration ESV (or 0.0 if the atom
+   * The partial derivative of each multipole with respect to its titration/tautomer ESV (or 0.0 if the atom
    * is not under titration ESV control).
    */
   double[][][] dMultipoledTirationESV = null;
+  double[][][] dMultipoledTautomerESV = null;
 
+  /**
+   * The partial derivative of each polarizability with respect to its titration/tautomer ESV (or 0.0 if the atom
+   * is not under titration ESV control).
+   */
+  double[] dPolardTitrationESV = null;
+  double[] dPolardTautomerESV =  null;
   /**
    * OST and ESV specific factors that effect real space interactions.
    */
@@ -3472,7 +3549,7 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     }
 
     // Query ExtendedSystem to create local preloads of all lambda quantities.
-    numESVs = extendedSystem.size();
+    numESVs = extendedSystem.getExtendedResidueList().size();
     if (perAtomTitrationESV == null || perAtomTitrationESV.length < nAtoms) {
       isAtomTitrating = new boolean[nAtoms];
       perAtomTitrationESV = new double[nAtoms];
@@ -3486,12 +3563,13 @@ public class ParticleMeshEwaldCart extends ParticleMeshEwald implements LambdaIn
     if (dMultipoledTirationESV == null || dMultipoledTirationESV.length != nSymm
         || dMultipoledTirationESV[0].length != nAtoms) {
       dMultipoledTirationESV = new double[nSymm][nAtoms][10];
+      dMultipoledTautomerESV = new double[nSymm][nAtoms][10];
     }
 
     for (int i = 0; i < nAtoms; i++) {
-      isAtomTitrating[i] = extendedSystem.isExtended(i);
-      perAtomTitrationESV[i] = extendedSystem.getLambda(i);
-      perAtomESVIndex[i] = extendedSystem.getEsvIndex(i);
+      isAtomTitrating[i] = extendedSystem.isTitrating(i);
+      perAtomTitrationESV[i] = extendedSystem.getTitrationLambda(i);
+      perAtomESVIndex[i] = extendedSystem.getTitrationESVIndex(i);
       Atom ai = atoms[i];
       if (ai.getPolarizeType() == null) {
         logger.warning("Null polarize type during ESV init.");

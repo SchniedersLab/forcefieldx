@@ -45,7 +45,6 @@ import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
 import edu.rit.pj.Comm;
-import ffx.algorithms.AlgorithmFunctions;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
 import ffx.algorithms.dynamics.integrators.BetterBeeman;
@@ -596,15 +595,15 @@ public class MolecularDynamics implements Runnable, Terminatable {
       logger.warning("An ExtendedSystem is already attached to this MD!");
     }
     esvSystem = system;
-    esvSystem.createMDThetaArrays();
-    this.esvIntegrator = new Stochastic(esvSystem.thetaFriction, esvSystem.getNumESVs(),esvSystem.theta_position,
-            esvSystem.theta_velocity, esvSystem.theta_accel, esvSystem.theta_mass);
-    this.esvThermostat = new Adiabatic(esvSystem.getNumESVs(),esvSystem.theta_position, esvSystem.theta_velocity, esvSystem.theta_mass, potential.getVariableTypes());
+    this.esvIntegrator = new Stochastic(esvSystem.getThetaFriction(), esvSystem.getExtendedResidueList().size(), esvSystem.getThetaPosition(),
+            esvSystem.getThetaVelocity(), esvSystem.getThetaAccel(), esvSystem.getThetaMassArray());
+    this.esvThermostat = new Adiabatic(esvSystem.getExtendedResidueList().size(), esvSystem.getThetaPosition(),
+            esvSystem.getThetaVelocity(), esvSystem.getThetaMassArray(), potential.getVariableTypes());
     printEsvFrequency = printFrequency;
     logger.info(
         format("  Attached extended system (%s) to molecular dynamics.", esvSystem.toString()));
-    logger.info(format("  Extended System Theta Friction: %f", esvSystem.thetaFriction));
-    logger.info(format("  Extended System Theta Mass: %f", esvSystem.theta_mass[0]));
+    logger.info(format("  Extended System Theta Friction: %f", esvSystem.getThetaFriction()));
+    logger.info(format("  Extended System Theta Mass: %f", esvSystem.getThetaMassArray()[0]));
     logger.info(format("  Extended System Lambda Print Frequency: %d (fsec)", printFrequency));
     reInit();
   }
@@ -1652,12 +1651,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
       potential.setVelocity(v);
       potential.setAcceleration(a);
       potential.setPreviousAcceleration(aPrevious);
-
-      // Update extended system variables if present.
-      if (esvSystem != null) {
-        esvSystem.setThetaValues();
-        esvSystem.collectThetaValues();
-      }
 
       // Log the current state every printFrequency steps.
       totalSimTime += dt;

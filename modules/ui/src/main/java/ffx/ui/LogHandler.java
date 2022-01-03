@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.ui;
 
-import static ffx.potential.extended.ExtUtils.prop;
 
 import ffx.ui.MainPanel.ExitStatus;
 import ffx.utilities.LoggerSevereError;
@@ -59,7 +58,7 @@ import java.util.logging.LogRecord;
 public class LogHandler extends Handler {
 
   private static final boolean headless = GraphicsEnvironment.isHeadless();
-  private static final boolean tryCatchSevere = prop("tryCatchSevere", false);
+  private static final boolean tryCatchSevere = false;
   private MainPanel mainPanel = null;
   private boolean fatal = false;
 

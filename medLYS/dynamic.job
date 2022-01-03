@@ -1,0 +1,12 @@
+#$ -r n                      # Restartable
+#$ -ckpt user                # Restart under user; do not change (do not replace with your username)
+#$ -V                        # Inherit current environment
+#$ -cwd                      # Start job in submission directory
+#$ -N LYS-cphmd              # Job Name
+#$ -j y                      # Combine stderr and stdout
+#$ -q UI,COE,MS                 # Queue
+#$ -pe 56cpn 56             # Request 12 tasnas/node, 12 total
+#$ -o $JOB_NAME.$JOB_ID.log  # Name of output file
+#$ -S /bin/bash              # Shell to use
+
+ffxc test.PhDynamics -n 10000000 -r 0.001 -i Stochastic --dt 1.0 --pH 10.53 LYS_solv_med.pdb

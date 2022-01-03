@@ -94,33 +94,35 @@ public class TitrationUtils {
 
   /** Constant <code>AspartateAtomNames</code> */
   private enum AspartateAtomNames {
-    CB(0, 0, 0),
-    HB2(1, 1, 1),
-    HB3(1, 1, 1),
-    CG(2, 2, 2),
-    OD1(3, 4, 3),
-    OD2(3, 3, 4),
-    HD1(-1, 5, -1),
-    HD2(-1, -1, 5);
+    CB(0, 0, 0, 0),
+    HB2(1, 1, 1, 0),
+    HB3(1, 1, 1, 0),
+    CG(2, 2, 2, 0),
+    OD1(3, 4, 3, 0),
+    OD2(3, 3, 4, 0),
+    HD1(-1, 5, -1, 1),
+    HD2(-1, -1, 5, -1);
 
     /**
      * Biotype offset relative to the CB biotype for charged aspartate (ASP).
      */
-    private int offsetASP;
+    private final int offsetASP;
 
     /**
      * Biotype offset relative to the CB biotype for neutral aspartic acid protonated on OD1 (ASH1).
      * <p>
      * This is set to negative -1 for the OD2 hydrogen.
      */
-    private int offsetASH1;
+    private final int offsetASH1;
 
     /**
      * Biotype offset relative to the CB biotype for neutral aspartic acid protonated on OD2 (ASH2).
      * <p>
      * This is set to negative -1 for the OD1 hydrogen.
      */
-    private int offsetASH2;
+    private final int offsetASH2;
+
+    private final int tautomerDirection;
 
     public int getOffset(AspStates state) {
       if (state == AspStates.ASP) {
@@ -139,10 +141,11 @@ public class TitrationUtils {
      * @param offsetASH1 Biotype relative to the CB biotype for ASH.
      * @param offsetASH2 Biotype relative to the CB biotype for ASH.
      */
-    AspartateAtomNames(int offsetASP, int offsetASH1, int offsetASH2) {
+    AspartateAtomNames(int offsetASP, int offsetASH1, int offsetASH2, int tautomerDirection) {
       this.offsetASP = offsetASP;
       this.offsetASH1 = offsetASH1;
       this.offsetASH2 = offsetASH2;
+      this.tautomerDirection = tautomerDirection;
     }
   }
 
@@ -152,22 +155,22 @@ public class TitrationUtils {
 
   /** Constant <code>GlutamateAtomNames</code> */
   private enum GlutamateAtomNames {
-    CB(0, 0, 0),
-    HB2(1, 1, 1),
-    HB3(1, 1, 1),
-    CG(2, 2, 2),
-    HG2(3, 3, 3),
-    HG3(3, 3, 3),
-    CD(4, 4, 4),
-    OE1(5, 6, 5),
-    OE2(5, 5, 6),
-    HE1(-1, 7, -1),
-    HE2(-1, -1, 7);
+    CB(0, 0, 0, 0),
+    HB2(1, 1, 1, 0),
+    HB3(1, 1, 1, 0),
+    CG(2, 2, 2, 0),
+    HG2(3, 3, 3, 0),
+    HG3(3, 3, 3, 0),
+    CD(4, 4, 4, 0),
+    OE1(5, 6, 5, 0),
+    OE2(5, 5, 6, 0),
+    HE1(-1, 7, -1, 1),
+    HE2(-1, -1, 7, -1);
 
     /**
      * Biotype offset relative to the CB biotype for charged Glutamate (GLU).
      */
-    private int offsetGLU;
+    private final int offsetGLU;
 
     /**
      * Biotype offset relative to the CB biotype for neutral Glutamate acid protonated on OE1
@@ -175,7 +178,7 @@ public class TitrationUtils {
      * <p>
      * This is set to negative -1 for the OE2 hydrogen.
      */
-    private int offsetGLH1;
+    private final int offsetGLH1;
 
     /**
      * Biotype offset relative to the CB biotype for neutral Glutamate acid protonated on OE2
@@ -183,7 +186,9 @@ public class TitrationUtils {
      * <p>
      * This is set to negative -1 for the OE1 hydrogen.
      */
-    private int offsetGLH2;
+    private final int offsetGLH2;
+
+    private final int tautomerDirection;
 
     public int getOffset(GluStates state) {
       if (state == GluStates.GLU) {
@@ -202,10 +207,11 @@ public class TitrationUtils {
      * @param offsetGLH1 Biotype relative to the CB biotype for GLH.
      * @param offsetGLH2 Biotype relative to the CB biotype for GLH.
      */
-    GlutamateAtomNames(int offsetGLU, int offsetGLH1, int offsetGLH2) {
+    GlutamateAtomNames(int offsetGLU, int offsetGLH1, int offsetGLH2, int tautomerDirection) {
       this.offsetGLU = offsetGLU;
       this.offsetGLH1 = offsetGLH1;
       this.offsetGLH2 = offsetGLH2;
+      this.tautomerDirection = tautomerDirection;
     }
   }
 
@@ -225,12 +231,12 @@ public class TitrationUtils {
     /**
      * Biotype offset relative to the CB biotype for LYS.
      */
-    private int offsetLYS;
+    private final int offsetLYS;
 
     /**
      * Biotype offset relative to the CB biotype for LYD.
      */
-    private int offsetLYD;
+    private final int offsetLYD;
 
     public int getOffsetLYS(LysStates state) {
       if (state == LysStates.LYS) {
@@ -259,25 +265,25 @@ public class TitrationUtils {
   /** Constant <code>HistidineAtoms</code> */
   public enum HistidineAtomNames {
     // HIS, HID, HIE
-    CB(0, 0, 0),
-    HB2(1, 1, 1),
-    HB3(1, 1, 1),
-    CG(2, 2, 2),
-    ND1(3, 3, 3),
+    CB (0, 0, 0, 0),
+    HB2(1, 1, 1, 0),
+    HB3(1, 1, 1, 0),
+    CG (2, 2, 2, 0),
+    ND1(3, 3, 3, 0),
     // No HD1 proton for HIE; HIE HD1 offset is -1.
-    HD1(4, 4, -1),
-    CD2(5, 5, 4),
-    HD2(6, 6, 5),
-    CE1(7, 7, 6),
-    HE1(8, 8, 7),
-    NE2(9, 9, 8),
+    HD1(4, 4, -1, -1),
+    CD2(5, 5, 4, 0),
+    HD2(6, 6, 5, 0),
+    CE1(7, 7, 6, 0),
+    HE1(8, 8, 7, 0),
+    NE2(9, 9, 8, 0),
     // No HE2 proton for HID; HID HE2 offset is -1
-    HE2(10, -1, 9);
+    HE2(10, -1, 9, 1);
 
     /**
      * Biotype offset relative to the CB biotype for charged histidine (HIS).
      */
-    private int offsetHIS;
+    private final int offsetHIS;
 
     /**
      * Biotype offset relative to the CB biotype for neutral histidine protonated on the delta
@@ -285,7 +291,7 @@ public class TitrationUtils {
      * <p>
      * This is set to negative -1 for the epsilon hydrogen.
      */
-    private int offsetHID;
+    private final int offsetHID;
 
     /**
      * Biotype offset relative to the CB biotype for neutral histidine protonated the epsilon
@@ -293,7 +299,9 @@ public class TitrationUtils {
      * <p>
      * This is set to negative -1 for the delta hydrogen.
      */
-    private int offsetHIE;
+    private final int offsetHIE;
+
+    private int tautomerDirection;
 
     public int getOffsetHIS(HisStates state) {
       if (state == HisStates.HIS) {
@@ -312,10 +320,11 @@ public class TitrationUtils {
      * @param offsetHID Biotype relative to the CB biotype for HID.
      * @param offsetHIE Biotype relative to the CB biotype for HIE.
      */
-    HistidineAtomNames(int offsetHIS, int offsetHID, int offsetHIE) {
+    HistidineAtomNames(int offsetHIS, int offsetHID, int offsetHIE, int tautomerDirection) {
       this.offsetHIS = offsetHIS;
       this.offsetHID = offsetHID;
       this.offsetHIE = offsetHIE;
+      this.tautomerDirection = tautomerDirection;
     }
   }
 
@@ -526,10 +535,24 @@ public class TitrationUtils {
     }
   }
 
-  public double[] getMultipole(AminoAcid3 aminoAcid3, int atomIndex,
+  public double[] getMultipole(Atom atom,
       double titrationLambda, double tautomerLambda, double[] multipole) {
+    /*
+    Step 1: retrieve the atomName from atom instance.
+    Step 2: retrieve the oridnal from the atom instance + residueType
+     */
+
+    AminoAcid3 aminoAcid3;
+    try{
+      aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
+    } catch (Exception exception){
+      return multipole;
+    }
+    String atomName = atom.getName();
+
     switch (aminoAcid3) {
       case LYS:
+        int atomIndex =  LysineAtomNames.valueOf(atomName).ordinal();
         double[] lys = lysMultipoleTypes[LysStates.LYS.ordinal()][atomIndex].getMultipole();
         double[] lyd = lysMultipoleTypes[LysStates.LYD.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
@@ -537,16 +560,18 @@ public class TitrationUtils {
         }
         break;
       case HIS:
+        atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
         double[] his = hisMultipoleTypes[HisStates.HIS.ordinal()][atomIndex].getMultipole();
         double[] hid = hisMultipoleTypes[HisStates.HID.ordinal()][atomIndex].getMultipole();
         double[] hie = hisMultipoleTypes[HisStates.HIE.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
           multipole[i] =
-              titrationLambda * his[i] + (1.0 - titrationLambda) * (tautomerLambda * hid[i]
-                  + (1 - tautomerLambda) * hie[i]);
+              titrationLambda * his[i] + (1.0 - titrationLambda) * (tautomerLambda * hie[i]
+                  + (1 - tautomerLambda) * hid[i]);
         }
         break;
       case ASD:
+        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
         double[] asp = aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
         double[] ash1 = aspMultipoleTypes[AspStates.ASH1.ordinal()][atomIndex].getMultipole();
         double[] ash2 = aspMultipoleTypes[AspStates.ASH2.ordinal()][atomIndex].getMultipole();
@@ -557,6 +582,7 @@ public class TitrationUtils {
         }
         break;
       case GLD:
+        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
         double[] glu = gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
         double[] glh1 = gluMultipoleTypes[GluStates.GLH1.ordinal()][atomIndex].getMultipole();
         double[] glh2 = gluMultipoleTypes[GluStates.GLH2.ordinal()][atomIndex].getMultipole();
@@ -572,10 +598,18 @@ public class TitrationUtils {
     return multipole;
   }
 
-  public double[] getMultipoleTitrationDeriv(AminoAcid3 aminoAcid3, int atomIndex,
+  public double[] getMultipoleTitrationDeriv(Atom atom,
       double titrationLambda, double tautomerLambda, double[] multipole) {
+    AminoAcid3 aminoAcid3;
+    try{
+      aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
+    } catch (Exception exception){
+      return multipole;
+    }
+    String atomName = atom.getName();
     switch (aminoAcid3) {
       case LYS:
+        int atomIndex =  LysineAtomNames.valueOf(atomName).ordinal();
         double[] lys = lysMultipoleTypes[LysStates.LYS.ordinal()][atomIndex].getMultipole();
         double[] lyd = lysMultipoleTypes[LysStates.LYD.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
@@ -583,14 +617,16 @@ public class TitrationUtils {
         }
         break;
       case HIS:
+        atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
         double[] his = hisMultipoleTypes[HisStates.HIS.ordinal()][atomIndex].getMultipole();
         double[] hid = hisMultipoleTypes[HisStates.HID.ordinal()][atomIndex].getMultipole();
         double[] hie = hisMultipoleTypes[HisStates.HIE.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
-          multipole[i] = his[i] - (tautomerLambda * hid[i] + (1 - tautomerLambda) * hie[i]);
+          multipole[i] = his[i] - (tautomerLambda * hie[i] + (1 - tautomerLambda) * hid[i]);
         }
         break;
       case ASD:
+        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
         double[] asp = aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
         double[] ash1 = aspMultipoleTypes[AspStates.ASH1.ordinal()][atomIndex].getMultipole();
         double[] ash2 = aspMultipoleTypes[AspStates.ASH2.ordinal()][atomIndex].getMultipole();
@@ -599,6 +635,7 @@ public class TitrationUtils {
         }
         break;
       case GLD:
+        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
         double[] glu = gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
         double[] glh1 = gluMultipoleTypes[GluStates.GLH1.ordinal()][atomIndex].getMultipole();
         double[] glh2 = gluMultipoleTypes[GluStates.GLH2.ordinal()][atomIndex].getMultipole();
@@ -612,31 +649,41 @@ public class TitrationUtils {
     return multipole;
   }
 
-  public double[] getMultipoleTautomerDeriv(AminoAcid3 aminoAcid3, int atomIndex,
+  public double[] getMultipoleTautomerDeriv(Atom atom,
       double titrationLambda, double tautomerLambda, double[] multipole) {
+    AminoAcid3 aminoAcid3;
+    try{
+      aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
+    } catch (Exception exception){
+      return multipole;
+    }
+    String atomName = atom.getName();
     switch (aminoAcid3) {
       case HIS:
+        int atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
         double[] his = hisMultipoleTypes[HisStates.HIS.ordinal()][atomIndex].getMultipole();
         double[] hid = hisMultipoleTypes[HisStates.HID.ordinal()][atomIndex].getMultipole();
         double[] hie = hisMultipoleTypes[HisStates.HIE.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
-          multipole[i] = titrationLambda * his[i] + (1.0 - titrationLambda) * (hid[i] - hie[i]);
+          multipole[i] = (1.0 - titrationLambda) * (hie[i] - hid[i]);
         }
         break;
       case ASD:
+        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
         double[] asp = aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
         double[] ash1 = aspMultipoleTypes[AspStates.ASH1.ordinal()][atomIndex].getMultipole();
         double[] ash2 = aspMultipoleTypes[AspStates.ASH2.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
-          multipole[i] = titrationLambda * (ash1[i] - ash2[i]) + (1.0 - titrationLambda) * asp[i];
+          multipole[i] = titrationLambda * (ash1[i] - ash2[i]);
         }
         break;
       case GLD:
+        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
         double[] glu = gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
         double[] glh1 = gluMultipoleTypes[GluStates.GLH1.ordinal()][atomIndex].getMultipole();
         double[] glh2 = gluMultipoleTypes[GluStates.GLH2.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
-          multipole[i] = titrationLambda * (glh1[i] - glh2[i]) + (1.0 - titrationLambda) * glu[i];
+          multipole[i] = titrationLambda * (glh1[i] - glh2[i]);
         }
         break;
       case LYS: // No tautomers for LYS.
@@ -646,26 +693,37 @@ public class TitrationUtils {
     return multipole;
   }
 
-  public double getPolarizability(AminoAcid3 aminoAcid3, int atomIndex,
+  public double getPolarizability(Atom atom,
       double titrationLambda, double tautomerLambda, double defaultPolarizability) {
+    AminoAcid3 aminoAcid3;
+    try{
+      aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
+    } catch (Exception exception){
+      return defaultPolarizability;
+    }
+    String atomName = atom.getName();
     switch (aminoAcid3) {
       case LYS:
+        int atomIndex =  LysineAtomNames.valueOf(atomName).ordinal();
         double lys = lysPolarizeTypes[LysStates.LYS.ordinal()][atomIndex].polarizability;
         double lyd = lysPolarizeTypes[LysStates.LYD.ordinal()][atomIndex].polarizability;
         return titrationLambda * lys + (1.0 - titrationLambda) * lyd;
       case HIS:
+        atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
         double his = hisPolarizeTypes[HisStates.HIS.ordinal()][atomIndex].polarizability;
         double hid = hisPolarizeTypes[HisStates.HID.ordinal()][atomIndex].polarizability;
         double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
-        return titrationLambda * his + (1.0 - titrationLambda) * (tautomerLambda * hid
-            + (1 - tautomerLambda) * hie);
+        return titrationLambda * his + (1.0 - titrationLambda) * (tautomerLambda * hie
+            + (1 - tautomerLambda) * hid);
       case ASD:
+        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
         double asp = aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
         double ash1 = aspPolarizeTypes[AspStates.ASH1.ordinal()][atomIndex].polarizability;
         double ash2 = aspPolarizeTypes[AspStates.ASH2.ordinal()][atomIndex].polarizability;
         return titrationLambda * (tautomerLambda * ash1 + (1 - tautomerLambda) * ash2)
             + (1.0 - titrationLambda) * asp;
       case GLD:
+        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
         double glu = gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
         double glh1 = gluPolarizeTypes[GluStates.GLH1.ordinal()][atomIndex].polarizability;
         double glh2 = gluPolarizeTypes[GluStates.GLH2.ordinal()][atomIndex].polarizability;
@@ -676,24 +734,35 @@ public class TitrationUtils {
     }
   }
 
-  public double getPolarizabilityTitrationDeriv(AminoAcid3 aminoAcid3, int atomIndex,
+  public double getPolarizabilityTitrationDeriv(Atom atom,
       double titrationLambda, double tautomerLambda) {
+    AminoAcid3 aminoAcid3;
+    try{
+      aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
+    } catch (Exception exception){
+      return 0.0;
+    }
+    String atomName = atom.getName();
     switch (aminoAcid3) {
       case LYS:
+        int atomIndex =  LysineAtomNames.valueOf(atomName).ordinal();
         double lys = lysPolarizeTypes[LysStates.LYS.ordinal()][atomIndex].polarizability;
         double lyd = lysPolarizeTypes[LysStates.LYD.ordinal()][atomIndex].polarizability;
         return lys - lyd;
       case HIS:
+        atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
         double his = hisPolarizeTypes[HisStates.HIS.ordinal()][atomIndex].polarizability;
         double hid = hisPolarizeTypes[HisStates.HID.ordinal()][atomIndex].polarizability;
         double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
-        return his - (tautomerLambda * hid + (1 - tautomerLambda) * hie);
+        return his - (tautomerLambda * hie + (1 - tautomerLambda) * hid);
       case ASD:
+        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
         double asp = aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
         double ash1 = aspPolarizeTypes[AspStates.ASH1.ordinal()][atomIndex].polarizability;
         double ash2 = aspPolarizeTypes[AspStates.ASH2.ordinal()][atomIndex].polarizability;
         return (tautomerLambda * ash1 + (1 - tautomerLambda) * ash2) - asp;
       case GLD:
+        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
         double glu = gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
         double glh1 = gluPolarizeTypes[GluStates.GLH1.ordinal()][atomIndex].polarizability;
         double glh2 = gluPolarizeTypes[GluStates.GLH2.ordinal()][atomIndex].polarizability;
@@ -703,20 +772,32 @@ public class TitrationUtils {
     }
   }
 
-  public double getPolarizabilityTautomerDeriv(AminoAcid3 aminoAcid3, int atomIndex,
+  public double getPolarizabilityTautomerDeriv(Atom atom,
       double titrationLambda, double tautomerLambda) {
+    AminoAcid3 aminoAcid3;
+    try{
+      aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
+    } catch (Exception exception){
+      return 0.0;
+    }
+    String atomName = atom.getName();
     switch (aminoAcid3) {
       case HIS:
+        int atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
         double his = hisPolarizeTypes[HisStates.HIS.ordinal()][atomIndex].polarizability;
         double hid = hisPolarizeTypes[HisStates.HID.ordinal()][atomIndex].polarizability;
         double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
-        return titrationLambda * his + (1.0 - titrationLambda) * (hid - hie);
+        //titrationLambda * his + (1.0 - titrationLambda) * (tautomerLambda * hie
+        //            + (1 - tautomerLambda) * hid);
+        return  (1.0 - titrationLambda) * (hie - hid);
       case ASD:
+        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
         double asp = aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
         double ash1 = aspPolarizeTypes[AspStates.ASH1.ordinal()][atomIndex].polarizability;
         double ash2 = aspPolarizeTypes[AspStates.ASH2.ordinal()][atomIndex].polarizability;
         return titrationLambda * (ash1 - ash2) + (1.0 - titrationLambda) * asp;
       case GLD:
+        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
         double glu = gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
         double glh1 = gluPolarizeTypes[GluStates.GLH1.ordinal()][atomIndex].polarizability;
         double glh2 = gluPolarizeTypes[GluStates.GLH2.ordinal()][atomIndex].polarizability;
@@ -725,6 +806,65 @@ public class TitrationUtils {
       default:
         return 0.0;
     }
+  }
+
+
+
+  public static boolean isTitratingHydrogen(AminoAcid3 aminoAcid3, Atom atom){
+    boolean isTitratingHydrogen = false;
+    String atomName = atom.getName();
+    switch (aminoAcid3) {
+      case ASD:
+        if (atomName.equals(AspartateAtomNames.HD1.name()) || atomName.equals(AspartateAtomNames.HD2.name())) {
+          isTitratingHydrogen = true;
+        }
+        break;
+      case GLD:
+        if (atomName.equals(GlutamateAtomNames.HE1.name()) || atomName.equals(GlutamateAtomNames.HE2.name())) {
+          isTitratingHydrogen = true;
+        }
+        break;
+      case HIS:
+        if (atomName.equals(HistidineAtomNames.HD1.name()) || atomName.equals(HistidineAtomNames.HE2.name())) {
+          isTitratingHydrogen = true;
+        }
+        break;
+      case LYS:
+        if (atomName.equals(LysineAtomNames.HZ3.name())) {
+          isTitratingHydrogen = true;
+        }
+        break;
+    }
+    return isTitratingHydrogen;
+  }
+
+  public static int getTitratingHydrogenDirection(AminoAcid3 aminoAcid3, Atom atom) {
+    int tautomerDirection = 0;
+    String atomName = atom.getName();
+    switch (aminoAcid3) {
+      case ASD:
+        if (atomName.equals(AspartateAtomNames.HD1.name())) {
+          tautomerDirection = AspartateAtomNames.HD1.tautomerDirection;
+        } else if (atomName.equals(AspartateAtomNames.HD2.name())) {
+          tautomerDirection = AspartateAtomNames.HD2.tautomerDirection;
+        }
+        break;
+      case GLD:
+        if (atomName.equals(GlutamateAtomNames.HE1.name())) {
+          tautomerDirection = GlutamateAtomNames.HE1.tautomerDirection;
+        } else if (atomName.equals(GlutamateAtomNames.HE2.name())) {
+          tautomerDirection = GlutamateAtomNames.HE2.tautomerDirection;
+        }
+        break;
+      case HIS:
+        if (atomName.equals(HistidineAtomNames.HD1.name())) {
+          tautomerDirection = HistidineAtomNames.HD1.tautomerDirection;
+        } else if (atomName.equals(HistidineAtomNames.HE2.name())) {
+          tautomerDirection = HistidineAtomNames.HE2.tautomerDirection;
+        }
+        break;
+    }
+    return tautomerDirection;
   }
 
   private void constructHISState(int biotypeCB, HisStates hisState) {
@@ -937,7 +1077,7 @@ public class TitrationUtils {
      * Set ASP pH bias as sum of Fmod and acidostat energy
      */
     double acidostat = LOG10 * Constants.R * temperature * (Titration.ASHtoASP.pKa - pH);
-    double fMod = Titration.ASHtoASP.refEnergy;
+    double fMod = Titration.ASHtoASP.freeEnergyDiff;
     rotamerPhBiasMap.put(ASP, acidostat - fMod);
 
     /*
@@ -949,7 +1089,7 @@ public class TitrationUtils {
      * Set GLU pH bias as sum of Fmod and acidostat energy
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.GLHtoGLU.pKa - pH);
-    fMod = Titration.GLHtoGLU.refEnergy;
+    fMod = Titration.GLHtoGLU.freeEnergyDiff;
     rotamerPhBiasMap.put(GLU, acidostat - fMod);
 
     /*
@@ -961,7 +1101,8 @@ public class TitrationUtils {
      * Set LYD pH bias as sum of Fmod and acidostat energy
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.LYStoLYD.pKa - pH);
-    fMod = Titration.LYStoLYD.refEnergy;
+
+    fMod = Titration.LYStoLYD.freeEnergyDiff;
     rotamerPhBiasMap.put(LYD, acidostat - fMod);
 
     /*
@@ -973,14 +1114,15 @@ public class TitrationUtils {
      * Set HID pH bias as sum of Fmod and acidostat energy
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.HIStoHID.pKa - pH);
-    fMod = Titration.HIStoHID.refEnergy;
+
+    fMod = Titration.HIStoHID.freeEnergyDiff;
     rotamerPhBiasMap.put(HID, acidostat - fMod);
 
     /*
      * Set HIE pH bias as sum of Fmod and acidostat energy
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.HIStoHIE.pKa - pH);
-    fMod = Titration.HIStoHIE.refEnergy;
+    fMod = Titration.HIStoHIE.freeEnergyDiff;
     rotamerPhBiasMap.put(HIE, acidostat - fMod);
   }
 
@@ -1010,26 +1152,36 @@ public class TitrationUtils {
    */
   public enum Titration {
     //ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
-    ASHtoASP(4.00, -66.87, 0.0, ASH, ASP),
-    GLHtoGLU(4.40, -81.50, 0.0, GLH, GLU),
-    LYStoLYD(10.40, 41.50, 0.0, LYS, LYD),
+
+    ASHtoASP(4.00, -66.87, 43.9250, 1.23836, AminoAcid3.ASH, AminoAcid3.ASP),
+    GLHtoGLU(4.40, -81.50, -70.3900, 0.0, AminoAcid3.GLH, AminoAcid3.GLU),
+    //LYStoLYD(10.40, 45.270, 0.0, AminoAcid3.LYS, AminoAcid3.LYD),
+    LYStoLYD(10.40, 41.50, 57.7100, 0.10746, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
-    HIStoHID(7.00, 36.00, 0.0, HIS, HID),
-    HIStoHIE(6.60, 36.00, 0.0, HIS, HIE),
-    HIDtoHIE(0.00, 0.00, 0.0, HID, HIE);
-    // TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
-    // TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
+
+    //HE1 is the proton that is lost
+    HIStoHID(7.00, 36.00, 42.4030, 0.10048, AminoAcid3.HIS, AminoAcid3.HID),
+    //HD1 is the proton that is lost
+    HIStoHIE(6.60, 36.00, 40.2215, 0.11638, AminoAcid3.HIS, AminoAcid3.HIE),
+    HIDtoHIE(Double.NaN, 0.00, -3.40, 0.0, AminoAcid3.HID, AminoAcid3.HIE);
+    //TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
+    //TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
+
 
     public final double pKa;
+    // Free energy differences used in rotamer optimization
+    public final double freeEnergyDiff;
     public final double refEnergy;
     public final double lambdaIntercept;
     public final AminoAcid3 protForm;
     public final AminoAcid3 deprotForm;
 
     /** Invoked by Enum; use the factory method to obtain instances. */
-    Titration(double pKa, double refEnergy, double lambdaIntercept, AminoAcid3 protForm,
-        AminoAcid3 deprotForm) {
+
+    Titration(double pKa, double freeEnergyDiff, double refEnergy, double lambdaIntercept, AminoAcid3 protForm, AminoAcid3 deprotForm)
+    {
       this.pKa = pKa;
+      this.freeEnergyDiff = freeEnergyDiff;
       this.refEnergy = refEnergy;
       this.lambdaIntercept = lambdaIntercept;
       this.protForm = protForm;
