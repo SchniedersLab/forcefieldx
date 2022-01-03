@@ -588,9 +588,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * attachExtendedSystem.
    *
    * @param system a {@link ffx.potential.extended.ExtendedSystem} object.
-   * @param printFrequency a int.
    */
-  public void attachExtendedSystem(ExtendedSystem system, int printFrequency) {
+  public void attachExtendedSystem(ExtendedSystem system, double reportFreq) {
     if (esvSystem != null) {
       logger.warning("An ExtendedSystem is already attached to this MD!");
     }
@@ -599,12 +598,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
             esvSystem.getThetaVelocity(), esvSystem.getThetaAccel(), esvSystem.getThetaMassArray());
     this.esvThermostat = new Adiabatic(esvSystem.getExtendedResidueList().size(), esvSystem.getThetaPosition(),
             esvSystem.getThetaVelocity(), esvSystem.getThetaMassArray(), potential.getVariableTypes());
-    printEsvFrequency = printFrequency;
+    printEsvFrequency = intervalToFreq(reportFreq, "Reporting (logging) interval");
     logger.info(
         format("  Attached extended system (%s) to molecular dynamics.", esvSystem.toString()));
     logger.info(format("  Extended System Theta Friction: %f", esvSystem.getThetaFriction()));
     logger.info(format("  Extended System Theta Mass: %f", esvSystem.getThetaMassArray()[0]));
-    logger.info(format("  Extended System Lambda Print Frequency: %d (fsec)", printFrequency));
+    logger.info(format("  Extended System Lambda Print Frequency: %d (fsec)", printEsvFrequency));
     reInit();
   }
 
@@ -1656,8 +1655,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
       totalSimTime += dt;
       time = logThermoForTime(step, time);
       if (step % printEsvFrequency == 0 && esvSystem != null) {
-        logger.log(basicLogging, format(" %7.3e %s", totalSimTime, esvSystem.getLambdaList()));
-        potential.energy(x, true);
+        logger.log(basicLogging, format(" %s", esvSystem.getLambdaList()));
+        //potential.energy(x, true);
       }
 
       if (automaticWriteouts) {

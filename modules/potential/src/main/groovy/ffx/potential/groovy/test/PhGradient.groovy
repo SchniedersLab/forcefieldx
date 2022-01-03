@@ -124,10 +124,10 @@ class PhGradient extends PotentialScript {
     if (!init()) {
       return this
     }
-      activeAssembly = getActiveAssembly(filename)
-      if (activeAssembly == null) {
-        logger.info(helpString())
-        return this
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
+      logger.info(helpString())
+      return this
     }
 
     // Set the filename.

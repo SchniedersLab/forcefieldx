@@ -41,6 +41,7 @@ package ffx.algorithms.ph;
 import static java.lang.String.format;
 
 import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.extended.*;
@@ -65,8 +66,6 @@ public class PhMD  {
   private final MolecularAssembly molecularAssembly;
   /** Simulation pH. */
   private final double pH;
-  /** The forcefield being used. Needed by MultiResidue constructor. */
-  private final ForceField forceField;
   /**
    * The ForceFieldEnergy object being used by MD. Needed by MultiResidue constructor and for
    * reinitializing after a chemical change.
@@ -91,23 +90,19 @@ public class PhMD  {
   public PhMD(
       MolecularAssembly molecularAssembly,
       MolecularDynamics molecularDynamics,
-      double pH) {
+      ForceFieldEnergy potential,
+      ExtendedSystem esvSystem,
+      double pH,
+      double reportFreq) {
     this.molecularAssembly = molecularAssembly;
     this.molecularDynamics = molecularDynamics;
-    this.forceField = molecularAssembly.getForceField();
-    this.forceFieldEnergy = molecularAssembly.getPotentialEnergy();
+    this.forceFieldEnergy = potential;
+    this.esvSystem = esvSystem;
     this.pH = pH;
 
     reInitialize(true, false);
-    readyup();
-  }
-
-  private void readyup() {
-    esvSystem = new ExtendedSystem(molecularAssembly);
-    esvSystem.setConstantPh(pH);
-    forceFieldEnergy.attachExtendedSystem(esvSystem);
     logger.info(format(" Continuous pHMD readied with %d residues.", esvSystem.getExtendedResidueList().size()));
-    molecularDynamics.attachExtendedSystem(esvSystem, 100);
+    molecularDynamics.attachExtendedSystem(esvSystem, reportFreq);
   }
 
   /** Wraps reinitialization calls so as to provide un-fucked atom numbering. */

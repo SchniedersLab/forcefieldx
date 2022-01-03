@@ -170,7 +170,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    * variables. Will throw an UnsupportedOperationException.
    */
   @Override
-  public void attachExtendedSystem(ExtendedSystem system, int printFrequency) {
+  public void attachExtendedSystem(ExtendedSystem system, double reportFreq) {
     throw new UnsupportedOperationException(
         " MolecularDynamicsOpenMM does not support extended system variables!");
   }
