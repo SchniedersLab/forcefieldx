@@ -89,20 +89,6 @@ class SuperposeCrystals extends AlgorithmsScript {
   private int numInflatedAU
 
   /**
-   * --ns or --numSearch Crystal 1 AUs to compare for unique conformations.
-   */
-  @Option(names = ['--ns', '--numSearch'], paramLabel = '1', defaultValue = '1',
-      description = 'Crystal 1 AUs to compare for unique conformations.')
-  private int numSearch
-
-  /**
-   * --ns2 or --numSearch2 Crystal 2 AUs to compare for unique conformations.
-   */
-  @Option(names = ['--ns2', '--numSearch2'], paramLabel = '1', defaultValue = '1',
-      description = 'Crystal 2 AUs to compare for unique conformations.')
-  private int numSearch2
-
-  /**
    * --zp or --zPrime Z' for crystal 1 (-1 to autodetect).
    */
   @Option(names = ['--zp', '--zPrime'], paramLabel = '-1', defaultValue = '-1',
@@ -115,6 +101,13 @@ class SuperposeCrystals extends AlgorithmsScript {
   @Option(names = ['--zp2', '--zPrime2'], paramLabel = '-1', defaultValue = '-1',
       description = "Z'' for crystal 2 (-1 to autodetect).")
   private int zPrime2
+
+  /**
+   * --mt or --moleculeTolerance Tolerance to determine if two molecules are different.
+   */
+  @Option(names = ['--mt', '--moleculeTolerance'], paramLabel = '0.1', defaultValue = '0.1',
+          description = "Tolerance to determine if two molecules are different.")
+  private double molTol
 
   /**
    * -w or --write Write out the PAC RMSD matrix.
@@ -178,20 +171,6 @@ class SuperposeCrystals extends AlgorithmsScript {
   @Option(names = ['-l', '--linkage'], paramLabel = '0', defaultValue = '0',
       description = 'Single (0), Average (1), or Complete (2) coordinate linkage for molecule prioritization.')
   private int linkage
-
-  /**
-   * --fo or --fileOrder Prioritize matching molecules of the first command line crystal (rather than using a density criteria).
-   */
-  @Option(names = ['--fo', '--fileOrder'], paramLabel = "false", defaultValue = "false",
-      description = 'Prioritize matching molecules of the first command line crystal (rather than using a density criteria).')
-  private static boolean fileOrder
-
-  /**
-   * --ld or --lowDensity Prioritize matching molecules of the lower density crystal (default uses higher density).
-   */
-  @Option(names = ['--ld', '--lowDensity'], paramLabel = "false", defaultValue = "false",
-      description = 'Prioritize matching molecules of the lower density crystal (default uses higher density).')
-  private static boolean lowDensity
 
   /**
    * --pc or --prioritizeCrystals Prioritize the crystals being compared based on high density (0), low density (1), or file order (2).
@@ -305,7 +284,7 @@ class SuperposeCrystals extends AlgorithmsScript {
     }
 
     runningStatistics =
-        pac.comparisons(numAU, numInflatedAU, numSearch, numSearch2, zPrime, zPrime2, alphaCarbons,
+        pac.comparisons(numAU, numInflatedAU, molTol, zPrime, zPrime2, alphaCarbons,
             noHydrogen, massWeighted, crystalPriority, exhaustive, savePDB,
             restart, write,
             machineLearning, linkage, pacFilename)
