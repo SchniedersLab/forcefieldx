@@ -42,15 +42,15 @@ import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.ph.PhMD
 import ffx.numerics.Potential
-import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.Residue
 import ffx.potential.cli.WriteoutOptions
-import ffx.potential.extended.TitrationUtils
+import ffx.potential.extended.ExtendedSystem
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+
+import static java.lang.String.format
 
 /**
  * The Dynamics script implements molecular and stochastic dynamics algorithms.
@@ -80,13 +80,13 @@ class PhDynamics extends AlgorithmsScript {
    */
   @Parameters(arity = "1..*", paramLabel = "files",
       description = "XYZ or PDB input files.")
-  private List<String> filenames
+  private String filename
 
   /**
    * Creation of a public field to try and make the JUnit test work, original code does not declare this as a public field.
    * Originally it is declared in the run method
    */
-  public Potential potential = null
+  private Potential potential
   public MolecularDynamics molDyn = null
 
   MolecularDynamics getMolecularDynamics() {
@@ -124,38 +124,34 @@ class PhDynamics extends AlgorithmsScript {
 
     dynamics.init()
 
-    TitrationUtils.initDiscountPreloadProperties()
-
-    String modelFilename
-    if (filenames != null && filenames.size() > 0) {
-      MolecularAssembly molecularAssembly =
-          TitrationUtils.openFullyProtonated(new File(filenames.get(0)))
-      MolecularAssembly[] assemblies = [molecularAssembly]
-      activeAssembly = assemblies[0]
-      modelFilename = filenames.get(0)
-    } else if (activeAssembly == null) {
+    activeAssembly = getActiveAssembly(filename)
+    if (activeAssembly == null) {
       logger.info(helpString())
       return this
-    } else {
-      modelFilename = activeAssembly.getFile().getAbsolutePath()
     }
-
-    // Select all possible titrating residues.
-    List<Residue> titrating = TitrationUtils.chooseTitratables(activeAssembly)
-
     potential = activeAssembly.getPotentialEnergy()
+    // Set the filename.
+    String filename = activeAssembly.getFile().getAbsolutePath()
+
+    // Initialize and attach extended system first.
+    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly)
+    esvSystem.setConstantPh(pH)
+    potential.attachExtendedSystem(esvSystem)
+    int numESVs = esvSystem.extendedResidueList.size()
+    logger.info(format(" Attached extended system with %d residues.", numESVs))
+
     double[] x = new double[potential.getNumberOfVariables()]
     potential.getCoordinates(x)
     potential.energy(x, true)
 
-    logger.info("\n Running molecular dynamics on " + modelFilename)
+    logger.info("\n Running molecular dynamics on " + filename)
 
     molDyn = dynamics.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
-
-    PhMD phmd = new PhMD(activeAssembly, molDyn, titrating, pH)
+    logger.info("Report Freq: " + dynamics.report)
+    PhMD phmd = new PhMD(activeAssembly, molDyn, potential, esvSystem, pH, dynamics.report)
 
     // Restart File
-    File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
+    File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn")
     if (!dyn.exists()) {
       dyn = null
     }

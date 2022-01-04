@@ -337,19 +337,15 @@ class LambdaGradient extends AlgorithmsScript {
       grad2 = Math.sqrt(grad2)
 
       if (len > errTol) {
-        logger.info(String.format(" Atom %d failed: %10.6f.", i + 1, len)
-            + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)", gradient[i0], gradient[i1],
-            gradient[i2])
-            + String.format("\n Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1],
-            numeric[2]))
+        logger.info(String.format(" Atom %d failed: %10.6f.", i + 1, len) +
+                String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)", gradient[i0], gradient[i1], gradient[i2]) +
+                String.format("\n Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]))
         ++nFailures
         //return
       } else {
-        logger.info(String.format(" Atom %d passed: %10.6f.", i + 1, len)
-            + String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)", gradient[i0], gradient[i1],
-            gradient[i2])
-            + String.format("\n Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1],
-            numeric[2]))
+        logger.info(String.format(" Atom %d passed: %10.6f.", i + 1, len) +
+                String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)", gradient[i0], gradient[i1], gradient[i2]) +
+                String.format("\n Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]))
       }
 
       if (grad2 > expGrad) {
@@ -413,20 +409,19 @@ class LambdaGradient extends AlgorithmsScript {
       grad2 = Math.sqrt(grad2)
 
       if (len > errTol) {
-        logger.info(String.format(" B-Factor %d failed: %10.6f.", i + 1, len)
-            + String.format("\n Analytic: %12.4f", gradient[i])
-            + String.format("\n Numeric:  %12.4f", fd))
+        logger.info(String.format(" B-Factor %d failed: %10.6f.", i + 1, len) +
+                String.format("\n Analytic: %12.4f", gradient[i]) +
+                String.format("\n Numeric:  %12.4f", fd))
         ++nFailures
         //return
       } else {
-        logger.info(String.format(" B-Factor %d passed: %10.6f.", i + 1, len)
-            + String.format("\n Analytic: %12.4f", gradient[i])
-            + String.format("\n Numeric:  %12.4f", fd))
+        logger.info(String.format(" B-Factor %d passed: %10.6f.", i + 1, len) +
+                String.format("\n Analytic: %12.4f", gradient[i]) +
+                String.format("\n Numeric:  %12.4f", fd))
       }
 
       if (grad2 > expGrad) {
-        logger.info(String.format(" B-Factor %d has an unusually large gradient: %10.6f", i + 1,
-            grad2))
+        logger.info(String.format(" B-Factor %d has an unusually large gradient: %10.6f", i + 1, grad2))
       }
       logger.info("\n")
     }

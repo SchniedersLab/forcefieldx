@@ -106,6 +106,9 @@ public abstract class ParticleMeshEwald implements LambdaInterface {
   public double[][] directDipole;
 
   public double[][] directDipoleCR;
+
+  public double[][] directField;
+  public double[][] directFieldCR;
   /** Vacuum induced dipoles */
   public double[][][] vacuumInducedDipole;
 

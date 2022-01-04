@@ -48,13 +48,15 @@ import ffx.potential.ForceFieldEnergyOpenMM;
 import ffx.potential.ForceFieldEnergyOpenMM.Context;
 import ffx.potential.ForceFieldEnergyOpenMM.State;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.extended.ExtendedSystem;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import ffx.potential.extended.ExtendedSystem;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
@@ -168,7 +170,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    * variables. Will throw an UnsupportedOperationException.
    */
   @Override
-  public void attachExtendedSystem(ExtendedSystem system, int printFrequency) {
+  public void attachExtendedSystem(ExtendedSystem system, double reportFreq) {
     throw new UnsupportedOperationException(
         " MolecularDynamicsOpenMM does not support extended system variables!");
   }
