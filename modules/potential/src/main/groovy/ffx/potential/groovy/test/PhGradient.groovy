@@ -400,13 +400,11 @@ class PhGradient extends PotentialScript {
     }
 
     if (print) {
-      if (titratingResidues.size() <= 4) {
-        String lambdaList = esvSystem.getLambdaList()
-        logger.info(format("Lambda List: %s", lambdaList))
-        energy.energy(x, true)
-        logger.info(esvSystem.getBiasDecomposition())
-        printPermutations(esvSystem, titratingResidues.size(), energy, x)
-      }
+      String lambdaList = esvSystem.getLambdaList()
+      logger.info(format("Lambda List: %s", lambdaList))
+      energy.energy(x, true)
+      logger.info(esvSystem.getBiasDecomposition())
+      printPermutations(esvSystem, titratingResidues.size(), energy, x)
     }
 
     return this
