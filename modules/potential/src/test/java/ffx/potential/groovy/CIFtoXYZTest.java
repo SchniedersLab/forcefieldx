@@ -60,6 +60,7 @@ public class CIFtoXYZTest extends PotentialTest {
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Construct and evaluate the CIFtoXYZ script.
+
     CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
     potentialScript = cifToXYZ;
   }
@@ -67,7 +68,7 @@ public class CIFtoXYZTest extends PotentialTest {
   @Test
   public void testCIFtoXYZNoHydrogen() {
     // Set-up the input arguments for the CIFtoXYZ script.
-    String[] args = {"src/main/java/ffx/potential/structures/CBZ03.cif",
+    String[] args = {"--fl","src/main/java/ffx/potential/structures/CBZ03.cif",
         "src/main/java/ffx/potential/structures/cbz.xyz"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
