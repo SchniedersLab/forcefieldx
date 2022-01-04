@@ -1959,7 +1959,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
                 double drdx = dx_local[0] * ir;
                 double drdy = dx_local[1] * ir;
                 double drdz = dx_local[2] * ir;
-                dedr = esvik * (eik * dtaper + dedr * taper);
+                dedr = selfScale * esvik * (eik * dtaper + dedr * taper);
                 if (gradient) {
                   double dedx = dedr * drdx;
                   double dedy = dedr * drdy;
