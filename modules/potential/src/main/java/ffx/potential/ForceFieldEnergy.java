@@ -37,8 +37,6 @@
 // ******************************************************************************
 package ffx.potential;
 
-import static ffx.crystal.LatticeSystem.HEXAGONAL_LATTICE;
-import static ffx.crystal.LatticeSystem.RHOMBOHEDRAL_LATTICE;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
@@ -1403,10 +1401,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       if (particleMeshEwald == null) {
         logger.warning("Null PME during ESV setup.");
       }
-      if (!(particleMeshEwald instanceof ParticleMeshEwaldQI)) {
+      if (!(particleMeshEwald instanceof ParticleMeshEwaldCart)) {
         logger.severe("Extended systems can attach only to Quasi-Internal PME. Try -Dpme-qi=true.");
       }
-      ((ParticleMeshEwaldQI) particleMeshEwald).attachExtendedSystem(system);
+      ((ParticleMeshEwaldCart) particleMeshEwald).attachExtendedSystem(system);
     }
     if (crystal != null) {
       crystal.setSpecialPositionCutoff(0.0);
@@ -2037,8 +2035,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         return restrainEnergy;
       case pHMD:
       case Bias:
-      case Discretizer:
-      case Acidostat:
+      case DiscretizeBias:
+      case ModelBias:
+      case pHBias:
         return (esvTerm) ? esvSystem.getEnergyComponent(component) : 0.0;
       case XRay:
       default:
@@ -3021,13 +3020,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   @Deprecated
   public void reInit() {
     int[] molecule;
-    if (esvTerm) {
-      atoms = esvSystem.getExtendedAndBackgroundAtoms();
-      molecule = esvSystem.getExtendedAndBackgroundMolecule();
-    } else {
-      atoms = molecularAssembly.getAtomArray();
-      molecule = molecularAssembly.getMoleculeNumbers();
-    }
+    atoms = molecularAssembly.getAtomArray();
+    molecule = molecularAssembly.getMoleculeNumbers();
     nAtoms = atoms.length;
 
     xyz = new double[nAtoms * 3];

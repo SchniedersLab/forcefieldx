@@ -695,6 +695,7 @@ public class EnergyExpansion {
 
     Rotamer[] rotamers = residues[i].getRotamers();
 
+
     if (rotamers[ri].isTitrating) {
       double bias = rotamers[ri].getRotamerPhBias();
       if (logger.isLoggable(Level.FINE)) {
