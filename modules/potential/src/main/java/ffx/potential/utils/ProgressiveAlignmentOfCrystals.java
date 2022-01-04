@@ -282,7 +282,6 @@ public class ProgressiveAlignmentOfCrystals {
      * @param zPrime2          Number of asymmetric units in second crystal.
      * @param alphaCarbons     Perform comparisons on only alpha carbons.
      * @param noHydrogen       Perform comparisons without hydrogen atoms.
-     * @param removeEquivalent Only use unique atom environments (prevents mislabeled symmetries).
      * @param exhaustive       Perform exhaustive number of comparisons (takes longer, but more information
      *                         returned).
      * @param save             Save out PDBs of the resulting superposition.
@@ -293,10 +292,9 @@ public class ProgressiveAlignmentOfCrystals {
      * @return RunningStatistics Statistics for comparisons performed.
      */
     public RunningStatistics comparisons(int nAU, int inflatedAU, int numSearch, int numSearch2, int zPrime, int zPrime2,
-                                         boolean alphaCarbons, boolean noHydrogen, boolean massWeighted, boolean fileOrder,
-                                         boolean lowDensity, boolean removeEquivalent, boolean exhaustive, boolean save,
-                                         boolean restart, boolean write, boolean machineLearning, int linkage,
-                                         String pacFileName) {
+                                         boolean alphaCarbons, boolean noHydrogen, boolean massWeighted, int crystalPriority,
+                                         boolean exhaustive, boolean save, boolean restart, boolean write,
+                                         boolean machineLearning, int linkage, String pacFileName) {
 
         RunningStatistics runningStatistics;
         if (restart) {
@@ -348,14 +346,6 @@ public class ProgressiveAlignmentOfCrystals {
             return null;
         }
 
-        if (removeEquivalent) {
-            // Remove atoms that are at non-unique positions (Might be mislabeled).
-            environmentCheck(baseAssembly, atomList);
-            if (atomList.size() < 1) {
-                logger.info("\n Symmetry check removed remaining atoms from first crystal. Rerun without --re.");
-                return null;
-            }
-        }
 
         // Atom arrays from the 2nd assembly.
         MolecularAssembly targetAssembly = targetFilter.getActiveMolecularSystem();
@@ -369,16 +359,6 @@ public class ProgressiveAlignmentOfCrystals {
         if (atomList2.size() < 1) {
             logger.info("\n No atoms were selected for the PAC RMSD in second crystal.");
             return null;
-        }
-
-
-        if (removeEquivalent) {
-            // Remove atoms that are at non-unique positions (Might be mislabeled).
-            environmentCheck(targetAssembly, atomList2);
-            if (atomList2.size() < 1) {
-                logger.warning("\n Symmetry check removed remaining atoms from second crystal. Rerun without --sc.");
-                return null;
-            }
         }
         int[] comparisonAtoms = atomList.stream().mapToInt(i -> i).toArray();
         int[] comparisonAtoms2 = atomList2.stream().mapToInt(i -> i).toArray();
@@ -446,7 +426,7 @@ public class ProgressiveAlignmentOfCrystals {
                                 column + 1, targetCrystal.toShortString(), targetLabel));
                         // Compute the PAC RMSD.
                         rmsd = compare(comparisonAtoms, comparisonAtoms2, compareAtomsSize, compareAtomsSize2, nAU, inflatedAU,
-                                numSearch, numSearch2, z1, z2, row * targetSize + column, massWeighted, fileOrder, lowDensity, exhaustive, save, machineLearning, linkage);
+                                numSearch, numSearch2, z1, z2, row * targetSize + column, massWeighted, crystalPriority, exhaustive, save, machineLearning, linkage);
                         time += System.nanoTime();
                         double timeSec = time * 1.0e-9;
                         // Record the fastest comparison.
@@ -516,7 +496,7 @@ public class ProgressiveAlignmentOfCrystals {
      */
     private double compare(int[] comparisonAtomsStart, int[] comparisonAtoms2Start, int compareAtomsSize,
                            int compareAtomsSize2, int nAU, int inflatedAU, int numSearch, int numSearch2, int zPrime, int zPrime2,
-                           int compNum, boolean massWeighted, boolean fileOrder, boolean lowDensity, boolean exhaustive, boolean save, boolean machineLearning, int linkage) {
+                           int compNum, boolean massWeighted, int crystalPriority, boolean exhaustive, boolean save, boolean machineLearning, int linkage) {
         // TODO: Does PAC work for a combination of molecules and polymers?
 
         //Remove atoms not used in comparisons from the original molecular assembly (crystal 1).
@@ -525,16 +505,28 @@ public class ProgressiveAlignmentOfCrystals {
         MolecularAssembly tAssembly = targetFilter.getActiveMolecularSystem();
         double targetDensity = tAssembly.getCrystal().getDensity(tAssembly.getMass());
         logger.finer(format(" Base Density: %4.4f Target Density: %4.4f", baseDensity, targetDensity));
-        boolean densityCheck = (lowDensity) ? baseDensity < targetDensity : baseDensity > targetDensity;
+        boolean densityCheck = (crystalPriority==1) ? baseDensity < targetDensity : baseDensity > targetDensity;
 
         MolecularAssembly staticAssembly;
         MolecularAssembly mobileAssembly;
-        if (densityCheck || fileOrder) {
+        if (densityCheck || crystalPriority==2) {
             staticAssembly = baseFilter.getActiveMolecularSystem();
             mobileAssembly = targetFilter.getActiveMolecularSystem();
         } else {
             staticAssembly = targetFilter.getActiveMolecularSystem();
             mobileAssembly = baseFilter.getActiveMolecularSystem();
+            int[] tempAtoms = comparisonAtomsStart.clone();
+            comparisonAtomsStart = comparisonAtoms2Start.clone();
+            comparisonAtoms2Start = tempAtoms.clone();
+            int temp = compareAtomsSize;
+            compareAtomsSize = compareAtomsSize2;
+            compareAtomsSize2 = temp;
+            temp = numSearch;
+            numSearch = numSearch2;
+            numSearch2 = temp;
+            temp = zPrime;
+            zPrime = zPrime2;
+            zPrime2 = temp;
         }
 
         staticAssembly.moveAllIntoUnitCell();
@@ -1464,137 +1456,6 @@ public class ProgressiveAlignmentOfCrystals {
             }
             // Reset all atoms to active once the selection is recorded.
             atom.setActive(true);
-        }
-    }
-
-    /**
-     * Check to see if atoms have unique bonded environment (helps with mislabeled atoms).
-     *
-     * @param assembly Assembly containing asymmetric unit.
-     * @param indices  Current indices of active atoms.
-     */
-    private static void environmentCheck(MolecularAssembly assembly, ArrayList<Integer> indices) {
-        List<Atom> atomList = assembly.getAtomList();
-        ArrayList<Integer> copy = new ArrayList<>(indices);
-        for (int j = 0; j < copy.size(); j++) {
-            for (int k = j; k < copy.size(); k++) {
-                Atom a1 = atomList.get(copy.get(j));
-                Atom a2 = atomList.get(copy.get(k));
-                if (a1.getIndex() != a2.getIndex()) {
-                    AtomEnvironmentComparator ac = new AtomEnvironmentComparator();
-                    int value = ac.compare(a1, a2);
-                    if (value == 0) {
-                        indices.remove(copy.get(j));
-                        indices.remove(copy.get(k));
-                        logger.finer(" Removed identical environments " + a1 + " and " + a2);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Class to determine the bonded environment of atoms.
-     */
-    static class AtomEnvironmentComparator implements Comparator<Object> {
-        /**
-         * Comparison method of the bonded environment of two atoms.
-         *
-         * @param obj1 Atom 1 to compare.
-         * @param obj2 Atom 2 to compare.
-         * @return -1 if reverse order, 1 if same order, or 0 unsuccessful.
-         */
-        @Override
-        public int compare(Object obj1, Object obj2) {
-            Atom a1 = (Atom) obj1;
-            Atom a2 = (Atom) obj2;
-            int comp = Integer.compare(a1.getMoleculeNumber(), a2.getMoleculeNumber());
-            if (comp == 0) {
-                comp = Integer.compare(a1.getResidueNumber(), a2.getResidueNumber());
-            }
-            if (comp == 0) {
-                comp = -Double.compare(a1.getMass(), a2.getMass());
-            }
-            if (comp == 0) {
-                comp = Integer.compare(a1.getBonds().size(), a2.getBonds().size());
-            }
-            if (comp == 0) {
-                comp = Integer.compare(a1.get12List().size(), a2.get12List().size());
-            }
-            if (comp == 0) {
-                for (int i = 0; i < a1.get12List().size(); i++) {
-                    Atom a12 = a1.get12List().get(i);
-                    Atom a22 = a2.get12List().get(i);
-                    comp = shallowCompare(a12, a22);
-                    if (comp != 0) {
-                        break;
-                    }
-                }
-            }
-            if (comp == 0) {
-                comp = Integer.compare(a1.get13List().size(), a2.get13List().size());
-            }
-            if (comp == 0) {
-                for (int i = 0; i < a1.get13List().size(); i++) {
-                    Atom a12 = a1.get13List().get(i);
-                    Atom a22 = a2.get13List().get(i);
-                    comp = shallowCompare(a12, a22);
-                    if (comp != 0) {
-                        break;
-                    }
-                }
-            }
-            if (comp == 0) {
-                comp = Integer.compare(a1.get14List().size(), a2.get14List().size());
-            }
-            if (comp == 0) {
-                for (int i = 0; i < a1.get14List().size(); i++) {
-                    Atom a12 = a1.get14List().get(i);
-                    Atom a22 = a2.get14List().get(i);
-                    comp = shallowCompare(a12, a22);
-                    if (comp != 0) {
-                        break;
-                    }
-                }
-            }
-            if (comp == 0) {
-                comp = Integer.compare(a1.get15List().size(), a2.get15List().size());
-            }
-            if (comp == 0) {
-                for (int i = 0; i < a1.get15List().size(); i++) {
-                    Atom a12 = a1.get15List().get(i);
-                    Atom a22 = a2.get15List().get(i);
-                    comp = shallowCompare(a12, a22);
-                    if (comp != 0) {
-                        break;
-                    }
-                }
-            }
-            return comp;
-        }
-
-        /**
-         * Comparison of atoms to see if they have the same number of bonds.
-         *
-         * @param a1 Atom 1 to compare.
-         * @param a2 Arom 2 to compare.
-         * @return -1 if reverse order, 1 if same order, or 0 unsuccessful.
-         */
-        private int shallowCompare(Atom a1, Atom a2) {
-            int comp = Integer.compare(a1.getBonds().size(), a2.getBonds().size());
-            if (comp == 0) {
-                comp = Integer.compare(a1.get12List().size(), a2.get12List().size());
-            }
-            if (comp == 0) {
-                comp = Integer.compare(a1.get13List().size(), a2.get13List().size());
-            }
-            if (comp == 0) {
-                comp = Integer.compare(a1.get14List().size(), a2.get14List().size());
-            }
-            if (comp == 0) {
-                comp = Integer.compare(a1.get15List().size(), a2.get15List().size());
-            }
-            return comp;
         }
     }
 

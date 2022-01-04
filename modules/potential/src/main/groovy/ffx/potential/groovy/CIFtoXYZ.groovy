@@ -142,6 +142,8 @@ class CIFtoXYZ extends PotentialScript {
      */
     private static final double BOND_TOLERANCE = 0.2
 
+    private List<String> createdFiles = new ArrayList<>()
+
     /**
      * CIFtoXYZ Constructor.
      */
@@ -238,6 +240,7 @@ class CIFtoXYZ extends PotentialScript {
             if (sg == null) {
                 logger.warning(" The space group could not be determined from the CIF file (using P1).")
                 sg = SpaceGroupDefinitions.spaceGroupFactory(1)
+                numFailed++
             }
 
             Cell cell = block.cell
@@ -256,7 +259,17 @@ class CIFtoXYZ extends PotentialScript {
                 if (fixLattice) {
                     logger.warning(" Attempting to patch disagreement between lattice system and lattice parameters.")
                     boolean fixed = false
-                    if(latticeSystem == LatticeSystem.HEXAGONAL_LATTICE || latticeSystem == LatticeSystem.RHOMBOHEDRAL_LATTICE) {
+                    // Check if Rhombohedral lattice has been named Hexagonal
+                    if(latticeSystem == LatticeSystem.HEXAGONAL_LATTICE &&
+                            LatticeSystem.RHOMBOHEDRAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)){
+                            crystal = hrConversion(a, b, c, alpha, beta, gamma, sg)
+                            latticeSystem = crystal.spaceGroup.latticeSystem
+                            if (latticeSystem.validParameters(crystal.a, crystal.b, crystal.c, crystal.alpha, crystal.beta, crystal.gamma)) {
+                                fixed = true
+                            }
+                        // Check if Hexagonal lattice has been named Rhombohedral
+                    } else if(latticeSystem == LatticeSystem.RHOMBOHEDRAL_LATTICE &&
+                            LatticeSystem.HEXAGONAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)) {
                         crystal = hrConversion(a, b, c, alpha, beta, gamma, sg)
                         latticeSystem = crystal.spaceGroup.latticeSystem
                         if (latticeSystem.validParameters(crystal.a, crystal.b, crystal.c, crystal.alpha, crystal.beta, crystal.gamma)) {
@@ -369,8 +382,8 @@ class CIFtoXYZ extends PotentialScript {
                 zPrime = (int) (nAtoms / nXYZAtoms)
                 itsFine = true
                 // Check if there are the same number of heavy atoms in both (CIF may contain multiple copies).
-            } else if ((nAtoms + numHydrogens) % nXYZAtoms == 0) {
-                zPrime = (int) ((nAtoms + numHydrogens) / nXYZAtoms)
+            } else if (nAtoms % (nXYZAtoms-numHydrogens) == 0) {
+                zPrime = (int) (nAtoms / (nXYZAtoms-numHydrogens))
                 itsFine = true
             } else {
                 zPrime = 1
@@ -498,7 +511,7 @@ class CIFtoXYZ extends PotentialScript {
                     RebondTool rebonder = new RebondTool(MAX_COVALENT_RADIUS, MIN_BOND_DISTANCE, BOND_TOLERANCE)
                     rebonder.rebond(cifCDKAtomsArr[i])
 
-                    int cifBonds = cifCDKAtomsArr[i].getBondCount();
+                    int cifBonds = cifCDKAtomsArr[i].getBondCount()
 
                     // Number of bonds matches.
                     if (cifBonds % xyzBonds == 0) {
@@ -618,6 +631,9 @@ class CIFtoXYZ extends PotentialScript {
                                 }
                             }
                         } else {
+                            if(p!=null){
+                                logger.info(format(" Matched %d atoms out of %d in CIF (%d in XYZ)", p.length, nAUatoms, xyzAtoms.size()-numHydrogens))
+                            }
                             logger.warning(" Could not match heavy atoms between CIF and XYZ.")
                             savePDB = true
                         }
@@ -678,7 +694,7 @@ class CIFtoXYZ extends PotentialScript {
                         fileName += "_z" + zPrime.toString()
                     }
                     // Concatenated CIF files may contain more than one space group.
-                    fileName = fileName + "_" + sg.shortName.replaceAll("\\/", "") + ".arc"
+                    fileName = fileName + "_" + crystal.spaceGroup.shortName.replaceAll("\\/", "") + ".arc"
                     saveFile = new File(dirName + fileName)
                 } else {
                     // If only structure, create new file on each run.
@@ -705,6 +721,10 @@ class CIFtoXYZ extends PotentialScript {
                     if (parameters != null && !parameters.equalsIgnoreCase("none")) {
                         bw.write(format("parameters %s\n", parameters))
                     }
+                    String forcefieldProperty = forceField.getString("forcefield", "none")
+                    if (forcefieldProperty != null && !forcefieldProperty.equalsIgnoreCase("none")) {
+                        bw.write(format("forcefield %s\n", forcefieldProperty))
+                    }
                     String patch = forceField.getString("patch", "none")
                     if (patch != null && !patch.equalsIgnoreCase("none")) {
                         bw.write(format("patch %s\n", patch))
@@ -720,6 +740,9 @@ class CIFtoXYZ extends PotentialScript {
                     logger.info("\n Property file already exists:  " + propertyFile.getAbsolutePath() + "\n")
                 }
             }
+            if(!createdFiles.contains(saveFile.getName())){
+                createdFiles.add(saveFile.getName())
+            }
             //Reset space group for next block
             sgNum = -1
             sgName = ""
@@ -727,9 +750,17 @@ class CIFtoXYZ extends PotentialScript {
             outputAssembly.destroy()
         }
         if (numFailed > 0) {
-            logger.info(format(" %d CIF files were not successfully converted.", numFailed))
+            logger.info(format(" %d CIF file(s) were not successfully converted.", numFailed))
         }
         return this
+    }
+
+    /**
+     * Obtain a list of output files written from the conversion.
+     * @return String[] containing output file names.
+     */
+    String[] getCreatedFileNames(){
+        return createdFiles.toArray()
     }
 
     /**

@@ -48,7 +48,9 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import static org.apache.commons.io.FilenameUtils.*
+import static org.apache.commons.io.FilenameUtils.concat
+import static org.apache.commons.io.FilenameUtils.getBaseName
+import static org.apache.commons.io.FilenameUtils.getFullPath
 
 /**
  * Quantifies the similarity of input crystals based on progressive alignments.
@@ -77,50 +79,42 @@ class SuperposeCrystals extends AlgorithmsScript {
    */
   @Option(names = ['--na', '--numAU'], paramLabel = '20', defaultValue = '20',
       description = 'AUs in the RMSD.')
-  int numAU
+  private int numAU
 
   /**
    * --ni or --numInflatedAU AUs in the expanded crystal.
    */
   @Option(names = ['--ni', '--numInflatedAU'], paramLabel = '500', defaultValue = '500',
       description = 'AUs in the expanded crystal.')
-  int numInflatedAU
+  private int numInflatedAU
 
   /**
    * --ns or --numSearch Crystal 1 AUs to compare for unique conformations.
    */
   @Option(names = ['--ns', '--numSearch'], paramLabel = '1', defaultValue = '1',
       description = 'Crystal 1 AUs to compare for unique conformations.')
-  int numSearch
+  private int numSearch
 
   /**
    * --ns2 or --numSearch2 Crystal 2 AUs to compare for unique conformations.
    */
   @Option(names = ['--ns2', '--numSearch2'], paramLabel = '1', defaultValue = '1',
       description = 'Crystal 2 AUs to compare for unique conformations.')
-  int numSearch2
+  private int numSearch2
 
   /**
    * --zp or --zPrime Z' for crystal 1 (-1 to autodetect).
    */
   @Option(names = ['--zp', '--zPrime'], paramLabel = '-1', defaultValue = '-1',
       description = "Z'' for crystal 1 (-1 to autodetect).")
-  int zPrime
+  private int zPrime
 
   /**
    * --zp2 or --zPrime2 Z' for crystal 2 (-1 to autodetect).
    */
   @Option(names = ['--zp2', '--zPrime2'], paramLabel = '-1', defaultValue = '-1',
       description = "Z'' for crystal 2 (-1 to autodetect).")
-  int zPrime2
-
-  // "Horrible Hack" to automatically select only atoms that can be reordered by Reorder.groovy.
-  /**
-   * --re or --removeEquivalent Remove atoms with equivalent bonded environments (experimental flag).
-   */
-  @Option(names = ['--re', '--removeEquivalent'], paramLabel = "false", defaultValue = "false",
-      description = 'Ignore atoms with similar bonded environment (experimental flag).')
-  private static boolean removeEquivalent
+  private int zPrime2
 
   /**
    * -w or --write Write out the PAC RMSD matrix.
@@ -183,7 +177,7 @@ class SuperposeCrystals extends AlgorithmsScript {
    */
   @Option(names = ['-l', '--linkage'], paramLabel = '0', defaultValue = '0',
       description = 'Single (0), Average (1), or Complete (2) coordinate linkage for molecule prioritization.')
-  int linkage
+  private int linkage
 
   /**
    * --fo or --fileOrder Prioritize matching molecules of the first command line crystal (rather than using a density criteria).
@@ -198,6 +192,13 @@ class SuperposeCrystals extends AlgorithmsScript {
   @Option(names = ['--ld', '--lowDensity'], paramLabel = "false", defaultValue = "false",
       description = 'Prioritize matching molecules of the lower density crystal (default uses higher density).')
   private static boolean lowDensity
+
+  /**
+   * --pc or --prioritizeCrystals Prioritize the crystals being compared based on high density (0), low density (1), or file order (2).
+   */
+  @Option(names = ['--pc', '--prioritizeCrystals'], paramLabel = '0', defaultValue = '0',
+          description = 'High density (0), low density (1), or file order (2) prioritization of submitted crystals.')
+  private int crystalPriority
 
   /**
    * The final argument(s) should be two or more filenames (same file twice if comparing same structures).
@@ -305,7 +306,7 @@ class SuperposeCrystals extends AlgorithmsScript {
 
     runningStatistics =
         pac.comparisons(numAU, numInflatedAU, numSearch, numSearch2, zPrime, zPrime2, alphaCarbons,
-            noHydrogen, massWeighted, fileOrder, lowDensity, removeEquivalent, exhaustive, savePDB,
+            noHydrogen, massWeighted, crystalPriority, exhaustive, savePDB,
             restart, write,
             machineLearning, linkage, pacFilename)
 
