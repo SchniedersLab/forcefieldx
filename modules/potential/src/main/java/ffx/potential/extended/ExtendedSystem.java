@@ -543,7 +543,7 @@ public class ExtendedSystem {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < extendedResidueList.size(); i++) {
             if (i == 0) {
-                sb.append("Titration Lambdas: ");
+                sb.append("\n Titration Lambdas: ");
             }
             if (i > 0) {
                 sb.append(", ");
