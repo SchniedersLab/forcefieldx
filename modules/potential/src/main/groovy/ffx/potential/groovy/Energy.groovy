@@ -55,6 +55,7 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import static ffx.potential.utils.Gyrate.radiusOfGyration
 import static java.lang.String.format
 
 /**
@@ -76,6 +77,13 @@ class Energy extends PotentialScript {
   @Option(names = ['-m', '--moments'], paramLabel = "false", defaultValue = "false",
       description = 'Print out electrostatic moments.')
   private boolean moments = false
+
+  /**
+   * --rg or --gyrate Print out the radius of gyration.
+   */
+  @Option(names = ['--rg', '--gyrate'], paramLabel = "false", defaultValue = "false",
+      description = 'Print out the radius of gyration.')
+  private boolean gyrate = false
 
   /**
    * -g or --gradient to print out gradients.
@@ -182,8 +190,12 @@ class Energy extends PotentialScript {
     }
 
     if (moments) {
-      Atom[] activeAtoms = activeAssembly.getActiveAtomArray()
-      forceFieldEnergy.getPmeNode().computeMoments(activeAtoms, false)
+      forceFieldEnergy.getPmeNode().computeMoments(activeAssembly.getActiveAtomArray(), false)
+    }
+
+    if (gyrate) {
+      double rg = radiusOfGyration(activeAssembly.getActiveAtomArray())
+      logger.info(format(" Radius of gyration:           %10.5f A", rg))
     }
 
     SystemFilter systemFilter = potentialFunctions.getFilter()
@@ -239,13 +251,17 @@ class Energy extends PotentialScript {
         }
 
         if (moments) {
-          Atom[] activeAtoms = activeAssembly.getActiveAtomArray()
-          forceFieldEnergy.getPmeNode().computeMoments(activeAtoms, false)
+          forceFieldEnergy.getPmeNode().computeMoments(activeAssembly.getActiveAtomArray(), false)
+        }
+
+        if (gyrate) {
+          double rg = radiusOfGyration(activeAssembly.getActiveAtomArray())
+          logger.info(format(" Radius of gyration:          %10.5f A", rg))
         }
 
       }
 
-      // If cutoffs have been selected create an ARC or PDB to store structures that satisfy cutoff
+      // If cutoffs have been selected create an ARC or PDB to store structures that satisfy cutoff.
       if ((eCutoff > 0.0 || dCutoff > 0.0) && numModels > 1) {
         systemFilter.readNext(true)
         activeAssembly = systemFilter.getActiveMolecularSystem()
