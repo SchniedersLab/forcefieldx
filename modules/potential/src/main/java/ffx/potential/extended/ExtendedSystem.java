@@ -589,16 +589,15 @@ public class ExtendedSystem {
             if (doBias){
                 getBiasTerms(residue, biasDerivComponents);
                 //Sum up titration bias derivs
-                esvDeriv[resTitrIndex] += biasDerivComponents[dDiscr_dTitrIndex] + biasDerivComponents[dPh_dTitrIndex] - biasDerivComponents[dModel_dTitrIndex];
+                esvDeriv[resTitrIndex] += biasDerivComponents[dDiscr_dTitrIndex] + biasDerivComponents[dPh_dTitrIndex] + biasDerivComponents[dModel_dTitrIndex];
                 //Sum up tautomer bias derivs
                 if (isTautomer(residue)) {
                     int resTautIndex = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
-                    esvDeriv[resTautIndex] += biasDerivComponents[dDiscr_dTautIndex] + biasDerivComponents[dPh_dTautIndex] - biasDerivComponents[dModel_dTautIndex];
+                    esvDeriv[resTautIndex] += biasDerivComponents[dDiscr_dTautIndex] + biasDerivComponents[dPh_dTautIndex] + biasDerivComponents[dModel_dTautIndex];
                 }
             }
 
             if (doVDW) {
-                //TODO: Add vdW
                 esvDeriv[resTitrIndex] += getVdwDeriv(resTitrIndex);
                 //Sum up tautomer bias derivs
                 if (isTautomer(residue)) {
@@ -639,7 +638,7 @@ public class ExtendedSystem {
         //Do not double count residues in tautomer list.
         for (Residue residue : titratingResidueList) {
             getBiasTerms(residue, biasEnergyComponents);
-            double biasEnergy = biasEnergyComponents[discrBiasIndex] + biasEnergyComponents[pHBiasIndex] - biasEnergyComponents[modelBiasIndex];
+            double biasEnergy = biasEnergyComponents[discrBiasIndex] + biasEnergyComponents[pHBiasIndex] + biasEnergyComponents[modelBiasIndex];
             totalBiasEnergy += biasEnergy;
         }
         return totalBiasEnergy;
@@ -799,13 +798,13 @@ public class ExtendedSystem {
         }
         biasEnergyAndDerivs[0] = discrBias;
         biasEnergyAndDerivs[1] = pHBias;
-        biasEnergyAndDerivs[2] = modelBias;
+        biasEnergyAndDerivs[2] = -modelBias;
         biasEnergyAndDerivs[3] = dDiscr_dTitr;
         biasEnergyAndDerivs[4] = dPh_dTitr;
-        biasEnergyAndDerivs[5] = dMod_dTitr;
+        biasEnergyAndDerivs[5] = -dMod_dTitr;
         biasEnergyAndDerivs[6] = dDiscr_dTaut;
         biasEnergyAndDerivs[7] = dPh_dTaut;
-        biasEnergyAndDerivs[8] = dMod_dTaut;
+        biasEnergyAndDerivs[8] = -dMod_dTaut;
     }
 
     /**
@@ -818,12 +817,12 @@ public class ExtendedSystem {
         double phBias = 0.0;
         double modelBias = 0.0;
         double[] biasEnergyAndDerivs = new double[9];
-        for (Residue residue : extendedResidueList) {
+        for (Residue residue : titratingResidueList) {
             getBiasTerms(residue, biasEnergyAndDerivs);
             discrBias += biasEnergyAndDerivs[discrBiasIndex];
             phBias += biasEnergyAndDerivs[pHBiasIndex];
             //Reminder: Ubias = UpH + Udiscr - Umod
-            modelBias -= biasEnergyAndDerivs[modelBiasIndex];
+            modelBias += biasEnergyAndDerivs[modelBiasIndex];
         }
         return format("    %-16s %16.8f\n", "Discretizer", discrBias)
                 + format("    %-16s %16.8f\n", "Acidostat", phBias)
@@ -844,20 +843,20 @@ public class ExtendedSystem {
             case pHMD:
                 return getBiasEnergy();
             case DiscretizeBias:
-                for (Residue residue : extendedResidueList) {
+                for (Residue residue : titratingResidueList) {
                     getBiasTerms(residue, biasEnergyAndDerivs);
                     uComp += biasEnergyAndDerivs[discrBiasIndex];
                 }
                 return uComp;
             case ModelBias:
-                for (Residue residue : extendedResidueList) {
+                for (Residue residue : titratingResidueList) {
                     getBiasTerms(residue, biasEnergyAndDerivs);
                     //Reminder: Ubias = UpH + Udiscr - Umod
-                    uComp -= biasEnergyAndDerivs[modelBiasIndex];
+                    uComp += biasEnergyAndDerivs[modelBiasIndex];
                 }
                 return uComp;
             case pHBias:
-                for (Residue residue : extendedResidueList) {
+                for (Residue residue : titratingResidueList) {
                     getBiasTerms(residue, biasEnergyAndDerivs);
                     uComp += biasEnergyAndDerivs[pHBiasIndex];
                 }
