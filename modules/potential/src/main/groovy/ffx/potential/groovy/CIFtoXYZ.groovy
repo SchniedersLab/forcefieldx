@@ -121,6 +121,13 @@ class CIFtoXYZ extends PotentialScript {
     private String sgName
 
     /**
+     * --bt or --bondTolerance Tolerance added to covalent radius to bond atoms.
+     */
+    @Option(names = ['--bt','--bondTolerance'], paramLabel = "0.2", defaultValue = "0.2",
+            description = 'Tolerance added to covalent radius to determine if atoms should be bonded.')
+    private double bondTolerance
+
+    /**
      * The final argument(s) should be a CIF file and an XYZ file with atom types.
      */
     @Parameters(arity = "1..2", paramLabel = "files",
@@ -136,11 +143,6 @@ class CIFtoXYZ extends PotentialScript {
      * Minimum bond distance for CDK Rebonder Tool
      */
     private static final double MIN_BOND_DISTANCE = 0.5
-
-    /**
-     * Atoms within covalent bond radii + tolerance will be bonded.
-     */
-    private static final double BOND_TOLERANCE = 0.2
 
     private List<String> createdFiles = new ArrayList<>()
 
@@ -321,7 +323,6 @@ class CIFtoXYZ extends PotentialScript {
 
             // Define per atom information for the PDB file.
             String resName = "CIF"
-            int resID = 1
             double occupancy = 1.0
             double bfactor = 1.0
             char altLoc = ' '
@@ -331,6 +332,8 @@ class CIFtoXYZ extends PotentialScript {
 
             // Loop over atoms.
             for (int i = 0; i < nAtoms; i++) {
+                // Assigning each atom their own resID prevents comparator from treating them as the same atom.
+                int resID = i
                 if(typeSymbol.getRowCount() > 0){
                     symbols[i] = typeSymbol.get(i)
                 }else{
@@ -438,18 +441,25 @@ class CIFtoXYZ extends PotentialScript {
                     }
                 } else {
                     // Bond atoms in CIF file.
-                    bondAtoms(atoms)
-
+                    int cifBonds = bondAtoms(atoms, bondTolerance)
+                    logger.fine(format(" Created %d bonds between CIF atoms (%d in xyz, so %d total molecules).",
+                            cifBonds, xyzBonds, (int) cifBonds/xyzBonds))
+                    int numMolecules = (int) (cifBonds / xyzBonds)
+                    if(cifBonds%xyzBonds!=0){
+                        logger.fine(format(" Created bonds (%d) do not match inputted molecule (%d).", cifBonds, xyzBonds))
+                    }else if(numMolecules != zPrime){
+                        logger.fine(format(" Number of detected molecules (%d) does not equal expected (%d).", numMolecules, zPrime))
+                    }
                     List<Atom> atomPool = new ArrayList<>()
                     for (int i = 0; i < atoms.size(); i++) {
                         atomPool.add(atoms[i])
                     }
 
-
                     try {
                         while (!atomPool.isEmpty()) {
                             List<Atom> molecule = new ArrayList<>()
                             collectAtoms(atomPool.get(0), molecule)
+                            logger.finer(format(" Molecule (%d) Size: %d", counter, molecule.size()))
                             List<Integer> indices = new ArrayList<>()
                             while (molecule.size() > 0) {
                                 Atom atom = molecule.remove(0)
@@ -508,7 +518,7 @@ class CIFtoXYZ extends PotentialScript {
                         factory.configure(atom)
                     }
 
-                    RebondTool rebonder = new RebondTool(MAX_COVALENT_RADIUS, MIN_BOND_DISTANCE, BOND_TOLERANCE)
+                    RebondTool rebonder = new RebondTool(MAX_COVALENT_RADIUS, MIN_BOND_DISTANCE, bondTolerance)
                     rebonder.rebond(cifCDKAtomsArr[i])
 
                     int cifBonds = cifCDKAtomsArr[i].getBondCount()
@@ -768,7 +778,8 @@ class CIFtoXYZ extends PotentialScript {
      *
      * @param atoms To potentially be bonded together.
      */
-    private static void bondAtoms(Atom[] atoms) {
+    private static int bondAtoms(Atom[] atoms, double bondTolerance) {
+        int bondCount = 0
         for (int i = 0; i < atoms.size(); i++) {
             Atom atom1 = atoms[i]
             String atomIelement = getAtomElement(atom1)
@@ -778,10 +789,7 @@ class CIFtoXYZ extends PotentialScript {
                 return
             }
             double[] xyz = [atom1.getX(), atom1.getY(), atom1.getZ()]
-            for (int j = 0; j < atoms.size(); j++) {
-                if (i == j) {
-                    continue
-                }
+            for (int j = i + 1; j < atoms.size(); j++) {
                 Atom atom2 = atoms[j]
                 String atomJelement = getAtomElement(atom2)
                 double radiusJ = getCovalentRadius(atomJelement)
@@ -791,16 +799,18 @@ class CIFtoXYZ extends PotentialScript {
                 }
                 double[] xyz2 = [atom2.getX(), atom2.getY(), atom2.getZ()]
                 double length = dist(xyz, xyz2)
-                double bondLength = radiusI + radiusJ + BOND_TOLERANCE
+                double bondLength = radiusI + radiusJ + bondTolerance
                 if (length < bondLength) {
+                    bondCount++
                     Bond bond = new Bond(atom1, atom2)
                     atom1.setBond(bond)
                     atom2.setBond(bond)
-                    logger.finer(format("Bonded atom %d (%s) with atom %d (%s): bond length (%4.4f Å) < tolerance (%4.4f Å)",
+                    logger.finest(format("Bonded atom %d (%s) with atom %d (%s): bond length (%4.4f Å) < tolerance (%4.4f Å)",
                             i+1, atomIelement, j+1, atomJelement, length, bondLength))
                 }
             }
         }
+        return bondCount
     }
 
     /**
@@ -831,6 +841,7 @@ class CIFtoXYZ extends PotentialScript {
      * @param atoms that are bonded.
      */
     private static void collectAtoms(Atom seed, List<Atom> atoms) {
+        logger.finest(format(" Atom: %s", seed.name))
         if (seed == null) {
             return
         }

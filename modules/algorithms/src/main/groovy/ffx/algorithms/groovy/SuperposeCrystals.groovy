@@ -103,11 +103,11 @@ class SuperposeCrystals extends AlgorithmsScript {
   private int zPrime2
 
   /**
-   * --mt or --moleculeTolerance Tolerance to determine if two molecules are different.
+   * --mt or --matchTolerance Tolerance to determine if two AUs are different.
    */
   @Option(names = ['--mt', '--moleculeTolerance'], paramLabel = '0.1', defaultValue = '0.1',
-          description = "Tolerance to determine if two molecules are different.")
-  private double molTol
+          description = "Tolerance to determine if two AUs are different.")
+  private double matchTol
 
   /**
    * -w or --write Write out the PAC RMSD matrix.
@@ -131,11 +131,11 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean savePDB
 
   /**
-   * --ex or --exhaustive Perform an exhaustive comparison to handle multiple conformations (more expensive, but may find lower RMSD).
+   * -p or --permute Compare all unique AUs between each crystal.
    */
-  @Option(names = ['--ex', '--exhaustive'], paramLabel = "false", defaultValue = "false",
-      description = 'Perform an exhaustive comparison to handle multiple conformations (more expensive, but may find lower RMSD).')
-  private static boolean exhaustive
+  @Option(names = ['-p', '--permute'], paramLabel = "false", defaultValue = "false",
+      description = 'Compare all unique AUs between each crystal (more intensive).')
+  private static boolean permute
 
   /**
    * --ac or --alphaCarbons Consider only alpha carbons for proteins.
@@ -176,7 +176,7 @@ class SuperposeCrystals extends AlgorithmsScript {
    * --pc or --prioritizeCrystals Prioritize the crystals being compared based on high density (0), low density (1), or file order (2).
    */
   @Option(names = ['--pc', '--prioritizeCrystals'], paramLabel = '0', defaultValue = '0',
-          description = 'High density (0), low density (1), or file order (2) prioritization of submitted crystals.')
+          description = 'Prioritize crystals based on high density (0), low density (1), or file order (2).')
   private int crystalPriority
 
   /**
@@ -284,8 +284,8 @@ class SuperposeCrystals extends AlgorithmsScript {
     }
 
     runningStatistics =
-        pac.comparisons(numAU, numInflatedAU, molTol, zPrime, zPrime2, alphaCarbons,
-            noHydrogen, massWeighted, crystalPriority, exhaustive, savePDB,
+        pac.comparisons(numAU, numInflatedAU, matchTol, zPrime, zPrime2, alphaCarbons,
+            noHydrogen, massWeighted, crystalPriority, permute, savePDB,
             restart, write,
             machineLearning, linkage, pacFilename)
 
