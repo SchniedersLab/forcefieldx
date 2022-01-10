@@ -68,116 +68,116 @@ import static org.apache.commons.io.FilenameUtils.getFullPath
  * ffxc test.SuperposeCrystals &lt;filename&gt &lt;filename&gt;
  */
 @Command(description = " Determine the RMSD for crystal polymorphs using the Progressive Alignment of Crystals (PAC) algorithm.",
-        name = "ffxc SuperposeCrystals")
+    name = "ffxc SuperposeCrystals")
 class SuperposeCrystals extends AlgorithmsScript {
 
   @Mixin
   AtomSelectionOptions atomSelectionOptions
 
   /**
-   * --na or --numAU Number of asymmetric units to include from each crystal in RMSD comparison.
+   * --na or --numAU AUs in the RMSD.
    */
   @Option(names = ['--na', '--numAU'], paramLabel = '20', defaultValue = '20',
-      description = 'Set the number of asymmetric units to include in final RMSD.')
-  int numAU
+      description = 'AUs in the RMSD.')
+  private int numAU
 
   /**
-   * --ni or --numInflatedAU Number of asymmetric units in the inflated sphere.
+   * --ni or --numInflatedAU AUs in the expanded crystal.
    */
   @Option(names = ['--ni', '--numInflatedAU'], paramLabel = '500', defaultValue = '500',
-      description = 'Specifies the number asymmetric units in the expanded crystal.')
-  int numInflatedAU
+      description = 'AUs in the expanded crystal.')
+  private int numInflatedAU
 
   /**
-   * --ns or --numSearch Number of asymmetric units for each handedness in the first crystal.
-   */
-  @Option(names = ['--ns', '--numSearch'], paramLabel = '1', defaultValue = '1',
-      description = 'Set the number of asymmetric units to search in the 1st crystal to check for additional conformations.')
-  int numSearch
-
-  /**
-   * --ns2 or --numSearch2 Number asymmetric units for each handedness in the second crystal.
-   */
-  @Option(names = ['--ns2', '--numSearch2'], paramLabel = '1', defaultValue = '1',
-      description = 'Set the number of asymmetric units to search in the 2nd crystal to check for additional conformations.')
-  int numSearch2
-
-  /**
-   * --zp or --zPrime Overrides number of species in the asymmetric unit.
+   * --zp or --zPrime Z' for crystal 1 (-1 to autodetect).
    */
   @Option(names = ['--zp', '--zPrime'], paramLabel = '-1', defaultValue = '-1',
-          description = 'Number of species in asymmetric unit of first crystal.')
-  int zPrime
+      description = "Z'' for crystal 1 (-1 to autodetect).")
+  private int zPrime
 
   /**
-   * --zp2 or --zPrime2 Overrides number of species in the asymmetric unit.
+   * --zp2 or --zPrime2 Z' for crystal 2 (-1 to autodetect).
    */
   @Option(names = ['--zp2', '--zPrime2'], paramLabel = '-1', defaultValue = '-1',
-          description = 'Number of species in asymmetric unit of second crystal.')
-  int zPrime2
+      description = "Z'' for crystal 2 (-1 to autodetect).")
+  private int zPrime2
 
   /**
-   * --re or --removeEquivalent Remove atoms with equivalent bonded environments.
+   * --mt or --matchTolerance Tolerance to determine if two AUs are different.
    */
-  @Option(names = ['--re', '--removeEquivalent'], paramLabel = "false", defaultValue = "false",
-          description = 'Ignore atoms with similar bonded environment .')
-  private static boolean renameEq
+  @Option(names = ['--mt', '--moleculeTolerance'], paramLabel = '0.1', defaultValue = '0.1',
+          description = "Tolerance to determine if two AUs are different.")
+  private double matchTol
 
   /**
-   * -w or --write Write out the RMSD matrix.
+   * -w or --write Write out the PAC RMSD matrix.
    */
   @Option(names = ['-w', '--write'], paramLabel = "false", defaultValue = "false",
-      description = 'Write out the RMSD matrix.')
+      description = 'Write out the PAC RMSD matrix.')
   private static boolean write
 
   /**
-   * -r or --restart Attempt to restart from a previously written RMSD matrix.
+   * -r or --restart Restart from a previously written RMSD matrix (if one exists).
    */
   @Option(names = ['-r', '--restart'], paramLabel = "false", defaultValue = "false",
-      description = 'Attempt to restart from a previously written RMSD matrix.')
+      description = 'Restart from a previously written RMSD matrix (if one exists).')
   private static boolean restart
 
   /**
-   * --sp or --savePDB Save out a PDB.
+   * --sp or --savePDB Save PDB files for the superposed crystals.
    */
   @Option(names = ['--sp', '--savePDB'], paramLabel = "false", defaultValue = "false",
-      description = 'Save a PDB file for the superposed crystal.')
+      description = 'Save PDB files for the superposed crystals.')
   private static boolean savePDB
 
   /**
-   * --ex or --exhaustive Perform an exhaustive comparison to handle multiple conformations (more expensive, but may find lower RMSD).
+   * -p or --permute Compare all unique AUs between each crystal.
    */
-  @Option(names = ['--ex', '--exhaustive'], paramLabel = "false", defaultValue = "false",
-      description = 'Perform an exhaustive comparison to handle multiple conformations (more expensive, but may find lower RMSD).')
-  private static boolean exhaustive
+  @Option(names = ['-p', '--permute'], paramLabel = "false", defaultValue = "false",
+      description = 'Compare all unique AUs between each crystal (more intensive).')
+  private static boolean permute
 
   /**
-   * --ac or --alphaCarbons Protein RMSD will only include alpha carbons.
+   * --ac or --alphaCarbons Consider only alpha carbons for proteins.
    */
   @Option(names = ['--ac', '--alphaCarbons'], paramLabel = "false", defaultValue = "false",
-          description = 'Protein RMSD will only include alpha carbons for comparison.')
+      description = 'Consider only alpha carbons for proteins.')
   private static boolean alphaCarbons
 
   /**
-   * --nh or --noHydrogen RMSD will not include hydrogen atoms.
+   * --nh or --noHydrogen Ignore hydrogen atoms.
    */
   @Option(names = ['--nh', '--noHydrogen'], paramLabel = "false", defaultValue = "false",
-      description = 'RMSD will not include hydrogen atoms.')
+      description = 'Ignore hydrogen atoms.')
   private static boolean noHydrogen
 
   /**
    * --sm or --saveMachineLearning Save out PDB and CSV for machine learning.
    */
   @Option(names = ['--sm', '--saveMachineLearning'], paramLabel = "false", defaultValue = "false",
-          description = 'Final structures for each comparison will be written out with RMSD in a CSV.')
+      description = 'Final structures for each comparison will be written out with RMSD in a CSV.')
   private static boolean machineLearning
 
   /**
-   * --mw or --massWeighted Weight atomic masses for comparison.
+   * --mw or --massWeighted Use mass-weighted atomic coordinates for alignment.
    */
   @Option(names = ['--mw', '--massWeighted'], paramLabel = "false", defaultValue = "false",
-          description = 'Weight atomic masses for the comparison.')
+      description = 'Use mass-weighted atomic coordinates for alignment.')
   private static boolean massWeighted
+
+  /**
+   * -l or --linkage Single (0), Average (1), or Complete (2) coordinate linkage for molecule prioritization.
+   */
+  @Option(names = ['-l', '--linkage'], paramLabel = '0', defaultValue = '0',
+      description = 'Single (0), Average (1), or Complete (2) coordinate linkage for molecule prioritization.')
+  private int linkage
+
+  /**
+   * --pc or --prioritizeCrystals Prioritize the crystals being compared based on high density (0), low density (1), or file order (2).
+   */
+  @Option(names = ['--pc', '--prioritizeCrystals'], paramLabel = '0', defaultValue = '0',
+          description = 'Prioritize crystals based on high density (0), low density (1), or file order (2).')
+  private int crystalPriority
 
   /**
    * The final argument(s) should be two or more filenames (same file twice if comparing same structures).
@@ -259,19 +259,35 @@ class SuperposeCrystals extends AlgorithmsScript {
     atomSelectionOptions.setActiveAtoms(targetFilter.getActiveMolecularSystem())
 
     // Compare structures in baseFilter and targetFilter.
-    ProgressiveAlignmentOfCrystals pac = new ProgressiveAlignmentOfCrystals(baseFilter, targetFilter, isSymmetric)
+    ProgressiveAlignmentOfCrystals pac = new ProgressiveAlignmentOfCrystals(baseFilter, targetFilter,
+        isSymmetric)
 
     // Define the filename to use for the RMSD values.
     String filename = filenames.get(0)
     String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt")
 
     // To save in ARES format a PDB must be written out.
-    if(machineLearning){
+    if (machineLearning) {
       savePDB = true
     }
 
-    runningStatistics = pac.comparisons(numAU, numInflatedAU, numSearch, numSearch2, zPrime, zPrime2, alphaCarbons,
-        noHydrogen, massWeighted, renameEq, exhaustive, savePDB, restart, write, machineLearning, pacFilename)
+    if (linkage == 0) {
+      logger.finer(" Single linkage will be used.")
+    } else if (linkage == 2) {
+      logger.finer(" Complete linkage will be used.")
+    } else if (linkage == 1) {
+      logger.finer(" Average linkage will be used.")
+    } else {
+      logger.warning(
+          "Prioritization method specified incorrectly (--pm {0, 1, 2}). Using default of average linkage.")
+      linkage = 1
+    }
+
+    runningStatistics =
+        pac.comparisons(numAU, numInflatedAU, matchTol, zPrime, zPrime2, alphaCarbons,
+            noHydrogen, massWeighted, crystalPriority, permute, savePDB,
+            restart, write,
+            machineLearning, linkage, pacFilename)
 
     return this
   }

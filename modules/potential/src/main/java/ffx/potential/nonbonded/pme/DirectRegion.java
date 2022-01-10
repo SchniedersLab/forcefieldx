@@ -70,6 +70,8 @@ public class DirectRegion extends ParallelRegion {
   public double[][] directDipole;
 
   public double[][] directDipoleCR;
+  public double[][] directField;
+  public double[][] directFieldCR;
   /** An ordered array of atoms in the system. */
   private Atom[] atoms;
 
@@ -120,7 +122,9 @@ public class DirectRegion extends ParallelRegion {
       double[][][] inducedDipole,
       double[][][] inducedDipoleCR,
       double[][] directDipole,
-      double[][] directDipoleCR) {
+      double[][] directDipoleCR,
+      double[][] directField,
+      double[][] directFieldCR) {
     // Input
     this.atoms = atoms;
     this.polarizability = polarizability;
@@ -137,6 +141,8 @@ public class DirectRegion extends ParallelRegion {
     this.inducedDipoleCR = inducedDipoleCR;
     this.directDipole = directDipole;
     this.directDipoleCR = directDipoleCR;
+    this.directField = directField;
+    this.directFieldCR = directFieldCR;
   }
 
   @Override
@@ -196,17 +202,23 @@ public class DirectRegion extends ParallelRegion {
         final double polar = polarizability[i];
         final double[] ind = induced0[i];
         final double[] directi = directDipole[i];
-        ind[0] = polar * field.getX(i);
-        ind[1] = polar * field.getY(i);
-        ind[2] = polar * field.getZ(i);
+        directField[i][0] = field.getX(i);
+        directField[i][1] = field.getY(i);
+        directField[i][2] = field.getZ(i);
+        ind[0] = polar * directField[i][0];
+        ind[1] = polar * directField[i][1];
+        ind[2] = polar * directField[i][2];
         directi[0] = ind[0];
         directi[1] = ind[1];
         directi[2] = ind[2];
         final double[] indCR = inducedCR0[i];
         final double[] directCRi = directDipoleCR[i];
-        indCR[0] = polar * fieldCR.getX(i);
-        indCR[1] = polar * fieldCR.getY(i);
-        indCR[2] = polar * fieldCR.getZ(i);
+        directFieldCR[i][0] = fieldCR.getX(i);
+        directFieldCR[i][1] = fieldCR.getY(i);
+        directFieldCR[i][2] = fieldCR.getZ(i);
+        indCR[0] = polar * directFieldCR[i][0];
+        indCR[1] = polar * directFieldCR[i][1];
+        indCR[2] = polar * directFieldCR[i][2];
         directCRi[0] = indCR[0];
         directCRi[1] = indCR[1];
         directCRi[2] = indCR[2];

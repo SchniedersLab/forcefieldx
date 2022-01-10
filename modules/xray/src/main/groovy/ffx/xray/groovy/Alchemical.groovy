@@ -268,8 +268,8 @@ class Alchemical extends AlgorithmsScript {
             logger.info("Ion charge is: " + ionCharge.toString())
             int numIons = (int) (-1 * (Math.ceil(crystalCharge / ionCharge)))
             if (numIons > 0) {
-              logger.info(numIons + " " + msNode.getAtomList().name
-                  + " ions needed to neutralize the crystal.")
+              logger.info(numIons + " " + msNode.getAtomList().name +
+                      " ions needed to neutralize the crystal.")
               ionType = msNode.getAtomList().name
               for (Atom atom : msNode.getAtomList()) {
                 atom.setUse(true)

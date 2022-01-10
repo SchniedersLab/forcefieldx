@@ -84,7 +84,6 @@ import ffx.numerics.fft.Complex3DCuda;
 import ffx.numerics.fft.Complex3DParallel;
 import ffx.numerics.multipole.MultipoleTensor;
 import ffx.potential.bonded.Atom;
-import ffx.potential.extended.ExtUtils;
 import ffx.potential.parameters.ForceField;
 import java.nio.DoubleBuffer;
 import java.util.logging.Level;
@@ -145,7 +144,7 @@ public class ReciprocalSpace {
   private final RowPermanentLoop[] rowPermanentLoops;
   private final RowInducedLoop[] rowInducedLoops;
   /** ExtendedSystem variables */
-  private final boolean esvTerm = ExtUtils.prop("esvterm", false);
+  private boolean esvTerm = false;
   /**
    * Number of atoms for a given symmetry operator that a given thread is responsible for applying
    * to the FFT grid. gridAtomCount[nSymm][nThread]
@@ -158,9 +157,10 @@ public class ReciprocalSpace {
   private final int[][][] gridAtomList;
 
   private final PermanentPhiRegion permanentPhiRegion;
-  private final PermanentPhiRegion permanentPhiDotRegion;
   private final InducedPhiRegion polarizationPhiRegion;
-  private final InducedPhiRegion polarUnscaledPhiRegion;
+  //Initialized in attachESV method
+  private PermanentPhiRegion permanentPhiDotRegion = null;
+  private InducedPhiRegion polarUnscaledPhiRegion = null;
   private final IntegerSchedule recipSchedule;
   /** Timing variables. */
   private final long[] bSplineTime;
@@ -357,13 +357,7 @@ public class ReciprocalSpace {
     }
     permanentPhiRegion = new PermanentPhiRegion(bSplineRegion);
     polarizationPhiRegion = new InducedPhiRegion(bSplineRegion);
-    if (esvTerm) {
-      permanentPhiDotRegion = new PermanentPhiRegion(bSplineRegion);
-      polarUnscaledPhiRegion = new InducedPhiRegion(bSplineRegion);
-    } else {
-      permanentPhiDotRegion = null;
-      polarUnscaledPhiRegion = null;
-    }
+
 
     // Initialize timing variables.
     bSplineTime = new long[threadCount];
@@ -372,6 +366,15 @@ public class ReciprocalSpace {
     splineCount = new int[threadCount];
     permanentPhiTime = new long[threadCount];
     inducedPhiTime = new long[threadCount];
+  }
+
+  public void attachExtendedSystem(){
+    esvTerm = true;
+    permanentPhiDotRegion = new PermanentPhiRegion(bSplineRegion);
+    polarUnscaledPhiRegion = new InducedPhiRegion(bSplineRegion);
+
+    fracMultipoleDot = new double[nSymm][nAtoms][10];
+    fracMultipoleDotPhi = new double[nAtoms][tensorCount];
   }
 
   /**
@@ -1068,10 +1071,6 @@ public class ReciprocalSpace {
       fracMultipolePhi = new double[nAtoms][tensorCount];
       fracInducedDipolePhi = new double[nAtoms][tensorCount];
       fracInducedDipolePhiCR = new double[nAtoms][tensorCount];
-      if (esvTerm) {
-        fracMultipoleDot = new double[nSymm][nAtoms][10];
-        fracMultipoleDotPhi = new double[nAtoms][tensorCount];
-      }
     }
   }
 

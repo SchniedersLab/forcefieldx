@@ -8145,7 +8145,7 @@ public class SpaceGroupDefinitions {
     for (int i = 0; i < num; i++) {
       String s1 = SpaceGroupInfo.spaceGroupNames[i];
       String s2 = SpaceGroupInfo.pdbSpaceGroupNames[i];
-      if (s1.equalsIgnoreCase(n) || s2.equalsIgnoreCase(n)) {
+      if (s1.equalsIgnoreCase(n.replaceAll(" +","")) || s2.equalsIgnoreCase(n)) {
         return i + 1;
       }
     }
