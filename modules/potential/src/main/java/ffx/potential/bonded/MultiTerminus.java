@@ -234,14 +234,11 @@ public class MultiTerminus extends Residue {
         intxyz(H1, N, 1.02, CA, 109.5, C, 180.0, 0);
         intxyz(H2, N, 1.02, CA, 109.5, C, 60.0, 0);
         intxyz(H3, N, 1.02, CA, 109.5, C, -60.0, 0);
-        double vel[] = new double[3];
+        double[] vel = new double[3];
         N.getVelocity(vel);
         H3.setVelocity(vel);
-        //                Bond bondH3 = buildBond(N, H3, forceField, null); // try manually
         Bond bondH3 = new Bond(N, H3);
-        bondH3.setBondType(
-            forceField.getBondType(
-                format("%d %d", N.getAtomType().atomClass, H3.getAtomType().atomClass)));
+        bondH3.setBondType(forceField.getBondType(N.getAtomType(), H3.getAtomType()));
         this.getAtomNode().add(H3);
         this.getBondList().add(bondH3);
         this.add(bondH3);
@@ -342,11 +339,7 @@ public class MultiTerminus extends Residue {
     sb.append("Updating bonded terms: \n");
     for (Bond bond : getBondList()) {
       BondType oldType = bond.bondType;
-      int c[] = new int[2];
-      c[0] = bond.atoms[0].getAtomType().atomClass;
-      c[1] = bond.atoms[1].getAtomType().atomClass;
-      String key = BondType.sortKey(c);
-      BondType newType = forceField.getBondType(key);
+      BondType newType = forceField.getBondType(bond.atoms[0].getAtomType(), bond.atoms[1].getAtomType());
       if (oldType != newType) {
         sb.append(format(" Bond: %s --> %s \n", bond.bondType, newType));
         bond.setBondType(newType);

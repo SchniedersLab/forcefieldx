@@ -480,12 +480,9 @@ public class XYZFilter extends SystemFilter {
               return false;
             }
             Bond bond = new Bond(atom1, atom2);
-            c[0] = atom1.getAtomType().atomClass;
-            c[1] = atom2.getAtomType().atomClass;
-            String key = BondType.sortKey(c);
-            BondType bondType = forceField.getBondType(key);
+            BondType bondType = forceField.getBondType(atom1.getAtomType(), atom2.getAtomType());
             if (bondType == null) {
-              logNoBondType(atom1, atom2, key, forceField);
+              logNoBondType(atom1, atom2, forceField);
             } else {
               bond.setBondType(bondType);
             }

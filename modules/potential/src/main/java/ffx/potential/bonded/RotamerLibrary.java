@@ -224,6 +224,18 @@ public class RotamerLibrary {
    */
   public static void applyRotamer(Residue residue, Rotamer rotamer, boolean independent) {
     residue.setRotamer(rotamer);
+
+    /*
+     If the rotamer represents a titration state, update force field parameters for the
+     side-chain atoms of the residue.
+
+     This is done before applying the rotamer, so that the conformation is based on the appropriate
+     equilibrium bond and angle values for the titration state of the rotamer.
+     */
+    if (rotamer.isTitrating) {
+      rotamer.updateParameters(residue);
+    }
+
     if (rotamer.isState) {
       applyState(residue, rotamer);
     } else {
@@ -237,12 +249,6 @@ public class RotamerLibrary {
         default:
           break;
       }
-    }
-
-    // If the rotamer represents a titration state, update force field parameters for the
-    // side-chain atoms of the residue.
-    if (rotamer.isTitrating) {
-      rotamer.updateParameters(residue);
     }
 
   }

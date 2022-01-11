@@ -148,14 +148,14 @@ public class Torsion extends BondedTerm implements LambdaInterface {
    * @param a1 Atom 1.
    * @param a2 Atom 2.
    * @param a3 Atom 3.
-   * @param key The class key.
    */
-  public static void logNoTorsionType(Atom a0, Atom a1, Atom a2, Atom a3, String key,
-      ForceField forceField) {
+  public static void logNoTorsionType(Atom a0, Atom a1, Atom a2, Atom a3, ForceField forceField) {
     AtomType atomType0 = a0.getAtomType();
     AtomType atomType1 = a1.getAtomType();
     AtomType atomType2 = a2.getAtomType();
     AtomType atomType3 = a3.getAtomType();
+    int[] c = {atomType0.atomClass, atomType1.atomClass, atomType2.atomClass, atomType3.atomClass};
+    String key = TorsionType.sortKey(c);
     StringBuilder sb = new StringBuilder(
         format(
             "No TorsionType for key: %s\n %s -> %s\n %s -> %s\n %s -> %s\n %s -> %s",
@@ -196,13 +196,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
                   continue;
                 }
               }
-              int[] c = new int[4];
-              c[0] = type0.atomClass;
-              c[1] = type1.atomClass;
-              c[2] = type2.atomClass;
-              c[3] = type3.atomClass;
-              String closeKey = TorsionType.sortKey(c);
-              TorsionType torsionType = forceField.getTorsionType(closeKey);
+              TorsionType torsionType = forceField.getTorsionType(type0, type1, type2, type3);
               if (torsionType != null && !torsionTypes.contains(torsionType)) {
                 if (!match) {
                   match = true;
@@ -217,23 +211,6 @@ public class Torsion extends BondedTerm implements LambdaInterface {
       }
     }
     return torsionTypes.size();
-  }
-
-  /**
-   * Find a torsion based on the specified classes.
-   *
-   * @param c0 Atom class 0.
-   * @param c1 Atom class 1.
-   * @param c2 Atom class 2.
-   * @param c3 Atom class 3.
-   * @param forceField Force Field parameters to use.
-   * @return A torsion type if it exists.
-   */
-  private static TorsionType getTorsionType(int c0, int c1, int c2, int c3, ForceField
-      forceField) {
-    int[] c = {c0, c1, c2, c3};
-    String key = TorsionType.sortKey(c);
-    return forceField.getTorsionType(key);
   }
 
   /**
@@ -252,46 +229,29 @@ public class Torsion extends BondedTerm implements LambdaInterface {
     Atom a2 = middleBond.getAtom(1);
     Atom a3 = bond3.getOtherAtom(middleBond);
 
-    int c0 = a0.getAtomType().atomClass;
-    int c1 = a1.getAtomType().atomClass;
-    int c2 = a2.getAtomType().atomClass;
-    int c3 = a3.getAtomType().atomClass;
-
-    TorsionType torsionType = getTorsionType(c0, c1, c2, c3, forceField);
-
-    // Single wild card.
-    if (torsionType == null) {
-      if (c0 > c3) {
-        torsionType = getTorsionType(c0, c1, c2, 0, forceField);
-        if (torsionType == null) {
-          torsionType = getTorsionType(0, c1, c2, c3, forceField);
-        }
-      } else {
-        torsionType = getTorsionType(0, c1, c2, c3, forceField);
-        if (torsionType == null) {
-          torsionType = getTorsionType(c0, c1, c2, 0, forceField);
-        }
-      }
-    }
-
-    // Double wild card.
-    if (torsionType == null) {
-      torsionType = getTorsionType(0, c1, c2, 0, forceField);
-    }
+    TorsionType torsionType = forceField.getTorsionType(a0.getAtomType(), a1.getAtomType(),
+        a2.getAtomType(), a3.getAtomType());
 
     // No torsion type found.
     if (torsionType == null) {
-      int[] c = {c0, c1, c2, c3};
-      String key = TorsionType.sortKey(c);
-      logNoTorsionType(a0, a1, a2, a3, key, forceField);
+      logNoTorsionType(a0, a1, a2, a3, forceField);
       return null;
     }
 
     Torsion torsion = new Torsion(bond1, middleBond, bond3);
-    torsion.torsionType = torsionType;
+    torsion.setTorsionType(torsionType);
     torsion.units = forceField.getDouble("TORSIONUNIT", 1.0);
 
     return torsion;
+  }
+
+  /**
+   * Set the torsion type.
+   *
+   * @param torsionType The TorsionType.
+   */
+  public void setTorsionType(TorsionType torsionType) {
+    this.torsionType = torsionType;
   }
 
   /**

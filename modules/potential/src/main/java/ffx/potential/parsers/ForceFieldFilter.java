@@ -53,7 +53,7 @@ import ffx.potential.parameters.ForceField.ForceFieldType;
 import ffx.potential.parameters.ImproperTorsionType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.OutOfPlaneBendType;
-import ffx.potential.parameters.PiTorsionType;
+import ffx.potential.parameters.PiOrbitalTorsionType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.RelativeSolvationType;
 import ffx.potential.parameters.SoluteType;
@@ -328,7 +328,7 @@ public class ForceFieldFilter {
                 baseType = StretchBendType.parse(input, tokens);
                 break;
               case PITORS:
-                baseType = PiTorsionType.parse(input, tokens);
+                baseType = PiOrbitalTorsionType.parse(input, tokens);
                 break;
               case IMPTORS:
                 baseType = ImproperTorsionType.parse(input, tokens);
@@ -451,7 +451,7 @@ public class ForceFieldFilter {
           baseType = StretchBendType.parse(input, tokens);
           break;
         case PITORS:
-          baseType = PiTorsionType.parse(input, tokens);
+          baseType = PiOrbitalTorsionType.parse(input, tokens);
           break;
         case IMPTORS:
           baseType = ImproperTorsionType.parse(input, tokens);
