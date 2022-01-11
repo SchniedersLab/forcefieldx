@@ -49,7 +49,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The PiTorsionType class defines a Pi-Torsion energy term.
+ * The PiTorsionType class defines a Pi Orbital Torsion energy term.
  *
  * @author Michael J. Schnieders
  * @since 1.0
