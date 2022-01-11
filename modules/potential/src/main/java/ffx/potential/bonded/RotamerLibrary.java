@@ -1936,6 +1936,7 @@ public class RotamerLibrary {
         double dOD1_CG = OD1_CG.bondType.distance;
         double dOD2_CG = OD2_CG.bondType.distance;
         double dHB_CB = HB_CB.bondType.distance;
+
         Angle CG_CB_CA = CG.getAngle(CB, CA);
         Angle OD1_CG_CB = OD1.getAngle(CG, CB);
         Angle OD2_CG_CB = OD2.getAngle(CG, CB);
@@ -1944,6 +1945,7 @@ public class RotamerLibrary {
         double dOD1_CG_CB = OD1_CG_CB.angleType.angle[OD1_CG_CB.nh];
         double dOD2_CG_CB = OD2_CG_CB.angleType.angle[OD2_CG_CB.nh];
         double dHB_CB_CA = HB_CB_CA.angleType.angle[HB_CB_CA.nh];
+
         intxyz(CG, CB, dCG_CB, CA, dCG_CB_CA, N, rotamer.chi1, 0);
         intxyz(OD1, CG, dOD1_CG, CB, dOD1_CG_CB, CA, 0.0, 0);
         intxyz(OD2, CG, dOD2_CG, CB, dOD2_CG_CB, OD1, 126.0, 1);
@@ -1981,11 +1983,13 @@ public class RotamerLibrary {
         double dOD2_CG = OD2_CG.bondType.distance;
         double dHB_CB = HB_CB.bondType.distance;
         double dHD2_OD2 = HD2_OD2.bondType.distance;
+
         Angle CG_CB_CA = CG.getAngle(CB, CA);
         Angle OD1_CG_CB = OD1.getAngle(CG, CB);
         Angle OD2_CG_CB = OD2.getAngle(CG, CB);
         Angle HB_CB_CA = HB2.getAngle(CB, CA);
         Angle HD2_OD2_CG = HD2.getAngle(OD2, CG);
+
         double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
         double dOD1_CG_CB = OD1_CG_CB.angleType.angle[OD1_CG_CB.nh];
         double dOD2_CG_CB = OD2_CG_CB.angleType.angle[OD2_CG_CB.nh];
