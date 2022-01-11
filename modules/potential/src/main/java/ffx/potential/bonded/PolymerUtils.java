@@ -559,13 +559,9 @@ public class PolymerUtils {
     for (Bond bond : ssBondList) {
       Atom a1 = bond.getAtom(0);
       Atom a2 = bond.getAtom(1);
-      int[] c = new int[2];
-      c[0] = a1.getAtomType().atomClass;
-      c[1] = a2.getAtomType().atomClass;
-      String key = BondType.sortKey(c);
-      BondType bondType = forceField.getBondType(key);
+      BondType bondType = forceField.getBondType(a1.getAtomType(), a2.getAtomType());
       if (bondType == null) {
-        logNoBondType(a1, a2, key, forceField);
+        logNoBondType(a1, a2, forceField);
       } else {
         bond.setBondType(bondType);
       }

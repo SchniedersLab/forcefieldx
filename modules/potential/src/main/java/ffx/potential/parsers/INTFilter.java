@@ -279,11 +279,9 @@ public class INTFilter extends SystemFilter {
             Atom atom1 = atomList.get(i);
             Atom atom2 = atomList.get(partner - 1);
             Bond bond = new Bond(atom1, atom2);
-            int[] c = {atom1.getAtomType().atomClass, atom2.getAtomType().atomClass};
-            String key = BondType.sortKey(c);
-            BondType bondType = forceField.getBondType(key);
+            BondType bondType = forceField.getBondType(atom1.getAtomType(), atom2.getAtomType());
             if (bondType == null) {
-              logNoBondType(atom1, atom2, key, forceField);
+              logNoBondType(atom1, atom2, forceField);
             } else {
               bond.setBondType(bondType);
             }
@@ -295,11 +293,9 @@ public class INTFilter extends SystemFilter {
           Atom atom1 = atomList.get(pair[0] - 1);
           Atom atom2 = atomList.get(pair[1] - 1);
           Bond bond = new Bond(atom1, atom2);
-          int[] c = {atom1.getAtomType().atomClass, atom2.getAtomType().atomClass};
-          String key = BondType.sortKey(c);
-          BondType bondType = forceField.getBondType(key);
+          BondType bondType = forceField.getBondType(atom1.getAtomType(), atom2.getAtomType());
           if (bondType == null) {
-            logNoBondType(atom1, atom2, key, forceField);
+            logNoBondType(atom1, atom2, forceField);
           } else {
             bond.setBondType(bondType);
           }

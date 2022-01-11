@@ -162,12 +162,13 @@ public class Bond extends BondedTerm {
    *
    * @param a1 Atom 1.
    * @param a2 Atom 2.
-   * @param key The class key.
    * @param forceField The force field in use.
    */
-  public static void logNoBondType(Atom a1, Atom a2, String key, ForceField forceField) {
+  public static void logNoBondType(Atom a1, Atom a2, ForceField forceField) {
     AtomType atomType1 = a1.getAtomType();
     AtomType atomType2 = a2.getAtomType();
+    int[] c = {atomType1.atomClass, atomType2.atomClass};
+    String key = BondType.sortKey(c);
     StringBuilder sb = new StringBuilder(
         format(" No BondType for key: %s\n %s -> %s\n %s -> %s", key,
         a1, atomType1, a2, atomType2));
@@ -184,11 +185,7 @@ public class Bond extends BondedTerm {
             (type2.atomClass != c1) && (type2.atomClass != c2)) {
           continue;
         }
-        int[] c = new int[2];
-        c[0] = type1.atomClass;
-        c[1] = type2.atomClass;
-        String closeKey = BondType.sortKey(c);
-        BondType bondType = forceField.getBondType(closeKey);
+        BondType bondType = forceField.getBondType(type1, type2);
         if (bondType != null && !bondTypes.contains(bondType)) {
           if (!match) {
             match = true;

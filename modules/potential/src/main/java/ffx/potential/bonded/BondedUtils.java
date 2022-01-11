@@ -103,13 +103,9 @@ public class BondedUtils {
    */
   public static Bond buildBond(Atom a1, Atom a2, ForceField forceField, List<Bond> bondList) {
     Bond bond = new Bond(a1, a2);
-    int[] c = new int[2];
-    c[0] = a1.getAtomType().atomClass;
-    c[1] = a2.getAtomType().atomClass;
-    String key = BondType.sortKey(c);
-    BondType bondType = forceField.getBondType(key);
+    BondType bondType = forceField.getBondType(a1.getAtomType(), a2.getAtomType());
     if (bondType == null) {
-      logNoBondType(a1, a2, key, forceField);
+      logNoBondType(a1, a2, forceField);
     } else {
       bond.setBondType(bondType);
     }

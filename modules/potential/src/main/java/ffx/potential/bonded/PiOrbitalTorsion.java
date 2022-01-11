@@ -37,7 +37,7 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static ffx.potential.parameters.PiTorsionType.units;
+import static ffx.potential.parameters.PiOrbitalTorsionType.units;
 import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
@@ -46,7 +46,7 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.PiTorsionType;
+import ffx.potential.parameters.PiOrbitalTorsionType;
 import java.util.logging.Logger;
 
 /**
@@ -60,7 +60,7 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
   private static final Logger logger = Logger.getLogger(PiOrbitalTorsion.class.getName());
 
   /** A reference to the Pi-Torsion type in use. */
-  public PiTorsionType piTorsionType = null;
+  public PiOrbitalTorsionType piOrbitalTorsionType = null;
   /** Current value of lambda. */
   private double lambda = 1.0;
   /** Current value of dE/dL. */
@@ -100,6 +100,24 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
   }
 
   /**
+   * Get the middle bond that the Pi-Orbital Torsion is formed around.
+   *
+   * @return The middle bond.
+   */
+  public Bond getMiddleBond() {
+    return bonds[2];
+  }
+
+  /**
+   * Set the PiOrbitalTorsionType.
+   *
+   * @param piOrbitalTorsionType The PiOrbitalTorsionType.
+   */
+  public void setPiOrbitalTorsionType(PiOrbitalTorsionType piOrbitalTorsionType) {
+    this.piOrbitalTorsionType = piOrbitalTorsionType;
+  }
+
+  /**
    * Attempt to create a new PiOrbitalTorsion based on the supplied bond and forceField.
    *
    * @param bond the Bond to create a PiOrbitalTorsion around.
@@ -109,19 +127,18 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
   public static PiOrbitalTorsion piOrbitalTorsionFactory(Bond bond, ForceField forceField) {
     Atom atom1 = bond.getAtom(0);
     Atom atom2 = bond.getAtom(1);
-    int[] c = new int[2];
     if (!atom1.isTrigonal() || !atom2.isTrigonal()) {
       return null;
     }
-    c[0] = atom1.getAtomType().atomClass;
-    c[1] = atom2.getAtomType().atomClass;
-    String key = PiTorsionType.sortKey(c);
-    PiTorsionType piTorsionType = forceField.getPiTorsionType(key);
-    if (piTorsionType == null) {
+
+    PiOrbitalTorsionType piOrbitalTorsionType = forceField.getPiOrbitalTorsionType(
+        atom1.getAtomType(), atom2.getAtomType());
+    if (piOrbitalTorsionType == null) {
       return null;
     }
+
     PiOrbitalTorsion piOrbitalTorsion = new PiOrbitalTorsion(bond);
-    piOrbitalTorsion.piTorsionType = piTorsionType;
+    piOrbitalTorsion.setPiOrbitalTorsionType(piOrbitalTorsionType);
     return piOrbitalTorsion;
   }
 
@@ -179,16 +196,16 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
       }
       var cosine2 = cosine * cosine - sine * sine;
       var phi2 = 1.0 - cosine2;
-      energy = units * piTorsionType.forceConstant * phi2 * esvLambda;
+      energy = units * piOrbitalTorsionType.forceConstant * phi2 * esvLambda;
       if (esvTerm) {
-        setEsvDeriv(units * piTorsionType.forceConstant * phi2 * dedesvChain);
+        setEsvDeriv(units * piOrbitalTorsionType.forceConstant * phi2 * dedesvChain);
       }
       dEdL = energy;
       energy = lambda * energy;
       if (gradient || lambdaTerm) {
         var sine2 = 2.0 * cosine * sine;
         var dphi2 = 2.0 * sine2;
-        var dedphi = units * piTorsionType.forceConstant * dphi2 * esvLambda;
+        var dedphi = units * piOrbitalTorsionType.forceConstant * dphi2 * esvLambda;
 
         // Chain rule terms for first derivative components.
         var vdp = vd.sub(vp);

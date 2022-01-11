@@ -122,18 +122,19 @@ public class Angle extends BondedTerm {
      * @param a1  Atom 1.
      * @param a2  Atom 2.
      * @param a3  Atom 3.
-     * @param key The class key.
      */
-    public static void logNoAngleType(Atom a1, Atom a2, Atom a3, String key, ForceField forceField) {
+    public static void logNoAngleType(Atom a1, Atom a2, Atom a3, ForceField forceField) {
         AtomType atomType1 = a1.getAtomType();
         AtomType atomType2 = a2.getAtomType();
         AtomType atomType3 = a3.getAtomType();
-        StringBuilder sb = new StringBuilder(
-            format("No AngleType for key: %s\n %s -> %s\n %s -> %s\n %s -> %s",
-                        key, a1, atomType1, a2, atomType2, a3, atomType3));
         int c1 = atomType1.atomClass;
         int c2 = atomType2.atomClass;
         int c3 = atomType3.atomClass;
+        int[] c = {c1, c2, c3};
+        String key = AngleType.sortKey(c);
+        StringBuilder sb = new StringBuilder(
+            format("No AngleType for key: %s\n %s -> %s\n %s -> %s\n %s -> %s",
+                        key, a1, atomType1, a2, atomType2, a3, atomType3));
         List<AtomType> types1 = forceField.getSimilarAtomTypes(atomType1);
         List<AtomType> types2 = forceField.getSimilarAtomTypes(atomType2);
         List<AtomType> types3 = forceField.getSimilarAtomTypes(atomType3);
@@ -151,12 +152,7 @@ public class Angle extends BondedTerm {
                         (type3.atomClass != c1) && (type3.atomClass != c3)) {
                         continue;
                     }
-                    int[] c = new int[3];
-                    c[0] = type1.atomClass;
-                    c[1] = type2.atomClass;
-                    c[2] = type3.atomClass;
-                    String closeKey = AngleType.sortKey(c);
-                    AngleType angleType = forceField.getAngleType(closeKey);
+                    AngleType angleType = forceField.getAngleType(type1, type2, type3);
                     if (angleType != null && !angleTypes.contains(angleType)) {
                         if (!match) {
                             match = true;
@@ -184,14 +180,9 @@ public class Angle extends BondedTerm {
         Atom ac = b1.getCommonAtom(b2);
         Atom a1 = b1.get1_2(ac);
         Atom a3 = b2.get1_2(ac);
-        int[] c = new int[3];
-        c[0] = a1.getAtomType().atomClass;
-        c[1] = ac.getAtomType().atomClass;
-        c[2] = a3.getAtomType().atomClass;
-        String key = AngleType.sortKey(c);
-        AngleType angleType = forceField.getAngleType(key);
+        AngleType angleType = forceField.getAngleType(a1.getAtomType(), ac.getAtomType(), a3.getAtomType());
         if (angleType == null) {
-            logNoAngleType(a1, ac, a3, key, forceField);
+            logNoAngleType(a1, ac, a3, forceField);
             return null;
         }
         newAngle.setAngleType(angleType);
