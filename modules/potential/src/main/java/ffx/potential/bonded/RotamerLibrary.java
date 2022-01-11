@@ -1976,11 +1976,6 @@ public class RotamerLibrary {
         Bond OD2_CG = OD2.getBond(CG);
         Bond HB_CB = HB2.getBond(CB);
         Bond HD2_OD2 = HD2.getBond(OD2);
-        /*double dCG_CB = 1.509;
-        double dOD1_CG = 1.2255;
-        double dOD2_CG = 1.3498;
-        double dHB_CB = 1.112;
-        double dHD2_OD2 = 0.9737;*/
         double dCG_CB = CG_CB.bondType.distance;
         double dOD1_CG = OD1_CG.bondType.distance;
         double dOD2_CG = OD2_CG.bondType.distance;
@@ -1991,16 +1986,6 @@ public class RotamerLibrary {
         Angle OD2_CG_CB = OD2.getAngle(CG, CB);
         Angle HB_CB_CA = HB2.getAngle(CB, CA);
         Angle HD2_OD2_CG = HD2.getAngle(OD2, CG);
-        /*double dCG_CB_CA = 110.6;
-        double dOD1_CG_CB = 122.4;
-        double dOD2_CG_CB = 110.3;
-        double dHB_CB_CA = 110.7;
-        double dHD2_OD2_CG = 110.7;
-        logger.info("ASH dCG_CB_CA Angle Length:" + dCG_CB_CA);
-        logger.info("ASH dOD1_CG_CB Angle Length:" + dOD1_CG_CB);
-        logger.info("ASH dOD2_CG_CB Angle Length:" + dOD2_CG_CB);
-        logger.info("ASH dHB_CB_CA Angle Length:" + dHB_CB_CA);
-        logger.info("ASH dHD2_OD2_CG Angle Length:" + dHB_CB_CA);*/
         double dCG_CB_CA = CG_CB_CA.angleType.angle[CG_CB_CA.nh];
         double dOD1_CG_CB = OD1_CG_CB.angleType.angle[OD1_CG_CB.nh];
         double dOD2_CG_CB = OD2_CG_CB.angleType.angle[OD2_CG_CB.nh];
