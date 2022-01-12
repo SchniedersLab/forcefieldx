@@ -1254,7 +1254,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
     if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
       logger.log(basicLogging, " Wrote dynamics restart file to " + dynName);
     } else {
-      logger.log(basicLogging, " Writing dynamics restart file to " + dynName + " failed");
+      logger.log(basicLogging, " Writing ESV dynamics restart file to " + dynName + " failed");
+    }
+    if(esvSystem != null){
+      esvSystem.writeRestart();
     }
   }
 

@@ -137,8 +137,9 @@ class ProtonMDDriver extends AlgorithmsScript {
     double ke = 0
     double totalEnergy = 0
 
-    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly)
+    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, null)
     esvSystem.setConstantPh(pH)
+    potential.attachExtendedSystem(esvSystem)
     List<Residue> extendedResidues = esvSystem.getExtendedResidueList()
     List<Residue> titratingResidues = esvSystem.getTitratingResidueList()
     List<Residue> tautomerResidues = esvSystem.getTautomerizingResidueList()
@@ -181,7 +182,7 @@ class ProtonMDDriver extends AlgorithmsScript {
     potential.getCoordinates(x)
     double initialEnergy = potential.energyAndGradient(x, g, true)
 
-    stochasticIntegrator = new Stochastic((double) 0.0, numESVs, theta, theta_v,
+    stochasticIntegrator = new Stochastic(esvSystem.getThetaFriction(), numESVs, theta, theta_v,
             theta_a, theta_mass)
     logger.info("\n Running lambda dynamics on " + modelFilename)
     logger.info(format("%s", esvSystem.getLambdaList()))
@@ -200,7 +201,6 @@ class ProtonMDDriver extends AlgorithmsScript {
       //Gather derivatives
       potential.getCoordinates(x)
       pe = potential.energyAndGradient(x, g, false)
-      pe += esvSystem.getBiasEnergy()
       //Put derivatives in terms of theta
       dEdL = esvSystem.postForce()
       //Do full step integration operation

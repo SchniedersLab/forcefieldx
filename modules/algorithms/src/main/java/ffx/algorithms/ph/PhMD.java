@@ -105,7 +105,7 @@ public class PhMD  {
     molecularDynamics.attachExtendedSystem(esvSystem, reportFreq);
   }
 
-  /** Wraps reinitialization calls so as to provide un-fucked atom numbering. */
+  /** Wraps reinitialization calls so as to provide correct atom numbering. */
   private void reInitialize(boolean initFFE, boolean initMolDyn) {
     //        renumberAtoms(mola);	// TODO Determine if+why this is necessary.
     if (initFFE) {

@@ -133,8 +133,13 @@ class PhDynamics extends AlgorithmsScript {
     // Set the filename.
     String filename = activeAssembly.getFile().getAbsolutePath()
 
+    // Restart File
+    File esv = new File(FilenameUtils.removeExtension(filename) + ".esv")
+    if (!esv.exists()) {
+      esv = null
+    }
     // Initialize and attach extended system first.
-    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly)
+    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, esv)
     esvSystem.setConstantPh(pH)
     potential.attachExtendedSystem(esvSystem)
     int numESVs = esvSystem.extendedResidueList.size()

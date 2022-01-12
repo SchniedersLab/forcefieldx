@@ -47,10 +47,15 @@ import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TitrationUtils;
+import ffx.potential.parsers.DYNFilter;
+import ffx.potential.parsers.ESVFilter;
 import ffx.utilities.Constants;
+import ffx.utilities.FileUtils;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
+import java.io.File;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ffx.utilities.Constants.kB;
@@ -58,6 +63,7 @@ import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.*;
 
 import edu.rit.pj.reduction.SharedDouble;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * ExtendedSystem class.
@@ -69,7 +75,7 @@ public class ExtendedSystem {
 
     private static final Logger logger = Logger.getLogger(ExtendedSystem.class.getName());
 
-    private static final double THETA_MASS = 1.0; //Atomic Mass Units
+    private static final double THETA_MASS = 5.0; //Atomic Mass Units
 
     private static final double THETA_FRICTION = 5.0; // psec^-1
 
@@ -124,14 +130,6 @@ public class ExtendedSystem {
      * when an Extended System is attached.
      */
     private final TitrationUtils titrationUtils;
-    /**
-     * VanDerWaals instance.
-     */
-    private final VanDerWaals vanDerWaals;
-    /**
-     * PME instance.
-     */
-    private final ParticleMeshEwaldQI particleMeshEwaldQI;
     /**
      * Array of booleans that is initialized to match the number of atoms in the molecular assembly
      * noting whether the atom is titrating. Note that any side chain atom that belongs to a titrating residue
@@ -216,13 +214,18 @@ public class ExtendedSystem {
      * Mass of each theta particle. Different theta mass for each particle are not supported.
      */
     private double[] thetaMassArray;
+    /** Dynamics restart file. */
+    File restartFile = null;
+
+    /** Filter to parse the dynamics restart file. */
+    ESVFilter esvFilter = null;
 
     /**
      * Construct extended system with the provided configuration.
      *
      * @param mola a {@link MolecularAssembly} object.
      */
-    public ExtendedSystem(MolecularAssembly mola) {
+    public ExtendedSystem(MolecularAssembly mola, final File esvFile) {
         this.molecularAssembly = mola;
 
         ForceField forceField = mola.getForceField();
@@ -236,8 +239,8 @@ public class ExtendedSystem {
         thetaFriction = properties.getDouble("esv.friction", ExtendedSystem.THETA_FRICTION);
         thetaMass = properties.getDouble("esv.mass", ExtendedSystem.THETA_MASS);
         discrBiasMag = properties.getDouble("discretize.bias.magnitude", DISCR_BIAS);
-        double initialTitrationLambda = properties.getDouble("lambda.titration.initial", 1.0);
-        double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 1.0);
+        double initialTitrationLambda = properties.getDouble("lambda.titration.initial", 0.5);
+        double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
 //        boolean bonded = properties.getBoolean("esv.bonded", false);
         doVDW = properties.getBoolean("esv.vdW", true);
         doElectrostatics = properties.getBoolean("esv.elec", true);
@@ -249,9 +252,6 @@ public class ExtendedSystem {
 //        boolean nonlinearMultipoles = properties.getBoolean("esv.nonlinearMultipoles", false); // sigmoid lambda Mpole switch
 //        boolean forceRoomTemp = properties.getBoolean("esv.forceRoomTemp", false);
 //        boolean propagation = properties.getBoolean("esv.propagation", true);
-
-        vanDerWaals = forceFieldEnergy.getVdwNode();
-        particleMeshEwaldQI = forceFieldEnergy.getPmeQiNode();
 
         titratingResidueList = new ArrayList<>();
         tautomerizingResidueList = new ArrayList<>();
@@ -291,7 +291,6 @@ public class ExtendedSystem {
                 List<Atom> atomList = residue.getSideChainAtoms();
                 for (Atom atom : atomList) {
                     int atomIndex = atom.getArrayIndex();
-                    logger.info(format("Atom: %s AtomIndex: %d", atom, atomIndex));
                     residueNames[atomIndex] = residue.getAminoAcid3();
                     isTitrating[atomIndex] = true;
                     titrationLambdas[atomIndex] = initialTitrationLambda;
@@ -343,6 +342,23 @@ public class ExtendedSystem {
                 initializeThetaArrays(i, initialTautomerLambda);
             }
         }
+        //TODO: Finish restart handling
+        if (esvFilter == null) {
+            esvFilter = new ESVFilter(molecularAssembly.getName());
+        }
+        if(esvFile==null){
+            String firstFileName = FilenameUtils.removeExtension(mola.getFile().getAbsolutePath());
+            restartFile = new File(firstFileName + ".esv");
+        } else{
+            if (!esvFilter.readESV(esvFile, thetaPosition, thetaVelocity, thetaAccel)) {
+                String message = " Could not load the restart file - dynamics terminated.";
+                logger.log(Level.WARNING, message);
+                throw new IllegalStateException(message);
+            } else{
+                restartFile = esvFile;
+                updateLambdas();
+            }
+        }
     }
 
     /**
@@ -358,7 +374,7 @@ public class ExtendedSystem {
         thetaPosition[index] = Math.asin(Math.sqrt(lambda));
         Random random = new Random();
         thetaVelocity[index] = random.nextGaussian() * sqrt(kB * 298.15 / thetaMass);
-        double dUdL = 0.0;//getDerivatives()[index];
+        double dUdL = getDerivatives()[index];
         double dUdTheta = dUdL * sin(2 * thetaPosition[index]);
         thetaAccel[index] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
     }
@@ -543,13 +559,13 @@ public class ExtendedSystem {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < extendedResidueList.size(); i++) {
             if (i == 0) {
-                sb.append("\n Titration Lambdas: ");
+                sb.append("\n  Titration Lambdas: ");
             }
             if (i > 0) {
                 sb.append(", ");
             }
             if (i == titratingResidueList.size()) {
-                sb.append("\n Tautomer Lambdas: ");
+                sb.append("\n  Tautomer Lambdas: ");
             }
             sb.append(format("%6.4f", extendedLambdas[i]));
         }
@@ -1032,28 +1048,12 @@ public class ExtendedSystem {
         return dEdTheta;
     }
 
-    /*private void updateMultipoleTypes() {
-        for (Residue residue : extendedResidueList){
-            AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
-            List<Atom> atomList = residue.get;
-            for(Atom atom : atomList){
-                int atomIndex = atom.getArrayIndex();
-                MultipoleType atomMultipoleType = atom.getMultipoleType();
-                double[] esvMultipole = TitrationUtils.getMultipole(AA3, atomIndex, titrationLambdas[atomIndex],
-                        tautomerLambdas[atomIndex], atomMultipoleType.getMultipole());
-                double[] esvTitrationDotMultipole = TitrationUtils.getMultipoleTitrationDeriv(AA3, atomIndex,
-                        titrationLambdas[atomIndex], tautomerLambdas[atomIndex], atomMultipoleType.getMultipole());
-                double[] esvTautomerDotMultipole = TitrationUtils.getMultipoleTautomerDeriv(AA3, atomIndex,
-                        titrationLambdas[atomIndex], tautomerLambdas[atomIndex], atomMultipoleType.getMultipole());
-                MultipoleType esvType = new MultipoleType(esvMultipole,atomMultipoleType.frameAtomTypes,
-                        atomMultipoleType.frameDefinition, false);
-                MultipoleType esvTitrationDotType = new MultipoleType(esvTitrationDotMultipole, atomMultipoleType.frameAtomTypes,
-                        atomMultipoleType.frameDefinition, false);
-                MultipoleType esvTautomerDotType =  new MultipoleType(esvTautomerDotMultipole, atomMultipoleType.frameAtomTypes,
-                        atomMultipoleType.frameDefinition, false);
-                //TODO: Detect hydrogen and scale alpha.
-                atom.setEsv( esvType, esvTitrationDotType);
-            }
+    public void writeRestart() {
+        String esvName = FileUtils.relativePathTo(restartFile).toString();
+        if (esvFilter.writeESV(restartFile, thetaPosition, thetaVelocity, thetaAccel)) {
+            logger.info(" Wrote dynamics restart file to " + esvName);
+        } else {
+            logger.info(" Writing dynamics restart file to " + esvName + " failed");
         }
-    }*/
+    }
 }
