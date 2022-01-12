@@ -906,17 +906,8 @@ public final class PDBFilter extends SystemFilter {
                   } else if (rotamerTitration){
                     AminoAcid3 aa3 = AminoAcidUtils.AminoAcid3.valueOf(resName.toUpperCase());
                     if (rotamerResidueMap.containsKey(aa3) && resNumberList.contains(resSeq)) {
-                      String atomName = name.toUpperCase();
                       AminoAcid3 aa3rotamer = rotamerResidueMap.get(aa3);
                       resName = aa3rotamer.name();
-                      if (constantPhBackboneNames.contains(atomName)) {
-                        logger.info(format(" %s-%d %s", resName, resSeq, atomName));
-                      } else if (!atomName.startsWith("H") ) {
-                        logger.info(format(" %s-%d %s", resName, resSeq, atomName));
-                      } else {
-                        logger.info(format(" %s-%d %s skipped", resName, resSeq, atomName));
-                        break;
-                      }
                     }
                   }
                   d = new double[3];
