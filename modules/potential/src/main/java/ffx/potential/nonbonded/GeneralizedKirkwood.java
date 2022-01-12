@@ -960,6 +960,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
   }
 
   /**
+   * Return the descreening dielectric offset.
+   * @return The offset (A).
+   */
+  public double getDescreenOffset() {
+    return descreenOffset;
+  }
+
+  /**
    * Returns the dispersion component of the solvation energy.
    *
    * @return Dispersion energy

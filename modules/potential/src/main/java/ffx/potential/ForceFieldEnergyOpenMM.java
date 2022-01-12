@@ -53,6 +53,7 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirk
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSoluteDielectric;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSolventDielectric;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setDielectricOffset;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSurfaceAreaFactor;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext;
@@ -3720,6 +3721,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           amoebaGeneralizedKirkwoodForce, gk.getSolventPermittivity());
       OpenMM_AmoebaGeneralizedKirkwoodForce_setSoluteDielectric(
           amoebaGeneralizedKirkwoodForce, 1.0);
+
+      OpenMM_AmoebaGeneralizedKirkwoodForce_setDielectricOffset(
+          amoebaGeneralizedKirkwoodForce, gk.getDescreenOffset() * OpenMM_NmPerAngstrom);
 
       double[] overlapScale = gk.getOverlapScale();
       double[] baseRadius = gk.getBaseRadii();
