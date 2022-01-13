@@ -377,11 +377,11 @@ class PhGradient extends PotentialScript {
 
 
       if (errorTitr > gradientTolerance) {
-        logger.info(format(" Residue: %s ESV %d\n Failed: %10.6f\n", residue.toString(), i, errorTitr) +
+        logger.info(format(" Residue: %s Chain: %s ESV %d\n Failed: %10.6f\n", residue.toString(), residue.chainID, i, errorTitr) +
                 format(" Analytic: %12.4f vs. Numeric: %12.4f\n", esvDerivs[i], fdDerivTitr))
         ++nESVFailures
       } else {
-        logger.info(format(" Residue: %s ESV %d\n Passed: %10.6f\n", residue.toString(), i, errorTitr) +
+        logger.info(format(" Residue: %s Chain: %s ESV %d\n Passed: %10.6f\n", residue.toString(), residue.chainID, i, errorTitr) +
                 format(" Analytic: %12.4f vs. Numeric: %12.4f\n", esvDerivs[i], fdDerivTitr))
       }
 
@@ -389,11 +389,11 @@ class PhGradient extends PotentialScript {
         double fdDerivTaut = (ePlusTaut - eMinusTaut) / width
         double errorTaut = abs(fdDerivTaut - esvDerivs[tautomerIndex])
         if (errorTaut > gradientTolerance) {
-          logger.info(format(" Residue: %s (Tautomer) ESV %d\n Failed: %10.6f\n", residue.toString(), tautomerIndex, errorTaut) +
+          logger.info(format(" Residue: %s (Tautomer) Chain: %s ESV %d\n Failed: %10.6f\n", residue.toString(), residue.chainID, tautomerIndex, errorTaut) +
                   format(" Analytic: %12.4f vs. Numeric: %12.4f\n", esvDerivs[tautomerIndex], fdDerivTaut))
           ++nESVFailures
         } else {
-          logger.info(format(" Residue: %s (Tautomer) ESV %d\n Passed: %10.6f\n", residue.toString(), tautomerIndex, errorTaut) +
+          logger.info(format(" Residue: %s (Tautomer) Chain: %s ESV %d\n Passed: %10.6f\n", residue.toString(), residue.chainID, tautomerIndex, errorTaut) +
                   format(" Analytic: %12.4f vs. Numeric: %12.4f\n", esvDerivs[tautomerIndex], fdDerivTaut))
         }
       }
