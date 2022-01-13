@@ -220,6 +220,8 @@ public class ExtendedSystem {
     /** Filter to parse the dynamics restart file. */
     ESVFilter esvFilter = null;
 
+    private int[][] esvHistogram;
+
     /**
      * Construct extended system with the provided configuration.
      *
@@ -323,6 +325,7 @@ public class ExtendedSystem {
         thetaVelocity = new double[size];
         thetaAccel = new double[size];
         thetaMassArray = new double[size];
+        esvHistogram = new int[size][10];
         esvVdwDerivs = new SharedDouble[size];
         esvPermElecDerivs = new SharedDouble[size];
         esvIndElecDerivs =  new SharedDouble[size];
@@ -498,6 +501,7 @@ public class ExtendedSystem {
             double sinTheta = Math.sin(thetaPosition[i]);
             double oldLambda = extendedLambdas[i];
             extendedLambdas[i] = sinTheta * sinTheta;
+            esvHistogram(i, extendedLambdas[i]);
         }
         for (int i = 0; i < molecularAssembly.getAtomArray().length; i++) {
             int mappedTitrationIndex = titrationIndexMap[i];
@@ -1054,6 +1058,21 @@ public class ExtendedSystem {
             logger.info(" Wrote dynamics restart file to " + esvName);
         } else {
             logger.info(" Writing dynamics restart file to " + esvName + " failed");
+        }
+        writeLambdaHistogram();
+    }
+
+    private void esvHistogram(int esv, double lambda){
+        int value = (int) (lambda * 10.0);
+        esvHistogram[esv][value]++;
+    }
+
+    public void writeLambdaHistogram(){
+        for(int i=0; i < extendedResidueList.size(); i++){
+            for(int j=0; j < 10; j++){
+                logger.info(format("ESV: %d [.%d - .%d] : %d", i, j, j+1, esvHistogram[i][j]));
+            }
+            logger.info("\n");
         }
     }
 }
