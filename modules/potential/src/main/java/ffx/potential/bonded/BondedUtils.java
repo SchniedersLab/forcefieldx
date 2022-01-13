@@ -103,13 +103,9 @@ public class BondedUtils {
    */
   public static Bond buildBond(Atom a1, Atom a2, ForceField forceField, List<Bond> bondList) {
     Bond bond = new Bond(a1, a2);
-    int[] c = new int[2];
-    c[0] = a1.getAtomType().atomClass;
-    c[1] = a2.getAtomType().atomClass;
-    String key = BondType.sortKey(c);
-    BondType bondType = forceField.getBondType(key);
+    BondType bondType = forceField.getBondType(a1.getAtomType(), a2.getAtomType());
     if (bondType == null) {
-      logNoBondType(a1, a2, key, forceField);
+      logNoBondType(a1, a2, forceField);
     } else {
       bond.setBondType(bondType);
     }
@@ -407,7 +403,7 @@ public class BondedUtils {
       atom = (Atom) residue.getAtomNode(dAtomName);
     }
 
-    // Basic checking for unspecified H atoms attached to waters.
+    // Basic checking for unspecified H atoms attached to water.
     if (residue instanceof Molecule && atom == null) {
       Molecule molec = (Molecule) residue;
       String molName = molec.getName().toUpperCase();
@@ -791,8 +787,8 @@ public class BondedUtils {
       MSGroup m = (MSGroup) n;
       m.reOrderAtoms();
     }
-    List<MSNode> waters = molecularAssembly.getWaters();
-    for (MSNode n : waters) {
+    List<MSNode> water = molecularAssembly.getWater();
+    for (MSNode n : water) {
       MSGroup m = (MSGroup) n;
       m.reOrderAtoms();
     }

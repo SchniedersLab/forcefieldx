@@ -89,7 +89,7 @@ public class ForceField {
   private final Map<String, StretchBendType> stretchBendTypes;
   private final Map<String, StretchTorsionType> stretchTorsionTypes;
   private final Map<String, AngleTorsionType> angleTorsionTypes;
-  private final Map<String, PiTorsionType> piTorsionTypes;
+  private final Map<String, PiOrbitalTorsionType> piOrbitalTorsionTypes;
   private final Map<String, TorsionType> torsionTypes;
   private final Map<String, TorsionType> improperTypes;
   private final Map<String, ImproperTorsionType> imptorsTypes;
@@ -102,10 +102,12 @@ public class ForceField {
   private final Map<ForceFieldType, Map<String, ? extends BaseType>> forceFieldTypes;
   /** URL to the force field parameter file. */
   public URL forceFieldURL;
+
   /**
    * ForceField Constructor.
    *
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    */
   public ForceField(CompositeConfiguration properties) {
     this.properties = properties;
@@ -126,7 +128,7 @@ public class ForceField {
     soluteTypes = new TreeMap<>(new SoluteType(0, 0.0, 0.0, 0.0));
     multipoleTypes = new TreeMap<>(new MultipoleType(new double[10], null, null, false));
     outOfPlaneBendTypes = new TreeMap<>(new OutOfPlaneBendType(new int[4], 0));
-    piTorsionTypes = new TreeMap<>(new PiTorsionType(new int[2], 0));
+    piOrbitalTorsionTypes = new TreeMap<>(new PiOrbitalTorsionType(new int[2], 0));
     polarizeTypes = new TreeMap<>(new PolarizeType(0, 0, 0, new int[1]));
     stretchBendTypes = new TreeMap<>(new StretchBendType(new int[3], new double[1]));
     stretchTorsionTypes = new TreeMap<>(new StretchTorsionType(new int[4], new double[1]));
@@ -152,7 +154,7 @@ public class ForceField {
     forceFieldTypes.put(ForceFieldType.SOLUTE, soluteTypes);
     forceFieldTypes.put(ForceFieldType.OPBEND, outOfPlaneBendTypes);
     forceFieldTypes.put(ForceFieldType.MULTIPOLE, multipoleTypes);
-    forceFieldTypes.put(ForceFieldType.PITORS, piTorsionTypes);
+    forceFieldTypes.put(ForceFieldType.PITORS, piOrbitalTorsionTypes);
     forceFieldTypes.put(ForceFieldType.POLARIZE, polarizeTypes);
     forceFieldTypes.put(ForceFieldType.STRBND, stretchBendTypes);
     forceFieldTypes.put(ForceFieldType.STRTORS, stretchTorsionTypes);
@@ -255,7 +257,7 @@ public class ForceField {
           Level.WARNING,
           " A force field entry of type {0} already exists with the key: {1}\n The (discarded) old entry: {2}\n The new entry            : {3}",
           new Object[] {
-            type.forceFieldType, type.key, treeMap.get(type.key).toString(), type.toString()
+              type.forceFieldType, type.key, treeMap.get(type.key).toString(), type.toString()
           });
     }
     treeMap.put(type.key, type);
@@ -289,6 +291,7 @@ public class ForceField {
 
   /**
    * Clear a property from the force field instance.
+   *
    * @param property Property to clear.
    */
   public void clearProperty(String property) {
@@ -345,8 +348,8 @@ public class ForceField {
       outOfPlaneBendTypes.put(outOfPlaneBendType.getKey(), outOfPlaneBendType);
     }
 
-    for (PiTorsionType piTorsionType : patch.piTorsionTypes.values()) {
-      piTorsionTypes.put(piTorsionType.getKey(), piTorsionType);
+    for (PiOrbitalTorsionType piOrbitalTorsionType : patch.piOrbitalTorsionTypes.values()) {
+      piOrbitalTorsionTypes.put(piOrbitalTorsionType.getKey(), piOrbitalTorsionType);
     }
 
     for (PolarizeType polarizeType : patch.polarizeTypes.values()) {
@@ -431,6 +434,20 @@ public class ForceField {
       angleType = anglepTypes.get(key);
     }
     return angleType;
+  }
+
+  /**
+   * getAngleType
+   *
+   * @param a1 First AtomType.
+   * @param a2 Second AtomType.
+   * @param a3 Third AtomType.
+   * @return a {@link ffx.potential.parameters.AngleType} object.
+   */
+  public AngleType getAngleType(AtomType a1, AtomType a2, AtomType a3) {
+    int[] c = {a1.atomClass, a2.atomClass, a3.atomClass};
+    String key = AngleType.sortKey(c);
+    return getAngleType(key);
   }
 
   /**
@@ -540,6 +557,19 @@ public class ForceField {
    */
   public BondType getBondType(String key) {
     return bondTypes.get(key);
+  }
+
+  /**
+   * getBondType
+   *
+   * @param a1 First AtomType.
+   * @param a2 Second AtomType.
+   * @return a {@link ffx.potential.parameters.BondType} object.
+   */
+  public BondType getBondType(AtomType a1, AtomType a2) {
+    int[] c = {a1.atomClass, a2.atomClass};
+    String key = BondType.sortKey(c);
+    return getBondType(key);
   }
 
   /**
@@ -704,8 +734,9 @@ public class ForceField {
   }
 
   /**
-   * Find the MultipoleType whose key begins with the supplied String.
-   * If there are more than one MultipoleType that begins with the key, null is returned.
+   * Find the MultipoleType whose key begins with the supplied String. If there are more than one
+   * MultipoleType that begins with the key, null is returned.
+   *
    * @param key The key to search for.
    * @return The MultipoleType if one and only one match is found.
    */
@@ -713,7 +744,7 @@ public class ForceField {
     int count = 0;
     MultipoleType multipoleType = null;
     for (String s : multipoleTypes.keySet()) {
-      if (s.startsWith(key + " ")){
+      if (s.startsWith(key + " ")) {
         count++;
         multipoleType = multipoleTypes.get(s);
       }
@@ -735,7 +766,7 @@ public class ForceField {
   public List<MultipoleType> getMultipoleTypes(String key) {
     List<MultipoleType> list = new ArrayList<>();
     for (String s : multipoleTypes.keySet()) {
-      if (s.startsWith(key + " ")){
+      if (s.startsWith(key + " ")) {
         list.add(multipoleTypes.get(s));
       }
     }
@@ -754,13 +785,61 @@ public class ForceField {
   }
 
   /**
-   * getPiTorsionType
+   * getOutOfPlaneBendType
+   *
+   * @param a4 AtomType of fourth atom.
+   * @param a0 AtomType of atom 0 of the angle.
+   * @param a1 AtomType of atom 1 of the angle (the trigonal atom).
+   * @param a2 AtomType of atom 2 of the angle.
+   * @return a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
+   */
+  public OutOfPlaneBendType getOutOfPlaneBendType(AtomType a4, AtomType a0, AtomType a1,
+      AtomType a2) {
+    int class4 = a4.atomClass;
+    int class0 = a0.atomClass;
+    int class1 = a1.atomClass;
+    int class2 = a2.atomClass;
+
+    // First check for an atom4-center-edge-edge type (also checking reversed edges).
+    String key = OutOfPlaneBendType.sortKey(new int[] {class4, class1, class0, class2});
+    OutOfPlaneBendType oopBendType = getOutOfPlaneBendType(key);
+    if (oopBendType == null) {
+      key = OutOfPlaneBendType.sortKey(new int[] {class4, class1, class2, class0});
+      oopBendType = getOutOfPlaneBendType(key);
+    }
+
+    // Then, check for a generic OOP bend type atom4-center-any-any
+    if (oopBendType == null) {
+      key = OutOfPlaneBendType.sortKey(new int[] {class4, class1, 0, 0});
+      oopBendType = getOutOfPlaneBendType(key);
+    }
+
+    return oopBendType;
+  }
+
+  /**
+   * getPiOrbitalTorsionType
    *
    * @param key a {@link java.lang.String} object.
-   * @return a {@link ffx.potential.parameters.PiTorsionType} object.
+   * @return a {@link PiOrbitalTorsionType} object.
    */
-  public PiTorsionType getPiTorsionType(String key) {
-    return piTorsionTypes.get(key);
+  public PiOrbitalTorsionType getPiOrbitalTorsionType(String key) {
+    return piOrbitalTorsionTypes.get(key);
+  }
+
+  /**
+   * getPiOrbitalTorsionType
+   *
+   * @param a1 AtomType of atom 1.
+   * @param a2 AtomType of atom 2.
+   * @return {@link PiOrbitalTorsionType} object.
+   */
+  public PiOrbitalTorsionType getPiOrbitalTorsionType(AtomType a1, AtomType a2) {
+    int[] c = new int[2];
+    c[0] = a1.atomClass;
+    c[1] = a2.atomClass;
+    String key = PiOrbitalTorsionType.sortKey(c);
+    return getPiOrbitalTorsionType(key);
   }
 
   /**
@@ -817,6 +896,20 @@ public class ForceField {
    */
   public StretchBendType getStretchBendType(String key) {
     return stretchBendTypes.get(key);
+  }
+
+  /**
+   * getStretchBendType
+   *
+   * @param a1 First AtomType.
+   * @param a2 Second AtomType.
+   * @param a3 Third AtomType.
+   * @return a {@link ffx.potential.parameters.StretchBendType} object.
+   */
+  public StretchBendType getStretchBendType(AtomType a1, AtomType a2, AtomType a3) {
+    int[] c = {a1.atomClass, a2.atomClass, a3.atomClass};
+    String key = AngleType.sortKey(c);
+    return getStretchBendType(key);
   }
 
   /**
@@ -881,6 +974,62 @@ public class ForceField {
   public TorsionType getTorsionType(String key) {
     return torsionTypes.get(key);
   }
+
+  /**
+   * Find a torsion based on the specified classes.
+   *
+   * @param c0 Atom class 0.
+   * @param c1 Atom class 1.
+   * @param c2 Atom class 2.
+   * @param c3 Atom class 3.
+   * @return A torsion type if it exists.
+   */
+  private TorsionType getTorsionType(int c0, int c1, int c2, int c3) {
+    int[] c = {c0, c1, c2, c3};
+    String key = TorsionType.sortKey(c);
+    return getTorsionType(key);
+  }
+
+  /**
+   * getTorsionType
+   *
+   * @param a0 First AtomType.
+   * @param a1 Second AtomType.
+   * @param a2 Third AtomType.
+   * @param a3 Fourth AtomType.
+   * @return a {@link ffx.potential.parameters.TorsionType} object.
+   */
+  public TorsionType getTorsionType(AtomType a0, AtomType a1, AtomType a2, AtomType a3) {
+    int c0 = a0.atomClass;
+    int c1 = a1.atomClass;
+    int c2 = a2.atomClass;
+    int c3 = a3.atomClass;
+
+    TorsionType torsionType = getTorsionType(c0, c1, c2, c3);
+
+    // Single wild card.
+    if (torsionType == null) {
+      if (c0 > c3) {
+        torsionType = getTorsionType(c0, c1, c2, 0);
+        if (torsionType == null) {
+          torsionType = getTorsionType(0, c1, c2, c3);
+        }
+      } else {
+        torsionType = getTorsionType(0, c1, c2, c3);
+        if (torsionType == null) {
+          torsionType = getTorsionType(c0, c1, c2, 0);
+        }
+      }
+    }
+
+    // Double wild card.
+    if (torsionType == null) {
+      torsionType = getTorsionType(0, c1, c2, 0);
+    }
+
+    return torsionType;
+  }
+
 
   /**
    * getUreyBradleyType
@@ -1018,8 +1167,8 @@ public class ForceField {
       outOfPlaneBendType.incrementClasses(classOffset);
     }
 
-    for (PiTorsionType piTorsionType : piTorsionTypes.values()) {
-      piTorsionType.incrementClasses(classOffset);
+    for (PiOrbitalTorsionType piOrbitalTorsionType : piOrbitalTorsionTypes.values()) {
+      piOrbitalTorsionType.incrementClasses(classOffset);
     }
 
     for (PolarizeType polarizeType : polarizeTypes.values()) {
@@ -1105,7 +1254,7 @@ public class ForceField {
     for (TorsionType type : torsionTypes.values()) {
       type.setScaleFactor(scaleFactor);
     }
-    for (PiTorsionType type : piTorsionTypes.values()) {
+    for (PiOrbitalTorsionType type : piOrbitalTorsionTypes.values()) {
       type.setScaleFactor(scaleFactor);
     }
   }
@@ -1236,8 +1385,9 @@ public class ForceField {
       }
     }
 
-    for (PiTorsionType piTorsionType : piTorsionTypes.values().toArray(new PiTorsionType[0])) {
-      PiTorsionType newType = piTorsionType.patchClasses(typeMap);
+    for (PiOrbitalTorsionType piOrbitalTorsionType : piOrbitalTorsionTypes.values()
+        .toArray(new PiOrbitalTorsionType[0])) {
+      PiOrbitalTorsionType newType = piOrbitalTorsionType.patchClasses(typeMap);
       if (newType != null) {
         logger.info(" " + newType.toString());
         addForceFieldType(newType);

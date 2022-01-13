@@ -58,13 +58,13 @@ import ffx.crystal.SymOp;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities.FileType;
 import ffx.potential.bonded.AminoAcidUtils;
+import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.Hybrid36;
 import ffx.utilities.StringUtils;
@@ -153,14 +153,17 @@ public final class PDBFilter extends SystemFilter {
   private String currentSegID = null;
   /** Flag to indicate a mutation is requested. */
   private boolean mutate = false;
-
   private List<Mutation> mutations = null;
   private List<Integer> resNumberList = null;
-  private List<Character> chainList = null;
   /** Flag to indicate if missing fields should be printed (i.e. missing B-factors). */
   private boolean printMissingFields = true;
-  /** Number of symmetry operators in the current crystal. */
-  private int nSymOp = 0;
+  /** Number of symmetry operators when expanding to a P1 unit cell (-1 saves as current spacegroup). */
+  private int nSymOp = -1;
+  /**
+   * The serial field continues from the previous asymmetric unit when expanding to P1. This is not
+   * used when saving as the current spacegroup.
+   */
+  private int serialP1 = 0;
   /** Assume current standard. */
   private PDBFileStandard fileStandard = VERSION3_3;
   /** If false, skip logging "Saving file". */
@@ -186,6 +189,7 @@ public final class PDBFilter extends SystemFilter {
    * List of residue to rename for constantPH simulations.
    */
   private static final HashMap<AminoAcid3, AminoAcid3> constantPHResidueMap = new HashMap<>();
+
   static {
     // Lysine
     constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.LYD, AminoAcidUtils.AminoAcid3.LYS);
@@ -199,10 +203,12 @@ public final class PDBFilter extends SystemFilter {
     constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.GLU, AminoAcidUtils.AminoAcid3.GLD);
     constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.GLH, AminoAcidUtils.AminoAcid3.GLD);
   }
+
   /**
    * List of residue to rename for rotamer titration simulations.
    */
   private static final HashMap<AminoAcid3, AminoAcid3> rotamerResidueMap = new HashMap<>();
+
   static {
     // Lysine
     rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.LYD, AminoAcidUtils.AminoAcid3.LYS);
@@ -281,15 +287,17 @@ public final class PDBFilter extends SystemFilter {
    * @param file a {@link java.util.List} object.
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
-   * @param resNumberList a List of integer residue numbers for constant pH rotamer optimization.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
+   * @param resNumberList a List of integer residue numbers for constant pH rotamer
+   *     optimization.
    */
   public PDBFilter(
-          File file,
-          MolecularAssembly molecularAssembly,
-          ForceField forceField,
-          CompositeConfiguration properties,
-          List<Integer> resNumberList) {
+      File file,
+      MolecularAssembly molecularAssembly,
+      ForceField forceField,
+      CompositeConfiguration properties,
+      List<Integer> resNumberList) {
     super(file, molecularAssembly, forceField, properties);
     bondList = new ArrayList<>();
     this.fileType = FileType.PDB;
@@ -896,27 +904,18 @@ public final class PDBFilter extends SystemFilter {
                       resName = aa3PH.name();
                       if (constantPhBackboneNames.contains(atomName)) {
                         logger.info(format(" %s-%d %s", resName, resSeq, atomName));
-                      } else if (!atomName.startsWith("H") ) {
+                      } else if (!atomName.startsWith("H")) {
                         logger.info(format(" %s-%d %s", resName, resSeq, atomName));
                       } else {
                         logger.info(format(" %s-%d %s skipped", resName, resSeq, atomName));
                         break;
                       }
                     }
-                  } else if (rotamerTitration){
+                  } else if (rotamerTitration) {
                     AminoAcid3 aa3 = AminoAcidUtils.AminoAcid3.valueOf(resName.toUpperCase());
                     if (rotamerResidueMap.containsKey(aa3) && resNumberList.contains(resSeq)) {
-                      String atomName = name.toUpperCase();
                       AminoAcid3 aa3rotamer = rotamerResidueMap.get(aa3);
                       resName = aa3rotamer.name();
-                      if (constantPhBackboneNames.contains(atomName)) {
-                        logger.info(format(" %s-%d %s", resName, resSeq, atomName));
-                      } else if (!atomName.startsWith("H") ) {
-                        logger.info(format(" %s-%d %s", resName, resSeq, atomName));
-                      } else {
-                        logger.info(format(" %s-%d %s skipped", resName, resSeq, atomName));
-                        break;
-                      }
                     }
                   }
                   d = new double[3];
@@ -1658,6 +1657,69 @@ public final class PDBFilter extends SystemFilter {
   }
 
   /**
+   * Expand the current system to P1 during the save operation.
+   *
+   * @param file
+   * @return Return true on a successful write.
+   */
+  public boolean writeFileAsP1(File file) {
+
+    Crystal crystal = activeMolecularAssembly.getCrystal();
+    int nSymOps = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
+
+    if (nSymOps == 1) {
+      // This is a P1 system.
+      if (!writeFile(file, false)) {
+        logger.info(format(" Save failed for %s", activeMolecularAssembly));
+        return false;
+      } else {
+        return true;
+      }
+    } else {
+      Polymer[] polymers = activeMolecularAssembly.getChains();
+      int chainCount = 0;
+      for (Polymer polymer : polymers) {
+        Character chainID = Polymer.CHAIN_IDS.charAt(chainCount++);
+        polymer.setChainID(chainID);
+        polymer.setSegID(chainID.toString());
+      }
+      nSymOp = 0;
+      logWrites = false;
+      boolean writeEnd = false;
+      if (!writeFile(file, false, false, writeEnd)) {
+        logger.info(format(" Save failed for %s", activeMolecularAssembly));
+        return false;
+      } else {
+        for (int i = 1; i < nSymOps; i++) {
+          nSymOp = i;
+          for (Polymer polymer : polymers) {
+            Character chainID = Polymer.CHAIN_IDS.charAt(chainCount++);
+            polymer.setChainID(chainID);
+            polymer.setSegID(chainID.toString());
+          }
+          writeEnd = i == nSymOps - 1;
+          if (!writeFile(file, true, false, writeEnd)) {
+            logger.info(format(" Save failed for %s", activeMolecularAssembly));
+            return false;
+          }
+        }
+      }
+
+      // Reset the chainIDs.
+      chainCount = 0;
+      for (Polymer polymer : polymers) {
+        Character chainID = Polymer.CHAIN_IDS.charAt(chainCount++);
+        polymer.setChainID(chainID);
+        polymer.setSegID(chainID.toString());
+      }
+
+    }
+
+    return true;
+  }
+
+
+  /**
    * writeFile
    *
    * @param saveFile a {@link java.io.File} object.
@@ -1682,8 +1744,8 @@ public final class PDBFilter extends SystemFilter {
    *     being saved to should be overwritten.
    * @return Success of writing.
    */
-  public boolean writeFile(
-      File saveFile, boolean append, Set<Atom> toExclude, boolean writeEnd, boolean versioning) {
+  public boolean writeFile(File saveFile, boolean append, Set<Atom> toExclude, boolean writeEnd,
+      boolean versioning) {
     return writeFile(saveFile, append, toExclude, writeEnd, versioning, null);
   }
 
@@ -1715,13 +1777,12 @@ public final class PDBFilter extends SystemFilter {
       return false;
     }
     if (vdwH) {
-      logger.info(" Printing hydrogen to van der Waals centers instead of nuclear locations.");
+      logger.info(" Saving hydrogen to van der Waals centers instead of nuclear locations.");
     }
-    if (nSymOp != 0) {
-      logger.info(
-          format(
-              " Printing atoms with symmetry operator %s\n",
-              activeMolecularAssembly.getCrystal().spaceGroup.getSymOp(nSymOp).toString()));
+    if (nSymOp > -1) {
+      logger.info(format(" Saving atoms using the symmetry operator:\n%s\n",
+          activeMolecularAssembly.getCrystal().getUnitCell().spaceGroup.getSymOp(nSymOp)
+              .toString()));
     }
 
     // Create StringBuilders for ATOM, ANISOU and TER records that can be reused.
@@ -1745,15 +1806,15 @@ public final class PDBFilter extends SystemFilter {
       model.append(repeat(" ", 65));
     }
     activeMolecularAssembly.setFile(newFile);
-    if(activeMolecularAssembly.getName() == null){
+    if (activeMolecularAssembly.getName() == null) {
       activeMolecularAssembly.setName(newFile.getName());
     }
     if (logWrites) {
       logger.log(Level.INFO, " Saving {0}", newFile.getName());
     }
 
-    try (FileWriter fw = new FileWriter(newFile, append); BufferedWriter bw = new BufferedWriter(
-        fw)) {
+    try (FileWriter fw = new FileWriter(newFile, append);
+        BufferedWriter bw = new BufferedWriter(fw)) {
       /*
        Will come before CRYST1 and ATOM records, but after anything
        written by writeFileWithHeader (particularly X-ray refinement statistics).
@@ -1785,10 +1846,21 @@ public final class PDBFilter extends SystemFilter {
       // 56 - 66       LString       sGroup         Space  group.
       // 67 - 70       Integer       z              Z value.
       // =============================================================================
-      Crystal crystal = activeMolecularAssembly.getCrystal();
-      if (crystal != null && !crystal.aperiodic()) {
-        Crystal c = crystal.getUnitCell();
-        bw.write(c.toCRYST1());
+      if (nSymOp < 0) {
+        // Write out the unit cell.
+        Crystal crystal = activeMolecularAssembly.getCrystal();
+        if (crystal != null && !crystal.aperiodic()) {
+          Crystal c = crystal.getUnitCell();
+          bw.write(c.toCRYST1());
+        }
+      } else if (nSymOp == 0) {
+        // Write a P1 cell.
+        Crystal crystal = activeMolecularAssembly.getCrystal();
+        if (crystal != null && !crystal.aperiodic()) {
+          Crystal c = crystal.getUnitCell();
+          Crystal p1 = new Crystal(c.a, c.b, c.c, c.alpha, c.beta, c.gamma, "P1");
+          bw.write(p1.toCRYST1());
+        }
       }
       // =============================================================================
       // The SSBOND record identifies each disulfide bond in protein and polypeptide
@@ -1881,6 +1953,10 @@ public final class PDBFilter extends SystemFilter {
       // ATOM      2  CA  ILE A  16      60.793  72.149  -9.511  1.00  6.91           C
       MolecularAssembly[] molecularAssemblies = this.getMolecularAssemblys();
       int serial = 1;
+      if (nSymOp > 0) {
+        serial = serialP1;
+      }
+
       // Loop over biomolecular chains
       if (polymers != null) {
         for (Polymer polymer : polymers) {
@@ -1960,25 +2036,21 @@ public final class PDBFilter extends SystemFilter {
       }
       sb.replace(0, 6, "HETATM");
       sb.setCharAt(21, 'A');
-      int resID = 1;
-      Polymer polymer = activeMolecularAssembly.getPolymer('A', "A", false);
-      if (polymer != null) {
-        List<Residue> residues = polymer.getResidues();
-        for (Residue residue : residues) {
-          int resID2 = residue.getResidueNumber();
-          if (resID2 >= resID) {
-            resID = resID2 + 1;
-          }
-        }
+
+      Character chainID = 'A';
+      if (polymers != null) {
+        chainID = polymers[0].getChainID();
       }
+      activeMolecularAssembly.setChainIDAndRenumberMolecules(chainID);
 
       // Loop over molecules, ions and then water.
       List<MSNode> molecules = activeMolecularAssembly.getMolecules();
       for (int i = 0; i < molecules.size(); i++) {
         Molecule molecule = (Molecule) molecules.get(i);
-        Character chainID = molecule.getChainID();
+        chainID = molecule.getChainID();
         sb.setCharAt(21, chainID);
         String resName = molecule.getResidueName();
+        int resID = molecule.getResidueNumber();
         if (resName.length() > 3) {
           resName = resName.substring(0, 3);
         }
@@ -2012,15 +2084,15 @@ public final class PDBFilter extends SystemFilter {
             }
           }
         }
-        resID++;
       }
 
       List<MSNode> ions = activeMolecularAssembly.getIons();
       for (int i = 0; i < ions.size(); i++) {
         Molecule ion = (Molecule) ions.get(i);
-        Character chainID = ion.getChainID();
+        chainID = ion.getChainID();
         sb.setCharAt(21, chainID);
         String resName = ion.getResidueName();
+        int resID = ion.getResidueNumber();
         if (resName.length() > 3) {
           resName = resName.substring(0, 3);
         }
@@ -2054,23 +2126,22 @@ public final class PDBFilter extends SystemFilter {
             }
           }
         }
-        resID++;
       }
 
-      List<MSNode> waters = activeMolecularAssembly.getWaters();
-      for (int i = 0; i < waters.size(); i++) {
-        Molecule water = (Molecule) waters.get(i);
-        Character chainID = water.getChainID();
+      List<MSNode> water = activeMolecularAssembly.getWater();
+      for (int i = 0; i < water.size(); i++) {
+        Molecule wat = (Molecule) water.get(i);
+        chainID = wat.getChainID();
         sb.setCharAt(21, chainID);
-        String resName = water.getResidueName();
+        String resName = wat.getResidueName();
+        int resID = wat.getResidueNumber();
         if (resName.length() > 3) {
           resName = resName.substring(0, 3);
         }
         sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
         sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
-        // List<Atom> waterAtoms = water.getAtomList();
         List<Atom> waterAtoms =
-            water.getAtomList().stream()
+            wat.getAtomList().stream()
                 .filter(a -> !atomExclusions.contains(a))
                 .collect(Collectors.toList());
         boolean altLocFound = false;
@@ -2085,7 +2156,7 @@ public final class PDBFilter extends SystemFilter {
         if (altLocFound) {
           for (int ma = 1; ma < molecularAssemblies.length; ma++) {
             MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
-            MSNode altwater = altMolecularAssembly.getWaters().get(i);
+            MSNode altwater = altMolecularAssembly.getWater().get(i);
             waterAtoms = altwater.getAtomList();
             for (Atom atom : waterAtoms) {
               if (atom.getAltLoc() != null
@@ -2096,7 +2167,6 @@ public final class PDBFilter extends SystemFilter {
             }
           }
         }
-        resID++;
       }
 
       if (model != null) {
@@ -2108,6 +2178,11 @@ public final class PDBFilter extends SystemFilter {
         bw.write("END");
         bw.newLine();
       }
+
+      if (nSymOp >= 0) {
+        serialP1 = serial;
+      }
+
     } catch (Exception e) {
       String message = "Exception writing to file: " + saveFile;
       logger.log(Level.WARNING, message, e);
@@ -2272,8 +2347,8 @@ public final class PDBFilter extends SystemFilter {
       }
     }
     double[] xyz = vdwH ? atom.getRedXYZ() : atom.getXYZ(null);
-    if (nSymOp != 0) {
-      Crystal crystal = activeMolecularAssembly.getCrystal();
+    if (nSymOp >= 0) {
+      Crystal crystal = activeMolecularAssembly.getCrystal().getUnitCell();
       SymOp symOp = crystal.spaceGroup.getSymOp(nSymOp);
       double[] newXYZ = new double[xyz.length];
       crystal.applySymOp(xyz, newXYZ, symOp);

@@ -480,12 +480,9 @@ public class XYZFilter extends SystemFilter {
               return false;
             }
             Bond bond = new Bond(atom1, atom2);
-            c[0] = atom1.getAtomType().atomClass;
-            c[1] = atom2.getAtomType().atomClass;
-            String key = BondType.sortKey(c);
-            BondType bondType = forceField.getBondType(key);
+            BondType bondType = forceField.getBondType(atom1.getAtomType(), atom2.getAtomType());
             if (bondType == null) {
-              logNoBondType(atom1, atom2, key, forceField);
+              logNoBondType(atom1, atom2, forceField);
             } else {
               bond.setBondType(bondType);
             }
@@ -537,7 +534,7 @@ public class XYZFilter extends SystemFilter {
           }
         }
         snapShot = 1;
-      } else if (resetPosition){
+      } else if (resetPosition) {
         // Reset the reader to the beginning of the file. Do not skip reading the first entry if resetPostion is true.
         bufferedReader = new BufferedReader(new FileReader(currentFile));
         snapShot = 0;
@@ -629,7 +626,7 @@ public class XYZFilter extends SystemFilter {
       newFile = version(saveFile);
     }
     activeMolecularAssembly.setFile(newFile);
-    if(activeMolecularAssembly.getName() == null){
+    if (activeMolecularAssembly.getName() == null) {
       activeMolecularAssembly.setName(newFile.getName());
     }
 
@@ -652,8 +649,7 @@ public class XYZFilter extends SystemFilter {
       if (!crystal.aperiodic()) {
         Crystal uc = crystal.getUnitCell();
         String params =
-            format(
-                "%14.8f%14.8f%14.8f%14.8f%14.8f%14.8f\n",
+            format("%14.8f%14.8f%14.8f%14.8f%14.8f%14.8f\n",
                 uc.a, uc.b, uc.c, uc.alpha, uc.beta, uc.gamma);
         bw.write(params);
       }
@@ -769,10 +765,8 @@ public class XYZFilter extends SystemFilter {
 
       if (!crystal.aperiodic()) {
         Crystal uc = crystal.getUnitCell();
-        String params =
-            format(
-                "%14.8f%14.8f%14.8f%14.8f%14.8f%14.8f\n",
-                uc.a, uc.b, uc.c, uc.alpha, uc.beta, uc.gamma);
+        String params = format("%14.8f%14.8f%14.8f%14.8f%14.8f%14.8f\n",
+            uc.a, uc.b, uc.c, uc.alpha, uc.beta, uc.gamma);
         bw.write(params);
       }
 

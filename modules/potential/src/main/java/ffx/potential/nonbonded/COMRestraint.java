@@ -94,7 +94,7 @@ public class COMRestraint implements LambdaInterface {
     nAtoms = atoms.length;
     this.polymers = molecularAssembly.getChains();
     this.molecules = molecularAssembly.getMolecules();
-    this.water = molecularAssembly.getWaters();
+    this.water = molecularAssembly.getWater();
     this.ions = molecularAssembly.getIons();
     ForceField forceField = molecularAssembly.getForceField();
 

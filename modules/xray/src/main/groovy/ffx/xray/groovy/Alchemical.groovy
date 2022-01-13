@@ -56,7 +56,6 @@ import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy
 import ffx.xray.RefinementMinimize.RefinementMode
 import ffx.xray.cli.XrayOptions
-import ffx.xray.parsers.DiffractionFile
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
@@ -85,9 +84,9 @@ class Alchemical extends AlgorithmsScript {
 
   private static final Logger logger = Logger.getLogger(RealSpaceOptions.class.getName())
   /**
-   * -I or --onlyions sets whether or not ion positions are optimized (default is false; must set at least one of either '-W' or '-I') (only one type of ion is chosen).
+   * -I or --onlyIons sets whether or not ion positions are optimized (default is false; must set at least one of either '-W' or '-I') (only one type of ion is chosen).
    */
-  @Option(names = ["-I", "--onlyions"], paramLabel = 'false',
+  @Option(names = ["-I", "--onlyIons"], paramLabel = 'false',
       description = 'Set to only optimize ions (of a single type).')
   boolean onlyIons = false
 
@@ -106,11 +105,11 @@ class Alchemical extends AlgorithmsScript {
   boolean neutralize = false
 
   /**
-   * -W or --onlywaters sets whether or not water positions are optimized (default is false; must set at least one of either '-W' or '-I').
+   * -W or --onlyWater sets whether or not water positions are optimized (default is false; must set at least one of either '-W' or '-I').
    */
-  @Option(names = ["-W", "--onlywaters"], paramLabel = 'false',
-      description = 'Set to only optimize waters.')
-  boolean onlyWaters = false
+  @Option(names = ["-W", "--onlyWater"], paramLabel = 'false',
+      description = 'Set to only optimize water.')
+  boolean onlyWater = false
   /**
    * The refinement mode to use.
    */
@@ -235,10 +234,10 @@ class Alchemical extends AlgorithmsScript {
     double crystalCharge = activeAssembly.getCharge(true)
     logger.info(" Overall crystal charge: " + crystalCharge)
     List<MSNode> ions = assemblies[0].getIons()
-    List<MSNode> waters = assemblies[0].getWaters()
+    List<MSNode> water = assemblies[0].getWater()
 
-//      Consider the option of creating a composite lambda gradient from vapor phase to crystal phase
-    if (!onlyWaters) {
+    // Consider the option of creating a composite lambda gradient from vapor phase to crystal phase
+    if (!onlyWater) {
       logger.info("Doing ions.")
       if (ions == null || ions.size() == 0) {
         logger.info("\n Please add an ion to the PDB file to scan with.")
@@ -291,9 +290,9 @@ class Alchemical extends AlgorithmsScript {
       }
     }
 
-    // Lambdize waters for position optimization, if this option was set to true
-    if (onlyWaters) {
-      for (MSNode msNode : waters) {
+    // Lambdize water for position optimization, if this option was set to true
+    if (onlyWater) {
+      for (MSNode msNode : water) {
         for (Atom atom : msNode.getAtomList()) {
           // Scan with the last ion in the file.
           atom.setUse(true)

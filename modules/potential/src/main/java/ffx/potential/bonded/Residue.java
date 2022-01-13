@@ -469,6 +469,19 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   }
 
   /**
+   * Setter for the field <code>segID</code>.
+   *
+   * @param segID The segID to use.
+   */
+  public void setSegID(String segID) {
+    this.segID = segID;
+
+    for (Atom atom : getAtomList()) {
+      atom.setSegID(segID);
+    }
+  }
+
+  /**
    * Returns the Residue bonded to this Residue at this Residue's 3' or C-terminal end. Any use of
    * this method to add Residues to a sliding window or similar MUST not add that residue if that
    * residue has no Rotamers, as several algorithms (such as the distance matrix) assume that all

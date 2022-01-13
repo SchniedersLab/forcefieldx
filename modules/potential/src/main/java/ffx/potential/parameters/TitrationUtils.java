@@ -53,13 +53,25 @@ import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.log;
 
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import ffx.potential.bonded.Angle;
+import ffx.potential.bonded.AngleTorsion;
 import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.ImproperTorsion;
+import ffx.potential.bonded.OutOfPlaneBend;
+import ffx.potential.bonded.PiOrbitalTorsion;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
+import ffx.potential.bonded.StretchBend;
+import ffx.potential.bonded.StretchTorsion;
+import ffx.potential.bonded.Torsion;
+import ffx.potential.bonded.TorsionTorsion;
+import ffx.potential.bonded.UreyBradley;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.SoluteType.SOLUTE_RADII_TYPE;
 import ffx.utilities.Constants;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -87,6 +99,19 @@ public class TitrationUtils {
 
   private static final AtomType deprotonatedAtomType = new AtomType(0, 0,
       "H", "\"Deprotonated Hydrogen\"", 1, 1.0080, 1);
+
+  private static final BondType zeroBondType =
+      new BondType(new int[] {0, 0}, 0.0, 1.0);
+  private static final AngleType zeroAngleType =
+      new AngleType(new int[] {0, 0, 0}, 0.0, new double[] {0.0});
+  private static final StretchBendType zeroStretchBendType =
+      new StretchBendType(new int[] {0, 0, 0}, new double[] {0.0, 0.0});
+  private static final OutOfPlaneBendType zeroOutOfPlaneBendType =
+      new OutOfPlaneBendType(new int[] {0, 0, 0, 0}, 0.0);
+  private static final TorsionType zeroTorsionType =
+      new TorsionType(new int[] {0, 0, 0, 0}, new double[] {0.0}, new double[] {0.0}, new int[] {0});
+  private static final PiOrbitalTorsionType zeroPiOrbitalTorsionType =
+      new PiOrbitalTorsionType(new int[] {0, 0}, 0.0);
 
   enum AspStates {
     ASP, ASH1, ASH2
@@ -265,10 +290,10 @@ public class TitrationUtils {
   /** Constant <code>HistidineAtoms</code> */
   public enum HistidineAtomNames {
     // HIS, HID, HIE
-    CB (0, 0, 0, 0),
+    CB(0, 0, 0, 0),
     HB2(1, 1, 1, 0),
     HB3(1, 1, 1, 0),
-    CG (2, 2, 2, 0),
+    CG(2, 2, 2, 0),
     ND1(3, 3, 3, 0),
     // No HD1 proton for HIE; HIE HD1 offset is -1.
     HD1(4, 4, -1, -1),
@@ -374,6 +399,7 @@ public class TitrationUtils {
 
   private final ForceField forceField;
   private final SOLUTE_RADII_TYPE soluteRadiiType;
+  private final boolean updateBondedTerms;
 
   private final HashMap<AminoAcid3, Double> rotamerPhBiasMap = new HashMap<>();
 
@@ -388,6 +414,8 @@ public class TitrationUtils {
       tempType = SOLUTE_RADII_TYPE.SOLUTE;
     }
     soluteRadiiType = tempType;
+
+    updateBondedTerms = forceField.getBoolean("TITRATION_UPDATE_BONDED_TERMS", true);
 
     // Populate the Lysine types.
     constructLYSState(AA_CB[LYS.ordinal()], LysStates.LYS);
@@ -533,6 +561,111 @@ public class TitrationUtils {
         logger.severe(
             format(" No support for titrating residue %s with rotamer %s.", residue, rotamer));
     }
+
+    // Should bonded terms be updated.
+    if (!updateBondedTerms) {
+      return;
+    }
+
+    // Update Bond force field terms.
+    for (Bond bond : residue.getBondList()) {
+      AtomType a1 = bond.getAtom(0).getAtomType();
+      AtomType a2 = bond.getAtom(1).getAtomType();
+      BondType bondType = forceField.getBondType(a1, a2);
+      if (bondType == null) {
+        bondType = zeroBondType;
+      }
+      bond.setBondType(bondType);
+    }
+
+    // Update Angle force field terms.
+    for (Angle angle : residue.getAngleList()) {
+      AtomType a1 = angle.getAtom(0).getAtomType();
+      AtomType a2 = angle.getAtom(1).getAtomType();
+      AtomType a3 = angle.getAtom(2).getAtomType();
+      AngleType angleType = forceField.getAngleType(a1, a2, a3);
+      if (angleType == null) {
+        angleType = zeroAngleType;
+      }
+      angle.setAngleType(angleType);
+    }
+
+    // Update Stretch-Bend force field terms.
+    for (StretchBend stretchBend : residue.getStretchBendList()) {
+      AtomType a1 = stretchBend.getAtom(0).getAtomType();
+      AtomType a2 = stretchBend.getAtom(1).getAtomType();
+      AtomType a3 = stretchBend.getAtom(2).getAtomType();
+      StretchBendType stretchBendType = forceField.getStretchBendType(a1, a2, a3);
+      if (stretchBendType == null) {
+        stretchBendType = zeroStretchBendType;
+      }
+      stretchBend.setStretchBendType(stretchBendType);
+    }
+
+    // Update Out-of-Plane Bend force field terms.
+    for (OutOfPlaneBend outOfPlaneBend : residue.getOutOfPlaneBendList()) {
+      AtomType a4 = outOfPlaneBend.getFourthAtom().getAtomType();
+      AtomType a0 = outOfPlaneBend.getFirstAngleAtom().getAtomType();
+      AtomType a1 = outOfPlaneBend.getTrigonalAtom().getAtomType();
+      AtomType a2 = outOfPlaneBend.getLastAngleAtom().getAtomType();
+      OutOfPlaneBendType outOfPlaneBendType = forceField.getOutOfPlaneBendType(a4, a0, a1, a2);
+      if (outOfPlaneBendType == null) {
+        outOfPlaneBendType = zeroOutOfPlaneBendType;
+      }
+      outOfPlaneBend.setOutOfPlaneBendType(outOfPlaneBendType);
+    }
+
+    // Update torsion force field terms.
+    for (Torsion torsion : residue.getTorsionList()) {
+      AtomType a1 = torsion.getAtom(0).getAtomType();
+      AtomType a2 = torsion.getAtom(1).getAtomType();
+      AtomType a3 = torsion.getAtom(2).getAtomType();
+      AtomType a4 = torsion.getAtom(3).getAtomType();
+      TorsionType torsionType = forceField.getTorsionType(a1, a2, a3, a4);
+      if (torsionType == null) {
+        torsionType = zeroTorsionType;
+      }
+      torsion.setTorsionType(torsionType);
+    }
+
+    // Update Pi-Orbital Torsion force field terms.
+    for (PiOrbitalTorsion piOrbitalTorsion : residue.getPiOrbitalTorsionList()) {
+      Bond middleBond = piOrbitalTorsion.getMiddleBond();
+      AtomType a1 = middleBond.getAtom(0).getAtomType();
+      AtomType a2 = middleBond.getAtom(1).getAtomType();
+      PiOrbitalTorsionType piOrbitalTorsionType = forceField.getPiOrbitalTorsionType(a1, a2);
+      if (piOrbitalTorsionType == null) {
+        piOrbitalTorsionType = zeroPiOrbitalTorsionType;
+      }
+      piOrbitalTorsion.setPiOrbitalTorsionType(piOrbitalTorsionType);
+    }
+
+    // The following terms are not supported yet.
+    List<ImproperTorsion> improperTorsions = residue.getImproperTorsionList();
+    if (improperTorsions != null && improperTorsions.size() > 0) {
+      logger.severe(" Improper torsions are not supported yet for pH-dependent rotamer optimization.");
+    }
+
+    List<StretchTorsion> stretchTorsions = residue.getStretchTorsionList();
+    if (stretchTorsions != null && stretchTorsions.size() > 0) {
+      logger.severe(" Stretch-torsions are not supported yet for pH-dependent rotamer optimization.");
+    }
+
+    List<AngleTorsion> angleTorsions = residue.getAngleTorsionList();
+    if (angleTorsions != null && angleTorsions.size() > 0) {
+      logger.severe(" Angle-torsions are not supported yet for pH-dependent rotamer optimization.");
+    }
+
+    List<TorsionTorsion> torsionTorsions = residue.getTorsionTorsionList();
+    if (torsionTorsions != null && torsionTorsions.size() > 0) {
+      logger.severe(" Torsion-torsions are not supported yet for pH-dependent rotamer optimization.");
+    }
+
+    List<UreyBradley> ureyBradleys = residue.getUreyBradleyList();
+    if (ureyBradleys != null && ureyBradleys.size() > 0) {
+      logger.severe(" Urey-Bradleys are not supported yet for pH-dependent rotamer optimization.");
+    }
+
   }
 
   public double[] getMultipole(Atom atom,
@@ -543,16 +676,16 @@ public class TitrationUtils {
      */
 
     AminoAcid3 aminoAcid3;
-    try{
+    try {
       aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
-    } catch (Exception exception){
+    } catch (Exception exception) {
       return multipole;
     }
     String atomName = atom.getName();
 
     switch (aminoAcid3) {
       case LYS:
-        int atomIndex =  LysineAtomNames.valueOf(atomName).ordinal();
+        int atomIndex = LysineAtomNames.valueOf(atomName).ordinal();
         double[] lys = lysMultipoleTypes[LysStates.LYS.ordinal()][atomIndex].getMultipole();
         double[] lyd = lysMultipoleTypes[LysStates.LYD.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
@@ -560,7 +693,7 @@ public class TitrationUtils {
         }
         break;
       case HIS:
-        atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
+        atomIndex = HistidineAtomNames.valueOf(atomName).ordinal();
         double[] his = hisMultipoleTypes[HisStates.HIS.ordinal()][atomIndex].getMultipole();
         double[] hid = hisMultipoleTypes[HisStates.HID.ordinal()][atomIndex].getMultipole();
         double[] hie = hisMultipoleTypes[HisStates.HIE.ordinal()][atomIndex].getMultipole();
@@ -571,7 +704,7 @@ public class TitrationUtils {
         }
         break;
       case ASD:
-        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
+        atomIndex = AspartateAtomNames.valueOf(atomName).ordinal();
         double[] asp = aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
         double[] ash1 = aspMultipoleTypes[AspStates.ASH1.ordinal()][atomIndex].getMultipole();
         double[] ash2 = aspMultipoleTypes[AspStates.ASH2.ordinal()][atomIndex].getMultipole();
@@ -582,7 +715,7 @@ public class TitrationUtils {
         }
         break;
       case GLD:
-        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
+        atomIndex = GlutamateAtomNames.valueOf(atomName).ordinal();
         double[] glu = gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
         double[] glh1 = gluMultipoleTypes[GluStates.GLH1.ordinal()][atomIndex].getMultipole();
         double[] glh2 = gluMultipoleTypes[GluStates.GLH2.ordinal()][atomIndex].getMultipole();
@@ -601,15 +734,15 @@ public class TitrationUtils {
   public double[] getMultipoleTitrationDeriv(Atom atom,
       double titrationLambda, double tautomerLambda, double[] multipole) {
     AminoAcid3 aminoAcid3;
-    try{
+    try {
       aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
-    } catch (Exception exception){
+    } catch (Exception exception) {
       return multipole;
     }
     String atomName = atom.getName();
     switch (aminoAcid3) {
       case LYS:
-        int atomIndex =  LysineAtomNames.valueOf(atomName).ordinal();
+        int atomIndex = LysineAtomNames.valueOf(atomName).ordinal();
         double[] lys = lysMultipoleTypes[LysStates.LYS.ordinal()][atomIndex].getMultipole();
         double[] lyd = lysMultipoleTypes[LysStates.LYD.ordinal()][atomIndex].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
@@ -617,7 +750,7 @@ public class TitrationUtils {
         }
         break;
       case HIS:
-        atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
+        atomIndex = HistidineAtomNames.valueOf(atomName).ordinal();
         double[] his = hisMultipoleTypes[HisStates.HIS.ordinal()][atomIndex].getMultipole();
         double[] hid = hisMultipoleTypes[HisStates.HID.ordinal()][atomIndex].getMultipole();
         double[] hie = hisMultipoleTypes[HisStates.HIE.ordinal()][atomIndex].getMultipole();
@@ -626,7 +759,7 @@ public class TitrationUtils {
         }
         break;
       case ASD:
-        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
+        atomIndex = AspartateAtomNames.valueOf(atomName).ordinal();
         double[] asp = aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
         double[] ash1 = aspMultipoleTypes[AspStates.ASH1.ordinal()][atomIndex].getMultipole();
         double[] ash2 = aspMultipoleTypes[AspStates.ASH2.ordinal()][atomIndex].getMultipole();
@@ -635,7 +768,7 @@ public class TitrationUtils {
         }
         break;
       case GLD:
-        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
+        atomIndex = GlutamateAtomNames.valueOf(atomName).ordinal();
         double[] glu = gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
         double[] glh1 = gluMultipoleTypes[GluStates.GLH1.ordinal()][atomIndex].getMultipole();
         double[] glh2 = gluMultipoleTypes[GluStates.GLH2.ordinal()][atomIndex].getMultipole();
@@ -652,15 +785,15 @@ public class TitrationUtils {
   public double[] getMultipoleTautomerDeriv(Atom atom,
       double titrationLambda, double tautomerLambda, double[] multipole) {
     AminoAcid3 aminoAcid3;
-    try{
+    try {
       aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
-    } catch (Exception exception){
+    } catch (Exception exception) {
       return multipole;
     }
     String atomName = atom.getName();
     switch (aminoAcid3) {
       case HIS:
-        int atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
+        int atomIndex = HistidineAtomNames.valueOf(atomName).ordinal();
         double[] his = hisMultipoleTypes[HisStates.HIS.ordinal()][atomIndex].getMultipole();
         double[] hid = hisMultipoleTypes[HisStates.HID.ordinal()][atomIndex].getMultipole();
         double[] hie = hisMultipoleTypes[HisStates.HIE.ordinal()][atomIndex].getMultipole();
@@ -669,7 +802,7 @@ public class TitrationUtils {
         }
         break;
       case ASD:
-        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
+        atomIndex = AspartateAtomNames.valueOf(atomName).ordinal();
         double[] asp = aspMultipoleTypes[AspStates.ASP.ordinal()][atomIndex].getMultipole();
         double[] ash1 = aspMultipoleTypes[AspStates.ASH1.ordinal()][atomIndex].getMultipole();
         double[] ash2 = aspMultipoleTypes[AspStates.ASH2.ordinal()][atomIndex].getMultipole();
@@ -678,7 +811,7 @@ public class TitrationUtils {
         }
         break;
       case GLD:
-        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
+        atomIndex = GlutamateAtomNames.valueOf(atomName).ordinal();
         double[] glu = gluMultipoleTypes[GluStates.GLU.ordinal()][atomIndex].getMultipole();
         double[] glh1 = gluMultipoleTypes[GluStates.GLH1.ordinal()][atomIndex].getMultipole();
         double[] glh2 = gluMultipoleTypes[GluStates.GLH2.ordinal()][atomIndex].getMultipole();
@@ -696,34 +829,34 @@ public class TitrationUtils {
   public double getPolarizability(Atom atom,
       double titrationLambda, double tautomerLambda, double defaultPolarizability) {
     AminoAcid3 aminoAcid3;
-    try{
+    try {
       aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
-    } catch (Exception exception){
+    } catch (Exception exception) {
       return defaultPolarizability;
     }
     String atomName = atom.getName();
     switch (aminoAcid3) {
       case LYS:
-        int atomIndex =  LysineAtomNames.valueOf(atomName).ordinal();
+        int atomIndex = LysineAtomNames.valueOf(atomName).ordinal();
         double lys = lysPolarizeTypes[LysStates.LYS.ordinal()][atomIndex].polarizability;
         double lyd = lysPolarizeTypes[LysStates.LYD.ordinal()][atomIndex].polarizability;
         return titrationLambda * lys + (1.0 - titrationLambda) * lyd;
       case HIS:
-        atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
+        atomIndex = HistidineAtomNames.valueOf(atomName).ordinal();
         double his = hisPolarizeTypes[HisStates.HIS.ordinal()][atomIndex].polarizability;
         double hid = hisPolarizeTypes[HisStates.HID.ordinal()][atomIndex].polarizability;
         double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
         return titrationLambda * his + (1.0 - titrationLambda) * (tautomerLambda * hie
             + (1 - tautomerLambda) * hid);
       case ASD:
-        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
+        atomIndex = AspartateAtomNames.valueOf(atomName).ordinal();
         double asp = aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
         double ash1 = aspPolarizeTypes[AspStates.ASH1.ordinal()][atomIndex].polarizability;
         double ash2 = aspPolarizeTypes[AspStates.ASH2.ordinal()][atomIndex].polarizability;
         return titrationLambda * (tautomerLambda * ash1 + (1 - tautomerLambda) * ash2)
             + (1.0 - titrationLambda) * asp;
       case GLD:
-        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
+        atomIndex = GlutamateAtomNames.valueOf(atomName).ordinal();
         double glu = gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
         double glh1 = gluPolarizeTypes[GluStates.GLH1.ordinal()][atomIndex].polarizability;
         double glh2 = gluPolarizeTypes[GluStates.GLH2.ordinal()][atomIndex].polarizability;
@@ -737,32 +870,32 @@ public class TitrationUtils {
   public double getPolarizabilityTitrationDeriv(Atom atom,
       double titrationLambda, double tautomerLambda) {
     AminoAcid3 aminoAcid3;
-    try{
+    try {
       aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
-    } catch (Exception exception){
+    } catch (Exception exception) {
       return 0.0;
     }
     String atomName = atom.getName();
     switch (aminoAcid3) {
       case LYS:
-        int atomIndex =  LysineAtomNames.valueOf(atomName).ordinal();
+        int atomIndex = LysineAtomNames.valueOf(atomName).ordinal();
         double lys = lysPolarizeTypes[LysStates.LYS.ordinal()][atomIndex].polarizability;
         double lyd = lysPolarizeTypes[LysStates.LYD.ordinal()][atomIndex].polarizability;
         return lys - lyd;
       case HIS:
-        atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
+        atomIndex = HistidineAtomNames.valueOf(atomName).ordinal();
         double his = hisPolarizeTypes[HisStates.HIS.ordinal()][atomIndex].polarizability;
         double hid = hisPolarizeTypes[HisStates.HID.ordinal()][atomIndex].polarizability;
         double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
         return his - (tautomerLambda * hie + (1 - tautomerLambda) * hid);
       case ASD:
-        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
+        atomIndex = AspartateAtomNames.valueOf(atomName).ordinal();
         double asp = aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
         double ash1 = aspPolarizeTypes[AspStates.ASH1.ordinal()][atomIndex].polarizability;
         double ash2 = aspPolarizeTypes[AspStates.ASH2.ordinal()][atomIndex].polarizability;
         return (tautomerLambda * ash1 + (1 - tautomerLambda) * ash2) - asp;
       case GLD:
-        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
+        atomIndex = GlutamateAtomNames.valueOf(atomName).ordinal();
         double glu = gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
         double glh1 = gluPolarizeTypes[GluStates.GLH1.ordinal()][atomIndex].polarizability;
         double glh2 = gluPolarizeTypes[GluStates.GLH2.ordinal()][atomIndex].polarizability;
@@ -775,29 +908,29 @@ public class TitrationUtils {
   public double getPolarizabilityTautomerDeriv(Atom atom,
       double titrationLambda, double tautomerLambda) {
     AminoAcid3 aminoAcid3;
-    try{
+    try {
       aminoAcid3 = atom.getMSNode(Residue.class).getAminoAcid3();
-    } catch (Exception exception){
+    } catch (Exception exception) {
       return 0.0;
     }
     String atomName = atom.getName();
     switch (aminoAcid3) {
       case HIS:
-        int atomIndex =  HistidineAtomNames.valueOf(atomName).ordinal();
+        int atomIndex = HistidineAtomNames.valueOf(atomName).ordinal();
         double his = hisPolarizeTypes[HisStates.HIS.ordinal()][atomIndex].polarizability;
         double hid = hisPolarizeTypes[HisStates.HID.ordinal()][atomIndex].polarizability;
         double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
         //titrationLambda * his + (1.0 - titrationLambda) * (tautomerLambda * hie
         //            + (1 - tautomerLambda) * hid);
-        return  (1.0 - titrationLambda) * (hie - hid);
+        return (1.0 - titrationLambda) * (hie - hid);
       case ASD:
-        atomIndex =  AspartateAtomNames.valueOf(atomName).ordinal();
+        atomIndex = AspartateAtomNames.valueOf(atomName).ordinal();
         double asp = aspPolarizeTypes[AspStates.ASP.ordinal()][atomIndex].polarizability;
         double ash1 = aspPolarizeTypes[AspStates.ASH1.ordinal()][atomIndex].polarizability;
         double ash2 = aspPolarizeTypes[AspStates.ASH2.ordinal()][atomIndex].polarizability;
         return titrationLambda * (ash1 - ash2) + (1.0 - titrationLambda) * asp;
       case GLD:
-        atomIndex =  GlutamateAtomNames.valueOf(atomName).ordinal();
+        atomIndex = GlutamateAtomNames.valueOf(atomName).ordinal();
         double glu = gluPolarizeTypes[GluStates.GLU.ordinal()][atomIndex].polarizability;
         double glh1 = gluPolarizeTypes[GluStates.GLH1.ordinal()][atomIndex].polarizability;
         double glh2 = gluPolarizeTypes[GluStates.GLH2.ordinal()][atomIndex].polarizability;
@@ -809,23 +942,25 @@ public class TitrationUtils {
   }
 
 
-
-  public static boolean isTitratingHydrogen(AminoAcid3 aminoAcid3, Atom atom){
+  public static boolean isTitratingHydrogen(AminoAcid3 aminoAcid3, Atom atom) {
     boolean isTitratingHydrogen = false;
     String atomName = atom.getName();
     switch (aminoAcid3) {
       case ASD:
-        if (atomName.equals(AspartateAtomNames.HD1.name()) || atomName.equals(AspartateAtomNames.HD2.name())) {
+        if (atomName.equals(AspartateAtomNames.HD1.name()) || atomName.equals(
+            AspartateAtomNames.HD2.name())) {
           isTitratingHydrogen = true;
         }
         break;
       case GLD:
-        if (atomName.equals(GlutamateAtomNames.HE1.name()) || atomName.equals(GlutamateAtomNames.HE2.name())) {
+        if (atomName.equals(GlutamateAtomNames.HE1.name()) || atomName.equals(
+            GlutamateAtomNames.HE2.name())) {
           isTitratingHydrogen = true;
         }
         break;
       case HIS:
-        if (atomName.equals(HistidineAtomNames.HD1.name()) || atomName.equals(HistidineAtomNames.HE2.name())) {
+        if (atomName.equals(HistidineAtomNames.HD1.name()) || atomName.equals(
+            HistidineAtomNames.HE2.name())) {
           isTitratingHydrogen = true;
         }
         break;
@@ -1160,9 +1295,9 @@ public class TitrationUtils {
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
 
     //HE1 is the proton that is lost
-    HIStoHID(7.00, 36.00, 42.4030, 0.10048, AminoAcid3.HIS, AminoAcid3.HID),
+    HIStoHID(7.00, 41.0, 42.4030, 0.10048, AminoAcid3.HIS, AminoAcid3.HID),
     //HD1 is the proton that is lost
-    HIStoHIE(6.60, 36.00, 40.2215, 0.11638, AminoAcid3.HIS, AminoAcid3.HIE),
+    HIStoHIE(6.60, 37.85, 40.2215, 0.11638, AminoAcid3.HIS, AminoAcid3.HIE),
     HIDtoHIE(Double.NaN, 0.00, -3.40, 0.0, AminoAcid3.HID, AminoAcid3.HIE);
     //TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     //TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
@@ -1178,8 +1313,8 @@ public class TitrationUtils {
 
     /** Invoked by Enum; use the factory method to obtain instances. */
 
-    Titration(double pKa, double freeEnergyDiff, double refEnergy, double lambdaIntercept, AminoAcid3 protForm, AminoAcid3 deprotForm)
-    {
+    Titration(double pKa, double freeEnergyDiff, double refEnergy, double lambdaIntercept,
+        AminoAcid3 protForm, AminoAcid3 deprotForm) {
       this.pKa = pKa;
       this.freeEnergyDiff = freeEnergyDiff;
       this.refEnergy = refEnergy;

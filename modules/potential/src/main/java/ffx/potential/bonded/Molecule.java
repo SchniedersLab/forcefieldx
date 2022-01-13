@@ -92,6 +92,31 @@ public class Molecule extends MSGroup {
   }
 
   /**
+   * Setter for the field <code>chainID</code>.
+   *
+   * @param c a {@link java.lang.Character} object.
+   */
+  public void setChainID(Character c) {
+    chainID = c;
+
+    for (Atom atom : getAtomList()) {
+      atom.setChainID(c);
+    }
+  }
+
+  /**
+   * Setter for the field <code>residueNum</code>.
+   *
+   * @param residueNum The molecule number.
+   */
+  public void setResidueNum(int residueNum) {
+    this.residueNum = residueNum;
+    for (Atom atom : getAtomList()) {
+      atom.setResidueNumber(residueNum);
+    }
+  }
+
+  /**
    * {@inheritDoc}
    *
    * <p>Allows adding Atom MSNodes to the Molecule.

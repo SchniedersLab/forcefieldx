@@ -143,10 +143,10 @@ class Frac2Cart extends PotentialScript {
       saveDir = new File(FilenameUtils.getFullPath(filename))
     }
 
-    String dirName = saveDir.toString() + File.separator
     String name = FilenameUtils.getName(filename)
     String ext = FilenameUtils.getExtension(name)
     name = FilenameUtils.removeExtension(name)
+    String dirName = saveDir.toString() + File.separator
 
     if (ext.toUpperCase().contains("XYZ")) {
       potentialFunctions.saveAsXYZ(molecularAssemblies[0], new File(dirName + name + ".xyz"))

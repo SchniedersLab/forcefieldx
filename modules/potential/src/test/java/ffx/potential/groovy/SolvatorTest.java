@@ -38,6 +38,7 @@
 package ffx.potential.groovy;
 
 import static java.lang.String.format;
+import static org.apache.commons.io.FileUtils.copyFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -56,6 +57,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.configuration2.Configuration;
@@ -126,8 +128,8 @@ public class SolvatorTest extends PotentialTest {
     } else {
       File temp = null;
       try {
-        temp = Files.createTempDirectory("Cart2Frac").toFile();
-      } catch (java.io.IOException e) {
+        temp = Files.createTempDirectory("Solvator").toFile();
+      } catch (IOException e) {
         fail(" Could not create a temporary directory.");
       }
       tempDir = temp;
@@ -143,21 +145,19 @@ public class SolvatorTest extends PotentialTest {
         File srcFile = new File("src/main/java/" + fname);
         File tempFile = new File(tempDir.getAbsolutePath() + "/" + FilenameUtils.getName(fname));
 
-        FileUtils.copyFile(srcFile, tempFile);
+        copyFile(srcFile, tempFile);
         copiedFiles.add(tempFile);
         logger.info(format(" Copied file %s to %s", srcFile, tempFile));
 
         for (String ext : copiedExtensions) {
-          srcFile =
-              new File(
+          srcFile = new File(
                   format("%s.%s", FilenameUtils.removeExtension(srcFile.getPath()), ext));
           if (srcFile.exists()) {
             logger.fine(" Copying extension " + ext);
-            tempFile =
-                new File(
+            tempFile = new File(
                     format("%s.%s", FilenameUtils.removeExtension(tempFile.getPath()), ext));
             logger.fine(format(" Copied file %s to %s", srcFile, tempFile));
-            FileUtils.copyFile(srcFile, tempFile);
+            copyFile(srcFile, tempFile);
           }
         }
       }
@@ -167,16 +167,12 @@ public class SolvatorTest extends PotentialTest {
       int nFlags = flagArray.length;
 
       if (nOpts > 0) {
-        assertEquals(
-            format("Unmatched option key %s for test %s", options[nOpts - 1], info),
-            0,
-            options.length % 2);
+        assertEquals(format("Unmatched option key %s for test %s", options[nOpts - 1], info),
+            0, options.length % 2);
       }
       if (nProps > 0) {
-        assertEquals(
-            format("Unmatched property key %s for test %s", properties[nProps - 1], info),
-            0,
-            properties.length % 2);
+        assertEquals(format("Unmatched property key %s for test %s", properties[nProps - 1], info),
+            0, properties.length % 2);
       }
 
       Pattern validOption = Pattern.compile("^--?[^D]");
@@ -287,7 +283,7 @@ public class SolvatorTest extends PotentialTest {
       try {
         DirectoryUtils.deleteDirectoryTree(tempDir.toPath());
       } catch (IOException e) {
-        System.out.println(e.toString());
+        System.out.println(e);
         fail(" Exception deleting files created by Cart2Frac.");
       }
     }
@@ -335,13 +331,17 @@ public class SolvatorTest extends PotentialTest {
     potentialScript = solvator;
 
     File written = solvator.getWrittenFile();
+
+    logger.log(Level.INFO, " Written file {0}", written.getAbsolutePath());
+    logger.log(Level.INFO, " Expected file {0}", solvatedTestFile.getAbsolutePath());
+
     try (BufferedReader expectedReader = new BufferedReader(new FileReader(solvatedTestFile));
         BufferedReader writtenReader = new BufferedReader(new FileReader(written))) {
       boolean same = IOUtils.contentEqualsIgnoreEOL(expectedReader, writtenReader);
       assertTrue(" File written by test did not match the expected file!", same);
     } catch (IOException ex) {
       fail(format(" Exception %s in attempting to compare expected file %s to written file %s",
-          ex.toString(), solvatedTestFile, written.toString()));
+          ex, solvatedTestFile, written));
     }
   }
 

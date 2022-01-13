@@ -53,6 +53,7 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirk
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSoluteDielectric;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSolventDielectric;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setDielectricOffset;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSurfaceAreaFactor;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext;
@@ -320,7 +321,7 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ImproperTorsionType;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.OutOfPlaneBendType;
-import ffx.potential.parameters.PiTorsionType;
+import ffx.potential.parameters.PiOrbitalTorsionType;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.TorsionTorsionType;
 import ffx.potential.parameters.TorsionType;
@@ -2595,8 +2596,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int a4 = piOrbitalTorsion.getAtom(3).getXyzIndex() - 1;
         int a5 = piOrbitalTorsion.getAtom(4).getXyzIndex() - 1;
         int a6 = piOrbitalTorsion.getAtom(5).getXyzIndex() - 1;
-        PiTorsionType type = piOrbitalTorsion.piTorsionType;
-        double k = OpenMM_KJPerKcal * type.forceConstant * PiTorsionType.units;
+        PiOrbitalTorsionType type = piOrbitalTorsion.piOrbitalTorsionType;
+        double k = OpenMM_KJPerKcal * type.forceConstant * PiOrbitalTorsionType.units;
         OpenMM_IntArray_append(particles, a1);
         OpenMM_IntArray_append(particles, a2);
         OpenMM_IntArray_append(particles, a3);
@@ -3720,6 +3721,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           amoebaGeneralizedKirkwoodForce, gk.getSolventPermittivity());
       OpenMM_AmoebaGeneralizedKirkwoodForce_setSoluteDielectric(
           amoebaGeneralizedKirkwoodForce, 1.0);
+
+      OpenMM_AmoebaGeneralizedKirkwoodForce_setDielectricOffset(
+          amoebaGeneralizedKirkwoodForce, gk.getDescreenOffset() * OpenMM_NmPerAngstrom);
 
       double[] overlapScale = gk.getOverlapScale();
       double[] baseRadius = gk.getBaseRadii();

@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
+import static ffx.potential.parameters.AngleType.AngleMode.IN_PLANE;
 import static ffx.potential.parameters.OutOfPlaneBendType.cubic;
 import static ffx.potential.parameters.OutOfPlaneBendType.quartic;
 import static ffx.potential.parameters.OutOfPlaneBendType.quintic;
@@ -50,7 +51,6 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
 import ffx.numerics.atomic.AtomicDoubleArray3D;
-import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.OutOfPlaneBendType;
 import java.util.logging.Logger;
@@ -88,6 +88,38 @@ public class OutOfPlaneBend extends BondedTerm {
   }
 
   /**
+   * The atom of this out-of-plane bend that was not part of the Angle.
+   * @return Fourth atom.
+   */
+  public Atom getFourthAtom() {
+    return atoms[3];
+  }
+
+  /**
+   * Get the triognal atom of this out-of-plane bend (central atom of the Angle).
+   * @return Fourth atom.
+   */
+  public Atom getTrigonalAtom() {
+    return atoms[1];
+  }
+
+  /**
+   * Get the first atom of the Angle.
+   * @return Fourth atom.
+   */
+  public Atom getFirstAngleAtom() {
+    return atoms[0];
+  }
+
+  /**
+   * Get the first atom of the Angle.
+   * @return Fourth atom.
+   */
+  public Atom getLastAngleAtom() {
+    return atoms[2];
+  }
+
+  /**
    * Attempt to create a new OutOfPlaneBend instance for a given Angle and Force Field.
    *
    * @param angle the Angle to create an OutOfPlaneBend around.
@@ -98,32 +130,19 @@ public class OutOfPlaneBend extends BondedTerm {
   public static OutOfPlaneBend outOfPlaneBendFactory(Angle angle, ForceField forceField) {
     Atom centralAtom = angle.atoms[1];
     if (centralAtom.isTrigonal()) {
-      Atom atom4 = angle.getTrigonalAtom();
-      int class4 = atom4.getAtomType().atomClass;
-      int class0 = angle.atoms[0].getAtomType().atomClass;
-      int class1 = angle.atoms[1].getAtomType().atomClass;
-      int class2 = angle.atoms[2].getAtomType().atomClass;
+      Atom fourthAtom = angle.getTrigonalAtom();
+      Atom[] atoms = angle.atoms;
 
-      // First check for an atom4-center-edge-edge type (also checking reversed edges).
-      String key = String.format("%d %d %d %d", class4, class1, class0, class2);
-      OutOfPlaneBendType oopBendType = forceField.getOutOfPlaneBendType(key);
-      if (oopBendType == null) {
-        key = String.format("%d %d %d %d", class4, class1, class2, class0);
-        oopBendType = forceField.getOutOfPlaneBendType(key);
-      }
+      OutOfPlaneBendType outOfPlaneBendType = forceField.getOutOfPlaneBendType(fourthAtom.getAtomType(),
+         atoms[0].getAtomType(), atoms[1].getAtomType(), atoms[2].getAtomType());
 
-      // Then, check for a generic OOP bend type atom4-center-any-any
-      if (oopBendType == null) {
-        key = String.format("%d %d 0 0", class4, class1);
-        oopBendType = forceField.getOutOfPlaneBendType(key);
-      }
-      if (oopBendType != null) {
-        if (angle.getAngleMode() == AngleType.AngleMode.IN_PLANE) {
-          angle.setInPlaneAtom(atom4);
+      if (outOfPlaneBendType != null) {
+        if (angle.getAngleMode() == IN_PLANE) {
+          angle.setInPlaneAtom(fourthAtom);
         }
-        OutOfPlaneBend newOutOfPlaneBend = new OutOfPlaneBend(angle, atom4);
-        newOutOfPlaneBend.outOfPlaneBendType = oopBendType;
-        return newOutOfPlaneBend;
+        OutOfPlaneBend outOfPlaneBend = new OutOfPlaneBend(angle, fourthAtom);
+        outOfPlaneBend.setOutOfPlaneBendType(outOfPlaneBendType);
+        return outOfPlaneBend;
       }
     }
     return null;
@@ -270,7 +289,7 @@ public class OutOfPlaneBend extends BondedTerm {
    *
    * @param a a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
    */
-  public void setAngleType(OutOfPlaneBendType a) {
+  public void setOutOfPlaneBendType(OutOfPlaneBendType a) {
     outOfPlaneBendType = a;
   }
 

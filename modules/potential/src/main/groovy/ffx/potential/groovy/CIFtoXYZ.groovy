@@ -80,6 +80,7 @@ import javax.vecmath.Point3d
 import java.nio.file.Path
 import java.nio.file.Paths
 
+import static ffx.crystal.SpaceGroupConversions.hrConversion
 import static ffx.numerics.math.DoubleMath.dihedralAngle
 import static ffx.numerics.math.DoubleMath.dist
 import static ffx.potential.bonded.BondedUtils.intxyz
@@ -120,6 +121,13 @@ class CIFtoXYZ extends PotentialScript {
     private String sgName
 
     /**
+     * --bt or --bondTolerance Tolerance added to covalent radius to bond atoms.
+     */
+    @Option(names = ['--bt','--bondTolerance'], paramLabel = "0.2", defaultValue = "0.2",
+            description = 'Tolerance added to covalent radius to determine if atoms should be bonded.')
+    private double bondTolerance
+
+    /**
      * The final argument(s) should be a CIF file and an XYZ file with atom types.
      */
     @Parameters(arity = "1..2", paramLabel = "files",
@@ -136,10 +144,7 @@ class CIFtoXYZ extends PotentialScript {
      */
     private static final double MIN_BOND_DISTANCE = 0.5
 
-    /**
-     * Atoms within covalent bond radii + tolerance will be bonded.
-     */
-    private static final double BOND_TOLERANCE = 0.2
+    private List<String> createdFiles = new ArrayList<>()
 
     /**
      * CIFtoXYZ Constructor.
@@ -237,6 +242,7 @@ class CIFtoXYZ extends PotentialScript {
             if (sg == null) {
                 logger.warning(" The space group could not be determined from the CIF file (using P1).")
                 sg = SpaceGroupDefinitions.spaceGroupFactory(1)
+                numFailed++
             }
 
             Cell cell = block.cell
@@ -254,20 +260,40 @@ class CIFtoXYZ extends PotentialScript {
             } else {
                 if (fixLattice) {
                     logger.warning(" Attempting to patch disagreement between lattice system and lattice parameters.")
-                    double[] newLatticeParameters = latticeSystem.fixParameters(a, b, c, alpha, beta, gamma)
-                    if (newLatticeParameters == latticeParameters) {
-                        logger.warning(" Conversion Failed: The proposed lattice parameters for " + sg.pdbName
-                                + " do not satisfy the " + latticeSystem + ".")
-                        numFailed++
-                        continue
-                    } else {
-                        a = newLatticeParameters[0]
-                        b = newLatticeParameters[1]
-                        c = newLatticeParameters[2]
-                        alpha = newLatticeParameters[3]
-                        beta = newLatticeParameters[4]
-                        gamma = newLatticeParameters[5]
-                        crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName)
+                    boolean fixed = false
+                    // Check if Rhombohedral lattice has been named Hexagonal
+                    if(latticeSystem == LatticeSystem.HEXAGONAL_LATTICE &&
+                            LatticeSystem.RHOMBOHEDRAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)){
+                            crystal = hrConversion(a, b, c, alpha, beta, gamma, sg)
+                            latticeSystem = crystal.spaceGroup.latticeSystem
+                            if (latticeSystem.validParameters(crystal.a, crystal.b, crystal.c, crystal.alpha, crystal.beta, crystal.gamma)) {
+                                fixed = true
+                            }
+                        // Check if Hexagonal lattice has been named Rhombohedral
+                    } else if(latticeSystem == LatticeSystem.RHOMBOHEDRAL_LATTICE &&
+                            LatticeSystem.HEXAGONAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)) {
+                        crystal = hrConversion(a, b, c, alpha, beta, gamma, sg)
+                        latticeSystem = crystal.spaceGroup.latticeSystem
+                        if (latticeSystem.validParameters(crystal.a, crystal.b, crystal.c, crystal.alpha, crystal.beta, crystal.gamma)) {
+                            fixed=true
+                        }
+                    }
+                    if(!fixed) {
+                        double[] newLatticeParameters = latticeSystem.fixParameters(a, b, c, alpha, beta, gamma)
+                        if (newLatticeParameters == latticeParameters) {
+                            logger.warning(" Conversion Failed: The proposed lattice parameters for " + sg.pdbName
+                                    + " do not satisfy the " + latticeSystem + ".")
+                            numFailed++
+                            continue
+                        } else {
+                            a = newLatticeParameters[0]
+                            b = newLatticeParameters[1]
+                            c = newLatticeParameters[2]
+                            alpha = newLatticeParameters[3]
+                            beta = newLatticeParameters[4]
+                            gamma = newLatticeParameters[5]
+                            crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName)
+                        }
                     }
                 } else {
                     logger.warning(" Conversion Failed: The proposed lattice parameters for " + sg.pdbName
@@ -289,6 +315,7 @@ class CIFtoXYZ extends PotentialScript {
             int nAtoms = label.getRowCount()
             if(nAtoms < 1){
                 logger.warning(" CIF file did not contain coordinates.")
+                numFailed++
                 continue
             }
             logger.info(format("\n Number of Atoms: %d", nAtoms))
@@ -296,7 +323,6 @@ class CIFtoXYZ extends PotentialScript {
 
             // Define per atom information for the PDB file.
             String resName = "CIF"
-            int resID = 1
             double occupancy = 1.0
             double bfactor = 1.0
             char altLoc = ' '
@@ -306,6 +332,8 @@ class CIFtoXYZ extends PotentialScript {
 
             // Loop over atoms.
             for (int i = 0; i < nAtoms; i++) {
+                // Assigning each atom their own resID prevents comparator from treating them as the same atom.
+                int resID = i
                 if(typeSymbol.getRowCount() > 0){
                     symbols[i] = typeSymbol.get(i)
                 }else{
@@ -357,8 +385,8 @@ class CIFtoXYZ extends PotentialScript {
                 zPrime = (int) (nAtoms / nXYZAtoms)
                 itsFine = true
                 // Check if there are the same number of heavy atoms in both (CIF may contain multiple copies).
-            } else if ((nAtoms + numHydrogens) % nXYZAtoms == 0) {
-                zPrime = (int) ((nAtoms + numHydrogens) / nXYZAtoms)
+            } else if (nAtoms % (nXYZAtoms-numHydrogens) == 0) {
+                zPrime = (int) (nAtoms / (nXYZAtoms-numHydrogens))
                 itsFine = true
             } else {
                 zPrime = 1
@@ -413,18 +441,25 @@ class CIFtoXYZ extends PotentialScript {
                     }
                 } else {
                     // Bond atoms in CIF file.
-                    bondAtoms(atoms)
-
+                    int cifBonds = bondAtoms(atoms, bondTolerance)
+                    logger.fine(format(" Created %d bonds between CIF atoms (%d in xyz, so %d total molecules).",
+                            cifBonds, xyzBonds, (int) cifBonds/xyzBonds))
+                    int numMolecules = (int) (cifBonds / xyzBonds)
+                    if(cifBonds%xyzBonds!=0){
+                        logger.fine(format(" Created bonds (%d) do not match inputted molecule (%d).", cifBonds, xyzBonds))
+                    }else if(numMolecules != zPrime){
+                        logger.fine(format(" Number of detected molecules (%d) does not equal expected (%d).", numMolecules, zPrime))
+                    }
                     List<Atom> atomPool = new ArrayList<>()
                     for (int i = 0; i < atoms.size(); i++) {
                         atomPool.add(atoms[i])
                     }
 
-
                     try {
                         while (!atomPool.isEmpty()) {
                             List<Atom> molecule = new ArrayList<>()
                             collectAtoms(atomPool.get(0), molecule)
+                            logger.finer(format(" Molecule (%d) Size: %d", counter, molecule.size()))
                             List<Integer> indices = new ArrayList<>()
                             while (molecule.size() > 0) {
                                 Atom atom = molecule.remove(0)
@@ -483,10 +518,10 @@ class CIFtoXYZ extends PotentialScript {
                         factory.configure(atom)
                     }
 
-                    RebondTool rebonder = new RebondTool(MAX_COVALENT_RADIUS, MIN_BOND_DISTANCE, BOND_TOLERANCE)
+                    RebondTool rebonder = new RebondTool(MAX_COVALENT_RADIUS, MIN_BOND_DISTANCE, bondTolerance)
                     rebonder.rebond(cifCDKAtomsArr[i])
 
-                    int cifBonds = cifCDKAtomsArr[i].getBondCount();
+                    int cifBonds = cifCDKAtomsArr[i].getBondCount()
 
                     // Number of bonds matches.
                     if (cifBonds % xyzBonds == 0) {
@@ -606,6 +641,9 @@ class CIFtoXYZ extends PotentialScript {
                                 }
                             }
                         } else {
+                            if(p!=null){
+                                logger.info(format(" Matched %d atoms out of %d in CIF (%d in XYZ)", p.length, nAUatoms, xyzAtoms.size()-numHydrogens))
+                            }
                             logger.warning(" Could not match heavy atoms between CIF and XYZ.")
                             savePDB = true
                         }
@@ -648,6 +686,7 @@ class CIFtoXYZ extends PotentialScript {
 
             File saveFile
             if (savePDB) {
+                numFailed++
                 // Save a PDB file if there is no XYZ file supplied.
                 fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
                 saveFile = new File(dirName + fileName)
@@ -665,7 +704,7 @@ class CIFtoXYZ extends PotentialScript {
                         fileName += "_z" + zPrime.toString()
                     }
                     // Concatenated CIF files may contain more than one space group.
-                    fileName = fileName + "_" + sg.shortName.replaceAll("\\/", "") + ".arc"
+                    fileName = fileName + "_" + crystal.spaceGroup.shortName.replaceAll("\\/", "") + ".arc"
                     saveFile = new File(dirName + fileName)
                 } else {
                     // If only structure, create new file on each run.
@@ -692,6 +731,10 @@ class CIFtoXYZ extends PotentialScript {
                     if (parameters != null && !parameters.equalsIgnoreCase("none")) {
                         bw.write(format("parameters %s\n", parameters))
                     }
+                    String forcefieldProperty = forceField.getString("forcefield", "none")
+                    if (forcefieldProperty != null && !forcefieldProperty.equalsIgnoreCase("none")) {
+                        bw.write(format("forcefield %s\n", forcefieldProperty))
+                    }
                     String patch = forceField.getString("patch", "none")
                     if (patch != null && !patch.equalsIgnoreCase("none")) {
                         bw.write(format("patch %s\n", patch))
@@ -707,6 +750,9 @@ class CIFtoXYZ extends PotentialScript {
                     logger.info("\n Property file already exists:  " + propertyFile.getAbsolutePath() + "\n")
                 }
             }
+            if(!createdFiles.contains(saveFile.getName())){
+                createdFiles.add(saveFile.getName())
+            }
             //Reset space group for next block
             sgNum = -1
             sgName = ""
@@ -714,9 +760,17 @@ class CIFtoXYZ extends PotentialScript {
             outputAssembly.destroy()
         }
         if (numFailed > 0) {
-            logger.info(format(" %d CIF files were not successfully converted.", numFailed))
+            logger.info(format(" %d CIF file(s) were not successfully converted.", numFailed))
         }
         return this
+    }
+
+    /**
+     * Obtain a list of output files written from the conversion.
+     * @return String[] containing output file names.
+     */
+    String[] getCreatedFileNames(){
+        return createdFiles.toArray()
     }
 
     /**
@@ -724,7 +778,8 @@ class CIFtoXYZ extends PotentialScript {
      *
      * @param atoms To potentially be bonded together.
      */
-    private static void bondAtoms(Atom[] atoms) {
+    private static int bondAtoms(Atom[] atoms, double bondTolerance) {
+        int bondCount = 0
         for (int i = 0; i < atoms.size(); i++) {
             Atom atom1 = atoms[i]
             String atomIelement = getAtomElement(atom1)
@@ -734,10 +789,7 @@ class CIFtoXYZ extends PotentialScript {
                 return
             }
             double[] xyz = [atom1.getX(), atom1.getY(), atom1.getZ()]
-            for (int j = 0; j < atoms.size(); j++) {
-                if (i == j) {
-                    continue
-                }
+            for (int j = i + 1; j < atoms.size(); j++) {
                 Atom atom2 = atoms[j]
                 String atomJelement = getAtomElement(atom2)
                 double radiusJ = getCovalentRadius(atomJelement)
@@ -747,16 +799,18 @@ class CIFtoXYZ extends PotentialScript {
                 }
                 double[] xyz2 = [atom2.getX(), atom2.getY(), atom2.getZ()]
                 double length = dist(xyz, xyz2)
-                double bondLength = radiusI + radiusJ + BOND_TOLERANCE
+                double bondLength = radiusI + radiusJ + bondTolerance
                 if (length < bondLength) {
+                    bondCount++
                     Bond bond = new Bond(atom1, atom2)
                     atom1.setBond(bond)
                     atom2.setBond(bond)
-                    logger.finer(format("Bonded atom %d (%s) with atom %d (%s): bond length (%4.4f Å) < tolerance (%4.4f Å)",
+                    logger.finest(format("Bonded atom %d (%s) with atom %d (%s): bond length (%4.4f Å) < tolerance (%4.4f Å)",
                             i+1, atomIelement, j+1, atomJelement, length, bondLength))
                 }
             }
         }
+        return bondCount
     }
 
     /**
@@ -787,6 +841,7 @@ class CIFtoXYZ extends PotentialScript {
      * @param atoms that are bonded.
      */
     private static void collectAtoms(Atom seed, List<Atom> atoms) {
+        logger.finest(format(" Atom: %s", seed.name))
         if (seed == null) {
             return
         }

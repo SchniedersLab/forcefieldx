@@ -252,7 +252,7 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
   }
 
   @Override
-  public void saveAsP1(MolecularAssembly assembly, File file) {
+  public void saveAsXYZinP1(MolecularAssembly assembly, File file) {
     Optional<FFXSystem> origSys = switchTo(assembly);
     mainPanel.saveAsP1(file);
     lastFilter = mainPanel.getFilter();
@@ -290,17 +290,9 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
   }
 
   @Override
-  public void savePDBSymMates(MolecularAssembly assembly, File file) {
+  public void saveAsPDBinP1(MolecularAssembly assembly, File file) {
     Optional<FFXSystem> origSys = switchTo(assembly);
-    mainPanel.savePDBSymMates(file, "_symMate");
-    lastFilter = mainPanel.getFilter();
-    origSys.ifPresent(this::switchBack);
-  }
-
-  @Override
-  public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix) {
-    Optional<FFXSystem> origSys = switchTo(assembly);
-    mainPanel.savePDBSymMates(file, suffix);
+    mainPanel.savePDBasP1(file);
     lastFilter = mainPanel.getFilter();
     origSys.ifPresent(this::switchBack);
   }
