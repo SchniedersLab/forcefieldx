@@ -119,10 +119,10 @@ class Deuterate extends AlgorithmsScript {
         }
       }
 
-      List<MSNode> waters = assemblies[i].getWaters()
-      for (MSNode node : waters) {
-        Molecule water = (Molecule) node
-        water.setName("DOD")
+      List<MSNode> water = assemblies[i].getWater()
+      for (MSNode node : water) {
+        Molecule wat = (Molecule) node
+        wat.setName("DOD")
       }
     }
 

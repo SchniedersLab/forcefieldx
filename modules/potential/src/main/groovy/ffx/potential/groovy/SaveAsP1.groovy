@@ -39,10 +39,16 @@ package ffx.potential.groovy
 
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.SaveOptions
-import org.apache.commons.io.FilenameUtils
+import ffx.potential.parsers.SystemFilter
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
+
+
+import static org.apache.commons.io.FilenameUtils.getExtension
+import static org.apache.commons.io.FilenameUtils.removeExtension
+import static org.apache.commons.io.FilenameUtils.getFullPath
+import static org.apache.commons.io.FilenameUtils.getName
 
 /**
  * The SaveAsP1 script expands a specified file to P1
@@ -106,17 +112,23 @@ class SaveAsP1 extends PotentialScript {
     // Configure the base directory if it has not been set.
     File saveDir = baseDir
     if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(FilenameUtils.getFullPath(filename))
+      saveDir = new File(getFullPath(filename))
     }
 
-    String name = FilenameUtils.getName(filename)
-    String dirName = saveDir.getAbsolutePath()
-    File saveLocation = new File(dirName + File.separator + name)
+    String name = getName(filename)
+    String ext = getExtension(name)
+    name = removeExtension(name)
+    String dirName = saveDir.toString() + File.separator
 
-    logger.info(" Saving P1 file to: " + saveLocation)
-
-    saveOptions.preSaveOperations(activeAssembly)
-    potentialFunctions.saveAsP1(activeAssembly, saveLocation)
+    if (ext.toUpperCase().contains("XYZ")) {
+      File saveLocation = SystemFilter.version(new File(dirName + name + ".xyz"))
+      logger.info(" Saving P1 file to: " + saveLocation)
+      potentialFunctions.saveAsXYZinP1(activeAssembly, saveLocation)
+    } else {
+      File saveLocation = SystemFilter.version(new File(dirName + name + ".pdb"))
+      logger.info(" Saving symmetry mates file to: " + saveLocation)
+      potentialFunctions.saveAsPDBinP1(activeAssembly, saveLocation)
+    }
 
     return this
   }

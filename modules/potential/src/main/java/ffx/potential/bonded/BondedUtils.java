@@ -403,7 +403,7 @@ public class BondedUtils {
       atom = (Atom) residue.getAtomNode(dAtomName);
     }
 
-    // Basic checking for unspecified H atoms attached to waters.
+    // Basic checking for unspecified H atoms attached to water.
     if (residue instanceof Molecule && atom == null) {
       Molecule molec = (Molecule) residue;
       String molName = molec.getName().toUpperCase();
@@ -787,8 +787,8 @@ public class BondedUtils {
       MSGroup m = (MSGroup) n;
       m.reOrderAtoms();
     }
-    List<MSNode> waters = molecularAssembly.getWaters();
-    for (MSNode n : waters) {
+    List<MSNode> water = molecularAssembly.getWater();
+    for (MSNode n : water) {
       MSGroup m = (MSGroup) n;
       m.reOrderAtoms();
     }

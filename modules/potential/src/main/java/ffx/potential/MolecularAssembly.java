@@ -114,7 +114,7 @@ public class MolecularAssembly extends MSGroup {
   // Data Nodes
   private final MSNode ions = new MSNode("Ions");
   private final HashMap<String, Molecule> ionHashMap = new HashMap<>();
-  private final MSNode water = new MSNode("Waters");
+  private final MSNode water = new MSNode("Water");
   private final HashMap<String, Molecule> waterHashMap = new HashMap<>();
   private final MSNode molecules = new MSNode("Hetero Molecules");
   private final HashMap<String, Molecule> moleculeHashMap = new HashMap<>();
@@ -177,7 +177,8 @@ public class MolecularAssembly extends MSGroup {
    *
    * @param name a {@link java.lang.String} object.
    * @param Polymers a {@link ffx.potential.bonded.MSNode} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    */
   public MolecularAssembly(String name, MSNode Polymers, CompositeConfiguration properties) {
     this(name, Polymers);
@@ -450,9 +451,9 @@ public class MolecularAssembly extends MSGroup {
         }
 
         // Loop over each water
-        List<MSNode> waters = getWaters();
-        for (MSNode water : waters) {
-          List<Atom> list = water.getAtomList();
+        List<MSNode> water = getWater();
+        for (MSNode wat : water) {
+          List<Atom> list = wat.getAtomList();
           // Find the center of mass
           com[0] = 0.0;
           com[1] = 0.0;
@@ -731,9 +732,9 @@ public class MolecularAssembly extends MSGroup {
   }
 
   /**
-   * Count the number of fractional coordinate entities in the system. If fractionalMode is
-   * MOLECULE, then the count is equal to the number of molecules. If fractionalMode is ATOM, then
-   * the count is the number of atoms. Otherwise the count is zero.
+   * Count the number of fractional coordinate entities in the system. If fractionalMode is MOLECULE,
+   * then the count is equal to the number of molecules. If fractionalMode is ATOM, then the count is
+   * the number of atoms. Otherwise the count is zero.
    *
    * @return The number of fractional coordinate entities.
    */
@@ -751,9 +752,9 @@ public class MolecularAssembly extends MSGroup {
           count += molecules.size();
         }
 
-        List<MSNode> waters = getWaters();
-        if (waters != null) {
-          count += waters.size();
+        List<MSNode> water = getWater();
+        if (water != null) {
+          count += water.size();
         }
 
         List<MSNode> ions = getIons();
@@ -804,7 +805,7 @@ public class MolecularAssembly extends MSGroup {
     // Initial construction via HashSet to eliminate duplicates.
     Set<MSNode> allBondedNodes = new HashSet<>(getIons());
     allBondedNodes.addAll(getMolecules());
-    allBondedNodes.addAll(getWaters());
+    allBondedNodes.addAll(getWater());
     Polymer[] polys = getChains();
     if (polys != null && polys.length > 0) {
       allBondedNodes.addAll(Arrays.asList(polys));
@@ -1206,6 +1207,56 @@ public class MolecularAssembly extends MSGroup {
     return molecules.getChildList();
   }
 
+  public Molecule[] getMoleculeArray() {
+    Molecule[] m = new Molecule[molecules.getChildCount()];
+    int i = 0;
+    for (MSNode msNode : molecules.getChildList()) {
+      m[i++] = (Molecule) msNode;
+    }
+    return m;
+  }
+
+  /**
+   * This method sets all HETATM molecules, including water and ions, to use the given
+   * chainID and then renumbers the molecules.
+   *
+   * If there is a polymer with the given chainID, then numbering begins after the final ResID.
+   * Otherwise numbering begins at 1.
+   *
+   * This is useful for producing consistent PDB file output.
+   *
+   * @param chainID The Character chainID to use for all HETATM molecules.
+   */
+  public void setChainIDAndRenumberMolecules(Character chainID) {
+    int resID = 1;
+
+    Polymer polymer = getPolymer(chainID, chainID.toString(), false);
+    if (polymer != null) {
+      List<Residue> residues = polymer.getResidues();
+      for (Residue residue : residues) {
+        int resID2 = residue.getResidueNumber();
+        if (resID2 >= resID) {
+          resID = resID2 + 1;
+        }
+      }
+    }
+    for (MSNode m : getMolecules()) {
+      Molecule molecule = (Molecule) m;
+      molecule.setChainID(chainID);
+      molecule.setResidueNum(resID++);
+    }
+    for (MSNode ion : getIons()) {
+      Molecule m = (Molecule) ion;
+      m.setChainID(chainID);
+      m.setResidueNum(resID++);
+    }
+    for (MSNode wat : getWater()) {
+      Molecule water = (Molecule) wat;
+      water.setChainID(chainID);
+      water.setResidueNum(resID++);
+    }
+  }
+
   /**
    * getNodeList
    *
@@ -1359,11 +1410,11 @@ public class MolecularAssembly extends MSGroup {
   }
 
   /**
-   * getWaters
+   * getWater
    *
    * @return a {@link java.util.List} object.
    */
-  public List<MSNode> getWaters() {
+  public List<MSNode> getWater() {
     return water.getChildList();
   }
 
@@ -1422,7 +1473,7 @@ public class MolecularAssembly extends MSGroup {
    */
   public void moveAllIntoUnitCell() {
     moveIntoUnitCell(getChains());
-    moveIntoUnitCell(getWaters());
+    moveIntoUnitCell(getWater());
     moveIntoUnitCell(getIons());
     moveIntoUnitCell(getMolecules());
   }
@@ -1521,9 +1572,9 @@ public class MolecularAssembly extends MSGroup {
         }
 
         // Loop over each water
-        List<MSNode> waters = getWaters();
-        for (MSNode water : waters) {
-          List<Atom> list = water.getAtomList();
+        List<MSNode> water = getWater();
+        for (MSNode wat : water) {
+          List<Atom> list = wat.getAtomList();
           // Find the center of mass
           com[0] = 0.0;
           com[1] = 0.0;
@@ -2132,9 +2183,9 @@ public class MolecularAssembly extends MSGroup {
    * Returns a list of all water molecules in the system, including both those properly under the
    * water node and those under the molecules node.
    *
-   * @return All waters in the system
+   * @return All water in the system
    */
-  private List<Molecule> getAllWatersInclMistyped() {
+  private List<Molecule> getAllWaterInclMistyped() {
     Stream<Molecule> mistyped =
         getMolecules()
             .parallelStream()
@@ -2157,14 +2208,14 @@ public class MolecularAssembly extends MSGroup {
                   }
                   return nO == 1 && nH == 2;
                 });
-    return Stream.concat(mistyped, getWaters().stream().map((MSNode m) -> (Molecule) m))
+    return Stream.concat(mistyped, getWater().stream().map((MSNode m) -> (Molecule) m))
         .distinct()
         .collect(Collectors.toList());
   }
 
   /** Renames water protons to H1 and H2. */
   void renameWaterProtons() {
-    for (Molecule water : getAllWatersInclMistyped()) {
+    for (Molecule water : getAllWaterInclMistyped()) {
       Atom H1 = water.getAtomByName("H1", false);
       Atom H2 = water.getAtomByName("H2", false);
       if (H1 != null && H2 != null) {

@@ -213,7 +213,7 @@ public interface PotentialsFunctions {
    * @param assembly MolecularAssembly to save
    * @param file Destination .xyz
    */
-  void saveAsP1(MolecularAssembly assembly, File file);
+  void saveAsXYZinP1(MolecularAssembly assembly, File file);
 
   /**
    * Saves the current state of a MolecularAssembly to a PDB file.
@@ -247,16 +247,7 @@ public interface PotentialsFunctions {
    * @param assembly To save
    * @param file Destination file
    */
-  void savePDBSymMates(MolecularAssembly assembly, File file);
-
-  /**
-   * Saves the symmetry mates of a MolecularAssembly to PDB files.
-   *
-   * @param assembly To save
-   * @param file Destination file
-   * @param suffix Custom file suffix
-   */
-  void savePDBSymMates(MolecularAssembly assembly, File file, String suffix);
+  void saveAsPDBinP1(MolecularAssembly assembly, File file);
 
   /**
    * Logs time elapsed since last call.

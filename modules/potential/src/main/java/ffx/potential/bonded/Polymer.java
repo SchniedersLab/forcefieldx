@@ -81,12 +81,14 @@ public class Polymer extends MSGroup {
     polymerColor.put(9, RendererCache.PINK);
   }
 
+  public static final String CHAIN_IDS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz";
+
   /** Flag to indicate the residues in the polymer should be joined. */
   private boolean link = false;
   /** The number of this Polymer. */
   private final int polymerNumber;
   /** The ChainID of this Polymer. */
-  private final Character chainID;
+  private Character chainID;
 
   /**
    * Polymer constructor.
@@ -154,6 +156,30 @@ public class Polymer extends MSGroup {
     residue.setChainID(chainID);
 
     return msNode;
+  }
+
+  /**
+   * Set the Polymer chainID. The residues that form the polymer are also updated.
+   *
+   * @param chainID The chainID to use.
+   */
+  public void setChainID(Character chainID) {
+    this.chainID = chainID;
+    for (Residue residue : getResidues()) {
+      residue.setChainID(chainID);
+    }
+  }
+
+  /**
+   * Set the Polymer segID. The residues that form the polymer are also updated.
+   *
+   * @param segID The segID to use.
+   */
+  public void setSegID(String segID) {
+    setName(segID);
+    for (Residue residue : getResidues()) {
+      residue.setSegID(segID);
+    }
   }
 
   /**

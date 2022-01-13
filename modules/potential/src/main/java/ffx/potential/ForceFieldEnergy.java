@@ -1218,7 +1218,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
                           return O != null && H.size() == 2;
                         });
             // Now concatenate the stream with the properly labeled waters.
-            settleStream = Stream.concat(settleStream, molecularAssembly.getWaters().stream());
+            settleStream = Stream.concat(settleStream, molecularAssembly.getWater().stream());
             // Map them into new Settle constraints and collect.
             List<SettleConstraint> settleConstraints =
                 settleStream

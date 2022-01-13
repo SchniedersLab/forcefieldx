@@ -52,14 +52,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.io.FilenameUtils;
 
 /**
  * PotentialsUtils implements core functionality for many Force Field X algorithms and scripts, such
  * as opening and closing structure files, basic force field evaluations, etc. This implementation
- * does not do anything on top of what is specified by the interface, and is used primarily by
- * tests. It is also potentially useful for third parties who would like to use FFX without its
- * graphical user interface.
+ * does not do anything on top of what is specified by the interface, and is used primarily by tests.
+ * It is also potentially useful for third parties who would like to use FFX without its graphical
+ * user interface.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
@@ -84,8 +83,8 @@ public class PotentialsUtils implements PotentialsFunctions {
    * {@inheritDoc}
    *
    * <p>Shuts down parallel teams in the force field of the provided MolecularAssembly. Kaminsky's
-   * ParallelTeamThreads' run() methods are infinite loops, and because running threads are always
-   * GC roots, it is necessary to send them a signal to shut down to enable garbage collection.
+   * ParallelTeamThreads' run() methods are infinite loops, and because running threads are always GC
+   * roots, it is necessary to send them a signal to shut down to enable garbage collection.
    */
   @Override
   public void close(MolecularAssembly assembly) {
@@ -296,7 +295,7 @@ public class PotentialsUtils implements PotentialsFunctions {
    * <p>Saves the current state of a MolecularAssembly to an XYZ file as a P1 crystal.
    */
   @Override
-  public void saveAsP1(MolecularAssembly assembly, File file) {
+  public void saveAsXYZinP1(MolecularAssembly assembly, File file) {
     if (assembly == null) {
       logger.info(" Assembly to save was null.");
     } else if (file == null) {
@@ -391,13 +390,7 @@ public class PotentialsUtils implements PotentialsFunctions {
 
   /** {@inheritDoc} */
   @Override
-  public void savePDBSymMates(MolecularAssembly assembly, File file) {
-    savePDBSymMates(assembly, file, "_symMate");
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void savePDBSymMates(MolecularAssembly assembly, File file, String suffix) {
+  public void saveAsPDBinP1(MolecularAssembly assembly, File file) {
     if (assembly == null) {
       logger.info(" Assembly to save was null.");
     } else if (file == null) {
@@ -405,50 +398,7 @@ public class PotentialsUtils implements PotentialsFunctions {
     } else {
       PDBFilter pdbFilter = new PDBFilter(file, assembly, null, null);
       lastFilter = pdbFilter;
-      if (!pdbFilter.writeFile(file, false)) {
-        logger.info(format(" Save failed for %s", assembly));
-      } else {
-        Crystal crystal = assembly.getCrystal();
-        int nSymOps = crystal.spaceGroup.getNumberOfSymOps();
-        String filename = FilenameUtils.removeExtension(file.getName());
-        for (int i = 1; i < nSymOps; i++) {
-          pdbFilter.setSymOp(i);
-          String saveFileName = filename + suffix + "_" + i + ".pdb";
-          File saveFile = new File(saveFileName);
-          for (int j = 1; j < 1000; j++) {
-            if (!saveFile.exists()) {
-              break;
-            }
-            saveFile = new File(saveFileName + "_" + j);
-          }
-          StringBuilder symSb = new StringBuilder();
-          String[] symopLines = crystal.spaceGroup.getSymOp(i).toString().split("\\r?\\n");
-          int nLines = symopLines.length;
-          symSb.append("REMARK 350\nREMARK 350 SYMMETRY OPERATORS");
-          for (int j = 0; j < nLines; j++) {
-            symSb.append("\nREMARK 350 ").append(symopLines[j]);
-          }
-
-          symopLines = crystal.spaceGroup.getSymOp(i).toXYZString().split("\\r?\\n");
-          nLines = symopLines.length;
-          symSb.append("\nREMARK 350\nREMARK 350 SYMMETRY OPERATORS XYZ FORM");
-          for (int j = 0; j < nLines; j++) {
-            symSb.append("\nREMARK 350 ").append(symopLines[j]);
-          }
-
-          if (saveFile.exists()) {
-            logger.warning(
-                format(
-                    " Could not successfully version file " + "%s: appending to file %s",
-                    saveFileName, saveFile.getName()));
-            if (!pdbFilter.writeFileWithHeader(saveFile, symSb.toString(), true)) {
-              logger.info(format(" Save failed for %s", saveFile.getName()));
-            }
-          } else if (!pdbFilter.writeFileWithHeader(saveFile, symSb.toString(), false)) {
-            logger.info(format(" Save failed for %s", saveFile.getName()));
-          }
-        }
-      }
+      pdbFilter.writeFileAsP1(file);
     }
   }
 

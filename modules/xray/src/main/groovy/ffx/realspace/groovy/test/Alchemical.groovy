@@ -102,11 +102,11 @@ class Alchemical extends AlgorithmsScript {
   boolean neutralize = false
 
   /**
-   * -W or --onlywaters sets whether or not water positions are optimized (default is false; must set at least one of either '-W' or '-I').
+   * -W or --onlyWater sets whether or not water positions are optimized (default is false; must set at least one of either '-W' or '-I').
    */
-  @Option(names = ["-W", "--onlywaters"], paramLabel = 'false',
-      description = 'Set to only optimize waters.')
-  boolean onlyWaters = false
+  @Option(names = ["-W", "--onlyWater"], paramLabel = 'false',
+      description = 'Set to only optimize water.')
+  boolean onlyWater = false
 
   /**
    * One or more filenames.
@@ -224,10 +224,10 @@ class Alchemical extends AlgorithmsScript {
     double crystalCharge = activeAssembly.getCharge(true)
     logger.info(" Overall crystal charge: " + crystalCharge)
     List<MSNode> ions = assemblies[0].getIons()
-    List<MSNode> waters = assemblies[0].getWaters()
+    List<MSNode> water = assemblies[0].getWater()
 
     // Consider the option of creating a composite lambda gradient from vapor phase to crystal phase
-    if (!onlyWaters) {
+    if (!onlyWater) {
       logger.info("Doing ions.")
       if (ions == null || ions.size() == 0) {
         logger.info("\n Please add an ion to the PDB file to scan with.")
@@ -280,14 +280,14 @@ class Alchemical extends AlgorithmsScript {
       }
     }
 
-    // Lambdize waters for position optimization
+    // Lambdize water for position optimization
     if (!onlyIons) {
-      logger.info(waters.size() + " water molecules in this PDB.")
-      if (waters == null || waters.size() == 0) {
+      logger.info(water.size() + " water molecules in this PDB.")
+      if (water == null || water.size() == 0) {
         logger.info("\n Please add water to the PDB file to scan with.")
         return
       }
-      for (MSNode msNode : waters) {
+      for (MSNode msNode : water) {
         for (Atom atom : msNode.getAtomList()) {
           // Scan with the last ion in the file.
           atom.setUse(true)

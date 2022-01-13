@@ -46,8 +46,8 @@ import static ffx.potential.bonded.AminoAcidUtils.aminoAcidList;
 import static ffx.potential.bonded.AminoAcidUtils.assignAminoAcidAtomTypes;
 import static ffx.potential.bonded.Bond.logNoBondType;
 import static ffx.potential.bonded.BondedUtils.buildBond;
-import static ffx.potential.bonded.BondedUtils.buildHeavy;
 import static ffx.potential.bonded.BondedUtils.buildH;
+import static ffx.potential.bonded.BondedUtils.buildHeavy;
 import static ffx.potential.bonded.BondedUtils.findAtomType;
 import static ffx.potential.bonded.BondedUtils.intxyz;
 import static ffx.potential.bonded.NamingUtils.checkHydrogenAtomNames;
@@ -294,30 +294,17 @@ public class PolymerUtils {
       }
     }
     // Assign water atom types.
-    List<MSNode> water = molecularAssembly.getWaters();
+    List<MSNode> water = molecularAssembly.getWater();
     if (water != null && water.size() > 0) {
-      logger.info(format(" Assigning atom types for %d waters.", water.size()));
+      logger.info(format(" Assigning atom types for %d water.", water.size()));
       for (MSNode m : water) {
         Molecule wat = (Molecule) m;
         try {
           Atom O = buildHeavy(wat, "O", null, 2001, forceField, bondList);
-          Atom H1 =
-              buildH(
-                  wat,
-                  "H1",
-                  O,
-                  0.96e0,
-                  null,
-                  109.5e0,
-                  null,
-                  120.0e0,
-                  0,
-                  2002,
-                  forceField,
-                  bondList);
-          Atom H2 =
-              buildH(
-                  wat, "H2", O, 0.96e0, H1, 109.5e0, null, 120.0e0, 0, 2002, forceField, bondList);
+          Atom H1 = buildH(wat, "H1", O, 0.96e0, null, 109.5e0, null, 120.0e0, 0, 2002, forceField,
+              bondList);
+          Atom H2 = buildH(wat, "H2", O, 0.96e0, H1, 109.5e0, null, 120.0e0, 0, 2002, forceField,
+              bondList);
           O.setHetero(true);
           H1.setHetero(true);
           H2.setHetero(true);

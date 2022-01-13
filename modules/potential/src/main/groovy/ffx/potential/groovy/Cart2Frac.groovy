@@ -175,8 +175,7 @@ class Cart2Frac extends PotentialScript {
     String name = FilenameUtils.getName(filename)
     String ext = FilenameUtils.getExtension(name)
     name = FilenameUtils.removeExtension(name)
-
-    String dirName = FilenameUtils.getFullPath(saveDir.getAbsolutePath())
+    String dirName = saveDir.toString() + File.separator
 
     if (ext.toUpperCase().contains("XYZ")) {
       potentialFunctions.saveAsXYZ(molecularAssemblies[0], new File(dirName + name + ".xyz"))
