@@ -147,6 +147,8 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addBond;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addGlobalParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addPerBondParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_create;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_setBondParameters;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_updateParametersInContext;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addBond;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addGroup;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addPerBondParameter;
@@ -1588,6 +1590,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     private PointerByReference ommBarostat = null;
     /** OpenMM center-of-mass motion remover. */
     private PointerByReference commRemover = null;
+    /** OpenMM Custom Bond Force */
+    private PointerByReference bondForce = null;
     /** OpenMM AMOEBA Torsion Force. */
     private PointerByReference amoebaTorsionForce = null;
     private PointerByReference[] restraintTorsions = null;
@@ -2215,10 +2219,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       } else {
         energy = "k*(d^2); d=r-r0";
       }
-      PointerByReference amoebaBondForce = OpenMM_CustomBondForce_create(energy);
-      OpenMM_CustomBondForce_addPerBondParameter(amoebaBondForce, "r0");
-      OpenMM_CustomBondForce_addPerBondParameter(amoebaBondForce, "k");
-      OpenMM_Force_setName(amoebaBondForce, "AmoebaBond");
+      bondForce = OpenMM_CustomBondForce_create(energy);
+      OpenMM_CustomBondForce_addPerBondParameter(bondForce, "r0");
+      OpenMM_CustomBondForce_addPerBondParameter(bondForce, "k");
+      OpenMM_Force_setName(bondForce, "AmoebaBond");
 
       double kParameterConversion =
           OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
@@ -2232,15 +2236,46 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         double k = kParameterConversion * bondType.forceConstant * BondType.units;
         OpenMM_DoubleArray_append(parameters, r0);
         OpenMM_DoubleArray_append(parameters, k);
-        OpenMM_CustomBondForce_addBond(amoebaBondForce, i1, i2, parameters);
+        OpenMM_CustomBondForce_addBond(bondForce, i1, i2, parameters);
         OpenMM_DoubleArray_resize(parameters, 0);
       }
       OpenMM_DoubleArray_destroy(parameters);
 
       int forceGroup = forceField.getInteger("BOND_FORCE_GROUP", 0);
-      OpenMM_Force_setForceGroup(amoebaBondForce, forceGroup);
-      OpenMM_System_addForce(system, amoebaBondForce);
+      OpenMM_Force_setForceGroup(bondForce, forceGroup);
+      OpenMM_System_addForce(system, bondForce);
       logger.log(Level.INFO, format("  Bonds \t\t%6d\t\t%1d", bonds.length, forceGroup));
+    }
+
+    /** Update an existing bond force for the OpenMM System. */
+    private void updateBondForce() {
+      Bond[] bonds = getBonds();
+      if (bonds == null || bonds.length < 1) {
+        return;
+      }
+
+      double kParameterConversion =
+          OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
+
+      PointerByReference parameters = OpenMM_DoubleArray_create(0);
+      int index = 0;
+      for (Bond bond : bonds) {
+        int i1 = bond.getAtom(0).getXyzIndex() - 1;
+        int i2 = bond.getAtom(1).getXyzIndex() - 1;
+        BondType bondType = bond.bondType;
+        double r0 = bondType.distance * OpenMM_NmPerAngstrom;
+        double k = kParameterConversion * bondType.forceConstant * BondType.units;
+        OpenMM_DoubleArray_append(parameters, r0);
+        OpenMM_DoubleArray_append(parameters, k);
+        OpenMM_CustomBondForce_setBondParameters(bondForce, index++, i1, i2, parameters);
+        OpenMM_DoubleArray_resize(parameters, 0);
+      }
+      OpenMM_DoubleArray_destroy(parameters);
+
+      if (context.contextPointer != null) {
+        OpenMM_CustomBondForce_updateParametersInContext(
+            bondForce, context.contextPointer);
+      }
     }
 
     /** Add an angle force to the OpenMM System. */
