@@ -122,152 +122,16 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KJPerKcal;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_KcalPerKJ;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_NmPerAngstrom;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_RadiansPerDegree;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_setDefaultCollisionFrequency;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_AndersenThermostat_setDefaultTemperature;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_BondArray_append;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_BondArray_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_BondArray_destroy;
+import static edu.uiowa.jopenmm.OpenMMLibrary.*;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_False;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Boolean.OpenMM_True;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CMMotionRemover_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_applyConstraints;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_create_2;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_getState;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_reinitialize;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setParameter;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setPeriodicBoxVectors;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setPositions;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setVelocities;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomAngleForce_addAngle;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomAngleForce_addPerAngleParameter;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomAngleForce_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addBond;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addGlobalParameter;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addPerBondParameter;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_setBondParameters;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_updateParametersInContext;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addBond;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addGroup;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addPerBondParameter;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_setUsesPeriodicBoundaryConditions;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_addBond;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_addGlobalParameter;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_addPerBondParameter;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomExternalForce_addGlobalParameter;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomExternalForce_addParticle;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomExternalForce_addPerParticleParameter;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomExternalForce_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_ComputationType.OpenMM_CustomGBForce_ParticlePair;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_ComputationType.OpenMM_CustomGBForce_ParticlePairNoExclusions;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_ComputationType.OpenMM_CustomGBForce_SingleParticle;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_addComputedValue;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_addEnergyTerm;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_addGlobalParameter;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_addParticle;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_addPerParticleParameter;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_setCutoffDistance;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_setParticleParameters;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomGBForce_updateParametersInContext;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_addComputePerDof;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_addConstrainPositions;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_addConstrainVelocities;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_addPerDofVariable;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_addUpdateContextState;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_setKineticEnergyExpression;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_addExclusion;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_addGlobalParameter;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_addInteractionGroup;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_addParticle;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_addPerParticleParameter;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_setCutoffDistance;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_setNonbondedMethod;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_setSwitchingDistance;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_setUseSwitchingFunction;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_append;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_resize;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_DoubleArray_set;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Force_setForceGroup;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Force_setName;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicBondForce_addBond;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicBondForce_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_append;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_resize;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_set;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntSet_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntSet_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntSet_insert;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_setConstraintTolerance;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Integrator_step;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LangevinIntegrator_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LangevinIntegrator_setRandomNumberSeed;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_LocalEnergyMinimizer_minimize;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_MonteCarloBarostat_setRandomNumberSeed;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_addParticle;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_createExceptionsFromBonds;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_getExceptionParameters;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_getNumExceptions;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_getParticleParameters;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_setCutoffDistance;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_setExceptionParameters;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_setNonbondedMethod;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_setPMEParameters;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_setParticleParameters;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_setSwitchingDistance;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_setUseDispersionCorrection;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_setUseSwitchingFunction;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_updateParametersInContext;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_addTorsion;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_setTorsionParameters;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_PeriodicTorsionForce_updateParametersInContext;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getNumPlatforms;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getOpenMMVersion;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getPlatformByName;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_getPluginLoadFailures;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_loadPluginsFromDirectory;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Platform_setPropertyDefaultValue;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Energy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Forces;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Positions;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_DataType.OpenMM_State_Velocities;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getForces;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getKineticEnergy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPeriodicBoxVectors;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPositions;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getPotentialEnergy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_State_getVelocities;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_StringArray_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_StringArray_get;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_StringArray_getSize;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_addConstraint;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_addForce;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_addParticle;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_getNumConstraints;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_setDefaultPeriodicBoxVectors;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_System_setParticleMass;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_append;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_destroy;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_get;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_VerletIntegrator_create;
 import static ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar.GAUSS_DISP;
 import static ffx.potential.nonbonded.VanDerWaalsForm.EPSILON_RULE.GEOMETRIC;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.ARITHMETIC;
@@ -1592,6 +1456,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     private PointerByReference commRemover = null;
     /** OpenMM Custom Bond Force */
     private PointerByReference bondForce = null;
+    /** OpenMM Custom Angle Force*/
+    private PointerByReference angleForce = null;
     /** OpenMM AMOEBA Torsion Force. */
     private PointerByReference amoebaTorsionForce = null;
     private PointerByReference[] restraintTorsions = null;
@@ -2305,10 +2171,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       } else {
         energy = format("k*(d^2); d=%.15g*theta-theta0", 180.0 / PI);
       }
-      PointerByReference amoebaAngleForce = OpenMM_CustomAngleForce_create(energy);
-      OpenMM_CustomAngleForce_addPerAngleParameter(amoebaAngleForce, "theta0");
-      OpenMM_CustomAngleForce_addPerAngleParameter(amoebaAngleForce, "k");
-      OpenMM_Force_setName(amoebaAngleForce, "AmoebaAngle");
+      angleForce = OpenMM_CustomAngleForce_create(energy);
+      OpenMM_CustomAngleForce_addPerAngleParameter(angleForce, "theta0");
+      OpenMM_CustomAngleForce_addPerAngleParameter(angleForce, "k");
+      OpenMM_Force_setName(angleForce, "AmoebaAngle");
 
       PointerByReference parameters = OpenMM_DoubleArray_create(0);
       for (Angle angle : normalAngles) {
@@ -2323,16 +2189,62 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
           OpenMM_DoubleArray_append(parameters, theta0);
           OpenMM_DoubleArray_append(parameters, k);
-          OpenMM_CustomAngleForce_addAngle(amoebaAngleForce, i1, i2, i3, parameters);
+          OpenMM_CustomAngleForce_addAngle(angleForce, i1, i2, i3, parameters);
           OpenMM_DoubleArray_resize(parameters, 0);
         }
       }
       OpenMM_DoubleArray_destroy(parameters);
 
       int forceGroup = forceField.getInteger("ANGLE_FORCE_GROUP", 0);
-      OpenMM_Force_setForceGroup(amoebaAngleForce, forceGroup);
-      OpenMM_System_addForce(system, amoebaAngleForce);
+      OpenMM_Force_setForceGroup(angleForce, forceGroup);
+      OpenMM_System_addForce(system, angleForce);
       logger.log(Level.INFO, format("  Angles \t\t%6d\t\t%1d", nAngles, forceGroup));
+    }
+
+    /** Update an existing angle force for the OpenMM System */
+    private void updateAngleForce(){
+      Angle[] angles = getAngles();
+      if (angles == null || angles.length < 1) {
+        return;
+      }
+      int nAngles = angles.length;
+      List<Angle> normalAngles = new ArrayList<>();
+      // Sort all normal angles from in-plane angles
+      for (int i = 0; i < nAngles; i++) {
+        if (angles[i].getAngleMode() == AngleType.AngleMode.NORMAL) {
+          normalAngles.add(angles[i]);
+        }
+      }
+      nAngles = normalAngles.size();
+      if (nAngles < 1) {
+        return;
+      }
+      boolean rigidHydrogenAngles = forceField.getBoolean("RIGID_HYDROGEN_ANGLES", false);
+
+      PointerByReference parameters = OpenMM_DoubleArray_create(0);
+      int index = 0;
+      for (Angle angle : normalAngles) {
+        if (isHydrogenAngle(angle) && rigidHydrogenAngles) {
+          logger.info(
+                  "Not adding angle to AmoebaAngleForce because angle is constrained: " + angle);
+        } else {
+          int i1 = angle.getAtom(0).getXyzIndex() - 1;
+          int i2 = angle.getAtom(1).getXyzIndex() - 1;
+          int i3 = angle.getAtom(2).getXyzIndex() - 1;
+          double theta0 = angle.angleType.angle[angle.nh];
+          double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
+          OpenMM_DoubleArray_append(parameters, theta0);
+          OpenMM_DoubleArray_append(parameters, k);
+          OpenMM_CustomAngleForce_setAngleParameters(angleForce, index++, i1, i2, i3, parameters);
+          OpenMM_DoubleArray_resize(parameters, 0);
+        }
+      }
+      OpenMM_DoubleArray_destroy(parameters);
+
+      if (context.contextPointer != null) {
+        OpenMM_CustomAngleForce_updateParametersInContext(
+                angleForce, context.contextPointer);
+      }
     }
 
     /** Add an in-plane angle force to the OpenMM System. */
