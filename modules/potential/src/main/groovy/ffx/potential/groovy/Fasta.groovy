@@ -38,7 +38,6 @@
 package ffx.potential.groovy
 
 import ffx.potential.cli.PotentialScript
-import org.apache.commons.io.FilenameUtils
 import org.biojava.nbio.core.sequence.ProteinSequence
 import org.biojava.nbio.core.sequence.io.FastaReaderHelper
 import org.biojava.nbio.core.sequence.io.FastaWriterHelper
@@ -47,6 +46,7 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
+import static org.apache.commons.io.FilenameUtils.getName
 
 /**
  * Fasta outputs a sub-sequence from a FASTA file.
@@ -114,9 +114,8 @@ class Fasta extends PotentialScript {
 
     logger.info("\n Opening FASTA " + fastaName)
 
-    File fastaFile = new File(fastaName)
     LinkedHashMap<String, ProteinSequence> fastaData =
-        FastaReaderHelper.readFastaProteinSequence(fastaFile)
+        FastaReaderHelper.readFastaProteinSequence(new File(fastaName))
     ProteinSequence sequence = fastaData.values()[0]
     String seq = sequence.sequenceAsString
     int length = seq.length()
@@ -135,20 +134,12 @@ class Fasta extends PotentialScript {
     logger.info(format("\n New sequence from residue %d to residue %d is of length %d: \n %s",
         firstResidue, lastResidue, length, proteinSequence.toString()))
 
-    // Configure the base directory if it has not been set.
-    File saveDir = baseDir
-    fastaName = fastaFile.getAbsolutePath()
-    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(FilenameUtils.getFullPath(fastaName))
-    }
-    String dirName = saveDir.toString() + File.separator
-    String fileName = FilenameUtils.getName(fastaName)
-    fileName = FilenameUtils.removeExtension(fileName) + ".fasta"
-    File modelFile = new File(dirName + fileName)
-    File saveFile = potentialFunctions.versionFile(modelFile)
-
     Collection<ProteinSequence> proteinSequenceCollection = new ArrayList<>()
     proteinSequenceCollection.add(proteinSequence)
+
+    // Use the current base directory, or update if necessary based on the given filename.
+    String dirString = getBaseDirString(fastaName)
+    File saveFile = potentialFunctions.versionFile(new File(dirString + getName(fastaName)))
 
     logger.info(format("\n Saving new Fasta file to: %s", saveFile.getAbsolutePath()))
     FastaWriterHelper.writeProteinSequence(saveFile, proteinSequenceCollection)

@@ -48,8 +48,9 @@ import picocli.CommandLine.Parameters
 
 import static ffx.numerics.math.DoubleMath.dist
 import static java.lang.String.format
-import static org.apache.commons.io.FilenameUtils.getBaseName
-import static org.apache.commons.io.FilenameUtils.getFullPath
+import static org.apache.commons.io.FilenameUtils.getExtension
+import static org.apache.commons.io.FilenameUtils.getName
+import static org.apache.commons.io.FilenameUtils.removeExtension
 import static org.apache.commons.math3.util.FastMath.abs
 
 @Command(description = " Fix chain breaks in a pdb file.", name = "ffxc ChainBreaks")
@@ -98,15 +99,26 @@ class ChainBreaks extends PotentialScript {
       return null
     }
 
+    // Get the base name of the file and its extension.
+    String name = getName(filename)
+    String ext = getExtension(name)
+    name = removeExtension(name)
+
+    if (!ext.containsIgnoreCase("pdb")) {
+      logger.info(format(" The file extension does not include 'pdb': %s", filename))
+      return null
+    }
+
     List<Residue> residues = activeAssembly.getResidueList()
     chainBreaks = findChainBreaks(residues, 3)
     logger.info(format(" Fixing Chain Breaks in %s", filename))
-    String pdbName = getBaseName(filename)
-    String newPDBpath = getFullPath(filename).replace(filename, "") + pdbName + "_edited.pdb"
-    logger.info(format(" Saving New Coordinates to:\n %s", newPDBpath))
 
-    File newPDBFile = new File(newPDBpath)
-    potentialsUtils.saveAsPDB(activeAssembly, newPDBFile, false, false)
+    // Use the current base directory, or update if necessary based on the given filename.
+    String dirString = getBaseDirString(filename)
+    File editedPDBFile = new File(dirString + name + "_edited.pdb")
+
+    logger.info(format(" Saving New Coordinates to:\n %s", editedPDBFile.toString()))
+    potentialsUtils.saveAsPDB(activeAssembly, editedPDBFile, false, false)
 
     return this
   }
