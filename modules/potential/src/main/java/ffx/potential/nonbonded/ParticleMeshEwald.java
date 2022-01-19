@@ -144,7 +144,7 @@ import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer
  */
 @SuppressWarnings("deprecation")
 public class ParticleMeshEwald implements LambdaInterface {
-  
+
   /** Default cutoff values for PME and aperiodic systems. */
   public static final double PERIODIC_DEFAULT_EWALD_CUTOFF = 7.0;
   /** Constant <code>APERIODIC_DEFAULT_EWALD_CUTOFF=1000.0</code> */

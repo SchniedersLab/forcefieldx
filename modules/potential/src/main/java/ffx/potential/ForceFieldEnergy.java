@@ -99,6 +99,7 @@ import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.RestrainGroups;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaalsTornado;
+import ffx.potential.parameters.AngleType.AngleMode;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ELEC_FORM;
@@ -1863,7 +1864,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   }
 
   /**
-   * Getter for the field <code>angles</code>.
+   * Getter for the field <code>angles</code>. Both normal and in-plane angles are returned.
    *
    * @return an array of {@link ffx.potential.bonded.Angle} objects.
    */
@@ -1871,6 +1872,31 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     return angles;
   }
 
+  /**
+   * Getter for the field <code>angles</code> with only <code>AngleMode</code> angles.
+   *
+   * @param angleMode Only angles of this mode will be returned.
+   * @return an array of {@link ffx.potential.bonded.Angle} objects.
+   */
+  public Angle[] getAngles(AngleMode angleMode) {
+    if (angles == null || angles.length < 1) {
+      return null;
+    }
+    int nAngles = angles.length;
+    List<Angle> angleList = new ArrayList<>();
+    // Sort all normal angles from in-plane angles
+    for (int i = 0; i < nAngles; i++) {
+      if (angles[i].getAngleMode() == angleMode) {
+        angleList.add(angles[i]);
+      }
+    }
+    nAngles = angleList.size();
+    if (nAngles < 1) {
+      return null;
+    }
+    return angleList.toArray(new Angle[0]);
+  }
+  
   /**
    * Getter for the field <code>bondEnergy</code>.
    *
@@ -2647,7 +2673,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   public double getPolarizationEnergy() {
     return polarizationEnergy;
   }
-
 
 
   /**
