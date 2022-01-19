@@ -64,6 +64,7 @@ import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
+import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.parameters.ForceField;
 import java.util.List;
 import java.util.logging.Level;
@@ -566,7 +567,7 @@ public class GKEnergyRegionQI extends ParallelRegion {
         // Compute the permanent GK energy gradient.
         // TODO: Many QI permanent energy gradient components will be zero.
         permanentEnergyGradient(i, k);
-        if (polarization != Polarization.NONE) {
+        if (polarization != ParticleMeshEwald.Polarization.NONE) {
           // Compute the induced GK energy gradient.
           // TODO: Many QI polarization energy gradient components will be zero.
           polarizationEnergyGradient(i, k);
@@ -845,7 +846,7 @@ public class GKEnergyRegionQI extends ParallelRegion {
 
       // Electrostatic solvation energy of the permanent multipoles in the
       // GK reaction potential of the induced dipoles.
-      if (polarization != Polarization.NONE) {
+      if (polarization != ParticleMeshEwald.Polarization.NONE) {
         // TODO: Many multipole-induced dipole interactions will be zero.
         double esymi =
             -uxi * (dxk * gux[2] + dyk * guy[2] + dzk * guz[2])
@@ -2467,7 +2468,7 @@ public class GKEnergyRegionQI extends ParallelRegion {
       double dsumdri = dsymdr + 0.5 * (dwipdr + dwkpdr);
       double dbi = 0.5 * rbk * dsumdri;
       double dbk = 0.5 * rbi * dsumdri;
-      if (polarization == Polarization.MUTUAL) {
+      if (polarization == ParticleMeshEwald.Polarization.MUTUAL) {
         dpdx -=
             0.5
                 * (dxi * (pxk * gux[5] + pyk * gux[6] + pzk * gux[7])

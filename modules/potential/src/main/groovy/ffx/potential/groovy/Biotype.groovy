@@ -61,7 +61,9 @@ class Biotype extends PotentialScript {
       description = "An XYZ coordinate file.")
   String filename = null
 
-  // Create a List of bioptype String entries.
+  /**
+   * The Script Binding contains the following List of BioType instances upon completion.
+   */
   private List<BioType> bioTypes = null
 
   /**

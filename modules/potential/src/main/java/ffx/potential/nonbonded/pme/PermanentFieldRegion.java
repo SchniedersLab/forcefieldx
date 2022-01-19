@@ -67,15 +67,14 @@ import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.MaskingInterface;
-import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart.PMETimings;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart.RealSpaceNeighborParameters;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart.ScaleParameters;
+import ffx.potential.nonbonded.ParticleMeshEwald;
+import ffx.potential.nonbonded.ParticleMeshEwald.EwaldParameters;
+import ffx.potential.nonbonded.ParticleMeshEwald.PMETimings;
+import ffx.potential.nonbonded.ParticleMeshEwald.RealSpaceNeighborParameters;
+import ffx.potential.nonbonded.ParticleMeshEwald.ScaleParameters;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.parameters.ForceField;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -106,8 +105,8 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
   /** Polarization groups. */
   protected int[][] ip11;
 
-  private PermanentRealSpaceFieldSection permanentRealSpaceFieldSection;
-  private PermanentReciprocalSection permanentReciprocalSection;
+  private final PermanentRealSpaceFieldSection permanentRealSpaceFieldSection;
+  private final PermanentReciprocalSection permanentReciprocalSection;
   /** An ordered array of atoms in the system. */
   private Atom[] atoms;
   /** Unit cell and spacegroup information. */
@@ -155,7 +154,7 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
   private int[][] mask13;
   private int[][] mask14;
   /** The current LambdaMode of this PME instance (or OFF for no lambda dependence). */
-  private LambdaMode lambdaMode = LambdaMode.OFF;
+  private LambdaMode lambdaMode = ParticleMeshEwald.LambdaMode.OFF;
   /** Reciprocal space instance. */
   private ReciprocalSpace reciprocalSpace;
 

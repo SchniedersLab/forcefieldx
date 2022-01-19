@@ -42,13 +42,13 @@ import ffx.potential.cli.SaveOptions
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
-import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import static java.lang.String.format
+import static org.apache.commons.io.FilenameUtils.getName
+import static org.apache.commons.io.FilenameUtils.removeExtension
 
 /**
  * The SaveAsPDB script saves a file as a PDB file
@@ -116,36 +116,26 @@ class SaveAsPDB extends PotentialScript {
 
     logger.info("\n Saving PDB for " + filename)
 
-    // Configure the base directory if it has not been set.
-    File saveDir = baseDir
-    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(FilenameUtils.getFullPath(filename))
-    }
+    // Use the current base directory, or update if necessary based on the given filename.
+    String dirString = getBaseDirString(filename)
 
-    String dirName = saveDir.toString() + File.separator
-    String fileName = FilenameUtils.getName(filename)
-    fileName = FilenameUtils.removeExtension(fileName) + ".pdb"
-    File modelFile = new File(dirName + fileName)
+    String name = removeExtension(getName(filename)) + ".pdb"
+    File saveFile = new File(dirString + name)
 
     if (writeSnapshot >= 1) {
-      PDBFilter snapshotFilter = new PDBFilter(modelFile, activeAssembly,
+      PDBFilter snapshotFilter = new PDBFilter(saveFile, activeAssembly,
           activeAssembly.getForceField(), activeAssembly.getProperties())
       openFilter.readNext(true)
-      int counter = 1
-      if (counter == writeSnapshot) {
-        File snapshotFile = new File(
-            dirName + File.separator + "snapshot" + counter.toString() + ".pdb")
-        potentialFunctions.versionFile(snapshotFile)
-        saveOptions.preSaveOperations(activeAssembly)
-        snapshotFilter.setModelNumbering(writeSnapshot - 1)
-        logger.info("\n Writing out PDB for " + snapshotFile.toString())
-        snapshotFilter.writeFile(snapshotFile, true)
-      }
-      while (openFilter.readNext(false)) {
+      // Reset the filter to read the first snapshot.
+      boolean resetPosition = true
+      int counter = 0
+      while (openFilter.readNext(resetPosition)) {
+        // No more resets.
+        resetPosition = false
+        // Increment the snapshot counter.
         counter++
         if (counter == writeSnapshot) {
-          File snapshotFile = new File(
-              dirName + File.separator + "snapshot" + counter.toString() + ".pdb")
+          File snapshotFile = new File(dirString + "snapshot" + counter.toString() + ".pdb")
           potentialFunctions.versionFile(snapshotFile)
           saveOptions.preSaveOperations(activeAssembly)
           snapshotFilter.setModelNumbering(writeSnapshot - 1)
@@ -158,35 +148,27 @@ class SaveAsPDB extends PotentialScript {
       return this
     }
 
-    File saveFile = potentialFunctions.versionFile(modelFile)
+    saveFile = potentialFunctions.versionFile(saveFile)
 
     int numModels = openFilter.countNumModels()
-    if (numModels > 1) {
-      new BufferedWriter(new FileWriter(saveFile)).withCloseable {bw ->
-        bw.write("MODEL        1\n")
-        bw.flush()
-      }
-      saveOptions.preSaveOperations(activeAssembly)
-      potentialFunctions.saveAsPDB(activeAssembly, saveFile, false, true)
-    } else {
+
+    if (numModels == 1) {
+      // Write one model and return.
       saveOptions.preSaveOperations(activeAssembly)
       potentialFunctions.saveAsPDB(activeAssembly, saveFile)
+      return this
     }
 
-    PDBFilter saveFilter
-    try {
-      saveFilter = (PDBFilter) potentialFunctions.getFilter()
-    } catch (Throwable t) {
-      logger.info(format(" The type of %s is %s", potentialFunctions.getFilter(),
-          potentialFunctions.getFilter().class.getName()))
-      throw t
-    }
+    // Write out the first model as "MODEL 1".
+    saveFile.write("MODEL        1\n")
+    saveOptions.preSaveOperations(activeAssembly)
+    potentialFunctions.saveAsPDB(activeAssembly, saveFile, false, true)
+    saveFile.append("ENDMDL\n")
+    PDBFilter saveFilter = (PDBFilter) potentialFunctions.getFilter()
+    saveFilter.setModelNumbering(1)
 
-    //If SaveAsPDB is run on an arc file, iterate through the models in the arc file and save each as a pdb file.
-    if (openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter)
-        && numModels > 1) {
-      saveFilter.setModelNumbering(1)
-      saveFile.append("ENDMDL\n")
+    // Iterate through the rest of the models in am arc or pdb.
+    if (openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter)) {
       try {
         while (openFilter.readNext(false)) {
           saveOptions.preSaveOperations(activeAssembly)
@@ -195,6 +177,7 @@ class SaveAsPDB extends PotentialScript {
       } catch (Exception e) {
         // Do nothing.
       }
+      // Add a final "END" record.
       saveFile.append("END\n")
     }
     return this

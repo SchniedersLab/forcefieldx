@@ -41,11 +41,12 @@ import ffx.numerics.Potential
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
-import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
 import java.util.stream.Collectors
+
+import static org.apache.commons.io.FilenameUtils.*
 
 /**
  * The MoveIntoUnitCell script moves the center of mass of each molecule into the unit cell.
@@ -131,21 +132,18 @@ class MoveIntoUnitCell extends PotentialScript {
       }
     }
 
-    // Configure the base directory if it has not been set.
-    File saveDir = baseDir
-    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(FilenameUtils.getFullPath(filename))
-    }
+    // Get the base name of the file and its extension.
+    String name = getName(filename)
+    String ext = getExtension(name)
+    name = removeExtension(name)
 
-    String dirName = saveDir.toString() + File.separator
-    String name = FilenameUtils.getName(filename)
-    String ext = FilenameUtils.getExtension(name)
-    name = FilenameUtils.removeExtension(name)
+    // Use the current base directory, or update if necessary based on the given filename.
+    String dirString = getBaseDirString(filename)
 
     if (ext.toUpperCase().contains("XYZ")) {
-      potentialFunctions.saveAsXYZ(molecularAssemblies[0], new File(dirName + name + ".xyz"))
+      potentialFunctions.saveAsXYZ(molecularAssemblies[0], new File(dirString + name + ".xyz"))
     } else {
-      potentialFunctions.saveAsPDB(molecularAssemblies, new File(dirName + name + ".pdb"))
+      potentialFunctions.saveAsPDB(molecularAssemblies, new File(dirString + name + ".pdb"))
     }
 
     return this

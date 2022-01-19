@@ -45,7 +45,6 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import org.apache.commons.configuration2.CompositeConfiguration
-import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -56,6 +55,8 @@ import static ffx.crystal.SpaceGroupInfo.getCCDCPercent
 import static ffx.crystal.SpaceGroupInfo.getPDBRank
 import static ffx.crystal.SymOp.randomSymOpFactory
 import static java.lang.String.format
+import static org.apache.commons.io.FilenameUtils.getName
+import static org.apache.commons.io.FilenameUtils.removeExtension
 
 /**
  * The PrepareSpaceGroups creates sub-directories for the selected space groups.
@@ -173,9 +174,6 @@ class PrepareSpaceGroups extends PotentialScript {
     energy = activeAssembly.getPotentialEnergy()
     CompositeConfiguration properties = activeAssembly.getProperties()
 
-    File coordFile = activeAssembly.getFile()
-    String coordName = FilenameUtils.getName(coordFile.getPath())
-
     File propertyFile = new File(properties.getString("propertyFile"))
 
     Atom[] atoms = activeAssembly.getAtomArray()
@@ -184,11 +182,15 @@ class PrepareSpaceGroups extends PotentialScript {
       density = 1.0
     }
 
+    // Use the current base directory, or update if necessary based on the given filename.
+    String dirString = getBaseDirString(filename)
+    String name = getName(filename)
+
     for (int num = 1; num <= 230; num++) {
-      SpaceGroup spacegroup = spaceGroupFactory(num);
+      SpaceGroup spacegroup = spaceGroupFactory(num)
       // Statistics for alternative space groups are not listed, spacegroup is used for statistics, spacegroup2 is
       //   used for alternative space group names/symmetry operations.
-      SpaceGroup spacegroup2;
+      SpaceGroup spacegroup2
       if (sg) {
         spacegroup2 = spaceGroupFactory(sg)
         if (spacegroup2 == null) {
@@ -223,14 +225,7 @@ class PrepareSpaceGroups extends PotentialScript {
 
       // Create the directory.
       String sgDirName = spacegroup2.shortName.replace('/', '_')
-
-      File baseDir = baseDir
-      File sgDir
-      if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
-        sgDir = new File(FilenameUtils.getFullPath(coordFile.getAbsolutePath()) + sgDirName)
-      } else {
-        sgDir = new File(baseDir.getAbsolutePath() + sgDirName)
-      }
+      File sgDir = new File(dirString + sgDirName)
 
       if (!sgDir.exists()) {
         logger.info("\n Creating space group directory: " + sgDir.toString())
@@ -261,12 +256,11 @@ class PrepareSpaceGroups extends PotentialScript {
       }
 
       // Save the coordinate file.
-      File sgFile = new File(sgDir.getAbsolutePath() + File.separator + coordName)
+      File sgFile = new File(sgDir.getAbsolutePath() + File.separator + name)
       logger.info(" Saving " + sgDirName + " coordinates to: " + sgFile.toString())
       potentialFunctions.save(activeAssembly, sgFile)
 
-      File keyFile = new File(
-          FilenameUtils.removeExtension(sgFile.getAbsolutePath()) + ".properties")
+      File keyFile = new File(removeExtension(sgFile.getAbsolutePath()) + ".properties")
       logger.info(" Saving " + sgDirName + " properties to: " + keyFile.toString())
 
       numberCreated++
@@ -305,6 +299,7 @@ class PrepareSpaceGroups extends PotentialScript {
                 }
               }
             }
+
             // Update the space group and unit cell parameters.
             keyWriter.println(format("spacegroup %s", spacegroup2.shortName))
             keyWriter.println(format("a-axis %12.8f", crystal.a))

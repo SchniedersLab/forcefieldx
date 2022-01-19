@@ -51,11 +51,11 @@ import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
-import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart.PMETimings;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart.RealSpaceNeighborParameters;
+import ffx.potential.nonbonded.ParticleMeshEwald;
+import ffx.potential.nonbonded.ParticleMeshEwald.EwaldParameters;
+import ffx.potential.nonbonded.ParticleMeshEwald.PMETimings;
+import ffx.potential.nonbonded.ParticleMeshEwald.RealSpaceNeighborParameters;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.parameters.ForceField;
 import java.util.List;
@@ -127,7 +127,7 @@ public class InducedDipoleFieldRegion extends ParallelRegion {
 
   private boolean reciprocalSpaceTerm;
   /** The current LambdaMode of this PME instance (or OFF for no lambda dependence). */
-  private LambdaMode lambdaMode = LambdaMode.OFF;
+  private LambdaMode lambdaMode = ParticleMeshEwald.LambdaMode.OFF;
 
   private double aewald;
   private double an0, an1;

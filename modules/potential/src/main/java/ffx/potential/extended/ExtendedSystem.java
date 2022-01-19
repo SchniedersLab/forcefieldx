@@ -43,7 +43,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.PotentialComponent;
 import ffx.potential.bonded.*;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
-import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TitrationUtils;
@@ -128,10 +127,6 @@ public class ExtendedSystem {
      * VanDerWaals instance.
      */
     private final VanDerWaals vanDerWaals;
-    /**
-     * PME instance.
-     */
-    private final ParticleMeshEwaldQI particleMeshEwaldQI;
     /**
      * Array of booleans that is initialized to match the number of atoms in the molecular assembly
      * noting whether the atom is titrating. Note that any side chain atom that belongs to a titrating residue
@@ -251,7 +246,6 @@ public class ExtendedSystem {
 //        boolean propagation = properties.getBoolean("esv.propagation", true);
 
         vanDerWaals = forceFieldEnergy.getVdwNode();
-        particleMeshEwaldQI = forceFieldEnergy.getPmeQiNode();
 
         titratingResidueList = new ArrayList<>();
         tautomerizingResidueList = new ArrayList<>();

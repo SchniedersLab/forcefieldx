@@ -43,13 +43,11 @@ import ffx.numerics.Potential
 import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.Atom
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
-import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
@@ -57,6 +55,7 @@ import picocli.CommandLine.Parameters
 
 import static ffx.potential.utils.Gyrate.radiusOfGyration
 import static java.lang.String.format
+import static org.apache.commons.io.FilenameUtils.*
 
 /**
  * The Energy script evaluates the energy of a system.
@@ -261,29 +260,34 @@ class Energy extends PotentialScript {
 
       }
 
+      // Use the current base directory, or update if necessary based on the given filename.
+      String dirString = getBaseDirString(filename)
+
       // If cutoffs have been selected create an ARC or PDB to store structures that satisfy cutoff.
       if ((eCutoff > 0.0 || dCutoff > 0.0) && numModels > 1) {
         systemFilter.readNext(true)
         activeAssembly = systemFilter.getActiveMolecularSystem()
-        String fileName = FilenameUtils.getName(filename)
-        String ext = FilenameUtils.getExtension(fileName)
-        fileName = FilenameUtils.removeExtension(fileName)
+
+        String name = getName(filename)
+        String ext = getExtension(name)
+        name = removeExtension(name)
+
         File saveFile
         SystemFilter writeFilter
         if (ext.toUpperCase().contains("XYZ")) {
-          saveFile = new File(fileName + ".xyz")
+          saveFile = new File(dirString + name + ".xyz")
           writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
               activeAssembly.getProperties())
           potentialFunctions.saveAsXYZ(activeAssembly, saveFile)
         } else if (ext.toUpperCase().contains("ARC")) {
-          saveFile = new File(fileName + ".arc")
+          saveFile = new File(dirString + name + ".arc")
           saveFile = potentialFunctions.versionFile(saveFile)
           writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
               activeAssembly.getProperties())
-          logger.info("SaveFile: " + saveFile.getAbsolutePath())
+          logger.info(" Saving to " + saveFile.getAbsolutePath())
           saveFile.createNewFile()
         } else {
-          saveFile = new File(fileName + ".pdb")
+          saveFile = new File(dirString + name + ".pdb")
           saveFile = potentialFunctions.versionFile(saveFile)
           writeFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
               activeAssembly.getProperties())
@@ -351,14 +355,7 @@ class Energy extends PotentialScript {
           numSnaps = index
         }
 
-        // Configure the base directory if it has not been set.
-        File saveDir = baseDir
-        String modelFilename = activeAssembly.getFile().getAbsolutePath()
-        if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-          saveDir = new File(FilenameUtils.getFullPath(modelFilename))
-        }
-        String dirName = saveDir.toString() + File.separator
-        String fileName = FilenameUtils.getName(modelFilename)
+        String name = getName(filename)
 
         for (int i = 0; i < numSnaps - 1; i++) {
           StateContainer savedState = lowestEnergyQueue.removeLast()
@@ -366,7 +363,7 @@ class Energy extends PotentialScript {
           finalAssembly.revertState()
           double finalEnergy = savedState.getEnergy()
           logger.info(format(" The potential energy found is %16.8f (kcal/mol)", finalEnergy))
-          File saveFile = potentialFunctions.versionFile(new File(dirName + fileName))
+          File saveFile = potentialFunctions.versionFile(new File(dirString + name))
           MolecularAssembly molecularAssembly = assemblyState.getMolecularAssembly()
           potentialFunctions.saveAsPDB(molecularAssembly, saveFile)
         }
@@ -379,7 +376,7 @@ class Energy extends PotentialScript {
         logger.info(format(" The lowest potential energy found is %16.8f (kcal/mol)", lowestEnergy))
 
         // Prints our final energy (which will be the lowest energy
-        File saveFile = potentialFunctions.versionFile(new File(dirName + fileName))
+        File saveFile = potentialFunctions.versionFile(new File(dirString + name))
         MolecularAssembly molecularAssembly = assemblyState.getMolecularAssembly()
         potentialFunctions.saveAsPDB(molecularAssembly, saveFile)
       }

@@ -92,7 +92,7 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * The Reciprocal Space class computes the reciprocal space contribution to {@link
- * ffx.potential.nonbonded.ParticleMeshEwald} for the AMOEBA force field.
+ * ParticleMeshEwald} for the AMOEBA force field.
  *
  * <ol>
  *   <li>Assignment of polarizable multipole charge density to the 3D grid, via b-Splines, is
@@ -226,7 +226,7 @@ public class ReciprocalSpace {
   /**
    * Reciprocal Space PME contribution.
    *
-   * @param particleMeshEwald a {@link ffx.potential.nonbonded.ParticleMeshEwald} object.
+   * @param particleMeshEwald a {@link ParticleMeshEwald} object.
    * @param crystal a {@link ffx.crystal.Crystal} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
    * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.

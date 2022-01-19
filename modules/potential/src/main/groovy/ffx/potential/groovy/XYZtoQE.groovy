@@ -169,14 +169,9 @@ class XYZtoQE extends PotentialScript {
     filename = activeAssembly.getFile().getAbsolutePath()
     logger.info(format("\n Converting %s to QE format\n", filename))
 
-    File saveDir = baseDir
-    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(getFullPath(filename))
-    }
-    String dirName = saveDir.getAbsolutePath()
-    String name = getName(filename)
-    name = removeExtension(name)
-    File modelFile = new File(dirName + File.separator + name + ".in")
+    String dirString = getBaseDirString(filename)
+    String name = removeExtension(getName(filename))
+    File modelFile = new File(dirString + name + ".in")
 
     Crystal crystal = activeAssembly.getCrystal().getUnitCell()
     double xtalA = crystal.a
