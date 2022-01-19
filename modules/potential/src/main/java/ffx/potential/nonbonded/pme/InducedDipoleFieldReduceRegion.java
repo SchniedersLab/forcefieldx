@@ -48,7 +48,7 @@ import edu.rit.pj.ParallelTeam;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
+import ffx.potential.nonbonded.ParticleMeshEwald.EwaldParameters;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

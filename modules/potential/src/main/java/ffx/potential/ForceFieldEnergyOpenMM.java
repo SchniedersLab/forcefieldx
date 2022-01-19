@@ -307,7 +307,7 @@ import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
 import ffx.potential.nonbonded.NonbondedCutoff;
 import ffx.potential.nonbonded.ParticleMeshEwald;
-import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
+import ffx.potential.nonbonded.ParticleMeshEwald.SCFAlgorithm;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.nonbonded.RestrainGroups;
 import ffx.potential.nonbonded.VanDerWaals;
@@ -3512,12 +3512,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       amoebaMultipoleForce = OpenMM_AmoebaMultipoleForce_create();
 
       double polarScale = 1.0;
-      ParticleMeshEwald.SCFAlgorithm scfAlgorithm = null;
+      SCFAlgorithm scfAlgorithm = null;
 
-      if (pme.getPolarizationType() != Polarization.MUTUAL) {
+      if (pme.getPolarizationType() != ParticleMeshEwald.Polarization.MUTUAL) {
         OpenMM_AmoebaMultipoleForce_setPolarizationType(
             amoebaMultipoleForce, OpenMM_AmoebaMultipoleForce_Direct);
-        if (pme.getPolarizationType() == Polarization.NONE) {
+        if (pme.getPolarizationType() == ParticleMeshEwald.Polarization.NONE) {
           polarScale = 0.0;
         }
       } else {
@@ -4481,7 +4481,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
 
       double polarScale = 1.0;
-      if (pme.getPolarizationType() == Polarization.NONE) {
+      if (pme.getPolarizationType() == ParticleMeshEwald.Polarization.NONE) {
         polarScale = 0.0;
       }
 
