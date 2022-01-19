@@ -53,8 +53,8 @@ import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart.EwaldParameters;
+import ffx.potential.nonbonded.ParticleMeshEwald;
+import ffx.potential.nonbonded.ParticleMeshEwald.EwaldParameters;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.utils.EnergyException;
 import ffx.utilities.Constants;
@@ -251,7 +251,7 @@ public class PCGSolver {
     this.realSpaceSCFTime = realSpaceSCFTime;
   }
 
-  public int scfByPCG(boolean print, long startTime, ParticleMeshEwaldCart pme) {
+  public int scfByPCG(boolean print, long startTime, ParticleMeshEwald pme) {
     long directTime = System.nanoTime() - startTime;
     // A request of 0 SCF cycles simplifies mutual polarization to direct polarization.
     StringBuilder sb = null;

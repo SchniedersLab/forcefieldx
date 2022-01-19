@@ -44,10 +44,8 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
-
 import static org.apache.commons.io.FilenameUtils.getExtension
 import static org.apache.commons.io.FilenameUtils.removeExtension
-import static org.apache.commons.io.FilenameUtils.getFullPath
 import static org.apache.commons.io.FilenameUtils.getName
 
 /**
@@ -109,23 +107,19 @@ class SaveAsP1 extends PotentialScript {
 
     logger.info("\n Expanding to P1 for " + filename)
 
-    // Configure the base directory if it has not been set.
-    File saveDir = baseDir
-    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(getFullPath(filename))
-    }
+    // Use the current base directory, or update if necessary based on the given filename.
+    String dirString = getBaseDirString(filename)
 
     String name = getName(filename)
     String ext = getExtension(name)
     name = removeExtension(name)
-    String dirName = saveDir.toString() + File.separator
 
     if (ext.toUpperCase().contains("XYZ")) {
-      File saveLocation = SystemFilter.version(new File(dirName + name + ".xyz"))
+      File saveLocation = SystemFilter.version(new File(dirString + name + ".xyz"))
       logger.info(" Saving P1 file to: " + saveLocation)
       potentialFunctions.saveAsXYZinP1(activeAssembly, saveLocation)
     } else {
-      File saveLocation = SystemFilter.version(new File(dirName + name + ".pdb"))
+      File saveLocation = SystemFilter.version(new File(dirString + name + ".pdb"))
       logger.info(" Saving symmetry mates file to: " + saveLocation)
       potentialFunctions.saveAsPDBinP1(activeAssembly, saveLocation)
     }

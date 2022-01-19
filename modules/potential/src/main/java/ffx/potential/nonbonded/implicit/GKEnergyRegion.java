@@ -66,8 +66,8 @@ import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
-import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
+import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.parameters.ForceField;
 import java.util.List;
 import java.util.logging.Level;
@@ -261,28 +261,22 @@ public class GKEnergyRegion extends ParallelRegion {
 
   @Override
   public void finish() {
-    if (logger.isLoggable(Level.FINE)) {
+    if (logger.isLoggable(Level.FINER)) {
       int nAtoms = atoms.length;
       selfEnergy.reduce(0, nAtoms - 1);
       crossEnergy.reduce(0, nAtoms - 1);
-      if (logger.isLoggable(Level.FINE)) {
-        logger.info(" Generalized Kirkwood Self-Energies and Cross-Energies\n");
-      }
+      logger.finer(" Generalized Kirkwood Self-Energies and Cross-Energies\n");
       double selfSum = 0.0;
       double crossSum = 0.0;
       for (int i = 0; i < nAtoms; i++) {
         double self = selfEnergy.get(i);
         double cross = crossEnergy.get(i);
-        if (logger.isLoggable(Level.FINE)) {
-          logger.info(format("GKSELF   %5d %16.8f %16.8f", i, self, cross));
-        }
+        logger.finer(format("GKSELF   %5d %16.8f %16.8f", i, self, cross));
         selfSum += self;
         crossSum += cross;
       }
-      if (logger.isLoggable(Level.FINE)) {
-        logger.info(format("       %16.8f %16.8f %16.8f\n",
-            selfSum, crossSum, selfSum + crossSum));
-      }
+      logger.finer(format("       %16.8f %16.8f %16.8f\n",
+          selfSum, crossSum, selfSum + crossSum));
     }
   }
 

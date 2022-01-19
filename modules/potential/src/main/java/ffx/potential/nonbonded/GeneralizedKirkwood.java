@@ -500,7 +500,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
    *
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
    * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
-   * @param particleMeshEwald a {@link ffx.potential.nonbonded.ParticleMeshEwald} object.
+   * @param particleMeshEwald a {@link ParticleMeshEwald} object.
    * @param crystal a {@link ffx.crystal.Crystal} object.
    * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
    */
@@ -626,7 +626,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     // If PME includes polarization and is a function of lambda, GK must also.
-    if (!lambdaTerm && particleMeshEwald.getPolarizationType() != Polarization.NONE) {
+    if (!lambdaTerm && particleMeshEwald.getPolarizationType() != ParticleMeshEwald.Polarization.NONE) {
       if (forceField.getBoolean("ELEC_LAMBDATERM", forceField.getBoolean("LAMBDATERM", false))) {
         logger.info(" If PME includes polarization and is a function of lambda, GK must also.");
         lambdaTerm = true;

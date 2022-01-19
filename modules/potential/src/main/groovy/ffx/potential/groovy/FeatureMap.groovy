@@ -41,11 +41,11 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Residue
 import ffx.potential.cli.PotentialScript
 import ffx.potential.utils.GetProteinFeatures
-import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
+import static org.apache.commons.io.FilenameUtils.getBaseName
 
 @Command(description = " Create a Feature Map for a given protein structure", name = "ffxc FeatureMap")
 class FeatureMap extends PotentialScript {
@@ -104,9 +104,11 @@ class FeatureMap extends PotentialScript {
     residues = activeAssembly.getResidueList()
     GetProteinFeatures getProteinFeatures = new GetProteinFeatures()
 
-    String fileDir = FilenameUtils.getFullPath(filename).replace("filename", "")
-    String baseName = FilenameUtils.getBaseName(filename)
-    String featureFileName = fileDir + baseName + ".csv"
+    // Use the current base directory, or update if necessary based on the given filename.
+    String dirString = getBaseDirString(filename)
+
+    String baseName = getBaseName(filename)
+    String featureFileName = dirString + baseName + ".csv"
     try {
       FileWriter fos = new FileWriter(featureFileName)
       PrintWriter dos = new PrintWriter(fos)

@@ -45,13 +45,14 @@ import ffx.potential.cli.SaveOptions
 import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
-import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
+import static org.apache.commons.io.FilenameUtils.getName
+import static org.apache.commons.io.FilenameUtils.removeExtension
 
 /**
  * The SaveAsXYZ script saves a file as an XYZ file
@@ -141,7 +142,6 @@ class SaveAsXYZ extends PotentialScript {
     int numModels = openFilter.countNumModels()
 
     int offset = 0
-
     // Positive offset atom types.
     if (posOffset > 0) {
       offset = posOffset
@@ -173,31 +173,22 @@ class SaveAsXYZ extends PotentialScript {
       }
     }
 
-    File saveDir = baseDir
-    if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-      saveDir = new File(FilenameUtils.getFullPath(filename))
-    }
-    String dirName = saveDir.getAbsolutePath()
-    String name = FilenameUtils.getName(filename)
 
+    String dirString = getBaseDirString(filename)
+    String name = getName(filename)
+
+    // Choose a single snapshot to write out from an archive.
     if (writeSnapshot >= 1) {
-      XYZFilter snapshotFilter = new XYZFilter(new File(dirName + File.separator + name),
+      XYZFilter snapshotFilter = new XYZFilter(new File(dirString + name),
           activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
       openFilter.readNext(true)
-      int counter = 1
-      if (counter == writeSnapshot) {
-        File snapshotFile = new File(
-            dirName + File.separator + "snapshot" + counter.toString() + ".xyz")
-        potentialFunctions.versionFile(snapshotFile)
-        saveOptions.preSaveOperations(activeAssembly)
-        logger.info("\n Writing out XYZ for " + snapshotFile.toString())
-        snapshotFilter.writeFile(snapshotFile, true)
-      }
-      while (openFilter.readNext(false)) {
+      int counter = 0
+      boolean reset = true
+      while (openFilter.readNext(reset)) {
         counter++
+        reset = false
         if (counter == writeSnapshot) {
-          File snapshotFile = new File(
-              dirName + File.separator + "snapshot" + counter.toString() + ".xyz")
+          File snapshotFile = new File(dirString + "snapshot" + counter.toString() + ".xyz")
           potentialFunctions.versionFile(snapshotFile)
           saveOptions.preSaveOperations(activeAssembly)
           logger.info("\n Writing out XYZ for " + snapshotFile.toString())
@@ -211,22 +202,20 @@ class SaveAsXYZ extends PotentialScript {
     logger.info("\n Writing out XYZ for " + filename)
 
     if (numModels <= 1) {
-      name = FilenameUtils.removeExtension(name) + ".xyz"
-      File modelFile = new File(dirName + File.separator + name)
-
+      // Just save a single snapshot.
+      name = removeExtension(name) + ".xyz"
+      File saveFile = new File(dirString + name)
       saveOptions.preSaveOperations(activeAssembly)
-      potentialFunctions.save(activeAssembly, modelFile)
+      potentialFunctions.save(activeAssembly, saveFile)
     } else {
-      //Save to an arc file rather than an xyz file if more than one model exists.
-      name = FilenameUtils.removeExtension(name) + ".arc"
-      File modelFile = new File(dirName + File.separator + name)
-
-      File saveFile = potentialFunctions.versionFile(modelFile)
+      // Save to an arc file rather than an xyz file if more than one model exists.
+      name = removeExtension(name) + ".arc"
+      File saveFile = new File(dirString + name)
+      saveFile = potentialFunctions.versionFile(saveFile)
       saveOptions.preSaveOperations(activeAssembly)
       potentialFunctions.save(activeAssembly, saveFile)
 
       XYZFilter saveFilter = (XYZFilter) potentialFunctions.getFilter()
-
       while (openFilter.readNext(false)) {
         saveOptions.preSaveOperations(activeAssembly)
         saveFilter.writeFile(saveFile, true)
