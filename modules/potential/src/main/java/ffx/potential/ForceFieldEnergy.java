@@ -1896,7 +1896,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
     return angleList.toArray(new Angle[0]);
   }
-  
+
   /**
    * Getter for the field <code>bondEnergy</code>.
    *
