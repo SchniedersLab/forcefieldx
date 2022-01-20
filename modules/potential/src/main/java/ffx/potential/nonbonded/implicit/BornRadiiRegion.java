@@ -45,6 +45,7 @@ import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -56,6 +57,7 @@ import edu.rit.pj.reduction.SharedDoubleArray;
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -150,6 +152,7 @@ public class BornRadiiRegion extends ParallelRegion {
    * BornRadiiRegion Constructor.
    *
    * @param nt Number of threads.
+   * @param nAtoms Number of atoms.
    * @param forceField The ForceField in use.
    * @param neckCorrection Perform a neck correction.
    * @param tanhCorrection Perform a tanh correction.
@@ -165,8 +168,8 @@ public class BornRadiiRegion extends ParallelRegion {
     this.perfectHCTScale = perfectHCTScale;
     this.neckCorrection = neckCorrection;
     this.tanhCorrection = tanhCorrection;
-    if (verboseRadii) {
-      logger.info(" Verbose Born radii.");
+    if (verboseRadii && logger.isLoggable(Level.FINER)) {
+      logger.finer(" Verbose Born radii.");
     }
 
     if (tanhCorrection) {
@@ -179,16 +182,23 @@ public class BornRadiiRegion extends ParallelRegion {
     if (usePerfectRadii) {
       perfectRadii = new double[nAtoms];
       if (radii != null && radii.length > 0) {
-        logger.info(" Reading perfect-born-radius records.");
+        if (logger.isLoggable(Level.FINER)) {
+          logger.finer(format(" Reading %d perfect-radius records .", radii.length));
+        }
         for (String radius : radii) {
           String[] tokens = radius.trim().split(" +");
           if (tokens.length == 2) {
             // Input records should be from 1 to the number of atoms (subtract 1 to index from 0).
             int index = Integer.parseInt(tokens[0]) - 1;
             double value = Double.parseDouble(tokens[1]);
+            if (logger.isLoggable(Level.FINER)) {
+              logger.finer(format(" perfect-radius %d %16.8f", index, value));
+            }
             if (index >= 0 && index < nAtoms && value > 0.0) {
               perfectRadii[index] = value;
             }
+          } else {
+            logger.warning(format(" Could not parse perfect-radius line %s", radius));
           }
         }
       }
@@ -277,7 +287,6 @@ public class BornRadiiRegion extends ParallelRegion {
     }
 
   }
-
 
   public void init(
       Atom[] atoms,
