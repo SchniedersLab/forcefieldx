@@ -115,7 +115,7 @@ class ManyBody extends AlgorithmsScript {
     // each torsion may change causing the updateParametersInContext to throw an
     // exception.
     if (manyBody.group.titrationPH != 0) {
-      System.setProperty("enforce-sixfold-torsions", "true")
+      System.setProperty("manybody-titration", "true")
     }
 
     String priorGKwarn = System.getProperty("gk-suppressWarnings")
@@ -320,7 +320,7 @@ class ManyBody extends AlgorithmsScript {
     }
 
     if (manyBody.group.titrationPH != 0) {
-      System.clearProperty("enforce-sixfold-torsions")
+      System.clearProperty("manybody-titration")
     }
 
     return this

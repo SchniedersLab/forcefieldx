@@ -1610,11 +1610,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /** OpenMM center-of-mass motion remover. */
     private PointerByReference commRemover = null;
     /**
-     * This flag indicates bonded force constants and equilibria are updated (e.g. during
-     * ManyBody titration).
+     * This flag indicates bonded force constants and equilibria are updated (e.g. during ManyBody
+     * titration).
      */
     private boolean updateBondedTerms = false;
-    private boolean enforceSixFoldTorsions = false;
+    private boolean manyBodyTitration;
     /** OpenMM Custom Bond Force */
     private PointerByReference bondForce = null;
     /** OpenMM Custom Angle Force */
@@ -1747,7 +1747,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       vdwLambdaTerm = forceField.getBoolean("VDW_LAMBDATERM", vdwLambdaTerm);
       torsionLambdaTerm = forceField.getBoolean("TORSION_LAMBDATERM", torsionLambdaTerm);
 
-      enforceSixFoldTorsions = forceField.getBoolean("ENFORCE_SIXFOLD_TORSIONS", false);
+      manyBodyTitration = forceField.getBoolean("MANYBODY_TITRATION", false);
 
       if (!forceField.getBoolean("LAMBDATERM", false)) {
         lambdaTerm = (elecLambdaTerm || vdwLambdaTerm || torsionLambdaTerm);
@@ -2329,13 +2329,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     /** Add an angle force to the OpenMM System. */
     private void addAngleForce() {
-      Angle[] normalAngles = getAngles(AngleMode.NORMAL);
-      if (normalAngles == null || normalAngles.length < 1) {
+      Angle[] angles = getAngles();
+      if (angles == null || angles.length < 1) {
         return;
       }
       boolean rigidHydrogenAngles = forceField.getBoolean("RIGID_HYDROGEN_ANGLES", false);
       String energy;
-      if (normalAngles[0].angleType.angleFunction == AngleFunction.SEXTIC) {
+      if (angles[0].angleType.angleFunction == AngleFunction.SEXTIC) {
         energy = format(
             "k*(d^2 + %.15g*d^3 + %.15g*d^4 + %.15g*d^5 + %.15g*d^6); d=%.15g*theta-theta0",
             AngleType.cubic, AngleType.quartic, AngleType.quintic, AngleType.sextic, 180.0 / PI);
@@ -2349,8 +2349,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       PointerByReference parameters = OpenMM_DoubleArray_create(0);
       int angleCount = 0;
-      for (Angle angle : normalAngles) {
-        if (isHydrogenAngle(angle) && rigidHydrogenAngles) {
+      for (Angle angle : angles) {
+        AngleMode angleMode = angle.angleType.angleMode;
+
+        if (!manyBodyTitration && angleMode == AngleMode.IN_PLANE) {
+          // Skip In-Plane angles unless this is ManyBody Titration.
+          continue;
+        } else if (isHydrogenAngle(angle) && rigidHydrogenAngles) {
           logger.log(Level.INFO, " Constrained angle %s was not added the AngleForce.", angle);
         } else {
           int i1 = angle.getAtom(0).getXyzIndex() - 1;
@@ -2358,6 +2363,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           int i3 = angle.getAtom(2).getXyzIndex() - 1;
           double theta0 = angle.angleType.angle[angle.nh];
           double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
+          if (angleMode == AngleMode.IN_PLANE) {
+            // This is a place-holder Angle, in case the In-Plane Angle is swtiched to a
+            // Normal Angle during in the udpateAngleForce.
+            k = 0.0;
+          }
           OpenMM_DoubleArray_append(parameters, theta0);
           OpenMM_DoubleArray_append(parameters, k);
           OpenMM_CustomAngleForce_addAngle(angleForce, i1, i2, i3, parameters);
@@ -2375,22 +2385,30 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     /** Update the angle force. */
     private void updateAngleForce() {
-      Angle[] normalAngles = getAngles(AngleMode.NORMAL);
-      if (normalAngles == null || normalAngles.length < 1) {
+      Angle[] angles = getAngles();
+      if (angles == null || angles.length < 1) {
         return;
       }
       boolean rigidHydrogenAngles = forceField.getBoolean("RIGID_HYDROGEN_ANGLES", false);
-
       PointerByReference parameters = OpenMM_DoubleArray_create(0);
       int index = 0;
-      for (Angle angle : normalAngles) {
+      for (Angle angle : angles) {
+        AngleMode angleMode = angle.angleType.angleMode;
+        if (!manyBodyTitration && angleMode == AngleMode.IN_PLANE) {
+          // Skip In-Plane angles unless this is ManyBody Titration.
+          continue;
+        }
         // Update angles that do not involve rigid hydrogen atoms.
-        if (!rigidHydrogenAngles || !isHydrogenAngle(angle)) {
+        else if (!rigidHydrogenAngles || !isHydrogenAngle(angle)) {
           int i1 = angle.getAtom(0).getXyzIndex() - 1;
           int i2 = angle.getAtom(1).getXyzIndex() - 1;
           int i3 = angle.getAtom(2).getXyzIndex() - 1;
           double theta0 = angle.angleType.angle[angle.nh];
           double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
+          if (angleMode == AngleMode.IN_PLANE) {
+            // Zero the force constant for In-Plane Angles.
+            k = 0.0;
+          }
           OpenMM_DoubleArray_append(parameters, theta0);
           OpenMM_DoubleArray_append(parameters, k);
           OpenMM_CustomAngleForce_setAngleParameters(angleForce, index++, i1, i2, i3, parameters);
@@ -2407,8 +2425,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     /** Add an in-plane angle force to the OpenMM System. */
     private void addInPlaneAngleForce() {
-      Angle[] inPlaneAngles = getAngles(AngleMode.IN_PLANE);
-      if (inPlaneAngles == null || inPlaneAngles.length < 1) {
+      Angle[] angles = getAngles();
+      if (angles == null || angles.length < 1) {
         return;
       }
 
@@ -2430,22 +2448,44 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       PointerByReference particles = OpenMM_IntArray_create(0);
       PointerByReference parameters = OpenMM_DoubleArray_create(0);
-      for (Angle angle : inPlaneAngles) {
-        int i1 = angle.getAtom(0).getXyzIndex() - 1;
-        int i2 = angle.getAtom(1).getXyzIndex() - 1;
-        int i3 = angle.getAtom(2).getXyzIndex() - 1;
-        int i4 = angle.getAtom4().getXyzIndex() - 1;
-        OpenMM_IntArray_append(particles, i1);
-        OpenMM_IntArray_append(particles, i2);
-        OpenMM_IntArray_append(particles, i3);
-        OpenMM_IntArray_append(particles, i4);
-        double theta0 = angle.angleType.angle[angle.nh];
-        double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
-        OpenMM_DoubleArray_append(parameters, theta0);
-        OpenMM_DoubleArray_append(parameters, k);
-        OpenMM_CustomCompoundBondForce_addBond(inPlaneAngleForce, particles, parameters);
-        OpenMM_IntArray_resize(particles, 0);
-        OpenMM_DoubleArray_resize(parameters, 0);
+      for (Angle angle : angles) {
+        AngleMode angleMode = angle.angleType.angleMode;
+
+        if (!manyBodyTitration && angleMode == AngleMode.NORMAL) {
+          // Skip Normal angles unless this is ManyBody Titration.
+          continue;
+        } else {
+          double theta0 = angle.angleType.angle[angle.nh];
+          double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
+          int i1 = angle.getAtom(0).getXyzIndex() - 1;
+          int i2 = angle.getAtom(1).getXyzIndex() - 1;
+          int i3 = angle.getAtom(2).getXyzIndex() - 1;
+          int i4 = 0;
+          if (angleMode == AngleMode.NORMAL) {
+            // This is a place-holder Angle, in case the Normal Angle is switched to a
+            // In-Plane Angle during in the udpateInPlaneAngleForce.
+            k = 0.0;
+            Atom fourthAtom = angle.getFourthAtomOfTrigonalCenter();
+            if (fourthAtom != null) {
+              i4 = fourthAtom.getXyzIndex() - 1;
+            } else {
+              while (i1 == i4 || i2 == i4 || i3 == i4) {
+                i4++;
+              }
+            }
+          } else {
+            i4 = angle.getAtom4().getXyzIndex() - 1;
+          }
+          OpenMM_IntArray_append(particles, i1);
+          OpenMM_IntArray_append(particles, i2);
+          OpenMM_IntArray_append(particles, i3);
+          OpenMM_IntArray_append(particles, i4);
+          OpenMM_DoubleArray_append(parameters, theta0);
+          OpenMM_DoubleArray_append(parameters, k);
+          OpenMM_CustomCompoundBondForce_addBond(inPlaneAngleForce, particles, parameters);
+          OpenMM_IntArray_resize(particles, 0);
+          OpenMM_DoubleArray_resize(parameters, 0);
+        }
       }
       OpenMM_IntArray_destroy(particles);
       OpenMM_DoubleArray_destroy(parameters);
@@ -2454,36 +2494,56 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       OpenMM_Force_setForceGroup(inPlaneAngleForce, forceGroup);
       OpenMM_System_addForce(system, inPlaneAngleForce);
       logger.log(Level.INFO,
-          format("  In-Plane Angles \t%6d\t\t%1d", inPlaneAngles.length, forceGroup));
+          format("  In-Plane Angles \t%6d\t\t%1d", angles.length, forceGroup));
     }
 
     /** Update the in-plane angle force. */
     private void updateInPlaneAngleForce() {
-      Angle[] inPlaneAngles = getAngles(AngleMode.IN_PLANE);
-      if (inPlaneAngles == null || inPlaneAngles.length < 1) {
+      Angle[] angles = getAngles();
+      if (angles == null || angles.length < 1) {
         return;
       }
-
       PointerByReference particles = OpenMM_IntArray_create(0);
       PointerByReference parameters = OpenMM_DoubleArray_create(0);
       int index = 0;
-      for (Angle angle : inPlaneAngles) {
-        int i1 = angle.getAtom(0).getXyzIndex() - 1;
-        int i2 = angle.getAtom(1).getXyzIndex() - 1;
-        int i3 = angle.getAtom(2).getXyzIndex() - 1;
-        int i4 = angle.getAtom4().getXyzIndex() - 1;
-        OpenMM_IntArray_append(particles, i1);
-        OpenMM_IntArray_append(particles, i2);
-        OpenMM_IntArray_append(particles, i3);
-        OpenMM_IntArray_append(particles, i4);
-        double theta0 = angle.angleType.angle[angle.nh];
-        double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
-        OpenMM_DoubleArray_append(parameters, theta0);
-        OpenMM_DoubleArray_append(parameters, k);
-        OpenMM_CustomCompoundBondForce_setBondParameters(inPlaneAngleForce, index++, particles,
-            parameters);
-        OpenMM_IntArray_resize(particles, 0);
-        OpenMM_DoubleArray_resize(parameters, 0);
+      for (Angle angle : angles) {
+        AngleMode angleMode = angle.angleType.angleMode;
+        if (!manyBodyTitration && angleMode == AngleMode.NORMAL) {
+          // Skip Normal angles unless this is ManyBody Titration.
+          continue;
+        } else {
+          double theta0 = angle.angleType.angle[angle.nh];
+          double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
+          int i1 = angle.getAtom(0).getXyzIndex() - 1;
+          int i2 = angle.getAtom(1).getXyzIndex() - 1;
+          int i3 = angle.getAtom(2).getXyzIndex() - 1;
+          // There is no 4th atom for normal angles, so set the index to first atom.
+          int i4 = 0;
+          if (angleMode == AngleMode.NORMAL) {
+            // Zero the force constant for Normal Angles.
+            k = 0.0;
+            Atom fourthAtom = angle.getFourthAtomOfTrigonalCenter();
+            if (fourthAtom != null) {
+              i4 = fourthAtom.getXyzIndex() - 1;
+            } else {
+              while (i1 == i4 || i2 == i4 || i3 == i4) {
+                i4++;
+              }
+            }
+          } else {
+            i4 = angle.getAtom4().getXyzIndex() - 1;
+          }
+          OpenMM_IntArray_append(particles, i1);
+          OpenMM_IntArray_append(particles, i2);
+          OpenMM_IntArray_append(particles, i3);
+          OpenMM_IntArray_append(particles, i4);
+          OpenMM_DoubleArray_append(parameters, theta0);
+          OpenMM_DoubleArray_append(parameters, k);
+          OpenMM_CustomCompoundBondForce_setBondParameters(inPlaneAngleForce, index++, particles,
+              parameters);
+          OpenMM_IntArray_resize(particles, 0);
+          OpenMM_DoubleArray_resize(parameters, 0);
+        }
       }
       OpenMM_IntArray_destroy(particles);
       OpenMM_DoubleArray_destroy(parameters);
@@ -2750,7 +2810,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
               torsionType.phase[j] * OpenMM_RadiansPerDegree,
               OpenMM_KJPerKcal * torsion.units * torsionType.amplitude[j]);
         }
-        if (enforceSixFoldTorsions) {
+        // Enforce 6-fold torsions since TorsionType instances can have different lengths
+        // when side-chain protonation changes.
+        if (manyBodyTitration) {
           for (int j = nTerms; j < 6; j++) {
             OpenMM_PeriodicTorsionForce_addTorsion(torsionForce, a1, a2, a3, a4, j + 1,
                 0.0, 0.0);
@@ -2787,9 +2849,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           OpenMM_PeriodicTorsionForce_setTorsionParameters(torsionForce, index++, a1, a2, a3, a4,
               j + 1, torsionType.phase[j] * OpenMM_RadiansPerDegree, forceConstant);
         }
-        if (enforceSixFoldTorsions) {
+        // Enforce 6-fold torsions since TorsionType instances can have different lengths
+        // when side-chain protonation changes.
+        if (manyBodyTitration) {
           for (int j = nTerms; j < 6; j++) {
-            OpenMM_PeriodicTorsionForce_setTorsionParameters(torsionForce, index++, a1, a2, a3, a4,j + 1,
+            OpenMM_PeriodicTorsionForce_setTorsionParameters(torsionForce, index++, a1, a2, a3, a4,
+                j + 1,
                 0.0, 0.0);
           }
         }
