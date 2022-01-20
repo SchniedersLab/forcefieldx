@@ -264,10 +264,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
    */
   private double crossOver;
   /**
-   * GaussVol radii offset.
-   */
-  private double offset;
-  /**
    * The requested permittivity.
    */
   private final double epsilon;
@@ -487,13 +483,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
    */
   private long cavitationTime = 0;
   /**
-   * If true, prevents Born radii from updating.
-   */
-  private boolean fixedRadii = false;
-  /**
    * Forces all atoms to be considered during Born radius updates.
    */
   private final boolean nativeEnvironmentApproximation;
+  /**
+   * Flag to turn on use of perfect Born radii.
+   */
+  private final boolean perfectRadii;
 
   /**
    * Constructor for GeneralizedKirkwood.
@@ -577,6 +573,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
     elementHCTScaleFactors.put(8, forceField.getDouble("HCT_O", DEFAULT_HCT_O));
     elementHCTScaleFactors.put(15, forceField.getDouble("HCT_P", DEFAULT_HCT_P));
     elementHCTScaleFactors.put(16, forceField.getDouble("HCT_S", DEFAULT_HCT_S));
+
+    perfectRadii = forceField.getBoolean("PERFECT_RADII", false);
 
     // Process any radii override values.
     String radiiProp = forceField.getString("GK_RADIIOVERRIDE", null);
@@ -712,14 +710,17 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     initializationRegion = new InitializationRegion(threadCount);
-    bornRadiiRegion = new BornRadiiRegion(threadCount, forceField, neckCorrection, tanhCorrection,
-        perfectHCTScale);
+    bornRadiiRegion = new BornRadiiRegion(threadCount, nAtoms, forceField, neckCorrection, tanhCorrection, perfectHCTScale);
     permanentGKFieldRegion = new PermanentGKFieldRegion(threadCount, forceField);
     inducedGKFieldRegion = new InducedGKFieldRegion(threadCount, forceField);
-    bornGradRegion = new BornGradRegion(threadCount, neckCorrection, tanhCorrection,
-        perfectHCTScale);
-    gkEnergyRegion =
-        new GKEnergyRegion(threadCount, forceField, polarization, nonPolar, surfaceTension, probe);
+    if (!perfectRadii) {
+      bornGradRegion = new BornGradRegion(threadCount, neckCorrection, tanhCorrection,
+          perfectHCTScale);
+    } else {
+      // No Born chain-rule terms when using Perfect Born Radii.
+      bornGradRegion = null;
+    }
+    gkEnergyRegion = new GKEnergyRegion(threadCount, forceField, polarization, nonPolar, surfaceTension, probe);
 
     logger.info("  Continuum Solvation ");
     logger.info(format("   Radii:                              %8s", soluteRadiiType));
@@ -727,39 +728,44 @@ public class GeneralizedKirkwood implements LambdaInterface {
     logger.info(format("   GKC:                                %8.4f",
         forceField.getDouble("GKC", DEFAULT_GKC)));
     logger.info(format("   Solvent Dielectric:                 %8.4f", epsilon));
-    logger.info(format("   Descreen with vdW Radii:            %8B", descreenWithVDW));
-    logger.info(format("   Descreen with Hydrogen Atoms:       %8B", descreenWithHydrogen));
-    logger.info(format("   Descreen Offset:                    %8.4f", descreenOffset));
-    if (neckCorrection) {
-      logger.info(format("   Use Neck Correction:                %8B", neckCorrection));
-      logger.info(format("   Sneck Scale Factor:                 %8.4f", sneck));
-      logger.info(format("   Chemically Aware Sneck:             %8B", chemicallyAwareSneck));
-    }
-    if (tanhCorrection) {
-      logger.info(format("   Use Tanh Correction                 %8B", tanhCorrection));
-      logger.info(format("    Beta0:                             %8.4f", beta0));
-      logger.info(format("    Beta1:                             %8.4f", beta1));
-      logger.info(format("    Beta2:                             %8.4f", beta2));
-    }
-    if (perfectHCTScale) {
-      logger.info(format("   GaussVol HCT Scale Factors:         %8B", perfectHCTScale));
-    }
-    logger.info(format("   General HCT Scale Factor:           %8.4f",
-        forceField.getDouble("HCT-SCALE", DEFAULT_HCT_SCALE)));
-    if (elementHCTScale) {
-      logger.info(format("   Element-Specific HCT Scale Factors: %8B", elementHCTScale));
-      logger.info(
-          format("    HCT-H:                             %8.4f", elementHCTScaleFactors.get(1)));
-      logger.info(
-          format("    HCT-C:                             %8.4f", elementHCTScaleFactors.get(6)));
-      logger.info(
-          format("    HCT-N:                             %8.4f", elementHCTScaleFactors.get(7)));
-      logger.info(
-          format("    HCT-O:                             %8.4f", elementHCTScaleFactors.get(8)));
-      logger.info(
-          format("    HCT-P:                             %8.4f", elementHCTScaleFactors.get(15)));
-      logger.info(
-          format("    HCT-S:                             %8.4f", elementHCTScaleFactors.get(16)));
+
+    if (perfectRadii) {
+      logger.info(format("   Use Perfect Born Radii:             %8B", perfectRadii));
+    } else {
+      logger.info(format("   Descreen with vdW Radii:            %8B", descreenWithVDW));
+      logger.info(format("   Descreen with Hydrogen Atoms:       %8B", descreenWithHydrogen));
+      logger.info(format("   Descreen Offset:                    %8.4f", descreenOffset));
+      if (neckCorrection) {
+        logger.info(format("   Use Neck Correction:                %8B", neckCorrection));
+        logger.info(format("   Sneck Scale Factor:                 %8.4f", sneck));
+        logger.info(format("   Chemically Aware Sneck:             %8B", chemicallyAwareSneck));
+      }
+      if (tanhCorrection) {
+        logger.info(format("   Use Tanh Correction                 %8B", tanhCorrection));
+        logger.info(format("    Beta0:                             %8.4f", beta0));
+        logger.info(format("    Beta1:                             %8.4f", beta1));
+        logger.info(format("    Beta2:                             %8.4f", beta2));
+      }
+      if (perfectHCTScale) {
+        logger.info(format("   GaussVol HCT Scale Factors:         %8B", perfectHCTScale));
+      }
+      logger.info(format("   General HCT Scale Factor:           %8.4f",
+          forceField.getDouble("HCT-SCALE", DEFAULT_HCT_SCALE)));
+      if (elementHCTScale) {
+        logger.info(format("   Element-Specific HCT Scale Factors: %8B", elementHCTScale));
+        logger.info(
+            format("    HCT-H:                             %8.4f", elementHCTScaleFactors.get(1)));
+        logger.info(
+            format("    HCT-C:                             %8.4f", elementHCTScaleFactors.get(6)));
+        logger.info(
+            format("    HCT-N:                             %8.4f", elementHCTScaleFactors.get(7)));
+        logger.info(
+            format("    HCT-O:                             %8.4f", elementHCTScaleFactors.get(8)));
+        logger.info(
+            format("    HCT-P:                             %8.4f", elementHCTScaleFactors.get(15)));
+        logger.info(
+            format("    HCT-S:                             %8.4f", elementHCTScaleFactors.get(16)));
+      }
     }
 
     logger.info(
@@ -814,11 +820,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * computeBornRadii
    */
   public void computeBornRadii() {
-    // Born radii are fixed.
-    if (fixedRadii) {
-      return;
-    }
-
     // The solute radii can change during titration based rotamer optimization.
     applySoluteRadii();
 
@@ -1359,26 +1360,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     // Compute the Born radii chain rule term.
-    if (gradient) {
+    if (gradient && !perfectRadii) {
       try {
         gkTime -= System.nanoTime();
         bornGradRegion.init(
-            atoms,
-            crystal,
-            sXYZ,
-            neighborLists,
-            baseRadius,
-            descreenRadius,
-            overlapScale,
-            neckScale,
-            descreenOffset,
-            bornRadiiRegion.getUnscaledBornIntegral(),
-            use,
-            cut2,
-            nativeEnvironmentApproximation,
-            born,
-            grad,
-            bornRadiiChainRule);
+            atoms, crystal, sXYZ, neighborLists,
+            baseRadius, descreenRadius, overlapScale, neckScale, descreenOffset,
+            bornRadiiRegion.getUnscaledBornIntegral(), use, cut2,
+            nativeEnvironmentApproximation, born, grad, bornRadiiChainRule);
         bornGradRegion.executeWith(parallelTeam);
         gkTime += System.nanoTime();
       } catch (Exception e) {
@@ -1431,10 +1420,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
   }
 
   private void initAtomArrays() {
-    if (fixedRadii) {
-      fixedRadii = false;
-    }
-
     sXYZ = particleMeshEwald.coordinates;
 
     x = sXYZ[0][0];
