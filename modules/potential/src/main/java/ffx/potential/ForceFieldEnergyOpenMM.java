@@ -95,6 +95,7 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_Nonbon
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod.OpenMM_AmoebaVdwForce_NoCutoff;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_addParticleType;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_addParticle_1;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_addTypePair;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_create;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setAlchemicalMethod;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setCutoffDistance;
@@ -348,6 +349,7 @@ import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.TorsionTorsionType;
 import ffx.potential.parameters.TorsionType;
 import ffx.potential.parameters.UreyBradleyType;
+import ffx.potential.parameters.VDWPairType;
 import ffx.potential.parameters.VDWType;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
@@ -1614,7 +1616,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * titration).
      */
     private boolean updateBondedTerms = false;
-    private boolean manyBodyTitration;
+    /**
+     * If true, all torsions are treated as 6-fold, and all angles are treated as possibly changing
+     * between normal and in-plane types.
+     */
+    private final boolean manyBodyTitration;
     /** OpenMM Custom Bond Force */
     private PointerByReference bondForce = null;
     /** OpenMM Custom Angle Force */
@@ -4058,9 +4064,22 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           }
         }
       }
+
       // Add a special vdW type for zero vdW energy and forces (e.g. to support the FFX "use" flag).
       int type = OpenMM_AmoebaVdwForce_addParticleType(amoebaVDWForce, OpenMM_NmPerAngstrom, 0.0);
       vdwClassToOpenMMType.put(vdWClassForNoInteraction, type);
+
+      Map<String, VDWPairType> vdwPairTypeMap = forceField.getVDWPairTypes();
+      for (VDWPairType vdwPairType : vdwPairTypeMap.values()) {
+        int c1 = vdwPairType.atomClasses[0];
+        int c2 = vdwPairType.atomClasses[1];
+        int type1 = vdwClassToOpenMMType.get(c1);
+        int type2 = vdwClassToOpenMMType.get(c2);
+        double rMin = vdwPairType.radius * OpenMM_NmPerAngstrom;
+        double eps = vdwPairType.wellDepth * OpenMM_KJPerKcal;
+        OpenMM_AmoebaVdwForce_addTypePair(amoebaVDWForce, type1, type2, rMin, eps);
+        OpenMM_AmoebaVdwForce_addTypePair(amoebaVDWForce, type2, type1, rMin, eps);
+      }
 
       int[] ired = vdW.getReductionIndex();
       for (int i = 0; i < nAtoms; i++) {

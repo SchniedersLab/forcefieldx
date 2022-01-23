@@ -62,6 +62,7 @@ import ffx.potential.parameters.StretchTorsionType;
 import ffx.potential.parameters.TorsionTorsionType;
 import ffx.potential.parameters.TorsionType;
 import ffx.potential.parameters.UreyBradleyType;
+import ffx.potential.parameters.VDWPairType;
 import ffx.potential.parameters.VDWType;
 import ffx.utilities.Keyword;
 import java.io.BufferedReader;
@@ -354,6 +355,9 @@ public class ForceFieldFilter {
               case VDW14:
                 baseType = VDWType.parseVDW14(input, tokens);
                 break;
+              case VDWPR:
+                baseType = VDWPairType.parse(input, tokens);
+                break;
               case POLARIZE:
                 baseType = PolarizeType.parse(input, tokens);
                 break;
@@ -476,6 +480,9 @@ public class ForceFieldFilter {
           break;
         case VDW14:
           baseType = VDWType.parseVDW14(input, tokens);
+          break;
+        case VDWPR:
+          baseType = VDWPairType.parse(input, tokens);
           break;
         case POLARIZE:
           baseType = PolarizeType.parse(input, tokens);

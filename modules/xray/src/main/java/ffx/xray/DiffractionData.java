@@ -275,7 +275,6 @@ public class DiffractionData implements DataContainer {
       for (int i = 0; i < n; i++) {
         tmp = new File(datafile[i].getFilename());
         reflectionList[i] = datafile[i].getDiffractionfilter().getReflectionList(tmp, properties);
-
         if (reflectionList[i] == null) {
           logger.info(" Crystal information from the PDB or property file will be used.");
           crystalinit = assembly[i].getCrystal().getUnitCell();

@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.utilities;
 
+import static org.apache.commons.math3.util.FastMath.PI;
+
 /**
  * Library class containing constants such as Avogadro's number.
  *
@@ -50,6 +52,10 @@ public class Constants {
   // Our typical units: g/mol, Angstrom, psec, elementary charges (+1 proton charge), K, mol, N/A
   // Below constants are the seven defining constants of SI as of May 20 2019 (BIPM).
 
+  /**
+   * Degrees per radian.
+   */
+  public static final double DEGREES_PER_RADIAN = 180.0 / PI;
   /**
    * Hyperfine transition frequency of cesium in Hertz, defining the second. <code>
    * DEL_V_Cs_SI=9192631770L</code>

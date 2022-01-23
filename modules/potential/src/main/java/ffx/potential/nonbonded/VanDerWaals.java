@@ -100,7 +100,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private final VanDerWaalsRegion vanDerWaalsRegion;
   /** Timing variables. */
   private final long[] initializationTime;
-
   private final long[] vdwTime;
   private final long[] reductionTime;
   private final VanDerWaalsForm vdwForm;
@@ -126,7 +125,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private int nSymm;
   /** ********************************************************************** Lambda variables. */
   private boolean gradient;
-
   private boolean lambdaTerm;
   private boolean esvTerm;
   private boolean[] isSoft;
@@ -1049,7 +1047,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    *
    * @param i Atom i.
    * @param k Atom j.
-   * @param minr The minimum vdW separation distance.
+   * @param minr The minimum energy vdW separation distance.
    * @param r The distance rij.
    * @param eij The interaction energy.
    * @since 1.0

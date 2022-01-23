@@ -98,6 +98,8 @@ public class ForceField {
   private final Map<String, UreyBradleyType> ureyBradleyTypes;
   private final Map<String, VDWType> vanderWaalsTypes;
   private final Map<String, VDWType> vanderWaals14Types;
+  private final Map<String, VDWPairType> vanderWaalsPairTypes;
+
   private final Map<String, RelativeSolvationType> relativeSolvationTypes;
   private final Map<ForceFieldType, Map<String, ? extends BaseType>> forceFieldTypes;
   /** URL to the force field parameter file. */
@@ -142,6 +144,7 @@ public class ForceField {
     ureyBradleyTypes = new TreeMap<>(new UreyBradleyType(new int[3], 0, 0));
     vanderWaalsTypes = new TreeMap<>(new VDWType(0, 0, 0, 0));
     vanderWaals14Types = new TreeMap<>(new VDWType(0, 0, 0, 0));
+    vanderWaalsPairTypes = new TreeMap<>(new VDWPairType(new int[2], 0, 0));
     relativeSolvationTypes = new TreeMap<>(new RelativeSolvationType("", 0.0));
 
     forceFieldTypes = new EnumMap<>(ForceFieldType.class);
@@ -166,6 +169,7 @@ public class ForceField {
     forceFieldTypes.put(ForceFieldType.UREYBRAD, ureyBradleyTypes);
     forceFieldTypes.put(ForceFieldType.VDW, vanderWaalsTypes);
     forceFieldTypes.put(ForceFieldType.VDW14, vanderWaals14Types);
+    forceFieldTypes.put(ForceFieldType.VDWPR, vanderWaalsPairTypes);
     forceFieldTypes.put(ForceFieldType.RELATIVESOLV, relativeSolvationTypes);
 
     trueImpliedBoolean("ELEC_LAMBDATERM", "GK_LAMBDATERM");
@@ -394,6 +398,10 @@ public class ForceField {
 
     for (VDWType vdwType : patch.vanderWaals14Types.values()) {
       vanderWaals14Types.put(vdwType.getKey(), vdwType);
+    }
+
+    for (VDWPairType vdwPairType : patch.vanderWaalsPairTypes.values()) {
+      vanderWaalsPairTypes.put(vdwPairType.getKey(), vdwPairType);
     }
 
     for (SoluteType soluteType : patch.soluteTypes.values()) {
@@ -1071,12 +1079,31 @@ public class ForceField {
   }
 
   /**
+   * getVDWPairType
+   *
+   * @param key a {@link java.lang.String} object.
+   * @return a {@link ffx.potential.parameters.VDWPairType} object.
+   */
+  public VDWPairType getVDWPairType(String key) {
+    return vanderWaalsPairTypes.get(key);
+  }
+
+  /**
    * getVDWTypes
    *
    * @return a {@link java.util.Map} object.
    */
   public Map<String, VDWType> getVDWTypes() {
     return vanderWaalsTypes;
+  }
+
+  /**
+   * getVDWPairTypes
+   *
+   * @return a {@link java.util.Map} object.
+   */
+  public Map<String, VDWPairType> getVDWPairTypes() {
+    return vanderWaalsPairTypes;
   }
 
   /**
@@ -1213,6 +1240,10 @@ public class ForceField {
 
     for (VDWType vanderWaals14Type : vanderWaals14Types.values()) {
       vanderWaals14Type.incrementClass(classOffset);
+    }
+
+    for (VDWPairType vanderWaalsPairType : vanderWaalsPairTypes.values()) {
+      vanderWaalsPairType.incrementClasses(classOffset);
     }
 
     for (SoluteType soluteType : soluteTypes.values()) {
@@ -1584,7 +1615,7 @@ public class ForceField {
         AtomType patchType = updateBioType(modResname, atomName, stdType.type);
         if (patchType != null) {
           typeMap.put(patchType, stdType);
-          logger.info(" " + patchType.toString() + " -> " + stdType.toString());
+          logger.info(" " + patchType + " -> " + stdType);
         }
       }
     }
@@ -1673,8 +1704,6 @@ public class ForceField {
     AMBER_1998,
     AMBER_1999,
     AMBER_1999_SB,
-    AMBER_1999_SB_AMOEBA,
-    AMBER_1999_SB_TIP3F,
     AMOEBA_2004,
     AMOEBA_2009,
     AMOEBA_BIO_2009,
@@ -1714,6 +1743,7 @@ public class ForceField {
     UREYBRAD,
     VDW,
     VDW14,
+    VDWPR,
     RELATIVESOLV
   }
 

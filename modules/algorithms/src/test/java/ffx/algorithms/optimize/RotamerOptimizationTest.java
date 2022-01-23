@@ -154,12 +154,12 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
                 false, // Use 3-body Energies.
                 true, // Use Original Rotamers.
                 true, // Do Overall Opt.
-                -211.88384480357658, // Expected Energy.
+                -213.4880773959454, // Expected Energy.
                 true, // Do Self-Energy Opt.
-                -211.88384480357658, // Expected Self-Energy.
+                -213.4880773959454, // Expected Self-Energy.
                 true, // Do Pair-Energy Opt.
                 1, // Pair residue
-                1000.5100013039976, // Expected Pair-Energy.
+                992.2128577001594, // Expected Pair-Energy.
                 false, // Do Trimer-Energy Opt.
                 1, // Trimer residue 1.
                 2, // Trimer residue 2.
@@ -177,12 +177,12 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
                 false, // Use 3-body Energies.
                 true, // Use Original Rotamers.
                 true, // Do Overall Opt.
-                -211.88384480357658, // Expected Energy.
+                -213.48807739594548, // Expected Energy.
                 true, // Do Self-Energy Opt.
-                -211.88384480357658, // Expected Self-Energy.
+                -213.48807739594548, // Expected Self-Energy.
                 true, // Do Pair-Energy Opt.
                 1, // Pair residue
-                -197.85885923519842, // Expected Pair-Energy.
+                -198.4002007539805, // Expected Pair-Energy.
                 false, // Do Trimer-Energy Opt.
                 1, // Trimer residue 1.
                 2, // Trimer residue 2.
@@ -200,12 +200,12 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
                 false, // Use 3-body Energies.
                 true, // Use Original Rotamers.
                 true, // Do Overall Opt.
-                -211.88384480357658, // Expected Energy.
+                -213.48807739594542, // Expected Energy.
                 true, // Do Self-Energy Opt.
-                -211.88384480357658, // Expected Self-Energy.
+                -213.48807739594542, // Expected Self-Energy.
                 true, // Do Pair-Energy Opt.
                 1, // Pair residue
-                -197.85885923519842, // Expected Pair-Energy.
+                -198.40020075398047, // Expected Pair-Energy.
                 false, // Do Trimer-Energy Opt.
                 1, // Trimer residue 1.
                 2, // Trimer residue 2.
@@ -223,16 +223,16 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
                 true, // Use 3-body Energies.
                 true, // Use Original Rotamers.
                 true, // Do Overall Opt.
-                -211.88384480357658, // Expected Energy.
+                -213.48807739594548, // Expected Energy.
                 true, // Do Self-Energy Opt.
-                -211.88384480357658, // Expected Self-Energy.
+                -213.48807739594548, // Expected Self-Energy.
                 true, // Do Pair-Energy Opt.
                 1, // Pair residue
-                -197.85885923519842, // Expected Pair-Energy.
+                -198.4002007539805, // Expected Pair-Energy.
                 true, // Do Trimer-Energy Opt.
                 1, // Trimer residue 1.
                 2, // Trimer residue 2.
-                -189.17343465853008, // Expected trimer energy.
+                -189.7147761383751, // Expected trimer energy.
                 1.0e-3 // Energy Tolerance.
             },
             {
@@ -246,12 +246,12 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
                 false, // Use 3-body Energies.
                 true, // Use Original Rotamers.
                 true, // Do Overall Opt.
-                -211.88384480357658, // Expected Energy.
+                -213.48807739594542, // Expected Energy.
                 true, // Do Self-Energy Opt.
-                -211.88384480357658, // Expected Self-Energy.
+                -213.48807739594542, // Expected Self-Energy.
                 true, // Do Pair-Energy Opt.
                 1, // Pair residue
-                1000.5100013039976, // Expected Pair-Energy.
+                992.2128577001597, // Expected Pair-Energy.
                 false, // Do Trimer-Energy Opt.
                 1, // Trimer residue 1.
                 2, // Trimer residue 2.
@@ -269,12 +269,12 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
                 false, // Use 3-body Energies.
                 true, // Use Original Rotamers.
                 true, // Do Overall Opt.
-                -211.88384480357658, // Expected Energy.
+                -213.48807739594542, // Expected Energy.
                 true, // Do Self-Energy Opt.
-                -211.88384480357658, // Expected Self-Energy.
+                -213.48807739594542, // Expected Self-Energy.
                 true, // Do Pair-Energy Opt.
                 1, // Pair residue
-                -197.85885923519842, // Expected Pair-Energy.
+                -198.40020075398047, // Expected Pair-Energy.
                 false, // Do Trimer-Energy Opt.
                 1, // Trimer residue 1.
                 2, // Trimer residue 2.
@@ -292,12 +292,12 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
                 false, // Use 3-body Energies.
                 true, // Use Original Rotamers.
                 true, // Do Overall Opt.
-                -211.88384480357658, // Expected Energy.
+                -213.48807739594542, // Expected Energy.
                 true, // Do Self-Energy Opt.
-                -211.88384480357658, // Expected Self-Energy.
+                -213.48807739594542, // Expected Self-Energy.
                 true, // Do Pair-Energy Opt.
                 1, // Pair residue
-                -197.85885923519842, // Expected Pair-Energy.
+                -198.40020075398047, // Expected Pair-Energy.
                 false, // Do Trimer-Energy Opt.
                 1, // Trimer residue 1.
                 2, // Trimer residue 2.
@@ -315,16 +315,16 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
                 true, // Use 3-body Energies.
                 true, // Use Original Rotamers.
                 true, // Do Overall Opt.
-                -211.88384480357658, // Expected Energy.
+                -213.48807739594542, // Expected Energy.
                 true, // Do Self-Energy Opt.
-                -211.88384480357658, // Expected Self-Energy.
+                -213.48807739594542, // Expected Self-Energy.
                 true, // Do Pair-Energy Opt.
                 1, // Pair residue
-                -197.85885923519842, // Expected Pair-Energy.
+                -198.40020075398047, // Expected Pair-Energy.
                 true, // Do Trimer-Energy Opt.
                 1, // Trimer residue 1.
                 2, // Trimer residue 2.
-                -189.17343465853008, // Expected trimer energy.
+                -189.7147761383751, // Expected trimer energy.
                 1.0e-3 // Energy Tolerance.
             }
         });
@@ -367,6 +367,7 @@ public class RotamerOptimizationTest extends AlgorithmsTest {
     rotamerOptimization.setUseGoldstein(useGoldstein);
     rotamerOptimization.setPruning(pruningLevel);
     rotamerOptimization.setEnergyRestartFile(restartFile);
+
     rotamerOptimization.setResidues(residueList);
     rotamerOptimization.setSingletonClashThreshold(20.0);
     rotamerOptimization.setPairClashThreshold(20.0);

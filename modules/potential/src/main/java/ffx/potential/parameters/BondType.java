@@ -40,6 +40,7 @@ package ffx.potential.parameters;
 import static ffx.potential.parameters.ForceField.ForceFieldType.BOND;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -223,8 +224,12 @@ public final class BondType extends BaseType implements Comparator<String> {
   /** {@inheritDoc} */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     BondType bondType = (BondType) o;
     return Arrays.equals(atomClasses, bondType.atomClasses);
   }
@@ -296,8 +301,8 @@ public final class BondType extends BaseType implements Comparator<String> {
    */
   @Override
   public String toString() {
-    return String.format(
-        "bond  %5d  %5d  %7.2f  %7.4f", atomClasses[0], atomClasses[1], forceConstant, distance);
+    return format("bond  %5d  %5d  %7.2f  %7.4f", atomClasses[0], atomClasses[1], forceConstant,
+        distance);
   }
 
   /**
