@@ -93,12 +93,7 @@ public class ManyBodyTest extends AlgorithmsTest {
    * angstroms.
    */
   @Test
-  public void testManyBodyBoxRestart() throws IOException {
-    File restartBoxBackup =
-        new File("src/main/java/ffx/algorithms/structures/5awl.box.restart");
-    File restart = new File("src/main/java/ffx/algorithms/structures/5awl.restart");
-    FileUtils.copyFile(restartBoxBackup, restart);
-
+  public void testManyBodyBoxRestart() {
     // Set-up the input arguments for the script.
     String[] args = {
         "-a", "5",
@@ -106,7 +101,7 @@ public class ManyBodyTest extends AlgorithmsTest {
         "--tC", "1.5",
         "-T", "--thC",
         "1.5", "--eR",
-        "src/main/java/ffx/algorithms/structures/5awl.restart",
+        "src/main/java/ffx/algorithms/structures/5awl.box.restart",
         "src/main/java/ffx/algorithms/structures/5awl.pdb"
     };
     binding.setVariable("args", args);
@@ -124,9 +119,6 @@ public class ManyBodyTest extends AlgorithmsTest {
     double expectedApproximateEnergy = -220.72737768799902;
     double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-7);
-
-    // Delete restart file.
-    restart.delete();
   }
 
   @Test
@@ -216,14 +208,10 @@ public class ManyBodyTest extends AlgorithmsTest {
    * but the restart file was generated using 2-body and 3-body cutoffs of 2 angstroms.
    */
   @Test
-  public void testManyBodyRestart() throws IOException {
-    File restartBackup = new File("src/main/java/ffx/algorithms/structures/5awl.test.restart");
-    File restart = new File("src/main/java/ffx/algorithms/structures/5awl.restart");
-    FileUtils.copyFile(restartBackup, restart);
-
+  public void testManyBodyRestart() {
     // Set-up the input arguments for the script.
     String[] args = {"-a", "2", "-L", "2", "--tC", "1.5", "-T", "--thC", "1.5", "--eR",
-        "src/main/java/ffx/algorithms/structures/5awl.restart",
+        "src/main/java/ffx/algorithms/structures/5awl.test.restart",
         "src/main/java/ffx/algorithms/structures/5awl.pdb"
     };
     binding.setVariable("args", args);
@@ -241,7 +229,5 @@ public class ManyBodyTest extends AlgorithmsTest {
     double expectedApproximateEnergy = -262.512834;
     double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-5);
-
-    restart.delete();
   }
 }
