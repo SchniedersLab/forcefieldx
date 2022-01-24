@@ -1865,7 +1865,7 @@ atom    830     86  C!    "3-Phenyl Pyrrole C3"       6   12.0110  3
 atom    831     86  C!    "4-Phenyl Imidazole C4"      6   12.0110  3
 atom    832     86  C!    "4-Phenyl Imidazole C4"     6   12.0110  3
 atom    833     48  CA    "Diphenylmethane Cipso"      6   12.0110  3
-atom    834    106  Zn    "Zinc Ion Zn+2"             30    0.0000  0
+atom    834    106  Zn    "Zinc Ion Zn+2"             30   65.3800  0
 atom    835     13  CT    "Alkyl Iodide RCH2-I"        6   12.0110  4
 atom    836     13  CT    "Alkyl Iodide R2CH-I"        6   12.0110  4
 atom    837     13  CT    "Alkyl Iodide R3C-I"         6   12.0110  4
