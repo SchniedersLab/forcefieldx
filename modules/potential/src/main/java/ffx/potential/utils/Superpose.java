@@ -172,7 +172,7 @@ public class Superpose {
     File targetOutputFile = null;
     SystemFilter targetOutputFilter = null;
     if (saveSnapshots) {
-      String targetOutputName = concat(getPath(filename), getBaseName(filename) + "_superposed.arc");
+      String targetOutputName = concat(getFullPath(filename), getBaseName(filename) + "_superposed.arc");
       targetOutputFile = SystemFilter.version(new File(targetOutputName));
       MolecularAssembly targetAssembly = targetFilter.getActiveMolecularSystem();
       targetOutputFilter = new XYZFilter(targetOutputFile, targetAssembly,
