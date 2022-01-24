@@ -3208,23 +3208,22 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       for (int m = 1; m < 3; m++) {
         for (int n = 1; n < 4; n++) {
           OpenMM_CustomCompoundBondForce_addPerBondParameter(
-              angleTorsionForce, String.format("k%d%d", m, n));
+              angleTorsionForce, format("k%d%d", m, n));
         }
       }
 
       for (int m = 1; m < 3; m++) {
         OpenMM_CustomCompoundBondForce_addPerBondParameter(
-            angleTorsionForce, String.format("a%d", m));
+            angleTorsionForce, format("a%d", m));
       }
-
-      final double unitConv = OpenMM_KJPerKcal / OpenMM_RadiansPerDegree;
+      
       for (AngleTorsion angleTorsion : angleTorsions) {
         double[] constants = angleTorsion.getConstants();
         PointerByReference atorsParams = OpenMM_DoubleArray_create(0);
         for (int m = 0; m < 2; m++) {
           for (int n = 0; n < 3; n++) {
             int index = (3 * m) + n;
-            double kmn = constants[index] * unitConv;
+            double kmn = constants[index] * OpenMM_KJPerKcal;
             OpenMM_DoubleArray_append(atorsParams, kmn);
           }
         }
