@@ -4840,6 +4840,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
               / OpenMM_NmPerAngstrom
               / OpenMM_NmPerAngstrom;
       double[] rad = gaussVol.getRadii();
+
       int index = 0;
       for (Atom atom : atoms) {
         int isHydrogen = OpenMM_False;
@@ -4884,6 +4885,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
               / OpenMM_NmPerAngstrom
               / OpenMM_NmPerAngstrom;
 
+      // Changing cavitation radii is not supported.
       // for (int i=0; i<nAtoms; i++) {
       //  gaussVol.updateAtom(i);
       // }
@@ -4909,6 +4911,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           isHydrogen = OpenMM_True;
           radius = 0.0;
         }
+
         OpenMM_AmoebaGKCavitationForce_setParticleParameters(
             amoebaCavitationForce,
             index,
@@ -4918,8 +4921,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       }
 
       if (context.contextPointer != null) {
-        OpenMM_AmoebaGKCavitationForce_updateParametersInContext(
-            amoebaCavitationForce, context.contextPointer);
+        OpenMM_AmoebaGKCavitationForce_updateParametersInContext(amoebaCavitationForce, context.contextPointer);
       }
     }
 
