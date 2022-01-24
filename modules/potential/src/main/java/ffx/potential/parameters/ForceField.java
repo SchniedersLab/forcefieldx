@@ -72,8 +72,6 @@ public class ForceField {
     }
   }
 
-  /** Flag to prevent patch renumbering. */
-  private final boolean noRenumbering;
   /** The CompositeConfiguration that contains key=value property pairs from a number of sources. */
   private final CompositeConfiguration properties;
 
@@ -113,8 +111,6 @@ public class ForceField {
    */
   public ForceField(CompositeConfiguration properties) {
     this.properties = properties;
-
-    noRenumbering = properties.getBoolean("noPatchRenumbering", false);
 
     /*
      Each force field "type" implements the "Comparator<String>" interface
@@ -309,20 +305,26 @@ public class ForceField {
    * @param patch The force field patch to append.
    */
   public void append(ForceField patch) {
-    // Determine the highest current atom class, atom type and biotype index.
-    int classOffset = maxClass();
-    int typeOffset = maxType();
-    int bioTypeOffset = maxBioType();
 
-    int minClass = patch.minClass();
-    int minType = patch.minType();
-    int minBioType = patch.minBioType();
+    boolean renumber = patch.getBoolean("renumberPatch", true);
+    logger.info(format(" Renumbering Patch: %B", renumber));
 
-    classOffset -= (minClass - 1);
-    typeOffset -= (minType - 1);
-    bioTypeOffset -= (minBioType - 1);
+    if (renumber) {
+      // Determine the highest current atom class, atom type and biotype index.
+      int classOffset = maxClass();
+      int typeOffset = maxType();
+      int bioTypeOffset = maxBioType();
 
-    patch.renumberForceField(classOffset, typeOffset, bioTypeOffset);
+      int minClass = patch.minClass();
+      int minType = patch.minType();
+      int minBioType = patch.minBioType();
+
+      classOffset -= (minClass - 1);
+      typeOffset -= (minType - 1);
+      bioTypeOffset -= (minBioType - 1);
+
+      patch.renumberForceField(classOffset, typeOffset, bioTypeOffset);
+    }
 
     for (AngleType angleType : patch.angleTypes.values()) {
       angleTypes.put(angleType.getKey(), angleType);
@@ -1163,9 +1165,6 @@ public class ForceField {
    * @param bioTypeOffset a int.
    */
   public void renumberForceField(int classOffset, int typeOffset, int bioTypeOffset) {
-    if (noRenumbering) {
-      return;
-    }
     for (AngleType angleType : angleTypes.values()) {
       angleType.incrementClasses(classOffset);
     }
