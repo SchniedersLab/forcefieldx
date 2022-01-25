@@ -220,7 +220,7 @@ public class ExtendedSystem {
     /** Filter to parse the dynamics restart file. */
     ESVFilter esvFilter = null;
 
-    private int[][] esvHistogram;
+    private int[][][] esvHistogram;
 
     /**
      * Construct extended system with the provided configuration.
@@ -325,7 +325,7 @@ public class ExtendedSystem {
         thetaVelocity = new double[size];
         thetaAccel = new double[size];
         thetaMassArray = new double[size];
-        esvHistogram = new int[size][10];
+        esvHistogram = new int[titratingResidueList.size()][10][10];
         esvVdwDerivs = new SharedDouble[size];
         esvPermElecDerivs = new SharedDouble[size];
         esvIndElecDerivs =  new SharedDouble[size];
@@ -501,7 +501,7 @@ public class ExtendedSystem {
             double sinTheta = Math.sin(thetaPosition[i]);
             double oldLambda = extendedLambdas[i];
             extendedLambdas[i] = sinTheta * sinTheta;
-            esvHistogram(i, extendedLambdas[i]);
+            //esvHistogram(i, extendedLambdas[i]);
         }
         for (int i = 0; i < molecularAssembly.getAtomArray().length; i++) {
             int mappedTitrationIndex = titrationIndexMap[i];
@@ -513,6 +513,7 @@ public class ExtendedSystem {
                 tautomerLambdas[i] = extendedLambdas[mappedTautomerIndex];
             }
         }
+        setESVHistogram();
     }
 
     public List<Residue> getTitratingResidueList() {
@@ -1062,15 +1063,52 @@ public class ExtendedSystem {
         writeLambdaHistogram();
     }
 
-    private void esvHistogram(int esv, double lambda){
-        int value = (int) (lambda * 10.0);
-        esvHistogram[esv][value]++;
+    private void setESVHistogram(){
+        for(Residue residue : titratingResidueList){
+            int index = titratingResidueList.indexOf(residue);
+            if(residue.getAminoAcid3().equals(AminoAcid3.LYS)){
+                double titrLambda = getTitrationLambda(residue);
+                esvHistogram(index, titrLambda);
+            }
+            else{
+                double titrLambda = getTitrationLambda(residue);
+                double tautLambda = getTautomerLambda(residue);
+                esvHistogram(index, titrLambda, tautLambda);
+            }
+        }
     }
 
+    private void esvHistogram(int esv, double lambda){
+        int value = (int) (lambda * 10.0);
+        esvHistogram[esv][value][0]++;
+    }
+
+    private void esvHistogram(int esv, double titrLambda, double tautLambda){
+        int titrValue = (int) (titrLambda * 10.0);
+        int tautValue = (int) (tautLambda * 10.0);
+        esvHistogram[esv][titrValue][tautValue]++;
+    }
+
+    //TODO: Find a better way to print this histogram out
     public void writeLambdaHistogram(){
-        for(int i=0; i < extendedResidueList.size(); i++){
+        StringBuilder tautomerHeader = new StringBuilder();
+        for(int k=0; k< 10; k++){
+            double lb = (double) k/10;
+            tautomerHeader.append("["+lb+"- ");
+        }
+        tautomerHeader.append("\n");
+        for(int k=0; k< 10; k++){
+            double ub = (k+1.0)/10;
+            tautomerHeader.append(" "+ub+"] ");
+        }
+        for(int i=0; i < titratingResidueList.size(); i++){
+            logger.info(format("ESV: %d \n", i));
+            logger.info(tautomerHeader.toString());
             for(int j=0; j < 10; j++){
-                logger.info(format("ESV: %d [.%d - .%d] : %d", i, j, j+1, esvHistogram[i][j]));
+                double lb = (double) j/10;
+                double ub = (j+1.0)/10;
+                String arrayString = Arrays.toString(esvHistogram[i][j]).replace("["," ").replace("]", "   ["+lb+"-"+ub+"]").replace(",","    ");
+                logger.info(arrayString);
             }
             logger.info("\n");
         }
