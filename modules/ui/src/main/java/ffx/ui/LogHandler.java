@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.ui;
 
+import static java.lang.String.format;
 
 import ffx.ui.MainPanel.ExitStatus;
 import ffx.utilities.LoggerSevereError;
@@ -138,7 +139,7 @@ public class LogHandler extends Handler {
 
         Throwable throwable = record.getThrown();
         if (throwable != null) {
-          System.err.println(String.format(" Exception %s logged.", throwable));
+          System.err.println(format(" Exception %s logged.", throwable));
         }
 
         // If tryCatchSevere, and the throwable (if it exists) is not an Error, then...

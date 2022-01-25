@@ -48,12 +48,12 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationFor
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGKCavitationForce_updateParametersInContext;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle_1;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_create;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setDielectricOffset;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setIncludeCavityTerm;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters_1;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSoluteDielectric;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSolventDielectric;
-import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setDielectricOffset;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setSurfaceAreaFactor;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext;
@@ -95,6 +95,7 @@ import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_Nonbon
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_NonbondedMethod.OpenMM_AmoebaVdwForce_NoCutoff;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_addParticleType;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_addParticle_1;
+import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_addTypePair;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_create;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setAlchemicalMethod;
 import static edu.uiowa.jopenmm.OpenMMAmoebaLibrary.OpenMM_AmoebaVdwForce_setCutoffDistance;
@@ -143,10 +144,14 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Context_setVelocities;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomAngleForce_addAngle;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomAngleForce_addPerAngleParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomAngleForce_create;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomAngleForce_setAngleParameters;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomAngleForce_updateParametersInContext;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addBond;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addGlobalParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_addPerBondParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_create;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_setBondParameters;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomBondForce_updateParametersInContext;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addBond;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addGroup;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCentroidBondForce_addPerBondParameter;
@@ -156,6 +161,8 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_add
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_addGlobalParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_addPerBondParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_create;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_setBondParameters;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomCompoundBondForce_updateParametersInContext;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomExternalForce_addGlobalParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomExternalForce_addParticle;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomExternalForce_addPerParticleParameter;
@@ -198,6 +205,8 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Force_setForceGroup;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Force_setName;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicBondForce_addBond;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicBondForce_create;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicBondForce_setBondParameters;
+import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_HarmonicBondForce_updateParametersInContext;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_append;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_IntArray_destroy;
@@ -299,13 +308,26 @@ import edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_NonbondedForce_NonbondedMethod;
 import edu.uiowa.jopenmm.OpenMMUtils;
 import edu.uiowa.jopenmm.OpenMM_Vec3;
 import ffx.crystal.Crystal;
-import ffx.potential.bonded.*;
+import ffx.potential.bonded.Angle;
+import ffx.potential.bonded.AngleTorsion;
+import ffx.potential.bonded.Atom;
+import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.ImproperTorsion;
+import ffx.potential.bonded.OutOfPlaneBend;
+import ffx.potential.bonded.PiOrbitalTorsion;
+import ffx.potential.bonded.RestraintBond;
+import ffx.potential.bonded.RestraintTorsion;
+import ffx.potential.bonded.StretchBend;
+import ffx.potential.bonded.StretchTorsion;
+import ffx.potential.bonded.Torsion;
+import ffx.potential.bonded.TorsionTorsion;
+import ffx.potential.bonded.UreyBradley;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
 import ffx.potential.nonbonded.NonbondedCutoff;
 import ffx.potential.nonbonded.ParticleMeshEwald;
-import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
+import ffx.potential.nonbonded.ParticleMeshEwald.SCFAlgorithm;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.nonbonded.RestrainGroups;
 import ffx.potential.nonbonded.VanDerWaals;
@@ -315,6 +337,7 @@ import ffx.potential.nonbonded.implicit.DispersionRegion;
 import ffx.potential.nonbonded.implicit.GaussVol;
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.AngleType.AngleFunction;
+import ffx.potential.parameters.AngleType.AngleMode;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.BondType.BondFunction;
 import ffx.potential.parameters.ForceField;
@@ -326,6 +349,7 @@ import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.TorsionTorsionType;
 import ffx.potential.parameters.TorsionType;
 import ffx.potential.parameters.UreyBradleyType;
+import ffx.potential.parameters.VDWPairType;
 import ffx.potential.parameters.VDWType;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
@@ -634,7 +658,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     // ZE BUG: updateParameters only gets called for energy(), not energyAndGradient().
-
 
     // Un-scale the coordinates.
     unscaleCoordinates(x);
@@ -1588,11 +1611,35 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     private PointerByReference ommBarostat = null;
     /** OpenMM center-of-mass motion remover. */
     private PointerByReference commRemover = null;
+    /**
+     * This flag indicates bonded force constants and equilibria are updated (e.g. during ManyBody
+     * titration).
+     */
+    private boolean updateBondedTerms = false;
+    /**
+     * If true, all torsions are treated as 6-fold, and all angles are treated as possibly changing
+     * between normal and in-plane types.
+     */
+    private final boolean manyBodyTitration;
+    /** OpenMM Custom Bond Force */
+    private PointerByReference bondForce = null;
+    /** OpenMM Custom Angle Force */
+    private PointerByReference angleForce = null;
+    /** OpenMM Custom Stretch-Bend Force */
+    private PointerByReference stretchBendForce = null;
+    /** OpenMM Custom In-Plane Angle Force */
+    private PointerByReference inPlaneAngleForce = null;
+    /** OpenMM Custom Urey-Bradley Force */
+    private PointerByReference ureyBradleyForce = null;
+    /** OpenMM Custom Out-of-Plane Bend Force */
+    private PointerByReference outOfPlaneBendForce = null;
+    /** OpenMM Custom Pi-Torsion Force */
+    private PointerByReference piTorsionForce = null;
     /** OpenMM AMOEBA Torsion Force. */
-    private PointerByReference amoebaTorsionForce = null;
+    private PointerByReference torsionForce = null;
     private PointerByReference[] restraintTorsions = null;
     /** OpenMM Improper Torsion Force. */
-    private PointerByReference amoebaImproperTorsionForce = null;
+    private PointerByReference improperTorsionForce = null;
     /** OpenMM AMOEBA van der Waals Force. */
     private PointerByReference amoebaVDWForce = null;
     /** OpenMM AMOEBA Multipole Force. */
@@ -1705,6 +1752,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       elecLambdaTerm = forceField.getBoolean("ELEC_LAMBDATERM", elecLambdaTerm);
       vdwLambdaTerm = forceField.getBoolean("VDW_LAMBDATERM", vdwLambdaTerm);
       torsionLambdaTerm = forceField.getBoolean("TORSION_LAMBDATERM", torsionLambdaTerm);
+
+      manyBodyTitration = forceField.getBoolean("MANYBODY_TITRATION", false);
 
       if (!forceField.getBoolean("LAMBDATERM", false)) {
         lambdaTerm = (elecLambdaTerm || vdwLambdaTerm || torsionLambdaTerm);
@@ -1856,39 +1905,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         if (useMeld) {
           logger.info(format(" Meld scale factor:              %6.3f", meldScaleFactor));
         }
-      }
-    }
-
-    private void addRestraintTorsions() {
-      if (rTors != null && rTors.length > 0) {
-        int nRT = rTors.length;
-        restraintTorsions = new PointerByReference[nRT];
-        for (int i = 0; i < nRT; i++) {
-          PointerByReference rtOMM = OpenMM_PeriodicTorsionForce_create();
-          RestraintTorsion rt = rTors[i];
-          int a1 = rt.getAtom(0).getXyzIndex() - 1;
-          int a2 = rt.getAtom(1).getXyzIndex() - 1;
-          int a3 = rt.getAtom(2).getXyzIndex() - 1;
-          int a4 = rt.getAtom(3).getXyzIndex() - 1;
-          int nTerms = rt.torsionType.terms;
-          for (int j = 0; j < nTerms; j++) {
-            OpenMM_PeriodicTorsionForce_addTorsion(
-                    rtOMM,
-                    a1,
-                    a2,
-                    a3,
-                    a4,
-                    j + 1,
-                    rt.torsionType.phase[j] * OpenMM_RadiansPerDegree,
-                    OpenMM_KJPerKcal * rt.units * rt.torsionType.amplitude[j]);
-          }
-          int fGroup = forceField.getInteger("TORSION_FORCE_GROUP", 0);
-
-          OpenMM_Force_setForceGroup(rtOMM, fGroup);
-          OpenMM_System_addForce(system, rtOMM);
-          restraintTorsions[i] = rtOMM;
-        }
-        logger.info(format(" Added %d restraint torsions to OpenMM.", nRT));
       }
     }
 
@@ -2057,6 +2073,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       }
     }
 
+    public void setUpdateBondedTerms(boolean updateBondedTerms) {
+      this.updateBondedTerms = updateBondedTerms;
+    }
+
     /**
      * Return a reference to the System.
      *
@@ -2126,15 +2146,42 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
       }
 
-      if (torsionLambdaTerm) {
-        if (amoebaTorsionForce != null) {
+      // Note Stretch-Torsion and Angle-Torsion terms (for nucleic acids)
+      // and Torsion-Torsion terms (for protein backbones) are not udpated yet.
+
+      if (updateBondedTerms) {
+        if (bondForce != null) {
+          updateBondForce();
+        }
+        if (angleForce != null) {
+          updateAngleForce();
+        }
+        if (stretchBendForce != null) {
+          updateStretchBendForce();
+        }
+        if (inPlaneAngleForce != null) {
+          updateInPlaneAngleForce();
+        }
+        if (ureyBradleyForce != null) {
+          updateUreyBradleyForce();
+        }
+        if (outOfPlaneBendForce != null) {
+          updateOutOfPlaneBendForce();
+        }
+        if (piTorsionForce != null) {
+          updatePiTorsionForce();
+        }
+      }
+
+      if (torsionLambdaTerm || updateBondedTerms) {
+        if (torsionForce != null) {
           updateTorsionForce();
         }
-        if (amoebaImproperTorsionForce != null) {
+        if (improperTorsionForce != null) {
           updateImproperTorsionForce();
         }
       }
-      
+
       if (restraintTorsions != null && restraintTorsions.length > 0) {
         updateRestraintTorsions();
       }
@@ -2165,7 +2212,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       // Update GK force.
       if (amoebaGeneralizedKirkwoodForce != null) {
-        updateAmoebaGeneralizedKirkwoodForce(atoms);
+        updateGeneralizedKirkwoodForce(atoms);
       }
 
       // Update WCA Force.
@@ -2200,6 +2247,18 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       logger.log(Level.INFO, format("  Mass  \t\t%12.3f", totalMass));
     }
 
+    /** This methods sets the mass of inactive atoms to zero. */
+    private void updateAtomMass() {
+      int index = 0;
+      for (Atom atom : atoms) {
+        double mass = 0.0;
+        if (atom.isActive()) {
+          mass = atom.getMass();
+        }
+        OpenMM_System_setParticleMass(system, index++, mass);
+      }
+    }
+
     /** Add a bond force to the OpenMM System. */
     private void addBondForce() {
       Bond[] bonds = getBonds();
@@ -2215,10 +2274,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       } else {
         energy = "k*(d^2); d=r-r0";
       }
-      PointerByReference amoebaBondForce = OpenMM_CustomBondForce_create(energy);
-      OpenMM_CustomBondForce_addPerBondParameter(amoebaBondForce, "r0");
-      OpenMM_CustomBondForce_addPerBondParameter(amoebaBondForce, "k");
-      OpenMM_Force_setName(amoebaBondForce, "AmoebaBond");
+      bondForce = OpenMM_CustomBondForce_create(energy);
+      OpenMM_CustomBondForce_addPerBondParameter(bondForce, "r0");
+      OpenMM_CustomBondForce_addPerBondParameter(bondForce, "k");
+      OpenMM_Force_setName(bondForce, "AmoebaBond");
 
       double kParameterConversion =
           OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
@@ -2232,33 +2291,52 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         double k = kParameterConversion * bondType.forceConstant * BondType.units;
         OpenMM_DoubleArray_append(parameters, r0);
         OpenMM_DoubleArray_append(parameters, k);
-        OpenMM_CustomBondForce_addBond(amoebaBondForce, i1, i2, parameters);
+        OpenMM_CustomBondForce_addBond(bondForce, i1, i2, parameters);
         OpenMM_DoubleArray_resize(parameters, 0);
       }
       OpenMM_DoubleArray_destroy(parameters);
 
       int forceGroup = forceField.getInteger("BOND_FORCE_GROUP", 0);
-      OpenMM_Force_setForceGroup(amoebaBondForce, forceGroup);
-      OpenMM_System_addForce(system, amoebaBondForce);
+      OpenMM_Force_setForceGroup(bondForce, forceGroup);
+      OpenMM_System_addForce(system, bondForce);
       logger.log(Level.INFO, format("  Bonds \t\t%6d\t\t%1d", bonds.length, forceGroup));
+    }
+
+    /** Update an existing bond force for the OpenMM System. */
+    private void updateBondForce() {
+      Bond[] bonds = getBonds();
+      if (bonds == null || bonds.length < 1) {
+        return;
+      }
+
+      double kParameterConversion =
+          OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
+
+      PointerByReference parameters = OpenMM_DoubleArray_create(0);
+      int index = 0;
+      for (Bond bond : bonds) {
+        int i1 = bond.getAtom(0).getXyzIndex() - 1;
+        int i2 = bond.getAtom(1).getXyzIndex() - 1;
+        BondType bondType = bond.bondType;
+        double r0 = bondType.distance * OpenMM_NmPerAngstrom;
+        double k = kParameterConversion * bondType.forceConstant * BondType.units;
+        OpenMM_DoubleArray_append(parameters, r0);
+        OpenMM_DoubleArray_append(parameters, k);
+        OpenMM_CustomBondForce_setBondParameters(bondForce, index++, i1, i2, parameters);
+        OpenMM_DoubleArray_resize(parameters, 0);
+      }
+      OpenMM_DoubleArray_destroy(parameters);
+
+      if (context.contextPointer != null) {
+        OpenMM_CustomBondForce_updateParametersInContext(
+            bondForce, context.contextPointer);
+      }
     }
 
     /** Add an angle force to the OpenMM System. */
     private void addAngleForce() {
       Angle[] angles = getAngles();
       if (angles == null || angles.length < 1) {
-        return;
-      }
-      int nAngles = angles.length;
-      List<Angle> normalAngles = new ArrayList<>();
-      // Sort all normal angles from in-plane angles
-      for (int i = 0; i < nAngles; i++) {
-        if (angles[i].getAngleMode() == AngleType.AngleMode.NORMAL) {
-          normalAngles.add(angles[i]);
-        }
-      }
-      nAngles = normalAngles.size();
-      if (nAngles < 1) {
         return;
       }
       boolean rigidHydrogenAngles = forceField.getBoolean("RIGID_HYDROGEN_ANGLES", false);
@@ -2270,52 +2348,91 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       } else {
         energy = format("k*(d^2); d=%.15g*theta-theta0", 180.0 / PI);
       }
-      PointerByReference amoebaAngleForce = OpenMM_CustomAngleForce_create(energy);
-      OpenMM_CustomAngleForce_addPerAngleParameter(amoebaAngleForce, "theta0");
-      OpenMM_CustomAngleForce_addPerAngleParameter(amoebaAngleForce, "k");
-      OpenMM_Force_setName(amoebaAngleForce, "AmoebaAngle");
+      angleForce = OpenMM_CustomAngleForce_create(energy);
+      OpenMM_CustomAngleForce_addPerAngleParameter(angleForce, "theta0");
+      OpenMM_CustomAngleForce_addPerAngleParameter(angleForce, "k");
+      OpenMM_Force_setName(angleForce, "Angle");
 
       PointerByReference parameters = OpenMM_DoubleArray_create(0);
-      for (Angle angle : normalAngles) {
-        if (isHydrogenAngle(angle) && rigidHydrogenAngles) {
-          logger.info(
-              "Not adding angle to AmoebaAngleForce because angle is constrained: " + angle);
+      int angleCount = 0;
+      for (Angle angle : angles) {
+        AngleMode angleMode = angle.angleType.angleMode;
+
+        if (!manyBodyTitration && angleMode == AngleMode.IN_PLANE) {
+          // Skip In-Plane angles unless this is ManyBody Titration.
+          continue;
+        } else if (isHydrogenAngle(angle) && rigidHydrogenAngles) {
+          logger.log(Level.INFO, " Constrained angle %s was not added the AngleForce.", angle);
         } else {
           int i1 = angle.getAtom(0).getXyzIndex() - 1;
           int i2 = angle.getAtom(1).getXyzIndex() - 1;
           int i3 = angle.getAtom(2).getXyzIndex() - 1;
           double theta0 = angle.angleType.angle[angle.nh];
           double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
+          if (angleMode == AngleMode.IN_PLANE) {
+            // This is a place-holder Angle, in case the In-Plane Angle is swtiched to a
+            // Normal Angle during in the udpateAngleForce.
+            k = 0.0;
+          }
           OpenMM_DoubleArray_append(parameters, theta0);
           OpenMM_DoubleArray_append(parameters, k);
-          OpenMM_CustomAngleForce_addAngle(amoebaAngleForce, i1, i2, i3, parameters);
+          OpenMM_CustomAngleForce_addAngle(angleForce, i1, i2, i3, parameters);
+          angleCount++;
           OpenMM_DoubleArray_resize(parameters, 0);
         }
       }
       OpenMM_DoubleArray_destroy(parameters);
 
       int forceGroup = forceField.getInteger("ANGLE_FORCE_GROUP", 0);
-      OpenMM_Force_setForceGroup(amoebaAngleForce, forceGroup);
-      OpenMM_System_addForce(system, amoebaAngleForce);
-      logger.log(Level.INFO, format("  Angles \t\t%6d\t\t%1d", nAngles, forceGroup));
+      OpenMM_Force_setForceGroup(angleForce, forceGroup);
+      OpenMM_System_addForce(system, angleForce);
+      logger.log(Level.INFO, format("  Angles \t\t%6d\t\t%1d", angleCount, forceGroup));
+    }
+
+    /** Update the angle force. */
+    private void updateAngleForce() {
+      Angle[] angles = getAngles();
+      if (angles == null || angles.length < 1) {
+        return;
+      }
+      boolean rigidHydrogenAngles = forceField.getBoolean("RIGID_HYDROGEN_ANGLES", false);
+      PointerByReference parameters = OpenMM_DoubleArray_create(0);
+      int index = 0;
+      for (Angle angle : angles) {
+        AngleMode angleMode = angle.angleType.angleMode;
+        if (!manyBodyTitration && angleMode == AngleMode.IN_PLANE) {
+          // Skip In-Plane angles unless this is ManyBody Titration.
+          continue;
+        }
+        // Update angles that do not involve rigid hydrogen atoms.
+        else if (!rigidHydrogenAngles || !isHydrogenAngle(angle)) {
+          int i1 = angle.getAtom(0).getXyzIndex() - 1;
+          int i2 = angle.getAtom(1).getXyzIndex() - 1;
+          int i3 = angle.getAtom(2).getXyzIndex() - 1;
+          double theta0 = angle.angleType.angle[angle.nh];
+          double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
+          if (angleMode == AngleMode.IN_PLANE) {
+            // Zero the force constant for In-Plane Angles.
+            k = 0.0;
+          }
+          OpenMM_DoubleArray_append(parameters, theta0);
+          OpenMM_DoubleArray_append(parameters, k);
+          OpenMM_CustomAngleForce_setAngleParameters(angleForce, index++, i1, i2, i3, parameters);
+          OpenMM_DoubleArray_resize(parameters, 0);
+        }
+      }
+      OpenMM_DoubleArray_destroy(parameters);
+
+      if (context.contextPointer != null) {
+        OpenMM_CustomAngleForce_updateParametersInContext(
+            angleForce, context.contextPointer);
+      }
     }
 
     /** Add an in-plane angle force to the OpenMM System. */
     private void addInPlaneAngleForce() {
       Angle[] angles = getAngles();
       if (angles == null || angles.length < 1) {
-        return;
-      }
-      int nAngles = angles.length;
-      List<Angle> inPlaneAngles = new ArrayList<>();
-      // Sort all in-plane angles from normal angles
-      for (int i = 0; i < nAngles; i++) {
-        if (angles[i].getAngleMode() == AngleType.AngleMode.IN_PLANE) {
-          inPlaneAngles.add(angles[i]);
-        }
-      }
-      nAngles = inPlaneAngles.size();
-      if (nAngles < 1) {
         return;
       }
 
@@ -2330,37 +2447,117 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
               + "d1x = x1-x4; d1y = y1-y4; d1z = z1-z4; "
               + "d2x = x3-x4; d2y = y3-y4; d2z = z3-z4",
           AngleType.cubic, AngleType.quartic, AngleType.quintic, AngleType.sextic, 180.0 / PI);
-      PointerByReference amoebaInPlaneAngleForce = OpenMM_CustomCompoundBondForce_create(4, energy);
-      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaInPlaneAngleForce, "theta0");
-      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaInPlaneAngleForce, "k");
-      OpenMM_Force_setName(amoebaInPlaneAngleForce, "AmoebaInPlaneAngle");
+      inPlaneAngleForce = OpenMM_CustomCompoundBondForce_create(4, energy);
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(inPlaneAngleForce, "theta0");
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(inPlaneAngleForce, "k");
+      OpenMM_Force_setName(inPlaneAngleForce, "InPlaneAngle");
 
       PointerByReference particles = OpenMM_IntArray_create(0);
       PointerByReference parameters = OpenMM_DoubleArray_create(0);
-      for (Angle angle : inPlaneAngles) {
-        int i1 = angle.getAtom(0).getXyzIndex() - 1;
-        int i2 = angle.getAtom(1).getXyzIndex() - 1;
-        int i3 = angle.getAtom(2).getXyzIndex() - 1;
-        int i4 = angle.getAtom4().getXyzIndex() - 1;
-        OpenMM_IntArray_append(particles, i1);
-        OpenMM_IntArray_append(particles, i2);
-        OpenMM_IntArray_append(particles, i3);
-        OpenMM_IntArray_append(particles, i4);
-        double theta0 = angle.angleType.angle[angle.nh];
-        double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
-        OpenMM_DoubleArray_append(parameters, theta0);
-        OpenMM_DoubleArray_append(parameters, k);
-        OpenMM_CustomCompoundBondForce_addBond(amoebaInPlaneAngleForce, particles, parameters);
-        OpenMM_IntArray_resize(particles, 0);
-        OpenMM_DoubleArray_resize(parameters, 0);
+      for (Angle angle : angles) {
+        AngleMode angleMode = angle.angleType.angleMode;
+
+        if (!manyBodyTitration && angleMode == AngleMode.NORMAL) {
+          // Skip Normal angles unless this is ManyBody Titration.
+          continue;
+        } else {
+          double theta0 = angle.angleType.angle[angle.nh];
+          double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
+          int i1 = angle.getAtom(0).getXyzIndex() - 1;
+          int i2 = angle.getAtom(1).getXyzIndex() - 1;
+          int i3 = angle.getAtom(2).getXyzIndex() - 1;
+          int i4 = 0;
+          if (angleMode == AngleMode.NORMAL) {
+            // This is a place-holder Angle, in case the Normal Angle is switched to a
+            // In-Plane Angle during in the udpateInPlaneAngleForce.
+            k = 0.0;
+            Atom fourthAtom = angle.getFourthAtomOfTrigonalCenter();
+            if (fourthAtom != null) {
+              i4 = fourthAtom.getXyzIndex() - 1;
+            } else {
+              while (i1 == i4 || i2 == i4 || i3 == i4) {
+                i4++;
+              }
+            }
+          } else {
+            i4 = angle.getAtom4().getXyzIndex() - 1;
+          }
+          OpenMM_IntArray_append(particles, i1);
+          OpenMM_IntArray_append(particles, i2);
+          OpenMM_IntArray_append(particles, i3);
+          OpenMM_IntArray_append(particles, i4);
+          OpenMM_DoubleArray_append(parameters, theta0);
+          OpenMM_DoubleArray_append(parameters, k);
+          OpenMM_CustomCompoundBondForce_addBond(inPlaneAngleForce, particles, parameters);
+          OpenMM_IntArray_resize(particles, 0);
+          OpenMM_DoubleArray_resize(parameters, 0);
+        }
       }
       OpenMM_IntArray_destroy(particles);
       OpenMM_DoubleArray_destroy(parameters);
 
       int forceGroup = forceField.getInteger("IN_PLANE_ANGLE_FORCE_GROUP", 0);
-      OpenMM_Force_setForceGroup(amoebaInPlaneAngleForce, forceGroup);
-      OpenMM_System_addForce(system, amoebaInPlaneAngleForce);
-      logger.log(Level.INFO, format("  In-plane Angles \t%6d\t\t%1d", nAngles, forceGroup));
+      OpenMM_Force_setForceGroup(inPlaneAngleForce, forceGroup);
+      OpenMM_System_addForce(system, inPlaneAngleForce);
+      logger.log(Level.INFO,
+          format("  In-Plane Angles \t%6d\t\t%1d", angles.length, forceGroup));
+    }
+
+    /** Update the in-plane angle force. */
+    private void updateInPlaneAngleForce() {
+      Angle[] angles = getAngles();
+      if (angles == null || angles.length < 1) {
+        return;
+      }
+      PointerByReference particles = OpenMM_IntArray_create(0);
+      PointerByReference parameters = OpenMM_DoubleArray_create(0);
+      int index = 0;
+      for (Angle angle : angles) {
+        AngleMode angleMode = angle.angleType.angleMode;
+        if (!manyBodyTitration && angleMode == AngleMode.NORMAL) {
+          // Skip Normal angles unless this is ManyBody Titration.
+          continue;
+        } else {
+          double theta0 = angle.angleType.angle[angle.nh];
+          double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
+          int i1 = angle.getAtom(0).getXyzIndex() - 1;
+          int i2 = angle.getAtom(1).getXyzIndex() - 1;
+          int i3 = angle.getAtom(2).getXyzIndex() - 1;
+          // There is no 4th atom for normal angles, so set the index to first atom.
+          int i4 = 0;
+          if (angleMode == AngleMode.NORMAL) {
+            // Zero the force constant for Normal Angles.
+            k = 0.0;
+            Atom fourthAtom = angle.getFourthAtomOfTrigonalCenter();
+            if (fourthAtom != null) {
+              i4 = fourthAtom.getXyzIndex() - 1;
+            } else {
+              while (i1 == i4 || i2 == i4 || i3 == i4) {
+                i4++;
+              }
+            }
+          } else {
+            i4 = angle.getAtom4().getXyzIndex() - 1;
+          }
+          OpenMM_IntArray_append(particles, i1);
+          OpenMM_IntArray_append(particles, i2);
+          OpenMM_IntArray_append(particles, i3);
+          OpenMM_IntArray_append(particles, i4);
+          OpenMM_DoubleArray_append(parameters, theta0);
+          OpenMM_DoubleArray_append(parameters, k);
+          OpenMM_CustomCompoundBondForce_setBondParameters(inPlaneAngleForce, index++, particles,
+              parameters);
+          OpenMM_IntArray_resize(particles, 0);
+          OpenMM_DoubleArray_resize(parameters, 0);
+        }
+      }
+      OpenMM_IntArray_destroy(particles);
+      OpenMM_DoubleArray_destroy(parameters);
+
+      if (context.contextPointer != null) {
+        OpenMM_CustomCompoundBondForce_updateParametersInContext(
+            inPlaneAngleForce, context.contextPointer);
+      }
     }
 
     /** Add a Urey-Bradley force to the OpenMM System. */
@@ -2370,7 +2567,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return;
       }
 
-      PointerByReference amoebaUreyBradleyForce = OpenMM_HarmonicBondForce_create();
+      ureyBradleyForce = OpenMM_HarmonicBondForce_create();
       double kParameterConversion =
           UreyBradleyType.units * OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
 
@@ -2382,14 +2579,42 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         // The implementation of UreyBradley in FFX & Tinker: k x^2
         // The implementation of Harmonic Bond Force in OpenMM:  k x^2 / 2
         double k = 2.0 * ureyBradleyType.forceConstant * kParameterConversion;
-        OpenMM_HarmonicBondForce_addBond(amoebaUreyBradleyForce, i1, i2, length, k);
+        OpenMM_HarmonicBondForce_addBond(ureyBradleyForce, i1, i2, length, k);
       }
 
       int forceGroup = forceField.getInteger("UREY_BRADLEY_FORCE", 0);
-      OpenMM_Force_setForceGroup(amoebaUreyBradleyForce, forceGroup);
-      OpenMM_System_addForce(system, amoebaUreyBradleyForce);
-      logger
-          .log(Level.INFO, format("  Urey-Bradleys \t%6d\t\t%1d", ureyBradleys.length, forceGroup));
+      OpenMM_Force_setForceGroup(ureyBradleyForce, forceGroup);
+      OpenMM_System_addForce(system, ureyBradleyForce);
+      logger.log(Level.INFO,
+          format("  Urey-Bradleys \t%6d\t\t%1d", ureyBradleys.length, forceGroup));
+    }
+
+    /** Add a Urey-Bradley force to the OpenMM System. */
+    private void updateUreyBradleyForce() {
+      UreyBradley[] ureyBradleys = getUreyBradleys();
+      if (ureyBradleys == null || ureyBradleys.length < 1) {
+        return;
+      }
+
+      double kParameterConversion =
+          UreyBradleyType.units * OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
+
+      int index = 0;
+      for (UreyBradley ureyBradley : ureyBradleys) {
+        int i1 = ureyBradley.getAtom(0).getXyzIndex() - 1;
+        int i2 = ureyBradley.getAtom(2).getXyzIndex() - 1;
+        UreyBradleyType ureyBradleyType = ureyBradley.ureyBradleyType;
+        double length = ureyBradleyType.distance * OpenMM_NmPerAngstrom;
+        // The implementation of UreyBradley in FFX & Tinker: k x^2
+        // The implementation of Harmonic Bond Force in OpenMM:  k x^2 / 2
+        double k = 2.0 * ureyBradleyType.forceConstant * kParameterConversion;
+        OpenMM_HarmonicBondForce_setBondParameters(ureyBradleyForce, index++, i1, i2, length, k);
+      }
+
+      if (context.contextPointer != null) {
+        OpenMM_HarmonicBondForce_updateParametersInContext(
+            ureyBradleyForce, context.contextPointer);
+      }
     }
 
     /** Add an out-of-plane bend force to the OpenMM System. */
@@ -2411,10 +2636,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
               + "d2x = x3-x4; d2y = y3-y4; d2z = z3-z4",
           OutOfPlaneBendType.cubic, OutOfPlaneBendType.quartic, OutOfPlaneBendType.quintic,
           OutOfPlaneBendType.sextic, 180.0 / PI);
-      PointerByReference amoebaOutOfPlaneBendForce = OpenMM_CustomCompoundBondForce_create(4,
-          energy);
-      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaOutOfPlaneBendForce, "k");
-      OpenMM_Force_setName(amoebaOutOfPlaneBendForce, "AmoebaOutOfPlaneBend");
+      outOfPlaneBendForce = OpenMM_CustomCompoundBondForce_create(4, energy);
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(outOfPlaneBendForce, "k");
+      OpenMM_Force_setName(outOfPlaneBendForce, "OutOfPlaneBend");
 
       PointerByReference particles = OpenMM_IntArray_create(0);
       PointerByReference parameters = OpenMM_DoubleArray_create(0);
@@ -2430,17 +2654,54 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_IntArray_append(particles, i3);
         OpenMM_IntArray_append(particles, i4);
         OpenMM_DoubleArray_append(parameters, k);
-        OpenMM_CustomCompoundBondForce_addBond(amoebaOutOfPlaneBendForce, particles, parameters);
+        OpenMM_CustomCompoundBondForce_addBond(outOfPlaneBendForce, particles, parameters);
         OpenMM_IntArray_resize(particles, 0);
         OpenMM_DoubleArray_resize(parameters, 0);
       }
       OpenMM_IntArray_destroy(particles);
       OpenMM_DoubleArray_destroy(parameters);
       int forceGroup = forceField.getInteger("OUT_OF_PLANE_BEND_FORCE_GROUP", 0);
-      OpenMM_Force_setForceGroup(amoebaOutOfPlaneBendForce, forceGroup);
-      OpenMM_System_addForce(system, amoebaOutOfPlaneBendForce);
+      OpenMM_Force_setForceGroup(outOfPlaneBendForce, forceGroup);
+      OpenMM_System_addForce(system, outOfPlaneBendForce);
       logger.log(Level.INFO,
           format("  Out-of-Plane Bends \t%6d\t\t%1d", outOfPlaneBends.length, forceGroup));
+    }
+
+    /** Update the Out-of-Plane bend force. */
+    private void updateOutOfPlaneBendForce() {
+      OutOfPlaneBend[] outOfPlaneBends = getOutOfPlaneBends();
+      if (outOfPlaneBends == null || outOfPlaneBends.length < 1) {
+        return;
+      }
+
+      PointerByReference particles = OpenMM_IntArray_create(0);
+      PointerByReference parameters = OpenMM_DoubleArray_create(0);
+      int index = 0;
+      for (OutOfPlaneBend outOfPlaneBend : outOfPlaneBends) {
+        OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBend.outOfPlaneBendType;
+        int i1 = outOfPlaneBend.getAtom(0).getXyzIndex() - 1;
+        int i2 = outOfPlaneBend.getAtom(1).getXyzIndex() - 1;
+        int i3 = outOfPlaneBend.getAtom(2).getXyzIndex() - 1;
+        int i4 = outOfPlaneBend.getAtom(3).getXyzIndex() - 1;
+        double k = OpenMM_KJPerKcal * outOfPlaneBendType.forceConstant * OutOfPlaneBendType.units;
+        OpenMM_IntArray_append(particles, i1);
+        OpenMM_IntArray_append(particles, i2);
+        OpenMM_IntArray_append(particles, i3);
+        OpenMM_IntArray_append(particles, i4);
+        OpenMM_DoubleArray_append(parameters, k);
+        OpenMM_CustomCompoundBondForce_setBondParameters(outOfPlaneBendForce, index++, particles,
+            parameters);
+        OpenMM_IntArray_resize(particles, 0);
+        OpenMM_DoubleArray_resize(parameters, 0);
+      }
+      OpenMM_IntArray_destroy(particles);
+      OpenMM_DoubleArray_destroy(parameters);
+
+      if (context.contextPointer != null) {
+        OpenMM_CustomCompoundBondForce_updateParametersInContext(
+            outOfPlaneBendForce, context.contextPointer);
+      }
+
     }
 
     /** Add a stretch-bend force to the OpenMM System. */
@@ -2453,13 +2714,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       String energy = format(
           "(k1*(distance(p1,p2)-r12) + k2*(distance(p2,p3)-r23))*(%.15g*(angle(p1,p2,p3)-theta0))",
           180.0 / PI);
-      PointerByReference amoebaStretchBendForce = OpenMM_CustomCompoundBondForce_create(3, energy);
-      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaStretchBendForce, "r12");
-      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaStretchBendForce, "r23");
-      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaStretchBendForce, "theta0");
-      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaStretchBendForce, "k1");
-      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaStretchBendForce, "k2");
-      OpenMM_Force_setName(amoebaStretchBendForce, "AmoebaStretchBend");
+      stretchBendForce = OpenMM_CustomCompoundBondForce_create(3, energy);
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(stretchBendForce, "r12");
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(stretchBendForce, "r23");
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(stretchBendForce, "theta0");
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(stretchBendForce, "k1");
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(stretchBendForce, "k2");
+      OpenMM_Force_setName(stretchBendForce, "AmoebaStretchBend");
 
       PointerByReference particles = OpenMM_IntArray_create(0);
       PointerByReference parameters = OpenMM_DoubleArray_create(0);
@@ -2480,7 +2741,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_DoubleArray_append(parameters, theta0);
         OpenMM_DoubleArray_append(parameters, k1);
         OpenMM_DoubleArray_append(parameters, k2);
-        OpenMM_CustomCompoundBondForce_addBond(amoebaStretchBendForce, particles, parameters);
+        OpenMM_CustomCompoundBondForce_addBond(stretchBendForce, particles, parameters);
         OpenMM_IntArray_resize(particles, 0);
         OpenMM_DoubleArray_resize(parameters, 0);
       }
@@ -2488,10 +2749,51 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       OpenMM_DoubleArray_destroy(parameters);
 
       int forceGroup = forceField.getInteger("STRETCH_BEND_FORCE_GROUP", 0);
-      OpenMM_Force_setForceGroup(amoebaStretchBendForce, forceGroup);
-      OpenMM_System_addForce(system, amoebaStretchBendForce);
+      OpenMM_Force_setForceGroup(stretchBendForce, forceGroup);
+      OpenMM_System_addForce(system, stretchBendForce);
       logger.log(
           Level.INFO, format("  Stretch-Bends \t%6d\t\t%1d", stretchBends.length, forceGroup));
+    }
+
+    /** Update the Stretch-Bend force. */
+    private void updateStretchBendForce() {
+      StretchBend[] stretchBends = getStretchBends();
+      if (stretchBends == null || stretchBends.length < 1) {
+        return;
+      }
+
+      PointerByReference particles = OpenMM_IntArray_create(0);
+      PointerByReference parameters = OpenMM_DoubleArray_create(0);
+      int index = 0;
+      for (StretchBend stretchBend : stretchBends) {
+        int i1 = stretchBend.getAtom(0).getXyzIndex() - 1;
+        int i2 = stretchBend.getAtom(1).getXyzIndex() - 1;
+        int i3 = stretchBend.getAtom(2).getXyzIndex() - 1;
+        double r12 = stretchBend.bond0Eq * OpenMM_NmPerAngstrom;
+        double r23 = stretchBend.bond1Eq * OpenMM_NmPerAngstrom;
+        double theta0 = stretchBend.angleEq * OpenMM_RadiansPerDegree;
+        double k1 = stretchBend.force0 * OpenMM_KJPerKcal / OpenMM_NmPerAngstrom;
+        double k2 = stretchBend.force1 * OpenMM_KJPerKcal / OpenMM_NmPerAngstrom;
+        OpenMM_IntArray_append(particles, i1);
+        OpenMM_IntArray_append(particles, i2);
+        OpenMM_IntArray_append(particles, i3);
+        OpenMM_DoubleArray_append(parameters, r12);
+        OpenMM_DoubleArray_append(parameters, r23);
+        OpenMM_DoubleArray_append(parameters, theta0);
+        OpenMM_DoubleArray_append(parameters, k1);
+        OpenMM_DoubleArray_append(parameters, k2);
+        OpenMM_CustomCompoundBondForce_setBondParameters(stretchBendForce, index++, particles,
+            parameters);
+        OpenMM_IntArray_resize(particles, 0);
+        OpenMM_DoubleArray_resize(parameters, 0);
+      }
+      OpenMM_IntArray_destroy(particles);
+      OpenMM_DoubleArray_destroy(parameters);
+
+      if (context.contextPointer != null) {
+        OpenMM_CustomCompoundBondForce_updateParametersInContext(stretchBendForce,
+            context.contextPointer);
+      }
     }
 
     /** Add a torsion force to the OpenMM System. */
@@ -2501,7 +2803,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return;
       }
 
-      amoebaTorsionForce = OpenMM_PeriodicTorsionForce_create();
+      torsionForce = OpenMM_PeriodicTorsionForce_create();
       for (Torsion torsion : torsions) {
         int a1 = torsion.getAtom(0).getXyzIndex() - 1;
         int a2 = torsion.getAtom(1).getXyzIndex() - 1;
@@ -2510,24 +2812,64 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         TorsionType torsionType = torsion.torsionType;
         int nTerms = torsionType.phase.length;
         for (int j = 0; j < nTerms; j++) {
-          OpenMM_PeriodicTorsionForce_addTorsion(
-              amoebaTorsionForce,
-              a1,
-              a2,
-              a3,
-              a4,
-              j + 1,
+          OpenMM_PeriodicTorsionForce_addTorsion(torsionForce, a1, a2, a3, a4, j + 1,
               torsionType.phase[j] * OpenMM_RadiansPerDegree,
               OpenMM_KJPerKcal * torsion.units * torsionType.amplitude[j]);
         }
+        // Enforce 6-fold torsions since TorsionType instances can have different lengths
+        // when side-chain protonation changes.
+        if (manyBodyTitration) {
+          for (int j = nTerms; j < 6; j++) {
+            OpenMM_PeriodicTorsionForce_addTorsion(torsionForce, a1, a2, a3, a4, j + 1,
+                0.0, 0.0);
+          }
+        }
       }
-
       int fGroup = forceField.getInteger("TORSION_FORCE_GROUP", 0);
 
-      OpenMM_Force_setForceGroup(amoebaTorsionForce, fGroup);
-      OpenMM_System_addForce(system, amoebaTorsionForce);
+      OpenMM_Force_setForceGroup(torsionForce, fGroup);
+      OpenMM_System_addForce(system, torsionForce);
 
       logger.log(Level.INFO, format("  Torsions \t\t%6d\t\t%1d", torsions.length, fGroup));
+    }
+
+    /** Update the Torsion force. */
+    private void updateTorsionForce() {
+      // Check if this system has torsions.
+      Torsion[] torsions = getTorsions();
+      if (torsions == null || torsions.length < 1) {
+        return;
+      }
+
+      int index = 0;
+      for (Torsion torsion : torsions) {
+        TorsionType torsionType = torsion.torsionType;
+        int nTerms = torsionType.phase.length;
+        int a1 = torsion.getAtom(0).getXyzIndex() - 1;
+        int a2 = torsion.getAtom(1).getXyzIndex() - 1;
+        int a3 = torsion.getAtom(2).getXyzIndex() - 1;
+        int a4 = torsion.getAtom(3).getXyzIndex() - 1;
+        for (int j = 0; j < nTerms; j++) {
+          double forceConstant =
+              OpenMM_KJPerKcal * torsion.units * torsionType.amplitude[j] * lambdaTorsion;
+          OpenMM_PeriodicTorsionForce_setTorsionParameters(torsionForce, index++, a1, a2, a3, a4,
+              j + 1, torsionType.phase[j] * OpenMM_RadiansPerDegree, forceConstant);
+        }
+        // Enforce 6-fold torsions since TorsionType instances can have different lengths
+        // when side-chain protonation changes.
+        if (manyBodyTitration) {
+          for (int j = nTerms; j < 6; j++) {
+            OpenMM_PeriodicTorsionForce_setTorsionParameters(torsionForce, index++, a1, a2, a3, a4,
+                j + 1,
+                0.0, 0.0);
+          }
+        }
+      }
+
+      if (context.contextPointer != null) {
+        OpenMM_PeriodicTorsionForce_updateParametersInContext(
+            torsionForce, context.contextPointer);
+      }
     }
 
     /** Add an improper-torsion force to the OpenMM System. */
@@ -2537,7 +2879,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return;
       }
 
-      amoebaImproperTorsionForce = OpenMM_PeriodicTorsionForce_create();
+      improperTorsionForce = OpenMM_PeriodicTorsionForce_create();
       for (ImproperTorsion improperTorsion : improperTorsions) {
         int a1 = improperTorsion.getAtom(0).getXyzIndex() - 1;
         int a2 = improperTorsion.getAtom(1).getXyzIndex() - 1;
@@ -2545,7 +2887,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int a4 = improperTorsion.getAtom(3).getXyzIndex() - 1;
         ImproperTorsionType improperTorsionType = improperTorsion.improperType;
         OpenMM_PeriodicTorsionForce_addTorsion(
-            amoebaImproperTorsionForce,
+            improperTorsionForce,
             a1,
             a2,
             a3,
@@ -2560,12 +2902,40 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       int forceGroup = forceField.getInteger("IMPROPER_TORSION_FORCE_GROUP", 0);
 
-      OpenMM_Force_setForceGroup(amoebaImproperTorsionForce, forceGroup);
-      OpenMM_System_addForce(system, amoebaImproperTorsionForce);
+      OpenMM_Force_setForceGroup(improperTorsionForce, forceGroup);
+      OpenMM_System_addForce(system, improperTorsionForce);
 
       logger.log(
           Level.INFO,
           format("  Improper Torsions \t%6d\t\t%1d", improperTorsions.length, forceGroup));
+    }
+
+    /** Update the Improper Torsion force. */
+    private void updateImproperTorsionForce() {
+      ImproperTorsion[] improperTorsions = getImproperTorsions();
+      if (improperTorsions == null || improperTorsions.length < 1) {
+        return;
+      }
+
+      int nImproperTorsions = improperTorsions.length;
+      for (int i = 0; i < nImproperTorsions; i++) {
+        ImproperTorsion improperTorsion = improperTorsions[i];
+        int a1 = improperTorsion.getAtom(0).getXyzIndex() - 1;
+        int a2 = improperTorsion.getAtom(1).getXyzIndex() - 1;
+        int a3 = improperTorsion.getAtom(2).getXyzIndex() - 1;
+        int a4 = improperTorsion.getAtom(3).getXyzIndex() - 1;
+        ImproperTorsionType improperTorsionType = improperTorsion.improperType;
+        double forceConstant = OpenMM_KJPerKcal * improperTorsion.units * improperTorsion.scaleFactor
+            * improperTorsionType.k * lambdaTorsion;
+        OpenMM_PeriodicTorsionForce_setTorsionParameters(improperTorsionForce, i, a1, a2, a3, a4,
+            improperTorsionType.periodicity, improperTorsionType.phase * OpenMM_RadiansPerDegree,
+            forceConstant);
+      }
+
+      if (context.contextPointer != null) {
+        OpenMM_PeriodicTorsionForce_updateParametersInContext(
+            improperTorsionForce, context.contextPointer);
+      }
     }
 
     /** Add a Pi-Torsion force to the OpenMM System. */
@@ -2583,9 +2953,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           + "d24x = x2-x4; d24y = y2-y4; d24z = z2-z4; "
           + "d53x = x5-x3; d53y = y5-y3; d53z = z5-z3; "
           + "d63x = x6-x3; d63y = y6-y3; d63z = z6-z3";
-      PointerByReference amoebaPiTorsionForce = OpenMM_CustomCompoundBondForce_create(6, energy);
-      OpenMM_CustomCompoundBondForce_addPerBondParameter(amoebaPiTorsionForce, "k");
-      OpenMM_Force_setName(amoebaPiTorsionForce, "AmoebaPiTorsion");
+      piTorsionForce = OpenMM_CustomCompoundBondForce_create(6, energy);
+      OpenMM_CustomCompoundBondForce_addPerBondParameter(piTorsionForce, "k");
+      OpenMM_Force_setName(piTorsionForce, "PiTorsion");
 
       PointerByReference particles = OpenMM_IntArray_create(0);
       PointerByReference parameters = OpenMM_DoubleArray_create(0);
@@ -2605,7 +2975,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_IntArray_append(particles, a5);
         OpenMM_IntArray_append(particles, a6);
         OpenMM_DoubleArray_append(parameters, k);
-        OpenMM_CustomCompoundBondForce_addBond(amoebaPiTorsionForce, particles, parameters);
+        OpenMM_CustomCompoundBondForce_addBond(piTorsionForce, particles, parameters);
         OpenMM_IntArray_resize(particles, 0);
         OpenMM_DoubleArray_resize(parameters, 0);
       }
@@ -2613,10 +2983,50 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       OpenMM_DoubleArray_destroy(parameters);
 
       int forceGroup = forceField.getInteger("PI_ORBITAL_TORSION_FORCE_GROUP", 0);
-      OpenMM_Force_setForceGroup(amoebaPiTorsionForce, forceGroup);
-      OpenMM_System_addForce(system, amoebaPiTorsionForce);
+      OpenMM_Force_setForceGroup(piTorsionForce, forceGroup);
+      OpenMM_System_addForce(system, piTorsionForce);
       logger.log(Level.INFO,
           format("  Pi-Orbital Torsions  \t%6d\t\t%1d", piOrbitalTorsions.length, forceGroup));
+    }
+
+    /** Update the Pi-Torsion force. */
+    private void updatePiTorsionForce() {
+      PiOrbitalTorsion[] piOrbitalTorsions = getPiOrbitalTorsions();
+      if (piOrbitalTorsions == null || piOrbitalTorsions.length < 1) {
+        return;
+      }
+
+      PointerByReference particles = OpenMM_IntArray_create(0);
+      PointerByReference parameters = OpenMM_DoubleArray_create(0);
+      int index = 0;
+      for (PiOrbitalTorsion piOrbitalTorsion : piOrbitalTorsions) {
+        int a1 = piOrbitalTorsion.getAtom(0).getXyzIndex() - 1;
+        int a2 = piOrbitalTorsion.getAtom(1).getXyzIndex() - 1;
+        int a3 = piOrbitalTorsion.getAtom(2).getXyzIndex() - 1;
+        int a4 = piOrbitalTorsion.getAtom(3).getXyzIndex() - 1;
+        int a5 = piOrbitalTorsion.getAtom(4).getXyzIndex() - 1;
+        int a6 = piOrbitalTorsion.getAtom(5).getXyzIndex() - 1;
+        PiOrbitalTorsionType type = piOrbitalTorsion.piOrbitalTorsionType;
+        double k = OpenMM_KJPerKcal * type.forceConstant * PiOrbitalTorsionType.units;
+        OpenMM_IntArray_append(particles, a1);
+        OpenMM_IntArray_append(particles, a2);
+        OpenMM_IntArray_append(particles, a3);
+        OpenMM_IntArray_append(particles, a4);
+        OpenMM_IntArray_append(particles, a5);
+        OpenMM_IntArray_append(particles, a6);
+        OpenMM_DoubleArray_append(parameters, k);
+        OpenMM_CustomCompoundBondForce_setBondParameters(piTorsionForce, index++, particles,
+            parameters);
+        OpenMM_IntArray_resize(particles, 0);
+        OpenMM_DoubleArray_resize(parameters, 0);
+      }
+      OpenMM_IntArray_destroy(particles);
+      OpenMM_DoubleArray_destroy(parameters);
+
+      if (context.contextPointer != null) {
+        OpenMM_CustomCompoundBondForce_updateParametersInContext(
+            piTorsionForce, context.contextPointer);
+      }
     }
 
     /** Add a Torsion-Torsion force to the OpenMM System. */
@@ -2798,23 +3208,22 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       for (int m = 1; m < 3; m++) {
         for (int n = 1; n < 4; n++) {
           OpenMM_CustomCompoundBondForce_addPerBondParameter(
-              angleTorsionForce, String.format("k%d%d", m, n));
+              angleTorsionForce, format("k%d%d", m, n));
         }
       }
 
       for (int m = 1; m < 3; m++) {
         OpenMM_CustomCompoundBondForce_addPerBondParameter(
-            angleTorsionForce, String.format("a%d", m));
+            angleTorsionForce, format("a%d", m));
       }
-
-      final double unitConv = OpenMM_KJPerKcal / OpenMM_RadiansPerDegree;
+      
       for (AngleTorsion angleTorsion : angleTorsions) {
         double[] constants = angleTorsion.getConstants();
         PointerByReference atorsParams = OpenMM_DoubleArray_create(0);
         for (int m = 0; m < 2; m++) {
           for (int n = 0; n < 3; n++) {
             int index = (3 * m) + n;
-            double kmn = constants[index] * unitConv;
+            double kmn = constants[index] * OpenMM_KJPerKcal;
             OpenMM_DoubleArray_append(atorsParams, kmn);
           }
         }
@@ -2847,6 +3256,80 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       logger.log(
           Level.INFO, format("  Angle-Torsions  \t%6d\t\t%1d", angleTorsions.length, forceGroup));
+    }
+
+    private void addRestraintTorsions() {
+      if (rTors != null && rTors.length > 0) {
+        int nRT = rTors.length;
+        restraintTorsions = new PointerByReference[nRT];
+        for (int i = 0; i < nRT; i++) {
+          PointerByReference rtOMM = OpenMM_PeriodicTorsionForce_create();
+          RestraintTorsion rt = rTors[i];
+          int a1 = rt.getAtom(0).getXyzIndex() - 1;
+          int a2 = rt.getAtom(1).getXyzIndex() - 1;
+          int a3 = rt.getAtom(2).getXyzIndex() - 1;
+          int a4 = rt.getAtom(3).getXyzIndex() - 1;
+          int nTerms = rt.torsionType.terms;
+          for (int j = 0; j < nTerms; j++) {
+            OpenMM_PeriodicTorsionForce_addTorsion(
+                rtOMM,
+                a1,
+                a2,
+                a3,
+                a4,
+                j + 1,
+                rt.torsionType.phase[j] * OpenMM_RadiansPerDegree,
+                OpenMM_KJPerKcal * rt.units * rt.torsionType.amplitude[j]);
+          }
+          int fGroup = forceField.getInteger("TORSION_FORCE_GROUP", 0);
+
+          OpenMM_Force_setForceGroup(rtOMM, fGroup);
+          OpenMM_System_addForce(system, rtOMM);
+          restraintTorsions[i] = rtOMM;
+        }
+        logger.info(format(" Added %d restraint torsions to OpenMM.", nRT));
+      }
+    }
+
+    private void updateRestraintTorsions() {
+      // update restraint torsions ONLY here.
+      // Only update parameters if torsions are being scaled by lambda.
+
+      // Check if this system has torsions.
+
+      int nRT = restraintTorsions.length;
+      for (int i = 0; i < nRT; i++) {
+        RestraintTorsion rt = rTors[i];
+        PointerByReference rtOMM = restraintTorsions[i];
+        if (rt.applyLambda()) {
+          int index = 0;
+          TorsionType torsionType = rt.torsionType;
+          int nTerms = torsionType.phase.length;
+          int a1 = rt.getAtom(0).getXyzIndex() - 1;
+          int a2 = rt.getAtom(1).getXyzIndex() - 1;
+          int a3 = rt.getAtom(2).getXyzIndex() - 1;
+          int a4 = rt.getAtom(3).getXyzIndex() - 1;
+          for (int j = 0; j < nTerms; j++) {
+            double forceConstant =
+                OpenMM_KJPerKcal * rt.units * torsionType.amplitude[j] * rt.mapLambda(getLambda());
+            OpenMM_PeriodicTorsionForce_setTorsionParameters(
+                rtOMM,
+                index++,
+                a1,
+                a2,
+                a3,
+                a4,
+                j + 1,
+                torsionType.phase[j] * OpenMM_RadiansPerDegree,
+                forceConstant);
+          }
+        }
+
+        if (context.contextPointer != null) {
+          OpenMM_PeriodicTorsionForce_updateParametersInContext(
+              rtOMM, context.contextPointer);
+        }
+      }
     }
 
     /** Uses arithmetic mean to define sigma and geometric mean for epsilon. */
@@ -3011,6 +3494,132 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       GeneralizedKirkwood gk = getGK();
       if (gk != null) {
         addCustomGBForce();
+      }
+    }
+
+    /**
+     * Updates the fixed-charge non-bonded force for changes in Use flags or Lambda.
+     *
+     * @param atoms Array of atoms to update.
+     */
+    private void updateFixedChargeNonBondedForce(Atom[] atoms) {
+      VanDerWaals vdW = getVdwNode();
+      // Only 6-12 LJ with arithmetic mean to define sigma and geometric mean for epsilon is
+      // supported.
+      VanDerWaalsForm vdwForm = vdW.getVDWForm();
+      if (vdwForm.vdwType != LENNARD_JONES
+          || vdwForm.radiusRule != ARITHMETIC
+          || vdwForm.epsilonRule != GEOMETRIC) {
+        logger.log(Level.SEVERE, " Unsupported van der Waals functional form.");
+        return;
+      }
+
+      // OpenMM vdW force requires a diameter (i.e. not radius).
+      double radScale = 1.0;
+      if (vdwForm.radiusSize == RADIUS) {
+        radScale = 2.0;
+      }
+
+      // OpenMM vdw force requires atomic sigma values (i.e. not r-min).
+      if (vdwForm.radiusType == R_MIN) {
+        radScale /= 1.122462048309372981;
+      }
+
+      // Update parameters.
+      for (Atom atom : atoms) {
+        int index = atom.getXyzIndex() - 1;
+        boolean applyLambda = atom.applyLambda();
+
+        double charge = Double.MIN_VALUE;
+        MultipoleType multipoleType = atom.getMultipoleType();
+        if (multipoleType != null && atom.getElectrostatics()) {
+          charge = multipoleType.charge;
+        }
+
+        VDWType vdwType = atom.getVDWType();
+        double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
+        double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
+
+        if (applyLambda) {
+          // If we're using vdwLambdaTerm, this atom's vdW interactions are handled by the Custom
+          // Non-Bonded force.
+          if (vdwLambdaTerm) {
+            eps = 0.0;
+          }
+          // Always scale the charge by lambdaElec
+          charge *= lambdaElec;
+        }
+
+        if (!atom.getUse()) {
+          eps = 0.0;
+          charge = 0.0;
+        }
+
+        OpenMM_NonbondedForce_setParticleParameters(
+            fixedChargeNonBondedForce, index, charge, sigma, eps);
+      }
+
+      // Update Exceptions.
+      IntByReference particle1 = new IntByReference();
+      IntByReference particle2 = new IntByReference();
+      DoubleByReference chargeProd = new DoubleByReference();
+      DoubleByReference sigma = new DoubleByReference();
+      DoubleByReference eps = new DoubleByReference();
+
+      int numExceptions = OpenMM_NonbondedForce_getNumExceptions(fixedChargeNonBondedForce);
+      for (int i = 0; i < numExceptions; i++) {
+
+        // Only update exceptions.
+        if (chargeExclusion[i] && vdWExclusion[i]) {
+          continue;
+        }
+
+        OpenMM_NonbondedForce_getExceptionParameters(
+            fixedChargeNonBondedForce, i, particle1, particle2, chargeProd, sigma, eps);
+
+        int i1 = particle1.getValue();
+        int i2 = particle2.getValue();
+
+        double qq = exceptionChargeProd[i];
+        double epsilon = exceptionEps[i];
+
+        Atom atom1 = atoms[i1];
+        Atom atom2 = atoms[i2];
+
+        /*
+        Note that the minimum epsilon value cannot be zero, or OpenMM may
+        report an error that the number of Exceptions has changed.
+        */
+        double minEpsilon = 1.0e-12;
+        double lambdaValue = lambdaElec;
+
+        if (lambdaValue < minEpsilon) {
+          lambdaValue = minEpsilon;
+        }
+
+        if (atom1.applyLambda()) {
+          qq *= lambdaValue;
+          if (vdwLambdaTerm) {
+            epsilon = minEpsilon;
+          }
+        }
+        if (atom2.applyLambda()) {
+          qq *= lambdaValue;
+          if (vdwLambdaTerm) {
+            epsilon = minEpsilon;
+          }
+        }
+        if (!atom1.getUse() || !atom2.getUse()) {
+          qq = minEpsilon;
+          epsilon = minEpsilon;
+        }
+        OpenMM_NonbondedForce_setExceptionParameters(
+            fixedChargeNonBondedForce, i, i1, i2, qq, sigma.getValue(), epsilon);
+      }
+
+      if (context.contextPointer != null) {
+        OpenMM_NonbondedForce_updateParametersInContext(
+            fixedChargeNonBondedForce, context.contextPointer);
       }
     }
 
@@ -3357,6 +3966,62 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       logger.log(Level.INFO, format("  Custom generalized Born force \t%d", forceGroup));
     }
 
+    /**
+     * Updates the custom GB force for changes in Use flags or Lambda.
+     *
+     * @param atoms Array of atoms to update.
+     */
+    private void updateCustomGBForce(Atom[] atoms) {
+      GeneralizedKirkwood gk = getGK();
+      double[] baseRadii = gk.getBaseRadii();
+      double[] overlapScale = gk.getOverlapScale();
+      boolean nea = gk.getNativeEnvironmentApproximation();
+
+      double sTens = 0.0;
+      if (gk.getNonPolarModel() == NonPolar.BORN_SOLV
+          || gk.getNonPolarModel() == NonPolar.BORN_CAV_DISP) {
+        sTens = gk.getSurfaceTension();
+        sTens *= OpenMM_KJPerKcal;
+        sTens *= 100.0; // 100 square Angstroms per square nanometer.
+      }
+
+      PointerByReference doubleArray = OpenMM_DoubleArray_create(0);
+      for (Atom atom : atoms) {
+        int index = atom.getXyzIndex() - 1;
+        double chargeUseFactor = 1.0;
+        if (!atom.getUse() || !atom.getElectrostatics()) {
+          chargeUseFactor = 0.0;
+        }
+        double lambdaScale = lambdaElec;
+        if (!atom.applyLambda()) {
+          lambdaScale = 1.0;
+        }
+
+        chargeUseFactor *= lambdaScale;
+        MultipoleType multipoleType = atom.getMultipoleType();
+        double charge = multipoleType.charge * chargeUseFactor;
+        double surfaceTension = sTens * chargeUseFactor;
+
+        double overlapScaleUseFactor = nea ? 1.0 : chargeUseFactor;
+        double oScale = overlapScale[index] * overlapScaleUseFactor;
+        double baseRadius = baseRadii[index];
+
+        OpenMM_DoubleArray_append(doubleArray, charge);
+        OpenMM_DoubleArray_append(doubleArray, OpenMM_NmPerAngstrom * baseRadius);
+        OpenMM_DoubleArray_append(doubleArray, oScale);
+        OpenMM_DoubleArray_append(doubleArray, surfaceTension);
+        OpenMM_CustomGBForce_setParticleParameters(customGBForce, index, doubleArray);
+
+        // Reset the double array for the next atom.
+        OpenMM_DoubleArray_resize(doubleArray, 0);
+      }
+      OpenMM_DoubleArray_destroy(doubleArray);
+
+      if (context.contextPointer != null) {
+        OpenMM_CustomGBForce_updateParametersInContext(customGBForce, context.contextPointer);
+      }
+    }
+
     /** Add an AMOEBA van der Waals force to the OpenMM System. */
     private void addAmoebaVDWForce() {
       VanDerWaals vdW = getVdwNode();
@@ -3398,9 +4063,22 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           }
         }
       }
+
       // Add a special vdW type for zero vdW energy and forces (e.g. to support the FFX "use" flag).
       int type = OpenMM_AmoebaVdwForce_addParticleType(amoebaVDWForce, OpenMM_NmPerAngstrom, 0.0);
       vdwClassToOpenMMType.put(vdWClassForNoInteraction, type);
+
+      Map<String, VDWPairType> vdwPairTypeMap = forceField.getVDWPairTypes();
+      for (VDWPairType vdwPairType : vdwPairTypeMap.values()) {
+        int c1 = vdwPairType.atomClasses[0];
+        int c2 = vdwPairType.atomClasses[1];
+        int type1 = vdwClassToOpenMMType.get(c1);
+        int type2 = vdwClassToOpenMMType.get(c2);
+        double rMin = vdwPairType.radius * OpenMM_NmPerAngstrom;
+        double eps = vdwPairType.wellDepth * OpenMM_KJPerKcal;
+        OpenMM_AmoebaVdwForce_addTypePair(amoebaVDWForce, type1, type2, rMin, eps);
+        OpenMM_AmoebaVdwForce_addTypePair(amoebaVDWForce, type2, type1, rMin, eps);
+      }
 
       int[] ired = vdW.getReductionIndex();
       for (int i = 0; i < nAtoms; i++) {
@@ -3425,7 +4103,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       if (crystal.aperiodic()) {
         OpenMM_AmoebaVdwForce_setNonbondedMethod(amoebaVDWForce, OpenMM_AmoebaVdwForce_NoCutoff);
       } else {
-        OpenMM_AmoebaVdwForce_setNonbondedMethod(amoebaVDWForce, OpenMM_AmoebaVdwForce_CutoffPeriodic);
+        OpenMM_AmoebaVdwForce_setNonbondedMethod(amoebaVDWForce,
+            OpenMM_AmoebaVdwForce_CutoffPeriodic);
       }
 
       if (vdwLambdaTerm) {
@@ -3461,6 +4140,43 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       logger.log(Level.INFO, format("  AMOEBA van der Waals force \t\t%d", forceGroup));
     }
 
+    /**
+     * Updates the AMOEBA van der Waals force for changes in Use flags or Lambda.
+     *
+     * @param atoms Array of atoms to update.
+     */
+    private void updateAmoebaVDWForce(Atom[] atoms) {
+      VanDerWaals vdW = getVdwNode();
+      VanDerWaalsForm vdwForm = vdW.getVDWForm();
+      double radScale = 1.0;
+      if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
+        radScale = 0.5;
+      }
+
+      int[] ired = vdW.getReductionIndex();
+      for (Atom atom : atoms) {
+        int index = atom.getXyzIndex() - 1;
+        VDWType vdwType = atom.getVDWType();
+
+        // Get the OpenMM index for this vdW type.
+        int type = vdwClassToOpenMMType.get(vdwType.atomClass);
+        if (!atom.getUse()) {
+          // Get the OpenMM index for a special vdW type that has no interactions.
+          type = vdwClassToOpenMMType.get(vdWClassForNoInteraction);
+        }
+        int isAlchemical = atom.applyLambda() ? 1 : 0;
+        double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
+        double rad = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
+        OpenMM_AmoebaVdwForce_setParticleParameters(
+            amoebaVDWForce, index, ired[index],
+            rad, eps, vdwType.reductionFactor, isAlchemical, type);
+      }
+
+      if (context.contextPointer != null) {
+        OpenMM_AmoebaVdwForce_updateParametersInContext(amoebaVDWForce, context.contextPointer);
+      }
+    }
+
     /** Add an AMOEBA polarizable multipole force to the OpenMM System. */
     private void addAmoebaMultipoleForce() {
       ParticleMeshEwald pme = getPmeNode();
@@ -3477,12 +4193,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       amoebaMultipoleForce = OpenMM_AmoebaMultipoleForce_create();
 
       double polarScale = 1.0;
-      ParticleMeshEwald.SCFAlgorithm scfAlgorithm = null;
+      SCFAlgorithm scfAlgorithm = null;
 
-      if (pme.getPolarizationType() != Polarization.MUTUAL) {
+      if (pme.getPolarizationType() != ParticleMeshEwald.Polarization.MUTUAL) {
         OpenMM_AmoebaMultipoleForce_setPolarizationType(
             amoebaMultipoleForce, OpenMM_AmoebaMultipoleForce_Direct);
-        if (pme.getPolarizationType() == Polarization.NONE) {
+        if (pme.getPolarizationType() == ParticleMeshEwald.Polarization.NONE) {
           polarScale = 0.0;
         }
       } else {
@@ -3704,7 +4420,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       GeneralizedKirkwood gk = getGK();
       if (gk != null) {
-        addGKForce();
+        addGeneralizedKirkwoodForce();
       }
 
       if (scfAlgorithm == ParticleMeshEwald.SCFAlgorithm.EPT) {
@@ -3712,8 +4428,125 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       }
     }
 
+    /**
+     * Updates the Amoeba electrostatic multipolar force for changes in Use flags or Lambda.
+     *
+     * @param atoms Array of atoms to update.
+     */
+    private void updateAmoebaMultipoleForce(Atom[] atoms) {
+      ParticleMeshEwald pme = getPmeNode();
+      double quadrupoleConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
+      double polarityConversion =
+          OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
+      double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
+
+      double polarScale = 1.0;
+      if (pme.getPolarizationType() == ParticleMeshEwald.Polarization.NONE) {
+        polarScale = 0.0;
+      }
+
+      PointerByReference dipoles = OpenMM_DoubleArray_create(3);
+      PointerByReference quadrupoles = OpenMM_DoubleArray_create(9);
+
+      for (Atom atom : atoms) {
+        int index = atom.getXyzIndex() - 1;
+        MultipoleType multipoleType = atom.getMultipoleType();
+        PolarizeType polarType = atom.getPolarizeType();
+        int[] axisAtoms = atom.getAxisAtomIndices();
+
+        double useFactor = 1.0;
+        if (!atom.getUse() || !atom.getElectrostatics()) {
+          useFactor = 0.0;
+        }
+
+        double lambdaScale = lambdaElec;
+        if (!atom.applyLambda()) {
+          lambdaScale = 1.0;
+        }
+        useFactor *= lambdaScale;
+
+        // Define the frame definition.
+        int axisType;
+        switch (multipoleType.frameDefinition) {
+          default:
+          case NONE:
+            axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
+            break;
+          case ZONLY:
+            axisType = OpenMM_AmoebaMultipoleForce_ZOnly;
+            break;
+          case ZTHENX:
+            axisType = OpenMM_AmoebaMultipoleForce_ZThenX;
+            break;
+          case BISECTOR:
+            axisType = OpenMM_AmoebaMultipoleForce_Bisector;
+            break;
+          case ZTHENBISECTOR:
+            axisType = OpenMM_AmoebaMultipoleForce_ZBisect;
+            break;
+          case THREEFOLD:
+            axisType = OpenMM_AmoebaMultipoleForce_ThreeFold;
+            break;
+        }
+
+        // Load local multipole coefficients.
+        for (int j = 0; j < 3; j++) {
+          OpenMM_DoubleArray_set(
+              dipoles, j, multipoleType.dipole[j] * OpenMM_NmPerAngstrom * useFactor);
+        }
+        int l = 0;
+        for (int j = 0; j < 3; j++) {
+          for (int k = 0; k < 3; k++) {
+            OpenMM_DoubleArray_set(
+                quadrupoles,
+                l++,
+                multipoleType.quadrupole[j][k] * quadrupoleConversion / 3.0 * useFactor);
+          }
+        }
+
+        int zaxis = 1;
+        int xaxis = 1;
+        int yaxis = 1;
+
+        if (axisAtoms != null) {
+          zaxis = axisAtoms[0];
+          if (axisAtoms.length > 1) {
+            xaxis = axisAtoms[1];
+            if (axisAtoms.length > 2) {
+              yaxis = axisAtoms[2];
+            }
+          }
+        } else {
+          axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
+        }
+
+        // Set the multipole parameters.
+        OpenMM_AmoebaMultipoleForce_setMultipoleParameters(
+            amoebaMultipoleForce,
+            index,
+            multipoleType.charge * useFactor,
+            dipoles,
+            quadrupoles,
+            axisType,
+            zaxis,
+            xaxis,
+            yaxis,
+            polarType.thole,
+            polarType.pdamp * dampingFactorConversion,
+            polarType.polarizability * polarityConversion * polarScale * useFactor);
+      }
+
+      OpenMM_DoubleArray_destroy(dipoles);
+      OpenMM_DoubleArray_destroy(quadrupoles);
+
+      if (context.contextPointer != null) {
+        OpenMM_AmoebaMultipoleForce_updateParametersInContext(
+            amoebaMultipoleForce, context.contextPointer);
+      }
+    }
+
     /** Add a Generalized Kirkwood force to the OpenMM System. */
-    private void addGKForce() {
+    private void addGeneralizedKirkwoodForce() {
       GeneralizedKirkwood gk = getGK();
 
       amoebaGeneralizedKirkwoodForce = OpenMM_AmoebaGeneralizedKirkwoodForce_create();
@@ -3755,9 +4588,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       int tanhRescale = 0;
       if (gk.getTanhCorrection()) {
-         tanhRescale = 1;
+        tanhRescale = 1;
       }
-      OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling(amoebaGeneralizedKirkwoodForce, tanhRescale);
+      OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling(amoebaGeneralizedKirkwoodForce,
+          tanhRescale);
 
       NonPolar nonpolar = gk.getNonPolarModel();
       switch (nonpolar) {
@@ -3812,6 +4646,80 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       // Add cavitation
       if (nonpolar == GAUSS_DISP) {
         addCavitationForce();
+      }
+    }
+
+    /**
+     * Updates the AMOEBA Generalized Kirkwood force for changes in Use flags or Lambda.
+     *
+     * @param atoms Array of atoms to update.
+     */
+    private void updateGeneralizedKirkwoodForce(Atom[] atoms) {
+      GeneralizedKirkwood gk = getGK();
+
+      for (int i = 0; i < nAtoms; i++) {
+        gk.udpateSoluteParameters(i);
+      }
+
+      double[] overlapScale = gk.getOverlapScale();
+      double[] baseRadii = gk.getBaseRadii();
+      double[] descreenRadius = gk.getDescreenRadii();
+      double[] neckFactors = gk.getNeckScale();
+
+      boolean nea = gk.getNativeEnvironmentApproximation();
+
+      for (Atom atom : atoms) {
+        int index = atom.getXyzIndex() - 1;
+        double chargeUseFactor = 1.0;
+        if (!atom.getUse() || !atom.getElectrostatics()) {
+          chargeUseFactor = 0.0;
+        }
+
+        double lambdaScale = lambdaElec;
+        if (!atom.applyLambda()) {
+          lambdaScale = 1.0;
+        }
+
+        double baseSize = baseRadii[index] * OpenMM_NmPerAngstrom;
+        double descreenSize = descreenRadius[index] * OpenMM_NmPerAngstrom;
+
+        chargeUseFactor *= lambdaScale;
+        double overlapScaleUseFactor = nea ? 1.0 : chargeUseFactor;
+        double overlap = overlapScale[index] * overlapScaleUseFactor;
+        double neckFactor = neckFactors[index] * overlapScaleUseFactor;
+
+        MultipoleType multipoleType = atom.getMultipoleType();
+        OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters_1(
+            amoebaGeneralizedKirkwoodForce,
+            index, multipoleType.charge * chargeUseFactor, baseSize, overlap, descreenSize,
+            neckFactor);
+      }
+
+      //        OpenMM Bug: Surface Area is not Updated by "updateParametersInContext"
+      //
+      //        NonPolar nonpolar = gk.getNonPolarModel();
+      //        switch (nonpolar) {
+      //            case BORN_SOLV:
+      //            case BORN_CAV_DISP:
+      //            default:
+      //                // Configure a Born Radii based surface area term.
+      //                double surfaceTension = gk.getSurfaceTension() * OpenMM_KJPerKcal
+      //                        * OpenMM_AngstromsPerNm * OpenMM_AngstromsPerNm * lambdaElec;
+      //
+      // OpenMM_AmoebaGeneralizedKirkwoodForce_setSurfaceAreaFactor(amoebaGeneralizedKirkwoodForce,
+      // -surfaceTension);
+      //                break;
+      //            case CAV:
+      //            case CAV_DISP:
+      //            case HYDROPHOBIC_PMF:
+      //            case NONE:
+      //                // This NonPolar model does not use a Born Radii based surface area term.
+      //                break;
+      //        }
+
+      if (context.contextPointer != null) {
+        OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext(
+            amoebaGeneralizedKirkwoodForce, context.contextPointer);
       }
     }
 
@@ -3871,6 +4779,50 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       logger.log(Level.INFO, format("  WCA dispersion force \t\t\t%d", forceGroup));
     }
 
+    /**
+     * Updates the WCA force for changes in Use flags or Lambda.
+     *
+     * @param atoms Array of atoms to update.
+     */
+    private void updateWCAForce(Atom[] atoms) {
+      VanDerWaals vdW = getVdwNode();
+      VanDerWaalsForm vdwForm = vdW.getVDWForm();
+      double radScale = 1.0;
+      if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
+        radScale = 0.5;
+      }
+
+      for (Atom atom : atoms) {
+        int index = atom.getXyzIndex() - 1;
+        double useFactor = 1.0;
+        if (!atom.getUse()) {
+          useFactor = 0.0;
+        }
+
+        // Scale all implicit solvent terms with the square of electrostatics lambda
+        // (so dUdisp / dL is 0 at lambdaElec = 0).
+        double lambdaScale = lambdaElec * lambdaElec;
+        if (!atom.applyLambda()) {
+          lambdaScale = 1.0;
+        }
+        useFactor *= lambdaScale;
+
+        VDWType vdwType = atom.getVDWType();
+        double radius = vdwType.radius;
+        double eps = vdwType.wellDepth;
+        OpenMM_AmoebaWcaDispersionForce_setParticleParameters(
+            amoebaWcaDispersionForce,
+            index,
+            OpenMM_NmPerAngstrom * radius * radScale,
+            OpenMM_KJPerKcal * eps * useFactor);
+      }
+
+      if (context.contextPointer != null) {
+        OpenMM_AmoebaWcaDispersionForce_updateParametersInContext(
+            amoebaWcaDispersionForce, context.contextPointer);
+      }
+    }
+
     /** Add a GaussVol cavitation force to the OpenMM System. */
     private void addCavitationForce() {
 
@@ -3888,6 +4840,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
               / OpenMM_NmPerAngstrom
               / OpenMM_NmPerAngstrom;
       double[] rad = gaussVol.getRadii();
+
       int index = 0;
       for (Atom atom : atoms) {
         int isHydrogen = OpenMM_False;
@@ -3914,6 +4867,65 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
+     * Updates the Cavitation force for changes in Use flags or Lambda.
+     *
+     * @param atoms Array of atoms to update.
+     */
+    private void updateCavitationForce(Atom[] atoms) {
+      GeneralizedKirkwood generalizedKirkwood = getGK();
+      ChandlerCavitation chandlerCavitation = generalizedKirkwood.getChandlerCavitation();
+      GaussVol gaussVol = chandlerCavitation.getGaussVol();
+      if (gaussVol == null) {
+        return;
+      }
+
+      double surfaceTension =
+          chandlerCavitation.getSurfaceTension()
+              * OpenMM_KJPerKcal
+              / OpenMM_NmPerAngstrom
+              / OpenMM_NmPerAngstrom;
+
+      // Changing cavitation radii is not supported.
+      // for (int i=0; i<nAtoms; i++) {
+      //  gaussVol.updateAtom(i);
+      // }
+      double[] rad = gaussVol.getRadii();
+
+      for (Atom atom : atoms) {
+        int index = atom.getXyzIndex() - 1;
+        double useFactor = 1.0;
+        if (!atom.getUse()) {
+          useFactor = 0.0;
+        }
+        // Scale all implicit solvent terms with the square of electrostatics lambda
+        // (so dUcav / dL is 0 at lambdaElec = 0).
+        double lambdaScale = lambdaElec * lambdaElec;
+        if (!atom.applyLambda()) {
+          lambdaScale = 1.0;
+        }
+        useFactor *= lambdaScale;
+
+        double radius = rad[index];
+        int isHydrogen = OpenMM_False;
+        if (atom.isHydrogen()) {
+          isHydrogen = OpenMM_True;
+          radius = 0.0;
+        }
+
+        OpenMM_AmoebaGKCavitationForce_setParticleParameters(
+            amoebaCavitationForce,
+            index,
+            radius * OpenMM_NmPerAngstrom,
+            surfaceTension * useFactor,
+            isHydrogen);
+      }
+
+      if (context.contextPointer != null) {
+        OpenMM_AmoebaGKCavitationForce_updateParametersInContext(amoebaCavitationForce, context.contextPointer);
+      }
+    }
+
+    /**
      * Adds harmonic restraints (CoordRestraint objects) to OpenMM as a custom external force.
      *
      * <p>TODO: Make robust to flat-bottom restraints.
@@ -3936,8 +4948,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           oCoords[i][2] *= OpenMM_NmPerAngstrom;
         }
 
-        PointerByReference theRestraint =
-            OpenMM_CustomExternalForce_create("k*periodicdistance(x,y,z,x0,y0,z0)^2");
+        PointerByReference theRestraint = OpenMM_CustomExternalForce_create(
+            "k*periodicdistance(x,y,z,x0,y0,z0)^2");
         OpenMM_CustomExternalForce_addGlobalParameter(theRestraint, "k", forceConstant);
         OpenMM_CustomExternalForce_addPerParticleParameter(theRestraint, "x0");
         OpenMM_CustomExternalForce_addPerParticleParameter(theRestraint, "y0");
@@ -4202,668 +5214,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       return false;
     }
 
-    /** This methods sets the mass of inactive atoms to zero. */
-    private void updateAtomMass() {
-      int index = 0;
-      for (Atom atom : atoms) {
-        double mass = 0.0;
-        if (atom.isActive()) {
-          mass = atom.getMass();
-        }
-        OpenMM_System_setParticleMass(system, index++, mass);
-      }
-    }
-
-    /**
-     * Updates the AMOEBA van der Waals force for changes in Use flags or Lambda.
-     *
-     * @param atoms Array of atoms to update.
-     */
-    private void updateAmoebaVDWForce(Atom[] atoms) {
-      VanDerWaals vdW = getVdwNode();
-      VanDerWaalsForm vdwForm = vdW.getVDWForm();
-      double radScale = 1.0;
-      if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
-        radScale = 0.5;
-      }
-
-      int[] ired = vdW.getReductionIndex();
-      for (Atom atom : atoms) {
-        int index = atom.getXyzIndex() - 1;
-        VDWType vdwType = atom.getVDWType();
-
-        // Get the OpenMM index for this vdW type.
-        int type = vdwClassToOpenMMType.get(vdwType.atomClass);
-        if (!atom.getUse()) {
-          // Get the OpenMM index for a special vdW type that has no interactions.
-          type = vdwClassToOpenMMType.get(vdWClassForNoInteraction);
-        }
-        int isAlchemical = atom.applyLambda() ? 1 : 0;
-        double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
-        double rad = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
-        OpenMM_AmoebaVdwForce_setParticleParameters(
-            amoebaVDWForce, index, ired[index],
-            rad, eps, vdwType.reductionFactor, isAlchemical, type);
-      }
-
-      if (context.contextPointer != null) {
-        OpenMM_AmoebaVdwForce_updateParametersInContext(amoebaVDWForce, context.contextPointer);
-      }
-    }
-
-    /**
-     * Updates the fixed-charge non-bonded force for changes in Use flags or Lambda.
-     *
-     * @param atoms Array of atoms to update.
-     */
-    private void updateFixedChargeNonBondedForce(Atom[] atoms) {
-      VanDerWaals vdW = getVdwNode();
-      // Only 6-12 LJ with arithmetic mean to define sigma and geometric mean for epsilon is
-      // supported.
-      VanDerWaalsForm vdwForm = vdW.getVDWForm();
-      if (vdwForm.vdwType != LENNARD_JONES
-          || vdwForm.radiusRule != ARITHMETIC
-          || vdwForm.epsilonRule != GEOMETRIC) {
-        logger.log(Level.SEVERE, " Unsupported van der Waals functional form.");
-        return;
-      }
-
-      // OpenMM vdW force requires a diameter (i.e. not radius).
-      double radScale = 1.0;
-      if (vdwForm.radiusSize == RADIUS) {
-        radScale = 2.0;
-      }
-
-      // OpenMM vdw force requires atomic sigma values (i.e. not r-min).
-      if (vdwForm.radiusType == R_MIN) {
-        radScale /= 1.122462048309372981;
-      }
-
-      // Update parameters.
-      for (Atom atom : atoms) {
-        int index = atom.getXyzIndex() - 1;
-        boolean applyLambda = atom.applyLambda();
-
-        double charge = Double.MIN_VALUE;
-        MultipoleType multipoleType = atom.getMultipoleType();
-        if (multipoleType != null && atom.getElectrostatics()) {
-          charge = multipoleType.charge;
-        }
-
-        VDWType vdwType = atom.getVDWType();
-        double sigma = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
-        double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
-
-        if (applyLambda) {
-          // If we're using vdwLambdaTerm, this atom's vdW interactions are handled by the Custom
-          // Non-Bonded force.
-          if (vdwLambdaTerm) {
-            eps = 0.0;
-          }
-          // Always scale the charge by lambdaElec
-          charge *= lambdaElec;
-        }
-
-        if (!atom.getUse()) {
-          eps = 0.0;
-          charge = 0.0;
-        }
-
-        OpenMM_NonbondedForce_setParticleParameters(
-            fixedChargeNonBondedForce, index, charge, sigma, eps);
-      }
-
-      // Update Exceptions.
-      IntByReference particle1 = new IntByReference();
-      IntByReference particle2 = new IntByReference();
-      DoubleByReference chargeProd = new DoubleByReference();
-      DoubleByReference sigma = new DoubleByReference();
-      DoubleByReference eps = new DoubleByReference();
-
-      int numExceptions = OpenMM_NonbondedForce_getNumExceptions(fixedChargeNonBondedForce);
-      for (int i = 0; i < numExceptions; i++) {
-
-        // Only update exceptions.
-        if (chargeExclusion[i] && vdWExclusion[i]) {
-          continue;
-        }
-
-        OpenMM_NonbondedForce_getExceptionParameters(
-            fixedChargeNonBondedForce, i, particle1, particle2, chargeProd, sigma, eps);
-
-        int i1 = particle1.getValue();
-        int i2 = particle2.getValue();
-
-        double qq = exceptionChargeProd[i];
-        double epsilon = exceptionEps[i];
-
-        Atom atom1 = atoms[i1];
-        Atom atom2 = atoms[i2];
-
-        /*
-        Note that the minimum epsilon value cannot be zero, or OpenMM may
-        report an error that the number of Exceptions has changed.
-        */
-        double minEpsilon = 1.0e-12;
-        double lambdaValue = lambdaElec;
-
-        if (lambdaValue < minEpsilon) {
-          lambdaValue = minEpsilon;
-        }
-
-        if (atom1.applyLambda()) {
-          qq *= lambdaValue;
-          if (vdwLambdaTerm) {
-            epsilon = minEpsilon;
-          }
-        }
-        if (atom2.applyLambda()) {
-          qq *= lambdaValue;
-          if (vdwLambdaTerm) {
-            epsilon = minEpsilon;
-          }
-        }
-        if (!atom1.getUse() || !atom2.getUse()) {
-          qq = minEpsilon;
-          epsilon = minEpsilon;
-        }
-        OpenMM_NonbondedForce_setExceptionParameters(
-            fixedChargeNonBondedForce, i, i1, i2, qq, sigma.getValue(), epsilon);
-      }
-
-      if (context.contextPointer != null) {
-        OpenMM_NonbondedForce_updateParametersInContext(
-            fixedChargeNonBondedForce, context.contextPointer);
-      }
-    }
-
-    /**
-     * Updates the custom GB force for changes in Use flags or Lambda.
-     *
-     * @param atoms Array of atoms to update.
-     */
-    private void updateCustomGBForce(Atom[] atoms) {
-      GeneralizedKirkwood gk = getGK();
-      double[] baseRadii = gk.getBaseRadii();
-      double[] overlapScale = gk.getOverlapScale();
-      boolean nea = gk.getNativeEnvironmentApproximation();
-
-      double sTens = 0.0;
-      if (gk.getNonPolarModel() == NonPolar.BORN_SOLV
-          || gk.getNonPolarModel() == NonPolar.BORN_CAV_DISP) {
-        sTens = gk.getSurfaceTension();
-        sTens *= OpenMM_KJPerKcal;
-        sTens *= 100.0; // 100 square Angstroms per square nanometer.
-      }
-
-      PointerByReference doubleArray = OpenMM_DoubleArray_create(0);
-      for (Atom atom : atoms) {
-        int index = atom.getXyzIndex() - 1;
-        double chargeUseFactor = 1.0;
-        if (!atom.getUse() || !atom.getElectrostatics()) {
-          chargeUseFactor = 0.0;
-        }
-        double lambdaScale = lambdaElec;
-        if (!atom.applyLambda()) {
-          lambdaScale = 1.0;
-        }
-
-        chargeUseFactor *= lambdaScale;
-        MultipoleType multipoleType = atom.getMultipoleType();
-        double charge = multipoleType.charge * chargeUseFactor;
-        double surfaceTension = sTens * chargeUseFactor;
-
-        double overlapScaleUseFactor = nea ? 1.0 : chargeUseFactor;
-        double oScale = overlapScale[index] * overlapScaleUseFactor;
-        double baseRadius = baseRadii[index];
-
-        OpenMM_DoubleArray_append(doubleArray, charge);
-        OpenMM_DoubleArray_append(doubleArray, OpenMM_NmPerAngstrom * baseRadius);
-        OpenMM_DoubleArray_append(doubleArray, oScale);
-        OpenMM_DoubleArray_append(doubleArray, surfaceTension);
-        OpenMM_CustomGBForce_setParticleParameters(customGBForce, index, doubleArray);
-
-        // Reset the double array for the next atom.
-        OpenMM_DoubleArray_resize(doubleArray, 0);
-      }
-      OpenMM_DoubleArray_destroy(doubleArray);
-
-      if (context.contextPointer != null) {
-        OpenMM_CustomGBForce_updateParametersInContext(customGBForce, context.contextPointer);
-      }
-    }
-
-    /**
-     * Updates the Amoeba electrostatic multipolar force for changes in Use flags or Lambda.
-     *
-     * @param atoms Array of atoms to update.
-     */
-    private void updateAmoebaMultipoleForce(Atom[] atoms) {
-      ParticleMeshEwald pme = getPmeNode();
-      double quadrupoleConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
-      double polarityConversion =
-          OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
-      double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
-
-      double polarScale = 1.0;
-      if (pme.getPolarizationType() == Polarization.NONE) {
-        polarScale = 0.0;
-      }
-
-      PointerByReference dipoles = OpenMM_DoubleArray_create(3);
-      PointerByReference quadrupoles = OpenMM_DoubleArray_create(9);
-
-      for (Atom atom : atoms) {
-        int index = atom.getXyzIndex() - 1;
-        MultipoleType multipoleType = atom.getMultipoleType();
-        PolarizeType polarType = atom.getPolarizeType();
-        int[] axisAtoms = atom.getAxisAtomIndices();
-
-        double useFactor = 1.0;
-        if (!atom.getUse() || !atom.getElectrostatics()) {
-          useFactor = 0.0;
-        }
-
-        double lambdaScale = lambdaElec;
-        if (!atom.applyLambda()) {
-          lambdaScale = 1.0;
-        }
-        useFactor *= lambdaScale;
-
-        // Define the frame definition.
-        int axisType;
-        switch (multipoleType.frameDefinition) {
-          default:
-          case NONE:
-            axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
-            break;
-          case ZONLY:
-            axisType = OpenMM_AmoebaMultipoleForce_ZOnly;
-            break;
-          case ZTHENX:
-            axisType = OpenMM_AmoebaMultipoleForce_ZThenX;
-            break;
-          case BISECTOR:
-            axisType = OpenMM_AmoebaMultipoleForce_Bisector;
-            break;
-          case ZTHENBISECTOR:
-            axisType = OpenMM_AmoebaMultipoleForce_ZBisect;
-            break;
-          case THREEFOLD:
-            axisType = OpenMM_AmoebaMultipoleForce_ThreeFold;
-            break;
-        }
-
-        // Load local multipole coefficients.
-        for (int j = 0; j < 3; j++) {
-          OpenMM_DoubleArray_set(
-              dipoles, j, multipoleType.dipole[j] * OpenMM_NmPerAngstrom * useFactor);
-        }
-        int l = 0;
-        for (int j = 0; j < 3; j++) {
-          for (int k = 0; k < 3; k++) {
-            OpenMM_DoubleArray_set(
-                quadrupoles,
-                l++,
-                multipoleType.quadrupole[j][k] * quadrupoleConversion / 3.0 * useFactor);
-          }
-        }
-
-        int zaxis = 1;
-        int xaxis = 1;
-        int yaxis = 1;
-
-        if (axisAtoms != null) {
-          zaxis = axisAtoms[0];
-          if (axisAtoms.length > 1) {
-            xaxis = axisAtoms[1];
-            if (axisAtoms.length > 2) {
-              yaxis = axisAtoms[2];
-            }
-          }
-        } else {
-          axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
-        }
-
-        // Set the multipole parameters.
-        OpenMM_AmoebaMultipoleForce_setMultipoleParameters(
-            amoebaMultipoleForce,
-            index,
-            multipoleType.charge * useFactor,
-            dipoles,
-            quadrupoles,
-            axisType,
-            zaxis,
-            xaxis,
-            yaxis,
-            polarType.thole,
-            polarType.pdamp * dampingFactorConversion,
-            polarType.polarizability * polarityConversion * polarScale * useFactor);
-      }
-
-      OpenMM_DoubleArray_destroy(dipoles);
-      OpenMM_DoubleArray_destroy(quadrupoles);
-
-      if (context.contextPointer != null) {
-        OpenMM_AmoebaMultipoleForce_updateParametersInContext(
-            amoebaMultipoleForce, context.contextPointer);
-      }
-    }
-
-    /**
-     * Updates the AMOEBA Generalized Kirkwood force for changes in Use flags or Lambda.
-     *
-     * @param atoms Array of atoms to update.
-     */
-    private void updateAmoebaGeneralizedKirkwoodForce(Atom[] atoms) {
-      GeneralizedKirkwood gk = getGK();
-
-      for (int i=0; i<nAtoms; i++) {
-        gk.udpateSoluteParameters(i);
-      }
-
-      double[] overlapScale = gk.getOverlapScale();
-      double[] baseRadii = gk.getBaseRadii();
-      double[] descreenRadius = gk.getDescreenRadii();
-      double[] neckFactors = gk.getNeckScale();
-
-      boolean nea = gk.getNativeEnvironmentApproximation();
-
-      for (Atom atom : atoms) {
-        int index = atom.getXyzIndex() - 1;
-        double chargeUseFactor = 1.0;
-        if (!atom.getUse() || !atom.getElectrostatics()) {
-          chargeUseFactor = 0.0;
-        }
-
-        double lambdaScale = lambdaElec;
-        if (!atom.applyLambda()) {
-          lambdaScale = 1.0;
-        }
-
-        double baseSize = baseRadii[index] * OpenMM_NmPerAngstrom;
-        double descreenSize = descreenRadius[index] * OpenMM_NmPerAngstrom;
-
-        chargeUseFactor *= lambdaScale;
-        double overlapScaleUseFactor = nea ? 1.0 : chargeUseFactor;
-        double overlap = overlapScale[index] * overlapScaleUseFactor;
-        double neckFactor = neckFactors[index] * overlapScaleUseFactor;
-
-        MultipoleType multipoleType = atom.getMultipoleType();
-        OpenMM_AmoebaGeneralizedKirkwoodForce_setParticleParameters_1(
-            amoebaGeneralizedKirkwoodForce,
-            index, multipoleType.charge * chargeUseFactor, baseSize, overlap, descreenSize, neckFactor);
-      }
-
-      //        OpenMM Bug: Surface Area is not Updated by "updateParametersInContext"
-      //
-      //        NonPolar nonpolar = gk.getNonPolarModel();
-      //        switch (nonpolar) {
-      //            case BORN_SOLV:
-      //            case BORN_CAV_DISP:
-      //            default:
-      //                // Configure a Born Radii based surface area term.
-      //                double surfaceTension = gk.getSurfaceTension() * OpenMM_KJPerKcal
-      //                        * OpenMM_AngstromsPerNm * OpenMM_AngstromsPerNm * lambdaElec;
-      //
-      // OpenMM_AmoebaGeneralizedKirkwoodForce_setSurfaceAreaFactor(amoebaGeneralizedKirkwoodForce,
-      // -surfaceTension);
-      //                break;
-      //            case CAV:
-      //            case CAV_DISP:
-      //            case HYDROPHOBIC_PMF:
-      //            case NONE:
-      //                // This NonPolar model does not use a Born Radii based surface area term.
-      //                break;
-      //        }
-
-      if (context.contextPointer != null) {
-        OpenMM_AmoebaGeneralizedKirkwoodForce_updateParametersInContext(
-            amoebaGeneralizedKirkwoodForce, context.contextPointer);
-      }
-    }
-
-    /**
-     * Updates the WCA force for changes in Use flags or Lambda.
-     *
-     * @param atoms Array of atoms to update.
-     */
-    private void updateWCAForce(Atom[] atoms) {
-      VanDerWaals vdW = getVdwNode();
-      VanDerWaalsForm vdwForm = vdW.getVDWForm();
-      double radScale = 1.0;
-      if (vdwForm.radiusSize == VanDerWaalsForm.RADIUS_SIZE.DIAMETER) {
-        radScale = 0.5;
-      }
-
-      for (Atom atom : atoms) {
-        int index = atom.getXyzIndex() - 1;
-        double useFactor = 1.0;
-        if (!atom.getUse()) {
-          useFactor = 0.0;
-        }
-
-        // Scale all implicit solvent terms with the square of electrostatics lambda
-        // (so dUdisp / dL is 0 at lambdaElec = 0).
-        double lambdaScale = lambdaElec * lambdaElec;
-        if (!atom.applyLambda()) {
-          lambdaScale = 1.0;
-        }
-        useFactor *= lambdaScale;
-
-        VDWType vdwType = atom.getVDWType();
-        double radius = vdwType.radius;
-        double eps = vdwType.wellDepth;
-        OpenMM_AmoebaWcaDispersionForce_setParticleParameters(
-            amoebaWcaDispersionForce,
-            index,
-            OpenMM_NmPerAngstrom * radius * radScale,
-            OpenMM_KJPerKcal * eps * useFactor);
-      }
-
-      if (context.contextPointer != null) {
-        OpenMM_AmoebaWcaDispersionForce_updateParametersInContext(
-            amoebaWcaDispersionForce, context.contextPointer);
-      }
-    }
-
-    /**
-     * Updates the Cavitation force for changes in Use flags or Lambda.
-     *
-     * @param atoms Array of atoms to update.
-     */
-    private void updateCavitationForce(Atom[] atoms) {
-      GeneralizedKirkwood generalizedKirkwood = getGK();
-      ChandlerCavitation chandlerCavitation = generalizedKirkwood.getChandlerCavitation();
-      GaussVol gaussVol = chandlerCavitation.getGaussVol();
-      if (gaussVol == null) {
-        return;
-      }
-
-      double surfaceTension =
-          chandlerCavitation.getSurfaceTension()
-              * OpenMM_KJPerKcal
-              / OpenMM_NmPerAngstrom
-              / OpenMM_NmPerAngstrom;
-
-      // for (int i=0; i<nAtoms; i++) {
-      //  gaussVol.updateAtom(i);
-      // }
-      double[] rad = gaussVol.getRadii();
-
-      for (Atom atom : atoms) {
-        int index = atom.getXyzIndex() - 1;
-        double useFactor = 1.0;
-        if (!atom.getUse()) {
-          useFactor = 0.0;
-        }
-        // Scale all implicit solvent terms with the square of electrostatics lambda
-        // (so dUcav / dL is 0 at lambdaElec = 0).
-        double lambdaScale = lambdaElec * lambdaElec;
-        if (!atom.applyLambda()) {
-          lambdaScale = 1.0;
-        }
-        useFactor *= lambdaScale;
-
-        double radius = rad[index];
-        int isHydrogen = OpenMM_False;
-        if (atom.isHydrogen()) {
-          isHydrogen = OpenMM_True;
-          radius = 0.0;
-        }
-        OpenMM_AmoebaGKCavitationForce_setParticleParameters(
-            amoebaCavitationForce,
-            index,
-            radius * OpenMM_NmPerAngstrom,
-            surfaceTension * useFactor,
-            isHydrogen);
-      }
-
-      if (context.contextPointer != null) {
-        OpenMM_AmoebaGKCavitationForce_updateParametersInContext(
-            amoebaCavitationForce, context.contextPointer);
-      }
-    }
-
-    /** Updates the Torsion force for application of lambda scaling. */
-    private void updateTorsionForce() {
-      // Only update parameters if torsions are being scaled by lambda.
-      if (!torsionLambdaTerm) {
-        return;
-      }
-
-      // Check if this system has torsions.
-      Torsion[] torsions = getTorsions();
-      if (torsions == null || torsions.length < 1) {
-        return;
-      }
-
-      int index = 0;
-      for (Torsion torsion : torsions) {
-        TorsionType torsionType = torsion.torsionType;
-        int nTerms = torsionType.phase.length;
-        if (!torsion.applyLambda()) {
-          index += nTerms;
-          continue;
-        }
-
-        int a1 = torsion.getAtom(0).getXyzIndex() - 1;
-        int a2 = torsion.getAtom(1).getXyzIndex() - 1;
-        int a3 = torsion.getAtom(2).getXyzIndex() - 1;
-        int a4 = torsion.getAtom(3).getXyzIndex() - 1;
-
-        for (int j = 0; j < nTerms; j++) {
-          double forceConstant =
-              OpenMM_KJPerKcal * torsion.units * torsionType.amplitude[j] * lambdaTorsion;
-          OpenMM_PeriodicTorsionForce_setTorsionParameters(
-              amoebaTorsionForce,
-              index++,
-              a1,
-              a2,
-              a3,
-              a4,
-              j + 1,
-              torsionType.phase[j] * OpenMM_RadiansPerDegree,
-              forceConstant);
-        }
-      }
-
-      if (context.contextPointer != null) {
-        OpenMM_PeriodicTorsionForce_updateParametersInContext(
-            amoebaTorsionForce, context.contextPointer);
-      }
-    }
-    
-    private void updateRestraintTorsions() {
-      // update restraint torsions ONLY here.
-      // Only update parameters if torsions are being scaled by lambda.
-
-      // Check if this system has torsions.
-
-      int nRT = restraintTorsions.length;
-      for (int i = 0; i < nRT; i++) {
-        RestraintTorsion rt = rTors[i];
-        PointerByReference rtOMM = restraintTorsions[i];
-        if (rt.applyLambda()) {
-          int index = 0;
-          TorsionType torsionType = rt.torsionType;
-          int nTerms = torsionType.phase.length;
-          int a1 = rt.getAtom(0).getXyzIndex() - 1;
-          int a2 = rt.getAtom(1).getXyzIndex() - 1;
-          int a3 = rt.getAtom(2).getXyzIndex() - 1;
-          int a4 = rt.getAtom(3).getXyzIndex() - 1;
-
-          for (int j = 0; j < nTerms; j++) {
-            double forceConstant =
-                    OpenMM_KJPerKcal * rt.units * torsionType.amplitude[j] * rt.mapLambda(getLambda());
-            OpenMM_PeriodicTorsionForce_setTorsionParameters(
-                    rtOMM,
-                    index++,
-                    a1,
-                    a2,
-                    a3,
-                    a4,
-                    j + 1,
-                    torsionType.phase[j] * OpenMM_RadiansPerDegree,
-                    forceConstant);
-          }
-        }
-
-        if (context.contextPointer != null) {
-          OpenMM_PeriodicTorsionForce_updateParametersInContext(
-                  rtOMM, context.contextPointer);
-        }
-      }
-    }
-
-    /** Updates the Improper Torsion force for application of lambda scaling. */
-    private void updateImproperTorsionForce() {
-      // Only update parameters if torsions are being scaled by lambda.
-      if (!torsionLambdaTerm) {
-        return;
-      }
-
-      ImproperTorsion[] impropers = getImproperTorsions();
-      if (impropers == null || impropers.length < 1) {
-        return;
-      }
-
-      int nImpropers = impropers.length;
-      for (int i = 0; i < nImpropers; i++) {
-        ImproperTorsion improperTorsion = impropers[i];
-        if (!improperTorsion.applyLambda()) {
-          continue;
-        }
-
-        int a1 = improperTorsion.getAtom(0).getXyzIndex() - 1;
-        int a2 = improperTorsion.getAtom(1).getXyzIndex() - 1;
-        int a3 = improperTorsion.getAtom(2).getXyzIndex() - 1;
-        int a4 = improperTorsion.getAtom(3).getXyzIndex() - 1;
-
-        ImproperTorsionType improperTorsionType = improperTorsion.improperType;
-        double forceConstant =
-            OpenMM_KJPerKcal
-                * improperTorsion.units
-                * improperTorsion.scaleFactor
-                * improperTorsionType.k
-                * lambdaTorsion;
-        OpenMM_PeriodicTorsionForce_setTorsionParameters(
-            amoebaImproperTorsionForce,
-            i,
-            a1,
-            a2,
-            a3,
-            a4,
-            improperTorsionType.periodicity,
-            improperTorsionType.phase * OpenMM_RadiansPerDegree,
-            forceConstant);
-      }
-
-      if (context.contextPointer != null) {
-        OpenMM_PeriodicTorsionForce_updateParametersInContext(
-            amoebaImproperTorsionForce, context.contextPointer);
-      }
-    }
   }
 
   /** Retrieve state information from an OpenMM Simulation. */

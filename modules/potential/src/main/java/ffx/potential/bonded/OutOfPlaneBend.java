@@ -130,7 +130,7 @@ public class OutOfPlaneBend extends BondedTerm {
   public static OutOfPlaneBend outOfPlaneBendFactory(Angle angle, ForceField forceField) {
     Atom centralAtom = angle.atoms[1];
     if (centralAtom.isTrigonal()) {
-      Atom fourthAtom = angle.getTrigonalAtom();
+      Atom fourthAtom = angle.getFourthAtomOfTrigonalCenter();
       Atom[] atoms = angle.atoms;
 
       OutOfPlaneBendType outOfPlaneBendType = forceField.getOutOfPlaneBendType(fourthAtom.getAtomType(),

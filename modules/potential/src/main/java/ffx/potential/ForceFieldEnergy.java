@@ -52,16 +52,42 @@ import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 import edu.rit.pj.reduction.SharedDouble;
-import ffx.crystal.*;
+import ffx.crystal.Crystal;
+import ffx.crystal.CrystalPotential;
+import ffx.crystal.LatticeSystem;
+import ffx.crystal.NCSCrystal;
+import ffx.crystal.ReplicatesCrystal;
+import ffx.crystal.SpaceGroup;
+import ffx.crystal.SpaceGroupDefinitions;
+import ffx.crystal.SymOp;
 import ffx.numerics.Constraint;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.switching.ConstantSwitch;
 import ffx.numerics.switching.UnivariateFunctionFactory;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
-import ffx.potential.bonded.*;
+import ffx.potential.bonded.Angle;
+import ffx.potential.bonded.AngleTorsion;
+import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
+import ffx.potential.bonded.Bond;
+import ffx.potential.bonded.BondedTerm;
+import ffx.potential.bonded.ImproperTorsion;
+import ffx.potential.bonded.LambdaInterface;
+import ffx.potential.bonded.MSNode;
+import ffx.potential.bonded.MultiResidue;
+import ffx.potential.bonded.OutOfPlaneBend;
+import ffx.potential.bonded.PiOrbitalTorsion;
+import ffx.potential.bonded.RelativeSolvation;
 import ffx.potential.bonded.RelativeSolvation.SolvationLibrary;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.RestraintBond;
+import ffx.potential.bonded.RestraintTorsion;
+import ffx.potential.bonded.StretchBend;
+import ffx.potential.bonded.StretchTorsion;
+import ffx.potential.bonded.Torsion;
+import ffx.potential.bonded.TorsionTorsion;
+import ffx.potential.bonded.UreyBradley;
 import ffx.potential.constraint.CcmaConstraint;
 import ffx.potential.constraint.SettleConstraint;
 import ffx.potential.extended.ExtendedSystem;
@@ -70,11 +96,10 @@ import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.NCSRestraint;
 import ffx.potential.nonbonded.ParticleMeshEwald;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart;
-import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.RestrainGroups;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.nonbonded.VanDerWaalsTornado;
+import ffx.potential.parameters.AngleType.AngleMode;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.ForceField.ELEC_FORM;
@@ -551,25 +576,25 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     double a, b, c, alpha, beta, gamma;
     boolean aperiodic;
     try {
-        spacegroup = forceField.getString("SPACEGROUP", "P 1");
-        SpaceGroup sg = SpaceGroupDefinitions.spaceGroupFactory(spacegroup);
-        LatticeSystem latticeSystem = sg.latticeSystem;
-        a = forceField.getDouble("A_AXIS");
-        aperiodic = false;
-        b = forceField.getDouble("B_AXIS", latticeSystem.getDefaultBAxis(a));
-        c = forceField.getDouble("C_AXIS", latticeSystem.getDefaultCAxis(a, b));
-        alpha = forceField.getDouble("ALPHA", latticeSystem.getDefaultAlpha());
-        beta = forceField.getDouble("BETA", latticeSystem.getDefaultBeta());
-        gamma = forceField.getDouble("GAMMA", latticeSystem.getDefaultGamma());
-        if (!sg.latticeSystem.validParameters(a, b, c, alpha, beta, gamma)) {
-          logger.severe(" Check lattice parameters.");
-        }
-        if (a == 1.0 && b == 1.0 && c == 1.0) {
-          String message = " A-, B-, and C-axis values equal to 1.0.";
-          logger.info(message);
-          throw new Exception(message);
-        }
-      } catch (Exception e) {
+      spacegroup = forceField.getString("SPACEGROUP", "P 1");
+      SpaceGroup sg = SpaceGroupDefinitions.spaceGroupFactory(spacegroup);
+      LatticeSystem latticeSystem = sg.latticeSystem;
+      a = forceField.getDouble("A_AXIS");
+      aperiodic = false;
+      b = forceField.getDouble("B_AXIS", latticeSystem.getDefaultBAxis(a));
+      c = forceField.getDouble("C_AXIS", latticeSystem.getDefaultCAxis(a, b));
+      alpha = forceField.getDouble("ALPHA", latticeSystem.getDefaultAlpha());
+      beta = forceField.getDouble("BETA", latticeSystem.getDefaultBeta());
+      gamma = forceField.getDouble("GAMMA", latticeSystem.getDefaultGamma());
+      if (!sg.latticeSystem.validParameters(a, b, c, alpha, beta, gamma)) {
+        logger.severe(" Check lattice parameters.");
+      }
+      if (a == 1.0 && b == 1.0 && c == 1.0) {
+        String message = " A-, B-, and C-axis values equal to 1.0.";
+        logger.info(message);
+        throw new Exception(message);
+      }
+    } catch (Exception e) {
       logger.info(" The system will be treated as aperiodic.");
       aperiodic = true;
 
@@ -961,29 +986,15 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         form = ELEC_FORM.PAM;
       }
 
-      boolean pmeQI = forceField.getBoolean("PME_QI", false);
-
-      if (pmeQI) {
-        particleMeshEwald =
-            new ParticleMeshEwaldQI(
-                atoms,
-                molecule,
-                forceField,
-                crystal,
-                vanderWaals.getNeighborList(),
-                form,
-                parallelTeam);
-      } else {
-        particleMeshEwald =
-            new ParticleMeshEwaldCart(
-                atoms,
-                molecule,
-                forceField,
-                crystal,
-                vanderWaals.getNeighborList(),
-                form,
-                parallelTeam);
-      }
+      particleMeshEwald =
+          new ParticleMeshEwald(
+              atoms,
+              molecule,
+              forceField,
+              crystal,
+              vanderWaals.getNeighborList(),
+              form,
+              parallelTeam);
       double charge = molecularAssembly.getCharge(checkAllNodeCharges);
       logger.info(format("\n  Overall system charge:             %10.3f", charge));
     } else {
@@ -1036,7 +1047,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       String[] toks = rtc.split("\\s+");
       int nTok = toks.length;
       if (nTok < 7) {
-        throw new IllegalArgumentException(format("restrain-torsion-cos record %s must have 4 atom indices, amplitude, phase shift and periodicity!", rtc));
+        throw new IllegalArgumentException(format(
+            "restrain-torsion-cos record %s must have 4 atom indices, amplitude, phase shift and periodicity!",
+            rtc));
       }
       int ai1 = Integer.parseInt(toks[0]) - 1;
       int ai2 = Integer.parseInt(toks[1]) - 1;
@@ -1046,7 +1059,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       Atom a2 = atoms[ai2];
       Atom a3 = atoms[ai3];
       Atom a4 = atoms[ai4];
-      int[] atomClasses = new int[]{-1, -1, -1, -1};
+      int[] atomClasses = new int[] {-1, -1, -1, -1};
 
       int startTerms = 4;
       boolean lamEnabled = false;
@@ -1401,10 +1414,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       if (particleMeshEwald == null) {
         logger.warning("Null PME during ESV setup.");
       }
-      if (!(particleMeshEwald instanceof ParticleMeshEwaldCart)) {
-        logger.severe("Extended systems can attach only to Quasi-Internal PME. Try -Dpme-qi=true.");
-      }
-      ((ParticleMeshEwaldCart) particleMeshEwald).attachExtendedSystem(system);
+      ((ParticleMeshEwald) particleMeshEwald).attachExtendedSystem(system);
     }
     if (crystal != null) {
       crystal.setSpecialPositionCutoff(0.0);
@@ -1464,11 +1474,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (vanderWaalsTerm && vanderWaals != null) {
       vanderWaals.detachExtendedSystem();
     }
-    if (multipoleTerm && particleMeshEwald != null) {
-      if (particleMeshEwald instanceof ParticleMeshEwaldQI) {
-        ((ParticleMeshEwaldQI) particleMeshEwald).detachExtendedSystem();
-      }
-    }
+
+    // if (multipoleTerm && particleMeshEwald != null) {
+    //    particleMeshEwald.detachExtendedSystem();
+    // }
+
     reInit();
   }
 
@@ -1854,12 +1864,37 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   }
 
   /**
-   * Getter for the field <code>angles</code>.
+   * Getter for the field <code>angles</code>. Both normal and in-plane angles are returned.
    *
    * @return an array of {@link ffx.potential.bonded.Angle} objects.
    */
   public Angle[] getAngles() {
     return angles;
+  }
+
+  /**
+   * Getter for the field <code>angles</code> with only <code>AngleMode</code> angles.
+   *
+   * @param angleMode Only angles of this mode will be returned.
+   * @return an array of {@link ffx.potential.bonded.Angle} objects.
+   */
+  public Angle[] getAngles(AngleMode angleMode) {
+    if (angles == null || angles.length < 1) {
+      return null;
+    }
+    int nAngles = angles.length;
+    List<Angle> angleList = new ArrayList<>();
+    // Sort all normal angles from in-plane angles
+    for (int i = 0; i < nAngles; i++) {
+      if (angles[i].getAngleMode() == angleMode) {
+        angleList.add(angles[i]);
+      }
+    }
+    nAngles = angleList.size();
+    if (nAngles < 1) {
+      return null;
+    }
+    return angleList.toArray(new Angle[0]);
   }
 
   /**
@@ -2613,32 +2648,21 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /**
    * getPmeCartNode.
    *
-   * @return a {@link ffx.potential.nonbonded.ParticleMeshEwaldCart} object.
+   * @return a {@link ParticleMeshEwald} object.
    */
-  public ParticleMeshEwaldCart getPmeCartNode() {
-    return (particleMeshEwald instanceof ParticleMeshEwaldCart)
-        ? (ParticleMeshEwaldCart) particleMeshEwald
+  public ParticleMeshEwald getPmeCartNode() {
+    return (particleMeshEwald instanceof ParticleMeshEwald)
+        ? (ParticleMeshEwald) particleMeshEwald
         : null;
   }
 
   /**
    * getPmeNode.
    *
-   * @return a {@link ffx.potential.nonbonded.ParticleMeshEwald} object.
+   * @return a {@link ParticleMeshEwald} object.
    */
   public ParticleMeshEwald getPmeNode() {
     return particleMeshEwald;
-  }
-
-  /**
-   * getPmeQiNode.
-   *
-   * @return a {@link ffx.potential.nonbonded.ParticleMeshEwaldQI} object.
-   */
-  public ParticleMeshEwaldQI getPmeQiNode() {
-    return (particleMeshEwald instanceof ParticleMeshEwaldQI)
-        ? (ParticleMeshEwaldQI) particleMeshEwald
-        : null;
   }
 
   /**
@@ -2649,6 +2673,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   public double getPolarizationEnergy() {
     return polarizationEnergy;
   }
+
 
   /**
    * {@inheritDoc}
@@ -3695,11 +3720,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
     if (rTorsTerm) {
       sb.append(
-              format("  %s %16.8f %12d %12.3f\n",
-                      "Dihedral Restraints",
-                      rTorsEnergy,
-                      nRestTors,
-                      rTorsTime * toSeconds)
+          format("  %s %16.8f %12d %12.3f\n",
+              "Dihedral Restraints",
+              rTorsEnergy,
+              nRestTors,
+              rTorsTime * toSeconds)
       );
     }
     if (vanderWaalsTerm && nVanDerWaalInteractions > 0) {
@@ -3712,14 +3737,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
               vanDerWaalsTime * toSeconds));
     }
     if (multipoleTerm && nPermanentInteractions > 0) {
-      String pmeTitle =
-          (particleMeshEwald instanceof ParticleMeshEwaldQI)
-              ? "Q.Int. Multipoles "
-              : "Atomic Multipoles ";
+      String pmeTitle = "Atomic Multipoles ";
       if (polarizationTerm) {
-        sb.append(
-            format(
-                "  %s %16.8f %12d\n", pmeTitle, permanentMultipoleEnergy, nPermanentInteractions));
+        sb.append(format("  %s %16.8f %12d\n", pmeTitle, permanentMultipoleEnergy,
+            nPermanentInteractions));
       } else {
         sb.append(
             format(
@@ -4549,7 +4570,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
            * If it is scaled internally by lambda, we assume that the energy term is not meant to be internally complemented.
            * In that case, we skip evaluation into restraintEnergy.
            */
-          boolean used = !lambdaBondedTerms || lambdaAllBondedTerms || (term.applyLambda() && !term.isLambdaScaled());
+          boolean used = !lambdaBondedTerms || lambdaAllBondedTerms || (term.applyLambda()
+              && !term.isLambdaScaled());
           if (used) {
             localEnergy += term.energy(gradient, threadID, grad, lambdaGrad);
             if (computeRMSD) {

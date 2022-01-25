@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential.cli;
 
+import static org.apache.commons.io.FilenameUtils.getFullPath;
+
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.utils.PotentialsFunctions;
@@ -104,9 +106,9 @@ public abstract class PotentialScript extends FFXScript {
   }
 
   /**
-   * Set the Active Assembly. This is a work-around for a strange Groovy static compilation
-   * bug where direct assignment of activeAssembly in Groovy scripts that extend PotentialScript
-   * fails (a NPE results).
+   * Set the Active Assembly. This is a work-around for a strange Groovy static compilation bug where
+   * direct assignment of activeAssembly in Groovy scripts that extend PotentialScript fails (a NPE
+   * results).
    *
    * @param molecularAssembly The MolecularAssembly that should be active.
    */
@@ -169,8 +171,27 @@ public abstract class PotentialScript extends FFXScript {
   }
 
   /**
-   * If a filename is supplied, open it and return the MolecularAssembly.
-   * Otherwise, the current activeAssembly is returned (which may be null).
+   * Check that we can write into the current base directory. If not, update the baseDir based on the
+   * supplied filename, including updating the script Binding instance.
+   *
+   * @param dirFromFilename Set the base directory variable <code>baseDir</code> using
+   *     this filename if its not set to a writeable directory.
+   * @return Return the base directory as a String (including an appended
+   *     <code>File.separator</code>).
+   */
+  public String getBaseDirString(String dirFromFilename) {
+    if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
+      File file = new File(dirFromFilename);
+      baseDir = new File(getFullPath(file.getAbsolutePath()));
+      Binding binding = getBinding();
+      binding.setVariable("baseDir", baseDir);
+    }
+    return baseDir.toString() + File.separator;
+  }
+
+  /**
+   * If a filename is supplied, open it and return the MolecularAssembly. Otherwise, the current
+   * activeAssembly is returned (which may be null).
    *
    * @param filename Filename to open.
    * @return The active assembly.
@@ -185,8 +206,8 @@ public abstract class PotentialScript extends FFXScript {
   }
 
   /**
-   * If a filename is supplied, open it and return the MolecularAssemblies.
-   * Otherwise, the current activeAssembly is returned (which may be null).
+   * If a filename is supplied, open it and return the MolecularAssemblies. Otherwise, the current
+   * activeAssembly is returned (which may be null).
    *
    * @param filename Filename to open.
    * @return The active assemblies.

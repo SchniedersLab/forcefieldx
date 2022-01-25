@@ -681,7 +681,7 @@ public class Angle extends BondedTerm {
      *
      * @return The 4th atom of a trigonal center.
      */
-    Atom getTrigonalAtom() {
+    public Atom getFourthAtomOfTrigonalCenter() {
         if (atoms[1].isTrigonal()) {
             for (Bond b : atoms[1].getBonds()) {
                 if (b != bonds[0] && b != bonds[1]) {

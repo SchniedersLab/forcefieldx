@@ -50,7 +50,7 @@ import org.junit.Test;
 
 public class ProgressiveAlignmentTest extends AlgorithmsTest {
 
-  private final double tolerance = 0.001;
+  private final double tolerance = 0.0001;
 
   // TODO: add more tests with more parameters
 
@@ -144,7 +144,7 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
     algorithmsScript = superposeCrystals;
 
-    assertEquals(0.066147, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.066569, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   /** Tests the CrystalSuperpose script in Sohncke group. */
@@ -178,7 +178,7 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
     algorithmsScript = superposeCrystals;
 
-    assertEquals(0.114188, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.1149806, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   /** Tests the CrystalSuperpose script on tricky handedness case. */
@@ -214,7 +214,7 @@ public class ProgressiveAlignmentTest extends AlgorithmsTest {
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
 
-    assertEquals(0.1509703, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.1525275, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
   /** Tests the CrystalSuperpose script on asymmetric unit greater than one. */

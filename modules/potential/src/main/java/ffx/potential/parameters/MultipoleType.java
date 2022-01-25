@@ -511,7 +511,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
       return multipoleType;
     }
 
-    // List sorted of 1-2 iteractions.
+    // List of sorted of 1-2 iteractions.
     List<Atom> n12 = atom.get12List();
 
     // No bonds.

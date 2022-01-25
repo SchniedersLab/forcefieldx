@@ -70,9 +70,9 @@ import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.multipole.MultipoleTensor;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
-import ffx.potential.nonbonded.ParticleMeshEwaldCart.AlchemicalParameters;
+import ffx.potential.nonbonded.ParticleMeshEwald;
+import ffx.potential.nonbonded.ParticleMeshEwald.AlchemicalParameters;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.parameters.ForceField;
 import java.util.logging.Level;
@@ -312,7 +312,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
     try {
       int nAtoms = atoms.length;
       execute(0, nAtoms - 1, permanentReciprocalEnergyLoop[threadIndex]);
-      if (polarization != Polarization.NONE) {
+      if (polarization != ParticleMeshEwald.Polarization.NONE) {
         execute(0, nAtoms - 1, inducedDipoleReciprocalEnergyLoop[threadIndex]);
       }
     } catch (Exception e) {

@@ -362,7 +362,7 @@ public class EnergyTest extends PotentialTest {
                 0,
                 0.0,
                 0,
-                312.82576484,
+                308.55702420206063,
                 203926,
                 -1208.54202510,
                 203926,
@@ -398,7 +398,7 @@ public class EnergyTest extends PotentialTest {
                 0,
                 0.0,
                 0,
-                20.45106694,
+                20.36671513,
                 2290,
                 -169.03958434,
                 2290,
@@ -828,7 +828,7 @@ public class EnergyTest extends PotentialTest {
                 0,
                 -3.02691282, // Stretch-Torsion
                 44,
-                -4.54517111, // Angle-Torsion
+                -4.54420615, // Angle-Torsion
                 72,
                 218.31775844, // vdW
                 134421,
@@ -878,7 +878,7 @@ public class EnergyTest extends PotentialTest {
                 0,
                 0.0, // Angle-Torsion
                 0,
-                473.23759467, // vdW
+                470.1728659015, // vdW
                 394854,
                 -1188.66271426, // Permanent
                 394854,

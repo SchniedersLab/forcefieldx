@@ -122,7 +122,7 @@ public class ScfPredictor {
   /**
    * run.
    *
-   * @param lambdaMode a {@link ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode} object.
+   * @param lambdaMode a {@link LambdaMode} object.
    */
   public void run(LambdaMode lambdaMode) {
     if (predictorMode == PredictorMode.NONE) {

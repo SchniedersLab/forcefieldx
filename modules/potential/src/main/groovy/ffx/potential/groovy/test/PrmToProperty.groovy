@@ -108,7 +108,8 @@ class PrmToProperty extends PotentialScript {
 
     ForceField forceField = forceFieldFilter.parse()
 
-    for (String filename : filenames) {
+    for (int i = 1; i < filenames.size(); i++) {
+      String filename = filenames.get(i)
       properties = Keyword.loadProperties(null)
       properties.setProperty("parameters", filename)
       forceFieldFilter = new ForceFieldFilter(properties)

@@ -77,12 +77,12 @@ public class ManyBodyTest extends AlgorithmsTest {
     ManyBody manyBody = new ManyBody(binding).run();
     algorithmsScript = manyBody;
 
-    double expectedTotalPotential = -219.88365885049828;
+    double expectedTotalPotential = -221.48751140045158;
     double actualTotalPotential = manyBody.getPotential()
         .getEnergyComponent(PotentialComponent.ForceFieldEnergy);
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-7);
 
-    double expectedApproximateEnergy = -215.73796751249856;
+    double expectedApproximateEnergy = -217.34182006245888;
     double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-7);
   }
@@ -93,12 +93,7 @@ public class ManyBodyTest extends AlgorithmsTest {
    * angstroms.
    */
   @Test
-  public void testManyBodyBoxRestart() throws IOException {
-    File restartBoxBackup =
-        new File("src/main/java/ffx/algorithms/structures/5awl.restartBoxBackup");
-    File restart = new File("src/main/java/ffx/algorithms/structures/5awl.restart");
-    FileUtils.copyFile(restartBoxBackup, restart);
-
+  public void testManyBodyBoxRestart() {
     // Set-up the input arguments for the script.
     String[] args = {
         "-a", "5",
@@ -106,7 +101,7 @@ public class ManyBodyTest extends AlgorithmsTest {
         "--tC", "1.5",
         "-T", "--thC",
         "1.5", "--eR",
-        "src/main/java/ffx/algorithms/structures/5awl.restart",
+        "src/main/java/ffx/algorithms/structures/5awl.box.restart",
         "src/main/java/ffx/algorithms/structures/5awl.pdb"
     };
     binding.setVariable("args", args);
@@ -116,17 +111,14 @@ public class ManyBodyTest extends AlgorithmsTest {
     ManyBody manyBody = new ManyBody(binding).run();
     algorithmsScript = manyBody;
 
-    double expectedTotalPotential = -219.88365885049828;
+    double expectedTotalPotential = -221.48751140045158;
     double actualTotalPotential =
         manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-7);
 
-    double expectedApproximateEnergy = -219.12352460035171;
+    double expectedApproximateEnergy = -220.72737768799902;
     double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-7);
-
-    // Delete restart file.
-    restart.delete();
   }
 
   @Test
@@ -144,12 +136,12 @@ public class ManyBodyTest extends AlgorithmsTest {
 
     // Evaluate the script.
     manyBody.run();
-    double expectedTotalPotential = -219.88365885049828;
+    double expectedTotalPotential = -221.48751140045158;
     double actualTotalPotential =
         manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
 
-    double expectedApproximateEnergy = -211.27591736924524;
+    double expectedApproximateEnergy = -212.8797699192298;
     double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-5);
 
@@ -184,7 +176,7 @@ public class ManyBodyTest extends AlgorithmsTest {
         "-L", "2",
         "--tC", "2",
         "--pr", "2",
-        "--mC", "10000",
+        "--mC", "100",
         "src/main/java/ffx/algorithms/structures/5awl.pdb"
     };
     binding.setVariable("args", args);
@@ -198,12 +190,12 @@ public class ManyBodyTest extends AlgorithmsTest {
 
     manyBody.run();
 
-    double expectedTotalPotential = -203.72294574070136;
+    double expectedTotalPotential = -205.32717394768866;
     double actualTotalPotential =
         manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
 
-    double expectedApproximateEnergy = -194.09506985539784;
+    double expectedApproximateEnergy = -195.699298;
     double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-5);
 
@@ -216,14 +208,10 @@ public class ManyBodyTest extends AlgorithmsTest {
    * but the restart file was generated using 2-body and 3-body cutoffs of 2 angstroms.
    */
   @Test
-  public void testManyBodyRestart() throws IOException {
-    File restartBackup = new File("src/main/java/ffx/algorithms/structures/5awl.restartBackup");
-    File restart = new File("src/main/java/ffx/algorithms/structures/5awl.restart");
-    FileUtils.copyFile(restartBackup, restart);
-
+  public void testManyBodyRestart() {
     // Set-up the input arguments for the script.
     String[] args = {"-a", "2", "-L", "2", "--tC", "1.5", "-T", "--thC", "1.5", "--eR",
-        "src/main/java/ffx/algorithms/structures/5awl.restart",
+        "src/main/java/ffx/algorithms/structures/5awl.test.restart",
         "src/main/java/ffx/algorithms/structures/5awl.pdb"
     };
     binding.setVariable("args", args);
@@ -233,15 +221,13 @@ public class ManyBodyTest extends AlgorithmsTest {
     ManyBody manyBody = new ManyBody(binding).run();
     algorithmsScript = manyBody;
 
-    double expectedTotalPotential = -217.86618724075134;
+    double expectedTotalPotential = -220.12787129;
     double actualTotalPotential =
         manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
 
-    double expectedApproximateEnergy = -260.2511478848418;
+    double expectedApproximateEnergy = -262.512834;
     double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-5);
-
-    restart.delete();
   }
 }

@@ -45,6 +45,10 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import static java.lang.String.format
+import static org.apache.commons.io.FilenameUtils.getExtension
+import static org.apache.commons.io.FilenameUtils.removeExtension
+
 /**
  * The SaveRotamers script saves a file as a PDB file
  * <br>
@@ -65,51 +69,51 @@ class SaveRotamers extends PotentialScript {
   /**
    * -l or --library to select rotamer library
    */
-  @Option(names = ['--library', '-l'], paramLabel = "1",
+  @Option(names = ['--library', '-l'], paramLabel = "1", defaultValue = "1",
       description = 'Available rotamer libraries are (1) Ponder and Richards or (2) Richardson.')
-  int library = 1
+  int library
 
   /**
    * -r or --resid to select residue number
    */
-  @Option(names = ['--resid', '-r'], paramLabel = "1",
+  @Option(names = ['--resid', '-r'], paramLabel = "1", defaultValue = "1",
       description = 'Residue number.')
-  int resID = 1
+  int resID
 
   /**
    * -i or --independent to draw nucleic acid rotamers independently of chain context
    */
-  @Option(names = ['--independent', '-i'], paramLabel = 'false',
+  @Option(names = ['--independent', '-i'], paramLabel = 'false', defaultValue = 'false',
       description = 'Independent draws nucleic acid rotamers independently of chain context.')
-  boolean independent = false
+  boolean independent
 
   /**
    * -s or --start to select first rotamer to draw. Indexed form rotamer 0
    */
-  @Option(names = ['--start', '-s'], paramLabel = "0",
+  @Option(names = ['--start', '-s'], paramLabel = "0", defaultValue = "0",
       description = 'First rotamer to draw (indexed from rotamer 0).')
-  int start = 0
+  int start
 
   /**
    * -f or --finish to select last rotamer to draw. Indexed from rotamer 0
    */
-  @Option(names = ['--finish', '-f'], paramLabel = "-1",
+  @Option(names = ['--finish', '-f'], paramLabel = "-1", defaultValue = "-1",
       description = 'Last rotamer to draw (indexed from rotamer 0).')
-  int finish = -1
+  int finish
 
   /**
    * -x or --all to draw all rotamers beginning from the passed rotamer number (overrides other options). Indexed from rotamer 0.
    */
-  @Option(names = ['--all', '-x'], paramLabel = "-1",
+  @Option(names = ['--all', '-x'], paramLabel = "-1", defaultValue = "-1",
       description = 'Draw all rotamers beginning from the passed index (overrides other options).')
-  int all = -1
+  int all
 
   /**
    * -u or --upstreamPucker to adjust the pucker of the 5\' residue to match the rotamer. Use flag to turn on
    */
-  @Option(names = ['--upstreamPucker', '-u'], paramLabel = 'false',
+  @Option(names = ['--upstreamPucker', '-u'], paramLabel = 'false', defaultValue = 'false',
       description = 'Adjusts the pucker of the 5\' residue to match the rotamer.')
-  boolean upstreamPucker = false
+  boolean upstreamPucker
 
 
   /**
@@ -181,7 +185,8 @@ class SaveRotamers extends PotentialScript {
       return this
     }
 
-    Rotamer[] rotamers = residue.getRotamers(rLib)
+    residue.setRotamers(rLib)
+    Rotamer[] rotamers = residue.getRotamers()
     if (rotamers == null) {
       logger.severe(" There are no rotamers for residue + " + residue.toString())
     }
@@ -215,8 +220,8 @@ class SaveRotamers extends PotentialScript {
       }
     }
 
-    String ext = FilenameUtils.getExtension(filename)
-    filename = FilenameUtils.removeExtension(filename)
+    String ext = getExtension(filename)
+    filename = removeExtension(filename)
 
     if (saveAllRotamers) {
       if (allStart >= nrotamers) {
@@ -230,10 +235,10 @@ class SaveRotamers extends PotentialScript {
             RotamerLibrary.applySugarPucker(prevResidue, sugarPucker, isDeoxy, true)
           }
           if (ext.toUpperCase().contains("XYZ")) {
-            logger.info(String.format("Saving rotamer %d", i))
+            logger.info(format(" Saving rotamer %d", i))
             potentialFunctions.saveAsXYZ(activeAssembly, new File(filename + ".xyz"))
           } else {
-            logger.info(String.format("Saving rotamer %d", i))
+            logger.info(format(" Saving rotamer %d", i))
             potentialFunctions.saveAsPDB(activeAssembly, new File(filename + ".pdb"))
           }
         }
@@ -257,10 +262,10 @@ class SaveRotamers extends PotentialScript {
             RotamerLibrary.applySugarPucker(prevResidue, sugarPucker, isDeoxy, true)
           }
           if (ext.toUpperCase().contains("XYZ")) {
-            logger.info(String.format("Saving rotamer %d", i))
+            logger.info(format(" Saving rotamer %d", i))
             potentialFunctions.saveAsXYZ(activeAssembly, new File(filename + ".xyz"))
           } else {
-            logger.info(String.format("Saving rotamer %d", i))
+            logger.info(format(" Saving rotamer %d", i))
             potentialFunctions.saveAsPDB(activeAssembly, new File(filename + ".pdb"))
           }
         }

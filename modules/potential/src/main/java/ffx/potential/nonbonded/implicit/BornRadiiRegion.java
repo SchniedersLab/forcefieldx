@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
+import static ffx.potential.nonbonded.implicit.BornTanhRescaling.MAX_BORN_RADIUS;
 import static ffx.potential.nonbonded.implicit.BornTanhRescaling.tanhRescaling;
 import static ffx.potential.nonbonded.implicit.NeckIntegral.getNeckConstants;
 import static java.lang.Double.isInfinite;
@@ -44,6 +45,7 @@ import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -55,8 +57,10 @@ import edu.rit.pj.reduction.SharedDoubleArray;
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * Parallel computation of Born radii via the Grycuk method.
@@ -98,13 +102,25 @@ public class BornRadiiRegion extends ParallelRegion {
    * of bound non-hydrogen atoms
    */
   private double[] neckScale;
+  /**
+   * Perfect born radius values
+   */
+  private final double[] perfectRadii;
+  /**
+   * Flag to turn on use of perfect Born radii.
+   */
+  private final boolean usePerfectRadii;
   /** Born radius of each atom. */
   private double[] born;
-  /** Flag to indicate if an atom should be included. */
+  /**
+   * Flag to indicate if an atom should be included.
+   */
   private boolean[] use;
   /** GK cut-off distance squared. */
   private double cut2;
-  /** Forces all atoms to be considered during Born radius updates. */
+  /**
+   * Forces all atoms to be considered during Born radius updates.
+   */
   private boolean nativeEnvironmentApproximation;
   /** If true, the descreening integral includes overlaps with the volume of the descreened atom */
   private final boolean perfectHCTScale;
@@ -136,12 +152,13 @@ public class BornRadiiRegion extends ParallelRegion {
    * BornRadiiRegion Constructor.
    *
    * @param nt Number of threads.
+   * @param nAtoms Number of atoms.
    * @param forceField The ForceField in use.
    * @param neckCorrection Perform a neck correction.
    * @param tanhCorrection Perform a tanh correction.
    * @param perfectHCTScale Use "perfect" HCT scale factors.
    */
-  public BornRadiiRegion(int nt, ForceField forceField, boolean neckCorrection,
+  public BornRadiiRegion(int nt, int nAtoms, ForceField forceField, boolean neckCorrection,
       boolean tanhCorrection, boolean perfectHCTScale) {
     bornRadiiLoop = new BornRadiiLoop[nt];
     for (int i = 0; i < nt; i++) {
@@ -151,16 +168,62 @@ public class BornRadiiRegion extends ParallelRegion {
     this.perfectHCTScale = perfectHCTScale;
     this.neckCorrection = neckCorrection;
     this.tanhCorrection = tanhCorrection;
-    if (verboseRadii) {
-      logger.info(" Verbose Born radii.");
+    if (verboseRadii && logger.isLoggable(Level.FINER)) {
+      logger.finer(" Verbose Born radii.");
+    }
+
+    if (tanhCorrection) {
+      unscaledBornIntegral = new double[nAtoms];
+    }
+
+    CompositeConfiguration compositeConfiguration = forceField.getProperties();
+    usePerfectRadii = forceField.getBoolean("PERFECT_RADII", false);
+    String[] radii = compositeConfiguration.getStringArray("perfect-radius");
+    if (usePerfectRadii) {
+      perfectRadii = new double[nAtoms];
+      if (radii != null && radii.length > 0) {
+        if (logger.isLoggable(Level.FINER)) {
+          logger.finer(format(" Reading %d perfect-radius records .", radii.length));
+        }
+        for (String radius : radii) {
+          String[] tokens = radius.trim().split(" +");
+          if (tokens.length == 2) {
+            // Input records should be from 1 to the number of atoms (subtract 1 to index from 0).
+            int index = Integer.parseInt(tokens[0]) - 1;
+            double value = Double.parseDouble(tokens[1]);
+            if (logger.isLoggable(Level.FINER)) {
+              logger.finer(format(" perfect-radius %d %16.8f", index, value));
+            }
+            if (index >= 0 && index < nAtoms && value > 0.0) {
+              perfectRadii[index] = value;
+            }
+          } else {
+            logger.warning(format(" Could not parse perfect-radius line %s", radius));
+          }
+        }
+      }
+    } else {
+      perfectRadii = null;
     }
   }
 
   @Override
   public void finish() {
     int nAtoms = atoms.length;
-    unscaledBornIntegral = new double[atoms.length];
-    double bigRadius = BornTanhRescaling.MAX_BORN_RADIUS;
+
+    // Load perfect radii and return.
+    if (usePerfectRadii) {
+      for (int i = 0; i < nAtoms; i++) {
+        double perfectRadius = perfectRadii[i];
+        if (!use[i] || perfectRadius <= 0.0) {
+          born[i] = baseRadius[i];
+        } else {
+          born[i] = perfectRadius;
+        }
+      }
+      return;
+    }
+
     for (int i = 0; i < nAtoms; i++) {
       final double baseRi = baseRadius[i];
       if (!use[i]) {
@@ -177,7 +240,7 @@ public class BornRadiiRegion extends ParallelRegion {
         double sum = PI4_3 / (baseRi * baseRi * baseRi) - soluteIntegral;
         // Due to solute atomic overlaps, in rare cases the sum can be less than zero.
         if (sum <= 0.0) {
-          born[i] = bigRadius;
+          born[i] = MAX_BORN_RADIUS;
           if (verboseRadii) {
             logger.info(format(
                 " Born Integral < 0 for atom %d; set Born radius to %12.6f (Base Radius: %12.6f)",
@@ -192,8 +255,8 @@ public class BornRadiiRegion extends ParallelRegion {
                   format(" Born radius < Base Radius for atom %d: set Born radius to %12.6f", i + 1,
                       baseRi));
             }
-          } else if (born[i] > bigRadius) {
-            born[i] = bigRadius;
+          } else if (born[i] > MAX_BORN_RADIUS) {
+            born[i] = MAX_BORN_RADIUS;
             if (verboseRadii) {
               logger.info(
                   format(" Born radius > 50.0 Angstroms for atom %d: set Born radius to %12.6f",
@@ -216,11 +279,13 @@ public class BornRadiiRegion extends ParallelRegion {
         }
       }
     }
+
     if (verboseRadii) {
       // Only log the Born radii once.
       logger.info(" Disabling verbose radii printing.");
       verboseRadii = false;
     }
+
   }
 
   public void init(
@@ -254,12 +319,14 @@ public class BornRadiiRegion extends ParallelRegion {
 
   @Override
   public void run() {
-    try {
-      int nAtoms = atoms.length;
-      execute(0, nAtoms - 1, bornRadiiLoop[getThreadIndex()]);
-    } catch (Exception e) {
-      String message = "Fatal exception computing Born radii in thread " + getThreadIndex() + "\n";
-      logger.log(Level.SEVERE, message, e);
+    if (!usePerfectRadii) {
+      try {
+        int nAtoms = atoms.length;
+        execute(0, nAtoms - 1, bornRadiiLoop[getThreadIndex()]);
+      } catch (Exception e) {
+        String message = "Fatal exception computing Born radii in thread " + getThreadIndex() + "\n";
+        logger.log(Level.SEVERE, message, e);
+      }
     }
   }
 

@@ -128,11 +128,13 @@ public class GaussVol {
    */
   public static final double DEFAULT_GAUSSVOL_RADII_OFFSET = 0.0;
 
-  private static final double RMIN_TO_SIGMA = 1.0 / pow((double) 2.0, (double) 1.0 / 6.0);
+  private static final double RMIN_TO_SIGMA = 1.0 / pow(2.0, 1.0 / 6.0);
 
-  // private static double MIN_GVOL = 1.0e-12;
   // Output Variables
   private final GaussVolRegion gaussVolRegion;
+
+  private enum GAUSSVOL_MODE {COMPUTE_TREE, RESCAN_TREE}
+
   private final AtomicDoubleArray3D grad;
   private final SharedDouble totalVolume;
   private final SharedDouble energy;
@@ -144,6 +146,7 @@ public class GaussVol {
   private final double vdwRadiiOffset;
   private final boolean includeHydrogen;
   private final boolean useSigma;
+  private static final double FOUR_THIRDS_PI = 4.0 / 3.0 * PI;
 
   /**
    * Array of Atoms in the system.
@@ -155,13 +158,13 @@ public class GaussVol {
    * Atomic radii for all atoms.
    */
   private double[] radii;
+  /** Atomic volumes for all atoms, which are computed from atomic radii. */
+  private double[] volumes;
   /**
    * All atomic radii with a small offset added, which are used to compute surface area using a
    * finite-difference approach.
    */
   private final double[] radiiOffset;
-  /** Atomic volumes for all atoms, which are computed from atomic radii. */
-  private double[] volumes;
   /** Atomic "self" volumes for all atoms, which are computed from the radii plus offset array. */
   private final double[] volumeOffset;
   /** Surface tension -- in our implementation these values are kept at 1.0. */
@@ -186,13 +189,11 @@ public class GaussVol {
   /** Volume (Ang^3). */
   private double volume;
   /**
-   * The volume gradient, which does not include the solvent pressure constant (i.e. this is in
-   * Ang^2).
+   * The volume gradient, which does not include the solvent pressure constant (Ang^2).
    */
   private double[] volumeGradient;
   /**
-   * The surface area gradient, which does not include the surface tension constant (i.e. this is in
-   * Ang).
+   * The surface area gradient, which does not include the surface tension constant (Ang).
    */
   private double[] surfaceAreaGradient;
 
@@ -210,16 +211,14 @@ public class GaussVol {
     this.atoms = atoms;
     nAtoms = atoms.length;
     tree = new GaussianOverlapTree(nAtoms);
-    this.radii = new double[nAtoms];
-    this.volumes = new double[nAtoms];
-    this.gammas = new double[nAtoms];
-    this.ishydrogen = new boolean[nAtoms];
-
+    radii = new double[nAtoms];
+    volumes = new double[nAtoms];
+    gammas = new double[nAtoms];
+    ishydrogen = new boolean[nAtoms];
     radiiOffset = new double[nAtoms];
     volumeOffset = new double[nAtoms];
     selfVolumeFraction = new double[nAtoms];
 
-    double fourThirdsPI = 4.0 / 3.0 * PI;
     vdwRadiiOffset = forceField.getDouble("GAUSSVOL_RADII_OFFSET", DEFAULT_GAUSSVOL_RADII_OFFSET);
     includeHydrogen = forceField.getBoolean("GAUSSVOL_HYDROGEN", false);
     useSigma = forceField.getBoolean("GAUSSVOL_USE_SIGMA", false);
@@ -363,6 +362,11 @@ public class GaussVol {
   public double computeVolumeAndSA(double[][] positions) {
 
     if (parallelTeam == null || parallelTeam.getThreadCount() == 1) {
+      // Execute in the current thread.
+      for (int i = 0; i < nAtoms - 1; i++) {
+        updateAtom(i);
+      }
+
       // Update the overlap tree.
       computeTree(positions);
 
@@ -371,10 +375,10 @@ public class GaussVol {
     } else {
       // Execute in parallel.
       try {
-        gaussVolRegion.init(0, positions);
+        gaussVolRegion.init(GAUSSVOL_MODE.COMPUTE_TREE, positions);
         parallelTeam.execute(gaussVolRegion);
       } catch (Exception e) {
-        logger.severe(" Exception evaluating GaussVol " + e.toString());
+        logger.severe(" Exception evaluating GaussVol " + e);
       }
     }
 
@@ -438,9 +442,11 @@ public class GaussVol {
     this.radii = radiiOffset;
     this.volumes = volumeOffset;
 
-    // Run Volume calculation on radii that are slightly offset in order to do finite difference to
-    // get back surface area
+    // Run the volume calculation on radii that are slightly offset
+    // for finite difference calculation of surface area.
+
     if (parallelTeam == null || parallelTeam.getThreadCount() == 1) {
+      // Execute in the current thread.
       // Rescan the overlap tree.
       rescanTreeVolumes(positions);
       // Compute the volume.
@@ -448,10 +454,10 @@ public class GaussVol {
     } else {
       // Execute in parallel.
       try {
-        gaussVolRegion.init(2, positions);
+        gaussVolRegion.init(GAUSSVOL_MODE.RESCAN_TREE, positions);
         parallelTeam.execute(gaussVolRegion);
       } catch (Exception e) {
-        logger.severe(" Exception evaluating GaussVol " + e.toString());
+        logger.severe(" Exception evaluating GaussVol " + e);
       }
     }
 
@@ -722,7 +728,6 @@ public class GaussVol {
   }
 
   public void updateAtom(int i) {
-    double fourThirdsPI = 4.0 / 3.0 * PI;
     Atom atom = atoms[i];
     ishydrogen[i] = atom.isHydrogen();
     if (includeHydrogen) {
@@ -733,10 +738,10 @@ public class GaussVol {
       radii[i] *= RMIN_TO_SIGMA;
     }
     radii[i] += vdwRadiiOffset;
-    volumes[i] = fourThirdsPI * pow(radii[i], 3);
+    volumes[i] = FOUR_THIRDS_PI * pow(radii[i], 3);
     gammas[i] = 1.0;
     radiiOffset[i] = radii[i] + offset;
-    volumeOffset[i] = fourThirdsPI * pow(radiiOffset[i], 3);
+    volumeOffset[i] = FOUR_THIRDS_PI * pow(radiiOffset[i], 3);
   }
 
   /** Gaussian Overlap Tree. */
@@ -1385,7 +1390,7 @@ public class GaussVol {
     private final ComputeVolumeLoop[] computeVolumeLoops;
     private final RescanTreeLoop[] rescanTreeLoops;
     private final ReductionLoop[] reductionLoops;
-    private int mode = 0;
+    private GAUSSVOL_MODE mode = GAUSSVOL_MODE.COMPUTE_TREE;
     private double[][] coordinates = null;
 
     /**
@@ -1402,7 +1407,7 @@ public class GaussVol {
       reductionLoops = new ReductionLoop[nThreads];
     }
 
-    public void init(int mode, double[][] coordinates) {
+    public void init(GAUSSVOL_MODE mode, double[][] coordinates) {
       this.mode = mode;
       this.coordinates = coordinates;
 
@@ -1427,13 +1432,12 @@ public class GaussVol {
         reductionLoops[threadIndex] = new ReductionLoop();
       }
       try {
-        if (mode == 0) {
+        if (mode == GAUSSVOL_MODE.COMPUTE_TREE) {
           execute(0, nAtoms - 1, initGaussVol[threadIndex]);
           execute(1, nAtoms, computeTreeLoops[threadIndex]);
           execute(1, nAtoms, computeVolumeLoops[threadIndex]);
           execute(0, nAtoms - 1, reductionLoops[threadIndex]);
         } else {
-          execute(0, nAtoms - 1, initGaussVol[threadIndex]);
           execute(1, nAtoms, rescanTreeLoops[threadIndex]);
           execute(1, nAtoms, computeVolumeLoops[threadIndex]);
           execute(0, nAtoms - 1, reductionLoops[threadIndex]);
@@ -1452,6 +1456,7 @@ public class GaussVol {
       @Override
       public void run(int first, int last) throws Exception {
         for (int i = first; i <= last; i++) {
+          // Update the radius and volume for each atom.
           updateAtom(i);
         }
       }

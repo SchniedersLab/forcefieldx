@@ -445,7 +445,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
     */
     return Arrays.asList(
         new Object[][] {
-            {
+           {
                 "Thermodynamics Help Message Test",
                 new String[] {},
                 ThermoTestMode.HELP,
@@ -634,9 +634,9 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 0,
                 new int[] {1, 100, 421, 426, 919, 921, 1203, 1204, 1205, 1206, 1207, 1208},
                 // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                new double[] {-8460.47321653, 0},
+                new double[] {-8479.23336094915, 0},
                 new double[] {0, 0},
-                new double[] {187.70850596942546, Double.NaN},
+                new double[] {205.85667664546781, Double.NaN},
                 new double[][][] {
                     {
                         {1.5160279105638157, -0.16798268028609797, 1.1908988796148456},
@@ -702,9 +702,9 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 0,
                 new int[] {1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
                 // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                new double[] {-10378.104156403408, 0},
+                new double[] {-10390.690452217978, 0},
                 new double[] {0, 0},
-                new double[] {-197.40065865800716, Double.NaN},
+                new double[] {-204.6304970000092, Double.NaN},
                 new double[][][] {
                     {
                         {-1.1610229302444828, 0.8877842196621852, -0.38190472079527416},
@@ -768,8 +768,8 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 0,
                 new int[] {1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
                 // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                new double[] {-10398.105024790417, 0},
-                new double[] {-62.8370972544, 0},
+                new double[] {-10411.423856383333, 0},
+                new double[] {-65.13591020980766, 0},
                 new double[] {0, Double.NaN},
                 new double[][][] {
                     {
@@ -834,9 +834,9 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 0,
                 new int[] {1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
                 // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                new double[] {-10418.105893177431, 0},
+                new double[] {-10432.157260548698, 0},
                 new double[] {0, 0},
-                new double[] {197.40065865800716, Double.NaN},
+                new double[] {204.63049700001284, Double.NaN},
                 new double[][][] {
                     {
                         {-1.1610211762120812, 0.887780797890894, -0.3819065056421289},
@@ -1620,7 +1620,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                     "445"
                 },
                 new String[] {"--mc", "true", "--ts", "true"}
-            }
+            } 
         });
   }
 

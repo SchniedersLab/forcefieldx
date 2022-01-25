@@ -44,7 +44,6 @@ import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.WriteoutOptions
 import ffx.potential.parsers.SystemFilter
 import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option

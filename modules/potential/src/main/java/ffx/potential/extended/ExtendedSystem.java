@@ -43,7 +43,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.PotentialComponent;
 import ffx.potential.bonded.*;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
-import ffx.potential.nonbonded.ParticleMeshEwaldQI;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TitrationUtils;
@@ -254,7 +253,7 @@ public class ExtendedSystem {
 //        boolean nonlinearMultipoles = properties.getBoolean("esv.nonlinearMultipoles", false); // sigmoid lambda Mpole switch
 //        boolean forceRoomTemp = properties.getBoolean("esv.forceRoomTemp", false);
 //        boolean propagation = properties.getBoolean("esv.propagation", true);
-
+        
         titratingResidueList = new ArrayList<>();
         tautomerizingResidueList = new ArrayList<>();
         extendedResidueList = new ArrayList<>();

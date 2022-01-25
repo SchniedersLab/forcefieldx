@@ -646,7 +646,7 @@ public class XYZFilter extends SystemFilter {
       bw.write(output);
 
       Crystal crystal = activeMolecularAssembly.getCrystal();
-      if (!crystal.aperiodic()) {
+      if (crystal!=null && !crystal.aperiodic()) {
         Crystal uc = crystal.getUnitCell();
         String params =
             format("%14.8f%14.8f%14.8f%14.8f%14.8f%14.8f\n",
@@ -697,7 +697,7 @@ public class XYZFilter extends SystemFilter {
       } catch (IOException e) {
         String message =
             format(
-                " Their was an unexpected error writing to %s.",
+                " There was an unexpected error writing to %s.",
                 getActiveMolecularSystem().toString());
         logger.log(Level.WARNING, message, e);
         return false;
@@ -705,7 +705,7 @@ public class XYZFilter extends SystemFilter {
     } catch (IOException e) {
       String message =
           format(
-              " Their was an unexpected error writing to %s.",
+              " There was an unexpected error writing to %s.",
               getActiveMolecularSystem().toString());
       logger.log(Level.WARNING, message, e);
       return false;
@@ -808,7 +808,7 @@ public class XYZFilter extends SystemFilter {
       } catch (IOException e) {
         String message =
             format(
-                " Their was an unexpected error writing to %s.",
+                " There was an unexpected error writing to %s.",
                 getActiveMolecularSystem().toString());
         logger.log(Level.WARNING, message, e);
         return false;
@@ -816,7 +816,7 @@ public class XYZFilter extends SystemFilter {
     } catch (IOException e) {
       String message =
           format(
-              " Their was an unexpected error writing to %s.",
+              " There was an unexpected error writing to %s.",
               getActiveMolecularSystem().toString());
       logger.log(Level.WARNING, message, e);
       return false;

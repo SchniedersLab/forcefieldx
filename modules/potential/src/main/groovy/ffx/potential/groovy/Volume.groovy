@@ -210,7 +210,7 @@ class Volume extends PotentialScript {
         double[] radii = gaussVol.getRadii();
         index = 0
         for (Atom atom : atoms) {
-          logger.info(" Radius for atom " + atom.name + ": " + radii[index] + "\n")
+          logger.info(" Radius for atom " + atom.name + ": " + radii[index])
           index++
         }
       }
@@ -223,8 +223,8 @@ class Volume extends PotentialScript {
       }
       logger.info(format("  Radii offset:        %8.4f (Ang)", offset))
       logger.info(format("  Include hydrogen:    %8b", includeHydrogen))
-      logger.info(format("  Volume:              %8.4f (Ang^3)", gaussVol.getVolume()))
-      logger.info(format("  Surface Area:        %8.4f (Ang^2)", gaussVol.getSurfaceArea()))
+      logger.info(format("  Volume:            %10.4f (Ang^3)", gaussVol.getVolume()))
+      logger.info(format("  Surface Area:      %10.4f (Ang^2)", gaussVol.getSurfaceArea()))
       // Set JUnit testing variables based on output volume and surface area
       totalVolume = gaussVol.getVolume()
       totalSurfaceArea = gaussVol.getSurfaceArea()
@@ -282,8 +282,8 @@ class Volume extends PotentialScript {
         logger.info(format("  Radii:                   Rmin"))
       }
       logger.info(format("  Include hydrogen:    %8b", includeHydrogen))
-      logger.info(format("  Volume:              %8.4f (Ang^3)", connollyRegion.getVolume()))
-      logger.info(format("  Surface Area:        %8.4f (Ang^2)", connollyRegion.getSurfaceArea()))
+      logger.info(format("  Volume:            %10.4f (Ang^3)", connollyRegion.getVolume()))
+      logger.info(format("  Surface Area:      %10.4f (Ang^2)", connollyRegion.getSurfaceArea()))
 
       // Set JUnit testing variables based on output volume and surface area
       totalVolume = connollyRegion.getVolume()

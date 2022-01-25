@@ -43,6 +43,7 @@ import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.VDWPairType;
 import ffx.potential.parameters.VDWType;
 import java.util.Map;
 import java.util.TreeMap;
@@ -224,9 +225,6 @@ public class VanDerWaalsForm {
     radEps = new double[maxClass + 1][2 * (maxClass + 1)];
     radEps14 = new double[maxClass + 1][2 * (maxClass + 1)];
 
-    Map<String, VDWType> map14 = forceField.getVDW14Types();
-    TreeMap<String, VDWType> vdw14Types = new TreeMap<>(map14);
-
     // Scale factor to convert to vdW size to Rmin.
     double radScale;
     switch (radiusSize) {
@@ -282,6 +280,7 @@ public class VanDerWaalsForm {
     }
 
     // Handle vdw14 types -- loop over VDW types.
+    Map<String, VDWType> vdw14Types = forceField.getVDW14Types();
     for (VDWType vdwi : vdwTypes.values()) {
       // Replace a normal VDW type with a VDW14 type if available.
       VDWType vdw14 = forceField.getVDW14Type(vdwi.getKey());
@@ -308,6 +307,30 @@ public class VanDerWaalsForm {
         radEps14[i][j * 2 + EPS] = eps;
         radEps14[j][i * 2 + EPS] = eps;
       }
+    }
+
+    // Replace combined VDW and VDW14 parameters with VDW Pair values.
+    Map<String, VDWPairType> vdwPairTypes = forceField.getVDWPairTypes();
+    for (VDWPairType vdwPairType : vdwPairTypes.values()) {
+      int i = vdwPairType.atomClasses[0];
+      int j = vdwPairType.atomClasses[1];
+      double radmin = vdwPairType.radius;
+      double eps = vdwPairType.wellDepth;
+      if (radmin > 0) {
+        radEps[i][j * 2 + RADMIN] = 1.0 / radmin;
+        radEps[j][i * 2 + RADMIN] = 1.0 / radmin;
+        radEps14[i][j * 2 + RADMIN] = 1.0 / radmin;
+        radEps14[j][i * 2 + RADMIN] = 1.0 / radmin;
+      } else {
+        radEps[i][j * 2 + RADMIN] = 0.0;
+        radEps[j][i * 2 + RADMIN] = 0.0;
+        radEps14[i][j * 2 + RADMIN] = 0.0;
+        radEps14[j][i * 2 + RADMIN] = 0.0;
+      }
+      radEps[i][j * 2 + EPS] = eps;
+      radEps[j][i * 2 + EPS] = eps;
+      radEps14[i][j * 2 + EPS] = eps;
+      radEps14[j][i * 2 + EPS] = eps;
     }
   }
 

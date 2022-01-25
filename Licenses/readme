@@ -30,8 +30,6 @@ jogamp-joal-license.txt: Mostly BSD license: covers JOAL
 jogamp-jogl-license.txt: Mostly BSD 2.0 license: covers JOGL and its dependencies.
 jogamp-gluegen-license.txt: Mostly BSD 2.0 license: covers Gluegen and its dependencies.
 
-jcuda-license.txt: MIT/X11: covers JCuda
-
 java-3d-license.txt: Covers Java3D
 
 MRJ Toolkit Stubs: License could not be found.
