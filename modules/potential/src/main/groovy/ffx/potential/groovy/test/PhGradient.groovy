@@ -433,7 +433,6 @@ class PhGradient extends PotentialScript {
 
         //Add ForceFieldEnergy to hashmap for testing. Protonation endstates used as key in map.
         energy.energy(x, true)
-        logger.info(esvSystem.getBiasDecomposition())
 
         // Bond Energy
         energyAndInteractionList[0] = energy.getBondEnergy()
