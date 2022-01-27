@@ -1099,20 +1099,19 @@ public class ExtendedSystem {
 
     //TODO: Find a better way to print this histogram out
     public void writeLambdaHistogram(){
-        StringBuilder tautomerHeader = new StringBuilder("         ");
+        StringBuilder tautomerHeader = new StringBuilder("      X→ ");
         for(int k=0; k< 10; k++){
             double lb = (double) k/10;
             double ub = (double) (k+1)/10;
             tautomerHeader.append(String.format("%1$10s","["+lb+"-"+ub+"]"));
         }
-        tautomerHeader.append("\n");
+        tautomerHeader.append("\nλ↓");
         for(int i=0; i < nTitr; i++){
             logger.info(format("ESV: %d \n", i));
             logger.info(tautomerHeader.toString());
             for(int j=0; j < 10; j++){
                 double lb = (double) j/10;
                 double ub = (j+1.0)/10;
-
                 StringBuilder histogram = new StringBuilder();
                 for(int k=0; k<10; k++){
                     StringBuilder hisvalue = new StringBuilder();
@@ -1120,8 +1119,6 @@ public class ExtendedSystem {
                     histogram.append(hisvalue);
                 }
                 logger.info("["+lb+"-"+ub+"]"+histogram);
-                //String arrayString = Arrays.toString(esvHistogram[i][j]).replace("["," ").replace("]", "   ["+lb+"-"+ub+"]").replace(",","    ");
-                //logger.info(arrayString);
             }
             logger.info("\n");
         }
