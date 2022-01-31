@@ -67,6 +67,7 @@ import ffx.potential.bonded.StretchTorsion;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
+import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.SoluteType.SOLUTE_RADII_TYPE;
 import ffx.utilities.Constants;
@@ -920,8 +921,6 @@ public class TitrationUtils {
         double his = hisPolarizeTypes[HisStates.HIS.ordinal()][atomIndex].polarizability;
         double hid = hisPolarizeTypes[HisStates.HID.ordinal()][atomIndex].polarizability;
         double hie = hisPolarizeTypes[HisStates.HIE.ordinal()][atomIndex].polarizability;
-        //titrationLambda * his + (1.0 - titrationLambda) * (tautomerLambda * hie
-        //            + (1 - tautomerLambda) * hid);
         return (1.0 - titrationLambda) * (hie - hid);
       case ASD:
         atomIndex = AspartateAtomNames.valueOf(atomName).ordinal();

@@ -38,6 +38,7 @@
 
 package ffx.potential.extended;
 
+import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.PotentialComponent;
@@ -202,6 +203,7 @@ public class ExtendedSystem {
     private final boolean doElectrostatics;
     private final boolean doBias;
     private final boolean doPolarization;
+    private final boolean fixLambdaState;
     /**
      * System PH.
      */
@@ -255,6 +257,8 @@ public class ExtendedSystem {
         discrBiasMag = properties.getDouble("discretize.bias.magnitude", DISCR_BIAS);
         double initialTitrationLambda = properties.getDouble("lambda.titration.initial", 0.5);
         double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
+        fixLambdaState = properties.getBoolean("fix.esv.lambda", false);
+
 //        boolean bonded = properties.getBoolean("esv.bonded", false);
         doVDW = properties.getBoolean("esv.vdW", true);
         doElectrostatics = properties.getBoolean("esv.elec", true);
@@ -1044,7 +1048,9 @@ public class ExtendedSystem {
      * Processes lambda values based on propagation of theta value from Stochastic integrator in Molecular dynamics
      */
     public void preForce() {
-        updateLambdas();
+        if(!fixLambdaState){
+            updateLambdas();
+        }
     }
 
     /**
@@ -1088,12 +1094,23 @@ public class ExtendedSystem {
 
     private void esvHistogram(int esv, double lambda){
         int value = (int) (lambda * 10.0);
+        //Cover the case where lambda could be exactly 1.0
+        if(value == 10){
+            value = 9;
+        }
         esvHistogram[esv][value][0]++;
     }
 
     private void esvHistogram(int esv, double titrLambda, double tautLambda){
         int titrValue = (int) (titrLambda * 10.0);
+        //Cover the case where lambda could be exactly 1.0
+        if(titrValue == 10){
+            titrValue = 9;
+        }
         int tautValue = (int) (tautLambda * 10.0);
+        if(tautValue == 10){
+            tautValue = 9;
+        }
         esvHistogram[esv][titrValue][tautValue]++;
     }
 
