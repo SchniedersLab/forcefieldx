@@ -70,6 +70,7 @@ import ffx.potential.bonded.UreyBradley;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.SoluteType.SOLUTE_RADII_TYPE;
 import ffx.utilities.Constants;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Level;
@@ -1227,6 +1228,7 @@ public class TitrationUtils {
     fMod = Titration.GLHtoGLU.freeEnergyDiff;
     rotamerPhBiasMap.put(GLU, acidostat - fMod);
 
+
     /*
      * Set LYS pH bias as sum of Fmod and acidostat energy
      */
@@ -1236,7 +1238,6 @@ public class TitrationUtils {
      * Set LYD pH bias as sum of Fmod and acidostat energy
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.LYStoLYD.pKa - pH);
-
     fMod = Titration.LYStoLYD.freeEnergyDiff;
     rotamerPhBiasMap.put(LYD, acidostat - fMod);
 
@@ -1249,7 +1250,6 @@ public class TitrationUtils {
      * Set HID pH bias as sum of Fmod and acidostat energy
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.HIStoHID.pKa - pH);
-
     fMod = Titration.HIStoHID.freeEnergyDiff;
     rotamerPhBiasMap.put(HID, acidostat - fMod);
 
@@ -1288,16 +1288,16 @@ public class TitrationUtils {
   public enum Titration {
     //ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
 
-    ASHtoASP(4.00, -66.87, 43.9250, 1.23836, AminoAcid3.ASH, AminoAcid3.ASP),
-    GLHtoGLU(4.40, -81.50, -70.3900, 0.0, AminoAcid3.GLH, AminoAcid3.GLU),
+    ASHtoASP(4.00, -73.17, 43.9250, 1.23836, AminoAcid3.ASH, AminoAcid3.ASP),
+    GLHtoGLU(4.40, -83.50, -70.3900, 0.0, AminoAcid3.GLH, AminoAcid3.GLU),
     //LYStoLYD(10.40, 45.270, 0.0, AminoAcid3.LYS, AminoAcid3.LYD),
-    LYStoLYD(10.40, 41.50, 57.7100, 0.10746, AminoAcid3.LYS, AminoAcid3.LYD),
+    LYStoLYD(10.40, 41.75, 57.7100, 0.10746, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
 
     //HE1 is the proton that is lost
-    HIStoHID(7.00, 41.0, 42.4030, 0.10048, AminoAcid3.HIS, AminoAcid3.HID),
+    HIStoHID(7.00, 40.29, 42.4030, 0.10048, AminoAcid3.HIS, AminoAcid3.HID),
     //HD1 is the proton that is lost
-    HIStoHIE(6.60, 37.85, 40.2215, 0.11638, AminoAcid3.HIS, AminoAcid3.HIE),
+    HIStoHIE(6.60, 37.44, 40.2215, 0.11638, AminoAcid3.HIS, AminoAcid3.HIE),
     HIDtoHIE(Double.NaN, 0.00, -3.40, 0.0, AminoAcid3.HID, AminoAcid3.HIE);
     //TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     //TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
