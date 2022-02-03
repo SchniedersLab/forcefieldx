@@ -89,6 +89,13 @@ class PhGradient extends PotentialScript {
   double esvLambda = 0.5
 
   /**
+   * --scanLambdas
+   */
+  @Option(names = ['--scanLambdas'], paramLabel = 'false',
+          description = 'Scan titration and tautomer lambda landscape.')
+  boolean scan = false
+
+  /**
    * The final argument should be a PDB coordinate file.
    */
   @Parameters(arity = "1", paramLabel = "file", description = 'The atomic coordinate file in PDB format.')
@@ -400,18 +407,23 @@ class PhGradient extends PotentialScript {
     }
 
     if (print) {
-      String lambdaList = esvSystem.getLambdaList()
-      logger.info(format("Lambda List: %s", lambdaList))
-      energy.energy(x, true)
-      logger.info(esvSystem.getBiasDecomposition())
+      //String lambdaList = esvSystem.getLambdaList()
+      //logger.info(format("Lambda List: %s", lambdaList))
+      energy.energy(x, false)
       printPermutations(esvSystem, titratingResidues.size(), energy, x)
+    }
+    if(scan){
+      for (Residue residue : esvSystem.getTitratingResidueList()) {
+        esvSystem.setTitrationLambda(residue, 0.0)
+        esvSystem.setTautomerLambda(residue, 0.0)
+      }
+      scanLambdas(esvSystem, energy, x)
     }
 
     return this
   }
 
-  private void printPermutations(ExtendedSystem esvSystem, int numESVs, ForceFieldEnergy energy,
-                                 double[] x) {
+  private void printPermutations(ExtendedSystem esvSystem, int numESVs, ForceFieldEnergy energy, double[] x) {
     for (Residue residue : esvSystem.getTitratingResidueList()) {
       esvSystem.setTitrationLambda(residue, 0.0)
     }
@@ -419,11 +431,10 @@ class PhGradient extends PotentialScript {
     printPermutationsR(esvSystem, numESVs - 1, energy, x)
   }
 
-  private void printPermutationsR(ExtendedSystem esvSystem, int esvID, ForceFieldEnergy energy,
-                                  double[] x) {
+  private void printPermutationsR(ExtendedSystem esvSystem, int esvID, ForceFieldEnergy energy, double[] x) {
     for (int i = 0; i <= 1; i++) {
       Residue residue = esvSystem.getTitratingResidueList().get(esvID)
-      esvSystem.setTitrationLambda(residue, (double) i)
+      esvSystem.setTitrationLambda(residue, (double) i )
       if (esvID != 0) {
         printPermutationsR(esvSystem, esvID - 1, energy, x)
       } else {
@@ -480,6 +491,45 @@ class PhGradient extends PotentialScript {
       }
     }
   }
+
+  private void scanLambdas(ExtendedSystem esvSystem, ForceFieldEnergy, double[] x){
+    int nTitrESVs = esvSystem.getTitratingResidueList().size()
+    double[][][] peLandscape = new double[nTitrESVs][11][11]
+    for(int i = 0; i < nTitrESVs; i++){
+      Residue residue = esvSystem.getTitratingResidueList().get(i)
+      for(int j = 0; j < 11; j++){
+        esvSystem.setTitrationLambda(residue, (double) j/10.0)
+        for(int k = 0; k < 11; k++){
+          esvSystem.setTautomerLambda(residue, (double) k/10.0)
+          peLandscape[i][j][k] = energy.energy(x, false)
+        }
+      }
+    }
+    StringBuilder tautomerHeader = new StringBuilder("      X→ ")
+    for(int k=0; k< 11; k++){
+      double lb = (double) k/10
+      tautomerHeader.append(String.format('%1$12s',"["+lb+"]"))
+    }
+    tautomerHeader.append("\nλ↓")
+    for(int i =0 ; i < nTitrESVs; i++){
+      logger.info(format("ESV: %d \n", i))
+      logger.info(tautomerHeader.toString())
+      for(int j = 0; j < 11; j++){
+        double lb = (double) j/10
+        StringBuilder histogram = new StringBuilder()
+        for(int k = 0; k < 11; k++){
+          StringBuilder hisvalue = new StringBuilder()
+          String value = String.format("%5.4f", peLandscape[i][j][k])
+          hisvalue.append(String.format('%1$12s', value))
+          histogram.append(hisvalue)
+        }
+        logger.info("["+lb+"]    "+histogram)
+      }
+      logger.info("\n");
+    }
+  }
+
+
 
   @Override
   List<Potential> getPotentials() {

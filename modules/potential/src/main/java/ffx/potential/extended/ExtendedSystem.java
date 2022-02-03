@@ -504,9 +504,9 @@ public class ExtendedSystem {
                 int atomIndex = atom.getArrayIndex();
                 tautomerLambdas[atomIndex] = lambda;
             }
-        } else {
+        } /*else {
             logger.warning(format("This residue %s does not have any titrating tautomers.", residue.getName()));
-        }
+        }*/
     }
 
     /**
@@ -1115,7 +1115,7 @@ public class ExtendedSystem {
     }
 
     //TODO: Find a better way to print this histogram out
-    public void writeLambdaHistogram(){
+    private void writeLambdaHistogram(){
         StringBuilder tautomerHeader = new StringBuilder("      X→ ");
         for(int k=0; k< 10; k++){
             double lb = (double) k/10;
