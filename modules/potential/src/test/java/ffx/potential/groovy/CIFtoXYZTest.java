@@ -37,7 +37,8 @@
 // ******************************************************************************
 package ffx.potential.groovy;
 
-import ffx.potential.groovy.CIFtoXYZ;
+import static org.junit.Assert.assertTrue;
+
 import ffx.potential.utils.PotentialTest;
 import org.junit.Test;
 
@@ -63,6 +64,22 @@ public class CIFtoXYZTest extends PotentialTest {
 
     CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
     potentialScript = cifToXYZ;
+
+    assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
+  }
+
+  @Test
+  public void testCIFtoXYZWriteAsCIF() {
+    // Set-up the input arguments for the CIFtoXYZ script.
+    String[] args = {"--sc", "src/main/java/ffx/potential/structures/paracetamol.xyz"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the CIFtoXYZ script.
+    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
+    potentialScript = cifToXYZ;
+
+    assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".CIF"));
   }
 
   @Test
@@ -76,6 +93,38 @@ public class CIFtoXYZTest extends PotentialTest {
     // Construct and evaluate the CIFtoXYZ script.
     CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
     potentialScript = cifToXYZ;
+
+    assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
+  }
+
+  @Test
+  public void testCIFtoXYZMultipleMolecules() {
+    // Set-up the input arguments for the CIFtoXYZ script.
+    String[] args = {"src/main/java/ffx/potential/structures/1183240.cif",
+            "src/main/java/ffx/potential/structures/asplyswat.xyz"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the CIFtoXYZ script.
+    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
+    potentialScript = cifToXYZ;
+
+    assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
+  }
+
+  @Test
+  public void testCIFtoXYZzPrimeChallenge() {
+    // Set-up the input arguments for the CIFtoXYZ script.
+    String[] args = {"--fl","src/main/java/ffx/potential/structures/1183241.cif",
+            "src/main/java/ffx/potential/structures/glulys.xyz"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the CIFtoXYZ script.
+    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
+    potentialScript = cifToXYZ;
+
+    assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
   }
 
   @Test
