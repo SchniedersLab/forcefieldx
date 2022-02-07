@@ -55,16 +55,16 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * <br>
  * Usage:
  * <br>
- * ffxc CIFtoXYZ &lt;filename.cif&gt; &lt;filename.pdb&gt;
+ * ffxc CIFtoXYZ &lt;filename.cif&gt; &lt;filename.xyz&gt;
  */
 @Command(description = " Convert a single molecule CIF file to XYZ format.", name = "ffxc CIFtoXYZ")
 class CIFtoXYZ extends PotentialScript {
 
   /**
-   * --sg or --spaceGroupNumber Manually specify Z' (only affects writing CIF files)."
+   * --zp or --zPrime Manually specify Z' (only affects writing CIF files)."
    */
   @Option(names = ['--zp', '--zPrime'], paramLabel = "-1", defaultValue = "-1",
-          description = 'Specify Z\' when writing a CIF file.')
+          description = "Specify Z' when writing a CIF file.")
   private int zPrime
 
   /**
