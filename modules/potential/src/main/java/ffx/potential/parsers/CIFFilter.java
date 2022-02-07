@@ -467,7 +467,7 @@ public class CIFFilter extends SystemFilter{
                     }
                 }
                 if (logger.isLoggable(Level.FINE)) {
-                    logger.fine(format(" Current Entity Number of Atoms: %d (%d + %dH)", numXYZMolAtoms, numXYZMolAtoms - numHydrogens, numHydrogens));
+                    logger.fine(format(" Current Entity Number of Atoms: %d (%d + %dH)", numXYZMolAtoms, numXYZMolAtoms - numMolHydrogens, numMolHydrogens));
                 }
 
                 // Set up XYZ file contents as CDK variable
@@ -734,14 +734,14 @@ public class CIFFilter extends SystemFilter{
                                 if (p != null && logger.isLoggable(Level.FINE)) {
                                     logger.fine(
                                             format(" Matched %d atoms out of %d in CIF (%d in XYZ)", p.length, nAtoms,
-                                                    nXYZAtoms - numHydrogens));
+                                                    nXYZAtoms - numMolHydrogens));
                                 }
                                 continue;
                             }
                         } else {
                             logger.info(
                                     format(" CIF (%d) and XYZ ([%d+%dH=]%d) have a different number of bonds.", cifMolBonds,
-                                            xyzBonds - numHydrogens, numHydrogens, xyzBonds));
+                                            xyzBonds - numMolHydrogens, numMolHydrogens, xyzBonds));
                             continue;
                         }
                         cifCDKAtoms.add(cifCDKAtomsArr[j]);
@@ -769,15 +769,21 @@ public class CIFFilter extends SystemFilter{
                     } else {
                         if (logger.isLoggable(Level.FINE)) {
                             logger.fine(format(" Number of atoms in CIF (%d) molecule do not match XYZ (%d + %dH = %d).",
-                                    cifMolAtoms, nXYZAtoms - numHydrogens, numHydrogens, nXYZAtoms));
+                                    cifMolAtoms, nXYZAtoms - numMolHydrogens, numMolHydrogens, nXYZAtoms));
                         }
                     }
                 }
             }
             // If no atoms, then conversion has failed... use active assembly
             if (logger.isLoggable(Level.FINE)) {
-                logger.fine(format(" Output Assembly Size: %d", outputAssembly.getAtomList().size()));
+                logger.fine(format("\n Output Assembly Atoms: %d", outputAssembly.getAtomList().size()));
             }
+            outputAssembly.setPotential(activeMolecularAssembly.getPotentialEnergy());
+            outputAssembly.setCrystal(crystal);
+            outputAssembly.setForceField(activeMolecularAssembly.getForceField());
+            outputAssembly.setFile(activeMolecularAssembly.getFile());
+            outputAssembly.setName(activeMolecularAssembly.getName());
+            setMolecularSystem(outputAssembly);
 
             if (outputAssembly.getAtomList().size() < 1 || !writeXYZFile()) {
                 logger.info(" No atoms were written to XYZ file. Conversion failed.");
