@@ -368,7 +368,7 @@ public class CIFFilter extends SystemFilter{
                 } else {
                     logger.warning(" Conversion Failed: The proposed lattice parameters for " + sg.pdbName
                             + " do not satisfy the " + latticeSystem + ".");
-                    logger.info(" Use \"--fl\" flag to attempt to fix automatically.");
+                    logger.info(" Use \"--fixLattice\" or \"--fl\" flag to attempt to fix automatically.");
                     return false;
                 }
             }
@@ -381,6 +381,11 @@ public class CIFFilter extends SystemFilter{
             FloatColumn fractX = atomSite.getFractX();
             FloatColumn fractY = atomSite.getFractY();
             FloatColumn fractZ = atomSite.getFractZ();
+
+            FloatColumn cartX = atomSite.getCartnX();
+            FloatColumn cartY = atomSite.getCartnY();
+            FloatColumn cartZ = atomSite.getCartnZ();
+
 
             int nAtoms = label.getRowCount();
             if (nAtoms < 1) {
@@ -409,11 +414,13 @@ public class CIFFilter extends SystemFilter{
                 } else {
                     symbols[i] = getAtomElement(label.getStringData(i));
                 }
-                double x = fractX.get(i);
-                double y = fractY.get(i);
-                double z = fractZ.get(i);
+                double x = (fractX.isDefined()) ? fractX.get(i) : cartX.get(i);
+                double y = (fractY.isDefined()) ? fractY.get(i) : cartY.get(i);
+                double z = (fractZ.isDefined()) ? fractZ.get(i) : cartZ.get(i);
                 double[] xyz = {x, y, z};
-                crystal.toCartesianCoordinates(xyz, xyz);
+                if (fractX.isDefined()) {
+                    crystal.toCartesianCoordinates(xyz, xyz);
+                }
                 atoms[i] = new Atom(i + 1, label.getStringData(i), altLoc, xyz, resName, i, chain, occupancy,
                         bfactor, segID);
                 atoms[i].setHetero(true);

@@ -48,6 +48,7 @@ import static ffx.potential.utils.Superpose.rmsd;
 import static ffx.potential.utils.Superpose.rotate;
 import static ffx.potential.utils.Superpose.translate;
 import static ffx.potential.utils.Gyrate.radiusOfGyration;
+import static ffx.potential.utils.Inertia.momentsOfInertia;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
@@ -292,6 +293,18 @@ public class ProgressiveAlignmentOfCrystals {
      */
     private DoubleIndexPair[] matchAUs;
     /**
+     * Radius of gyration for the best matching clusters (position 0 for first and 1 for second crystal).
+     */
+    double[] gyrations = new double[2];
+    /**
+     * Moments of inertia and vectors of application for first crystal.
+     */
+    double[][] bestBaseMandV = new double[3][4];
+    /**
+     * Moments of inertia and vectors of application for second crystal.
+     */
+    double[][] bestTargetMandV = new double[3][4];
+    /**
      * String builder to attempt to off load work from logger.
      */
     private final StringBuilder stringBuilder = new StringBuilder();
@@ -387,7 +400,7 @@ public class ProgressiveAlignmentOfCrystals {
     public RunningStatistics comparisons() {
         return comparisons(15, 500, 0.1, -1, -1,
                 true, false, false, 0, false, 0, false,
-                false, false, 0, "default");
+                false, false, false, 0, "default");
     }
 
     /**
@@ -412,7 +425,7 @@ public class ProgressiveAlignmentOfCrystals {
     public RunningStatistics comparisons(int nAU, int inflatedAU, double matchTol, int zPrime, int zPrime2,
                                          boolean alphaCarbons, boolean noHydrogen, boolean massWeighted,
                                          int crystalPriority, boolean permute, int save, boolean restart, boolean write,
-                                         boolean machineLearning, int linkage, String pacFileName) {
+                                         boolean machineLearning, boolean inertia, int linkage, String pacFileName) {
         //TODO: Incorporate graphic user interface (gui: ffx)
         //TODO: Save systems out as original molecule regardless of selection
         //TODO: Handle ring flipping or atoms in equivalent positions (mislabeled atoms)
@@ -645,7 +658,6 @@ public class ProgressiveAlignmentOfCrystals {
                         stringBuilder.append(format("\n Comparing Model %d (%s) of %s\n with      Model %d (%s) of %s\n",
                                 row + 1, baseCrystal.toShortString(), baseLabel,
                                 column + 1, targetCrystal.toShortString(), targetLabel));
-                        double[] gyrations = new double[2];
 
                         //Setup for comparison with crystal specific information.
                         // Prioritize crystal order based on user specification (High/low density or file order).
@@ -686,9 +698,9 @@ public class ProgressiveAlignmentOfCrystals {
                                 inflatedAU);
 
                         // Compute the PAC RMSD.
-                        rmsd = compare(staticAssembly, mobileAssembly, compareAtomsSize, nAU, baseSearchValue, targetSearchValue,
-                                matchTol, row * targetSize + column, gyrations, permute, save,
-                                machineLearning, linkage, stringBuilder);
+                        rmsd = compare(staticAssembly, mobileAssembly, compareAtomsSize, nAU,
+                                baseSearchValue, targetSearchValue, matchTol, row * targetSize + column,
+                                gyrations, permute, save, machineLearning, linkage, stringBuilder);
                         time += System.nanoTime();
                         double timeSec = time * 1.0e-9;
                         // Record the fastest comparison.
@@ -700,6 +712,18 @@ public class ProgressiveAlignmentOfCrystals {
                         double diff = Math.max(gyrations[0], gyrations[1]) - avgGyration;
                         stringBuilder.append(format("\n PAC %s: %12s %7.4f A (%5.3f sec) G(r) %7.4f A +/- %7.4f\n", rmsdLabel, "", rmsd,
                                 timeSec, avgGyration, diff));
+                        if(inertia) {
+                            stringBuilder.append("\n Moments of Inertia and Principle Axes for first crystal:\n" +
+                                    "  Moments (amu Ang^2): \t X-, Y-, and Z-Components of Axes:\n");
+                            for (int i = 1; i < 4; i++) {
+                                stringBuilder.append(format("  %16.3f %12.6f %12.6f %12.6f\n", bestBaseMandV[i - 1][0], bestBaseMandV[0][i], bestBaseMandV[1][i], bestBaseMandV[2][i]));
+                            }
+                            stringBuilder.append(" Moments of Inertia and Principle Axes for second crystal:\n" +
+                                    "  Moments (amu Ang^2): \t X-, Y-, and Z-Components of Axes:\n");
+                            for (int i = 1; i < 4; i++) {
+                                stringBuilder.append(format("  %16.3f %12.6f %12.6f %12.6f\n", bestTargetMandV[i - 1][0], bestTargetMandV[0][i], bestTargetMandV[1][i], bestTargetMandV[2][i]));
+                            }
+                        }
                         if(logger.isLoggable(Level.FINER)){
                             stringBuilder.append(format(" Gyration Crystal 1 (%s): %7.4f Crystal 2 (%s): %7.4f.\n", staticAssembly.getName(),
                                     gyrations[0], mobileAssembly.getName(), gyrations[1]));
@@ -761,12 +785,10 @@ public class ProgressiveAlignmentOfCrystals {
      * @return the computed RMSD.
      */
     private double compare(MolecularAssembly staticAssembly, MolecularAssembly mobileAssembly, int compareAtomsSize, int nAU,
-                           int baseSearchValue, int targetSearchValue, double matchTol, int compNum,
-                           double[] gyrations, boolean permute, int save, boolean machineLearning,
-                           int linkage, StringBuilder stringBuilder) {
+                           int baseSearchValue, int targetSearchValue, double matchTol, int compNum, double[] gyrations,
+                           boolean permute, int save, boolean machineLearning, int linkage, StringBuilder stringBuilder) {
         // TODO: Does PAC work for a combination of molecules and polymers?
         // Yes and no. It does not compare them on an individual basis, but can compare AUs as a whole.
-
         int nCoords = compareAtomsSize * 3;
         //Number of species in expanded crystals.
         int nBaseMols = baseXYZ.length / nCoords;
@@ -1079,6 +1101,9 @@ public class ProgressiveAlignmentOfCrystals {
                 saveAssembly(mobileAssembly, bestTargetNAUs, comparisonAtoms, "_c2", compNum, save);
             }
         }
+
+        bestBaseMandV = momentsOfInertia(bestBaseNAUs, massN, false, false);
+        bestTargetMandV= momentsOfInertia(bestTargetNAUs, massN, false, false);
 
         return finalRMSD;
     }
