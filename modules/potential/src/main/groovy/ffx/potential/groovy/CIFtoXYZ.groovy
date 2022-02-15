@@ -41,7 +41,6 @@ import ffx.numerics.Potential
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.CIFFilter
 import ffx.potential.parsers.SystemFilter
-import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -189,10 +188,14 @@ class CIFtoXYZ extends PotentialScript {
         } else {
           logger.info(" Error occurred during conversion.")
         }
+      }else{
+        logger.info(helpString())
+        logger.info(" Expected 2 files as input to convert CIF file(s).")
+        return this
       }
     } else {
       logger.info(helpString())
-      logger.info(" Expected 1 or 2 file(s) as input.")
+      logger.info(" Expected 1 or 2 file(s) as input to CIFtoXYZ.")
       return this
     }
     return this
