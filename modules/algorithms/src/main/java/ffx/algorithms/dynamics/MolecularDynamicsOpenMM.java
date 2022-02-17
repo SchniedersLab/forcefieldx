@@ -166,30 +166,6 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
   /**
    * {@inheritDoc}
    *
-   * <p>UNSUPPORTED: MolecularDynamicsOpenMM is not presently capable of handling extended system
-   * variables. Will throw an UnsupportedOperationException.
-   */
-  @Override
-  public void attachExtendedSystem(ExtendedSystem system, double reportFreq) {
-    throw new UnsupportedOperationException(
-        " MolecularDynamicsOpenMM does not support extended system variables!");
-  }
-
-  /**
-   * {@inheritDoc}
-   *
-   * <p>UNSUPPORTED: MolecularDynamicsOpenMM is not presently capable of handling extended system
-   * variables. Will throw an UnsupportedOperationException.
-   */
-  @Override
-  public void detachExtendedSystem() {
-    throw new UnsupportedOperationException(
-        " MolecularDynamicsOpenMM does not support extended system variables!");
-  }
-
-  /**
-   * {@inheritDoc}
-   *
    * <p>Start sets up context, write out file name, restart file name, sets the integrator and
    * determines whether the simulation is starting out from a previous molecular dynamics run (.dyn)
    * or if the initial velocities are determined by a Maxwell Boltzmann distribution. This method

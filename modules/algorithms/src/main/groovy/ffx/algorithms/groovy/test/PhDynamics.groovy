@@ -40,7 +40,7 @@ package ffx.algorithms.groovy.test
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.dynamics.MolecularDynamics
-import ffx.algorithms.ph.PhMD
+import ffx.algorithms.dynamics.MolecularDynamicsOpenMM
 import ffx.numerics.Potential
 import ffx.potential.cli.WriteoutOptions
 import ffx.potential.extended.ExtendedSystem
@@ -53,20 +53,20 @@ import picocli.CommandLine.Parameters
 import static java.lang.String.format
 
 /**
- * The Dynamics script implements molecular and stochastic dynamics algorithms.
+ * The PhDynamics script implements constant pH molecular dynamics .
  * <br>
  * Usage:
  * <br>
- * ffxc CPHMDynamics [options] &lt;filename&gt; [file2...]
+ * ffxc PhDynamics [options] &lt;filename&gt; [file2...]
  */
 @Command(description = " Run constant pH dynamics on a system.", name = "ffxc PHDynamics")
 class PhDynamics extends AlgorithmsScript {
 
   @Mixin
-  DynamicsOptions dynamics
+  DynamicsOptions dynamicsOptions
 
   @Mixin
-  WriteoutOptions writeOut
+  WriteoutOptions writeOutOptions
 
   /**
    * --pH or --constantPH Constant pH value for molecular dynamics.
@@ -87,10 +87,10 @@ class PhDynamics extends AlgorithmsScript {
    * Originally it is declared in the run method
    */
   private Potential potential
-  public MolecularDynamics molDyn = null
+  public MolecularDynamics molecularDynamics = null
 
   MolecularDynamics getMolecularDynamics() {
-    return molDyn
+    return molecularDynamics
   }
 
   Potential getPotentialObject() {
@@ -122,7 +122,7 @@ class PhDynamics extends AlgorithmsScript {
       return this
     }
 
-    dynamics.init()
+    dynamicsOptions.init()
 
     activeAssembly = getActiveAssembly(filename)
     if (activeAssembly == null) {
@@ -142,6 +142,7 @@ class PhDynamics extends AlgorithmsScript {
     ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, esv)
     esvSystem.setConstantPh(pH)
     potential.attachExtendedSystem(esvSystem)
+
     int numESVs = esvSystem.extendedResidueList.size()
     logger.info(format(" Attached extended system with %d residues.", numESVs))
 
@@ -151,9 +152,11 @@ class PhDynamics extends AlgorithmsScript {
 
     logger.info("\n Running molecular dynamics on " + filename)
 
-    molDyn = dynamics.getDynamics(writeOut, potential, activeAssembly, algorithmListener)
-    logger.info("Report Freq: " + dynamics.report)
-    PhMD phmd = new PhMD(activeAssembly, molDyn, potential, esvSystem, pH, dynamics.report)
+    molecularDynamics =
+        dynamicsOptions.getDynamics(writeOutOptions, potential, activeAssembly, algorithmListener)
+    logger.info("Report Freq: " + dynamicsOptions.report)
+
+    molecularDynamics.attachExtendedSystem(esvSystem, dynamicsOptions.report)
 
     // Restart File
     File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn")
@@ -161,8 +164,36 @@ class PhDynamics extends AlgorithmsScript {
       dyn = null
     }
 
-    molDyn.dynamic(dynamics.steps, dynamics.dt,
-        dynamics.report, dynamics.write, dynamics.temperature, true, dyn)
+    // CPU Constant pH Dynamics
+    if (!(molecularDynamics instanceof MolecularDynamicsOpenMM)) {
+      molecularDynamics.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
+          dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temperature, true, dyn)
+    } else {
+      // CPU Constant pH Dynamics alternatives with GPU Dynamics at fixed protonation states.
+
+      // Save a reference to the OpenMM Molecular Dynamics
+      MolecularDynamicsOpenMM molecularDynamicsOpenMM = molecularDynamics
+
+      // Create an FFX Molecular Dynamics
+      molecularDynamics =
+          dynamicsOptions.getDynamics(writeOutOptions, potential, activeAssembly, algorithmListener,
+              MolecularDynamics.DynamicsEngine.FFX)
+      molecularDynamics.attachExtendedSystem(esvSystem, dynamicsOptions.report)
+
+      for (int i = 0; i < 5; i++) {
+        // Try running on the CPU
+        molecularDynamics.setCoordinates(x)
+        molecularDynamics.dynamic(5, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
+                dynamicsOptions.temperature, true, dyn)
+        x = molecularDynamics.getCoordinates()
+
+        // Try running in OpenMM
+        molecularDynamicsOpenMM.setCoordinates(x)
+        molecularDynamicsOpenMM.dynamic(5, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
+                dynamicsOptions.temperature, true, dyn)
+        x = molecularDynamicsOpenMM.getCoordinates()
+      }
+    }
 
     return this
   }
