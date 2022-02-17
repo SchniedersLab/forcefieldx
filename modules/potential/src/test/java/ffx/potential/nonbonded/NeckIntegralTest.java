@@ -47,9 +47,9 @@ public class NeckIntegralTest extends PotentialTest {
 
   @Test
   public void testSettingConstants() {
-    // ri: 1.3550 rj: 2.0550 Aij: 0.0000040327 Bij 0.4100
+    // ri: 1.3550 rj: 2.0550 Aij: 0.0000038315 Bij 0.2300
     double[] constants = NeckIntegral.getNeckConstants(1.355, 2.055);
-    assertEquals(constants[0], 0.0000040327, 0.00000001);
-    assertEquals(constants[1], 0.4100, 0.001);
+    assertEquals(constants[0], 0.0000038315, 0.00000001);
+    assertEquals(constants[1], 0.2300, 0.001);
   }
 }
