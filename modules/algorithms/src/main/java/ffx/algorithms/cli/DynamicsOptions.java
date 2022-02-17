@@ -39,6 +39,7 @@ package ffx.algorithms.cli;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.dynamics.MolecularDynamics.DynamicsEngine;
 import ffx.algorithms.dynamics.integrators.Integrator;
 import ffx.algorithms.dynamics.integrators.IntegratorEnum;
 import ffx.algorithms.dynamics.thermostats.Thermostat;
@@ -70,7 +71,7 @@ public class DynamicsOptions {
    */
   @ArgGroup(heading = "%n Dynamics Options%n", validate = false)
   public DynamicsOptionGroup group = new DynamicsOptionGroup();
-  private MolecularDynamics.DynamicsEngine engine = null;
+  private DynamicsEngine engine = null;
 
   /**
    * The restart save frequency in picoseconds (1.0 psec default).
@@ -113,8 +114,28 @@ public class DynamicsOptions {
       Potential potential,
       MolecularAssembly activeAssembly,
       AlgorithmListener algorithmListener) {
+      return getDynamics(writeoutOptions, potential, activeAssembly, algorithmListener, engine);
+  }
+
+  /**
+   * Initialize a MolecularDynamics from the parsed options.
+   *
+   * @param potential a {@link ffx.numerics.Potential} object.
+   * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
+   * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener} object.
+   * @param writeoutOptions a {@link WriteoutOptions} object.
+   * @param requestedEngine The requested engine (either FFX or OpenMM).
+   * @return a {@link MolecularDynamics} object.
+   */
+  public MolecularDynamics getDynamics(
+      WriteoutOptions writeoutOptions,
+      Potential potential,
+      MolecularAssembly activeAssembly,
+      AlgorithmListener algorithmListener,
+      DynamicsEngine requestedEngine) {
     MolecularDynamics molDyn;
-    if (engine == null) {
+
+    if (requestedEngine == null) {
       molDyn =
           MolecularDynamics.dynamicsFactory(
               activeAssembly,
@@ -132,7 +153,7 @@ public class DynamicsOptions {
               algorithmListener,
               thermostat,
               integrator,
-              engine);
+              requestedEngine);
     }
     molDyn.setFileType(writeoutOptions.getFileType());
     molDyn.setRestartFrequency(group.checkpoint);
@@ -195,7 +216,7 @@ public class DynamicsOptions {
     integrator = Integrator.parseIntegrator(group.integratorString);
     if (group.engineString != null) {
       try {
-        engine = MolecularDynamics.DynamicsEngine.valueOf(group.engineString.toUpperCase());
+        engine = DynamicsEngine.valueOf(group.engineString.toUpperCase());
       } catch (Exception ex) {
         logger.warning(
             String.format(
