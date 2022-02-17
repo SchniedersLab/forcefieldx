@@ -504,6 +504,8 @@ class PhGradient extends PotentialScript {
           peLandscape[i][j][k] = energy.energy(x, false)
         }
       }
+      esvSystem.setTitrationLambda(residue, 0.0)
+      esvSystem.setTautomerLambda(residue, 0.0)
     }
     StringBuilder tautomerHeader = new StringBuilder("      X→ ")
     for(int k=0; k< 11; k++){
