@@ -197,7 +197,8 @@ public class ExtendedSystem {
     /**
      * Descritizer Bias Magnitude. Default is 1 kcal/mol.
      */
-    private final double discrBiasMag;
+    private final double titrBiasMag;
+    private final double tautBiasMag;
     // Controls for turning of certain terms for testing.
     private final boolean doVDW;
     private final boolean doElectrostatics;
@@ -254,7 +255,8 @@ public class ExtendedSystem {
         titrationUtils = new TitrationUtils(forceField);
         thetaFriction = properties.getDouble("esv.friction", ExtendedSystem.THETA_FRICTION);
         thetaMass = properties.getDouble("esv.mass", ExtendedSystem.THETA_MASS);
-        discrBiasMag = properties.getDouble("discretize.bias.magnitude", DISCR_BIAS);
+        titrBiasMag = properties.getDouble("titration.bias.magnitude", DISCR_BIAS);
+        tautBiasMag = properties.getDouble("tautomer.bias.magnitude", DISCR_BIAS);
         double initialTitrationLambda = properties.getDouble("lambda.titration.initial", 0.5);
         double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
         fixLambdaState = properties.getBoolean("fix.esv.lambda", false);
@@ -559,6 +561,10 @@ public class ExtendedSystem {
         return thetaMassArray;
     }
 
+    public double getThetaMass(){
+        return thetaMass;
+    }
+
     public double getThetaFriction() {
         return thetaFriction;
     }
@@ -704,10 +710,10 @@ public class ExtendedSystem {
             case ASP:
                 // Discr Bias & Derivs
                 double tautomerLambda = getTautomerLambda(residue);
-                discrBias = -4.0 * discrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
-                discrBias += -4.0 * discrBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
-                dDiscr_dTitr = -8.0 * discrBiasMag * (titrationLambda - 0.5);
-                dDiscr_dTaut = -8.0 * discrBiasMag * (tautomerLambda - 0.5);
+                discrBias = -4.0 * titrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
+                discrBias += -4.0 * tautBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
+                dDiscr_dTitr = -8.0 * titrBiasMag * (titrationLambda - 0.5);
+                dDiscr_dTaut = -8.0 * tautBiasMag * (tautomerLambda - 0.5);
 
                 // pH Bias & Derivs
                 double pKa1 = TitrationUtils.Titration.ASHtoASP.pKa;
@@ -731,10 +737,10 @@ public class ExtendedSystem {
             case GLU:
                 // Discr Bias & Derivs
                 tautomerLambda = getTautomerLambda(residue);
-                discrBias = -4.0 * discrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
-                discrBias += -4.0 * discrBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
-                dDiscr_dTitr = -8.0 * discrBiasMag * (titrationLambda - 0.5);
-                dDiscr_dTaut = -8.0 * discrBiasMag * (tautomerLambda - 0.5);
+                discrBias = -4.0 * titrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
+                discrBias += -4.0 * tautBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
+                dDiscr_dTitr = -8.0 * titrBiasMag * (titrationLambda - 0.5);
+                dDiscr_dTaut = -8.0 * tautBiasMag * (tautomerLambda - 0.5);
 
                 // pH Bias & Derivs
                 pKa1 = TitrationUtils.Titration.GLHtoGLU.pKa;
@@ -759,10 +765,10 @@ public class ExtendedSystem {
                 // Discr Bias & Derivs
                 tautomerLambda = getTautomerLambda(residue);
                 double tautomerLambdaSquared = tautomerLambda * tautomerLambda;
-                discrBias = -4.0 * discrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
-                discrBias += -4.0 * discrBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
-                dDiscr_dTitr = -8.0 * discrBiasMag * (titrationLambda - 0.5);
-                dDiscr_dTaut = -8.0 * discrBiasMag * (tautomerLambda - 0.5);
+                discrBias = -4.0 * titrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
+                discrBias += -4.0 * tautBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
+                dDiscr_dTitr = -8.0 * titrBiasMag * (titrationLambda - 0.5);
+                dDiscr_dTaut = -8.0 * tautBiasMag * (tautomerLambda - 0.5);
 
                 // pH Bias & Derivs
                 // At tautomerLambda=1 HIE is fully on.
@@ -800,8 +806,8 @@ public class ExtendedSystem {
             case LYS:
             case LYD:
                 // Discr Bias & Derivs
-                discrBias = -4.0 * discrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
-                dDiscr_dTitr = -8.0 * discrBiasMag * (titrationLambda - 0.5);
+                discrBias = -4.0 * titrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
+                dDiscr_dTitr = -8.0 * titrBiasMag * (titrationLambda - 0.5);
                 dDiscr_dTaut = 0.0;
 
                 // pH Bias & Derivs
@@ -1115,7 +1121,7 @@ public class ExtendedSystem {
     }
 
     //TODO: Find a better way to print this histogram out
-    private void writeLambdaHistogram(){
+    public void writeLambdaHistogram(){
         StringBuilder tautomerHeader = new StringBuilder("      X→ ");
         for(int k=0; k< 10; k++){
             double lb = (double) k/10;

@@ -603,7 +603,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     logger.info(
         format("  Attached extended system (%s) to molecular dynamics.", esvSystem.toString()));
     logger.info(format("  Extended System Theta Friction: %f", esvSystem.getThetaFriction()));
-    logger.info(format("  Extended System Theta Mass: %f", esvSystem.getThetaMassArray()[0]));
+    logger.info(format("  Extended System Theta Mass: %f", esvSystem.getThetaMass()));
     logger.info(format("  Extended System Lambda Print Frequency: %d (fsec)", printEsvFrequency));
     reInit();
   }
@@ -1597,7 +1597,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
       // Compute the potential energy and gradients.
       double priorPE = currentPotentialEnergy;
       try {
-        currentPotentialEnergy = potential.energyAndGradient(x, gradient);
+        if(esvSystem != null && potential instanceof ForceFieldEnergyOpenMM){
+          ((ForceFieldEnergyOpenMM) potential).energyFFX(x, true);
+          currentPotentialEnergy = ((ForceFieldEnergyOpenMM) potential).energyAndGradientFFX(x, gradient);
+        }
+        else{
+          currentPotentialEnergy = potential.energyAndGradient(x, gradient);
+        }
+
       } catch (EnergyException ex) {
         writeStoredSnapshots();
         throw ex;
