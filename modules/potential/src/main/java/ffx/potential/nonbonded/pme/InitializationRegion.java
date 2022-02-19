@@ -49,7 +49,6 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
-import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.max;
 
 import edu.rit.pj.IntegerForLoop;
@@ -61,13 +60,11 @@ import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
+import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.PolarizeType;
-import ffx.potential.parameters.TitrationUtils;
-
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -83,10 +80,11 @@ public class InitializationRegion extends ParallelRegion {
 
   private static final Logger logger = Logger.getLogger(InitializationRegion.class.getName());
 
+  private final ParticleMeshEwald particleMeshEwald;
   /**
-   * If set to false, multipoles are fixed in their local frame and torques are zero, which is
-   * useful for narrowing down discrepancies between analytic and finite-difference
-   * derivatives(default is true).
+   * If set to false, multipoles are fixed in their local frame and torques are zero, which is useful
+   * for narrowing down discrepancies between analytic and finite-difference derivatives(default is
+   * true).
    */
   private final boolean rotateMultipoles;
   /** If set to false, multipole charges are set to zero (default is true). */
@@ -139,8 +137,8 @@ public class InitializationRegion extends ParallelRegion {
   private double[] thole;
   private double[] ipdamp;
   /**
-   * The "use" array can be employed to turn off atoms for computing the electrostatic
-   * energy of sub-structures.
+   * The "use" array can be employed to turn off atoms for computing the electrostatic energy of
+   * sub-structures.
    */
   private boolean[] use;
   /**
@@ -162,13 +160,14 @@ public class InitializationRegion extends ParallelRegion {
   /** Partial derivative of the torque with respect to Lambda. */
   private AtomicDoubleArray3D lambdaTorque;
 
-  public InitializationRegion(int maxThreads, ForceField forceField) {
+  public InitializationRegion(ParticleMeshEwald particleMeshEwald, int maxThreads, ForceField forceField) {
     initializationLoop = new InitializationLoop[maxThreads];
     rotateMultipolesLoop = new RotateMultipolesLoop[maxThreads];
     useCharges = forceField.getBoolean("USE_CHARGES", true);
     useDipoles = forceField.getBoolean("USE_DIPOLES", true);
     useQuadrupoles = forceField.getBoolean("USE_QUADRUPOLES", true);
     rotateMultipoles = forceField.getBoolean("ROTATE_MULTIPOLES", true);
+    this.particleMeshEwald = particleMeshEwald;
   }
 
   /**
@@ -216,7 +215,7 @@ public class InitializationRegion extends ParallelRegion {
       AtomicDoubleArray3D lambdaTorque) {
     this.lambdaTerm = lambdaTerm;
     this.esvSystem = esvSystem;
-    if(esvSystem != null) {
+    if (esvSystem != null) {
       this.esvTerm = true;
     }
     this.lambdaScaleMultipoles = lambdaScaleMultipoles;
@@ -391,17 +390,9 @@ public class InitializationRegion extends ParallelRegion {
             elecScale = 0.0;
           }
 
-          MultipoleType multipoleType = atom.getMultipoleType();
+          // Collect the MultipoleType for Atom i.
+          MultipoleType multipoleType = particleMeshEwald.getMultipoleType(ii);
           double[] in = multipoleType.getMultipole();
-          if(esvTerm && esvSystem.isTitrating(ii)){
-            double[] esvIn = new double[10];
-            System.arraycopy(in, 0, esvIn, 0, in.length);
-            double titrationLambda = esvSystem.getTitrationLambda(ii);
-            double tautomerLambda = esvSystem.getTautomerLambda(ii);
-            /*logger.info(String.format("ESV: %d, Atom: %s AtomNum: %d, titrationLambda: %6.8f, tautomerLambda: %6.8f",
-                    esvSystem.getTitrationESVIndex(ii), atom.getName(), ii, titrationLambda, tautomerLambda));*/
-            in = esvSystem.getTitrationUtils().getMultipole(atom, titrationLambda, tautomerLambda, esvIn);
-          }
           // Update the frame
           frame[ii] = multipoleType.frameDefinition;
           // Update the axis defining atom.
@@ -479,9 +470,11 @@ public class InitializationRegion extends ParallelRegion {
               double[] esvMultipoleTautDot = new double[10];
               double titrationLambda = esvSystem.getTitrationLambda(ii);
               double tautomerLambda = esvSystem.getTautomerLambda(ii);
-              esvMultipoleTitrDot = esvSystem.getTitrationUtils().getMultipoleTitrationDeriv(atom, titrationLambda,
+              esvMultipoleTitrDot = esvSystem.getTitrationUtils()
+                  .getMultipoleTitrationDeriv(atom, titrationLambda,
                       tautomerLambda, esvMultipoleTitrDot);
-              esvMultipoleTautDot = esvSystem.getTitrationUtils().getMultipoleTautomerDeriv(atom, titrationLambda,
+              esvMultipoleTautDot = esvSystem.getTitrationUtils()
+                  .getMultipoleTautomerDeriv(atom, titrationLambda,
                       tautomerLambda, esvMultipoleTautDot);
               double tempCharge = esvMultipoleTitrDot[0];
               // Load the dipole for rotation.
@@ -571,12 +564,13 @@ public class InitializationRegion extends ParallelRegion {
             out[t110] = in[t110] * quadrupoleScale * elecScale;
             out[t101] = in[t101] * quadrupoleScale * elecScale;
             out[t011] = in[t011] * quadrupoleScale * elecScale;
-            /* For ESV atoms, also rotate and scale the Mdot multipole. */
+            /* For ESV atoms, also scale the Mdot multipole. */
             if (esvTerm && esvSystem.isTitrating(ii)) {
               double[] esvMultipoleTitrDot = new double[10];
               double titrationLambda = esvSystem.getTitrationLambda(ii);
               double tautomerLambda = esvSystem.getTautomerLambda(ii);
-              esvMultipoleTitrDot = esvSystem.getTitrationUtils().getMultipoleTitrationDeriv(atom, titrationLambda,
+              esvMultipoleTitrDot = esvSystem.getTitrationUtils()
+                  .getMultipoleTitrationDeriv(atom, titrationLambda,
                       tautomerLambda, esvMultipoleTitrDot);
               in = esvMultipoleTitrDot;
               out = titrationMultipole[iSymm][ii];
@@ -592,7 +586,8 @@ public class InitializationRegion extends ParallelRegion {
               out[t011] = in[t011] * quadrupoleScale * elecScale;
 
               double[] esvMultipoleTautDot = new double[10];
-              esvMultipoleTautDot = esvSystem.getTitrationUtils().getMultipoleTautomerDeriv(atom, titrationLambda,
+              esvMultipoleTautDot = esvSystem.getTitrationUtils()
+                  .getMultipoleTautomerDeriv(atom, titrationLambda,
                       tautomerLambda, esvMultipoleTautDot);
               in = esvMultipoleTautDot;
               out = tautomerMultipole[iSymm][ii];
@@ -610,21 +605,19 @@ public class InitializationRegion extends ParallelRegion {
           }
 
           // Load the polarizability.
-          PolarizeType polarizeType = atoms[ii].getPolarizeType();
+          PolarizeType polarizeType = particleMeshEwald.getPolarizeType(ii);
           if (polarizeType != null) {
             polarizability[ii] = polarizeType.polarizability * polarizabilityScale * elecScale;
-            if(esvTerm && esvSystem.isTitrating(ii) && esvSystem.isTitratingHydrogen(ii)){
+            if (esvTerm && esvSystem.isTitrating(ii) && esvSystem.isTitratingHydrogen(ii)) {
               titrationPolarizability[ii] = 0.0;
               tautomerPolarizability[ii] = 0.0;
               double titrationLambda = esvSystem.getTitrationLambda(ii);
               double tautomerLambda = esvSystem.getTautomerLambda(ii);
-              double esvPolarizability = polarizability[ii];
-              polarizability[ii] = esvSystem.getTitrationUtils().getPolarizability(atom, titrationLambda, tautomerLambda, esvPolarizability);
-              double titrationDeriv = esvSystem.getTitrationUtils().getPolarizabilityTitrationDeriv(atom, titrationLambda, tautomerLambda);
-              titrationPolarizability[ii] = titrationDeriv;
-              tautomerPolarizability[ii] =  esvSystem.getTitrationUtils().getPolarizabilityTautomerDeriv(atom, titrationLambda, tautomerLambda);
+              titrationPolarizability[ii] = esvSystem.getTitrationUtils()
+                  .getPolarizabilityTitrationDeriv(atom, titrationLambda, tautomerLambda);
+              tautomerPolarizability[ii] = esvSystem.getTitrationUtils()
+                  .getPolarizabilityTautomerDeriv(atom, titrationLambda, tautomerLambda);
             }
-
             thole[ii] = polarizeType.thole;
             ipdamp[ii] = polarizeType.pdamp;
             if (!(ipdamp[ii] > 0.0)) {

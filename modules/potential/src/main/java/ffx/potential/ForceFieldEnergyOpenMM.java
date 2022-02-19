@@ -3216,7 +3216,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_CustomCompoundBondForce_addPerBondParameter(
             angleTorsionForce, format("a%d", m));
       }
-      
+
       for (AngleTorsion angleTorsion : angleTorsions) {
         double[] constants = angleTorsion.getConstants();
         PointerByReference atorsParams = OpenMM_DoubleArray_create(0);
@@ -4241,8 +4241,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       for (int i = 0; i < nAtoms; i++) {
         Atom atom = atoms[i];
-        MultipoleType multipoleType = atom.getMultipoleType();
-        PolarizeType polarType = atom.getPolarizeType();
+        MultipoleType multipoleType = pme.getMultipoleType(i);
+        PolarizeType polarType = pme.getPolarizeType(i);
 
         // Define the frame definition.
         int axisType;
@@ -4450,8 +4450,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       for (Atom atom : atoms) {
         int index = atom.getXyzIndex() - 1;
-        MultipoleType multipoleType = atom.getMultipoleType();
-        PolarizeType polarType = atom.getPolarizeType();
+        MultipoleType multipoleType = pme.getMultipoleType(index);
+        PolarizeType polarizeType = pme.getPolarizeType(index);
         int[] axisAtoms = atom.getAxisAtomIndices();
 
         double useFactor = 1.0;
@@ -4531,9 +4531,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             zaxis,
             xaxis,
             yaxis,
-            polarType.thole,
-            polarType.pdamp * dampingFactorConversion,
-            polarType.polarizability * polarityConversion * polarScale * useFactor);
+            polarizeType.thole,
+            polarizeType.pdamp * dampingFactorConversion,
+            polarizeType.polarizability * polarityConversion * polarScale * useFactor);
       }
 
       OpenMM_DoubleArray_destroy(dipoles);
@@ -4921,7 +4921,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       }
 
       if (context.contextPointer != null) {
-        OpenMM_AmoebaGKCavitationForce_updateParametersInContext(amoebaCavitationForce, context.contextPointer);
+        OpenMM_AmoebaGKCavitationForce_updateParametersInContext(amoebaCavitationForce,
+            context.contextPointer);
       }
     }
 
