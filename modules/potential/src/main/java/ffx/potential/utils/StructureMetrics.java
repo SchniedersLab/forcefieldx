@@ -37,32 +37,32 @@
 // ******************************************************************************
 package ffx.potential.utils;
 
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+
 import ffx.crystal.Crystal;
+import ffx.numerics.math.Double3;
 import ffx.potential.bonded.Atom;
+import java.util.Arrays;
+import java.util.logging.Logger;
+import org.apache.commons.math3.geometry.euclidean.threed.Line;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.RotationOrder;
+import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
 
-import java.util.Arrays;
-import java.util.logging.Logger;
-
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-import static org.apache.commons.math3.util.FastMath.PI;
-
 /**
  * Structure Metrics contains functionality to calculate characteristics of coordinate systems.
- *
- * This includes:
- * Gyrate computes the radius of gyration of a molecular system from its atomic coordinates.
- *
+ * <p>
+ * This includes: Gyrate computes the radius of gyration of a molecular system from its atomic
+ * coordinates.
+ * <p>
  * Inertia computes the principal moments of inertia for the system, and optionally translates the
- * center of mass to the origin and rotates the principal axes onto the global axes.
- * Reference:
- * Herbert Goldstein, "Classical Mechanics, 2nd Edition",
- *  Addison-Wesley, Reading, MA, 1980; see the Euler angle
- *  xyz convention in Appendix B
+ * center of mass to the origin and rotates the principal axes onto the global axes. Reference:
+ * Herbert Goldstein, "Classical Mechanics, 2nd Edition", Addison-Wesley, Reading, MA, 1980; see the
+ * Euler angle xyz convention in Appendix B
  *
  * @author Michael J. Schnieders
  * @author Aaron J. Nessler
@@ -71,6 +71,7 @@ import static org.apache.commons.math3.util.FastMath.PI;
 public class StructureMetrics {
 
   private static final Logger logger = Logger.getLogger(StructureMetrics.class.getName());
+
   /**
    * Compute the radius of gyration for all atoms in the supplied array.
    *
@@ -174,6 +175,7 @@ public class StructureMetrics {
 
   /**
    * Compute the components that make up the radius of gyration along three axes.
+   *
    * @param atoms Atoms for calculation
    * @param pma Principal moment axes
    * @return radius of gyration along axes
@@ -187,10 +189,11 @@ public class StructureMetrics {
 
     int index = 0;
     for (int i = 0; i < nAtoms; i++) {
-      mass[i] = atoms[i].getMass();
-      x[index] = atoms[i].getX();
-      y[index] = atoms[i].getY();
-      z[index] = atoms[i].getZ();
+      Atom atom = atoms[i];
+      mass[i] = atom.getMass();
+      x[index] = atom.getX();
+      y[index] = atom.getY();
+      z[index] = atom.getZ();
       index++;
     }
 
@@ -199,13 +202,15 @@ public class StructureMetrics {
 
   /**
    * Compute the components that make up the radius of gyration along three axes.
+   *
    * @param xyz Coordinates for calculation
    * @param mass Mass of each atom
    * @param pma Use principal moment axes
    * @return radius of gyration along axes
    */
   public static double[][] radiusOfGyrationComponents(double[] xyz, double[] mass, boolean pma) {
-    assert(xyz.length % 3 ==0);
+    assert (xyz.length % 3 == 0);
+
     int nAtoms = xyz.length / 3;
     // Find the centroid of the atomic coordinates.
     double[] x = new double[nAtoms];
@@ -224,6 +229,7 @@ public class StructureMetrics {
 
   /**
    * Compute the components that make up the radius of gyration along three axes.
+   *
    * @param x Coordinates for calculation
    * @param y Coordiantes for calculation
    * @param z Coordinates for calculation
@@ -231,15 +237,16 @@ public class StructureMetrics {
    * @param pma Use principal moment axes
    * @return radius of gyration along axes
    */
-  public static double[][] radiusOfGyrationComponents(double[] x, double[] y, double[] z, double[] mass, boolean pma) {
-    assert(x.length <= mass.length);
+  public static double[][] radiusOfGyrationComponents(double[] x, double[] y, double[] z,
+      double[] mass, boolean pma) {
+    assert (x.length <= mass.length);
     double massSum = Arrays.stream(mass).sum();
 
     double[][] inertia = momentsOfInertia(x, y, z, mass, false, false, pma);
 
     // Rg = sqrt(I/m)
-    for(int i = 0; i < inertia.length; i++){
-      inertia[i][0] = sqrt(inertia[i][0]/massSum);
+    for (int i = 0; i < inertia.length; i++) {
+      inertia[i][0] = sqrt(inertia[i][0] / massSum);
     }
 
     return inertia;
@@ -247,12 +254,13 @@ public class StructureMetrics {
 
   /**
    * Compute the components that make up the radius of gyration along three axes.
+   *
    * @param xyz Coordinates for calculation
    * @param unitCell crystal used as system basis.
    * @return radius of gyration along axes
    */
   public static double[][] radiusOfGyrationComponents(double[] xyz, Crystal unitCell) {
-    assert(xyz.length % 3 ==0);
+    assert (xyz.length % 3 == 0);
     int nAtoms = xyz.length / 3;
     // Find the centroid of the atomic coordinates.
     double[] x = new double[nAtoms];
@@ -271,42 +279,63 @@ public class StructureMetrics {
 
   /**
    * Compute the components that make up the radius of gyration along crystal axes.
+   *
    * @param x Coordinates for calculation
    * @param y Coordiantes for calculation
    * @param z Coordinates for calculation
    * @param unitCell Crystal to use as basis.
    * @return radius of gyration along axes
    */
-  public static double[][] radiusOfGyrationComponents(double[] x, double[] y, double[] z, Crystal unitCell) {
+  public static double[][] radiusOfGyrationComponents(double[] x, double[] y, double[] z,
+      Crystal unitCell) {
     assert (x.length == y.length);
     assert (y.length == z.length);
-    // Crystal orientation
-    double[][] vec = new double[][]{unitCell.Ai[0].clone(),unitCell.Ai[1].clone(),unitCell.Ai[2].clone()};
 
-    unitVector(vec[0]);
-    unitVector(vec[1]);
-    unitVector(vec[2]);
+    // Define a Line for each unit cell vector.
+    Vector3D origin = new Vector3D(0.0, 0.0, 0.0);
+    Vector3D aAxis = new Vector3D(unitCell.Ai[0].clone());
+    Vector3D bAxis = new Vector3D(unitCell.Ai[1].clone());
+    Vector3D cAxis = new Vector3D(unitCell.Ai[2].clone());
+    Line[] axes = new Line[3];
+    axes[0] = new Line(origin, aAxis, 1.e0-8);
+    axes[1] = new Line(origin, bAxis, 1.e0-8);
+    axes[2] = new Line(origin, cAxis, 1.e0-8);
 
+    // Find the centroid of the atomic coordinates.
     int nAtoms = x.length;
-    //Distance between a point and a line:
-    // (|BA x BC|) / |BC|
+    double xc = 0.0;
+    double yc = 0.0;
+    double zc = 0.0;
+    for (int i = 0; i < nAtoms; i++) {
+      xc += x[i];
+      yc += y[i];
+      zc += z[i];
+    }
+    Vector3D centroid = new Vector3D(xc, yc, zc);
+    centroid = centroid.scalarMultiply(1.0 / nAtoms);
 
+    // Compute the radius of gyration about each unit cell vector.
     double[] radius = new double[3];
-    for(int i = 0; i < 3; i++) {
-      for (int j = 0; j < nAtoms; j++) {
-        double dist = magnitude(crossProduct(x[j], y[j], z[j], vec[i][0], vec[i][1], vec[i][2]))/magnitude(vec[i]);
-        radius[i] += dist * dist;
+    for (int j = 0; j < nAtoms; j++) {
+      Vector3D xyz = new Vector3D(x[j], y[j], z[j]);
+      xyz = xyz.subtract(centroid);
+      for (int i=0; i<3; i++) {
+        double mag = axes[i].distance(xyz);
+        radius[i] += mag * mag;
       }
-      radius[i] = sqrt(radius[i]/nAtoms);
+    }
+
+    for (int i = 0; i < 3; i++) {
+      radius[i] = sqrt(radius[i] / nAtoms);
     }
 
     double[][] momentsAndVectors = new double[3][4];
-    for(int i = 0; i< 3;i++){
-      for(int j = 0; j < 4; j++){
-        if(j==0) {
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 4; j++) {
+        if (j == 0) {
           momentsAndVectors[i][j] = radius[i];
-        }else{
-          momentsAndVectors[i][j] = vec[i][j-1];
+        } else {
+          momentsAndVectors[i][j] = unitCell.Ai[i][j-1];
         }
       }
     }
@@ -323,7 +352,8 @@ public class StructureMetrics {
    * @param pma Use principal moment axes.
    * @return The moments of inertia.
    */
-  public static double[][] momentsOfInertia(Atom[] atoms, boolean moved, boolean print, boolean pma) {
+  public static double[][] momentsOfInertia(Atom[] atoms, boolean moved, boolean print,
+      boolean pma) {
     double[] mass = new double[atoms.length];
     int nAtoms = atoms.length;
     double[] x = new double[nAtoms];
@@ -352,7 +382,8 @@ public class StructureMetrics {
    * @param pma Use principal moment axes.
    * @return The radius of gyration.
    */
-  public static double[][] momentsOfInertia(double[] xyz, double[] mass, boolean moved, boolean print, boolean pma) {
+  public static double[][] momentsOfInertia(double[] xyz, double[] mass, boolean moved,
+      boolean print, boolean pma) {
     assert (xyz.length % 3 == 0);
     int nAtoms = xyz.length / 3;
     // Find the centroid of the atomic coordinates.
@@ -382,7 +413,8 @@ public class StructureMetrics {
    * @param pma Report moments of inertia to principal axes.
    * @return The moment of inertia.
    */
-  public static double[][] momentsOfInertia(double[] x, double[] y, double[] z, double[] mass, boolean moved, boolean print, boolean pma) {
+  public static double[][] momentsOfInertia(double[] x, double[] y, double[] z, double[] mass,
+      boolean moved, boolean print, boolean pma) {
     assert (x.length == y.length);
     assert (y.length == z.length);
 
@@ -415,7 +447,7 @@ public class StructureMetrics {
     double yterm;
     double zterm;
 
-    for(int i = 0; i < nAtoms; i++){
+    for (int i = 0; i < nAtoms; i++) {
       double massValue = mass[i];
       xterm = x[i] - xcm;
       yterm = y[i] - ycm;
@@ -440,7 +472,7 @@ public class StructureMetrics {
 
     double[] moment;
     double[][] vec;
-    if(pma) {
+    if (pma) {
       // Diagonalize the matrix
       Array2DRowRealMatrix cMatrix = new Array2DRowRealMatrix(tensor, false);
       EigenDecomposition eigenDecomposition = new EigenDecomposition(cMatrix);
@@ -499,35 +531,38 @@ public class StructureMetrics {
           z[i] = a[0][2] * xterm + a[1][2] * yterm + a[2][2] * zterm;
         }
       }
-    }else{
-      vec = new double[][]{{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0},{0.0, 0.0, 1.0}};
+    } else {
+      vec = new double[][] {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
       moment = new double[] {tensor[0][0], tensor[1][1], tensor[2][2]};
     }
 
     // print the center of mass and Euler angle values
-    if(print){
+    if (print) {
       logger.info(format("\n Center of Mass Coordinates: %8.4f %8.4f %8.4f", xcm, ycm, zcm));
       // invert vec
       double[] angles = new Rotation(vec, 1.0E-7).getAngles(RotationOrder.XYZ);
-      double radian = 180/PI;
+      double radian = 180 / PI;
       // Convert to degrees
-      for(int i = 0; i< 3; i++){
+      for (int i = 0; i < 3; i++) {
         angles[i] += radian;
       }
-      logger.info(format(" Euler Angles (Phi/Theta/Psi): %8.3f %8.3f %8.3f", angles[0], angles[1], angles[2]));
-      logger.info(" Moments of Inertia and Principle Axes:\n  Moments (amu Ang^2): \t X-, Y-, and Z-Components of Axes:");
-      for(int i = 0; i < 3; i++){
-        logger.info(format("  %16.3f %12.6f %12.6f %12.6f", moment[i], vec[i][0], vec[i][1], vec[i][2]));
+      logger.info(format(" Euler Angles (Phi/Theta/Psi): %8.3f %8.3f %8.3f", angles[0], angles[1],
+          angles[2]));
+      logger.info(
+          " Moments of Inertia and Principle Axes:\n  Moments (amu Ang^2): \t X-, Y-, and Z-Components of Axes:");
+      for (int i = 0; i < 3; i++) {
+        logger.info(
+            format("  %16.3f %12.6f %12.6f %12.6f", moment[i], vec[i][0], vec[i][1], vec[i][2]));
       }
     }
 
     double[][] momentsAndVectors = new double[3][4];
-    for(int i = 0; i< 3;i++){
-      for(int j = 0; j < 4; j++){
-        if(j==0) {
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 4; j++) {
+        if (j == 0) {
           momentsAndVectors[i][j] = moment[i];
-        }else{
-          momentsAndVectors[i][j] = vec[i][j-1];
+        } else {
+          momentsAndVectors[i][j] = vec[i][j - 1];
         }
       }
     }
@@ -571,7 +606,8 @@ public class StructureMetrics {
    * @param unitCell Crystal to use as system basis.
    * @return The moment of inertia.
    */
-  public static double[][] momentsOfInertia(double[] x, double[] y, double[] z, double[] mass, Crystal unitCell) {
+  public static double[][] momentsOfInertia(double[] x, double[] y, double[] z, double[] mass,
+      Crystal unitCell) {
     assert (x.length == y.length);
     assert (y.length == z.length);
     // Crystal orientation
@@ -579,12 +615,12 @@ public class StructureMetrics {
     double massSum = Arrays.stream(mass).sum();
 
     double[][] momentsAndVectors = new double[3][4];
-    for(int i = 0; i< 3;i++){
-      for(int j = 0; j < 4; j++){
-        if(j==0) {
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 4; j++) {
+        if (j == 0) {
           momentsAndVectors[i][j] = massSum * radius[i][0] * radius[i][0];
-        }else{
-          momentsAndVectors[i][j] = radius[i][j-1];
+        } else {
+          momentsAndVectors[i][j] = radius[i][j - 1];
         }
       }
     }
@@ -592,66 +628,4 @@ public class StructureMetrics {
     return momentsAndVectors;
   }
 
-  /**
-   * Determine the magnitude of a vector.
-   * @param vector Vector
-   * @return magnitude
-   */
-  private static double magnitude(double[] vector){
-    int vLength = vector.length;
-    double magnitude = 0.0;
-    for(int i = 0; i < vLength; i++){
-      magnitude += vector[i] * vector[i];
-    }
-    return sqrt(magnitude);
-  }
-
-  /**
-   * Transform the vector into a unit vector.
-   * @param vector Vector we wish to convert to unit vector.
-   */
-  private static void unitVector(double[] vector){
-    int vLength = vector.length;
-    double magnitude = magnitude(vector);
-    for(int i = 0; i < vLength; i++){
-      vector[i]/=magnitude;
-    }
-  }
-
-  /**
-   * Perform cross product of two vectors.
-   * @param v vector 1
-   * @param v2 vector 2
-   * @return cross product
-   */
-  private static double[] crossProduct(double[] v, double[] v2){
-    int vLength = v.length;
-    assert(vLength == v2.length);
-
-    double[] cross = new double[vLength];
-    cross[0] = v[1] * v2[2] - v[2]*v2[1];
-    cross[1] = v[0]*v2[2] - v[2]*v2[0];
-    cross[2] = v[0]*v2[1] - v[1]*v2[0];
-
-    return cross;
-  }
-
-  /**
-   * Perform cross product between two vectors {x, y, z} and {x1, y1, z1}.
-   * @param x coordinate for first vector
-   * @param y coordinate for first vector
-   * @param z coordinate for first vector
-   * @param x1 coordinate for second vector
-   * @param y1 coordinate for second vector
-   * @param z1 coordinate for second vector
-   * @return Cross product
-   */
-  private static double[] crossProduct(double x, double y, double z, double x1, double y1, double z1) {
-    double[] cross = new double[3];
-    cross[0] = y * z1 - z * y1;
-    cross[1] = x * z1 - z * x1;
-    cross[2] = x * y1 - y * x1;
-
-    return cross;
-  }
 }

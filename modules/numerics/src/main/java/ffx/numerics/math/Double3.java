@@ -174,6 +174,15 @@ public class Double3 {
   }
 
   /**
+   * Returns the coordinate at position i.
+   *
+   * @return The coordinate.
+   */
+  public double get(int i) {
+    return a[i];
+  }
+
+  /**
    * Finds the length of this Double3.
    *
    * @return Length of vector this Double3.
