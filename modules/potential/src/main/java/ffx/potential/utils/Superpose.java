@@ -482,8 +482,7 @@ public class Superpose {
   }
 
   /**
-   * Minimize the RMS distance between two sets of atoms using quaternions and a pre-calculated
-   * rotation matrix; overlaps x2 onto x1.
+   * Apply a rotation matrix to a set of coordinates.
    *
    * @param x2 Cartesian coordinates of the second system. Modified in-place.
    * @param rot A pre-calculated rotation matrix.
@@ -512,9 +511,9 @@ public class Superpose {
   public static void applyTranslation(double[] x, final double[] translation) {
     int n = x.length / 3;
     for (int i = 0; i < n; i++) {
-      int i3 = 3 * i;
+      int k = i * 3;
       for (int j = 0; j < 3; j++) {
-        x[i3 + j] -= translation[j];
+        x[k + j] += translation[j];
       }
     }
   }
@@ -618,16 +617,16 @@ public class Superpose {
     for (int i = 0; i < n; i++) {
       int k = 3 * i;
       double weigh = mass[i];
-      xmid = xmid + x[k] * weigh;
-      ymid = ymid + x[k + 1] * weigh;
-      zmid = zmid + x[k + 2] * weigh;
-      norm = norm + weigh;
+      xmid += x[k] * weigh;
+      ymid += x[k + 1] * weigh;
+      zmid += x[k + 2] * weigh;
+      norm += weigh;
     }
-    xmid = xmid / norm;
-    ymid = ymid / norm;
-    zmid = zmid / norm;
+    xmid /= norm;
+    ymid /= norm;
+    zmid /= norm;
 
-    return new double[] {xmid, ymid, zmid};
+    return new double[] {-xmid, -ymid, -zmid};
   }
 
   /**

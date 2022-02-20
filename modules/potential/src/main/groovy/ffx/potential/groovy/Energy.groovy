@@ -53,8 +53,8 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import static ffx.potential.utils.Gyrate.radiusOfGyration
-import static ffx.potential.utils.Inertia.momentsOfInertia
+import static ffx.potential.utils.StructureMetrics.radiusOfGyration
+import static ffx.potential.utils.StructureMetrics.momentsOfInertia
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.*
 
@@ -206,7 +206,7 @@ class Energy extends PotentialScript {
     }
 
     if(inertia){
-      double[][] inertiaValue = momentsOfInertia(activeAssembly.getActiveAtomArray(), true, true)
+      double[][] inertiaValue = momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true, true)
     }
 
     SystemFilter systemFilter = potentialFunctions.getFilter()
@@ -271,7 +271,7 @@ class Energy extends PotentialScript {
         }
 
         if(inertia){
-          double[][] inertiaValue = momentsOfInertia(activeAssembly.getActiveAtomArray(), true, true)
+          double[][] inertiaValue = momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true,true)
         }
       }
 
