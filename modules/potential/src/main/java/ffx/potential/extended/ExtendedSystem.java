@@ -204,7 +204,8 @@ public class ExtendedSystem {
     private final boolean doElectrostatics;
     private final boolean doBias;
     private final boolean doPolarization;
-    private final boolean fixLambdaState;
+    private final boolean fixTitrationState;
+    private final boolean fixTautomerState;
     /**
      * System PH.
      */
@@ -259,7 +260,8 @@ public class ExtendedSystem {
         tautBiasMag = properties.getDouble("tautomer.bias.magnitude", DISCR_BIAS);
         double initialTitrationLambda = properties.getDouble("lambda.titration.initial", 0.5);
         double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
-        fixLambdaState = properties.getBoolean("fix.esv.lambda", false);
+        fixTitrationState = properties.getBoolean("fix.titration.lambda", false);
+        fixTautomerState = properties.getBoolean("fix.tautomer.lambda", false);
 
 //        boolean bonded = properties.getBoolean("esv.bonded", false);
         doVDW = properties.getBoolean("esv.vdW", true);
@@ -517,8 +519,11 @@ public class ExtendedSystem {
     private void updateLambdas() {
         //This will prevent recalculating multiple sinTheta*sinTheta that are the same number.
         for (int i = 0; i < nESVs; i++) {
-            double sinTheta = Math.sin(thetaPosition[i]);
-            extendedLambdas[i] = sinTheta * sinTheta;
+            //Check to see if titration/tautomer lambdas are to be fixed
+            if((!fixTitrationState && i < nTitr) || (!fixTautomerState && i >= nTitr)){
+                double sinTheta = Math.sin(thetaPosition[i]);
+                extendedLambdas[i] = sinTheta * sinTheta;
+            }
         }
         for (int i = 0; i < nAtoms; i++) {
             int mappedTitrationIndex = titrationIndexMap[i];
@@ -662,7 +667,6 @@ public class ExtendedSystem {
                     }
                 }
             }
-
         }
         return esvDeriv;
     }
@@ -1054,9 +1058,7 @@ public class ExtendedSystem {
      * Processes lambda values based on propagation of theta value from Stochastic integrator in Molecular dynamics
      */
     public void preForce() {
-        if(!fixLambdaState){
             updateLambdas();
-        }
     }
 
     /**
@@ -1069,6 +1071,7 @@ public class ExtendedSystem {
         double[] dEdTheta = new double[dEdL.length];
         for (int i = 0; i < nESVs; i++) {
             dEdTheta[i] = dEdL[i] * sin(2 * thetaPosition[i]);
+            logger.info("dEdL["+i+"]: "+dEdL[i]);
         }
         return dEdTheta;
     }
