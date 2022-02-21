@@ -482,6 +482,7 @@ public class BornRadiiRegion extends ParallelRegion {
 
       double Aij = constants[0];
       double Bij = constants[1];
+      //logger.info(format("rhoi %2.4f rhoj %2.4f separation %2.4f Aij %2.10f Bij %2.2f",radius,radiusK,r,Aij,Bij));
 
       double rMinusBij = r - Bij;
       double radiiMinusr = radius + radiusK + 2.0 * radiusWater - r;
@@ -490,7 +491,7 @@ public class BornRadiiRegion extends ParallelRegion {
 
       // Use Aij and Bij to get neck integral using Equations 13 and 14 from Aguilar/Onufriev 2010 paper
       // Sneck may be based on the number of heavy atoms bound to the atom being descreened.
-      double neckIntegral = sneck * Aij * power1 * power2;
+      double neckIntegral = PI4_3 * sneck * Aij * power1 * power2;
 
       return -neckIntegral;
     }
