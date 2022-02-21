@@ -95,10 +95,11 @@ public class NeckIntegral {
     private static final double[] radArray = {
             0.80, 0.85, 0.90, 0.95, 1.00, 1.05, 1.10, 1.15, 1.20, 1.25, 1.30, 1.35, 1.40,
             1.45, 1.50, 1.55, 1.60, 1.65, 1.70, 1.75, 1.80, 1.85, 1.90, 1.95, 2.00, 2.05,
-            2.10, 2.15, 2.20, 2.25, 2.30, 2.35, 2.40, 2.45, 2.50};
+            2.10, 2.15, 2.20, 2.25, 2.30, 2.35, 2.40, 2.45, 2.50, 2.55, 2.60, 2.65, 2.70,
+            2.75, 2.80, 2.85, 2.90, 2.95, 3.00};
 
     private static final double MINIMUM_RADIUS = 0.80;
-    private static final double MAXIMUM_RADIUS = 2.50;
+    private static final double MAXIMUM_RADIUS = 3.00;
     private static final double SPACING = 0.05;
     private static final int NUM_POINTS = radArray.length;
 
@@ -624,7 +625,7 @@ public class NeckIntegral {
         // Never let Aij be negative.
         if (aij < 0.0) {
             logger.warning(
-                    format(" Aij is less than zero in NeckIntegral for radii: %16.8f %16.8f.", rhoDescreened,
+                    format(" Aij is less than zero (%2.10f) in NeckIntegral for radii: %16.8f %16.8f.", aij, rhoDescreened,
                             rhoDescreening));
             aij = 0.0;
         }
