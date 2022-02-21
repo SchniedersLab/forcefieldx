@@ -64,7 +64,7 @@ public class BornTanhRescaling {
   /**
    * Maximum Born radius.
    */
-  public static final double MAX_BORN_RADIUS = 50.0;
+  public static final double MAX_BORN_RADIUS = 30.0;
   /**
    * 1/50^3 where 50 Angstroms is the maximum Born radius
    */
