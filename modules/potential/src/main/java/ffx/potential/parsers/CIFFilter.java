@@ -492,6 +492,9 @@ public class CIFFilter extends SystemFilter{
                 List<Bond> bonds = mol.getBondList();
                 IBond.Order order = IBond.Order.SINGLE;
                 int xyzBonds = bonds.size();
+                if(xyzBonds <= 0){
+                    logger.warning(" XYZ structure has no bonds... Check input.");
+                }
                 for (Bond xyzBond : bonds) {
                     if (logger.isLoggable(Level.FINE)) {
                         logger.fine(format(" Bonded atom 1: %d, Bonded atom 2: %d", xyzBond.getAtom(0).getXyzIndex(), xyzBond.getAtom(1).getXyzIndex()));

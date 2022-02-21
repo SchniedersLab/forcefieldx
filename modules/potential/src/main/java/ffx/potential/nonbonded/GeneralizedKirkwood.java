@@ -463,6 +463,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
    */
   private double gkEnergy = 0.0;
   /**
+   * Electrostatic Solvation Energy from Permanent Multipoles.
+   */
+  private double gkPermanentEnergy = 0.0;
+  /**
+   * Electrostatic Solvation Energy from Induced Dipoles.
+   */
+  private double gkPolarizationEnergy = 0.0;
+  /**
    * Dispersion Solvation Energy.
    */
   private double dispersionEnergy = 0.0;
@@ -1002,6 +1010,24 @@ public class GeneralizedKirkwood implements LambdaInterface {
     return gkEnergy;
   }
 
+  /**
+   * Returns the GK component of the solvation energy.
+   *
+   * @return GK electrostatic energy
+   */
+  public double getGeneralizedKirkwoordPermanentEnergy() {
+    return gkPermanentEnergy;
+  }
+
+  /**
+   * Returns the GK component of the solvation energy.
+   *
+   * @return GK electrostatic energy
+   */
+  public double getGeneralizedKirkwoordPolariztionEnergy() {
+    return gkPolarizationEnergy;
+  }
+
   public AtomicDoubleArray3D getGrad() {
     return grad;
   }
@@ -1253,12 +1279,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * solvationEnergy
    *
-   * @param gkPolarizationEnergy GK vacuum to SCRF polarization energy cost.
+   * @param gkInducedCorrectionEnergy GK vacuum to SCRF polarization energy cost.
    * @param gradient a boolean.
    * @param print a boolean.
    * @return a double.
    */
-  public double solvationEnergy(double gkPolarizationEnergy, boolean gradient, boolean print) {
+  public double solvationEnergy(double gkInducedCorrectionEnergy, boolean gradient, boolean print) {
 
     cavitationEnergy = 0.0;
     dispersionEnergy = 0.0;
@@ -1376,7 +1402,12 @@ public class GeneralizedKirkwood implements LambdaInterface {
       }
     }
 
-    gkEnergy = gkEnergyRegion.getEnergy() + gkPolarizationEnergy;
+    gkEnergy = gkEnergyRegion.getEnergy() + gkInducedCorrectionEnergy;
+    gkPermanentEnergy = gkEnergyRegion.getPermanentEnergy();
+    gkPolarizationEnergy = gkEnergy - gkPermanentEnergy;
+
+    // The following expression is equivalent to the former.
+    // gkPolarizationEnergy = gkEnergyRegion.getPolarizationEnergy() + gkInducedCorrectionEnergy;
 
     // Solvation energy is the sum of cavitation, dispersion and GK
     solvationEnergy = cavitationEnergy + dispersionEnergy + gkEnergy;

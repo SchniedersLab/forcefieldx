@@ -69,7 +69,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
   /** Thole damping factor. */
   public final double thole;
   /** Value of polarizability scale factor. */
-  public final double pdamp;
+  public double pdamp;
   /** Isotropic polarizability in units of Angstroms^3. */
   public final double polarizability;
   /** Atom type number. */
@@ -96,6 +96,19 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
     } else {
       pdamp = pow(polarizability, sixth);
     }
+  }
+
+  /**
+   * Construct a PolarizeType from a reference type and updated polarizability.
+   *
+   * @param polarizeType The reference PolarizeType.
+   * @param polarizability The updated polarizability.
+   */
+  public PolarizeType(PolarizeType polarizeType, double polarizability) {
+    this(polarizeType.type, polarizability, polarizeType.thole,
+        Arrays.copyOf(polarizeType.polarizationGroup, polarizeType.polarizationGroup.length));
+    // Keep pdamp fixed during titration.
+    pdamp = polarizeType.pdamp;
   }
 
   /**

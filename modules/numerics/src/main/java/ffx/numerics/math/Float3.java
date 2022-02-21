@@ -174,6 +174,15 @@ public class Float3 {
   }
 
   /**
+   * Returns the coordinate at position i.
+   *
+   * @return The coordinate.
+   */
+  public float get(int i) {
+    return a[i];
+  }
+
+  /**
    * Finds the length of this Float3.
    *
    * @return Length of vector this Float3.

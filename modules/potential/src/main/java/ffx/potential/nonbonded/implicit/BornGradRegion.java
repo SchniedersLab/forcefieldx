@@ -419,7 +419,7 @@ public class BornGradRegion extends ParallelRegion {
       double radiiMinusr3 = radiiMinusr * radiiMinusr * radiiMinusr;
       double radiiMinusr4 = radiiMinusr3 * radiiMinusr;
 
-      return 4.0 * (sneck * Aij * rMinusBij3 * radiiMinusr4
+      return 4.0 * PI4_3 * (sneck * Aij * rMinusBij3 * radiiMinusr4
           - sneck * Aij * rMinusBij4 * radiiMinusr3);
     }
 
