@@ -836,7 +836,7 @@ public class EnergyTest extends PotentialTest {
                 134421,
                 -238.72700000, // Polarization
                 134421,
-                -3228.36542246, // Solvation
+                -3308.29464032, // Solvation with cavmodel=none
                 136503,
                 false
             },
