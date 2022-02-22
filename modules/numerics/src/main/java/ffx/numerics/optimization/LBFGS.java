@@ -322,8 +322,7 @@ public class LBFGS {
       }
 
       if (listener != null) {
-        if (!listener.optimizationUpdate(
-            iterations, evaluations, grms, xrms, f, df, angle[0], info[0])) {
+        if (!listener.optimizationUpdate(iterations, evaluations, grms, xrms, f, df, angle[0], info[0])) {
           // Terminate the optimization.
           return 1;
         }
@@ -429,7 +428,8 @@ public class LBFGS {
 
     int stop = v1Start + v1Step * n;
     for (int i = v1Start, j = v2Start; i != stop; i += v1Step, j += v2Step) {
-      v2[j] += a * v1[i];
+      // v2[j] += a * v1[i];
+      v2[j] = Math.fma(a, v1[i], v2[j]);
     }
   }
 
@@ -501,7 +501,8 @@ public class LBFGS {
     double sum = 0.0;
     int stop = v1Start + v1Step * n;
     for (int i = v1Start, j = v2Start; i != stop; i += v1Step, j += v2Step) {
-      sum += v1[i] * v2[j];
+      //sum += v1[i] * v2[j];
+      sum = Math.fma(v1[i], v2[j], sum);
     }
     return sum;
   }

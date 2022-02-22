@@ -165,7 +165,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private double d2sc2dL2 = 0.0;
   /** Generalized extended system variables. */
   private ExtendedSystem esvSystem;
-  private int numESVs = 0;
 
   /** A local copy of atomic coordinates, including reductions on the hydrogen atoms. */
   private double[] coordinates;
@@ -369,7 +368,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     }
     esvTerm = true;
     esvSystem = system;
-    numESVs = esvSystem.getExtendedResidueList().size();
 
     // Launch shared lambda/esvLambda initializers if missed (ie. !lambdaTerm) in constructor.
     vdwLambdaAlpha = forceField.getDouble("VDW_LAMBDA_ALPHA", 0.05);
@@ -396,6 +394,14 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   }
 
   /**
+   * Get the ExtendedSystem instance.
+   * @return The ExtendedSystem is returned.
+   */
+  public ExtendedSystem getExtendedSystem() {
+    return esvSystem;
+  }
+
+  /**
    * destroy.
    *
    * @throws java.lang.Exception if any.
@@ -411,7 +417,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     setAtoms(previousAtoms, molecule);
     esvTerm = false;
     esvSystem = null;
-    numESVs = 0;
     initSoftCore(); // To remove entries from isSoft[] that were due only to ESVs.
   }
 

@@ -256,13 +256,9 @@ public class Bond extends BondedTerm {
       case FLAT_BOTTOM_QUARTIC:
         {
           energy = prefactor * dv2 * (1.0 + cubic * dv + quartic * dv2);
-          if (esvTerm) {
-            setEsvDeriv(energy * dedesvChain);
-            energy = energy * esvLambda;
-          }
           if (gradient) {
             // Compute the magnitude of the gradient.
-            var dedr = 2.0 * prefactor * esvLambda * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
+            var dedr = 2.0 * prefactor * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
             computeGradient(threadID, grad, atomA, atomB, vab, dedr);
           }
           break;
@@ -272,13 +268,9 @@ public class Bond extends BondedTerm {
       default:
         {
           energy = prefactor * dv2;
-          if (esvTerm) {
-            setEsvDeriv(energy * dedesvChain);
-            energy = energy * esvLambda;
-          }
           if (gradient) {
             // Compute the magnitude of the gradient.
-            var dedr = 2.0 * prefactor * esvLambda * dv;
+            var dedr = 2.0 * prefactor * dv;
             computeGradient(threadID, grad, atomA, atomB, vab, dedr);
           }
           break;

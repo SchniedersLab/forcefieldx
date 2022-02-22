@@ -165,6 +165,17 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   }
 
   /**
+   * Construct a MultipoleType from a reference type and updated coefficients.
+   *
+   * @param multipoleType Reference MultipoleType.
+   * @param multipole The updated multipole parameters.
+   */
+  public MultipoleType(MultipoleType multipoleType, double[] multipole) {
+    this(multipole, Arrays.copyOf(multipoleType.frameAtomTypes, multipoleType.frameAtomTypes.length),
+        multipoleType.frameDefinition, false);
+  }
+
+  /**
    * Constructor for MultipoleType.
    *
    * @param charge a double.

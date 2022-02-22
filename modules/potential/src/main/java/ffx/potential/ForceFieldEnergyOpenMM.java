@@ -322,6 +322,7 @@ import ffx.potential.bonded.StretchTorsion;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
+import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
@@ -3216,7 +3217,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_CustomCompoundBondForce_addPerBondParameter(
             angleTorsionForce, format("a%d", m));
       }
-      
+
       for (AngleTorsion angleTorsion : angleTorsions) {
         double[] constants = angleTorsion.getConstants();
         PointerByReference atorsParams = OpenMM_DoubleArray_create(0);
@@ -4080,6 +4081,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_AmoebaVdwForce_addTypePair(amoebaVDWForce, type2, type1, rMin, eps);
       }
 
+      ExtendedSystem extendedSystem = vdW.getExtendedSystem();
+      double[] vdwPrefactorAndDerivs = new double[3];
+
       int[] ired = vdW.getReductionIndex();
       for (int i = 0; i < nAtoms; i++) {
         Atom atom = atoms[i];
@@ -4087,8 +4091,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int atomClass = vdwType.atomClass;
         type = vdwClassToOpenMMType.get(atomClass);
         int isAlchemical = atom.applyLambda() ? 1 : 0;
+        double scaleFactor = 1.0;
+        if (extendedSystem != null) {
+          extendedSystem.getVdwPrefactor(i, vdwPrefactorAndDerivs);
+          scaleFactor = vdwPrefactorAndDerivs[0];
+        }
+
         OpenMM_AmoebaVdwForce_addParticle_1(amoebaVDWForce, ired[i], type, vdwType.reductionFactor,
-            isAlchemical);
+            isAlchemical, scaleFactor);
       }
 
       double cutoff = nonbondedCutoff.off * OpenMM_NmPerAngstrom;
@@ -4153,6 +4163,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         radScale = 0.5;
       }
 
+      ExtendedSystem extendedSystem = vdW.getExtendedSystem();
+      double[] vdwPrefactorAndDerivs = new double[3];
+
       int[] ired = vdW.getReductionIndex();
       for (Atom atom : atoms) {
         int index = atom.getXyzIndex() - 1;
@@ -4167,9 +4180,16 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int isAlchemical = atom.applyLambda() ? 1 : 0;
         double eps = OpenMM_KJPerKcal * vdwType.wellDepth;
         double rad = OpenMM_NmPerAngstrom * vdwType.radius * radScale;
+
+        double scaleFactor = 1.0;
+        if (extendedSystem != null) {
+          extendedSystem.getVdwPrefactor(index, vdwPrefactorAndDerivs);
+          scaleFactor = vdwPrefactorAndDerivs[0];
+        }
+
         OpenMM_AmoebaVdwForce_setParticleParameters(
             amoebaVDWForce, index, ired[index],
-            rad, eps, vdwType.reductionFactor, isAlchemical, type);
+            rad, eps, vdwType.reductionFactor, isAlchemical, type, scaleFactor);
       }
 
       if (context.contextPointer != null) {
@@ -4241,8 +4261,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       for (int i = 0; i < nAtoms; i++) {
         Atom atom = atoms[i];
-        MultipoleType multipoleType = atom.getMultipoleType();
-        PolarizeType polarType = atom.getPolarizeType();
+        MultipoleType multipoleType = pme.getMultipoleType(i);
+        PolarizeType polarType = pme.getPolarizeType(i);
 
         // Define the frame definition.
         int axisType;
@@ -4450,8 +4470,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       for (Atom atom : atoms) {
         int index = atom.getXyzIndex() - 1;
-        MultipoleType multipoleType = atom.getMultipoleType();
-        PolarizeType polarType = atom.getPolarizeType();
+        MultipoleType multipoleType = pme.getMultipoleType(index);
+        PolarizeType polarizeType = pme.getPolarizeType(index);
         int[] axisAtoms = atom.getAxisAtomIndices();
 
         double useFactor = 1.0;
@@ -4531,9 +4551,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             zaxis,
             xaxis,
             yaxis,
-            polarType.thole,
-            polarType.pdamp * dampingFactorConversion,
-            polarType.polarizability * polarityConversion * polarScale * useFactor);
+            polarizeType.thole,
+            polarizeType.pdamp * dampingFactorConversion,
+            polarizeType.polarizability * polarityConversion * polarScale * useFactor);
       }
 
       OpenMM_DoubleArray_destroy(dipoles);
@@ -4921,7 +4941,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       }
 
       if (context.contextPointer != null) {
-        OpenMM_AmoebaGKCavitationForce_updateParametersInContext(amoebaCavitationForce, context.contextPointer);
+        OpenMM_AmoebaGKCavitationForce_updateParametersInContext(amoebaCavitationForce,
+            context.contextPointer);
       }
     }
 

@@ -121,25 +121,11 @@ public class UreyBradley extends BondedTerm {
     value = vac.length();
     var dv = value - ureyBradleyType.distance;
     var dv2 = dv * dv;
-    energy =
-        units
-            * rigidScale
-            * ureyBradleyType.forceConstant
-            * dv2
-            * (1.0 + cubic * dv + quartic * dv2);
-    if (esvTerm) {
-      setEsvDeriv(energy * dedesvChain);
-      energy = energy * esvLambda;
-    }
+    energy = units * rigidScale * ureyBradleyType.forceConstant
+        * dv2 * (1.0 + cubic * dv + quartic * dv2);
     if (gradient) {
-      var deddt =
-          2.0
-              * units
-              * rigidScale
-              * ureyBradleyType.forceConstant
-              * dv
-              * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2)
-              * esvLambda;
+      var deddt = 2.0 * units * rigidScale * ureyBradleyType.forceConstant
+          * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
       var de = 0.0;
       if (value > 0.0) {
         de = deddt / value;

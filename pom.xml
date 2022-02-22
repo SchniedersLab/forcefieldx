@@ -834,9 +834,9 @@
     <appassembler.version>1.10</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
     <assembly.version>3.3.0</assembly.version>
-    <biojava.version>6.0.4</biojava.version>
+    <biojava.version>6.0.5</biojava.version>
     <buildnumber.version>1.2.10</buildnumber.version>
-    <cdk.version>2.7</cdk.version>
+    <cdk.version>2.7.1</cdk.version>
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
@@ -860,7 +860,7 @@
     <enforcer.version>3.0.0-M3</enforcer.version>
     <exec.version>3.0.0</exec.version>
     <failIfNoTests>false</failIfNoTests>
-    <fastutil.version>8.5.6</fastutil.version>
+    <fastutil.version>8.5.8</fastutil.version>
     <!-- Version of FFX  -->
     <ffx.version>1.0.0-BETA</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
@@ -875,7 +875,7 @@
     <jdepend.version>2.0</jdepend.version>
     <jna.version>5.6.0</jna.version>
     <jogamp-fat.version>2.4.0.1</jogamp-fat.version>
-    <jopenmm.version>7.5.0-v5</jopenmm.version>
+    <jopenmm.version>7.5.0-v6</jopenmm.version>
     <junit.version>4.13.2</junit.version>
     <jxr.version>3.0.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
@@ -884,7 +884,7 @@
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
-    <picocli.version>4.6.2</picocli.version>
+    <picocli.version>4.6.3</picocli.version>
     <pj.version>1.0.1</pj.version>
     <pmd.skip>false</pmd.skip>
     <pmd.version>3.14.0</pmd.version>

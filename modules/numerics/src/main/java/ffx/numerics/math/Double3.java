@@ -76,13 +76,40 @@ public class Double3 {
   }
 
   /**
+   * Compute <code>this * b + c></code> and return the result in a new Double3.
+   *
+   * @param b Scalar.
+   * @param c Double3.
+   * @return Returns the FMA of <code>this * b + c</code> in a new Double3.
+   */
+  public Double3 fma(double b, Double3 c) {
+    Double3 ret = new Double3();
+    DoubleMath.fma(a, b, c.get(), ret.get());
+    return ret;
+  }
+
+  /**
+   * Compute <code>this * b + c</code> and return the result in a new Double3.
+   *
+   * @param b Scalar.
+   * @param c Double3.
+   * @return Returns the FMA of <code>this * b + c</code> in this Double3.
+   */
+  public Double3 fmaI(double b, Double3 c) {
+    DoubleMath.fma(a, b, c.get(), a);
+    return this;
+  }
+
+  /**
    * Cross product of this Double3 with b.
    *
    * @param b Vector b.
    * @return Returns the cross product in a new Double3.
    */
   public Double3 X(Double3 b) {
-    return new Double3(DoubleMath.X(a, b.get()));
+    Double3 ret = new Double3();
+    DoubleMath.X(a, b.get(), ret.get());
+    return ret;
   }
 
   /**
@@ -102,7 +129,9 @@ public class Double3 {
    * @return Returns the sum in a new Double3.
    */
   public Double3 add(Double3 b) {
-    return new Double3(DoubleMath.add(a, b.get()));
+    Double3 ret = new Double3();
+    DoubleMath.add(a, b.get(), ret.get());
+    return ret;
   }
 
   /**
@@ -112,7 +141,8 @@ public class Double3 {
    * @return Returns the sum in this Double3.
    */
   public Double3 addI(Double3 b) {
-    return set(add(b));
+    DoubleMath.add(a, b.get(), a);
+    return this;
   }
 
   /**
@@ -174,6 +204,15 @@ public class Double3 {
   }
 
   /**
+   * Returns the coordinate at position i.
+   *
+   * @return The coordinate.
+   */
+  public double get(int i) {
+    return a[i];
+  }
+
+  /**
    * Finds the length of this Double3.
    *
    * @return Length of vector this Double3.
@@ -199,10 +238,12 @@ public class Double3 {
   /**
    * Normalize this Double3.
    *
-   * @return Returns a normalized Double3.
+   * @return Returns a new Double3.
    */
   public Double3 normalize() {
-    return new Double3(DoubleMath.normalize(a));
+    Double3 ret = new Double3();
+    DoubleMath.normalize(a, ret.get());
+    return ret;
   }
 
   /**
@@ -211,7 +252,8 @@ public class Double3 {
    * @return Returns a reference to this Double3 normalized.
    */
   public Double3 normalizeI() {
-    return set(normalize());
+    DoubleMath.normalize(a, a);
+    return this;
   }
 
   /**
@@ -221,7 +263,9 @@ public class Double3 {
    * @return Returns a new scaled Double3.
    */
   public Double3 scale(double d) {
-    return new Double3(DoubleMath.scale(a, d));
+    Double3 ret = new Double3();
+    DoubleMath.scale(a, d, ret.get());
+    return ret;
   }
 
   /**
@@ -231,7 +275,8 @@ public class Double3 {
    * @return Returns a reference to this Double3 scaled.
    */
   public Double3 scaleI(double d) {
-    return set(scale(d));
+    DoubleMath.scale(a, d, a);
+    return this;
   }
 
   /**
@@ -278,7 +323,9 @@ public class Double3 {
    * @return Returns the difference in a new Double3.
    */
   public Double3 sub(Double3 b) {
-    return new Double3(DoubleMath.sub(a, b.get()));
+    Double3 ret = new Double3();
+    DoubleMath.sub(a, b.get(), ret.get());
+    return ret;
   }
 
   /**
@@ -288,7 +335,8 @@ public class Double3 {
    * @return Returns the difference in this Double3.
    */
   public Double3 subI(Double3 b) {
-    return set(sub(b));
+    DoubleMath.sub(a, b.get(), a);
+    return this;
   }
 
   /**
