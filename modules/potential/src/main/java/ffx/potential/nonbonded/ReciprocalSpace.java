@@ -80,7 +80,6 @@ import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
 import ffx.numerics.fft.Complex;
-import ffx.numerics.fft.Complex3DCuda;
 import ffx.numerics.fft.Complex3DParallel;
 import ffx.numerics.multipole.MultipoleTensor;
 import ffx.potential.bonded.Atom;
@@ -91,8 +90,8 @@ import java.util.logging.Logger;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
- * The Reciprocal Space class computes the reciprocal space contribution to {@link
- * ParticleMeshEwald} for the AMOEBA force field.
+ * The Reciprocal Space class computes the reciprocal space contribution to {@link ParticleMeshEwald}
+ * for the AMOEBA force field.
  *
  * <ol>
  *   <li>Assignment of polarizable multipole charge density to the 3D grid, via b-Splines, is
@@ -146,8 +145,8 @@ public class ReciprocalSpace {
   /** ExtendedSystem variables */
   private boolean esvTerm = false;
   /**
-   * Number of atoms for a given symmetry operator that a given thread is responsible for applying
-   * to the FFT grid. gridAtomCount[nSymm][nThread]
+   * Number of atoms for a given symmetry operator that a given thread is responsible for applying to
+   * the FFT grid. gridAtomCount[nSymm][nThread]
    */
   private final int[][] gridAtomCount;
   /**
@@ -158,21 +157,18 @@ public class ReciprocalSpace {
 
   private final PermanentPhiRegion permanentPhiRegion;
   private final InducedPhiRegion polarizationPhiRegion;
-  //Initialized in attachESV method
+  // Initialized in attachESV method
   private PermanentPhiRegion permanentPhiDotRegion = null;
   private InducedPhiRegion polarUnscaledPhiRegion = null;
   private final IntegerSchedule recipSchedule;
   /** Timing variables. */
   private final long[] bSplineTime;
-
   private final long[] splinePermanentTime;
   private final long[] permanentPhiTime;
   private final long[] splineInducedTime;
   private final int[] splineCount;
   private final long[] inducedPhiTime;
   /** Convolution variables. */
-  private final FFTMethod fftMethod;
-
   private final double[][] transformFieldMatrix = new double[10][10];
   private final double[][] transformMultipoleMatrix = new double[10][10];
   private final double[][] a = new double[3][3];
@@ -219,7 +215,6 @@ public class ReciprocalSpace {
   private double[][] fracMultipoleDotPhi;
   private long bSplineTotal, splinePermanentTotal, splineInducedTotal;
   private long permanentPhiTotal, inducedPhiTotal, convTotal;
-  private Complex3DCuda cudaFFT3D;
   private Complex3DParallel pjFFT3D;
   private GridMethod gridMethod;
 
@@ -272,15 +267,6 @@ public class ReciprocalSpace {
     } else {
       recipSchedule = IntegerSchedule.fixed();
     }
-
-    String temp = forceField.getString("FFT_METHOD", "PJ");
-    FFTMethod method;
-    try {
-      method = FFTMethod.valueOf(temp.toUpperCase().trim());
-    } catch (Exception e) {
-      method = FFTMethod.PJ;
-    }
-    fftMethod = method;
 
     CompositeConfiguration properties = forceField.getProperties();
     String gridString = properties.getString("grid-method", "SPATIAL").toUpperCase();
@@ -358,7 +344,6 @@ public class ReciprocalSpace {
     permanentPhiRegion = new PermanentPhiRegion(bSplineRegion);
     polarizationPhiRegion = new InducedPhiRegion(bSplineRegion);
 
-
     // Initialize timing variables.
     bSplineTime = new long[threadCount];
     splinePermanentTime = new long[threadCount];
@@ -368,7 +353,7 @@ public class ReciprocalSpace {
     inducedPhiTime = new long[threadCount];
   }
 
-  public void attachExtendedSystem(){
+  public void attachExtendedSystem() {
     esvTerm = true;
     permanentPhiDotRegion = new PermanentPhiRegion(bSplineRegion);
     polarUnscaledPhiRegion = new InducedPhiRegion(bSplineRegion);
@@ -711,14 +696,7 @@ public class ReciprocalSpace {
   public void inducedDipoleConvolution() {
     convTotal -= System.nanoTime();
     try {
-      switch (fftMethod) {
-        case CUDA:
-          cudaFFT3D.convolution(splineGrid);
-          break;
-        case PJ:
-          pjFFT3D.convolution(splineGrid);
-          break;
-      }
+      pjFFT3D.convolution(splineGrid);
     } catch (Exception e) {
       String message = "Fatal exception evaluating induced convolution.";
       logger.log(Level.SEVERE, message, e);
@@ -756,14 +734,7 @@ public class ReciprocalSpace {
   public void permanentMultipoleConvolution() {
     convTotal -= System.nanoTime();
     try {
-      switch (fftMethod) {
-        case CUDA:
-          cudaFFT3D.convolution(splineGrid);
-          break;
-        case PJ:
-          pjFFT3D.convolution(splineGrid);
-          break;
-      }
+      pjFFT3D.convolution(splineGrid);
     } catch (Exception e) {
       String message = " Fatal exception evaluating permanent convolution.";
       logger.log(Level.SEVERE, message, e);
@@ -777,11 +748,11 @@ public class ReciprocalSpace {
       if (pjFFT3D != null) {
         double total =
             (bSplineTotal
-                    + convTotal
-                    + splinePermanentTotal
-                    + permanentPhiTotal
-                    + splineInducedTotal
-                    + inducedPhiTotal)
+                + convTotal
+                + splinePermanentTotal
+                + permanentPhiTotal
+                + splineInducedTotal
+                + inducedPhiTotal)
                 * toSeconds;
 
         logger.fine(String.format("\n Reciprocal Space: %7.4f (sec)", total));
@@ -929,15 +900,6 @@ public class ReciprocalSpace {
       double[][][] inducedDipole, double[][][] inducedDipoleCR, boolean[] use) {
     splineInducedTotal -= System.nanoTime();
 
-    switch (fftMethod) {
-      case CUDA:
-        splineBuffer = cudaFFT3D.getDoubleBuffer();
-        spatialDensityRegion.setGridBuffer(splineBuffer);
-        break;
-      case PJ:
-        break;
-    }
-
     switch (gridMethod) {
       case SPATIAL:
         spatialDensityRegion.setDensityLoop(spatialInducedLoops);
@@ -998,15 +960,6 @@ public class ReciprocalSpace {
       fracMultipoles = fracMultipole;
     } else {
       fracMultipoles = fracMultipoleDot;
-    }
-
-    switch (fftMethod) {
-      case CUDA:
-        splineBuffer = cudaFFT3D.getDoubleBuffer();
-        spatialDensityRegion.setGridBuffer(splineBuffer);
-        break;
-      case PJ:
-        break;
     }
 
     switch (gridMethod) {
@@ -1139,33 +1092,14 @@ public class ReciprocalSpace {
     fftSpace = fftX * fftY * fftZ * 2;
     boolean dimChanged = fftX != fftXCurrent || fftY != fftYCurrent || fftZ != fftZCurrent;
 
-    switch (fftMethod) {
-      case PJ:
-        if (pjFFT3D == null || dimChanged) {
-          pjFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam, recipSchedule);
-          if (splineGrid == null || splineGrid.length < fftSpace) {
-            splineGrid = new double[fftSpace];
-          }
-          splineBuffer = DoubleBuffer.wrap(splineGrid);
-        }
-        pjFFT3D.setRecip(generalizedInfluenceFunction());
-        cudaFFT3D = null;
-        break;
-      case CUDA:
-        if (cudaFFT3D == null || dimChanged) {
-          if (cudaFFT3D != null) {
-            cudaFFT3D.free();
-          }
-          cudaFFT3D = new Complex3DCuda(fftX, fftY, fftZ);
-          Thread gpuThread = new Thread(cudaFFT3D);
-          gpuThread.setPriority(Thread.MAX_PRIORITY);
-          gpuThread.start();
-          splineBuffer = cudaFFT3D.getDoubleBuffer();
-        }
-        cudaFFT3D.setRecip(generalizedInfluenceFunction());
-        pjFFT3D = null;
-        break;
+    if (pjFFT3D == null || dimChanged) {
+      pjFFT3D = new Complex3DParallel(fftX, fftY, fftZ, fftTeam, recipSchedule);
+      if (splineGrid == null || splineGrid.length < fftSpace) {
+        splineGrid = new double[fftSpace];
+      }
+      splineBuffer = DoubleBuffer.wrap(splineGrid);
     }
+    pjFFT3D.setRecip(generalizedInfluenceFunction());
 
     switch (gridMethod) {
       case SPATIAL:
@@ -1183,9 +1117,6 @@ public class ReciprocalSpace {
                   crystal,
                   atoms,
                   coordinates);
-          if (fftMethod != FFTMethod.PJ) {
-            spatialDensityRegion.setGridBuffer(splineBuffer);
-          }
         } else {
           spatialDensityRegion.setCrystal(crystal, fftX, fftY, fftZ);
           spatialDensityRegion.coordinates = coordinates;
@@ -1193,11 +1124,8 @@ public class ReciprocalSpace {
         break;
       case ROW:
         if (rowRegion == null || dimChanged) {
-          rowRegion =
-              new RowRegion(fftX, fftY, fftZ, splineGrid, nSymm, threadCount, atoms, coordinates);
-          if (fftMethod != FFTMethod.PJ) {
-            rowRegion.setGridBuffer(splineBuffer);
-          }
+          rowRegion = new RowRegion(fftX, fftY, fftZ, splineGrid, nSymm, threadCount, atoms,
+              coordinates);
         } else {
           rowRegion.setCrystal(crystal, fftX, fftY, fftZ);
           rowRegion.coordinates = coordinates;
@@ -1206,11 +1134,8 @@ public class ReciprocalSpace {
       case SLICE:
       default:
         if (sliceRegion == null || dimChanged) {
-          sliceRegion =
-              new SliceRegion(fftX, fftY, fftZ, splineGrid, nSymm, threadCount, atoms, coordinates);
-          if (fftMethod != FFTMethod.PJ) {
-            sliceRegion.setGridBuffer(splineBuffer);
-          }
+          sliceRegion = new SliceRegion(fftX, fftY, fftZ, splineGrid, nSymm, threadCount, atoms,
+              coordinates);
         } else {
           sliceRegion.setCrystal(crystal, fftX, fftY, fftZ);
           sliceRegion.coordinates = coordinates;
@@ -1410,11 +1335,6 @@ public class ReciprocalSpace {
     }
   }
 
-  public enum FFTMethod {
-    CUDA,
-    PJ
-  }
-
   public enum GridMethod {
     SPATIAL,
     SLICE,
@@ -1422,18 +1342,14 @@ public class ReciprocalSpace {
   }
 
   /**
-   * The class computes b-Splines that are used to spline multipoles and induced dipoles onto the
-   * PME grid. Following convolution, the b-Splines are then used to obtain the reciprocal space
-   * potential and fields from the PME grid. This class automatically updates itself to be
-   * consistent with the current Crystal boundary conditions.
+   * The class computes b-Splines that are used to spline multipoles and induced dipoles onto the PME
+   * grid. Following convolution, the b-Splines are then used to obtain the reciprocal space
+   * potential and fields from the PME grid. This class automatically updates itself to be consistent
+   * with the current Crystal boundary conditions.
    *
    * <p>An external ParallelRegion can be used as follows: <code>
-   * start() {
-   * bSplineRegion.start();
-   * }
-   * run() {
-   * execute(0, nAtoms - 1, bSplineRegion.bSplineLoop[threadID]);
-   * }
+   * start() { bSplineRegion.start(); } run() { execute(0, nAtoms - 1,
+   * bSplineRegion.bSplineLoop[threadID]); }
    * </code>
    */
   public class BSplineRegion extends ParallelRegion {
@@ -2454,13 +2370,9 @@ public class ReciprocalSpace {
    * multipoles from the PME grid.
    *
    * <p>An external ParallelRegion can be used as follows: <code>
-   * start() {
-   * permanentPhiRegion.setCartPermanentPhi(...);
-   * }
+   * start() { permanentPhiRegion.setCartPermanentPhi(...); }
    * <p>
-   * run() {
-   * execute(0, nAtoms - 1, permanentPhiLoops[threadID]);
-   * }
+   * run() { execute(0, nAtoms - 1, permanentPhiLoops[threadID]); }
    * </code>
    */
   private class PermanentPhiRegion extends ParallelRegion {
@@ -2666,13 +2578,9 @@ public class ReciprocalSpace {
    * from the PME grid.
    *
    * <p>An external ParallelRegion can be used as follows: <code>
-   * start() {
-   * inducedPhiRegion.setCartInducedDipolePhi(...);
-   * }
+   * start() { inducedPhiRegion.setCartInducedDipolePhi(...); }
    * <p>
-   * run() {
-   * execute(0, nAtoms - 1, inducedPhiLoops[threadID]);
-   * }
+   * run() { execute(0, nAtoms - 1, inducedPhiLoops[threadID]); }
    * </code>
    */
   private class InducedPhiRegion extends ParallelRegion {

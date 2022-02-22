@@ -283,10 +283,6 @@ public final class SoluteType extends BaseType implements Comparator<String> {
   }
 
   public static void setSoluteRadii(ForceField forceField, Atom[] atoms, SOLUTE_RADII_TYPE soluteRadiiType) {
-
-    Map<String, SoluteType> types = forceField.getSoluteTypes();
-    logger.info(format(" Number of Solute Types %d", types.size()));
-
     for (Atom atom : atoms) {
       atom.setSoluteType(getSoluteType(atom, forceField, soluteRadiiType));
     }

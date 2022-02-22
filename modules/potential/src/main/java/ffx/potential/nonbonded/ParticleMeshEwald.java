@@ -78,7 +78,6 @@ import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.nonbonded.ReciprocalSpace.FFTMethod;
 import ffx.potential.nonbonded.pme.DirectRegion;
 import ffx.potential.nonbonded.pme.ExpandInducedDipolesRegion;
 import ffx.potential.nonbonded.pme.InducedDipoleFieldReduceRegion;
@@ -144,7 +143,7 @@ import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer
  */
 @SuppressWarnings("deprecation")
 public class ParticleMeshEwald implements LambdaInterface {
-  
+
   /** Default cutoff values for PME and aperiodic systems. */
   public static final double PERIODIC_DEFAULT_EWALD_CUTOFF = 7.0;
   /** Constant <code>APERIODIC_DEFAULT_EWALD_CUTOFF=1000.0</code> */
@@ -224,8 +223,8 @@ public class ParticleMeshEwald implements LambdaInterface {
   private final GeneralizedKirkwood generalizedKirkwood;
 
   /**
-   * Polarization modes include "direct", in which induced dipoles do not interact, and "mutual"
-   * that converges the self-consistent field to a tolerance specified by the "polar-eps" keyword.
+   * Polarization modes include "direct", in which induced dipoles do not interact, and "mutual" that
+   * converges the self-consistent field to a tolerance specified by the "polar-eps" keyword.
    */
   public Polarization polarization;
   /** Dimensions of [nsymm][xyz][nAtoms]. */
@@ -272,8 +271,8 @@ public class ParticleMeshEwald implements LambdaInterface {
   protected int[][] ip12;
   protected int[][] ip13;
   /**
-   * Total multipole energy = permanentMultipoleEnergy + polarizationEnergy. <br>
-   * This does not include GK.
+   * Total multipole energy = permanentMultipoleEnergy + polarizationEnergy. <br> This does not
+   * include GK.
    */
   protected double totalMultipoleEnergy;
   /**
@@ -491,15 +490,6 @@ public class ParticleMeshEwald implements LambdaInterface {
       polarization = Polarization.MUTUAL;
     }
 
-    String temp = forceField.getString("FFT_METHOD", "PJ");
-    FFTMethod method;
-    try {
-      method = ReciprocalSpace.FFTMethod.valueOf(temp.toUpperCase().trim());
-    } catch (Exception e) {
-      method = ReciprocalSpace.FFTMethod.PJ;
-    }
-    boolean gpuFFT = method != FFTMethod.PJ;
-
     if (lambdaTerm) {
       shareddEdLambda = new SharedDouble();
       sharedd2EdLambda2 = new SharedDouble();
@@ -560,38 +550,30 @@ public class ParticleMeshEwald implements LambdaInterface {
     */
     int reciprocalThreads;
 
-    if (gpuFFT) {
+    boolean concurrent;
+    int realThreads = 1;
+    try {
+      realThreads = forceField.getInteger("PME_REAL_THREADS");
+      if (realThreads >= maxThreads || realThreads < 1) {
+        throw new Exception("pme-real-threads must be < ffx.nt and greater than 0");
+      }
+      concurrent = true;
+    } catch (Exception e) {
+      concurrent = false;
+    }
+    if (concurrent) {
       sectionThreads = 2;
-      reciprocalThreads = 1;
+      realSpaceThreads = realThreads;
+      reciprocalThreads = maxThreads - realThreads;
       sectionTeam = new ParallelTeam(sectionThreads);
-      realSpaceTeam = parallelTeam;
+      realSpaceTeam = new ParallelTeam(realSpaceThreads);
       fftTeam = new ParallelTeam(reciprocalThreads);
     } else {
-      boolean concurrent;
-      int realThreads = 1;
-      try {
-        realThreads = forceField.getInteger("PME_REAL_THREADS");
-        if (realThreads >= maxThreads || realThreads < 1) {
-          throw new Exception("pme-real-threads must be < ffx.nt and greater than 0");
-        }
-        concurrent = true;
-      } catch (Exception e) {
-        concurrent = false;
-      }
-      if (concurrent) {
-        sectionThreads = 2;
-        realSpaceThreads = realThreads;
-        reciprocalThreads = maxThreads - realThreads;
-        sectionTeam = new ParallelTeam(sectionThreads);
-        realSpaceTeam = new ParallelTeam(realSpaceThreads);
-        fftTeam = new ParallelTeam(reciprocalThreads);
-      } else {
-        // If pme-real-threads is not defined, then do real and reciprocal space parts sequentially.
-        sectionThreads = 1;
-        sectionTeam = new ParallelTeam(sectionThreads);
-        realSpaceTeam = parallelTeam;
-        fftTeam = parallelTeam;
-      }
+      // If pme-real-threads is not defined, then do real and reciprocal space parts sequentially.
+      sectionThreads = 1;
+      sectionTeam = new ParallelTeam(sectionThreads);
+      realSpaceTeam = parallelTeam;
+      fftTeam = parallelTeam;
     }
 
     realSpaceNeighborParameters = new RealSpaceNeighborParameters(maxThreads);
@@ -793,7 +775,7 @@ public class ParticleMeshEwald implements LambdaInterface {
       sharedd2EdLambda2.set(0.0);
     }
 
-    if(esvTerm){
+    if (esvTerm) {
       extendedSystem.initEsvPermElec();
       extendedSystem.initEsvIndElec();
     }
@@ -1297,7 +1279,7 @@ public class ParticleMeshEwald implements LambdaInterface {
           // Invoked every time through inner loops.
           lambdaFactors[i] = new LambdaFactorsESV();
         } else */
-          if (lambdaTerm) {
+        if (lambdaTerm) {
           // Invoked on calls to setLambda().
           lambdaFactors[i] = new LambdaFactorsOST();
         } else {
@@ -1676,9 +1658,9 @@ public class ParticleMeshEwald implements LambdaInterface {
       // Compute induced dipoles.
       selfConsistentField(logger.isLoggable(Level.FINE));
 
-
-      for(int i = 0; i < nAtoms; i++){
-        if(polarization != Polarization.NONE && esvTerm && extendedSystem.isTitrating(i) && extendedSystem.isTitratingHydrogen(i)){
+      for (int i = 0; i < nAtoms; i++) {
+        if (polarization != Polarization.NONE && esvTerm && extendedSystem.isTitrating(i)
+            && extendedSystem.isTitratingHydrogen(i)) {
           double dx = field.getX(i);
           double dy = field.getY(i);
           double dz = field.getZ(i);
@@ -1686,7 +1668,7 @@ public class ParticleMeshEwald implements LambdaInterface {
           double dyCR = fieldCR.getY(i);
           double dzCR = fieldCR.getZ(i);
           //Add back permanent multipole field to total field for extended system derivatives if mutual polarization is used
-          if(polarization == Polarization.MUTUAL) {
+          if (polarization == Polarization.MUTUAL) {
             dx += directField[i][0];
             dy += directField[i][1];
             dz += directField[i][2];
@@ -1699,14 +1681,14 @@ public class ParticleMeshEwald implements LambdaInterface {
           double fiz = dz * dPolardTitrationESV[i] * dzCR;
           double titrdUdL = fix + fiy + fiz;
           double tautdUdL = 0.0;
-          if(extendedSystem.isTautomerizing(i)){
+          if (extendedSystem.isTautomerizing(i)) {
             fix = dx * dPolardTautomerESV[i] * dxCR;
             fiy = dy * dPolardTautomerESV[i] * dyCR;
             fiz = dz * dPolardTautomerESV[i] * dzCR;
             tautdUdL = fix + fiy + fiz;
           }
           //logger.info(format("Index i: %d Polarizability: %6.8f TitrDeriv: %6.8f TautDeriv: %6.8f",
-                 // i, polarizability[i], dPolardTitrationESV[i], dPolardTautomerESV[i]));
+          // i, polarizability[i], dPolardTitrationESV[i], dPolardTautomerESV[i]));
           extendedSystem.addIndElecDeriv(i, titrdUdL * electric * -0.5, tautdUdL * electric * -0.5);
         }
       }
@@ -2588,7 +2570,8 @@ public class ParticleMeshEwald implements LambdaInterface {
           }
         }
 
-        List<MultipoleType> multipoleTypes = forceField.getMultipoleTypes("" + atom.getAtomType().getKey());
+        List<MultipoleType> multipoleTypes = forceField.getMultipoleTypes(
+            "" + atom.getAtomType().getKey());
         if (multipoleTypes != null || !multipoleTypes.isEmpty()) {
           sb.append("\n Similar Multipole types:");
           for (MultipoleType multipoleType : multipoleTypes) {
@@ -3975,17 +3958,16 @@ public class ParticleMeshEwald implements LambdaInterface {
     extendedSystem = system;
     numESVs = extendedSystem.getExtendedResidueList().size();
 
-
     // Update atoms and reinitialize arrays for consistency with the ExtendedSystem.
     setAtoms(extendedSystem.getExtendedAtoms(), extendedSystem.getExtendedMolecule());
     // Allocate space for dM/dTitratonESV
     if (dMultipoledTirationESV == null || dMultipoledTirationESV.length != nSymm
-            || dMultipoledTirationESV[0].length != nAtoms) {
+        || dMultipoledTirationESV[0].length != nAtoms) {
       dMultipoledTirationESV = new double[nSymm][nAtoms][10];
       dMultipoledTautomerESV = new double[nSymm][nAtoms][10];
     }
 
-    if(dPolardTitrationESV == null || dPolardTitrationESV.length != nAtoms){
+    if (dPolardTitrationESV == null || dPolardTitrationESV.length != nAtoms) {
       dPolardTitrationESV = new double[nAtoms];
       dPolardTautomerESV = new double[nAtoms];
     }
@@ -4009,18 +3991,18 @@ public class ParticleMeshEwald implements LambdaInterface {
   Integer[] perAtomESVIndex = null;
 
   /**
-   * The partial derivative of each multipole with respect to its titration/tautomer ESV (or 0.0 if the atom
-   * is not under titration ESV control).
+   * The partial derivative of each multipole with respect to its titration/tautomer ESV (or 0.0 if
+   * the atom is not under titration ESV control).
    */
   double[][][] dMultipoledTirationESV = null;
   double[][][] dMultipoledTautomerESV = null;
 
   /**
-   * The partial derivative of each polarizability with respect to its titration/tautomer ESV (or 0.0 if the atom
-   * is not under titration ESV control).
+   * The partial derivative of each polarizability with respect to its titration/tautomer ESV (or 0.0
+   * if the atom is not under titration ESV control).
    */
   double[] dPolardTitrationESV = null;
-  double[] dPolardTautomerESV =  null;
+  double[] dPolardTautomerESV = null;
   /**
    * OST and ESV specific factors that effect real space interactions.
    */

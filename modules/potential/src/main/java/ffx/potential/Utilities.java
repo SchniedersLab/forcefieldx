@@ -1236,6 +1236,7 @@ public final class Utilities {
     INT,
     ARC,
     PDB,
+    CIF,
     ANY,
     SIM,
     UNK

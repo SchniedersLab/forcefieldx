@@ -62,7 +62,7 @@ public class MinimizeTest extends AlgorithmsTest {
     Minimize minimize = new Minimize(binding).run();
     algorithmsScript = minimize;
 
-    double expectedTotalPotential = -277.6200456888939;
+    double expectedTotalPotential = -279.9605291685508;
     double actualTotalPotential =
         minimize.getPotentials().get(minimize.getPotentials().size() - 1).getTotalEnergy();
     Assert.assertEquals(expectedTotalPotential, actualTotalPotential, 1E-8);
@@ -91,7 +91,7 @@ public class MinimizeTest extends AlgorithmsTest {
     Minimize minimize = new Minimize(binding).run();
     algorithmsScript = minimize;
 
-    double expectedTotalPotential = -262.7346193607451;
+    double expectedTotalPotential = -264.6944689980441;
     double actualTotalPotential =
         minimize.getPotentials().get(minimize.getPotentials().size() - 1).getTotalEnergy();
     Assert.assertEquals(expectedTotalPotential, actualTotalPotential, 1E-8);

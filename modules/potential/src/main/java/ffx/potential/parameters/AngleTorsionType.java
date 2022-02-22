@@ -38,6 +38,7 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.ANGTORS;
+import static ffx.utilities.Constants.DEGREES_PER_RADIAN;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -58,7 +59,7 @@ import java.util.logging.Logger;
 public final class AngleTorsionType extends BaseType implements Comparator<String> {
 
   /** Convert angle-torsion to kcal/mole. */
-  public static final double units = 1.0;
+  public static final double units = 1.0 / DEGREES_PER_RADIAN;
   /** A Logger for the AngleTorsionType class. */
   private static final Logger logger = Logger.getLogger(AngleTorsionType.class.getName());
   /** Atom classes for this stretch-torsion type. */

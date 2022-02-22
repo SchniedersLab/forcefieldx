@@ -124,11 +124,11 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean restart
 
   /**
-   * --sp or --savePDB Save PDB files for the superposed crystals.
+   * --save Save files for the superposed crystals.
    */
-  @Option(names = ['--sp', '--savePDB'], paramLabel = "false", defaultValue = "false",
-      description = 'Save PDB files for the superposed crystals.')
-  private static boolean savePDB
+  @Option(names = ['--save'], paramLabel = "0", defaultValue = "0",
+      description = 'Save files for the superposed crystals (1=PDB, 2=XYZ).')
+  private static int save
 
   /**
    * -p or --permute Compare all unique AUs between each crystal.
@@ -157,6 +157,13 @@ class SuperposeCrystals extends AlgorithmsScript {
   @Option(names = ['--sm', '--saveMachineLearning'], paramLabel = "false", defaultValue = "false",
       description = 'Final structures for each comparison will be written out with RMSD in a CSV.')
   private static boolean machineLearning
+
+  /**
+   * --in or --inertia Display moments of inertia for final clusters.
+   */
+  @Option(names = ['--in', '--inertia'], paramLabel = "false", defaultValue = "false",
+          description = 'Display moments of inertia for final clusters.')
+  private static boolean inertia
 
   /**
    * --mw or --massWeighted Use mass-weighted atomic coordinates for alignment.
@@ -266,28 +273,10 @@ class SuperposeCrystals extends AlgorithmsScript {
     String filename = filenames.get(0)
     String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt")
 
-    // To save in ARES format a PDB must be written out.
-    if (machineLearning) {
-      savePDB = true
-    }
-
-    if (linkage == 0) {
-      logger.finer(" Single linkage will be used.")
-    } else if (linkage == 2) {
-      logger.finer(" Complete linkage will be used.")
-    } else if (linkage == 1) {
-      logger.finer(" Average linkage will be used.")
-    } else {
-      logger.warning(
-          "Prioritization method specified incorrectly (--pm {0, 1, 2}). Using default of average linkage.")
-      linkage = 1
-    }
-
     runningStatistics =
         pac.comparisons(numAU, numInflatedAU, matchTol, zPrime, zPrime2, alphaCarbons,
-            noHydrogen, massWeighted, crystalPriority, permute, savePDB,
-            restart, write,
-            machineLearning, linkage, pacFilename)
+            noHydrogen, massWeighted, crystalPriority, permute, save,
+            restart, write, machineLearning, inertia, linkage, pacFilename)
 
     return this
   }

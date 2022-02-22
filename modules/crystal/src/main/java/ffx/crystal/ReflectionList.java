@@ -391,7 +391,7 @@ public class ReflectionList {
     if (properties != null) {
       nbins = properties.getInt("nbins", 10);
     }
-    double nbinsd = (double) nbins;
+    double nbinsd = nbins;
     for (HKL ih : hkllist) {
       int bin = (int) (nbinsd * ordinal(Crystal.invressq(this.crystal, ih)));
       ih.bin = min(bin, nbins - 1);
