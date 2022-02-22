@@ -441,14 +441,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   private double[] globalDipole = null;
   private double[][] globalQuadrupole = null;
   private boolean applyState = false;
-
-  /* Extended System handling */
-  private boolean esvTerm = false;
-  private Double scaledPolarizability = null;
-  private Double unscaledPolarizability = null;
-  private MultipoleType esvMultipole;
-  private MultipoleType esvMultipoleDot;
-
+  
   private int moleculeNumber = 0;
   private ViewModel viewModel = ViewModel.INVISIBLE;
   private ViewModel polygonType = ViewModel.FILL;
@@ -1173,24 +1166,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
   }
 
   /**
-   * Getter for the field <code>esvMultipole</code>.
-   *
-   * @return a {@link ffx.potential.parameters.MultipoleType} object.
-   */
-  public MultipoleType getEsvMultipole() {
-    return (esvTerm) ? esvMultipole : getMultipoleType();
-  }
-
-  /**
-   * Getter for the field <code>esvMultipoleDot</code>.
-   *
-   * @return a {@link ffx.potential.parameters.MultipoleType} object.
-   */
-  public MultipoleType getEsvMultipoleDot() {
-    return (esvTerm) ? esvMultipoleDot : getMultipoleType();
-  }
-
-  /**
    * Getter for the field <code>formFactorIndex</code>.
    *
    * @return a int.
@@ -1653,15 +1628,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
   }
 
   /**
-   * Getter for the field <code>scaledPolarizability</code>.
-   *
-   * @return a double.
-   */
-  public double getScaledPolarizability() {
-    return (esvTerm) ? scaledPolarizability : polarizeType.polarizability;
-  }
-
-  /**
    * Getter for the field <code>segID</code>.
    *
    * @return a {@link java.lang.String} object.
@@ -1840,15 +1806,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
    */
   public int getType() {
     return atomType.type;
-  }
-
-  /**
-   * Getter for the field <code>unscaledPolarizability</code>.
-   *
-   * @return a double.
-   */
-  public double getUnscaledPolarizability() {
-    return (esvTerm) ? unscaledPolarizability : polarizeType.polarizability;
   }
 
   /**

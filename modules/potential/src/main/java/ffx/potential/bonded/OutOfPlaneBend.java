@@ -216,16 +216,9 @@ public class OutOfPlaneBend extends BondedTerm {
               * outOfPlaneBendType.forceConstant
               * dv2
               * (1.0 + cubic * dv + quartic * dv2 + quintic * dv3 + sextic * dv4);
-      if (esvTerm) {
-        setEsvDeriv(energy * dedesvChain);
-        energy = energy * esvLambda;
-      }
       if (gradient) {
         var deddt =
-            units * esvLambda
-                * outOfPlaneBendType.forceConstant
-                * dv
-                * toDegrees(
+            units * outOfPlaneBendType.forceConstant * dv * toDegrees(
                     2.0
                         + 3.0 * cubic * dv
                         + 4.0 * quartic * dv2

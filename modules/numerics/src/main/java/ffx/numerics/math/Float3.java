@@ -76,13 +76,40 @@ public class Float3 {
   }
 
   /**
+   * Compute a * b + c and return the result in a new Float3.
+   *
+   * @param b Scalar.
+   * @param c Float3.
+   * @return Returns the FMA of a * b + c in a new Float3.
+   */
+  public Float3 fma(float b, Float3 c) {
+    Float3 ret = new Float3();
+    FloatMath.fma(a, b, c.get(), ret.get());
+    return ret;
+  }
+
+  /**
+   * Compute a * b + c and return the result in a new Float3.
+   *
+   * @param b Scalar.
+   * @param c Float3.
+   * @return Returns the FMA of a * b + c in a new Float3.
+   */
+  public Float3 fmaI(float b, Float3 c) {
+    FloatMath.fma(a, b, c.get(), a);
+    return this;
+  }
+
+  /**
    * Cross product of this Float3 with b.
    *
    * @param b Vector b.
    * @return Returns the cross product in a new Float3.
    */
   public Float3 X(Float3 b) {
-    return new Float3(FloatMath.X(a, b.get()));
+    Float3 ret = new Float3();
+    FloatMath.X(a, b.get(), ret.get());
+    return ret;
   }
 
   /**
@@ -102,7 +129,9 @@ public class Float3 {
    * @return Returns the sum in a new Float3.
    */
   public Float3 add(Float3 b) {
-    return new Float3(FloatMath.add(a, b.get()));
+    Float3 ret = new Float3();
+    FloatMath.add(a, b.get(), ret.get());
+    return ret;
   }
 
   /**
@@ -112,7 +141,8 @@ public class Float3 {
    * @return Returns the sum in this Float3.
    */
   public Float3 addI(Float3 b) {
-    return set(add(b));
+    FloatMath.add(a, b.get(), a);
+    return this;
   }
 
   /**
@@ -208,10 +238,12 @@ public class Float3 {
   /**
    * Normalize this Float3.
    *
-   * @return Returns a normalized Float3.
+   * @return Returns the normalized vector in a new Float3.
    */
   public Float3 normalize() {
-    return new Float3(FloatMath.normalize(a));
+    Float3 ret = new Float3();
+    FloatMath.normalize(a, ret.get());
+    return ret;
   }
 
   /**
@@ -220,7 +252,8 @@ public class Float3 {
    * @return Returns a reference to this Float3 normalized.
    */
   public Float3 normalizeI() {
-    return set(normalize());
+    FloatMath.normalize(a, a);
+    return this;
   }
 
   /**
@@ -230,7 +263,9 @@ public class Float3 {
    * @return Returns a new scaled Float3.
    */
   public Float3 scale(float d) {
-    return new Float3(FloatMath.scale(a, d));
+    Float3 ret = new Float3();
+    FloatMath.scale(a, d, ret.get());
+    return ret;
   }
 
   /**
@@ -240,7 +275,8 @@ public class Float3 {
    * @return Returns a reference to this Float3 scaled.
    */
   public Float3 scaleI(float d) {
-    return set(scale(d));
+    FloatMath.scale(a, d, a);
+    return this;
   }
 
   /**
@@ -287,7 +323,9 @@ public class Float3 {
    * @return Returns the difference in a new Float3.
    */
   public Float3 sub(Float3 b) {
-    return new Float3(FloatMath.sub(a, b.get()));
+    Float3 ret = new Float3();
+    FloatMath.sub(a, b.get(), ret.get());
+    return ret;
   }
 
   /**
@@ -297,7 +335,8 @@ public class Float3 {
    * @return Returns the difference in this Float3.
    */
   public Float3 subI(Float3 b) {
-    return set(sub(b));
+    FloatMath.sub(a, b.get(), a);
+    return this;
   }
 
   /**

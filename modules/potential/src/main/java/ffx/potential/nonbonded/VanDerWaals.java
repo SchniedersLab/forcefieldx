@@ -394,6 +394,14 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   }
 
   /**
+   * Get the ExtendedSystem instance.
+   * @return The ExtendedSystem is returned.
+   */
+  public ExtendedSystem getExtendedSystem() {
+    return esvSystem;
+  }
+
+  /**
    * destroy.
    *
    * @throws java.lang.Exception if any.

@@ -65,9 +65,9 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
    * that are used in forming the term. Order can be reversed for help in assigning force field
    * parameters for the Term.
    */
-  private static StringBuilder idtemp = new StringBuilder();
+  private static final StringBuilder idtemp = new StringBuilder();
   /** Constant <code>bondedComparator</code> */
-  private static BondedComparator bondedComparator = new BondedComparator();
+  private static final BondedComparator bondedComparator = new BondedComparator();
   /** ID of this BondedTerm. */
   protected String id;
   /** Atoms that are used to form this term. */
@@ -78,25 +78,8 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
   protected double value;
   /** Energy of the term (kcal/mol). */
   protected double energy;
-  /** Flag to indicate use of extended system variables. */
-  protected boolean esvTerm = false;
-  /** Lambda value of attached ESV, if present. */
-  protected double esvLambda = 1.0;
-  /**
-   * d(lambda_switching_function)/dL. For the linear switch E=L*E1+(1-L)*E0, chain is +/- unity. For
-   * other switches E=S(L)*E1+(1-S(L))*E0, set chain to dSdL.
-   *
-   * <p>Handles sign flip d.t. d[(1-L)*E]/dL.
-   */
-  protected double dedesvChain = 1.0;
-  /** Target for extended variable derivatives. */
-  double esvDerivLocal = 0.0;
-  /** Reference to the ESV derivative reduction variable. */
-  private SharedDouble esvDerivShared = null;
   /** If set, derivative components are filed by source type. */
   private HashMap<Class<? extends BondedTerm>, SharedDouble> decompositionMap = null;
-  /** Flag to indicate decomposition of ESV derivatives. */
-  private boolean decomposeEsvDeriv = false;
   /** Flag indicating if this term is constrained. */
   private boolean isConstrained = false;
   /** Constraint on this BondedTerm, if any (else null). */
@@ -130,45 +113,6 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
       }
     }
     return false;
-  }
-
-  /**
-   * Under a linear switching function, E=L*E1+(1-L)*E0, chainRule is +1 or -1 for lambda and
-   * (1-lambda) terms, respectively. Other switches should set this to d(switch)/d(lambda) as well.
-   *
-   * @param lambda a double.
-   * @param chainRule a double.
-   * @param esvBondedDeriv a {@link edu.rit.pj.reduction.SharedDouble} object.
-   * @param decomposition a {@link java.util.HashMap} object.
-   */
-  public void attachExtendedVariable(
-      double lambda,
-      double chainRule,
-      SharedDouble esvBondedDeriv,
-      HashMap<Class<? extends BondedTerm>, SharedDouble> decomposition) {
-    esvTerm = true;
-    esvLambda = lambda;
-    dedesvChain = chainRule;
-    esvDerivShared = esvBondedDeriv;
-    esvDerivLocal = 0.0;
-    if (decomposition != null) {
-      decompositionMap = decomposition;
-      decomposeEsvDeriv = true;
-    } else {
-      decompositionMap = null;
-      decomposeEsvDeriv = false;
-    }
-  }
-
-  /**
-   * attachExtendedVariable.
-   *
-   * @param lambda a double.
-   * @param chainRule a double.
-   * @param esvBondedDeriv a {@link edu.rit.pj.reduction.SharedDouble} object.
-   */
-  public void attachExtendedVariable(double lambda, double chainRule, SharedDouble esvBondedDeriv) {
-    attachExtendedVariable(lambda, chainRule, esvBondedDeriv, null);
   }
 
   /** {@inheritDoc} */
@@ -338,15 +282,6 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
   }
 
   /**
-   * isExtendedSystemMember.
-   *
-   * @return a boolean.
-   */
-  public boolean isExtendedSystemMember() {
-    return esvTerm;
-  }
-
-  /**
    * Check if this BondedTerm is lambda-sensitive (e.g. a softcored dihedral).
    *
    * @return True if Lambda affects the energy of this term.
@@ -378,24 +313,6 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
   @Override
   public void print() {
     logger.info(toString());
-  }
-
-  /** reduceEsvDeriv. */
-  public void reduceEsvDeriv() {
-    if (esvTerm) {
-      //            logf(" :: %.6f from %s", esvDerivLocal, this.toString());
-      esvDerivShared.addAndGet(esvDerivLocal);
-      if (decomposeEsvDeriv) {
-        Class<? extends BondedTerm> source = this.getClass();
-        SharedDouble dub = decompositionMap.get(source);
-        if (dub == null) {
-          decompositionMap.put(source, new SharedDouble(esvDerivLocal));
-        } else {
-          dub.addAndGet(esvDerivLocal);
-        }
-      }
-      esvDerivLocal = 0.0;
-    }
   }
 
   /**
@@ -533,19 +450,6 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
       }
     }
     return false;
-  }
-
-  /**
-   * Derivative with respect to attached ExtendedVariable lambda, if any. Double.isFinite() check
-   * protects against dEdEsv=(energy*chain/lambda) for lambda=0.0
-   *
-   * @param dEdEsv a double.
-   */
-  protected final void setEsvDeriv(double dEdEsv) {
-    if (esvTerm) {
-      esvDerivLocal = dEdEsv;
-      //logger.info(String.format("%s: %6.8f", this, dEdEsv));
-    }
   }
 
   public static class BondedComparator implements Comparator<BondedTerm> {

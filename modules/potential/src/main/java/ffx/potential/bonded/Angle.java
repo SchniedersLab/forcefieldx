@@ -310,16 +310,9 @@ public class Angle extends BondedTerm {
                                     prefactor
                                             * dv2
                                             * (1.0 + cubic * dv + quartic * dv2 + quintic * dv3 + sextic * dv4);
-                            if (esvTerm) {
-                                setEsvDeriv(energy * dedesvChain);
-                                energy = energy * esvLambda;
-                            }
                             if (gradient) {
                                 var deddt =
-                                        prefactor * esvLambda
-                                                * dv
-                                                * toDegrees(
-                                                2.0
+                                        prefactor * dv * toDegrees(2.0
                                                         + 3.0 * cubic * dv
                                                         + 4.0 * quartic * dv2
                                                         + 5.0 * quintic * dv3
@@ -361,16 +354,9 @@ public class Angle extends BondedTerm {
                                     prefactor
                                             * dv2
                                             * (1.0 + cubic * dv + quartic * dv2 + quintic * dv3 + sextic * dv4);
-                            if (esvTerm) {
-                                setEsvDeriv(energy * dedesvChain);
-                                energy = energy * esvLambda;
-                            }
                             if (gradient) {
                                 var deddt =
-                                        prefactor * esvLambda
-                                                * dv
-                                                * toDegrees(
-                                                2.0
+                                        prefactor * dv * toDegrees(2.0
                                                         + 3.0 * cubic * dv
                                                         + 4.0 * quartic * dv2
                                                         + 5.0 * quintic * dv3
@@ -399,12 +385,8 @@ public class Angle extends BondedTerm {
                             var dv = value - angleType.angle[nh];
                             var dv2 = dv * dv;
                             energy = prefactor * dv2;
-                            if (esvTerm) {
-                                setEsvDeriv(energy * dedesvChain);
-                                energy = energy * esvLambda;
-                            }
                             if (gradient) {
-                                var deddt = prefactor * esvLambda * dv * toDegrees(2.0);
+                                var deddt = prefactor * dv * toDegrees(2.0);
                                 var rp = max(p.length(), 0.000001);
                                 var terma = -deddt / (rab2 * rp);
                                 var termc = deddt / (rcb2 * rp);
@@ -437,15 +419,10 @@ public class Angle extends BondedTerm {
                             var dv = value - angleType.angle[nh];
                             var dv2 = dv * dv;
                             energy = prefactor * dv2;
-                            if (esvTerm) {
-                                setEsvDeriv(energy * dedesvChain);
-                                energy = energy * esvLambda;
-                            }
                             if (gradient) {
-                                var deddt = prefactor * esvLambda * dv * toDegrees(2.0);
-                                inPlaneGrad(
-                                        threadID, grad, ia, ib, ic, id, vad, vbd, vcd, vp, rp2, vjp, rjp2, vkp, rkp2,
-                                        delta, deddt);
+                                var deddt = prefactor * dv * toDegrees(2.0);
+                                inPlaneGrad(threadID, grad, ia, ib, ic, id,
+                                    vad, vbd, vcd, vp, rp2, vjp, rjp2, vkp, rkp2, delta, deddt);
                             }
                             value = dv;
                         }
