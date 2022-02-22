@@ -200,7 +200,8 @@ class PhDynamics extends AlgorithmsScript {
         x = molecularDynamics.getCoordinates()
 
         // Try running in OpenMM
-        molecularDynamicsOpenMM.setCoordinates(x)
+        potential.energy(x)
+	molecularDynamicsOpenMM.setCoordinates(x)
         molecularDynamicsOpenMM.dynamic(coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
                 dynamicsOptions.temperature, true, dyn)
         x = molecularDynamicsOpenMM.getCoordinates()
