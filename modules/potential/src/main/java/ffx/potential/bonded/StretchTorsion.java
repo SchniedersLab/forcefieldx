@@ -300,11 +300,8 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
     var s3 = c7 * phi1 + c8 * phi2 + c9 * phi3;
     var e3 = units * dr3 * s3;
     energy = e1 + e2 + e3;
-    if (esvTerm) {
-      esvDerivLocal = energy * dedesvChain * lambda;
-    }
-    energy = energy * esvLambda * lambda;
-    dEdL = energy * esvLambda;
+    energy = energy * lambda;
+    dEdL = energy;
     if (gradient || lambdaTerm) {
       // Compute derivative components for the first bond.
       var dedphi = units * dr1 * (c1 * dphi1 + c2 * dphi2 + c3 * dphi3);
@@ -338,12 +335,6 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
       gb.addI(vca.X(dedt).addI(dedu.X(vdc)));
       gc.addI(dedt.X(vba).addI(vdb.X(dedu)).subI(ddrd));
       gd.addI(dedu.X(vcb).addI(ddrd));
-
-      // Apply ESV lambda
-      ga.scaleI(esvLambda);
-      gb.scaleI(esvLambda);
-      gc.scaleI(esvLambda);
-      gd.scaleI(esvLambda);
       var ia = atomA.getIndex() - 1;
       var ib = atomB.getIndex() - 1;
       var ic = atomC.getIndex() - 1;
@@ -366,8 +357,8 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
   }
 
   /**
-   * If the specified atom is not a central atom of <b>this</b> torsion, the atom at the opposite
-   * end is returned. These atoms are said to be 1-4 to each other.
+   * If the specified atom is not a central atom of <b>this</b> torsion, the atom at the opposite end
+   * is returned. These atoms are said to be 1-4 to each other.
    *
    * @param a Atom
    * @return Atom

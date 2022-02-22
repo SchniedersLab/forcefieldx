@@ -307,11 +307,8 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
     var s2 = c4 * phi1 + c5 * phi2 + c6 * phi3;
     var e2 = units * dt2 * s2;
     energy = e1 + e2;
-    if (esvTerm) {
-      esvDerivLocal = energy * dedesvChain * lambda;
-    }
-    energy = energy * esvLambda * lambda;
-    dEdL = energy * esvLambda;
+    energy = energy * lambda;
+    dEdL = energy;
     if (gradient || lambdaTerm) {
       // Compute derivative components for this interaction.
       var dedphi = units * dt1 * (c1 * dphi1 + c2 * dphi2 + c3 * dphi3);
@@ -342,10 +339,6 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
       gb.addI(vu.X(vcb).scaleI(sb)).addI(vca.X(vdt)).addI(vdu.X(vdc));
       gc.addI(vcb.X(vu).scaleI(sb)).addI(vu.X(vdc).scaleI(sd)).addI(vdt.X(vba)).addI(vdb.X(vdu));
       gd.addI(vdc.X(vu).scaleI(sd)).addI(vdu.X(vcb));
-      ga.scaleI(esvLambda);
-      gb.scaleI(esvLambda);
-      gc.scaleI(esvLambda);
-      gd.scaleI(esvLambda);
       var ia = atomA.getIndex() - 1;
       var ib = atomB.getIndex() - 1;
       var ic = atomC.getIndex() - 1;
