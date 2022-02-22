@@ -58,6 +58,8 @@ import static java.util.Arrays.sort;
 import static org.apache.commons.io.FilenameUtils.getName;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.cbrt;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
@@ -767,20 +769,21 @@ public class ProgressiveAlignmentOfCrystals {
               }
             }
             if (gyrationComponents) {
-              stringBuilder.append("\n Radius of gyration about unit cell axes for first crystal:\n" +
-                  "  Magnitudes (Ang): \t X-, Y-, and Z-Components of Axes:\n");
-              for (int i = 1; i < 4; i++) {
-                stringBuilder.append(
-                    format("  %16.3f %12.6f %12.6f %12.6f\n", bestBaseGandV[i - 1][0],
-                        bestBaseGandV[0][i], bestBaseGandV[1][i], bestBaseGandV[2][i]));
-              }
-              stringBuilder.append(" Radius of gyration about unit cell axes for second crystal:\n" +
-                  "  Magnitudes (Ang): \t X-, Y-, and Z-Components of Axes:\n");
-              for (int i = 1; i < 4; i++) {
-                stringBuilder.append(
-                    format("  %16.3f %12.6f %12.6f %12.6f\n", bestTargetGandV[i - 1][0],
-                        bestTargetGandV[0][i], bestTargetGandV[1][i], bestTargetGandV[2][i]));
-              }
+              double Rmax = max(max(bestBaseGandV[0][0], bestBaseGandV[1][0]), bestBaseGandV[2][0]);
+              Rmax *= Rmax;
+              double Rg = gyrations[0] * gyrations[0];
+              // 0.0 indicates a perfect sphere, and 1.0 indicates all atoms along a single axis.
+              double asphericity = (1.5 * Rmax - Rg / 2.0) / Rmax;
+              stringBuilder.append(format("  Ryz %9.3f  Rxz %9.3f  Ryz %9.3f  Asphericity %9.3f\n",
+                  bestTargetGandV[0][0], bestTargetGandV[1][0], bestTargetGandV[2][0], asphericity));
+
+              Rmax = max(max(bestTargetGandV[0][0], bestTargetGandV[1][0]), bestTargetGandV[2][0]);
+              Rmax *= Rmax;
+              Rg = gyrations[0] * gyrations[0];
+              // 0.0 indicates a perfect sphere, and 1.0 indicates all atoms along a single axis.
+              asphericity = (1.5 * Rmax - Rg / 2.0) / Rmax;
+              stringBuilder.append(format("  Ryz %9.3f  Rxz %9.3f  Ryz %9.3f  Asphericity %9.3f\n",
+                  bestTargetGandV[0][0], bestTargetGandV[1][0], bestTargetGandV[2][0], asphericity));
             }
             if (logger.isLoggable(Level.FINER)) {
               stringBuilder.append(format(" Gyration Crystal 1 (%s): %7.4f Crystal 2 (%s): %7.4f.\n",
@@ -1196,8 +1199,8 @@ public class ProgressiveAlignmentOfCrystals {
       }
     }
 
-    bestBaseMandV = momentsOfInertia(bestBaseNAUs, massN, false, false,true);
-    bestTargetMandV= momentsOfInertia(bestTargetNAUs, massN, false, false, true);
+    bestBaseMandV = momentsOfInertia(bestBaseNAUs, massN, false, false, true);
+    bestTargetMandV = momentsOfInertia(bestTargetNAUs, massN, false, false, true);
 
     // bestBaseGandV = radiusOfGyrationComponents(bestBaseNAUs, massN, false);
     // bestTargetGandV = radiusOfGyrationComponents(bestTargetNAUs, massN, false);
@@ -1325,7 +1328,8 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Determine the number of unique AUs within the replicates crystal to a tolerance.
    *
-   * @param allCoords Coordinates for every atom in replicates crystal ([x1, y1, z1, x2, y2, z2...].
+   * @param allCoords Coordinates for every atom in replicates crystal ([x1, y1, z1, x2, y2,
+   *     z2...].
    * @param molIndices Prioritization of molecules.
    * @param auCoords Coordinates for single AU.
    * @param nCoords Number of coordinates in an AU (number of atoms * 3).

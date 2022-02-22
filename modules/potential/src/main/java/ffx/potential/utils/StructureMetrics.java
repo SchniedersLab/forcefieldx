@@ -278,13 +278,13 @@ public class StructureMetrics {
   }
 
   /**
-   * Compute the components that make up the radius of gyration along crystal axes.
+   * Compute the components that make up the radius of gyration tensor about yz-, xz-, xy-planes.
    *
    * @param x Coordinates for calculation
-   * @param y Coordiantes for calculation
+   * @param y Coordinates for calculation
    * @param z Coordinates for calculation
    * @param unitCell Crystal to use as basis.
-   * @return radius of gyration along axes
+   * @return radius of gyration about planes.
    */
   public static double[][] radiusOfGyrationComponents(double[] x, double[] y, double[] z,
       Crystal unitCell) {
@@ -292,14 +292,14 @@ public class StructureMetrics {
     assert (y.length == z.length);
 
     // Define a Line for each unit cell vector.
-    Vector3D origin = new Vector3D(0.0, 0.0, 0.0);
-    Vector3D aAxis = new Vector3D(unitCell.Ai[0].clone());
-    Vector3D bAxis = new Vector3D(unitCell.Ai[1].clone());
-    Vector3D cAxis = new Vector3D(unitCell.Ai[2].clone());
-    Line[] axes = new Line[3];
-    axes[0] = new Line(origin, aAxis, 1.e0-8);
-    axes[1] = new Line(origin, bAxis, 1.e0-8);
-    axes[2] = new Line(origin, cAxis, 1.e0-8);
+//    Vector3D origin = new Vector3D(0.0, 0.0, 0.0);
+//    Vector3D aAxis = new Vector3D(unitCell.Ai[0].clone());
+//    Vector3D bAxis = new Vector3D(unitCell.Ai[1].clone());
+//    Vector3D cAxis = new Vector3D(unitCell.Ai[2].clone());
+//    Line[] axes = new Line[3];
+//    axes[0] = new Line(origin, aAxis, 1.e0-8);
+//    axes[1] = new Line(origin, bAxis, 1.e0-8);
+//    axes[2] = new Line(origin, cAxis, 1.e0-8);
 
     // Find the centroid of the atomic coordinates.
     int nAtoms = x.length;
@@ -319,8 +319,10 @@ public class StructureMetrics {
     for (int j = 0; j < nAtoms; j++) {
       Vector3D xyz = new Vector3D(x[j], y[j], z[j]);
       xyz = xyz.subtract(centroid);
+      double[] coords = xyz.toArray();
       for (int i=0; i<3; i++) {
-        double mag = axes[i].distance(xyz);
+        // double mag = axes[i].distance(xyz);
+        double mag = coords[i];
         radius[i] += mag * mag;
       }
     }
@@ -473,7 +475,7 @@ public class StructureMetrics {
     double[] moment;
     double[][] vec;
     if (pma) {
-      // Diagonalize the matrix
+      // Diagonalize the matrix.
       Array2DRowRealMatrix cMatrix = new Array2DRowRealMatrix(tensor, false);
       EigenDecomposition eigenDecomposition = new EigenDecomposition(cMatrix);
       // Extract the quaternions.
@@ -502,7 +504,7 @@ public class StructureMetrics {
         }
       }
 
-      // moment axes must give a right-handed coordinate system
+      // Moment axes must give a right-handed coordinate system.
       xterm = vec[0][0] * (vec[1][1] * vec[2][2] - vec[2][1] * vec[1][2]);
       yterm = vec[0][1] * (vec[2][0] * vec[1][2] - vec[1][0] * vec[2][2]);
       zterm = vec[0][2] * (vec[1][0] * vec[2][1] - vec[2][0] * vec[1][1]);
@@ -513,7 +515,7 @@ public class StructureMetrics {
         }
       }
 
-      // principal moment axes form rows of Euler rotation matrix
+      // Principal moment axes form rows of Euler rotation matrix.
       if (moved) {
         double[][] a = new double[3][3];
         for (int i = 0; i < 3; i++) {
@@ -521,7 +523,7 @@ public class StructureMetrics {
             a[j][i] = vec[j][i];
           }
         }
-        // translate to origin, then apply Euler rotation matrix
+        // Translate to origin, then apply Euler rotation matrix.
         for (int i = 0; i < nAtoms; i++) {
           xterm = x[i] - xcm;
           yterm = y[i] - ycm;
