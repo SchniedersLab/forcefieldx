@@ -53,7 +53,8 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import static ffx.potential.utils.Gyrate.radiusOfGyration
+import static ffx.potential.utils.StructureMetrics.radiusOfGyration
+import static ffx.potential.utils.StructureMetrics.momentsOfInertia
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.*
 
@@ -83,6 +84,13 @@ class Energy extends PotentialScript {
   @Option(names = ['--rg', '--gyrate'], paramLabel = "false", defaultValue = "false",
       description = 'Print out the radius of gyration.')
   private boolean gyrate = false
+
+  /**
+   * --in or --inertia Print out the moments of inertia.
+   */
+  @Option(names = ['--in', '--inertia'], paramLabel = "false", defaultValue = "false",
+          description = 'Print out the moments of inertia.')
+  private boolean inertia = false
 
   /**
    * -g or --gradient to print out gradients.
@@ -197,6 +205,10 @@ class Energy extends PotentialScript {
       logger.info(format(" Radius of gyration:           %10.5f A", rg))
     }
 
+    if(inertia){
+      double[][] inertiaValue = momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true, true)
+    }
+
     SystemFilter systemFilter = potentialFunctions.getFilter()
 
     if (systemFilter instanceof XYZFilter || systemFilter instanceof PDBFilter) {
@@ -258,6 +270,9 @@ class Energy extends PotentialScript {
           logger.info(format(" Radius of gyration:          %10.5f A", rg))
         }
 
+        if(inertia){
+          double[][] inertiaValue = momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true,true)
+        }
       }
 
       // Use the current base directory, or update if necessary based on the given filename.

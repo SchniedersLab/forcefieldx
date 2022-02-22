@@ -38,13 +38,15 @@
 package ffx.potential.groovy
 
 import ffx.numerics.Potential
-import ffx.potential.MolecularAssembly
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.CIFFilter
-import static java.lang.String.format;
+import ffx.potential.parsers.SystemFilter
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+
+import static org.apache.commons.io.FilenameUtils.getName
+import static org.apache.commons.io.FilenameUtils.removeExtension
 
 /**
  * The CIFtoXYZ script converts a CIF file to an XYZ file including atom types.
@@ -52,10 +54,17 @@ import picocli.CommandLine.Parameters
  * <br>
  * Usage:
  * <br>
- * ffxc CIFtoXYZ &lt;filename.cif&gt; &lt;filename.pdb&gt;
+ * ffxc CIFtoXYZ &lt;filename.cif&gt; &lt;filename.xyz&gt;
  */
 @Command(description = " Convert a single molecule CIF file to XYZ format.", name = "ffxc CIFtoXYZ")
 class CIFtoXYZ extends PotentialScript {
+
+  /**
+   * --zp or --zPrime Manually specify Z' (only affects writing CIF files)."
+   */
+  @Option(names = ['--zp', '--zPrime'], paramLabel = "-1", defaultValue = "-1",
+          description = "Specify Z' when writing a CIF file.")
+  private int zPrime
 
   /**
    * --sg or --spaceGroupNumber Override the CIF space group.
@@ -86,11 +95,30 @@ class CIFtoXYZ extends PotentialScript {
   private boolean fixLattice
 
   /**
+   * --sc or --saveCIF Save file as a basic CIF.
+   */
+  @Option(names = ['--sc', '--saveCIF'], paramLabel = "false", defaultValue = "false",
+          description = 'Attempt to save file in CIF format (input(s) in XYZ format).')
+  private boolean saveCIF
+
+  /**
+   * --ca or --cifAppend Append cif files
+   */
+  @Option(names = ['--ca', '--cifAppend'], paramLabel = "false", defaultValue = "false",
+          description = 'Append structures.')
+  private boolean cifAppend
+
+  /**
    * The final argument(s) should be a CIF file and an XYZ file with atom types.
    */
   @Parameters(arity = "1..2", paramLabel = "files",
       description = "A CIF file and an XYZ file.")
   List<String> filenames = null
+
+  /**
+   * Array of strings containing files created.
+   */
+  public String[] createdFiles
 
   /**
    * CIFtoXYZ Constructor.
@@ -122,15 +150,52 @@ class CIFtoXYZ extends PotentialScript {
     if (!init()) {
       return this
     }
-
-    if (filenames != null && filenames.size() == 2) {
-      MolecularAssembly[] assemblies = potentialFunctions.openAll(filenames.get(1))
+    if (filenames != null) {
+      int fileInputs = filenames.size()
       System.clearProperty("mpoleterm")
-      setActiveAssembly(assemblies[0])
-      CIFFilter cifFilter = new CIFFilter(filenames.toArray() as String[], activeAssembly, sgNum, sgName, bondTolerance, fixLattice, baseDir);
-      cifFilter.readFile()
+      File saveFile
+      String dirString = getBaseDirString(filenames.get(0))
+      String name = removeExtension(getName(filenames.get(0)))
+      if (saveCIF) {
+        potentialFunctions.openAll(filenames.toArray() as String[])
+        SystemFilter systemFilter = potentialFunctions.getFilter() as SystemFilter
+        do{
+          activeAssembly = systemFilter.getActiveMolecularSystem()
+          saveFile = new File(dirString + name + ".cif")
+          CIFFilter cifFilter = new CIFFilter(saveFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties(), saveCIF)
+          cifFilter.setBondTolerance(bondTolerance)
+          cifFilter.setFixLattice(fixLattice)
+          cifFilter.setSgName(sgName)
+          cifFilter.setSgNum(sgNum)
+          cifFilter.setZprime(zPrime)
+          if (cifFilter.writeFile(saveFile, cifAppend)) {
+            createdFiles = cifFilter.getCreatedFileNames()
+          }else{
+            logger.warning(" Assembly " + activeAssembly.getName() + " was not successful...")
+          }
+        }while(systemFilter.readNext())
+      } else if (fileInputs == 2) {
+        getActiveAssembly(filenames[1])
+        saveFile = new File(dirString + name + ".xyz")
+        CIFFilter cifFilter = new CIFFilter(saveFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties(), saveCIF)
+        cifFilter.setBondTolerance(bondTolerance)
+        cifFilter.setFixLattice(fixLattice)
+        cifFilter.setSgName(sgName)
+        cifFilter.setSgNum(sgNum)
+        cifFilter.setZprime(zPrime)
+        if (cifFilter.readFile()) {
+          createdFiles = cifFilter.getCreatedFileNames()
+        } else {
+          logger.info(" Error occurred during conversion.")
+        }
+      }else{
+        logger.info(helpString())
+        logger.info(" Expected 2 files as input to convert CIF file(s).")
+        return this
+      }
     } else {
       logger.info(helpString())
+      logger.info(" Expected 1 or 2 file(s) as input to CIFtoXYZ.")
       return this
     }
     return this

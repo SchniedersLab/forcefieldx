@@ -1414,11 +1414,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       if (particleMeshEwald == null) {
         logger.warning("Null PME during ESV setup.");
       }
-      ((ParticleMeshEwald) particleMeshEwald).attachExtendedSystem(system);
+      particleMeshEwald.attachExtendedSystem(system);
     }
     if (crystal != null) {
       crystal.setSpecialPositionCutoff(0.0);
     }
+    // Check if reInit is needed, now that we init with fully protonated residues ASD/GLD/HIS
     reInit();
   }
 

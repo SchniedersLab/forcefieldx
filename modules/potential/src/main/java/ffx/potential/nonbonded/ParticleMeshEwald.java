@@ -577,7 +577,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     realSpaceNeighborParameters = new RealSpaceNeighborParameters(maxThreads);
-    initializationRegion = new InitializationRegion(maxThreads, forceField);
+    initializationRegion = new InitializationRegion(this, maxThreads, forceField);
     expandInducedDipolesRegion = new ExpandInducedDipolesRegion(maxThreads);
     initAtomArrays();
 
@@ -1088,6 +1088,50 @@ public class ParticleMeshEwald implements LambdaInterface {
    */
   public double getSolvationEnergy() {
     return solvationEnergy;
+  }
+
+  /**
+   * Get the MultipoleType for Atom i.
+   *
+   * @param i The atom index.
+   * @return The MultipoleType.
+   */
+  public MultipoleType getMultipoleType(int i) {
+    Atom atom = atoms[i];
+    MultipoleType multipoleType = atom.getMultipoleType();
+    double[] multipole = multipoleType.getMultipole();
+    if (esvTerm && extendedSystem.isTitrating(i)) {
+      double[] esvMultipole = new double[10];
+      System.arraycopy(multipole, 0, esvMultipole, 0, multipole.length);
+      double titrationLambda = extendedSystem.getTitrationLambda(i);
+      double tautomerLambda = extendedSystem.getTautomerLambda(i);
+      esvMultipole = extendedSystem.getTitrationUtils()
+          .getMultipole(atom, titrationLambda, tautomerLambda, esvMultipole);
+      // Create a new MultipoleType for the tritrating site.
+      multipoleType = new MultipoleType(multipoleType, esvMultipole);
+    }
+    return multipoleType;
+  }
+
+  /**
+   * Get the PolarizeType for Atom i.
+   *
+   * @param i The atom index.
+   * @return The PolarizeType.
+   */
+  public PolarizeType getPolarizeType(int i) {
+    Atom atom = atoms[i];
+    PolarizeType polarizeType = atom.getPolarizeType();
+    if (polarizeType != null) {
+      if (esvTerm && extendedSystem.isTitrating(i) && extendedSystem.isTitratingHydrogen(i)) {
+        double titrationLambda = extendedSystem.getTitrationLambda(i);
+        double tautomerLambda = extendedSystem.getTautomerLambda(i);
+        double esvPolarizability = extendedSystem.getTitrationUtils()
+            .getPolarizability(atom, titrationLambda, tautomerLambda, polarizeType.polarizability);
+        polarizeType = new PolarizeType(polarizeType, esvPolarizability);
+      }
+    }
+    return polarizeType;
   }
 
   /** {@inheritDoc} */
@@ -4007,43 +4051,6 @@ public class ParticleMeshEwald implements LambdaInterface {
    * OST and ESV specific factors that effect real space interactions.
    */
   LambdaFactors[] lambdaFactors = null;
-
-  /** Precalculate ESV factors subsequent to lambda propagation. */
-  public void updateEsvLambda() {
-    if (!esvTerm) {
-      return;
-    }
-
-    // Query ExtendedSystem to create local preloads of all lambda quantities.
-    numESVs = extendedSystem.getExtendedResidueList().size();
-    if (perAtomTitrationESV == null || perAtomTitrationESV.length < nAtoms) {
-      isAtomTitrating = new boolean[nAtoms];
-      perAtomTitrationESV = new double[nAtoms];
-      perAtomESVIndex = new Integer[nAtoms];
-      fill(isAtomTitrating, false);
-      fill(perAtomTitrationESV, 1.0);
-      fill(perAtomESVIndex, null);
-    }
-
-    // Allocate space for dM/dTitratonESV
-    if (dMultipoledTirationESV == null || dMultipoledTirationESV.length != nSymm
-        || dMultipoledTirationESV[0].length != nAtoms) {
-      dMultipoledTirationESV = new double[nSymm][nAtoms][10];
-      dMultipoledTautomerESV = new double[nSymm][nAtoms][10];
-    }
-
-    for (int i = 0; i < nAtoms; i++) {
-      isAtomTitrating[i] = extendedSystem.isTitrating(i);
-      perAtomTitrationESV[i] = extendedSystem.getTitrationLambda(i);
-      perAtomESVIndex[i] = extendedSystem.getTitrationESVIndex(i);
-      Atom ai = atoms[i];
-      if (ai.getPolarizeType() == null) {
-        logger.warning("Null polarize type during ESV init.");
-        continue;
-      }
-      polarizability[i] = ai.getScaledPolarizability();
-    }
-  }
 
   /**
    * The setFactors(i,k,lambdaMode) method is called every time through the inner PME loops, avoiding

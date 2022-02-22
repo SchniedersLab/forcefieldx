@@ -500,6 +500,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
       DynamicsEngine engine) {
     switch (engine) {
       case OPENMM:
+      case OMM:
         // TODO: Replace this with calls to the leaves of a proper tree structure.
         // Unfortunately, neither Java, nor Apache Commons, nor Guava has an arbitrary tree
         // implementing Collection.
@@ -1618,7 +1619,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
       // Compute the full-step kinetic energy.
       thermostat.computeKineticEnergy();
 
-
       // Do the full-step thermostat operation.
       thermostat.fullStep(dt);
 
@@ -1745,6 +1745,24 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
   }
 
+  /**
+   * Set the coordinates.
+   * @param coords The coordinates to copy into MD coordinates array.
+   */
+  public void setCoordinates(double[] coords){
+    if (coords.length == x.length) {
+      System.arraycopy(coords, 0, x, 0, x.length);
+    }
+  }
+
+  /**
+   * Get the coordinates.
+   * @return A copy of the current coordinates are returned.
+   */
+  public double[] getCoordinates() {
+    return Arrays.copyOf(x, x.length);
+  }
+
   public enum VerbosityLevel {
     VERBOSE(false),
     QUIET(true),
@@ -1784,6 +1802,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
    */
   public enum DynamicsEngine {
     FFX(true, true),
+    OMM(false, true),
     OPENMM(false, true);
 
     // Set of supported Platforms. The EnumSet paradigm is very efficient, as it

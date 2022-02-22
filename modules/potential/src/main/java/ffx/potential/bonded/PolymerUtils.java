@@ -274,7 +274,7 @@ public class PolymerUtils {
               break;
             case ZN:
             case ZN2:
-              atom.setAtomType(findAtomType(2010, forceField));
+              atom.setAtomType(findAtomType(2016, forceField));
               break;
             case CL:
               atom.setAtomType(findAtomType(2013, forceField));

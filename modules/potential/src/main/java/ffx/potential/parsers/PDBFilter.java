@@ -1087,6 +1087,9 @@ public final class PDBFilter extends SystemFilter {
                 // 56 - 66       LString       sGroup         Space  group.
                 // 67 - 70       Integer       z              Z value.
                 // =============================================================================
+                if(line.length() < 55){
+                  logger.severe(" CRYST1 record is improperly formatted.");
+                }
                 double aaxis = parseDouble(line.substring(6, 15).trim());
                 double baxis = parseDouble(line.substring(15, 24).trim());
                 double caxis = parseDouble(line.substring(24, 33).trim());

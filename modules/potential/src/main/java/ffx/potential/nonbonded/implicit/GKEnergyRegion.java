@@ -109,6 +109,8 @@ public class GKEnergyRegion extends ParallelRegion {
   /** Water probe radius. */
   private final double probe;
 
+  private final SharedDouble sharedPermanentGKEnergy;
+  private final SharedDouble sharedPolarizationGKEnergy;
   private final SharedDouble sharedGKEnergy;
   private final SharedInteger sharedInteractions;
   private final GKEnergyLoop[] gkEnergyLoop;
@@ -174,12 +176,22 @@ public class GKEnergyRegion extends ParallelRegion {
     for (int i = 0; i < nt; i++) {
       gkEnergyLoop[i] = new GKEnergyLoop();
     }
+    sharedPermanentGKEnergy = new SharedDouble();
+    sharedPolarizationGKEnergy = new SharedDouble();
     sharedGKEnergy = new SharedDouble();
     sharedInteractions = new SharedInteger();
   }
 
   public double getEnergy() {
     return sharedGKEnergy.get();
+  }
+
+  public double getPermanentEnergy() {
+    return sharedPermanentGKEnergy.get();
+  }
+
+  public double getPolarizationEnergy() {
+    return sharedPolarizationGKEnergy.get();
   }
 
   public AtomicDoubleArray getSelfEnergy() {
@@ -255,6 +267,8 @@ public class GKEnergyRegion extends ParallelRegion {
 
   @Override
   public void start() {
+    sharedPermanentGKEnergy.set(0.0);
+    sharedPolarizationGKEnergy.set(0.0);
     sharedGKEnergy.set(0.0);
     sharedInteractions.set(0);
   }
@@ -315,6 +329,8 @@ public class GKEnergyRegion extends ParallelRegion {
     private int iSymm;
     private int threadID;
     private final double[][] transOp;
+    private double gkPermanentEnergy;
+    private double gkPolarizationEnergy;
     private double gkEnergy;
     // Extra padding to avert cache interference.
     private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -341,6 +357,8 @@ public class GKEnergyRegion extends ParallelRegion {
     public void finish() {
       sharedInteractions.addAndGet(count);
       sharedGKEnergy.addAndGet(gkEnergy);
+      sharedPermanentGKEnergy.addAndGet(gkPermanentEnergy);
+      sharedPolarizationGKEnergy.addAndGet(gkPolarizationEnergy);
     }
 
     @Override
@@ -441,6 +459,8 @@ public class GKEnergyRegion extends ParallelRegion {
     @Override
     public void start() {
       gkEnergy = 0.0;
+      gkPermanentEnergy = 0.0;
+      gkPolarizationEnergy = 0.0;
       count = 0;
       threadID = getThreadIndex();
     }
@@ -961,6 +981,9 @@ public class GKEnergyRegion extends ParallelRegion {
         crossEnergy.add(threadID, i, half);
         crossEnergy.add(threadID, k, half);
       }
+
+      gkPermanentEnergy += e;
+      gkPolarizationEnergy += ei;
 
       return e + ei;
     }

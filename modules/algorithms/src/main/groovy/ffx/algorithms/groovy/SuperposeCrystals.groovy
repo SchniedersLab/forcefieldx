@@ -159,6 +159,20 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean machineLearning
 
   /**
+   * --in or --inertia Display moments of inertia for final clusters.
+   */
+  @Option(names = ['--in', '--inertia'], paramLabel = "false", defaultValue = "false",
+          description = 'Display moments of inertia for final clusters.')
+  private static boolean inertia
+
+  /**
+   * --rgc or --radiusGyrationComponents Display components for radius of gyration for final clusters.
+   */
+  @Option(names = ['--rgc', '--radiusGyrationComponents'], paramLabel = "false", defaultValue = "false",
+          description = 'Display components for radius of gyration for final clusters.')
+  private static boolean gyrationComponents
+
+  /**
    * --mw or --massWeighted Use mass-weighted atomic coordinates for alignment.
    */
   @Option(names = ['--mw', '--massWeighted'], paramLabel = "false", defaultValue = "false",
@@ -269,8 +283,7 @@ class SuperposeCrystals extends AlgorithmsScript {
     runningStatistics =
         pac.comparisons(numAU, numInflatedAU, matchTol, zPrime, zPrime2, alphaCarbons,
             noHydrogen, massWeighted, crystalPriority, permute, save,
-            restart, write,
-            machineLearning, linkage, pacFilename)
+            restart, write, machineLearning, inertia, gyrationComponents, linkage, pacFilename)
 
     return this
   }

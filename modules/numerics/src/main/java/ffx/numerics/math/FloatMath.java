@@ -61,6 +61,34 @@ public class FloatMath {
   private static final Logger logger = Logger.getLogger(FloatMath.class.getName());
 
   /**
+   * Compute a * b + c and return the result in a new array.
+   *
+   * @param a First vector.
+   * @param b Scalar.
+   * @param c Second vector.
+   * @return Returns a * b + c.
+   */
+  public static float[] fma(float[] a, float b, float[] c) {
+    return fma(a, b, c, new float[3]);
+  }
+
+  /**
+   * Compute a * b + c.
+   *
+   * @param a First vector.
+   * @param b Scalar.
+   * @param c Second vector.
+   * @param ret Result vector.
+   * @return Returns a * b + c in the vector ret.
+   */
+  public static float[] fma(float[] a, float b, float[] c, float[] ret) {
+    ret[0] = Math.fma(a[0], b, c[0]);
+    ret[1] = Math.fma(a[1], b, c[1]);
+    ret[2] = Math.fma(a[2], b, c[2]);
+    return ret;
+  }
+
+  /**
    * Finds the cross-product between two vectors.
    *
    * @param a First vector.
@@ -199,7 +227,7 @@ public class FloatMath {
     var dx = a[0] - b[0];
     var dy = a[1] - b[1];
     var dz = a[2] - b[2];
-    return dx * dx + dy * dy + dz * dz;
+    return Math.fma(dx, dx, Math.fma(dy, dy, dz * dz));
   }
 
   /**
@@ -210,7 +238,7 @@ public class FloatMath {
    * @return Returns the dot product of a and b.
    */
   public static float dot(float[] a, float[] b) {
-    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    return Math.fma(a[0], b[0], Math.fma(a[1], b[1], a[2] * b[2]));
   }
 
   /**
@@ -230,7 +258,7 @@ public class FloatMath {
    * @return Returns the length of vector d squared.
    */
   public static float length2(float[] d) {
-    return d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
+    return Math.fma(d[0], d[0], Math.fma(d[1], d[1], d[2] * d[2]));
   }
 
   /**

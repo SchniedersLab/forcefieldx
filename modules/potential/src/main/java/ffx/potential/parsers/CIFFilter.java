@@ -37,10 +37,11 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
-import ffx.crystal.Crystal;
 import ffx.crystal.SpaceGroup;
-import ffx.crystal.LatticeSystem;
 import ffx.crystal.SpaceGroupDefinitions;
+import ffx.crystal.Crystal;
+import ffx.crystal.LatticeSystem;
+import ffx.potential.Utilities;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Angle;
@@ -49,18 +50,21 @@ import ffx.potential.bonded.Molecule;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.BufferedWriter;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 import org.openscience.cdk.AtomContainer;
 import org.openscience.cdk.config.AtomTypeFactory;
@@ -90,6 +94,9 @@ import static ffx.numerics.math.DoubleMath.dihedralAngle;
 import static ffx.numerics.math.DoubleMath.dist;
 import static ffx.potential.bonded.BondedUtils.intxyz;
 import static java.lang.String.format;
+import static org.apache.commons.io.FilenameUtils.getName;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
+import static org.apache.commons.io.FilenameUtils.getFullPath;
 import static org.openscience.cdk.tools.periodictable.PeriodicTable.getSymbol;
 import static org.openscience.cdk.tools.periodictable.PeriodicTable.getCovalentRadius;
 
@@ -99,9 +106,17 @@ import static org.openscience.cdk.tools.periodictable.PeriodicTable.getCovalentR
  * @author Aaron J. Nessler
  * @since 1.0
  */
-public class CIFFilter{
+public class CIFFilter extends SystemFilter{
 
     private static final Logger logger = Logger.getLogger(CIFFilter.class.getName());
+    private BufferedReader bufferedReader = null;
+    private CifCoreFile cifFile;
+    private int snapShot;
+    private int zPrime = -1;
+    private int sgNum = -1;
+    private String sgName = null;
+    private boolean fixLattice = false;
+    private double bondTolerance = 0.2;
 
     /**
      * Maximum atomic covalent radius for CDK Rebonder Tool
@@ -116,68 +131,132 @@ public class CIFFilter{
     /**
      * List of output files created from converted CIF file.
      */
-    private List<String> createdFiles = new ArrayList<>();
-    /**
-     * Input filenames to be converted (0: CIF file 1: XYZ file)
-     */
-    private final String[] fileNames;
-    /**
-     * Override space group based on number.
-     */
-    private int sgNum;
-    /**
-     * Override space group based on name.
-     */
-    private String sgName;
-    /**
-     * Tolerance added to covalent radii to determine bonded atoms.
-     */
-    private final double bondTolerance;
-    /**
-     * Attempt to fix inconsistencies between lattice parameters and space group.
-     */
-    private final boolean fixLattice;
-    /**
-     * Directory where conversion is taking place.
-     */
-    private final File baseDir;
-    /**
-     * XYZ assembly to base CIF file off of.
-     */
-    private final MolecularAssembly activeAssembly;
+    private final List<String> createdFiles = new ArrayList<>();
 
+    /**
+     * Constructor for CIFFilter on a single file and a single assembly.
+     * @param file Input file
+     * @param molecularAssembly Active assembly
+     * @param forceField Force field for save file.
+     * @param properties Properties for save file.
+     */
+    public CIFFilter(File file, MolecularAssembly molecularAssembly, ForceField forceField, CompositeConfiguration properties, boolean saveCIF) {
+        super(file, molecularAssembly, forceField, properties);
+        this.fileType = Utilities.FileType.CIF;
 
-    public CIFFilter(String[] fileNames, MolecularAssembly activeAssembly, int sgNum,
-                     String sgName, double bondTolerance, boolean fixLattice, File baseDir) {
-        this.fileNames = fileNames;
-        this.sgName = sgName;
-        this.sgNum = sgNum;
-        this.activeAssembly = activeAssembly;
-        this.bondTolerance = bondTolerance;
-        this.fixLattice = fixLattice;
-        this.baseDir = baseDir;
+        if (!saveCIF) {
+            String dir = getFullPath(molecularAssembly.getFile().getAbsolutePath()) + File.separator;
+            String cifName = removeExtension(file.getName()) + ".cif";
+            Path path = Paths.get( dir + cifName);
+            try {
+                cifFile = CifIO.readFromPath(path).as(StandardSchemata.CIF_CORE);
+            } catch (Exception ex) {
+                logger.info(" Failed to create CIF file object.\n" + ex);
+                ex.printStackTrace();
+            }
+            currentFile = new File(removeExtension(currentFile.getAbsolutePath()) + ".xyz");
+        }
     }
 
     /**
-     * Open a CIF file and attempt to convert to XYZ.
-     * @return Whether conversion was successful.
+     * Constructor for CIFFilter on a single file and multiple assemblies.
+     * @param file Input file
+     * @param molecularAssemblies Active assemblies
+     * @param forceField Force field for save file.
+     * @param properties Properties for save file.
      */
-    public boolean readFile() {
+    public CIFFilter(File file, List<MolecularAssembly> molecularAssemblies, ForceField forceField, CompositeConfiguration properties, boolean saveCIF) {
+        super(file, molecularAssemblies, forceField, properties);
+        this.fileType = Utilities.FileType.CIF;
 
-        CifCoreFile cifFile;
-        Path path = Paths.get(fileNames[0]);
-        try {
-            cifFile = CifIO.readFromPath(path).as(StandardSchemata.CIF_CORE);
-        } catch (Exception ex) {
-            logger.info(" Failed to create CIF file object.\n" + ex + "\n" + Arrays.toString(ex.getStackTrace()));
-            return false;
+        if (!saveCIF) {
+            String dir = getFullPath(molecularAssemblies.get(0).getFile().getAbsolutePath()) + File.separator;
+            String cifName = removeExtension(file.getName()) + ".cif";
+            Path path = Paths.get( dir + cifName);
+            try {
+                cifFile = CifIO.readFromPath(path).as(StandardSchemata.CIF_CORE);
+            } catch (Exception ex) {
+                logger.info(" Failed to create CIF file object.\n" + ex);
+                ex.printStackTrace();
+            }
+            currentFile = new File(removeExtension(currentFile.getAbsolutePath()) + ".xyz");
         }
+    }
 
-        String modelFilename = path.toAbsolutePath().toString();
-        logger.info("\n Opening CIF file " + path);
-        int numFailed = 0;
+    /**
+     * Constructor for CIFFilter on a multiple files and a single assembly.
+     * @param files Input files
+     * @param molecularAssembly Active assembly
+     * @param forceField Force field for save file.
+     * @param properties Properties for save file.
+     */
+    public CIFFilter(List<File> files, MolecularAssembly molecularAssembly, ForceField forceField, CompositeConfiguration properties, boolean saveCIF) {
+        super(files, molecularAssembly, forceField, properties);
+        this.fileType = Utilities.FileType.CIF;
+
+        if (!saveCIF) {
+            String dir = getFullPath(molecularAssembly.getFile().getAbsolutePath()) + File.separator;
+            String cifName = removeExtension(files.get(0).getName()) + ".cif";
+            Path path = Paths.get( dir + cifName);
+            try {
+                cifFile = CifIO.readFromPath(path).as(StandardSchemata.CIF_CORE);
+            } catch (Exception ex) {
+                logger.info(" Failed to create CIF file object.\n" + ex);
+                ex.printStackTrace();
+            }
+            currentFile = new File(removeExtension(currentFile.getAbsolutePath()) + ".xyz");
+        }
+    }
+
+    /**
+     * Override the space group of a CIF conversion based on space group number.
+     * @param sgNum Number of the desired space group
+     */
+    public void setSgNum(int sgNum){
+        this.sgNum = sgNum;
+    }
+
+    /**
+     * Override the space group of a CIF conversion based on space group name.
+     * @param sgName Name of the desired space group
+     */
+    public void setSgName(String sgName){
+        this.sgName = sgName;
+    }
+
+    /**
+     * Determine whether lattice parameters can be manipulated to follow lattice system constraints.
+     * @param fixLattice True if lattices should be fixed.
+     */
+    public void setFixLattice(boolean fixLattice){
+        this.fixLattice = fixLattice;
+    }
+
+    /**
+     * Override the number of copies in the asymmetric unit (Z').
+     * @param zPrime Number of the desired space group
+     */
+    public void setZprime(int zPrime){
+        this.zPrime = zPrime;
+    }
+
+    /**
+     * Set buffer value when bonding atoms together.
+     * @param bondTolerance Value added to VdW radii when determining bonding.
+     */
+    public void setBondTolerance(double bondTolerance){
+        this.bondTolerance = bondTolerance;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>Parse the CIF File
+     */
+    @Override
+    public boolean readFile() {
         for (CifCoreBlock block : cifFile.getBlocks()) {
-            logger.info(" Block ID: " + block.getBlockHeader());
+            logger.info("\n Block ID: " + block.getBlockHeader());
             Chemical chemical = block.getChemical();
             Column<String[]> nameCommon = chemical.getNameCommon();
             Column<String[]> nameSystematic = chemical.getNameSystematic();
@@ -193,7 +272,7 @@ public class CIFFilter{
 
             // Determine the space group.
             Symmetry symmetry = block.getSymmetry();
-            if (sgNum == -1 && sgName.equals("")) {
+            if (sgNum == -1 && sgName == null || sgName.equals("")) {
                 if (symmetry.getIntTablesNumber().getRowCount() > 0) {
                     sgNum = symmetry.getIntTablesNumber().get(0);
                     logger.info(format(" CIF International Tables Number: %d", sgNum));
@@ -227,7 +306,6 @@ public class CIFFilter{
             if (sg == null) {
                 logger.warning(" The space group could not be determined from the CIF file (using P1).");
                 sg = SpaceGroupDefinitions.spaceGroupFactory(1);
-                numFailed++;
             }
 
             Cell cell = block.getCell();
@@ -237,6 +315,7 @@ public class CIFFilter{
             double alpha = cell.getAngleAlpha().get(0);
             double beta = cell.getAngleBeta().get(0);
             double gamma = cell.getAngleGamma().get(0);
+            assert sg != null;
             LatticeSystem latticeSystem = sg.latticeSystem;
             double[] latticeParameters = {a, b, c, alpha, beta, gamma};
             Crystal crystal = null;
@@ -244,7 +323,7 @@ public class CIFFilter{
                 crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName);
             } else {
                 if (fixLattice) {
-                    logger.warning(
+                    logger.info(
                             " Attempting to patch disagreement between lattice system and lattice parameters.");
                     boolean fixed = false;
                     // Check if Rhombohedral lattice has been named Hexagonal
@@ -275,8 +354,7 @@ public class CIFFilter{
                         if (newLatticeParameters == latticeParameters) {
                             logger.warning(" Conversion Failed: The proposed lattice parameters for " + sg.pdbName
                                     + " do not satisfy the " + latticeSystem + ".");
-                            numFailed++;
-                            continue;
+                            return false;
                         } else {
                             a = newLatticeParameters[0];
                             b = newLatticeParameters[1];
@@ -290,12 +368,12 @@ public class CIFFilter{
                 } else {
                     logger.warning(" Conversion Failed: The proposed lattice parameters for " + sg.pdbName
                             + " do not satisfy the " + latticeSystem + ".");
-                    logger.info(" Use \"--fl\" flag to attempt to fix automatically.");
-                    numFailed++;
-                    continue;
+                    logger.info(" Use \"--fixLattice\" or \"--fl\" flag to attempt to fix automatically.");
+                    return false;
                 }
             }
             logger.info(" New Crystal: " + crystal);
+            activeMolecularAssembly.setCrystal(crystal);
 
             AtomSite atomSite = block.getAtomSite();
             Column<String[]> label = atomSite.getLabel();
@@ -304,13 +382,17 @@ public class CIFFilter{
             FloatColumn fractY = atomSite.getFractY();
             FloatColumn fractZ = atomSite.getFractZ();
 
+            FloatColumn cartX = atomSite.getCartnX();
+            FloatColumn cartY = atomSite.getCartnY();
+            FloatColumn cartZ = atomSite.getCartnZ();
+
+
             int nAtoms = label.getRowCount();
             if (nAtoms < 1) {
                 logger.warning(" CIF file did not contain coordinates.");
-                numFailed++;
-                continue;
+                return false;
             }
-            if(logger.isLoggable(Level.FINE)) {
+            if (logger.isLoggable(Level.FINE)) {
                 logger.fine(format("\n Number of Atoms in CIF: %d", nAtoms));
             }
             Atom[] atoms = new Atom[nAtoms];
@@ -332,31 +414,23 @@ public class CIFFilter{
                 } else {
                     symbols[i] = getAtomElement(label.getStringData(i));
                 }
-                double x = fractX.get(i);
-                double y = fractY.get(i);
-                double z = fractZ.get(i);
+                double x = (fractX.isDefined()) ? fractX.get(i) : cartX.get(i);
+                double y = (fractY.isDefined()) ? fractY.get(i) : cartY.get(i);
+                double z = (fractZ.isDefined()) ? fractZ.get(i) : cartZ.get(i);
                 double[] xyz = {x, y, z};
-                crystal.toCartesianCoordinates(xyz, xyz);
+                if (fractX.isDefined()) {
+                    crystal.toCartesianCoordinates(xyz, xyz);
+                }
                 atoms[i] = new Atom(i + 1, label.getStringData(i), altLoc, xyz, resName, i, chain, occupancy,
                         bfactor, segID);
                 atoms[i].setHetero(true);
             }
 
-            // Determine where to save results.
-            File saveDir = baseDir;
-            File cif = new File(modelFilename);
-            String cifName = cif.getAbsolutePath();
-            if (saveDir == null || !saveDir.exists() || !saveDir.isDirectory() || !saveDir.canWrite()) {
-                saveDir = new File(FilenameUtils.getFullPath(cifName));
-            }
-            String dirName = saveDir + File.separator;
-            String fileName = FilenameUtils.getName(cifName);
-
             // Open the XYZ file (with electrostatics turned off).
             System.setProperty("mpoleterm", "false");
             System.clearProperty("mpoleterm");
-            activeAssembly.setName(block.getBlockHeader());
-            Atom[] xyzAtoms = activeAssembly.getAtomArray();
+            activeMolecularAssembly.setName(block.getBlockHeader());
+            Atom[] xyzAtoms = activeMolecularAssembly.getAtomArray();
             ArrayList<ArrayList<Atom>> xyzatoms = new ArrayList<>();
             int nXYZAtoms = xyzAtoms.length;
 
@@ -367,9 +441,9 @@ public class CIFFilter{
                 }
             }
 
-            List<MSNode> entitiesXYZ = activeAssembly.getAllBondedEntities();
+            List<MSNode> entitiesXYZ = activeMolecularAssembly.getAllBondedEntities();
             int numEntitiesXYZ = entitiesXYZ.size();
-            if(logger.isLoggable(Level.FINE)) {
+            if (logger.isLoggable(Level.FINE)) {
                 logger.fine(format(" Number of entities in XYZ: %d", numEntitiesXYZ));
             }
             MolecularAssembly outputAssembly = new MolecularAssembly(block.getBlockHeader());
@@ -400,7 +474,7 @@ public class CIFFilter{
                     }
                 }
                 if (logger.isLoggable(Level.FINE)) {
-                    logger.fine(format(" Current Entity Number of Atoms: %d (%d + %dH)", numXYZMolAtoms, numXYZMolAtoms - numHydrogens, numHydrogens));
+                    logger.fine(format(" Current Entity Number of Atoms: %d (%d + %dH)", numXYZMolAtoms, numXYZMolAtoms - numMolHydrogens, numMolHydrogens));
                 }
 
                 // Set up XYZ file contents as CDK variable
@@ -418,6 +492,9 @@ public class CIFFilter{
                 List<Bond> bonds = mol.getBondList();
                 IBond.Order order = IBond.Order.SINGLE;
                 int xyzBonds = bonds.size();
+                if(xyzBonds <= 0){
+                    logger.warning(" XYZ structure has no bonds... Check input.");
+                }
                 for (Bond xyzBond : bonds) {
                     if (logger.isLoggable(Level.FINE)) {
                         logger.fine(format(" Bonded atom 1: %d, Bonded atom 2: %d", xyzBond.getAtom(0).getXyzIndex(), xyzBond.getAtom(1).getXyzIndex()));
@@ -436,7 +513,7 @@ public class CIFFilter{
                     try {
                         factory.configure(atom);
                     } catch (Exception ex) {
-                        logger.info("Failed to configure atoms from CIF.\n" + ex + "\n" + Arrays.toString(ex.getStackTrace()));
+                        logger.info(" Failed to configure atoms from CIF.\n" + ex + "\n" + Arrays.toString(ex.getStackTrace()));
                     }
                 }
 
@@ -475,14 +552,16 @@ public class CIFFilter{
                 } catch (Exception e) {
                     logger.info(e + "\n" + Arrays.toString(e.getStackTrace()));
                     logger.warning(" Failed to separate copies within the asymmetric unit.");
-                    numFailed++;
-                    continue;
+                    return false;
                 }
                 zPrime = zindices.size();
                 // Set up CIF file contents as CDK variable
                 AtomContainer[] cifCDKAtomsArr = new AtomContainer[zPrime];
                 AtomContainer cifCDKAtoms = new AtomContainer();
                 for (int j = 0; j < zPrime; j++) {
+                    if (zPrime > 1) {
+                        logger.info(format("\n Attempting entity %d of %d", j + 1, zPrime));
+                    }
                     ArrayList<Integer> currentList = zindices.get(j);
                     int cifMolAtoms = currentList.size();
                     if (logger.isLoggable(Level.FINE)) {
@@ -512,7 +591,7 @@ public class CIFFilter{
                             try {
                                 factory.configure(atom);
                             } catch (Exception ex) {
-                                logger.info("Failed to configure CIF atoms.\n" + ex + "\n" + Arrays.toString(ex.getStackTrace()));
+                                logger.info(" Failed to configure CIF atoms.\n" + ex + "\n" + Arrays.toString(ex.getStackTrace()));
                             }
                         }
 
@@ -525,7 +604,7 @@ public class CIFFilter{
 
                         int cifMolBonds = cifCDKAtomsArr[j].getBondCount();
                         if (logger.isLoggable(Level.FINE)) {
-                            logger.fine(format(" Number of CIF bonds: %d", cifMolBonds));
+                            logger.fine(format(" Number of CIF bonds: %d (%d in XYZ)", cifMolBonds, xyzBonds));
                         }
                         // Number of bonds matches.
                         // If cifMolBonds == 0 then ion or atom with implicit hydrogens (e.g. water, methane, etc.)
@@ -538,18 +617,22 @@ public class CIFFilter{
                                 // Used matched atoms to update the positions of the XYZ file atoms.
                                 for (int k = 0; k < p.length; k++) {
                                     if (logger.isLoggable(Level.FINEST)) {
-                                        logger.finest(format(" %d XYZ %s -> CIF %s", k, xyzCDKAtoms.getAtom(k).getSymbol(), cifCDKAtoms.getAtom(p[k]).getSymbol()));
+                                        logger.finest(format(" %d XYZ %s -> CIF %s", k, xyzCDKAtoms.getAtom(k).getSymbol(), cifCDKAtomsArr[j].getAtom(p[k]).getSymbol()));
                                     }
                                     Point3d point3d = cifCDKAtomsArr[j].getAtom(p[k]).getPoint3d();
                                     xyzatoms.get(i).get(k).setXYZ(new double[]{point3d.x, point3d.y, point3d.z});
                                 }
                             } else {
-                                logger.info(format(" Atoms from CIF (%d) and XYZ (%d) structures don't match.", p.length, nAtoms));
+                                if (logger.isLoggable(Level.FINE)) {
+                                    logger.fine(format(" Atoms from CIF (%d) and XYZ (%d) structures don't match.", p.length, nAtoms));
+                                }
                                 continue;
                             }
                         } else if ((xyzBonds - numMolHydrogens) == 0 || cifMolBonds % ((xyzBonds - numMolHydrogens)) == 0) {
                             // Hydrogens most likely missing from file. If zero then potentially water.
-                            logger.info(" CIF may contain implicit hydrogen -- attempting to patch.");
+                            if (logger.isLoggable(Level.FINE)) {
+                                logger.info(" CIF may contain implicit hydrogen -- attempting to patch.");
+                            }
                             // Match heavy atoms between CIF and XYZ
                             org.openscience.cdk.isomorphism.Pattern pattern = VentoFoggia.
                                     findSubstructure(cifCDKAtomsArr[j], AtomMatcher.forElement(), BondMatcher.forAny());
@@ -589,6 +672,7 @@ public class CIFFilter{
                                                         break;
                                                     }
                                                 }
+                                                assert atom2 != null;
                                                 List<Bond> bonds2 = atom2.getBonds();
                                                 Atom atom3 = (bonds2.size() > 1 && atom1 == bonds2.get(0).get1_2(atom2)) ? bonds2.get(1).get1_2(atom2) :
                                                         bonds2.get(0).get1_2(atom2);
@@ -634,6 +718,7 @@ public class CIFFilter{
                                                 if (angle0_2B == 0.0) {
                                                     // Hydrogen position depends on other hydrogens, use generic location
                                                     chiral = 0;
+                                                    assert atom2 != null;
                                                     bonds2 = atom2.getBonds();
                                                     atom2B = (atom1 == bonds2.get(0).get1_2(atom2)) ? bonds2.get(1).get1_2(atom2) :
                                                             bonds2.get(0).get1_2(atom2);
@@ -653,18 +738,20 @@ public class CIFFilter{
                                     }
                                 }
                             } else {
-                                logger.info(" Could not match heavy atoms between CIF and XYZ.");
-                                if (p != null) {
-                                    logger.info(
+                                if (logger.isLoggable(Level.FINE)) {
+                                    logger.fine(" Could not match heavy atoms between CIF and XYZ.");
+                                }
+                                if (p != null && logger.isLoggable(Level.FINE)) {
+                                    logger.fine(
                                             format(" Matched %d atoms out of %d in CIF (%d in XYZ)", p.length, nAtoms,
-                                                    nXYZAtoms - numHydrogens));
+                                                    nXYZAtoms - numMolHydrogens));
                                 }
                                 continue;
                             }
                         } else {
                             logger.info(
                                     format(" CIF (%d) and XYZ ([%d+%dH=]%d) have a different number of bonds.", cifMolBonds,
-                                            xyzBonds - numHydrogens, numHydrogens, xyzBonds));
+                                            xyzBonds - numMolHydrogens, numMolHydrogens, xyzBonds));
                             continue;
                         }
                         cifCDKAtoms.add(cifCDKAtomsArr[j]);
@@ -690,96 +777,190 @@ public class CIFFilter{
                         }
                         outputAssembly.addMSNode(molecule);
                     } else {
-                        if(logger.isLoggable(Level.FINE)) {
+                        if (logger.isLoggable(Level.FINE)) {
                             logger.fine(format(" Number of atoms in CIF (%d) molecule do not match XYZ (%d + %dH = %d).",
-                                    cifMolAtoms, nXYZAtoms - numHydrogens, numHydrogens, nXYZAtoms));
+                                    cifMolAtoms, nXYZAtoms - numMolHydrogens, numMolHydrogens, nXYZAtoms));
                         }
                     }
                 }
             }
             // If no atoms, then conversion has failed... use active assembly
-            if(logger.isLoggable(Level.FINE)) {
-                logger.fine(format(" Output Assembly Size: %d", outputAssembly.getAtomList().size()));
+            if (logger.isLoggable(Level.FINE)) {
+                logger.fine(format("\n Output Assembly Atoms: %d", outputAssembly.getAtomList().size()));
             }
+            outputAssembly.setPotential(activeMolecularAssembly.getPotentialEnergy());
+            outputAssembly.setCrystal(crystal);
+            outputAssembly.setForceField(activeMolecularAssembly.getForceField());
+            outputAssembly.setFile(activeMolecularAssembly.getFile());
+            outputAssembly.setName(activeMolecularAssembly.getName());
+            setMolecularSystem(outputAssembly);
 
-            if (outputAssembly.getAtomList().size() < 1) {
-                outputAssembly = activeAssembly;
-            } else {
-                if(logger.isLoggable(Level.FINEST)) {
-                    for (Atom atom : outputAssembly.getAtomList()) {
-                        logger.finest(atom.toString());
-                    }
+            if (outputAssembly.getAtomList().size() < 1 || !writeXYZFile()) {
+                logger.info(" No atoms were written to XYZ file. Conversion failed.");
+            }
+            // Finsished with this block. Clean up/reset variables for next block.
+            outputAssembly.destroy();
+            sgNum = -1;
+            sgName = null;
+        }
+        return true;
+    }
+
+    /**
+     * Write an XYZ file.
+     * @return Whether file was written successfully.
+     */
+    private boolean writeXYZFile() {
+        String dir = getFullPath(files.get(0).getAbsolutePath()) + File.separator;
+        String fileName = removeExtension(getName(files.get(0).getAbsolutePath()));
+        String spacegroup = activeMolecularAssembly.getCrystal().getUnitCell().spaceGroup.shortName;
+        List<MSNode> entities = activeMolecularAssembly.getAllBondedEntities();
+
+        File saveFile;
+        if(cifFile.getBlocks().size() > 1){
+            if(entities.size() > 1){
+                fileName += "_z" + entities.size();
+            }
+            fileName += "_" + spacegroup.replaceAll("\\/","");
+            saveFile = new File(dir + fileName + ".arc");
+        } else {
+            // If only structure then create XYZ.
+            saveFile = XYZFilter.version(new File(dir + fileName + ".xyz"));
+        }
+        XYZFilter xyzFilter = new XYZFilter(saveFile, activeMolecularAssembly, null, null);
+        xyzFilter.writeFile(saveFile, true);
+        logger.info("\n Saved XYZ file:        " + saveFile.getAbsolutePath());
+        // Write out a property file.
+        File propertyFile = new File(dir + fileName + ".properties");
+        if (!propertyFile.exists()) {
+            try {
+                FileWriter fw = new FileWriter(propertyFile, false);
+                BufferedWriter bw = new BufferedWriter(fw);
+                ForceField forceField = activeMolecularAssembly.getForceField();
+                String parameters = forceField.getString("parameters", "none");
+                if (parameters != null && !parameters.equalsIgnoreCase("none")) {
+                    bw.write(format("parameters %s\n", parameters));
                 }
-            }
-
-            File saveFile;
-            // Choose a location to save the file.
-            fileName = FilenameUtils.removeExtension(fileName);
-            if (cifFile.getBlocks().size() > 1) {
-                if (zPrime > 1) {
-                    fileName += "_z" + zPrime;
+                String forcefieldProperty = forceField.getString("forcefield", "none");
+                if (forcefieldProperty != null && !forcefieldProperty.equalsIgnoreCase("none")) {
+                    bw.write(format("forcefield %s\n", forcefieldProperty));
                 }
-                // Concatenated CIF files may contain more than one space group.
-                fileName = fileName + "_" + crystal.spaceGroup.shortName.replaceAll("\\/", "") + ".arc";
-                saveFile = new File(dirName + fileName);
-            } else {
-                // If only structure, create new file on each run.
-                fileName = fileName + ".xyz";
-                saveFile = XYZFilter.version(new File(dirName + fileName));
-            }
-
-            // Write out the result.
-            // Update the active molecular assembly to use the CIF space group and unit cell.
-            outputAssembly.setPotential(activeAssembly.getPotentialEnergy());
-            outputAssembly.getPotentialEnergy().setCrystal(crystal);
-            XYZFilter xyzFilter = new XYZFilter(saveFile, outputAssembly, null, null);
-            xyzFilter.writeFile(saveFile, true);
-            logger.info("\n Saved XYZ file:        " + saveFile.getAbsolutePath());
-
-            // Write out a property file.
-            fileName = FilenameUtils.removeExtension(fileName) + ".properties";
-            File propertyFile = new File(dirName + fileName);
-            if (!propertyFile.exists()) {
-                try {
-                    FileWriter fw = new FileWriter(propertyFile, false);
-                    BufferedWriter bw = new BufferedWriter(fw);
-                    ForceField forceField = activeAssembly.getForceField();
-                    String parameters = forceField.getString("parameters", "none");
-                    if (parameters != null && !parameters.equalsIgnoreCase("none")) {
-                        bw.write(format("parameters %s\n", parameters));
-                    }
-                    String forcefieldProperty = forceField.getString("forcefield", "none");
-                    if (forcefieldProperty != null && !forcefieldProperty.equalsIgnoreCase("none")) {
-                        bw.write(format("forcefield %s\n", forcefieldProperty));
-                    }
-                    String patch = forceField.getString("patch", "none");
-                    if (patch != null && !patch.equalsIgnoreCase("none")) {
-                        bw.write(format("patch %s\n", patch));
-                    }
-                    bw.write(format("spacegroup %s\n", crystal.spaceGroup.shortName));
-                    if (zPrime > 1) {
-                        bw.write("intermolecular-softcore true");
-                    }
-
-                    bw.close();
-                } catch (Exception ex) {
-                    logger.info("Failed to write files.\n" + ex + "\n" + Arrays.toString(ex.getStackTrace()));
+                String patch = forceField.getString("patch", "none");
+                if (patch != null && !patch.equalsIgnoreCase("none")) {
+                    bw.write(format("patch %s\n", patch));
+                }
+                bw.write(format("spacegroup %s\n", spacegroup));
+                if (entities.size() > 1) {
+                    bw.write("intermolecular-softcore true\n");
                 }
                 logger.info("\n Saved properties file: " + propertyFile.getAbsolutePath() + "\n");
-            } else {
-                logger.info("\n Property file already exists:  " + propertyFile.getAbsolutePath() + "\n");
+                bw.close();
+            } catch (Exception ex) {
+                logger.info("Failed to write files.\n" + ex);
+                ex.printStackTrace();
             }
-            if (!createdFiles.contains(saveFile.getName())) {
-                createdFiles.add(saveFile.getName());
-            }
-            //Reset space group for next block
-            sgNum = -1;
-            sgName = "";
-            // All done with this molecule. Therefore, clean up.
-            outputAssembly.destroy();
+        } else {
+            logger.info("\n Property file already exists:  " + propertyFile.getAbsolutePath() + "\n");
         }
-        if (numFailed > 0) {
-            logger.info(format(" %d CIF file(s) were not successfully converted.", numFailed));
+        if (!createdFiles.contains(saveFile.getAbsolutePath())) {
+            createdFiles.add(saveFile.getAbsolutePath());
+        }
+        return true;
+    }
+
+    /**
+     * Write CIF files for multiple File objects.
+     * @return whether conversion was successful.
+     */
+    public boolean writeFiles(){
+        for(File file : files) {
+            File saveFile = new File(removeExtension(file.getAbsolutePath()) + ".cif");
+            if(!writeFile(saveFile, true, null)){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Save a CIF file for the given molecular assembly.
+     * @return whether conversion was successful.
+     */
+    @Override
+    public boolean writeFile(File saveFile, boolean append){
+        return writeFile(saveFile, append, null);
+    }
+
+    /**
+     * Save a CIF file for the given molecular assembly.
+     * @return whether conversion was successful.
+     */
+    @Override
+    public boolean writeFile(File saveFile, boolean append, String[] extraLines){
+        try {
+            if(!append) {
+                SystemFilter.setVersioning(Versioning.PREFIX);
+                saveFile = version(saveFile);
+            }
+            BufferedWriter bw = new BufferedWriter(new FileWriter(saveFile, append));
+            if (extraLines != null && extraLines.length > 0) {
+                for (String line : extraLines) {
+                    line = line.replaceAll("\n", " ");
+                    bw.write("### " + line + "\n");
+                }
+            }
+            bw.write("\ndata_" + activeMolecularAssembly.getName());
+            Crystal xtal  = activeMolecularAssembly.getCrystal().getUnitCell();
+            bw.write("\n_symmetry_cell_setting\t" + xtal.spaceGroup.latticeSystem.name().toLowerCase().replaceAll("_lattice",""));
+            bw.write("\n_symmetry_space_group_name_H-M\t" + "'" +  xtal.spaceGroup.shortName + "'");
+            bw.write("\n_symmetry_Int_Tables_number\t" + xtal.spaceGroup.number);
+            bw.write("\nloop_\n_symmetry_equiv_pos_site_id\n_symmetry_equiv_pos_as_xyz");
+            int numSymOps = xtal.spaceGroup.getNumberOfSymOps();
+            for(int i = 0; i<numSymOps; i++) {
+                bw.write(format("\n%d " + xtal.spaceGroup.getSymOp(i).toXYZString().toLowerCase().replaceAll(" +", ""), i));
+            }
+            bw.write(format("\n_cell_length_a\t%4.4f", xtal.a));
+            bw.write(format("\n_cell_length_b\t%4.4f", xtal.b));
+            bw.write(format("\n_cell_length_c\t%4.4f", xtal.c));
+            bw.write(format("\n_cell_angle_alpha\t%4.4f", xtal.alpha));
+            bw.write(format("\n_cell_angle_beta\t%4.4f", xtal.beta));
+            bw.write(format("\n_cell_angle_gamma\t%4.4f", xtal.gamma));
+            bw.write(format("\n_cell_volume\t%4.4f", xtal.volume));
+            int numEntities = (zPrime < 1) ? activeMolecularAssembly.getMolecules().size() : zPrime;
+            if(numEntities > 1){
+                if(zPrime < 1) {
+                    logger.info(format(" Molecules detected, guessing a Z' of %d. Set manually using --zp.", numEntities));
+                }
+                bw.write(format("\n_cell_formula_units_Z\t%3d", numEntities));
+            }
+            bw.write("\nloop_");
+            bw.write("\n_atom_site_label");
+            bw.write("\n_atom_site_type_symbol");
+            bw.write("\n_atom_site_fract_x");
+            bw.write("\n_atom_site_fract_y");
+            bw.write("\n_atom_site_fract_z");
+            Atom[] atoms = activeMolecularAssembly.getAtomArray();
+            int count = 1;
+            for(Atom atom: atoms){
+                String name = atom.getName();
+                String symbol = getSymbol(atom.getAtomicNumber());
+                if(Objects.equals(name, symbol)){
+                    name+=count++;
+                }
+                double[] xyzC = {atom.getX(), atom.getY(), atom.getZ()};
+                double[] xyzF = new double[3];
+                xtal.toFractionalCoordinates(xyzC, xyzF);
+                bw.write(format("\n%-3s %2s %8.6f %8.6f %8.6f", name, symbol, xyzF[0], xyzF[1], xyzF[2]));
+            }
+            bw.write("\n#END\n");
+            bw.close();
+        }catch(Exception ex){
+            ex.printStackTrace();
+            logger.info(format("\n Failed to write out CIF file: %s \n" + ex, saveFile.getAbsolutePath()));
+            return false;
+        }
+        if (!createdFiles.contains(saveFile.getAbsolutePath())) {
+            createdFiles.add(saveFile.getAbsolutePath());
         }
         return true;
     }
@@ -873,7 +1054,7 @@ public class CIFFilter{
                     atom1.setBond(bond);
                     atom2.setBond(bond);
                     logger.finest(format(
-                            "Bonded atom %d (%s) with atom %d (%s): bond length (%4.4f Å) < tolerance (%4.4f Å)",
+                            " Bonded atom %d (%s) with atom %d (%s): bond length (%4.4f Å) < tolerance (%4.4f Å)",
                             i + 1, atomIelement, j + 1, atomJelement, length, bondLength));
                 }
             }
@@ -916,6 +1097,61 @@ public class CIFFilter{
             Atom nextAtom = b.get1_2(seed);
             if (!atoms.contains(nextAtom)) {
                 collectAtoms(nextAtom, atoms);
+            }
+        }
+    }
+    /**
+     * Reads the next snap-shot of an archive into the activeMolecularAssembly. After calling this
+     * function, a BufferedReader will remain open until the <code>close</code> method is called.
+     */
+    @Override
+    public boolean readNext() {
+        return readNext(false, true);
+    }
+
+    /**
+     * Reads the next snap-shot of an archive into the activeMolecularAssembly. After calling this
+     * function, a BufferedReader will remain open until the <code>close</code> method is called.
+     */
+    @Override
+    public boolean readNext(boolean resetPosition) {
+        return readNext(resetPosition, true);
+    }
+
+    /**
+     * Reads the next snap-shot of an archive into the activeMolecularAssembly. After calling this
+     * function, a BufferedReader will remain open until the <code>close</code> method is called.
+     */
+    @Override
+    public boolean readNext(boolean resetPosition, boolean print) {
+        List<CifCoreBlock> blocks = cifFile.getBlocks();
+        CifCoreBlock currentBlock;
+        if(resetPosition){
+            currentBlock = blocks.get(0);
+            snapShot = 0;
+        }else if(++snapShot < blocks.size()){
+            currentBlock = blocks.get(snapShot);
+        }else{
+            if(print){
+                logger.info(" Reached end of available blocks in CIF file.");
+            }
+            return false;
+        }
+        if(print) {
+            logger.info(" Current Block: " + currentBlock.getBlockHeader());
+        }
+        return true;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public void closeReader() {
+        if (bufferedReader != null) {
+            try {
+                bufferedReader.close();
+            } catch (IOException ex) {
+                logger.warning(format(" Exception in closing CIF filter: %s", ex));
+                ex.printStackTrace();
             }
         }
     }
