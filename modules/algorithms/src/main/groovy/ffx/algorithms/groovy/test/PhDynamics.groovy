@@ -75,6 +75,18 @@ class PhDynamics extends AlgorithmsScript {
       description = 'Constant pH value for molecular dynamics')
   double pH = 7.4
 
+  @Option(names = ['--titrationSteps'], paramLabel = '10',
+          description = 'Number of steps done titrating protons on CPU in one cycle')
+  int titrSteps  = 10
+
+  @Option(names = ['--coordinateSteps'], paramLabel = '100',
+          description = 'Number of steps done propagating coordinates only on GPU in one cycle')
+  int coordSteps  = 10
+
+  @Option(names = ['--cycles', '--OMMcycles'], paramLabel = '5',
+          description = 'Number of times to cycle between titrating protons on CPU and propagating coordinates only on GPU')
+  int cycles  = 5
+
   /**
    * One or more filenames.
    */
@@ -133,8 +145,13 @@ class PhDynamics extends AlgorithmsScript {
     // Set the filename.
     String filename = activeAssembly.getFile().getAbsolutePath()
 
+    // Restart File
+    File esv = new File(FilenameUtils.removeExtension(filename) + ".esv")
+    if (!esv.exists()) {
+      esv = null
+    }
     // Initialize and attach extended system first.
-    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly)
+    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, esv)
     esvSystem.setConstantPh(pH)
     potential.attachExtendedSystem(esvSystem)
 
@@ -175,19 +192,21 @@ class PhDynamics extends AlgorithmsScript {
               MolecularDynamics.DynamicsEngine.FFX)
       molecularDynamics.attachExtendedSystem(esvSystem, dynamicsOptions.report)
 
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < cycles; i++) {
         // Try running on the CPU
         molecularDynamics.setCoordinates(x)
-        molecularDynamics.dynamic(5, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
+        molecularDynamics.dynamic(titrSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
                 dynamicsOptions.temperature, true, dyn)
         x = molecularDynamics.getCoordinates()
 
         // Try running in OpenMM
-        molecularDynamicsOpenMM.setCoordinates(x)
-        molecularDynamicsOpenMM.dynamic(5, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
+        potential.energy(x)
+	molecularDynamicsOpenMM.setCoordinates(x)
+        molecularDynamicsOpenMM.dynamic(coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
                 dynamicsOptions.temperature, true, dyn)
         x = molecularDynamicsOpenMM.getCoordinates()
       }
+      esvSystem.writeLambdaHistogram()
     }
 
     return this

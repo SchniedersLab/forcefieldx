@@ -603,7 +603,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     logger.info(
         format("  Attached extended system (%s) to molecular dynamics.", esvSystem.toString()));
     logger.info(format("  Extended System Theta Friction: %f", esvSystem.getThetaFriction()));
-    logger.info(format("  Extended System Theta Mass: %f", esvSystem.getThetaMassArray()[0]));
+    logger.info(format("  Extended System Theta Mass: %f", esvSystem.getThetaMass()));
     logger.info(format("  Extended System Lambda Print Frequency: %d (fsec)", printEsvFrequency));
     reInit();
   }
@@ -1255,7 +1255,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
     if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
       logger.log(basicLogging, " Wrote dynamics restart file to " + dynName);
     } else {
-      logger.log(basicLogging, " Writing dynamics restart file to " + dynName + " failed");
+      logger.log(basicLogging, " Writing ESV dynamics restart file to " + dynName + " failed");
+    }
+    if(esvSystem != null){
+      esvSystem.writeRestart();
     }
   }
 
@@ -1413,7 +1416,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
   private void initializeEnergies() {
     // Compute the current potential energy.
     try {
-      currentPotentialEnergy = potential.energyAndGradient(x, gradient);
+      if(esvSystem != null && potential instanceof ForceFieldEnergyOpenMM){
+        currentPotentialEnergy = ((ForceFieldEnergyOpenMM) potential).energyAndGradientFFX(x, gradient);
+      }
+      else{
+        currentPotentialEnergy = potential.energyAndGradient(x, gradient);
+      }
     } catch (EnergyException ex) {
       writeStoredSnapshots();
       throw ex;
@@ -1594,7 +1602,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
       // Compute the potential energy and gradients.
       double priorPE = currentPotentialEnergy;
       try {
-        currentPotentialEnergy = potential.energyAndGradient(x, gradient);
+        if(esvSystem != null && potential instanceof ForceFieldEnergyOpenMM){
+          currentPotentialEnergy = ((ForceFieldEnergyOpenMM) potential).energyAndGradientFFX(x, gradient);
+        }
+        else{
+          currentPotentialEnergy = potential.energyAndGradient(x, gradient);
+        }
+
       } catch (EnergyException ex) {
         writeStoredSnapshots();
         throw ex;
