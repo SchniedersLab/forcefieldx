@@ -168,6 +168,7 @@ class ManyBody extends AlgorithmsScript {
     PDBFilter protFilter = new PDBFilter(structureFile, activeAssembly, forceField,
         forceField.getProperties(), resNumberList)
     if (manyBody.group.titrationPH != 0) {
+      logger.info(format("\n Titration pH    %16.2f", manyBody.group.titrationPH))
       logger.info("\n Adding rotamer optimization with titration protons to : " + filename + "\n")
       protFilter.setRotamerTitration(true)
     }
