@@ -1071,7 +1071,7 @@ public class ExtendedSystem {
         double[] dEdTheta = new double[dEdL.length];
         for (int i = 0; i < nESVs; i++) {
             dEdTheta[i] = dEdL[i] * sin(2 * thetaPosition[i]);
-            logger.info("dEdL["+i+"]: "+dEdL[i]);
+            //logger.info("dEdL["+i+"]: "+dEdL[i]);
         }
         return dEdTheta;
     }
