@@ -12,14 +12,14 @@ import static java.lang.String.format
 class ManyBodyPHScan extends PotentialScript {
 
     /**
-     * --spH --startpH Lower end of the pH range to be evaluated (exclusive).
+     * --spH --startpH Lower end of the pH range to be evaluated.
      */
     @CommandLine.Option(names = ['--spH', "--startpH"], paramLabel = "0.0", defaultValue = "0.0",
             description = 'Lower end of the pH range to be evaluated.')
     double start = 0.0
 
     /**
-     * --epH --endpH Upper end of the pH range to be evaluated (inclusive).
+     * --epH --endpH Upper end of the pH range to be evaluated.
      */
     @CommandLine.Option(names = ['--epH', "--endpH"], paramLabel = "14.0", defaultValue = "14.0",
             description = 'Upper end of the pH range to be evaluated.')
@@ -76,17 +76,14 @@ class ManyBodyPHScan extends PotentialScript {
         // Remove ManyBodyPHScan command.
         unmatched.remove(0)
 
-        double[] pHValues = new double[nSteps]
-        double stepSize = (end - start) / nSteps
-        for(int i=1; i < nSteps+1; i++){
-            pHValues[i-1] = start + (stepSize*i)
-        }
+        double stepSize = (end - start) / (nSteps - 1)
 
         int pHIndex = unmatched.indexOf("0.0")
         for (int i = 0; i < nSteps; i++) {
+            double pHValue = start + (stepSize*i)
             List<String> commandArgs = new ArrayList<>()
             for (String arg : unmatched) {
-                unmatched.set(pHIndex, pHValues[i].toString())
+                unmatched.set(pHIndex, pHValue.toString())
                 commandArgs.add(arg)
             }
 
