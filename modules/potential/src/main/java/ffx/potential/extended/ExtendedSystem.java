@@ -235,9 +235,15 @@ public class ExtendedSystem {
 
     /** Filter to parse the dynamics restart file. */
     ESVFilter esvFilter = null;
-
+    /**
+     * 3D array to store the titration and tautomer population states for each ESV
+     */
     private int[][][] esvHistogram;
 
+    private double ASHrefEnergy;
+    private double ASHlambdaIntercept;
+    private double GLHrefEnergy;
+    private double GLHlambdaIntercept;
     /**
      * Construct extended system with the provided configuration.
      *
@@ -274,6 +280,10 @@ public class ExtendedSystem {
 //        boolean nonlinearMultipoles = properties.getBoolean("esv.nonlinearMultipoles", false); // sigmoid lambda Mpole switch
 //        boolean forceRoomTemp = properties.getBoolean("esv.forceRoomTemp", false);
 //        boolean propagation = properties.getBoolean("esv.propagation", true);
+        ASHrefEnergy = properties.getDouble("ASH.ref.energy", TitrationUtils.Titration.ASHtoASP.refEnergy);
+        ASHlambdaIntercept = properties.getDouble("ASH.ref.energy", TitrationUtils.Titration.ASHtoASP.lambdaIntercept);
+        GLHrefEnergy = properties.getDouble("ASH.ref.energy", TitrationUtils.Titration.GLHtoGLU.refEnergy);
+        GLHlambdaIntercept = properties.getDouble("ASH.ref.energy", TitrationUtils.Titration.GLHtoGLU.lambdaIntercept);
 
         titratingResidueList = new ArrayList<>();
         tautomerizingResidueList = new ArrayList<>();
@@ -730,8 +740,8 @@ public class ExtendedSystem {
                         * ((pKa1 - constantSystemPh) - (pKa2 - constantSystemPh));
 
                 // Model Bias & Derivs
-                double refEnergy = TitrationUtils.Titration.ASHtoASP.refEnergy;
-                double lambdaIntercept = TitrationUtils.Titration.ASHtoASP.lambdaIntercept;
+                double refEnergy = ASHrefEnergy;
+                double lambdaIntercept = ASHlambdaIntercept;
                 modelBias = refEnergy * ((1.0 - titrationLambda) - lambdaIntercept) * ((1.0 - titrationLambda) - lambdaIntercept);
                 dMod_dTitr = -2.0 * refEnergy * ((1.0 - titrationLambda) - lambdaIntercept);
                 dMod_dTaut = 0.0;
@@ -757,8 +767,8 @@ public class ExtendedSystem {
                         * ((pKa1 - constantSystemPh) - (pKa2 - constantSystemPh));
 
                 // Model Bias & Derivs
-                refEnergy = TitrationUtils.Titration.GLHtoGLU.refEnergy;
-                lambdaIntercept = TitrationUtils.Titration.GLHtoGLU.lambdaIntercept;
+                refEnergy = GLHrefEnergy;
+                lambdaIntercept = GLHlambdaIntercept;
                 modelBias = refEnergy * ((1 - titrationLambda) - lambdaIntercept) * ((1 - titrationLambda) - lambdaIntercept);
                 dMod_dTitr = -2.0 * refEnergy * ((1 - titrationLambda) - lambdaIntercept);
                 dMod_dTaut = 0.0;
