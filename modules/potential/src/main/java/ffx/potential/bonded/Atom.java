@@ -441,7 +441,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   private double[] globalDipole = null;
   private double[][] globalQuadrupole = null;
   private boolean applyState = false;
-  
+
   private int moleculeNumber = 0;
   private ViewModel viewModel = ViewModel.INVISIBLE;
   private ViewModel polygonType = ViewModel.FILL;
@@ -457,7 +457,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
   private double scale = 1.0;
   /** "stale" is True if this Atom's J3D transforms need to be updated before making it visible */
   private boolean stale = false;
-
 
   /**
    * Default constructor.
