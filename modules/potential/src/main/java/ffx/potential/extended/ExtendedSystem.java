@@ -281,9 +281,9 @@ public class ExtendedSystem {
 //        boolean forceRoomTemp = properties.getBoolean("esv.forceRoomTemp", false);
 //        boolean propagation = properties.getBoolean("esv.propagation", true);
         ASHrefEnergy = properties.getDouble("ASH.ref.energy", TitrationUtils.Titration.ASHtoASP.refEnergy);
-        ASHlambdaIntercept = properties.getDouble("ASH.ref.energy", TitrationUtils.Titration.ASHtoASP.lambdaIntercept);
-        GLHrefEnergy = properties.getDouble("ASH.ref.energy", TitrationUtils.Titration.GLHtoGLU.refEnergy);
-        GLHlambdaIntercept = properties.getDouble("ASH.ref.energy", TitrationUtils.Titration.GLHtoGLU.lambdaIntercept);
+        ASHlambdaIntercept = properties.getDouble("ASH.lambda.intercept", TitrationUtils.Titration.ASHtoASP.lambdaIntercept);
+        GLHrefEnergy = properties.getDouble("GLH.ref.energy", TitrationUtils.Titration.GLHtoGLU.refEnergy);
+        GLHlambdaIntercept = properties.getDouble("GLH.lambda.intercept", TitrationUtils.Titration.GLHtoGLU.lambdaIntercept);
 
         titratingResidueList = new ArrayList<>();
         tautomerizingResidueList = new ArrayList<>();
