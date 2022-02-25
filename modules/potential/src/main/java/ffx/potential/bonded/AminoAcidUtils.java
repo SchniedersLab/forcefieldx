@@ -83,13 +83,10 @@ public class AminoAcidUtils {
   public static final List<AminoAcid1> aminoAcid1List = Arrays.asList(AminoAcid1.values());
   /** Constant <code>aminoAcidList</code> */
   public static final List<AminoAcid3> aminoAcidList = Arrays.asList(AminoAcid3.values());
-
   /** Constant <code>AminoAcidBackboneAtoms</code> */
   public enum AminoAcidBackboneAtoms {N, H, CA, HA, C, O}
-
   /** Constant <code>GlycineBackboneAtoms</code> */
   public enum GlycineBackboneAtoms {N, H, CA, HA2, HA3, C, O}
-
   /** Constant <code>ProlineBackboneAtoms</code> */
   public enum ProlineBackboneAtoms {N, CA, HA, C, O}
 
@@ -3118,7 +3115,7 @@ public class AminoAcidUtils {
       this.heavyAtoms = heavyAtoms;
       useWithMultiResidue = false;
       isConstantPhTitratable = false;
-      isConstantPhTautomer =  false;
+      isConstantPhTautomer = false;
       nonStandardProtonation = false;
     }
 
@@ -3126,12 +3123,13 @@ public class AminoAcidUtils {
       this.heavyAtoms = heavyAtoms;
       this.useWithMultiResidue = useWithMultiResidue;
       isConstantPhTitratable = false;
-      isConstantPhTautomer =  false;
+      isConstantPhTautomer = false;
       nonStandardProtonation = false;
     }
 
-    AminoAcid3(int heavyAtoms, boolean useWithMultiResidue, boolean isConstantPhTitratable, boolean isConstantPhTautomer,
-               boolean nonStandardProtonation) {
+    AminoAcid3(int heavyAtoms, boolean useWithMultiResidue, boolean isConstantPhTitratable,
+        boolean isConstantPhTautomer,
+        boolean nonStandardProtonation) {
       this.heavyAtoms = heavyAtoms;
       this.useWithMultiResidue = useWithMultiResidue;
       this.isConstantPhTitratable = isConstantPhTitratable;
@@ -3334,11 +3332,8 @@ public class AminoAcidUtils {
   /**
    * Constant <code>AA_CB</code>
    * <p>
-   * GLY ALA VAL LEU ILE SER THR CYS
-   * CYX CYD PRO PHE TYR TYD TRP HIS
-   * HID HIE ASP ASH ASD ASN GLU GLH
-   * GLD GLN MET LYS LYD ARG ORN AIB
-   * PCA H2N FOR ACE COH NH2 NME UNK
+   * GLY ALA VAL LEU ILE SER THR CYS CYX CYD PRO PHE TYR TYD TRP HIS HID HIE ASP ASH ASD ASN GLU GLH
+   * GLD GLN MET LYS LYD ARG ORN AIB PCA H2N FOR ACE COH NH2 NME UNK
    */
   public static final int[] AA_CB = {
       0, 13, 21, 33, 47, 61, 71, 83,

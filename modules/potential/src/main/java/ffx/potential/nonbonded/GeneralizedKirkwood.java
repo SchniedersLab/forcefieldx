@@ -152,19 +152,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * Default Sneck scaling factor from Aguilar/Onufriev 2010
    */
-  private static final double DEFAULT_SNECK = 0.8187;
+  private static final double DEFAULT_SNECK = 0.6784;
   /**
    * Default value of beta0 for tanh scaling
    */
-  private static final double DEFAULT_BETA0 = 0.3900;
+  public static final double DEFAULT_BETA0 = 0.5316;
   /**
    * Default value of beta1 for tanh scaling
    */
-  private static final double DEFAULT_BETA1 = 0.0290;
+  public static final double DEFAULT_BETA1 = 0.0614;
   /**
    * Default value of beta2 for tanh scaling
    */
-  private static final double DEFAULT_BETA2 = 0.0009;
+  public static final double DEFAULT_BETA2 = 0.0030;
   /**
    * Default surface tension for apolar models without an explicit dispersion term. This is lower
    * than CAVDISP, since the favorable dispersion term is implicitly included.
