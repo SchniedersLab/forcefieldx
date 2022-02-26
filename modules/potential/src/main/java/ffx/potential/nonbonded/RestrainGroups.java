@@ -113,10 +113,11 @@ public class RestrainGroups {
       logger.severe(" No restrain-groups property found.");
     }
 
+    logger.fine("\n Initializing Groups");
+
     HashMap<Integer, ArrayList<Integer>> groupMap = new HashMap<>();
     // Loop over groups.
     for (String g : groups) {
-      logger.fine(format(" Parsing group:\n %s.", g));
       // Split group lines on 1 or mores spaces.
       String[] gs = g.trim().split(" +");
       // First entry is the group number.
@@ -124,23 +125,24 @@ public class RestrainGroups {
       ArrayList<Integer> groupAtomIDs = new ArrayList<>();
       // Loop over group ranges.
       for (int i = 1; i < gs.length; i++) {
-        String[] range = gs[i].split(",");
-        // Only one entry (not a range).
-        if (range.length == 1) {
-          groupAtomIDs.add(parseInt(range[0]) - 1);
-        } else if (range.length == 2) {
-          int start = -parseInt(range[0]) - 1;
-          int end = parseInt(range[1]) - 1;
-          if (start < 0 || start >= nAtoms || end < start || end >= nAtoms) {
+        int start = parseInt(gs[i]);
+        if (start < 0) {
+          // This is a range.
+          start = -start - 1;
+          i++;
+          int end = parseInt(gs[i]) - 1;
+          if (start >= nAtoms || end < start || end >= nAtoms) {
             logger.severe(format(" Property group could not be parsed:\n %s.", g));
             continue;
           }
           for (int j = start; j <= end; j++) {
             groupAtomIDs.add(j);
           }
+          logger.fine(format(" Group %d added atoms %d to %d.", groupNumber + 1, start + 1, end + 1));
         } else {
-          logger.severe(format(" Property group could not be parsed:\n %s.", g));
-          continue;
+          int atomID = start - 1;
+          groupAtomIDs.add(atomID);
+          logger.fine(format(" Group %d added atom %d.", groupNumber + 1, atomID + 1));
         }
         groupMap.put(groupNumber, groupAtomIDs);
       }
@@ -164,7 +166,7 @@ public class RestrainGroups {
       for (int member : members) {
         groupMembers[groupID][mem++] = member;
       }
-      logger.fine(format(" Group %d members %s.", groupID, Arrays.toString(groupMembers[groupID])));
+      logger.finer(format(" Group %d members %s.", groupID, Arrays.toString(groupMembers[groupID])));
       int k = groupMembers[groupID][0];
       Atom atom = atoms[k];
       groupMass[groupID] = atom.getMass();
@@ -181,6 +183,7 @@ public class RestrainGroups {
     }
 
     // Parse restrain-groups properties.
+    logger.fine("\n Initializing Restrain-Groups");
     nRestraints = restrainGroups.length;
     group1 = new int[nRestraints];
     group2 = new int[nRestraints];
@@ -189,7 +192,6 @@ public class RestrainGroups {
     distance2 = new double[nRestraints];
     int iRestraint = 0;
     for (String restraint : restrainGroups) {
-      logger.fine(format(" Parsing restrain-groups:\n %s.", restraint));
       String[] values = restraint.trim().split(" +");
       if (values.length < 3) {
         logger.severe(format(" Property restrain-groups could not be parsed:\n %s.", restraint));
@@ -216,7 +218,12 @@ public class RestrainGroups {
           sameMolecule[iRestraint] = true;
         }
       }
+      logger.fine(format(" Restrain-Groups %2d %2d %8.3f %8.3f %8.3f",
+          i1 + 1, i2 + 1, forceConstants[iRestraint], distance1[iRestraint], distance2[iRestraint]));
+
+      iRestraint++;
     }
+    logger.fine("\n");
   }
 
   /**
@@ -355,6 +362,7 @@ public class RestrainGroups {
       double dt2 = dt * dt;
       double e = force * dt2;
       energy = energy + e;
+      // logger.fine(format(" Restrain-Groups %d %d %8.3f - %8.3f %8.3f %16.8f", i1 + 1, i2+1, gf1, gf2, r, e));
       if (gradient) {
         // Compute chain rule terms needed for derivatives.
         if (r == 0.0) {
