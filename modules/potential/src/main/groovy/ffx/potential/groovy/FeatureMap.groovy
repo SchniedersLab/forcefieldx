@@ -55,7 +55,7 @@ class FeatureMap extends PotentialScript {
    */
   @Parameters(arity = "1", paramLabel = "file",
       description = 'The atomic coordinate file in PDB or XYZ format.')
-  private String filename = null
+  private List<String> filenames = null
 
   private List<Residue> residues
 
@@ -87,7 +87,7 @@ class FeatureMap extends PotentialScript {
     System.setProperty("cavmodel", "CAV")
     System.setProperty("surface-tension", "1.0")
     // Load the MolecularAssembly.
-    activeAssembly = getActiveAssembly(filename)
+    activeAssembly = getActiveAssembly(filenames[0])
     if (activeAssembly == null) {
       logger.info(helpString())
       return null
@@ -105,29 +105,65 @@ class FeatureMap extends PotentialScript {
     GetProteinFeatures getProteinFeatures = new GetProteinFeatures()
 
     // Use the current base directory, or update if necessary based on the given filename.
-    String dirString = getBaseDirString(filename)
+    String dirString = getBaseDirString(filenames[0])
 
-    String baseName = getBaseName(filename)
-    String featureFileName = dirString + baseName + ".csv"
+    String baseName = getBaseName(filenames[0])
+    String csvFileName = filenames[1]
+    logger.info(getBaseDirString(csvFileName))
+
+    List<String[]> featureList = new ArrayList<>()
+    //Store all features for each residue in an array list called Features
+    for (int i = 0; i < residues.size(); i++) {
+      double residueSurfaceArea =
+              forceFieldEnergy.getGK().getSurfaceAreaRegion().getResidueSurfaceArea(residues.get(i))
+      featureList.add(getProteinFeatures.saveFeatures(residues.get(i), residueSurfaceArea))
+
+    }
+
+
+    BufferedReader br=null;
+    BufferedWriter bw=null;
+
+    final String lineSep=System.getProperty("line.separator");
+    logger.info(lineSep)
+
     try {
-      FileWriter fos = new FileWriter(featureFileName)
-      PrintWriter dos = new PrintWriter(fos)
-      dos.println(
-          "Residue\tPosition\tPolarity\tAcidity\tSecondary Structure\tPhi\tPsi\tOmega\tSurface Area\tNormalized SA\tConfidence Score")
-      for (int i = 0; i < residues.size(); i++) {
-        double residueSurfaceArea =
-            forceFieldEnergy.getGK().getSurfaceAreaRegion().getResidueSurfaceArea(residues.get(i))
-        String[] features = getProteinFeatures.saveFeatures(residues.get(i), residueSurfaceArea)
-        for (int j = 0; j < features.length; j++) {
-          dos.print(features[j] + "\t")
-        }
-        dos.println()
+      File file = new File(getBaseDirString(csvFileName), csvFileName)
+      //File file2 = new File(getBaseDirString(csvFileName), "update_"+csvFileName )
+
+      br = new BufferedReader(new InputStreamReader(new FileInputStream(file)))
+      //bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file2)))
+      String line = null;
+      int i = 0;
+      for (line = br.readLine(); line != null; line = br.readLine(), i++) {
+        String[] position = line.split('\",\"')
+        logger.info(position)
+        //String addedColumn = String.valueOf(data.get(i))
+        //bw.write(line + addedColumn + lineSep)
       }
-      dos.close()
+    }catch(Exception e){
+      System.out.println(e);
+    }finally  {
+      if(br!=null)
+        br.close();
+      if(bw!=null)
+        bw.close();
+    }
+
+      /*try {
+        /*FileWriter fos = new FileWriter(featureFileName)
+        PrintWriter dos = new PrintWriter(fos)
+        dos.println(
+            "Surface Area\tNormalized SA\tConfidence Score")*/
+    /*for (int j = 0; j < features.length; j++) {
+      dos.print(features[j] + "\t")
+    }
+    dos.println()*/
+      /*dos.close()
       fos.close()
     } catch (IOException e) {
       logger.info("Could Not Write Tab Delimited File")
-    }
+    }*/
 
     logger.info(format("\n Total SurfacAreaRegion Solvent Accessible Surface Area: %1.6f",
         forceFieldEnergy.getGK().getSurfaceAreaRegion().getEnergy()))

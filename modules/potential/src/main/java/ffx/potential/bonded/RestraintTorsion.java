@@ -84,13 +84,10 @@ public class RestraintTorsion extends BondedTerm implements LambdaInterface {
                 cosprev = cosn;
                 sinprev = sinn;
             }
-            if (esvTerm) {
-                esvDerivLocal = units * energy * dedesvChain * lambda;
-            }
-            energy = units * energy * esvLambda * lambda;
-            dEdL = units * energy * esvLambda;
+            energy = units * energy * lambda;
+            dEdL = units * energy;
             if (gradient || lambdaTerm) {
-                dedphi = units * dedphi * esvLambda;
+                dedphi = units * dedphi;
                 var vca = vc.sub(va);
                 var vdb = vd.sub(vb);
                 var dedt = vt.X(vcb).scaleI(dedphi / (rt2 * rcb));

@@ -201,9 +201,6 @@ public class SummaryStatistics {
 
       descString = format(" Summary of single observation: value is %17.14g", mean);
     } else {
-
-
-
       double meanAcc = 0;
       double varAcc = 0;
       double minAcc = Double.MAX_VALUE;

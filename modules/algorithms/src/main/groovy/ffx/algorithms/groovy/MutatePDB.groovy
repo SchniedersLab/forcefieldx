@@ -187,7 +187,7 @@ class MutatePDB extends AlgorithmsScript {
         chains = molecularAssembly.getChains()
         for (Polymer currentChain : chains) {
           Residue residue = currentChain.getResidue(resID)
-          Rotamer[] rotamers = residue.getRotamers(rLib)
+          Rotamer[] rotamers = residue.getRotamers()
           if (rotamers != null && rotamers.length > 0) {
             RotamerLibrary.applyRotamer(residue, rotamers[destRotamer])
           } else {
@@ -197,7 +197,7 @@ class MutatePDB extends AlgorithmsScript {
       } else {
         Polymer polymer = molecularAssembly.getChain(chain.toString())
         Residue residue = polymer.getResidue(resID)
-        Rotamer[] rotamers = residue.getRotamers(rLib)
+        Rotamer[] rotamers = residue.getRotamers()
         if (rotamers != null && rotamers.length > 0) {
           RotamerLibrary.applyRotamer(residue, rotamers[destRotamer])
         } else {

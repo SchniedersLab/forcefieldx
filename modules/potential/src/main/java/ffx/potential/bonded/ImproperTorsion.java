@@ -377,13 +377,9 @@ public class ImproperTorsion extends BondedTerm {
       var dphi2 = 2.0 * (cosine2 * s2 - sine2 * c2);
       // Calculate improper torsion energy and master chain rule term
       value = toDegrees(acos(cosine));
-      var desvPrefactor = units * scaleFactor;
-      var prefactor = units * scaleFactor * esvLambda;
+      var prefactor = units * scaleFactor;
       energy = prefactor * (v2 * phi2);
       var dedphi = prefactor * (v2 * dphi2);
-      if (esvTerm) {
-        setEsvDeriv(desvPrefactor * (v2 * phi2) * dedesvChain);
-      }
       if (gradient) {
         // Chain rule terms for first derivative components.
         var vca = vc.sub(va);

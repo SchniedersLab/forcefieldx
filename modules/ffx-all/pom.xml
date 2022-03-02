@@ -90,7 +90,14 @@
               </excludes>
             </filter>
             <filter>
-              <artifact>org.codehaus.groovy:groovy</artifact>
+              <artifact>com.fasterxml.jackson.dataformat:jackson-dataformat-yaml</artifact>
+              <excludes>
+                <exclude>META-INF/services/com.fasterxml.jackson.core.JsonFactory</exclude>
+                <exclude>META-INF/services/com.fasterxml.jackson.core.ObjectCodec</exclude>
+              </excludes>
+            </filter>
+            <filter>
+              <artifact>org.apache.groovy:groovy</artifact>
               <excludes>
                 <exclude>META-INF/services/org.codehaus.groovy.transform.ASTTransformation</exclude>
               </excludes>

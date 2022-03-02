@@ -167,8 +167,8 @@ public class GetProteinFeatures {
     }
 
     public String[] saveFeatures(Residue residue, double surfaceArea) {
-        String[] features = new String[11];
-        String name = residue.getName();
+        String[] features = new String[3];
+        /*String name = residue.getName();
         AminoAcid3 aa3 = residue.getAminoAcid3();
         String acid = acidityMap.getOrDefault(aa3, null);
         String structure = "";
@@ -199,7 +199,7 @@ public class GetProteinFeatures {
             psiString = String.valueOf(psi);
             omegaString = String.valueOf(omega);
             structure = getSecondaryStructure();
-        }
+        }*/
 
         totalSurfaceArea += surfaceArea;
         String surfaceAreaString = String.valueOf(surfaceArea);
@@ -211,17 +211,9 @@ public class GetProteinFeatures {
         }
         String confidence =  String.valueOf(getConfidenceScore(residue));
 
-        features[0] = name;
-        features[1] = String.valueOf(residue.getResidueNumber());
-        features[2] = polarityMap.getOrDefault(aa3, "null");
-        features[3] = acid;
-        features[4] = structure;
-        features[5] = phiString;
-        features[6] = psiString;
-        features[7] = omegaString;
-        features[8] = surfaceAreaString;
-        features[9] = normalizedSA;
-        features[10] = confidence;
+        features[0] = surfaceAreaString;
+        features[1] = normalizedSA;
+        features[2] = confidence;
 
         return features;
     }
@@ -296,22 +288,7 @@ public class GetProteinFeatures {
         }
         return secondaryStructure;
     }
-
-    /*public double getSurfaceArea(Residue residue) {
-        List<Atom> atoms = residue.getAtomList();
-        int nAtoms = atoms.size();
-        int endIndex = surfaceAreaIndex + nAtoms;
-        double sumResidueArea = 0.0;
-
-        for (int i = surfaceAreaIndex; i < endIndex; i++) {
-            sumResidueArea += surfaceAreaArray[i];
-        }
-        surfaceAreaIndex += nAtoms;
-        totalSurfaceArea += sumResidueArea;
-
-        return sumResidueArea;
-    }*/
-
+    
     public double getTotalSurfaceArea(){
         return totalSurfaceArea;
     }

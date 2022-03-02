@@ -4172,69 +4172,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       // Load shared restraint energy values.
       restraintBondEnergy = sharedRestraintBondEnergy.get();
       rTorsEnergy = sharedRestTorsEnergy.get();
-
-      if (esvTerm) {
-        if (angleTerm) {
-          for (BondedTerm term : angles) {
-            term.reduceEsvDeriv();
-          }
-        }
-        if (bondTerm) {
-          for (BondedTerm term : bonds) {
-            term.reduceEsvDeriv();
-          }
-        }
-        if (improperTorsionTerm) {
-          for (BondedTerm term : improperTorsions) {
-            term.reduceEsvDeriv();
-          }
-        }
-        if (outOfPlaneBendTerm) {
-          for (BondedTerm term : outOfPlaneBends) {
-            term.reduceEsvDeriv();
-          }
-        }
-        if (piOrbitalTorsionTerm) {
-          for (BondedTerm term : piOrbitalTorsions) {
-            term.reduceEsvDeriv();
-          }
-        }
-        if (stretchBendTerm) {
-          for (BondedTerm term : stretchBends) {
-            term.reduceEsvDeriv();
-          }
-        }
-        if (torsionTerm) {
-          for (BondedTerm term : torsions) {
-            term.reduceEsvDeriv();
-          }
-        }
-        if (stretchTorsionTerm) {
-          for (BondedTerm term : stretchTorsions) {
-            term.reduceEsvDeriv();
-          }
-        }
-        if (angleTorsionTerm) {
-          for (BondedTerm term : angleTorsions) {
-            term.reduceEsvDeriv();
-          }
-        }
-        if (torsionTorsionTerm) {
-          for (BondedTerm term : torsionTorsions) {
-            term.reduceEsvDeriv();
-          }
-        }
-        if (ureyBradleyTerm) {
-          for (BondedTerm term : ureyBradleys) {
-            term.reduceEsvDeriv();
-          }
-        }
-        if (restraintBondTerm) {
-          for (BondedTerm term : restraintBonds) {
-            term.reduceEsvDeriv();
-          }
-        }
-      }
     }
 
     @Override

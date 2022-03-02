@@ -38,6 +38,7 @@
 
 package ffx.potential.extended;
 
+import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.PotentialComponent;
@@ -46,10 +47,15 @@ import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TitrationUtils;
+import ffx.potential.parsers.DYNFilter;
+import ffx.potential.parsers.ESVFilter;
 import ffx.utilities.Constants;
+import ffx.utilities.FileUtils;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
+import java.io.File;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ffx.utilities.Constants.kB;
@@ -57,6 +63,7 @@ import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.*;
 
 import edu.rit.pj.reduction.SharedDouble;
+import org.apache.commons.io.FilenameUtils;
 
 /**
  * ExtendedSystem class.
@@ -68,7 +75,7 @@ public class ExtendedSystem {
 
     private static final Logger logger = Logger.getLogger(ExtendedSystem.class.getName());
 
-    private static final double THETA_MASS = 1.0; //Atomic Mass Units
+    private static final double THETA_MASS = 5.0; //Atomic Mass Units
 
     private static final double THETA_FRICTION = 5.0; // psec^-1
 
@@ -123,10 +130,19 @@ public class ExtendedSystem {
      * when an Extended System is attached.
      */
     private final TitrationUtils titrationUtils;
+
     /**
-     * VanDerWaals instance.
+     * Number of atoms in the molecular assembly. Since all protons are instantiated at start, this int will not change.
      */
-    private final VanDerWaals vanDerWaals;
+    private final int nAtoms;
+    /**
+     * Number of ESVs attached to the molecular assembly. This number is the sum of tautomerizing + titrating ESVs.
+     */
+    private final int nESVs;
+    /**
+     * Number of titrating ESVs attached to the molecular assembly.
+     */
+    private final int nTitr;
     /**
      * Array of booleans that is initialized to match the number of atoms in the molecular assembly
      * noting whether the atom is titrating. Note that any side chain atom that belongs to a titrating residue
@@ -181,12 +197,15 @@ public class ExtendedSystem {
     /**
      * Descritizer Bias Magnitude. Default is 1 kcal/mol.
      */
-    private final double discrBiasMag;
+    private final double titrBiasMag;
+    private final double tautBiasMag;
     // Controls for turning of certain terms for testing.
     private final boolean doVDW;
     private final boolean doElectrostatics;
     private final boolean doBias;
     private final boolean doPolarization;
+    private final boolean fixTitrationState;
+    private final boolean fixTautomerState;
     /**
      * System PH.
      */
@@ -211,13 +230,20 @@ public class ExtendedSystem {
      * Mass of each theta particle. Different theta mass for each particle are not supported.
      */
     private double[] thetaMassArray;
+    /** Dynamics restart file. */
+    File restartFile = null;
+
+    /** Filter to parse the dynamics restart file. */
+    ESVFilter esvFilter = null;
+
+    private int[][][] esvHistogram;
 
     /**
      * Construct extended system with the provided configuration.
      *
      * @param mola a {@link MolecularAssembly} object.
      */
-    public ExtendedSystem(MolecularAssembly mola) {
+    public ExtendedSystem(MolecularAssembly mola, final File esvFile) {
         this.molecularAssembly = mola;
 
         ForceField forceField = mola.getForceField();
@@ -230,9 +256,13 @@ public class ExtendedSystem {
         titrationUtils = new TitrationUtils(forceField);
         thetaFriction = properties.getDouble("esv.friction", ExtendedSystem.THETA_FRICTION);
         thetaMass = properties.getDouble("esv.mass", ExtendedSystem.THETA_MASS);
-        discrBiasMag = properties.getDouble("discretize.bias.magnitude", DISCR_BIAS);
-        double initialTitrationLambda = properties.getDouble("lambda.titration.initial", 1.0);
-        double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 1.0);
+        titrBiasMag = properties.getDouble("titration.bias.magnitude", DISCR_BIAS);
+        tautBiasMag = properties.getDouble("tautomer.bias.magnitude", DISCR_BIAS);
+        double initialTitrationLambda = properties.getDouble("lambda.titration.initial", 0.5);
+        double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
+        fixTitrationState = properties.getBoolean("fix.titration.lambda", false);
+        fixTautomerState = properties.getBoolean("fix.tautomer.lambda", false);
+
 //        boolean bonded = properties.getBoolean("esv.bonded", false);
         doVDW = properties.getBoolean("esv.vdW", true);
         doElectrostatics = properties.getBoolean("esv.elec", true);
@@ -245,23 +275,21 @@ public class ExtendedSystem {
 //        boolean forceRoomTemp = properties.getBoolean("esv.forceRoomTemp", false);
 //        boolean propagation = properties.getBoolean("esv.propagation", true);
 
-        vanDerWaals = forceFieldEnergy.getVdwNode();
-
         titratingResidueList = new ArrayList<>();
         tautomerizingResidueList = new ArrayList<>();
         extendedResidueList = new ArrayList<>();
         // Initialize atom arrays with the existing assembly.
         Atom[] atoms = mola.getAtomArray();
-
-        isTitrating = new boolean[atoms.length];
-        isTitratingHydrogen = new boolean[atoms.length];
-        isTautomerizing = new boolean[atoms.length];
-        titrationLambdas = new double[atoms.length];
-        tautomerLambdas = new double[atoms.length];
-        titrationIndexMap = new int[atoms.length];
-        tautomerIndexMap = new int[atoms.length];
-        tautomerDirections = new int[atoms.length];
-        residueNames = new AminoAcid3[atoms.length];
+        nAtoms = atoms.length;
+        isTitrating = new boolean[nAtoms];
+        isTitratingHydrogen = new boolean[nAtoms];
+        isTautomerizing = new boolean[nAtoms];
+        titrationLambdas = new double[nAtoms];
+        tautomerLambdas = new double[nAtoms];
+        titrationIndexMap = new int[nAtoms];
+        tautomerIndexMap = new int[nAtoms];
+        tautomerDirections = new int[nAtoms];
+        residueNames = new AminoAcid3[nAtoms];
 
         Arrays.fill(isTitrating, false);
         Arrays.fill(isTitratingHydrogen, false);
@@ -285,7 +313,6 @@ public class ExtendedSystem {
                 List<Atom> atomList = residue.getSideChainAtoms();
                 for (Atom atom : atomList) {
                     int atomIndex = atom.getArrayIndex();
-                    logger.info(format("Atom: %s AtomIndex: %d", atom, atomIndex));
                     residueNames[atomIndex] = residue.getAminoAcid3();
                     isTitrating[atomIndex] = true;
                     titrationLambdas[atomIndex] = initialTitrationLambda;
@@ -312,16 +339,18 @@ public class ExtendedSystem {
         extendedResidueList.addAll(titratingResidueList);
         extendedResidueList.addAll(tautomerizingResidueList);
         //Arrays that are sent to integrator are based on extendedResidueList size
-        int size = extendedResidueList.size();
-        extendedLambdas = new double[size];
-        thetaPosition = new double[size];
-        thetaVelocity = new double[size];
-        thetaAccel = new double[size];
-        thetaMassArray = new double[size];
-        esvVdwDerivs = new SharedDouble[size];
-        esvPermElecDerivs = new SharedDouble[size];
-        esvIndElecDerivs =  new SharedDouble[size];
-        for(int i=0; i < size; i++){
+        nESVs = extendedResidueList.size();
+        nTitr = titratingResidueList.size();
+        extendedLambdas = new double[nESVs];
+        thetaPosition = new double[nESVs];
+        thetaVelocity = new double[nESVs];
+        thetaAccel = new double[nESVs];
+        thetaMassArray = new double[nESVs];
+        esvHistogram = new int[nTitr][10][10];
+        esvVdwDerivs = new SharedDouble[nESVs];
+        esvPermElecDerivs = new SharedDouble[nESVs];
+        esvIndElecDerivs =  new SharedDouble[nESVs];
+        for(int i=0; i < nESVs; i++){
             esvVdwDerivs[i] = new SharedDouble(0.0);
             esvPermElecDerivs[i] = new SharedDouble(0.0);
             esvIndElecDerivs[i] = new SharedDouble(0.0);
@@ -330,11 +359,28 @@ public class ExtendedSystem {
         //Theta masses should always be the same for each ESV
         Arrays.fill(thetaMassArray, thetaMass);
 
-        for (int i = 0; i < extendedResidueList.size(); i++) {
-            if (i < titratingResidueList.size()) {
+        for (int i = 0; i < nESVs; i++) {
+            if (i < nTitr) {
                 initializeThetaArrays(i, initialTitrationLambda);
             } else {
                 initializeThetaArrays(i, initialTautomerLambda);
+            }
+        }
+        //TODO: Finish restart handling
+        if (esvFilter == null) {
+            esvFilter = new ESVFilter(molecularAssembly.getName());
+        }
+        if(esvFile==null){
+            String firstFileName = FilenameUtils.removeExtension(mola.getFile().getAbsolutePath());
+            restartFile = new File(firstFileName + ".esv");
+        } else{
+            if (!esvFilter.readESV(esvFile, thetaPosition, thetaVelocity, thetaAccel)) {
+                String message = " Could not load the restart file - dynamics terminated.";
+                logger.log(Level.WARNING, message);
+                throw new IllegalStateException(message);
+            } else{
+                restartFile = esvFile;
+                updateLambdas();
             }
         }
     }
@@ -352,25 +398,25 @@ public class ExtendedSystem {
         thetaPosition[index] = Math.asin(Math.sqrt(lambda));
         Random random = new Random();
         thetaVelocity[index] = random.nextGaussian() * sqrt(kB * 298.15 / thetaMass);
-        double dUdL = 0.0;//getDerivatives()[index];
+        double dUdL = getDerivatives()[index];
         double dUdTheta = dUdL * sin(2 * thetaPosition[index]);
         thetaAccel[index] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
     }
 
     public void initEsvVdw(){
-        for (int i = 0; i < extendedResidueList.size(); i++) {
+        for (int i = 0; i < nESVs; i++) {
             esvVdwDerivs[i].set(0.0);
         }
     }
 
     public void initEsvPermElec(){
-        for (int i = 0; i < extendedResidueList.size(); i++) {
+        for (int i = 0; i < nESVs; i++) {
             esvPermElecDerivs[i].set(0.0);
         }
     }
 
     public void initEsvIndElec(){
-        for (int i = 0; i < extendedResidueList.size(); i++) {
+        for (int i = 0; i < nESVs; i++) {
             esvIndElecDerivs[i].set(0.0);
         }
     }
@@ -421,7 +467,7 @@ public class ExtendedSystem {
     public double getTautomerLambda(Residue residue) {
         if (tautomerizingResidueList.contains(residue)) {
             int resIndex = tautomerizingResidueList.indexOf(residue);
-            return extendedLambdas[titratingResidueList.size() + resIndex];
+            return extendedLambdas[nTitr + resIndex];
         } else {
             return 1.0;
         }
@@ -454,7 +500,7 @@ public class ExtendedSystem {
         if (tautomerizingResidueList.contains(residue)) {
             // The correct index in the theta arrays for tautomer coordinates is after the titration list.
             // So titrationList.size() + tautomerIndex should match with appropriate spot in thetaPosition, etc.
-            int index = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
+            int index = tautomerizingResidueList.indexOf(residue) + nTitr;
             extendedLambdas[index] = lambda;
             thetaPosition[index] = Math.asin(Math.sqrt(lambda));
             List<Atom> currentAtomList = residue.getSideChainAtoms();
@@ -462,9 +508,9 @@ public class ExtendedSystem {
                 int atomIndex = atom.getArrayIndex();
                 tautomerLambdas[atomIndex] = lambda;
             }
-        } else {
+        } /*else {
             logger.warning(format("This residue %s does not have any titrating tautomers.", residue.getName()));
-        }
+        }*/
     }
 
     /**
@@ -472,21 +518,24 @@ public class ExtendedSystem {
      */
     private void updateLambdas() {
         //This will prevent recalculating multiple sinTheta*sinTheta that are the same number.
-        for (int i = 0; i < extendedResidueList.size(); i++) {
-            double sinTheta = Math.sin(thetaPosition[i]);
-            double oldLambda = extendedLambdas[i];
-            extendedLambdas[i] = sinTheta * sinTheta;
+        for (int i = 0; i < nESVs; i++) {
+            //Check to see if titration/tautomer lambdas are to be fixed
+            if((!fixTitrationState && i < nTitr) || (!fixTautomerState && i >= nTitr)){
+                double sinTheta = Math.sin(thetaPosition[i]);
+                extendedLambdas[i] = sinTheta * sinTheta;
+            }
         }
-        for (int i = 0; i < molecularAssembly.getAtomArray().length; i++) {
+        for (int i = 0; i < nAtoms; i++) {
             int mappedTitrationIndex = titrationIndexMap[i];
-            int mappedTautomerIndex = tautomerIndexMap[i] + titratingResidueList.size();
+            int mappedTautomerIndex = tautomerIndexMap[i] + nTitr;
             if (isTitrating(i) && mappedTitrationIndex != -1) {
                 titrationLambdas[i] = extendedLambdas[mappedTitrationIndex];
             }
-            if (isTautomerizing(i) && mappedTautomerIndex >= titratingResidueList.size()) {
+            if (isTautomerizing(i) && mappedTautomerIndex >= nTitr) {
                 tautomerLambdas[i] = extendedLambdas[mappedTautomerIndex];
             }
         }
+        setESVHistogram();
     }
 
     public List<Residue> getTitratingResidueList() {
@@ -517,6 +566,10 @@ public class ExtendedSystem {
         return thetaMassArray;
     }
 
+    public double getThetaMass(){
+        return thetaMass;
+    }
+
     public double getThetaFriction() {
         return thetaFriction;
     }
@@ -531,19 +584,19 @@ public class ExtendedSystem {
      * @return a {@link String} object.
      */
     public String getLambdaList() {
-        if (extendedResidueList.size() < 1) {
+        if (nESVs < 1) {
             return "";
         }
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < extendedResidueList.size(); i++) {
+        for (int i = 0; i < nESVs; i++) {
             if (i == 0) {
-                sb.append("\n Titration Lambdas: ");
+                sb.append("\n  Titration Lambdas: ");
             }
             if (i > 0) {
                 sb.append(", ");
             }
-            if (i == titratingResidueList.size()) {
-                sb.append("\n Tautomer Lambdas: ");
+            if (i == nTitr) {
+                sb.append("\n  Tautomer Lambdas: ");
             }
             sb.append(format("%6.4f", extendedLambdas[i]));
         }
@@ -573,8 +626,7 @@ public class ExtendedSystem {
      * @return esvDeriv a double[]
      */
     public double[] getDerivatives() {
-        int numESVs = extendedResidueList.size();
-        double[] esvDeriv = new double[numESVs];
+        double[] esvDeriv = new double[nESVs];
         double[] biasDerivComponents = new double[9];
 
         for (Residue residue : titratingResidueList) {
@@ -583,20 +635,19 @@ public class ExtendedSystem {
             if (doBias){
                 getBiasTerms(residue, biasDerivComponents);
                 //Sum up titration bias derivs
-                esvDeriv[resTitrIndex] += biasDerivComponents[dDiscr_dTitrIndex] + biasDerivComponents[dPh_dTitrIndex] - biasDerivComponents[dModel_dTitrIndex];
+                esvDeriv[resTitrIndex] += biasDerivComponents[dDiscr_dTitrIndex] + biasDerivComponents[dPh_dTitrIndex] + biasDerivComponents[dModel_dTitrIndex];
                 //Sum up tautomer bias derivs
                 if (isTautomer(residue)) {
-                    int resTautIndex = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
-                    esvDeriv[resTautIndex] += biasDerivComponents[dDiscr_dTautIndex] + biasDerivComponents[dPh_dTautIndex] - biasDerivComponents[dModel_dTautIndex];
+                    int resTautIndex = tautomerizingResidueList.indexOf(residue) + nTitr;
+                    esvDeriv[resTautIndex] += biasDerivComponents[dDiscr_dTautIndex] + biasDerivComponents[dPh_dTautIndex] + biasDerivComponents[dModel_dTautIndex];
                 }
             }
 
             if (doVDW) {
-                //TODO: Add vdW
                 esvDeriv[resTitrIndex] += getVdwDeriv(resTitrIndex);
                 //Sum up tautomer bias derivs
                 if (isTautomer(residue)) {
-                    int resTautIndex = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
+                    int resTautIndex = tautomerizingResidueList.indexOf(residue) + nTitr;
                     esvDeriv[resTautIndex] += getVdwDeriv(resTautIndex);
                 }
             }
@@ -605,21 +656,18 @@ public class ExtendedSystem {
                 esvDeriv[resTitrIndex] += getPermElecDeriv(resTitrIndex);
                 //Sum up tautomer bias derivs
                 if (isTautomer(residue)) {
-                    int resTautIndex = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
+                    int resTautIndex = tautomerizingResidueList.indexOf(residue) + nTitr;
                     esvDeriv[resTautIndex] += getPermElecDeriv(resTautIndex);
                 }
                 if(doPolarization){
                     esvDeriv[resTitrIndex] += getIndElecDeriv(resTitrIndex);
                     if(isTautomer(residue)){
-                        int resTautIndex = tautomerizingResidueList.indexOf(residue) + titratingResidueList.size();
+                        int resTautIndex = tautomerizingResidueList.indexOf(residue) + nTitr;
                         esvDeriv[resTautIndex] += getIndElecDeriv(resTautIndex);
                     }
                 }
             }
-
         }
-
-
         return esvDeriv;
     }
 
@@ -633,7 +681,7 @@ public class ExtendedSystem {
         //Do not double count residues in tautomer list.
         for (Residue residue : titratingResidueList) {
             getBiasTerms(residue, biasEnergyComponents);
-            double biasEnergy = biasEnergyComponents[discrBiasIndex] + biasEnergyComponents[pHBiasIndex] - biasEnergyComponents[modelBiasIndex];
+            double biasEnergy = biasEnergyComponents[discrBiasIndex] + biasEnergyComponents[pHBiasIndex] + biasEnergyComponents[modelBiasIndex];
             totalBiasEnergy += biasEnergy;
         }
         return totalBiasEnergy;
@@ -666,10 +714,10 @@ public class ExtendedSystem {
             case ASP:
                 // Discr Bias & Derivs
                 double tautomerLambda = getTautomerLambda(residue);
-                discrBias = -4.0 * discrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
-                discrBias += -4.0 * discrBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
-                dDiscr_dTitr = -8.0 * discrBiasMag * (titrationLambda - 0.5);
-                dDiscr_dTaut = -8.0 * discrBiasMag * (tautomerLambda - 0.5);
+                discrBias = -4.0 * titrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
+                discrBias += -4.0 * tautBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
+                dDiscr_dTitr = -8.0 * titrBiasMag * (titrationLambda - 0.5);
+                dDiscr_dTaut = -8.0 * tautBiasMag * (tautomerLambda - 0.5);
 
                 // pH Bias & Derivs
                 double pKa1 = TitrationUtils.Titration.ASHtoASP.pKa;
@@ -684,8 +732,8 @@ public class ExtendedSystem {
                 // Model Bias & Derivs
                 double refEnergy = TitrationUtils.Titration.ASHtoASP.refEnergy;
                 double lambdaIntercept = TitrationUtils.Titration.ASHtoASP.lambdaIntercept;
-                modelBias = refEnergy * ((1 - titrationLambda) - lambdaIntercept) * ((1 - titrationLambda) - lambdaIntercept);
-                dMod_dTitr = -2.0 * refEnergy * ((1 - titrationLambda) - lambdaIntercept);
+                modelBias = refEnergy * ((1.0 - titrationLambda) - lambdaIntercept) * ((1.0 - titrationLambda) - lambdaIntercept);
+                dMod_dTitr = -2.0 * refEnergy * ((1.0 - titrationLambda) - lambdaIntercept);
                 dMod_dTaut = 0.0;
                 break;
             case GLD:
@@ -693,10 +741,10 @@ public class ExtendedSystem {
             case GLU:
                 // Discr Bias & Derivs
                 tautomerLambda = getTautomerLambda(residue);
-                discrBias = -4.0 * discrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
-                discrBias += -4.0 * discrBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
-                dDiscr_dTitr = -8.0 * discrBiasMag * (titrationLambda - 0.5);
-                dDiscr_dTaut = -8.0 * discrBiasMag * (tautomerLambda - 0.5);
+                discrBias = -4.0 * titrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
+                discrBias += -4.0 * tautBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
+                dDiscr_dTitr = -8.0 * titrBiasMag * (titrationLambda - 0.5);
+                dDiscr_dTaut = -8.0 * tautBiasMag * (tautomerLambda - 0.5);
 
                 // pH Bias & Derivs
                 pKa1 = TitrationUtils.Titration.GLHtoGLU.pKa;
@@ -721,10 +769,10 @@ public class ExtendedSystem {
                 // Discr Bias & Derivs
                 tautomerLambda = getTautomerLambda(residue);
                 double tautomerLambdaSquared = tautomerLambda * tautomerLambda;
-                discrBias = -4.0 * discrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
-                discrBias += -4.0 * discrBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
-                dDiscr_dTitr = -8.0 * discrBiasMag * (titrationLambda - 0.5);
-                dDiscr_dTaut = -8.0 * discrBiasMag * (tautomerLambda - 0.5);
+                discrBias = -4.0 * titrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
+                discrBias += -4.0 * tautBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
+                dDiscr_dTitr = -8.0 * titrBiasMag * (titrationLambda - 0.5);
+                dDiscr_dTaut = -8.0 * tautBiasMag * (tautomerLambda - 0.5);
 
                 // pH Bias & Derivs
                 // At tautomerLambda=1 HIE is fully on.
@@ -746,13 +794,13 @@ public class ExtendedSystem {
                 double refEnergyHIDtoHIE = TitrationUtils.Titration.HIDtoHIE.refEnergy;
                 double lambdaInterceptHIDtoHIE = TitrationUtils.Titration.HIDtoHIE.lambdaIntercept;
 
-                double coeff4 = -2 * refEnergyHID * lambdaInterceptHID;
-                double coeff3 = -2 * refEnergyHIE * lambdaInterceptHIE - coeff4;
+                double coeff4 = -2.0 * refEnergyHID * lambdaInterceptHID;
+                double coeff3 = -2.0 * refEnergyHIE * lambdaInterceptHIE - coeff4;
                 double coeff2 = refEnergyHID;
-                double coeff1 = -2 * refEnergyHIDtoHIE * lambdaInterceptHIDtoHIE - coeff3;
+                double coeff1 = -2.0 * refEnergyHIDtoHIE * lambdaInterceptHIDtoHIE - coeff3;
                 double coeff0 = refEnergyHIDtoHIE;
-                double oneMinusTitrationLambda = (1 - titrationLambda);
-                double oneMinusTitrationLambdaSquared = (1 - titrationLambda) * (1 - titrationLambda);
+                double oneMinusTitrationLambda = (1.0 - titrationLambda);
+                double oneMinusTitrationLambdaSquared = oneMinusTitrationLambda * oneMinusTitrationLambda;
                 modelBias = oneMinusTitrationLambdaSquared * (coeff0 * tautomerLambdaSquared + coeff1 * tautomerLambda + coeff2)
                         + oneMinusTitrationLambda * (coeff3 * tautomerLambda + coeff4);
                 dMod_dTitr = -2 * oneMinusTitrationLambda * (coeff0 * tautomerLambdaSquared + coeff1 * tautomerLambda + coeff2)
@@ -762,8 +810,8 @@ public class ExtendedSystem {
             case LYS:
             case LYD:
                 // Discr Bias & Derivs
-                discrBias = -4.0 * discrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
-                dDiscr_dTitr = -8.0 * discrBiasMag * (titrationLambda - 0.5);
+                discrBias = -4.0 * titrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
+                dDiscr_dTitr = -8.0 * titrBiasMag * (titrationLambda - 0.5);
                 dDiscr_dTaut = 0.0;
 
                 // pH Bias & Derivs
@@ -775,8 +823,8 @@ public class ExtendedSystem {
                 // Model Bias & Derivs
                 refEnergy = TitrationUtils.Titration.LYStoLYD.refEnergy;
                 lambdaIntercept = TitrationUtils.Titration.LYStoLYD.lambdaIntercept;
-                modelBias = refEnergy * ((1 - titrationLambda) - lambdaIntercept) * ((1 - titrationLambda) - lambdaIntercept);
-                dMod_dTitr = -2.0 * refEnergy * ((1 - titrationLambda) - lambdaIntercept);
+                modelBias = refEnergy * ((1.0 - titrationLambda) - lambdaIntercept) * ((1.0 - titrationLambda) - lambdaIntercept);
+                dMod_dTitr = -2.0 * refEnergy * ((1.0 - titrationLambda) - lambdaIntercept);
                 dMod_dTaut = 0.0;
                 break;
             default:
@@ -793,13 +841,13 @@ public class ExtendedSystem {
         }
         biasEnergyAndDerivs[0] = discrBias;
         biasEnergyAndDerivs[1] = pHBias;
-        biasEnergyAndDerivs[2] = modelBias;
+        biasEnergyAndDerivs[2] = -modelBias;
         biasEnergyAndDerivs[3] = dDiscr_dTitr;
         biasEnergyAndDerivs[4] = dPh_dTitr;
-        biasEnergyAndDerivs[5] = dMod_dTitr;
+        biasEnergyAndDerivs[5] = -dMod_dTitr;
         biasEnergyAndDerivs[6] = dDiscr_dTaut;
         biasEnergyAndDerivs[7] = dPh_dTaut;
-        biasEnergyAndDerivs[8] = dMod_dTaut;
+        biasEnergyAndDerivs[8] = -dMod_dTaut;
     }
 
     /**
@@ -812,12 +860,12 @@ public class ExtendedSystem {
         double phBias = 0.0;
         double modelBias = 0.0;
         double[] biasEnergyAndDerivs = new double[9];
-        for (Residue residue : extendedResidueList) {
+        for (Residue residue : titratingResidueList) {
             getBiasTerms(residue, biasEnergyAndDerivs);
             discrBias += biasEnergyAndDerivs[discrBiasIndex];
             phBias += biasEnergyAndDerivs[pHBiasIndex];
             //Reminder: Ubias = UpH + Udiscr - Umod
-            modelBias -= biasEnergyAndDerivs[modelBiasIndex];
+            modelBias += biasEnergyAndDerivs[modelBiasIndex];
         }
         return format("    %-16s %16.8f\n", "Discretizer", discrBias)
                 + format("    %-16s %16.8f\n", "Acidostat", phBias)
@@ -838,20 +886,20 @@ public class ExtendedSystem {
             case pHMD:
                 return getBiasEnergy();
             case DiscretizeBias:
-                for (Residue residue : extendedResidueList) {
+                for (Residue residue : titratingResidueList) {
                     getBiasTerms(residue, biasEnergyAndDerivs);
                     uComp += biasEnergyAndDerivs[discrBiasIndex];
                 }
                 return uComp;
             case ModelBias:
-                for (Residue residue : extendedResidueList) {
+                for (Residue residue : titratingResidueList) {
                     getBiasTerms(residue, biasEnergyAndDerivs);
                     //Reminder: Ubias = UpH + Udiscr - Umod
-                    uComp -= biasEnergyAndDerivs[modelBiasIndex];
+                    uComp += biasEnergyAndDerivs[modelBiasIndex];
                 }
                 return uComp;
             case pHBias:
-                for (Residue residue : extendedResidueList) {
+                for (Residue residue : titratingResidueList) {
                     getBiasTerms(residue, biasEnergyAndDerivs);
                     uComp += biasEnergyAndDerivs[pHBiasIndex];
                 }
@@ -927,7 +975,7 @@ public class ExtendedSystem {
         //Sum up dU/dL for titration ESV if atom i is titrating hydrogen
         //Sum up dU/dL for tautomer ESV if atom i is titrating hydrogen
         int titrationEsvIndex = titrationIndexMap[atomI];
-        int tautomerEsvIndex = tautomerIndexMap[atomI] + titratingResidueList.size();
+        int tautomerEsvIndex = tautomerIndexMap[atomI] + nTitr;
         double dTitr_dLambda;
         double dTaut_dLambda;
 
@@ -935,25 +983,25 @@ public class ExtendedSystem {
         dTaut_dLambda = vdwPrefactorAndDerivI[2] * vdwPrefactorJ * vdwEnergy;
 
         esvVdwDerivs[titrationEsvIndex].addAndGet(dTitr_dLambda);
-        if(tautomerEsvIndex >= titratingResidueList.size()){
+        if(tautomerEsvIndex >= nTitr){
             esvVdwDerivs[tautomerEsvIndex].addAndGet(dTaut_dLambda);
         }
     }
 
     public void addPermElecDeriv(int atomI, double titrationEnergy, double tautomerEnergy){
         int titrationEsvIndex = titrationIndexMap[atomI];
-        int tautomerEsvIndex = tautomerIndexMap[atomI] + titratingResidueList.size();
+        int tautomerEsvIndex = tautomerIndexMap[atomI] + nTitr;
         esvPermElecDerivs[titrationEsvIndex].addAndGet(titrationEnergy);
-        if(tautomerEsvIndex >= titratingResidueList.size()){
+        if(tautomerEsvIndex >= nTitr){
             esvPermElecDerivs[tautomerEsvIndex].addAndGet(tautomerEnergy);
         }
     }
 
     public void addIndElecDeriv(int atomI, double titrationEnergy, double tautomerEnergy){
         int titrationEsvIndex = titrationIndexMap[atomI];
-        int tautomerEsvIndex = tautomerIndexMap[atomI] + titratingResidueList.size();
+        int tautomerEsvIndex = tautomerIndexMap[atomI] + nTitr;
         esvIndElecDerivs[titrationEsvIndex].addAndGet(titrationEnergy);
-        if(tautomerEsvIndex >= titratingResidueList.size()){
+        if(tautomerEsvIndex >= nTitr){
             esvIndElecDerivs[tautomerEsvIndex].addAndGet(tautomerEnergy);
         }
     }
@@ -1010,7 +1058,7 @@ public class ExtendedSystem {
      * Processes lambda values based on propagation of theta value from Stochastic integrator in Molecular dynamics
      */
     public void preForce() {
-        updateLambdas();
+            updateLambdas();
     }
 
     /**
@@ -1021,34 +1069,84 @@ public class ExtendedSystem {
     public double[] postForce() {
         double[] dEdL = ExtendedSystem.this.getDerivatives();
         double[] dEdTheta = new double[dEdL.length];
-        for (int i = 0; i < extendedResidueList.size(); i++) {
+        for (int i = 0; i < nESVs; i++) {
             dEdTheta[i] = dEdL[i] * sin(2 * thetaPosition[i]);
+            logger.info("dEdL["+i+"]: "+dEdL[i]);
         }
         return dEdTheta;
     }
 
-    /*private void updateMultipoleTypes() {
-        for (Residue residue : extendedResidueList){
-            AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
-            List<Atom> atomList = residue.get;
-            for(Atom atom : atomList){
-                int atomIndex = atom.getArrayIndex();
-                MultipoleType atomMultipoleType = atom.getMultipoleType();
-                double[] esvMultipole = TitrationUtils.getMultipole(AA3, atomIndex, titrationLambdas[atomIndex],
-                        tautomerLambdas[atomIndex], atomMultipoleType.getMultipole());
-                double[] esvTitrationDotMultipole = TitrationUtils.getMultipoleTitrationDeriv(AA3, atomIndex,
-                        titrationLambdas[atomIndex], tautomerLambdas[atomIndex], atomMultipoleType.getMultipole());
-                double[] esvTautomerDotMultipole = TitrationUtils.getMultipoleTautomerDeriv(AA3, atomIndex,
-                        titrationLambdas[atomIndex], tautomerLambdas[atomIndex], atomMultipoleType.getMultipole());
-                MultipoleType esvType = new MultipoleType(esvMultipole,atomMultipoleType.frameAtomTypes,
-                        atomMultipoleType.frameDefinition, false);
-                MultipoleType esvTitrationDotType = new MultipoleType(esvTitrationDotMultipole, atomMultipoleType.frameAtomTypes,
-                        atomMultipoleType.frameDefinition, false);
-                MultipoleType esvTautomerDotType =  new MultipoleType(esvTautomerDotMultipole, atomMultipoleType.frameAtomTypes,
-                        atomMultipoleType.frameDefinition, false);
-                //TODO: Detect hydrogen and scale alpha.
-                atom.setEsv( esvType, esvTitrationDotType);
+    public void writeRestart() {
+        String esvName = FileUtils.relativePathTo(restartFile).toString();
+        if (esvFilter.writeESV(restartFile, thetaPosition, thetaVelocity, thetaAccel)) {
+            logger.info(" Wrote dynamics restart file to " + esvName);
+        } else {
+            logger.info(" Writing dynamics restart file to " + esvName + " failed");
+        }
+        writeLambdaHistogram();
+    }
+
+    private void setESVHistogram(){
+        for(Residue residue : titratingResidueList){
+            int index = titratingResidueList.indexOf(residue);
+            if(residue.getAminoAcid3().equals(AminoAcid3.LYS)){
+                double titrLambda = getTitrationLambda(residue);
+                esvHistogram(index, titrLambda);
+            }
+            else{
+                double titrLambda = getTitrationLambda(residue);
+                double tautLambda = getTautomerLambda(residue);
+                esvHistogram(index, titrLambda, tautLambda);
             }
         }
-    }*/
+    }
+
+    private void esvHistogram(int esv, double lambda){
+        int value = (int) (lambda * 10.0);
+        //Cover the case where lambda could be exactly 1.0
+        if(value == 10){
+            value = 9;
+        }
+        esvHistogram[esv][value][0]++;
+    }
+
+    private void esvHistogram(int esv, double titrLambda, double tautLambda){
+        int titrValue = (int) (titrLambda * 10.0);
+        //Cover the case where lambda could be exactly 1.0
+        if(titrValue == 10){
+            titrValue = 9;
+        }
+        int tautValue = (int) (tautLambda * 10.0);
+        if(tautValue == 10){
+            tautValue = 9;
+        }
+        esvHistogram[esv][titrValue][tautValue]++;
+    }
+
+    //TODO: Find a better way to print this histogram out
+    public void writeLambdaHistogram(){
+        StringBuilder tautomerHeader = new StringBuilder("      X→ ");
+        for(int k=0; k< 10; k++){
+            double lb = (double) k/10;
+            double ub = (double) (k+1)/10;
+            tautomerHeader.append(String.format("%1$10s","["+lb+"-"+ub+"]"));
+        }
+        tautomerHeader.append("\nλ↓");
+        for(int i=0; i < nTitr; i++){
+            logger.info(format("ESV: %d \n", i));
+            logger.info(tautomerHeader.toString());
+            for(int j=0; j < 10; j++){
+                double lb = (double) j/10;
+                double ub = (j+1.0)/10;
+                StringBuilder histogram = new StringBuilder();
+                for(int k=0; k<10; k++){
+                    StringBuilder hisvalue = new StringBuilder();
+                    hisvalue.append(String.format("%1$10s",esvHistogram[i][j][k]));
+                    histogram.append(hisvalue);
+                }
+                logger.info("["+lb+"-"+ub+"]"+histogram);
+            }
+            logger.info("\n");
+        }
+    }
 }
