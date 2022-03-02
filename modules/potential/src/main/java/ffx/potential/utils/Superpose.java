@@ -44,7 +44,6 @@ import static java.util.Arrays.fill;
 import static org.apache.commons.io.FilenameUtils.concat;
 import static org.apache.commons.io.FilenameUtils.getBaseName;
 import static org.apache.commons.io.FilenameUtils.getFullPath;
-import static org.apache.commons.io.FilenameUtils.getPath;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.mp.DoubleBuf;
@@ -581,19 +580,19 @@ public class Superpose {
     double[] q = eigenDecomposition.getEigenvector(0).toArray();
 
     // Assemble rotation matrix that superimposes the molecules
-    double[][] rot = new double[3][3];
     double q02 = q[0] * q[0];
     double q12 = q[1] * q[1];
     double q22 = q[2] * q[2];
     double q32 = q[3] * q[3];
+    double[][] rot = new double[3][3];
     rot[0][0] = q02 + q12 - q22 - q32;
     rot[1][0] = 2.0 * (q[1] * q[2] - q[0] * q[3]);
     rot[2][0] = 2.0 * (q[1] * q[3] + q[0] * q[2]);
-    rot[0][1] = 2.0 * (q[2] * q[1] + q[0] * q[3]);
+    rot[0][1] = 2.0 * (q[1] * q[2] + q[0] * q[3]);
     rot[1][1] = q02 - q12 + q22 - q32;
     rot[2][1] = 2.0 * (q[2] * q[3] - q[0] * q[1]);
-    rot[0][2] = 2.0 * (q[3] * q[1] - q[0] * q[2]);
-    rot[1][2] = 2.0 * (q[3] * q[2] + q[0] * q[1]);
+    rot[0][2] = 2.0 * (q[1] * q[3] - q[0] * q[2]);
+    rot[1][2] = 2.0 * (q[2] * q[3] + q[0] * q[1]);
     rot[2][2] = q02 - q12 - q22 + q32;
 
     return rot;

@@ -280,6 +280,48 @@ public class Float3 {
   }
 
   /**
+   * Squares values in Float3.
+   *
+   * @return Returns a reference to this Float3 squared.
+   */
+  public Float3 square() {
+    Float3 ret = new Float3();
+    FloatMath.square(a, ret.get());
+    return ret;
+  }
+
+  /**
+   * Squares values in Float3 in place.
+   *
+   * @return Returns a reference to this Float3 squared.
+   */
+  public Float3 squareI() {
+    FloatMath.square(a, a);
+    return this;
+  }
+
+  /**
+   * Square roots values in Float3.
+   *
+   * @return Returns a reference to this Float3 square rooted.
+   */
+  public Float3 sqrt() {
+    Float3 ret = new Float3();
+    FloatMath.squareRoot(a, ret.get());
+    return ret;
+  }
+
+  /**
+   * Square roots values in Float3 in place.
+   *
+   * @return Returns a reference to this Float3 square rooted.
+   */
+  public Float3 sqrtI() {
+    FloatMath.squareRoot(a, a);
+    return this;
+  }
+
+  /**
    * Set the value of this Float3.
    *
    * @param x X-value.
