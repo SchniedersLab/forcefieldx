@@ -180,6 +180,13 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean massWeighted
 
   /**
+   * --ps or --printSymOp Print optimal SymOp to align crystal 2 to crystal 1.
+   */
+  @Option(names = ['--ps', '--printSymOp'], paramLabel = "false", defaultValue = "false",
+          description = 'Print optimal SymOp to align crystal 2 to crystal 1.')
+  private static boolean printSym
+
+  /**
    * -l or --linkage Single (0), Average (1), or Complete (2) coordinate linkage for molecule prioritization.
    */
   @Option(names = ['-l', '--linkage'], paramLabel = '0', defaultValue = '0',
@@ -283,7 +290,7 @@ class SuperposeCrystals extends AlgorithmsScript {
     runningStatistics =
         pac.comparisons(numAU, numInflatedAU, matchTol, zPrime, zPrime2, alphaCarbons,
             noHydrogen, massWeighted, crystalPriority, permute, save,
-            restart, write, machineLearning, inertia, gyrationComponents, linkage, pacFilename)
+            restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym, pacFilename)
 
     return this
   }
