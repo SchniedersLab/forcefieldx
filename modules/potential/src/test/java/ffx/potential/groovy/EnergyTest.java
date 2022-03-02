@@ -1017,7 +1017,7 @@ public class EnergyTest extends PotentialTest {
         "--dx", Double.toString(stepSize),
         "--tol", Double.toString(tolerance),
         "--ac", "1" + "-" + nAtoms,
-        "-l", "0.5",
+        "-l", "0.9",
         "src/main/java/" + filename
     };
     binding.setVariable("args", args);
