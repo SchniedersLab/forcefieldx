@@ -411,8 +411,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       region.setVerbose(verbose);
       team.execute(region);
     } catch (Exception ex) {
-      throw new EnergyException(
-          format(" Exception in calculating dual-topology energy: %s", ex.toString()), false);
+      throw new EnergyException(format(" Exception in calculating dual-topology energy: %s", ex));
     }
     return totalEnergy;
   }
@@ -441,8 +440,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       region.setVerbose(verbose);
       team.execute(region);
     } catch (Exception ex) {
-      throw new EnergyException(
-          format(" Exception in calculating dual-topology energy: %s", ex.toString()), false);
+      throw new EnergyException(format(" Exception in calculating dual-topology energy: %s", ex));
     }
     return totalEnergy;
   }

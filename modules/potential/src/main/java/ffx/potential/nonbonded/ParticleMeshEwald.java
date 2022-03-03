@@ -2279,39 +2279,72 @@ public class ParticleMeshEwald implements LambdaInterface {
     expandInducedDipoles();
 
     // Converge the self-consistent field.
-    int iterations;
-    switch (scfAlgorithm) {
-      case SOR:
-        iterations = scfBySOR(print, startTime);
-        break;
-      case EPT:
-        iterations = scfByEPT(print, startTime);
-        break;
-      case CG:
-      default:
-        pcgSolver.init(
-            atoms,
-            coordinates,
-            polarizability,
-            ipdamp,
-            thole,
-            use,
-            crystal,
-            inducedDipole,
-            inducedDipoleCR,
-            directDipole,
-            directDipoleCR,
-            field,
-            fieldCR,
-            ewaldParameters,
-            parallelTeam,
-            realSpaceNeighborParameters.realSpaceSchedule,
-            pmeTimings.realSpaceSCFTime);
-        iterations = pcgSolver.scfByPCG(print, startTime, this);
-        break;
-    }
+    try {
+      int iterations;
+      switch (scfAlgorithm) {
+        case SOR:
+          iterations = scfBySOR(print, startTime);
+          break;
+        case EPT:
+          iterations = scfByEPT(print, startTime);
+          break;
+        case CG:
+        default:
+          pcgSolver.init(
+              atoms,
+              coordinates,
+              polarizability,
+              ipdamp,
+              thole,
+              use,
+              crystal,
+              inducedDipole,
+              inducedDipoleCR,
+              directDipole,
+              directDipoleCR,
+              field,
+              fieldCR,
+              ewaldParameters,
+              parallelTeam,
+              realSpaceNeighborParameters.realSpaceSchedule,
+              pmeTimings.realSpaceSCFTime);
+          iterations = pcgSolver.scfByPCG(print, startTime, this);
+          break;
+      }
 
-    return iterations;
+      return iterations;
+    } catch (EnergyException ex) {
+      // SCF Failure: warn and revert to direct polarization.
+      logger.warning(ex.toString());
+      // Compute the direct induced dipoles.
+      if (generalizedKirkwoodTerm) {
+        pmeTimings.gkEnergyTotal = -System.nanoTime();
+        generalizedKirkwood.computePermanentGKField();
+        pmeTimings.gkEnergyTotal += System.nanoTime();
+        logger.fine(format(" Computed GK permanent field %8.3f (sec)", pmeTimings.gkEnergyTotal * 1.0e-9));
+      }
+      directRegion.init(
+          atoms,
+          polarizability,
+          globalMultipole,
+          cartesianMultipolePhi,
+          field,
+          fieldCR,
+          generalizedKirkwoodTerm,
+          generalizedKirkwood,
+          ewaldParameters,
+          inducedDipole,
+          inducedDipoleCR,
+          directDipole,
+          directDipoleCR,
+          directField,
+          directFieldCR
+      );
+      directRegion.executeWith(parallelTeam);
+      expandInducedDipoles();
+      logger.info(" Direct induced dipoles computed due to SCF failure.");
+      return 0;
+    }
   }
 
   /** Converge the SCF using Successive Over-Relaxation (SOR). */
@@ -2407,7 +2440,7 @@ public class ParticleMeshEwald implements LambdaInterface {
           logger.warning(sb.toString());
         }
         String message = format(" SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
-        throw new EnergyException(message, false);
+        throw new EnergyException(message);
       }
 
       // The SCF should converge well before the max iteration check. Otherwise, fail the SCF
@@ -2417,7 +2450,7 @@ public class ParticleMeshEwald implements LambdaInterface {
           logger.warning(sb.toString());
         }
         String message = format(" Maximum SCF iterations reached: (%d)\n", completedSCFCycles);
-        throw new EnergyException(message, false);
+        throw new EnergyException(message);
       }
 
       // Check if the convergence criteria has been achieved.

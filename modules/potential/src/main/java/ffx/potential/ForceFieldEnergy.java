@@ -43,6 +43,7 @@ import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static java.util.Arrays.sort;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -1670,44 +1671,30 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         esvBias = esvSystem.getBiasEnergy();
         totalEnergy += esvBias;
       }
+
+      if (print) {
+        StringBuilder sb = new StringBuilder();
+        if (gradient) {
+          sb.append("\n Computed Potential Energy and Atomic Coordinate Gradients\n");
+        } else {
+          sb.append("\n Computed Potential Energy\n");
+        }
+        sb.append(this);
+        logger.info(sb.toString());
+      }
+      return totalEnergy;
     } catch (EnergyException ex) {
       if (printOnFailure) {
-        File origFile = molecularAssembly.getFile();
-        String timeString =
-            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd-HH_mm_ss"));
-
-        String filename =
-            format(
-                "%s-ERROR-%s.pdb",
-                FilenameUtils.removeExtension(molecularAssembly.getFile().getName()), timeString);
-
-        PotentialsFunctions ef = new PotentialsUtils();
-        filename = ef.versionFile(filename);
-        logger.info(format(" Writing on-error snapshot to file %s", filename));
-        ef.saveAsPDB(molecularAssembly, new File(filename));
-        molecularAssembly.setFile(origFile);
+        printFailure();
       }
-
       if (ex.doCauseSevere()) {
+        logger.info(Utilities.stackTraceToString(ex));
         logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
-        return 0.0;
       } else {
-        logger.log(Level.INFO, format(" Exception in energy calculation: %s", ex.toString()));
-        throw ex; // Rethrow exception
+        logger.log(Level.INFO, format(" Exception in energy calculation:\n %s", ex));
       }
+      throw ex;
     }
-
-    if (print) {
-      StringBuilder sb = new StringBuilder();
-      if (gradient) {
-        sb.append("\n Computed Potential Energy and Atomic Coordinate Gradients\n");
-      } else {
-        sb.append("\n Computed Potential Energy\n");
-      }
-      sb.append(this);
-      logger.info(sb.toString());
-    }
-    return totalEnergy;
   }
 
   /** {@inheritDoc} */
@@ -1773,7 +1760,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
           String filename =
               format(
                   "%s-LARGEGRAD-%s.pdb",
-                  FilenameUtils.removeExtension(molecularAssembly.getFile().getName()), timeString);
+                  removeExtension(molecularAssembly.getFile().getName()), timeString);
           PotentialsFunctions ef = new PotentialsUtils();
           filename = ef.versionFile(filename);
 
@@ -1787,30 +1774,29 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       return e;
     } catch (EnergyException ex) {
       if (printOnFailure) {
-        logger.info(Utilities.stackTraceToString(ex));
-        String timeString =
-            LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd-HH_mm_ss"));
-
-        String filename =
-            format(
-                "%s-ERROR-%s.pdb",
-                FilenameUtils.removeExtension(molecularAssembly.getFile().getName()), timeString);
-
-        PotentialsFunctions ef = new PotentialsUtils();
-        filename = ef.versionFile(filename);
-        logger.info(format(" Writing on-error snapshot to file %s", filename));
-        ef.saveAsPDB(molecularAssembly, new File(filename));
+        printFailure();
       }
-
       if (ex.doCauseSevere()) {
         logger.info(Utilities.stackTraceToString(ex));
         logger.log(Level.SEVERE, " Error in calculating energies or gradients", ex);
       } else {
-        logger.log(Level.INFO, format(" Exception in energy calculation: %s", ex.toString()));
+        logger.log(Level.INFO, format(" Exception in energy calculation:\n %s", ex));
       }
-
       throw ex;
     }
+  }
+
+  /**
+   * Save coordinates when an EnergyException is caught.
+   */
+  private void printFailure() {
+    String timeString =
+        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd-HH_mm_ss"));
+    String filename = format("%s-ERROR-%s.pdb", removeExtension(molecularAssembly.getFile().getName()), timeString);
+    PotentialsFunctions ef = new PotentialsUtils();
+    filename = ef.versionFile(filename);
+    logger.info(format(" Writing on-error snapshot to file %s", filename));
+    ef.saveAsPDB(molecularAssembly, new File(filename));
   }
 
   /**

@@ -509,7 +509,7 @@ public class EnergyExpansion {
                 " Rejecting pair energy for %s-%d %s-%d is %10.5g << %10f, " + "likely in error.",
                 residues[i], ri, residues[j], rj, energy, singularityThreshold);
         logger.warning(message);
-        throw new EnergyException(message);
+        throw new EnergyException(message, false, energy);
       }
     } finally {
       // Revert if the currentEnergy call throws an exception.
@@ -929,8 +929,7 @@ public class EnergyExpansion {
     return loadEnergyRestart(restartFile, residues, -1, null);
   }
 
-  public int loadEnergyRestart(
-      File restartFile, Residue[] residues, int boxIteration, int[] cellIndices) {
+  public int loadEnergyRestart(File restartFile, Residue[] residues, int boxIteration, int[] cellIndices) {
     try {
       int nResidues = residues.length;
       Path path = Paths.get(restartFile.getCanonicalPath());
@@ -943,7 +942,7 @@ public class EnergyExpansion {
         logger.severe(format(
             " Exception %s in calculating backbone energy; FFX shutting down.", ex));
       }
-      rO.logIfMaster(format(" Backbone energy:  %s\n", rO.formatEnergy(backboneEnergy)));
+      rO.logIfMaster(format("\n Backbone energy:  %s\n", rO.formatEnergy(backboneEnergy)));
 
       if (usingBoxOptimization && boxIteration >= 0) {
         boolean foundBox = false;
@@ -974,8 +973,7 @@ public class EnergyExpansion {
         }
         if (!foundBox) {
           rO.logIfMaster(
-              format(
-                  " Didn't find restart energies for Box %d: %d,%d,%d",
+              format(" Didn't find restart energies for Box %d: %d,%d,%d",
                   boxIteration, cellIndices[0], cellIndices[1], cellIndices[2]));
           return 0;
         } else if (linesThisBox.size() == 0) {
@@ -1006,9 +1004,7 @@ public class EnergyExpansion {
       } else if (singleLines.size() > 0) {
         loaded = 1;
       } else {
-        logger.warning(
-            format(
-                " Empty or unreadable energy restart file: %s.", restartFile.getCanonicalPath()));
+        logger.warning(format(" Empty or unreadable energy restart file: %s.", restartFile.getCanonicalPath()));
       }
       if (loaded >= 1) {
         boolean reverseMap = true;

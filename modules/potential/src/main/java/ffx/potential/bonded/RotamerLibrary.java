@@ -974,24 +974,13 @@ public class RotamerLibrary {
       measureRotamer(residue, chi, print);
       switch (residue.getResidueType()) {
         case AA:
-          logger.info(
-              format(
-                  " %c %s %8.3f %8.3f %8.3f %8.3f",
-                  residue.getChainID(), residue, chi[0], chi[1], chi[2], chi[3]));
+          logger.info(format(" %c %s %8.3f %8.3f %8.3f %8.3f", residue.getChainID(),
+              residue, chi[0], chi[1], chi[2], chi[3]));
           break;
         case NA:
-          logger.info(
-              format(
-                  " %c %s %8.3f %8.3f %8.3f %8.3f %8.3f" + " %8.3f %8.3f",
-                  residue.getChainID(),
-                  residue,
-                  chi[0],
-                  chi[1],
-                  chi[2],
-                  chi[3],
-                  chi[4],
-                  chi[5],
-                  chi[6]));
+          logger.info(format(" %c %s %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f",
+                  residue.getChainID(), residue,
+                  chi[0], chi[1], chi[2], chi[3], chi[4], chi[5], chi[6]));
           break;
         default:
           logger.info(" Not recognized as a nucleic or amino acid residue");

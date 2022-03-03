@@ -317,13 +317,13 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
       double e = realSpaceEnergyLoop[i].permanentEnergy;
       if (isNaN(e)) {
         throw new EnergyException(
-            format(" The permanent multipole energy of thread %d is %16.8f", i, e), false);
+            format(" The permanent multipole energy of thread %d is %16.8f", i, e));
       }
       permanentEnergy += e;
       double ei = realSpaceEnergyLoop[i].inducedEnergy;
       if (isNaN(ei)) {
         throw new EnergyException(
-            format(" The polarization energyof thread %d is %16.8f", i, ei), false);
+            format(" The polarization energyof thread %d is %16.8f", i, ei));
       }
       polarizationEnergy += ei;
     }
@@ -884,7 +884,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                       iSymm,
                       ei,
                       r);
-              throw new EnergyException(message, false);
+              throw new EnergyException(message);
             }
             if (ei != 0.0) {
               permanentEnergy += ei;
@@ -1005,7 +1005,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                       iSymm,
                       ei,
                       r);
-              throw new EnergyException(message, false);
+              throw new EnergyException(message);
             }
             inducedEnergy += ei;
 

@@ -686,9 +686,9 @@ public class ConnollyRegion extends ParallelRegion {
         for (int k = 0; k < 3; k++) {
           cubeCoordinates[k][i] = (int) ((atomCoords[k][i] - minAtomicCoordinates[k]) / width);
           if (cubeCoordinates[k][i] < 0) {
-            throw new EnergyException(" Cube Coordinate Too Small", false);
+            throw new EnergyException(" Cube Coordinate Too Small");
           } else if (cubeCoordinates[k][i] > MAXCUBE) {
-            throw new EnergyException(" Cube Coordinate Too Large", false);
+            throw new EnergyException(" Cube Coordinate Too Large");
           }
         }
       }
@@ -821,7 +821,7 @@ public class ConnollyRegion extends ParallelRegion {
                   }
                   nclsa++;
                   if (nclsa >= maxclsa) {
-                    throw new EnergyException(" Too many Neighbors for Atom", false);
+                    throw new EnergyException(" Too many Neighbors for Atom");
                   }
                   tempNeighborList[nclsa] = j;
                 }
@@ -864,7 +864,7 @@ public class ConnollyRegion extends ParallelRegion {
           for (int m = 0; m < nclsa + 1; m++) {
             ncls++;
             if (ncls >= maxAtomPairs) {
-              throw new EnergyException(" Too many Neighboring Atom Pairs", false);
+              throw new EnergyException(" Too many Neighboring Atom Pairs");
             }
             neighborAtomNumbers[ncls] = clsa[m];
           }
@@ -940,7 +940,7 @@ public class ConnollyRegion extends ParallelRegion {
                   // We have temporary torus; set up variables.
                   nTempTori++;
                   if (nTempTori >= maxTempTori) {
-                    throw new EnergyException(" Too many Temporary Tori", false);
+                    throw new EnergyException(" Too many Temporary Tori");
                   }
                   // Mark both atoms not free.
                   atomFreeOfNeighbors[ia] = false;
@@ -1051,7 +1051,7 @@ public class ConnollyRegion extends ParallelRegion {
             */
             nmnb++;
             if (nmnb >= MAXMNB) {
-              throw new EnergyException(" Too many Mutual Neighbors", false);
+              throw new EnergyException(" Too many Mutual Neighbors");
             }
             mnb[nmnb] = neighborAtomNumbers[iptr];
 
@@ -1247,7 +1247,7 @@ public class ConnollyRegion extends ParallelRegion {
             // We have a new probe position.
             nProbePositions++;
             if (nProbePositions >= maxProbePositions) {
-              throw new EnergyException(" Too many Probe Positions", false);
+              throw new EnergyException(" Too many Probe Positions");
             }
             // Mark three tori not buried.
             tempToriBuried[itt] = false;
@@ -1260,7 +1260,7 @@ public class ConnollyRegion extends ParallelRegion {
 
             // Calculate vectors from probe to atom centers.
             if (nConcaveVerts + 3 >= maxVertices) {
-              throw new EnergyException(" Too many Vertices", false);
+              throw new EnergyException(" Too many Vertices");
             }
             for (int k = 0; k < 3; k++) {
               vertexCoords[k][nConcaveVerts + 1] =
@@ -1348,7 +1348,7 @@ public class ConnollyRegion extends ParallelRegion {
             }
             // Set up concave edges and concave face.
             if (nConcaveEdges + 3 >= maxConcaveEdges) {
-              throw new EnergyException(" Too many Concave Edges", false);
+              throw new EnergyException(" Too many Concave Edges");
             }
             // Edges point to vertices.
             concaveEdgeVertexNumbers[0][nConcaveEdges + 1] = nConcaveVerts + 1;
@@ -1358,7 +1358,7 @@ public class ConnollyRegion extends ParallelRegion {
             concaveEdgeVertexNumbers[0][nConcaveEdges + 3] = nConcaveVerts + 3;
             concaveEdgeVertexNumbers[1][nConcaveEdges + 3] = nConcaveVerts + 1;
             if (nConcaveFaces + 1 >= maxConcaveFaces) {
-              throw new EnergyException(" Too many Concave Faces", false);
+              throw new EnergyException(" Too many Concave Faces");
             }
             // Face points to edges.
             for (int ke = 0; ke < 3; ke++) {
@@ -1382,10 +1382,10 @@ public class ConnollyRegion extends ParallelRegion {
     private void insertEdge(int edgeNumber, int torusNumber) {
       // Check for a serious error in the calling arguments.
       if (edgeNumber <= -1) {
-        throw new EnergyException(" Bad Edge Number in INEDGE", false);
+        throw new EnergyException(" Bad Edge Number in INEDGE");
       }
       if (torusNumber <= -1) {
-        throw new EnergyException(" Bad Torus Number in INEDGE", false);
+        throw new EnergyException(" Bad Torus Number in INEDGE");
       }
       // Set beginning of list or add to end.
       if (tempToriFirstEdge[torusNumber] == -1) {
@@ -1421,7 +1421,7 @@ public class ConnollyRegion extends ParallelRegion {
           // First, transfer information.
           nTori++;
           if (nTori >= maxTori) {
-            throw new EnergyException(" Too many non-buried tori.", false);
+            throw new EnergyException(" Too many non-buried tori.");
           }
           int ia = tempToriAtomNumbers[0][itt];
           int ja = tempToriAtomNumbers[1][itt];
@@ -1509,7 +1509,7 @@ public class ConnollyRegion extends ParallelRegion {
           // One more circle.
           nCircles++;
           if (nCircles >= maxCircles) {
-            throw new EnergyException(" Too many Circles", false);
+            throw new EnergyException(" Too many Circles");
           }
 
           // Circle center.
@@ -1546,7 +1546,7 @@ public class ConnollyRegion extends ParallelRegion {
             // One more concave edge.
             nent++;
             if (nent >= maxent) {
-              throw new EnergyException(" Too many Edges for Torus", false);
+              throw new EnergyException(" Too many Edges for Torus");
             }
             // First vertex of edge.
             int iv = concaveEdgeVertexNumbers[0][ien];
@@ -1561,7 +1561,7 @@ public class ConnollyRegion extends ParallelRegion {
               dtev += tev[k][nent] * tev[k][nent];
             }
             if (dtev <= 0.0) {
-              throw new EnergyException(" Probe on Torus Axis", false);
+              throw new EnergyException(" Probe on Torus Axis");
             }
             dtev = sqrt(dtev);
             for (int k = 0; k < 3; k++) {
@@ -1616,7 +1616,7 @@ public class ConnollyRegion extends ParallelRegion {
           }
 
           if ((nent % 2) == 0) {
-            throw new EnergyException(" Odd Number of Edges for Torus", false);
+            throw new EnergyException(" Odd Number of Edges for Torus");
           }
 
           // Set up linked list of concave edges in order of increasing angle
@@ -1650,7 +1650,7 @@ public class ConnollyRegion extends ParallelRegion {
               // One more saddle face.
               nSaddleFaces++;
               if (nSaddleFaces >= maxSaddleFace) {
-                throw new EnergyException(" Too many Saddle Faces", false);
+                throw new EnergyException(" Too many Saddle Faces");
               }
               // Get edge number.
               ien = ten[l1];
@@ -1659,7 +1659,7 @@ public class ConnollyRegion extends ParallelRegion {
               // One more convex edge.
               nConvexEdges++;
               if (nConvexEdges >= maxConvexEdges) {
-                throw new EnergyException(" Too many Convex Edges", false);
+                throw new EnergyException(" Too many Convex Edges");
               }
               // First convex edge points to second circle.
               convexEdgeCircleNumber[nConvexEdges] = nCircles;
@@ -1674,7 +1674,7 @@ public class ConnollyRegion extends ParallelRegion {
               // One more convex edge.
               nConvexEdges++;
               if (nConvexEdges >= maxConvexEdges) {
-                throw new EnergyException(" Too many Convex Edges", false);
+                throw new EnergyException(" Too many Convex Edges");
               }
               // Second convex edge points to fist circle.
               convexEdgeCircleNumber[nConvexEdges] = nCircles - 1;
@@ -1694,7 +1694,7 @@ public class ConnollyRegion extends ParallelRegion {
                   m1 = 0;
                 }
                 if (sdstrt[m1]) {
-                  throw new EnergyException(" Three Starts in a Row", false);
+                  throw new EnergyException(" Three Starts in a Row");
                 }
                 int n1 = nxtang[m1];
                 // The old switcheroo.
@@ -1723,7 +1723,7 @@ public class ConnollyRegion extends ParallelRegion {
           // Set up entire circles as convex edges for new saddle surface; one more saddle face.
           nSaddleFaces++;
           if (nSaddleFaces >= maxSaddleFace) {
-            throw new EnergyException(" Too many Saddle Faces", false);
+            throw new EnergyException(" Too many Saddle Faces");
           }
           // No concave edge for saddle.
           saddleConcaveEdgeNumbers[0][nSaddleFaces] = -1;
@@ -1814,7 +1814,7 @@ public class ConnollyRegion extends ParallelRegion {
             // One more edge.
             nepa++;
             if (nepa >= maxepa) {
-              throw new EnergyException(" Too many Convex Edges for Atom", false);
+              throw new EnergyException(" Too many Convex Edges for Atom");
             }
             // Store vertices of edge.
             av[0][nepa] = convexEdgeVertexNumber[0][iep];
@@ -1849,7 +1849,7 @@ public class ConnollyRegion extends ParallelRegion {
             iep = convexEdgeNext[iep];
           }
           if (nepa <= -1) {
-            throw new EnergyException(" No Edges for Non-buried, Non-free Atom", false);
+            throw new EnergyException(" No Edges for Non-buried, Non-free Atom");
           }
           // Form cycles; initialize all the convex edges as not used in cycle.
           for (int iepa = 0; iepa < nepa + 1; iepa++) {
@@ -1878,7 +1878,7 @@ public class ConnollyRegion extends ParallelRegion {
             // One more cycle for atom.
             ncypa++;
             if (ncypa >= maxcypa) {
-              throw new EnergyException(" Too many Cycles per Atom", false);
+              throw new EnergyException(" Too many Cycles per Atom");
             }
             // Mark edge used in cycle.
             epused[iepa] = true;
@@ -1886,7 +1886,7 @@ public class ConnollyRegion extends ParallelRegion {
             // One more cycle for molecule.
             nCycles++;
             if (nCycles >= maxCycles) {
-              throw new EnergyException(" Too many Cycles", false);
+              throw new EnergyException(" Too many Cycles");
             }
             // Index of edge in atom cycle array.
             cyepa[ncyep][ncypa] = iepa;
@@ -1910,7 +1910,7 @@ public class ConnollyRegion extends ParallelRegion {
                 // One more edge for this cycle.
                 ncyep++;
                 if (ncyep >= MAXCYEP) {
-                  throw new EnergyException(" Too many Edges per Cycle", false);
+                  throw new EnergyException(" Too many Edges per Cycle");
                 }
                 epused[jepa] = true;
                 nused++;
@@ -2026,7 +2026,7 @@ public class ConnollyRegion extends ParallelRegion {
             // One more convex face.
             nConvexFaces++;
             if (nConvexFaces >= maxConvexFaces) {
-              throw new EnergyException(" Too many Convex Faces", false);
+              throw new EnergyException(" Too many Convex Faces");
             }
             // Clear number of cycles for face.
             convexFaceNumCycles[nConvexFaces] = -1;
@@ -2048,7 +2048,7 @@ public class ConnollyRegion extends ParallelRegion {
               // One more cycle for face.
               convexFaceNumCycles[nConvexFaces]++;
               if (convexFaceNumCycles[nConvexFaces] >= MAXFPCY) {
-                throw new EnergyException(" Too many Cycles bounding Convex Face", false);
+                throw new EnergyException(" Too many Cycles bounding Convex Face");
               }
               int i = convexFaceNumCycles[nConvexFaces];
               // Store cycle number.
@@ -2065,7 +2065,7 @@ public class ConnollyRegion extends ParallelRegion {
         // Once face for free atom; no cycles.
         nConvexFaces++;
         if (nConvexFaces >= maxConvexFaces) {
-          throw new EnergyException(" Too many Convex Faces", false);
+          throw new EnergyException(" Too many Convex Faces");
         }
         convexFaceAtomNumber[nConvexFaces] = ia;
         convexFaceNumCycles[nConvexFaces] = -1;
@@ -2568,7 +2568,7 @@ public class ConnollyRegion extends ParallelRegion {
               if (dij2 <= fourProbe2 && depths[jfn] <= probe) {
                 nop++;
                 if (nop >= maxop) {
-                  throw new EnergyException(" NOP Overflow in VAM", false);
+                  throw new EnergyException(" NOP Overflow in VAM");
                 }
                 ifnop[nop] = jfn;
                 for (int k = 0; k < 3; k++) {
@@ -3512,8 +3512,7 @@ public class ConnollyRegion extends ParallelRegion {
       int ny = (int) ((ymax - ymin) / edge);
       int nz = (int) ((zmax - zmin) / edge);
       if (max(max(nx, ny), nz) > MXCUBE) {
-        throw new EnergyException(
-            " VolumeRegion derivative  --  Increase the Value of mxcube", false);
+        throw new EnergyException(" VolumeRegion derivative  --  Increase the Value of mxcube");
       }
 
       // Initialize the coarse lattice of cubes.
