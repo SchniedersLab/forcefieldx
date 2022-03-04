@@ -49,12 +49,14 @@ package ffx.potential.utils;
  */
 public class EnergyException extends ArithmeticException {
 
+  private final double energy;
   private final boolean causeSevere;
 
   /** Constructor for EnergyException. */
   public EnergyException() {
     super();
     causeSevere = false;
+    energy = Double.NaN;
   }
 
   /**
@@ -65,16 +67,7 @@ public class EnergyException extends ArithmeticException {
   public EnergyException(String str) {
     super(str);
     causeSevere = false;
-  }
-
-  /**
-   * Constructor for EnergyException.
-   *
-   * @param causeSevere a boolean.
-   */
-  public EnergyException(boolean causeSevere) {
-    super();
-    this.causeSevere = causeSevere;
+    energy = Double.NaN;
   }
 
   /**
@@ -86,6 +79,28 @@ public class EnergyException extends ArithmeticException {
   public EnergyException(String str, boolean causeSevere) {
     super(str);
     this.causeSevere = causeSevere;
+    energy = Double.NaN;
+  }
+
+  /**
+   * Constructor for EnergyException.
+   *
+   * @param str a {@link java.lang.String} object.
+   * @param causeSevere a boolean.
+   */
+  public EnergyException(String str, boolean causeSevere, double energy) {
+    super(str);
+    this.causeSevere = causeSevere;
+    this.energy = energy;
+  }
+
+  /**
+   * Return the reported Energy.
+   *
+   * @return Energy.
+   */
+  public double getEnergy() {
+    return energy;
   }
 
   /**

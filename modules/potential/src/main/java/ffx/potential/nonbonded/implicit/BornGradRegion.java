@@ -297,8 +297,7 @@ public class BornGradRegion extends ParallelRegion {
           // Check the value of the Born radii chain rule term.
           double bornGrad = sharedBornGrad.get(i);
           if (isInfinite(bornGrad) || isNaN(bornGrad)) {
-            throw new EnergyException(
-                format(" %s\n Born radii CR %d %8.3f", atoms[i], i, bornGrad), true);
+            throw new EnergyException(format(" %s\n Born radii CR %d %8.3f", atoms[i], i, bornGrad), true);
           }
           final double integralStartI = max(baseRadius[i], descreenRadius[i]) + descreenOffset;
           final double descreenRi = descreenRadius[i];

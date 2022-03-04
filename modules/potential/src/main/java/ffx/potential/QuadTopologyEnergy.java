@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.potential;
 
+import static java.lang.String.format;
 import static java.util.Arrays.fill;
 
 import edu.rit.pj.ParallelRegion;
@@ -305,7 +306,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
       }
       return dtADestroy && dtBDestroy;
     } catch (Exception ex) {
-      logger.warning(String.format(" Exception in shutting down QuadTopologyEnergy: %s", ex));
+      logger.warning(format(" Exception in shutting down QuadTopologyEnergy: %s", ex));
       logger.info(Utilities.stackTraceToString(ex));
       return false;
     }
@@ -325,13 +326,11 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
     try {
       team.execute(region);
     } catch (Exception ex) {
-      throw new EnergyException(
-          String.format(" Exception in calculating quad-topology energy: %s", ex.toString()),
-          false);
+      throw new EnergyException(format(" Exception in calculating quad-topology energy: %s", ex));
     }
 
     if (verbose) {
-      logger.info(String.format(" Total quad-topology energy: %12.4f", totalEnergy));
+      logger.info(format(" Total quad-topology energy: %12.4f", totalEnergy));
     }
     return totalEnergy;
   }
@@ -352,13 +351,11 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
     try {
       team.execute(region);
     } catch (Exception ex) {
-      throw new EnergyException(
-          String.format(" Exception in calculating quad-topology energy: %s", ex.toString()),
-          false);
+      throw new EnergyException(format(" Exception in calculating quad-topology energy: %s", ex));
     }
 
     if (verbose) {
-      logger.info(String.format(" Total quad-topology energy: %12.4f", totalEnergy));
+      logger.info(format(" Total quad-topology energy: %12.4f", totalEnergy));
     }
     return totalEnergy;
   }
@@ -435,7 +432,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
   public void setLambda(double lambda) {
     if (!Double.isFinite(lambda) || lambda > 1.0 || lambda < 0.0) {
       throw new ArithmeticException(
-          String.format(" Attempted to set invalid lambda value of %10.6g", lambda));
+          format(" Attempted to set invalid lambda value of %10.6g", lambda));
     }
     this.lambda = lambda;
     dualTopA.setLambda(lambda);
@@ -576,7 +573,7 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
         team.shutdown();
       } catch (Exception e) {
         logger.severe(
-            String.format(
+            format(
                 " Exception in shutting down old ParallelTeam for DualTopologyEnergy: %s",
                 e.toString()));
       }
@@ -705,12 +702,12 @@ public class QuadTopologyEnergy implements CrystalPotential, LambdaInterface {
       int index = indexBToGlobal[i];
       if (index < nShared) {
         double current = to[index];
-        logger.finer(String.format(" Current %g, i %d, index %d", current, i, index));
+        logger.finer(format(" Current %g, i %d, index %d", current, i, index));
         to[index] = funct.applyAsDouble(current, fromB[i]);
-        logger.finer(String.format(" New: %g", to[index]));
+        logger.finer(format(" New: %g", to[index]));
       } else {
         logger.finer(
-            String.format(
+            format(
                 " Applying %g to i %d index %d, current %g", fromB[i], i, index, to[index]));
         to[index] = fromB[i];
       }

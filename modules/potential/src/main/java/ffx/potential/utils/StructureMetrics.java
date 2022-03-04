@@ -41,15 +41,12 @@ import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
-import ffx.crystal.Crystal;
 import ffx.numerics.math.Double3;
 import ffx.potential.bonded.Atom;
 import java.util.Arrays;
 import java.util.logging.Logger;
-import org.apache.commons.math3.geometry.euclidean.threed.Line;
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
 import org.apache.commons.math3.geometry.euclidean.threed.RotationOrder;
-import org.apache.commons.math3.geometry.euclidean.threed.Vector3D;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
 
@@ -79,108 +76,44 @@ public class StructureMetrics {
    * @return The radius of gyration.
    */
   public static double radiusOfGyration(Atom[] atoms) {
-    int nAtoms = atoms.length;
-    double[] x = new double[nAtoms];
-    double[] y = new double[nAtoms];
-    double[] z = new double[nAtoms];
-
-    int index = 0;
-    for (Atom atom : atoms) {
-      x[index] = atom.getX();
-      y[index] = atom.getY();
-      z[index] = atom.getZ();
-      index++;
-    }
-
-    return radiusOfGyration(x, y, z);
+    Double3 radius = new Double3(radiusOfGyrationComponents(atoms));
+    return radius.length();
   }
 
   /**
-   * Compute the radius of gyration.
+   * Compute the average radius of gyration.
    *
    * @param x Array of atomic X-coordinates.
    * @param y Array of atomic X-coordinates.
    * @param z Array of atomic X-coordinates.
    * @return The radius of gyration.
    */
-  public static double radiusOfGyration(double[] x, double[] y, double[] z) {
+  public static double radiusOfGyration(double[] x, double[] y, double[] z, double[] mass) {
     assert (x.length == y.length);
     assert (y.length == z.length);
-
-    // Find the centroid of the atomic coordinates.
-    double xc = 0.0;
-    double yc = 0.0;
-    double zc = 0.0;
-    int nAtoms = x.length;
-    for (int i = 0; i < nAtoms; i++) {
-      xc += x[i];
-      yc += y[i];
-      zc += z[i];
-    }
-    xc /= nAtoms;
-    yc /= nAtoms;
-    zc /= nAtoms;
-
-    // Compute the radius of gyration.
-    double rg = 0.0;
-    for (int i = 0; i < nAtoms; i++) {
-      double dx = x[i] - xc;
-      double dy = y[i] - yc;
-      double dz = z[i] - zc;
-      rg += dx * dx + dy * dy + dz * dz;
-    }
-    rg = sqrt(rg / nAtoms);
-
-    return rg;
+    Double3 radius = new Double3(radiusOfGyrationComponents(x,y,z, mass, true));
+    return radius.length();
   }
 
   /**
-   * Compute the radius of gyration.
+   * Compute the average radius of gyration.
    *
    * @param xyz Array of atomic coordinates (xyz = [X0, Y0, Z0, X1, Y1, Z1, ...].
    * @return The radius of gyration.
    */
-  public static double radiusOfGyration(double[] xyz) {
+  public static double radiusOfGyration(double[] xyz, double[] mass) {
     assert (xyz.length % 3 == 0);
-
-    // Find the centroid of the atomic coordinates.
-    double xc = 0.0;
-    double yc = 0.0;
-    double zc = 0.0;
-    int nAtoms = xyz.length / 3;
-    for (int i = 0; i < nAtoms; i++) {
-      int index = i * 3;
-      xc += xyz[index++];
-      yc += xyz[index++];
-      zc += xyz[index];
-    }
-    xc /= nAtoms;
-    yc /= nAtoms;
-    zc /= nAtoms;
-
-    // Compute the radius of gyration
-    double rg = 0.0;
-    for (int i = 0; i < nAtoms; i++) {
-      int index = i * 3;
-      double dx = xyz[index++] - xc;
-      double dy = xyz[index++] - yc;
-      double dz = xyz[index] - zc;
-      rg += dx * dx + dy * dy + dz * dz;
-    }
-
-    rg = sqrt(rg / nAtoms);
-
-    return rg;
+    Double3 radius = new Double3(radiusOfGyrationComponents(xyz, mass, true));
+    return radius.length();
   }
 
   /**
-   * Compute the components that make up the radius of gyration along three axes.
+   * Compute the radius of gyration for all atoms in the supplied array.
    *
-   * @param atoms Atoms for calculation
-   * @param pma Principal moment axes
-   * @return radius of gyration along axes
+   * @param atoms Atom array.
+   * @return The radius of gyration.
    */
-  public static double[][] radiusOfGyrationComponents(Atom[] atoms, boolean pma) {
+  public static double[] radiusOfGyrationComponents(Atom[] atoms) {
     int nAtoms = atoms.length;
     double[] x = new double[nAtoms];
     double[] y = new double[nAtoms];
@@ -189,77 +122,23 @@ public class StructureMetrics {
 
     int index = 0;
     for (int i = 0; i < nAtoms; i++) {
-      Atom atom = atoms[i];
-      mass[i] = atom.getMass();
-      x[index] = atom.getX();
-      y[index] = atom.getY();
-      z[index] = atom.getZ();
+      mass[i] = atoms[i].getMass();
+      x[index] = atoms[i].getX();
+      y[index] = atoms[i].getY();
+      z[index] = atoms[i].getZ();
       index++;
     }
 
-    return radiusOfGyrationComponents(x, y, z, mass, pma);
+    return radiusOfGyrationComponents(x, y, z, mass, false);
   }
 
   /**
-   * Compute the components that make up the radius of gyration along three axes.
+   * Compute the components that make up the radius of gyration about yz-, xz-, xy-planes.
    *
    * @param xyz Coordinates for calculation
-   * @param mass Mass of each atom
-   * @param pma Use principal moment axes
    * @return radius of gyration along axes
    */
-  public static double[][] radiusOfGyrationComponents(double[] xyz, double[] mass, boolean pma) {
-    assert (xyz.length % 3 == 0);
-
-    int nAtoms = xyz.length / 3;
-    // Find the centroid of the atomic coordinates.
-    double[] x = new double[nAtoms];
-    double[] y = new double[nAtoms];
-    double[] z = new double[nAtoms];
-
-    for (int i = 0; i < nAtoms; i++) {
-      int index = i * 3;
-      x[i] = xyz[index++];
-      y[i] = xyz[index++];
-      z[i] = xyz[index];
-    }
-
-    return radiusOfGyrationComponents(x, y, z, mass, pma);
-  }
-
-  /**
-   * Compute the components that make up the radius of gyration along three axes.
-   *
-   * @param x Coordinates for calculation
-   * @param y Coordiantes for calculation
-   * @param z Coordinates for calculation
-   * @param mass Mass of each atom
-   * @param pma Use principal moment axes
-   * @return radius of gyration along axes
-   */
-  public static double[][] radiusOfGyrationComponents(double[] x, double[] y, double[] z,
-      double[] mass, boolean pma) {
-    assert (x.length <= mass.length);
-    double massSum = Arrays.stream(mass).sum();
-
-    double[][] inertia = momentsOfInertia(x, y, z, mass, false, false, pma);
-
-    // Rg = sqrt(I/m)
-    for (int i = 0; i < inertia.length; i++) {
-      inertia[i][0] = sqrt(inertia[i][0] / massSum);
-    }
-
-    return inertia;
-  }
-
-  /**
-   * Compute the components that make up the radius of gyration along three axes.
-   *
-   * @param xyz Coordinates for calculation
-   * @param unitCell crystal used as system basis.
-   * @return radius of gyration along axes
-   */
-  public static double[][] radiusOfGyrationComponents(double[] xyz, Crystal unitCell) {
+  public static double[] radiusOfGyrationComponents(double[] xyz, double[] mass, boolean pmp) {
     assert (xyz.length % 3 == 0);
     int nAtoms = xyz.length / 3;
     // Find the centroid of the atomic coordinates.
@@ -274,7 +153,7 @@ public class StructureMetrics {
       z[i] = xyz[index];
     }
 
-    return radiusOfGyrationComponents(x, y, z, unitCell);
+    return radiusOfGyrationComponents(x, y, z, mass, pmp);
   }
 
   /**
@@ -283,23 +162,14 @@ public class StructureMetrics {
    * @param x Coordinates for calculation
    * @param y Coordinates for calculation
    * @param z Coordinates for calculation
-   * @param unitCell Crystal to use as basis.
-   * @return radius of gyration about planes.
+   * @param pmp Principal moment plane
+   * @return radius of gyration about planes (yz, xz, xy).
    */
-  public static double[][] radiusOfGyrationComponents(double[] x, double[] y, double[] z,
-      Crystal unitCell) {
+  public static double[] radiusOfGyrationComponents(double[] x, double[] y, double[] z, double[] mass, boolean pmp) {
     assert (x.length == y.length);
     assert (y.length == z.length);
-
-    // Define a Line for each unit cell vector.
-//    Vector3D origin = new Vector3D(0.0, 0.0, 0.0);
-//    Vector3D aAxis = new Vector3D(unitCell.Ai[0].clone());
-//    Vector3D bAxis = new Vector3D(unitCell.Ai[1].clone());
-//    Vector3D cAxis = new Vector3D(unitCell.Ai[2].clone());
-//    Line[] axes = new Line[3];
-//    axes[0] = new Line(origin, aAxis, 1.e0-8);
-//    axes[1] = new Line(origin, bAxis, 1.e0-8);
-//    axes[2] = new Line(origin, cAxis, 1.e0-8);
+    assert (x.length <= mass.length);
+    double massSum = Arrays.stream(mass).sum();
 
     // Find the centroid of the atomic coordinates.
     int nAtoms = x.length;
@@ -307,42 +177,86 @@ public class StructureMetrics {
     double yc = 0.0;
     double zc = 0.0;
     for (int i = 0; i < nAtoms; i++) {
-      xc += x[i];
-      yc += y[i];
-      zc += z[i];
+      xc += x[i] * mass[i];
+      yc += y[i] * mass[i];
+      zc += z[i] * mass[i];
     }
-    Vector3D centroid = new Vector3D(xc, yc, zc);
-    centroid = centroid.scalarMultiply(1.0 / nAtoms);
+    Double3 centroid = new Double3(xc, yc, zc);
+    centroid.scaleI(1.0 / massSum);
 
-    // Compute the radius of gyration about each unit cell vector.
-    double[] radius = new double[3];
-    for (int j = 0; j < nAtoms; j++) {
-      Vector3D xyz = new Vector3D(x[j], y[j], z[j]);
-      xyz = xyz.subtract(centroid);
-      double[] coords = xyz.toArray();
-      for (int i=0; i<3; i++) {
-        // double mag = axes[i].distance(xyz);
-        double mag = coords[i];
-        radius[i] += mag * mag;
+    // Compute the radius of gyration.
+    Double3 radius = new Double3();
+    double[][] vec;
+    if (pmp) {
+      // gyration tensor about principal planes
+      double xterm;
+      double yterm;
+      double zterm;
+      double xx = 0.0;
+      double xy = 0.0;
+      double xz = 0.0;
+      double yy = 0.0;
+      double yz = 0.0;
+      double zz = 0.0;
+      for (int i = 0; i < nAtoms; i++) {
+        xterm = x[i] - xc;
+        yterm = y[i] - yc;
+        zterm = z[i] - zc;
+        xx += xterm * xterm;
+        xy += xterm * yterm;
+        xz += xterm * zterm;
+        yy += yterm * yterm;
+        yz += yterm * zterm;
+        zz += zterm * zterm;
       }
-    }
-
-    for (int i = 0; i < 3; i++) {
-      radius[i] = sqrt(radius[i] / nAtoms);
-    }
-
-    double[][] momentsAndVectors = new double[3][4];
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 4; j++) {
-        if (j == 0) {
-          momentsAndVectors[i][j] = radius[i];
-        } else {
-          momentsAndVectors[i][j] = unitCell.Ai[i][j-1];
-        }
+      double[][] tensor = new double[3][3];
+      tensor[0][0] = xx;
+      tensor[0][1] = xy;
+      tensor[0][2] = xz;
+      tensor[1][0] = xy;
+      tensor[1][1] = yy;
+      tensor[1][2] = yz;
+      tensor[2][0] = xz;
+      tensor[2][1] = yz;
+      tensor[2][2] = zz;
+      // Diagonalize the matrix.
+      Array2DRowRealMatrix cMatrix = new Array2DRowRealMatrix(tensor, false);
+      EigenDecomposition eigenDecomposition = new EigenDecomposition(cMatrix);
+      // Extract the quaternions.
+      radius.set(eigenDecomposition.getRealEigenvalues()).scaleI(1.0/nAtoms).sqrtI();
+//      vec = eigenDecomposition.getV().getData();
+//
+//      // Select the direction for each principal moment axis
+//      double dot = 0.0;
+//      for (int i = 0; i < 2; i++) {
+//        for (int j = 0; j < nAtoms; j++) {
+//          xterm = vec[i][0] * (x[j] - xc);
+//          yterm = vec[i][1] * (y[j] - yc);
+//          zterm = vec[i][2] * (z[j] - zc);
+//          dot = xterm + yterm + zterm;
+//          if (dot < 0.0) {
+//            for (int k = 0; k < 3; k++) {
+//              vec[i][k] = -vec[i][k];
+//            }
+//          }
+//          if (dot != 0.0) {
+//            break;
+//          }
+//        }
+//        if (dot != 0.0) {
+//          break;
+//        }
+//      }
+    }else{
+      for(int i = 0; i < nAtoms; i++) {
+        Double3 xyz = new Double3(x[i], y[i], z[i]);
+        xyz.subI(centroid);
+        radius.addI(xyz.squareI());
       }
+      radius.scaleI(1.0 / nAtoms).sqrtI();
     }
 
-    return momentsAndVectors;
+    return radius.get();
   }
 
   /**
@@ -571,63 +485,4 @@ public class StructureMetrics {
 
     return momentsAndVectors;
   }
-
-  /**
-   * Compute the moments of inertia.
-   *
-   * @param xyz Array of atomic coordinates (xyz = [X0, Y0, Z0, X1, Y1, Z1, ...].
-   * @param mass Mass of atoms
-   * @param unitCell Crystal to use as system basis.
-   * @return The radius of gyration.
-   */
-  public static double[][] momentsOfInertia(double[] xyz, double[] mass, Crystal unitCell) {
-    assert (xyz.length % 3 == 0);
-    int nAtoms = xyz.length / 3;
-    // Find the centroid of the atomic coordinates.
-    double[] x = new double[nAtoms];
-    double[] y = new double[nAtoms];
-    double[] z = new double[nAtoms];
-
-    for (int i = 0; i < nAtoms; i++) {
-      int index = i * 3;
-      x[i] = xyz[index++];
-      y[i] = xyz[index++];
-      z[i] = xyz[index];
-    }
-
-    return momentsOfInertia(x, y, z, mass, unitCell);
-  }
-
-  /**
-   * Compute the moments of inertia
-   *
-   * @param x Array of atomic X-coordinates.
-   * @param y Array of atomic X-coordinates.
-   * @param z Array of atomic X-coordinates.
-   * @param mass Mass of atoms
-   * @param unitCell Crystal to use as system basis.
-   * @return The moment of inertia.
-   */
-  public static double[][] momentsOfInertia(double[] x, double[] y, double[] z, double[] mass,
-      Crystal unitCell) {
-    assert (x.length == y.length);
-    assert (y.length == z.length);
-    // Crystal orientation
-    double[][] radius = radiusOfGyrationComponents(x, y, z, unitCell);
-    double massSum = Arrays.stream(mass).sum();
-
-    double[][] momentsAndVectors = new double[3][4];
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 4; j++) {
-        if (j == 0) {
-          momentsAndVectors[i][j] = massSum * radius[i][0] * radius[i][0];
-        } else {
-          momentsAndVectors[i][j] = radius[i][j - 1];
-        }
-      }
-    }
-
-    return momentsAndVectors;
-  }
-
 }

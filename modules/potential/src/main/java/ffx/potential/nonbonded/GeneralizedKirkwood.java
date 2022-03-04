@@ -1285,7 +1285,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * @return a double.
    */
   public double solvationEnergy(double gkInducedCorrectionEnergy, boolean gradient, boolean print) {
-
     cavitationEnergy = 0.0;
     dispersionEnergy = 0.0;
     gkEnergy = 0.0;

@@ -588,45 +588,29 @@ public class DistanceMatrix {
       neighborList.buildList(xyz, lists, use, forceRebuild, printLists);
 
       neighborTime += System.nanoTime();
-      logger.info(
-          format(" Built residue neighbor list:           %8.3f sec", neighborTime * 1.0e-9));
+      logger.info(format(" Built residue neighbor list:           %8.3f sec", neighborTime * 1.0e-9));
 
-      DistanceRegion distanceRegion =
-          new DistanceRegion(
-              parallelTeam.getThreadCount(),
-              numResidues,
-              crystal,
-              lists,
+      DistanceRegion distanceRegion = new DistanceRegion(
+              parallelTeam.getThreadCount(), numResidues, crystal, lists,
               neighborList.getPairwiseSchedule());
 
       long parallelTime = -System.nanoTime();
       try {
-        distanceRegion.init(
-            this,
-            rO,
-            molecularAssembly,
-            allResiduesArray,
-            library,
-            algorithmListener,
-            distanceMatrix);
+        distanceRegion.init(this, rO, molecularAssembly, allResiduesArray, library, algorithmListener, distanceMatrix);
         parallelTeam.execute(distanceRegion);
       } catch (Exception e) {
         String message = " Exception compting residue distance matrix.";
         logger.log(Level.SEVERE, message, e);
       }
       parallelTime += System.nanoTime();
-      logger.info(
-          format(" Pairwise distance matrix:              %8.3f sec\n", parallelTime * 1.0e-9));
+      logger.info(format(" Pairwise distance matrix:              %8.3f sec", parallelTime * 1.0e-9));
 
       ResidueState.revertAllCoordinates(allResiduesList, orig);
-
       try {
         parallelTeam.shutdown();
       } catch (Exception ex) {
         logger.warning(
-            format(
-                " Exception shutting down parallel team for the distance matrix: %s",
-                ex.toString()));
+            format(" Exception shutting down parallel team for the distance matrix: %s", ex));
       }
     }
   }

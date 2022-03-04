@@ -42,6 +42,7 @@ import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
 import ffx.potential.nonbonded.VanDerWaals;
+import ffx.utilities.StringOutputStream;
 
 import java.util.*;
 
@@ -51,6 +52,7 @@ public class GetProteinFeatures {
     private static final NavigableMap<Double, String> phiToStructure = new TreeMap<>();
     private static final NavigableMap<Double, String> psiToStructure = new TreeMap<>();
     private static final HashMap<AminoAcid3, Double> standardSurfaceArea = new HashMap<>();
+    private static final HashMap<String, String> aminoAcidCodes = new HashMap<>();
     private double phi;
     private double psi;
     private double omega;
@@ -164,6 +166,27 @@ public class GetProteinFeatures {
         standardSurfaceArea.put(AminoAcid3.TRP, 262.32819);
         standardSurfaceArea.put(AminoAcid3.TYR, 239.91172);
         standardSurfaceArea.put(AminoAcid3.VAL, 171.89211);
+
+        aminoAcidCodes.put("A", "Ala");
+        aminoAcidCodes.put("R", "Arg");
+        aminoAcidCodes.put("N", "Asn");
+        aminoAcidCodes.put("D", "Asp");
+        aminoAcidCodes.put("C", "Cys");
+        aminoAcidCodes.put("E", "Glu");
+        aminoAcidCodes.put("Q", "Gln");
+        aminoAcidCodes.put("G", "Gly");
+        aminoAcidCodes.put("H", "His");
+        aminoAcidCodes.put("I", "Ile");
+        aminoAcidCodes.put("L", "Leu");
+        aminoAcidCodes.put("K", "Lys");
+        aminoAcidCodes.put("M", "Met");
+        aminoAcidCodes.put("F", "Phe");
+        aminoAcidCodes.put("P", "Pro");
+        aminoAcidCodes.put("S", "Ser");
+        aminoAcidCodes.put("T", "Thr");
+        aminoAcidCodes.put("W", "Trp");
+        aminoAcidCodes.put("Y", "Tyr");
+        aminoAcidCodes.put("V", "Val");
     }
 
     public String[] saveFeatures(Residue residue, double surfaceArea) {
@@ -297,6 +320,32 @@ public class GetProteinFeatures {
         double bFactor = 0;
         bFactor = currentRes.getAtomByName("CA", true).getTempFactor();
         return bFactor;
+    }
+
+    public List<String> ddgunToNPChange(List<String> ddgun){
+        List<String> npChanges = new ArrayList<>();
+        for (int i=0; i<ddgun.size(); i++){
+            String[] splits = ddgun.get(i).split("\t");
+            String[] splits2 = splits[0].split("_");
+            String isoform = splits2[1] + "_" + splits2[2].replace(".pdb", "");
+            String currentNP = splits[2];
+            String wt = String.valueOf(currentNP.charAt(0));
+            String mut = String.valueOf(currentNP.charAt(currentNP.length()-1));
+            String pos = currentNP.substring(1, currentNP.length()-1);
+            String npChange = isoform + ":p." + aminoAcidCodes.get(wt) + pos + aminoAcidCodes.get(mut);
+            npChanges.add(npChange);
+        }
+        return npChanges;
+    }
+
+    public List<Double> getDDGunValues(List<String> ddgun){
+        List<Double> values= new ArrayList<>();
+        for (int i=0; i<ddgun.size(); i++){
+            String[] splits = ddgun.get(i).split("\t");
+            Double value = Math.abs(Double.parseDouble(splits[3]));
+            values.add(value);
+        }
+        return values;
     }
 
 
