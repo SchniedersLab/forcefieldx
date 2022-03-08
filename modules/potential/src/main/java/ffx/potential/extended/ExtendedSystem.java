@@ -1093,7 +1093,6 @@ public class ExtendedSystem {
         } else {
             logger.info(" Writing dynamics restart file to " + esvName + " failed");
         }
-        writeLambdaHistogram();
     }
 
     private void setESVHistogram(){
@@ -1143,7 +1142,7 @@ public class ExtendedSystem {
         }
         tautomerHeader.append("\nλ↓");
         for(int i=0; i < nTitr; i++){
-            logger.info(format("ESV: %d \n", i));
+            logger.info(format("ESV: %s (%d) \n", titratingResidueList.get(i).getName() ,i));
             logger.info(tautomerHeader.toString());
             for(int j=0; j < 10; j++){
                 double lb = (double) j/10;
