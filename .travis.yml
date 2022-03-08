@@ -7,7 +7,7 @@ sudo: false
 matrix:
   include:
     - os: linux
-      jdk: openjdk17
+      jdk: openjdk
 
 cache:
   directories:
