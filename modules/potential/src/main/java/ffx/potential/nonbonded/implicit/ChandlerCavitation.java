@@ -181,7 +181,7 @@ public class ChandlerCavitation {
     // Calculate a purely volume based cavitation energy.
     volume = connollyRegion.getVolume();
     volumeEnergy = volume * solventPressure;
-    
+
     // effectiveRadius = 0.5 * sqrt(surfaceArea / PI);
     // double reff = effectiveRadius;
     // double reff2 = reff * reff;

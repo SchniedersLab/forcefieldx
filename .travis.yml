@@ -2,7 +2,6 @@
 
 os: linux
 language: java
-jdk: openjdk17
 sudo: false
 
 cache:
