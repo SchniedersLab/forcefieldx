@@ -371,7 +371,7 @@ public class PCGSolver {
         }
         String message =
             format("Fatal SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
-        throw new EnergyException(message, false);
+        throw new EnergyException(message);
       }
 
       // The SCF should converge well before the max iteration check. Otherwise, fail the SCF
@@ -381,7 +381,7 @@ public class PCGSolver {
           logger.warning(sb.toString());
         }
         String message = format("Maximum SCF iterations reached: (%d)\n", completedSCFCycles);
-        throw new EnergyException(message, false);
+        throw new EnergyException(message);
       }
 
       // Check if the convergence criteria has been achieved.

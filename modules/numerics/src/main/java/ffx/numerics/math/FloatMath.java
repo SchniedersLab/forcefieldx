@@ -51,7 +51,7 @@ import java.util.logging.Logger;
  *
  * <p>All methods are static and thread-safe.
  *
- * <p>Use instances of Double3 for convenience.
+ * <p>Use instances of Float3 for convenience.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -327,6 +327,51 @@ public class FloatMath {
     return ret;
   }
 
+
+  /**
+   * Squares values of a vector.
+   *
+   * @param n A vector to be squared.
+   * @return Returns the squared vector.
+   */
+  public static float[] square(float[] n) {return square(n, new float[3]);}
+
+  /**
+   * Squares values of a vector.
+   *
+   * @param n A vector to be squared.
+   * @param ret The squared vector.
+   * @return Returns the array ret.
+   */
+  public static float[] square(float[] n, float[] ret) {
+    ret[0] = n[0] * n[0];
+    ret[1] = n[1] * n[1];
+    ret[2] = n[2] * n[2];
+    return ret;
+  }
+
+  /**
+   * Square root values of a vector.
+   *
+   * @param n A vector to determine square root.
+   * @return Returns the rooted vector.
+   */
+  public static float[] squareRoot(float[] n) {return squareRoot(n, new float[3]);}
+
+  /**
+   * Square root values of a vector.
+   *
+   * @param n A vector to determine square root.
+   * @param ret The rooted vector.
+   * @return Returns the array ret.
+   */
+  public static float[] squareRoot(float[] n, float[] ret) {
+    ret[0] = (float) sqrt(n[0]);
+    ret[1] = (float) sqrt(n[1]);
+    ret[2] = (float) sqrt(n[2]);
+    return ret;
+  }
+
   /**
    * Finds the difference between two vectors.
    *
@@ -361,7 +406,7 @@ public class FloatMath {
    */
   public static String toString(float[] v) {
     StringBuilder sb = new StringBuilder("Vector ( ");
-    for (double d : v) {
+    for (float d : v) {
       sb.append(format("%g ", d));
     }
     sb.append(")");
@@ -386,7 +431,7 @@ public class FloatMath {
       sb = new StringBuilder(format(" %16s = [", "v"));
     }
 
-    for (double value : v) {
+    for (float value : v) {
       sb.append(format(" %16.8f", value));
     }
     sb.append(" ]");

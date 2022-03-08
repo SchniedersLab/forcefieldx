@@ -70,9 +70,9 @@ import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.multipole.MultipoleTensor;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.AlchemicalParameters;
+import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.parameters.ForceField;
 import java.util.logging.Level;
@@ -104,18 +104,17 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
   private final InducedDipoleReciprocalEnergyLoop[] inducedDipoleReciprocalEnergyLoop;
   /** Dimensions of [nsymm][nAtoms][3] */
   public double[][][] inducedDipole;
-
   public double[][][] inducedDipoleCR;
+  /** Convenience reference to inducedDipole[0] */
+  private double[][] ind;
+  /** Convenience reference to inducedDipoleCR[0] */
+  private double[][] indCR;
   private double nfftX, nfftY, nfftZ;
   private double[][] multipole;
-  private double[][] ind;
-  private double[][] indCR;
-  private double[][] fracMultipoles;
-  private double[][] fracInd;
-  private double[][] fracIndCR;
+  private double[][] fracMultipole;
   private double[][] fracMultipolePhi;
   private double[][] fracInducedDipolePhi;
-  private double[][] fracInducedDipoleCRPhi;
+  private double[][] fracInducedDipolePhiCR;
   private double permanentSelfEnergy;
   private double permanentReciprocalEnergy;
   /** An ordered array of atoms in the system. */
@@ -143,18 +142,16 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
   private boolean[] use;
   /** Dimensions of [nsymm][nAtoms][10] */
   private double[][][] globalMultipole;
+  private double[][][] globalFracMultipole;
   private double[][][] titrationMultipole;
   private double[][][] tautomerMultipole;
-
   private ExtendedSystem extendedSystem = null;
   private boolean esvTerm = false;
-
   private double[][] cartMultipolePhi;
   private double[][] cartesianDipolePhi;
   private double[][] cartesianDipolePhiCR;
   /** Reciprocal space instance. */
   private ReciprocalSpace reciprocalSpace;
-
   private Polarization polarization;
   /** Atomic Gradient array. */
   private AtomicDoubleArray3D grad;
@@ -175,7 +172,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
   private SharedDouble shareddEdLambda;
   /** Second partial derivative with respect to Lambda. */
   private SharedDouble sharedd2EdLambda2;
-
+  // Alchemical control
   private double permanentScale;
   private double dlPowPerm;
   private double d2lPowPerm;
@@ -248,51 +245,57 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
   public void init(
       Atom[] atoms,
       Crystal crystal,
-      ExtendedSystem extendedSystem,
+      boolean gradient,
+      boolean lambdaTerm,
       boolean esvTerm,
       boolean[] use,
       double[][][] globalMultipole,
+      double[][][] globalFracMultipole,
       double[][][] titrationMultipole,
       double[][][] tautomerMultipole,
       double[][] cartMultipolePhi,
+      double[][] fracMultipolePhi,
+      Polarization polarization,
       double[][][] inducedDipole,
       double[][][] inducedDipoleCR,
       double[][] cartesianDipolePhi,
       double[][] cartesianDipolePhiCR,
+      double[][] fracInducedDipolePhi,
+      double[][] fracInducedDipolePhiCR,
       ReciprocalSpace reciprocalSpace,
-      Polarization polarization,
+      AlchemicalParameters alchemicalParameters,
+      ExtendedSystem extendedSystem,
       AtomicDoubleArray3D grad,
       AtomicDoubleArray3D torque,
       AtomicDoubleArray3D lambdaGrad,
       AtomicDoubleArray3D lambdaTorque,
-      boolean gradient,
-      boolean lambdaTerm,
       SharedDouble shareddEdLambda,
-      SharedDouble sharedd2EdLambda2,
-      AlchemicalParameters alchemicalParameters) {
+      SharedDouble sharedd2EdLambda2
+      ) {
     this.atoms = atoms;
     this.crystal = crystal;
-    this.extendedSystem = extendedSystem;
+    this.gradient = gradient;
+    this.lambdaTerm = lambdaTerm;
     this.esvTerm = esvTerm;
     this.use = use;
+    // Permanent
     this.globalMultipole = globalMultipole;
+    this.globalFracMultipole = globalFracMultipole;
     this.titrationMultipole = titrationMultipole;
     this.tautomerMultipole = tautomerMultipole;
     this.cartMultipolePhi = cartMultipolePhi;
+    this.fracMultipolePhi = fracMultipolePhi;
+    // Polarization
+    this.polarization = polarization;
     this.inducedDipole = inducedDipole;
     this.inducedDipoleCR = inducedDipoleCR;
     this.cartesianDipolePhi = cartesianDipolePhi;
     this.cartesianDipolePhiCR = cartesianDipolePhiCR;
+    this.fracInducedDipolePhi = fracInducedDipolePhi;
+    this.fracInducedDipolePhiCR = fracInducedDipolePhiCR;
     this.reciprocalSpace = reciprocalSpace;
-    this.polarization = polarization;
-    this.grad = grad;
-    this.torque = torque;
-    this.lambdaGrad = lambdaGrad;
-    this.lambdaTorque = lambdaTorque;
-    this.gradient = gradient;
-    this.lambdaTerm = lambdaTerm;
-    this.shareddEdLambda = shareddEdLambda;
-    this.sharedd2EdLambda2 = sharedd2EdLambda2;
+    this.extendedSystem = extendedSystem;
+    // Alchemical control
     this.permanentScale = alchemicalParameters.permanentScale;
     this.dlPowPerm = alchemicalParameters.dlPowPerm;
     this.d2lPowPerm = alchemicalParameters.d2lPowPerm;
@@ -300,6 +303,13 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
     this.dlPowPol = alchemicalParameters.dlPowPol;
     this.d2lPowPol = alchemicalParameters.d2lPowPol;
     this.dEdLSign = alchemicalParameters.dEdLSign;
+    // Output
+    this.grad = grad;
+    this.torque = torque;
+    this.lambdaGrad = lambdaGrad;
+    this.lambdaTorque = lambdaTorque;
+    this.shareddEdLambda = shareddEdLambda;
+    this.sharedd2EdLambda2 = sharedd2EdLambda2;
   }
 
   @Override
@@ -311,7 +321,9 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
     }
     try {
       int nAtoms = atoms.length;
-      execute(0, nAtoms - 1, permanentReciprocalEnergyLoop[threadIndex]);
+      if (permanentScale > 0.0) {
+        execute(0, nAtoms - 1, permanentReciprocalEnergyLoop[threadIndex]);
+      }
       if (polarization != ParticleMeshEwald.Polarization.NONE) {
         execute(0, nAtoms - 1, inducedDipoleReciprocalEnergyLoop[threadIndex]);
       }
@@ -325,14 +337,9 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
   @Override
   public void start() {
     multipole = globalMultipole[0];
+    fracMultipole = globalFracMultipole[0];
     ind = inducedDipole[0];
     indCR = inducedDipoleCR[0];
-    fracMultipoles = reciprocalSpace.getFracMultipoles();
-    fracInd = reciprocalSpace.getFracInducedDipoles();
-    fracIndCR = reciprocalSpace.getFracInducedDipolesCR();
-    fracMultipolePhi = reciprocalSpace.getFracMultipolePhi();
-    fracInducedDipolePhi = reciprocalSpace.getFracInducedDipolePhi();
-    fracInducedDipoleCRPhi = reciprocalSpace.getFracInducedDipoleCRPhi();
     inducedDipoleSelfEnergy.set(0.0);
     inducedDipoleRecipEnergy.set(0.0);
     nfftX = reciprocalSpace.getXDim();
@@ -355,58 +362,36 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
     @Override
     public void run(int lb, int ub) throws Exception {
 
-      //TODO: copy from PMEQI the self energy for the titr & taut mdots to contribute to eSelfDeriv
       // Permanent multipole self energy and gradient.
       for (int i = lb; i <= ub; i++) {
         if (use[i]) {
           double[] in = globalMultipole[0][i];
           double cii = in[t000] * in[t000];
           double dii = in[t100] * in[t100] + in[t010] * in[t010] + in[t001] * in[t001];
-          double qii =
-              in[t200] * in[t200]
-                  + in[t020] * in[t020]
-                  + in[t002] * in[t002]
-                  + 2.0 * (in[t110] * in[t110] + in[t101] * in[t101] + in[t011] * in[t011]);
+          double qii = in[t200] * in[t200] + in[t020] * in[t020] + in[t002] * in[t002]
+              + 2.0 * (in[t110] * in[t110] + in[t101] * in[t101] + in[t011] * in[t011]);
           eSelf += aewald1 * (cii + aewald2 * (dii / 3.0 + 2.0 * aewald2 * qii / 45.0));
 
           if (esvTerm && extendedSystem.isTitrating(i)) {
             double[] indot = titrationMultipole[0][i];
             double ciidot = indot[t000] * in[t000];
-            double diidot =
-                    indot[t100] * in[t100] + indot[t010] * in[t010] + indot[t001] * in[t001];
-            double qiidot =
-                    indot[t200] * in[t200]
-                            + indot[t020] * in[t020]
-                            + indot[t002] * in[t002]
-                            + 2.0
-                            * (indot[t110] * in[t110]
-                            + indot[t101] * in[t101]
-                            + indot[t011] * in[t011]);
+            double diidot = indot[t100] * in[t100] + indot[t010] * in[t010] + indot[t001] * in[t001];
+            double qiidot = indot[t200] * in[t200] + indot[t020] * in[t020] + indot[t002] * in[t002]
+                + 2.0 * (indot[t110] * in[t110] + indot[t101] * in[t101] + indot[t011] * in[t011]);
             double eSelfTitrDot =
-                    2.0
-                            * aewald1
-                            * (ciidot + aewald2 * (diidot / 3.0 + 2.0 * aewald2 * qiidot / 45.0));
+                2.0 * aewald1 * (ciidot + aewald2 * (diidot / 3.0 + 2.0 * aewald2 * qiidot / 45.0));
             double eSelfTautDot = 0.0;
             if (extendedSystem.isTautomerizing(i)) {
               indot = tautomerMultipole[0][i];
               ciidot = indot[t000] * in[t000];
-              diidot =
-                      indot[t100] * in[t100] + indot[t010] * in[t010] + indot[t001] * in[t001];
-              qiidot =
-                      indot[t200] * in[t200]
-                              + indot[t020] * in[t020]
-                              + indot[t002] * in[t002]
-                              + 2.0
-                              * (indot[t110] * in[t110]
-                              + indot[t101] * in[t101]
-                              + indot[t011] * in[t011]);
-              eSelfTautDot =
-                      2.0
-                              * aewald1
-                              * (ciidot + aewald2 * (diidot / 3.0 + 2.0 * aewald2 * qiidot / 45.0));
+              diidot = indot[t100] * in[t100] + indot[t010] * in[t010] + indot[t001] * in[t001];
+              qiidot = indot[t200] * in[t200] + indot[t020] * in[t020] + indot[t002] * in[t002]
+                  + 2.0 * (indot[t110] * in[t110] + indot[t101] * in[t101] + indot[t011] * in[t011]);
+              eSelfTautDot = 2.0 * aewald1 * (ciidot + aewald2 * (diidot / 3.0
+                  + 2.0 * aewald2 * qiidot / 45.0));
             }
             double factor = permanentScale;
-            extendedSystem.addPermElecDeriv(i, eSelfTitrDot*factor, eSelfTautDot*factor);
+            extendedSystem.addPermElecDeriv(i, eSelfTitrDot * factor, eSelfTautDot * factor);
           }
         }
       }
@@ -424,93 +409,50 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
         if (use[i]) {
           final double[] phi = cartMultipolePhi[i];
           final double[] mpole = multipole[i];
-          final double[] fmpole = fracMultipoles[i];
-
-          //TODO: Copy from PMEQI the eRecip term for ESV scaled terms. Add to shared double gradient.
-          double e =
-              mpole[t000] * phi[t000]
-                  + mpole[t100] * phi[t100]
-                  + mpole[t010] * phi[t010]
-                  + mpole[t001] * phi[t001]
-                  + oneThird
-                      * (mpole[t200] * phi[t200]
-                          + mpole[t020] * phi[t020]
-                          + mpole[t002] * phi[t002]
-                          + 2.0
-                              * (mpole[t110] * phi[t110]
-                                  + mpole[t101] * phi[t101]
-                                  + mpole[t011] * phi[t011]));
+          final double[] fmpole = fracMultipole[i];
+          double e = mpole[t000] * phi[t000]
+              + mpole[t100] * phi[t100] + mpole[t010] * phi[t010] + mpole[t001] * phi[t001]
+              + oneThird * (mpole[t200] * phi[t200] + mpole[t020] * phi[t020]
+              + mpole[t002] * phi[t002]
+              + 2.0 * (mpole[t110] * phi[t110] + mpole[t101] * phi[t101] + mpole[t011] * phi[t011]));
           eRecip += e;
           if (esvTerm && extendedSystem.isTitrating(i)) {
-            double mpoleDot[] = titrationMultipole[0][i];
-            double edotTitr =
-                    mpoleDot[t000] * phi[t000]
-                            + mpoleDot[t100] * phi[t100]
-                            + mpoleDot[t010] * phi[t010]
-                            + mpoleDot[t001] * phi[t001]
-                            + oneThird
-                            * (mpoleDot[t200] * phi[t200]
-                            + mpoleDot[t020] * phi[t020]
-                            + mpoleDot[t002] * phi[t002]
-                            + 2.0
-                            * (mpoleDot[t110] * phi[t110]
-                            + mpoleDot[t101] * phi[t101]
-                            + mpoleDot[t011] * phi[t011]));
+            double[] mpoleDot = titrationMultipole[0][i];
+            double edotTitr = mpoleDot[t000] * phi[t000]
+                + mpoleDot[t100] * phi[t100] + mpoleDot[t010] * phi[t010]
+                + mpoleDot[t001] * phi[t001]
+                + oneThird * (mpoleDot[t200] * phi[t200] + mpoleDot[t020] * phi[t020]
+                + mpoleDot[t002] * phi[t002]
+                + 2.0 * (mpoleDot[t110] * phi[t110] + mpoleDot[t101] * phi[t101]
+                + mpoleDot[t011] * phi[t011]));
             double edotTaut = 0.0;
-            if(extendedSystem.isTautomerizing(i)){
+            if (extendedSystem.isTautomerizing(i)) {
               mpoleDot = tautomerMultipole[0][i];
-              edotTaut =
-                      mpoleDot[t000] * phi[t000]
-                              + mpoleDot[t100] * phi[t100]
-                              + mpoleDot[t010] * phi[t010]
-                              + mpoleDot[t001] * phi[t001]
-                              + oneThird
-                              * (mpoleDot[t200] * phi[t200]
-                              + mpoleDot[t020] * phi[t020]
-                              + mpoleDot[t002] * phi[t002]
-                              + 2.0
-                              * (mpoleDot[t110] * phi[t110]
-                              + mpoleDot[t101] * phi[t101]
-                              + mpoleDot[t011] * phi[t011]));
+              edotTaut = mpoleDot[t000] * phi[t000]
+                  + mpoleDot[t100] * phi[t100] + mpoleDot[t010] * phi[t010]
+                  + mpoleDot[t001] * phi[t001]
+                  + oneThird * (mpoleDot[t200] * phi[t200] + mpoleDot[t020] * phi[t020]
+                  + mpoleDot[t002] * phi[t002]
+                  + 2.0 * (mpoleDot[t110] * phi[t110] + mpoleDot[t101] * phi[t101]
+                  + mpoleDot[t011] * phi[t011]));
             }
             double factor = permanentScale * electric;
-            extendedSystem.addPermElecDeriv(i,edotTitr * factor, edotTaut * factor);
+            extendedSystem.addPermElecDeriv(i, edotTitr * factor, edotTaut * factor);
           }
           if (gradient || lambdaTerm) {
             final double[] fPhi = fracMultipolePhi[i];
-            double gx =
-                fmpole[t000] * fPhi[t100]
-                    + fmpole[t100] * fPhi[t200]
-                    + fmpole[t010] * fPhi[t110]
-                    + fmpole[t001] * fPhi[t101]
-                    + fmpole[t200] * fPhi[t300]
-                    + fmpole[t020] * fPhi[t120]
-                    + fmpole[t002] * fPhi[t102]
-                    + fmpole[t110] * fPhi[t210]
-                    + fmpole[t101] * fPhi[t201]
-                    + fmpole[t011] * fPhi[t111];
-            double gy =
-                fmpole[t000] * fPhi[t010]
-                    + fmpole[t100] * fPhi[t110]
-                    + fmpole[t010] * fPhi[t020]
-                    + fmpole[t001] * fPhi[t011]
-                    + fmpole[t200] * fPhi[t210]
-                    + fmpole[t020] * fPhi[t030]
-                    + fmpole[t002] * fPhi[t012]
-                    + fmpole[t110] * fPhi[t120]
-                    + fmpole[t101] * fPhi[t111]
-                    + fmpole[t011] * fPhi[t021];
-            double gz =
-                fmpole[t000] * fPhi[t001]
-                    + fmpole[t100] * fPhi[t101]
-                    + fmpole[t010] * fPhi[t011]
-                    + fmpole[t001] * fPhi[t002]
-                    + fmpole[t200] * fPhi[t201]
-                    + fmpole[t020] * fPhi[t021]
-                    + fmpole[t002] * fPhi[t003]
-                    + fmpole[t110] * fPhi[t111]
-                    + fmpole[t101] * fPhi[t102]
-                    + fmpole[t011] * fPhi[t012];
+            double gx = fmpole[t000] * fPhi[t100]
+                + fmpole[t100] * fPhi[t200] + fmpole[t010] * fPhi[t110] + fmpole[t001] * fPhi[t101]
+                + fmpole[t200] * fPhi[t300] + fmpole[t020] * fPhi[t120] + fmpole[t002] * fPhi[t102]
+                + fmpole[t110] * fPhi[t210] + fmpole[t101] * fPhi[t201] + fmpole[t011] * fPhi[t111];
+            double gy = fmpole[t000] * fPhi[t010]
+                + fmpole[t100] * fPhi[t110] + fmpole[t010] * fPhi[t020] + fmpole[t001] * fPhi[t011]
+                + fmpole[t200] * fPhi[t210] + fmpole[t020] * fPhi[t030] + fmpole[t002] * fPhi[t012]
+                + fmpole[t110] * fPhi[t120] + fmpole[t101] * fPhi[t111] + fmpole[t011] * fPhi[t021];
+            double gz = fmpole[t000] * fPhi[t001]
+                + fmpole[t100] * fPhi[t101] + fmpole[t010] * fPhi[t011] + fmpole[t001] * fPhi[t002]
+                + fmpole[t200] * fPhi[t201] + fmpole[t020] * fPhi[t021] + fmpole[t002] * fPhi[t003]
+                + fmpole[t110] * fPhi[t111] + fmpole[t101] * fPhi[t102] + fmpole[t011] * fPhi[t012];
             gx *= nfftX;
             gy *= nfftY;
             gz *= nfftZ;
@@ -522,30 +464,15 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
             double tqy = -mpole[t001] * phi[t100] + mpole[t100] * phi[t001];
             double tqz = -mpole[t100] * phi[t010] + mpole[t010] * phi[t100];
             // Compute quadrupole torques
-            tqx -=
-                twoThirds
-                    * (mpole[t110] * phi[t101]
-                        + mpole[t020] * phi[t011]
-                        + mpole[t011] * phi[t002]
-                        - mpole[t101] * phi[t110]
-                        - mpole[t011] * phi[t020]
-                        - mpole[t002] * phi[t011]);
-            tqy -=
-                twoThirds
-                    * (mpole[t101] * phi[t200]
-                        + mpole[t011] * phi[t110]
-                        + mpole[t002] * phi[t101]
-                        - mpole[t200] * phi[t101]
-                        - mpole[t110] * phi[t011]
-                        - mpole[t101] * phi[t002]);
-            tqz -=
-                twoThirds
-                    * (mpole[t200] * phi[t110]
-                        + mpole[t110] * phi[t020]
-                        + mpole[t101] * phi[t011]
-                        - mpole[t110] * phi[t200]
-                        - mpole[t020] * phi[t110]
-                        - mpole[t011] * phi[t101]);
+            tqx -= twoThirds * (
+                mpole[t110] * phi[t101] + mpole[t020] * phi[t011] + mpole[t011] * phi[t002]
+                    - mpole[t101] * phi[t110] - mpole[t011] * phi[t020] - mpole[t002] * phi[t011]);
+            tqy -= twoThirds * (
+                mpole[t101] * phi[t200] + mpole[t011] * phi[t110] + mpole[t002] * phi[t101]
+                    - mpole[t200] * phi[t101] - mpole[t110] * phi[t011] - mpole[t101] * phi[t002]);
+            tqz -= twoThirds * (
+                mpole[t200] * phi[t110] + mpole[t110] * phi[t020] + mpole[t101] * phi[t011]
+                    - mpole[t110] * phi[t200] - mpole[t020] * phi[t110] - mpole[t011] * phi[t101]);
             if (gradient) {
               double factor = permanentScale * electric;
               grad.add(threadID, i, factor * dfx, factor * dfy, factor * dfz);
@@ -625,30 +552,28 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
             final double uix = 0.5 * (indi[0] + indpi[0]);
             final double uiy = 0.5 * (indi[1] + indpi[1]);
             final double uiz = 0.5 * (indi[2] + indpi[2]);
-            final double tix = aewald4 * (diy * uiz - diz * uiy);
-            final double tiy = aewald4 * (diz * uix - dix * uiz);
-            final double tiz = aewald4 * (dix * uiy - diy * uix);
-            torque.add(
-                threadID,
-                i,
-                polarizationScale * tix,
-                polarizationScale * tiy,
-                polarizationScale * tiz);
-            if (lambdaTerm) {
-              double factor = dEdLSign * dlPowPol;
-              lambdaTorque.add(threadID, i, factor * tix, factor * tiy, factor * tiz);
+            if (gradient) {
+              final double tix = aewald4 * (diy * uiz - diz * uiy);
+              final double tiy = aewald4 * (diz * uix - dix * uiz);
+              final double tiz = aewald4 * (dix * uiy - diy * uix);
+              torque.add(threadID, i, polarizationScale * tix, polarizationScale * tiy,
+                  polarizationScale * tiz);
+              if (lambdaTerm) {
+                double factor = dEdLSign * dlPowPol;
+                lambdaTorque.add(threadID, i, factor * tix, factor * tiy, factor * tiz);
+              }
             }
-            if(esvTerm && extendedSystem.isTitrating(i)){
+            if (esvTerm && extendedSystem.isTitrating(i)) {
               double[] titrDot = titrationMultipole[0][i];
               double indiDotMdot = uix * titrDot[t100] + uiy * titrDot[t010] + uiz * titrDot[t001];
-              double dIndSelfTitrdLi = 2.0 * aewald3 * indiDotMdot;
+              double dIndSelfTitrdLi = polarizationScale * 2.0 * aewald3 * indiDotMdot;
               double dIndSelfTautdLi = 0.0;
-              if(extendedSystem.isTautomerizing(i)){
+              if (extendedSystem.isTautomerizing(i)) {
                 double[] tautDot = tautomerMultipole[0][i];
                 indiDotMdot = uix * tautDot[t100] + uiy * tautDot[t010] + uiz * tautDot[t001];
-                dIndSelfTautdLi = 2.0 * aewald3 * indiDotMdot;
+                dIndSelfTautdLi = polarizationScale * 2.0 * aewald3 * indiDotMdot;
               }
-              extendedSystem.addIndElecDeriv(i, dIndSelfTitrdLi * polarizationScale, dIndSelfTautdLi * polarizationScale);
+              extendedSystem.addIndElecDeriv(i, dIndSelfTitrdLi, dIndSelfTautdLi);
             }
           }
         }
@@ -656,24 +581,25 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
 
       // Induced dipole reciprocal space energy and gradient.
       for (int i = lb; i <= ub; i++) {
+        double[] fracInd = new double[3];
+        double[] fracIndCR = new double[3];
         if (use[i]) {
           final double[] fPhi = fracMultipolePhi[i];
-          final double[] findi = fracInd[i];
-          final double indx = findi[0];
-          final double indy = findi[1];
-          final double indz = findi[2];
+          reciprocalSpace.cartToFracInducedDipole(inducedDipole[0][i], inducedDipoleCR[0][i], fracInd, fracIndCR);
+          final double indx = fracInd[0];
+          final double indy = fracInd[1];
+          final double indz = fracInd[2];
           eRecip += indx * fPhi[t100] + indy * fPhi[t010] + indz * fPhi[t001];
           if (gradient || esvTerm) {
             final double[] iPhi = cartesianDipolePhi[i];
             final double[] iCRPhi = cartesianDipolePhiCR[i];
             final double[] fiPhi = fracInducedDipolePhi[i];
-            final double[] fiCRPhi = fracInducedDipoleCRPhi[i];
+            final double[] fiCRPhi = fracInducedDipolePhiCR[i];
             final double[] mpolei = multipole[i];
-            final double[] fmpolei = fracMultipoles[i];
-            final double[] findCRi = fracIndCR[i];
-            final double inpx = findCRi[0];
-            final double inpy = findCRi[1];
-            final double inpz = findCRi[2];
+            final double[] fmpolei = fracMultipole[i];
+            final double inpx = fracIndCR[0];
+            final double inpy = fracIndCR[1];
+            final double inpz = fracIndCR[2];
             final double insx = indx + inpx;
             final double insy = indy + inpy;
             final double insz = indz + inpz;
@@ -685,61 +611,28 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
             double gy = insx * fPhi[t110] + insy * fPhi[t020] + insz * fPhi[t011];
             double gz = insx * fPhi[t101] + insy * fPhi[t011] + insz * fPhi[t002];
             if (polarization == ParticleMeshEwald.Polarization.MUTUAL) {
-              gx +=
-                  indx * fiCRPhi[t200]
-                      + inpx * fiPhi[t200]
-                      + indy * fiCRPhi[t110]
-                      + inpy * fiPhi[t110]
-                      + indz * fiCRPhi[t101]
-                      + inpz * fiPhi[t101];
-              gy +=
-                  indx * fiCRPhi[t110]
-                      + inpx * fiPhi[t110]
-                      + indy * fiCRPhi[t020]
-                      + inpy * fiPhi[t020]
-                      + indz * fiCRPhi[t011]
-                      + inpz * fiPhi[t011];
-              gz +=
-                  indx * fiCRPhi[t101]
-                      + inpx * fiPhi[t101]
-                      + indy * fiCRPhi[t011]
-                      + inpy * fiPhi[t011]
-                      + indz * fiCRPhi[t002]
-                      + inpz * fiPhi[t002];
+              gx += indx * fiCRPhi[t200] + inpx * fiPhi[t200] + indy * fiCRPhi[t110]
+                  + inpy * fiPhi[t110] + indz * fiCRPhi[t101] + inpz * fiPhi[t101];
+              gy += indx * fiCRPhi[t110] + inpx * fiPhi[t110] + indy * fiCRPhi[t020]
+                  + inpy * fiPhi[t020] + indz * fiCRPhi[t011] + inpz * fiPhi[t011];
+              gz += indx * fiCRPhi[t101] + inpx * fiPhi[t101] + indy * fiCRPhi[t011]
+                  + inpy * fiPhi[t011] + indz * fiCRPhi[t002] + inpz * fiPhi[t002];
             }
-            gx +=
-                fmpolei[t000] * sfPhi[t100]
-                    + fmpolei[t100] * sfPhi[t200]
-                    + fmpolei[t010] * sfPhi[t110]
-                    + fmpolei[t001] * sfPhi[t101]
-                    + fmpolei[t200] * sfPhi[t300]
-                    + fmpolei[t020] * sfPhi[t120]
-                    + fmpolei[t002] * sfPhi[t102]
-                    + fmpolei[t110] * sfPhi[t210]
-                    + fmpolei[t101] * sfPhi[t201]
-                    + fmpolei[t011] * sfPhi[t111];
-            gy +=
-                fmpolei[t000] * sfPhi[t010]
-                    + fmpolei[t100] * sfPhi[t110]
-                    + fmpolei[t010] * sfPhi[t020]
-                    + fmpolei[t001] * sfPhi[t011]
-                    + fmpolei[t200] * sfPhi[t210]
-                    + fmpolei[t020] * sfPhi[t030]
-                    + fmpolei[t002] * sfPhi[t012]
-                    + fmpolei[t110] * sfPhi[t120]
-                    + fmpolei[t101] * sfPhi[t111]
-                    + fmpolei[t011] * sfPhi[t021];
-            gz +=
-                fmpolei[t000] * sfPhi[t001]
-                    + fmpolei[t100] * sfPhi[t101]
-                    + fmpolei[t010] * sfPhi[t011]
-                    + fmpolei[t001] * sfPhi[t002]
-                    + fmpolei[t200] * sfPhi[t201]
-                    + fmpolei[t020] * sfPhi[t021]
-                    + fmpolei[t002] * sfPhi[t003]
-                    + fmpolei[t110] * sfPhi[t111]
-                    + fmpolei[t101] * sfPhi[t102]
-                    + fmpolei[t011] * sfPhi[t012];
+            gx += fmpolei[t000] * sfPhi[t100] + fmpolei[t100] * sfPhi[t200]
+                + fmpolei[t010] * sfPhi[t110] + fmpolei[t001] * sfPhi[t101]
+                + fmpolei[t200] * sfPhi[t300] + fmpolei[t020] * sfPhi[t120]
+                + fmpolei[t002] * sfPhi[t102] + fmpolei[t110] * sfPhi[t210]
+                + fmpolei[t101] * sfPhi[t201] + fmpolei[t011] * sfPhi[t111];
+            gy += fmpolei[t000] * sfPhi[t010] + fmpolei[t100] * sfPhi[t110]
+                + fmpolei[t010] * sfPhi[t020] + fmpolei[t001] * sfPhi[t011]
+                + fmpolei[t200] * sfPhi[t210] + fmpolei[t020] * sfPhi[t030]
+                + fmpolei[t002] * sfPhi[t012] + fmpolei[t110] * sfPhi[t120]
+                + fmpolei[t101] * sfPhi[t111] + fmpolei[t011] * sfPhi[t021];
+            gz += fmpolei[t000] * sfPhi[t001] + fmpolei[t100] * sfPhi[t101]
+                + fmpolei[t010] * sfPhi[t011] + fmpolei[t001] * sfPhi[t002]
+                + fmpolei[t200] * sfPhi[t201] + fmpolei[t020] * sfPhi[t021]
+                + fmpolei[t002] * sfPhi[t003] + fmpolei[t110] * sfPhi[t111]
+                + fmpolei[t101] * sfPhi[t102] + fmpolei[t011] * sfPhi[t012];
             gx *= nfftX;
             gy *= nfftY;
             gz *= nfftZ;
@@ -755,84 +648,52 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
             double tqy = -mpolei[t001] * sPhi[t100] + mpolei[t100] * sPhi[t001];
             double tqz = -mpolei[t100] * sPhi[t010] + mpolei[t010] * sPhi[t100];
             // Compute quadrupole torques
-            tqx -=
-                twoThirds
-                    * (mpolei[t110] * sPhi[t101]
-                        + mpolei[t020] * sPhi[t011]
-                        + mpolei[t011] * sPhi[t002]
-                        - mpolei[t101] * sPhi[t110]
-                        - mpolei[t011] * sPhi[t020]
-                        - mpolei[t002] * sPhi[t011]);
-            tqy -=
-                twoThirds
-                    * (mpolei[t101] * sPhi[t200]
-                        + mpolei[t011] * sPhi[t110]
-                        + mpolei[t002] * sPhi[t101]
-                        - mpolei[t200] * sPhi[t101]
-                        - mpolei[t110] * sPhi[t011]
-                        - mpolei[t101] * sPhi[t002]);
-            tqz -=
-                twoThirds
-                    * (mpolei[t200] * sPhi[t110]
-                        + mpolei[t110] * sPhi[t020]
-                        + mpolei[t101] * sPhi[t011]
-                        - mpolei[t110] * sPhi[t200]
-                        - mpolei[t020] * sPhi[t110]
-                        - mpolei[t011] * sPhi[t101]);
+            tqx -= twoThirds * (
+                mpolei[t110] * sPhi[t101] + mpolei[t020] * sPhi[t011] + mpolei[t011] * sPhi[t002]
+                    - mpolei[t101] * sPhi[t110] - mpolei[t011] * sPhi[t020]
+                    - mpolei[t002] * sPhi[t011]);
+            tqy -= twoThirds * (
+                mpolei[t101] * sPhi[t200] + mpolei[t011] * sPhi[t110] + mpolei[t002] * sPhi[t101]
+                    - mpolei[t200] * sPhi[t101] - mpolei[t110] * sPhi[t011]
+                    - mpolei[t101] * sPhi[t002]);
+            tqz -= twoThirds * (
+                mpolei[t200] * sPhi[t110] + mpolei[t110] * sPhi[t020] + mpolei[t101] * sPhi[t011]
+                    - mpolei[t110] * sPhi[t200] - mpolei[t020] * sPhi[t110]
+                    - mpolei[t011] * sPhi[t101]);
             tqx *= electric;
             tqy *= electric;
             tqz *= electric;
-            grad.add(
-                threadID,
-                i,
-                polarizationScale * dfx,
-                polarizationScale * dfy,
+            grad.add(threadID, i, polarizationScale * dfx, polarizationScale * dfy,
                 polarizationScale * dfz);
-            torque.add(
-                threadID,
-                i,
-                polarizationScale * tqx,
-                polarizationScale * tqy,
+            torque.add(threadID, i, polarizationScale * tqx, polarizationScale * tqy,
                 polarizationScale * tqz);
             if (lambdaTerm) {
               double factor = dEdLSign * dlPowPol;
               lambdaGrad.add(threadID, i, factor * dfx, factor * dfy, factor * dfz);
               lambdaTorque.add(threadID, i, factor * tqx, factor * tqy, factor * tqz);
             }
-            if(esvTerm && extendedSystem.isTitrating(i)){
+            if (esvTerm && extendedSystem.isTitrating(i)) {
               final double[] mTitrDot = titrationMultipole[0][i];
-              double eTitrDot =
-                      mTitrDot[t000] * sPhi[t000]
-                              + mTitrDot[t100] * sPhi[t100]
-                              + mTitrDot[t010] * sPhi[t010]
-                              + mTitrDot[t001] * sPhi[t001]
-                              + oneThird
-                              * (mTitrDot[t200] * sPhi[t200]
-                              + mTitrDot[t020] * sPhi[t020]
-                              + mTitrDot[t002] * sPhi[t002]
-                              + 2.0
-                              * (mTitrDot[t110] * sPhi[t110]
-                              + mTitrDot[t101] * sPhi[t101]
-                              + mTitrDot[t011] * sPhi[t011]));
+              double eTitrDot = mTitrDot[t000] * sPhi[t000]
+                  + mTitrDot[t100] * sPhi[t100] + mTitrDot[t010] * sPhi[t010]
+                  + mTitrDot[t001] * sPhi[t001]
+                  + oneThird * (mTitrDot[t200] * sPhi[t200] + mTitrDot[t020] * sPhi[t020]
+                  + mTitrDot[t002] * sPhi[t002]
+                  + 2.0 * (mTitrDot[t110] * sPhi[t110] + mTitrDot[t101] * sPhi[t101]
+                  + mTitrDot[t011] * sPhi[t011]));
               double eTautDot = 0.0;
-              if(extendedSystem.isTautomerizing(i)){
+              if (extendedSystem.isTautomerizing(i)) {
                 final double[] mTautDot = tautomerMultipole[0][i];
-                eTautDot =
-                        mTautDot[t000] * sPhi[t000]
-                                + mTautDot[t100] * sPhi[t100]
-                                + mTautDot[t010] * sPhi[t010]
-                                + mTautDot[t001] * sPhi[t001]
-                                + oneThird
-                                * (mTautDot[t200] * sPhi[t200]
-                                + mTautDot[t020] * sPhi[t020]
-                                + mTautDot[t002] * sPhi[t002]
-                                + 2.0
-                                * (mTautDot[t110] * sPhi[t110]
-                                + mTautDot[t101] * sPhi[t101]
-                                + mTautDot[t011] * sPhi[t011]));
+                eTautDot = mTautDot[t000] * sPhi[t000]
+                    + mTautDot[t100] * sPhi[t100] + mTautDot[t010] * sPhi[t010]
+                    + mTautDot[t001] * sPhi[t001]
+                    + oneThird * (mTautDot[t200] * sPhi[t200] + mTautDot[t020] * sPhi[t020]
+                    + mTautDot[t002] * sPhi[t002]
+                    + 2.0 * (mTautDot[t110] * sPhi[t110]
+                    + mTautDot[t101] * sPhi[t101] + mTautDot[t011] * sPhi[t011]));
               }
               double factor = polarizationScale * electric;
-              extendedSystem.addIndElecDeriv(i,eTitrDot * factor, eTautDot * factor);
+              extendedSystem.addIndElecDeriv(i, eTitrDot * factor, eTautDot * factor);
             }
           }
         }

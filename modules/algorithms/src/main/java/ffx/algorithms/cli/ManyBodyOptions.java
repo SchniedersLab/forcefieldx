@@ -49,6 +49,7 @@ import ffx.potential.parameters.TitrationUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
@@ -556,10 +557,7 @@ public class ManyBodyOptions{
     List<String> resList = new ArrayList<>();
     if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
       String[] tok = residueGroup.listResidues.split(",");
-      for (String t : tok) {
-        logger.info(" Adding " + t);
-        resList.add(t);
-      }
+      Collections.addAll(resList, tok);
     }
 
     // Evaluate forced residues for the sliding window algorithm
@@ -595,9 +593,9 @@ public class ManyBodyOptions{
 
     if (group.algorithm != 5) {
       if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
-        StringBuilder info = new StringBuilder("\n Evaluating rotamers for residues ");
+        StringBuilder info = new StringBuilder("\n Evaluating rotamers for residues:\n");
         for (String i : resList) {
-          info.append(format("%s, ", i));
+          info.append(format(" %s", i));
         }
         logger.info(info.toString());
       } else if (allStartResID == -1) {
@@ -629,10 +627,7 @@ public class ManyBodyOptions{
   private void addListResidues(List<String> resList) {
     if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
       String[] tok = residueGroup.listResidues.split(",");
-      for (String t : tok) {
-        logger.info(" Adding " + t);
-        resList.add(t);
-      }
+      Collections.addAll(resList, tok);
     }
   }
 

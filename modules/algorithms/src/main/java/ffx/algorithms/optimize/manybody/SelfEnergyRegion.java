@@ -144,9 +144,7 @@ public class SelfEnergyRegion extends WorkerRegion {
         Residue residue = residues[i];
         Rotamer[] rotamers = residue.getRotamers();
         for (int ri = 0; ri < rotamers.length; ri++) {
-          logger.info(
-              format(
-                  " Self energy %8s %-2d: %s", residues[i].toString(rotamers[ri]),
+          logger.info(format(" Self energy %8s %-2d: %s", residues[i].toString(rotamers[ri]),
                   ri, rO.formatEnergy(eE.getSelf(i, ri))));
         }
       }
@@ -213,7 +211,7 @@ public class SelfEnergyRegion extends WorkerRegion {
     } catch (ArithmeticException ex) {
       logger.severe(format(" Error in calculation of backbone energy %s", ex.getMessage()));
     }
-    rO.logIfMaster(format(" Backbone energy:  %s\n", rO.formatEnergy(backboneEnergy)));
+    rO.logIfMaster(format("\n Backbone energy:  %s\n", rO.formatEnergy(backboneEnergy)));
 
     eE.setBackboneEnergy(backboneEnergy);
   }

@@ -535,13 +535,13 @@ public class Crystal {
    * or not of length n, new arrays are allocated.
    *
    * @param n Number of atoms.
-   * @param x Input x coordinates.
-   * @param y Input y coordinates.
-   * @param z Input z coordinates.
-   * @param mateX Output x coordinates.
-   * @param mateY Output y coordinates.
-   * @param mateZ Output z coordinates.
-   * @param symOp The symmetry operator.
+   * @param x Input cartesian x-coordinates.
+   * @param y Input cartesian y-coordinates.
+   * @param z Input cartesian z-coordinates.
+   * @param mateX Output cartesian x-coordinates.
+   * @param mateY Output cartesian y-coordinates.
+   * @param mateZ Output cartesian z-coordinates.
+   * @param symOp The cartesian symmetry operator.
    */
   public void applyCartSymOp(
       int n,
@@ -595,11 +595,11 @@ public class Crystal {
   }
 
   /**
-   * Apply a fractional symmetry operator to one set of coordinates.
+   * Apply a  cartesian symmetry operator to one set of coordinates.
    *
-   * @param xyz Input coordinates.
-   * @param mate Symmetry mate coordinates.
-   * @param symOp The symmetry operator.
+   * @param xyz Input  cartesian coordinates.
+   * @param mate Symmetry mate  cartesian coordinates.
+   * @param symOp The cartesian symmetry operator.
    */
   public void applyCartesianSymOp(double[] xyz, double[] mate, SymOp symOp) {
     double[][] rot = symOp.rot;
@@ -614,25 +614,22 @@ public class Crystal {
   }
 
   /**
-   * Apply a symmetry operator to one set of coordinates.
+   * Apply a fractional symmetry operator to one set of coordinates.
    *
-   * @param xyz Input coordinates.
-   * @param mate Symmetry mate coordinates.
-   * @param symOp The symmetry operator.
+   * @param xyz Input fractional coordinates.
+   * @param mate Symmetry mate fractional coordinates.
+   * @param symOp The fractional symmetry operator.
    */
   public void applyFracSymOp(double[] xyz, double[] mate, SymOp symOp) {
     double[][] rot = symOp.rot;
     double[] trans = symOp.tr;
-    double xi = xyz[0];
-    double yi = xyz[1];
-    double zi = xyz[2];
+    double xf = xyz[0];
+    double yf = xyz[1];
+    double zf = xyz[2];
     // Apply Symmetry Operator.
-    double fx = rot[0][0] * xi + rot[0][1] * yi + rot[0][2] * zi + trans[0];
-    double fy = rot[1][0] * xi + rot[1][1] * yi + rot[1][2] * zi + trans[1];
-    double fz = rot[2][0] * xi + rot[2][1] * yi + rot[2][2] * zi + trans[2];
-    mate[0] = fx;
-    mate[1] = fy;
-    mate[2] = fz;
+    mate[0] = rot[0][0] * xf + rot[0][1] * yf + rot[0][2] * zf + trans[0];
+    mate[1] = rot[1][0] * xf + rot[1][1] * yf + rot[1][2] * zf + trans[1];
+    mate[2] = rot[2][0] * xf + rot[2][1] * yf + rot[2][2] * zf + trans[2];
   }
 
   /**
@@ -641,13 +638,13 @@ public class Crystal {
    * or not of length n, new arrays are allocated.
    *
    * @param n Number of atoms.
-   * @param x Input x coordinates.
-   * @param y Input y coordinates.
-   * @param z Input z coordinates.
-   * @param mateX Output x coordinates.
-   * @param mateY Output y coordinates.
-   * @param mateZ Output z coordinates.
-   * @param symOp The symmetry operator.
+   * @param x Input fractional x-coordinates.
+   * @param y Input fractional y-coordinates.
+   * @param z Input fractional z-coordinates.
+   * @param mateX Output fractional x-coordinates.
+   * @param mateY Output fractional y-coordinates.
+   * @param mateZ Output fractional z-coordinates.
+   * @param symOp The fractional symmetry operator.
    */
   public void applySymOp(
       int n,
@@ -736,11 +733,11 @@ public class Crystal {
   }
 
   /**
-   * Apply a fractional symmetry operator to one set of coordinates.
+   * Apply a fractional symmetry operator to one set of cartesian coordinates.
    *
-   * @param xyz Input coordinates.
-   * @param mate Symmetry mate coordinates.
-   * @param symOp The symmetry operator.
+   * @param xyz Input cartesian coordinates.
+   * @param mate Symmetry mate cartesian coordinates.
+   * @param symOp The fractional symmetry operator.
    */
   public void applySymOp(double[] xyz, double[] mate, SymOp symOp) {
     double[][] rot = symOp.rot;
@@ -763,11 +760,11 @@ public class Crystal {
   }
 
   /**
-   * Apply a symmetry operator to one set of coordinates.
+   * Apply a fractional symmetry operator to one set of cartesian coordinates.
    *
-   * @param xyz Input coordinates.
-   * @param mate Symmetry mate coordinates.
-   * @param symOp The symmetry operator.
+   * @param xyz Input cartesian coordinates.
+   * @param mate Symmetry mate cartesian coordinates.
+   * @param symOp The fractional symmetry operator.
    */
   public void applySymRot(double[] xyz, double[] mate, SymOp symOp) {
     double[][] rot = symOp.rot;
@@ -813,18 +810,18 @@ public class Crystal {
   }
 
   /**
-   * Apply a symmetry rotation to an array of Cartesian coordinates. If the arrays x, y or z are null
+   * Apply a fractional symmetry rotation to an array of Cartesian coordinates. If the arrays x, y or z are null
    * or not of length n, the method returns immediately. If mateX, mateY or mateZ are null or not of
    * length n, new arrays are allocated.
    *
    * @param n Number of atoms.
-   * @param x Input x coordinates.
-   * @param y Input y coordinates.
-   * @param z Input z coordinates.
-   * @param mateX Output x coordinates.
-   * @param mateY Output y coordinates.
-   * @param mateZ Output z coordinates.
-   * @param symOp The symmetry operator.
+   * @param x Input cartesian x-coordinates.
+   * @param y Input cartesian y-coordinates.
+   * @param z Input cartesian z-coordinates.
+   * @param mateX Output cartesian x-coordinates.
+   * @param mateY Output cartesian y-coordinates.
+   * @param mateZ Output cartesian z-coordinates.
+   * @param symOp The fractional symmetry operator.
    */
   public void applySymRot(
       int n, double[] x, double[] y, double[] z,
@@ -860,7 +857,7 @@ public class Crystal {
   }
 
   /**
-   * Apply a symmetry operator to one set of coordinates.
+   * .Apply the rotation of a fractional symmetry operator to cartesian coordinates.
    *
    * @param xyz Input coordinates.
    * @param mate Symmetry mate coordinates.
@@ -904,12 +901,12 @@ public class Crystal {
    * are null or not of length n, new arrays are allocated.
    *
    * @param n Number of atoms.
-   * @param x Input x coordinates.
-   * @param y Input y coordinates.
-   * @param z Input z coordinates.
-   * @param mateX Output x coordinates.
-   * @param mateY Output y coordinates.
-   * @param mateZ Output z coordinates.
+   * @param x Input x-coordinates.
+   * @param y Input y-coordinates.
+   * @param z Input z-coordinates.
+   * @param mateX Output x-coordinates.
+   * @param mateY Output y-coordinates.
+   * @param mateZ Output z-coordinates.
    * @param symOp The symmetry operator.
    * @param rotmat an array of double.
    */
@@ -1202,14 +1199,7 @@ public class Crystal {
    * @return Unit cell parameters.
    */
   public double[] getUnitCellParams() {
-    double[] params = new double[6];
-    params[0] = a;
-    params[1] = b;
-    params[2] = c;
-    params[0] = alpha;
-    params[1] = beta;
-    params[2] = gamma;
-    return params;
+    return new double[]{a, b, c, alpha, beta, gamma};
   }
 
   /** {@inheritDoc} */
@@ -1490,12 +1480,12 @@ public class Crystal {
    * toCartesianCoordinates
    *
    * @param n a int.
-   * @param xf an array of double.
-   * @param yf an array of double.
-   * @param zf an array of double.
-   * @param x an array of double.
-   * @param y an array of double.
-   * @param z an array of double.
+   * @param xf an array of double for fractional x-coordinates.
+   * @param yf an array of double for fractional y-coordinates.
+   * @param zf an array of double for fractional z-coordinates.
+   * @param x an array of double for cartesian x-coordinates.
+   * @param y an array of double for cartesian y-coordinates.
+   * @param z an array of double for cartesian z-coordinates.
    */
   public void toCartesianCoordinates(
       int n, double[] xf, double[] yf, double[] zf, double[] x, double[] y, double[] z) {
@@ -1513,8 +1503,8 @@ public class Crystal {
    * toCartesianCoordinates
    *
    * @param n a int.
-   * @param frac an array of double.
-   * @param cart an array of double.
+   * @param frac an array of double for fractional coordinates.
+   * @param cart an array of double for cartesian coordinates.
    */
   public void toCartesianCoordinates(int n, double[] frac, double[] cart) {
     int i3 = 0;
@@ -1536,8 +1526,8 @@ public class Crystal {
   /**
    * toCartesianCoordinates
    *
-   * @param xf an array of double.
-   * @param x an array of double.
+   * @param xf an array of double for fractional coordinate.
+   * @param x an array of double for cartesian coordinate.
    */
   public void toCartesianCoordinates(double[] xf, double[] x) {
     double fx = xf[0];
@@ -1552,12 +1542,12 @@ public class Crystal {
    * toFractionalCoordinates
    *
    * @param n a int.
-   * @param x an array of double.
-   * @param y an array of double.
-   * @param z an array of double.
-   * @param xf an array of double.
-   * @param yf an array of double.
-   * @param zf an array of double.
+   * @param x an array of double for cartesian x-coordinates.
+   * @param y an array of double for cartesian y-coordinates.
+   * @param z an array of double for cartesian z-coordinates.
+   * @param xf an array of double for fractional x-coordinates.
+   * @param yf an array of double for fractional y-coordinates.
+   * @param zf an array of double for fractional z-coordinates.
    */
   public void toFractionalCoordinates(
       int n, double[] x, double[] y, double[] z, double[] xf, double[] yf, double[] zf) {
@@ -1575,8 +1565,8 @@ public class Crystal {
    * toFractionalCoordinates
    *
    * @param n a int.
-   * @param cart an array of double.
-   * @param frac an array of double.
+   * @param cart an array of double for cartesian coordinates.
+   * @param frac an array of double for fractional coordinates.
    */
   public void toFractionalCoordinates(int n, double[] cart, double[] frac) {
     int i3 = 0;
@@ -1598,8 +1588,8 @@ public class Crystal {
   /**
    * toFractionalCoordinates
    *
-   * @param x an array of double.
-   * @param xf an array of double.
+   * @param x an array of double for cartesian coordinate.
+   * @param xf an array of double for fractional coordinate.
    */
   public void toFractionalCoordinates(double[] x, double[] xf) {
     double xc = x[0];
