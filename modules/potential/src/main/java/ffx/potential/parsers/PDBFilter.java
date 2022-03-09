@@ -1522,25 +1522,7 @@ public final class PDBFilter extends SystemFilter {
                   }
                   String resName = line.substring(17, 20).trim();
                   Character chainID = line.substring(21, 22).charAt(0);
-
-                  List<String> segIDList = segidMap.get(chainID);
-                  if (segIDList == null) {
-                    logger.log(
-                        Level.WARNING,
-                        format(
-                            " No " + "known segment ID corresponds to " + "chain ID %s",
-                            chainID));
-                    break;
-                  }
-
-                  String segID = segIDList.get(0);
-                  if (segIDList.size() > 1) {
-                    logger.log(
-                        Level.WARNING,
-                        format(
-                            " " + "Multiple segment IDs correspond to" + "chain ID %s; assuming %s",
-                            chainID, segID));
-                  }
+                  String segID = getExistingSegID(chainID);
 
                   int resSeq = Hybrid36.decode(4, line.substring(22, 26));
 
@@ -2278,6 +2260,30 @@ public final class PDBFilter extends SystemFilter {
   }
 
   /**
+   * Get unique SegID for possibly duplicate chain IDs.
+   *
+   * @param c chain ID just read.
+   * @return a unique segID.
+   */
+  private String getExistingSegID(Character c) {
+    if (c.equals(' ')) {
+      c = 'A';
+    }
+
+    List<String> segIDs = segidMap.get(c);
+    if (segIDs != null) {
+      String segID = segIDs.get(0);
+      if (segIDs.size() > 1) {
+        logger.log(Level.INFO, format(" Multiple SegIDs for to chain %s; using %s.", c, segID));
+      }
+      return segID;
+    } else {
+      logger.log(Level.INFO, format(" Creating SegID for to chain %s", c));
+      return getSegID(c);
+    }
+  }
+
+  /**
    * Convert possibly duplicate chain IDs into unique segIDs.
    *
    * @param c chain ID just read.
@@ -2308,7 +2314,6 @@ public final class PDBFilter extends SystemFilter {
     } else {
       newSegID = count + c.toString();
     }
-
     segIDs.add(newSegID);
     currentChainID = c;
     currentSegID = newSegID;

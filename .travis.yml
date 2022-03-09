@@ -1,13 +1,8 @@
 # Force Field X configuration for Travis-CI
 
+os: linux
 language: java
-
 sudo: false
-
-matrix:
-  include:
-    - os: linux
-      jdk: oraclejdk17
 
 cache:
   directories:
