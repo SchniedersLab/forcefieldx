@@ -46,96 +46,165 @@ import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.getBaseName
+import static org.apache.commons.io.FilenameUtils.getFullPath
 
 @Command(description = " Create a Feature Map for a given protein structure", name = "ffxc FeatureMap")
 class FeatureMap extends PotentialScript {
 
-  /**
-   * The final argument(s) should be one or more filenames.
-   */
-  @Parameters(arity = "1", paramLabel = "file",
-      description = 'The atomic coordinate file in PDB or XYZ format.')
-  private String filename = null
+    /**
+     * The final argument(s) should be one or more filenames.
+     */
+    @Parameters(arity = "1", paramLabel = "file",
+            description = 'The atomic coordinate file in PDB or XYZ format.')
+    private List<String> filenames = null
 
-  private List<Residue> residues
+    private List<Residue> residues
 
-  /**
-   * ffx.potential.FeatureMap constructor.
-   */
-  FeatureMap() {
-    this(new Binding())
-  }
-
-  /**
-   * ffx.potential.FeatureMap constructor.
-   * @param binding The Groovy Binding to use.
-   */
-  FeatureMap(Binding binding) {
-    super(binding)
-  }
-
-  /**
-   * ffx.potential.FeatureMap the script.
-   */
-  @Override
-  FeatureMap run() {
-    // Init the context and bind variables.
-    if (!init()) {
-      return null
-    }
-    System.setProperty("gkterm", "true")
-    System.setProperty("cavmodel", "CAV")
-    System.setProperty("surface-tension", "1.0")
-    // Load the MolecularAssembly.
-    activeAssembly = getActiveAssembly(filename)
-    if (activeAssembly == null) {
-      logger.info(helpString())
-      return null
+    /**
+     * ffx.potential.FeatureMap constructor.
+     */
+    FeatureMap() {
+        this(new Binding())
     }
 
-    //sum surface area of all atoms and compare to total surface area
-    ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
+    /**
+     * ffx.potential.FeatureMap constructor.
+     * @param binding The Groovy Binding to use.
+     */
+    FeatureMap(Binding binding) {
+        super(binding)
+    }
 
-    int nVars = forceFieldEnergy.getNumberOfVariables()
-    double[] x = new double[nVars]
-    forceFieldEnergy.getCoordinates(x)
-    forceFieldEnergy.energy(x)
-
-    residues = activeAssembly.getResidueList()
-    GetProteinFeatures getProteinFeatures = new GetProteinFeatures()
-
-    // Use the current base directory, or update if necessary based on the given filename.
-    String dirString = getBaseDirString(filename)
-
-    String baseName = getBaseName(filename)
-    String featureFileName = dirString + baseName + ".csv"
-    try {
-      FileWriter fos = new FileWriter(featureFileName)
-      PrintWriter dos = new PrintWriter(fos)
-      dos.println(
-          "Residue\tPosition\tPolarity\tAcidity\tSecondary Structure\tPhi\tPsi\tOmega\tSurface Area\tNormalized SA\tConfidence Score")
-      for (int i = 0; i < residues.size(); i++) {
-        double residueSurfaceArea =
-            forceFieldEnergy.getGK().getSurfaceAreaRegion().getResidueSurfaceArea(residues.get(i))
-        String[] features = getProteinFeatures.saveFeatures(residues.get(i), residueSurfaceArea)
-        for (int j = 0; j < features.length; j++) {
-          dos.print(features[j] + "\t")
+    /**
+     * ffx.potential.FeatureMap the script.
+     */
+    @Override
+    FeatureMap run() {
+        // Init the context and bind variables.
+        if (!init()) {
+            return null
         }
-        dos.println()
-      }
-      dos.close()
-      fos.close()
-    } catch (IOException e) {
-      logger.info("Could Not Write Tab Delimited File")
+        System.setProperty("gkterm", "true")
+        System.setProperty("cavmodel", "CAV")
+        System.setProperty("surface-tension", "1.0")
+        // Load the MolecularAssembly.
+        activeAssembly = getActiveAssembly(filenames[0])
+        if (activeAssembly == null) {
+            logger.info(helpString())
+            return null
+        }
+
+        ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
+
+        int nVars = forceFieldEnergy.getNumberOfVariables()
+        double[] x = new double[nVars]
+        forceFieldEnergy.getCoordinates(x)
+        forceFieldEnergy.energy(x)
+
+        residues = activeAssembly.getResidueList()
+        GetProteinFeatures getProteinFeatures = new GetProteinFeatures()
+
+        // Use the current base directory, or update if necessary based on the given filename.
+        String dirString = getBaseDirString(filenames[0])
+
+        String baseName = getBaseName(filenames[0])
+        String csvPath = getBaseDirString(filenames[0]).replace(baseName + '/', '')
+        String[] geneSplit =  baseName.split('_')
+        String csvFileName = geneSplit[0] + ".csv"
+
+        logger.info(csvFileName)
+
+        List<String[]> featureList = new ArrayList<>()
+        //Store all features for each residue in an array list called Features
+        for (int i = 0; i < residues.size(); i++) {
+            double residueSurfaceArea =
+                    forceFieldEnergy.getGK().getSurfaceAreaRegion().getResidueSurfaceArea(residues.get(i))
+            featureList.add(getProteinFeatures.saveFeatures(residues.get(i), residueSurfaceArea))
+        }
+
+        BufferedReader txtReader = null;
+        List<String> ddgunLines = new ArrayList<>()
+        try {
+            File txtfile = new File(dirString, "output.txt")
+            txtReader = new BufferedReader(new FileReader(txtfile));
+            String line = txtReader.readLine();
+            while (line != null) {
+                if(line.contains('.pdb')){
+                    ddgunLines.add(line)
+                }
+                // read next line
+                line = txtReader.readLine();
+            }
+            txtReader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        List<String> npChanges = getProteinFeatures.ddgunToNPChange(ddgunLines)
+        List<Double> ddGun = getProteinFeatures.getDDGunValues(ddgunLines)
+
+        BufferedReader br = null;
+        BufferedWriter bw = null;
+
+        final String lineSep = System.getProperty("line.separator");
+        logger.info(lineSep)
+
+        try {
+            File file = new File(csvPath, csvFileName)
+            File updatedFile = new File(csvPath, "update_" + csvFileName)
+
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(file)))
+            if (csvFileName.length() == 0){
+                bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(updatedFile)))
+            } else {
+                FileWriter fw = new FileWriter(updatedFile,true)
+                bw = new BufferedWriter(fw)
+            }
+
+            String line = null;
+            int i = 0;
+            for (line = br.readLine(); line != null; line = br.readLine(), i++) {
+                if (i == 0 || i == 1) {
+                    if (updatedFile.length() == 0) {
+                        bw.write(line + ',\"Surface Area\",\"Normalized SA\",\"Confidence Score\",\"|ddG|\"')
+                    }
+                } else {
+                    String[] splits = line.split('\",\"')
+                    int length = splits.length
+                    int position = splits[8].toInteger()
+                    String proteinChange = splits[2]
+                    String ddG = ""
+                    if (npChanges.indexOf(proteinChange) != -1){
+                        ddG = String.valueOf(ddGun.get(npChanges.indexOf(proteinChange)))
+                    } else {
+                        ddG = "null"
+                    }
+                    String isomer = proteinChange.split(':p.')[0]
+
+                    if (length == 14 && isomer == geneSplit[1]+ '_' + geneSplit[2]) {
+                        String[] feat = featureList.get(position - 1)
+                        bw.newLine()
+                        bw.write(line + '\",\"' + feat[0] + '\",\"' + feat[1] + '\",\"' + feat[2] + '\",\"' + String.valueOf(ddG) + '\"')
+                    }
+                }
+
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+        } finally {
+            if (br != null)
+                br.close();
+            if (bw != null)
+                bw.close();
+        }
+
+        logger.info(format("\n Total SurfacAreaRegion Solvent Accessible Surface Area: %1.6f",
+                forceFieldEnergy.getGK().getSurfaceAreaRegion().getEnergy()))
+        logger.info(format("\n Total Calculated Solvent Accessible Surface Area: %1.6f",
+                getProteinFeatures.getTotalSurfaceArea()))
+
+
     }
-
-    logger.info(format("\n Total SurfacAreaRegion Solvent Accessible Surface Area: %1.6f",
-        forceFieldEnergy.getGK().getSurfaceAreaRegion().getEnergy()))
-    logger.info(format("\n Total Calculated Solvent Accessible Surface Area: %1.6f",
-        getProteinFeatures.getTotalSurfaceArea()))
-
-
-  }
 
 
 }
