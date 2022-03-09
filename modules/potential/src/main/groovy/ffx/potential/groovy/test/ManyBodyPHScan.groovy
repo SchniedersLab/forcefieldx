@@ -97,7 +97,7 @@ class ManyBodyPHScan extends PotentialScript {
             try {
                 groovyScript.run()
             } catch (Exception e) {
-                logger.info(format(" Exception for pH value: %s", pHValues[i].toString()))
+                logger.info(format(" Exception for pH value: %s", pHValue.toString()))
             }
         }
         // Clear the pj.use.mpi flag.

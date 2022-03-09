@@ -307,11 +307,17 @@ class ManyBody extends AlgorithmsScript {
       File modelFile = saveDirFile(activeAssembly.getFile())
       PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(),
           properties)
-      if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
-        logger.info(format(" Save failed for %s", activeAssembly))
+      if (manyBody.group.titrationPH != 0){
+        String remark = "Titration pH:   " + manyBody.group.titrationPH.toString()
+        if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true, remark)) {
+          logger.info(format(" Save failed for %s", activeAssembly))
+        }
+      } else {
+        if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
+          logger.info(format(" Save failed for %s", activeAssembly))
+        }
       }
     }
-
     if (priorGKwarn == null) {
       System.clearProperty("gk-suppressWarnings")
     }
