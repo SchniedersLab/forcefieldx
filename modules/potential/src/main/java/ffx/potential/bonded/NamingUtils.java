@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
+import static ffx.potential.bonded.AminoAcidUtils.getAminoAcid;
 import static ffx.potential.bonded.BondedUtils.findAtomsOfElement;
 import static ffx.potential.bonded.BondedUtils.findBondedAtoms;
 import static ffx.potential.bonded.BondedUtils.findNitrogenAtom;
@@ -44,9 +46,7 @@ import static ffx.potential.bonded.BondedUtils.findNucleotideO4s;
 import static ffx.potential.bonded.BondedUtils.getAlphaCarbon;
 import static ffx.potential.bonded.BondedUtils.hasAttachedAtom;
 import static ffx.potential.bonded.BondedUtils.sortAtomsByDistance;
-import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import static ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
-import static ffx.potential.bonded.AminoAcidUtils.getAminoAcid;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
@@ -564,9 +564,7 @@ public class NamingUtils {
    * @param aceC The acetyl group's C atom.
    */
   public static void nameAcetylCap(Residue residue, Atom aceC) {
-    logger.warning(
-        format(
-            " Probable ACE cap attached to residue %s; duplicate atom names may result.", residue));
+    logger.fine(format(" Probable ACE cap attached to residue %s; duplicate atom names may result.", residue));
     aceC.setName("C");
     findBondedAtoms(aceC, 8).get(0).setName("O");
     Atom CH3 = findBondedAtoms(aceC, 6).get(0);
@@ -616,76 +614,85 @@ public class NamingUtils {
    */
   public static void renameAminoAcidToPDBStandard(Residue residue) {
     if (residue.getChainID() == null) {
+      logger.info(" Setting Chain ID to Z for " + residue);
       residue.setChainID('Z');
     }
-    final Atom N = findNitrogenAtom(residue);
     AminoAcid3 aa3 = residue.getAminoAcid3();
+    final Atom N = findNitrogenAtom(residue);
     if (N != null) {
+      // Nitrogen
       N.setName("N");
 
+      // C-alpha
       Atom CA = getAlphaCarbon(residue, N);
       CA.setName("CA");
 
-      List<Atom> has = findBondedAtoms(CA, 1);
+      // C-alpha hydrogen
+      List<Atom> hydrogenForCA = findBondedAtoms(CA, 1);
       switch (aa3) {
         case NME:
           // Do all renaming here then return out of the method.
           findBondedAtoms(N, 1).get(0).setName("H");
           CA.setName("CH3");
           for (int i = 1; i <= 3; i++) {
-            has.get(i - 1).setName(format("H%d", i));
+            hydrogenForCA.get(i - 1).setName(format("H%d", i));
           }
           return;
         case GLY:
-          has.get(0).setName("HA2");
-          has.get(1).setName("HA3");
+          hydrogenForCA.get(0).setName("HA2");
+          hydrogenForCA.get(1).setName("HA3");
           break;
         default:
-          has.get(0).setName("HA");
+          hydrogenForCA.get(0).setName("HA");
           break;
       }
 
+      // Carbonyl carbon
       Atom C = null;
+      // C-beta
       Atom CB = null;
-      for (Atom carb : findBondedAtoms(CA, 6)) {
+      for (Atom carbon : findBondedAtoms(CA, 6)) {
         // Second check is because of serine/threonine OG bonded straight to CB.
-        if (hasAttachedAtom(carb, 8) && !hasAttachedAtom(carb, 1)) {
-          C = carb;
+        if (hasAttachedAtom(carbon, 8) && !hasAttachedAtom(carbon, 1)) {
+          C = carbon;
           C.setName("C");
         } else {
-          CB = carb;
+          CB = carbon;
           CB.setName("CB");
         }
       }
       if (C == null) {
         throw new IllegalArgumentException(
-            format(" Could not find carbonyl carbon for residue %s!", residue));
+            format(" The carbonyl carbon for residue %s could not be found.", residue));
       }
       if (CB == null && aa3 != AminoAcidUtils.AminoAcid3.GLY) {
         throw new IllegalArgumentException(
-            format(" Could not find beta carbon for residue %s!", residue));
+            format(" The beta carbon for residue %s could not be found.", residue));
       }
 
-      List<Atom> ctermOxygens = findBondedAtoms(C, 8);
-      switch (ctermOxygens.size()) {
+      // Carbonyl oxygen (1 for mid-chain, 2 for last residue)
+      List<Atom> cTerminalOxygen = findBondedAtoms(C, 8);
+      switch (cTerminalOxygen.size()) {
         case 1:
-          ctermOxygens.get(0).setName("O");
+          // Mid-chain
+          cTerminalOxygen.get(0).setName("O");
           break;
         case 2:
           Atom O = null;
-          for (Atom oxy : ctermOxygens) {
-            if (oxy.getBonds().size() == 2) {
-              O = oxy;
+          for (Atom oxygen : cTerminalOxygen) {
+            if (oxygen.getBonds().size() == 2) {
+              O = oxygen;
               O.setName("O");
               findBondedAtoms(O, 1).get(0).setName("HO");
             }
           }
           if (O == null) {
-            ctermOxygens.get(0).setName("O");
-            ctermOxygens.get(1).setName("OXT");
+            cTerminalOxygen.get(0).setName("O");
+            cTerminalOxygen.get(1).setName("OXT");
           }
       }
 
+      // Nitrogen hydrogen atoms
       List<Atom> amideProtons = findBondedAtoms(N, 1);
       if (amideProtons.size() == 1) {
         amideProtons.get(0).setName("H");
@@ -697,22 +704,20 @@ public class NamingUtils {
 
       // All common atoms are now named: N, H[1-3], CA, HA[2-3], CB, C, O[XT], [HO]
       renameCommonAminoAcids(residue, aa3, CA, CB);
-    } else {
-      if (aa3 == AminoAcid3.ACE) {
-        Atom O = findAtomsOfElement(residue, 8).get(0);
-        O.setName("O");
-        Atom C = findBondedAtoms(O, 6).get(0);
-        C.setName("C");
-        Atom CH3 = findBondedAtoms(C, 6).get(0);
-        CH3.setName("CH3");
-        List<Atom> hydrogens = findBondedAtoms(CH3, 1);
-        for (int i = 1; i <= 3; i++) {
-          hydrogens.get(i - 1).setName(format("H%d", i));
-        }
-      } else {
-        throw new IllegalArgumentException(
-            format(" Could not find nitrogen atom for residue %s!", residue));
+    } else if (aa3 == AminoAcid3.ACE) {
+      Atom O = findAtomsOfElement(residue, 8).get(0);
+      O.setName("O");
+      Atom C = findBondedAtoms(O, 6).get(0);
+      C.setName("C");
+      Atom CH3 = findBondedAtoms(C, 6).get(0);
+      CH3.setName("CH3");
+      List<Atom> hydrogens = findBondedAtoms(CH3, 1);
+      for (int i = 1; i <= 3; i++) {
+        hydrogens.get(i - 1).setName(format("H%d", i));
       }
+    } else {
+      throw new IllegalArgumentException(
+          format(" Could not find nitrogen atom for residue %s!", residue));
     }
   }
 
@@ -898,408 +903,390 @@ public class NamingUtils {
    */
   public static void renameCommonAminoAcids(Residue residue, AminoAcid3 aa3, Atom CA, Atom CB) {
     switch (aa3) {
-      case ALA:
-        {
-          renameAlkyl(CB, CA, 1, 'B');
-        }
-        break;
+      case ALA: {
+        renameAlkyl(CB, CA, 1, 'B');
+      }
+      break;
       case CYS:
-      case CYD:
-        {
-          Atom SG = renameAlkyl(CB, CA, 2, 'B').get();
-          SG.setName("SG");
-          if (hasAttachedAtom(SG, 1)) {
-            assert aa3 == AminoAcidUtils.AminoAcid3.CYS;
-            findBondedAtoms(SG, 1).get(0).setName("HG");
-          } else if (hasAttachedAtom(SG, 16)) {
-            logger.finer(format(" SG atom %s likely part of a disulfide bond.", SG));
-          } else {
-            residue.setName("CYD");
-          }
+      case CYD: {
+        Atom SG = renameAlkyl(CB, CA, 2, 'B').get();
+        SG.setName("SG");
+        if (hasAttachedAtom(SG, 1)) {
+          assert aa3 == AminoAcidUtils.AminoAcid3.CYS;
+          findBondedAtoms(SG, 1).get(0).setName("HG");
+        } else if (hasAttachedAtom(SG, 16)) {
+          logger.finer(format(" SG atom %s likely part of a disulfide bond.", SG));
+        } else {
+          residue.setName("CYD");
         }
-        break;
+      }
+      break;
       case ASP:
       case ASH:
-      case ASD:
-        {
-          Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
-          CG.setName("CG");
-          List<Atom> ODs = findBondedAtoms(CG, 8);
+      case ASD: {
+        Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
+        CG.setName("CG");
+        List<Atom> ODs = findBondedAtoms(CG, 8);
 
-          int protonatedOD = -1; // -1: Deprotonated ASP. 0/1: Index of protonated oxygen (ASH).
-          for (int i = 0; i < 2; i++) {
-            if (hasAttachedAtom(ODs.get(i), 1)) {
-              protonatedOD = i;
-              break;
-            }
-          }
-
-          // Check for double protonation for constant pH.
-          if (hasAttachedAtom(ODs.get(0),1) && hasAttachedAtom(ODs.get(1), 1)) {
-            protonatedOD = 2;
-          }
-
-          switch (protonatedOD) {
-            case -1:
-              ODs.get(0).setName("OD1");
-              ODs.get(1).setName("OD2");
-              break;
-            case 0:
-              if (aa3 != AminoAcidUtils.AminoAcid3.ASH) {
-                residue.setName("ASH");
-              }
-              ODs.get(0).setName("OD2");
-              findBondedAtoms(ODs.get(0), 1).get(0).setName("HD2");
-              ODs.get(1).setName("OD1");
-              break;
-            case 1:
-              if (aa3 != AminoAcidUtils.AminoAcid3.ASH) {
-                residue.setName("ASH");
-              }
-              ODs.get(1).setName("OD2");
-              findBondedAtoms(ODs.get(1), 1).get(0).setName("HD2");
-              ODs.get(0).setName("OD1");
-              break;
-            case 2:
-              if (aa3 != AminoAcidUtils.AminoAcid3.ASD) {
-                residue.setName("ASD");
-              }
-              ODs.get(0).setName("OD1");
-              findBondedAtoms(ODs.get(0), 1).get(0).setName("HD1");
-              ODs.get(1).setName("OD2");
-              findBondedAtoms(ODs.get(1), 1).get(0).setName("HD2");
-              break;
+        int protonatedOD = -1; // -1: Deprotonated ASP. 0/1: Index of protonated oxygen (ASH).
+        for (int i = 0; i < 2; i++) {
+          if (hasAttachedAtom(ODs.get(i), 1)) {
+            protonatedOD = i;
+            break;
           }
         }
-        break;
+
+        // Check for double protonation for constant pH.
+        if (hasAttachedAtom(ODs.get(0), 1) && hasAttachedAtom(ODs.get(1), 1)) {
+          protonatedOD = 2;
+        }
+
+        switch (protonatedOD) {
+          case -1:
+            ODs.get(0).setName("OD1");
+            ODs.get(1).setName("OD2");
+            break;
+          case 0:
+            if (aa3 != AminoAcidUtils.AminoAcid3.ASH) {
+              residue.setName("ASH");
+            }
+            ODs.get(0).setName("OD2");
+            findBondedAtoms(ODs.get(0), 1).get(0).setName("HD2");
+            ODs.get(1).setName("OD1");
+            break;
+          case 1:
+            if (aa3 != AminoAcidUtils.AminoAcid3.ASH) {
+              residue.setName("ASH");
+            }
+            ODs.get(1).setName("OD2");
+            findBondedAtoms(ODs.get(1), 1).get(0).setName("HD2");
+            ODs.get(0).setName("OD1");
+            break;
+          case 2:
+            if (aa3 != AminoAcidUtils.AminoAcid3.ASD) {
+              residue.setName("ASD");
+            }
+            ODs.get(0).setName("OD1");
+            findBondedAtoms(ODs.get(0), 1).get(0).setName("HD1");
+            ODs.get(1).setName("OD2");
+            findBondedAtoms(ODs.get(1), 1).get(0).setName("HD2");
+            break;
+        }
+      }
+      break;
       case GLU:
       case GLH:
-      case GLD:
-        {
-          Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
-          Atom CD = renameAlkyl(CG, CB, 2, 'G').get();
-          CD.setName("CD");
-          List<Atom> OEs = findBondedAtoms(CD, 8);
+      case GLD: {
+        Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
+        Atom CD = renameAlkyl(CG, CB, 2, 'G').get();
+        CD.setName("CD");
+        List<Atom> OEs = findBondedAtoms(CD, 8);
 
-          int protonatedOE = -1; // If it remains -1, deprotonated ASP, else ASH.
-          for (int i = 0; i < 2; i++) {
-            if (hasAttachedAtom(OEs.get(i), 1)) {
-              protonatedOE = i;
-              break;
+        int protonatedOE = -1; // If it remains -1, deprotonated ASP, else ASH.
+        for (int i = 0; i < 2; i++) {
+          if (hasAttachedAtom(OEs.get(i), 1)) {
+            protonatedOE = i;
+            break;
+          }
+        }
+
+        // Check for double protonation for constant pH.
+        if (hasAttachedAtom(OEs.get(0), 1) && hasAttachedAtom(OEs.get(1), 1)) {
+          protonatedOE = 2;
+        }
+
+        switch (protonatedOE) {
+          case -1:
+            OEs.get(0).setName("OE1");
+            OEs.get(1).setName("OE2");
+            break;
+          case 0:
+            if (aa3 != AminoAcidUtils.AminoAcid3.GLH) {
+              residue.setName("GLH");
             }
-          }
-
-          // Check for double protonation for constant pH.
-          if (hasAttachedAtom(OEs.get(0),1) && hasAttachedAtom(OEs.get(1), 1)) {
-            protonatedOE = 2;
-          }
-
-          switch (protonatedOE) {
-            case -1:
-              OEs.get(0).setName("OE1");
-              OEs.get(1).setName("OE2");
-              break;
-            case 0:
-              if (aa3 != AminoAcidUtils.AminoAcid3.GLH) {
-                residue.setName("GLH");
-              }
-              OEs.get(0).setName("OE2");
-              findBondedAtoms(OEs.get(0), 1).get(0).setName("HE2");
-              OEs.get(1).setName("OE1");
-              break;
-            case 1:
-              if (aa3 != AminoAcidUtils.AminoAcid3.GLH) {
-                residue.setName("GLH");
-              }
-              OEs.get(1).setName("OE2");
-              findBondedAtoms(OEs.get(1), 1).get(0).setName("HE2");
-              OEs.get(0).setName("OE1");
-              break;
-            case 2:
-              if (aa3 != AminoAcidUtils.AminoAcid3.GLD) {
-                residue.setName("GLD");
-              }
-              OEs.get(0).setName("OE1");
-              findBondedAtoms(OEs.get(0), 1).get(0).setName("HE1");
-              OEs.get(1).setName("OE2");
-              findBondedAtoms(OEs.get(1), 1).get(0).setName("HE2");
-              break;
-          }
+            OEs.get(0).setName("OE2");
+            findBondedAtoms(OEs.get(0), 1).get(0).setName("HE2");
+            OEs.get(1).setName("OE1");
+            break;
+          case 1:
+            if (aa3 != AminoAcidUtils.AminoAcid3.GLH) {
+              residue.setName("GLH");
+            }
+            OEs.get(1).setName("OE2");
+            findBondedAtoms(OEs.get(1), 1).get(0).setName("HE2");
+            OEs.get(0).setName("OE1");
+            break;
+          case 2:
+            if (aa3 != AminoAcidUtils.AminoAcid3.GLD) {
+              residue.setName("GLD");
+            }
+            OEs.get(0).setName("OE1");
+            findBondedAtoms(OEs.get(0), 1).get(0).setName("HE1");
+            OEs.get(1).setName("OE2");
+            findBondedAtoms(OEs.get(1), 1).get(0).setName("HE2");
+            break;
         }
-        break;
-      case PHE:
-        {
-          Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
-          CG.setName("CG");
-          List<Atom> CDs = findBondedAtoms(CG, CB, 6);
+      }
+      break;
+      case PHE: {
+        Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
+        CG.setName("CG");
+        List<Atom> CDs = findBondedAtoms(CG, CB, 6);
 
-          Atom CZ = null;
-          for (int i = 1; i <= 2; i++) {
-            Atom CD = CDs.get(i - 1);
-            Atom CE = renameBranchedAlkyl(CD, CG, 0, i, 'D').get();
-            CZ = renameBranchedAlkyl(CE, CD, 0, i, 'E').get();
-          }
-          CZ.setName("CZ");
-          findBondedAtoms(CZ, 1).get(0).setName("HZ");
+        Atom CZ = null;
+        for (int i = 1; i <= 2; i++) {
+          Atom CD = CDs.get(i - 1);
+          Atom CE = renameBranchedAlkyl(CD, CG, 0, i, 'D').get();
+          CZ = renameBranchedAlkyl(CE, CD, 0, i, 'E').get();
         }
-        break;
+        CZ.setName("CZ");
+        findBondedAtoms(CZ, 1).get(0).setName("HZ");
+      }
+      break;
       case GLY:
         break;
       case HIS:
       case HIE:
-      case HID:
-        {
-          Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
-          CG.setName("CG");
+      case HID: {
+        Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
+        CG.setName("CG");
 
-          Atom CD2 = findBondedAtoms(CG, 6).stream().filter((Atom a) -> a != CB).findAny().get();
-          CD2.setName("CD2");
-          findBondedAtoms(CD2, 1).get(0).setName("HD2");
+        Atom CD2 = findBondedAtoms(CG, 6).stream().filter((Atom a) -> a != CB).findAny().get();
+        CD2.setName("CD2");
+        findBondedAtoms(CD2, 1).get(0).setName("HD2");
 
-          Atom NE2 = findBondedAtoms(CD2, 7).get(0);
-          NE2.setName("NE2");
-          List<Atom> HE2 = findBondedAtoms(NE2, 1);
-          boolean epsProtonated = (HE2 != null && !HE2.isEmpty());
-          if (epsProtonated) {
-            HE2.get(0).setName("HE2");
-          }
+        Atom NE2 = findBondedAtoms(CD2, 7).get(0);
+        NE2.setName("NE2");
+        List<Atom> HE2 = findBondedAtoms(NE2, 1);
+        boolean epsProtonated = (HE2 != null && !HE2.isEmpty());
+        if (epsProtonated) {
+          HE2.get(0).setName("HE2");
+        }
 
-          Atom CE1 = findBondedAtoms(NE2, CD2, 6).get(0);
-          CE1.setName("CE1");
-          findBondedAtoms(CE1, 1).get(0).setName("HE1");
+        Atom CE1 = findBondedAtoms(NE2, CD2, 6).get(0);
+        CE1.setName("CE1");
+        findBondedAtoms(CE1, 1).get(0).setName("HE1");
 
-          Atom ND1 = findBondedAtoms(CG, 7).get(0);
-          ND1.setName("ND1");
-          List<Atom> HD1 = findBondedAtoms(ND1, 1);
-          boolean deltaProtonated = (HD1 != null && !HD1.isEmpty());
-          if (deltaProtonated) {
-            HD1.get(0).setName("HD1");
-          }
+        Atom ND1 = findBondedAtoms(CG, 7).get(0);
+        ND1.setName("ND1");
+        List<Atom> HD1 = findBondedAtoms(ND1, 1);
+        boolean deltaProtonated = (HD1 != null && !HD1.isEmpty());
+        if (deltaProtonated) {
+          HD1.get(0).setName("HD1");
+        }
 
-          // All constant atoms found: now check protonation state.
-          if (epsProtonated && deltaProtonated) {
-            assert aa3 == AminoAcidUtils.AminoAcid3.HIS;
-          } else if (epsProtonated) {
-            residue.setName("HIE");
-          } else if (deltaProtonated) {
-            residue.setName("HID");
+        // All constant atoms found: now check protonation state.
+        if (epsProtonated && deltaProtonated) {
+          assert aa3 == AminoAcidUtils.AminoAcid3.HIS;
+        } else if (epsProtonated) {
+          residue.setName("HIE");
+        } else if (deltaProtonated) {
+          residue.setName("HID");
+        } else {
+          throw new IllegalArgumentException(
+              format(" Histidine residue %s is doubly deprotonated!", residue));
+        }
+      }
+      break;
+      case ILE: {
+        findBondedAtoms(CB, 1).get(0).setName("HB");
+        List<Atom> CGs = findBondedAtoms(CB, CA, 6);
+
+        for (Atom CG : CGs) {
+          List<Atom> HGs = findBondedAtoms(CG, 1);
+          int numHGs = HGs.size();
+          if (numHGs == 3) {
+            renameBranchedAlkyl(CG, CB, 1, 2, 'G');
+          } else if (numHGs == 2) {
+            Atom CD1 = renameBranchedAlkyl(CG, CB, 2, 1, 'G').get();
+            renameBranchedAlkyl(CD1, CG, 1, 1, 'D');
           } else {
             throw new IllegalArgumentException(
-                format(" Histidine residue %s is doubly deprotonated!", residue));
+                format(
+                    " Isoleucine residue %s had %d gamma hydrogens, expecting 2-3!",
+                    residue, numHGs));
           }
         }
-        break;
-      case ILE:
-        {
-          findBondedAtoms(CB, 1).get(0).setName("HB");
-          List<Atom> CGs = findBondedAtoms(CB, CA, 6);
-
-          for (Atom CG : CGs) {
-            List<Atom> HGs = findBondedAtoms(CG, 1);
-            int numHGs = HGs.size();
-            if (numHGs == 3) {
-              renameBranchedAlkyl(CG, CB, 1, 2, 'G');
-            } else if (numHGs == 2) {
-              Atom CD1 = renameBranchedAlkyl(CG, CB, 2, 1, 'G').get();
-              renameBranchedAlkyl(CD1, CG, 1, 1, 'D');
-            } else {
-              throw new IllegalArgumentException(
-                  format(
-                      " Isoleucine residue %s had %d gamma hydrogens, expecting 2-3!",
-                      residue, numHGs));
-            }
-          }
-        }
-        break;
+      }
+      break;
       case LYS:
-      case LYD:
-        {
-          Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
-          Atom CD = renameAlkyl(CG, CB, 2, 'G').get();
-          Atom CE = renameAlkyl(CD, CG, 2, 'D').get();
-          Atom NZ = renameAlkyl(CE, CD, 2, 'E').get();
-          // For a very brief period, NZ will be named CZ.
-          renameAlkyl(NZ, CE, 1, 'Z');
-          NZ.setName("NZ");
-          int numH = findBondedAtoms(NZ, 1).size();
-          switch (numH) {
-            case 2:
-              residue.setName("LYD");
-              break;
-            case 3:
-              assert aa3 == AminoAcidUtils.AminoAcid3.LYS;
-              break;
-            default:
-              throw new IllegalArgumentException(
-                  format(" Lysine residue %s had %d amine protons, expecting 2-3!", residue, numH));
-          }
-        }
-        break;
-      case LEU:
-        {
-          Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
-          CG.setName("CG");
-          findBondedAtoms(CG, 1).get(0).setName("HG");
-          List<Atom> CDs = findBondedAtoms(CG, CB, 6);
-
-          for (int i = 0; i < 2; i++) {
-            renameBranchedAlkyl(CDs.get(i), CG, 1, (i + 1), 'D');
-          }
-        }
-        break;
-      case MET:
-        {
-          Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
-          Atom SD = renameAlkyl(CG, CB, 2, 'G').get();
-          Atom CE = renameAlkyl(SD, CG, 0, 'D').get();
-          // Once again, briefly misnamed atom because I'm kludging it through renameAlkyl.
-          SD.setName("SD");
-          renameAlkyl(CE, SD, 1, 'E');
-        }
-        break;
-      case ASN:
-        {
-          Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
-          CG.setName("CG");
-          findBondedAtoms(CG, 8).get(0).setName("OD1");
-          Atom ND2 = findBondedAtoms(CG, 7).get(0);
-          renameBranchedAlkyl(ND2, CG, 1, 2, 'D');
-          // Once again, briefly misnamed atom because I'm kludging it through renameAlkyl.
-          ND2.setName("ND2");
-        }
-        break;
-      case PRO:
-        {
-          Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
-          Atom CD = renameAlkyl(CG, CB, 2, 'G').get();
-          Atom N = renameAlkyl(CD, CG, 2, 'D').get();
-          assert N.getName().equals("N");
-        }
-        break;
-      case GLN:
-        {
-          Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
-          Atom CD = renameAlkyl(CG, CB, 2, 'G').get();
-          CD.setName("CD");
-
-          findBondedAtoms(CD, 8).get(0).setName("OE1");
-          Atom NE2 = findBondedAtoms(CD, 7).get(0);
-          renameBranchedAlkyl(NE2, CD, 1, 2, 'E');
-          // Once again, briefly misnamed atom because I'm kludging it through renameAlkyl.
-          NE2.setName("NE2");
-        }
-        break;
-      case ARG:
-        {
-          Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
-          Atom CD = renameAlkyl(CG, CB, 2, 'G').get();
-          Atom NE = renameAlkyl(CD, CG, 2, 'D').get();
-          Atom CZ = renameAlkyl(NE, CD, 0, 'E').get();
-          NE.setName("NE");
-          CZ.setName("CZ");
-
-          List<Atom> NHs = findBondedAtoms(CZ, NE, 7);
-          assert NHs.size() == 2;
-          for (int i = 0; i < 2; i++) {
-            Atom NHx = NHs.get(i);
-            renameBranchedAlkyl(NHx, CZ, 1, (i + 1), 'H');
-            NHx.setName(format("NH%d", (i + 1)));
-          }
-        }
-        break;
-      case SER:
-        {
-          Atom OG = renameAlkyl(CB, CA, 2, 'B').get();
-          renameAlkyl(OG, CB, 0, 'G');
-          OG.setName("OG");
-        }
-        break;
-      case THR:
-        {
-          CB.setName("CB"); // Should be unnecessary.
-          findBondedAtoms(CB, 1).get(0).setName("HB");
-
-          Atom OG1 = findBondedAtoms(CB, 8).get(0);
-          OG1.setName("OG1");
-          findBondedAtoms(OG1, 1).get(0).setName("HG1");
-
-          Atom CG2 = findBondedAtoms(CB, CA, 6).get(0);
-          renameBranchedAlkyl(CG2, CB, 1, 2, 'G');
-        }
-        break;
-      case VAL:
-        {
-          CB.setName("CB"); // Should be unnecessary.
-          findBondedAtoms(CB, 1).get(0).setName("HB");
-
-          List<Atom> CGs = findBondedAtoms(CB, CA, 6);
-
-          assert CGs.size() == 2;
-          for (int i = 0; i < 2; i++) {
-            Atom CGx = CGs.get(i);
-            renameBranchedAlkyl(CGx, CB, 1, (i + 1), 'G');
-          }
-        }
-        break;
-      case TRP:
-        {
-          Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
-          CG.setName("CG");
-          List<Atom> CDs = findBondedAtoms(CG, CB, 6);
-          Atom CD1 = null;
-          Atom CD2 = null;
-
-          for (Atom CDx : CDs) {
-            if (hasAttachedAtom(CDx, 1)) {
-              CD1 = CDx;
-            } else {
-              CD2 = CDx;
-              CD2.setName("CD2");
-            }
-          }
-          Atom NE1 = renameBranchedAlkyl(CD1, CG, 0, 1, 'D').get();
-          Atom CE2 = renameBranchedAlkyl(NE1, CD1, 0, 1, 'E').get();
-          NE1.setName("NE1");
-          CE2.setName("CE2");
-
-          Atom CZ2 = findBondedAtoms(CE2, CD2, 6).get(0);
-          Atom CH2 = renameBranchedAlkyl(CZ2, CE2, 0, 2, 'Z').get();
-          Atom CZ3 = renameBranchedAlkyl(CH2, CZ2, 0, 2, 'H').get();
-          Atom CE3 = renameBranchedAlkyl(CZ3, CH2, 0, 3, 'Z').get();
-          if (CD2 != renameBranchedAlkyl(CE3, CZ3, 0, 3, 'E').get()) {
+      case LYD: {
+        Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
+        Atom CD = renameAlkyl(CG, CB, 2, 'G').get();
+        Atom CE = renameAlkyl(CD, CG, 2, 'D').get();
+        Atom NZ = renameAlkyl(CE, CD, 2, 'E').get();
+        // For a very brief period, NZ will be named CZ.
+        renameAlkyl(NZ, CE, 1, 'Z');
+        NZ.setName("NZ");
+        int numH = findBondedAtoms(NZ, 1).size();
+        switch (numH) {
+          case 2:
+            residue.setName("LYD");
+            break;
+          case 3:
+            assert aa3 == AminoAcidUtils.AminoAcid3.LYS;
+            break;
+          default:
             throw new IllegalArgumentException(
-                format(" Error in cyclizing tryptophan %s!", residue));
-          }
+                format(" Lysine residue %s had %d amine protons, expecting 2-3!", residue, numH));
         }
-        break;
-      case TYR:
-      case TYD:
-        {
-          Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
-          CG.setName("CG");
-          List<Atom> CDs = findBondedAtoms(CG, CB, 6);
-          Atom CZ = null;
+      }
+      break;
+      case LEU: {
+        Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
+        CG.setName("CG");
+        findBondedAtoms(CG, 1).get(0).setName("HG");
+        List<Atom> CDs = findBondedAtoms(CG, CB, 6);
 
-          assert CDs.size() == 2;
-          for (int i = 1; i <= 2; i++) {
-            Atom CDx = CDs.get(i - 1);
-            Atom CEx = renameBranchedAlkyl(CDx, CG, 0, i, 'D').get();
-            CZ = renameBranchedAlkyl(CEx, CDx, 0, i, 'E').get();
-          }
+        for (int i = 0; i < 2; i++) {
+          renameBranchedAlkyl(CDs.get(i), CG, 1, (i + 1), 'D');
+        }
+      }
+      break;
+      case MET: {
+        Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
+        Atom SD = renameAlkyl(CG, CB, 2, 'G').get();
+        Atom CE = renameAlkyl(SD, CG, 0, 'D').get();
+        // Once again, briefly misnamed atom because I'm kludging it through renameAlkyl.
+        SD.setName("SD");
+        renameAlkyl(CE, SD, 1, 'E');
+      }
+      break;
+      case ASN: {
+        Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
+        CG.setName("CG");
+        findBondedAtoms(CG, 8).get(0).setName("OD1");
+        Atom ND2 = findBondedAtoms(CG, 7).get(0);
+        renameBranchedAlkyl(ND2, CG, 1, 2, 'D');
+        // Once again, briefly misnamed atom because I'm kludging it through renameAlkyl.
+        ND2.setName("ND2");
+      }
+      break;
+      case PRO: {
+        Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
+        Atom CD = renameAlkyl(CG, CB, 2, 'G').get();
+        Atom N = renameAlkyl(CD, CG, 2, 'D').get();
+        assert N.getName().equals("N");
+      }
+      break;
+      case GLN: {
+        Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
+        Atom CD = renameAlkyl(CG, CB, 2, 'G').get();
+        CD.setName("CD");
 
-          CZ.setName("CZ");
-          Atom OH = findBondedAtoms(CZ, 8).get(0);
-          OH.setName("OH");
-          if (hasAttachedAtom(OH, 1)) {
-            assert aa3 == AminoAcidUtils.AminoAcid3.TYR;
-            findBondedAtoms(OH, 1).get(0).setName("HH");
+        findBondedAtoms(CD, 8).get(0).setName("OE1");
+        Atom NE2 = findBondedAtoms(CD, 7).get(0);
+        renameBranchedAlkyl(NE2, CD, 1, 2, 'E');
+        // Once again, briefly misnamed atom because I'm kludging it through renameAlkyl.
+        NE2.setName("NE2");
+      }
+      break;
+      case ARG: {
+        Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
+        Atom CD = renameAlkyl(CG, CB, 2, 'G').get();
+        Atom NE = renameAlkyl(CD, CG, 2, 'D').get();
+        Atom CZ = renameAlkyl(NE, CD, 0, 'E').get();
+        NE.setName("NE");
+        CZ.setName("CZ");
+
+        List<Atom> NHs = findBondedAtoms(CZ, NE, 7);
+        assert NHs.size() == 2;
+        for (int i = 0; i < 2; i++) {
+          Atom NHx = NHs.get(i);
+          renameBranchedAlkyl(NHx, CZ, 1, (i + 1), 'H');
+          NHx.setName(format("NH%d", (i + 1)));
+        }
+      }
+      break;
+      case SER: {
+        Atom OG = renameAlkyl(CB, CA, 2, 'B').get();
+        renameAlkyl(OG, CB, 0, 'G');
+        OG.setName("OG");
+      }
+      break;
+      case THR: {
+        CB.setName("CB"); // Should be unnecessary.
+        findBondedAtoms(CB, 1).get(0).setName("HB");
+
+        Atom OG1 = findBondedAtoms(CB, 8).get(0);
+        OG1.setName("OG1");
+        findBondedAtoms(OG1, 1).get(0).setName("HG1");
+
+        Atom CG2 = findBondedAtoms(CB, CA, 6).get(0);
+        renameBranchedAlkyl(CG2, CB, 1, 2, 'G');
+      }
+      break;
+      case VAL: {
+        CB.setName("CB"); // Should be unnecessary.
+        findBondedAtoms(CB, 1).get(0).setName("HB");
+
+        List<Atom> CGs = findBondedAtoms(CB, CA, 6);
+
+        assert CGs.size() == 2;
+        for (int i = 0; i < 2; i++) {
+          Atom CGx = CGs.get(i);
+          renameBranchedAlkyl(CGx, CB, 1, (i + 1), 'G');
+        }
+      }
+      break;
+      case TRP: {
+        Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
+        CG.setName("CG");
+        List<Atom> CDs = findBondedAtoms(CG, CB, 6);
+        Atom CD1 = null;
+        Atom CD2 = null;
+
+        for (Atom CDx : CDs) {
+          if (hasAttachedAtom(CDx, 1)) {
+            CD1 = CDx;
           } else {
-            residue.setName("TYD");
+            CD2 = CDx;
+            CD2.setName("CD2");
           }
         }
-        break;
+        Atom NE1 = renameBranchedAlkyl(CD1, CG, 0, 1, 'D').get();
+        Atom CE2 = renameBranchedAlkyl(NE1, CD1, 0, 1, 'E').get();
+        NE1.setName("NE1");
+        CE2.setName("CE2");
+
+        Atom CZ2 = findBondedAtoms(CE2, CD2, 6).get(0);
+        Atom CH2 = renameBranchedAlkyl(CZ2, CE2, 0, 2, 'Z').get();
+        Atom CZ3 = renameBranchedAlkyl(CH2, CZ2, 0, 2, 'H').get();
+        Atom CE3 = renameBranchedAlkyl(CZ3, CH2, 0, 3, 'Z').get();
+        if (CD2 != renameBranchedAlkyl(CE3, CZ3, 0, 3, 'E').get()) {
+          throw new IllegalArgumentException(
+              format(" Error in cyclizing tryptophan %s!", residue));
+        }
+      }
+      break;
+      case TYR:
+      case TYD: {
+        Atom CG = renameAlkyl(CB, CA, 2, 'B').get();
+        CG.setName("CG");
+        List<Atom> CDs = findBondedAtoms(CG, CB, 6);
+        Atom CZ = null;
+
+        assert CDs.size() == 2;
+        for (int i = 1; i <= 2; i++) {
+          Atom CDx = CDs.get(i - 1);
+          Atom CEx = renameBranchedAlkyl(CDx, CG, 0, i, 'D').get();
+          CZ = renameBranchedAlkyl(CEx, CDx, 0, i, 'E').get();
+        }
+
+        CZ.setName("CZ");
+        Atom OH = findBondedAtoms(CZ, 8).get(0);
+        OH.setName("OH");
+        if (hasAttachedAtom(OH, 1)) {
+          assert aa3 == AminoAcidUtils.AminoAcid3.TYR;
+          findBondedAtoms(OH, 1).get(0).setName("HH");
+        } else {
+          residue.setName("TYD");
+        }
+      }
+      break;
       default:
-        throw new IllegalArgumentException((format(" Amino acid %s (%s) not recognized!", residue, aa3)));
+        throw new IllegalArgumentException(
+            (format(" Amino acid %s (%s) not recognized!", residue, aa3)));
     }
   }
 
@@ -1484,84 +1471,79 @@ public class NamingUtils {
       Atom N19, Atom C1s, NucleicAcid3 na3) {
     switch (na3) {
       case ADE:
-      case DAD:
-        {
-          Map<String, Atom> purineBase = renameCommonPurine(N19, C1s);
-          // Unique to A: H2, N6, H6[12]
-          findBondedAtoms(purineBase.get("C2"), 1).get(0).setName("H2");
-          Atom C6 = purineBase.get("C6");
-          Atom N1 = purineBase.get("N1");
-          Atom N6 = findBondedAtoms(C6, N1, 7).get(0);
-          N6.setName("N6");
-          List<Atom> allH6List = findBondedAtoms(N6, 1);
-          Atom[] allH6 = sortAtomsByDistance(N1, allH6List);
-          allH6[0].setName("H61");
-          allH6[1].setName("H62");
-        }
-        break;
+      case DAD: {
+        Map<String, Atom> purineBase = renameCommonPurine(N19, C1s);
+        // Unique to A: H2, N6, H6[12]
+        findBondedAtoms(purineBase.get("C2"), 1).get(0).setName("H2");
+        Atom C6 = purineBase.get("C6");
+        Atom N1 = purineBase.get("N1");
+        Atom N6 = findBondedAtoms(C6, N1, 7).get(0);
+        N6.setName("N6");
+        List<Atom> allH6List = findBondedAtoms(N6, 1);
+        Atom[] allH6 = sortAtomsByDistance(N1, allH6List);
+        allH6[0].setName("H61");
+        allH6[1].setName("H62");
+      }
+      break;
       case CYT:
-      case DCY:
-        {
-          Map<String, Atom> pyrimidineBase = renameCommonPyrimidine(N19, C1s);
-          // Unique to C: N4, H4[12]
-          Atom C4 = pyrimidineBase.get("C4");
-          Atom N3 = pyrimidineBase.get("N3");
-          Atom N4 = findBondedAtoms(C4, N3, 7).get(0);
-          N4.setName("N4");
-          Atom[] allH4 = sortAtomsByDistance(N3, findBondedAtoms(N4, 1));
-          allH4[0].setName("H41");
-          allH4[1].setName("H42");
-        }
-        break;
+      case DCY: {
+        Map<String, Atom> pyrimidineBase = renameCommonPyrimidine(N19, C1s);
+        // Unique to C: N4, H4[12]
+        Atom C4 = pyrimidineBase.get("C4");
+        Atom N3 = pyrimidineBase.get("N3");
+        Atom N4 = findBondedAtoms(C4, N3, 7).get(0);
+        N4.setName("N4");
+        Atom[] allH4 = sortAtomsByDistance(N3, findBondedAtoms(N4, 1));
+        allH4[0].setName("H41");
+        allH4[1].setName("H42");
+      }
+      break;
       case GUA:
-      case DGU:
-        {
-          Map<String, Atom> purineBase = renameCommonPurine(N19, C1s);
-          // Unique to G: H1, N2, H2[12], O6
-          Atom N1 = purineBase.get("N1");
-          Atom C2 = purineBase.get("C2");
-          Atom C6 = purineBase.get("C6");
-          findBondedAtoms(N1, 1).get(0).setName("H1");
-          Atom N2 =
-              findBondedAtoms(C2, N1, 7).stream()
-                  .filter(n -> hasAttachedAtom(n, 1))
-                  .findAny()
-                  .get();
-          N2.setName("N2");
-          Atom[] allH2 = sortAtomsByDistance(N1, findBondedAtoms(N2, 1));
-          allH2[0].setName("H21");
-          allH2[1].setName("H22");
-          findBondedAtoms(C6, 8).get(0).setName("O6");
-        }
-        break;
-      case URI:
-        {
-          Map<String, Atom> pyrimidineBase = renameCommonPyrimidine(N19, C1s);
-          // Unique to U: H3, O4
-          findBondedAtoms(pyrimidineBase.get("N3"), 1).get(0).setName("H3");
-          findBondedAtoms(pyrimidineBase.get("C4"), 8).get(0).setName("O4");
-        }
-        break;
+      case DGU: {
+        Map<String, Atom> purineBase = renameCommonPurine(N19, C1s);
+        // Unique to G: H1, N2, H2[12], O6
+        Atom N1 = purineBase.get("N1");
+        Atom C2 = purineBase.get("C2");
+        Atom C6 = purineBase.get("C6");
+        findBondedAtoms(N1, 1).get(0).setName("H1");
+        Atom N2 =
+            findBondedAtoms(C2, N1, 7).stream()
+                .filter(n -> hasAttachedAtom(n, 1))
+                .findAny()
+                .get();
+        N2.setName("N2");
+        Atom[] allH2 = sortAtomsByDistance(N1, findBondedAtoms(N2, 1));
+        allH2[0].setName("H21");
+        allH2[1].setName("H22");
+        findBondedAtoms(C6, 8).get(0).setName("O6");
+      }
+      break;
+      case URI: {
+        Map<String, Atom> pyrimidineBase = renameCommonPyrimidine(N19, C1s);
+        // Unique to U: H3, O4
+        findBondedAtoms(pyrimidineBase.get("N3"), 1).get(0).setName("H3");
+        findBondedAtoms(pyrimidineBase.get("C4"), 8).get(0).setName("O4");
+      }
+      break;
       case THY:
-      case DTY:
-        {
-          Map<String, Atom> pyrimidineBase = renameCommonPyrimidine(N19, C1s);
-          // Unique to T: H3, O4, C7
-          findBondedAtoms(pyrimidineBase.get("N3"), 1).get(0).setName("H3");
-          findBondedAtoms(pyrimidineBase.get("C4"), 8).get(0).setName("O4");
-          Atom C5 = pyrimidineBase.get("C5");
-          for (Atom c : findBondedAtoms(C5, 6)) {
-            List<Atom> bondedH = findBondedAtoms(c, 1);
-            if (bondedH != null && bondedH.size() == 3) {
-              c.setName("C7");
-              for (int i = 0; i < 3; i++) {
-                bondedH.get(i).setName(format("H7%d", i + 1));
-              }
-              break;
+      case DTY: {
+        Map<String, Atom> pyrimidineBase = renameCommonPyrimidine(N19, C1s);
+        // Unique to T: H3, O4, C7
+        findBondedAtoms(pyrimidineBase.get("N3"), 1).get(0).setName("H3");
+        findBondedAtoms(pyrimidineBase.get("C4"), 8).get(0).setName("O4");
+        Atom C5 = pyrimidineBase.get("C5");
+        for (Atom c : findBondedAtoms(C5, 6)) {
+          List<Atom> bondedH = findBondedAtoms(c, 1);
+          if (bondedH != null && bondedH.size() == 3) {
+            c.setName("C7");
+            for (int i = 0; i < 3; i++) {
+              bondedH.get(i).setName(format("H7%d", i + 1));
             }
+            break;
           }
         }
-        break;
+      }
+      break;
     }
   }
 
@@ -1896,6 +1878,7 @@ public class NamingUtils {
    */
   public static void renameNucleicAcidToPDBStandard(Residue residue) {
     if (residue.getChainID() == null) {
+      logger.info(" Setting Chain ID to Z for " + residue);
       residue.setChainID('Z');
     }
     assert residue.getResidueType() == Residue.ResidueType.NA;

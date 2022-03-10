@@ -335,6 +335,14 @@ public class SolvatorTest extends PotentialTest {
     logger.log(Level.INFO, " Written file {0}", written.getAbsolutePath());
     logger.log(Level.INFO, " Expected file {0}", solvatedTestFile.getAbsolutePath());
 
+//    File writeTo = new File(FilenameUtils.concat(solvatedTestFile.getParent(),"NewSolvatorFile"));
+//    try {
+//      logger.info(format(" Copy from: %s\n Copy to: %s", written.getAbsolutePath(), writeTo.getAbsolutePath()));
+//      FileUtils.copyFile(written, writeTo);
+//    } catch (Exception e) {
+//      logger.info(" Failed to write file.");
+//    }
+
     try (BufferedReader expectedReader = new BufferedReader(new FileReader(solvatedTestFile));
         BufferedReader writtenReader = new BufferedReader(new FileReader(written))) {
       boolean same = IOUtils.contentEqualsIgnoreEOL(expectedReader, writtenReader);
