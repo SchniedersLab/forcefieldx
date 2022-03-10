@@ -1087,7 +1087,7 @@ public final class PDBFilter extends SystemFilter {
                 // 56 - 66       LString       sGroup         Space  group.
                 // 67 - 70       Integer       z              Z value.
                 // =============================================================================
-                if(line.length() < 55){
+                if (line.length() < 55) {
                   logger.severe(" CRYST1 record is improperly formatted.");
                 }
                 double aaxis = parseDouble(line.substring(6, 15).trim());
@@ -1508,64 +1508,49 @@ public final class PDBFilter extends SystemFilter {
               case ATOM:
                 hetatm = false;
               case HETATM:
-                if (!line.substring(17, 20).trim().equals("HOH")) {
-                  String name = line.substring(12, 16).trim();
-                  if (name.toUpperCase().contains("1H")
-                      || name.toUpperCase().contains("2H")
-                      || name.toUpperCase().contains("3H")) {
-                    // VERSION3_2 is presently just a placeholder for "anything non-standard".
-                    fileStandard = VERSION3_2;
-                  }
-                  Character altLoc = line.substring(16, 17).toUpperCase().charAt(0);
-                  if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
-                    break;
-                  }
-                  String resName = line.substring(17, 20).trim();
-                  Character chainID = line.substring(21, 22).charAt(0);
-                  String segID = getExistingSegID(chainID);
-
-                  int resSeq = Hybrid36.decode(4, line.substring(22, 26));
-
-                  double[] d = new double[3];
-                  d[0] = parseDouble(line.substring(30, 38).trim());
-                  d[1] = parseDouble(line.substring(38, 46).trim());
-                  d[2] = parseDouble(line.substring(46, 54).trim());
-                  double occupancy = 1.0;
-                  double tempFactor = 1.0;
-                  Atom newAtom =
-                      new Atom(
-                          0,
-                          name,
-                          altLoc,
-                          d,
-                          resName,
-                          resSeq,
-                          chainID,
-                          occupancy,
-                          tempFactor,
-                          segID);
-                  newAtom.setHetero(hetatm);
-                  // Check if this is a modified residue.
-                  if (modRes.containsKey(resName.toUpperCase())) {
-                    newAtom.setModRes(true);
-                  }
-
-                  Atom returnedAtom = activeMolecularAssembly.findAtom(newAtom);
-                  if (returnedAtom != null) {
-                    returnedAtom.setXYZ(d);
-                    double[] retXYZ = new double[3];
-                    returnedAtom.getXYZ(retXYZ);
-                  } else {
-                    String message =
-                        format(" Could not find atom %s in assembly", newAtom);
-                    if (dieOnMissingAtom) {
-                      logger.severe(message);
-                    } else {
-                      logger.warning(message);
-                    }
-                  }
+                String name = line.substring(12, 16).trim();
+                if (name.toUpperCase().contains("1H")
+                    || name.toUpperCase().contains("2H")
+                    || name.toUpperCase().contains("3H")) {
+                  // VERSION3_2 is presently just a placeholder for "anything non-standard".
+                  fileStandard = VERSION3_2;
+                }
+                Character altLoc = line.substring(16, 17).toUpperCase().charAt(0);
+                if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
                   break;
                 }
+                String resName = line.substring(17, 20).trim();
+                Character chainID = line.substring(21, 22).charAt(0);
+                String segID = getExistingSegID(chainID);
+                int resSeq = Hybrid36.decode(4, line.substring(22, 26));
+                double[] d = new double[3];
+                d[0] = parseDouble(line.substring(30, 38).trim());
+                d[1] = parseDouble(line.substring(38, 46).trim());
+                d[2] = parseDouble(line.substring(46, 54).trim());
+                double occupancy = 1.0;
+                double tempFactor = 1.0;
+                Atom newAtom = new Atom(0, name, altLoc, d, resName, resSeq,
+                        chainID, occupancy, tempFactor, segID);
+                newAtom.setHetero(hetatm);
+                // Check if this is a modified residue.
+                if (modRes.containsKey(resName.toUpperCase())) {
+                  newAtom.setModRes(true);
+                }
+
+                Atom returnedAtom = activeMolecularAssembly.findAtom(newAtom);
+                if (returnedAtom != null) {
+                  returnedAtom.setXYZ(d);
+                  double[] retXYZ = new double[3];
+                  returnedAtom.getXYZ(retXYZ);
+                } else {
+                  String message = format(" Could not find atom %s in assembly", newAtom);
+                  if (dieOnMissingAtom) {
+                    logger.severe(message);
+                  } else {
+                    logger.warning(message);
+                  }
+                }
+                break;
               case ENDMDL:
               case END: // Technically speaking, END should be at the end of the file, not end of
                 // the model.
