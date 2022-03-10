@@ -623,10 +623,7 @@ public class BondedUtils {
       case 1:
         return nitrogenCandidates.get(0);
       case 2:
-        logger.warning(
-            format(
-                " Probable NME C-terminal cap attached to residue %s, some atom names may be duplicated!",
-                residue));
+        logger.fine(format(" Probable NME C-terminal cap attached to residue %s, some atom names may be duplicated!", residue));
         Atom N = null;
         for (Atom nitro : nitrogenCandidates) {
           nitro.setName("N");

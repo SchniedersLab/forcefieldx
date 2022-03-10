@@ -40,6 +40,8 @@ package ffx.potential.parameters;
 import static ffx.potential.bonded.AminoAcidUtils.AA_CB;
 import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.ASH;
 import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.ASP;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.CYS;
+import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.CYD;
 import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.GLH;
 import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.GLU;
 import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3.HID;
@@ -67,7 +69,6 @@ import ffx.potential.bonded.StretchTorsion;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
-import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.SoluteType.SOLUTE_RADII_TYPE;
 import ffx.utilities.Constants;
@@ -355,6 +356,54 @@ public class TitrationUtils {
     }
   }
 
+  enum CysStates {
+    CYS, CYD
+  }
+
+  /** Constant <code>CystineAtoms</code> */
+  public enum CystineAtomNames {
+    // CYS, CYD
+    CB(0, 0, 0),
+    HB2(1, 1, 0),
+    HB3(1, 1, 0),
+    SG(2, 2, 0),
+    HG(3, -1, 0);
+    
+    /**
+     * Biotype offset relative to the CB biotype for neutral cystein (CYS).
+     */
+    private final int offsetCYS;
+
+    /**
+     * Biotype offset relative to the CB biotype for negatively charged cysteine (CYD).
+     * <p>
+     * This is set to negative -1 for the gamma hydrogen.
+     */
+    private final int offsetCYD;
+    
+    private int tautomerDirection;
+
+    public int getOffsetCYS(CysStates state) {
+      if (state == CysStates.CYS) {
+        return offsetCYS;
+      } else {
+        return offsetCYD;
+      }
+    }
+
+    /**
+     * Init the Cystin atom names.
+     *
+     * @param offsetCYS Biotype relative to the CB biotype for CYS.
+     * @param offsetCYD Biotype relative to the CB biotype for CYD.
+     */
+    CystineAtomNames(int offsetCYS, int offsetCYD, int tautomerDirection) {
+      this.offsetCYS = offsetCYS;
+      this.offsetCYD = offsetCYD;
+      this.tautomerDirection = tautomerDirection;
+    }
+  }
+
   /**
    * Lysine atom types.
    */
@@ -399,6 +448,17 @@ public class TitrationUtils {
   private final VDWType[][] gluVDWTypes = new VDWType[nGluStates][nGluTypes];
   private final SoluteType[][] gluSoluteTypes = new SoluteType[nGluStates][nGluTypes];
 
+  /**
+   * Cystine atom types.
+   */
+  private final int nCysTypes = CystineAtomNames.values().length;
+  private final int nCysStates = CysStates.values().length;
+  private final AtomType[][] cysAtomTypes = new AtomType[nCysStates][nCysTypes];
+  private final MultipoleType[][] cysMultipoleTypes = new MultipoleType[nCysStates][nCysTypes];
+  private final PolarizeType[][] cysPolarizeTypes = new PolarizeType[nCysStates][nCysTypes];
+  private final VDWType[][] cysVDWTypes = new VDWType[nCysStates][nCysTypes];
+  private final SoluteType[][] cysSoluteTypes = new SoluteType[nCysStates][nCysTypes];
+  
   private final ForceField forceField;
   private final SOLUTE_RADII_TYPE soluteRadiiType;
   private final boolean updateBondedTerms;
@@ -441,6 +501,11 @@ public class TitrationUtils {
     constructGLUState(AA_CB[GLH.ordinal()], GluStates.GLH1); // First GLH Tautomer
     constructGLUState(AA_CB[GLH.ordinal()], GluStates.GLH2); // Second GLH Tautomer
     checkMultipoleFrames("GLU", gluAtomTypes, gluPolarizeTypes, gluMultipoleTypes, gluVDWTypes);
+
+    // Populate the Cystine types.
+    constructCYSState(AA_CB[CYS.ordinal()], CysStates.CYS);
+    constructCYSState(AA_CB[CYD.ordinal()], CysStates.CYD);
+    checkMultipoleFrames("CYS", cysAtomTypes, cysPolarizeTypes, cysMultipoleTypes, cysVDWTypes);
   }
 
   /**
@@ -531,6 +596,28 @@ public class TitrationUtils {
           atom.setPolarizeType(lysPolarizeTypes[lysIndex][atomIndex]);
           atom.setVDWType(lysVDWTypes[lysIndex][atomIndex]);
           atom.setSoluteType(lysSoluteTypes[lysIndex][atomIndex]);
+        }
+        break;
+      case CYS:
+      case CYD:
+        // Assume CYS types
+        int cysIndex = CysStates.CYS.ordinal();
+        if (rotamer.aminoAcid3 == LYD) {
+          // Use CYD types
+          cysIndex = CysStates.CYD.ordinal();
+        }
+        for (CystineAtomNames atomName : CystineAtomNames.values()) {
+          int atomIndex = atomName.ordinal();
+          Atom atom = (Atom) residue.getAtomNode(atomName.name());
+          if (atom == null) {
+            logger.warning(" Atom is null for " + atomName);
+          }
+          atom.setAtomType(cysAtomTypes[cysIndex][atomIndex]);
+          atom.setMultipoleType(cysMultipoleTypes[cysIndex][atomIndex]);
+          assignAxisAtoms(atom);
+          atom.setPolarizeType(cysPolarizeTypes[cysIndex][atomIndex]);
+          atom.setVDWType(cysVDWTypes[cysIndex][atomIndex]);
+          atom.setSoluteType(cysSoluteTypes[cysIndex][atomIndex]);
         }
         break;
       case HIS:
@@ -669,6 +756,8 @@ public class TitrationUtils {
     }
 
   }
+
+  // TODO: Andrew - please update the titration API for CYS/CYD
 
   public double[] getMultipole(Atom atom,
       double titrationLambda, double tautomerLambda, double[] multipole) {
@@ -940,8 +1029,7 @@ public class TitrationUtils {
         return 0.0;
     }
   }
-
-
+  
   public static boolean isTitratingHydrogen(AminoAcid3 aminoAcid3, Atom atom) {
     boolean isTitratingHydrogen = false;
     String atomName = atom.getName();
@@ -1133,6 +1221,38 @@ public class TitrationUtils {
     }
   }
 
+  private void constructCYSState(int biotypeCB, CysStates cysState) {
+    int state = cysState.ordinal();
+    for (CystineAtomNames atomName : CystineAtomNames.values()) {
+      int index = atomName.ordinal();
+      int offset = atomName.getOffsetCYS(cysState);
+      if (offset < 0) {
+        // Set the AtomType to null.
+        cysAtomTypes[state][index] = deprotonatedAtomType;
+        // Zero out the MultipoleType and Polarizetype.
+        cysMultipoleTypes[state][index] = zeroMultipoleType;
+        cysPolarizeTypes[state][index] = zeroPolarizeType;
+        cysVDWTypes[state][index] = forceField.getVDWType(Integer.toString(0));
+        cysSoluteTypes[state][index] = zeroSoluteType;
+      } else {
+        int biotype = biotypeCB + offset;
+        cysAtomTypes[state][index] = findAtomType(biotype, forceField);
+        String key = cysAtomTypes[state][index].getKey();
+        cysMultipoleTypes[state][index] = forceField.getMultipoleTypeBeginsWith(key);
+        cysPolarizeTypes[state][index] = forceField.getPolarizeType(key);
+        int atomClass = cysAtomTypes[state][index].atomClass;
+        cysVDWTypes[state][index] = forceField.getVDWType("" + atomClass);
+        cysSoluteTypes[state][index] = getSoluteType(forceField, cysAtomTypes[state][index], cysVDWTypes[state][index]);
+        if (cysMultipoleTypes[state][index] == null
+            || cysPolarizeTypes[state][index] == null
+            || cysSoluteTypes[state][index] == null) {
+          logger.severe(format(" Titration parameters could not be assigned for Cys atom %s.\n %s\n",
+              atomName, cysAtomTypes[state][index]));
+        }
+      }
+    }
+  }
+  
   private void checkMultipoleFrames(String label,
       AtomType[][] atomTypes, PolarizeType[][] polarizeTypes, MultipoleType[][] multipoleTypes,
       VDWType[][] vdwTypes) {
@@ -1285,8 +1405,9 @@ public class TitrationUtils {
    * 32.31 (1993): 8045-8056.
    */
   public enum Titration {
-    //ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
 
+    // TODO: Rose - please update the values for CYS/CYD
+    // ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
 
     ASHtoASP(4.00, -73.17, -71.9600, 0.0, AminoAcid3.ASH, AminoAcid3.ASP),
     GLHtoGLU(4.40, -81.50, -87.6300, 0.0, AminoAcid3.GLH, AminoAcid3.GLU),
