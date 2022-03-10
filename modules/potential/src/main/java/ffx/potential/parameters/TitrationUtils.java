@@ -505,7 +505,7 @@ public class TitrationUtils {
     // Populate the Cystine types.
     constructCYSState(AA_CB[CYS.ordinal()], CysStates.CYS);
     constructCYSState(AA_CB[CYD.ordinal()], CysStates.CYD);
-    checkMultipoleFrames("CYS", cysAtomTypes, cysPolarizeTypes, cysMultipoleTypes, cysVDWTypes);
+    // checkMultipoleFrames("CYS", cysAtomTypes, cysPolarizeTypes, cysMultipoleTypes, cysVDWTypes);
   }
 
   /**
