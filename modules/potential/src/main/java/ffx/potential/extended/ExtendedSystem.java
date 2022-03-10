@@ -121,10 +121,15 @@ public class ExtendedSystem {
      * Used to know how to apply vdW or electrostatic ESV terms for the atom.
      */
     public final AminoAcid3[] residueNames;
+
     /**
-     * MolecularAssembly instance.
+     * Extended Atoms
      */
-    private final MolecularAssembly molecularAssembly;
+    private final Atom[] extendedAtoms;
+    /**
+     * Extended Molecules
+     */
+    private final int[] extendedMolecules;
     /**
      * Titration Utils instance. This instance is the master copy that will be distributed to electrostatics classes
      * when an Extended System is attached.
@@ -250,7 +255,8 @@ public class ExtendedSystem {
      * @param mola a {@link MolecularAssembly} object.
      */
     public ExtendedSystem(MolecularAssembly mola, final File esvFile) {
-        this.molecularAssembly = mola;
+        extendedAtoms = mola.getActiveAtomArray();
+        extendedMolecules = mola.getMoleculeNumbers();
 
         ForceField forceField = mola.getForceField();
         ForceFieldEnergy forceFieldEnergy = mola.getPotentialEnergy();
@@ -258,7 +264,7 @@ public class ExtendedSystem {
             logger.severe("No potential energy found?");
         }
 
-        CompositeConfiguration properties = molecularAssembly.getProperties();
+        CompositeConfiguration properties = mola.getProperties();
         titrationUtils = new TitrationUtils(forceField);
         thetaFriction = properties.getDouble("esv.friction", ExtendedSystem.THETA_FRICTION);
         thetaMass = properties.getDouble("esv.mass", ExtendedSystem.THETA_MASS);
@@ -316,7 +322,8 @@ public class ExtendedSystem {
         // Next, loop through all atoms and check to see if the atom belongs to this residue.
         // If the atom does belong to this residue, set all corresponding variables in the respective titration or tautomer array (size = numAtoms).
         // Store the index of the residue in the respective list into a map array (size = numAtoms).
-        List<Residue> residueList = molecularAssembly.getResidueList();
+        List<Residue> residueList = mola.getResidueList();
+        logger.info(residueList.toString());
         for (Residue residue : residueList) {
             if (isTitrable(residue)) {
                 titratingResidueList.add(residue);
@@ -378,7 +385,7 @@ public class ExtendedSystem {
         }
         //TODO: Finish restart handling
         if (esvFilter == null) {
-            esvFilter = new ESVFilter(molecularAssembly.getName());
+            esvFilter = new ESVFilter(mola.getName());
         }
         if(esvFile==null){
             String firstFileName = FilenameUtils.removeExtension(mola.getFile().getAbsolutePath());
@@ -619,7 +626,7 @@ public class ExtendedSystem {
      * @return an array of {@link Atom} objects.
      */
     public Atom[] getExtendedAtoms() {
-        return molecularAssembly.getAtomArray();
+        return extendedAtoms;
     }
 
     /**
@@ -628,7 +635,7 @@ public class ExtendedSystem {
      * @return an array of {@link int} objects.
      */
     public int[] getExtendedMolecule() {
-        return molecularAssembly.getMoleculeNumbers();
+        return extendedMolecules;
     }
 
     /**
