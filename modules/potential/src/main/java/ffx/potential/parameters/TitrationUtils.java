@@ -499,9 +499,7 @@ public class TitrationUtils {
     checkMultipoleFrames("GLU", gluAtomTypes, gluPolarizeTypes, gluMultipoleTypes, gluVDWTypes);
 
     // Populate the Cystine types.
-    logger.info(format("CYS Biotype: %d", AA_CB[CYS.ordinal()]));
     constructCYSState(AA_CB[CYS.ordinal()], CysStates.CYS);
-    logger.info(format("CYD Biotype: %d", AA_CB[CYD.ordinal()]));
     constructCYSState(AA_CB[CYD.ordinal()], CysStates.CYD);
     checkMultipoleFrames("CYS", cysAtomTypes, cysPolarizeTypes, cysMultipoleTypes, cysVDWTypes);
   }
@@ -1288,22 +1286,20 @@ public class TitrationUtils {
         MultipoleFrameDefinition frame = multipoleTypes[s][t].frameDefinition;
 
         if (!frame0.equals(frame)) {
-          StringBuilder sb2 = new StringBuilder("\n Incompatible multipole frames:\n");
-          sb2.append(format(" %s\n  %s\n  %s\n",
+          sb.append("\n Incompatible multipole frames:\n");
+          sb.append(format(" %s\n  %s\n  %s\n",
               atomTypes[0][t], polarizeTypes[0][t], multipoleTypes[0][t]));
-          sb2.append(format(" %s\n  %s\n  %s\n",
+          sb.append(format(" %s\n  %s\n  %s\n",
               atomTypes[s][t], polarizeTypes[s][t], multipoleTypes[s][t]));
-          logger.fine(sb2.toString());
         }
 
         if (atomTypes[0][t].atomicNumber != 1) {
           double epsS = vdwTypes[s][t].wellDepth;
           double radS = vdwTypes[s][t].radius;
           if (epsS != eps0 || radS != rad0) {
-            StringBuilder sb2 = new StringBuilder("\n Incompatible vdW types:\n");
-            sb2.append(format(" %s\n  %s\n", atomTypes[0][t], vdwTypes[0][t]));
-            sb2.append(format(" %s\n  %s\n", atomTypes[s][t], vdwTypes[s][t]));
-            logger.fine(sb2.toString());
+            sb.append("\n Incompatible vdW types:\n");
+            sb.append(format(" %s\n  %s\n", atomTypes[0][t], vdwTypes[0][t]));
+            sb.append(format(" %s\n  %s\n", atomTypes[s][t], vdwTypes[s][t]));
           }
         }
       }
