@@ -410,6 +410,22 @@ public class SymOp {
   }
 
   /**
+   * Print the symmetry operator with double precision.
+   * @return String of rotation/translation with double precision.
+   */
+  public String toStringPrecise() {
+    StringBuilder sb = new StringBuilder(" Rotation operator:\n");
+    sb.append(
+            format(
+                    " [[%18.16e,%18.16e,%18.16e]\n  [%18.16e,%18.16e,%18.16e]\n  [%18.16e,%18.16e,%18.16e]]\n",
+                    rot[0][0], rot[0][1], rot[0][2], rot[1][0], rot[1][1], rot[1][2], rot[2][0], rot[2][1],
+                    rot[2][2]));
+    sb.append(" Translation:\n");
+    sb.append(format(" [%18.16e,%18.16e,%18.16e]", tr[0], tr[1], tr[2]));
+    return sb.toString();
+  }
+
+  /**
    * toXYZString
    *
    * @return a {@link java.lang.String} object.
