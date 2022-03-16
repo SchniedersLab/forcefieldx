@@ -618,6 +618,10 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     return null;
   }
 
+  /**
+   * Assign local multipole frame defining atoms.
+   * @param atom Assign local multipole frame defining atoms for this atom.
+   */
   public static void assignAxisAtoms(Atom atom) {
     MultipoleType multipoleType = atom.getMultipoleType();
     String mutipoleKey = multipoleType.getKey();
@@ -710,6 +714,9 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         }
       }
     }
+
+    String message = format(" Assignment of axis atoms failed for %s  %s.", atom, multipoleType);
+    logger.severe(message);
   }
 
 
