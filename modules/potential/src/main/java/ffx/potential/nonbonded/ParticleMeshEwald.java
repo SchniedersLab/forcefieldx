@@ -158,11 +158,9 @@ public class ParticleMeshEwald implements LambdaInterface {
    * on/off.
    */
   private final boolean lambdaTerm;
-
   private final boolean reciprocalSpaceTerm;
   /** Reference to the force field being used. */
   private final ForceField forceField;
-
   private final double poleps;
   /** Specify an SCF predictor algorithm. */
   private final SCFPredictor scfPredictor;
@@ -2656,16 +2654,16 @@ public class ParticleMeshEwald implements LambdaInterface {
             format("No MultipoleType could be assigned:\n %s --> %s", atom, atom.getAtomType()));
         StringBuilder sb = new StringBuilder();
         List<Bond> bonds = atom.getBonds();
-        for (Bond b : bonds) {
-          Atom a2 = b.get1_2(atom);
+        for (Bond bond12 : bonds) {
+          Atom a2 = bond12.get1_2(atom);
           AtomType aType2 = a2.getAtomType();
-          sb.append(format("\n  %s --> %s", a2, aType2));
+          sb.append(format("\n  1-2 %s --> %s", a2, aType2));
         }
-        if (bonds.size() == 1) {
-          Atom atom2 = bonds.get(0).get1_2(atom);
+        for (Bond bond12 : bonds) {
+          Atom atom2 = bond12.get1_2(atom);
           bonds = atom2.getBonds();
-          for (Bond b : bonds) {
-            Atom a2 = b.get1_2(atom2);
+          for (Bond bond23 : bonds) {
+            Atom a2 = bond23.get1_2(atom2);
             AtomType aType2 = a2.getAtomType();
             sb.append(format("\n  1-3 %s --> %s", a2, aType2));
           }
@@ -2719,7 +2717,7 @@ public class ParticleMeshEwald implements LambdaInterface {
       Atom a = atoms[i];
       if (a.getIndex() - 1 != i) {
         logger.info(format(" PME Index i: %d, %s Index: %d\n Atom: %s",
-            i, MolecularAssembly.atomIndexing, a.getIndex(), a.toString()));
+            i, MolecularAssembly.atomIndexing, a.getIndex(), a));
         logger.severe(" Atom indexing is not consistent in PME.");
       }
     }
