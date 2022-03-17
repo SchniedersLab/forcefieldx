@@ -321,9 +321,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
     }
     try {
       int nAtoms = atoms.length;
-      if (permanentScale > 0.0) {
-        execute(0, nAtoms - 1, permanentReciprocalEnergyLoop[threadIndex]);
-      }
+      execute(0, nAtoms - 1, permanentReciprocalEnergyLoop[threadIndex]);
       if (polarization != ParticleMeshEwald.Polarization.NONE) {
         execute(0, nAtoms - 1, inducedDipoleReciprocalEnergyLoop[threadIndex]);
       }
