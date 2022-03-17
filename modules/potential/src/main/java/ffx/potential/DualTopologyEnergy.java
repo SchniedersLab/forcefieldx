@@ -348,6 +348,10 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     }
     energyRegion = new EnergyRegion();
     parallelTeam = new ParallelTeam(1);
+
+    // TODO: Check if system two requests applicaton of a SymOp to its coordinates
+    // TODO: Read in the SymOp property: symop d1 d2 ... d12
+
     this.switchFunction = switchFunction;
     logger.info(format("\n Dual topology using switching function:\n  %s", switchFunction));
   }
@@ -501,12 +505,14 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
   /** {@inheritDoc} */
   @Override
   public Crystal getCrystal() {
+    // TODO: Handle the case where each system has a unique crystal instance (e.g., different space groups).
     return potential1.getCrystal();
   }
 
   /** {@inheritDoc} */
   @Override
   public void setCrystal(Crystal crystal) {
+    // TODO: Handle the case where each system has a unique crystal instance (e.g., different space groups).
     potential1.setCrystal(crystal);
     potential2.setCrystal(crystal);
   }
@@ -1263,6 +1269,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
 
     @Override
     public void run() throws Exception {
+      // TODO: Apply the SymOp to the coordinates for the second crystal (x2).
+
       if (gradient) {
         fill(gl2, 0.0);
         fill(rgl2, 0.0);
@@ -1272,6 +1280,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         dEdL_2 = -lambdaInterface2.getdEdL();
         d2EdL2_2 = lambdaInterface2.getd2EdL2();
         lambdaInterface2.getdEdXdL(gl2);
+        // TODO: Rotate the gradient (g2) and lambda gradient (gl2) back into the frame of system 1.
 
         if (doValenceRestraint2) {
           forceFieldEnergy2.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
@@ -1282,6 +1291,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
           restraintdEdL_2 = -forceFieldEnergy2.getdEdL();
           restraintd2EdL2_2 = forceFieldEnergy2.getd2EdL2();
           forceFieldEnergy2.getdEdXdL(rgl2);
+          // TODO: Rotate the restraint gradient (rg2) and restraint lambda gradient (rgl2) back into the frame of system 1.
           forceFieldEnergy2.setLambdaBondedTerms(false, false);
         } else {
           restraintEnergy2 = 0.0;
