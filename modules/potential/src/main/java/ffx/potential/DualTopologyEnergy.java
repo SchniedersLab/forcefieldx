@@ -70,26 +70,12 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
 
   /** Logger for the DualTopologyEnergy class. */
   private static final Logger logger = Logger.getLogger(DualTopologyEnergy.class.getName());
-  /** Topology 1 number of atoms. */
-  private final int nAtoms1;
-  /** Topology 2 number of atoms. */
-  private final int nAtoms2;
-  /** Topology 1 number of softcore atoms. */
-  private final int nSoftCore1;
-  /** Topology 2 number of softcore atoms. */
-  private final int nSoftCore2;
   /** Shared atoms between topologies 1 and 2. */
   private final int nShared;
-  /** Total number of softcore and shared atoms: nTotal = nShared + nSoftcore1 + nSoftcore2 */
-  private final int nTotal;
   /** Total number of variables: nVariables = nTotal * 3; */
   private final int nVariables;
   /** Region for computing energy/gradient in parallel. */
-  private final EnergyRegion region;
-  /** Atom array for topology 1. */
-  private final Atom[] atoms1;
-  /** Atom array for topology 2. */
-  private final Atom[] atoms2;
+  private final EnergyRegion energyRegion;
   /** Mass array for shared and softcore atoms. */
   private final double[] mass;
   /** VARIABLE_TYPE array for shared and softcore atoms. */
@@ -152,13 +138,13 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
   /** Current potential energy of topology 2 (kcal/mol). */
   private double energy2 = 0;
   /** ParallelTeam to execute the EnergyRegion. */
-  private ParallelTeam team;
-  /** Include a valence restaint energy for atoms being "disappeared." */
-  private boolean doValenceRestraint1;
-  /** Include a valence restaint energy for atoms being "disappeared." */
-  private boolean doValenceRestraint2;
+  private ParallelTeam parallelTeam;
+  /** Include a valence restraint energy for atoms being "disappeared." */
+  private final boolean doValenceRestraint1;
+  /** Include a valence restraint energy for atoms being "disappeared." */
+  private final boolean doValenceRestraint2;
   /** Use System 1 Bonded Energy. */
-  private boolean useFirstSystemBondedEnergy;
+  private final boolean useFirstSystemBondedEnergy;
   /** End-state restraint energy of topology 1 (kcal/mol). */
   private double restraintEnergy1 = 0;
   /** End-state restraint energy of topology 2 (kcal/mol). */
@@ -218,10 +204,11 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     potential2.setCrystal(potential1.getCrystal());
     lambdaInterface1 = forceFieldEnergy1;
     lambdaInterface2 = forceFieldEnergy2;
-    atoms1 = topology1.getAtomArray();
-    atoms2 = topology2.getAtomArray();
-    nAtoms1 = atoms1.length;
-    nAtoms2 = atoms2.length;
+
+    /* Atom array for topology 1. */
+    Atom[] atoms1 = topology1.getAtomArray();
+    /* Atom array for topology 2. */
+    Atom[] atoms2 = topology2.getAtomArray();
 
     ForceField forceField1 = topology1.getForceField();
     doValenceRestraint1 = forceField1.getBoolean("LAMBDA_VALENCE_RESTRAINTS", true);
@@ -244,8 +231,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     int shared2 = 0;
     int activeCount1 = 0;
     int activeCount2 = 0;
-    for (int i = 0; i < nAtoms1; i++) {
-      Atom a1 = atoms1[i];
+    for (Atom a1 : atoms1) {
       if (a1.isActive()) {
         activeCount1++;
         if (!doUnpin.test(a1)) {
@@ -253,8 +239,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         }
       }
     }
-    for (int i = 0; i < nAtoms2; i++) {
-      Atom a2 = atoms2[i];
+    for (Atom a2 : atoms2) {
       if (a2.isActive()) {
         activeCount2++;
         if (!doUnpin.test(a2)) {
@@ -267,15 +252,13 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     activeAtoms1 = new Atom[activeCount1];
     activeAtoms2 = new Atom[activeCount2];
     int index = 0;
-    for (int i = 0; i < nAtoms1; i++) {
-      Atom a1 = atoms1[i];
+    for (Atom a1 : atoms1) {
       if (a1.isActive()) {
         activeAtoms1[index++] = a1;
       }
     }
     index = 0;
-    for (int i = 0; i < nAtoms2; i++) {
-      Atom a2 = atoms2[i];
+    for (Atom a2 : atoms2) {
       if (a2.isActive()) {
         activeAtoms2[index++] = a2;
       }
@@ -283,9 +266,12 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
 
     assert (shared1 == shared2);
     nShared = shared1;
-    nSoftCore1 = nActive1 - nShared;
-    nSoftCore2 = nActive2 - nShared;
-    nTotal = nShared + nSoftCore1 + nSoftCore2;
+    /* Topology 1 number of softcore atoms. */
+    int nSoftCore1 = nActive1 - nShared;
+    /* Topology 2 number of softcore atoms. */
+    int nSoftCore2 = nActive2 - nShared;
+    /* Total number of softcore and shared atoms: nTotal = nShared + nSoftcore1 + nSoftcore2 */
+    int nTotal = nShared + nSoftCore1 + nSoftCore2;
     nVariables = 3 * nTotal;
 
     // Allocate memory for coordinates and derivatives.
@@ -360,10 +346,14 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         mass[softcoreIndex++] = m;
       }
     }
-    region = new EnergyRegion();
-    team = new ParallelTeam(1);
+    energyRegion = new EnergyRegion();
+    parallelTeam = new ParallelTeam(1);
+
+    // TODO: Check if system two requests applicaton of a SymOp to its coordinates
+    // TODO: Read in the SymOp property: symop d1 d2 ... d12
+
     this.switchFunction = switchFunction;
-    logger.info(format(" Dual topology using switching function %s", switchFunction));
+    logger.info(format("\n Dual topology using switching function:\n  %s", switchFunction));
   }
 
   /**
@@ -386,8 +376,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     boolean ffe1Destroy = forceFieldEnergy1.destroy();
     boolean ffe2Destroy = forceFieldEnergy2.destroy();
     try {
-      if (team != null) {
-        team.shutdown();
+      if (parallelTeam != null) {
+        parallelTeam.shutdown();
       }
       return ffe1Destroy && ffe2Destroy;
     } catch (Exception ex) {
@@ -407,9 +397,9 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
   @Override
   public double energy(double[] x, boolean verbose) {
     try {
-      region.setX(x);
-      region.setVerbose(verbose);
-      team.execute(region);
+      energyRegion.setX(x);
+      energyRegion.setVerbose(verbose);
+      parallelTeam.execute(energyRegion);
     } catch (Exception ex) {
       throw new EnergyException(format(" Exception in calculating dual-topology energy: %s", ex));
     }
@@ -435,10 +425,10 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
   public double energyAndGradient(double[] x, double[] g, boolean verbose) {
     assert Arrays.stream(x).allMatch(Double::isFinite);
     try {
-      region.setX(x);
-      region.setG(g);
-      region.setVerbose(verbose);
-      team.execute(region);
+      energyRegion.setX(x);
+      energyRegion.setG(g);
+      energyRegion.setVerbose(verbose);
+      parallelTeam.execute(energyRegion);
     } catch (Exception ex) {
       throw new EnergyException(format(" Exception in calculating dual-topology energy: %s", ex));
     }
@@ -515,12 +505,14 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
   /** {@inheritDoc} */
   @Override
   public Crystal getCrystal() {
+    // TODO: Handle the case where each system has a unique crystal instance (e.g., different space groups).
     return potential1.getCrystal();
   }
 
   /** {@inheritDoc} */
   @Override
   public void setCrystal(Crystal crystal) {
+    // TODO: Handle the case where each system has a unique crystal instance (e.g., different space groups).
     potential1.setCrystal(crystal);
     potential2.setCrystal(crystal);
   }
@@ -863,9 +855,9 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
    * @param parallel a boolean.
    */
   public void setParallel(boolean parallel) {
-    if (team != null) {
+    if (parallelTeam != null) {
       try {
-        team.shutdown();
+        parallelTeam.shutdown();
       } catch (Exception e) {
         logger.severe(
             format(
@@ -873,7 +865,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
                 e.toString()));
       }
     }
-    team = parallel ? new ParallelTeam(2) : new ParallelTeam(1);
+    parallelTeam = parallel ? new ParallelTeam(2) : new ParallelTeam(1);
   }
 
   /** {@inheritDoc} */
@@ -1238,10 +1230,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
           restraintd2EdL2_1 = 0.0;
         }
         if (logger.isLoggable(Level.FINE)) {
-          logger.fine(
-              format(
-                  " Topology 1 Energy & Restraints: %15.8f %15.8f\n",
-                  f1L * energy1, f2L * restraintEnergy1));
+          logger.fine(format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n", f1L * energy1, f2L * restraintEnergy1));
           logger.fine(format(" Topology 1:    %15.8f * (%.2f)", energy1, f1L));
           logger.fine(format(" T1 Restraints: %15.8f * (%.2f)", restraintEnergy1, f2L));
         }
@@ -1259,10 +1248,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
           restraintEnergy1 = 0.0;
         }
         if (logger.isLoggable(Level.FINE)) {
-          logger.fine(
-              format(
-                  " Topology 1 Energy & Restraints: %15.8f %15.8f\n",
-                  f1L * energy1, f2L * restraintEnergy1));
+          logger.fine(format(" Topology 1 Energy & Restraints: %15.8f %15.8f\n", f1L * energy1, f2L * restraintEnergy1));
         }
       }
     }
@@ -1283,6 +1269,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
 
     @Override
     public void run() throws Exception {
+      // TODO: Apply the SymOp to the coordinates for the second crystal (x2).
+
       if (gradient) {
         fill(gl2, 0.0);
         fill(rgl2, 0.0);
@@ -1292,6 +1280,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         dEdL_2 = -lambdaInterface2.getdEdL();
         d2EdL2_2 = lambdaInterface2.getd2EdL2();
         lambdaInterface2.getdEdXdL(gl2);
+        // TODO: Rotate the gradient (g2) and lambda gradient (gl2) back into the frame of system 1.
 
         if (doValenceRestraint2) {
           forceFieldEnergy2.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
@@ -1302,6 +1291,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
           restraintdEdL_2 = -forceFieldEnergy2.getdEdL();
           restraintd2EdL2_2 = forceFieldEnergy2.getd2EdL2();
           forceFieldEnergy2.getdEdXdL(rgl2);
+          // TODO: Rotate the restraint gradient (rg2) and restraint lambda gradient (rgl2) back into the frame of system 1.
           forceFieldEnergy2.setLambdaBondedTerms(false, false);
         } else {
           restraintEnergy2 = 0.0;
@@ -1309,10 +1299,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
           restraintd2EdL2_2 = 0.0;
         }
         if (logger.isLoggable(Level.FINE)) {
-          logger.fine(
-              format(
-                  " Topology 2 Energy & Restraints: %15.8f %15.8f\n",
-                  f2L * energy2, f1L * restraintEnergy2));
+          logger.fine(format(" Topology 2 Energy & Restraints: %15.8f %15.8f", f2L * energy2, f1L * restraintEnergy2));
           logger.fine(format(" Topology 2:    %15.8f * (%.2f)", energy2, f2L));
           logger.fine(format(" T2 Restraints: %15.8f * (%.2f)", restraintEnergy2, f1L));
         }
@@ -1329,11 +1316,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         } else {
           restraintEnergy2 = 0.0;
         }
-        if (logger.isLoggable(Level.FINE)) {
-          logger.fine(
-              format(
-                  " Topology 2 Energy & Restraints: %15.8f %15.8f\n",
-                  f2L * energy2, f1L * restraintEnergy2));
+        if (logger.isLoggable(Level.INFO)) {
+          logger.info(format(" Topology 2 Energy & Restraints: %15.8f %15.8f", f2L * energy2, f1L * restraintEnergy2));
         }
       }
     }
