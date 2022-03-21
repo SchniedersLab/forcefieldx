@@ -82,10 +82,10 @@ class SuperposeCrystals extends AlgorithmsScript {
   private int numAU
 
   /**
-   * --ni or --numInflatedAU AUs in the expanded crystal.
+   * --ni or --numInflatedAU Inflation factor used to determine replicates expansion.
    */
-  @Option(names = ['--ni', '--numInflatedAU'], paramLabel = '500', defaultValue = '500',
-      description = 'AUs in the expanded crystal.')
+  @Option(names = ['--ni', '--numInflatedAU'], paramLabel = '4', defaultValue = '4',
+      description = 'Inflation factor used to determine replicates expansion.')
   private int numInflatedAU
 
   /**
@@ -145,11 +145,11 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean alphaCarbons
 
   /**
-   * --nh or --noHydrogen Ignore hydrogen atoms.
+   * --ih or --includeHydrogen Include hydrogen atoms.
    */
-  @Option(names = ['--nh', '--noHydrogen'], paramLabel = "false", defaultValue = "false",
-      description = 'Ignore hydrogen atoms.')
-  private static boolean noHydrogen
+  @Option(names = ['--ih', '--includeHydrogen'], paramLabel = "false", defaultValue = "false",
+      description = 'Include hydrogen atoms.')
+  private static boolean includeHydrogen
 
   /**
    * --sm or --saveMachineLearning Save out PDB and CSV for machine learning.
@@ -189,7 +189,7 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * -l or --linkage Single (0), Average (1), or Complete (2) coordinate linkage for molecule prioritization.
    */
-  @Option(names = ['-l', '--linkage'], paramLabel = '0', defaultValue = '0',
+  @Option(names = ['-l', '--linkage'], paramLabel = '1', defaultValue = '1',
       description = 'Single (0), Average (1), or Complete (2) coordinate linkage for molecule prioritization.')
   private int linkage
 
@@ -289,7 +289,7 @@ class SuperposeCrystals extends AlgorithmsScript {
 
     runningStatistics =
         pac.comparisons(numAU, numInflatedAU, matchTol, zPrime, zPrime2, alphaCarbons,
-            noHydrogen, massWeighted, crystalPriority, permute, save,
+            includeHydrogen, massWeighted, crystalPriority, permute, save,
             restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym, pacFilename)
 
     return this
