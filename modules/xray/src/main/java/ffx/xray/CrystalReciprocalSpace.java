@@ -1138,7 +1138,7 @@ public class CrystalReciprocalSpace {
       // apply symmetry
       for (int j = 0; j < nsym; j++) {
         cj.copy(c);
-        crystal.applyTransSymRot(ih, ij, symops.get(j));
+        Crystal.applyTransSymRot(ih, ij, symops.get(j));
         double shift = Crystal.sym_phase_shift(ih, symops.get(j));
 
         int h = Crystal.mod(ij.h(), fftX);
@@ -3683,7 +3683,7 @@ public class CrystalReciprocalSpace {
           double[] fc = hkldata[ih.index()];
           // Apply symmetry
           for (int j = 0; j < nsym; j++) {
-            crystal.applyTransSymRot(ih, ij, symops.get(j));
+            Crystal.applyTransSymRot(ih, ij, symops.get(j));
             double shift = Crystal.sym_phase_shift(ih, symops.get(j));
             int h = Crystal.mod(ij.h(), fftX);
             int k = Crystal.mod(ij.k(), fftY);
