@@ -130,7 +130,7 @@ public class BoxOptCell {
     atXYZ = atom.getXYZ(atXYZ);
     crystal.toFractionalCoordinates(atXYZ, atXYZ);
     NeighborList.moveValuesBetweenZeroAndOne(atXYZ);
-    crystal.applyFracSymOp(atXYZ, atXYZ, symOp);
+    Crystal.applyFracSymOp(atXYZ, atXYZ, symOp);
     return checkIfContained(atXYZ);
   }
 

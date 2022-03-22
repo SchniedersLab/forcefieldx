@@ -46,7 +46,9 @@ import edu.rit.pj.ParallelSection;
 import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
+import ffx.crystal.SymOp;
 import ffx.numerics.Potential;
+import ffx.numerics.math.Double3;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
@@ -59,6 +61,8 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
 
 /**
  * Compute the potential energy and derivatives for a dual-topology system.
@@ -185,6 +189,12 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
   private double[] scaling = null;
   /** State for calculating energies. */
   private STATE state = STATE.BOTH;
+  /** Symmetry operator to superimpose system 2 onto system 1 */
+  private SymOp symOp = null;
+  /** Symmetry operator to move system 2 back to original frame */
+  private SymOp inverse = null;
+  /** Utilize a provided SymOp */
+  private boolean useSymOp = false;
 
   /**
    * Constructor for DualTopologyEnergy.
@@ -351,7 +361,31 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
 
     // TODO: Check if system two requests applicaton of a SymOp to its coordinates
     // TODO: Read in the SymOp property: symop d1 d2 ... d12
-
+    String symop = System.getProperty("symop");
+    if(symop != null){
+      String[] tokens = symop.split(" +");
+      if(tokens.length == 12) {
+        try {
+          symOp = new SymOp(new double[][]{
+                  {Double.parseDouble(tokens[0]), Double.parseDouble(tokens[1]), Double.parseDouble(tokens[2])},
+                  {Double.parseDouble(tokens[3]), Double.parseDouble(tokens[4]), Double.parseDouble(tokens[5])},
+                  {Double.parseDouble(tokens[6]), Double.parseDouble(tokens[7]), Double.parseDouble(tokens[8])}},
+                  new double[]{Double.parseDouble(tokens[9]), Double.parseDouble(tokens[10]), Double.parseDouble(tokens[11])});
+          useSymOp = true;
+          RealMatrix rotation = MatrixUtils.createRealMatrix(symOp.rot);
+          Double3 translation = new Double3(symOp.tr);
+          // Transpose == inverse for orthogonal matrices
+          inverse = new SymOp(rotation.transpose().getData(), translation.scale(-1.0).get());
+          logger.info(" Utilizing SymOp between systems:\n" + symOp);
+        }catch(Exception ex){
+          logger.warning(ex.toString());
+          ex.printStackTrace();
+          logger.severe(" Error parsing SymOp for Dual Topology:\n (" + symop + ")");
+        }
+      }else{
+        logger.warning(format(" SymOp property (%d) was unrecognized", tokens.length));
+      }
+    }
     this.switchFunction = switchFunction;
     logger.info(format("\n Dual topology using switching function:\n  %s", switchFunction));
   }
@@ -506,6 +540,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
   @Override
   public Crystal getCrystal() {
     // TODO: Handle the case where each system has a unique crystal instance (e.g., different space groups).
+    logger.warning(" Get method only returned first crystal.");
     return potential1.getCrystal();
   }
 
@@ -515,6 +550,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     // TODO: Handle the case where each system has a unique crystal instance (e.g., different space groups).
     potential1.setCrystal(crystal);
     potential2.setCrystal(crystal);
+    logger.warning(" Both systems set to the same crystal.");
   }
 
   /** {@inheritDoc} */
@@ -1270,7 +1306,9 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     @Override
     public void run() throws Exception {
       // TODO: Apply the SymOp to the coordinates for the second crystal (x2).
-
+      if(useSymOp) {
+        Crystal.applyCartesianSymOp(x2, x2, symOp);
+      }
       if (gradient) {
         fill(gl2, 0.0);
         fill(rgl2, 0.0);
@@ -1281,7 +1319,10 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         d2EdL2_2 = lambdaInterface2.getd2EdL2();
         lambdaInterface2.getdEdXdL(gl2);
         // TODO: Rotate the gradient (g2) and lambda gradient (gl2) back into the frame of system 1.
-
+        if(useSymOp) {
+          Crystal.applyCartesianSymRot(g2, g2, inverse);
+          Crystal.applyCartesianSymRot(gl2, gl2, inverse);
+        }
         if (doValenceRestraint2) {
           forceFieldEnergy2.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
           if (verbose) {
@@ -1292,6 +1333,10 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
           restraintd2EdL2_2 = forceFieldEnergy2.getd2EdL2();
           forceFieldEnergy2.getdEdXdL(rgl2);
           // TODO: Rotate the restraint gradient (rg2) and restraint lambda gradient (rgl2) back into the frame of system 1.
+          if(useSymOp){
+            Crystal.applyCartesianSymRot(rg2, rg2, inverse);
+            Crystal.applyCartesianSymRot(rgl2, rgl2, inverse);
+          }
           forceFieldEnergy2.setLambdaBondedTerms(false, false);
         } else {
           restraintEnergy2 = 0.0;

@@ -320,7 +320,7 @@ public class MolecularAssembly extends MSGroup {
               moleculeNum, symOp));
       for (Atom atom : atoms) {
         atom.getXYZ(xyz);
-        crystal.applyCartesianSymOp(xyz, xyz, symOp);
+        Crystal.applyCartesianSymOp(xyz, xyz, symOp);
         atom.setXYZ(xyz);
       }
       moleculeNum++;
