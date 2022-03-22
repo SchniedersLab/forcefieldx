@@ -190,6 +190,23 @@ public class Crystal {
    * @param alpha The alpha angle.
    * @param beta The beta angle.
    * @param gamma The gamma angle.
+   * @param sgNumber The space group number.
+   */
+  public Crystal(double a, double b, double c, double alpha, double beta, double gamma,
+      int sgNumber) {
+    this(a, b, c, alpha, beta, gamma, SpaceGroupDefinitions.spaceGroupFactory(sgNumber).pdbName);
+  }
+
+  /**
+   * The Crystal class encapsulates the lattice parameters and space group. Methods are available to
+   * apply the minimum image convention and to apply space group operators.
+   *
+   * @param a The a-axis length.
+   * @param b The b-axis length.
+   * @param c The c-axis length.
+   * @param alpha The alpha angle.
+   * @param beta The beta angle.
+   * @param gamma The gamma angle.
    * @param sg The space group symbol.
    */
   public Crystal(double a, double b, double c, double alpha, double beta, double gamma, String sg) {
@@ -205,19 +222,22 @@ public class Crystal {
     aperiodic = false;
     if (!tempLS.validParameters(a, b, c, alpha, beta, gamma)) {
       // Invalid parameters... Start error/warning log and try to fix.
-      StringBuilder sb = new StringBuilder(
-          " The proposed lattice parameters for " + tempSG.pdbName
-              + " do not satisfy the " + tempLS +
-              " lattice system restrictions and were ignored.\n");
+      StringBuilder sb = new StringBuilder(format(
+              " The %s lattice parameters do not satisfy the %s lattice system restrictions.\n",
+              tempSG.pdbName, tempLS));
       sb.append(format("  A-axis:                              %18.15e\n", a));
       sb.append(format("  B-axis:                              %18.15e\n", b));
       sb.append(format("  C-axis:                              %18.15e\n", c));
       sb.append(format("  Alpha:                               %18.15e\n", alpha));
       sb.append(format("  Beta:                                %18.15e\n", beta));
       sb.append(format("  Gamma:                               %18.15e\n", gamma));
-      if(tempLS == LatticeSystem.HEXAGONAL_LATTICE || tempLS == LatticeSystem.RHOMBOHEDRAL_LATTICE) {
+      logger.info(sb.toString());
+      sb = new StringBuilder();
+      if (tempLS == LatticeSystem.HEXAGONAL_LATTICE
+          || tempLS == LatticeSystem.RHOMBOHEDRAL_LATTICE) {
         // Try to convert between hexagonal and rhombohedral lattices to fix crystal.
-        Crystal convertedCrystal = SpaceGroupConversions.hrConversion(a, b, c, alpha, beta, gamma, tempSG);
+        Crystal convertedCrystal = SpaceGroupConversions.hrConversion(a, b, c, alpha, beta, gamma,
+            tempSG);
         this.a = convertedCrystal.a;
         this.b = convertedCrystal.b;
         this.c = convertedCrystal.c;
@@ -228,13 +248,11 @@ public class Crystal {
         crystalSystem = spaceGroup.crystalSystem;
         latticeSystem = spaceGroup.latticeSystem;
         sb.append(" Converted ").append(tempSG.pdbName).append(" to ").append(spaceGroup.pdbName);
-        if (!latticeSystem.validParameters(this.a, this.b, this.c, this.alpha, this.beta, this.gamma)) {
-          // Converted space group is still invalid... Print error message.
-          sb.append(" The proposed lattice parameters for ")
-                  .append(spaceGroup.pdbName)
-                  .append(" do not satisfy the ")
-                  .append(latticeSystem)
-                  .append(" lattice system restrictions and were ignored.\n");
+        if (!latticeSystem.validParameters(this.a, this.b, this.c, this.alpha, this.beta,
+            this.gamma)) {
+          sb.append(format(
+              " The %s lattice parameters do not satisfy the %s lattice system restrictions.\n",
+              spaceGroup.pdbName, latticeSystem));
           sb.append(format("  A-axis:                              %18.15e\n", this.a));
           sb.append(format("  B-axis:                              %18.15e\n", this.b));
           sb.append(format("  C-axis:                              %18.15e\n", this.c));
@@ -242,11 +260,11 @@ public class Crystal {
           sb.append(format("  Beta:                                %18.15e\n", this.beta));
           sb.append(format("  Gamma:                               %18.15e\n", this.gamma));
           logger.severe(sb.toString());
-        }else{
-          // Successfully converted space group between hexagonal and rhombohedral. Inform user.
-          logger.warning(sb.toString());
+        } else {
+          // Successfully converted space group between hexagonal and rhombohedral.
+          logger.info(sb.toString());
         }
-      }else{
+      } else {
         // Invalid lattice parameters. Update Crystal as much as possible, then print error message.
         this.a = a;
         this.b = b;
@@ -259,7 +277,7 @@ public class Crystal {
         latticeSystem = spaceGroup.latticeSystem;
         logger.severe(sb.toString());
       }
-    }else{
+    } else {
       // Valid parameters, update crystal and continue.
       this.a = a;
       this.b = b;
@@ -810,9 +828,9 @@ public class Crystal {
   }
 
   /**
-   * Apply a fractional symmetry rotation to an array of Cartesian coordinates. If the arrays x, y or z are null
-   * or not of length n, the method returns immediately. If mateX, mateY or mateZ are null or not of
-   * length n, new arrays are allocated.
+   * Apply a fractional symmetry rotation to an array of Cartesian coordinates. If the arrays x, y or
+   * z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are null
+   * or not of length n, new arrays are allocated.
    *
    * @param n Number of atoms.
    * @param x Input cartesian x-coordinates.
@@ -1199,7 +1217,7 @@ public class Crystal {
    * @return Unit cell parameters.
    */
   public double[] getUnitCellParams() {
-    return new double[]{a, b, c, alpha, beta, gamma};
+    return new double[] {a, b, c, alpha, beta, gamma};
   }
 
   /** {@inheritDoc} */
