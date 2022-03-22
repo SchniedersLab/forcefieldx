@@ -39,6 +39,7 @@
 package ffx.potential.groovy
 
 import ffx.crystal.Crystal
+import ffx.crystal.LatticeSystem
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import picocli.CommandLine.Command
@@ -216,12 +217,12 @@ class XYZtoQE extends PotentialScript {
         "\tcosBC = " + format("%16.12f", cos(crystal.alpha)) + "\n" +
         "\tecutwfc = %6.4f,\n" +
         "\tecutrho = %6.4f,\n" +
-        "\tvdw_corr = 'XDM',\n" +
+        "\tvdw_corr = 'XDM',\n"
         // xdm_a1 and xdm_a2 do not need to be provided for B86bPBE
         // "\txdm_a1 = 0.6512,\n" +
         // "\txdm_a2 = 1.4633,\n" +
-        "/\n", ecutwfc, ecutrho))
-    if (hexagonal) {
+        , ecutwfc, ecutrho))
+    if (crystal.spaceGroup.latticeSystem == LatticeSystem.HEXAGONAL_LATTICE) {
       bwQE.write("\trhombohedral = .FALSE.,\n")
     }
     bwQE.write("/\n")

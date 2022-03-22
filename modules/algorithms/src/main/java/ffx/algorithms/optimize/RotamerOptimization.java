@@ -44,7 +44,9 @@ import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
+import static java.util.Arrays.copyOf;
 import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.log;
 
 import edu.rit.pj.Comm;
 import edu.rit.pj.ParallelTeam;
@@ -1119,18 +1121,9 @@ public class RotamerOptimization implements Terminatable {
        * The memory and compute overhead can be a problem for some very large structures.
        */
       if (distance > 0) {
-        dM = new DistanceMatrix(this,
-            molecularAssembly,
-            algorithmListener,
-            allResiduesArray,
-            allResiduesList,
-            library,
-            distanceMethod,
-            distance,
-            twoBodyCutoffDist,
-            threeBodyCutoffDist,
-            lazyMatrix,
-            useForcedResidues);
+        dM = new DistanceMatrix(this, molecularAssembly, algorithmListener, allResiduesArray,
+            allResiduesList, library, distanceMethod, distance,
+            twoBodyCutoffDist, threeBodyCutoffDist, lazyMatrix, useForcedResidues);
       }
 
       if (residueList != null) {
@@ -1230,7 +1223,7 @@ public class RotamerOptimization implements Terminatable {
        residue. If a lower potential energy is discovered, the rotamers of each residue will be
        collected as the recursion returns up the chain.
       */
-      int[] rotArray = Arrays.copyOf(optimum, nResidues);
+      int[] rotArray = copyOf(optimum, nResidues);
       for (int ri = 0; ri < lenri; ri++) {
         applyRotamer(current, rotamers[ri]);
         double rotEnergy = Double.NaN;
@@ -1563,13 +1556,13 @@ public class RotamerOptimization implements Terminatable {
    */
   public List<Residue> setResiduesIgnoreNull(List<Residue> residues) {
     residueList = new ArrayList<>();
-    logger.info(" Optimizing these residues: ");
+    logger.fine(" Optimizing these residues: ");
     for (Residue r : residues) {
       if (r.getRotamers() != null) {
         residueList.add(r);
-        logger.info(format("\t%s", r));
+        logger.fine(format("\t%s", r));
       } else {
-        logger.info(format(" not \t%s", r));
+        logger.fine(format(" not \t%s", r));
       }
     }
     return new ArrayList<>(residues);
@@ -3434,10 +3427,7 @@ public class RotamerOptimization implements Terminatable {
       try {
         logIfMaster(format("\n Beginning Energy %s", formatEnergy(currentEnergy(residues))));
       } catch (ArithmeticException ex) {
-        logger.severe(
-            format(
-                " Exception %s in calculating beginning energy; FFX shutting down.",
-                ex));
+        logger.severe(format(" Exception %s in calculating beginning energy; FFX shutting down.", ex));
       }
     }
 
@@ -3452,8 +3442,7 @@ public class RotamerOptimization implements Terminatable {
         Rotamer[] rotamersi = residuei.getRotamers();
         int lenri = rotamersi.length; // Length rotamers i
         eR.onlyPrunedSingles[i] = new boolean[lenri];
-        eR.onlyPrunedSingles[i] =
-            Arrays.copyOf(eR.eliminatedSingles[i], eR.eliminatedSingles[i].length);
+        eR.onlyPrunedSingles[i] = copyOf(eR.eliminatedSingles[i], eR.eliminatedSingles[i].length);
         eR.onlyPrunedPairs[i] = new boolean[lenri][][];
         // Loop over the set of rotamers for residue i.
         for (int ri = 0; ri < lenri; ri++) {
@@ -3463,8 +3452,7 @@ public class RotamerOptimization implements Terminatable {
             Rotamer[] rotamersj = residuej.getRotamers();
             int lenrj = rotamersj.length;
             eR.onlyPrunedPairs[i][ri][j] = new boolean[lenrj];
-            eR.onlyPrunedPairs[i][ri][j] =
-                Arrays.copyOf(eR.eliminatedPairs[i][ri][j], eR.eliminatedPairs[i][ri][j].length);
+            eR.onlyPrunedPairs[i][ri][j] = copyOf(eR.eliminatedPairs[i][ri][j], eR.eliminatedPairs[i][ri][j].length);
           }
         }
       }
@@ -3642,7 +3630,7 @@ public class RotamerOptimization implements Terminatable {
     } catch (IOException ex) {
       logger.log(Level.SEVERE, "Couldn't open energy restart file.", ex);
     }
-    logger.info(format(" Energy restart file: %s", restartFile.getName()));
+    logger.info(format("\n Energy restart file: %s", restartFile.getName()));
   }
 
   /**
@@ -3760,7 +3748,9 @@ public class RotamerOptimization implements Terminatable {
       energyWorkerTeam.execute(selfEnergyRegion);
       long singlesTime = System.nanoTime() - energyStartTime;
       logIfMaster(format(" Time for single energies: %12.4g", (singlesTime * 1.0E-9)));
-      Resources.logResources();
+      if (logger.isLoggable(Level.FINE)) {
+        Resources.logResources();
+      }
 
       if (loaded < 2) {
         eE.allocate2BodyJobMap(residues, nResidues, false);
@@ -3788,17 +3778,17 @@ public class RotamerOptimization implements Terminatable {
       energyWorkerTeam.execute(twoBodyEnergyRegion);
       long pairsTime = System.nanoTime() - (singlesTime + energyStartTime);
 
-
       long triplesTime = 0;
       long quadsTime = 0;
       logIfMaster(format(" Time for 2-body energies:   %12.4g", (pairsTime * 1.0E-9)));
-      Resources.logResources();
+      if (logger.isLoggable(Level.FINE)) {
+        Resources.logResources();
+      }
 
       if (threeBodyTerm) {
         if (loaded < 3) {
           eE.allocate3BodyJobMap(residues, nResidues, false);
         }
-
         ThreeBodyEnergyRegion threeBodyEnergyRegion =
             new ThreeBodyEnergyRegion(
                 this,
@@ -3820,7 +3810,9 @@ public class RotamerOptimization implements Terminatable {
         energyWorkerTeam.execute(threeBodyEnergyRegion);
         triplesTime = System.nanoTime() - (pairsTime + singlesTime + energyStartTime);
         logIfMaster(format(" Time for 3-Body energies: %12.4g", (triplesTime * 1.0E-9)));
-        Resources.logResources();
+        if (logger.isLoggable(Level.FINE)) {
+          Resources.logResources();
+        }
       }
 
       if (compute4BodyEnergy) {

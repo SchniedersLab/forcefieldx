@@ -168,6 +168,9 @@ public class ChandlerCavitation {
    */
   public double energyAndGradientConnolly(AtomicDoubleArray3D gradient) {
 
+    // Zero out cavitation energy.
+    cavitationEnergy = 0.0;
+
     connollyRegion.init(atoms, true);
     connollyRegion.runVolume();
 
@@ -261,6 +264,9 @@ public class ChandlerCavitation {
    * @return The cavitation energy.
    */
   public double energyAndGradientGausVol(double[][] positions, AtomicDoubleArray3D gradient) {
+
+    // Zero out cavitation energy.
+    cavitationEnergy = 0.0;
 
     gaussVol.computeVolumeAndSA(positions);
 

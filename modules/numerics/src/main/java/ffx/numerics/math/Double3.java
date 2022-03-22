@@ -280,6 +280,48 @@ public class Double3 {
   }
 
   /**
+   * Squares values in Double3.
+   *
+   * @return Returns a reference to this Double3 squared.
+   */
+  public Double3 square() {
+    Double3 ret = new Double3();
+    DoubleMath.square(a, ret.get());
+    return ret;
+  }
+
+  /**
+   * Squares values in Double3 in place.
+   *
+   * @return Returns a reference to this Double3 squared.
+   */
+  public Double3 squareI() {
+    DoubleMath.square(a, a);
+    return this;
+  }
+
+  /**
+   * Square roots values in Double3.
+   *
+   * @return Returns a reference to this Double3 square rooted.
+   */
+  public Double3 sqrt() {
+    Double3 ret = new Double3();
+    DoubleMath.squareRoot(a, ret.get());
+    return ret;
+  }
+
+  /**
+   * Square roots values in Double3 in place.
+   *
+   * @return Returns a reference to this Double3 square rooted.
+   */
+  public Double3 sqrtI() {
+    DoubleMath.squareRoot(a, a);
+    return this;
+  }
+
+  /**
    * Set the value of this Double3.
    *
    * @param x X-value.

@@ -38,12 +38,16 @@
 package ffx.potential;
 
 import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.potential.bonded.NamingUtils.renameAminoAcidToPDBStandard;
+import static ffx.potential.bonded.NamingUtils.renameNucleicAcidToPDBStandard;
+import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Molecule;
+import ffx.potential.bonded.NamingUtils;
 import ffx.potential.bonded.NucleicAcidUtils;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
@@ -114,6 +118,9 @@ public final class Utilities {
    * @param atoms a {@link java.util.List} object.
    */
   public static void biochemistry(MolecularAssembly molecularAssembly, List<Atom> atoms) {
+
+    // logger.info(" Biochemistry called.");
+
     Atom atom, seed = null;
     int num = 0;
     int waterNum = 0;
@@ -123,7 +130,7 @@ public final class Utilities {
     while (atoms.size() > 0) {
       /*
        Nitrogen is used to "seed" a backbone search because carbon can
-       be separated from the backbone by a sulfur (ie. MET).
+       be separated from the backbone by a sulfur (e.g., MET).
       */
       for (Atom a : atoms) {
         seed = a;
@@ -133,19 +140,20 @@ public final class Utilities {
       }
       // If no nitrogen atoms remain, there are no nucleic or amino acids.
       if (seed.getAtomicNumber() != 7) {
+        // logger.info(" Finished searching for proteins and nucleic acids.");
         List<Atom> moleculeAtoms;
         while (atoms.size() > 0) {
           atom = atoms.get(0);
-          // Check for a metal ion or noble gas
           if (atom.getNumBonds() == 0) {
+            // A metal ion or noble gas
             ionNum++;
             Molecule ion = new Molecule(atom.getName() + "-" + ionNum);
             ion.addMSNode(atom);
             atoms.remove(0);
             molecularAssembly.addMSNode(ion);
             continue;
-          } // Check for water
-          else if (atom.getAtomicNumber() == 8 && isWaterOxygen(atom)) {
+          } else if (atom.getAtomicNumber() == 8 && isWaterOxygen(atom)) {
+            // Water
             waterNum++;
             Molecule water = new Molecule("Water-" + waterNum);
             water.addMSNode(atom);
@@ -159,8 +167,9 @@ public final class Utilities {
             molecularAssembly.addMSNode(water);
             continue;
           }
-          // Otherwise classify the molecule as a hetero
+          // All other molecules
           moleculeNum++;
+          // logger.info(" Molecule: " + moleculeNum);
           Molecule molecule = new Molecule("Molecule-" + moleculeNum);
           moleculeAtoms = getAtomListFromPool();
           collectAtoms(atoms.get(0), moleculeAtoms);
@@ -176,12 +185,12 @@ public final class Utilities {
       }
 
       List<Atom> backbone = findPolymer(seed, null);
-
       if (backbone.size() > 0) {
         seed = backbone.get(backbone.size() - 1);
         backbone = findPolymer(seed, null);
       }
 
+      // logger.info(" Backbone length: " + backbone.size());
       Character chainID = getChainID(num);
       String segID = getSegID(chainID, segIDs);
       Polymer c = new Polymer(chainID, segID, true);
@@ -189,12 +198,13 @@ public final class Utilities {
         for (Atom a : c.getAtomList()) {
           atoms.remove(a);
         }
-        logger.fine(" Sequenced chain: " + c.getName());
+        // logger.info(" Sequenced chain: " + c.getName());
         molecularAssembly.addMSNode(c);
         num++;
       } else {
         moleculeNum++;
-        Molecule hetero = new Molecule("" + moleculeNum + "-Hetero");
+        // logger.info(" Molecule: " + moleculeNum);
+        Molecule hetero = new Molecule("Molecule-" + moleculeNum);
         atom = backbone.get(0);
         List<Atom> heteroAtomList = getAtomListFromPool();
         collectAtoms(atom, heteroAtomList);
@@ -207,22 +217,6 @@ public final class Utilities {
         molecularAssembly.addMSNode(hetero);
       }
     }
-  }
-
-  /**
-   * Returns the first nitrogen atom found that is bonded to the adjacent atom.
-   *
-   * @param adjacent Atom
-   * @return Atom a nitrogen atom.
-   */
-  public static Atom findN(Atom adjacent) {
-    for (Bond b : adjacent.getBonds()) {
-      Atom nitrogen = b.get1_2(adjacent);
-      if (nitrogen.getAtomicNumber() == 7) {
-        return nitrogen;
-      }
-    }
-    return null;
   }
 
   /**
@@ -530,22 +524,29 @@ public final class Utilities {
     int length = backbone.size();
 
     // Try to find a Phosphorus or Nitrogen in the backbone
-    int n, p;
-    n = p = 0;
+    int nitrogenCount = 0;
+    int phosphorusCount = 0;
     for (Atom match : backbone) {
-      int an = match.getAtomicNumber();
-      if (an == 15) {
-        p++;
-      } else if (an == 7) {
-        n++;
+      int atomicNumber = match.getAtomicNumber();
+      if (atomicNumber == 15) {
+        phosphorusCount++;
+      } else if (atomicNumber == 7) {
+        nitrogenCount++;
       }
     }
+
+    // logger.info(format(" Divide Backbone: %d Nitrogen", nitrogenCount));
+    // logger.info(format(" Divide Backbone: %d Phosphorous", phosphorusCount));
+
     PolymerType type;
-    if (p >= n && p > 1) {
+    if (phosphorusCount >= nitrogenCount && phosphorusCount > 1) {
+      // logger.info(" Divide Backbone: Nucleic Acid");
       type = PolymerType.NUCLEICACID;
-    } else if (n > p && n > 2) {
+    } else if (nitrogenCount > phosphorusCount && nitrogenCount > 2) {
+      // logger.info(" Divide Backbone: Amino Acid");
       type = PolymerType.AMINOACID;
     } else {
+      // logger.info(" Divide Backbone: Unknown");
       return false;
     }
     int start = -1;
@@ -667,6 +668,7 @@ public final class Utilities {
       int index = 1;
       for (Residue r : aaArray) {
         r.setNumber(index++);
+        renameAminoAcidToPDBStandard(r);
         c.addMSNode(r);
       }
       // Potential DNA/RNA
@@ -763,6 +765,7 @@ public final class Utilities {
       int index = 1;
       for (Residue r : na) {
         r.setNumber(index++);
+        renameNucleicAcidToPDBStandard(r);
         c.addMSNode(r);
       }
     } else {
@@ -923,7 +926,7 @@ public final class Utilities {
       return null;
     }
 
-    // Allow the search to make it out of side chains, but not enter them...
+    // Allow the search to make it out of side chains, but not enter them.
     if (path != null && path.size() > 6) {
 
       // Oxygen is only in the backbone for Nucleic Acids in a phosphate group

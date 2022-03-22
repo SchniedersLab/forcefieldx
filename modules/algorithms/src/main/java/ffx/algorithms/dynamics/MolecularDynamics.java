@@ -1416,7 +1416,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
   private void initializeEnergies() {
     // Compute the current potential energy.
     try {
-      currentPotentialEnergy = potential.energyAndGradient(x, gradient);
+      if(esvSystem != null && potential instanceof ForceFieldEnergyOpenMM){
+        currentPotentialEnergy = ((ForceFieldEnergyOpenMM) potential).energyAndGradientFFX(x, gradient);
+      }
+      else{
+        currentPotentialEnergy = potential.energyAndGradient(x, gradient);
+      }
     } catch (EnergyException ex) {
       writeStoredSnapshots();
       throw ex;
@@ -1598,7 +1603,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
       double priorPE = currentPotentialEnergy;
       try {
         if(esvSystem != null && potential instanceof ForceFieldEnergyOpenMM){
-          ((ForceFieldEnergyOpenMM) potential).energyFFX(x, true);
           currentPotentialEnergy = ((ForceFieldEnergyOpenMM) potential).energyAndGradientFFX(x, gradient);
         }
         else{

@@ -68,10 +68,8 @@ public class EnergyTest extends PotentialTest {
   private final int nImproperTorsions;
   private final int nPiOrbitalTorsions;
   private final int nTorsionTorsions;
-
   private final int nStretchTorsions;
   private final int nAngleTorsions;
-
   private final int nVanDerWaals;
   private final int nPermanent;
   private final int nPolar;
@@ -85,10 +83,8 @@ public class EnergyTest extends PotentialTest {
   private final double improperTorsionEnergy;
   private final double piOrbitalTorsionEnergy;
   private final double torsionTorsionEnergy;
-
   private final double stretchTorsionEnergy;
   private final double angleTorsionEnergy;
-
   private final double vanDerWaalsEnergy;
   private final double permanentEnergy;
   private final double polarizationEnergy;
@@ -153,12 +149,10 @@ public class EnergyTest extends PotentialTest {
     this.nPiOrbitalTorsions = nPiOrbitalTorsions;
     this.torsionTorsionEnergy = torsionTorsionEnergy;
     this.nTorsionTorsions = nTorsionTorsions;
-
     this.stretchTorsionEnergy = stretchTorsionEnergy;
     this.nStretchTorsions = nStretchTorsions;
     this.angleTorsionEnergy = angleTorsionEnergy;
     this.nAngleTorsions = nAngleTorsions;
-
     this.vanDerWaalsEnergy = vanDerWaalsEnergy;
     this.nVanDerWaals = nVanDerWaals;
     this.permanentEnergy = permanentEnergy;
@@ -1017,7 +1011,7 @@ public class EnergyTest extends PotentialTest {
         "--dx", Double.toString(stepSize),
         "--tol", Double.toString(tolerance),
         "--ac", "1" + "-" + nAtoms,
-        "-l", "0.5",
+        "-l", "0.9",
         "src/main/java/" + filename
     };
     binding.setVariable("args", args);

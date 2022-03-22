@@ -352,12 +352,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
    */
   private Character altLoc;
 
-  private int[] axisAtomIndices = null;
   /** Array of velocities */
   private double mass;
   /**
-   * Array of XYZ coordinates for the electron (van der Waals) centers of each atom: if null,
-   * methods will refer to xyz.
+   * Array of XYZ coordinates for the electron (van der Waals) centers of each atom: if null, methods
+   * will refer to xyz.
    *
    * @since 1.0
    */
@@ -374,7 +373,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * @since 1.0
    */
   private double occupancyGradient;
-
   private double occupancyVelocity;
   private double occupancyAcceleration;
   private double occupancyPreviousAcceleration;
@@ -390,7 +388,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * @since 1.0
    */
   private double tempFactorGradient;
-
   private double tempFactorVelocity;
   private double tempFactorAcceleration;
   private double tempFactorPreviousAcceleration;
@@ -406,7 +403,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * @since 1.0
    */
   private double[] anisouGradient;
-
   private double[] anisouVelocity;
   private double[] anisouAcceleration;
   private double[] anisouPreviousAcceleration;
@@ -423,8 +419,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /** True if this Atom is a member of modified residue. */
   private boolean modres = false;
   /**
-   * If electrostatics is true, include the charge, multipole and/or polarizability in
-   * electrostatics calculations.
+   * If electrostatics is true, include the charge, multipole and/or polarizability in electrostatics
+   * calculations.
    */
   private boolean electrostatics = true;
 
@@ -433,15 +429,33 @@ public class Atom extends MSNode implements Comparable<Atom> {
   private double formFactorWidth2 = formFactorWidth * formFactorWidth;
   private int formFactorIndex = -1;
   private ArrayList<Vector3d> trajectory;
+
+  /**
+   * Force field AtomType.
+   */
   private AtomType atomType = null;
+  /**
+   * Force field MultipoleType.
+   */
   private MultipoleType multipoleType = null;
+  /**
+   * Local frame axis atom indices.
+   */
+  private int[] axisAtomIndices = null;
+  /**
+   * Force field PolarizeType.
+   */
   private PolarizeType polarizeType = null;
+  /**
+   * Force Field VDWType.
+   */
   private VDWType vdwType = null;
+  /**
+   * Force Field SoluteType.
+   */
   private SoluteType soluteType = null;
-  private double[] globalDipole = null;
-  private double[][] globalQuadrupole = null;
+
   private boolean applyState = false;
-  
   private int moleculeNumber = 0;
   private ViewModel viewModel = ViewModel.INVISIBLE;
   private ViewModel polygonType = ViewModel.FILL;
@@ -457,7 +471,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
   private double scale = 1.0;
   /** "stale" is True if this Atom's J3D transforms need to be updated before making it visible */
   private boolean stale = false;
-
 
   /**
    * Default constructor.
@@ -742,8 +755,12 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /** {@inheritDoc} */
   @Override
   public final boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     Atom atom = (Atom) o;
 
     // TDOO: Check initialization of the segID field.
@@ -1134,7 +1151,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
       return ff.getMultipoleType(key).getCharge();
     } else {
       throw new IllegalStateException(
-          String.format(" Atom %s does not yet have an assigned multipole type!", toString()));
+          String.format(" Atom %s does not yet have an assigned multipole type!", this));
     }
   }
 
@@ -2443,11 +2460,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
   }
 
-  /** setBackground. */
-  public void setBackground() {
-    isBackground = true;
-  }
-
   /**
    * Specify that <b>this</b> Atom is part of a Bond
    *
@@ -2559,25 +2571,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
   }
 
   /**
-   * setGlobalMultipole
-   *
-   * @param dipole an array of double.
-   * @param quadrupole an array of double.
-   */
-  public void setGlobalMultipole(double[] dipole, double[][] quadrupole) {
-    if (globalDipole == null) {
-      globalDipole = new double[3];
-    }
-    if (globalQuadrupole == null) {
-      globalQuadrupole = new double[3][3];
-    }
-    for (int i = 0; i < 3; i++) {
-      globalDipole[i] = dipole[i];
-      arraycopy(quadrupole[i], 0, globalQuadrupole[i], 0, 3);
-    }
-  }
-
-  /**
    * setLambdaXYZGradient
    *
    * @param x a double.
@@ -2679,7 +2672,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   @Override
   public void setView(ViewModel newViewModel, List<BranchGroup> newShapes) {
     switch (newViewModel) {
-        // case INVISIBLE through case TUBE change the "ViewModel"
+      // case INVISIBLE through case TUBE change the "ViewModel"
       case INVISIBLE:
         viewModel = ViewModel.INVISIBLE;
         setSphereVisible(false, newShapes);
@@ -2743,7 +2736,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
           setView(viewModel, newShapes);
         }
         break;
-        // Polygon Appearance Selection
+      // Polygon Appearance Selection
       case FILL:
       case POINTS:
       case LINES:
@@ -2769,37 +2762,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
       xyzGradient[1] = y;
       xyzGradient[2] = z;
     }
-  }
-
-  /**
-   * toMultipoleString
-   *
-   * @return a {@link java.lang.String} object.
-   */
-  public String toMultipoleString() {
-    if (multipoleType == null || globalDipole == null || globalQuadrupole == null) {
-      return null;
-    }
-    StringBuilder multipoleBuffer = new StringBuilder(toString());
-    multipoleBuffer.append(
-        String.format(
-            "\n%11$s % 7.5f\n"
-                + "%11$s % 7.5f % 7.5f % 7.5f\n"
-                + "%11$s % 7.5f\n"
-                + "%11$s % 7.5f % 7.5f\n"
-                + "%11$s % 7.5f % 7.5f % 7.5f",
-            multipoleType.getCharge(),
-            globalDipole[0],
-            globalDipole[1],
-            globalDipole[2],
-            globalQuadrupole[0][0],
-            globalQuadrupole[1][0],
-            globalQuadrupole[1][1],
-            globalQuadrupole[2][0],
-            globalQuadrupole[2][1],
-            globalQuadrupole[2][2],
-            "                 "));
-    return multipoleBuffer.toString();
   }
 
   /** {@inheritDoc} */

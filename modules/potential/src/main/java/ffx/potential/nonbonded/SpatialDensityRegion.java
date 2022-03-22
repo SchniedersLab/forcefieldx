@@ -199,7 +199,7 @@ public class SpatialDensityRegion extends ParallelRegion {
 
   /**
    * Assign asymmetric and symmetry mate atoms to cells. This is very fast; there is little to be
-   * gained from parallelizing it at this point.
+   * gained from parallelization at this point.
    */
   public void assignAtomsToCells() {
     // Call the selectAtoms method of subclasses.

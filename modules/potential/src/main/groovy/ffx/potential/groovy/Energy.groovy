@@ -53,8 +53,8 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import static ffx.potential.utils.StructureMetrics.radiusOfGyration
 import static ffx.potential.utils.StructureMetrics.momentsOfInertia
+import static ffx.potential.utils.StructureMetrics.radiusOfGyration
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.*
 
@@ -89,7 +89,7 @@ class Energy extends PotentialScript {
    * --in or --inertia Print out the moments of inertia.
    */
   @Option(names = ['--in', '--inertia'], paramLabel = "false", defaultValue = "false",
-          description = 'Print out the moments of inertia.')
+      description = 'Print out the moments of inertia.')
   private boolean inertia = false
 
   /**
@@ -205,12 +205,12 @@ class Energy extends PotentialScript {
       logger.info(format(" Radius of gyration:           %10.5f A", rg))
     }
 
-    if(inertia){
-      double[][] inertiaValue = momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true, true)
+    if (inertia) {
+      double[][] inertiaValue =
+          momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true, true)
     }
 
     SystemFilter systemFilter = potentialFunctions.getFilter()
-
     if (systemFilter instanceof XYZFilter || systemFilter instanceof PDBFilter) {
 
       int numSnaps = fl
@@ -230,7 +230,7 @@ class Energy extends PotentialScript {
       double[] densities = new double[numModels]
       //Store energies in ordered encountered (used in energy cutoff implementation).
       double[] energies = new double[numModels]
-      energies[0] = forceFieldEnergy.energy(x, false)
+      energies[0] = energy
 
       while (systemFilter.readNext()) {
         index++
@@ -270,8 +270,9 @@ class Energy extends PotentialScript {
           logger.info(format(" Radius of gyration:          %10.5f A", rg))
         }
 
-        if(inertia){
-          double[][] inertiaValue = momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true,true)
+        if (inertia) {
+          double[][] inertiaValue =
+              momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true, true)
         }
       }
 

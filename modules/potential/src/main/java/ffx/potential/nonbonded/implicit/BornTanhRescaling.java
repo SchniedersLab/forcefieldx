@@ -37,24 +37,26 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
+import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_BETA0;
+import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_BETA1;
+import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_BETA2;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.tanh;
 
+import ffx.potential.nonbonded.GeneralizedKirkwood;
+
 /**
  * Rescale the Born radius integral to account for interstitial spaces.
  * <p>
- * Ri^-1 = [rhoi^-3 - (4*pi/3(rhoi^-3 - 50^-3)) *
- *         tanh(beta0*Psi*rhoi^3 - beta1*(Psi*rhoi^3)^2 + beta2*(Psi*rhoi^3)^3)]^(1/3)
+ * Ri^-1 = [rhoi^-3 - (4*pi/3(rhoi^-3 - 50^-3)) * tanh(beta0*Psi*rhoi^3 - beta1*(Psi*rhoi^3)^2 +
+ * beta2*(Psi*rhoi^3)^3)]^(1/3)
  * <p>
- * Citations:
- *   Aguilar, B.; Shadrach, R.; Onufriev, A. V. Reducing the
- *   secondary structure bias in the generalized Born model via R6 effective
- *   radii. J. Chem. Theory Comput. 2010, 6, 3613−3630.
- *
- *   Onufriev, A.; Bashford, D.; Case, D. Exploring protein native
- *   states and large-scale conformational changes with a modified
- *   generalized born model. Proteins 2004, 55, 383−394.
+ * Citations: Aguilar, B.; Shadrach, R.; Onufriev, A. V. Reducing the secondary structure bias in the
+ * generalized Born model via R6 effective radii. J. Chem. Theory Comput. 2010, 6, 3613−3630.
+ * <p>
+ * Onufriev, A.; Bashford, D.; Case, D. Exploring protein native states and large-scale
+ * conformational changes with a modified generalized born model. Proteins 2004, 55, 383−394.
  *
  * @author Rae A. Corrigan
  * @since 1.0
@@ -73,9 +75,9 @@ public class BornTanhRescaling {
   /**
    * Tanh coefficients from Corrigan et al.
    */
-  private static double beta0 = 0.4694;
-  private static double beta1 = 0.0391;
-  private static double beta2 = 0.0008;
+  private static double beta0 = DEFAULT_BETA0;
+  private static double beta1 = DEFAULT_BETA1;
+  private static double beta2 = DEFAULT_BETA2;
 
   /**
    * Rescale the Born radius integral to account for interstitial spaces.

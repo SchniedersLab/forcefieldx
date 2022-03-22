@@ -38,6 +38,7 @@
 package ffx.potential.groovy.test
 
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.RotamerLibrary
 import ffx.potential.parameters.TitrationUtils
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parameters.ForceField
@@ -49,6 +50,8 @@ import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
+
+import java.util.logging.Level
 
 import static java.lang.String.format
 
@@ -114,6 +117,15 @@ class SaveAsConstantPhPDB extends PotentialScript {
     CompositeConfiguration properties = Keyword.loadProperties(structureFile)
     ForceFieldFilter forceFieldFilter = new ForceFieldFilter(properties)
     ForceField forceField = forceFieldFilter.parse()
+    String[] patches = properties.getStringArray("patch")
+    for (String patch : patches) {
+      logger.info(" Attempting to read force field patch from " + patch + ".")
+      CompositeConfiguration patchConfiguration = new CompositeConfiguration()
+      patchConfiguration.addProperty("parameters", patch)
+      forceFieldFilter = new ForceFieldFilter(patchConfiguration)
+      ForceField patchForceField = forceFieldFilter.parse()
+      forceField.append(patchForceField)
+    }
     activeAssembly.setForceField(forceField)
 
     PDBFilter pdbFilter = new PDBFilter(structureFile, activeAssembly, forceField, properties)

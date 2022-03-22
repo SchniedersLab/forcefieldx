@@ -254,6 +254,26 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     assertEquals(0.143013, superposeCrystals.runningStatistics.getMean(), tolerance);
   }
 
+  /** Tests the SuperposeCrystals script on protein crystal. */
+  @Test
+  public void testBaseSingleSuperposeCrystalsSmallProtein() {
+
+    // Set-up the input arguments for the SuperposeCrystals script.
+    String[] args = {"--nh", "src/main/java/ffx/algorithms/structures/2olx.arc"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the SuperposeCrystals script.
+    SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = superposeCrystals;
+
+    assertEquals(6, superposeCrystals.runningStatistics.getCount());
+    // Mean RMSD for 6 comparisons.
+
+    assertEquals(0.476837, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(1.379653, superposeCrystals.runningStatistics.getMax(), tolerance);
+  }
+
   @Test
   public void testSuperposeCrystalsHelp() {
     // Set-up the input arguments for the SuperposeCrystals script.

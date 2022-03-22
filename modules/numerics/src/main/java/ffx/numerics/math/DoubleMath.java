@@ -327,6 +327,50 @@ public final class DoubleMath {
   }
 
   /**
+   * Squares values of a vector.
+   *
+   * @param n A vector to be squared.
+   * @return Returns the squared vector.
+   */
+  public static double[] square(double[] n) {return square(n, new double[3]);}
+
+  /**
+   * Squares values of a vector.
+   *
+   * @param n A vector to be squared.
+   * @param ret The squared vector.
+   * @return Returns the array ret.
+   */
+  public static double[] square(double[] n, double[] ret) {
+    ret[0] = n[0] * n[0];
+    ret[1] = n[1] * n[1];
+    ret[2] = n[2] * n[2];
+    return ret;
+  }
+
+  /**
+   * Square root values of a vector.
+   *
+   * @param n A vector to determine square root.
+   * @return Returns the rooted vector.
+   */
+  public static double[] squareRoot(double[] n) {return squareRoot(n, new double[3]);}
+
+  /**
+   * Square root values of a vector.
+   *
+   * @param n A vector to determine square root.
+   * @param ret The rooted vector.
+   * @return Returns the array ret.
+   */
+  public static double[] squareRoot(double[] n, double[] ret) {
+    ret[0] = sqrt(n[0]);
+    ret[1] = sqrt(n[1]);
+    ret[2] = sqrt(n[2]);
+    return ret;
+  }
+
+  /**
    * Finds the difference between two vectors.
    *
    * @param a First vector

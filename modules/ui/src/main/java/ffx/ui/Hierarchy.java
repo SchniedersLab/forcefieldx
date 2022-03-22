@@ -480,7 +480,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener, Tre
         }
       }
 
-      // Add a parallel node if the ffe.lang.parallel flag was set
+      // Add a parallel node if the ffx.lang.parallel flag was set
       if (ROLSP.GO_PARALLEL) {
         ROLSP parallelNode = new ROLSP();
         parallelNode.add(nodeToAdd);

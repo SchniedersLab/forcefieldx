@@ -158,11 +158,9 @@ public class ParticleMeshEwald implements LambdaInterface {
    * on/off.
    */
   private final boolean lambdaTerm;
-
   private final boolean reciprocalSpaceTerm;
   /** Reference to the force field being used. */
   private final ForceField forceField;
-
   private final double poleps;
   /** Specify an SCF predictor algorithm. */
   private final SCFPredictor scfPredictor;
@@ -204,7 +202,6 @@ public class ParticleMeshEwald implements LambdaInterface {
    * reciprocalSpaceTeam will have fewer threads than the default parallelTeam.
    */
   private final ParallelTeam fftTeam;
-
   private final NeighborList neighborList;
   private final InitializationRegion initializationRegion;
   private final PermanentFieldRegion permanentFieldRegion;
@@ -221,7 +218,6 @@ public class ParticleMeshEwald implements LambdaInterface {
   private final RealSpaceEnergyRegion realSpaceEnergyRegion;
   private final ReduceRegion reduceRegion;
   private final GeneralizedKirkwood generalizedKirkwood;
-
   /**
    * Polarization modes include "direct", in which induced dipoles do not interact, and "mutual" that
    * converges the self-consistent field to a tolerance specified by the "polar-eps" keyword.
@@ -233,8 +229,10 @@ public class ParticleMeshEwald implements LambdaInterface {
    * Neighbor lists, including atoms beyond the real space cutoff. [nsymm][nAtoms][nAllNeighbors]
    */
   public int[][][] neighborLists;
-  /** Dimensions of [nsymm][nAtoms][10] */
+  /** Cartesian multipoles in the global frame with dimensions of [nsymm][nAtoms][10] */
   public double[][][] globalMultipole;
+  /** Fractional multipoles in the global frame with dimensions of [nsymm][nAtoms][10] */
+  public double[][][] fractionalMultipole;
   /** Dimensions of [nsymm][nAtoms][3] */
   public double[][][] inducedDipole;
   public double[][][] inducedDipoleCR;
@@ -363,10 +361,15 @@ public class ParticleMeshEwald implements LambdaInterface {
 
   private IntegerSchedule permanentSchedule;
   private double[][] cartesianMultipolePhi;
-  private double[][] cartesianDipolePhi;
-  private double[][] cartesianDipolePhiCR;
-  private double[][] vacuumDipolePhi;
-  private double[][] vacuumDipolePhiCR;
+  private double[][] fracMultipolePhi;
+  private double[][] cartesianInducedDipolePhi;
+  private double[][] cartesianInducedDipolePhiCR;
+  private double[][] fractionalInducedDipolePhi;
+  private double[][] fractionalInducedDipolePhiCR;
+  private double[][] cartesianVacuumDipolePhi;
+  private double[][] cartesianVacuumDipolePhiCR;
+  private double[][] fractionalVacuumDipolePhi;
+  private double[][] fractionalVacuumDipolePhiCR;
   /** AtomicDoubleArray implementation to use. */
   private AtomicDoubleArrayImpl atomicDoubleArrayImpl;
   /** Field array for each thread. [threadID][X/Y/Z][atomID] */
@@ -606,7 +609,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     inducedDipoleFieldRegion = new InducedDipoleFieldRegion(realSpaceTeam, forceField, lambdaTerm);
     inducedDipoleFieldReduceRegion = new InducedDipoleFieldReduceRegion(maxThreads);
     polarizationEnergyRegion = new PolarizationEnergyRegion(maxThreads, forceField);
-    realSpaceEnergyRegion = new RealSpaceEnergyRegion(maxThreads, forceField, elecForm, lambdaTerm);
+    realSpaceEnergyRegion = new RealSpaceEnergyRegion(maxThreads, forceField, lambdaTerm);
     reduceRegion = new ReduceRegion(maxThreads, forceField);
 
     pmeTimings = new PMETimings(maxThreads);
@@ -687,7 +690,9 @@ public class ParticleMeshEwald implements LambdaInterface {
     pmeTimings.realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
 
     if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
-      reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
+      reciprocalSpace.computeInducedPhi(
+          cartesianInducedDipolePhi, cartesianInducedDipolePhiCR,
+          fractionalInducedDipolePhi, fractionalInducedDipolePhiCR);
     }
 
     if (generalizedKirkwoodTerm) {
@@ -705,8 +710,8 @@ public class ParticleMeshEwald implements LambdaInterface {
         generalizedKirkwoodTerm,
         generalizedKirkwood,
         ewaldParameters,
-        cartesianDipolePhi,
-        cartesianDipolePhiCR,
+        cartesianInducedDipolePhi,
+        cartesianInducedDipolePhiCR,
         field,
         fieldCR);
     inducedDipoleFieldReduceRegion.executeWith(parallelTeam);
@@ -1201,6 +1206,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     if (nSymm < nSymmNew) {
       coordinates = new double[nSymmNew][3][nAtoms];
       globalMultipole = new double[nSymmNew][nAtoms][10];
+      fractionalMultipole = new double[nSymmNew][nAtoms][10];
       inducedDipole = new double[nSymmNew][nAtoms][3];
       inducedDipoleCR = new double[nSymmNew][nAtoms][3];
       if (generalizedKirkwood != null) {
@@ -1251,6 +1257,7 @@ public class ParticleMeshEwald implements LambdaInterface {
       frame = new MultipoleFrameDefinition[nAtoms];
       axisAtom = new int[nAtoms][];
       cartesianMultipolePhi = new double[nAtoms][tensorCount];
+      fracMultipolePhi = new double[nAtoms][tensorCount];
       directDipole = new double[nAtoms][3];
       directDipoleCR = new double[nAtoms][3];
       directField = new double[nAtoms][3];
@@ -1262,10 +1269,17 @@ public class ParticleMeshEwald implements LambdaInterface {
         optRegion.optDipole = new double[optOrder + 1][nAtoms][3];
         optRegion.optDipoleCR = new double[optOrder + 1][nAtoms][3];
       }
-      cartesianDipolePhi = new double[nAtoms][tensorCount];
-      cartesianDipolePhiCR = new double[nAtoms][tensorCount];
-      vacuumDipolePhi = new double[nAtoms][tensorCount];
-      vacuumDipolePhiCR = new double[nAtoms][tensorCount];
+      // Total Induced Dipole Phi (i.e. with GK)
+      cartesianInducedDipolePhi = new double[nAtoms][tensorCount];
+      cartesianInducedDipolePhiCR = new double[nAtoms][tensorCount];
+      fractionalInducedDipolePhi = new double[nAtoms][tensorCount];
+      fractionalInducedDipolePhiCR = new double[nAtoms][tensorCount];
+      // Vacuum Induced Dipole Phi (i.e. no GK)
+      cartesianVacuumDipolePhi = new double[nAtoms][tensorCount];
+      cartesianVacuumDipolePhiCR = new double[nAtoms][tensorCount];
+      fractionalVacuumDipolePhi = new double[nAtoms][tensorCount];
+      fractionalVacuumDipolePhiCR = new double[nAtoms][tensorCount];
+
       mask12 = new int[nAtoms][];
       mask13 = new int[nAtoms][];
       mask14 = new int[nAtoms][];
@@ -1308,6 +1322,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
       coordinates = new double[nSymm][3][nAtoms];
       globalMultipole = new double[nSymm][nAtoms][10];
+      fractionalMultipole = new double[nSymm][nAtoms][10];
       inducedDipole = new double[nSymm][nAtoms][3];
       inducedDipoleCR = new double[nSymm][nAtoms][3];
       vacuumInducedDipole = new double[nSymm][nAtoms][3];
@@ -1561,9 +1576,7 @@ public class ParticleMeshEwald implements LambdaInterface {
       energy = permanentMultipoleEnergy + polarizationEnergy + solvationEnergy;
     } else {
       energy = computeEnergy(false);
-      for (int i = 0; i < nAtoms; i++) {
-        use[i] = true;
-      }
+      Arrays.fill(use, true);
     }
 
     generalizedKirkwoodTerm = gkBack;
@@ -1760,9 +1773,9 @@ public class ParticleMeshEwald implements LambdaInterface {
               fieldCR,
               pmeTimings);
           inducedDipoleFieldRegion.executeWith(sectionTeam);
-          reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
-        } else {
-          reciprocalSpace.cartToFracInducedDipoles(inducedDipole, inducedDipoleCR);
+          reciprocalSpace.computeInducedPhi(
+              cartesianInducedDipolePhi, cartesianInducedDipolePhiCR,
+              fractionalInducedDipolePhi, fractionalInducedDipolePhiCR);
         }
       }
 
@@ -1795,17 +1808,20 @@ public class ParticleMeshEwald implements LambdaInterface {
       4) the permanent multipoles interacting with the induced dipole reciprocal space potential
     */
 
+    // With GK, we need to compute the polarization energy with vacuum induced dipoles.
     double[][][] inputDipole = inducedDipole;
     double[][][] inputDipoleCR = inducedDipoleCR;
-    double[][] inputPhi = cartesianDipolePhi;
-    double[][] inputPhiCR = cartesianDipolePhiCR;
-
+    double[][] inputPhi = cartesianInducedDipolePhi;
+    double[][] inputPhiCR = cartesianInducedDipolePhiCR;
+    double[][] fracInputPhi = fractionalInducedDipolePhi;
+    double[][] fracInputPhiCR = fractionalInducedDipolePhiCR;
     if (generalizedKirkwoodTerm) {
-      // With GK, we need to compute the polarization energy with vacuum induced dipoles.
       inputDipole = vacuumInducedDipole;
       inputDipoleCR = vacuumInducedDipoleCR;
-      inputPhi = vacuumDipolePhi;
-      inputPhiCR = vacuumDipolePhiCR;
+      inputPhi = cartesianVacuumDipolePhi;
+      inputPhiCR = cartesianVacuumDipolePhiCR;
+      fracInputPhi = fractionalVacuumDipolePhi;
+      fracInputPhiCR = fractionalVacuumDipolePhiCR;
     }
 
     double eself = 0.0;
@@ -1814,31 +1830,13 @@ public class ParticleMeshEwald implements LambdaInterface {
     double erecipi = 0.0;
     polarizationEnergyRegion.setPolarizationEnergy(0.0);
     if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
-      reciprocalEnergyRegion.init(
-          atoms,
-          crystal,
-          extendedSystem,
-          esvTerm,
-          use,
-          globalMultipole,
-          dMultipoledTirationESV,
-          dMultipoledTautomerESV,
-          cartesianMultipolePhi,
-          inputDipole,
-          inputDipoleCR,
-          inputPhi,
-          inputPhiCR,
-          reciprocalSpace,
-          polarization,
-          grad,
-          torque,
-          lambdaGrad,
-          lambdaTorque,
-          gradient,
-          lambdaTerm,
-          shareddEdLambda,
-          sharedd2EdLambda2,
-          alchemicalParameters);
+      reciprocalEnergyRegion.init(atoms, crystal, gradient, lambdaTerm, esvTerm, use,
+          globalMultipole, fractionalMultipole, dMultipoledTirationESV, dMultipoledTautomerESV,
+          cartesianMultipolePhi, fracMultipolePhi,
+          polarization, inputDipole, inputDipoleCR, inputPhi, inputPhiCR, fracInputPhi, fracInputPhiCR,
+          reciprocalSpace, alchemicalParameters, extendedSystem,
+          // Output
+          grad, torque, lambdaGrad, lambdaTorque, shareddEdLambda, sharedd2EdLambda2);
       reciprocalEnergyRegion.executeWith(parallelTeam);
       eself = reciprocalEnergyRegion.getPermanentSelfEnergy();
       erecip = reciprocalEnergyRegion.getPermanentReciprocalEnergy();
@@ -1848,49 +1846,14 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
 
     pmeTimings.realSpaceEnergyTotal -= System.nanoTime();
-    realSpaceEnergyRegion.init(
-        atoms,
-        crystal,
-        extendedSystem,
-        esvTerm,
-        coordinates,
-        frame,
-        axisAtom,
-        globalMultipole,
-        dMultipoledTirationESV,
-        dMultipoledTautomerESV,
-        inputDipole,
-        inputDipoleCR,
-        field,
-        fieldCR,
-        dPolardTitrationESV,
-        dPolardTautomerESV,
-        use,
-        molecule,
-        ip11,
-        mask12,
-        mask13,
-        mask14,
-        mask15,
-        isSoft,
-        ipdamp,
-        thole,
-        realSpaceNeighborParameters,
-        gradient,
-        lambdaTerm,
-        lambdaMode,
-        polarization,
-        ewaldParameters,
-        scaleParameters,
-        alchemicalParameters,
-        pmeTimings.realSpaceEnergyTime,
+    realSpaceEnergyRegion.init(atoms, crystal, extendedSystem, esvTerm, coordinates, frame, axisAtom,
+        globalMultipole, dMultipoledTirationESV, dMultipoledTautomerESV,
+        inputDipole, inputDipoleCR, use, molecule,
+        ip11, mask12, mask13, mask14, mask15, isSoft, ipdamp, thole, realSpaceNeighborParameters,
+        gradient, lambdaTerm, lambdaMode, polarization,
+        ewaldParameters, scaleParameters, alchemicalParameters, pmeTimings.realSpaceEnergyTime,
         // Output
-        grad,
-        torque,
-        lambdaGrad,
-        lambdaTorque,
-        shareddEdLambda,
-        sharedd2EdLambda2);
+        grad, torque, lambdaGrad, lambdaTorque, shareddEdLambda, sharedd2EdLambda2);
     realSpaceEnergyRegion.executeWith(parallelTeam);
     double ereal = realSpaceEnergyRegion.getPermanentEnergy();
     double ereali = realSpaceEnergyRegion.getPolarizationEnergy();
@@ -1916,36 +1879,38 @@ public class ParticleMeshEwald implements LambdaInterface {
       AtomicDoubleArray3D torqueGK = generalizedKirkwood.getTorque();
 
       if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
-        logger.severe(" Compute reciprocal space contribution to GK.");
         reciprocalEnergyRegion.init(
             atoms,
             crystal,
-            extendedSystem,
+            gradient,
+            false,
             esvTerm,
             use,
             globalMultipole,
+            fractionalMultipole,
             dMultipoledTirationESV,
             dMultipoledTautomerESV,
             cartesianMultipolePhi,
+            fracMultipolePhi,
+            polarization,
             vacuumInducedDipole,
             vacuumInducedDipoleCR,
-            vacuumDipolePhi,
-            vacuumDipolePhiCR,
+            cartesianVacuumDipolePhi,
+            cartesianVacuumDipolePhiCR,
+            fractionalVacuumDipolePhi,
+            fractionalVacuumDipolePhiCR,
             reciprocalSpace,
-            polarization,
+            alchemicalParametersGK,
+            extendedSystem,
             gradGK,
             torqueGK,
             null,
             null,
-            gradient,
-            false,
             shareddEdLambda,
-            sharedd2EdLambda2,
-            alchemicalParametersGK);
+            sharedd2EdLambda2);
         reciprocalEnergyRegion.executeWith(parallelTeam);
-        eGK =
-            reciprocalEnergyRegion.getInducedDipoleSelfEnergy()
-                + reciprocalEnergyRegion.getInducedDipoleReciprocalEnergy();
+        eGK = reciprocalEnergyRegion.getInducedDipoleSelfEnergy()
+            + reciprocalEnergyRegion.getInducedDipoleReciprocalEnergy();
       }
 
       pmeTimings.gkEnergyTotal -= System.nanoTime();
@@ -1962,10 +1927,6 @@ public class ParticleMeshEwald implements LambdaInterface {
           dMultipoledTautomerESV,
           vacuumInducedDipole,
           vacuumInducedDipoleCR,
-          field,
-          fieldCR,
-          dPolardTitrationESV,
-          dPolardTautomerESV,
           use,
           molecule,
           ip11,
@@ -1999,36 +1960,38 @@ public class ParticleMeshEwald implements LambdaInterface {
       alchemicalParametersGK.polarizationScale = 1.0;
 
       if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
-        logger.severe(" Compute reciprocal space contribution to GK.");
         reciprocalEnergyRegion.init(
             atoms,
             crystal,
-            extendedSystem,
+            gradient,
+            false,
             esvTerm,
             use,
             globalMultipole,
+            fractionalMultipole,
             dMultipoledTirationESV,
             dMultipoledTautomerESV,
             cartesianMultipolePhi,
+            fracMultipolePhi,
+            polarization,
             inducedDipole,
             inducedDipoleCR,
-            cartesianDipolePhi,
-            cartesianDipolePhiCR,
+            cartesianInducedDipolePhi,
+            cartesianInducedDipolePhiCR,
+            fractionalInducedDipolePhi,
+            fractionalInducedDipolePhiCR,
             reciprocalSpace,
-            polarization,
+            alchemicalParametersGK,
+            extendedSystem,
             gradGK,
             torqueGK,
             null,
             null,
-            gradient,
-            false,
             shareddEdLambda,
-            sharedd2EdLambda2,
-            alchemicalParametersGK);
+            sharedd2EdLambda2);
         reciprocalEnergyRegion.executeWith(parallelTeam);
-        eGK +=
-            reciprocalEnergyRegion.getInducedDipoleSelfEnergy()
-                + reciprocalEnergyRegion.getInducedDipoleReciprocalEnergy();
+        eGK += reciprocalEnergyRegion.getInducedDipoleSelfEnergy()
+            + reciprocalEnergyRegion.getInducedDipoleReciprocalEnergy();
       }
 
       pmeTimings.gkEnergyTotal -= System.nanoTime();
@@ -2045,10 +2008,6 @@ public class ParticleMeshEwald implements LambdaInterface {
           dMultipoledTautomerESV,
           inducedDipole,
           inducedDipoleCR,
-          field,
-          fieldCR,
-          dPolardTitrationESV,
-          dPolardTautomerESV,
           use,
           molecule,
           ip11,
@@ -2129,7 +2088,7 @@ public class ParticleMeshEwald implements LambdaInterface {
       // Compute b-Splines and permanent density.
       if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
         reciprocalSpace.computeBSplines();
-        reciprocalSpace.splinePermanentMultipoles(globalMultipole, 0, use);
+        reciprocalSpace.splinePermanentMultipoles(globalMultipole, fractionalMultipole, use);
       }
 
       field.reset(parallelTeam, 0, nAtoms - 1);
@@ -2169,7 +2128,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
       // Collect the reciprocal space field.
       if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
-        reciprocalSpace.computePermanentPhi(cartesianMultipolePhi);
+        reciprocalSpace.computePermanentPhi(cartesianMultipolePhi, fracMultipolePhi);
       }
     } catch (RuntimeException e) {
       String message = "Fatal exception computing the permanent multipole field.\n";
@@ -2187,8 +2146,13 @@ public class ParticleMeshEwald implements LambdaInterface {
       System.arraycopy(directDipoleCR[i], 0, vacuumDirectDipoleCR[i], 0, 3);
       System.arraycopy(inducedDipole[0][i], 0, vacuumInducedDipole[0][i], 0, 3);
       System.arraycopy(inducedDipoleCR[0][i], 0, vacuumInducedDipoleCR[0][i], 0, 3);
-      System.arraycopy(cartesianDipolePhi[i], 0, vacuumDipolePhi[i], 0, tensorCount);
-      System.arraycopy(cartesianDipolePhiCR[i], 0, vacuumDipolePhiCR[i], 0, tensorCount);
+      System.arraycopy(cartesianInducedDipolePhi[i], 0, cartesianVacuumDipolePhi[i], 0, tensorCount);
+      System.arraycopy(cartesianInducedDipolePhiCR[i], 0, cartesianVacuumDipolePhiCR[i], 0,
+          tensorCount);
+      System.arraycopy(fractionalInducedDipolePhi[i], 0, fractionalVacuumDipolePhi[i], 0,
+          tensorCount);
+      System.arraycopy(fractionalInducedDipolePhiCR[i], 0, fractionalVacuumDipolePhiCR[i], 0,
+          tensorCount);
       if (nSymm > 1) {
         for (int s = 1; s < nSymm; s++) {
           System.arraycopy(inducedDipole[s][i], 0, vacuumInducedDipole[s][i], 0, 3);
@@ -2259,39 +2223,73 @@ public class ParticleMeshEwald implements LambdaInterface {
     expandInducedDipoles();
 
     // Converge the self-consistent field.
-    int iterations;
-    switch (scfAlgorithm) {
-      case SOR:
-        iterations = scfBySOR(print, startTime);
-        break;
-      case EPT:
-        iterations = scfByEPT(print, startTime);
-        break;
-      case CG:
-      default:
-        pcgSolver.init(
-            atoms,
-            coordinates,
-            polarizability,
-            ipdamp,
-            thole,
-            use,
-            crystal,
-            inducedDipole,
-            inducedDipoleCR,
-            directDipole,
-            directDipoleCR,
-            field,
-            fieldCR,
-            ewaldParameters,
-            parallelTeam,
-            realSpaceNeighborParameters.realSpaceSchedule,
-            pmeTimings.realSpaceSCFTime);
-        iterations = pcgSolver.scfByPCG(print, startTime, this);
-        break;
-    }
+    try {
+      int iterations;
+      switch (scfAlgorithm) {
+        case SOR:
+          iterations = scfBySOR(print, startTime);
+          break;
+        case EPT:
+          iterations = scfByEPT(print, startTime);
+          break;
+        case CG:
+        default:
+          pcgSolver.init(
+              atoms,
+              coordinates,
+              polarizability,
+              ipdamp,
+              thole,
+              use,
+              crystal,
+              inducedDipole,
+              inducedDipoleCR,
+              directDipole,
+              directDipoleCR,
+              field,
+              fieldCR,
+              ewaldParameters,
+              parallelTeam,
+              realSpaceNeighborParameters.realSpaceSchedule,
+              pmeTimings.realSpaceSCFTime);
+          iterations = pcgSolver.scfByPCG(print, startTime, this);
+          break;
+      }
 
-    return iterations;
+      return iterations;
+    } catch (EnergyException ex) {
+      // SCF Failure: warn and revert to direct polarization.
+      logger.warning(ex.toString());
+      // Compute the direct induced dipoles.
+      if (generalizedKirkwoodTerm) {
+        pmeTimings.gkEnergyTotal = -System.nanoTime();
+        generalizedKirkwood.computePermanentGKField();
+        pmeTimings.gkEnergyTotal += System.nanoTime();
+        logger.fine(
+            format(" Computed GK permanent field %8.3f (sec)", pmeTimings.gkEnergyTotal * 1.0e-9));
+      }
+      directRegion.init(
+          atoms,
+          polarizability,
+          globalMultipole,
+          cartesianMultipolePhi,
+          field,
+          fieldCR,
+          generalizedKirkwoodTerm,
+          generalizedKirkwood,
+          ewaldParameters,
+          inducedDipole,
+          inducedDipoleCR,
+          directDipole,
+          directDipoleCR,
+          directField,
+          directFieldCR
+      );
+      directRegion.executeWith(parallelTeam);
+      expandInducedDipoles();
+      logger.info(" Direct induced dipoles computed due to SCF failure.");
+      return 0;
+    }
   }
 
   /** Converge the SCF using Successive Over-Relaxation (SOR). */
@@ -2337,7 +2335,9 @@ public class ParticleMeshEwald implements LambdaInterface {
         inducedDipoleFieldRegion.executeWith(sectionTeam);
         pmeTimings.realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
         if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
-          reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
+          reciprocalSpace.computeInducedPhi(
+              cartesianInducedDipolePhi, cartesianInducedDipolePhiCR,
+              fractionalInducedDipolePhi, fractionalInducedDipolePhiCR);
         }
 
         if (generalizedKirkwoodTerm) {
@@ -2356,8 +2356,8 @@ public class ParticleMeshEwald implements LambdaInterface {
             inducedDipoleCR,
             directDipole,
             directDipoleCR,
-            cartesianDipolePhi,
-            cartesianDipolePhiCR,
+            cartesianInducedDipolePhi,
+            cartesianInducedDipolePhiCR,
             field,
             fieldCR,
             generalizedKirkwoodTerm,
@@ -2385,7 +2385,7 @@ public class ParticleMeshEwald implements LambdaInterface {
           logger.warning(sb.toString());
         }
         String message = format(" SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
-        throw new EnergyException(message, false);
+        throw new EnergyException(message);
       }
 
       // The SCF should converge well before the max iteration check. Otherwise, fail the SCF
@@ -2395,7 +2395,7 @@ public class ParticleMeshEwald implements LambdaInterface {
           logger.warning(sb.toString());
         }
         String message = format(" Maximum SCF iterations reached: (%d)\n", completedSCFCycles);
-        throw new EnergyException(message, false);
+        throw new EnergyException(message);
       }
 
       // Check if the convergence criteria has been achieved.
@@ -2454,7 +2454,9 @@ public class ParticleMeshEwald implements LambdaInterface {
         pmeTimings.realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
 
         if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
-          reciprocalSpace.computeInducedPhi(cartesianDipolePhi, cartesianDipolePhiCR);
+          reciprocalSpace.computeInducedPhi(
+              cartesianInducedDipolePhi, cartesianInducedDipolePhiCR,
+              fractionalInducedDipolePhi, fractionalInducedDipolePhiCR);
         }
 
         if (generalizedKirkwoodTerm) {
@@ -2472,8 +2474,8 @@ public class ParticleMeshEwald implements LambdaInterface {
             polarizability,
             inducedDipole,
             inducedDipoleCR,
-            cartesianDipolePhi,
-            cartesianDipolePhiCR,
+            cartesianInducedDipolePhi,
+            cartesianInducedDipolePhiCR,
             field,
             fieldCR,
             generalizedKirkwoodTerm,
@@ -2599,16 +2601,16 @@ public class ParticleMeshEwald implements LambdaInterface {
             format("No MultipoleType could be assigned:\n %s --> %s", atom, atom.getAtomType()));
         StringBuilder sb = new StringBuilder();
         List<Bond> bonds = atom.getBonds();
-        for (Bond b : bonds) {
-          Atom a2 = b.get1_2(atom);
+        for (Bond bond12 : bonds) {
+          Atom a2 = bond12.get1_2(atom);
           AtomType aType2 = a2.getAtomType();
-          sb.append(format("\n  %s --> %s", a2, aType2));
+          sb.append(format("\n  1-2 %s --> %s", a2, aType2));
         }
-        if (bonds.size() == 1) {
-          Atom atom2 = bonds.get(0).get1_2(atom);
+        for (Bond bond12 : bonds) {
+          Atom atom2 = bond12.get1_2(atom);
           bonds = atom2.getBonds();
-          for (Bond b : bonds) {
-            Atom a2 = b.get1_2(atom2);
+          for (Bond bond23 : bonds) {
+            Atom a2 = bond23.get1_2(atom2);
             AtomType aType2 = a2.getAtomType();
             sb.append(format("\n  1-3 %s --> %s", a2, aType2));
           }
@@ -2662,7 +2664,7 @@ public class ParticleMeshEwald implements LambdaInterface {
       Atom a = atoms[i];
       if (a.getIndex() - 1 != i) {
         logger.info(format(" PME Index i: %d, %s Index: %d\n Atom: %s",
-            i, MolecularAssembly.atomIndexing, a.getIndex(), a.toString()));
+            i, MolecularAssembly.atomIndexing, a.getIndex(), a));
         logger.severe(" Atom indexing is not consistent in PME.");
       }
     }

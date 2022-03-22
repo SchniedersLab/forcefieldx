@@ -440,8 +440,7 @@ public class SurfaceAreaRegion extends ParallelRegion {
         gr[i][n] = new IndexedDouble((r2 + rplus * rminus) / (rri2 * overlapR[i][n]), n);
         overlapCounts[i]++;
         if (overlapCounts[i] >= MAXARC) {
-          throw new EnergyException(
-              format(" Increase the value of MAXARC to (%d).", overlapCounts[i]), false);
+          throw new EnergyException(format(" Increase the value of MAXARC to (%d).", overlapCounts[i]));
         }
       }
     }
@@ -737,7 +736,7 @@ public class SurfaceAreaRegion extends ParallelRegion {
             }
             narc += 1;
             if (narc > MAXARC) {
-              throw new EnergyException(format(" Increase value of MAXARC %d.", narc), false);
+              throw new EnergyException(format(" Increase value of MAXARC %d.", narc));
             }
             int narc1 = narc - 1;
             if (tf <= ti) {
@@ -788,7 +787,7 @@ public class SurfaceAreaRegion extends ParallelRegion {
             exang += ex[ni];
             jb += 1;
             if (jb >= MAXARC) {
-              throw new EnergyException(format("Increase the value of MAXARC (%d).", jb), false);
+              throw new EnergyException(format("Increase the value of MAXARC (%d).", jb));
             }
             int l = lt[ni];
             ider[l] += 1;

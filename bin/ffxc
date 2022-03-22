@@ -112,7 +112,12 @@ if [ ! -z "$FFX_MEMORY" ]; then
   JVM_MEM="$FFX_MEMORY"
 fi
 
-EXTRA_JVM_ARGUMENTS="-Xms${JVM_MEM} -Xmx${JVM_MEM} -Xss1M"
+JVM_SS="2M"
+if [ ! -z "$FFX_STACKSIZE" ]; then
+  JVM_SS="$FFX_STACKSIZE"
+fi
+
+EXTRA_JVM_ARGUMENTS="-Xms${JVM_MEM} -Xmx${JVM_MEM} -Xss${JVM_SS}"
 
 if [ -z $TMPDIR ]; then
     if [ -z $TMP ]; then
