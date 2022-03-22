@@ -84,9 +84,9 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * --ni or --numInflatedAU Inflation factor used to determine replicates expansion.
    */
-  @Option(names = ['--ni', '--numInflatedAU'], paramLabel = '4', defaultValue = '4',
+  @Option(names = ['--ni', '--numInflatedAU'], paramLabel = '4.25', defaultValue = '4.25',
       description = 'Inflation factor used to determine replicates expansion.')
-  private int numInflatedAU
+  private double numInflatedAU
 
   /**
    * --zp or --zPrime Z' for crystal 1 (-1 to autodetect).

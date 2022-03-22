@@ -494,6 +494,7 @@ public class CIFFilter extends SystemFilter{
                 int xyzBonds = bonds.size();
                 if(xyzBonds <= 0){
                     logger.warning(" XYZ structure has no bonds... Check input.");
+                    continue;
                 }
                 for (Bond xyzBond : bonds) {
                     if (logger.isLoggable(Level.FINE)) {
