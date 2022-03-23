@@ -223,8 +223,8 @@ public class Crystal {
     if (!tempLS.validParameters(a, b, c, alpha, beta, gamma)) {
       // Invalid parameters... Start error/warning log and try to fix.
       StringBuilder sb = new StringBuilder(format(
-              " The %s lattice parameters do not satisfy the %s lattice system restrictions.\n",
-              tempSG.pdbName, tempLS));
+          " The %s lattice parameters do not satisfy the %s lattice system restrictions.\n",
+          tempSG.pdbName, tempLS));
       sb.append(format("  A-axis:                              %18.15e\n", a));
       sb.append(format("  B-axis:                              %18.15e\n", b));
       sb.append(format("  C-axis:                              %18.15e\n", c));
@@ -622,13 +622,21 @@ public class Crystal {
   public static void applyCartesianSymOp(double[] xyz, double[] mate, SymOp symOp) {
     double[][] rot = symOp.rot;
     double[] trans = symOp.tr;
-    double xc = xyz[0];
-    double yc = xyz[1];
-    double zc = xyz[2];
-    // Apply Symmetry Operator.
-    mate[0] = rot[0][0] * xc + rot[0][1] * yc + rot[0][2] * zc + trans[0];
-    mate[1] = rot[1][0] * xc + rot[1][1] * yc + rot[1][2] * zc + trans[1];
-    mate[2] = rot[2][0] * xc + rot[2][1] * yc + rot[2][2] * zc + trans[2];
+
+    assert(xyz.length % 3 == 0);
+    assert(xyz.length == mate.length);
+
+    int len = xyz.length / 3;
+    for (int i = 0; i < len; i++) {
+      int index = i * 3;
+      double xc = xyz[index + XX];
+      double yc = xyz[index + YY];
+      double zc = xyz[index + ZZ];
+      // Apply Symmetry Operator.
+      mate[index + XX] = rot[0][0] * xc + rot[0][1] * yc + rot[0][2] * zc + trans[0];
+      mate[index + YY] = rot[1][0] * xc + rot[1][1] * yc + rot[1][2] * zc + trans[1];
+      mate[index + ZZ] = rot[2][0] * xc + rot[2][1] * yc + rot[2][2] * zc + trans[2];
+    }
   }
 
   /**
@@ -735,7 +743,8 @@ public class Crystal {
    * @param ny number of unit cell translations
    * @param nz number of unit cell translations
    */
-  public static void applySymOp(int h, int k, int l, int[] mate, SymOp symOp, int nx, int ny, int nz) {
+  public static void applySymOp(int h, int k, int l, int[] mate, SymOp symOp, int nx, int ny,
+      int nz) {
     double[][] rot = symOp.rot;
     double[] trans = symOp.tr;
     // Apply Symmetry Operator.
@@ -859,7 +868,6 @@ public class Crystal {
       double xc = x[i];
       double yc = y[i];
       double zc = z[i];
-      // Convert to fractional coordinates.
       double xi = xc * A00 + yc * A10 + zc * A20;
       double yi = xc * A01 + yc * A11 + zc * A21;
       double zi = xc * A02 + yc * A12 + zc * A22;
@@ -875,8 +883,8 @@ public class Crystal {
   }
 
   /**
-   * Apply a Cartesian symmetry rotation to an array of Cartesian coordinates. The length of xyz must be divisible by
-   * 3 and mate must have the same length.
+   * Apply a Cartesian symmetry rotation to an array of Cartesian coordinates. The length of xyz must
+   * be divisible by 3 and mate must have the same length.
    *
    * @param xyz Input cartesian x, y, z-coordinates.
    * @param mate Output cartesian x, y, z-coordinates.
@@ -884,8 +892,8 @@ public class Crystal {
    */
   public static void applyCartesianSymRot(double[] xyz, double[] mate, SymOp symOp) {
     int l = xyz.length;
-    assert(l % 3 == 0);
-    assert(mate.length == l);
+    assert (l % 3 == 0);
+    assert (mate.length == l);
     double[][] rot = symOp.rot;
     final double rot00 = rot[0][0];
     final double rot10 = rot[1][0];
@@ -896,7 +904,7 @@ public class Crystal {
     final double rot02 = rot[0][2];
     final double rot12 = rot[1][2];
     final double rot22 = rot[2][2];
-    int n = l/3;
+    int n = l / 3;
     for (int i = 0; i < n; i++) {
       int j = i * 3;
       double xi = xyz[j];
