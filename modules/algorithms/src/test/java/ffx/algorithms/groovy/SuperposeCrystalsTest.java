@@ -50,7 +50,7 @@ import org.junit.Test;
 
 public class SuperposeCrystalsTest extends AlgorithmsTest {
 
-  private final double tolerance = 0.001;
+  private final double TOLERANCE = 0.001;
 
   /** Tests the SuperposeCrystals script with default settings. */
   @Test
@@ -68,7 +68,8 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     // Only off-diagonal values.
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
-    assertEquals(0.087248, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.082798, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.216710, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script with RMSD size of one. */
@@ -87,7 +88,8 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     // Only off-diagonal values.
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
-    assertEquals(0.055486, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.055486, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.161867, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script with default settings and average linkage. */
@@ -106,7 +108,8 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     // Only off-diagonal values.
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
-    assertEquals(0.083089, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.080817, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.213987, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script with hydrogens. */
@@ -125,7 +128,8 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     // Only off-diagonal values.
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
-    assertEquals(0.111014, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.111014, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.297522, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script with hydrogens. */
@@ -144,7 +148,8 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     // Only off-diagonal values.
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
-    assertEquals(0.112556, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.111039, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.300095, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script in Sohncke group. */
@@ -161,7 +166,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
     algorithmsScript = superposeCrystals;
 
-    assertEquals(0.066569, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.066569, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script in Sohncke group. */
@@ -178,7 +183,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
     algorithmsScript = superposeCrystals;
 
-    assertEquals(0.073036, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.073036, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script on tricky handedness case. */
@@ -195,7 +200,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
     algorithmsScript = superposeCrystals;
 
-    assertEquals(0.112274, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.112274, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script on tricky handedness case. */
@@ -212,7 +217,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
     algorithmsScript = superposeCrystals;
 
-    assertEquals(0.098483, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.098483, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script on asymmetric unit greater than one. */
@@ -231,7 +236,8 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
 
-    assertEquals(0.151675, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.151675, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.375328, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script on asymmetric unit greater than one. */
@@ -250,7 +256,8 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
 
-    assertEquals(0.143013, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.145739, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.362522, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script on protein crystal. */
@@ -269,8 +276,8 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
 
-    assertEquals(0.478175, superposeCrystals.runningStatistics.getMean(), tolerance);
-    assertEquals(1.383652, superposeCrystals.runningStatistics.getMax(), tolerance);
+    assertEquals(0.478175, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(1.383652, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   @Test
