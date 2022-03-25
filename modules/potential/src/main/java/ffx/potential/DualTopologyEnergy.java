@@ -39,6 +39,7 @@ package ffx.potential;
 
 import static ffx.crystal.Crystal.applyCartesianSymOp;
 import static ffx.crystal.Crystal.applyCartesianSymRot;
+import static ffx.crystal.Crystal.invertSymOp;
 import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
@@ -51,7 +52,6 @@ import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.crystal.SymOp;
 import ffx.numerics.Potential;
-import ffx.numerics.math.Double3;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
@@ -64,8 +64,6 @@ import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.math3.linear.MatrixUtils;
-import org.apache.commons.math3.linear.RealMatrix;
 
 /**
  * Compute the potential energy and derivatives for a dual-topology system.
@@ -373,10 +371,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             {parseDouble(tokens[6]), parseDouble(tokens[7]), parseDouble(tokens[8])}},
             new double[] {parseDouble(tokens[9]), parseDouble(tokens[10]), parseDouble(tokens[11])});
         useSymOp = true;
-        RealMatrix rotation = MatrixUtils.createRealMatrix(symOp.rot);
-        Double3 translation = new Double3(symOp.tr);
         // Transpose == inverse for orthogonal matrices
-        inverse = new SymOp(rotation.transpose().getData(), translation.scale(-1.0).get());
+        inverse = invertSymOp(symOp);
         logger.info("\n Utilizing SymOp between systems:\n" + symOp);
         logger.info(" Inverse                        :\n" + inverse);
       } catch (Exception ex) {

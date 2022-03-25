@@ -40,9 +40,7 @@ package ffx.crystal;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.DoubleMath.sub;
-import static ffx.numerics.math.MatrixMath.mat3Mat3;
-import static ffx.numerics.math.MatrixMath.mat3SymVec6;
-import static ffx.numerics.math.MatrixMath.transpose3;
+import static ffx.numerics.math.MatrixMath.*;
 import static ffx.utilities.Constants.AVOGADRO;
 import static ffx.utilities.StringUtils.padRight;
 import static java.lang.String.format;
@@ -1336,6 +1334,16 @@ public class Crystal {
       }
     }
     return false;
+  }
+
+  /**
+   * Invert a symmetry operator.
+   * @param symOp Original symmetry operator of which the inverse is desired.
+   * @return SymOp The inverse symmetry operator of the one supplied.
+   */
+  public static SymOp invertSymOp(SymOp symOp){
+    double[] tr =  symOp.tr;
+    return new SymOp(mat3Inverse(symOp.rot), new double[]{-tr[0], -tr[1], -tr[2]});
   }
 
   /**

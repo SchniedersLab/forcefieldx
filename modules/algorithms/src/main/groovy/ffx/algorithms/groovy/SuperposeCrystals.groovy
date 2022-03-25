@@ -82,11 +82,11 @@ class SuperposeCrystals extends AlgorithmsScript {
   private int numAU
 
   /**
-   * --ni or --numInflatedAU Inflation factor used to determine replicates expansion.
+   * --if or --inflationFactor Inflation factor used to determine replicates expansion.
    */
-  @Option(names = ['--ni', '--numInflatedAU'], paramLabel = '4.25', defaultValue = '4.25',
+  @Option(names = ['--if', '--inflationFactor'], paramLabel = '2.90', defaultValue = '2.90',
       description = 'Inflation factor used to determine replicates expansion.')
-  private double numInflatedAU
+  private double inflationFactor
 
   /**
    * --zp or --zPrime Z' for crystal 1 (-1 to autodetect).
@@ -105,7 +105,7 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * --mt or --matchTolerance Tolerance to determine if two AUs are different.
    */
-  @Option(names = ['--mt', '--moleculeTolerance'], paramLabel = '0.1', defaultValue = '0.1',
+  @Option(names = ['--mt', '--moleculeTolerance'], paramLabel = '0.007', defaultValue = '0.007',
           description = "Tolerance to determine if two AUs are different.")
   private double matchTol
 
@@ -288,7 +288,7 @@ class SuperposeCrystals extends AlgorithmsScript {
     String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt")
 
     runningStatistics =
-        pac.comparisons(numAU, numInflatedAU, matchTol, zPrime, zPrime2, alphaCarbons,
+        pac.comparisons(numAU, inflationFactor, matchTol, zPrime, zPrime2, alphaCarbons,
             includeHydrogen, massWeighted, crystalPriority, permute, save,
             restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym, pacFilename)
 
