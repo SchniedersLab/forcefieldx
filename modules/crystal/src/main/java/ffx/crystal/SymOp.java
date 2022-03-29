@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.crystal;
 
+import static ffx.numerics.math.MatrixMath.mat4Mat4;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.cos;
@@ -53,57 +54,63 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  */
 public class SymOp {
 
-  private static final double zero = 0.0;
-  /** Constant <code>Tr_0_0_0={zero, zero, zero}</code> */
-  static final double[] Tr_0_0_0 = {zero, zero, zero};
-
+  /** Constant <code>ZERO = 0.0</code> */
+  private static final double ZERO = 0.0;
+  /** Constant <code>ZERO_ROTATION = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}</code> */
+  public static final double[][] ZERO_ROTATION = {
+      {1.0, ZERO, ZERO},
+      {ZERO, 1.0, ZERO},
+      {ZERO, ZERO, 1.0}};
+  /** Constant <code>Tr_0_0_0={ZERO, ZERO, ZERO}</code> */
+  public static final double[] Tr_0_0_0 = {ZERO, ZERO, ZERO};
+  /** Constant <code>f12 = 1.0 / 2.0</code> */
   private static final double f12 = 1.0 / 2.0;
-  /** Constant <code>Tr_12_0_12={f12, zero, f12}</code> */
-  static final double[] Tr_12_0_12 = {f12, zero, f12};
-  /** Constant <code>Tr_0_12_12={zero, f12, f12}</code> */
-  static final double[] Tr_0_12_12 = {zero, f12, f12};
-  /** Constant <code>Tr_12_12_0={f12, f12, zero}</code> */
-  static final double[] Tr_12_12_0 = {f12, f12, zero};
+  /** Constant <code>Tr_12_0_12={f12, ZERO, f12}</code> */
+  static final double[] Tr_12_0_12 = {f12, ZERO, f12};
+  /** Constant <code>Tr_0_12_12={ZERO, f12, f12}</code> */
+  static final double[] Tr_0_12_12 = {ZERO, f12, f12};
+  /** Constant <code>Tr_12_12_0={f12, f12, ZERO}</code> */
+  static final double[] Tr_12_12_0 = {f12, f12, ZERO};
   /** Constant <code>Tr_12_12_12={f12, f12, f12}</code> */
   static final double[] Tr_12_12_12 = {f12, f12, f12};
-  /** Constant <code>Tr_0_12_0={zero, f12, zero}</code> */
-  static final double[] Tr_0_12_0 = {zero, f12, zero};
-  /** Constant <code>Tr_12_0_0={f12, zero, zero}</code> */
-  static final double[] Tr_12_0_0 = {f12, zero, zero};
-  /** Constant <code>Tr_0_0_12={zero, zero, f12}</code> */
-  static final double[] Tr_0_0_12 = {zero, zero, f12};
-
+  /** Constant <code>Tr_0_12_0={ZERO, f12, ZERO}</code> */
+  static final double[] Tr_0_12_0 = {ZERO, f12, ZERO};
+  /** Constant <code>Tr_12_0_0={f12, ZERO, ZERO}</code> */
+  static final double[] Tr_12_0_0 = {f12, ZERO, ZERO};
+  /** Constant <code>Tr_0_0_12={ZERO, ZERO, f12}</code> */
+  static final double[] Tr_0_0_12 = {ZERO, ZERO, f12};
+  /** Constant <code>f13 = 1.0 / 3.0</code> */
   private static final double f13 = 1.0 / 3.0;
-  /** Constant <code>Tr_0_0_13={zero, zero, f13}</code> */
-  static final double[] Tr_0_0_13 = {zero, zero, f13};
-
+  /** Constant <code>Tr_0_0_13={ZERO, ZERO, f13}</code> */
+  static final double[] Tr_0_0_13 = {ZERO, ZERO, f13};
+  /** Constant <code>f23 = 2.0 / 3.0</code> */
   private static final double f23 = 2.0 / 3.0;
   /** Constant <code>Tr_23_13_13={f23, f13, f13}</code> */
   static final double[] Tr_23_13_13 = {f23, f13, f13};
   /** Constant <code>Tr_13_23_23={f13, f23, f23}</code> */
   static final double[] Tr_13_23_23 = {f13, f23, f23};
-  /** Constant <code>Tr_0_0_23={zero, zero, f23}</code> */
-  static final double[] Tr_0_0_23 = {zero, zero, f23};
-
+  /** Constant <code>Tr_0_0_23={ZERO, ZERO, f23}</code> */
+  static final double[] Tr_0_0_23 = {ZERO, ZERO, f23};
+  /** Constant <code>f14 = 1.0 / 4.0</code> */
   private static final double f14 = 1.0 / 4.0;
-  /** Constant <code>Tr_12_0_14={f12, zero, f14}</code> */
-  static final double[] Tr_12_0_14 = {f12, zero, f14};
-  /** Constant <code>Tr_0_12_14={zero, f12, f14}</code> */
-  static final double[] Tr_0_12_14 = {zero, f12, f14};
+  /** Constant <code>Tr_12_0_14={f12, ZERO, f14}</code> */
+  static final double[] Tr_12_0_14 = {f12, ZERO, f14};
+  /** Constant <code>Tr_0_12_14={ZERO, f12, f14}</code> */
+  static final double[] Tr_0_12_14 = {ZERO, f12, f14};
   /** Constant <code>Tr_14_14_14={f14, f14, f14}</code> */
   static final double[] Tr_14_14_14 = {f14, f14, f14};
   /** Constant <code>Tr_12_12_14={f12, f12, f14}</code> */
   static final double[] Tr_12_12_14 = {f12, f12, f14};
-  /** Constant <code>Tr_0_0_14={zero, zero, f14}</code> */
-  static final double[] Tr_0_0_14 = {zero, zero, f14};
-
+  /** Constant <code>Tr_0_0_14={ZERO, ZERO, f14}</code> */
+  static final double[] Tr_0_0_14 = {ZERO, ZERO, f14};
+  /** Constant <code>f34 = 3.0 / 4.0</code> */
   private static final double f34 = 3.0 / 4.0;
-  /** Constant <code>Tr_0_0_34={zero, zero, f34}</code> */
-  static final double[] Tr_0_0_34 = {zero, zero, f34};
-  /** Constant <code>Tr_12_0_34={f12, zero, f34}</code> */
-  static final double[] Tr_12_0_34 = {f12, zero, f34};
-  /** Constant <code>Tr_0_12_34={zero, f12, f34}</code> */
-  static final double[] Tr_0_12_34 = {zero, f12, f34};
+  /** Constant <code>Tr_0_0_34={ZERO, ZERO, f34}</code> */
+  static final double[] Tr_0_0_34 = {ZERO, ZERO, f34};
+  /** Constant <code>Tr_12_0_34={f12, ZERO, f34}</code> */
+  static final double[] Tr_12_0_34 = {f12, ZERO, f34};
+  /** Constant <code>Tr_0_12_34={ZERO, f12, f34}</code> */
+  static final double[] Tr_0_12_34 = {ZERO, f12, f34};
   /** Constant <code>Tr_34_14_14={f34, f14, f14}</code> */
   static final double[] Tr_34_14_14 = {f34, f14, f14};
   /** Constant <code>Tr_14_14_34={f14, f14, f34}</code> */
@@ -120,22 +127,24 @@ public class SymOp {
   static final double[] Tr_34_34_34 = {f34, f34, f34};
   /** Constant <code>Tr_34_14_34={f34, f14, f34}</code> */
   static final double[] Tr_34_14_34 = {f34, f14, f34};
-
+  /** Constant <code>f16 = 1.0 / 6.0</code> */
   private static final double f16 = 1.0 / 6.0;
   /** Constant <code>Tr_13_23_16={f13, f23, f16}</code> */
   static final double[] Tr_13_23_16 = {f13, f23, f16};
-  /** Constant <code>Tr_0_0_16={zero, zero, f16}</code> */
-  static final double[] Tr_0_0_16 = {zero, zero, f16};
-
+  /** Constant <code>Tr_0_0_16={ZERO, ZERO, f16}</code> */
+  static final double[] Tr_0_0_16 = {ZERO, ZERO, f16};
+  /** Constant <code>f56 = 5.0 / 6.0</code> */
   private static final double f56 = 5.0 / 6.0;
-  /** Constant <code>Tr_0_0_56={zero, zero, f56}</code> */
-  static final double[] Tr_0_0_56 = {zero, zero, f56};
+  /** Constant <code>Tr_0_0_56={ZERO, ZERO, f56}</code> */
+  static final double[] Tr_0_0_56 = {ZERO, ZERO, f56};
   /** Constant <code>Tr_23_13_56={f23, f13, f56}</code> */
   static final double[] Tr_23_13_56 = {f23, f13, f56};
-
-  private static final double[] X = {1.0, zero, zero};
-  private static final double[] Y = {zero, 1.0, zero};
-  private static final double[] Z = {zero, zero, 1.0};
+  /** Constant <code>X = {1.0, ZERO, ZERO}</code> */
+  private static final double[] X = {1.0, ZERO, ZERO};
+  /** Constant <code>Y = {ZERO, 1.0, ZERO}</code> */
+  private static final double[] Y = {ZERO, 1.0, ZERO};
+  /** Constant <code>Z = {ZERO, ZERO, 1.0}</code> */
+  private static final double[] Z = {ZERO, ZERO, 1.0};
   /** Constant <code>Rot_Y_Z_X={Y, Z, X}</code> */
   static final double[][] Rot_Y_Z_X = {Y, Z, X};
   /** Constant <code>Rot_X_Y_Z={X, Y, Z}</code> */
@@ -148,8 +157,8 @@ public class SymOp {
   static final double[][] Rot_Z_Y_X = {Z, Y, X};
   /** Constant <code>Rot_Y_X_Z={Y, X, Z}</code> */
   static final double[][] Rot_Y_X_Z = {Y, X, Z};
-
-  private static final double[] mX = {-1.0, zero, zero};
+  /** Constant <code>mX = {-1.0, ZERO, ZERO}</code> */
+  private static final double[] mX = {-1.0, ZERO, ZERO};
   /** Constant <code>Rot_Y_mX_Z={Y, mX, Z}</code> */
   static final double[][] Rot_Y_mX_Z = {Y, mX, Z};
   /** Constant <code>Rot_mX_Z_Y={mX, Z, Y}</code> */
@@ -162,8 +171,8 @@ public class SymOp {
   static final double[][] Rot_Z_Y_mX = {Z, Y, mX};
   /** Constant <code>Rot_Z_mX_Y={Z, mX, Y}</code> */
   static final double[][] Rot_Z_mX_Y = {Z, mX, Y};
-
-  private static final double[] mY = {zero, -1.0, zero};
+  /** Constant <code>mY = {ZERO, -1.0, ZERO}</code> */
+  private static final double[] mY = {ZERO, -1.0, ZERO};
   /** Constant <code>Rot_Z_mY_X={Z, mY, X}</code> */
   static final double[][] Rot_Z_mY_X = {Z, mY, X};
   /** Constant <code>Rot_X_Z_mY={X, Z, mY}</code> */
@@ -188,8 +197,8 @@ public class SymOp {
   static final double[][] Rot_Z_mY_mX = {Z, mY, mX};
   /** Constant <code>Rot_mX_mY_Z={mX, mY, Z}</code> */
   static final double[][] Rot_mX_mY_Z = {mX, mY, Z};
-
-  private static final double[] mZ = {zero, zero, -1.0};
+  /** Constant <code>mZ = {ZERO, ZERO, -1.0}</code> */
+  private static final double[] mZ = {ZERO, ZERO, -1.0};
   /** Constant <code>Rot_Y_mX_mZ={Y, mX, mZ}</code> */
   static final double[][] Rot_Y_mX_mZ = {Y, mX, mZ};
   /** Constant <code>Rot_mX_Y_mZ={mX, Y, mZ}</code> */
@@ -238,8 +247,8 @@ public class SymOp {
   static final double[][] Rot_mZ_Y_X = {mZ, Y, X};
   /** Constant <code>Rot_mZ_X_mY={mZ, X, mY}</code> */
   static final double[][] Rot_mZ_X_mY = {mZ, X, mY};
-
-  private static final double[] XmY = {1.0, -1.0, zero};
+  /** Constant <code>XmY = {1.0, -1.0, ZERO}</code> */
+  private static final double[] XmY = {1.0, -1.0, ZERO};
   /** Constant <code>Rot_XmY_X_mZ={XmY, X, mZ}</code> */
   static final double[][] Rot_XmY_X_mZ = {XmY, X, mZ};
   /** Constant <code>Rot_XmY_X_Z={XmY, X, Z}</code> */
@@ -256,8 +265,8 @@ public class SymOp {
   static final double[][] Rot_mY_XmY_Z = {mY, XmY, Z};
   /** Constant <code>Rot_XmY_mY_mZ={XmY, mY, mZ}</code> */
   static final double[][] Rot_XmY_mY_mZ = {XmY, mY, mZ};
-
-  private static final double[] mXY = {-1.0, 1.0, zero};
+  /** Constant <code>mXY = {-1.0, 1.0, ZERO}</code> */
+  private static final double[] mXY = {-1.0, 1.0, ZERO};
   /** Constant <code>Rot_Y_mXY_Z={Y, mXY, Z}</code> */
   static final double[][] Rot_Y_mXY_Z = {Y, mXY, Z};
   /** Constant <code>Rot_mX_mXY_mZ={mX, mXY, mZ}</code> */
@@ -278,6 +287,7 @@ public class SymOp {
   public final double[][] rot;
   /** The translation vector in fractional coordinates. */
   public final double[] tr;
+
   /**
    * The SymOp constructor.
    *
@@ -287,6 +297,30 @@ public class SymOp {
   public SymOp(double[][] rot, double[] tr) {
     this.rot = rot;
     this.tr = tr;
+  }
+
+
+  /**
+   * The SymOp constructor.
+   *
+   * @param m The rotation matrix and translation vector as a 4x4 matrix.
+   */
+  public SymOp(double[][] m) {
+    this.rot = new double[3][3];
+    rot[0][0] = m[0][0];
+    rot[0][1] = m[0][1];
+    rot[0][2] = m[0][2];
+    rot[1][0] = m[1][0];
+    rot[1][1] = m[1][1];
+    rot[1][2] = m[1][2];
+    rot[2][0] = m[2][0];
+    rot[2][1] = m[2][1];
+    rot[2][2] = m[2][2];
+
+    this.tr = new double[3];
+    tr[0] = m[0][3];
+    tr[1] = m[1][3];
+    tr[2] = m[2][3];
   }
 
   /**
@@ -302,6 +336,59 @@ public class SymOp {
   public static SymOp randomSymOpFactory(double scalar) {
     double[] tr = {scalar * (random() - 0.5), scalar * (random() - 0.5), scalar * (random() - 0.5)};
     return randomSymOpFactory(tr);
+  }
+
+  /**
+   * Return the SymOp as a 4x4 matrix.
+   *
+   * @return A 4x4 matrix representation of the SymOp.
+   */
+  public double[][] asMatrix() {
+    return new double[][] {
+        {rot[0][0], rot[0][1], rot[0][2], tr[0]},
+        {rot[1][0], rot[1][1], rot[1][2], tr[1]},
+        {rot[2][0], rot[2][1], rot[2][2], tr[2]},
+        {0.0, 0.0, 0.0, 1.0}};
+  }
+
+  /**
+   * Return the combined SymOp that is equivalent to first applying <code>this</code> SymOp and then
+   * the argument.
+   * <code>X' = S_arg(S_this(X))</code>
+   * <code>X' = S_combined(X)</code>
+   *
+   * @param symOp The SymOp to append to <code>this</code> SymOp.
+   * @return The combined SymOp.
+   */
+  public SymOp append(SymOp symOp) {
+    return new SymOp(mat4Mat4(symOp.asMatrix(), asMatrix()));
+  }
+
+  /**
+   * Return the combined SymOp that is equivalent to first applying the argument and then
+   * <code>this</code> SymOp.
+   * <code>X' = S_this(S_arg(X))</code>
+   * <code>X' = S_combined(X)</code>
+   *
+   * @param symOp The SymOp to prepend to <code>this</code> Symop.
+   * @return The combined SymOp.
+   */
+  public SymOp prepend(SymOp symOp) {
+    return new SymOp(mat4Mat4(asMatrix(), symOp.asMatrix()));
+  }
+
+  /**
+   * Return the combined SymOp that is equivalent to first applying symOp1 and then SymOp2.
+   *
+   * <code>X' = S_2(S_1(X))</code>
+   * <code>X' = S_combined(X)</code>
+   *
+   * @param symOp1 The fist SymOp.
+   * @param symOp2 The second SymOp.
+   * @return The combined SymOp.
+   */
+  public static SymOp combineSymOps(SymOp symOp1, SymOp symOp2) {
+    return new SymOp(mat4Mat4(symOp2.asMatrix(), symOp1.asMatrix()));
   }
 
   /**
@@ -411,15 +498,16 @@ public class SymOp {
 
   /**
    * Print the symmetry operator with double precision.
+   *
    * @return String of rotation/translation with double precision.
    */
   public String toStringPrecise() {
     StringBuilder sb = new StringBuilder(" Rotation operator:\n");
     sb.append(
-            format(
-                    " [[%18.16e,%18.16e,%18.16e]\n  [%18.16e,%18.16e,%18.16e]\n  [%18.16e,%18.16e,%18.16e]]\n",
-                    rot[0][0], rot[0][1], rot[0][2], rot[1][0], rot[1][1], rot[1][2], rot[2][0], rot[2][1],
-                    rot[2][2]));
+        format(
+            " [[%18.16e,%18.16e,%18.16e]\n  [%18.16e,%18.16e,%18.16e]\n  [%18.16e,%18.16e,%18.16e]]\n",
+            rot[0][0], rot[0][1], rot[0][2], rot[1][0], rot[1][1], rot[1][2], rot[2][0], rot[2][1],
+            rot[2][2]));
     sb.append(" Translation:\n");
     sb.append(format(" [%18.16e,%18.16e,%18.16e]", tr[0], tr[1], tr[2]));
     return sb.toString();

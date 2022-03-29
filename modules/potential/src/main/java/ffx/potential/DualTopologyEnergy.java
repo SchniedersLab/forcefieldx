@@ -40,6 +40,14 @@ package ffx.potential;
 import static ffx.crystal.Crystal.applyCartesianSymOp;
 import static ffx.crystal.Crystal.applyCartesianSymRot;
 import static ffx.crystal.Crystal.invertSymOp;
+import static ffx.crystal.SymOp.Tr_0_0_0;
+import static ffx.crystal.SymOp.ZERO_ROTATION;
+import static ffx.potential.utils.Superpose.applyRotation;
+import static ffx.potential.utils.Superpose.applyTranslation;
+import static ffx.potential.utils.Superpose.calculateRotation;
+import static ffx.potential.utils.Superpose.calculateTranslation;
+import static ffx.potential.utils.Superpose.rmsd;
+import static ffx.potential.utils.Superpose.translate;
 import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
@@ -52,6 +60,7 @@ import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.crystal.SymOp;
 import ffx.numerics.Potential;
+import ffx.numerics.math.DoubleMath;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
@@ -229,7 +238,6 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
 
     CompositeConfiguration properties = topology1.getProperties();
     boolean doPinSoftcore = properties.getBoolean("doPinSoftcore", false);
-
     if (doPinSoftcore) {
       doUnpin = (Atom a) -> false;
     } else {
@@ -359,27 +367,9 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     energyRegion = new EnergyRegion();
     parallelTeam = new ParallelTeam(1);
 
-    // TODO: Check if system two requests applicaton of a SymOp to its coordinates
-    // TODO: Read in the SymOp property: symop d1 d2 ... d12
     String symOpString = forceField2.getString("symop", null);
     if (symOpString != null) {
-      try {
-        String[] tokens = symOpString.split(" +");
-        symOp = new SymOp(new double[][] {
-            {parseDouble(tokens[0]), parseDouble(tokens[1]), parseDouble(tokens[2])},
-            {parseDouble(tokens[3]), parseDouble(tokens[4]), parseDouble(tokens[5])},
-            {parseDouble(tokens[6]), parseDouble(tokens[7]), parseDouble(tokens[8])}},
-            new double[] {parseDouble(tokens[9]), parseDouble(tokens[10]), parseDouble(tokens[11])});
-        useSymOp = true;
-        // Transpose == inverse for orthogonal matrices
-        inverse = invertSymOp(symOp);
-        logger.info("\n Utilizing SymOp between systems:\n" + symOp);
-        logger.info(" Inverse                        :\n" + inverse);
-      } catch (Exception ex) {
-        logger.warning(ex.toString());
-        ex.printStackTrace();
-        logger.severe(" Error parsing SymOp for Dual Topology:\n (" + symOpString + ")");
-      }
+      readSymOp(symOpString);
     } else {
       // Both end-states will use the same crystal object.
       potential2.setCrystal(potential1.getCrystal());
@@ -390,6 +380,108 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
 
     this.switchFunction = switchFunction;
     logger.info(format("\n Dual topology using switching function:\n  %s", switchFunction));
+  }
+
+  private void readSymOp(String symOpString) {
+    try {
+      String[] tokens = symOpString.split(" +");
+      symOp = new SymOp(new double[][] {
+          {parseDouble(tokens[0]), parseDouble(tokens[1]), parseDouble(tokens[2])},
+          {parseDouble(tokens[3]), parseDouble(tokens[4]), parseDouble(tokens[5])},
+          {parseDouble(tokens[6]), parseDouble(tokens[7]), parseDouble(tokens[8])}},
+          new double[] {parseDouble(tokens[9]), parseDouble(tokens[10]), parseDouble(tokens[11])});
+      useSymOp = true;
+      // Transpose == inverse for orthogonal matrices
+      inverse = invertSymOp(symOp);
+
+      // Check atom identities.
+      int n = activeAtoms1.length;
+      for (int i = 0; i < n; i++) {
+        Atom a1 = activeAtoms1[i];
+        Atom a2 = activeAtoms2[i];
+        if (!a1.getAtomType().equals(a2.getAtomType())) {
+          logger.info(format(" %s %s", a1, a1.getAtomType()));
+          logger.info(format(" %s %s", a2, a2.getAtomType()));
+        }
+        if (!a1.getMultipoleType().equals(a2.getMultipoleType())) {
+          logger.info(format(" %s %s", a1, a1.getMultipoleType()));
+          logger.info(format(" %s %s", a2, a2.getMultipoleType()));
+        }
+      }
+
+      // Compute RMSD
+      potential1.getCoordinates(x1);
+      potential2.getCoordinates(x2);
+      double[] origX2 = Arrays.copyOf(x2, x2.length);
+      double[] x2s = new double[origX2.length];
+      double[] m = new double[x1.length];
+      Arrays.fill(m, 1.0);
+      double origRMSD = rmsd(x1, x2, m);
+      logger.info("\n Topology 2 Coordinates from Input File");
+      logger.info(format(" RMSD: %12.3f", origRMSD));
+      potential2.energy(x2, false);
+
+      logger.info("\n Topology 2 Coordinates from Superpose");
+      Crystal unitCell2 = potential2.getCrystal().getUnitCell();
+      double calcEnergy = Double.MAX_VALUE;
+      SymOp calcSymOp = null;
+      for (int s = 0; s < unitCell2.getNumSymOps(); s++) {
+        potential1.getCoordinates(x1);
+        SymOp symOp2 = unitCell2.spaceGroup.getSymOp(s);
+        unitCell2.applySymOp(origX2, x2s, symOp2);
+        // Calculate a SymOp on the fly.
+        // Translate Topology 1 and Topology 2 to the origin.
+        double[] trans = calculateTranslation(x1, m);
+        applyTranslation(x1, trans);
+        SymOp trialSymOp = new SymOp(ZERO_ROTATION, trans);
+        translate(x2s, m);
+
+        // Rotate Topology 1 onto Topology 2.
+        double[][] rot = calculateRotation(x2s, x1, m);
+        applyRotation(x1, rot);
+        trialSymOp = trialSymOp.append(new SymOp(rot, Tr_0_0_0));
+
+        // Translate Topology 1 to the center of mass of Topology 2.
+        unitCell2.applySymOp(origX2, x2s, symOp2);
+        trans = DoubleMath.sub(calculateTranslation(x1, m), calculateTranslation(x2s, m));
+        applyTranslation(x1, trans);
+        trialSymOp = trialSymOp.append(new SymOp(ZERO_ROTATION, trans));
+
+        // Apply the calculated SymOp.
+        potential1.getCoordinates(x1);
+        applyCartesianSymOp(x1, x1, trialSymOp);
+        double calcRMSD = rmsd(x1, x2s, m);
+
+        logger.info(format(" RMSD: %12.3f", calcRMSD));
+        double temp = potential2.energy(x1, false);
+        if (temp < calcEnergy) {
+          calcEnergy = temp;
+          calcSymOp = trialSymOp;
+        }
+      }
+
+      // Get a fresh copy of the original coordinates.
+      potential1.getCoordinates(x1);
+      applyCartesianSymOp(x1, x1, symOp);
+      double loadedRMSD = rmsd(x1, x2, m);
+      logger.info("\n Topology 2 Coordinates from Loaded SymOp");
+      logger.info(format(" RMSD: %12.3f", loadedRMSD));
+      double loadedEnergy = potential2.energy(x1, false);
+
+      // If the loaded SymOp gives a larger RMSD that the calculated SymOp, replace it.
+      if (calcEnergy < loadedEnergy) {
+        logger.info(format("\n Using the Superpose SymOp (Energy: %16.8f)", calcEnergy));
+        symOp = calcSymOp;
+        inverse = invertSymOp(symOp);
+      }
+
+      logger.info("\n SymOp between topologies:\n" + symOp);
+      logger.info("\n Inverse SymOp:\n" + inverse);
+    } catch (Exception ex) {
+      logger.warning(ex.toString());
+      ex.printStackTrace();
+      logger.severe(" Error parsing SymOp for Dual Topology:\n (" + symOpString + ")");
+    }
   }
 
   /**

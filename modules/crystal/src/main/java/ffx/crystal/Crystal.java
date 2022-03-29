@@ -40,7 +40,10 @@ package ffx.crystal;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.DoubleMath.sub;
-import static ffx.numerics.math.MatrixMath.*;
+import static ffx.numerics.math.MatrixMath.mat3Inverse;
+import static ffx.numerics.math.MatrixMath.mat3Mat3;
+import static ffx.numerics.math.MatrixMath.mat3SymVec6;
+import static ffx.numerics.math.MatrixMath.transpose3;
 import static ffx.utilities.Constants.AVOGADRO;
 import static ffx.utilities.StringUtils.padRight;
 import static java.lang.String.format;
@@ -68,7 +71,6 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.LUDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.util.FastMath;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that describe the geometry
@@ -621,8 +623,8 @@ public class Crystal {
     double[][] rot = symOp.rot;
     double[] trans = symOp.tr;
 
-    assert(xyz.length % 3 == 0);
-    assert(xyz.length == mate.length);
+    assert (xyz.length % 3 == 0);
+    assert (xyz.length == mate.length);
 
     int len = xyz.length / 3;
     for (int i = 0; i < len; i++) {
@@ -765,23 +767,44 @@ public class Crystal {
    * @param symOp The fractional symmetry operator.
    */
   public void applySymOp(double[] xyz, double[] mate, SymOp symOp) {
-    double[][] rot = symOp.rot;
-    double[] trans = symOp.tr;
-    double xc = xyz[0];
-    double yc = xyz[1];
-    double zc = xyz[2];
-    // Convert to fractional coordinates.
-    double xi = xc * A00 + yc * A10 + zc * A20;
-    double yi = xc * A01 + yc * A11 + zc * A21;
-    double zi = xc * A02 + yc * A12 + zc * A22;
-    // Apply Symmetry Operator.
-    double fx = rot[0][0] * xi + rot[0][1] * yi + rot[0][2] * zi + trans[0];
-    double fy = rot[1][0] * xi + rot[1][1] * yi + rot[1][2] * zi + trans[1];
-    double fz = rot[2][0] * xi + rot[2][1] * yi + rot[2][2] * zi + trans[2];
-    // Convert back to Cartesian coordinates.
-    mate[0] = fx * Ai00 + fy * Ai10 + fz * Ai20;
-    mate[1] = fx * Ai01 + fy * Ai11 + fz * Ai21;
-    mate[2] = fx * Ai02 + fy * Ai12 + fz * Ai22;
+    assert (xyz.length % 3 == 0);
+    assert (xyz.length == mate.length);
+
+    var rot = symOp.rot;
+    var r00 = rot[0][0];
+    var r01 = rot[0][1];
+    var r02 = rot[0][2];
+    var r10 = rot[1][0];
+    var r11 = rot[1][1];
+    var r12 = rot[1][2];
+    var r20 = rot[2][0];
+    var r21 = rot[2][1];
+    var r22 = rot[2][2];
+
+    var trans = symOp.tr;
+    var t0 = trans[0];
+    var t1 = trans[1];
+    var t2 = trans[2];
+
+    int len = xyz.length / 3;
+    for (int i = 0; i < len; i++) {
+      int index = i * 3;
+      var xc = xyz[index + XX];
+      var yc = xyz[index + YY];
+      var zc = xyz[index + ZZ];
+      // Convert to fractional coordinates.
+      var xi = xc * A00 + yc * A10 + zc * A20;
+      var yi = xc * A01 + yc * A11 + zc * A21;
+      var zi = xc * A02 + yc * A12 + zc * A22;
+      // Apply Symmetry Operator.
+      var fx = r00 * xi + r01 * yi + r02 * zi + t0;
+      var fy = r10 * xi + r11 * yi + r12 * zi + t1;
+      var fz = r20 * xi + r21 * yi + r22 * zi + t2;
+      // Convert back to Cartesian coordinates.
+      mate[index + XX] = fx * Ai00 + fy * Ai10 + fz * Ai20;
+      mate[index + YY] = fx * Ai01 + fy * Ai11 + fz * Ai21;
+      mate[index + ZZ] = fx * Ai02 + fy * Ai12 + fz * Ai22;
+    }
   }
 
   /**
@@ -1338,12 +1361,13 @@ public class Crystal {
 
   /**
    * Invert a symmetry operator.
+   *
    * @param symOp Original symmetry operator of which the inverse is desired.
    * @return SymOp The inverse symmetry operator of the one supplied.
    */
-  public static SymOp invertSymOp(SymOp symOp){
-    double[] tr =  symOp.tr;
-    return new SymOp(mat3Inverse(symOp.rot), new double[]{-tr[0], -tr[1], -tr[2]});
+  public static SymOp invertSymOp(SymOp symOp) {
+    var tr = symOp.tr;
+    return new SymOp(mat3Inverse(symOp.rot), new double[] {-tr[0], -tr[1], -tr[2]});
   }
 
   /**
@@ -1384,7 +1408,7 @@ public class Crystal {
       double dx = xyzA[i] - xyzB[i];
       dist += (dx * dx);
     }
-    double[] symB = new double[3];
+    var symB = new double[3];
     for (SymOp symOp : spaceGroup.symOps) {
       applySymOp(xyzB, symB, symOp);
       for (int i = 0; i < 3; i++) {
@@ -1393,7 +1417,7 @@ public class Crystal {
       double d = image(symB);
       dist = d < dist ? d : dist;
     }
-    return FastMath.sqrt(dist);
+    return sqrt(dist);
   }
 
   /**

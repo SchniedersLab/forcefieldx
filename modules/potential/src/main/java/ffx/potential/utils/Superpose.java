@@ -78,7 +78,7 @@ public class Superpose {
 
   private int restartRow;
   private int restartColumn;
-  private double[] distRow;
+  private final double[] distRow;
 
   /**
    * Parallel Java world communicator.
@@ -171,14 +171,14 @@ public class Superpose {
     File targetOutputFile = null;
     SystemFilter targetOutputFilter = null;
     if (saveSnapshots) {
-      String targetOutputName = concat(getFullPath(filename), getBaseName(filename) + "_superposed.arc");
+      String targetOutputName = concat(getFullPath(filename),
+          getBaseName(filename) + "_superposed.arc");
       targetOutputFile = SystemFilter.version(new File(targetOutputName));
       MolecularAssembly targetAssembly = targetFilter.getActiveMolecularSystem();
       targetOutputFilter = new XYZFilter(targetOutputFile, targetAssembly,
           targetAssembly.getForceField(),
           targetAssembly.getProperties());
     }
-
 
     String matrixFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt");
     RunningStatistics runningStatistics;
@@ -282,8 +282,8 @@ public class Superpose {
               // Load the target coordinates.
               targetForceFieldEnergy.getCoordinates(targetCoords);
 
-              copyCoordinates(usedIndices, baseCoords, baseUsedCoords);
-              copyCoordinates(usedIndices, targetCoords, targetUsedCoords);
+              extractCoordinates(usedIndices, baseCoords, baseUsedCoords);
+              extractCoordinates(usedIndices, targetCoords, targetUsedCoords);
 
               double origRMSD = rmsd(baseUsedCoords, targetUsedCoords, mass);
 
@@ -291,14 +291,14 @@ public class Superpose {
               applyTranslation(baseCoords, calculateTranslation(baseUsedCoords, mass));
               applyTranslation(targetCoords, calculateTranslation(targetUsedCoords, mass));
               // Copy the applied translation to baseUsedCoords and targetUsedCoords.
-              copyCoordinates(usedIndices, baseCoords, baseUsedCoords);
-              copyCoordinates(usedIndices, targetCoords, targetUsedCoords);
+              extractCoordinates(usedIndices, baseCoords, baseUsedCoords);
+              extractCoordinates(usedIndices, targetCoords, targetUsedCoords);
               double translatedRMSD = rmsd(baseUsedCoords, targetUsedCoords, mass);
 
               // Calculate the rotation on only the used subset, but apply it to the entire structure.
               applyRotation(targetCoords, calculateRotation(baseUsedCoords, targetUsedCoords, mass));
               // Copy the applied rotation to targetUsedCoords.
-              copyCoordinates(usedIndices, targetCoords, targetUsedCoords);
+              extractCoordinates(usedIndices, targetCoords, targetUsedCoords);
               double rotatedRMSD = rmsd(baseUsedCoords, targetUsedCoords, mass);
 
               if (dRMSD) {
@@ -378,14 +378,14 @@ public class Superpose {
       for (int i = 0; i < numProc; i++) {
         int c = (column + 1) - numProc + i;
         if (c < targetSize) {
-            distRow[c] = distances[i][0];
-            if (!isSymmetric) {
-              runningStatistics.addValue(distRow[c]);
-            } else if (c > row) {
-              // Only collect stats for the upper triangle.
-              runningStatistics.addValue(distRow[c]);
-            }
-            logger.finer(format(" %d %d %16.8f", row, c, distances[i][0]));
+          distRow[c] = distances[i][0];
+          if (!isSymmetric) {
+            runningStatistics.addValue(distRow[c]);
+          } else if (c > row) {
+            // Only collect stats for the upper triangle.
+            runningStatistics.addValue(distRow[c]);
+          }
+          logger.finer(format(" %d %d %16.8f", row, c, distances[i][0]));
         }
       }
     } catch (Exception e) {
@@ -402,7 +402,8 @@ public class Superpose {
    * @param expectedColumns The expected number of columns.
    * @return Stats for all read in distance matrix values.
    */
-  private RunningStatistics readMatrix(String filename, boolean isSymmetric, int expectedRows, int expectedColumns) {
+  private RunningStatistics readMatrix(String filename, boolean isSymmetric, int expectedRows,
+      int expectedColumns) {
     restartRow = 0;
     restartColumn = 0;
 
@@ -421,7 +422,8 @@ public class Superpose {
               restartRow));
         } else {
           restartColumn = 0;
-          logger.info(format(" Incomplete symmetric distance matrix found.\n Restarting at row %d, column %d.",
+          logger.info(format(
+              " Incomplete symmetric distance matrix found.\n Restarting at row %d, column %d.",
               restartRow + 1, restartColumn + 1));
         }
       } else if (restartRow == expectedRows && restartColumn == expectedColumns) {
@@ -437,13 +439,13 @@ public class Superpose {
   }
 
   /**
-   * Copy coordinates from the entire system to the used subset.
+   * Extract used coordinate subset from the entire system.
    *
    * @param usedIndices Mapping from the xUsed array to its source in x.
    * @param x All atomic coordinates.
    * @param xUsed The used subset of coordinates.
    */
-  public static void copyCoordinates(int[] usedIndices, double[] x, double[] xUsed) {
+  public static void extractCoordinates(int[] usedIndices, double[] x, double[] xUsed) {
     int nUsed = usedIndices.length;
     for (int u = 0; u < nUsed; u++) {
       int u3 = 3 * u;
@@ -599,8 +601,7 @@ public class Superpose {
   }
 
   /**
-   * Calculate a translation matrix [dx,dy,dz] to return a molecular system's center of mass to the
-   * origin.
+   * Calculate a translation vector [dx,dy,dz] to move the center of mass to the origin.
    *
    * @param x Coordinates of the system.
    * @param mass Mass of each atom.
@@ -629,7 +630,7 @@ public class Superpose {
   }
 
   /**
-   * Compute the rms fit over superimposed atom pairs
+   * Compute the RMSD for superimposed atom pairs.
    *
    * @param x1 Cartesian coordinates of the first system.
    * @param x2 Cartesian coordinates of the second system.
@@ -687,8 +688,25 @@ public class Superpose {
    * @param x Cartesian coordinates of the system; modified in-place.
    * @param mass The mass of each particle in the system.
    */
-  private static void translate(double[] x, final double[] mass) {
+  public static void translate(double[] x, final double[] mass) {
     double[] translation = calculateTranslation(x, mass);
     applyTranslation(x, translation);
+  }
+
+  /**
+   * This method completes the following superposition operations and returns an RMSD: 1) translates
+   * the x1 coordinates to the origin. 2) translates the x2 coordinates to the origin. 3) rotates x2
+   * onto x1. 4) computes and return the RMSD.
+   *
+   * @param x1 Coordinates of system 1.
+   * @param x2 Coordinates of system 2.
+   * @param mass Mass of each atom.
+   * @return The mass-weighted RMSD following superposition.
+   */
+  public static double superpose(double[] x1, double[] x2, double[] mass) {
+    translate(x1, mass);
+    translate(x2, mass);
+    rotate(x1, x2, mass);
+    return rmsd(x1, x2, mass);
   }
 }
