@@ -50,15 +50,14 @@ import org.junit.Test;
 
 public class SuperposeCrystalsTest extends AlgorithmsTest {
 
-  private final double tolerance = 0.001;
+  private final double TOLERANCE = 0.001;
 
-  // TODO: add more tests with more parameters
   /** Tests the SuperposeCrystals script with default settings. */
   @Test
   public void testBaseSingleSuperposeCrystals() {
 
     // Set-up the input arguments for the SuperposeCrystals script.
-    String[] args = {"src/main/java/ffx/algorithms/structures/C23.arc"};
+    String[] args = {"-l", "0", "src/main/java/ffx/algorithms/structures/C23.arc"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -69,15 +68,16 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     // Only off-diagonal values.
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
-    assertEquals(0.113573, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.082798, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.216710, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
-  /** Tests the SuperposeCrystals script with crystal size of one. */
+  /** Tests the SuperposeCrystals script with RMSD size of one. */
   @Test
-  public void testBaseSingleCrystalSuperposeCrystals() {
+  public void testBaseSingleAUSuperposeCrystals() {
 
     // Set-up the input arguments for the SuperposeCrystals script.
-    String[] args = {"--na","1","src/main/java/ffx/algorithms/structures/C23.arc"};
+    String[] args = {"--na","1","-l", "0", "src/main/java/ffx/algorithms/structures/C23.arc"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -88,7 +88,8 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     // Only off-diagonal values.
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
-    assertEquals(0.088323, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.055486, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.161867, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script with default settings and average linkage. */
@@ -107,15 +108,16 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     // Only off-diagonal values.
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
-    assertEquals(0.11101375, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.080817, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.213987, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
-  /** Tests the SuperposeCrystals script without hydrogens. */
+  /** Tests the SuperposeCrystals script with hydrogens. */
   @Test
-  public void testBaseAverageSuperposeCrystalsNoHydrogen() {
+  public void testBaseAverageSuperposeCrystalsHydrogen() {
 
     // Set-up the input arguments for the SuperposeCrystals script.
-    String[] args = {"--nh", "-l", "1", "src/main/java/ffx/algorithms/structures/C23.arc"};
+    String[] args = {"--ih", "-l", "1", "src/main/java/ffx/algorithms/structures/C23.arc"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -126,15 +128,16 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     // Only off-diagonal values.
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
-    assertEquals(0.0825498666, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.111014, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.297522, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
-  /** Tests the SuperposeCrystals script without hydrogens. */
+  /** Tests the SuperposeCrystals script with hydrogens. */
   @Test
-  public void testBaseSingleSuperposeCrystalsNoHydrogen() {
+  public void testBaseSingleSuperposeCrystalsHydrogen() {
 
     // Set-up the input arguments for the SuperposeCrystals script.
-    String[] args = {"--nh", "src/main/java/ffx/algorithms/structures/C23.arc"};
+    String[] args = {"--ih","-l", "0", "src/main/java/ffx/algorithms/structures/C23.arc"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -145,7 +148,8 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     // Only off-diagonal values.
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
-    assertEquals(0.088094, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.111039, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.300095, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script in Sohncke group. */
@@ -153,7 +157,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   public void testBaseAverageSuperposeCrystalsSohnckeGroup() {
 
     // Set-up the input arguments for the SuperposeCrystals script.
-    String[] args = {"--nh", "-l", "1", "src/main/java/ffx/algorithms/structures/dap.xyz",
+    String[] args = {"-l", "1", "src/main/java/ffx/algorithms/structures/dap.xyz",
             "src/main/java/ffx/algorithms/structures/dap.xyz_close"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
@@ -162,7 +166,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
     algorithmsScript = superposeCrystals;
 
-    assertEquals(0.066569, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.066569, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script in Sohncke group. */
@@ -170,7 +174,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   public void testBaseSingleSuperposeCrystalsSohnckeGroup() {
 
     // Set-up the input arguments for the SuperposeCrystals script.
-    String[] args = {"--nh", "src/main/java/ffx/algorithms/structures/dap.xyz",
+    String[] args = {"-l","0", "src/main/java/ffx/algorithms/structures/dap.xyz",
         "src/main/java/ffx/algorithms/structures/dap.xyz_close"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
@@ -179,7 +183,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
     algorithmsScript = superposeCrystals;
 
-    assertEquals(0.073036, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.073036, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script on tricky handedness case. */
@@ -187,7 +191,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   public void testBaseAverageSuperposeCrystalsHandedness() {
 
     // Set-up the input arguments for the SuperposeCrystals script.
-    String[] args = {"--nh", "-l", "1", "src/main/java/ffx/algorithms/structures/dap2.xyz",
+    String[] args = {"-l", "1", "src/main/java/ffx/algorithms/structures/dap2.xyz",
             "src/main/java/ffx/algorithms/structures/dap2.xyz_2"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
@@ -196,7 +200,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
     algorithmsScript = superposeCrystals;
 
-    assertEquals(0.1149806, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.112274, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script on tricky handedness case. */
@@ -204,7 +208,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   public void testBaseSingleSuperposeCrystalsHandedness() {
 
     // Set-up the input arguments for the SuperposeCrystals script.
-    String[] args = {"--nh", "src/main/java/ffx/algorithms/structures/dap2.xyz",
+    String[] args = {"-l","0","src/main/java/ffx/algorithms/structures/dap2.xyz",
         "src/main/java/ffx/algorithms/structures/dap2.xyz_2"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
@@ -213,7 +217,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
     algorithmsScript = superposeCrystals;
 
-    assertEquals(0.099021, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.098483, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script on asymmetric unit greater than one. */
@@ -221,7 +225,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   public void testBaseAverageSuperposeCrystalsZPrime2() {
 
     // Set-up the input arguments for the SuperposeCrystals script.
-    String[] args = {"--nh", "-l", "1", "src/main/java/ffx/algorithms/structures/XAFPAY02.arc"};
+    String[] args = {"-l", "1", "src/main/java/ffx/algorithms/structures/XAFPAY02.arc"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -232,7 +236,8 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
 
-    assertEquals(0.15314780346762857, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.151675, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.375328, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script on asymmetric unit greater than one. */
@@ -240,7 +245,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   public void testBaseSingleSuperposeCrystalsZPrime2() {
 
     // Set-up the input arguments for the SuperposeCrystals script.
-    String[] args = {"--nh", "src/main/java/ffx/algorithms/structures/XAFPAY02.arc"};
+    String[] args = {"-l","0", "src/main/java/ffx/algorithms/structures/XAFPAY02.arc"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -251,7 +256,8 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
 
-    assertEquals(0.143013, superposeCrystals.runningStatistics.getMean(), tolerance);
+    assertEquals(0.145739, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.362522, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script on protein crystal. */
@@ -259,7 +265,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   public void testBaseSingleSuperposeCrystalsSmallProtein() {
 
     // Set-up the input arguments for the SuperposeCrystals script.
-    String[] args = {"--nh", "src/main/java/ffx/algorithms/structures/2olx.arc"};
+    String[] args = {"-l","0", "src/main/java/ffx/algorithms/structures/2olx.arc"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -270,8 +276,8 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
 
-    assertEquals(0.476837, superposeCrystals.runningStatistics.getMean(), tolerance);
-    assertEquals(1.379653, superposeCrystals.runningStatistics.getMax(), tolerance);
+    assertEquals(0.478175, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(1.383652, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   @Test

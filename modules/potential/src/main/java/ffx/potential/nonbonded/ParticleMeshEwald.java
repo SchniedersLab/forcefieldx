@@ -2618,7 +2618,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         List<MultipoleType> multipoleTypes = forceField.getMultipoleTypes(
             "" + atom.getAtomType().getKey());
-        if (multipoleTypes != null || !multipoleTypes.isEmpty()) {
+        if (multipoleTypes != null && !multipoleTypes.isEmpty()) {
           sb.append("\n Similar Multipole types:");
           for (MultipoleType multipoleType : multipoleTypes) {
             sb.append(format("\n %s", multipoleType));

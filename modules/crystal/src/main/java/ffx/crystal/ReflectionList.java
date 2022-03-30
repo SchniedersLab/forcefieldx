@@ -316,9 +316,9 @@ public class ReflectionList {
 
     for (int i = 0; i < nsym; i++) {
       if (transpose) {
-        crystal.applyTransSymRot(hkl, mate, spaceGroup.symOps.get(i));
+        Crystal.applyTransSymRot(hkl, mate, spaceGroup.symOps.get(i));
       } else {
-        crystal.applySymRot(hkl, mate, spaceGroup.symOps.get(i));
+        Crystal.applySymRot(hkl, mate, spaceGroup.symOps.get(i));
       }
 
       LaueSystem laueSystem = spaceGroup.laueSystem;
@@ -359,7 +359,7 @@ public class ReflectionList {
     int nsym = spaceGroup.symOps.size();
     for (int i = 1; i < nsym; i++) {
       HKL mate = new HKL();
-      crystal.applySymRot(hkl, mate, spaceGroup.symOps.get(i));
+      Crystal.applySymRot(hkl, mate, spaceGroup.symOps.get(i));
       double shift = Crystal.sym_phase_shift(hkl, spaceGroup.symOps.get(i));
 
       if (mate.equals(hkl)) {

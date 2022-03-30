@@ -40,6 +40,7 @@ package ffx.crystal;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.DoubleMath.sub;
+import static ffx.numerics.math.MatrixMath.mat3Inverse;
 import static ffx.numerics.math.MatrixMath.mat3Mat3;
 import static ffx.numerics.math.MatrixMath.mat3SymVec6;
 import static ffx.numerics.math.MatrixMath.transpose3;
@@ -70,7 +71,6 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.LUDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.util.FastMath;
 
 /**
  * The Crystal class encapsulates the lattice parameters and space group that describe the geometry
@@ -190,6 +190,23 @@ public class Crystal {
    * @param alpha The alpha angle.
    * @param beta The beta angle.
    * @param gamma The gamma angle.
+   * @param sgNumber The space group number.
+   */
+  public Crystal(double a, double b, double c, double alpha, double beta, double gamma,
+      int sgNumber) {
+    this(a, b, c, alpha, beta, gamma, SpaceGroupDefinitions.spaceGroupFactory(sgNumber).pdbName);
+  }
+
+  /**
+   * The Crystal class encapsulates the lattice parameters and space group. Methods are available to
+   * apply the minimum image convention and to apply space group operators.
+   *
+   * @param a The a-axis length.
+   * @param b The b-axis length.
+   * @param c The c-axis length.
+   * @param alpha The alpha angle.
+   * @param beta The beta angle.
+   * @param gamma The gamma angle.
    * @param sg The space group symbol.
    */
   public Crystal(double a, double b, double c, double alpha, double beta, double gamma, String sg) {
@@ -205,19 +222,22 @@ public class Crystal {
     aperiodic = false;
     if (!tempLS.validParameters(a, b, c, alpha, beta, gamma)) {
       // Invalid parameters... Start error/warning log and try to fix.
-      StringBuilder sb = new StringBuilder(
-          " The proposed lattice parameters for " + tempSG.pdbName
-              + " do not satisfy the " + tempLS +
-              " lattice system restrictions and were ignored.\n");
+      StringBuilder sb = new StringBuilder(format(
+          " The %s lattice parameters do not satisfy the %s lattice system restrictions.\n",
+          tempSG.pdbName, tempLS));
       sb.append(format("  A-axis:                              %18.15e\n", a));
       sb.append(format("  B-axis:                              %18.15e\n", b));
       sb.append(format("  C-axis:                              %18.15e\n", c));
       sb.append(format("  Alpha:                               %18.15e\n", alpha));
       sb.append(format("  Beta:                                %18.15e\n", beta));
       sb.append(format("  Gamma:                               %18.15e\n", gamma));
-      if(tempLS == LatticeSystem.HEXAGONAL_LATTICE || tempLS == LatticeSystem.RHOMBOHEDRAL_LATTICE) {
+      logger.info(sb.toString());
+      sb = new StringBuilder();
+      if (tempLS == LatticeSystem.HEXAGONAL_LATTICE
+          || tempLS == LatticeSystem.RHOMBOHEDRAL_LATTICE) {
         // Try to convert between hexagonal and rhombohedral lattices to fix crystal.
-        Crystal convertedCrystal = SpaceGroupConversions.hrConversion(a, b, c, alpha, beta, gamma, tempSG);
+        Crystal convertedCrystal = SpaceGroupConversions.hrConversion(a, b, c, alpha, beta, gamma,
+            tempSG);
         this.a = convertedCrystal.a;
         this.b = convertedCrystal.b;
         this.c = convertedCrystal.c;
@@ -228,13 +248,11 @@ public class Crystal {
         crystalSystem = spaceGroup.crystalSystem;
         latticeSystem = spaceGroup.latticeSystem;
         sb.append(" Converted ").append(tempSG.pdbName).append(" to ").append(spaceGroup.pdbName);
-        if (!latticeSystem.validParameters(this.a, this.b, this.c, this.alpha, this.beta, this.gamma)) {
-          // Converted space group is still invalid... Print error message.
-          sb.append(" The proposed lattice parameters for ")
-                  .append(spaceGroup.pdbName)
-                  .append(" do not satisfy the ")
-                  .append(latticeSystem)
-                  .append(" lattice system restrictions and were ignored.\n");
+        if (!latticeSystem.validParameters(this.a, this.b, this.c, this.alpha, this.beta,
+            this.gamma)) {
+          sb.append(format(
+              " The %s lattice parameters do not satisfy the %s lattice system restrictions.\n",
+              spaceGroup.pdbName, latticeSystem));
           sb.append(format("  A-axis:                              %18.15e\n", this.a));
           sb.append(format("  B-axis:                              %18.15e\n", this.b));
           sb.append(format("  C-axis:                              %18.15e\n", this.c));
@@ -242,11 +260,11 @@ public class Crystal {
           sb.append(format("  Beta:                                %18.15e\n", this.beta));
           sb.append(format("  Gamma:                               %18.15e\n", this.gamma));
           logger.severe(sb.toString());
-        }else{
-          // Successfully converted space group between hexagonal and rhombohedral. Inform user.
-          logger.warning(sb.toString());
+        } else {
+          // Successfully converted space group between hexagonal and rhombohedral.
+          logger.info(sb.toString());
         }
-      }else{
+      } else {
         // Invalid lattice parameters. Update Crystal as much as possible, then print error message.
         this.a = a;
         this.b = b;
@@ -259,7 +277,7 @@ public class Crystal {
         latticeSystem = spaceGroup.latticeSystem;
         logger.severe(sb.toString());
       }
-    }else{
+    } else {
       // Valid parameters, update crystal and continue.
       this.a = a;
       this.b = b;
@@ -543,7 +561,7 @@ public class Crystal {
    * @param mateZ Output cartesian z-coordinates.
    * @param symOp The cartesian symmetry operator.
    */
-  public void applyCartSymOp(
+  public static void applyCartSymOp(
       int n,
       double[] x,
       double[] y,
@@ -601,16 +619,24 @@ public class Crystal {
    * @param mate Symmetry mate  cartesian coordinates.
    * @param symOp The cartesian symmetry operator.
    */
-  public void applyCartesianSymOp(double[] xyz, double[] mate, SymOp symOp) {
+  public static void applyCartesianSymOp(double[] xyz, double[] mate, SymOp symOp) {
     double[][] rot = symOp.rot;
     double[] trans = symOp.tr;
-    double xc = xyz[0];
-    double yc = xyz[1];
-    double zc = xyz[2];
-    // Apply Symmetry Operator.
-    mate[0] = rot[0][0] * xc + rot[0][1] * yc + rot[0][2] * zc + trans[0];
-    mate[1] = rot[1][0] * xc + rot[1][1] * yc + rot[1][2] * zc + trans[1];
-    mate[2] = rot[2][0] * xc + rot[2][1] * yc + rot[2][2] * zc + trans[2];
+
+    assert (xyz.length % 3 == 0);
+    assert (xyz.length == mate.length);
+
+    int len = xyz.length / 3;
+    for (int i = 0; i < len; i++) {
+      int index = i * 3;
+      double xc = xyz[index + XX];
+      double yc = xyz[index + YY];
+      double zc = xyz[index + ZZ];
+      // Apply Symmetry Operator.
+      mate[index + XX] = rot[0][0] * xc + rot[0][1] * yc + rot[0][2] * zc + trans[0];
+      mate[index + YY] = rot[1][0] * xc + rot[1][1] * yc + rot[1][2] * zc + trans[1];
+      mate[index + ZZ] = rot[2][0] * xc + rot[2][1] * yc + rot[2][2] * zc + trans[2];
+    }
   }
 
   /**
@@ -620,7 +646,7 @@ public class Crystal {
    * @param mate Symmetry mate fractional coordinates.
    * @param symOp The fractional symmetry operator.
    */
-  public void applyFracSymOp(double[] xyz, double[] mate, SymOp symOp) {
+  public static void applyFracSymOp(double[] xyz, double[] mate, SymOp symOp) {
     double[][] rot = symOp.rot;
     double[] trans = symOp.tr;
     double xf = xyz[0];
@@ -717,7 +743,8 @@ public class Crystal {
    * @param ny number of unit cell translations
    * @param nz number of unit cell translations
    */
-  public void applySymOp(int h, int k, int l, int[] mate, SymOp symOp, int nx, int ny, int nz) {
+  public static void applySymOp(int h, int k, int l, int[] mate, SymOp symOp, int nx, int ny,
+      int nz) {
     double[][] rot = symOp.rot;
     double[] trans = symOp.tr;
     // Apply Symmetry Operator.
@@ -740,23 +767,44 @@ public class Crystal {
    * @param symOp The fractional symmetry operator.
    */
   public void applySymOp(double[] xyz, double[] mate, SymOp symOp) {
-    double[][] rot = symOp.rot;
-    double[] trans = symOp.tr;
-    double xc = xyz[0];
-    double yc = xyz[1];
-    double zc = xyz[2];
-    // Convert to fractional coordinates.
-    double xi = xc * A00 + yc * A10 + zc * A20;
-    double yi = xc * A01 + yc * A11 + zc * A21;
-    double zi = xc * A02 + yc * A12 + zc * A22;
-    // Apply Symmetry Operator.
-    double fx = rot[0][0] * xi + rot[0][1] * yi + rot[0][2] * zi + trans[0];
-    double fy = rot[1][0] * xi + rot[1][1] * yi + rot[1][2] * zi + trans[1];
-    double fz = rot[2][0] * xi + rot[2][1] * yi + rot[2][2] * zi + trans[2];
-    // Convert back to Cartesian coordinates.
-    mate[0] = fx * Ai00 + fy * Ai10 + fz * Ai20;
-    mate[1] = fx * Ai01 + fy * Ai11 + fz * Ai21;
-    mate[2] = fx * Ai02 + fy * Ai12 + fz * Ai22;
+    assert (xyz.length % 3 == 0);
+    assert (xyz.length == mate.length);
+
+    var rot = symOp.rot;
+    var r00 = rot[0][0];
+    var r01 = rot[0][1];
+    var r02 = rot[0][2];
+    var r10 = rot[1][0];
+    var r11 = rot[1][1];
+    var r12 = rot[1][2];
+    var r20 = rot[2][0];
+    var r21 = rot[2][1];
+    var r22 = rot[2][2];
+
+    var trans = symOp.tr;
+    var t0 = trans[0];
+    var t1 = trans[1];
+    var t2 = trans[2];
+
+    int len = xyz.length / 3;
+    for (int i = 0; i < len; i++) {
+      int index = i * 3;
+      var xc = xyz[index + XX];
+      var yc = xyz[index + YY];
+      var zc = xyz[index + ZZ];
+      // Convert to fractional coordinates.
+      var xi = xc * A00 + yc * A10 + zc * A20;
+      var yi = xc * A01 + yc * A11 + zc * A21;
+      var zi = xc * A02 + yc * A12 + zc * A22;
+      // Apply Symmetry Operator.
+      var fx = r00 * xi + r01 * yi + r02 * zi + t0;
+      var fy = r10 * xi + r11 * yi + r12 * zi + t1;
+      var fz = r20 * xi + r21 * yi + r22 * zi + t2;
+      // Convert back to Cartesian coordinates.
+      mate[index + XX] = fx * Ai00 + fy * Ai10 + fz * Ai20;
+      mate[index + YY] = fx * Ai01 + fy * Ai11 + fz * Ai21;
+      mate[index + ZZ] = fx * Ai02 + fy * Ai12 + fz * Ai22;
+    }
   }
 
   /**
@@ -795,7 +843,7 @@ public class Crystal {
    * @param mate Symmetry mate HKL.
    * @param symOp The symmetry operator.
    */
-  public void applySymRot(HKL hkl, HKL mate, SymOp symOp) {
+  public static void applySymRot(HKL hkl, HKL mate, SymOp symOp) {
     double[][] rot = symOp.rot;
     double h = hkl.h();
     double k = hkl.k();
@@ -810,9 +858,9 @@ public class Crystal {
   }
 
   /**
-   * Apply a fractional symmetry rotation to an array of Cartesian coordinates. If the arrays x, y or z are null
-   * or not of length n, the method returns immediately. If mateX, mateY or mateZ are null or not of
-   * length n, new arrays are allocated.
+   * Apply a fractional symmetry rotation to an array of Cartesian coordinates. If the arrays x, y or
+   * z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are null
+   * or not of length n, new arrays are allocated.
    *
    * @param n Number of atoms.
    * @param x Input cartesian x-coordinates.
@@ -841,7 +889,6 @@ public class Crystal {
       double xc = x[i];
       double yc = y[i];
       double zc = z[i];
-      // Convert to fractional coordinates.
       double xi = xc * A00 + yc * A10 + zc * A20;
       double yi = xc * A01 + yc * A11 + zc * A21;
       double zi = xc * A02 + yc * A12 + zc * A22;
@@ -853,6 +900,41 @@ public class Crystal {
       mateX[i] = fx * Ai00 + fy * Ai10 + fz * Ai20;
       mateY[i] = fx * Ai01 + fy * Ai11 + fz * Ai21;
       mateZ[i] = fx * Ai02 + fy * Ai12 + fz * Ai22;
+    }
+  }
+
+  /**
+   * Apply a Cartesian symmetry rotation to an array of Cartesian coordinates. The length of xyz must
+   * be divisible by 3 and mate must have the same length.
+   *
+   * @param xyz Input cartesian x, y, z-coordinates.
+   * @param mate Output cartesian x, y, z-coordinates.
+   * @param symOp The fractional symmetry operator.
+   */
+  public static void applyCartesianSymRot(double[] xyz, double[] mate, SymOp symOp) {
+    int l = xyz.length;
+    assert (l % 3 == 0);
+    assert (mate.length == l);
+    double[][] rot = symOp.rot;
+    final double rot00 = rot[0][0];
+    final double rot10 = rot[1][0];
+    final double rot20 = rot[2][0];
+    final double rot01 = rot[0][1];
+    final double rot11 = rot[1][1];
+    final double rot21 = rot[2][1];
+    final double rot02 = rot[0][2];
+    final double rot12 = rot[1][2];
+    final double rot22 = rot[2][2];
+    int n = l / 3;
+    for (int i = 0; i < n; i++) {
+      int j = i * 3;
+      double xi = xyz[j];
+      double yi = xyz[j + 1];
+      double zi = xyz[j + 2];
+      // Apply Symmetry Operator.
+      mate[j] = rot00 * xi + rot01 * yi + rot02 * zi;
+      mate[j + 1] = rot10 * xi + rot11 * yi + rot12 * zi;
+      mate[j + 2] = rot20 * xi + rot21 * yi + rot22 * zi;
     }
   }
 
@@ -880,7 +962,7 @@ public class Crystal {
    * @param mate Symmetry mate HKL.
    * @param symOp The symmetry operator.
    */
-  public void applyTransSymRot(HKL hkl, HKL mate, SymOp symOp) {
+  public static void applyTransSymRot(HKL hkl, HKL mate, SymOp symOp) {
     double[][] rot = symOp.rot;
     double h = hkl.h();
     double k = hkl.k();
@@ -1199,7 +1281,7 @@ public class Crystal {
    * @return Unit cell parameters.
    */
   public double[] getUnitCellParams() {
-    return new double[]{a, b, c, alpha, beta, gamma};
+    return new double[] {a, b, c, alpha, beta, gamma};
   }
 
   /** {@inheritDoc} */
@@ -1278,6 +1360,17 @@ public class Crystal {
   }
 
   /**
+   * Invert a symmetry operator.
+   *
+   * @param symOp Original symmetry operator of which the inverse is desired.
+   * @return SymOp The inverse symmetry operator of the one supplied.
+   */
+  public static SymOp invertSymOp(SymOp symOp) {
+    var tr = symOp.tr;
+    return new SymOp(mat3Inverse(symOp.rot), new double[] {-tr[0], -tr[1], -tr[2]});
+  }
+
+  /**
    * Two crystals are equal if all unit cell parameters are within 0.01.
    *
    * <p>{@inheritDoc}
@@ -1315,7 +1408,7 @@ public class Crystal {
       double dx = xyzA[i] - xyzB[i];
       dist += (dx * dx);
     }
-    double[] symB = new double[3];
+    var symB = new double[3];
     for (SymOp symOp : spaceGroup.symOps) {
       applySymOp(xyzB, symB, symOp);
       for (int i = 0; i < 3; i++) {
@@ -1324,7 +1417,7 @@ public class Crystal {
       double d = image(symB);
       dist = d < dist ? d : dist;
     }
-    return FastMath.sqrt(dist);
+    return sqrt(dist);
   }
 
   /**
