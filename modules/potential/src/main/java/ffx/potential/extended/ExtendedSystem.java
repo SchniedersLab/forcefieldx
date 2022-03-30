@@ -235,6 +235,14 @@ public class ExtendedSystem {
     final private double ASHlambdaIntercept;
     final private double GLHrefEnergy;
     final private double GLHlambdaIntercept;
+    final private double LYSrefEnergy;
+    final private double LYSlambdaIntercept;
+    final private double HIDrefEnergy;
+    final private double HIDlambdaIntercept;
+    final private double HIErefEnergy;
+    final private double HIElambdaIntercept;
+    final private double HIDtoHIErefEnergy;
+    final private double HIDtoHIElambdaIntercept;
     /**
      * Dynamics restart file.
      */
@@ -293,6 +301,14 @@ public class ExtendedSystem {
         ASHlambdaIntercept = properties.getDouble("ASH.lambda.intercept", TitrationUtils.Titration.ASHtoASP.lambdaIntercept);
         GLHrefEnergy = properties.getDouble("GLH.ref.energy", TitrationUtils.Titration.GLHtoGLU.refEnergy);
         GLHlambdaIntercept = properties.getDouble("GLH.lambda.intercept", TitrationUtils.Titration.GLHtoGLU.lambdaIntercept);
+        LYSrefEnergy = properties.getDouble("LYS.ref.energy", TitrationUtils.Titration.LYStoLYD.refEnergy);
+        LYSlambdaIntercept = properties.getDouble("LYS.lambda.intercept", TitrationUtils.Titration.LYStoLYD.lambdaIntercept);
+        HIDrefEnergy = properties.getDouble("HID.ref.energy", TitrationUtils.Titration.HIStoHID.refEnergy);
+        HIDlambdaIntercept = properties.getDouble("HID.lambda.intercept", TitrationUtils.Titration.HIStoHID.lambdaIntercept);
+        HIErefEnergy = properties.getDouble("HIE.ref.energy", TitrationUtils.Titration.HIStoHIE.refEnergy);
+        HIElambdaIntercept = properties.getDouble("HIE.lambda.intercept", TitrationUtils.Titration.HIStoHIE.lambdaIntercept);
+        HIDtoHIErefEnergy = properties.getDouble("HIDtoHIE.ref.energy", TitrationUtils.Titration.HIDtoHIE.refEnergy);
+        HIDtoHIElambdaIntercept = properties.getDouble("HIDtoHIE.lambda.intercept", TitrationUtils.Titration.HIDtoHIE.lambdaIntercept);
 
         titratingResidueList = new ArrayList<>();
         tautomerizingResidueList = new ArrayList<>();
@@ -578,18 +594,12 @@ public class ExtendedSystem {
                         * ((pKa1 - constantSystemPh) - (pKa2 - constantSystemPh));
 
                 // Model Bias & Derivs
-                double refEnergyHID = TitrationUtils.Titration.HIStoHID.refEnergy;
-                double lambdaInterceptHID = TitrationUtils.Titration.HIStoHID.lambdaIntercept;
-                double refEnergyHIE = TitrationUtils.Titration.HIStoHIE.refEnergy;
-                double lambdaInterceptHIE = TitrationUtils.Titration.HIStoHIE.lambdaIntercept;
-                double refEnergyHIDtoHIE = TitrationUtils.Titration.HIDtoHIE.refEnergy;
-                double lambdaInterceptHIDtoHIE = TitrationUtils.Titration.HIDtoHIE.lambdaIntercept;
-
-                double coeff4 = -2.0 * refEnergyHID * lambdaInterceptHID;
-                double coeff3 = -2.0 * refEnergyHIE * lambdaInterceptHIE - coeff4;
-                double coeff2 = refEnergyHID;
-                double coeff1 = -2.0 * refEnergyHIDtoHIE * lambdaInterceptHIDtoHIE - coeff3;
-                double coeff0 = refEnergyHIDtoHIE;
+                
+                double coeff4 = -2.0 * HIDrefEnergy * HIDlambdaIntercept;
+                double coeff3 = -2.0 * HIErefEnergy * HIElambdaIntercept - coeff4;
+                double coeff2 = HIDrefEnergy;
+                double coeff1 = -2.0 * HIDtoHIErefEnergy * HIDtoHIElambdaIntercept - coeff3;
+                double coeff0 = HIDtoHIErefEnergy;
                 double oneMinusTitrationLambda = (1.0 - titrationLambda);
                 double oneMinusTitrationLambdaSquared = oneMinusTitrationLambda * oneMinusTitrationLambda;
                 modelBias = oneMinusTitrationLambdaSquared * (coeff0 * tautomerLambdaSquared + coeff1 * tautomerLambda + coeff2)
@@ -612,8 +622,8 @@ public class ExtendedSystem {
                 dPh_dTaut = 0.0;
 
                 // Model Bias & Derivs
-                refEnergy = TitrationUtils.Titration.LYStoLYD.refEnergy;
-                lambdaIntercept = TitrationUtils.Titration.LYStoLYD.lambdaIntercept;
+                refEnergy = LYSrefEnergy;
+                lambdaIntercept = LYSlambdaIntercept;
                 modelBias = refEnergy * ((1.0 - titrationLambda) - lambdaIntercept) * ((1.0 - titrationLambda) - lambdaIntercept);
                 dMod_dTitr = -2.0 * refEnergy * ((1.0 - titrationLambda) - lambdaIntercept);
                 dMod_dTaut = 0.0;
