@@ -182,9 +182,9 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * --ps or --printSymOp Print optimal SymOp to align crystal 2 to crystal 1.
    */
-  @Option(names = ['--ps', '--printSymOp'], paramLabel = "false", defaultValue = "false",
-          description = 'Print optimal SymOp to align crystal 2 to crystal 1.')
-  private static boolean printSym
+  @Option(names = ['--ps', '--printSymOp'], paramLabel = "-1.0", defaultValue = "-1.0",
+          description = 'Print optimal SymOp to align input crystals (print out atom deviations above value).')
+  private static double printSym
 
   /**
    * -l or --linkage Single (0), Average (1), or Complete (2) coordinate linkage for molecule prioritization.

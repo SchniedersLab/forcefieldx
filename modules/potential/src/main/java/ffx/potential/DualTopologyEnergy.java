@@ -37,11 +37,11 @@
 // ******************************************************************************
 package ffx.potential;
 
-import static ffx.crystal.Crystal.applyCartesianSymOp;
-import static ffx.crystal.Crystal.applyCartesianSymRot;
-import static ffx.crystal.Crystal.invertSymOp;
+import static ffx.crystal.SymOp.invertSymOp;
 import static ffx.crystal.SymOp.Tr_0_0_0;
 import static ffx.crystal.SymOp.ZERO_ROTATION;
+import static ffx.crystal.SymOp.applyCartesianSymOp;
+import static ffx.crystal.SymOp.applyCartesianSymRot;
 import static ffx.potential.utils.Superpose.applyRotation;
 import static ffx.potential.utils.Superpose.applyTranslation;
 import static ffx.potential.utils.Superpose.calculateRotation;
@@ -382,6 +382,10 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     logger.info(format("\n Dual topology using switching function:\n  %s", switchFunction));
   }
 
+  /**
+   * Temporary method to be used as a benchmark. Move to SymOp?
+   * @param symOpString String containing sym op.
+   */
   private void readSymOp(String symOpString) {
     try {
       String[] tokens = symOpString.split(" +");
@@ -643,12 +647,12 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
   /** {@inheritDoc} */
   @Override
   public void setCrystal(Crystal crystal) {
-    potential1.setCrystal(crystal);
-    potential2.setCrystal(crystal);
     // TODO: Handle the case where each system has a unique crystal instance (e.g., different space groups).
     if (useSymOp) {
       logger.warning(" Both systems set to the same crystal.");
     }
+    potential1.setCrystal(crystal);
+    potential2.setCrystal(crystal);
   }
 
   /** {@inheritDoc} */
