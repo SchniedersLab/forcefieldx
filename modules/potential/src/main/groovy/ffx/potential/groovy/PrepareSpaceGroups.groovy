@@ -53,6 +53,7 @@ import static ffx.crystal.ReplicatesCrystal.replicatesCrystalFactory
 import static ffx.crystal.SpaceGroupDefinitions.spaceGroupFactory
 import static ffx.crystal.SpaceGroupInfo.getCCDCPercent
 import static ffx.crystal.SpaceGroupInfo.getPDBRank
+import static ffx.crystal.SymOp.applyCartesianSymOp
 import static ffx.crystal.SymOp.randomSymOpFactory
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.getName
@@ -250,7 +251,7 @@ class PrepareSpaceGroups extends PotentialScript {
         double[] xyz = new double[3]
         for (int i = 0; i < atoms.length; i++) {
           atoms[i].getXYZ(xyz)
-          Crystal.applyCartesianSymOp(xyz, xyz, symOp)
+          applyCartesianSymOp(xyz, xyz, symOp)
           atoms[i].setXYZ(xyz)
         }
       }

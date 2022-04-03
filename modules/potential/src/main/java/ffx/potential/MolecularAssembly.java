@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.potential;
 
+import static ffx.crystal.SymOp.applyCartesianSymOp;
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.DoubleMath.sub;
 import static java.lang.String.format;
@@ -320,7 +321,7 @@ public class MolecularAssembly extends MSGroup {
               moleculeNum, symOp));
       for (Atom atom : atoms) {
         atom.getXYZ(xyz);
-        Crystal.applyCartesianSymOp(xyz, xyz, symOp);
+        applyCartesianSymOp(xyz, xyz, symOp);
         atom.setXYZ(xyz);
       }
       moleculeNum++;
