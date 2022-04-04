@@ -57,6 +57,7 @@ import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
+import ffx.algorithms.TitrationManyBody
 
 import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer
@@ -85,6 +86,7 @@ class ManyBody extends AlgorithmsScript {
   ForceFieldEnergy potentialEnergy
   boolean testing = false
   boolean monteCarloTesting = false
+  TitrationManyBody titrationManyBody
 
   /**
    * ManyBody Constructor.
@@ -159,38 +161,14 @@ class ManyBody extends AlgorithmsScript {
       resNumberList.add(residue.getResidueNumber())
     }
 
+    MolecularAssembly newActiveAssembly;
     // If rotamer optimization with titration, create new molecular assembly with additional protons
     if (manyBody.group.titrationPH != 0) {
       logger.info("\n Adding titration hydrogen to : " + filename + "\n")
-
-      activeAssembly = new MolecularAssembly(filename)
-      activeAssembly.setForceField(forceField)
-      File structureFile = new File(filename)
-      PDBFilter protFilter = new PDBFilter(structureFile, activeAssembly, forceField, forceField.getProperties(), resNumberList)
-      protFilter.setRotamerTitration(true)
-      protFilter.readFile()
-      protFilter.applyAtomProperties()
-      activeAssembly.finalize(true, forceField)
-      potentialEnergy = ForceFieldEnergy.energyFactory(activeAssembly)
-      activeAssembly.setFile(structureFile)
-
-      TitrationUtils titrationUtils
-      titrationUtils = new TitrationUtils(activeAssembly.getForceField())
-      titrationUtils.setRotamerPhBias(298.15, manyBody.group.titrationPH)
-      for (Residue residue : activeAssembly.getResidueList()) {
-        String resName = residue.getName()
-        if (resNumberList.contains(residue.getResidueNumber())) {
-          if (resName == "ASH" || resName == "GLH" || resName == "LYS" || resName == "HIS") {
-            residue.setTitrationUtils(titrationUtils)
-          }
-        }
-      }
-
-      if (potentialEnergy instanceof ForceFieldEnergyOpenMM) {
-        boolean updateBondedTerms = forceField.getBoolean("TITRATION_UPDATE_BONDED_TERMS", true)
-        ForceFieldEnergyOpenMM forceFieldEnergyOpenMM = (ForceFieldEnergyOpenMM) potentialEnergy
-        forceFieldEnergyOpenMM.getSystem().setUpdateBondedTerms(updateBondedTerms)
-      }
+      titrationManyBody = new TitrationManyBody(filename,forceField,resNumberList, manyBody.group.titrationPH)
+      MolecularAssembly prot = titrationManyBody.getProtonatedAssembly()
+      setActiveAssembly(prot)
+      potentialEnergy = prot.getPotentialEnergy()
     }
 
     RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly, potentialEnergy, algorithmListener)
@@ -249,8 +227,8 @@ class ManyBody extends AlgorithmsScript {
     boolean isTitrating = false
     Set<Atom> excludeAtoms = new HashSet<>()
     int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
-
-    int i = 0
+    excludeAtoms = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
+    /*int i = 0
     for (Residue residue : residueList) {
       Rotamer rotamer = residue.getRotamers()[optimalRotamers[i++]]
       applyRotamer(residue, rotamer)
@@ -289,7 +267,7 @@ class ManyBody extends AlgorithmsScript {
             break
         }
       }
-    }
+    }*/
 
     if (master) {
       logger.info(" Final Minimum Energy")

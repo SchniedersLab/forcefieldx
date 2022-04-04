@@ -38,13 +38,18 @@
 package ffx.realspace.groovy
 
 import edu.rit.pj.Comm
+import ffx.algorithms.TitrationManyBody
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization
 import ffx.numerics.Potential
+import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary
+import ffx.potential.parameters.ForceField
+import ffx.potential.parsers.PDBFilter
 import ffx.realspace.cli.RealSpaceOptions
 import ffx.xray.RefinementEnergy
 import org.apache.commons.configuration2.CompositeConfiguration
@@ -52,6 +57,9 @@ import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
+
+import static java.lang.String.format
+import static java.lang.String.format
 
 /**
  * The ManyBody script performs a discrete optimization using a many-body expansion and elimination expressions.
@@ -76,6 +84,9 @@ class ManyBody extends AlgorithmsScript {
   private List<String> filenames
   private RefinementEnergy refinementEnergy
 
+  ForceFieldEnergy potentialEnergy
+  TitrationManyBody titrationManyBody
+
   /**
    * ManyBody constructor.
    */
@@ -98,6 +109,10 @@ class ManyBody extends AlgorithmsScript {
       return this
     }
 
+    if (manyBody.group.titrationPH != 0) {
+      System.setProperty("manybody-titration", "true")
+    }
+
     String modelFilename
     if (filenames != null && filenames.size() > 0) {
       activeAssembly = algorithmFunctions.open(filenames.get(0))
@@ -115,6 +130,36 @@ class ManyBody extends AlgorithmsScript {
       properties.setProperty("gk-suppressWarnings", "true")
     }
     activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
+    ForceField forceField = activeAssembly.getForceField()
+    potentialEnergy = activeAssembly.getPotentialEnergy()
+
+    // Collect residues to optimize.
+    List<Integer> resNumberList = new ArrayList<>()
+    List<Residue> residues
+    if (manyBody.residueGroup.start > -1 || manyBody.residueGroup.all > -1) {
+      residues = manyBody.getResidues(activeAssembly)
+    } else {
+      residues = activeAssembly.getResidueList()
+    }
+
+    if (residues.isEmpty()) {
+      logger.info("Residue list is empty")
+      return
+    }
+
+    for (Residue residue : residues) {
+      resNumberList.add(residue.getResidueNumber())
+    }
+
+    // If rotamer optimization with titration, create new molecular assembly with additional protons
+    if (manyBody.group.titrationPH != 0) {
+      logger.info("\n Adding titration hydrogen to : " + filenames.get(0) + "\n")
+      titrationManyBody = new TitrationManyBody(filenames.get(0),forceField,resNumberList,manyBody.group.titrationPH)
+      MolecularAssembly prot = titrationManyBody.getProtonatedAssembly()
+      setActiveAssembly(prot)
+      potentialEnergy = prot.getPotentialEnergy()
+      assemblies = [activeAssembly] as MolecularAssembly[]
+    }
 
     refinementEnergy = realSpace.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
     RotamerOptimization rotamerOptimization = new RotamerOptimization(
@@ -149,18 +194,44 @@ class ManyBody extends AlgorithmsScript {
       }
     }
 
+    boolean isTitrating = false
+    Set<Atom> excludeAtoms = new HashSet<>()
+    int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
+    excludeAtoms = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
+
     if (master) {
       logger.info(" Final Minimum Energy")
-
       algorithmFunctions.energy(activeAssembly)
-
+      double energy = potentialEnergy.energy(false, true)
+      if (isTitrating) {
+        double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList,
+                optimalRotamers)
+        logger.info(format("\n  Rotamer pH Bias    %16.8f", phBias))
+        logger.info(format("  Potential with Bias%16.8f\n", phBias + energy))
+      }
       String ext = FilenameUtils.getExtension(modelFilename)
       modelFilename = FilenameUtils.removeExtension(modelFilename)
       if (ext.toUpperCase().contains("XYZ")) {
         algorithmFunctions.saveAsXYZ(assemblies[0], new File(modelFilename + ".xyz"))
       } else {
-        algorithmFunctions.saveAsPDB(assemblies, new File(modelFilename + ".pdb"))
+        //algorithmFunctions.saveAsPDB(assemblies, new File(modelFilename + ".pdb"))
+        properties.setProperty("standardizeAtomNames", "false")
+        File modelFile = saveDirFile(activeAssembly.getFile())
+        PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(),
+                properties)
+        if (manyBody.group.titrationPH != 0){
+          String remark = "Titration pH:   " + manyBody.group.titrationPH.toString()
+          if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true, remark)) {
+            logger.info(format(" Save failed for %s", activeAssembly))
+          }
+        } else {
+          if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
+            logger.info(format(" Save failed for %s", activeAssembly))
+          }
+        }
       }
+
+
     }
 
     return this
