@@ -38,13 +38,18 @@
 package ffx.xray.groovy
 
 import edu.rit.pj.Comm
+import ffx.algorithms.TitrationManyBody
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization
 import ffx.numerics.Potential
+import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary
+import ffx.potential.parameters.ForceField
+import ffx.potential.parsers.PDBFilter
 import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy
 import ffx.xray.RefinementMinimize.RefinementMode
@@ -54,6 +59,9 @@ import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
+
+import static java.lang.String.format
+import static java.lang.String.format
 
 /**
  * The ManyBody script performs a discrete optimization using a many-body expansion and elimination expressions.
@@ -78,6 +86,8 @@ class ManyBody extends AlgorithmsScript {
   private List<String> filenames
   private RefinementEnergy refinementEnergy
 
+  ForceFieldEnergy potentialEnergy
+  TitrationManyBody titrationManyBody
   /**
    * ManyBody constructor.
    */
@@ -116,12 +126,18 @@ class ManyBody extends AlgorithmsScript {
       filename = activeAssembly.getFile().getAbsolutePath()
     }
 
+    if (manyBody.group.titrationPH != 0) {
+      System.setProperty("manybody-titration", "true")
+    }
+
     // By default, rotamer optimization should silence GK warnings, because occasionally we will have unreasonable configurations.
     if (System.getProperty("gk-suppressWarnings") == null) {
       System.setProperty("gk-suppressWarnings", "true")
     }
 
     activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
+    ForceField forceField = activeAssembly.getForceField()
+    potentialEnergy = activeAssembly.getPotentialEnergy()
 
     // Load parsed X-ray properties.
     CompositeConfiguration properties = assemblies[0].getProperties()
@@ -139,6 +155,24 @@ class ManyBody extends AlgorithmsScript {
       xrayOptions.refinementMode = RefinementMode.COORDINATES
     }
 
+    // Collect residues to optimize.
+    List<Integer> resNumberList = new ArrayList<>()
+    List<Residue> residues
+    if (manyBody.residueGroup.start > -1 || manyBody.residueGroup.all > -1) {
+      residues = manyBody.getResidues(activeAssembly)
+    } else {
+      residues = activeAssembly.getResidueList()
+    }
+
+    if (residues.isEmpty()) {
+      logger.info("Residue list is empty")
+      return
+    }
+
+    for (Residue residue : residues) {
+      resNumberList.add(residue.getResidueNumber())
+    }
+
     refinementEnergy = xrayOptions.toXrayEnergy(diffractionData, assemblies, algorithmFunctions)
     refinementEnergy.setScaling(null)
     int n = refinementEnergy.getNumberOfVariables()
@@ -146,6 +180,12 @@ class ManyBody extends AlgorithmsScript {
     refinementEnergy.getCoordinates(x)
     double e = refinementEnergy.energy(x, true)
     logger.info(String.format(" Starting energy: %16.8f ", e))
+
+    if (manyBody.group.titrationPH != 0) {
+      logger.info("\n Adding titration hydrogen to : " + filename + "\n")
+      titrationManyBody = new TitrationManyBody(filename,forceField,resNumberList,manyBody.group.titrationPH)
+      activeAssembly = titrationManyBody.getProtonatedAssembly()
+    }
 
     RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,
         refinementEnergy, algorithmListener)
@@ -174,18 +214,43 @@ class ManyBody extends AlgorithmsScript {
       }
     }
 
+    boolean isTitrating = false
+    Set<Atom> excludeAtoms = new HashSet<>()
+    int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
+    excludeAtoms = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
+
     if (master) {
       refinementEnergy.getCoordinates(x)
       e = refinementEnergy.energy(x, true)
       logger.info(String.format(" Final energy: %16.8f ", e))
+      if (isTitrating) {
+        double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList,
+                optimalRotamers)
+        logger.info(format("\n  Rotamer pH Bias    %16.8f", phBias))
+        logger.info(format("  Potential with Bias%16.8f\n", phBias + e))
+      }
 
       String ext = FilenameUtils.getExtension(filename)
       filename = FilenameUtils.removeExtension(filename)
       if (ext.toUpperCase().contains("XYZ")) {
         algorithmFunctions.saveAsXYZ(activeAssembly, new File(filename + ".xyz"))
       } else {
+        //File modelFile = saveDirFile(activeAssembly.getFile())
+        //algorithmFunctions.saveAsPDB(activeAssembly, modelFile)
+        properties.setProperty("standardizeAtomNames", "false")
         File modelFile = saveDirFile(activeAssembly.getFile())
-        algorithmFunctions.saveAsPDB(activeAssembly, modelFile)
+        PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(),
+                properties)
+        if (manyBody.group.titrationPH != 0){
+          String remark = "Titration pH:   " + manyBody.group.titrationPH.toString()
+          if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true, remark)) {
+            logger.info(format(" Save failed for %s", activeAssembly))
+          }
+        } else {
+          if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
+            logger.info(format(" Save failed for %s", activeAssembly))
+          }
+        }
       }
     }
 

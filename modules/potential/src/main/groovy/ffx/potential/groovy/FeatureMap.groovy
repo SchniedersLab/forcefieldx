@@ -141,7 +141,7 @@ class FeatureMap extends PotentialScript {
         }
 
         List<String> npChanges = getProteinFeatures.ddgunToNPChange(ddgunLines)
-        List<Double> ddGun = getProteinFeatures.getDDGunValues(ddgunLines)
+        List<Double[]> ddGun = getProteinFeatures.getDDGunValues(ddgunLines)
 
         BufferedReader br = null;
         BufferedWriter bw = null;
@@ -165,26 +165,29 @@ class FeatureMap extends PotentialScript {
             int i = 0;
             for (line = br.readLine(); line != null; line = br.readLine(), i++) {
                 if (i == 0 || i == 1) {
-                    if (updatedFile.length() == 0) {
-                        bw.write(line + ',\"Surface Area\",\"Normalized SA\",\"Confidence Score\",\"|ddG|\"')
+
+                    if (updatedFile.length() == 0 && i == 1) {
+                        bw.write(line + ',\"Surface Area\",\"Normalized SA\",\"Confidence Score\",\"ddG\",\"|ddG|\"')
+                    } else if (i == 0 && updatedFile.length() == 0){
+                        bw.write(line+ '\n')
                     }
-                } else {
+                }  else {
                     String[] splits = line.split('\",\"')
                     int length = splits.length
                     int position = splits[8].toInteger()
                     String proteinChange = splits[2]
-                    String ddG = ""
+                    String[] ddG = ""
                     if (npChanges.indexOf(proteinChange) != -1){
-                        ddG = String.valueOf(ddGun.get(npChanges.indexOf(proteinChange)))
+                        ddG = ddGun.get(npChanges.indexOf(proteinChange))
                     } else {
-                        ddG = "null"
+                        ddG = ["null","null"]
                     }
                     String isomer = proteinChange.split(':p.')[0]
 
                     if (length == 14 && isomer == geneSplit[1]+ '_' + geneSplit[2]) {
                         String[] feat = featureList.get(position - 1)
                         bw.newLine()
-                        bw.write(line + '\",\"' + feat[0] + '\",\"' + feat[1] + '\",\"' + feat[2] + '\",\"' + String.valueOf(ddG) + '\"')
+                        bw.write(line + '\",\"' + feat[0] + '\",\"' + feat[1] + '\",\"' + feat[2] + '\",\"' + String.valueOf(ddG[0]) +'\"' + String.valueOf(ddG[1])+ '\"')
                     }
                 }
 
