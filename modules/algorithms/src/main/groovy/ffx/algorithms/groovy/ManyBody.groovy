@@ -38,29 +38,24 @@
 package ffx.algorithms.groovy
 
 import edu.rit.pj.Comm
+import ffx.algorithms.TitrationManyBody
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization
 import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.ForceFieldEnergyOpenMM
 import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.AminoAcidUtils.AminoAcid3
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Residue
-import ffx.potential.bonded.Rotamer
 import ffx.potential.bonded.RotamerLibrary
 import ffx.potential.parameters.ForceField
-import ffx.potential.parameters.TitrationUtils
 import ffx.potential.parsers.PDBFilter
 import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
-import ffx.algorithms.TitrationManyBody
 
 import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard
-import static ffx.potential.bonded.RotamerLibrary.applyRotamer
 import static java.lang.String.format
 
 /**
@@ -165,13 +160,15 @@ class ManyBody extends AlgorithmsScript {
     // If rotamer optimization with titration, create new molecular assembly with additional protons
     if (manyBody.group.titrationPH != 0) {
       logger.info("\n Adding titration hydrogen to : " + filename + "\n")
-      titrationManyBody = new TitrationManyBody(filename,forceField,resNumberList, manyBody.group.titrationPH)
+      titrationManyBody = new TitrationManyBody(filename, forceField, resNumberList,
+          manyBody.group.titrationPH)
       MolecularAssembly prot = titrationManyBody.getProtonatedAssembly()
       setActiveAssembly(prot)
       potentialEnergy = prot.getPotentialEnergy()
     }
 
-    RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly, potentialEnergy, algorithmListener)
+    RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,
+        potentialEnergy, algorithmListener)
 
     testing = getTesting()
     if (testing) {
@@ -227,47 +224,9 @@ class ManyBody extends AlgorithmsScript {
     boolean isTitrating = false
     Set<Atom> excludeAtoms = new HashSet<>()
     int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
-    excludeAtoms = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
-    /*int i = 0
-    for (Residue residue : residueList) {
-      Rotamer rotamer = residue.getRotamers()[optimalRotamers[i++]]
-      applyRotamer(residue, rotamer)
-      if (rotamer.isTitrating) {
-        isTitrating = true
-        AminoAcid3 aa3 = rotamer.aminoAcid3
-        residue.setName(aa3.name())
-        switch (aa3) {
-          case AminoAcid3.HID:
-            // No HE2
-            Atom HE2 = residue.getAtomByName("HE2", true)
-            excludeAtoms.add(HE2)
-            break
-          case AminoAcid3.HIE:
-            // No HD1
-            Atom HD1 = residue.getAtomByName("HD1", true)
-            excludeAtoms.add(HD1)
-            break
-          case AminoAcid3.ASP:
-            // No HD2
-            Atom HD2 = residue.getAtomByName("HD2", true)
-            excludeAtoms.add(HD2)
-            break
-          case AminoAcid3.GLU:
-            // No HE2
-            Atom HE2 = residue.getAtomByName("HE2", true)
-            excludeAtoms.add(HE2)
-            break
-          case AminoAcid3.LYD:
-            // No HZ3
-            Atom HZ3 = residue.getAtomByName("HZ3", true)
-            excludeAtoms.add(HZ3)
-            break
-          default:
-            // Do nothing.
-            break
-        }
-      }
-    }*/
+    if (manyBody.group.titrationPH != 0) {
+      isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
+    }
 
     if (master) {
       logger.info(" Final Minimum Energy")
@@ -285,7 +244,7 @@ class ManyBody extends AlgorithmsScript {
       File modelFile = saveDirFile(activeAssembly.getFile())
       PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(),
           properties)
-      if (manyBody.group.titrationPH != 0){
+      if (manyBody.group.titrationPH != 0) {
         String remark = "Titration pH:   " + manyBody.group.titrationPH.toString()
         if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true, remark)) {
           logger.info(format(" Save failed for %s", activeAssembly))
@@ -296,10 +255,10 @@ class ManyBody extends AlgorithmsScript {
         }
       }
     }
+
     if (priorGKwarn == null) {
       System.clearProperty("gk-suppressWarnings")
     }
-
     if (manyBody.group.titrationPH != 0) {
       System.clearProperty("manybody-titration")
     }

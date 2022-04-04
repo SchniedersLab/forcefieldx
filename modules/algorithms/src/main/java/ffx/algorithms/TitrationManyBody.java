@@ -1,4 +1,4 @@
-package ffx.algorithms;// ******************************************************************************
+// ******************************************************************************
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
@@ -35,6 +35,9 @@ package ffx.algorithms;// ******************************************************
 // exception statement from your version.
 //
 // ******************************************************************************
+package ffx.algorithms;
+
+import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
 
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.ForceFieldEnergyOpenMM;
@@ -46,116 +49,111 @@ import ffx.potential.bonded.Rotamer;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TitrationUtils;
 import ffx.potential.parsers.PDBFilter;
-
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
-
 public class TitrationManyBody {
 
-    //private MolecularAssembly protonatedAssembly;
-    private PDBFilter protonFilter;
-    private ForceField forceField;
-    private List<Integer> resNumberList;
-    private ForceFieldEnergy potentialEnergy;
-    private final double pH;
-    private final String filename;
+  //private MolecularAssembly protonatedAssembly;
+  private PDBFilter protonFilter;
+  private ForceField forceField;
+  private List<Integer> resNumberList;
+  private ForceFieldEnergy potentialEnergy;
+  private final double pH;
+  private final String filename;
 
-    public TitrationManyBody(
-            String filename,
-            ForceField forceField,
-            List<Integer> resNumberList,
-            double pH)
-    {
-        this.filename = filename;
-        this.forceField = forceField;
-        this.resNumberList = resNumberList;
-        this.pH = pH;
+  public TitrationManyBody(
+      String filename,
+      ForceField forceField,
+      List<Integer> resNumberList,
+      double pH) {
+    this.filename = filename;
+    this.forceField = forceField;
+    this.resNumberList = resNumberList;
+    this.pH = pH;
+  }
+
+  public MolecularAssembly getProtonatedAssembly() {
+    MolecularAssembly protonatedAssembly = new MolecularAssembly(filename);
+    protonatedAssembly.setForceField(forceField);
+    File structureFile = new File(filename);
+    protonFilter = new PDBFilter(structureFile, protonatedAssembly, forceField,
+        forceField.getProperties(), resNumberList);
+    protonFilter.setRotamerTitration(true);
+    protonFilter.readFile();
+    protonFilter.applyAtomProperties();
+    protonatedAssembly.finalize(true, forceField);
+    potentialEnergy = ForceFieldEnergy.energyFactory(protonatedAssembly);
+    protonatedAssembly.setFile(structureFile);
+
+    TitrationUtils titrationUtils;
+    titrationUtils = new TitrationUtils(protonatedAssembly.getForceField());
+    titrationUtils.setRotamerPhBias(298.15, pH);
+    for (Residue residue : protonatedAssembly.getResidueList()) {
+      String resName = residue.getName();
+      if (resNumberList.contains(residue.getResidueNumber())) {
+        if (resName == "ASH" || resName == "GLH" || resName == "LYS" || resName == "HIS") {
+          residue.setTitrationUtils(titrationUtils);
+        }
+      }
     }
 
-    public MolecularAssembly getProtonatedAssembly(){
-        MolecularAssembly protonatedAssembly = new MolecularAssembly(filename);
-        protonatedAssembly.setForceField(forceField);
-        File structureFile = new File(filename);
-        protonFilter = new PDBFilter(structureFile, protonatedAssembly, forceField, forceField.getProperties(), resNumberList);
-        protonFilter.setRotamerTitration(true);
-        protonFilter.readFile();
-        protonFilter.applyAtomProperties();
-        protonatedAssembly.finalize(true, forceField);
-        potentialEnergy = ForceFieldEnergy.energyFactory(protonatedAssembly);
-        protonatedAssembly.setFile(structureFile);
+    if (potentialEnergy instanceof ForceFieldEnergyOpenMM) {
+      boolean updateBondedTerms = forceField.getBoolean("TITRATION_UPDATE_BONDED_TERMS", true);
+      ForceFieldEnergyOpenMM forceFieldEnergyOpenMM = (ForceFieldEnergyOpenMM) potentialEnergy;
+      forceFieldEnergyOpenMM.getSystem().setUpdateBondedTerms(updateBondedTerms);
+    }
+    potentialEnergy.energy();
+    return protonatedAssembly;
+  }
 
-        TitrationUtils titrationUtils;
-        titrationUtils = new TitrationUtils(protonatedAssembly.getForceField());
-        titrationUtils.setRotamerPhBias(298.15, pH);
-        for (Residue residue : protonatedAssembly.getResidueList()) {
-            String resName = residue.getName();
-            if (resNumberList.contains(residue.getResidueNumber())) {
-                if (resName == "ASH" || resName == "GLH" || resName == "LYS" || resName == "HIS") {
-                    residue.setTitrationUtils(titrationUtils);
-                }
-            }
+  public boolean excludeExcessAtoms(Set<Atom> excludeAtoms, int[] optimalRotamers,
+      List<Residue> residueList) {
+    boolean isTitrating = false;
+    int i = 0;
+    for (Residue residue : residueList) {
+      Rotamer rotamer = residue.getRotamers()[optimalRotamers[i++]];
+      applyRotamer(residue, rotamer);
+      if (rotamer.isTitrating) {
+        isTitrating = true;
+        AminoAcidUtils.AminoAcid3 aa3 = rotamer.aminoAcid3;
+        residue.setName(aa3.name());
+        switch (aa3) {
+          case HID:
+            // No HE2
+            Atom HE2 = residue.getAtomByName("HE2", true);
+            excludeAtoms.add(HE2);
+            break;
+          case HIE:
+            // No HD1
+            Atom HD1 = residue.getAtomByName("HD1", true);
+            excludeAtoms.add(HD1);
+            break;
+          case ASP:
+            // No HD2
+            Atom HD2 = residue.getAtomByName("HD2", true);
+            excludeAtoms.add(HD2);
+            break;
+          case GLU:
+            // No HE2
+            Atom HE2_G = residue.getAtomByName("HE2", true);
+            excludeAtoms.add(HE2_G);
+            break;
+          case LYD:
+            // No HZ3
+            Atom HZ3 = residue.getAtomByName("HZ3", true);
+            excludeAtoms.add(HZ3);
+            break;
+          default:
+            // Do nothing.
+            break;
         }
-
-        if (potentialEnergy instanceof ForceFieldEnergyOpenMM) {
-            boolean updateBondedTerms = forceField.getBoolean("TITRATION_UPDATE_BONDED_TERMS", true);
-            ForceFieldEnergyOpenMM forceFieldEnergyOpenMM = (ForceFieldEnergyOpenMM) potentialEnergy;
-            forceFieldEnergyOpenMM.getSystem().setUpdateBondedTerms(updateBondedTerms);
-        }
-        potentialEnergy.energy();
-        return protonatedAssembly;
+      }
     }
 
-    public Set<Atom> excludeExcessAtoms(Set<Atom> excludeAtoms, int[] optimalRotamers, List<Residue> residueList) {
-        boolean isTitrating = false;
-        int i = 0;
-        for (Residue residue : residueList) {
-            Rotamer rotamer = residue.getRotamers()[optimalRotamers[i++]];
-            applyRotamer(residue, rotamer);
-            if (rotamer.isTitrating) {
-                isTitrating = true;
-                AminoAcidUtils.AminoAcid3 aa3 = rotamer.aminoAcid3;
-                residue.setName(aa3.name());
-                switch (aa3) {
-                    case HID:
-                        // No HE2
-                        Atom HE2 = residue.getAtomByName("HE2", true);
-                        excludeAtoms.add(HE2);
-                        break;
-                    case HIE:
-                        // No HD1
-                        Atom HD1 = residue.getAtomByName("HD1", true);
-                        excludeAtoms.add(HD1);
-                        break;
-                    case ASP:
-                        // No HD2
-                        Atom HD2 = residue.getAtomByName("HD2", true);
-                        excludeAtoms.add(HD2);
-                        break;
-                    case GLU:
-                        // No HE2
-                        Atom HE2_G = residue.getAtomByName("HE2", true);
-                        excludeAtoms.add(HE2_G);
-                        break;
-                    case LYD:
-                        // No HZ3
-                        Atom HZ3 = residue.getAtomByName("HZ3", true);
-                        excludeAtoms.add(HZ3);
-                        break;
-                    default:
-                        // Do nothing.
-                        break;
-                }
-            }
-        }
-        return excludeAtoms;
-
-    }
-
+    return isTitrating;
+  }
 
 
 }
