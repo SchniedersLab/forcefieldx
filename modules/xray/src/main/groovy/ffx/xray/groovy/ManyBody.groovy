@@ -173,19 +173,19 @@ class ManyBody extends AlgorithmsScript {
       resNumberList.add(residue.getResidueNumber())
     }
 
+//    if (manyBody.group.titrationPH != 0) {
+//      logger.info("\n Adding titration hydrogen to : " + filename + "\n")
+//      titrationManyBody = new TitrationManyBody(filename,forceField,resNumberList,manyBody.group.titrationPH)
+//      activeAssembly = titrationManyBody.getProtonatedAssembly()
+//    }
+
     refinementEnergy = xrayOptions.toXrayEnergy(diffractionData, assemblies, algorithmFunctions)
     refinementEnergy.setScaling(null)
     int n = refinementEnergy.getNumberOfVariables()
     double[] x = new double[n]
     refinementEnergy.getCoordinates(x)
     double e = refinementEnergy.energy(x, true)
-    logger.info(String.format(" Starting energy: %16.8f ", e))
-
-    if (manyBody.group.titrationPH != 0) {
-      logger.info("\n Adding titration hydrogen to : " + filename + "\n")
-      titrationManyBody = new TitrationManyBody(filename,forceField,resNumberList,manyBody.group.titrationPH)
-      activeAssembly = titrationManyBody.getProtonatedAssembly()
-    }
+    logger.info(format(" Starting energy: %16.8f ", e))
 
     RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,
         refinementEnergy, algorithmListener)
@@ -214,15 +214,16 @@ class ManyBody extends AlgorithmsScript {
       }
     }
 
+
+    int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
     boolean isTitrating = false
     Set<Atom> excludeAtoms = new HashSet<>()
-    int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
-    excludeAtoms = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
+//    excludeAtoms = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
 
     if (master) {
       refinementEnergy.getCoordinates(x)
       e = refinementEnergy.energy(x, true)
-      logger.info(String.format(" Final energy: %16.8f ", e))
+      logger.info(format(" Final energy: %16.8f ", e))
       if (isTitrating) {
         double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList,
                 optimalRotamers)
@@ -241,16 +242,16 @@ class ManyBody extends AlgorithmsScript {
         File modelFile = saveDirFile(activeAssembly.getFile())
         PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(),
                 properties)
-        if (manyBody.group.titrationPH != 0){
-          String remark = "Titration pH:   " + manyBody.group.titrationPH.toString()
-          if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true, remark)) {
-            logger.info(format(" Save failed for %s", activeAssembly))
-          }
-        } else {
+//        if (manyBody.group.titrationPH != 0){
+//          String remark = "Titration pH:   " + manyBody.group.titrationPH.toString()
+//          if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true, remark)) {
+//            logger.info(format(" Save failed for %s", activeAssembly))
+//          }
+//        } else {
           if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
             logger.info(format(" Save failed for %s", activeAssembly))
           }
-        }
+//        }
       }
     }
 
