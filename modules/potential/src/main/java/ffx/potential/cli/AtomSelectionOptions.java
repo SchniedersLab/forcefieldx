@@ -137,6 +137,21 @@ public class AtomSelectionOptions {
     return group.inactiveAtoms;
   }
 
+  /**
+   * Check if either the active or inactive atom selection is set.
+   *
+   * @return True if one of the fields is not empty.
+   */
+  public boolean isAtomSelectionSet() {
+    if (group.activeAtoms != null && !(group.activeAtoms.length() > 0)) {
+      return true;
+    }
+    if (group.inactiveAtoms != null && !(group.inactiveAtoms.length() > 0)) {
+      return true;
+    }
+    return false;
+  }
+
   private void setInactive(MolecularAssembly assembly) {
     actOnAtoms(assembly, getInactiveAtoms(), (Atom a, Boolean b) -> a.setActive(!b), "Inactive");
   }
