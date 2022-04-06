@@ -197,7 +197,9 @@ class ManyBody extends AlgorithmsScript {
     boolean isTitrating = false
     Set<Atom> excludeAtoms = new HashSet<>()
     int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
-    excludeAtoms = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
+    if (manyBody.group.titrationPH != 0) {
+      isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
+    }
 
     if (master) {
       logger.info(" Final Minimum Energy")
