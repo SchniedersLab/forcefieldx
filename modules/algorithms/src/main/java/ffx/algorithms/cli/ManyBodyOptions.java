@@ -40,12 +40,13 @@ package ffx.algorithms.cli;
 import static java.lang.String.format;
 
 import ffx.algorithms.optimize.RotamerOptimization;
+import ffx.algorithms.optimize.RotamerOptimization.Algorithm;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
-import ffx.potential.bonded.*;
-import ffx.potential.cli.PotentialScript;
-import ffx.potential.parameters.ForceField;
-import ffx.potential.parameters.TitrationUtils;
+import ffx.potential.bonded.Polymer;
+import ffx.potential.bonded.Residue;
+import ffx.potential.bonded.Rotamer;
+import ffx.potential.bonded.RotamerLibrary;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,13 +54,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
-
-import ffx.potential.parsers.ForceFieldFilter;
-import ffx.potential.parsers.PDBFilter;
-import ffx.potential.utils.PotentialsFunctions;
-import ffx.potential.utils.PotentialsUtils;
 import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
@@ -72,7 +67,7 @@ import picocli.CommandLine.Option;
  * @author Mallory R. Tollefson
  * @since 1.0
  */
-public class ManyBodyOptions{
+public class ManyBodyOptions {
 
   private static final Logger logger = Logger.getLogger(ManyBodyOptions.class.getName());
 
@@ -116,13 +111,10 @@ public class ManyBodyOptions{
   private int forceResiduesEnd;
 
   /**
-   * Gets the algorithm number.
-   *
-   * @return Integer representing the algorithm being run (i.e. global, box optimization, window,
-   *     etc.)
+   * @return Returns the algorithm choice.
    */
-  public int getAlgorithmNumber() {
-    return group.algorithm;
+  public Algorithm getAlgorithm() {
+    return Algorithm.getAlgorithm(group.algorithm);
   }
 
   public boolean getUsingOriginalCoordinates() {
@@ -136,7 +128,7 @@ public class ManyBodyOptions{
    * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
    */
   public void initRotamerOptimization(
-          RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly) {
+      RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly) {
     this.rotamerOptimization = rotamerOptimization;
     boolean useOrigCoordsRotamer = !group.noOriginal;
     if (group.decompose) {
@@ -212,8 +204,8 @@ public class ManyBodyOptions{
               }
             } else if (!group.forceResidues.equalsIgnoreCase("none")) {
               if (counter >= allStartResID
-                      && counter >= forceResiduesStart
-                      && counter <= forceResiduesEnd) {
+                  && counter >= forceResiduesStart
+                  && counter <= forceResiduesEnd) {
                 residueList.add(residue);
               }
             }
@@ -349,31 +341,44 @@ public class ManyBodyOptions{
     }
   }
 
-  public List<Residue> getResidues(MolecularAssembly activeAssembly){
-    List<Residue> residueList = new ArrayList<>();
-    int counter = 0;
-    List<Residue> residues = activeAssembly.getResidueList();
+  /**
+   * Get the list of residues to optimization based on the "all", "start" and "finish" flags.
+   * <p>
+   * If the selected list of residues is empty, then all residues are returned.
+   *
+   * @param activeAssembly The MolecularAssembly to collect residues from.
+   * @return The list of Residues to optimize.
+   */
+  public List<Residue> getResidues(MolecularAssembly activeAssembly) {
+    List<Residue> allResidues = activeAssembly.getResidueList();
+    List<Residue> residueSelection = new ArrayList<>();
+
     if (residueGroup.all > -1) {
-      counter = residueGroup.all;
-      for(Residue residue : residues){
-        if (residue.getResidueNumber() == counter){
-          residueList.add(residue);
-          counter += 1;
+      int counter = residueGroup.all;
+      for (Residue residue : allResidues) {
+        if (residue.getResidueNumber() == counter) {
+          residueSelection.add(residue);
+          counter++;
         }
       }
     } else if (residueGroup.start > -1) {
-      counter = residueGroup.start;
-      for(Residue residue : residues){
-        if (counter == residueGroup.finish + 1){
+      int counter = residueGroup.start;
+      for (Residue residue : allResidues) {
+        if (counter == residueGroup.finish + 1) {
           break;
         } else if (residue.getResidueNumber() == counter) {
-          residueList.add(residue);
-          counter += 1;
-
+          residueSelection.add(residue);
+          counter++;
         }
       }
     }
-    return residueList;
+
+    if (residueSelection.size() > 0) {
+      return residueSelection;
+    } else {
+      // Return all residues if the residueSelection is empty.
+      return allResidues;
+    }
   }
 
   /**
@@ -671,16 +676,6 @@ public class ManyBodyOptions{
       rotamerOptimization.setNumXYZBoxes(numXYZBoxes);
       rotamerOptimization.setBoxInclusionCriterion(boxGroup.boxInclusionCriterion);
     }
-  }
-
-  /**
-   * Choices are independent residues (1), all with rotamer elimination (2), all brute force (3),
-   * sliding window (4), or box optimization (5).
-   *
-   * @return Returns the algorithm choice.
-   */
-  public int getAlgorithm() {
-    return group.algorithm;
   }
 
   public void setAlgorithm(int algorithm) {
@@ -1060,6 +1055,18 @@ public class ManyBodyOptions{
 
   public void setBoxInclusionCriterion(int boxInclusionCriterion) {
     boxGroup.boxInclusionCriterion = boxInclusionCriterion;
+  }
+
+  public void setTitrationPH(double pH) {
+    group.titrationPH = pH;
+  }
+
+  public double getTitrationPH() {
+    return group.titrationPH;
+  }
+
+  public boolean isTitrating() {
+    return group.titrationPH == 0;
   }
 
   /**
