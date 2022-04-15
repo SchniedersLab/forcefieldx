@@ -165,7 +165,6 @@ class FeatureMap extends PotentialScript {
             int i = 0;
             for (line = br.readLine(); line != null; line = br.readLine(), i++) {
                 if (i == 0 || i == 1) {
-
                     if (updatedFile.length() == 0 && i == 1) {
                         bw.write(line + ',\"Surface Area\",\"Normalized SA\",\"Confidence Score\",\"ddG\",\"|ddG|\"')
                     } else if (i == 0 && updatedFile.length() == 0){
@@ -174,18 +173,24 @@ class FeatureMap extends PotentialScript {
                 }  else {
                     String[] splits = line.split('\",\"')
                     int length = splits.length
-                    int position = splits[8].toInteger()
-                    String proteinChange = splits[2]
+                    int position
                     String[] ddG = ""
-                    if (npChanges.indexOf(proteinChange) != -1){
-                        ddG = ddGun.get(npChanges.indexOf(proteinChange))
-                    } else {
+                    String proteinChange = splits[2]
+                    String[] feat = ""
+                    if(splits[8].contains('-')){
                         ddG = ["null","null"]
+                        feat = ["null","null","null"]
+                    } else {
+                        position = splits[8].toInteger()
+                        if (npChanges.indexOf(proteinChange) != -1){
+                            ddG = ddGun.get(npChanges.indexOf(proteinChange))
+                        } else {
+                            ddG = ["null","null"]
+                        }
+                        feat = featureList.get(position - 1)
                     }
                     String isomer = proteinChange.split(':p.')[0]
-
                     if (length == 14 && isomer == geneSplit[1]+ '_' + geneSplit[2]) {
-                        String[] feat = featureList.get(position - 1)
                         bw.newLine()
                         bw.write(line + '\",\"' + feat[0] + '\",\"' + feat[1] + '\",\"' + feat[2] + '\",\"' + String.valueOf(ddG[0]) +'\"' + String.valueOf(ddG[1])+ '\"')
                     }
