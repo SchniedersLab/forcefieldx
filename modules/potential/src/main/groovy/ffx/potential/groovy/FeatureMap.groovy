@@ -109,7 +109,7 @@ class FeatureMap extends PotentialScript {
 
         String baseName = getBaseName(filenames[0])
         String csvPath = getBaseDirString(filenames[0]).replace(baseName + '/', '')
-        String[] geneSplit =  baseName.split('_')
+        String[] geneSplit = baseName.split('_')
         String csvFileName = geneSplit[0] + ".csv"
 
         logger.info(csvFileName)
@@ -129,7 +129,7 @@ class FeatureMap extends PotentialScript {
             txtReader = new BufferedReader(new FileReader(txtfile));
             String line = txtReader.readLine();
             while (line != null) {
-                if(line.contains('.pdb')){
+                if (line.contains('.pdb')) {
                     ddgunLines.add(line)
                 }
                 // read next line
@@ -154,10 +154,10 @@ class FeatureMap extends PotentialScript {
             File updatedFile = new File(csvPath, "update_" + csvFileName)
 
             br = new BufferedReader(new InputStreamReader(new FileInputStream(file)))
-            if (csvFileName.length() == 0){
+            if (csvFileName.length() == 0) {
                 bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(updatedFile)))
             } else {
-                FileWriter fw = new FileWriter(updatedFile,true)
+                FileWriter fw = new FileWriter(updatedFile, true)
                 bw = new BufferedWriter(fw)
             }
 
@@ -167,32 +167,34 @@ class FeatureMap extends PotentialScript {
                 if (i == 0 || i == 1) {
                     if (updatedFile.length() == 0 && i == 1) {
                         bw.write(line + ',\"Surface Area\",\"Normalized SA\",\"Confidence Score\",\"ddG\",\"|ddG|\"')
-                    } else if (i == 0 && updatedFile.length() == 0){
-                        bw.write(line+ '\n')
+                    } else if (i == 0 && updatedFile.length() == 0) {
+                        bw.write(line + '\n')
                     }
-                }  else {
+                } else {
                     String[] splits = line.split('\",\"')
                     int length = splits.length
                     int position
                     String[] ddG = ""
                     String proteinChange = splits[2]
                     String[] feat = ""
-                    if(splits[8].contains('-')){
-                        ddG = ["null","null"]
-                        feat = ["null","null","null"]
+                    if (splits[8].contains('-')) {
+                        ddG = ["null", "null"]
+                        feat = ["null", "null", "null"]
                     } else {
                         position = splits[8].toInteger()
-                        if (npChanges.indexOf(proteinChange) != -1){
-                            ddG = ddGun.get(npChanges.indexOf(proteinChange))
-                        } else {
-                            ddG = ["null","null"]
+                        if (position <= residues.size()) {
+                            if (npChanges.indexOf(proteinChange) != -1) {
+                                ddG = ddGun.get(npChanges.indexOf(proteinChange))
+                            } else {
+                                ddG = ["null", "null"]
+                            }
+                            feat = featureList.get(position - 1)
                         }
-                        feat = featureList.get(position - 1)
                     }
                     String isomer = proteinChange.split(':p.')[0]
-                    if (length == 14 && isomer == geneSplit[1]+ '_' + geneSplit[2]) {
+                    if (length == 14 && isomer == geneSplit[1] + '_' + geneSplit[2]) {
                         bw.newLine()
-                        bw.write(line + '\",\"' + feat[0] + '\",\"' + feat[1] + '\",\"' + feat[2] + '\",\"' + String.valueOf(ddG[0]) +'\",\"' + String.valueOf(ddG[1])+ '\"')
+                        bw.write(line + '\",\"' + feat[0] + '\",\"' + feat[1] + '\",\"' + feat[2] + '\",\"' + String.valueOf(ddG[0]) + '\",\"' + String.valueOf(ddG[1]) + '\"')
                     }
                 }
 
