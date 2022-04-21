@@ -2023,10 +2023,6 @@ public class ProgressiveAlignmentOfCrystals {
     int nSymm = replicatesCrystal.getNumSymOps();
 
     int numEntities = nSymm * zPrime;
-    if (logger.isLoggable(Level.FINEST)) {
-      logger.finer(" Replicates crystal " + replicatesCrystal);
-      logger.finer(format(" Replicates Volume: %8.4f", replicatesCrystal.volume));
-    }
 
     double[][] xS = new double[nSymm][nAtoms];
     double[][] yS = new double[nSymm][nAtoms];
@@ -2090,7 +2086,11 @@ public class ProgressiveAlignmentOfCrystals {
     replicatesCrystal.toCartesianCoordinates(fracCenter, cartCenter);
 
     if (logger.isLoggable(Level.FINER)) {
-      logger.finer(format(" Expanded Crystal Center: %16.8f %16.8f %16.8f",
+      if(logger.isLoggable(Level.FINEST)) {
+        logger.finer(" Replicates crystal " + replicatesCrystal);
+      }
+        logger.finer(format(" Replicates Volume: %8.4f", replicatesCrystal.volume));
+        logger.finer(format(" Expanded Crystal Center: %16.8f %16.8f %16.8f",
               cartCenter[0], cartCenter[1], cartCenter[2]));
     }
 
