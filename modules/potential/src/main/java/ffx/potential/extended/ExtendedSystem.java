@@ -594,7 +594,7 @@ public class ExtendedSystem {
                         * ((pKa1 - constantSystemPh) - (pKa2 - constantSystemPh));
 
                 // Model Bias & Derivs
-                
+
                 double coeff4 = -2.0 * HIDrefEnergy * HIDlambdaIntercept;
                 double coeff3 = -2.0 * HIErefEnergy * HIElambdaIntercept - coeff4;
                 double coeff2 = HIDrefEnergy;

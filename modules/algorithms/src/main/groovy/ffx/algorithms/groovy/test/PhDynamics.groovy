@@ -208,9 +208,11 @@ class PhDynamics extends AlgorithmsScript {
         // Try running in OpenMM
         potential.energy(x)
 	    molecularDynamicsOpenMM.setCoordinates(x)
-        molecularDynamicsOpenMM.dynamic(coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
-                dynamicsOptions.temperature, true, dyn)
-        x = molecularDynamicsOpenMM.getCoordinates()
+        if(coordSteps != 0){
+          molecularDynamicsOpenMM.dynamic(coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
+                  dynamicsOptions.temperature, true, dyn)
+          x = molecularDynamicsOpenMM.getCoordinates()
+        }
       }
     }
 
