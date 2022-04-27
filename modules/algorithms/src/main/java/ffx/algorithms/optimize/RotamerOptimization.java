@@ -46,7 +46,6 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.log;
 
 import edu.rit.pj.Comm;
 import edu.rit.pj.ParallelTeam;
@@ -85,6 +84,7 @@ import ffx.potential.nonbonded.NonbondedCutoff;
 import ffx.potential.nonbonded.VanDerWaals;
 import ffx.potential.parsers.PDBFilter;
 import ffx.utilities.ObjectPair;
+import ffx.utilities.Resources;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -106,8 +106,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import ffx.utilities.Resources;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
@@ -3305,7 +3303,7 @@ public class RotamerOptimization implements Terminatable {
               windowFilter.writeFile(file, false);
               if (firstResidue != lastResidue) {
                 logger.info(format(" File with residues %s ... %s in window written to.",
-                        firstResidue, lastResidue));
+                    firstResidue, lastResidue));
               } else {
                 logger.info(
                     format(" File with residue %s in window written to.", firstResidue));
@@ -3318,7 +3316,8 @@ public class RotamerOptimization implements Terminatable {
           long currentTime = System.nanoTime();
           windowTime += currentTime;
           logIfMaster(format(" Time elapsed for this iteration: %11.3f sec", windowTime * 1.0E-9));
-          logIfMaster(format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
+          logIfMaster(
+              format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
         }
         break;
 
@@ -3427,7 +3426,8 @@ public class RotamerOptimization implements Terminatable {
       try {
         logIfMaster(format("\n Beginning Energy %s", formatEnergy(currentEnergy(residues))));
       } catch (ArithmeticException ex) {
-        logger.severe(format(" Exception %s in calculating beginning energy; FFX shutting down.", ex));
+        logger.severe(
+            format(" Exception %s in calculating beginning energy; FFX shutting down.", ex));
       }
     }
 
@@ -3452,7 +3452,8 @@ public class RotamerOptimization implements Terminatable {
             Rotamer[] rotamersj = residuej.getRotamers();
             int lenrj = rotamersj.length;
             eR.onlyPrunedPairs[i][ri][j] = new boolean[lenrj];
-            eR.onlyPrunedPairs[i][ri][j] = copyOf(eR.eliminatedPairs[i][ri][j], eR.eliminatedPairs[i][ri][j].length);
+            eR.onlyPrunedPairs[i][ri][j] = copyOf(eR.eliminatedPairs[i][ri][j],
+                eR.eliminatedPairs[i][ri][j].length);
           }
         }
       }
@@ -4850,12 +4851,33 @@ public class RotamerOptimization implements Terminatable {
     }
   }
 
+  /**
+   * Rotamer Optimization Methods.
+   */
   public enum Algorithm {
-    ALL,
-    BOX,
-    WINDOW,
-    INDEPENDENT,
-    BRUTE_FORCE
+    INDEPENDENT,  // 1
+    ALL,          // 2
+    BRUTE_FORCE,  // 3
+    WINDOW,       // 4
+    BOX;          // 5
+
+    public static Algorithm getAlgorithm(int algorithm) {
+      switch (algorithm) {
+        case 1:
+          return INDEPENDENT;
+        case 2:
+          return ALL;
+        case 3:
+          return BRUTE_FORCE;
+        case 4:
+          return WINDOW;
+        case 5:
+          return BOX;
+        default:
+          throw new IllegalArgumentException(
+              format(" Algorithm choice was %d, not in range 1-5!", algorithm));
+      }
+    }
   }
 
   /**
@@ -4968,7 +4990,8 @@ public class RotamerOptimization implements Terminatable {
           Residue firstResidue = residueSubsetList.get(0);
           Residue lastResidue = residueSubsetList.get(nResidueSubset - 1);
           if (firstResidue != lastResidue) {
-            logIfMaster(format(" Residues %s ... %s", firstResidue.toString(), lastResidue.toString()));
+            logIfMaster(
+                format(" Residues %s ... %s", firstResidue.toString(), lastResidue.toString()));
           } else {
             logIfMaster(format(" Residue %s", firstResidue.toString()));
           }
@@ -4979,13 +5002,17 @@ public class RotamerOptimization implements Terminatable {
             try {
               startingEnergy = currentEnergy(residueSubsetList);
             } catch (ArithmeticException ex) {
-              logger.severe(format(" Exception %s in calculating starting energy of a box; FFX shutting down", ex));
+              logger.severe(
+                  format(" Exception %s in calculating starting energy of a box; FFX shutting down",
+                      ex));
             }
             globalOptimization(residueSubsetList);
             try {
               finalEnergy = currentEnergy(residueSubsetList);
             } catch (ArithmeticException ex) {
-              logger.severe(format(" Exception %s in calculating starting energy of a box; FFX shutting down", ex));
+              logger.severe(
+                  format(" Exception %s in calculating starting energy of a box; FFX shutting down",
+                      ex));
             }
             if (startingEnergy <= finalEnergy) {
               logger.warning(
@@ -5002,7 +5029,8 @@ public class RotamerOptimization implements Terminatable {
             long currentTime = System.nanoTime();
             boxTime += currentTime;
             logIfMaster(format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
-            logIfMaster(format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
+            logIfMaster(
+                format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
           } else {
             globalOptimization(residueSubsetList);
             // Copy sliding window optimal rotamers into the overall optimum array.
@@ -5014,7 +5042,8 @@ public class RotamerOptimization implements Terminatable {
             long currentTime = System.nanoTime();
             boxTime += currentTime;
             logIfMaster(format(" Time elapsed for this iteration: %11.3f sec", boxTime * 1.0E-9));
-            logIfMaster(format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
+            logIfMaster(
+                format(" Overall time elapsed: %11.3f sec", (currentTime + beginTime) * 1.0E-9));
           }
           if (master && printFiles) {
             // Don't write a file if it's the final iteration.
@@ -5023,7 +5052,8 @@ public class RotamerOptimization implements Terminatable {
             }
             try {
               if (firstResidue != lastResidue) {
-                logIfMaster(format(" File with residues %s ... %s in window written.", firstResidue, lastResidue));
+                logIfMaster(format(" File with residues %s ... %s in window written.", firstResidue,
+                    lastResidue));
               } else {
                 logIfMaster(format(" File with residue %s in window written.", firstResidue));
               }

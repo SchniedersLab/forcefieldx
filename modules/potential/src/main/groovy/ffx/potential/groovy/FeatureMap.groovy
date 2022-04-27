@@ -194,7 +194,7 @@ class FeatureMap extends PotentialScript {
                     String isomer = proteinChange.split(':p.')[0]
                     if (length == 14 && isomer == geneSplit[1] + '_' + geneSplit[2]) {
                         bw.newLine()
-                        bw.write(line + '\",\"' + feat[0] + '\",\"' + feat[1] + '\",\"' + feat[2] + '\",\"' + String.valueOf(ddG[0]) + '\",\"' + String.valueOf(ddG[1]) + '\"')
+                        bw.write(line + ',\"' + feat[0] + '\",\"' + feat[1] + '\",\"' + feat[2] + '\",\"' + String.valueOf(ddG[0]) + '\",\"' + String.valueOf(ddG[1]) + '\"')
                     }
                 }
 

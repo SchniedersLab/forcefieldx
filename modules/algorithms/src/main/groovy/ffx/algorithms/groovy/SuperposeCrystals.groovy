@@ -84,7 +84,7 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * --if or --inflationFactor Inflation factor used to determine replicates expansion.
    */
-  @Option(names = ['--if', '--inflationFactor'], paramLabel = '2.90', defaultValue = '2.90',
+  @Option(names = ['--if', '--inflationFactor'], paramLabel = '4.0', defaultValue = '4.0',
       description = 'Inflation factor used to determine replicates expansion.')
   private double inflationFactor
 
@@ -105,7 +105,7 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * --mt or --matchTolerance Tolerance to determine if two AUs are different.
    */
-  @Option(names = ['--mt', '--moleculeTolerance'], paramLabel = '0.007', defaultValue = '0.007',
+  @Option(names = ['--mt', '--moleculeTolerance'], paramLabel = '0.002', defaultValue = '0.002',
           description = "Tolerance to determine if two AUs are different.")
   private double matchTol
 
@@ -166,9 +166,9 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean inertia
 
   /**
-   * --rgc or --radiusGyrationComponents Display components for radius of gyration for final clusters.
+   * --rgc or --gyrationComponents Display components for radius of gyration for final clusters.
    */
-  @Option(names = ['--rgc', '--radiusGyrationComponents'], paramLabel = "false", defaultValue = "false",
+  @Option(names = ['--gc', '--gyrationComponents'], paramLabel = "false", defaultValue = "false",
           description = 'Display components for radius of gyration for final clusters.')
   private static boolean gyrationComponents
 
