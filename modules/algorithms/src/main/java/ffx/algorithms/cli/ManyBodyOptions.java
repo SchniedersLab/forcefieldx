@@ -129,34 +129,15 @@ public class ManyBodyOptions {
    */
   public void initRotamerOptimization(
       RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly) {
+
     this.rotamerOptimization = rotamerOptimization;
     boolean useOrigCoordsRotamer = !group.noOriginal;
     if (group.decompose) {
       useOrigCoordsRotamer = true;
     }
 
-    String rotamerFileName = activeAssembly.getFile().getName();
-    rotamerFileName = FilenameUtils.removeExtension(rotamerFileName);
-    rotamerFileName = rotamerFileName + ".rot";
-    File rotFile = new File(rotamerFileName);
-
-    if (rotFile.exists()) {
-      logger.info(" EXPERIMENTAL: Using rotamer file " + rotamerFileName);
-      rotamerLibrary = new RotamerLibrary(RotamerLibrary.ProteinLibrary.None, false);
-      try {
-        RotamerLibrary.readRotFile(rotFile, activeAssembly);
-      } catch (IOException iox) {
-        logger.severe(
-            format(
-                " Exception in parsing rotamer file: %s\n%s",
-                iox, Utilities.stackTraceToString(iox)));
-      }
-    } else {
-      rotamerLibrary =
-          new RotamerLibrary(
-              RotamerLibrary.ProteinLibrary.intToProteinLibrary(group.library),
+    rotamerLibrary = new RotamerLibrary(RotamerLibrary.ProteinLibrary.intToProteinLibrary(group.library),
               useOrigCoordsRotamer);
-    }
 
     rotamerOptimization.setRotamerLibrary(rotamerLibrary);
     rotamerOptimization.setSingletonClashThreshold(energyGroup.clashThreshold);
@@ -166,9 +147,16 @@ public class ManyBodyOptions {
     if (group.algorithm == 0) {
       setAlgorithm(activeAssembly);
     }
+
+    // Mainly box optimization flags.
     setSelection();
+
+    // Sliding window.
+    // TODO: Delete sliding window.
     setForcedResidue();
+
     setResidues(activeAssembly);
+
     setRotOptProperties();
   }
 
@@ -178,6 +166,9 @@ public class ManyBodyOptions {
 
   /**
    * setResidues.
+   *
+   * TODO: This needs to be called prior to configuring support for titration, and prior
+   * to creation of the RotamerOptimization instance.
    *
    * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
    */
@@ -489,11 +480,10 @@ public class ManyBodyOptions {
     // Internal machinery indexed 0 to (n-1)
     setStartAndEndDefault();
 
-    if (group.algorithm != 5) {
+    if (getAlgorithm() != Algorithm.BOX) {
       // Not Box optimization.
       if (allStartResID < 1 && residueGroup.listResidues.equalsIgnoreCase("none")) {
-        if (residueGroup.finish < residueGroup.start || residueGroup.start < 0
-            || residueGroup.finish < 0) {
+        if (residueGroup.finish < residueGroup.start || residueGroup.start < 0) {
           logger.warning(" FFX shutting down: no residues specified for optimization.");
           return;
         }
@@ -514,7 +504,7 @@ public class ManyBodyOptions {
 
     // Box optimization options.
     numXYZBoxes = new int[3];
-    if (group.algorithm == 5) {
+    if (getAlgorithm() == Algorithm.BOX) {
       String input = boxGroup.numBoxes;
       Scanner boxNumInput = new java.util.Scanner(input);
       boxNumInput.useDelimiter(",");
@@ -646,13 +636,14 @@ public class ManyBodyOptions {
     rotamerOptimization.setRevert(group.revert);
     rotamerOptimization.setPruning(energyGroup.prune);
     rotamerOptimization.setDistanceCutoff(energyGroup.cutoff);
+
     boolean monteCarloBool = false;
     if (group.monteCarlo > 1) {
       monteCarloBool = true;
     }
     rotamerOptimization.setMonteCarlo(monteCarloBool, group.monteCarlo);
 
-    File energyRestartFile = null;
+    File energyRestartFile;
     if (!group.energyRestart.equalsIgnoreCase("none")) {
       energyRestartFile = new File(group.energyRestart);
       rotamerOptimization.setEnergyRestartFile(energyRestartFile);

@@ -48,7 +48,6 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary
-import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.PDBFilter
 import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine.Command
@@ -69,7 +68,7 @@ import static java.lang.String.format
 class ManyBody extends AlgorithmsScript {
 
   @Mixin
-  ManyBodyOptions manyBody
+  ManyBodyOptions manyBodyOptions
 
   /**
    * An XYZ or PDB input file.
@@ -112,7 +111,7 @@ class ManyBody extends AlgorithmsScript {
     // It enforces that all torsions include a Fourier series with 6 terms.
     // Otherwise, during titration the number of terms for each torsion may change and
     // causing updateParametersInContext to throw an exception.
-    double titrationPH = manyBody.getTitrationPH()
+    double titrationPH = manyBodyOptions.getTitrationPH()
     if (titrationPH > 0) {
       System.setProperty("manybody-titration", "true")
     }
@@ -134,7 +133,7 @@ class ManyBody extends AlgorithmsScript {
     potentialEnergy = activeAssembly.getPotentialEnergy()
 
     // Collect residues to optimize.
-    List<Residue> residues = manyBody.getResidues(activeAssembly);
+    List<Residue> residues = manyBodyOptions.getResidues(activeAssembly);
     if (residues == null || residues.isEmpty()) {
       logger.info(" There are no residues in the active system to optimize.")
       return this
@@ -173,7 +172,7 @@ class ManyBody extends AlgorithmsScript {
       rotamerOptimization.setMonteCarloTesting(true)
     }
 
-    manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
+    manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
     // TODO: Consolidate the method below with "manyBody.getResidues".
     List<Residue> residueList = rotamerOptimization.getResidues()
@@ -187,7 +186,7 @@ class ManyBody extends AlgorithmsScript {
     RotamerLibrary.measureRotamers(residueList, false)
 
     // Run the optimization.
-    rotamerOptimization.optimize(manyBody.getAlgorithm())
+    rotamerOptimization.optimize(manyBodyOptions.getAlgorithm())
 
     boolean isTitrating = false
     Set<Atom> excludeAtoms = new HashSet<>()
