@@ -249,7 +249,7 @@ class Superpose extends AlgorithmsScript {
     for (int i = 0; i < nSelected; i++) {
       usedIndices[i] = selectedList.get(i)
     }
-    
+
     // Reset all atoms to be active because the Superpose class will apply our "usedIndices" array.
     for (Atom atom : atoms) {
       atom.setActive(true)
