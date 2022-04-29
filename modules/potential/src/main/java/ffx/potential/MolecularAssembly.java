@@ -824,7 +824,7 @@ public class MolecularAssembly extends MSGroup {
   }
 
   /**
-   * getAtomArray
+   * Return an Array of all atoms in the System.
    *
    * @return an array of {@link ffx.potential.bonded.Atom} objects.
    */
