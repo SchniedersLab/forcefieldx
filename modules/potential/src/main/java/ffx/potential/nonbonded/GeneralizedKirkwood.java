@@ -1589,11 +1589,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
             // Sneck for lone ions or molecules like methane, which are not descreened by any other atoms
             neckScale[i] = 1.0;
           } else {
-            neckScale[i] = sneck * (5.0 - numBoundHeavyAtoms) / 4.0;
+            neckScale[i] = atom.getSoluteType().sneck * (5.0 - numBoundHeavyAtoms) / 4.0;
           }
         } else {
           // Non-chemically aware Sneck - set neckScale to the max (input) Sneck value for all non-hydrogen atoms
-          neckScale[i] = sneck;
+          neckScale[i] = atom.getSoluteType().sneck;
         }
       }
 
