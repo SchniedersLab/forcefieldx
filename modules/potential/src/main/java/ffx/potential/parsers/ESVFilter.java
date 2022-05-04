@@ -37,8 +37,6 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
-import ffx.crystal.Crystal;
-
 import java.io.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,9 +45,9 @@ import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
 
 /**
- * The DYNFilter class parses TINKER Restart (*.DYN) files.
+ * The ESVFilter class parses Extended System Restart (*.ESV) files.
  *
- * @author Michael J. Schnieders
+ * @author Andrew Thiel
  * @since 1.0
  */
 public class ESVFilter {

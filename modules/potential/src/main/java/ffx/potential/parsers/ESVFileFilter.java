@@ -43,7 +43,7 @@ import javax.swing.filechooser.FileFilter;
 import java.io.File;
 
 /**
- * The ESVFileFilter class is used to choose a TINKER Restart (*.DYN) file.
+ * The ESVFileFilter class is used to choose a Extended System Restart (*.ESV) file.
  *
  * @author Andrew Thiel
  * @since 1.0

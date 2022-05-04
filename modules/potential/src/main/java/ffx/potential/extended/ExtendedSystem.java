@@ -274,7 +274,6 @@ public class ExtendedSystem {
         if (forceFieldEnergy == null) {
             logger.severe("No potential energy found?");
         }
-
         CompositeConfiguration properties = mola.getProperties();
         titrationUtils = new TitrationUtils(forceField);
         thetaFriction = properties.getDouble("esv.friction", ExtendedSystem.THETA_FRICTION);
@@ -539,8 +538,10 @@ public class ExtendedSystem {
                 // Model Bias & Derivs
                 double refEnergy = ASHrefEnergy;
                 double lambdaIntercept = ASHlambdaIntercept;
-                modelBias = refEnergy * ((1.0 - titrationLambda) - lambdaIntercept) * ((1.0 - titrationLambda) - lambdaIntercept);
-                dMod_dTitr = -2.0 * refEnergy * ((1.0 - titrationLambda) - lambdaIntercept);
+                //modelBias = refEnergy * ((1.0 - titrationLambda) - lambdaIntercept) * ((1.0 - titrationLambda) - lambdaIntercept);
+                modelBias = refEnergy * titrationLambda*titrationLambda + lambdaIntercept * titrationLambda;
+                //dMod_dTitr = -2.0 * refEnergy * ((1.0 - titrationLambda) - lambdaIntercept);
+                dMod_dTitr = 2 * refEnergy * titrationLambda + lambdaIntercept;
                 dMod_dTaut = 0.0;
                 break;
             case GLD:
@@ -566,8 +567,10 @@ public class ExtendedSystem {
                 // Model Bias & Derivs
                 refEnergy = GLHrefEnergy;
                 lambdaIntercept = GLHlambdaIntercept;
-                modelBias = refEnergy * ((1 - titrationLambda) - lambdaIntercept) * ((1 - titrationLambda) - lambdaIntercept);
-                dMod_dTitr = -2.0 * refEnergy * ((1 - titrationLambda) - lambdaIntercept);
+                //modelBias = refEnergy * ((1 - titrationLambda) - lambdaIntercept) * ((1 - titrationLambda) - lambdaIntercept);
+                modelBias = refEnergy * titrationLambda*titrationLambda + lambdaIntercept * titrationLambda;
+                //dMod_dTitr = -2.0 * refEnergy * ((1 - titrationLambda) - lambdaIntercept);
+                dMod_dTitr = 2 * refEnergy * titrationLambda + lambdaIntercept;
                 dMod_dTaut = 0.0;
                 break;
             case HIS:
@@ -624,8 +627,11 @@ public class ExtendedSystem {
                 // Model Bias & Derivs
                 refEnergy = LYSrefEnergy;
                 lambdaIntercept = LYSlambdaIntercept;
-                modelBias = refEnergy * ((1.0 - titrationLambda) - lambdaIntercept) * ((1.0 - titrationLambda) - lambdaIntercept);
-                dMod_dTitr = -2.0 * refEnergy * ((1.0 - titrationLambda) - lambdaIntercept);
+                //modelBias = refEnergy * ((1.0 - titrationLambda) - lambdaIntercept) * ((1.0 - titrationLambda) - lambdaIntercept);
+                //TODO: consolidate/fix Fmod terms
+                modelBias = refEnergy * titrationLambda * titrationLambda + lambdaIntercept * titrationLambda;
+                //dMod_dTitr = -2.0 * refEnergy * ((1.0 - titrationLambda) - lambdaIntercept);
+                dMod_dTitr = 2 * refEnergy * titrationLambda + lambdaIntercept;
                 dMod_dTaut = 0.0;
                 break;
             default:
