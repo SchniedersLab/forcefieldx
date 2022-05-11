@@ -1490,8 +1490,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         } else {
           restraintEnergy2 = 0.0;
         }
-        if (logger.isLoggable(Level.INFO)) {
-          logger.info(format(" Topology 2 Energy & Restraints: %15.8f %15.8f", f2L * energy2,
+        if (logger.isLoggable(Level.FINE)) {
+          logger.fine(format(" Topology 2 Energy & Restraints: %15.8f %15.8f", f2L * energy2,
               f1L * restraintEnergy2));
         }
       }
