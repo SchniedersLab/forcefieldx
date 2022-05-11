@@ -1235,6 +1235,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
     if (step != 0) {
       // Write out snapshots in selected format every saveSnapshotFrequency steps.
       if (trySnapshot && trajectoryFrequency > 0 && step % trajectoryFrequency == 0) {
+        if(esvSystem != null){
+          for(Atom atom : molecularAssembly.getAtomList()){
+            int atomIndex = atom.getIndex() - 1;
+            atom.setOccupancy(esvSystem.getTitrationLambda(atomIndex));
+            atom.setTempFactor(esvSystem.getTautomerLambda(atomIndex));
+          }
+        }
         appendSnapshot(allLines);
         written.add(WriteActions.SNAPSHOT);
       }
@@ -1259,6 +1266,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
     if(esvSystem != null){
       esvSystem.writeRestart();
+      esvSystem.writeLambdaHistogram();
     }
   }
 

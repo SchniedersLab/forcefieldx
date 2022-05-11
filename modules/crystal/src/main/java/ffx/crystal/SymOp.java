@@ -37,10 +37,16 @@
 // ******************************************************************************
 package ffx.crystal;
 
+import static ffx.crystal.Crystal.mod;
+import static ffx.numerics.math.DoubleMath.dot;
+import static ffx.numerics.math.MatrixMath.mat3Inverse;
+import static ffx.numerics.math.MatrixMath.mat4Mat4;
+import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.random;
+import static org.apache.commons.math3.util.FastMath.rint;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -53,57 +59,63 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  */
 public class SymOp {
 
-  private static final double zero = 0.0;
-  /** Constant <code>Tr_0_0_0={zero, zero, zero}</code> */
-  static final double[] Tr_0_0_0 = {zero, zero, zero};
-
+  /** Constant <code>ZERO = 0.0</code> */
+  private static final double ZERO = 0.0;
+  /** Constant <code>ZERO_ROTATION = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}</code> */
+  public static final double[][] ZERO_ROTATION = {
+      {1.0, ZERO, ZERO},
+      {ZERO, 1.0, ZERO},
+      {ZERO, ZERO, 1.0}};
+  /** Constant <code>Tr_0_0_0={ZERO, ZERO, ZERO}</code> */
+  public static final double[] Tr_0_0_0 = {ZERO, ZERO, ZERO};
+  /** Constant <code>f12 = 1.0 / 2.0</code> */
   private static final double f12 = 1.0 / 2.0;
-  /** Constant <code>Tr_12_0_12={f12, zero, f12}</code> */
-  static final double[] Tr_12_0_12 = {f12, zero, f12};
-  /** Constant <code>Tr_0_12_12={zero, f12, f12}</code> */
-  static final double[] Tr_0_12_12 = {zero, f12, f12};
-  /** Constant <code>Tr_12_12_0={f12, f12, zero}</code> */
-  static final double[] Tr_12_12_0 = {f12, f12, zero};
+  /** Constant <code>Tr_12_0_12={f12, ZERO, f12}</code> */
+  static final double[] Tr_12_0_12 = {f12, ZERO, f12};
+  /** Constant <code>Tr_0_12_12={ZERO, f12, f12}</code> */
+  static final double[] Tr_0_12_12 = {ZERO, f12, f12};
+  /** Constant <code>Tr_12_12_0={f12, f12, ZERO}</code> */
+  static final double[] Tr_12_12_0 = {f12, f12, ZERO};
   /** Constant <code>Tr_12_12_12={f12, f12, f12}</code> */
   static final double[] Tr_12_12_12 = {f12, f12, f12};
-  /** Constant <code>Tr_0_12_0={zero, f12, zero}</code> */
-  static final double[] Tr_0_12_0 = {zero, f12, zero};
-  /** Constant <code>Tr_12_0_0={f12, zero, zero}</code> */
-  static final double[] Tr_12_0_0 = {f12, zero, zero};
-  /** Constant <code>Tr_0_0_12={zero, zero, f12}</code> */
-  static final double[] Tr_0_0_12 = {zero, zero, f12};
-
+  /** Constant <code>Tr_0_12_0={ZERO, f12, ZERO}</code> */
+  static final double[] Tr_0_12_0 = {ZERO, f12, ZERO};
+  /** Constant <code>Tr_12_0_0={f12, ZERO, ZERO}</code> */
+  static final double[] Tr_12_0_0 = {f12, ZERO, ZERO};
+  /** Constant <code>Tr_0_0_12={ZERO, ZERO, f12}</code> */
+  static final double[] Tr_0_0_12 = {ZERO, ZERO, f12};
+  /** Constant <code>f13 = 1.0 / 3.0</code> */
   private static final double f13 = 1.0 / 3.0;
-  /** Constant <code>Tr_0_0_13={zero, zero, f13}</code> */
-  static final double[] Tr_0_0_13 = {zero, zero, f13};
-
+  /** Constant <code>Tr_0_0_13={ZERO, ZERO, f13}</code> */
+  static final double[] Tr_0_0_13 = {ZERO, ZERO, f13};
+  /** Constant <code>f23 = 2.0 / 3.0</code> */
   private static final double f23 = 2.0 / 3.0;
   /** Constant <code>Tr_23_13_13={f23, f13, f13}</code> */
   static final double[] Tr_23_13_13 = {f23, f13, f13};
   /** Constant <code>Tr_13_23_23={f13, f23, f23}</code> */
   static final double[] Tr_13_23_23 = {f13, f23, f23};
-  /** Constant <code>Tr_0_0_23={zero, zero, f23}</code> */
-  static final double[] Tr_0_0_23 = {zero, zero, f23};
-
+  /** Constant <code>Tr_0_0_23={ZERO, ZERO, f23}</code> */
+  static final double[] Tr_0_0_23 = {ZERO, ZERO, f23};
+  /** Constant <code>f14 = 1.0 / 4.0</code> */
   private static final double f14 = 1.0 / 4.0;
-  /** Constant <code>Tr_12_0_14={f12, zero, f14}</code> */
-  static final double[] Tr_12_0_14 = {f12, zero, f14};
-  /** Constant <code>Tr_0_12_14={zero, f12, f14}</code> */
-  static final double[] Tr_0_12_14 = {zero, f12, f14};
+  /** Constant <code>Tr_12_0_14={f12, ZERO, f14}</code> */
+  static final double[] Tr_12_0_14 = {f12, ZERO, f14};
+  /** Constant <code>Tr_0_12_14={ZERO, f12, f14}</code> */
+  static final double[] Tr_0_12_14 = {ZERO, f12, f14};
   /** Constant <code>Tr_14_14_14={f14, f14, f14}</code> */
   static final double[] Tr_14_14_14 = {f14, f14, f14};
   /** Constant <code>Tr_12_12_14={f12, f12, f14}</code> */
   static final double[] Tr_12_12_14 = {f12, f12, f14};
-  /** Constant <code>Tr_0_0_14={zero, zero, f14}</code> */
-  static final double[] Tr_0_0_14 = {zero, zero, f14};
-
+  /** Constant <code>Tr_0_0_14={ZERO, ZERO, f14}</code> */
+  static final double[] Tr_0_0_14 = {ZERO, ZERO, f14};
+  /** Constant <code>f34 = 3.0 / 4.0</code> */
   private static final double f34 = 3.0 / 4.0;
-  /** Constant <code>Tr_0_0_34={zero, zero, f34}</code> */
-  static final double[] Tr_0_0_34 = {zero, zero, f34};
-  /** Constant <code>Tr_12_0_34={f12, zero, f34}</code> */
-  static final double[] Tr_12_0_34 = {f12, zero, f34};
-  /** Constant <code>Tr_0_12_34={zero, f12, f34}</code> */
-  static final double[] Tr_0_12_34 = {zero, f12, f34};
+  /** Constant <code>Tr_0_0_34={ZERO, ZERO, f34}</code> */
+  static final double[] Tr_0_0_34 = {ZERO, ZERO, f34};
+  /** Constant <code>Tr_12_0_34={f12, ZERO, f34}</code> */
+  static final double[] Tr_12_0_34 = {f12, ZERO, f34};
+  /** Constant <code>Tr_0_12_34={ZERO, f12, f34}</code> */
+  static final double[] Tr_0_12_34 = {ZERO, f12, f34};
   /** Constant <code>Tr_34_14_14={f34, f14, f14}</code> */
   static final double[] Tr_34_14_14 = {f34, f14, f14};
   /** Constant <code>Tr_14_14_34={f14, f14, f34}</code> */
@@ -120,22 +132,24 @@ public class SymOp {
   static final double[] Tr_34_34_34 = {f34, f34, f34};
   /** Constant <code>Tr_34_14_34={f34, f14, f34}</code> */
   static final double[] Tr_34_14_34 = {f34, f14, f34};
-
+  /** Constant <code>f16 = 1.0 / 6.0</code> */
   private static final double f16 = 1.0 / 6.0;
   /** Constant <code>Tr_13_23_16={f13, f23, f16}</code> */
   static final double[] Tr_13_23_16 = {f13, f23, f16};
-  /** Constant <code>Tr_0_0_16={zero, zero, f16}</code> */
-  static final double[] Tr_0_0_16 = {zero, zero, f16};
-
+  /** Constant <code>Tr_0_0_16={ZERO, ZERO, f16}</code> */
+  static final double[] Tr_0_0_16 = {ZERO, ZERO, f16};
+  /** Constant <code>f56 = 5.0 / 6.0</code> */
   private static final double f56 = 5.0 / 6.0;
-  /** Constant <code>Tr_0_0_56={zero, zero, f56}</code> */
-  static final double[] Tr_0_0_56 = {zero, zero, f56};
+  /** Constant <code>Tr_0_0_56={ZERO, ZERO, f56}</code> */
+  static final double[] Tr_0_0_56 = {ZERO, ZERO, f56};
   /** Constant <code>Tr_23_13_56={f23, f13, f56}</code> */
   static final double[] Tr_23_13_56 = {f23, f13, f56};
-
-  private static final double[] X = {1.0, zero, zero};
-  private static final double[] Y = {zero, 1.0, zero};
-  private static final double[] Z = {zero, zero, 1.0};
+  /** Constant <code>X = {1.0, ZERO, ZERO}</code> */
+  private static final double[] X = {1.0, ZERO, ZERO};
+  /** Constant <code>Y = {ZERO, 1.0, ZERO}</code> */
+  private static final double[] Y = {ZERO, 1.0, ZERO};
+  /** Constant <code>Z = {ZERO, ZERO, 1.0}</code> */
+  private static final double[] Z = {ZERO, ZERO, 1.0};
   /** Constant <code>Rot_Y_Z_X={Y, Z, X}</code> */
   static final double[][] Rot_Y_Z_X = {Y, Z, X};
   /** Constant <code>Rot_X_Y_Z={X, Y, Z}</code> */
@@ -148,8 +162,8 @@ public class SymOp {
   static final double[][] Rot_Z_Y_X = {Z, Y, X};
   /** Constant <code>Rot_Y_X_Z={Y, X, Z}</code> */
   static final double[][] Rot_Y_X_Z = {Y, X, Z};
-
-  private static final double[] mX = {-1.0, zero, zero};
+  /** Constant <code>mX = {-1.0, ZERO, ZERO}</code> */
+  private static final double[] mX = {-1.0, ZERO, ZERO};
   /** Constant <code>Rot_Y_mX_Z={Y, mX, Z}</code> */
   static final double[][] Rot_Y_mX_Z = {Y, mX, Z};
   /** Constant <code>Rot_mX_Z_Y={mX, Z, Y}</code> */
@@ -162,8 +176,8 @@ public class SymOp {
   static final double[][] Rot_Z_Y_mX = {Z, Y, mX};
   /** Constant <code>Rot_Z_mX_Y={Z, mX, Y}</code> */
   static final double[][] Rot_Z_mX_Y = {Z, mX, Y};
-
-  private static final double[] mY = {zero, -1.0, zero};
+  /** Constant <code>mY = {ZERO, -1.0, ZERO}</code> */
+  private static final double[] mY = {ZERO, -1.0, ZERO};
   /** Constant <code>Rot_Z_mY_X={Z, mY, X}</code> */
   static final double[][] Rot_Z_mY_X = {Z, mY, X};
   /** Constant <code>Rot_X_Z_mY={X, Z, mY}</code> */
@@ -188,8 +202,8 @@ public class SymOp {
   static final double[][] Rot_Z_mY_mX = {Z, mY, mX};
   /** Constant <code>Rot_mX_mY_Z={mX, mY, Z}</code> */
   static final double[][] Rot_mX_mY_Z = {mX, mY, Z};
-
-  private static final double[] mZ = {zero, zero, -1.0};
+  /** Constant <code>mZ = {ZERO, ZERO, -1.0}</code> */
+  private static final double[] mZ = {ZERO, ZERO, -1.0};
   /** Constant <code>Rot_Y_mX_mZ={Y, mX, mZ}</code> */
   static final double[][] Rot_Y_mX_mZ = {Y, mX, mZ};
   /** Constant <code>Rot_mX_Y_mZ={mX, Y, mZ}</code> */
@@ -238,8 +252,8 @@ public class SymOp {
   static final double[][] Rot_mZ_Y_X = {mZ, Y, X};
   /** Constant <code>Rot_mZ_X_mY={mZ, X, mY}</code> */
   static final double[][] Rot_mZ_X_mY = {mZ, X, mY};
-
-  private static final double[] XmY = {1.0, -1.0, zero};
+  /** Constant <code>XmY = {1.0, -1.0, ZERO}</code> */
+  private static final double[] XmY = {1.0, -1.0, ZERO};
   /** Constant <code>Rot_XmY_X_mZ={XmY, X, mZ}</code> */
   static final double[][] Rot_XmY_X_mZ = {XmY, X, mZ};
   /** Constant <code>Rot_XmY_X_Z={XmY, X, Z}</code> */
@@ -256,8 +270,8 @@ public class SymOp {
   static final double[][] Rot_mY_XmY_Z = {mY, XmY, Z};
   /** Constant <code>Rot_XmY_mY_mZ={XmY, mY, mZ}</code> */
   static final double[][] Rot_XmY_mY_mZ = {XmY, mY, mZ};
-
-  private static final double[] mXY = {-1.0, 1.0, zero};
+  /** Constant <code>mXY = {-1.0, 1.0, ZERO}</code> */
+  private static final double[] mXY = {-1.0, 1.0, ZERO};
   /** Constant <code>Rot_Y_mXY_Z={Y, mXY, Z}</code> */
   static final double[][] Rot_Y_mXY_Z = {Y, mXY, Z};
   /** Constant <code>Rot_mX_mXY_mZ={mX, mXY, mZ}</code> */
@@ -278,8 +292,15 @@ public class SymOp {
   public final double[][] rot;
   /** The translation vector in fractional coordinates. */
   public final double[] tr;
+  /** A mask equal to 0 for X-coordinates. */
+  private static final int XX = 0;
+  /** A mask equal to 1 for Y-coordinates. */
+  private static final int YY = 1;
+  /** A mask equal to 2 for Z-coordinates. */
+  private static final int ZZ = 2;
+
   /**
-   * The SymOp constructor.
+   * The SymOp constructor using a rotation matrix and translation vector.
    *
    * @param rot The rotation matrix.
    * @param tr The translation vector.
@@ -289,12 +310,415 @@ public class SymOp {
     this.tr = tr;
   }
 
+
+  /**
+   * The SymOp constructor using a 4x4 matrix.
+   *
+   * @param m The rotation matrix and translation vector as a 4x4 matrix.
+   */
+  public SymOp(double[][] m) {
+    this.rot = new double[3][3];
+    rot[0][0] = m[0][0];
+    rot[0][1] = m[0][1];
+    rot[0][2] = m[0][2];
+    rot[1][0] = m[1][0];
+    rot[1][1] = m[1][1];
+    rot[1][2] = m[1][2];
+    rot[2][0] = m[2][0];
+    rot[2][1] = m[2][1];
+    rot[2][2] = m[2][2];
+
+    this.tr = new double[3];
+    tr[0] = m[0][3] / m[3][3];
+    tr[1] = m[1][3] / m[3][3];
+    tr[2] = m[2][3] / m[3][3];
+  }
+
+  /**
+   * Return the SymOp as a 4x4 matrix.
+   *
+   * @return A 4x4 matrix representation of the SymOp.
+   */
+  public double[][] asMatrix() {
+    return new double[][] {
+        {rot[0][0], rot[0][1], rot[0][2], tr[0]},
+        {rot[1][0], rot[1][1], rot[1][2], tr[1]},
+        {rot[2][0], rot[2][1], rot[2][2], tr[2]},
+        {0.0, 0.0, 0.0, 1.0}};
+  }
+
+  /**
+   * Return the combined SymOp that is equivalent to first applying <code>this</code> SymOp and then
+   * the argument. Note: Applied as rotation then translation.
+   * <code>X' = S_arg(S_this(X))</code>
+   * <code>X' = S_combined(X)</code>
+   *
+   * @param symOp The SymOp to append to <code>this</code> SymOp.
+   * @return The combined SymOp.
+   */
+  public SymOp append(SymOp symOp) {
+    return new SymOp(mat4Mat4(symOp.asMatrix(), asMatrix()));
+  }
+
+  /**
+   * Return the combined SymOp that is equivalent to first applying the argument and then
+   * <code>this</code> SymOp. Note: Applied as rotation then translation.
+   * <code>X' = S_this(S_arg(X))</code>
+   * <code>X' = S_combined(X)</code>
+   *
+   * @param symOp The SymOp to prepend to <code>this</code> Symop.
+   * @return The combined SymOp.
+   */
+  public SymOp prepend(SymOp symOp) {
+    return new SymOp(mat4Mat4(asMatrix(), symOp.asMatrix()));
+  }
+
+  /**
+   * Return the combined SymOp that is equivalent to first applying symOp1 and then SymOp2. Note:
+   * Applied as rotation then translation.
+   *
+   * <code>X' = S_2(S_1(X))</code>
+   * <code>X' = S_combined(X)</code>
+   *
+   * @param symOp1 The fist SymOp.
+   * @param symOp2 The second SymOp.
+   * @return The combined SymOp.
+   */
+  public static SymOp combineSymOps(SymOp symOp1, SymOp symOp2) {
+    return new SymOp(mat4Mat4(symOp2.asMatrix(), symOp1.asMatrix()));
+  }
+
+  /**
+   * Apply a Cartesian symmetry operator to an array of Cartesian coordinates. If the arrays x, y or
+   * z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are null
+   * or not of length n, new arrays are allocated.
+   *
+   * @param n Number of atoms.
+   * @param x Input cartesian x-coordinates.
+   * @param y Input cartesian y-coordinates.
+   * @param z Input cartesian z-coordinates.
+   * @param mateX Output cartesian x-coordinates.
+   * @param mateY Output cartesian y-coordinates.
+   * @param mateZ Output cartesian z-coordinates.
+   * @param symOp The cartesian symmetry operator.
+   */
+  public static void applyCartSymOp(
+      int n,
+      double[] x,
+      double[] y,
+      double[] z,
+      double[] mateX,
+      double[] mateY,
+      double[] mateZ,
+      SymOp symOp) {
+    if (x == null || y == null || z == null) {
+      return;
+    }
+    if (x.length < n || y.length < n || z.length < n) {
+      return;
+    }
+    if (mateX == null || mateX.length < n) {
+      mateX = new double[n];
+    }
+    if (mateY == null || mateY.length < n) {
+      mateY = new double[n];
+    }
+    if (mateZ == null || mateZ.length < n) {
+      mateZ = new double[n];
+    }
+
+    final double[][] rot = symOp.rot;
+    final double[] trans = symOp.tr;
+
+    final double rot00 = rot[0][0];
+    final double rot10 = rot[1][0];
+    final double rot20 = rot[2][0];
+    final double rot01 = rot[0][1];
+    final double rot11 = rot[1][1];
+    final double rot21 = rot[2][1];
+    final double rot02 = rot[0][2];
+    final double rot12 = rot[1][2];
+    final double rot22 = rot[2][2];
+    final double t0 = trans[0];
+    final double t1 = trans[1];
+    final double t2 = trans[2];
+    for (int i = 0; i < n; i++) {
+      double xc = x[i];
+      double yc = y[i];
+      double zc = z[i];
+      // Apply Symmetry Operator.
+      mateX[i] = rot00 * xc + rot01 * yc + rot02 * zc + t0;
+      mateY[i] = rot10 * xc + rot11 * yc + rot12 * zc + t1;
+      mateZ[i] = rot20 * xc + rot21 * yc + rot22 * zc + t2;
+    }
+  }
+
+  /**
+   * Apply a cartesian symmetry operator to an array of coordinates.
+   *
+   * @param xyz Input  cartesian coordinates.
+   * @param mate Symmetry mate  cartesian coordinates.
+   * @param symOp The cartesian symmetry operator.
+   */
+  public static void applyCartesianSymOp(double[] xyz, double[] mate, SymOp symOp) {
+    applyCartesianSymOp(xyz, mate, symOp, null);
+  }
+
+  /**
+   * Apply a cartesian symmetry operator to an array of coordinates.
+   *
+   * @param xyz Input  cartesian coordinates.
+   * @param mate Symmetry mate  cartesian coordinates.
+   * @param symOp The cartesian symmetry operator.
+   * @param mask Only apply the SymOp if the per atom mask is true.
+   */
+  public static void applyCartesianSymOp(double[] xyz, double[] mate, SymOp symOp, boolean[] mask) {
+    var rot = symOp.rot;
+    var trans = symOp.tr;
+
+    assert (xyz.length % 3 == 0);
+    assert (xyz.length == mate.length);
+    int len = xyz.length / 3;
+
+    // Load the SymOp into local variables.
+    var rot00 = rot[0][0];
+    var rot10 = rot[1][0];
+    var rot20 = rot[2][0];
+    var rot01 = rot[0][1];
+    var rot11 = rot[1][1];
+    var rot21 = rot[2][1];
+    var rot02 = rot[0][2];
+    var rot12 = rot[1][2];
+    var rot22 = rot[2][2];
+    var tx = trans[0];
+    var ty = trans[1];
+    var tz = trans[2];
+
+    if (mask == null) {
+      for (int i = 0; i < len; i++) {
+        int index = i * 3;
+        var xc = xyz[index + XX];
+        var yc = xyz[index + YY];
+        var zc = xyz[index + ZZ];
+        // Apply Symmetry Operator.
+        mate[index + XX] = rot00 * xc + rot01 * yc + rot02 * zc + tx;
+        mate[index + YY] = rot10 * xc + rot11 * yc + rot12 * zc + ty;
+        mate[index + ZZ] = rot20 * xc + rot21 * yc + rot22 * zc + tz;
+      }
+    } else {
+      for (int i = 0; i < len; i++) {
+        int index = i * 3;
+        var xc = xyz[index + XX];
+        var yc = xyz[index + YY];
+        var zc = xyz[index + ZZ];
+        if (mask[i]) {
+          // Apply Symmetry Operator.
+          mate[index + XX] = rot00 * xc + rot01 * yc + rot02 * zc + tx;
+          mate[index + YY] = rot10 * xc + rot11 * yc + rot12 * zc + ty;
+          mate[index + ZZ] = rot20 * xc + rot21 * yc + rot22 * zc + tz;
+        } else {
+          mate[index + XX] = xc;
+          mate[index + YY] = yc;
+          mate[index + ZZ] = zc;
+        }
+      }
+    }
+  }
+
+  /**
+   * Apply a fractional symmetry operator to one set of coordinates.
+   *
+   * @param xyz Input fractional coordinates.
+   * @param mate Symmetry mate fractional coordinates.
+   * @param symOp The fractional symmetry operator.
+   */
+  public static void applyFracSymOp(double[] xyz, double[] mate, SymOp symOp) {
+    var rot = symOp.rot;
+    var trans = symOp.tr;
+    var xf = xyz[0];
+    var yf = xyz[1];
+    var zf = xyz[2];
+    // Apply Symmetry Operator.
+    mate[0] = rot[0][0] * xf + rot[0][1] * yf + rot[0][2] * zf + trans[0];
+    mate[1] = rot[1][0] * xf + rot[1][1] * yf + rot[1][2] * zf + trans[1];
+    mate[2] = rot[2][0] * xf + rot[2][1] * yf + rot[2][2] * zf + trans[2];
+  }
+
+  /**
+   * Apply a symmetry operator to one set of coordinates.
+   *
+   * @param h Input coordinates.
+   * @param k Input coordinates.
+   * @param l Input coordinates.
+   * @param mate Symmetry mate coordinates.
+   * @param symOp The symmetry operator.
+   * @param nx number of unit cell translations
+   * @param ny number of unit cell translations
+   * @param nz number of unit cell translations
+   */
+  public static void applySymOp(int h, int k, int l, int[] mate, SymOp symOp, int nx, int ny,
+      int nz) {
+    var rot = symOp.rot;
+    var trans = symOp.tr;
+    // Apply Symmetry Operator.
+    mate[0] =
+        (int) rot[0][0] * h + (int) rot[0][1] * k + (int) rot[0][2] * l + (int) rint(nx * trans[0]);
+    mate[1] =
+        (int) rot[1][0] * h + (int) rot[1][1] * k + (int) rot[1][2] * l + (int) rint(ny * trans[1]);
+    mate[2] =
+        (int) rot[2][0] * h + (int) rot[2][1] * k + (int) rot[2][2] * l + (int) rint(nz * trans[2]);
+    mate[0] = mod(mate[0], nx);
+    mate[1] = mod(mate[1], ny);
+    mate[2] = mod(mate[2], nz);
+  }
+
+  /**
+   * Apply a symmetry operator to one HKL.
+   *
+   * @param hkl Input HKL.
+   * @param mate Symmetry mate HKL.
+   * @param symOp The symmetry operator.
+   */
+  public static void applySymRot(HKL hkl, HKL mate, SymOp symOp) {
+    var rot = symOp.rot;
+    double h = hkl.h();
+    double k = hkl.k();
+    double l = hkl.l();
+    double hs = rot[0][0] * h + rot[0][1] * k + rot[0][2] * l;
+    double ks = rot[1][0] * h + rot[1][1] * k + rot[1][2] * l;
+    double ls = rot[2][0] * h + rot[2][1] * k + rot[2][2] * l;
+    // Convert back to HKL
+    mate.h((int) rint(hs));
+    mate.k((int) rint(ks));
+    mate.l((int) rint(ls));
+  }
+
+  /**
+   * Apply a Cartesian symmetry rotation to an array of Cartesian coordinates. The length of xyz must
+   * be divisible by 3 and mate must have the same length.
+   *
+   * @param xyz Input cartesian x, y, z-coordinates.
+   * @param mate Output cartesian x, y, z-coordinates.
+   * @param symOp The fractional symmetry operator.
+   */
+  public static void applyCartesianSymRot(double[] xyz, double[] mate, SymOp symOp) {
+    applyCartesianSymRot(xyz, mate, symOp, null);
+  }
+
+  /**
+   * Apply a Cartesian symmetry rotation to an array of Cartesian coordinates. The length of xyz must
+   * be divisible by 3 and mate must have the same length.
+   *
+   * @param xyz Input cartesian x, y, z-coordinates.
+   * @param mate Output cartesian x, y, z-coordinates.
+   * @param symOp The fractional symmetry operator.
+   * @param mask Only apply the SymOp if the per atom mask is true.
+   */
+  public static void applyCartesianSymRot(double[] xyz, double[] mate, SymOp symOp, boolean[] mask) {
+    int l = xyz.length;
+    int n = l / 3;
+    assert (l % 3 == 0);
+    assert (mate.length == l);
+
+    // Load the rotation matrix
+    var rot = symOp.rot;
+    var rot00 = rot[0][0];
+    var rot10 = rot[1][0];
+    var rot20 = rot[2][0];
+    var rot01 = rot[0][1];
+    var rot11 = rot[1][1];
+    var rot21 = rot[2][1];
+    var rot02 = rot[0][2];
+    var rot12 = rot[1][2];
+    var rot22 = rot[2][2];
+
+    if (mask == null) {
+      for (int i = 0; i < n; i++) {
+        int index = i * 3;
+        var xi = xyz[index + XX];
+        var yi = xyz[index + YY];
+        var zi = xyz[index + ZZ];
+        // Apply Symmetry Operator.
+        mate[index + XX] = rot00 * xi + rot01 * yi + rot02 * zi;
+        mate[index + YY] = rot10 * xi + rot11 * yi + rot12 * zi;
+        mate[index + ZZ] = rot20 * xi + rot21 * yi + rot22 * zi;
+      }
+    } else {
+      for (int i = 0; i < n; i++) {
+        int index = i * 3;
+        var xi = xyz[index + XX];
+        var yi = xyz[index + YY];
+        var zi = xyz[index + ZZ];
+        if (mask[i]) {
+          // Apply Symmetry Operator.
+          mate[index + XX] = rot00 * xi + rot01 * yi + rot02 * zi;
+          mate[index + YY] = rot10 * xi + rot11 * yi + rot12 * zi;
+          mate[index + ZZ] = rot20 * xi + rot21 * yi + rot22 * zi;
+        } else {
+          mate[index + XX] = xi;
+          mate[index + YY] = yi;
+          mate[index + ZZ] = zi;
+        }
+      }
+    }
+  }
+
+  /**
+   * Apply a transpose rotation symmetry operator to one HKL.
+   *
+   * @param hkl Input HKL.
+   * @param mate Symmetry mate HKL.
+   * @param symOp The symmetry operator.
+   */
+  public static void applyTransSymRot(HKL hkl, HKL mate, SymOp symOp) {
+    double[][] rot = symOp.rot;
+    double h = hkl.h();
+    double k = hkl.k();
+    double l = hkl.l();
+    // Apply transpose Symmetry Operator.
+    double hs = rot[0][0] * h + rot[1][0] * k + rot[2][0] * l;
+    double ks = rot[0][1] * h + rot[1][1] * k + rot[2][1] * l;
+    double ls = rot[0][2] * h + rot[1][2] * k + rot[2][2] * l;
+    // Convert back to HKL
+    mate.h((int) rint(hs));
+    mate.k((int) rint(ks));
+    mate.l((int) rint(ls));
+  }
+
+  /**
+   * Invert a symmetry operator.
+   *
+   * @param symOp Original symmetry operator of which the inverse is desired.
+   * @return SymOp The inverse symmetry operator of the one supplied.
+   */
+  public static SymOp invertSymOp(SymOp symOp) {
+    var tr = symOp.tr;
+    var rot = symOp.rot;
+    return new SymOp(mat3Inverse(rot),
+        new double[] {-dot(tr, rot[0]), -dot(tr, rot[1]), -dot(tr, rot[2])});
+  }
+
+  /**
+   * Create a SymOp from an input String.
+   *
+   * @param s Input <code>String</code> containing 12 white-space delimited double values.
+   * @return The SymOp.
+   */
+  public static SymOp parse(String s) {
+    String[] tokens = s.split(" +");
+    if (tokens.length < 12) {
+      return null;
+    }
+    SymOp symOp = new SymOp(new double[][] {
+        {parseDouble(tokens[0]), parseDouble(tokens[1]), parseDouble(tokens[2])},
+        {parseDouble(tokens[3]), parseDouble(tokens[4]), parseDouble(tokens[5])},
+        {parseDouble(tokens[6]), parseDouble(tokens[7]), parseDouble(tokens[8])}},
+        new double[] {parseDouble(tokens[9]), parseDouble(tokens[10]), parseDouble(tokens[11])});
+    return symOp;
+  }
+
   /**
    * Generate a random Cartesian Symmetry Operator.
-   *
-   * <p>The random rotation matrix is derived from: Arvo, James (1992), "Fast random rotation
-   * matrices", in David Kirk, Graphics Gems III, San Diego: Academic Press Professional, pp.
-   * 117–120, ISBN 978-0-12-409671-4
    *
    * @param scalar The range of translations will be from -scalar/2 .. scalar/2.
    * @return A Cartesian SymOp with a random rotation and translation.
@@ -411,15 +835,16 @@ public class SymOp {
 
   /**
    * Print the symmetry operator with double precision.
+   *
    * @return String of rotation/translation with double precision.
    */
   public String toStringPrecise() {
     StringBuilder sb = new StringBuilder(" Rotation operator:\n");
     sb.append(
-            format(
-                    " [[%18.16e,%18.16e,%18.16e]\n  [%18.16e,%18.16e,%18.16e]\n  [%18.16e,%18.16e,%18.16e]]\n",
-                    rot[0][0], rot[0][1], rot[0][2], rot[1][0], rot[1][1], rot[1][2], rot[2][0], rot[2][1],
-                    rot[2][2]));
+        format(
+            " [[%18.16e,%18.16e,%18.16e]\n  [%18.16e,%18.16e,%18.16e]\n  [%18.16e,%18.16e,%18.16e]]\n",
+            rot[0][0], rot[0][1], rot[0][2], rot[1][0], rot[1][1], rot[1][2], rot[2][0], rot[2][1],
+            rot[2][2]));
     sb.append(" Translation:\n");
     sb.append(format(" [%18.16e,%18.16e,%18.16e]", tr[0], tr[1], tr[2]));
     return sb.toString();

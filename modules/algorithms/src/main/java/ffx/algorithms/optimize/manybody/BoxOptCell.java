@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.algorithms.optimize.manybody;
 
+import static ffx.crystal.SymOp.applyFracSymOp;
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
 
 import ffx.crystal.Crystal;
@@ -130,7 +131,7 @@ public class BoxOptCell {
     atXYZ = atom.getXYZ(atXYZ);
     crystal.toFractionalCoordinates(atXYZ, atXYZ);
     NeighborList.moveValuesBetweenZeroAndOne(atXYZ);
-    crystal.applyFracSymOp(atXYZ, atXYZ, symOp);
+    applyFracSymOp(atXYZ, atXYZ, symOp);
     return checkIfContained(atXYZ);
   }
 

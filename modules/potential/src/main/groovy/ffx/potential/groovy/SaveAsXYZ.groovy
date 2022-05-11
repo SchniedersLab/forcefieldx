@@ -51,6 +51,7 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
+import static ffx.crystal.SymOp.applyCartesianSymOp
 import static org.apache.commons.io.FilenameUtils.getName
 import static org.apache.commons.io.FilenameUtils.removeExtension
 
@@ -168,7 +169,7 @@ class SaveAsXYZ extends PotentialScript {
       double[] xyz = new double[3]
       for (int i = 0; i < atoms.length; i++) {
         atoms[i].getXYZ(xyz)
-        crystal.applyCartesianSymOp(xyz, xyz, symOp)
+        applyCartesianSymOp(xyz, xyz, symOp)
         atoms[i].setXYZ(xyz)
       }
     }

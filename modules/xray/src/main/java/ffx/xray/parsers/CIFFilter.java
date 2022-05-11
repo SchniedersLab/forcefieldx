@@ -48,6 +48,8 @@ import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
+import ffx.crystal.SpaceGroup;
+import ffx.crystal.SpaceGroupDefinitions;
 import ffx.crystal.SpaceGroupInfo;
 import ffx.xray.DiffractionRefinementData;
 import java.io.BufferedReader;
@@ -165,29 +167,19 @@ public class CIFFilter implements DiffractionFileFilter {
       StringBuilder sb = new StringBuilder();
       sb.append(format("\nOpening %s\n", cifFile.getName()));
       sb.append(" Setting up Reflection List based on CIF:\n");
-      sb.append(
-          format(
-              "  spacegroup #: %d (name: %s)\n",
+      sb.append(format("  spacegroup #: %d (name: %s)\n",
               spacegroupNum, SpaceGroupInfo.spaceGroupNames[spacegroupNum - 1]));
       sb.append(format("  Resolution: %8.3f\n", 0.999999 * resHigh));
-      sb.append(
-          format(
-              "  Cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
+      sb.append(format("  Cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
               cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]));
       sb.append(format("\n  CIF # HKL (observed): %d\n", nObs));
       sb.append(format("  CIF # HKL (all):      %d\n", nAll));
       logger.info(sb.toString());
     }
 
-    Crystal crystal =
-        new Crystal(
-            cell[0],
-            cell[1],
-            cell[2],
-            cell[3],
-            cell[4],
-            cell[5],
-            SpaceGroupInfo.spaceGroupNames[spacegroupNum - 1]);
+    logger.info(format(" Space group number %d", spacegroupNum));
+    Crystal crystal = new Crystal(cell[0], cell[1], cell[2], cell[3], cell[4], cell[5], spacegroupNum);
+
     double sampling = 1.0 / 1.5;
     if (properties != null) {
       sampling = properties.getDouble("sampling", 1.0 / 1.5);

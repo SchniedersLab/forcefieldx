@@ -236,7 +236,7 @@
                   <version>[10,18.1]</version>
                 </requireJavaVersion>
                 <requireMavenVersion>
-                  <version>3.1.0</version>
+                  <version>3.2.5</version>
                 </requireMavenVersion>
                 <requirePluginVersions/>
               </rules>
@@ -853,11 +853,11 @@
     <commons-math3.version>3.6.1</commons-math3.version>
     <!-- Control the source version version -->
     <compileVersion>10</compileVersion>
-    <compiler.version>3.8.1</compiler.version>
-    <dependency.version>3.1.2</dependency.version>
+    <compiler.version>3.10.1</compiler.version>
+    <dependency.version>3.3.0</dependency.version>
     <dependencyDetails>false</dependencyDetails>
-    <deploy.version>3.0.0-M1</deploy.version>
-    <enforcer.version>3.0.0-M3</enforcer.version>
+    <deploy.version>3.0.0-M2</deploy.version>
+    <enforcer.version>3.0.0</enforcer.version>
     <exec.version>3.0.0</exec.version>
     <failIfNoTests>false</failIfNoTests>
     <fastutil.version>8.5.8</fastutil.version>
@@ -865,42 +865,43 @@
     <ffx.version>1.0.0-BETA</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
     <groovy-all.version>4.0.1-ffx</groovy-all.version>
-    <guava.version>31.0.1-jre</guava.version>
+    <guava.version>31.1-jre</guava.version>
     <install.version>3.0.0-M1</install.version>
-    <jar.version>3.2.0</jar.version>
+    <jar.version>3.2.2</jar.version>
     <jarsigner.version>3.0.0</jarsigner.version>
     <java3d.version>1.7.0-final</java3d.version>
-    <javadoc.version>3.2.0</javadoc.version>
+    <javadoc.version>3.3.2</javadoc.version>
     <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
     <jdepend.version>2.0</jdepend.version>
     <jna.version>5.6.0</jna.version>
     <jogamp-fat.version>2.4.0.1</jogamp-fat.version>
     <jopenmm.version>7.5.0-v7</jopenmm.version>
     <junit.version>4.13.2</junit.version>
-    <jxr.version>3.0.0</jxr.version>
+    <jxr.version>3.2.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
-    <log4j.version>2.17.1</log4j.version>
+    <log4j.version>2.17.2</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
     <picocli.version>4.6.3</picocli.version>
     <pj.version>1.0.1</pj.version>
     <pmd.skip>false</pmd.skip>
+    <!-- There is a bug in 3.15.0 and newer PMD that doesn't handle repository resolution correctly -->
     <pmd.version>3.14.0</pmd.version>
-    <project-info-reports.version>3.1.1</project-info-reports.version>
+    <project-info-reports.version>3.2.2</project-info-reports.version>
     <!-- Setting the source encoding is required for builds that are platform independent. -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <properties.version>1.0.0</properties.version>
+    <properties.version>1.1.0</properties.version>
     <quickhull3D.version>1.0.0</quickhull3D.version>
     <!-- Default locations for deploying a release (can be over-ridden by settings.xml) -->
     <release.repo>file:release</release.repo>
-    <release.version>3.0.0-M4</release.version>
+    <release.version>3.0.0-M5</release.version>
     <resources.version>3.2.0</resources.version>
-    <scm.version>1.11.2</scm.version>
+    <scm.version>2.0.0-M1</scm.version>
     <slf4j-nop.version>1.7.30</slf4j-nop.version>
     <shade.version>3.2.4</shade.version>
-    <site.version>3.9.1</site.version>
+    <site.version>3.11.0</site.version>
     <skipSurefireReport>false</skipSurefireReport>
     <skipTests>true</skipTests>
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
@@ -914,7 +915,7 @@
     <tensorflow.version>1.13.1</tensorflow.version>
     <timestamp>${maven.build.timestamp}</timestamp>
     <tornado.version>0.6</tornado.version>
-    <versions.version>2.8.1</versions.version>
+    <versions.version>2.10.0</versions.version>
     <!-- Default locations for deploying the website (can be over-ridden by settings.xml) -->
     <website.repo>file:website</website.repo>
   </properties>
@@ -1029,14 +1030,24 @@
       <plugin>
         <artifactId>maven-pmd-plugin</artifactId>
         <configuration>
-          <aggregate>true</aggregate>
           <linkXRef>true</linkXRef>
           <minimumPriority>2</minimumPriority>
           <minimumTokens>500</minimumTokens>
           <targetJdk>10</targetJdk>
+          <typeResolution>true</typeResolution>
+          <aggregate>true</aggregate>
         </configuration>
         <reportSets>
-          <reportSet>
+          <!-- reportSet>
+            <id>aggregate</id>
+            <inherited>false</inherited>
+            <reports>
+              <report>aggregate-pmd</report>
+              <report>aggregate-cpd</report>
+            </reports>
+          </reportSet -->
+         <reportSet>
+            <id>default</id>
             <reports>
               <report>pmd</report>
               <report>cpd</report>
@@ -1069,7 +1080,7 @@
         <enabled>false</enabled>
       </snapshots>
       <releases>
-        <updatePolicy>never</updatePolicy>
+        <updatePolicy>daily</updatePolicy>
       </releases>
     </pluginRepository>
   </pluginRepositories>

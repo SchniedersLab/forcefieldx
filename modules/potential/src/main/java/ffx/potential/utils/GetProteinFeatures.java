@@ -338,11 +338,13 @@ public class GetProteinFeatures {
         return npChanges;
     }
 
-    public List<Double> getDDGunValues(List<String> ddgun){
-        List<Double> values= new ArrayList<>();
+    public List<Double[]> getDDGunValues(List<String> ddgun){
+        List<Double[]> values= new ArrayList<>();
         for (int i=0; i<ddgun.size(); i++){
             String[] splits = ddgun.get(i).split("\t");
-            Double value = Math.abs(Double.parseDouble(splits[3]));
+            Double[] value = new Double[2];
+            value[0] = Double.parseDouble(splits[3]);
+            value[1] = Math.abs(Double.parseDouble(splits[3]));
             values.add(value);
         }
         return values;

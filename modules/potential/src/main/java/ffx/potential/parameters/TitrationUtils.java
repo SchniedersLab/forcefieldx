@@ -1611,14 +1611,14 @@ public class TitrationUtils {
     // TODO: Rose - please update the values for CYS/CYD
     // ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
 
-    ASHtoASP(4.00, -73.17, -71.9600, 0.0, AminoAcid3.ASH, AminoAcid3.ASP),
-    GLHtoGLU(4.40, -81.50, -87.6300, 0.0, AminoAcid3.GLH, AminoAcid3.GLU),
+    ASHtoASP(4.00, -71.10, -72.113, 144.06, AminoAcid3.ASH, AminoAcid3.ASP), //-71.96, 0.0
+    GLHtoGLU(4.40, -83.40, -101.22, 178.73, AminoAcid3.GLH, AminoAcid3.GLU), //-87.63, 0.0
     //LYStoLYD(10.40, 45.270, 0.0, AminoAcid3.LYS, AminoAcid3.LYD),
-    LYStoLYD(10.40, 41.75, 57.7100, 0.10746, AminoAcid3.LYS, AminoAcid3.LYD),
+    LYStoLYD(10.40, 41.77, -69.29, 15.587, AminoAcid3.LYS, AminoAcid3.LYD), //57.7100, 0.10746
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
 
     //HE2 is the proton that is lost
-    HIStoHID(7.00, 40.29, 42.4030, 0.10048, AminoAcid3.HIS, AminoAcid3.HID),
+    HIStoHID(7.00, 40.20, 42.4030, 0.10048, AminoAcid3.HIS, AminoAcid3.HID),
     //HD1 is the proton that is lost
     HIStoHIE(6.60, 37.44, 40.2215, 0.11638, AminoAcid3.HIS, AminoAcid3.HIE),
     HIDtoHIE(Double.NaN, 0.00, -3.40, 0.0, AminoAcid3.HID, AminoAcid3.HIE);

@@ -59,11 +59,11 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
 
   private static final Logger logger = Logger.getLogger(StretchBend.class.getName());
   /** Equilibrium angle. */
-  public final double angleEq;
+  public double angleEq;
   /** First equilibrium bond distance. */
-  public final double bond0Eq;
+  public double bond0Eq;
   /** Second equilibrium bond distance. */
-  public final double bond1Eq;
+  public double bond1Eq;
   /** Angle this Stretch-Bend is based on. */
   protected final Angle angle;
   /** Force constant. */
@@ -203,6 +203,11 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
       force0 = units * stretchBendType.forceConstants[1];
       force1 = units * stretchBendType.forceConstants[0];
     }
+    atoms = angle.atoms;
+    bonds = angle.bonds;
+    angleEq = angle.angleType.angle[angle.nh];
+    bond0Eq = bonds[0].bondType.distance;
+    bond1Eq = bonds[1].bondType.distance;
   }
 
   /**

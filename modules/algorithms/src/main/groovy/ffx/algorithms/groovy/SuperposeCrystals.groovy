@@ -82,11 +82,11 @@ class SuperposeCrystals extends AlgorithmsScript {
   private int numAU
 
   /**
-   * --ni or --numInflatedAU AUs in the expanded crystal.
+   * --if or --inflationFactor Inflation factor used to determine replicates expansion.
    */
-  @Option(names = ['--ni', '--numInflatedAU'], paramLabel = '500', defaultValue = '500',
-      description = 'AUs in the expanded crystal.')
-  private int numInflatedAU
+  @Option(names = ['--if', '--inflationFactor'], paramLabel = '4.0', defaultValue = '4.0',
+      description = 'Inflation factor used to determine replicates expansion.')
+  private double inflationFactor
 
   /**
    * --zp or --zPrime Z' for crystal 1 (-1 to autodetect).
@@ -105,7 +105,7 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * --mt or --matchTolerance Tolerance to determine if two AUs are different.
    */
-  @Option(names = ['--mt', '--moleculeTolerance'], paramLabel = '0.1', defaultValue = '0.1',
+  @Option(names = ['--mt', '--moleculeTolerance'], paramLabel = '0.002', defaultValue = '0.002',
           description = "Tolerance to determine if two AUs are different.")
   private double matchTol
 
@@ -145,11 +145,11 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean alphaCarbons
 
   /**
-   * --nh or --noHydrogen Ignore hydrogen atoms.
+   * --ih or --includeHydrogen Include hydrogen atoms.
    */
-  @Option(names = ['--nh', '--noHydrogen'], paramLabel = "false", defaultValue = "false",
-      description = 'Ignore hydrogen atoms.')
-  private static boolean noHydrogen
+  @Option(names = ['--ih', '--includeHydrogen'], paramLabel = "false", defaultValue = "false",
+      description = 'Include hydrogen atoms.')
+  private static boolean includeHydrogen
 
   /**
    * --sm or --saveMachineLearning Save out PDB and CSV for machine learning.
@@ -166,9 +166,9 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean inertia
 
   /**
-   * --rgc or --radiusGyrationComponents Display components for radius of gyration for final clusters.
+   * --rgc or --gyrationComponents Display components for radius of gyration for final clusters.
    */
-  @Option(names = ['--rgc', '--radiusGyrationComponents'], paramLabel = "false", defaultValue = "false",
+  @Option(names = ['--gc', '--gyrationComponents'], paramLabel = "false", defaultValue = "false",
           description = 'Display components for radius of gyration for final clusters.')
   private static boolean gyrationComponents
 
@@ -182,14 +182,14 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * --ps or --printSymOp Print optimal SymOp to align crystal 2 to crystal 1.
    */
-  @Option(names = ['--ps', '--printSymOp'], paramLabel = "false", defaultValue = "false",
-          description = 'Print optimal SymOp to align crystal 2 to crystal 1.')
-  private static boolean printSym
+  @Option(names = ['--ps', '--printSymOp'], paramLabel = "-1.0", defaultValue = "-1.0",
+          description = 'Print optimal SymOp to align input crystals (print out atom deviations above value).')
+  private static double printSym
 
   /**
    * -l or --linkage Single (0), Average (1), or Complete (2) coordinate linkage for molecule prioritization.
    */
-  @Option(names = ['-l', '--linkage'], paramLabel = '0', defaultValue = '0',
+  @Option(names = ['-l', '--linkage'], paramLabel = '1', defaultValue = '1',
       description = 'Single (0), Average (1), or Complete (2) coordinate linkage for molecule prioritization.')
   private int linkage
 
@@ -288,8 +288,8 @@ class SuperposeCrystals extends AlgorithmsScript {
     String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt")
 
     runningStatistics =
-        pac.comparisons(numAU, numInflatedAU, matchTol, zPrime, zPrime2, alphaCarbons,
-            noHydrogen, massWeighted, crystalPriority, permute, save,
+        pac.comparisons(numAU, inflationFactor, matchTol, zPrime, zPrime2, alphaCarbons,
+            includeHydrogen, massWeighted, crystalPriority, permute, save,
             restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym, pacFilename)
 
     return this
