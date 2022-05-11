@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.xray;
 
+import static ffx.crystal.SymOp.applyTransSymRot;
 import static ffx.numerics.fft.Complex3D.iComplex3D;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
@@ -1138,7 +1139,7 @@ public class CrystalReciprocalSpace {
       // apply symmetry
       for (int j = 0; j < nsym; j++) {
         cj.copy(c);
-        Crystal.applyTransSymRot(ih, ij, symops.get(j));
+        applyTransSymRot(ih, ij, symops.get(j));
         double shift = Crystal.sym_phase_shift(ih, symops.get(j));
 
         int h = Crystal.mod(ij.h(), fftX);
@@ -3683,7 +3684,7 @@ public class CrystalReciprocalSpace {
           double[] fc = hkldata[ih.index()];
           // Apply symmetry
           for (int j = 0; j < nsym; j++) {
-            Crystal.applyTransSymRot(ih, ij, symops.get(j));
+            applyTransSymRot(ih, ij, symops.get(j));
             double shift = Crystal.sym_phase_shift(ih, symops.get(j));
             int h = Crystal.mod(ij.h(), fftX);
             int k = Crystal.mod(ij.k(), fftY);

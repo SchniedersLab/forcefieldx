@@ -38,9 +38,12 @@
 package ffx.potential.utils;
 
 import static ffx.crystal.Crystal.mod;
-import static ffx.numerics.math.MatrixMath.mat3Inverse;
-import static ffx.numerics.math.MatrixMath.mat4Mat4;
+import static ffx.crystal.SymOp.Tr_0_0_0;
+import static ffx.crystal.SymOp.ZERO_ROTATION;
+import static ffx.crystal.SymOp.applyCartesianSymOp;
+import static ffx.crystal.SymOp.invertSymOp;
 import static ffx.numerics.math.DoubleMath.dist2;
+import static ffx.numerics.math.MatrixMath.mat4Mat4;
 import static ffx.potential.parsers.DistanceMatrixFilter.writeDistanceMatrixRow;
 import static ffx.potential.utils.StructureMetrics.momentsOfInertia;
 import static ffx.potential.utils.StructureMetrics.radiusOfGyration;
@@ -57,11 +60,11 @@ import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 import static java.util.Arrays.sort;
 import static org.apache.commons.io.FilenameUtils.getName;
+import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.cbrt;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.mp.DoubleBuf;
@@ -331,22 +334,6 @@ public class ProgressiveAlignmentOfCrystals {
    */
   double[] bestTargetRg = new double[3];
   /**
-   * Transformations applied to first system.
-   */
-  double[][] totalBaseTransform = new double[][]{
-          {1.0, 0.0, 0.0, 0.0},
-          {0.0, 1.0, 0.0, 0.0},
-          {0.0, 0.0, 1.0, 0.0},
-          {0.0, 0.0, 0.0, 1.0}};
-  /**
-   * Transformation applied to second system to mimic first system.
-   */
-  double[][] bestBaseTransform = new double[][]{
-          {1.0, 0.0, 0.0, 0.0},
-          {0.0, 1.0, 0.0, 0.0},
-          {0.0, 0.0, 1.0, 0.0},
-          {0.0, 0.0, 0.0, 1.0}};
-  /**
    * Sym Op applied to asymmetric unit of second system.
    */
   SymOp baseSymOp;
@@ -362,22 +349,6 @@ public class ProgressiveAlignmentOfCrystals {
    * Sym Op applied to asymmetric unit of second system.
    */
   SymOp bestTargetSymOp;
-  /**
-   * Transformations applied to second system.
-   */
-  double[][] totalTargetTransform = new double[][]{
-          {1.0, 0.0, 0.0, 0.0},
-          {0.0, 1.0, 0.0, 0.0},
-          {0.0, 0.0, 1.0, 0.0},
-          {0.0, 0.0, 0.0, 1.0}};
-  /**
-   * Transformation applied to second system to mimic first system.
-   */
-  double[][] bestTargetTransform = new double[][]{
-          {1.0, 0.0, 0.0, 0.0},
-          {0.0, 1.0, 0.0, 0.0},
-          {0.0, 0.0, 1.0, 0.0},
-          {0.0, 0.0, 0.0, 1.0}};
   /**
    * List of symmetry operators used to create inflated crystal for 1st structure.
    */
@@ -403,22 +374,37 @@ public class ProgressiveAlignmentOfCrystals {
    */
   Crystal targetCrystal;
   /**
-   *
+   * Boolean to determine if comparison should print symmetry operators used.
    */
-  private boolean printSym;
+  private double printSym;
   /**
    * String builder to attempt to off load work from logger.
    */
   private final StringBuilder stringBuilder = new StringBuilder();
   /**
-   * If molecules between two crystals differ below this tolerance, it is assumed they are
-   * equivalent.
-   */
-  private static final double MATCH_TOLERANCE = 1.0E-12;
-  /**
    * Radius determined based on the volume of one asymmetric unit.
    */
   private double radius;
+  /**
+   * Symmetry operator used to generate central base molecule updated each iteration.
+   */
+  private SymOp baseTransformSymOp = new SymOp(ZERO_ROTATION, Tr_0_0_0);
+  /**
+   * Symmetry operator used to generate central target molecules updated each iteration.
+   */
+  private SymOp targetTransformSymOp = new SymOp(ZERO_ROTATION, Tr_0_0_0);
+  /**
+   * Best symmetry operator used to generate central base molecule.
+   */
+  private SymOp bestBaseTransformSymOp = new SymOp(ZERO_ROTATION, Tr_0_0_0);
+  /**
+   * Best symmetry operator used to generate central target molecules.
+   */
+  private SymOp bestTargetTransformSymOp = new SymOp(ZERO_ROTATION, Tr_0_0_0);
+  /**
+   * If molecules between two crystals differ below this tolerance, they are treated as equivalent.
+   */
+  private static final double MATCH_TOLERANCE = 1.0E-12;
 
   /**
    * Constructor for the ProgressiveAlignmentOfCrystals class.
@@ -440,7 +426,7 @@ public class ProgressiveAlignmentOfCrystals {
 
     assert !isSymmetric || (baseSize == targetSize);
 
-    if(logger.isLoggable(Level.FINER)) {
+    if (logger.isLoggable(Level.FINER)) {
       logger.finer(format("\n Conformations for %s: %d", baseLabel, baseSize));
       logger.finer(format(" Conformations for %s: %d", targetLabel, targetSize));
     }
@@ -479,15 +465,15 @@ public class ProgressiveAlignmentOfCrystals {
       logger.info(format(" Work per process per row: %d", numWorkItems));
     }
 
-    // Initialize array as -1.0 as -1.0 is not a viable RMSD.
+    // Initialize array to -1.0 as -1.0 is not a viable RMSD.
     fill(distRow, -1.0);
 
     // Each process will complete the following amount of work per row.
     distances = new double[numProc][numWorkItems];
 
-    // Initialize each distance as -1.0.
+    // Initialize each distance as -2.0.
     for (int i = 0; i < numProc; i++) {
-      fill(distances[i], -1.0);
+      fill(distances[i], -2.0);
     }
 
     // DoubleBuf is a wrapper used by MPI Comm methods to transfer data between processors.
@@ -504,8 +490,10 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Perform single comparison between two crystals (staticAssembly and mobileAssembly).
    *
-   * @param staticAssembly Crystal structure (1st or base) that will remain relatively static (only translations).
-   * @param mobileAssembly Crystal strucutre (2nd or target) that will rotate to match static assembly.
+   * @param staticAssembly Crystal structure (1st or base) that will remain relatively static
+   *     (only translations).
+   * @param mobileAssembly Crystal strucutre (2nd or target) that will rotate to match static
+   *     assembly.
    * @param compareAtomsSize Number of active atoms in asymmetric unit of first crystal.
    * @param nAU Number of asymmetric units to compare.
    * @param baseSearchValue Number of anticipated unique entities in 1st system.
@@ -518,21 +506,23 @@ public class ProgressiveAlignmentOfCrystals {
    * @param linkage Criteria to select nearest AUs (0=single, 1=average, 2=complete linkage).
    * @return the computed RMSD.
    */
-  private double compare(MolecularAssembly staticAssembly, MolecularAssembly mobileAssembly,
-                         int compareAtomsSize, int nAU, int baseSearchValue, int targetSearchValue, double matchTol,
-                         int compNum, boolean permute, int save, boolean machineLearning, int linkage,
-                         boolean inertia, boolean gyrationComponents) {
+  private double compare(MolecularAssembly staticAssembly, MolecularAssembly mobileAssembly, int z1,
+      int z2,
+      int compareAtomsSize, int nAU, int baseSearchValue, int targetSearchValue, double matchTol,
+      int compNum, boolean permute, int save, boolean machineLearning, int linkage,
+      boolean inertia, boolean gyrationComponents) {
     // TODO: Does PAC work for a combination of molecules and polymers?
     // It does not compare them on an individual basis, but can compare AUs as a whole (set zp/zp2 to 1).
     int nCoords = compareAtomsSize * 3;
-    //Number of species in expanded crystals.
+    // Number of species in expanded crystals.
     int nBaseMols = baseXYZ.length / nCoords;
     int nTargetMols = targetXYZ.length / nCoords;
 
     if (logger.isLoggable(Level.FINER)) {
-      stringBuilder.append(format("\n Number of copies to compare:    %4d\n" +
-              " Number of entities in base sphere: %4d\n" +
-              " Number of entities in target sphere: %d\n", nAU, nBaseMols, nTargetMols));
+      stringBuilder.append(
+          format("\n Base: %s Target: %s", staticAssembly.getName(), mobileAssembly.getName()));
+      stringBuilder.append(format("\n Comparing %3d of %5d in base sphere.\n" +
+          " Comparing %3d of %5d in target sphere.\n", nAU, nBaseMols, nAU, nTargetMols));
     }
 
     // Translate asymmetric unit of 0th index (closest to all atom center) to the origin.
@@ -553,23 +543,25 @@ public class ProgressiveAlignmentOfCrystals {
     prioritizeReplicates(baseXYZ, massN, massSum, baseCoM, compareAtomsSize, molDist1, 0, linkage);
 
     //Used for debugging. can be removed.
-    if (logger.isLoggable(Level.FINER)) {
+    if (logger.isLoggable(Level.FINEST)) {
       stringBuilder.append(" System 1 distances to center of sphere:\n");
       for (int i = 0; i < nAU; i++) {
         stringBuilder.append(
-                format(" %d\t%16.8f\n", molDist1[i].getIndex(), sqrt(molDist1[i].getDoubleValue())));
+            format(" %d\t%16.8f\n", molDist1[i].getIndex(), sqrt(molDist1[i].getDoubleValue())));
       }
     }
     // Translate system to the origin.
     arraycopy(targetXYZ, 0, targetAU, 0, nCoords);
-    if(printSym) {
+    if (printSym >= 0.0) {
       arraycopy(targetXYZ, centerT.indexOf(0) * nCoords, targetAUoriginal, 0, nCoords);
-      if(logger.isLoggable(Level.FINER)) {
+      if (logger.isLoggable(Level.FINER)) {
         for (int i = 0; i < compareAtomsSize; i++) {
           int k = i * 3;
           stringBuilder.append(format("\n %9.3f %9.3f %9.3f from %9.3f %9.3f %9.3f",
-                  targetAU[k], targetAU[k + 1], targetAU[k + 2], targetAUoriginal[k], targetAUoriginal[k + 1], targetAUoriginal[k + 2]));
+              targetAU[k], targetAU[k + 1], targetAU[k + 2], targetAUoriginal[k],
+              targetAUoriginal[k + 1], targetAUoriginal[k + 2]));
         }
+        stringBuilder.append("\n");
       }
     }
 
@@ -588,133 +580,291 @@ public class ProgressiveAlignmentOfCrystals {
 
     centerOfMass(targetCoM, targetXYZ, massN, massSum, compareAtomsSize);
     prioritizeReplicates(targetXYZ, massN, massSum, targetCoM, compareAtomsSize, molDist2, 0,
-            linkage);
+        linkage);
 
-    if (logger.isLoggable(Level.FINER)) {
+    if (logger.isLoggable(Level.FINEST)) {
       stringBuilder.append(" System 2 distances to center of sphere:\n");
       for (int i = 0; i < nAU; i++) {
         stringBuilder.append(
-                format(" %d\t%16.8f\n", molDist2[i].getIndex(), sqrt(molDist2[i].getDoubleValue())));
+            format(" %d\t%16.8f\n", molDist2[i].getIndex(), sqrt(molDist2[i].getDoubleValue())));
       }
     }
 
     //Determine if AUs in first system are same hand as center most in first (stereoisomer handling).
     if (logger.isLoggable(Level.FINER)) {
-      stringBuilder.append(" Search Conformations of Base Crystal:\n");
+      stringBuilder.append(" Search Conformations of each crystal:\n");
     }
     tempListXYZ.clear();
     tempListIndices.clear();
-    numberUniqueAUs(baseXYZ, molDist1, baseAU, nCoords, baseSearchValue, permute,
-            nBaseMols, massN, matchTol);
+    numberUniqueAUs(baseXYZ, molDist1, baseAU.clone(), nCoords, baseSearchValue, permute,
+        nBaseMols, massN, matchTol);
     if (baseXYZs == null || baseXYZs.length != tempListXYZ.size()) {
       baseXYZs = new double[tempListXYZ.size()][nCoords];
     }
     tempListXYZ.toArray(baseXYZs);
+    int baseLength = tempListIndices.size();
     if (baseIndices == null || baseIndices.length != tempListIndices.size()) {
-      baseIndices = new Integer[tempListIndices.size()];
+      baseIndices = new Integer[baseLength];
     }
     tempListIndices.toArray(baseIndices);
-    if (logger.isLoggable(Level.FINER)) {
-      stringBuilder.append(format(" %d conformations detected out of %d in base crystal.\n" +
-              " Search Conformations of Target Crystal:\n", baseIndices.length, baseSearchValue));
-    }
     tempListXYZ.clear();
     tempListIndices.clear();
     numberUniqueAUs(targetXYZ, molDist2, targetAU.clone(), nCoords, targetSearchValue, permute,
-            nTargetMols, massN, matchTol);
+        nTargetMols, massN, matchTol);
     if (targetXYZs == null || targetXYZs.length != tempListXYZ.size()) {
       targetXYZs = new double[tempListXYZ.size()][nCoords];
     }
     tempListXYZ.toArray(targetXYZs);
     int targetLength = tempListIndices.size();
     if (targetIndices == null || targetIndices.length != targetLength) {
-      targetIndices = new Integer[tempListIndices.size()];
+      targetIndices = new Integer[targetLength];
     }
     tempListIndices.toArray(targetIndices);
+    int maxLength = max(baseLength, targetLength);
+    final boolean reverse = baseLength > targetLength;
     if (logger.isLoggable(Level.FINER)) {
-      stringBuilder.append(
-              format(" %d conformations detected out of %d in target crystal.\n", targetIndices.length,
-                      targetSearchValue));
+      stringBuilder.append(format("\n Reverse: %b\n" +
+              "  %d conformations detected out of %d in base crystal.\n " +
+              " %d conformations detected out of %d in target crystal.\n",
+          reverse, baseLength, baseSearchValue, targetLength, targetSearchValue));
     }
 
     // Determine which unique AUs are most similar between crystals
     // Minimum difference between each unique target AU and closest matching base AU.
-    double[] targetBaseDiff = new double[targetLength];
+    // If RMSD_1 is symmetric, could save time by using shorter of two.
+    //TODO: Switch to min(targetLength, baseLength) rather than targetLength.
+    double[] targetBaseDiff = new double[maxLength];
     // Index of the closest matching base AU to each target AU.
-    int[] targetBaseIndices = new int[targetLength];
-    int baseLength = baseXYZs.length;
-    targetLength = targetXYZs.length;
-    for (int i = 0; i < targetLength; i++) {
-      int minIndex = -1;
-      double minDiff = Double.MAX_VALUE;
-      for (int j = 0; j < baseLength; j++) {
-        double value = rmsd_1(targetXYZs[i], baseXYZs[j], massN);
-        if (value < minDiff) {
-          minDiff = value;
-          minIndex = j;
+    int[] targetBaseIndices = new int[maxLength];
+    int[] baseTargetIndices = new int[maxLength];
+    double min1 = Double.MAX_VALUE;
+    int minBIndex = -1;
+    int minTIndex = -1;
+    double[][] rotationT = new double[3][3];
+    double[] translationB = new double[3];
+    double[] translationT = new double[3];
+
+    if (reverse) {
+      for (int i = 0; i < baseLength; i++) {
+        int minIndex = -1;
+        double minDiff = Double.MAX_VALUE;
+        int bIndex = baseIndices[i];
+        double[] baseXYZ = new double[nCoords];
+        for (int j = 0; j < targetLength; j++) {
+          // Need to remove translation/rotation from previous check.
+          arraycopy(this.baseXYZ, molDist1[bIndex].getIndex() * nCoords, baseXYZ, 0, nCoords);
+          int tIndex = targetIndices[j];
+          double[] targetXYZ = new double[nCoords];
+          arraycopy(this.targetXYZ, molDist2[tIndex].getIndex() * nCoords, targetXYZ, 0, nCoords);
+          double[] tempTranB = calculateTranslation(baseXYZ, massN);
+          applyTranslation(baseXYZ, tempTranB);
+          double[] tempTranT = calculateTranslation(targetXYZ, massN);
+          applyTranslation(targetXYZ, tempTranT);
+          double[][] tempRotT = calculateRotation(baseXYZ, targetXYZ, massN);
+          applyRotation(targetXYZ, tempRotT);
+          double value = rmsd(baseXYZ, targetXYZ, massN);
+          if (logger.isLoggable(Level.FINEST)) {
+            stringBuilder.append(
+                format(" BaseInd: %3d TargetInd: %3d Diff: %8.4f\n", bIndex, tIndex, value));
+          }
+          if (value < minDiff) {
+            minDiff = value;
+            minIndex = j;
+            if (minDiff < min1) {
+              min1 = minDiff;
+              if (nAU == 1 && !permute) {
+                // Record values for short circuit.
+                minBIndex = bIndex;
+                minTIndex = tIndex;
+                translationB = tempTranB;
+                translationT = tempTranT;
+                rotationT = tempRotT;
+                baseNAUs = baseXYZ;
+                targetNAUs = targetXYZ;
+              }
+            }
+          }
+        }
+        targetBaseDiff[i] = minDiff;
+        baseTargetIndices[i] = targetIndices[minIndex];
+      }
+    } else {
+      for (int i = 0; i < targetLength; i++) {
+        int minIndex = -1;
+        double minDiff = Double.MAX_VALUE;
+        int tIndex = targetIndices[i];
+        double[] targetXYZ = new double[nCoords];
+        for (int j = 0; j < baseLength; j++) {
+          // Need to remove translation/rotation from previous check.
+          arraycopy(this.targetXYZ, molDist2[tIndex].getIndex() * nCoords, targetXYZ, 0, nCoords);
+          int bIndex = baseIndices[j];
+          double[] baseXYZ = new double[nCoords];
+          arraycopy(this.baseXYZ, molDist1[bIndex].getIndex() * nCoords, baseXYZ, 0, nCoords);
+          double[] tempTranB = calculateTranslation(baseXYZ, massN);
+          applyTranslation(baseXYZ, tempTranB);
+          double[] tempTranT = calculateTranslation(targetXYZ, massN);
+          applyTranslation(targetXYZ, tempTranT);
+          double[][] tempRotT = calculateRotation(baseXYZ, targetXYZ, massN);
+          applyRotation(targetXYZ, tempRotT);
+          double value = rmsd(baseXYZ, targetXYZ, massN);
+          if (logger.isLoggable(Level.FINEST)) {
+            stringBuilder.append(
+                format(" BaseInd: %3d TargetInd: %3d Diff: %8.4f\n", bIndex, tIndex, value));
+          }
+          if (value < minDiff) {
+            minDiff = value;
+            minIndex = j;
+            if (minDiff < min1) {
+              min1 = minDiff;
+              if (nAU == 1 && !permute) {
+                // Record values for short circuit.
+                minBIndex = bIndex;
+                minTIndex = tIndex;
+                translationB = tempTranB;
+                translationT = tempTranT;
+                rotationT = tempRotT;
+                baseNAUs = baseXYZ;
+                targetNAUs = targetXYZ;
+              }
+            }
+          }
+        }
+        targetBaseDiff[i] = minDiff;
+        targetBaseIndices[i] = baseIndices[minIndex];
+      }
+    }
+    if (nAU == 1 && !permute) {
+      // If only comparing one entity we are done. Return values.
+      // Rg ranges from 1-->sqrt(3). Normalize to get from 0-->1
+      double baseGyration = radiusOfGyration(baseNAUs, massN);
+      gyrations[0] = baseGyration;
+      double targetGyration = radiusOfGyration(targetNAUs, massN);
+      gyrations[1] = targetGyration;
+      arraycopy(baseNAUs, 0, bestBaseNAUs, 0, nAU * nCoords);
+      arraycopy(targetNAUs, 0, bestTargetNAUs, 0, nAU * nCoords);
+      if (printSym >= 0.00) {
+        bestBaseTransformSymOp = new SymOp(ZERO_ROTATION, translationB);
+        // SymOp.append defaults to rotation then translation. Break apart to have translation then rotation.
+        bestTargetTransformSymOp = new SymOp(ZERO_ROTATION, translationT);
+        bestTargetTransformSymOp = bestTargetTransformSymOp.append(new SymOp(rotationT, Tr_0_0_0));
+        baseSymOp = baseSymOps.get(centerB.get(molDist1[minBIndex].getIndex()));
+        targetSymOp = targetSymOps.get(centerT.get(molDist2[minTIndex].getIndex()));
+        bestBaseSymOp = baseSymOp;
+        bestTargetSymOp = targetSymOp;
+        StringBuilder alchemicalAtoms = null;
+        StringBuilder separation = null;
+        for (int i = 0; i < nAU * compareAtomsSize; i++) {
+          int index = i * 3;
+          double value = rmsd(
+              new double[] {bestBaseNAUs[index], bestBaseNAUs[index + 1], bestBaseNAUs[index + 2]},
+              new double[] {bestTargetNAUs[index], bestTargetNAUs[index + 1],
+                  bestTargetNAUs[index + 2]}, massN);
+          if (logger.isLoggable(Level.INFO)) {
+            if (printSym < value) {
+              // Collect atomic separation distances
+              if (separation == null) {
+                separation = new StringBuilder("\n Atom  Separation (A)  Description\n");
+              }
+              separation.append(format(" %4d  %14.6f\n", comparisonAtoms[i] + 1, value));
+              // Collect alchemical atoms
+              if (alchemicalAtoms == null) {
+                alchemicalAtoms = new StringBuilder(" ").append(comparisonAtoms[i] + 1);
+              } else {
+                alchemicalAtoms.append(",").append(comparisonAtoms[i] + 1);
+              }
+            }
+          }
+        }
+        if (separation != null) {
+          stringBuilder.append(separation);
+          stringBuilder.append("\n Alchemical Atoms:\n").append(alchemicalAtoms).append("\n");
+        }
+        if (save > 0) {
+          if (machineLearning) {
+            saveAssembly(staticAssembly, bestBaseNAUs, comparisonAtoms, "_c1", 0.000, compNum, save);
+            saveAssembly(mobileAssembly, bestTargetNAUs, comparisonAtoms, "_c2", min1, compNum,
+                save);
+          } else {
+            saveAssembly(staticAssembly, bestBaseNAUs, comparisonAtoms, "_c1", compNum, save);
+            saveAssembly(mobileAssembly, bestTargetNAUs, comparisonAtoms, "_c2", compNum, save);
+          }
         }
       }
-      targetBaseDiff[i] = minDiff;
-      targetBaseIndices[i] = baseIndices[minIndex];
+      if (logger.isLoggable(Level.FINE)) {
+        String output = format(
+            " Single RMSD: %8.4f  %8.4f %8.4f\n", min1,
+            baseGyration, targetGyration);
+        stringBuilder.append(output);
+      }
+      return min1;
     }
     if (logger.isLoggable(Level.FINER)) {
-      stringBuilder.append(
-              " Minimum RMSD_1 Between Unique Target and Base AUs:\n i tInd RMSD_1    bInd\n");
-      int tbIndicesLength = targetBaseIndices.length;
-      for (int i = 0; i < tbIndicesLength; i++) {
+      if (reverse) {
         stringBuilder.append(
-                format(" %d %4d %4.4f %4d\n", i, targetIndices[i], targetBaseDiff[i], targetBaseIndices[i]));
+            " Minimum RMSD_1 Between Unique Base and Target AUs:\n i bInd RMSD_1    tInd\n");
+        int btIndicesLength = baseTargetIndices.length;
+        for (int i = 0; i < btIndicesLength; i++) {
+          stringBuilder.append(
+              format(" %d %4d %4.4f %4d\n", i, molDist1[baseIndices[i]].getIndex(),
+                  targetBaseDiff[i], molDist2[baseTargetIndices[i]].getIndex()));
+        }
+      } else {
+        stringBuilder.append(
+            " Minimum RMSD_1 Between Unique Target and Base AUs:\n i tInd RMSD_1    bInd\n");
+        int tbIndicesLength = targetBaseIndices.length;
+        for (int i = 0; i < tbIndicesLength; i++) {
+          stringBuilder.append(
+              format(" %d %4d %4.4f %4d\n", i, molDist2[targetIndices[i]].getIndex(),
+                  targetBaseDiff[i], molDist1[targetBaseIndices[i]].getIndex()));
+        }
       }
     }
 
     // Coordinate arrays to save out structures at the end.
     double bestRMSD = Double.MAX_VALUE;
     if (logger.isLoggable(Level.FINE)) {
-      stringBuilder.append(format("\n  Trial     RMSD_1 (%7s)  RMSD_3 (%7s)  %7s  G(r1)    G(r2)\n",
-              rmsdLabel, rmsdLabel, rmsdLabel));
+      stringBuilder.append(format("\n  Trial     RMSD_1 (%8s)  RMSD_3 (%8s)  %8s  G(r1)    G(r2)\n",
+          rmsdLabel, rmsdLabel, rmsdLabel));
     }
     molDist1_2 = new DoubleIndexPair[nBaseMols];
     molDist2_2 = new DoubleIndexPair[nTargetMols];
     // Begin comparison
     // Integer used only for user display logging.
     int currentComparison = 1;
-    for (Integer index : baseIndices) {
-      int centerB = molDist1[index].getIndex();
-      if(printSym) {
+    for (int l = 0; l < baseLength; l++) {
+      int index = baseIndices[l];
+      final int centerB = molDist1[index].getIndex();
+      if (printSym >= 0.00) {
+        stringBuilder.append(format("\n centerB: %d", centerB));
+        stringBuilder.append(format("\n This centerB: %d", this.centerB.get(centerB)));
+        stringBuilder.append(format("\n RemainderB: %d\n", this.centerB.get(centerB) % z1));
         if (logger.isLoggable(Level.FINER)) {
-          stringBuilder.append(format("\n Base Index: %d", index)).append(format("\n Center: %d", centerB))
-                  .append(format("\n SymOp: %d\n", this.centerB.get(centerB)));
+          stringBuilder.append(format("\n Base Index: %d", index))
+              .append(format("\n Center: %d", centerB))
+              .append(format("\n SymOp: %d\n", this.centerB.get(centerB)));
         }
         baseSymOp = baseSymOps.get(this.centerB.get(centerB));
         // Reset values for printing symmetry operations
         arraycopy(baseXYZoriginal, 0, baseXYZ, 0, baseXYZoriginal.length);
         centerOfMass(baseCoM, baseXYZoriginal, massN, massSum, compareAtomsSize);
-        int values = totalBaseTransform.length;
-        for (int i = 0; i < values; i++) {
-          for (int j = 0; j < values; j++) {
-            if (i == j) {
-              totalBaseTransform[i][j] = 1.0;
-            } else {
-              totalBaseTransform[i][j] = 0.0;
-            }
-          }
-        }
+        baseTransformSymOp = new SymOp(ZERO_ROTATION, Tr_0_0_0);
         if (logger.isLoggable(Level.FINER)) {
           stringBuilder.append(matrixToString(baseSymOp.rot, index, "Base Sym Rot"));
-          stringBuilder.append(format("\n Base %d Sym Op Translation: ", index)).append(Arrays.toString(baseSymOp.tr)).append("\n");
+          stringBuilder.append(format("\n Base %d Sym Op Translation: ", index))
+              .append(Arrays.toString(baseSymOp.tr)).append("\n");
         }
       }
 
       //Re-prioritize based on center-most molecule
       prioritizeReplicates(baseXYZ, massN, massSum, baseCoM, compareAtomsSize, molDist1_2, centerB,
-              linkage);
+          linkage);
 
       //Translate base system based on center-most molecule
       int baseAUIndex = molDist1_2[0].getIndex() * nCoords;
       arraycopy(baseXYZ, baseAUIndex, baseAU, 0, nCoords);
 
       // Acquire coordinates based on center 3 molecules
-      if (logger.isLoggable(Level.FINER)) {
+      if (logger.isLoggable(Level.FINEST)) {
         stringBuilder.append(" Base 3 Conformations\n");
       }
       for (int i = 0; i < 3; i++) {
@@ -723,51 +873,46 @@ public class ProgressiveAlignmentOfCrystals {
       }
 
       // Acquire coordinates for final comparison
-      double maxDist = molDist1[molDist1.length-1].getDoubleValue();
-      if(logger.isLoggable(Level.FINER)) {
+      double maxDist = molDist1[molDist1.length - 1].getDoubleValue();
+      if (logger.isLoggable(Level.FINEST)) {
         stringBuilder.append(format("\n System 1 Max Dist: %4.8f", sqrt(maxDist)));
       }
       for (int i = 0; i < nAU; i++) {
         // Only checks for spherical replicates crystal. If one axis is large check will miss selected molecules near short borders.
-        if(maxDist - molDist1_2[i].getDoubleValue() < radius){
-          logger.warning(" Selected base entity is near the replicates border. Please increase inflation factor (--ni).");
+        if (maxDist - molDist1_2[i].getDoubleValue() < radius) {
+          logger.warning(
+              " Selected base entity is near the replicates border. Please increase inflation factor (--ni).");
         }
         int molIndex = molDist1_2[i].getIndex() * nCoords;
         arraycopy(baseXYZ, molIndex, baseNAUs, i * nCoords, nCoords);
       }
-      int targetConformations = targetXYZs.length;
-      for (int m = 0; m < targetConformations; m++) {
-        if (permute || Objects.equals(targetBaseIndices[m], index)) {
-          if(printSym) {
+      for (int m = 0; m < targetLength; m++) {
+        if (permute || !reverse && Objects.equals(targetBaseIndices[m], index)
+            || reverse && Objects.equals(baseTargetIndices[l], targetIndices[m])) {
+          if (printSym >= 0.00) {
             // Reset values for printing symmetry operations
             arraycopy(targetXYZoriginal, 0, targetXYZ, 0, targetXYZoriginal.length);
-            int values = totalTargetTransform.length;
-            for (int i = 0; i < values; i++) {
-              for (int j = 0; j < values; j++) {
-                if (i == j) {
-                  totalTargetTransform[i][j] = 1.0;
-                } else {
-                  totalTargetTransform[i][j] = 0.0;
-                }
-              }
-            }
+            targetTransformSymOp = new SymOp(ZERO_ROTATION, Tr_0_0_0);
           }
           // Switch m center most molecules (looking for stereoisomers)
-          int centerT = molDist2[targetIndices[m]].getIndex();
+          final int centerT = molDist2[targetIndices[m]].getIndex();
 
           //Re-prioritize based on central AU if different from first prioritization.
-          if (logger.isLoggable(Level.FINER)) {
+          if (logger.isLoggable(Level.FINEST)) {
             stringBuilder.append(" Re-prioritize target system.\n");
           }
           prioritizeReplicates(targetXYZ, massN, massSum, targetCoM, compareAtomsSize, molDist2_2,
-                  centerT, linkage);
-          if (logger.isLoggable(Level.FINER)) {
+              centerT, linkage);
+          if (logger.isLoggable(Level.FINEST)) {
             stringBuilder.append(" Rotation 1:\n");
           }
           // Isolate the AU closest to center in the second crystal (targetAU).
           arraycopy(targetXYZ, molDist2_2[0].getIndex() * nCoords, targetAU, 0, nCoords);
-          if(printSym) {
+          if (printSym >= 0.00) {
             targetSymOp = targetSymOps.get(this.centerT.get(centerT));
+            stringBuilder.append(format("\n\n centerT: %d", centerT));
+            stringBuilder.append(format("\n This centerT: %d", this.centerT.get(centerT)));
+            stringBuilder.append(format("\n RemainderT: %d\n", this.centerT.get(centerT) % z2));
             // TODO: finish making printSym compatible for Z'>1.
 //              int value = center / z2 * z2;
 //              stringBuilder.append("\n Sym Op rounded number: ").append(value).append("\n");
@@ -783,21 +928,27 @@ public class ProgressiveAlignmentOfCrystals {
 //                }
 //              }
             if (logger.isLoggable(Level.FINER)) {
-              stringBuilder.append(format("\n Target Index: %d", targetIndices[m])).append(format("\n center: %d", centerT))
-                      .append(format("\n targetBaseInd: %d", targetBaseIndices[m])).append(format("\n m counter: %d", m))
-                      .append(format("\n Index of target Index: %d", this.centerT.indexOf(targetIndices[m]))).append(format("\n Index of center: %d", this.centerT.indexOf(centerT)))
-                      .append(format("\n SymOp: %d\n", this.centerT.get(centerT)));
+              stringBuilder.append(format("\n Target Index: %d", targetIndices[m]))
+                  .append(format("\n center: %d", centerT))
+                  .append(format("\n targetBaseInd: %d", targetBaseIndices[m]))
+                  .append(format("\n m counter: %d", m))
+                  .append(
+                      format("\n Index of target Index: %d", this.centerT.indexOf(targetIndices[m])))
+                  .append(format("\n Index of center: %d", this.centerT.indexOf(centerT)))
+                  .append(format("\n SymOp: %d\n", this.centerT.get(centerT)));
               stringBuilder.append(matrixToString(targetSymOp.rot, index, "Target Sym Op Rotation"));
-              stringBuilder.append(format("\n Target %d Sym Op Translation: ", index)).append(Arrays.toString(targetSymOp.tr)).append("\n");
+              stringBuilder.append(format("\n Target %d Sym Op Translation: ", index))
+                  .append(Arrays.toString(targetSymOp.tr)).append("\n");
               printSym(compareAtomsSize, mobileAssembly, save);
             }
           }
           // Translate each system to the origin
           double[] translation = calculateTranslation(baseAU, massN);
-          if(printSym) {
-            addTranslation(translation, totalBaseTransform, false);
-            if(logger.isLoggable(Level.FINER)) {
-              stringBuilder.append(format("\n Base %d to Origin Translation: ", index)).append(Arrays.toString(translation)).append("\n");
+          if (printSym >= 0.00) {
+            baseTransformSymOp = baseTransformSymOp.append(new SymOp(ZERO_ROTATION, translation));
+            if (logger.isLoggable(Level.FINER)) {
+              stringBuilder.append(format("\n Base %d to Origin Translation: ", index))
+                  .append(Arrays.toString(translation)).append("\n");
             }
           }
           applyTranslation(baseAU, translation);
@@ -807,13 +958,6 @@ public class ProgressiveAlignmentOfCrystals {
 
           // Translate to origin
           translation = calculateTranslation(targetAU, massN);
-          // Save copy to reproduce later
-          if(printSym) {
-            addTranslation(translation, totalTargetTransform, false);
-            if(logger.isLoggable(Level.FINER)) {
-              stringBuilder.append(format("\n Trans target %d sys to origin: \n\t", index)).append(Arrays.toString(translation)).append("\n");
-            }
-          }
           // Move the center current AU
           applyTranslation(targetAU, translation);
           // Move the entire system
@@ -821,9 +965,12 @@ public class ProgressiveAlignmentOfCrystals {
 
           // Rotate the target molecule onto the base molecule.
           double[][] rotation = calculateRotation(baseAU, targetAU, massN);
-          if(printSym) {
-            addRotation(rotation, totalTargetTransform, false);
-            if(logger.isLoggable(Level.FINER)) {
+          if (printSym >= 0.00) {
+            targetTransformSymOp = targetTransformSymOp.append(new SymOp(ZERO_ROTATION, translation));
+            targetTransformSymOp = targetTransformSymOp.append(new SymOp(rotation, Tr_0_0_0));
+            if (logger.isLoggable(Level.FINER)) {
+              stringBuilder.append(format("\n Trans target %d sys to origin: \n\t", index))
+                  .append(Arrays.toString(translation)).append("\n");
               stringBuilder.append(matrixToString(rotation, index, "1st Rot"));
             }
           }
@@ -832,8 +979,8 @@ public class ProgressiveAlignmentOfCrystals {
 
           // At this point both systems have completed first rotation/translation
           //  Therefore both center-most molecules should be overlapped.
-          if (logger.isLoggable(Level.FINER)) {
-            stringBuilder.append(" Match molecules between systems.\n");
+          if (logger.isLoggable(Level.FINEST)) {
+            stringBuilder.append("\n Match molecules between systems.\n");
           }
 
           //Update CoMs with translation
@@ -843,27 +990,15 @@ public class ProgressiveAlignmentOfCrystals {
           // Need 3 for progressive alignment even if RMSD_1 or RMSD_2 is desired
           pairEntities(Math.max(3, nAU));
 
-          double checkRMSD1 = -1.0;
-          double n1RMSD = -1.0;
+          double checkRMSD1 = -3.0;
+          double n1RMSD = -4.0;
           if (logger.isLoggable(Level.FINE)) {
             int targetCenterMol = molDist2_2[0].getIndex() * nCoords;
             arraycopy(targetXYZ, targetCenterMol, targetAU, 0, nCoords);
             checkRMSD1 = rmsd(baseAU, targetAU, massN);
-            if (logger.isLoggable(Level.FINER)) {
-              stringBuilder.append(
-                      format(" Center Molecule RMSD after rot 1: %16.8f\n", checkRMSD1));
-            }
-            double maxDist2 = molDist2[molDist2.length-1].getDoubleValue();
-            if(logger.isLoggable(Level.FINER)) {
-              stringBuilder.append(format("\n System 2 Max Dist: %4.8f", sqrt(maxDist2)));
-            }
             for (int i = 0; i < nAU; i++) {
               int offset = i * nCoords;
               int molIndex = pairedAUs[i].getIndex() * nCoords;
-//              double dist = Arrays.stream(molDist2).filter(x->x.getIndex() == molIndex).findFirst().get().getDoubleValue();
-//              if(maxDist2 - dist < radius){
-//                logger.warning(" Selected target entity is near the replicates border. Please increase inflation factor (--ni).");
-//              }
               arraycopy(targetXYZ, molIndex, targetNAUs, offset, nCoords);
             }
             n1RMSD = rmsd(baseNAUs, targetNAUs, massN);
@@ -875,7 +1010,7 @@ public class ProgressiveAlignmentOfCrystals {
             }
           }
 
-          if (logger.isLoggable(Level.FINER)) {
+          if (logger.isLoggable(Level.FINEST)) {
             stringBuilder.append(" Rotation 2:\n");
           }
 
@@ -884,32 +1019,25 @@ public class ProgressiveAlignmentOfCrystals {
           applyTranslation(base3AUs, translation);
           applyTranslation(baseNAUs, translation);
           applyTranslation(baseXYZ, translation);
-          if(printSym) {
-            addTranslation(translation, totalBaseTransform, false);
-            if(logger.isLoggable(Level.FINER)) {
-              stringBuilder.append(format("\n Base %d 2nd Translation: ", index)).append(Arrays.toString(translation)).append("\n");
+          if (printSym >= 0.00) {
+            baseTransformSymOp = baseTransformSymOp.append(new SymOp(ZERO_ROTATION, translation));
+            if (logger.isLoggable(Level.FINER)) {
+              stringBuilder.append(format("\n Base %d 2nd Translation: ", index))
+                  .append(Arrays.toString(translation)).append("\n");
             }
           }
 
           // Load coordinates for 3 molecules for the target systems
           for (int i = 0; i < 3; i++) {
             int targetIndex = pairedAUs[i].getIndex() * nCoords;
-            index = i * nCoords;
-            arraycopy(targetXYZ, targetIndex, target3AUs, index, nCoords);
+            int coordIndex = i * nCoords;
+            arraycopy(targetXYZ, targetIndex, target3AUs, coordIndex, nCoords);
           }
 
           translation = calculateTranslation(target3AUs, massN);
           applyTranslation(target3AUs, translation);
           applyTranslation(targetNAUs, translation);
           applyTranslation(targetXYZ, translation);
-          if(printSym) {
-            addTranslation(translation, totalTargetTransform, false);
-            applyTranslation(targetAU, translation);
-            if (logger.isLoggable(Level.FINER)) {
-              stringBuilder.append(format("\n Target %d 2nd Translation: ", index)).append(Arrays.toString(translation)).append("\n");
-              printSym(compareAtomsSize, mobileAssembly, save);
-            }
-          }
 
           // Perform 2nd Rotation
           // Calculate the rotation matrix and apply it to the target system.
@@ -917,16 +1045,20 @@ public class ProgressiveAlignmentOfCrystals {
           applyRotation(target3AUs, rotation);
           applyRotation(targetNAUs, rotation);
           applyRotation(targetXYZ, rotation);
-          if(printSym) {
-            addRotation(rotation, totalTargetTransform, false);
+          if (printSym >= 0.00) {
+            applyTranslation(targetAU, translation);
+            targetTransformSymOp = targetTransformSymOp.append(new SymOp(ZERO_ROTATION, translation));
+            targetTransformSymOp = targetTransformSymOp.append(new SymOp(rotation, Tr_0_0_0));
             applyRotation(targetAU, rotation);
-            if(logger.isLoggable(Level.FINER)) {
-              stringBuilder.append(matrixToString(totalTargetTransform, -3, "2nd Rotation"));
+            if (logger.isLoggable(Level.FINER)) {
+              stringBuilder.append(format("\n Target %d 2nd Translation: ", index))
+                  .append(Arrays.toString(translation)).append("\n");
+              printSym(compareAtomsSize, mobileAssembly, save);
             }
           }
 
-          double checkRMSD2 = -1.0;
-          double n3RMSD = -1.0;
+          double checkRMSD2 = -5.0;
+          double n3RMSD = -6.0;
           if (logger.isLoggable(Level.FINE)) {
             checkRMSD2 = rmsd(base3AUs, target3AUs, massN);
 //            for (int i = 0; i < nAU; i++) {
@@ -948,7 +1080,7 @@ public class ProgressiveAlignmentOfCrystals {
           centerOfMass(targetCoM, targetXYZ, massN, massSum, compareAtomsSize);
           // Rotations 1 and 2 have been completed and both systems should be overlapped
           //  Isolate center most nAU from System 1 and matching molecules from System 2
-          if (logger.isLoggable(Level.FINER)) {
+          if (logger.isLoggable(Level.FINEST)) {
             stringBuilder.append(" Match Molecules:\n");
           }
           pairEntities(nAU);
@@ -960,10 +1092,11 @@ public class ProgressiveAlignmentOfCrystals {
           }
 
           translation = calculateTranslation(baseNAUs, massN);
-          if(printSym) {
-            addTranslation(translation, totalBaseTransform, false);
-            if(logger.isLoggable(Level.FINER)) {
-              stringBuilder.append(format("\n Base %d Final Translation: ", index)).append(Arrays.toString(translation)).append("\n");
+          if (printSym >= 0.00) {
+            baseTransformSymOp = baseTransformSymOp.append(new SymOp(ZERO_ROTATION, translation));
+            if (logger.isLoggable(Level.FINER)) {
+              stringBuilder.append(format("\n Base %d Final Translation: ", index))
+                  .append(Arrays.toString(translation)).append("\n");
             }
           }
           applyTranslation(baseAU, translation);
@@ -975,14 +1108,15 @@ public class ProgressiveAlignmentOfCrystals {
           applyTranslation(targetNAUs, translation);
           applyTranslation(targetXYZ, translation);
           rotation = calculateRotation(baseNAUs, targetNAUs, massN);
-          if(printSym) {
-            addTranslation(translation, totalTargetTransform, false);
+          if (printSym >= 0.00) {
             applyTranslation(targetAU, translation);
-            addRotation(rotation, totalTargetTransform, false);
+            targetTransformSymOp = targetTransformSymOp.append(new SymOp(ZERO_ROTATION, translation));
+            targetTransformSymOp = targetTransformSymOp.append(new SymOp(rotation, Tr_0_0_0));
             applyRotation(targetAU, rotation);
             if (logger.isLoggable(Level.FINER)) {
               stringBuilder.append(matrixToString(rotation, index, "Target System Final Rotation"));
-              stringBuilder.append(format("\n Target %d Final Translation: ", index)).append(Arrays.toString(translation)).append("\n");
+              stringBuilder.append(format("\n Target %d Final Translation: ", index))
+                  .append(Arrays.toString(translation)).append("\n");
               printSym(compareAtomsSize, mobileAssembly, save);
             }
           }
@@ -1003,16 +1137,24 @@ public class ProgressiveAlignmentOfCrystals {
           double targetGyration = radiusOfGyration(targetNAUs, massN);
 
           if (logger.isLoggable(Level.FINE)) {
-            int totalComparisons = (permute) ? baseXYZs.length * targetConformations
-                    : Math.min(baseXYZs.length, targetConformations);
+            int totalComparisons = (permute) ? baseLength * targetLength
+                : maxLength;
             String output = format(
-                    " %2d of %2d: %7.4f (%7.4f) %7.4f (%7.4f) %7.4f %8.4f %8.4f",
-                    currentComparison, totalComparisons, checkRMSD1, n1RMSD, checkRMSD2, n3RMSD,
-                    rmsdSymOp,
-                    baseGyration, targetGyration);
+                " %2d of %2d: %7.4f (%8.4f) %7.4f (%8.4f) %8.4f %8.4f %8.4f",
+                currentComparison, totalComparisons, checkRMSD1, n1RMSD, checkRMSD2, n3RMSD,
+                rmsdSymOp,
+                baseGyration, targetGyration);
 
             if (logger.isLoggable(Level.FINER)) {
-              output += format(" %d=%d", index, targetBaseIndices[m]);
+              if (reverse) {
+                output += format(" b: %2d t: %2d bt: %2d", molDist1[index].getIndex(),
+                    molDist2[targetIndices[m]].getIndex(),
+                    molDist2[baseTargetIndices[m]].getIndex());
+              } else {
+                output += format(" b: %2d t: %2d tb: %2d", molDist1[index].getIndex(),
+                    molDist2[targetIndices[m]].getIndex(),
+                    molDist1[targetBaseIndices[m]].getIndex());
+              }
             }
             stringBuilder.append(output).append("\n");
           }
@@ -1024,11 +1166,11 @@ public class ProgressiveAlignmentOfCrystals {
             bestRMSD = rmsdSymOp;
             arraycopy(baseNAUs, 0, bestBaseNAUs, 0, nAU * nCoords);
             arraycopy(targetNAUs, 0, bestTargetNAUs, 0, nAU * nCoords);
-            if(printSym) {
-              copyArrayValues(bestTargetTransform, totalTargetTransform);
+            if (printSym >= 0.00) {
+              bestTargetTransformSymOp = new SymOp(targetTransformSymOp.asMatrix());
               bestTargetSymOp = targetSymOp;
-              copyArrayValues(bestBaseTransform, totalBaseTransform);
               bestBaseSymOp = baseSymOp;
+              bestBaseTransformSymOp = new SymOp(baseTransformSymOp.asMatrix());
             }
           }
           currentComparison++;
@@ -1040,27 +1182,32 @@ public class ProgressiveAlignmentOfCrystals {
     if (bestRMSD < Double.MAX_VALUE) {
       finalRMSD = bestRMSD;
     } else {
-      stringBuilder.append(" This RMSD was filtered out! Try the --ex flag." +
-              "\nAlternatively increase --ns and/or --ns2.\n");
-      // TODO: Double.NaN causes an error in RunningStatistics... Set to -4.0 for now...
-      finalRMSD = -4.0;
+      stringBuilder.append(" This RMSD was filtered out! Try the -p flag or increasing --if.\n");
+      // TODO: Double.NaN causes an error in RunningStatistics... Set to -7.0 for now...
+      finalRMSD = -7.0;
+    }
+    if (nAU == 1 && abs(min1 - finalRMSD) > MATCH_TOLERANCE) {
+      stringBuilder.append(
+          format(" WARNING: Single molecule overlay (%8.4f) does not match PAC RMSD_1 (%8.4f)", min1,
+              finalRMSD));
     }
     if (save > 0) {
       if (machineLearning) {
         saveAssembly(staticAssembly, bestBaseNAUs, comparisonAtoms, "_c1", 0.000, compNum, save);
-        saveAssembly(mobileAssembly, bestTargetNAUs, comparisonAtoms, "_c2", finalRMSD, compNum, save);
+        saveAssembly(mobileAssembly, bestTargetNAUs, comparisonAtoms, "_c2", finalRMSD, compNum,
+            save);
       } else {
         saveAssembly(staticAssembly, bestBaseNAUs, comparisonAtoms, "_c1", compNum, save);
         saveAssembly(mobileAssembly, bestTargetNAUs, comparisonAtoms, "_c2", compNum, save);
       }
     }
 
-    if(inertia) {
+    if (inertia) {
       bestBaseMandV = momentsOfInertia(bestBaseNAUs, massN, false, false, true);
       bestTargetMandV = momentsOfInertia(bestTargetNAUs, massN, false, false, true);
     }
 
-    if(gyrationComponents) {
+    if (gyrationComponents) {
       bestBaseRg = radiusOfGyrationComponents(bestBaseNAUs, massN, true);
       bestTargetRg = radiusOfGyrationComponents(bestTargetNAUs, massN, true);
     }
@@ -1074,9 +1221,9 @@ public class ProgressiveAlignmentOfCrystals {
    * @return RunningStatistics of results.
    */
   public RunningStatistics comparisons() {
-    return comparisons(20,  4, 0.1, -1, -1,
+    return comparisons(20, 4, 0.1, -1, -1,
         false, false, false, 0, false, 0, false,
-        false, false, false, false, 0, false, "default");
+        false, false, false, false, 0, -1.0, "default");
   }
 
   /**
@@ -1090,17 +1237,21 @@ public class ProgressiveAlignmentOfCrystals {
    * @param zPrime2 Number of asymmetric units in second crystal (-1 attempts detection).
    * @param alphaCarbons Perform comparisons on only alpha carbons.
    * @param includeHydrogen Perform comparisons without hydrogen atoms.
-   * @param massWeighted Perform comparisons with mass weighted coordinates (center of mass instead of geometric center).
-   * @param crystalPriority Prioritize most dense (0), least dense (1), or first inputted file (2).
+   * @param massWeighted Perform comparisons with mass weighted coordinates (center of mass
+   *     instead of geometric center).
+   * @param crystalPriority Prioritize most dense (0), least dense (1), or first inputted file
+   *     (2).
    * @param permute Compare all unique AUs between crystals.
    * @param save Save out files of the resulting superposition.
    * @param restart Try to restart from a previous job.
    * @param write Save out a PAC RMSD file.
    * @param machineLearning Save out CSV files for machine learning input (saves PDBs as well).
    * @param inertia Compute moments of inertia for final clusters.
-   * @param gyrationComponents Compute axial components for radius of gyration of final clusters.
+   * @param gyrationComponents Compute axial components for radius of gyration of final
+   *     clusters.
    * @param linkage Prioritize entities based on single, average, or complete linkage.
-   * @param printSym Print final symmetry operator used to superimpose mobile assembly onto static assembly.
+   * @param printSym Print final symmetry operator used to superimpose mobile assembly onto
+   *     static assembly.
    * @param pacFileName The filename to use.
    * @return RunningStatistics Statistics for comparisons performed.
    */
@@ -1108,7 +1259,7 @@ public class ProgressiveAlignmentOfCrystals {
       int zPrime2, boolean alphaCarbons, boolean includeHydrogen, boolean massWeighted,
       int crystalPriority, boolean permute, int save, boolean restart, boolean write,
       boolean machineLearning, boolean inertia, boolean gyrationComponents,
-      int linkage, boolean printSym, String pacFileName) {
+      int linkage, double printSym, String pacFileName) {
     this.printSym = printSym;
     //TODO: Incorporate graphic user interface (gui: ffx)
     //TODO: Save systems out as original molecule regardless of selection
@@ -1179,17 +1330,17 @@ public class ProgressiveAlignmentOfCrystals {
     // Each ASU contains z * comparisonAtoms species so treat each species individually.
     if (z1 > 1) {
       compareAtomsSize /= z1;
-      if(printSym){
-        logger.warning(" Printing symmetry operators is not currently functional for Z' > 1.");
-        printSym = false;
-      }
+//      if(printSym >= 0.00){
+//        logger.warning(" Printing symmetry operators is not currently functional for Z' > 1.");
+//        printSym = -1.0;
+//      }
     }
     if (z2 > 1) {
       compareAtomsSize2 /= z2;
-      if(printSym){
-        logger.warning(" Printing symmetry operators is not currently functional for Z' > 1.");
-        printSym = false;
-      }
+//      if(printSym >= 0.00){
+//        logger.warning(" Printing symmetry operators is not currently functional for Z' > 1.");
+//        printSym = -1.0;
+//      }
     }
 
     if (compareAtomsSize != compareAtomsSize2) {
@@ -1198,6 +1349,7 @@ public class ProgressiveAlignmentOfCrystals {
 
     baseCrystal = baseAssembly.getCrystal().getUnitCell();
     targetCrystal = targetFilter.getActiveMolecularSystem().getCrystal().getUnitCell();
+    // Sohncke groups are non-enantiogenic, so only 1 copy, 2 if mirror exists.
     int baseSearchValue = (baseCrystal.spaceGroup.respectsChirality()) ? z1 : 2 * z1;
     int targetSearchValue = (targetCrystal.spaceGroup.respectsChirality()) ? z2 : 2 * z2;
 
@@ -1311,7 +1463,7 @@ public class ProgressiveAlignmentOfCrystals {
     }
 
     // Number of atoms included in the PAC RMSD.
-    if(compareAtomsSize == 0 || compareAtomsSize2 == 0){
+    if (compareAtomsSize == 0 || compareAtomsSize2 == 0) {
       logger.severe(" No atoms were selected for comparison.");
       return runningStatistics;
     }
@@ -1325,10 +1477,11 @@ public class ProgressiveAlignmentOfCrystals {
 
     // Minimum amount of time for a single comparison.
     double minTime = Double.MAX_VALUE;
+    double maxTime = -Double.MIN_VALUE;
     // Loop over conformations in the base assembly.
     for (int row = restartRow; row < baseSize; row++) {
       // Initialize the distance this rank is responsible for to zero.
-      fill(myDistances, -1.0);
+      fill(myDistances, -8.0);
       int myIndex = 0;
       // Base unit cell for logging.
       baseAssembly = baseFilter.getActiveMolecularSystem();
@@ -1336,7 +1489,7 @@ public class ProgressiveAlignmentOfCrystals {
       double baseDensity = baseCrystal.getDensity(baseAssembly.getMass());
       stringBuilder.setLength(0);
       if (baseCrystal == null || baseCrystal.aperiodic()) {
-        stringBuilder.append(" WARNING: Base structure does not have a crystal.\n");
+        logger.warning(" " + baseAssembly.getName() + " does not have a crystal.\n");
         continue;
       }
       for (int column = restartColumn; column < targetSize; column++) {
@@ -1346,10 +1499,10 @@ public class ProgressiveAlignmentOfCrystals {
           targetAssembly = targetFilter.getActiveMolecularSystem();
           targetCrystal = targetAssembly.getCrystal().getUnitCell();
           if (targetCrystal == null || targetCrystal.aperiodic()) {
-            stringBuilder.append(" WARNING: Target structure does not have a crystal.\n");
+            logger.warning(" " + targetAssembly.getName() + " does not have a crystal.\n");
             continue;
           }
-          double rmsd = -2.0;
+          double rmsd = -9.0;
           if (isSymmetric && row == column) {
             stringBuilder.append(
                 format("\n Comparing Model %d (%s) of %s\n with      Model %d (%s) of %s\n",
@@ -1361,33 +1514,18 @@ public class ProgressiveAlignmentOfCrystals {
             stringBuilder.append(format("\n PAC %s: %12s %7.4f A\n", rmsdLabel, "", rmsd));
           } else if (isSymmetric && row > column) {
             // Do not compute lower triangle values.
-            rmsd = -3.0;
+            rmsd = -10.0;
           } else {
             stringBuilder.append(
                 format("\n Comparing Model %d (%s) of %s\n with      Model %d (%s) of %s\n",
                     row + 1, baseCrystal.toShortString(), baseLabel,
                     column + 1, targetCrystal.toShortString(), targetLabel));
 
-            //Setup for comparison with crystal specific information.
-            // Density changes based on mass weighted flag, therefore use volume.
-            double baseVolume = baseCrystal.volume / baseCrystal.getNumSymOps() / z1;
-            double targetVolume = targetCrystal.volume / targetCrystal.getNumSymOps() / z2;
-            double asymmetricUnitVolume = max(abs(baseVolume), abs(targetVolume));
-            radius = cbrt(0.75/PI * asymmetricUnitVolume * nAU * inflationFactor);
-
-            // Estimate a radius that will include desired number of asymmetric units (inflationFactor).
-            if(logger.isLoggable(Level.FINER)){
-              logger.finer(format(" Unit Cell Volume:  (Base) %4.2f (Target) %4.2f", baseCrystal.volume, targetCrystal.volume));
-              logger.finer(format(" Unit Cell Symm Ops: (Base) %d (Target) %d", baseCrystal.getNumSymOps(), targetCrystal.getNumSymOps()));
-              logger.finer(format(" Z': (Base) %d (Target) %d", z1, z2));
-              logger.finer(format("\n Asymmetric Unit Volume:  %4.2f", asymmetricUnitVolume));
-              logger.finer(format(" Replicates Cutoff Radius:  %4.2f", radius));
-            }
             // Prioritize crystal order based on user specification (High/low density or file order).
             double targetDensity = targetCrystal.getDensity(targetAssembly.getMass());
             if (logger.isLoggable(Level.FINER)) {
               stringBuilder.append(
-                  format(" Base Density: %4.4f Target Density: %4.4f\n", baseDensity,
+                  format("\n Base Density: %4.4f Target Density: %4.4f\n", baseDensity,
                       targetDensity));
             }
             boolean densityCheck =
@@ -1407,6 +1545,31 @@ public class ProgressiveAlignmentOfCrystals {
               int temp = z1;
               z1 = z2;
               z2 = temp;
+              temp = baseSearchValue;
+              baseSearchValue = targetSearchValue;
+              targetSearchValue = temp;
+            }
+
+            //Setup for comparison with crystal specific information.
+            // Density changes based on mass weighted flag, therefore use volume.
+            double baseVolume = baseCrystal.volume / baseCrystal.getNumSymOps() / z1;
+            double targetVolume = targetCrystal.volume / targetCrystal.getNumSymOps() / z2;
+            double asymmetricUnitVolume = max(abs(baseVolume), abs(targetVolume));
+            radius = cbrt(0.75 / PI * asymmetricUnitVolume * nAU * inflationFactor);
+
+            // Estimate a radius that will include desired number of asymmetric units (inflationFactor).
+            if (logger.isLoggable(Level.FINER)) {
+              logger.finer(
+                  format(" Unit Cell Volume:  (Base) %4.2f (Target) %4.2f", baseCrystal.volume,
+                      targetCrystal.volume));
+              logger.finer(
+                  format(" Unit Cell Symm Ops: (Base) %d (Target) %d", baseCrystal.getNumSymOps(),
+                      targetCrystal.getNumSymOps()));
+              logger.finer(format(" Z': (Base) %d (Target) %d", z1, z2));
+              logger.finer(format(" Larger Asymmetric Unit Volume:  %4.2f", asymmetricUnitVolume));
+              logger.finer(
+                  format(" Larger N Asymmetric Units Volume:  %4.2f", asymmetricUnitVolume * nAU));
+              logger.finer(format(" Replicates Cutoff Radius:  %4.2f", radius));
             }
 
             // When the system was read in, a replicates crystal may have been created to satisfy the cutoff.
@@ -1415,11 +1578,14 @@ public class ProgressiveAlignmentOfCrystals {
             // a different size (i.e. larger).
             //Remove atoms not used in comparisons from the original molecular assembly (crystal 1).
             staticAssembly.moveAllIntoUnitCell();
-            double[] reducedBaseCoords = reduceSystem(staticAssembly.getAtomArray(), comparisonAtoms);
+            double[] reducedBaseCoords = reduceSystem(staticAssembly.getAtomArray(),
+                comparisonAtoms);
             baseCrystal = staticAssembly.getCrystal().getUnitCell();
             baseSymOps.clear();
             centerB.clear();
-            baseXYZoriginal = generateInflatedSphere(baseCrystal.getUnitCell(), radius, reducedBaseCoords, z1, mass, baseSymOps, centerB);
+            baseXYZoriginal = generateInflatedSphere(baseCrystal.getUnitCell(), radius,
+                reducedBaseCoords, z1, mass,
+                baseSymOps, centerB);
             int nBaseCoords = baseXYZoriginal.length;
             baseXYZ = new double[nBaseCoords];
             arraycopy(baseXYZoriginal, 0, baseXYZ, 0, baseXYZoriginal.length);
@@ -1427,12 +1593,14 @@ public class ProgressiveAlignmentOfCrystals {
 
             //Remove atoms not used in comparisons from the original molecular assembly (crystal 2).
             mobileAssembly.moveAllIntoUnitCell();
-            double[] reducedTargetCoords = reduceSystem(mobileAssembly.getAtomArray(), comparisonAtoms2);
+            double[] reducedTargetCoords = reduceSystem(mobileAssembly.getAtomArray(),
+                comparisonAtoms2);
             targetCrystal = mobileAssembly.getCrystal().getUnitCell();
             targetSymOps.clear();
             centerT.clear();
-            targetXYZoriginal = generateInflatedSphere(targetCrystal.getUnitCell(), radius, reducedTargetCoords, z2, mass2,
-                    targetSymOps, centerT);
+            targetXYZoriginal = generateInflatedSphere(targetCrystal.getUnitCell(), radius,
+                reducedTargetCoords, z2, mass2,
+                targetSymOps, centerT);
             int nTargetCoords = targetXYZoriginal.length;
             targetXYZ = new double[nTargetCoords];
             arraycopy(targetXYZoriginal, 0, targetXYZ, 0, nTargetCoords);
@@ -1442,7 +1610,7 @@ public class ProgressiveAlignmentOfCrystals {
               saveAssembly(mobileAssembly, targetXYZoriginal, comparisonAtoms2, "_c2_rep", -1, save);
             }
             // Compute the PAC RMSD.
-            rmsd = compare(staticAssembly, mobileAssembly, compareAtomsSize, nAU,
+            rmsd = compare(staticAssembly, mobileAssembly, z1, z2, compareAtomsSize, nAU,
                 baseSearchValue, targetSearchValue, matchTol, row * targetSize + column,
                 permute, save, machineLearning, linkage, inertia, gyrationComponents);
             time += System.nanoTime();
@@ -1451,10 +1619,12 @@ public class ProgressiveAlignmentOfCrystals {
             if (timeSec < minTime) {
               minTime = timeSec;
             }
+            if (timeSec > maxTime) {
+              maxTime = timeSec;
+            }
             // Log the final result.
             double avgGyration = (gyrations[0] + gyrations[1]) / 2;
             double diff = max(gyrations[0], gyrations[1]) - avgGyration;
-//            double Rmx = max(Arrays.stream(bestTargetRg).max().orElse(-1.0), Arrays.stream(bestBaseRg).max().orElse(-1.0));
             stringBuilder.append(
                 format("\n PAC %s: %12s %7.4f A (%5.3f sec) G(r) %7.4f A +/- %7.4f\n", rmsdLabel, "",
                     rmsd,
@@ -1483,23 +1653,29 @@ public class ProgressiveAlignmentOfCrystals {
               Rmed *= Rmed;
               double Rmin = min(min(bestBaseRg[0], bestBaseRg[1]), bestBaseRg[2]);
               Rmin *= Rmin;
-              double Rg = gyrations[0] * gyrations[0];
+              double Rg = Rmax + Rmed + Rmin;
               // 0.0 indicates a perfect sphere, and 1.0 indicates all atoms along a single axis.
               double asphericity = Rmax - 0.5 * (Rmin + Rmed);
               double acylindricity = Rmed - Rmin;
               double anisotropy = (asphericity * asphericity + 0.75 * acylindricity * acylindricity);
               double totalMass = Arrays.stream(mass).sum();
               // Density changes based on mass weighted flag.
-              double volume = totalMass / max(baseCrystal.getDensity(massSum), targetCrystal.getDensity(massSum));
-              double targetRadius = cbrt(0.75/PI * volume);
-              stringBuilder.append(format(" Target Radius Metric: %7.4f", avgGyration/targetRadius));
-              if(logger.isLoggable(Level.FINER)) {
-                stringBuilder.append(format("\n Target Base Radius:           %9.3f Å\n", targetRadius));
-                stringBuilder.append(format(" Asphericity:   (%6.3f Å) %9.3f\n", asphericity, asphericity/Rmax));
-                stringBuilder.append(format(" Acylindricity: (%6.3f Å) %9.3f\n", acylindricity, acylindricity/Rmax));
-                stringBuilder.append(format(" Anisotropy:    (%6.3f Å) %9.3f\n", sqrt(sqrt(anisotropy)), anisotropy/(Rg*Rg)));
+              double volume = totalMass / max(baseCrystal.getDensity(massSum),
+                  targetCrystal.getDensity(massSum));
+              double targetRadius = cbrt(0.75 / PI * volume);
+              stringBuilder.append(format(" Base Radius Metric: %7.4f", avgGyration / targetRadius));
+              if (logger.isLoggable(Level.FINER)) {
+                stringBuilder.append(
+                    format("\n Target Base Radius:           %9.3f Å\n", targetRadius));
+                stringBuilder.append(
+                    format(" Asphericity:   (%6.3f Å^2) %9.3f\n", asphericity, asphericity / Rmax));
+                stringBuilder.append(format(" Acylindricity: (%6.3f Å^2) %9.3f\n", acylindricity,
+                    acylindricity / Rmax));
+                stringBuilder.append(
+                    format(" Anisotropy:    (%6.3f Å) %9.3f\n", sqrt(sqrt(anisotropy)),
+                        anisotropy / (Rg * Rg)));
                 stringBuilder.append(format("  Ryz %9.3fÅ  Rxz %9.3fÅ  Rxy %9.3fÅ\n",
-                        bestTargetRg[0], bestTargetRg[1], bestTargetRg[2]));
+                    bestBaseRg[0], bestBaseRg[1], bestBaseRg[2]));
               }
               // Crystal 2 metrics
               Rmax = max(max(bestTargetRg[0], bestTargetRg[1]), bestTargetRg[2]);
@@ -1508,80 +1684,63 @@ public class ProgressiveAlignmentOfCrystals {
               Rmed *= Rmed;
               Rmin = min(min(bestTargetRg[0], bestTargetRg[1]), bestTargetRg[2]);
               Rmin *= Rmin;
-              Rg = gyrations[1] * gyrations[1];
+              Rg = Rmax + Rmed + Rmin;
               // 0.0 indicates a perfect sphere, and 1.0 indicates all atoms along a single axis.
               asphericity = Rmax - 0.5 * (Rmin + Rmed);
               acylindricity = Rmed - Rmin;
               anisotropy = (asphericity * asphericity + 0.75 * acylindricity * acylindricity);
               totalMass = Arrays.stream(mass).sum();
               volume = totalMass / targetDensity;
-              targetRadius = cbrt(0.75/PI * volume);
-              if(logger.isLoggable(Level.FINER)) {
-                stringBuilder.append(format("\n Target Target Radius:           %9.3f Å\n", targetRadius));
-                stringBuilder.append(format(" Asphericity:   (%6.3f Å) %9.3f\n", asphericity, asphericity/Rmax));
-                stringBuilder.append(format(" Acylindricity: (%6.3f Å) %9.3f\n", acylindricity, acylindricity/Rmax));
-                stringBuilder.append(format(" Anisotropy:    (%6.3f Å) %9.3f\n", sqrt(sqrt(anisotropy)), anisotropy/(Rg*Rg)));
+              targetRadius = cbrt(0.75 / PI * volume);
+              if (logger.isLoggable(Level.FINER)) {
+                stringBuilder.append(
+                    format("\n Target Target Radius:           %9.3f Å\n", targetRadius));
+                stringBuilder.append(
+                    format(" Asphericity:   (%6.3f Å) %9.3f\n", asphericity, asphericity / Rmax));
+                stringBuilder.append(format(" Acylindricity: (%6.3f Å) %9.3f\n", acylindricity,
+                    acylindricity / Rmax));
+                stringBuilder.append(
+                    format(" Anisotropy:    (%6.3f Å) %9.3f\n", sqrt(sqrt(anisotropy)),
+                        anisotropy / (Rg * Rg)));
                 stringBuilder.append(format("  Ryz %9.3fÅ  Rxz %9.3fÅ  Rxy %9.3fÅ\n",
-                        bestTargetRg[0], bestTargetRg[1], bestTargetRg[2]));
+                    bestTargetRg[0], bestTargetRg[1], bestTargetRg[2]));
               }
             }
             if (logger.isLoggable(Level.FINER)) {
-              stringBuilder.append(format("\n Gyration Crystal 1 (%s): %7.4f Crystal 2 (%s): %7.4f.\n",
-                  staticAssembly.getName(),
-                  gyrations[0], mobileAssembly.getName(), gyrations[1]));
+              stringBuilder.append(
+                  format("\n Gyration Crystal 1 (%s): %7.4f Crystal 2 (%s): %7.4f.\n",
+                      staticAssembly.getName(),
+                      gyrations[0], mobileAssembly.getName(), gyrations[1]));
             }
-            if(printSym) {
-              addTranslation(bestTargetSymOp.tr, bestTargetTransform, true);
-              addRotation(bestTargetSymOp.rot, bestTargetTransform, true);
-              addTranslation(bestBaseSymOp.tr, bestBaseTransform, true);
-              addRotation(bestBaseSymOp.rot, bestBaseTransform, true);
+            if (printSym >= 0.00) {
+              bestTargetTransformSymOp = bestTargetTransformSymOp.prepend(bestTargetSymOp);
+              bestBaseTransformSymOp = bestBaseTransformSymOp.prepend(bestBaseSymOp);
               // Apply inverse of base operations:
               // For orthogonal matrices the inverse matrix = the transpose. True iff det(A)== +/- 1.
               // No inverse if det(A)==0.
-              double[][] invBaseRotation = mat3Inverse(Arrays.copyOf(bestBaseTransform, 3));
-              double[] invBaseTranslation = new double[]{
-                      -1 * (bestBaseTransform[0][3] / bestBaseTransform[3][3]),
-                      -1 * (bestBaseTransform[1][3] / bestBaseTransform[3][3]),
-                      -1 * (bestBaseTransform[2][3] / bestBaseTransform[3][3])};
-              addTranslation(invBaseTranslation, bestTargetTransform, false);
-              addRotation(invBaseRotation, bestTargetTransform, false);
-              if(logger.isLoggable(Level.FINER)){
-                stringBuilder.append(matrixToString(invBaseRotation, -4, "Base Inverse Rotation"));
-                stringBuilder.append("\n Base Inverse Translation: ").append(Arrays.toString(invBaseTranslation)).append("\n");
-              }
-
-              double[] bestTranslation = new double[]{
-                      bestTargetTransform[0][3] / bestTargetTransform[3][3],
-                      bestTargetTransform[1][3] / bestTargetTransform[3][3],
-                      bestTargetTransform[2][3] / bestTargetTransform[3][3]};
-              double[][] bestRotation = Arrays.copyOf(bestTargetTransform, 3);
-              SymOp symOp = new SymOp(bestRotation, bestTranslation);
+              bestTargetTransformSymOp = bestTargetTransformSymOp.append(
+                  invertSymOp(bestBaseTransformSymOp));
               for (int i = 0; i < compareAtomsSize; i++) {
                 int k = i * 3;
-                double[] xyz = new double[]{targetAUoriginal[k], targetAUoriginal[k + 1], targetAUoriginal[k + 2]};
-                Crystal.applyCartesianSymOp(xyz, xyz, symOp);
+                double[] xyz = new double[] {targetAUoriginal[k], targetAUoriginal[k + 1],
+                    targetAUoriginal[k + 2]};
+                applyCartesianSymOp(xyz, xyz, bestTargetTransformSymOp);
                 targetAUoriginal[k] = xyz[0];
                 targetAUoriginal[k + 1] = xyz[1];
                 targetAUoriginal[k + 2] = xyz[2];
               }
-              if(logger.isLoggable(Level.FINER)){
-                stringBuilder.append(matrixToString(bestRotation, -4, "Final Rotation"));
-                stringBuilder.append("\n Final Translation: ").append(Arrays.toString(bestTranslation)).append("\n");
-                printSym(compareAtomsSize, mobileAssembly, save);
-              }
               if (save > 0) {
                 saveAssembly(mobileAssembly, targetAUoriginal, comparisonAtoms, "_moved", 0, save);
               }
-              stringBuilder.append("\n Sym Op to move second system onto first:\n").append(symOp.toString()).append("\n");
-              stringBuilder.append("\n").append(format(
-                              " %12.4f %12.4f %12.4f \\\n" +
-                              " %12.4f %12.4f %12.4f \\\n" +
-                              " %12.4f %12.4f %12.4f \\\n" +
-                              " %12.4f %12.4f %12.4f ",
-                      symOp.rot[0][0], symOp.rot[0][1], symOp.rot[0][2],
-                      symOp.rot[1][0], symOp.rot[1][1], symOp.rot[1][2],
-                      symOp.rot[2][0], symOp.rot[2][1], symOp.rot[2][2],
-                      symOp.tr[0],symOp.tr[1],symOp.tr[2]));
+              stringBuilder.append(
+                  format("\n Sym Op to move %s onto %s:\n", mobileAssembly.getName(),
+                      staticAssembly.getName())).append(bestTargetTransformSymOp).append("\n");
+              stringBuilder.append(asMatrixString(bestTargetTransformSymOp));
+              SymOp inverted = invertSymOp(bestTargetTransformSymOp);
+              stringBuilder.append(
+                  format("\n\n Inverted Sym Op to move %s onto %s:\n", staticAssembly.getName(),
+                      mobileAssembly.getName())).append(inverted).append("\n");
+              stringBuilder.append(asMatrixString(inverted));
             }
           }
           myDistances[myIndex] = rmsd;
@@ -1608,22 +1767,46 @@ public class ProgressiveAlignmentOfCrystals {
     }
 
     if (minTime < Double.MAX_VALUE) {
-      logger.info(format("\n Minimum PAC time: %7.4f", minTime));
+      logger.info(format("\n Minimum PAC Time: %7.4f", minTime));
+    }
+    if (maxTime > Double.MIN_VALUE && maxTime != minTime) {
+      logger.info(format(" Maximum PAC Time: %7.4f", maxTime));
     }
 
     baseFilter.closeReader();
     targetFilter.closeReader();
 
-    logger.info(format(" RMSD Minimum:  %8.6f", runningStatistics.getMin()));
-    logger.info(format(" RMSD Maximum:  %8.6f", runningStatistics.getMax()));
-    logger.info(format(" RMSD Mean:     %8.6f", runningStatistics.getMean()));
-    double variance = runningStatistics.getVariance();
-    if (!Double.isNaN(variance)) {
-      logger.info(format(" RMSD Variance: %8.6f", variance));
+    if (rank == 0 || logger.isLoggable(Level.FINER)) {
+      logger.info(format(" RMSD Minimum:  %8.6f", runningStatistics.getMin()));
+      logger.info(format(" RMSD Maximum:  %8.6f", runningStatistics.getMax()));
+      logger.info(format(" RMSD Mean:     %8.6f", runningStatistics.getMean()));
+      double variance = runningStatistics.getVariance();
+      if (!Double.isNaN(variance)) {
+        logger.info(format(" RMSD Variance: %8.6f", variance));
+      }
     }
 
     // Return distMatrix for validation if this is for the test script
     return runningStatistics;
+  }
+
+  /**
+   * Print a Sym Op matrix as a continued line string.
+   *
+   * @param symOp Symmetry operation to print.
+   * @return Continued line string.
+   */
+  private static String asMatrixString(SymOp symOp) {
+    double[][] values = symOp.asMatrix();
+    return format(
+        " %12.4f %12.4f %12.4f \\\n" +
+            " %12.4f %12.4f %12.4f \\\n" +
+            " %12.4f %12.4f %12.4f \\\n" +
+            " %12.4f %12.4f %12.4f ",
+        values[0][0], values[0][1], values[0][2],
+        values[1][0], values[1][1], values[1][2],
+        values[2][0], values[2][1], values[2][2],
+        values[0][3], values[1][3], values[2][3]);
   }
 
   /**
@@ -1657,13 +1840,14 @@ public class ProgressiveAlignmentOfCrystals {
    * @param prepend If true prepend translation, false append to end.
    */
   public void addRotation(double[][] rot, double[][] totalTransform, boolean prepend) {
-    double[][] transform = new double[][]{
-            {rot[0][0],rot[0][1], rot[0][2], 0.0},
-            {rot[1][0],rot[1][1], rot[1][2], 0.0},
-            {rot[2][0],rot[2][1], rot[2][2], 0.0},
-            {0.0, 0.0, 0.0, 1.0}};
-    transform = (prepend) ? mat4Mat4(totalTransform, transform):mat4Mat4(transform, totalTransform);
-    for(int i = 0; i < totalTransform.length; i++){
+    double[][] transform = new double[][] {
+        {rot[0][0], rot[0][1], rot[0][2], 0.0},
+        {rot[1][0], rot[1][1], rot[1][2], 0.0},
+        {rot[2][0], rot[2][1], rot[2][2], 0.0},
+        {0.0, 0.0, 0.0, 1.0}};
+    transform =
+        (prepend) ? mat4Mat4(totalTransform, transform) : mat4Mat4(transform, totalTransform);
+    for (int i = 0; i < totalTransform.length; i++) {
       arraycopy(transform[i], 0, totalTransform[i], 0, totalTransform[i].length);
     }
   }
@@ -1675,14 +1859,16 @@ public class ProgressiveAlignmentOfCrystals {
    * @param totalTransform Array to be updated with translation (4x4).
    * @param prepend If true prepend translation, false append to end.
    */
-  public static void addTranslation(double[] translation, double[][] totalTransform, boolean prepend) {
-    double[][] transform = new double[][]{
-            {1.0, 0.0, 0.0, translation[0]},
-            {0.0, 1.0, 0.0, translation[1]},
-            {0.0, 0.0, 1.0, translation[2]},
-            {0.0, 0.0, 0.0, 1.0}};
-    transform = (prepend) ? mat4Mat4(totalTransform, transform):mat4Mat4(transform, totalTransform);
-    for(int i = 0; i < totalTransform.length; i++){
+  public static void addTranslation(double[] translation, double[][] totalTransform,
+      boolean prepend) {
+    double[][] transform = new double[][] {
+        {1.0, 0.0, 0.0, translation[0]},
+        {0.0, 1.0, 0.0, translation[1]},
+        {0.0, 0.0, 1.0, translation[2]},
+        {0.0, 0.0, 0.0, 1.0}};
+    transform =
+        (prepend) ? mat4Mat4(totalTransform, transform) : mat4Mat4(transform, totalTransform);
+    for (int i = 0; i < totalTransform.length; i++) {
       arraycopy(transform[i], 0, totalTransform[i], 0, totalTransform[i].length);
     }
   }
@@ -1698,7 +1884,7 @@ public class ProgressiveAlignmentOfCrystals {
    * @param nAtoms Number of coordinates in an entity.
    */
   private static void centerOfMass(double[][] centersOfMass, double[] coords, double[] mass,
-                                   double massSum, int nAtoms) {
+      double massSum, int nAtoms) {
     int size = centersOfMass.length;
     for (int i = 0; i < size; i++) {
       int molIndex = i * nAtoms * 3;
@@ -1719,11 +1905,12 @@ public class ProgressiveAlignmentOfCrystals {
 
   /**
    * Deep copy of values from one array to another.
+   *
    * @param newArray Destination of values.
    * @param oldArray Current location of values.
    */
-  private static void copyArrayValues(double[][] newArray, double[][] oldArray){
-    for(int i = 0; i < newArray.length; i++){
+  private static void copyArrayValues(double[][] newArray, double[][] oldArray) {
+    for (int i = 0; i < newArray.length; i++) {
       arraycopy(oldArray[i], 0, newArray[i], 0, newArray[i].length);
     }
   }
@@ -1737,8 +1924,8 @@ public class ProgressiveAlignmentOfCrystals {
    * @param includeHydrogen Boolean whether to include hydrogens.
    */
   private static void determineActiveAtoms(MolecularAssembly assembly, ArrayList<Integer> indices,
-                                           boolean alphaCarbons,
-                                           boolean includeHydrogen) {
+      boolean alphaCarbons,
+      boolean includeHydrogen) {
     Atom[] atoms = assembly.getAtomArray();
     int nAtoms = atoms.length;
     for (int i = 0; i < nAtoms; i++) {
@@ -1818,12 +2005,31 @@ public class ProgressiveAlignmentOfCrystals {
         }
         // TODO: Node 0 is the only process that updates. Remove from other nodes.
         world.gather(0, myBuffer, buffers);
-        for (int workItem = 0; workItem < numWorkItems; workItem++) {
-          for (int proc = 0; proc < numProc; proc++) {
-            int column = numProc * workItem + proc;
+        if (rank == 0) {
+          for (int workItem = 0; workItem < numWorkItems; workItem++) {
+            for (int proc = 0; proc < numProc; proc++) {
+              int column = numProc * workItem + proc;
+              // Do not include padded results.
+              if (column < targetSize) {
+                distRow[column] = distances[proc][workItem];
+                if (!isSymmetric) {
+                  runningStatistics.addValue(distRow[column]);
+                } else if (column >= row) {
+                  // Only collect stats for the upper triangle.
+                  runningStatistics.addValue(distRow[column]);
+                }
+                if (logger.isLoggable(Level.FINER)) {
+                  logger.finer(format(" %d %d %16.8f", row, column, distances[proc][workItem]));
+                }
+              }
+            }
+          }
+        } else {
+          for (int workItem = 0; workItem < numWorkItems; workItem++) {
+            int column = numProc * workItem + rank;
             // Do not include padded results.
             if (column < targetSize) {
-              distRow[column] = distances[proc][workItem];
+              distRow[column] = distances[rank][workItem];
               if (!isSymmetric) {
                 runningStatistics.addValue(distRow[column]);
               } else if (column >= row) {
@@ -1831,7 +2037,7 @@ public class ProgressiveAlignmentOfCrystals {
                 runningStatistics.addValue(distRow[column]);
               }
               if (logger.isLoggable(Level.FINER)) {
-                logger.finer(format(" %d %d %16.8f", row, column, distances[proc][workItem]));
+                logger.finer(format(" %d %d %16.8f", row, column, distances[rank][workItem]));
               }
             }
           }
@@ -1862,10 +2068,11 @@ public class ProgressiveAlignmentOfCrystals {
    * @param mass Masses for atoms within reduced asymmetric unit.
    * @return double[] containing the coordinates for the expanded crystal.
    */
-  private static double[] generateInflatedSphere(Crystal unitCell, double radius, double[] reducedCoords, int zPrime,
-                                                 double[] mass, ArrayList<SymOp> symOps, ArrayList<Integer> center) {
+  private static double[] generateInflatedSphere(Crystal unitCell, double radius,
+      double[] reducedCoords, int zPrime,
+      double[] mass, ArrayList<SymOp> symOps, ArrayList<Integer> center) {
     int nAtoms = reducedCoords.length / 3;
-    int zAtoms = nAtoms/zPrime;
+    int zAtoms = nAtoms / zPrime;
     // Collect asymmetric unit atomic coordinates.
     double[] x = new double[nAtoms];
     double[] y = new double[nAtoms];
@@ -1883,10 +2090,6 @@ public class ProgressiveAlignmentOfCrystals {
     int nSymm = replicatesCrystal.getNumSymOps();
 
     int numEntities = nSymm * zPrime;
-    if (logger.isLoggable(Level.FINER)) {
-      logger.finer(format("\n Number of entities in replicates: %3d", numEntities));
-      logger.finer(" Replicates crystal " + replicatesCrystal);
-    }
 
     double[][] xS = new double[nSymm][nAtoms];
     double[][] yS = new double[nSymm][nAtoms];
@@ -1923,8 +2126,8 @@ public class ProgressiveAlignmentOfCrystals {
         //Convert sym op into cartesian for later use.
         double[] trans = symOp.tr.clone();
         replicatesCrystal.toCartesianCoordinates(trans, trans);
-        for(int i = 0; i < translate.length; i++){
-          trans[i]+=translate[i];
+        for (int i = 0; i < translate.length; i++) {
+          trans[i] += translate[i];
         }
         symOps.add(new SymOp(rot, trans));
         for (int i = 0; i < zAtoms; i++) {
@@ -1950,8 +2153,12 @@ public class ProgressiveAlignmentOfCrystals {
     replicatesCrystal.toCartesianCoordinates(fracCenter, cartCenter);
 
     if (logger.isLoggable(Level.FINER)) {
+      if (logger.isLoggable(Level.FINEST)) {
+        logger.finer(" Replicates crystal " + replicatesCrystal);
+      }
+      logger.finer(format(" Replicates Volume: %8.4f", replicatesCrystal.volume));
       logger.finer(format(" Expanded Crystal Center: %16.8f %16.8f %16.8f",
-              cartCenter[0], cartCenter[1], cartCenter[2]));
+          cartCenter[0], cartCenter[1], cartCenter[2]));
     }
 
     for (int i = 0; i < numEntities; i++) {
@@ -2012,6 +2219,7 @@ public class ProgressiveAlignmentOfCrystals {
 
   /**
    * Parse values of a matrix into a string.
+   *
    * @param matrix Values to present
    * @param index Identifier
    * @param description Identifier
@@ -2090,15 +2298,20 @@ public class ProgressiveAlignmentOfCrystals {
     // Determine number of conformations in first crystal
     int numConfCheck = (permute || upperLimit <= 0) ? nAUinReplicates : upperLimit;
     if (logger.isLoggable(Level.FINEST)) {
-      logger.finer("RMSD Differences in Replicates Crystal:");
+      logger.finest("RMSD Differences in Replicates Crystal:");
     }
+    double[] target = new double[nCoords];
+    arraycopy(tempListXYZ.get(0), 0, target, 0, nCoords);
+    translate(target, massN);
     while (uniqueDiffs.size() < numConfCheck) {
       double[] baseCheckMol = new double[nCoords];
       arraycopy(allCoords, molIndices[index].getIndex() * nCoords, baseCheckMol, 0,
           nCoords);
-      double value = rmsd_1(tempListXYZ.get(0), baseCheckMol, massN);
+      translate(baseCheckMol, massN);
+      rotate(target, baseCheckMol, massN);
+      double value = rmsd(target, baseCheckMol, massN);
       if (logger.isLoggable(Level.FINEST)) {
-        logger.finer(format("%4d %4.4f", molIndices[index].getIndex(), value));
+        logger.finest(format("%4d %4.4f", molIndices[index].getIndex(), value));
       }
       if (addLooseUnequal(uniqueDiffs, value, matchTol)) {
         tempListIndices.add(index);
@@ -2113,7 +2326,8 @@ public class ProgressiveAlignmentOfCrystals {
       logger.finer(" RMSD_1 from 1st AU:\n i RMSD     AU Index");
       int numUniqueIndices = tempListIndices.size();
       for (int i = 0; i < numUniqueIndices; i++) {
-        logger.finer(format(" %d %4.4f    %4d", i, uniqueDiffs.get(i), tempListIndices.get(i)));
+        logger.finer(format(" %d %4.4f    %4d", i, uniqueDiffs.get(i),
+            molIndices[tempListIndices.get(i)].getIndex()));
       }
     }
   }
@@ -2145,7 +2359,7 @@ public class ProgressiveAlignmentOfCrystals {
         }
         if (abs(minDist) < MATCH_TOLERANCE) {
           // Distance between center of masses is ~0 is the best scenario assuming no coordinate overlaps.
-          if (logger.isLoggable(Level.FINER)) {
+          if (logger.isLoggable(Level.FINEST)) {
             stringBuilder.append(" \tExit out of match loop.\n");
           }
           break;
@@ -2157,17 +2371,17 @@ public class ProgressiveAlignmentOfCrystals {
       }
       if (logger.isLoggable(Level.FINEST)) {
         stringBuilder.append(
-                format("\n Base position:   %d: %8.4f %8.4f %8.4f\n", i,
-                        baseCoM[molDist1_2[i].getIndex()][0],
-                        baseCoM[molDist1_2[i].getIndex()][1],
-                        baseCoM[molDist1_2[i].getIndex()][2]));
+            format("\n Base position:   %d: %8.4f %8.4f %8.4f\n", i,
+                baseCoM[molDist1_2[i].getIndex()][0],
+                baseCoM[molDist1_2[i].getIndex()][1],
+                baseCoM[molDist1_2[i].getIndex()][2]));
         stringBuilder.append(
-                format(" Match Distance:  %d: %8.4f\n", i, sqrt(pairedAUs[i].getDoubleValue())));
+            format(" Match Distance:  %d: %8.4f\n", i, sqrt(pairedAUs[i].getDoubleValue())));
         stringBuilder.append(
-                format(" Target position: %d: %8.4f %8.4f %8.4f\n", i,
-                        targetCoM[pairedAUs[i].getIndex()][0],
-                        targetCoM[pairedAUs[i].getIndex()][1],
-                        targetCoM[pairedAUs[i].getIndex()][2]));
+            format(" Target position: %d: %8.4f %8.4f %8.4f\n", i,
+                targetCoM[pairedAUs[i].getIndex()][0],
+                targetCoM[pairedAUs[i].getIndex()][1],
+                targetCoM[pairedAUs[i].getIndex()][2]));
       }
     }
     if (logger.isLoggable(Level.FINEST)) {
@@ -2183,37 +2397,40 @@ public class ProgressiveAlignmentOfCrystals {
 
   /**
    * Print values for the symmetry operations performed so far (useful for debugging printSym flag).
+   *
    * @param compareAtomsSize Number of atoms being compared from each AU.
    * @param mobileAssembly MolecularAssembly representing second system.
    * @param save Save integer switch to determine if/how to save file.
    */
-  private void printSym(int compareAtomsSize, MolecularAssembly mobileAssembly, int save){
+  private void printSym(int compareAtomsSize, MolecularAssembly mobileAssembly, int save) {
     double[][] tempTransform = new double[4][4];
-    copyArrayValues(tempTransform, totalTargetTransform);
+    copyArrayValues(tempTransform, targetTransformSymOp.asMatrix());
     addTranslation(targetSymOp.tr, tempTransform, true);
     addRotation(targetSymOp.rot, tempTransform, true);
-    double[] bestTranslation = new double[]{
-            tempTransform[0][3]/tempTransform[3][3],
-            tempTransform[1][3]/tempTransform[3][3],
-            tempTransform[2][3]/tempTransform[3][3]};
+    double[] bestTranslation = new double[] {
+        tempTransform[0][3] / tempTransform[3][3],
+        tempTransform[1][3] / tempTransform[3][3],
+        tempTransform[2][3] / tempTransform[3][3]};
     SymOp symOp = new SymOp(Arrays.copyOf(tempTransform, 3), bestTranslation);
     double[] x = new double[compareAtomsSize];
     double[] y = new double[compareAtomsSize];
     double[] z = new double[compareAtomsSize];
-    double[] newMol = new double[compareAtomsSize*3];
-    stringBuilder.append("\n Print Current Symmetry Operator:\n \tCurrent Coords \t\t Applied Sym Op Coords");
-    for(int i = 0; i < compareAtomsSize; i++){
+    double[] newMol = new double[compareAtomsSize * 3];
+    stringBuilder.append(
+        "\n Print Current Symmetry Operator:\n \tCurrent Coords \t\t Applied Sym Op Coords");
+    for (int i = 0; i < compareAtomsSize; i++) {
       int k = i * 3;
       x[i] = targetAU[k];
       y[i] = targetAU[k + 1];
       z[i] = targetAU[k + 2];
-      double[] xyz = new double[]{targetAUoriginal[k], targetAUoriginal[k + 1], targetAUoriginal[k + 2]};
-      Crystal.applyCartesianSymOp(xyz, xyz, symOp);
-      newMol[k] =  xyz[0];
+      double[] xyz = new double[] {targetAUoriginal[k], targetAUoriginal[k + 1],
+          targetAUoriginal[k + 2]};
+      applyCartesianSymOp(xyz, xyz, symOp);
+      newMol[k] = xyz[0];
       newMol[k + 1] = xyz[1];
       newMol[k + 2] = xyz[2];
       stringBuilder.append(format("\n %9.3f %9.3f %9.3f to %9.3f %9.3f %9.3f",
-              x[i], y[i], z[i], xyz[0], xyz[1], xyz[2]));
+          x[i], y[i], z[i], xyz[0], xyz[1], xyz[2]));
     }
     saveAssembly(mobileAssembly, newMol, comparisonAtoms, "_moveMethod", 0, save);
     stringBuilder.append("\n").append(symOp);
@@ -2234,8 +2451,8 @@ public class ProgressiveAlignmentOfCrystals {
    * @param linkage User specified criteria to determine prioritization.
    */
   private static void prioritizeReplicates(double[] coordsXYZ, double[] mass,
-                                           double massSum, double[][] centerOfMasses, int nAtoms,
-                                           DoubleIndexPair[] molDists, int index, int linkage) {
+      double massSum, double[][] centerOfMasses, int nAtoms,
+      DoubleIndexPair[] molDists, int index, int linkage) {
     // Find AU to be treated as the new center.
     // AUs added to system based on distance to center of all atoms. Index = 0 AU should be closest to all atom center.
     int nCoords = nAtoms * 3;
@@ -2249,13 +2466,13 @@ public class ProgressiveAlignmentOfCrystals {
         for (int j = 0; j < nAtoms; j++) {
           int centerAtomIndex = j * 3;
           double[] centerXYZ = {coordsXYZ[centerIndex + centerAtomIndex],
-                  coordsXYZ[centerIndex + centerAtomIndex + 1],
-                  coordsXYZ[centerIndex + centerAtomIndex + 2]};
+              coordsXYZ[centerIndex + centerAtomIndex + 1],
+              coordsXYZ[centerIndex + centerAtomIndex + 2]};
           for (int k = 0; k < nAtoms; k++) {
             int atomIndex = k * 3;
             double[] xyz = {coordsXYZ[molIndex + atomIndex],
-                    coordsXYZ[molIndex + atomIndex + 1],
-                    coordsXYZ[molIndex + atomIndex + 2]};
+                coordsXYZ[molIndex + atomIndex + 1],
+                coordsXYZ[molIndex + atomIndex + 2]};
             double currDist = dist2(centerXYZ, xyz);
             if (currDist < tempDist) {
               tempDist = currDist;
@@ -2280,10 +2497,10 @@ public class ProgressiveAlignmentOfCrystals {
         logger.finer(" Prioritize replicates:");
         for (int i = 0; i < numCheck; i++) {
           logger.finest(
-                  format("  AU %d Center: %3d Index: %3d Dist %4.4f CoM:(%6.4f %6.4f %6.4f)", i, index,
-                          molDists[i].getIndex(),
-                          sqrt(molDists[i].getDoubleValue()), targetMol[molDists[i].getIndex()][0],
-                          targetMol[molDists[i].getIndex()][1], targetMol[molDists[i].getIndex()][2]));
+              format("  AU %d Center: %3d Index: %3d Dist %4.4f CoM:(%6.4f %6.4f %6.4f)", i, index,
+                  molDists[i].getIndex(),
+                  sqrt(molDists[i].getDoubleValue()), targetMol[molDists[i].getIndex()][0],
+                  targetMol[molDists[i].getIndex()][1], targetMol[molDists[i].getIndex()][2]));
         }
         logger.finest("\n");
       }
@@ -2303,10 +2520,10 @@ public class ProgressiveAlignmentOfCrystals {
         centerOfMass(targetMol, coordsXYZ, mass, massSum, nAtoms);
         for (int i = 0; i < numCheck; i++) {
           logger.finest(
-                  format("  1AU %d Center: %3d Index: %3d Dist %4.4f CoM:(%6.4f %6.4f %6.4f)", i, index,
-                          molDists[i].getIndex(),
-                          sqrt(molDists[i].getDoubleValue()), targetMol[molDists[i].getIndex()][0],
-                          targetMol[molDists[i].getIndex()][1], targetMol[molDists[i].getIndex()][2]));
+              format("  1AU %d Center: %3d Index: %3d Dist %4.4f CoM:(%6.4f %6.4f %6.4f)", i, index,
+                  molDists[i].getIndex(),
+                  sqrt(molDists[i].getDoubleValue()), targetMol[molDists[i].getIndex()][0],
+                  targetMol[molDists[i].getIndex()][1], targetMol[molDists[i].getIndex()][2]));
         }
       }
 
@@ -2318,14 +2535,14 @@ public class ProgressiveAlignmentOfCrystals {
 
       double[] avgCenter = new double[3];
       avgCenter[0] =
-              (centerOfMasses[molDists[0].getIndex()][0] + centerOfMasses[molDists[1].getIndex()][0])
-                      / 2;
+          (centerOfMasses[molDists[0].getIndex()][0] + centerOfMasses[molDists[1].getIndex()][0])
+              / 2;
       avgCenter[1] =
-              (centerOfMasses[molDists[0].getIndex()][1] + centerOfMasses[molDists[1].getIndex()][1])
-                      / 2;
+          (centerOfMasses[molDists[0].getIndex()][1] + centerOfMasses[molDists[1].getIndex()][1])
+              / 2;
       avgCenter[2] =
-              (centerOfMasses[molDists[0].getIndex()][2] + centerOfMasses[molDists[1].getIndex()][2])
-                      / 2;
+          (centerOfMasses[molDists[0].getIndex()][2] + centerOfMasses[molDists[1].getIndex()][2])
+              / 2;
 
       for (int i = 1; i < nMols; i++) {
         double[] moleculeCenter = centerOfMasses[molDists[i].getIndex()];
@@ -2338,10 +2555,11 @@ public class ProgressiveAlignmentOfCrystals {
         centerOfMass(targetMol, coordsXYZ, mass, massSum, nAtoms);
         for (int i = 0; i < numCheck; i++) {
           logger.finest(
-                  format("  1,2AU %d Center: %3d Index: %3d Dist %4.4f CoM:(%6.4f %6.4f %6.4f)", i, index,
-                          molDists2[i].getIndex(),
-                          sqrt(molDists2[i].getDoubleValue()), targetMol[molDists2[i].getIndex()][0],
-                          targetMol[molDists2[i].getIndex()][1], targetMol[molDists2[i].getIndex()][2]));
+              format("  1,2AU %d Center: %3d Index: %3d Dist %4.4f CoM:(%6.4f %6.4f %6.4f)", i,
+                  index,
+                  molDists2[i].getIndex(),
+                  sqrt(molDists2[i].getDoubleValue()), targetMol[molDists2[i].getIndex()][0],
+                  targetMol[molDists2[i].getIndex()][1], targetMol[molDists2[i].getIndex()][2]));
         }
       }
       // Molecules in crystal sorted based on distance to center of mass of center 2 most molecule
@@ -2362,7 +2580,8 @@ public class ProgressiveAlignmentOfCrystals {
 
       for (int i = 2; i < nMols; i++) {
         double[] moleculeCenter = centerOfMasses[molDists2[i].getIndex()];
-        molDists3[i] = new DoubleIndexPair(molDists2[i].getIndex(), dist2(avgCenter, moleculeCenter));
+        molDists3[i] = new DoubleIndexPair(molDists2[i].getIndex(),
+            dist2(avgCenter, moleculeCenter));
       }
       //Reorder based on center point between center-most AU to all atom center and closest AU to center-most AU.
       sort(molDists3);
@@ -2373,10 +2592,11 @@ public class ProgressiveAlignmentOfCrystals {
         centerOfMass(targetMol, coordsXYZ, mass, massSum, nAtoms);
         for (int i = 0; i < numCheck; i++) {
           logger.finest(
-                  format("  1,2,3AU %d Center: %3d Index: %3d Dist %4.4f CoM:(%6.4f %6.4f %6.4f)", i, index,
-                          molDists3[i].getIndex(),
-                          sqrt(molDists3[i].getDoubleValue()), targetMol[molDists3[i].getIndex()][0],
-                          targetMol[molDists3[i].getIndex()][1], targetMol[molDists3[i].getIndex()][2]));
+              format("  1,2,3AU %d Center: %3d Index: %3d Dist %4.4f CoM:(%6.4f %6.4f %6.4f)", i,
+                  index,
+                  molDists3[i].getIndex(),
+                  sqrt(molDists3[i].getDoubleValue()), targetMol[molDists3[i].getIndex()][0],
+                  targetMol[molDists3[i].getIndex()][1], targetMol[molDists3[i].getIndex()][2]));
         }
       }
     } else if (linkage == 2) {
@@ -2388,13 +2608,13 @@ public class ProgressiveAlignmentOfCrystals {
         for (int j = 0; j < nAtoms; j++) {
           int centerAtomIndex = j * 3;
           double[] centerXYZ = {coordsXYZ[centerIndex + centerAtomIndex],
-                  coordsXYZ[centerIndex + centerAtomIndex + 1],
-                  coordsXYZ[centerIndex + centerAtomIndex + 2]};
+              coordsXYZ[centerIndex + centerAtomIndex + 1],
+              coordsXYZ[centerIndex + centerAtomIndex + 2]};
           for (int k = 0; k < nAtoms; k++) {
             int atomIndex = k * 3;
             double[] xyz = {coordsXYZ[molIndex + atomIndex],
-                    coordsXYZ[molIndex + atomIndex + 1],
-                    coordsXYZ[molIndex + atomIndex + 2]};
+                coordsXYZ[molIndex + atomIndex + 1],
+                coordsXYZ[molIndex + atomIndex + 2]};
             double currDist = dist2(centerXYZ, xyz);
             if (currDist > tempDist) {
               tempDist = currDist;
@@ -2418,13 +2638,13 @@ public class ProgressiveAlignmentOfCrystals {
         centerOfMass(targetMol, coordsXYZ, mass, massSum, nAtoms);
         for (int i = 0; i < numCheck; i++) {
           logger.finest(
-                  format("  AU %d Center: %3d Index: %3d Dist %4.4f CoM:(%6.4f %6.4f %6.4f)", i, index,
-                          molDists[i].getIndex(),
-                          sqrt(molDists[i].getDoubleValue()), targetMol[molDists[i].getIndex()][0],
-                          targetMol[molDists[i].getIndex()][1], targetMol[molDists[i].getIndex()][2]));
+              format("  AU %d Center: %3d Index: %3d Dist %4.4f CoM:(%6.4f %6.4f %6.4f)", i, index,
+                  molDists[i].getIndex(),
+                  sqrt(molDists[i].getDoubleValue()), targetMol[molDists[i].getIndex()][0],
+                  targetMol[molDists[i].getIndex()][1], targetMol[molDists[i].getIndex()][2]));
         }
       }
-    }else {
+    } else {
       logger.severe(format(" Linkage value of %d was unrecognized. Try 0 (, 1, or 2.", linkage));
     }
   }
@@ -2439,13 +2659,13 @@ public class ProgressiveAlignmentOfCrystals {
    * @return Stats for all read in distance matrix values.
    */
   private RunningStatistics readMatrix(String filename, boolean isSymmetric, int expectedRows,
-                                       int expectedColumns) {
+      int expectedColumns) {
     restartRow = 0;
     restartColumn = 0;
 
     DistanceMatrixFilter distanceMatrixFilter = new DistanceMatrixFilter();
     RunningStatistics runningStatistics = distanceMatrixFilter.readDistanceMatrix(
-            filename, expectedRows, expectedColumns);
+        filename, expectedRows, expectedColumns);
 
     if (runningStatistics != null && runningStatistics.getCount() > 0) {
       restartRow = distanceMatrixFilter.getRestartRow();
@@ -2455,37 +2675,23 @@ public class ProgressiveAlignmentOfCrystals {
         // Only the diagonal entry (0.0) is on the last row for a symmetric matrix.
         if (restartRow == expectedRows && restartColumn == 1) {
           logger.info(format(" Complete symmetric distance matrix found (%d x %d).", restartRow,
-                  restartRow));
+              restartRow));
         } else {
           restartColumn = 0;
           logger.info(format(
-                  " Incomplete symmetric distance matrix found.\n Restarting at row %d, column %d.",
-                  restartRow + 1, restartColumn + 1));
+              " Incomplete symmetric distance matrix found.\n Restarting at row %d, column %d.",
+              restartRow + 1, restartColumn + 1));
         }
       } else if (restartRow == expectedRows && restartColumn == expectedColumns) {
         logger.info(format(" Complete distance matrix found (%d x %d).", restartRow, restartColumn));
       } else {
         restartColumn = 0;
         logger.info(format(" Incomplete distance matrix found.\n Restarting at row %d, column %d.",
-                restartRow + 1, restartColumn + 1));
+            restartRow + 1, restartColumn + 1));
       }
     }
 
     return runningStatistics;
-  }
-
-  /**
-   * Determine the RMSD between two AUs (should be same AUs).
-   *
-   * @param baseAU Coordinates for first AU.
-   * @param targetAU Coordinates for second AU.
-   * @param mass Mass of atoms within AU.
-   * @return RMSD between AUs.
-   */
-  private static double rmsd_1(double[] baseAU, double[] targetAU, double[] mass) {
-    translate(baseAU, mass, targetAU, mass);
-    rotate(baseAU, targetAU, mass);
-    return rmsd(baseAU, targetAU, mass);
   }
 
   /**
@@ -2525,9 +2731,9 @@ public class ProgressiveAlignmentOfCrystals {
     File saveLocation;
     if (save == 2) {
       saveLocation = new File(fileName + description + ".xyz");
-    } else if(save == 1) {
+    } else if (save == 1) {
       saveLocation = new File(fileName + description + ".pdb");
-    }else{
+    } else {
       return;
     }
     // Save aperiodic system of n_mol closest atoms for visualization
@@ -2535,11 +2741,10 @@ public class ProgressiveAlignmentOfCrystals {
     List<Bond> bondList = molecularAssembly.getBondList();
     ArrayList<Atom> newAtomList = new ArrayList<>();
     Atom[] atoms = molecularAssembly.getAtomArray();
-    int atomIndex = 0;
+    int atomIndex = 1;
     int compareAtomsSize = comparisonAtoms.length;
     int nCoords = compareAtomsSize * 3;
     // Reset atom Index for indexing new atoms
-    atomIndex = 1;
     int numMols = coords.length / (nCoords);
     for (int n = 0; n < numMols; n++) {
       // Obtain atoms from moved AU (create copy to move to origin)
@@ -2613,7 +2818,7 @@ public class ProgressiveAlignmentOfCrystals {
           }
         } catch (Exception ex) {
           // Likely using properties file.
-          if(logger.isLoggable(Level.FINER)) {
+          if (logger.isLoggable(Level.FINER)) {
             stringBuilder.append(ex);
           }
         }
@@ -2627,8 +2832,9 @@ public class ProgressiveAlignmentOfCrystals {
           }
         } catch (Exception ex) {
           // Likely not using a key/properties file... so PDB?
-          stringBuilder.append("\n Neither key nor properties file detected therefore only creating XYZ.\n");
-          if(logger.isLoggable(Level.FINER)) {
+          stringBuilder.append(
+              "\n Neither key nor properties file detected therefore only creating XYZ.\n");
+          if (logger.isLoggable(Level.FINER)) {
             stringBuilder.append(ex);
           }
         }

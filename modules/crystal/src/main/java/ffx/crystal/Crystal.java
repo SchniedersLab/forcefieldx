@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.crystal;
 
+import static ffx.crystal.SymOp.applyCartesianSymOp;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.DoubleMath.sub;
@@ -463,9 +464,9 @@ public class Crystal {
    *
    * <p>mod
    *
-   * @param a a int.
-   * @param b a int.
-   * @return a int.
+   * @param a an int.
+   * @param b an int.
+   * @return an int.
    */
   public static int mod(int a, int b) {
     int res = a % b;
@@ -548,117 +549,6 @@ public class Crystal {
   }
 
   /**
-   * Apply a Cartesian symmetry operator to an array of Cartesian coordinates. If the arrays x, y or
-   * z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are null
-   * or not of length n, new arrays are allocated.
-   *
-   * @param n Number of atoms.
-   * @param x Input cartesian x-coordinates.
-   * @param y Input cartesian y-coordinates.
-   * @param z Input cartesian z-coordinates.
-   * @param mateX Output cartesian x-coordinates.
-   * @param mateY Output cartesian y-coordinates.
-   * @param mateZ Output cartesian z-coordinates.
-   * @param symOp The cartesian symmetry operator.
-   */
-  public static void applyCartSymOp(
-      int n,
-      double[] x,
-      double[] y,
-      double[] z,
-      double[] mateX,
-      double[] mateY,
-      double[] mateZ,
-      SymOp symOp) {
-    if (x == null || y == null || z == null) {
-      return;
-    }
-    if (x.length < n || y.length < n || z.length < n) {
-      return;
-    }
-    if (mateX == null || mateX.length < n) {
-      mateX = new double[n];
-    }
-    if (mateY == null || mateY.length < n) {
-      mateY = new double[n];
-    }
-    if (mateZ == null || mateZ.length < n) {
-      mateZ = new double[n];
-    }
-
-    final double[][] rot = symOp.rot;
-    final double[] trans = symOp.tr;
-
-    final double rot00 = rot[0][0];
-    final double rot10 = rot[1][0];
-    final double rot20 = rot[2][0];
-    final double rot01 = rot[0][1];
-    final double rot11 = rot[1][1];
-    final double rot21 = rot[2][1];
-    final double rot02 = rot[0][2];
-    final double rot12 = rot[1][2];
-    final double rot22 = rot[2][2];
-    final double t0 = trans[0];
-    final double t1 = trans[1];
-    final double t2 = trans[2];
-    for (int i = 0; i < n; i++) {
-      double xc = x[i];
-      double yc = y[i];
-      double zc = z[i];
-      // Apply Symmetry Operator.
-      mateX[i] = rot00 * xc + rot01 * yc + rot02 * zc + t0;
-      mateY[i] = rot10 * xc + rot11 * yc + rot12 * zc + t1;
-      mateZ[i] = rot20 * xc + rot21 * yc + rot22 * zc + t2;
-    }
-  }
-
-  /**
-   * Apply a  cartesian symmetry operator to one set of coordinates.
-   *
-   * @param xyz Input  cartesian coordinates.
-   * @param mate Symmetry mate  cartesian coordinates.
-   * @param symOp The cartesian symmetry operator.
-   */
-  public static void applyCartesianSymOp(double[] xyz, double[] mate, SymOp symOp) {
-    double[][] rot = symOp.rot;
-    double[] trans = symOp.tr;
-
-    assert (xyz.length % 3 == 0);
-    assert (xyz.length == mate.length);
-
-    int len = xyz.length / 3;
-    for (int i = 0; i < len; i++) {
-      int index = i * 3;
-      double xc = xyz[index + XX];
-      double yc = xyz[index + YY];
-      double zc = xyz[index + ZZ];
-      // Apply Symmetry Operator.
-      mate[index + XX] = rot[0][0] * xc + rot[0][1] * yc + rot[0][2] * zc + trans[0];
-      mate[index + YY] = rot[1][0] * xc + rot[1][1] * yc + rot[1][2] * zc + trans[1];
-      mate[index + ZZ] = rot[2][0] * xc + rot[2][1] * yc + rot[2][2] * zc + trans[2];
-    }
-  }
-
-  /**
-   * Apply a fractional symmetry operator to one set of coordinates.
-   *
-   * @param xyz Input fractional coordinates.
-   * @param mate Symmetry mate fractional coordinates.
-   * @param symOp The fractional symmetry operator.
-   */
-  public static void applyFracSymOp(double[] xyz, double[] mate, SymOp symOp) {
-    double[][] rot = symOp.rot;
-    double[] trans = symOp.tr;
-    double xf = xyz[0];
-    double yf = xyz[1];
-    double zf = xyz[2];
-    // Apply Symmetry Operator.
-    mate[0] = rot[0][0] * xf + rot[0][1] * yf + rot[0][2] * zf + trans[0];
-    mate[1] = rot[1][0] * xf + rot[1][1] * yf + rot[1][2] * zf + trans[1];
-    mate[2] = rot[2][0] * xf + rot[2][1] * yf + rot[2][2] * zf + trans[2];
-  }
-
-  /**
    * Apply a fractional symmetry operator to an array of Cartesian coordinates. If the arrays x, y or
    * z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are null
    * or not of length n, new arrays are allocated.
@@ -729,34 +619,6 @@ public class Crystal {
       mateY[i] = fx * Ai01 + fy * Ai11 + fz * Ai21;
       mateZ[i] = fx * Ai02 + fy * Ai12 + fz * Ai22;
     }
-  }
-
-  /**
-   * Apply a symmetry operator to one set of coordinates.
-   *
-   * @param h Input coordinates.
-   * @param k Input coordinates.
-   * @param l Input coordinates.
-   * @param mate Symmetry mate coordinates.
-   * @param symOp The symmetry operator.
-   * @param nx number of unit cell translations
-   * @param ny number of unit cell translations
-   * @param nz number of unit cell translations
-   */
-  public static void applySymOp(int h, int k, int l, int[] mate, SymOp symOp, int nx, int ny,
-      int nz) {
-    double[][] rot = symOp.rot;
-    double[] trans = symOp.tr;
-    // Apply Symmetry Operator.
-    mate[0] =
-        (int) rot[0][0] * h + (int) rot[0][1] * k + (int) rot[0][2] * l + (int) rint(nx * trans[0]);
-    mate[1] =
-        (int) rot[1][0] * h + (int) rot[1][1] * k + (int) rot[1][2] * l + (int) rint(ny * trans[1]);
-    mate[2] =
-        (int) rot[2][0] * h + (int) rot[2][1] * k + (int) rot[2][2] * l + (int) rint(nz * trans[2]);
-    mate[0] = mod(mate[0], nx);
-    mate[1] = mod(mate[1], ny);
-    mate[2] = mod(mate[2], nz);
   }
 
   /**
@@ -837,27 +699,6 @@ public class Crystal {
   }
 
   /**
-   * Apply a symmetry operator to one HKL.
-   *
-   * @param hkl Input HKL.
-   * @param mate Symmetry mate HKL.
-   * @param symOp The symmetry operator.
-   */
-  public static void applySymRot(HKL hkl, HKL mate, SymOp symOp) {
-    double[][] rot = symOp.rot;
-    double h = hkl.h();
-    double k = hkl.k();
-    double l = hkl.l();
-    double hs = rot[0][0] * h + rot[0][1] * k + rot[0][2] * l;
-    double ks = rot[1][0] * h + rot[1][1] * k + rot[1][2] * l;
-    double ls = rot[2][0] * h + rot[2][1] * k + rot[2][2] * l;
-    // Convert back to HKL
-    mate.h((int) rint(hs));
-    mate.k((int) rint(ks));
-    mate.l((int) rint(ls));
-  }
-
-  /**
    * Apply a fractional symmetry rotation to an array of Cartesian coordinates. If the arrays x, y or
    * z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are null
    * or not of length n, new arrays are allocated.
@@ -904,41 +745,6 @@ public class Crystal {
   }
 
   /**
-   * Apply a Cartesian symmetry rotation to an array of Cartesian coordinates. The length of xyz must
-   * be divisible by 3 and mate must have the same length.
-   *
-   * @param xyz Input cartesian x, y, z-coordinates.
-   * @param mate Output cartesian x, y, z-coordinates.
-   * @param symOp The fractional symmetry operator.
-   */
-  public static void applyCartesianSymRot(double[] xyz, double[] mate, SymOp symOp) {
-    int l = xyz.length;
-    assert (l % 3 == 0);
-    assert (mate.length == l);
-    double[][] rot = symOp.rot;
-    final double rot00 = rot[0][0];
-    final double rot10 = rot[1][0];
-    final double rot20 = rot[2][0];
-    final double rot01 = rot[0][1];
-    final double rot11 = rot[1][1];
-    final double rot21 = rot[2][1];
-    final double rot02 = rot[0][2];
-    final double rot12 = rot[1][2];
-    final double rot22 = rot[2][2];
-    int n = l / 3;
-    for (int i = 0; i < n; i++) {
-      int j = i * 3;
-      double xi = xyz[j];
-      double yi = xyz[j + 1];
-      double zi = xyz[j + 2];
-      // Apply Symmetry Operator.
-      mate[j] = rot00 * xi + rot01 * yi + rot02 * zi;
-      mate[j + 1] = rot10 * xi + rot11 * yi + rot12 * zi;
-      mate[j + 2] = rot20 * xi + rot21 * yi + rot22 * zi;
-    }
-  }
-
-  /**
    * .Apply the rotation of a fractional symmetry operator to cartesian coordinates.
    *
    * @param xyz Input coordinates.
@@ -953,28 +759,6 @@ public class Crystal {
 
     // Apply R^T (its transpose).
     applyMatrixTranspose(xyz, mate, rotmat);
-  }
-
-  /**
-   * Apply a transpose rotation symmetry operator to one HKL.
-   *
-   * @param hkl Input HKL.
-   * @param mate Symmetry mate HKL.
-   * @param symOp The symmetry operator.
-   */
-  public static void applyTransSymRot(HKL hkl, HKL mate, SymOp symOp) {
-    double[][] rot = symOp.rot;
-    double h = hkl.h();
-    double k = hkl.k();
-    double l = hkl.l();
-    // Apply transpose Symmetry Operator.
-    double hs = rot[0][0] * h + rot[1][0] * k + rot[2][0] * l;
-    double ks = rot[0][1] * h + rot[1][1] * k + rot[2][1] * l;
-    double ls = rot[0][2] * h + rot[1][2] * k + rot[2][2] * l;
-    // Convert back to HKL
-    mate.h((int) rint(hs));
-    mate.k((int) rint(ks));
-    mate.l((int) rint(ls));
   }
 
   /**
@@ -1357,17 +1141,6 @@ public class Crystal {
       }
     }
     return false;
-  }
-
-  /**
-   * Invert a symmetry operator.
-   *
-   * @param symOp Original symmetry operator of which the inverse is desired.
-   * @return SymOp The inverse symmetry operator of the one supplied.
-   */
-  public static SymOp invertSymOp(SymOp symOp) {
-    var tr = symOp.tr;
-    return new SymOp(mat3Inverse(symOp.rot), new double[] {-tr[0], -tr[1], -tr[2]});
   }
 
   /**

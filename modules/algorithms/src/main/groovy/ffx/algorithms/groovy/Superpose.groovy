@@ -42,15 +42,13 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Residue
+import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.parsers.SystemFilter
 import org.apache.commons.lang3.StringUtils
 import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-
-import java.util.stream.IntStream
-
-import static java.lang.String.format
 
 /**
  * The Superpose script superposes molecules in an arc/multiple model pdb file (all versus all or one versus all) or in two pdb/xyz files.
@@ -64,26 +62,29 @@ import static java.lang.String.format
 @Command(description = " Superpose frames one or two trajectory files to calculate RMSD.", name = "ffxc Superpose")
 class Superpose extends AlgorithmsScript {
 
-  /**
-   * --aS or --atomSelection RMSD atom selection [HEAVY (0) / ALL (1) / CALPHA (2) / BACKBONE (3)]. CALPHA uses N1 or N9 for N. A.
-   */
-  @Option(names = ['--aS', '--atomSelection'], paramLabel = "0", defaultValue = "0",
-      description = 'RMSD atom selection [HEAVY (0) / ALL (1) / CALPHA (2) / BACKBONE (3)]. CALPHA uses N1 or N9 for N. A.')
-  private String atomSelection
+  @Mixin
+  AtomSelectionOptions atomSelectionOptions
 
   /**
-   * -s or --start Atom number where RMSD calculation of structure will begin.
+   * --bb or --backboneSelection Restrict selection to backbone atoms [0 == C_ALPHA or 1 == BACKBONE]. Note C_ALPHA uses N1 or N9 for NA.
    */
-  @Option(names = ['-s', '--start'], paramLabel = "1", defaultValue = "1",
-      description = 'Starting atom to include in the RMSD calculation.')
-  private int start
+  @Option(names = ['--bb', '--backboneSelection'], paramLabel = "-1", defaultValue = "-1",
+      description = 'Restrict selection to backbone atoms [0 == C_ALPHA or 1 == BACKBONE]. Note C_ALPHA uses N1 or N9 for NA.')
+  private int backboneSelection
 
   /**
-   * -f or --final Atom number where RMSD calculation of structure will end.
+   * --ih or --includeHydrogen Include hydrogen atoms.
    */
-  @Option(names = ['-f', '--final'], paramLabel = "nAtoms",
-      description = 'Final atom to include in the RMSD calculation (default uses all atoms).')
-  private int finish = Integer.MAX_VALUE
+  @Option(names = ['--ih', '--includeHydrogen'], paramLabel = "false", defaultValue = "false",
+      description = 'Include hydrogen atoms.')
+  private static boolean includeHydrogen
+
+  /**
+   * --ss or --secondaryStructure Restrict selection using a secondary structure string.
+   */
+  @Option(names = ['--ss', '--secondaryStructure'], paramLabel = "", defaultValue = "",
+      description = 'Restrict selection using a secondary structure string.')
+  private String secondaryStructure
 
   /**
    * --dRMSD Calculate dRMSD in addition to RMSD.
@@ -91,13 +92,6 @@ class Superpose extends AlgorithmsScript {
   @Option(names = ['--dRMSD'], paramLabel = "false", defaultValue = "false",
       description = 'Calculate dRMSD in addition to RMSD.')
   private boolean dRMSD
-
-  /**
-   * --ss or --secondaryStructure Use a secondary structure string to identify which atoms should be part of the RMSD.
-   */
-  @Option(names = ['--ss', '--secondaryStructure'], paramLabel = "", defaultValue = "",
-      description = 'Use a secondary structure string to identify which atoms should be part of the RMSD.')
-  private String secondaryStructure
 
   /**
    * -w or --write Write out the RMSD matrix.
@@ -193,115 +187,73 @@ class Superpose extends AlgorithmsScript {
       targetFilter = algorithmFunctions.getFilter()
     }
 
-    // Load all atomic coordinates.
-    Atom[] atoms = activeAssembly.getAtomArray()
-    int nAtoms = atoms.length
+    // Apply active and inactive atom selections
+    atomSelectionOptions.setActiveAtoms(activeAssembly)
 
-    // Check the start to finish atom range.
-    // Note that atoms are indexed from 0 to nAtoms - 1.
-    if (finish > nAtoms - 1) {
-      finish = nAtoms - 1
-    }
-    if (start < 0 || start > finish) {
-      start = 0
-    }
-    if (verbose) {
-      logger.info(format("\n Atoms from %d to %d will be considered.", start, finish))
-    }
-
-    // Begin streaming the possible atom indices, filtering out inactive atoms.
-    IntStream atomIndexStream =
-        IntStream.range(start, finish + 1).filter({int i -> return atoms[i].isActive()
-        })
-
-    // If the secondary structure element is being used, then find helices and sheets and filter out any atoms that are not part of a helix or sheet.
+    // Load SS definition.
+    List<List<Integer>> helices = null
+    List<List<Integer>> sheets = null
+    boolean applySS = false
     if (!secondaryStructure.isEmpty()) {
       secondaryStructure = validateSecondaryStructurePrediction(activeAssembly)
       checkForAppropriateResidueIdentities(activeAssembly)
       String helixChar = "H"
       String sheetChar = "E"
-
-      List<List<Integer>> helices =
-          extractSecondaryElement(secondaryStructure, helixChar, 2)
-      List<List<Integer>> sheets =
-          extractSecondaryElement(secondaryStructure, sheetChar, 2)
-
-      atomIndexStream = atomIndexStream.filter({int i ->
-        Atom atom = atoms[i]
-        int resNum = atom.getResidueNumber() - 1
-        boolean isHelix = false
-        for (List<Integer> helix : helices) {
-          if (resNum >= helix.get(0) && resNum <= helix.get(1)) {
-            isHelix = true
-            break
-          }
-        }
-        boolean isSheet = false
-        for (List<Integer> sheet : sheets) {
-          if (resNum >= sheet.get(0) && resNum <= sheet.get(1)) {
-            isSheet = true
-            break
-          }
-        }
-        return isHelix || isSheet
-      })
+      helices = extractSecondaryElement(secondaryStructure, helixChar, 2)
+      sheets = extractSecondaryElement(secondaryStructure, sheetChar, 2)
+      if (!helices.isEmpty() || !sheets.isEmpty()) {
+        applySS = true
+      }
     }
 
-    // String describing the selection type.
-    String selectionType = "All Atoms"
+    // Loop over atoms and apply remaining selection flags.
+    Atom[] atoms = activeAssembly.getAtomArray()
+    List<Integer> selectedList = new ArrayList<>()
+    for (Atom atom : atoms) {
+      // Restrict active atoms to heavy atoms.
+      if (!includeHydrogen && atom.isActive() && atom.isHydrogen()) {
+        atom.setActive(false)
+      }
 
-    // Switch on what type of atoms to select, filtering as appropriate. Support the old integer indices.
-    switch (atomSelection.toUpperCase()) {
-      case "HEAVY":
-      case "0":
-        // Filter only for heavy (non-hydrogen) atoms.
-        atomIndexStream = atomIndexStream.filter({int i -> atoms[i].isHeavy()})
-        selectionType = "Heavy Atoms"
-        break
-      case "ALL":
-      case "1":
-        // Unmodified stream; we have just checked for active atoms.
-        selectionType = "All Atoms"
-        break
-      case "ALPHA":
-      case "2":
-        // Filter only for reference atoms: carbons named CA (protein) or nitrogen atoms named N1 or N9 (nucleic acids).
-        atomIndexStream = atomIndexStream.filter({int i ->
-          Atom atom = atoms[i]
-          String atName = atom.getName().toUpperCase()
-          boolean proteinReference = atName == "CA" && atom.getAtomType().atomicNumber == 6
-          boolean naReference = (atName == "N1" || atName == "N9") &&
-              atom.getAtomType().atomicNumber == 7
-          return proteinReference || naReference
-        })
-        selectionType = "C-Alpha Atoms (or N1/N9 for nucleic acids)"
-        break
-      case "BACKBONE":
-      case "3":
-        // Filter for only backbone atoms.
-        atomIndexStream = atomIndexStream.filter({int i ->
-          Atom atom = atoms[i]
-          String atName = atom.getName().toUpperCase()
-          boolean caReference = atName == "CA" && atom.getAtomType().atomicNumber == 6
-          boolean cReference = atName == "C" && atom.getAtomType().atomicNumber == 6
-          boolean nReference = atName == "N" && atom.getAtomType().atomicNumber == 7
-          return caReference || cReference || nReference
-        })
-        selectionType = "C, C-Alpha, and N backbone atoms."
-        break
-      default:
-        logger.severe(format(
-            " Could not parse %s as an atom selection! Must be ALL, HEAVY, ALPHA or BACKBONE.",
-            atomSelection))
-        break
-    }
+      // Restrict active atoms to the SS selection.
+      if (applySS && atom.isActive()) {
+        if (!isSS(helices, sheets, atom)) {
+          atom.setActive(false)
+        }
+      }
 
-    if (verbose) {
-      logger.info(" Superpose selection criteria: " + selectionType + "\n")
+      // Restrict to the backbone atom selection.
+      if (backboneSelection > -1 && atom.isActive()) {
+        if (backboneSelection == 0) {
+          // CALPHA (uses N1 or N9 for NA).
+          if (!(atom.getName() == "CA" || atom.getName() == "N1" || atom.getName() == "N9")) {
+            atom.setActive(false)
+          }
+        } else if (backboneSelection == 1) {
+          // BACKBONE (not supported for NA)
+          if (!(atom.getName() == "CA" || atom.getName() == "N" || atom.getName() == "C")) {
+            atom.setActive(false)
+          }
+        }
+      }
+
+      // Keep only active atoms.
+      if (atom.isActive()) {
+        selectedList.add(atom.getIndex())
+      }
     }
 
     // Indices of atoms used in alignment and RMSD calculations.
-    int[] usedIndices = atomIndexStream.toArray()
+    int nSelected = selectedList.size()
+    int[] usedIndices = new int[nSelected]
+    for (int i = 0; i < nSelected; i++) {
+      usedIndices[i] = selectedList.get(i)
+    }
+
+    // Reset all atoms to be active because the Superpose class will apply our "usedIndices" array.
+    for (Atom atom : atoms) {
+      atom.setActive(true)
+    }
 
     // Compute the RMSD values.
     ffx.potential.utils.Superpose superpose =
@@ -311,6 +263,25 @@ class Superpose extends AlgorithmsScript {
     superpose.calculateRMSDs(usedIndices, dRMSD, verbose, restart, write, saveSnapshots)
 
     return this
+  }
+
+  private static boolean isSS(List<List<Integer>> helices, List<List<Integer>> sheets, Atom atom) {
+    int resNum = atom.getResidueNumber() - 1
+    boolean isHelix = false
+    for (List<Integer> helix : helices) {
+      if (resNum >= helix.get(0) && resNum <= helix.get(1)) {
+        isHelix = true
+        break
+      }
+    }
+    boolean isSheet = false
+    for (List<Integer> sheet : sheets) {
+      if (resNum >= sheet.get(0) && resNum <= sheet.get(1)) {
+        isSheet = true
+        break
+      }
+    }
+    return isHelix || isSheet
   }
 
   /**

@@ -41,9 +41,6 @@ import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.potential.PotentialComponent;
-import java.io.File;
-import java.io.IOException;
-import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
 /**
@@ -83,7 +80,7 @@ public class ManyBodyTest extends AlgorithmsTest {
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-7);
 
     double expectedApproximateEnergy = -217.34182006245888;
-    double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
+    double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-7);
   }
 
@@ -117,7 +114,7 @@ public class ManyBodyTest extends AlgorithmsTest {
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-7);
 
     double expectedApproximateEnergy = -220.72737768799902;
-    double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
+    double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-7);
   }
 
@@ -142,11 +139,11 @@ public class ManyBodyTest extends AlgorithmsTest {
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
 
     double expectedApproximateEnergy = -212.8797699192298;
-    double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
+    double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-5);
 
     // Delete restart file.
-    manyBody.getManyBody().getRestartFile().delete();
+    manyBody.getManyBodyOptions().getRestartFile().delete();
   }
 
   @Test
@@ -196,11 +193,11 @@ public class ManyBodyTest extends AlgorithmsTest {
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
 
     double expectedApproximateEnergy = -195.699298;
-    double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
+    double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-5);
 
     // Delete restart file.
-    manyBody.getManyBody().getRestartFile().delete();
+    manyBody.getManyBodyOptions().getRestartFile().delete();
   }
 
   /**
@@ -227,7 +224,7 @@ public class ManyBodyTest extends AlgorithmsTest {
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
 
     double expectedApproximateEnergy = -262.512834;
-    double actualApproximateEnergy = manyBody.getManyBody().getApproximate();
+    double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-5);
   }
 }
