@@ -282,6 +282,7 @@ public class ExtendedSystem {
         tautBiasMag = properties.getDouble("tautomer.bias.magnitude", DISCR_BIAS);
         double initialTitrationLambda = properties.getDouble("lambda.titration.initial", 0.5);
         double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
+        boolean guessTitrState = properties.getBoolean("guess.titration.state", false);
         fixTitrationState = properties.getBoolean("fix.titration.lambda", false);
         fixTautomerState = properties.getBoolean("fix.tautomer.lambda", false);
 
@@ -350,7 +351,12 @@ public class ExtendedSystem {
                     int atomIndex = atom.getArrayIndex();
                     residueNames[atomIndex] = residue.getAminoAcid3();
                     isTitrating[atomIndex] = true;
-                    titrationLambdas[atomIndex] = initialTitrationLambda;
+                    if(guessTitrState){
+                        double guessTitrLambda = initialTitrationState(residue, initialTitrationLambda);
+                        titrationLambdas[atomIndex] = guessTitrLambda;
+                    } else{
+                        titrationLambdas[atomIndex] = initialTitrationLambda;
+                    }
                     int titrationIndex = titratingResidueList.indexOf(residue);
                     titrationIndexMap[atomIndex] = titrationIndex;
                     isTitratingHydrogen[atomIndex] = TitrationUtils.isTitratingHydrogen(residue.getAminoAcid3(), atom);
@@ -398,7 +404,13 @@ public class ExtendedSystem {
 
         for (int i = 0; i < nESVs; i++) {
             if (i < nTitr) {
-                initializeThetaArrays(i, initialTitrationLambda);
+                if(guessTitrState){
+                    Residue residue = extendedResidueList.get(i);
+                    double initialTitrLambda = initialTitrationState(residue, initialTitrationLambda);
+                    initializeThetaArrays(i, initialTitrLambda);
+                } else{
+                    initializeThetaArrays(i, initialTitrationLambda);
+                }
             } else {
                 initializeThetaArrays(i, initialTautomerLambda);
             }
@@ -1194,5 +1206,29 @@ public class ExtendedSystem {
             }
             logger.info("\n");
         }
+    }
+
+    //Naive guess as to what the best starting state should be based purely on the acidostat term.
+    private double initialTitrationState(Residue residue, double initialLambda){
+        AminoAcid3 AA3 = residue.getAminoAcid3();
+        double initialTitrationLambda;
+        switch (AA3){
+            case ASD:
+                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.ASHtoASP.pKa) ? 1.0 : 0.0;
+                break;
+            case GLD:
+                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.GLHtoGLU.pKa) ? 1.0 : 0.0;
+                break;
+            case HIS:
+                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.HIStoHID.pKa) ? 1.0 : 0.0;
+                break;
+            case LYS:
+                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.LYStoLYD.pKa) ? 1.0 : 0.0;
+                break;
+            default:
+                initialTitrationLambda = initialLambda;
+                break;
+        }
+        return initialTitrationLambda;
     }
 }
