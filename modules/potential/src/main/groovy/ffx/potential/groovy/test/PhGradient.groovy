@@ -106,6 +106,8 @@ class PhGradient extends PotentialScript {
   public HashMap<String, double[]> endstateEnergyMap = new HashMap<String, double[]>()
   public int nFailures = 0
   public int nESVFailures = 0
+  public double minEnergy = 0.0
+  public String minLambdaList = ""
 
   /**
    * Gradient constructor.
@@ -429,6 +431,7 @@ class PhGradient extends PotentialScript {
     }
     energy.getCoordinates(x)
     printPermutationsR(esvSystem, numESVs - 1, energy, x)
+    logger.info("Minimum Energy:"+minEnergy+" acheived with lambdas: "+minLambdaList)
   }
 
   private void printPermutationsR(ExtendedSystem esvSystem, int esvID, ForceFieldEnergy energy, double[] x) {
@@ -443,7 +446,11 @@ class PhGradient extends PotentialScript {
         logger.info(format("Lambda List: %s", lambdaList))
 
         //Add ForceFieldEnergy to hashmap for testing. Protonation endstates used as key in map.
-        energy.energy(x, true)
+        double stateEnergy = energy.energy(x, true)
+        if(stateEnergy < minEnergy){
+          minEnergy = stateEnergy
+          minLambdaList = lambdaList
+        }
 
         // Bond Energy
         energyAndInteractionList[0] = energy.getBondEnergy()
