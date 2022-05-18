@@ -51,7 +51,7 @@ import org.junit.Test;
 
 public class SuperposeCrystalsTest extends AlgorithmsTest {
 
-  private final double TOLERANCE = 0.002;
+  private final double TOLERANCE = 0.005;
 
   /** Tests the SuperposeCrystals script with default settings. */
   @Test
