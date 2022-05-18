@@ -694,8 +694,9 @@ public class SymOp {
   public static SymOp invertSymOp(SymOp symOp) {
     var tr = symOp.tr;
     var rot = symOp.rot;
-    return new SymOp(mat3Inverse(rot),
-        new double[] {-dot(tr, rot[0]), -dot(tr, rot[1]), -dot(tr, rot[2])});
+    var inv = mat3Inverse(rot);
+    return new SymOp(inv,
+        new double[] {-dot(inv[0], tr), -dot(inv[1], tr), -dot(inv[2], tr)});
   }
 
   /**

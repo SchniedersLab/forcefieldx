@@ -316,6 +316,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     // Check that all Dual-Topology atoms start with identical coordinates.
     int i1 = 0;
     int i2 = 0;
+    logger.info(format(" Shared atoms: %d (1: %d,%d; 2: %d,%d)\n ", nShared, shared1, atoms1.length, shared2, atoms2.length));
     for (int i = 0; i < nShared; i++) {
       Atom a1 = atoms1[i1++];
       while (a1.applyLambda()) {
@@ -404,20 +405,35 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       inverse = invertSymOp(symOp);
 
       // Check atom identities.
-      int n = activeAtoms1.length;
-      for (int i = 0; i < n; i++) {
-        Atom a1 = activeAtoms1[i];
-        Atom a2 = activeAtoms2[i];
-        if (!a1.getAtomType().equals(a2.getAtomType())) {
-          logger.info(format(" %s %s", a1, a1.getAtomType()));
-          logger.info(format(" %s %s", a2, a2.getAtomType()));
+      int len1 = activeAtoms1.length;
+      int len2 = activeAtoms2.length;
+      int slen1 = sharedAtoms1.length;
+      int slen2 = sharedAtoms2.length;
+      int count1 = 0;
+      int count2 = 0;
+      while (count1 < slen1) {
+        if (sharedAtoms1[count1]) {
+          while (count2 < slen2) {
+            if (sharedAtoms2[count2]) {
+              Atom a1 = activeAtoms1[count1];
+              Atom a2 = activeAtoms2[count2];
+              if (!a1.getAtomType().equals(a2.getAtomType())) {
+                logger.info(format(" %s %s", a1, a1.getAtomType()));
+                logger.info(format(" %s %s", a2, a2.getAtomType()));
+              }
+              count2++;
+              break;
+            }
+            count2++;
+          }
         }
+        count1++;
+      }
         /*
         if (!a1.getMultipoleType().equals(a2.getMultipoleType())) {
           logger.info(format(" %s %s", a1, a1.getMultipoleType()));
           logger.info(format(" %s %s", a2, a2.getMultipoleType()));
         } */
-      }
 
       // Get the coordinates for active atoms.
       potential1.getCoordinates(x1);
@@ -426,9 +442,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       // Collect coordinates for shared atoms (remove alchemical atoms from the superposition).
       double[] x1Shared = new double[nShared * 3];
       double[] x2Shared = new double[nShared * 3];
-      n = activeAtoms1.length;
       int sharedIndex = 0;
-      for (int i = 0; i < n; i++) {
+      for (int i = 0; i < len1; i++) {
         if (sharedAtoms1[i]) {
           int index = i * 3;
           x1Shared[sharedIndex++] = x1[index];
@@ -436,9 +451,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
           x1Shared[sharedIndex++] = x1[index + 2];
         }
       }
-      n = activeAtoms2.length;
       sharedIndex = 0;
-      for (int i = 0; i < n; i++) {
+      for (int i = 0; i < len2; i++) {
         if (sharedAtoms2[i]) {
           int index = i * 3;
           x2Shared[sharedIndex++] = x2[index];
@@ -496,7 +510,24 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       // Get a fresh copy of the original coordinates.
       double[] origX1 = Arrays.copyOf(x1Shared, x1Shared.length);
       origX2 = Arrays.copyOf(x2Shared, x2Shared.length);
+      if (logger.isLoggable(Level.FINE)) {
+        logger.fine(" Start Coords File 1:");
+        for (int i = 0; i < 4; i++) {
+          int index = i * 3;
+          logger.fine(format("\n %9.3f %9.3f %9.3f",
+                  origX1[index], origX1[index + 1], origX1[index + 2]));
+        }
+      }
       applyCartesianSymOp(origX1, origX1, symOp);
+      if (logger.isLoggable(Level.FINE)) {
+        logger.fine(" Sym Op of File 1 vs File 2:");
+        for (int i = 0; i < 4; i++) {
+          int index = i * 3;
+
+          logger.fine(format("\n %9.3f %9.3f %9.3f compared to  %9.3f %9.3f %9.3f",
+                  origX1[index], origX1[index + 1], origX1[index + 2], origX2[index], origX2[index + 1], origX2[index + 2]));
+        }
+      }
       double loadedRMSD = rmsd(origX1, origX2, m);
       logger.info("\n Topology 2 Coordinates from Loaded SymOp");
       logger.info(format(" RMSD: %12.3f", loadedRMSD));
