@@ -37,17 +37,10 @@
 // ******************************************************************************
 package ffx.potential;
 
-import static ffx.crystal.SymOp.Tr_0_0_0;
-import static ffx.crystal.SymOp.ZERO_ROTATION;
 import static ffx.crystal.SymOp.applyCartesianSymOp;
 import static ffx.crystal.SymOp.applyCartesianSymRot;
 import static ffx.crystal.SymOp.invertSymOp;
-import static ffx.potential.utils.Superpose.applyRotation;
-import static ffx.potential.utils.Superpose.applyTranslation;
-import static ffx.potential.utils.Superpose.calculateRotation;
-import static ffx.potential.utils.Superpose.calculateTranslation;
 import static ffx.potential.utils.Superpose.rmsd;
-import static ffx.potential.utils.Superpose.translate;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -59,7 +52,6 @@ import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.crystal.SymOp;
 import ffx.numerics.Potential;
-import ffx.numerics.math.DoubleMath;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
@@ -407,33 +399,6 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       // Check atom identities.
       int len1 = activeAtoms1.length;
       int len2 = activeAtoms2.length;
-      int slen1 = sharedAtoms1.length;
-      int slen2 = sharedAtoms2.length;
-      int count1 = 0;
-      int count2 = 0;
-      while (count1 < slen1) {
-        if (sharedAtoms1[count1]) {
-          while (count2 < slen2) {
-            if (sharedAtoms2[count2]) {
-              Atom a1 = activeAtoms1[count1];
-              Atom a2 = activeAtoms2[count2];
-              if (!a1.getAtomType().equals(a2.getAtomType())) {
-                logger.info(format(" %s %s", a1, a1.getAtomType()));
-                logger.info(format(" %s %s", a2, a2.getAtomType()));
-              }
-              count2++;
-              break;
-            }
-            count2++;
-          }
-        }
-        count1++;
-      }
-        /*
-        if (!a1.getMultipoleType().equals(a2.getMultipoleType())) {
-          logger.info(format(" %s %s", a1, a1.getMultipoleType()));
-          logger.info(format(" %s %s", a2, a2.getMultipoleType()));
-        } */
 
       // Get the coordinates for active atoms.
       potential1.getCoordinates(x1);
@@ -462,82 +427,66 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       }
 
       double[] origX2 = Arrays.copyOf(x2Shared, x2Shared.length);
-      double[] x2s = new double[origX2.length];
+//      double[] x2s = new double[origX2.length];
       double[] m = new double[origX2.length];
       Arrays.fill(m, 1.0);
       double origRMSD = rmsd(x1Shared, x2Shared, m);
       logger.info("\n Topology 2 Coordinates from Input File");
       logger.info(format(" RMSD: %12.3f", origRMSD));
-      potential2.energy(x2, false);
-
-      logger.info("\n Topology 2 Coordinates from Superpose");
-      Crystal unitCell2 = potential2.getCrystal().getUnitCell();
-      double calcRMSD = Double.MAX_VALUE;
-      SymOp calcSymOp = null;
-      for (int s = 0; s < unitCell2.getNumSymOps(); s++) {
-        SymOp symOp2 = unitCell2.spaceGroup.getSymOp(s);
-        unitCell2.applySymOp(origX2, x2s, symOp2);
-        // Calculate a SymOp on the fly.
-        // Translate Topology 1 and Topology 2 to the origin.
-        double[] origX1 = Arrays.copyOf(x1Shared, x1Shared.length);
-        double[] trans = calculateTranslation(origX1, m);
-        applyTranslation(origX1, trans);
-        SymOp trialSymOp = new SymOp(ZERO_ROTATION, trans);
-        translate(x2s, m);
-
-        // Rotate Topology 1 onto Topology 2.
-        double[][] rot = calculateRotation(x2s, origX1, m);
-        applyRotation(origX1, rot);
-        trialSymOp = trialSymOp.append(new SymOp(rot, Tr_0_0_0));
-
-        // Translate Topology 1 to the center of mass of Topology 2.
-        unitCell2.applySymOp(origX2, x2s, symOp2);
-        trans = DoubleMath.sub(calculateTranslation(origX1, m), calculateTranslation(x2s, m));
-        applyTranslation(origX1, trans);
-        trialSymOp = trialSymOp.append(new SymOp(ZERO_ROTATION, trans));
-
-        // Apply the calculated SymOp to shared atoms.
-        origX1 = Arrays.copyOf(x1Shared, x1Shared.length);
-        applyCartesianSymOp(origX1, origX1, trialSymOp);
-        double trialRMSD = rmsd(origX1, x2s, m);
-        logger.info(format(" RMSD: %12.3f", trialRMSD));
-        if (trialRMSD < calcRMSD) {
-          calcRMSD = trialRMSD;
-          calcSymOp = trialSymOp;
-        }
-      }
-
+//      potential2.energy(x2, false);
+//
+//      logger.info("\n Topology 2 Coordinates from Superpose");
+//      Crystal unitCell2 = potential2.getCrystal().getUnitCell();
+//      double calcRMSD = Double.MAX_VALUE;
+//      SymOp calcSymOp = null;
+//      for (int s = 0; s < unitCell2.getNumSymOps(); s++) {
+//        SymOp symOp2 = unitCell2.spaceGroup.getSymOp(s);
+//        unitCell2.applySymOp(origX2, x2s, symOp2);
+//        // Calculate a SymOp on the fly.
+//        // Translate Topology 1 and Topology 2 to the origin.
+//        double[] origX1 = Arrays.copyOf(x1Shared, x1Shared.length);
+//        double[] trans = calculateTranslation(origX1, m);
+//        applyTranslation(origX1, trans);
+//        SymOp trialSymOp = new SymOp(ZERO_ROTATION, trans);
+//        translate(x2s, m);
+//
+//        // Rotate Topology 1 onto Topology 2.
+//        double[][] rot = calculateRotation(x2s, origX1, m);
+//        applyRotation(origX1, rot);
+//        trialSymOp = trialSymOp.append(new SymOp(rot, Tr_0_0_0));
+//
+//        // Translate Topology 1 to the center of mass of Topology 2.
+//        unitCell2.applySymOp(origX2, x2s, symOp2);
+//        trans = DoubleMath.sub(calculateTranslation(origX1, m), calculateTranslation(x2s, m));
+//        applyTranslation(origX1, trans);
+//        trialSymOp = trialSymOp.append(new SymOp(ZERO_ROTATION, trans));
+//
+//        // Apply the calculated SymOp to shared atoms.
+//        origX1 = Arrays.copyOf(x1Shared, x1Shared.length);
+//        applyCartesianSymOp(origX1, origX1, trialSymOp);
+//        double trialRMSD = rmsd(origX1, x2s, m);
+//        logger.info(format(" RMSD: %12.3f", trialRMSD));
+//        if (trialRMSD < calcRMSD) {
+//          calcRMSD = trialRMSD;
+//          calcSymOp = trialSymOp;
+//        }
+//      }
+//
       // Get a fresh copy of the original coordinates.
       double[] origX1 = Arrays.copyOf(x1Shared, x1Shared.length);
       origX2 = Arrays.copyOf(x2Shared, x2Shared.length);
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine(" Start Coords File 1:");
-        for (int i = 0; i < 4; i++) {
-          int index = i * 3;
-          logger.fine(format("\n %9.3f %9.3f %9.3f",
-                  origX1[index], origX1[index + 1], origX1[index + 2]));
-        }
-      }
       applyCartesianSymOp(origX1, origX1, symOp);
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine(" Sym Op of File 1 vs File 2:");
-        for (int i = 0; i < 4; i++) {
-          int index = i * 3;
-
-          logger.fine(format("\n %9.3f %9.3f %9.3f compared to  %9.3f %9.3f %9.3f",
-                  origX1[index], origX1[index + 1], origX1[index + 2], origX2[index], origX2[index + 1], origX2[index + 2]));
-        }
-      }
       double loadedRMSD = rmsd(origX1, origX2, m);
       logger.info("\n Topology 2 Coordinates from Loaded SymOp");
       logger.info(format(" RMSD: %12.3f", loadedRMSD));
 
-      // If the loaded SymOp gives a larger Energy that the calculated SymOp, replace it.
-      if (calcRMSD < loadedRMSD) {
-        logger.info(format("\n Using the Superpose SymOp (RMSD: %16.8f)", calcRMSD));
-        symOp = calcSymOp;
-        inverse = invertSymOp(symOp);
-      }
+//      // If the loaded SymOp gives a larger Energy that the calculated SymOp, replace it.
+//      if (calcRMSD < loadedRMSD) {
+//        logger.info(format("\n Using the Superpose SymOp (RMSD: %16.8f)", calcRMSD));
+//        symOp = calcSymOp;
+//        inverse = invertSymOp(symOp);
+//      }
+
       logger.info("\n SymOp between topologies:\n" + symOp);
       logger.info("\n Inverse SymOp:\n" + inverse);
     } catch (Exception ex) {
