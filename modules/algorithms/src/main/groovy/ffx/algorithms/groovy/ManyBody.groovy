@@ -109,8 +109,8 @@ class ManyBody extends AlgorithmsScript {
 
     // This flag is for ForceFieldEnergyOpenMM and must be set before reading files.
     // It enforces that all torsions include a Fourier series with 6 terms.
-    // Otherwise, during titration the number of terms for each torsion may change and
-    // causing updateParametersInContext to throw an exception.
+    // Otherwise, during titration the number of terms for each torsion can change and
+    // cause updateParametersInContext to throw an exception.
     double titrationPH = manyBodyOptions.getTitrationPH()
     if (titrationPH > 0) {
       System.setProperty("manybody-titration", "true")
@@ -133,13 +133,11 @@ class ManyBody extends AlgorithmsScript {
     potentialEnergy = activeAssembly.getPotentialEnergy()
 
     // Collect residues to optimize.
-    List<Residue> residues = manyBodyOptions.getResidues(activeAssembly);
+    List<Residue> residues = manyBodyOptions.collectResidues(activeAssembly)
     if (residues == null || residues.isEmpty()) {
       logger.info(" There are no residues in the active system to optimize.")
       return this
     }
-
-    logger.info(" manyBody.getResidues " + Arrays.toString(residues.toArray()))
 
     // Handle rotamer optimization with titration.
     if (titrationPH > 0) {
@@ -152,7 +150,8 @@ class ManyBody extends AlgorithmsScript {
       }
 
       // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
-      titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(), resNumberList, titrationPH)
+      titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
+          resNumberList, titrationPH)
       MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly()
       setActiveAssembly(protonatedAssembly)
       potentialEnergy = protonatedAssembly.getPotentialEnergy()
@@ -173,11 +172,9 @@ class ManyBody extends AlgorithmsScript {
     }
 
     manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
-
-    // TODO: Consolidate the method below with "manyBody.getResidues".
+    // rotamerOptimization.getResidues() returns a cached version of
+    // manyBodyOptions.collectResidues(activeAssembly)
     List<Residue> residueList = rotamerOptimization.getResidues()
-
-    logger.info(" RotamerOptimization.getResidues " + Arrays.toString(residueList.toArray()))
 
     logger.info("\n Initial Potential Energy:")
     potentialEnergy.energy(false, true)
@@ -186,7 +183,7 @@ class ManyBody extends AlgorithmsScript {
     RotamerLibrary.measureRotamers(residueList, false)
 
     // Run the optimization.
-    rotamerOptimization.optimize(manyBodyOptions.getAlgorithm())
+    rotamerOptimization.optimize(manyBodyOptions.getAlgorithm(residueList.size()))
 
     boolean isTitrating = false
     Set<Atom> excludeAtoms = new HashSet<>()
@@ -201,7 +198,8 @@ class ManyBody extends AlgorithmsScript {
       logger.info(" Final Minimum Energy")
       double energy = potentialEnergy.energy(false, true)
       if (isTitrating) {
-        double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList, optimalRotamers)
+        double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList,
+            optimalRotamers)
         logger.info(format("\n  Rotamer pH Bias    %16.8f", phBias))
         logger.info(format("  Potential with Bias%16.8f\n", phBias + energy))
       }
@@ -210,7 +208,8 @@ class ManyBody extends AlgorithmsScript {
       // atoms (i.e. hydrogen that are excluded from being written out).
       properties.setProperty("standardizeAtomNames", "false")
       File modelFile = saveDirFile(activeAssembly.getFile())
-      PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(), properties)
+      PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(),
+          properties)
       if (titrationPH > 0) {
         String remark = format("Titration pH: %6.3f", titrationPH)
         if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true, remark)) {
