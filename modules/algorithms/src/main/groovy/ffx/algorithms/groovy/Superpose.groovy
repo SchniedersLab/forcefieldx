@@ -250,6 +250,11 @@ class Superpose extends AlgorithmsScript {
       usedIndices[i] = selectedList.get(i)
     }
 
+    // Reset all atoms to be active because the Superpose class will apply our "usedIndices" array.
+    for (Atom atom : atoms) {
+      atom.setActive(true)
+    }
+
     // Compute the RMSD values.
     ffx.potential.utils.Superpose superpose =
         new ffx.potential.utils.Superpose(baseFilter, targetFilter, isSymmetric)

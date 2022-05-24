@@ -37,11 +37,12 @@
 // ******************************************************************************
 package ffx.ui;
 
-import static java.lang.String.format;
-
+import edu.rit.pj.Comm;
 import ffx.ui.MainPanel.ExitStatus;
-import ffx.utilities.LoggerSevereError;
 import java.awt.GraphicsEnvironment;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.util.logging.ErrorManager;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -58,25 +59,69 @@ import java.util.logging.LogRecord;
  */
 public class LogHandler extends Handler {
 
+  /**
+   * If true, FFX is running in a headless environment.
+   */
   private static final boolean headless = GraphicsEnvironment.isHeadless();
-  private static final boolean tryCatchSevere = false;
+
+  /**
+   * If the MainPanel variable has been set, we can publish records to the ModelingShell.
+   */
   private MainPanel mainPanel = null;
+
+  /**
+   * If true, we have received a Record at the Level.SEVERE and FFX will exit.
+   */
   private boolean fatal = false;
 
   /**
-   * Construct the Force Field X logging handler.
+   * Construct the Force Field X Log Handler.
    *
    * @since 1.0
    */
   public LogHandler() {
-
-    boolean mpiLogging = true;
-    String logString = System.getProperty("mpiLogging", "true");
-    if (logString.trim().equalsIgnoreCase("false")) {
-      mpiLogging = false;
-    }
-    setFormatter(new LogFormatter(false, mpiLogging));
     setLevel(Level.ALL);
+
+    // Log all messages to the file specified by "ffx.log.file" if in Headless mode.
+    // For MPI jobs, a separate file is used for each process.
+    boolean prependRank = false;
+    if (headless) {
+      String log = System.getProperty("ffx.log.file", "");
+      if (log != null && !log.equalsIgnoreCase("")) {
+        Comm comm = Comm.world();
+        int np = comm.size();
+        int rank = comm.rank();
+
+        // Define the log file directory and filename.
+        String logFile;
+        if (np == 1) {
+          logFile = new File(log).getAbsolutePath();
+        } else {
+          prependRank = true;
+          File dir = new File(Integer.toString(rank));
+          if (!dir.exists()) {
+            dir.mkdir();
+          }
+          logFile = dir.getAbsolutePath() + File.separator + log;
+        }
+
+        try {
+          PrintStream printStream = new PrintStream(new FileOutputStream(logFile, true));
+          System.setOut(printStream);
+          System.setErr(printStream);
+        } catch (Exception e) {
+          System.err.println(e);
+        }
+      }
+    }
+
+    // If each process has a separate log file, then it's not necessary to prepend a rank.
+    if (prependRank) {
+      setFormatter(new LogFormatter(false));
+    } else {
+      setFormatter(new LogFormatter());
+    }
+
   }
 
   /**
@@ -110,12 +155,7 @@ public class LogHandler extends Handler {
    */
   @Override
   public synchronized void publish(LogRecord record) {
-    if (record.getLevel() == Level.OFF) {
-      if (record.getMessage().toLowerCase().contains("algorithm failure:")) {
-        mainPanel.setExitType(MainPanel.ExitStatus.ALGORITHM_FAILURE);
-      }
-      return;
-    }
+
     // Check if the record is loggable and that we have not already encountered a fatal error.
     if (!isLoggable(record) || fatal) {
       return;
@@ -125,33 +165,22 @@ public class LogHandler extends Handler {
     try {
       msg = getFormatter().format(record);
     } catch (Exception e) {
-      /*
-       We don't want to throw an exception here, but we report the
-       exception to any registered ErrorManager.
-      */
+      // Report the exception to any registered ErrorManager.
       reportError(null, e, ErrorManager.FORMAT_FAILURE);
       return;
     }
-    try {
-      if (record.getLevel() == Level.SEVERE) {
-        fatal = true;
-        System.err.println(msg);
 
+    try {
+      // FFX logs severe messages to System.err and then exits.
+      if (record.getLevel() == Level.SEVERE) {
+        // Set the fatal flag to true; this is the final record that will be logged.
+        fatal = true;
+
+        // Log the message to System.err.
+        System.err.println(msg);
         Throwable throwable = record.getThrown();
         if (throwable != null) {
-          System.err.println(format(" Exception %s logged.", throwable));
-        }
-
-        // If tryCatchSevere, and the throwable (if it exists) is not an Error, then...
-        if (tryCatchSevere && (!(throwable instanceof Error))) {
-          System.err.println(" Force Field X may not continue.");
-          System.err.println(" Throwing new error...");
-          fatal = false;
-          if (throwable != null) {
-            throw new LoggerSevereError(throwable);
-          } else {
-            throw new LoggerSevereError(" Unknown exception");
-          }
+          System.err.printf(" %s%n", throwable);
         }
 
         System.err.println(" Force Field X will not continue.");
@@ -172,10 +201,7 @@ public class LogHandler extends Handler {
         System.out.println(msg);
       }
     } catch (Exception e) {
-      /*
-       We don't want to throw an exception here, but we report the
-       exception to any registered ErrorManager.
-      */
+      // Report the exception to any registered ErrorManager.
       reportError(null, e, ErrorManager.WRITE_FAILURE);
     }
   }

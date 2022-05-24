@@ -45,8 +45,6 @@ import edu.rit.pj.WorkerIntegerForLoop;
 import edu.rit.pj.WorkerRegion;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.RotamerLibrary;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -114,7 +112,6 @@ public class FourBodyEnergyRegion extends WorkerRegion {
     @Override
     public void run(int lb, int ub) {
       for (int key = lb; key <= ub; key++) {
-        long time = -System.nanoTime();
         if (!fourBodyEnergyMap.containsKey(key)) {
           continue;
         }
@@ -174,75 +171,48 @@ public class FourBodyEnergyRegion extends WorkerRegion {
           resDistString = format("%5.3f", resDist);
         }
 
-        double fourBodyEnergy = 0.0;
+        double fourBodyEnergy;
         if (minDist < superpositionThreshold) {
-          fourBodyEnergy = Double.NaN;
           logger.info(
               format(
                   " Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d:   set to NaN at %13.6f Ang (%s Ang by residue)  < %5.3f Ang.",
-                  residues[i],
-                  ri,
-                  residues[j].toFormattedString(false, true),
-                  rj,
-                  residues[k].toFormattedString(false, true),
-                  rk,
-                  residues[l].toFormattedString(false, true),
-                  rl,
-                  minDist,
-                  resDistString,
-                  superpositionThreshold));
+                  residues[i], ri,
+                  residues[j].toFormattedString(false, true), rj,
+                  residues[k].toFormattedString(false, true), rk,
+                  residues[l].toFormattedString(false, true), rl,
+                  minDist, resDistString, superpositionThreshold));
         } else if (dM.checkQuadDistThreshold(indexI, ri, indexJ, rj, indexK, rk, indexL, rl)) {
           // Set the 4-body energy to 0.0 for separation distances larger than the 4-body cutoff.
           fourBodyEnergy = 0.0;
-          time += System.nanoTime();
           logger.info(
               format(
                   " Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
-                  resi.toFormattedString(false, true),
-                  ri,
-                  resj.toFormattedString(false, true),
-                  rj,
-                  resk.toFormattedString(false, true),
-                  rk,
-                  resl.toFormattedString(false, true),
-                  rl,
-                  rO.formatEnergy(fourBodyEnergy),
-                  distString,
-                  resDistString));
+                  resi.toFormattedString(false, true), ri,
+                  resj.toFormattedString(false, true), rj,
+                  resk.toFormattedString(false, true), rk,
+                  resl.toFormattedString(false, true), rl,
+                  rO.formatEnergy(fourBodyEnergy), distString, resDistString));
         } else {
           try {
             fourBodyEnergy = eE.compute4BodyEnergy(residues, i, ri, j, rj, k, rk, l, rl);
-            time += System.nanoTime();
             logger.info(
                 format(
                     " Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
-                    resi.toFormattedString(false, true),
-                    ri,
-                    resj.toFormattedString(false, true),
-                    rj,
-                    resk.toFormattedString(false, true),
-                    rk,
-                    resl.toFormattedString(false, true),
-                    rl,
-                    rO.formatEnergy(fourBodyEnergy),
-                    distString,
-                    resDistString));
+                    resi.toFormattedString(false, true), ri,
+                    resj.toFormattedString(false, true), rj,
+                    resk.toFormattedString(false, true), rk,
+                    resl.toFormattedString(false, true), rl,
+                    rO.formatEnergy(fourBodyEnergy), distString, resDistString));
             if (abs(fourBodyEnergy) > 1.0) {
               StringBuilder sb = new StringBuilder();
               sb.append(
                   format(
                       " Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).\n",
-                      resi.toFormattedString(false, true),
-                      ri,
-                      resj.toFormattedString(false, true),
-                      rj,
-                      resk.toFormattedString(false, true),
-                      rk,
-                      resl.toFormattedString(false, true),
-                      rl,
-                      rO.formatEnergy(fourBodyEnergy),
-                      distString,
-                      resDistString));
+                      resi.toFormattedString(false, true), ri,
+                      resj.toFormattedString(false, true), rj,
+                      resk.toFormattedString(false, true), rk,
+                      resl.toFormattedString(false, true), rl,
+                      rO.formatEnergy(fourBodyEnergy), distString, resDistString));
               sb.append(format("   Explain: (ref %d) \n", key));
               sb.append(
                   format("     Self %3d %3d:                  %.3f\n", i, ri, eE.getSelf(i, ri)));
@@ -252,46 +222,26 @@ public class FourBodyEnergyRegion extends WorkerRegion {
                   format("     Self %3d %3d:                  %.3f\n", k, rk, eE.getSelf(k, rk)));
               sb.append(
                   format("     Self %3d %3d:                  %.3f\n", l, rl, eE.getSelf(l, rl)));
-              sb.append(
-                  format(
-                      "     Pair %3d %3d %3d %3d:          %.3f\n",
-                      i, ri, j, rj, eE.get2Body(i, ri, j, rj)));
-              sb.append(
-                  format(
-                      "     Pair %3d %3d %3d %3d:          %.3f\n",
-                      i, ri, k, rk, eE.get2Body(i, ri, k, rk)));
-              sb.append(
-                  format(
-                      "     Pair %3d %3d %3d %3d:          %.3f\n",
-                      i, ri, l, rl, eE.get2Body(i, ri, l, rl)));
-              sb.append(
-                  format(
-                      "     Pair %3d %3d %3d %3d:          %.3f\n",
-                      j, rj, k, rk, eE.get2Body(j, rj, k, rk)));
-              sb.append(
-                  format(
-                      "     Pair %3d %3d %3d %3d:          %.3f\n",
-                      j, rj, l, rl, eE.get2Body(j, rj, l, rl)));
-              sb.append(
-                  format(
-                      "     Pair %3d %3d %3d %3d:          %.3f\n",
-                      k, rk, l, rl, eE.get2Body(k, rk, l, rl)));
-              sb.append(
-                  format(
-                      "     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n",
-                      i, ri, j, rj, k, rk, eE.get3Body(residues, i, ri, j, rj, k, rk)));
-              sb.append(
-                  format(
-                      "     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n",
-                      i, ri, j, rj, l, rl, eE.get3Body(residues, i, ri, j, rj, l, rl)));
-              sb.append(
-                  format(
-                      "     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n",
-                      i, ri, k, rk, l, rl, eE.get3Body(residues, i, ri, k, rk, l, rl)));
-              sb.append(
-                  format(
-                      "     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n",
-                      j, rj, k, rk, l, rl, eE.get3Body(residues, j, rj, k, rk, l, rl)));
+              sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n",
+                  i, ri, j, rj, eE.get2Body(i, ri, j, rj)));
+              sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n",
+                  i, ri, k, rk, eE.get2Body(i, ri, k, rk)));
+              sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n",
+                  i, ri, l, rl, eE.get2Body(i, ri, l, rl)));
+              sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n",
+                  j, rj, k, rk, eE.get2Body(j, rj, k, rk)));
+              sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n",
+                  j, rj, l, rl, eE.get2Body(j, rj, l, rl)));
+              sb.append(format("     Pair %3d %3d %3d %3d:          %.3f\n",
+                  k, rk, l, rl, eE.get2Body(k, rk, l, rl)));
+              sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n",
+                  i, ri, j, rj, k, rk, eE.get3Body(residues, i, ri, j, rj, k, rk)));
+              sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n",
+                  i, ri, j, rj, l, rl, eE.get3Body(residues, i, ri, j, rj, l, rl)));
+              sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n",
+                  i, ri, k, rk, l, rl, eE.get3Body(residues, i, ri, k, rk, l, rl)));
+              sb.append(format("     Tri  %3d %3d %3d %3d %3d %3d:  %.3f\n",
+                  j, rj, k, rk, l, rl, eE.get3Body(residues, j, rj, k, rk, l, rl)));
               sb.append(
                   format("     backbone:                      %.3f\n", rO.getBackboneEnergy()));
               sb.append(format("     quadEnergy:                 %.3f\n", fourBodyEnergy));
@@ -299,28 +249,21 @@ public class FourBodyEnergyRegion extends WorkerRegion {
               sb.append("     Active residues:\n");
               for (Residue residue : residues) {
                 if (residue.getSideChainAtoms().get(0).getUse()) {
-                  sb.append(format("       %s\n", residue.toString()));
+                  sb.append(format("       %s\n", residue));
                 }
               }
               sb.append("     --f--\n");
               logger.info(sb.toString());
             }
           } catch (ArithmeticException ex) {
-            fourBodyEnergy = Double.NaN;
-            time += System.nanoTime();
             logger.info(
                 format(
                     " Quad %8s %-2d, %8s %-2d, %8s %-2d, %8s %-2d: NaN at %s Ang (%s Ang by residue).",
-                    resi.toFormattedString(false, true),
-                    ri,
-                    resj.toFormattedString(false, true),
-                    rj,
-                    resk.toFormattedString(false, true),
-                    rk,
-                    resl.toFormattedString(false, true),
-                    rl,
-                    distString,
-                    resDistString));
+                    resi.toFormattedString(false, true), ri,
+                    resj.toFormattedString(false, true), rj,
+                    resk.toFormattedString(false, true), rk,
+                    resl.toFormattedString(false, true), rl,
+                    distString, resDistString));
           }
         }
       }

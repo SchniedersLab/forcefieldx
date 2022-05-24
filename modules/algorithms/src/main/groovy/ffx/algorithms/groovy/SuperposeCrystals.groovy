@@ -138,6 +138,13 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean permute
 
   /**
+   * --lm or --lowMemory Slower comparisons, but reduces memory usage.
+   */
+  @Option(names = ['--lm', '--lowMemory'], paramLabel = "false", defaultValue = "false",
+          description = 'Reduce memory usage at the cost of efficiency.')
+  private static boolean lowMemory
+
+  /**
    * --ac or --alphaCarbons Consider only alpha carbons for proteins.
    */
   @Option(names = ['--ac', '--alphaCarbons'], paramLabel = "false", defaultValue = "false",
@@ -290,7 +297,7 @@ class SuperposeCrystals extends AlgorithmsScript {
     runningStatistics =
         pac.comparisons(numAU, inflationFactor, matchTol, zPrime, zPrime2, alphaCarbons,
             includeHydrogen, massWeighted, crystalPriority, permute, save,
-            restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym, pacFilename)
+            restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym, lowMemory, pacFilename)
 
     return this
   }

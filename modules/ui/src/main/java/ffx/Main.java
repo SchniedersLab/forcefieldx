@@ -234,14 +234,14 @@ public final class Main extends JFrame {
     // Process any "-D" command line flags.
     args = processProperties(args);
 
+    // Start up the Parallel Java communication layer.
+    startParallelJava(args);
+
     // Configure our logging.
     startLogging();
 
     // Determine host name and process ID.
     environment();
-
-    // Start up the Parallel Java communication layer.
-    startParallelJava(args);
 
     // Print the header.
     header(args);
@@ -566,8 +566,10 @@ public final class Main extends JFrame {
       Comm.init(args);
       world = Comm.world();
     } catch (Exception e) {
+      // Log the exception to System.err because the logging subsystem has not be initialized yet.
       String message = " Exception starting up the Parallel Java communication layer.";
-      logger.log(Level.WARNING, message, e.toString());
+      System.err.println(message);
+      System.err.println(e);
     }
   }
 

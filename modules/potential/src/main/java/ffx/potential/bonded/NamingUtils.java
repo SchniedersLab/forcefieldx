@@ -60,6 +60,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -614,7 +615,9 @@ public class NamingUtils {
    */
   public static void renameAminoAcidToPDBStandard(Residue residue) {
     if (residue.getChainID() == null) {
-      logger.info(" Setting Chain ID to Z for " + residue);
+      if (logger.isLoggable(Level.FINE)) {
+        logger.fine(" Setting Chain ID to Z for " + residue);
+      }
       residue.setChainID('Z');
     }
     AminoAcid3 aa3 = residue.getAminoAcid3();

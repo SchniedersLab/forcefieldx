@@ -37,13 +37,10 @@
 // ******************************************************************************
 package ffx.algorithms.optimize.manybody;
 
-import static java.lang.String.format;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import ffx.algorithms.AlgorithmListener;
-import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.potential.MolecularAssembly;
@@ -63,20 +60,23 @@ public class DistanceRegion extends ParallelRegion {
   private final int nSymm;
   private final int[][][] lists;
   private final IntegerSchedule pairwiseSchedule;
-  /** AlgorithmListener who should receive updates as the optimization runs. */
+  /**
+   * AlgorithmListener who should receive updates as the optimization runs.
+   */
   protected AlgorithmListener algorithmListener;
-
-  private RotamerOptimization rotamerOptimization;
+  /**
+   * The DistanceMatrix to fill.
+   */
   private DistanceMatrix dM;
-  /** MolecularAssembly to perform rotamer optimization on. */
+  /**
+   * MolecularAssembly to perform rotamer optimization on.
+   */
   private MolecularAssembly molecularAssembly;
   /**
    * An array of all residues being optimized. Note that Box and Window optimizations operate on
    * subsets of this list.
    */
   private Residue[] allResiduesArray;
-  /** RotamerLibrary instance. */
-  private RotamerLibrary library;
   /**
    * The minimum distance between atoms of a residue pair, taking into account interactions with
    * symmetry mates.
@@ -100,17 +100,13 @@ public class DistanceRegion extends ParallelRegion {
 
   public void init(
       DistanceMatrix dM,
-      RotamerOptimization rotamerOptimization,
       MolecularAssembly molecularAssembly,
       Residue[] allResiduesArray,
-      RotamerLibrary library,
       AlgorithmListener algorithmListener,
       double[][][][] distanceMatrix) {
     this.dM = dM;
-    this.rotamerOptimization = rotamerOptimization;
     this.molecularAssembly = molecularAssembly;
     this.allResiduesArray = allResiduesArray;
-    this.library = library;
     this.algorithmListener = algorithmListener;
     this.distanceMatrix = distanceMatrix;
   }
@@ -133,18 +129,13 @@ public class DistanceRegion extends ParallelRegion {
    * @param i Residue index.
    * @param residues Array of residues.
    * @param rotamer Rotamer to apply.
-   * @param forced True for a forced residue.
    * @return Returns the coordinates.
    */
-  private double[][] getCoordinates(int i, Residue[] residues, Rotamer rotamer, boolean forced) {
+  private double[][] getCoordinates(int i, Residue[] residues, Rotamer rotamer) {
     synchronized (residues[i]) {
       Residue residue = residues[i];
-      if (!forced) {
-        RotamerLibrary.applyRotamer(residue, rotamer);
-        return residue.storeCoordinateArray();
-      } else {
-        return residue.storeCoordinateArray();
-      }
+      RotamerLibrary.applyRotamer(residue, rotamer);
+      return residue.storeCoordinateArray();
     }
   }
 
@@ -159,32 +150,11 @@ public class DistanceRegion extends ParallelRegion {
         for (int i = lb; i <= ub; i++) {
           Residue residuei = allResiduesArray[i];
           Rotamer[] rotamersi = residuei.getRotamers();
-          int lengthRi;
-          boolean forcedResidueI = false;
-          try {
-            if (rotamerOptimization.checkIfForced(residuei)) {
-              forcedResidueI = true;
-              lengthRi = 1;
-            } else {
-              lengthRi = rotamersi.length;
-            }
-          } catch (IndexOutOfBoundsException ex) {
-            logger.warning(format(" Exception in distance loop: %s", ex.toString()));
-            continue;
-          }
-
+          int lengthRi = rotamersi.length;
           int[] list = lists[iSymOp][i];
-          int nList = list.length;
-
           // Loop over Residue i's rotamers
           for (int ri = 0; ri < lengthRi; ri++) {
-            double[][] xi;
-            if (forcedResidueI) {
-              xi = getCoordinates(i, allResiduesArray, null, forcedResidueI);
-            } else {
-              xi = getCoordinates(i, allResiduesArray, rotamersi[ri], forcedResidueI);
-            }
-
+            double[][] xi = getCoordinates(i, allResiduesArray, rotamersi[ri]);
             // Loop over Residue i's neighbors.
             for (int j : list) {
               if (i == j) {
@@ -193,31 +163,14 @@ public class DistanceRegion extends ParallelRegion {
 
               Residue residuej = allResiduesArray[j];
               Rotamer[] rotamersj = residuej.getRotamers();
-              int lengthRj;
-              boolean forcedResidueJ = false;
-              try {
-                if (rotamerOptimization.checkIfForced(residuej)) {
-                  forcedResidueJ = true;
-                  lengthRj = 1;
-                } else {
-                  lengthRj = rotamersj.length;
-                }
-              } catch (IndexOutOfBoundsException ex) {
-                continue;
-              }
+              int lengthRj = rotamersj.length;
 
               // Loop over the neighbor's rotamers
               for (int rj = 0; rj < lengthRj; rj++) {
-                double[][] xj;
-                if (forcedResidueJ) {
-                  xj = getCoordinates(j, allResiduesArray, null, forcedResidueJ);
-                } else {
-                  xj = getCoordinates(j, allResiduesArray, rotamersj[rj], forcedResidueJ);
-                }
+                double[][] xj = getCoordinates(j, allResiduesArray, rotamersj[rj]);
                 if (getThreadIndex() == 0 && algorithmListener != null) {
                   algorithmListener.algorithmUpdate(molecularAssembly);
                 }
-
                 double r = dM.interResidueDistance(xi, xj, symOp);
                 if (i < j) {
                   if (r < distanceMatrix[i][ri][j][rj]) {

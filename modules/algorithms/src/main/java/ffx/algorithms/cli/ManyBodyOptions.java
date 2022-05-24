@@ -37,25 +37,21 @@
 // ******************************************************************************
 package ffx.algorithms.cli;
 
-import static java.lang.String.format;
+import static java.lang.Integer.parseInt;
 
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.algorithms.optimize.RotamerOptimization.Algorithm;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.Utilities;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.io.FilenameUtils;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
@@ -78,48 +74,31 @@ public class ManyBodyOptions {
   public ManyBodyOptionGroup group = new ManyBodyOptionGroup();
 
   /**
-   * The ArgGroup keeps the ManyBodyBoxOptionGroup together when printing help.
+   * The ArgGroup keeps the BoxOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Many-Body Box Optimization Options%n", validate = false)
-  public ManyBodyBoxOptionGroup boxGroup = new ManyBodyBoxOptionGroup();
+  public BoxOptionGroup boxGroup = new BoxOptionGroup();
 
   /**
-   * The ArgGroup keeps the ManyBodyWindowOptionGroup together when printing help.
+   * The ArgGroup keeps the WindowOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Many-Body Window Optimization Options%n", validate = false)
-  public ManyBodyWindowOptionGroup windowGroup = new ManyBodyWindowOptionGroup();
+  public WindowOptionGroup windowGroup = new WindowOptionGroup();
 
   /**
-   * The ArgGroup keeps the ManyBodyWindowOptionGroup together when printing help.
+   * The ArgGroup keeps the WindowOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Many-Body Energy Expansion and Cut-off Options%n", validate = false)
-  public ManyBodyEnergyOptionGroup energyGroup = new ManyBodyEnergyOptionGroup();
+  public EnergyOptionGroup energyGroup = new EnergyOptionGroup();
 
   /**
-   * The ArgGroup keeps the ManyBodyResidueOptionGroup together when printing help.
+   * The ArgGroup keeps the ResidueOptionGroup together when printing help.
    */
   @ArgGroup(heading = "%n Many-Body Residue Selection Options%n", validate = false)
-  public ManyBodyResidueOptionGroup residueGroup = new ManyBodyResidueOptionGroup();
+  public ResidueOptionGroup residueGroup = new ResidueOptionGroup();
 
   private RotamerOptimization rotamerOptimization;
   private RotamerLibrary rotamerLibrary;
-  private int allStartResID;
-  private int boxStart;
-  private int boxEnd;
-  private int[] numXYZBoxes;
-  private int forceResiduesStart;
-  private int forceResiduesEnd;
-
-  /**
-   * @return Returns the algorithm choice.
-   */
-  public Algorithm getAlgorithm() {
-    return Algorithm.getAlgorithm(group.algorithm);
-  }
-
-  public boolean getUsingOriginalCoordinates() {
-    return !group.noOriginal;
-  }
 
   /**
    * initRotamerOptimization.
@@ -130,300 +109,151 @@ public class ManyBodyOptions {
   public void initRotamerOptimization(
       RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly) {
     this.rotamerOptimization = rotamerOptimization;
-    boolean useOrigCoordsRotamer = !group.noOriginal;
-    if (group.decompose) {
-      useOrigCoordsRotamer = true;
-    }
 
-    String rotamerFileName = activeAssembly.getFile().getName();
-    rotamerFileName = FilenameUtils.removeExtension(rotamerFileName);
-    rotamerFileName = rotamerFileName + ".rot";
-    File rotFile = new File(rotamerFileName);
-
-    if (rotFile.exists()) {
-      logger.info(" EXPERIMENTAL: Using rotamer file " + rotamerFileName);
-      rotamerLibrary = new RotamerLibrary(RotamerLibrary.ProteinLibrary.None, false);
-      try {
-        RotamerLibrary.readRotFile(rotFile, activeAssembly);
-      } catch (IOException iox) {
-        logger.severe(
-            format(
-                " Exception in parsing rotamer file: %s\n%s",
-                iox, Utilities.stackTraceToString(iox)));
-      }
-    } else {
-      rotamerLibrary =
-          new RotamerLibrary(
-              RotamerLibrary.ProteinLibrary.intToProteinLibrary(group.library),
-              useOrigCoordsRotamer);
-    }
-
+    // Make sure the rotamer library is initialized.
+    initRotamerLibrary();
     rotamerOptimization.setRotamerLibrary(rotamerLibrary);
+
+    // Collect the residues to optimize.
+    List<Residue> residues = collectResidues(activeAssembly);
+    rotamerOptimization.setResidues(residues);
+
+    // If the user has not selected an algorithm, it will be chosen based on the number of residues.
+    Algorithm algorithm = getAlgorithm(residues.size());
+
+    // Configure general options.
+    rotamerOptimization.setDecomposeOriginal(group.decompose);
+    rotamerOptimization.setUseGoldstein(!group.dee);
+    rotamerOptimization.setRevert(group.revert);
+    boolean monteCarloBool = group.monteCarlo > 1;
+    rotamerOptimization.setMonteCarlo(monteCarloBool, group.monteCarlo);
+    File energyRestartFile;
+    if (!group.energyRestart.equalsIgnoreCase("none")) {
+      energyRestartFile = new File(group.energyRestart);
+      rotamerOptimization.setEnergyRestartFile(energyRestartFile);
+    }
+
+    // Configure Energy Expansion and Pruning Options.
+    rotamerOptimization.setTwoBodyCutoff(energyGroup.twoBodyCutoff);
+    rotamerOptimization.setThreeBodyEnergy(energyGroup.threeBody);
+    rotamerOptimization.setThreeBodyCutoff(energyGroup.threeBodyCutoff);
+    rotamerOptimization.setDistanceCutoff(energyGroup.cutoff);
+    rotamerOptimization.setPruning(energyGroup.prune);
     rotamerOptimization.setSingletonClashThreshold(energyGroup.clashThreshold);
     rotamerOptimization.setPairClashThreshold(energyGroup.pairClashThreshold);
-    rotamerOptimization.setDecomposeOriginal(group.decompose);
 
-    if (group.algorithm == 0) {
-      setAlgorithm(activeAssembly);
+    // Window
+    if (algorithm == Algorithm.WINDOW) {
+      rotamerOptimization.setWindowSize(windowGroup.window);
+      rotamerOptimization.setIncrement(windowGroup.increment);
+    } else if (algorithm == Algorithm.BOX) {
+      // Box
+      parseBoxSelection();
+      if (boxGroup.approxBoxLength < 0) {
+        logger.info(" Negative box length value changed to -1 * input.");
+        boxGroup.approxBoxLength *= -1;
+      }
+      rotamerOptimization.setBoxBorderSize(boxGroup.boxBorderSize);
+      rotamerOptimization.setApproxBoxLength(boxGroup.approxBoxLength);
+      rotamerOptimization.setNumXYZBoxes(boxGroup.numXYZBoxes);
+      rotamerOptimization.setBoxInclusionCriterion(boxGroup.boxInclusionCriterion);
+      rotamerOptimization.setBoxStart(boxGroup.initialBox);
+      rotamerOptimization.setBoxEnd(boxGroup.finalBox);
     }
-    setSelection();
-    setForcedResidue();
-    setResidues(activeAssembly);
-    setRotOptProperties();
+  }
+
+  /**
+   * Collect residues based on residue selection flags.
+   *
+   * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
+   */
+  public List<Residue> collectResidues(MolecularAssembly activeAssembly) {
+
+    // Make sure the RotamerLibrary has been initialized.
+    initRotamerLibrary();
+
+    // First, interpret the residueGroup.listResidues flag if its set.
+    if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
+      List<String> stringList = new ArrayList<>();
+      String[] tok = residueGroup.listResidues.split(",");
+      Collections.addAll(stringList, tok);
+      List<Residue> residueList = new ArrayList<>();
+      Polymer[] polymers = activeAssembly.getChains();
+      for (String s : stringList) {
+        Character chainID = s.charAt(0);
+        int i = parseInt(s.substring(1));
+        for (Polymer polymer : polymers) {
+          if (polymer.getChainID() == chainID) {
+            List<Residue> residues = polymer.getResidues();
+            for (Residue residue : residues) {
+              if (residue.getResidueNumber() == i) {
+                Rotamer[] rotamers = residue.setRotamers(rotamerLibrary);
+                if (rotamers != null || rotamers.length > 0) {
+                  residueList.add(residue);
+                }
+              }
+            }
+          }
+        }
+      }
+      return residueList;
+    }
+
+    // Check that the finish flag is greater than the start flag.
+    if (residueGroup.finish < residueGroup.start) {
+      residueGroup.finish = Integer.MAX_VALUE;
+    }
+    Character chainID = null;
+    if (!residueGroup.chain.equalsIgnoreCase("-1")) {
+      chainID = residueGroup.chain.charAt(0);
+    }
+
+    // Otherwise, collect all residues with a rotamer.
+    List<Residue> residueList = new ArrayList<>();
+    Polymer[] polymers = activeAssembly.getChains();
+    for (Polymer polymer : polymers) {
+      // Enforce requested chainID.
+      if (chainID != null && chainID != polymer.getChainID()) {
+        continue;
+      }
+      List<Residue> residues = polymer.getResidues();
+      for (Residue residue : residues) {
+        int resID = residue.getResidueNumber();
+        // Enforce requested residue range.
+        if (resID >= residueGroup.start && resID <= residueGroup.finish) {
+          Rotamer[] rotamers = residue.setRotamers(rotamerLibrary);
+          if (rotamers != null) {
+            residueList.add(residue);
+          }
+        }
+      }
+    }
+
+    return residueList;
+  }
+
+  /**
+   * Returns the user selected algorithm or one chosen based on number of residues.
+   *
+   * @return Returns the algorithm choice.
+   */
+  public Algorithm getAlgorithm(int numResidues) {
+    if (group.algorithm == 0) {
+      if (numResidues < 100) {
+        return Algorithm.ALL;
+      } else {
+        return Algorithm.BOX;
+      }
+    }
+    return Algorithm.getAlgorithm(group.algorithm);
+  }
+
+  public boolean getUsingOriginalCoordinates() {
+    return !group.noOriginal;
   }
 
   public void setOriginalCoordinates(boolean useOrig) {
     group.noOriginal = !useOrig;
-  }
-
-  /**
-   * setResidues.
-   *
-   * @param activeAssembly a {@link ffx.potential.MolecularAssembly} object.
-   */
-  public void setResidues(MolecularAssembly activeAssembly) {
-    List<String> resList = new ArrayList<>();
-    addListResidues(resList);
-
-    int counter = 1;
-    if (group.algorithm != 5) {
-      if (allStartResID > 0) {
-        List<Residue> residueList = new ArrayList<>();
-        Polymer[] polymers = activeAssembly.getChains();
-        for (Polymer polymer : polymers) {
-          List<Residue> residues = polymer.getResidues();
-          for (Residue residue : residues) {
-            Rotamer[] rotamers = residue.setRotamers(rotamerLibrary);
-            if (rotamers != null) {
-              int nrot = rotamers.length;
-              if (nrot == 1) {
-                RotamerLibrary.applyRotamer(residue, rotamers[0]);
-              }
-              if (counter >= allStartResID) {
-                residueList.add(residue);
-              }
-            } else if (!group.forceResidues.equalsIgnoreCase("none")) {
-              if (counter >= allStartResID
-                  && counter >= forceResiduesStart
-                  && counter <= forceResiduesEnd) {
-                residueList.add(residue);
-              }
-            }
-            counter++;
-          }
-        }
-        rotamerOptimization.setResidues(residueList);
-      } else if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
-        List<Residue> residueList = new ArrayList<>();
-        Polymer[] polymers = activeAssembly.getChains();
-        int n = 0;
-        for (String s : resList) {
-          Character chainID = s.charAt(0);
-          int i = Integer.parseInt(s.substring(1));
-          for (Polymer p : polymers) {
-            if (p.getChainID() == chainID) {
-              List<Residue> rs = p.getResidues();
-              for (Residue r : rs) {
-                if (r.getResidueNumber() == i) {
-                  residueList.add(r);
-                  Rotamer[] rotamers = r.setRotamers(rotamerLibrary);
-                  if (rotamers != null) {
-                    n++;
-                  }
-                }
-              }
-            }
-          }
-        }
-        rotamerOptimization.setResiduesIgnoreNull(residueList);
-        if (n < 1) {
-          return;
-        }
-      } else if (!residueGroup.chain.equalsIgnoreCase("-1")) {
-        rotamerOptimization.setResidues(residueGroup.chain, residueGroup.start, residueGroup.finish);
-      } else {
-        rotamerOptimization.setResidues(residueGroup.start, residueGroup.finish);
-      }
-    } else {
-      List<Residue> residueList = new ArrayList<>();
-      Polymer[] polymers = activeAssembly.getChains();
-
-      CompositeConfiguration properties = activeAssembly.getProperties();
-      boolean ignoreNA = properties.getBoolean("ignoreNA", false);
-
-      if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
-        int n = 0;
-        for (String s : resList) {
-          Character chainID = s.charAt(0);
-          int i = Integer.parseInt(s.substring(1));
-          for (Polymer p : polymers) {
-            if (p.getChainID() == chainID) {
-              List<Residue> rs = p.getResidues();
-              for (Residue r : rs) {
-                if (ignoreNA && r.getResidueType() == Residue.ResidueType.NA) {
-                  continue;
-                }
-                if (r.getResidueNumber() == i) {
-                  residueList.add(r);
-                  Rotamer[] rotamers = r.setRotamers(rotamerLibrary);
-                  if (rotamers != null) {
-                    n++;
-                  }
-                }
-              }
-            }
-          }
-        }
-        rotamerOptimization.setResiduesIgnoreNull(residueList);
-        if (n < 1) {
-          return;
-        }
-      } else {
-        for (Polymer p : polymers) {
-          List<Residue> rs = p.getResidues();
-          for (Residue r : rs) {
-            if (ignoreNA && r.getResidueType() == Residue.ResidueType.NA) {
-              continue;
-            }
-            Rotamer[] rotamers = r.setRotamers(rotamerLibrary);
-            if (rotamers != null) {
-              int nrot = rotamers.length;
-              if (nrot == 1) {
-                RotamerLibrary.applyRotamer(r, rotamers[0]);
-              } else if (nrot > 1) {
-                residueList.add(r);
-              }
-            }
-            counter++;
-          }
-        }
-
-        //            boolean ignoreNA = false;
-        //            String ignoreNAProp = System.getProperty("ignoreNA");
-        //            if (ignoreNAProp != null && ignoreNAProp.equalsIgnoreCase("true")) {
-        //                ignoreNA = true;
-        //            }
-        //            List<Residue> residueList = new ArrayList<>();
-        //            Polymer[] polymers = activeAssembly.getChains();
-        //            int nPolymers = polymers.length;
-        //            for (int p = 0; p < nPolymers; p++) {
-        //                Polymer polymer = polymers[p];
-        //                List<Residue> residues = polymer.getResidues();
-        //
-        //                System.out.print("\nresidues:\n");
-        //
-        //                int nResidues = residues.size();
-        //                for (int i = 0; i < nResidues; i++) {
-        //                    Residue residue = residues.get(i);
-        //
-        //                    System.out.print(residue+"\n");
-        //
-        //                    if (ignoreNA && residue.getResidueType() == ResidueType.NA) {
-        //                        continue;
-        //                    }
-        //                    Rotamer[] rotamers = residue.getRotamers(rotamerLibrary);
-        //                    if (rotamers != null) {
-        //                        int nrot = rotamers.length;
-        //                        if (nrot == 1) {
-        //                            RotamerLibrary.applyRotamer(residue, rotamers[0]);
-        //                        } else if (nrot > 1) {
-        //                            residueList.add(residue);
-        //                        }
-        //                    }
-        //                    counter++;
-        //                }
-      }
-      rotamerOptimization.setResidues(residueList);
-      rotamerOptimization.setBoxStart(boxStart);
-      if (residueGroup.finish > 0) {
-        rotamerOptimization.setBoxEnd(boxEnd);
-      }
-    }
-  }
-
-  /**
-   * Get the list of residues to optimization based on the "all", "start" and "finish" flags.
-   * <p>
-   * If the selected list of residues is empty, then all residues are returned.
-   *
-   * @param activeAssembly The MolecularAssembly to collect residues from.
-   * @return The list of Residues to optimize.
-   */
-  public List<Residue> getResidues(MolecularAssembly activeAssembly) {
-    List<Residue> allResidues = activeAssembly.getResidueList();
-    List<Residue> residueSelection = new ArrayList<>();
-
-    if (residueGroup.all > -1) {
-      int counter = residueGroup.all;
-      for (Residue residue : allResidues) {
-        if (residue.getResidueNumber() == counter) {
-          residueSelection.add(residue);
-          counter++;
-        }
-      }
-    } else if (residueGroup.start > -1) {
-      int counter = residueGroup.start;
-      for (Residue residue : allResidues) {
-        if (counter == residueGroup.finish + 1) {
-          break;
-        } else if (residue.getResidueNumber() == counter) {
-          residueSelection.add(residue);
-          counter++;
-        }
-      }
-    }
-
-    if (residueSelection.size() > 0) {
-      return residueSelection;
-    } else {
-      // Return all residues if the residueSelection is empty.
-      return allResidues;
-    }
-  }
-
-  /**
-   * This method sets the algorithm by default. If no parameters are given, the default algorithm
-   * value 0. When the default algorithm is 0, a specific algorithm number (1-5) needs to be
-   * assigned. This method assigns the default algorithm based on variation in input parameters
-   * (start, finish, all, chain, etc.) and then determines how many amino acids are to be optimized.
-   * If more than 100 amino acids are to be optimized, the algorithm is set to use box optimization.
-   * If fewer than 100 amino acids are to be optimized, the algorithm is set to use global
-   * optimization.
-   *
-   * @param activeAssembly The protein to be optimized.
-   * @return The value that the algorithm should be set to since no 1-5 value was assigned by the
-   *     user. Either set to 2-global or 5-box optimization.
-   */
-  private int setAlgorithm(MolecularAssembly activeAssembly) {
-
-    setStartAndEndDefault();
-
-    if (allStartResID > 0) {
-      Polymer[] polymers = activeAssembly.getChains();
-      int nResidues = 0;
-      for (Polymer polymer : polymers) {
-        List<Residue> residues = polymer.getResidues();
-        nResidues = residues.size() + nResidues;
-      }
-      if (nResidues > 100) {
-        group.algorithm = 5;
-      } else {
-        group.algorithm = 2;
-      }
-    } else if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
-      List<String> resList = new ArrayList<>();
-      addListResidues(resList);
-      if (resList.size() > 100) {
-        group.algorithm = 5;
-      } else {
-        group.algorithm = 2;
-      }
-    } else if (!residueGroup.chain.equalsIgnoreCase("-1")) {
-      group.algorithm = startFinishDifference();
-    } else if (residueGroup.start > 0 && residueGroup.finish > 0) {
-      group.algorithm = startFinishDifference();
-    }
-    return group.algorithm;
   }
 
   public double getApproximate() {
@@ -440,242 +270,83 @@ public class ManyBodyOptions {
   }
 
   public RotamerLibrary getRotamerLibrary() {
+    initRotamerLibrary();
     return rotamerLibrary;
   }
 
-  /**
-   * This method calculates the difference between the start and finish variables and it returns the
-   * algorithm that should be used by default. If more than 100 side-chains are to be optimized, the
-   * default algorithm is box optimization (algorithm = 5). If fewer than 100 residues are to be
-   * optimized, the default algorithm is global optimization (algorithm = 2).
-   *
-   * @return The default algorithm number.
-   */
-  private int startFinishDifference() {
-    if (residueGroup.finish - residueGroup.start > 100) {
-      return 5;
-    } else {
-      return 2;
+  private void initRotamerLibrary() {
+    if (rotamerLibrary == null) {
+      boolean useOrigCoordsRotamer = !group.noOriginal;
+      if (group.decompose) {
+        useOrigCoordsRotamer = true;
+      }
+      rotamerLibrary = new RotamerLibrary(
+          RotamerLibrary.ProteinLibrary.intToProteinLibrary(group.library),
+          useOrigCoordsRotamer);
     }
   }
 
-  /**
-   * This method sets the start and finish points by default. If no parameters are given as input,
-   * the default behavior is to begin the optimization at the first available amino acid and end the
-   * optimization at the last amino acid. The default algorithm (i.e. box versus global) depends on
-   * how many amino acids will be optimized (general cutoff of 100 amino acids).
-   */
-  private void setStartAndEndDefault() {
-    if (residueGroup.start < 0 && residueGroup.finish < 0 && residueGroup.all < 0) {
-      if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
-        allStartResID = -1;
-        boxStart = 0;
-        boxEnd = -1;
-      } else {
-        allStartResID = 1;
-        boxStart = residueGroup.start - 1;
-        boxEnd = residueGroup.finish - 1;
-      }
-    } else {
-      allStartResID = residueGroup.all;
-      boxStart = residueGroup.start - 1;
-      boxEnd = residueGroup.finish - 1;
-    }
-  }
 
   /** Set allStartResID, boxStart and boxEnd */
-  private void setSelection() {
-    // Chain, Residue and/or Box selections.
-    // Internal machinery indexed 0 to (n-1)
-    setStartAndEndDefault();
-
-    if (group.algorithm != 5) {
-      // Not Box optimization.
-      if (allStartResID < 1 && residueGroup.listResidues.equalsIgnoreCase("none")) {
-        if (residueGroup.finish < residueGroup.start || residueGroup.start < 0
-            || residueGroup.finish < 0) {
-          logger.warning(" FFX shutting down: no residues specified for optimization.");
-          return;
-        }
-      }
-    } else {
-      // Box optimization.
-      if (allStartResID > 0) {
-        // Internal machinery indexed 0 to (n-1)
-        boxStart = allStartResID - 1;
+  private void parseBoxSelection() {
+    // Parse the numBoxes flag.
+    String input = boxGroup.numBoxes;
+    Scanner boxNumInput = new java.util.Scanner(input);
+    boxNumInput.useDelimiter(",");
+    int inputLoopCounter = 0;
+    int[] numXYZBoxes = new int[3];
+    numXYZBoxes[0] = 3; // Default
+    while (inputLoopCounter < 3) {
+      if (boxNumInput.hasNextInt()) {
+        numXYZBoxes[inputLoopCounter] = boxNumInput.nextInt();
+        inputLoopCounter++;
+      } else if (boxNumInput.hasNextDouble()) {
+        numXYZBoxes[inputLoopCounter] = (int) Math.floor(boxNumInput.nextDouble());
+        inputLoopCounter++;
+        logger.info(" Double input to nB truncated to integer.");
+      } else if (boxNumInput.hasNext()) {
+        logger.info(" Non-numeric input to nB discarded");
+        boxNumInput.next();
       } else {
-        if (boxStart < 0 || (boxEnd > -1 && boxEnd < boxStart)) {
-          logger.warning(
-              " FFX shutting down: Invalid input for box selection: index begins at 1 (or start must be less than finish).");
-          return;
-        }
+        logger.info(
+            " Insufficient input to nB. Non-input values assumed either equal to X or default to 3");
+        break;
       }
     }
+    boxNumInput.close();
 
-    // Box optimization options.
-    numXYZBoxes = new int[3];
-    if (group.algorithm == 5) {
-      String input = boxGroup.numBoxes;
-      Scanner boxNumInput = new java.util.Scanner(input);
-      boxNumInput.useDelimiter(",");
-      int inputLoopCounter = 0;
-      numXYZBoxes[0] = 3; // Default
-      while (inputLoopCounter < numXYZBoxes.length) {
-        if (boxNumInput.hasNextInt()) {
-          numXYZBoxes[inputLoopCounter] = boxNumInput.nextInt();
-          inputLoopCounter++;
-        } else if (boxNumInput.hasNextDouble()) {
-          numXYZBoxes[inputLoopCounter] = (int) Math.floor(boxNumInput.nextDouble());
-          inputLoopCounter++;
-          logger.info(" Double input to nB truncated to integer.");
-        } else if (boxNumInput.hasNext()) {
-          logger.info(" Non-numeric input to nB discarded");
-          boxNumInput.next();
-        } else {
-          logger.info(
-              " Insufficient input to nB. Non-input values assumed either equal to X or default to 3");
-          break;
-        }
-      }
-      boxNumInput.close();
-      for (int i = inputLoopCounter; i < numXYZBoxes.length; i++) {
-        numXYZBoxes[i] = numXYZBoxes[0];
-      }
-      for (int i = 0; i < numXYZBoxes.length; i++) {
-        if (numXYZBoxes[i] == 0) {
-          numXYZBoxes[i] = 3;
-          logger.info(" Input of zero to nB reset to default of three.");
-        } else if (numXYZBoxes[i] < 0) {
-          numXYZBoxes[i] = -1 * numXYZBoxes[i];
-          logger.info(" Input of negative number to nB reset to positive number");
-        }
-      }
-    }
-  }
-
-  /** setForcedResidue. */
-  private void setForcedResidue() {
-    // Force residues.
-    forceResiduesStart = -1;
-    forceResiduesEnd = -1;
-
-    List<String> resList = new ArrayList<>();
-    if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
-      String[] tok = residueGroup.listResidues.split(",");
-      Collections.addAll(resList, tok);
+    // Initialize dimensions not provided.
+    for (int i = inputLoopCounter; i < 3; i++) {
+      numXYZBoxes[i] = numXYZBoxes[0];
     }
 
-    // Evaluate forced residues for the sliding window algorithm
-    if (group.algorithm == 4 && !group.forceResidues.equalsIgnoreCase("-1,-1")) {
-      String input = group.forceResidues;
-      Scanner frScan = new Scanner(input);
-      frScan.useDelimiter(",");
-      try {
-        if (!frScan.hasNextInt()) {
-          frScan.next(); // Discards extra input to indicate a negative value of frStart.
-        }
-        forceResiduesStart = frScan.nextInt();
-        forceResiduesEnd = frScan.nextInt();
-      } catch (Exception ex) {
-        logger.severe(
-            format(
-                " FFX shutting down: input to -fR could not be parsed as a pair of integers: %s",
-                input));
+    // Correct input errors.
+    int totalCount = 1;
+    for (int i = 0; i < 3; i++) {
+      if (numXYZBoxes[i] == 0) {
+        numXYZBoxes[i] = 3;
+        logger.info(" Input of 0 to nB reset to default of 3.");
+      } else if (numXYZBoxes[i] < 0) {
+        numXYZBoxes[i] = -1 * numXYZBoxes[i];
+        logger.info(" Input of negative number to nB reset to positive number");
       }
-      if (forceResiduesStart > forceResiduesEnd) {
-        logger.info(" Start of range higher than ending: start flipped with end.");
-        int temp = forceResiduesStart;
-        forceResiduesStart = forceResiduesEnd;
-        forceResiduesEnd = temp;
-      }
-      if (forceResiduesEnd < 1) {
-        logger.severe(
-            format(
-                " FFX shutting down: end range for -fR must be at least 1; input range %d to %d",
-                forceResiduesStart, forceResiduesEnd));
-      }
+      totalCount *= numXYZBoxes[i];
     }
 
-    if (group.algorithm != 5) {
-      if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
-        StringBuilder info = new StringBuilder("\n Evaluating rotamers for residues:\n");
-        for (String i : resList) {
-          info.append(format(" %s", i));
-        }
-        logger.info(info.toString());
-      } else if (allStartResID == -1) {
-        logger.info("\n Evaluating rotamers for residues " + residueGroup.start + " to "
-            + residueGroup.finish);
-      } else {
-        logger.info("\n Evaluating rotamers for all residues beginning at " + allStartResID);
-      }
-    } else {
-      if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
-        StringBuilder info = new StringBuilder("\n Evaluating rotamers for boxes with residues ");
-        for (String i : resList) {
-          info.append(format("%s, ", i));
-        }
-        logger.info(info.toString());
-      } else if (allStartResID == -1) {
-        logger.info("\n Evaluating rotamers for boxes " + (boxStart + 1) + " to " + (boxEnd + 1));
-      } else {
-        logger.info("\n Evaluating rotamers for all boxes beginning at " + (boxStart + 1));
-      }
-    }
-  }
+    boxGroup.numXYZBoxes = numXYZBoxes;
 
-  /**
-   * addListResidues.
-   *
-   * @param resList a {@link java.util.List} object.
-   */
-  private void addListResidues(List<String> resList) {
-    if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
-      String[] tok = residueGroup.listResidues.split(",");
-      Collections.addAll(resList, tok);
+    if (boxGroup.initialBox < 0) {
+      boxGroup.initialBox = 0;
     }
+    if (boxGroup.finalBox < 0 || boxGroup.finalBox > totalCount) {
+      boxGroup.finalBox = totalCount;
+    }
+
   }
 
   /** Sets the standard values for properties in rotamer optimization. */
-  private void setRotOptProperties() {
-    // General
-    rotamerOptimization.setTwoBodyCutoff(energyGroup.twoBodyCutoff);
-    rotamerOptimization.setThreeBodyCutoff(energyGroup.threeBodyCutoff);
-    rotamerOptimization.setThreeBodyEnergy(energyGroup.threeBody);
-    rotamerOptimization.setUseGoldstein(!group.dee);
-    rotamerOptimization.setRevert(group.revert);
-    rotamerOptimization.setPruning(energyGroup.prune);
-    rotamerOptimization.setDistanceCutoff(energyGroup.cutoff);
-    boolean monteCarloBool = false;
-    if (group.monteCarlo > 1) {
-      monteCarloBool = true;
-    }
-    rotamerOptimization.setMonteCarlo(monteCarloBool, group.monteCarlo);
+  private void setRotOptProperties(Algorithm algorithm) {
 
-    File energyRestartFile = null;
-    if (!group.energyRestart.equalsIgnoreCase("none")) {
-      energyRestartFile = new File(group.energyRestart);
-      rotamerOptimization.setEnergyRestartFile(energyRestartFile);
-    }
-
-    // Window
-    if (group.algorithm == 4) {
-      rotamerOptimization.setWindowSize(windowGroup.window);
-      rotamerOptimization.setIncrement(windowGroup.increment);
-      rotamerOptimization.setForcedResidues(forceResiduesStart, forceResiduesEnd);
-    }
-
-    // Box
-    if (group.algorithm == 5) {
-      if (boxGroup.approxBoxLength < 0) {
-        logger.info(" Negative box length value changed to -1 * input.");
-        boxGroup.approxBoxLength *= -1;
-      }
-      rotamerOptimization.setBoxBorderSize(boxGroup.boxBorderSize);
-      rotamerOptimization.setApproxBoxLength(boxGroup.approxBoxLength);
-      rotamerOptimization.setNumXYZBoxes(numXYZBoxes);
-      rotamerOptimization.setBoxInclusionCriterion(boxGroup.boxInclusionCriterion);
-    }
   }
 
   public void setAlgorithm(int algorithm) {
@@ -812,21 +483,6 @@ public class ManyBodyOptions {
 
   public void setPrune(int prune) {
     energyGroup.prune = prune;
-  }
-
-  /**
-   * Optimize all residues beginning from the passed value (overrides other options). for box
-   * optimization, optimizes all boxes beginning from the passed index. Default is to optimize all
-   * residues.
-   *
-   * @return Returns the residue / box to start from.
-   */
-  public int getAll() {
-    return residueGroup.all;
-  }
-
-  public void setAll(int all) {
-    residueGroup.all = all;
   }
 
   /**
@@ -989,20 +645,6 @@ public class ManyBodyOptions {
   }
 
   /**
-   * Force residues in this range to be considered for sliding window radii, regardless of whether
-   * they lack rotamers.
-   *
-   * @return Returns forced residues.
-   */
-  public String getForceResidues() {
-    return group.forceResidues;
-  }
-
-  public void setForceResidues(String forceResidues) {
-    group.forceResidues = forceResidues;
-  }
-
-  /**
    * The number of boxes along X, Y, and Z (default: '3,3,3').
    *
    * @return Returns the number of boxes.
@@ -1094,13 +736,13 @@ public class ManyBodyOptions {
         description = "Ponder and Richards (1) or Richardson (2) rotamer library.")
     private int library;
 
-    /** -Ln or --libraryNucleic Choose a nucleic acid library: currently only Richardson available. */
-    @Option(
-        names = {"--Ln", "--libraryNucleic"},
-        paramLabel = "Richardson",
-        defaultValue = "Richardson",
-        description = "Nucleic acid library to select: [Richardson]")
-    private String naLibraryName;
+    /** -nl or --nucleicLibrary Choose a nucleic acid library: currently only Richardson available. */
+    // @Option(
+    //    names = {"--nl", "--nucleiclibrary"},
+    //    paramLabel = "Richardson",
+    //    defaultValue = "Richardson",
+    //    description = "Nucleic acid library to select: [Richardson]")
+    private String naLibraryName = "Richardson";
 
     /** --dee or --deadEnd Use dead-end elimination criteria instead of Goldstein criteria. */
     @Option(
@@ -1129,7 +771,7 @@ public class ManyBodyOptions {
             "Load energy restart file from a previous run (requires that all parameters are the same).")
     private String energyRestart;
 
-    /** -o or --noOriginal Do not include starting coordinates as their own rotamer. */
+    /** -O or --noOriginal Do not include starting coordinates as their own rotamer. */
     @Option(
         names = {"-O", "--noOriginal"},
         defaultValue = "false",
@@ -1175,24 +817,12 @@ public class ManyBodyOptions {
     //      description = "Save eliminated singles and eliminated pairs to a text file.")
     private boolean saveOutput;
 
-    /**
-     * -fR or --forceResidues Force residues in this range to be considered for sliding window radii,
-     * regardless of whether they lack rotamers.
-     */
-    @Option(
-        names = {"--fR", "--forceResidues"},
-        paramLabel = "-1,-1",
-        defaultValue = "-1,-1",
-        description =
-            "Force residues in this range to be considered for sliding window radii, regardless of whether they lack rotamers.")
-    private String forceResidues;
-
   }
 
   /**
    * Collection of ManyBody Box Optimization Options.
    */
-  private static class ManyBodyBoxOptionGroup {
+  private static class BoxOptionGroup {
 
     /** -nB or --numBoxes Specify number of boxes along X, Y, and Z (default: '3,3,3'). */
     @Option(
@@ -1201,6 +831,11 @@ public class ManyBodyOptions {
         defaultValue = "3,3,3",
         description = "Specify number of boxes along X, Y, and Z (default: 3,3,3)")
     private String numBoxes;
+
+    /**
+     * Result of parsing numBoxes flag.
+     */
+    private int[] numXYZBoxes;
 
     /** -bB or --boxBorderSize Extent of overlap between optimization boxes (default: 0.0 A). */
     @Option(
@@ -1233,12 +868,33 @@ public class ManyBodyOptions {
         description =
             "Criterion to use for adding a residue to a box: (1) uses C alpha only (N1/9 for nucleic acids), (2) uses any atom, and (3) uses any rotamer")
     private int boxInclusionCriterion;
+
+    /**
+     * --iB or --initialBox Initial box to optimize.
+     */
+    @Option(
+        names = {"--iB", "--initialBox"},
+        paramLabel = "",
+        defaultValue = "0",
+        description = "Initial box to optimize.")
+    private int initialBox;
+
+    /**
+     * --bf or --boxFinal Final box to optimize.
+     */
+    @Option(
+        names = {"--fB", "--finalBox"},
+        paramLabel = "",
+        defaultValue = "2147483647", // Integer.MAX_VALUE
+        description = "Final box to optimize.")
+    private int finalBox;
+
   }
 
   /**
    * Collection of ManyBody Window Optimization Options.
    */
-  private static class ManyBodyWindowOptionGroup {
+  private static class WindowOptionGroup {
 
     /** --window Size of the sliding window with respect to adjacent residues (default = 7). */
     @Option(
@@ -1261,7 +917,7 @@ public class ManyBodyOptions {
   /**
    * Collection of ManyBody Energy Optimization Options.
    */
-  private static class ManyBodyEnergyOptionGroup {
+  private static class EnergyOptionGroup {
 
     /** --radius The sliding window and box cutoff radius (Angstroms). */
     @Option(
@@ -1329,59 +985,42 @@ public class ManyBodyOptions {
   /**
    * Collection of ManyBody Residue Selection Options.
    */
-  private static class ManyBodyResidueOptionGroup {
+  private static class ResidueOptionGroup {
 
     /** --ch or --chain Single character chain ID of the residues to optimize. */
     @Option(
         names = {"--ch", "--chain"},
-        paramLabel = "-1",
+        paramLabel = "<A>",
         defaultValue = "-1",
-        description = "Single character chain ID of the residues to optimize.")
+        description = "Include only specified chain ID (default: all chains).")
     private String chain;
 
     /**
-     * -s or --start Starting residue to perform the optimization on (-1 exits). For box
-     * optimization, first box to optimize.
+     * --sR or --start Starting residue to perform the optimization on.
      */
     @Option(
-        names = {"-s", "--start"},
-        paramLabel = "-1",
-        defaultValue = "-1",
-        description =
-            "Starting residue to perform the optimization on (-1 exits). For box optimization, first box to optimize.")
+        names = {"--sR", "--start"},
+        paramLabel = "",
+        defaultValue = "-2147483648", // Integer.MIN_VALUE
+        description = "Starting residue to optimize (default: all residues).")
     private int start;
 
     /**
-     * --fi or --final Final residue to perform the optimization on (-1 exits). For box optimization,
-     * final box to optimize.
+     * --fi or --final Final residue to perform the optimization.
      */
     @Option(
-        names = {"--fi", "--final"},
-        paramLabel = "-1",
-        defaultValue = "-1",
-        description =
-            "Final residue to perform the optimization on (-1 exits). For box optimization, final box to optimize.")
+        names = {"--fR", "--final"},
+        paramLabel = "<final>",
+        defaultValue = "2147483647", // Integer.MAX_VALUE
+        description = "Final residue to optimize (default: all residues).")
     private int finish;
-
-    /**
-     * -x or --all Optimize all residues beginning from the passed value (overrides other options);
-     * for box optimization, optimizes all boxes beginning from the passed index. Default is to
-     * optimize all residues.
-     */
-    @Option(
-        names = {"-x", "--all"},
-        paramLabel = "-1",
-        defaultValue = "-1",
-        description =
-            "Optimize all residues beginning from the passed value (overrides other options); for box optimization, optimizes all boxes beginning from the passed index.")
-    private int all;
 
     /** --lR or --listResidues Choose a list of individual residues to optimize (eg. A11,A24,B40). */
     @Option(
         names = {"--lR", "--listResidues"},
-        paramLabel = "none",
+        paramLabel = "<list>",
         defaultValue = "none",
-        description = "Choose a list of individual residues to optimize (eg. A11,A24,B40).")
+        description = "Select a list of residues to optimize (eg. A11,A24,B40).")
     private String listResidues;
 
   }

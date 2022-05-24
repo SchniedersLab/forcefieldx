@@ -41,9 +41,14 @@ import static ffx.crystal.Crystal.mod;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.MatrixMath.mat3Inverse;
 import static ffx.numerics.math.MatrixMath.mat4Mat4;
+import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.*;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.random;
 import static org.apache.commons.math3.util.FastMath.rint;
+import static org.apache.commons.math3.util.FastMath.sin;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * The SymOp class defines the rotation and translation of a single symmetry operator.
@@ -295,7 +300,7 @@ public class SymOp {
   private static final int ZZ = 2;
 
   /**
-   * The SymOp constructor.
+   * The SymOp constructor using a rotation matrix and translation vector.
    *
    * @param rot The rotation matrix.
    * @param tr The translation vector.
@@ -307,7 +312,7 @@ public class SymOp {
 
 
   /**
-   * The SymOp constructor.
+   * The SymOp constructor using a 4x4 matrix.
    *
    * @param m The rotation matrix and translation vector as a 4x4 matrix.
    */
@@ -327,21 +332,6 @@ public class SymOp {
     tr[0] = m[0][3] / m[3][3];
     tr[1] = m[1][3] / m[3][3];
     tr[2] = m[2][3] / m[3][3];
-  }
-
-  /**
-   * Generate a random Cartesian Symmetry Operator.
-   *
-   * <p>The random rotation matrix is derived from: Arvo, James (1992), "Fast random rotation
-   * matrices", in David Kirk, Graphics Gems III, San Diego: Academic Press Professional, pp.
-   * 117–120, ISBN 978-0-12-409671-4
-   *
-   * @param scalar The range of translations will be from -scalar/2 .. scalar/2.
-   * @return A Cartesian SymOp with a random rotation and translation.
-   */
-  public static SymOp randomSymOpFactory(double scalar) {
-    double[] tr = {scalar * (random() - 0.5), scalar * (random() - 0.5), scalar * (random() - 0.5)};
-    return randomSymOpFactory(tr);
   }
 
   /**
@@ -384,8 +374,8 @@ public class SymOp {
   }
 
   /**
-   * Return the combined SymOp that is equivalent to first applying symOp1 and then SymOp2.
-   * Note: Applied as rotation then translation.
+   * Return the combined SymOp that is equivalent to first applying symOp1 and then SymOp2. Note:
+   * Applied as rotation then translation.
    *
    * <code>X' = S_2(S_1(X))</code>
    * <code>X' = S_combined(X)</code>
@@ -413,14 +403,14 @@ public class SymOp {
    * @param symOp The cartesian symmetry operator.
    */
   public static void applyCartSymOp(
-          int n,
-          double[] x,
-          double[] y,
-          double[] z,
-          double[] mateX,
-          double[] mateY,
-          double[] mateZ,
-          SymOp symOp) {
+      int n,
+      double[] x,
+      double[] y,
+      double[] z,
+      double[] mateX,
+      double[] mateY,
+      double[] mateZ,
+      SymOp symOp) {
     if (x == null || y == null || z == null) {
       return;
     }
@@ -464,29 +454,74 @@ public class SymOp {
   }
 
   /**
-   * Apply a  cartesian symmetry operator to one set of coordinates.
+   * Apply a cartesian symmetry operator to an array of coordinates.
    *
    * @param xyz Input  cartesian coordinates.
    * @param mate Symmetry mate  cartesian coordinates.
    * @param symOp The cartesian symmetry operator.
    */
   public static void applyCartesianSymOp(double[] xyz, double[] mate, SymOp symOp) {
-    double[][] rot = symOp.rot;
-    double[] trans = symOp.tr;
+    applyCartesianSymOp(xyz, mate, symOp, null);
+  }
+
+  /**
+   * Apply a cartesian symmetry operator to an array of coordinates.
+   *
+   * @param xyz Input  cartesian coordinates.
+   * @param mate Symmetry mate  cartesian coordinates.
+   * @param symOp The cartesian symmetry operator.
+   * @param mask Only apply the SymOp if the per atom mask is true.
+   */
+  public static void applyCartesianSymOp(double[] xyz, double[] mate, SymOp symOp, boolean[] mask) {
+    var rot = symOp.rot;
+    var trans = symOp.tr;
 
     assert (xyz.length % 3 == 0);
     assert (xyz.length == mate.length);
-
     int len = xyz.length / 3;
-    for (int i = 0; i < len; i++) {
-      int index = i * 3;
-      double xc = xyz[index + XX];
-      double yc = xyz[index + YY];
-      double zc = xyz[index + ZZ];
-      // Apply Symmetry Operator.
-      mate[index + XX] = rot[0][0] * xc + rot[0][1] * yc + rot[0][2] * zc + trans[0];
-      mate[index + YY] = rot[1][0] * xc + rot[1][1] * yc + rot[1][2] * zc + trans[1];
-      mate[index + ZZ] = rot[2][0] * xc + rot[2][1] * yc + rot[2][2] * zc + trans[2];
+
+    // Load the SymOp into local variables.
+    var rot00 = rot[0][0];
+    var rot10 = rot[1][0];
+    var rot20 = rot[2][0];
+    var rot01 = rot[0][1];
+    var rot11 = rot[1][1];
+    var rot21 = rot[2][1];
+    var rot02 = rot[0][2];
+    var rot12 = rot[1][2];
+    var rot22 = rot[2][2];
+    var tx = trans[0];
+    var ty = trans[1];
+    var tz = trans[2];
+
+    if (mask == null) {
+      for (int i = 0; i < len; i++) {
+        int index = i * 3;
+        var xc = xyz[index + XX];
+        var yc = xyz[index + YY];
+        var zc = xyz[index + ZZ];
+        // Apply Symmetry Operator.
+        mate[index + XX] = rot00 * xc + rot01 * yc + rot02 * zc + tx;
+        mate[index + YY] = rot10 * xc + rot11 * yc + rot12 * zc + ty;
+        mate[index + ZZ] = rot20 * xc + rot21 * yc + rot22 * zc + tz;
+      }
+    } else {
+      for (int i = 0; i < len; i++) {
+        int index = i * 3;
+        var xc = xyz[index + XX];
+        var yc = xyz[index + YY];
+        var zc = xyz[index + ZZ];
+        if (mask[i]) {
+          // Apply Symmetry Operator.
+          mate[index + XX] = rot00 * xc + rot01 * yc + rot02 * zc + tx;
+          mate[index + YY] = rot10 * xc + rot11 * yc + rot12 * zc + ty;
+          mate[index + ZZ] = rot20 * xc + rot21 * yc + rot22 * zc + tz;
+        } else {
+          mate[index + XX] = xc;
+          mate[index + YY] = yc;
+          mate[index + ZZ] = zc;
+        }
+      }
     }
   }
 
@@ -498,11 +533,11 @@ public class SymOp {
    * @param symOp The fractional symmetry operator.
    */
   public static void applyFracSymOp(double[] xyz, double[] mate, SymOp symOp) {
-    double[][] rot = symOp.rot;
-    double[] trans = symOp.tr;
-    double xf = xyz[0];
-    double yf = xyz[1];
-    double zf = xyz[2];
+    var rot = symOp.rot;
+    var trans = symOp.tr;
+    var xf = xyz[0];
+    var yf = xyz[1];
+    var zf = xyz[2];
     // Apply Symmetry Operator.
     mate[0] = rot[0][0] * xf + rot[0][1] * yf + rot[0][2] * zf + trans[0];
     mate[1] = rot[1][0] * xf + rot[1][1] * yf + rot[1][2] * zf + trans[1];
@@ -522,16 +557,16 @@ public class SymOp {
    * @param nz number of unit cell translations
    */
   public static void applySymOp(int h, int k, int l, int[] mate, SymOp symOp, int nx, int ny,
-                                int nz) {
-    double[][] rot = symOp.rot;
-    double[] trans = symOp.tr;
+      int nz) {
+    var rot = symOp.rot;
+    var trans = symOp.tr;
     // Apply Symmetry Operator.
     mate[0] =
-            (int) rot[0][0] * h + (int) rot[0][1] * k + (int) rot[0][2] * l + (int) rint(nx * trans[0]);
+        (int) rot[0][0] * h + (int) rot[0][1] * k + (int) rot[0][2] * l + (int) rint(nx * trans[0]);
     mate[1] =
-            (int) rot[1][0] * h + (int) rot[1][1] * k + (int) rot[1][2] * l + (int) rint(ny * trans[1]);
+        (int) rot[1][0] * h + (int) rot[1][1] * k + (int) rot[1][2] * l + (int) rint(ny * trans[1]);
     mate[2] =
-            (int) rot[2][0] * h + (int) rot[2][1] * k + (int) rot[2][2] * l + (int) rint(nz * trans[2]);
+        (int) rot[2][0] * h + (int) rot[2][1] * k + (int) rot[2][2] * l + (int) rint(nz * trans[2]);
     mate[0] = mod(mate[0], nx);
     mate[1] = mod(mate[1], ny);
     mate[2] = mod(mate[2], nz);
@@ -545,7 +580,7 @@ public class SymOp {
    * @param symOp The symmetry operator.
    */
   public static void applySymRot(HKL hkl, HKL mate, SymOp symOp) {
-    double[][] rot = symOp.rot;
+    var rot = symOp.rot;
     double h = hkl.h();
     double k = hkl.k();
     double l = hkl.l();
@@ -567,29 +602,64 @@ public class SymOp {
    * @param symOp The fractional symmetry operator.
    */
   public static void applyCartesianSymRot(double[] xyz, double[] mate, SymOp symOp) {
+    applyCartesianSymRot(xyz, mate, symOp, null);
+  }
+
+  /**
+   * Apply a Cartesian symmetry rotation to an array of Cartesian coordinates. The length of xyz must
+   * be divisible by 3 and mate must have the same length.
+   *
+   * @param xyz Input cartesian x, y, z-coordinates.
+   * @param mate Output cartesian x, y, z-coordinates.
+   * @param symOp The fractional symmetry operator.
+   * @param mask Only apply the SymOp if the per atom mask is true.
+   */
+  public static void applyCartesianSymRot(double[] xyz, double[] mate, SymOp symOp, boolean[] mask) {
     int l = xyz.length;
+    int n = l / 3;
     assert (l % 3 == 0);
     assert (mate.length == l);
-    double[][] rot = symOp.rot;
-    final double rot00 = rot[0][0];
-    final double rot10 = rot[1][0];
-    final double rot20 = rot[2][0];
-    final double rot01 = rot[0][1];
-    final double rot11 = rot[1][1];
-    final double rot21 = rot[2][1];
-    final double rot02 = rot[0][2];
-    final double rot12 = rot[1][2];
-    final double rot22 = rot[2][2];
-    int n = l / 3;
-    for (int i = 0; i < n; i++) {
-      int j = i * 3;
-      double xi = xyz[j];
-      double yi = xyz[j + 1];
-      double zi = xyz[j + 2];
-      // Apply Symmetry Operator.
-      mate[j] = rot00 * xi + rot01 * yi + rot02 * zi;
-      mate[j + 1] = rot10 * xi + rot11 * yi + rot12 * zi;
-      mate[j + 2] = rot20 * xi + rot21 * yi + rot22 * zi;
+
+    // Load the rotation matrix
+    var rot = symOp.rot;
+    var rot00 = rot[0][0];
+    var rot10 = rot[1][0];
+    var rot20 = rot[2][0];
+    var rot01 = rot[0][1];
+    var rot11 = rot[1][1];
+    var rot21 = rot[2][1];
+    var rot02 = rot[0][2];
+    var rot12 = rot[1][2];
+    var rot22 = rot[2][2];
+
+    if (mask == null) {
+      for (int i = 0; i < n; i++) {
+        int index = i * 3;
+        var xi = xyz[index + XX];
+        var yi = xyz[index + YY];
+        var zi = xyz[index + ZZ];
+        // Apply Symmetry Operator.
+        mate[index + XX] = rot00 * xi + rot01 * yi + rot02 * zi;
+        mate[index + YY] = rot10 * xi + rot11 * yi + rot12 * zi;
+        mate[index + ZZ] = rot20 * xi + rot21 * yi + rot22 * zi;
+      }
+    } else {
+      for (int i = 0; i < n; i++) {
+        int index = i * 3;
+        var xi = xyz[index + XX];
+        var yi = xyz[index + YY];
+        var zi = xyz[index + ZZ];
+        if (mask[i]) {
+          // Apply Symmetry Operator.
+          mate[index + XX] = rot00 * xi + rot01 * yi + rot02 * zi;
+          mate[index + YY] = rot10 * xi + rot11 * yi + rot12 * zi;
+          mate[index + ZZ] = rot20 * xi + rot21 * yi + rot22 * zi;
+        } else {
+          mate[index + XX] = xi;
+          mate[index + YY] = yi;
+          mate[index + ZZ] = zi;
+        }
+      }
     }
   }
 
@@ -624,7 +694,39 @@ public class SymOp {
   public static SymOp invertSymOp(SymOp symOp) {
     var tr = symOp.tr;
     var rot = symOp.rot;
-    return new SymOp(mat3Inverse(rot), new double[] {-dot(tr, rot[0]),-dot(tr, rot[1]),-dot(tr, rot[2])});
+    var inv = mat3Inverse(rot);
+    return new SymOp(inv,
+        new double[] {-dot(inv[0], tr), -dot(inv[1], tr), -dot(inv[2], tr)});
+  }
+
+  /**
+   * Create a SymOp from an input String.
+   *
+   * @param s Input <code>String</code> containing 12 white-space delimited double values.
+   * @return The SymOp.
+   */
+  public static SymOp parse(String s) {
+    String[] tokens = s.split(" +");
+    if (tokens.length < 12) {
+      return null;
+    }
+    SymOp symOp = new SymOp(new double[][] {
+        {parseDouble(tokens[0]), parseDouble(tokens[1]), parseDouble(tokens[2])},
+        {parseDouble(tokens[3]), parseDouble(tokens[4]), parseDouble(tokens[5])},
+        {parseDouble(tokens[6]), parseDouble(tokens[7]), parseDouble(tokens[8])}},
+        new double[] {parseDouble(tokens[9]), parseDouble(tokens[10]), parseDouble(tokens[11])});
+    return symOp;
+  }
+
+  /**
+   * Generate a random Cartesian Symmetry Operator.
+   *
+   * @param scalar The range of translations will be from -scalar/2 .. scalar/2.
+   * @return A Cartesian SymOp with a random rotation and translation.
+   */
+  public static SymOp randomSymOpFactory(double scalar) {
+    double[] tr = {scalar * (random() - 0.5), scalar * (random() - 0.5), scalar * (random() - 0.5)};
+    return randomSymOpFactory(tr);
   }
 
   /**

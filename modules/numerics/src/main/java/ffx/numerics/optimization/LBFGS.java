@@ -314,7 +314,6 @@ public class LBFGS {
       if (info[0] == LineSearchResult.BadIntpln || info[0] == LineSearchResult.IntplnErr) {
         nErrors++;
         if (nErrors >= maxErrors) {
-          logger.log(Level.OFF, " Algorithm failure: bad interpolation.");
           done = true;
         }
       } else {
