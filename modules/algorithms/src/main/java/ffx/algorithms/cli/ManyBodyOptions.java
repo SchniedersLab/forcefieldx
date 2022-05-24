@@ -110,13 +110,10 @@ public class ManyBodyOptions {
       RotamerOptimization rotamerOptimization, MolecularAssembly activeAssembly) {
     this.rotamerOptimization = rotamerOptimization;
 
-    // Make sure the rotamer library is initialized.
-    initRotamerLibrary();
-    rotamerOptimization.setRotamerLibrary(rotamerLibrary);
-
     // Collect the residues to optimize.
     List<Residue> residues = collectResidues(activeAssembly);
     rotamerOptimization.setResidues(residues);
+    rotamerOptimization.setRotamerLibrary(rotamerLibrary);
 
     // If the user has not selected an algorithm, it will be chosen based on the number of residues.
     Algorithm algorithm = getAlgorithm(residues.size());
@@ -169,8 +166,8 @@ public class ManyBodyOptions {
    */
   public List<Residue> collectResidues(MolecularAssembly activeAssembly) {
 
-    // Make sure the RotamerLibrary has been initialized.
-    initRotamerLibrary();
+    // Force re-initialization RotamerLibrary prior to collecting residues and rotamers.
+    initRotamerLibrary(true);
 
     // First, interpret the residueGroup.listResidues flag if its set.
     if (!residueGroup.listResidues.equalsIgnoreCase("none")) {
@@ -269,13 +266,13 @@ public class ManyBodyOptions {
     return rotamerOptimization.getRestartFile();
   }
 
-  public RotamerLibrary getRotamerLibrary() {
-    initRotamerLibrary();
+  public RotamerLibrary getRotamerLibrary(boolean reinit) {
+    initRotamerLibrary(reinit);
     return rotamerLibrary;
   }
 
-  private void initRotamerLibrary() {
-    if (rotamerLibrary == null) {
+  private void initRotamerLibrary(boolean reinit) {
+    if (rotamerLibrary == null || reinit) {
       boolean useOrigCoordsRotamer = !group.noOriginal;
       if (group.decompose) {
         useOrigCoordsRotamer = true;
