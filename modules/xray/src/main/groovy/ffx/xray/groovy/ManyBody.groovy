@@ -154,7 +154,7 @@ class ManyBody extends AlgorithmsScript {
     }
 
     // Collect residues to optimize.
-    List<Residue> residues = manyBody.getResidues(activeAssembly);
+    List<Residue> residues = manyBody.collectResidues(activeAssembly);
     if (residues == null || residues.isEmpty()) {
       logger.info(" There are no residues in the active system to optimize.")
       return this
@@ -184,7 +184,7 @@ class ManyBody extends AlgorithmsScript {
     List<Residue> residueList = rotamerOptimization.getResidues()
     RotamerLibrary.measureRotamers(residueList, false)
 
-    rotamerOptimization.optimize(manyBody.getAlgorithm())
+    rotamerOptimization.optimize(manyBody.getAlgorithm(residueList.size()))
 
     int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
     boolean isTitrating = false
