@@ -65,7 +65,7 @@ import static org.apache.commons.io.FilenameUtils.getFullPath
  * <br>
  * Usage:
  * <br>
- * ffxc test.SuperposeCrystals &lt;filename&gt &lt;filename&gt;
+ * ffxc test.SuperposeCrystals &lt;filename&gt; &lt;filename&gt;
  */
 @Command(description = " Determine the RMSD for crystal polymorphs using the Progressive Alignment of Crystals (PAC) algorithm.",
     name = "ffxc SuperposeCrystals")

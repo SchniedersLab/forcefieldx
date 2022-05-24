@@ -92,6 +92,12 @@ public class MergeFilter extends SystemFilter {
 
   /** {@inheritDoc} */
   @Override
+  public boolean readNext(boolean resetPosition, boolean print, boolean parse) {
+    return false;
+  }
+
+  /** {@inheritDoc} */
+  @Override
   public boolean readNext() {
     return readNext(false);
   }
