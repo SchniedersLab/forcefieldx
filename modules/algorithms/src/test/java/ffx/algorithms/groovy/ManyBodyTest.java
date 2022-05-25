@@ -159,13 +159,16 @@ public class ManyBodyTest extends AlgorithmsTest {
 
   /**
    * Tests ManyBody.groovy and RotamerOptimization.java by running a monte carlo optimization
-   * simulation on a small pdb file. Elimination criteria are not used during this test. A monte
-   * carlo search is done on the permuatations the protein experience.
+   * simulation on a small pdb file. Elimination criteria are not used during this test. A Monte
+   * Carlo search is done on the permutations.
    */
   @Test
   public void testManyBodyMonteCarlo() {
 
+    // These properties will be cleared automatically after the test.
     System.setProperty("polarization", "direct");
+    System.setProperty("manybody-testing", "true");
+    System.setProperty("manybody-testing-mc", "true");
 
     // Set-up the input arguments for the script.
     String[] args = {
@@ -182,9 +185,6 @@ public class ManyBodyTest extends AlgorithmsTest {
     // Evaluate the script.
     ManyBody manyBody = new ManyBody(binding);
     algorithmsScript = manyBody;
-    manyBody.setTesting(true);
-    manyBody.setMonteCarloTesting(true);
-
     manyBody.run();
 
     double expectedTotalPotential = -205.32717394768866;

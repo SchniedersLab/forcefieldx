@@ -78,8 +78,6 @@ class ManyBody extends AlgorithmsScript {
   private String filename
 
   ForceFieldEnergy potentialEnergy
-  boolean testing = false
-  boolean monteCarloTesting = false
   TitrationManyBody titrationManyBody
 
   /**
@@ -125,6 +123,8 @@ class ManyBody extends AlgorithmsScript {
     }
 
     CompositeConfiguration properties = activeAssembly.getProperties()
+
+    // Application of rotamers uses side-chain atom naming from the PDB.
     if (properties.getBoolean("standardizeAtomNames", false)) {
       renameAtomsToPDBStandard(activeAssembly)
     }
@@ -160,17 +160,6 @@ class ManyBody extends AlgorithmsScript {
     RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,
         potentialEnergy, algorithmListener)
 
-    // TODO: Handle testing flags more elegantly.
-    // Apply testing flags.
-    testing = getTesting()
-    if (testing) {
-      rotamerOptimization.turnRotamerSingleEliminationOff()
-      rotamerOptimization.turnRotamerPairEliminationOff()
-    }
-    if (monteCarloTesting) {
-      rotamerOptimization.setMonteCarloTesting(true)
-    }
-
     manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
     // rotamerOptimization.getResidues() returns a cached version of
     // manyBodyOptions.collectResidues(activeAssembly)
@@ -192,7 +181,7 @@ class ManyBody extends AlgorithmsScript {
       isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
     }
 
-    // Start-up Parallel Java MPI communication.
+    // Log the final result on rank 0.
     int rank = Comm.world().rank()
     if (rank == 0) {
       logger.info(" Final Minimum Energy")
@@ -251,28 +240,4 @@ class ManyBody extends AlgorithmsScript {
     return potentials
   }
 
-  /**
-   * Set method for the testing boolean. When true, the testing boolean will shut off all elimination criteria forcing either a monte carlo or brute force search over all permutations.
-   * @param testing A boolean flag that turns off elimination criteria for testing purposes.
-   */
-  void setTesting(boolean testing) {
-    this.testing = testing
-  }
-
-  /**
-   * Get method for the testing boolean. When true, the testing boolean will shut off all elimination criteria forcing either a monte carlo or brute force search over all permutations.
-   * @return testing A boolean flag that turns off elimination criteria for testing purposes.
-   */
-  boolean getTesting() {
-    return testing
-  }
-
-  /**
-   * Set to true when testing the monte carlo rotamer optimization algorithm. True will trigger the "set seed"
-   * functionality of the pseudo-random number generator in the RotamerOptimization.java class to create a deterministic monte carlo algorithm.
-   * @param bool True ONLY when a deterministic monte carlo approach is desired. False in all other cases.
-   */
-  void setMonteCarloTesting(boolean bool) {
-    this.monteCarloTesting = bool
-  }
 }

@@ -321,8 +321,6 @@ public class RotamerOptimization implements Terminatable {
   private double superpositionThreshold = 0.25;
   /** Flag to indicate computation of a many-body expansion for original coordinates. */
   private boolean decomposeOriginal = false;
-  /** Use original side-chain coordinates as a rotamer for each residue. */
-  private boolean addOrigRot = true;
   /** Flag to indicate use of MC optimization. */
   private boolean monteCarlo = false;
   /** Number of MC optimization steps. */
@@ -425,58 +423,40 @@ public class RotamerOptimization implements Terminatable {
       twoBodyCutoffDist = FALLBACK_TWO_BODY_CUTOFF;
     }
 
-    // Process relevant system keys.
-    String undo = properties.getString("ro-undo");
-    String direction = properties.getString("ro-direction");
-    String increment = properties.getString("ro-increment");
-    String goldstein = properties.getString("ro-goldstein");
-    String superpositionThreshold = properties.getString("ro-superpositionThreshold");
-    String ensembleNumber = properties.getString("ro-ensembleNumber");
-    String ensembleEnergy = properties.getString("ro-ensembleEnergy");
-    String ensembleBuffer = properties.getString("ro-ensembleBuffer");
-    String threeBodyCutoffDist = properties.getString("ro-threeBodyCutoffDist");
-    String nucleicPruningFactor = properties.getString("ro-nucleicPruningFactor");
-    String nucleicCorrectionThreshold = properties.getString("ro-nucleicCorrectionThreshold");
-    String minimumNumberAcceptedNARotamers =
-        properties.getString("ro-minimumNumberAcceptedNARotamers");
-    String singletonClashThreshold = properties.getString("ro-singletonClashThreshold");
-    String multiResClashThreshold = properties.getString("ro-multiResClashThreshold");
-    String pairClashThreshold = properties.getString("ro-pairClashThreshold");
-    String multiResPairClashAddition = properties.getString("ro-multiResPairClashAddition");
-    String boxDimensions = properties.getString("ro-boxDimensions");
-    String computeQuads = properties.getString("ro-compute4BodyEnergy");
-    String lazyMatrix = properties.getString("ro-lazyMatrix");
-    String mcTemp = properties.getString("ro-mcTemp");
-    String mcUseAll = properties.getString("ro-mcUseAll");
-    String mcNoEnum = properties.getString("ro-debug-mcNoEnum");
-    String addOrigRotStr = properties.getString("ro-addOrigRot");
-    String origAtEndStr = properties.getString("ro-origAtEnd");
+    // Process properties; most are seldom used and not available in ManyBodyOptions.
+    // Handle testing flags.
+    boolean testing = properties.getBoolean("manybody-testing", false);
+    if (testing) {
+      turnRotamerSingleEliminationOff();
+      turnRotamerPairEliminationOff();
+    }
+    boolean monteCarloTesting = properties.getBoolean("manybody-testing-mc", false);
+    if (monteCarloTesting) {
+      setMonteCarloTesting(true);
+    }
 
+    // Compute 4-body energies.
+    String computeQuads = properties.getString("ro-compute4BodyEnergy");
     if (computeQuads != null) {
       this.compute4BodyEnergy = parseBoolean(computeQuads);
       logger.info(format(" (KEY) compute4BodyEnergy: %b", this.compute4BodyEnergy));
     }
 
-    if (undo != null) {
-      this.revert = parseBoolean(undo);
-      logger.info(format(" (KEY) undo: %b", this.revert));
-    }
+    // Box / sliding window options.
+    String direction = properties.getString("ro-direction");
+    String boxDimensions = properties.getString("ro-boxDimensions");
     if (direction != null) {
       this.direction = Direction.valueOf(direction);
       logger.info(format(" (KEY) direction: %s", this.direction));
     }
-    if (increment != null) {
-      this.increment = parseInt(increment);
-      logger.info(format(" (KEY) increment: %d", this.increment));
+    if (boxDimensions != null) {
+      boxOpt.update(boxDimensions);
     }
-    if (goldstein != null) {
-      this.useGoldstein = parseBoolean(goldstein);
-      logger.info(format(" (KEY) goldstein: %b", this.useGoldstein));
-    }
-    if (superpositionThreshold != null) {
-      this.superpositionThreshold = parseDouble(superpositionThreshold);
-      logger.info(format(" (KEY) superpositionThreshold: %.2f", this.superpositionThreshold));
-    }
+
+    // Ensemble options.
+    String ensembleNumber = properties.getString("ro-ensembleNumber");
+    String ensembleEnergy = properties.getString("ro-ensembleEnergy");
+    String ensembleBuffer = properties.getString("ro-ensembleBuffer");
     if (ensembleNumber != null) {
       this.ensembleNumber = parseInt(ensembleNumber);
       this.ensembleBuffer = 5.0;
@@ -492,13 +472,11 @@ public class RotamerOptimization implements Terminatable {
       this.ensembleEnergy = parseDouble(ensembleEnergy);
       logger.info(format(" (KEY) ensembleEnergy: %.2f", this.ensembleEnergy));
     }
-    if (threeBodyCutoffDist != null) {
-      this.threeBodyCutoffDist = parseDouble(threeBodyCutoffDist);
-      if (this.threeBodyCutoffDist < 0) {
-        logger.info("Warning: threeBodyCuoffDist should not be less than 0.");
-      }
-      logger.info(format(" (KEY) threeBodyCutoffDist: %.2f", this.threeBodyCutoffDist));
-    }
+
+    // Nucleic Acid Options.
+    String nucleicPruningFactor = properties.getString("ro-nucleicPruningFactor");
+    String nucleicCorrectionThreshold = properties.getString("ro-nucleicCorrectionThreshold");
+    String minimumNumberAcceptedNARotamers = properties.getString("ro-minimumNumberAcceptedNARotamers");
     if (nucleicPruningFactor != null) {
       double value = parseDouble(nucleicPruningFactor);
       this.nucleicPruningFactor = (value >= 0 ? value : 1.0);
@@ -517,25 +495,30 @@ public class RotamerOptimization implements Terminatable {
       logger.info(
           format(" (KEY) minimumNumberAcceptedNARotamers: %d", this.minNumberAcceptedNARotamers));
     }
-    if (singletonClashThreshold != null) {
-      this.clashThreshold = parseDouble(singletonClashThreshold);
-      logger.info(format(" (KEY) singletonClashThreshold: %.2f", this.clashThreshold));
+
+    // Superposition
+    String superpositionThreshold = properties.getString("ro-superpositionThreshold");
+    if (superpositionThreshold != null) {
+      this.superpositionThreshold = parseDouble(superpositionThreshold);
+      logger.info(format(" (KEY) superpositionThreshold: %.2f", this.superpositionThreshold));
     }
+
+    // Multi-residue clash thresholds
+    String multiResClashThreshold = properties.getString("ro-multiResClashThreshold");
+    String multiResPairClashAddition = properties.getString("ro-multiResPairClashAddition");
     if (multiResClashThreshold != null) {
       this.multiResClashThreshold = parseDouble(multiResClashThreshold);
       logger.info(format(" (KEY) multiResClashThreshold: %.2f", this.multiResClashThreshold));
-    }
-    if (pairClashThreshold != null) {
-      this.pairClashThreshold = parseDouble(pairClashThreshold);
-      logger.info(format(" (KEY) pairClashThreshold: %.2f", this.pairClashThreshold));
     }
     if (multiResPairClashAddition != null) {
       this.multiResPairClashAddn = parseDouble(multiResPairClashAddition);
       logger.info(format(" (KEY) multiResPairClashAddition: %.2f", this.multiResPairClashAddn));
     }
-    if (boxDimensions != null) {
-      boxOpt.update(boxDimensions);
-    }
+
+    // Monte Carlo Options.
+    String mcTemp = properties.getString("ro-mcTemp");
+    String mcUseAll = properties.getString("ro-mcUseAll");
+    String mcNoEnum = properties.getString("ro-debug-mcNoEnum");
     if (mcTemp != null) {
       this.mcTemp = parseDouble(mcTemp);
       logIfMaster(format(" (KEY) mcTemp: %10.6f", this.mcTemp));
@@ -548,18 +531,11 @@ public class RotamerOptimization implements Terminatable {
       this.mcNoEnum = parseBoolean(mcNoEnum);
       logIfMaster(format(" (KEY) debug-mcNoEnum: %b", this.mcNoEnum));
     }
+
+    String lazyMatrix = properties.getString("ro-lazyMatrix");
     if (lazyMatrix != null) {
       this.lazyMatrix = parseBoolean(lazyMatrix);
       logger.info(format(" (KEY) lazyMatrix: %b", lazyMatrix));
-    }
-    if (addOrigRotStr != null) {
-      this.addOrigRot = parseBoolean(addOrigRotStr);
-      logger.info(format(" (KEY) addOrigRot: %b", addOrigRot));
-    }
-    if (origAtEndStr != null) {
-      boolean value = parseBoolean(origAtEndStr);
-      // Property works in the contest of Residue class.
-      logger.info(format(" (KEY) origAtEnd: %b", value));
     }
 
     String propStr = properties.getString("ro-maxRotCheckDepth");
@@ -581,7 +557,7 @@ public class RotamerOptimization implements Terminatable {
     } else {
       maxRotCheckDepth = defaultMaxRotCheckDepth;
     }
-    revert = properties.getBoolean("revertUnfavorable", false);
+
     setUpRestart();
   }
 
@@ -1035,10 +1011,7 @@ public class RotamerOptimization implements Terminatable {
       logger.info(format(" Three-Body Energies: %b\n", threeBodyTerm));
 
       /*
-       * Collect all residues in the MolecularAssembly. Use all Residues with
-       * Rotamers and all forced residues if using sliding window and forced
-       * residues. Forced residues is meaningless for other algorithms, and
-       * will be reverted to false.
+       * Collect all residues in the MolecularAssembly. Use all Residues with Rotamers.
        */
       allResiduesList = new ArrayList<>();
       // An array of polymers from the MolecularAssembly.
@@ -1069,8 +1042,7 @@ public class RotamerOptimization implements Terminatable {
         residueList = onlyAA;
       }
 
-      RotamerLibrary.initializeDefaultAtomicCoordinates(
-          molecularAssembly.getChains()); // for NA only
+      RotamerLibrary.initializeDefaultAtomicCoordinates(molecularAssembly.getChains()); // for NA only
 
       nAllResidues = allResiduesList.size();
       allResiduesArray = allResiduesList.toArray(new Residue[nAllResidues]);
@@ -1094,6 +1066,7 @@ public class RotamerOptimization implements Terminatable {
 
         done = false;
         terminate = false;
+
         switch (algorithm) {
           case INDEPENDENT:
             e = independent(residueList);
@@ -1326,15 +1299,6 @@ public class RotamerOptimization implements Terminatable {
   }
 
   /**
-   * setGoldstein.
-   *
-   * @param set a boolean.
-   */
-  public void setGoldstein(boolean set) {
-    this.useGoldstein = set;
-  }
-
-  /**
    * Set the residue increment for sliding window.
    *
    * @param increment a int.
@@ -1524,17 +1488,6 @@ public class RotamerOptimization implements Terminatable {
     }
   }
 
-  /**
-   * Setter for the field <code>threeBodyCutoffDist</code>.
-   *
-   * @param dist a double.
-   */
-  public void setThreeBodyCutoffDist(double dist) {
-    this.threeBodyCutoffDist = dist;
-    if (threeBodyCutoffDist < 0) {
-      logger.info("Warning: threeBodyCutoffDist should not be less than 0.");
-    }
-  }
 
   /**
    * Flag to control use of 3-body energy terms.
