@@ -70,10 +70,10 @@ import static java.lang.String.format
 class ManyBody extends AlgorithmsScript {
 
   @Mixin
-  private RealSpaceOptions realSpace
+  private RealSpaceOptions realSpaceOptions
 
   @Mixin
-  ManyBodyOptions manyBody
+  ManyBodyOptions manyBodyOptions
 
   /**
    * One or more filenames.
@@ -112,7 +112,7 @@ class ManyBody extends AlgorithmsScript {
     // Otherwise, during titration the number of terms for each torsion may change and
     // causing updateParametersInContext to throw an exception.
     // Note that OpenMM is not usually used for crystals (it doesn't handle space groups).
-    double titrationPH = manyBody.getTitrationPH()
+    double titrationPH = manyBodyOptions.getTitrationPH()
     if (titrationPH > 0) {
       System.setProperty("manybody-titration", "true")
     }
@@ -134,7 +134,7 @@ class ManyBody extends AlgorithmsScript {
     potentialEnergy = activeAssembly.getPotentialEnergy()
 
     // Collect residues to optimize.
-    List<Residue> residues = manyBody.getResidues(activeAssembly);
+    List<Residue> residues = manyBodyOptions.collectResidues(activeAssembly)
     if (residues == null || residues.isEmpty()) {
       logger.info(" There are no residues in the active system to optimize.")
       return this
@@ -158,11 +158,11 @@ class ManyBody extends AlgorithmsScript {
       assemblies = [activeAssembly] as MolecularAssembly[]
     }
 
-    refinementEnergy = realSpace.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
+    refinementEnergy = realSpaceOptions.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
     RotamerOptimization rotamerOptimization = new RotamerOptimization(
         activeAssembly, refinementEnergy, algorithmListener)
 
-    manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
+    manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
     double[] x = new double[refinementEnergy.getNumberOfVariables()]
     x = refinementEnergy.getCoordinates(x)
@@ -171,13 +171,13 @@ class ManyBody extends AlgorithmsScript {
     List<Residue> residueList = rotamerOptimization.getResidues()
     RotamerLibrary.measureRotamers(residueList, false)
 
-    rotamerOptimization.optimize(manyBody.getAlgorithm())
+    rotamerOptimization.optimize(manyBodyOptions.getAlgorithm(residueList.size()))
 
     boolean isTitrating = false
     Set<Atom> excludeAtoms = new HashSet<>()
     int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
 
-    if (manyBody.group.titrationPH != 0) {
+    if (titrationPH > 0) {
       isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
     }
 

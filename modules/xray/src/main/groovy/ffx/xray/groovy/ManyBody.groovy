@@ -75,7 +75,7 @@ class ManyBody extends AlgorithmsScript {
   XrayOptions xrayOptions
 
   @Mixin
-  ManyBodyOptions manyBody
+  ManyBodyOptions manyBodyOptions
 
   /**
    * One or more filenames.
@@ -115,37 +115,26 @@ class ManyBody extends AlgorithmsScript {
     // Otherwise, during titration the number of terms for each torsion may change and
     // causing updateParametersInContext to throw an exception.
     // Note that OpenMM is not usually used for crystals (it doesn't handle space groups).
-    double titrationPH = manyBody.getTitrationPH()
+    double titrationPH = manyBodyOptions.getTitrationPH()
     if (titrationPH > 0) {
       System.setProperty("manybody-titration", "true")
     }
 
-    String filename
-    MolecularAssembly[] assemblies
+    String modelFilename
     if (filenames != null && filenames.size() > 0) {
-      assemblies = algorithmFunctions.openAll(filenames.get(0))
-      setActiveAssembly(assemblies[0])
-      filename = filenames.get(0)
+      activeAssembly = algorithmFunctions.open(filenames.get(0))
+      modelFilename = filenames.get(0)
     } else if (activeAssembly == null) {
       logger.info(helpString())
       return this
     } else {
-      assemblies = [activeAssembly]
-      filename = activeAssembly.getFile().getAbsolutePath()
+      modelFilename = activeAssembly.getFile().getAbsolutePath()
     }
+    MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
 
+    CompositeConfiguration properties = activeAssembly.getProperties()
     activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
     potentialEnergy = activeAssembly.getPotentialEnergy()
-
-    // Load parsed X-ray properties.
-    CompositeConfiguration properties = assemblies[0].getProperties()
-    xrayOptions.setProperties(parseResult, properties)
-
-    // Set up diffraction data (can be multiple files)
-    DiffractionData diffractionData =
-        xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
-    diffractionData.scaleBulkFit()
-    diffractionData.printStats()
 
     // The refinement mode must be coordinates.
     if (xrayOptions.refinementMode != RefinementMode.COORDINATES) {
@@ -154,47 +143,71 @@ class ManyBody extends AlgorithmsScript {
     }
 
     // Collect residues to optimize.
-    List<Residue> residues = manyBody.collectResidues(activeAssembly);
+    List<Residue> residues = manyBodyOptions.collectResidues(activeAssembly)
     if (residues == null || residues.isEmpty()) {
       logger.info(" There are no residues in the active system to optimize.")
       return this
     }
 
-//    if (manyBody.group.titrationPH != 0) {
-//      logger.info("\n Adding titration hydrogen to : " + filename + "\n")
-//      for (Residue residue : residues) {
-//        resNumberList.add(residue.getResidueNumber())
-//      }
-//      titrationManyBody = new TitrationManyBody(filename,forceField,resNumberList,manyBody.group.titrationPH)
-//      activeAssembly = titrationManyBody.getProtonatedAssembly()
-//    }
+    // Handle rotamer optimization with titration.
+    if (titrationPH > 0) {
+      logger.info("\n Adding titration hydrogen to : " + filenames.get(0) + "\n")
+
+      List<Integer> resNumberList = new ArrayList<>()
+      for (Residue residue : residues) {
+        resNumberList.add(residue.getResidueNumber())
+      }
+
+      // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
+      titrationManyBody = new TitrationManyBody(filenames.get(0), activeAssembly.getForceField(),
+              resNumberList, titrationPH)
+      MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly()
+      setActiveAssembly(protonatedAssembly)
+      potentialEnergy = protonatedAssembly.getPotentialEnergy()
+      assemblies = [activeAssembly] as MolecularAssembly[]
+    }
+    // Load parsed X-ray properties.
+    //CompositeConfiguration properties = assemblies[0].getProperties()
+    xrayOptions.setProperties(parseResult, properties)
+
+    // Set up diffraction data (can be multiple files)
+    DiffractionData diffractionData =
+        xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
+    diffractionData.scaleBulkFit()
+    diffractionData.printStats()
+
 
     refinementEnergy = xrayOptions.toXrayEnergy(diffractionData, assemblies, algorithmFunctions)
     refinementEnergy.setScaling(null)
-    int n = refinementEnergy.getNumberOfVariables()
-    double[] x = new double[n]
-    refinementEnergy.getCoordinates(x)
+
+    RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,
+            refinementEnergy, algorithmListener)
+
+    manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
+
+    double[] x = new double[refinementEnergy.getNumberOfVariables()]
+    x = refinementEnergy.getCoordinates(x)
     double e = refinementEnergy.energy(x, true)
     logger.info(format(" Starting energy: %16.8f ", e))
 
-    RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,
-        refinementEnergy, algorithmListener)
-    manyBody.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
     List<Residue> residueList = rotamerOptimization.getResidues()
     RotamerLibrary.measureRotamers(residueList, false)
 
-    rotamerOptimization.optimize(manyBody.getAlgorithm(residueList.size()))
+    rotamerOptimization.optimize(manyBodyOptions.getAlgorithm(residueList.size()))
 
     int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
     boolean isTitrating = false
     Set<Atom> excludeAtoms = new HashSet<>()
-//    excludeAtoms = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
+
+    if (titrationPH > 0) {
+      isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
+    }
 
     if (Comm.world().rank() == 0) {
-      refinementEnergy.getCoordinates(x)
-      e = refinementEnergy.energy(x, true)
-      logger.info(format(" Final energy: %16.8f ", e))
+      logger.info(" Final Minimum Energy")
+      algorithmFunctions.energy(activeAssembly)
+      double energy = potentialEnergy.energy(false, true)
       if (isTitrating) {
         double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList,
             optimalRotamers)
@@ -202,10 +215,10 @@ class ManyBody extends AlgorithmsScript {
         logger.info(format("  Potential with Bias%16.8f\n", phBias + e))
       }
 
-      String ext = FilenameUtils.getExtension(filename)
-      filename = FilenameUtils.removeExtension(filename)
+      String ext = FilenameUtils.getExtension(modelFilename)
+      modelFilename = FilenameUtils.removeExtension(modelFilename)
       if (ext.toUpperCase().contains("XYZ")) {
-        algorithmFunctions.saveAsXYZ(activeAssembly, new File(filename + ".xyz"))
+        algorithmFunctions.saveAsXYZ(activeAssembly, new File(modelFilename + ".xyz"))
       } else {
         //File modelFile = saveDirFile(activeAssembly.getFile())
         //algorithmFunctions.saveAsPDB(activeAssembly, modelFile)
@@ -214,16 +227,16 @@ class ManyBody extends AlgorithmsScript {
         PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly,
             activeAssembly.getForceField(),
             properties)
-//        if (manyBody.group.titrationPH != 0){
-//          String remark = "Titration pH:   " + manyBody.group.titrationPH.toString()
-//          if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true, remark)) {
-//            logger.info(format(" Save failed for %s", activeAssembly))
-//          }
-//        } else {
-        if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
-          logger.info(format(" Save failed for %s", activeAssembly))
+        if (titrationPH > 0) {
+          String remark = format("Titration pH: %6.3f", titrationPH)
+          if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true, remark)) {
+            logger.info(format(" Save failed for %s", activeAssembly))
+          }
+        } else {
+          if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
+            logger.info(format(" Save failed for %s", activeAssembly))
+          }
         }
-//        }
       }
     }
 

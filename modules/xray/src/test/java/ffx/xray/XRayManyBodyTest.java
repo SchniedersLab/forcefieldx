@@ -77,7 +77,7 @@ public class XRayManyBodyTest extends AlgorithmsTest {
     double tol = 1.0E-9 * expectedPotential;
 
     assertEquals(actualPotential, expectedPotential, tol);
-    manyBody.getManyBody().getRestartFile().delete();
+    manyBody.getManyBodyOptions().getRestartFile().delete();
   }
 
   @Test
