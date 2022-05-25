@@ -120,6 +120,9 @@ class ManyBody extends AlgorithmsScript {
       System.setProperty("manybody-titration", "true")
     }
 
+    // Xray ManyBody expansion converges more quickly with the NEA set.
+    System.setProperty("native-environment-approximation", "true")
+
     String modelFilename
     if (filenames != null && filenames.size() > 0) {
       activeAssembly = algorithmFunctions.open(filenames.get(0))
@@ -166,16 +169,14 @@ class ManyBody extends AlgorithmsScript {
       potentialEnergy = protonatedAssembly.getPotentialEnergy()
       assemblies = [activeAssembly] as MolecularAssembly[]
     }
+
     // Load parsed X-ray properties.
-    //CompositeConfiguration properties = assemblies[0].getProperties()
     xrayOptions.setProperties(parseResult, properties)
 
     // Set up diffraction data (can be multiple files)
-    DiffractionData diffractionData =
-        xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
+    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
     diffractionData.scaleBulkFit()
     diffractionData.printStats()
-
 
     refinementEnergy = xrayOptions.toXrayEnergy(diffractionData, assemblies, algorithmFunctions)
     refinementEnergy.setScaling(null)
@@ -189,7 +190,6 @@ class ManyBody extends AlgorithmsScript {
     x = refinementEnergy.getCoordinates(x)
     double e = refinementEnergy.energy(x, true)
     logger.info(format(" Starting energy: %16.8f ", e))
-
 
     List<Residue> residueList = rotamerOptimization.getResidues()
     RotamerLibrary.measureRotamers(residueList, false)
@@ -206,13 +206,17 @@ class ManyBody extends AlgorithmsScript {
 
     if (Comm.world().rank() == 0) {
       logger.info(" Final Minimum Energy")
-      algorithmFunctions.energy(activeAssembly)
-      double energy = potentialEnergy.energy(false, true)
+      // Get final parameters and compute the target function.
+      x = refinementEnergy.getCoordinates(x)
+      e = refinementEnergy.energy(x, true)
+
       if (isTitrating) {
         double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList,
             optimalRotamers)
-        logger.info(format("\n  Rotamer pH Bias    %16.8f", phBias))
-        logger.info(format("  Potential with Bias%16.8f\n", phBias + e))
+        logger.info(format("\n  Rotamer pH Bias      %16.8f", phBias))
+        logger.info(format("  Xray Target with Bias%16.8f\n", phBias + e))
+      } else {
+        logger.info(format("\n  Xray Target          %16.8f\n",e))
       }
 
       String ext = FilenameUtils.getExtension(modelFilename)
@@ -220,13 +224,10 @@ class ManyBody extends AlgorithmsScript {
       if (ext.toUpperCase().contains("XYZ")) {
         algorithmFunctions.saveAsXYZ(activeAssembly, new File(modelFilename + ".xyz"))
       } else {
-        //File modelFile = saveDirFile(activeAssembly.getFile())
-        //algorithmFunctions.saveAsPDB(activeAssembly, modelFile)
         properties.setProperty("standardizeAtomNames", "false")
         File modelFile = saveDirFile(activeAssembly.getFile())
         PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly,
-            activeAssembly.getForceField(),
-            properties)
+            activeAssembly.getForceField(), properties)
         if (titrationPH > 0) {
           String remark = format("Titration pH: %6.3f", titrationPH)
           if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true, remark)) {

@@ -320,6 +320,7 @@ public class DiffractionData implements DataContainer {
       sb.append("   Solvent grid search: ").append(gridSearch).append("\n");
       sb.append("   X-ray scale fit tolerance: ").append(xrayScaleTol).append("\n");
       sb.append("   Sigma A fit tolerance: ").append(sigmaATol).append("\n");
+      sb.append("   Native environment approximation: ").append(nativeEnvironmentApproximation).append("\n");
       sb.append("  Reflections\n");
       sb.append("   F/sigF cutoff: ").append(fsigfCutoff).append("\n");
       sb.append("   R Free flag (-1 auto-determine from the data): ").append(rflag).append("\n");

@@ -183,20 +183,23 @@ class ManyBody extends AlgorithmsScript {
 
     if (Comm.world().rank() == 0) {
       logger.info(" Final Minimum Energy")
-      algorithmFunctions.energy(activeAssembly)
-      double energy = potentialEnergy.energy(false, true)
+      // Get final parameters and compute the target function.
+      x = refinementEnergy.getCoordinates(x)
+      double energy = refinementEnergy.energy(x, true)
+
       if (isTitrating) {
         double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList,
             optimalRotamers)
         logger.info(format("\n  Rotamer pH Bias    %16.8f", phBias))
         logger.info(format("  Potential with Bias%16.8f\n", phBias + energy))
+      } else {
+        logger.info(format("\n  Real Space Target  %16.8f\n", energy))
       }
       String ext = FilenameUtils.getExtension(modelFilename)
       modelFilename = FilenameUtils.removeExtension(modelFilename)
       if (ext.toUpperCase().contains("XYZ")) {
         algorithmFunctions.saveAsXYZ(assemblies[0], new File(modelFilename + ".xyz"))
       } else {
-        //algorithmFunctions.saveAsPDB(assemblies, new File(modelFilename + ".pdb"))
         properties.setProperty("standardizeAtomNames", "false")
         File modelFile = saveDirFile(activeAssembly.getFile())
         PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly,
