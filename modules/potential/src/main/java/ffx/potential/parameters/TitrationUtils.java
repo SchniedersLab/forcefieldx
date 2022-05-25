@@ -1612,7 +1612,7 @@ public class TitrationUtils {
     // ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
 
     ASHtoASP(4.00, -71.10, -71.9600, 0.0, AminoAcid3.ASH, AminoAcid3.ASP),
-    GLHtoGLU(4.40, -83.40, -87.6300, 0.0, AminoAcid3.GLH, AminoAcid3.GLU),
+    GLHtoGLU(4.40, -83.20, -87.6300, 0.0, AminoAcid3.GLH, AminoAcid3.GLU),
     //LYStoLYD(10.40, 45.270, 0.0, AminoAcid3.LYS, AminoAcid3.LYD),
     LYStoLYD(10.40, 41.77, 57.7100, 0.10746, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),

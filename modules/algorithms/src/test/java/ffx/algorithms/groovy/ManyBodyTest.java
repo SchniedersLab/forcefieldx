@@ -227,4 +227,29 @@ public class ManyBodyTest extends AlgorithmsTest {
     double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-5);
   }
+
+  @Test
+  public void testManyBodyTitration() {
+    // Set-up the input arguments for the script.
+    String[] args = {"--pH","7.0","--eR",
+            "src/main/java/ffx/algorithms/structures/DEHK.rot.restart",
+            "src/main/java/ffx/algorithms/structures/DEHK.rot.pdb"
+    };
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Evaluate the script.
+    ManyBody manyBody = new ManyBody(binding).run();
+    algorithmsScript = manyBody;
+
+    double expectedTotalPotential = -92.99101502;
+    double actualTotalPotential =
+            manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
+    assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
+
+    double expectedApproximateEnergy = -168.256752;
+    double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
+    assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-5);
+  }
+
 }

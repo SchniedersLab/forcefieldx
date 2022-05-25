@@ -80,7 +80,7 @@ public class RealspaceManyBodyTest extends AlgorithmsTest {
     // the magnitude of the potentials.
     double differenceNorm = (expectedPotential - actualPotential) / actualPotential;
     assertEquals(differenceNorm, 0, 1E-8);
-    manyBody.getManyBody().getRestartFile().delete();
+    manyBody.getManyBodyOptions().getRestartFile().delete();
   }
 
   @Test
