@@ -1408,11 +1408,23 @@ public final class PDBFilter extends SystemFilter {
   /** {@inheritDoc} */
   @Override
   public boolean readNext(boolean resetPosition, boolean print) {
+    return readNext(resetPosition, print, true);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public boolean readNext(boolean resetPosition, boolean print, boolean parse) {
+    modelsRead = resetPosition ? 1 : modelsRead + 1;
+    if(!parse){
+      if(print){
+        logger.info(format(" Skipped Model %d.", modelsRead));
+      }
+      return true;
+    }
     remarkLines = new ArrayList<>(remarkLines.size());
     // ^ is beginning of line, \\s+ means "one or more whitespace", (\\d+) means match and capture
     // one or more digits.
     Pattern modelPatt = Pattern.compile("^MODEL\\s+(\\d+)");
-    modelsRead = resetPosition ? 1 : modelsRead + 1;
     boolean eof = true;
     for (MolecularAssembly system : systems) {
       try {

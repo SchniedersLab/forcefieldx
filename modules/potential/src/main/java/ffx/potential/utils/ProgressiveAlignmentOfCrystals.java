@@ -749,15 +749,15 @@ public class ProgressiveAlignmentOfCrystals {
               min1 = minDiff;
               minBIndex = bIndex;
               minTIndex = tIndex;
-              baseAU = baseXYZ;
-              targetAU = targetXYZ;
+              arraycopy(baseXYZ, 0, baseAU, 0, nCoords);
+              arraycopy(targetXYZ, 0, targetAU, 0, nCoords);
               if (nAU == 1 && !permute) {
                 // Record values for short circuit.
                 translationB = tempTranB;
                 translationT = tempTranT;
                 rotationT = tempRotT;
-                baseNAUs = baseXYZ;
-                targetNAUs = targetXYZ;
+                arraycopy(baseAU, 0, baseNAUs, 0, nCoords);
+                arraycopy(targetAU, 0, targetNAUs, 0, nCoords);
               }
             }
           }
@@ -772,11 +772,8 @@ public class ProgressiveAlignmentOfCrystals {
       arraycopy(baseXYZoriginal, centerB.indexOf(baseSymIndex) * nCoords, baseAUoriginal, 0, nCoords);
       arraycopy(targetXYZoriginal, centerT.indexOf(targetSymIndex) * nCoords, targetAUoriginal, 0, nCoords);
       if (logger.isLoggable(Level.FINER)) {
-        stringBuilder.append(format("\n B: minInd %d; bInd %d; bSymInd %d; center %d; molDist %d %9.3f T: %d %d %d %d %d %9.3f \n",
-                minBIndex, baseIndices[minBIndex], baseSymIndex, centerB.indexOf(baseSymIndex), molDist1[minBIndex].getIndex(), baseXYZoriginal[centerB.indexOf(baseSymIndex) * nCoords],
-                minTIndex, targetIndices[minTIndex], targetSymIndex, centerT.indexOf(targetSymIndex), molDist2[minTIndex].getIndex(), targetXYZoriginal[centerT.indexOf(targetSymIndex) * nCoords]));
         stringBuilder.append(" \tInitial AU Coords     vs    Center AU Coords");
-        for (int i = 0; i < compareAtomsSize; i++) {
+        for (int i = 0; i < nAU * compareAtomsSize; i++) {
           int k = i * 3;
           stringBuilder.append(format("\n %9.3f %9.3f %9.3f to %9.3f %9.3f %9.3f",
                   targetAUoriginal[k], targetAUoriginal[k + 1], targetAUoriginal[k + 2], targetAU[k],
@@ -1338,7 +1335,7 @@ public class ProgressiveAlignmentOfCrystals {
 
     // Read ahead to the base starting conformation.
     for (int row = 0; row < restartRow; row++) {
-      baseFilter.readNext(false, false);
+      baseFilter.readNext(false, false, row + 1 >= restartRow);
     }
 
     MolecularAssembly baseAssembly = baseFilter.getActiveMolecularSystem();
@@ -1570,7 +1567,7 @@ public class ProgressiveAlignmentOfCrystals {
           Crystal cXtal = currentAssembly.getCrystal().getUnitCell();
           crystalCache[assemblyNum] = new Crystal(cXtal.a, cXtal.b, cXtal.c, cXtal.alpha, cXtal.beta, cXtal.gamma, cXtal.spaceGroup.pdbName);
         }
-        targetFilter.readNext(false, false);
+        targetFilter.readNext(false, false, (column + 1) % numProc == rank);
       }
     }
 
@@ -1910,7 +1907,7 @@ public class ProgressiveAlignmentOfCrystals {
 
                 double value = rmsd(baseAUoriginal, symMol, massN);
                 stringBuilder.append(
-                        format("\n\n Sym Op RMSD: %8.4f ", value));
+                        format("\n\n Sym Op RMSD: %8.8f ", value));
                 double[] symMol2 = new double[nCoords];
                 stringBuilder.append("\n\n Sym Op Inverse Application:");
                 for (int i = 0; i < compareAtomsSize; i++) {
@@ -1934,12 +1931,12 @@ public class ProgressiveAlignmentOfCrystals {
           logger.info(stringBuilder.toString());
         }
         if (lowMemory) {
-          targetFilter.readNext(false, false);
+          targetFilter.readNext(false, false, (column + 1) % numProc == rank);
         }
       }
       restartColumn = 0;
       if(lowMemory) {
-        targetFilter.readNext(true, false);
+        targetFilter.readNext(true, false, 0 % numProc == rank);
       }
       baseFilter.readNext(false, false);
 
@@ -1989,10 +1986,10 @@ public class ProgressiveAlignmentOfCrystals {
   private static String asMatrixString(SymOp symOp) {
     double[][] values = symOp.asMatrix();
     return format(
-        " %12.6f %12.6f %12.6f \\\n" +
-            " %12.6f %12.6f %12.6f \\\n" +
-            " %12.6f %12.6f %12.6f \\\n" +
-            " %12.6f %12.6f %12.6f ",
+        " %14.8f %14.8f %14.8f \\\n" +
+            " %14.8f %14.8f %14.8f \\\n" +
+            " %14.8f %14.8f %14.8f \\\n" +
+            " %14.8f %14.8f %14.8f ",
         values[0][0], values[0][1], values[0][2],
         values[1][0], values[1][1], values[1][2],
         values[2][0], values[2][1], values[2][2],
@@ -2208,7 +2205,7 @@ public class ProgressiveAlignmentOfCrystals {
                   runningStatistics.addValue(distRow[column]);
                 }
                 if (logger.isLoggable(Level.FINER)) {
-                  logger.finer(format(" %d %d %16.8f", row, column, distances[proc][workItem]));
+                  logger.finer(format(" %d %d %14.8f", row, column, distances[proc][workItem]));
                 }
               }
             }
@@ -2226,7 +2223,7 @@ public class ProgressiveAlignmentOfCrystals {
                 runningStatistics.addValue(distRow[column]);
               }
               if (logger.isLoggable(Level.FINER)) {
-                logger.finer(format(" %d %d %16.8f", row, column, distances[rank][workItem]));
+                logger.finer(format(" %d %d %14.8f", row, column, distances[rank][workItem]));
               }
             }
           }
@@ -2346,7 +2343,7 @@ public class ProgressiveAlignmentOfCrystals {
         logger.finer(" Replicates crystal " + replicatesCrystal);
       }
       logger.finer(format(" Replicates Volume: %8.4f", replicatesCrystal.volume));
-      logger.finer(format(" Expanded Crystal Center: %16.8f %16.8f %16.8f",
+      logger.finer(format(" Expanded Crystal Center: %14.8f %14.8f %14.8f",
           cartCenter[0], cartCenter[1], cartCenter[2]));
     }
 
@@ -2373,7 +2370,7 @@ public class ProgressiveAlignmentOfCrystals {
         int iSym = molsDists[index].getIndex();
         double distance = molsDists[index].getDoubleValue();
         if (logger.isLoggable(Level.FINEST) && n < 50) {
-          logger.finest(format(" %4d  %5d  %16.8f", index, iSym, sqrt(distance)));
+          logger.finest(format(" %4d  %5d  %14.8f", index, iSym, sqrt(distance)));
         }
 
         // Create a new set of Atoms for each SymOp molecule
