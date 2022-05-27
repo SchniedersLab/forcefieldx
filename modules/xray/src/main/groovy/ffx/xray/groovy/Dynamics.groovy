@@ -52,6 +52,9 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
+import static org.apache.commons.io.FilenameUtils.removeExtension
+import static org.apache.commons.io.FilenameUtils.removeExtension
+
 /**
  * The X-ray Dynamics script.
  * <br>
@@ -103,50 +106,54 @@ class Dynamics extends AlgorithmsScript {
     dynamicsOptions.init()
     xrayOptions.init()
 
-    String modelFilename
-    MolecularAssembly[] assemblies
+    String filename
+    MolecularAssembly[] molecularAssemblies
     if (filenames != null && filenames.size() > 0) {
-      assemblies = algorithmFunctions.openAll(filenames.get(0))
-      activeAssembly = assemblies[0]
-      modelFilename = filenames.get(0)
+      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
+      activeAssembly = molecularAssemblies[0]
+      filename = filenames.get(0)
     } else if (activeAssembly == null) {
       logger.info(helpString())
       return this
     } else {
-      assemblies = [activeAssembly]
-      modelFilename = activeAssembly.getFile().getAbsolutePath()
+      molecularAssemblies = [activeAssembly]
+      filename = activeAssembly.getFile().getAbsolutePath()
     }
 
-    logger.info("\n Running xray.Dynamics on " + modelFilename)
+    logger.info("\n Running xray.Dynamics on " + filename)
 
     // Load parsed X-ray properties.
-    CompositeConfiguration properties = assemblies[0].getProperties()
+    CompositeConfiguration properties = molecularAssemblies[0].getProperties()
     xrayOptions.setProperties(parseResult, properties)
 
     // Set up diffraction data (can be multiple files)
-    DiffractionData diffractionData =
-        xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
-    diffractionData.scaleBulkFit()
-    diffractionData.printStats()
-
-    algorithmFunctions.energy(assemblies[0])
-
-    RefinementEnergy refinementEnergy =
-        xrayOptions.toXrayEnergy(diffractionData, assemblies, algorithmFunctions)
+    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, parseResult)
+    refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
+    algorithmFunctions.energy(molecularAssemblies)
 
     // Restart File
-    File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
+    File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn")
     if (!dyn.exists()) {
       dyn = null
     }
 
     MolecularDynamics molecularDynamics =
-        dynamicsOptions
-            .getDynamics(writeoutOptions, refinementEnergy, activeAssembly, algorithmListener)
+        dynamicsOptions.getDynamics(writeoutOptions, refinementEnergy, activeAssembly, algorithmListener)
     refinementEnergy.setThermostat(molecularDynamics.getThermostat())
     boolean initVelocities = true
     molecularDynamics.dynamic(dynamicsOptions.steps, dynamicsOptions.dt, dynamicsOptions.report,
         dynamicsOptions.write, dynamicsOptions.temperature, initVelocities, dyn)
+
+    // Print the final refinement statistics.
+    diffractionData.scaleBulkFit()
+    diffractionData.printStats()
+
+    // Print the final energy of each conformer.
+    algorithmFunctions.energy(molecularAssemblies)
+
+    logger.info(" ")
+    diffractionData.writeModel(removeExtension(filename) + ".pdb")
+    diffractionData.writeData(removeExtension(filename) + ".mtz")
 
     return this
   }

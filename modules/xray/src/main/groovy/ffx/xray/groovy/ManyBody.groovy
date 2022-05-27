@@ -121,7 +121,8 @@ class ManyBody extends AlgorithmsScript {
     }
 
     // Xray ManyBody expansion converges more quickly with the NEA set.
-    System.setProperty("native-environment-approximation", "true")
+    String nea = System.getProperty("native-environment-approximation", "true")
+    System.setProperty("native-environment-approximation", nea)
 
     String modelFilename
     if (filenames != null && filenames.size() > 0) {
@@ -175,15 +176,10 @@ class ManyBody extends AlgorithmsScript {
 
     // Set up diffraction data (can be multiple files)
     DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
-    diffractionData.scaleBulkFit()
-    diffractionData.printStats()
-
-    refinementEnergy = xrayOptions.toXrayEnergy(diffractionData, assemblies, algorithmFunctions)
+    refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
     refinementEnergy.setScaling(null)
 
-    RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,
-            refinementEnergy, algorithmListener)
-
+    RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly, refinementEnergy, algorithmListener)
     manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
     double[] x = new double[refinementEnergy.getNumberOfVariables()]

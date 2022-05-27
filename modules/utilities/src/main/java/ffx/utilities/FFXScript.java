@@ -233,7 +233,7 @@ public abstract class FFXScript extends Script {
     try {
       StringOutputStream sos = new StringOutputStream(new ByteArrayOutputStream());
       usage(this, sos, color);
-      return " " + sos.toString();
+      return " " + sos;
     } catch (UnsupportedEncodingException e) {
       logger.log(Level.WARNING, e.toString());
       return null;

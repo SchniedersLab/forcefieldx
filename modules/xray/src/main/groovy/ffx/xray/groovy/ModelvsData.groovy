@@ -51,6 +51,9 @@ import picocli.CommandLine.Parameters
 
 import java.util.stream.Collectors
 
+import static java.lang.String.format
+import static org.apache.commons.io.FilenameUtils.removeExtension
+
 /**
  * The X-ray ModelvsData script.
  * <br>
@@ -87,7 +90,7 @@ class ModelvsData extends AlgorithmsScript {
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
   private List<String> filenames
   private DiffractionData diffractionData
-  private MolecularAssembly[] assemblies
+  private MolecularAssembly[] molecularAssemblies
 
   /**
    * ModelvsData constructor.
@@ -113,38 +116,38 @@ class ModelvsData extends AlgorithmsScript {
 
     xrayOptions.init()
 
-    String modelfilename
+    String filename
     if (filenames != null && filenames.size() > 0) {
-      assemblies = algorithmFunctions.openAll(filenames.get(0))
-      activeAssembly = assemblies[0]
-      modelfilename = filenames.get(0)
+      // Each alternate conformer is returned in a separate MolecularAssembly.
+      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
+      activeAssembly = molecularAssemblies[0]
+      filename = filenames.get(0)
     } else if (activeAssembly == null) {
       logger.info(helpString())
       return this
     } else {
-      assemblies = [activeAssembly]
-      modelfilename = activeAssembly.getFile().getAbsolutePath()
+      molecularAssemblies = [activeAssembly]
+      filename = activeAssembly.getFile().getAbsolutePath()
     }
 
-    logger.info("\n Running xray.ModelvsData on " + modelfilename)
+    logger.info(format("\n Running xray.ModelvsData on %s", filename))
 
-    // Load parsed X-ray properties.
+    // Combine script flags (in parseResult) with properties.
     CompositeConfiguration properties = activeAssembly.getProperties()
     xrayOptions.setProperties(parseResult, properties)
 
     // Set up diffraction data (can be multiple files)
-    diffractionData = xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
+    diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, parseResult)
     diffractionData.scaleBulkFit()
     diffractionData.printStats()
-
-    algorithmFunctions.energy(assemblies[0])
+    algorithmFunctions.energy(molecularAssemblies)
 
     if (mtz) {
-      diffractionData.writeData(FilenameUtils.removeExtension(modelfilename) + "_ffx.mtz")
+      diffractionData.writeData(removeExtension(filename) + "_ffx.mtz")
     }
 
     if (maps) {
-      diffractionData.writeMaps(FilenameUtils.removeExtension(modelfilename) + "_ffx")
+      diffractionData.writeMaps(removeExtension(filename) + "_ffx")
     }
 
     if (timings) {
@@ -156,10 +159,10 @@ class ModelvsData extends AlgorithmsScript {
 
   @Override
   List<Potential> getPotentials() {
-    if (assemblies == null) {
+    if (molecularAssemblies == null) {
       return new ArrayList<Potential>()
     } else {
-      return Arrays.stream(assemblies).filter {a -> a != null
+      return Arrays.stream(molecularAssemblies).filter {a -> a != null
       }.map {a -> a.getPotentialEnergy()
       }.filter {e -> e != null
       }.collect(Collectors.toList())

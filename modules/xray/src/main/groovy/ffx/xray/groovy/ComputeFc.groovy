@@ -45,12 +45,13 @@ import ffx.xray.cli.XrayOptions
 import ffx.xray.parsers.MTZWriter
 import ffx.xray.parsers.MTZWriter.MTZType
 import org.apache.commons.configuration2.CompositeConfiguration
-import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
 import java.util.stream.Collectors
+
+import static org.apache.commons.io.FilenameUtils.getBaseName
 
 /**
  * The X-ray ComputeFc script.
@@ -86,7 +87,7 @@ class ComputeFc extends AlgorithmsScript {
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
   private List<String> filenames
 
-  private MolecularAssembly[] assemblies
+  private MolecularAssembly[] molecularAssemblies
   private DiffractionData diffractionData
 
   @Override
@@ -98,17 +99,17 @@ class ComputeFc extends AlgorithmsScript {
 
     xrayOptions.init()
 
-    String modelfilename
+    String filename
     if (filenames != null && filenames.size() > 0) {
-      assemblies = algorithmFunctions.openAll(filenames.get(0))
-      activeAssembly = assemblies[0]
-      modelfilename = filenames.get(0)
+      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
+      activeAssembly = molecularAssemblies[0]
+      filename = filenames.get(0)
     } else if (activeAssembly == null) {
       logger.info(helpString())
       return this
     } else {
-      assemblies = [activeAssembly]
-      modelfilename = activeAssembly.getFile().getAbsolutePath()
+      molecularAssemblies = [activeAssembly]
+      filename = activeAssembly.getFile().getAbsolutePath()
     }
 
     // Load parsed X-ray properties.
@@ -116,9 +117,9 @@ class ComputeFc extends AlgorithmsScript {
     xrayOptions.setProperties(parseResult, properties)
 
     // Set up diffraction data (can be multiple files)
-    diffractionData = xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
+    diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, parseResult)
 
-    logger.info("\n Running xray.ComputeFc on " + modelfilename)
+    logger.info("\n Running xray.ComputeFc on " + filename)
 
     // Compute structure factors
     diffractionData.computeAtomicDensity()
@@ -126,8 +127,7 @@ class ComputeFc extends AlgorithmsScript {
 
     // Output Fcs
     MTZWriter mtzWriter = new MTZWriter(diffractionData.reflectionList[0],
-        diffractionData.refinementData[0],
-        FilenameUtils.getBaseName(modelfilename) + "_fc.mtz", MTZType.FCONLY)
+        diffractionData.refinementData[0], getBaseName(filename) + "_fc.mtz", MTZType.FCONLY)
 
     mtzWriter.write()
     return this
@@ -135,10 +135,10 @@ class ComputeFc extends AlgorithmsScript {
 
   @Override
   List<Potential> getPotentials() {
-    if (assemblies == null) {
+    if (molecularAssemblies == null) {
       return new ArrayList<Potential>()
     } else {
-      return Arrays.stream(assemblies).filter {a -> a != null
+      return Arrays.stream(molecularAssemblies).filter {a -> a != null
       }.map {a -> a.getPotentialEnergy()
       }.filter {e -> e != null
       }.collect(Collectors.toList())

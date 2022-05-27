@@ -94,13 +94,11 @@ public class UIUtils extends AlgorithmUtils implements AlgorithmFunctions {
   }
 
   @Override
-  public ForceFieldEnergy energy(MolecularAssembly assembly) {
-    // TODO: Determine why this only runs energy on the last opened assembly, not the passed
-    // assembly.
-    Optional<FFXSystem> origSys = switchTo(assembly);
-    ForceFieldEnergy ffe = modelingShell.energy();
+  public ForceFieldEnergy energy(MolecularAssembly molecularAssembly) {
+    Optional<FFXSystem> origSys = switchTo(molecularAssembly);
+    ForceFieldEnergy forceFieldEnergy = modelingShell.energy();
     origSys.ifPresent(this::switchBack);
-    return ffe;
+    return forceFieldEnergy;
   }
 
   @Override
