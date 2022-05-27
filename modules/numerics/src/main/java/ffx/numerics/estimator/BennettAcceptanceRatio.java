@@ -231,12 +231,10 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
       fbvsum  += fore*back*(e1[i]-e0[i]);
       vsum  += e0[i];
       fbsum  += fore*back;
-
     }
     alpha = fvsum - (fsum*(vsum/len)) + fbvsum;
-
-
   }
+
   /**
    * Calculates backward alpha and fbsum for  BAR Enthalpy calculations
    * @param e0 Perturbed energy (to be added; evaluated at L +/- dL).
@@ -260,11 +258,8 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
       fbvsum  += fore*back*(e1[i]-e0[i]);
       vsum  += e1[i];
       fbsum  += fore*back;
-
     }
-    alpha = bvsum - (bsum*(vsum/len)) + fbvsum;
-
-
+    alpha = bvsum - (bsum*(vsum/len)) - fbvsum;
   }
 
 
