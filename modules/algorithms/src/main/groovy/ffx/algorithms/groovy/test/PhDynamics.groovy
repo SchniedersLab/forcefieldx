@@ -170,7 +170,6 @@ class PhDynamics extends AlgorithmsScript {
 
     molecularDynamics =
         dynamicsOptions.getDynamics(writeOutOptions, potential, activeAssembly, algorithmListener)
-    logger.info("Report Freq: " + dynamicsOptions.report)
 
     molecularDynamics.attachExtendedSystem(esvSystem, dynamicsOptions.report)
 

@@ -342,7 +342,6 @@ public class ExtendedSystem {
         // If the atom does belong to this residue, set all corresponding variables in the respective titration or tautomer array (size = numAtoms).
         // Store the index of the residue in the respective list into a map array (size = numAtoms).
         List<Residue> residueList = mola.getResidueList();
-        logger.info(residueList.toString());
         for (Residue residue : residueList) {
             if (isTitrable(residue)) {
                 titratingResidueList.add(residue);
@@ -590,7 +589,7 @@ public class ExtendedSystem {
             case HIE:
                 // Discr Bias & Derivs
                 tautomerLambda = getTautomerLambda(residue);
-                double tautomerLambdaSquared = tautomerLambda * tautomerLambda;
+
                 discrBias = -4.0 * titrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
                 discrBias += -4.0 * tautBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
                 dDiscr_dTitr = -8.0 * titrBiasMag * (titrationLambda - 0.5);
@@ -610,18 +609,32 @@ public class ExtendedSystem {
 
                 // Model Bias & Derivs
 
-                double coeff4 = -2.0 * HIDrefEnergy * HIDlambdaIntercept;
-                double coeff3 = -2.0 * HIErefEnergy * HIElambdaIntercept - coeff4;
-                double coeff2 = HIDrefEnergy;
-                double coeff1 = -2.0 * HIDtoHIErefEnergy * HIDtoHIElambdaIntercept - coeff3;
-                double coeff0 = HIDtoHIErefEnergy;
+                double coeffA0 = HIDtoHIErefEnergy;
+                double coeffA1 = HIDtoHIElambdaIntercept;
+                double coeffB0 = HIErefEnergy;
+                double coeffB1 = HIElambdaIntercept;
+                double coeffC0 = HIDrefEnergy;
+                double coeffC1 = HIDlambdaIntercept;
+                double titrationLambdaSquared = titrationLambda * titrationLambda;
+                double tautomerLambdaSquared = tautomerLambda * tautomerLambda;
                 double oneMinusTitrationLambda = (1.0 - titrationLambda);
-                double oneMinusTitrationLambdaSquared = oneMinusTitrationLambda * oneMinusTitrationLambda;
-                modelBias = oneMinusTitrationLambdaSquared * (coeff0 * tautomerLambdaSquared + coeff1 * tautomerLambda + coeff2)
-                        + oneMinusTitrationLambda * (coeff3 * tautomerLambda + coeff4);
-                dMod_dTitr = -2 * oneMinusTitrationLambda * (coeff0 * tautomerLambdaSquared + coeff1 * tautomerLambda + coeff2)
-                        - (coeff3 * tautomerLambda + coeff4);
-                dMod_dTaut = 2 * coeff0 * tautomerLambda * oneMinusTitrationLambdaSquared + coeff1 * oneMinusTitrationLambdaSquared + coeff3 * oneMinusTitrationLambda;
+                double oneMinusTautomerLambda = (1.0 - tautomerLambda);
+                double coeffBSum = coeffB0 + coeffB1;
+                double coeffCSum = coeffC0 + coeffC1;
+                modelBias = oneMinusTitrationLambda * (coeffA0 * tautomerLambdaSquared + coeffA1 * tautomerLambda) +
+                            tautomerLambda * (coeffB0 * titrationLambdaSquared + coeffB1 * titrationLambda) +
+                            oneMinusTautomerLambda * (coeffC0 * titrationLambdaSquared + coeffC1 * titrationLambda) +
+                            //Enforce that HIS(titration==1) state is equal energy no matter tautomer value
+                            titrationLambda * (coeffCSum - coeffBSum) * tautomerLambda;
+                dMod_dTitr = -(coeffA0 * tautomerLambdaSquared + coeffA1 * tautomerLambda) +
+                             tautomerLambda * (2.0 * coeffB0 * titrationLambda + coeffB1) +
+                             oneMinusTautomerLambda * (2.0 * coeffC0 * titrationLambda + coeffC1) +
+                             tautomerLambda * (coeffCSum - coeffBSum);
+                dMod_dTaut = oneMinusTitrationLambda * (2.0 * coeffA0 * tautomerLambda + coeffA1) +
+                             (coeffB0 * titrationLambdaSquared + coeffB1 * titrationLambda) +
+                             -(coeffC0 * titrationLambdaSquared + coeffC1 * titrationLambda) +
+                             titrationLambda * (coeffCSum - coeffBSum);
+
                 break;
             case LYS:
             case LYD:
