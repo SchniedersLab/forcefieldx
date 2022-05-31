@@ -287,11 +287,8 @@ public class XrayOptions extends DataRefinementOptions {
     // Set up diffraction data (can be multiple files)
     List<DiffractionFile> diffractionFiles = processData(filenames, assemblies);
 
-    return new DiffractionData(
-        assemblies,
-        properties,
-        solventModel,
-        diffractionFiles.toArray(new DiffractionFile[diffractionFiles.size()]));
+    return new DiffractionData(assemblies, properties, solventModel,
+        diffractionFiles.toArray(new DiffractionFile[0]));
   }
 
   /**
@@ -456,20 +453,11 @@ public class XrayOptions extends DataRefinementOptions {
    * Process input from opened molecular assemblies and diffraction data to a RefinementEnergy.
    *
    * @param diffractionData Diffraction data.
-   * @param assemblies All molecular assemblies included in the diffraction data.
-   * @param algorithmFunctions An AlgorithmFunctions object.
    * @return An assembled RefinementEnergy with X-ray energy.
    */
-  public RefinementEnergy toXrayEnergy(
-      DiffractionData diffractionData,
-      MolecularAssembly[] assemblies,
-      AlgorithmFunctions algorithmFunctions) {
-
+  public RefinementEnergy toXrayEnergy(DiffractionData diffractionData) {
     diffractionData.scaleBulkFit();
     diffractionData.printStats();
-
-    algorithmFunctions.energy(assemblies[0]);
-
     return new RefinementEnergy(diffractionData, refinementMode);
   }
 }

@@ -1125,15 +1125,30 @@ public class CIFFilter extends SystemFilter{
      */
     @Override
     public boolean readNext(boolean resetPosition, boolean print) {
+        return readNext(resetPosition, print, true);
+    }
+
+    /**
+     * Reads the next snap-shot of an archive into the activeMolecularAssembly. After calling this
+     * function, a BufferedReader will remain open until the <code>close</code> method is called.
+     */
+    @Override
+    public boolean readNext(boolean resetPosition, boolean print, boolean parse) {
         List<CifCoreBlock> blocks = cifFile.getBlocks();
         CifCoreBlock currentBlock;
-        if(resetPosition){
+        if (!parse) {
+            snapShot++;
+            if(print){
+                logger.info(format(" Skipped Block: %d", snapShot));
+            }
+            return true;
+        } else if (resetPosition) {
             currentBlock = blocks.get(0);
             snapShot = 0;
-        }else if(++snapShot < blocks.size()){
+        } else if (++snapShot < blocks.size()) {
             currentBlock = blocks.get(snapShot);
-        }else{
-            if(print){
+        } else {
+            if (print) {
                 logger.info(" Reached end of available blocks in CIF file.");
             }
             return false;

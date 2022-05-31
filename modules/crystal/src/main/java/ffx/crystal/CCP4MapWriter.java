@@ -37,11 +37,13 @@
 // ******************************************************************************
 package ffx.crystal;
 
+import static ffx.utilities.TinkerUtils.version;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -214,15 +216,18 @@ public class CCP4MapWriter {
       write(data, false);
     }
 
+    File file = version(new File(filename));
+    String name = file.getName();
+
     try {
       if (logger.isLoggable(Level.INFO)) {
         StringBuilder sb = new StringBuilder();
-        sb.append(format("\nwriting CCP4 map file: \"%s\"\n", filename));
-        sb.append(format("map min: %g max: %g mean: %g standard dev.: %g", min, max, mean, sd));
+        sb.append(format("\n Writing CCP4 map file: \"%s\"", name));
+        sb.append(format("\n  Map min: %g max: %g mean: %g standard dev.: %g", min, max, mean, sd));
         logger.info(sb.toString());
       }
 
-      fos = new FileOutputStream(filename);
+      fos = new FileOutputStream(file);
       dos = new DataOutputStream(fos);
 
       byte[] bytes = new byte[2048];

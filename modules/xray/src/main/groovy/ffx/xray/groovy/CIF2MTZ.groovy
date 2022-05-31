@@ -47,11 +47,12 @@ import ffx.xray.DiffractionRefinementData
 import ffx.xray.parsers.CIFFilter
 import ffx.xray.parsers.MTZWriter
 import ffx.xray.parsers.MTZWriter.MTZType
-import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
 
 import java.util.stream.Collectors
+
+import static org.apache.commons.io.FilenameUtils.removeExtension
 
 /**
  * The CIF2MTZ script saves a CIF file to MTZ format.
@@ -69,7 +70,7 @@ class CIF2MTZ extends AlgorithmsScript {
   @Parameters(arity = "2", paramLabel = "file", description = "A PDB file and a CIF diffraction file.")
   private ArrayList<String> filenames = null
 
-  private MolecularAssembly[] systems
+  private MolecularAssembly[] molecularAssemblies
   private DiffractionRefinementData refinementData
 
   /**
@@ -103,16 +104,16 @@ class CIF2MTZ extends AlgorithmsScript {
     logger.info("\n Running CIF2MTZ on " + cif)
 
     // Use PotentialsFunctions methods instead of Groovy method closures to do work.
-    systems = algorithmFunctions.openAll(pdb)
+    molecularAssemblies = algorithmFunctions.openAll(pdb)
 
     CIFFilter cifFilter = new CIFFilter()
     ReflectionList reflectionlist =
-        cifFilter.getReflectionList(new File(cif), systems[0].getProperties())
+        cifFilter.getReflectionList(new File(cif), molecularAssemblies[0].getProperties())
 
     if (reflectionlist == null) {
       println(" Using crystal information from the PDB file to generate MTZ file.")
 
-      Crystal crystal = systems[0].getCrystal().getUnitCell()
+      Crystal crystal = molecularAssemblies[0].getCrystal().getUnitCell()
       double res = cifFilter.getResolution(new File(cif), crystal)
       if (res < 0.0) {
         println(" Resolution could not be determined from the PDB and CIF files.")
@@ -120,14 +121,17 @@ class CIF2MTZ extends AlgorithmsScript {
       }
 
       Resolution resolution = new Resolution(res)
-      reflectionlist = new ReflectionList(crystal, resolution, systems[0].getProperties())
+      reflectionlist = new ReflectionList(crystal, resolution,
+          molecularAssemblies[0].getProperties())
     }
 
-    refinementData = new DiffractionRefinementData(systems[0].getProperties(), reflectionlist)
-    cifFilter.readFile(new File(cif), reflectionlist, refinementData, systems[0].getProperties())
+    refinementData = new DiffractionRefinementData(molecularAssemblies[0].getProperties(),
+        reflectionlist)
+    cifFilter.readFile(new File(cif), reflectionlist, refinementData,
+        molecularAssemblies[0].getProperties())
 
     MTZWriter mtzwriter = new MTZWriter(reflectionlist, refinementData,
-        FilenameUtils.removeExtension(cif) + ".mtz", MTZType.DATAONLY)
+        removeExtension(cif) + ".mtz", MTZType.DATAONLY)
     mtzwriter.write()
 
     return this
@@ -135,10 +139,10 @@ class CIF2MTZ extends AlgorithmsScript {
 
   @Override
   List<Potential> getPotentials() {
-    if (systems == null) {
+    if (molecularAssemblies == null) {
       return new ArrayList<Potential>()
     } else {
-      return Arrays.stream(systems).filter {a -> a != null
+      return Arrays.stream(molecularAssemblies).filter {a -> a != null
       }.map {a -> a.getPotentialEnergy()
       }.filter {e -> e != null
       }.collect(Collectors.toList())

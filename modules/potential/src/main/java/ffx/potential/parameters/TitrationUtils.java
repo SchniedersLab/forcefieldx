@@ -1611,6 +1611,7 @@ public class TitrationUtils {
     // TODO: Rose - please update the values for CYS/CYD
     // ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
 
+
     ASHtoASP(4.00, -71.10, -72.113, 144.16, AminoAcid3.ASH, AminoAcid3.ASP), //-71.96, 0.0
     GLHtoGLU(4.40, -83.40, -101.22, 180.73, AminoAcid3.GLH, AminoAcid3.GLU), //-87.63, 0.0
     //LYStoLYD(10.40, 45.270, 0.0, AminoAcid3.LYS, AminoAcid3.LYD),

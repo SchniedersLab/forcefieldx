@@ -148,6 +148,11 @@ public final class SimulationFilter extends SystemFilter {
   }
 
   @Override
+  public boolean readNext(boolean resetPosition, boolean print, boolean parse) {
+    return false;
+  }
+
+  @Override
   public boolean readNext() {
     return readNext(false);
   }

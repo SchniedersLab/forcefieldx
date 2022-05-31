@@ -865,6 +865,16 @@ public abstract class SystemFilter {
   public abstract boolean readNext(boolean resetPosition, boolean print);
 
   /**
+   * Reads the next model if applicable (currently, ARC files only).
+   *
+   * @param resetPosition Resets to first frame.
+   * @param print Flag to print.
+   * @param parse Parse data in file. May want to skip structures for parallel jobs.
+   * @return If next model read.
+   */
+  public abstract boolean readNext(boolean resetPosition, boolean print, boolean parse);
+
+  /**
    * Setter for the field <code>forceField</code>.
    *
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.

@@ -93,7 +93,10 @@ public class TitrationManyBody {
     for (Residue residue : protonatedAssembly.getResidueList()) {
       String resName = residue.getName();
       if (resNumberList.contains(residue.getResidueNumber())) {
-        if (resName == "ASH" || resName == "GLH" || resName == "LYS" || resName == "HIS") {
+        if (resName.equalsIgnoreCase("ASH") ||
+            resName.equalsIgnoreCase("GLH") ||
+            resName.equalsIgnoreCase("LYS") ||
+            resName.equalsIgnoreCase("HIS")) {
           residue.setTitrationUtils(titrationUtils);
         }
       }

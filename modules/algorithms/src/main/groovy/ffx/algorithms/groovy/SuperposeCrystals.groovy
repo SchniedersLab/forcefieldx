@@ -65,7 +65,7 @@ import static org.apache.commons.io.FilenameUtils.getFullPath
  * <br>
  * Usage:
  * <br>
- * ffxc test.SuperposeCrystals &lt;filename&gt &lt;filename&gt;
+ * ffxc test.SuperposeCrystals &lt;filename&gt; &lt;filename&gt;
  */
 @Command(description = " Determine the RMSD for crystal polymorphs using the Progressive Alignment of Crystals (PAC) algorithm.",
     name = "ffxc SuperposeCrystals")
@@ -136,6 +136,13 @@ class SuperposeCrystals extends AlgorithmsScript {
   @Option(names = ['-p', '--permute'], paramLabel = "false", defaultValue = "false",
       description = 'Compare all unique AUs between each crystal (more intensive).')
   private static boolean permute
+
+  /**
+   * --lm or --lowMemory Slower comparisons, but reduces memory usage.
+   */
+  @Option(names = ['--lm', '--lowMemory'], paramLabel = "false", defaultValue = "false",
+          description = 'Reduce memory usage at the cost of efficiency.')
+  private static boolean lowMemory
 
   /**
    * --ac or --alphaCarbons Consider only alpha carbons for proteins.
@@ -290,7 +297,7 @@ class SuperposeCrystals extends AlgorithmsScript {
     runningStatistics =
         pac.comparisons(numAU, inflationFactor, matchTol, zPrime, zPrime2, alphaCarbons,
             includeHydrogen, massWeighted, crystalPriority, permute, save,
-            restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym, pacFilename)
+            restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym, lowMemory, pacFilename)
 
     return this
   }

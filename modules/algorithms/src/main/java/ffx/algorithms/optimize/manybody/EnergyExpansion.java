@@ -64,7 +64,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.configuration2.CompositeConfiguration;
-import org.openscience.cdk.interfaces.IDoubleBondStereochemistry;
 
 public class EnergyExpansion {
 
@@ -492,7 +491,8 @@ public class EnergyExpansion {
       }
       Rotamer[] rot_i = residues[i].getRotamers();
       Rotamer[] rot_j = residues[j].getRotamers();
-      double subtract = -backboneEnergy - getSelf(i, ri, rot_i[ri], true) - getSelf(j, rj, rot_j[rj], true);
+      double subtract =
+          -backboneEnergy - getSelf(i, ri, rot_i[ri], true) - getSelf(j, rj, rot_j[rj], true);
 
       //double subtract = -backboneEnergy - getSelf(i, ri) - getSelf(j, rj);
       energy = rO.currentEnergy(residues) + subtract;
@@ -664,9 +664,9 @@ public class EnergyExpansion {
   /**
    * Computes a self energy, defined as energy with all side-chains but one turned off, minus the
    * backbone energy.
-   *
-   * If a residue has multiple titration states represented by its set of rotamers,
-   * then a pH-dependent bias is included.
+   * <p>
+   * If a residue has multiple titration states represented by its set of rotamers, then a
+   * pH-dependent bias is included.
    *
    * @param residues Residues under optimization.
    * @param i A residue index.
@@ -702,7 +702,6 @@ public class EnergyExpansion {
     }
 
     Rotamer[] rotamers = residues[i].getRotamers();
-
 
     if (rotamers[ri].isTitrating) {
       double bias = rotamers[ri].getRotamerPhBias();
@@ -900,7 +899,7 @@ public class EnergyExpansion {
   public double getSelf(int i, int ri, Rotamer rot, boolean excludeFMod) {
     try {
       double totalSelf;
-      if (rot.isTitrating && excludeFMod){
+      if (rot.isTitrating && excludeFMod) {
         totalSelf = selfEnergy[i][ri] - rot.getRotamerPhBias();
       } else {
         totalSelf = selfEnergy[i][ri];
@@ -929,7 +928,8 @@ public class EnergyExpansion {
     return loadEnergyRestart(restartFile, residues, -1, null);
   }
 
-  public int loadEnergyRestart(File restartFile, Residue[] residues, int boxIteration, int[] cellIndices) {
+  public int loadEnergyRestart(File restartFile, Residue[] residues, int boxIteration,
+      int[] cellIndices) {
     try {
       int nResidues = residues.length;
       Path path = Paths.get(restartFile.getCanonicalPath());
@@ -1004,7 +1004,8 @@ public class EnergyExpansion {
       } else if (singleLines.size() > 0) {
         loaded = 1;
       } else {
-        logger.warning(format(" Empty or unreadable energy restart file: %s.", restartFile.getCanonicalPath()));
+        logger.warning(
+            format(" Empty or unreadable energy restart file: %s.", restartFile.getCanonicalPath()));
       }
       if (loaded >= 1) {
         boolean reverseMap = true;
@@ -1129,8 +1130,7 @@ public class EnergyExpansion {
               }
 
               if (verbose) {
-                rO.logIfMaster(
-                    format(
+                rO.logIfMaster(format(
                         " From restart file: Pair energy [(%8s,%2d),(%8s,%2d)]: %12.4f",
                         residues[i].toFormattedString(false, true), ri,
                         residues[j].toFormattedString(false, true), rj,
@@ -1203,17 +1203,12 @@ public class EnergyExpansion {
             double energy = Double.parseDouble(tok[7]);
 
             try {
-              // threeBodyEnergy[i][ri][j][rj][k][rk] = energy;
-              // IntegerKeyset ijk = new IntegerKeyset(i, ri, j, rj, k, rk);
-              // threeBodyEnergies.put(ijk, energy);
-
-              // When a restart file is generated using a large cutoff, but a new simulation is
-              // being done
-              // with a smaller cutoff, the three-body distance needs to be checked. If the
-              // three-body
-              // distance is larger than the cutoff, then the three residues are not considered
-              // 'neighbors'
-              // so that triple should not be added to the pairs map.
+              /*
+                When a restart file is generated using a large cutoff, but a new simulation is
+                being done with a smaller cutoff, the three-body distance needs to be checked. If the
+                three-body distance is larger than the cutoff, then the three residues are not considered
+                'neighbors' so that triple should not be added to the pairs map.
+               */
               if (rO.checkNeighboringTriple(i, j, k)) {
                 // If within the cutoff, the energy should be set to the previously calculated
                 // energy.
@@ -1226,43 +1221,33 @@ public class EnergyExpansion {
                 if (!dM.checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
                   set3Body(residues, i, ri, j, rj, k, rk, energy);
 
-                  double rawDist = dM.getRawNBodyDistance(indexI, ri, indexJ, rj, indexK, rk);
                   double resDist = dM.get3BodyResidueDistance(indexI, ri, indexJ, rj, indexK, rk);
-
                   String resDistString = "     large";
                   if (resDist < Double.MAX_VALUE) {
                     resDistString = format("%5.3f", resDist);
                   }
 
+                  double rawDist = dM.getRawNBodyDistance(indexI, ri, indexJ, rj, indexK, rk);
                   String distString = "     large";
                   if (rawDist < Double.MAX_VALUE) {
                     distString = format("%10.3f", rawDist);
                   }
 
-                  logger.fine(
-                      format(
-                          " 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
-                          residueI.toFormattedString(false, true),
-                          ri,
-                          residueJ.toFormattedString(false, true),
-                          rj,
-                          residueK.toFormattedString(false, true),
-                          rk,
-                          rO.formatEnergy(get3Body(residues, i, ri, j, rj, k, rk)),
-                          distString,
-                          resDistString));
+                  logger.fine(format(
+                      " 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
+                      residueI.toFormattedString(false, true), ri,
+                      residueJ.toFormattedString(false, true), rj,
+                      residueK.toFormattedString(false, true), rk,
+                      rO.formatEnergy(get3Body(residues, i, ri, j, rj, k, rk)),
+                      distString, resDistString));
                 }
               } else {
-                logger.fine(
-                    format(
-                        "Ignoring a triple-energy from outside the cutoff: 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s",
-                        residues[i].toFormattedString(false, true),
-                        ri,
-                        residues[j].toFormattedString(false, true),
-                        rj,
-                        residues[k].toFormattedString(false, true),
-                        rk,
-                        rO.formatEnergy(get3Body(residues, i, ri, j, rj, k, rk))));
+                logger.fine(format(
+                    "Ignoring a triple-energy from outside the cutoff: 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s",
+                    residues[i].toFormattedString(false, true), ri,
+                    residues[j].toFormattedString(false, true), rj,
+                    residues[k].toFormattedString(false, true), rk,
+                    rO.formatEnergy(get3Body(residues, i, ri, j, rj, k, rk))));
               }
             } catch (ArrayIndexOutOfBoundsException ex) {
               if (verbose) {
@@ -1270,25 +1255,18 @@ public class EnergyExpansion {
               }
             } catch (NullPointerException npe) {
               if (verbose) {
-                rO.logIfMaster(
-                    format(
-                        " NPE in loading 3-body energies: pruning "
-                            + "likely changed! 3-body %s-%d %s-%d %s-%d",
-                        residues[i].toFormattedString(false, true),
-                        ri,
-                        residues[j],
-                        rj,
-                        residues[k],
-                        rk));
+                rO.logIfMaster(format(" NPE in loading 3-body energies: pruning "
+                        + "likely changed! 3-body %s-%d %s-%d %s-%d",
+                    residues[i].toFormattedString(false, true), ri,
+                    residues[j], rj, residues[k], rk));
               }
             }
             if (verbose) {
-              rO.logIfMaster(
-                  format(
-                      " From restart file: Trimer energy %3d %-2d, %3d %-2d, %3d %-2d: %s",
-                      i, ri, j, rj, k, rk, rO.formatEnergy(energy)));
+              rO.logIfMaster(format(
+                  " From restart file: Trimer energy %3d %-2d, %3d %-2d, %3d %-2d: %s",
+                  i, ri, j, rj, k, rk, rO.formatEnergy(energy)));
             }
-            // remove that job from the pool
+            // Remove that job from the pool.
             String revKey = format("%d %d %d %d %d %d", i, ri, j, rj, k, rk);
             threeBodyEnergyMap.remove(reverseJobMapTrimers.get(revKey));
           } catch (NumberFormatException ex) {

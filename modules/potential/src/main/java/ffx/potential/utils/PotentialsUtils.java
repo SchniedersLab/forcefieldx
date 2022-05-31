@@ -109,19 +109,39 @@ public class PotentialsUtils implements PotentialsFunctions {
    * <p>Evaluates the energy of a MolecularAssembly and returns its ForceFieldEnergy object.
    */
   @Override
-  public ForceFieldEnergy energy(MolecularAssembly assembly) {
-    if (assembly == null) {
-      logger.info(" Molecular assembly was null - skipping energy");
+  public ForceFieldEnergy energy(MolecularAssembly molecularAssembly) {
+    if (molecularAssembly == null) {
       return null;
     } else {
-      ForceFieldEnergy energy = assembly.getPotentialEnergy();
+      ForceFieldEnergy energy = molecularAssembly.getPotentialEnergy();
       if (energy == null) {
-        energy = ForceFieldEnergy.energyFactory(assembly);
-        assembly.setPotential(energy);
+        energy = ForceFieldEnergy.energyFactory(molecularAssembly);
+        molecularAssembly.setPotential(energy);
       }
       energy.energy(false, true);
       return energy;
     }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public ForceFieldEnergy[] energy(MolecularAssembly[] molecularAssemblies) {
+    if (molecularAssemblies == null) {
+      return null;
+    }
+    int n = molecularAssemblies.length;
+    ForceFieldEnergy[] forceFieldEnergies = new ForceFieldEnergy[n];
+    if (n == 1) {
+      forceFieldEnergies[0] = energy(molecularAssemblies[0]);
+    } else {
+      for (int i = 0; i < n; i++) {
+        logger.info(format("\n Conformer %d", i + 1));
+        forceFieldEnergies[i] = energy(molecularAssemblies[i]);
+      }
+    }
+    return forceFieldEnergies;
   }
 
   /** {@inheritDoc} */

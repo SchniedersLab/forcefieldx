@@ -37,17 +37,10 @@
 // ******************************************************************************
 package ffx.potential;
 
-import static ffx.crystal.SymOp.Tr_0_0_0;
-import static ffx.crystal.SymOp.ZERO_ROTATION;
 import static ffx.crystal.SymOp.applyCartesianSymOp;
 import static ffx.crystal.SymOp.applyCartesianSymRot;
 import static ffx.crystal.SymOp.invertSymOp;
-import static ffx.potential.utils.Superpose.applyRotation;
-import static ffx.potential.utils.Superpose.applyTranslation;
-import static ffx.potential.utils.Superpose.calculateRotation;
-import static ffx.potential.utils.Superpose.calculateTranslation;
 import static ffx.potential.utils.Superpose.rmsd;
-import static ffx.potential.utils.Superpose.translate;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -59,7 +52,6 @@ import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.crystal.SymOp;
 import ffx.numerics.Potential;
-import ffx.numerics.math.DoubleMath;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
@@ -316,6 +308,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     // Check that all Dual-Topology atoms start with identical coordinates.
     int i1 = 0;
     int i2 = 0;
+    logger.info(format(" Shared atoms: %d (1: %d,%d; 2: %d,%d)\n ", nShared, shared1, atoms1.length, shared2, atoms2.length));
     for (int i = 0; i < nShared; i++) {
       Atom a1 = atoms1[i1++];
       while (a1.applyLambda()) {
@@ -404,20 +397,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       inverse = invertSymOp(symOp);
 
       // Check atom identities.
-      int n = activeAtoms1.length;
-      for (int i = 0; i < n; i++) {
-        Atom a1 = activeAtoms1[i];
-        Atom a2 = activeAtoms2[i];
-        if (!a1.getAtomType().equals(a2.getAtomType())) {
-          logger.info(format(" %s %s", a1, a1.getAtomType()));
-          logger.info(format(" %s %s", a2, a2.getAtomType()));
-        }
-        /*
-        if (!a1.getMultipoleType().equals(a2.getMultipoleType())) {
-          logger.info(format(" %s %s", a1, a1.getMultipoleType()));
-          logger.info(format(" %s %s", a2, a2.getMultipoleType()));
-        } */
-      }
+      int len1 = activeAtoms1.length;
+      int len2 = activeAtoms2.length;
 
       // Get the coordinates for active atoms.
       potential1.getCoordinates(x1);
@@ -426,9 +407,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       // Collect coordinates for shared atoms (remove alchemical atoms from the superposition).
       double[] x1Shared = new double[nShared * 3];
       double[] x2Shared = new double[nShared * 3];
-      n = activeAtoms1.length;
       int sharedIndex = 0;
-      for (int i = 0; i < n; i++) {
+      for (int i = 0; i < len1; i++) {
         if (sharedAtoms1[i]) {
           int index = i * 3;
           x1Shared[sharedIndex++] = x1[index];
@@ -436,9 +416,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
           x1Shared[sharedIndex++] = x1[index + 2];
         }
       }
-      n = activeAtoms2.length;
       sharedIndex = 0;
-      for (int i = 0; i < n; i++) {
+      for (int i = 0; i < len2; i++) {
         if (sharedAtoms2[i]) {
           int index = i * 3;
           x2Shared[sharedIndex++] = x2[index];
@@ -448,50 +427,11 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       }
 
       double[] origX2 = Arrays.copyOf(x2Shared, x2Shared.length);
-      double[] x2s = new double[origX2.length];
       double[] m = new double[origX2.length];
       Arrays.fill(m, 1.0);
       double origRMSD = rmsd(x1Shared, x2Shared, m);
       logger.info("\n Topology 2 Coordinates from Input File");
       logger.info(format(" RMSD: %12.3f", origRMSD));
-      potential2.energy(x2, false);
-
-      logger.info("\n Topology 2 Coordinates from Superpose");
-      Crystal unitCell2 = potential2.getCrystal().getUnitCell();
-      double calcRMSD = Double.MAX_VALUE;
-      SymOp calcSymOp = null;
-      for (int s = 0; s < unitCell2.getNumSymOps(); s++) {
-        SymOp symOp2 = unitCell2.spaceGroup.getSymOp(s);
-        unitCell2.applySymOp(origX2, x2s, symOp2);
-        // Calculate a SymOp on the fly.
-        // Translate Topology 1 and Topology 2 to the origin.
-        double[] origX1 = Arrays.copyOf(x1Shared, x1Shared.length);
-        double[] trans = calculateTranslation(origX1, m);
-        applyTranslation(origX1, trans);
-        SymOp trialSymOp = new SymOp(ZERO_ROTATION, trans);
-        translate(x2s, m);
-
-        // Rotate Topology 1 onto Topology 2.
-        double[][] rot = calculateRotation(x2s, origX1, m);
-        applyRotation(origX1, rot);
-        trialSymOp = trialSymOp.append(new SymOp(rot, Tr_0_0_0));
-
-        // Translate Topology 1 to the center of mass of Topology 2.
-        unitCell2.applySymOp(origX2, x2s, symOp2);
-        trans = DoubleMath.sub(calculateTranslation(origX1, m), calculateTranslation(x2s, m));
-        applyTranslation(origX1, trans);
-        trialSymOp = trialSymOp.append(new SymOp(ZERO_ROTATION, trans));
-
-        // Apply the calculated SymOp to shared atoms.
-        origX1 = Arrays.copyOf(x1Shared, x1Shared.length);
-        applyCartesianSymOp(origX1, origX1, trialSymOp);
-        double trialRMSD = rmsd(origX1, x2s, m);
-        logger.info(format(" RMSD: %12.3f", trialRMSD));
-        if (trialRMSD < calcRMSD) {
-          calcRMSD = trialRMSD;
-          calcSymOp = trialSymOp;
-        }
-      }
 
       // Get a fresh copy of the original coordinates.
       double[] origX1 = Arrays.copyOf(x1Shared, x1Shared.length);
@@ -501,12 +441,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       logger.info("\n Topology 2 Coordinates from Loaded SymOp");
       logger.info(format(" RMSD: %12.3f", loadedRMSD));
 
-      // If the loaded SymOp gives a larger Energy that the calculated SymOp, replace it.
-      if (calcRMSD < loadedRMSD) {
-        logger.info(format("\n Using the Superpose SymOp (RMSD: %16.8f)", calcRMSD));
-        symOp = calcSymOp;
-        inverse = invertSymOp(symOp);
-      }
+
       logger.info("\n SymOp between topologies:\n" + symOp);
       logger.info("\n Inverse SymOp:\n" + inverse);
     } catch (Exception ex) {
@@ -1490,8 +1425,8 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         } else {
           restraintEnergy2 = 0.0;
         }
-        if (logger.isLoggable(Level.INFO)) {
-          logger.info(format(" Topology 2 Energy & Restraints: %15.8f %15.8f", f2L * energy2,
+        if (logger.isLoggable(Level.FINE)) {
+          logger.fine(format(" Topology 2 Energy & Restraints: %15.8f %15.8f", f2L * energy2,
               f1L * restraintEnergy2));
         }
       }

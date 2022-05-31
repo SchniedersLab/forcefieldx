@@ -37,9 +37,11 @@
 // ******************************************************************************
 package ffx.xray;
 
+import static ffx.utilities.TinkerUtils.version;
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.POLYNOMIAL;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
+import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 import edu.rit.pj.ParallelTeam;
 import ffx.crystal.CCP4MapWriter;
@@ -70,7 +72,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.io.FilenameUtils;
 
 /**
  * DiffractionData class.
@@ -125,8 +126,8 @@ public class DiffractionData implements DataContainer {
    * construct a diffraction data assembly, assumes an X-ray data set with a weight of 1.0 using the
    * same name as the molecular assembly
    *
-   * @param assembly {@link ffx.potential.MolecularAssembly molecular assembly} object, used as the
-   *     atomic model for comparison against the data
+   * @param assembly {@link ffx.potential.MolecularAssembly molecular assembly} object, used as
+   *     the atomic model for comparison against the data
    * @param properties system properties file
    */
   public DiffractionData(MolecularAssembly assembly, CompositeConfiguration properties) {
@@ -136,8 +137,8 @@ public class DiffractionData implements DataContainer {
   /**
    * construct a diffraction data assembly
    *
-   * @param assembly {@link ffx.potential.MolecularAssembly molecular assembly} object, used as the
-   *     atomic model for comparison against the data
+   * @param assembly {@link ffx.potential.MolecularAssembly molecular assembly} object, used as
+   *     the atomic model for comparison against the data
    * @param properties system properties file
    * @param datafile one or more {@link ffx.xray.parsers.DiffractionFile} to be refined against
    */
@@ -150,8 +151,8 @@ public class DiffractionData implements DataContainer {
    * construct a diffraction data assembly, assumes an X-ray data set with a weight of 1.0 using the
    * same name as the molecular assembly
    *
-   * @param assembly {@link ffx.potential.MolecularAssembly molecular assembly} object, used as the
-   *     atomic model for comparison against the data
+   * @param assembly {@link ffx.potential.MolecularAssembly molecular assembly} object, used as
+   *     the atomic model for comparison against the data
    * @param properties system properties file
    * @param solventmodel the type of solvent model desired - see {@link
    *     CrystalReciprocalSpace.SolventModel bulk solvent model} selections
@@ -168,8 +169,8 @@ public class DiffractionData implements DataContainer {
   /**
    * construct a diffraction data assembly
    *
-   * @param assembly {@link ffx.potential.MolecularAssembly molecular assembly} object, used as the
-   *     atomic model for comparison against the data
+   * @param assembly {@link ffx.potential.MolecularAssembly molecular assembly} object, used as
+   *     the atomic model for comparison against the data
    * @param properties system properties file
    * @param solventmodel the type of solvent model desired - see {@link
    *     CrystalReciprocalSpace.SolventModel bulk solvent model} selections
@@ -320,6 +321,8 @@ public class DiffractionData implements DataContainer {
       sb.append("   Solvent grid search: ").append(gridSearch).append("\n");
       sb.append("   X-ray scale fit tolerance: ").append(xrayScaleTol).append("\n");
       sb.append("   Sigma A fit tolerance: ").append(sigmaATol).append("\n");
+      sb.append("   Native environment approximation: ").append(nativeEnvironmentApproximation)
+          .append("\n");
       sb.append("  Reflections\n");
       sb.append("   F/sigF cutoff: ").append(fsigfCutoff).append("\n");
       sb.append("   R Free flag (-1 auto-determine from the data): ").append(rflag).append("\n");
@@ -1048,7 +1051,7 @@ public class DiffractionData implements DataContainer {
       writeData(filename, 0);
     } else {
       for (int i = 0; i < n; i++) {
-        writeData("" + FilenameUtils.removeExtension(filename) + "_" + i + ".mtz", i);
+        writeData("" + removeExtension(filename) + "_" + i + ".mtz", i);
       }
     }
   }
@@ -1080,9 +1083,51 @@ public class DiffractionData implements DataContainer {
       writeMaps(filename, 0);
     } else {
       for (int i = 0; i < n; i++) {
-        writeMaps("" + FilenameUtils.removeExtension(filename) + "_" + i + ".map", i);
+        writeMaps("" + removeExtension(filename) + "_" + i + ".map", i);
       }
     }
+  }
+
+  /**
+   * write 2Fo-Fc and Fo-Fc maps for a datasets
+   *
+   * @param filename output root filename for Fo-Fc and 2Fo-Fc maps
+   * @param i a int.
+   */
+  private void writeMaps(String filename, int i) {
+    if (!scaled[i]) {
+      scaleBulkFit(i);
+    }
+
+    // Fo-Fc
+    crystalReciprocalSpacesFc[i].computeAtomicGradients(
+        refinementData[i].foFc1,
+        refinementData[i].freeR,
+        refinementData[i].rFreeFlag,
+        RefinementMode.COORDINATES);
+    double[] densityGrid = crystalReciprocalSpacesFc[i].getDensityGrid();
+    int extx = (int) crystalReciprocalSpacesFc[i].getXDim();
+    int exty = (int) crystalReciprocalSpacesFc[i].getYDim();
+    int extz = (int) crystalReciprocalSpacesFc[i].getZDim();
+
+    CCP4MapWriter mapwriter = new CCP4MapWriter(extx, exty, extz, crystal[i],
+        removeExtension(filename) + "_fofc.map");
+    mapwriter.write(densityGrid);
+
+    // 2Fo-Fc
+    crystalReciprocalSpacesFc[i].computeAtomicGradients(
+        refinementData[i].foFc2,
+        refinementData[i].freeR,
+        refinementData[i].rFreeFlag,
+        RefinementMode.COORDINATES);
+    densityGrid = crystalReciprocalSpacesFc[i].getDensityGrid();
+    extx = (int) crystalReciprocalSpacesFc[i].getXDim();
+    exty = (int) crystalReciprocalSpacesFc[i].getYDim();
+    extz = (int) crystalReciprocalSpacesFc[i].getZDim();
+
+    mapwriter = new CCP4MapWriter(extx, exty, extz, crystal[i],
+        removeExtension(filename) + "_2fofc.map");
+    mapwriter.write(densityGrid);
   }
 
   /**
@@ -1092,7 +1137,8 @@ public class DiffractionData implements DataContainer {
    */
   public void writeModel(String filename) {
     StringBuilder remark = new StringBuilder();
-    File file = new File(filename);
+
+    File file = version(new File(filename));
     PDBFilter pdbFilter = new PDBFilter(file, Arrays.asList(assembly), null, null);
 
     Date now = new Date();
@@ -1132,7 +1178,7 @@ public class DiffractionData implements DataContainer {
       writeSolventMask(filename, 0);
     } else {
       for (int i = 0; i < n; i++) {
-        writeSolventMask("" + FilenameUtils.removeExtension(filename) + "_" + i + ".map", i);
+        writeSolventMask("" + removeExtension(filename) + "_" + i + ".map", i);
       }
     }
   }
@@ -1147,7 +1193,7 @@ public class DiffractionData implements DataContainer {
       writeSolventMaskCNS(filename, 0);
     } else {
       for (int i = 0; i < n; i++) {
-        writeSolventMaskCNS("" + FilenameUtils.removeExtension(filename) + "_" + i + ".map", i);
+        writeSolventMaskCNS("" + removeExtension(filename) + "_" + i + ".map", i);
       }
     }
   }
@@ -1169,7 +1215,8 @@ public class DiffractionData implements DataContainer {
   /**
    * Determine the total atomic gradients due to the diffraction data - performs an inverse FFT
    *
-   * @param refinementMode the {@link RefinementMinimize.RefinementMode refinement mode} requested
+   * @param refinementMode the {@link RefinementMinimize.RefinementMode refinement mode}
+   *     requested
    * @see CrystalReciprocalSpace#computeAtomicGradients(double[][], int[], int,
    *     ffx.xray.RefinementMinimize.RefinementMode, boolean) computeAtomicGradients
    */
@@ -1212,50 +1259,6 @@ public class DiffractionData implements DataContainer {
       crystalReciprocalSpacesFc[i].setLambdaTerm(lambdaTerm);
       crystalReciprocalSpacesFs[i].setLambdaTerm(lambdaTerm);
     }
-  }
-
-  /**
-   * write 2Fo-Fc and Fo-Fc maps for a datasets
-   *
-   * @param filename output root filename for Fo-Fc and 2Fo-Fc maps
-   * @param i a int.
-   */
-  private void writeMaps(String filename, int i) {
-    if (!scaled[i]) {
-      scaleBulkFit(i);
-    }
-
-    // Fo-Fc
-    crystalReciprocalSpacesFc[i].computeAtomicGradients(
-        refinementData[i].foFc1,
-        refinementData[i].freeR,
-        refinementData[i].rFreeFlag,
-        RefinementMode.COORDINATES);
-    double[] densityGrid = crystalReciprocalSpacesFc[i].getDensityGrid();
-    int extx = (int) crystalReciprocalSpacesFc[i].getXDim();
-    int exty = (int) crystalReciprocalSpacesFc[i].getYDim();
-    int extz = (int) crystalReciprocalSpacesFc[i].getZDim();
-
-    CCP4MapWriter mapwriter =
-        new CCP4MapWriter(
-            extx, exty, extz, crystal[i], FilenameUtils.removeExtension(filename) + "_fofc.map");
-    mapwriter.write(densityGrid);
-
-    // 2Fo-Fc
-    crystalReciprocalSpacesFc[i].computeAtomicGradients(
-        refinementData[i].foFc2,
-        refinementData[i].freeR,
-        refinementData[i].rFreeFlag,
-        RefinementMode.COORDINATES);
-    densityGrid = crystalReciprocalSpacesFc[i].getDensityGrid();
-    extx = (int) crystalReciprocalSpacesFc[i].getXDim();
-    exty = (int) crystalReciprocalSpacesFc[i].getYDim();
-    extz = (int) crystalReciprocalSpacesFc[i].getZDim();
-
-    mapwriter =
-        new CCP4MapWriter(
-            extx, exty, extz, crystal[i], FilenameUtils.removeExtension(filename) + "_2fofc.map");
-    mapwriter.write(densityGrid);
   }
 
   /**

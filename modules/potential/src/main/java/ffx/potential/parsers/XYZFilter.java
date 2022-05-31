@@ -515,10 +515,21 @@ public class XYZFilter extends SystemFilter {
   }
 
   /**
+   * {@inheritDoc}
+   *
+   * <p>Reads the next snap-shot of an archive into the activeMolecularAssembly. After calling this
+   * function, a BufferedReader will remain open until the <code>close</code> method is called.
+   */
+  @Override
+  public boolean readNext(boolean resetPosition, boolean print) {
+    return readNext(resetPosition, print, true);
+  }
+
+  /**
    * Reads the next snap-shot of an archive into the activeMolecularAssembly. After calling this
    * function, a BufferedReader will remain open until the <code>close</code> method is called.
    */
-  public boolean readNext(boolean resetPosition, boolean print) {
+  public boolean readNext(boolean resetPosition, boolean print, boolean parse) {
     try {
       String data;
       Atom[] atoms = activeMolecularAssembly.getAtomArray();
@@ -552,56 +563,77 @@ public class XYZFilter extends SystemFilter {
       }
 
       if (print) {
-        logger.info(format("\n Attempting to read snapshot %d.", snapShot));
+        if (parse) {
+          logger.info(format("\n Attempting to read snapshot %d.", snapShot));
+        } else {
+          logger.info(format("\n Skipping snapshot %d.", snapShot));
+        }
       }
-      try {
-        int nArchive = parseInt(data.trim().split(" +")[0]);
-        if (nArchive != nSystem) {
-          String message =
-              format("Number of atoms mismatch (Archive: %d, System: %d).", nArchive, nSystem);
-          if (dieOnMissingAtom) {
-            logger.severe(message);
+      if (parse) {
+        try {
+          int nArchive = parseInt(data.trim().split(" +")[0]);
+          if (nArchive != nSystem) {
+            String message =
+                    format("Number of atoms mismatch (Archive: %d, System: %d).", nArchive, nSystem);
+            if (dieOnMissingAtom) {
+              logger.severe(message);
+            }
+            logger.warning(message);
+            return false;
           }
-          logger.warning(message);
+        } catch (NumberFormatException e) {
+          logger.warning(e.toString());
           return false;
         }
-      } catch (NumberFormatException e) {
-        logger.warning(e.toString());
-        return false;
-      }
 
-      remarkLine = data;
+        remarkLine = data;
 
-      // The header line is reasonable. Check for periodic box dimensions.
-      bufferedReader.mark(10000);
-      data = bufferedReader.readLine();
-      if (!readPBC(data, activeMolecularAssembly)) {
-        bufferedReader.reset();
-      }
-
-      for (int i = 0; i < nSystem; i++) {
+        // The header line is reasonable. Check for periodic box dimensions.
+        bufferedReader.mark(10000);
         data = bufferedReader.readLine();
-        // Read past blank lines
-        while (data != null && data.trim().equals("")) {
+        if (!readPBC(data, activeMolecularAssembly)) {
+          bufferedReader.reset();
+        }
+
+        for (int i = 0; i < nSystem; i++) {
           data = bufferedReader.readLine();
+          // Read past blank lines
+          while (data != null && data.trim().equals("")) {
+            data = bufferedReader.readLine();
+          }
+          String[] tokens = data.trim().split(" +");
+          if (tokens.length < 6) {
+            String message = format("Check atom %d in %s.", (i + 1), currentFile.getName());
+            logger.warning(message);
+            return false;
+          }
+          double x = parseDouble(tokens[2]);
+          double y = parseDouble(tokens[3]);
+          double z = parseDouble(tokens[4]);
+          int xyzIndex = atoms[i].getIndex();
+          if (xyzIndex != i + 1) {
+            String message =
+                    format(
+                            "Archive atom index %d being read onto system atom index %d.", i + 1, xyzIndex);
+            logger.warning(message);
+          }
+          atoms[i].moveTo(x, y, z);
         }
-        String[] tokens = data.trim().split(" +");
-        if (tokens.length < 6) {
-          String message = format("Check atom %d in %s.", (i + 1), currentFile.getName());
-          logger.warning(message);
-          return false;
+      }else{
+        // Header line skipped. Check for crstal information.
+        bufferedReader.mark(10000);
+        data = bufferedReader.readLine();
+        if (!readPBC(data, activeMolecularAssembly)) {
+          bufferedReader.reset();
         }
-        double x = parseDouble(tokens[2]);
-        double y = parseDouble(tokens[3]);
-        double z = parseDouble(tokens[4]);
-        int xyzIndex = atoms[i].getIndex();
-        if (xyzIndex != i + 1) {
-          String message =
-              format(
-                  "Archive atom index %d being read onto system atom index %d.", i + 1, xyzIndex);
-          logger.warning(message);
+        // Read ahead n lines and skip blanks.
+        for (int i = 0; i < nSystem; i++) {
+          data = bufferedReader.readLine();
+          // Read past blank lines
+          while (data != null && data.trim().equals("")) {
+            data = bufferedReader.readLine();
+          }
         }
-        atoms[i].moveTo(x, y, z);
       }
       return true;
     } catch (FileNotFoundException e) {

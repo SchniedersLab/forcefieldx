@@ -58,24 +58,24 @@ import static java.lang.String.format
 class Scheduler extends AlgorithmsScript {
 
   /**
-   * -v or --verbose to turn on verbose backend Parallel Java logging.
+   * -v or --verbose Turn on verbose logging during backend Parallel Java startup.
    */
-  @Option(names = ['-v', '--verbose'],
-      description = 'Turn on verbose back end logging.')
+  @Option(names = ['-v', '--verbose'], paramLabel = '', defaultValue = 'false',
+      description = 'Turn on verbose logging during backend Parallel Java startup.')
   boolean v = false
 
   /**
    * -p or --threadsPerProcess The number of cores (threads) per process (requires -Dpj.nt=x satisfies x <= p).
    * The default is all available cores.
    */
-  @Option(names = ['-p', '--threadsPerProcess'], paramLabel = 'all',
+  @Option(names = ['-p', '--threadsPerProcess'], paramLabel = 'all', defaultValue = '-1',
       description = 'The number of cores (threads) per process (requires -Dpj.nt=X satisfies X <= p).')
   int p = -1
 
   /**
    * -P or --port to define the port the Server will use.
    */
-  @Option(names = ['-P', '--port'], paramLabel = '20617',
+  @Option(names = ['-P', '--port'], paramLabel = '20617', defaultValue = '20617',
       description = 'Set the port the front end server will listen on.')
   int port = 20617
 
@@ -228,9 +228,8 @@ class Scheduler extends AlgorithmsScript {
     String arg = "-Xmx" + memory
 
     if (v) {
-      arg += " -Dpj.log='true'"
+      arg += " -Dpj.verbose=true"
     }
-
     // Create an entry for each process
     int i = 0
     for (p = 0; p < processes; p++) {

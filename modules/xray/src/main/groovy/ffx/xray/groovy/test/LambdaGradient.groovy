@@ -56,6 +56,7 @@ import picocli.CommandLine.Parameters
 import java.util.stream.IntStream
 
 import static ffx.utilities.StringUtils.parseAtomRanges
+import static java.lang.String.format
 
 /**
  * The X-ray test Lambda Gradient script.
@@ -110,36 +111,34 @@ class LambdaGradient extends AlgorithmsScript {
     // Turn on computation of lambda derivatives
     System.setProperty("lambdaterm", "true")
 
-    String modelfilename
-    MolecularAssembly[] assemblies
+    String filename
+    MolecularAssembly[] molecularAssemblies
     if (filenames != null && filenames.size() > 0) {
-      assemblies = algorithmFunctions.openAll(filenames.get(0))
-      activeAssembly = assemblies[0]
-      modelfilename = filenames.get(0)
+      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
+      activeAssembly = molecularAssemblies[0]
+      filename = filenames.get(0)
     } else if (activeAssembly == null) {
       logger.info(helpString())
       return this
     } else {
-      modelfilename = activeAssembly.getFile().getAbsolutePath()
-      assemblies = [activeAssembly]
+      filename = activeAssembly.getFile().getAbsolutePath()
+      molecularAssemblies = [activeAssembly]
     }
 
     alchemicalOptions.setFirstSystemAlchemistry(activeAssembly)
     alchemicalOptions.setFirstSystemUnchargedAtoms(activeAssembly)
 
-    logger.info("\n Testing X-ray lambda derivatives for " + modelfilename)
+    logger.info("\n Testing X-ray lambda derivatives for " + filename)
 
     // Load parsed X-ray properties.
-    CompositeConfiguration properties = assemblies[0].getProperties()
+    CompositeConfiguration properties = molecularAssemblies[0].getProperties()
     xrayOptions.setProperties(parseResult, properties)
 
     // Set up diffraction data (can be multiple files)
     DiffractionData diffractionData =
-        xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
-    diffractionData.scaleBulkFit()
-    diffractionData.printStats()
+        xrayOptions.getDiffractionData(filenames, molecularAssemblies, parseResult)
+    refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
 
-    refinementEnergy = xrayOptions.toXrayEnergy(diffractionData, assemblies, algorithmFunctions)
     Potential potential = refinementEnergy
     LambdaInterface lambdaInterface = refinementEnergy
 
@@ -175,9 +174,9 @@ class LambdaGradient extends AlgorithmsScript {
     lambdaInterface.setLambda(lambda)
     double e1 = potential.energy(x, true)
 
-    logger.info(String.format(" E(0):      %20.8f.", e0))
-    logger.info(String.format(" E(1):      %20.8f.", e1))
-    logger.info(String.format(" E(1)-E(0): %20.8f.\n", e1 - e0))
+    logger.info(format(" E(0):      %20.8f.", e0))
+    logger.info(format(" E(1):      %20.8f.", e1))
+    logger.info(format(" E(1)-E(0): %20.8f.\n", e1 - e0))
 
     // Test Lambda gradient in the neighborhood of the lambda variable.
     for (int j = 0; j < 3; j++) {
@@ -190,7 +189,7 @@ class LambdaGradient extends AlgorithmsScript {
         continue
       }
 
-      logger.info(String.format(" Current lambda value %6.4f", lambda))
+      logger.info(format(" Current lambda value %6.4f", lambda))
       lambdaInterface.setLambda(lambda)
 
       // Calculate the energy, dE/dX, dE/dL, d2E/dL2 and dE/dL/dX
@@ -217,21 +216,21 @@ class LambdaGradient extends AlgorithmsScript {
 
       double err = Math.abs(dEdLFD - dEdL)
       if (err < errTol) {
-        logger.info(String.format(" dE/dL passed:   %10.6f", err))
+        logger.info(format(" dE/dL passed:   %10.6f", err))
       } else {
-        logger.info(String.format(" dE/dL failed: %10.6f", err))
+        logger.info(format(" dE/dL failed: %10.6f", err))
       }
-      logger.info(String.format(" Numeric:   %15.8f", dEdLFD))
-      logger.info(String.format(" Analytic:  %15.8f", dEdL))
+      logger.info(format(" Numeric:   %15.8f", dEdLFD))
+      logger.info(format(" Analytic:  %15.8f", dEdL))
 
       err = Math.abs(d2EdL2FD - d2EdL2)
       if (err < errTol) {
-        logger.info(String.format(" d2E/dL2 passed: %10.6f", err))
+        logger.info(format(" d2E/dL2 passed: %10.6f", err))
       } else {
-        logger.info(String.format(" d2E/dL2 failed: %10.6f", err))
+        logger.info(format(" d2E/dL2 failed: %10.6f", err))
       }
-      logger.info(String.format(" Numeric:   %15.8f", d2EdL2FD))
-      logger.info(String.format(" Analytic:  %15.8f", d2EdL2))
+      logger.info(format(" Numeric:   %15.8f", d2EdL2FD))
+      logger.info(format(" Analytic:  %15.8f", d2EdL2))
 
       boolean passed = true
 
@@ -251,16 +250,16 @@ class LambdaGradient extends AlgorithmsScript {
 
         double error = Math.sqrt(eX * eX + eY * eY + eZ * eZ)
         if (error < errTol) {
-          logger.fine(String.format(" dE/dX/dL for Atom %d passed: %10.6f", i + 1, error))
+          logger.fine(format(" dE/dX/dL for Atom %d passed: %10.6f", i + 1, error))
         } else {
-          logger.info(String.format(" dE/dX/dL for Atom %d failed: %10.6f", i + 1, error))
-          logger.info(String.format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXa, dYa, dZa))
-          logger.info(String.format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX, dY, dZ))
+          logger.info(format(" dE/dX/dL for Atom %d failed: %10.6f", i + 1, error))
+          logger.info(format(" Analytic: (%15.8f, %15.8f, %15.8f)", dXa, dYa, dZa))
+          logger.info(format(" Numeric:  (%15.8f, %15.8f, %15.8f)", dX, dY, dZ))
           passed = false
         }
       }
       if (passed) {
-        logger.info(String.format(" dE/dX/dL passed for all atoms"))
+        logger.info(format(" dE/dX/dL passed for all atoms"))
       }
 
       logger.info("")
@@ -337,19 +336,21 @@ class LambdaGradient extends AlgorithmsScript {
       grad2 = Math.sqrt(grad2)
 
       if (len > errTol) {
-        logger.info(String.format(" Atom %d failed: %10.6f.", i + 1, len) +
-                String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)", gradient[i0], gradient[i1], gradient[i2]) +
-                String.format("\n Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]))
+        logger.info(format(" Atom %d failed: %10.6f.", i + 1, len) +
+            format("\n Analytic: (%12.4f, %12.4f, %12.4f)", gradient[i0], gradient[i1],
+                gradient[i2]) +
+            format("\n Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]))
         ++nFailures
         //return
       } else {
-        logger.info(String.format(" Atom %d passed: %10.6f.", i + 1, len) +
-                String.format("\n Analytic: (%12.4f, %12.4f, %12.4f)", gradient[i0], gradient[i1], gradient[i2]) +
-                String.format("\n Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]))
+        logger.info(format(" Atom %d passed: %10.6f.", i + 1, len) +
+            format("\n Analytic: (%12.4f, %12.4f, %12.4f)", gradient[i0], gradient[i1],
+                gradient[i2]) +
+            format("\n Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]))
       }
 
       if (grad2 > expGrad) {
-        logger.info(String.format(" Atom %d has an unusually large gradient: %10.6f", i + 1, grad2))
+        logger.info(format(" Atom %d has an unusually large gradient: %10.6f", i + 1, grad2))
       }
       logger.info("\n")
     }
@@ -357,20 +358,20 @@ class LambdaGradient extends AlgorithmsScript {
     avLen = avLen / nAtoms
     avLen = Math.sqrt(avLen)
     if (avLen > errTol) {
-      logger.info(String.
+      logger.info(
           format(" Test failure: RMSD from analytic solution is %10.6f > %10.6f", avLen, errTol))
     } else {
-      logger.info(String.
+      logger.info(
           format(" Test success: RMSD from analytic solution is %10.6f < %10.6f", avLen, errTol))
     }
-    logger.info(String.format(" Number of atoms failing gradient test: %d", nFailures))
+    logger.info(format(" Number of atoms failing gradient test: %d", nFailures))
 
     avGrad = avGrad / nAtoms
     avGrad = Math.sqrt(avGrad)
     if (avGrad > expGrad) {
-      logger.info(String.format(" Unusually large RMS gradient: %10.6f > %10.6f", avGrad, expGrad))
+      logger.info(format(" Unusually large RMS gradient: %10.6f > %10.6f", avGrad, expGrad))
     } else {
-      logger.info(String.format(" RMS gradient: %10.6f", avGrad))
+      logger.info(format(" RMS gradient: %10.6f", avGrad))
     }
 
     refinementEnergy = new RefinementEnergy(diffractionData, RefinementMode.BFACTORS)
@@ -409,19 +410,19 @@ class LambdaGradient extends AlgorithmsScript {
       grad2 = Math.sqrt(grad2)
 
       if (len > errTol) {
-        logger.info(String.format(" B-Factor %d failed: %10.6f.", i + 1, len) +
-                String.format("\n Analytic: %12.4f", gradient[i]) +
-                String.format("\n Numeric:  %12.4f", fd))
+        logger.info(format(" B-Factor %d failed: %10.6f.", i + 1, len) +
+            format("\n Analytic: %12.4f", gradient[i]) +
+            format("\n Numeric:  %12.4f", fd))
         ++nFailures
         //return
       } else {
-        logger.info(String.format(" B-Factor %d passed: %10.6f.", i + 1, len) +
-                String.format("\n Analytic: %12.4f", gradient[i]) +
-                String.format("\n Numeric:  %12.4f", fd))
+        logger.info(format(" B-Factor %d passed: %10.6f.", i + 1, len) +
+            format("\n Analytic: %12.4f", gradient[i]) +
+            format("\n Numeric:  %12.4f", fd))
       }
 
       if (grad2 > expGrad) {
-        logger.info(String.format(" B-Factor %d has an unusually large gradient: %10.6f", i + 1, grad2))
+        logger.info(format(" B-Factor %d has an unusually large gradient: %10.6f", i + 1, grad2))
       }
       logger.info("\n")
     }
@@ -429,20 +430,20 @@ class LambdaGradient extends AlgorithmsScript {
     avLen = avLen / n
     avLen = Math.sqrt(avLen)
     if (avLen > errTol) {
-      logger.info(String.
+      logger.info(
           format(" Test failure: RMSD from analytic solution is %10.6f > %10.6f", avLen, errTol))
     } else {
-      logger.info(String.
+      logger.info(
           format(" Test success: RMSD from analytic solution is %10.6f < %10.6f", avLen, errTol))
     }
-    logger.info(String.format(" Number of B-Factors failing gradient test: %d", nFailures))
+    logger.info(format(" Number of B-Factors failing gradient test: %d", nFailures))
 
     avGrad = avGrad / n
     avGrad = Math.sqrt(avGrad)
     if (avGrad > expGrad) {
-      logger.info(String.format(" Unusually large RMS gradient: %10.6f > %10.6f", avGrad, expGrad))
+      logger.info(format(" Unusually large RMS gradient: %10.6f > %10.6f", avGrad, expGrad))
     } else {
-      logger.info(String.format(" RMS gradient: %10.6f", avGrad))
+      logger.info(format(" RMS gradient: %10.6f", avGrad))
     }
 
     return this

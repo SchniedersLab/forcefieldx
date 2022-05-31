@@ -38,6 +38,13 @@
 package ffx.algorithms.groovy
 
 import edu.rit.pj.Comm
+import edu.rit.pj.HybridTeam
+import edu.rit.pj.IntegerSchedule
+import edu.rit.pj.ParallelTeam
+import edu.rit.pj.Schedule
+import edu.rit.pj.WorkerIntegerForLoop
+import edu.rit.pj.WorkerRegion
+import edu.rit.pj.WorkerTeam
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.Potential
 import ffx.utilities.FFXScript
@@ -85,10 +92,32 @@ class ForEachFile extends AlgorithmsScript {
   String regex
 
   /**
+   * -s --schedule Load balancing will use a [Dynamic, Fixed, or Guided] schedule.
+   */
+  @Option(names = ['-s', '--schedule'], defaultValue = "dynamic", paramLabel = "dynamic",
+      description = 'Load balancing will use a [Dynamic, Fixed, or Guided] schedule.')
+  String schedule
+
+  /**
    * The final argument(s) should be one or more filenames.
    */
   @Unmatched
   List<String> unmatched = null
+
+  /**
+   * FFX Script to run in each process.
+   */
+  Class<? extends FFXScript> script
+
+  /**
+   * List of files.
+   */
+  List<File> files
+
+  /**
+   * Parallel Java Schedule.
+   */
+  IntegerSchedule integerSchedule
 
   /**
    * Minimize Constructor.
@@ -118,7 +147,7 @@ class ForEachFile extends AlgorithmsScript {
     // Set a flag to avoid double use of MPI in downstream commands.
     System.setProperty("pj.use.mpi", "false")
 
-    Class<? extends FFXScript> script = getScript(unmatched.get(0))
+    script = getScript(unmatched.get(0))
     if (script != null) {
       logger.info(format(" The %s will be run on each file.", script))
     } else {
@@ -140,7 +169,7 @@ class ForEachFile extends AlgorithmsScript {
 
     // Collect the files.
     File cwd = new File(".")
-    List<File> files = []
+    files = []
     cwd.traverse(type: FILES, maxDepth: recurse, nameFilter: ~/$regex/) {
       files.add(it)
     }
@@ -148,9 +177,52 @@ class ForEachFile extends AlgorithmsScript {
     // Sort the files.
     Collections.sort(files)
 
-    int numFiles = files.size()
-    for (int i = 0; i < numFiles; i++) {
-      if (i % numProc == rank) {
+    // Create the Parallel Java execution Schedule.
+    try {
+      integerSchedule = IntegerSchedule.parse(schedule.toLowerCase())
+      logger.info(" Parallel Schedule: " + schedule)
+    } catch (Exception e) {
+      integerSchedule = IntegerSchedule.dynamic()
+      logger.info(" Parallel Schedule: Dynamic")
+    }
+
+    // Create a HybridTeam and then execute the ForEachFileRegion
+    WorkerTeam workerTeam = new WorkerTeam(world)
+    workerTeam.execute(new ForEachFileRegion())
+
+    // Clear the pj.use.mpi flag.
+    System.clearProperty("pj.use.mpi")
+
+    return this
+  }
+
+  /**
+   * ForEachFileRegion delegates work to ForEachFileLoop instances in Parallel Java processes.
+   */
+  private class ForEachFileRegion extends WorkerRegion {
+
+    @Override
+    void run() throws Exception {
+      int numFiles = files.size()
+      execute (0, numFiles - 1, new ForEachFileLoop())
+    }
+
+  }
+
+  /**
+   * ForEachFileLoop is executed in a Parallel Java process.
+   */
+  private class ForEachFileLoop extends WorkerIntegerForLoop {
+
+
+    @Override
+    IntegerSchedule schedule() {
+      return integerSchedule
+    }
+
+    @Override
+    void run(int lb, int ub) throws Exception {
+      for (int i = lb; i <= ub; i++) {
         File file = files.get(i)
         if (file.exists()) {
           String path = normalize(file.getAbsolutePath())
@@ -189,10 +261,6 @@ class ForEachFile extends AlgorithmsScript {
       }
     }
 
-    // Clear the pj.use.mpi flag.
-    System.clearProperty("pj.use.mpi")
-
-    return this
   }
 
   @Override
