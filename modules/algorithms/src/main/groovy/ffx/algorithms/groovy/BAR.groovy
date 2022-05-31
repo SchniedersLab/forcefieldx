@@ -552,9 +552,9 @@ class BAR extends AlgorithmsScript {
       long MAX_BOOTSTRAP_TRIALS = 100000L
       long bootstrap = min(MAX_BOOTSTRAP_TRIALS, min(volume.length, volume.length))
       if (w == nWindows) {
-        logger.info("\n Free Energy Difference via FEP Method\n")
+        logger.info("\n Free Energy Difference:\n")
       } else {
-        logger.info(format("\n Free Energy Difference via FEP Method for Window %d\n", w))
+        logger.info(format("\n Free Energy Difference for Window %d\n", w))
       }
 
       long time = -System.nanoTime()
@@ -582,11 +582,11 @@ class BAR extends AlgorithmsScript {
               varBackFE))
       barEnergy = bar.getFreeEnergy()
 
-      if (w == nWindows) {
+      /*if (w == nWindows) {
         logger.info("\n Free Energy Difference via BAR Method\n")
       } else {
         logger.info(format("\n Free Energy Difference via BAR Method for Window %d\n", w))
-      }
+      }*/
 
       logger.info(format(" Free energy via BAR Iteration:  %12.4f +/- %6.4f kcal/mol.", barEnergy,
           bar.getUncertainty()))
@@ -616,9 +616,9 @@ class BAR extends AlgorithmsScript {
         logger.info(format(" Enthalpy via Direct Estimate:    %12.4f +/- %6.4f kcal/mol.",
             enthalpyDiff, enthalpyDiffSD))
 
-        logger.info("\n Enthalpy and Entropy via FEP:\n")
+        logger.info("\n Enthalpy and Entropy:\n")
       } else {
-        logger.info(format("\n Enthalpy and Entropy via FEP for Window %d\n", w))
+        logger.info(format("\n Enthalpy and Entropy for Window %d\n", w))
       }
 
       forwardEntropy = (forwardEnthalpy - forwardFEP) / this.temperature
