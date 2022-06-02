@@ -74,24 +74,31 @@ class Cluster extends AlgorithmsScript {
 
   /**
    * -a or --algorithm Clustering algorithm to use.
-   * Algorithm: Multi-K-Means++ (0) or Hierarchical (1)
+   * Algorithm: Multi-K-Means++ (0), Hierarchical (1), or Iterative (2)
    */
   @Option(names = ['-a', '--algorithm'], paramLabel = "0", defaultValue = "0",
-      description = "Algorithm: Multi-K-Means++ (0) or Hierarchical (1)")
+      description = "Algorithm: Multi-K-Means++ (0), Hierarchical (1), or Iterative (2)")
   private int algorithm
 
   /**
-   * -t or --trials Number of trials for Multi-K-Means.
+   * -t or --trials Number of trials for Multi-K-Means or Iterative.
    */
-  @Option(names = ['-t', '--trials'], paramLabel = "1", defaultValue = "1",
-      description = "Number of trials for Multi-K-Means.")
+  @Option(names = ['-t', '--trials'], paramLabel = "1000", defaultValue = "1000",
+      description = "Number of trials for Multi-K-Means or iterative method.")
   private int trials
+
+  /**
+   * --tol or --tolerance Tolerance to determine equivalent points (iterative method).
+   */
+  @Option(names = ['--tol', '--tolerance'], paramLabel = "0.5", defaultValue = "0.5",
+          description = "Tolerance to determine if points are equivalent (iterative method).")
+  private double tolerance
 
   /**
    * -k or --clusters Maximum number of kmeans clusters.
    */
   @Option(names = ['-k', '--clusters'], paramLabel = "0", defaultValue = "0",
-      description = "Maximum number of kmeans clusters.")
+      description = "Maximum number of k-means clusters.")
   private int maxClusters
 
   /**
@@ -198,6 +205,11 @@ class Cluster extends AlgorithmsScript {
         logger.info(format("  Cluster separation threshold: %6.4f A.\n", threshold))
         clusterList = hierarchicalClustering(distMatrix, threshold)
         break
+      case 2:
+        // Iterative Clustering
+        logger.info(" Performing Iterative Clustering")
+        clusterList = iterativeClustering(distMatrix, trials, tolerance)
+        break
       default:
         // K-Means++ and Multi K-Means++.
         logger.info(" Performing K-Means++ Clustering")
@@ -266,7 +278,7 @@ class Cluster extends AlgorithmsScript {
       return
     }
 
-    logger.info("\n Conformations")
+    logger.info("\n Conformations: ")
     int structNum = 0
     do {
       if (repStructs.contains(structNum)) {

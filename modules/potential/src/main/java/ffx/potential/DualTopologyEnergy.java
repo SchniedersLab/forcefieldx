@@ -308,7 +308,7 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     // Check that all Dual-Topology atoms start with identical coordinates.
     int i1 = 0;
     int i2 = 0;
-    logger.info(format(" Shared atoms: %d (1: %d,%d; 2: %d,%d)\n ", nShared, shared1, atoms1.length, shared2, atoms2.length));
+    logger.info(format(" Shared atoms: %d (1: %d of %d; 2: %d of %d)\n ", nShared, shared1, atoms1.length, shared2, atoms2.length));
     for (int i = 0; i < nShared; i++) {
       Atom a1 = atoms1[i1++];
       while (a1.applyLambda()) {
