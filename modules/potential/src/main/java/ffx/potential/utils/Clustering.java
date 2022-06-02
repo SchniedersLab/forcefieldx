@@ -39,12 +39,15 @@ package ffx.potential.utils;
 
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.random;
 
 import com.apporiented.algorithm.clustering.Cluster;
 import com.apporiented.algorithm.clustering.ClusteringAlgorithm;
 import com.apporiented.algorithm.clustering.DefaultClusteringAlgorithm;
 import com.apporiented.algorithm.clustering.SingleLinkageStrategy;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
@@ -94,10 +97,6 @@ public class Clustering {
       conformationList.add(new Conformation(row, i));
     }
 
-    if (maxClusters < 1 || maxClusters >= dim) {
-      maxClusters = dim / 2;
-    }
-
     // Input the RMSD matrix to the clustering algorithm
     // Use the org.apache.commons.math3.ml.clustering package.
     KMeansPlusPlusClusterer<Conformation> kMeansPlusPlusClusterer = new KMeansPlusPlusClusterer<>(
@@ -142,6 +141,61 @@ public class Clustering {
 
     // Convert the cluster format to CentroidClusters
     return clustersToCentroidClusters(distMatrixArray, clusterList);
+  }
+
+  /**
+   * Perform an iterative clustering for a specified number of clusters.
+   *
+   * Designed and tested by researchers at Takeda:
+   * @author Yuya, Kinoshita
+   * @author Koki, Nishimura
+   * @author Masatoshi, Karashima
+   * Implemented by:
+   * @author Aaron J. Nessler
+   *
+   * @param distMatrix Coordinate input serves as the data points.
+   * @param trials Number of iterations to perform clustering.
+   * @param tolerance RMSD cutoff to divide same values from different.
+   * @return The clusters.
+   */
+  public static List<CentroidCluster<Conformation>> iterativeClustering(List<double[]> distMatrix,
+                                                                     int trials, double tolerance) {
+    // Square distance matrix size (dim x dim).
+    int dim = distMatrix.size();
+    ArrayList<CentroidCluster<Conformation>> bestClusters = new ArrayList<>();
+    for(int i = 0; i<trials; i++) {
+
+      ArrayList<Integer> remaining = new ArrayList<>();
+      for (int j = 0; j < dim; j++) {
+        remaining.add(j);
+      }
+      List<CentroidCluster<Conformation>> clusters = new ArrayList<>();
+      while (remaining.size() > 0) {
+        int seed = (int) floor(random() * (remaining.size() - 1));
+        int index = remaining.get(seed);
+        CentroidCluster<Conformation> cluster = new CentroidCluster<>(new Conformation(distMatrix.get(index), index));
+        double[] row = distMatrix.get(index);
+        // Check that the input data is appropriate.
+        if (row.length != dim) {
+          log.severe(format(" Row %d of the distance matrix (%d x %d) has %d columns.",
+                  index, dim, dim, row.length));
+        }
+        for (int j = 0; j < dim; j++) {
+          if (row[j] < tolerance) {
+            if (remaining.contains(j)) {
+              cluster.addPoint(new Conformation(distMatrix.get(j), j));
+              remaining.remove((Integer) j);
+            }
+          }
+        }
+        clusters.add(cluster);
+        remaining.remove((Integer) seed);
+      }
+      if(bestClusters.size() ==0 || clusters.size() < bestClusters.size()){
+        bestClusters = new ArrayList<>(clusters);
+      }
+    }
+    return bestClusters;
   }
 
   /**
