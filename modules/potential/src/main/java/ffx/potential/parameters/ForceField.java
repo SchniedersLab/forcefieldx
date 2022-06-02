@@ -1717,7 +1717,8 @@ public class ForceField {
     CHARMM_22_CMAP,
     IAMOEBA_WATER,
     OPLS_AA,
-    OPLS_AAL
+    OPLS_AAL,
+    BASIC
   }
 
   public enum ForceFieldType {

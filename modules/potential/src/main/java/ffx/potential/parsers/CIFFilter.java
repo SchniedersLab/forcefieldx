@@ -255,6 +255,26 @@ public class CIFFilter extends SystemFilter{
      */
     @Override
     public boolean readFile() {
+        // Open the XYZ file (with electrostatics turned off).
+        System.setProperty("mpoleterm", "false");
+        System.clearProperty("mpoleterm");
+        Atom[] xyzAtoms = activeMolecularAssembly.getAtomArray();
+        ArrayList<ArrayList<Atom>> xyzatoms = new ArrayList<>();
+        int nXYZAtoms = xyzAtoms.length;
+
+        int numHydrogens = 0;
+        for (Atom atom : xyzAtoms) {
+            if (atom.isHydrogen()) {
+                numHydrogens++;
+            }
+        }
+
+        List<MSNode> entitiesXYZ = activeMolecularAssembly.getAllBondedEntities();
+        int numEntitiesXYZ = entitiesXYZ.size();
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(format(" Number of entities in XYZ: %d", numEntitiesXYZ));
+        }
+
         for (CifCoreBlock block : cifFile.getBlocks()) {
             logger.info("\n Block ID: " + block.getBlockHeader());
             Chemical chemical = block.getChemical();
@@ -295,8 +315,10 @@ public class CIFFilter extends SystemFilter{
                 }
             }
 
-            SpaceGroup sg;
-            sg = SpaceGroupDefinitions.spaceGroupFactory(sgName);
+            SpaceGroup sg = null;
+            if(sgName != null) {
+                sg = SpaceGroupDefinitions.spaceGroupFactory(sgName);
+            }
             if (sg == null) {
                 logger.finer(" Space group name not found. Attempting to use space group number.");
                 sg = SpaceGroupDefinitions.spaceGroupFactory(sgNum);
@@ -372,6 +394,7 @@ public class CIFFilter extends SystemFilter{
                     return false;
                 }
             }
+            activeMolecularAssembly.setName(block.getBlockHeader());
             logger.info(" New Crystal: " + crystal);
             activeMolecularAssembly.setCrystal(crystal);
 
@@ -426,26 +449,6 @@ public class CIFFilter extends SystemFilter{
                 atoms[i].setHetero(true);
             }
 
-            // Open the XYZ file (with electrostatics turned off).
-            System.setProperty("mpoleterm", "false");
-            System.clearProperty("mpoleterm");
-            activeMolecularAssembly.setName(block.getBlockHeader());
-            Atom[] xyzAtoms = activeMolecularAssembly.getAtomArray();
-            ArrayList<ArrayList<Atom>> xyzatoms = new ArrayList<>();
-            int nXYZAtoms = xyzAtoms.length;
-
-            int numHydrogens = 0;
-            for (Atom atom : xyzAtoms) {
-                if (atom.isHydrogen()) {
-                    numHydrogens++;
-                }
-            }
-
-            List<MSNode> entitiesXYZ = activeMolecularAssembly.getAllBondedEntities();
-            int numEntitiesXYZ = entitiesXYZ.size();
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine(format(" Number of entities in XYZ: %d", numEntitiesXYZ));
-            }
             MolecularAssembly outputAssembly = new MolecularAssembly(block.getBlockHeader());
             int zPrime = -1;
             if (nAtoms % nXYZAtoms == 0) {
@@ -497,8 +500,8 @@ public class CIFFilter extends SystemFilter{
                     continue;
                 }
                 for (Bond xyzBond : bonds) {
-                    if (logger.isLoggable(Level.FINE)) {
-                        logger.fine(format(" Bonded atom 1: %d, Bonded atom 2: %d", xyzBond.getAtom(0).getXyzIndex(), xyzBond.getAtom(1).getXyzIndex()));
+                    if (logger.isLoggable(Level.FINER)) {
+                        logger.finer(format(" Bonded atom 1: %d, Bonded atom 2: %d", xyzBond.getAtom(0).getXyzIndex(), xyzBond.getAtom(1).getXyzIndex()));
                     }
                     xyzCDKAtoms.addBond(xyzBond.getAtom(0).getXyzIndex() - lessIndex - 1,
                             xyzBond.getAtom(1).getXyzIndex() - lessIndex - 1, order);
@@ -796,8 +799,10 @@ public class CIFFilter extends SystemFilter{
             outputAssembly.setName(activeMolecularAssembly.getName());
             setMolecularSystem(outputAssembly);
 
-            if (outputAssembly.getAtomList().size() < 1 || !writeXYZFile()) {
-                logger.info(" No atoms were written to XYZ file. Conversion failed.");
+            if (outputAssembly.getAtomList().size() < 1) {
+                logger.info(" AtomList does not contain atoms. File could not be written.");
+            }else if(!writeXYZFile()) {
+                logger.info(" XYZ File could not be written.");
             }
             // Finsished with this block. Clean up/reset variables for next block.
             outputAssembly.destroy();
