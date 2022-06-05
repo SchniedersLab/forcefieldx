@@ -40,6 +40,7 @@ package ffx.potential.parameters;
 import static ffx.potential.parameters.ForceField.ForceFieldType.POLARIZE;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.pow;
 
@@ -70,6 +71,8 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
   public final double thole;
   /** Value of polarizability scale factor. */
   public double pdamp;
+  /** Direct polarization damping. */
+  public final double ddp;
   /** Isotropic polarizability in units of Angstroms^3. */
   public final double polarizability;
   /** Atom type number. */
@@ -85,11 +88,12 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
    * @param thole The Thole dampling constant.
    * @param polarizationGroup The atom types in the polarization group.
    */
-  public PolarizeType(int atomType, double polarizability, double thole, int[] polarizationGroup) {
+  public PolarizeType(int atomType, double polarizability, double thole, double ddp, int[] polarizationGroup) {
     super(POLARIZE, Integer.toString(atomType));
     this.type = atomType;
     this.thole = thole;
     this.polarizability = polarizability;
+    this.ddp = 0.0;
     this.polarizationGroup = polarizationGroup;
     if (thole == 0.0) {
       pdamp = 0.0;
@@ -105,7 +109,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
    * @param polarizability The updated polarizability.
    */
   public PolarizeType(PolarizeType polarizeType, double polarizability) {
-    this(polarizeType.type, polarizability, polarizeType.thole,
+    this(polarizeType.type, polarizability, polarizeType.thole, polarizeType.ddp,
         Arrays.copyOf(polarizeType.polarizationGroup, polarizeType.polarizationGroup.length));
     // Keep pdamp fixed during titration.
     pdamp = polarizeType.pdamp;
@@ -253,7 +257,8 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
     }
     double thole = (polarizeType1.thole + polarizeType2.thole) / 2.0;
     double polarizability = (polarizeType1.polarizability + polarizeType2.polarizability) / 2.0;
-    return new PolarizeType(atomType, polarizability, thole, polarizationGroup);
+    double ddp = (polarizeType1.ddp + polarizeType2.ddp) / 2.0;
+    return new PolarizeType(atomType, polarizability, thole, ddp, polarizationGroup);
   }
 
   /**
@@ -271,15 +276,29 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
         int atomType = parseInt(tokens[1]);
         double polarizability = parseDouble(tokens[2]);
         double thole = parseDouble(tokens[3]);
-        int entries = tokens.length - 4;
+
+        // There might be a direct polarization damping value.
+        double ddp = 0.0;
+        int nextToken = 4;
+        try {
+          // Try to parse the next token as an Int;
+          // If there is an exception then it's a direct damping value.
+          parseInt(tokens[nextToken]);
+        } catch (NumberFormatException e) {
+          ddp = parseDouble(tokens[nextToken]);
+          nextToken = 5;
+        } catch (ArrayIndexOutOfBoundsException e) {
+          // No direct damping value.
+        }
+        int entries = tokens.length - nextToken;
         int[] polarizationGroup = null;
         if (entries > 0) {
           polarizationGroup = new int[entries];
-          for (int i = 4; i < tokens.length; i++) {
-            polarizationGroup[i - 4] = parseInt(tokens[i]);
+          for (int i = nextToken; i < tokens.length; i++) {
+            polarizationGroup[i - nextToken] = parseInt(tokens[i]);
           }
         }
-        return new PolarizeType(atomType, polarizability, thole, polarizationGroup);
+        return new PolarizeType(atomType, polarizability, thole, ddp, polarizationGroup);
       } catch (NumberFormatException e) {
         String message = "Exception parsing POLARIZE type:\n" + input + "\n";
         logger.log(Level.SEVERE, message, e);
@@ -373,10 +392,13 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
   @Override
   public String toString() {
     StringBuilder polarizeString =
-        new StringBuilder(String.format("polarize  %5d  %8.5f %8.5f", type, polarizability, thole));
+        new StringBuilder(format("polarize  %5d  %8.5f %8.5f", type, polarizability, thole));
+    if (ddp != 0.0) {
+      polarizeString.append(format(" %8.5f", ddp));
+    }
     if (polarizationGroup != null) {
       for (int a : polarizationGroup) {
-        polarizeString.append(String.format("  %5d", a));
+        polarizeString.append(format("  %5d", a));
       }
     }
     return polarizeString.toString();
