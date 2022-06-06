@@ -40,6 +40,7 @@ package ffx.potential.groovy;
 import static org.junit.Assert.assertTrue;
 
 import ffx.potential.utils.PotentialTest;
+import ffx.potential.groovy.CIFtoXYZ;
 import org.junit.Test;
 
 /**
@@ -65,6 +66,7 @@ public class CIFtoXYZTest extends PotentialTest {
     CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
     potentialScript = cifToXYZ;
 
+    assertTrue(cifToXYZ.createdFiles.length == 1);
     assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
   }
 
@@ -79,6 +81,7 @@ public class CIFtoXYZTest extends PotentialTest {
     CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
     potentialScript = cifToXYZ;
 
+    assertTrue(cifToXYZ.createdFiles.length == 1);
     assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".CIF"));
   }
 
@@ -94,6 +97,7 @@ public class CIFtoXYZTest extends PotentialTest {
     CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
     potentialScript = cifToXYZ;
 
+    assertTrue(cifToXYZ.createdFiles.length == 1);
     assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
   }
 
@@ -109,6 +113,7 @@ public class CIFtoXYZTest extends PotentialTest {
     CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
     potentialScript = cifToXYZ;
 
+    assertTrue(cifToXYZ.createdFiles.length == 1);
     assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
   }
 
@@ -124,7 +129,24 @@ public class CIFtoXYZTest extends PotentialTest {
     CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
     potentialScript = cifToXYZ;
 
+    assertTrue(cifToXYZ.createdFiles.length == 1);
     assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
+  }
+
+  @Test
+  public void testCIFtoXYZarc() {
+    // Set-up the input arguments for the CIFtoXYZ script.
+    String[] args = {"--fl","src/main/java/ffx/potential/structures/cbzs.cif",
+            "src/main/java/ffx/potential/structures/cbz.xyz"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the CIFtoXYZ script.
+    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
+    potentialScript = cifToXYZ;
+
+    assertTrue(cifToXYZ.createdFiles.length == 3);
+    assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".ARC"));
   }
 
   @Test
