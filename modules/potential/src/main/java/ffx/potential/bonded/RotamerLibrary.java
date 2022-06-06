@@ -3655,66 +3655,108 @@ public class RotamerLibrary {
         break;
       case GLH:
         if (titrationUtils == null) {
-          aminoAcidRotamerCache[n] = new Rotamer[14];
-          aminoAcidRotamerCache[n][0] = new Rotamer(name, -69.6, 19.2, -177.2, 21.7, -11.4, 44.8);
-          aminoAcidRotamerCache[n][1] = new Rotamer(name, -176.2, 14.9, 175.4, 10.6, -6.7, 39.0);
-          aminoAcidRotamerCache[n][2] = new Rotamer(name, -64.6, 13.5, -69.1, 17.3, -33.4, 27.4);
-          aminoAcidRotamerCache[n][3] = new Rotamer(name, -55.6, 10.6, 77.0, 6.8, 25.3, 32.6);
-          aminoAcidRotamerCache[n][4] = new Rotamer(name, 69.8, 10.6, -179.0, 23.7, 6.6, 64.2);
-          aminoAcidRotamerCache[n][5] = new Rotamer(name, -173.6, 14.6, 70.6, 8.7, 14.0, 37.1);
-          aminoAcidRotamerCache[n][6] = new Rotamer(name, 63.0, 4.3, -80.4, 13.9, 16.3, 20.8);
-          aminoAcidRotamerCache[n][7] = new Rotamer(name, -69.6, 19.2, -177.2, 21.7, 168.6, 44.8);
-          aminoAcidRotamerCache[n][8] = new Rotamer(name, -176.2, 14.9, 175.4, 10.6, 175.3, 39.0);
-          aminoAcidRotamerCache[n][9] = new Rotamer(name, -64.6, 13.5, -69.1, 17.3, 146.6, 27.4);
-          aminoAcidRotamerCache[n][10] = new Rotamer(name, -55.6, 10.6, 77.0, 6.8, -154.7, 32.6);
-          aminoAcidRotamerCache[n][11] = new Rotamer(name, 69.8, 10.6, -179.0, 23.7, -173.4, 64.2);
-          aminoAcidRotamerCache[n][12] = new Rotamer(name, -173.6, 14.6, 70.6, 8.7, -166.0, 37.1);
-          aminoAcidRotamerCache[n][13] = new Rotamer(name, 63.0, 4.3, -80.4, 13.9, -163.7, 20.8);
+          aminoAcidRotamerCache[n] = new Rotamer[28];
+          aminoAcidRotamerCache[n][0] = new Rotamer(name, -69.6, 19.2, -177.2, 21.7, -11.4, 44.8, 0, 0);
+          aminoAcidRotamerCache[n][1] = new Rotamer(name, -176.2, 14.9, 175.4, 10.6, -6.7, 39.0, 0, 0);
+          aminoAcidRotamerCache[n][2] = new Rotamer(name, -64.6, 13.5, -69.1, 17.3, -33.4, 27.4, 0, 0);
+          aminoAcidRotamerCache[n][3] = new Rotamer(name, -55.6, 10.6, 77.0, 6.8, 25.3, 32.6, 0, 0);
+          aminoAcidRotamerCache[n][4] = new Rotamer(name, 69.8, 10.6, -179.0, 23.7, 6.6, 64.2, 0, 0);
+          aminoAcidRotamerCache[n][5] = new Rotamer(name, -173.6, 14.6, 70.6, 8.7, 14.0, 37.1, 0, 0);
+          aminoAcidRotamerCache[n][6] = new Rotamer(name, 63.0, 4.3, -80.4, 13.9, 16.3, 20.8, 0, 0);
+          aminoAcidRotamerCache[n][7] = new Rotamer(name, -69.6, 19.2, -177.2, 21.7, 168.6, 44.8, 0, 0);
+          aminoAcidRotamerCache[n][8] = new Rotamer(name, -176.2, 14.9, 175.4, 10.6, 175.3, 39.0, 0, 0);
+          aminoAcidRotamerCache[n][9] = new Rotamer(name, -64.6, 13.5, -69.1, 17.3, 146.6, 27.4, 0, 0);
+          aminoAcidRotamerCache[n][10] = new Rotamer(name, -55.6, 10.6, 77.0, 6.8, -154.7, 32.6, 0, 0);
+          aminoAcidRotamerCache[n][11] = new Rotamer(name, 69.8, 10.6, -179.0, 23.7, -173.4, 64.2, 0, 0);
+          aminoAcidRotamerCache[n][12] = new Rotamer(name, -173.6, 14.6, 70.6, 8.7, -166.0, 37.1, 0, 0);
+          aminoAcidRotamerCache[n][13] = new Rotamer(name, 63.0, 4.3, -80.4, 13.9, -163.7, 20.8, 0, 0);
+          aminoAcidRotamerCache[n][14] = new Rotamer(name, -69.6, 19.2, -177.2, 21.7, -11.4, 44.8, 180, 0);
+          aminoAcidRotamerCache[n][15] = new Rotamer(name, -176.2, 14.9, 175.4, 10.6, -6.7, 39.0, 180, 0);
+          aminoAcidRotamerCache[n][16] = new Rotamer(name, -64.6, 13.5, -69.1, 17.3, -33.4, 27.4, 180, 0);
+          aminoAcidRotamerCache[n][17] = new Rotamer(name, -55.6, 10.6, 77.0, 6.8, 25.3, 32.6, 180, 0);
+          aminoAcidRotamerCache[n][18] = new Rotamer(name, 69.8, 10.6, -179.0, 23.7, 6.6, 64.2, 180, 0);
+          aminoAcidRotamerCache[n][19] = new Rotamer(name, -173.6, 14.6, 70.6, 8.7, 14.0, 37.1, 180, 0);
+          aminoAcidRotamerCache[n][20] = new Rotamer(name, 63.0, 4.3, -80.4, 13.9, 16.3, 20.8, 180, 0);
+          aminoAcidRotamerCache[n][21] = new Rotamer(name, -69.6, 19.2, -177.2, 21.7, 168.6, 44.8, 180, 0);
+          aminoAcidRotamerCache[n][22] = new Rotamer(name, -176.2, 14.9, 175.4, 10.6, 175.3, 39.0, 180, 0);
+          aminoAcidRotamerCache[n][23] = new Rotamer(name, -64.6, 13.5, -69.1, 17.3, 146.6, 27.4, 180, 0);
+          aminoAcidRotamerCache[n][23] = new Rotamer(name, -55.6, 10.6, 77.0, 6.8, -154.7, 32.6, 180, 0);
+          aminoAcidRotamerCache[n][25] = new Rotamer(name, 69.8, 10.6, -179.0, 23.7, -173.4, 64.2, 180, 0);
+          aminoAcidRotamerCache[n][26] = new Rotamer(name, -173.6, 14.6, 70.6, 8.7, -166.0, 37.1, 180, 0);
+          aminoAcidRotamerCache[n][27] = new Rotamer(name, 63.0, 4.3, -80.4, 13.9, -163.7, 20.8, 180, 0);
         } else {
-          aminoAcidRotamerCache[n] = new Rotamer[21];
+          aminoAcidRotamerCache[n] = new Rotamer[35];
           // GLH rotamers
           aminoAcidRotamerCache[n][0] = new Rotamer(AminoAcid3.GLH,
-              titrationUtils, -69.6, 19.2, -177.2, 21.7, -11.4, 44.8);
+                  titrationUtils, -69.6, 19.2, -177.2, 21.7, -11.4, 44.8, 0, 0);
           aminoAcidRotamerCache[n][1] = new Rotamer(AminoAcid3.GLH,
-              titrationUtils, -176.2, 14.9, 175.4, 10.6, -6.7, 39.0);
+                  titrationUtils, -176.2, 14.9, 175.4, 10.6, -6.7, 39.0, 0, 0);
           aminoAcidRotamerCache[n][2] = new Rotamer(AminoAcid3.GLH,
-              titrationUtils, -64.6, 13.5, -69.1, 17.3, -33.4, 27.4);
+                  titrationUtils,-64.6, 13.5, -69.1, 17.3, -33.4, 27.4, 0, 0);
           aminoAcidRotamerCache[n][3] = new Rotamer(AminoAcid3.GLH,
-              titrationUtils, -55.6, 10.6, 77.0, 6.8, 25.3, 32.6);
+                  titrationUtils, -55.6, 10.6, 77.0, 6.8, 25.3, 32.6, 0, 0);
           aminoAcidRotamerCache[n][4] = new Rotamer(AminoAcid3.GLH,
-              titrationUtils, 69.8, 10.6, -179.0, 23.7, 6.6, 64.2);
+                  titrationUtils,69.8, 10.6, -179.0, 23.7, 6.6, 64.2, 0, 0);
           aminoAcidRotamerCache[n][5] = new Rotamer(AminoAcid3.GLH,
-              titrationUtils, -173.6, 14.6, 70.6, 8.7, 14.0, 37.1);
+                  titrationUtils,-173.6, 14.6, 70.6, 8.7, 14.0, 37.1, 0, 0);
           aminoAcidRotamerCache[n][6] = new Rotamer(AminoAcid3.GLH,
-              titrationUtils, 63.0, 4.3, -80.4, 13.9, 16.3, 20.8);
+                  titrationUtils,63.0, 4.3, -80.4, 13.9, 16.3, 20.8, 0, 0);
           aminoAcidRotamerCache[n][7] = new Rotamer(AminoAcid3.GLH,
-              titrationUtils, -69.6, 19.2, -177.2, 21.7, 168.6, 44.8);
+                  titrationUtils,-69.6, 19.2, -177.2, 21.7, 168.6, 44.8, 0, 0);
           aminoAcidRotamerCache[n][8] = new Rotamer(AminoAcid3.GLH,
-              titrationUtils, -176.2, 14.9, 175.4, 10.6, 175.3, 39.0);
+                  titrationUtils,-176.2, 14.9, 175.4, 10.6, 175.3, 39.0, 0, 0);
           aminoAcidRotamerCache[n][9] = new Rotamer(AminoAcid3.GLH,
-              titrationUtils, -64.6, 13.5, -69.1, 17.3, 146.6, 27.4);
+                  titrationUtils,-64.6, 13.5, -69.1, 17.3, 146.6, 27.4, 0, 0);
           aminoAcidRotamerCache[n][10] = new Rotamer(AminoAcid3.GLH,
-              titrationUtils, -55.6, 10.6, 77.0, 6.8, -154.7, 32.6);
+                  titrationUtils,-55.6, 10.6, 77.0, 6.8, -154.7, 32.6, 0, 0);
           aminoAcidRotamerCache[n][11] = new Rotamer(AminoAcid3.GLH,
-              titrationUtils, 69.8, 10.6, -179.0, 23.7, -173.4, 64.2);
+                  titrationUtils,69.8, 10.6, -179.0, 23.7, -173.4, 64.2, 0, 0);
           aminoAcidRotamerCache[n][12] = new Rotamer(AminoAcid3.GLH,
-              titrationUtils, -173.6, 14.6, 70.6, 8.7, -166.0, 37.1);
+                  titrationUtils,-173.6, 14.6, 70.6, 8.7, -166.0, 37.1, 0, 0);
           aminoAcidRotamerCache[n][13] = new Rotamer(AminoAcid3.GLH,
-              titrationUtils, 63.0, 4.3, -80.4, 13.9, -163.7, 20.8);
+                  titrationUtils,63.0, 4.3, -80.4, 13.9, -163.7, 20.8, 0, 0);
+          aminoAcidRotamerCache[n][14] = new Rotamer(AminoAcid3.GLH,
+                  titrationUtils,-69.6, 19.2, -177.2, 21.7, -11.4, 44.8, 180, 0);
+          aminoAcidRotamerCache[n][15] = new Rotamer(AminoAcid3.GLH,
+                  titrationUtils, -176.2, 14.9, 175.4, 10.6, -6.7, 39.0, 180, 0);
+          aminoAcidRotamerCache[n][16] = new Rotamer(AminoAcid3.GLH,
+                  titrationUtils, -64.6, 13.5, -69.1, 17.3, -33.4, 27.4, 180, 0);
+          aminoAcidRotamerCache[n][17] = new Rotamer(AminoAcid3.GLH,
+                  titrationUtils,-55.6, 10.6, 77.0, 6.8, 25.3, 32.6, 180, 0);
+          aminoAcidRotamerCache[n][18] = new Rotamer(AminoAcid3.GLH,
+                  titrationUtils, 69.8, 10.6, -179.0, 23.7, 6.6, 64.2, 180, 0);
+          aminoAcidRotamerCache[n][19] = new Rotamer(AminoAcid3.GLH,
+                  titrationUtils,-173.6, 14.6, 70.6, 8.7, 14.0, 37.1, 180, 0);
+          aminoAcidRotamerCache[n][20] = new Rotamer(AminoAcid3.GLH,
+                  titrationUtils, 63.0, 4.3, -80.4, 13.9, 16.3, 20.8, 180, 0);
+          aminoAcidRotamerCache[n][21] = new Rotamer(AminoAcid3.GLH,
+                  titrationUtils, -69.6, 19.2, -177.2, 21.7, 168.6, 44.8, 180, 0);
+          aminoAcidRotamerCache[n][22] = new Rotamer(AminoAcid3.GLH,
+                  titrationUtils, -176.2, 14.9, 175.4, 10.6, 175.3, 39.0, 180, 0);
+          aminoAcidRotamerCache[n][23] = new Rotamer(AminoAcid3.GLH,
+                  titrationUtils, -64.6, 13.5, -69.1, 17.3, 146.6, 27.4, 180, 0);
+          aminoAcidRotamerCache[n][23] = new Rotamer(AminoAcid3.GLH,
+                  titrationUtils, -55.6, 10.6, 77.0, 6.8, -154.7, 32.6, 180, 0);
+          aminoAcidRotamerCache[n][25] = new Rotamer(AminoAcid3.GLH,
+                  titrationUtils,69.8, 10.6, -179.0, 23.7, -173.4, 64.2, 180, 0);
+          aminoAcidRotamerCache[n][26] = new Rotamer(AminoAcid3.GLH,
+                  titrationUtils,-173.6, 14.6, 70.6, 8.7, -166.0, 37.1, 180, 0);
+          aminoAcidRotamerCache[n][27] = new Rotamer(AminoAcid3.GLH,
+                  titrationUtils, 63.0, 4.3, -80.4, 13.9, -163.7, 20.8, 180, 0);
           // GLU rotamers
-          aminoAcidRotamerCache[n][14] = new Rotamer(AminoAcid3.GLU,
+          aminoAcidRotamerCache[n][28] = new Rotamer(AminoAcid3.GLU,
               titrationUtils, -69.6, 19.2, -177.2, 21.7, -11.4, 44.8);
-          aminoAcidRotamerCache[n][15] = new Rotamer(AminoAcid3.GLU,
+          aminoAcidRotamerCache[n][29] = new Rotamer(AminoAcid3.GLU,
               titrationUtils, -176.2, 14.9, 175.4, 10.6, -6.7, 39.0);
-          aminoAcidRotamerCache[n][16] = new Rotamer(AminoAcid3.GLU,
+          aminoAcidRotamerCache[n][30] = new Rotamer(AminoAcid3.GLU,
               titrationUtils, -64.6, 13.5, -69.1, 17.3, -33.4, 27.4);
-          aminoAcidRotamerCache[n][17] = new Rotamer(AminoAcid3.GLU,
+          aminoAcidRotamerCache[n][31] = new Rotamer(AminoAcid3.GLU,
               titrationUtils, -55.6, 10.6, 77.0, 6.8, 25.3, 32.6);
-          aminoAcidRotamerCache[n][18] = new Rotamer(AminoAcid3.GLU,
+          aminoAcidRotamerCache[n][32] = new Rotamer(AminoAcid3.GLU,
               titrationUtils, 69.8, 10.6, -179.0, 23.7, 6.6, 64.2);
-          aminoAcidRotamerCache[n][19] = new Rotamer(AminoAcid3.GLU,
+          aminoAcidRotamerCache[n][33] = new Rotamer(AminoAcid3.GLU,
               titrationUtils, -173.6, 14.6, 70.6, 8.7, 14.0, 37.1);
-          aminoAcidRotamerCache[n][20] = new Rotamer(AminoAcid3.GLU,
+          aminoAcidRotamerCache[n][34] = new Rotamer(AminoAcid3.GLU,
               titrationUtils, 63.0, 4.3, -80.4, 13.9, 16.3, 20.8);
         }
         break;
@@ -4123,74 +4165,90 @@ public class RotamerLibrary {
         break;
       case GLH:
         if (titrationUtils == null) {
-          aminoAcidRotamerCache[n] = new Rotamer[16];
-          aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 180, 0, -20, 0);
-          aminoAcidRotamerCache[n][1] = new Rotamer(name, 70, 0, -80, 0, 0, 0);
-          aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 65, 0, 10, 0);
-          aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 180, 0, 0, 0);
-          aminoAcidRotamerCache[n][4] = new Rotamer(name, -177, 0, -80, 0, -25, 0);
-          aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, 85, 0, 0, 0);
-          aminoAcidRotamerCache[n][6] = new Rotamer(name, -67, 0, -180, 0, -10, 0);
-          aminoAcidRotamerCache[n][7] = new Rotamer(name, -65, 0, -65, 0, -40, 0);
-          aminoAcidRotamerCache[n][8] = new Rotamer(name, 62, 0, 180, 0, 160, 0);
-          aminoAcidRotamerCache[n][9] = new Rotamer(name, 70, 0, -80, 0, -180, 0);
-          aminoAcidRotamerCache[n][10] = new Rotamer(name, -177, 0, 65, 0, -170, 0);
-          aminoAcidRotamerCache[n][11] = new Rotamer(name, -177, 0, 180, 0, -180, 0);
-          aminoAcidRotamerCache[n][12] = new Rotamer(name, -177, 0, -80, 0, 155, 0);
-          aminoAcidRotamerCache[n][13] = new Rotamer(name, -65, 0, 85, 0, -180, 0);
-          aminoAcidRotamerCache[n][14] = new Rotamer(name, -67, 0, -180, 0, 170, 0);
-          aminoAcidRotamerCache[n][15] = new Rotamer(name, -65, 0, -65, 0, 140, 0);
+          aminoAcidRotamerCache[n] = new Rotamer[32];
+          aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0, 180, 0, -20, 0, 0, 0);
+          aminoAcidRotamerCache[n][1] = new Rotamer(name, 70, 0, -80, 0, 0, 0, 0, 0);
+          aminoAcidRotamerCache[n][2] = new Rotamer(name, -177, 0, 65, 0, 10, 0, 0, 0);
+          aminoAcidRotamerCache[n][3] = new Rotamer(name, -177, 0, 180, 0, 0, 0, 0, 0);
+          aminoAcidRotamerCache[n][4] = new Rotamer(name, -177, 0, -80, 0, -25, 0, 0, 0);
+          aminoAcidRotamerCache[n][5] = new Rotamer(name, -65, 0, 85, 0, 0, 0, 0, 0);
+          aminoAcidRotamerCache[n][6] = new Rotamer(name, -67, 0, -180, 0, -10, 0, 0, 0);
+          aminoAcidRotamerCache[n][7] = new Rotamer(name, -65, 0, -65, 0, -40, 0, 0, 0);
+          aminoAcidRotamerCache[n][8] = new Rotamer(name, 62, 0, 180, 0, 160, 0, 0, 0);
+          aminoAcidRotamerCache[n][9] = new Rotamer(name, 70, 0, -80, 0, -180, 0, 0, 0);
+          aminoAcidRotamerCache[n][10] = new Rotamer(name, -177, 0, 65, 0, -170, 0, 0, 0);
+          aminoAcidRotamerCache[n][11] = new Rotamer(name, -177, 0, 180, 0, -180, 0, 0, 0);
+          aminoAcidRotamerCache[n][12] = new Rotamer(name, -177, 0, -80, 0, 155, 0, 0, 0);
+          aminoAcidRotamerCache[n][13] = new Rotamer(name, -65, 0, 85, 0, -180, 0, 0, 0);
+          aminoAcidRotamerCache[n][14] = new Rotamer(name, -67, 0, -180, 0, 170, 0, 0, 0);
+          aminoAcidRotamerCache[n][15] = new Rotamer(name, -65, 0, -65, 0, 140, 0, 0, 0);
+          aminoAcidRotamerCache[n][16] = new Rotamer(name, 62, 0, 180, 0, -20, 0, 180, 0);
+          aminoAcidRotamerCache[n][17] = new Rotamer(name, 70, 0, -80, 0, 0, 0, 180, 0);
+          aminoAcidRotamerCache[n][18] = new Rotamer(name, -177, 0, 65, 0, 10, 0, 180, 0);
+          aminoAcidRotamerCache[n][19] = new Rotamer(name, -177, 0, 180, 0, 0, 0, 180, 0);
+          aminoAcidRotamerCache[n][20] = new Rotamer(name, -177, 0, -80, 0, -25, 0, 180, 0);
+          aminoAcidRotamerCache[n][21] = new Rotamer(name, -65, 0, 85, 0, 0, 0, 180, 0);
+          aminoAcidRotamerCache[n][22] = new Rotamer(name, -67, 0, -180, 0, -10, 0, 180, 0);
+          aminoAcidRotamerCache[n][23] = new Rotamer(name, -65, 0, -65, 0, -40, 0, 180, 0);
+          aminoAcidRotamerCache[n][24] = new Rotamer(name, 62, 0, 180, 0, 160, 0, 180, 0);
+          aminoAcidRotamerCache[n][25] = new Rotamer(name, 70, 0, -80, 0, -180, 0, 180, 0);
+          aminoAcidRotamerCache[n][26] = new Rotamer(name, -177, 0, 65, 0, -170, 0, 180, 0);
+          aminoAcidRotamerCache[n][27] = new Rotamer(name, -177, 0, 180, 0, -180, 0, 180, 0);
+          aminoAcidRotamerCache[n][28] = new Rotamer(name, -177, 0, -80, 0, 155, 0, 180, 0);
+          aminoAcidRotamerCache[n][29] = new Rotamer(name, -65, 0, 85, 0, -180, 0, 180, 0);
+          aminoAcidRotamerCache[n][30] = new Rotamer(name, -67, 0, -180, 0, 170, 0, 180, 0);
+          aminoAcidRotamerCache[n][31] = new Rotamer(name, -65, 0, -65, 0, 140, 0, 180, 0);
         } else {
-          aminoAcidRotamerCache[n] = new Rotamer[24];
+          aminoAcidRotamerCache[n] = new Rotamer[40];
           //GLH
-          aminoAcidRotamerCache[n][0] = new Rotamer(AminoAcid3.GLH, titrationUtils, 0, 180, 0, -20,
-              0);
-          aminoAcidRotamerCache[n][1] = new Rotamer(AminoAcid3.GLH, titrationUtils, 70, 0, -80, 0, 0,
-              0);
-          aminoAcidRotamerCache[n][2] = new Rotamer(AminoAcid3.GLH, titrationUtils, -177, 0, 65, 0,
-              10, 0);
-          aminoAcidRotamerCache[n][3] = new Rotamer(AminoAcid3.GLH, titrationUtils, -177, 0, 180, 0,
-              0, 0);
-          aminoAcidRotamerCache[n][4] = new Rotamer(AminoAcid3.GLH, titrationUtils, -177, 0, -80, 0,
-              -25, 0);
-          aminoAcidRotamerCache[n][5] = new Rotamer(AminoAcid3.GLH, titrationUtils, -65, 0, 85, 0, 0,
-              0);
-          aminoAcidRotamerCache[n][6] = new Rotamer(AminoAcid3.GLH, titrationUtils, -67, 0, -180, 0,
-              -10, 0);
-          aminoAcidRotamerCache[n][7] = new Rotamer(AminoAcid3.GLH, titrationUtils, -65, 0, -65, 0,
-              -40, 0);
-          aminoAcidRotamerCache[n][8] = new Rotamer(AminoAcid3.GLH, titrationUtils, 62, 0, 180, 0,
-              160, 0);
-          aminoAcidRotamerCache[n][9] = new Rotamer(AminoAcid3.GLH, titrationUtils, 70, 0, -80, 0,
-              -180, 0);
-          aminoAcidRotamerCache[n][10] = new Rotamer(AminoAcid3.GLH, titrationUtils, -177, 0, 65, 0,
-              -170, 0);
-          aminoAcidRotamerCache[n][11] = new Rotamer(AminoAcid3.GLH, titrationUtils, -177, 0, 180, 0,
-              -180, 0);
-          aminoAcidRotamerCache[n][12] = new Rotamer(AminoAcid3.GLH, titrationUtils, -177, 0, -80, 0,
-              155, 0);
-          aminoAcidRotamerCache[n][13] = new Rotamer(AminoAcid3.GLH, titrationUtils, -65, 0, 85, 0,
-              -180, 0);
-          aminoAcidRotamerCache[n][14] = new Rotamer(AminoAcid3.GLH, titrationUtils, -67, 0, -180, 0,
-              170, 0);
-          aminoAcidRotamerCache[n][15] = new Rotamer(AminoAcid3.GLH, titrationUtils, -65, 0, -65, 0,
-              140, 0);
+          aminoAcidRotamerCache[n][0] = new Rotamer(AminoAcid3.GLH, titrationUtils,  62, 0, 180, 0, -20, 0, 0, 0);
+          aminoAcidRotamerCache[n][1] = new Rotamer(AminoAcid3.GLH, titrationUtils,  70, 0, -80, 0, 0, 0, 0, 0);
+          aminoAcidRotamerCache[n][2] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -177, 0, 65, 0, 10, 0, 0, 0);
+          aminoAcidRotamerCache[n][3] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -177, 0, 180, 0, 0, 0, 0, 0);
+          aminoAcidRotamerCache[n][4] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -177, 0, -80, 0, -25, 0, 0, 0);
+          aminoAcidRotamerCache[n][5] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -65, 0, 85, 0, 0, 0, 0, 0);
+          aminoAcidRotamerCache[n][6] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -67, 0, -180, 0, -10, 0, 0, 0);
+          aminoAcidRotamerCache[n][7] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -65, 0, -65, 0, -40, 0, 0, 0);
+          aminoAcidRotamerCache[n][8] = new Rotamer(AminoAcid3.GLH, titrationUtils,  62, 0, 180, 0, 160, 0, 0, 0);
+          aminoAcidRotamerCache[n][9] = new Rotamer(AminoAcid3.GLH, titrationUtils,  70, 0, -80, 0, -180, 0, 0, 0);
+          aminoAcidRotamerCache[n][10] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -177, 0, 65, 0, -170, 0, 0, 0);
+          aminoAcidRotamerCache[n][11] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -177, 0, 180, 0, -180, 0, 0, 0);
+          aminoAcidRotamerCache[n][12] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -177, 0, -80, 0, 155, 0, 0, 0);
+          aminoAcidRotamerCache[n][13] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -65, 0, 85, 0, -180, 0, 0, 0);
+          aminoAcidRotamerCache[n][14] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -67, 0, -180, 0, 170, 0, 0, 0);
+          aminoAcidRotamerCache[n][15] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -65, 0, -65, 0, 140, 0, 0, 0);
+          aminoAcidRotamerCache[n][16] = new Rotamer(AminoAcid3.GLH, titrationUtils,  62, 0, 180, 0, -20, 0, 180, 0);
+          aminoAcidRotamerCache[n][17] = new Rotamer(AminoAcid3.GLH, titrationUtils,  70, 0, -80, 0, 0, 0, 180, 0);
+          aminoAcidRotamerCache[n][18] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -177, 0, 65, 0, 10, 0, 180, 0);
+          aminoAcidRotamerCache[n][19] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -177, 0, 180, 0, 0, 0, 180, 0);
+          aminoAcidRotamerCache[n][20] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -177, 0, -80, 0, -25, 0, 180, 0);
+          aminoAcidRotamerCache[n][21] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -65, 0, 85, 0, 0, 0, 180, 0);
+          aminoAcidRotamerCache[n][22] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -67, 0, -180, 0, -10, 0, 180, 0);
+          aminoAcidRotamerCache[n][23] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -65, 0, -65, 0, -40, 0, 180, 0);
+          aminoAcidRotamerCache[n][24] = new Rotamer(AminoAcid3.GLH, titrationUtils,  62, 0, 180, 0, 160, 0, 180, 0);
+          aminoAcidRotamerCache[n][25] = new Rotamer(AminoAcid3.GLH, titrationUtils,  70, 0, -80, 0, -180, 0, 180, 0);
+          aminoAcidRotamerCache[n][26] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -177, 0, 65, 0, -170, 0, 180, 0);
+          aminoAcidRotamerCache[n][27] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -177, 0, 180, 0, -180, 0, 180, 0);
+          aminoAcidRotamerCache[n][28] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -177, 0, -80, 0, 155, 0, 180, 0);
+          aminoAcidRotamerCache[n][29] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -65, 0, 85, 0, -180, 0, 180, 0);
+          aminoAcidRotamerCache[n][30] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -67, 0, -180, 0, 170, 0, 180, 0);
+          aminoAcidRotamerCache[n][31] = new Rotamer(AminoAcid3.GLH, titrationUtils,  -65, 0, -65, 0, 140, 0, 180, 0);
           //GLU
-          aminoAcidRotamerCache[n][16] = new Rotamer(AminoAcid3.GLU, titrationUtils, 62, 0, 180, 0,
+          aminoAcidRotamerCache[n][32] = new Rotamer(AminoAcid3.GLU, titrationUtils, 62, 0, 180, 0,
               -20, 0);
-          aminoAcidRotamerCache[n][17] = new Rotamer(AminoAcid3.GLU, titrationUtils, 70, 0, -80, 0,
+          aminoAcidRotamerCache[n][33] = new Rotamer(AminoAcid3.GLU, titrationUtils, 70, 0, -80, 0,
               0, 0);
-          aminoAcidRotamerCache[n][18] = new Rotamer(AminoAcid3.GLU, titrationUtils, -177, 0, 65, 0,
+          aminoAcidRotamerCache[n][34] = new Rotamer(AminoAcid3.GLU, titrationUtils, -177, 0, 65, 0,
               10, 0);
-          aminoAcidRotamerCache[n][19] = new Rotamer(AminoAcid3.GLU, titrationUtils, -177, 0, 180, 0,
+          aminoAcidRotamerCache[n][35] = new Rotamer(AminoAcid3.GLU, titrationUtils, -177, 0, 180, 0,
               0, 0);
-          aminoAcidRotamerCache[n][20] = new Rotamer(AminoAcid3.GLU, titrationUtils, -177, 0, -80, 0,
+          aminoAcidRotamerCache[n][36] = new Rotamer(AminoAcid3.GLU, titrationUtils, -177, 0, -80, 0,
               -25, 0);
-          aminoAcidRotamerCache[n][21] = new Rotamer(AminoAcid3.GLU, titrationUtils, -65, 0, 85, 0,
+          aminoAcidRotamerCache[n][37] = new Rotamer(AminoAcid3.GLU, titrationUtils, -65, 0, 85, 0,
               0, 0);
-          aminoAcidRotamerCache[n][22] = new Rotamer(AminoAcid3.GLU, titrationUtils, -67, 0, -180, 0,
+          aminoAcidRotamerCache[n][38] = new Rotamer(AminoAcid3.GLU, titrationUtils, -67, 0, -180, 0,
               -10, 0);
-          aminoAcidRotamerCache[n][23] = new Rotamer(AminoAcid3.GLU, titrationUtils, -65, 0, -65, 0,
+          aminoAcidRotamerCache[n][39] = new Rotamer(AminoAcid3.GLU, titrationUtils, -65, 0, -65, 0,
               -40, 0);
         }
 
