@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static ffx.crystal.Crystal.invressq;
 import static java.lang.Double.isNaN;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -248,7 +247,7 @@ public class SplineEnergy implements Potential {
     }
 
     for (HKL ih : reflectionList.hkllist) {
-      int i = ih.index();
+      int i = ih.getIndex();
       if (isNaN(fc[i][0]) || isNaN(fo[i][0]) || fo[i][1] <= 0.0) {
         continue;
       }
@@ -257,8 +256,8 @@ public class SplineEnergy implements Potential {
         continue;
       }
 
-      double eps = ih.epsilon();
-      double s = invressq(crystal, ih);
+      double eps = ih.getEpsilon();
+      double s = crystal.invressq(ih);
       // Spline setup
       double fh = spline.f(s, x);
       refinementData.getFcTotIP(i, fct);

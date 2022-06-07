@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static ffx.crystal.Crystal.invressq;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.MatrixMath.mat3Mat3;
 import static ffx.numerics.math.MatrixMath.mat3SymVec6;
@@ -180,9 +179,9 @@ public class SigmaAEnergy implements Potential {
   }
 
   /**
-   * From sim and sim_integ functions in clipper utils:
-   * http://www.ysbl.york.ac.uk/~cowtan/clipper/clipper.html and from lnI0 and i1OverI0 functions in
-   * bessel.h in scitbx module of cctbx: http://cci.lbl.gov/cctbx_sources/scitbx/math/bessel.h
+   * From sim and sim_integ functions in clipper utils: http://www.ysbl.york.ac.uk/~cowtan/clipper/clipper.html
+   * and from lnI0 and i1OverI0 functions in bessel.h in scitbx module of cctbx:
+   * http://cci.lbl.gov/cctbx_sources/scitbx/math/bessel.h
    *
    * @param x a double.
    * @return a double.
@@ -520,14 +519,14 @@ public class SigmaAEnergy implements Potential {
       public void run(int lb, int ub) throws Exception {
         for (int j = lb; j <= ub; j++) {
           HKL ih = reflectionList.hkllist.get(j);
-          int i = ih.index();
+          int i = ih.getIndex();
           // Constants
-          ihc[0] = ih.h();
-          ihc[1] = ih.k();
-          ihc[2] = ih.l();
+          ihc[0] = ih.getH();
+          ihc[1] = ih.getK();
+          ihc[2] = ih.getL();
           vec3Mat3(ihc, ustar, resv);
           double u = modelK - dot(resv, ihc);
-          double s = invressq(crystal, ih);
+          double s = crystal.invressq(ih);
           double ebs = exp(-twoPI2 * solventUEq * s);
           double ksebs = solventK * ebs;
           double kmems = exp(0.25 * u);

@@ -251,32 +251,32 @@ public class MTZWriter {
 
       for (HKL ih : reflectionList.hkllist) {
         col = 0;
-        int i = ih.index();
+        int i = ih.getIndex();
 
         // Skip the 0 0 0 reflection.
-        if (ih.h() == 0 && ih.k() == 0 && ih.l() == 0) {
+        if (ih.getH() == 0 && ih.getK() == 0 && ih.getL() == 0) {
           continue;
         }
 
-        double ss = Crystal.invressq(crystal, ih);
+        double ss = crystal.invressq(ih);
         res[0] = min(ss, res[0]);
         res[1] = max(ss, res[1]);
 
         // HKL first (3)
-        fMapData = ih.h();
+        fMapData = ih.getH();
         colMinMax[col][0] = min(fMapData, colMinMax[0][0]);
         colMinMax[col][1] = max(fMapData, colMinMax[0][1]);
         byteBuffer.rewind();
         byteBuffer.order(byteOrder).putFloat(fMapData);
         col++;
 
-        fMapData = ih.k();
+        fMapData = ih.getK();
         colMinMax[col][0] = min(fMapData, colMinMax[1][0]);
         colMinMax[col][1] = max(fMapData, colMinMax[1][1]);
         byteBuffer.order(byteOrder).putFloat(fMapData);
         col++;
 
-        fMapData = ih.l();
+        fMapData = ih.getL();
         colMinMax[col][0] = min(fMapData, colMinMax[2][0]);
         colMinMax[col][1] = max(fMapData, colMinMax[2][1]);
         byteBuffer.order(byteOrder).putFloat(fMapData);

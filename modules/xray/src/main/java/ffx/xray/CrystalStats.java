@@ -37,8 +37,6 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static ffx.crystal.Crystal.invressq;
-import static ffx.crystal.Crystal.res;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -113,7 +111,7 @@ public class CrystalStats {
     double sumall = 0.0;
     double sumfoall = 0.0;
     for (HKL ih : reflectionList.hkllist) {
-      int i = ih.index();
+      int i = ih.getIndex();
 
       // Ignored cases
       if (isNaN(fcTot[i][0]) || isNaN(fSigF[i][0]) || fSigF[i][1] <= 0.0) {
@@ -121,7 +119,7 @@ public class CrystalStats {
       }
 
       // Spline setup
-      double ss = invressq(crystal, ih);
+      double ss = crystal.invressq(ih);
       double fh = spline.f(ss, refinementData.spline);
 
       ComplexNumber c = new ComplexNumber(fcTot[i][0], fcTot[i][1]);
@@ -152,7 +150,7 @@ public class CrystalStats {
         new ReflectionSpline(reflectionList, refinementData.sigmaA.length);
 
     for (HKL ih : reflectionList.hkllist) {
-      int i = ih.index();
+      int i = ih.getIndex();
 
       // Ignored cases
       if (isNaN(fcTot[i][0]) || isNaN(fSigF[i][0]) || fSigF[i][1] <= 0.0) {
@@ -160,7 +158,7 @@ public class CrystalStats {
       }
 
       // Spline setup
-      double ss = invressq(crystal, ih);
+      double ss = crystal.invressq(ih);
       spline.f(ss, refinementData.spline);
       double sa = sigmaaspline.f(ss, refinementData.sigmaA);
 
@@ -196,7 +194,7 @@ public class CrystalStats {
       sb.append("REMARK   3   DATA CUTOFF            (SIGMA(F)) : NONE\n");
     }
     sb.append(format("REMARK   3   COMPLETENESS FOR RANGE        (%%) : %6.2f\n", completeness));
-    sb.append("REMARK   3   NUMBER OF REFLECTIONS             : " + nObsHKL + "\n");
+    sb.append("REMARK   3   NUMBER OF REFLECTIONS             : ").append(nObsHKL).append("\n");
     sb.append("REMARK   3\n");
     sb.append("REMARK   3  FIT TO DATA USED IN REFINEMENT\n");
     sb.append("REMARK   3   CROSS-VALIDATION METHOD          : THROUGHOUT\n");
@@ -208,19 +206,18 @@ public class CrystalStats {
         format(
             "REMARK   3   FREE R VALUE TEST SET SIZE   (%%) : %6.1f\n",
             (((double) nObsRFree) / nObsHKL) * 100.0));
-    sb.append("REMARK   3   FREE R VALUE TEST SET COUNT      : " + nObsRFree + "\n");
+    sb.append("REMARK   3   FREE R VALUE TEST SET COUNT      : ").append(nObsRFree).append("\n");
     sb.append("REMARK   3\n");
     sb.append("REMARK   3  FIT IN THE HIGHEST RESOLUTION BIN\n");
-    sb.append("REMARK   3   TOTAL NUMBER OF BINS USED           : " + nBins + "\n");
+    sb.append("REMARK   3   TOTAL NUMBER OF BINS USED           : ").append(nBins).append("\n");
     sb.append(format("REMARK   3   BIN RESOLUTION RANGE HIGH           : %6.2f\n", highResHigh));
     sb.append(format("REMARK   3   BIN RESOLUTION RANGE LOW            : %6.2f\n", highResLow));
-    sb.append("REMARK   3   REFLECTION IN BIN     (WORKING SET) : " + highnObsHKL + "\n");
-    sb.append(
-        format("REMARK   3   BIN COMPLETENESS (WORKING+TEST) (%%) : %6.2f\n", highCompleteness));
+    sb.append("REMARK   3   REFLECTION IN BIN     (WORKING SET) : ").append(highnObsHKL).append("\n");
+    sb.append(format("REMARK   3   BIN COMPLETENESS (WORKING+TEST) (%%) : %6.2f\n", highCompleteness));
     sb.append(format("REMARK   3   BIN R VALUE           (WORKING SET) : %8.6f\n", highR / 100.0));
-    sb.append("REMARK   3   BIN FREE R VALUE SET COUNT          : " + highnObsRFree + "\n");
-    sb.append(
-        format("REMARK   3   BIN FREE R VALUE                    : %8.6f\n", highRfree / 100.0));
+    sb.append("REMARK   3   BIN FREE R VALUE SET COUNT          : ").append(highnObsRFree)
+        .append("\n");
+    sb.append(format("REMARK   3   BIN FREE R VALUE                    : %8.6f\n", highRfree / 100.0));
     sb.append("REMARK   3\n");
 
     sb.append("REMARK   3  OVERALL SCALE FACTORS\n");
@@ -302,7 +299,7 @@ public class CrystalStats {
     double sum = 0.0;
     double sumfo = 0.0;
     for (HKL ih : reflectionList.hkllist) {
-      int i = ih.index();
+      int i = ih.getIndex();
 
       // Ignored cases
       if (isNaN(fcTot[i][0]) || isNaN(fSigF[i][0]) || fSigF[i][1] <= 0.0) {
@@ -310,7 +307,7 @@ public class CrystalStats {
       }
 
       // Spline setup
-      double ss = invressq(crystal, ih);
+      double ss = crystal.invressq(ih);
       double fh = spline.f(ss, refinementData.spline);
 
       ComplexNumber c = new ComplexNumber(fcTot[i][0], fcTot[i][1]);
@@ -336,7 +333,7 @@ public class CrystalStats {
         new ReflectionSpline(reflectionList, refinementData.sigmaA.length);
 
     for (HKL ih : reflectionList.hkllist) {
-      int i = ih.index();
+      int i = ih.getIndex();
 
       // Ignored cases
       if (isNaN(fcTot[i][0]) || isNaN(fSigF[i][0]) || fSigF[i][1] <= 0.0) {
@@ -344,7 +341,7 @@ public class CrystalStats {
       }
 
       // Spline setup
-      double ss = invressq(crystal, ih);
+      double ss = crystal.invressq(ih);
       spline.f(ss, refinementData.spline);
       double wa = sigmaaspline.f(ss, refinementData.sigmaW);
 
@@ -371,7 +368,7 @@ public class CrystalStats {
     double rfreefrac = getRFree() * 0.01;
     double res = reflectionList.resolution.resolutionLimit();
     for (HKL ih : reflectionList.hkllist) {
-      int i = ih.index();
+      int i = ih.getIndex();
 
       // ignored cases
       if (isNaN(fSigF[i][0]) || fSigF[i][1] <= 0.0) {
@@ -410,8 +407,8 @@ public class CrystalStats {
     }
 
     for (HKL ih : reflectionList.hkllist) {
-      int i = ih.index();
-      int b = ih.bin();
+      int i = ih.getIndex();
+      int b = ih.getBin();
 
       // Ignored cases
       if (isNaN(fSigF[i][0]) || fSigF[i][1] <= 0.0) {
@@ -420,7 +417,7 @@ public class CrystalStats {
       }
 
       // Determine res limits of each bin
-      double rh = res(crystal, ih);
+      double rh = crystal.res(ih);
       if (rh > res[b][0]) {
         res[b][0] = rh;
       }
@@ -501,8 +498,8 @@ public class CrystalStats {
     }
 
     for (HKL ih : reflectionList.hkllist) {
-      int i = ih.index();
-      int b = ih.bin();
+      int i = ih.getIndex();
+      int b = ih.getBin();
 
       // Ignored cases
       if (isNaN(fcTot[i][0]) || isNaN(fSigF[i][0]) || fSigF[i][1] <= 0.0) {
@@ -510,14 +507,14 @@ public class CrystalStats {
       }
 
       // Spline setup
-      double ss = invressq(crystal, ih);
+      double ss = crystal.invressq(ih);
       double fh = spline.f(ss, refinementData.spline);
       double sa = sigmaASpline.f(ss, refinementData.sigmaA);
       double wa = sigmaASpline.f(ss, refinementData.sigmaW);
       double eoscale = sigmaASpline.f(ss, refinementData.esqFo);
 
       // Determine res limits of each bin
-      double rs = res(crystal, ih);
+      double rs = crystal.res(ih);
       if (rs > res[b][0]) {
         res[b][0] = rs;
       }
@@ -607,8 +604,8 @@ public class CrystalStats {
     double[] scale = new double[nBins];
 
     for (HKL ih : reflectionList.hkllist) {
-      int i = ih.index();
-      int b = ih.bin();
+      int i = ih.getIndex();
+      int b = ih.getBin();
 
       // Ignored cases.
       if (isNaN(fSigF[i][0]) || fSigF[i][1] <= 0.0) {
@@ -616,7 +613,7 @@ public class CrystalStats {
       }
 
       // Spline setup.
-      double ss = invressq(crystal, ih);
+      double ss = crystal.invressq(ih);
       double fh = spline.f(ss, refinementData.spline);
 
       nhkl[b]++;
@@ -701,8 +698,8 @@ public class CrystalStats {
     }
 
     for (HKL ih : reflectionList.hkllist) {
-      int i = ih.index();
-      int b = ih.bin();
+      int i = ih.getIndex();
+      int b = ih.getBin();
 
       // Ignored cases
       if (isNaN(fSigF[i][0]) || fSigF[i][1] <= 0.0) {
@@ -710,7 +707,7 @@ public class CrystalStats {
       }
 
       // Determine res limits of each bin
-      double rs = res(crystal, ih);
+      double rs = crystal.res(ih);
       if (rs > res[b][0]) {
         res[b][0] = rs;
       }

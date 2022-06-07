@@ -38,7 +38,7 @@
 package ffx.crystal;
 
 /**
- * Enumeration of the different real space ASU limit operators.
+ * Enumeration of the different asymmetric unit limit operators.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -47,18 +47,18 @@ public enum ASULimit {
   LT, LTE;
 
   /**
-   * Check the given point is within the real space ASU limits.
+   * Check the given point is within the asymmetric unit limit.
    *
-   * @param lim a double.
+   * @param limit a double.
    * @param x a double.
-   * @return True if the point is within the real space ASU, false otherwise.
+   * @return True if the point is within the real space asymmetric unit, false otherwise.
    */
-  public boolean check(double lim, double x) {
+  public boolean check(double limit, double x) {
     switch (this) {
       case LT:
-        return x >= 0.0 && x < lim;
+        return x >= 0.0 && x < limit;
       case LTE:
-        return x >= 0.0 && x <= lim;
+        return x >= 0.0 && x <= limit;
       default:
         return false;
     }

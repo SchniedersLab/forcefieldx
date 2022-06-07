@@ -37,7 +37,7 @@
 // ******************************************************************************
 package ffx.potential.nonbonded;
 
-import static ffx.crystal.Crystal.mod;
+import static ffx.numerics.math.ScalarMath.mod;
 import static ffx.numerics.fft.Complex3D.iComplex3D;
 import static ffx.numerics.spline.UniformBSpline.bSpline;
 import static ffx.numerics.spline.UniformBSpline.bSplineDerivatives;
@@ -81,7 +81,6 @@ import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
 import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Complex3DParallel;
-import ffx.numerics.multipole.MultipoleTensor;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 import java.nio.DoubleBuffer;
@@ -2016,7 +2015,7 @@ public class ReciprocalSpace {
           for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
             final int i = mod(++i0, fftX);
             final int ii = iComplex3D(i, j, k, fftX, fftY);
-            final double splxi[] = splx[ith1];
+            final double[] splxi = splx[ith1];
             final double add = splxi[0] * term0 + splxi[1] * term1 + splxi[2] * term2;
             final double current = splineBuffer.get(ii);
             splineBuffer.put(ii, current + add);

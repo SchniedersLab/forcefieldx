@@ -38,9 +38,9 @@
 package ffx.algorithms.dynamics;
 
 import static ffx.crystal.LatticeSystem.check;
+import static ffx.numerics.math.ScalarMath.mirrorDegrees;
 import static ffx.utilities.Constants.AVOGADRO;
 import static ffx.utilities.Constants.PRESCON;
-import static java.lang.Math.PI;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.floor;
@@ -807,7 +807,7 @@ public class Barostat implements CrystalPotential {
     double move = maxAngleMove * (2.0 * random() - 1.0);
     double currentAUV = unitCell.volume / nSymm;
     double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
-    double newAlpha = Crystal.mirrorDegrees(alpha + move);
+    double newAlpha = mirrorDegrees(alpha + move);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(
         a, b, c, newAlpha, beta, gamma, currentAUV + dAUVolume);
 
@@ -834,7 +834,7 @@ public class Barostat implements CrystalPotential {
     double move = maxAngleMove * (2.0 * random() - 1.0);
     double currentAUV = unitCell.volume / nSymm;
     double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
-    double newBeta = Crystal.mirrorDegrees(beta + move);
+    double newBeta = mirrorDegrees(beta + move);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(
         a, b, c, alpha, newBeta, gamma, currentAUV + dAUVolume);
     if (succeed) {
@@ -860,7 +860,7 @@ public class Barostat implements CrystalPotential {
     double move = maxAngleMove * (2.0 * random() - 1.0);
     double currentAUV = unitCell.volume / nSymm;
     double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
-    double newGamma = Crystal.mirrorDegrees(gamma + move);
+    double newGamma = mirrorDegrees(gamma + move);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(
         a, b, c, alpha, beta, newGamma, currentAUV + dAUVolume);
 
@@ -887,9 +887,9 @@ public class Barostat implements CrystalPotential {
     double move = maxAngleMove * (2.0 * random() - 1.0);
     double currentAUV = unitCell.volume / nSymm;
     double dAUVolume = maxVolumeMove * (2.0 * random() - 1.0);
-    double newAlpha = Crystal.mirrorDegrees(alpha + move);
-    double newBeta = Crystal.mirrorDegrees(beta + move);
-    double newGamma = Crystal.mirrorDegrees(gamma + move);
+    double newAlpha = mirrorDegrees(alpha + move);
+    double newBeta = mirrorDegrees(beta + move);
+    double newGamma = mirrorDegrees(gamma + move);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(
         a, b, c, newAlpha, newBeta, newGamma, currentAUV + dAUVolume);
     if (succeed) {

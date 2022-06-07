@@ -64,7 +64,7 @@ import java.util.logging.Logger;
 public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
   private static final Logger logger = Logger.getLogger(ScaleBulkMinimize.class.getName());
-  private static double toSeconds = 1.0e-9;
+  private static final double toSeconds = 1.0e-9;
   private final ReflectionList reflectionlist;
   private final DiffractionRefinementData refinementData;
   private final Crystal crystal;
@@ -291,7 +291,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
         logger.info(
             format(
                 "%6d %12.5f %10.6f %10.6f %9.5f %8.2f %6d %8s",
-                iter, f, grms, df, xrms, angle, nfun, info.toString()));
+                iter, f, grms, df, xrms, angle, nfun, info));
       }
     }
     if (terminate) {
@@ -337,7 +337,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
     double sumfofc = 0.0;
     double sumfc = 0.0;
     for (HKL ih : reflectionlist.hkllist) {
-      int i = ih.index();
+      int i = ih.getIndex();
       if (isNaN(fc[i][0]) || isNaN(fSigf[i][0]) || fSigf[i][1] <= 0.0) {
         continue;
       }

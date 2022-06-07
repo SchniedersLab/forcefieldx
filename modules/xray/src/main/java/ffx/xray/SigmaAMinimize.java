@@ -256,7 +256,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
         logger.info(
             format(
                 "%6d %12.2f %10.2f %10.5f %9.5f %8.2f %6d %8s",
-                iter, f, grms, df, xrms, angle, nfun, info.toString()));
+                iter, f, grms, df, xrms, angle, nfun, info));
       }
     }
     if (terminate) {
@@ -294,12 +294,12 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     double[][] fcTot = refinementData.fcTot;
     double[][] fSigF = refinementData.fSigF;
     for (HKL ih : reflectionList.hkllist) {
-      int i = ih.index();
-      if (ih.allowed() == 0.0 || isNaN(fcTot[i][0]) || isNaN(fSigF[i][0])) {
+      int i = ih.getIndex();
+      if (ih.getAllowed() == 0.0 || isNaN(fcTot[i][0]) || isNaN(fSigF[i][0])) {
         continue;
       }
 
-      double s2 = Crystal.invressq(crystal, ih);
+      double s2 = crystal.invressq(ih);
       double epsc = ih.epsilonc();
       ComplexNumber fct = new ComplexNumber(fcTot[i][0], fcTot[i][1]);
       double ecscale = spline.f(s2, refinementData.esqFc);
