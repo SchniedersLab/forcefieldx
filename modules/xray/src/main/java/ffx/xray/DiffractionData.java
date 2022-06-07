@@ -109,18 +109,18 @@ public class DiffractionData implements DataContainer {
   private final boolean refineMolOcc;
   private final double occMass;
   private final boolean nativeEnvironmentApproximation;
-  private ScaleBulkMinimize[] scaleBulkMinimize;
-  private SigmaAMinimize[] sigmaAMinimize;
-  private SplineMinimize[] splineMinimize;
-  private CrystalStats[] crystalStats;
+  private final ScaleBulkMinimize[] scaleBulkMinimize;
+  private final SigmaAMinimize[] sigmaAMinimize;
+  private final SplineMinimize[] splineMinimize;
+  private final CrystalStats[] crystalStats;
   private ParallelTeam parallelTeam;
   private CrystalReciprocalSpace.GridMethod gridMethod;
-  private boolean[] scaled;
+  private final boolean[] scaled;
   private double xWeight;
   /** If true, perform a grid search for bulk solvent parameters. */
-  private boolean gridSearch;
+  private final boolean gridSearch;
   /** If true, fit a scaling spline between Fo and Fc. */
-  private boolean splineFit;
+  private final boolean splineFit;
 
   /**
    * construct a diffraction data assembly, assumes an X-ray data set with a weight of 1.0 using the
@@ -361,10 +361,7 @@ public class DiffractionData implements DataContainer {
       try {
         arad = a.getVDWType().radius * 0.5;
       } catch (NullPointerException ex) {
-        logger.warning(
-            format(
-                " Failure to get van der Waals type for atom %s; ensure the vdW term is enabled!",
-                a.toString()));
+        logger.warning(format(" Failure to get van der Waals type for atom %s; ensure the vdW term is enabled!", a));
         throw ex;
       }
       double[] xyz = new double[3];
@@ -1143,25 +1140,25 @@ public class DiffractionData implements DataContainer {
 
     Date now = new Date();
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss ");
-    remark.append("REMARK FFX output ISO-8601 date: " + sdf.format(now) + "\n");
+    remark.append("REMARK FFX output ISO-8601 date: ").append(sdf.format(now)).append("\n");
     remark.append("REMARK\n");
     remark.append("REMARK   3\n");
     remark.append("REMARK   3 REFINEMENT\n");
     remark.append("REMARK   3   PROGRAM     : FORCE FIELD X\n");
     remark.append("REMARK   3\n");
     for (int i = 0; i < n; i++) {
-      remark.append("REMARK   3  DATA SET " + (i + 1) + "\n");
+      remark.append("REMARK   3  DATA SET ").append(i + 1).append("\n");
       if (dataFiles[i].isNeutron()) {
         remark.append("REMARK   3   DATA SET TYPE   : NEUTRON\n");
       } else {
         remark.append("REMARK   3   DATA SET TYPE   : X-RAY\n");
       }
-      remark.append("REMARK   3   DATA SET WEIGHT : " + dataFiles[i].getWeight() + "\n");
+      remark.append("REMARK   3   DATA SET WEIGHT : ").append(dataFiles[i].getWeight()).append("\n");
       remark.append("REMARK   3\n");
       remark.append(crystalStats[i].getPDBHeaderString());
     }
     for (int i = 0; i < assembly.length; i++) {
-      remark.append("REMARK   3  CHEMICAL SYSTEM " + (i + 1) + "\n");
+      remark.append("REMARK   3  CHEMICAL SYSTEM ").append(i + 1).append("\n");
       remark.append(assembly[i].getPotentialEnergy().getPDBHeaderString());
     }
     pdbFilter.writeFileWithHeader(file, remark);
@@ -1274,12 +1271,12 @@ public class DiffractionData implements DataContainer {
         cnsfile.println(" ANOMalous=FALSE");
         cnsfile.println(" DECLare NAME=FS DOMAin=RECIprocal TYPE=COMP END");
         for (HKL ih : reflectionList[i].hkllist) {
-          int j = ih.index();
+          int j = ih.getIndex();
           cnsfile.printf(
               " INDE %d %d %d FS= %.4f %.4f\n",
-              ih.h(),
-              ih.k(),
-              ih.l(),
+              ih.getH(),
+              ih.getK(),
+              ih.getL(),
               refinementData[i].fsF(j),
               Math.toDegrees(refinementData[i].fsPhi(j)));
         }

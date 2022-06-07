@@ -160,7 +160,7 @@ public class RefinementModel {
     }
 
     // For mapping between atoms between different molecular assemblies.
-    xIndex = new List[assembly.length];
+    xIndex = new ArrayList[assembly.length];
     for (int i = 0; i < assembly.length; i++) {
       xIndex[i] = new ArrayList<>();
     }
@@ -231,13 +231,13 @@ public class RefinementModel {
         logger.log(
             Level.INFO,
             "  Residue {0} is a single conformer with non-unity occupancy.\n  Occupancy will be refined independently.\n",
-            r.getChainID() + " " + r.toString());
+            r.getChainID() + " " + r);
       } else if (tocc < 1.0 || tocc > 1.0) {
         Residue r = list.get(0);
         logger.log(
             Level.INFO,
             "  Residue {0} occupancy does not sum to 1.0.\n  This should be fixed or checked due to possible instability in refinement.\n",
-            r.getChainID() + " " + r.toString());
+            r.getChainID() + " " + r);
       }
     }
   }

@@ -51,6 +51,8 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
+import static ffx.utilities.TinkerUtils.version
+
 /**
  * The Real Space Dynamics script.
  * <br>
@@ -104,26 +106,30 @@ class Dynamics extends AlgorithmsScript {
 
     dynamicsOptions.init()
 
-    String modelFilename
+    String filename
     if (filenames != null && filenames.size() > 0) {
       activeAssembly = algorithmFunctions.open(filenames.get(0))
-      modelFilename = filenames.get(0)
+      filename = filenames.get(0)
     } else if (activeAssembly == null) {
       logger.info(helpString())
       return this
     } else {
-      modelFilename = activeAssembly.getFile().getAbsolutePath()
+      filename = activeAssembly.getFile().getAbsolutePath()
     }
-    MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
+    MolecularAssembly[] molecularAssemblies = [activeAssembly] as MolecularAssembly[]
 
-    logger.info("\n Running Real Space Dynamics on " + modelFilename)
+    logger.info("\n Running Real Space Dynamics on " + filename)
 
     atomSelectionOptions.setActiveAtoms(activeAssembly)
 
-    refinementEnergy = realSpaceOptions.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
+    // Create the refinement target.
+    refinementEnergy = realSpaceOptions.toRealSpaceEnergy(filenames, molecularAssemblies)
+
+    // Beginning force field energy.
+    algorithmFunctions.energy(activeAssembly)
 
     // Restart File
-    File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
+    File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn")
     if (!dyn.exists()) {
       dyn = null
     }
@@ -136,6 +142,12 @@ class Dynamics extends AlgorithmsScript {
     boolean initVelocities = true
     molDyn.dynamic(dynamicsOptions.steps, dynamicsOptions.dt, dynamicsOptions.report,
             dynamicsOptions.write, dynamicsOptions.temperature, initVelocities, dyn)
+
+    // Final target function.
+    algorithmFunctions.energy(activeAssembly)
+
+    File file = version(new File(FilenameUtils.removeExtension(filename) + ".pdb"))
+    algorithmFunctions.saveAsPDB(molecularAssemblies, file)
 
     return this
   }

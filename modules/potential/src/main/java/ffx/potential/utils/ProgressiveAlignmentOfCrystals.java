@@ -38,7 +38,7 @@
 package ffx.potential.utils;
 
 import static org.apache.commons.math3.util.FastMath.ceil;
-import static ffx.crystal.Crystal.mod;
+import static ffx.numerics.math.ScalarMath.mod;
 import static ffx.crystal.SymOp.Tr_0_0_0;
 import static ffx.crystal.SymOp.ZERO_ROTATION;
 import static ffx.crystal.SymOp.applyCartesianSymOp;

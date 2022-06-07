@@ -37,11 +37,11 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
+import static ffx.numerics.math.ScalarMath.mod;
 import static ffx.potential.bonded.BondedUtils.determineIntxyz;
 import static ffx.potential.bonded.BondedUtils.intxyz;
 import static java.lang.String.format;
 
-import ffx.crystal.Crystal;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
@@ -4729,7 +4729,7 @@ public class RotamerLibrary {
        * 0-360: North is 0-115 or 295-360.
        * -180 to 180: North is -65 to 115.
        */
-      delta = Crystal.mod(delta, 360.0);
+      delta = mod(delta, 360.0);
       if (delta <= 115 || delta > 295) {
         return C3_ENDO;
       } else {

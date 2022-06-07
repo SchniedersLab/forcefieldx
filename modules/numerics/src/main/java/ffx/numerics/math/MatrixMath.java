@@ -394,4 +394,20 @@ public final class MatrixMath {
     res[2] = v[0] * m[0][2] + v[1] * m[1][2] + v[2] * m[2][2];
     return res;
   }
+
+  /**
+   * Multiply coordinates by the transpose of a matrix.
+   *
+   * @param in input coordinates.
+   * @param out output coordinates.
+   * @param matrix multiply by the transpose of this matrix.
+   */
+  public static void applyMatrixTranspose(double[] in, double[] out, double[][] matrix) {
+    double xc = in[0];
+    double yc = in[1];
+    double zc = in[2];
+    out[0] = xc * matrix[0][0] + yc * matrix[1][0] + zc * matrix[2][0];
+    out[1] = xc * matrix[0][1] + yc * matrix[1][1] + zc * matrix[2][1];
+    out[2] = xc * matrix[0][2] + yc * matrix[1][2] + zc * matrix[2][2];
+  }
 }

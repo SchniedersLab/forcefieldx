@@ -48,8 +48,6 @@ import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
-import ffx.crystal.SpaceGroup;
-import ffx.crystal.SpaceGroupDefinitions;
 import ffx.crystal.SpaceGroupInfo;
 import ffx.xray.DiffractionRefinementData;
 import java.io.BufferedReader;
@@ -168,17 +166,18 @@ public class CIFFilter implements DiffractionFileFilter {
       sb.append(format("\nOpening %s\n", cifFile.getName()));
       sb.append(" Setting up Reflection List based on CIF:\n");
       sb.append(format("  spacegroup #: %d (name: %s)\n",
-              spacegroupNum, SpaceGroupInfo.spaceGroupNames[spacegroupNum - 1]));
+          spacegroupNum, SpaceGroupInfo.spaceGroupNames[spacegroupNum - 1]));
       sb.append(format("  Resolution: %8.3f\n", 0.999999 * resHigh));
       sb.append(format("  Cell: %8.3f %8.3f %8.3f %8.3f %8.3f %8.3f\n",
-              cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]));
+          cell[0], cell[1], cell[2], cell[3], cell[4], cell[5]));
       sb.append(format("\n  CIF # HKL (observed): %d\n", nObs));
       sb.append(format("  CIF # HKL (all):      %d\n", nAll));
       logger.info(sb.toString());
     }
 
     logger.info(format(" Space group number %d", spacegroupNum));
-    Crystal crystal = new Crystal(cell[0], cell[1], cell[2], cell[3], cell[4], cell[5], spacegroupNum);
+    Crystal crystal = new Crystal(cell[0], cell[1], cell[2], cell[3], cell[4], cell[5],
+        spacegroupNum);
 
     double sampling = 1.0 / 1.5;
     if (properties != null) {
@@ -249,10 +248,10 @@ public class CIFFilter implements DiffractionFileFilter {
         int ik = parseInt(strArray[k]);
         int il = parseInt(strArray[l]);
 
-        hkl.h(ih);
-        hkl.k(ik);
-        hkl.l(il);
-        resolution = min(resolution, Crystal.res(crystal, hkl));
+        hkl.setH(ih);
+        hkl.setK(ik);
+        hkl.setL(il);
+        resolution = min(resolution, crystal.res(hkl));
       }
     } catch (IOException e) {
       String message = " CIF IO Exception.";
@@ -448,9 +447,9 @@ public class CIFFilter implements DiffractionFileFilter {
           boolean isnull = false;
           if (rFree > 0) {
             if (strArray[rFree].charAt(0) == 'o') {
-              refinementData.setFreeR(hkl.index(), 0);
+              refinementData.setFreeR(hkl.getIndex(), 0);
             } else if (strArray[rFree].charAt(0) == 'f') {
-              refinementData.setFreeR(hkl.index(), 1);
+              refinementData.setFreeR(hkl.getIndex(), 1);
             } else if (strArray[rFree].charAt(0) == 'x') {
               isnull = true;
               nNAN++;
@@ -461,7 +460,7 @@ public class CIFFilter implements DiffractionFileFilter {
               isnull = true;
               nCIFIgnore++;
             } else {
-              refinementData.setFreeR(hkl.index(), parseInt(strArray[rFree]));
+              refinementData.setFreeR(hkl.getIndex(), parseInt(strArray[rFree]));
             }
           }
 
@@ -481,12 +480,12 @@ public class CIFFilter implements DiffractionFileFilter {
             }
 
             if (friedel) {
-              anofSigF[hkl.index()][2] = parseDouble(strArray[fo]);
-              anofSigF[hkl.index()][3] = parseDouble(strArray[sigFo]);
+              anofSigF[hkl.getIndex()][2] = parseDouble(strArray[fo]);
+              anofSigF[hkl.getIndex()][3] = parseDouble(strArray[sigFo]);
               nFriedel++;
             } else {
-              anofSigF[hkl.index()][0] = parseDouble(strArray[fo]);
-              anofSigF[hkl.index()][1] = parseDouble(strArray[sigFo]);
+              anofSigF[hkl.getIndex()][0] = parseDouble(strArray[fo]);
+              anofSigF[hkl.getIndex()][1] = parseDouble(strArray[sigFo]);
             }
           }
 
@@ -497,12 +496,12 @@ public class CIFFilter implements DiffractionFileFilter {
             }
 
             if (friedel) {
-              anofSigF[hkl.index()][2] = parseDouble(strArray[io]);
-              anofSigF[hkl.index()][3] = parseDouble(strArray[sigIo]);
+              anofSigF[hkl.getIndex()][2] = parseDouble(strArray[io]);
+              anofSigF[hkl.getIndex()][3] = parseDouble(strArray[sigIo]);
               nFriedel++;
             } else {
-              anofSigF[hkl.index()][0] = parseDouble(strArray[io]);
-              anofSigF[hkl.index()][1] = parseDouble(strArray[sigIo]);
+              anofSigF[hkl.getIndex()][0] = parseDouble(strArray[io]);
+              anofSigF[hkl.getIndex()][1] = parseDouble(strArray[sigIo]);
             }
           }
 
@@ -510,7 +509,7 @@ public class CIFFilter implements DiffractionFileFilter {
         } else {
           HKL tmp = new HKL(ih, ik, il);
           if (!reflectionList.resolution.inInverseResSqRange(
-              Crystal.invressq(reflectionList.crystal, tmp))) {
+              reflectionList.crystal.invressq(tmp))) {
             nRes++;
           } else {
             nIgnore++;

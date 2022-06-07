@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.potential.nonbonded;
 
+import static ffx.numerics.math.ScalarMath.binomial;
 import static ffx.numerics.special.Erf.erfc;
 import static ffx.potential.parameters.ForceField.ELEC_FORM.PAM;
 import static ffx.potential.parameters.ForceField.toEnumForm;
@@ -69,7 +70,6 @@ import edu.rit.util.Range;
 import ffx.crystal.Crystal;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
-import ffx.numerics.math.ScalarMath;
 import ffx.numerics.multipole.MultipoleTensor;
 import ffx.potential.ForceFieldEnergy.Platform;
 import ffx.potential.MolecularAssembly;
@@ -3705,7 +3705,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
         // Set the current predictor sign and coefficient.
         sign *= -1.0;
-        double c = sign * ScalarMath.binomial(n, k);
+        double c = sign * binomial(n, k);
         for (int i = 0; i < nAtoms; i++) {
           for (int j = 0; j < 3; j++) {
             inducedDipole[0][i][j] += c * predictorInducedDipole[mode][index][i][j];

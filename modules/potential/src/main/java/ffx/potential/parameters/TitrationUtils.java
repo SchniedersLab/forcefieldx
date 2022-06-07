@@ -113,7 +113,7 @@ public class TitrationUtils {
       new MultipoleType(MultipoleType.zeroM, new int[] {0, 200, 198}, MultipoleFrameDefinition.ZTHENX, false);
 
   private static final PolarizeType zeroPolarizeType =
-      new PolarizeType(0, 0.0, 0.39, new int[] {0});
+      new PolarizeType(0, 0.0, 0.39, 0.0, new int[] {0});
 
   private static final SoluteType zeroSoluteType = new SoluteType(0, 1.0);
 

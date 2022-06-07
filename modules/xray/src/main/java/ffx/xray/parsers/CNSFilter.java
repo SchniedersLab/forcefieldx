@@ -168,10 +168,10 @@ public class CNSFilter implements DiffractionFileFilter {
               int ih = parseInt(strArray[i + 1]);
               int ik = parseInt(strArray[i + 2]);
               int il = parseInt(strArray[i + 3]);
-              hkl.h(ih);
-              hkl.k(ik);
-              hkl.l(il);
-              res = min(res, Crystal.res(crystal, hkl));
+              hkl.setH(ih);
+              hkl.setK(ik);
+              hkl.setL(il);
+              res = min(res, crystal.res(hkl));
             }
           }
         }
@@ -286,19 +286,19 @@ public class CNSFilter implements DiffractionFileFilter {
                 if (refinementData.fSigFCutoff > 0.0 && (fo / sigFo) < refinementData.fSigFCutoff) {
                   nCut++;
                 } else if (friedel) {
-                  anofSigF[hkl.index()][2] = fo;
-                  anofSigF[hkl.index()][3] = sigFo;
+                  anofSigF[hkl.getIndex()][2] = fo;
+                  anofSigF[hkl.getIndex()][3] = sigFo;
                   nFriedel++;
                 } else {
-                  anofSigF[hkl.index()][0] = fo;
-                  anofSigF[hkl.index()][1] = sigFo;
+                  anofSigF[hkl.getIndex()][0] = fo;
+                  anofSigF[hkl.getIndex()][1] = sigFo;
                 }
-                refinementData.setFreeR(hkl.index(), free);
+                refinementData.setFreeR(hkl.getIndex(), free);
                 nRead++;
               } else {
                 HKL tmp = new HKL(ih, ik, il);
                 if (!reflectionList.resolution.inInverseResSqRange(
-                    Crystal.invressq(reflectionList.crystal, tmp))) {
+                    reflectionList.crystal.invressq(tmp))) {
                   nRes++;
                 } else {
                   nIgnore++;

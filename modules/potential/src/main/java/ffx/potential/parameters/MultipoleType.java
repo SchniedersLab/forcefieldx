@@ -506,8 +506,9 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         logger.info(message);
         double polarizability = 0.0;
         double thole = 0.0;
+        double ddp = 0.0;
         int[] polarizationGroup = null;
-        polarizeType = new PolarizeType(atomType.type, polarizability, thole, polarizationGroup);
+        polarizeType = new PolarizeType(atomType.type, polarizability, thole, ddp, polarizationGroup);
         forceField.addForceFieldType(polarizeType);
         atom.setPolarizeType(polarizeType);
       }

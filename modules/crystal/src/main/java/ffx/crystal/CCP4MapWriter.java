@@ -139,7 +139,7 @@ public class CCP4MapWriter {
   }
 
   /**
-   * set the stepping across the array (e.g. 2 if data is separated by 1 space)
+   * Set the stepping across the array (e.g. 2 if data is separated by 1 space)
    *
    * @param stride the step size desired
    */
@@ -148,7 +148,7 @@ public class CCP4MapWriter {
   }
 
   /**
-   * write data to file, does not normalize
+   * Write data to file (does not normalize).
    *
    * @param data map data to write out
    */
@@ -177,7 +177,6 @@ public class CCP4MapWriter {
       for (int j = 0; j < exty; j++) {
         for (int i = 0; i < extx; i++) {
           int index = stride * (i + extx * (j + exty * k));
-          // int index = k * (exty * (extx + 2)) + j * (extx + 2) + i;
           n++;
           if (data[index] < min) {
             min = data[index];
@@ -195,7 +194,6 @@ public class CCP4MapWriter {
       for (int j = 0; j < exty; j++) {
         for (int i = 0; i < extx; i++) {
           int index = stride * (i + extx * (j + exty * k));
-          // int index = k * (exty * (extx + 2)) + j * (extx + 2) + i;
           sd += pow(data[index] - mean, 2.0);
           n++;
         }
@@ -331,7 +329,6 @@ public class CCP4MapWriter {
         for (int j = 0; j < exty; j++) {
           for (int i = 0; i < extx; i++) {
             int index = stride * (i + extx * (j + exty * k));
-            // int index = k * (exty * (extx + 2)) + j * (extx + 2) + i;
             fmapdata = (float) data[index];
             bb.order(b).putFloat(fmapdata);
             if (!bb.hasRemaining()) {
@@ -350,7 +347,6 @@ public class CCP4MapWriter {
     } catch (Exception e) {
       String message = "Fatal exception evaluating structure factors.\n";
       logger.log(Level.SEVERE, message, e);
-      System.exit(-1);
     }
   }
 }
