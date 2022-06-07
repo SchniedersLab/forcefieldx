@@ -127,6 +127,14 @@ public class GaussVol {
    * hydrogen atoms.
    */
   public static final double DEFAULT_GAUSSVOL_RADII_OFFSET = 0.0;
+  /**
+   * Default scaling applied to radii for use with Gaussian Volumes to correct for not including
+   * hydrogen atoms and general underestimation of molecular volume
+   *
+   * Default set to 1.0 - can be set to greater than 1.0 to increase the radii by a uniform percentage
+   * (ex: a radii scale of 1.25 increases all radii by 25%)
+   */
+  public static final double DEFAULT_GAUSSVOL_RADII_SCALE = 1.0;
 
   private static final double RMIN_TO_SIGMA = 1.0 / pow(2.0, 1.0 / 6.0);
 
@@ -144,6 +152,7 @@ public class GaussVol {
   private final ParallelTeam parallelTeam;
 
   private final double vdwRadiiOffset;
+  private final double vdwRadiiScale;
   private final boolean includeHydrogen;
   private final boolean useSigma;
   private static final double FOUR_THIRDS_PI = 4.0 / 3.0 * PI;
@@ -220,6 +229,7 @@ public class GaussVol {
     selfVolumeFraction = new double[nAtoms];
 
     vdwRadiiOffset = forceField.getDouble("GAUSSVOL_RADII_OFFSET", DEFAULT_GAUSSVOL_RADII_OFFSET);
+    vdwRadiiScale = forceField.getDouble("GAUSSVOL_RADII_SCALE",DEFAULT_GAUSSVOL_RADII_SCALE);
     includeHydrogen = forceField.getBoolean("GAUSSVOL_HYDROGEN", false);
     useSigma = forceField.getBoolean("GAUSSVOL_USE_SIGMA", false);
 
@@ -738,6 +748,7 @@ public class GaussVol {
       radii[i] *= RMIN_TO_SIGMA;
     }
     radii[i] += vdwRadiiOffset;
+    radii[i] *= vdwRadiiScale;
     volumes[i] = FOUR_THIRDS_PI * pow(radii[i], 3);
     gammas[i] = 1.0;
     radiiOffset[i] = radii[i] + offset;

@@ -779,6 +779,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
     logger.info(
         format("   Non-Polar Model:                  %10s", nonPolar.toString().replace('_', '-')));
 
+    if(nonPolar.equals(NonPolar.GAUSS_DISP)){
+      logger.info(
+              format("    GaussVol Radii Offset:               %2.4f",
+                      forceField.getDouble("GAUSSVOL_RADII_OFFSET",0.0)));
+      logger.info(
+              format("    GaussVol Radii Scale:                %2.4f",
+                      forceField.getDouble("GAUSSVOL_RADII_SCALE",1.0)));
+    }
+
     if (dispersionRegion != null) {
       logger.info(
           format(
@@ -1580,11 +1589,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
             // Sneck for lone ions or molecules like methane, which are not descreened by any other atoms
             neckScale[i] = 1.0;
           } else {
-            neckScale[i] = sneck * (5.0 - numBoundHeavyAtoms) / 4.0;
+            neckScale[i] = atom.getSoluteType().sneck * (5.0 - numBoundHeavyAtoms) / 4.0;
           }
         } else {
           // Non-chemically aware Sneck - set neckScale to the max (input) Sneck value for all non-hydrogen atoms
-          neckScale[i] = sneck;
+          neckScale[i] = atom.getSoluteType().sneck;
         }
       }
 
