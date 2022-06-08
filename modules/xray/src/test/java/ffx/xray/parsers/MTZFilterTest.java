@@ -76,14 +76,14 @@ public class MTZFilterTest {
     assertTrue(
         "mtz file errors", mtzFilter.readFile(mtzFile, reflectionList, refinementData, null));
     HKL hkl = reflectionList.getHKL(-10, 1, 1);
-    assertEquals("-10 1 1 FP value", 229.90, refinementData.getF(hkl.index()), 0.02);
-    assertEquals("-10 1 1 SIGFP value", 2.50, refinementData.getSigF(hkl.index()), 0.02);
-    assertEquals("-10 1 1 FREE value", 1, refinementData.getFreeR(hkl.index()));
+    assertEquals("-10 1 1 FP value", 229.90, refinementData.getF(hkl.getIndex()), 0.02);
+    assertEquals("-10 1 1 SIGFP value", 2.50, refinementData.getSigF(hkl.getIndex()), 0.02);
+    assertEquals("-10 1 1 FREE value", 1, refinementData.getFreeR(hkl.getIndex()));
     hkl = reflectionList.getHKL(-10, 1, 10);
     assertEquals(
-        "-10 1 10 FP value should be NaN", Double.NaN, refinementData.getF(hkl.index()), 0.1);
+        "-10 1 10 FP value should be NaN", Double.NaN, refinementData.getF(hkl.getIndex()), 0.1);
     assertEquals(
-        "-10 1 10 SIGFP value should be NaN", Double.NaN, refinementData.getSigF(hkl.index()), 0.1);
+        "-10 1 10 SIGFP value should be NaN", Double.NaN, refinementData.getSigF(hkl.getIndex()), 0.1);
   }
 
   @Test

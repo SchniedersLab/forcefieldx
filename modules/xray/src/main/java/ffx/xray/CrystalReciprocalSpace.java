@@ -39,6 +39,7 @@ package ffx.xray;
 
 import static ffx.crystal.SymOp.applyTransSymRot;
 import static ffx.numerics.fft.Complex3D.iComplex3D;
+import static ffx.numerics.math.ScalarMath.mod;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
@@ -101,7 +102,7 @@ import java.util.logging.Logger;
 public class CrystalReciprocalSpace {
 
   private static final Logger logger = Logger.getLogger(CrystalReciprocalSpace.class.getName());
-  private static double toSeconds = 1.0e-9;
+  private static final double toSeconds = 1.0e-9;
   private final boolean neutron;
   private final double bAdd;
   private final double fftScale;
@@ -191,12 +192,12 @@ public class CrystalReciprocalSpace {
   boolean lambdaTerm = false;
   double solventA;
   double solventB;
-  private boolean solvent;
+  private final boolean solvent;
   private boolean useThreeGaussians = true;
-  // not final for purposes of finite differences
+  // Not final for purposes of finite differences
   private double[][][] coordinates;
   private double weight = 1.0;
-  private int aRadGrid;
+  private final int aRadGrid;
   /** If the "Native Environment Approximation" is true, the "use" flag is ignored. */
   private boolean nativeEnvironmentApproximation = false;
 
@@ -205,7 +206,8 @@ public class CrystalReciprocalSpace {
    * neutron data set
    *
    * @param reflectionList the {@link ffx.crystal.ReflectionList} to fill with structure factors
-   * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for structure factor computation
+   * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for structure factor
+   *     computation
    * @param fftTeam {@link edu.rit.pj.ParallelTeam} for parallelization
    * @param parallelTeam {@link edu.rit.pj.ParallelTeam} for parallelization
    */
@@ -230,7 +232,8 @@ public class CrystalReciprocalSpace {
    * polynomial bulk solvent mask if needed
    *
    * @param reflectionList the {@link ffx.crystal.ReflectionList} to fill with structure factors
-   * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for structure factor computation
+   * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for structure factor
+   *     computation
    * @param fftTeam {@link edu.rit.pj.ParallelTeam} for parallelization
    * @param parallelTeam {@link edu.rit.pj.ParallelTeam} for parallelization
    * @param solventMask true if this is a bulk solvent mask
@@ -256,7 +259,8 @@ public class CrystalReciprocalSpace {
    * Crystal Reciprocal Space constructor, assumes a polynomial bulk solvent mask if needed
    *
    * @param reflectionList the {@link ffx.crystal.ReflectionList} to fill with structure factors
-   * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for structure factor computation
+   * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for structure factor
+   *     computation
    * @param fftTeam {@link edu.rit.pj.ParallelTeam} for parallelization
    * @param parallelTeam {@link edu.rit.pj.ParallelTeam} for parallelization
    * @param solventMask true if this is a bulk solvent mask
@@ -284,7 +288,8 @@ public class CrystalReciprocalSpace {
    * Crystal Reciprocal Space constructor, all parameters provided
    *
    * @param reflectionlist the {@link ffx.crystal.ReflectionList} to fill with structure factors
-   * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for structure factor computation
+   * @param atoms array of {@link ffx.potential.bonded.Atom atoms} for structure factor
+   *     computation
    * @param fftTeam {@link edu.rit.pj.ParallelTeam} for parallelization
    * @param parallelTeam {@link edu.rit.pj.ParallelTeam} for parallelization
    * @param solventMask true if this is a bulk solvent mask
@@ -491,7 +496,7 @@ public class CrystalReciprocalSpace {
       StringBuilder sb = new StringBuilder();
       if (solvent) {
         sb.append("  Bulk Solvent Grid\n");
-        sb.append(format("  Bulk solvent model type:           %8s\n", solventModel.toString()));
+        sb.append(format("  Bulk solvent model type:           %8s\n", solventModel));
       } else {
         sb.append("  Atomic Scattering Grid\n");
       }
@@ -499,7 +504,7 @@ public class CrystalReciprocalSpace {
       sb.append(format("  Form factor grid diameter:           %8.3f\n", aRad * 2));
       sb.append(format("  Grid density:                        %8.3f\n", 1.0 / gridStep));
       sb.append(format("  Grid dimensions:                (%3d,%3d,%3d)\n", fftX, fftY, fftZ));
-      sb.append(format("  Grid method:                         %8s\n", gridMethod.toString()));
+      sb.append(format("  Grid method:                         %8s\n", gridMethod));
       logger.info(sb.toString());
     }
 
@@ -1118,14 +1123,14 @@ public class CrystalReciprocalSpace {
     ComplexNumber cj = new ComplexNumber();
     HKL ij = new HKL();
     for (HKL ih : reflectionList.hkllist) {
-      double[] fc = hklData[ih.index()];
+      double[] fc = hklData[ih.getIndex()];
       if (Double.isNaN(fc[0])) {
         continue;
       }
 
       // cross validation check!!!
       if (freer != null) {
-        if (freer[ih.index()] == flag) {
+        if (freer[ih.getIndex()] == flag) {
           nfree++;
           continue;
         }
@@ -1139,18 +1144,21 @@ public class CrystalReciprocalSpace {
       // apply symmetry
       for (int j = 0; j < nsym; j++) {
         cj.copy(c);
-        applyTransSymRot(ih, ij, symops.get(j));
-        double shift = Crystal.sym_phase_shift(ih, symops.get(j));
+        SymOp symOp = symops.get(j);
+        applyTransSymRot(ih, ij, symOp);
+        double shift = symOp.symPhaseShift(ih);
 
-        int h = Crystal.mod(ij.h(), fftX);
-        int k = Crystal.mod(ij.k(), fftY);
-        int l = Crystal.mod(ij.l(), fftZ);
+        int h = mod(ij.getH(), fftX);
+        int k = mod(ij.getK(), fftY);
+        int l = mod(ij.getL(), fftZ);
 
         if (h < halfFFTX + 1) {
           final int ii = iComplex3D(h, k, l, fftX, fftY);
           cj.phaseShiftIP(shift);
           densityGrid[ii] += cj.re();
-          densityGrid[ii + 1] += -cj.im();
+          // Added parentheses below on June 6, 2022.
+          // TODO: Should there be a "minus"?
+          densityGrid[ii + 1] += (-cj.im());
         } else {
           h = (fftX - h) % fftX;
           k = (fftY - k) % fftY;
@@ -1338,16 +1346,15 @@ public class CrystalReciprocalSpace {
             ASB.append(
                 format(
                     "     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n",
-                    i,
-                    (double) (atomicRowLoops[i].getThreadTime() * toSeconds),
+                    i, atomicRowLoops[i].getThreadTime() * toSeconds,
                     ((atomicRowLoops[i].getThreadTime()) / (atomicRowTotal)) * 100.00,
-                    ((atomicRowLoops[i].getThreadTime()) / (atomicRowTotal))
-                        * (100.00 * threadCount),
+                    ((atomicRowLoops[i].getThreadTime()) / (atomicRowTotal)) * (100.00
+                        * threadCount),
                     atomicRowLoops[i].getNumberofSlices(),
                     atomicRowLoops[i].getThreadWeight(),
                     100.00 * (atomicRowLoops[i].getThreadWeight() / atomicRowWeightTotal),
-                    (100.00 * threadCount)
-                        * (atomicRowLoops[i].getThreadWeight() / atomicRowWeightTotal)));
+                    (100.00 * threadCount) * (atomicRowLoops[i].getThreadWeight()
+                        / atomicRowWeightTotal)));
           }
           ASB.append(format("    Min      %7.5f\n", atomicRowMin * toSeconds));
           ASB.append(format("    Max      %7.5f\n", atomicRowMax * toSeconds));
@@ -1388,20 +1395,21 @@ public class CrystalReciprocalSpace {
                 format(
                     "     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n",
                     i,
-                    (double) (atomicSliceLoops[i].getThreadTime() * toSeconds),
+                    atomicSliceLoops[i].getThreadTime() * toSeconds,
                     ((atomicSliceLoops[i].getThreadTime()) / (atomicSliceTotal)) * 100.00,
-                    ((atomicSliceLoops[i].getThreadTime()) / (atomicSliceTotal))
-                        * (100.00 * threadCount),
+                    ((atomicSliceLoops[i].getThreadTime()) / (atomicSliceTotal)) * (100.00
+                        * threadCount),
                     atomicSliceLoops[i].getNumberofSlices(),
                     atomicSliceLoops[i].getThreadWeight(),
                     100.00 * (atomicSliceLoops[i].getThreadWeight() / atomicSliceWeightTotal),
-                    (100.00 * threadCount)
-                        * (atomicSliceLoops[i].getThreadWeight() / atomicSliceWeightTotal)));
+                    (100.00 * threadCount) * (atomicSliceLoops[i].getThreadWeight()
+                        / atomicSliceWeightTotal)));
           }
           ASB.append(format("    Min      %7.5f\n", atomicSliceMin * toSeconds));
           ASB.append(format("    Max      %7.5f\n", atomicSliceMax * toSeconds));
           ASB.append(format("    Delta    %7.5f\n", (atomicSliceMax - atomicSliceMin) * toSeconds));
           logger.info(ASB.toString());
+          break;
         default:
       }
     }
@@ -1487,11 +1495,11 @@ public class CrystalReciprocalSpace {
               continue;
             }
             for (int iz = k - ifrz; iz <= k + ifrz; iz++) {
-              int giz = Crystal.mod(iz, fftZ);
+              int giz = mod(iz, fftZ);
               for (int iy = j - ifry; iy <= j + ifry; iy++) {
-                int giy = Crystal.mod(iy, fftY);
+                int giy = mod(iy, fftY);
                 for (int ix = i - ifrx; ix <= i + ifrx; ix++) {
-                  int gix = Crystal.mod(ix, fftX);
+                  int gix = mod(ix, fftX);
                   final int jj = iComplex3D(gix, giy, giz, fftX, fftY);
                   if (densityGrid[jj] == 1.0) {
                     solventGrid[ii] = 1.0;
@@ -1652,8 +1660,7 @@ public class CrystalReciprocalSpace {
             SSB.append(
                 format(
                     "     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n",
-                    i,
-                    (double) (solventRowLoops[i].getThreadTime() * toSeconds),
+                    i, solventRowLoops[i].getThreadTime() * toSeconds,
                     ((solventRowLoops[i].getThreadTime()) / (solventRowTotal)) * 100.00,
                     ((solventRowLoops[i].getThreadTime()) / (solventRowTotal))
                         * (100.00 * threadCount),
@@ -1685,8 +1692,7 @@ public class CrystalReciprocalSpace {
             BSSB.append(
                 format(
                     "     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n",
-                    i,
-                    (double) (bulkSolventRowLoops[i].getTimePerThread() * toSeconds),
+                    i, bulkSolventRowLoops[i].getTimePerThread() * toSeconds,
                     ((bulkSolventRowLoops[i].getTimePerThread()) / (bulkSolventRowTotal)) * 100.00,
                     ((bulkSolventRowLoops[i].getTimePerThread()) / (bulkSolventRowTotal))
                         * (100.00 * threadCount),
@@ -1694,10 +1700,10 @@ public class CrystalReciprocalSpace {
                     bulkSolventRowLoops[i].getWeightPerThread()[i],
                     100.00
                         * (bulkSolventRowLoops[i].getWeightPerThread()[i]
-                            / bulkSolventRowWeightTotal),
+                        / bulkSolventRowWeightTotal),
                     (100.00 * threadCount)
                         * (bulkSolventRowLoops[i].getWeightPerThread()[i]
-                            / bulkSolventRowWeightTotal)));
+                        / bulkSolventRowWeightTotal)));
           }
           BSSB.append(format("    Min      %7.5f\n", bulkSolventRowMin * toSeconds));
           BSSB.append(format("    Max      %7.5f\n", bulkSolventRowMax * toSeconds));
@@ -1749,8 +1755,7 @@ public class CrystalReciprocalSpace {
             SSB.append(
                 format(
                     "     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n",
-                    i,
-                    (double) (solventSliceLoops[i].getThreadTime() * toSeconds),
+                    i, solventSliceLoops[i].getThreadTime() * toSeconds,
                     ((solventSliceLoops[i].getThreadTime()) / (solventSliceTotal)) * 100.00,
                     ((solventSliceLoops[i].getThreadTime()) / (solventSliceTotal))
                         * (100.00 * threadCount),
@@ -1783,8 +1788,7 @@ public class CrystalReciprocalSpace {
             BSSB.append(
                 format(
                     "     %3d     %7.5f     %7.1f     %7.1f     |   %7d     %7d     %7.1f     %7.1f\n",
-                    i,
-                    (double) (bulkSolventSliceLoops[i].getTimePerThread() * toSeconds),
+                    i, bulkSolventSliceLoops[i].getTimePerThread() * toSeconds,
                     ((bulkSolventSliceLoops[i].getTimePerThread()) / (bulkSolventSliceTotal))
                         * 100.00,
                     ((bulkSolventSliceLoops[i].getTimePerThread()) / (bulkSolventSliceTotal))
@@ -1793,10 +1797,10 @@ public class CrystalReciprocalSpace {
                     bulkSolventSliceLoops[i].getWeightPerThread()[i],
                     100.00
                         * (bulkSolventSliceLoops[i].getWeightPerThread()[i]
-                            / bulkSolventSliceWeightTotal),
+                        / bulkSolventSliceWeightTotal),
                     (100.00 * threadCount)
                         * (bulkSolventSliceLoops[i].getWeightPerThread()[i]
-                            / bulkSolventSliceWeightTotal)));
+                        / bulkSolventSliceWeightTotal)));
           }
           BSSB.append(format("    Min      %7.5f\n", bulkSolventSliceMin * toSeconds));
           BSSB.append(format("    Max      %7.5f\n", bulkSolventSliceMax * toSeconds));
@@ -1875,13 +1879,13 @@ public class CrystalReciprocalSpace {
       final int ifrzu = ifrz + frad;
 
       for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
-        int giz = Crystal.mod(iz, fftZ);
+        int giz = mod(iz, fftZ);
         xf[2] = iz * ifftZ;
         for (int iy = ifry - frad; iy <= ifryu; iy++) {
-          int giy = Crystal.mod(iy, fftY);
+          int giy = mod(iy, fftY);
           xf[1] = iy * ifftY;
           for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-            int gix = Crystal.mod(ix, fftX);
+            int gix = mod(ix, fftX);
             xf[0] = ix * ifftX;
             crystal.toCartesianCoordinates(xf, xc);
             final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
@@ -1954,13 +1958,13 @@ public class CrystalReciprocalSpace {
       final int ifrzu = ifrz + frad;
 
       for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
-        int giz = Crystal.mod(iz, fftZ);
+        int giz = mod(iz, fftZ);
         xf[2] = iz * ifftZ;
         for (int iy = ifry - frad; iy <= ifryu; iy++) {
-          int giy = Crystal.mod(iy, fftY);
+          int giy = mod(iy, fftY);
           xf[1] = iy * ifftY;
           for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-            int gix = Crystal.mod(ix, fftX);
+            int gix = mod(ix, fftX);
             xf[0] = ix * ifftX;
             crystal.toCartesianCoordinates(xf, xc);
             final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
@@ -2019,12 +2023,12 @@ public class CrystalReciprocalSpace {
       int ubZ = rowRegion.zFromRowIndex(ub);
 
       for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
-        int giz = Crystal.mod(iz, fftZ);
+        int giz = mod(iz, fftZ);
         if (lbZ > giz || giz > ubZ) {
           continue;
         }
-        int rowLB = rowRegion.rowIndexForYZ(Crystal.mod(ifryl - buff, fftY), giz);
-        int rowUB = rowRegion.rowIndexForYZ(Crystal.mod(ifryu + buff, fftY), giz);
+        int rowLB = rowRegion.rowIndexForYZ(mod(ifryl - buff, fftY), giz);
+        int rowUB = rowRegion.rowIndexForYZ(mod(ifryu + buff, fftY), giz);
         if (lb >= rowLB || rowUB <= ub) {
           buildListA.add(iAtom);
           buildListS.add(iSymm);
@@ -2104,20 +2108,20 @@ public class CrystalReciprocalSpace {
       final int ifrzu = ifrz + frad;
 
       for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
-        int giz = Crystal.mod(iz, fftZ);
+        int giz = mod(iz, fftZ);
         if (lbZ > giz || giz > ubZ) {
           continue;
         }
         xf[2] = iz * ifftZ;
         for (int iy = ifry - frad; iy <= ifryu; iy++) {
-          int giy = Crystal.mod(iy, fftY);
+          int giy = mod(iy, fftY);
           int rowIndex = rowRegion.rowIndexForYZ(giy, giz);
           if (lb > rowIndex || rowIndex > ub) {
             continue;
           }
           xf[1] = iy * ifftY;
           for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-            int gix = Crystal.mod(ix, fftX);
+            int gix = mod(ix, fftX);
             xf[0] = ix * ifftX;
             crystal.toCartesianCoordinates(xf, xc);
             optLocal[rowIndex]++;
@@ -2254,12 +2258,12 @@ public class CrystalReciprocalSpace {
       int ubZ = rowRegion.zFromRowIndex(ub);
 
       for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
-        int giz = Crystal.mod(iz, fftZ);
+        int giz = mod(iz, fftZ);
         if (lbZ > giz || giz > ubZ) {
           continue;
         }
-        int rowLB = rowRegion.rowIndexForYZ(Crystal.mod(ifryl - buff, fftY), giz);
-        int rowUB = rowRegion.rowIndexForYZ(Crystal.mod(ifryu + buff, fftY), giz);
+        int rowLB = rowRegion.rowIndexForYZ(mod(ifryl - buff, fftY), giz);
+        int rowUB = rowRegion.rowIndexForYZ(mod(ifryu + buff, fftY), giz);
         if (lb >= rowLB || rowUB <= ub) {
           buildListA.add(iAtom);
           buildListS.add(iSymm);
@@ -2366,20 +2370,20 @@ public class CrystalReciprocalSpace {
       final int ifrzu = ifrz + frad;
 
       for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
-        int giz = Crystal.mod(iz, fftZ);
+        int giz = mod(iz, fftZ);
         if (lbZ > giz || giz > ubZ) {
           continue;
         }
         xf[2] = iz * ifftZ;
         for (int iy = ifry - frad; iy <= ifryu; iy++) {
-          int giy = Crystal.mod(iy, fftY);
+          int giy = mod(iy, fftY);
           int rowIndex = rowRegion.rowIndexForYZ(giy, giz);
           if (lb > rowIndex || rowIndex > ub) {
             continue;
           }
           xf[1] = iy * ifftY;
           for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-            int gix = Crystal.mod(ix, fftX);
+            int gix = mod(ix, fftX);
             xf[0] = ix * ifftX;
             crystal.toCartesianCoordinates(xf, xc);
             optLocal[rowIndex]++;
@@ -2547,20 +2551,20 @@ public class CrystalReciprocalSpace {
       final int ifrzu = ifrz + frad;
 
       for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
-        int giz = Crystal.mod(iz, fftZ);
+        int giz = mod(iz, fftZ);
         if (lbZ > giz || giz > ubZ) {
           continue;
         }
         xf[2] = iz * ifftZ;
         for (int iy = ifry - frad; iy <= ifryu; iy++) {
-          int giy = Crystal.mod(iy, fftY);
+          int giy = mod(iy, fftY);
           int rowIndex = rowRegion.rowIndexForYZ(giy, giz);
           if (lb > rowIndex || rowIndex > ub) {
             continue;
           }
           xf[1] = iy * ifftY;
           for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-            int gix = Crystal.mod(ix, fftX);
+            int gix = mod(ix, fftX);
             xf[0] = ix * ifftX;
             crystal.toCartesianCoordinates(xf, xc);
             optLocal[rowIndex]++;
@@ -2620,7 +2624,7 @@ public class CrystalReciprocalSpace {
       // If so, add to list.
       int buff = bufferSize;
       for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
-        int giz = Crystal.mod(iz, fftZ);
+        int giz = mod(iz, fftZ);
         if (giz >= lb && giz <= ub) {
           buildListA.add(iAtom);
           buildListS.add(iSymm);
@@ -2705,16 +2709,16 @@ public class CrystalReciprocalSpace {
       final int ifrzu = ifrz + frad;
 
       for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
-        int giz = Crystal.mod(iz, fftZ);
+        int giz = mod(iz, fftZ);
         if (lb > giz || giz > ub) {
           continue;
         }
         xf[2] = iz * ifftZ;
         for (int iy = ifry - frad; iy <= ifryu; iy++) {
-          int giy = Crystal.mod(iy, fftY);
+          int giy = mod(iy, fftY);
           xf[1] = iy * ifftY;
           for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-            int gix = Crystal.mod(ix, fftX);
+            int gix = mod(ix, fftX);
             xf[0] = ix * ifftX;
             crystal.toCartesianCoordinates(xf, xc);
             optLocal[giz]++;
@@ -2823,7 +2827,7 @@ public class CrystalReciprocalSpace {
       // If so, add to list.
       int buff = bufferSize;
       for (int iz = ifrzl - buff; iz <= ifrzu + buff; iz++) {
-        int giz = Crystal.mod(iz, fftZ);
+        int giz = mod(iz, fftZ);
         if (giz >= lb && giz <= ub) {
           buildListA.add(iAtom);
           buildListS.add(iSymm);
@@ -2922,16 +2926,16 @@ public class CrystalReciprocalSpace {
       final int ifrzu = ifrz + frad;
 
       for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
-        int giz = Crystal.mod(iz, fftZ);
+        int giz = mod(iz, fftZ);
         if (lb > giz || giz > ub) {
           continue;
         }
         xf[2] = iz * ifftZ;
         for (int iy = ifry - frad; iy <= ifryu; iy++) {
-          int giy = Crystal.mod(iy, fftY);
+          int giy = mod(iy, fftY);
           xf[1] = iy * ifftY;
           for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-            int gix = Crystal.mod(ix, fftX);
+            int gix = mod(ix, fftX);
             xf[0] = ix * ifftX;
             crystal.toCartesianCoordinates(xf, xc);
             optLocal[giz]++;
@@ -3092,16 +3096,16 @@ public class CrystalReciprocalSpace {
       final int ifrzu = ifrz + frad;
 
       for (int iz = ifrz - frad; iz <= ifrzu; iz++) {
-        int giz = Crystal.mod(iz, fftZ);
+        int giz = mod(iz, fftZ);
         if (lb > giz || giz > ub) {
           continue;
         }
         xf[2] = iz * ifftZ;
         for (int iy = ifry - frad; iy <= ifryu; iy++) {
-          int giy = Crystal.mod(iy, fftY);
+          int giy = mod(iy, fftY);
           xf[1] = iy * ifftY;
           for (int ix = ifrx - frad; ix <= ifrxu; ix++) {
-            int gix = Crystal.mod(ix, fftX);
+            int gix = mod(ix, fftX);
             xf[0] = ix * ifftX;
             crystal.toCartesianCoordinates(xf, xc);
             optLocal[giz]++;
@@ -3207,13 +3211,13 @@ public class CrystalReciprocalSpace {
           final int ifrz = (int) frz;
 
           for (int ix = ifrx - dfrad; ix <= ifrx + dfrad; ix++) {
-            int gix = Crystal.mod(ix, fftX);
+            int gix = mod(ix, fftX);
             xf[0] = ix * ifftX;
             for (int iy = ifry - dfrad; iy <= ifry + dfrad; iy++) {
-              int giy = Crystal.mod(iy, fftY);
+              int giy = mod(iy, fftY);
               xf[1] = iy * ifftY;
               for (int iz = ifrz - dfrad; iz <= ifrz + dfrad; iz++) {
-                int giz = Crystal.mod(iz, fftZ);
+                int giz = mod(iz, fftZ);
                 xf[2] = iz * ifftZ;
                 crystal.toCartesianCoordinates(xf, xc);
                 optLocal[n]++;
@@ -3331,13 +3335,13 @@ public class CrystalReciprocalSpace {
           final int ifrzu = ifrz + dfrad;
 
           for (int ix = ifrx - dfrad; ix <= ifrxu; ix++) {
-            int gix = Crystal.mod(ix, fftX);
+            int gix = mod(ix, fftX);
             xf[0] = ix * ifftX;
             for (int iy = ifry - dfrad; iy <= ifryu; iy++) {
-              int giy = Crystal.mod(iy, fftY);
+              int giy = mod(iy, fftY);
               xf[1] = iy * ifftY;
               for (int iz = ifrz - dfrad; iz <= ifrzu; iz++) {
-                int giz = Crystal.mod(iz, fftZ);
+                int giz = mod(iz, fftZ);
                 xf[2] = iz * ifftZ;
                 crystal.toCartesianCoordinates(xf, xc);
                 final int ii = iComplex3D(gix, giy, giz, fftX, fftY);
@@ -3561,11 +3565,11 @@ public class CrystalReciprocalSpace {
       public void run(int lb, int ub) throws Exception {
         for (int i = lb; i <= ub; i++) {
           HKL ih = reflectionList.hkllist.get(i);
-          double[] fc = hklData[ih.index()];
+          double[] fc = hklData[ih.getIndex()];
           c.re(fc[0]);
           c.im(fc[1]);
           // Remove Badd
-          double s = Crystal.invressq(crystal, ih);
+          double s = crystal.invressq(ih);
           c.timesIP(scale * exp(0.25 * bAdd * s));
           c.conjugateIP();
           fc[0] = c.re();
@@ -3621,7 +3625,7 @@ public class CrystalReciprocalSpace {
       public void run(int lb, int ub) throws Exception {
         for (int i = lb; i <= ub; i++) {
           HKL ih = reflectionList.hkllist.get(i);
-          double[] fc = hkldata[ih.index()];
+          double[] fc = hkldata[ih.getIndex()];
           c.re(fc[0]);
           c.im(fc[1]);
           c.timesIP(scale);
@@ -3681,14 +3685,15 @@ public class CrystalReciprocalSpace {
       public void run(int lb, int ub) throws Exception {
         for (int i = lb; i <= ub; i++) {
           HKL ih = reflectionList.hkllist.get(i);
-          double[] fc = hkldata[ih.index()];
+          double[] fc = hkldata[ih.getIndex()];
           // Apply symmetry
           for (int j = 0; j < nsym; j++) {
-            applyTransSymRot(ih, ij, symops.get(j));
-            double shift = Crystal.sym_phase_shift(ih, symops.get(j));
-            int h = Crystal.mod(ij.h(), fftX);
-            int k = Crystal.mod(ij.k(), fftY);
-            int l = Crystal.mod(ij.l(), fftZ);
+            SymOp symOp = symops.get(j);
+            applyTransSymRot(ih, ij, symOp);
+            double shift = symOp.symPhaseShift(ih);
+            int h = mod(ij.getH(), fftX);
+            int k = mod(ij.getK(), fftY);
+            int l = mod(ij.getL(), fftZ);
             if (h < halfFFTX + 1) {
               final int ii = iComplex3D(h, k, l, fftX, fftY);
               c.re(getDensityGrid()[ii]);

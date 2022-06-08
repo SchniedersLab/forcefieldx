@@ -50,6 +50,8 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
+import static ffx.utilities.TinkerUtils.version
+
 /**
  * The Real Space Minimize script.
  * <br>
@@ -74,7 +76,7 @@ class Minimize extends AlgorithmsScript {
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
   private List<String> filenames
-  private MolecularAssembly[] assemblies
+  private MolecularAssembly[] molecularAssemblies
   private RealSpaceData realspaceData
 
   /**
@@ -99,29 +101,29 @@ class Minimize extends AlgorithmsScript {
       return this
     }
 
-    String modelFilename
+    String filename
     if (filenames != null && filenames.size() > 0) {
       activeAssembly = algorithmFunctions.open(filenames.get(0))
-      modelFilename = filenames.get(0)
+      filename = filenames.get(0)
     } else if (activeAssembly == null) {
       logger.info(helpString())
       return this
     } else {
-      modelFilename = activeAssembly.getFile().getAbsolutePath()
+      filename = activeAssembly.getFile().getAbsolutePath()
     }
-    assemblies = [activeAssembly] as MolecularAssembly[]
+    molecularAssemblies = [activeAssembly] as MolecularAssembly[]
 
-    logger.info("\n Running Real Space Minimization on " + modelFilename)
+    logger.info("\n Running Real Space Minimization on " + filename)
 
     // Set atom (in)active selections.
     atomSelectionOptions.setActiveAtoms(activeAssembly)
 
     RealSpaceFile[] mapFiles =
         realSpaceOptions.processData(filenames, activeAssembly).toArray(new RealSpaceFile[0])
-    realspaceData = new RealSpaceData(assemblies, activeAssembly.getProperties(),
+    realspaceData = new RealSpaceData(molecularAssemblies, activeAssembly.getProperties(),
         activeAssembly.getParallelTeam(), mapFiles)
 
-    // Beginning target function.
+    // Beginning force field energy.
     algorithmFunctions.energy(activeAssembly)
 
     RefinementMinimize refinementMinimize = new RefinementMinimize(realspaceData,
@@ -146,10 +148,8 @@ class Minimize extends AlgorithmsScript {
     // Final target function.
     algorithmFunctions.energy(activeAssembly)
 
-    // Suffix to append to output data
-    String suffix = "_refine"
-    algorithmFunctions.saveAsPDB(assemblies,
-        new File(FilenameUtils.removeExtension(modelFilename) + suffix + ".pdb"))
+    File file = version(new File(FilenameUtils.removeExtension(filename) + ".pdb"))
+    algorithmFunctions.saveAsPDB(molecularAssemblies, file)
 
     return this
   }
@@ -157,12 +157,12 @@ class Minimize extends AlgorithmsScript {
   @Override
   boolean destroyPotentials() {
     boolean destroyedSuccess = true
-    if (assemblies != null) {
+    if (molecularAssemblies != null) {
       if (realspaceData != null) {
         destroyedSuccess = realspaceData.destroy()
       }
-      for (int i = 1; i < assemblies.length; i++) {
-        destroyedSuccess = destroyedSuccess && assemblies[i].getPotentialEnergy().destroy()
+      for (int i = 1; i < molecularAssemblies.length; i++) {
+        destroyedSuccess = destroyedSuccess && molecularAssemblies[i].getPotentialEnergy().destroy()
       }
     }
     return destroyedSuccess

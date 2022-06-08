@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static ffx.crystal.Crystal.quad_form;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.DoubleMath.sub;
@@ -47,6 +46,7 @@ import static ffx.numerics.math.MatrixMath.mat3Mat3;
 import static ffx.numerics.math.MatrixMath.scalarMat3Mat3;
 import static ffx.numerics.math.MatrixMath.vec3Mat3;
 import static ffx.numerics.math.ScalarMath.b2u;
+import static ffx.numerics.math.ScalarMath.quadForm;
 import static ffx.numerics.math.ScalarMath.u2b;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
@@ -89,106 +89,106 @@ public final class NeutronFormFactor implements FormFactor {
   private static final double[][] u23 = {{0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}};
   private static final HashMap<String, double[][]> formfactors = new HashMap<>();
   private static final String[] atoms = {
-    "H", "D", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S",
-    "Cl", "Ar", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge",
-    "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Ru", "Rh", "Pd", "Ag", "Cd", "In",
-    "Sn", "Sb", "Te", "I", "Xe", "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Sm", "Eu", "Gd", "Tb", "Dy",
-    "Ho", "Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb",
-    "Bi", "Th", "U"
+      "H", "D", "He", "Li", "Be", "B", "C", "N", "O", "F", "Ne", "Na", "Mg", "Al", "Si", "P", "S",
+      "Cl", "Ar", "K", "Ca", "Sc", "Ti", "V", "Cr", "Mn", "Fe", "Co", "Ni", "Cu", "Zn", "Ga", "Ge",
+      "As", "Se", "Br", "Kr", "Rb", "Sr", "Y", "Zr", "Nb", "Mo", "Ru", "Rh", "Pd", "Ag", "Cd", "In",
+      "Sn", "Sb", "Te", "I", "Xe", "Cs", "Ba", "La", "Ce", "Pr", "Nd", "Sm", "Eu", "Gd", "Tb", "Dy",
+      "Ho", "Er", "Tm", "Yb", "Lu", "Hf", "Ta", "W", "Re", "Os", "Ir", "Pt", "Au", "Hg", "Tl", "Pb",
+      "Bi", "Th", "U"
   };
   private static final String[] atomsi = {
-    "1_1", "1_2", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16",
-    "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32",
-    "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "44", "45", "46", "47", "48", "49",
-    "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "62", "63", "64", "65", "66",
-    "67", "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82",
-    "83", "90", "92"
+      "1_1", "1_2", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16",
+      "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32",
+      "33", "34", "35", "36", "37", "38", "39", "40", "41", "42", "44", "45", "46", "47", "48", "49",
+      "50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "62", "63", "64", "65", "66",
+      "67", "68", "69", "70", "71", "72", "73", "74", "75", "76", "77", "78", "79", "80", "81", "82",
+      "83", "90", "92"
   };
   private static final double[][][] ffactors = {
-    {{0}, {-3.7390, 0.0}},
-    {{1}, {6.671, 0.0}},
-    {{2}, {3.26, 0.0}},
-    {{3}, {-1.90, 0.0}},
-    {{4}, {7.79, 0.0}},
-    {{5}, {5.30, 0.213}},
-    {{6}, {6.6460, 0.0}},
-    {{7}, {9.36, 0.0}},
-    {{8}, {5.803, 0.0}},
-    {{9}, {5.654, 0.0}},
-    {{10}, {4.566, 0.0}},
-    {{11}, {3.63, 0.0}},
-    {{12}, {5.375, 0.0}},
-    {{13}, {3.449, 0.0}},
-    {{14}, {4.1491, 0.0}},
-    {{15}, {5.13, 0.0}},
-    {{16}, {2.847, 0.0}},
-    {{17}, {9.5770, 0.0}},
-    {{18}, {1.909, 0.0}},
-    {{19}, {3.67, 0.0}},
-    {{20}, {4.70, 0.0}},
-    {{21}, {12.29, 0.0}},
-    {{22}, {-3.370, 0.0}},
-    {{23}, {-0.3824, 0.0}},
-    {{24}, {3.635, 0.0}},
-    {{25}, {-3.750, 0.0}},
-    {{26}, {9.45, 0.0}},
-    {{27}, {2.49, 0.0}},
-    {{28}, {10.3, 0.0}},
-    {{29}, {7.718, 0.0}},
-    {{30}, {5.60, 0.0}},
-    {{31}, {7.288, 0.0}},
-    {{32}, {8.185, 0.0}},
-    {{33}, {6.58, 0.0}},
-    {{34}, {7.970, 0.0}},
-    {{35}, {6.795, 0.0}},
-    {{36}, {7.81, 0.0}},
-    {{37}, {7.09, 0.0}},
-    {{38}, {7.02, 0.0}},
-    {{39}, {7.75, 0.0}},
-    {{40}, {7.16, 0.0}},
-    {{41}, {7.054, 0.0}},
-    {{42}, {6.715, 0.0}},
-    {{43}, {7.03, 0.0}},
-    {{44}, {5.88, 0.0}},
-    {{45}, {5.91, 0.0}},
-    {{46}, {5.922, 0.0}},
-    {{47}, {4.87, -0.70}},
-    {{48}, {2.08, -0.0539}},
-    {{49}, {6.225, 0.0}},
-    {{50}, {5.57, 0.0}},
-    {{51}, {5.80, 0.0}},
-    {{52}, {5.28, 0.0}},
-    {{53}, {4.92, 0.0}},
-    {{54}, {5.42, 0.0}},
-    {{55}, {5.07, 0.0}},
-    {{56}, {8.24, 0.0}},
-    {{57}, {4.84, 0.0}},
-    {{58}, {4.58, 0.0}},
-    {{59}, {7.69, 0.0}},
-    {{60}, {0.80, -1.65}},
-    {{61}, {7.22, -1.26}},
-    {{62}, {6.5, -13.82}},
-    {{63}, {7.38, 0.0}},
-    {{64}, {16.9, -0.276}},
-    {{65}, {8.01, 0.0}},
-    {{66}, {7.79, 0.0}},
-    {{67}, {7.07, 0.0}},
-    {{68}, {12.43, 0.0}},
-    {{69}, {7.21, 0.0}},
-    {{70}, {7.77, 0.0}},
-    {{71}, {6.91, 0.0}},
-    {{72}, {4.86, 0.0}},
-    {{73}, {9.2, 0.0}},
-    {{74}, {10.7, 0.0}},
-    {{75}, {10.6, 0.0}},
-    {{76}, {9.60, 0.0}},
-    {{77}, {7.63, 0.0}},
-    {{78}, {12.692, 0.0}},
-    {{79}, {8.776, 0.0}},
-    {{80}, {9.405, 0.0}},
-    {{81}, {8.532, 0.0}},
-    {{82}, {10.31, 0.0}},
-    {{83}, {8.417, 0.0}}
+      {{0}, {-3.7390, 0.0}},
+      {{1}, {6.671, 0.0}},
+      {{2}, {3.26, 0.0}},
+      {{3}, {-1.90, 0.0}},
+      {{4}, {7.79, 0.0}},
+      {{5}, {5.30, 0.213}},
+      {{6}, {6.6460, 0.0}},
+      {{7}, {9.36, 0.0}},
+      {{8}, {5.803, 0.0}},
+      {{9}, {5.654, 0.0}},
+      {{10}, {4.566, 0.0}},
+      {{11}, {3.63, 0.0}},
+      {{12}, {5.375, 0.0}},
+      {{13}, {3.449, 0.0}},
+      {{14}, {4.1491, 0.0}},
+      {{15}, {5.13, 0.0}},
+      {{16}, {2.847, 0.0}},
+      {{17}, {9.5770, 0.0}},
+      {{18}, {1.909, 0.0}},
+      {{19}, {3.67, 0.0}},
+      {{20}, {4.70, 0.0}},
+      {{21}, {12.29, 0.0}},
+      {{22}, {-3.370, 0.0}},
+      {{23}, {-0.3824, 0.0}},
+      {{24}, {3.635, 0.0}},
+      {{25}, {-3.750, 0.0}},
+      {{26}, {9.45, 0.0}},
+      {{27}, {2.49, 0.0}},
+      {{28}, {10.3, 0.0}},
+      {{29}, {7.718, 0.0}},
+      {{30}, {5.60, 0.0}},
+      {{31}, {7.288, 0.0}},
+      {{32}, {8.185, 0.0}},
+      {{33}, {6.58, 0.0}},
+      {{34}, {7.970, 0.0}},
+      {{35}, {6.795, 0.0}},
+      {{36}, {7.81, 0.0}},
+      {{37}, {7.09, 0.0}},
+      {{38}, {7.02, 0.0}},
+      {{39}, {7.75, 0.0}},
+      {{40}, {7.16, 0.0}},
+      {{41}, {7.054, 0.0}},
+      {{42}, {6.715, 0.0}},
+      {{43}, {7.03, 0.0}},
+      {{44}, {5.88, 0.0}},
+      {{45}, {5.91, 0.0}},
+      {{46}, {5.922, 0.0}},
+      {{47}, {4.87, -0.70}},
+      {{48}, {2.08, -0.0539}},
+      {{49}, {6.225, 0.0}},
+      {{50}, {5.57, 0.0}},
+      {{51}, {5.80, 0.0}},
+      {{52}, {5.28, 0.0}},
+      {{53}, {4.92, 0.0}},
+      {{54}, {5.42, 0.0}},
+      {{55}, {5.07, 0.0}},
+      {{56}, {8.24, 0.0}},
+      {{57}, {4.84, 0.0}},
+      {{58}, {4.58, 0.0}},
+      {{59}, {7.69, 0.0}},
+      {{60}, {0.80, -1.65}},
+      {{61}, {7.22, -1.26}},
+      {{62}, {6.5, -13.82}},
+      {{63}, {7.38, 0.0}},
+      {{64}, {16.9, -0.276}},
+      {{65}, {8.01, 0.0}},
+      {{66}, {7.79, 0.0}},
+      {{67}, {7.07, 0.0}},
+      {{68}, {12.43, 0.0}},
+      {{69}, {7.21, 0.0}},
+      {{70}, {7.77, 0.0}},
+      {{71}, {6.91, 0.0}},
+      {{72}, {4.86, 0.0}},
+      {{73}, {9.2, 0.0}},
+      {{74}, {10.7, 0.0}},
+      {{75}, {10.6, 0.0}},
+      {{76}, {9.60, 0.0}},
+      {{77}, {7.63, 0.0}},
+      {{78}, {12.692, 0.0}},
+      {{79}, {8.776, 0.0}},
+      {{80}, {9.405, 0.0}},
+      {{81}, {8.532, 0.0}},
+      {{82}, {10.31, 0.0}},
+      {{83}, {8.417, 0.0}}
   };
 
   static {
@@ -266,7 +266,7 @@ public final class NeutronFormFactor implements FormFactor {
 
     if (occ <= 0.0) {
       StringBuilder sb = new StringBuilder();
-      sb.append("zero occ for atom: ").append(atom.toString()).append("\n");
+      sb.append("zero occ for atom: ").append(atom).append("\n");
       sb.append("(atom will not contribute to electron density calculation)\n");
       logger.warning(sb.toString());
     }
@@ -332,7 +332,7 @@ public final class NeutronFormFactor implements FormFactor {
    * @return a double.
    */
   public double f(HKL hkl) {
-    double sum = a[0] * exp(-twopi2 * quad_form(hkl, u[0]));
+    double sum = a[0] * exp(-twopi2 * hkl.quadForm(u[0]));
     return occ * sum;
   }
 
@@ -344,7 +344,7 @@ public final class NeutronFormFactor implements FormFactor {
     if (r > atom.getFormFactorWidth()) {
       return f;
     }
-    double sum = ainv[0] * exp(-0.5 * quad_form(xyz, uinv[0]));
+    double sum = ainv[0] * exp(-0.5 * quadForm(xyz, uinv[0]));
     return f + (lambda * occ * twopi32 * sum);
   }
 
@@ -387,7 +387,7 @@ public final class NeutronFormFactor implements FormFactor {
       refineocc = true;
     }
 
-    double aex = ainv[0] * exp(-0.5 * quad_form(dxyz, uinv[0]));
+    double aex = ainv[0] * exp(-0.5 * quadForm(dxyz, uinv[0]));
 
     if (refinexyz) {
       vec3Mat3(dxyz, uinv[0], resv);
@@ -417,12 +417,12 @@ public final class NeutronFormFactor implements FormFactor {
         scalarMat3Mat3(-1.0, uinv[0], u23, resm);
         mat3Mat3(resm, uinv[0], jmat[5]);
 
-        gradu[0] += aex * 0.5 * (-quad_form(dxyz, jmat[0]) - uinv[0][0][0]);
-        gradu[1] += aex * 0.5 * (-quad_form(dxyz, jmat[1]) - uinv[0][1][1]);
-        gradu[2] += aex * 0.5 * (-quad_form(dxyz, jmat[2]) - uinv[0][2][2]);
-        gradu[3] += aex * 0.5 * (-quad_form(dxyz, jmat[3]) - uinv[0][0][1] * 2.0);
-        gradu[4] += aex * 0.5 * (-quad_form(dxyz, jmat[4]) - uinv[0][0][2] * 2.0);
-        gradu[5] += aex * 0.5 * (-quad_form(dxyz, jmat[5]) - uinv[0][1][2] * 2.0);
+        gradu[0] += aex * 0.5 * (-quadForm(dxyz, jmat[0]) - uinv[0][0][0]);
+        gradu[1] += aex * 0.5 * (-quadForm(dxyz, jmat[1]) - uinv[0][1][1]);
+        gradu[2] += aex * 0.5 * (-quadForm(dxyz, jmat[2]) - uinv[0][2][2]);
+        gradu[3] += aex * 0.5 * (-quadForm(dxyz, jmat[3]) - uinv[0][0][1] * 2.0);
+        gradu[4] += aex * 0.5 * (-quadForm(dxyz, jmat[4]) - uinv[0][0][2] * 2.0);
+        gradu[5] += aex * 0.5 * (-quadForm(dxyz, jmat[5]) - uinv[0][1][2] * 2.0);
       }
     }
 
@@ -472,7 +472,7 @@ public final class NeutronFormFactor implements FormFactor {
     // Check occ is valid.
     if (occ < 0.0) {
       StringBuilder sb = new StringBuilder();
-      sb.append("negative occupancy for atom: ").append(atom.toString()).append("\n");
+      sb.append("negative occupancy for atom: ").append(atom).append("\n");
       sb.append("resetting to 0.0\n");
       logger.warning(sb.toString());
       occ = 0.0;
@@ -496,7 +496,7 @@ public final class NeutronFormFactor implements FormFactor {
 
       if (det <= 1e-14) {
         StringBuilder sb = new StringBuilder();
-        sb.append("non-positive definite ANISOU for atom: ").append(atom.toString()).append("\n");
+        sb.append("non-positive definite ANISOU for atom: ").append(atom).append("\n");
         sb.append("resetting ANISOU based on isotropic B: (").append(biso).append(")\n");
         logger.warning(sb.toString());
 
@@ -507,7 +507,7 @@ public final class NeutronFormFactor implements FormFactor {
     } else {
       if (biso < 0.0) {
         StringBuilder sb = new StringBuilder();
-        sb.append("negative B factor for atom: ").append(atom.toString()).append("\n");
+        sb.append("negative B factor for atom: ").append(atom).append("\n");
         sb.append("resetting B to 0.01\n");
         logger.warning(sb.toString());
         atom.setTempFactor(0.01);

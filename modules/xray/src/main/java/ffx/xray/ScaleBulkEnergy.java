@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.xray;
 
-import static ffx.crystal.Crystal.invressq;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.MatrixMath.mat3Mat3;
 import static ffx.numerics.math.MatrixMath.mat3SymVec6;
@@ -359,7 +358,7 @@ public class ScaleBulkEnergy implements Potential {
       }
     }
 
-    public void init(double x[], double g[], boolean gradient) {
+    public void init(double[] x, double[] g, boolean gradient) {
       this.x = x;
       this.g = g;
       this.gradient = gradient;
@@ -455,16 +454,16 @@ public class ScaleBulkEnergy implements Potential {
 
         for (int j = lb; j <= ub; j++) {
           HKL ih = reflectionList.hkllist.get(j);
-          int i = ih.index();
+          int i = ih.getIndex();
           if (isNaN(fc[i][0]) || isNaN(fSigF[i][0]) || fSigF[i][1] <= 0.0) {
             continue;
           }
 
           // Constants
-          double s = invressq(crystal, ih);
-          ihc[0] = ih.h();
-          ihc[1] = ih.k();
-          ihc[2] = ih.l();
+          double s = crystal.invressq(ih);
+          ihc[0] = ih.getH();
+          ihc[1] = ih.getK();
+          ihc[2] = ih.getL();
           vec3Mat3(ihc, uStar, resv);
           double u = modelK - dot(resv, ihc);
           double expBS = exp(-twopi2 * solventUEq * s);

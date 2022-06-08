@@ -571,7 +571,8 @@ public class XYZFilter extends SystemFilter {
       }
       if (parse) {
         try {
-          int nArchive = parseInt(data.trim().split(" +")[0]);
+          String[] tokens = data.trim().split(" +");
+          int nArchive = parseInt(tokens[0]);
           if (nArchive != nSystem) {
             String message =
                     format("Number of atoms mismatch (Archive: %d, System: %d).", nArchive, nSystem);
@@ -580,6 +581,9 @@ public class XYZFilter extends SystemFilter {
             }
             logger.warning(message);
             return false;
+          }
+          if(tokens.length > 1) {
+            activeMolecularAssembly.setName(tokens[1]);
           }
         } catch (NumberFormatException e) {
           logger.warning(e.toString());

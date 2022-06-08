@@ -57,39 +57,51 @@ import java.util.logging.Logger;
  */
 public class VanDerWaalsForm {
 
+  /** The logger. */
+  private static final Logger logger = Logger.getLogger(VanDerWaalsForm.class.getName());
+
   /** Constant <code>RADMIN=0</code> */
   static final byte RADMIN = 0;
   /** Constant <code>EPS=1</code> */
   static final byte EPS = 1;
-  /** The logger. */
-  private static final Logger logger = Logger.getLogger(VanDerWaalsForm.class.getName());
+  /**
+   * Softcore vdW partial derivatives that are different between LJ and B14-7.
+   */
+  private final VDWPowers vdwPowers;
   /** First constant suggested by Halgren for the Buffered-14-7 potential. */
   public final double gamma;
+  /** First constant suggested by Halgren for the Buffered-14-7 potential plus 1 */
+  final double gamma1;
   /** Second constant suggested by Halgren for the Buffered-14-7 potential. */
   public final double delta;
   /** vdW Dispersive Power (e.g. 6). */
   final int dispersivePower;
-
-  final double gamma1;
+  /** vdW Dispersive Power minus 1 (e.g. 6-1 = 5). */
+  private final int dispersivePower1;
   /** Define some handy constants. */
   final double t1n;
-
+  /** Repulsive power minus dispersive power (e.g., 12-6 = 6). */
   final int repDispPower;
-  private final VDWPowers vdwPowers;
-  private final int dispersivePower1;
+  /** Repulsive power minus dispersive power minus 1 (e.g., 12-6-1 = 5). */
   private final int repDispPower1;
-  /** van der Waals functional form. */
+  /**
+   * van der Waals functional form.
+   */
   public VDW_TYPE vdwType;
-
+  /** Epsilon combining rule. */
   public EPSILON_RULE epsilonRule;
+  /** Radius combining rule. */
   public RADIUS_RULE radiusRule;
+  /** Radius size in the parameter file (radius or diameter). */
   public RADIUS_SIZE radiusSize;
+  /** Radius type in the parameter file (R-Min or Sigma). */
   public RADIUS_TYPE radiusType;
-  /** Define scale factors between 1-2, 1-3, etc. atoms. */
+  /** Define scale factors between 1-2 atoms. */
   protected double scale12;
-
+  /** Define scale factors between 1-3 atoms. */
   protected double scale13;
-  double scale14;
+  /** Define scale factors between 1-4 atoms. */
+  protected double scale14;
   /** Maximum number of classes in the force field. */
   int maxClass;
   /** Store the Rmin for each class. */
@@ -104,6 +116,7 @@ public class VanDerWaalsForm {
    * <p>Currently this is specific to the CHARMM force fields.
    */
   private final double[][] radEps14;
+
   /**
    * Constructor for VanDerWaalsForm.
    *
@@ -260,7 +273,7 @@ public class VanDerWaalsForm {
         double rj = radScale * vdwj.radius;
         double e2 = vdwj.wellDepth;
         double radmin = getCombinedRadius(ri, rj, radiusRule);
-        double eps = getCombinedEps(e1, e2, epsilonRule);
+        double eps = getCombinedEps(e1, e2, ri, rj, epsilonRule);
         if (radmin > 0) {
           radEps[i][j * 2 + RADMIN] = 1.0 / radmin;
           radEps[j][i * 2 + RADMIN] = 1.0 / radmin;
@@ -296,7 +309,7 @@ public class VanDerWaalsForm {
         double rj = radScale * vdwj.radius;
         double e2 = vdwj.wellDepth;
         double radmin = getCombinedRadius(ri, rj, radiusRule);
-        double eps = getCombinedEps(e1, e2, epsilonRule);
+        double eps = getCombinedEps(e1, e2, ri, rj, epsilonRule);
         if (radmin > 0) {
           radEps14[i][j * 2 + RADMIN] = 1.0 / radmin;
           radEps14[j][i * 2 + RADMIN] = 1.0 / radmin;
@@ -339,15 +352,25 @@ public class VanDerWaalsForm {
    *
    * @param ei The eps value of the first atom.
    * @param ej The eps value of the second atom.
+   * @param ri The radius of the first atom.
+   * @param rj The radius of the second atom.
    * @param epsilonRule The epsilon rule to use.
    * @return The combined eps value.
    */
-  public static double getCombinedEps(double ei, double ej, EPSILON_RULE epsilonRule) {
+  public static double getCombinedEps(double ei, double ej, double ri, double rj,
+      EPSILON_RULE epsilonRule) {
     double sei = sqrt(ei);
     double sej = sqrt(ej);
     switch (epsilonRule) {
       case GEOMETRIC:
         return sei * sej;
+      case W_H:
+        // ep = 2.0d0 * (seps(i)*seps(k)) * (rad(i)*rad(k))**3 / (rad(i)**6+rad(k)**6)
+        double rr = ri * rj;
+        double rr3 = rr * rr * rr;
+        double ri6 = pow(ri, 6);
+        double rj6 = pow(rj, 6);
+        return 2.0 * sei * sej * rr3 / (ri6 + rj6);
       default:
       case HHG:
         return 4.0 * (ei * ej) / ((sei + sej) * (sei + sej));
@@ -469,32 +492,51 @@ public class VanDerWaalsForm {
     return vdwPowers.rhoDisp1(rhoDelta);
   }
 
+  /**
+   * VDW Type.
+   */
   public enum VDW_TYPE {
     BUFFERED_14_7,
     LENNARD_JONES
   }
 
+  /**
+   * Radius combining rule.
+   */
   public enum RADIUS_RULE {
     ARITHMETIC,
     CUBIC_MEAN,
     GEOMETRIC
   }
 
+  /**
+   * Radius size in the parameter file (radius or diameter).
+   */
   public enum RADIUS_SIZE {
     DIAMETER,
     RADIUS
   }
 
+  /**
+   * Radius type in the parameter file (R-Min or Sigma).
+   */
   public enum RADIUS_TYPE {
     R_MIN,
     SIGMA
   }
 
+  /**
+   * Epsilon combining rule.
+   */
   public enum EPSILON_RULE {
     GEOMETRIC,
-    HHG
+    HHG,
+    W_H
   }
 
+  /**
+   * Softcore vdW partial derivatives that are different between LJ and B14-7.
+   */
   private class VDWPowers {
 
     public double rhoDelta1(double rhoDelta) {
@@ -506,6 +548,9 @@ public class VanDerWaalsForm {
     }
   }
 
+  /**
+   * LJ softcore vdW partial derivatives.
+   */
   private class LJ_6_12 extends VDWPowers {
 
     @Override
@@ -521,6 +566,9 @@ public class VanDerWaalsForm {
     }
   }
 
+  /**
+   * Buffered 14-7 softcore vdW partial derivatives.
+   */
   private class Buffered_14_7 extends VDWPowers {
 
     @Override

@@ -109,30 +109,32 @@ class Anneal extends AlgorithmsScript {
 
     dynamicsOptions.init()
 
-    String modelFilename
+    String filename
     if (filenames != null && filenames.size() > 0) {
       activeAssembly = algorithmFunctions.open(filenames.get(0))
-      modelFilename = filenames.get(0)
+      filename = filenames.get(0)
     } else if (activeAssembly == null) {
       logger.info(helpString())
       return this
     } else {
-      modelFilename = activeAssembly.getFile().getAbsolutePath()
+      filename = activeAssembly.getFile().getAbsolutePath()
     }
-    MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
+    MolecularAssembly[] molecularAssemblies = [activeAssembly] as MolecularAssembly[]
 
     logger.info(
-        "\n Running simulated annealing on on real-space target including " + modelFilename + "\n")
+        "\n Running simulated annealing on on real-space target including " + filename + "\n")
 
     // Set atom (in)active selections.
     atomSelectionOptions.setActiveAtoms(activeAssembly)
 
-    // Construct the real space potential.
-    Potential potential =
-        realSpaceOptions.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
+    // Create the refinement target.
+    Potential potential = realSpaceOptions.toRealSpaceEnergy(filenames, molecularAssemblies)
+
+    // Beginning force field energy.
+    algorithmFunctions.energy(activeAssembly)
 
     // Restart File
-    File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
+    File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn")
     if (!dyn.exists()) {
       dyn = null
     }
@@ -150,11 +152,11 @@ class Anneal extends AlgorithmsScript {
     simulatedAnnealing.anneal()
 
     if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
-      baseDir = new File(FilenameUtils.getFullPath(modelFilename))
+      baseDir = new File(FilenameUtils.getFullPath(filename))
     }
 
     String dirName = baseDir.toString() + File.separator
-    String fileName = FilenameUtils.getName(modelFilename)
+    String fileName = FilenameUtils.getName(filename)
     fileName = FilenameUtils.removeExtension(fileName)
 
     writeoutOptions.

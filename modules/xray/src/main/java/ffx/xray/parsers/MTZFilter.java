@@ -99,7 +99,8 @@ public class MTZFilter implements DiffractionFileFilter {
   private double resHigh;
 
   /** Constructor for MTZFilter. */
-  public MTZFilter() {}
+  public MTZFilter() {
+  }
 
   /**
    * Average the computed structure factors for two systems.
@@ -298,37 +299,24 @@ public class MTZFilter implements DiffractionFileFilter {
       sb.append(" Number of reflections: ").append(nReflections).append("\n");
 
       int ndset = 1;
-      for (Iterator i = dataSets.iterator(); i.hasNext(); ndset++) {
-        Dataset d = (Dataset) i.next();
+      for (Iterator<Dataset> i = dataSets.iterator(); i.hasNext(); ndset++) {
+        Dataset d = i.next();
         sb.append("  dataset ").append(ndset).append(": ").append(d.dataset).append("\n");
         sb.append("  project ").append(ndset).append(": ").append(d.project).append("\n");
         sb.append("  wavelength ").append(ndset).append(": ").append(d.lambda).append("\n");
-        sb.append("  cell ")
-            .append(ndset)
-            .append(": ")
-            .append(d.cell[0])
-            .append(" ")
-            .append(d.cell[1])
-            .append(" ")
-            .append(d.cell[2])
-            .append(" ")
-            .append(d.cell[3])
-            .append(" ")
-            .append(d.cell[4])
-            .append(" ")
-            .append(d.cell[5])
-            .append("\n");
+        sb.append("  cell ").append(ndset).append(": ")
+            .append(d.cell[0]).append(" ").append(d.cell[1]).append(" ")
+            .append(d.cell[2]).append(" ").append(d.cell[3]).append(" ")
+            .append(d.cell[4]).append(" ").append(d.cell[5]).append("\n");
         sb.append("\n");
       }
 
       sb.append(" Number of columns: ").append(nColumns).append("\n");
       int nc = 0;
-      for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
-        Column c = (Column) i.next();
-        sb.append(
-            String.format(
-                "  column %d: dataset id: %d min: %9.2f max: %9.2f label: %s type: %c\n",
-                nc, c.id, c.min, c.max, c.label, c.type));
+      for (Iterator<Column> i = columns.iterator(); i.hasNext(); nc++) {
+        Column c = i.next();
+        sb.append(format("  column %d: dataset id: %d min: %9.2f max: %9.2f label: %s type: %c\n",
+            nc, c.id, c.min, c.max, c.label, c.type));
       }
       logger.info(sb.toString());
     }
@@ -519,12 +507,12 @@ public class MTZFilter implements DiffractionFileFilter {
               }
             }
             if (friedel) {
-              anofSigF[hkl.index()][2] = data[fo];
-              anofSigF[hkl.index()][3] = data[sigFo];
+              anofSigF[hkl.getIndex()][2] = data[fo];
+              anofSigF[hkl.getIndex()][3] = data[sigFo];
               nFriedel++;
             } else {
-              anofSigF[hkl.index()][0] = data[fo];
-              anofSigF[hkl.index()][1] = data[sigFo];
+              anofSigF[hkl.getIndex()][0] = data[fo];
+              anofSigF[hkl.getIndex()][1] = data[sigFo];
             }
           } else {
             if (fPlus > 0 && sigFPlus > 0) {
@@ -534,8 +522,8 @@ public class MTZFilter implements DiffractionFileFilter {
                   continue;
                 }
               }
-              anofSigF[hkl.index()][0] = data[fPlus];
-              anofSigF[hkl.index()][1] = data[sigFPlus];
+              anofSigF[hkl.getIndex()][0] = data[fPlus];
+              anofSigF[hkl.getIndex()][1] = data[sigFPlus];
             }
             if (fMinus > 0 && sigFMinus > 0) {
               if (refinementData.fSigFCutoff > 0.0) {
@@ -544,27 +532,27 @@ public class MTZFilter implements DiffractionFileFilter {
                   continue;
                 }
               }
-              anofSigF[hkl.index()][2] = data[fMinus];
-              anofSigF[hkl.index()][3] = data[sigFMinus];
+              anofSigF[hkl.getIndex()][2] = data[fMinus];
+              anofSigF[hkl.getIndex()][3] = data[sigFMinus];
             }
           }
           if (rFree > 0) {
-            refinementData.setFreeR(hkl.index(), (int) data[rFree]);
+            refinementData.setFreeR(hkl.getIndex(), (int) data[rFree]);
           } else {
             if (rFreePlus > 0 && rFreeMinus > 0) {
               // not sure what the correct thing to do here is?
-              refinementData.setFreeR(hkl.index(), (int) data[rFreePlus]);
+              refinementData.setFreeR(hkl.getIndex(), (int) data[rFreePlus]);
             } else if (rFreePlus > 0) {
-              refinementData.setFreeR(hkl.index(), (int) data[rFreePlus]);
+              refinementData.setFreeR(hkl.getIndex(), (int) data[rFreePlus]);
             } else if (rFreeMinus > 0) {
-              refinementData.setFreeR(hkl.index(), (int) data[rFreeMinus]);
+              refinementData.setFreeR(hkl.getIndex(), (int) data[rFreeMinus]);
             }
           }
           nRead++;
         } else {
           HKL tmp = new HKL(ih, ik, il);
           if (!reflectionList.resolution.inInverseResSqRange(
-              Crystal.invressq(reflectionList.crystal, tmp))) {
+              reflectionList.crystal.invressq(tmp))) {
             nRes++;
           } else {
             nIgnore++;
@@ -610,7 +598,8 @@ public class MTZFilter implements DiffractionFileFilter {
    * @param mtzFile a {@link java.io.File} object.
    * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
    * @param fcData a {@link ffx.xray.DiffractionRefinementData} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
+   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
+   *     object.
    * @return a boolean.
    */
   private boolean readFcs(
@@ -709,18 +698,18 @@ public class MTZFilter implements DiffractionFileFilter {
           if (fc > 0 && phiC > 0) {
             complexNumber.re(data[fc] * cos(toRadians(data[phiC])));
             complexNumber.im(data[fc] * sin(toRadians(data[phiC])));
-            fcData.setFc(hkl.index(), complexNumber);
+            fcData.setFc(hkl.getIndex(), complexNumber);
           }
           if (fs > 0 && phiS > 0) {
             complexNumber.re(data[fs] * cos(toRadians(data[phiS])));
             complexNumber.im(data[fs] * sin(toRadians(data[phiS])));
-            fcData.setFs(hkl.index(), complexNumber);
+            fcData.setFs(hkl.getIndex(), complexNumber);
           }
           nRead++;
         } else {
           HKL tmp = new HKL(ih, ik, il);
           if (!reflectionList.resolution.inInverseResSqRange(
-              Crystal.invressq(reflectionList.crystal, tmp))) {
+              reflectionList.crystal.invressq(tmp))) {
             nRes++;
           } else {
             nIgnore++;
@@ -895,8 +884,8 @@ public class MTZFilter implements DiffractionFileFilter {
 
     int nc = 0;
     StringBuilder sb = new StringBuilder();
-    for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
-      Column column = (Column) i.next();
+    for (Iterator<Column> i = columns.iterator(); i.hasNext(); nc++) {
+      Column column = i.next();
       String label = column.label.trim();
       if (label.equalsIgnoreCase("H") && column.type == 'H') {
         h = nc;
@@ -905,87 +894,87 @@ public class MTZFilter implements DiffractionFileFilter {
       } else if (label.equalsIgnoreCase("L") && column.type == 'H') {
         l = nc;
       } else if ((label.equalsIgnoreCase("free")
-              || label.equalsIgnoreCase("freer")
-              || label.equalsIgnoreCase("freerflag")
-              || label.equalsIgnoreCase("freer_flag")
-              || label.equalsIgnoreCase("rfree")
-              || label.equalsIgnoreCase("rfreeflag")
-              || label.equalsIgnoreCase("r-free-flags")
-              || label.equalsIgnoreCase("test")
-              || StringUtils.equalsIgnoreCase(label, rFreeString))
+          || label.equalsIgnoreCase("freer")
+          || label.equalsIgnoreCase("freerflag")
+          || label.equalsIgnoreCase("freer_flag")
+          || label.equalsIgnoreCase("rfree")
+          || label.equalsIgnoreCase("rfreeflag")
+          || label.equalsIgnoreCase("r-free-flags")
+          || label.equalsIgnoreCase("test")
+          || StringUtils.equalsIgnoreCase(label, rFreeString))
           && column.type == 'I') {
         sb.append(format(" Reading R Free column: \"%s\"\n", column.label));
         rFree = nc;
       } else if ((label.equalsIgnoreCase("free(+)")
-              || label.equalsIgnoreCase("freer(+)")
-              || label.equalsIgnoreCase("freerflag(+)")
-              || label.equalsIgnoreCase("freer_flag(+)")
-              || label.equalsIgnoreCase("rfree(+)")
-              || label.equalsIgnoreCase("rfreeflag(+)")
-              || label.equalsIgnoreCase("r-free-flags(+)")
-              || label.equalsIgnoreCase("test(+)")
-              || StringUtils.equalsIgnoreCase(label + "(+)", rFreeString))
+          || label.equalsIgnoreCase("freer(+)")
+          || label.equalsIgnoreCase("freerflag(+)")
+          || label.equalsIgnoreCase("freer_flag(+)")
+          || label.equalsIgnoreCase("rfree(+)")
+          || label.equalsIgnoreCase("rfreeflag(+)")
+          || label.equalsIgnoreCase("r-free-flags(+)")
+          || label.equalsIgnoreCase("test(+)")
+          || StringUtils.equalsIgnoreCase(label + "(+)", rFreeString))
           && column.type == 'I') {
         rFreePlus = nc;
       } else if ((label.equalsIgnoreCase("free(-)")
-              || label.equalsIgnoreCase("freer(-)")
-              || label.equalsIgnoreCase("freerflag(-)")
-              || label.equalsIgnoreCase("freer_flag(-)")
-              || label.equalsIgnoreCase("rfree(-)")
-              || label.equalsIgnoreCase("rfreeflag(-)")
-              || label.equalsIgnoreCase("r-free-flags(-)")
-              || label.equalsIgnoreCase("test(-)")
-              || StringUtils.equalsIgnoreCase(label + "(-)", rFreeString))
+          || label.equalsIgnoreCase("freer(-)")
+          || label.equalsIgnoreCase("freerflag(-)")
+          || label.equalsIgnoreCase("freer_flag(-)")
+          || label.equalsIgnoreCase("rfree(-)")
+          || label.equalsIgnoreCase("rfreeflag(-)")
+          || label.equalsIgnoreCase("r-free-flags(-)")
+          || label.equalsIgnoreCase("test(-)")
+          || StringUtils.equalsIgnoreCase(label + "(-)", rFreeString))
           && column.type == 'I') {
         rFreeMinus = nc;
       } else if ((label.equalsIgnoreCase("f")
-              || label.equalsIgnoreCase("fp")
-              || label.equalsIgnoreCase("fo")
-              || label.equalsIgnoreCase("fobs")
-              || label.equalsIgnoreCase("f-obs")
-              || StringUtils.equalsIgnoreCase(label, foString))
+          || label.equalsIgnoreCase("fp")
+          || label.equalsIgnoreCase("fo")
+          || label.equalsIgnoreCase("fobs")
+          || label.equalsIgnoreCase("f-obs")
+          || StringUtils.equalsIgnoreCase(label, foString))
           && column.type == 'F') {
         sb.append(format(" Reading Fo column: \"%s\"\n", column.label));
         fo = nc;
       } else if ((label.equalsIgnoreCase("f(+)")
-              || label.equalsIgnoreCase("fp(+)")
-              || label.equalsIgnoreCase("fo(+)")
-              || label.equalsIgnoreCase("fobs(+)")
-              || label.equalsIgnoreCase("f-obs(+)")
-              || StringUtils.equalsIgnoreCase(label + "(+)", foString))
+          || label.equalsIgnoreCase("fp(+)")
+          || label.equalsIgnoreCase("fo(+)")
+          || label.equalsIgnoreCase("fobs(+)")
+          || label.equalsIgnoreCase("f-obs(+)")
+          || StringUtils.equalsIgnoreCase(label + "(+)", foString))
           && column.type == 'G') {
         fPlus = nc;
       } else if ((label.equalsIgnoreCase("f(-)")
-              || label.equalsIgnoreCase("fp(-)")
-              || label.equalsIgnoreCase("fo(-)")
-              || label.equalsIgnoreCase("fobs(-)")
-              || label.equalsIgnoreCase("f-obs(-)")
-              || StringUtils.equalsIgnoreCase(label + "(-)", foString))
+          || label.equalsIgnoreCase("fp(-)")
+          || label.equalsIgnoreCase("fo(-)")
+          || label.equalsIgnoreCase("fobs(-)")
+          || label.equalsIgnoreCase("f-obs(-)")
+          || StringUtils.equalsIgnoreCase(label + "(-)", foString))
           && column.type == 'G') {
         fMinus = nc;
       } else if ((label.equalsIgnoreCase("sigf")
-              || label.equalsIgnoreCase("sigfp")
-              || label.equalsIgnoreCase("sigfo")
-              || label.equalsIgnoreCase("sigfobs")
-              || label.equalsIgnoreCase("sigf-obs")
-              || StringUtils.equalsIgnoreCase(label, sigFoString))
+          || label.equalsIgnoreCase("sigfp")
+          || label.equalsIgnoreCase("sigfo")
+          || label.equalsIgnoreCase("sigfobs")
+          || label.equalsIgnoreCase("sigf-obs")
+          || StringUtils.equalsIgnoreCase(label, sigFoString))
           && column.type == 'Q') {
         sb.append(format(" Reading sigFo column: \"%s\"\n", column.label));
         sigFo = nc;
       } else if ((label.equalsIgnoreCase("sigf(+)")
-              || label.equalsIgnoreCase("sigfp(+)")
-              || label.equalsIgnoreCase("sigfo(+)")
-              || label.equalsIgnoreCase("sigfobs(+)")
-              || label.equalsIgnoreCase("sigf-obs(+)")
-              || StringUtils.equalsIgnoreCase(label + "(+)", sigFoString))
+          || label.equalsIgnoreCase("sigfp(+)")
+          || label.equalsIgnoreCase("sigfo(+)")
+          || label.equalsIgnoreCase("sigfobs(+)")
+          || label.equalsIgnoreCase("sigf-obs(+)")
+          || StringUtils.equalsIgnoreCase(label + "(+)", sigFoString))
           && column.type == 'L') {
         sigFPlus = nc;
       } else if ((label.equalsIgnoreCase("sigf(-)")
-              || label.equalsIgnoreCase("sigfp(-)")
-              || label.equalsIgnoreCase("sigfo(-)")
-              || label.equalsIgnoreCase("sigfobs(-)")
-              || label.equalsIgnoreCase("sigf-obs(-)")
-              || StringUtils.equalsIgnoreCase(label + "(-)", sigFoString))
+          || label.equalsIgnoreCase("sigfp(-)")
+          || label.equalsIgnoreCase("sigfo(-)")
+          || label.equalsIgnoreCase("sigfobs(-)")
+          || label.equalsIgnoreCase("sigf-obs(-)")
+          || StringUtils.equalsIgnoreCase(label + "(-)", sigFoString))
           && column.type == 'L') {
         sigFMinus = nc;
       }
@@ -1004,11 +993,10 @@ public class MTZFilter implements DiffractionFileFilter {
    * @param print
    */
   private void parseFcColumns(boolean print) {
-
     int nc = 0;
     StringBuilder sb = new StringBuilder();
-    for (Iterator i = columns.iterator(); i.hasNext(); nc++) {
-      Column column = (Column) i.next();
+    for (Iterator<Column> i = columns.iterator(); i.hasNext(); nc++) {
+      Column column = i.next();
       String label = column.label.trim();
       if (label.equalsIgnoreCase("H") && column.type == 'H') {
         h = nc;
@@ -1021,9 +1009,9 @@ public class MTZFilter implements DiffractionFileFilter {
         sb.append(format(" Reading Fc column: \"%s\"\n", column.label));
         fc = nc;
       } else if ((label.equalsIgnoreCase("phic")
-              || label.equalsIgnoreCase("phifc")
-              || label.equalsIgnoreCase("phicalc")
-              || label.equalsIgnoreCase("phifcalc"))
+          || label.equalsIgnoreCase("phifc")
+          || label.equalsIgnoreCase("phicalc")
+          || label.equalsIgnoreCase("phifcalc"))
           && column.type == 'P') {
         sb.append(format(" Reading phiFc column: \"%s\"\n", column.label));
         phiC = nc;
@@ -1032,9 +1020,9 @@ public class MTZFilter implements DiffractionFileFilter {
         sb.append(format(" Reading Fs column: \"%s\"\n", column.label));
         fs = nc;
       } else if ((label.equalsIgnoreCase("phis")
-              || label.equalsIgnoreCase("phifs")
-              || label.equalsIgnoreCase("phiscalc")
-              || label.equalsIgnoreCase("phifscalc"))
+          || label.equalsIgnoreCase("phifs")
+          || label.equalsIgnoreCase("phiscalc")
+          || label.equalsIgnoreCase("phifscalc"))
           && column.type == 'P') {
         sb.append(format(" Reading phiFs column: \"%s\"\n", column.label));
         phiS = nc;
@@ -1102,7 +1090,7 @@ public class MTZFilter implements DiffractionFileFilter {
     }
   }
 
-  private class Column {
+  private static class Column {
 
     public String label;
     public char type;
@@ -1110,7 +1098,7 @@ public class MTZFilter implements DiffractionFileFilter {
     public double min, max;
   }
 
-  private class Dataset {
+  private static class Dataset {
 
     public double lambda;
     public double[] cell = new double[6];

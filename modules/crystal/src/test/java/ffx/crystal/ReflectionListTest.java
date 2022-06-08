@@ -169,7 +169,7 @@ public class ReflectionListTest extends FFXTest {
 
     HKL hkl = reflectionlist.getHKL(0, 0, 0);
     assertEquals(
-        info + " list 0 0 0 reflection should have correct epsilon", epsilon, hkl.epsilon());
+        info + " list 0 0 0 reflection should have correct epsilon", epsilon, hkl.getEpsilon());
     assertEquals(
         info + " list 0 0 0 reflection should have correct allowance", allowed, hkl.allowed);
   }

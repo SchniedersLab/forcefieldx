@@ -89,11 +89,8 @@ public class ScalarMath {
   }
 
   /**
-   * Returns n! <br>
-   * Precondition: n .GE. 0 and n .LE. 20 <br>
-   * Max long = 9223372036854775807 <br>
-   * 20! = 2432902008176640000 is ok. <br>
-   * 21! returns an overflow: -4249290049419214848
+   * Returns n! <br> Precondition: n .GE. 0 and n .LE. 20 <br> Max long = 9223372036854775807 <br>
+   * 20! = 2432902008176640000 is ok. <br> 21! returns an overflow: -4249290049419214848
    *
    * @param n long.
    * @return Returns n!.
@@ -138,6 +135,21 @@ public class ScalarMath {
   }
 
   /**
+   * This is an atypical mod function used by crystallography methods.
+   *
+   * @param a an int.
+   * @param b an int.
+   * @return an int.
+   */
+  public static int mod(int a, int b) {
+    int res = a % b;
+    if (res < 0) {
+      res += b;
+    }
+    return res;
+  }
+
+  /**
    * Atypical mod function used to move a value into the range lb &lt;= value &lt; ub, assuming the
    * domain is periodic with a period of (ub - lb).
    *
@@ -162,5 +174,44 @@ public class ScalarMath {
    */
   public static double u2b(double u) {
     return u * eightPi2;
+  }
+
+  /**
+   * quadForm
+   *
+   * @param v an array of double.
+   * @param mat an array of double.
+   * @return a double.
+   */
+  public static double quadForm(double[] v, double[][] mat) {
+    return (v[0] * (v[0] * mat[0][0] + 2 * (v[1] * mat[0][1] + v[2] * mat[0][2]))
+        + v[1] * (v[1] * mat[1][1] + 2 * (v[2] * mat[1][2]))
+        + v[2] * v[2] * mat[2][2]);
+  }
+
+  /**
+   * Reflect proposed angles to be within 0 and 180 degrees.
+   *
+   * @param angle Proposed angle in radians.
+   * @return value of mirrored angle in radians.
+   */
+  public static double mirrorRadians(double angle) {
+    double angleDegrees = angle * 180 / PI;
+    return mirrorDegrees(angleDegrees) * PI / 180;
+  }
+
+  /**
+   * Reflect proposed angles to be within 0 and 180 degrees.
+   *
+   * @param angle Proposed angle in radians.
+   * @return value of mirrored angle in radians.
+   */
+  public static double mirrorDegrees(double angle) {
+    if (angle > 180.0) {
+      angle = 180.0 - (angle - 180.0);
+    } else if (angle < 0.0) {
+      angle = 0.0 - angle;
+    }
+    return angle;
   }
 }

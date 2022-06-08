@@ -38,7 +38,7 @@
 package ffx.potential.utils;
 
 import static org.apache.commons.math3.util.FastMath.ceil;
-import static ffx.crystal.Crystal.mod;
+import static ffx.numerics.math.ScalarMath.mod;
 import static ffx.crystal.SymOp.Tr_0_0_0;
 import static ffx.crystal.SymOp.ZERO_ROTATION;
 import static ffx.crystal.SymOp.applyCartesianSymOp;
@@ -1317,7 +1317,7 @@ public class ProgressiveAlignmentOfCrystals {
     //TODO: Handle Z' > 1 for heterogeneous/co-crystals.
     RunningStatistics runningStatistics;
     if (restart) {
-      runningStatistics = readMatrix(pacFileName, isSymmetric, baseSize, targetSize);
+      runningStatistics = readMatrix(pacFileName);
       if (runningStatistics == null) {
         runningStatistics = new RunningStatistics();
       }
@@ -1928,7 +1928,9 @@ public class ProgressiveAlignmentOfCrystals {
           }
           myDistances[myIndex] = rmsd;
           myIndex++;
-          logger.info(stringBuilder.toString());
+          if(stringBuilder.length() > 0) {
+            logger.info(stringBuilder.toString());
+          }
         }
         if (lowMemory) {
           targetFilter.readNext(false, false, (column + 1) % numProc == rank);
@@ -1945,10 +1947,7 @@ public class ProgressiveAlignmentOfCrystals {
 
       // Write out this row.
       if (rank == 0 && write) {
-        int firstColumn = 0;
-        if (isSymmetric) {
-          firstColumn = row;
-        }
+        int firstColumn = (isSymmetric) ? row : 0;
         writeDistanceMatrixRow(pacFileName, distRow, firstColumn);
       }
     }
@@ -2838,19 +2837,15 @@ public class ProgressiveAlignmentOfCrystals {
    * Read in the distance matrix.
    *
    * @param filename The PAC RMSD matrix file to read from.
-   * @param isSymmetric Is the distance matrix symmetric.
-   * @param expectedRows The expected number of rows.
-   * @param expectedColumns The expected number of columns.
    * @return Stats for all read in distance matrix values.
    */
-  private RunningStatistics readMatrix(String filename, boolean isSymmetric, int expectedRows,
-      int expectedColumns) {
+  private RunningStatistics readMatrix(String filename) {
     restartRow = 0;
     restartColumn = 0;
 
     DistanceMatrixFilter distanceMatrixFilter = new DistanceMatrixFilter();
     RunningStatistics runningStatistics = distanceMatrixFilter.readDistanceMatrix(
-        filename, expectedRows, expectedColumns);
+        filename, baseSize, targetSize);
 
     if (runningStatistics != null && runningStatistics.getCount() > 0) {
       restartRow = distanceMatrixFilter.getRestartRow();
@@ -2858,7 +2853,7 @@ public class ProgressiveAlignmentOfCrystals {
 
       if (isSymmetric) {
         // Only the diagonal entry (0.0) is on the last row for a symmetric matrix.
-        if (restartRow == expectedRows && restartColumn == 1) {
+        if (restartRow == baseSize && restartColumn == 1) {
           logger.info(format(" Complete symmetric distance matrix found (%d x %d).", restartRow,
               restartRow));
         } else {
@@ -2867,7 +2862,7 @@ public class ProgressiveAlignmentOfCrystals {
               " Incomplete symmetric distance matrix found.\n Restarting at row %d, column %d.",
               restartRow + 1, restartColumn + 1));
         }
-      } else if (restartRow == expectedRows && restartColumn == expectedColumns) {
+      } else if (restartRow == baseSize && restartColumn == targetSize) {
         logger.info(format(" Complete distance matrix found (%d x %d).", restartRow, restartColumn));
       } else {
         restartColumn = 0;

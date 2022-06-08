@@ -117,17 +117,17 @@ class ManyBody extends AlgorithmsScript {
       System.setProperty("manybody-titration", "true")
     }
 
-    String modelFilename
+    String filename
     if (filenames != null && filenames.size() > 0) {
       activeAssembly = algorithmFunctions.open(filenames.get(0))
-      modelFilename = filenames.get(0)
+      filename = filenames.get(0)
     } else if (activeAssembly == null) {
       logger.info(helpString())
       return this
     } else {
-      modelFilename = activeAssembly.getFile().getAbsolutePath()
+      filename = activeAssembly.getFile().getAbsolutePath()
     }
-    MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
+    MolecularAssembly[] molecularAssemblies = [activeAssembly] as MolecularAssembly[]
 
     CompositeConfiguration properties = activeAssembly.getProperties()
     activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
@@ -155,13 +155,13 @@ class ManyBody extends AlgorithmsScript {
       MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly()
       setActiveAssembly(protonatedAssembly)
       potentialEnergy = protonatedAssembly.getPotentialEnergy()
-      assemblies = [activeAssembly] as MolecularAssembly[]
+      molecularAssemblies = [activeAssembly] as MolecularAssembly[]
     }
 
-    refinementEnergy = realSpaceOptions.toRealSpaceEnergy(filenames, assemblies, algorithmFunctions)
+    refinementEnergy = realSpaceOptions.toRealSpaceEnergy(filenames, molecularAssemblies)
+
     RotamerOptimization rotamerOptimization = new RotamerOptimization(
         activeAssembly, refinementEnergy, algorithmListener)
-
     manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
     double[] x = new double[refinementEnergy.getNumberOfVariables()]
@@ -195,10 +195,10 @@ class ManyBody extends AlgorithmsScript {
       } else {
         logger.info(format("\n  Real Space Target  %16.8f\n", energy))
       }
-      String ext = FilenameUtils.getExtension(modelFilename)
-      modelFilename = FilenameUtils.removeExtension(modelFilename)
+      String ext = FilenameUtils.getExtension(filename)
+      filename = FilenameUtils.removeExtension(filename)
       if (ext.toUpperCase().contains("XYZ")) {
-        algorithmFunctions.saveAsXYZ(assemblies[0], new File(modelFilename + ".xyz"))
+        algorithmFunctions.saveAsXYZ(molecularAssemblies[0], new File(filename + ".xyz"))
       } else {
         properties.setProperty("standardizeAtomNames", "false")
         File modelFile = saveDirFile(activeAssembly.getFile())
