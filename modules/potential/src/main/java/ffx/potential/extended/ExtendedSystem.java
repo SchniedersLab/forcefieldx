@@ -231,16 +231,26 @@ public class ExtendedSystem {
      * 3D array to store the titration and tautomer population states for each ESV
      */
     final private int[][][] esvHistogram;
+    /**
+     * Coefficients that define the per residue type Fmod polynomial
+     * refEnergy * titrationLambda^2 + lambdaIntercept * titrationLambda
+     */
     final private double ASHrefEnergy;
     final private double ASHlambdaIntercept;
     final private double GLHrefEnergy;
     final private double GLHlambdaIntercept;
     final private double LYSrefEnergy;
     final private double LYSlambdaIntercept;
+    final private double CYSrefEnergy;
+    final private double CYSlambdaIntercept;
     final private double HIDrefEnergy;
     final private double HIDlambdaIntercept;
     final private double HIErefEnergy;
     final private double HIElambdaIntercept;
+    /**
+     * Coefficients that define the tautomer component of the bivariate Histidine Fmod
+     * refEnergy * tautomerLambda^2 + lambdaIntercept * tautomerLambda
+     */
     final private double HIDtoHIErefEnergy;
     final private double HIDtoHIElambdaIntercept;
     /**
@@ -276,6 +286,18 @@ public class ExtendedSystem {
         }
         CompositeConfiguration properties = mola.getProperties();
         titrationUtils = new TitrationUtils(forceField);
+
+        doVDW = properties.getBoolean("esv.vdW", true);
+        doElectrostatics = properties.getBoolean("esv.elec", true);
+        doBias = properties.getBoolean("esv.bias", true);
+        doPolarization = properties.getBoolean("esv.polarization", true);
+//        boolean bonded = properties.getBoolean("esv.bonded", false);
+//        boolean verbose = properties.getBoolean("esv.verbose", false);
+//        boolean decomposeBonded = properties.getBoolean("esv.decomposeBonded", false);
+//        boolean decomposeDeriv = properties.getBoolean("esv.decomposeDeriv", false);
+//        boolean nonlinearMultipoles = properties.getBoolean("esv.nonlinearMultipoles", false); // sigmoid lambda Mpole switch
+//        boolean forceRoomTemp = properties.getBoolean("esv.forceRoomTemp", false);
+//        boolean propagation = properties.getBoolean("esv.propagation", true);
         thetaFriction = properties.getDouble("esv.friction", ExtendedSystem.THETA_FRICTION);
         thetaMass = properties.getDouble("esv.mass", ExtendedSystem.THETA_MASS);
         titrBiasMag = properties.getDouble("titration.bias.magnitude", DISCR_BIAS);
@@ -285,24 +307,14 @@ public class ExtendedSystem {
         boolean guessTitrState = properties.getBoolean("guess.titration.state", false);
         fixTitrationState = properties.getBoolean("fix.titration.lambda", false);
         fixTautomerState = properties.getBoolean("fix.tautomer.lambda", false);
-
-//        boolean bonded = properties.getBoolean("esv.bonded", false);
-        doVDW = properties.getBoolean("esv.vdW", true);
-        doElectrostatics = properties.getBoolean("esv.elec", true);
-        doBias = properties.getBoolean("esv.bias", true);
-        doPolarization = properties.getBoolean("esv.polarization", true);
-//        boolean verbose = properties.getBoolean("esv.verbose", false);
-//        boolean decomposeBonded = properties.getBoolean("esv.decomposeBonded", false);
-//        boolean decomposeDeriv = properties.getBoolean("esv.decomposeDeriv", false);
-//        boolean nonlinearMultipoles = properties.getBoolean("esv.nonlinearMultipoles", false); // sigmoid lambda Mpole switch
-//        boolean forceRoomTemp = properties.getBoolean("esv.forceRoomTemp", false);
-//        boolean propagation = properties.getBoolean("esv.propagation", true);
         ASHrefEnergy = properties.getDouble("ASH.ref.energy", TitrationUtils.Titration.ASHtoASP.refEnergy);
         ASHlambdaIntercept = properties.getDouble("ASH.lambda.intercept", TitrationUtils.Titration.ASHtoASP.lambdaIntercept);
         GLHrefEnergy = properties.getDouble("GLH.ref.energy", TitrationUtils.Titration.GLHtoGLU.refEnergy);
         GLHlambdaIntercept = properties.getDouble("GLH.lambda.intercept", TitrationUtils.Titration.GLHtoGLU.lambdaIntercept);
         LYSrefEnergy = properties.getDouble("LYS.ref.energy", TitrationUtils.Titration.LYStoLYD.refEnergy);
         LYSlambdaIntercept = properties.getDouble("LYS.lambda.intercept", TitrationUtils.Titration.LYStoLYD.lambdaIntercept);
+        CYSrefEnergy = properties.getDouble("CYS.ref.energy", TitrationUtils.Titration.CYStoCYD.refEnergy);
+        CYSlambdaIntercept = properties.getDouble("CYS.lambda.intercept", TitrationUtils.Titration.CYStoCYD.lambdaIntercept);
         HIDrefEnergy = properties.getDouble("HID.ref.energy", TitrationUtils.Titration.HIStoHID.refEnergy);
         HIDlambdaIntercept = properties.getDouble("HID.lambda.intercept", TitrationUtils.Titration.HIStoHID.lambdaIntercept);
         HIErefEnergy = properties.getDouble("HIE.ref.energy", TitrationUtils.Titration.HIStoHIE.refEnergy);
@@ -414,7 +426,6 @@ public class ExtendedSystem {
                 initializeThetaArrays(i, initialTautomerLambda);
             }
         }
-        //TODO: Finish restart handling
         if (esvFilter == null) {
             esvFilter = new ESVFilter(mola.getName());
         }
@@ -549,9 +560,7 @@ public class ExtendedSystem {
                 // Model Bias & Derivs
                 double refEnergy = ASHrefEnergy;
                 double lambdaIntercept = ASHlambdaIntercept;
-                //modelBias = refEnergy * ((1.0 - titrationLambda) - lambdaIntercept) * ((1.0 - titrationLambda) - lambdaIntercept);
                 modelBias = refEnergy * titrationLambda*titrationLambda + lambdaIntercept * titrationLambda;
-                //dMod_dTitr = -2.0 * refEnergy * ((1.0 - titrationLambda) - lambdaIntercept);
                 dMod_dTitr = 2 * refEnergy * titrationLambda + lambdaIntercept;
                 dMod_dTaut = 0.0;
                 break;
@@ -578,9 +587,7 @@ public class ExtendedSystem {
                 // Model Bias & Derivs
                 refEnergy = GLHrefEnergy;
                 lambdaIntercept = GLHlambdaIntercept;
-                //modelBias = refEnergy * ((1 - titrationLambda) - lambdaIntercept) * ((1 - titrationLambda) - lambdaIntercept);
                 modelBias = refEnergy * titrationLambda*titrationLambda + lambdaIntercept * titrationLambda;
-                //dMod_dTitr = -2.0 * refEnergy * ((1 - titrationLambda) - lambdaIntercept);
                 dMod_dTitr = 2 * refEnergy * titrationLambda + lambdaIntercept;
                 dMod_dTaut = 0.0;
                 break;
@@ -652,10 +659,27 @@ public class ExtendedSystem {
                 // Model Bias & Derivs
                 refEnergy = LYSrefEnergy;
                 lambdaIntercept = LYSlambdaIntercept;
-                //modelBias = refEnergy * ((1.0 - titrationLambda) - lambdaIntercept) * ((1.0 - titrationLambda) - lambdaIntercept);
-                //TODO: consolidate/fix Fmod terms
                 modelBias = refEnergy * titrationLambda * titrationLambda + lambdaIntercept * titrationLambda;
-                //dMod_dTitr = -2.0 * refEnergy * ((1.0 - titrationLambda) - lambdaIntercept);
+                dMod_dTitr = 2 * refEnergy * titrationLambda + lambdaIntercept;
+                dMod_dTaut = 0.0;
+                break;
+            case CYS:
+            case CYD:
+                // Discr Bias & Derivs
+                discrBias = -4.0 * titrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
+                dDiscr_dTitr = -8.0 * titrBiasMag * (titrationLambda - 0.5);
+                dDiscr_dTaut = 0.0;
+
+                // pH Bias & Derivs
+                pKa1 = TitrationUtils.Titration.CYStoCYD.pKa;
+                pHBias = LOG10 * Constants.R * currentTemperature * (1.0 - titrationLambda) * (pKa1 - constantSystemPh);
+                dPh_dTitr = LOG10 * Constants.R * currentTemperature * -1.0 * (pKa1 - constantSystemPh);
+                dPh_dTaut = 0.0;
+
+                // Model Bias & Derivs
+                refEnergy = CYSrefEnergy;
+                lambdaIntercept = CYSlambdaIntercept;
+                modelBias = refEnergy * titrationLambda * titrationLambda + lambdaIntercept * titrationLambda;
                 dMod_dTitr = 2 * refEnergy * titrationLambda + lambdaIntercept;
                 dMod_dTaut = 0.0;
                 break;
@@ -1068,6 +1092,7 @@ public class ExtendedSystem {
                 }
                 break;
             case LYS:
+            case CYS:
                 prefactor = titrationLambdas[atomIndex];
                 titrationDeriv = 1.0;
                 tautomerDeriv = 0.0;
@@ -1237,6 +1262,9 @@ public class ExtendedSystem {
                 break;
             case LYS:
                 initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.LYStoLYD.pKa) ? 1.0 : 0.0;
+                break;
+            case CYS:
+                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.CYStoCYD.pKa) ? 1.0 : 0.0;
                 break;
             default:
                 initialTitrationLambda = initialLambda;

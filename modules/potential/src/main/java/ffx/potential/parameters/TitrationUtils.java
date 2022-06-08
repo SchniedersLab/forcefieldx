@@ -754,7 +754,7 @@ public class TitrationUtils {
       case CYD:
         // Assume CYS types
         int cysIndex = CysStates.CYS.ordinal();
-        if (rotamer.aminoAcid3 == LYD) {
+        if (rotamer.aminoAcid3 == CYD) {
           // Use CYD types
           cysIndex = CysStates.CYD.ordinal();
         }
@@ -945,6 +945,16 @@ public class TitrationUtils {
           multipole[i] = titrationLambda * lys[i] + (1.0 - titrationLambda) * lyd[i];
         }
         break;
+      case CYS:
+        atomIndex = CystineAtomNames.valueOf(atomName).ordinal();
+        MultipoleType cysM = cysMultipoleTypes[atomIndex][CysStates.CYS.ordinal()];
+        MultipoleType cydM = cysMultipoleTypes[atomIndex][CysStates.CYD.ordinal()];
+        double[] cys = cysM.getMultipole();
+        double[] cyd = cydM.getMultipole();
+        for (int i = 0; i < multipole.length; i++) {
+          multipole[i] = titrationLambda * cys[i] + (1.0 - titrationLambda) * cyd[i];
+        }
+        break;
       case HIS:
         atomIndex = HistidineAtomNames.valueOf(atomName).ordinal();
         MultipoleType hisM = hisMultipoleTypes[atomIndex][HisStates.HIS.ordinal()];
@@ -1009,6 +1019,14 @@ public class TitrationUtils {
         double[] lyd = lysMultipoleTypes[atomIndex][LysStates.LYD.ordinal()].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
           multipole[i] = lys[i] - lyd[i];
+        }
+        break;
+      case CYS:
+        atomIndex = CystineAtomNames.valueOf(atomName).ordinal();
+        double[] cys = cysMultipoleTypes[atomIndex][CysStates.CYS.ordinal()].getMultipole();
+        double[] cyd = cysMultipoleTypes[atomIndex][CysStates.CYD.ordinal()].getMultipole();
+        for (int i = 0; i < multipole.length; i++) {
+          multipole[i] = cys[i] - cyd[i];
         }
         break;
       case HIS:
@@ -1082,6 +1100,7 @@ public class TitrationUtils {
         }
         break;
       case LYS: // No tautomers for LYS.
+      case CYS: // No tautomers for CYS.
       default:
         return multipole;
     }
@@ -1103,6 +1122,11 @@ public class TitrationUtils {
         double lys = lysPolarizeTypes[atomIndex][LysStates.LYS.ordinal()].polarizability;
         double lyd = lysPolarizeTypes[atomIndex][LysStates.LYD.ordinal()].polarizability;
         return titrationLambda * lys + (1.0 - titrationLambda) * lyd;
+      case CYS:
+        atomIndex = CystineAtomNames.valueOf(atomName).ordinal();
+        double cys = cysPolarizeTypes[atomIndex][CysStates.CYS.ordinal()].polarizability;
+        double cyd = cysPolarizeTypes[atomIndex][CysStates.CYD.ordinal()].polarizability;
+        return titrationLambda * cys + (1.0 - titrationLambda) * cyd;
       case HIS:
         atomIndex = HistidineAtomNames.valueOf(atomName).ordinal();
         double his = hisPolarizeTypes[atomIndex][HisStates.HIS.ordinal()].polarizability;
@@ -1144,6 +1168,11 @@ public class TitrationUtils {
         double lys = lysPolarizeTypes[atomIndex][LysStates.LYS.ordinal()].polarizability;
         double lyd = lysPolarizeTypes[atomIndex][LysStates.LYD.ordinal()].polarizability;
         return lys - lyd;
+      case CYS:
+        atomIndex = CystineAtomNames.valueOf(atomName).ordinal();
+        double cys = lysPolarizeTypes[atomIndex][CysStates.CYS.ordinal()].polarizability;
+        double cyd = lysPolarizeTypes[atomIndex][CysStates.CYD.ordinal()].polarizability;
+        return cys - cyd;
       case HIS:
         atomIndex = HistidineAtomNames.valueOf(atomName).ordinal();
         double his = hisPolarizeTypes[atomIndex][HisStates.HIS.ordinal()].polarizability;
@@ -1196,6 +1225,7 @@ public class TitrationUtils {
         double glh2 = gluPolarizeTypes[atomIndex][GluStates.GLH2.ordinal()].polarizability;
         return titrationLambda * (glh1 - glh2) + (1.0 - titrationLambda) * glu;
       case LYS: // No tautomers for LYS.
+      case CYS: // No tautomers for LYS.
       default:
         return 0.0;
     }
@@ -1228,6 +1258,10 @@ public class TitrationUtils {
           isTitratingHydrogen = true;
         }
         break;
+      case CYS:
+        if (atomName.equals(CystineAtomNames.HG.name())){
+          isTitratingHydrogen = true;
+        }
     }
     return isTitratingHydrogen;
   }
@@ -1563,6 +1597,18 @@ public class TitrationUtils {
     rotamerPhBiasMap.put(LYD, acidostat - fMod);
 
     /*
+     * Set LYS pH bias as sum of Fmod and acidostat energy
+     */
+    rotamerPhBiasMap.put(CYS, 0.0);
+
+    /*
+     * Set LYD pH bias as sum of Fmod and acidostat energy
+     */
+    acidostat = LOG10 * Constants.R * temperature * (Titration.CYStoCYD.pKa - pH);
+    fMod = Titration.CYStoCYD.freeEnergyDiff;
+    rotamerPhBiasMap.put(CYD, acidostat - fMod);
+
+    /*
      * Set HIS pH bias as sum of Fmod and acidostat energy
      */
     rotamerPhBiasMap.put(HIS, 0.0);
@@ -1598,9 +1644,8 @@ public class TitrationUtils {
 
   /**
    * Amino acid protonation reactions. Constructors below specify intrinsic pKa and reference free
-   * energy of protonation, obtained via (OST) metadynamics on capped monomers. pKa values from
-   * Nozaki, Yasuhiko, and Charles Tanford. "[84] Examination of titration behavior." Methods in
-   * enzymology. Vol. 11. Academic Press, 1967. 715-734.
+   * energy of protonation, obtained via BAR on capped monomers. pKa values from
+   * Thurlkill, Richard L., et al. "pK values of the ionizable groups of proteins." Protein science 15.5 (2006): 1214-1218.
    * <p>
    * HIS to HID/HIE pKa values from Bashford, Donald, et al. "Electrostatic calculations of
    * side-chain pKa values in myoglobin and comparison with NMR data for histidines." Biochemistry
@@ -1609,11 +1654,11 @@ public class TitrationUtils {
   public enum Titration {
 
     // TODO: Rose - please update the values for CYS/CYD
-    ASHtoASP(4.00, -71.10, -72.113, 144.16, AminoAcid3.ASH, AminoAcid3.ASP),
-    GLHtoGLU(4.40, -83.40, -101.22, 180.73, AminoAcid3.GLH, AminoAcid3.GLU),
+    ASHtoASP(3.67, -71.10, -72.113, 144.16, AminoAcid3.ASH, AminoAcid3.ASP),
+    GLHtoGLU(4.25, -83.40, -101.22, 180.73, AminoAcid3.GLH, AminoAcid3.GLU),
     LYStoLYD(10.40, 41.77, -69.29, 23.887, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
-    //CYStoCYD(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYS, AminoAcidUtils.AminoAcid3.CYD),
+    CYStoCYD(8.55, 60.168, 0.0, 0.0, AminoAcid3.CYS, AminoAcid3.CYD),
     //HE2 is the proton that is lost
     HIStoHID(7.00, 40.20, -64.317, 30.719, AminoAcid3.HIS, AminoAcid3.HID),
     //HD1 is the proton that is lost
@@ -1643,5 +1688,4 @@ public class TitrationUtils {
       this.deprotForm = deprotForm;
     }
   }
-
 }
