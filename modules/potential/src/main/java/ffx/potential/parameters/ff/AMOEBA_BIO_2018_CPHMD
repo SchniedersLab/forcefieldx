@@ -483,7 +483,8 @@ atom     44      9  H     "Cysteine HB"                1    1.0080  1
 atom     45     12  SH    "Cysteine SG"               16   32.0660  2
 atom     46     13  HS    "Cysteine HG"                1    1.0080  1
 atom     47     12  SS    "Cystine SG"                16   32.0660  2
-atom     48      7  CA    "Cysteine Anion CA"          6   12.0110  4
+# For CpHMD, do not use the special C-alpha.
+# atom     48      7  CA    "Cysteine Anion CA"          6   12.0110  4
 atom     49     14  S     "Cysteine Anion S-"         16   32.0660  1
 atom     50     15  N     "Proline N"                  7   14.0070  3
 atom     51      7  CA    "Proline CA"                 6   12.0110  4
@@ -896,7 +897,8 @@ biotype     93  CB    "Cystine (SS)           "     43
 biotype     94  HB    "Cystine (SS)           "     44
 biotype     95  SG    "Cystine (SS)           "     47
 biotype     96  N     "Cysteine (S-)          "      7
-biotype     97  CA    "Cysteine (S-)          "     48
+# Replaced by values for CpHMD at the end of the file.
+# biotype     97  CA    "Cysteine (S-)          "     48
 biotype     98  C     "Cysteine (S-)          "      9
 biotype     99  HN    "Cysteine (S-)          "     10
 biotype    100  O     "Cysteine (S-)          "     11
@@ -1257,7 +1259,8 @@ biotype    454  HN    "N-Terminal CYX (SS)    "    232
 biotype    455  O     "N-Terminal CYX (SS)    "     11
 biotype    456  HA    "N-Terminal CYX (SS)    "     12
 biotype    457  N     "N-Terminal CYD (S-)    "    231
-biotype    458  CA    "N-Terminal CYD (S-)    "     48
+# Replaced by values for CpHMD at the end of the file.
+# biotype    458  CA    "N-Terminal CYD (S-)    "     48
 biotype    459  C     "N-Terminal CYD (S-)    "      9
 biotype    460  HN    "N-Terminal CYD (S-)    "    232
 biotype    461  O     "N-Terminal CYD (S-)    "     11
@@ -1438,7 +1441,7 @@ biotype    635  HN    "C-Terminal CYX (SS)    "     10
 biotype    636  OXT   "C-Terminal CYX (SS)    "    234
 biotype    637  HA    "C-Terminal CYX (SS)    "     12
 biotype    638  N     "C-Terminal CYD (S-)    "      7
-biotype    639  CA    "C-Terminal CYD (S-)    "     48
+# biotype    639  CA    "C-Terminal CYD (S-)    "     48
 biotype    640  C     "C-Terminal CYD (S-)    "    233
 biotype    641  HN    "C-Terminal CYD (S-)    "     10
 biotype    642  OXT   "C-Terminal CYD (S-)    "    234
@@ -2407,11 +2410,12 @@ multipole     44     43     48                 0.00975 \
                                        -0.22868 \
                                         0.00000  0.13700 \
                                        -0.21056  0.00000  0.09168
-multipole     45     46     43                -0.03264 \
-                                        0.49460  0.00000 -0.04347 \
-                                        1.63727 \
-                                        0.00000 -2.40778 \
-                                       -0.45566  0.00000  0.77051
+# Replaced by values for CpHMD at the end of the file.
+# multipole     45     46     43                -0.03264 \
+#                                        0.49460  0.00000 -0.04347 \
+#                                        1.63727 \
+#                                        0.00000 -2.40778 \
+#                                       -0.45566  0.00000  0.77051
 multipole     46     45     43                 0.10947 \
                                        -0.10504  0.00000 -0.03823 \
                                        -0.08656 \
@@ -2422,17 +2426,23 @@ multipole     47     47     43                 0.07683 \
                                         1.04951 \
                                         0.00000 -2.57126 \
                                        -0.50502  0.00000  1.52175
-multipole     48      7      9         -0.23113 \
-                                        0.27663  0.00000  0.12440 \
-                                       -0.20625 \
-                                        0.00000 -0.28389 \
-                                        0.15574  0.00000  0.49014
-multipole     48      7    233          0.60118 \
-                                        0.27663  0.00000  0.12440 \
-                                       -0.20625 \
-                                        0.00000 -0.28389 \
-                                        0.15574  0.00000  0.49014
-multipole     49     43     48                -0.85155 \
+# Replaced by values for CpHMD at the end of the file.
+# multipole     48      7      9         -0.23113 \
+#                                        0.27663  0.00000  0.12440 \
+#                                       -0.20625 \
+#                                        0.00000 -0.28389 \
+#                                        0.15574  0.00000  0.49014
+# multipole     48      7    233          0.60118 \
+#                                        0.27663  0.00000  0.12440 \
+#                                       -0.20625 \
+#                                        0.00000 -0.28389 \
+#                                        0.15574  0.00000  0.49014
+# multipole     49     43     48                -0.85155 \
+#                                        0.15871  0.00000  0.56464 \
+#                                       -1.49210 \
+#                                        0.00000 -1.58110 \
+#                                       -0.20334  0.00000  3.07320
+multipole     49     43     8          -0.85155 \
                                         0.15871  0.00000  0.56464 \
                                        -1.49210 \
                                         0.00000 -1.58110 \
@@ -4421,7 +4431,8 @@ polarize     41   1.33400  0.39000     42
 polarize     42   0.49600  0.39000     41
 polarize     43   1.33400  0.39000     44     48     49
 polarize     44   0.49600  0.39000     43
-polarize     45   2.80000  0.39000     46
+# Replaced by values for CpHMD at the end of the file.
+# polarize     45   2.80000  0.39000     46
 polarize     46   0.49600  0.39000     45
 polarize     47   2.80000  0.39000     47
 polarize     48   1.33400  0.39000     12     43
@@ -8346,3 +8357,29 @@ biotype     820    HG      "GLD (COHOH)"            409
 biotype     821    CD      "GLD (COHOH)"            410
 biotype     822    OE      "GLD (COHOH)"            411
 biotype     823    HE      "GLD (COHOH)"            412
+
+# Changes for CYS and CYD
+# For CpHMD, use C-alpha atom type 8 for the anion
+biotype     97  CA    "Cysteine (S-)          "      8
+biotype    639  CA    "C-Terminal CYD (S-)    "      8
+
+# CYS SG cannot use the HG atom for its frame during CpHMD
+# The new SG frame uses CB then CA (as does CYD SG); the multipole was updated for the new frame.
+multipole    45   43    8              -0.03264 \
+                                       -0.00847    0.00000    0.49643 \
+                                        0.68524 \
+                                        0.00000   -2.40778 \
+                                        0.35560    0.00000    1.72254
+
+# For protonated CYS, SG and HG were originally their own polarization group.
+# Here we expand the polarization group to include CB (43) to match the CYD.
+# In principle, the SG multipole should be re-optimized to account for the change in polarization group.
+# As of June 8, 2022, this has not been done.
+polarize     45   2.80000  0.39000     46    43
+
+# CYD SG- now uses the default CA multipole (48 replaced with 8 below); the components do not need to be changed.
+multipole     49     43     8          -0.85155 \
+                                        0.15871  0.00000  0.56464 \
+                                       -1.49210 \
+                                        0.00000 -1.58110 \
+                                       -0.20334  0.00000  3.07320
