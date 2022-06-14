@@ -49,7 +49,7 @@ import ffx.potential.cli.PotentialScript
 import ffx.potential.extended.ExtendedSystem
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
-import ffx.potential.parsers.XYZFilter
+import ffx.potential.parsers.XPHFilter
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
@@ -142,10 +142,10 @@ class PhEnergy extends PotentialScript {
     private String arcFileName = null
 
     /**
-     * The final argument is a PDB or XYZ coordinate file.
+     * The final argument is a PDB or XPH coordinate file.
      */
     @Parameters(arity = "1", paramLabel = "file",
-            description = 'The atomic coordinate file in PDB or XYZ format.')
+            description = 'The atomic coordinate file in PDB or XPH format.')
     private String filename = null
 
     public double energy = 0.0
@@ -232,12 +232,12 @@ class PhEnergy extends PotentialScript {
         SystemFilter systemFilter = null
         if(arcFileName != null){
             File arcFile = new File(arcFileName)
-            systemFilter = new XYZFilter(arcFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties())
+            systemFilter = new XPHFilter(arcFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties(), esvSystem)
         } else{
             systemFilter = potentialFunctions.getFilter()
         }
 
-        if (systemFilter instanceof XYZFilter || systemFilter instanceof PDBFilter) {
+        if (systemFilter instanceof XPHFilter || systemFilter instanceof PDBFilter) {
             int index = 1
             while (systemFilter.readNext()) {
                 index++

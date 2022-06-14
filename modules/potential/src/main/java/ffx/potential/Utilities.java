@@ -1236,6 +1236,7 @@ public final class Utilities {
   /** An enumeration of recognized file types. */
   public enum FileType {
     XYZ,
+    XPH,
     INT,
     ARC,
     PDB,
