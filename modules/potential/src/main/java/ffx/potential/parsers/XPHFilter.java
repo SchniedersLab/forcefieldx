@@ -503,10 +503,21 @@ public class XPHFilter extends SystemFilter {
   }
 
   /**
+   * {@inheritDoc}
+   *
+   * <p>Reads the next snap-shot of an archive into the activeMolecularAssembly. After calling this
+   * function, a BufferedReader will remain open until the <code>close</code> method is called.
+   */
+  @Override
+  public boolean readNext(boolean resetPosition, boolean print) {
+    return readNext(resetPosition, print, true);
+  }
+
+  /**
    * Reads the next snap-shot of an archive into the activeMolecularAssembly. After calling this
    * function, a BufferedReader will remain open until the <code>close</code> method is called.
    */
-  public boolean readNext(boolean resetPosition, boolean print) {
+  public boolean readNext(boolean resetPosition, boolean print, boolean parse) {
     try {
       String data;
       Atom[] atoms = activeMolecularAssembly.getAtomArray();
