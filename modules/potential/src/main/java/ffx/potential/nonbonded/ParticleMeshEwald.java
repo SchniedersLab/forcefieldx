@@ -1128,7 +1128,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     Atom atom = atoms[i];
     PolarizeType polarizeType = atom.getPolarizeType();
     if (polarizeType != null) {
-      if (esvTerm && extendedSystem.isTitrating(i) && extendedSystem.isTitratingHydrogen(i)) {
+      if (esvTerm && extendedSystem.isTitrating(i) && (extendedSystem.isTitratingHydrogen(i) || extendedSystem.isTitratingSulfur(i))) {
         double titrationLambda = extendedSystem.getTitrationLambda(i);
         double tautomerLambda = extendedSystem.getTautomerLambda(i);
         double esvPolarizability = extendedSystem.getTitrationUtils()
@@ -1717,7 +1717,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
       for (int i = 0; i < nAtoms; i++) {
         if (polarization != Polarization.NONE && esvTerm && extendedSystem.isTitrating(i)
-            && extendedSystem.isTitratingHydrogen(i)) {
+                && (extendedSystem.isTitratingHydrogen(i) || extendedSystem.isTitratingSulfur(i))) {
           double dx = field.getX(i);
           double dy = field.getY(i);
           double dz = field.getZ(i);

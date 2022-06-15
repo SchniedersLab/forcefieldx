@@ -1170,8 +1170,8 @@ public class TitrationUtils {
         return lys - lyd;
       case CYS:
         atomIndex = CystineAtomNames.valueOf(atomName).ordinal();
-        double cys = lysPolarizeTypes[atomIndex][CysStates.CYS.ordinal()].polarizability;
-        double cyd = lysPolarizeTypes[atomIndex][CysStates.CYD.ordinal()].polarizability;
+        double cys = cysPolarizeTypes[atomIndex][CysStates.CYS.ordinal()].polarizability;
+        double cyd = cysPolarizeTypes[atomIndex][CysStates.CYD.ordinal()].polarizability;
         return cys - cyd;
       case HIS:
         atomIndex = HistidineAtomNames.valueOf(atomName).ordinal();
@@ -1264,6 +1264,15 @@ public class TitrationUtils {
         }
     }
     return isTitratingHydrogen;
+  }
+
+  public static boolean isTitratingSulfur(AminoAcid3 aminoAcid3, Atom atom){
+    boolean isTitratingSulfur = false;
+    String atomName = atom.getName();
+    if (atomName.equals(CystineAtomNames.SG.name())){
+      isTitratingSulfur = true;
+    }
+    return isTitratingSulfur;
   }
 
   public static int getTitratingHydrogenDirection(AminoAcid3 aminoAcid3, Atom atom) {

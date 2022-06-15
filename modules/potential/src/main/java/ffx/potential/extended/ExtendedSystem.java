@@ -159,6 +159,7 @@ public class ExtendedSystem {
      * specifically a titrating hydrogen.
      */
     private final boolean[] isTitratingHydrogen;
+    private final boolean[] isTitratingSulfur;
     /**
      * Array of booleans that is initialized to match the number of atoms in the molecular assembly
      * noting whether the atom is tautomerizing. Note that any side chain atom that belongs to a tautomerizing residue
@@ -199,11 +200,7 @@ public class ExtendedSystem {
      * Array of lambda values that matches residues in extendedResidueList
      */
     private final double[] extendedLambdas;
-    /**
-     * Descritizer Bias Magnitude. Default is 1 kcal/mol.
-     */
-    private final double titrBiasMag;
-    private final double tautBiasMag;
+
     // Controls for turning of certain terms for testing.
     private final boolean doVDW;
     private final boolean doElectrostatics;
@@ -231,6 +228,13 @@ public class ExtendedSystem {
      * 3D array to store the titration and tautomer population states for each ESV
      */
     final private int[][][] esvHistogram;
+    /**
+     * Descritizer Bias Magnitude. Default is 1 kcal/mol.
+     */
+    private final double titrBiasMag;
+    private final double tautBiasMag;
+    private final double HIStitrBiasMag;
+    private final double HIStautBiasMag;
     /**
      * Coefficients that define the per residue type Fmod polynomial
      * refEnergy * titrationLambda^2 + lambdaIntercept * titrationLambda
@@ -302,6 +306,8 @@ public class ExtendedSystem {
         thetaMass = properties.getDouble("esv.mass", ExtendedSystem.THETA_MASS);
         titrBiasMag = properties.getDouble("titration.bias.magnitude", DISCR_BIAS);
         tautBiasMag = properties.getDouble("tautomer.bias.magnitude", DISCR_BIAS);
+        HIStitrBiasMag = properties.getDouble("HIS.titration.bias.magnitude", DISCR_BIAS);
+        HIStautBiasMag = properties.getDouble("HIS.tautomer.bias.magnitude", DISCR_BIAS);
         double initialTitrationLambda = properties.getDouble("lambda.titration.initial", 0.5);
         double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
         boolean guessTitrState = properties.getBoolean("guess.titration.state", false);
@@ -330,6 +336,7 @@ public class ExtendedSystem {
         nAtoms = atoms.length;
         isTitrating = new boolean[nAtoms];
         isTitratingHydrogen = new boolean[nAtoms];
+        isTitratingSulfur = new boolean[nAtoms];
         isTautomerizing = new boolean[nAtoms];
         titrationLambdas = new double[nAtoms];
         tautomerLambdas = new double[nAtoms];
@@ -340,6 +347,7 @@ public class ExtendedSystem {
 
         Arrays.fill(isTitrating, false);
         Arrays.fill(isTitratingHydrogen, false);
+        Arrays.fill(isTitratingSulfur, false);
         Arrays.fill(isTautomerizing, false);
         Arrays.fill(titrationLambdas, 1.0);
         Arrays.fill(tautomerLambdas, 0.0);
@@ -355,7 +363,7 @@ public class ExtendedSystem {
         // Store the index of the residue in the respective list into a map array (size = numAtoms).
         List<Residue> residueList = mola.getResidueList();
         for (Residue residue : residueList) {
-            if (isTitrable(residue)) {
+            if (isTitratable(residue)) {
                 titratingResidueList.add(residue);
                 List<Atom> atomList = residue.getSideChainAtoms();
                 for (Atom atom : atomList) {
@@ -371,6 +379,7 @@ public class ExtendedSystem {
                     int titrationIndex = titratingResidueList.indexOf(residue);
                     titrationIndexMap[atomIndex] = titrationIndex;
                     isTitratingHydrogen[atomIndex] = TitrationUtils.isTitratingHydrogen(residue.getAminoAcid3(), atom);
+                    isTitratingSulfur[atomIndex] = TitrationUtils.isTitratingSulfur(residue.getAminoAcid3(), atom);
                 }
                 // If is a tautomer, it must also be titrating.
                 if (isTautomer(residue)) {
@@ -597,10 +606,10 @@ public class ExtendedSystem {
                 // Discr Bias & Derivs
                 tautomerLambda = getTautomerLambda(residue);
 
-                discrBias = -4.0 * titrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
-                discrBias += -4.0 * tautBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
-                dDiscr_dTitr = -8.0 * titrBiasMag * (titrationLambda - 0.5);
-                dDiscr_dTaut = -8.0 * tautBiasMag * (tautomerLambda - 0.5);
+                discrBias = -4.0 * HIStitrBiasMag * (titrationLambda - 0.5) * (titrationLambda - 0.5);
+                discrBias += -4.0 * HIStautBiasMag * (tautomerLambda - 0.5) * (tautomerLambda - 0.5);
+                dDiscr_dTitr = -8.0 * HIStitrBiasMag * (titrationLambda - 0.5);
+                dDiscr_dTaut = -8.0 * HIStautBiasMag * (tautomerLambda - 0.5);
 
                 // pH Bias & Derivs
                 // At tautomerLambda=1 HIE is fully on.
@@ -742,7 +751,7 @@ public class ExtendedSystem {
         return esvIndElecDerivs[esvID].get();
     }
 
-    public boolean isTitrable(Residue residue) {
+    public boolean isTitratable(Residue residue) {
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
         return AA3.isConstantPhTitratable;
     }
@@ -1106,6 +1115,8 @@ public class ExtendedSystem {
     public boolean isTitratingHydrogen(int atomIndex) {
         return isTitratingHydrogen[atomIndex];
     }
+
+    public boolean isTitratingSulfur(int atomIndex){ return isTitratingSulfur[atomIndex];}
 
     /**
      * Add van der Waals deriv to appropriate dU/dL term.
