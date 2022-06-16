@@ -208,6 +208,7 @@ public class ExtendedSystem {
     private final boolean doPolarization;
     private final boolean fixTitrationState;
     private final boolean fixTautomerState;
+    private final boolean lockStates;
     /**
      * Current value of theta for each ESV.
      */
@@ -308,6 +309,7 @@ public class ExtendedSystem {
         tautBiasMag = properties.getDouble("tautomer.bias.magnitude", DISCR_BIAS);
         HIStitrBiasMag = properties.getDouble("HIS.titration.bias.magnitude", DISCR_BIAS);
         HIStautBiasMag = properties.getDouble("HIS.tautomer.bias.magnitude", DISCR_BIAS);
+        lockStates = properties.getBoolean("lock.esv.states", false); //Prevents setTitrationLambda/setTautomerLambda
         double initialTitrationLambda = properties.getDouble("lambda.titration.initial", 0.5);
         double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
         boolean guessTitrState = properties.getBoolean("guess.titration.state", false);
@@ -869,7 +871,7 @@ public class ExtendedSystem {
     }
 
     public void setTitrationLambda(Residue residue, double lambda) {
-        if (titratingResidueList.contains(residue)) {
+        if (titratingResidueList.contains(residue) && !lockStates) {
             int index = titratingResidueList.indexOf(residue);
             extendedLambdas[index] = lambda;
             thetaPosition[index] = Math.asin(Math.sqrt(lambda));
@@ -878,13 +880,13 @@ public class ExtendedSystem {
                 int atomIndex = atom.getArrayIndex();
                 titrationLambdas[atomIndex] = lambda;
             }
-        } else {
-            logger.warning(format("This residue %s is not titrating.", residue.getName()));
-        }
+        } /*else {
+            logger.warning(format("This residue %s is not titrating or locked by user property.", residue.getName()));
+        }*/
     }
 
     public void setTautomerLambda(Residue residue, double lambda) {
-        if (tautomerizingResidueList.contains(residue)) {
+        if (tautomerizingResidueList.contains(residue) && !lockStates) {
             // The correct index in the theta arrays for tautomer coordinates is after the titration list.
             // So titrationList.size() + tautomerIndex should match with appropriate spot in thetaPosition, etc.
             int index = tautomerizingResidueList.indexOf(residue) + nTitr;
