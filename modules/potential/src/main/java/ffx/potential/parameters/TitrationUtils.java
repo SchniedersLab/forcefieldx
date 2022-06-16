@@ -112,6 +112,9 @@ public class TitrationUtils {
   private static final MultipoleType lydZeroMultipoleType =
       new MultipoleType(MultipoleType.zeroM, new int[] {0, 200, 198}, MultipoleFrameDefinition.ZTHENX, false);
 
+  private static final MultipoleType cydZeroMultipoleType =
+          new MultipoleType(MultipoleType.zeroM, new int[] {0, 49, 43}, MultipoleFrameDefinition.ZTHENX, false);
+
   private static final PolarizeType zeroPolarizeType =
       new PolarizeType(0, 0.0, 0.39, 0.0, new int[] {0});
 
@@ -628,9 +631,9 @@ public class TitrationUtils {
         AtomType stateAtomType = atomTypes[i][state];
         MultipoleType stateMultipoleType = multipoleTypes[i][state];
         if (referenceMultipoleType.frameDefinition != stateMultipoleType.frameDefinition) {
-          logger.info(format(" Local frame definition is inconsistent for atom %s", atom));
-          logger.info(format("  %s\n  %s", referenceAtomType, referenceMultipoleType));
-          logger.info(format("  %s\n  %s", stateAtomType, stateMultipoleType));
+          logger.warning(format(" Local frame definition is inconsistent for atom %s", atom));
+          logger.warning(format("  %s\n  %s", referenceAtomType, referenceMultipoleType));
+          logger.warning(format("  %s\n  %s", stateAtomType, stateMultipoleType));
           testPassed = false;
           continue;
         }
@@ -642,9 +645,9 @@ public class TitrationUtils {
               continue;
             }
           }
-          logger.info(format(" Local frame atom indices are inconsistent for atom %s", atom));
-          logger.info(format("  %s %s\n  %s", referenceAtomType, Arrays.toString(referenceIndices), referenceMultipoleType));
-          logger.info(format("  %s %s\n  %s", stateAtomType, Arrays.toString(stateIndices), stateMultipoleType));
+          logger.warning(format(" Local frame atom indices are inconsistent for atom %s", atom));
+          logger.warning(format("  %s %s\n  %s", referenceAtomType, Arrays.toString(referenceIndices), referenceMultipoleType));
+          logger.warning(format("  %s %s\n  %s", stateAtomType, Arrays.toString(stateIndices), stateMultipoleType));
           testPassed = false;
         }
       }
@@ -1458,7 +1461,7 @@ public class TitrationUtils {
         // Set the AtomType to null.
         cysAtomTypes[index][state] = dummyHydrogenAtomType;
         // Zero out the MultipoleType and PolarizeType.
-        cysMultipoleTypes[index][state] = zeroMultipoleType;
+        cysMultipoleTypes[index][state] = cydZeroMultipoleType;
         cysPolarizeTypes[index][state] = zeroPolarizeType;
         cysVDWTypes[index][state] = forceField.getVDWType(Integer.toString(0));
         cysSoluteTypes[index][state] = zeroSoluteType;
@@ -1478,10 +1481,10 @@ public class TitrationUtils {
             }
           } else {
             if (atomName == CystineAtomNames.CB) {
-              cysMultipoleTypes[index][state] = forceField.getMultipoleType(key + " 48 49");
+              cysMultipoleTypes[index][state] = forceField.getMultipoleType(key + " 8 49");
             } else {
               // HB2 & HB3
-              cysMultipoleTypes[index][state] = forceField.getMultipoleType(key + " 43 48");
+              cysMultipoleTypes[index][state] = forceField.getMultipoleType(key + " 43 8");
             }
           }
         }
