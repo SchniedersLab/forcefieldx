@@ -819,6 +819,25 @@ public class GeneralizedKirkwood implements LambdaInterface {
   }
 
   /**
+   * GK is using perfect radii where available.
+   * @return True if using perfect radii.
+   */
+  public boolean getUsePerfectRadii() {
+    return perfectRadii;
+  }
+
+  /**
+   * Return perfect Born radii read in as keywords, or base radii if perfect radii are not available.
+   *
+   * @return Array of perfect Born radii.
+   */
+  public double[] getPerfectRadii() {
+    bornRadiiRegion.init(atoms, crystal, sXYZ, neighborLists, baseRadius, descreenRadius,
+        overlapScale, neckScale, descreenOffset, use, cut2, nativeEnvironmentApproximation, born);
+    return bornRadiiRegion.getPerfectRadii();
+  }
+
+  /**
    * getNonPolarModel.
    *
    * @param nonpolarModel a {@link java.lang.String} object.
