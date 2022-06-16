@@ -618,35 +618,38 @@ public class XPHFilter extends SystemFilter {
       }
 
       // Read ESVs
-      data = bufferedReader.readLine().trim();
-      while (data.equals("") && bufferedReader.ready()) {
+      while (data != null && data.equals("") && bufferedReader.ready()) {
         data = bufferedReader.readLine().trim();
       }
 
-      tokens = data.split(" +", 2);
-      int numOfESVs = parseInt(tokens[1]);
-      data = bufferedReader.readLine().trim();
+      if(data != null) {
+        tokens = data.split(" +", 2);
 
-      List<Residue> residueList = extendedSystem.getExtendedResidueList();
-
-      if (numOfESVs == residueList.size()) {
-        int switchIndex = extendedSystem.getTitratingResidueList().size();
-        for (int i = 0; i < residueList.size(); i++) {
-          tokens = data.split(" +", 3);
-
-          if (i < switchIndex) {
-            extendedSystem.setTitrationLambda(residueList.get(i), parseDouble(tokens[2]));
-          } else {
-            extendedSystem.setTautomerLambda(residueList.get(i), parseDouble(tokens[2]));
-          }
-
+        if (tokens[0].equalsIgnoreCase("ESV")) {
+          int numOfESVs = parseInt(tokens[1]);
           data = bufferedReader.readLine().trim();
-        }
-      } else {
-        logger.severe(" Number of ESVs in archive doesn't match extended system residue list size.");
-        return false;
-      }
 
+          List<Residue> residueList = extendedSystem.getExtendedResidueList();
+
+          if (numOfESVs == residueList.size()) {
+            int switchIndex = extendedSystem.getTitratingResidueList().size();
+            for (int i = 0; i < residueList.size(); i++) {
+              tokens = data.split(" +", 3);
+
+              if (i < switchIndex) {
+                extendedSystem.setTitrationLambda(residueList.get(i), parseDouble(tokens[2]));
+              } else {
+                extendedSystem.setTautomerLambda(residueList.get(i), parseDouble(tokens[2]));
+              }
+
+              data = bufferedReader.readLine().trim();
+            }
+          } else {
+            logger.severe(" Number of ESVs in archive doesn't match extended system residue list size.");
+            return false;
+          }
+        }
+      }
       return true;
 
     } catch (FileNotFoundException e) {
