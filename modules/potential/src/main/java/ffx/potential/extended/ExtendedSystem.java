@@ -364,6 +364,7 @@ public class ExtendedSystem {
         // If the atom does belong to this residue, set all corresponding variables in the respective titration or tautomer array (size = numAtoms).
         // Store the index of the residue in the respective list into a map array (size = numAtoms).
         List<Residue> residueList = mola.getResidueList();
+        residueList.removeIf(residue -> (residue.getResidueType() == Residue.ResidueType.NA));
         for (Residue residue : residueList) {
             if (isTitratable(residue)) {
                 titratingResidueList.add(residue);
@@ -754,11 +755,17 @@ public class ExtendedSystem {
     }
 
     public boolean isTitratable(Residue residue) {
+        if(residue.getResidueType() == Residue.ResidueType.NA){
+            return false;
+        }
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
         return AA3.isConstantPhTitratable;
     }
 
     public boolean isTautomer(Residue residue) {
+        if(residue.getResidueType() == Residue.ResidueType.NA){
+            return false;
+        }
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
         return AA3.isConstantPhTautomer;
     }
