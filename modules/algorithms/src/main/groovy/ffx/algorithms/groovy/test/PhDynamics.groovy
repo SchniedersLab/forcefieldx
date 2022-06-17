@@ -87,6 +87,10 @@ class PhDynamics extends AlgorithmsScript {
           description = 'Number of times to cycle between titrating protons on CPU and propagating coordinates only on GPU')
   int cycles  = 5
 
+  @Option(names = ['--titrationReport', '--esvLog'], paramLabel = '0.001 (psec)',
+          description = 'Interval in psec to report ESV energy and lambdas when cycling between GPU and CPU.')
+  double titrReport  = 0.001
+
   /**
    * One or more filenames.
    */
@@ -166,7 +170,6 @@ class PhDynamics extends AlgorithmsScript {
 
     molecularDynamics =
         dynamicsOptions.getDynamics(writeOutOptions, potential, activeAssembly, algorithmListener)
-    logger.info("Report Freq: " + dynamicsOptions.report)
 
     molecularDynamics.attachExtendedSystem(esvSystem, dynamicsOptions.report)
 
@@ -180,6 +183,7 @@ class PhDynamics extends AlgorithmsScript {
     if (!(molecularDynamics instanceof MolecularDynamicsOpenMM)) {
       molecularDynamics.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
           dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temperature, true, dyn)
+      esvSystem.writeLambdaHistogram()
     } else {
       // CPU Constant pH Dynamics alternatives with GPU Dynamics at fixed protonation states.
 
@@ -190,23 +194,25 @@ class PhDynamics extends AlgorithmsScript {
       molecularDynamics =
           dynamicsOptions.getDynamics(writeOutOptions, potential, activeAssembly, algorithmListener,
               MolecularDynamics.DynamicsEngine.FFX)
-      molecularDynamics.attachExtendedSystem(esvSystem, dynamicsOptions.report)
+      molecularDynamics.attachExtendedSystem(esvSystem, titrReport)
 
       for (int i = 0; i < cycles; i++) {
         // Try running on the CPU
         molecularDynamics.setCoordinates(x)
-        molecularDynamics.dynamic(titrSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
+        molecularDynamics.dynamic(titrSteps, dynamicsOptions.dt, titrReport, dynamicsOptions.write,
                 dynamicsOptions.temperature, true, dyn)
         x = molecularDynamics.getCoordinates()
+        esvSystem.writeLambdaHistogram()
 
         // Try running in OpenMM
         potential.energy(x)
-	molecularDynamicsOpenMM.setCoordinates(x)
-        molecularDynamicsOpenMM.dynamic(coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
-                dynamicsOptions.temperature, true, dyn)
-        x = molecularDynamicsOpenMM.getCoordinates()
+	    molecularDynamicsOpenMM.setCoordinates(x)
+        if(coordSteps != 0){
+          molecularDynamicsOpenMM.dynamic(coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
+                  dynamicsOptions.temperature, true, dyn)
+          x = molecularDynamicsOpenMM.getCoordinates()
+        }
       }
-      esvSystem.writeLambdaHistogram()
     }
 
     return this

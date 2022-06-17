@@ -72,6 +72,7 @@ import ffx.potential.parsers.DYNFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
+import ffx.potential.parsers.XPHFilter;
 import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
@@ -1235,6 +1236,13 @@ public class MolecularDynamics implements Runnable, Terminatable {
     if (step != 0) {
       // Write out snapshots in selected format every saveSnapshotFrequency steps.
       if (trySnapshot && trajectoryFrequency > 0 && step % trajectoryFrequency == 0) {
+        if(esvSystem != null){
+          for(Atom atom : molecularAssembly.getAtomList()){
+            int atomIndex = atom.getIndex() - 1;
+            atom.setOccupancy(esvSystem.getTitrationLambda(atomIndex));
+            atom.setTempFactor(esvSystem.getTautomerLambda(atomIndex));
+          }
+        }
         appendSnapshot(allLines);
         written.add(WriteActions.SNAPSHOT);
       }
@@ -1259,6 +1267,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
     if(esvSystem != null){
       esvSystem.writeRestart();
+      esvSystem.writeLambdaHistogram();
     }
   }
 
@@ -1310,8 +1319,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
               ainfo.pdbFile = new File(filename + ".pdb");
             }
           }
-          if (ainfo.xyzFilter == null) {
+          if (ainfo.xyzFilter == null && esvSystem == null) {
             ainfo.xyzFilter = new XYZFilter(file, mola, mola.getForceField(), aprops);
+          }
+          if (ainfo.xphFilter == null){
+            ainfo.xphFilter = new XPHFilter(file, mola, mola.getForceField(), aprops, esvSystem);
           }
           if (ainfo.pdbFilter == null) {
             ainfo.pdbFilter = new PDBFilter(ainfo.pdbFile, mola, mola.getForceField(), aprops);
@@ -1511,14 +1523,23 @@ public class MolecularDynamics implements Runnable, Terminatable {
    */
   protected void appendSnapshot(String[] extraLines) {
     for (AssemblyInfo ai : assemblies) {
-      if (ai.archiveFile != null && !saveSnapshotAsPDB) {
+      if (ai.archiveFile != null && !saveSnapshotAsPDB ) {
         String aiName = FileUtils.relativePathTo(ai.archiveFile).toString();
-        if (ai.xyzFilter.writeFile(ai.archiveFile, true, extraLines)) {
-          logger.log(basicLogging, format(" Appended snap shot to %s", aiName));
+        if(esvSystem == null){
+          if (ai.xyzFilter.writeFile(ai.archiveFile, true, extraLines)) {
+            logger.log(basicLogging, format(" Appended snap shot to %s", aiName));
+          } else {
+            logger.warning(format(" Appending snap shot to %s failed", aiName));
+          }
         } else {
-          logger.warning(format(" Appending snap shot to %s failed", aiName));
+          if (ai.xphFilter.writeFile(ai.archiveFile, true, extraLines)) {
+            logger.log(basicLogging, format(" Appended snap shot to %s", aiName));
+          } else {
+            logger.warning(format(" Appending snap shot to %s failed", aiName));
+          }
         }
-      } else if (saveSnapshotAsPDB) {
+
+      }else if (saveSnapshotAsPDB) {
         String aiName = FileUtils.relativePathTo(ai.pdbFile).toString();
         if (ai.pdbFilter.writeFile(ai.pdbFile, true, extraLines)) {
           logger.log(basicLogging, format(" Wrote PDB file to %s", aiName));
@@ -1873,6 +1894,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     CompositeConfiguration compositeConfiguration;
     File archiveFile = null;
     XYZFilter xyzFilter = null;
+    XPHFilter xphFilter;
     File pdbFile;
     PDBFilter pdbFilter;
 

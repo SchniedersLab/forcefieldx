@@ -608,7 +608,7 @@ public class InitializationRegion extends ParallelRegion {
           PolarizeType polarizeType = particleMeshEwald.getPolarizeType(ii);
           if (polarizeType != null) {
             polarizability[ii] = polarizeType.polarizability * polarizabilityScale * elecScale;
-            if (esvTerm && esvSystem.isTitrating(ii) && esvSystem.isTitratingHydrogen(ii)) {
+            if (esvTerm && esvSystem.isTitrating(ii) && (esvSystem.isTitratingHydrogen(ii) || esvSystem.isTitratingSulfur(ii))) {
               titrationPolarizability[ii] = 0.0;
               tautomerPolarizability[ii] = 0.0;
               double titrationLambda = esvSystem.getTitrationLambda(ii);

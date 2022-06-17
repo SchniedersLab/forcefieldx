@@ -1128,7 +1128,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     Atom atom = atoms[i];
     PolarizeType polarizeType = atom.getPolarizeType();
     if (polarizeType != null) {
-      if (esvTerm && extendedSystem.isTitrating(i) && extendedSystem.isTitratingHydrogen(i)) {
+      if (esvTerm && extendedSystem.isTitrating(i) && (extendedSystem.isTitratingHydrogen(i) || extendedSystem.isTitratingSulfur(i))) {
         double titrationLambda = extendedSystem.getTitrationLambda(i);
         double tautomerLambda = extendedSystem.getTautomerLambda(i);
         double esvPolarizability = extendedSystem.getTitrationUtils()
@@ -1717,7 +1717,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
       for (int i = 0; i < nAtoms; i++) {
         if (polarization != Polarization.NONE && esvTerm && extendedSystem.isTitrating(i)
-            && extendedSystem.isTitratingHydrogen(i)) {
+                && (extendedSystem.isTitratingHydrogen(i) || extendedSystem.isTitratingSulfur(i))) {
           double dx = field.getX(i);
           double dy = field.getY(i);
           double dz = field.getZ(i);
@@ -3135,9 +3135,10 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
   }
 
-  /** Scale factors for group based polarization rules and energy masking rules. */
+  /**
+   * Scale factors and masking rules for electrostatics.
+   */
   public class ScaleParameters {
-
     /** The interaction energy between 1-2 multipoles is scaled by m12scale. */
     public final double m12scale;
     /** The interaction energy between 1-3 multipoles is scaled by m13scale. */
@@ -3148,10 +3149,17 @@ public class ParticleMeshEwald implements LambdaInterface {
     public final double m15scale;
 
     /**
-     * Direct polarization field due to permanent multipoles at polarizable sites within their group
-     * are scaled. The scaling is 0.0 in AMOEBA.
+     * DIRECT-11-SCALE: Provides a multiplicative scale factor that is applied to the permanent
+     * (direct) fielddue to atoms within a polarization group during an induced dipole calculation,
+     * i.e., atoms that are in the same polarization group as the atom being polarized.
+     *
+     * The scaling is 0.0 in AMOEBA.
+     *
+     * DIRECT_12_SCALE, DIRECT_13_SCALE, DIRECT_14_SCALE and DIRECT_15_SCALE are assumed to
+     * be 1.0. If this assumption is violated by a keyword, FFX will exit.
      */
     public final double d11scale;
+
     /**
      * The interaction energy between a permanent multipole and polarizable site that are 1-2 is
      * scaled by p12scale.
@@ -3162,9 +3170,23 @@ public class ParticleMeshEwald implements LambdaInterface {
      * scaled by p13scale.
      */
     public final double p13scale;
-
+    /**
+     * The interaction energy between a permanent multipole and polarizable site that are 1-4 is
+     * scaled by p14scale.
+     */
     public final double p14scale;
+    /**
+     * The interaction energy between a permanent multipole and polarizable site that are 1-5 is
+     * scaled by p15scale. Only 1.0 is supported.
+     */
     public final double p15scale;
+
+    /**
+     * Provides a multiplicative scale factor that is applied to polarization interactions between 1-4
+     * connected atoms located in the same polarization group.
+     *
+     * The intra-12-scale, intra-13-scale and intra-15-scale factors are not supported.
+     */
     public final double intra14Scale;
 
     public ScaleParameters(ForceField forceField) {
@@ -3181,12 +3203,50 @@ public class ParticleMeshEwald implements LambdaInterface {
         m14scale = forceField.getDouble("MPOLE_14_SCALE", mpole14);
         m15scale = forceField.getDouble("MPOLE_15_SCALE", 1.0);
       }
+
+      // Multiplicative scale factors applied to polarization interactions
+      // between connected atoms located in the same polarization group.
+      double intra12Scale = forceField.getDouble("POLAR_12_INTRA", 0.0);
+      if (intra12Scale != 0.0) {
+        logger.severe(format(" Unsupported polar-12-intra parameter: %8.6f", intra12Scale));
+      }
+      double intra13Scale = forceField.getDouble("POLAR_13_INTRA", 0.0);
+      if (intra13Scale != 0.0) {
+        logger.severe(format(" Unsupported polar-13-intra parameter: %8.6f", intra13Scale));
+      }
       intra14Scale = forceField.getDouble("POLAR_14_INTRA", 0.5);
+      double intra15Scale = forceField.getDouble("POLAR_15_INTRA", 1.0);
+      if (intra15Scale != 1.0) {
+        logger.severe(format(" Unsupported polar-15-intra parameter: %8.6f", intra15Scale));
+      }
+
+      // Polarization groups masking rules.
       d11scale = forceField.getDouble("DIRECT_11_SCALE", 0.0);
+      double d12scale = forceField.getDouble("DIRECT_12_SCALE", 1.0);
+      if (d12scale != 1.0) {
+        logger.severe(format(" Unsupported direct-12-scale parameter: %8.6f", d12scale));
+      }
+      double d13scale = forceField.getDouble("DIRECT_13_SCALE", 1.0);
+      if (d13scale != 1.0) {
+        logger.severe(format(" Unsupported direct-13-scale parameter: %8.6f", d13scale));
+      }
+      double d14scale = forceField.getDouble("DIRECT_14_SCALE", 1.0);
+      if (d14scale != 1.0) {
+        logger.severe(format(" Unsupported direct-14-scale parameter: %8.6f", d14scale));
+      }
+      double d15scale = forceField.getDouble("DIRECT_15_SCALE", 1.0);
+      if (d15scale != 1.0) {
+        logger.severe(format(" Unsupported direct-15-scale parameter: %8.6f", d15scale));
+      }
+
+      // Polarization energy masking rules.
       p12scale = forceField.getDouble("POLAR_12_SCALE", 0.0);
       p13scale = forceField.getDouble("POLAR_13_SCALE", 0.0);
       p14scale = forceField.getDouble("POLAR_14_SCALE", 1.0);
       p15scale = forceField.getDouble("POLAR_15_SCALE", 1.0);
+      if (p15scale != 1.0) {
+        logger.severe(format(" Unsupported polar-15-scale parameter: %8.6f", p14scale));
+      }
     }
   }
 
