@@ -85,6 +85,7 @@ class ManyBody extends AlgorithmsScript {
   private RefinementEnergy refinementEnergy
 
   ForceFieldEnergy potentialEnergy
+  private MolecularAssembly[] molecularAssemblies
   TitrationManyBody titrationManyBody
   /**
    * ManyBody constructor.
@@ -126,15 +127,18 @@ class ManyBody extends AlgorithmsScript {
 
     String modelFilename
     if (filenames != null && filenames.size() > 0) {
-      activeAssembly = algorithmFunctions.open(filenames.get(0))
+      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
+      activeAssembly = molecularAssemblies[0]
       modelFilename = filenames.get(0)
     } else if (activeAssembly == null) {
       logger.info(helpString())
       return this
     } else {
+      molecularAssemblies = [activeAssembly]
       modelFilename = activeAssembly.getFile().getAbsolutePath()
     }
-    MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
+
+    //MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
 
     CompositeConfiguration properties = activeAssembly.getProperties()
     activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
@@ -156,26 +160,24 @@ class ManyBody extends AlgorithmsScript {
     // Handle rotamer optimization with titration.
     if (titrationPH > 0) {
       logger.info("\n Adding titration hydrogen to : " + filenames.get(0) + "\n")
-
       List<Integer> resNumberList = new ArrayList<>()
       for (Residue residue : residues) {
         resNumberList.add(residue.getResidueNumber())
       }
-
       // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
       titrationManyBody = new TitrationManyBody(filenames.get(0), activeAssembly.getForceField(),
               resNumberList, titrationPH)
-      MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly()
-      setActiveAssembly(protonatedAssembly)
-      potentialEnergy = protonatedAssembly.getPotentialEnergy()
-      assemblies = [activeAssembly] as MolecularAssembly[]
+      MolecularAssembly[] protonatedAssemblies = titrationManyBody.getProtonatedAssemblies()
+      setActiveAssembly(protonatedAssemblies[0])
+      potentialEnergy = protonatedAssemblies[0].getPotentialEnergy()
+      molecularAssemblies = protonatedAssemblies
     }
 
     // Load parsed X-ray properties.
     xrayOptions.setProperties(parseResult, properties)
 
     // Set up diffraction data (can be multiple files)
-    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
+    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, parseResult)
     refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
     refinementEnergy.setScaling(null)
 
