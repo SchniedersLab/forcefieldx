@@ -8248,11 +8248,11 @@ multipole   505  504  503               0.24242 \
                                         0.00000   -0.15395 \
                                        -0.00414    0.00000    0.30809
 
-polarize    501          1.3340     0.3900    402  403
-polarize    502          0.4960     0.3900    401
-polarize    503          1.3340     0.3900    401  404
-polarize    504          0.8370     0.3900    403  405
-polarize    505          0.4960     0.3900    405
+polarize    501          1.3340     0.3900    502  503
+polarize    502          0.4960     0.3900    501
+polarize    503          1.3340     0.3900    501  504
+polarize    504          0.8370     0.3900    503  505
+polarize    505          0.4960     0.3900    505
 
 # GLD side-chain has hydrogen on both Oxygen atoms to support tautomers.
 atom        506    8    C     "GLD CB"             6    12.011    4
@@ -8326,13 +8326,13 @@ multipole   512  511  510               0.24071 \
                                         0.00000    0.09278 \
                                        -0.19140    0.00000   -0.16700
 
-polarize    506          1.3340     0.3900    407
-polarize    507          0.4960     0.3900    406
-polarize    508          1.3340     0.3900    409  410
-polarize    509          0.4960     0.3900    408
-polarize    510          1.3340     0.3900    408  411
-polarize    511          0.8370     0.3900    410  412
-polarize    512          0.4960     0.3900    411
+polarize    506          1.3340     0.3900    507
+polarize    507          0.4960     0.3900    506
+polarize    508          1.3340     0.3900    509  510
+polarize    509          0.4960     0.3900    508
+polarize    510          1.3340     0.3900    508  511
+polarize    511          0.8370     0.3900    510  512
+polarize    512          0.4960     0.3900    511
 
 biotype     800    N       "ASD (COHOH)"              7
 biotype     801    CA      "ASD (COHOH)"              8
