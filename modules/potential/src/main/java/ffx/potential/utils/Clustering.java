@@ -47,8 +47,8 @@ import com.apporiented.algorithm.clustering.ClusteringAlgorithm;
 import com.apporiented.algorithm.clustering.DefaultClusteringAlgorithm;
 import com.apporiented.algorithm.clustering.SingleLinkageStrategy;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.ml.clustering.CentroidCluster;
 import org.apache.commons.math3.ml.clustering.Clusterable;
@@ -175,23 +175,33 @@ public class Clustering {
         int index = remaining.get(seed);
         CentroidCluster<Conformation> cluster = new CentroidCluster<>(new Conformation(distMatrix.get(index), index));
         double[] row = distMatrix.get(index);
-        // Check that the input data is appropriate.
+        // Check that the input data is complete.
+        if(log.isLoggable(Level.FINER)) {
+          log.finer(format(" Remaining clusters: %3d of %3d", remaining.size(), dim));
+          log.finer(format("  Row: %3d (seed %3d) has %3d entries.", index + 1, seed, row.length));
+        }
         if (row.length != dim) {
           log.severe(format(" Row %d of the distance matrix (%d x %d) has %d columns.",
                   index, dim, dim, row.length));
         }
         for (int j = 0; j < dim; j++) {
-          if (row[j] < tolerance) {
-            if (remaining.contains(j)) {
-              cluster.addPoint(new Conformation(distMatrix.get(j), j));
-              remaining.remove((Integer) j);
+          if (row[j] < tolerance && remaining.contains(j)) {
+            cluster.addPoint(new Conformation(distMatrix.get(j), j));
+            if (!remaining.remove((Integer) j)) {
+              log.warning(format(" Row %3d matched %3d, but could not be removed.", j + 1, index + 1));
             }
           }
         }
         clusters.add(cluster);
-        remaining.remove((Integer) seed);
       }
-      if(bestClusters.size() ==0 || clusters.size() < bestClusters.size()){
+      if(bestClusters.size() == 0 || clusters.size() < bestClusters.size()){
+        if(log.isLoggable(Level.FINE)) {
+          int numStructs = 0;
+          for(CentroidCluster clust: clusters){
+            numStructs += clust.getPoints().size();
+          }
+          log.fine(format(" New Best: Num clusters: %3d Num Structs: %3d ", clusters.size(), numStructs));
+        }
         bestClusters = new ArrayList<>(clusters);
       }
     }

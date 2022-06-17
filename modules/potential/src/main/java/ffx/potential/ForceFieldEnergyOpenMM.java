@@ -4574,31 +4574,47 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           amoebaGeneralizedKirkwoodForce, gk.getSolventPermittivity());
       OpenMM_AmoebaGeneralizedKirkwoodForce_setSoluteDielectric(
           amoebaGeneralizedKirkwoodForce, 1.0);
-
       OpenMM_AmoebaGeneralizedKirkwoodForce_setDielectricOffset(
           amoebaGeneralizedKirkwoodForce, gk.getDescreenOffset() * OpenMM_NmPerAngstrom);
 
-      double[] overlapScale = gk.getOverlapScale();
+      boolean usePerfectRadii = gk.getUsePerfectRadii();
+      double perfectRadiiScale = 1.0;
+      if (usePerfectRadii) {
+        // No descreening when using perfect radii (OpenMM will just load the base radii).
+        perfectRadiiScale = 0.0;
+      }
+
+      // Turn on tanh rescaling only when not using perfect radii.
+      int tanhRescale = 0;
+      if (gk.getTanhCorrection() && !usePerfectRadii) {
+        tanhRescale = 1;
+      }
+      OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling(amoebaGeneralizedKirkwoodForce, tanhRescale);
+
       double[] baseRadius = gk.getBaseRadii();
+      if (usePerfectRadii) {
+        baseRadius = gk.getPerfectRadii();
+      }
+
+      double[] overlapScale = gk.getOverlapScale();
       double[] descreenRadius = gk.getDescreenRadii();
       double[] neckFactor = gk.getNeckScale();
 
-      if (logger.isLoggable(Level.FINE)) {
+      if (!usePerfectRadii && logger.isLoggable(Level.FINE)) {
         logger.fine("   GK Base Radii  Descreen Radius  Overlap Scale  Overlap");
       }
 
       for (int i = 0; i < nAtoms; i++) {
         MultipoleType multipoleType = atoms[i].getMultipoleType();
         double base = baseRadius[i] * OpenMM_NmPerAngstrom;
-        double descreen = descreenRadius[i] * OpenMM_NmPerAngstrom;
-        double overlap = overlapScale[i];
-        double neck = neckFactor[i];
+        double descreen = descreenRadius[i] * OpenMM_NmPerAngstrom * perfectRadiiScale;
+        double overlap = overlapScale[i] * perfectRadiiScale;
+        double neck = neckFactor[i] * perfectRadiiScale;
         OpenMM_AmoebaGeneralizedKirkwoodForce_addParticle_1(
             amoebaGeneralizedKirkwoodForce, multipoleType.charge, base, overlap, descreen, neck);
 
-        if (logger.isLoggable(Level.FINE)) {
-          logger.fine(
-              format("   %s %8.6f %8.6f %5.3f",
+        if (!usePerfectRadii && logger.isLoggable(Level.FINE)) {
+          logger.fine(format("   %s %8.6f %8.6f %5.3f",
                   atoms[i].toString(), baseRadius[i], descreenRadius[i], overlapScale[i]));
         }
       }
@@ -4606,12 +4622,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius(
           amoebaGeneralizedKirkwoodForce, gk.getProbeRadius() * OpenMM_NmPerAngstrom);
 
-      int tanhRescale = 0;
-      if (gk.getTanhCorrection()) {
-        tanhRescale = 1;
-      }
-      OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling(amoebaGeneralizedKirkwoodForce,
-          tanhRescale);
 
       NonPolar nonpolar = gk.getNonPolarModel();
       switch (nonpolar) {
@@ -4681,8 +4691,18 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         gk.udpateSoluteParameters(i);
       }
 
-      double[] overlapScale = gk.getOverlapScale();
+      boolean usePerfectRadii = gk.getUsePerfectRadii();
+      double perfectRadiiScale = 1.0;
+      if (usePerfectRadii) {
+        // No descreening when using perfect radii (OpenMM will just load the base radii).
+        perfectRadiiScale = 0.0;
+      }
+
       double[] baseRadii = gk.getBaseRadii();
+      if (usePerfectRadii) {
+        baseRadii = gk.getPerfectRadii();
+      }
+      double[] overlapScale = gk.getOverlapScale();
       double[] descreenRadius = gk.getDescreenRadii();
       double[] neckFactors = gk.getNeckScale();
 
@@ -4701,10 +4721,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
 
         double baseSize = baseRadii[index] * OpenMM_NmPerAngstrom;
-        double descreenSize = descreenRadius[index] * OpenMM_NmPerAngstrom;
+        double descreenSize = descreenRadius[index] * OpenMM_NmPerAngstrom * perfectRadiiScale;
 
         chargeUseFactor *= lambdaScale;
         double overlapScaleUseFactor = nea ? 1.0 : chargeUseFactor;
+        overlapScaleUseFactor = overlapScaleUseFactor * perfectRadiiScale;
         double overlap = overlapScale[index] * overlapScaleUseFactor;
         double neckFactor = neckFactors[index] * overlapScaleUseFactor;
 

@@ -79,6 +79,7 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.utils.EnergyException;
 import ffx.utilities.Constants;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -323,7 +324,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
       double ei = realSpaceEnergyLoop[i].inducedEnergy;
       if (isNaN(ei)) {
         throw new EnergyException(
-            format(" The polarization energyof thread %d is %16.8f", i, ei));
+            format(" The polarization energy of thread %d is %16.8f", i, ei));
       }
       polarizationEnergy += ei;
     }
@@ -551,13 +552,13 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
     private double ukx, uky, ukz;
     private double pkx, pky, pkz;
     private double bn0, bn1, bn2, bn3, bn4, bn5, bn6;
-    private double r2, rr1, rr2, rr3, rr5, rr7, rr9, rr11, rr13;
+    private double rr1, rr3, rr5, rr7, rr9, rr11, rr13;
     private double scale, scale3, scale5, scale7;
     private double scalep, scaled;
     private double ddsc3x, ddsc3y, ddsc3z;
     private double ddsc5x, ddsc5y, ddsc5z;
     private double ddsc7x, ddsc7y, ddsc7z;
-    private double beta, l2;
+    private double l2;
     private boolean soft;
     private double selfScale;
     private double permanentEnergy;
@@ -623,10 +624,14 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
         realSpaceChunk(lb, ub);
         if (gradient) {
           // Turn symmetry mate torques into gradients
+          int[] frameIndex = {-1, -1, -1, -1};
+          double[][] g = new double[4][3];
           double[] trq = new double[3];
           for (int i = 0; i < nAtoms; i++) {
-            double[][] g = new double[4][3];
-            int[] frameIndex = {-1, -1, -1, -1};
+            fill(frameIndex, -1);
+            for (int j = 0; j < 4; j++) {
+              fill(g[j], 0.0);
+            }
             trq[0] = txk_local[i];
             trq[1] = tyk_local[i];
             trq[2] = tzk_local[i];
@@ -654,10 +659,14 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
         }
         if (lambdaTerm) {
           // Turn symmetry mate torques into gradients
+          int[] frameIndex = {-1, -1, -1, -1};
+          double[][] g = new double[4][3];
           double[] trq = new double[3];
           for (int i = 0; i < nAtoms; i++) {
-            double[][] g = new double[4][3];
-            int[] frameIndex = {-1, -1, -1, -1};
+            fill(frameIndex, -1);
+            for (int j = 0; j < 4; j++) {
+              fill(g[j], 0.0);
+            }
             trq[0] = ltxk_local[i];
             trq[1] = ltyk_local[i];
             trq[2] = ltzk_local[i];
@@ -789,7 +798,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
           if (i == k) {
             selfScale = 0.5;
           }
-          beta = 0.0;
+          double beta = 0.0;
           l2 = 1.0;
           soft = (softi || isSoft[k]);
           if (soft && doPermanentRealSpace) {
@@ -802,7 +811,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
           dx_local[0] = xk - xi;
           dx_local[1] = yk - yi;
           dx_local[2] = zk - zi;
-          r2 = crystal.image(dx_local);
+          double r2 = crystal.image(dx_local);
           xr = dx_local[0];
           yr = dx_local[1];
           zr = dx_local[2];
@@ -817,6 +826,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
           scale = masking_local[k];
           scalep = maskingp_local[k];
           scaled = maskingd_local[k];
+          // logger.info(format("Permanent %3.1f, U Field %3.1f, U Energy: %3.1f", scale, scaled, scalep));
           scale3 = 1.0;
           scale5 = 1.0;
           scale7 = 1.0;
@@ -824,7 +834,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
           double ralpha = aewald * r;
           double exp2a = exp(-ralpha * ralpha);
           rr1 = 1.0 / r;
-          rr2 = rr1 * rr1;
+          double rr2 = rr1 * rr1;
           bn0 = erfc(ralpha) * rr1;
           bn1 = (bn0 + an0 * exp2a) * rr2;
           bn2 = (3.0 * bn1 + an1 * exp2a) * rr2;
@@ -848,9 +858,12 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
           ddsc7y = 0.0;
           ddsc7z = 0.0;
           double damp = pdi * pdk;
-          double pgamma = min(pti, ptk);
+          double thole = min(pti, ptk);
+
+          // logger.info(format(" %d %d Thole: %17.15f AiAk: %17.15f", i, k, thole, damp));
+
           double rdamp = r * damp;
-          damp = -pgamma * rdamp * rdamp * rdamp;
+          damp = -thole * rdamp * rdamp * rdamp;
           if (damp > -50.0) {
             final double expdamp = exp(damp);
             scale3 = 1.0 - expdamp;
@@ -870,20 +883,20 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
             ddsc7z = temp7 * ddsc5z;
           }
           if (doPermanentRealSpace) {
+
             double ei = permanentPair(gradient, lambdaTerm);
+            // logger.info(format(" Permanent %d %d %17.15f", i, k, ei));
+            // logger.info(format(" %16.14f %16.14f %16.14f", xr, yr, zr));
+            // logger.info(format(" %d multipole:  %s", i, Arrays.toString(globalMultipolei)));
+            // logger.info(format(" %d multipole:  %s", k, Arrays.toString(globalMultipolek)));
+
             if (isNaN(ei) || isInfinite(ei)) {
               String message =
                   format(
                       " %s\n %s\n %s\n The permanent multipole energy between "
                           + "atoms %d and %d (%d) is %16.8f at %16.8f A.",
-                      crystal.getUnitCell().toString(),
-                      atoms[i].toString(),
-                      atoms[k].toString(),
-                      i,
-                      k,
-                      iSymm,
-                      ei,
-                      r);
+                      crystal.getUnitCell().toString(), atoms[i].toString(), atoms[k].toString(),
+                      i, k, iSymm, ei, r);
               throw new EnergyException(message);
             }
             if (ei != 0.0) {
@@ -960,9 +973,9 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
               ddsc7y = 0.0;
               ddsc7z = 0.0;
               damp = pdi * pdk;
-              pgamma = min(pti, ptk);
+              thole = min(pti, ptk);
               rdamp = r * damp;
-              damp = -pgamma * rdamp * rdamp * rdamp;
+              damp = -thole * rdamp * rdamp * rdamp;
               if (damp > -50.0) {
                 final double expdamp = exp(damp);
                 scale3 = 1.0 - expdamp;
@@ -982,7 +995,15 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                 ddsc7z = temp7 * ddsc5z;
               }
             }
+
             double ei = polarizationPair(gradient, lambdaTerm);
+
+//            logger.info(format(" Total Polarization %d %d %17.15f", i, k, ei));
+//            logger.info(format(" %d induced:    %s", i, Arrays.toString(inducedDipolei)));
+//            logger.info(format(" %d induced cr: %s", i, Arrays.toString(inducedDipolepi)));
+//            logger.info(format(" %d induced:    %s", k, Arrays.toString(inducedDipolek)));
+//            logger.info(format(" %d induced cr: %s", k, Arrays.toString(inducedDipolepk)));
+
             if (isNaN(ei) || isInfinite(ei)) {
               String message =
                   format(
@@ -1008,7 +1029,6 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
               throw new EnergyException(message);
             }
             inducedEnergy += ei;
-
             if (esvTerm) {
               int esvI = extendedSystem.getTitrationESVIndex(i);
               int esvK = extendedSystem.getTitrationESVIndex(k);
@@ -1388,6 +1408,11 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
         double prefactor = electric * selfScale * l2;
         grad.add(threadID, i, prefactor * ftm2x, prefactor * ftm2y, prefactor * ftm2z);
         torque.add(threadID, i, prefactor * ttm2x, prefactor * ttm2y, prefactor * ttm2z);
+
+//        logger.info(format(" %d %d I Perm Force %17.15f %17.15f %17.15f", i, k, ftm2x, ftm2y, ftm2z));
+//        logger.info(format(" %d %d I Perm Torque %17.15f %17.15f %17.15f", i, k, ttm2x, ttm2y, ttm2z));
+//        logger.info(format(" %d %d K Perm Torque %17.15f %17.15f %17.15f", i, k, ttm3x, ttm3y, ttm3z));
+
         gxk_local[k] -= prefactor * ftm2x;
         gyk_local[k] -= prefactor * ftm2y;
         gzk_local[k] -= prefactor * ftm2z;
@@ -1640,7 +1665,6 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
       final double psc7 = 1.0 - scale7 * scalep;
       final double usc3 = 1.0 - scale3;
       final double usc5 = 1.0 - scale5;
-      final double usr5 = bn2 - usc5 * rr5;
 
       final double dixukx = diy * ukz - diz * uky;
       final double dixuky = diz * ukx - dix * ukz;
@@ -1745,6 +1769,9 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
       final double efix =
           (gli1 + gli6) * rr3 * psc3 + (gli2 + gli7) * rr5 * psc5 + gli3 * rr7 * psc7;
       final double e = selfScale * 0.5 * (ereal - efix);
+
+      // logger.info(format(" %d %d Polarization Energy (real): %17.15f", i, k, 0.5 * ereal));
+      // logger.info(format(" %d %d Polarization Energy (fix) : %17.15f", i, k, -0.5 * efix));
 
       if (!(gradientLocal || lambdaTermLocal)) {
         return polarizationScale * e;
@@ -1963,6 +1990,10 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
       final double findmpy = temp3 * ddsc3y + temp5 * ddsc5y;
       final double findmpz = temp3 * ddsc3z + temp5 * ddsc5z;
 
+//      logger.info(format(" %d %d Ewald Polarization grad (i):   %17.15f %17.15f %17.15f", i, k, ftm2ix, ftm2iy, ftm2iz));
+//      logger.info(format(" %d %d Ewald Polarization torque (i): %17.15f %17.15f %17.15f", i, k, ttm2ix, ttm2iy, ttm2iz));
+//      logger.info(format(" %d %d Ewald Polarization torque (k): %17.15f %17.15f %17.15f", i, k, ttm3ix, ttm3iy, ttm3iz));
+
       // Modify the forces for partially excluded interactions.
       ftm2ix = ftm2ix - fridmpx - findmpx;
       ftm2iy = ftm2iy - fridmpy - findmpy;
@@ -2068,6 +2099,12 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
       //            }
 
       // Handle the case where scaling is used.
+
+//      logger.info(format(" %d %d Polarization Coulomb grad (i):   %17.15f %17.15f %17.15f", i, k,
+//          -ftm2rix - fridmpx - findmpx, -ftm2riy - fridmpy - findmpy, -ftm2riz - fridmpz - findmpz));
+//      logger.info(format(" %d %d Polarization Thole torque (i): %17.15f %17.15f %17.15f", i, k, -ttm2rix, -ttm2riy, -ttm2riz));
+//      logger.info(format(" %d %d Polarization Thole torque (k): %17.15f %17.15f %17.15f", i, k, -ttm3rix, -ttm3riy, -ttm3riz));
+
       ftm2ix = ftm2ix - ftm2rix;
       ftm2iy = ftm2iy - ftm2riy;
       ftm2iz = ftm2iz - ftm2riz;
@@ -2079,6 +2116,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
       ttm3iz = ttm3iz - ttm3riz;
 
       double scalar = electric * polarizationScale * selfScale;
+
       grad.add(threadID, i, scalar * ftm2ix, scalar * ftm2iy, scalar * ftm2iz);
       torque.add(threadID, i, scalar * ttm2ix, scalar * ttm2iy, scalar * ttm2iz);
       gxk_local[k] -= scalar * ftm2ix;
@@ -2154,4 +2192,5 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
     }
 
   }
+
 }

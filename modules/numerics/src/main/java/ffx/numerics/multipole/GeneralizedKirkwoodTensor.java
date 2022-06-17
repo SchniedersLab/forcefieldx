@@ -184,7 +184,7 @@ public class GeneralizedKirkwoodTensor {
   }
 
   /**
-   * Compute the Kirkwood dieletric function for a multipole of order n.
+   * Compute the Kirkwood dielectric function for a multipole of order n.
    *
    * @param n Multipole order.
    * @param Eh Homogeneous dieletric.
