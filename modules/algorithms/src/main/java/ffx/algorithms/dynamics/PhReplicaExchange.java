@@ -91,7 +91,6 @@ public class PhReplicaExchange implements Terminatable {
   private final int[] pHAcceptedCount;
   private final int[] rankAcceptedCount;
   private final int[] pHTrialCount;
-  private final AlgorithmListener listener;
   private final double temp;
 
   private final ExtendedSystem extendedSystem;
@@ -101,16 +100,14 @@ public class PhReplicaExchange implements Terminatable {
    * ReplicaExchange constructor.
    *
    * @param molecularDynamics a {@link MolecularDynamics} object.
-   * @param listener a {@link AlgorithmListener} object.
    * @param pH pH = pKa <-- will be changed from this initial value
    * @param extendedSystem extended system attached to this process
    */
   public PhReplicaExchange(
-      MolecularDynamics molecularDynamics, AlgorithmListener listener, double pH, ExtendedSystem extendedSystem) {
+      MolecularDynamics molecularDynamics, double pH, double temp, ExtendedSystem extendedSystem) {
 
     this.replica = molecularDynamics;
-    this.listener = listener;
-    this.temp = replica.initialTemp;
+    this.temp = temp;
     this.extendedSystem = extendedSystem;
     this.pH = pH;
 
@@ -130,7 +127,7 @@ public class PhReplicaExchange implements Terminatable {
     rankAcceptedCount = new int [nReplicas];
     pHTrialCount = new int[nReplicas];
 
-    setEvenSpacePhLadder(2, 12);
+    setEvenSpacePhLadder(9.3, 10.4);
 
     random = new Random();
     random.setSeed(0);

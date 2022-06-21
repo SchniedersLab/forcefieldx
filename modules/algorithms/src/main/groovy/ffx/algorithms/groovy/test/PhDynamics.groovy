@@ -206,7 +206,7 @@ class PhDynamics extends AlgorithmsScript {
       final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
       logger.info("Set activeAssembly filename: " + newMolAssemblyFile)
       activeAssembly.setFile(new File(newMolAssemblyFile))
-      PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, algorithmListener, pH, esvSystem)
+      PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, dynamicsOptions.temperature, esvSystem)
 
       long totalSteps = titrSteps
       int nSteps = repEx.replicaSteps
