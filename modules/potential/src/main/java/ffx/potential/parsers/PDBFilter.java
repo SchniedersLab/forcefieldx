@@ -897,7 +897,7 @@ public final class PDBFilter extends SystemFilter {
                   }
 
                   if (constantPH) {
-                    AminoAcid3 aa3 = AminoAcidUtils.AminoAcid3.valueOf(resName.toUpperCase());
+                    AminoAcid3 aa3 = AminoAcidUtils.getAminoAcid(resName.toUpperCase());
                     if (constantPHResidueMap.containsKey(aa3)) {
                       String atomName = name.toUpperCase();
                       AminoAcid3 aa3PH = constantPHResidueMap.get(aa3);
@@ -912,7 +912,7 @@ public final class PDBFilter extends SystemFilter {
                       }
                     }
                   } else if (rotamerTitration) {
-                    AminoAcid3 aa3 = AminoAcidUtils.AminoAcid3.valueOf(resName.toUpperCase());
+                    AminoAcid3 aa3 = AminoAcidUtils.getAminoAcid(resName.toUpperCase());
                     if (rotamerResidueMap.containsKey(aa3) && resNumberList.contains(resSeq)) {
                       AminoAcid3 aa3rotamer = rotamerResidueMap.get(aa3);
                       resName = aa3rotamer.name();
