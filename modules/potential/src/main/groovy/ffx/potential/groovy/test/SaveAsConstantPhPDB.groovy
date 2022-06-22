@@ -39,6 +39,7 @@ package ffx.potential.groovy.test
 
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.RotamerLibrary
+import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.parameters.TitrationUtils
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parameters.ForceField
