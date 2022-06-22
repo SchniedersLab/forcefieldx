@@ -261,6 +261,7 @@ public class PhReplicaExchange implements Terminatable {
 
       // If the Metropolis criteria is satisfied, do the switch.
       if (deltaE < 0.0 || random.nextDouble() < exp(-deltaE)) {
+        pH++;
         pHAcceptedCount[pH]++;
         double pHAcceptance = pHAcceptedCount[pH] * 100.0 / (pHTrialCount[pH]);
 
