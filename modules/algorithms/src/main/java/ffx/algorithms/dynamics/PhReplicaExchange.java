@@ -261,7 +261,6 @@ public class PhReplicaExchange implements Terminatable {
 
       // If the Metropolis criteria is satisfied, do the switch.
       if (deltaE < 0.0 || random.nextDouble() < exp(-deltaE)) {
-        pH++;
         pHAcceptedCount[pH]++;
         double pHAcceptance = pHAcceptedCount[pH] * 100.0 / (pHTrialCount[pH]);
 
@@ -290,6 +289,8 @@ public class PhReplicaExchange implements Terminatable {
             String.format(
                 " RepEx accepted. pH Accept: (%5.1f%%) Rank Accept: (%5.1f%%) for %6.2f (%d) and %6.2f (%d) for dE=%10.4f.",
                 pHAcceptance, rankAcceptance, pHA, rankA, pHB, rankB, deltaE));
+
+        pH++;
       } else {
         double tempAcceptance = pHAcceptedCount[pH] * 100.0 / (pHTrialCount[pH]);
         double rankAcceptance = rankAcceptedCount[pH] * 100.0 / (pHTrialCount[pH]);
