@@ -208,15 +208,18 @@ class PhDynamics extends AlgorithmsScript {
       activeAssembly.setFile(new File(newMolAssemblyFile))
       PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, dynamicsOptions.temperature, esvSystem)
 
-      long totalSteps = titrSteps
+      long totalSteps = dynamicsOptions.numSteps
       int nSteps = repEx.replicaSteps
       int exchangeCycles = (int) (totalSteps / nSteps)
+
       if (exchangeCycles <= 0) {
         exchangeCycles = 1
       }
 
       pHReplicaExchange.
               sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
+
+
 
     } else if (!(molecularDynamics instanceof MolecularDynamicsOpenMM)) {
       // CPU Constant pH Dynamics
