@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
+import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.multipole.MultipoleTensorTest.Qi;
 import static ffx.numerics.multipole.MultipoleTensorTest.Qk;
 import static ffx.numerics.multipole.MultipoleTensorTest.Ui;
@@ -153,15 +154,16 @@ public class QIMultipoleTensorTest {
 
     double[] tensor = new double[tensorCount];
     MultipoleTensor multipoleTensor = new CoulombTensorQI(order);
-    QIFrame qiFrame = new QIFrame(r);
     logger.info(format(" Writing QI Order %d tensor recursion code:", order));
-    r[2] = DoubleMath.length(r);
+
+    r[2] = length(r);
     r[0] = 0.0;
     r[1] = 0.0;
     String code = multipoleTensor.codeTensorRecursion(r, tensor);
     logger.info(format("\n%s", code));
 
     PolarizableMultipole polarizableMultipole = new PolarizableMultipole(Qi, Ui, Ui);
+    QIFrame qiFrame = new QIFrame(r);
     qiFrame.rotatePolarizableMultipole(polarizableMultipole);
     StringBuilder sb = new StringBuilder();
     logger.info(" Writing QI potential code due to multipole I:");
@@ -472,7 +474,7 @@ public class QIMultipoleTensorTest {
 
     // Check QI Tensors in a quasi-internal frame.
     // Set x and y = 0.0
-    r[2] = DoubleMath.length(r);
+    r[2] = length(r);
     r[0] = 0.0;
     r[1] = 0.0;
     fill(noStorageTensor, 0.0);

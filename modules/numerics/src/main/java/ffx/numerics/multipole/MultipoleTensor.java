@@ -759,14 +759,20 @@ public abstract class MultipoleTensor {
    */
   protected void generateTensor() {
     switch (order) {
-      case 6:
-        order6();
+      case 2:
+        order2();
+        break;
+      case 3:
+        order3();
+        break;
+      case 4:
+        order4();
         break;
       case 5:
         order5();
         break;
-      case 4:
-        order4();
+      case 6:
+        order6();
         break;
       default:
         double[] r = {x, y, z};
@@ -1570,20 +1576,29 @@ public abstract class MultipoleTensor {
   protected abstract void recursion(final double[] r, final double[] tensor);
 
   /**
-   * Hard coded computation of all Cartesian multipole tensors up to 4th order, in the global frame,
-   * which is sufficient for quadrupole-induced dipole forces.
+   * Hard coded computation of the Cartesian multipole tensors up to 2nd order.
+   */
+  protected abstract void order2();
+
+  /**
+   * Hard coded computation of the Cartesian multipole tensors up to 3rd order.
+   */
+  protected abstract void order3();
+
+  /**
+   * Hard coded computation of the Cartesian multipole tensors up to 4th order.
    */
   protected abstract void order4();
 
   /**
-   * Hard coded computation of all Cartesian multipole tensors up to 5th order, in the global frame,
-   * which is sufficient for quadrupole-quadrupole forces.
+   * Hard coded computation of the Cartesian multipole tensors up to 5th order,
+   * which is needed for quadrupole-quadrupole forces.
    */
   protected abstract void order5();
 
   /**
-   * Hard coded computation of all Cartesian multipole tensors up to 5th order, in the global frame,
-   * which is sufficient for quadrupole-quadrupole forces and orthogonal space sampling.
+   * Hard coded computation of the Cartesian multipole tensors up to 6th order,
+   * which is needed for quadrupole-quadrupole forces and orthogonal space sampling.
    */
   protected abstract void order6();
 

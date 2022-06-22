@@ -85,10 +85,45 @@ public class CoulombTensorQI extends MultipoleTensor {
     R = z;
   }
 
-  /**
-   * Hard coded computation of all multipole tensors up to 4th order, based on a quasi-internal
-   * frame, which is sufficient for quadrupole-induced dipole forces.
-   */
+  /** {@inheritDoc} */
+  @Override
+  protected void order2() {
+    source(work);
+    double term0000 = work[0];
+    double term0001 = work[1];
+    double term0002 = work[2];
+    R000 = term0000;
+    R200 = term0001;
+    R020 = term0001;
+    R001 = z * term0001;
+    double term0011 = z * term0002;
+    R002 = fma(z, term0011, term0001);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  protected void order3() {
+    source(work);
+    double term0000 = work[0];
+    double term0001 = work[1];
+    double term0002 = work[2];
+    double term0003 = work[3];
+    R000 = term0000;
+    R200 = term0001;
+    double term2001 = term0002;
+    R020 = term0001;
+    double term0201 = term0002;
+    R001 = z * term0001;
+    double term0011 = z * term0002;
+    R002 = fma(z, term0011, term0001);
+    double term0012 = z * term0003;
+    double term0021 = fma(z, term0012, term0002);
+    R003 = fma(z, term0021, 2 * term0011);
+    R021 = z * term0201;
+    R201 = z * term2001;
+  }
+
+  /** {@inheritDoc} */
   @Override
   protected void order4() {
     source(work);
@@ -125,10 +160,7 @@ public class CoulombTensorQI extends MultipoleTensor {
     R202 = fma(z, term2011, term2001);
   }
 
-  /**
-   * Hard coded computation of all Cartesian multipole tensors up to 5th order, based on a
-   * quasi-internal frame, which is sufficient for quadrupole-quadrupole forces.
-   */
+  /** {@inheritDoc} */
   @Override
   protected void order5() {
     source(work);
@@ -185,11 +217,7 @@ public class CoulombTensorQI extends MultipoleTensor {
     R401 = z * term4001;
   }
 
-  /**
-   * Hard coded computation of all Cartesian multipole tensors up to 6th order, based on a
-   * quasi-internal frame, which is sufficient for quadrupole-quadrupole forces and orthogonal space
-   * sampling.
-   */
+  /** {@inheritDoc} */
   @Override
   protected void order6() {
     source(work);

@@ -38,10 +38,13 @@
 package ffx.numerics.multipole;
 
 import static ffx.numerics.math.ScalarMath.doubleFactorial;
+import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
+
+import java.util.logging.Logger;
 
 /**
  * The GeneralizedKirkwoodTensor class contains utilities for generated Generalized Kirkwood
@@ -51,6 +54,9 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  * @since 1.0
  */
 public class GeneralizedKirkwoodTensor extends CoulombTensorGlobal {
+
+  /** Logger for the MultipoleTensor class. */
+  private static final Logger logger = Logger.getLogger(GeneralizedKirkwoodTensor.class.getName());
 
   /**
    * Generalized Kirkwood constant.
@@ -88,9 +94,26 @@ public class GeneralizedKirkwoodTensor extends CoulombTensorGlobal {
   protected final double[] kirkwoodSource;
 
   /**
-   *  Coefficients needed when taking derivatives of auxiliary functions.
+   * Coefficients needed when taking derivatives of auxiliary functions.
    */
   private final double[][] anmc;
+
+  /**
+   * Source terms for the Kirkwood version of the Challacombe et al. recursion.
+   */
+  private final double[] an0;
+
+  /**
+   * Chain rule terms from differentiating zeroth order auxiliary functions (an0) with respect to x,
+   * y or z.
+   */
+  private final double[] fn;
+
+  /**
+   * Chain rule terms from differentiating zeroth order auxiliary functions (an0) with respect to Ai
+   * or Aj.
+   */
+  private final double[] bn;
 
   /**
    * Born radius of atom i.
@@ -113,7 +136,6 @@ public class GeneralizedKirkwoodTensor extends CoulombTensorGlobal {
   private double f;
 
   /**
-   *
    * @param multipoleOrder The multipole order.
    * @param order The number of derivatives to complete.
    * @param gc Generalized Kirkwood constant.
@@ -141,6 +163,10 @@ public class GeneralizedKirkwoodTensor extends CoulombTensorGlobal {
     for (int n = 0; n <= order; n++) {
       anmc[n] = anmc(n);
     }
+
+    an0 = new double[order + 1];
+    fn = new double[order + 1];
+    bn = new double[order + 1];
   }
 
   public double selfEnergy(PolarizableMultipole polarizableMultipole, double a) {
@@ -166,8 +192,11 @@ public class GeneralizedKirkwoodTensor extends CoulombTensorGlobal {
     double a5 = a2 * a3;
 
     // Permanent self-energy
+    // Born partial charge
     double e0 = cn(0, Eh, Es) * q2 / a;
+    // Dipole
     double e1 = cn(1, Eh, Es) * (dx2 + dy2 + dz2) / a3;
+    // Quadrupole
     double e2 = cn(2, Eh, Es) * (3.0 * (qxy2 + qxz2 + qyz2) + 6.0 * (qxx2 + qyy2 + qzz2)) / a5;
 
     // Induced self-energy
@@ -194,18 +223,18 @@ public class GeneralizedKirkwoodTensor extends CoulombTensorGlobal {
   }
 
   /**
-   * Generate source terms for the Coulomb Challacombe et al. recursion.
-   *
-   * @param T000 Location to store the source terms.
+   * Generate source terms for the Kirkwood version of the Challacombe et al. recursion.
    */
-  protected void source(double[] T000) {
+  protected void source() {
     for (int n = 0; n <= order; n++) {
-      T000[n] = an0(n);
+      an0[n] = an0(n);
+      fn[n] = fn(n);
+      bn[n] = bn(n);
     }
   }
 
   /**
-   * Compute the potential auxiliary function for a multipole of order n
+   * Compute the potential auxiliary function for a multipole of order n.
    *
    * @param n Multipole order.
    * @return The potential auxiliary function for a multipole of order n.
@@ -223,12 +252,12 @@ public class GeneralizedKirkwoodTensor extends CoulombTensorGlobal {
    */
   public double anm(int n, int m) {
     if (m == 0) {
-      return T000[n];
+      return an0[n];
     }
     var ret = 0.0;
-    var coef = anmc[n];
+    var coef = anmc[m];
     for (int i = 1; i <= m; i++) {
-      ret += coef[i - 1] * fn(i) * anm(n + 1, m - i);
+      ret += coef[i - 1] * fn[i] * anm(n + 1, m - i);
     }
     return ret;
   }
@@ -245,13 +274,13 @@ public class GeneralizedKirkwoodTensor extends CoulombTensorGlobal {
   public double bnm(int n, int m) {
     if (m == 0) {
       // return bn(0) * an0(n + 1);
-      return bn(0) * T000[n+1];
+      return bn[0] * an0[n + 1];
     }
-    var ret = 0;
-    var coef = anmc(n);
+    var ret = 0.0;
+    var coef = anmc[m];
     for (int i = 1; i <= m; i++) {
-      ret += coef[i - 1] * bn(i) * anm(n + 1, m - i);
-      ret += coef[i - 1] * fn(i) * bnm(n + 1, m - i);
+      ret += coef[i - 1] * bn[i] * anm(n + 1, m - i);
+      ret += coef[i - 1] * fn[i] * bnm(n + 1, m - i);
     }
     return ret;
   }
@@ -284,7 +313,7 @@ public class GeneralizedKirkwoodTensor extends CoulombTensorGlobal {
    * @param n Multipole order.
    * @return Returns the nth value of the function f.
    */
-  private double bn(int n) {
+  protected double bn(int n) {
     var gcAiAj = gc * ai * aj;
     var ratio = -r2 / gcAiAj;
     switch (n) {

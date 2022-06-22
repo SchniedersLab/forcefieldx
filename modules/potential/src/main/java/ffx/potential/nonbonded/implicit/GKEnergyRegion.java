@@ -613,13 +613,13 @@ public class GKEnergyRegion extends ParallelRegion {
       double eik = energy(i, k);
 
       // Test the GK Tensor class.
-//      if (i == k) {
+//     if (i == k) {
 //        PolarizableMultipole polarizableMultipole = new PolarizableMultipole(multipolek,
 //            inducedDipole[iSymm][k], inducedDipoleCR[iSymm][k]);
 //        GeneralizedKirkwoodTensor generalizedKirkwoodTensor = new GeneralizedKirkwoodTensor(0, 2,
 //            gkc, 1.0, 78.3);
 //        double energy = generalizedKirkwoodTensor.selfEnergy(polarizableMultipole, rbk);
-//        logger.info(format(" Tensor Self-Energy %16.8f", electric * energy));
+//        logger.info(format(" GK Tensor: %16.8f Code: %16.8f Rad: %16.8f", electric * energy, eik, rbk));
 //      }
 
       gkEnergy += eik;
