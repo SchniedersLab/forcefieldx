@@ -128,7 +128,7 @@ public class PhReplicaExchange implements Terminatable {
     rankAcceptedCount = new int [nReplicas];
     pHTrialCount = new int[nReplicas];
 
-    setEvenSpacePhLadder(9, 12);
+    setEvenSpacePhLadder(5, 12);
 
     random = new Random();
     random.setSeed(0);
@@ -235,7 +235,7 @@ public class PhReplicaExchange implements Terminatable {
     // 2 M.C. trials per pH (except for those at the ends of the ladder).
 
     // Loop over pH scale
-    for (int pH = 0; pH < nReplicas - 1; pH ++) {
+    for (int pH = 0; pH < nReplicas - 1; pH++) {
 
       // Ranks for pH A and B
       int rankA = pH2Rank[pH];
