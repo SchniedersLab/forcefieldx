@@ -64,6 +64,8 @@ import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.numerics.multipole.GeneralizedKirkwoodTensor;
+import ffx.numerics.multipole.PolarizableMultipole;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
@@ -609,6 +611,16 @@ public class GKEnergyRegion extends ParallelRegion {
 
       // Compute the GK interaction energy.
       double eik = energy(i, k);
+
+      // Test the GK Tensor class.
+//     if (i == k) {
+//        PolarizableMultipole polarizableMultipole = new PolarizableMultipole(multipolek,
+//            inducedDipole[iSymm][k], inducedDipoleCR[iSymm][k]);
+//        GeneralizedKirkwoodTensor generalizedKirkwoodTensor = new GeneralizedKirkwoodTensor(0, 2,
+//            gkc, 1.0, 78.3);
+//        double energy = generalizedKirkwoodTensor.selfEnergy(polarizableMultipole, rbk);
+//        logger.info(format(" GK Tensor: %16.8f Code: %16.8f Rad: %16.8f", electric * energy, eik, rbk));
+//      }
 
       gkEnergy += eik;
       count++;

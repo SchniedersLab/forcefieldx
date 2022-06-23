@@ -112,10 +112,74 @@ public class CoulombTensorGlobal extends MultipoleTensor {
 
   /**
    * {@inheritDoc}
-   *
-   * <p>Machine generated computation of all Cartesian multipole tensors up to 4th order, in the
-   * global
-   * frame, which is sufficient for quadrupole-induced dipole forces.
+   */
+  @Override
+  protected void order2() {
+    source(work);
+    double term0000 = work[0];
+    double term0001 = work[1];
+    double term0002 = work[2];
+    R000 = term0000;
+    R100 = x * term0001;
+    double term1001 = x * term0002;
+    R200 = fma(x, term1001, term0001);
+    R010 = y * term0001;
+    double term0101 = y * term0002;
+    R020 = fma(y, term0101, term0001);
+    R110 = y * term1001;
+    R001 = z * term0001;
+    double term0011 = z * term0002;
+    R002 = fma(z, term0011, term0001);
+    R011 = z * term0101;
+    R101 = z * term1001;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  protected void order3() {
+    source(work);
+    double term0000 = work[0];
+    double term0001 = work[1];
+    double term0002 = work[2];
+    double term0003 = work[3];
+    R000 = term0000;
+    R100 = x * term0001;
+    double term1001 = x * term0002;
+    R200 = fma(x, term1001, term0001);
+    double term1002 = x * term0003;
+    double term2001 = fma(x, term1002, term0002);
+    R300 = fma(x, term2001, 2 * term1001);
+    R010 = y * term0001;
+    double term0101 = y * term0002;
+    R020 = fma(y, term0101, term0001);
+    double term0102 = y * term0003;
+    double term0201 = fma(y, term0102, term0002);
+    R030 = fma(y, term0201, 2 * term0101);
+    R110 = y * term1001;
+    double term1101 = y * term1002;
+    R120 = fma(y, term1101, term1001);
+    R210 = y * term2001;
+    R001 = z * term0001;
+    double term0011 = z * term0002;
+    R002 = fma(z, term0011, term0001);
+    double term0012 = z * term0003;
+    double term0021 = fma(z, term0012, term0002);
+    R003 = fma(z, term0021, 2 * term0011);
+    R011 = z * term0101;
+    double term0111 = z * term0102;
+    R012 = fma(z, term0111, term0101);
+    R021 = z * term0201;
+    R101 = z * term1001;
+    double term1011 = z * term1002;
+    R102 = fma(z, term1011, term1001);
+    R111 = z * term1101;
+    R201 = z * term2001;
+  }
+
+  /**
+   * {@inheritDoc}
    */
   @Override
   protected void order4() {
@@ -195,10 +259,6 @@ public class CoulombTensorGlobal extends MultipoleTensor {
 
   /**
    * {@inheritDoc}
-   *
-   * <p>Machine generated computation of all Cartesian multipole tensors up to 5th order, in the
-   * global
-   * frame, which is sufficient for quadrupole-quadrupole forces.
    */
   @Override
   protected void order5() {
@@ -334,10 +394,6 @@ public class CoulombTensorGlobal extends MultipoleTensor {
 
   /**
    * {@inheritDoc}
-   *
-   * <p>Machine generated computation of all Cartesian multipole tensors up to 5th order, in the
-   * global
-   * frame, which is sufficient for quadrupole-quadrupole forces and orthogonal space sampling.
    */
   @Override
   protected void order6() {
@@ -1355,22 +1411,27 @@ public class CoulombTensorGlobal extends MultipoleTensor {
       if (l > 1) {
         return r[0] * Tlmnj(l - 1, 0, 0, j + 1, r, T000)
             + (l - 1) * Tlmnj(l - 2, 0, 0, j + 1, r, T000);
-      } else if (l == 1) { // l == 1, d/dx is done.
+      } else if (l == 1) { // l == 1; d/dx is done.
         return r[0] * Tlmnj(0, 0, 0, j + 1, r, T000);
-      } else { // l = m = n = 0. Recursion is done.
+      } else {
+        // l = m = n = 0; Recursion is done.
         return T000[j];
       }
-    } else if (n == 0) { // m >= 1
+    } else if (n == 0) {
+      // m >= 1
       if (m > 1) {
         return r[1] * Tlmnj(l, m - 1, 0, j + 1, r, T000)
             + (m - 1) * Tlmnj(l, m - 2, 0, j + 1, r, T000);
       }
+      // m == 1; d/dy is done.
       return r[1] * Tlmnj(l, 0, 0, j + 1, r, T000);
-    } else { // n >= 1
+    } else {
+      // n >= 1
       if (n > 1) {
         return r[2] * Tlmnj(l, m, n - 1, j + 1, r, T000)
             + (n - 1) * Tlmnj(l, m, n - 2, j + 1, r, T000);
       }
+      // n == 1; d/dz is done.
       return r[2] * Tlmnj(l, m, 0, j + 1, r, T000);
     }
   }
@@ -1441,7 +1502,7 @@ public class CoulombTensorGlobal extends MultipoleTensor {
         work[iw] = current;
       }
       // Store the Tl00 tensor (d/dx)^l
-      // Tl00 = x * [[ T(l-1)001 ]] + (l - 1) * T(l-2)001
+      // Tl00 = x * T(l-1)001 + (l - 1) * T(l-2)001
       tensor[ti(l, 0, 0)] = x * current + (l - 1) * previous;
       previous = current;
     }
@@ -1525,7 +1586,6 @@ public class CoulombTensorGlobal extends MultipoleTensor {
    * <br>
    *
    * <p>
-   *
    * @since 1.0
    */
   @Override

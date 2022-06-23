@@ -38,6 +38,7 @@
 package ffx.numerics;
 
 import ffx.numerics.math.SquareRootTest;
+import ffx.numerics.multipole.GKTensorTest;
 import ffx.numerics.multipole.GlobalMultipoleTensorTest;
 import ffx.numerics.multipole.MultipoleTensorTest;
 import ffx.numerics.multipole.QIMultipoleTensorTest;
@@ -55,6 +56,7 @@ import org.junit.runners.Suite.SuiteClasses;
     MultipoleTensorTest.class,
     GlobalMultipoleTensorTest.class,
     QIMultipoleTensorTest.class,
+    GKTensorTest.class,
     UniformBSplineTest.class
 })
 public class NumericsTestSuite {
