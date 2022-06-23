@@ -199,7 +199,7 @@ class PhDynamics extends AlgorithmsScript {
 
       logger.info("\n Running replica exchange molecular dynamics on " + filename)
       int rank = (size > 1) ? world.rank() : 0
-      logger.info("Rank: " + rank.toString())
+      logger.info(" Rank: " + rank.toString())
 
       File structureFile = new File(filename)
       File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank))
@@ -208,7 +208,7 @@ class PhDynamics extends AlgorithmsScript {
       }
 
       final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
-      logger.info("Set activeAssembly filename: " + newMolAssemblyFile)
+      logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
       activeAssembly.setFile(new File(newMolAssemblyFile))
       PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, pHGap, dynamicsOptions.temperature, esvSystem)
 

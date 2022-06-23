@@ -250,9 +250,10 @@ public class PhReplicaExchange implements Terminatable {
     acidostatAatB = parameters[rankA][3]; // acidostat of rankA evaluated at the pH of rankB
     acidostatBatA = parameters[rankB][1];
 
-    logger.info("\n\n");
+    logger.info(" ");
+    logger.info(" ");
     logger.info("\t\t ----------------------New Comparison----------------------");
-    logger.info("\t From rank " + rank + ": Comparing ranks " + rankA + " (pH = " + pHA + ") & " + rankB + " (pH = " + pHB + ")");
+    logger.info(" From rank " + rank + ": Comparing ranks " + rankA + " (pH = " + pHA + ") & " + rankB + " (pH = " + pHB + ")");
 
     // Compute the change in energy over kT (E/kT) for the Metropolis criteria.
     logger.info(" pHA = " + pHA);
@@ -263,8 +264,9 @@ public class PhReplicaExchange implements Terminatable {
     logger.info(" AcidostatB: " + acidostatB);
     logger.info(" AcidostatBatA: " + acidostatBatA);
 
-    logger.info(" exp(" + beta + " * ((" + acidostatAatB + " + " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + ")))");
     double deltaE = beta * ((acidostatAatB + acidostatBatA) - (acidostatA + acidostatB));
+    logger.info(" exp(" + beta + " * ((" + acidostatAatB + " + " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + ")))");
+    logger.info("\t DeltaE: " + deltaE);
 
     //Count the number of trials for each temp
     pHTrialCount[pH]++;
@@ -305,7 +307,7 @@ public class PhReplicaExchange implements Terminatable {
     for (int i = 0; i < pHScale.length - 1; i++) {
       double pHAcceptance = pHAcceptedCount[i] * 100.0 / (pHTrialCount[i]);
 
-      logger.info(" Acceptance for pH " + pHScale[i] + " to be exchanged with pH" + pHScale[i+1] + ": " + pHAcceptance);
+      logger.info(" Acceptance for pH " + pHScale[i] + " to be exchanged with pH " + pHScale[i+1] + ": " + pHAcceptance);
       }
   }
 
