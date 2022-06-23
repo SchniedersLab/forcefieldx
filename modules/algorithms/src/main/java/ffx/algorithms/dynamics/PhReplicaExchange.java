@@ -84,7 +84,6 @@ public class PhReplicaExchange implements Terminatable {
   private boolean terminate = false;
   private final double[] myParameters;
   private final DoubleBuf myParametersBuf;
-
   private final int[] pH2Rank;
   private final int[] rank2Ph;
   private double[] pHScale;
@@ -92,10 +91,10 @@ public class PhReplicaExchange implements Terminatable {
   private final int[] rankAcceptedCount;
   private final int[] pHTrialCount;
   private final double temp;
-
   private final ExtendedSystem extendedSystem;
   private final double pH;
   private double gapSize;
+  private int centerIndex;
 
   /**
    * ReplicaExchange constructor.
@@ -128,7 +127,15 @@ public class PhReplicaExchange implements Terminatable {
     rankAcceptedCount = new int [nReplicas];
     pHTrialCount = new int[nReplicas];
 
-    setEvenSpacePhLadder(5, 12);
+    setEvenSpacePhLadder(pH - 4, pH + 4);
+
+    double distance = 100;
+    for (int i = 0; i < pHScale.length; i++){
+      if(FastMath.abs(pHScale[i] - pH) < distance){
+        distance = pHScale[i] - pH;
+        centerIndex = i;
+      }
+    }
 
     random = new Random();
     random.setSeed(0);
@@ -230,77 +237,106 @@ public class PhReplicaExchange implements Terminatable {
     }
   }
 
+  private void compareTwo(int pH, boolean countingDown){
+    // Ranks for pH A and B
+    int rankA;
+    int rankB;
+
+    // Load pH, beta and energy for each rank.
+    double pHA;
+    double pHB;
+    double beta;
+    double acidostatA;
+    double acidostatB;
+    double acidostatAatB;
+    double acidostatBatA;
+
+    if(!countingDown) {
+      rankA = pH2Rank[pH];
+      rankB = pH2Rank[pH + 1];
+
+      pHA = parameters[rankA][0];
+      pHB = parameters[rankB][0];
+      beta = KCAL_TO_GRAM_ANG2_PER_PS2 / (temp * kB);
+      acidostatA = parameters[rankA][2];
+      acidostatB = parameters[rankB][2];
+      acidostatAatB = parameters[rankA][3]; // acidostat of rankA evaluated at the pH of rankB
+      acidostatBatA = parameters[rankB][1];
+    }
+    else {
+      rankA = pH2Rank[pH];
+      rankB = pH2Rank[pH - 1];
+      pHA = parameters[rankA][0];
+      pHB = parameters[rankB][0];
+      beta = KCAL_TO_GRAM_ANG2_PER_PS2 / (temp * kB);
+      acidostatA = parameters[rankA][2];
+      acidostatB = parameters[rankB][2];
+      acidostatAatB = parameters[rankA][1]; // acidostat of rankA evaluated at the pH of rankB
+      acidostatBatA = parameters[rankB][3];
+    }
+
+    // Compute the change in energy over kT (E/kT) for the Metropolis criteria.
+    logger.info("pHA = " + pHA + "" + acidostatA + "" + acidostatAatB);
+    logger.info("pHB = " + pHB + "" + acidostatB + "" + acidostatBatA);
+    logger.info("exp(" + beta + " * ((" + acidostatAatB + " - " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + ")))");
+    double deltaE = beta * ((acidostatAatB - acidostatBatA) - (acidostatA + acidostatB));
+
+    //Count the number of trials for each temp
+    pHTrialCount[pH]++;
+
+    // If the Metropolis criteria is satisfied, do the switch.
+    if (deltaE < 0.0 || random.nextDouble() < exp(-deltaE)) {
+      pHAcceptedCount[pH]++;
+      double pHAcceptance = pHAcceptedCount[pH] * 100.0 / (pHTrialCount[pH]);
+
+      double rankAcceptance;
+      if (pHA < pHB){
+        rankAcceptedCount[rankA]++;
+        rankAcceptance = rankAcceptedCount[rankA] * 100.0 / (pHTrialCount[pH]);
+      } else {
+        rankAcceptedCount[rankB]++;
+        rankAcceptance = rankAcceptedCount[rankB] * 100.0 / (pHTrialCount[pH + 1]);
+      }
+
+      // Swap pH and energy values.
+      parameters[rankA][0] = pHB;
+      parameters[rankB][0] = pHA;
+
+      // Map temperatures to process ranks.
+      pH2Rank[pH] = rankB;
+      pH2Rank[pH + 1] = rankA;
+
+      // Map ranks to temperatures.
+      rank2Ph[rankA] = pH + 1;
+      rank2Ph[rankB] = pH;
+
+      logger.info(
+              String.format(
+                      " RepEx accepted. pH Accept: (%5.1f%%) Rank Accept: (%5.1f%%) for %6.2f (%d) and %6.2f (%d) for dE=%10.4f.",
+                      pHAcceptance, rankAcceptance, pHA, rankA, pHB, rankB, deltaE));
+
+    } else {
+      double tempAcceptance = pHAcceptedCount[pH] * 100.0 / (pHTrialCount[pH]);
+      double rankAcceptance = rankAcceptedCount[pH] * 100.0 / (pHTrialCount[pH]);
+      logger.info(
+              String.format(
+                      " RepEx rejected (%5.1f%%) (f%5.1f%%) for %6.2f (%d) and %6.2f (%d) for dE=%10.4f.",
+                      tempAcceptance, rankAcceptance, pHA, rankA, pHB, rankB, deltaE));
+    }
+
+  }
+
   /** All processes complete the exchanges identically given the same Random number seed. */
   private void exchange() {
     // 2 M.C. trials per pH (except for those at the ends of the ladder).
 
-    // Loop over pH scale
-    for (int pH = 0; pH < nReplicas - 1; pH++) {
+    // Loop over top and bottom parts of pH scale
+    for (int pH = centerIndex; pH < nReplicas - 1; pH++) {
+      compareTwo(pH, false);
+    }
 
-      // Ranks for pH A and B
-      int rankA = pH2Rank[pH];
-      int rankB = pH2Rank[pH + 1];
-
-      // Load pH, beta and energy for each rank.
-      double pHA = parameters[rankA][0];
-      double pHB = parameters[rankB][0];
-      double beta = KCAL_TO_GRAM_ANG2_PER_PS2 / (temp * kB);
-      double acidostatA = parameters[rankA][2];
-      double acidostatB = parameters[rankB][2];
-      double acidostatAatB = parameters[rankA][3]; // acidostat of rankA evaluated at the pH of rankB
-      double acidostatBatA = parameters[rankB][1];
-
-      // Compute the change in energy over kT (E/kT) for the Metropolis criteria.
-      logger.info("pHA = " + pHA + "" + acidostatA + "" + acidostatAatB);
-      logger.info("pHB = " + pHB + "" + acidostatB + "" + acidostatBatA);
-      logger.info("exp(" + beta + " * ((" + acidostatAatB + " - " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + ")))");
-      double deltaE = beta * ((acidostatAatB - acidostatBatA) - (acidostatA + acidostatB));
-
-      //Count the number of trials for each temp
-      pHTrialCount[pH]++;
-
-      // If the Metropolis criteria is satisfied, do the switch.
-      if (deltaE < 0.0 || random.nextDouble() < exp(-deltaE)) {
-        pHAcceptedCount[pH]++;
-        double pHAcceptance = pHAcceptedCount[pH] * 100.0 / (pHTrialCount[pH]);
-
-        double rankAcceptance;
-        if (pHA < pHB){
-          rankAcceptedCount[rankA]++;
-          rankAcceptance = rankAcceptedCount[rankA] * 100.0 / (pHTrialCount[pH]);
-        } else {
-          rankAcceptedCount[rankB]++;
-          rankAcceptance = rankAcceptedCount[rankB] * 100.0 / (pHTrialCount[pH + 1]);
-        }
-
-        // Swap pH and energy values.
-        parameters[rankA][0] = pHB;
-        parameters[rankB][0] = pHA;
-
-        // Map temperatures to process ranks.
-        pH2Rank[pH] = rankB;
-        pH2Rank[pH + 1] = rankA;
-
-        // Map ranks to temperatures.
-        rank2Ph[rankA] = pH + 1;
-        rank2Ph[rankB] = pH;
-
-        logger.info(
-            String.format(
-                " RepEx accepted. pH Accept: (%5.1f%%) Rank Accept: (%5.1f%%) for %6.2f (%d) and %6.2f (%d) for dE=%10.4f.",
-                pHAcceptance, rankAcceptance, pHA, rankA, pHB, rankB, deltaE));
-
-        pH++;
-      } else {
-        double tempAcceptance = pHAcceptedCount[pH] * 100.0 / (pHTrialCount[pH]);
-        double rankAcceptance = rankAcceptedCount[pH] * 100.0 / (pHTrialCount[pH]);
-        logger.info(
-            String.format(
-                " RepEx rejected (%5.1f%%) (f%5.1f%%) for %6.2f (%d) and %6.2f (%d) for dE=%10.4f.",
-                tempAcceptance, rankAcceptance, pHA, rankA, pHB, rankB, deltaE));
-      }
-
-
+    for (int pH = centerIndex - 1; pH > 0; pH--){
+      compareTwo(pH, true);
     }
   }
 

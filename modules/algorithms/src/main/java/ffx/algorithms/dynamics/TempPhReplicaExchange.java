@@ -148,7 +148,7 @@ public class TempPhReplicaExchange implements Terminatable {
     setExponentialTemperatureLadder(273, exponent);
 
     // Create arrays to store the parameters of all processes.
-    parameters = new double[nReplicas][3]; // parameters[rank][index] | index = 0-pH 1-temp 2-energy
+    parameters = new double[nReplicas][3]; // parameters[rank][index] | index = 0-pH 1-(n-1)@n 2-n@n 3-n@(n+1) 4-temp 5-energy
     parametersBuf = new DoubleBuf[nReplicas];
     for (int i = 0; i < nReplicas; i++) {
       parametersBuf[i] = DoubleBuf.buffer(parameters[i]);
