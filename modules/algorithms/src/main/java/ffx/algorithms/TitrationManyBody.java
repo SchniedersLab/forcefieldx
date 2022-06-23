@@ -96,7 +96,8 @@ public class TitrationManyBody {
         if (resName.equalsIgnoreCase("ASH") ||
             resName.equalsIgnoreCase("GLH") ||
             resName.equalsIgnoreCase("LYS") ||
-            resName.equalsIgnoreCase("HIS")) {
+            resName.equalsIgnoreCase("HIS") ||
+            resName.equalsIgnoreCase("CYS")) {
           residue.setTitrationUtils(titrationUtils);
         }
       }
@@ -109,6 +110,45 @@ public class TitrationManyBody {
     }
     potentialEnergy.energy();
     return protonatedAssembly;
+  }
+
+  public MolecularAssembly[] getProtonatedAssemblies(MolecularAssembly[] molecularAssemblies) {
+    molecularAssemblies[0].setForceField(forceField);
+    File structureFile = new File(filename);
+    for (MolecularAssembly molecularAssembly : molecularAssemblies) {
+      protonFilter = new PDBFilter(structureFile, molecularAssembly, forceField,
+              forceField.getProperties(), resNumberList);
+      protonFilter.setRotamerTitration(true);
+      protonFilter.readFile();
+      protonFilter.applyAtomProperties();
+      molecularAssembly.finalize(true, forceField);
+      potentialEnergy = ForceFieldEnergy.energyFactory(molecularAssembly);
+      molecularAssembly.setFile(structureFile);
+
+      TitrationUtils titrationUtils;
+      titrationUtils = new TitrationUtils(molecularAssembly.getForceField());
+      titrationUtils.setRotamerPhBias(298.15, pH);
+      for (Residue residue : molecularAssembly.getResidueList()) {
+        String resName = residue.getName();
+        if (resNumberList.contains(residue.getResidueNumber())) {
+          if (resName.equalsIgnoreCase("ASH") ||
+                  resName.equalsIgnoreCase("GLH") ||
+                  resName.equalsIgnoreCase("LYS") ||
+                  resName.equalsIgnoreCase("HIS") ||
+                  resName.equalsIgnoreCase("CYS")) {
+            residue.setTitrationUtils(titrationUtils);
+          }
+        }
+      }
+    }
+
+    if (potentialEnergy instanceof ForceFieldEnergyOpenMM) {
+      boolean updateBondedTerms = forceField.getBoolean("TITRATION_UPDATE_BONDED_TERMS", true);
+      ForceFieldEnergyOpenMM forceFieldEnergyOpenMM = (ForceFieldEnergyOpenMM) potentialEnergy;
+      forceFieldEnergyOpenMM.getSystem().setUpdateBondedTerms(updateBondedTerms);
+    }
+    potentialEnergy.energy();
+    return molecularAssemblies;
   }
 
   public boolean excludeExcessAtoms(Set<Atom> excludeAtoms, int[] optimalRotamers,
@@ -147,6 +187,11 @@ public class TitrationManyBody {
             // No HZ3
             Atom HZ3 = residue.getAtomByName("HZ3", true);
             excludeAtoms.add(HZ3);
+            break;
+          case CYD:
+            // No HG
+            Atom HG = residue.getAtomByName("HG", true);
+            excludeAtoms.add(HG);
             break;
           default:
             // Do nothing.

@@ -41,6 +41,7 @@ package ffx.xray.groovy
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
+import ffx.potential.bonded.Residue
 import ffx.xray.DiffractionData
 import ffx.xray.cli.XrayOptions
 import org.apache.commons.configuration2.CompositeConfiguration
@@ -98,7 +99,7 @@ class SaveConformerPDB extends AlgorithmsScript {
             filename = activeAssembly.getFile().getAbsolutePath()
         }
 
-        if(molecularAssemblies.length == 1){
+        if (molecularAssemblies.length == 1) {
             logger.info("No alternate conformers")
             return this
         }
@@ -114,18 +115,25 @@ class SaveConformerPDB extends AlgorithmsScript {
         algorithmFunctions.energy(molecularAssemblies)
 
 
-        List<Atom> atomsA = molecularAssemblies[0].getAtomList()
-        List<Atom> atomsB = molecularAssemblies[1].getAtomList()
-        for (int i = 0; i < atomsA.size(); i++) {
-            Atom atomA = atomsA.get(i)
-            Atom atomB = atomsB.get(i)
-            if (atomA.getAltLoc() == null || atomA.getAltLoc() == ' ') {
-                atomA.setAltLoc('A' as Character)
-            }
-            if (atomB.getAltLoc() == null || atomB.getAltLoc() == ' ') {
-                atomB.setAltLoc('B' as Character)
+        List<Residue> residuesA = molecularAssemblies[0].getResidueList()
+        List<Residue> residuesB = molecularAssemblies[1].getResidueList()
+
+        for (int j = 0; j < residuesA.size(); j++) {
+            List<Atom> atomsA = residuesA.get(j).getAtomList()
+            List<Atom> atomsB = residuesB.get(j).getAtomList()
+            for (int i = 0; i < atomsA.size(); i++) {
+                Atom atomA = atomsA.get(i)
+                Atom atomB = atomsB.get(i)
+
+                if (atomA.getAltLoc() == null || atomA.getAltLoc() == ' ') {
+                    atomA.setAltLoc('A' as Character)
+                }
+                if (atomB.getAltLoc() == null || atomB.getAltLoc() == ' ') {
+                    atomB.setAltLoc('B' as Character)
+                }
             }
         }
+
 
         logger.info(" ")
         diffractionData.writeModel(removeExtension(filename) + ".pdb")

@@ -3469,10 +3469,21 @@ public class RotamerLibrary {
         break;
       case CYS:
       case CYD:
-        aminoAcidRotamerCache[n] = new Rotamer[3];
-        aminoAcidRotamerCache[n][0] = new Rotamer(name, -65.2, 10.1);
-        aminoAcidRotamerCache[n][1] = new Rotamer(name, -179.6, 9.5);
-        aminoAcidRotamerCache[n][2] = new Rotamer(name, 63.5, 9.6);
+        if(titrationUtils == null){
+          aminoAcidRotamerCache[n] = new Rotamer[3];
+          aminoAcidRotamerCache[n][0] = new Rotamer(name, -65.2, 10.1);
+          aminoAcidRotamerCache[n][1] = new Rotamer(name, -179.6, 9.5);
+          aminoAcidRotamerCache[n][2] = new Rotamer(name, 63.5, 9.6);
+        } else {
+          aminoAcidRotamerCache[n] = new Rotamer[6];
+          aminoAcidRotamerCache[n][0] = new Rotamer(AminoAcid3.CYS, titrationUtils, -65.2, 10.1);
+          aminoAcidRotamerCache[n][1] = new Rotamer(AminoAcid3.CYS, titrationUtils, -179.6, 9.5);
+          aminoAcidRotamerCache[n][2] = new Rotamer(AminoAcid3.CYS, titrationUtils, 63.5, 9.6);
+          aminoAcidRotamerCache[n][3] = new Rotamer(AminoAcid3.CYD, titrationUtils, -65.2, 10.1);
+          aminoAcidRotamerCache[n][4] = new Rotamer(AminoAcid3.CYD, titrationUtils, -179.6, 9.5);
+          aminoAcidRotamerCache[n][5] = new Rotamer(AminoAcid3.CYD, titrationUtils, 63.5, 9.6);
+        }
+
         break;
       /*
        * TODO: Figure out proline rotamers.  I have dihedrals from
@@ -3992,10 +4003,21 @@ public class RotamerLibrary {
         break;
       case CYS:
       case CYD:
-        aminoAcidRotamerCache[n] = new Rotamer[3];
-        aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0);
-        aminoAcidRotamerCache[n][1] = new Rotamer(name, -177, 0);
-        aminoAcidRotamerCache[n][2] = new Rotamer(name, -65, 0);
+        if(titrationUtils == null){
+          aminoAcidRotamerCache[n] = new Rotamer[3];
+          aminoAcidRotamerCache[n][0] = new Rotamer(name, 62, 0);
+          aminoAcidRotamerCache[n][1] = new Rotamer(name, -177, 0);
+          aminoAcidRotamerCache[n][2] = new Rotamer(name, -65, 0);
+        } else {
+          aminoAcidRotamerCache[n] = new Rotamer[6];
+          aminoAcidRotamerCache[n][0] = new Rotamer(AminoAcid3.CYS, titrationUtils,62, 0);
+          aminoAcidRotamerCache[n][1] = new Rotamer(AminoAcid3.CYS, titrationUtils,-177, 0);
+          aminoAcidRotamerCache[n][2] = new Rotamer(AminoAcid3.CYS, titrationUtils, -65, 0);
+          aminoAcidRotamerCache[n][3] = new Rotamer(AminoAcid3.CYD, titrationUtils,62, 0);
+          aminoAcidRotamerCache[n][4] = new Rotamer(AminoAcid3.CYD, titrationUtils,-177, 0);
+          aminoAcidRotamerCache[n][5] = new Rotamer(AminoAcid3.CYD, titrationUtils, -65, 0);
+        }
+
         break;
       case PHE:
       case TYD:

@@ -43,6 +43,7 @@ import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization
 import ffx.numerics.Potential
+import ffx.numerics.math.Double3
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
@@ -60,6 +61,8 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
+import static org.apache.commons.io.FilenameUtils.removeExtension
+import static org.apache.commons.io.FilenameUtils.removeExtension
 
 /**
  * The ManyBody script performs a discrete optimization using a many-body expansion and elimination expressions.
@@ -71,182 +74,245 @@ import static java.lang.String.format
 @Command(description = " Discrete optimization using a many-body expansion and elimination expressions.", name = "ffxc xray.ManyBody")
 class ManyBody extends AlgorithmsScript {
 
-  @Mixin
-  XrayOptions xrayOptions
+    @Mixin
+    XrayOptions xrayOptions
 
-  @Mixin
-  ManyBodyOptions manyBodyOptions
+    @Mixin
+    ManyBodyOptions manyBodyOptions
 
-  /**
-   * One or more filenames.
-   */
-  @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
-  private List<String> filenames
-  private RefinementEnergy refinementEnergy
+    /**
+     * One or more filenames.
+     */
+    @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
+    private List<String> filenames
+    private RefinementEnergy refinementEnergy
 
-  ForceFieldEnergy potentialEnergy
-  private MolecularAssembly[] molecularAssemblies
-  TitrationManyBody titrationManyBody
-  /**
-   * ManyBody constructor.
-   */
-  ManyBody() {
-    this(new Binding())
-  }
-
-  /**
-   * ManyBody constructor.
-   * @param binding The Groovy Binding to use.
-   */
-  ManyBody(Binding binding) {
-    super(binding)
-  }
-
-  @Override
-  ManyBody run() {
-
-    if (!init()) {
-      return this
+    ForceFieldEnergy potentialEnergy
+    private MolecularAssembly[] molecularAssemblies
+    TitrationManyBody titrationManyBody
+    /**
+     * ManyBody constructor.
+     */
+    ManyBody() {
+        this(new Binding())
     }
 
-    xrayOptions.init()
-
-    // This flag is for ForceFieldEnergyOpenMM and must be set before reading files.
-    // It enforces that all torsions include a Fourier series with 6 terms.
-    // Otherwise, during titration the number of terms for each torsion may change and
-    // causing updateParametersInContext to throw an exception.
-    // Note that OpenMM is not usually used for crystals (it doesn't handle space groups).
-    double titrationPH = manyBodyOptions.getTitrationPH()
-    if (titrationPH > 0) {
-      System.setProperty("manybody-titration", "true")
+    /**
+     * ManyBody constructor.
+     * @param binding The Groovy Binding to use.
+     */
+    ManyBody(Binding binding) {
+        super(binding)
     }
 
-    // Xray ManyBody expansion converges more quickly with the NEA set.
-    String nea = System.getProperty("native-environment-approximation", "true")
-    System.setProperty("native-environment-approximation", nea)
+    @Override
+    ManyBody run() {
 
-    String modelFilename
-    if (filenames != null && filenames.size() > 0) {
-      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
-      activeAssembly = molecularAssemblies[0]
-      modelFilename = filenames.get(0)
-    } else if (activeAssembly == null) {
-      logger.info(helpString())
-      return this
-    } else {
-      molecularAssemblies = [activeAssembly]
-      modelFilename = activeAssembly.getFile().getAbsolutePath()
-    }
-
-    //MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
-
-    CompositeConfiguration properties = activeAssembly.getProperties()
-    activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
-    potentialEnergy = activeAssembly.getPotentialEnergy()
-
-    // The refinement mode must be coordinates.
-    if (xrayOptions.refinementMode != RefinementMode.COORDINATES) {
-      logger.info(" Refinement mode set to COORDINATES.")
-      xrayOptions.refinementMode = RefinementMode.COORDINATES
-    }
-
-    // Collect residues to optimize.
-    List<Residue> residues = manyBodyOptions.collectResidues(activeAssembly)
-    if (residues == null || residues.isEmpty()) {
-      logger.info(" There are no residues in the active system to optimize.")
-      return this
-    }
-
-    // Handle rotamer optimization with titration.
-    if (titrationPH > 0) {
-      logger.info("\n Adding titration hydrogen to : " + filenames.get(0) + "\n")
-      List<Integer> resNumberList = new ArrayList<>()
-      for (Residue residue : residues) {
-        resNumberList.add(residue.getResidueNumber())
-      }
-      // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
-      titrationManyBody = new TitrationManyBody(filenames.get(0), activeAssembly.getForceField(),
-              resNumberList, titrationPH)
-      MolecularAssembly[] protonatedAssemblies = titrationManyBody.getProtonatedAssemblies()
-      setActiveAssembly(protonatedAssemblies[0])
-      potentialEnergy = protonatedAssemblies[0].getPotentialEnergy()
-      molecularAssemblies = protonatedAssemblies
-    }
-
-    // Load parsed X-ray properties.
-    xrayOptions.setProperties(parseResult, properties)
-
-    // Set up diffraction data (can be multiple files)
-    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, parseResult)
-    refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
-    refinementEnergy.setScaling(null)
-
-    RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly, refinementEnergy, algorithmListener)
-    manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
-
-    double[] x = new double[refinementEnergy.getNumberOfVariables()]
-    x = refinementEnergy.getCoordinates(x)
-    double e = refinementEnergy.energy(x, true)
-    logger.info(format(" Starting energy: %16.8f ", e))
-
-    List<Residue> residueList = rotamerOptimization.getResidues()
-    RotamerLibrary.measureRotamers(residueList, false)
-
-    rotamerOptimization.optimize(manyBodyOptions.getAlgorithm(residueList.size()))
-
-    int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
-    boolean isTitrating = false
-    Set<Atom> excludeAtoms = new HashSet<>()
-
-    if (titrationPH > 0) {
-      isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
-    }
-
-    if (Comm.world().rank() == 0) {
-      logger.info(" Final Minimum Energy")
-      // Get final parameters and compute the target function.
-      x = refinementEnergy.getCoordinates(x)
-      e = refinementEnergy.energy(x, true)
-
-      if (isTitrating) {
-        double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList,
-            optimalRotamers)
-        logger.info(format("\n  Rotamer pH Bias      %16.8f", phBias))
-        logger.info(format("  Xray Target with Bias%16.8f\n", phBias + e))
-      } else {
-        logger.info(format("\n  Xray Target          %16.8f\n",e))
-      }
-
-      String ext = FilenameUtils.getExtension(modelFilename)
-      modelFilename = FilenameUtils.removeExtension(modelFilename)
-      if (ext.toUpperCase().contains("XYZ")) {
-        algorithmFunctions.saveAsXYZ(activeAssembly, new File(modelFilename + ".xyz"))
-      } else {
-        properties.setProperty("standardizeAtomNames", "false")
-        File modelFile = saveDirFile(activeAssembly.getFile())
-        PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly,
-            activeAssembly.getForceField(), properties)
-        if (titrationPH > 0) {
-          String remark = format("Titration pH: %6.3f", titrationPH)
-          if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true, remark)) {
-            logger.info(format(" Save failed for %s", activeAssembly))
-          }
-        } else {
-          if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
-            logger.info(format(" Save failed for %s", activeAssembly))
-          }
+        if (!init()) {
+            return this
         }
-      }
+
+        xrayOptions.init()
+
+        // This flag is for ForceFieldEnergyOpenMM and must be set before reading files.
+        // It enforces that all torsions include a Fourier series with 6 terms.
+        // Otherwise, during titration the number of terms for each torsion may change and
+        // causing updateParametersInContext to throw an exception.
+        // Note that OpenMM is not usually used for crystals (it doesn't handle space groups).
+        double titrationPH = manyBodyOptions.getTitrationPH()
+        if (titrationPH > 0) {
+            System.setProperty("manybody-titration", "true")
+        }
+
+        // Xray ManyBody expansion converges more quickly with the NEA set.
+        String nea = System.getProperty("native-environment-approximation", "true")
+        System.setProperty("native-environment-approximation", nea)
+
+        String modelFilename
+        if (filenames != null && filenames.size() > 0) {
+            molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
+            activeAssembly = molecularAssemblies[0]
+            modelFilename = filenames.get(0)
+        } else if (activeAssembly == null) {
+            logger.info(helpString())
+            return this
+        } else {
+            molecularAssemblies = [activeAssembly]
+            modelFilename = activeAssembly.getFile().getAbsolutePath()
+        }
+
+        //MolecularAssembly[] assemblies = [activeAssembly] as MolecularAssembly[]
+
+        CompositeConfiguration properties = activeAssembly.getProperties()
+        activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
+        potentialEnergy = activeAssembly.getPotentialEnergy()
+
+        // The refinement mode must be coordinates.
+        if (xrayOptions.refinementMode != RefinementMode.COORDINATES) {
+            logger.info(" Refinement mode set to COORDINATES.")
+            xrayOptions.refinementMode = RefinementMode.COORDINATES
+        }
+
+        // Collect residues to optimize.
+        List<Residue> residues = manyBodyOptions.collectResidues(activeAssembly)
+        if (residues == null || residues.isEmpty()) {
+            logger.info(" There are no residues in the active system to optimize.")
+            return this
+        }
+
+        // Handle rotamer optimization with titration.
+        if (titrationPH > 0) {
+            logger.info("\n Adding titration hydrogen to : " + filenames.get(0) + "\n")
+            List<Integer> resNumberList = new ArrayList<>()
+            for (Residue residue : residues) {
+                resNumberList.add(residue.getResidueNumber())
+            }
+            // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
+            titrationManyBody = new TitrationManyBody(filenames.get(0), activeAssembly.getForceField(),
+                    resNumberList, titrationPH)
+            MolecularAssembly[] protonatedAssemblies = titrationManyBody.getProtonatedAssemblies(molecularAssemblies)
+            setActiveAssembly(protonatedAssemblies[0])
+            potentialEnergy = protonatedAssemblies[0].getPotentialEnergy()
+            molecularAssemblies = protonatedAssemblies
+        }
+
+        // Load parsed X-ray properties.
+        xrayOptions.setProperties(parseResult, properties)
+
+        // Set up diffraction data (can be multiple files)
+        DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, parseResult)
+        refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
+        refinementEnergy.setScaling(null)
+
+
+        boolean isTitrating = false
+        Set<Atom> excludeAtoms = new HashSet<>()
+        for (MolecularAssembly currentMolecularAssembly : molecularAssemblies) {
+            setActiveAssembly(currentMolecularAssembly)
+            if(currentMolecularAssembly.getAtomList().get(0).getAltLoc() == 'A' && molecularAssemblies.length > 1){
+                for(int i=0; i<molecularAssemblies[0].getAtomList().size(); i++){
+                    molecularAssemblies[0].getAtomList().get(i).setOccupancy(1.0)
+                    molecularAssemblies[1].getAtomList().get(i).setOccupancy(0.0)
+                }
+                logger.info("Occupancy of 1st Molecular Assembly Atoms: " + molecularAssemblies[0].getAtomList().get(0).getOccupancy())
+                logger.info("Occupancy of 2nd Molecular Assembly Atoms: " + molecularAssemblies[1].getAtomList().get(0).getOccupancy())
+
+            } else if (currentMolecularAssembly.getAtomList().get(0).getAltLoc() == 'B' && molecularAssemblies.length > 1){
+                for(int i=0; i<molecularAssemblies[0].getAtomList().size(); i++){
+                    molecularAssemblies[0].getAtomList().get(i).setOccupancy(0.5)
+                    molecularAssemblies[1].getAtomList().get(i).setOccupancy(0.5)
+                }
+                logger.info("Occupancy of 1st Molecular Assembly Atoms: " + molecularAssemblies[0].getAtomList().get(0).getOccupancy())
+                logger.info("Occupancy of 2nd Molecular Assembly Atoms: " + molecularAssemblies[1].getAtomList().get(0).getOccupancy())
+            }
+
+
+            RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly, refinementEnergy, algorithmListener)
+            manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
+
+            double[] x = new double[refinementEnergy.getNumberOfVariables()]
+            x = refinementEnergy.getCoordinates(x)
+            double e = refinementEnergy.energy(x, true)
+            logger.info(format(" Starting energy: %16.8f ", e))
+
+            List<Residue> residueList = rotamerOptimization.getResidues()
+            RotamerLibrary.measureRotamers(residueList, false)
+
+            rotamerOptimization.optimize(manyBodyOptions.getAlgorithm(residueList.size()))
+
+            int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
+
+
+            if (titrationPH > 0) {
+                isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
+            }
+            logger.info(" Final Minimum Energy")
+            // Get final parameters and compute the target function.
+            x = refinementEnergy.getCoordinates(x)
+            e = refinementEnergy.energy(x, true)
+
+            if (isTitrating) {
+                double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList,
+                        optimalRotamers)
+                logger.info(format("\n  Rotamer pH Bias      %16.8f", phBias))
+                logger.info(format("  Xray Target with Bias%16.8f\n", phBias + e))
+            } else {
+                logger.info(format("\n  Xray Target          %16.8f\n", e))
+            }
+            diffractionData.scaleBulkFit()
+            diffractionData.printStats()
+        }
+
+        if (molecularAssemblies.length > 1) {
+            List<Residue> residueListA = molecularAssemblies[0].getResidueList()
+            List<Residue> residueListB = molecularAssemblies[1].getResidueList()
+            int firstRes = residueListA.get(0).getResidueNumber()
+            for (Residue residue : residueListA) {
+                int resNum = residue.getResidueNumber()
+                List<Atom> atomList = residue.getAtomList()
+                for (int i = 0; i < residue.getAtomList().size(); i++) {
+                    Atom atom = atomList.get(i)
+                    double coorAX = atom.getX()
+                    double coorAY = atom.getY()
+                    double coorAZ = atom.getZ()
+                    Residue residueB = residueListB.get(resNum - firstRes)
+                    List<Atom> atomListB = residueB.getAtomList()
+                    Atom atomB = atomListB.get(i)
+                    double coorBX = atomB.getX()
+                    double coorBY = atomB.getY()
+                    double coorBZ = atomB.getZ()
+                    if (coorAX == coorBX && coorAY == coorBY && coorAZ == coorBZ) {
+                        atom.setAltLoc(' ' as Character)
+                        atomB.setAltLoc(' ' as Character)
+                    }
+                }
+
+            }
+            diffractionData.writeModel(removeExtension(filenames[0]) + ".pdb")
+            diffractionData.writeData(removeExtension(filenames[0]) + ".mtz")
+        } else if (Comm.world().rank() == 0) {
+            String ext = FilenameUtils.getExtension(modelFilename)
+            modelFilename = FilenameUtils.removeExtension(modelFilename)
+            if (ext.toUpperCase().contains("XYZ")) {
+                algorithmFunctions.saveAsXYZ(activeAssembly, new File(modelFilename + ".xyz"))
+            } else {
+                properties.setProperty("standardizeAtomNames", "false")
+                File modelFile = saveDirFile(activeAssembly.getFile())
+                PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly,
+                        activeAssembly.getForceField(), properties)
+                if (titrationPH > 0) {
+                    String remark = format("Titration pH: %6.3f", titrationPH)
+                    if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true, remark)) {
+                        logger.info(format(" Save failed for %s", activeAssembly))
+                    }
+                } else {
+                    if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true)) {
+                        logger.info(format(" Save failed for %s", activeAssembly))
+                    }
+                }
+            }
+        }
+        return this
     }
 
-    return this
-  }
+    /*private MolecularAssembly[] removeRedundantConformer(MolecularAssembly[] molecularAssemblies1){
+        for(Atom atom : molecularAssemblies1[0].getAtomList()){
+            double[] coorA = atom.getXYZ()
+            int i = atom.getIndex()
+            double[] coorB = molecularAssemblies1[1].getAtomList().get(i).getXYZ()
+            if(coorA == coorB){
+                molecularAssemblies1[0].getAtomList().get(i).setAltLoc(' ')
+                molecularAssemblies1[1].getAtomList().get(i).setAltLoc(' ')
+            }
 
-  @Override
-  List<Potential> getPotentials() {
-    return refinementEnergy == null ? Collections.emptyList() :
-        Collections.singletonList((Potential) refinementEnergy)
-  }
+        }
+    }*/
+
+    @Override
+    List<Potential> getPotentials() {
+        return refinementEnergy == null ? Collections.emptyList() :
+                Collections.singletonList((Potential) refinementEnergy)
+    }
 }
 
 
