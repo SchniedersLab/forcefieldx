@@ -224,11 +224,6 @@ class PhDynamics extends AlgorithmsScript {
               sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
 
 
-      //TODO: Output xyz files into proper rank directories
-      String xyzName
-      xyzName = structureFile.getParent() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + ".xyz"
-
-
       String outputName = rankDirectory.getPath() + File.separator + "rankOutput.log"
       File output = new File(outputName)
       try(FileReader r = new FileReader(structureFile.getParent() + File.separator + "repEx.log")
