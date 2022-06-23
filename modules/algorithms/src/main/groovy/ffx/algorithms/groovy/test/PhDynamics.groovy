@@ -232,13 +232,13 @@ class PhDynamics extends AlgorithmsScript {
       File output = new File(outputName)
       try(FileReader r = new FileReader(structureFile.getParent() + File.separator + "repEx.log")
           BufferedReader br = new BufferedReader(r)
-
           FileWriter wr = new FileWriter(output)
           BufferedWriter bwr = new BufferedWriter(wr)) {
+
         bwr.write("")
         String data = br.readLine()
         while(data != null) {
-          if (data.contains("[" + world.rank() + "]")) {
+          if (data.substring(0,5).contains("[" + world.rank() + "]")) {
             wr.write(data + "\n")
           }
           data = br.readLine()
@@ -246,6 +246,7 @@ class PhDynamics extends AlgorithmsScript {
       } catch(IOException e){
         e.printStackTrace()
       }
+
     } else if (!(molecularDynamics instanceof MolecularDynamicsOpenMM)) {
       // CPU Constant pH Dynamics
       molecularDynamics.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
