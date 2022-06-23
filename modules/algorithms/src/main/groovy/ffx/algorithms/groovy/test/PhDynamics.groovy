@@ -226,21 +226,33 @@ class PhDynamics extends AlgorithmsScript {
 
       String outputName = rankDirectory.getPath() + File.separator + "rankOutput.log"
       File output = new File(outputName)
-      try(FileReader r = new FileReader(structureFile.getParent() + File.separator + "repEx.log")
-          BufferedReader br = new BufferedReader(r)
-          FileWriter wr = new FileWriter(output)
-          BufferedWriter bwr = new BufferedWriter(wr)) {
 
-        bwr.write("")
-        String data = br.readLine()
-        while(data != null) {
-          if (data.substring(0,4).contains("[" + world.rank() + "]")) {
-            wr.write(data + "\n")
+      String repExLogName = structureFile.getParent() + File.separator + "repEx.log"
+      File repExLog = new FileReader(repExLogName)
+
+      if(!repExLog.exists()){
+        FileWriter wr = new FileWriter(repExLog)
+        wr.write("")
+        wr.close()
+      }
+
+      if(world.size() > 1) {
+        try (FileReader r = new FileReader(structureFile.getParent() + File.separator + "repEx.log")
+             BufferedReader br = new BufferedReader(r)
+             FileWriter wr = new FileWriter(output)
+             BufferedWriter bwr = new BufferedWriter(wr)) {
+
+          bwr.write("")
+          String data = br.readLine()
+          while (data != null) {
+            if (data.substring(0, 4).contains("[" + world.rank() + "]")) {
+              wr.write(data + "\n")
+            }
+            data = br.readLine()
           }
-          data = br.readLine()
+        } catch (IOException e) {
+          e.printStackTrace()
         }
-      } catch(IOException e){
-        e.printStackTrace()
       }
 
     } else if (!(molecularDynamics instanceof MolecularDynamicsOpenMM)) {
