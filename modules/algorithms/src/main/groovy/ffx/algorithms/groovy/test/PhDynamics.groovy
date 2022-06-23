@@ -220,7 +220,28 @@ class PhDynamics extends AlgorithmsScript {
               sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
 
 
+      //TODO: Output xyz files into proper rank directories
+      String xyzName
+      xyzName = structureFile.getParent() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + ".xyz"
 
+      String outputName = rankDirectory.getPath() + File.separator + "rankOutput.log"
+      File output = new File(outputName)
+      try(FileReader r = new FileReader(structureFile.getParent() + File.separator + "repEx.log")
+          BufferedReader br = new BufferedReader(r)
+
+          FileWriter wr = new FileWriter(output)
+          BufferedWriter bwr = new BufferedWriter(wr)) {
+        bwr.write("")
+        String data = br.readLine()
+        while(data != null) {
+          if (data.contains("[" + world.rank() + "]")) {
+            wr.write(data)
+          }
+          data = br.readLine()
+        }
+      } catch(IOException e){
+        e.printStackTrace()
+      }
     } else if (!(molecularDynamics instanceof MolecularDynamicsOpenMM)) {
       // CPU Constant pH Dynamics
       molecularDynamics.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,

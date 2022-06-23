@@ -178,8 +178,6 @@ public class PhReplicaExchange implements Terminatable {
 
       logger.info(" Setting rank " + rank + " esv to pH " + pHScale[rank2Ph[rank]]);
     }
-
-    logger.info("Replica Exchange Complete");
   }
 
   /**
@@ -195,26 +193,6 @@ public class PhReplicaExchange implements Terminatable {
       pH2Rank[i] = i;
     }
   }
-
-/*
-  public void setScaledPhLadder(double pHThatEqualsPKa){
-
-    if(pHThatEqualsPKa > 2 && pHThatEqualsPKa < 12) {
-      int lower = (int) (nReplicas * (pHThatEqualsPKa / 14.0)) - 1;
-      int higher = (int) ( nReplicas * ((14 - pHThatEqualsPKa) / 14.0));
-
-      for (int i = lower; i > 1; i--) {
-        pHScale[lower - i] = pHThatEqualsPKa - ()
-      }
-
-      pHScale[lower] = pHThatEqualsPKa;
-
-    }
-    else {
-      setEvenSpacePhLadder(pHThatEqualsPKa - 2);
-    }
-  }
- */
 
   /**
    * {@inheritDoc}
@@ -278,7 +256,7 @@ public class PhReplicaExchange implements Terminatable {
     // Compute the change in energy over kT (E/kT) for the Metropolis criteria.
     logger.info("pHA = " + pHA + "" + acidostatA + "" + acidostatAatB);
     logger.info("pHB = " + pHB + "" + acidostatB + "" + acidostatBatA);
-    logger.info("exp(" + beta + " * ((" + acidostatAatB + " - " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + ")))");
+    logger.info("exp(" + beta + " * ((" + acidostatAatB + " + " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + ")))");
     double deltaE = beta * ((acidostatAatB + acidostatBatA) - (acidostatA + acidostatB));
 
     //Count the number of trials for each temp
@@ -323,7 +301,6 @@ public class PhReplicaExchange implements Terminatable {
                       " RepEx rejected (%5.1f%%) (f%5.1f%%) for %6.2f (%d) and %6.2f (%d) for dE=%10.4f.",
                       tempAcceptance, rankAcceptance, pHA, rankA, pHB, rankB, deltaE));
     }
-
   }
 
   /** All processes complete the exchanges identically given the same Random number seed. */
@@ -339,7 +316,7 @@ public class PhReplicaExchange implements Terminatable {
     for (int pH = centerIndex - 1; pH > 0; pH--){
       compareTwo(pH, true);
     }
-    
+
  */
   }
 
