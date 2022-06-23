@@ -1224,7 +1224,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     linesList.add(tempString);
 
     if (esvSystem != null){
-      String pHString = format("pH: $.2f", esvSystem.getConstantPh());
+      String pHString = format("pH: %.2f", esvSystem.getConstantPh());
       linesList.add(pHString);
     }
 
