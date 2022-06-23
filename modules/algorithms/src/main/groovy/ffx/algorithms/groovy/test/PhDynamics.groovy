@@ -97,6 +97,14 @@ class PhDynamics extends AlgorithmsScript {
           description = 'Interval in psec to report ESV energy and lambdas when cycling between GPU and CPU.')
   double titrReport  = 0.001
 
+  @Option(names = ['--pHMin'], paramLabel = '2',
+          description = 'Minimum pH for replica exchange windows.')
+  double pHMin = 2
+
+  @Option(names = ['--pHMax'], paramLabel = '12',
+          description = 'Maximum pH for replica exchange windows.')
+  double pHMax = 12
+
 
 
   /**
@@ -206,7 +214,7 @@ class PhDynamics extends AlgorithmsScript {
       final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
       logger.info("Set activeAssembly filename: " + newMolAssemblyFile)
       activeAssembly.setFile(new File(newMolAssemblyFile))
-      PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, dynamicsOptions.temperature, esvSystem)
+      PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, pHMin, pHMax, dynamicsOptions.temperature, esvSystem)
 
       long totalSteps = dynamicsOptions.numSteps
       int nSteps = repEx.replicaSteps
@@ -235,7 +243,7 @@ class PhDynamics extends AlgorithmsScript {
         String data = br.readLine()
         while(data != null) {
           if (data.contains("[" + world.rank() + "]")) {
-            wr.write(data)
+            wr.write(data + "\n")
           }
           data = br.readLine()
         }

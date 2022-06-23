@@ -104,7 +104,7 @@ public class PhReplicaExchange implements Terminatable {
    * @param extendedSystem extended system attached to this process
    */
   public PhReplicaExchange(
-      MolecularDynamics molecularDynamics, double pH, double temp, ExtendedSystem extendedSystem) {
+      MolecularDynamics molecularDynamics, double pH, double pHMin, double pHMax, double temp, ExtendedSystem extendedSystem) {
 
     this.replica = molecularDynamics;
     this.temp = temp;
@@ -127,7 +127,7 @@ public class PhReplicaExchange implements Terminatable {
     rankAcceptedCount = new int [nReplicas];
     pHTrialCount = new int[nReplicas];
 
-    setEvenSpacePhLadder(pH - 4, pH + 4);
+    setEvenSpacePhLadder(pHMin, pHMax);
 
     double distance = 100;
     for (int i = 0; i < pHScale.length; i++){
