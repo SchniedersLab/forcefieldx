@@ -238,7 +238,7 @@ class PhDynamics extends AlgorithmsScript {
         bwr.write("")
         String data = br.readLine()
         while(data != null) {
-          if (data.substring(0,3).contains("[" + world.rank() + "]")) {
+          if (data.substring(0,4).contains("[" + world.rank() + "]")) {
             wr.write(data + "\n")
           }
           data = br.readLine()
