@@ -259,12 +259,18 @@ public class PhReplicaExchange implements Terminatable {
       acidostatBatA = parameters[rankB][3];
     }
 
+    logger.info("\n\n");
     logger.info("\t\t ----------------------New Comparison----------------------");
     logger.info("\t From rank " + rank + ": Comparing ranks " + rankA + " (pH = " + pHA + ") & " + rankB + " (pH = " + pHB + ")");
 
     // Compute the change in energy over kT (E/kT) for the Metropolis criteria.
-    logger.info("\t pHA = " + pHA + "   AcidostatA: "  + acidostatA + "    AcidostatAatB: " + acidostatAatB);
-    logger.info("\t pHB = " + pHB + "   AcidostatB:" + acidostatB + "     AcidostatBatA: " + acidostatBatA);
+    logger.info("\t pHA = " + pHA);
+    logger.info("\tAcidostatA: "  + acidostatA);
+    logger.info("\tAcidostatAatB: " + acidostatAatB);
+
+    logger.info("\t pHB = " + pHB);
+    logger.info("\tAcidostatB: " + acidostatB);
+    logger.info("\tAcidostatBatA: " + acidostatBatA);
 
     logger.info("\t exp(" + beta + " * ((" + acidostatAatB + " + " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + ")))");
     double deltaE = beta * ((acidostatAatB + acidostatBatA) - (acidostatA + acidostatB));
