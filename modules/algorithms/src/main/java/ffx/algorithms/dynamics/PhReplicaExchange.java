@@ -110,6 +110,7 @@ public class PhReplicaExchange implements Terminatable {
     this.temp = temp;
     this.extendedSystem = extendedSystem;
     this.pH = pH;
+    this.gapSize = pHGap;
 
     // Set up the Replica Exchange communication variables for Parallel Java communication between
     // nodes.
@@ -262,8 +263,9 @@ public class PhReplicaExchange implements Terminatable {
     logger.info("\t From rank " + rank + ": Comparing ranks " + rankA + " (pH = " + pHA + ") & " + rankB + " (pH = " + pHB + ")");
 
     // Compute the change in energy over kT (E/kT) for the Metropolis criteria.
-    logger.info("\t pHA = " + pHA + "" + acidostatA + "" + acidostatAatB);
-    logger.info("\t pHB = " + pHB + "" + acidostatB + "" + acidostatBatA);
+    logger.info("\t pHA = " + pHA + "   AcidostatA: "  + acidostatA + "    AcidostatAatB: " + acidostatAatB);
+    logger.info("\t pHB = " + pHB + "   AcidostatB:" + acidostatB + "     AcidostatBatA: " + acidostatBatA);
+
     logger.info("\t exp(" + beta + " * ((" + acidostatAatB + " + " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + ")))");
     double deltaE = beta * ((acidostatAatB + acidostatBatA) - (acidostatA + acidostatB));
 
