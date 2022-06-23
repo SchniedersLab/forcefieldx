@@ -279,7 +279,7 @@ public class PhReplicaExchange implements Terminatable {
     logger.info("pHA = " + pHA + "" + acidostatA + "" + acidostatAatB);
     logger.info("pHB = " + pHB + "" + acidostatB + "" + acidostatBatA);
     logger.info("exp(" + beta + " * ((" + acidostatAatB + " - " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + ")))");
-    double deltaE = beta * ((acidostatAatB - acidostatBatA) - (acidostatA + acidostatB));
+    double deltaE = beta * ((acidostatAatB + acidostatBatA) - (acidostatA + acidostatB));
 
     //Count the number of trials for each temp
     pHTrialCount[pH]++;
@@ -331,14 +331,18 @@ public class PhReplicaExchange implements Terminatable {
     // 2 M.C. trials per pH (except for those at the ends of the ladder).
 
     // Loop over top and bottom parts of pH scale
-    for (int pH = centerIndex; pH < nReplicas - 1; pH++) {
+    for (int pH = 0; pH < nReplicas - 1; pH++) {
       compareTwo(pH, false);
     }
 
+/*
     for (int pH = centerIndex - 1; pH > 0; pH--){
       compareTwo(pH, true);
     }
+    
+ */
   }
+
 
   /**
    * Blocking dynamic steps: when this method returns each replica has completed the requested
