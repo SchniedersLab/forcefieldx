@@ -254,13 +254,11 @@ public class PhReplicaExchange implements Terminatable {
       acidostatBatA = parameters[rankB][3];
     }
 
-    logger.info("\n\n ----------------------New Comparison----------------------");
-    logger.info("\n From rank " + rank + ": Comparing ranks " + rankA + " (pH = " + pHA + ") & " + rankB + " (pH = " + pHB + ")\n");
+    logger.info("\t ----------------------New Comparison----------------------");
+    logger.info("\t From rank " + rank + ": Comparing ranks " + rankA + " (pH = " + pHA + ") & " + rankB + " (pH = " + pHB + ")\n");
 
     // Compute the change in energy over kT (E/kT) for the Metropolis criteria.
-    logger.info(" pHA = " + pHA + "" + acidostatA + "" + acidostatAatB);
-    logger.info(" pHB = " + pHB + "" + acidostatB + "" + acidostatBatA);
-    logger.info(" exp(" + beta + " * ((" + acidostatAatB + " + " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + ")))");
+    logger.info("\t exp(" + beta + " * ((" + acidostatAatB + " + " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + ")))");
     double deltaE = beta * ((acidostatAatB + acidostatBatA) - (acidostatA + acidostatB));
 
     //Count the number of trials for each temp
@@ -354,7 +352,7 @@ public class PhReplicaExchange implements Terminatable {
     myParameters[2] = extendedSystem.getBiasEnergy();
 
     // Evaluate acidostat of ES at different pHs
-    logger.info(" Evaluating rank " + rank + " (originally at pH " + myParameters[0] + ") at pH " + (myParameters[0] - gapSize) + " and pH " + (myParameters[0] + gapSize));
+    logger.info("\t Evaluating rank " + rank + " (originally at pH " + myParameters[0] + ") at pH " + (myParameters[0] - gapSize) + " and pH " + (myParameters[0] + gapSize));
     extendedSystem.setConstantPh(myParameters[0] - gapSize);
     myParameters[1] = extendedSystem.getBiasEnergy();
 
