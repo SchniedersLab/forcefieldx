@@ -188,6 +188,10 @@ public class PhReplicaExchange implements Terminatable {
     double range = world.size() * pHGap;
     double pHMin = pH - range/2;
 
+    if(nReplicas % 2 != 0){
+      pHMin += pHGap/2;
+    }
+
     for(int i = 0; i < nReplicas; i++){
       pHScale[i] = pHMin + i * pHGap;
       rank2Ph[i] = i;
@@ -315,13 +319,6 @@ public class PhReplicaExchange implements Terminatable {
     for (int pH = 0; pH < nReplicas - 1; pH++) {
       compareTwo(pH, false);
     }
-
-/*
-    for (int pH = centerIndex - 1; pH > 0; pH--){
-      compareTwo(pH, true);
-    }
-
- */
   }
 
 
