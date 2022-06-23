@@ -228,7 +228,7 @@ class PhDynamics extends AlgorithmsScript {
       File output = new File(outputName)
 
       String repExLogName = structureFile.getParent() + File.separator + "repEx.log"
-      File repExLog = new FileReader(repExLogName)
+      File repExLog = new File(repExLogName)
 
       if(!repExLog.exists()){
         FileWriter wr = new FileWriter(repExLog)
