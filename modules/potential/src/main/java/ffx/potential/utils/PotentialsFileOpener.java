@@ -44,17 +44,8 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parsers.ARCFileFilter;
-import ffx.potential.parsers.FileOpener;
-import ffx.potential.parsers.ForceFieldFilter;
-import ffx.potential.parsers.INTFileFilter;
-import ffx.potential.parsers.INTFilter;
-import ffx.potential.parsers.PDBFileFilter;
-import ffx.potential.parsers.PDBFilter;
+import ffx.potential.parsers.*;
 import ffx.potential.parsers.PDBFilter.Mutation;
-import ffx.potential.parsers.SystemFilter;
-import ffx.potential.parsers.XYZFileFilter;
-import ffx.potential.parsers.XYZFilter;
 import ffx.utilities.Keyword;
 import java.io.File;
 import java.io.IOException;
@@ -327,7 +318,7 @@ public class PotentialsFileOpener implements FileOpener {
       assembly.setForceField(forceField);
       if (new PDBFileFilter().acceptDeep(fileI)) {
         filter = new PDBFilter(fileI, assembly, forceField, properties);
-      } else if (new XYZFileFilter().acceptDeep(fileI)) {
+      } else if (new XPHFileFilter().acceptDeep(fileI)) {
         filter = new XYZFilter(fileI, assembly, forceField, properties);
       } else if (new INTFileFilter().acceptDeep(fileI) || new ARCFileFilter().accept(fileI)) {
         filter = new INTFilter(fileI, assembly, forceField, properties);

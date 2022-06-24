@@ -248,10 +248,18 @@ class SortArc extends AlgorithmsScript {
 
         molecularAssemblies = new MolecularAssembly[nMolAssemblies]
         for (int j = 0; j < nMolAssemblies; j++) {
-            if(filenames[j].contains(".pdb")){
-                ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, archiveFullPaths[0][j], j)
+            if(sortPh){
+                if(filenames[j].contains(".pdb")){
+                    ma = openers[j].openFile(algorithmFunctions, topology, threadsPer, archiveFullPaths[0][j], j)
+                } else {
+                    ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[j], j)
+                }
             } else {
-                ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[j], j)
+                if(filenames[j].contains(".pdb")){
+                    ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, archiveFullPaths[0][j], j)
+                } else {
+                    ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[j], j)
+                }
             }
             logger.info(" ma: " + ma.getAtomList().get(0).getAtomType())
             molecularAssemblies[j] = ma
