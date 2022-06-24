@@ -227,6 +227,7 @@ public class PotentialsUtils implements PotentialsFunctions {
     PotentialsFileOpener opener = new PotentialsFileOpener(files);
     opener.run();
     lastFilter = opener.getFilter();
+    logger.info(" Filter type: " + lastFilter.toString());
     return opener.getAllAssemblies();
   }
 
