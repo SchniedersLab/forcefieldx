@@ -42,6 +42,7 @@ import ffx.crystal.CrystalPotential
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
+import ffx.potential.extended.ExtendedSystem
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XPHFileFilter
 import ffx.potential.parsers.XYZFilter
@@ -169,10 +170,9 @@ class SortArc extends AlgorithmsScript {
             for (int i = 0; i < nWindows; i++) {
                 for (int j = 0; j < nMolAssemblies; j++) {
                     String fullPathToFile = FilenameUtils.getFullPath(files[j])
-                    String directoryFullPath = fullPathToFile.replace(files[j], "") + i;
+                    String directoryFullPath = fullPathToFile.replace(files[j], "") + i
                     windowFiles.add(directoryFullPath + File.separator + i)
                 }
-
             }
 
             lambdaValues = new double[nWindows]
@@ -187,7 +187,6 @@ class SortArc extends AlgorithmsScript {
                     if(nWindows % 2 != 0){
                         pHMin += pHGap/2
                     }
-                    logger.info(" Range: " + range + "  pHMin: " + pHMin + " pH: " + pH + " pHGap: " + pHGap + " pHValue: " + pHValues[i] + " i: " + i)
                     pHValues[i] = pHMin + i * pHGap
 
                 } else {
@@ -251,25 +250,29 @@ class SortArc extends AlgorithmsScript {
         for (int j = 0; j < nMolAssemblies; j++) {
 
             if(filenames[j].contains(".pdb")){
-                logger.info(" Filter Set: pdb")
                 ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, archiveFullPaths[0][j], j)
             } else {
-                logger.info(" Filter Set: not pdb")
                 ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[j], j)
             }
 
-            logger.info(" ma: " + ma.getAtomList().get(0).getAtomType())
             molecularAssemblies[j] = ma
-            logger.info(" Filter Class: " + algorithmFunctions.getFilter().getClass())
-            openers[j] = new XPHFilter(algorithmFunctions.getFilter() as XYZFilter)
 
+            if(sortPh){
+                File esv = new File(FilenameUtils.removeExtension(algorithmFunctions.getFilter().getFile().toString()) + ".esv")
+                ExtendedSystem extendedSystem = new ExtendedSystem(molecularAssemblies[j], esv)
+                openers[j] = new XPHFilter(algorithmFunctions.getFilter(), extendedSystem)
+            } else{
+                openers[j] = algorithmFunctions.getFilter()
+            }
 
             for (int i = 0; i < nWindows; i++) {
                 File arc = saveFile[i][j]
-                if(!sortPh) {
-                    writers[i][j] = new XYZFilter(arc, molecularAssemblies[j], molecularAssemblies[j].getForceField(), additionalProperties)
+                if(sortPh) {
+                    File esv = new File(FilenameUtils.removeExtension(arc.toString()) + ".esv")
+                    ExtendedSystem extendedSystem = new ExtendedSystem(molecularAssemblies[j], esv)
+                    writers[i][j] = new XPHFilter(arc, molecularAssemblies[j], molecularAssemblies[j].getForceField(), additionalProperties, extendedSystem)
                 } else{
-                    writers[i][j] = new XPHFilter(arc, molecularAssemblies[j], molecularAssemblies[j].getForceField(), additionalProperties)
+                    writers[i][j] = new XYZFilter(arc, molecularAssemblies[j], molecularAssemblies[j].getForceField(), additionalProperties)
                 }
             }
         }

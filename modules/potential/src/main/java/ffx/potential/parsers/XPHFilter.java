@@ -81,7 +81,7 @@ public class XPHFilter extends SystemFilter {
   private BufferedReader bufferedReader = null;
   private int snapShot;
   private String remarkLine;
-  private final ExtendedSystem extendedSystem;
+  private ExtendedSystem extendedSystem;
 
   /**
    * Constructor for XPHFilter.
@@ -103,23 +103,10 @@ public class XPHFilter extends SystemFilter {
     extendedSystem = esvSystem;
   }
 
-  public XPHFilter(
-          File file,
-          MolecularAssembly system,
-          ForceField forceField,
-          CompositeConfiguration properties) {
-    super(file, system, forceField, properties);
-    this.fileType = FileType.XPH;
-    extendedSystem = new ExtendedSystem(system, file);
-  }
+  public XPHFilter(SystemFilter systemFilter, ExtendedSystem extendedSystem) {
+    super(systemFilter.getFile(), systemFilter.getActiveMolecularSystem(), systemFilter.getActiveMolecularSystem().getForceField(), systemFilter.getActiveMolecularSystem().getProperties());
 
-  public XPHFilter(
-          XYZFilter filter
-  ) {
-    super(filter.getFile(), filter.getActiveMolecularSystem(), filter.getActiveMolecularSystem().getForceField(), filter.getActiveMolecularSystem().getProperties());
-    logger.info(" file name: " + filter.getFile());
-    this.fileType = FileType.XPH;
-    extendedSystem = new ExtendedSystem(filter.getActiveMolecularSystem(), filter.getFile());
+    this.extendedSystem = extendedSystem;
   }
 
   /**

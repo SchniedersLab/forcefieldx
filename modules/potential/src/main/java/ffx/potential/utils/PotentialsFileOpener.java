@@ -318,8 +318,8 @@ public class PotentialsFileOpener implements FileOpener {
       assembly.setForceField(forceField);
       if (new PDBFileFilter().acceptDeep(fileI)) {
         filter = new PDBFilter(fileI, assembly, forceField, properties);
-      } else if (new XPHFileFilter().acceptDeep(fileI)) {
-        filter = new XPHFilter(fileI, assembly, forceField, properties);
+      } else if (new XYZFileFilter().acceptDeep(fileI)) {
+        filter = new XYZFilter(fileI, assembly, forceField, properties);
       } else if (new INTFileFilter().acceptDeep(fileI) || new ARCFileFilter().accept(fileI)) {
         filter = new INTFilter(fileI, assembly, forceField, properties);
       } else {
