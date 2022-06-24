@@ -253,7 +253,7 @@ class SortArc extends AlgorithmsScript {
             } else {
                 ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[j], j)
             }
-            logger.info(" ma: " + ma.getFile().getAbsolutePath())
+            logger.info(" ma: " + ma.getAtomList().get(0).getAtomType())
             molecularAssemblies[j] = ma
             openers[j] = algorithmFunctions.getFilter()
 
