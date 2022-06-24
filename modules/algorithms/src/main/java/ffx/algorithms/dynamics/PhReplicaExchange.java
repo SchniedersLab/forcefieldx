@@ -291,7 +291,6 @@ public class PhReplicaExchange implements Terminatable {
       } else {
         rankAcceptedCount[rankB]++;
       }
-
     }
   }
 

@@ -88,6 +88,18 @@ class SortArc extends AlgorithmsScript {
             description = "Sets the starting temperature for the exponential temperature ladder if sorting by temperature.")
     private double lowTemperature = 298.15
 
+    @Option(names = ["--bpH", '--sortByPH'], paramLabel = "false",
+            description = "If set, sort archive files by pH values")
+    private boolean sortPh = false
+
+    @Option(names = ['--pH'], paramLabel = "7.4",
+            description = "Sets the middle of the pH ladder")
+    private double pH = 7.4
+
+    @Option(names = ['--pHGaps'], paramLabel = "1",
+            description = "Sets the size of the gaps in the pH latter")
+    private double pHGap = 1
+
     @Option(names = ["--ex", '--exponent'], paramLabel = "0.5",
             defaultValue = "0.5",
             description = "Sets the exponent for the exponential temperature ladder if sorting by temperature.")
@@ -102,6 +114,7 @@ class SortArc extends AlgorithmsScript {
 
     private double[] lambdaValues
     private double[] temperatureValues
+    private double[] pHValues
     private SystemFilter[] openers
     private SystemFilter[][] writers
     private String[] files
@@ -163,6 +176,13 @@ class SortArc extends AlgorithmsScript {
             for (int i = 0; i < nWindows; i++) {
                 if (sortTemp) {
                     temperatureValues[i] = lowTemperature * Math.exp(exponent * i);
+                } else if(sortPh){
+                    double range = nWindows * pHGap
+                    double pHMin = pH - range/2
+                    if(nWindows % 2 != 0){
+                        pHMin += pHGap/2
+                    }
+                    pHValues[i] = pHMin + i * pHGap
                 } else {
                     lambdaValues[i] = alchemical.getInitialLambda(nWindows, i, false);
                 }
@@ -234,6 +254,8 @@ class SortArc extends AlgorithmsScript {
         double tolerance
         if (sortTemp){
             tolerance = 1.0e-2
+        } else if(sortPh) {
+            tolerance = 1.0e-1
         } else {
             tolerance = 1.0e-4
         }
@@ -259,6 +281,7 @@ class SortArc extends AlgorithmsScript {
 
                     double lambda = 0
                     double temp = 0
+                    double pH = 0
                     if (remarkLine.contains(" Lambda: ")) {
                         String[] tokens = remarkLine.split(" +")
                         for (int p = 0; p < tokens.length; p++) {
@@ -268,6 +291,9 @@ class SortArc extends AlgorithmsScript {
                             if (tokens[p].startsWith("Temp")) {
                                 temp = Double.parseDouble(tokens[p + 1])
                             }
+                            if (tokens[p].startsWith("pH")){
+                                pH = Double.parseDouble(tokens[p + 1])
+                            }
                         }
 
                     }
@@ -276,6 +302,8 @@ class SortArc extends AlgorithmsScript {
                     for (int k = 0; k < nWindows; k++) {
                         if (sortTemp) {
                             diff = Math.abs(temperatureValues[k] - temp)
+                        }else if(sortPh){
+                            diff = Math.abs(pHValues[k] - pH)
                         } else {
                             diff = Math.abs(lambdaValues[k] - lambda)
                         }
@@ -286,20 +314,11 @@ class SortArc extends AlgorithmsScript {
                             topologies[j].setFile(arcFiles[i][j])
                             break
                         }
-
                     }
-
                 }
-
             }
-
-
         }
-
-
     }
-
-
 }
 
 
