@@ -45,6 +45,7 @@ import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.reduction.SharedDouble;
+import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.PotentialComponent;
@@ -73,7 +74,7 @@ import org.apache.commons.io.FilenameUtils;
  * @author Andrew Thiel
  * @since 1.0
  */
-public class ExtendedSystem {
+public class ExtendedSystem implements Potential {
 
     private static final Logger logger = Logger.getLogger(ExtendedSystem.class.getName());
 
@@ -1240,7 +1241,6 @@ public class ExtendedSystem {
         }
     }
 
-    //TODO: Find a better way to print this histogram out
     public void writeLambdaHistogram() {
         StringBuilder tautomerHeader = new StringBuilder("      X→ ");
         for (int k = 0; k < 10; k++) {
@@ -1292,5 +1292,90 @@ public class ExtendedSystem {
                 break;
         }
         return initialTitrationLambda;
+    }
+
+    @Override
+    public double energy(double[] x) {
+        return 0;
+    }
+
+    @Override
+    public double energyAndGradient(double[] x, double[] g) {
+        return 0;
+    }
+
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        return new double[0];
+    }
+
+    @Override
+    public double[] getCoordinates(double[] parameters) {
+        return new double[0];
+    }
+
+    @Override
+    public STATE getEnergyTermState() {
+        return null;
+    }
+
+    @Override
+    public void setEnergyTermState(STATE state) {
+
+    }
+
+    @Override
+    public double[] getMass() {
+        return new double[0];
+    }
+
+    @Override
+    public int getNumberOfVariables() {
+        return 0;
+    }
+
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        return new double[0];
+    }
+
+    @Override
+    public double[] getScaling() {
+        return new double[0];
+    }
+
+    @Override
+    public void setScaling(double[] scaling) {
+
+    }
+
+    @Override
+    public double getTotalEnergy() {
+        return 0;
+    }
+
+    @Override
+    public VARIABLE_TYPE[] getVariableTypes() {
+        return new VARIABLE_TYPE[0];
+    }
+
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        return new double[0];
+    }
+
+    @Override
+    public void setAcceleration(double[] acceleration) {
+
+    }
+
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+
+    }
+
+    @Override
+    public void setVelocity(double[] velocity) {
+
     }
 }
