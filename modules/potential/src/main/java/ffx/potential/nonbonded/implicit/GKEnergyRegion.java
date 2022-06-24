@@ -64,8 +64,6 @@ import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
-import ffx.numerics.multipole.GeneralizedKirkwoodTensor;
-import ffx.numerics.multipole.PolarizableMultipole;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
