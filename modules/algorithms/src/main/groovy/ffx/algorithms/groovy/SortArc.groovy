@@ -261,7 +261,7 @@ class SortArc extends AlgorithmsScript {
             molecularAssemblies[j] = ma
             logger.info(" Filter Class: " + algorithmFunctions.getFilter().getClass())
             logger.info(" Filter Class: " + algorithmFunctions.getFilter().toString())
-            openers[j] = algorithmFunctions.getFilter()
+            openers[j] = (XPHFilter) (SystemFilter) algorithmFunctions.getFilter()
 
 
             for (int i = 0; i < nWindows; i++) {
