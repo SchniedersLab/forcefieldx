@@ -152,6 +152,8 @@ class SortArc extends AlgorithmsScript {
 
     @Override
     SortArc run() {
+        logger.info(" Running")
+
         if (!init()) {
             return this
         }
@@ -174,6 +176,7 @@ class SortArc extends AlgorithmsScript {
 
             lambdaValues = new double[nWindows]
             temperatureValues = new double[nWindows]
+            pHValues = new double[nWindows]
             for (int i = 0; i < nWindows; i++) {
                 if (sortTemp) {
                     temperatureValues[i] = lowTemperature * Math.exp(exponent * i);
@@ -183,7 +186,9 @@ class SortArc extends AlgorithmsScript {
                     if(nWindows % 2 != 0){
                         pHMin += pHGap/2
                     }
+                    logger.info(" Range: " + range + "  pHMin: " + pHMin + " pH: " + pH + " pHGap: " + pHGap + " pHValue: " + pHValues[i] + " i: " + i)
                     pHValues[i] = pHMin + i * pHGap
+
                 } else {
                     lambdaValues[i] = alchemical.getInitialLambda(nWindows, i, false);
                 }
