@@ -249,6 +249,7 @@ class SortArc extends AlgorithmsScript {
         molecularAssemblies = new MolecularAssembly[nMolAssemblies]
         for (int j = 0; j < nMolAssemblies; j++) {
             if(filenames[j].contains(".pdb")){
+                logger.info(" Filename: " + filenames[j])
                 ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, archiveFullPaths[0][j], j)
             } else {
                 logger.info(" Filename: " + filenames[j])
