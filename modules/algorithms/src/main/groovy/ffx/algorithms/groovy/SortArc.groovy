@@ -40,6 +40,7 @@ import edu.rit.pj.ParallelTeam
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.crystal.CrystalPotential
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Residue
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
 import ffx.potential.extended.ExtendedSystem
@@ -50,6 +51,7 @@ import ffx.potential.parsers.XPHFilter
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.configuration2.Configuration
 import org.apache.commons.io.FilenameUtils
+import org.biojava.nbio.structure.chem.ResidueType
 import picocli.CommandLine
 
 import picocli.CommandLine.Command
@@ -257,8 +259,8 @@ class SortArc extends AlgorithmsScript {
 
             molecularAssemblies[j] = ma
             ExtendedSystem extendedSystem = new ExtendedSystem(molecularAssemblies[j], null)
-
-            logger.info(" Number of ESVs: " + extendedSystem.getExtendedResidueList().toString())
+            //TODO: Figure out how to get esv to be properly read in
+            logger.info(" Number of ESVs: " + extendedSystem.getExtendedResidueList())
 
             if(sortPh){
                 openers[j] = new XPHFilter(algorithmFunctions.getFilter(), extendedSystem)
@@ -299,8 +301,10 @@ class SortArc extends AlgorithmsScript {
                 logger.info(snapshots.toString())
 
                 for (int n = 0; n < snapshots; n++) {
-                    boolean resetPosition = (n == 0) ? true : false;
-                    openers[j].readNext(resetPosition, false)
+                    boolean resetPosition = n == 0
+                    
+                    //TODO: Fix ReadNex to actually read in esv
+                    openers[j].readNext(resetPosition, true)
                     String remarkLine = openers[j].getRemarkLines()
 
 
