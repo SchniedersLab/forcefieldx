@@ -243,6 +243,7 @@ public class PotentialsUtils implements PotentialsFunctions {
     opener.setNThreads(nThreads);
     opener.run();
     lastFilter = opener.getFilter();
+    logger.info(" Filter type: " + lastFilter.toString());
     return opener.getAllAssemblies();
   }
 

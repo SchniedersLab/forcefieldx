@@ -208,11 +208,8 @@ public class AlchemicalOptions {
       int threadsPer,
       String toOpen,
       int topNum) {
-    logger.info( "     potentialFunctions.openAll(toOpen, threadsPer);\n");
     potentialFunctions.openAll(toOpen, threadsPer);
-    logger.info( "        MolecularAssembly molecularAssembly = potentialFunctions.getActiveAssembly();\n");
     MolecularAssembly molecularAssembly = potentialFunctions.getActiveAssembly();
-    logger.info( "      return processFile(topologyOptions, molecularAssembly, topNum);     \n");
     return processFile(topologyOptions, molecularAssembly, topNum);
   }
 
