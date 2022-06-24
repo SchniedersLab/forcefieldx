@@ -248,22 +248,21 @@ class SortArc extends AlgorithmsScript {
 
         molecularAssemblies = new MolecularAssembly[nMolAssemblies]
         for (int j = 0; j < nMolAssemblies; j++) {
-            if(sortPh){
-                if(filenames[j].contains(".pdb")){
-                    ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, archiveFullPaths[0][j], j)
-                } else {
-                    ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[j], j)
-                }
+
+            if(filenames[j].contains(".pdb")){
+                logger.info(" Filter Set: pdb")
+                ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, archiveFullPaths[0][j], j)
             } else {
-                if(filenames[j].contains(".pdb")){
-                    ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, archiveFullPaths[0][j], j)
-                } else {
-                    ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[j], j)
-                }
+                logger.info(" Filter Set: not pdb")
+                ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[j], j)
             }
+
             logger.info(" ma: " + ma.getAtomList().get(0).getAtomType())
             molecularAssemblies[j] = ma
+            logger.info(" Filter Class: " + algorithmFunctions.getFilter().getClass())
+            logger.info(" Filter Class: " + algorithmFunctions.getFilter().toString())
             openers[j] = algorithmFunctions.getFilter()
+
 
             for (int i = 0; i < nWindows; i++) {
                 File arc = saveFile[i][j]
