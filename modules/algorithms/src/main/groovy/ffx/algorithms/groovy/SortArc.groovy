@@ -44,6 +44,7 @@ import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
+import ffx.potential.parsers.XPHFilter
 import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.configuration2.Configuration
 import org.apache.commons.io.FilenameUtils
@@ -216,8 +217,8 @@ class SortArc extends AlgorithmsScript {
             openers = new XYZFilter[nMolAssemblies]
             writers = new XYZFilter[nWindows][nMolAssemblies]
         } else{
-            openers = new XPHFilter[nMolAssemblies] as SystemFilter[]
-            writers = new XPHFilter[nWindows][nMolAssemblies] as SystemFilter[][]
+            openers = new XPHFilter[nMolAssemblies]
+            writers = new XPHFilter[nWindows][nMolAssemblies]
         }
         int numParallel = topology.getNumParallel(threadsAvail, nMolAssemblies)
         threadsPer = (int) (threadsAvail / numParallel)
