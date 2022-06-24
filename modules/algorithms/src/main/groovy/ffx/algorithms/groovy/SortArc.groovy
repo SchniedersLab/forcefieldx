@@ -251,6 +251,7 @@ class SortArc extends AlgorithmsScript {
             if(filenames[j].contains(".pdb")){
                 ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, archiveFullPaths[0][j], j)
             } else {
+                logger.info(" Filename: " + filenames[j])
                 ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[j], j)
             }
             molecularAssemblies[j] = ma
