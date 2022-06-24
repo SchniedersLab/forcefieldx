@@ -117,6 +117,7 @@ public class XPHFilter extends SystemFilter {
           XYZFilter filter
   ) {
     super(filter.getFile(), filter.getActiveMolecularSystem(), filter.getActiveMolecularSystem().getForceField(), filter.getActiveMolecularSystem().getProperties());
+    logger.info(" file name: " + filter.getFile());
     this.fileType = FileType.XPH;
     extendedSystem = new ExtendedSystem(filter.getActiveMolecularSystem(), filter.getFile());
   }
