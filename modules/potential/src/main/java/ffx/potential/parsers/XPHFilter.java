@@ -81,8 +81,6 @@ public class XPHFilter extends SystemFilter {
   private BufferedReader bufferedReader = null;
   private int snapShot;
   private String remarkLine;
-
-  //FIXME: final?
   private final ExtendedSystem extendedSystem;
 
   /**

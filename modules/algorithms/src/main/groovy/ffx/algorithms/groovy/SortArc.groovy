@@ -120,7 +120,7 @@ class SortArc extends AlgorithmsScript {
     private String[] files
     private CompositeConfiguration additionalProperties
     private List<String> windowFiles = new ArrayList<>()
-    MolecularAssembly[] topologies
+    MolecularAssembly[] molecularAssemblies
     MolecularAssembly ma
     private int threadsAvail = ParallelTeam.getDefaultThreadCount()
     private int threadsPer = threadsAvail
@@ -155,15 +155,15 @@ class SortArc extends AlgorithmsScript {
             return this
         }
 
-        int nTopology = filenames.size()
-        files = new String[nTopology]
-        for (int i = 0; i < nTopology; i++) {
+        int nMolAssemblies = filenames.size()
+        files = new String[nMolAssemblies]
+        for (int i = 0; i < nMolAssemblies; i++) {
             files[i] = filenames.get(i)
         }
 
         if (nWindows != -1) {
             for (int i = 0; i < nWindows; i++) {
-                for (int j = 0; j < nTopology; j++) {
+                for (int j = 0; j < nMolAssemblies; j++) {
                     String fullPathToFile = FilenameUtils.getFullPath(files[j])
                     String directoryFullPath = fullPathToFile.replace(files[j], "") + i;
                     windowFiles.add(directoryFullPath + File.separator + i)
@@ -193,15 +193,15 @@ class SortArc extends AlgorithmsScript {
             return this
         }
 
-        String[][] archiveFullPaths = new String[nWindows][nTopology]
+        String[][] archiveFullPaths = new String[nWindows][nMolAssemblies]
         File file = new File(files[0])
         String directoryPath = file.getAbsoluteFile().getParent() + File.separator
-        String[][] archiveNewPath = new String[nWindows][nTopology]
-        File[][] saveFile = new File[nWindows][nTopology]
-        File[][] arcFiles = new File[nWindows][nTopology]
+        String[][] archiveNewPath = new String[nWindows][nMolAssemblies]
+        File[][] saveFile = new File[nWindows][nMolAssemblies]
+        File[][] arcFiles = new File[nWindows][nMolAssemblies]
 
 
-        for (int j = 0; j < nTopology; j++) {
+        for (int j = 0; j < nMolAssemblies; j++) {
             String archiveName = FilenameUtils.getBaseName(files[j]) + ".arc"
             for (int i = 0; i < nWindows; i++) {
                 archiveFullPaths[i][j] = directoryPath + i + File.separator + archiveName
@@ -212,16 +212,21 @@ class SortArc extends AlgorithmsScript {
             }
         }
 
-        openers = new XYZFilter[nTopology]
-        writers = new XYZFilter[nWindows][nTopology]
-        int numParallel = topology.getNumParallel(threadsAvail, nTopology)
+        if(!sortPh) {
+            openers = new XYZFilter[nMolAssemblies]
+            writers = new XYZFilter[nWindows][nMolAssemblies]
+        } else{
+            openers = new XPHFilter[nMolAssemblies] as SystemFilter[]
+            writers = new XPHFilter[nWindows][nMolAssemblies] as SystemFilter[][]
+        }
+        int numParallel = topology.getNumParallel(threadsAvail, nMolAssemblies)
         threadsPer = (int) (threadsAvail / numParallel)
 
 
         // Turn on computation of lambda derivatives if softcore atoms exist or a single topology.
         /* Checking nArgs == 1 should only be done for scripts that imply some sort of lambda scaling.
     The Minimize script, for example, may be running on a single, unscaled physical topology. */
-        boolean lambdaTerm = (nTopology == 1 || alchemical.hasSoftcore() || topology.hasSoftcore())
+        boolean lambdaTerm = (nMolAssemblies == 1 || alchemical.hasSoftcore() || topology.hasSoftcore())
 
         if (lambdaTerm) {
             System.setProperty("lambdaterm", "true")
@@ -229,25 +234,25 @@ class SortArc extends AlgorithmsScript {
 
         // Relative free energies via the DualTopologyEnergy class require different
         // default OST parameters than absolute free energies.
-        if (nTopology >= 2) {
+        if (nMolAssemblies >= 2) {
             // Ligand vapor electrostatics are not calculated. This cancels when the
             // difference between protein and water environments is considered.
             System.setProperty("ligand-vapor-elec", "false")
         }
 
-        topologies = new MolecularAssembly[nTopology]
-        for (int j = 0; j < nTopology; j++) {
+        molecularAssemblies = new MolecularAssembly[nMolAssemblies]
+        for (int j = 0; j < nMolAssemblies; j++) {
             if(filenames[j].contains(".pdb")){
                 ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, archiveFullPaths[0][j], j)
             } else {
                 ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[j], j)
             }
-            topologies[j] = ma
+            molecularAssemblies[j] = ma
             openers[j] = algorithmFunctions.getFilter()
 
             for (int i = 0; i < nWindows; i++) {
                 File arc = saveFile[i][j]
-                writers[i][j] = new XYZFilter(arc, topologies[j], topologies[j].getForceField(), additionalProperties)
+                writers[i][j] = new XYZFilter(arc, molecularAssemblies[j], molecularAssemblies[j].getForceField(), additionalProperties)
             }
         }
 
@@ -260,13 +265,13 @@ class SortArc extends AlgorithmsScript {
             tolerance = 1.0e-4
         }
 
-        for (int j = 0; j < nTopology; j++) {
+        for (int j = 0; j < nMolAssemblies; j++) {
 
             for (int i = 0; i < nWindows; i++) {
 
-                logger.info(format(" Initializing %d topologies for each end", nTopology))
+                logger.info(format(" Initializing %d topologies for each end", nMolAssemblies))
                 openers[j].setFile(arcFiles[i][j])
-                topologies[j].setFile(arcFiles[i][j])
+                molecularAssemblies[j].setFile(arcFiles[i][j])
                 logger.info("Set file to:" + arcFiles[i][j].toString())
 
 
@@ -311,7 +316,7 @@ class SortArc extends AlgorithmsScript {
                         if (diff < tolerance) {
                             writers[k][j].writeFile(saveFile[k][j], true, remarkLine)
                             //set topology back to archive being read in
-                            topologies[j].setFile(arcFiles[i][j])
+                            molecularAssemblies[j].setFile(arcFiles[i][j])
                             break
                         }
                     }
