@@ -253,7 +253,11 @@ class SortArc extends AlgorithmsScript {
 
             for (int i = 0; i < nWindows; i++) {
                 File arc = saveFile[i][j]
-                writers[i][j] = new XYZFilter(arc, molecularAssemblies[j], molecularAssemblies[j].getForceField(), additionalProperties)
+                if(!sortPh) {
+                    writers[i][j] = new XYZFilter(arc, molecularAssemblies[j], molecularAssemblies[j].getForceField(), additionalProperties)
+                } else{
+                    writers[i][j] = new XPHFilter(arc, molecularAssemblies[j], molecularAssemblies[j].getForceField(), additionalProperties)
+                }
             }
         }
 

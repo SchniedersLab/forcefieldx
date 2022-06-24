@@ -103,6 +103,16 @@ public class XPHFilter extends SystemFilter {
     extendedSystem = esvSystem;
   }
 
+  public XPHFilter(
+          File file,
+          MolecularAssembly system,
+          ForceField forceField,
+          CompositeConfiguration properties) {
+    super(file, system, forceField, properties);
+    this.fileType = FileType.XPH;
+    extendedSystem = new ExtendedSystem(system, file);
+  }
+
   /**
    * readOnto
    *
