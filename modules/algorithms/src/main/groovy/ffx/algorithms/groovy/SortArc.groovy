@@ -256,9 +256,9 @@ class SortArc extends AlgorithmsScript {
             }
 
             molecularAssemblies[j] = ma
+            ExtendedSystem extendedSystem = new ExtendedSystem(molecularAssemblies[j], null)
 
             if(sortPh){
-                ExtendedSystem extendedSystem = new ExtendedSystem(molecularAssemblies[j], null)
                 openers[j] = new XPHFilter(algorithmFunctions.getFilter(), extendedSystem)
             } else{
                 openers[j] = algorithmFunctions.getFilter()
@@ -267,7 +267,6 @@ class SortArc extends AlgorithmsScript {
             for (int i = 0; i < nWindows; i++) {
                 File arc = saveFile[i][j]
                 if(sortPh) {
-                    ExtendedSystem extendedSystem = new ExtendedSystem(molecularAssemblies[j], null)
                     writers[i][j] = new XPHFilter(arc, molecularAssemblies[j], molecularAssemblies[j].getForceField(), additionalProperties, extendedSystem)
                 } else{
                     writers[i][j] = new XYZFilter(arc, molecularAssemblies[j], molecularAssemblies[j].getForceField(), additionalProperties)
