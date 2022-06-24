@@ -260,6 +260,9 @@ class SortArc extends AlgorithmsScript {
             if(sortPh){
                 File esv = new File(FilenameUtils.removeExtension(algorithmFunctions.getFilter().getFile().toString()) + ".esv")
                 ExtendedSystem extendedSystem = new ExtendedSystem(molecularAssemblies[j], esv)
+                if (!esv.exists()) {
+                    esv = null
+                }
                 openers[j] = new XPHFilter(algorithmFunctions.getFilter(), extendedSystem)
             } else{
                 openers[j] = algorithmFunctions.getFilter()
@@ -269,6 +272,9 @@ class SortArc extends AlgorithmsScript {
                 File arc = saveFile[i][j]
                 if(sortPh) {
                     File esv = new File(FilenameUtils.removeExtension(arc.toString()) + ".esv")
+                    if (!esv.exists()) {
+                        esv = null
+                    }
                     ExtendedSystem extendedSystem = new ExtendedSystem(molecularAssemblies[j], esv)
                     writers[i][j] = new XPHFilter(arc, molecularAssemblies[j], molecularAssemblies[j].getForceField(), additionalProperties, extendedSystem)
                 } else{
