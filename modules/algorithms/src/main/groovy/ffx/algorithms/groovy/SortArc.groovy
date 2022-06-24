@@ -215,7 +215,6 @@ class SortArc extends AlgorithmsScript {
                 arcFiles[i][j] = arcFile
                 archiveNewPath[i][j] = directoryPath + i + File.separator + FilenameUtils.getBaseName(files[j]) + "_E" + i + ".arc"
                 saveFile[i][j] = new File(archiveNewPath[i][j])
-                logger.info(" Archive new file paths: " + archiveFullPaths)
             }
         }
 
@@ -223,7 +222,6 @@ class SortArc extends AlgorithmsScript {
             openers = new XYZFilter[nMolAssemblies]
             writers = new XYZFilter[nWindows][nMolAssemblies]
         } else{
-            logger.info(" Opening file")
             openers = new XPHFilter[nMolAssemblies]
             writers = new XPHFilter[nWindows][nMolAssemblies]
         }
@@ -250,14 +248,12 @@ class SortArc extends AlgorithmsScript {
 
         molecularAssemblies = new MolecularAssembly[nMolAssemblies]
         for (int j = 0; j < nMolAssemblies; j++) {
-            logger.info(" Filename: " + filenames[j])
             if(filenames[j].contains(".pdb")){
-                logger.info(" Filename: " + filenames[j])
                 ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, archiveFullPaths[0][j], j)
             } else {
-                logger.info(" Filename: " + filenames[j])
                 ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[j], j)
             }
+            logger.info(" ma: " + ma)
             molecularAssemblies[j] = ma
             openers[j] = algorithmFunctions.getFilter()
 
