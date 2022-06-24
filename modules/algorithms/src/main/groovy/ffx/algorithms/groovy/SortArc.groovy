@@ -258,6 +258,8 @@ class SortArc extends AlgorithmsScript {
             molecularAssemblies[j] = ma
             ExtendedSystem extendedSystem = new ExtendedSystem(molecularAssemblies[j], null)
 
+            logger.info(" Number of ESVs: " + extendedSystem.getExtendedResidueList().toString())
+
             if(sortPh){
                 openers[j] = new XPHFilter(algorithmFunctions.getFilter(), extendedSystem)
             } else{
