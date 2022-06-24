@@ -302,9 +302,13 @@ class SortArc extends AlgorithmsScript {
 
                 for (int n = 0; n < snapshots; n++) {
                     boolean resetPosition = n == 0
-                    
+
                     //TODO: Fix ReadNex to actually read in esv
                     openers[j].readNext(resetPosition, true)
+                    if(sortPh) {
+                        logger.info(" ESV Residues: " + openers[j].getExtendedSystem().getExtendedResidues().toString())
+                    }
+                    
                     String remarkLine = openers[j].getRemarkLines()
 
 
@@ -338,6 +342,7 @@ class SortArc extends AlgorithmsScript {
                         }
 
                         if (diff < tolerance) {
+                            logger.info(" Writing to XYZ")
                             writers[k][j].writeFile(saveFile[k][j], true, remarkLine)
                             //set topology back to archive being read in
                             molecularAssemblies[j].setFile(arcFiles[i][j])

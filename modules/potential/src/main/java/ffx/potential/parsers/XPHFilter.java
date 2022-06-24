@@ -666,6 +666,10 @@ public class XPHFilter extends SystemFilter {
     return false;
   }
 
+  public ExtendedSystem getExtendedSystem(){
+    return extendedSystem;
+  }
+
   /** {@inheritDoc} */
   @Override
   public boolean writeFile(File saveFile, boolean append, String[] extraLines) {
