@@ -250,7 +250,7 @@ class SortArc extends AlgorithmsScript {
         for (int j = 0; j < nMolAssemblies; j++) {
             if(sortPh){
                 if(filenames[j].contains(".pdb")){
-                    ma = openers[j].openFile(algorithmFunctions, topology, threadsPer, archiveFullPaths[0][j], j)
+                    ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, archiveFullPaths[0][j], j)
                 } else {
                     ma = alchemical.openFile(algorithmFunctions, topology, threadsPer, filenames[j], j)
                 }
