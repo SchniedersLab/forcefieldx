@@ -113,6 +113,14 @@ public class XPHFilter extends SystemFilter {
     extendedSystem = new ExtendedSystem(system, file);
   }
 
+  public XPHFilter(
+          XYZFilter filter
+  ) {
+    super(filter.getFile(), filter.getActiveMolecularSystem(), filter.getActiveMolecularSystem().getForceField(), filter.getActiveMolecularSystem().getProperties());
+    this.fileType = FileType.XPH;
+    extendedSystem = new ExtendedSystem(filter.getActiveMolecularSystem(), filter.getFile());
+  }
+
   /**
    * readOnto
    *

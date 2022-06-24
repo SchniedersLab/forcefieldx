@@ -43,6 +43,7 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
 import ffx.potential.parsers.SystemFilter
+import ffx.potential.parsers.XPHFileFilter
 import ffx.potential.parsers.XYZFilter
 import ffx.potential.parsers.XPHFilter
 import org.apache.commons.configuration2.CompositeConfiguration
@@ -260,8 +261,7 @@ class SortArc extends AlgorithmsScript {
             logger.info(" ma: " + ma.getAtomList().get(0).getAtomType())
             molecularAssemblies[j] = ma
             logger.info(" Filter Class: " + algorithmFunctions.getFilter().getClass())
-            logger.info(" Filter Class: " + algorithmFunctions.getFilter().toString())
-            openers[j] = (XPHFilter) (SystemFilter) algorithmFunctions.getFilter()
+            openers[j] = new XPHFileFilter(algorithmFunctions.getFilter())
 
 
             for (int i = 0; i < nWindows; i++) {
