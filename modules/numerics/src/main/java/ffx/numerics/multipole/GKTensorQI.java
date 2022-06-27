@@ -38,13 +38,10 @@
 package ffx.numerics.multipole;
 
 import static ffx.numerics.math.ScalarMath.doubleFactorial;
-import static java.lang.Math.fma;
 import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import java.util.logging.Logger;
 
 /**
  * The GeneralizedKirkwoodTensor class contains utilities for generated Generalized Kirkwood
@@ -54,9 +51,6 @@ import java.util.logging.Logger;
  * @since 1.0
  */
 public class GKTensorQI extends CoulombTensorQI {
-
-  /** Logger for the MultipoleTensor class. */
-  private static final Logger logger = Logger.getLogger(GKTensorQI.class.getName());
 
   /**
    * Generalized Kirkwood constant.
@@ -81,7 +75,7 @@ public class GKTensorQI extends CoulombTensorQI {
   /**
    * Multipole order (2nd is needed for AMOEBA forces).
    */
-  private final int multipoleOrder;
+  protected final int multipoleOrder;
 
   /**
    * The Kirkwood dielectric function for the given multipole order.
@@ -203,6 +197,17 @@ public class GKTensorQI extends CoulombTensorQI {
     double ei = cn(1, Eh, Es) * (dx * ux + dy * uy + dz * uz) / a3;
 
     return 0.5 * (e0 + e1 + e2 + ei);
+  }
+
+  /**
+   * Set the separation vector.
+   *
+   * @param r Separation vector.
+   * @param ai Born radius for Atom i.
+   * @param aj Born radius for Atom j.
+   */
+  protected void setR(double[] r, double ai, double aj) {
+    setR(r[0], r[1], r[2], ai, aj);
   }
 
   /**
@@ -381,104 +386,4 @@ public class GKTensorQI extends CoulombTensorQI {
     return (n + 1) * (Eh - Es) / ((n + 1) * Es + n * Eh);
   }
 
-  /**
-   * Generate the tensor using hard-coded methods or via recursion.
-   */
-  protected void generateTensor() {
-    super.generateTensor();
-    if (multipoleOrder < 2) {
-      return;
-    } else if (multipoleOrder == 2) {
-      // Detrace quadrupoles.
-      switch (order) {
-        case 1:
-        case 2:
-          // Do nothing.
-          break;
-        case 3:
-          detraceOrder3();
-          break;
-        case 4:
-          detraceOrder4();
-          break;
-        case 5:
-          detraceOrder5();
-          break;
-        case 6:
-          detraceOrder6();
-          break;
-        default:
-          logger.severe(" Detracing is only supported for GK below order 6");
-          break;
-      }
-    } else {
-      logger.severe(" Detracing is only supported for quadrupoles.");
-    }
-  }
-
-  /**
-   * Detrace quadrupole tensor for order 3.
-   */
-  private void detraceOrder3() {
-    double term0001 = work[2];
-    double dt001 = z * term0001;
-    R003 -= dt001;
-  }
-
-  /**
-   * Detrace quadrupole tensor for order 4.
-   */
-  private void detraceOrder4() {
-    double term0001 = work[2];
-    double term0002 = work[3];
-    double dt001 = z * term0001;
-    double term0011 = z * term0002;
-    double dt002 = fma(z, term0011, term0001);
-    R003 -= dt001;
-    R004 -= dt002;
-  }
-
-  /**
-   * Detrace quadrupole tensor for order 5.
-   */
-  private void detraceOrder5() {
-    source(work);
-    double term0001 = work[2];
-    double term0002 = work[3];
-    double term0003 = work[4];
-    double dt001 = z * term0001;
-    double term0011 = z * term0002;
-    double dt002 = fma(z, term0011, term0001);
-    double term0012 = z * term0003;
-    double term0021 = fma(z, term0012, term0002);
-    double dt003 = fma(z, term0021, 2 * term0011);
-    R003 -= dt001;
-    R004 -= dt002;
-    R005 -= dt003;
-  }
-
-  /**
-   * Detrace quadrupole tensor for order 6.
-   */
-  private void detraceOrder6() {
-    source(work);
-    double term0001 = work[2];
-    double term0002 = work[3];
-    double term0003 = work[4];
-    double term0004 = work[5];
-    double dt001 = z * term0001;
-    double term0011 = z * term0002;
-    double dt002 = fma(z, term0011, term0001);
-    double term0012 = z * term0003;
-    double term0021 = fma(z, term0012, term0002);
-    double dt003 = fma(z, term0021, 2 * term0011);
-    double term0013 = z * term0004;
-    double term0022 = fma(z, term0013, term0003);
-    double term0031 = fma(z, term0022, 2 * term0012);
-    double dt004 = fma(z, term0031, 3 * term0021);
-    R003 -= dt001;
-    R004 -= dt002;
-    R005 -= dt003;
-    R006 -= dt004;
-  }
 }

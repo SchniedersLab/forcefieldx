@@ -1,17 +1,50 @@
+// ******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+// ******************************************************************************
 package ffx.numerics.multipole;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.logging.Logger;
 import org.junit.Test;
 
 public class GKTensorGlobalTest {
 
-  /** Logger for the MultipoleTensor class. */
-  private static final Logger logger = Logger.getLogger(GKTensorGlobalTest.class.getName());
-
   private final double tolerance = 1.0e-9;
-
+  private final double fdTolerance = 1.0e-6;
   private static final double gc = 2.455;
   private static final double Eh = 1.0;
   private static final double Es = 78.3;
@@ -190,7 +223,8 @@ public class GKTensorGlobalTest {
     assertEquals(" R100", x * A10, gkDipoleTensor.R100, tolerance);
     assertEquals(" R200", x * x * A11 + A10, gkDipoleTensor.R200, tolerance);
     assertEquals(" R300", x * x * x * A12 + 3.0 * x * A11, gkDipoleTensor.R300, tolerance);
-    assertEquals(" R400", x * x * x * x * A13 + 6.0 * x * x * A12 + 3.0 * A11, gkDipoleTensor.R400, tolerance);
+    assertEquals(" R400", x * x * x * x * A13 + 6.0 * x * x * A12 + 3.0 * A11, gkDipoleTensor.R400,
+        tolerance);
   }
 
   @Test
@@ -211,28 +245,236 @@ public class GKTensorGlobalTest {
     double A21 = gkQuadrupoleTensor.anm(2, 1);
     double A22 = gkQuadrupoleTensor.anm(2, 2);
     double A23 = gkQuadrupoleTensor.anm(2, 3);
+
+    // int tensorCount = MultipoleTensor.tensorCount(order);
+    // double[] tensor = new double[tensorCount];
+    // gkQuadrupoleTensor.noStorageRecursion(tensor);
+
     gkQuadrupoleTensor.generateTensor();
+
+    // assertEquals(" R200", tensor[MultipoleTensor.ti(2, 0, 0, order)], gkQuadrupoleTensor.R200, tolerance);
 
     // No charge potential.
     assertEquals(" R000", 0.0, gkQuadrupoleTensor.R000, tolerance);
     // No dipole potential.
     assertEquals(" R100", 0.0, gkQuadrupoleTensor.R100, tolerance);
 
-    // Qxx (checks de-tracing).
+    // Potential for the quadrupole trace
     assertEquals(" R200", x * x * A20, gkQuadrupoleTensor.R200, tolerance);
-    assertEquals(" R300", x * x * x * A21 + 2.0 * x * A20, gkQuadrupoleTensor.R300, tolerance);
-    assertEquals(" R400", x * x * x * x * A22 + 5.0 * x * x * A21 + 2.0 * A20, gkQuadrupoleTensor.R400, tolerance);
-    assertEquals(" R500", x * x * x * x * x * A23 + 9.0 * x * x * x * A22 + 12.0 * x * A21, gkQuadrupoleTensor.R500, tolerance);
+    assertEquals(" R020", y * y * A20, gkQuadrupoleTensor.R020, tolerance);
+    assertEquals(" R002", z * z * A20, gkQuadrupoleTensor.R002, tolerance);
+
+    // Gradient of the trace with respect to X (note that the x*A20 term sums to 2*x*A20 over the trace).
+    assertEquals(" R300", x * x * x * A21 + 3.0 * x * A20, gkQuadrupoleTensor.R300, tolerance);
+    assertEquals(" R120", x * y * y * A21 + x * A20, gkQuadrupoleTensor.R120, tolerance);
+    assertEquals(" R102", x * z * z * A21 + x * A20, gkQuadrupoleTensor.R102, tolerance);
+
+    // Higher order Qxx terms.
+    assertEquals(" R400", x * x * x * x * A22 + 6.0 * x * x * A21 + 3.0 * A20, gkQuadrupoleTensor.R400, tolerance);
+    assertEquals(" R500", x * x * x * x * x * A23 + 10.0 * x * x * x * A22 + 15.0 * x * A21, gkQuadrupoleTensor.R500, tolerance);
 
     // Qxy
     assertEquals(" R110", x * y * A20, gkQuadrupoleTensor.R110, tolerance);
-    assertEquals(" R210", x * x * y * A21 + y * A20, gkQuadrupoleTensor.R210, tolerance);
     assertEquals(" R111", x * y * z * A21, gkQuadrupoleTensor.R111, tolerance);
     assertEquals(" R310", x * x * x * y * A22 + 3.0 * x * y * A21, gkQuadrupoleTensor.R310, tolerance);
     assertEquals(" R220", x * x * y * y * A22 + x * x * A21 + y * y * A21 + A20, gkQuadrupoleTensor.R220, tolerance);
     assertEquals(" R211", x * x * y * z * A22 + y * z * A21, gkQuadrupoleTensor.R211, tolerance);
-    assertEquals(" R410", x * x * x * x * y * A23 + 6.0 * x * x * y * A22 + 3.0 *y * A21, gkQuadrupoleTensor.R410, tolerance);
+    assertEquals(" R410", x * x * x * x * y * A23 + 6.0 * x * x * y * A22 + 3.0 * y * A21, gkQuadrupoleTensor.R410, tolerance);
     assertEquals(" R320", x * x * x * y * y * A23 + x * x * x * A22 + 3.0 * x * y * y * A22 + 3.0 * x * A21, gkQuadrupoleTensor.R320, tolerance);
     assertEquals(" R311", x * x * x * y * z * A23 + 3.0 * x * y * z * A22, gkQuadrupoleTensor.R311, tolerance);
+  }
+
+  @Test
+  public void chargeFiniteDifferenceTest() {
+    int order = 6;
+    double[] r = {0.7, 0.8, 0.9};
+    double x = r[0];
+    double y = r[1];
+    double z = r[2];
+
+    GKTensorGlobal gkTensorGlobal = new GKTensorGlobal(0, order, gc, Eh, Es);
+    int tensorCount = MultipoleTensor.tensorCount(order);
+    double[] tensor = new double[tensorCount];
+    gkTensorGlobal.setR(x, y, z, Ai, Aj);
+    gkTensorGlobal.noStorageRecursion(tensor);
+    double[] tensorsPx = new double[tensorCount];
+    double[] tensorsNx = new double[tensorCount];
+    double[] tensorsPy = new double[tensorCount];
+    double[] tensorsNy = new double[tensorCount];
+    double[] tensorsPz = new double[tensorCount];
+    double[] tensorsNz = new double[tensorCount];
+    double delta = 1.0e-5;
+    double delta2 = delta * 2;
+    r[0] += delta;
+    gkTensorGlobal.setR(r, Ai, Aj);
+    gkTensorGlobal.noStorageRecursion(tensorsPx);
+    r[0] -= delta2;
+    gkTensorGlobal.setR(r, Ai, Aj);
+    gkTensorGlobal.noStorageRecursion(tensorsNx);
+    r[0] += delta;
+
+    r[1] += delta;
+    gkTensorGlobal.setR(r, Ai, Aj);
+    gkTensorGlobal.noStorageRecursion(tensorsPy);
+    r[1] -= delta2;
+    gkTensorGlobal.setR(r, Ai, Aj);
+    gkTensorGlobal.noStorageRecursion(tensorsNy);
+    r[1] += delta;
+
+    r[2] += delta;
+    gkTensorGlobal.setR(r, Ai, Aj);
+    gkTensorGlobal.noStorageRecursion(tensorsPz);
+    r[2] -= delta2;
+    gkTensorGlobal.setR(r, Ai, Aj);
+    gkTensorGlobal.noStorageRecursion(tensorsNz);
+    r[2] += delta;
+
+    tensorFiniteDifference(gkTensorGlobal, delta2, order, tensor, tensorsPx, tensorsNx, tensorsPy,
+        tensorsNy, tensorsPz, tensorsNz);
+
+    // Order(L^4) recursion.
+    gkTensorGlobal.setR(r, Ai, Aj);
+    gkTensorGlobal.recursion(tensor);
+    tensorFiniteDifference(gkTensorGlobal, delta2, order, tensor, tensorsPx, tensorsNx, tensorsPy,
+        tensorsNy, tensorsPz, tensorsNz);
+
+    // Machine generated code.
+    gkTensorGlobal.setR(r, Ai, Aj);
+    gkTensorGlobal.generateTensor();
+    gkTensorGlobal.getTensor(tensor);
+    tensorFiniteDifference(gkTensorGlobal, delta2, order, tensor, tensorsPx, tensorsNx, tensorsPy,
+        tensorsNy, tensorsPz, tensorsNz);
+  }
+
+  @Test
+  public void dipoleFiniteDifferenceTest() {
+    int order = 6;
+    int mulitpoleOrder = 1;
+    double[] r = {0.7, 0.8, 0.9};
+    double x = r[0];
+    double y = r[1];
+    double z = r[2];
+
+    GKTensorGlobal gkTensorGlobal = new GKTensorGlobal(mulitpoleOrder, order, gc, Eh, Es);
+    int tensorCount = MultipoleTensor.tensorCount(order);
+    double[] tensor = new double[tensorCount];
+    gkTensorGlobal.setR(x, y, z, Ai, Aj);
+    gkTensorGlobal.noStorageRecursion(tensor);
+    double[] tensorsPx = new double[tensorCount];
+    double[] tensorsNx = new double[tensorCount];
+    double[] tensorsPy = new double[tensorCount];
+    double[] tensorsNy = new double[tensorCount];
+    double[] tensorsPz = new double[tensorCount];
+    double[] tensorsNz = new double[tensorCount];
+    double delta = 1.0e-5;
+    double delta2 = delta * 2;
+    r[0] += delta;
+    gkTensorGlobal.setR(r, Ai, Aj);
+    gkTensorGlobal.noStorageRecursion(tensorsPx);
+    r[0] -= delta2;
+    gkTensorGlobal.setR(r, Ai, Aj);
+    gkTensorGlobal.noStorageRecursion(tensorsNx);
+    r[0] += delta;
+
+    r[1] += delta;
+    gkTensorGlobal.setR(r, Ai, Aj);
+    gkTensorGlobal.noStorageRecursion(tensorsPy);
+    r[1] -= delta2;
+    gkTensorGlobal.setR(r, Ai, Aj);
+    gkTensorGlobal.noStorageRecursion(tensorsNy);
+    r[1] += delta;
+
+    r[2] += delta;
+    gkTensorGlobal.setR(r, Ai, Aj);
+    gkTensorGlobal.noStorageRecursion(tensorsPz);
+    r[2] -= delta2;
+    gkTensorGlobal.setR(r, Ai, Aj);
+    gkTensorGlobal.noStorageRecursion(tensorsNz);
+    r[2] += delta;
+
+    tensorFiniteDifference(gkTensorGlobal, delta2, order, tensor, tensorsPx, tensorsNx, tensorsPy,
+        tensorsNy, tensorsPz, tensorsNz);
+
+    // Order(L^4) recursion.
+    gkTensorGlobal.setR(r, Ai, Aj);
+    gkTensorGlobal.recursion(tensor);
+    tensorFiniteDifference(gkTensorGlobal, delta2, order, tensor, tensorsPx, tensorsNx, tensorsPy,
+        tensorsNy, tensorsPz, tensorsNz);
+
+    // Machine generated code.
+    gkTensorGlobal.setR(r, Ai, Aj);
+    gkTensorGlobal.generateTensor();
+    gkTensorGlobal.getTensor(tensor);
+    tensorFiniteDifference(gkTensorGlobal, delta2, order, tensor, tensorsPx, tensorsNx, tensorsPy,
+        tensorsNy, tensorsPz, tensorsNz);
+  }
+
+  private void tensorFiniteDifference(GKTensorGlobal multipoleTensor,
+      double delta2, int order, double[] tensor,
+      double[] tensorsPx, double[] tensorsNx,
+      double[] tensorsPy, double[] tensorsNy,
+      double[] tensorsPz, double[] tensorsNz) {
+
+    int start = multipoleTensor.multipoleOrder;
+
+    String info = "GK Global";
+    // Test the partial derivatives for all tensor components.
+    for (int l = start; l < order; l++) {
+      // Test X derivative
+      double expect = tensor[multipoleTensor.ti(l + 1, 0, 0)];
+      double actual = (tensorsPx[multipoleTensor.ti(l, 0, 0)] - tensorsNx[multipoleTensor.ti(l, 0, 0)]) / delta2;
+      assertEquals(info + " @ " + l, expect, actual, fdTolerance);
+      // Test Y derivative
+      expect = tensor[multipoleTensor.ti(l, 1, 0)];
+      actual =
+          (tensorsPy[multipoleTensor.ti(l, 0, 0)] - tensorsNy[multipoleTensor.ti(l, 0, 0)]) / delta2;
+      assertEquals(info + " @ " + l, expect, actual, fdTolerance);
+      // Test Z derivative
+      expect = tensor[multipoleTensor.ti(l, 0, 1)];
+      actual =
+          (tensorsPz[multipoleTensor.ti(l, 0, 0)] - tensorsNz[multipoleTensor.ti(l, 0, 0)]) / delta2;
+      assertEquals(info + " @ " + l, expect, actual, fdTolerance);
+    }
+    for (int l = 0; l < order; l++) {
+      for (int m = 1; m < order - l; m++) {
+        // Test X derivative
+        double expect = tensor[multipoleTensor.ti(l + 1, m, 0)];
+        double actual = (tensorsPx[multipoleTensor.ti(l, m, 0)] - tensorsNx[multipoleTensor.ti(l, m, 0)]) / delta2;
+        assertEquals(info + " " + l + " " + m, expect, actual, fdTolerance);
+        // Test Y derivative
+        expect = tensor[multipoleTensor.ti(l, m + 1, 0)];
+        actual = (tensorsPy[multipoleTensor.ti(l, m, 0)] - tensorsNy[multipoleTensor.ti(l, m, 0)]) / delta2;
+        assertEquals(info + " " + l + " " + m, expect, actual, fdTolerance);
+        // Test Z derivative
+        expect = tensor[multipoleTensor.ti(l, m, 1)];
+        actual = (tensorsPz[multipoleTensor.ti(l, m, 0)] - tensorsNz[multipoleTensor.ti(l, m, 0)]) / delta2;
+        assertEquals(info + " " + l + " " + m, expect, actual, fdTolerance);
+      }
+    }
+    // Find (d/dx)^l * (d/dy)^m * (d/dz)^n for l + m + n = 1..o (n >= 1)
+    for (int l = 0; l < order; l++) {
+      for (int m = 0; m < order - l; m++) {
+        for (int n = 1; n < order - l - m; n++) {
+          // Test X derivative
+          double expect = tensor[multipoleTensor.ti(l + 1, m, n)];
+          double actual =
+              (tensorsPx[multipoleTensor.ti(l, m, n)] - tensorsNx[multipoleTensor.ti(l, m, n)])
+                  / delta2;
+          assertEquals(info + " " + l + " " + m, expect, actual, fdTolerance);
+          // Test Y derivative
+          expect = tensor[multipoleTensor.ti(l, m + 1, n)];
+          actual =
+              (tensorsPy[multipoleTensor.ti(l, m, n)] - tensorsNy[multipoleTensor.ti(l, m, n)])
+                  / delta2;
+          assertEquals(info + " " + l + " " + m, expect, actual, fdTolerance);
+          // Test Z derivative
+          expect = tensor[multipoleTensor.ti(l, m, n + 1)];
+          actual =
+              (tensorsPz[multipoleTensor.ti(l, m, n)] - tensorsNz[multipoleTensor.ti(l, m, n)])
+                  / delta2;
+          assertEquals(info + " " + l + " " + m, expect, actual, fdTolerance);
+        }
+      }
+    }
   }
 }

@@ -1,18 +1,51 @@
+// ******************************************************************************
+//
+// Title:       Force Field X.
+// Description: Force Field X - Software for Molecular Biophysics.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+//
+// This file is part of Force Field X.
+//
+// Force Field X is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3 as published by
+// the Free Software Foundation.
+//
+// Force Field X is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License along with
+// Force Field X; if not, write to the Free Software Foundation, Inc., 59 Temple
+// Place, Suite 330, Boston, MA 02111-1307 USA
+//
+// Linking this library statically or dynamically with other modules is making a
+// combined work based on this library. Thus, the terms and conditions of the
+// GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of this library give you
+// permission to link this library with independent modules to produce an
+// executable, regardless of the license terms of these independent modules, and
+// to copy and distribute the resulting executable under terms of your choice,
+// provided that you also meet, for each linked independent module, the terms
+// and conditions of the license of that module. An independent module is a
+// module which is not derived from or based on this library. If you modify this
+// library, you may extend this exception to your version of the library, but
+// you are not obligated to do so. If you do not wish to do so, delete this
+// exception statement from your version.
+//
+// ******************************************************************************
 package ffx.numerics.multipole;
 
 import static ffx.numerics.math.DoubleMath.length;
 import static org.junit.Assert.assertEquals;
 
-import ffx.numerics.math.DoubleMath;
-import java.util.logging.Logger;
 import org.junit.Test;
 
 public class GKTensorQITest {
 
-  /** Logger for the MultipoleTensor class. */
-  private static final Logger logger = Logger.getLogger(GKTensorQITest.class.getName());
-
   private final double tolerance = 1.0e-9;
+  private final double fdTolerance = 1.0e-6;
 
   private static final double gc = 2.455;
   private static final double Eh = 1.0;
@@ -188,7 +221,8 @@ public class GKTensorQITest {
     assertEquals(" R001", z * A10, gkDipoleTensor.R001, tolerance);
     assertEquals(" R002", z * z * A11 + A10, gkDipoleTensor.R002, tolerance);
     assertEquals(" R003", z * z * z * A12 + 3.0 * z * A11, gkDipoleTensor.R003, tolerance);
-    assertEquals(" R004", z * z * z * z * A13 + 6.0 * z * z * A12 + 3.0 * A11, gkDipoleTensor.R004, tolerance);
+    assertEquals(" R004", z * z * z * z * A13 + 6.0 * z * z * A12 + 3.0 * A11, gkDipoleTensor.R004,
+        tolerance);
   }
 
   @Test
@@ -214,16 +248,28 @@ public class GKTensorQITest {
     // No dipole potential.
     assertEquals(" R100", 0.0, gkQuadrupoleTensor.R100, tolerance);
 
-    // Qxx (checks de-tracing).
     double z = length(r);
+    double x = 0.0;
+    double y = 0.0;
+
+    // Trace.
+    assertEquals(" R200", x * x * A20, gkQuadrupoleTensor.R200, tolerance);
+    assertEquals(" R020", y * y * A20, gkQuadrupoleTensor.R020, tolerance);
     assertEquals(" R002", z * z * A20, gkQuadrupoleTensor.R002, tolerance);
-    assertEquals(" R003", z * z * z * A21 + 2.0 * z * A20, gkQuadrupoleTensor.R003, tolerance);
-    assertEquals(" R004", z * z * z * z * A22 + 5.0 * z * z * A21 + 2.0 * A20, gkQuadrupoleTensor.R004, tolerance);
-    assertEquals(" R005", z * z * z * z * z * A23 + 9.0 * z * z * z * A22 + 12.0 * z * A21, gkQuadrupoleTensor.R005, tolerance);
+
+    // Gradient of the trace with respect to z (note that the x*A20 term sums to 2*x*A20 over the trace).
+    assertEquals(" R003", z * z * z * A21 + 3.0 * z * A20, gkQuadrupoleTensor.R003, tolerance);
+    assertEquals(" R201", z * A20, gkQuadrupoleTensor.R201, tolerance);
+    assertEquals(" R021", z * A20, gkQuadrupoleTensor.R021, tolerance);
+
+    // Higher order Qzz terms.
+    assertEquals(" R004", z * z * z * z * A22 + 6.0 * z * z * A21 + 3.0 * A20,
+        gkQuadrupoleTensor.R004, tolerance);
+    assertEquals(" R005", z * z * z * z * z * A23 + 10.0 * z * z * z * A22 + 15.0 * z * A21,
+        gkQuadrupoleTensor.R005, tolerance);
 
     // Qxy
     assertEquals(" R110", 0.0, gkQuadrupoleTensor.R110, tolerance);
-    assertEquals(" R201", z * A20, gkQuadrupoleTensor.R201, tolerance);
     assertEquals(" R111", 0.0, gkQuadrupoleTensor.R111, tolerance);
     assertEquals(" R310", 0.0, gkQuadrupoleTensor.R310, tolerance);
     assertEquals(" R220", A20, gkQuadrupoleTensor.R220, tolerance);
@@ -231,5 +277,128 @@ public class GKTensorQITest {
     assertEquals(" R401", 3.0 * z * A21, gkQuadrupoleTensor.R401, tolerance);
     assertEquals(" R023", z * z * z * A22 + 3.0 * z * A21, gkQuadrupoleTensor.R023, tolerance);
     assertEquals(" R311", 0.0, gkQuadrupoleTensor.R311, tolerance);
+  }
+
+  @Test
+  public void chargeFiniteDifferenceTest() {
+    int order = 6;
+    double[] r = {0.7, 0.8, 0.9};
+
+    r[2] = length(r);
+    r[0] = 0.0;
+    r[1] = 0.0;
+
+    GKTensorQI gkTensorQI = new GKTensorQI(0, order, gc, Eh, Es);
+    int tensorCount = MultipoleTensor.tensorCount(order);
+    double[] tensor = new double[tensorCount];
+    gkTensorQI.setR(r, Ai, Aj);
+    gkTensorQI.noStorageRecursion(tensor);
+    double[] tensorsPz = new double[tensorCount];
+    double[] tensorsNz = new double[tensorCount];
+    double delta = 1.0e-5;
+    double delta2 = delta * 2;
+
+    r[2] += delta;
+    gkTensorQI.setR(r, Ai, Aj);
+    gkTensorQI.noStorageRecursion(tensorsPz);
+    r[2] -= delta2;
+    gkTensorQI.setR(r, Ai, Aj);
+    gkTensorQI.noStorageRecursion(tensorsNz);
+    r[2] += delta;
+
+    tensorFiniteDifference(gkTensorQI, delta2, order, tensor, tensorsPz, tensorsNz);
+
+    // Order(L^4) recursion.
+    gkTensorQI.setR(r, Ai, Aj);
+    gkTensorQI.recursion(tensor);
+    tensorFiniteDifference(gkTensorQI, delta2, order, tensor, tensorsPz, tensorsNz);
+
+    // Machine generated code.
+    gkTensorQI.setR(r, Ai, Aj);
+    gkTensorQI.generateTensor();
+    gkTensorQI.getTensor(tensor);
+    tensorFiniteDifference(gkTensorQI, delta2, order, tensor, tensorsPz, tensorsNz);
+  }
+
+  @Test
+  public void dipoleFiniteDifferenceTest() {
+    int order = 6;
+    int mulitpoleOrder = 1;
+    double[] r = {0.7, 0.8, 0.9};
+    r[2] = length(r);
+    r[0] = 0.0;
+    r[1] = 0.0;
+
+    GKTensorQI gkTensorQI = new GKTensorQI(mulitpoleOrder, order, gc, Eh, Es);
+    int tensorCount = MultipoleTensor.tensorCount(order);
+    double[] tensor = new double[tensorCount];
+    gkTensorQI.setR(r, Ai, Aj);
+    gkTensorQI.noStorageRecursion(tensor);
+    double[] tensorsPz = new double[tensorCount];
+    double[] tensorsNz = new double[tensorCount];
+    double delta = 1.0e-5;
+    double delta2 = delta * 2;
+
+    r[2] += delta;
+    gkTensorQI.setR(r, Ai, Aj);
+    gkTensorQI.noStorageRecursion(tensorsPz);
+    r[2] -= delta2;
+    gkTensorQI.setR(r, Ai, Aj);
+    gkTensorQI.noStorageRecursion(tensorsNz);
+    r[2] += delta;
+
+    tensorFiniteDifference(gkTensorQI, delta2, order, tensor, tensorsPz, tensorsNz);
+
+    // Order(L^4) recursion.
+    gkTensorQI.setR(r, Ai, Aj);
+    gkTensorQI.recursion(tensor);
+    tensorFiniteDifference(gkTensorQI, delta2, order, tensor, tensorsPz, tensorsNz);
+
+    // Machine generated code.
+    gkTensorQI.setR(r, Ai, Aj);
+    gkTensorQI.generateTensor();
+    gkTensorQI.getTensor(tensor);
+    tensorFiniteDifference(gkTensorQI, delta2, order, tensor, tensorsPz, tensorsNz);
+  }
+
+  private void tensorFiniteDifference(GKTensorQI gkTensorQI, double delta2, int order,
+      double[] tensor, double[] tensorsPz, double[] tensorsNz) {
+
+    int start = gkTensorQI.multipoleOrder;
+
+    String info = "QK QI";
+
+    // Test the partial derivatives for all tensor components.
+    for (int l = start; l < order; l++) {
+      // Test Z derivative
+      double expect = tensor[gkTensorQI.ti(l, 0, 1)];
+      double actual =
+          (tensorsPz[gkTensorQI.ti(l, 0, 0)] - tensorsNz[gkTensorQI.ti(l, 0, 0)]) / delta2;
+      assertEquals(info + " (d/dx): " + l, expect, actual, fdTolerance);
+    }
+    for (int l = 0; l < order; l++) {
+      for (int m = 1; m < order - l; m++) {
+        // Test Z derivative
+        double expect = tensor[gkTensorQI.ti(l, m, 1)];
+        double actual =
+            (tensorsPz[gkTensorQI.ti(l, m, 0)] - tensorsNz[gkTensorQI.ti(l, m, 0)])
+                / delta2;
+        assertEquals(info + " (d/dx): " + l + " (d/dy): " + m, expect, actual, fdTolerance);
+      }
+    }
+    // Find (d/dx)^l * (d/dy)^m * (d/dz)^n for l + m + n = 1..o (n >= 1)
+    for (int l = 0; l < order; l++) {
+      for (int m = 0; m < order - l; m++) {
+        for (int n = 1; n < order - l - m; n++) {
+          // Test Z derivative
+          double expect = tensor[gkTensorQI.ti(l, m, n + 1)];
+          double actual =
+              (tensorsPz[gkTensorQI.ti(l, m, n)] - tensorsNz[gkTensorQI.ti(l, m, n)])
+                  / delta2;
+          assertEquals(info + " (d/dx): " + l + " (d/dy): " + m + " (d/dz):" + n, expect, actual,
+              fdTolerance);
+        }
+      }
+    }
   }
 }
