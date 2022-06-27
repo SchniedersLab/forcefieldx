@@ -37,10 +37,13 @@
 //******************************************************************************
 package ffx.algorithms.groovy.test
 
+import edu.rit.pj.Comm
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
+import ffx.algorithms.cli.RepExOptions
 import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.MolecularDynamicsOpenMM
+import ffx.algorithms.dynamics.PhReplicaExchange
 import ffx.numerics.Potential
 import ffx.potential.cli.WriteoutOptions
 import ffx.potential.extended.ExtendedSystem
@@ -68,6 +71,9 @@ class PhDynamics extends AlgorithmsScript {
   @Mixin
   WriteoutOptions writeOutOptions
 
+  @Mixin
+  RepExOptions repEx
+
   /**
    * --pH or --constantPH Constant pH value for molecular dynamics.
    */
@@ -90,6 +96,12 @@ class PhDynamics extends AlgorithmsScript {
   @Option(names = ['--titrationReport', '--esvLog'], paramLabel = '0.001 (psec)',
           description = 'Interval in psec to report ESV energy and lambdas when cycling between GPU and CPU.')
   double titrReport  = 0.001
+
+  @Option(names = ['--pHGaps'], paramLabel = '1',
+          description = 'pH gap between replica exchange windows.')
+  double pHGap = 1
+
+
 
   /**
    * One or more filenames.
@@ -179,8 +191,72 @@ class PhDynamics extends AlgorithmsScript {
       dyn = null
     }
 
-    // CPU Constant pH Dynamics
-    if (!(molecularDynamics instanceof MolecularDynamicsOpenMM)) {
+
+    //TODO: **************************************************************************************
+    if(repEx.repEx){
+      Comm world = Comm.world()
+      int size = world.size()
+
+      logger.info("\n Running replica exchange molecular dynamics on " + filename)
+      int rank = (size > 1) ? world.rank() : 0
+      logger.info(" Rank: " + rank.toString())
+
+      File structureFile = new File(filename)
+      File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank))
+      if (!rankDirectory.exists()) {
+        rankDirectory.mkdir()
+      }
+
+      final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
+      logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
+      activeAssembly.setFile(new File(newMolAssemblyFile))
+      PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, pHGap, dynamicsOptions.temperature, esvSystem)
+
+      long totalSteps = dynamicsOptions.numSteps
+      int nSteps = repEx.replicaSteps
+      int exchangeCycles = (int) (totalSteps / nSteps)
+
+      if (exchangeCycles <= 0) {
+        exchangeCycles = 1
+      }
+
+      pHReplicaExchange.
+              sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
+
+
+      String outputName = rankDirectory.getPath() + File.separator + "rankOutput.log"
+      File output = new File(outputName)
+
+      String repExLogName = structureFile.getParent() + File.separator + "repEx.log"
+      File repExLog = new File(repExLogName)
+
+      if(!repExLog.exists()){
+        FileWriter wr = new FileWriter(repExLog)
+        wr.write("")
+        wr.close()
+      }
+
+      if(world.size() > 1) {
+        try (FileReader r = new FileReader(structureFile.getParent() + File.separator + "repEx.log")
+             BufferedReader br = new BufferedReader(r)
+             FileWriter wr = new FileWriter(output)
+             BufferedWriter bwr = new BufferedWriter(wr)) {
+
+          bwr.write("")
+          String data = br.readLine()
+          while (data != null) {
+            if (data.substring(0, 4).contains("[" + world.rank() + "]")) {
+              wr.write(data + "\n")
+            }
+            data = br.readLine()
+          }
+        } catch (IOException e) {
+          e.printStackTrace()
+        }
+      }
+
+    } else if (!(molecularDynamics instanceof MolecularDynamicsOpenMM)) {
+      // CPU Constant pH Dynamics
       molecularDynamics.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
           dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temperature, true, dyn)
       esvSystem.writeLambdaHistogram()

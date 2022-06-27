@@ -310,7 +310,7 @@ public class ExtendedSystem implements Potential {
         tautBiasMag = properties.getDouble("tautomer.bias.magnitude", DISCR_BIAS);
         HIStitrBiasMag = properties.getDouble("HIS.titration.bias.magnitude", DISCR_BIAS);
         HIStautBiasMag = properties.getDouble("HIS.tautomer.bias.magnitude", DISCR_BIAS);
-        lockStates = properties.getBoolean("lock.esv.states", false); //Prevents setTitrationLambda/setTautomerLambda
+        lockStates = properties.getBoolean("lock.esv.states", false); // Prevents setTitrationLambda/setTautomerLambda
         double initialTitrationLambda = properties.getDouble("lambda.titration.initial", 0.5);
         double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
         boolean guessTitrState = properties.getBoolean("guess.titration.state", false);

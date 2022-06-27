@@ -81,9 +81,7 @@ public class XPHFilter extends SystemFilter {
   private BufferedReader bufferedReader = null;
   private int snapShot;
   private String remarkLine;
-
-  //FIXME: final?
-  private final ExtendedSystem extendedSystem;
+  private ExtendedSystem extendedSystem;
 
   /**
    * Constructor for XPHFilter.
@@ -103,6 +101,12 @@ public class XPHFilter extends SystemFilter {
     super(file, system, forceField, properties);
     this.fileType = FileType.XPH;
     extendedSystem = esvSystem;
+  }
+
+  public XPHFilter(SystemFilter systemFilter, ExtendedSystem extendedSystem) {
+    super(systemFilter.getFile(), systemFilter.getActiveMolecularSystem(), systemFilter.getActiveMolecularSystem().getForceField(), systemFilter.getActiveMolecularSystem().getProperties());
+
+    this.extendedSystem = extendedSystem;
   }
 
   /**
@@ -618,35 +622,38 @@ public class XPHFilter extends SystemFilter {
       }
 
       // Read ESVs
-      data = bufferedReader.readLine().trim();
-      while (data.equals("") && bufferedReader.ready()) {
+      while (data != null && data.equals("") && bufferedReader.ready()) {
         data = bufferedReader.readLine().trim();
       }
 
-      tokens = data.split(" +", 2);
-      int numOfESVs = parseInt(tokens[1]);
-      data = bufferedReader.readLine().trim();
+      if(data != null) {
+        tokens = data.split(" +", 2);
 
-      List<Residue> residueList = extendedSystem.getExtendedResidueList();
-
-      if (numOfESVs == residueList.size()) {
-        int switchIndex = extendedSystem.getTitratingResidueList().size();
-        for (int i = 0; i < residueList.size(); i++) {
-          tokens = data.split(" +", 3);
-
-          if (i < switchIndex) {
-            extendedSystem.setTitrationLambda(residueList.get(i), parseDouble(tokens[2]));
-          } else {
-            extendedSystem.setTautomerLambda(residueList.get(i), parseDouble(tokens[2]));
-          }
-
+        if (tokens[0].equalsIgnoreCase("ESV")) {
+          int numOfESVs = parseInt(tokens[1]);
           data = bufferedReader.readLine().trim();
-        }
-      } else {
-        logger.severe(" Number of ESVs in archive doesn't match extended system residue list size.");
-        return false;
-      }
 
+          List<Residue> residueList = extendedSystem.getExtendedResidueList();
+
+          if (numOfESVs == residueList.size()) {
+            int switchIndex = extendedSystem.getTitratingResidueList().size();
+            for (int i = 0; i < residueList.size(); i++) {
+              tokens = data.split(" +", 3);
+
+              if (i < switchIndex) {
+                extendedSystem.setTitrationLambda(residueList.get(i), parseDouble(tokens[2]));
+              } else {
+                extendedSystem.setTautomerLambda(residueList.get(i), parseDouble(tokens[2]));
+              }
+
+              data = bufferedReader.readLine().trim();
+            }
+          } else {
+            logger.severe(" Number of ESVs in archive doesn't match extended system residue list size.");
+            return false;
+          }
+        }
+      }
       return true;
 
     } catch (FileNotFoundException e) {
@@ -657,6 +664,10 @@ public class XPHFilter extends SystemFilter {
       logger.log(Level.WARNING, message, e);
     }
     return false;
+  }
+
+  public ExtendedSystem getExtendedSystem(){
+    return extendedSystem;
   }
 
   /** {@inheritDoc} */
