@@ -259,7 +259,7 @@ class SortArc extends AlgorithmsScript {
 
             molecularAssemblies[j] = ma
             if(sortPh){
-                molecularAssemblies = getActiveAssemblies(files[j])
+                molecularAssemblies[j] = getActiveAssembly(files[j])
             }
             ExtendedSystem extendedSystem = new ExtendedSystem(molecularAssemblies[j], null)
             //TODO: Figure out how to get esv to be properly read in
