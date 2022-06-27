@@ -150,6 +150,9 @@ public class CoulombTensorGlobal extends MultipoleTensor {
     R200 = fma(x, term1001, term0001);
     double term1002 = x * term0003;
     double term2001 = fma(x, term1002, term0002);
+    // x * term2001 + 2 * term1001
+    // x * (x * term1002 + term0002) + 2 * (x * term0002)
+    // x * (x * (x * term0003) + term0002) + 2 * (x * term0002)
     R300 = fma(x, term2001, 2 * term1001);
     R010 = y * term0001;
     double term0101 = y * term0002;
@@ -1447,7 +1450,21 @@ public class CoulombTensorGlobal extends MultipoleTensor {
   @Override
   protected void noStorageRecursion(double[] r, double[] tensor) {
     setR(r);
+    noStorageRecursion(tensor);
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * <p>This method is a driver to collect elements of the Cartesian multipole tensor given the
+   * recursion relationships implemented by the method "Tlmnj", which can be called directly to get a
+   * single tensor element. It does not store intermediate values of the recursion, causing it to
+   * scale O(order^8). For order = 5, this approach is a factor of 10 slower than recursion.
+   */
+  @Override
+  protected void noStorageRecursion(double[] tensor) {
     source(T000);
+    double[] r = {x, y, z};
     // 1/r
     tensor[0] = T000[0];
     // Find (d/dx)^l for l = 1..order (m = 0, n = 0)
@@ -1474,6 +1491,12 @@ public class CoulombTensorGlobal extends MultipoleTensor {
   @Override
   protected void recursion(double[] r, double[] tensor) {
     setR(r);
+    recursion(tensor);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  protected void recursion(double[] tensor) {
     source(work);
     tensor[0] = work[0];
     // Find (d/dx)^l for l = 1..order (m = 0, n = 0)

@@ -38,13 +38,10 @@
 package ffx.numerics.multipole;
 
 import static ffx.numerics.math.ScalarMath.doubleFactorial;
-import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import java.util.logging.Logger;
 
 /**
  * The GeneralizedKirkwoodTensor class contains utilities for generated Generalized Kirkwood
@@ -53,10 +50,7 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class GeneralizedKirkwoodTensor extends CoulombTensorGlobal {
-
-  /** Logger for the MultipoleTensor class. */
-  private static final Logger logger = Logger.getLogger(GeneralizedKirkwoodTensor.class.getName());
+public class GKTensorGlobal extends CoulombTensorGlobal {
 
   /**
    * Generalized Kirkwood constant.
@@ -81,7 +75,7 @@ public class GeneralizedKirkwoodTensor extends CoulombTensorGlobal {
   /**
    * Multipole order (2nd is needed for AMOEBA forces).
    */
-  private final int multipoleOrder;
+  protected final int multipoleOrder;
 
   /**
    * The Kirkwood dielectric function for the given multipole order.
@@ -142,7 +136,7 @@ public class GeneralizedKirkwoodTensor extends CoulombTensorGlobal {
    * @param Eh Homogeneous dielectric constant.
    * @param Es Solvent dielectric constant.
    */
-  public GeneralizedKirkwoodTensor(int multipoleOrder, int order, double gc, double Eh, double Es) {
+  public GKTensorGlobal(int multipoleOrder, int order, double gc, double Eh, double Es) {
     super(order);
     this.multipoleOrder = multipoleOrder;
     this.order = order;
@@ -169,7 +163,7 @@ public class GeneralizedKirkwoodTensor extends CoulombTensorGlobal {
     bn = new double[order + 1];
   }
 
-  public double selfEnergy(PolarizableMultipole polarizableMultipole, double a) {
+  public double selfEnergy(PolarizableMultipole polarizableMultipole) {
     double q2 = polarizableMultipole.q * polarizableMultipole.q;
     double dx = polarizableMultipole.dx;
     double dy = polarizableMultipole.dy;
@@ -187,22 +181,33 @@ public class GeneralizedKirkwoodTensor extends CoulombTensorGlobal {
     double qyy2 = polarizableMultipole.qyy * polarizableMultipole.qyy;
     double qzz2 = polarizableMultipole.qzz * polarizableMultipole.qzz;
 
+    double a = sqrt(ai * aj);
     double a2 = a * a;
     double a3 = a * a2;
     double a5 = a2 * a3;
 
-    // Permanent self-energy
     // Born partial charge
     double e0 = cn(0, Eh, Es) * q2 / a;
-    // Dipole
+    // Permanent Dipole
     double e1 = cn(1, Eh, Es) * (dx2 + dy2 + dz2) / a3;
-    // Quadrupole
+    // Permanent Quadrupole
     double e2 = cn(2, Eh, Es) * (3.0 * (qxy2 + qxz2 + qyz2) + 6.0 * (qxx2 + qyy2 + qzz2)) / a5;
 
     // Induced self-energy
     double ei = cn(1, Eh, Es) * (dx * ux + dy * uy + dz * uz) / a3;
 
     return 0.5 * (e0 + e1 + e2 + ei);
+  }
+
+  /**
+   * Set the separation vector.
+   *
+   * @param r Separation vector.
+   * @param ai Born radius for Atom i.
+   * @param aj Born radius for Atom j.
+   */
+  protected void setR(double[] r, double ai, double aj) {
+    setR(r[0], r[1], r[2], ai, aj);
   }
 
   /**
@@ -225,11 +230,19 @@ public class GeneralizedKirkwoodTensor extends CoulombTensorGlobal {
   /**
    * Generate source terms for the Kirkwood version of the Challacombe et al. recursion.
    */
-  protected void source() {
+  protected void source(double[] work) {
     for (int n = 0; n <= order; n++) {
       an0[n] = an0(n);
       fn[n] = fn(n);
       bn[n] = bn(n);
+    }
+
+    for (int n = 0; n <= order; n++) {
+      if (n < multipoleOrder) {
+        work[n] = 0.0;
+      } else {
+        work[n] = anm(multipoleOrder, n - multipoleOrder);
+      }
     }
   }
 
@@ -372,4 +385,5 @@ public class GeneralizedKirkwoodTensor extends CoulombTensorGlobal {
   public static double cn(int n, double Eh, double Es) {
     return (n + 1) * (Eh - Es) / ((n + 1) * Es + n * Eh);
   }
+
 }

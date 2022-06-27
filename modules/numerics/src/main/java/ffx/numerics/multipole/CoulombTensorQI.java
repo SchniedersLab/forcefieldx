@@ -671,8 +671,22 @@ public class CoulombTensorQI extends MultipoleTensor {
   @Override
   protected void noStorageRecursion(double[] r, double[] tensor) {
     setR(r);
+    noStorageRecursion(tensor);
+  }
+
+  /**
+   * This method is a driver to collect elements of the Cartesian multipole tensor given the
+   * recursion relationships implemented by the method "Tlmnj", which can be called directly to get a
+   * single tensor element. It does not store intermediate values of the recursion, causing it to
+   * scale O(order^8). For order = 5, this approach is a factor of 10 slower than recursion that
+   * stores intermediates.
+   *
+   * @param tensor double[] length must be at least binomial(order + 3, 3).
+   */
+  @Override
+  protected void noStorageRecursion(double[] tensor) {
     assert (x == 0.0 && y == 0.0);
-    r = new double[] {x, y, z};
+    double[] r = {x, y, z};
     source(T000);
     // 1/r
     tensor[0] = T000[0];
@@ -700,6 +714,12 @@ public class CoulombTensorQI extends MultipoleTensor {
   @Override
   protected void recursion(final double[] r, final double[] tensor) {
     setR(r);
+    recursion(tensor);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  protected void recursion(final double[] tensor) {
     assert (x == 0.0 && y == 0.0);
     source(work);
     tensor[0] = work[0];

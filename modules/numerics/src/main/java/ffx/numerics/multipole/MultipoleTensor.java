@@ -816,29 +816,6 @@ public abstract class MultipoleTensor {
   }
 
   /**
-   * unrolled.
-   *
-   * @param r an array of {@link double} objects.
-   * @param tensor an array of {@link double} objects.
-   */
-  final void unrolled(final double[] r, final double[] tensor) {
-    switch (order) {
-      case 4:
-        order4();
-        break;
-      case 5:
-        order5();
-        break;
-      case 6:
-        order6();
-        break;
-      default:
-        throw new IllegalArgumentException();
-    }
-    getTensor(tensor);
-  }
-
-  /**
    * Contract multipole moments with their respective electrostatic potential derivatives.
    *
    * @param mI PolarizableMultipole at site I.
@@ -1542,6 +1519,16 @@ public abstract class MultipoleTensor {
    * single tensor element. It does not store intermediate values of the recursion, causing it to
    * scale O(order^8). For order = 5, this approach is a factor of 10 slower than recursion.
    *
+   * @param tensor double[] length must be at least binomial(order + 3, 3).
+   */
+  protected abstract void noStorageRecursion(double[] tensor);
+
+  /**
+   * This method is a driver to collect elements of the Cartesian multipole tensor given the
+   * recursion relationships implemented by the method "Tlmnj", which can be called directly to get a
+   * single tensor element. It does not store intermediate values of the recursion, causing it to
+   * scale O(order^8). For order = 5, this approach is a factor of 10 slower than recursion.
+   *
    * @param r double[] vector between two sites.
    * @param tensor double[] length must be at least binomial(order + 3, 3).
    */
@@ -1564,14 +1551,23 @@ public abstract class MultipoleTensor {
    * @return double The requested Tensor element (intermediate if j .GT. 0).
    * @since 1.0
    */
-  protected abstract double Tlmnj(
-      final int l, final int m, final int n, final int j, final double[] r, final double[] T000);
+  protected abstract double Tlmnj(final int l, final int m, final int n, final int j,
+      final double[] r, final double[] T000);
 
   /**
-   * recursion.
+   * This method is a driver to collect elements of the Cartesian multipole tensor using recursion
+   * relationships and storing intermediate values. It scales approximately O(order^4).
    *
-   * @param r an array of {@link double} objects.
-   * @param tensor an array of {@link double} objects.
+   * @param tensor double[] length must be at least binomial(order + 3, 3).
+   */
+  protected abstract void recursion(final double[] tensor);
+
+  /**
+   * This method is a driver to collect elements of the Cartesian multipole tensor using recursion
+   * relationships and storing intermediate values. It scales approximately O(order^4).
+   *
+   * @param r double[] vector between two sites.
+   * @param tensor double[] length must be at least binomial(order + 3, 3).
    */
   protected abstract void recursion(final double[] r, final double[] tensor);
 
@@ -1591,14 +1587,14 @@ public abstract class MultipoleTensor {
   protected abstract void order4();
 
   /**
-   * Hard coded computation of the Cartesian multipole tensors up to 5th order,
-   * which is needed for quadrupole-quadrupole forces.
+   * Hard coded computation of the Cartesian multipole tensors up to 5th order, which is needed for
+   * quadrupole-quadrupole forces.
    */
   protected abstract void order5();
 
   /**
-   * Hard coded computation of the Cartesian multipole tensors up to 6th order,
-   * which is needed for quadrupole-quadrupole forces and orthogonal space sampling.
+   * Hard coded computation of the Cartesian multipole tensors up to 6th order, which is needed for
+   * quadrupole-quadrupole forces and orthogonal space sampling.
    */
   protected abstract void order6();
 
@@ -1706,70 +1702,70 @@ public abstract class MultipoleTensor {
   protected final int t012;
   protected final int t111;
   // l + m + n = 4 (15) 35
-  private final int t400;
-  private final int t040;
-  private final int t004;
-  private final int t310;
-  private final int t301;
-  private final int t130;
-  private final int t031;
-  private final int t103;
-  private final int t013;
-  private final int t220;
-  private final int t202;
-  private final int t022;
-  private final int t211;
-  private final int t121;
-  private final int t112;
+  protected final int t400;
+  protected final int t040;
+  protected final int t004;
+  protected final int t310;
+  protected final int t301;
+  protected final int t130;
+  protected final int t031;
+  protected final int t103;
+  protected final int t013;
+  protected final int t220;
+  protected final int t202;
+  protected final int t022;
+  protected final int t211;
+  protected final int t121;
+  protected final int t112;
   // l + m + n = 5 (21) 56
-  private final int t500;
-  private final int t050;
-  private final int t005;
-  private final int t410;
-  private final int t401;
-  private final int t140;
-  private final int t041;
-  private final int t104;
-  private final int t014;
-  private final int t320;
-  private final int t302;
-  private final int t230;
-  private final int t032;
-  private final int t203;
-  private final int t023;
-  private final int t311;
-  private final int t131;
-  private final int t113;
-  private final int t221;
-  private final int t212;
-  private final int t122;
+  protected final int t500;
+  protected final int t050;
+  protected final int t005;
+  protected final int t410;
+  protected final int t401;
+  protected final int t140;
+  protected final int t041;
+  protected final int t104;
+  protected final int t014;
+  protected final int t320;
+  protected final int t302;
+  protected final int t230;
+  protected final int t032;
+  protected final int t203;
+  protected final int t023;
+  protected final int t311;
+  protected final int t131;
+  protected final int t113;
+  protected final int t221;
+  protected final int t212;
+  protected final int t122;
   // l + m + n = 6 (28) 84
-  private final int t600;
-  private final int t060;
-  private final int t006;
-  private final int t510;
-  private final int t501;
-  private final int t150;
-  private final int t051;
-  private final int t105;
-  private final int t015;
-  private final int t420;
-  private final int t402;
-  private final int t240;
-  private final int t042;
-  private final int t204;
-  private final int t024;
-  private final int t411;
-  private final int t141;
-  private final int t114;
-  private final int t330;
-  private final int t303;
-  private final int t033;
-  private final int t321;
-  private final int t231;
-  private final int t213;
-  private final int t312;
-  private final int t132;
-  private final int t123;
-  private final int t222;
+  protected final int t600;
+  protected final int t060;
+  protected final int t006;
+  protected final int t510;
+  protected final int t501;
+  protected final int t150;
+  protected final int t051;
+  protected final int t105;
+  protected final int t015;
+  protected final int t420;
+  protected final int t402;
+  protected final int t240;
+  protected final int t042;
+  protected final int t204;
+  protected final int t024;
+  protected final int t411;
+  protected final int t141;
+  protected final int t114;
+  protected final int t330;
+  protected final int t303;
+  protected final int t033;
+  protected final int t321;
+  protected final int t231;
+  protected final int t213;
+  protected final int t312;
+  protected final int t132;
+  protected final int t123;
+  protected final int t222;
 }
