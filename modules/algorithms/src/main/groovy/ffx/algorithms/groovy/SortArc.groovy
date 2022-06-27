@@ -258,6 +258,9 @@ class SortArc extends AlgorithmsScript {
             }
 
             molecularAssemblies[j] = ma
+            if(sortPh){
+                molecularAssemblies = getActiveAssemblies(files[j])
+            }
             ExtendedSystem extendedSystem = new ExtendedSystem(molecularAssemblies[j], null)
             //TODO: Figure out how to get esv to be properly read in
             logger.info(" Number of ESVs: " + extendedSystem.getExtendedResidueList())
@@ -304,7 +307,8 @@ class SortArc extends AlgorithmsScript {
                     boolean resetPosition = n == 0
 
                     //TODO: Fix ReadNex to actually read in esv
-                    openers[j].readNext(resetPosition, true)
+                    openers[j].readNext(resetPosition, false)
+
                     if(sortPh) {
                         ExtendedSystem esv = (openers[j] as XPHFilter).getExtendedSystem()
                         logger.info(" ESV Residues: " + esv.getExtendedResidueList().toString())
