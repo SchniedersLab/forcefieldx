@@ -306,9 +306,9 @@ class SortArc extends AlgorithmsScript {
                     //TODO: Fix ReadNex to actually read in esv
                     openers[j].readNext(resetPosition, true)
                     if(sortPh) {
-                        logger.info(" ESV Residues: " + openers[j].getExtendedSystem().getExtendedResidues().toString())
+                        //logger.info(" ESV Residues: " + (openers[j] as XPHFilter).getExtendedSystem().getExtendedResidues().toString())
                     }
-                    
+
                     String remarkLine = openers[j].getRemarkLines()
 
 
