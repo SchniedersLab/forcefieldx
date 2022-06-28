@@ -1662,6 +1662,8 @@ public class TitrationUtils {
    * HIS to HID/HIE pKa values from Bashford, Donald, et al. "Electrostatic calculations of
    * side-chain pKa values in myoglobin and comparison with NMR data for histidines." Biochemistry
    * 32.31 (1993): 8045-8056.
+   *
+   *                -(refEnergy * lambda^2 + lambdaIntercept * lambda)
    */
   public enum Titration {
 

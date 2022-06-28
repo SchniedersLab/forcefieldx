@@ -181,7 +181,7 @@ class PhDynamics extends AlgorithmsScript {
     logger.info("\n Running molecular dynamics on " + filename)
 
     molecularDynamics =
-        dynamicsOptions.getDynamics(writeOutOptions, potential, activeAssembly, algorithmListener)
+            dynamicsOptions.getDynamics(writeOutOptions, potential, activeAssembly, algorithmListener)
 
     molecularDynamics.attachExtendedSystem(esvSystem, dynamicsOptions.report)
 
@@ -191,75 +191,74 @@ class PhDynamics extends AlgorithmsScript {
       dyn = null
     }
 
+    if (!(molecularDynamics instanceof MolecularDynamicsOpenMM)) {
+      if (repEx.repEx) {
+        Comm world = Comm.world()
+        int size = world.size()
 
-    //TODO: **************************************************************************************
-    if(repEx.repEx){
-      Comm world = Comm.world()
-      int size = world.size()
+        logger.info("\n Running replica exchange molecular dynamics on " + filename)
+        int rank = (size > 1) ? world.rank() : 0
+        logger.info(" Rank: " + rank.toString())
 
-      logger.info("\n Running replica exchange molecular dynamics on " + filename)
-      int rank = (size > 1) ? world.rank() : 0
-      logger.info(" Rank: " + rank.toString())
-
-      File structureFile = new File(filename)
-      File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank))
-      if (!rankDirectory.exists()) {
-        rankDirectory.mkdir()
-      }
-
-      final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
-      logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
-      activeAssembly.setFile(new File(newMolAssemblyFile))
-      PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, pHGap, dynamicsOptions.temperature, esvSystem)
-
-      long totalSteps = dynamicsOptions.numSteps
-      int nSteps = repEx.replicaSteps
-      int exchangeCycles = (int) (totalSteps / nSteps)
-
-      if (exchangeCycles <= 0) {
-        exchangeCycles = 1
-      }
-
-      pHReplicaExchange.
-              sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
-
-
-      String outputName = rankDirectory.getPath() + File.separator + "rankOutput.log"
-      File output = new File(outputName)
-
-      String repExLogName = structureFile.getParent() + File.separator + "repEx.log"
-      File repExLog = new File(repExLogName)
-
-      if(!repExLog.exists()){
-        FileWriter wr = new FileWriter(repExLog)
-        wr.write("")
-        wr.close()
-      }
-
-      if(world.size() > 1) {
-        try (FileReader r = new FileReader(structureFile.getParent() + File.separator + "repEx.log")
-             BufferedReader br = new BufferedReader(r)
-             FileWriter wr = new FileWriter(output)
-             BufferedWriter bwr = new BufferedWriter(wr)) {
-
-          bwr.write("")
-          String data = br.readLine()
-          while (data != null) {
-            if (data.substring(0, 4).contains("[" + world.rank() + "]")) {
-              wr.write(data + "\n")
-            }
-            data = br.readLine()
-          }
-        } catch (IOException e) {
-          e.printStackTrace()
+        File structureFile = new File(filename)
+        File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank))
+        if (!rankDirectory.exists()) {
+          rankDirectory.mkdir()
         }
-      }
 
-    } else if (!(molecularDynamics instanceof MolecularDynamicsOpenMM)) {
-      // CPU Constant pH Dynamics
-      molecularDynamics.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
-          dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temperature, true, dyn)
-      esvSystem.writeLambdaHistogram()
+        final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
+        logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
+        activeAssembly.setFile(new File(newMolAssemblyFile))
+        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, pHGap, dynamicsOptions.temperature, esvSystem)
+
+        long totalSteps = dynamicsOptions.numSteps
+        int nSteps = repEx.replicaSteps
+        int exchangeCycles = (int) (totalSteps / nSteps)
+
+        if (exchangeCycles <= 0) {
+          exchangeCycles = 1
+        }
+
+        pHReplicaExchange.
+                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
+
+
+        String outputName = rankDirectory.getPath() + File.separator + "rankOutput.log"
+        File output = new File(outputName)
+
+        String repExLogName = structureFile.getParent() + File.separator + "repEx.log"
+        File repExLog = new File(repExLogName)
+
+        if (!repExLog.exists()) {
+          FileWriter wr = new FileWriter(repExLog)
+          wr.write("")
+          wr.close()
+        }
+
+        if (world.size() > 1) {
+          try (FileReader r = new FileReader(structureFile.getParent() + File.separator + "repEx.log")
+               BufferedReader br = new BufferedReader(r)
+               FileWriter wr = new FileWriter(output)
+               BufferedWriter bwr = new BufferedWriter(wr)) {
+
+            bwr.write("")
+            String data = br.readLine()
+            while (data != null) {
+              if (data.substring(0, 4).contains("[" + world.rank() + "]")) {
+                wr.write(data + "\n")
+              }
+              data = br.readLine()
+            }
+          } catch (IOException e) {
+            e.printStackTrace()
+          }
+        }
+      } else {
+        // CPU Constant pH Dynamics
+        molecularDynamics.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
+                dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temperature, true, dyn)
+        esvSystem.writeLambdaHistogram()
+      }
     } else {
       // CPU Constant pH Dynamics alternatives with GPU Dynamics at fixed protonation states.
 
@@ -268,25 +267,88 @@ class PhDynamics extends AlgorithmsScript {
 
       // Create an FFX Molecular Dynamics
       molecularDynamics =
-          dynamicsOptions.getDynamics(writeOutOptions, potential, activeAssembly, algorithmListener,
-              MolecularDynamics.DynamicsEngine.FFX)
+              dynamicsOptions.getDynamics(writeOutOptions, potential, activeAssembly, algorithmListener,
+                      MolecularDynamics.DynamicsEngine.FFX)
       molecularDynamics.attachExtendedSystem(esvSystem, titrReport)
 
-      for (int i = 0; i < cycles; i++) {
-        // Try running on the CPU
-        molecularDynamics.setCoordinates(x)
-        molecularDynamics.dynamic(titrSteps, dynamicsOptions.dt, titrReport, dynamicsOptions.write,
-                dynamicsOptions.temperature, true, dyn)
-        x = molecularDynamics.getCoordinates()
-        esvSystem.writeLambdaHistogram()
+      if (repEx.repEx) {
+        Comm world = Comm.world()
+        int size = world.size()
 
-        // Try running in OpenMM
-        potential.energy(x)
-	    molecularDynamicsOpenMM.setCoordinates(x)
-        if(coordSteps != 0){
-          molecularDynamicsOpenMM.dynamic(coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
+        logger.info("\n Running replica exchange molecular dynamics on " + filename)
+        int rank = (size > 1) ? world.rank() : 0
+        logger.info(" Rank: " + rank.toString())
+
+        File structureFile = new File(filename)
+        File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank))
+        if (!rankDirectory.exists()) {
+          rankDirectory.mkdir()
+        }
+
+        final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
+        logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
+        activeAssembly.setFile(new File(newMolAssemblyFile))
+        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, pHGap, dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
+
+        long totalSteps = dynamicsOptions.numSteps
+        int nSteps = repEx.replicaSteps
+        int exchangeCycles = (int) (totalSteps / nSteps)
+
+        if (exchangeCycles <= 0) {
+          exchangeCycles = 1
+        }
+
+        pHReplicaExchange.
+                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
+
+
+        String outputName = rankDirectory.getPath() + File.separator + "rankOutput.log"
+        File output = new File(outputName)
+
+        String repExLogName = structureFile.getParent() + File.separator + "repEx.log"
+        File repExLog = new File(repExLogName)
+
+        if (!repExLog.exists()) {
+          FileWriter wr = new FileWriter(repExLog)
+          wr.write("")
+          wr.close()
+        }
+
+        if (world.size() > 1) {
+          try (FileReader r = new FileReader(structureFile.getParent() + File.separator + "repEx.log")
+               BufferedReader br = new BufferedReader(r)
+               FileWriter wr = new FileWriter(output)
+               BufferedWriter bwr = new BufferedWriter(wr)) {
+
+            bwr.write("")
+            String data = br.readLine()
+            while (data != null) {
+              if (data.substring(0, 4).contains("[" + world.rank() + "]")) {
+                wr.write(data + "\n")
+              }
+              data = br.readLine()
+            }
+          } catch (IOException e) {
+            e.printStackTrace()
+          }
+        }
+      } else {
+        for (int i = 0; i < cycles; i++) {
+          // Try running on the CPU
+          molecularDynamics.setCoordinates(x)
+          molecularDynamics.dynamic(titrSteps, dynamicsOptions.dt, titrReport, dynamicsOptions.write,
                   dynamicsOptions.temperature, true, dyn)
-          x = molecularDynamicsOpenMM.getCoordinates()
+          x = molecularDynamics.getCoordinates()
+          esvSystem.writeLambdaHistogram()
+
+          // Try running in OpenMM
+          potential.energy(x)
+          molecularDynamicsOpenMM.setCoordinates(x)
+          if (coordSteps != 0) {
+            molecularDynamicsOpenMM.dynamic(coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
+                    dynamicsOptions.temperature, true, dyn)
+            x = molecularDynamicsOpenMM.getCoordinates()
+          }
         }
       }
     }
@@ -294,18 +356,17 @@ class PhDynamics extends AlgorithmsScript {
     return this
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  List<Potential> getPotentials() {
-    List<Potential> potentials
-    if (potential == null) {
-      potentials = Collections.emptyList()
-    } else {
-      potentials = Collections.singletonList(potential)
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    List<Potential> getPotentials() {
+      List<Potential> potentials
+      if (potential == null) {
+        potentials = Collections.emptyList()
+      } else {
+        potentials = Collections.singletonList(potential)
+      }
+      return potentials
     }
-    return potentials
   }
-
-}
