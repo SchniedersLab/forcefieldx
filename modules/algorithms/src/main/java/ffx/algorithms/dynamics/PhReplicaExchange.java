@@ -332,6 +332,9 @@ public class PhReplicaExchange implements Terminatable {
 
     // Start this processes MolecularDynamics instance sampling.
     boolean initVelocities = true;
+
+
+
     replica.dynamic(
         nSteps, timeStep, printInterval, saveInterval, temp, initVelocities, null);
 
