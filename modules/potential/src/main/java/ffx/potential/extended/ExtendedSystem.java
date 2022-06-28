@@ -976,6 +976,15 @@ public class ExtendedSystem implements Potential {
         return sb.toString();
     }
 
+    public double[] getLambdaArray(){
+        double[] lambdaArray = new double[extendedResidueList.size()];
+        System.arraycopy(extendedLambdas,0, lambdaArray, 0, lambdaArray.length);
+        return lambdaArray;
+    }
+    public void setLambdaArray(double[] lambdaArray){
+        System.arraycopy(lambdaArray, 0, extendedLambdas, 0, extendedLambdas.length);
+    }
+
     /**
      * All atoms of the fully-protonated system (not just those affected by this system).
      *

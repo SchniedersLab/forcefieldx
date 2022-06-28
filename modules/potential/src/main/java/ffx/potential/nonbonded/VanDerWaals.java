@@ -1189,7 +1189,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
 
       // Build the neighbor-list (if necessary) using reduced coordinates.
       if (threadIndex == 0) {
-        neighborList.buildList(reduced, neighborLists, null, neighborListOnly, true);
+        neighborList.buildList(reduced, neighborLists, null, neighborListOnly, false);
       }
       barrier();
 

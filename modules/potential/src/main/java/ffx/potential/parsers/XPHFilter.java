@@ -482,6 +482,39 @@ public class XPHFilter extends SystemFilter {
           }
         }
       }
+      // Read ESVs
+      while (data != null && data.equals("") && bufferedReader.ready()) {
+        data = bufferedReader.readLine().trim();
+      }
+
+      if(data != null) {
+        tokens = data.split(" +", 2);
+
+        if (tokens[0].equalsIgnoreCase("ESV")) {
+          int numOfESVs = parseInt(tokens[1]);
+          data = bufferedReader.readLine().trim();
+
+          List<Residue> residueList = extendedSystem.getExtendedResidueList();
+
+          if (numOfESVs == residueList.size()) {
+            int switchIndex = extendedSystem.getTitratingResidueList().size();
+            for (int i = 0; i < residueList.size(); i++) {
+              tokens = data.split(" +", 3);
+
+              if (i < switchIndex) {
+                extendedSystem.setTitrationLambda(residueList.get(i), parseDouble(tokens[2]));
+              } else {
+                extendedSystem.setTautomerLambda(residueList.get(i), parseDouble(tokens[2]));
+              }
+
+              data = bufferedReader.readLine().trim();
+            }
+          } else {
+            logger.severe(" Number of ESVs in archive doesn't match extended system residue list size.");
+            return false;
+          }
+        }
+      }
       return true;
     } catch (IOException e) {
       logger.severe(e.toString());
