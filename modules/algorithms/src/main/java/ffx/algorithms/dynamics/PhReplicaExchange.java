@@ -229,16 +229,27 @@ public class PhReplicaExchange implements Terminatable {
         break;
       }
 
+      if(nSteps < 3)
+      {
+        logger.severe("Increase number of steps per cycle.");
+      }
+
       if(openMM != null){
         dynamicsOpenMM(nSteps, timeStep, printInterval, saveInterval);
       }
       else {
         dynamics(nSteps, timeStep, printInterval, saveInterval);
       }
-      logger.info(String.format(" Applying exchange condition for cycle %d.", i));
+      logger.info(" ");
+      logger.info(" ");
+      logger.info(String.format(" ------------------Exchange Cycle %d------------------\n", i+1));
       exchange();
 
+      extendedSystem.writeLambdaHistogram();
+
+      logger.info(" ");
       logger.info(" Setting rank " + rank + " esv to pH " + pHScale[rank2Ph[rank]]);
+      logger.info(" ");
     }
   }
 
@@ -316,22 +327,11 @@ public class PhReplicaExchange implements Terminatable {
     acidostatBatA = parameters[rankB][1];
 
     logger.info(" ");
-    logger.info(" ");
-    logger.info("\t\t ----------------------New Comparison----------------------");
     logger.info(" From rank " + rank + ": Comparing ranks " + rankA + " (pH = " + pHA + ") & " + rankB + " (pH = " + pHB + ")");
 
     // Compute the change in energy over kT (E/kT) for the Metropolis criteria.
-    logger.info(" pHA = " + pHA);
-    logger.info(" AcidostatA: "  + acidostatA);
-    logger.info(" AcidostatAatB: " + acidostatAatB);
-
-    logger.info(" pHB = " + pHB);
-    logger.info(" AcidostatB: " + acidostatB);
-    logger.info(" AcidostatBatA: " + acidostatBatA);
-
     double deltaE = beta * ((acidostatAatB + acidostatBatA) - (acidostatA + acidostatB));
-    logger.info(" exp(" + beta + " * ((" + acidostatAatB + " + " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + ")))");
-    logger.info("\t DeltaE: " + deltaE);
+    logger.info(" DeltaE: " + deltaE);
 
     //Count the number of trials for each temp
     pHTrialCount[pH]++;
@@ -361,19 +361,18 @@ public class PhReplicaExchange implements Terminatable {
 
   /** All processes complete the exchanges identically given the same Random number seed. */
   private void exchange() {
-    // 2 M.C. trials per pH (except for those at the ends of the ladder).
-
     // Loop over top and bottom parts of pH scale
     for (int pH = 0; pH < nReplicas - 1; pH++) {
       compareTwo(pH, false);
     }
 
+    logger.info(" ");
     // Print Exchange Info
     for (int i = 0; i < pHScale.length - 1; i++) {
       double pHAcceptance = pHAcceptedCount[i] * 100.0 / (pHTrialCount[i]);
-
       logger.info(" Acceptance for pH " + pHScale[i] + " to be exchanged with pH " + pHScale[i+1] + ": " + pHAcceptance);
       }
+    logger.info(" ");
   }
 
 
