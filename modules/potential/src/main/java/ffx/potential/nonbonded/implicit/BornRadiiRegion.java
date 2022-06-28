@@ -43,6 +43,7 @@ import static ffx.potential.nonbonded.implicit.NeckIntegral.getNeckConstants;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.log;
@@ -205,6 +206,31 @@ public class BornRadiiRegion extends ParallelRegion {
     } else {
       perfectRadii = null;
     }
+  }
+
+  /**
+   * Return perfect Born radii read in as keywords, or base radii if perfect radii are not available.
+   *
+   * @return Array of perfect Born radii.
+   */
+  public double[] getPerfectRadii() {
+    int nAtoms = atoms.length;
+
+    // Start with base radii.
+    double[] radii = new double[nAtoms];
+    arraycopy(baseRadius, 0, radii, 0, nAtoms);
+
+    // Load perfect radii and return.
+    if (usePerfectRadii) {
+      for (int i = 0; i < nAtoms; i++) {
+        double perfectRadius = perfectRadii[i];
+        if (perfectRadius > 0.0) {
+          radii[i] = perfectRadius;
+        }
+      }
+    }
+
+    return radii;
   }
 
   @Override
