@@ -95,7 +95,7 @@ public class PhReplicaExchange implements Terminatable {
   private final ExtendedSystem extendedSystem;
   private final double pH;
   private double gapSize;
-  private double[] x = null;
+  private double[] x;
   private MolecularDynamicsOpenMM openMM = null;
   private Potential potential;
 
@@ -282,6 +282,11 @@ public class PhReplicaExchange implements Terminatable {
     }
   }
 
+  /**
+   * Evaluate whether or not to exchange
+   * @param pH what pH to have as the replica target
+   * @param countingDown
+   */
   private void compareTwo(int pH, boolean countingDown){
     // Ranks for pH A and B
     int rankA;
@@ -363,6 +368,7 @@ public class PhReplicaExchange implements Terminatable {
       compareTwo(pH, false);
     }
 
+    // Print Exchange Info
     for (int i = 0; i < pHScale.length - 1; i++) {
       double pHAcceptance = pHAcceptedCount[i] * 100.0 / (pHTrialCount[i]);
 
@@ -373,18 +379,14 @@ public class PhReplicaExchange implements Terminatable {
 
   /**
    * Blocking dynamic steps: when this method returns each replica has completed the requested
-   * number of steps.
+   * number of steps. Both OpenMM and CPU implementations exist
    *
    * @param nSteps the number of time steps.
    * @param timeStep the time step.
    * @param printInterval the number of steps between loggging updates.
    * @param saveInterval the number of steps between saving snapshots.
    */
-  private void dynamics(
-      final long nSteps,
-      final double timeStep,
-      final double printInterval,
-      final double saveInterval) {
+  private void dynamicsOpenMM(final long nSteps, final double timeStep, final double printInterval, final double saveInterval) {
 
     int i = rank2Ph[rank];
 
@@ -433,7 +435,7 @@ public class PhReplicaExchange implements Terminatable {
     }
   }
 
-  private void dynamicsOpenMM(long nSteps, double timeStep, double printInterval, double saveInterval) {
+  private void dynamics(long nSteps, double timeStep, double printInterval, double saveInterval) {
 
     int i = rank2Ph[rank];
 
