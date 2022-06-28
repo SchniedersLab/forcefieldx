@@ -38,7 +38,6 @@
 package ffx.numerics.multipole;
 
 import static ffx.numerics.math.ScalarMath.doubleFactorial;
-import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -73,9 +72,9 @@ public class GKTensorQI extends CoulombTensorQI {
   private final int order;
 
   /**
-   * Multipole order (2nd is needed for AMOEBA forces).
+   * The GK tensor can be constructed for monopoles (GB), dipoles or quadrupoles.
    */
-  protected final int multipoleOrder;
+  protected final GK_MULTIPOLE_ORDER multipoleOrder;
 
   /**
    * The Kirkwood dielectric function for the given multipole order.
@@ -130,13 +129,40 @@ public class GKTensorQI extends CoulombTensorQI {
   private double f;
 
   /**
+   * The "mode" for the tensor (either POTENTIAL or BORN).
+   */
+  private GK_TENSOR_MODE mode = GK_TENSOR_MODE.POTENTIAL;
+
+  /**
+   * The "mode" for the tensor (either POTENTIAL or BORN).
+   */
+  public enum GK_TENSOR_MODE {POTENTIAL, BORN}
+
+  /**
+   * The GK tensor can be constructed for monopoles (GB), dipoles or quadrupoles.
+   */
+  public enum GK_MULTIPOLE_ORDER {
+    MONOPOLE(0), DIPOLE(1), QUADRUPOLE(2);
+
+    private final int order;
+
+    GK_MULTIPOLE_ORDER(int order) {
+      this.order = order;
+    }
+
+    public int getOrder() {
+      return order;
+    }
+  }
+
+  /**
    * @param multipoleOrder The multipole order.
    * @param order The number of derivatives to complete.
    * @param gc Generalized Kirkwood constant.
    * @param Eh Homogeneous dielectric constant.
    * @param Es Solvent dielectric constant.
    */
-  public GKTensorQI(int multipoleOrder, int order, double gc, double Eh, double Es) {
+  public GKTensorQI(GK_MULTIPOLE_ORDER multipoleOrder, int order, double gc, double Eh, double Es) {
     super(order);
     this.multipoleOrder = multipoleOrder;
     this.order = order;
@@ -145,7 +171,7 @@ public class GKTensorQI extends CoulombTensorQI {
     this.Es = Es;
 
     // Load the dielectric function
-    c = cn(multipoleOrder, Eh, Es);
+    c = cn(multipoleOrder.getOrder(), Eh, Es);
 
     // Auxiliary terms for Generalized Kirkwood (equivalent to Coulomb and Thole Screening).
     kirkwoodSource = new double[order + 1];
@@ -200,13 +226,44 @@ public class GKTensorQI extends CoulombTensorQI {
   }
 
   /**
+   * GK Permanent multipole energy.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @return a double.
+   */
+  public double multipoleEnergy(PolarizableMultipole mI, PolarizableMultipole mK) {
+    switch (multipoleOrder.getOrder()) {
+      default:
+      case 0:
+        chargeIPotentialAtK(mI, 2);
+        double eK = multipoleEnergy(mK);
+        chargeKPotentialAtI(mK, 2);
+        double eI = multipoleEnergy(mI);
+        return 0.5 * eK + eI;
+      case 1:
+        dipoleIPotentialAtK(mI, 2);
+        eK = multipoleEnergy(mK);
+        dipoleKPotentialAtI(mK, 2);
+        eI = multipoleEnergy(mI);
+        return 0.5 * eK + eI;
+      case 2:
+        quadrupoleIPotentialAtK(mI, 2);
+        eK = multipoleEnergy(mK);
+        quadrupoleKPotentialAtI(mK, 2);
+        eI = multipoleEnergy(mI);
+        return 0.5 * eK + eI;
+    }
+  }
+
+  /**
    * Set the separation vector.
    *
    * @param r Separation vector.
    * @param ai Born radius for Atom i.
    * @param aj Born radius for Atom j.
    */
-  protected void setR(double[] r, double ai, double aj) {
+  public void setR(double[] r, double ai, double aj) {
     setR(r[0], r[1], r[2], ai, aj);
   }
 
@@ -219,7 +276,7 @@ public class GKTensorQI extends CoulombTensorQI {
    * @param ai Born radius for Atom i.
    * @param aj Born radius for Atom j.
    */
-  protected void setR(double dx, double dy, double dz, double ai, double aj) {
+  public void setR(double dx, double dy, double dz, double ai, double aj) {
     setR(dx, dy, dz);
     this.ai = ai;
     this.aj = aj;
@@ -228,20 +285,46 @@ public class GKTensorQI extends CoulombTensorQI {
   }
 
   /**
+   * Set the "mode" for the tensor (either POTENTIAL or BORN).
+   *
+   * @param mode The mode for tensor generation.
+   */
+  protected void setMode(GK_TENSOR_MODE mode) {
+    this.mode = mode;
+  }
+
+  /**
    * Generate source terms for the Kirkwood version of the Challacombe et al. recursion.
    */
   protected void source(double[] work) {
-    for (int n = 0; n <= order; n++) {
-      an0[n] = an0(n);
-      fn[n] = fn(n);
-      bn[n] = bn(n);
-    }
-
-    for (int n = 0; n <= order; n++) {
-      if (n < multipoleOrder) {
-        work[n] = 0.0;
-      } else {
-        work[n] = anm(multipoleOrder, n - multipoleOrder);
+    int multipoleOrder = this.multipoleOrder.getOrder();
+    if (mode == GK_TENSOR_MODE.POTENTIAL) {
+      // Prepare the GK Potential tensor.
+      for (int n = 0; n <= order; n++) {
+        an0[n] = an0(n);
+        fn[n] = fn(n);
+      }
+      for (int n = 0; n <= order; n++) {
+        if (n < multipoleOrder) {
+          work[n] = 0.0;
+        } else {
+          work[n] = anm(multipoleOrder, n - multipoleOrder);
+        }
+      }
+    } else {
+      // Prepare the GK Born-chain rule tensor.
+      for (int n = 0; n <= order; n++) {
+        an0[n] = an0(n);
+        fn[n] = fn(n);
+        bn[n] = bn(n);
+      }
+      // Only up to order - 1.
+      for (int n = 0; n <= order - 1; n++) {
+        if (n < multipoleOrder) {
+          work[n] = 0.0;
+        } else {
+          work[n] = bnm(multipoleOrder, n - multipoleOrder);
+        }
       }
     }
   }
@@ -252,7 +335,7 @@ public class GKTensorQI extends CoulombTensorQI {
    * @param n Multipole order.
    * @return The potential auxiliary function for a multipole of order n.
    */
-  public double an0(int n) {
+  protected double an0(int n) {
     return kirkwoodSource[n] / pow(f, 2 * n + 1);
   }
 
@@ -263,7 +346,7 @@ public class GKTensorQI extends CoulombTensorQI {
    * @param m Mth potential gradient auxiliary function.
    * @return Returns the mth potential gradient auxiliary function for a multipole of order n.
    */
-  public double anm(int n, int m) {
+  protected double anm(int n, int m) {
     if (m == 0) {
       return an0[n];
     }
@@ -284,7 +367,7 @@ public class GKTensorQI extends CoulombTensorQI {
    * @return Returns the derivative with respect to a Born radius of the mth potential gradient
    *     auxiliary function for a multipole of order n.
    */
-  public double bnm(int n, int m) {
+  protected double bnm(int n, int m) {
     if (m == 0) {
       // return bn(0) * an0(n + 1);
       return bn[0] * an0[n + 1];
@@ -305,7 +388,7 @@ public class GKTensorQI extends CoulombTensorQI {
    * @param n Multipole order.
    * @return Returns the nth value of the function f.
    */
-  private double fn(int n) {
+  protected double fn(int n) {
     switch (n) {
       case 0:
         return f;
@@ -349,29 +432,8 @@ public class GKTensorQI extends CoulombTensorQI {
    * @param n Multipole order.
    * @return Returns coefficients needed when taking derivatives of auxiliary functions.
    */
-  public static double[] anmc(int n) {
-    double[] ret = new double[n + 1];
-    ret[0] = 1.0;
-    switch (n) {
-      case 0:
-        return ret;
-      case 1:
-        ret[1] = 1.0;
-        return ret;
-      default:
-        ret[1] = 1.0;
-        double[] prev = new double[n];
-        prev[0] = 1.0;
-        prev[1] = 1.0;
-        for (int i = 3; i <= n; i++) {
-          for (int j = 2; j <= i - 1; j++) {
-            ret[j - 1] = prev[j - 2] + prev[j - 1];
-          }
-          ret[i - 1] = 1.0;
-          arraycopy(ret, 0, prev, 0, i);
-        }
-        return ret;
-    }
+  protected static double[] anmc(int n) {
+    return GKTensorGlobal.anmc(n);
   }
 
   /**
@@ -383,7 +445,7 @@ public class GKTensorQI extends CoulombTensorQI {
    * @return Returns (n+1)*(Eh-Es)/((n+1)*Es + n*Eh))
    */
   public static double cn(int n, double Eh, double Es) {
-    return (n + 1) * (Eh - Es) / ((n + 1) * Es + n * Eh);
+    return GKTensorGlobal.cn(n, Eh, Es);
   }
 
 }

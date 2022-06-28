@@ -68,7 +68,6 @@ import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static org.junit.Assert.assertEquals;
 
-import ffx.numerics.math.DoubleMath;
 import ffx.numerics.multipole.MultipoleTensor.OPERATOR;
 import java.util.Arrays;
 import java.util.Collection;
@@ -204,9 +203,9 @@ public class QIMultipoleTensorTest {
     multipoleTensor.generateTensor(r);
     double e = multipoleTensor.multipoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
 
-    qiFrame.qiToGlobal(Gk);
-    qiFrame.qiToGlobal(Ti);
-    qiFrame.qiToGlobal(Tk);
+    qiFrame.qiFrameToGlobal(Gk);
+    qiFrame.qiFrameToGlobal(Ti);
+    qiFrame.qiFrameToGlobal(Tk);
 
     if (operator == OPERATOR.COULOMB) {
       assertEquals(info + " QI Permanent Energy", permanentEnergy, e, tolerance);
@@ -313,9 +312,9 @@ public class QIMultipoleTensorTest {
     double e = multipoleTensor.polarizationEnergyAndGradient(mI, mK, 1.0, 1.0, scaleMutual, Gi, Ti,
         Tk);
 
-    qiFrame.qiToGlobal(Gi);
-    qiFrame.qiToGlobal(Ti);
-    qiFrame.qiToGlobal(Tk);
+    qiFrame.qiFrameToGlobal(Gi);
+    qiFrame.qiFrameToGlobal(Ti);
+    qiFrame.qiFrameToGlobal(Tk);
 
     // Analytic gradient on Atom I.
     double aX = Gi[0];

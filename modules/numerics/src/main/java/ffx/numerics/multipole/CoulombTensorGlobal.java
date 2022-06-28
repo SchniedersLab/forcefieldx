@@ -65,22 +65,6 @@ public class CoulombTensorGlobal extends MultipoleTensor {
   }
 
   /**
-   * Generate source terms for the Coulomb Challacombe et al. recursion.
-   *
-   * @param T000 Location to store the source terms.
-   */
-  protected void source(double[] T000) {
-    // Challacombe et al. Equation 21, last factor.
-    // == (1/r) * (1/r^3) * (1/r^5) * (1/r^7) * ...
-    double ir = 1.0 / R;
-    double ir2 = ir * ir;
-    for (int n = 0; n < o1; n++) {
-      T000[n] = coulombSource[n] * ir;
-      ir *= ir2;
-    }
-  }
-
-  /**
    * {@inheritDoc}
    *
    * <p>Meaningful only for QI.
@@ -102,12 +86,28 @@ public class CoulombTensorGlobal extends MultipoleTensor {
 
   /** {@inheritDoc} */
   @Override
-  protected void setR(double dx, double dy, double dz) {
+  public void setR(double dx, double dy, double dz) {
     x = dx;
     y = dy;
     z = dz;
     r2 = (x * x + y * y + z * z);
     R = sqrt(r2);
+  }
+
+  /**
+   * Generate source terms for the Coulomb Challacombe et al. recursion.
+   *
+   * @param T000 Location to store the source terms.
+   */
+  protected void source(double[] T000) {
+    // Challacombe et al. Equation 21, last factor.
+    // == (1/r) * (1/r^3) * (1/r^5) * (1/r^7) * ...
+    double ir = 1.0 / R;
+    double ir2 = ir * ir;
+    for (int n = 0; n < o1; n++) {
+      T000[n] = coulombSource[n] * ir;
+      ir *= ir2;
+    }
   }
 
   /**
@@ -617,523 +617,1215 @@ public class CoulombTensorGlobal extends MultipoleTensor {
   /** {@inheritDoc} */
   @Override
   protected void multipoleIPotentialAtK(PolarizableMultipole mI, int order) {
-    // This is equation 3.1.3 in the Stone book.
-    double term000 = 0.0;
-    term000 = fma(mI.q, R000, term000);
-    term000 = fma(mI.dx, -R100, term000);
-    term000 = fma(mI.dy, -R010, term000);
-    term000 = fma(mI.dz, -R001, term000);
-    term000 = fma(mI.qxx, R200, term000);
-    term000 = fma(mI.qyy, R020, term000);
-    term000 = fma(mI.qzz, R002, term000);
-    term000 = fma(mI.qxy, R110, term000);
-    term000 = fma(mI.qxz, R101, term000);
-    term000 = fma(mI.qyz, R011, term000);
-    E000 = term000;
-    if (order <= 0) {
-      return;
+    switch (order) {
+      default:
+      case 3:
+        // Order 3
+        double term300 = 0.0;
+        term300 = fma(mI.q, R300, term300);
+        term300 = fma(mI.dx, -R400, term300);
+        term300 = fma(mI.dy, -R310, term300);
+        term300 = fma(mI.dz, -R301, term300);
+        term300 = fma(mI.qxx, R500, term300);
+        term300 = fma(mI.qyy, R320, term300);
+        term300 = fma(mI.qzz, R302, term300);
+        term300 = fma(mI.qxy, R410, term300);
+        term300 = fma(mI.qxz, R401, term300);
+        term300 = fma(mI.qyz, R311, term300);
+        E300 = term300;
+        double term030 = 0.0;
+        term030 = fma(mI.q, R030, term030);
+        term030 = fma(mI.dx, -R130, term030);
+        term030 = fma(mI.dy, -R040, term030);
+        term030 = fma(mI.dz, -R031, term030);
+        term030 = fma(mI.qxx, R230, term030);
+        term030 = fma(mI.qyy, R050, term030);
+        term030 = fma(mI.qzz, R032, term030);
+        term030 = fma(mI.qxy, R140, term030);
+        term030 = fma(mI.qxz, R131, term030);
+        term030 = fma(mI.qyz, R041, term030);
+        E030 = term030;
+        double term003 = 0.0;
+        term003 = fma(mI.q, R003, term003);
+        term003 = fma(mI.dx, -R103, term003);
+        term003 = fma(mI.dy, -R013, term003);
+        term003 = fma(mI.dz, -R004, term003);
+        term003 = fma(mI.qxx, R203, term003);
+        term003 = fma(mI.qyy, R023, term003);
+        term003 = fma(mI.qzz, R005, term003);
+        term003 = fma(mI.qxy, R113, term003);
+        term003 = fma(mI.qxz, R104, term003);
+        term003 = fma(mI.qyz, R014, term003);
+        E003 = term003;
+        double term210 = 0.0;
+        term210 = fma(mI.q, R210, term210);
+        term210 = fma(mI.dx, -R310, term210);
+        term210 = fma(mI.dy, -R220, term210);
+        term210 = fma(mI.dz, -R211, term210);
+        term210 = fma(mI.qxx, R410, term210);
+        term210 = fma(mI.qyy, R230, term210);
+        term210 = fma(mI.qzz, R212, term210);
+        term210 = fma(mI.qxy, R320, term210);
+        term210 = fma(mI.qxz, R311, term210);
+        term210 = fma(mI.qyz, R221, term210);
+        E210 = term210;
+        double term201 = 0.0;
+        term201 = fma(mI.q, R201, term201);
+        term201 = fma(mI.dx, -R301, term201);
+        term201 = fma(mI.dy, -R211, term201);
+        term201 = fma(mI.dz, -R202, term201);
+        term201 = fma(mI.qxx, R401, term201);
+        term201 = fma(mI.qyy, R221, term201);
+        term201 = fma(mI.qzz, R203, term201);
+        term201 = fma(mI.qxy, R311, term201);
+        term201 = fma(mI.qxz, R302, term201);
+        term201 = fma(mI.qyz, R212, term201);
+        E201 = term201;
+        double term120 = 0.0;
+        term120 = fma(mI.q, R120, term120);
+        term120 = fma(mI.dx, -R220, term120);
+        term120 = fma(mI.dy, -R130, term120);
+        term120 = fma(mI.dz, -R121, term120);
+        term120 = fma(mI.qxx, R320, term120);
+        term120 = fma(mI.qyy, R140, term120);
+        term120 = fma(mI.qzz, R122, term120);
+        term120 = fma(mI.qxy, R230, term120);
+        term120 = fma(mI.qxz, R221, term120);
+        term120 = fma(mI.qyz, R131, term120);
+        E120 = term120;
+        double term021 = 0.0;
+        term021 = fma(mI.q, R021, term021);
+        term021 = fma(mI.dx, -R121, term021);
+        term021 = fma(mI.dy, -R031, term021);
+        term021 = fma(mI.dz, -R022, term021);
+        term021 = fma(mI.qxx, R221, term021);
+        term021 = fma(mI.qyy, R041, term021);
+        term021 = fma(mI.qzz, R023, term021);
+        term021 = fma(mI.qxy, R131, term021);
+        term021 = fma(mI.qxz, R122, term021);
+        term021 = fma(mI.qyz, R032, term021);
+        E021 = term021;
+        double term102 = 0.0;
+        term102 = fma(mI.q, R102, term102);
+        term102 = fma(mI.dx, -R202, term102);
+        term102 = fma(mI.dy, -R112, term102);
+        term102 = fma(mI.dz, -R103, term102);
+        term102 = fma(mI.qxx, R302, term102);
+        term102 = fma(mI.qyy, R122, term102);
+        term102 = fma(mI.qzz, R104, term102);
+        term102 = fma(mI.qxy, R212, term102);
+        term102 = fma(mI.qxz, R203, term102);
+        term102 = fma(mI.qyz, R113, term102);
+        E102 = term102;
+        double term012 = 0.0;
+        term012 = fma(mI.q, R012, term012);
+        term012 = fma(mI.dx, -R112, term012);
+        term012 = fma(mI.dy, -R022, term012);
+        term012 = fma(mI.dz, -R013, term012);
+        term012 = fma(mI.qxx, R212, term012);
+        term012 = fma(mI.qyy, R032, term012);
+        term012 = fma(mI.qzz, R014, term012);
+        term012 = fma(mI.qxy, R122, term012);
+        term012 = fma(mI.qxz, R113, term012);
+        term012 = fma(mI.qyz, R023, term012);
+        E012 = term012;
+        double term111 = 0.0;
+        term111 = fma(mI.q, R111, term111);
+        term111 = fma(mI.dx, -R211, term111);
+        term111 = fma(mI.dy, -R121, term111);
+        term111 = fma(mI.dz, -R112, term111);
+        term111 = fma(mI.qxx, R311, term111);
+        term111 = fma(mI.qyy, R131, term111);
+        term111 = fma(mI.qzz, R113, term111);
+        term111 = fma(mI.qxy, R221, term111);
+        term111 = fma(mI.qxz, R212, term111);
+        term111 = fma(mI.qyz, R122, term111);
+        E111 = term111;
+        // Fall through to 2nd order.
+      case 2:
+        // Order 2
+        double term200 = 0.0;
+        term200 = fma(mI.q, R200, term200);
+        term200 = fma(mI.dx, -R300, term200);
+        term200 = fma(mI.dy, -R210, term200);
+        term200 = fma(mI.dz, -R201, term200);
+        term200 = fma(mI.qxx, R400, term200);
+        term200 = fma(mI.qyy, R220, term200);
+        term200 = fma(mI.qzz, R202, term200);
+        term200 = fma(mI.qxy, R310, term200);
+        term200 = fma(mI.qxz, R301, term200);
+        term200 = fma(mI.qyz, R211, term200);
+        E200 = term200;
+        double term020 = 0.0;
+        term020 = fma(mI.q, R020, term020);
+        term020 = fma(mI.dx, -R120, term020);
+        term020 = fma(mI.dy, -R030, term020);
+        term020 = fma(mI.dz, -R021, term020);
+        term020 = fma(mI.qxx, R220, term020);
+        term020 = fma(mI.qyy, R040, term020);
+        term020 = fma(mI.qzz, R022, term020);
+        term020 = fma(mI.qxy, R130, term020);
+        term020 = fma(mI.qxz, R121, term020);
+        term020 = fma(mI.qyz, R031, term020);
+        E020 = term020;
+        double term002 = 0.0;
+        term002 = fma(mI.q, R002, term002);
+        term002 = fma(mI.dx, -R102, term002);
+        term002 = fma(mI.dy, -R012, term002);
+        term002 = fma(mI.dz, -R003, term002);
+        term002 = fma(mI.qxx, R202, term002);
+        term002 = fma(mI.qyy, R022, term002);
+        term002 = fma(mI.qzz, R004, term002);
+        term002 = fma(mI.qxy, R112, term002);
+        term002 = fma(mI.qxz, R103, term002);
+        term002 = fma(mI.qyz, R013, term002);
+        E002 = term002;
+        double term110 = 0.0;
+        term110 = fma(mI.q, R110, term110);
+        term110 = fma(mI.dx, -R210, term110);
+        term110 = fma(mI.dy, -R120, term110);
+        term110 = fma(mI.dz, -R111, term110);
+        term110 = fma(mI.qxx, R310, term110);
+        term110 = fma(mI.qyy, R130, term110);
+        term110 = fma(mI.qzz, R112, term110);
+        term110 = fma(mI.qxy, R220, term110);
+        term110 = fma(mI.qxz, R211, term110);
+        term110 = fma(mI.qyz, R121, term110);
+        E110 = term110;
+        double term101 = 0.0;
+        term101 = fma(mI.q, R101, term101);
+        term101 = fma(mI.dx, -R201, term101);
+        term101 = fma(mI.dy, -R111, term101);
+        term101 = fma(mI.dz, -R102, term101);
+        term101 = fma(mI.qxx, R301, term101);
+        term101 = fma(mI.qyy, R121, term101);
+        term101 = fma(mI.qzz, R103, term101);
+        term101 = fma(mI.qxy, R211, term101);
+        term101 = fma(mI.qxz, R202, term101);
+        term101 = fma(mI.qyz, R112, term101);
+        E101 = term101;
+        double term011 = 0.0;
+        term011 = fma(mI.q, R011, term011);
+        term011 = fma(mI.dx, -R111, term011);
+        term011 = fma(mI.dy, -R021, term011);
+        term011 = fma(mI.dz, -R012, term011);
+        term011 = fma(mI.qxx, R211, term011);
+        term011 = fma(mI.qyy, R031, term011);
+        term011 = fma(mI.qzz, R013, term011);
+        term011 = fma(mI.qxy, R121, term011);
+        term011 = fma(mI.qxz, R112, term011);
+        term011 = fma(mI.qyz, R022, term011);
+        E011 = term011;
+        // Fall through to 1st order.
+      case 1:
+        // Order 1
+        // This is d/dX of equation 3.1.3 in the Stone book.
+        double term100 = 0.0;
+        term100 = fma(mI.q, R100, term100);
+        term100 = fma(mI.dx, -R200, term100);
+        term100 = fma(mI.dy, -R110, term100);
+        term100 = fma(mI.dz, -R101, term100);
+        term100 = fma(mI.qxx, R300, term100);
+        term100 = fma(mI.qyy, R120, term100);
+        term100 = fma(mI.qzz, R102, term100);
+        term100 = fma(mI.qxy, R210, term100);
+        term100 = fma(mI.qxz, R201, term100);
+        term100 = fma(mI.qyz, R111, term100);
+        E100 = term100;
+        // This is d/dY of equation 3.1.3 in the Stone book.
+        double term010 = 0.0;
+        term010 = fma(mI.q, R010, term010);
+        term010 = fma(mI.dx, -R110, term010);
+        term010 = fma(mI.dy, -R020, term010);
+        term010 = fma(mI.dz, -R011, term010);
+        term010 = fma(mI.qxx, R210, term010);
+        term010 = fma(mI.qyy, R030, term010);
+        term010 = fma(mI.qzz, R012, term010);
+        term010 = fma(mI.qxy, R120, term010);
+        term010 = fma(mI.qxz, R111, term010);
+        term010 = fma(mI.qyz, R021, term010);
+        E010 = term010;
+        double term001 = 0.0;
+        term001 = fma(mI.q, R001, term001);
+        term001 = fma(mI.dx, -R101, term001);
+        term001 = fma(mI.dy, -R011, term001);
+        term001 = fma(mI.dz, -R002, term001);
+        term001 = fma(mI.qxx, R201, term001);
+        term001 = fma(mI.qyy, R021, term001);
+        term001 = fma(mI.qzz, R003, term001);
+        term001 = fma(mI.qxy, R111, term001);
+        term001 = fma(mI.qxz, R102, term001);
+        term001 = fma(mI.qyz, R012, term001);
+        E001 = term001;
+        // Fall through to the potential.
+      case 0:
+        // This is equation 3.1.3 in the Stone book.
+        double term000 = 0.0;
+        term000 = fma(mI.q, R000, term000);
+        term000 = fma(mI.dx, -R100, term000);
+        term000 = fma(mI.dy, -R010, term000);
+        term000 = fma(mI.dz, -R001, term000);
+        term000 = fma(mI.qxx, R200, term000);
+        term000 = fma(mI.qyy, R020, term000);
+        term000 = fma(mI.qzz, R002, term000);
+        term000 = fma(mI.qxy, R110, term000);
+        term000 = fma(mI.qxz, R101, term000);
+        term000 = fma(mI.qyz, R011, term000);
+        E000 = term000;
     }
-    // Order 1
-    // This is d/dX of equation 3.1.3 in the Stone book.
-    double term100 = 0.0;
-    term100 = fma(mI.q, R100, term100);
-    term100 = fma(mI.dx, -R200, term100);
-    term100 = fma(mI.dy, -R110, term100);
-    term100 = fma(mI.dz, -R101, term100);
-    term100 = fma(mI.qxx, R300, term100);
-    term100 = fma(mI.qyy, R120, term100);
-    term100 = fma(mI.qzz, R102, term100);
-    term100 = fma(mI.qxy, R210, term100);
-    term100 = fma(mI.qxz, R201, term100);
-    term100 = fma(mI.qyz, R111, term100);
-    E100 = term100;
-    // This is d/dY of equation 3.1.3 in the Stone book.
-    double term010 = 0.0;
-    term010 = fma(mI.q, R010, term010);
-    term010 = fma(mI.dx, -R110, term010);
-    term010 = fma(mI.dy, -R020, term010);
-    term010 = fma(mI.dz, -R011, term010);
-    term010 = fma(mI.qxx, R210, term010);
-    term010 = fma(mI.qyy, R030, term010);
-    term010 = fma(mI.qzz, R012, term010);
-    term010 = fma(mI.qxy, R120, term010);
-    term010 = fma(mI.qxz, R111, term010);
-    term010 = fma(mI.qyz, R021, term010);
-    E010 = term010;
-    double term001 = 0.0;
-    term001 = fma(mI.q, R001, term001);
-    term001 = fma(mI.dx, -R101, term001);
-    term001 = fma(mI.dy, -R011, term001);
-    term001 = fma(mI.dz, -R002, term001);
-    term001 = fma(mI.qxx, R201, term001);
-    term001 = fma(mI.qyy, R021, term001);
-    term001 = fma(mI.qzz, R003, term001);
-    term001 = fma(mI.qxy, R111, term001);
-    term001 = fma(mI.qxz, R102, term001);
-    term001 = fma(mI.qyz, R012, term001);
-    E001 = term001;
-    if (order <= 1) {
-      return;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  protected void chargeIPotentialAtK(PolarizableMultipole mI, int order) {
+    switch (order) {
+      default:
+      case 3:
+        E300 = mI.q * R300;
+        E030 = mI.q * R030;
+        E003 = mI.q * R003;
+        E210 = mI.q * R210;
+        E201 = mI.q * R201;
+        E120 = mI.q * R120;
+        E021 = mI.q * R021;
+        E102 = mI.q * R102;
+        E012 = mI.q * R012;
+        E111 = mI.q * R111;
+        // Fall through to 2nd order.
+      case 2:
+        E200 = mI.q * R200;
+        E020 = mI.q * R020;
+        E002 = mI.q * R002;
+        E110 = mI.q * R110;
+        E101 = mI.q * R101;
+        E011 = mI.q * R011;
+        // Fall through to 1st order.
+      case 1:
+        // Order 1
+        // This is d/dX of equation 3.1.3 in the Stone book.
+        E100 = mI.q * R100;
+        E010 = mI.q * R010;
+        E001 = mI.q * R001;
+        // Fall through to the potential.
+      case 0:
+        // This is equation 3.1.3 in the Stone book.
+        E000 = mI.q * R000;
     }
-    // Order 2
-    double term200 = 0.0;
-    term200 = fma(mI.q, R200, term200);
-    term200 = fma(mI.dx, -R300, term200);
-    term200 = fma(mI.dy, -R210, term200);
-    term200 = fma(mI.dz, -R201, term200);
-    term200 = fma(mI.qxx, R400, term200);
-    term200 = fma(mI.qyy, R220, term200);
-    term200 = fma(mI.qzz, R202, term200);
-    term200 = fma(mI.qxy, R310, term200);
-    term200 = fma(mI.qxz, R301, term200);
-    term200 = fma(mI.qyz, R211, term200);
-    E200 = term200;
-    double term020 = 0.0;
-    term020 = fma(mI.q, R020, term020);
-    term020 = fma(mI.dx, -R120, term020);
-    term020 = fma(mI.dy, -R030, term020);
-    term020 = fma(mI.dz, -R021, term020);
-    term020 = fma(mI.qxx, R220, term020);
-    term020 = fma(mI.qyy, R040, term020);
-    term020 = fma(mI.qzz, R022, term020);
-    term020 = fma(mI.qxy, R130, term020);
-    term020 = fma(mI.qxz, R121, term020);
-    term020 = fma(mI.qyz, R031, term020);
-    E020 = term020;
-    double term002 = 0.0;
-    term002 = fma(mI.q, R002, term002);
-    term002 = fma(mI.dx, -R102, term002);
-    term002 = fma(mI.dy, -R012, term002);
-    term002 = fma(mI.dz, -R003, term002);
-    term002 = fma(mI.qxx, R202, term002);
-    term002 = fma(mI.qyy, R022, term002);
-    term002 = fma(mI.qzz, R004, term002);
-    term002 = fma(mI.qxy, R112, term002);
-    term002 = fma(mI.qxz, R103, term002);
-    term002 = fma(mI.qyz, R013, term002);
-    E002 = term002;
-    double term110 = 0.0;
-    term110 = fma(mI.q, R110, term110);
-    term110 = fma(mI.dx, -R210, term110);
-    term110 = fma(mI.dy, -R120, term110);
-    term110 = fma(mI.dz, -R111, term110);
-    term110 = fma(mI.qxx, R310, term110);
-    term110 = fma(mI.qyy, R130, term110);
-    term110 = fma(mI.qzz, R112, term110);
-    term110 = fma(mI.qxy, R220, term110);
-    term110 = fma(mI.qxz, R211, term110);
-    term110 = fma(mI.qyz, R121, term110);
-    E110 = term110;
-    double term101 = 0.0;
-    term101 = fma(mI.q, R101, term101);
-    term101 = fma(mI.dx, -R201, term101);
-    term101 = fma(mI.dy, -R111, term101);
-    term101 = fma(mI.dz, -R102, term101);
-    term101 = fma(mI.qxx, R301, term101);
-    term101 = fma(mI.qyy, R121, term101);
-    term101 = fma(mI.qzz, R103, term101);
-    term101 = fma(mI.qxy, R211, term101);
-    term101 = fma(mI.qxz, R202, term101);
-    term101 = fma(mI.qyz, R112, term101);
-    E101 = term101;
-    double term011 = 0.0;
-    term011 = fma(mI.q, R011, term011);
-    term011 = fma(mI.dx, -R111, term011);
-    term011 = fma(mI.dy, -R021, term011);
-    term011 = fma(mI.dz, -R012, term011);
-    term011 = fma(mI.qxx, R211, term011);
-    term011 = fma(mI.qyy, R031, term011);
-    term011 = fma(mI.qzz, R013, term011);
-    term011 = fma(mI.qxy, R121, term011);
-    term011 = fma(mI.qxz, R112, term011);
-    term011 = fma(mI.qyz, R022, term011);
-    E011 = term011;
-    if (order <= 2) {
-      return;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  protected void dipoleIPotentialAtK(PolarizableMultipole mI, int order) {
+    switch (order) {
+      default:
+      case 3:
+        // Order 3
+        double term300 = 0.0;
+        term300 = fma(mI.dx, -R400, term300);
+        term300 = fma(mI.dy, -R310, term300);
+        term300 = fma(mI.dz, -R301, term300);
+        E300 = term300;
+        double term030 = 0.0;
+        term030 = fma(mI.dx, -R130, term030);
+        term030 = fma(mI.dy, -R040, term030);
+        term030 = fma(mI.dz, -R031, term030);
+        E030 = term030;
+        double term003 = 0.0;
+        term003 = fma(mI.dx, -R103, term003);
+        term003 = fma(mI.dy, -R013, term003);
+        term003 = fma(mI.dz, -R004, term003);
+        E003 = term003;
+        double term210 = 0.0;
+        term210 = fma(mI.dx, -R310, term210);
+        term210 = fma(mI.dy, -R220, term210);
+        term210 = fma(mI.dz, -R211, term210);
+        E210 = term210;
+        double term201 = 0.0;
+        term201 = fma(mI.dx, -R301, term201);
+        term201 = fma(mI.dy, -R211, term201);
+        term201 = fma(mI.dz, -R202, term201);
+        E201 = term201;
+        double term120 = 0.0;
+        term120 = fma(mI.dx, -R220, term120);
+        term120 = fma(mI.dy, -R130, term120);
+        term120 = fma(mI.dz, -R121, term120);
+        E120 = term120;
+        double term021 = 0.0;
+        term021 = fma(mI.dx, -R121, term021);
+        term021 = fma(mI.dy, -R031, term021);
+        term021 = fma(mI.dz, -R022, term021);
+        E021 = term021;
+        double term102 = 0.0;
+        term102 = fma(mI.dx, -R202, term102);
+        term102 = fma(mI.dy, -R112, term102);
+        term102 = fma(mI.dz, -R103, term102);
+        E102 = term102;
+        double term012 = 0.0;
+        term012 = fma(mI.dx, -R112, term012);
+        term012 = fma(mI.dy, -R022, term012);
+        term012 = fma(mI.dz, -R013, term012);
+        E012 = term012;
+        double term111 = 0.0;
+        term111 = fma(mI.dx, -R211, term111);
+        term111 = fma(mI.dy, -R121, term111);
+        term111 = fma(mI.dz, -R112, term111);
+        E111 = term111;
+        // Fall through to 2nd order.
+      case 2:
+        // Order 2
+        double term200 = 0.0;
+        term200 = fma(mI.dx, -R300, term200);
+        term200 = fma(mI.dy, -R210, term200);
+        term200 = fma(mI.dz, -R201, term200);
+        E200 = term200;
+        double term020 = 0.0;
+        term020 = fma(mI.dx, -R120, term020);
+        term020 = fma(mI.dy, -R030, term020);
+        term020 = fma(mI.dz, -R021, term020);
+        term020 = fma(mI.qxx, R220, term020);
+        E020 = term020;
+        double term002 = 0.0;
+        term002 = fma(mI.dx, -R102, term002);
+        term002 = fma(mI.dy, -R012, term002);
+        term002 = fma(mI.dz, -R003, term002);
+        E002 = term002;
+        double term110 = 0.0;
+        term110 = fma(mI.dx, -R210, term110);
+        term110 = fma(mI.dy, -R120, term110);
+        term110 = fma(mI.dz, -R111, term110);
+        E110 = term110;
+        double term101 = 0.0;
+        term101 = fma(mI.dx, -R201, term101);
+        term101 = fma(mI.dy, -R111, term101);
+        term101 = fma(mI.dz, -R102, term101);
+        E101 = term101;
+        double term011 = 0.0;
+        term011 = fma(mI.dx, -R111, term011);
+        term011 = fma(mI.dy, -R021, term011);
+        term011 = fma(mI.dz, -R012, term011);
+        E011 = term011;
+        // Fall through to 1st order.
+      case 1:
+        // Order 1
+        // This is d/dX of equation 3.1.3 in the Stone book.
+        double term100 = 0.0;
+        term100 = fma(mI.dx, -R200, term100);
+        term100 = fma(mI.dy, -R110, term100);
+        term100 = fma(mI.dz, -R101, term100);
+        E100 = term100;
+        // This is d/dY of equation 3.1.3 in the Stone book.
+        double term010 = 0.0;
+        term010 = fma(mI.dx, -R110, term010);
+        term010 = fma(mI.dy, -R020, term010);
+        term010 = fma(mI.dz, -R011, term010);
+        E010 = term010;
+        double term001 = 0.0;
+        term001 = fma(mI.dx, -R101, term001);
+        term001 = fma(mI.dy, -R011, term001);
+        term001 = fma(mI.dz, -R002, term001);
+        E001 = term001;
+        // Fall through to the potential.
+      case 0:
+        // This is equation 3.1.3 in the Stone book.
+        double term000 = 0.0;
+        term000 = fma(mI.dx, -R100, term000);
+        term000 = fma(mI.dy, -R010, term000);
+        term000 = fma(mI.dz, -R001, term000);
+        E000 = term000;
     }
-    // Order 3
-    double term300 = 0.0;
-    term300 = fma(mI.q, R300, term300);
-    term300 = fma(mI.dx, -R400, term300);
-    term300 = fma(mI.dy, -R310, term300);
-    term300 = fma(mI.dz, -R301, term300);
-    term300 = fma(mI.qxx, R500, term300);
-    term300 = fma(mI.qyy, R320, term300);
-    term300 = fma(mI.qzz, R302, term300);
-    term300 = fma(mI.qxy, R410, term300);
-    term300 = fma(mI.qxz, R401, term300);
-    term300 = fma(mI.qyz, R311, term300);
-    E300 = term300;
-    double term030 = 0.0;
-    term030 = fma(mI.q, R030, term030);
-    term030 = fma(mI.dx, -R130, term030);
-    term030 = fma(mI.dy, -R040, term030);
-    term030 = fma(mI.dz, -R031, term030);
-    term030 = fma(mI.qxx, R230, term030);
-    term030 = fma(mI.qyy, R050, term030);
-    term030 = fma(mI.qzz, R032, term030);
-    term030 = fma(mI.qxy, R140, term030);
-    term030 = fma(mI.qxz, R131, term030);
-    term030 = fma(mI.qyz, R041, term030);
-    E030 = term030;
-    double term003 = 0.0;
-    term003 = fma(mI.q, R003, term003);
-    term003 = fma(mI.dx, -R103, term003);
-    term003 = fma(mI.dy, -R013, term003);
-    term003 = fma(mI.dz, -R004, term003);
-    term003 = fma(mI.qxx, R203, term003);
-    term003 = fma(mI.qyy, R023, term003);
-    term003 = fma(mI.qzz, R005, term003);
-    term003 = fma(mI.qxy, R113, term003);
-    term003 = fma(mI.qxz, R104, term003);
-    term003 = fma(mI.qyz, R014, term003);
-    E003 = term003;
-    double term210 = 0.0;
-    term210 = fma(mI.q, R210, term210);
-    term210 = fma(mI.dx, -R310, term210);
-    term210 = fma(mI.dy, -R220, term210);
-    term210 = fma(mI.dz, -R211, term210);
-    term210 = fma(mI.qxx, R410, term210);
-    term210 = fma(mI.qyy, R230, term210);
-    term210 = fma(mI.qzz, R212, term210);
-    term210 = fma(mI.qxy, R320, term210);
-    term210 = fma(mI.qxz, R311, term210);
-    term210 = fma(mI.qyz, R221, term210);
-    E210 = term210;
-    double term201 = 0.0;
-    term201 = fma(mI.q, R201, term201);
-    term201 = fma(mI.dx, -R301, term201);
-    term201 = fma(mI.dy, -R211, term201);
-    term201 = fma(mI.dz, -R202, term201);
-    term201 = fma(mI.qxx, R401, term201);
-    term201 = fma(mI.qyy, R221, term201);
-    term201 = fma(mI.qzz, R203, term201);
-    term201 = fma(mI.qxy, R311, term201);
-    term201 = fma(mI.qxz, R302, term201);
-    term201 = fma(mI.qyz, R212, term201);
-    E201 = term201;
-    double term120 = 0.0;
-    term120 = fma(mI.q, R120, term120);
-    term120 = fma(mI.dx, -R220, term120);
-    term120 = fma(mI.dy, -R130, term120);
-    term120 = fma(mI.dz, -R121, term120);
-    term120 = fma(mI.qxx, R320, term120);
-    term120 = fma(mI.qyy, R140, term120);
-    term120 = fma(mI.qzz, R122, term120);
-    term120 = fma(mI.qxy, R230, term120);
-    term120 = fma(mI.qxz, R221, term120);
-    term120 = fma(mI.qyz, R131, term120);
-    E120 = term120;
-    double term021 = 0.0;
-    term021 = fma(mI.q, R021, term021);
-    term021 = fma(mI.dx, -R121, term021);
-    term021 = fma(mI.dy, -R031, term021);
-    term021 = fma(mI.dz, -R022, term021);
-    term021 = fma(mI.qxx, R221, term021);
-    term021 = fma(mI.qyy, R041, term021);
-    term021 = fma(mI.qzz, R023, term021);
-    term021 = fma(mI.qxy, R131, term021);
-    term021 = fma(mI.qxz, R122, term021);
-    term021 = fma(mI.qyz, R032, term021);
-    E021 = term021;
-    double term102 = 0.0;
-    term102 = fma(mI.q, R102, term102);
-    term102 = fma(mI.dx, -R202, term102);
-    term102 = fma(mI.dy, -R112, term102);
-    term102 = fma(mI.dz, -R103, term102);
-    term102 = fma(mI.qxx, R302, term102);
-    term102 = fma(mI.qyy, R122, term102);
-    term102 = fma(mI.qzz, R104, term102);
-    term102 = fma(mI.qxy, R212, term102);
-    term102 = fma(mI.qxz, R203, term102);
-    term102 = fma(mI.qyz, R113, term102);
-    E102 = term102;
-    double term012 = 0.0;
-    term012 = fma(mI.q, R012, term012);
-    term012 = fma(mI.dx, -R112, term012);
-    term012 = fma(mI.dy, -R022, term012);
-    term012 = fma(mI.dz, -R013, term012);
-    term012 = fma(mI.qxx, R212, term012);
-    term012 = fma(mI.qyy, R032, term012);
-    term012 = fma(mI.qzz, R014, term012);
-    term012 = fma(mI.qxy, R122, term012);
-    term012 = fma(mI.qxz, R113, term012);
-    term012 = fma(mI.qyz, R023, term012);
-    E012 = term012;
-    double term111 = 0.0;
-    term111 = fma(mI.q, R111, term111);
-    term111 = fma(mI.dx, -R211, term111);
-    term111 = fma(mI.dy, -R121, term111);
-    term111 = fma(mI.dz, -R112, term111);
-    term111 = fma(mI.qxx, R311, term111);
-    term111 = fma(mI.qyy, R131, term111);
-    term111 = fma(mI.qzz, R113, term111);
-    term111 = fma(mI.qxy, R221, term111);
-    term111 = fma(mI.qxz, R212, term111);
-    term111 = fma(mI.qyz, R122, term111);
-    E111 = term111;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  protected void quadrupoleIPotentialAtK(PolarizableMultipole mI, int order) {
+    switch (order) {
+      default:
+      case 3:
+        // Order 3
+        double term300 = 0.0;
+        term300 = fma(mI.qxx, R500, term300);
+        term300 = fma(mI.qyy, R320, term300);
+        term300 = fma(mI.qzz, R302, term300);
+        term300 = fma(mI.qxy, R410, term300);
+        term300 = fma(mI.qxz, R401, term300);
+        term300 = fma(mI.qyz, R311, term300);
+        E300 = term300;
+        double term030 = 0.0;
+        term030 = fma(mI.qxx, R230, term030);
+        term030 = fma(mI.qyy, R050, term030);
+        term030 = fma(mI.qzz, R032, term030);
+        term030 = fma(mI.qxy, R140, term030);
+        term030 = fma(mI.qxz, R131, term030);
+        term030 = fma(mI.qyz, R041, term030);
+        E030 = term030;
+        double term003 = 0.0;
+        term003 = fma(mI.qxx, R203, term003);
+        term003 = fma(mI.qyy, R023, term003);
+        term003 = fma(mI.qzz, R005, term003);
+        term003 = fma(mI.qxy, R113, term003);
+        term003 = fma(mI.qxz, R104, term003);
+        term003 = fma(mI.qyz, R014, term003);
+        E003 = term003;
+        double term210 = 0.0;
+        term210 = fma(mI.qxx, R410, term210);
+        term210 = fma(mI.qyy, R230, term210);
+        term210 = fma(mI.qzz, R212, term210);
+        term210 = fma(mI.qxy, R320, term210);
+        term210 = fma(mI.qxz, R311, term210);
+        term210 = fma(mI.qyz, R221, term210);
+        E210 = term210;
+        double term201 = 0.0;
+        term201 = fma(mI.qxx, R401, term201);
+        term201 = fma(mI.qyy, R221, term201);
+        term201 = fma(mI.qzz, R203, term201);
+        term201 = fma(mI.qxy, R311, term201);
+        term201 = fma(mI.qxz, R302, term201);
+        term201 = fma(mI.qyz, R212, term201);
+        E201 = term201;
+        double term120 = 0.0;
+        term120 = fma(mI.qxx, R320, term120);
+        term120 = fma(mI.qyy, R140, term120);
+        term120 = fma(mI.qzz, R122, term120);
+        term120 = fma(mI.qxy, R230, term120);
+        term120 = fma(mI.qxz, R221, term120);
+        term120 = fma(mI.qyz, R131, term120);
+        E120 = term120;
+        double term021 = 0.0;
+        term021 = fma(mI.qxx, R221, term021);
+        term021 = fma(mI.qyy, R041, term021);
+        term021 = fma(mI.qzz, R023, term021);
+        term021 = fma(mI.qxy, R131, term021);
+        term021 = fma(mI.qxz, R122, term021);
+        term021 = fma(mI.qyz, R032, term021);
+        E021 = term021;
+        double term102 = 0.0;
+        term102 = fma(mI.qxx, R302, term102);
+        term102 = fma(mI.qyy, R122, term102);
+        term102 = fma(mI.qzz, R104, term102);
+        term102 = fma(mI.qxy, R212, term102);
+        term102 = fma(mI.qxz, R203, term102);
+        term102 = fma(mI.qyz, R113, term102);
+        E102 = term102;
+        double term012 = 0.0;
+        term012 = fma(mI.qxx, R212, term012);
+        term012 = fma(mI.qyy, R032, term012);
+        term012 = fma(mI.qzz, R014, term012);
+        term012 = fma(mI.qxy, R122, term012);
+        term012 = fma(mI.qxz, R113, term012);
+        term012 = fma(mI.qyz, R023, term012);
+        E012 = term012;
+        double term111 = 0.0;
+        term111 = fma(mI.qxx, R311, term111);
+        term111 = fma(mI.qyy, R131, term111);
+        term111 = fma(mI.qzz, R113, term111);
+        term111 = fma(mI.qxy, R221, term111);
+        term111 = fma(mI.qxz, R212, term111);
+        term111 = fma(mI.qyz, R122, term111);
+        E111 = term111;
+        // Fall through to 2nd order.
+      case 2:
+        // Order 2
+        double term200 = 0.0;
+        term200 = fma(mI.qxx, R400, term200);
+        term200 = fma(mI.qyy, R220, term200);
+        term200 = fma(mI.qzz, R202, term200);
+        term200 = fma(mI.qxy, R310, term200);
+        term200 = fma(mI.qxz, R301, term200);
+        term200 = fma(mI.qyz, R211, term200);
+        E200 = term200;
+        double term020 = 0.0;
+        term020 = fma(mI.qxx, R220, term020);
+        term020 = fma(mI.qyy, R040, term020);
+        term020 = fma(mI.qzz, R022, term020);
+        term020 = fma(mI.qxy, R130, term020);
+        term020 = fma(mI.qxz, R121, term020);
+        term020 = fma(mI.qyz, R031, term020);
+        E020 = term020;
+        double term002 = 0.0;
+        term002 = fma(mI.qxx, R202, term002);
+        term002 = fma(mI.qyy, R022, term002);
+        term002 = fma(mI.qzz, R004, term002);
+        term002 = fma(mI.qxy, R112, term002);
+        term002 = fma(mI.qxz, R103, term002);
+        term002 = fma(mI.qyz, R013, term002);
+        E002 = term002;
+        double term110 = 0.0;
+        term110 = fma(mI.qxx, R310, term110);
+        term110 = fma(mI.qyy, R130, term110);
+        term110 = fma(mI.qzz, R112, term110);
+        term110 = fma(mI.qxy, R220, term110);
+        term110 = fma(mI.qxz, R211, term110);
+        term110 = fma(mI.qyz, R121, term110);
+        E110 = term110;
+        double term101 = 0.0;
+        term101 = fma(mI.qxx, R301, term101);
+        term101 = fma(mI.qyy, R121, term101);
+        term101 = fma(mI.qzz, R103, term101);
+        term101 = fma(mI.qxy, R211, term101);
+        term101 = fma(mI.qxz, R202, term101);
+        term101 = fma(mI.qyz, R112, term101);
+        E101 = term101;
+        double term011 = 0.0;
+        term011 = fma(mI.qxx, R211, term011);
+        term011 = fma(mI.qyy, R031, term011);
+        term011 = fma(mI.qzz, R013, term011);
+        term011 = fma(mI.qxy, R121, term011);
+        term011 = fma(mI.qxz, R112, term011);
+        term011 = fma(mI.qyz, R022, term011);
+        E011 = term011;
+        // Fall through to 1st order.
+      case 1:
+        // Order 1
+        // This is d/dX of equation 3.1.3 in the Stone book.
+        double term100 = 0.0;
+        term100 = fma(mI.qxx, R300, term100);
+        term100 = fma(mI.qyy, R120, term100);
+        term100 = fma(mI.qzz, R102, term100);
+        term100 = fma(mI.qxy, R210, term100);
+        term100 = fma(mI.qxz, R201, term100);
+        term100 = fma(mI.qyz, R111, term100);
+        E100 = term100;
+        // This is d/dY of equation 3.1.3 in the Stone book.
+        double term010 = 0.0;
+        term010 = fma(mI.qxx, R210, term010);
+        term010 = fma(mI.qyy, R030, term010);
+        term010 = fma(mI.qzz, R012, term010);
+        term010 = fma(mI.qxy, R120, term010);
+        term010 = fma(mI.qxz, R111, term010);
+        term010 = fma(mI.qyz, R021, term010);
+        E010 = term010;
+        double term001 = 0.0;
+        term001 = fma(mI.qxx, R201, term001);
+        term001 = fma(mI.qyy, R021, term001);
+        term001 = fma(mI.qzz, R003, term001);
+        term001 = fma(mI.qxy, R111, term001);
+        term001 = fma(mI.qxz, R102, term001);
+        term001 = fma(mI.qyz, R012, term001);
+        E001 = term001;
+        // Fall through to the potential.
+      case 0:
+        // This is equation 3.1.3 in the Stone book.
+        double term000 = 0.0;
+        term000 = fma(mI.qxx, R200, term000);
+        term000 = fma(mI.qyy, R020, term000);
+        term000 = fma(mI.qzz, R002, term000);
+        term000 = fma(mI.qxy, R110, term000);
+        term000 = fma(mI.qxz, R101, term000);
+        term000 = fma(mI.qyz, R011, term000);
+        E000 = term000;
+    }
   }
 
   /** {@inheritDoc} */
   @Override
   protected void multipoleKPotentialAtI(PolarizableMultipole mK, int order) {
-    // This is equation 3.1.3 in the Stone book, except its V_B at A.
-    // The sign for separation vector is reversed, so the dipole contribution becomes positive.
-    double term000 = 0.0;
-    term000 = fma(mK.q, R000, term000);
-    term000 = fma(mK.dx, R100, term000);
-    term000 = fma(mK.dy, R010, term000);
-    term000 = fma(mK.dz, R001, term000);
-    term000 = fma(mK.qxx, R200, term000);
-    term000 = fma(mK.qyy, R020, term000);
-    term000 = fma(mK.qzz, R002, term000);
-    term000 = fma(mK.qxy, R110, term000);
-    term000 = fma(mK.qxz, R101, term000);
-    term000 = fma(mK.qyz, R011, term000);
-    E000 = term000;
-    if (order <= 0) {
-      return;
+    switch (order) {
+      default:
+      case 3:
+        // Order 3
+        // This is d^3/dX^3 of equation 3.1.3 in the Stone book. The sign is flipped due to the
+        // derivative being with respect to R = Rk - Ri.
+        double term300 = 0.0;
+        term300 = fma(mK.q, R300, term300);
+        term300 = fma(mK.dx, R400, term300);
+        term300 = fma(mK.dy, R310, term300);
+        term300 = fma(mK.dz, R301, term300);
+        term300 = fma(mK.qxx, R500, term300);
+        term300 = fma(mK.qyy, R320, term300);
+        term300 = fma(mK.qzz, R302, term300);
+        term300 = fma(mK.qxy, R410, term300);
+        term300 = fma(mK.qxz, R401, term300);
+        term300 = fma(mK.qyz, R311, term300);
+        E300 = -term300;
+        double term030 = 0.0;
+        term030 = fma(mK.q, R030, term030);
+        term030 = fma(mK.dx, R130, term030);
+        term030 = fma(mK.dy, R040, term030);
+        term030 = fma(mK.dz, R031, term030);
+        term030 = fma(mK.qxx, R230, term030);
+        term030 = fma(mK.qyy, R050, term030);
+        term030 = fma(mK.qzz, R032, term030);
+        term030 = fma(mK.qxy, R140, term030);
+        term030 = fma(mK.qxz, R131, term030);
+        term030 = fma(mK.qyz, R041, term030);
+        E030 = -term030;
+        double term003 = 0.0;
+        term003 = fma(mK.q, R003, term003);
+        term003 = fma(mK.dx, R103, term003);
+        term003 = fma(mK.dy, R013, term003);
+        term003 = fma(mK.dz, R004, term003);
+        term003 = fma(mK.qxx, R203, term003);
+        term003 = fma(mK.qyy, R023, term003);
+        term003 = fma(mK.qzz, R005, term003);
+        term003 = fma(mK.qxy, R113, term003);
+        term003 = fma(mK.qxz, R104, term003);
+        term003 = fma(mK.qyz, R014, term003);
+        E003 = -term003;
+        double term210 = 0.0;
+        term210 = fma(mK.q, R210, term210);
+        term210 = fma(mK.dx, R310, term210);
+        term210 = fma(mK.dy, R220, term210);
+        term210 = fma(mK.dz, R211, term210);
+        term210 = fma(mK.qxx, R410, term210);
+        term210 = fma(mK.qyy, R230, term210);
+        term210 = fma(mK.qzz, R212, term210);
+        term210 = fma(mK.qxy, R320, term210);
+        term210 = fma(mK.qxz, R311, term210);
+        term210 = fma(mK.qyz, R221, term210);
+        E210 = -term210;
+        double term201 = 0.0;
+        term201 = fma(mK.q, R201, term201);
+        term201 = fma(mK.dx, R301, term201);
+        term201 = fma(mK.dy, R211, term201);
+        term201 = fma(mK.dz, R202, term201);
+        term201 = fma(mK.qxx, R401, term201);
+        term201 = fma(mK.qyy, R221, term201);
+        term201 = fma(mK.qzz, R203, term201);
+        term201 = fma(mK.qxy, R311, term201);
+        term201 = fma(mK.qxz, R302, term201);
+        term201 = fma(mK.qyz, R212, term201);
+        E201 = -term201;
+        double term120 = 0.0;
+        term120 = fma(mK.q, R120, term120);
+        term120 = fma(mK.dx, R220, term120);
+        term120 = fma(mK.dy, R130, term120);
+        term120 = fma(mK.dz, R121, term120);
+        term120 = fma(mK.qxx, R320, term120);
+        term120 = fma(mK.qyy, R140, term120);
+        term120 = fma(mK.qzz, R122, term120);
+        term120 = fma(mK.qxy, R230, term120);
+        term120 = fma(mK.qxz, R221, term120);
+        term120 = fma(mK.qyz, R131, term120);
+        E120 = -term120;
+        double term021 = 0.0;
+        term021 = fma(mK.q, R021, term021);
+        term021 = fma(mK.dx, R121, term021);
+        term021 = fma(mK.dy, R031, term021);
+        term021 = fma(mK.dz, R022, term021);
+        term021 = fma(mK.qxx, R221, term021);
+        term021 = fma(mK.qyy, R041, term021);
+        term021 = fma(mK.qzz, R023, term021);
+        term021 = fma(mK.qxy, R131, term021);
+        term021 = fma(mK.qxz, R122, term021);
+        term021 = fma(mK.qyz, R032, term021);
+        E021 = -term021;
+        double term102 = 0.0;
+        term102 = fma(mK.q, R102, term102);
+        term102 = fma(mK.dx, R202, term102);
+        term102 = fma(mK.dy, R112, term102);
+        term102 = fma(mK.dz, R103, term102);
+        term102 = fma(mK.qxx, R302, term102);
+        term102 = fma(mK.qyy, R122, term102);
+        term102 = fma(mK.qzz, R104, term102);
+        term102 = fma(mK.qxy, R212, term102);
+        term102 = fma(mK.qxz, R203, term102);
+        term102 = fma(mK.qyz, R113, term102);
+        E102 = -term102;
+        double term012 = 0.0;
+        term012 = fma(mK.q, R012, term012);
+        term012 = fma(mK.dx, R112, term012);
+        term012 = fma(mK.dy, R022, term012);
+        term012 = fma(mK.dz, R013, term012);
+        term012 = fma(mK.qxx, R212, term012);
+        term012 = fma(mK.qyy, R032, term012);
+        term012 = fma(mK.qzz, R014, term012);
+        term012 = fma(mK.qxy, R122, term012);
+        term012 = fma(mK.qxz, R113, term012);
+        term012 = fma(mK.qyz, R023, term012);
+        E012 = -term012;
+        double term111 = 0.0;
+        term111 = fma(mK.q, R111, term111);
+        term111 = fma(mK.dx, R211, term111);
+        term111 = fma(mK.dy, R121, term111);
+        term111 = fma(mK.dz, R112, term111);
+        term111 = fma(mK.qxx, R311, term111);
+        term111 = fma(mK.qyy, R131, term111);
+        term111 = fma(mK.qzz, R113, term111);
+        term111 = fma(mK.qxy, R221, term111);
+        term111 = fma(mK.qxz, R212, term111);
+        term111 = fma(mK.qyz, R122, term111);
+        E111 = -term111;
+        // Fall through to 2nd order.
+      case 2:
+        // Order 2
+        double term200 = 0.0;
+        term200 = fma(mK.q, R200, term200);
+        term200 = fma(mK.dx, R300, term200);
+        term200 = fma(mK.dy, R210, term200);
+        term200 = fma(mK.dz, R201, term200);
+        term200 = fma(mK.qxx, R400, term200);
+        term200 = fma(mK.qyy, R220, term200);
+        term200 = fma(mK.qzz, R202, term200);
+        term200 = fma(mK.qxy, R310, term200);
+        term200 = fma(mK.qxz, R301, term200);
+        term200 = fma(mK.qyz, R211, term200);
+        E200 = term200;
+        double term020 = 0.0;
+        term020 = fma(mK.q, R020, term020);
+        term020 = fma(mK.dx, R120, term020);
+        term020 = fma(mK.dy, R030, term020);
+        term020 = fma(mK.dz, R021, term020);
+        term020 = fma(mK.qxx, R220, term020);
+        term020 = fma(mK.qyy, R040, term020);
+        term020 = fma(mK.qzz, R022, term020);
+        term020 = fma(mK.qxy, R130, term020);
+        term020 = fma(mK.qxz, R121, term020);
+        term020 = fma(mK.qyz, R031, term020);
+        E020 = term020;
+        double term002 = 0.0;
+        term002 = fma(mK.q, R002, term002);
+        term002 = fma(mK.dx, R102, term002);
+        term002 = fma(mK.dy, R012, term002);
+        term002 = fma(mK.dz, R003, term002);
+        term002 = fma(mK.qxx, R202, term002);
+        term002 = fma(mK.qyy, R022, term002);
+        term002 = fma(mK.qzz, R004, term002);
+        term002 = fma(mK.qxy, R112, term002);
+        term002 = fma(mK.qxz, R103, term002);
+        term002 = fma(mK.qyz, R013, term002);
+        E002 = term002;
+        double term110 = 0.0;
+        term110 = fma(mK.q, R110, term110);
+        term110 = fma(mK.dx, R210, term110);
+        term110 = fma(mK.dy, R120, term110);
+        term110 = fma(mK.dz, R111, term110);
+        term110 = fma(mK.qxx, R310, term110);
+        term110 = fma(mK.qyy, R130, term110);
+        term110 = fma(mK.qzz, R112, term110);
+        term110 = fma(mK.qxy, R220, term110);
+        term110 = fma(mK.qxz, R211, term110);
+        term110 = fma(mK.qyz, R121, term110);
+        E110 = term110;
+        double term101 = 0.0;
+        term101 = fma(mK.q, R101, term101);
+        term101 = fma(mK.dx, R201, term101);
+        term101 = fma(mK.dy, R111, term101);
+        term101 = fma(mK.dz, R102, term101);
+        term101 = fma(mK.qxx, R301, term101);
+        term101 = fma(mK.qyy, R121, term101);
+        term101 = fma(mK.qzz, R103, term101);
+        term101 = fma(mK.qxy, R211, term101);
+        term101 = fma(mK.qxz, R202, term101);
+        term101 = fma(mK.qyz, R112, term101);
+        E101 = term101;
+        double term011 = 0.0;
+        term011 = fma(mK.q, R011, term011);
+        term011 = fma(mK.dx, R111, term011);
+        term011 = fma(mK.dy, R021, term011);
+        term011 = fma(mK.dz, R012, term011);
+        term011 = fma(mK.qxx, R211, term011);
+        term011 = fma(mK.qyy, R031, term011);
+        term011 = fma(mK.qzz, R013, term011);
+        term011 = fma(mK.qxy, R121, term011);
+        term011 = fma(mK.qxz, R112, term011);
+        term011 = fma(mK.qyz, R022, term011);
+        E011 = term011;
+        // Fall through to 1st order.
+      case 1:
+        // This is d/dX of equation 3.1.3 in the Stone book. The sign is flipped due to the
+        // derivative being with respect to R = Rk - Ri.
+        double term100 = 0.0;
+        term100 = fma(mK.q, R100, term100);
+        term100 = fma(mK.dx, R200, term100);
+        term100 = fma(mK.dy, R110, term100);
+        term100 = fma(mK.dz, R101, term100);
+        term100 = fma(mK.qxx, R300, term100);
+        term100 = fma(mK.qyy, R120, term100);
+        term100 = fma(mK.qzz, R102, term100);
+        term100 = fma(mK.qxy, R210, term100);
+        term100 = fma(mK.qxz, R201, term100);
+        term100 = fma(mK.qyz, R111, term100);
+        E100 = -term100;
+        double term010 = 0.0;
+        term010 = fma(mK.q, R010, term010);
+        term010 = fma(mK.dx, R110, term010);
+        term010 = fma(mK.dy, R020, term010);
+        term010 = fma(mK.dz, R011, term010);
+        term010 = fma(mK.qxx, R210, term010);
+        term010 = fma(mK.qyy, R030, term010);
+        term010 = fma(mK.qzz, R012, term010);
+        term010 = fma(mK.qxy, R120, term010);
+        term010 = fma(mK.qxz, R111, term010);
+        term010 = fma(mK.qyz, R021, term010);
+        E010 = -term010;
+        double term001 = 0.0;
+        term001 = fma(mK.q, R001, term001);
+        term001 = fma(mK.dx, R101, term001);
+        term001 = fma(mK.dy, R011, term001);
+        term001 = fma(mK.dz, R002, term001);
+        term001 = fma(mK.qxx, R201, term001);
+        term001 = fma(mK.qyy, R021, term001);
+        term001 = fma(mK.qzz, R003, term001);
+        term001 = fma(mK.qxy, R111, term001);
+        term001 = fma(mK.qxz, R102, term001);
+        term001 = fma(mK.qyz, R012, term001);
+        E001 = -term001;
+        // Fall through to the potential.
+      case 0:
+        // This is equation 3.1.3 in the Stone book, except its V_B at A.
+        // The sign for separation vector is reversed, so the dipole contribution becomes positive.
+        double term000 = 0.0;
+        term000 = fma(mK.q, R000, term000);
+        term000 = fma(mK.dx, R100, term000);
+        term000 = fma(mK.dy, R010, term000);
+        term000 = fma(mK.dz, R001, term000);
+        term000 = fma(mK.qxx, R200, term000);
+        term000 = fma(mK.qyy, R020, term000);
+        term000 = fma(mK.qzz, R002, term000);
+        term000 = fma(mK.qxy, R110, term000);
+        term000 = fma(mK.qxz, R101, term000);
+        term000 = fma(mK.qyz, R011, term000);
+        E000 = term000;
     }
-    // This is d/dX of equation 3.1.3 in the Stone book. The sign is flipped due to the
-    // derivative being with respect to R = Rk - Ri.
-    double term100 = 0.0;
-    term100 = fma(mK.q, R100, term100);
-    term100 = fma(mK.dx, R200, term100);
-    term100 = fma(mK.dy, R110, term100);
-    term100 = fma(mK.dz, R101, term100);
-    term100 = fma(mK.qxx, R300, term100);
-    term100 = fma(mK.qyy, R120, term100);
-    term100 = fma(mK.qzz, R102, term100);
-    term100 = fma(mK.qxy, R210, term100);
-    term100 = fma(mK.qxz, R201, term100);
-    term100 = fma(mK.qyz, R111, term100);
-    E100 = -term100;
-    double term010 = 0.0;
-    term010 = fma(mK.q, R010, term010);
-    term010 = fma(mK.dx, R110, term010);
-    term010 = fma(mK.dy, R020, term010);
-    term010 = fma(mK.dz, R011, term010);
-    term010 = fma(mK.qxx, R210, term010);
-    term010 = fma(mK.qyy, R030, term010);
-    term010 = fma(mK.qzz, R012, term010);
-    term010 = fma(mK.qxy, R120, term010);
-    term010 = fma(mK.qxz, R111, term010);
-    term010 = fma(mK.qyz, R021, term010);
-    E010 = -term010;
-    double term001 = 0.0;
-    term001 = fma(mK.q, R001, term001);
-    term001 = fma(mK.dx, R101, term001);
-    term001 = fma(mK.dy, R011, term001);
-    term001 = fma(mK.dz, R002, term001);
-    term001 = fma(mK.qxx, R201, term001);
-    term001 = fma(mK.qyy, R021, term001);
-    term001 = fma(mK.qzz, R003, term001);
-    term001 = fma(mK.qxy, R111, term001);
-    term001 = fma(mK.qxz, R102, term001);
-    term001 = fma(mK.qyz, R012, term001);
-    E001 = -term001;
-    if (order <= 1) {
-      return;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  protected void chargeKPotentialAtI(PolarizableMultipole mK, int order) {
+    switch (order) {
+      default:
+      case 3:
+        // Order 3
+        // This is d^3/dX^3 of equation 3.1.3 in the Stone book. The sign is flipped due to the
+        // derivative being with respect to R = Rk - Ri.
+        E300 = -mK.q * R300;
+        E030 = -mK.q * R030;
+        E003 = -mK.q * R003;
+        E210 = -mK.q * R210;
+        E201 = -mK.q * R201;
+        E120 = -mK.q * R120;
+        E021 = -mK.q * R021;
+        E102 = -mK.q * R102;
+        E012 = -mK.q * R012;
+        E111 = -mK.q * R111;
+        // Fall through to 2nd order.
+      case 2:
+        // Order 2
+        E200 = mK.q * R200;
+        E020 = mK.q * R020;
+        E002 = mK.q * R002;
+        E110 = mK.q * R110;
+        E101 = mK.q * R101;
+        E011 = mK.q * R011;
+        // Fall through to 1st order.
+      case 1:
+        // This is d/dX of equation 3.1.3 in the Stone book. The sign is flipped due to the
+        // derivative being with respect to R = Rk - Ri.
+        E100 = -mK.q * R100;
+        E010 = -mK.q * R010;
+        E001 = -mK.q * R001;
+        // Fall through to the potential.
+      case 0:
+        // This is equation 3.1.3 in the Stone book, except its V_B at A.
+        // The sign for separation vector is reversed, so the dipole contribution becomes positive.
+        E000 = mK.q * R000;
     }
-    // Order 2
-    double term200 = 0.0;
-    term200 = fma(mK.q, R200, term200);
-    term200 = fma(mK.dx, R300, term200);
-    term200 = fma(mK.dy, R210, term200);
-    term200 = fma(mK.dz, R201, term200);
-    term200 = fma(mK.qxx, R400, term200);
-    term200 = fma(mK.qyy, R220, term200);
-    term200 = fma(mK.qzz, R202, term200);
-    term200 = fma(mK.qxy, R310, term200);
-    term200 = fma(mK.qxz, R301, term200);
-    term200 = fma(mK.qyz, R211, term200);
-    E200 = term200;
-    double term020 = 0.0;
-    term020 = fma(mK.q, R020, term020);
-    term020 = fma(mK.dx, R120, term020);
-    term020 = fma(mK.dy, R030, term020);
-    term020 = fma(mK.dz, R021, term020);
-    term020 = fma(mK.qxx, R220, term020);
-    term020 = fma(mK.qyy, R040, term020);
-    term020 = fma(mK.qzz, R022, term020);
-    term020 = fma(mK.qxy, R130, term020);
-    term020 = fma(mK.qxz, R121, term020);
-    term020 = fma(mK.qyz, R031, term020);
-    E020 = term020;
-    double term002 = 0.0;
-    term002 = fma(mK.q, R002, term002);
-    term002 = fma(mK.dx, R102, term002);
-    term002 = fma(mK.dy, R012, term002);
-    term002 = fma(mK.dz, R003, term002);
-    term002 = fma(mK.qxx, R202, term002);
-    term002 = fma(mK.qyy, R022, term002);
-    term002 = fma(mK.qzz, R004, term002);
-    term002 = fma(mK.qxy, R112, term002);
-    term002 = fma(mK.qxz, R103, term002);
-    term002 = fma(mK.qyz, R013, term002);
-    E002 = term002;
-    double term110 = 0.0;
-    term110 = fma(mK.q, R110, term110);
-    term110 = fma(mK.dx, R210, term110);
-    term110 = fma(mK.dy, R120, term110);
-    term110 = fma(mK.dz, R111, term110);
-    term110 = fma(mK.qxx, R310, term110);
-    term110 = fma(mK.qyy, R130, term110);
-    term110 = fma(mK.qzz, R112, term110);
-    term110 = fma(mK.qxy, R220, term110);
-    term110 = fma(mK.qxz, R211, term110);
-    term110 = fma(mK.qyz, R121, term110);
-    E110 = term110;
-    double term101 = 0.0;
-    term101 = fma(mK.q, R101, term101);
-    term101 = fma(mK.dx, R201, term101);
-    term101 = fma(mK.dy, R111, term101);
-    term101 = fma(mK.dz, R102, term101);
-    term101 = fma(mK.qxx, R301, term101);
-    term101 = fma(mK.qyy, R121, term101);
-    term101 = fma(mK.qzz, R103, term101);
-    term101 = fma(mK.qxy, R211, term101);
-    term101 = fma(mK.qxz, R202, term101);
-    term101 = fma(mK.qyz, R112, term101);
-    E101 = term101;
-    double term011 = 0.0;
-    term011 = fma(mK.q, R011, term011);
-    term011 = fma(mK.dx, R111, term011);
-    term011 = fma(mK.dy, R021, term011);
-    term011 = fma(mK.dz, R012, term011);
-    term011 = fma(mK.qxx, R211, term011);
-    term011 = fma(mK.qyy, R031, term011);
-    term011 = fma(mK.qzz, R013, term011);
-    term011 = fma(mK.qxy, R121, term011);
-    term011 = fma(mK.qxz, R112, term011);
-    term011 = fma(mK.qyz, R022, term011);
-    E011 = term011;
-    if (order <= 2) {
-      return;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  protected void dipoleKPotentialAtI(PolarizableMultipole mK, int order) {
+    switch (order) {
+      default:
+      case 3:
+        // Order 3
+        // This is d^3/dX^3 of equation 3.1.3 in the Stone book. The sign is flipped due to the
+        // derivative being with respect to R = Rk - Ri.
+        double term300 = 0.0;
+        term300 = fma(mK.dx, R400, term300);
+        term300 = fma(mK.dy, R310, term300);
+        term300 = fma(mK.dz, R301, term300);
+        E300 = -term300;
+        double term030 = 0.0;
+        term030 = fma(mK.dx, R130, term030);
+        term030 = fma(mK.dy, R040, term030);
+        term030 = fma(mK.dz, R031, term030);
+        E030 = -term030;
+        double term003 = 0.0;
+        term003 = fma(mK.dx, R103, term003);
+        term003 = fma(mK.dy, R013, term003);
+        term003 = fma(mK.dz, R004, term003);
+        E003 = -term003;
+        double term210 = 0.0;
+        term210 = fma(mK.dx, R310, term210);
+        term210 = fma(mK.dy, R220, term210);
+        term210 = fma(mK.dz, R211, term210);
+        E210 = -term210;
+        double term201 = 0.0;
+        term201 = fma(mK.dx, R301, term201);
+        term201 = fma(mK.dy, R211, term201);
+        term201 = fma(mK.dz, R202, term201);
+        E201 = -term201;
+        double term120 = 0.0;
+        term120 = fma(mK.dx, R220, term120);
+        term120 = fma(mK.dy, R130, term120);
+        term120 = fma(mK.dz, R121, term120);
+        E120 = -term120;
+        double term021 = 0.0;
+        term021 = fma(mK.dx, R121, term021);
+        term021 = fma(mK.dy, R031, term021);
+        term021 = fma(mK.dz, R022, term021);
+        E021 = -term021;
+        double term102 = 0.0;
+        term102 = fma(mK.dx, R202, term102);
+        term102 = fma(mK.dy, R112, term102);
+        term102 = fma(mK.dz, R103, term102);
+        E102 = -term102;
+        double term012 = 0.0;
+        term012 = fma(mK.dx, R112, term012);
+        term012 = fma(mK.dy, R022, term012);
+        term012 = fma(mK.dz, R013, term012);
+        E012 = -term012;
+        double term111 = 0.0;
+        term111 = fma(mK.dx, R211, term111);
+        term111 = fma(mK.dy, R121, term111);
+        term111 = fma(mK.dz, R112, term111);
+        E111 = -term111;
+        // Fall through to 2nd order.
+      case 2:
+        // Order 2
+        double term200 = 0.0;
+        term200 = fma(mK.dx, R300, term200);
+        term200 = fma(mK.dy, R210, term200);
+        term200 = fma(mK.dz, R201, term200);
+        E200 = term200;
+        double term020 = 0.0;
+        term020 = fma(mK.dx, R120, term020);
+        term020 = fma(mK.dy, R030, term020);
+        term020 = fma(mK.dz, R021, term020);
+        E020 = term020;
+        double term002 = 0.0;
+        term002 = fma(mK.dx, R102, term002);
+        term002 = fma(mK.dy, R012, term002);
+        term002 = fma(mK.dz, R003, term002);
+        E002 = term002;
+        double term110 = 0.0;
+        term110 = fma(mK.dx, R210, term110);
+        term110 = fma(mK.dy, R120, term110);
+        term110 = fma(mK.dz, R111, term110);
+        E110 = term110;
+        double term101 = 0.0;
+        term101 = fma(mK.dx, R201, term101);
+        term101 = fma(mK.dy, R111, term101);
+        term101 = fma(mK.dz, R102, term101);
+        E101 = term101;
+        double term011 = 0.0;
+        term011 = fma(mK.dx, R111, term011);
+        term011 = fma(mK.dy, R021, term011);
+        term011 = fma(mK.dz, R012, term011);
+        E011 = term011;
+        // Fall through to 1st order.
+      case 1:
+        // This is d/dX of equation 3.1.3 in the Stone book. The sign is flipped due to the
+        // derivative being with respect to R = Rk - Ri.
+        double term100 = 0.0;
+        term100 = fma(mK.dx, R200, term100);
+        term100 = fma(mK.dy, R110, term100);
+        term100 = fma(mK.dz, R101, term100);
+        E100 = -term100;
+        double term010 = 0.0;
+        term010 = fma(mK.dx, R110, term010);
+        term010 = fma(mK.dy, R020, term010);
+        term010 = fma(mK.dz, R011, term010);
+        E010 = -term010;
+        double term001 = 0.0;
+        term001 = fma(mK.dx, R101, term001);
+        term001 = fma(mK.dy, R011, term001);
+        term001 = fma(mK.dz, R002, term001);
+        E001 = -term001;
+        // Fall through to the potential.
+      case 0:
+        // This is equation 3.1.3 in the Stone book, except its V_B at A.
+        // The sign for separation vector is reversed, so the dipole contribution becomes positive.
+        double term000 = 0.0;
+        term000 = fma(mK.dx, R100, term000);
+        term000 = fma(mK.dy, R010, term000);
+        term000 = fma(mK.dz, R001, term000);
+        E000 = term000;
     }
-    // Order 3
-    // This is d^3/dX^3 of equation 3.1.3 in the Stone book. The sign is flipped due to the
-    // derivative being with respect to R = Rk - Ri.
-    double term300 = 0.0;
-    term300 = fma(mK.q, R300, term300);
-    term300 = fma(mK.dx, R400, term300);
-    term300 = fma(mK.dy, R310, term300);
-    term300 = fma(mK.dz, R301, term300);
-    term300 = fma(mK.qxx, R500, term300);
-    term300 = fma(mK.qyy, R320, term300);
-    term300 = fma(mK.qzz, R302, term300);
-    term300 = fma(mK.qxy, R410, term300);
-    term300 = fma(mK.qxz, R401, term300);
-    term300 = fma(mK.qyz, R311, term300);
-    E300 = -term300;
-    double term030 = 0.0;
-    term030 = fma(mK.q, R030, term030);
-    term030 = fma(mK.dx, R130, term030);
-    term030 = fma(mK.dy, R040, term030);
-    term030 = fma(mK.dz, R031, term030);
-    term030 = fma(mK.qxx, R230, term030);
-    term030 = fma(mK.qyy, R050, term030);
-    term030 = fma(mK.qzz, R032, term030);
-    term030 = fma(mK.qxy, R140, term030);
-    term030 = fma(mK.qxz, R131, term030);
-    term030 = fma(mK.qyz, R041, term030);
-    E030 = -term030;
-    double term003 = 0.0;
-    term003 = fma(mK.q, R003, term003);
-    term003 = fma(mK.dx, R103, term003);
-    term003 = fma(mK.dy, R013, term003);
-    term003 = fma(mK.dz, R004, term003);
-    term003 = fma(mK.qxx, R203, term003);
-    term003 = fma(mK.qyy, R023, term003);
-    term003 = fma(mK.qzz, R005, term003);
-    term003 = fma(mK.qxy, R113, term003);
-    term003 = fma(mK.qxz, R104, term003);
-    term003 = fma(mK.qyz, R014, term003);
-    E003 = -term003;
-    double term210 = 0.0;
-    term210 = fma(mK.q, R210, term210);
-    term210 = fma(mK.dx, R310, term210);
-    term210 = fma(mK.dy, R220, term210);
-    term210 = fma(mK.dz, R211, term210);
-    term210 = fma(mK.qxx, R410, term210);
-    term210 = fma(mK.qyy, R230, term210);
-    term210 = fma(mK.qzz, R212, term210);
-    term210 = fma(mK.qxy, R320, term210);
-    term210 = fma(mK.qxz, R311, term210);
-    term210 = fma(mK.qyz, R221, term210);
-    E210 = -term210;
-    double term201 = 0.0;
-    term201 = fma(mK.q, R201, term201);
-    term201 = fma(mK.dx, R301, term201);
-    term201 = fma(mK.dy, R211, term201);
-    term201 = fma(mK.dz, R202, term201);
-    term201 = fma(mK.qxx, R401, term201);
-    term201 = fma(mK.qyy, R221, term201);
-    term201 = fma(mK.qzz, R203, term201);
-    term201 = fma(mK.qxy, R311, term201);
-    term201 = fma(mK.qxz, R302, term201);
-    term201 = fma(mK.qyz, R212, term201);
-    E201 = -term201;
-    double term120 = 0.0;
-    term120 = fma(mK.q, R120, term120);
-    term120 = fma(mK.dx, R220, term120);
-    term120 = fma(mK.dy, R130, term120);
-    term120 = fma(mK.dz, R121, term120);
-    term120 = fma(mK.qxx, R320, term120);
-    term120 = fma(mK.qyy, R140, term120);
-    term120 = fma(mK.qzz, R122, term120);
-    term120 = fma(mK.qxy, R230, term120);
-    term120 = fma(mK.qxz, R221, term120);
-    term120 = fma(mK.qyz, R131, term120);
-    E120 = -term120;
-    double term021 = 0.0;
-    term021 = fma(mK.q, R021, term021);
-    term021 = fma(mK.dx, R121, term021);
-    term021 = fma(mK.dy, R031, term021);
-    term021 = fma(mK.dz, R022, term021);
-    term021 = fma(mK.qxx, R221, term021);
-    term021 = fma(mK.qyy, R041, term021);
-    term021 = fma(mK.qzz, R023, term021);
-    term021 = fma(mK.qxy, R131, term021);
-    term021 = fma(mK.qxz, R122, term021);
-    term021 = fma(mK.qyz, R032, term021);
-    E021 = -term021;
-    double term102 = 0.0;
-    term102 = fma(mK.q, R102, term102);
-    term102 = fma(mK.dx, R202, term102);
-    term102 = fma(mK.dy, R112, term102);
-    term102 = fma(mK.dz, R103, term102);
-    term102 = fma(mK.qxx, R302, term102);
-    term102 = fma(mK.qyy, R122, term102);
-    term102 = fma(mK.qzz, R104, term102);
-    term102 = fma(mK.qxy, R212, term102);
-    term102 = fma(mK.qxz, R203, term102);
-    term102 = fma(mK.qyz, R113, term102);
-    E102 = -term102;
-    double term012 = 0.0;
-    term012 = fma(mK.q, R012, term012);
-    term012 = fma(mK.dx, R112, term012);
-    term012 = fma(mK.dy, R022, term012);
-    term012 = fma(mK.dz, R013, term012);
-    term012 = fma(mK.qxx, R212, term012);
-    term012 = fma(mK.qyy, R032, term012);
-    term012 = fma(mK.qzz, R014, term012);
-    term012 = fma(mK.qxy, R122, term012);
-    term012 = fma(mK.qxz, R113, term012);
-    term012 = fma(mK.qyz, R023, term012);
-    E012 = -term012;
-    double term111 = 0.0;
-    term111 = fma(mK.q, R111, term111);
-    term111 = fma(mK.dx, R211, term111);
-    term111 = fma(mK.dy, R121, term111);
-    term111 = fma(mK.dz, R112, term111);
-    term111 = fma(mK.qxx, R311, term111);
-    term111 = fma(mK.qyy, R131, term111);
-    term111 = fma(mK.qzz, R113, term111);
-    term111 = fma(mK.qxy, R221, term111);
-    term111 = fma(mK.qxz, R212, term111);
-    term111 = fma(mK.qyz, R122, term111);
-    E111 = -term111;
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  protected void quadrupoleKPotentialAtI(PolarizableMultipole mK, int order) {
+    switch (order) {
+      default:
+      case 3:
+        // Order 3
+        // This is d^3/dX^3 of equation 3.1.3 in the Stone book. The sign is flipped due to the
+        // derivative being with respect to R = Rk - Ri.
+        double term300 = 0.0;
+        term300 = fma(mK.qxx, R500, term300);
+        term300 = fma(mK.qyy, R320, term300);
+        term300 = fma(mK.qzz, R302, term300);
+        term300 = fma(mK.qxy, R410, term300);
+        term300 = fma(mK.qxz, R401, term300);
+        term300 = fma(mK.qyz, R311, term300);
+        E300 = -term300;
+        double term030 = 0.0;
+        term030 = fma(mK.qxx, R230, term030);
+        term030 = fma(mK.qyy, R050, term030);
+        term030 = fma(mK.qzz, R032, term030);
+        term030 = fma(mK.qxy, R140, term030);
+        term030 = fma(mK.qxz, R131, term030);
+        term030 = fma(mK.qyz, R041, term030);
+        E030 = -term030;
+        double term003 = 0.0;
+        term003 = fma(mK.qxx, R203, term003);
+        term003 = fma(mK.qyy, R023, term003);
+        term003 = fma(mK.qzz, R005, term003);
+        term003 = fma(mK.qxy, R113, term003);
+        term003 = fma(mK.qxz, R104, term003);
+        term003 = fma(mK.qyz, R014, term003);
+        E003 = -term003;
+        double term210 = 0.0;
+        term210 = fma(mK.qxx, R410, term210);
+        term210 = fma(mK.qyy, R230, term210);
+        term210 = fma(mK.qzz, R212, term210);
+        term210 = fma(mK.qxy, R320, term210);
+        term210 = fma(mK.qxz, R311, term210);
+        term210 = fma(mK.qyz, R221, term210);
+        E210 = -term210;
+        double term201 = 0.0;
+        term201 = fma(mK.qxx, R401, term201);
+        term201 = fma(mK.qyy, R221, term201);
+        term201 = fma(mK.qzz, R203, term201);
+        term201 = fma(mK.qxy, R311, term201);
+        term201 = fma(mK.qxz, R302, term201);
+        term201 = fma(mK.qyz, R212, term201);
+        E201 = -term201;
+        double term120 = 0.0;
+        term120 = fma(mK.qxx, R320, term120);
+        term120 = fma(mK.qyy, R140, term120);
+        term120 = fma(mK.qzz, R122, term120);
+        term120 = fma(mK.qxy, R230, term120);
+        term120 = fma(mK.qxz, R221, term120);
+        term120 = fma(mK.qyz, R131, term120);
+        E120 = -term120;
+        double term021 = 0.0;
+        term021 = fma(mK.qxx, R221, term021);
+        term021 = fma(mK.qyy, R041, term021);
+        term021 = fma(mK.qzz, R023, term021);
+        term021 = fma(mK.qxy, R131, term021);
+        term021 = fma(mK.qxz, R122, term021);
+        term021 = fma(mK.qyz, R032, term021);
+        E021 = -term021;
+        double term102 = 0.0;
+        term102 = fma(mK.qxx, R302, term102);
+        term102 = fma(mK.qyy, R122, term102);
+        term102 = fma(mK.qzz, R104, term102);
+        term102 = fma(mK.qxy, R212, term102);
+        term102 = fma(mK.qxz, R203, term102);
+        term102 = fma(mK.qyz, R113, term102);
+        E102 = -term102;
+        double term012 = 0.0;
+        term012 = fma(mK.qxx, R212, term012);
+        term012 = fma(mK.qyy, R032, term012);
+        term012 = fma(mK.qzz, R014, term012);
+        term012 = fma(mK.qxy, R122, term012);
+        term012 = fma(mK.qxz, R113, term012);
+        term012 = fma(mK.qyz, R023, term012);
+        E012 = -term012;
+        double term111 = 0.0;
+        term111 = fma(mK.qxx, R311, term111);
+        term111 = fma(mK.qyy, R131, term111);
+        term111 = fma(mK.qzz, R113, term111);
+        term111 = fma(mK.qxy, R221, term111);
+        term111 = fma(mK.qxz, R212, term111);
+        term111 = fma(mK.qyz, R122, term111);
+        E111 = -term111;
+        // Fall through to 2nd order.
+      case 2:
+        // Order 2
+        double term200 = 0.0;
+        term200 = fma(mK.qxx, R400, term200);
+        term200 = fma(mK.qyy, R220, term200);
+        term200 = fma(mK.qzz, R202, term200);
+        term200 = fma(mK.qxy, R310, term200);
+        term200 = fma(mK.qxz, R301, term200);
+        term200 = fma(mK.qyz, R211, term200);
+        E200 = term200;
+        double term020 = 0.0;
+        term020 = fma(mK.qxx, R220, term020);
+        term020 = fma(mK.qyy, R040, term020);
+        term020 = fma(mK.qzz, R022, term020);
+        term020 = fma(mK.qxy, R130, term020);
+        term020 = fma(mK.qxz, R121, term020);
+        term020 = fma(mK.qyz, R031, term020);
+        E020 = term020;
+        double term002 = 0.0;
+        term002 = fma(mK.qxx, R202, term002);
+        term002 = fma(mK.qyy, R022, term002);
+        term002 = fma(mK.qzz, R004, term002);
+        term002 = fma(mK.qxy, R112, term002);
+        term002 = fma(mK.qxz, R103, term002);
+        term002 = fma(mK.qyz, R013, term002);
+        E002 = term002;
+        double term110 = 0.0;
+        term110 = fma(mK.qxx, R310, term110);
+        term110 = fma(mK.qyy, R130, term110);
+        term110 = fma(mK.qzz, R112, term110);
+        term110 = fma(mK.qxy, R220, term110);
+        term110 = fma(mK.qxz, R211, term110);
+        term110 = fma(mK.qyz, R121, term110);
+        E110 = term110;
+        double term101 = 0.0;
+        term101 = fma(mK.qxx, R301, term101);
+        term101 = fma(mK.qyy, R121, term101);
+        term101 = fma(mK.qzz, R103, term101);
+        term101 = fma(mK.qxy, R211, term101);
+        term101 = fma(mK.qxz, R202, term101);
+        term101 = fma(mK.qyz, R112, term101);
+        E101 = term101;
+        double term011 = 0.0;
+        term011 = fma(mK.qxx, R211, term011);
+        term011 = fma(mK.qyy, R031, term011);
+        term011 = fma(mK.qzz, R013, term011);
+        term011 = fma(mK.qxy, R121, term011);
+        term011 = fma(mK.qxz, R112, term011);
+        term011 = fma(mK.qyz, R022, term011);
+        E011 = term011;
+        // Fall through to 1st order.
+      case 1:
+        // This is d/dX of equation 3.1.3 in the Stone book. The sign is flipped due to the
+        // derivative being with respect to R = Rk - Ri.
+        double term100 = 0.0;
+        term100 = fma(mK.qxx, R300, term100);
+        term100 = fma(mK.qyy, R120, term100);
+        term100 = fma(mK.qzz, R102, term100);
+        term100 = fma(mK.qxy, R210, term100);
+        term100 = fma(mK.qxz, R201, term100);
+        term100 = fma(mK.qyz, R111, term100);
+        E100 = -term100;
+        double term010 = 0.0;
+        term010 = fma(mK.qxx, R210, term010);
+        term010 = fma(mK.qyy, R030, term010);
+        term010 = fma(mK.qzz, R012, term010);
+        term010 = fma(mK.qxy, R120, term010);
+        term010 = fma(mK.qxz, R111, term010);
+        term010 = fma(mK.qyz, R021, term010);
+        E010 = -term010;
+        double term001 = 0.0;
+        term001 = fma(mK.qxx, R201, term001);
+        term001 = fma(mK.qyy, R021, term001);
+        term001 = fma(mK.qzz, R003, term001);
+        term001 = fma(mK.qxy, R111, term001);
+        term001 = fma(mK.qxz, R102, term001);
+        term001 = fma(mK.qyz, R012, term001);
+        E001 = -term001;
+        // Fall through to the potential.
+      case 0:
+        // This is equation 3.1.3 in the Stone book, except its V_B at A.
+        // The sign for separation vector is reversed, so the dipole contribution becomes positive.
+        double term000 = 0.0;
+        term000 = fma(mK.qxx, R200, term000);
+        term000 = fma(mK.qyy, R020, term000);
+        term000 = fma(mK.qzz, R002, term000);
+        term000 = fma(mK.qxy, R110, term000);
+        term000 = fma(mK.qxz, R101, term000);
+        term000 = fma(mK.qyz, R011, term000);
+        E000 = term000;
+    }
   }
 
   /** {@inheritDoc} */
@@ -1609,6 +2301,7 @@ public class CoulombTensorGlobal extends MultipoleTensor {
    * <br>
    *
    * <p>
+   *
    * @since 1.0
    */
   @Override

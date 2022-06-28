@@ -127,7 +127,7 @@ public class PolarizableMultipole {
    * @param uCR Induced dipole chain-rule uCR[ux, uy, uz]
    */
   public PolarizableMultipole(double[] Q, double[] u, double[] uCR) {
-    setMultipole(Q);
+    setPermanentMultipole(Q);
     setInducedDipole(u, uCR);
   }
 
@@ -139,7 +139,7 @@ public class PolarizableMultipole {
    * @param uCR Induced dipole chain-rule uCR[ux, uy, uz]
    */
   public void set(double[] Q, double[] u, double[] uCR) {
-    setMultipole(Q);
+    setPermanentMultipole(Q);
     setInducedDipole(u, uCR);
   }
 
@@ -148,7 +148,7 @@ public class PolarizableMultipole {
    *
    * @param Q Multipole Q[q, dx, dy, dz, qxx, qyy, qzz, qxy, qxz, qyz]
    */
-  public void setMultipole(double[] Q) {
+  public void setPermanentMultipole(double[] Q) {
     q = Q[0];
     dx = Q[1];
     dy = Q[2];
@@ -195,7 +195,7 @@ public class PolarizableMultipole {
   }
 
   /**
-   * Scale the averaged induced dipole.
+   * Compute the scaled and averaged induced dipole.
    *
    * @param scaleInduction a double.
    * @param scaleEnergy a double.
