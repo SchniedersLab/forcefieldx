@@ -488,7 +488,7 @@ public class GKTensorQI extends CoulombTensorQI {
         // Energy of induced dipole K in the field of permanent dipole I.
         eK = polarizationEnergy(mK);
         // Find the GK induced dipole potential of site I at site K.
-        inducedIPotentialAtK(mI);
+        inducedIPotentialAtK(mI, 2);
         // Energy of permanent multipole K in the field of induced dipole I.
         eK += 0.5 * multipoleEnergy(mK);
         // Find the GK dipole potential of site K at site I.
@@ -496,7 +496,7 @@ public class GKTensorQI extends CoulombTensorQI {
         // Energy of induced dipole I in the field of permanent dipole K.
         eI = polarizationEnergy(mI);
         // Find the GK induced dipole potential of site K at site I.
-        inducedKPotentialAtI(mK);
+        inducedKPotentialAtI(mK, 2);
         // Energy of permanent multipole I in the field of induced dipole K.
         eI += 0.5 * multipoleEnergy(mI);
         return 0.5 * (eK + eI);

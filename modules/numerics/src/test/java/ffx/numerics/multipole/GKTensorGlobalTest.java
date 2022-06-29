@@ -69,27 +69,36 @@ public class GKTensorGlobalTest {
   public static final double bornK = 1.403320706062232;
 
   public static final double watPermEnergy = -0.086259327778797;
-  public static final double watTotalEnergy = -0.086278549962107;
-  public static final double watPolEnergy = watTotalEnergy - watPermEnergy;
-
   public static final double[] multI = {-0.51966, 0.06979198988239577, 0.0, 0.0289581620819011,
       0.024871041044109393, -0.1170771231287098, 0.09220608208460039,
       0.0, -0.03374891685535346, 0.0};
   public static final double[] multK = {-0.51966, 0.05872406108747119, 0.0, 0.047549780780788455,
       0.048623413357888695, -0.1170771231287098, 0.06845370977082109,
       0.0, -0.04662811558421081, 0.0};
-  public static final double[] uI = {0.07723465799892439, 0.0, 0.027914344367154516};
-  public static final double[] uK = {0.08743555236690667, 0.0, 0.05830830340255934};
-
   public static final double[] permTorqueI = {0.0, -0.000497809865297, 0.0};
   public static final double[] permTorqueK = {0.0, 0.003535773811802, 0.0};
   public static final double[] permGradI = {-0.025569107173925, 0.0, 0.000716747957596};
   public static final double permGradBorn = 0.002598186313550;
 
+  // Mutual polarization.
+  public static final double watTotalEnergy = -0.086278549962107;
+  public static final double watPolEnergy = watTotalEnergy - watPermEnergy;
+  public static final double[] uI = {0.07723465799892439, 0.0, 0.027914344367154516};
+  public static final double[] uK = {0.08743555236690667, 0.0, 0.05830830340255934};
   public static final double[] polGradI = {0.000254342542095, 0.0, -0.000047781304691};
   public static final double[] polTorqueI = {0.0, -0.000050312084142, 0.0};
   public static final double[] polTorqueK = {0.0, -0.000480106909619, 0.0};
   public static final double polGradBorn = -0.000262931043709;
+
+  // Direct polarization.
+  public static final double watTotalDirect = -0.086133659894249;
+  public static final double watPolDirect = watTotalDirect - watPermEnergy;
+  public static final double[] uIDirect = {0.05851012079839759, 0.0, 0.02312407977363764};
+  public static final double[] uKDirect = {0.0603673253364741, 0.0, 0.04226502224741869};
+  public static final double[] polGradIDirect = {0.000161932495081, 0.0, 0.000062539680741};
+  public static final double[] polTorqueIDirect = {0.0, -0.000036645740123, 0.0};
+  public static final double[] polTorqueKDirect = {0.0, -0.000368952557395, 0.0};
+  public static final double polGradBornDirect = -0.000125792583010;
 
   @Test
   public void permanentEnergyTest() {
@@ -97,21 +106,21 @@ public class GKTensorGlobalTest {
     PolarizableMultipole mK = new PolarizableMultipole(multK, uK, uK);
 
     // Apply the GK monopole tensor.
-    int order = 2;
+    int order = 2; // Charge - Quadrupole Energy.
     GKTensorGlobal gkMonopoleTensor = new GKTensorGlobal(MONOPOLE, order, gc, Eh, Es);
     gkMonopoleTensor.setR(rWater, bornI, bornK);
     gkMonopoleTensor.generateTensor();
     double c = gkMonopoleTensor.multipoleEnergy(mI, mK);
 
     // Apply the GK dipole tensor.
-    order = 3;
+    order = 3; // Dipole - Quadrupole Energy.
     GKTensorGlobal gkDipoleTensor = new GKTensorGlobal(DIPOLE, order, gc, Eh, Es);
     gkDipoleTensor.setR(rWater, bornI, bornK);
     gkDipoleTensor.generateTensor();
     double d = gkDipoleTensor.multipoleEnergy(mI, mK);
 
     // Apply the GK quadrupole tensor.
-    order = 4;
+    order = 4; // Quadrupole - Quadrupole Energy.
     GKTensorGlobal gkQuadrupoleTensor = new GKTensorGlobal(QUADRUPOLE, order, gc, Eh, Es);
     gkQuadrupoleTensor.setR(rWater, bornI, bornK);
     gkQuadrupoleTensor.generateTensor();
@@ -136,7 +145,7 @@ public class GKTensorGlobalTest {
     double[] tempTorqueK = new double[3];
 
     // Apply the GK monopole tensor.
-    int order = 3;
+    int order = 3; // Charge - Quadrupole Energy Gradient.
     GKTensorGlobal gkMonopoleTensor = new GKTensorGlobal(MONOPOLE, order, gc, Eh, Es);
     gkMonopoleTensor.setR(rWater, bornI, bornK);
     gkMonopoleTensor.generateTensor();
@@ -147,7 +156,7 @@ public class GKTensorGlobalTest {
         polarizableMultipoleK);
 
     // Apply the GK dipole tensor.
-    order = 4;
+    order = 4; // Dipole - Quadrupole Energy Gradient.
     GKTensorGlobal gkDipoleTensor = new GKTensorGlobal(DIPOLE, order, gc, Eh, Es);
     gkDipoleTensor.setR(rWater, bornI, bornK);
     gkDipoleTensor.generateTensor();
@@ -165,7 +174,7 @@ public class GKTensorGlobalTest {
     }
 
     // Apply the GK quadrupole tensor.
-    order = 5;
+    order = 5; // Quadrupole - Quadrupole Energy Gradient.
     GKTensorGlobal gkQuadrupoleTensor = new GKTensorGlobal(QUADRUPOLE, order, gc, Eh, Es);
     gkQuadrupoleTensor.setR(rWater, bornI, bornK);
     gkQuadrupoleTensor.generateTensor();
@@ -199,27 +208,176 @@ public class GKTensorGlobalTest {
     PolarizableMultipole mK = new PolarizableMultipole(multK, uK, uK);
 
     // Apply the GK monopole tensor.
-    int order = 2;
+    int order = 1; // Induced Dipole - Monopole Energy.
     GKTensorGlobal gkMonopoleTensor = new GKTensorGlobal(MONOPOLE, order, gc, Eh, Es);
     gkMonopoleTensor.setR(rWater, bornI, bornK);
     gkMonopoleTensor.generateTensor();
     double c = gkMonopoleTensor.polarizationEnergy(mI, mK);
 
     // Apply the GK dipole tensor.
-    order = 3;
+    order = 3; // Induced Dipole - Quadrupole Energy.
     GKTensorGlobal gkDipoleTensor = new GKTensorGlobal(DIPOLE, order, gc, Eh, Es);
     gkDipoleTensor.setR(rWater, bornI, bornK);
     gkDipoleTensor.generateTensor();
     double d = gkDipoleTensor.polarizationEnergy(mI, mK);
 
     // Apply the GK quadrupole tensor.
-    order = 4;
+    order = 3; // Induced Dipole - Quadrupole Energy.
     GKTensorGlobal gkQuadrupoleTensor = new GKTensorGlobal(QUADRUPOLE, order, gc, Eh, Es);
     gkQuadrupoleTensor.setR(rWater, bornI, bornK);
     gkQuadrupoleTensor.generateTensor();
     double q = gkQuadrupoleTensor.polarizationEnergy(mI, mK);
 
     assertEquals("GK Polarization Energy", watPolEnergy, c + d + q, tolerance);
+  }
+
+  @Test
+  public void polarizationEnergyDirectTest() {
+    PolarizableMultipole mI = new PolarizableMultipole(multI, uIDirect, uIDirect);
+    PolarizableMultipole mK = new PolarizableMultipole(multK, uKDirect, uKDirect);
+
+    // Apply the GK monopole tensor.
+    int order = 1; // Induced Dipole - Monopole Energy.
+    GKTensorGlobal gkMonopoleTensor = new GKTensorGlobal(MONOPOLE, order, gc, Eh, Es);
+    gkMonopoleTensor.setR(rWater, bornI, bornK);
+    gkMonopoleTensor.generateTensor();
+    double c = gkMonopoleTensor.polarizationEnergy(mI, mK);
+
+    // Apply the GK dipole tensor.
+    order = 3; // Induced Dipole - Quadrupole Energy.
+    GKTensorGlobal gkDipoleTensor = new GKTensorGlobal(DIPOLE, order, gc, Eh, Es);
+    gkDipoleTensor.setR(rWater, bornI, bornK);
+    gkDipoleTensor.generateTensor();
+    double d = gkDipoleTensor.polarizationEnergy(mI, mK);
+
+    // Apply the GK quadrupole tensor.
+    order = 3; // Induced Dipole - Quadrupole Energy.
+    GKTensorGlobal gkQuadrupoleTensor = new GKTensorGlobal(QUADRUPOLE, order, gc, Eh, Es);
+    gkQuadrupoleTensor.setR(rWater, bornI, bornK);
+    gkQuadrupoleTensor.generateTensor();
+    double q = gkQuadrupoleTensor.polarizationEnergy(mI, mK);
+
+    assertEquals("GK Direct Polarization Energy", watPolDirect, c + d + q, tolerance);
+  }
+
+  @Test
+  public void polarizationEnergyAndGradientTest() {
+    PolarizableMultipole mI = new PolarizableMultipole(multI, uI, uI);
+    PolarizableMultipole mK = new PolarizableMultipole(multK, uK, uK);
+
+    mI.applyMasks(1.0, 1.0);
+    mK.applyMasks(1.0, 1.0);
+
+    double[] gradI = new double[3];
+    double[] torqueI = new double[3];
+    double[] torqueK = new double[3];
+    double[] tempGradI = new double[3];
+    double[] tempTorqueI = new double[3];
+    double[] tempTorqueK = new double[3];
+
+    // Apply the GK monopole tensor.
+    int order = 2; // Induced Dipole - Monopole Energy Gradient.
+    GKTensorGlobal gkMonopoleTensor = new GKTensorGlobal(MONOPOLE, order, gc, Eh, Es);
+    gkMonopoleTensor.setR(rWater, bornI, bornK);
+    gkMonopoleTensor.generateTensor();
+    double c = gkMonopoleTensor.polarizationEnergyAndGradient(mI, mK,
+        1.0, 1.0, 1.0, gradI, torqueI, torqueK);
+
+    // Apply the GK dipole tensor.
+    order = 4; // Induced Dipole - Quadrupole Energy Gradient.
+    GKTensorGlobal gkDipoleTensor = new GKTensorGlobal(DIPOLE, order, gc, Eh, Es);
+    gkDipoleTensor.setR(rWater, bornI, bornK);
+    gkDipoleTensor.generateTensor();
+    double d = gkDipoleTensor.polarizationEnergyAndGradient(mI, mK,
+        1.0, 1.0, 1.0, tempGradI, tempTorqueI, tempTorqueK);
+
+    for (int i = 0; i < 3; i++) {
+      gradI[i] += tempGradI[i];
+      torqueI[i] += tempTorqueI[i];
+      torqueK[i] += tempTorqueK[i];
+      tempGradI[i] = 0.0;
+      tempTorqueI[i] = 0.0;
+      tempTorqueK[i] = 0.0;
+    }
+
+    // Apply the GK quadrupole tensor.
+    order = 4; // Induced Dipole - Quadrupole Energy Gradient.
+    GKTensorGlobal gkQuadrupoleTensor = new GKTensorGlobal(QUADRUPOLE, order, gc, Eh, Es);
+    gkQuadrupoleTensor.setR(rWater, bornI, bornK);
+    gkQuadrupoleTensor.generateTensor();
+    double q = gkQuadrupoleTensor.polarizationEnergyAndGradient(mI, mK,
+        1.0, 1.0, 1.0, tempGradI, tempTorqueI, tempTorqueK);
+
+    for (int i = 0; i < 3; i++) {
+      gradI[i] += tempGradI[i];
+      torqueI[i] += tempTorqueI[i];
+      torqueK[i] += tempTorqueK[i];
+    }
+
+    assertEquals("GK Polarization Energy", watPolEnergy, c + d + q, tolerance);
+    assertEquals("GK Polarization Grad X", polGradI[0], gradI[0], tolerance);
+    assertEquals("GK Polarization Grad Y", polGradI[1], gradI[1], tolerance);
+    assertEquals("GK Polarization Grad Z", polGradI[2], gradI[2], tolerance);
+  }
+
+  @Test
+  public void polarizationEnergyAndGradientDirectTest() {
+    PolarizableMultipole mI = new PolarizableMultipole(multI, uIDirect, uIDirect);
+    PolarizableMultipole mK = new PolarizableMultipole(multK, uKDirect, uKDirect);
+
+    mI.applyMasks(1.0, 1.0);
+    mK.applyMasks(1.0, 1.0);
+
+    double[] gradI = new double[3];
+    double[] torqueI = new double[3];
+    double[] torqueK = new double[3];
+    double[] tempGradI = new double[3];
+    double[] tempTorqueI = new double[3];
+    double[] tempTorqueK = new double[3];
+
+    // Apply the GK monopole tensor.
+    int order = 2; // Induced Dipole - Monopole Energy Gradient.
+    GKTensorGlobal gkMonopoleTensor = new GKTensorGlobal(MONOPOLE, order, gc, Eh, Es);
+    gkMonopoleTensor.setR(rWater, bornI, bornK);
+    gkMonopoleTensor.generateTensor();
+    double c = gkMonopoleTensor.polarizationEnergyAndGradient(mI, mK,
+        1.0, 1.0, 0.0, gradI, torqueI, torqueK);
+
+    // Apply the GK dipole tensor.
+    order = 4; // Induced Dipole - Quadrupole Energy Gradient.
+    GKTensorGlobal gkDipoleTensor = new GKTensorGlobal(DIPOLE, order, gc, Eh, Es);
+    gkDipoleTensor.setR(rWater, bornI, bornK);
+    gkDipoleTensor.generateTensor();
+    double d = gkDipoleTensor.polarizationEnergyAndGradient(mI, mK,
+        1.0, 1.0, 0.0, tempGradI, tempTorqueI, tempTorqueK);
+
+    for (int i = 0; i < 3; i++) {
+      gradI[i] += tempGradI[i];
+      torqueI[i] += tempTorqueI[i];
+      torqueK[i] += tempTorqueK[i];
+      tempGradI[i] = 0.0;
+      tempTorqueI[i] = 0.0;
+      tempTorqueK[i] = 0.0;
+    }
+
+    // Apply the GK quadrupole tensor.
+    order = 4; // Induced Dipole - Quadrupole Energy Gradient.
+    GKTensorGlobal gkQuadrupoleTensor = new GKTensorGlobal(QUADRUPOLE, order, gc, Eh, Es);
+    gkQuadrupoleTensor.setR(rWater, bornI, bornK);
+    gkQuadrupoleTensor.generateTensor();
+    double q = gkQuadrupoleTensor.polarizationEnergyAndGradient(mI, mK,
+        1.0, 1.0, 0.0, tempGradI, tempTorqueI, tempTorqueK);
+
+    for (int i = 0; i < 3; i++) {
+      gradI[i] += tempGradI[i];
+      torqueI[i] += tempTorqueI[i];
+      torqueK[i] += tempTorqueK[i];
+    }
+
+    assertEquals("GK Polarization Energy", watPolDirect, c + d + q, tolerance);
+    assertEquals("GK Polarization Grad X", polGradIDirect[0], gradI[0], tolerance);
+    assertEquals("GK Polarization Grad Y", polGradIDirect[1], gradI[1], tolerance);
+    assertEquals("GK Polarization Grad Z", polGradIDirect[2], gradI[2], tolerance);
   }
 
   @Test

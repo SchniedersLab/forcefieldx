@@ -440,7 +440,6 @@ public abstract class MultipoleTensor {
       double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
     multipoleIPotentialAtK(mI, 3);
     double energy = multipoleEnergy(mK);
-
     multipoleGradient(mK, Gk);
     Gi[0] = -Gk[0];
     Gi[1] = -Gk[1];
@@ -531,13 +530,13 @@ public abstract class MultipoleTensor {
     // This contribution does not exist for direct polarization (mutualMask == 0.0).
     if (mutualMask != 0.0) {
       // Find the potential and its derivatives at k due to induced dipole i.
-      inducedIPotentialAtK(mI);
+      inducedIPotentialAtK(mI, 2);
       Gi[0] -= 0.5 * mutualMask * (mK.px * E200 + mK.py * E110 + mK.pz * E101);
       Gi[1] -= 0.5 * mutualMask * (mK.px * E110 + mK.py * E020 + mK.pz * E011);
       Gi[2] -= 0.5 * mutualMask * (mK.px * E101 + mK.py * E011 + mK.pz * E002);
 
       // Find the potential and its derivatives at i due to induced dipole k.
-      inducedKPotentialAtI(mK);
+      inducedKPotentialAtI(mK, 2);
       Gi[0] += 0.5 * mutualMask * (mI.px * E200 + mI.py * E110 + mI.pz * E101);
       Gi[1] += 0.5 * mutualMask * (mI.px * E110 + mI.py * E020 + mI.pz * E011);
       Gi[2] += 0.5 * mutualMask * (mI.px * E101 + mI.py * E011 + mI.pz * E002);
@@ -618,6 +617,9 @@ public abstract class MultipoleTensor {
    */
   protected void generateTensor() {
     switch (order) {
+      case 1:
+        order1();
+        break;
       case 2:
         order2();
         break;
@@ -1365,6 +1367,11 @@ public abstract class MultipoleTensor {
   protected abstract void recursion(final double[] r, final double[] tensor);
 
   /**
+   * Hard coded computation of the Cartesian multipole tensors up to 1st order.
+   */
+  protected abstract void order1();
+
+  /**
    * Hard coded computation of the Cartesian multipole tensors up to 2nd order.
    */
   protected abstract void order2();
@@ -1483,8 +1490,9 @@ public abstract class MultipoleTensor {
    * Compute the induced dipole field components due to site I at site K.
    *
    * @param mI PolarizableMultipole at site I.
+   * @param order Potential order.
    */
-  protected abstract void inducedIPotentialAtK(PolarizableMultipole mI);
+  protected abstract void inducedIPotentialAtK(PolarizableMultipole mI, int order);
 
   /**
    * Compute the induced dipole chain-rule field components due to site I at site K.
@@ -1505,8 +1513,9 @@ public abstract class MultipoleTensor {
    * Compute the induced dipole field components due to site K at site I.
    *
    * @param mK PolarizableMultipole at site K.
+   * @param order Potential order.
    */
-  protected abstract void inducedKPotentialAtI(PolarizableMultipole mK);
+  protected abstract void inducedKPotentialAtI(PolarizableMultipole mK, int order);
 
   /**
    * Compute the induced dipole chain-rule field components due to site K at site I.

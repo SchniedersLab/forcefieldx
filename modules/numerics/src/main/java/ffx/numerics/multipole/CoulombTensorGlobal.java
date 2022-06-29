@@ -114,6 +114,20 @@ public class CoulombTensorGlobal extends MultipoleTensor {
    * {@inheritDoc}
    */
   @Override
+  protected void order1() {
+    source(work);
+    double term0000 = work[0];
+    double term0001 = work[1];
+    R000 = term0000;
+    R100 = x * term0001;
+    R010 = y * term0001;
+    R001 = z * term0001;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   protected void order2() {
     source(work);
     double term0000 = work[0];
@@ -1826,47 +1840,109 @@ public class CoulombTensorGlobal extends MultipoleTensor {
 
   /** {@inheritDoc} */
   @Override
-  protected void inducedIPotentialAtK(PolarizableMultipole mI) {
-    double term000 = -mI.ux * R100;
-    term000 -= mI.uy * R010;
-    term000 -= mI.uz * R001;
-    E000 = term000;
-    double term100 = -mI.ux * R200;
-    term100 -= mI.uy * R110;
-    term100 -= mI.uz * R101;
-    E100 = term100;
-    double term010 = -mI.ux * R110;
-    term010 -= mI.uy * R020;
-    term010 -= mI.uz * R011;
-    E010 = term010;
-    double term001 = -mI.ux * R101;
-    term001 -= mI.uy * R011;
-    term001 -= mI.uz * R002;
-    E001 = term001;
-    double term200 = -mI.ux * R300;
-    term200 -= mI.uy * R210;
-    term200 -= mI.uz * R201;
-    E200 = term200;
-    double term020 = -mI.ux * R120;
-    term020 -= mI.uy * R030;
-    term020 -= mI.uz * R021;
-    E020 = term020;
-    double term002 = -mI.ux * R102;
-    term002 -= mI.uy * R012;
-    term002 -= mI.uz * R003;
-    E002 = term002;
-    double term110 = -mI.ux * R210;
-    term110 -= mI.uy * R120;
-    term110 -= mI.uz * R111;
-    E110 = term110;
-    double term101 = -mI.ux * R201;
-    term101 -= mI.uy * R111;
-    term101 -= mI.uz * R102;
-    E101 = term101;
-    double term011 = -mI.ux * R111;
-    term011 -= mI.uy * R021;
-    term011 -= mI.uz * R012;
-    E011 = term011;
+  protected void inducedIPotentialAtK(PolarizableMultipole mI, int order) {
+    switch (order) {
+      case 3:
+        // Order 3
+        double term300 = 0.0;
+        term300 = fma(mI.ux, -R400, term300);
+        term300 = fma(mI.uy, -R310, term300);
+        term300 = fma(mI.uz, -R301, term300);
+        E300 = term300;
+        double term030 = 0.0;
+        term030 = fma(mI.ux, -R130, term030);
+        term030 = fma(mI.uy, -R040, term030);
+        term030 = fma(mI.uz, -R031, term030);
+        E030 = term030;
+        double term003 = 0.0;
+        term003 = fma(mI.ux, -R103, term003);
+        term003 = fma(mI.uy, -R013, term003);
+        term003 = fma(mI.uz, -R004, term003);
+        E003 = term003;
+        double term210 = 0.0;
+        term210 = fma(mI.ux, -R310, term210);
+        term210 = fma(mI.uy, -R220, term210);
+        term210 = fma(mI.uz, -R211, term210);
+        E210 = term210;
+        double term201 = 0.0;
+        term201 = fma(mI.ux, -R301, term201);
+        term201 = fma(mI.uy, -R211, term201);
+        term201 = fma(mI.uz, -R202, term201);
+        E201 = term201;
+        double term120 = 0.0;
+        term120 = fma(mI.ux, -R220, term120);
+        term120 = fma(mI.uy, -R130, term120);
+        term120 = fma(mI.uz, -R121, term120);
+        E120 = term120;
+        double term021 = 0.0;
+        term021 = fma(mI.ux, -R121, term021);
+        term021 = fma(mI.uy, -R031, term021);
+        term021 = fma(mI.uz, -R022, term021);
+        E021 = term021;
+        double term102 = 0.0;
+        term102 = fma(mI.ux, -R202, term102);
+        term102 = fma(mI.uy, -R112, term102);
+        term102 = fma(mI.uz, -R103, term102);
+        E102 = term102;
+        double term012 = 0.0;
+        term012 = fma(mI.ux, -R112, term012);
+        term012 = fma(mI.uy, -R022, term012);
+        term012 = fma(mI.uz, -R013, term012);
+        E012 = term012;
+        double term111 = 0.0;
+        term111 = fma(mI.ux, -R211, term111);
+        term111 = fma(mI.uy, -R121, term111);
+        term111 = fma(mI.uz, -R112, term111);
+        E111 = term111;
+        // Fall through to 2nd order.
+      case 2:
+        // Order 2
+        double term200 = -mI.ux * R300;
+        term200 -= mI.uy * R210;
+        term200 -= mI.uz * R201;
+        E200 = term200;
+        double term020 = -mI.ux * R120;
+        term020 -= mI.uy * R030;
+        term020 -= mI.uz * R021;
+        E020 = term020;
+        double term002 = -mI.ux * R102;
+        term002 -= mI.uy * R012;
+        term002 -= mI.uz * R003;
+        E002 = term002;
+        double term110 = -mI.ux * R210;
+        term110 -= mI.uy * R120;
+        term110 -= mI.uz * R111;
+        E110 = term110;
+        double term101 = -mI.ux * R201;
+        term101 -= mI.uy * R111;
+        term101 -= mI.uz * R102;
+        E101 = term101;
+        double term011 = -mI.ux * R111;
+        term011 -= mI.uy * R021;
+        term011 -= mI.uz * R012;
+        E011 = term011;
+        // Fall through to 1st order.
+      case 1:
+        // Order 1
+        double term100 = -mI.ux * R200;
+        term100 -= mI.uy * R110;
+        term100 -= mI.uz * R101;
+        E100 = term100;
+        double term010 = -mI.ux * R110;
+        term010 -= mI.uy * R020;
+        term010 -= mI.uz * R011;
+        E010 = term010;
+        double term001 = -mI.ux * R101;
+        term001 -= mI.uy * R011;
+        term001 -= mI.uz * R002;
+        E001 = term001;
+        // Fall through to the potential.
+      case 0:
+        double term000 = -mI.ux * R100;
+        term000 -= mI.uy * R010;
+        term000 -= mI.uz * R001;
+        E000 = term000;
+    }
   }
 
   /** {@inheritDoc} */
@@ -1961,47 +2037,109 @@ public class CoulombTensorGlobal extends MultipoleTensor {
 
   /** {@inheritDoc} */
   @Override
-  protected void inducedKPotentialAtI(PolarizableMultipole mK) {
-    double term000 = mK.ux * R100;
-    term000 += mK.uy * R010;
-    term000 += mK.uz * R001;
-    E000 = term000;
-    double term100 = mK.ux * R200;
-    term100 += mK.uy * R110;
-    term100 += mK.uz * R101;
-    E100 = -term100;
-    double term010 = mK.ux * R110;
-    term010 += mK.uy * R020;
-    term010 += mK.uz * R011;
-    E010 = -term010;
-    double term001 = mK.ux * R101;
-    term001 += mK.uy * R011;
-    term001 += mK.uz * R002;
-    E001 = -term001;
-    double term200 = mK.ux * R300;
-    term200 += mK.uy * R210;
-    term200 += mK.uz * R201;
-    E200 = term200;
-    double term020 = mK.ux * R120;
-    term020 += mK.uy * R030;
-    term020 += mK.uz * R021;
-    E020 = term020;
-    double term002 = mK.ux * R102;
-    term002 += mK.uy * R012;
-    term002 += mK.uz * R003;
-    E002 = term002;
-    double term110 = mK.ux * R210;
-    term110 += mK.uy * R120;
-    term110 += mK.uz * R111;
-    E110 = term110;
-    double term101 = mK.ux * R201;
-    term101 += mK.uy * R111;
-    term101 += mK.uz * R102;
-    E101 = term101;
-    double term011 = mK.ux * R111;
-    term011 += mK.uy * R021;
-    term011 += mK.uz * R012;
-    E011 = term011;
+  protected void inducedKPotentialAtI(PolarizableMultipole mK, int order) {
+    switch (order) {
+      case 3:
+        // Order 3
+        double term300 = 0.0;
+        term300 = fma(mK.ux, R400, term300);
+        term300 = fma(mK.uy, R310, term300);
+        term300 = fma(mK.uz, R301, term300);
+        E300 = -term300;
+        double term030 = 0.0;
+        term030 = fma(mK.ux, R130, term030);
+        term030 = fma(mK.uy, R040, term030);
+        term030 = fma(mK.uz, R031, term030);
+        E030 = -term030;
+        double term003 = 0.0;
+        term003 = fma(mK.ux, R103, term003);
+        term003 = fma(mK.uy, R013, term003);
+        term003 = fma(mK.uz, R004, term003);
+        E003 = -term003;
+        double term210 = 0.0;
+        term210 = fma(mK.ux, R310, term210);
+        term210 = fma(mK.uy, R220, term210);
+        term210 = fma(mK.uz, R211, term210);
+        E210 = -term210;
+        double term201 = 0.0;
+        term201 = fma(mK.ux, R301, term201);
+        term201 = fma(mK.uy, R211, term201);
+        term201 = fma(mK.uz, R202, term201);
+        E201 = -term201;
+        double term120 = 0.0;
+        term120 = fma(mK.ux, R220, term120);
+        term120 = fma(mK.uy, R130, term120);
+        term120 = fma(mK.uz, R121, term120);
+        E120 = -term120;
+        double term021 = 0.0;
+        term021 = fma(mK.ux, R121, term021);
+        term021 = fma(mK.uy, R031, term021);
+        term021 = fma(mK.uz, R022, term021);
+        E021 = -term021;
+        double term102 = 0.0;
+        term102 = fma(mK.ux, R202, term102);
+        term102 = fma(mK.uy, R112, term102);
+        term102 = fma(mK.uz, R103, term102);
+        E102 = -term102;
+        double term012 = 0.0;
+        term012 = fma(mK.ux, R112, term012);
+        term012 = fma(mK.uy, R022, term012);
+        term012 = fma(mK.uz, R013, term012);
+        E012 = -term012;
+        double term111 = 0.0;
+        term111 = fma(mK.ux, R211, term111);
+        term111 = fma(mK.uy, R121, term111);
+        term111 = fma(mK.uz, R112, term111);
+        E111 = -term111;
+        // Foll through to 2nd order.
+      case 2:
+        // Order 2
+        double term200 = mK.ux * R300;
+        term200 += mK.uy * R210;
+        term200 += mK.uz * R201;
+        E200 = term200;
+        double term020 = mK.ux * R120;
+        term020 += mK.uy * R030;
+        term020 += mK.uz * R021;
+        E020 = term020;
+        double term002 = mK.ux * R102;
+        term002 += mK.uy * R012;
+        term002 += mK.uz * R003;
+        E002 = term002;
+        double term110 = mK.ux * R210;
+        term110 += mK.uy * R120;
+        term110 += mK.uz * R111;
+        E110 = term110;
+        double term101 = mK.ux * R201;
+        term101 += mK.uy * R111;
+        term101 += mK.uz * R102;
+        E101 = term101;
+        double term011 = mK.ux * R111;
+        term011 += mK.uy * R021;
+        term011 += mK.uz * R012;
+        E011 = term011;
+        // Foll through to 1st order.
+      case 1:
+        // Order 1
+        double term100 = mK.ux * R200;
+        term100 += mK.uy * R110;
+        term100 += mK.uz * R101;
+        E100 = -term100;
+        double term010 = mK.ux * R110;
+        term010 += mK.uy * R020;
+        term010 += mK.uz * R011;
+        E010 = -term010;
+        double term001 = mK.ux * R101;
+        term001 += mK.uy * R011;
+        term001 += mK.uz * R002;
+        E001 = -term001;
+        // Foll through to the potential.
+      case 0:
+        double term000 = mK.ux * R100;
+        term000 += mK.uy * R010;
+        term000 += mK.uz * R001;
+        E000 = term000;
+    }
   }
 
   /** {@inheritDoc} */

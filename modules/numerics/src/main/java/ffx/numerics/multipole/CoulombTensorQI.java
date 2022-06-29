@@ -87,6 +87,16 @@ public class CoulombTensorQI extends MultipoleTensor {
 
   /** {@inheritDoc} */
   @Override
+  protected void order1() {
+    source(work);
+    double term0000 = work[0];
+    double term0001 = work[1];
+    R000 = term0000;
+    R001 = z * term0001;
+  }
+
+  /** {@inheritDoc} */
+  @Override
   protected void order2() {
     source(work);
     double term0000 = work[0];
@@ -834,17 +844,40 @@ public class CoulombTensorQI extends MultipoleTensor {
 
   /** {@inheritDoc} */
   @Override
-  protected void inducedIPotentialAtK(PolarizableMultipole mI) {
-    E000 = -mI.uz * R001;
-    E100 = -mI.ux * R200;
-    E010 = -mI.uy * R020;
-    E001 = -mI.uz * R002;
-    E200 = -mI.uz * R201;
-    E020 = -mI.uz * R021;
-    E002 = -mI.uz * R003;
-    E110 = 0.0;
-    E101 = -mI.ux * R201;
-    E011 = -mI.uy * R021;
+  protected void inducedIPotentialAtK(PolarizableMultipole mI, int order) {
+    switch (order) {
+      case 3:
+      default:
+        // Order 3
+        E300 = -mI.ux * R400;
+        E030 = -mI.uy * R040;
+        E003 = -mI.uz * R004;
+        E210 = -mI.uy * R220;
+        E201 = -mI.uz * R202;
+        E120 = -mI.ux * R220;
+        E021 = -mI.uz * R022;
+        E102 = -mI.ux * R202;
+        E012 = -mI.uy * R022;
+        E111 = 0.0;
+        // Fall through to 2nd order.
+      case 2:
+        // Order 2.
+        E200 = -mI.uz * R201;
+        E020 = -mI.uz * R021;
+        E002 = -mI.uz * R003;
+        E110 = 0.0;
+        E101 = -mI.ux * R201;
+        E011 = -mI.uy * R021;
+        // Fall through to 1st order.
+      case 1:
+        // Order 1.
+        E100 = -mI.ux * R200;
+        E010 = -mI.uy * R020;
+        E001 = -mI.uz * R002;
+        // Fall through to the potential.
+      case 0:
+        E000 = -mI.uz * R001;
+    }
   }
 
   /** {@inheritDoc} */
@@ -879,17 +912,36 @@ public class CoulombTensorQI extends MultipoleTensor {
 
   /** {@inheritDoc} */
   @Override
-  protected void inducedKPotentialAtI(PolarizableMultipole mK) {
-    E000 = mK.uz * R001;
-    E100 = -mK.ux * R200;
-    E010 = -mK.uy * R020;
-    E001 = -mK.uz * R002;
-    E200 = mK.uz * R201;
-    E020 = mK.uz * R021;
-    E002 = mK.uz * R003;
-    E110 = 0.0;
-    E101 = mK.ux * R201;
-    E011 = mK.uy * R021;
+  protected void inducedKPotentialAtI(PolarizableMultipole mK, int order) {
+    switch (order) {
+      case 3:
+      default:
+        // Order 3
+        E300 = -mK.ux * R400;
+        E030 = -mK.uy * R040;
+        E003 = -mK.uz * R004;
+        E210 = -mK.uy * R220;
+        E201 = -mK.uz * R202;
+        E120 = -mK.ux * R220;
+        E021 = -mK.uz * R022;
+        E102 = -mK.ux * R202;
+        E012 = -mK.uy * R022;
+        E111 = 0.0;
+        // Fall through to 2nd order.
+      case 2:
+        E200 = mK.uz * R201;
+        E020 = mK.uz * R021;
+        E002 = mK.uz * R003;
+        E110 = 0.0;
+        E101 = mK.ux * R201;
+        E011 = mK.uy * R021;
+      case 1:
+        E100 = -mK.ux * R200;
+        E010 = -mK.uy * R020;
+        E001 = -mK.uz * R002;
+      case 0:
+        E000 = mK.uz * R001;
+    }
   }
 
   /** {@inheritDoc} */
@@ -910,10 +962,13 @@ public class CoulombTensorQI extends MultipoleTensor {
   /** {@inheritDoc} */
   @Override
   protected void inducedKTotalPotentialAtI(PolarizableMultipole mK) {
+    // Potential
     E000 = mK.sz * R001;
+    // Order 1.
     E100 = -mK.sx * R200;
     E010 = -mK.sy * R020;
     E001 = -mK.sz * R002;
+    // Order 2.
     E200 = mK.sz * R201;
     E020 = mK.sz * R021;
     E002 = mK.sz * R003;
