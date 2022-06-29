@@ -596,9 +596,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
       logger.warning("An ExtendedSystem is already attached to this MD!");
     }
     esvSystem = system;
-    this.esvIntegrator = new Stochastic(esvSystem.getThetaFriction(), esvSystem.getExtendedResidueList().size(), esvSystem.getThetaPosition(),
+    this.esvIntegrator = new Stochastic(esvSystem.getThetaFriction(), esvSystem.getNumberOfVariables(), esvSystem.getThetaPosition(),
             esvSystem.getThetaVelocity(), esvSystem.getThetaAccel(), esvSystem.getThetaMassArray());
-    this.esvThermostat = new Adiabatic(esvSystem.getExtendedResidueList().size(), esvSystem.getThetaPosition(),
+    this.esvThermostat = new Adiabatic(esvSystem.getNumberOfVariables(), esvSystem.getThetaPosition(),
             esvSystem.getThetaVelocity(), esvSystem.getThetaMassArray(), potential.getVariableTypes());
     printEsvFrequency = intervalToFreq(reportFreq, "Reporting (logging) interval");
     logger.info(
