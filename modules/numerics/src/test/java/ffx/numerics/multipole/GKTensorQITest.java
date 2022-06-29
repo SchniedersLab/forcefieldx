@@ -40,8 +40,12 @@ package ffx.numerics.multipole;
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.multipole.GKTensorGlobalTest.bornI;
 import static ffx.numerics.multipole.GKTensorGlobalTest.bornK;
+import static ffx.numerics.multipole.GKTensorGlobalTest.drb;
 import static ffx.numerics.multipole.GKTensorGlobalTest.multI;
 import static ffx.numerics.multipole.GKTensorGlobalTest.multK;
+import static ffx.numerics.multipole.GKTensorGlobalTest.permGradI;
+import static ffx.numerics.multipole.GKTensorGlobalTest.permTorqueI;
+import static ffx.numerics.multipole.GKTensorGlobalTest.permTorqueK;
 import static ffx.numerics.multipole.GKTensorGlobalTest.rWater;
 import static ffx.numerics.multipole.GKTensorGlobalTest.uI;
 import static ffx.numerics.multipole.GKTensorGlobalTest.uK;
@@ -51,7 +55,7 @@ import static ffx.numerics.multipole.GKTensorQI.GK_MULTIPOLE_ORDER.MONOPOLE;
 import static ffx.numerics.multipole.GKTensorQI.GK_MULTIPOLE_ORDER.QUADRUPOLE;
 import static org.junit.Assert.assertEquals;
 
-import ffx.numerics.multipole.GKTensorGlobal.GK_MULTIPOLE_ORDER;
+import ffx.numerics.multipole.GKTensorQI.GK_MULTIPOLE_ORDER;
 import ffx.numerics.multipole.GKTensorQI.GK_TENSOR_MODE;
 import org.junit.Test;
 
@@ -76,31 +80,111 @@ public class GKTensorQITest {
 
   @Test
   public void permanentEnergyTest() {
-    PolarizableMultipole polarizableMultipoleI = new PolarizableMultipole(multI, uI, uI);
-    PolarizableMultipole polarizableMultipoleK = new PolarizableMultipole(multK, uK, uK);
+    PolarizableMultipole mI = new PolarizableMultipole(multI, uI, uI);
+    PolarizableMultipole mK = new PolarizableMultipole(multK, uK, uK);
+    QIFrame qiFrame = new QIFrame(rWater);
+    qiFrame.rotatePolarizableMultipole(mI);
+    qiFrame.rotatePolarizableMultipole(mK);
 
     // Apply the GK monopole tensor.
     int order = 2;
-    GKTensorGlobal gkMonopoleTensor = new GKTensorGlobal(GK_MULTIPOLE_ORDER.MONOPOLE, order, gc, Eh, Es);
-    gkMonopoleTensor.setR(rWater, bornI, bornK);
-    gkMonopoleTensor.generateTensor();
-    double e = gkMonopoleTensor.multipoleEnergy(polarizableMultipoleI, polarizableMultipoleK);
+    GKTensorQI monopoleGK = new GKTensorQI(MONOPOLE, order, gc, Eh, Es);
+    monopoleGK.setR(rWater, bornI, bornK);
+    monopoleGK.generateTensor();
+    double c = monopoleGK.multipoleEnergy(mI, mK);
 
     // Apply the GK dipole tensor.
     order = 3;
-    GKTensorGlobal gkDipoleTensor = new GKTensorGlobal(GK_MULTIPOLE_ORDER.DIPOLE, order, gc, Eh, Es);
-    gkDipoleTensor.setR(rWater, bornI, bornK);
-    gkDipoleTensor.generateTensor();
-    e += gkDipoleTensor.multipoleEnergy(polarizableMultipoleI, polarizableMultipoleK);
+    GKTensorQI dipoleGK = new GKTensorQI(DIPOLE, order, gc, Eh, Es);
+    dipoleGK.setR(rWater, bornI, bornK);
+    dipoleGK.generateTensor();
+    double d = dipoleGK.multipoleEnergy(mI, mK);
 
     // Apply the GK quadrupole tensor.
     order = 4;
-    GKTensorGlobal gkQuadrupoleTensor = new GKTensorGlobal(GK_MULTIPOLE_ORDER.QUADRUPOLE, order, gc, Eh, Es);
+    GKTensorQI quadrupoleGK = new GKTensorQI(QUADRUPOLE, order, gc, Eh, Es);
+    quadrupoleGK.setR(rWater, bornI, bornK);
+    quadrupoleGK.generateTensor();
+    double q = quadrupoleGK.multipoleEnergy(mI, mK);
+
+    assertEquals("GK Permanent Energy", watPerm, c + d + q, tolerance);
+  }
+
+  @Test
+  public void permanentEnergyAndGradientTest() {
+    PolarizableMultipole mI = new PolarizableMultipole(multI, uI, uI);
+    PolarizableMultipole mK = new PolarizableMultipole(multK, uK, uK);
+    QIFrame qiFrame = new QIFrame(rWater);
+    qiFrame.rotatePolarizableMultipole(mI);
+    qiFrame.rotatePolarizableMultipole(mK);
+
+    double[] gradI = new double[3];
+    double[] gradK = new double[3];
+    double[] torqueI = new double[3];
+    double[] torqueK = new double[3];
+
+    double[] tempGradI = new double[3];
+    double[] tempGradK = new double[3];
+    double[] tempTorqueI = new double[3];
+    double[] tempTorqueK = new double[3];
+
+    // Apply the GK monopole tensor.
+    int order = 3;
+    GKTensorQI gkMonopoleTensor = new GKTensorQI(MONOPOLE, order, gc, Eh, Es);
+    gkMonopoleTensor.setR(rWater, bornI, bornK);
+    gkMonopoleTensor.generateTensor();
+    double e = gkMonopoleTensor.multipoleEnergyAndGradient(mI, mK, gradI, gradK, torqueI, torqueK);
+    double db = gkMonopoleTensor.multipoleEnergyBornGrad(mI, mK);
+
+    // Apply the GK dipole tensor.
+    order = 4;
+    GKTensorQI gkDipoleTensor = new GKTensorQI(DIPOLE, order, gc, Eh, Es);
+    gkDipoleTensor.setR(rWater, bornI, bornK);
+    gkDipoleTensor.generateTensor();
+    e += gkDipoleTensor.multipoleEnergyAndGradient(mI, mK, tempGradI, tempGradK, tempTorqueI,
+        tempTorqueK);
+    db += gkDipoleTensor.multipoleEnergyBornGrad(mI, mK);
+
+    for (int i = 0; i < 3; i++) {
+      gradI[i] += tempGradI[i];
+      gradK[i] += tempGradK[i];
+      torqueI[i] += tempTorqueI[i];
+      torqueK[i] += tempTorqueK[i];
+      tempTorqueI[i] = 0.0;
+      tempTorqueK[i] = 0.0;
+    }
+
+    // Apply the GK quadrupole tensor.
+    order = 5;
+    GKTensorQI gkQuadrupoleTensor = new GKTensorQI(GK_MULTIPOLE_ORDER.QUADRUPOLE, order, gc, Eh, Es);
     gkQuadrupoleTensor.setR(rWater, bornI, bornK);
     gkQuadrupoleTensor.generateTensor();
-    e += gkQuadrupoleTensor.multipoleEnergy(polarizableMultipoleI, polarizableMultipoleK);
+    e += gkQuadrupoleTensor.multipoleEnergyAndGradient(mI, mK, tempGradI, tempGradK, tempTorqueI,
+        tempTorqueK);
+    db += gkQuadrupoleTensor.multipoleEnergyBornGrad(mI, mK);
+
+    for (int i = 0; i < 3; i++) {
+      gradI[i] += tempGradI[i];
+      gradK[i] += tempGradK[i];
+      torqueI[i] += tempTorqueI[i];
+      torqueK[i] += tempTorqueK[i];
+    }
+
+    qiFrame.toGlobal(gradI);
+    qiFrame.toGlobal(torqueI);
+    qiFrame.toGlobal(torqueK);
 
     assertEquals("GK Permanent Energy", watPerm, e, tolerance);
+    assertEquals("GK Permanent Grad X", permGradI[0], gradI[0], tolerance);
+    assertEquals("GK Permanent Grad Y", permGradI[1], gradI[1], tolerance);
+    assertEquals("GK Permanent Grad Z", permGradI[2], gradI[2], tolerance);
+    assertEquals("GK Permanent Torque I X", permTorqueI[0], torqueI[0], tolerance);
+    assertEquals("GK Permanent Torque I Y", permTorqueI[1], torqueI[1], tolerance);
+    assertEquals("GK Permanent Torque I Z", permTorqueI[2], torqueI[2], tolerance);
+    assertEquals("GK Permanent Torque K X", permTorqueK[0], torqueK[0], tolerance);
+    assertEquals("GK Permanent Torque K Y", permTorqueK[1], torqueK[1], tolerance);
+    assertEquals("GK Permanent Torque K Z", permTorqueK[2], torqueK[2], tolerance);
+    assertEquals("GK Born Grad I", drb, db * bornI, tolerance);
   }
 
   @Test

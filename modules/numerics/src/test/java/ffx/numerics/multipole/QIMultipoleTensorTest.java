@@ -203,9 +203,9 @@ public class QIMultipoleTensorTest {
     multipoleTensor.generateTensor(r);
     double e = multipoleTensor.multipoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
 
-    qiFrame.qiFrameToGlobal(Gk);
-    qiFrame.qiFrameToGlobal(Ti);
-    qiFrame.qiFrameToGlobal(Tk);
+    qiFrame.toGlobal(Gk);
+    qiFrame.toGlobal(Ti);
+    qiFrame.toGlobal(Tk);
 
     if (operator == OPERATOR.COULOMB) {
       assertEquals(info + " QI Permanent Energy", permanentEnergy, e, tolerance);
@@ -312,9 +312,9 @@ public class QIMultipoleTensorTest {
     double e = multipoleTensor.polarizationEnergyAndGradient(mI, mK, 1.0, 1.0, scaleMutual, Gi, Ti,
         Tk);
 
-    qiFrame.qiFrameToGlobal(Gi);
-    qiFrame.qiFrameToGlobal(Ti);
-    qiFrame.qiFrameToGlobal(Tk);
+    qiFrame.toGlobal(Gi);
+    qiFrame.toGlobal(Ti);
+    qiFrame.toGlobal(Tk);
 
     // Analytic gradient on Atom I.
     double aX = Gi[0];

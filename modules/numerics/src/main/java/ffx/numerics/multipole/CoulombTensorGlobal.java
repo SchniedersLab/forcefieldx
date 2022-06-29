@@ -150,9 +150,6 @@ public class CoulombTensorGlobal extends MultipoleTensor {
     R200 = fma(x, term1001, term0001);
     double term1002 = x * term0003;
     double term2001 = fma(x, term1002, term0002);
-    // x * term2001 + 2 * term1001
-    // x * (x * term1002 + term0002) + 2 * (x * term0002)
-    // x * (x * (x * term0003) + term0002) + 2 * (x * term0002)
     R300 = fma(x, term2001, 2 * term1001);
     R010 = y * term0001;
     double term0101 = y * term0002;
@@ -982,7 +979,6 @@ public class CoulombTensorGlobal extends MultipoleTensor {
         term020 = fma(mI.dx, -R120, term020);
         term020 = fma(mI.dy, -R030, term020);
         term020 = fma(mI.dz, -R021, term020);
-        term020 = fma(mI.qxx, R220, term020);
         E020 = term020;
         double term002 = 0.0;
         term002 = fma(mI.dx, -R102, term002);

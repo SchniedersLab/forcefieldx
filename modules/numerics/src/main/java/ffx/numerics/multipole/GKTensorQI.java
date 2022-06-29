@@ -230,8 +230,9 @@ public class GKTensorQI extends CoulombTensorQI {
    *
    * @param mI PolarizableMultipole at site I.
    * @param mK PolarizableMultipole at site K.
-   * @return a double.
+   * @return the GK permanent multipole energy.
    */
+  @Override
   public double multipoleEnergy(PolarizableMultipole mI, PolarizableMultipole mK) {
     switch (multipoleOrder.getOrder()) {
       default:
@@ -240,20 +241,210 @@ public class GKTensorQI extends CoulombTensorQI {
         double eK = multipoleEnergy(mK);
         chargeKPotentialAtI(mK, 2);
         double eI = multipoleEnergy(mI);
-        return 0.5 * eK + eI;
+        return 0.5 * (eK + eI);
       case 1:
         dipoleIPotentialAtK(mI, 2);
         eK = multipoleEnergy(mK);
         dipoleKPotentialAtI(mK, 2);
         eI = multipoleEnergy(mI);
-        return 0.5 * eK + eI;
+        return 0.5 * (eK + eI);
       case 2:
         quadrupoleIPotentialAtK(mI, 2);
         eK = multipoleEnergy(mK);
         quadrupoleKPotentialAtI(mK, 2);
         eI = multipoleEnergy(mI);
-        return 0.5 * eK + eI;
+        return 0.5 * (eK + eI);
     }
+  }
+
+  /**
+   * GK Permanent multipole energy and gradient.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @param Gi Coordinate gradient at site I.
+   * @param Gk Coordinate gradient at site K.
+   * @param Ti Torque at site I.
+   * @param Tk Torque at site K.
+   * @return the permanent multipole GK energy.
+   */
+  @Override
+  public double multipoleEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
+      double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
+    switch (multipoleOrder) {
+      default:
+      case MONOPOLE:
+        return monopoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
+      case DIPOLE:
+        return dipoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
+      case QUADRUPOLE:
+        return quadrupoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
+    }
+  }
+
+  /**
+   * Permanent multipole energy and gradient using the GK monopole tensor.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @param Gi Coordinate gradient at site I.
+   * @param Gk Coordinate gradient at site K.
+   * @param Ti Torque at site I.
+   * @param Tk Torque at site K.
+   * @return the permanent multipole GK energy.
+   */
+  protected double monopoleEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
+      double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
+
+    // Compute the potential due to a multipole component at site I.
+    chargeIPotentialAtK(mI, 3);
+    double eK = multipoleEnergy(mK);
+    multipoleGradient(mK, Gk);
+    multipoleTorque(mK, Tk);
+
+    // Compute the potential due to a multipole component at site K.
+    chargeKPotentialAtI(mK, 3);
+    double eI = multipoleEnergy(mI);
+    multipoleGradient(mI, Gi);
+    multipoleTorque(mI, Ti);
+
+    Gi[0] = 0.5 * (Gi[0] - Gk[0]);
+    Gi[1] = 0.5 * (Gi[1] - Gk[1]);
+    Gi[2] = 0.5 * (Gi[2] - Gk[2]);
+    Gk[0] = -Gi[0];
+    Gk[1] = -Gi[1];
+    Gk[2] = -Gi[2];
+
+    Ti[0] = 0.5 * Ti[0];
+    Ti[1] = 0.5 * Ti[1];
+    Ti[2] = 0.5 * Ti[2];
+    Tk[0] = 0.5 * Tk[0];
+    Tk[1] = 0.5 * Tk[1];
+    Tk[2] = 0.5 * Tk[2];
+
+    return 0.5 * (eK + eI);
+  }
+
+  /**
+   * Permanent multipole energy and gradient using the GK dipole tensor.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @param Gi Coordinate gradient at site I.
+   * @param Gk Coordinate gradient at site K.
+   * @param Ti Torque at site I.
+   * @param Tk Torque at site K.
+   * @return the permanent multipole GK energy.
+   */
+  protected double dipoleEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
+      double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
+
+    // Compute the potential due to a multipole component at site I.
+    dipoleIPotentialAtK(mI, 3);
+    double eK = multipoleEnergy(mK);
+    multipoleGradient(mK, Gk);
+    multipoleTorque(mK, Tk);
+
+    // Need the torque on site I pole due to site K multipole.
+    // Only torque on the site I dipole.
+    multipoleKPotentialAtI(mK, 1);
+    dipoleTorque(mI, Ti);
+
+    // Compute the potential due to a multipole component at site K.
+    dipoleKPotentialAtI(mK, 3);
+    double eI = multipoleEnergy(mI);
+    multipoleGradient(mI, Gi);
+    multipoleTorque(mI, Ti);
+
+    // Need the torque on site K pole due to site I multipole.
+    // Only torque on the site K dipole.
+    multipoleIPotentialAtK(mI, 1);
+    dipoleTorque(mK, Tk);
+
+    Gi[0] = 0.5 * (Gi[0] - Gk[0]);
+    Gi[1] = 0.5 * (Gi[1] - Gk[1]);
+    Gi[2] = 0.5 * (Gi[2] - Gk[2]);
+    Gk[0] = -Gi[0];
+    Gk[1] = -Gi[1];
+    Gk[2] = -Gi[2];
+
+    Ti[0] = 0.5 * Ti[0];
+    Ti[1] = 0.5 * Ti[1];
+    Ti[2] = 0.5 * Ti[2];
+    Tk[0] = 0.5 * Tk[0];
+    Tk[1] = 0.5 * Tk[1];
+    Tk[2] = 0.5 * Tk[2];
+
+    return 0.5 * (eK + eI);
+  }
+
+  /**
+   * Permanent multipole energy and gradient using the GK quadrupole tensor.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @param Gi Coordinate gradient at site I.
+   * @param Gk Coordinate gradient at site K.
+   * @param Ti Torque at site I.
+   * @param Tk Torque at site K.
+   * @return the permanent multipole GK energy.
+   */
+  protected double quadrupoleEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
+      double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
+
+    // Compute the potential due to a multipole component at site I.
+    quadrupoleIPotentialAtK(mI, 3);
+    double eK = multipoleEnergy(mK);
+    multipoleGradient(mK, Gk);
+    multipoleTorque(mK, Tk);
+
+    // Need the torque on site I pole due to site K multipole.
+    // Only torque on the site I quadrupole.
+    multipoleKPotentialAtI(mK, 2);
+    quadrupoleTorque(mI, Ti);
+
+    // Compute the potential due to a multipole component at site K.
+    quadrupoleKPotentialAtI(mK, 3);
+    double eI = multipoleEnergy(mI);
+    multipoleGradient(mI, Gi);
+    multipoleTorque(mI, Ti);
+
+    // Need the torque on site K pole due to site I multipole.
+    // Only torque on the site K quadrupole.
+    multipoleIPotentialAtK(mI, 2);
+    quadrupoleTorque(mK, Tk);
+
+    Gi[0] = 0.5 * (Gi[0] - Gk[0]);
+    Gi[1] = 0.5 * (Gi[1] - Gk[1]);
+    Gi[2] = 0.5 * (Gi[2] - Gk[2]);
+    Gk[0] = -Gi[0];
+    Gk[1] = -Gi[1];
+    Gk[2] = -Gi[2];
+
+    Ti[0] = 0.5 * Ti[0];
+    Ti[1] = 0.5 * Ti[1];
+    Ti[2] = 0.5 * Ti[2];
+    Tk[0] = 0.5 * Tk[0];
+    Tk[1] = 0.5 * Tk[1];
+    Tk[2] = 0.5 * Tk[2];
+
+    return 0.5 * (eK + eI);
+  }
+
+  /**
+   * GK Permanent multipole Born grad.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @return a double.
+   */
+  public double multipoleEnergyBornGrad(PolarizableMultipole mI, PolarizableMultipole mK) {
+    GK_TENSOR_MODE currentMode = mode;
+    setMode(GK_TENSOR_MODE.BORN);
+    generateTensor();
+    double db = multipoleEnergy(mI, mK);
+    setMode(currentMode);
+    return db;
   }
 
   /**

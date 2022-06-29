@@ -430,11 +430,11 @@ public abstract class MultipoleTensor {
    *
    * @param mI PolarizableMultipole at site I.
    * @param mK PolarizableMultipole at site K.
-   * @param Gi an array of {@link double} objects.
-   * @param Gk an array of {@link double} objects.
-   * @param Ti an array of {@link double} objects.
-   * @param Tk an array of {@link double} objects.
-   * @return a double.
+   * @param Gi Coordinate gradient at site I.
+   * @param Gk Coordinate gradient at site K.
+   * @param Ti Torque at site I.
+   * @param Tk Torque at site K.
+   * @return the permanent multipole energy.
    */
   public double multipoleEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
       double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
@@ -1083,9 +1083,48 @@ public abstract class MultipoleTensor {
         - (m.qxy * E200 + 2.0 * m.qyy * E110 + m.qyz * E101);
 
     // The field along X is -E001, so we need a negative sign.
-    torque[0] = -(dx + qx);
-    torque[1] = -(dy + qy);
-    torque[2] = -(dz + qz);
+    torque[0] -= (dx + qx);
+    torque[1] -= (dy + qy);
+    torque[2] -= (dz + qz);
+  }
+
+  /**
+   * Compute the torque on a permanent dipole.
+   *
+   * @param m PolarizableMultipole at the site of the potential.
+   * @param torque an array of {@link double} objects.
+   */
+  protected final void dipoleTorque(PolarizableMultipole m, double[] torque) {
+    // Torque on the permanent dipole due to the field.
+    double dx = m.dy * E001 - m.dz * E010;
+    double dy = m.dz * E100 - m.dx * E001;
+    double dz = m.dx * E010 - m.dy * E100;
+
+    // The field along X is -E001, so we need a negative sign.
+    torque[0] -= dx;
+    torque[1] -= dy;
+    torque[2] -= dz;
+  }
+
+  /**
+   * Compute the torque on a permanent quadrupole.
+   *
+   * @param m PolarizableMultipole at the site of the potential.
+   * @param torque an array of {@link double} objects.
+   */
+  protected final void quadrupoleTorque(PolarizableMultipole m, double[] torque) {
+    // Torque on the permanent quadrupole due to the gradient of the field.
+    double qx = m.qxy * E101 + 2.0 * m.qyy * E011 + m.qyz * E002
+        - (m.qxz * E110 + m.qyz * E020 + 2.0 * m.qzz * E011);
+    double qy = m.qxz * E200 + m.qyz * E110 + 2.0 * m.qzz * E101
+        - (2.0 * m.qxx * E101 + m.qxy * E011 + m.qxz * E002);
+    double qz = 2.0 * m.qxx * E110 + m.qxy * E020 + m.qxz * E011
+        - (m.qxy * E200 + 2.0 * m.qyy * E110 + m.qyz * E101);
+
+    // The field along X is -E001, so we need a negative sign.
+    torque[0] -= qx;
+    torque[1] -= qy;
+    torque[2] -= qz;
   }
 
   /**

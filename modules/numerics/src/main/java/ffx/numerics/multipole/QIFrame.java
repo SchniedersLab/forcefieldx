@@ -256,7 +256,7 @@ public class QIFrame {
    *
    * @param v The vector to rotate (in-place).
    */
-  public void qiFrameToGlobal(double[] v) {
+  public void toGlobal(double[] v) {
     double vx = v[0];
     double vy = v[1];
     double vz = v[2];
