@@ -187,6 +187,7 @@ class MinimizePh extends AlgorithmsScript {
 
     forceFieldEnergy.getCoordinates(x)
     forceFieldEnergy.energy(x, true)
+    esvSystem.writeRestart()
 
     // Handle Single Topology Cases.
     String modelFilename = activeAssembly.getFile().getAbsolutePath()
