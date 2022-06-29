@@ -47,9 +47,11 @@ import ffx.numerics.optimization.OptimizationListener;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.ForceFieldEnergyOpenMM;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -77,10 +79,16 @@ public class PhMinimize implements OptimizationListener, Terminatable {
   protected final AlgorithmListener algorithmListener;
   /** Number of variables. */
   protected final int n;
+  /** Number of Extended System variables. */
+  protected final int nESV;
   /** Current value of each variable. */
   protected final double[] x;
+  /** Current value of each Extended System variable. */
+  protected double[] theta;
   /** The gradient. */
   protected final double[] grad;
+  /** The gradient. */
+  protected double[] gradESV;
   /** Scaling applied to each variable. */
   protected final double[] scaling;
   /** A flag to indicate the algorithm is done. */
@@ -115,8 +123,11 @@ public class PhMinimize implements OptimizationListener, Terminatable {
     this.potential = potential;
     this.esvSystem = esvSystem;
     n = potential.getNumberOfVariables();
+    nESV = esvSystem.getNumberOfVariables();
     x = new double[n];
+    theta = new double[nESV];
     grad = new double[n];
+    gradESV = new double[nESV];
     scaling = new double[n];
     fill(scaling, 12.0);
   }
@@ -136,8 +147,11 @@ public class PhMinimize implements OptimizationListener, Terminatable {
     }
     potential = molecularAssembly.getPotentialEnergy();
     n = potential.getNumberOfVariables();
+    nESV = esvSystem.getNumberOfVariables();
     x = new double[n];
+    theta = new double[nESV];
     grad = new double[n];
+    gradESV = new double[nESV];
     scaling = new double[n];
     fill(scaling, 12.0);
   }
@@ -174,8 +188,8 @@ public class PhMinimize implements OptimizationListener, Terminatable {
    *
    * @return a {@link Potential} object.
    */
-  public Potential minimize() {
-    return minimize(7, 1.0, Integer.MAX_VALUE);
+  public Potential minimizeCoordinates() {
+    return minimizeCoordinates(7, 1.0, Integer.MAX_VALUE);
   }
 
   /**
@@ -184,8 +198,8 @@ public class PhMinimize implements OptimizationListener, Terminatable {
    * @param eps The convergence criteria.
    * @return a {@link Potential} object.
    */
-  public Potential minimize(double eps) {
-    return minimize(7, eps, Integer.MAX_VALUE);
+  public Potential minimizeCoordinates(double eps) {
+    return minimizeCoordinates(7, eps, Integer.MAX_VALUE);
   }
 
   /**
@@ -195,8 +209,8 @@ public class PhMinimize implements OptimizationListener, Terminatable {
    * @param maxIterations The maximum number of iterations.
    * @return a {@link Potential} object.
    */
-  public Potential minimize(double eps, int maxIterations) {
-    return minimize(7, eps, maxIterations);
+  public Potential minimizeCoordinates(double eps, int maxIterations) {
+    return minimizeCoordinates(7, eps, maxIterations);
   }
 
   /**
@@ -207,7 +221,7 @@ public class PhMinimize implements OptimizationListener, Terminatable {
    * @param maxIterations The maximum number of iterations.
    * @return a {@link Potential} object.
    */
-  public Potential minimize(int m, double eps, int maxIterations) {
+  public Potential minimizeCoordinates(int m, double eps, int maxIterations) {
     time = System.nanoTime();
     potential.getCoordinates(x);
     potential.setScaling(scaling);
@@ -230,6 +244,61 @@ public class PhMinimize implements OptimizationListener, Terminatable {
     switch (status) {
       case 0:
         logger.info(format("\n Optimization achieved convergence criteria: %8.5f", rmsGradient));
+        break;
+      case 1:
+        logger.info(format("\n Optimization terminated at step %d.", nSteps));
+        break;
+      default:
+        logger.warning("\n Optimization failed.");
+    }
+
+    potential.setScaling(null);
+    return potential;
+  }
+
+  /**
+   * minimize
+   *
+   * @param eps The convergence criteria.
+   * @param maxIterations The maximum number of iterations.
+   * @return a {@link Potential} object.
+   */
+  public Potential minimizeTitration(double eps, int maxIterations) {
+    return minimizeTitration(7, eps, maxIterations);
+  }
+
+  /**
+   * minimize
+   *
+   * @param m The number of previous steps used to estimate the Hessian.
+   * @param eps The convergence criteria.
+   * @param maxIterations The maximum number of iterations.
+   * @return a {@link Potential} object.
+   */
+  public Potential minimizeTitration(int m, double eps, int maxIterations) {
+    time = System.nanoTime();
+    theta = esvSystem.getThetaPosition();
+
+    done = false;
+    potential.getCoordinates(x);
+    theta = esvSystem.getThetaPosition();
+    energy = esvSystem.energyAndGradient(theta, gradESV);
+
+    if (logger.isLoggable(Level.FINE)) {
+      logger.fine(format(" Minimize initial energy: %16.8f", energy));
+    }
+
+    status = LBFGS.minimize(nESV, m, theta, energy, gradESV, eps, maxIterations, esvSystem, this);
+    done = true;
+
+    switch (status) {
+      case 0:
+        logger.info(format("\n Optimization achieved convergence criteria: %8.5f", rmsGradient));
+        for(Atom atom : molecularAssembly.getAtomList()){
+          int atomIndex = atom.getIndex() - 1;
+          atom.setOccupancy(esvSystem.getTitrationLambda(atomIndex));
+          atom.setTempFactor(esvSystem.getTautomerLambda(atomIndex));
+        }
         break;
       case 1:
         logger.info(format("\n Optimization terminated at step %d.", nSteps));
