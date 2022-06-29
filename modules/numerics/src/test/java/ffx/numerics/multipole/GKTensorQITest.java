@@ -40,16 +40,17 @@ package ffx.numerics.multipole;
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.multipole.GKTensorGlobalTest.bornI;
 import static ffx.numerics.multipole.GKTensorGlobalTest.bornK;
-import static ffx.numerics.multipole.GKTensorGlobalTest.drb;
 import static ffx.numerics.multipole.GKTensorGlobalTest.multI;
 import static ffx.numerics.multipole.GKTensorGlobalTest.multK;
+import static ffx.numerics.multipole.GKTensorGlobalTest.permGradBorn;
 import static ffx.numerics.multipole.GKTensorGlobalTest.permGradI;
 import static ffx.numerics.multipole.GKTensorGlobalTest.permTorqueI;
 import static ffx.numerics.multipole.GKTensorGlobalTest.permTorqueK;
 import static ffx.numerics.multipole.GKTensorGlobalTest.rWater;
 import static ffx.numerics.multipole.GKTensorGlobalTest.uI;
 import static ffx.numerics.multipole.GKTensorGlobalTest.uK;
-import static ffx.numerics.multipole.GKTensorGlobalTest.watPerm;
+import static ffx.numerics.multipole.GKTensorGlobalTest.watPermEnergy;
+import static ffx.numerics.multipole.GKTensorGlobalTest.watPolEnergy;
 import static ffx.numerics.multipole.GKTensorQI.GK_MULTIPOLE_ORDER.DIPOLE;
 import static ffx.numerics.multipole.GKTensorQI.GK_MULTIPOLE_ORDER.MONOPOLE;
 import static ffx.numerics.multipole.GKTensorQI.GK_MULTIPOLE_ORDER.QUADRUPOLE;
@@ -107,7 +108,7 @@ public class GKTensorQITest {
     quadrupoleGK.generateTensor();
     double q = quadrupoleGK.multipoleEnergy(mI, mK);
 
-    assertEquals("GK Permanent Energy", watPerm, c + d + q, tolerance);
+    assertEquals("GK Permanent Energy", watPermEnergy, c + d + q, tolerance);
   }
 
   @Test
@@ -174,7 +175,7 @@ public class GKTensorQITest {
     qiFrame.toGlobal(torqueI);
     qiFrame.toGlobal(torqueK);
 
-    assertEquals("GK Permanent Energy", watPerm, e, tolerance);
+    assertEquals("GK Permanent Energy", watPermEnergy, e, tolerance);
     assertEquals("GK Permanent Grad X", permGradI[0], gradI[0], tolerance);
     assertEquals("GK Permanent Grad Y", permGradI[1], gradI[1], tolerance);
     assertEquals("GK Permanent Grad Z", permGradI[2], gradI[2], tolerance);
@@ -184,7 +185,40 @@ public class GKTensorQITest {
     assertEquals("GK Permanent Torque K X", permTorqueK[0], torqueK[0], tolerance);
     assertEquals("GK Permanent Torque K Y", permTorqueK[1], torqueK[1], tolerance);
     assertEquals("GK Permanent Torque K Z", permTorqueK[2], torqueK[2], tolerance);
-    assertEquals("GK Born Grad I", drb, db * bornI, tolerance);
+    assertEquals("GK Born Grad I", permGradBorn, db * bornI, tolerance);
+  }
+
+  @Test
+  public void polarizationEnergyTest() {
+    PolarizableMultipole mI = new PolarizableMultipole(multI, uI, uI);
+    PolarizableMultipole mK = new PolarizableMultipole(multK, uK, uK);
+
+    QIFrame qiFrame = new QIFrame(rWater);
+    qiFrame.rotatePolarizableMultipole(mI);
+    qiFrame.rotatePolarizableMultipole(mK);
+
+    // Apply the GK monopole tensor.
+    int order = 2;
+    GKTensorQI gkMonopoleTensor = new GKTensorQI(MONOPOLE, order, gc, Eh, Es);
+    gkMonopoleTensor.setR(rWater, bornI, bornK);
+    gkMonopoleTensor.generateTensor();
+    double c = gkMonopoleTensor.polarizationEnergy(mI, mK);
+
+    // Apply the GK dipole tensor.
+    order = 3;
+    GKTensorQI gkDipoleTensor = new GKTensorQI(DIPOLE, order, gc, Eh, Es);
+    gkDipoleTensor.setR(rWater, bornI, bornK);
+    gkDipoleTensor.generateTensor();
+    double d = gkDipoleTensor.polarizationEnergy(mI, mK);
+
+    // Apply the GK quadrupole tensor.
+    order = 4;
+    GKTensorQI gkQuadrupoleTensor = new GKTensorQI(QUADRUPOLE, order, gc, Eh, Es);
+    gkQuadrupoleTensor.setR(rWater, bornI, bornK);
+    gkQuadrupoleTensor.generateTensor();
+    double q = gkQuadrupoleTensor.polarizationEnergy(mI, mK);
+
+    assertEquals("GK Polarization Energy", watPolEnergy, c + d + q, tolerance);
   }
 
   @Test

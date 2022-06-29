@@ -448,6 +448,72 @@ public class GKTensorQI extends CoulombTensorQI {
   }
 
   /**
+   * GK Polarization Energy.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @param scaleEnergy This is ignored, since masking/scaling is not applied to GK
+   *     interactions.
+   * @return a double.
+   */
+  @Override
+  public double polarizationEnergy(PolarizableMultipole mI, PolarizableMultipole mK,
+      double scaleEnergy) {
+    return polarizationEnergy(mI, mK);
+  }
+
+  /**
+   * GK Polarization Energy.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @return a double.
+   */
+  public double polarizationEnergy(PolarizableMultipole mI, PolarizableMultipole mK) {
+    switch (multipoleOrder) {
+      default:
+      case MONOPOLE:
+        // Find the GK charge potential of site I at site K.
+        chargeIPotentialAtK(mI, 1);
+        // Energy of induced dipole K in the field of permanent charge I.
+        double eK = polarizationEnergy(mK);
+        // Find the GK charge potential of site K at site I.
+        chargeKPotentialAtI(mK, 1);
+        // Energy of induced dipole I in the field of permanent charge K.
+        double eI = polarizationEnergy(mI);
+        return 0.5 * (eK + eI);
+      case DIPOLE:
+        // Find the GK dipole potential of site I at site K.
+        dipoleIPotentialAtK(mI, 1);
+        // Energy of induced dipole K in the field of permanent dipole I.
+        eK = polarizationEnergy(mK);
+        // Find the GK induced dipole potential of site I at site K.
+        inducedIPotentialAtK(mI);
+        // Energy of permanent multipole K in the field of induced dipole I.
+        eK += 0.5 * multipoleEnergy(mK);
+        // Find the GK dipole potential of site K at site I.
+        dipoleKPotentialAtI(mK, 1);
+        // Energy of induced dipole I in the field of permanent dipole K.
+        eI = polarizationEnergy(mI);
+        // Find the GK induced dipole potential of site K at site I.
+        inducedKPotentialAtI(mK);
+        // Energy of permanent multipole I in the field of induced dipole K.
+        eI += 0.5 * multipoleEnergy(mI);
+        return 0.5 * (eK + eI);
+      case QUADRUPOLE:
+        // Find the GK quadrupole potential of site I at site K.
+        quadrupoleIPotentialAtK(mI, 1);
+        // Energy of induced dipole K in the field of permanent quadrupole I.
+        eK = polarizationEnergy(mK);
+        // Find the GK quadrupole potential of site K at site I.
+        quadrupoleKPotentialAtI(mK, 1);
+        // Energy of induced dipole I in the field of permanent quadrupole K.
+        eI = polarizationEnergy(mI);
+        return 0.5 * (eK + eI);
+    }
+  }
+
+  /**
    * Set the separation vector.
    *
    * @param r Separation vector.
