@@ -50,6 +50,7 @@ import ffx.potential.extended.ExtendedSystem
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XPHFilter
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
@@ -189,8 +190,13 @@ class PhEnergy extends PotentialScript {
         logger.info("\n Running Energy on " + filename)
         forceFieldEnergy = activeAssembly.getPotentialEnergy()
 
+        // Restart File
+        File esv = new File(removeExtension(filename) + ".esv")
+        if (!esv.exists()) {
+            esv = null
+        }
 
-        ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, null)
+        ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, esv)
         esvSystem.setConstantPh(pH)
         int numESVs = esvSystem.extendedResidueList.size()
         forceFieldEnergy.attachExtendedSystem(esvSystem)
