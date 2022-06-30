@@ -245,7 +245,7 @@ public class PhReplicaExchange implements Terminatable {
       logger.info(String.format(" ------------------Exchange Cycle %d------------------\n", i+1));
       exchange();
 
-      extendedSystem.writeLambdaHistogram();
+      //extendedSystem.writeLambdaHistogram();
 
       logger.info(" ");
       logger.info(" Setting rank " + rank + " esv to pH " + pHScale[rank2Ph[rank]]);
@@ -414,14 +414,19 @@ public class PhReplicaExchange implements Terminatable {
     replica.dynamic(titrStepsTwo, timeStep, printInterval, saveInterval, temp, initVelocities, null);
 
     // Update this ranks' parameter array to be consistent with the dynamics.
+
+    logger.info(" ----------------------------------" + rank + "@" + rank);
     myParameters[0] = pHScale[i];
     myParameters[2] = extendedSystem.getBiasEnergy();
+    logger.info(" ");
 
     // Evaluate acidostat of ES at different pHs
+    logger.info(" ----------------------------------" + rank + "@" + (rank-1));
     extendedSystem.setConstantPh(myParameters[0] - gapSize);
     myParameters[1] = extendedSystem.getBiasEnergy();
 
-    extendedSystem.setConstantPh(myParameters[0] - gapSize);
+    logger.info(" ----------------------------------" + rank + "@" + rank);
+    extendedSystem.setConstantPh(myParameters[0] + gapSize);
     myParameters[3] = extendedSystem.getBiasEnergy();
 
     extendedSystem.setConstantPh(myParameters[0]);
@@ -452,10 +457,10 @@ public class PhReplicaExchange implements Terminatable {
     myParameters[2] = extendedSystem.getBiasEnergy();
 
     // Evaluate acidostat of ES at different pHs
-    extendedSystem.setConstantPh(myParameters[0] - gapSize);
+    extendedSystem.setConstantPh(myParameters[0] - gapSize); // B at A-gap
     myParameters[1] = extendedSystem.getBiasEnergy();
 
-    extendedSystem.setConstantPh(myParameters[0] - gapSize);
+    extendedSystem.setConstantPh(myParameters[0] + gapSize); // A at A+gap(B)
     myParameters[3] = extendedSystem.getBiasEnergy();
 
     extendedSystem.setConstantPh(myParameters[0]);
