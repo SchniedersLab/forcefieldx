@@ -41,6 +41,8 @@ import static ffx.crystal.SymOp.applyCartesianSymOp;
 import static ffx.crystal.SymOp.applyCartesianSymRot;
 import static ffx.crystal.SymOp.invertSymOp;
 import static ffx.potential.utils.Superpose.rmsd;
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.sqrt;
@@ -193,9 +195,9 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
   /** State for calculating energies. */
   private STATE state = STATE.BOTH;
   /** Symmetry operator to superimpose system 2 onto system 1 */
-  private SymOp symOp = null;
+  private SymOp[] symOp = null;
   /** Symmetry operator to move system 2 back to original frame */
-  private SymOp inverse = null;
+  private SymOp[] inverse = null;
   /** Utilize a provided SymOp */
   private boolean useSymOp = false;
 
@@ -370,7 +372,13 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     parallelTeam = new ParallelTeam(1);
 
     String symOpString = forceField2.getString("symop", null);
+
     if (symOpString != null) {
+      // TODO make work for co-crystals (currently assumes same length).
+      int z1 = topology1.getMolecules().size();
+//      int z2 = topology2.getMolecules().size();
+      symOp = new SymOp[z1];
+      inverse = new SymOp[z1];
       readSymOp(symOpString);
     } else {
       // Both end-states will use the same crystal object.
@@ -391,10 +399,40 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
    */
   private void readSymOp(String symOpString) {
     try {
-      symOp = SymOp.parse(symOpString);
+      String[] tokens = symOpString.split(" +");
+      int numTokens = tokens.length;
+      int z1 = symOp.length;
+//      int z2 = symOp[0].length;
+      int z1index = -1;
+//      int z2index = -1;
+      if(numTokens == 12){
+        // Twelve values makes 1 sym op. so assign to [0][0].
+        symOp[0] = new SymOp(new double[][] {
+            {parseDouble(tokens[0]), parseDouble(tokens[1]), parseDouble(tokens[2])},
+            {parseDouble(tokens[3]), parseDouble(tokens[4]), parseDouble(tokens[5])},
+            {parseDouble(tokens[6]), parseDouble(tokens[7]), parseDouble(tokens[8])}},
+            new double[] {parseDouble(tokens[9]), parseDouble(tokens[10]), parseDouble(tokens[11])});
+      }else if(numTokens % 14 == 0){
+        int numSymOps = numTokens/14;
+        assert(numSymOps == z1);
+        for(int i = 0; i < numSymOps; i++) {
+          int j = i * 14;
+          z1index = parseInt(tokens[j + 0]);
+          // Assumed equal for now... can revisit later.
+//          z2index = parseInt(tokens[j + 1]);
+          symOp[z1index] = new SymOp(new double[][]{
+              {parseDouble(tokens[j + 2]), parseDouble(tokens[j + 3]), parseDouble(tokens[j + 4])},
+              {parseDouble(tokens[j + 5]), parseDouble(tokens[j + 6]), parseDouble(tokens[j + 7])},
+              {parseDouble(tokens[j + 8]), parseDouble(tokens[j + 9]), parseDouble(tokens[j + 10])}},
+              new double[]{parseDouble(tokens[j + 11]), parseDouble(tokens[j + 12]), parseDouble(tokens[j + 13])});
+        }
+      }else{
+        logger.warning(" Sym Op is formatted incorrectly.");
+        symOp = null;
+        return;
+      }
+//      symOp = SymOp.parse(symOpString);
       useSymOp = true;
-      // Transpose == inverse for orthogonal matrices
-      inverse = invertSymOp(symOp);
 
       // Check atom identities.
       int len1 = activeAtoms1.length;
@@ -436,14 +474,31 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       // Get a fresh copy of the original coordinates.
       double[] origX1 = Arrays.copyOf(x1Shared, x1Shared.length);
       origX2 = Arrays.copyOf(x2Shared, x2Shared.length);
-      applyCartesianSymOp(origX1, origX1, symOp);
+      int assumedSize = nShared/z1;
+      // nshared = 20; z1 = 4; assumedSize = 5;
+      for(int i = 0; i < z1; i++) {
+        boolean[] mask = new boolean[nShared];
+        for(int j = 0; j < nShared; j++){
+          if(j >= assumedSize * i && j < assumedSize * (i + 1)){
+            mask[j] = true;
+          }
+        }
+//        for(int j = 0; j < z2; j++){
+        // Transpose == inverse for orthogonal matrices (value needed later).
+        inverse[i] = invertSymOp(symOp[i]);
+        // Apply symOp to appropriate coords (validity check).
+
+        applyCartesianSymOp(origX1, origX1, symOp[i], mask);
+
+        logger.info("\n SymOp between topologies:\n" + symOp[i]);
+        logger.info("\n Inverse SymOp:\n" + inverse[i]);
+//        }
+      }
+//      inverse = invertSymOp(symOp);
+
       double loadedRMSD = rmsd(origX1, origX2, m);
       logger.info("\n Topology 2 Coordinates from Loaded SymOp");
       logger.info(format(" RMSD: %12.3f", loadedRMSD));
-
-
-      logger.info("\n SymOp between topologies:\n" + symOp);
-      logger.info("\n Inverse SymOp:\n" + inverse);
     } catch (Exception ex) {
       logger.warning(ex.toString());
       ex.printStackTrace();
@@ -1370,7 +1425,19 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     public void run() throws Exception {
       if (useSymOp) {
         // The SymOp is applied to the coordinates of shared atoms.
-        applyCartesianSymOp(x2, x2, symOp, sharedAtoms2);
+        int z = symOp.length;
+        int assumedSize = nShared/z;
+        for(int i = 0; i < z; i++) {
+          boolean[] mask = new boolean[nShared];
+          for (int j = 0; j < nShared; j++) {
+            if (j >= assumedSize * i && j < assumedSize * (i + 1)) {
+              if(sharedAtoms2[j]) {
+                mask[j] = true;
+              }
+            }
+          }
+          applyCartesianSymOp(x2, x2, symOp[i], mask);
+        }
       }
       if (gradient) {
         fill(gl2, 0.0);
@@ -1383,8 +1450,20 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         lambdaInterface2.getdEdXdL(gl2);
         if (useSymOp) {
           // Rotate the gradient back for shared atoms.
-          applyCartesianSymRot(g2, g2, inverse, sharedAtoms2);
-          applyCartesianSymRot(gl2, gl2, inverse, sharedAtoms2);
+          int z = symOp.length;
+          int assumedSize = nShared/z;
+          for(int i = 0; i < z; i++) {
+            boolean[] mask = new boolean[nShared];
+            for (int j = 0; j < nShared; j++) {
+              if (j >= assumedSize * i && j < assumedSize * (i + 1)) {
+                if (sharedAtoms2[j]) {
+                  mask[j] = true;
+                }
+              }
+            }
+            applyCartesianSymRot(g2, g2, inverse[i], mask);
+            applyCartesianSymRot(gl2, gl2, inverse[i], mask);
+          }
         }
         if (doValenceRestraint2) {
           forceFieldEnergy2.setLambdaBondedTerms(true, useFirstSystemBondedEnergy);
@@ -1397,8 +1476,20 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
           forceFieldEnergy2.getdEdXdL(rgl2);
           if (useSymOp) {
             // Rotate the gradient back for shared atoms.
-            applyCartesianSymRot(rg2, rg2, inverse, sharedAtoms2);
-            applyCartesianSymRot(rgl2, rgl2, inverse, sharedAtoms2);
+            int z = symOp.length;
+            int assumedSize = nShared/z;
+            for(int i = 0; i < z; i++) {
+              boolean[] mask = new boolean[nShared];
+              for (int j = 0; j < nShared; j++) {
+                if (j >= assumedSize * i && j < assumedSize * (i + 1)) {
+                  if(sharedAtoms2[j]) {
+                    mask[j] = true;
+                  }
+                }
+              }
+              applyCartesianSymRot(rg2, rg2, inverse[i], mask);
+              applyCartesianSymRot(rgl2, rgl2, inverse[i], mask);
+            }
           }
           forceFieldEnergy2.setLambdaBondedTerms(false, false);
         } else {

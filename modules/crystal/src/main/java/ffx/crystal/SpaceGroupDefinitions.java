@@ -7893,9 +7893,9 @@ public class SpaceGroupDefinitions {
               new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
               new double[] {-1.0, -1.0, -1.0},
               new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
-              new SymOp(SymOp.Rot_mX_mY_Z, SymOp.Tr_12_0_12),
+              new SymOp(SymOp.Rot_mX_Y_mZ, SymOp.Tr_12_12_0),
               new SymOp(SymOp.Rot_mX_mY_mZ, SymOp.Tr_0_0_0),
-              new SymOp(SymOp.Rot_X_Y_mZ, SymOp.Tr_12_0_12));
+              new SymOp(SymOp.Rot_X_mY_Z, SymOp.Tr_12_12_0));
     } else if (name.equalsIgnoreCase("P21/n") || name.equalsIgnoreCase("P121/n1")) {
       spaceGroup =
               new SpaceGroup(
@@ -7914,6 +7914,59 @@ public class SpaceGroupDefinitions {
                       new SymOp(SymOp.Rot_mX_Y_mZ, SymOp.Tr_12_12_12),
                       new SymOp(SymOp.Rot_mX_mY_mZ, SymOp.Tr_0_0_0),
                       new SymOp(SymOp.Rot_X_mY_Z, SymOp.Tr_12_12_12));
+    } else if(name.equalsIgnoreCase("Pn") || name.equalsIgnoreCase("P1n1")) {
+        spaceGroup =
+                new SpaceGroup(
+                        7,
+                        2,
+                        2,
+                        "Pn",
+                        "PGm",
+                        "P 1 n 1",
+                        MONOCLINIC,
+                        MONOCLINIC_LATTICE,
+                        L121,
+                        new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
+                        new double[] {-1.0, -1.0, -1.0},
+                        new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
+                        new SymOp(SymOp.Rot_X_mY_Z, SymOp.Tr_12_0_12));
+    } else if(name.equalsIgnoreCase("Pa") || name.equalsIgnoreCase("P1a1")) {
+      spaceGroup =
+              new SpaceGroup(
+                      7,
+                      2,
+                      2,
+                      "Pa",
+                      "PGm",
+                      "P 1 a 1",
+                      MONOCLINIC,
+                      MONOCLINIC_LATTICE,
+                      L121,
+                      new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
+                      new double[] {-1.0, -1.0, -1.0},
+                      new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_X_mY_Z, SymOp.Tr_12_0_0));
+    } else if (name.equalsIgnoreCase("Pcab") || name.equalsIgnoreCase("P 21/c 21/a 21/b")) {
+      spaceGroup =
+              new SpaceGroup(
+                      61,
+                      8,
+                      8,
+                      "Pcab",
+                      "PGmmm",
+                      "P 21/c 21/a 21/b",
+                      ORTHORHOMBIC, ORTHORHOMBIC_LATTICE,
+                      L222,
+                      new ASULimit[] {ASULimit.LT, ASULimit.LT, ASULimit.LT},
+                      new double[] {-1.0, -1.0, -1.0},
+                      new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_mX_Y_Z, SymOp.Tr_12_0_12),
+                      new SymOp(SymOp.Rot_X_mY_Z, SymOp.Tr_12_12_0),
+                      new SymOp(SymOp.Rot_X_Y_mZ, SymOp.Tr_0_12_12),
+                      new SymOp(SymOp.Rot_mX_mY_mZ, SymOp.Tr_0_0_0),
+                      new SymOp(SymOp.Rot_X_mY_mZ, SymOp.Tr_12_0_12),
+                      new SymOp(SymOp.Rot_mX_Y_mZ, SymOp.Tr_12_12_0),
+                      new SymOp(SymOp.Rot_mX_mY_Z, SymOp.Tr_0_12_12));
     } else if (name.equalsIgnoreCase("P21212A") || name.equalsIgnoreCase("P 21 21 2 A")) {
       spaceGroup =
               new SpaceGroup(
