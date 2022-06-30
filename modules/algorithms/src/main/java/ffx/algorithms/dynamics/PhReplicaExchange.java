@@ -415,17 +415,14 @@ public class PhReplicaExchange implements Terminatable {
 
     // Update this ranks' parameter array to be consistent with the dynamics.
 
-    logger.info(" ----------------------------------" + rank + "@" + rank);
     myParameters[0] = pHScale[i];
     myParameters[2] = extendedSystem.getBiasEnergy();
     logger.info(" ");
 
     // Evaluate acidostat of ES at different pHs
-    logger.info(" ----------------------------------" + rank + "@" + (rank-1));
     extendedSystem.setConstantPh(myParameters[0] - gapSize);
     myParameters[1] = extendedSystem.getBiasEnergy();
 
-    logger.info(" ----------------------------------" + rank + "@" + rank);
     extendedSystem.setConstantPh(myParameters[0] + gapSize);
     myParameters[3] = extendedSystem.getBiasEnergy();
 
