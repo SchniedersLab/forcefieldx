@@ -229,18 +229,18 @@ public class PhReplicaExchange implements Terminatable {
         break;
       }
 
-      if(nSteps < 3)
-      {
-        logger.severe("Increase number of steps per cycle.");
-      }
-
       if(openMM != null){
+        if(nSteps < 3)
+        {
+          logger.severe("Increase number of steps per cycle.");
+        }
+
         dynamicsOpenMM(nSteps, timeStep, printInterval, saveInterval);
       }
       else {
         dynamics(nSteps, timeStep, printInterval, saveInterval);
       }
-      logger.info(" ");
+
       logger.info(" ");
       logger.info(String.format(" ------------------Exchange Cycle %d------------------\n", i+1));
       exchange();
@@ -331,6 +331,7 @@ public class PhReplicaExchange implements Terminatable {
 
     // Compute the change in energy over kT (E/kT) for the Metropolis criteria.
     double deltaE = beta * ((acidostatAatB + acidostatBatA) - (acidostatA + acidostatB));
+    logger.info(" deltaE = " + beta + " * ((" + acidostatAatB + " + " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + "))");
     logger.info(" DeltaE: " + deltaE);
 
     //Count the number of trials for each temp
