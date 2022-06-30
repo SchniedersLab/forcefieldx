@@ -46,7 +46,6 @@ import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.cli.AtomSelectionOptions
-import ffx.potential.cli.TopologyOptions
 import ffx.potential.extended.ExtendedSystem
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
@@ -58,6 +57,8 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
+import static org.apache.commons.math3.util.FastMath.abs
+import static org.apache.commons.math3.util.FastMath.abs
 
 /**
  * The Minimize script uses a limited-memory BFGS algorithm to minimize the energy of a molecular system.
@@ -83,14 +84,19 @@ class MinimizePh extends AlgorithmsScript {
   double pH = 7.4
 
   /**
+   * --coords
+   */
+  @CommandLine.Option(names = ['--coords'], paramLabel = 'false',
+          description = 'Minimize spatial coordinates along with titration')
+  boolean coords = false
+  /**
    * The final argument(s) should be one or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = 'Atomic coordinate files in PDB or XYZ format.')
-  List<String> filename = null
+  private String filename = null
 
   private int threadsAvail = ParallelTeam.getDefaultThreadCount()
   private int threadsPer = threadsAvail
-  MolecularAssembly[] topologies
   private ForceFieldEnergy forceFieldEnergy
 
   /**
@@ -143,88 +149,98 @@ class MinimizePh extends AlgorithmsScript {
     double[] x = new double[forceFieldEnergy.getNumberOfVariables()]
     forceFieldEnergy.getCoordinates(x)
     forceFieldEnergy.energy(x, true)
+    PhMinimize minimize = new PhMinimize(activeAssembly, forceFieldEnergy, algorithmListener, esvSystem)
 
-    PhMinimize minimize = new PhMinimize(topologies[0], algorithmListener, esvSystem)
-    minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
+    double energy = minimize.getEnergy()
+    double tolerance = 1.0e-10
+
+    if(coords){
+      while (true) {
+        // Complete a round of coordinate optimization.
+        minimize.minimizeCoordinates(minimizeOptions.eps, minimizeOptions.iterations)
+        double newEnergy = minimize.getEnergy()
+        int status = minimize.getStatus()
+        if (status != 0) {
+          break
+        }
+        if (abs(newEnergy - energy) <= tolerance) {
+          break
+        }
+        energy = newEnergy
+
+        // Complete a round of titration optimization.
+        minimize.minimizeTitration(minimizeOptions.eps, minimizeOptions.iterations)
+        newEnergy = minimize.getEnergy()
+        status = minimize.getStatus()
+        if (status != 0) {
+          break
+        }
+        if (abs(newEnergy - energy) <= tolerance) {
+          break
+        }
+        energy = newEnergy
+      }
+    }
+    else{
+      minimize.minimizeTitration(minimizeOptions.getEps(), minimizeOptions.getIterations())
+    }
 
     forceFieldEnergy.getCoordinates(x)
     forceFieldEnergy.energy(x, true)
+    esvSystem.writeRestart()
 
-    if (topologies.length > 1) {
-      // Handle Multiple Topology Cases.
-      for (molecularAssembly in topologies) {
-        String modelFilename = molecularAssembly.getFile().getAbsolutePath()
+    // Handle Single Topology Cases.
+    String modelFilename = activeAssembly.getFile().getAbsolutePath()
+    if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
+      baseDir = new File(FilenameUtils.getFullPath(modelFilename))
+    }
 
-        if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
-          baseDir = new File(FilenameUtils.getFullPath(modelFilename))
-        }
-
-        String dirName = baseDir.toString() + File.separator
-        String fileName = FilenameUtils.getName(modelFilename)
-        String ext = FilenameUtils.getExtension(fileName)
-        fileName = FilenameUtils.removeExtension(fileName)
-
-        if (ext.toUpperCase().contains("XYZ")) {
-          algorithmFunctions.saveAsXYZ(molecularAssembly, new File(dirName + fileName + ".xyz"))
-        } else {
-          algorithmFunctions.saveAsPDB(molecularAssembly, new File(dirName + fileName + ".pdb"))
-        }
-      }
+    String dirName = baseDir.toString() + File.separator
+    String fileName = FilenameUtils.getName(modelFilename)
+    String ext = FilenameUtils.getExtension(fileName)
+    fileName = FilenameUtils.removeExtension(fileName)
+    File saveFile
+    SystemFilter writeFilter
+    if (ext.toUpperCase().contains("XYZ")) {
+      saveFile = new File(dirName + fileName + ".xyz")
+      writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
+          activeAssembly.getProperties())
+      algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
+    } else if (ext.toUpperCase().contains("ARC")) {
+      saveFile = new File(dirName + fileName + ".arc")
+      saveFile = algorithmFunctions.versionFile(saveFile)
+      writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
+          activeAssembly.getProperties())
+      algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
     } else {
-      // Handle Single Topology Cases.
-      setActiveAssembly(topologies[0])
-      String modelFilename = activeAssembly.getFile().getAbsolutePath()
-      if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
-        baseDir = new File(FilenameUtils.getFullPath(modelFilename))
+      saveFile = new File(dirName + fileName + ".pdb")
+      saveFile = algorithmFunctions.versionFile(saveFile)
+      writeFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
+          activeAssembly.getProperties())
+      int numModels = systemFilter.countNumModels()
+      if (numModels > 1) {
+        writeFilter.setModelNumbering(0)
       }
+      writeFilter.writeFile(saveFile, true, false, false)
+    }
 
-      String dirName = baseDir.toString() + File.separator
-      String fileName = FilenameUtils.getName(modelFilename)
-      String ext = FilenameUtils.getExtension(fileName)
-      fileName = FilenameUtils.removeExtension(fileName)
-      File saveFile
-      SystemFilter writeFilter
-      if (ext.toUpperCase().contains("XYZ")) {
-        saveFile = new File(dirName + fileName + ".xyz")
-        writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
-            activeAssembly.getProperties())
-        algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
-      } else if (ext.toUpperCase().contains("ARC")) {
-        saveFile = new File(dirName + fileName + ".arc")
-        saveFile = algorithmFunctions.versionFile(saveFile)
-        writeFilter = new XYZFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
-            activeAssembly.getProperties())
-        algorithmFunctions.saveAsXYZ(activeAssembly, saveFile)
-      } else {
-        saveFile = new File(dirName + fileName + ".pdb")
-        saveFile = algorithmFunctions.versionFile(saveFile)
-        writeFilter = new PDBFilter(saveFile, activeAssembly, activeAssembly.getForceField(),
-            activeAssembly.getProperties())
-        int numModels = systemFilter.countNumModels()
-        if (numModels > 1) {
-          writeFilter.setModelNumbering(0)
-        }
-        writeFilter.writeFile(saveFile, true, false, false)
-      }
-
-      if (systemFilter instanceof XYZFilter || systemFilter instanceof PDBFilter) {
-        while (systemFilter.readNext()) {
-          Crystal crystal = activeAssembly.getCrystal()
-          ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
-          forceFieldEnergy.setCrystal(crystal)
-          if (systemFilter instanceof PDBFilter) {
-            saveFile.append("ENDMDL\n")
-            minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
-            PDBFilter pdbFilter = (PDBFilter) systemFilter
-            pdbFilter.writeFile(saveFile, true, false, false)
-          } else if (systemFilter instanceof XYZFilter) {
-            minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
-            writeFilter.writeFile(saveFile, true)
-          }
-        }
+    if (systemFilter instanceof XYZFilter || systemFilter instanceof PDBFilter) {
+      while (systemFilter.readNext()) {
+        Crystal crystal = activeAssembly.getCrystal()
+        ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
+        forceFieldEnergy.setCrystal(crystal)
         if (systemFilter instanceof PDBFilter) {
-          saveFile.append("END\n")
+          saveFile.append("ENDMDL\n")
+          minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
+          PDBFilter pdbFilter = (PDBFilter) systemFilter
+          pdbFilter.writeFile(saveFile, true, false, false)
+        } else if (systemFilter instanceof XYZFilter) {
+          minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
+          writeFilter.writeFile(saveFile, true)
         }
+      }
+      if (systemFilter instanceof PDBFilter) {
+        saveFile.append("END\n")
       }
     }
 

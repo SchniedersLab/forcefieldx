@@ -77,14 +77,11 @@ import org.apache.commons.io.FilenameUtils;
 public class ExtendedSystem implements Potential {
 
     private static final Logger logger = Logger.getLogger(ExtendedSystem.class.getName());
-
     private static final double THETA_MASS = 5.0; //Atomic Mass Units
-
     private static final double THETA_FRICTION = 5.0; // psec^-1
-
     private static final double DISCR_BIAS = 1.0; // kcal/mol
-
     private static final double LOG10 = log(10.0);
+
     private static final int discrBiasIndex = 0;
     private static final int pHBiasIndex = 1;
     private static final int modelBiasIndex = 2;
@@ -136,6 +133,10 @@ public class ExtendedSystem implements Potential {
      * when an Extended System is attached.
      */
     private final TitrationUtils titrationUtils;
+
+    /** ForceField Energy Instance. This instance is only used for Potential implementations for grabbing the energy components.
+     */
+    private final ForceFieldEnergy forceFieldEnergy;
 
     /**
      * Number of atoms in the molecular assembly. Since all protons are instantiated at start, this int will not change.
@@ -241,24 +242,24 @@ public class ExtendedSystem implements Potential {
      * Coefficients that define the per residue type Fmod polynomial
      * refEnergy * titrationLambda^2 + lambdaIntercept * titrationLambda
      */
-    final private double ASHrefEnergy;
-    final private double ASHlambdaIntercept;
-    final private double GLHrefEnergy;
-    final private double GLHlambdaIntercept;
-    final private double LYSrefEnergy;
-    final private double LYSlambdaIntercept;
-    final private double CYSrefEnergy;
-    final private double CYSlambdaIntercept;
-    final private double HIDrefEnergy;
-    final private double HIDlambdaIntercept;
-    final private double HIErefEnergy;
-    final private double HIElambdaIntercept;
+    private final double ASHrefEnergy;
+    private final double ASHlambdaIntercept;
+    private final double GLHrefEnergy;
+    private final double GLHlambdaIntercept;
+    private final double LYSrefEnergy;
+    private final double LYSlambdaIntercept;
+    private final double CYSrefEnergy;
+    private final double CYSlambdaIntercept;
+    private final double HIDrefEnergy;
+    private final double HIDlambdaIntercept;
+    private final double HIErefEnergy;
+    private final double HIElambdaIntercept;
     /**
      * Coefficients that define the tautomer component of the bivariate Histidine Fmod
      * refEnergy * tautomerLambda^2 + lambdaIntercept * tautomerLambda
      */
-    final private double HIDtoHIErefEnergy;
-    final private double HIDtoHIElambdaIntercept;
+    private final double HIDtoHIErefEnergy;
+    private final double HIDtoHIElambdaIntercept;
     /**
      * Dynamics restart file.
      */
@@ -286,7 +287,7 @@ public class ExtendedSystem implements Potential {
         extendedMolecules = mola.getMoleculeNumbers();
 
         ForceField forceField = mola.getForceField();
-        ForceFieldEnergy forceFieldEnergy = mola.getPotentialEnergy();
+        forceFieldEnergy = mola.getPotentialEnergy();
         if (forceFieldEnergy == null) {
             logger.severe("No potential energy found?");
         }
@@ -297,13 +298,6 @@ public class ExtendedSystem implements Potential {
         doElectrostatics = properties.getBoolean("esv.elec", true);
         doBias = properties.getBoolean("esv.bias", true);
         doPolarization = properties.getBoolean("esv.polarization", true);
-//        boolean bonded = properties.getBoolean("esv.bonded", false);
-//        boolean verbose = properties.getBoolean("esv.verbose", false);
-//        boolean decomposeBonded = properties.getBoolean("esv.decomposeBonded", false);
-//        boolean decomposeDeriv = properties.getBoolean("esv.decomposeDeriv", false);
-//        boolean nonlinearMultipoles = properties.getBoolean("esv.nonlinearMultipoles", false); // sigmoid lambda Mpole switch
-//        boolean forceRoomTemp = properties.getBoolean("esv.forceRoomTemp", false);
-//        boolean propagation = properties.getBoolean("esv.propagation", true);
         thetaFriction = properties.getDouble("esv.friction", ExtendedSystem.THETA_FRICTION);
         thetaMass = properties.getDouble("esv.mass", ExtendedSystem.THETA_MASS);
         titrBiasMag = properties.getDouble("titration.bias.magnitude", DISCR_BIAS);
@@ -841,6 +835,33 @@ public class ExtendedSystem implements Potential {
         esvHistogram[esv][titrValue][tautValue]++;
     }
 
+    //Naive guess as to what the best starting state should be based purely on the acidostat term.
+    private double initialTitrationState(Residue residue, double initialLambda){
+        AminoAcid3 AA3 = residue.getAminoAcid3();
+        double initialTitrationLambda;
+        switch (AA3){
+            case ASD:
+                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.ASHtoASP.pKa) ? 1.0 : 0.0;
+                break;
+            case GLD:
+                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.GLHtoGLU.pKa) ? 1.0 : 0.0;
+                break;
+            case HIS:
+                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.HIStoHID.pKa) ? 1.0 : 0.0;
+                break;
+            case LYS:
+                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.LYStoLYD.pKa) ? 1.0 : 0.0;
+                break;
+            case CYS:
+                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.CYStoCYD.pKa) ? 1.0 : 0.0;
+                break;
+            default:
+                initialTitrationLambda = initialLambda;
+                break;
+        }
+        return initialTitrationLambda;
+    }
+
     public void initEsvVdw() {
         for (int i = 0; i < nESVs; i++) {
             esvVdwDerivs[i].set(0.0);
@@ -1241,6 +1262,12 @@ public class ExtendedSystem implements Potential {
         return dEdTheta;
     }
 
+    private double[] fillESVgradient(double[] g){
+        double[] gradESV = postForce();
+        System.arraycopy(gradESV,0, g,0, g.length);
+        return g;
+    }
+
     public void writeRestart() {
         String esvName = FileUtils.relativePathTo(restartFile).toString();
         if (esvFilter.writeESV(restartFile, thetaPosition, thetaVelocity, thetaAccel)) {
@@ -1276,41 +1303,19 @@ public class ExtendedSystem implements Potential {
         }
     }
 
-    //Naive guess as to what the best starting state should be based purely on the acidostat term.
-    private double initialTitrationState(Residue residue, double initialLambda){
-        AminoAcid3 AA3 = residue.getAminoAcid3();
-        double initialTitrationLambda;
-        switch (AA3){
-            case ASD:
-                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.ASHtoASP.pKa) ? 1.0 : 0.0;
-                break;
-            case GLD:
-                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.GLHtoGLU.pKa) ? 1.0 : 0.0;
-                break;
-            case HIS:
-                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.HIStoHID.pKa) ? 1.0 : 0.0;
-                break;
-            case LYS:
-                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.LYStoLYD.pKa) ? 1.0 : 0.0;
-                break;
-            case CYS:
-                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.CYStoCYD.pKa) ? 1.0 : 0.0;
-                break;
-            default:
-                initialTitrationLambda = initialLambda;
-                break;
-        }
-        return initialTitrationLambda;
-    }
-
     @Override
     public double energy(double[] x) {
-        return 0;
+        double[] coords = new double[forceFieldEnergy.getNumberOfVariables()];
+        forceFieldEnergy.getCoordinates(coords);
+        return forceFieldEnergy.energy(coords);
     }
 
     @Override
     public double energyAndGradient(double[] x, double[] g) {
-        return 0;
+        System.arraycopy(x, 0, thetaPosition, 0, thetaPosition.length);
+        updateLambdas();
+        fillESVgradient(g);
+        return energy(x);
     }
 
     @Override
@@ -1340,7 +1345,7 @@ public class ExtendedSystem implements Potential {
 
     @Override
     public int getNumberOfVariables() {
-        return 0;
+        return nESVs;
     }
 
     @Override
@@ -1350,7 +1355,9 @@ public class ExtendedSystem implements Potential {
 
     @Override
     public double[] getScaling() {
-        return new double[0];
+        double[] scaling = new double[nESVs];
+        Arrays.fill(scaling, 1.0);
+        return scaling;
     }
 
     @Override
