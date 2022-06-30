@@ -474,39 +474,39 @@ public class CoulombTensorQI extends MultipoleTensor {
 
   /** {@inheritDoc} */
   @Override
-  protected void dipoleIPotentialAtK(PolarizableMultipole mI, int order) {
+  protected void dipoleIPotentialAtK(double uxi, double uyi, double uzi, int order) {
     switch (order) {
-      default:
       case 3:
-        // Order 3.
-        E300 = -mI.dx * R400;
-        E030 = -mI.dy * R040;
-        E003 = -mI.dz * R004;
-        E210 = -mI.dy * R220;
-        E201 = -mI.dz * R202;
-        E120 = -mI.dx * R220;
-        E021 = -mI.dz * R022;
-        E102 = -mI.dx * R202;
-        E012 = -mI.dy * R022;
+      default:
+        // Order 3
+        E300 = -uxi * R400;
+        E030 = -uyi * R040;
+        E003 = -uzi * R004;
+        E210 = -uyi * R220;
+        E201 = -uzi * R202;
+        E120 = -uxi * R220;
+        E021 = -uzi * R022;
+        E102 = -uxi * R202;
+        E012 = -uyi * R022;
         E111 = 0.0;
         // Fall through to 2nd order.
       case 2:
         // Order 2.
-        E200 = -mI.dz * R201;
-        E020 = -mI.dz * R021;
-        E002 = -mI.dz * R003;
+        E200 = -uzi * R201;
+        E020 = -uzi * R021;
+        E002 = -uzi * R003;
         E110 = 0.0;
-        E101 = -mI.dx * R201;
-        E011 = -mI.dy * R021;
+        E101 = -uxi * R201;
+        E011 = -uyi * R021;
         // Fall through to 1st order.
       case 1:
         // Order 1.
-        E100 = -mI.dx * R200;
-        E010 = -mI.dy * R020;
-        E001 = -mI.dz * R002;
+        E100 = -uxi * R200;
+        E010 = -uyi * R020;
+        E001 = -uzi * R002;
         // Fall through to the potential.
       case 0:
-        E000 = -mI.dz * R001;
+        E000 = -uzi * R001;
     }
   }
 
@@ -738,38 +738,35 @@ public class CoulombTensorQI extends MultipoleTensor {
 
   /** {@inheritDoc} */
   @Override
-  protected void dipoleKPotentialAtI(PolarizableMultipole mK, int order) {
+  protected void dipoleKPotentialAtI(double uxk, double uyk, double uzk, int order) {
     switch (order) {
-      default:
       case 3:
+      default:
         // Order 3
-        E300 = -mK.dx * R400;
-        E030 = -mK.dy * R040;
-        E003 = -mK.dz * R004;
-        E210 = -mK.dy * R220;
-        E201 = -mK.dz * R202;
-        E120 = -mK.dx * R220;
-        E021 = -mK.dz * R022;
-        E102 = -mK.dx * R202;
-        E012 = -mK.dy * R022;
+        E300 = -uxk * R400;
+        E030 = -uyk * R040;
+        E003 = -uzk * R004;
+        E210 = -uyk * R220;
+        E201 = -uzk * R202;
+        E120 = -uxk * R220;
+        E021 = -uzk * R022;
+        E102 = -uxk * R202;
+        E012 = -uyk * R022;
         E111 = 0.0;
         // Fall through to 2nd order.
       case 2:
-        // Order 2
-        E200 = mK.dz * R201;
-        E020 = mK.dz * R021;
-        E002 = mK.dz * R003;
+        E200 = uzk * R201;
+        E020 = uzk * R021;
+        E002 = uzk * R003;
         E110 = 0.0;
-        E101 = mK.dx * R201;
-        E011 = mK.dy * R021;
-        // Fall through to 1st order.
+        E101 = uxk * R201;
+        E011 = uyk * R021;
       case 1:
-        // Order 1
-        E100 = -mK.dx * R200;
-        E010 = -mK.dy * R020;
-        E001 = -mK.dz * R002;
+        E100 = -uxk * R200;
+        E010 = -uyk * R020;
+        E001 = -uzk * R002;
       case 0:
-        E000 = mK.dz * R001;
+        E000 = uzk * R001;
     }
   }
 
@@ -840,141 +837,6 @@ public class CoulombTensorQI extends MultipoleTensor {
         term000 = fma(mK.qzz, R002, term000);
         E000 = term000;
     }
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  protected void inducedIPotentialAtK(PolarizableMultipole mI, int order) {
-    switch (order) {
-      case 3:
-      default:
-        // Order 3
-        E300 = -mI.ux * R400;
-        E030 = -mI.uy * R040;
-        E003 = -mI.uz * R004;
-        E210 = -mI.uy * R220;
-        E201 = -mI.uz * R202;
-        E120 = -mI.ux * R220;
-        E021 = -mI.uz * R022;
-        E102 = -mI.ux * R202;
-        E012 = -mI.uy * R022;
-        E111 = 0.0;
-        // Fall through to 2nd order.
-      case 2:
-        // Order 2.
-        E200 = -mI.uz * R201;
-        E020 = -mI.uz * R021;
-        E002 = -mI.uz * R003;
-        E110 = 0.0;
-        E101 = -mI.ux * R201;
-        E011 = -mI.uy * R021;
-        // Fall through to 1st order.
-      case 1:
-        // Order 1.
-        E100 = -mI.ux * R200;
-        E010 = -mI.uy * R020;
-        E001 = -mI.uz * R002;
-        // Fall through to the potential.
-      case 0:
-        E000 = -mI.uz * R001;
-    }
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  protected void inducedICRPotentialAtK(PolarizableMultipole mI) {
-    E000 = -mI.pz * R001;
-    E100 = -mI.px * R200;
-    E010 = -mI.py * R020;
-    E001 = -mI.pz * R002;
-    E200 = -mI.pz * R201;
-    E020 = -mI.pz * R021;
-    E002 = -mI.pz * R003;
-    E110 = 0.0;
-    E101 = -mI.px * R201;
-    E011 = -mI.py * R021;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  protected void inducedITotalPotentialAtK(PolarizableMultipole mI) {
-    E000 = -mI.sz * R001;
-    E100 = -mI.sx * R200;
-    E010 = -mI.sy * R020;
-    E001 = -mI.sz * R002;
-    E200 = -mI.sz * R201;
-    E020 = -mI.sz * R021;
-    E002 = -mI.sz * R003;
-    E110 = 0.0;
-    E101 = -mI.sx * R201;
-    E011 = -mI.sy * R021;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  protected void inducedKPotentialAtI(PolarizableMultipole mK, int order) {
-    switch (order) {
-      case 3:
-      default:
-        // Order 3
-        E300 = -mK.ux * R400;
-        E030 = -mK.uy * R040;
-        E003 = -mK.uz * R004;
-        E210 = -mK.uy * R220;
-        E201 = -mK.uz * R202;
-        E120 = -mK.ux * R220;
-        E021 = -mK.uz * R022;
-        E102 = -mK.ux * R202;
-        E012 = -mK.uy * R022;
-        E111 = 0.0;
-        // Fall through to 2nd order.
-      case 2:
-        E200 = mK.uz * R201;
-        E020 = mK.uz * R021;
-        E002 = mK.uz * R003;
-        E110 = 0.0;
-        E101 = mK.ux * R201;
-        E011 = mK.uy * R021;
-      case 1:
-        E100 = -mK.ux * R200;
-        E010 = -mK.uy * R020;
-        E001 = -mK.uz * R002;
-      case 0:
-        E000 = mK.uz * R001;
-    }
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  protected void inducedKCRPotentialAtI(PolarizableMultipole mK) {
-    E000 = mK.pz * R001;
-    E100 = -mK.px * R200;
-    E010 = -mK.py * R020;
-    E001 = -mK.pz * R002;
-    E200 = mK.pz * R201;
-    E020 = mK.pz * R021;
-    E002 = mK.pz * R003;
-    E110 = 0.0;
-    E101 = mK.px * R201;
-    E011 = mK.py * R021;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  protected void inducedKTotalPotentialAtI(PolarizableMultipole mK) {
-    // Potential
-    E000 = mK.sz * R001;
-    // Order 1.
-    E100 = -mK.sx * R200;
-    E010 = -mK.sy * R020;
-    E001 = -mK.sz * R002;
-    // Order 2.
-    E200 = mK.sz * R201;
-    E020 = mK.sz * R021;
-    E002 = mK.sz * R003;
-    E110 = 0.0;
-    E101 = mK.sx * R201;
-    E011 = mK.sy * R021;
   }
 
   /** {@inheritDoc} */

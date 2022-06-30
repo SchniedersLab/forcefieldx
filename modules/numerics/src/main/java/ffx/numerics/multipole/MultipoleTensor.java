@@ -530,24 +530,24 @@ public abstract class MultipoleTensor {
     // This contribution does not exist for direct polarization (mutualMask == 0.0).
     if (mutualMask != 0.0) {
       // Find the potential and its derivatives at k due to induced dipole i.
-      inducedIPotentialAtK(mI, 2);
+      dipoleIPotentialAtK(mI.ux, mI.uy, mI.uz, 2);
       Gi[0] -= 0.5 * mutualMask * (mK.px * E200 + mK.py * E110 + mK.pz * E101);
       Gi[1] -= 0.5 * mutualMask * (mK.px * E110 + mK.py * E020 + mK.pz * E011);
       Gi[2] -= 0.5 * mutualMask * (mK.px * E101 + mK.py * E011 + mK.pz * E002);
 
       // Find the potential and its derivatives at i due to induced dipole k.
-      inducedKPotentialAtI(mK, 2);
+      dipoleKPotentialAtI(mK.ux, mK.uy, mK.uz, 2);
       Gi[0] += 0.5 * mutualMask * (mI.px * E200 + mI.py * E110 + mI.pz * E101);
       Gi[1] += 0.5 * mutualMask * (mI.px * E110 + mI.py * E020 + mI.pz * E011);
       Gi[2] += 0.5 * mutualMask * (mI.px * E101 + mI.py * E011 + mI.pz * E002);
     }
 
     // Find the potential and its derivatives at K due to the averaged induced dipole at i.
-    inducedITotalPotentialAtK(mI);
+    dipoleIPotentialAtK(mI.sx, mI.sy, mI.sz, 2);
     multipoleTorque(mK, Tk);
 
     // Find the potential and its derivatives at I due to the averaged induced dipole at k.
-    inducedKTotalPotentialAtI(mK);
+    dipoleKPotentialAtI(mK.sx, mK.sy, mK.sz, 2);
     multipoleTorque(mI, Ti);
 
     return energy;
@@ -1421,15 +1421,14 @@ public abstract class MultipoleTensor {
   protected abstract void chargeIPotentialAtK(PolarizableMultipole mI, int order);
 
   /**
-   * Compute the field components due to dipole I at site K.
+   * Compute the induced dipole field components due to site I at site K.
    *
-   * @param mI PolarizableMultipole at site I.
-   * @param order Compute derivatives of the potential up to this order. Order 0: Electrostatic
-   *     potential (E000) Order 1: First derivatives: d/dX is E100, d/dY is E010, d/dZ is E001. Order
-   *     2: Second derivatives: d2/dXdX is E200, d2/dXdY is E110 (needed for quadrupole energy) Order
-   *     3: 3rd derivatives: (needed for quadrupole forces).
+   * @param uxi X-dipole component.
+   * @param uyi Y-dipole component.
+   * @param uzi Z-dipole component.
+   * @param order Potential order.
    */
-  protected abstract void dipoleIPotentialAtK(PolarizableMultipole mI, int order);
+  protected abstract void dipoleIPotentialAtK(double uxi, double uyi, double uzi, int order);
 
   /**
    * Compute the field components due to quadrupole I at site K.
@@ -1465,15 +1464,14 @@ public abstract class MultipoleTensor {
   protected abstract void chargeKPotentialAtI(PolarizableMultipole mK, int order);
 
   /**
-   * Compute the field components due to multipole K at site I.
+   * Compute the induced dipole field components due to site K at site I.
    *
-   * @param mK PolarizableMultipole at site K.
-   * @param order Compute derivatives of the potential up to this order. Order 0: Electrostatic
-   *     potential (E000) Order 1: First derivatives: d/dX is E100, d/dY is E010, d/dZ is E001. Order
-   *     2: Second derivatives: d2/dXdX is E200, d2/dXdY is E110 (needed for quadrupole energy) Order
-   *     3: 3rd derivatives: (needed for quadrupole forces).
+   * @param uxk X-dipole component.
+   * @param uyk Y-dipole component.
+   * @param uzk Z-dipole component.
+   * @param order Potential order.
    */
-  protected abstract void dipoleKPotentialAtI(PolarizableMultipole mK, int order);
+  protected abstract void dipoleKPotentialAtI(double uxk, double uyk, double uzk, int order);
 
   /**
    * Compute the field components due to multipole K at site I.
@@ -1485,52 +1483,6 @@ public abstract class MultipoleTensor {
    *     3: 3rd derivatives: (needed for quadrupole forces).
    */
   protected abstract void quadrupoleKPotentialAtI(PolarizableMultipole mK, int order);
-
-  /**
-   * Compute the induced dipole field components due to site I at site K.
-   *
-   * @param mI PolarizableMultipole at site I.
-   * @param order Potential order.
-   */
-  protected abstract void inducedIPotentialAtK(PolarizableMultipole mI, int order);
-
-  /**
-   * Compute the induced dipole chain-rule field components due to site I at site K.
-   *
-   * @param mI PolarizableMultipole at site I.
-   */
-  protected abstract void inducedICRPotentialAtK(PolarizableMultipole mI);
-
-  /**
-   * Compute the induced dipole + induced dipole chain-rule field components due to site I at site
-   * K.
-   *
-   * @param mI PolarizableMultipole at site I.
-   */
-  protected abstract void inducedITotalPotentialAtK(PolarizableMultipole mI);
-
-  /**
-   * Compute the induced dipole field components due to site K at site I.
-   *
-   * @param mK PolarizableMultipole at site K.
-   * @param order Potential order.
-   */
-  protected abstract void inducedKPotentialAtI(PolarizableMultipole mK, int order);
-
-  /**
-   * Compute the induced dipole chain-rule field components due to site K at site I.
-   *
-   * @param mK PolarizableMultipole at site K.
-   */
-  protected abstract void inducedKCRPotentialAtI(PolarizableMultipole mK);
-
-  /**
-   * Compute the induced dipole + induced dipole chain-rule field components due to site K at site
-   * I.
-   *
-   * @param mK PolarizableMultipole at site K.
-   */
-  protected abstract void inducedKTotalPotentialAtI(PolarizableMultipole mK);
 
   /**
    * Contract multipole moments with their respective electrostatic potential derivatives.
