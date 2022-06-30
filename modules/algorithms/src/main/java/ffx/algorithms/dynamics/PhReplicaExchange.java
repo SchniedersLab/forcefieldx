@@ -40,6 +40,7 @@ package ffx.algorithms.dynamics;
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
 import ffx.algorithms.Terminatable;
+import ffx.numerics.Potential;
 import ffx.potential.extended.ExtendedSystem;
 import org.apache.commons.math3.util.FastMath;
 
@@ -94,7 +95,9 @@ public class PhReplicaExchange implements Terminatable {
   private final ExtendedSystem extendedSystem;
   private final double pH;
   private double gapSize;
-  private int centerIndex;
+  private double[] x;
+  private MolecularDynamicsOpenMM openMM = null;
+  private Potential potential;
 
   /**
    * ReplicaExchange constructor.
@@ -102,6 +105,8 @@ public class PhReplicaExchange implements Terminatable {
    * @param molecularDynamics a {@link MolecularDynamics} object.
    * @param pH pH = pKa <-- will be changed from this initial value
    * @param extendedSystem extended system attached to this process
+   * @param pHGap the gap in pH units between replicas
+   * @param temp
    */
   public PhReplicaExchange(
       MolecularDynamics molecularDynamics, double pH, double pHGap, double temp, ExtendedSystem extendedSystem) {
@@ -130,13 +135,63 @@ public class PhReplicaExchange implements Terminatable {
 
     setEvenSpacePhLadder(pHGap);
 
-    double distance = 100;
-    for (int i = 0; i < pHScale.length; i++){
-      if(FastMath.abs(pHScale[i] - pH) < distance){
-        distance = pHScale[i] - pH;
-        centerIndex = i;
-      }
+    random = new Random();
+    random.setSeed(0);
+
+    // Create arrays to store the parameters of all processes.
+    parameters = new double[nReplicas][4]; //
+    parametersBuf = new DoubleBuf[nReplicas];
+    for (int i = 0; i < nReplicas; i++) {
+      parametersBuf[i] = DoubleBuf.buffer(parameters[i]);
     }
+
+    // A convenience reference to the parameters of this process are updated
+    // during communication calls.
+    myParameters = parameters[rank];
+    myParametersBuf = parametersBuf[rank];
+  }
+
+  /**
+   * OpenMM ReplicaExchange constructor.
+   *
+   * @param molecularDynamics a {@link MolecularDynamics} object.
+   * @param pH pH = pKa <-- will be changed from this initial value
+   * @param extendedSystem extended system attached to this process
+   * @param pHGap the gap in pH units between replicas
+   * @param temp
+   * @param x array of coordinates
+   * @param molecularDynamicsOpenMM for running config steps on GPU
+   */
+  public PhReplicaExchange(
+          MolecularDynamics molecularDynamics, double pH, double pHGap, double temp, ExtendedSystem extendedSystem,
+          double[] x, MolecularDynamicsOpenMM molecularDynamicsOpenMM, Potential potential) {
+
+    this.replica = molecularDynamics;
+    this.temp = temp;
+    this.extendedSystem = extendedSystem;
+    this.pH = pH;
+    this.gapSize = pHGap;
+    this.x = x;
+    this.openMM = molecularDynamicsOpenMM;
+    this.potential = potential;
+
+    // Set up the Replica Exchange communication variables for Parallel Java communication between
+    // nodes.
+    world = Comm.world();
+
+    // Number of processes is equal to the number of replicas.
+    int numProc = world.size();
+    rank = world.rank();
+
+    nReplicas = numProc;
+    pHScale = new double[nReplicas];
+    pH2Rank = new int[nReplicas];
+    rank2Ph = new int[nReplicas];
+    pHAcceptedCount = new int[nReplicas];
+    rankAcceptedCount = new int [nReplicas];
+    pHTrialCount = new int[nReplicas];
+
+    setEvenSpacePhLadder(pHGap);
 
     random = new Random();
     random.setSeed(0);
@@ -174,11 +229,27 @@ public class PhReplicaExchange implements Terminatable {
         break;
       }
 
-      dynamics(nSteps, timeStep, printInterval, saveInterval);
-      logger.info(String.format(" Applying exchange condition for cycle %d.", i));
+      if(openMM != null){
+        if(nSteps < 3)
+        {
+          logger.severe("Increase number of steps per cycle.");
+        }
+
+        dynamicsOpenMM(nSteps, timeStep, printInterval, saveInterval);
+      }
+      else {
+        dynamics(nSteps, timeStep, printInterval, saveInterval);
+      }
+
+      logger.info(" ");
+      logger.info(String.format(" ------------------Exchange Cycle %d------------------\n", i+1));
       exchange();
 
+      //extendedSystem.writeLambdaHistogram();
+
+      logger.info(" ");
       logger.info(" Setting rank " + rank + " esv to pH " + pHScale[rank2Ph[rank]]);
+      logger.info(" ");
     }
   }
 
@@ -222,6 +293,11 @@ public class PhReplicaExchange implements Terminatable {
     }
   }
 
+  /**
+   * Evaluate whether or not to exchange
+   * @param pH what pH to have as the replica target
+   * @param countingDown
+   */
   private void compareTwo(int pH, boolean countingDown){
     // Ranks for pH A and B
     int rankA;
@@ -251,22 +327,12 @@ public class PhReplicaExchange implements Terminatable {
     acidostatBatA = parameters[rankB][1];
 
     logger.info(" ");
-    logger.info(" ");
-    logger.info("\t\t ----------------------New Comparison----------------------");
     logger.info(" From rank " + rank + ": Comparing ranks " + rankA + " (pH = " + pHA + ") & " + rankB + " (pH = " + pHB + ")");
 
     // Compute the change in energy over kT (E/kT) for the Metropolis criteria.
-    logger.info(" pHA = " + pHA);
-    logger.info(" AcidostatA: "  + acidostatA);
-    logger.info(" AcidostatAatB: " + acidostatAatB);
-
-    logger.info(" pHB = " + pHB);
-    logger.info(" AcidostatB: " + acidostatB);
-    logger.info(" AcidostatBatA: " + acidostatBatA);
-
     double deltaE = beta * ((acidostatAatB + acidostatBatA) - (acidostatA + acidostatB));
-    logger.info(" exp(" + beta + " * ((" + acidostatAatB + " + " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + ")))");
-    logger.info("\t DeltaE: " + deltaE);
+    logger.info(" deltaE = " + beta + " * ((" + acidostatAatB + " + " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + "))");
+    logger.info(" DeltaE: " + deltaE);
 
     //Count the number of trials for each temp
     pHTrialCount[pH]++;
@@ -296,35 +362,31 @@ public class PhReplicaExchange implements Terminatable {
 
   /** All processes complete the exchanges identically given the same Random number seed. */
   private void exchange() {
-    // 2 M.C. trials per pH (except for those at the ends of the ladder).
-
     // Loop over top and bottom parts of pH scale
     for (int pH = 0; pH < nReplicas - 1; pH++) {
       compareTwo(pH, false);
     }
 
+    logger.info(" ");
+    // Print Exchange Info
     for (int i = 0; i < pHScale.length - 1; i++) {
       double pHAcceptance = pHAcceptedCount[i] * 100.0 / (pHTrialCount[i]);
-
       logger.info(" Acceptance for pH " + pHScale[i] + " to be exchanged with pH " + pHScale[i+1] + ": " + pHAcceptance);
       }
+    logger.info(" ");
   }
 
 
   /**
    * Blocking dynamic steps: when this method returns each replica has completed the requested
-   * number of steps.
+   * number of steps. Both OpenMM and CPU implementations exist
    *
    * @param nSteps the number of time steps.
    * @param timeStep the time step.
    * @param printInterval the number of steps between loggging updates.
    * @param saveInterval the number of steps between saving snapshots.
    */
-  private void dynamics(
-      final long nSteps,
-      final double timeStep,
-      final double printInterval,
-      final double saveInterval) {
+  private void dynamicsOpenMM(final long nSteps, final double timeStep, final double printInterval, final double saveInterval) {
 
     int i = rank2Ph[rank];
 
@@ -332,18 +394,73 @@ public class PhReplicaExchange implements Terminatable {
 
     // Start this processes MolecularDynamics instance sampling.
     boolean initVelocities = true;
+
+    double titrSteps = nSteps / 2.0;
+    int titrStepsOne = (int) titrSteps / 2;
+    int titrStepsTwo = (int) FastMath.ceil(titrSteps / 2.0);
+    int conformSteps = (int) FastMath.ceil(nSteps / 2.0);
+
+    replica.dynamic(titrStepsOne, timeStep, printInterval, saveInterval, temp, initVelocities, null);
+
+    x = replica.getCoordinates();
+    potential.energy(x);
+    openMM.setCoordinates(x);
+
+    openMM.dynamic(conformSteps, timeStep, printInterval, saveInterval, temp, initVelocities, null);
+
+    x = openMM.getCoordinates();
+    replica.setCoordinates(x);
+
+    replica.dynamic(titrStepsTwo, timeStep, printInterval, saveInterval, temp, initVelocities, null);
+
+    // Update this ranks' parameter array to be consistent with the dynamics.
+
+    logger.info(" ----------------------------------" + rank + "@" + rank);
+    myParameters[0] = pHScale[i];
+    myParameters[2] = extendedSystem.getBiasEnergy();
+    logger.info(" ");
+
+    // Evaluate acidostat of ES at different pHs
+    logger.info(" ----------------------------------" + rank + "@" + (rank-1));
+    extendedSystem.setConstantPh(myParameters[0] - gapSize);
+    myParameters[1] = extendedSystem.getBiasEnergy();
+
+    logger.info(" ----------------------------------" + rank + "@" + rank);
+    extendedSystem.setConstantPh(myParameters[0] + gapSize);
+    myParameters[3] = extendedSystem.getBiasEnergy();
+
+    extendedSystem.setConstantPh(myParameters[0]);
+
+    // Gather all parameters from the other processes.
+    try {
+      world.allGather(myParametersBuf, parametersBuf);
+    } catch (IOException ex) {
+      String message = " Replica Exchange allGather failed.";
+      logger.log(Level.SEVERE, message, ex);
+    }
+  }
+
+  private void dynamics(long nSteps, double timeStep, double printInterval, double saveInterval) {
+
+    int i = rank2Ph[rank];
+
+    extendedSystem.setConstantPh(pHScale[i]);
+
+    // Start this processes MolecularDynamics instance sampling.
+    boolean initVelocities = true;
+
     replica.dynamic(
-        nSteps, timeStep, printInterval, saveInterval, temp, initVelocities, null);
+            nSteps, timeStep, printInterval, saveInterval, temp, initVelocities, null);
 
     // Update this ranks' parameter array to be consistent with the dynamics.
     myParameters[0] = pHScale[i];
     myParameters[2] = extendedSystem.getBiasEnergy();
 
     // Evaluate acidostat of ES at different pHs
-    extendedSystem.setConstantPh(myParameters[0] - gapSize);
+    extendedSystem.setConstantPh(myParameters[0] - gapSize); // B at A-gap
     myParameters[1] = extendedSystem.getBiasEnergy();
 
-    extendedSystem.setConstantPh(myParameters[0] - gapSize);
+    extendedSystem.setConstantPh(myParameters[0] + gapSize); // A at A+gap(B)
     myParameters[3] = extendedSystem.getBiasEnergy();
 
     extendedSystem.setConstantPh(myParameters[0]);
