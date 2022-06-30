@@ -53,6 +53,8 @@ import static org.apache.commons.lang3.StringUtils.repeat;
 import static org.apache.commons.math3.util.FastMath.min;
 
 import ffx.crystal.Crystal;
+import ffx.crystal.SpaceGroup;
+import ffx.crystal.SpaceGroupDefinitions;
 import ffx.crystal.SpaceGroupInfo;
 import ffx.crystal.SymOp;
 import ffx.potential.MolecularAssembly;
@@ -1561,6 +1563,58 @@ public final class PDBFilter extends SystemFilter {
                   } else {
                     logger.warning(message);
                   }
+                }
+                break;
+              case CRYST1:
+                // =============================================================================
+                // The CRYST1 record presents the unit cell parameters, space group, and Z
+                // value. If the structure was not determined by crystallographic means, CRYST1
+                // simply provides the unitary values, with an appropriate REMARK.
+                //
+                //  7 - 15       Real(9.3)     a              a (Angstroms).
+                // 16 - 24       Real(9.3)     b              b (Angstroms).
+                // 25 - 33       Real(9.3)     c              c (Angstroms).
+                // 34 - 40       Real(7.2)     alpha          alpha (degrees).
+                // 41 - 47       Real(7.2)     beta           beta (degrees).
+                // 48 - 54       Real(7.2)     gamma          gamma (degrees).
+                // 56 - 66       LString       sGroup         Space  group.
+                // 67 - 70       Integer       z              Z value.
+                // =============================================================================
+                logger.info(" Crystal record found.");
+                if (line.length() < 55) {
+                  logger.severe(" CRYST1 record is improperly formatted.");
+                }
+                double aaxis = parseDouble(line.substring(6, 15).trim());
+                double baxis = parseDouble(line.substring(15, 24).trim());
+                double caxis = parseDouble(line.substring(24, 33).trim());
+                double alpha = parseDouble(line.substring(33, 40).trim());
+                double beta = parseDouble(line.substring(40, 47).trim());
+                double gamma = parseDouble(line.substring(47, 54).trim());
+                int limit = min(line.length(), 66);
+                String sg = line.substring(55, limit).trim();
+//                properties.clearProperty("a-axis");
+//                properties.clearProperty("b-axis");
+//                properties.clearProperty("c-axis");
+//                properties.clearProperty("alpha");
+//                properties.clearProperty("beta");
+//                properties.clearProperty("gamma");
+//                properties.clearProperty("spacegroup");
+//
+//                properties.addProperty("a-axis", aaxis);
+//                properties.addProperty("b-axis", baxis);
+//                properties.addProperty("c-axis", caxis);
+//                properties.addProperty("alpha", alpha);
+//                properties.addProperty("beta", beta);
+//                properties.addProperty("gamma", gamma);
+//                properties.addProperty("spacegroup", SpaceGroupInfo.pdb2ShortName(sg));
+                Crystal crystal = activeMolecularAssembly.getCrystal();
+                SpaceGroup spaceGroup = SpaceGroupDefinitions.spaceGroupFactory(sg);
+                if(Objects.equals(crystal.spaceGroup.shortName, spaceGroup.shortName)) {
+                  crystal.changeUnitCellParameters(aaxis, baxis, caxis, alpha, beta, gamma);
+                }else{
+                  // TODO: Handle changes in space groups... Means recalculating force field terms.
+                  logger.warning(format(" Original space group %s could not be changed to %s",
+                          crystal.spaceGroup.shortName, spaceGroup.shortName));
                 }
                 break;
               case ENDMDL:
