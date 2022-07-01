@@ -139,7 +139,7 @@ public class PhReplicaExchange implements Terminatable {
     random.setSeed(0);
 
     // Create arrays to store the parameters of all processes.
-    parameters = new double[nReplicas][4]; //
+    parameters = new double[nReplicas][5]; //
     parametersBuf = new DoubleBuf[nReplicas];
     for (int i = 0; i < nReplicas; i++) {
       parametersBuf[i] = DoubleBuf.buffer(parameters[i]);
