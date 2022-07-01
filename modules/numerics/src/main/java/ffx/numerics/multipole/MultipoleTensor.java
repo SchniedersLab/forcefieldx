@@ -387,165 +387,6 @@ public abstract class MultipoleTensor {
   }
 
   /**
-   * Returns the number of tensors for derivatives to the given order.
-   *
-   * @param order maximum number of derivatives.
-   * @return the number of tensors.
-   * @since 1.0
-   */
-  public static int tensorCount(int order) {
-    long ret = binomial(order + 3, 3);
-    assert (ret < Integer.MAX_VALUE);
-    return (int) ret;
-  }
-
-  /**
-   * Log the tensors.
-   *
-   * @param operator The OPERATOR to use.
-   * @param order The tensor order.
-   * @param tensor The tensor array.
-   */
-  private static void log(OPERATOR operator, int order, double[] tensor) {
-    final int o1 = order + 1;
-    StringBuilder sb = new StringBuilder();
-
-    sb.append(format("\n %s Operator to order %d:", operator, order));
-    sb.append(format("\n%5s %4s %4s %4s %12s\n", "Index", "d/dx", "d/dy", "d/dz", "Tensor"));
-    sb.append(format("%5d %4d %4d %4d %12.8f\n", 0, 0, 0, 0, tensor[0]));
-    int count = 1;
-    // Print (d/dx)^l for l = 1..order (m = 0, n = 0)
-    for (int l = 1; l <= order; l++) {
-      double value = tensor[ti(l, 0, 0, order)];
-      if (value != 0.0) {
-        sb.append(format("%5d %4d %4d %4d %12.8f\n", ti(l, 0, 0, order), l, 0, 0, value));
-        count++;
-      }
-    }
-    // Print (d/dx)^l * (d/dy)^m for l + m = 1..order (m >= 1, n = 0)
-    for (int l = 0; l <= o1; l++) {
-      for (int m = 1; m <= order - l; m++) {
-        double value = tensor[ti(l, m, 0, order)];
-        if (value != 0.0) {
-          sb.append(format("%5d %4d %4d %4d %12.8f\n", ti(l, m, 0, order), l, m, 0, value));
-          count++;
-        }
-      }
-    }
-    // Print (d/dx)^l * (d/dy)^m * (d/dz)^n for l + m + n = 1..o (n >= 1)
-    for (int l = 0; l <= o1; l++) {
-      for (int m = 0; m <= o1 - l; m++) {
-        for (int n = 1; n <= order - l - m; n++) {
-          double value = tensor[ti(l, m, n, order)];
-          if (value != 0.0) {
-            sb.append(format("%5d %4d %4d %4d %12.8f\n", ti(l, m, n, order), l, m, n, value));
-            count++;
-          }
-        }
-      }
-    }
-    sb.append(format("\n Total number of active tensors: %d\n", count));
-    logger.log(Level.INFO, sb.toString());
-  }
-
-  /**
-   * Convenience method for writing out tensor indices.
-   *
-   * @param l number of d/dx partial derivatives.
-   * @param m number of d/dx partial derivatives.
-   * @param n number of d/dx partial derivatives.
-   * @return a String of the form <code>Rlmn</code>.
-   */
-  protected static String rlmn(int l, int m, int n) {
-    return format("R%d%d%d", l, m, n);
-  }
-
-  /**
-   * Convenience method for writing out intermediate terms in the recursion.
-   *
-   * @param l number of d/dx partial derivatives.
-   * @param m number of d/dx partial derivatives.
-   * @param n number of d/dx partial derivatives.
-   * @return a String of the form <code>termlmnj</code>.
-   */
-  protected static String term(int l, int m, int n) {
-    return format("term%d%d%d", l, m, n);
-  }
-
-  /**
-   * Convenience method for writing out intermediate terms in the recursion.
-   *
-   * @param l number of d/dx partial derivatives.
-   * @param m number of d/dx partial derivatives.
-   * @param n number of d/dx partial derivatives.
-   * @param j the jth intermediate term.
-   * @return a String of the form <code>termlmnj</code>.
-   */
-  protected static String term(int l, int m, int n, int j) {
-    return format("term%d%d%d%d", l, m, n, j);
-  }
-
-  /**
-   * The index is based on the idea of filling tetrahedron.
-   *
-   * <p>1/r has an index of 0 <br>
-   * derivatives of x are first; indeces from 1..o for d/dx..(d/dx)^o <br> derivatives of x and y are
-   * second; base triangle of size (o+1)(o+2)/2 <br> derivatives of x, y and z are last; total size
-   * (o+1)*(o+2)*(o+3)/6 <br>
-   *
-   * <p>This function is useful to set up masking constants: <br>
-   * static int Tlmn = ti(l,m,n,order) <br> For example the (d/dy)^2 (1/R) storage location: <br>
-   * static int T020 = ti(0,2,0,order)
-   *
-   * <p>
-   *
-   * @param dx int The number of d/dx operations.
-   * @param dy int The number of d/dy operations.
-   * @param dz int The number of d/dz operations.
-   * @param order int The maximum tensor order (0 .LE. dx + dy + dz .LE. order).
-   * @return int in the range (0..binomial(order + 3, 3) - 1)
-   */
-  protected static int ti(int dx, int dy, int dz, int order) {
-    if (dx < 0 || dy < 0 || dz < 0 || dx + dy + dz > order) {
-      return -1;
-    }
-
-    int size = (order + 1) * (order + 2) * (order + 3) / 6;
-    /*
-     We only get to the top of the tetrahedron if dz = order, otherwise
-     subtract off the top, including the level of the requested tensor
-     index.
-    */
-    int top = order + 1 - dz;
-    top = top * (top + 1) * (top + 2) / 6;
-    int zindex = size - top;
-    /*
-     Given the "dz level", dy can range from 0..order - dz) To get to the
-     row for a specific value of dy, dy*(order + 1) - dy*(dy-1)/2 indeces
-     are skipped. This is an operation that looks like the area of
-     rectangle, minus the area of an empty triangle.
-    */
-    int yindex = dy * (order - dz) - (dy - 1) * (dy - 2) / 2 + 1;
-    /*
-     Given the dz level and dy row, dx can range from (0..order - dz - dy)
-     The dx index is just walking down the dy row for "dx" steps.
-    */
-    return dx + yindex + zindex;
-  }
-
-  /**
-   * Convenience method for writing out tensor indices.
-   *
-   * @param l number of d/dx partial derivatives.
-   * @param m number of d/dx partial derivatives.
-   * @param n number of d/dx partial derivatives.
-   * @return a String of the form <code>tlmn</code>.
-   */
-  private static String tlmn(int l, int m, int n) {
-    return format("%d%d%d", l, m, n);
-  }
-
-  /**
    * getd2EdZ2.
    *
    * @return a double.
@@ -589,17 +430,16 @@ public abstract class MultipoleTensor {
    *
    * @param mI PolarizableMultipole at site I.
    * @param mK PolarizableMultipole at site K.
-   * @param Gi an array of {@link double} objects.
-   * @param Gk an array of {@link double} objects.
-   * @param Ti an array of {@link double} objects.
-   * @param Tk an array of {@link double} objects.
-   * @return a double.
+   * @param Gi Coordinate gradient at site I.
+   * @param Gk Coordinate gradient at site K.
+   * @param Ti Torque at site I.
+   * @param Tk Torque at site K.
+   * @return the permanent multipole energy.
    */
   public double multipoleEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
       double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
     multipoleIPotentialAtK(mI, 3);
     double energy = multipoleEnergy(mK);
-
     multipoleGradient(mK, Gk);
     Gi[0] = -Gk[0];
     Gi[1] = -Gk[1];
@@ -690,24 +530,24 @@ public abstract class MultipoleTensor {
     // This contribution does not exist for direct polarization (mutualMask == 0.0).
     if (mutualMask != 0.0) {
       // Find the potential and its derivatives at k due to induced dipole i.
-      inducedIPotentialAtK(mI);
+      dipoleIPotentialAtK(mI.ux, mI.uy, mI.uz, 2);
       Gi[0] -= 0.5 * mutualMask * (mK.px * E200 + mK.py * E110 + mK.pz * E101);
       Gi[1] -= 0.5 * mutualMask * (mK.px * E110 + mK.py * E020 + mK.pz * E011);
       Gi[2] -= 0.5 * mutualMask * (mK.px * E101 + mK.py * E011 + mK.pz * E002);
 
       // Find the potential and its derivatives at i due to induced dipole k.
-      inducedKPotentialAtI(mK);
+      dipoleKPotentialAtI(mK.ux, mK.uy, mK.uz, 2);
       Gi[0] += 0.5 * mutualMask * (mI.px * E200 + mI.py * E110 + mI.pz * E101);
       Gi[1] += 0.5 * mutualMask * (mI.px * E110 + mI.py * E020 + mI.pz * E011);
       Gi[2] += 0.5 * mutualMask * (mI.px * E101 + mI.py * E011 + mI.pz * E002);
     }
 
     // Find the potential and its derivatives at K due to the averaged induced dipole at i.
-    inducedITotalPotentialAtK(mI);
+    dipoleIPotentialAtK(mI.sx, mI.sy, mI.sz, 2);
     multipoleTorque(mK, Tk);
 
     // Find the potential and its derivatives at I due to the averaged induced dipole at k.
-    inducedKTotalPotentialAtI(mK);
+    dipoleKPotentialAtI(mK.sx, mK.sy, mK.sz, 2);
     multipoleTorque(mI, Ti);
 
     return energy;
@@ -745,6 +585,24 @@ public abstract class MultipoleTensor {
   }
 
   /**
+   * Set the separation vector.
+   *
+   * @param r The separation vector.
+   */
+  public final void setR(double[] r) {
+    setR(r[0], r[1], r[2]);
+  }
+
+  /**
+   * Set the separation vector.
+   *
+   * @param dx Separation along the X-axis.
+   * @param dy Separation along the Y-axis.
+   * @param dz Separation along the Z-axis.
+   */
+  public abstract void setR(double dx, double dy, double dz);
+
+  /**
    * For the MultipoleTensorTest class and testing.
    *
    * @param r an array of {@link double} objects.
@@ -759,6 +617,9 @@ public abstract class MultipoleTensor {
    */
   protected void generateTensor() {
     switch (order) {
+      case 1:
+        order1();
+        break;
       case 2:
         order2();
         break;
@@ -781,24 +642,6 @@ public abstract class MultipoleTensor {
   }
 
   /**
-   * Set the separation vector.
-   *
-   * @param r The separation vector.
-   */
-  protected final void setR(double[] r) {
-    setR(r[0], r[1], r[2]);
-  }
-
-  /**
-   * Set the separation vector.
-   *
-   * @param dx Separation along the X-axis.
-   * @param dy Separation along the Y-axis.
-   * @param dz Separation along the Z-axis.
-   */
-  protected abstract void setR(double dx, double dy, double dz);
-
-  /**
    * Generate source terms for the Challacombe et al. recursion.
    *
    * @param T000 Location to store the source terms.
@@ -811,7 +654,7 @@ public abstract class MultipoleTensor {
    *
    * @see {@code MultipoleTensor::ti(int dx, int dy, int dz, int order)}
    */
-  final int ti(int dx, int dy, int dz) {
+  protected final int ti(int dx, int dy, int dz) {
     return ti(dx, dy, dz, order);
   }
 
@@ -825,7 +668,7 @@ public abstract class MultipoleTensor {
    * @param n apply (d/dz)^l to the potential
    * @return the contracted interaction.
    */
-  private double contractMultipoleI(PolarizableMultipole mI, double[] T, int l, int m, int n) {
+  protected double contractMultipoleI(PolarizableMultipole mI, double[] T, int l, int m, int n) {
     double total = 0.0;
     total += mI.q * T[ti(l, m, n)];
     total -= mI.dx * T[ti(l + 1, m, n)];
@@ -849,7 +692,8 @@ public abstract class MultipoleTensor {
    * @param m apply (d/dy)^l to the potential
    * @param n apply (d/dz)^l to the potential
    */
-  final void potentialMultipoleI(PolarizableMultipole mI, double[] T, int l, int m, int n) {
+  protected final void potentialMultipoleI(PolarizableMultipole mI, double[] T, int l, int m,
+      int n) {
     E000 = contractMultipoleI(mI, T, l, m, n);
     E100 = contractMultipoleI(mI, T, l + 1, m, n);
     E010 = contractMultipoleI(mI, T, l, m + 1, n);
@@ -879,85 +723,6 @@ public abstract class MultipoleTensor {
    * @since 1.0
    */
   protected abstract String codeTensorRecursion(final double[] r, final double[] tensor);
-
-  /**
-   * Contract multipole moments with their respective electrostatic potential derivatives.
-   *
-   * @param mI PolarizableMultipole at site I.
-   * @param T array of electrostatic potential and partial derivatives
-   * @param l apply (d/dx)^l to the potential
-   * @param m apply (d/dy)^l to the potential
-   * @param n apply (d/dz)^l to the potential
-   * @param sb the code will be appended to the StringBuilfer.
-   * @return the contracted interaction.
-   */
-  private double codeContractMultipoleI(PolarizableMultipole mI, double[] T, int l, int m, int n,
-      StringBuilder sb) {
-    double total = 0.0;
-    String name = term(l, m, n);
-    sb.append(format("double %s = 0.0;\n", name));
-    StringBuilder sb1 = new StringBuilder();
-    double term = mI.q * T[ti(l, m, n)];
-    if (term != 0) {
-      total += term;
-      sb1.append(format("%s = fma(mI.q, R%s, %s);\n", name, tlmn(l, m, n), name));
-    }
-    term = mI.dx * T[ti(l + 1, m, n)];
-    if (term != 0) {
-      total += term;
-      sb1.append(format("%s = fma(mI.dx, -R%s, %s);\n", name, tlmn(l + 1, m, n), name));
-    }
-    term = mI.dy * T[ti(l, m + 1, n)];
-    if (term != 0) {
-      total += term;
-      sb1.append(format("%s = fma(mI.dy, -R%s, %s);\n", name, tlmn(l, m + 1, n), name));
-    }
-    term = mI.dz * T[ti(l, m, n + 1)];
-    if (term != 0) {
-      total += term;
-      sb1.append(format("%s = fma(mI.dz, -R%s, %s);\n", name, tlmn(l, m, n + 1), name));
-    }
-    StringBuilder traceSB = new StringBuilder();
-    double trace = 0.0;
-    term = mI.qxx * T[ti(l + 2, m, n)];
-    if (term != 0) {
-      trace += term;
-      traceSB.append(format("%s = fma(mI.qxx, R%s, %s);\n", name, tlmn(l + 2, m, n), name));
-    }
-    term = mI.qyy * T[ti(l, m + 2, n)];
-    if (term != 0) {
-      trace += term;
-      traceSB.append(format("%s = fma(mI.qyy, R%s, %s);\n", name, tlmn(l, m + 2, n), name));
-    }
-    term = mI.qzz * T[ti(l, m, n + 2)];
-    if (term != 0) {
-      trace += term;
-      traceSB.append(format("%s = fma(mI.qzz, R%s, %s);\n", name, tlmn(l, m, n + 2), name));
-    }
-    total += trace;
-    if (total != 0) {
-      sb.append(sb1);
-      if (trace != 0) {
-        sb.append(traceSB);
-      }
-    }
-    term = mI.qxy * T[ti(l + 1, m + 1, n)];
-    if (term != 0) {
-      total += term;
-      sb.append(format("%s = fma(mI.qxy, R%s, %s);\n", name, tlmn(l + 1, m + 1, n), name));
-    }
-    term = mI.qxz * T[ti(l + 1, m, n + 1)];
-    if (term != 0) {
-      total += term;
-      sb.append(format("%s = fma(mI.qxz, R%s, %s);\n", name, tlmn(l + 1, m, n + 1), name));
-    }
-    term = mI.qyz * T[ti(l, m + 1, n + 1)];
-    if (term != 0) {
-      total += term;
-      sb.append(format("%s = fma(mI.qyz, R%s, %s);\n", name, tlmn(l, m + 1, n + 1), name));
-    }
-    return total;
-  }
 
   /**
    * Contract multipole moments with their respective electrostatic potential derivatives.
@@ -1048,7 +813,7 @@ public abstract class MultipoleTensor {
    * @param n apply (d/dz)^l to the potential.
    * @param sb Append the code to the StringBuilder.
    */
-  public void codePotentialMultipoleI(PolarizableMultipole mI, double[] T, int l, int m, int n,
+  protected void codePotentialMultipoleI(PolarizableMultipole mI, double[] T, int l, int m, int n,
       StringBuilder sb) {
     E000 = codeContractMultipoleI(mI, T, l, m, n, sb);
     if (E000 != 0) {
@@ -1145,7 +910,7 @@ public abstract class MultipoleTensor {
    * @param n apply (d/dz)^l to the potential.
    * @param sb Append the code to the StringBuilder.
    */
-  public void codePotentialMultipoleK(PolarizableMultipole mK, double[] T, int l, int m, int n,
+  protected void codePotentialMultipoleK(PolarizableMultipole mK, double[] T, int l, int m, int n,
       StringBuilder sb) {
     E000 = codeContractMultipoleK(mK, T, l, m, n, sb);
     if (E000 != 0) {
@@ -1305,7 +1070,7 @@ public abstract class MultipoleTensor {
    * @param m PolarizableMultipole at the site of the potential.
    * @param torque an array of {@link double} objects.
    */
-  final void multipoleTorque(PolarizableMultipole m, double[] torque) {
+  protected final void multipoleTorque(PolarizableMultipole m, double[] torque) {
     // Torque on the permanent dipole due to the field.
     double dx = m.dy * E001 - m.dz * E010;
     double dy = m.dz * E100 - m.dx * E001;
@@ -1320,9 +1085,48 @@ public abstract class MultipoleTensor {
         - (m.qxy * E200 + 2.0 * m.qyy * E110 + m.qyz * E101);
 
     // The field along X is -E001, so we need a negative sign.
-    torque[0] = -(dx + qx);
-    torque[1] = -(dy + qy);
-    torque[2] = -(dz + qz);
+    torque[0] -= (dx + qx);
+    torque[1] -= (dy + qy);
+    torque[2] -= (dz + qz);
+  }
+
+  /**
+   * Compute the torque on a permanent dipole.
+   *
+   * @param m PolarizableMultipole at the site of the potential.
+   * @param torque an array of {@link double} objects.
+   */
+  protected final void dipoleTorque(PolarizableMultipole m, double[] torque) {
+    // Torque on the permanent dipole due to the field.
+    double dx = m.dy * E001 - m.dz * E010;
+    double dy = m.dz * E100 - m.dx * E001;
+    double dz = m.dx * E010 - m.dy * E100;
+
+    // The field along X is -E001, so we need a negative sign.
+    torque[0] -= dx;
+    torque[1] -= dy;
+    torque[2] -= dz;
+  }
+
+  /**
+   * Compute the torque on a permanent quadrupole.
+   *
+   * @param m PolarizableMultipole at the site of the potential.
+   * @param torque an array of {@link double} objects.
+   */
+  protected final void quadrupoleTorque(PolarizableMultipole m, double[] torque) {
+    // Torque on the permanent quadrupole due to the gradient of the field.
+    double qx = m.qxy * E101 + 2.0 * m.qyy * E011 + m.qyz * E002
+        - (m.qxz * E110 + m.qyz * E020 + 2.0 * m.qzz * E011);
+    double qy = m.qxz * E200 + m.qyz * E110 + 2.0 * m.qzz * E101
+        - (2.0 * m.qxx * E101 + m.qxy * E011 + m.qxz * E002);
+    double qz = 2.0 * m.qxx * E110 + m.qxy * E020 + m.qxz * E011
+        - (m.qxy * E200 + 2.0 * m.qyy * E110 + m.qyz * E101);
+
+    // The field along X is -E001, so we need a negative sign.
+    torque[0] -= qx;
+    torque[1] -= qy;
+    torque[2] -= qz;
   }
 
   /**
@@ -1338,179 +1142,170 @@ public abstract class MultipoleTensor {
   }
 
   /**
-   * getTensor.
+   * Load the tensor components.
    *
    * @param T an array of {@link double} objects.
    */
-  final void getTensor(double[] T) {
-    if (T == null || order < 0) {
-      return;
+  protected final void getTensor(double[] T) {
+    switch (order) {
+      default:
+      case 5:
+        // l + m + n = 5 (21) 56
+        T[t500] = R500;
+        T[t050] = R050;
+        T[t005] = R005;
+        T[t410] = R410;
+        T[t401] = R401;
+        T[t140] = R140;
+        T[t041] = R041;
+        T[t104] = R104;
+        T[t014] = R014;
+        T[t320] = R320;
+        T[t302] = R302;
+        T[t230] = R230;
+        T[t032] = R032;
+        T[t203] = R203;
+        T[t023] = R023;
+        T[t311] = R311;
+        T[t131] = R131;
+        T[t113] = R113;
+        T[t221] = R221;
+        T[t212] = R212;
+        T[t122] = R122;
+        // Fall through to 4th order.
+      case 4:
+        // l + m + n = 4 (15) 35
+        T[t400] = R400;
+        T[t040] = R040;
+        T[t004] = R004;
+        T[t310] = R310;
+        T[t301] = R301;
+        T[t130] = R130;
+        T[t031] = R031;
+        T[t103] = R103;
+        T[t013] = R013;
+        T[t220] = R220;
+        T[t202] = R202;
+        T[t022] = R022;
+        T[t211] = R211;
+        T[t121] = R121;
+        T[t112] = R112;
+        // Fall through to 3rd order.
+      case 3:
+        // l + m + n = 3 (10) 20
+        T[t300] = R300;
+        T[t030] = R030;
+        T[t003] = R003;
+        T[t210] = R210;
+        T[t201] = R201;
+        T[t120] = R120;
+        T[t021] = R021;
+        T[t102] = R102;
+        T[t012] = R012;
+        T[t111] = R111;
+        // Fall through to 2nd order.
+      case 2:
+        // l + m + n = 2 (6)  10
+        T[t200] = R200;
+        T[t020] = R020;
+        T[t002] = R002;
+        T[t110] = R110;
+        T[t101] = R101;
+        T[t011] = R011;
+        // Fall through to 1st order.
+      case 1:
+        // l + m + n = 1 (3)   4
+        T[t100] = R100;
+        T[t010] = R010;
+        T[t001] = R001;
+        // Fall through to the potential.
+      case 0:
+        // l + m + n = 0 (1)
+        T[t000] = R000;
     }
-    // l + m + n = 0 (1)
-    T[t000] = R000;
-    if (order < 1) {
-      return;
-    }
-    // l + m + n = 1 (3)   4
-    T[t100] = R100;
-    T[t010] = R010;
-    T[t001] = R001;
-    if (order < 2) {
-      return;
-    }
-    // l + m + n = 2 (6)  10
-    T[t200] = R200;
-    T[t020] = R020;
-    T[t002] = R002;
-    T[t110] = R110;
-    T[t101] = R101;
-    T[t011] = R011;
-    if (order < 3) {
-      return;
-    }
-    // l + m + n = 3 (10) 20
-    T[t300] = R300;
-    T[t030] = R030;
-    T[t003] = R003;
-    T[t210] = R210;
-    T[t201] = R201;
-    T[t120] = R120;
-    T[t021] = R021;
-    T[t102] = R102;
-    T[t012] = R012;
-    T[t111] = R111;
-    if (order < 4) {
-      return;
-    }
-    // l + m + n = 4 (15) 35
-    T[t400] = R400;
-    T[t040] = R040;
-    T[t004] = R004;
-    T[t310] = R310;
-    T[t301] = R301;
-    T[t130] = R130;
-    T[t031] = R031;
-    T[t103] = R103;
-    T[t013] = R013;
-    T[t220] = R220;
-    T[t202] = R202;
-    T[t022] = R022;
-    T[t211] = R211;
-    T[t121] = R121;
-    T[t112] = R112;
-    if (order < 5) {
-      return;
-    }
-    // l + m + n = 5 (21) 56
-    T[t500] = R500;
-    T[t050] = R050;
-    T[t005] = R005;
-    T[t410] = R410;
-    T[t401] = R401;
-    T[t140] = R140;
-    T[t041] = R041;
-    T[t104] = R104;
-    T[t014] = R014;
-    T[t320] = R320;
-    T[t302] = R302;
-    T[t230] = R230;
-    T[t032] = R032;
-    T[t203] = R203;
-    T[t023] = R023;
-    T[t311] = R311;
-    T[t131] = R131;
-    T[t113] = R113;
-    T[t221] = R221;
-    T[t212] = R212;
-    T[t122] = R122;
   }
 
   /**
-   * setTensor.
+   * Set the tensor components.
    *
    * @param T an array of {@link double} objects.
    */
-  final void setTensor(double[] T) {
-    if (T == null || order < 0) {
-      return;
+  protected final void setTensor(double[] T) {
+    switch (order) {
+      case 5:
+        // l + m + n = 5 (21) 56
+        R500 = T[t500];
+        R050 = T[t050];
+        R005 = T[t005];
+        R410 = T[t410];
+        R401 = T[t401];
+        R140 = T[t140];
+        R041 = T[t041];
+        R104 = T[t104];
+        R014 = T[t014];
+        R320 = T[t320];
+        R302 = T[t302];
+        R230 = T[t230];
+        R032 = T[t032];
+        R203 = T[t203];
+        R023 = T[t023];
+        R311 = T[t311];
+        R131 = T[t131];
+        R113 = T[t113];
+        R221 = T[t221];
+        R212 = T[t212];
+        R122 = T[t122];
+        // Fall through to 4th order.
+      case 4:
+        // l + m + n = 4 (15) 35
+        R400 = T[t400];
+        R040 = T[t040];
+        R004 = T[t004];
+        R310 = T[t310];
+        R301 = T[t301];
+        R130 = T[t130];
+        R031 = T[t031];
+        R103 = T[t103];
+        R013 = T[t013];
+        R220 = T[t220];
+        R202 = T[t202];
+        R022 = T[t022];
+        R211 = T[t211];
+        R121 = T[t121];
+        R112 = T[t112];
+        // Fall through to 3rd order.
+      case 3:
+        // l + m + n = 3 (10) 20
+        R300 = T[t300];
+        R030 = T[t030];
+        R003 = T[t003];
+        R210 = T[t210];
+        R201 = T[t201];
+        R120 = T[t120];
+        R021 = T[t021];
+        R102 = T[t102];
+        R012 = T[t012];
+        R111 = T[t111];
+        // Fall through to 2nd order.
+      case 2:
+        // l + m + n = 2 (6)  10
+        R200 = T[t200];
+        R020 = T[t020];
+        R002 = T[t002];
+        R110 = T[t110];
+        R101 = T[t101];
+        R011 = T[t011];
+        // Fall through to 1st order.
+      case 1:
+        // l + m + n = 1 (3)   4
+        R100 = T[t100];
+        R010 = T[t010];
+        R001 = T[t001];
+        // Fall through to the potential.
+      case 0:
+        // l + m + n = 0 (1)
+        R000 = T[t000];
     }
-    // l + m + n = 0 (1)
-    R000 = T[t000];
-    if (order < 1) {
-      return;
-    }
-    // l + m + n = 1 (3)   4
-    R100 = T[t100];
-    R010 = T[t010];
-    R001 = T[t001];
-    if (order < 2) {
-      return;
-    }
-    // l + m + n = 2 (6)  10
-    R200 = T[t200];
-    R020 = T[t020];
-    R002 = T[t002];
-    R110 = T[t110];
-    R101 = T[t101];
-    R011 = T[t011];
-    if (order < 3) {
-      return;
-    }
-    // l + m + n = 3 (10) 20
-    R300 = T[t300];
-    R030 = T[t030];
-    R003 = T[t003];
-    R210 = T[t210];
-    R201 = T[t201];
-    R120 = T[t120];
-    R021 = T[t021];
-    R102 = T[t102];
-    R012 = T[t012];
-    R111 = T[t111];
-    if (order < 4) {
-      return;
-    }
-    // l + m + n = 4 (15) 35
-    R400 = T[t400];
-    R040 = T[t040];
-    R004 = T[t004];
-    R310 = T[t310];
-    R301 = T[t301];
-    R130 = T[t130];
-    R031 = T[t031];
-    R103 = T[t103];
-    R013 = T[t013];
-    R220 = T[t220];
-    R202 = T[t202];
-    R022 = T[t022];
-    R211 = T[t211];
-    R121 = T[t121];
-    R112 = T[t112];
-    if (order < 5) {
-      return;
-    }
-    // l + m + n = 5 (21) 56
-    R500 = T[t500];
-    R050 = T[t050];
-    R005 = T[t005];
-    R410 = T[t410];
-    R401 = T[t401];
-    R140 = T[t140];
-    R041 = T[t041];
-    R104 = T[t104];
-    R014 = T[t014];
-    R320 = T[t320];
-    R302 = T[t302];
-    R230 = T[t230];
-    R032 = T[t032];
-    R203 = T[t203];
-    R023 = T[t023];
-    R311 = T[t311];
-    R131 = T[t131];
-    R113 = T[t113];
-    R221 = T[t221];
-    R212 = T[t212];
-    R122 = T[t122];
   }
 
   /**
@@ -1572,6 +1367,11 @@ public abstract class MultipoleTensor {
   protected abstract void recursion(final double[] r, final double[] tensor);
 
   /**
+   * Hard coded computation of the Cartesian multipole tensors up to 1st order.
+   */
+  protected abstract void order1();
+
+  /**
    * Hard coded computation of the Cartesian multipole tensors up to 2nd order.
    */
   protected abstract void order2();
@@ -1610,6 +1410,38 @@ public abstract class MultipoleTensor {
   protected abstract void multipoleIPotentialAtK(PolarizableMultipole mI, int order);
 
   /**
+   * Compute the field components due to charge I at site K.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param order Compute derivatives of the potential up to this order. Order 0: Electrostatic
+   *     potential (E000) Order 1: First derivatives: d/dX is E100, d/dY is E010, d/dZ is E001. Order
+   *     2: Second derivatives: d2/dXdX is E200, d2/dXdY is E110 (needed for quadrupole energy) Order
+   *     3: 3rd derivatives: (needed for quadrupole forces).
+   */
+  protected abstract void chargeIPotentialAtK(PolarizableMultipole mI, int order);
+
+  /**
+   * Compute the induced dipole field components due to site I at site K.
+   *
+   * @param uxi X-dipole component.
+   * @param uyi Y-dipole component.
+   * @param uzi Z-dipole component.
+   * @param order Potential order.
+   */
+  protected abstract void dipoleIPotentialAtK(double uxi, double uyi, double uzi, int order);
+
+  /**
+   * Compute the field components due to quadrupole I at site K.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param order Compute derivatives of the potential up to this order. Order 0: Electrostatic
+   *     potential (E000) Order 1: First derivatives: d/dX is E100, d/dY is E010, d/dZ is E001. Order
+   *     2: Second derivatives: d2/dXdX is E200, d2/dXdY is E110 (needed for quadrupole energy) Order
+   *     3: 3rd derivatives: (needed for quadrupole forces).
+   */
+  protected abstract void quadrupoleIPotentialAtK(PolarizableMultipole mI, int order);
+
+  /**
    * Compute the field components due to multipole K at site I.
    *
    * @param mK PolarizableMultipole at site K.
@@ -1621,48 +1453,274 @@ public abstract class MultipoleTensor {
   protected abstract void multipoleKPotentialAtI(PolarizableMultipole mK, int order);
 
   /**
-   * Compute the induced dipole field components due to site I at site K.
+   * Compute the field components due to multipole K at site I.
    *
-   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @param order Compute derivatives of the potential up to this order. Order 0: Electrostatic
+   *     potential (E000) Order 1: First derivatives: d/dX is E100, d/dY is E010, d/dZ is E001. Order
+   *     2: Second derivatives: d2/dXdX is E200, d2/dXdY is E110 (needed for quadrupole energy) Order
+   *     3: 3rd derivatives: (needed for quadrupole forces).
    */
-  protected abstract void inducedIPotentialAtK(PolarizableMultipole mI);
-
-  /**
-   * Compute the induced dipole chain-rule field components due to site I at site K.
-   *
-   * @param mI PolarizableMultipole at site I.
-   */
-  protected abstract void inducedICRPotentialAtK(PolarizableMultipole mI);
-
-  /**
-   * Compute the induced dipole + induced dipole chain-rule field components due to site I at site
-   * K.
-   *
-   * @param mI PolarizableMultipole at site I.
-   */
-  protected abstract void inducedITotalPotentialAtK(PolarizableMultipole mI);
+  protected abstract void chargeKPotentialAtI(PolarizableMultipole mK, int order);
 
   /**
    * Compute the induced dipole field components due to site K at site I.
    *
-   * @param mK PolarizableMultipole at site K.
+   * @param uxk X-dipole component.
+   * @param uyk Y-dipole component.
+   * @param uzk Z-dipole component.
+   * @param order Potential order.
    */
-  protected abstract void inducedKPotentialAtI(PolarizableMultipole mK);
+  protected abstract void dipoleKPotentialAtI(double uxk, double uyk, double uzk, int order);
 
   /**
-   * Compute the induced dipole chain-rule field components due to site K at site I.
+   * Compute the field components due to multipole K at site I.
    *
    * @param mK PolarizableMultipole at site K.
+   * @param order Compute derivatives of the potential up to this order. Order 0: Electrostatic
+   *     potential (E000) Order 1: First derivatives: d/dX is E100, d/dY is E010, d/dZ is E001. Order
+   *     2: Second derivatives: d2/dXdX is E200, d2/dXdY is E110 (needed for quadrupole energy) Order
+   *     3: 3rd derivatives: (needed for quadrupole forces).
    */
-  protected abstract void inducedKCRPotentialAtI(PolarizableMultipole mK);
+  protected abstract void quadrupoleKPotentialAtI(PolarizableMultipole mK, int order);
 
   /**
-   * Compute the induced dipole + induced dipole chain-rule field components due to site K at site
-   * I.
+   * Contract multipole moments with their respective electrostatic potential derivatives.
    *
-   * @param mK PolarizableMultipole at site K.
+   * @param mI PolarizableMultipole at site I.
+   * @param T array of electrostatic potential and partial derivatives
+   * @param l apply (d/dx)^l to the potential
+   * @param m apply (d/dy)^l to the potential
+   * @param n apply (d/dz)^l to the potential
+   * @param sb the code will be appended to the StringBuilfer.
+   * @return the contracted interaction.
    */
-  protected abstract void inducedKTotalPotentialAtI(PolarizableMultipole mK);
+  private double codeContractMultipoleI(PolarizableMultipole mI, double[] T, int l, int m, int n,
+      StringBuilder sb) {
+    double total = 0.0;
+    String name = term(l, m, n);
+    sb.append(format("double %s = 0.0;\n", name));
+    StringBuilder sb1 = new StringBuilder();
+    double term = mI.q * T[ti(l, m, n)];
+    if (term != 0) {
+      total += term;
+      sb1.append(format("%s = fma(mI.q, R%s, %s);\n", name, tlmn(l, m, n), name));
+    }
+    term = mI.dx * T[ti(l + 1, m, n)];
+    if (term != 0) {
+      total += term;
+      sb1.append(format("%s = fma(mI.dx, -R%s, %s);\n", name, tlmn(l + 1, m, n), name));
+    }
+    term = mI.dy * T[ti(l, m + 1, n)];
+    if (term != 0) {
+      total += term;
+      sb1.append(format("%s = fma(mI.dy, -R%s, %s);\n", name, tlmn(l, m + 1, n), name));
+    }
+    term = mI.dz * T[ti(l, m, n + 1)];
+    if (term != 0) {
+      total += term;
+      sb1.append(format("%s = fma(mI.dz, -R%s, %s);\n", name, tlmn(l, m, n + 1), name));
+    }
+    StringBuilder traceSB = new StringBuilder();
+    double trace = 0.0;
+    term = mI.qxx * T[ti(l + 2, m, n)];
+    if (term != 0) {
+      trace += term;
+      traceSB.append(format("%s = fma(mI.qxx, R%s, %s);\n", name, tlmn(l + 2, m, n), name));
+    }
+    term = mI.qyy * T[ti(l, m + 2, n)];
+    if (term != 0) {
+      trace += term;
+      traceSB.append(format("%s = fma(mI.qyy, R%s, %s);\n", name, tlmn(l, m + 2, n), name));
+    }
+    term = mI.qzz * T[ti(l, m, n + 2)];
+    if (term != 0) {
+      trace += term;
+      traceSB.append(format("%s = fma(mI.qzz, R%s, %s);\n", name, tlmn(l, m, n + 2), name));
+    }
+    total += trace;
+    if (total != 0) {
+      sb.append(sb1);
+      if (trace != 0) {
+        sb.append(traceSB);
+      }
+    }
+    term = mI.qxy * T[ti(l + 1, m + 1, n)];
+    if (term != 0) {
+      total += term;
+      sb.append(format("%s = fma(mI.qxy, R%s, %s);\n", name, tlmn(l + 1, m + 1, n), name));
+    }
+    term = mI.qxz * T[ti(l + 1, m, n + 1)];
+    if (term != 0) {
+      total += term;
+      sb.append(format("%s = fma(mI.qxz, R%s, %s);\n", name, tlmn(l + 1, m, n + 1), name));
+    }
+    term = mI.qyz * T[ti(l, m + 1, n + 1)];
+    if (term != 0) {
+      total += term;
+      sb.append(format("%s = fma(mI.qyz, R%s, %s);\n", name, tlmn(l, m + 1, n + 1), name));
+    }
+    return total;
+  }
+
+  /**
+   * Returns the number of tensors for derivatives to the given order.
+   *
+   * @param order maximum number of derivatives.
+   * @return the number of tensors.
+   * @since 1.0
+   */
+  public static int tensorCount(int order) {
+    long ret = binomial(order + 3, 3);
+    assert (ret < Integer.MAX_VALUE);
+    return (int) ret;
+  }
+
+  /**
+   * Log the tensors.
+   *
+   * @param operator The OPERATOR to use.
+   * @param order The tensor order.
+   * @param tensor The tensor array.
+   */
+  private static void log(OPERATOR operator, int order, double[] tensor) {
+    final int o1 = order + 1;
+    StringBuilder sb = new StringBuilder();
+
+    sb.append(format("\n %s Operator to order %d:", operator, order));
+    sb.append(format("\n%5s %4s %4s %4s %12s\n", "Index", "d/dx", "d/dy", "d/dz", "Tensor"));
+    sb.append(format("%5d %4d %4d %4d %12.8f\n", 0, 0, 0, 0, tensor[0]));
+    int count = 1;
+    // Print (d/dx)^l for l = 1..order (m = 0, n = 0)
+    for (int l = 1; l <= order; l++) {
+      double value = tensor[ti(l, 0, 0, order)];
+      if (value != 0.0) {
+        sb.append(format("%5d %4d %4d %4d %12.8f\n", ti(l, 0, 0, order), l, 0, 0, value));
+        count++;
+      }
+    }
+    // Print (d/dx)^l * (d/dy)^m for l + m = 1..order (m >= 1, n = 0)
+    for (int l = 0; l <= o1; l++) {
+      for (int m = 1; m <= order - l; m++) {
+        double value = tensor[ti(l, m, 0, order)];
+        if (value != 0.0) {
+          sb.append(format("%5d %4d %4d %4d %12.8f\n", ti(l, m, 0, order), l, m, 0, value));
+          count++;
+        }
+      }
+    }
+    // Print (d/dx)^l * (d/dy)^m * (d/dz)^n for l + m + n = 1..o (n >= 1)
+    for (int l = 0; l <= o1; l++) {
+      for (int m = 0; m <= o1 - l; m++) {
+        for (int n = 1; n <= order - l - m; n++) {
+          double value = tensor[ti(l, m, n, order)];
+          if (value != 0.0) {
+            sb.append(format("%5d %4d %4d %4d %12.8f\n", ti(l, m, n, order), l, m, n, value));
+            count++;
+          }
+        }
+      }
+    }
+    sb.append(format("\n Total number of active tensors: %d\n", count));
+    logger.log(Level.INFO, sb.toString());
+  }
+
+  /**
+   * Convenience method for writing out tensor indices.
+   *
+   * @param l number of d/dx partial derivatives.
+   * @param m number of d/dx partial derivatives.
+   * @param n number of d/dx partial derivatives.
+   * @return a String of the form <code>Rlmn</code>.
+   */
+  protected static String rlmn(int l, int m, int n) {
+    return format("R%d%d%d", l, m, n);
+  }
+
+  /**
+   * Convenience method for writing out intermediate terms in the recursion.
+   *
+   * @param l number of d/dx partial derivatives.
+   * @param m number of d/dx partial derivatives.
+   * @param n number of d/dx partial derivatives.
+   * @return a String of the form <code>termlmnj</code>.
+   */
+  protected static String term(int l, int m, int n) {
+    return format("term%d%d%d", l, m, n);
+  }
+
+  /**
+   * Convenience method for writing out intermediate terms in the recursion.
+   *
+   * @param l number of d/dx partial derivatives.
+   * @param m number of d/dx partial derivatives.
+   * @param n number of d/dx partial derivatives.
+   * @param j the jth intermediate term.
+   * @return a String of the form <code>termlmnj</code>.
+   */
+  protected static String term(int l, int m, int n, int j) {
+    return format("term%d%d%d%d", l, m, n, j);
+  }
+
+  /**
+   * The index is based on the idea of filling tetrahedron.
+   *
+   * <p>1/r has an index of 0 <br>
+   * derivatives of x are first; indeces from 1..o for d/dx..(d/dx)^o <br> derivatives of x and y are
+   * second; base triangle of size (o+1)(o+2)/2 <br> derivatives of x, y and z are last; total size
+   * (o+1)*(o+2)*(o+3)/6 <br>
+   *
+   * <p>This function is useful to set up masking constants: <br>
+   * static int Tlmn = ti(l,m,n,order) <br> For example the (d/dy)^2 (1/R) storage location: <br>
+   * static int T020 = ti(0,2,0,order)
+   *
+   * <p>
+   *
+   * @param dx int The number of d/dx operations.
+   * @param dy int The number of d/dy operations.
+   * @param dz int The number of d/dz operations.
+   * @param order int The maximum tensor order (0 .LE. dx + dy + dz .LE. order).
+   * @return int in the range (0..binomial(order + 3, 3) - 1)
+   */
+  protected static int ti(int dx, int dy, int dz, int order) {
+    if (dx < 0 || dy < 0 || dz < 0 || dx + dy + dz > order) {
+      return -1;
+    }
+
+    int size = (order + 1) * (order + 2) * (order + 3) / 6;
+    /*
+     We only get to the top of the tetrahedron if dz = order, otherwise
+     subtract off the top, including the level of the requested tensor
+     index.
+    */
+    int top = order + 1 - dz;
+    top = top * (top + 1) * (top + 2) / 6;
+    int zindex = size - top;
+    /*
+     Given the "dz level", dy can range from 0..order - dz) To get to the
+     row for a specific value of dy, dy*(order + 1) - dy*(dy-1)/2 indeces
+     are skipped. This is an operation that looks like the area of
+     rectangle, minus the area of an empty triangle.
+    */
+    int yindex = dy * (order - dz) - (dy - 1) * (dy - 2) / 2 + 1;
+    /*
+     Given the dz level and dy row, dx can range from (0..order - dz - dy)
+     The dx index is just walking down the dy row for "dx" steps.
+    */
+    return dx + yindex + zindex;
+  }
+
+  /**
+   * Convenience method for writing out tensor indices.
+   *
+   * @param l number of d/dx partial derivatives.
+   * @param m number of d/dx partial derivatives.
+   * @param n number of d/dx partial derivatives.
+   * @return a String of the form <code>tlmn</code>.
+   */
+  private static String tlmn(int l, int m, int n) {
+    return format("%d%d%d", l, m, n);
+  }
 
   /** Operators that are supported. */
   public enum OPERATOR {

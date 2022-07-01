@@ -73,9 +73,9 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
   private final int order;
 
   /**
-   * Multipole order (2nd is needed for AMOEBA forces).
+   * The GK tensor can be constructed for monopoles (GB), dipoles or quadrupoles.
    */
-  protected final int multipoleOrder;
+  protected final GK_MULTIPOLE_ORDER multipoleOrder;
 
   /**
    * The Kirkwood dielectric function for the given multipole order.
@@ -130,13 +130,41 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
   private double f;
 
   /**
+   * The "mode" for the tensor (either POTENTIAL or BORN).
+   */
+  private GK_TENSOR_MODE mode = GK_TENSOR_MODE.POTENTIAL;
+
+  /**
+   * The "mode" for the tensor (either POTENTIAL or BORN).
+   */
+  public enum GK_TENSOR_MODE {POTENTIAL, BORN}
+
+  /**
+   * The GK tensor can be constructed for monopoles (GB), dipoles or quadrupoles.
+   */
+  public enum GK_MULTIPOLE_ORDER {
+    MONOPOLE(0), DIPOLE(1), QUADRUPOLE(2);
+
+    private final int order;
+
+    GK_MULTIPOLE_ORDER(int order) {
+      this.order = order;
+    }
+
+    public int getOrder() {
+      return order;
+    }
+  }
+
+  /**
    * @param multipoleOrder The multipole order.
    * @param order The number of derivatives to complete.
    * @param gc Generalized Kirkwood constant.
    * @param Eh Homogeneous dielectric constant.
    * @param Es Solvent dielectric constant.
    */
-  public GKTensorGlobal(int multipoleOrder, int order, double gc, double Eh, double Es) {
+  public GKTensorGlobal(GK_MULTIPOLE_ORDER multipoleOrder, int order, double gc, double Eh,
+      double Es) {
     super(order);
     this.multipoleOrder = multipoleOrder;
     this.order = order;
@@ -145,7 +173,7 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
     this.Es = Es;
 
     // Load the dielectric function
-    c = cn(multipoleOrder, Eh, Es);
+    c = cn(multipoleOrder.getOrder(), Eh, Es);
 
     // Auxiliary terms for Generalized Kirkwood (equivalent to Coulomb and Thole Screening).
     kirkwoodSource = new double[order + 1];
@@ -200,6 +228,541 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
   }
 
   /**
+   * GK Permanent multipole energy.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @return a double.
+   */
+  @Override
+  public double multipoleEnergy(PolarizableMultipole mI, PolarizableMultipole mK) {
+    switch (multipoleOrder) {
+      default:
+      case MONOPOLE:
+        chargeIPotentialAtK(mI, 2);
+        double eK = multipoleEnergy(mK);
+        chargeKPotentialAtI(mK, 2);
+        double eI = multipoleEnergy(mI);
+        return 0.5 * (eK + eI);
+      case DIPOLE:
+        dipoleIPotentialAtK(mI.dx, mI.dy, mI.dz, 2);
+        // dipoleIPotentialAtK(mI, 2);
+        eK = multipoleEnergy(mK);
+        dipoleKPotentialAtI(mK.dx, mK.dy, mK.dz, 2);
+        // dipoleKPotentialAtI(mK, 2);
+        eI = multipoleEnergy(mI);
+        return 0.5 * (eK + eI);
+      case QUADRUPOLE:
+        quadrupoleIPotentialAtK(mI, 2);
+        eK = multipoleEnergy(mK);
+        quadrupoleKPotentialAtI(mK, 2);
+        eI = multipoleEnergy(mI);
+        return 0.5 * (eK + eI);
+    }
+  }
+
+  /**
+   * GK Permanent multipole energy and gradient.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @param Gi Coordinate gradient at site I.
+   * @param Gk Coordinate gradient at site K.
+   * @param Ti Torque at site I.
+   * @param Tk Torque at site K.
+   * @return the permanent multipole GK energy.
+   */
+  @Override
+  public double multipoleEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
+      double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
+    switch (multipoleOrder) {
+      default:
+      case MONOPOLE:
+        return monopoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
+      case DIPOLE:
+        return dipoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
+      case QUADRUPOLE:
+        return quadrupoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
+    }
+  }
+
+  /**
+   * Permanent multipole energy and gradient using the GK monopole tensor.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @param Gi Coordinate gradient at site I.
+   * @param Gk Coordinate gradient at site K.
+   * @param Ti Torque at site I.
+   * @param Tk Torque at site K.
+   * @return the permanent multipole GK energy.
+   */
+  protected double monopoleEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
+      double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
+
+    // Compute the potential due to a multipole component at site I.
+    chargeIPotentialAtK(mI, 3);
+    double eK = multipoleEnergy(mK);
+    multipoleGradient(mK, Gk);
+    multipoleTorque(mK, Tk);
+
+    // Compute the potential due to a multipole component at site K.
+    chargeKPotentialAtI(mK, 3);
+    double eI = multipoleEnergy(mI);
+    multipoleGradient(mI, Gi);
+    multipoleTorque(mI, Ti);
+
+    Gi[0] = 0.5 * (Gi[0] - Gk[0]);
+    Gi[1] = 0.5 * (Gi[1] - Gk[1]);
+    Gi[2] = 0.5 * (Gi[2] - Gk[2]);
+    Gk[0] = -Gi[0];
+    Gk[1] = -Gi[1];
+    Gk[2] = -Gi[2];
+
+    Ti[0] = 0.5 * Ti[0];
+    Ti[1] = 0.5 * Ti[1];
+    Ti[2] = 0.5 * Ti[2];
+    Tk[0] = 0.5 * Tk[0];
+    Tk[1] = 0.5 * Tk[1];
+    Tk[2] = 0.5 * Tk[2];
+
+    return 0.5 * (eK + eI);
+  }
+
+  /**
+   * Permanent multipole energy and gradient using the GK dipole tensor.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @param Gi Coordinate gradient at site I.
+   * @param Gk Coordinate gradient at site K.
+   * @param Ti Torque at site I.
+   * @param Tk Torque at site K.
+   * @return the permanent multipole GK energy.
+   */
+  protected double dipoleEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
+      double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
+
+    // Compute the potential due to a multipole component at site I.
+    dipoleIPotentialAtK(mI.dx, mI.dy, mI.dz, 3);
+    double eK = multipoleEnergy(mK);
+    multipoleGradient(mK, Gk);
+    multipoleTorque(mK, Tk);
+
+    // Need the torque on site I pole due to site K multipole.
+    // Only torque on the site I dipole.
+    multipoleKPotentialAtI(mK, 1);
+    dipoleTorque(mI, Ti);
+
+    // Compute the potential due to a multipole component at site K.
+    dipoleKPotentialAtI(mK.dx, mK.dy, mK.dz, 3);
+    double eI = multipoleEnergy(mI);
+    multipoleGradient(mI, Gi);
+    multipoleTorque(mI, Ti);
+
+    // Need the torque on site K pole due to site I multipole.
+    // Only torque on the site K dipole.
+    multipoleIPotentialAtK(mI, 1);
+    dipoleTorque(mK, Tk);
+
+    Gi[0] = 0.5 * (Gi[0] - Gk[0]);
+    Gi[1] = 0.5 * (Gi[1] - Gk[1]);
+    Gi[2] = 0.5 * (Gi[2] - Gk[2]);
+    Gk[0] = -Gi[0];
+    Gk[1] = -Gi[1];
+    Gk[2] = -Gi[2];
+
+    Ti[0] = 0.5 * Ti[0];
+    Ti[1] = 0.5 * Ti[1];
+    Ti[2] = 0.5 * Ti[2];
+    Tk[0] = 0.5 * Tk[0];
+    Tk[1] = 0.5 * Tk[1];
+    Tk[2] = 0.5 * Tk[2];
+
+    return 0.5 * (eK + eI);
+  }
+
+  /**
+   * Permanent multipole energy and gradient using the GK quadrupole tensor.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @param Gi Coordinate gradient at site I.
+   * @param Gk Coordinate gradient at site K.
+   * @param Ti Torque at site I.
+   * @param Tk Torque at site K.
+   * @return the permanent multipole GK energy.
+   */
+  protected double quadrupoleEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
+      double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
+
+    // Compute the potential due to a multipole component at site I.
+    quadrupoleIPotentialAtK(mI, 3);
+    double eK = multipoleEnergy(mK);
+    multipoleGradient(mK, Gk);
+    multipoleTorque(mK, Tk);
+
+    // Need the torque on site I pole due to site K multipole.
+    // Only torque on the site I quadrupole.
+    multipoleKPotentialAtI(mK, 2);
+    quadrupoleTorque(mI, Ti);
+
+    // Compute the potential due to a multipole component at site K.
+    quadrupoleKPotentialAtI(mK, 3);
+    double eI = multipoleEnergy(mI);
+    multipoleGradient(mI, Gi);
+    multipoleTorque(mI, Ti);
+
+    // Need the torque on site K pole due to site I multipole.
+    // Only torque on the site K quadrupole.
+    multipoleIPotentialAtK(mI, 2);
+    quadrupoleTorque(mK, Tk);
+
+    Gi[0] = 0.5 * (Gi[0] - Gk[0]);
+    Gi[1] = 0.5 * (Gi[1] - Gk[1]);
+    Gi[2] = 0.5 * (Gi[2] - Gk[2]);
+    Gk[0] = -Gi[0];
+    Gk[1] = -Gi[1];
+    Gk[2] = -Gi[2];
+
+    Ti[0] = 0.5 * Ti[0];
+    Ti[1] = 0.5 * Ti[1];
+    Ti[2] = 0.5 * Ti[2];
+    Tk[0] = 0.5 * Tk[0];
+    Tk[1] = 0.5 * Tk[1];
+    Tk[2] = 0.5 * Tk[2];
+
+    return 0.5 * (eK + eI);
+  }
+
+  /**
+   * GK Permanent multipole Born grad.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @return a double.
+   */
+  public double multipoleEnergyBornGrad(PolarizableMultipole mI, PolarizableMultipole mK) {
+    GK_TENSOR_MODE currentMode = mode;
+    setMode(GK_TENSOR_MODE.BORN);
+    generateTensor();
+    double db = multipoleEnergy(mI, mK);
+    setMode(currentMode);
+    return db;
+  }
+
+  /**
+   * GK Polarization Energy.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @param scaleEnergy This is ignored, since masking/scaling is not applied to GK interactions
+   *     (everything is intermolecular).
+   * @return a double.
+   */
+  @Override
+  public double polarizationEnergy(PolarizableMultipole mI, PolarizableMultipole mK,
+      double scaleEnergy) {
+    return polarizationEnergy(mI, mK);
+  }
+
+  /**
+   * GK Polarization Energy.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @return a double.
+   */
+  public double polarizationEnergy(PolarizableMultipole mI, PolarizableMultipole mK) {
+    switch (multipoleOrder) {
+      default:
+      case MONOPOLE:
+        // Find the GK charge potential of site I at site K.
+        chargeIPotentialAtK(mI, 1);
+        // Energy of induced dipole K in the field of permanent charge I.
+        double eK = polarizationEnergy(mK);
+        // Find the GK charge potential of site K at site I.
+        chargeKPotentialAtI(mK, 1);
+        // Energy of induced dipole I in the field of permanent charge K.
+        double eI = polarizationEnergy(mI);
+        return 0.5 * (eK + eI);
+      case DIPOLE:
+        // Find the GK dipole potential of site I at site K.
+        dipoleIPotentialAtK(mI.dx, mI.dy, mI.dz, 1);
+        // Energy of induced dipole K in the field of permanent dipole I.
+        eK = polarizationEnergy(mK);
+        // Find the GK induced dipole potential of site I at site K.
+        dipoleIPotentialAtK(mI.ux, mI.uy, mI.uz, 2);
+        // Energy of permanent multipole K in the field of induced dipole I.
+        eK += 0.5 * multipoleEnergy(mK);
+        // Find the GK dipole potential of site K at site I.
+        dipoleKPotentialAtI(mK.dx, mK.dy, mK.dz, 1);
+        // Energy of induced dipole I in the field of permanent dipole K.
+        eI = polarizationEnergy(mI);
+        // Find the GK induced dipole potential of site K at site I.
+        dipoleKPotentialAtI(mK.ux, mK.uy, mK.uz, 2);
+        // Energy of permanent multipole I in the field of induced dipole K.
+        eI += 0.5 * multipoleEnergy(mI);
+        return 0.5 * (eK + eI);
+      case QUADRUPOLE:
+        // Find the GK quadrupole potential of site I at site K.
+        quadrupoleIPotentialAtK(mI, 1);
+        // Energy of induced dipole K in the field of permanent quadrupole I.
+        eK = polarizationEnergy(mK);
+        // Find the GK quadrupole potential of site K at site I.
+        quadrupoleKPotentialAtI(mK, 1);
+        // Energy of induced dipole I in the field of permanent quadrupole K.
+        eI = polarizationEnergy(mI);
+        return 0.5 * (eK + eI);
+    }
+  }
+
+  /**
+   * Polarization Energy and Gradient.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @param inductionMask This is ignored, since masking/scaling is not applied to GK
+   *     interactions (everything is intermolecular).
+   * @param energyMask This is ignored, since masking/scaling is not applied to GK interactions
+   *     (everything is intermolecular).
+   * @param mutualMask This should be set to zero for direction polarization.
+   * @param Gi an array of {@link double} objects.
+   * @param Ti an array of {@link double} objects.
+   * @param Tk an array of {@link double} objects.
+   * @return a double.
+   */
+  @Override
+  public double polarizationEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
+      double inductionMask, double energyMask, double mutualMask,
+      double[] Gi, double[] Ti, double[] Tk) {
+    switch (multipoleOrder) {
+      default:
+      case MONOPOLE:
+        return monopolePolarizationEnergyAndGradient(mI, mK, Gi, Ti, Tk);
+      case DIPOLE:
+        return dipolePolarizationEnergyAndGradient(mI, mK, mutualMask, Gi, Ti, Tk);
+      case QUADRUPOLE:
+        return quadrupolePolarizationEnergyAndGradient(mI, mK, Gi, Ti, Tk);
+    }
+  }
+
+  /**
+   * Monopole Polarization Energy and Gradient.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @param Gi an array of {@link double} objects.
+   * @param Ti an array of {@link double} objects.
+   * @param Tk an array of {@link double} objects.
+   * @return a double.
+   */
+  public double monopolePolarizationEnergyAndGradient(
+      PolarizableMultipole mI, PolarizableMultipole mK, double[] Gi, double[] Ti, double[] Tk) {
+
+    // Find the permanent multipole potential at site k.
+    chargeIPotentialAtK(mI, 2);
+    // Energy of induced dipole k in the field of multipole i.
+    double eK = polarizationEnergy(mK);
+    // Derivative with respect to moving atom k.
+    Gi[0] = -(mK.sx * E200 + mK.sy * E110 + mK.sz * E101);
+    Gi[1] = -(mK.sx * E110 + mK.sy * E020 + mK.sz * E011);
+    Gi[2] = -(mK.sx * E101 + mK.sy * E011 + mK.sz * E002);
+
+    // Find the permanent multipole potential and derivatives at site i.
+    chargeKPotentialAtI(mK, 2);
+    // Energy of induced dipole i in the field of multipole k.
+    double eI = polarizationEnergy(mI);
+    // Derivative with respect to moving atom i.
+    Gi[0] += (mI.sx * E200 + mI.sy * E110 + mI.sz * E101);
+    Gi[1] += (mI.sx * E110 + mI.sy * E020 + mI.sz * E011);
+    Gi[2] += (mI.sx * E101 + mI.sy * E011 + mI.sz * E002);
+
+    Gi[0] *= 0.5;
+    Gi[1] *= 0.5;
+    Gi[2] *= 0.5;
+
+    // Total polarization energy.
+    return 0.5 * (eI + eK);
+  }
+
+  /**
+   * Dipole Polarization Energy and Gradient.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @param mutualMask This should be set to zero for direction polarization.
+   * @param Gi an array of {@link double} objects.
+   * @param Ti an array of {@link double} objects.
+   * @param Tk an array of {@link double} objects.
+   * @return a double.
+   */
+  public double dipolePolarizationEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
+      double mutualMask, double[] Gi, double[] Ti, double[] Tk) {
+
+    // Find the permanent multipole potential and derivatives at site k.
+    dipoleIPotentialAtK(mI.dx, mI.dy, mI.dz, 2);
+    // Energy of induced dipole k in the field of multipole i.
+    double eK = polarizationEnergy(mK);
+    // Derivative with respect to moving atom k.
+    Gi[0] = -(mK.sx * E200 + mK.sy * E110 + mK.sz * E101);
+    Gi[1] = -(mK.sx * E110 + mK.sy * E020 + mK.sz * E011);
+    Gi[2] = -(mK.sx * E101 + mK.sy * E011 + mK.sz * E002);
+    // Find the potential at K due to the averaged induced dipole at i.
+    dipoleIPotentialAtK(mI.sx, mI.sy, mI.sz, 2);
+    dipoleTorque(mK, Tk);
+
+    // Find the GK induced dipole potential of site I at site K.
+    dipoleIPotentialAtK(mI.ux, mI.uy, mI.uz, 3);
+    // Energy of permanent multipole K in the field of induced dipole I.
+    eK += 0.5 * multipoleEnergy(mK);
+    double[] G = new double[3];
+    multipoleGradient(mK, G);
+    Gi[0] -= G[0];
+    Gi[1] -= G[1];
+    Gi[2] -= G[2];
+    multipoleTorque(mK, Tk);
+
+    // Find the permanent multipole potential and derivatives at site i.
+    dipoleKPotentialAtI(mK.dx, mK.dy, mK.dz, 2);
+    // Energy of induced dipole i in the field of multipole k.
+    double eI = polarizationEnergy(mI);
+    // Derivative with respect to moving atom i.
+    Gi[0] += (mI.sx * E200 + mI.sy * E110 + mI.sz * E101);
+    Gi[1] += (mI.sx * E110 + mI.sy * E020 + mI.sz * E011);
+    Gi[2] += (mI.sx * E101 + mI.sy * E011 + mI.sz * E002);
+    // Find the potential at I due to the averaged induced dipole at k.
+    dipoleKPotentialAtI(mK.sx, mK.sy, mK.sz, 2);
+    dipoleTorque(mI, Ti);
+
+    // Find the GK induced dipole potential of site K at site I.
+    dipoleKPotentialAtI(mK.ux, mK.uy, mK.uz, 3);
+    // Energy of permanent multipole I in the field of induced dipole K.
+    eI += 0.5 * multipoleEnergy(mI);
+    G = new double[3];
+    multipoleGradient(mI, G);
+    Gi[0] += G[0];
+    Gi[1] += G[1];
+    Gi[2] += G[2];
+    multipoleTorque(mI, Ti);
+
+    // Get the induced-induced portion of the force (Ud . dC/dX . Up).
+    // This contribution does not exist for direct polarization (mutualMask == 0.0).
+    if (mutualMask != 0.0) {
+      // Find the potential and its derivatives at k due to induced dipole i.
+      dipoleIPotentialAtK(mI.ux, mI.uy, mI.uz, 2);
+      Gi[0] -= mutualMask * (mK.px * E200 + mK.py * E110 + mK.pz * E101);
+      Gi[1] -= mutualMask * (mK.px * E110 + mK.py * E020 + mK.pz * E011);
+      Gi[2] -= mutualMask * (mK.px * E101 + mK.py * E011 + mK.pz * E002);
+
+      // Find the potential and its derivatives at i due to induced dipole k.
+      dipoleKPotentialAtI(mK.ux, mK.uy, mK.uz, 2);
+      Gi[0] += mutualMask * (mI.px * E200 + mI.py * E110 + mI.pz * E101);
+      Gi[1] += mutualMask * (mI.px * E110 + mI.py * E020 + mI.pz * E011);
+      Gi[2] += mutualMask * (mI.px * E101 + mI.py * E011 + mI.pz * E002);
+    }
+
+    // Total polarization energy.
+    double energy = 0.5 * (eI + eK);
+    Gi[0] *= 0.5;
+    Gi[1] *= 0.5;
+    Gi[2] *= 0.5;
+    Ti[0] *= 0.5;
+    Ti[1] *= 0.5;
+    Ti[2] *= 0.5;
+    Tk[0] *= 0.5;
+    Tk[1] *= 0.5;
+    Tk[2] *= 0.5;
+
+    return energy;
+  }
+
+  /**
+   * Quadrupole Polarization Energy and Gradient.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @param Gi an array of {@link double} objects.
+   * @param Ti an array of {@link double} objects.
+   * @param Tk an array of {@link double} objects.
+   * @return a double.
+   */
+  public double quadrupolePolarizationEnergyAndGradient(
+      PolarizableMultipole mI, PolarizableMultipole mK,
+      double[] Gi, double[] Ti, double[] Tk) {
+
+    // Find the permanent multipole potential and derivatives at site k.
+    quadrupoleIPotentialAtK(mI, 2);
+    // Energy of induced dipole k in the field of multipole i.
+    double eK = polarizationEnergy(mK);
+    // Derivative with respect to moving atom k.
+    Gi[0] = -(mK.sx * E200 + mK.sy * E110 + mK.sz * E101);
+    Gi[1] = -(mK.sx * E110 + mK.sy * E020 + mK.sz * E011);
+    Gi[2] = -(mK.sx * E101 + mK.sy * E011 + mK.sz * E002);
+
+    // Find the permanent multipole potential and derivatives at site i.
+    quadrupoleKPotentialAtI(mK, 2);
+    // Energy of induced dipole i in the field of multipole k.
+    double eI = polarizationEnergy(mI);
+    // Derivative with respect to moving atom i.
+    Gi[0] += (mI.sx * E200 + mI.sy * E110 + mI.sz * E101);
+    Gi[1] += (mI.sx * E110 + mI.sy * E020 + mI.sz * E011);
+    Gi[2] += (mI.sx * E101 + mI.sy * E011 + mI.sz * E002);
+
+    Gi[0] *= 0.5;
+    Gi[1] *= 0.5;
+    Gi[2] *= 0.5;
+
+    // Find the potential and its derivatives at K due to the averaged induced dipole at i.
+    dipoleIPotentialAtK(0.5 * mI.sx, 0.5 * mI.sy, 0.5 * mI.sz, 2);
+    quadrupoleTorque(mK, Tk);
+
+    // Find the potential and its derivatives at I due to the averaged induced dipole at k.
+    dipoleKPotentialAtI(0.5 * mK.sx, 0.5 * mK.sy, 0.5 * mK.sz, 2);
+    quadrupoleTorque(mI, Ti);
+
+    // Total polarization energy.
+    return 0.5 * (eI + eK);
+  }
+
+  /**
+   * GK Direct Polarization Born grad.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @return Partial derivative of the Polarization energy with respect to a Born grad.
+   */
+  public double polarizationEnergyBornGrad(PolarizableMultipole mI, PolarizableMultipole mK) {
+    GK_TENSOR_MODE currentMode = mode;
+    setMode(GK_TENSOR_MODE.BORN);
+    generateTensor();
+    double db = 2.0 * polarizationEnergy(mI, mK);
+    setMode(currentMode);
+    return db;
+  }
+
+  /**
+   * GK Mutual Polarization Contribution to the Born grad.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @return Mutual Polarization contribution to the partial derivative with respect to a Born grad.
+   */
+  public double mutualPolarizationEnergyBornGrad(PolarizableMultipole mI, PolarizableMultipole mK) {
+    double db = 0.0;
+    if (multipoleOrder == GK_MULTIPOLE_ORDER.DIPOLE) {
+      // Find the potential and its derivatives at k due to induced dipole i.
+      dipoleIPotentialAtK(mI.ux, mI.uy, mI.uz, 2);
+      db = 0.5 * (mK.px * E100 + mK.py * E010 + mK.pz * E001);
+
+      // Find the potential and its derivatives at i due to induced dipole k.
+      dipoleKPotentialAtI(mK.ux, mK.uy, mK.uz, 2);
+      db += 0.5 * (mI.px * E100 + mI.py * E010 + mI.pz * E001);
+    }
+    return db;
+  }
+
+  /**
    * Set the separation vector.
    *
    * @param r Separation vector.
@@ -228,20 +791,47 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
   }
 
   /**
+   * Set the "mode" for the tensor (either POTENTIAL or BORN).
+   *
+   * @param mode The mode for tensor generation.
+   */
+  protected void setMode(GK_TENSOR_MODE mode) {
+    this.mode = mode;
+  }
+
+  /**
    * Generate source terms for the Kirkwood version of the Challacombe et al. recursion.
    */
   protected void source(double[] work) {
-    for (int n = 0; n <= order; n++) {
-      an0[n] = an0(n);
-      fn[n] = fn(n);
-      bn[n] = bn(n);
-    }
+    int multipoleOrder = this.multipoleOrder.getOrder();
 
-    for (int n = 0; n <= order; n++) {
-      if (n < multipoleOrder) {
-        work[n] = 0.0;
-      } else {
-        work[n] = anm(multipoleOrder, n - multipoleOrder);
+    if (mode == GK_TENSOR_MODE.POTENTIAL) {
+      // Prepare the GK Potential tensor.
+      for (int n = 0; n <= order; n++) {
+        an0[n] = an0(n);
+        fn[n] = fn(n);
+      }
+      for (int n = 0; n <= order; n++) {
+        if (n < multipoleOrder) {
+          work[n] = 0.0;
+        } else {
+          work[n] = anm(multipoleOrder, n - multipoleOrder);
+        }
+      }
+    } else {
+      // Prepare the GK Born-chain rule tensor.
+      for (int n = 0; n <= order; n++) {
+        an0[n] = an0(n);
+        fn[n] = fn(n);
+        bn[n] = bn(n);
+      }
+      // Only up to order - 1.
+      for (int n = 0; n <= order - 1; n++) {
+        if (n < multipoleOrder) {
+          work[n] = 0.0;
+        } else {
+          work[n] = bnm(multipoleOrder, n - multipoleOrder);
+        }
       }
     }
   }
@@ -252,7 +842,7 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
    * @param n Multipole order.
    * @return The potential auxiliary function for a multipole of order n.
    */
-  public double an0(int n) {
+  protected double an0(int n) {
     return kirkwoodSource[n] / pow(f, 2 * n + 1);
   }
 
@@ -263,7 +853,7 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
    * @param m Mth potential gradient auxiliary function.
    * @return Returns the mth potential gradient auxiliary function for a multipole of order n.
    */
-  public double anm(int n, int m) {
+  protected double anm(int n, int m) {
     if (m == 0) {
       return an0[n];
     }
@@ -284,7 +874,7 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
    * @return Returns the derivative with respect to a Born radius of the mth potential gradient
    *     auxiliary function for a multipole of order n.
    */
-  public double bnm(int n, int m) {
+  protected double bnm(int n, int m) {
     if (m == 0) {
       // return bn(0) * an0(n + 1);
       return bn[0] * an0[n + 1];
@@ -305,7 +895,7 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
    * @param n Multipole order.
    * @return Returns the nth value of the function f.
    */
-  private double fn(int n) {
+  protected double fn(int n) {
     switch (n) {
       case 0:
         return f;
@@ -349,7 +939,7 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
    * @param n Multipole order.
    * @return Returns coefficients needed when taking derivatives of auxiliary functions.
    */
-  public static double[] anmc(int n) {
+  protected static double[] anmc(int n) {
     double[] ret = new double[n + 1];
     ret[0] = 1.0;
     switch (n) {

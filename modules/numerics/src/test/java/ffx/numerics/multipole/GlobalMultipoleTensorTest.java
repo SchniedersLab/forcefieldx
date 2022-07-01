@@ -150,7 +150,6 @@ public class GlobalMultipoleTensorTest {
     double[] Qi = {0.11, 0.22, 0.33, 0.44, 0.11, 0.22, -0.33, 0.12, 0.13, 0.14};
     double[] r = {2.11, 2.12, 2.13};
     double[] tensor = new double[tensorCount];
-
     MultipoleTensor multipoleTensor = new CoulombTensorGlobal(order);
     logger.info(format(" Writing Cartesian Order %d tensor recursion code:", order));
     String code = multipoleTensor.codeTensorRecursion(r, tensor);

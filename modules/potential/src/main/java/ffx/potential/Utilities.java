@@ -172,7 +172,7 @@ public final class Utilities {
           // logger.info(" Molecule: " + moleculeNum);
           Molecule molecule = new Molecule("Molecule-" + moleculeNum);
           moleculeAtoms = getAtomListFromPool();
-          collectAtoms(atoms.get(0), moleculeAtoms);
+          collectAtoms(atoms.get(0), moleculeAtoms, true);
           while (moleculeAtoms.size() > 0) {
             atom = moleculeAtoms.get(0);
             moleculeAtoms.remove(0);
@@ -207,7 +207,7 @@ public final class Utilities {
         Molecule hetero = new Molecule("Molecule-" + moleculeNum);
         atom = backbone.get(0);
         List<Atom> heteroAtomList = getAtomListFromPool();
-        collectAtoms(atom, heteroAtomList);
+        collectAtoms(atom, heteroAtomList,  true);
         for (Atom a : heteroAtomList) {
           hetero.addMSNode(a);
         }
@@ -474,6 +474,20 @@ public final class Utilities {
    * @param atoms List
    */
   private static void collectAtoms(Atom seed, List<Atom> atoms) {
+    collectAtoms(seed, atoms, false);
+  }
+
+  /**
+   * Given an array of bonded atoms, this function recursively collects all other connected atoms,
+   * without backtracking over atoms already in the list. Disulfide bonds are not crossed. (the
+   * intent is to search along a peptide backbone) Atoms preloaded into the List provide search
+   * termination.
+   *
+   * @param seed Atom
+   * @param atoms List
+   * @param searchDisulfide Allows crossing of disulfide bonds (e.g. molecules)
+   */
+  private static void collectAtoms(Atom seed, List<Atom> atoms, boolean searchDisulfide) {
     if (seed == null) {
       return;
     }
@@ -483,10 +497,10 @@ public final class Utilities {
       if (nextAtom.getParent() != null) {
         continue;
       }
-      // Avoid crossing disulfide bonds.
-      if ((nextAtom.getAtomicNumber() != 16 || seed.getAtomicNumber() != 16)
+      // Avoid crossing disulfide bonds?
+      if ((searchDisulfide || (nextAtom.getAtomicNumber() != 16 || seed.getAtomicNumber() != 16))
           && !atoms.contains(nextAtom)) {
-        collectAtoms(nextAtom, atoms);
+        collectAtoms(nextAtom, atoms, searchDisulfide);
       }
     }
   }

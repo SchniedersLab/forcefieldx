@@ -56,7 +56,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * <br>
  * ffxc CIFtoXYZ &lt;filename.cif&gt; &lt;filename.xyz&gt;
  */
-@Command(description = " Convert a single molecule CIF file to XYZ format.", name = "ffxc CIFtoXYZ")
+@Command(description = " Convert a CIF file to XYZ format.", name = "ffxc CIFtoXYZ")
 class CIFtoXYZ extends PotentialScript {
 
   /**
@@ -112,7 +112,7 @@ class CIFtoXYZ extends PotentialScript {
    * The final argument(s) should be a CIF file and an XYZ file with atom types.
    */
   @Parameters(arity = "1..2", paramLabel = "files",
-      description = "A CIF file and an XYZ file.")
+      description = "A CIF file and an XYZ file (already parameterized) containing one of each molecule from the CIF.")
   List<String> filenames = null
 
   /**

@@ -63,7 +63,7 @@ public class QIFrame {
    * @param dz Separation along the z-axis.
    */
   public QIFrame(double dx, double dy, double dz) {
-    setQIRotationMatrix(dx, dy, dz);
+    setQIVector(dx, dy, dz);
   }
 
   /**
@@ -72,7 +72,7 @@ public class QIFrame {
    * @param r Separation along each axis.
    */
   public QIFrame(double[] r) {
-    setQIRotationMatrix(r[0], r[1], r[2]);
+    setQIVector(r[0], r[1], r[2]);
   }
 
   /**
@@ -80,8 +80,8 @@ public class QIFrame {
    *
    * @param r Separation along each axis.
    */
-  public void setQIRotationMatrix(double[] r) {
-    setQIRotationMatrix(r[0], r[1], r[2]);
+  public void setQIVector(double[] r) {
+    setQIVector(r[0], r[1], r[2]);
   }
 
   /**
@@ -91,7 +91,7 @@ public class QIFrame {
    * @param dy Separation along the y-axis.
    * @param dz Separation along the z-axis.
    */
-  public void setQIRotationMatrix(double dx, double dy, double dz) {
+  public void setQIVector(double dx, double dy, double dz) {
     // The QI Z-axis is along the separation vector.
     double[] zAxis = {dx, dy, dz};
 
@@ -161,7 +161,7 @@ public class QIFrame {
    */
   public void setAndRotate(double dx, double dy, double dz,
       PolarizableMultipole mI, PolarizableMultipole mK) {
-    setQIRotationMatrix(dx, dy, dz);
+    setQIVector(dx, dy, dz);
     rotatePolarizableMultipole(mI);
     rotatePolarizableMultipole(mK);
   }
@@ -171,7 +171,7 @@ public class QIFrame {
    *
    * @param m PolarizableMultipole to rotate.
    */
-  protected void rotatePolarizableMultipole(PolarizableMultipole m) {
+  public void rotatePolarizableMultipole(PolarizableMultipole m) {
     rotatePermanentMultipole(m);
     rotateInducedDipoles(m);
   }
@@ -181,7 +181,7 @@ public class QIFrame {
    *
    * @param m PolarizableMultipole to rotate.
    */
-  protected void rotatePermanentMultipole(PolarizableMultipole m) {
+  public void rotatePermanentMultipole(PolarizableMultipole m) {
     // Rotate the permanent dipole.
     double dx = m.dx;
     double dy = m.dy;
@@ -256,7 +256,7 @@ public class QIFrame {
    *
    * @param v The vector to rotate (in-place).
    */
-  public void qiToGlobal(double[] v) {
+  public void toGlobal(double[] v) {
     double vx = v[0];
     double vy = v[1];
     double vz = v[2];

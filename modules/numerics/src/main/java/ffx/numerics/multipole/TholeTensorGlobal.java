@@ -37,12 +37,11 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
-import static ffx.numerics.math.DoubleMath.length;
 import static org.apache.commons.math3.util.FastMath.exp;
 
 /**
- * The TholeTensorGlobal class computes derivatives of Thole dampling via recursion to
- * order <= 4 for Cartesian multipoles in either a global frame.
+ * The TholeTensorGlobal class computes derivatives of Thole dampling via recursion to order <= 4 for
+ * Cartesian multipoles in either a global frame.
  *
  * @author Michael J. Schnieders
  * @see <a href="http://doi.org/10.1142/9789812830364_0002" target="_blank"> Matt Challacombe, Eric
@@ -60,7 +59,7 @@ public class TholeTensorGlobal extends CoulombTensorGlobal {
   private static final double oneThirtyFifth = 1.0 / 35.0;
 
   /**
-   * Thole dampling parameter is set to min(pti,ptk)).
+   * Thole damping parameter is set to min(pti,ptk)).
    */
   private double thole;
 
@@ -91,21 +90,19 @@ public class TholeTensorGlobal extends CoulombTensorGlobal {
    * @param thole a double.
    * @param AiAk a double.
    */
-  public void setDamping(double thole, double AiAk) {
+  public void setThole(double thole, double AiAk) {
     this.thole = thole;
     this.AiAk = AiAk;
   }
 
   /**
-   * checkDampingCriterion.
+   * Check if the Thole damping is exponential is greater than zero (or the interaction can be
+   * neglected).
    *
-   * @param dx_local an array of {@link double} objects.
-   * @param thole a double.
-   * @param AiAk a double.
-   * @return a boolean.
+   * @param r The separation distance.
+   * @return True if -thole*u^3 is greater than -50.0.
    */
-  public static boolean checkDampingCriterion(double[] dx_local, double thole, double AiAk) {
-    double r = length(dx_local);
+  public boolean checkThole(double r) {
     double rAiAk = r * AiAk;
     return (-thole * rAiAk * rAiAk * rAiAk > -50.0);
   }
@@ -115,7 +112,9 @@ public class TholeTensorGlobal extends CoulombTensorGlobal {
    *
    * @param T000 Location to store the source terms.
    */
+  @Override
   protected void source(double[] T000) {
+    // Compute the normal Coulomb auxiliary term.
     double ir = 1.0 / R;
     double ir2 = ir * ir;
     for (int n = 0; n < o1; n++) {
@@ -123,7 +122,7 @@ public class TholeTensorGlobal extends CoulombTensorGlobal {
       ir *= ir2;
     }
 
-    // Add the Thole damping terms: edamp = exp(-damp*u^3).
+    // Add the Thole damping terms: edamp = exp(-thole*u^3).
     double u = R * AiAk;
     double u3 = thole * u * u * u;
     double u6 = u3 * u3;
