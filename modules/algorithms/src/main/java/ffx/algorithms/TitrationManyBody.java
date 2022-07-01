@@ -52,6 +52,8 @@ import ffx.potential.parsers.PDBFilter;
 import java.io.File;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class TitrationManyBody {
 
@@ -62,6 +64,7 @@ public class TitrationManyBody {
   private ForceFieldEnergy potentialEnergy;
   private final double pH;
   private final String filename;
+  private static final Logger logger = Logger.getLogger(TitrationManyBody.class.getName());
 
   public TitrationManyBody(
       String filename,
@@ -86,18 +89,22 @@ public class TitrationManyBody {
     protonatedAssembly.finalize(true, forceField);
     potentialEnergy = ForceFieldEnergy.energyFactory(protonatedAssembly);
     protonatedAssembly.setFile(structureFile);
-
+    logger.info(protonatedAssembly.getResidueList().toString());
     TitrationUtils titrationUtils;
+    logger.info("Construct titration utils");
     titrationUtils = new TitrationUtils(protonatedAssembly.getForceField());
+    logger.info("set titration utils");
     titrationUtils.setRotamerPhBias(298.15, pH);
+    logger.info("set rotamer ph bias");
     for (Residue residue : protonatedAssembly.getResidueList()) {
       String resName = residue.getName();
+      logger.info(resName);
       if (resNumberList.contains(residue.getResidueNumber())) {
         if (resName.equalsIgnoreCase("ASH") ||
             resName.equalsIgnoreCase("GLH") ||
             resName.equalsIgnoreCase("LYS") ||
             resName.equalsIgnoreCase("HIS") ||
-            resName.equalsIgnoreCase("CYS")) {
+                resName.equalsIgnoreCase("CYS")) {
           residue.setTitrationUtils(titrationUtils);
         }
       }
@@ -112,42 +119,53 @@ public class TitrationManyBody {
     return protonatedAssembly;
   }
 
-  public MolecularAssembly[] getProtonatedAssemblies(MolecularAssembly[] molecularAssemblies) {
-    molecularAssemblies[0].setForceField(forceField);
-    File structureFile = new File(filename);
-    for (MolecularAssembly molecularAssembly : molecularAssemblies) {
-      protonFilter = new PDBFilter(structureFile, molecularAssembly, forceField,
-              forceField.getProperties(), resNumberList);
-      protonFilter.setRotamerTitration(true);
-      protonFilter.readFile();
-      protonFilter.applyAtomProperties();
-      molecularAssembly.finalize(true, forceField);
-      potentialEnergy = ForceFieldEnergy.energyFactory(molecularAssembly);
-      molecularAssembly.setFile(structureFile);
+  public MolecularAssembly[] getProtonatedAssemblies() {
+    logger.info("Getting protonated assemblies");
+    MolecularAssembly molecularAssembly = getProtonatedAssembly();
+    System.out.println("Got first system");
+    List<Character> altLocs = protonFilter.getAltLocs();
+    MolecularAssembly[] molecularAssemblies = new MolecularAssembly[altLocs.size()];
+    molecularAssemblies[0] = molecularAssembly;
+    for(int i=0; i< altLocs.size(); i++){
+      if(i!=0){
+        MolecularAssembly newAssembly = new MolecularAssembly(filename);
+        System.out.println("Looking at second system");
+        protonFilter.setRotamerTitration(true);
+        System.out.println("Reading file");
+        protonFilter.setAltID(newAssembly, altLocs.get(i));
+        protonFilter.readFile();
+        System.out.println("Applying atom properties");
+        protonFilter.applyAtomProperties();
+        molecularAssembly.finalize(true, forceField);
+        potentialEnergy = ForceFieldEnergy.energyFactory(newAssembly);
 
-      TitrationUtils titrationUtils;
-      titrationUtils = new TitrationUtils(molecularAssembly.getForceField());
-      titrationUtils.setRotamerPhBias(298.15, pH);
-      for (Residue residue : molecularAssembly.getResidueList()) {
-        String resName = residue.getName();
-        if (resNumberList.contains(residue.getResidueNumber())) {
-          if (resName.equalsIgnoreCase("ASH") ||
-                  resName.equalsIgnoreCase("GLH") ||
-                  resName.equalsIgnoreCase("LYS") ||
-                  resName.equalsIgnoreCase("HIS") ||
-                  resName.equalsIgnoreCase("CYS")) {
-            residue.setTitrationUtils(titrationUtils);
+        TitrationUtils titrationUtils;
+        titrationUtils = new TitrationUtils(molecularAssembly.getForceField());
+        titrationUtils.setRotamerPhBias(298.15, pH);
+        for (Residue residue : molecularAssembly.getResidueList()) {
+          String resName = residue.getName();
+          if (resNumberList.contains(residue.getResidueNumber())) {
+            if (resName.equalsIgnoreCase("ASH") ||
+                    resName.equalsIgnoreCase("GLH") ||
+                    resName.equalsIgnoreCase("LYS") ||
+                    resName.equalsIgnoreCase("HIS") ||
+                    resName.equalsIgnoreCase("CYS")) {
+              residue.setTitrationUtils(titrationUtils);
+            }
           }
         }
+        potentialEnergy.energy();
+        molecularAssemblies[i] = newAssembly;
       }
     }
+    /*
 
     if (potentialEnergy instanceof ForceFieldEnergyOpenMM) {
       boolean updateBondedTerms = forceField.getBoolean("TITRATION_UPDATE_BONDED_TERMS", true);
       ForceFieldEnergyOpenMM forceFieldEnergyOpenMM = (ForceFieldEnergyOpenMM) potentialEnergy;
       forceFieldEnergyOpenMM.getSystem().setUpdateBondedTerms(updateBondedTerms);
-    }
-    potentialEnergy.energy();
+    }*/
+
     return molecularAssemblies;
   }
 

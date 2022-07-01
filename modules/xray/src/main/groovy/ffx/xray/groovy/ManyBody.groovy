@@ -132,6 +132,7 @@ class ManyBody extends AlgorithmsScript {
         if (filenames != null && filenames.size() > 0) {
             molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
             activeAssembly = molecularAssemblies[0]
+            logger.info(molecularAssemblies.length.toString())
             modelFilename = filenames.get(0)
         } else if (activeAssembly == null) {
             logger.info(helpString())
@@ -170,10 +171,10 @@ class ManyBody extends AlgorithmsScript {
             // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
             titrationManyBody = new TitrationManyBody(filenames.get(0), activeAssembly.getForceField(),
                     resNumberList, titrationPH)
-            MolecularAssembly[] protonatedAssemblies = titrationManyBody.getProtonatedAssemblies(molecularAssemblies)
+            MolecularAssembly[] protonatedAssemblies = titrationManyBody.getProtonatedAssemblies()
             setActiveAssembly(protonatedAssemblies[0])
             potentialEnergy = protonatedAssemblies[0].getPotentialEnergy()
-            molecularAssemblies = protonatedAssemblies
+            //molecularAssemblies = protonatedAssemblies
         }
 
         // Load parsed X-ray properties.
@@ -264,6 +265,7 @@ class ManyBody extends AlgorithmsScript {
                     if (coorAX == coorBX && coorAY == coorBY && coorAZ == coorBZ) {
                         atom.setAltLoc(' ' as Character)
                         atomB.setAltLoc(' ' as Character)
+                        atom.setOccupancy(1.0)
                     }
                 }
 
