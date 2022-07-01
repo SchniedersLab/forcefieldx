@@ -1423,10 +1423,6 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     // Set the Current Working Directory based on this file.
     setCWD(file.getParentFile());
 
-    // Get "filename" from "filename.extension".
-    String name = file.getName();
-    String extension = FilenameUtils.getExtension(name);
-
     // Create the CompositeConfiguration properties.
     CompositeConfiguration properties = Keyword.loadProperties(file);
     // Create an FFXSystem for this file.
@@ -1468,7 +1464,6 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
       fileOpener.setNThreads(fileOpenerThreads);
     }
     return fileOpener;
-    // return new UIFileOpener(systemFilter, this);
   }
 
   private UIFileOpener openFromUtils(List<File> files, String commandDescription) {

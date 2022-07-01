@@ -860,15 +860,8 @@ public final class PDBFilter extends SystemFilter {
                     }
                     resSeq += offset;
                     if (offset != 0) {
-                      logger.info(
-                          format(
-                              " Chain %c " + "residue %s-%s renumbered to %c %s-%d",
-                              chainID,
-                              pdbResNum.substring(1).trim(),
-                              resName,
-                              chainID,
-                              resName,
-                              resSeq));
+                      logger.info(format(" Chain %c " + "residue %s-%s renumbered to %c %s-%d",
+                              chainID, pdbResNum.substring(1).trim(), resName, chainID, resName, resSeq));
                     }
                     String newNum = format("%c%d", chainID, resSeq);
                     pdbToNewResMap.put(pdbResNum, newNum);
@@ -1187,11 +1180,9 @@ public final class PDBFilter extends SystemFilter {
                 //
                 // Notes:
                 // SSBOND records may be invalid if chain IDs are reused.
-                // SSBOND records are applied by FFX to the A conformer (not alternate conformers).
+                // SSBOND records are applied by FFX to all conformers.
                 // =============================================================================
-                if (currentAltLoc == 'A') {
-                  ssbonds.add(line);
-                }
+                ssbonds.add(line);
                 break;
               case HELIX:
                 // =============================================================================

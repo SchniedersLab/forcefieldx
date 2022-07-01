@@ -135,62 +135,6 @@ public class PotentialsFileOpener implements FileOpener {
   /**
    * Constructor for PotentialsFileOpener.
    *
-   * @param filepath a {@link java.nio.file.Path} object.
-   */
-  public PotentialsFileOpener(Path filepath) {
-    this(filepath.toString());
-  }
-
-  /**
-   * Constructor for PotentialsFileOpener.
-   *
-   * @param files an array of {@link java.io.File} objects.
-   */
-  public PotentialsFileOpener(File[] files) {
-    if (files == null) {
-      throw new IllegalArgumentException(" Array of files to be opened was null.");
-    }
-    int numFiles = files.length;
-    if (numFiles == 0) {
-      throw new IllegalArgumentException(" Array of files to be opened was empty.");
-    }
-    List<File> fileList = new ArrayList<>();
-    List<Path> pathList = new ArrayList<>();
-    Path pwdPath;
-    try {
-      pwdPath = Paths.get(new File("").getCanonicalPath());
-    } catch (IOException ex) {
-      pwdPath = Paths.get(new File("").getAbsolutePath());
-    }
-    for (File tryFile : files) {
-      if (!(tryFile.exists() && tryFile.isFile())) {
-        continue;
-      }
-      Path absPath;
-      try {
-        absPath = Paths.get(tryFile.getCanonicalPath());
-      } catch (IOException ex) {
-        absPath = Paths.get(tryFile.getAbsolutePath());
-      }
-      Path thisPath = pwdPath.relativize(absPath);
-      fileList.add(tryFile);
-      pathList.add(thisPath);
-    }
-    int numAccepted = fileList.size();
-    if (numAccepted < 1) {
-      throw new IllegalArgumentException(" No valid files could be found to open.");
-    }
-    allFiles = fileList.toArray(new File[numAccepted]);
-    allPaths = pathList.toArray(new Path[numAccepted]);
-    this.file = allFiles[0];
-    this.filepath = allPaths[0];
-    assemblies = new ArrayList<>();
-    propertyList = new ArrayList<>();
-  }
-
-  /**
-   * Constructor for PotentialsFileOpener.
-   *
    * @param filenames an array of {@link java.lang.String} objects.
    */
   PotentialsFileOpener(String[] filenames) {
@@ -321,7 +265,7 @@ public class PotentialsFileOpener implements FileOpener {
         ForceField patchForceField = forceFieldFilter.parse();
         forceField.append(patchForceField);
         if (RotamerLibrary.addRotPatch(patch)) {
-          logger.info(String.format(" Loaded rotamer definitions from patch %s.", patch));
+          logger.info(format(" Loaded rotamer definitions from patch %s.", patch));
         }
       }
       assembly.setForceField(forceField);
@@ -333,9 +277,8 @@ public class PotentialsFileOpener implements FileOpener {
         filter = new INTFilter(fileI, assembly, forceField, properties);
       } else {
         throw new IllegalArgumentException(
-            String.format(
-                " File %s could not be recognized as a valid PDB, XYZ, INT, or ARC file.",
-                pathI.toString()));
+            format(" File %s could not be recognized as a valid PDB, XYZ, INT, or ARC file.",
+                pathI));
       }
 
       /* If on-open mutations requested, add them to filter. */
@@ -353,8 +296,6 @@ public class PotentialsFileOpener implements FileOpener {
         }
         filter.applyAtomProperties();
         assembly.finalize(true, forceField);
-        // ForceFieldEnergy energy = ForceFieldEnergy.energyFactory(assembly,
-        // filter.getCoordRestraints());
         ForceFieldEnergy energy;
         if (nThreads > 0) {
           energy = ForceFieldEnergy.energyFactory(assembly, filter.getCoordRestraints(), nThreads);
@@ -411,7 +352,7 @@ public class PotentialsFileOpener implements FileOpener {
           }
         }
       } else {
-        logger.warning(String.format(" Failed to read file %s", fileI.toString()));
+        logger.warning(String.format(" Failed to read file %s", fileI));
       }
     }
     activeAssembly = assemblies.get(0);
