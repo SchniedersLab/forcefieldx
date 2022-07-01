@@ -219,6 +219,8 @@ public final class PDBFilter extends SystemFilter {
     rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.ASP, AminoAcidUtils.AminoAcid3.ASH);
     // Glutamate
     rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.GLU, AminoAcidUtils.AminoAcid3.GLH);
+    //Cysteine
+    rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS);
   }
 
   /**
