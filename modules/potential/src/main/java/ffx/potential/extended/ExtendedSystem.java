@@ -65,6 +65,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
@@ -813,13 +816,26 @@ public class ExtendedSystem implements Potential {
         }
     }
 
-    public int[][][] getESVHistogram(){
-        return esvHistogram;
+    public int[][] getESVHistogram(int[][] histogram){
+        for(int i=0; i<titratingResidueList.size(); i++){
+            int h=0;
+            for(int j=0; j <10; j++){
+                for(int k=0; k<10; k++){
+                    histogram[i][h++] = esvHistogram[i][j][k];
+                }
+            }
+        }
+        return histogram;
     }
 
-    public void copyESVHistogramTo(int[][][] histogram){
-        for(int i = 0; i < 3 ; i++){
-            System.arraycopy(histogram[i], 0, esvHistogram[i]);
+    public void copyESVHistogramTo(int[][] histogram){
+        for(int i=0; i<titratingResidueList.size(); i++){
+            int h=0;
+            for(int j=0; j <10; j++){
+                for(int k=0; k<10; k++){
+                    esvHistogram[i][j][k] = histogram[i][h++];
+                }
+            }
         }
     }
 
