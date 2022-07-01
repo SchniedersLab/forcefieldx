@@ -74,6 +74,7 @@ public class PhReplicaExchange implements Terminatable {
    * Currently the array is of size [number of Processes][2].
    */
   private final double[][] parameters;
+  private final int[][][] parametersHis;
   /**
    * Each parameter array is wrapped inside a Parallel Java DoubleBuf for the All-Gather
    * communication calls.
@@ -140,6 +141,7 @@ public class PhReplicaExchange implements Terminatable {
 
     // Create arrays to store the parameters of all processes.
     parameters = new double[nReplicas][4]; //
+    parametersHis = new int[nReplicas][extendedSystem.getNumberOfVariables()][100];
     parametersBuf = new DoubleBuf[nReplicas];
     for (int i = 0; i < nReplicas; i++) {
       parametersBuf[i] = DoubleBuf.buffer(parameters[i]);

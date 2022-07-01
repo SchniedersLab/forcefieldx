@@ -813,6 +813,16 @@ public class ExtendedSystem implements Potential {
         }
     }
 
+    public int[][][] getESVHistogram(){
+        return esvHistogram;
+    }
+
+    public void copyESVHistogramTo(int[][][] histogram){
+        for(int i = 0; i < 3 ; i++){
+            System.arraycopy(histogram[i], 0, esvHistogram[i]);
+        }
+    }
+
     private void esvHistogram(int esv, double lambda) {
         int value = (int) (lambda * 10.0);
         //Cover the case where lambda could be exactly 1.0
