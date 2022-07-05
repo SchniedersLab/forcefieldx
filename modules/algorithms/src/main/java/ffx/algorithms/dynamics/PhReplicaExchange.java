@@ -54,7 +54,7 @@ import static ffx.utilities.Constants.kB;
 import static org.apache.commons.math3.util.FastMath.exp;
 
 /**
- * The ReplicaExchange implements temperature and lambda replica exchange methods.
+ * The ReplicaExchange implements pH replica exchange methods.
  *
  * @author Timothy D. Fenn and Michael J. Schnieders
  * @since 1.0
@@ -79,7 +79,6 @@ public class PhReplicaExchange implements Terminatable {
    * communication calls.
    */
   private final DoubleBuf[] parametersBuf;
-
   private final MolecularDynamics replica;
   private boolean done = false;
   private boolean terminate = false;
@@ -296,9 +295,8 @@ public class PhReplicaExchange implements Terminatable {
   /**
    * Evaluate whether or not to exchange
    * @param pH what pH to have as the replica target
-   * @param countingDown
    */
-  private void compareTwo(int pH, boolean countingDown){
+  private void compareTwo(int pH){
     // Ranks for pH A and B
     int rankA;
     int rankB;
@@ -364,7 +362,7 @@ public class PhReplicaExchange implements Terminatable {
   private void exchange() {
     // Loop over top and bottom parts of pH scale
     for (int pH = 0; pH < nReplicas - 1; pH++) {
-      compareTwo(pH, false);
+      compareTwo(pH);
     }
 
     logger.info(" ");
@@ -436,6 +434,7 @@ public class PhReplicaExchange implements Terminatable {
       logger.log(Level.SEVERE, message, ex);
     }
   }
+
 
   private void dynamics(long nSteps, double timeStep, double printInterval, double saveInterval) {
 
