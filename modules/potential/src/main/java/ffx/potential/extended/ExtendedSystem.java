@@ -373,8 +373,7 @@ public class ExtendedSystem implements Potential {
                     residueNames[atomIndex] = residue.getAminoAcid3();
                     isTitrating[atomIndex] = true;
                     if(guessTitrState){
-                        double guessTitrLambda = initialTitrationState(residue, initialTitrationLambda);
-                        titrationLambdas[atomIndex] = guessTitrLambda;
+                        titrationLambdas[atomIndex] = initialTitrationState(residue, initialTitrationLambda);
                     } else{
                         titrationLambdas[atomIndex] = initialTitrationLambda;
                     }
@@ -472,6 +471,13 @@ public class ExtendedSystem implements Potential {
         double dUdL = getDerivatives()[index];
         double dUdTheta = dUdL * sin(2 * thetaPosition[index]);
         thetaAccel[index] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
+    }
+
+    public void reinitLambdas(){
+        for(Residue residue : titratingResidueList){
+            double lambda = initialTitrationState(residue, 1.0);
+            setTitrationLambda(residue, lambda);
+        }
     }
 
     /**

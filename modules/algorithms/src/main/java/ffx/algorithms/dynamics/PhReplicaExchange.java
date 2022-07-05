@@ -237,7 +237,7 @@ public class PhReplicaExchange implements Terminatable {
       int cycles, long nSteps, double timeStep, double printInterval, double saveInterval) {
     done = false;
     terminate = false;
-    parametersHis[0][0][0] = 100;
+    extendedSystem.reinitLambdas();
     for (int i = 0; i < cycles; i++) {
       // Check for termination request.
       if (terminate) {
@@ -415,7 +415,7 @@ public class PhReplicaExchange implements Terminatable {
     int i = rank2Ph[rank];
 
     extendedSystem.setConstantPh(pHScale[i]);
-    extendedSystem.copyESVHistogramTo(parametersHis[i]);
+    extendedSystem.copyESVHistogramTo(parametersHis[rank]);
 
     // Start this processes MolecularDynamics instance sampling.
     boolean initVelocities = true;
@@ -472,10 +472,9 @@ public class PhReplicaExchange implements Terminatable {
   private void dynamics(long nSteps, double timeStep, double printInterval, double saveInterval) {
 
     int i = rank2Ph[rank];
-
     extendedSystem.setConstantPh(pHScale[i]);
     //TODO: check if this correct index
-    extendedSystem.copyESVHistogramTo(parametersHis[i]);
+    extendedSystem.copyESVHistogramTo(parametersHis[rank]);
 
     // Start this processes MolecularDynamics instance sampling.
     boolean initVelocities = true;
