@@ -89,16 +89,11 @@ public class TitrationManyBody {
     protonatedAssembly.finalize(true, forceField);
     potentialEnergy = ForceFieldEnergy.energyFactory(protonatedAssembly);
     protonatedAssembly.setFile(structureFile);
-    logger.info(protonatedAssembly.getResidueList().toString());
     TitrationUtils titrationUtils;
-    logger.info("Construct titration utils");
     titrationUtils = new TitrationUtils(protonatedAssembly.getForceField());
-    logger.info("set titration utils");
     titrationUtils.setRotamerPhBias(298.15, pH);
-    logger.info("set rotamer ph bias");
     for (Residue residue : protonatedAssembly.getResidueList()) {
       String resName = residue.getName();
-      logger.info(resName);
       if (resNumberList.contains(residue.getResidueNumber())) {
         if (resName.equalsIgnoreCase("ASH") ||
             resName.equalsIgnoreCase("GLH") ||
@@ -122,17 +117,16 @@ public class TitrationManyBody {
   public MolecularAssembly[] getProtonatedAssemblies() {
     logger.info("Getting protonated assemblies");
     MolecularAssembly molecularAssembly = getProtonatedAssembly();
-    System.out.println("Got first system");
     List<Character> altLocs = protonFilter.getAltLocs();
     MolecularAssembly[] molecularAssemblies = new MolecularAssembly[altLocs.size()];
     molecularAssemblies[0] = molecularAssembly;
     for(int i=0; i< altLocs.size(); i++){
       if(i!=0){
         MolecularAssembly newAssembly = new MolecularAssembly(filename);
-        System.out.println("Looking at second system");
+        
         protonFilter.setRotamerTitration(true);
-        System.out.println("Reading file");
         protonFilter.setAltID(newAssembly, altLocs.get(i));
+        logger.info(newAssembly.getResidueList().toString());
         protonFilter.readFile();
         System.out.println("Applying atom properties");
         protonFilter.applyAtomProperties();
@@ -168,6 +162,7 @@ public class TitrationManyBody {
 
     return molecularAssemblies;
   }
+
 
   public boolean excludeExcessAtoms(Set<Atom> excludeAtoms, int[] optimalRotamers,
       List<Residue> residueList) {

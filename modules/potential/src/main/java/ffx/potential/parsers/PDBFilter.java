@@ -195,6 +195,8 @@ public final class PDBFilter extends SystemFilter {
   static {
     // Lysine
     constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.LYD, AminoAcidUtils.AminoAcid3.LYS);
+    // Cysteine
+    constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS);
     // Histidine
     constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.HID, AminoAcidUtils.AminoAcid3.HIS);
     constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.HIE, AminoAcidUtils.AminoAcid3.HIS);
