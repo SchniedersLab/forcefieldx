@@ -66,9 +66,10 @@ import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
-import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.nonbonded.ParticleMeshEwald;
+import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.parameters.ForceField;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -397,11 +398,11 @@ public class GKEnergyRegion extends ParallelRegion {
           uyi = multipolei[t010];
           uzi = multipolei[t001];
           qxxi = multipolei[t200] * oneThird;
+          qyyi = multipolei[t020] * oneThird;
+          qzzi = multipolei[t002] * oneThird;
           qxyi = multipolei[t110] * oneThird;
           qxzi = multipolei[t101] * oneThird;
-          qyyi = multipolei[t020] * oneThird;
           qyzi = multipolei[t011] * oneThird;
-          qzzi = multipolei[t002] * oneThird;
           dxi = inducedDipole[0][i][0];
           dyi = inducedDipole[0][i][1];
           dzi = inducedDipole[0][i][2];
@@ -487,11 +488,11 @@ public class GKEnergyRegion extends ParallelRegion {
       uyk = multipolek[t010];
       uzk = multipolek[t001];
       qxxk = multipolek[t200] * oneThird;
+      qyyk = multipolek[t020] * oneThird;
+      qzzk = multipolek[t002] * oneThird;
       qxyk = multipolek[t110] * oneThird;
       qxzk = multipolek[t101] * oneThird;
-      qyyk = multipolek[t020] * oneThird;
       qyzk = multipolek[t011] * oneThird;
-      qzzk = multipolek[t002] * oneThird;
       dxk = inducedDipole[iSymm][k][0];
       dyk = inducedDipole[iSymm][k][1];
       dzk = inducedDipole[iSymm][k][2];
@@ -610,6 +611,13 @@ public class GKEnergyRegion extends ParallelRegion {
       // Compute the GK interaction energy.
       double eik = energy(i, k);
 
+//      logger.info(format(" GK %d %d (%17.15f %17.15f %17.15f): %17.15f", i, k, xr, yr, zr, eik / electric));
+//      logger.info(format(" GK %d %d BornI: %17.15f BornK: %17.15f", i, k, rbi, rbk));
+//      logger.info(format(" GK %d multipole %s", i, Arrays.toString(globalMultipole[0][i])));
+//      logger.info(format(" GK %d multipole %s", k, Arrays.toString(multipolek)));
+//      logger.info(format(" GK %d induced %s", i, Arrays.toString(inducedDipole[iSymm][i])));
+//      logger.info(format(" GK %d induced %s", k, Arrays.toString(inducedDipole[iSymm][k])));
+
       // Test the GK Tensor class.
 //     if (i == k) {
 //        PolarizableMultipole polarizableMultipole = new PolarizableMultipole(multipolek,
@@ -629,6 +637,7 @@ public class GKEnergyRegion extends ParallelRegion {
 
         // Compute the permanent GK energy gradient.
         permanentEnergyGradient(i, k);
+
         if (polarization != ParticleMeshEwald.Polarization.NONE) {
           // Compute the induced GK energy gradient.
           polarizationEnergyGradient(i, k);
@@ -1397,10 +1406,12 @@ public class GKEnergyRegion extends ParallelRegion {
       final double dedxk = dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
       final double dedyk = dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
       final double dedzk = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
-
       grad.add(threadID, k, dedxk, dedyk, dedzk);
       sharedBornGrad.add(threadID, k, selfScale * drbk);
       permanentEnergyTorque(i, k);
+//      logger.info(format(" GK %d grad %17.15f %17.15f %17.15f", i, -dedx / electric, -dedy / electric, -dedz / electric));
+//      logger.info(format(" GK %d grad %17.15f %17.15f %17.15f", k, dedxk / electric, dedyk / electric, dedzk / electric));
+//      logger.info(format(" GK %d drbi %17.15f %d drbk %17.15f", i, drbi / electric, k, drbk / electric));
     }
 
     private double dEdZ() {
@@ -1877,7 +1888,6 @@ public class GKEnergyRegion extends ParallelRegion {
     }
 
     private void permanentEnergyTorque(int i, int k) {
-
       // Torque on permanent dipoles due to permanent reaction field.
       final double ix =
           uxk * gux[2]
@@ -2222,6 +2232,9 @@ public class GKEnergyRegion extends ParallelRegion {
       final double rtky = tkx * transOp[0][1] + tky * transOp[1][1] + tkz * transOp[2][1];
       final double rtkz = tkx * transOp[0][2] + tky * transOp[1][2] + tkz * transOp[2][2];
       torque.add(threadID, k, rtkx, rtky, rtkz);
+
+//      logger.info(format(" GK %d torque %17.15f %17.15f %17.15f", i, tix / electric, tiy / electric, tiz / electric));
+//      logger.info(format(" GK %d torque %17.15f %17.15f %17.15f", k, rtkx / electric, rtky / electric, rtkz / electric));
     }
 
     private void polarizationEnergyGradient(int i, int k) {
@@ -2579,12 +2592,14 @@ public class GKEnergyRegion extends ParallelRegion {
         dedyi -= dpdy;
         dedzi -= dpdz;
         dborni += dbi;
-
         final double rdpdx = dpdx * transOp[0][0] + dpdy * transOp[1][0] + dpdz * transOp[2][0];
         final double rdpdy = dpdx * transOp[0][1] + dpdy * transOp[1][1] + dpdz * transOp[2][1];
         final double rdpdz = dpdx * transOp[0][2] + dpdy * transOp[1][2] + dpdz * transOp[2][2];
         grad.add(threadID, k, rdpdx, rdpdy, rdpdz);
         sharedBornGrad.add(threadID, k, dbk);
+//        logger.info(format(" GK %d pol grad %17.15f %17.15f %17.15f", i, -dpdx / electric, -dpdy / electric, -dpdz / electric));
+//        logger.info(format(" GK %d pol grad %17.15f %17.15f %17.15f", k, dpdx / electric, dpdy / electric, dpdz / electric));
+//        logger.info(format(" GK %d drbi %17.15f %d drbk %17.15f", i, dbi / electric, k, dbk / electric));
       }
       polarizationEnergyTorque(i, k);
     }
@@ -2709,6 +2724,8 @@ public class GKEnergyRegion extends ParallelRegion {
       tky = rx * transOp[0][1] + ry * transOp[1][1] + rz * transOp[2][1];
       tkz = rx * transOp[0][2] + ry * transOp[1][2] + rz * transOp[2][2];
       torque.add(threadID, k, tkx, tky, tkz);
+//      logger.info(format(" GK %d pol torque %17.15f %17.15f %17.15f", i, tix / electric, tiy / electric, tiz / electric));
+//      logger.info(format(" GK %d pol torque %17.15f %17.15f %17.15f", k, tkx / electric, tky / electric, tkz / electric));
     }
   }
 }
