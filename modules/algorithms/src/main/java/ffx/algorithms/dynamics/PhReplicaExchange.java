@@ -38,6 +38,8 @@
 package ffx.algorithms.dynamics;
 
 import edu.rit.mp.DoubleBuf;
+import edu.rit.mp.IntegerBuf;
+import edu.rit.mp.buf.IntegerMatrixBuf_1;
 import edu.rit.pj.Comm;
 import ffx.algorithms.Terminatable;
 import ffx.numerics.Potential;
@@ -74,11 +76,15 @@ public class PhReplicaExchange implements Terminatable {
    * Currently the array is of size [number of Processes][2].
    */
   private final double[][] parameters;
+  private final int[][][] parametersHis;
+  private final int[][] myParametersHis;
   /**
    * Each parameter array is wrapped inside a Parallel Java DoubleBuf for the All-Gather
    * communication calls.
    */
   private final DoubleBuf[] parametersBuf;
+  private final IntegerBuf[] parametersHisBuf;
+  private final IntegerBuf myParametersHisBuf;
   private final MolecularDynamics replica;
   private boolean done = false;
   private boolean terminate = false;
@@ -138,16 +144,21 @@ public class PhReplicaExchange implements Terminatable {
     random.setSeed(0);
 
     // Create arrays to store the parameters of all processes.
-    parameters = new double[nReplicas][5]; //
+    parameters = new double[nReplicas][4]; //
+    parametersHis = new int[nReplicas][extendedSystem.getTitratingResidueList().size()][100];
     parametersBuf = new DoubleBuf[nReplicas];
+    parametersHisBuf = new IntegerBuf[nReplicas];
     for (int i = 0; i < nReplicas; i++) {
       parametersBuf[i] = DoubleBuf.buffer(parameters[i]);
+      parametersHisBuf[i] = IntegerMatrixBuf_1.buffer(parametersHis[i]);
     }
 
     // A convenience reference to the parameters of this process are updated
     // during communication calls.
     myParameters = parameters[rank];
+    myParametersHis = parametersHis[rank];
     myParametersBuf = parametersBuf[rank];
+    myParametersHisBuf = parametersHisBuf[rank];
   }
 
   /**
@@ -197,15 +208,20 @@ public class PhReplicaExchange implements Terminatable {
 
     // Create arrays to store the parameters of all processes.
     parameters = new double[nReplicas][4]; //
+    parametersHis = new int[nReplicas][extendedSystem.getTitratingResidueList().size()][100];
     parametersBuf = new DoubleBuf[nReplicas];
+    parametersHisBuf = new IntegerMatrixBuf_1[nReplicas];
     for (int i = 0; i < nReplicas; i++) {
       parametersBuf[i] = DoubleBuf.buffer(parameters[i]);
+      parametersHisBuf[i] = IntegerMatrixBuf_1.buffer(parametersHis[i]);
     }
 
     // A convenience reference to the parameters of this process are updated
     // during communication calls.
     myParameters = parameters[rank];
+    myParametersHis = parametersHis[rank];
     myParametersBuf = parametersBuf[rank];
+    myParametersHisBuf = parametersHisBuf[rank];
   }
 
   /**
@@ -221,6 +237,7 @@ public class PhReplicaExchange implements Terminatable {
       int cycles, long nSteps, double timeStep, double printInterval, double saveInterval) {
     done = false;
     terminate = false;
+    extendedSystem.reinitLambdas();
     for (int i = 0; i < cycles; i++) {
       // Check for termination request.
       if (terminate) {
@@ -341,6 +358,14 @@ public class PhReplicaExchange implements Terminatable {
       parameters[rankA][0] = pHB;
       parameters[rankB][0] = pHA;
 
+      int[][] tempHis = new int[extendedSystem.getTitratingResidueList().size()][100];
+      for (int i = 0; i < parametersHis[rankA].length; i++) {
+        System.arraycopy(parametersHis[rankA][i],0,tempHis[i],0,tempHis[i].length);
+        System.arraycopy(parametersHis[rankB][i],0,parametersHis[rankA][i],0,parametersHis[rankA].length);
+        System.arraycopy(tempHis[i],0,parametersHis[rankB][i],0,parametersHis[rankB].length);
+      }
+      //int[][] hisB = parametersHis[rankB];
+
       // Map temperatures to process ranks.
       pH2Rank[pH] = rankB;
       pH2Rank[pH + 1] = rankA;
@@ -389,6 +414,7 @@ public class PhReplicaExchange implements Terminatable {
     int i = rank2Ph[rank];
 
     extendedSystem.setConstantPh(pHScale[i]);
+    extendedSystem.copyESVHistogramTo(parametersHis[rank]);
 
     // Start this processes MolecularDynamics instance sampling.
     boolean initVelocities = true;
@@ -426,9 +452,13 @@ public class PhReplicaExchange implements Terminatable {
 
     extendedSystem.setConstantPh(myParameters[0]);
 
+    extendedSystem.getESVHistogram(myParametersHis);
+    extendedSystem.writeLambdaHistogram();
+
     // Gather all parameters from the other processes.
     try {
       world.allGather(myParametersBuf, parametersBuf);
+      world.allGather(myParametersHisBuf, parametersHisBuf);
     } catch (IOException ex) {
       String message = " Replica Exchange allGather failed.";
       logger.log(Level.SEVERE, message, ex);
@@ -439,8 +469,9 @@ public class PhReplicaExchange implements Terminatable {
   private void dynamics(long nSteps, double timeStep, double printInterval, double saveInterval) {
 
     int i = rank2Ph[rank];
-
     extendedSystem.setConstantPh(pHScale[i]);
+    //TODO: check if this correct index
+    extendedSystem.copyESVHistogramTo(parametersHis[rank]);
 
     // Start this processes MolecularDynamics instance sampling.
     boolean initVelocities = true;
@@ -461,9 +492,13 @@ public class PhReplicaExchange implements Terminatable {
 
     extendedSystem.setConstantPh(myParameters[0]);
 
+    extendedSystem.getESVHistogram(myParametersHis);
+    extendedSystem.writeLambdaHistogram();
+
     // Gather all parameters from the other processes.
     try {
       world.allGather(myParametersBuf, parametersBuf);
+      world.allGather(myParametersHisBuf, parametersHisBuf);
     } catch (IOException ex) {
       String message = " Replica Exchange allGather failed.";
       logger.log(Level.SEVERE, message, ex);

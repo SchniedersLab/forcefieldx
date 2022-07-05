@@ -45,6 +45,7 @@ import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.reduction.SharedDouble;
+import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.PotentialComponent;
@@ -64,6 +65,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
@@ -73,17 +77,14 @@ import org.apache.commons.io.FilenameUtils;
  * @author Andrew Thiel
  * @since 1.0
  */
-public class ExtendedSystem {
+public class ExtendedSystem implements Potential {
 
     private static final Logger logger = Logger.getLogger(ExtendedSystem.class.getName());
-
     private static final double THETA_MASS = 5.0; //Atomic Mass Units
-
     private static final double THETA_FRICTION = 5.0; // psec^-1
-
     private static final double DISCR_BIAS = 1.0; // kcal/mol
-
     private static final double LOG10 = log(10.0);
+
     private static final int discrBiasIndex = 0;
     private static final int pHBiasIndex = 1;
     private static final int modelBiasIndex = 2;
@@ -135,6 +136,10 @@ public class ExtendedSystem {
      * when an Extended System is attached.
      */
     private final TitrationUtils titrationUtils;
+
+    /** ForceField Energy Instance. This instance is only used for Potential implementations for grabbing the energy components.
+     */
+    private final ForceFieldEnergy forceFieldEnergy;
 
     /**
      * Number of atoms in the molecular assembly. Since all protons are instantiated at start, this int will not change.
@@ -240,24 +245,24 @@ public class ExtendedSystem {
      * Coefficients that define the per residue type Fmod polynomial
      * refEnergy * titrationLambda^2 + lambdaIntercept * titrationLambda
      */
-    final private double ASHrefEnergy;
-    final private double ASHlambdaIntercept;
-    final private double GLHrefEnergy;
-    final private double GLHlambdaIntercept;
-    final private double LYSrefEnergy;
-    final private double LYSlambdaIntercept;
-    final private double CYSrefEnergy;
-    final private double CYSlambdaIntercept;
-    final private double HIDrefEnergy;
-    final private double HIDlambdaIntercept;
-    final private double HIErefEnergy;
-    final private double HIElambdaIntercept;
+    private final double ASHrefEnergy;
+    private final double ASHlambdaIntercept;
+    private final double GLHrefEnergy;
+    private final double GLHlambdaIntercept;
+    private final double LYSrefEnergy;
+    private final double LYSlambdaIntercept;
+    private final double CYSrefEnergy;
+    private final double CYSlambdaIntercept;
+    private final double HIDrefEnergy;
+    private final double HIDlambdaIntercept;
+    private final double HIErefEnergy;
+    private final double HIElambdaIntercept;
     /**
      * Coefficients that define the tautomer component of the bivariate Histidine Fmod
      * refEnergy * tautomerLambda^2 + lambdaIntercept * tautomerLambda
      */
-    final private double HIDtoHIErefEnergy;
-    final private double HIDtoHIElambdaIntercept;
+    private final double HIDtoHIErefEnergy;
+    private final double HIDtoHIElambdaIntercept;
     /**
      * Dynamics restart file.
      */
@@ -285,7 +290,7 @@ public class ExtendedSystem {
         extendedMolecules = mola.getMoleculeNumbers();
 
         ForceField forceField = mola.getForceField();
-        ForceFieldEnergy forceFieldEnergy = mola.getPotentialEnergy();
+        forceFieldEnergy = mola.getPotentialEnergy();
         if (forceFieldEnergy == null) {
             logger.severe("No potential energy found?");
         }
@@ -296,13 +301,6 @@ public class ExtendedSystem {
         doElectrostatics = properties.getBoolean("esv.elec", true);
         doBias = properties.getBoolean("esv.bias", true);
         doPolarization = properties.getBoolean("esv.polarization", true);
-//        boolean bonded = properties.getBoolean("esv.bonded", false);
-//        boolean verbose = properties.getBoolean("esv.verbose", false);
-//        boolean decomposeBonded = properties.getBoolean("esv.decomposeBonded", false);
-//        boolean decomposeDeriv = properties.getBoolean("esv.decomposeDeriv", false);
-//        boolean nonlinearMultipoles = properties.getBoolean("esv.nonlinearMultipoles", false); // sigmoid lambda Mpole switch
-//        boolean forceRoomTemp = properties.getBoolean("esv.forceRoomTemp", false);
-//        boolean propagation = properties.getBoolean("esv.propagation", true);
         thetaFriction = properties.getDouble("esv.friction", ExtendedSystem.THETA_FRICTION);
         thetaMass = properties.getDouble("esv.mass", ExtendedSystem.THETA_MASS);
         titrBiasMag = properties.getDouble("titration.bias.magnitude", DISCR_BIAS);
@@ -375,8 +373,7 @@ public class ExtendedSystem {
                     residueNames[atomIndex] = residue.getAminoAcid3();
                     isTitrating[atomIndex] = true;
                     if(guessTitrState){
-                        double guessTitrLambda = initialTitrationState(residue, initialTitrationLambda);
-                        titrationLambdas[atomIndex] = guessTitrLambda;
+                        titrationLambdas[atomIndex] = initialTitrationState(residue, initialTitrationLambda);
                     } else{
                         titrationLambdas[atomIndex] = initialTitrationLambda;
                     }
@@ -474,6 +471,13 @@ public class ExtendedSystem {
         double dUdL = getDerivatives()[index];
         double dUdTheta = dUdL * sin(2 * thetaPosition[index]);
         thetaAccel[index] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
+    }
+
+    public void reinitLambdas(){
+        for(Residue residue : titratingResidueList){
+            double lambda = initialTitrationState(residue, 1.0);
+            setTitrationLambda(residue, lambda);
+        }
     }
 
     /**
@@ -818,6 +822,29 @@ public class ExtendedSystem {
         }
     }
 
+    public int[][] getESVHistogram(int[][] histogram){
+        for(int i=0; i<titratingResidueList.size(); i++){
+            int h=0;
+            for(int j=0; j <10; j++){
+                for(int k=0; k<10; k++){
+                    histogram[i][h++] = esvHistogram[i][j][k];
+                }
+            }
+        }
+        return histogram;
+    }
+
+    public void copyESVHistogramTo(int[][] histogram){
+        for(int i=0; i<titratingResidueList.size(); i++){
+            int h=0;
+            for(int j=0; j <10; j++){
+                for(int k=0; k<10; k++){
+                    esvHistogram[i][j][k] = histogram[i][h++];
+                }
+            }
+        }
+    }
+
     private void esvHistogram(int esv, double lambda) {
         int value = (int) (lambda * 10.0);
         //Cover the case where lambda could be exactly 1.0
@@ -838,6 +865,33 @@ public class ExtendedSystem {
             tautValue = 9;
         }
         esvHistogram[esv][titrValue][tautValue]++;
+    }
+
+    //Naive guess as to what the best starting state should be based purely on the acidostat term.
+    private double initialTitrationState(Residue residue, double initialLambda){
+        AminoAcid3 AA3 = residue.getAminoAcid3();
+        double initialTitrationLambda;
+        switch (AA3){
+            case ASD:
+                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.ASHtoASP.pKa) ? 1.0 : 0.0;
+                break;
+            case GLD:
+                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.GLHtoGLU.pKa) ? 1.0 : 0.0;
+                break;
+            case HIS:
+                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.HIStoHID.pKa) ? 1.0 : 0.0;
+                break;
+            case LYS:
+                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.LYStoLYD.pKa) ? 1.0 : 0.0;
+                break;
+            case CYS:
+                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.CYStoCYD.pKa) ? 1.0 : 0.0;
+                break;
+            default:
+                initialTitrationLambda = initialLambda;
+                break;
+        }
+        return initialTitrationLambda;
     }
 
     public void initEsvVdw() {
@@ -973,6 +1027,15 @@ public class ExtendedSystem {
             sb.append(format("%6.4f", extendedLambdas[i]));
         }
         return sb.toString();
+    }
+
+    public double[] getLambdaArray(){
+        double[] lambdaArray = new double[extendedResidueList.size()];
+        System.arraycopy(extendedLambdas,0, lambdaArray, 0, lambdaArray.length);
+        return lambdaArray;
+    }
+    public void setLambdaArray(double[] lambdaArray){
+        System.arraycopy(lambdaArray, 0, extendedLambdas, 0, extendedLambdas.length);
     }
 
     /**
@@ -1231,6 +1294,12 @@ public class ExtendedSystem {
         return dEdTheta;
     }
 
+    private double[] fillESVgradient(double[] g){
+        double[] gradESV = postForce();
+        System.arraycopy(gradESV,0, g,0, g.length);
+        return g;
+    }
+
     public void writeRestart() {
         String esvName = FileUtils.relativePathTo(restartFile).toString();
         if (esvFilter.writeESV(restartFile, thetaPosition, thetaVelocity, thetaAccel)) {
@@ -1240,7 +1309,6 @@ public class ExtendedSystem {
         }
     }
 
-    //TODO: Find a better way to print this histogram out
     public void writeLambdaHistogram() {
         StringBuilder tautomerHeader = new StringBuilder("      X→ ");
         for (int k = 0; k < 10; k++) {
@@ -1267,30 +1335,95 @@ public class ExtendedSystem {
         }
     }
 
-    //Naive guess as to what the best starting state should be based purely on the acidostat term.
-    private double initialTitrationState(Residue residue, double initialLambda){
-        AminoAcid3 AA3 = residue.getAminoAcid3();
-        double initialTitrationLambda;
-        switch (AA3){
-            case ASD:
-                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.ASHtoASP.pKa) ? 1.0 : 0.0;
-                break;
-            case GLD:
-                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.GLHtoGLU.pKa) ? 1.0 : 0.0;
-                break;
-            case HIS:
-                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.HIStoHID.pKa) ? 1.0 : 0.0;
-                break;
-            case LYS:
-                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.LYStoLYD.pKa) ? 1.0 : 0.0;
-                break;
-            case CYS:
-                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.CYStoCYD.pKa) ? 1.0 : 0.0;
-                break;
-            default:
-                initialTitrationLambda = initialLambda;
-                break;
-        }
-        return initialTitrationLambda;
+    @Override
+    public double energy(double[] x) {
+        double[] coords = new double[forceFieldEnergy.getNumberOfVariables()];
+        forceFieldEnergy.getCoordinates(coords);
+        return forceFieldEnergy.energy(coords);
+    }
+
+    @Override
+    public double energyAndGradient(double[] x, double[] g) {
+        System.arraycopy(x, 0, thetaPosition, 0, thetaPosition.length);
+        updateLambdas();
+        fillESVgradient(g);
+        return energy(x);
+    }
+
+    @Override
+    public double[] getAcceleration(double[] acceleration) {
+        return new double[0];
+    }
+
+    @Override
+    public double[] getCoordinates(double[] parameters) {
+        return new double[0];
+    }
+
+    @Override
+    public STATE getEnergyTermState() {
+        return null;
+    }
+
+    @Override
+    public void setEnergyTermState(STATE state) {
+
+    }
+
+    @Override
+    public double[] getMass() {
+        return new double[0];
+    }
+
+    @Override
+    public int getNumberOfVariables() {
+        return nESVs;
+    }
+
+    @Override
+    public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        return new double[0];
+    }
+
+    @Override
+    public double[] getScaling() {
+        double[] scaling = new double[nESVs];
+        Arrays.fill(scaling, 1.0);
+        return scaling;
+    }
+
+    @Override
+    public void setScaling(double[] scaling) {
+
+    }
+
+    @Override
+    public double getTotalEnergy() {
+        return 0;
+    }
+
+    @Override
+    public VARIABLE_TYPE[] getVariableTypes() {
+        return new VARIABLE_TYPE[0];
+    }
+
+    @Override
+    public double[] getVelocity(double[] velocity) {
+        return new double[0];
+    }
+
+    @Override
+    public void setAcceleration(double[] acceleration) {
+
+    }
+
+    @Override
+    public void setPreviousAcceleration(double[] previousAcceleration) {
+
+    }
+
+    @Override
+    public void setVelocity(double[] velocity) {
+
     }
 }
