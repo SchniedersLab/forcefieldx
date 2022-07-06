@@ -237,7 +237,7 @@ public class PhReplicaExchange implements Terminatable {
       int cycles, long nSteps, double timeStep, double printInterval, double saveInterval) {
     done = false;
     terminate = false;
-    extendedSystem.reinitLambdas();
+    extendedSystem.reGuessLambdas();
     for (int i = 0; i < cycles; i++) {
       // Check for termination request.
       if (terminate) {
@@ -312,9 +312,8 @@ public class PhReplicaExchange implements Terminatable {
   /**
    * Evaluate whether or not to exchange
    * @param pH what pH to have as the replica target
-   * @param countingDown
    */
-  private void compareTwo(int pH, boolean countingDown){
+  private void compareTwo(int pH){
     // Ranks for pH A and B
     int rankA;
     int rankB;
@@ -388,7 +387,7 @@ public class PhReplicaExchange implements Terminatable {
   private void exchange() {
     // Loop over top and bottom parts of pH scale
     for (int pH = 0; pH < nReplicas - 1; pH++) {
-      compareTwo(pH, false);
+      compareTwo(pH);
     }
 
     logger.info(" ");

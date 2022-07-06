@@ -72,7 +72,7 @@ public final class XPHFileFilter extends FileFilter {
       return true;
     }
     String ext = FilenameUtils.getExtension(file.getName());
-    return ext.toUpperCase().startsWith("XYZ");
+    return ext.toUpperCase().startsWith("XPH");
   }
 
   /**
