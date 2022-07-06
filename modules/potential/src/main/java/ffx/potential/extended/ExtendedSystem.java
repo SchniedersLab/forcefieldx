@@ -56,9 +56,13 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TitrationUtils;
 import ffx.potential.parsers.ESVFilter;
+import ffx.potential.parsers.XPHFilter;
 import ffx.utilities.Constants;
 import ffx.utilities.FileUtils;
+
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -443,7 +447,7 @@ public class ExtendedSystem implements Potential {
             String firstFileName = FilenameUtils.removeExtension(mola.getFile().getAbsolutePath());
             restartFile = new File(firstFileName + ".esv");
         } else {
-            if (!esvFilter.readESV(esvFile, thetaPosition, thetaVelocity, thetaAccel)) {
+            if (!esvFilter.readESV(esvFile, thetaPosition, thetaVelocity, thetaAccel, esvHistogram)) {
                 String message = " Could not load the restart file - dynamics terminated.";
                 logger.log(Level.WARNING, message);
                 throw new IllegalStateException(message);
@@ -471,13 +475,6 @@ public class ExtendedSystem implements Potential {
         double dUdL = getDerivatives()[index];
         double dUdTheta = dUdL * sin(2 * thetaPosition[index]);
         thetaAccel[index] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
-    }
-
-    public void reinitLambdas(){
-        for(Residue residue : titratingResidueList){
-            double lambda = initialTitrationState(residue, 1.0);
-            setTitrationLambda(residue, lambda);
-        }
     }
 
     /**
@@ -822,29 +819,6 @@ public class ExtendedSystem implements Potential {
         }
     }
 
-    public int[][] getESVHistogram(int[][] histogram){
-        for(int i=0; i<titratingResidueList.size(); i++){
-            int h=0;
-            for(int j=0; j <10; j++){
-                for(int k=0; k<10; k++){
-                    histogram[i][h++] = esvHistogram[i][j][k];
-                }
-            }
-        }
-        return histogram;
-    }
-
-    public void copyESVHistogramTo(int[][] histogram){
-        for(int i=0; i<titratingResidueList.size(); i++){
-            int h=0;
-            for(int j=0; j <10; j++){
-                for(int k=0; k<10; k++){
-                    esvHistogram[i][j][k] = histogram[i][h++];
-                }
-            }
-        }
-    }
-
     private void esvHistogram(int esv, double lambda) {
         int value = (int) (lambda * 10.0);
         //Cover the case where lambda could be exactly 1.0
@@ -894,6 +868,51 @@ public class ExtendedSystem implements Potential {
         return initialTitrationLambda;
     }
 
+    public void reGuessLambdas(){
+        for(Residue residue : titratingResidueList){
+            double lambda = initialTitrationState(residue, 1.0);
+            setTitrationLambda(residue, lambda);
+        }
+    }
+
+    public void setTitrationLambda(Residue residue, double lambda) {
+        if (titratingResidueList.contains(residue) && !lockStates) {
+            int index = titratingResidueList.indexOf(residue);
+            extendedLambdas[index] = lambda;
+            thetaPosition[index] = Math.asin(Math.sqrt(lambda));
+            List<Atom> currentAtomList = residue.getSideChainAtoms();
+            for (Atom atom : currentAtomList) {
+                int atomIndex = atom.getArrayIndex();
+                titrationLambdas[atomIndex] = lambda;
+            }
+        } /*else {
+            logger.warning(format("This residue %s is not titrating or locked by user property.", residue.getName()));
+        }*/
+    }
+
+    public int[][] getESVHistogram(int[][] histogram){
+        for(int i=0; i<titratingResidueList.size(); i++){
+            int h=0;
+            for(int j=0; j <10; j++){
+                for(int k=0; k<10; k++){
+                    histogram[i][h++] = esvHistogram[i][j][k];
+                }
+            }
+        }
+        return histogram;
+    }
+
+    public void copyESVHistogramTo(int[][] histogram){
+        for(int i=0; i<titratingResidueList.size(); i++){
+            int h=0;
+            for(int j=0; j <10; j++){
+                for(int k=0; k<10; k++){
+                    esvHistogram[i][j][k] = histogram[i][h++];
+                }
+            }
+        }
+    }
+
     public void initEsvVdw() {
         for (int i = 0; i < nESVs; i++) {
             esvVdwDerivs[i].set(0.0);
@@ -930,21 +949,6 @@ public class ExtendedSystem implements Potential {
 
     public int getTautomerESVIndex(int i) {
         return tautomerIndexMap[i];
-    }
-
-    public void setTitrationLambda(Residue residue, double lambda) {
-        if (titratingResidueList.contains(residue) && !lockStates) {
-            int index = titratingResidueList.indexOf(residue);
-            extendedLambdas[index] = lambda;
-            thetaPosition[index] = Math.asin(Math.sqrt(lambda));
-            List<Atom> currentAtomList = residue.getSideChainAtoms();
-            for (Atom atom : currentAtomList) {
-                int atomIndex = atom.getArrayIndex();
-                titrationLambdas[atomIndex] = lambda;
-            }
-        } /*else {
-            logger.warning(format("This residue %s is not titrating or locked by user property.", residue.getName()));
-        }*/
     }
 
     public void setTautomerLambda(Residue residue, double lambda) {
@@ -1001,7 +1005,13 @@ public class ExtendedSystem implements Potential {
     }
 
     public double[] getExtendedLambdas() {
-        return extendedLambdas;
+        double[] lambdas= new double[nESVs];
+        System.arraycopy(extendedLambdas, 0, lambdas, 0, lambdas.length);
+        return lambdas;
+    }
+
+    public void setExtendedLambdas(double[] lambdas){
+        System.arraycopy(lambdas, 0, extendedLambdas, 0, extendedLambdas.length);
     }
 
     /**
@@ -1027,15 +1037,6 @@ public class ExtendedSystem implements Potential {
             sb.append(format("%6.4f", extendedLambdas[i]));
         }
         return sb.toString();
-    }
-
-    public double[] getLambdaArray(){
-        double[] lambdaArray = new double[extendedResidueList.size()];
-        System.arraycopy(extendedLambdas,0, lambdaArray, 0, lambdaArray.length);
-        return lambdaArray;
-    }
-    public void setLambdaArray(double[] lambdaArray){
-        System.arraycopy(lambdaArray, 0, extendedLambdas, 0, extendedLambdas.length);
     }
 
     /**
@@ -1279,6 +1280,33 @@ public class ExtendedSystem implements Potential {
         updateLambdas();
     }
 
+    public void writeRestart() {
+        String esvName = FileUtils.relativePathTo(restartFile).toString();
+        if (esvFilter.writeESV(restartFile, thetaPosition, thetaVelocity, thetaAccel, titratingResidueList, esvHistogram, constantSystemPh)) {
+            logger.info(" Wrote dynamics restart file to " + esvName);
+        } else {
+            logger.info(" Writing dynamics restart file to " + esvName + " failed");
+        }
+    }
+
+    public void writeLambdaHistogram() {
+        logger.info(esvFilter.getLambdaHistogram(titratingResidueList, esvHistogram, constantSystemPh));
+    }
+
+    @Override
+    public double energyAndGradient(double[] x, double[] g) {
+        System.arraycopy(x, 0, thetaPosition, 0, thetaPosition.length);
+        updateLambdas();
+        fillESVgradient(g);
+        return energy(x);
+    }
+
+    private double[] fillESVgradient(double[] g){
+        double[] gradESV = postForce();
+        System.arraycopy(gradESV,0, g,0, g.length);
+        return g;
+    }
+
     /**
      * Applies a chain rule term to the derivative to account for taking a derivative of lambda = sin(theta)^2
      *
@@ -1294,60 +1322,11 @@ public class ExtendedSystem implements Potential {
         return dEdTheta;
     }
 
-    private double[] fillESVgradient(double[] g){
-        double[] gradESV = postForce();
-        System.arraycopy(gradESV,0, g,0, g.length);
-        return g;
-    }
-
-    public void writeRestart() {
-        String esvName = FileUtils.relativePathTo(restartFile).toString();
-        if (esvFilter.writeESV(restartFile, thetaPosition, thetaVelocity, thetaAccel)) {
-            logger.info(" Wrote dynamics restart file to " + esvName);
-        } else {
-            logger.info(" Writing dynamics restart file to " + esvName + " failed");
-        }
-    }
-
-    public void writeLambdaHistogram() {
-        StringBuilder tautomerHeader = new StringBuilder("      X→ ");
-        for (int k = 0; k < 10; k++) {
-            double lb = (double) k / 10;
-            double ub = (double) (k + 1) / 10;
-            tautomerHeader.append(String.format("%1$10s", "[" + lb + "-" + ub + "]"));
-        }
-        tautomerHeader.append("\nλ↓");
-        for (int i = 0; i < nTitr; i++) {
-            logger.info(format("ESV: %s (%d) \n", titratingResidueList.get(i).getName(), i));
-            logger.info(tautomerHeader.toString());
-            for (int j = 0; j < 10; j++) {
-                double lb = (double) j / 10;
-                double ub = (j + 1.0) / 10;
-                StringBuilder histogram = new StringBuilder();
-                for (int k = 0; k < 10; k++) {
-                    StringBuilder hisvalue = new StringBuilder();
-                    hisvalue.append(String.format("%1$10s", esvHistogram[i][j][k]));
-                    histogram.append(hisvalue);
-                }
-                logger.info("[" + lb + "-" + ub + "]" + histogram);
-            }
-            logger.info("\n");
-        }
-    }
-
     @Override
     public double energy(double[] x) {
         double[] coords = new double[forceFieldEnergy.getNumberOfVariables()];
         forceFieldEnergy.getCoordinates(coords);
         return forceFieldEnergy.energy(coords);
-    }
-
-    @Override
-    public double energyAndGradient(double[] x, double[] g) {
-        System.arraycopy(x, 0, thetaPosition, 0, thetaPosition.length);
-        updateLambdas();
-        fillESVgradient(g);
-        return energy(x);
     }
 
     @Override
