@@ -56,7 +56,7 @@ import static ffx.utilities.Constants.kB;
 import static org.apache.commons.math3.util.FastMath.exp;
 
 /**
- * The ReplicaExchange implements temperature and lambda replica exchange methods.
+ * The ReplicaExchange implements pH replica exchange methods.
  *
  * @author Timothy D. Fenn and Michael J. Schnieders
  * @since 1.0
@@ -439,17 +439,14 @@ public class PhReplicaExchange implements Terminatable {
 
     // Update this ranks' parameter array to be consistent with the dynamics.
 
-    logger.info(" ----------------------------------" + rank + "@" + rank);
     myParameters[0] = pHScale[i];
     myParameters[2] = extendedSystem.getBiasEnergy();
     logger.info(" ");
 
     // Evaluate acidostat of ES at different pHs
-    logger.info(" ----------------------------------" + rank + "@" + (rank-1));
     extendedSystem.setConstantPh(myParameters[0] - gapSize);
     myParameters[1] = extendedSystem.getBiasEnergy();
 
-    logger.info(" ----------------------------------" + rank + "@" + rank);
     extendedSystem.setConstantPh(myParameters[0] + gapSize);
     myParameters[3] = extendedSystem.getBiasEnergy();
 
@@ -467,6 +464,7 @@ public class PhReplicaExchange implements Terminatable {
       logger.log(Level.SEVERE, message, ex);
     }
   }
+
 
   private void dynamics(long nSteps, double timeStep, double printInterval, double saveInterval) {
 

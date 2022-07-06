@@ -672,7 +672,7 @@ public class XPHFilter extends SystemFilter {
           if (numOfESVs == residueList.size()) {
             int switchIndex = extendedSystem.getTitratingResidueList().size();
             for (int i = 0; i < residueList.size(); i++) {
-              tokens = data.split(" +", 3);
+              tokens = data.split(" +", 0);
 
               if (i < switchIndex) {
                 extendedSystem.setTitrationLambda(residueList.get(i), parseDouble(tokens[2]));
@@ -800,12 +800,12 @@ public class XPHFilter extends SystemFilter {
 
           residueAtoms = residueList.get(i).getAtomList(true);
           for(Atom atom : residueAtoms){
-            if(atom.getAtomType().name.equalsIgnoreCase("CA") ){
+            if(atom.getAtomType().name.equalsIgnoreCase("CA")){
               CAIndex = atom.getIndex();
             }
           }
 
-          line = new StringBuilder(format("%7d%7d%14.8f\n", i, CAIndex, ESV));
+          line = new StringBuilder(format("%7d%7d%14.8f%7s\n", i, CAIndex, ESV, residueList.get(i).getAminoAcid3()));
 
           esvLines[i] = line;
 
@@ -825,7 +825,7 @@ public class XPHFilter extends SystemFilter {
             }
           }
 
-          line = new StringBuilder(format("%7d%7d%14.8f\n", offsetIndex + i, CAIndex, ESV));
+          line = new StringBuilder(format("%7d%7d%14.8f%7s\n", offsetIndex + i, CAIndex, ESV, residueList.get(i).getAminoAcid3()));
 
           esvLines[offsetIndex + i] = line;
 

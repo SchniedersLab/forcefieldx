@@ -37,7 +37,10 @@
 // ******************************************************************************
 package ffx.potential.parsers;
 
+import ffx.potential.bonded.Residue;
+
 import java.io.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -64,6 +67,37 @@ public class ESVFilter {
     this.label = label;
   }
 
+  public String getLambdaHistogram(List<Residue> titratingResidueList, final int[][][] esvHistogram, double pH){
+    int nTitr = titratingResidueList.size();
+
+    StringBuilder tautomerHeader = new StringBuilder("      X→ ");
+    for (int k = 0; k < 10; k++) {
+      tautomerHeader.append(String.format("%1$10s", "[" + k / 10.0 + "-" + (k + 1) / 10.0 + "]"));
+    }
+    tautomerHeader.append("\nλ↓\n");
+
+    StringBuilder[] histogram = new StringBuilder[nTitr];
+    for (int i = 0; i < nTitr; i++) {
+      StringBuilder hist = new StringBuilder();
+      hist.append(format("ESV: %s (%d) pH: %4.2f\n", titratingResidueList.get(i), i, pH));
+      hist.append(tautomerHeader);
+      for (int j = 0; j < 10; j++) {
+        hist.append("[").append(j / 10.0).append("-").append((j + 1) / 10.0).append("]");
+        for (int k = 0; k < 10; k++) {
+          hist.append(String.format("%1$10s", esvHistogram[i][j][k]));
+        }
+        hist.append("\n");
+      }
+      histogram[i] = hist.append("\n");
+    }
+
+    StringBuilder histograms = new StringBuilder();
+    for (int i = 0; i < nTitr; i++) {
+      histograms.append(histogram[i]);
+    }
+    return String.valueOf(histograms);
+  }
+
   /**
    * readDYN
    *
@@ -74,7 +108,7 @@ public class ESVFilter {
    * @return a boolean.
    */
   public boolean readESV(
-      File esvFile, double[] x, double[] v, double[] a) {
+      File esvFile, double[] x, double[] v, double[] a, final int[][][] esvHist) {
     if (!esvFile.exists() || !esvFile.canRead()) {
       return false;
     }
@@ -120,6 +154,19 @@ public class ESVFilter {
         }
         a[i] = parseDouble(tokens[0]);
       }
+
+      for (int i = 0; i < esvHist.length; i++){
+        for (int j = 0; j < 4; j ++) {br.readLine();}
+        for (int j = 0; j < esvHist[i].length; j++){
+          data = br.readLine().trim();
+          tokens = data.split(" +");
+          for (int k = 0; k < esvHist[i][j].length; k++)
+          {
+            esvHist[i][j][k] = Integer.parseInt(tokens[k+1]);
+          }
+        }
+      }
+
     } catch (Exception e) {
       String message = "Exception reading ESV restart file: " + esvFile;
       logger.log(Level.WARNING, message, e);
@@ -137,7 +184,7 @@ public class ESVFilter {
    * @return a boolean.
    */
   public boolean writeESV(
-      File dynFile, double[] x, double[] v, double[] a) {
+      File dynFile, double[] x, double[] v, double[] a, List<Residue> titrResList, final int[][][] esvHist, double pH) {
     FileWriter fw = null;
     BufferedWriter bw = null;
     try {
@@ -163,6 +210,10 @@ public class ESVFilter {
       for (int i = 0; i < numberOfAtoms; i++) {
         bw.write(format("%26.16E\n", a[i]));
       }
+
+      bw.write(" Current Lambda Histogram(s) :\n");
+      bw.write(this.getLambdaHistogram(titrResList, esvHist, pH));
+
     } catch (IOException e) {
       String message = " Exception writing dynamic restart file " + dynFile;
       logger.log(Level.SEVERE, message, e);
