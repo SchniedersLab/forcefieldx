@@ -58,7 +58,10 @@ import ffx.potential.parameters.TitrationUtils;
 import ffx.potential.parsers.ESVFilter;
 import ffx.utilities.Constants;
 import ffx.utilities.FileUtils;
+
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -443,7 +446,7 @@ public class ExtendedSystem implements Potential {
             String firstFileName = FilenameUtils.removeExtension(mola.getFile().getAbsolutePath());
             restartFile = new File(firstFileName + ".esv");
         } else {
-            if (!esvFilter.readESV(esvFile, thetaPosition, thetaVelocity, thetaAccel)) {
+            if (!esvFilter.readESV(esvFile, thetaPosition, thetaVelocity, thetaAccel, esvHistogram)) {
                 String message = " Could not load the restart file - dynamics terminated.";
                 logger.log(Level.WARNING, message);
                 throw new IllegalStateException(message);
@@ -1302,7 +1305,7 @@ public class ExtendedSystem implements Potential {
 
     public void writeRestart() {
         String esvName = FileUtils.relativePathTo(restartFile).toString();
-        if (esvFilter.writeESV(restartFile, thetaPosition, thetaVelocity, thetaAccel)) {
+        if (esvFilter.writeESV(restartFile, thetaPosition, thetaVelocity, thetaAccel, titratingResidueList, esvHistogram, constantSystemPh)) {
             logger.info(" Wrote dynamics restart file to " + esvName);
         } else {
             logger.info(" Writing dynamics restart file to " + esvName + " failed");
@@ -1310,29 +1313,7 @@ public class ExtendedSystem implements Potential {
     }
 
     public void writeLambdaHistogram() {
-        StringBuilder tautomerHeader = new StringBuilder("      X→ ");
-        for (int k = 0; k < 10; k++) {
-            double lb = (double) k / 10;
-            double ub = (double) (k + 1) / 10;
-            tautomerHeader.append(String.format("%1$10s", "[" + lb + "-" + ub + "]"));
-        }
-        tautomerHeader.append("\nλ↓");
-        for (int i = 0; i < nTitr; i++) {
-            logger.info(format("ESV: %s (%d) \n", titratingResidueList.get(i).getName(), i));
-            logger.info(tautomerHeader.toString());
-            for (int j = 0; j < 10; j++) {
-                double lb = (double) j / 10;
-                double ub = (j + 1.0) / 10;
-                StringBuilder histogram = new StringBuilder();
-                for (int k = 0; k < 10; k++) {
-                    StringBuilder hisvalue = new StringBuilder();
-                    hisvalue.append(String.format("%1$10s", esvHistogram[i][j][k]));
-                    histogram.append(hisvalue);
-                }
-                logger.info("[" + lb + "-" + ub + "]" + histogram);
-            }
-            logger.info("\n");
-        }
+        logger.info(esvFilter.getLambdaHistogram(titratingResidueList, esvHistogram, constantSystemPh));
     }
 
     @Override

@@ -795,12 +795,12 @@ public class XPHFilter extends SystemFilter {
 
           residueAtoms = residueList.get(i).getAtomList(true);
           for(Atom atom : residueAtoms){
-            if(atom.getAtomType().name.equalsIgnoreCase("CB") ){
+            if(atom.getAtomType().name.equalsIgnoreCase("CA")){
               CAIndex = atom.getIndex();
             }
           }
 
-          line = new StringBuilder(format("%7d%7d%14.8f\n", i, CAIndex, ESV));
+          line = new StringBuilder(format("%7d%7d%14.8f%7s\n", i, CAIndex, ESV, residueList.get(i).getAminoAcid3()));
 
           esvLines[i] = line;
 
@@ -820,8 +820,7 @@ public class XPHFilter extends SystemFilter {
             }
           }
 
-          line = new StringBuilder(format("%7d%7d%14.8f\n", offsetIndex + i, CAIndex, ESV));
-          line.append(" ").append(residueList.get(i).getAminoAcid3());
+          line = new StringBuilder(format("%7d%7d%14.8f%7s\n", offsetIndex + i, CAIndex, ESV, residueList.get(i).getAminoAcid3()));
 
           esvLines[offsetIndex + i] = line;
 
