@@ -201,14 +201,13 @@ public class UIFileOpener implements FileOpener {
           logger.info(altLocString.toString());
         }
 
-        // Alternate conformers may have different chemistry, so they each need to be their own FFX
-        // system.
+        // Alternate conformers may have different chemistry,
+        // so they each need to be their own FFX system.
         for (Character c : altLocs) {
           if (c.equals(' ') || c.equals('A')) {
             continue;
           }
-          FFXSystem newSystem =
-              new FFXSystem(
+          FFXSystem newSystem = new FFXSystem(
                   ffxSystem.getFile(), "Alternate Location " + c, ffxSystem.getProperties());
           newSystem.setForceField(ffxSystem.getForceField());
           pdbFilter.setAltID(newSystem, c);
