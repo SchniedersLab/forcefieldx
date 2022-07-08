@@ -48,10 +48,11 @@ import ffx.xray.DiffractionData
 import ffx.xray.RefinementEnergy
 import ffx.xray.cli.XrayOptions
 import org.apache.commons.configuration2.CompositeConfiguration
-import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
+
+import static org.apache.commons.io.FilenameUtils.removeExtension
 
 /**
  * The X-ray Annealing script.
@@ -70,9 +71,6 @@ class Anneal extends AlgorithmsScript {
   DynamicsOptions dynamics
 
   @Mixin
-  WriteoutOptions writeout
-
-  @Mixin
   AnnealOptions anneal
 
   /**
@@ -82,8 +80,6 @@ class Anneal extends AlgorithmsScript {
   private List<String> filenames
 
   private SimulatedAnnealing simulatedAnnealing = null
-
-  private Potential potential
   private RefinementEnergy refinementEnergy
 
   /**
@@ -109,64 +105,57 @@ class Anneal extends AlgorithmsScript {
     }
 
     dynamics.init()
-    // Added vs. regular Anneal script.
     xrayOptions.init()
 
-    String modelFilename
-    MolecularAssembly[] assemblies
+    String filename
+    MolecularAssembly[] molecularAssemblies
     if (filenames != null && filenames.size() > 0) {
-      assemblies = algorithmFunctions.openAll(filenames.get(0))
-      activeAssembly = assemblies[0]
+      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
+      activeAssembly = molecularAssemblies[0]
     } else if (activeAssembly == null) {
       logger.info(helpString())
       return this
     } else {
-      assemblies = [activeAssembly]
+      molecularAssemblies = [activeAssembly]
     }
 
-    modelFilename = activeAssembly.getFile().getAbsolutePath()
+    filename = activeAssembly.getFile().getAbsolutePath()
 
-    logger.info("\n Running simulated annealing on X-ray target including " + modelFilename + "\n")
+    logger.info("\n Running simulated annealing on X-ray target including " + filename + "\n")
 
     // Restart File
-    File dyn = new File(FilenameUtils.removeExtension(modelFilename) + ".dyn")
+    File dyn = new File(removeExtension(filename) + ".dyn")
     if (!dyn.exists()) {
       dyn = null
     }
 
-    // Differs between regular Anneal and x-ray Anneal.
     CompositeConfiguration properties = activeAssembly.getProperties()
-    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
-    potential = xrayOptions.toXrayEnergy(diffractionData, assemblies, algorithmFunctions)
-    simulatedAnnealing = anneal.createAnnealer(dynamics, activeAssembly,
-        potential, properties,
-        algorithmListener, dyn)
+    DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, parseResult)
+    refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
 
+    // Print the initial energy of each conformer.
+    algorithmFunctions.energy(molecularAssemblies)
+
+    simulatedAnnealing = anneal.createAnnealer(dynamics, activeAssembly, refinementEnergy, properties,
+        algorithmListener, dyn)
     simulatedAnnealing.setPrintInterval(dynamics.report)
     simulatedAnnealing.setSaveFrequency(dynamics.write)
     simulatedAnnealing.setRestartFrequency(dynamics.checkpoint)
     simulatedAnnealing.setTrajectorySteps(dynamics.trajSteps)
 
+    // Run simulated annealing.
     simulatedAnnealing.anneal()
 
+    // Print the final refinement statistics.
     diffractionData.scaleBulkFit()
     diffractionData.printStats()
 
-    double[] x = new double[potential.getNumberOfVariables()]
-    x = potential.getCoordinates(x)
-    potential.energy(x, true)
+    // Print the final energy of each conformer.
+    algorithmFunctions.energy(molecularAssemblies)
 
-    diffractionData.writeData(FilenameUtils.removeExtension(modelFilename) + ".mtz")
-
-    if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {
-      baseDir = new File(FilenameUtils.getFullPath(modelFilename))
-    }
-
-    String dirName = baseDir.toString() + File.separator
-    String fileName = FilenameUtils.getName(modelFilename)
-    fileName = FilenameUtils.removeExtension(fileName)
-
-    writeout.saveFile(String.format("%s%s", dirName, fileName), algorithmFunctions, activeAssembly)
+    logger.info(" ")
+    diffractionData.writeModel(removeExtension(filename) + ".pdb")
+    diffractionData.writeData(removeExtension(filename) + ".mtz")
 
     return this
   }

@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
+import static ffx.numerics.math.DoubleMath.dihedralAngle;
+import static ffx.numerics.math.ScalarMath.modToRange;
 import static ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import static ffx.potential.bonded.AminoAcidUtils.getAminoAcid;
 import static ffx.potential.bonded.BondedUtils.findAtomsOfElement;
@@ -48,10 +50,9 @@ import static ffx.potential.bonded.BondedUtils.hasAttachedAtom;
 import static ffx.potential.bonded.BondedUtils.sortAtomsByDistance;
 import static ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
 import static java.lang.Integer.parseInt;
+import static java.lang.Math.PI;
 import static java.lang.String.format;
 
-import ffx.numerics.math.DoubleMath;
-import ffx.numerics.math.ScalarMath;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parsers.PDBFilter.PDBFileStandard;
 import java.util.ArrayList;
@@ -60,6 +61,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -564,7 +566,8 @@ public class NamingUtils {
    * @param aceC The acetyl group's C atom.
    */
   public static void nameAcetylCap(Residue residue, Atom aceC) {
-    logger.fine(format(" Probable ACE cap attached to residue %s; duplicate atom names may result.", residue));
+    logger.fine(format(" Probable ACE cap attached to residue %s; duplicate atom names may result.",
+        residue));
     aceC.setName("C");
     findBondedAtoms(aceC, 8).get(0).setName("O");
     Atom CH3 = findBondedAtoms(aceC, 6).get(0);
@@ -614,7 +617,9 @@ public class NamingUtils {
    */
   public static void renameAminoAcidToPDBStandard(Residue residue) {
     if (residue.getChainID() == null) {
-      logger.info(" Setting Chain ID to Z for " + residue);
+      if (logger.isLoggable(Level.FINE)) {
+        logger.fine(" Setting Chain ID to Z for " + residue);
+      }
       residue.setChainID('Z');
     }
     AminoAcid3 aa3 = residue.getAminoAcid3();
@@ -1395,9 +1400,9 @@ public class NamingUtils {
           final double[] xyzO5s = O5s.getXYZ(new double[3]);
           final double[] xyzP = P.getXYZ(new double[3]);
           final double[] xyzOP1 = OP1.getXYZ(new double[3]);
-          double dihedral = DoubleMath.dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzOP1);
-          double twoPiOver3 = 2.0 * Math.PI / 3.0;
-          double target = ScalarMath.modToRange(dihedral + twoPiOver3, -Math.PI, Math.PI);
+          double dihedral = dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzOP1);
+          double twoPiOver3 = 2.0 * PI / 3.0;
+          double target = modToRange(dihedral + twoPiOver3, -PI, PI);
           List<Atom> otherO =
               bondedO.stream()
                   .filter(o -> o != OP1)
@@ -1405,11 +1410,11 @@ public class NamingUtils {
                       Comparator.comparingDouble(
                           (Atom o) -> {
                             double[] xyzO = o.getXYZ(new double[3]);
-                            double dihedO = DoubleMath.dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzO);
+                            double dihedO = dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzO);
                             double diff = dihedO - target;
-                            double twoPi = 2 * Math.PI;
-                            diff = ScalarMath.modToRange(diff, 0, twoPi);
-                            diff = diff < Math.PI ? diff : twoPi - diff;
+                            double twoPi = 2 * PI;
+                            diff = modToRange(diff, 0, twoPi);
+                            diff = diff < PI ? diff : twoPi - diff;
                             return diff;
                           }))
                   .collect(Collectors.toList());
@@ -1425,9 +1430,9 @@ public class NamingUtils {
           final double[] xyzO5s = O5s.getXYZ(new double[3]);
           final double[] xyzP = P.getXYZ(new double[3]);
           final double[] xyzNextO3s = nextO3s.getXYZ(new double[3]);
-          double dihedral = DoubleMath.dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzNextO3s);
-          double twoPiOver3 = 2.0 * Math.PI / 3.0;
-          double target = ScalarMath.modToRange(dihedral + twoPiOver3, -Math.PI, Math.PI);
+          double dihedral = dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzNextO3s);
+          double twoPiOver3 = 2.0 * PI / 3.0;
+          double target = modToRange(dihedral + twoPiOver3, -PI, PI);
           List<Atom> otherO =
               bondedO.stream()
                   .filter(o -> o != nextO3s)
@@ -1435,11 +1440,11 @@ public class NamingUtils {
                       Comparator.comparingDouble(
                           (Atom o) -> {
                             double[] xyzO = o.getXYZ(new double[3]);
-                            double dihedO = DoubleMath.dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzO);
+                            double dihedO = dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzO);
                             double diff = dihedO - target;
-                            double twoPi = 2 * Math.PI;
-                            diff = ScalarMath.modToRange(diff, 0, twoPi);
-                            diff = diff < Math.PI ? diff : twoPi - diff;
+                            double twoPi = 2 * PI;
+                            diff = modToRange(diff, 0, twoPi);
+                            diff = diff < PI ? diff : twoPi - diff;
                             return diff;
                           }))
                   .collect(Collectors.toList());

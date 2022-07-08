@@ -95,6 +95,14 @@ public interface PotentialsFunctions {
   ForceFieldEnergy energy(MolecularAssembly assembly);
 
   /**
+   * Evaluates the energy of each MolecularAssembly and returns their ForceFieldEnergy instances.
+   *
+   * @param molecularAssemblies An array of molecularAssembly instances.
+   * @return An array of ForceFieldEnergy instances.
+   */
+  ForceFieldEnergy[] energy(MolecularAssembly[] molecularAssemblies);
+
+  /**
    * Returns either the active assembly from the overlying UI, or the "active" molecular assembly
    * from the last used SystemFilter.
    *

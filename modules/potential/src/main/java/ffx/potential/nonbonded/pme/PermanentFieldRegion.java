@@ -104,9 +104,6 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
   public double[][][] inducedDipoleCR;
   /** Polarization groups. */
   protected int[][] ip11;
-
-  private final PermanentRealSpaceFieldSection permanentRealSpaceFieldSection;
-  private final PermanentReciprocalSection permanentReciprocalSection;
   /** An ordered array of atoms in the system. */
   private Atom[] atoms;
   /** Unit cell and spacegroup information. */
@@ -178,9 +175,13 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
   private AtomicDoubleArray3D fieldCR;
   /** Timing variables. */
   private long realSpacePermTotal;
-
+  /**
+   * Collect timings for each thread.
+   */
   private long[] realSpacePermTime;
   private ScaleParameters scaleParameters;
+  private final PermanentRealSpaceFieldSection permanentRealSpaceFieldSection;
+  private final PermanentReciprocalSection permanentReciprocalSection;
 
   public PermanentFieldRegion(ParallelTeam pt, ForceField forceField, boolean lambdaTerm) {
     permanentRealSpaceFieldSection = new PermanentRealSpaceFieldSection(pt);
@@ -206,29 +207,29 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
   @Override
   public void applyMask(int i, boolean[] is14, double[]... masks) {
     if (ip11[i] != null) {
-      double[] permanentFieldMask = masks[0];
+      double[] energyMask = masks[0];
       var m12 = mask12[i];
       for (int value : m12) {
-        permanentFieldMask[value] = scaleParameters.p12scale;
+        energyMask[value] = scaleParameters.p12scale;
       }
       var m13 = mask13[i];
       for (int value : m13) {
-        permanentFieldMask[value] = scaleParameters.p13scale;
+        energyMask[value] = scaleParameters.p13scale;
       }
       var m14 = mask14[i];
       for (int value : m14) {
-        permanentFieldMask[value] = scaleParameters.p14scale;
+        energyMask[value] = scaleParameters.p14scale;
         for (int k : ip11[i]) {
           if (k == value) {
-            permanentFieldMask[value] = scaleParameters.intra14Scale * scaleParameters.p14scale;
+            energyMask[value] = scaleParameters.intra14Scale * scaleParameters.p14scale;
             break;
           }
         }
       }
       // Apply group based polarization masking rule.
-      double[] polarizationGroupMask = masks[1];
+      double[] inductionMask = masks[1];
       for (int index : ip11[i]) {
-        polarizationGroupMask[index] = scaleParameters.d11scale;
+        inductionMask[index] = scaleParameters.d11scale;
       }
     }
   }
@@ -313,29 +314,29 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
   @Override
   public void removeMask(int i, boolean[] is14, double[]... masks) {
     if (ip11[i] != null) {
-      double[] permanentFieldMask = masks[0];
+      double[] energyMask = masks[0];
       var m12 = mask12[i];
       for (int value : m12) {
-        permanentFieldMask[value] = 1.0;
+        energyMask[value] = 1.0;
       }
       var m13 = mask13[i];
       for (int value : m13) {
-        permanentFieldMask[value] = 1.0;
+        energyMask[value] = 1.0;
       }
       var m14 = mask14[i];
       for (int value : m14) {
-        permanentFieldMask[value] = 1.0;
+        energyMask[value] = 1.0;
         for (int k : ip11[i]) {
           if (k == value) {
-            permanentFieldMask[value] = 1.0;
+            energyMask[value] = 1.0;
             break;
           }
         }
       }
       // Apply group based polarization masking rule.
-      double[] polarizationGroupMask = masks[1];
+      double[] inductionMask = masks[1];
       for (int index : ip11[i]) {
-        polarizationGroupMask[index] = 1.0;
+        inductionMask[index] = 1.0;
       }
     }
   }
@@ -540,8 +541,8 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
       private final double[] dx_local;
       private final double[][] transOp;
       private int threadID;
-      private double[] mask_local;
-      private double[] maskp_local;
+      private double[] inductionMaskLocal;
+      private double[] energyMaskLocal;
       private int count;
       // Extra padding to avert cache interference.
       private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
@@ -603,7 +604,7 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
           final double qiyz = globalMultipolei[t011] * oneThird;
 
           // Apply field masking rules.
-          applyMask(i, null, maskp_local, mask_local);
+          applyMask(i, null, energyMaskLocal, inductionMaskLocal);
 
           // Loop over the neighbor list.
           final int[] list = lists[i];
@@ -690,20 +691,24 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
                 scale5 = 1.0 - expdamp * (1.0 - damp);
                 scale7 = 1.0 - expdamp * (1.0 - damp + 0.6 * damp * damp);
               }
-              final double scale = mask_local[k];
-              final double scalep = maskp_local[k];
+              final double scale = inductionMaskLocal[k];
+              final double scalep = energyMaskLocal[k];
+              // Thole damping multiplied by the group-based mask.
               final double dsc3 = scale3 * scale;
               final double dsc5 = scale5 * scale;
               final double dsc7 = scale7 * scale;
+              // Thole damping multiplied by the energy mask.
               final double psc3 = scale3 * scalep;
               final double psc5 = scale5 * scalep;
               final double psc7 = scale7 * scalep;
               final double rr3 = rr1 * rr2;
               final double rr5 = 3.0 * rr3 * rr2;
               final double rr7 = 5.0 * rr5 * rr2;
+              // 1.0 minus induction masks and Thole damping.
               final double drr3 = (1.0 - dsc3) * rr3;
               final double drr5 = (1.0 - dsc5) * rr5;
               final double drr7 = (1.0 - dsc7) * rr7;
+              // 1.0 minus energy masks and Thole damping.
               final double prr3 = (1.0 - psc3) * rr3;
               final double prr5 = (1.0 - psc5) * rr5;
               final double prr7 = (1.0 - psc7) * rr7;
@@ -712,15 +717,18 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
               final double qiy = 2.0 * (qixy * xr + qiyy * yr + qiyz * zr);
               final double qiz = 2.0 * (qixz * xr + qiyz * yr + qizz * zr);
               final double qir = (qix * xr + qiy * yr + qiz * zr) * 0.5;
+              // Ewald field for atom k (no masking).
               final double bn123i = bn1 * ci + bn2 * dir + bn3 * qir;
               final double fkmx = xr * bn123i - bn1 * dix - bn2 * qix;
               final double fkmy = yr * bn123i - bn1 * diy - bn2 * qiy;
               final double fkmz = zr * bn123i - bn1 * diz - bn2 * qiz;
+              // Correct Ewald field for over-counted induction interactions.
               final double ddr357i = drr3 * ci + drr5 * dir + drr7 * qir;
               final double fkdx = xr * ddr357i - drr3 * dix - drr5 * qix;
               final double fkdy = yr * ddr357i - drr3 * diy - drr5 * qiy;
               final double fkdz = zr * ddr357i - drr3 * diz - drr5 * qiz;
               field.add(threadID, k, fkmx - fkdx, fkmy - fkdy, fkmz - fkdz);
+              // Correct Ewald field for over-counted energy interactions.
               final double prr357i = prr3 * ci + prr5 * dir + prr7 * qir;
               final double fkpx = xr * prr357i - prr3 * dix - prr5 * qix;
               final double fkpy = yr * prr357i - prr3 * diy - prr5 * qiy;
@@ -732,9 +740,11 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
               final double qkz = 2.0 * (qkxz * xr + qkyz * yr + qkzz * zr);
               final double qkr = (qkx * xr + qky * yr + qkz * zr) * 0.5;
               final double bn123k = bn1 * ck - bn2 * dkr + bn3 * qkr;
+              // Ewald field for atom i (no masking).
               final double fimx = -xr * bn123k - bn1 * dkx + bn2 * qkx;
               final double fimy = -yr * bn123k - bn1 * dky + bn2 * qky;
               final double fimz = -zr * bn123k - bn1 * dkz + bn2 * qkz;
+              // Correct Ewald field for over-counted induction interactions.
               final double drr357k = drr3 * ck - drr5 * dkr + drr7 * qkr;
               final double fidx = -xr * drr357k - drr3 * dkx + drr5 * qkx;
               final double fidy = -yr * drr357k - drr3 * dky + drr5 * qky;
@@ -742,6 +752,7 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
               fix += fimx - fidx;
               fiy += fimy - fidy;
               fiz += fimz - fidz;
+              // Correct Ewald field for over-counted energy interactions.
               final double prr357k = prr3 * ck - prr5 * dkr + prr7 * qkr;
               final double fipx = -xr * prr357k - prr3 * dkx + prr5 * qkx;
               final double fipy = -yr * prr357k - prr3 * dky + prr5 * qky;
@@ -755,7 +766,7 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
           field.add(threadID, i, fix, fiy, fiz);
           fieldCR.add(threadID, i, fixCR, fiyCR, fizCR);
           // Remove field masking rules.
-          removeMask(i, null, maskp_local, mask_local);
+          removeMask(i, null, energyMaskLocal, inductionMaskLocal);
         }
 
         // Loop over symmetry mates.
@@ -948,11 +959,11 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
         realSpacePermTime[threadID] -= System.nanoTime();
         count = 0;
         int nAtoms = atoms.length;
-        if (mask_local == null || mask_local.length < nAtoms) {
-          mask_local = new double[nAtoms];
-          maskp_local = new double[nAtoms];
-          fill(mask_local, 1.0);
-          fill(maskp_local, 1.0);
+        if (inductionMaskLocal == null || inductionMaskLocal.length < nAtoms) {
+          inductionMaskLocal = new double[nAtoms];
+          energyMaskLocal = new double[nAtoms];
+          fill(inductionMaskLocal, 1.0);
+          fill(energyMaskLocal, 1.0);
         }
       }
     }

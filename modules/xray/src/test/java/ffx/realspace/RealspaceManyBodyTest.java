@@ -59,8 +59,8 @@ public class RealspaceManyBodyTest extends AlgorithmsTest {
     String[] args = {
         "-a", "2",
         "-L", "2",
-        "-s", "1",
-        "--fi", "5",
+        "--sR", "1",
+        "--fR", "5",
         "src/main/java/ffx/realspace/structures/file.pdb",
         "src/main/java/ffx/realspace/structures/file.mtz"
     };
@@ -80,7 +80,7 @@ public class RealspaceManyBodyTest extends AlgorithmsTest {
     // the magnitude of the potentials.
     double differenceNorm = (expectedPotential - actualPotential) / actualPotential;
     assertEquals(differenceNorm, 0, 1E-8);
-    manyBody.getManyBody().getRestartFile().delete();
+    manyBody.getManyBodyOptions().getRestartFile().delete();
   }
 
   @Test

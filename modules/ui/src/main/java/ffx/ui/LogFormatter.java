@@ -52,19 +52,33 @@ import java.util.logging.SimpleFormatter;
 public class LogFormatter extends SimpleFormatter {
 
   private static final int warningLevel = Level.WARNING.intValue();
-  private final boolean debug;
-  private final boolean mpiLogging;
+  private final int size;
+  private final int rank;
 
   /**
    * Constructor for the LogFormatter.
    *
-   * @param debug If debug is true, then LogFormatter is equivalent to {@link SimpleFormatter}.
-   * @param mpiLogging Configure for MPI logging.
    * @since 1.0
    */
-  LogFormatter(boolean debug, boolean mpiLogging) {
-    this.debug = debug;
-    this.mpiLogging = mpiLogging;
+  LogFormatter() {
+    this(true);
+  }
+
+  /**
+   * Constructor for the LogFormatter.
+   *
+   * @since 1.0
+   */
+  LogFormatter(boolean prependRank) {
+    if (prependRank) {
+      Comm comm = Comm.world();
+      size = comm.size();
+      rank = comm.rank();
+    } else {
+      // Set the MPI size to 1 and rank to 0 to turn off prepending of the process rank.
+      size = 1;
+      rank = 0;
+    }
   }
 
   /**
@@ -81,7 +95,7 @@ public class LogFormatter extends SimpleFormatter {
   @Override
   public String format(LogRecord record) {
     String message;
-    if (debug || record.getLevel().intValue() >= warningLevel) {
+    if (record.getLevel().intValue() >= warningLevel) {
       message = super.format(record);
     } else {
       message = record.getMessage();
@@ -89,20 +103,9 @@ public class LogFormatter extends SimpleFormatter {
       message = MessageFormat.format(message, objects);
     }
 
-    try {
-      Comm comm = Comm.world();
-      int size = comm.size();
-      int rank = comm.rank();
-      if (size > 1) {
-        if (mpiLogging) {
-          String[] lines = message.split("\n");
-          message = mpiFormat(size, rank, lines);
-        } else if (rank != 0) {
-          message = null;
-        }
-      }
-    } catch (Exception e) {
-      // If Comm.world does not exist, do not append the rank.
+    if (size > 1) {
+      String[] lines = message.split("\n");
+      message = mpiFormat(size, rank, lines);
     }
 
     return message;

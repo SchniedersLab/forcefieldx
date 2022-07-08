@@ -41,11 +41,19 @@ package edu.rit.pj.cluster;
 
 import static java.lang.String.format;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
@@ -212,9 +220,10 @@ public class JobBackend
         this.frontendPort = frontendPort;
         this.backendHost = backendHost;
 
-        // Turn on logging?
+        // Turn on verbose start-up logging.
         StringBuilder sb = new StringBuilder();
-        if (System.getProperty("pj.log", "false").equalsIgnoreCase("true")) {
+        boolean verbose = Boolean.parseBoolean(System.getProperty("pj.verbose", "false"));
+        if (verbose) {
             try {
                 // Remove all log handlers from the default logger.
                 Logger defaultLogger = LogManager.getLogManager().getLogger("");
@@ -224,12 +233,13 @@ public class JobBackend
                 }
 
                 // Create a FileHandler that logs messages with a SimpleFormatter.
-                File file = new File(Integer.toString(this.rank));
-                if (!file.exists()) {
-                    boolean success = file.mkdir();
-                    sb.append(format("\n Creation of logging directory %s: %b", file, success));
+                File dir = new File(Integer.toString(this.rank));
+                if (!dir.exists()) {
+                    boolean success = dir.mkdir();
+                    sb.append(format("\n Creation of logging directory %s: %b", dir, success));
                 }
-                String logFile = file.getAbsolutePath() + File.separator + "backend.log";
+
+                String logFile = dir.getAbsolutePath() + File.separator + "backend.log";
                 fileHandler = new FileHandler(logFile);
                 sb.append(format("\n Log file: %s", logFile));
                 fileHandler.setFormatter(new SimpleFormatter());
@@ -337,13 +347,12 @@ public class JobBackend
         // Tell job frontend we're ready!
         logger.log(Level.INFO, " Tell job frontend we're ready.");
         myJobFrontend.backendReady(
-                /*theJobBackend    */this,
+                /*theJobBackend    */ this,
                 /*rank             */ rank,
                 /*middlewareAddress*/ myMiddlewareChannelGroup.listenAddress(),
                 /*worldAddress     */ myWorldChannelGroup.listenAddress(),
                 /*frontendAddress  */ hasFrontendComm ? myFrontendChannelGroup.listenAddress() : null);
     }
-
 // Exported operations.
 
     /**

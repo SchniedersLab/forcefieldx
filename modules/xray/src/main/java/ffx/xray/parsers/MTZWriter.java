@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.xray.parsers;
 
+import static ffx.utilities.TinkerUtils.version;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -51,6 +52,7 @@ import ffx.crystal.SpaceGroup;
 import ffx.crystal.SymOp;
 import ffx.xray.DiffractionRefinementData;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -139,14 +141,15 @@ public class MTZWriter {
     FileOutputStream fileOutputStream;
     DataOutputStream dataOutputStream;
 
+    File file = version(new File(fileName));
+    String name = file.getName();
+
     try {
       if (logger.isLoggable(Level.INFO)) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(format("\n Writing MTZ HKL file: \"%s\"", fileName));
-        logger.info(sb.toString());
+        logger.info(format("\n Saving %s", name));
       }
 
-      fileOutputStream = new FileOutputStream(fileName);
+      fileOutputStream = new FileOutputStream(file);
       dataOutputStream = new DataOutputStream(fileOutputStream);
 
       byte[] bytes = new byte[80];
@@ -248,32 +251,32 @@ public class MTZWriter {
 
       for (HKL ih : reflectionList.hkllist) {
         col = 0;
-        int i = ih.index();
+        int i = ih.getIndex();
 
         // Skip the 0 0 0 reflection.
-        if (ih.h() == 0 && ih.k() == 0 && ih.l() == 0) {
+        if (ih.getH() == 0 && ih.getK() == 0 && ih.getL() == 0) {
           continue;
         }
 
-        double ss = Crystal.invressq(crystal, ih);
+        double ss = crystal.invressq(ih);
         res[0] = min(ss, res[0]);
         res[1] = max(ss, res[1]);
 
         // HKL first (3)
-        fMapData = ih.h();
+        fMapData = ih.getH();
         colMinMax[col][0] = min(fMapData, colMinMax[0][0]);
         colMinMax[col][1] = max(fMapData, colMinMax[0][1]);
         byteBuffer.rewind();
         byteBuffer.order(byteOrder).putFloat(fMapData);
         col++;
 
-        fMapData = ih.k();
+        fMapData = ih.getK();
         colMinMax[col][0] = min(fMapData, colMinMax[1][0]);
         colMinMax[col][1] = max(fMapData, colMinMax[1][1]);
         byteBuffer.order(byteOrder).putFloat(fMapData);
         col++;
 
-        fMapData = ih.l();
+        fMapData = ih.getL();
         colMinMax[col][0] = min(fMapData, colMinMax[2][0]);
         colMinMax[col][1] = max(fMapData, colMinMax[2][1]);
         byteBuffer.order(byteOrder).putFloat(fMapData);
@@ -577,8 +580,12 @@ public class MTZWriter {
         sb.append(" ");
       }
       dataOutputStream.writeBytes(sb.toString());
-
       dataOutputStream.close();
+
+      if (logger.isLoggable(Level.INFO)) {
+        logger.info(format(" Wrote MTZ to file %s", file.getAbsolutePath()));
+      }
+
     } catch (Exception e) {
       String message = "Fatal exception evaluating structure factors.\n";
       logger.log(Level.SEVERE, message, e);

@@ -3071,7 +3071,7 @@ public class AminoAcidUtils {
     ILE(8, true),
     SER(6),
     THR(7),
-    CYS(6, false, false, false, false),
+    CYS(6, false, true, false, false),
     CYX(6),
     CYD(6, false, false, false, false),
     PRO(7),

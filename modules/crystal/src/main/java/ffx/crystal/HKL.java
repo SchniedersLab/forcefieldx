@@ -62,7 +62,8 @@ public class HKL {
   protected int index;
 
   /** Constructor for HKL. */
-  public HKL() {}
+  public HKL() {
+  }
 
   /**
    * Constructor for HKL.
@@ -98,56 +99,66 @@ public class HKL {
   /**
    * neg
    *
-   * @param hkl a {@link ffx.crystal.HKL} object.
    * @return a {@link ffx.crystal.HKL} object.
    */
-  static HKL neg(HKL hkl) {
-    return new HKL(-hkl.h(), -hkl.k(), -hkl.l());
+  public HKL neg() {
+    return new HKL(-h, -k, -l);
   }
 
   /**
-   * sys_abs
+   * sysAbs
    *
-   * @param hkl a {@link ffx.crystal.HKL} object.
    * @return a boolean.
    */
-  static boolean sys_abs(HKL hkl) {
-    return (hkl.epsilon == 0);
+  public boolean sysAbs() {
+    return (epsilon == 0);
   }
 
   /**
-   * allowed
+   * quadForm
+   *
+   * @param mat an array of double.
+   * @return a double.
+   */
+  public double quadForm(double[][] mat) {
+    return h * (h * mat[0][0] + 2 * (k * mat[0][1] + l * mat[0][2]))
+        + k * (k * mat[1][1] + 2 * (l * mat[1][2]))
+        + l * l * mat[2][2];
+  }
+
+  /**
+   * getAllowed
    *
    * @return a double.
    */
-  public double allowed() {
+  public double getAllowed() {
     return ((double) allowed) * (PI / ndiv);
   }
 
   /**
-   * allowed
+   * setAllowed
    *
    * @param allowed a int.
    */
-  public void allowed(int allowed) {
+  public void setAllowed(int allowed) {
     this.allowed = allowed;
   }
 
   /**
-   * bin
+   * getBin
    *
    * @return a int.
    */
-  public int bin() {
+  public int getBin() {
     return bin;
   }
 
   /**
-   * bin
+   * setBin
    *
    * @param bin a int.
    */
-  public void bin(int bin) {
+  public void setBin(int bin) {
     this.bin = bin;
   }
 
@@ -161,20 +172,20 @@ public class HKL {
   }
 
   /**
-   * epsilon
+   * getEpsilon
    *
    * @return a int.
    */
-  public int epsilon() {
+  public int getEpsilon() {
     return epsilon;
   }
 
   /**
-   * epsilon
+   * setEpsilon
    *
    * @param eps a int.
    */
-  public void epsilon(int eps) {
+  public void setEpsilon(int eps) {
     this.epsilon = eps;
   }
 
@@ -184,7 +195,7 @@ public class HKL {
    * @return a int.
    */
   public int epsilonc() {
-    if (this.centric()) {
+    if (centric()) {
       return 2 * epsilon;
     } else {
       return epsilon;
@@ -194,10 +205,14 @@ public class HKL {
   /** {@inheritDoc} */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     HKL hkl = (HKL) o;
-    return (h == hkl.h() && k == hkl.k() && l == hkl.l());
+    return (h == hkl.getH() && k == hkl.getK() && l == hkl.getL());
   }
 
   /**
@@ -205,7 +220,7 @@ public class HKL {
    *
    * @return a int.
    */
-  public int h() {
+  public int getH() {
     return h;
   }
 
@@ -214,7 +229,7 @@ public class HKL {
    *
    * @param h a int.
    */
-  public void h(int h) {
+  public void setH(int h) {
     this.h = h;
   }
 
@@ -229,7 +244,7 @@ public class HKL {
    *
    * @return a int.
    */
-  public int index() {
+  public int getIndex() {
     return index;
   }
 
@@ -238,7 +253,7 @@ public class HKL {
    *
    * @param index a int.
    */
-  public void index(int index) {
+  public void setIndex(int index) {
     this.index = index;
   }
 
@@ -247,7 +262,7 @@ public class HKL {
    *
    * @return a int.
    */
-  public int k() {
+  public int getK() {
     return k;
   }
 
@@ -256,7 +271,7 @@ public class HKL {
    *
    * @param k a int.
    */
-  public void k(int k) {
+  public void setK(int k) {
     this.k = k;
   }
 
@@ -265,7 +280,7 @@ public class HKL {
    *
    * @return a int.
    */
-  public int l() {
+  public int getL() {
     return l;
   }
 
@@ -274,22 +289,14 @@ public class HKL {
    *
    * @param l a int.
    */
-  public void l(int l) {
+  public void setL(int l) {
     this.l = l;
   }
 
   /** {@inheritDoc} */
   @Override
   public String toString() {
-    return this.h()
-        + " "
-        + this.k()
-        + " "
-        + this.l()
-        + "(allowed: "
-        + this.allowed
-        + " eps: "
-        + this.epsilon
-        + ") ";
+    return h + " " + k + " " + l
+        + "(allowed: " + allowed + " eps: " + epsilon + ") ";
   }
 }

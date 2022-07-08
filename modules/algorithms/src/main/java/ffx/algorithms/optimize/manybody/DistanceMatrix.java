@@ -98,8 +98,6 @@ public class DistanceMatrix {
   private final List<Residue> allResiduesList;
   /** Number of residues being optimized. */
   private final int numResidues;
-
-  private final RotamerLibrary library;
   /** Default distance method is to find the shortest distance between residues. */
   private final RotamerOptimization.DistanceMethod distanceMethod;
   /** The distance that the distance matrix checks for. */
@@ -113,8 +111,6 @@ public class DistanceMatrix {
    * rotamer optimization.
    */
   private final boolean lazyMatrix;
-  /** Flag to indicate use of forced residues during the sliding window algorithm. */
-  private final boolean useForcedResidues;
   /**
    * The minimum distance between atoms of a residue pair, taking into account interactions with
    * symmetry mates.
@@ -129,26 +125,22 @@ public class DistanceMatrix {
       AlgorithmListener algorithmListener,
       Residue[] allResiduesArray,
       List<Residue> allResiduesList,
-      RotamerLibrary library,
       RotamerOptimization.DistanceMethod distanceMethod,
       double distance,
       double twoBodyCutoffDist,
       double threeBodyCutoffDist,
-      boolean lazyMatrix,
-      boolean useForcedResidues) {
+      boolean lazyMatrix) {
     this.rO = rO;
     this.molecularAssembly = molecularAssembly;
     this.algorithmListener = algorithmListener;
     this.allResiduesArray = allResiduesArray;
     this.allResiduesList = allResiduesList;
     this.numResidues = allResiduesArray.length;
-    this.library = library;
     this.distanceMethod = distanceMethod;
     this.distance = distance;
     this.twoBodyCutoffDist = twoBodyCutoffDist;
     this.threeBodyCutoffDist = threeBodyCutoffDist;
     this.lazyMatrix = lazyMatrix;
-    this.useForcedResidues = useForcedResidues;
 
     distanceMatrix();
   }
@@ -417,15 +409,11 @@ public class DistanceMatrix {
   public double interResidueDistance(double[][] resi, double[][] resj, SymOp symOp) {
     double dist = Double.MAX_VALUE;
     Crystal crystal = molecularAssembly.getCrystal();
-    int ni = resi.length;
     for (double[] xi : resi) {
-      int nj = resj.length;
       for (double[] xj : resj) {
         if (symOp != null) {
           crystal.applySymOp(xj, xj, symOp);
         }
-        // Generally: compare on square-of-distance, and square root only at return.
-        // double r = Math.sqrt(crystal.image(xi[0] - xj[0], xi[1] - xj[1], xi[2] - xj[2]));
         double r = crystal.image(xi[0] - xj[0], xi[1] - xj[1], xi[2] - xj[2]);
         if (r < dist) {
           dist = r;
@@ -443,21 +431,12 @@ public class DistanceMatrix {
       Residue residuei = allResiduesArray[i];
       int lengthRi;
       try {
-        if (rO.checkIfForced(residuei)) {
-          lengthRi = 1;
-        } else {
-          lengthRi = residuei.getRotamers().length;
-        }
+        lengthRi = residuei.getRotamers().length;
       } catch (IndexOutOfBoundsException ex) {
-        if (useForcedResidues) {
-          logger.warning(ex.toString());
-        } else {
-          rO.logIfMaster(
-              format(
-                  " Non-forced Residue i %s has null rotamers.",
-                  residuei.toFormattedString(false, true)),
-              Level.WARNING);
-        }
+        rO.logIfMaster(
+            format(" Residue i %s has null rotamers.",
+                residuei.toFormattedString(false, true)),
+            Level.WARNING);
         continue;
       }
       distanceMatrix[i] = new double[lengthRi][][];
@@ -467,19 +446,10 @@ public class DistanceMatrix {
           Residue residuej = allResiduesArray[j];
           int lengthRj;
           try {
-            if (rO.checkIfForced(residuej)) {
-              lengthRj = 1;
-            } else {
-              lengthRj = residuej.getRotamers().length;
-            }
+            lengthRj = residuej.getRotamers().length;
           } catch (IndexOutOfBoundsException ex) {
-            if (useForcedResidues) {
-              logger.warning(ex.toString());
-            } else {
-              rO.logIfMaster(
-                  format(
-                      " Residue j %s has null rotamers.", residuej.toFormattedString(false, true)));
-            }
+            rO.logIfMaster(format(" Residue j %s has null rotamers.",
+                residuej.toFormattedString(false, true)));
             continue;
           }
           distanceMatrix[i][ri][j] = new double[lengthRj];
@@ -563,15 +533,14 @@ public class DistanceMatrix {
       for (int iSymOp = 0; iSymOp < nSymm; iSymOp++) {
         SymOp symOp = crystal.spaceGroup.getSymOp(iSymOp);
         for (int i = 0; i < numResidues; i++) {
-          int i3 = i * 3;
-          int iX = i3;
-          int iY = i3 + 1;
-          int iZ = i3 + 2;
           Atom atom = atoms[i];
           in[0] = atom.getX();
           in[1] = atom.getY();
           in[2] = atom.getZ();
           crystal.applySymOp(in, out, symOp);
+          int iX = i * 3;
+          int iY = iX + 1;
+          int iZ = iX + 2;
           xyz[iSymOp][iX] = out[0];
           xyz[iSymOp][iY] = out[1];
           xyz[iSymOp][iZ] = out[2];
@@ -588,22 +557,25 @@ public class DistanceMatrix {
       neighborList.buildList(xyz, lists, use, forceRebuild, printLists);
 
       neighborTime += System.nanoTime();
-      logger.info(format(" Built residue neighbor list:           %8.3f sec", neighborTime * 1.0e-9));
+      logger.info(
+          format(" Built residue neighbor list:           %8.3f sec", neighborTime * 1.0e-9));
 
       DistanceRegion distanceRegion = new DistanceRegion(
-              parallelTeam.getThreadCount(), numResidues, crystal, lists,
-              neighborList.getPairwiseSchedule());
+          parallelTeam.getThreadCount(), numResidues, crystal, lists,
+          neighborList.getPairwiseSchedule());
 
       long parallelTime = -System.nanoTime();
       try {
-        distanceRegion.init(this, rO, molecularAssembly, allResiduesArray, library, algorithmListener, distanceMatrix);
+        distanceRegion.init(this, molecularAssembly, allResiduesArray, algorithmListener,
+            distanceMatrix);
         parallelTeam.execute(distanceRegion);
       } catch (Exception e) {
         String message = " Exception compting residue distance matrix.";
         logger.log(Level.SEVERE, message, e);
       }
       parallelTime += System.nanoTime();
-      logger.info(format(" Pairwise distance matrix:              %8.3f sec", parallelTime * 1.0e-9));
+      logger.info(
+          format(" Pairwise distance matrix:              %8.3f sec", parallelTime * 1.0e-9));
 
       ResidueState.revertAllCoordinates(allResiduesList, orig);
       try {

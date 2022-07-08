@@ -38,7 +38,11 @@
 package ffx.numerics;
 
 import ffx.numerics.math.SquareRootTest;
+import ffx.numerics.multipole.GKTensorGlobalTest;
+import ffx.numerics.multipole.GKTensorQITest;
+import ffx.numerics.multipole.GlobalMultipoleTensorTest;
 import ffx.numerics.multipole.MultipoleTensorTest;
+import ffx.numerics.multipole.QIMultipoleTensorTest;
 import ffx.numerics.special.ErfTest;
 import ffx.numerics.spline.UniformBSplineTest;
 import org.junit.runner.RunWith;
@@ -48,9 +52,15 @@ import org.junit.runners.Suite.SuiteClasses;
 /** NumericsTestSuite collects all Unit tests from the ffx.numerics package. */
 @RunWith(Suite.class)
 @SuiteClasses({
-  ErfTest.class,
-  SquareRootTest.class,
-  MultipoleTensorTest.class,
-  UniformBSplineTest.class
+    ErfTest.class,
+    SquareRootTest.class,
+    MultipoleTensorTest.class,
+    GlobalMultipoleTensorTest.class,
+    QIMultipoleTensorTest.class,
+    GKTensorGlobalTest.class,
+    GKTensorQITest.class,
+    UniformBSplineTest.class
 })
-public class NumericsTestSuite {}
+public class NumericsTestSuite {
+
+}

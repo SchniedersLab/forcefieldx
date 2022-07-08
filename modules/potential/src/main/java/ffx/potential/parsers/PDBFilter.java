@@ -53,6 +53,8 @@ import static org.apache.commons.lang3.StringUtils.repeat;
 import static org.apache.commons.math3.util.FastMath.min;
 
 import ffx.crystal.Crystal;
+import ffx.crystal.SpaceGroup;
+import ffx.crystal.SpaceGroupDefinitions;
 import ffx.crystal.SpaceGroupInfo;
 import ffx.crystal.SymOp;
 import ffx.potential.MolecularAssembly;
@@ -193,6 +195,8 @@ public final class PDBFilter extends SystemFilter {
   static {
     // Lysine
     constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.LYD, AminoAcidUtils.AminoAcid3.LYS);
+    // Cysteine
+    constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS);
     // Histidine
     constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.HID, AminoAcidUtils.AminoAcid3.HIS);
     constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.HIE, AminoAcidUtils.AminoAcid3.HIS);
@@ -858,15 +862,8 @@ public final class PDBFilter extends SystemFilter {
                     }
                     resSeq += offset;
                     if (offset != 0) {
-                      logger.info(
-                          format(
-                              " Chain %c " + "residue %s-%s renumbered to %c %s-%d",
-                              chainID,
-                              pdbResNum.substring(1).trim(),
-                              resName,
-                              chainID,
-                              resName,
-                              resSeq));
+                      logger.info(format(" Chain %c " + "residue %s-%s renumbered to %c %s-%d",
+                              chainID, pdbResNum.substring(1).trim(), resName, chainID, resName, resSeq));
                     }
                     String newNum = format("%c%d", chainID, resSeq);
                     pdbToNewResMap.put(pdbResNum, newNum);
@@ -897,7 +894,7 @@ public final class PDBFilter extends SystemFilter {
                   }
 
                   if (constantPH) {
-                    AminoAcid3 aa3 = AminoAcidUtils.AminoAcid3.valueOf(resName.toUpperCase());
+                    AminoAcid3 aa3 = AminoAcidUtils.getAminoAcid(resName.toUpperCase());
                     if (constantPHResidueMap.containsKey(aa3)) {
                       String atomName = name.toUpperCase();
                       AminoAcid3 aa3PH = constantPHResidueMap.get(aa3);
@@ -912,7 +909,7 @@ public final class PDBFilter extends SystemFilter {
                       }
                     }
                   } else if (rotamerTitration) {
-                    AminoAcid3 aa3 = AminoAcidUtils.AminoAcid3.valueOf(resName.toUpperCase());
+                    AminoAcid3 aa3 = AminoAcidUtils.getAminoAcid(resName.toUpperCase());
                     if (rotamerResidueMap.containsKey(aa3) && resNumberList.contains(resSeq)) {
                       AminoAcid3 aa3rotamer = rotamerResidueMap.get(aa3);
                       resName = aa3rotamer.name();
@@ -1185,11 +1182,9 @@ public final class PDBFilter extends SystemFilter {
                 //
                 // Notes:
                 // SSBOND records may be invalid if chain IDs are reused.
-                // SSBOND records are applied by FFX to the A conformer (not alternate conformers).
+                // SSBOND records are applied by FFX to all conformers.
                 // =============================================================================
-                if (currentAltLoc == 'A') {
-                  ssbonds.add(line);
-                }
+                ssbonds.add(line);
                 break;
               case HELIX:
                 // =============================================================================
@@ -1408,11 +1403,23 @@ public final class PDBFilter extends SystemFilter {
   /** {@inheritDoc} */
   @Override
   public boolean readNext(boolean resetPosition, boolean print) {
+    return readNext(resetPosition, print, true);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public boolean readNext(boolean resetPosition, boolean print, boolean parse) {
+    modelsRead = resetPosition ? 1 : modelsRead + 1;
+    if(!parse){
+      if(print){
+        logger.info(format(" Skipped Model %d.", modelsRead));
+      }
+      return true;
+    }
     remarkLines = new ArrayList<>(remarkLines.size());
     // ^ is beginning of line, \\s+ means "one or more whitespace", (\\d+) means match and capture
     // one or more digits.
     Pattern modelPatt = Pattern.compile("^MODEL\\s+(\\d+)");
-    modelsRead = resetPosition ? 1 : modelsRead + 1;
     boolean eof = true;
     for (MolecularAssembly system : systems) {
       try {
@@ -1549,6 +1556,58 @@ public final class PDBFilter extends SystemFilter {
                   } else {
                     logger.warning(message);
                   }
+                }
+                break;
+              case CRYST1:
+                // =============================================================================
+                // The CRYST1 record presents the unit cell parameters, space group, and Z
+                // value. If the structure was not determined by crystallographic means, CRYST1
+                // simply provides the unitary values, with an appropriate REMARK.
+                //
+                //  7 - 15       Real(9.3)     a              a (Angstroms).
+                // 16 - 24       Real(9.3)     b              b (Angstroms).
+                // 25 - 33       Real(9.3)     c              c (Angstroms).
+                // 34 - 40       Real(7.2)     alpha          alpha (degrees).
+                // 41 - 47       Real(7.2)     beta           beta (degrees).
+                // 48 - 54       Real(7.2)     gamma          gamma (degrees).
+                // 56 - 66       LString       sGroup         Space  group.
+                // 67 - 70       Integer       z              Z value.
+                // =============================================================================
+                logger.info(" Crystal record found.");
+                if (line.length() < 55) {
+                  logger.severe(" CRYST1 record is improperly formatted.");
+                }
+                double aaxis = parseDouble(line.substring(6, 15).trim());
+                double baxis = parseDouble(line.substring(15, 24).trim());
+                double caxis = parseDouble(line.substring(24, 33).trim());
+                double alpha = parseDouble(line.substring(33, 40).trim());
+                double beta = parseDouble(line.substring(40, 47).trim());
+                double gamma = parseDouble(line.substring(47, 54).trim());
+                int limit = min(line.length(), 66);
+                String sg = line.substring(55, limit).trim();
+//                properties.clearProperty("a-axis");
+//                properties.clearProperty("b-axis");
+//                properties.clearProperty("c-axis");
+//                properties.clearProperty("alpha");
+//                properties.clearProperty("beta");
+//                properties.clearProperty("gamma");
+//                properties.clearProperty("spacegroup");
+//
+//                properties.addProperty("a-axis", aaxis);
+//                properties.addProperty("b-axis", baxis);
+//                properties.addProperty("c-axis", caxis);
+//                properties.addProperty("alpha", alpha);
+//                properties.addProperty("beta", beta);
+//                properties.addProperty("gamma", gamma);
+//                properties.addProperty("spacegroup", SpaceGroupInfo.pdb2ShortName(sg));
+                Crystal crystal = activeMolecularAssembly.getCrystal();
+                SpaceGroup spaceGroup = SpaceGroupDefinitions.spaceGroupFactory(sg);
+                if(Objects.equals(crystal.spaceGroup.shortName, spaceGroup.shortName)) {
+                  crystal.changeUnitCellParameters(aaxis, baxis, caxis, alpha, beta, gamma);
+                }else{
+                  // TODO: Handle changes in space groups... Means recalculating force field terms.
+                  logger.warning(format(" Original space group %s could not be changed to %s",
+                          crystal.spaceGroup.shortName, spaceGroup.shortName));
                 }
                 break;
               case ENDMDL:

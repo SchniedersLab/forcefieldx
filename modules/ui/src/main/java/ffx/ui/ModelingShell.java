@@ -54,7 +54,7 @@ import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.cli.PotentialScript;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.utilities.FFXScript;
-import groovy.console.ui.Console;
+// import groovy.console.ui.Console;
 import groovy.lang.Binding;
 import groovy.lang.Script;
 import java.awt.Color;
@@ -72,7 +72,6 @@ import java.util.EventObject;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.prefs.Preferences;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -94,14 +93,12 @@ import org.codehaus.groovy.runtime.MethodClosure;
  *
  * @author Michael J. Schnieders
  */
-public final class ModelingShell extends Console implements AlgorithmListener {
+public class ModelingShell extends Console implements AlgorithmListener {
 
   /** The logger for this class. */
   private static final Logger logger = Logger.getLogger(ModelingShell.class.getName());
-
   private static final double toSeconds = 1.0e-9;
-  private static final Preferences preferences =
-      Preferences.userNodeForPackage(ModelingShell.class);
+
   /** A reference to the main application container. */
   private final MainPanel mainPanel;
   /** The flag headless is true for the CLI and false for the GUI. */
@@ -131,7 +128,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     this.mainPanel = mainPanel;
     headless = java.awt.GraphicsEnvironment.isHeadless();
     initContext(getShell().getContext());
-    loadPrefs();
   }
 
   /** after */
@@ -249,7 +245,7 @@ public final class ModelingShell extends Console implements AlgorithmListener {
    * <p>Print out the Force Field X promo.
    */
   @Override
-  public final void clearOutput() {
+  public void clearOutput() {
     if (!java.awt.GraphicsEnvironment.isHeadless()) {
       JTextPane output = getOutputArea();
       output.setText("");
@@ -314,13 +310,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
 
   public PotentialsFunctions getUIPotentialsUtils() {
     return new UIUtils(this, mainPanel);
-  }
-
-  public void interruptScript() {
-    if (!scriptRunning) {
-      return;
-    }
-    doInterrupt();
   }
 
   /**
@@ -569,8 +558,10 @@ public final class ModelingShell extends Console implements AlgorithmListener {
       ImageIcon icon = new ImageIcon(iconURL);
       frame.setIconImage(icon.getImage());
       frame.setSize(600, 600);
+
     } catch (Exception e) {
-      System.out.println(e.toString());
+      System.out.println(" Exception starting up the FFX console.");
+      System.out.println(e);
       e.printStackTrace();
       logger.warning(e.toString());
     }
@@ -726,26 +717,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
     return null;
   }
 
-  /** Clear output text from any previous script and then output a message about the new script. */
-  private void scriptStartup() {
-    clearOutput();
-
-    // Attempt to get the script's name.
-    Object name = getScriptFile();
-    if (name instanceof File) {
-      name = ((File) name).getName();
-    }
-
-    // A short message about the script to be evaluated.
-    String message;
-    if (name == null || name.toString().equalsIgnoreCase("null")) {
-      message = "\n Evaluating...\n\n";
-    } else {
-      message = "\n Evaluating " + name + "...\n\n";
-    }
-    appendOutput(message, getPromptStyle());
-  }
-
   /**
    * Fix up the "Result: " message, then call the original method.
    *
@@ -809,12 +780,6 @@ public final class ModelingShell extends Console implements AlgorithmListener {
       SwingUtilities.invokeLater(this::scroll);
     }
   }
-
-  /** loadPrefs */
-  private void loadPrefs() {}
-
-  /** savePrefs */
-  void savePrefs() {}
 
   /**
    * setMeasurement

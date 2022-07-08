@@ -43,6 +43,8 @@ import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
 import ffx.potential.bonded.Atom;
+import org.apache.commons.lang3.math.NumberUtils;
+
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -75,6 +77,9 @@ public final class SoluteType extends BaseType implements Comparator<String> {
   public double cosDiameter;
   /** Solute atomic diameter for GK. */
   public double gkDiameter;
+  /** Sneck scaling factor to use with interstitial space corrections */
+  public double sneck;
+  public double DEFAULT_SNECK = 0.6784;
 
   /** Optional SMARTS description. */
   public String description;
@@ -94,6 +99,7 @@ public final class SoluteType extends BaseType implements Comparator<String> {
     this.cosDiameter = diameter;
     this.gkDiameter = diameter;
     this.description = null;
+    this.sneck = DEFAULT_SNECK;
   }
 
   /**
@@ -111,6 +117,26 @@ public final class SoluteType extends BaseType implements Comparator<String> {
     this.cosDiameter = cosDiameter;
     this.gkDiameter = gkDiameter;
     this.description = null;
+    this.sneck = DEFAULT_SNECK;
+  }
+
+  /**
+   * Constructor for SoluteType.
+   *
+   * @param atomType Atom type.
+   * @param pbDiameter Diameter for PB continuum electrostatics.
+   * @param cosDiameter Diameter for ddCOSMO continuum electrostatics.
+   * @param gkDiameter Diameter for GK continuum electrostatics.
+   * @param sneck Sneck scaling factor for implicit solvent interstitial space corrections
+   */
+  public SoluteType(int atomType, double pbDiameter, double cosDiameter, double gkDiameter, double sneck) {
+    super(SOLUTE, Integer.toString(atomType));
+    this.atomType = atomType;
+    this.pbDiameter = pbDiameter;
+    this.cosDiameter = cosDiameter;
+    this.gkDiameter = gkDiameter;
+    this.description = null;
+    this.sneck = sneck;
   }
 
   /**
@@ -126,6 +152,7 @@ public final class SoluteType extends BaseType implements Comparator<String> {
       double gkDiameter) {
     this(atomType, pbDiameter, cosDiameter, gkDiameter);
     this.description = description;
+    this.sneck = DEFAULT_SNECK;
   }
 
   /**
@@ -147,12 +174,26 @@ public final class SoluteType extends BaseType implements Comparator<String> {
           double gkDiameter = parseDouble(tokens[4].trim());
           return new SoluteType(atomType, pbDiameter, cosDiameter, gkDiameter);
         } else {
-          int atomType = parseInt(tokens[1].trim());
-          String description = tokens[2].trim();
-          double pbDiameter = parseDouble(tokens[3].trim());
-          double cosDiameter = parseDouble(tokens[4].trim());
-          double gkDiameter = parseDouble(tokens[5].trim());
-          return new SoluteType(atomType, description, pbDiameter, cosDiameter, gkDiameter);
+          // A SOLUTE line with length six could have a description or an Sneck value
+          // Need to check if the entry at index 2 is a parseable number to determine which constructor to use
+          if(NumberUtils.isParsable(tokens[2].trim())){
+            // Use Sneck included constructor
+            int atomType = parseInt(tokens[1].trim());
+            double pbDiameter = parseDouble(tokens[2].trim());
+            double cosDiameter = parseDouble(tokens[3].trim());
+            double gkDiameter = parseDouble(tokens[4].trim());
+            double sneck = parseDouble(tokens[5].trim());
+            return new SoluteType(atomType, pbDiameter, cosDiameter, gkDiameter, sneck);
+          } else {
+            // Use description included constructor
+            // (needed for optimization with PolType parameter files for individual molecules)
+            int atomType = parseInt(tokens[1].trim());
+            String description = tokens[2].trim();
+            double pbDiameter = parseDouble(tokens[3].trim());
+            double cosDiameter = parseDouble(tokens[4].trim());
+            double gkDiameter = parseDouble(tokens[5].trim());
+            return new SoluteType(atomType, description, pbDiameter, cosDiameter, gkDiameter);
+          }
         }
       } catch (NumberFormatException e) {
         String message = "Exception parsing SOLUTE type:\n" + input + "\n";

@@ -37,10 +37,10 @@
 // ******************************************************************************
 package ffx.crystal;
 
-import static ffx.crystal.Crystal.mod;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.MatrixMath.mat3Inverse;
 import static ffx.numerics.math.MatrixMath.mat4Mat4;
+import static ffx.numerics.math.ScalarMath.mod;
 import static java.lang.Double.parseDouble;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -335,6 +335,28 @@ public class SymOp {
   }
 
   /**
+   * symPhaseShift
+   *
+   * @param hkl an array of double.
+   * @return a double.
+   */
+  public double symPhaseShift(double[] hkl) {
+    // Apply translation
+    return -2.0 * PI * (hkl[0] * tr[0] + hkl[1] * tr[1] + hkl[2] * tr[2]);
+  }
+
+  /**
+   * symPhaseShift
+   *
+   * @param hkl a {@link HKL} object.
+   * @return a double.
+   */
+  public double symPhaseShift(HKL hkl) {
+    // Apply translation
+    return -2.0 * PI * (hkl.getH() * tr[0] + hkl.getK() * tr[1] + hkl.getL() * tr[2]);
+  }
+
+  /**
    * Return the SymOp as a 4x4 matrix.
    *
    * @return A 4x4 matrix representation of the SymOp.
@@ -581,16 +603,16 @@ public class SymOp {
    */
   public static void applySymRot(HKL hkl, HKL mate, SymOp symOp) {
     var rot = symOp.rot;
-    double h = hkl.h();
-    double k = hkl.k();
-    double l = hkl.l();
+    double h = hkl.getH();
+    double k = hkl.getK();
+    double l = hkl.getL();
     double hs = rot[0][0] * h + rot[0][1] * k + rot[0][2] * l;
     double ks = rot[1][0] * h + rot[1][1] * k + rot[1][2] * l;
     double ls = rot[2][0] * h + rot[2][1] * k + rot[2][2] * l;
     // Convert back to HKL
-    mate.h((int) rint(hs));
-    mate.k((int) rint(ks));
-    mate.l((int) rint(ls));
+    mate.setH((int) rint(hs));
+    mate.setK((int) rint(ks));
+    mate.setL((int) rint(ls));
   }
 
   /**
@@ -672,17 +694,17 @@ public class SymOp {
    */
   public static void applyTransSymRot(HKL hkl, HKL mate, SymOp symOp) {
     double[][] rot = symOp.rot;
-    double h = hkl.h();
-    double k = hkl.k();
-    double l = hkl.l();
+    double h = hkl.getH();
+    double k = hkl.getK();
+    double l = hkl.getL();
     // Apply transpose Symmetry Operator.
     double hs = rot[0][0] * h + rot[1][0] * k + rot[2][0] * l;
     double ks = rot[0][1] * h + rot[1][1] * k + rot[2][1] * l;
     double ls = rot[0][2] * h + rot[1][2] * k + rot[2][2] * l;
     // Convert back to HKL
-    mate.h((int) rint(hs));
-    mate.k((int) rint(ks));
-    mate.l((int) rint(ls));
+    mate.setH((int) rint(hs));
+    mate.setK((int) rint(ks));
+    mate.setL((int) rint(ls));
   }
 
   /**
@@ -694,8 +716,9 @@ public class SymOp {
   public static SymOp invertSymOp(SymOp symOp) {
     var tr = symOp.tr;
     var rot = symOp.rot;
-    return new SymOp(mat3Inverse(rot),
-        new double[] {-dot(tr, rot[0]), -dot(tr, rot[1]), -dot(tr, rot[2])});
+    var inv = mat3Inverse(rot);
+    return new SymOp(inv,
+        new double[] {-dot(inv[0], tr), -dot(inv[1], tr), -dot(inv[2], tr)});
   }
 
   /**
@@ -709,12 +732,11 @@ public class SymOp {
     if (tokens.length < 12) {
       return null;
     }
-    SymOp symOp = new SymOp(new double[][] {
+    return new SymOp(new double[][] {
         {parseDouble(tokens[0]), parseDouble(tokens[1]), parseDouble(tokens[2])},
         {parseDouble(tokens[3]), parseDouble(tokens[4]), parseDouble(tokens[5])},
         {parseDouble(tokens[6]), parseDouble(tokens[7]), parseDouble(tokens[8])}},
         new double[] {parseDouble(tokens[9]), parseDouble(tokens[10]), parseDouble(tokens[11])});
-    return symOp;
   }
 
   /**

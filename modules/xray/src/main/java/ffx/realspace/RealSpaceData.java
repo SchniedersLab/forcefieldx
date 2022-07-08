@@ -37,7 +37,7 @@
 // ******************************************************************************
 package ffx.realspace;
 
-import static ffx.crystal.Crystal.mod;
+import static ffx.numerics.math.ScalarMath.mod;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.floor;
@@ -582,8 +582,8 @@ public class RealSpaceData implements DataContainer {
     private final RealSpaceLoop[] realSpaceLoops;
     private final SharedDouble[] sharedTarget;
     private final SharedDouble shareddUdL;
-    private int nAtoms;
-    private int nData;
+    private final int nAtoms;
+    private final int nData;
 
     RealSpaceRegion(int nThreads, int nAtoms, int nData) {
       this.nAtoms = nAtoms;
@@ -746,8 +746,7 @@ public class RealSpaceData implements DataContainer {
                   || ifry + 2 > extY
                   || ifrz - 1 < 0
                   || ifrz + 2 > extZ) {
-                String message =
-                    format(" Atom %s is outside the density will be ignored.", a.toString());
+                String message = format(" Atom %s is outside the density will be ignored.", a);
                 logger.warning(message);
                 continue;
               }

@@ -127,7 +127,7 @@ public class ForceField {
     multipoleTypes = new TreeMap<>(new MultipoleType(new double[10], null, null, false));
     outOfPlaneBendTypes = new TreeMap<>(new OutOfPlaneBendType(new int[4], 0));
     piOrbitalTorsionTypes = new TreeMap<>(new PiOrbitalTorsionType(new int[2], 0));
-    polarizeTypes = new TreeMap<>(new PolarizeType(0, 0, 0, new int[1]));
+    polarizeTypes = new TreeMap<>(new PolarizeType(0, 0, 0, 0, new int[1]));
     stretchBendTypes = new TreeMap<>(new StretchBendType(new int[3], new double[1]));
     stretchTorsionTypes = new TreeMap<>(new StretchTorsionType(new int[4], new double[1]));
     angleTorsionTypes = new TreeMap<>(new AngleTorsionType(new int[4], new double[1]));

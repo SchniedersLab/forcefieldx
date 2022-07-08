@@ -483,7 +483,8 @@ atom     44      9  H     "Cysteine HB"                1    1.0080  1
 atom     45     12  SH    "Cysteine SG"               16   32.0660  2
 atom     46     13  HS    "Cysteine HG"                1    1.0080  1
 atom     47     12  SS    "Cystine SG"                16   32.0660  2
-atom     48      7  CA    "Cysteine Anion CA"          6   12.0110  4
+# For CpHMD, do not use the special C-alpha.
+# atom     48      7  CA    "Cysteine Anion CA"          6   12.0110  4
 atom     49     14  S     "Cysteine Anion S-"         16   32.0660  1
 atom     50     15  N     "Proline N"                  7   14.0070  3
 atom     51      7  CA    "Proline CA"                 6   12.0110  4
@@ -896,7 +897,8 @@ biotype     93  CB    "Cystine (SS)           "     43
 biotype     94  HB    "Cystine (SS)           "     44
 biotype     95  SG    "Cystine (SS)           "     47
 biotype     96  N     "Cysteine (S-)          "      7
-biotype     97  CA    "Cysteine (S-)          "     48
+# Replaced by values for CpHMD at the end of the file.
+# biotype     97  CA    "Cysteine (S-)          "     48
 biotype     98  C     "Cysteine (S-)          "      9
 biotype     99  HN    "Cysteine (S-)          "     10
 biotype    100  O     "Cysteine (S-)          "     11
@@ -1257,7 +1259,8 @@ biotype    454  HN    "N-Terminal CYX (SS)    "    232
 biotype    455  O     "N-Terminal CYX (SS)    "     11
 biotype    456  HA    "N-Terminal CYX (SS)    "     12
 biotype    457  N     "N-Terminal CYD (S-)    "    231
-biotype    458  CA    "N-Terminal CYD (S-)    "     48
+# Replaced by values for CpHMD at the end of the file.
+# biotype    458  CA    "N-Terminal CYD (S-)    "     48
 biotype    459  C     "N-Terminal CYD (S-)    "      9
 biotype    460  HN    "N-Terminal CYD (S-)    "    232
 biotype    461  O     "N-Terminal CYD (S-)    "     11
@@ -1438,7 +1441,7 @@ biotype    635  HN    "C-Terminal CYX (SS)    "     10
 biotype    636  OXT   "C-Terminal CYX (SS)    "    234
 biotype    637  HA    "C-Terminal CYX (SS)    "     12
 biotype    638  N     "C-Terminal CYD (S-)    "      7
-biotype    639  CA    "C-Terminal CYD (S-)    "     48
+# biotype    639  CA    "C-Terminal CYD (S-)    "     48
 biotype    640  C     "C-Terminal CYD (S-)    "    233
 biotype    641  HN    "C-Terminal CYD (S-)    "     10
 biotype    642  OXT   "C-Terminal CYD (S-)    "    234
@@ -2392,26 +2395,28 @@ multipole     43      8     47                -0.30144 \
                                        -0.35442 \
                                         0.00000 -0.51033 \
                                        -0.35331  0.00000  0.86475
-multipole     43     48     49                -0.08027 \
-                                        0.13313  0.00000  0.28094 \
-                                       -0.73267 \
-                                        0.00000  0.44660 \
-                                       -0.05681  0.00000  0.28607
+# Replaced by values for CpHMD at the end of the file.
+#multipole     43     48     49                -0.08027 \
+#                                        0.13313  0.00000  0.28094 \
+#                                       -0.73267 \
+#                                        0.00000  0.44660 \
+#                                       -0.05681  0.00000  0.28607
 multipole     44     43      8                 0.14381 \
                                        -0.07645  0.00000  0.01699 \
                                        -0.09149 \
                                         0.00000 -0.03033 \
                                        -0.15284  0.00000  0.12182
-multipole     44     43     48                 0.00975 \
-                                       -0.14579  0.00000 -0.00614 \
-                                       -0.22868 \
-                                        0.00000  0.13700 \
-                                       -0.21056  0.00000  0.09168
-multipole     45     46     43                -0.03264 \
-                                        0.49460  0.00000 -0.04347 \
-                                        1.63727 \
-                                        0.00000 -2.40778 \
-                                       -0.45566  0.00000  0.77051
+#multipole     44     43     48                 0.00975 \
+#                                       -0.14579  0.00000 -0.00614 \
+#                                       -0.22868 \
+#                                        0.00000  0.13700 \
+#                                       -0.21056  0.00000  0.09168
+# Replaced by values for CpHMD at the end of the file.
+# multipole     45     46     43                -0.03264 \
+#                                        0.49460  0.00000 -0.04347 \
+#                                        1.63727 \
+#                                        0.00000 -2.40778 \
+#                                       -0.45566  0.00000  0.77051
 multipole     46     45     43                 0.10947 \
                                        -0.10504  0.00000 -0.03823 \
                                        -0.08656 \
@@ -2422,17 +2427,23 @@ multipole     47     47     43                 0.07683 \
                                         1.04951 \
                                         0.00000 -2.57126 \
                                        -0.50502  0.00000  1.52175
-multipole     48      7      9         -0.23113 \
-                                        0.27663  0.00000  0.12440 \
-                                       -0.20625 \
-                                        0.00000 -0.28389 \
-                                        0.15574  0.00000  0.49014
-multipole     48      7    233          0.60118 \
-                                        0.27663  0.00000  0.12440 \
-                                       -0.20625 \
-                                        0.00000 -0.28389 \
-                                        0.15574  0.00000  0.49014
-multipole     49     43     48                -0.85155 \
+# Replaced by values for CpHMD at the end of the file.
+# multipole     48      7      9         -0.23113 \
+#                                        0.27663  0.00000  0.12440 \
+#                                       -0.20625 \
+#                                        0.00000 -0.28389 \
+#                                        0.15574  0.00000  0.49014
+# multipole     48      7    233          0.60118 \
+#                                        0.27663  0.00000  0.12440 \
+#                                       -0.20625 \
+#                                        0.00000 -0.28389 \
+#                                        0.15574  0.00000  0.49014
+# multipole     49     43     48                -0.85155 \
+#                                        0.15871  0.00000  0.56464 \
+#                                       -1.49210 \
+#                                        0.00000 -1.58110 \
+#                                       -0.20334  0.00000  3.07320
+multipole     49     43     8          -0.85155 \
                                         0.15871  0.00000  0.56464 \
                                        -1.49210 \
                                         0.00000 -1.58110 \
@@ -4421,7 +4432,8 @@ polarize     41   1.33400  0.39000     42
 polarize     42   0.49600  0.39000     41
 polarize     43   1.33400  0.39000     44     48     49
 polarize     44   0.49600  0.39000     43
-polarize     45   2.80000  0.39000     46
+# Replaced by values for CpHMD at the end of the file.
+# polarize     45   2.80000  0.39000     46
 polarize     46   0.49600  0.39000     45
 polarize     47   2.80000  0.39000     47
 polarize     48   1.33400  0.39000     12     43
@@ -8164,11 +8176,11 @@ multipole   121  120  119               0.13110 \
                                        -0.00411    0.00000    0.00915
 
 # ASD side-chain has hydrogen on both Oxygen atoms to support tautomers.
-atom        401    8    C     "ASD CB"             6    12.011    4
-atom        402    9    H     "ASD HB"             1     1.008    1
-atom        403   32    C     "ASD CG"             6    12.011    3
-atom        404   34    OH    "ASD OD"             8    15.999    2
-atom        405   35    HO    "ASD HD"             1     1.008    1
+atom        501    8    C     "ASD CB"             6    12.011    4
+atom        502    9    H     "ASD HB"             1     1.008    1
+atom        503   32    C     "ASD CG"             6    12.011    3
+atom        504   34    OH    "ASD OD"             8    15.999    2
+atom        505   35    HO    "ASD HD"             1     1.008    1
 
 # OD1-CG-OD2, OE1-CD-OE2
 anglep     34     32     34  122.30  121.50
@@ -8205,51 +8217,51 @@ multipole   145  143  144              -0.43939 \
                                        -0.26932    0.00000   -0.00842
 
 # ASD Multipoles
-multipole    12    8  401               0.08514 \
+multipole    12    8  501               0.08514 \
                                         0.02910    0.00000    0.05267 \
                                         0.04149 \
                                         0.00000   -0.00658 \
                                        -0.00600    0.00000   -0.03491
-multipole   401    8  403              -0.17303 \
+multipole   501    8  503              -0.17303 \
                                         0.44945    0.00000    0.30728 \
                                        -0.07251 \
                                         0.00000   -0.67903 \
                                         0.08175    0.00000    0.75154
-multipole   402  401  403               0.10446 \
+multipole   502  501  503               0.10446 \
                                        -0.08174    0.00000   -0.18518 \
                                        -0.00080 \
                                         0.00000    0.13227 \
                                        -0.04979    0.00000   -0.13147
-multipole   403 -404 -404               0.85923 \
+multipole   503 -504 -504               0.85923 \
                                         0.00000    0.00000    0.14630 \
                                         0.26732 \
                                         0.00000   -0.30726 \
                                         0.00000    0.00000    0.03994
-multipole   404  403  404              -0.43939 \
+multipole   504  503  504              -0.43939 \
                                         0.21541    0.00000   -0.02221 \
                                         0.36981 \
                                         0.00000   -0.36139 \
                                        -0.26932    0.00000   -0.00842
-multipole   405  404  403               0.24242 \
+multipole   505  504  503               0.24242 \
                                        -0.05297    0.00000   -0.03262 \
                                        -0.15414 \
                                         0.00000   -0.15395 \
                                        -0.00414    0.00000    0.30809
 
-polarize    401          1.3340     0.3900    402  403
-polarize    402          0.4960     0.3900    401
-polarize    403          1.3340     0.3900    401  404
-polarize    404          0.8370     0.3900    403  405
-polarize    405          0.4960     0.3900    405
+polarize    501          1.3340     0.3900    502  503
+polarize    502          0.4960     0.3900    501
+polarize    503          1.3340     0.3900    501  504
+polarize    504          0.8370     0.3900    503  505
+polarize    505          0.4960     0.3900    505
 
 # GLD side-chain has hydrogen on both Oxygen atoms to support tautomers.
-atom        406    8    C     "GLD CB"             6    12.011    4
-atom        407    9    H     "GLD HB"             1     1.008    1
-atom        408    8    C     "GLD CG"             6    12.011    4
-atom        409    9    H     "GLD HG"             1     1.008    1
-atom        410   32    C     "GLD CD"             6    12.011    3
-atom        411   34    O     "GLD OE"             8    15.999    2
-atom        412   35    H     "GLD HE"             1     1.008    1
+atom        506    8    C     "GLD CB"             6    12.011    4
+atom        507    9    H     "GLD HB"             1     1.008    1
+atom        508    8    C     "GLD CG"             6    12.011    4
+atom        509    9    H     "GLD HG"             1     1.008    1
+atom        510   32    C     "GLD CD"             6    12.011    3
+atom        511   34    O     "GLD OE"             8    15.999    2
+atom        512   35    H     "GLD HE"             1     1.008    1
 
 # GLU Carboxylic Carbon (replaced AMOEBA-BIO-18 which has a non-zero x-dipole)
 multipole   157 -158 -158               1.05691 \
@@ -8273,54 +8285,54 @@ multipole   163 -164 -165               0.90086 \
                                         0.00000    0.00000   -0.15694
 
 # GLD Multipoles
-multipole    12    8  406               0.08514 \
+multipole    12    8  506               0.08514 \
                                         0.02910    0.00000    0.05267 \
                                         0.04149 \
                                         0.00000   -0.00658 \
                                        -0.00600    0.00000   -0.03491
-multipole   406    8  408              -0.10668 \
+multipole   506    8  508              -0.10668 \
                                         0.29642    0.00000    0.28365 \
                                         0.39855 \
                                         0.00000   -0.41154 \
                                         0.04273    0.00000    0.01299
-multipole   407  406    8               0.09513 \
+multipole   507  506    8               0.09513 \
                                        -0.05887    0.00000   -0.04640 \
                                        -0.03611 \
                                         0.00000   -0.02016 \
                                        -0.01670    0.00000    0.05627
-multipole   408  406  410              -0.23637 \
+multipole   508  506  510              -0.23637 \
                                         0.34729    0.00000    0.09253 \
                                        -0.40537 \
                                         0.00000   -0.00346 \
                                        -0.52649    0.00000    0.40883
-multipole   409  408  409               0.10600 \
+multipole   509  508  509               0.10600 \
                                        -0.20910    0.00000   -0.08841 \
                                        -0.14892 \
                                         0.00000    0.17218 \
                                        -0.34482    0.00000   -0.02326
-multipole   410 -411 -411               0.90086 \
+multipole   510 -511 -511               0.90086 \
                                         0.00000    0.00000    0.15202 \
                                         0.12045 \
                                         0.00000    0.03649 \
                                         0.00000    0.00000   -0.15694
-multipole   411  410  411              -0.53100 \
+multipole   511  510  511              -0.53100 \
                                         0.05936    0.00000   -0.00202 \
                                         0.03421 \
                                         0.00000    0.00132 \
                                         0.18532    0.00000   -0.03553
-multipole   412  411  410               0.24071 \
+multipole   512  511  510               0.24071 \
                                        -0.19323    0.00000   -0.29128 \
                                         0.07422 \
                                         0.00000    0.09278 \
                                        -0.19140    0.00000   -0.16700
 
-polarize    406          1.3340     0.3900    407
-polarize    407          0.4960     0.3900    406
-polarize    408          1.3340     0.3900    409  410
-polarize    409          0.4960     0.3900    408
-polarize    410          1.3340     0.3900    408  411
-polarize    411          0.8370     0.3900    410  412
-polarize    412          0.4960     0.3900    411
+polarize    506          1.3340     0.3900    507
+polarize    507          0.4960     0.3900    506
+polarize    508          1.3340     0.3900    509  510
+polarize    509          0.4960     0.3900    508
+polarize    510          1.3340     0.3900    508  511
+polarize    511          0.8370     0.3900    510  512
+polarize    512          0.4960     0.3900    511
 
 biotype     800    N       "ASD (COHOH)"              7
 biotype     801    CA      "ASD (COHOH)"              8
@@ -8328,21 +8340,54 @@ biotype     802    C       "ASD (COHOH)"              9
 biotype     803    HN      "ASD (COHOH)"             10
 biotype     804    O       "ASD (COHOH)"             11
 biotype     805    HA      "ASD (COHOH)"             12
-biotype     806    CB      "ASD (COHOH)"            401
-biotype     807    HB      "ASD (COHOH)"            402
-biotype     808    CG      "ASD (COHOH)"            403
-biotype     809    OD      "ASD (COHOH)"            404
-biotype     810    HD      "ASD (COHOH)"            405
+biotype     806    CB      "ASD (COHOH)"            501
+biotype     807    HB      "ASD (COHOH)"            502
+biotype     808    CG      "ASD (COHOH)"            503
+biotype     809    OD      "ASD (COHOH)"            504
+biotype     810    HD      "ASD (COHOH)"            505
 biotype     811    N       "GLD (COHOH)"              7
 biotype     812    CA      "GLD (COHOH)"              8
 biotype     813    C       "GLD (COHOH)"              9
 biotype     814    HN      "GLD (COHOH)"             10
 biotype     815    O       "GLD (COHOH)"             11
 biotype     816    HA      "GLD (COHOH)"             12
-biotype     817    CB      "GLD (COHOH)"            406
-biotype     818    HB      "GLD (COHOH)"            407
-biotype     819    CG      "GLD (COHOH)"            408
-biotype     820    HG      "GLD (COHOH)"            409
-biotype     821    CD      "GLD (COHOH)"            410
-biotype     822    OE      "GLD (COHOH)"            411
-biotype     823    HE      "GLD (COHOH)"            412
+biotype     817    CB      "GLD (COHOH)"            506
+biotype     818    HB      "GLD (COHOH)"            507
+biotype     819    CG      "GLD (COHOH)"            508
+biotype     820    HG      "GLD (COHOH)"            509
+biotype     821    CD      "GLD (COHOH)"            510
+biotype     822    OE      "GLD (COHOH)"            511
+biotype     823    HE      "GLD (COHOH)"            512
+
+# Changes for CYS and CYD
+# For CpHMD, use C-alpha atom type 8 for the anion
+biotype     97  CA    "Cysteine (S-)          "      8
+biotype    639  CA    "C-Terminal CYD (S-)    "      8
+
+# CYS SG cannot use the HG atom for its frame during CpHMD
+# The new SG frame uses CB then CA (as does CYD SG); the multipole was updated for the new frame.
+multipole    45   43    8              -0.03264 \
+                                       -0.00847    0.00000    0.49643 \
+                                        0.68524 \
+                                        0.00000   -2.40778 \
+                                        0.35560    0.00000    1.72254
+
+# For protonated CYS, SG and HG were originally their own polarization group.
+# Here we expand the polarization group to include CB (43) to match the CYD.
+# In principle, the SG multipole should be re-optimized to account for the change in polarization group.
+# As of June 8, 2022, this has not been done.
+polarize     45   2.80000  0.39000     46    43
+
+# CYD SG- now uses the default CA multipole (48 replaced with 8 below); the components do not need to be changed.
+multipole     49     43     8          -0.85155 \
+                                        0.15871  0.00000  0.56464 \
+                                       -1.49210 \
+                                        0.00000 -1.58110 \
+                                       -0.20334  0.00000  3.07320
+
+# Changed the partial charge from (q = -0.08027) (-0.21433) to below to maintain charge neutrality with new HB multipole definition
+multipole     43     8     49           -0.37333 \
+                                        0.13313  0.00000  0.28094 \
+                                       -0.73267 \
+                                        0.00000  0.44660 \
+                                       -0.05681  0.00000  0.28607

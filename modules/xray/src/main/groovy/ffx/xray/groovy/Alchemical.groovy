@@ -308,10 +308,8 @@ class Alchemical extends AlgorithmsScript {
     xrayOptions.setProperties(parseResult, properties)
 
     DiffractionData diffractionData = xrayOptions.getDiffractionData(filenames, assemblies, parseResult)
-    diffractionData.scaleBulkFit()
-    diffractionData.printStats()
+    RefinementEnergy refinementEnergy = xrayOptions.toXrayEnergy(diffractionData)
 
-    RefinementEnergy refinementEnergy = xrayOptions.toXrayEnergy(diffractionData, assemblies, algorithmFunctions)
     double[] x = new double[refinementEnergy.getNumberOfVariables()]
     x = refinementEnergy.getCoordinates(x)
     refinementEnergy.energy(x, true)
@@ -321,8 +319,7 @@ class Alchemical extends AlgorithmsScript {
     boolean asynchronous = true
 
     CompositeConfiguration props = assemblies[0].getProperties()
-    HistogramSettings hOps = new HistogramSettings(histogramRestart, lambdaRestart.toString(),
-        props)
+    HistogramSettings hOps = new HistogramSettings(histogramRestart, lambdaRestart.toString(), props)
     OrthogonalSpaceTempering orthogonalSpaceTempering = new OrthogonalSpaceTempering(
         refinementEnergy, refinementEnergy, lambdaRestart,
         hOps, props, dynamicsOptions.getTemperature(), dynamicsOptions.getDt(),

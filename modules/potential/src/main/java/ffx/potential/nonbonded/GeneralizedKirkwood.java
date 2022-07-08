@@ -779,6 +779,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
     logger.info(
         format("   Non-Polar Model:                  %10s", nonPolar.toString().replace('_', '-')));
 
+    if(nonPolar.equals(NonPolar.GAUSS_DISP)){
+      logger.info(
+              format("    GaussVol Radii Offset:               %2.4f",
+                      forceField.getDouble("GAUSSVOL_RADII_OFFSET",0.0)));
+      logger.info(
+              format("    GaussVol Radii Scale:                %2.4f",
+                      forceField.getDouble("GAUSSVOL_RADII_SCALE",1.0)));
+    }
+
     if (dispersionRegion != null) {
       logger.info(
           format(
@@ -807,6 +816,25 @@ public class GeneralizedKirkwood implements LambdaInterface {
                 atoms[i].toString(), baseRadius[i], descreenRadius[i], overlapScale[i], neckScale[i]));
       }
     }
+  }
+
+  /**
+   * GK is using perfect radii where available.
+   * @return True if using perfect radii.
+   */
+  public boolean getUsePerfectRadii() {
+    return perfectRadii;
+  }
+
+  /**
+   * Return perfect Born radii read in as keywords, or base radii if perfect radii are not available.
+   *
+   * @return Array of perfect Born radii.
+   */
+  public double[] getPerfectRadii() {
+    bornRadiiRegion.init(atoms, crystal, sXYZ, neighborLists, baseRadius, descreenRadius,
+        overlapScale, neckScale, descreenOffset, use, cut2, nativeEnvironmentApproximation, born);
+    return bornRadiiRegion.getPerfectRadii();
   }
 
   /**
@@ -1580,11 +1608,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
             // Sneck for lone ions or molecules like methane, which are not descreened by any other atoms
             neckScale[i] = 1.0;
           } else {
-            neckScale[i] = sneck * (5.0 - numBoundHeavyAtoms) / 4.0;
+            neckScale[i] = atom.getSoluteType().sneck * (5.0 - numBoundHeavyAtoms) / 4.0;
           }
         } else {
           // Non-chemically aware Sneck - set neckScale to the max (input) Sneck value for all non-hydrogen atoms
-          neckScale[i] = sneck;
+          neckScale[i] = atom.getSoluteType().sneck;
         }
       }
 

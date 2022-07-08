@@ -46,8 +46,10 @@ import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
+import ffx.potential.bonded.LambdaInterface
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary
+import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.parsers.PDBFilter
 import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine.Command
@@ -70,6 +72,9 @@ class ManyBody extends AlgorithmsScript {
   @Mixin
   ManyBodyOptions manyBodyOptions
 
+  @Mixin
+  AlchemicalOptions alchemicalOptions
+
   /**
    * An XYZ or PDB input file.
    */
@@ -78,8 +83,6 @@ class ManyBody extends AlgorithmsScript {
   private String filename
 
   ForceFieldEnergy potentialEnergy
-  boolean testing = false
-  boolean monteCarloTesting = false
   TitrationManyBody titrationManyBody
 
   /**
@@ -109,11 +112,22 @@ class ManyBody extends AlgorithmsScript {
 
     // This flag is for ForceFieldEnergyOpenMM and must be set before reading files.
     // It enforces that all torsions include a Fourier series with 6 terms.
-    // Otherwise, during titration the number of terms for each torsion may change and
-    // causing updateParametersInContext to throw an exception.
+    // Otherwise, during titration the number of terms for each torsion can change and
+    // cause updateParametersInContext to throw an exception.
     double titrationPH = manyBodyOptions.getTitrationPH()
     if (titrationPH > 0) {
       System.setProperty("manybody-titration", "true")
+    }
+
+    // Turn on computation of lambda derivatives if softcore atoms exist.
+    boolean lambdaTerm = alchemicalOptions.hasSoftcore()
+    if (lambdaTerm) {
+      // Turn on softcore van der Waals
+      System.setProperty("lambdaterm", "true")
+      // Turn of alchemical electrostatics
+      System.setProperty("elec-lambdaterm", "false")
+      // Turn on intra-molecular softcore
+      System.setProperty("intramolecular-softcore", "true");
     }
 
     // Load the MolecularAssembly.
@@ -125,6 +139,8 @@ class ManyBody extends AlgorithmsScript {
     }
 
     CompositeConfiguration properties = activeAssembly.getProperties()
+
+    // Application of rotamers uses side-chain atom naming from the PDB.
     if (properties.getBoolean("standardizeAtomNames", false)) {
       renameAtomsToPDBStandard(activeAssembly)
     }
@@ -133,13 +149,11 @@ class ManyBody extends AlgorithmsScript {
     potentialEnergy = activeAssembly.getPotentialEnergy()
 
     // Collect residues to optimize.
-    List<Residue> residues = manyBodyOptions.getResidues(activeAssembly);
+    List<Residue> residues = manyBodyOptions.collectResidues(activeAssembly)
     if (residues == null || residues.isEmpty()) {
       logger.info(" There are no residues in the active system to optimize.")
       return this
     }
-
-    logger.info(" manyBody.getResidues " + Arrays.toString(residues.toArray()))
 
     // Handle rotamer optimization with titration.
     if (titrationPH > 0) {
@@ -152,32 +166,28 @@ class ManyBody extends AlgorithmsScript {
       }
 
       // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
-      titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(), resNumberList, titrationPH)
+      titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
+          resNumberList, titrationPH)
       MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly()
       setActiveAssembly(protonatedAssembly)
       potentialEnergy = protonatedAssembly.getPotentialEnergy()
     }
 
+    if (lambdaTerm) {
+      alchemicalOptions.setFirstSystemAlchemistry(activeAssembly)
+      LambdaInterface lambdaInterface = (LambdaInterface) potentialEnergy
+      double lambda = alchemicalOptions.getInitialLambda()
+      logger.info(format(" Setting ManyBody softcore lambda to: %5.3f", lambda))
+      lambdaInterface.setLambda(lambda)
+    }
+
     RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,
         potentialEnergy, algorithmListener)
 
-    // TODO: Handle testing flags more elegantly.
-    // Apply testing flags.
-    testing = getTesting()
-    if (testing) {
-      rotamerOptimization.turnRotamerSingleEliminationOff()
-      rotamerOptimization.turnRotamerPairEliminationOff()
-    }
-    if (monteCarloTesting) {
-      rotamerOptimization.setMonteCarloTesting(true)
-    }
-
     manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
-
-    // TODO: Consolidate the method below with "manyBody.getResidues".
+    // rotamerOptimization.getResidues() returns a cached version of
+    // manyBodyOptions.collectResidues(activeAssembly)
     List<Residue> residueList = rotamerOptimization.getResidues()
-
-    logger.info(" RotamerOptimization.getResidues " + Arrays.toString(residueList.toArray()))
 
     logger.info("\n Initial Potential Energy:")
     potentialEnergy.energy(false, true)
@@ -186,7 +196,7 @@ class ManyBody extends AlgorithmsScript {
     RotamerLibrary.measureRotamers(residueList, false)
 
     // Run the optimization.
-    rotamerOptimization.optimize(manyBodyOptions.getAlgorithm())
+    rotamerOptimization.optimize(manyBodyOptions.getAlgorithm(residueList.size()))
 
     boolean isTitrating = false
     Set<Atom> excludeAtoms = new HashSet<>()
@@ -195,13 +205,14 @@ class ManyBody extends AlgorithmsScript {
       isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
     }
 
-    // Start-up Parallel Java MPI communication.
+    // Log the final result on rank 0.
     int rank = Comm.world().rank()
     if (rank == 0) {
       logger.info(" Final Minimum Energy")
       double energy = potentialEnergy.energy(false, true)
       if (isTitrating) {
-        double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList, optimalRotamers)
+        double phBias = rotamerOptimization.getEnergyExpansion().getTotalRotamerPhBias(residueList,
+            optimalRotamers)
         logger.info(format("\n  Rotamer pH Bias    %16.8f", phBias))
         logger.info(format("  Potential with Bias%16.8f\n", phBias + energy))
       }
@@ -210,7 +221,8 @@ class ManyBody extends AlgorithmsScript {
       // atoms (i.e. hydrogen that are excluded from being written out).
       properties.setProperty("standardizeAtomNames", "false")
       File modelFile = saveDirFile(activeAssembly.getFile())
-      PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(), properties)
+      PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(),
+          properties)
       if (titrationPH > 0) {
         String remark = format("Titration pH: %6.3f", titrationPH)
         if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true, remark)) {
@@ -252,28 +264,4 @@ class ManyBody extends AlgorithmsScript {
     return potentials
   }
 
-  /**
-   * Set method for the testing boolean. When true, the testing boolean will shut off all elimination criteria forcing either a monte carlo or brute force search over all permutations.
-   * @param testing A boolean flag that turns off elimination criteria for testing purposes.
-   */
-  void setTesting(boolean testing) {
-    this.testing = testing
-  }
-
-  /**
-   * Get method for the testing boolean. When true, the testing boolean will shut off all elimination criteria forcing either a monte carlo or brute force search over all permutations.
-   * @return testing A boolean flag that turns off elimination criteria for testing purposes.
-   */
-  boolean getTesting() {
-    return testing
-  }
-
-  /**
-   * Set to true when testing the monte carlo rotamer optimization algorithm. True will trigger the "set seed"
-   * functionality of the pseudo-random number generator in the RotamerOptimization.java class to create a deterministic monte carlo algorithm.
-   * @param bool True ONLY when a deterministic monte carlo approach is desired. False in all other cases.
-   */
-  void setMonteCarloTesting(boolean bool) {
-    this.monteCarloTesting = bool
-  }
 }

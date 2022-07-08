@@ -315,12 +315,12 @@ public class DispersionRegion extends ParallelRegion {
         double rmini = type.radius / 2.0;
         double cDisp = 0.0;
         if (rmini > 0.0 && epsi > 0.0) {
-          double emixo = getCombinedEps(EPSO, epsi, epsilonRule);
+          double emixo = getCombinedEps(EPSO, epsi, RMINO, rmini, epsilonRule);
           double rmixo = getCombinedRadius(RMINO, rmini, radiusRule);
           // Start of integration of dispersion for atom i with water oxygen.
           double riO = rmixo / 2.0 + dispersionOffest;
           cDisp = tailCorrection(riO, emixo, rmixo);
-          double emixh = getCombinedEps(EPSH, epsi, epsilonRule);
+          double emixh = getCombinedEps(EPSH, epsi, RMINH, rmini, epsilonRule);
           double rmixh = getCombinedRadius(RMINH, rmini, radiusRule);
           // Start of integration of dispersion for atom i with water hydrogen.
           double riH = rmixh / 2.0 + dispersionOffest;
@@ -392,14 +392,14 @@ public class DispersionRegion extends ParallelRegion {
       double rmink = atoms[k].getVDWType().radius / 2.0;
 
       // Parameters for atom i with water oxygen.
-      double emixo = getCombinedEps(EPSO, epsi, epsilonRule);
+      double emixo = getCombinedEps(EPSO, epsi, RMINO, rmini, epsilonRule);
       double rmixo = getCombinedRadius(RMINO, rmini, radiusRule);
       // Start of integration of dispersion for atom i with water oxygen.
       double riO = rmixo / 2.0 + dispersionOffest;
       double nO = 1.0;
 
       // Parameters for atom i with water hydrogen.
-      double emixh = getCombinedEps(EPSH, epsi, epsilonRule);
+      double emixh = getCombinedEps(EPSH, epsi, RMINH, rmini, epsilonRule);
       double rmixh = getCombinedRadius(RMINH, rmini, radiusRule);
       // Start of integration of dispersion for atom i with water oxygen.
       double riH = rmixh / 2.0 + dispersionOffest;

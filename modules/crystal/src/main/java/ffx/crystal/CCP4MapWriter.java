@@ -37,11 +37,13 @@
 // ******************************************************************************
 package ffx.crystal;
 
+import static ffx.utilities.TinkerUtils.version;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -137,7 +139,7 @@ public class CCP4MapWriter {
   }
 
   /**
-   * set the stepping across the array (e.g. 2 if data is separated by 1 space)
+   * Set the stepping across the array (e.g. 2 if data is separated by 1 space)
    *
    * @param stride the step size desired
    */
@@ -146,7 +148,7 @@ public class CCP4MapWriter {
   }
 
   /**
-   * write data to file, does not normalize
+   * Write data to file (does not normalize).
    *
    * @param data map data to write out
    */
@@ -175,7 +177,6 @@ public class CCP4MapWriter {
       for (int j = 0; j < exty; j++) {
         for (int i = 0; i < extx; i++) {
           int index = stride * (i + extx * (j + exty * k));
-          // int index = k * (exty * (extx + 2)) + j * (extx + 2) + i;
           n++;
           if (data[index] < min) {
             min = data[index];
@@ -193,7 +194,6 @@ public class CCP4MapWriter {
       for (int j = 0; j < exty; j++) {
         for (int i = 0; i < extx; i++) {
           int index = stride * (i + extx * (j + exty * k));
-          // int index = k * (exty * (extx + 2)) + j * (extx + 2) + i;
           sd += pow(data[index] - mean, 2.0);
           n++;
         }
@@ -214,15 +214,18 @@ public class CCP4MapWriter {
       write(data, false);
     }
 
+    File file = version(new File(filename));
+    String name = file.getName();
+
     try {
       if (logger.isLoggable(Level.INFO)) {
         StringBuilder sb = new StringBuilder();
-        sb.append(format("\nwriting CCP4 map file: \"%s\"\n", filename));
-        sb.append(format("map min: %g max: %g mean: %g standard dev.: %g", min, max, mean, sd));
+        sb.append(format("\n Writing CCP4 map file: \"%s\"", name));
+        sb.append(format("\n  Map min: %g max: %g mean: %g standard dev.: %g", min, max, mean, sd));
         logger.info(sb.toString());
       }
 
-      fos = new FileOutputStream(filename);
+      fos = new FileOutputStream(file);
       dos = new DataOutputStream(fos);
 
       byte[] bytes = new byte[2048];
@@ -326,7 +329,6 @@ public class CCP4MapWriter {
         for (int j = 0; j < exty; j++) {
           for (int i = 0; i < extx; i++) {
             int index = stride * (i + extx * (j + exty * k));
-            // int index = k * (exty * (extx + 2)) + j * (extx + 2) + i;
             fmapdata = (float) data[index];
             bb.order(b).putFloat(fmapdata);
             if (!bb.hasRemaining()) {
@@ -345,7 +347,6 @@ public class CCP4MapWriter {
     } catch (Exception e) {
       String message = "Fatal exception evaluating structure factors.\n";
       logger.log(Level.SEVERE, message, e);
-      System.exit(-1);
     }
   }
 }

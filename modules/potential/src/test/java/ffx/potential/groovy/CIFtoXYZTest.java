@@ -37,24 +37,26 @@
 // ******************************************************************************
 package ffx.potential.groovy;
 
-import static org.junit.Assert.assertTrue;
-
 import ffx.potential.utils.PotentialTest;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
- * Tests test.CIFtoXYZ command to determine that files are being translated correctly. Based on
- * SaveAsPDBTest.java
+ * Tests CIFtoXYZ command to determine that files are being translated correctly.
  *
  * @author Aaron J. Nessler
  */
 
 public class CIFtoXYZTest extends PotentialTest {
 
-  /** Tests the CIFtoXYZ script. */
+  /**
+   * Test a basic CIF to XYZ conversion.
+   */
   @Test
   public void testCIFtoXYZ() {
-    // Set-up the input arguments for the CIFtoXYZ script.
+    // Set up the input arguments for the CIFtoXYZ script.
     String[] args = {"src/main/java/ffx/potential/structures/CBZ16.cif",
         "src/main/java/ffx/potential/structures/cbz.xyz"};
     binding.setVariable("args", args);
@@ -65,12 +67,16 @@ public class CIFtoXYZTest extends PotentialTest {
     CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
     potentialScript = cifToXYZ;
 
+    assertEquals(1, cifToXYZ.createdFiles.length);
     assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
   }
 
+  /**
+   * Test writing out a CIF file (XYZ to CIF).
+   */
   @Test
   public void testCIFtoXYZWriteAsCIF() {
-    // Set-up the input arguments for the CIFtoXYZ script.
+    // Set up the input arguments for the CIFtoXYZ script.
     String[] args = {"--sc", "src/main/java/ffx/potential/structures/paracetamol.xyz"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
@@ -79,12 +85,16 @@ public class CIFtoXYZTest extends PotentialTest {
     CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
     potentialScript = cifToXYZ;
 
+    assertEquals(1, cifToXYZ.createdFiles.length);
     assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".CIF"));
   }
 
+  /**
+   * Test CIFtoXYZ when the CIF file is missing hydrogen atoms.
+   */
   @Test
   public void testCIFtoXYZNoHydrogen() {
-    // Set-up the input arguments for the CIFtoXYZ script.
+    // Set up the input arguments for the CIFtoXYZ script.
     String[] args = {"--fl","src/main/java/ffx/potential/structures/CBZ03.cif",
         "src/main/java/ffx/potential/structures/cbz.xyz"};
     binding.setVariable("args", args);
@@ -94,12 +104,16 @@ public class CIFtoXYZTest extends PotentialTest {
     CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
     potentialScript = cifToXYZ;
 
+    assertEquals(1, cifToXYZ.createdFiles.length);
     assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
   }
 
+  /**
+   * Test CIFtoXYZ when several molecules are included in asymmetric unit.
+   */
   @Test
   public void testCIFtoXYZMultipleMolecules() {
-    // Set-up the input arguments for the CIFtoXYZ script.
+    // Set up the input arguments for the CIFtoXYZ script.
     String[] args = {"src/main/java/ffx/potential/structures/1183240.cif",
             "src/main/java/ffx/potential/structures/asplyswat.xyz"};
     binding.setVariable("args", args);
@@ -109,12 +123,16 @@ public class CIFtoXYZTest extends PotentialTest {
     CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
     potentialScript = cifToXYZ;
 
+    assertEquals(1, cifToXYZ.createdFiles.length);
     assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
   }
 
+  /**
+   * Test CIFtoXYZ when similar (but different) molecules are in asymmetric unit.
+   */
   @Test
   public void testCIFtoXYZzPrimeChallenge() {
-    // Set-up the input arguments for the CIFtoXYZ script.
+    // Set up the input arguments for the CIFtoXYZ script.
     String[] args = {"--fl","src/main/java/ffx/potential/structures/1183241.cif",
             "src/main/java/ffx/potential/structures/glulys.xyz"};
     binding.setVariable("args", args);
@@ -124,17 +142,58 @@ public class CIFtoXYZTest extends PotentialTest {
     CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
     potentialScript = cifToXYZ;
 
+    assertEquals(1, cifToXYZ.createdFiles.length);
     assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
   }
 
+  /**
+   * Test CIFtoXYZ on concatenated CIF files (produces multiple ARC files).
+   */
   @Test
-  public void testCIFtoXYZHelp() {
-    // Set-up the input arguments for the CIFtoXYZ script.
-    String[] args = {"-h"};
+  public void testCIFtoXYZarc() {
+    // Set up the input arguments for the CIFtoXYZ script.
+    String[] args = {"--fl","src/main/java/ffx/potential/structures/cbzs.cif",
+            "src/main/java/ffx/potential/structures/cbz.xyz"};
     binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
     // Construct and evaluate the CIFtoXYZ script.
     CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
     potentialScript = cifToXYZ;
+
+    assertEquals(3, cifToXYZ.createdFiles.length);
+    assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".ARC"));
+  }
+
+  /**
+   * Test CIFtoXYZ across a molecular disulfide bond.
+   */
+  @Test
+  public void testCIFtoXYZdisulfide() {
+    // Set up the input arguments for the CIFtoXYZ script.
+    String[] args = {"src/main/java/ffx/potential/structures/UFAGIS01.cif",
+            "src/main/java/ffx/potential/structures/uf.xyz"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the CIFtoXYZ script.
+    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
+    potentialScript = cifToXYZ;
+
+    assertEquals(1, cifToXYZ.createdFiles.length);
+    assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
+  }
+
+  /**
+   * Print out help message.
+   */
+  @Test
+  public void testCIFtoXYZHelp() {
+    // Set up the input arguments for the CIFtoXYZ script.
+    String[] args = {"-h"};
+    binding.setVariable("args", args);
+
+    // Construct and evaluate the CIFtoXYZ script.
+    potentialScript = new CIFtoXYZ(binding).run();
   }
 }

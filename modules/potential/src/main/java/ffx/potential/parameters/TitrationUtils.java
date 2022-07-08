@@ -112,8 +112,11 @@ public class TitrationUtils {
   private static final MultipoleType lydZeroMultipoleType =
       new MultipoleType(MultipoleType.zeroM, new int[] {0, 200, 198}, MultipoleFrameDefinition.ZTHENX, false);
 
+  private static final MultipoleType cydZeroMultipoleType =
+          new MultipoleType(MultipoleType.zeroM, new int[] {0, 49, 43}, MultipoleFrameDefinition.ZTHENX, false);
+
   private static final PolarizeType zeroPolarizeType =
-      new PolarizeType(0, 0.0, 0.39, new int[] {0});
+      new PolarizeType(0, 0.0, 0.39, 0.0, new int[] {0});
 
   private static final SoluteType zeroSoluteType = new SoluteType(0, 1.0);
 
@@ -628,9 +631,9 @@ public class TitrationUtils {
         AtomType stateAtomType = atomTypes[i][state];
         MultipoleType stateMultipoleType = multipoleTypes[i][state];
         if (referenceMultipoleType.frameDefinition != stateMultipoleType.frameDefinition) {
-          logger.info(format(" Local frame definition is inconsistent for atom %s", atom));
-          logger.info(format("  %s\n  %s", referenceAtomType, referenceMultipoleType));
-          logger.info(format("  %s\n  %s", stateAtomType, stateMultipoleType));
+          logger.warning(format(" Local frame definition is inconsistent for atom %s", atom));
+          logger.warning(format("  %s\n  %s", referenceAtomType, referenceMultipoleType));
+          logger.warning(format("  %s\n  %s", stateAtomType, stateMultipoleType));
           testPassed = false;
           continue;
         }
@@ -642,9 +645,9 @@ public class TitrationUtils {
               continue;
             }
           }
-          logger.info(format(" Local frame atom indices are inconsistent for atom %s", atom));
-          logger.info(format("  %s %s\n  %s", referenceAtomType, Arrays.toString(referenceIndices), referenceMultipoleType));
-          logger.info(format("  %s %s\n  %s", stateAtomType, Arrays.toString(stateIndices), stateMultipoleType));
+          logger.warning(format(" Local frame atom indices are inconsistent for atom %s", atom));
+          logger.warning(format("  %s %s\n  %s", referenceAtomType, Arrays.toString(referenceIndices), referenceMultipoleType));
+          logger.warning(format("  %s %s\n  %s", stateAtomType, Arrays.toString(stateIndices), stateMultipoleType));
           testPassed = false;
         }
       }
@@ -754,7 +757,7 @@ public class TitrationUtils {
       case CYD:
         // Assume CYS types
         int cysIndex = CysStates.CYS.ordinal();
-        if (rotamer.aminoAcid3 == LYD) {
+        if (rotamer.aminoAcid3 == CYD) {
           // Use CYD types
           cysIndex = CysStates.CYD.ordinal();
         }
@@ -945,6 +948,16 @@ public class TitrationUtils {
           multipole[i] = titrationLambda * lys[i] + (1.0 - titrationLambda) * lyd[i];
         }
         break;
+      case CYS:
+        atomIndex = CystineAtomNames.valueOf(atomName).ordinal();
+        MultipoleType cysM = cysMultipoleTypes[atomIndex][CysStates.CYS.ordinal()];
+        MultipoleType cydM = cysMultipoleTypes[atomIndex][CysStates.CYD.ordinal()];
+        double[] cys = cysM.getMultipole();
+        double[] cyd = cydM.getMultipole();
+        for (int i = 0; i < multipole.length; i++) {
+          multipole[i] = titrationLambda * cys[i] + (1.0 - titrationLambda) * cyd[i];
+        }
+        break;
       case HIS:
         atomIndex = HistidineAtomNames.valueOf(atomName).ordinal();
         MultipoleType hisM = hisMultipoleTypes[atomIndex][HisStates.HIS.ordinal()];
@@ -1009,6 +1022,14 @@ public class TitrationUtils {
         double[] lyd = lysMultipoleTypes[atomIndex][LysStates.LYD.ordinal()].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
           multipole[i] = lys[i] - lyd[i];
+        }
+        break;
+      case CYS:
+        atomIndex = CystineAtomNames.valueOf(atomName).ordinal();
+        double[] cys = cysMultipoleTypes[atomIndex][CysStates.CYS.ordinal()].getMultipole();
+        double[] cyd = cysMultipoleTypes[atomIndex][CysStates.CYD.ordinal()].getMultipole();
+        for (int i = 0; i < multipole.length; i++) {
+          multipole[i] = cys[i] - cyd[i];
         }
         break;
       case HIS:
@@ -1082,6 +1103,7 @@ public class TitrationUtils {
         }
         break;
       case LYS: // No tautomers for LYS.
+      case CYS: // No tautomers for CYS.
       default:
         return multipole;
     }
@@ -1103,6 +1125,11 @@ public class TitrationUtils {
         double lys = lysPolarizeTypes[atomIndex][LysStates.LYS.ordinal()].polarizability;
         double lyd = lysPolarizeTypes[atomIndex][LysStates.LYD.ordinal()].polarizability;
         return titrationLambda * lys + (1.0 - titrationLambda) * lyd;
+      case CYS:
+        atomIndex = CystineAtomNames.valueOf(atomName).ordinal();
+        double cys = cysPolarizeTypes[atomIndex][CysStates.CYS.ordinal()].polarizability;
+        double cyd = cysPolarizeTypes[atomIndex][CysStates.CYD.ordinal()].polarizability;
+        return titrationLambda * cys + (1.0 - titrationLambda) * cyd;
       case HIS:
         atomIndex = HistidineAtomNames.valueOf(atomName).ordinal();
         double his = hisPolarizeTypes[atomIndex][HisStates.HIS.ordinal()].polarizability;
@@ -1144,6 +1171,11 @@ public class TitrationUtils {
         double lys = lysPolarizeTypes[atomIndex][LysStates.LYS.ordinal()].polarizability;
         double lyd = lysPolarizeTypes[atomIndex][LysStates.LYD.ordinal()].polarizability;
         return lys - lyd;
+      case CYS:
+        atomIndex = CystineAtomNames.valueOf(atomName).ordinal();
+        double cys = cysPolarizeTypes[atomIndex][CysStates.CYS.ordinal()].polarizability;
+        double cyd = cysPolarizeTypes[atomIndex][CysStates.CYD.ordinal()].polarizability;
+        return cys - cyd;
       case HIS:
         atomIndex = HistidineAtomNames.valueOf(atomName).ordinal();
         double his = hisPolarizeTypes[atomIndex][HisStates.HIS.ordinal()].polarizability;
@@ -1196,6 +1228,7 @@ public class TitrationUtils {
         double glh2 = gluPolarizeTypes[atomIndex][GluStates.GLH2.ordinal()].polarizability;
         return titrationLambda * (glh1 - glh2) + (1.0 - titrationLambda) * glu;
       case LYS: // No tautomers for LYS.
+      case CYS: // No tautomers for LYS.
       default:
         return 0.0;
     }
@@ -1228,8 +1261,21 @@ public class TitrationUtils {
           isTitratingHydrogen = true;
         }
         break;
+      case CYS:
+        if (atomName.equals(CystineAtomNames.HG.name())){
+          isTitratingHydrogen = true;
+        }
     }
     return isTitratingHydrogen;
+  }
+
+  public static boolean isTitratingSulfur(AminoAcid3 aminoAcid3, Atom atom){
+    boolean isTitratingSulfur = false;
+    String atomName = atom.getName();
+    if (atomName.equals(CystineAtomNames.SG.name())){
+      isTitratingSulfur = true;
+    }
+    return isTitratingSulfur;
   }
 
   public static int getTitratingHydrogenDirection(AminoAcid3 aminoAcid3, Atom atom) {
@@ -1415,7 +1461,7 @@ public class TitrationUtils {
         // Set the AtomType to null.
         cysAtomTypes[index][state] = dummyHydrogenAtomType;
         // Zero out the MultipoleType and PolarizeType.
-        cysMultipoleTypes[index][state] = zeroMultipoleType;
+        cysMultipoleTypes[index][state] = cydZeroMultipoleType;
         cysPolarizeTypes[index][state] = zeroPolarizeType;
         cysVDWTypes[index][state] = forceField.getVDWType(Integer.toString(0));
         cysSoluteTypes[index][state] = zeroSoluteType;
@@ -1435,10 +1481,10 @@ public class TitrationUtils {
             }
           } else {
             if (atomName == CystineAtomNames.CB) {
-              cysMultipoleTypes[index][state] = forceField.getMultipoleType(key + " 48 49");
+              cysMultipoleTypes[index][state] = forceField.getMultipoleType(key + " 8 49");
             } else {
               // HB2 & HB3
-              cysMultipoleTypes[index][state] = forceField.getMultipoleType(key + " 43 48");
+              cysMultipoleTypes[index][state] = forceField.getMultipoleType(key + " 43 8");
             }
           }
         }
@@ -1563,6 +1609,18 @@ public class TitrationUtils {
     rotamerPhBiasMap.put(LYD, acidostat - fMod);
 
     /*
+     * Set LYS pH bias as sum of Fmod and acidostat energy
+     */
+    rotamerPhBiasMap.put(CYS, 0.0);
+
+    /*
+     * Set LYD pH bias as sum of Fmod and acidostat energy
+     */
+    acidostat = LOG10 * Constants.R * temperature * (Titration.CYStoCYD.pKa - pH);
+    fMod = Titration.CYStoCYD.freeEnergyDiff;
+    rotamerPhBiasMap.put(CYD, acidostat - fMod);
+
+    /*
      * Set HIS pH bias as sum of Fmod and acidostat energy
      */
     rotamerPhBiasMap.put(HIS, 0.0);
@@ -1598,30 +1656,28 @@ public class TitrationUtils {
 
   /**
    * Amino acid protonation reactions. Constructors below specify intrinsic pKa and reference free
-   * energy of protonation, obtained via (OST) metadynamics on capped monomers. pKa values from
-   * Nozaki, Yasuhiko, and Charles Tanford. "[84] Examination of titration behavior." Methods in
-   * enzymology. Vol. 11. Academic Press, 1967. 715-734.
+   * energy of protonation, obtained via BAR on capped monomers. pKa values from
+   * Thurlkill, Richard L., et al. "pK values of the ionizable groups of proteins." Protein science 15.5 (2006): 1214-1218.
    * <p>
    * HIS to HID/HIE pKa values from Bashford, Donald, et al. "Electrostatic calculations of
    * side-chain pKa values in myoglobin and comparison with NMR data for histidines." Biochemistry
    * 32.31 (1993): 8045-8056.
+   *
+   *                -(refEnergy * lambda^2 + lambdaIntercept * lambda)
    */
   public enum Titration {
 
     // TODO: Rose - please update the values for CYS/CYD
-    // ctoC(8.18, 60.168, 0.0, AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS),
-
-    ASHtoASP(4.00, -71.10, -72.113, 144.06, AminoAcid3.ASH, AminoAcid3.ASP), //-71.96, 0.0
-    GLHtoGLU(4.40, -83.40, -101.22, 178.73, AminoAcid3.GLH, AminoAcid3.GLU), //-87.63, 0.0
-    //LYStoLYD(10.40, 45.270, 0.0, AminoAcid3.LYS, AminoAcid3.LYD),
-    LYStoLYD(10.40, 41.77, -69.29, 15.587, AminoAcid3.LYS, AminoAcid3.LYD), //57.7100, 0.10746
+    ASHtoASP(3.67, -71.10, -72.113, 144.16, AminoAcid3.ASH, AminoAcid3.ASP),
+    GLHtoGLU(4.25, -83.40, -101.22, 180.73, AminoAcid3.GLH, AminoAcid3.GLU),
+    LYStoLYD(10.40, 41.77, -69.29, 23.887, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
-
+    CYStoCYD(8.55, 60.168, -103.85, 181.28, AminoAcid3.CYS, AminoAcid3.CYD),
     //HE2 is the proton that is lost
-    HIStoHID(7.00, 40.20, 42.4030, 0.10048, AminoAcid3.HIS, AminoAcid3.HID),
+    HIStoHID(7.00, 40.20, -64.317, 30.719, AminoAcid3.HIS, AminoAcid3.HID),
     //HD1 is the proton that is lost
-    HIStoHIE(6.60, 37.44, 40.2215, 0.11638, AminoAcid3.HIS, AminoAcid3.HIE),
-    HIDtoHIE(Double.NaN, 0.00, -3.40, 0.0, AminoAcid3.HID, AminoAcid3.HIE);
+    HIStoHIE(6.60, 37.44, -62.931, 32.209, AminoAcid3.HIS, AminoAcid3.HIE),
+    HIDtoHIE(Double.NaN, 0.00, -36.83, 34.325, AminoAcid3.HID, AminoAcid3.HIE);
     //TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     //TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
 
@@ -1646,5 +1702,4 @@ public class TitrationUtils {
       this.deprotForm = deprotForm;
     }
   }
-
 }

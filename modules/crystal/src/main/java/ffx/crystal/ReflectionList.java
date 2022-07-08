@@ -39,6 +39,7 @@ package ffx.crystal;
 
 import static ffx.crystal.SymOp.applySymRot;
 import static ffx.crystal.SymOp.applyTransSymRot;
+import static ffx.numerics.math.ScalarMath.mod;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.floor;
@@ -77,7 +78,7 @@ public class ReflectionList {
   /** For binning reflections based on resolution */
   public int nbins = 10;
   /** Histogram. */
-  private double[] hist = new double[1001];
+  private final double[] hist = new double[1001];
   /** Minimum resolution. */
   private double minResolution;
   /** Maximum resolution. */
@@ -117,22 +118,22 @@ public class ReflectionList {
 
     HKL hkl = new HKL();
     for (int h = -hmax; h <= hmax; h++) {
-      hkl.h(h);
+      hkl.setH(h);
       for (int k = -kmax; k <= kmax; k++) {
-        hkl.k(k);
+        hkl.setK(k);
         for (int l = -lmax; l <= lmax; l++) {
-          hkl.l(l);
+          hkl.setL(l);
 
-          double res = Crystal.invressq(this.crystal, hkl);
+          double res = this.crystal.invressq(hkl);
           getepsilon(hkl);
           LaueSystem laueSystem = spaceGroup.laueSystem;
           if (laueSystem.checkRestrictions(h, k, l)
               && resolution.inInverseResSqRange(res)
-              && !HKL.sys_abs(hkl)) {
+              && !hkl.sysAbs()) {
             minResolution = min(res, minResolution);
             maxResolution = max(res, maxResolution);
             String s = ("" + h + "_" + k + "_" + l).intern();
-            hklmap.put(s, new HKL(hkl.h(), hkl.k(), hkl.l(), hkl.epsilon(), hkl.allowed));
+            hklmap.put(s, new HKL(hkl.getH(), hkl.getK(), hkl.getL(), hkl.getEpsilon(), hkl.allowed));
             n++;
           }
         }
@@ -140,9 +141,9 @@ public class ReflectionList {
     }
 
     n = 0;
-    for (Entry ei : hklmap.entrySet()) {
-      HKL ih = (HKL) ei.getValue();
-      ih.index(n);
+    for (Entry<String, HKL> ei : hklmap.entrySet()) {
+      HKL ih = ei.getValue();
+      ih.setIndex(n);
       hkllist.add(ih);
       n++;
     }
@@ -150,7 +151,7 @@ public class ReflectionList {
     // Set up the resolution bins first build a histogram.
     for (HKL ih : hkllist) {
       double r =
-          (Crystal.invressq(this.crystal, ih) - minResolution) / (maxResolution - minResolution);
+          (this.crystal.invressq(ih) - minResolution) / (maxResolution - minResolution);
       int i = (int) (min(r, 0.999) * 1000.0);
       hist[i + 1] += 1.0;
     }
@@ -249,7 +250,7 @@ public class ReflectionList {
    * @return a {@link ffx.crystal.HKL} object.
    */
   public HKL getHKL(HKL hkl) {
-    return getHKL(hkl.h(), hkl.k(), hkl.l());
+    return getHKL(hkl.getH(), hkl.getK(), hkl.getL());
   }
 
   /**
@@ -277,7 +278,7 @@ public class ReflectionList {
    * @return a boolean.
    */
   public boolean hasHKL(HKL hkl) {
-    return hasHKL(hkl.h(), hkl.k(), hkl.l());
+    return hasHKL(hkl.getH(), hkl.getK(), hkl.getL());
   }
 
   /**
@@ -324,20 +325,20 @@ public class ReflectionList {
       }
 
       LaueSystem laueSystem = spaceGroup.laueSystem;
-      if (laueSystem.checkRestrictions(mate.h(), mate.k(), mate.l())) {
+      if (laueSystem.checkRestrictions(mate.getH(), mate.getK(), mate.getL())) {
         return false;
       }
-      if (laueSystem.checkRestrictions(-mate.h(), -mate.k(), -mate.l())) {
-        mate.h(-mate.h());
-        mate.k(-mate.k());
-        mate.l(-mate.l());
+      if (laueSystem.checkRestrictions(-mate.getH(), -mate.getK(), -mate.getL())) {
+        mate.setH(-mate.getH());
+        mate.setK(-mate.getK());
+        mate.setL(-mate.getL());
         return true;
       }
     }
 
-    mate.h(hkl.h());
-    mate.k(hkl.k());
-    mate.l(hkl.l());
+    mate.setH(hkl.getH());
+    mate.setK(hkl.getK());
+    mate.setL(hkl.getL());
     return false;
   }
 
@@ -361,9 +362,9 @@ public class ReflectionList {
     int nsym = spaceGroup.symOps.size();
     for (int i = 1; i < nsym; i++) {
       HKL mate = new HKL();
-      applySymRot(hkl, mate, spaceGroup.symOps.get(i));
-      double shift = Crystal.sym_phase_shift(hkl, spaceGroup.symOps.get(i));
-
+      SymOp symOp = spaceGroup.symOps.get(i);
+      applySymRot(hkl, mate, symOp);
+      double shift = symOp.symPhaseShift(hkl);
       if (mate.equals(hkl)) {
         if (cos(shift) > 0.999) {
           epsilon++;
@@ -372,17 +373,17 @@ public class ReflectionList {
           epsilon = 0;
           break;
         }
-      } else if (mate.equals(HKL.neg(hkl))) {
+      } else if (mate.equals(hkl.neg())) {
         // centric reflection
-        allowed = (int) rint(Crystal.mod(-0.5 * shift, PI) / (PI / HKL.ndiv));
+        allowed = (int) rint(mod(-0.5 * shift, PI) / (PI / HKL.ndiv));
       }
     }
-    if (hkl.h() == 0 && hkl.k() == 0 && hkl.l() == 0) {
+    if (hkl.getH() == 0 && hkl.getK() == 0 && hkl.getL() == 0) {
       allowed = 0;
     }
 
-    hkl.epsilon(epsilon);
-    hkl.allowed(allowed);
+    hkl.setEpsilon(epsilon);
+    hkl.setAllowed(allowed);
   }
 
   private void setResolutionBins() {
@@ -395,7 +396,7 @@ public class ReflectionList {
     }
     double nbinsd = nbins;
     for (HKL ih : hkllist) {
-      int bin = (int) (nbinsd * ordinal(Crystal.invressq(this.crystal, ih)));
+      int bin = (int) (nbinsd * ordinal(crystal.invressq(ih)));
       ih.bin = min(bin, nbins - 1);
     }
   }

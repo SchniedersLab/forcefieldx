@@ -37,32 +37,28 @@
 // ******************************************************************************
 package ffx.crystal;
 
-import static ffx.crystal.SymOp.applyCartesianSymOp;
 import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.length;
-import static ffx.numerics.math.DoubleMath.sub;
-import static ffx.numerics.math.MatrixMath.mat3Inverse;
 import static ffx.numerics.math.MatrixMath.mat3Mat3;
 import static ffx.numerics.math.MatrixMath.mat3SymVec6;
 import static ffx.numerics.math.MatrixMath.transpose3;
+import static ffx.numerics.math.ScalarMath.mod;
 import static ffx.utilities.Constants.AVOGADRO;
 import static ffx.utilities.StringUtils.padRight;
 import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.cbrt;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.random;
-import static org.apache.commons.math3.util.FastMath.rint;
 import static org.apache.commons.math3.util.FastMath.signum;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
-import ffx.numerics.math.ScalarMath;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -305,7 +301,6 @@ public class Crystal {
         }
         break;
       case MONOCLINIC:
-        index = 0;
         scaleB[0] = index++;
         scaleB[1] = index++;
         scaleB[2] = index++;
@@ -321,13 +316,11 @@ public class Crystal {
         }
         break;
       case ORTHORHOMBIC:
-        index = 0;
         scaleB[0] = index++;
         scaleB[1] = index++;
         scaleB[2] = index++;
         break;
       case TETRAGONAL:
-        index = 0;
         scaleB[0] = index++;
         scaleB[1] = scaleB[0];
         scaleB[2] = index++;
@@ -370,7 +363,6 @@ public class Crystal {
         }
         if (!hexagonal) {
           // rhombohedral
-          index = 0;
           scaleB[3] = index++;
           scaleB[4] = scaleB[3];
           scaleB[5] = scaleB[3];
@@ -382,22 +374,6 @@ public class Crystal {
     scaleN = index;
 
     updateCrystal();
-  }
-
-  /**
-   * Multiply coordinates by the transpose of a matrix.
-   *
-   * @param in input coordinates.
-   * @param out output coordinates.
-   * @param matrix multiply by the transpose of this matrix.
-   */
-  public static void applyMatrixTranspose(double[] in, double[] out, double[][] matrix) {
-    double xc = in[0];
-    double yc = in[1];
-    double zc = in[2];
-    out[0] = xc * matrix[0][0] + yc * matrix[1][0] + zc * matrix[2][0];
-    out[1] = xc * matrix[0][1] + yc * matrix[1][1] + zc * matrix[2][1];
-    out[2] = xc * matrix[0][2] + yc * matrix[1][2] + zc * matrix[2][2];
   }
 
   /**
@@ -438,105 +414,21 @@ public class Crystal {
   /**
    * invressq
    *
-   * @param crystal a {@link ffx.crystal.Crystal} object.
    * @param hkl a {@link ffx.crystal.HKL} object.
    * @return a double.
    */
-  public static double invressq(Crystal crystal, HKL hkl) {
-    return quad_form(hkl, crystal.Gstar);
-  }
-
-  /**
-   * This is an atypical mod function used by crystallography methods.
-   *
-   * <p>mod
-   *
-   * @param a Value to mod.
-   * @param b Value to mod by.
-   * @return Positive a % b.
-   */
-  public static double mod(double a, double b) {
-    return ScalarMath.mod(a, b);
-  }
-
-  /**
-   * This is an atypical mod function used by crystallography methods.
-   *
-   * <p>mod
-   *
-   * @param a an int.
-   * @param b an int.
-   * @return an int.
-   */
-  public static int mod(int a, int b) {
-    int res = a % b;
-    if (res < 0) {
-      res += b;
-    }
-    return res;
-  }
-
-  /**
-   * quad_form
-   *
-   * @param v an array of double.
-   * @param mat an array of double.
-   * @return a double.
-   */
-  public static double quad_form(double[] v, double[][] mat) {
-    return (v[0] * (v[0] * mat[0][0] + 2 * (v[1] * mat[0][1] + v[2] * mat[0][2]))
-        + v[1] * (v[1] * mat[1][1] + 2 * (v[2] * mat[1][2]))
-        + v[2] * v[2] * mat[2][2]);
-  }
-
-  /**
-   * quad_form
-   *
-   * @param hkl a {@link ffx.crystal.HKL} object.
-   * @param mat an array of double.
-   * @return a double.
-   */
-  public static double quad_form(HKL hkl, double[][] mat) {
-    return (hkl.h() * (hkl.h() * mat[0][0] + 2 * (hkl.k() * mat[0][1] + hkl.l() * mat[0][2]))
-        + hkl.k() * (hkl.k() * mat[1][1] + 2 * (hkl.l() * mat[1][2]))
-        + hkl.l() * hkl.l() * mat[2][2]);
+  public double invressq(HKL hkl) {
+    return hkl.quadForm(Gstar);
   }
 
   /**
    * res
    *
-   * @param crystal a {@link ffx.crystal.Crystal} object.
    * @param hkl a {@link ffx.crystal.HKL} object.
    * @return a double.
    */
-  public static double res(Crystal crystal, HKL hkl) {
-    return 1.0 / sqrt(quad_form(hkl, crystal.Gstar));
-  }
-
-  /**
-   * sym_phase_shift
-   *
-   * @param hkl an array of double.
-   * @param symOp a {@link ffx.crystal.SymOp} object.
-   * @return a double.
-   */
-  public static double sym_phase_shift(double[] hkl, SymOp symOp) {
-    double[] trans = symOp.tr;
-    // Apply translation
-    return -2.0 * PI * (hkl[0] * trans[0] + hkl[1] * trans[1] + hkl[2] * trans[2]);
-  }
-
-  /**
-   * sym_phase_shift
-   *
-   * @param hkl a {@link ffx.crystal.HKL} object.
-   * @param symOp a {@link ffx.crystal.SymOp} object.
-   * @return a double.
-   */
-  public static double sym_phase_shift(HKL hkl, SymOp symOp) {
-    double[] trans = symOp.tr;
-    // Apply translation
-    return -2.0 * PI * (hkl.h() * trans[0] + hkl.k() * trans[1] + hkl.l() * trans[2]);
+  public double res(HKL hkl) {
+    return 1.0 / sqrt(hkl.quadForm(Gstar));
   }
 
   /**
@@ -696,69 +588,6 @@ public class Crystal {
     mate[0] = fx * Ai00 + fy * Ai10 + fz * Ai20;
     mate[1] = fx * Ai01 + fy * Ai11 + fz * Ai21;
     mate[2] = fx * Ai02 + fy * Ai12 + fz * Ai22;
-  }
-
-  /**
-   * Apply a fractional symmetry rotation to an array of Cartesian coordinates. If the arrays x, y or
-   * z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are null
-   * or not of length n, new arrays are allocated.
-   *
-   * @param n Number of atoms.
-   * @param x Input cartesian x-coordinates.
-   * @param y Input cartesian y-coordinates.
-   * @param z Input cartesian z-coordinates.
-   * @param mateX Output cartesian x-coordinates.
-   * @param mateY Output cartesian y-coordinates.
-   * @param mateZ Output cartesian z-coordinates.
-   * @param symOp The fractional symmetry operator.
-   */
-  public void applySymRot(
-      int n, double[] x, double[] y, double[] z,
-      double[] mateX, double[] mateY, double[] mateZ, SymOp symOp) {
-    double[][] rot = symOp.rot;
-    final double rot00 = rot[0][0];
-    final double rot10 = rot[1][0];
-    final double rot20 = rot[2][0];
-    final double rot01 = rot[0][1];
-    final double rot11 = rot[1][1];
-    final double rot21 = rot[2][1];
-    final double rot02 = rot[0][2];
-    final double rot12 = rot[1][2];
-    final double rot22 = rot[2][2];
-    for (int i = 0; i < n; i++) {
-      // Convert to fractional coordinates.
-      double xc = x[i];
-      double yc = y[i];
-      double zc = z[i];
-      double xi = xc * A00 + yc * A10 + zc * A20;
-      double yi = xc * A01 + yc * A11 + zc * A21;
-      double zi = xc * A02 + yc * A12 + zc * A22;
-      // Apply Symmetry Operator.
-      double fx = rot00 * xi + rot01 * yi + rot02 * zi;
-      double fy = rot10 * xi + rot11 * yi + rot12 * zi;
-      double fz = rot20 * xi + rot21 * yi + rot22 * zi;
-      // Convert back to Cartesian coordinates.
-      mateX[i] = fx * Ai00 + fy * Ai10 + fz * Ai20;
-      mateY[i] = fx * Ai01 + fy * Ai11 + fz * Ai21;
-      mateZ[i] = fx * Ai02 + fy * Ai12 + fz * Ai22;
-    }
-  }
-
-  /**
-   * .Apply the rotation of a fractional symmetry operator to cartesian coordinates.
-   *
-   * @param xyz Input coordinates.
-   * @param mate Symmetry mate coordinates.
-   * @param symOp The symmetry operator.
-   * @param rotmat an array of double.
-   */
-  public void applyTransSymRot(double[] xyz, double[] mate, SymOp symOp, double[][] rotmat) {
-
-    // The transformation operator R = ToCart * Rot * ToFrac
-    getTransformationOperator(symOp, rotmat);
-
-    // Apply R^T (its transpose).
-    applyMatrixTranspose(xyz, mate, rotmat);
   }
 
   /**
@@ -1059,15 +888,6 @@ public class Crystal {
     return this;
   }
 
-  /**
-   * Gets the unit cell parameters in order: a, b, c, alpha, beta, gamma.
-   *
-   * @return Unit cell parameters.
-   */
-  public double[] getUnitCellParams() {
-    return new double[] {a, b, c, alpha, beta, gamma};
-  }
-
   /** {@inheritDoc} */
   @Override
   public int hashCode() {
@@ -1126,48 +946,6 @@ public class Crystal {
     return dx * dx + dy * dy + dz * dz;
   }
 
-  public boolean isSpecialPosition(double[] cartesianCoords) {
-    double[] newCoords = new double[3];
-    double[] ret = new double[3];
-    int n = spaceGroup.getNumberOfSymOps();
-    for (int i = 1; i < n; i++) {
-      SymOp symOp = symOpsCartesian.get(i);
-      applyCartesianSymOp(cartesianCoords, newCoords, symOp);
-      sub(cartesianCoords, newCoords, ret);
-      image(ret);
-      double r = length(ret);
-      if (r < specialPositionCutoff) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /**
-   * Two crystals are equal if all unit cell parameters are within 0.01.
-   *
-   * <p>{@inheritDoc}
-   */
-  public boolean looseEquals(Object obj) {
-    if (obj == null) {
-      return false;
-    }
-    if (!(obj instanceof Crystal)) {
-      return false;
-    }
-    if (this == obj) {
-      return true;
-    }
-    Crystal other = (Crystal) obj;
-    return (abs(a - other.a) < 0.01
-        && abs(b - other.b) < 0.01
-        && abs(c - other.c) < 0.01
-        && abs(alpha - other.alpha) < 0.01
-        && abs(beta - other.beta) < 0.01
-        && abs(gamma - other.gamma) < 0.01
-        && spaceGroup.number == other.spaceGroup.number);
-  }
-
   /**
    * Minimum distance between two coordinates over all symmetry operators.
    *
@@ -1188,35 +966,9 @@ public class Crystal {
         symB[i] -= xyzA[i];
       }
       double d = image(symB);
-      dist = d < dist ? d : dist;
+      dist = min(d, dist);
     }
     return sqrt(dist);
-  }
-
-  /**
-   * Reflect proposed angles to be within 0 and 180 degrees.
-   *
-   * @param angle Proposed angle in radians.
-   * @return value of mirrored angle in radians.
-   */
-  public static double mirrorRadians(double angle) {
-    double angleDegrees = angle * 180 / PI;
-    return mirrorDegrees(angleDegrees) * PI / 180;
-  }
-
-  /**
-   * Reflect proposed angles to be within 0 and 180 degrees.
-   *
-   * @param angle Proposed angle in radians.
-   * @return value of mirrored angle in radians.
-   */
-  public static double mirrorDegrees(double angle) {
-    if (angle > 180.0) {
-      angle = 180.0 - (angle - 180.0);
-    } else if (angle < 0.0) {
-      angle = 0.0 - angle;
-    }
-    return angle;
   }
 
   /**

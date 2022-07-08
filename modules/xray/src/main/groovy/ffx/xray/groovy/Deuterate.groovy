@@ -43,9 +43,10 @@ import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.MSNode
 import ffx.potential.bonded.Molecule
-import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
+
+import static org.apache.commons.io.FilenameUtils.removeExtension
 
 /**
  * Deuterate changes exchangeable hydrogen atoms to deuterium atoms for a PDB file.
@@ -88,24 +89,24 @@ class Deuterate extends AlgorithmsScript {
       return this
     }
 
-    MolecularAssembly[] assemblies
-    String modelfilename
+    MolecularAssembly[] molecularAssemblies
+    String filename
     if (filenames != null && filenames.size() > 0) {
-      assemblies = algorithmFunctions.openAll(filenames.get(0))
-      activeAssembly = assemblies[0]
-      modelfilename = filenames.get(0)
+      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
+      activeAssembly = molecularAssemblies[0]
+      filename = filenames.get(0)
     } else if (activeAssembly == null) {
       logger.info(helpString())
       return this
     } else {
-      assemblies = [activeAssembly]
-      modelfilename = activeAssembly.getFile().getAbsolutePath()
+      molecularAssemblies = [activeAssembly]
+      filename = activeAssembly.getFile().getAbsolutePath()
     }
 
-    logger.info("\n Running xray.Deuterate on " + modelfilename)
+    logger.info("\n Running xray.Deuterate on " + filename)
 
-    for (int i = 0; i < assemblies.length; i++) {
-      Atom[] atoms = assemblies[i].getAtomArray()
+    for (int i = 0; i < molecularAssemblies.length; i++) {
+      Atom[] atoms = molecularAssemblies[i].getAtomArray()
       for (Atom a : atoms) {
         if (a.getAtomicNumber() == 1) {
           Atom b = a.getBonds().get(0).get1_2(a)
@@ -119,15 +120,14 @@ class Deuterate extends AlgorithmsScript {
         }
       }
 
-      List<MSNode> water = assemblies[i].getWater()
+      List<MSNode> water = molecularAssemblies[i].getWater()
       for (MSNode node : water) {
         Molecule wat = (Molecule) node
         wat.setName("DOD")
       }
     }
 
-    algorithmFunctions.saveAsPDB(assemblies,
-        new File(FilenameUtils.removeExtension(modelfilename) + "_deuterate.pdb"))
+    algorithmFunctions.saveAsPDB(molecularAssemblies, new File(removeExtension(filename) + "_deuterate.pdb"))
 
     return this
   }
