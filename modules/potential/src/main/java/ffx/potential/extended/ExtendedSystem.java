@@ -44,6 +44,7 @@ import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import edu.rit.pj.Comm;
 import edu.rit.pj.reduction.SharedDouble;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
@@ -214,8 +215,8 @@ public class ExtendedSystem implements Potential {
     private final boolean doElectrostatics;
     private final boolean doBias;
     private final boolean doPolarization;
-    private final boolean fixTitrationState;
-    private final boolean fixTautomerState;
+    private boolean fixTitrationState;
+    private boolean fixTautomerState;
     private final boolean lockStates;
     /**
      * Current value of theta for each ESV.
@@ -443,6 +444,7 @@ public class ExtendedSystem implements Potential {
             esvFilter = new ESVFilter(mola.getName());
         }
         if (esvFile == null) {
+
             String firstFileName = FilenameUtils.removeExtension(mola.getFile().getAbsolutePath());
             restartFile = new File(firstFileName + ".esv");
         } else {
@@ -476,11 +478,20 @@ public class ExtendedSystem implements Potential {
         thetaAccel[index] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
     }
 
-    public void reinitLambdas(){
+    public void reGuessLambdas(){
         for(Residue residue : titratingResidueList){
             double lambda = initialTitrationState(residue, 1.0);
             setTitrationLambda(residue, lambda);
         }
+    }
+
+    public void perturbLambdas(boolean fixtaut, double lambda){
+        int index = (fixtaut) ? 0 : nTitr; // when fixtaut is true, you change tautomer values --> swap?
+        int length = (fixtaut) ? nTitr : nESVs;
+        for(int i = index; i < length; i++){
+            extendedLambdas[i] = lambda;
+        }
+        updateLambdas();
     }
 
     /**
@@ -744,6 +755,14 @@ public class ExtendedSystem implements Potential {
         }
     }
 
+    public void setFixTautomerState(boolean fixTautomerState){
+        this.fixTautomerState = fixTautomerState;
+    }
+
+    public void setFixTitrationState(boolean fixTitrationState){
+        this.fixTitrationState = fixTitrationState;
+    }
+
     /**
      * get total dUvdw/dL for the selected extended system variable
      *
@@ -814,7 +833,7 @@ public class ExtendedSystem implements Potential {
     private void setESVHistogram() {
         for (Residue residue : titratingResidueList) {
             int index = titratingResidueList.indexOf(residue);
-            if (residue.getAminoAcid3().equals(AminoAcid3.LYS)) {
+            if (residue.getAminoAcid3().equals(AminoAcid3.LYS)) { // TODO: Add support for CYS?
                 double titrLambda = getTitrationLambda(residue);
                 esvHistogram(index, titrLambda);
             } else {
@@ -936,27 +955,39 @@ public class ExtendedSystem implements Potential {
     }
 
     public void setTitrationLambda(Residue residue, double lambda) {
+        setTitrationLambda(residue, lambda, true);
+    }
+
+    public void setTitrationLambda(Residue residue, double lambda, boolean changeThetas){
         if (titratingResidueList.contains(residue) && !lockStates) {
             int index = titratingResidueList.indexOf(residue);
             extendedLambdas[index] = lambda;
-            thetaPosition[index] = Math.asin(Math.sqrt(lambda));
+            if(changeThetas) {
+                thetaPosition[index] = Math.asin(Math.sqrt(lambda));
+            }
             List<Atom> currentAtomList = residue.getSideChainAtoms();
             for (Atom atom : currentAtomList) {
                 int atomIndex = atom.getArrayIndex();
                 titrationLambdas[atomIndex] = lambda;
             }
-        } /*else {
+        }/*else {
             logger.warning(format("This residue %s is not titrating or locked by user property.", residue.getName()));
         }*/
     }
 
     public void setTautomerLambda(Residue residue, double lambda) {
+        setTautomerLambda(residue, lambda, true);
+    }
+
+    public void setTautomerLambda(Residue residue, double lambda, boolean changeThetas){
         if (tautomerizingResidueList.contains(residue) && !lockStates) {
             // The correct index in the theta arrays for tautomer coordinates is after the titration list.
             // So titrationList.size() + tautomerIndex should match with appropriate spot in thetaPosition, etc.
             int index = tautomerizingResidueList.indexOf(residue) + nTitr;
             extendedLambdas[index] = lambda;
-            thetaPosition[index] = Math.asin(Math.sqrt(lambda));
+            if(changeThetas) {
+                thetaPosition[index] = Math.asin(Math.sqrt(lambda));
+            }
             List<Atom> currentAtomList = residue.getSideChainAtoms();
             for (Atom atom : currentAtomList) {
                 int atomIndex = atom.getArrayIndex();

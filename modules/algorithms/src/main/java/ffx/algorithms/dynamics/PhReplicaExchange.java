@@ -46,6 +46,7 @@ import ffx.numerics.Potential;
 import ffx.potential.extended.ExtendedSystem;
 import org.apache.commons.math3.util.FastMath;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 import java.util.logging.Level;
@@ -237,7 +238,7 @@ public class PhReplicaExchange implements Terminatable {
       int cycles, long nSteps, double timeStep, double printInterval, double saveInterval) {
     done = false;
     terminate = false;
-    extendedSystem.reinitLambdas();
+    extendedSystem.reGuessLambdas();
     for (int i = 0; i < cycles; i++) {
       // Check for termination request.
       if (terminate) {
@@ -470,7 +471,6 @@ public class PhReplicaExchange implements Terminatable {
 
     int i = rank2Ph[rank];
     extendedSystem.setConstantPh(pHScale[i]);
-    //TODO: check if this correct index
     extendedSystem.copyESVHistogramTo(parametersHis[rank]);
 
     // Start this processes MolecularDynamics instance sampling.
