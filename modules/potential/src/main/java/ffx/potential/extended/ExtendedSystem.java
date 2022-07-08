@@ -1239,6 +1239,10 @@ public class ExtendedSystem implements Potential {
         return titrationUtils;
     }
 
+    public void setESVFile(File esvFile){
+        restartFile = esvFile;
+    }
+
     /**
      * setTemperature.
      *

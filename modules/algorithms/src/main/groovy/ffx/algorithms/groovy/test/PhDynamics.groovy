@@ -47,6 +47,9 @@ import ffx.algorithms.dynamics.PhReplicaExchange
 import ffx.numerics.Potential
 import ffx.potential.cli.WriteoutOptions
 import ffx.potential.extended.ExtendedSystem
+import ffx.potential.parsers.SystemFilter
+import ffx.potential.parsers.XPHFilter
+import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -177,6 +180,14 @@ class PhDynamics extends AlgorithmsScript {
     double[] x = new double[potential.getNumberOfVariables()]
     potential.getCoordinates(x)
     potential.energy(x, true)
+    SystemFilter systemFilter = algorithmFunctions.getFilter()
+    if(systemFilter instanceof XYZFilter){
+      XPHFilter xphFilter = new XPHFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties(), esvSystem)
+      xphFilter.readFile()
+      logger.info("Reading ESV lambdas from XPH file")
+      potential.getCoordinates(x)
+      potential.energy(x, true)
+    }
 
     logger.info("\n Running molecular dynamics on " + filename)
 
@@ -209,6 +220,8 @@ class PhDynamics extends AlgorithmsScript {
         final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
+        File esvRestart = new File(rankDirectory.getPath() + File.separator + esv.getName())
+        esvSystem.setESVFile(esvRestart)
         PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, pHGap, dynamicsOptions.temperature, esvSystem)
 
         long totalSteps = dynamicsOptions.numSteps
