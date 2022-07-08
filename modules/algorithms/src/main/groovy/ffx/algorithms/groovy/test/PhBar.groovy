@@ -142,8 +142,8 @@ class PhBar extends AlgorithmsScript {
 
         Comm world = Comm.world()
         int nRanks = world.size()
-        if(nRanks < 11){
-            logger.warning(" Running BAR with less then the usual amount of windows")
+        if(nRanks < 2){
+            logger.severe(" Running BAR with less then the required amount of windows")
         }
         int myRank = (nRanks > 1) ? world.rank() : 0
 
@@ -155,7 +155,7 @@ class PhBar extends AlgorithmsScript {
             fixedTitrationState = (double) myRank / nRanks
             lockTautomer = true
             logger.info(" Running BAR across titration states with tautomer state locked at " + fixedTautomerState)
-            logger.info(" Titration state for this rank: " + fixedTitrationState)
+            logger.info(" Titration state for this rank(" + myRank + "): " + fixedTitrationState)
         } else if (fixedTitrationState != -1){
             fixedTautomerState = (double) myRank / nRanks
             lockTitration = true
@@ -185,20 +185,6 @@ class PhBar extends AlgorithmsScript {
 
         // Set the filename.
         String filename = activeAssembly.getFile().getAbsolutePath()
-
-        //TODO: Restart Stuff?
-        /*
-        // Restart File
-        File esv = new File(FilenameUtils.removeExtension(filename) + ".esv")
-        if (!esv.exists()) {
-            esv = null
-        }*/
-        /*
-        // Restart File
-        File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn")
-        if (!dyn.exists()) {
-            dyn = null
-        }*/
 
         // Initialize and attach extended system first.
         ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, null)
@@ -244,7 +230,6 @@ class PhBar extends AlgorithmsScript {
             molecularDynamics.attachExtendedSystem(esvSystem, dynamicsOptions.report)
 
             for (int i = 0; i < cycles; i++) {
-                logger.info(" ________________________CYCLE " + i + "____________________________")
                 molecularDynamics.setCoordinates(x)
                 molecularDynamics.dynamic(1, dynamicsOptions.dt, 1, dynamicsOptions.write,
                         dynamicsOptions.temperature, true, null)
@@ -259,15 +244,10 @@ class PhBar extends AlgorithmsScript {
                 double titrationNeighbor = lockTitration ? 0 : (double) 1 / nRanks
                 double tautomerNeighbor = lockTautomer ? 0 : (double) 1 / nRanks
 
-                logger.info("Rank: " + myRank + "  Titration Perturbation: " + titrationNeighbor + "  Tautomer Perturbation: " + tautomerNeighbor)
-                logger.info("List of Residues: " + esvSystem.getExtendedResidueList())
-                logger.info("List of Titrating Residues: " + esvSystem.getTitratingResidueList())
-                logger.info("List of Tautomerizing Residues" + esvSystem.getTautomerizingResidueList())
-
                 if(myRank != nRanks-1) {
                     for (Residue res : esvSystem.getExtendedResidueList()) {
                         esvSystem.setTitrationLambda(res, fixedTitrationState + titrationNeighbor, false)
-                        //esvSystem.perturbLambdas(lockTautomer, fixedTitrationState + titrationNeighbor)
+                        //esvSystem.perturbLambdas(lockTautomer, fixedTitrationState + titrationNeighbor) //TODO: get this to work
                         if (esvSystem.isTautomer(res)) {
                             esvSystem.setTautomerLambda(res, fixedTautomerState + tautomerNeighbor, false)
                             //esvSystem.perturbLambdas(lockTautomer, fixedTautomerState + tautomerNeighbor)
@@ -313,24 +293,27 @@ class PhBar extends AlgorithmsScript {
             return this
         }
 
-        logger.info(" ________________________End of Cycles for rank: " + myRank + "___________________________")
-
         double[][] parameters = new double[nRanks][current.size() * 3]
-        DoubleBuf[] parametersBuf = new DoubleBuf[nRanks];
+        DoubleBuf[] parametersBuf = new DoubleBuf[nRanks]
         int counter = 0
         if(myRank != 0) {
             for (int i = 0; i < previous.size(); i++) {
                 parameters[myRank][i] = previous.get(i)
                 counter = i
             }
+        }else{
+            counter = current.size()
         }
-        for (int i = counter; i < counter + current.size(); i++){
-            parameters[myRank][i - counter] = current.get(i - counter)
-            counter = i
+
+        for (int i = 0; i < current.size(); i++){
+            parameters[myRank][counter] = current.get(i)
+            counter += 1
         }
+
         if(myRank != nRanks - 1) {
-            for (int i = counter; i < counter + next.size(); i++) {
-                parameters[myRank][i - counter] = previous.get(i - counter)
+            for (int i = 0; i < next.size(); i++) {
+                parameters[myRank][counter] = next.get(i)
+                counter += 1
             }
         }
 
@@ -340,7 +323,6 @@ class PhBar extends AlgorithmsScript {
 
         DoubleBuf myParametersBuf = parametersBuf[myRank]
 
-
         try {
             world.allGather(myParametersBuf, parametersBuf)
         } catch (IOException ex) {
@@ -348,7 +330,6 @@ class PhBar extends AlgorithmsScript {
             logger.log(Level.SEVERE, message, ex)
         }
 
-        logger.log(" ______________________________All Gather Complete________________________")
         if(myRank != nRanks - 1) {
 
             File outputDir = new File(rankDirectory.getParent() + File.separator + "barFiles")
@@ -359,14 +340,15 @@ class PhBar extends AlgorithmsScript {
 
             try (FileWriter fw = new FileWriter(output)
                  BufferedWriter bw = new BufferedWriter(fw)) {
-                bw.write(format("    %d  %f  this.xyz", current.size(), dynamicsOptions.temperature))
+                bw.write(format("   %d  %f  this.xyz\n", current.size(), dynamicsOptions.temperature))
 
                 for (int i = 1; i <= current.size(); i++){
-                    bw.write(format("%5d%17.9f%17.9f", i, parameters[myRank][current.size() + i - 1], parameters[myRank][current.size() * 2 + i - 2]))
+                    bw.write(format("%5d%17.9f%17.9f\n", i, parameters[myRank][current.size() + i - 1], parameters[myRank][current.size() * 2 + i - 2]))
                 }
 
+                bw.write(format("\n   %d  %f  this.xyz\n", current.size(), dynamicsOptions.temperature))
                 for (int i = 1; i <= current.size(); i++){
-                    bw.write(format("%5d%17.9f%17.9f", i, parameters[myRank + 1][i - 1], parameters[myRank + 1][current.size() + i - 1]))
+                    bw.write(format("%5d%17.9f%17.9f\n", i, parameters[myRank + 1][i - 1], parameters[myRank + 1][current.size() + i - 1]))
                 }
             } catch (IOException e) {
                 e.printStackTrace()
