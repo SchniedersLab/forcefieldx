@@ -2037,13 +2037,20 @@ public final class PDBFilter extends SystemFilter {
                 MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
                 Polymer altPolymer =
                     altMolecularAssembly.getPolymer(currentChainID, currentSegID, false);
-                Residue altResidue = altPolymer.getResidue(resName, resID, false);
+                Residue altResidue = altPolymer.getResidue(resName, resID,false,
+                        Residue.ResidueType.AA);
+                if(altResidue == null){
+                  resName = AminoAcid3.UNK.name();
+                  altResidue = altPolymer.getResidue(resName, resID,false,
+                          Residue.ResidueType.AA);
+                }
                 backboneAtoms = altResidue.getBackboneAtoms();
                 residueAtoms = altResidue.getAtomList();
                 for (Atom atom : backboneAtoms) {
                   if (atom.getAltLoc() != null
                       && !atom.getAltLoc().equals(' ')
                       && !atom.getAltLoc().equals('A')) {
+                    sb.replace(17, 20, padLeft(atom.getResidueName().toUpperCase(), 3));
                     writeAtom(atom, serial++, sb, anisouSB, bw);
                   }
                   residueAtoms.remove(atom);
@@ -2411,6 +2418,7 @@ public final class PDBFilter extends SystemFilter {
     sb.replace(6, 16, format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
     Character altLoc = atom.getAltLoc();
     sb.setCharAt(16, Objects.requireNonNullElse(altLoc, ' '));
+
 
     /*
      * On the following code:

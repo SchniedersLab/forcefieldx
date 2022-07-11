@@ -174,7 +174,7 @@ class ManyBody extends AlgorithmsScript {
             MolecularAssembly[] protonatedAssemblies = titrationManyBody.getProtonatedAssemblies()
             setActiveAssembly(protonatedAssemblies[0])
             potentialEnergy = protonatedAssemblies[0].getPotentialEnergy()
-            //molecularAssemblies = protonatedAssemblies
+            molecularAssemblies = protonatedAssemblies
         }
 
         // Load parsed X-ray properties.
@@ -190,23 +190,23 @@ class ManyBody extends AlgorithmsScript {
         Set<Atom> excludeAtoms = new HashSet<>()
         for (MolecularAssembly currentMolecularAssembly : molecularAssemblies) {
             setActiveAssembly(currentMolecularAssembly)
+            currentMolecularAssembly.setFile(filenames[0] as File)
             if(currentMolecularAssembly.getAtomList().get(0).getAltLoc() == 'A' && molecularAssemblies.length > 1){
                 for(int i=0; i<molecularAssemblies[0].getAtomList().size(); i++){
                     molecularAssemblies[0].getAtomList().get(i).setOccupancy(1.0)
                     molecularAssemblies[1].getAtomList().get(i).setOccupancy(0.0)
                 }
-                logger.info("Occupancy of 1st Molecular Assembly Atoms: " + molecularAssemblies[0].getAtomList().get(0).getOccupancy())
-                logger.info("Occupancy of 2nd Molecular Assembly Atoms: " + molecularAssemblies[1].getAtomList().get(0).getOccupancy())
+                logger.info(" Occupancy of 1st Molecular Assembly Atoms: " + molecularAssemblies[0].getAtomList().get(0).getOccupancy())
+                logger.info(" Occupancy of 2nd Molecular Assembly Atoms: " + molecularAssemblies[1].getAtomList().get(0).getOccupancy())
 
             } else if (currentMolecularAssembly.getAtomList().get(0).getAltLoc() == 'B' && molecularAssemblies.length > 1){
                 for(int i=0; i<molecularAssemblies[0].getAtomList().size(); i++){
                     molecularAssemblies[0].getAtomList().get(i).setOccupancy(0.5)
                     molecularAssemblies[1].getAtomList().get(i).setOccupancy(0.5)
                 }
-                logger.info("Occupancy of 1st Molecular Assembly Atoms: " + molecularAssemblies[0].getAtomList().get(0).getOccupancy())
-                logger.info("Occupancy of 2nd Molecular Assembly Atoms: " + molecularAssemblies[1].getAtomList().get(0).getOccupancy())
+                logger.info(" Occupancy of 1st Molecular Assembly Atoms: " + molecularAssemblies[0].getAtomList().get(0).getOccupancy())
+                logger.info(" Occupancy of 2nd Molecular Assembly Atoms: " + molecularAssemblies[1].getAtomList().get(0).getOccupancy())
             }
-
 
             RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly, refinementEnergy, algorithmListener)
             manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
@@ -253,24 +253,31 @@ class ManyBody extends AlgorithmsScript {
                 List<Atom> atomList = residue.getAtomList()
                 for (int i = 0; i < residue.getAtomList().size(); i++) {
                     Atom atom = atomList.get(i)
+                    String resNameA = atom.getResidueName()
+                    //logger.info("Residue A: " + resNameA)
                     double coorAX = atom.getX()
                     double coorAY = atom.getY()
                     double coorAZ = atom.getZ()
                     Residue residueB = residueListB.get(resNum - firstRes)
                     List<Atom> atomListB = residueB.getAtomList()
                     Atom atomB = atomListB.get(i)
+                    String resNameB = atomB.getResidueName()
+                    //logger.info("Residue B: " + resNameB)
                     double coorBX = atomB.getX()
                     double coorBY = atomB.getY()
                     double coorBZ = atomB.getZ()
-                    if (coorAX == coorBX && coorAY == coorBY && coorAZ == coorBZ) {
+                    if (coorAX == coorBX && coorAY == coorBY && coorAZ == coorBZ && resNameA == resNameB) {
                         atom.setAltLoc(' ' as Character)
                         atomB.setAltLoc(' ' as Character)
                         atom.setOccupancy(1.0)
                     }
                 }
-
             }
-            diffractionData.writeModel(removeExtension(filenames[0]) + ".pdb")
+            if( titrationPH > 0){
+                diffractionData.writeModel(removeExtension(filenames[0]) + ".pdb", excludeAtoms, titrationPH)
+            } else {
+                diffractionData.writeModel(removeExtension(filenames[0]) + ".pdb")
+            }
             diffractionData.writeData(removeExtension(filenames[0]) + ".mtz")
         } else if (Comm.world().rank() == 0) {
             String ext = FilenameUtils.getExtension(modelFilename)
@@ -297,18 +304,6 @@ class ManyBody extends AlgorithmsScript {
         return this
     }
 
-    /*private MolecularAssembly[] removeRedundantConformer(MolecularAssembly[] molecularAssemblies1){
-        for(Atom atom : molecularAssemblies1[0].getAtomList()){
-            double[] coorA = atom.getXYZ()
-            int i = atom.getIndex()
-            double[] coorB = molecularAssemblies1[1].getAtomList().get(i).getXYZ()
-            if(coorA == coorB){
-                molecularAssemblies1[0].getAtomList().get(i).setAltLoc(' ')
-                molecularAssemblies1[1].getAtomList().get(i).setAltLoc(' ')
-            }
-
-        }
-    }*/
 
     @Override
     List<Potential> getPotentials() {

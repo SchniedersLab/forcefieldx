@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.lang.String;
 
 public class TitrationManyBody {
 
@@ -89,6 +90,7 @@ public class TitrationManyBody {
     protonatedAssembly.finalize(true, forceField);
     potentialEnergy = ForceFieldEnergy.energyFactory(protonatedAssembly);
     protonatedAssembly.setFile(structureFile);
+
     TitrationUtils titrationUtils;
     titrationUtils = new TitrationUtils(protonatedAssembly.getForceField());
     titrationUtils.setRotamerPhBias(298.15, pH);
@@ -104,7 +106,6 @@ public class TitrationManyBody {
         }
       }
     }
-
     if (potentialEnergy instanceof ForceFieldEnergyOpenMM) {
       boolean updateBondedTerms = forceField.getBoolean("TITRATION_UPDATE_BONDED_TERMS", true);
       ForceFieldEnergyOpenMM forceFieldEnergyOpenMM = (ForceFieldEnergyOpenMM) potentialEnergy;
@@ -118,19 +119,30 @@ public class TitrationManyBody {
     logger.info("Getting protonated assemblies");
     MolecularAssembly molecularAssembly = getProtonatedAssembly();
     List<Character> altLocs = protonFilter.getAltLocs();
+    for(int i=0; i<altLocs.size(); i++){
+      if(altLocs.get(i) >= 'A' && altLocs.get(i) <='Z'){
+        logger.info("");
+      } else {
+        altLocs.remove(altLocs.get(i));
+      }
+    }
     MolecularAssembly[] molecularAssemblies = new MolecularAssembly[altLocs.size()];
     molecularAssemblies[0] = molecularAssembly;
-    for(int i=0; i< altLocs.size(); i++){
+    for(int i=0; i < altLocs.size(); i++){
       if(i!=0){
+        logger.info(filename);
         MolecularAssembly newAssembly = new MolecularAssembly(filename);
-        
+        newAssembly.setForceField(forceField);
+        File structureFile = new File(filename);
+        protonFilter = new PDBFilter(structureFile, newAssembly, forceField,
+                forceField.getProperties(), resNumberList);
+        logger.info(newAssembly.getResidueList().toString());
         protonFilter.setRotamerTitration(true);
         protonFilter.setAltID(newAssembly, altLocs.get(i));
-        logger.info(newAssembly.getResidueList().toString());
         protonFilter.readFile();
-        System.out.println("Applying atom properties");
+        logger.info(newAssembly.getResidueList().get(0).getAtomList().get(0).getAltLoc().toString());
         protonFilter.applyAtomProperties();
-        molecularAssembly.finalize(true, forceField);
+        newAssembly.finalize(true, forceField);
         potentialEnergy = ForceFieldEnergy.energyFactory(newAssembly);
 
         TitrationUtils titrationUtils;
@@ -152,14 +164,6 @@ public class TitrationManyBody {
         molecularAssemblies[i] = newAssembly;
       }
     }
-    /*
-
-    if (potentialEnergy instanceof ForceFieldEnergyOpenMM) {
-      boolean updateBondedTerms = forceField.getBoolean("TITRATION_UPDATE_BONDED_TERMS", true);
-      ForceFieldEnergyOpenMM forceFieldEnergyOpenMM = (ForceFieldEnergyOpenMM) potentialEnergy;
-      forceFieldEnergyOpenMM.getSystem().setUpdateBondedTerms(updateBondedTerms);
-    }*/
-
     return molecularAssemblies;
   }
 
