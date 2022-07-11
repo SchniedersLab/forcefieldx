@@ -237,7 +237,9 @@ public class PhReplicaExchange implements Terminatable {
       int cycles, long nSteps, double timeStep, double printInterval, double saveInterval) {
     done = false;
     terminate = false;
-    extendedSystem.reGuessLambdas();
+    if(extendedSystem.guessTitrState){
+      extendedSystem.reGuessLambdas();
+    }
     for (int i = 0; i < cycles; i++) {
       // Check for termination request.
       if (terminate) {

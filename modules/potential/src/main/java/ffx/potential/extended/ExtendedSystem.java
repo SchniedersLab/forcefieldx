@@ -182,6 +182,7 @@ public class ExtendedSystem implements Potential {
     private final boolean[] isTitratingHydrogen;
     private final boolean[] isTitratingSulfur;
     private final boolean lockStates;
+    public final boolean guessTitrState;
     /**
      * Number of atoms in the molecular assembly. Since all protons are instantiated at start, this int will not change.
      */
@@ -303,7 +304,7 @@ public class ExtendedSystem implements Potential {
         lockStates = properties.getBoolean("lock.esv.states", false); // Prevents setTitrationLambda/setTautomerLambda
         double initialTitrationLambda = properties.getDouble("lambda.titration.initial", 0.5);
         double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
-        boolean guessTitrState = properties.getBoolean("guess.titration.state", false);
+        guessTitrState = properties.getBoolean("guess.titration.state", false);
         fixTitrationState = properties.getBoolean("fix.titration.lambda", false);
         fixTautomerState = properties.getBoolean("fix.tautomer.lambda", false);
         ASHrefEnergy = properties.getDouble("ASH.ref.energy", TitrationUtils.Titration.ASHtoASP.refEnergy);
