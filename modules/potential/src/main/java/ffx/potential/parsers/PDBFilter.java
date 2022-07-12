@@ -195,6 +195,8 @@ public final class PDBFilter extends SystemFilter {
   static {
     // Lysine
     constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.LYD, AminoAcidUtils.AminoAcid3.LYS);
+    // Cysteine
+    constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS);
     // Histidine
     constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.HID, AminoAcidUtils.AminoAcid3.HIS);
     constantPHResidueMap.put(AminoAcidUtils.AminoAcid3.HIE, AminoAcidUtils.AminoAcid3.HIS);
@@ -221,6 +223,8 @@ public final class PDBFilter extends SystemFilter {
     rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.ASP, AminoAcidUtils.AminoAcid3.ASH);
     // Glutamate
     rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.GLU, AminoAcidUtils.AminoAcid3.GLH);
+    //Cysteine
+    rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS);
   }
 
   /**
@@ -1851,8 +1855,14 @@ public final class PDBFilter extends SystemFilter {
         bw.write(format("%s\n", line));
       }
       if (extraLines != null) {
-        for (String line : extraLines) {
-          bw.write(format("REMARK 999 %s\n", line));
+        if(rotamerTitration && extraLines[0].contains("REMARK")){
+          for (String line : extraLines) {
+            bw.write(line + "\n");
+          }
+        } else {
+          for (String line : extraLines) {
+            bw.write(format("REMARK 999 %s\n", line));
+          }
         }
       }
       if (model != null) {
@@ -2033,13 +2043,20 @@ public final class PDBFilter extends SystemFilter {
                 MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
                 Polymer altPolymer =
                     altMolecularAssembly.getPolymer(currentChainID, currentSegID, false);
-                Residue altResidue = altPolymer.getResidue(resName, resID, false);
+                Residue altResidue = altPolymer.getResidue(resName, resID,false,
+                        Residue.ResidueType.AA);
+                if(altResidue == null){
+                  resName = AminoAcid3.UNK.name();
+                  altResidue = altPolymer.getResidue(resName, resID,false,
+                          Residue.ResidueType.AA);
+                }
                 backboneAtoms = altResidue.getBackboneAtoms();
                 residueAtoms = altResidue.getAtomList();
                 for (Atom atom : backboneAtoms) {
                   if (atom.getAltLoc() != null
                       && !atom.getAltLoc().equals(' ')
                       && !atom.getAltLoc().equals('A')) {
+                    sb.replace(17, 20, padLeft(atom.getResidueName().toUpperCase(), 3));
                     writeAtom(atom, serial++, sb, anisouSB, bw);
                   }
                   residueAtoms.remove(atom);
@@ -2407,6 +2424,7 @@ public final class PDBFilter extends SystemFilter {
     sb.replace(6, 16, format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
     Character altLoc = atom.getAltLoc();
     sb.setCharAt(16, Objects.requireNonNullElse(altLoc, ' '));
+
 
     /*
      * On the following code:
