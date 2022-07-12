@@ -102,12 +102,8 @@ class PhDynamics extends AlgorithmsScript {
   double pHGap = 1
 
   @Option(names = ['--initTitrDynamics'], paramLabel = '1000',
-          description = 'pH gap between replica exchange windows.')
+          description = 'Number of initialization steps to take before replica exchange windows start.')
   int initTitrDynamics = 1000
-
-  @Option(names = ['--init'], paramLabel = 'False',
-          description = 'pH gap between replica exchange windows.')
-  boolean init = false
 
 
 
