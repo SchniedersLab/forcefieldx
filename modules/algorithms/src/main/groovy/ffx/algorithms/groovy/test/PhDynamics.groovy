@@ -101,6 +101,14 @@ class PhDynamics extends AlgorithmsScript {
           description = 'pH gap between replica exchange windows.')
   double pHGap = 1
 
+  @Option(names = ['--initTitrDynamics'], paramLabel = '1000',
+          description = 'pH gap between replica exchange windows.')
+  int initTitrDynamics = 1000
+
+  @Option(names = ['--init'], paramLabel = 'False',
+          description = 'pH gap between replica exchange windows.')
+  boolean init = false
+
 
 
   /**
@@ -219,8 +227,13 @@ class PhDynamics extends AlgorithmsScript {
           exchangeCycles = 1
         }
 
+        if(!init){
+          initTitrDynamics = 0
+        }
+
+
         pHReplicaExchange.
-                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
+                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
 
 
         String outputName = rankDirectory.getPath() + File.separator + "rankOutput.log"
@@ -298,8 +311,12 @@ class PhDynamics extends AlgorithmsScript {
           exchangeCycles = 1
         }
 
+        if(!init){
+          initTitrDynamics = 0
+        }
+
         pHReplicaExchange.
-                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
+                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
 
 
         String outputName = rankDirectory.getPath() + File.separator + "rankOutput.log"

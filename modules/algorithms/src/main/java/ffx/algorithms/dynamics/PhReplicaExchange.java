@@ -140,6 +140,7 @@ public class PhReplicaExchange implements Terminatable {
     pHTrialCount = new int[nReplicas];
 
     setEvenSpacePhLadder(pHGap);
+    extendedSystem.setConstantPh(pHScale[rank]);
 
     random = new Random();
     random.setSeed(0);
@@ -235,10 +236,17 @@ public class PhReplicaExchange implements Terminatable {
    * @param saveInterval a double.
    */
   public void sample(
-      int cycles, long nSteps, double timeStep, double printInterval, double saveInterval) {
+      int cycles, long nSteps, double timeStep, double printInterval, double saveInterval, int initTitrDynamics) {
     done = false;
     terminate = false;
     extendedSystem.reGuessLambdas();
+
+    if(initTitrDynamics != 0) {
+      logger.info(" Running an initial " + initTitrDynamics + " titration steps");
+      replica.dynamic(initTitrDynamics, timeStep,
+              printInterval, saveInterval, temp, true, null);
+    }
+
     for (int i = 0; i < cycles; i++) {
       // Check for termination request.
       if (terminate) {
