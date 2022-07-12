@@ -1855,8 +1855,14 @@ public final class PDBFilter extends SystemFilter {
         bw.write(format("%s\n", line));
       }
       if (extraLines != null) {
-        for (String line : extraLines) {
-          bw.write(format("REMARK 999 %s\n", line));
+        if(rotamerTitration && extraLines[0].contains("REMARK")){
+          for (String line : extraLines) {
+            bw.write(line + "\n");
+          }
+        } else {
+          for (String line : extraLines) {
+            bw.write(format("REMARK 999 %s\n", line));
+          }
         }
       }
       if (model != null) {

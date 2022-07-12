@@ -1175,6 +1175,9 @@ public class DiffractionData implements DataContainer {
 
     File file = version(new File(filename));
     PDBFilter pdbFilter = new PDBFilter(file, Arrays.asList(assembly),null, null);
+    if(pH > 0){
+      pdbFilter.setRotamerTitration(true);
+    }
 
     Date now = new Date();
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss ");
@@ -1199,7 +1202,7 @@ public class DiffractionData implements DataContainer {
       remark.append("REMARK   3  CHEMICAL SYSTEM ").append(i + 1).append("\n");
       remark.append(assembly[i].getPotentialEnergy().getPDBHeaderString());
     }
-    remark.append("REMARK   3   TITRATION PH   : ").append(pH).append("\n");
+    remark.append("REMARK   3   TITRATION PH   : \n").append(pH).append("\n");
     String[] remarks = remark.toString().split("\n");
     pdbFilter.writeFile(file, false, excludeAtoms,true, true, remarks);
   }
