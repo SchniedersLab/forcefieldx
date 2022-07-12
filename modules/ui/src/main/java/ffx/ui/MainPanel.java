@@ -1904,7 +1904,6 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
   void resetShell() {
     if (!GraphicsEnvironment.isHeadless()) {
       modelingShell = getModelingShell();
-      modelingShell.savePrefs();
       try {
         modelingShell.exit();
       } catch (NullPointerException e) {
@@ -2153,9 +2152,6 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     }
     if (keywordPanel != null) {
       keywordPanel.savePrefs();
-    }
-    if (modelingShell != null) {
-      modelingShell.savePrefs();
     }
     if (graphicsCanvas != null) {
       graphicsCanvas.savePrefs();

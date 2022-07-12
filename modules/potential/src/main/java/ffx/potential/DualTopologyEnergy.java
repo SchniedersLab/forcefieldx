@@ -320,9 +320,10 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       while (a2.applyLambda()) {
         a2 = atoms2[i2++];
       }
-      assert (a1.getX() == a2.getX());
-      assert (a1.getY() == a2.getY());
-      assert (a1.getZ() == a2.getZ());
+      // Not true if mapping atoms via symmetry operator.
+//      assert (a1.getX() == a2.getX());
+//      assert (a1.getY() == a2.getY());
+//      assert (a1.getZ() == a2.getZ());
       // reconcileAtoms(a1, a2, Level.INFO);
     }
 
@@ -1426,10 +1427,10 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       if (useSymOp) {
         // The SymOp is applied to the coordinates of shared atoms.
         int z = symOp.length;
-        int assumedSize = nShared/z;
+        int assumedSize = nActive2/z;
         for(int i = 0; i < z; i++) {
-          boolean[] mask = new boolean[nShared];
-          for (int j = 0; j < nShared; j++) {
+          boolean[] mask = new boolean[nActive2];
+          for (int j = 0; j < nActive2; j++) {
             if (j >= assumedSize * i && j < assumedSize * (i + 1)) {
               if(sharedAtoms2[j]) {
                 mask[j] = true;
@@ -1451,10 +1452,10 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         if (useSymOp) {
           // Rotate the gradient back for shared atoms.
           int z = symOp.length;
-          int assumedSize = nShared/z;
+          int assumedSize = nActive2/z;
           for(int i = 0; i < z; i++) {
-            boolean[] mask = new boolean[nShared];
-            for (int j = 0; j < nShared; j++) {
+            boolean[] mask = new boolean[nActive2];
+            for (int j = 0; j < nActive2; j++) {
               if (j >= assumedSize * i && j < assumedSize * (i + 1)) {
                 if (sharedAtoms2[j]) {
                   mask[j] = true;
@@ -1477,10 +1478,10 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
           if (useSymOp) {
             // Rotate the gradient back for shared atoms.
             int z = symOp.length;
-            int assumedSize = nShared/z;
+            int assumedSize = nActive2/z;
             for(int i = 0; i < z; i++) {
-              boolean[] mask = new boolean[nShared];
-              for (int j = 0; j < nShared; j++) {
+              boolean[] mask = new boolean[nActive2];
+              for (int j = 0; j < nActive2; j++) {
                 if (j >= assumedSize * i && j < assumedSize * (i + 1)) {
                   if(sharedAtoms2[j]) {
                     mask[j] = true;

@@ -110,4 +110,29 @@ public class LambdaGradientTest extends PotentialTest {
     assertEquals(0, lambdaGradient.ndEdXdLFailures);
     assertEquals(0, lambdaGradient.ndEdXFailures);
   }
+
+  /** Tests the End States of the LambdaGradient class when mapped via sym op. */
+  @Test
+  public void testLambdaGradientSymOp() {
+    // Set-up the input arguments for the LambdaGradient script.
+    String[] args = {"--sf", "TRIG", "--ls", "-l", "0.5", "--ac", "3,30","--ac2","3,30",
+        "src/main/java/ffx/potential/structures/roy02_P1.xyz", "src/main/java/ffx/potential/structures/roy31.xyz"};
+    binding.setVariable("args", args);
+
+    // Construct and evaluate the script.
+    LambdaGradient lambdaGradient = new LambdaGradient(binding).run();
+    potentialScript = lambdaGradient;
+
+    double expectedPotentialEnergyVac = -65.14805617952214;
+    double expectedPotentialEnergyXtal = -73.397571;
+    double actualPotentialEnergyVac = lambdaGradient.e0;
+    double actualPotentialEnergyXtal = lambdaGradient.e1;
+
+    assertEquals(expectedPotentialEnergyVac, actualPotentialEnergyVac, 1E-6);
+    assertEquals(expectedPotentialEnergyXtal, actualPotentialEnergyXtal, 1E-6);
+    assertEquals(0, lambdaGradient.ndEdLFailures);
+    assertEquals(0, lambdaGradient.nd2EdL2Failures);
+    assertEquals(0, lambdaGradient.ndEdXdLFailures);
+    assertEquals(0, lambdaGradient.ndEdXFailures);
+  }
 }
