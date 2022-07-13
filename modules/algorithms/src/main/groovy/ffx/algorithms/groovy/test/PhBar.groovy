@@ -222,6 +222,11 @@ class PhBar extends AlgorithmsScript {
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
 
+        File natMinusOne = new File(rankDirectory.getPath() + File.separator + myRank + "at" + (myRank-1) + ".log")
+        File natN = new File(rankDirectory.getPath() + File.separator + myRank + "at" + myRank + ".log")
+        File natPlusOne = new File(rankDirectory.getPath() + File.separator + myRank + "at" + (myRank+1) + ".log")
+
+
         if (molecularDynamics instanceof MolecularDynamicsOpenMM) {
             MolecularDynamicsOpenMM molecularDynamicsOpenMM = molecularDynamics
 
@@ -250,7 +255,6 @@ class PhBar extends AlgorithmsScript {
                         //esvSystem.perturbLambdas(lockTautomer, fixedTitrationState + titrationNeighbor) //TODO: get this to work
                         if (esvSystem.isTautomer(res)) {
                             esvSystem.setTautomerLambda(res, fixedTautomerState + tautomerNeighbor, false)
-                            //esvSystem.perturbLambdas(lockTautomer, fixedTautomerState + tautomerNeighbor)
                         }
                     }
                     forceFieldEnergy.getCoordinates(x)
@@ -261,10 +265,8 @@ class PhBar extends AlgorithmsScript {
                 if(myRank != 0) {
                     for (Residue res : esvSystem.getExtendedResidueList()) {
                         esvSystem.setTitrationLambda(res, fixedTitrationState - titrationNeighbor, false)
-                        //esvSystem.perturbLambdas(lockTautomer, fixedTautomerState - titrationNeighbor)
                         if (esvSystem.isTautomer(res)) {
                             esvSystem.setTautomerLambda(res, fixedTautomerState - tautomerNeighbor, false)
-                            //esvSystem.perturbLambdas(lockTautomer, fixedTautomerState - tautomerNeighbor)
                         }
                     }
                     forceFieldEnergy.getCoordinates(x)
@@ -274,18 +276,18 @@ class PhBar extends AlgorithmsScript {
 
                 for(Residue res: esvSystem.getExtendedResidueList()){
                     esvSystem.setTitrationLambda(res, fixedTitrationState, false)
-                    //esvSystem.perturbLambdas(lockTautomer, fixedTitrationState)
                     if(esvSystem.isTautomer(res)){
                         esvSystem.setTautomerLambda(res, fixedTautomerState, false)
-                        //esvSystem.perturbLambdas(lockTautomer, fixedTautomerState)
                     }
                 }
                 forceFieldEnergy.getCoordinates(x)
                 energy = forceFieldEnergy.energy(x, false)
                 current.add(energy)
+
+
             }
-        }else {
-            logger.severe(" MD is not an instance of MDOMM")
+        } else {
+            logger.severe(" MD is not an instance of MDOMM (try adding )")
         }
 
         if(current.size() != cycles){
