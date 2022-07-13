@@ -264,7 +264,7 @@ public class ExtendedSystem implements Potential {
     /**
      * Filter to parse the dynamics restart file.
      */
-    ESVFilter esvFilter = null;
+    private ESVFilter esvFilter = null;
     /**
      * System PH.
      */
