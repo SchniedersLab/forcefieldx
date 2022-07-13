@@ -37,10 +37,7 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
-import static ffx.numerics.math.ScalarMath.doubleFactorial;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.pow;
-import static org.apache.commons.math3.util.FastMath.sqrt;
+import ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER;
 
 /**
  * The GeneralizedKirkwoodTensor class contains utilities for generated Generalized Kirkwood
@@ -52,26 +49,6 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 public class GKTensorQI extends CoulombTensorQI {
 
   /**
-   * Generalized Kirkwood constant.
-   */
-  private final double gc;
-
-  /**
-   * Homogeneous dielectric constant.
-   */
-  private final double Eh;
-
-  /**
-   * Solvent dielectric constant.
-   */
-  private final double Es;
-
-  /**
-   * Order of the tensor recursion (5th is needed for AMOEBA forces).
-   */
-  private final int order;
-
-  /**
    * The GK tensor can be constructed for monopoles (GB), dipoles or quadrupoles.
    */
   protected final GK_MULTIPOLE_ORDER multipoleOrder;
@@ -81,148 +58,23 @@ public class GKTensorQI extends CoulombTensorQI {
    */
   private final double c;
 
-  /**
-   * Compute the "source" terms for the recursion.
-   */
-  protected final double[] kirkwoodSource;
-
-  /**
-   * Coefficients needed when taking derivatives of auxiliary functions.
-   */
-  private final double[][] anmc;
-
-  /**
-   * Source terms for the Kirkwood version of the Challacombe et al. recursion.
-   */
-  private final double[] an0;
-
-  /**
-   * Chain rule terms from differentiating zeroth order auxiliary functions (an0) with respect to x,
-   * y or z.
-   */
-  private final double[] fn;
-
-  /**
-   * Chain rule terms from differentiating zeroth order auxiliary functions (an0) with respect to Ai
-   * or Aj.
-   */
-  private final double[] bn;
-
-  /**
-   * Born radius of atom i.
-   */
-  private double ai;
-
-  /**
-   * Born radius of atom j.
-   */
-  private double aj;
-
-  /**
-   * The GK term exp(-r2 / (gc * ai * aj)).
-   */
-  private double expTerm;
-
-  /**
-   * The GK effective separation distance.
-   */
-  private double f;
-
-  /**
-   * The "mode" for the tensor (either POTENTIAL or BORN).
-   */
-  private GK_TENSOR_MODE mode = GK_TENSOR_MODE.POTENTIAL;
-
-  /**
-   * The "mode" for the tensor (either POTENTIAL or BORN).
-   */
-  public enum GK_TENSOR_MODE {POTENTIAL, BORN}
-
-  /**
-   * The GK tensor can be constructed for monopoles (GB), dipoles or quadrupoles.
-   */
-  public enum GK_MULTIPOLE_ORDER {
-    MONOPOLE(0), DIPOLE(1), QUADRUPOLE(2);
-
-    private final int order;
-
-    GK_MULTIPOLE_ORDER(int order) {
-      this.order = order;
-    }
-
-    public int getOrder() {
-      return order;
-    }
-  }
+  private final GKSource gkSource;
 
   /**
    * @param multipoleOrder The multipole order.
-   * @param order The number of derivatives to complete.
-   * @param gc Generalized Kirkwood constant.
+   * @param order The tensor order.
+   * @param gkSource Generate the source terms for the GK recurrence.
    * @param Eh Homogeneous dielectric constant.
    * @param Es Solvent dielectric constant.
    */
-  public GKTensorQI(GK_MULTIPOLE_ORDER multipoleOrder, int order, double gc, double Eh, double Es) {
+  public GKTensorQI(GK_MULTIPOLE_ORDER multipoleOrder, int order, GKSource gkSource, double Eh,
+      double Es) {
     super(order);
     this.multipoleOrder = multipoleOrder;
-    this.order = order;
-    this.gc = gc;
-    this.Eh = Eh;
-    this.Es = Es;
+    this.gkSource = gkSource;
 
     // Load the dielectric function
-    c = cn(multipoleOrder.getOrder(), Eh, Es);
-
-    // Auxiliary terms for Generalized Kirkwood (equivalent to Coulomb and Thole Screening).
-    kirkwoodSource = new double[order + 1];
-    for (int n = 0; n <= order; n++) {
-      kirkwoodSource[n] = c * pow(-1, n) * doubleFactorial(2 * n - 1);
-    }
-
-    anmc = new double[order + 1][];
-    for (int n = 0; n <= order; n++) {
-      anmc[n] = anmc(n);
-    }
-
-    an0 = new double[order + 1];
-    fn = new double[order + 1];
-    bn = new double[order + 1];
-  }
-
-  public double selfEnergy(PolarizableMultipole polarizableMultipole) {
-    double q2 = polarizableMultipole.q * polarizableMultipole.q;
-    double dx = polarizableMultipole.dx;
-    double dy = polarizableMultipole.dy;
-    double dz = polarizableMultipole.dz;
-    double dx2 = dx * dx;
-    double dy2 = dy * dy;
-    double dz2 = dz * dz;
-    double ux = polarizableMultipole.ux;
-    double uy = polarizableMultipole.uy;
-    double uz = polarizableMultipole.uz;
-    double qxy2 = polarizableMultipole.qxy * polarizableMultipole.qxy;
-    double qxz2 = polarizableMultipole.qxz * polarizableMultipole.qxz;
-    double qyz2 = polarizableMultipole.qyz * polarizableMultipole.qyz;
-    double qxx2 = polarizableMultipole.qxx * polarizableMultipole.qxx;
-    double qyy2 = polarizableMultipole.qyy * polarizableMultipole.qyy;
-    double qzz2 = polarizableMultipole.qzz * polarizableMultipole.qzz;
-
-    double a = sqrt(ai * aj);
-    double a2 = a * a;
-    double a3 = a * a2;
-    double a5 = a2 * a3;
-
-    // Born partial charge
-    double e0 = cn(0, Eh, Es) * q2 / a;
-    // Permanent Dipole
-    double e1 = cn(1, Eh, Es) * (dx2 + dy2 + dz2) / a3;
-    // Permanent Quadrupole
-    double e2 = cn(2, Eh, Es) * (3.0 * (qxy2 + qxz2 + qyz2) + 6.0 * (qxx2 + qyy2 + qzz2)) / a5;
-
-    // Induced self-energy
-    double ei = cn(1, Eh, Es) * (dx * ux + dy * uy + dz * uz) / a3;
-
-    return 0.5 * (e0 + e1 + e2 + ei);
+    c = GKSource.cn(multipoleOrder.getOrder(), Eh, Es);
   }
 
   /**
@@ -241,21 +93,19 @@ public class GKTensorQI extends CoulombTensorQI {
         double eK = multipoleEnergy(mK);
         chargeKPotentialAtI(mK, 2);
         double eI = multipoleEnergy(mI);
-        return 0.5 * (eK + eI);
+        return c * 0.5 * (eK + eI);
       case 1:
         dipoleIPotentialAtK(mI.dx, mI.dy, mI.dz, 2);
-        // dipoleIPotentialAtK(mI, 2);
         eK = multipoleEnergy(mK);
         dipoleKPotentialAtI(mK.dx, mK.dy, mK.dz, 2);
-        // dipoleKPotentialAtI(mK, 2);
         eI = multipoleEnergy(mI);
-        return 0.5 * (eK + eI);
+        return c * 0.5 * (eK + eI);
       case 2:
         quadrupoleIPotentialAtK(mI, 2);
         eK = multipoleEnergy(mK);
         quadrupoleKPotentialAtI(mK, 2);
         eI = multipoleEnergy(mI);
-        return 0.5 * (eK + eI);
+        return c * 0.5 * (eK + eI);
     }
   }
 
@@ -310,21 +160,22 @@ public class GKTensorQI extends CoulombTensorQI {
     multipoleGradient(mI, Gi);
     multipoleTorque(mI, Ti);
 
-    Gi[0] = 0.5 * (Gi[0] - Gk[0]);
-    Gi[1] = 0.5 * (Gi[1] - Gk[1]);
-    Gi[2] = 0.5 * (Gi[2] - Gk[2]);
+    double scale = c * 0.5;
+    Gi[0] = scale * (Gi[0] - Gk[0]);
+    Gi[1] = scale * (Gi[1] - Gk[1]);
+    Gi[2] = scale * (Gi[2] - Gk[2]);
     Gk[0] = -Gi[0];
     Gk[1] = -Gi[1];
     Gk[2] = -Gi[2];
 
-    Ti[0] = 0.5 * Ti[0];
-    Ti[1] = 0.5 * Ti[1];
-    Ti[2] = 0.5 * Ti[2];
-    Tk[0] = 0.5 * Tk[0];
-    Tk[1] = 0.5 * Tk[1];
-    Tk[2] = 0.5 * Tk[2];
+    Ti[0] = scale * Ti[0];
+    Ti[1] = scale * Ti[1];
+    Ti[2] = scale * Ti[2];
+    Tk[0] = scale * Tk[0];
+    Tk[1] = scale * Tk[1];
+    Tk[2] = scale * Tk[2];
 
-    return 0.5 * (eK + eI);
+    return scale * (eK + eI);
   }
 
   /**
@@ -347,8 +198,7 @@ public class GKTensorQI extends CoulombTensorQI {
     multipoleGradient(mK, Gk);
     multipoleTorque(mK, Tk);
 
-    // Need the torque on site I pole due to site K multipole.
-    // Only torque on the site I dipole.
+    // Need the torque on site I dipole due to site K multipole.
     multipoleKPotentialAtI(mK, 1);
     dipoleTorque(mI, Ti);
 
@@ -358,26 +208,26 @@ public class GKTensorQI extends CoulombTensorQI {
     multipoleGradient(mI, Gi);
     multipoleTorque(mI, Ti);
 
-    // Need the torque on site K pole due to site I multipole.
-    // Only torque on the site K dipole.
+    // Need the torque on site K dipole due to site I multipole.
     multipoleIPotentialAtK(mI, 1);
     dipoleTorque(mK, Tk);
 
-    Gi[0] = 0.5 * (Gi[0] - Gk[0]);
-    Gi[1] = 0.5 * (Gi[1] - Gk[1]);
-    Gi[2] = 0.5 * (Gi[2] - Gk[2]);
+    double scale = c * 0.5;
+    Gi[0] = scale * (Gi[0] - Gk[0]);
+    Gi[1] = scale * (Gi[1] - Gk[1]);
+    Gi[2] = scale * (Gi[2] - Gk[2]);
     Gk[0] = -Gi[0];
     Gk[1] = -Gi[1];
     Gk[2] = -Gi[2];
 
-    Ti[0] = 0.5 * Ti[0];
-    Ti[1] = 0.5 * Ti[1];
-    Ti[2] = 0.5 * Ti[2];
-    Tk[0] = 0.5 * Tk[0];
-    Tk[1] = 0.5 * Tk[1];
-    Tk[2] = 0.5 * Tk[2];
+    Ti[0] = scale * Ti[0];
+    Ti[1] = scale * Ti[1];
+    Ti[2] = scale * Ti[2];
+    Tk[0] = scale * Tk[0];
+    Tk[1] = scale * Tk[1];
+    Tk[2] = scale * Tk[2];
 
-    return 0.5 * (eK + eI);
+    return scale * (eK + eI);
   }
 
   /**
@@ -400,8 +250,7 @@ public class GKTensorQI extends CoulombTensorQI {
     multipoleGradient(mK, Gk);
     multipoleTorque(mK, Tk);
 
-    // Need the torque on site I pole due to site K multipole.
-    // Only torque on the site I quadrupole.
+    // Need the torque on site I quadrupole due to site K multipole.
     multipoleKPotentialAtI(mK, 2);
     quadrupoleTorque(mI, Ti);
 
@@ -411,26 +260,26 @@ public class GKTensorQI extends CoulombTensorQI {
     multipoleGradient(mI, Gi);
     multipoleTorque(mI, Ti);
 
-    // Need the torque on site K pole due to site I multipole.
-    // Only torque on the site K quadrupole.
+    // Need the torque on site K quadrupole due to site I multipole.
     multipoleIPotentialAtK(mI, 2);
     quadrupoleTorque(mK, Tk);
 
-    Gi[0] = 0.5 * (Gi[0] - Gk[0]);
-    Gi[1] = 0.5 * (Gi[1] - Gk[1]);
-    Gi[2] = 0.5 * (Gi[2] - Gk[2]);
+    double scale = c * 0.5;
+    Gi[0] = scale * (Gi[0] - Gk[0]);
+    Gi[1] = scale * (Gi[1] - Gk[1]);
+    Gi[2] = scale * (Gi[2] - Gk[2]);
     Gk[0] = -Gi[0];
     Gk[1] = -Gi[1];
     Gk[2] = -Gi[2];
 
-    Ti[0] = 0.5 * Ti[0];
-    Ti[1] = 0.5 * Ti[1];
-    Ti[2] = 0.5 * Ti[2];
-    Tk[0] = 0.5 * Tk[0];
-    Tk[1] = 0.5 * Tk[1];
-    Tk[2] = 0.5 * Tk[2];
+    Ti[0] = scale * Ti[0];
+    Ti[1] = scale * Ti[1];
+    Ti[2] = scale * Ti[2];
+    Tk[0] = scale * Tk[0];
+    Tk[1] = scale * Tk[1];
+    Tk[2] = scale * Tk[2];
 
-    return 0.5 * (eK + eI);
+    return scale * (eK + eI);
   }
 
   /**
@@ -441,12 +290,8 @@ public class GKTensorQI extends CoulombTensorQI {
    * @return a double.
    */
   public double multipoleEnergyBornGrad(PolarizableMultipole mI, PolarizableMultipole mK) {
-    GK_TENSOR_MODE currentMode = mode;
-    setMode(GK_TENSOR_MODE.BORN);
     generateTensor();
-    double db = multipoleEnergy(mI, mK);
-    setMode(currentMode);
-    return db;
+    return multipoleEnergy(mI, mK);
   }
 
   /**
@@ -483,7 +328,7 @@ public class GKTensorQI extends CoulombTensorQI {
         chargeKPotentialAtI(mK, 1);
         // Energy of induced dipole I in the field of permanent charge K.
         double eI = polarizationEnergy(mI);
-        return 0.5 * (eK + eI);
+        return c * 0.5 * (eK + eI);
       case DIPOLE:
         // Find the GK dipole potential of site I at site K.
         dipoleIPotentialAtK(mI.dx, mI.dy, mI.dz, 1);
@@ -501,7 +346,7 @@ public class GKTensorQI extends CoulombTensorQI {
         dipoleKPotentialAtI(mK.ux, mK.uy, mK.uz, 2);
         // Energy of permanent multipole I in the field of induced dipole K.
         eI += 0.5 * multipoleEnergy(mI);
-        return 0.5 * (eK + eI);
+        return c * 0.5 * (eK + eI);
       case QUADRUPOLE:
         // Find the GK quadrupole potential of site I at site K.
         quadrupoleIPotentialAtK(mI, 1);
@@ -511,7 +356,7 @@ public class GKTensorQI extends CoulombTensorQI {
         quadrupoleKPotentialAtI(mK, 1);
         // Energy of induced dipole I in the field of permanent quadrupole K.
         eI = polarizationEnergy(mI);
-        return 0.5 * (eK + eI);
+        return c * 0.5 * (eK + eI);
     }
   }
 
@@ -576,12 +421,13 @@ public class GKTensorQI extends CoulombTensorQI {
     Gi[1] += (mI.sx * E110 + mI.sy * E020 + mI.sz * E011);
     Gi[2] += (mI.sx * E101 + mI.sy * E011 + mI.sz * E002);
 
-    Gi[0] *= 0.5;
-    Gi[1] *= 0.5;
-    Gi[2] *= 0.5;
+    double scale = c * 0.5;
+    Gi[0] *= scale;
+    Gi[1] *= scale;
+    Gi[2] *= scale;
 
     // Total polarization energy.
-    return 0.5 * (eI + eK);
+    return scale * (eI + eK);
   }
 
   /**
@@ -661,16 +507,17 @@ public class GKTensorQI extends CoulombTensorQI {
     }
 
     // Total polarization energy.
-    double energy = 0.5 * (eI + eK);
-    Gi[0] *= 0.5;
-    Gi[1] *= 0.5;
-    Gi[2] *= 0.5;
-    Ti[0] *= 0.5;
-    Ti[1] *= 0.5;
-    Ti[2] *= 0.5;
-    Tk[0] *= 0.5;
-    Tk[1] *= 0.5;
-    Tk[2] *= 0.5;
+    double scale = c * 0.5;
+    double energy = scale * (eI + eK);
+    Gi[0] *= scale;
+    Gi[1] *= scale;
+    Gi[2] *= scale;
+    Ti[0] *= scale;
+    Ti[1] *= scale;
+    Ti[2] *= scale;
+    Tk[0] *= scale;
+    Tk[1] *= scale;
+    Tk[2] *= scale;
 
     return energy;
   }
@@ -707,20 +554,21 @@ public class GKTensorQI extends CoulombTensorQI {
     Gi[1] += (mI.sx * E110 + mI.sy * E020 + mI.sz * E011);
     Gi[2] += (mI.sx * E101 + mI.sy * E011 + mI.sz * E002);
 
-    Gi[0] *= 0.5;
-    Gi[1] *= 0.5;
-    Gi[2] *= 0.5;
+    double scale = c * 0.5;
+    Gi[0] *= scale;
+    Gi[1] *= scale;
+    Gi[2] *= scale;
 
     // Find the potential and its derivatives at K due to the averaged induced dipole at i.
-    dipoleIPotentialAtK(0.5 * mI.sx, 0.5 * mI.sy, 0.5 * mI.sz, 2);
+    dipoleIPotentialAtK(scale * mI.sx, scale * mI.sy, scale * mI.sz, 2);
     quadrupoleTorque(mK, Tk);
 
     // Find the potential and its derivatives at I due to the averaged induced dipole at k.
-    dipoleKPotentialAtI(0.5 * mK.sx, 0.5 * mK.sy, 0.5 * mK.sz, 2);
+    dipoleKPotentialAtI(scale * mK.sx, scale * mK.sy, scale * mK.sz, 2);
     quadrupoleTorque(mI, Ti);
 
     // Total polarization energy.
-    return 0.5 * (eI + eK);
+    return scale * (eI + eK);
   }
 
   /**
@@ -731,12 +579,8 @@ public class GKTensorQI extends CoulombTensorQI {
    * @return Partial derivative of the Polarization energy with respect to a Born grad.
    */
   public double polarizationEnergyBornGrad(PolarizableMultipole mI, PolarizableMultipole mK) {
-    GK_TENSOR_MODE currentMode = mode;
-    setMode(GK_TENSOR_MODE.BORN);
     generateTensor();
-    double db = 2.0 * polarizationEnergy(mI, mK);
-    setMode(currentMode);
-    return db;
+    return 2.0 * polarizationEnergy(mI, mK);
   }
 
   /**
@@ -757,199 +601,14 @@ public class GKTensorQI extends CoulombTensorQI {
       dipoleKPotentialAtI(mK.ux, mK.uy, mK.uz, 2);
       db += 0.5 * (mI.px * E100 + mI.py * E010 + mI.pz * E001);
     }
-    return db;
-  }
-
-  /**
-   * Set the separation vector.
-   *
-   * @param r Separation vector.
-   * @param ai Born radius for Atom i.
-   * @param aj Born radius for Atom j.
-   */
-  public void setR(double[] r, double ai, double aj) {
-    setR(r[0], r[1], r[2], ai, aj);
-  }
-
-  /**
-   * Set the separation vector.
-   *
-   * @param dx Separation along the X-axis.
-   * @param dy Separation along the Y-axis.
-   * @param dz Separation along the Z-axis.
-   * @param ai Born radius for Atom i.
-   * @param aj Born radius for Atom j.
-   */
-  public void setR(double dx, double dy, double dz, double ai, double aj) {
-    setR(dx, dy, dz);
-    this.ai = ai;
-    this.aj = aj;
-    expTerm = exp(-r2 / (gc * ai * aj));
-    f = sqrt(r2 + ai * aj * expTerm);
-  }
-
-  /**
-   * Set the "mode" for the tensor (either POTENTIAL or BORN).
-   *
-   * @param mode The mode for tensor generation.
-   */
-  protected void setMode(GK_TENSOR_MODE mode) {
-    this.mode = mode;
+    return c * db;
   }
 
   /**
    * Generate source terms for the Kirkwood version of the Challacombe et al. recursion.
    */
+  @Override
   protected void source(double[] work) {
-    int multipoleOrder = this.multipoleOrder.getOrder();
-    if (mode == GK_TENSOR_MODE.POTENTIAL) {
-      // Prepare the GK Potential tensor.
-      for (int n = 0; n <= order; n++) {
-        an0[n] = an0(n);
-        fn[n] = fn(n);
-      }
-      for (int n = 0; n <= order; n++) {
-        if (n < multipoleOrder) {
-          work[n] = 0.0;
-        } else {
-          work[n] = anm(multipoleOrder, n - multipoleOrder);
-        }
-      }
-    } else {
-      // Prepare the GK Born-chain rule tensor.
-      for (int n = 0; n <= order; n++) {
-        an0[n] = an0(n);
-        fn[n] = fn(n);
-        bn[n] = bn(n);
-      }
-      // Only up to order - 1.
-      for (int n = 0; n <= order - 1; n++) {
-        if (n < multipoleOrder) {
-          work[n] = 0.0;
-        } else {
-          work[n] = bnm(multipoleOrder, n - multipoleOrder);
-        }
-      }
-    }
+    gkSource.source(work, multipoleOrder);
   }
-
-  /**
-   * Compute the potential auxiliary function for a multipole of order n.
-   *
-   * @param n Multipole order.
-   * @return The potential auxiliary function for a multipole of order n.
-   */
-  protected double an0(int n) {
-    return kirkwoodSource[n] / pow(f, 2 * n + 1);
-  }
-
-  /**
-   * Compute the mth potential gradient auxiliary function for a multipole of order n.
-   *
-   * @param n Multipole order.
-   * @param m Mth potential gradient auxiliary function.
-   * @return Returns the mth potential gradient auxiliary function for a multipole of order n.
-   */
-  protected double anm(int n, int m) {
-    if (m == 0) {
-      return an0[n];
-    }
-    var ret = 0.0;
-    var coef = anmc[m];
-    for (int i = 1; i <= m; i++) {
-      ret += coef[i - 1] * fn[i] * anm(n + 1, m - i);
-    }
-    return ret;
-  }
-
-  /**
-   * Compute the derivative with respect to a Born radius of the mth potential gradient auxiliary
-   * function for a multipole of order n.
-   *
-   * @param n Multipole order.
-   * @param m Mth potential gradient auxiliary function.
-   * @return Returns the derivative with respect to a Born radius of the mth potential gradient
-   *     auxiliary function for a multipole of order n.
-   */
-  protected double bnm(int n, int m) {
-    if (m == 0) {
-      // return bn(0) * an0(n + 1);
-      return bn[0] * an0[n + 1];
-    }
-    var ret = 0.0;
-    var coef = anmc[m];
-    for (int i = 1; i <= m; i++) {
-      ret += coef[i - 1] * bn[i] * anm(n + 1, m - i);
-      ret += coef[i - 1] * fn[i] * bnm(n + 1, m - i);
-    }
-    return ret;
-  }
-
-  /**
-   * Returns nth value of the function f, which are chain rule terms from differentiating zeroth
-   * order auxiliary functions (an0) with respect to x, y or z.
-   *
-   * @param n Multipole order.
-   * @return Returns the nth value of the function f.
-   */
-  protected double fn(int n) {
-    switch (n) {
-      case 0:
-        return f;
-      case 1:
-        return 1.0 - expTerm / gc;
-      default:
-        var gcAiAj = gc * ai * aj;
-        var f2 = 2.0 * expTerm / (gc * gcAiAj);
-        var fr = -2.0 / gcAiAj;
-        return pow(fr, n - 2) * f2;
-    }
-  }
-
-  /**
-   * Returns nth value of the function b, which are chain rule terms from differentiating zeroth
-   * order auxiliary functions (an0) with respect to Ai or Aj.
-   *
-   * @param n Multipole order.
-   * @return Returns the nth value of the function f.
-   */
-  protected double bn(int n) {
-    var gcAiAj = gc * ai * aj;
-    var ratio = -r2 / gcAiAj;
-    switch (n) {
-      case 0:
-        return 0.5 * expTerm * (1.0 - ratio);
-      case 1:
-        return -r2 * expTerm / (gcAiAj * gcAiAj);
-      default:
-        var b2 = 2.0 * expTerm / (gcAiAj * gcAiAj) * (-ratio - 1.0);
-        var br = 2.0 / (gcAiAj * ai * aj);
-        var f2 = 2.0 / (gc * gcAiAj) * expTerm;
-        var fr = -2.0 / (gcAiAj);
-        return (n - 2) * pow(fr, n - 3) * br * f2 + pow(fr, n - 2) * b2;
-    }
-  }
-
-  /**
-   * Return coefficients needed when taking derivatives of auxiliary functions.
-   *
-   * @param n Multipole order.
-   * @return Returns coefficients needed when taking derivatives of auxiliary functions.
-   */
-  protected static double[] anmc(int n) {
-    return GKTensorGlobal.anmc(n);
-  }
-
-  /**
-   * Compute the Kirkwood dielectric function for a multipole of order n.
-   *
-   * @param n Multipole order.
-   * @param Eh Homogeneous dielectric.
-   * @param Es Solvent dielectric.
-   * @return Returns (n+1)*(Eh-Es)/((n+1)*Es + n*Eh))
-   */
-  public static double cn(int n, double Eh, double Es) {
-    return GKTensorGlobal.cn(n, Eh, Es);
-  }
-
 }
