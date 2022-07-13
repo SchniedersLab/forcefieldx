@@ -79,7 +79,6 @@ public class PhReplicaExchange implements Terminatable {
    */
   private final double[][] parameters;
   private final int[][][] parametersHis;
-  //private final int[][] myParametersHis;
   /**
    * Each parameter array is wrapped inside a Parallel Java DoubleBuf for the All-Gather
    * communication calls.
