@@ -51,20 +51,19 @@ import static ffx.numerics.multipole.MultipoleTensorTest.permanentEnergy;
 import static ffx.numerics.multipole.MultipoleTensorTest.permanentEnergyEwald;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarGradICoulomb;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarGradIEwald;
+import static ffx.numerics.multipole.MultipoleTensorTest.polarGradIThole;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarTorqueICoulomb;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarTorqueIEwald;
+import static ffx.numerics.multipole.MultipoleTensorTest.polarTorqueIThole;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarTorqueKCoulomb;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarTorqueKEwald;
+import static ffx.numerics.multipole.MultipoleTensorTest.polarTorqueKThole;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarizationEnergyCoulomb;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarizationEnergyEwald;
-import static ffx.numerics.multipole.MultipoleTensorTest.scaleMutual;
 import static ffx.numerics.multipole.MultipoleTensorTest.polarizationEnergyThole;
-import static ffx.numerics.multipole.MultipoleTensorTest.polarGradIThole;
-import static ffx.numerics.multipole.MultipoleTensorTest.polarTorqueIThole;
-import static ffx.numerics.multipole.MultipoleTensorTest.polarTorqueKThole;
+import static ffx.numerics.multipole.MultipoleTensorTest.scaleMutual;
 import static ffx.numerics.multipole.MultipoleTensorTest.xyz;
 import static java.lang.String.format;
-import static java.util.Arrays.fill;
 import static org.junit.Assert.assertEquals;
 
 import ffx.numerics.multipole.MultipoleTensor.OPERATOR;
@@ -151,7 +150,6 @@ public class GlobalMultipoleTensorTest {
     double[] Qi = {0.11, 0.22, 0.33, 0.44, 0.11, 0.22, -0.33, 0.12, 0.13, 0.14};
     double[] r = {2.11, 2.12, 2.13};
     double[] tensor = new double[tensorCount];
-
     MultipoleTensor multipoleTensor = new CoulombTensorGlobal(order);
     logger.info(format(" Writing Cartesian Order %d tensor recursion code:", order));
     String code = multipoleTensor.codeTensorRecursion(r, tensor);
@@ -410,33 +408,14 @@ public class GlobalMultipoleTensorTest {
     // Check Cartesian Tensors in the Global frame.
     multipoleTensor.noStorageRecursion(r, noStorageTensor);
     multipoleTensor.recursion(r, tensor);
-    multipoleTensor.unrolled(r, fastTensor);
-
-    for (int i = 0; i < tensorCount; i++) {
-      double expect = noStorageTensor[i];
-      double actual = tensor[i];
-      assertEquals(info + " @ " + i, expect, actual, tolerance);
-      if (order == 4 || order == 5) {
-        expect = noStorageTensor[i];
-        actual = fastTensor[i];
-        assertEquals(info + " @ " + i, expect, actual, tolerance);
-      }
-    }
-
-    fill(noStorageTensor, 0.0);
-    fill(tensor, 0.0);
-    fill(fastTensor, 0.0);
-    multipoleTensor.noStorageRecursion(r, noStorageTensor);
-    multipoleTensor.recursion(r, tensor);
-    multipoleTensor.setTensor(fastTensor);
-    multipoleTensor.generateTensor();
+    multipoleTensor.generateTensor(r);
     multipoleTensor.getTensor(fastTensor);
 
     for (int i = 0; i < tensorCount; i++) {
       double expect = noStorageTensor[i];
       double actual = tensor[i];
       assertEquals(info + " @ " + i, expect, actual, tolerance);
-      if (order == 4 || order == 5) {
+      if (order >= 2 || order <= 6) {
         expect = noStorageTensor[i];
         actual = fastTensor[i];
         assertEquals(info + " @ " + i, expect, actual, tolerance);
@@ -446,8 +425,9 @@ public class GlobalMultipoleTensorTest {
 
   private void tensorFiniteDifference(MultipoleTensor multipoleTensor,
       double delta2,
-      double[] tensorsPx, double[] tensorsNx, double[] tensorsPy,
-      double[] tensorsNy, double[] tensorsPz, double[] tensorsNz) {
+      double[] tensorsPx, double[] tensorsNx,
+      double[] tensorsPy, double[] tensorsNy,
+      double[] tensorsPz, double[] tensorsNz) {
 
     int start = 0;
 

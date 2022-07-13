@@ -46,8 +46,10 @@ import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
+import ffx.potential.bonded.LambdaInterface
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary
+import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.parsers.PDBFilter
 import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine.Command
@@ -69,6 +71,9 @@ class ManyBody extends AlgorithmsScript {
 
   @Mixin
   ManyBodyOptions manyBodyOptions
+
+  @Mixin
+  AlchemicalOptions alchemicalOptions
 
   /**
    * An XYZ or PDB input file.
@@ -114,6 +119,17 @@ class ManyBody extends AlgorithmsScript {
       System.setProperty("manybody-titration", "true")
     }
 
+    // Turn on computation of lambda derivatives if softcore atoms exist.
+    boolean lambdaTerm = alchemicalOptions.hasSoftcore()
+    if (lambdaTerm) {
+      // Turn on softcore van der Waals
+      System.setProperty("lambdaterm", "true")
+      // Turn of alchemical electrostatics
+      System.setProperty("elec-lambdaterm", "false")
+      // Turn on intra-molecular softcore
+      System.setProperty("intramolecular-softcore", "true");
+    }
+
     // Load the MolecularAssembly.
     activeAssembly = getActiveAssembly(filename)
 
@@ -155,6 +171,14 @@ class ManyBody extends AlgorithmsScript {
       MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly()
       setActiveAssembly(protonatedAssembly)
       potentialEnergy = protonatedAssembly.getPotentialEnergy()
+    }
+
+    if (lambdaTerm) {
+      alchemicalOptions.setFirstSystemAlchemistry(activeAssembly)
+      LambdaInterface lambdaInterface = (LambdaInterface) potentialEnergy
+      double lambda = alchemicalOptions.getInitialLambda()
+      logger.info(format(" Setting ManyBody softcore lambda to: %5.3f", lambda))
+      lambdaInterface.setLambda(lambda)
     }
 
     RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,

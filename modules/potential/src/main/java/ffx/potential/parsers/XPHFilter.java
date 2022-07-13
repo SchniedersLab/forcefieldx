@@ -82,6 +82,7 @@ public class XPHFilter extends SystemFilter {
   private int snapShot;
   private String remarkLine;
   private ExtendedSystem extendedSystem;
+  private double[] extendedLambdas;
 
   /**
    * Constructor for XPHFilter.
@@ -103,10 +104,10 @@ public class XPHFilter extends SystemFilter {
     extendedSystem = esvSystem;
   }
 
-  public XPHFilter(SystemFilter systemFilter, ExtendedSystem extendedSystem) {
+  public XPHFilter(SystemFilter systemFilter, ExtendedSystem esvSystem) {
     super(systemFilter.getFile(), systemFilter.getActiveMolecularSystem(), systemFilter.getActiveMolecularSystem().getForceField(), systemFilter.getActiveMolecularSystem().getProperties());
 
-    this.extendedSystem = extendedSystem;
+    extendedSystem = esvSystem;
   }
 
   /**
@@ -239,13 +240,13 @@ public class XPHFilter extends SystemFilter {
 
   @Override
   public int countNumModels() {
-    File xyzFile = activeMolecularAssembly.getFile();
+    File xphFile = activeMolecularAssembly.getFile();
     int nAtoms = activeMolecularAssembly.getAtomArray().length;
     Pattern crystInfoPattern =
         Pattern.compile(
             "^ *(?:[0-9]+\\.[0-9]+ +){3}(?:-?[0-9]+\\.[0-9]+ +){2}(?:-?[0-9]+\\.[0-9]+) *$");
 
-    try (BufferedReader br = new BufferedReader(new FileReader(xyzFile))) {
+    try (BufferedReader br = new BufferedReader(new FileReader(xphFile))) {
       String line = br.readLine();
       int nSnaps = 0;
       // For each header line, will read either X or X+1 lines, where X is the number of atoms.
@@ -269,7 +270,7 @@ public class XPHFilter extends SystemFilter {
       return nSnaps;
     } catch (Exception ex) {
       logger.log(
-          Level.WARNING, String.format(" Exception reading trajectory file %s: %s", xyzFile, ex));
+          Level.WARNING, String.format(" Exception reading trajectory file %s: %s", xphFile, ex));
       return 1;
     }
   }
@@ -304,13 +305,13 @@ public class XPHFilter extends SystemFilter {
    */
   @Override
   public boolean readFile() {
-    File xyzFile = activeMolecularAssembly.getFile();
+    File xphFile = activeMolecularAssembly.getFile();
 
     if (forceField == null) {
-      logger.warning(format(" No force field is associated with %s.", xyzFile.toString()));
+      logger.warning(format(" No force field is associated with %s.", xphFile.toString()));
       return false;
     }
-    try (BufferedReader br = new BufferedReader(new FileReader(xyzFile))) {
+    try (BufferedReader br = new BufferedReader(new FileReader(xphFile))) {
       String data = br.readLine();
       // Read blank lines at the top of the file
       while (data != null && data.trim().equals("")) {
@@ -327,7 +328,7 @@ public class XPHFilter extends SystemFilter {
       if (tokens.length == 2) {
         getActiveMolecularSystem().setName(tokens[1]);
       }
-      logger.info(format(" Opening %s with %d atoms\n", xyzFile.getName(), numberOfAtoms));
+      logger.info(format(" Opening %s with %d atoms\n", xphFile.getName(), numberOfAtoms));
       remarkLine = data.trim();
 
       // The header line is reasonable. Check for periodic box dimensions.
@@ -483,8 +484,8 @@ public class XPHFilter extends SystemFilter {
         }
       }
       // Read ESVs
-      while (data != null && data.equals("") && bufferedReader.ready()) {
-        data = bufferedReader.readLine().trim();
+      while (data != null && data.equals("") && br.ready()) {
+        data = br.readLine().trim();
       }
 
       if(data != null) {
@@ -492,7 +493,7 @@ public class XPHFilter extends SystemFilter {
 
         if (tokens[0].equalsIgnoreCase("ESV")) {
           int numOfESVs = parseInt(tokens[1]);
-          data = bufferedReader.readLine().trim();
+          data = br.readLine().trim();
 
           List<Residue> residueList = extendedSystem.getExtendedResidueList();
 
@@ -507,7 +508,7 @@ public class XPHFilter extends SystemFilter {
                 extendedSystem.setTautomerLambda(residueList.get(i), parseDouble(tokens[2]));
               }
 
-              data = bufferedReader.readLine().trim();
+              data = br.readLine().trim();
             }
           } else {
             logger.severe(" Number of ESVs in archive doesn't match extended system residue list size.");
@@ -701,6 +702,10 @@ public class XPHFilter extends SystemFilter {
 
   public ExtendedSystem getExtendedSystem(){
     return extendedSystem;
+  }
+
+  public void setExtendedSystem(ExtendedSystem esvSystem){
+    this.extendedSystem = esvSystem;
   }
 
   /** {@inheritDoc} */

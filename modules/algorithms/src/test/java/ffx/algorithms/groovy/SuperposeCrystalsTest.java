@@ -40,7 +40,6 @@ package ffx.algorithms.groovy;
 import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.misc.AlgorithmsTest;
-import ffx.algorithms.groovy.SuperposeCrystals;
 import org.junit.Test;
 
 /**
@@ -57,7 +56,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testBaseSingleSuperposeCrystals() {
 
-    // Set-up the input arguments for the SuperposeCrystals script.
+    // Set up the input arguments for the SuperposeCrystals script.
     String[] args = {"-l", "0", "src/main/java/ffx/algorithms/structures/C23.arc"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
@@ -77,7 +76,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testBaseSingleAUSuperposeCrystals() {
 
-    // Set-up the input arguments for the SuperposeCrystals script.
+    // Set up the input arguments for the SuperposeCrystals script.
     String[] args = {"--na","1","-l", "0", "src/main/java/ffx/algorithms/structures/C23.arc"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
@@ -97,7 +96,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testBaseSingleMTSuperposeCrystals() {
 
-    // Set-up the input arguments for the SuperposeCrystals script.
+    // Set up the input arguments for the SuperposeCrystals script.
     String[] args = {"-l", "0",
             "src/main/java/ffx/algorithms/structures/ace.arc_s", "src/main/java/ffx/algorithms/structures/ace.arc_sx"};
     binding.setVariable("args", args);
@@ -118,7 +117,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testBaseAverageSuperposeCrystals() {
 
-    // Set-up the input arguments for the SuperposeCrystals script.
+    // Set up the input arguments for the SuperposeCrystals script.
     String[] args = {"-l", "1","src/main/java/ffx/algorithms/structures/C23.arc"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
@@ -138,7 +137,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testBaseAverageSuperposeCrystalsHydrogen() {
 
-    // Set-up the input arguments for the SuperposeCrystals script.
+    // Set up the input arguments for the SuperposeCrystals script.
     String[] args = {"--ih", "-l", "1", "src/main/java/ffx/algorithms/structures/C23.arc"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
@@ -158,7 +157,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testBaseSingleSuperposeCrystalsHydrogen() {
 
-    // Set-up the input arguments for the SuperposeCrystals script.
+    // Set up the input arguments for the SuperposeCrystals script.
     String[] args = {"--ih","-l", "0", "src/main/java/ffx/algorithms/structures/C23.arc"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
@@ -178,7 +177,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testBaseAverageSuperposeCrystalsSohnckeGroup() {
 
-    // Set-up the input arguments for the SuperposeCrystals script.
+    // Set up the input arguments for the SuperposeCrystals script.
     String[] args = {"-l", "1", "src/main/java/ffx/algorithms/structures/dap.xyz",
             "src/main/java/ffx/algorithms/structures/dap.xyz_close"};
     binding.setVariable("args", args);
@@ -195,7 +194,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testBaseSingleSuperposeCrystalsSohnckeGroup() {
 
-    // Set-up the input arguments for the SuperposeCrystals script.
+    // Set up the input arguments for the SuperposeCrystals script.
     String[] args = {"-l","0", "src/main/java/ffx/algorithms/structures/dap.xyz",
         "src/main/java/ffx/algorithms/structures/dap.xyz_close"};
     binding.setVariable("args", args);
@@ -212,7 +211,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testBaseAverageSuperposeCrystalsHandedness() {
 
-    // Set-up the input arguments for the SuperposeCrystals script.
+    // Set up the input arguments for the SuperposeCrystals script.
     String[] args = {"-l", "1", "src/main/java/ffx/algorithms/structures/dap2.xyz",
             "src/main/java/ffx/algorithms/structures/dap2.xyz_2"};
     binding.setVariable("args", args);
@@ -229,7 +228,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testBaseSingleSuperposeCrystalsHandedness() {
 
-    // Set-up the input arguments for the SuperposeCrystals script.
+    // Set up the input arguments for the SuperposeCrystals script.
     String[] args = {"-l","0","src/main/java/ffx/algorithms/structures/dap2.xyz",
         "src/main/java/ffx/algorithms/structures/dap2.xyz_2"};
     binding.setVariable("args", args);
@@ -246,7 +245,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testBaseAverageSuperposeCrystalsZPrime2() {
 
-    // Set-up the input arguments for the SuperposeCrystals script.
+    // Set up the input arguments for the SuperposeCrystals script.
     String[] args = {"-l", "1", "src/main/java/ffx/algorithms/structures/XAFPAY02.arc"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
@@ -266,7 +265,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testBaseSingleSuperposeCrystalsZPrime2() {
 
-    // Set-up the input arguments for the SuperposeCrystals script.
+    // Set up the input arguments for the SuperposeCrystals script.
     String[] args = {"-l","0", "src/main/java/ffx/algorithms/structures/XAFPAY02.arc"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
@@ -286,7 +285,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
   @Test
   public void testBaseSingleSuperposeCrystalsSmallProtein() {
 
-    // Set-up the input arguments for the SuperposeCrystals script.
+    // Set up the input arguments for the SuperposeCrystals script.
     String[] args = {"-l","0", "src/main/java/ffx/algorithms/structures/2olx.arc"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
@@ -302,9 +301,29 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     assertEquals(1.383652, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
+  /** Tests the SuperposeCrystals script print symmetry operator functionality. */
+  @Test
+  public void testBaseAverageSuperposeCrystalsPrintSym() {
+
+    // Set up the input arguments for the SuperposeCrystals script.
+    String[] args = {"--na","1","--ps","1.0","src/main/java/ffx/algorithms/structures/CBZ01_P1.xyz","src/main/java/ffx/algorithms/structures/cbz11.xyz"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the SuperposeCrystals script.
+    SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = superposeCrystals;
+
+    assertEquals(1, superposeCrystals.runningStatistics.getCount());
+    // Mean RMSD for 6 comparisons.
+
+    assertEquals(0.10510735, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.10510735, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
+  }
+
   @Test
   public void testSuperposeCrystalsHelp() {
-    // Set-up the input arguments for the SuperposeCrystals script.
+    // Set up the input arguments for the SuperposeCrystals script.
     String[] args = {"-h"};
     binding.setVariable("args", args);
 

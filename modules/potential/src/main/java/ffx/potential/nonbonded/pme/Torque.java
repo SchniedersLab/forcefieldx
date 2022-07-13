@@ -256,7 +256,7 @@ public class Torque {
         for (int j = 0; j < 3; j++) {
           double dZ = del[j] * dPhidR / (rZ * sinRZ) + eps[j] * dPhidDel * cosZSum / (rZ * rZXY);
           g[0][j] = dZ; // Atom Z
-          g[3][j] -= dZ; // Atom I
+          g[3][j] = -dZ; // Atom I
         }
         add(vecZ, vecY, r);
         normalize(r, r);
@@ -284,7 +284,7 @@ public class Torque {
         for (int j = 0; j < 3; j++) {
           double dY = del[j] * dPhidR / (rY * sinRY) + eps[j] * dPhidDel * cosYSum / (rY * rZXY);
           g[2][j] = dY; // Atom Y
-          g[3][j] = -dY; // Atom I
+          g[3][j] -= dY; // Atom I
         }
         break;
       default:

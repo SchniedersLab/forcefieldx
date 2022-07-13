@@ -273,6 +273,16 @@ public class CIFFilter extends SystemFilter{
         int numEntitiesXYZ = entitiesXYZ.size();
         if (logger.isLoggable(Level.FINE)) {
             logger.fine(format(" Number of entities in XYZ: %d", numEntitiesXYZ));
+            for(MSNode entity : entitiesXYZ){
+                logger.fine(format(" Entity: " + entity.getName()));
+                int size = entity.getAtomList().size();
+                logger.fine(format("   Entity Size: %3d", size));
+                if(size > 0) {
+                    logger.fine(format("   Entity First Atom: " + entity.getAtomList().get(0).toString()));
+                }else{
+                    logger.warning(" Entity did not contain atoms.");
+                }
+            }
         }
 
         for (CifCoreBlock block : cifFile.getBlocks()) {
@@ -451,7 +461,9 @@ public class CIFFilter extends SystemFilter{
 
             MolecularAssembly outputAssembly = new MolecularAssembly(block.getBlockHeader());
             int zPrime = -1;
-            if (nAtoms % nXYZAtoms == 0) {
+            if(this.zPrime > 0){
+                zPrime = this.zPrime;
+            } else if (nAtoms % nXYZAtoms == 0) {
                 zPrime = nAtoms / nXYZAtoms;
             } else if (nAtoms % (nXYZAtoms - numHydrogens) == 0) {
                 zPrime = nAtoms / (nXYZAtoms - numHydrogens);
@@ -487,9 +499,9 @@ public class CIFFilter extends SystemFilter{
                     xyzCDKAtoms.addAtom(new org.openscience.cdk.Atom(atomName, new Point3d(atom.getXYZ(null))));
                 }
 
-                int lessIndex = findMaxLessIndex(xyzatoms, i);
+                int lessIndex = (this.zPrime == 1) ? 0 : findMaxLessIndex(xyzatoms, i);
                 if (logger.isLoggable(Level.FINE)) {
-                    logger.fine(format(" Less Index: %d", lessIndex));
+                    logger.fine(format(" Molecule Index: %d", lessIndex));
                 }
                 // Add known XYZ bonds; a limitation is that bonds all are given a Bond order of 1.
                 List<Bond> bonds = mol.getBondList();
@@ -781,8 +793,8 @@ public class CIFFilter extends SystemFilter{
                         }
                         outputAssembly.addMSNode(molecule);
                     } else {
-                        if (logger.isLoggable(Level.FINE)) {
-                            logger.fine(format(" Number of atoms in CIF (%d) molecule do not match XYZ (%d + %dH = %d).",
+                        if (logger.isLoggable(Level.INFO)) {
+                            logger.info(format(" Number of atoms in CIF (%d) molecule do not match XYZ (%d + %dH = %d).",
                                     cifMolAtoms, nXYZAtoms - numMolHydrogens, numMolHydrogens, nXYZAtoms));
                         }
                     }
@@ -800,7 +812,7 @@ public class CIFFilter extends SystemFilter{
             setMolecularSystem(outputAssembly);
 
             if (outputAssembly.getAtomList().size() < 1) {
-                logger.info(" AtomList does not contain atoms. File could not be written.");
+                logger.info(" Atom types could not be matched. File could not be written.");
             }else if(!writeXYZFile()) {
                 logger.info(" XYZ File could not be written.");
             }
@@ -824,6 +836,7 @@ public class CIFFilter extends SystemFilter{
 
         File saveFile;
         if(cifFile.getBlocks().size() > 1){
+            // Change name for different space groups. XYZ cannot handle multiple space groups in same file.
             if(entities.size() > 1){
                 fileName += "_z" + entities.size();
             }

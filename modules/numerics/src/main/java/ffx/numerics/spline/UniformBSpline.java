@@ -224,12 +224,10 @@ public class UniformBSpline {
       final double x1 = x + (double) i;
       final double k1mwi = k1mw - (double) i;
       newCoefficients[kmi] = div * (x1 * coefficients[km1i] + k1mwi * coefficients[kmi]);
-      if (logger.isLoggable(Level.FINEST)) {
-        logger.finest(
-            format(
-                " BSR %16.8f %16.8f %16.8f %16.8f %16.8f",
-                div, x1, coefficients[km1i], k1mwi, coefficients[kmi]));
-      }
+//      if (logger.isLoggable(Level.OFF)) {
+//        logger.finest(format(" BSR %16.8f %16.8f %16.8f %16.8f %16.8f",
+//                div, x1, coefficients[km1i], k1mwi, coefficients[kmi]));
+//      }
     }
     double oneX = 1.0 - x;
     newCoefficients[0] = div * oneX * coefficients[0];

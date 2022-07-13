@@ -38,13 +38,6 @@
 
 package ffx.potential.extended;
 
-import static ffx.utilities.Constants.kB;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.log;
-import static org.apache.commons.math3.util.FastMath.sin;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
-import edu.rit.pj.Comm;
 import edu.rit.pj.reduction.SharedDouble;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
@@ -59,21 +52,20 @@ import ffx.potential.parameters.TitrationUtils;
 import ffx.potential.parsers.ESVFilter;
 import ffx.utilities.Constants;
 import ffx.utilities.FileUtils;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
-import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.io.FilenameUtils;
+import static ffx.utilities.Constants.kB;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.*;
 
 /**
  * ExtendedSystem class.
@@ -83,21 +75,25 @@ import org.apache.commons.io.FilenameUtils;
  */
 public class ExtendedSystem implements Potential {
 
-    private static final Logger logger = Logger.getLogger(ExtendedSystem.class.getName());
-    private static final double THETA_MASS = 5.0; //Atomic Mass Units
-    private static final double THETA_FRICTION = 5.0; // psec^-1
     private static final double DISCR_BIAS = 1.0; // kcal/mol
     private static final double LOG10 = log(10.0);
-
-    private static final int discrBiasIndex = 0;
-    private static final int pHBiasIndex = 1;
-    private static final int modelBiasIndex = 2;
-    private static final int dDiscr_dTitrIndex = 3;
-    private static final int dPh_dTitrIndex = 4;
-    private static final int dModel_dTitrIndex = 5;
+    private static final double THETA_FRICTION = 5.0; // psec^-1
+    private static final double THETA_MASS = 5.0; //Atomic Mass Units
     private static final int dDiscr_dTautIndex = 6;
-    private static final int dPh_dTautIndex = 7;
+    private static final int dDiscr_dTitrIndex = 3;
     private static final int dModel_dTautIndex = 8;
+    private static final int dModel_dTitrIndex = 5;
+    private static final int dPh_dTautIndex = 7;
+    private static final int dPh_dTitrIndex = 4;
+    private static final int discrBiasIndex = 0;
+    private static final Logger logger = Logger.getLogger(ExtendedSystem.class.getName());
+    private static final int modelBiasIndex = 2;
+    private static final int pHBiasIndex = 1;
+    /**
+     * Array of AminoAcid3 initialized  to match the number of atoms in the system.
+     * Used to know how to apply vdW or electrostatic ESV terms for the atom.
+     */
+    public final AminoAcid3[] residueNames;
     /**
      * Array of ints that is initialized to match the number of atoms in the molecular assembly.
      * 1 indicates that the tautomer lambda direction is normal.
@@ -105,58 +101,74 @@ public class ExtendedSystem implements Potential {
      * 0 indicates that the atom is not a tautomerizing atom.
      */
     public final int[] tautomerDirections;
+    private final double ASHlambdaIntercept;
     /**
-     * Array of AminoAcid3 initialized  to match the number of atoms in the system.
-     * Used to know how to apply vdW or electrostatic ESV terms for the atom.
+     * Coefficients that define the per residue type Fmod polynomial
+     * refEnergy * titrationLambda^2 + lambdaIntercept * titrationLambda
      */
-    public final AminoAcid3[] residueNames;
+    private final double ASHrefEnergy;
+    private final double CYSlambdaIntercept;
+    private final double CYSrefEnergy;
+    private final double GLHlambdaIntercept;
+    private final double GLHrefEnergy;
+    private final double HIDlambdaIntercept;
+    private final double HIDrefEnergy;
+    private final double HIDtoHIElambdaIntercept;
     /**
-     * Array of doubles that is initialized to match the number of atoms in the molecular assembly.
-     * Only elements that match a titrating atom will have their lambda updated.
+     * Coefficients that define the tautomer component of the bivariate Histidine Fmod
+     * refEnergy * tautomerLambda^2 + lambdaIntercept * tautomerLambda
      */
-    private final double[] titrationLambdas;
+    private final double HIDtoHIErefEnergy;
+    private final double HIElambdaIntercept;
+    private final double HIErefEnergy;
+    private final double HIStautBiasMag;
+    private final double HIStitrBiasMag;
+    private final double LYSlambdaIntercept;
+    private final double LYSrefEnergy;
+    private final boolean doBias;
+    private final boolean doElectrostatics;
+    private final boolean doPolarization;
+    // Controls for turning of certain terms for testing.
+    private final boolean doVDW;
     /**
-     * Array of doubles that is initialized to match the number of atoms in the molecular assembly.
-     * Only elements that match a tautomerizing atom will have their lambda updated.
+     * 3D array to store the titration and tautomer population states for each ESV
      */
-    private final double[] tautomerLambdas;
+    final private int[][][] esvHistogram;
+    private final SharedDouble[] esvIndElecDerivs;
+    private final SharedDouble[] esvPermElecDerivs;
     /**
      * Shared double that is initialized to match the number of ESVs in the system.
      * Once reduced, will equal either dU_Titr/dLambda or dU_Taut/dLambda for specific ESV
      */
     private final SharedDouble[] esvVdwDerivs;
-    private final SharedDouble[] esvPermElecDerivs;
-    private final SharedDouble[] esvIndElecDerivs;
     /**
      * Extended Atoms
      */
     private final Atom[] extendedAtoms;
     /**
+     * Array of lambda values that matches residues in extendedResidueList
+     */
+    private final double[] extendedLambdas;
+    /**
      * Extended Molecules
      */
     private final int[] extendedMolecules;
     /**
-     * Titration Utils instance. This instance is the master copy that will be distributed to electrostatics classes
-     * when an Extended System is attached.
+     * Concatenated list of titrating residues + tautomerizing residues.
      */
-    private final TitrationUtils titrationUtils;
-
-    /** ForceField Energy Instance. This instance is only used for Potential implementations for grabbing the energy components.
+    private final List<Residue> extendedResidueList;
+    private final boolean fixTautomerState;
+    private final boolean fixTitrationState;
+    /**
+     * ForceField Energy Instance. This instance is only used for Potential implementations for grabbing the energy components.
      */
     private final ForceFieldEnergy forceFieldEnergy;
-
     /**
-     * Number of atoms in the molecular assembly. Since all protons are instantiated at start, this int will not change.
+     * Array of booleans that is initialized to match the number of atoms in the molecular assembly
+     * noting whether the atom is tautomerizing. Note that any side chain atom that belongs to a tautomerizing residue
+     * will be flagged as tautomerizing for purposes of scaling electrostatic parameters.
      */
-    private final int nAtoms;
-    /**
-     * Number of ESVs attached to the molecular assembly. This number is the sum of tautomerizing + titrating ESVs.
-     */
-    private final int nESVs;
-    /**
-     * Number of titrating ESVs attached to the molecular assembly.
-     */
-    private final int nTitr;
+    private final boolean[] isTautomerizing;
     /**
      * Array of booleans that is initialized to match the number of atoms in the molecular assembly
      * noting whether the atom is titrating. Note that any side chain atom that belongs to a titrating residue
@@ -169,55 +181,51 @@ public class ExtendedSystem implements Potential {
      */
     private final boolean[] isTitratingHydrogen;
     private final boolean[] isTitratingSulfur;
+    private final boolean lockStates;
+    public final boolean guessTitrState;
     /**
-     * Array of booleans that is initialized to match the number of atoms in the molecular assembly
-     * noting whether the atom is tautomerizing. Note that any side chain atom that belongs to a tautomerizing residue
-     * will be flagged as tautomerizing for purposes of scaling electrostatic parameters.
+     * Number of atoms in the molecular assembly. Since all protons are instantiated at start, this int will not change.
      */
-    private final boolean[] isTautomerizing;
+    private final int nAtoms;
     /**
-     * Array of ints that is initialized to match the number of atoms in the molecular assembly.
-     * Elements correspond to residue index in the titratingResidueList. Only set for titrating residues, -1 otherwise.
+     * Number of ESVs attached to the molecular assembly. This number is the sum of tautomerizing + titrating ESVs.
      */
-    private final int[] titrationIndexMap;
+    private final int nESVs;
+    /**
+     * Number of titrating ESVs attached to the molecular assembly.
+     */
+    private final int nTitr;
+    private final double tautBiasMag;
     /**
      * Array of ints that is initialized to match the number of atoms in the molecular assembly.
      * Elements correspond to residue index in the tautomerizingResidueList. Only set for tautomerizing residues, -1 otherwise.
      */
     private final int[] tautomerIndexMap;
     /**
-     * List of titrating residues.
+     * Array of doubles that is initialized to match the number of atoms in the molecular assembly.
+     * Only elements that match a tautomerizing atom will have their lambda updated.
      */
-    private final List<Residue> titratingResidueList;
+    private final double[] tautomerLambdas;
     /**
      * List of tautomerizing residues.
      */
     private final List<Residue> tautomerizingResidueList;
     /**
-     * Concatenated list of titrating residues + tautomerizing residues.
+     * Current theta acceleration for each ESV.
      */
-    private final List<Residue> extendedResidueList;
-    /**
-     * The system defined theta mass of the fictional particle. Used to fill theta mass array.
-     */
-    private final double thetaMass;
+    final private double[] thetaAccel;
     /**
      * Friction for the ESV system
      */
     private final double thetaFriction;
     /**
-     * Array of lambda values that matches residues in extendedResidueList
+     * The system defined theta mass of the fictional particle. Used to fill theta mass array.
      */
-    private final double[] extendedLambdas;
-
-    // Controls for turning of certain terms for testing.
-    private final boolean doVDW;
-    private final boolean doElectrostatics;
-    private final boolean doBias;
-    private final boolean doPolarization;
-    private boolean fixTitrationState;
-    private boolean fixTautomerState;
-    private final boolean lockStates;
+    private final double thetaMass;
+    /**
+     * Mass of each theta particle. Different theta mass for each particle are not supported.
+     */
+    final private double[] thetaMassArray;
     /**
      * Current value of theta for each ESV.
      */
@@ -227,46 +235,28 @@ public class ExtendedSystem implements Potential {
      */
     final private double[] thetaVelocity;
     /**
-     * Current theta acceleration for each ESV.
-     */
-    final private double[] thetaAccel;
-    /**
-     * Mass of each theta particle. Different theta mass for each particle are not supported.
-     */
-    final private double[] thetaMassArray;
-    /**
-     * 3D array to store the titration and tautomer population states for each ESV
-     */
-    final private int[][][] esvHistogram;
-    /**
      * Descritizer Bias Magnitude. Default is 1 kcal/mol.
      */
     private final double titrBiasMag;
-    private final double tautBiasMag;
-    private final double HIStitrBiasMag;
-    private final double HIStautBiasMag;
     /**
-     * Coefficients that define the per residue type Fmod polynomial
-     * refEnergy * titrationLambda^2 + lambdaIntercept * titrationLambda
+     * List of titrating residues.
      */
-    private final double ASHrefEnergy;
-    private final double ASHlambdaIntercept;
-    private final double GLHrefEnergy;
-    private final double GLHlambdaIntercept;
-    private final double LYSrefEnergy;
-    private final double LYSlambdaIntercept;
-    private final double CYSrefEnergy;
-    private final double CYSlambdaIntercept;
-    private final double HIDrefEnergy;
-    private final double HIDlambdaIntercept;
-    private final double HIErefEnergy;
-    private final double HIElambdaIntercept;
+    private final List<Residue> titratingResidueList;
     /**
-     * Coefficients that define the tautomer component of the bivariate Histidine Fmod
-     * refEnergy * tautomerLambda^2 + lambdaIntercept * tautomerLambda
+     * Array of ints that is initialized to match the number of atoms in the molecular assembly.
+     * Elements correspond to residue index in the titratingResidueList. Only set for titrating residues, -1 otherwise.
      */
-    private final double HIDtoHIErefEnergy;
-    private final double HIDtoHIElambdaIntercept;
+    private final int[] titrationIndexMap;
+    /**
+     * Array of doubles that is initialized to match the number of atoms in the molecular assembly.
+     * Only elements that match a titrating atom will have their lambda updated.
+     */
+    private final double[] titrationLambdas;
+    /**
+     * Titration Utils instance. This instance is the master copy that will be distributed to electrostatics classes
+     * when an Extended System is attached.
+     */
+    private final TitrationUtils titrationUtils;
     /**
      * Dynamics restart file.
      */
@@ -274,7 +264,7 @@ public class ExtendedSystem implements Potential {
     /**
      * Filter to parse the dynamics restart file.
      */
-    ESVFilter esvFilter = null;
+    private ESVFilter esvFilter = null;
     /**
      * System PH.
      */
@@ -314,7 +304,7 @@ public class ExtendedSystem implements Potential {
         lockStates = properties.getBoolean("lock.esv.states", false); // Prevents setTitrationLambda/setTautomerLambda
         double initialTitrationLambda = properties.getDouble("lambda.titration.initial", 0.5);
         double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
-        boolean guessTitrState = properties.getBoolean("guess.titration.state", false);
+        guessTitrState = properties.getBoolean("guess.titration.state", false);
         fixTitrationState = properties.getBoolean("fix.titration.lambda", false);
         fixTautomerState = properties.getBoolean("fix.tautomer.lambda", false);
         ASHrefEnergy = properties.getDouble("ASH.ref.energy", TitrationUtils.Titration.ASHtoASP.refEnergy);
@@ -376,9 +366,9 @@ public class ExtendedSystem implements Potential {
                     int atomIndex = atom.getArrayIndex();
                     residueNames[atomIndex] = residue.getAminoAcid3();
                     isTitrating[atomIndex] = true;
-                    if(guessTitrState){
+                    if (guessTitrState) {
                         titrationLambdas[atomIndex] = initialTitrationState(residue, initialTitrationLambda);
-                    } else{
+                    } else {
                         titrationLambdas[atomIndex] = initialTitrationLambda;
                     }
                     int titrationIndex = titratingResidueList.indexOf(residue);
@@ -429,11 +419,11 @@ public class ExtendedSystem implements Potential {
 
         for (int i = 0; i < nESVs; i++) {
             if (i < nTitr) {
-                if(guessTitrState){
+                if (guessTitrState) {
                     Residue residue = extendedResidueList.get(i);
                     double initialTitrLambda = initialTitrationState(residue, initialTitrationLambda);
                     initializeThetaArrays(i, initialTitrLambda);
-                } else{
+                } else {
                     initializeThetaArrays(i, initialTitrationLambda);
                 }
             } else {
@@ -476,22 +466,6 @@ public class ExtendedSystem implements Potential {
         double dUdL = getDerivatives()[index];
         double dUdTheta = dUdL * sin(2 * thetaPosition[index]);
         thetaAccel[index] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
-    }
-
-    public void reGuessLambdas(){
-        for(Residue residue : titratingResidueList){
-            double lambda = initialTitrationState(residue, 1.0);
-            setTitrationLambda(residue, lambda);
-        }
-    }
-
-    public void perturbLambdas(boolean fixtaut, double lambda){
-        int index = (fixtaut) ? 0 : nTitr; // when fixtaut is true, you change tautomer values --> swap?
-        int length = (fixtaut) ? nTitr : nESVs;
-        for(int i = index; i < length; i++){
-            extendedLambdas[i] = lambda;
-        }
-        updateLambdas();
     }
 
     /**
@@ -551,7 +525,7 @@ public class ExtendedSystem implements Potential {
      * @param residue
      * @param biasEnergyAndDerivs
      */
-    public void getBiasTerms(Residue residue, double[] biasEnergyAndDerivs) {
+    private void getBiasTerms(Residue residue, double[] biasEnergyAndDerivs) {
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
         double titrationLambda = getTitrationLambda(residue);
         double discrBias;
@@ -591,7 +565,7 @@ public class ExtendedSystem implements Potential {
                 // Model Bias & Derivs
                 double refEnergy = ASHrefEnergy;
                 double lambdaIntercept = ASHlambdaIntercept;
-                modelBias = refEnergy * titrationLambda*titrationLambda + lambdaIntercept * titrationLambda;
+                modelBias = refEnergy * titrationLambda * titrationLambda + lambdaIntercept * titrationLambda;
                 dMod_dTitr = 2 * refEnergy * titrationLambda + lambdaIntercept;
                 dMod_dTaut = 0.0;
                 break;
@@ -618,7 +592,7 @@ public class ExtendedSystem implements Potential {
                 // Model Bias & Derivs
                 refEnergy = GLHrefEnergy;
                 lambdaIntercept = GLHlambdaIntercept;
-                modelBias = refEnergy * titrationLambda*titrationLambda + lambdaIntercept * titrationLambda;
+                modelBias = refEnergy * titrationLambda * titrationLambda + lambdaIntercept * titrationLambda;
                 dMod_dTitr = 2 * refEnergy * titrationLambda + lambdaIntercept;
                 dMod_dTaut = 0.0;
                 break;
@@ -660,18 +634,18 @@ public class ExtendedSystem implements Potential {
                 double coeffBSum = coeffB0 + coeffB1;
                 double coeffCSum = coeffC0 + coeffC1;
                 modelBias = oneMinusTitrationLambda * (coeffA0 * tautomerLambdaSquared + coeffA1 * tautomerLambda) +
-                            tautomerLambda * (coeffB0 * titrationLambdaSquared + coeffB1 * titrationLambda) +
-                            oneMinusTautomerLambda * (coeffC0 * titrationLambdaSquared + coeffC1 * titrationLambda) +
-                            //Enforce that HIS(titration==1) state is equal energy no matter tautomer value
-                            titrationLambda * (coeffCSum - coeffBSum) * tautomerLambda;
+                        tautomerLambda * (coeffB0 * titrationLambdaSquared + coeffB1 * titrationLambda) +
+                        oneMinusTautomerLambda * (coeffC0 * titrationLambdaSquared + coeffC1 * titrationLambda) +
+                        //Enforce that HIS(titration==1) state is equal energy no matter tautomer value
+                        titrationLambda * (coeffCSum - coeffBSum) * tautomerLambda;
                 dMod_dTitr = -(coeffA0 * tautomerLambdaSquared + coeffA1 * tautomerLambda) +
-                             tautomerLambda * (2.0 * coeffB0 * titrationLambda + coeffB1) +
-                             oneMinusTautomerLambda * (2.0 * coeffC0 * titrationLambda + coeffC1) +
-                             tautomerLambda * (coeffCSum - coeffBSum);
+                        tautomerLambda * (2.0 * coeffB0 * titrationLambda + coeffB1) +
+                        oneMinusTautomerLambda * (2.0 * coeffC0 * titrationLambda + coeffC1) +
+                        tautomerLambda * (coeffCSum - coeffBSum);
                 dMod_dTaut = oneMinusTitrationLambda * (2.0 * coeffA0 * tautomerLambda + coeffA1) +
-                             (coeffB0 * titrationLambdaSquared + coeffB1 * titrationLambda) +
-                             -(coeffC0 * titrationLambdaSquared + coeffC1 * titrationLambda) +
-                             titrationLambda * (coeffCSum - coeffBSum);
+                        (coeffB0 * titrationLambdaSquared + coeffB1 * titrationLambda) +
+                        -(coeffC0 * titrationLambdaSquared + coeffC1 * titrationLambda) +
+                        titrationLambda * (coeffCSum - coeffBSum);
 
                 break;
             case LYS:
@@ -769,20 +743,20 @@ public class ExtendedSystem implements Potential {
      * @param esvID
      * @return
      */
-    public double getVdwDeriv(int esvID) {
+    private double getVdwDeriv(int esvID) {
         return esvVdwDerivs[esvID].get();
     }
 
-    public double getPermElecDeriv(int esvID) {
+    private double getPermElecDeriv(int esvID) {
         return esvPermElecDerivs[esvID].get();
     }
 
-    public double getIndElecDeriv(int esvID) {
+    private double getIndElecDeriv(int esvID) {
         return esvIndElecDerivs[esvID].get();
     }
 
     public boolean isTitratable(Residue residue) {
-        if(residue.getResidueType() == Residue.ResidueType.NA){
+        if (residue.getResidueType() == Residue.ResidueType.NA) {
             return false;
         }
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
@@ -790,7 +764,7 @@ public class ExtendedSystem implements Potential {
     }
 
     public boolean isTautomer(Residue residue) {
-        if(residue.getResidueType() == Residue.ResidueType.NA){
+        if (residue.getResidueType() == Residue.ResidueType.NA) {
             return false;
         }
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
@@ -844,29 +818,6 @@ public class ExtendedSystem implements Potential {
         }
     }
 
-    public int[][] getESVHistogram(int[][] histogram){
-        for(int i=0; i<titratingResidueList.size(); i++){
-            int h=0;
-            for(int j=0; j <10; j++){
-                for(int k=0; k<10; k++){
-                    histogram[i][h++] = esvHistogram[i][j][k];
-                }
-            }
-        }
-        return histogram;
-    }
-
-    public void copyESVHistogramTo(int[][] histogram){
-        for(int i=0; i<titratingResidueList.size(); i++){
-            int h=0;
-            for(int j=0; j <10; j++){
-                for(int k=0; k<10; k++){
-                    esvHistogram[i][j][k] = histogram[i][h++];
-                }
-            }
-        }
-    }
-
     private void esvHistogram(int esv, double lambda) {
         int value = (int) (lambda * 10.0);
         //Cover the case where lambda could be exactly 1.0
@@ -890,10 +841,10 @@ public class ExtendedSystem implements Potential {
     }
 
     //Naive guess as to what the best starting state should be based purely on the acidostat term.
-    private double initialTitrationState(Residue residue, double initialLambda){
+    private double initialTitrationState(Residue residue, double initialLambda) {
         AminoAcid3 AA3 = residue.getAminoAcid3();
         double initialTitrationLambda;
-        switch (AA3){
+        switch (AA3) {
             case ASD:
                 initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.ASHtoASP.pKa) ? 1.0 : 0.0;
                 break;
@@ -914,6 +865,51 @@ public class ExtendedSystem implements Potential {
                 break;
         }
         return initialTitrationLambda;
+    }
+
+    public void reGuessLambdas() {
+        for (Residue residue : titratingResidueList) {
+            double lambda = initialTitrationState(residue, 1.0);
+            setTitrationLambda(residue, lambda);
+        }
+    }
+
+    public void setTitrationLambda(Residue residue, double lambda) {
+        if (titratingResidueList.contains(residue) && !lockStates) {
+            int index = titratingResidueList.indexOf(residue);
+            extendedLambdas[index] = lambda;
+            thetaPosition[index] = Math.asin(Math.sqrt(lambda));
+            List<Atom> currentAtomList = residue.getSideChainAtoms();
+            for (Atom atom : currentAtomList) {
+                int atomIndex = atom.getArrayIndex();
+                titrationLambdas[atomIndex] = lambda;
+            }
+        } /*else {
+            logger.warning(format("This residue %s is not titrating or locked by user property.", residue.getName()));
+        }*/
+    }
+
+    public int[][] getESVHistogram(int[][] histogram) {
+        for (int i = 0; i < titratingResidueList.size(); i++) {
+            int h = 0;
+            for (int j = 0; j < 10; j++) {
+                for (int k = 0; k < 10; k++) {
+                    histogram[i][h++] = esvHistogram[i][j][k];
+                }
+            }
+        }
+        return histogram;
+    }
+
+    public void copyESVHistogramTo(int[][] histogram) {
+        for (int i = 0; i < titratingResidueList.size(); i++) {
+            int h = 0;
+            for (int j = 0; j < 10; j++) {
+                for (int k = 0; k < 10; k++) {
+                    esvHistogram[i][j][k] = histogram[i][h++];
+                }
+            }
+        }
     }
 
     public void initEsvVdw() {
@@ -954,27 +950,6 @@ public class ExtendedSystem implements Potential {
         return tautomerIndexMap[i];
     }
 
-    public void setTitrationLambda(Residue residue, double lambda) {
-        setTitrationLambda(residue, lambda, true);
-    }
-
-    public void setTitrationLambda(Residue residue, double lambda, boolean changeThetas){
-        if (titratingResidueList.contains(residue) && !lockStates) {
-            int index = titratingResidueList.indexOf(residue);
-            extendedLambdas[index] = lambda;
-            if(changeThetas) {
-                thetaPosition[index] = Math.asin(Math.sqrt(lambda));
-            }
-            List<Atom> currentAtomList = residue.getSideChainAtoms();
-            for (Atom atom : currentAtomList) {
-                int atomIndex = atom.getArrayIndex();
-                titrationLambdas[atomIndex] = lambda;
-            }
-        }/*else {
-            logger.warning(format("This residue %s is not titrating or locked by user property.", residue.getName()));
-        }*/
-    }
-
     public void setTautomerLambda(Residue residue, double lambda) {
         setTautomerLambda(residue, lambda, true);
     }
@@ -1010,22 +985,6 @@ public class ExtendedSystem implements Potential {
         return extendedResidueList;
     }
 
-    public double[] getThetaPosition() {
-        return thetaPosition;
-    }
-
-    public double[] getThetaVelocity() {
-        return thetaVelocity;
-    }
-
-    public double[] getThetaAccel() {
-        return thetaAccel;
-    }
-
-    public double[] getThetaMassArray() {
-        return thetaMassArray;
-    }
-
     public double getThetaMass() {
         return thetaMass;
     }
@@ -1035,7 +994,13 @@ public class ExtendedSystem implements Potential {
     }
 
     public double[] getExtendedLambdas() {
-        return extendedLambdas;
+        double[] lambdas = new double[nESVs];
+        System.arraycopy(extendedLambdas, 0, lambdas, 0, lambdas.length);
+        return lambdas;
+    }
+
+    public void setExtendedLambdas(double[] lambdas) {
+        System.arraycopy(lambdas, 0, extendedLambdas, 0, extendedLambdas.length);
     }
 
     /**
@@ -1061,15 +1026,6 @@ public class ExtendedSystem implements Potential {
             sb.append(format("%6.4f", extendedLambdas[i]));
         }
         return sb.toString();
-    }
-
-    public double[] getLambdaArray(){
-        double[] lambdaArray = new double[extendedResidueList.size()];
-        System.arraycopy(extendedLambdas,0, lambdaArray, 0, lambdaArray.length);
-        return lambdaArray;
-    }
-    public void setLambdaArray(double[] lambdaArray){
-        System.arraycopy(lambdaArray, 0, extendedLambdas, 0, extendedLambdas.length);
     }
 
     /**
@@ -1223,7 +1179,9 @@ public class ExtendedSystem implements Potential {
         return isTitratingHydrogen[atomIndex];
     }
 
-    public boolean isTitratingSulfur(int atomIndex){ return isTitratingSulfur[atomIndex];}
+    public boolean isTitratingSulfur(int atomIndex) {
+        return isTitratingSulfur[atomIndex];
+    }
 
     /**
      * Add van der Waals deriv to appropriate dU/dL term.
@@ -1297,6 +1255,10 @@ public class ExtendedSystem implements Potential {
         return titrationUtils;
     }
 
+    public void setESVFile(File esvFile){
+        restartFile = esvFile;
+    }
+
     /**
      * setTemperature.
      *
@@ -1311,6 +1273,33 @@ public class ExtendedSystem implements Potential {
      */
     public void preForce() {
         updateLambdas();
+    }
+
+    public void writeRestart() {
+        String esvName = FileUtils.relativePathTo(restartFile).toString();
+        if (esvFilter.writeESV(restartFile, thetaPosition, thetaVelocity, thetaAccel, titratingResidueList, esvHistogram, constantSystemPh)) {
+            logger.info(" Wrote dynamics restart file to " + esvName);
+        } else {
+            logger.info(" Writing dynamics restart file to " + esvName + " failed");
+        }
+    }
+
+    public void writeLambdaHistogram() {
+        logger.info(esvFilter.getLambdaHistogram(titratingResidueList, esvHistogram, constantSystemPh));
+    }
+
+    @Override
+    public double energyAndGradient(double[] x, double[] g) {
+        System.arraycopy(x, 0, thetaPosition, 0, thetaPosition.length);
+        updateLambdas();
+        fillESVgradient(g);
+        return energy(x);
+    }
+
+    private double[] fillESVgradient(double[] g) {
+        double[] gradESV = postForce();
+        System.arraycopy(gradESV, 0, g, 0, g.length);
+        return g;
     }
 
     /**
@@ -1328,25 +1317,6 @@ public class ExtendedSystem implements Potential {
         return dEdTheta;
     }
 
-    private double[] fillESVgradient(double[] g){
-        double[] gradESV = postForce();
-        System.arraycopy(gradESV,0, g,0, g.length);
-        return g;
-    }
-
-    public void writeRestart() {
-        String esvName = FileUtils.relativePathTo(restartFile).toString();
-        if (esvFilter.writeESV(restartFile, thetaPosition, thetaVelocity, thetaAccel, titratingResidueList, esvHistogram, constantSystemPh)) {
-            logger.info(" Wrote dynamics restart file to " + esvName);
-        } else {
-            logger.info(" Writing dynamics restart file to " + esvName + " failed");
-        }
-    }
-
-    public void writeLambdaHistogram() {
-        logger.info(esvFilter.getLambdaHistogram(titratingResidueList, esvHistogram, constantSystemPh));
-    }
-
     @Override
     public double energy(double[] x) {
         double[] coords = new double[forceFieldEnergy.getNumberOfVariables()];
@@ -1355,21 +1325,21 @@ public class ExtendedSystem implements Potential {
     }
 
     @Override
-    public double energyAndGradient(double[] x, double[] g) {
-        System.arraycopy(x, 0, thetaPosition, 0, thetaPosition.length);
-        updateLambdas();
-        fillESVgradient(g);
-        return energy(x);
+    public double[] getAcceleration(double[] acceleration) {
+        return getThetaAccel();
     }
 
-    @Override
-    public double[] getAcceleration(double[] acceleration) {
-        return new double[0];
+    public double[] getThetaAccel() {
+        return thetaAccel;
     }
 
     @Override
     public double[] getCoordinates(double[] parameters) {
-        return new double[0];
+        return getThetaPosition();
+    }
+
+    public double[] getThetaPosition() {
+        return thetaPosition;
     }
 
     @Override
@@ -1384,7 +1354,11 @@ public class ExtendedSystem implements Potential {
 
     @Override
     public double[] getMass() {
-        return new double[0];
+        return getThetaMassArray();
+    }
+
+    public double[] getThetaMassArray() {
+        return thetaMassArray;
     }
 
     @Override
@@ -1421,7 +1395,11 @@ public class ExtendedSystem implements Potential {
 
     @Override
     public double[] getVelocity(double[] velocity) {
-        return new double[0];
+        return getThetaVelocity();
+    }
+
+    public double[] getThetaVelocity() {
+        return thetaVelocity;
     }
 
     @Override

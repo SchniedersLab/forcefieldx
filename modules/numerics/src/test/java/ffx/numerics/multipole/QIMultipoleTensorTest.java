@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
+import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.multipole.MultipoleTensorTest.Qi;
 import static ffx.numerics.multipole.MultipoleTensorTest.Qk;
 import static ffx.numerics.multipole.MultipoleTensorTest.Ui;
@@ -67,7 +68,6 @@ import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static org.junit.Assert.assertEquals;
 
-import ffx.numerics.math.DoubleMath;
 import ffx.numerics.multipole.MultipoleTensor.OPERATOR;
 import java.util.Arrays;
 import java.util.Collection;
@@ -153,15 +153,16 @@ public class QIMultipoleTensorTest {
 
     double[] tensor = new double[tensorCount];
     MultipoleTensor multipoleTensor = new CoulombTensorQI(order);
-    QIFrame qiFrame = new QIFrame(r);
     logger.info(format(" Writing QI Order %d tensor recursion code:", order));
-    r[2] = DoubleMath.length(r);
+
+    r[2] = length(r);
     r[0] = 0.0;
     r[1] = 0.0;
     String code = multipoleTensor.codeTensorRecursion(r, tensor);
     logger.info(format("\n%s", code));
 
     PolarizableMultipole polarizableMultipole = new PolarizableMultipole(Qi, Ui, Ui);
+    QIFrame qiFrame = new QIFrame(r);
     qiFrame.rotatePolarizableMultipole(polarizableMultipole);
     StringBuilder sb = new StringBuilder();
     logger.info(" Writing QI potential code due to multipole I:");
@@ -202,9 +203,9 @@ public class QIMultipoleTensorTest {
     multipoleTensor.generateTensor(r);
     double e = multipoleTensor.multipoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
 
-    qiFrame.qiToGlobal(Gk);
-    qiFrame.qiToGlobal(Ti);
-    qiFrame.qiToGlobal(Tk);
+    qiFrame.toGlobal(Gk);
+    qiFrame.toGlobal(Ti);
+    qiFrame.toGlobal(Tk);
 
     if (operator == OPERATOR.COULOMB) {
       assertEquals(info + " QI Permanent Energy", permanentEnergy, e, tolerance);
@@ -311,9 +312,9 @@ public class QIMultipoleTensorTest {
     double e = multipoleTensor.polarizationEnergyAndGradient(mI, mK, 1.0, 1.0, scaleMutual, Gi, Ti,
         Tk);
 
-    qiFrame.qiToGlobal(Gi);
-    qiFrame.qiToGlobal(Ti);
-    qiFrame.qiToGlobal(Tk);
+    qiFrame.toGlobal(Gi);
+    qiFrame.toGlobal(Ti);
+    qiFrame.toGlobal(Tk);
 
     // Analytic gradient on Atom I.
     double aX = Gi[0];
@@ -472,7 +473,7 @@ public class QIMultipoleTensorTest {
 
     // Check QI Tensors in a quasi-internal frame.
     // Set x and y = 0.0
-    r[2] = DoubleMath.length(r);
+    r[2] = length(r);
     r[0] = 0.0;
     r[1] = 0.0;
     fill(noStorageTensor, 0.0);
