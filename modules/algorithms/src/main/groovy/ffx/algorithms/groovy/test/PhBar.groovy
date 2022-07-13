@@ -53,6 +53,7 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import java.lang.reflect.Array
 import java.util.logging.Level
 
 import static java.lang.String.format
@@ -222,9 +223,36 @@ class PhBar extends AlgorithmsScript {
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
 
-        File natMinusOne = new File(rankDirectory.getPath() + File.separator + myRank + "at" + (myRank-1) + ".log")
+        File natNMinusOne = new File(rankDirectory.getPath() + File.separator + myRank + "at" + (myRank-1) + ".log")
         File natN = new File(rankDirectory.getPath() + File.separator + myRank + "at" + myRank + ".log")
-        File natPlusOne = new File(rankDirectory.getPath() + File.separator + myRank + "at" + (myRank+1) + ".log")
+        File natNPlusOne = new File(rankDirectory.getPath() + File.separator + myRank + "at" + (myRank+1) + ".log")
+
+        File[] files = new File[]{natNMinusOne, natN, natNPlusOne}
+        ArrayList<Double>[] lists = new ArrayList<Double>[]{previous, current, next}
+
+
+        if(natNMinusOne.exists() && natN.exists() && natNPlusOne.exists()){ //MolA should be set to the previous arc file
+            logger.warning(" Initializing to last run. Since this program deletes these files on completion, runs in which these files already exist are assumed to be restarts.")
+
+            for(int i = 0; i < 3; i++) {
+                try (FileReader fr = new FileReader(files[i])
+                     BufferedReader br = new BufferedReader(fr)) {
+                    String data = br.readLine()
+                    while (data != null) {
+                        lists[i].add(Double.parseDouble(br.readLine()))
+                        data = br.readLine()
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace()
+                }
+            }
+
+            if(current.size() != next.size() || current.size() != previous.size()){
+                logger.severe(" Restart nAtN.log files are not of the same size")
+            } else {
+                logger.info(" Rank " + myRank + " starting from cycle" + current.size())
+            }
+        }
 
 
         if (molecularDynamics instanceof MolecularDynamicsOpenMM) {
@@ -234,7 +262,7 @@ class PhBar extends AlgorithmsScript {
                     MolecularDynamics.DynamicsEngine.FFX)
             molecularDynamics.attachExtendedSystem(esvSystem, dynamicsOptions.report)
 
-            for (int i = 0; i < cycles; i++) {
+            for (int i = 0; i < cycles - current.size(); i++) {
                 molecularDynamics.setCoordinates(x)
                 molecularDynamics.dynamic(1, dynamicsOptions.dt, 1, dynamicsOptions.write,
                         dynamicsOptions.temperature, true, null)
@@ -284,10 +312,19 @@ class PhBar extends AlgorithmsScript {
                 energy = forceFieldEnergy.energy(x, false)
                 current.add(energy)
 
+                logger.info(" Previous: " + previous + "\n Current: " + current + "\n Next: " + next)
 
+                for (int j = 0; j < 3; j++){
+                    try (FileWriter fw = new FileWriter(files[i])
+                         BufferedWriter bw = new BufferedWriter(fw)) {
+                        bw.append(lists[i].get(i) as String)
+                    } catch (IOException e) {
+                        e.printStackTrace()
+                    }
+                }
             }
         } else {
-            logger.severe(" MD is not an instance of MDOMM (try adding )")
+            logger.severe(" MD is not an instance of MDOMM (try adding -Dplatform=OMM --mdE OpenMM)")
         }
 
         if(current.size() != cycles){
@@ -333,7 +370,6 @@ class PhBar extends AlgorithmsScript {
         }
 
         if(myRank != nRanks - 1) {
-
             File outputDir = new File(rankDirectory.getParent() + File.separator + "barFiles")
             if (!outputDir.exists()) {
                 outputDir.mkdir()
@@ -357,6 +393,9 @@ class PhBar extends AlgorithmsScript {
             }
         }
 
+        for (int i = 0; i < 0; i++){
+            files[i].delete()
+        }
         return this
     }
 }
