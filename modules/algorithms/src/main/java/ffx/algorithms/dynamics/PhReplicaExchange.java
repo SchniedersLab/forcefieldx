@@ -94,14 +94,14 @@ public class PhReplicaExchange implements Terminatable {
   private final DoubleBuf myParametersBuf;
   private final int[] pH2Rank;
   private final int[] rank2Ph;
-  private double[] pHScale;
+  private final double[] pHScale;
   private final int[] pHAcceptedCount;
   private final int[] rankAcceptedCount;
   private final int[] pHTrialCount;
   private final double temp;
   private final ExtendedSystem extendedSystem;
   private final double pH;
-  private double gapSize;
+  private final double gapSize;
   private double[] x;
   private MolecularDynamicsOpenMM openMM = null;
   private Potential potential;
@@ -113,7 +113,7 @@ public class PhReplicaExchange implements Terminatable {
    * @param pH pH = pKa <-- will be changed from this initial value
    * @param extendedSystem extended system attached to this process
    * @param pHGap the gap in pH units between replicas
-   * @param temp
+   * @param temp temperature of replica
    */
   public PhReplicaExchange(
       MolecularDynamics molecularDynamics, double pH, double pHGap, double temp, ExtendedSystem extendedSystem) {
@@ -171,7 +171,7 @@ public class PhReplicaExchange implements Terminatable {
    * @param pH pH = pKa <-- will be changed from this initial value
    * @param extendedSystem extended system attached to this process
    * @param pHGap the gap in pH units between replicas
-   * @param temp
+   * @param temp temperature of replica
    * @param x array of coordinates
    * @param molecularDynamicsOpenMM for running config steps on GPU
    */
@@ -205,6 +205,7 @@ public class PhReplicaExchange implements Terminatable {
     pHTrialCount = new int[nReplicas];
 
     setEvenSpacePhLadder(pHGap);
+    extendedSystem.setConstantPh(pHScale[rank]);
 
     random = new Random();
     random.setSeed(0);
@@ -244,6 +245,12 @@ public class PhReplicaExchange implements Terminatable {
     if(extendedSystem.guessTitrState){
       extendedSystem.reGuessLambdas();
     }
+
+    if(initTitrDynamics > 0) {
+      replica.dynamic(initTitrDynamics, timeStep,
+              printInterval, saveInterval, temp, true, null);
+    }
+
     for (int i = 0; i < cycles; i++) {
       // Check for termination request.
       if (terminate) {

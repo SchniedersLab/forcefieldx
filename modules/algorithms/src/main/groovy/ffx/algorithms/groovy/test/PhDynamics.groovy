@@ -236,11 +236,6 @@ class PhDynamics extends AlgorithmsScript {
           exchangeCycles = 1
         }
 
-        if(!init){
-          initTitrDynamics = 0
-        }
-
-
         pHReplicaExchange.
                 sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
 
@@ -320,13 +315,8 @@ class PhDynamics extends AlgorithmsScript {
           exchangeCycles = 1
         }
 
-        if(!init){
-          initTitrDynamics = 0
-        }
-
         pHReplicaExchange.
                 sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
-
 
         String outputName = rankDirectory.getPath() + File.separator + "rankOutput.log"
         File output = new File(outputName)
