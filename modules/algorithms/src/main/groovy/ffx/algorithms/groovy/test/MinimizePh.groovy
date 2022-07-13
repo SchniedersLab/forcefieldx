@@ -49,6 +49,7 @@ import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.extended.ExtendedSystem
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
+import ffx.potential.parsers.XPHFilter
 import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine
@@ -144,11 +145,18 @@ class MinimizePh extends AlgorithmsScript {
     forceFieldEnergy.attachExtendedSystem(esvSystem)
     logger.info(format(" Attached extended system with %d residues.", numESVs))
 
-    SystemFilter systemFilter = algorithmFunctions.getFilter()
-
     double[] x = new double[forceFieldEnergy.getNumberOfVariables()]
     forceFieldEnergy.getCoordinates(x)
     forceFieldEnergy.energy(x, true)
+
+    SystemFilter systemFilter = algorithmFunctions.getFilter()
+    if(systemFilter instanceof XYZFilter){
+      XPHFilter xphFilter = new XPHFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties(), esvSystem)
+      xphFilter.readFile()
+      logger.info("Reading ESV lambdas from XPH file")
+      forceFieldEnergy.getCoordinates(x)
+      forceFieldEnergy.energy(x, true)
+    }
     PhMinimize minimize = new PhMinimize(activeAssembly, forceFieldEnergy, algorithmListener, esvSystem)
 
     double energy = minimize.getEnergy()
