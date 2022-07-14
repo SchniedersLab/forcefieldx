@@ -424,7 +424,7 @@ public class PhReplicaExchange implements Terminatable {
 
     int i = rank2Ph[rank];
     extendedSystem.setConstantPh(pHScale[i]);
-    extendedSystem.copyESVHistogramTo(parametersHis[i]);
+    extendedSystem.copyESVHistogramTo(parametersHis[rank]);
 
     // Start this processes MolecularDynamics instance sampling.
     boolean initVelocities = true;
@@ -462,7 +462,7 @@ public class PhReplicaExchange implements Terminatable {
 
     extendedSystem.setConstantPh(myParameters[0]);
 
-    extendedSystem.getESVHistogram(parametersHis[i]);
+    extendedSystem.getESVHistogram(parametersHis[rank]);
     extendedSystem.writeLambdaHistogram();
 
     // Gather all parameters from the other processes.
