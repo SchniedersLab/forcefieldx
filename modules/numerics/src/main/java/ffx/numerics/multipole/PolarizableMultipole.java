@@ -120,6 +120,12 @@ public class PolarizableMultipole {
   protected double sz;
 
   /**
+   * PolarizableMultipole constructor with zero moments.
+   */
+  public PolarizableMultipole() {
+  }
+
+  /**
    * PolarizableMultipole constructor.
    *
    * @param Q Multipole Q[q, dx, dy, dz, qxx, qyy, qzz, qxy, qxz, qyz]

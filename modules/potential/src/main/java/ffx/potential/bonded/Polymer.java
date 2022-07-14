@@ -447,11 +447,12 @@ public class Polymer extends MSGroup {
    * @param defaultRT Default ResidueType if it cannot be assigned.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
-  public Residue getResidue(
-      String resName, int resNum, boolean create, ResidueType defaultRT) {
+  public Residue getResidue(String resName, int resNum, boolean create, ResidueType defaultRT) {
     for (Enumeration<TreeNode> e = getAtomNode().children(); e.hasMoreElements(); ) {
       Residue r = (Residue) e.nextElement();
       if (r.getResidueNumber() == resNum && r.getName().equalsIgnoreCase(resName)) {
+        return r;
+      } else if(resName.equals(AminoAcidUtils.AminoAcid3.UNK.name()) && resNum == r.getResidueNumber()){
         return r;
       }
     }

@@ -615,7 +615,7 @@ public abstract class MultipoleTensor {
   /**
    * Generate the tensor using hard-coded methods or via recursion.
    */
-  protected void generateTensor() {
+  public void generateTensor() {
     switch (order) {
       case 1:
         order1();

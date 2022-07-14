@@ -315,6 +315,11 @@ public class Rotamer {
             rotamers[0] = new Rotamer(AminoAcid3.LYS, resState, titrationUtils, vals);
             rotamers[1] = new Rotamer(AminoAcid3.LYD, resState, titrationUtils, vals);
             return rotamers;
+          case CYS:
+            rotamers = new Rotamer[2];
+            rotamers[0] = new Rotamer(AminoAcid3.CYS, resState, titrationUtils, vals);
+            rotamers[1] = new Rotamer(AminoAcid3.CYD, resState, titrationUtils, vals);
+            return rotamers;
           default:
             // Null TitrationUtils reference to indicates this residue does not support titration.
             rotamers = new Rotamer[1];
