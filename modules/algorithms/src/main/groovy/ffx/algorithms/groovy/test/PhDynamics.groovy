@@ -104,6 +104,10 @@ class PhDynamics extends AlgorithmsScript {
           description = 'pH gap between replica exchange windows.')
   double pHGap = 1
 
+  @Option(names = ['--initTitrDynamics'], paramLabel = '1000',
+          description = 'Number of initialization steps to take before replica exchange windows start.')
+  int initTitrDynamics = 1000
+
 
 
   /**
@@ -220,7 +224,7 @@ class PhDynamics extends AlgorithmsScript {
         final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
-        File esvRestart = new File(rankDirectory.getPath() + File.separator + FilenameUtils.removeExtension(filename) + ".esv")
+        File esvRestart = new File(rankDirectory.getPath() + File.separator + structureFile.getName() + ".esv")
         esvSystem.setESVFile(esvRestart)
         PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, pHGap, dynamicsOptions.temperature, esvSystem)
 
@@ -233,7 +237,7 @@ class PhDynamics extends AlgorithmsScript {
         }
 
         pHReplicaExchange.
-                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
+                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
 
 
         String outputName = rankDirectory.getPath() + File.separator + "rankOutput.log"
@@ -312,8 +316,7 @@ class PhDynamics extends AlgorithmsScript {
         }
 
         pHReplicaExchange.
-                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write)
-
+                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
 
         String outputName = rankDirectory.getPath() + File.separator + "rankOutput.log"
         File output = new File(outputName)

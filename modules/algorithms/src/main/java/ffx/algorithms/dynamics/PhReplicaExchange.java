@@ -46,6 +46,7 @@ import ffx.numerics.Potential;
 import ffx.potential.extended.ExtendedSystem;
 import org.apache.commons.math3.util.FastMath;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
@@ -78,7 +79,6 @@ public class PhReplicaExchange implements Terminatable {
    */
   private final double[][] parameters;
   private final int[][][] parametersHis;
-  //private final int[][] myParametersHis;
   /**
    * Each parameter array is wrapped inside a Parallel Java DoubleBuf for the All-Gather
    * communication calls.
@@ -93,14 +93,14 @@ public class PhReplicaExchange implements Terminatable {
   private final DoubleBuf myParametersBuf;
   private final int[] pH2Rank;
   private final int[] rank2Ph;
-  private double[] pHScale;
+  private final double[] pHScale;
   private final int[] pHAcceptedCount;
   private final int[] rankAcceptedCount;
   private final int[] pHTrialCount;
   private final double temp;
   private final ExtendedSystem extendedSystem;
   private final double pH;
-  private double gapSize;
+  private final double gapSize;
   private double[] x;
   private MolecularDynamicsOpenMM openMM = null;
   private Potential potential;
@@ -112,7 +112,7 @@ public class PhReplicaExchange implements Terminatable {
    * @param pH pH = pKa <-- will be changed from this initial value
    * @param extendedSystem extended system attached to this process
    * @param pHGap the gap in pH units between replicas
-   * @param temp
+   * @param temp temperature of replica
    */
   public PhReplicaExchange(
       MolecularDynamics molecularDynamics, double pH, double pHGap, double temp, ExtendedSystem extendedSystem) {
@@ -140,6 +140,7 @@ public class PhReplicaExchange implements Terminatable {
     pHTrialCount = new int[nReplicas];
 
     setEvenSpacePhLadder(pHGap);
+    extendedSystem.setConstantPh(pHScale[rank]);
 
     random = new Random();
     random.setSeed(0);
@@ -169,7 +170,7 @@ public class PhReplicaExchange implements Terminatable {
    * @param pH pH = pKa <-- will be changed from this initial value
    * @param extendedSystem extended system attached to this process
    * @param pHGap the gap in pH units between replicas
-   * @param temp
+   * @param temp temperature of replica
    * @param x array of coordinates
    * @param molecularDynamicsOpenMM for running config steps on GPU
    */
@@ -203,6 +204,7 @@ public class PhReplicaExchange implements Terminatable {
     pHTrialCount = new int[nReplicas];
 
     setEvenSpacePhLadder(pHGap);
+    extendedSystem.setConstantPh(pHScale[rank]);
 
     random = new Random();
     random.setSeed(0);
@@ -235,13 +237,19 @@ public class PhReplicaExchange implements Terminatable {
    * @param saveInterval a double.
    */
   public void sample(
-      int cycles, long nSteps, double timeStep, double printInterval, double saveInterval) {
+      int cycles, long nSteps, double timeStep, double printInterval, double saveInterval, int initTitrDynamics) {
     done = false;
     terminate = false;
 
     if(extendedSystem.guessTitrState){
       extendedSystem.reGuessLambdas();
     }
+
+    if(initTitrDynamics > 0) {
+      replica.dynamic(initTitrDynamics, timeStep,
+              printInterval, saveInterval, temp, true, null);
+    }
+
     for (int i = 0; i < cycles; i++) {
       // Check for termination request.
       if (terminate) {
