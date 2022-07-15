@@ -1142,6 +1142,18 @@ public abstract class MultipoleTensor {
   }
 
   /**
+   * Contract an induced dipole with the potential and its derivatives.
+   *
+   * @param m PolarizableMultipole at the site of the potential.
+   * @return The polarization energy.
+   */
+  protected final double polarizationEnergyS(PolarizableMultipole m) {
+    // E = -1/2 * u.E
+    // No negative sign because the field E = [-E100, -E010, -E001].
+    return 0.5 * (m.sx * E100 + m.sy * E010 + m.sz * E001);
+  }
+
+  /**
    * Load the tensor components.
    *
    * @param T an array of {@link double} objects.

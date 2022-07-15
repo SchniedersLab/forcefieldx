@@ -280,9 +280,6 @@ public class GKTensorGlobalTest {
     PolarizableMultipole mI = new PolarizableMultipole(multI, uI, uI);
     PolarizableMultipole mK = new PolarizableMultipole(multK, uK, uK);
 
-    mI.applyMasks(1.0, 1.0);
-    mK.applyMasks(1.0, 1.0);
-
     double[] gradI = new double[3];
     double[] torqueI = new double[3];
     double[] torqueK = new double[3];
@@ -357,9 +354,6 @@ public class GKTensorGlobalTest {
   public void polarizationEnergyAndGradientDirectTest() {
     PolarizableMultipole mI = new PolarizableMultipole(multI, uIDirect, uIDirect);
     PolarizableMultipole mK = new PolarizableMultipole(multK, uKDirect, uKDirect);
-
-    mI.applyMasks(1.0, 1.0);
-    mK.applyMasks(1.0, 1.0);
 
     double[] gradI = new double[3];
     double[] torqueI = new double[3];

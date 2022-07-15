@@ -291,9 +291,6 @@ public class GKTensorQITest {
     qiFrame.rotatePolarizableMultipole(mI);
     qiFrame.rotatePolarizableMultipole(mK);
 
-    mI.applyMasks(1.0, 1.0);
-    mK.applyMasks(1.0, 1.0);
-
     double[] gradI = new double[3];
     double[] torqueI = new double[3];
     double[] torqueK = new double[3];
@@ -375,9 +372,6 @@ public class GKTensorQITest {
     QIFrame qiFrame = new QIFrame(rWater);
     qiFrame.rotatePolarizableMultipole(mI);
     qiFrame.rotatePolarizableMultipole(mK);
-
-    mI.applyMasks(1.0, 1.0);
-    mK.applyMasks(1.0, 1.0);
 
     double[] gradI = new double[3];
     double[] torqueI = new double[3];
