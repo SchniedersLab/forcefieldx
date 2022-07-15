@@ -615,7 +615,7 @@ public abstract class MultipoleTensor {
   /**
    * Generate the tensor using hard-coded methods or via recursion.
    */
-  protected void generateTensor() {
+  public void generateTensor() {
     switch (order) {
       case 1:
         order1();
@@ -1139,6 +1139,18 @@ public abstract class MultipoleTensor {
     // E = -1/2 * u.E
     // No negative sign because the field E = [-E100, -E010, -E001].
     return 0.5 * (m.ux * E100 + m.uy * E010 + m.uz * E001);
+  }
+
+  /**
+   * Contract an induced dipole with the potential and its derivatives.
+   *
+   * @param m PolarizableMultipole at the site of the potential.
+   * @return The polarization energy.
+   */
+  protected final double polarizationEnergyS(PolarizableMultipole m) {
+    // E = -1/2 * u.E
+    // No negative sign because the field E = [-E100, -E010, -E001].
+    return 0.5 * (m.sx * E100 + m.sy * E010 + m.sz * E001);
   }
 
   /**

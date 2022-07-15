@@ -38,6 +38,12 @@
 package ffx.numerics.multipole;
 
 import static ffx.numerics.math.DoubleMath.length;
+import static ffx.numerics.math.DoubleMath.length2;
+import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.DIPOLE;
+import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.MONOPOLE;
+import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.QUADRUPOLE;
+import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.BORN;
+import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.POTENTIAL;
 import static ffx.numerics.multipole.GKTensorGlobalTest.bornI;
 import static ffx.numerics.multipole.GKTensorGlobalTest.bornK;
 import static ffx.numerics.multipole.GKTensorGlobalTest.multI;
@@ -62,13 +68,9 @@ import static ffx.numerics.multipole.GKTensorGlobalTest.uKDirect;
 import static ffx.numerics.multipole.GKTensorGlobalTest.watPermEnergy;
 import static ffx.numerics.multipole.GKTensorGlobalTest.watPolDirect;
 import static ffx.numerics.multipole.GKTensorGlobalTest.watPolEnergy;
-import static ffx.numerics.multipole.GKTensorQI.GK_MULTIPOLE_ORDER.DIPOLE;
-import static ffx.numerics.multipole.GKTensorQI.GK_MULTIPOLE_ORDER.MONOPOLE;
-import static ffx.numerics.multipole.GKTensorQI.GK_MULTIPOLE_ORDER.QUADRUPOLE;
 import static org.junit.Assert.assertEquals;
 
-import ffx.numerics.multipole.GKTensorQI.GK_MULTIPOLE_ORDER;
-import ffx.numerics.multipole.GKTensorQI.GK_TENSOR_MODE;
+import ffx.numerics.multipole.GKSource.GK_TENSOR_MODE;
 import org.junit.Test;
 
 /**
@@ -82,7 +84,6 @@ public class GKTensorQITest {
 
   private final double tolerance = 1.0e-9;
   private final double fdTolerance = 1.0e-6;
-
   private static final double gc = 2.455;
   private static final double Eh = 1.0;
   private static final double Es = 78.3;
@@ -98,24 +99,28 @@ public class GKTensorQITest {
     qiFrame.rotatePolarizableMultipole(mI);
     qiFrame.rotatePolarizableMultipole(mK);
 
+    double r2 = length2(rWater);
+    GKSource gkSource = new GKSource(5, gc);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
+
     // Apply the GK monopole tensor.
     int order = 2;
-    GKTensorQI monopoleGK = new GKTensorQI(MONOPOLE, order, gc, Eh, Es);
-    monopoleGK.setR(rWater, bornI, bornK);
+    GKTensorQI monopoleGK = new GKTensorQI(MONOPOLE, order, gkSource, Eh, Es);
+    monopoleGK.setR(rWater);
     monopoleGK.generateTensor();
     double c = monopoleGK.multipoleEnergy(mI, mK);
 
     // Apply the GK dipole tensor.
     order = 3;
-    GKTensorQI dipoleGK = new GKTensorQI(DIPOLE, order, gc, Eh, Es);
-    dipoleGK.setR(rWater, bornI, bornK);
+    GKTensorQI dipoleGK = new GKTensorQI(DIPOLE, order, gkSource, Eh, Es);
+    dipoleGK.setR(rWater);
     dipoleGK.generateTensor();
     double d = dipoleGK.multipoleEnergy(mI, mK);
 
     // Apply the GK quadrupole tensor.
     order = 4;
-    GKTensorQI quadrupoleGK = new GKTensorQI(QUADRUPOLE, order, gc, Eh, Es);
-    quadrupoleGK.setR(rWater, bornI, bornK);
+    GKTensorQI quadrupoleGK = new GKTensorQI(QUADRUPOLE, order, gkSource, Eh, Es);
+    quadrupoleGK.setR(rWater);
     quadrupoleGK.generateTensor();
     double q = quadrupoleGK.multipoleEnergy(mI, mK);
 
@@ -140,22 +145,23 @@ public class GKTensorQITest {
     double[] tempTorqueI = new double[3];
     double[] tempTorqueK = new double[3];
 
+    double r2 = length2(rWater);
+    GKSource gkSource = new GKSource(6, gc);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
+
     // Apply the GK monopole tensor.
     int order = 3;
-    GKTensorQI gkMonopoleTensor = new GKTensorQI(MONOPOLE, order, gc, Eh, Es);
-    gkMonopoleTensor.setR(rWater, bornI, bornK);
+    GKTensorQI gkMonopoleTensor = new GKTensorQI(MONOPOLE, order, gkSource, Eh, Es);
+    gkMonopoleTensor.setR(rWater);
     gkMonopoleTensor.generateTensor();
     double e = gkMonopoleTensor.multipoleEnergyAndGradient(mI, mK, gradI, gradK, torqueI, torqueK);
-    double db = gkMonopoleTensor.multipoleEnergyBornGrad(mI, mK);
 
     // Apply the GK dipole tensor.
     order = 4;
-    GKTensorQI gkDipoleTensor = new GKTensorQI(DIPOLE, order, gc, Eh, Es);
-    gkDipoleTensor.setR(rWater, bornI, bornK);
+    GKTensorQI gkDipoleTensor = new GKTensorQI(DIPOLE, order, gkSource, Eh, Es);
+    gkDipoleTensor.setR(rWater);
     gkDipoleTensor.generateTensor();
-    e += gkDipoleTensor.multipoleEnergyAndGradient(mI, mK, tempGradI, tempGradK, tempTorqueI,
-        tempTorqueK);
-    db += gkDipoleTensor.multipoleEnergyBornGrad(mI, mK);
+    e += gkDipoleTensor.multipoleEnergyAndGradient(mI, mK, tempGradI, tempGradK, tempTorqueI, tempTorqueK);
 
     for (int i = 0; i < 3; i++) {
       gradI[i] += tempGradI[i];
@@ -168,12 +174,10 @@ public class GKTensorQITest {
 
     // Apply the GK quadrupole tensor.
     order = 5;
-    GKTensorQI gkQuadrupoleTensor = new GKTensorQI(GK_MULTIPOLE_ORDER.QUADRUPOLE, order, gc, Eh, Es);
-    gkQuadrupoleTensor.setR(rWater, bornI, bornK);
+    GKTensorQI gkQuadrupoleTensor = new GKTensorQI(QUADRUPOLE, order, gkSource, Eh, Es);
+    gkQuadrupoleTensor.setR(rWater);
     gkQuadrupoleTensor.generateTensor();
-    e += gkQuadrupoleTensor.multipoleEnergyAndGradient(mI, mK, tempGradI, tempGradK, tempTorqueI,
-        tempTorqueK);
-    db += gkQuadrupoleTensor.multipoleEnergyBornGrad(mI, mK);
+    e += gkQuadrupoleTensor.multipoleEnergyAndGradient(mI, mK, tempGradI, tempGradK, tempTorqueI, tempTorqueK);
 
     for (int i = 0; i < 3; i++) {
       gradI[i] += tempGradI[i];
@@ -181,6 +185,11 @@ public class GKTensorQITest {
       torqueI[i] += tempTorqueI[i];
       torqueK[i] += tempTorqueK[i];
     }
+
+    gkSource.generateSource(BORN, QUADRUPOLE, r2, bornI, bornK);
+    double db = gkMonopoleTensor.multipoleEnergyBornGrad(mI, mK);
+    db += gkDipoleTensor.multipoleEnergyBornGrad(mI, mK);
+    db += gkQuadrupoleTensor.multipoleEnergyBornGrad(mI, mK);
 
     qiFrame.toGlobal(gradI);
     qiFrame.toGlobal(torqueI);
@@ -208,24 +217,28 @@ public class GKTensorQITest {
     qiFrame.rotatePolarizableMultipole(mI);
     qiFrame.rotatePolarizableMultipole(mK);
 
+    double r2 = length2(rWater);
+    GKSource gkSource = new GKSource(6, gc);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
+
     // Apply the GK monopole tensor.
     int order = 2;
-    GKTensorQI gkMonopoleTensor = new GKTensorQI(MONOPOLE, order, gc, Eh, Es);
-    gkMonopoleTensor.setR(rWater, bornI, bornK);
+    GKTensorQI gkMonopoleTensor = new GKTensorQI(MONOPOLE, order, gkSource, Eh, Es);
+    gkMonopoleTensor.setR(rWater);
     gkMonopoleTensor.generateTensor();
     double c = gkMonopoleTensor.polarizationEnergy(mI, mK);
 
     // Apply the GK dipole tensor.
     order = 3;
-    GKTensorQI gkDipoleTensor = new GKTensorQI(DIPOLE, order, gc, Eh, Es);
-    gkDipoleTensor.setR(rWater, bornI, bornK);
+    GKTensorQI gkDipoleTensor = new GKTensorQI(DIPOLE, order, gkSource, Eh, Es);
+    gkDipoleTensor.setR(rWater);
     gkDipoleTensor.generateTensor();
     double d = gkDipoleTensor.polarizationEnergy(mI, mK);
 
     // Apply the GK quadrupole tensor.
     order = 4;
-    GKTensorQI gkQuadrupoleTensor = new GKTensorQI(QUADRUPOLE, order, gc, Eh, Es);
-    gkQuadrupoleTensor.setR(rWater, bornI, bornK);
+    GKTensorQI gkQuadrupoleTensor = new GKTensorQI(QUADRUPOLE, order, gkSource, Eh, Es);
+    gkQuadrupoleTensor.setR(rWater);
     gkQuadrupoleTensor.generateTensor();
     double q = gkQuadrupoleTensor.polarizationEnergy(mI, mK);
 
@@ -241,24 +254,28 @@ public class GKTensorQITest {
     qiFrame.rotatePolarizableMultipole(mI);
     qiFrame.rotatePolarizableMultipole(mK);
 
+    double r2 = length2(rWater);
+    GKSource gkSource = new GKSource(5, gc);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
+
     // Apply the GK monopole tensor.
     int order = 1; // Induced Dipole - Monopole Energy.
-    GKTensorQI gkMonopoleTensor = new GKTensorQI(MONOPOLE, order, gc, Eh, Es);
-    gkMonopoleTensor.setR(rWater, bornI, bornK);
+    GKTensorQI gkMonopoleTensor = new GKTensorQI(MONOPOLE, order, gkSource, Eh, Es);
+    gkMonopoleTensor.setR(rWater);
     gkMonopoleTensor.generateTensor();
     double c = gkMonopoleTensor.polarizationEnergy(mI, mK);
 
     // Apply the GK dipole tensor.
     order = 3; // Induced Dipole - Quadrupole Energy.
-    GKTensorQI gkDipoleTensor = new GKTensorQI(DIPOLE, order, gc, Eh, Es);
-    gkDipoleTensor.setR(rWater, bornI, bornK);
+    GKTensorQI gkDipoleTensor = new GKTensorQI(DIPOLE, order, gkSource, Eh, Es);
+    gkDipoleTensor.setR(rWater);
     gkDipoleTensor.generateTensor();
     double d = gkDipoleTensor.polarizationEnergy(mI, mK);
 
     // Apply the GK quadrupole tensor.
     order = 3; // Induced Dipole - Quadrupole Energy.
-    GKTensorQI gkQuadrupoleTensor = new GKTensorQI(QUADRUPOLE, order, gc, Eh, Es);
-    gkQuadrupoleTensor.setR(rWater, bornI, bornK);
+    GKTensorQI gkQuadrupoleTensor = new GKTensorQI(QUADRUPOLE, order, gkSource, Eh, Es);
+    gkQuadrupoleTensor.setR(rWater);
     gkQuadrupoleTensor.generateTensor();
     double q = gkQuadrupoleTensor.polarizationEnergy(mI, mK);
 
@@ -274,9 +291,6 @@ public class GKTensorQITest {
     qiFrame.rotatePolarizableMultipole(mI);
     qiFrame.rotatePolarizableMultipole(mK);
 
-    mI.applyMasks(1.0, 1.0);
-    mK.applyMasks(1.0, 1.0);
-
     double[] gradI = new double[3];
     double[] torqueI = new double[3];
     double[] torqueK = new double[3];
@@ -284,26 +298,25 @@ public class GKTensorQITest {
     double[] tempTorqueI = new double[3];
     double[] tempTorqueK = new double[3];
 
+    double r2 = length2(rWater);
+    GKSource gkSource = new GKSource(6, gc);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
+    
     // Apply the GK monopole tensor.
     int order = 2; // Induced Dipole - Monopole Energy Gradient.
-    GKTensorQI gkMonopoleTensor = new GKTensorQI(MONOPOLE, order, gc, Eh, Es);
-    gkMonopoleTensor.setR(rWater, bornI, bornK);
+    GKTensorQI gkMonopoleTensor = new GKTensorQI(MONOPOLE, order, gkSource, Eh, Es);
+    gkMonopoleTensor.setR(rWater);
     gkMonopoleTensor.generateTensor();
     double c = gkMonopoleTensor.polarizationEnergyAndGradient(mI, mK,
         1.0, 1.0, 1.0, gradI, torqueI, torqueK);
-    double db = gkMonopoleTensor.polarizationEnergyBornGrad(mI, mK);
-
+    
     // Apply the GK dipole tensor.
     order = 4; // Induced Dipole - Quadrupole Energy Gradient.
-    GKTensorQI gkDipoleTensor = new GKTensorQI(DIPOLE, order, gc, Eh, Es);
-    gkDipoleTensor.setR(rWater, bornI, bornK);
+    GKTensorQI gkDipoleTensor = new GKTensorQI(DIPOLE, order, gkSource, Eh, Es);
+    gkDipoleTensor.setR(rWater);
     gkDipoleTensor.generateTensor();
     double d = gkDipoleTensor.polarizationEnergyAndGradient(mI, mK,
         1.0, 1.0, 1.0, tempGradI, tempTorqueI, tempTorqueK);
-    db += gkDipoleTensor.polarizationEnergyBornGrad(mI, mK);
-    // Add the mutual polarization contribution to Born chain-rule term.
-    db += gkDipoleTensor.mutualPolarizationEnergyBornGrad(mI, mK);
-
     for (int i = 0; i < 3; i++) {
       gradI[i] += tempGradI[i];
       torqueI[i] += tempTorqueI[i];
@@ -315,11 +328,17 @@ public class GKTensorQITest {
 
     // Apply the GK quadrupole tensor.
     order = 4; // Induced Dipole - Quadrupole Energy Gradient.
-    GKTensorQI gkQuadrupoleTensor = new GKTensorQI(QUADRUPOLE, order, gc, Eh, Es);
-    gkQuadrupoleTensor.setR(rWater, bornI, bornK);
+    GKTensorQI gkQuadrupoleTensor = new GKTensorQI(QUADRUPOLE, order, gkSource, Eh, Es);
+    gkQuadrupoleTensor.setR(rWater);
     gkQuadrupoleTensor.generateTensor();
     double q = gkQuadrupoleTensor.polarizationEnergyAndGradient(mI, mK,
         1.0, 1.0, 1.0, tempGradI, tempTorqueI, tempTorqueK);
+
+    gkSource.generateSource(BORN, QUADRUPOLE, r2, bornI, bornK);
+    double db = gkMonopoleTensor.polarizationEnergyBornGrad(mI, mK);
+    db += gkDipoleTensor.polarizationEnergyBornGrad(mI, mK);
+    // Add the mutual polarization contribution to Born chain-rule term.
+    db += gkDipoleTensor.mutualPolarizationEnergyBornGrad(mI, mK);
     db += gkQuadrupoleTensor.polarizationEnergyBornGrad(mI, mK);
 
     for (int i = 0; i < 3; i++) {
@@ -354,9 +373,6 @@ public class GKTensorQITest {
     qiFrame.rotatePolarizableMultipole(mI);
     qiFrame.rotatePolarizableMultipole(mK);
 
-    mI.applyMasks(1.0, 1.0);
-    mK.applyMasks(1.0, 1.0);
-
     double[] gradI = new double[3];
     double[] torqueI = new double[3];
     double[] torqueK = new double[3];
@@ -364,24 +380,26 @@ public class GKTensorQITest {
     double[] tempTorqueI = new double[3];
     double[] tempTorqueK = new double[3];
 
+    double r2 = length2(rWater);
+    GKSource gkSource = new GKSource(6, gc);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
+    
     // Apply the GK monopole tensor.
     int order = 2; // Induced Dipole - Monopole Energy Gradient.
-    GKTensorQI gkMonopoleTensor = new GKTensorQI(MONOPOLE, order, gc, Eh, Es);
-    gkMonopoleTensor.setR(rWater, bornI, bornK);
+    GKTensorQI gkMonopoleTensor = new GKTensorQI(MONOPOLE, order, gkSource, Eh, Es);
+    gkMonopoleTensor.setR(rWater);
     gkMonopoleTensor.generateTensor();
     double c = gkMonopoleTensor.polarizationEnergyAndGradient(mI, mK,
         1.0, 1.0, 0.0, gradI, torqueI, torqueK);
-    double db = gkMonopoleTensor.polarizationEnergyBornGrad(mI, mK);
+
 
     // Apply the GK dipole tensor.
     order = 4; // Induced Dipole - Quadrupole Energy Gradient.
-    GKTensorQI gkDipoleTensor = new GKTensorQI(DIPOLE, order, gc, Eh, Es);
-    gkDipoleTensor.setR(rWater, bornI, bornK);
+    GKTensorQI gkDipoleTensor = new GKTensorQI(DIPOLE, order, gkSource, Eh, Es);
+    gkDipoleTensor.setR(rWater);
     gkDipoleTensor.generateTensor();
     double d = gkDipoleTensor.polarizationEnergyAndGradient(mI, mK,
         1.0, 1.0, 0.0, tempGradI, tempTorqueI, tempTorqueK);
-    db += gkDipoleTensor.polarizationEnergyBornGrad(mI, mK);
-
     for (int i = 0; i < 3; i++) {
       gradI[i] += tempGradI[i];
       torqueI[i] += tempTorqueI[i];
@@ -393,11 +411,15 @@ public class GKTensorQITest {
 
     // Apply the GK quadrupole tensor.
     order = 4; // Induced Dipole - Quadrupole Energy Gradient.
-    GKTensorQI gkQuadrupoleTensor = new GKTensorQI(QUADRUPOLE, order, gc, Eh, Es);
-    gkQuadrupoleTensor.setR(rWater, bornI, bornK);
+    GKTensorQI gkQuadrupoleTensor = new GKTensorQI(QUADRUPOLE, order, gkSource, Eh, Es);
+    gkQuadrupoleTensor.setR(rWater);
     gkQuadrupoleTensor.generateTensor();
     double q = gkQuadrupoleTensor.polarizationEnergyAndGradient(mI, mK,
         1.0, 1.0, 0.0, tempGradI, tempTorqueI, tempTorqueK);
+
+    gkSource.generateSource(BORN, QUADRUPOLE, r2, bornI, bornK);
+    double db = gkMonopoleTensor.polarizationEnergyBornGrad(mI, mK);
+    db += gkDipoleTensor.polarizationEnergyBornGrad(mI, mK);
     db += gkQuadrupoleTensor.polarizationEnergyBornGrad(mI, mK);
 
     for (int i = 0; i < 3; i++) {
@@ -425,18 +447,24 @@ public class GKTensorQITest {
   
   @Test
   public void tensorAuxiliaryTest() {
-    int order = 3;
-    GKTensorQI tensorQI = new GKTensorQI(MONOPOLE, order, gc, Eh, Es);
-    tensorQI.setR(r, Ai, Aj);
+    int order = 6;
+
+    double r2 = length2(r);
+    GKSource gkSource = new GKSource(order, gc);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, Ai, Aj);
+    
+    GKTensorQI tensorQI = new GKTensorQI(MONOPOLE, order, gkSource, Eh, Es);
+    tensorQI.setR(r);
     double[] work = new double[order + 1];
     tensorQI.source(work);
 
     // Test the "bn" method.
-    double bn0 = tensorQI.bn(0);
-    double bn1 = tensorQI.bn(1);
-    double bn2 = tensorQI.bn(2);
-    double bn3 = tensorQI.bn(3);
-    double bn4 = tensorQI.bn(4);
+    gkSource.bn(5);
+    double bn0 = gkSource.bn[0];
+    double bn1 = gkSource.bn[1];
+    double bn2 = gkSource.bn[2];
+    double bn3 = gkSource.bn[3];
+    double bn4 = gkSource.bn[4];
     double mapleBN0 = 0.4914375691;
     double mapleBN1 = -0.01651130007;
     double mapleBN2 = -0.01365916860;
@@ -449,10 +477,11 @@ public class GKTensorQITest {
     assertEquals("bn4", mapleBN4, bn4, tolerance);
 
     // Monopole potential and derivatives.
-    double A00 = tensorQI.anm(0, 0);
-    double A01 = tensorQI.anm(0, 1);
-    double A02 = tensorQI.anm(0, 2);
-    double A03 = tensorQI.anm(0, 3);
+    double c = GKSource.cn(0, Eh, Es);
+    double A00 = c * work[0];
+    double A01 = c * work[1];
+    double A02 = c * work[2];
+    double A03 = c * work[3];
     final double mapleA00 = -0.4319767286;
     final double mapleA01 = 0.05505753880;
     final double mapleA02 = -0.01542067105;
@@ -461,12 +490,13 @@ public class GKTensorQITest {
     assertEquals("A01", mapleA01, A01, tolerance);
     assertEquals("A02", mapleA02, A02, tolerance);
     assertEquals("A03", mapleA03, A03, tolerance);
-    // Monpole potential Born chain-rule derivatives.
-    tensorQI.setMode(GK_TENSOR_MODE.BORN);
+
+    // Monopole potential Born chain-rule derivatives.
+    gkSource.generateSource(BORN, QUADRUPOLE, r2, Ai, Aj);
     tensorQI.source(work);
-    double B00 = tensorQI.bnm(0, 0);
-    double B01 = tensorQI.bnm(0, 1);
-    double B02 = tensorQI.bnm(0, 2);
+    double B00 = c * work[0];
+    double B01 = c * work[1];
+    double B02 = c * work[2];
     final double mapleB00 = 0.04064563792;
     final double mapleB01 = -0.01690706430;
     final double mapleB02 = 0.008229167114;
@@ -475,15 +505,16 @@ public class GKTensorQITest {
     assertEquals("B02", mapleB02, B02, tolerance);
 
     // Dipole potential and derivatives.
-    order = 4;
     work = new double[order + 1];
-    tensorQI = new GKTensorQI(DIPOLE, order, gc, Eh, Es);
-    tensorQI.setR(r, Ai, Aj);
+    tensorQI = new GKTensorQI(DIPOLE, order, gkSource, Eh, Es);
+    tensorQI.setR(r);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, Ai, Aj);
     tensorQI.source(work);
-    double A10 = tensorQI.anm(1, 0);
-    double A11 = tensorQI.anm(1, 1);
-    double A12 = tensorQI.anm(1, 2);
-    double A13 = tensorQI.anm(1, 3);
+    c = GKSource.cn(1, Eh, Es);
+    double A10 = c * work[1];
+    double A11 = c * work[2];
+    double A12 = c * work[3];
+    double A13 = c * work[4];
     final double mapleA10 = 0.08218283800;
     final double mapleA11 = -0.03142380936;
     final double mapleA12 = 0.01681150454;
@@ -492,12 +523,13 @@ public class GKTensorQITest {
     assertEquals("A11", mapleA11, A11, tolerance);
     assertEquals("A12", mapleA12, A12, tolerance);
     assertEquals("A13", mapleA13, A13, tolerance);
+
     // Dipole potential Born chain-rule derivatives.
-    tensorQI.setMode(GK_TENSOR_MODE.BORN);
+    gkSource.generateSource(BORN, QUADRUPOLE, r2, Ai, Aj);
     tensorQI.source(work);
-    double B10 = tensorQI.bnm(1, 0);
-    double B11 = tensorQI.bnm(1, 1);
-    double B12 = tensorQI.bnm(1, 2);
+    double B10 = c * work[1];
+    double B11 = c * work[2];
+    double B12 = c * work[3];
     final double mapleB10 = -0.02319829046;
     final double mapleB11 = 0.01556309100;
     final double mapleB12 = -0.01202628190;
@@ -506,15 +538,16 @@ public class GKTensorQITest {
     assertEquals("B12", mapleB12, B12, tolerance);
 
     // Quadrupole potential and derivatives.
-    order = 5;
     work = new double[order + 1];
-    tensorQI = new GKTensorQI(QUADRUPOLE, order, gc, Eh, Es);
-    tensorQI.setR(r, Ai, Aj);
+    tensorQI = new GKTensorQI(QUADRUPOLE, order, gkSource, Eh, Es);
+    tensorQI.setR(r);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, Ai, Aj);
     tensorQI.source(work);
-    double A20 = tensorQI.anm(2, 0);
-    double A21 = tensorQI.anm(2, 1);
-    double A22 = tensorQI.anm(2, 2);
-    double A23 = tensorQI.anm(2, 3);
+    c = GKSource.cn(2, Eh, Es);
+    double A20 = c * work[2];
+    double A21 = c * work[3];
+    double A22 = c * work[4];
+    double A23 = c * work[5];
     final double mapleA20 = -0.04710532877;
     final double mapleA21 = 0.03001901831;
     final double mapleA22 = -0.02371209206;
@@ -523,12 +556,13 @@ public class GKTensorQITest {
     assertEquals("A21", mapleA21, A21, tolerance);
     assertEquals("A22", mapleA22, A22, tolerance);
     assertEquals("A23", mapleA23, A23, tolerance);
+
     // Quadrupole potential Born chain-rule derivatives.
-    tensorQI.setMode(GK_TENSOR_MODE.BORN);
+    gkSource.generateSource(BORN, QUADRUPOLE, r2, Ai, Aj);
     tensorQI.source(work);
-    double B20 = tensorQI.bnm(2, 0);
-    double B21 = tensorQI.bnm(2, 1);
-    double B22 = tensorQI.bnm(2, 2);
+    double B20 = c * work[2];
+    double B21 = c * work[3];
+    double B22 = c * work[4];
     final double mapleB20 = 0.02216121853;
     final double mapleB21 = -0.02051645869;
     final double mapleB22 = 0.02137054028;
@@ -539,17 +573,21 @@ public class GKTensorQITest {
 
   @Test
   public void chargeTensorTest() {
+
+    double r2 = length2(r);
+    GKSource gkSource = new GKSource(3, gc);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
+
     // Monopole potential and derivatives.
     int order = 3;
-    GKTensorQI gkMonopoleTensor = new GKTensorQI(MONOPOLE, order, gc, Eh, Es);
-    gkMonopoleTensor.setR(r, Ai, Aj);
+    GKTensorQI gkMonopoleTensor = new GKTensorQI(MONOPOLE, order, gkSource, Eh, Es);
+    gkMonopoleTensor.setR(r);
     double[] work = new double[order + 1];
     gkMonopoleTensor.source(work);
-
-    double A00 = gkMonopoleTensor.anm(0, 0);
-    double A01 = gkMonopoleTensor.anm(0, 1);
-    double A02 = gkMonopoleTensor.anm(0, 2);
-    double A03 = gkMonopoleTensor.anm(0, 3);
+    double A00 = work[0];
+    double A01 = work[1];
+    double A02 = work[2];
+    double A03 = work[3];
     gkMonopoleTensor.generateTensor();
 
     double z = length(r);
@@ -559,11 +597,12 @@ public class GKTensorQITest {
     assertEquals("R003", z * z * z * A03 + 3.0 * z * A02, gkMonopoleTensor.R003, tolerance);
 
     // Check Born radii chain rule terms.
-    gkMonopoleTensor.setMode(GK_TENSOR_MODE.BORN);
+    gkSource.generateSource(BORN, QUADRUPOLE, r2, bornI, bornK);
+    gkMonopoleTensor.source(work);
+    double B00 = work[0];
+    double B01 = work[1];
+    double B02 = work[2];
     gkMonopoleTensor.generateTensor();
-    double B00 = gkMonopoleTensor.bnm(0, 0);
-    double B01 = gkMonopoleTensor.bnm(0, 1);
-    double B02 = gkMonopoleTensor.bnm(0, 2);
     assertEquals("B000", B00, gkMonopoleTensor.R000, tolerance);
     assertEquals("B001", z * B01, gkMonopoleTensor.R001, tolerance);
     assertEquals("B002", z * z * B02 + B01, gkMonopoleTensor.R002, tolerance);
@@ -571,17 +610,20 @@ public class GKTensorQITest {
 
   @Test
   public void dipoleTensorTest() {
+    double r2 = length2(r);
+    GKSource gkSource = new GKSource(4, gc);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
+
     // Dipole potential and derivatives.
     int order = 4;
-    GKTensorQI gkDipoleTensor = new GKTensorQI(DIPOLE, order, gc, Eh, Es);
-    gkDipoleTensor.setR(r, Ai, Aj);
+    GKTensorQI gkDipoleTensor = new GKTensorQI(DIPOLE, order, gkSource, Eh, Es);
+    gkDipoleTensor.setR(r);
     double[] work = new double[order + 1];
     gkDipoleTensor.source(work);
-
-    double A10 = gkDipoleTensor.anm(1, 0);
-    double A11 = gkDipoleTensor.anm(1, 1);
-    double A12 = gkDipoleTensor.anm(1, 2);
-    double A13 = gkDipoleTensor.anm(1, 3);
+    double A10 = work[1];
+    double A11 = work[2];
+    double A12 = work[3];
+    double A13 = work[4];
     gkDipoleTensor.generateTensor();
 
     // No charge potential.
@@ -595,11 +637,12 @@ public class GKTensorQITest {
         tolerance);
 
     // Check Born radii chain rule terms.
-    gkDipoleTensor.setMode(GK_TENSOR_MODE.BORN);
+    gkSource.generateSource(BORN, QUADRUPOLE, r2, bornI, bornK);
+    gkDipoleTensor.source(work);
+    double B10 = work[1];
+    double B11 = work[2];
+    double B12 = work[3];
     gkDipoleTensor.generateTensor();
-    double B10 = gkDipoleTensor.bnm(1, 0);
-    double B11 = gkDipoleTensor.bnm(1, 1);
-    double B12 = gkDipoleTensor.bnm(1, 2);
     assertEquals("B001", z * B10, gkDipoleTensor.R001, tolerance);
     assertEquals("B002", z * z * B11 + B10, gkDipoleTensor.R002, tolerance);
     assertEquals("B003", z * z * z * B12 + 3.0 * z * B11, gkDipoleTensor.R003, tolerance);
@@ -607,17 +650,20 @@ public class GKTensorQITest {
 
   @Test
   public void quadrupoleTensorTest() {
+    double r2 = length2(r);
+    GKSource gkSource = new GKSource(4, gc);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
+
     // Quadrupole potential and derivatives.
     int order = 5;
-    GKTensorQI gkQuadrupoleTensor = new GKTensorQI(QUADRUPOLE, order, gc, Eh, Es);
-    gkQuadrupoleTensor.setR(r, Ai, Aj);
+    GKTensorQI gkQuadrupoleTensor = new GKTensorQI(QUADRUPOLE, order, gkSource, Eh, Es);
+    gkQuadrupoleTensor.setR(r);
     double[] work = new double[order + 1];
     gkQuadrupoleTensor.source(work);
-
-    double A20 = gkQuadrupoleTensor.anm(2, 0);
-    double A21 = gkQuadrupoleTensor.anm(2, 1);
-    double A22 = gkQuadrupoleTensor.anm(2, 2);
-    double A23 = gkQuadrupoleTensor.anm(2, 3);
+    double A20 = work[2];
+    double A21 = work[3];
+    double A22 = work[4];
+    double A23 = work[5];
     gkQuadrupoleTensor.generateTensor();
 
     // No charge potential.
@@ -656,11 +702,13 @@ public class GKTensorQITest {
     assertEquals("R311", 0.0, gkQuadrupoleTensor.R311, tolerance);
 
     // Check Born radii chain rule terms.
-    gkQuadrupoleTensor.setMode(GK_TENSOR_MODE.BORN);
+    gkSource.generateSource(BORN, QUADRUPOLE, r2, bornI, bornK);
+    gkQuadrupoleTensor.source(work);
+    double B20 = work[2];
+    double B21 = work[3];
+    double B22 = work[4];
     gkQuadrupoleTensor.generateTensor();
-    double B20 = gkQuadrupoleTensor.bnm(2, 0);
-    double B21 = gkQuadrupoleTensor.bnm(2, 1);
-    double B22 = gkQuadrupoleTensor.bnm(2, 2);
+
     // No charge or dipole potential.
     assertEquals("B000", 0.0, gkQuadrupoleTensor.R000, tolerance);
     assertEquals("B100", 0.0, gkQuadrupoleTensor.R100, tolerance);
@@ -679,13 +727,17 @@ public class GKTensorQITest {
 
   @Test
   public void chargeFiniteDifferenceTest() {
-    int order = 6;
-    GKTensorQI gkTensorQI = new GKTensorQI(MONOPOLE, order, gc, Eh, Es);
     double[] r = {0.7, 0.8, 0.9};
     r[2] = length(r);
     r[0] = 0.0;
     r[1] = 0.0;
-    gkTensorQI.setR(r, Ai, Aj);
+    int order = 6;
+    GKSource gkSource = new GKSource(order, gc);
+    double r2 = length2(r);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
+    GKTensorQI gkTensorQI = new GKTensorQI(MONOPOLE, order, gkSource, Eh, Es);
+
+    gkTensorQI.setR(r);
     int tensorCount = MultipoleTensor.tensorCount(order);
     double[] tensor = new double[tensorCount];
     gkTensorQI.noStorageRecursion(tensor);
@@ -695,36 +747,47 @@ public class GKTensorQITest {
     double delta2 = delta * 2;
 
     r[2] += delta;
-    gkTensorQI.setR(r, Ai, Aj);
+    r2 = length2(r);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
+    gkTensorQI.setR(r);
     gkTensorQI.noStorageRecursion(tensorsPz);
     r[2] -= delta2;
-    gkTensorQI.setR(r, Ai, Aj);
+    r2 = length2(r);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
+    gkTensorQI.setR(r);
     gkTensorQI.noStorageRecursion(tensorsNz);
     r[2] += delta;
 
-    tensorFiniteDifference(gkTensorQI, delta2, order, tensor, tensorsPz, tensorsNz);
+    tensorFiniteDifference(gkTensorQI, delta2, 3, tensor, tensorsPz, tensorsNz);
 
     // Order(L^4) recursion.
-    gkTensorQI.setR(r, Ai, Aj);
+    r2 = length2(r);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
+    gkTensorQI.setR(r);
     gkTensorQI.recursion(tensor);
-    tensorFiniteDifference(gkTensorQI, delta2, order, tensor, tensorsPz, tensorsNz);
+    tensorFiniteDifference(gkTensorQI, delta2, 3, tensor, tensorsPz, tensorsNz);
 
     // Machine generated code.
-    gkTensorQI.setR(r, Ai, Aj);
+    gkTensorQI.setR(r);
     gkTensorQI.generateTensor();
     gkTensorQI.getTensor(tensor);
-    tensorFiniteDifference(gkTensorQI, delta2, order, tensor, tensorsPz, tensorsNz);
+    tensorFiniteDifference(gkTensorQI, delta2, 3, tensor, tensorsPz, tensorsNz);
   }
 
   @Test
   public void dipoleFiniteDifferenceTest() {
-    int order = 6;
-    GKTensorQI gkTensorQI = new GKTensorQI(DIPOLE, order, gc, Eh, Es);
+
     double[] r = {0.7, 0.8, 0.9};
     r[2] = length(r);
     r[0] = 0.0;
     r[1] = 0.0;
-    gkTensorQI.setR(r, Ai, Aj);
+    double r2 = length2(r);
+    int order = 6;
+    GKSource gkSource = new GKSource(order, gc);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
+
+    GKTensorQI gkTensorQI = new GKTensorQI(DIPOLE, order, gkSource, Eh, Es);
+    gkTensorQI.setR(r);
     int tensorCount = MultipoleTensor.tensorCount(order);
     double[] tensor = new double[tensorCount];
     gkTensorQI.noStorageRecursion(tensor);
@@ -734,25 +797,30 @@ public class GKTensorQITest {
     double delta2 = delta * 2;
 
     r[2] += delta;
-    gkTensorQI.setR(r, Ai, Aj);
+    r2 = length2(r);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
+    gkTensorQI.setR(r);
     gkTensorQI.noStorageRecursion(tensorsPz);
     r[2] -= delta2;
-    gkTensorQI.setR(r, Ai, Aj);
+    r2 = length2(r);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
+    gkTensorQI.setR(r);
     gkTensorQI.noStorageRecursion(tensorsNz);
     r[2] += delta;
-
-    tensorFiniteDifference(gkTensorQI, delta2, order, tensor, tensorsPz, tensorsNz);
+    tensorFiniteDifference(gkTensorQI, delta2, 3, tensor, tensorsPz, tensorsNz);
 
     // Order(L^4) recursion.
-    gkTensorQI.setR(r, Ai, Aj);
+    r2 = length2(r);
+    gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, bornI, bornK);
+    gkTensorQI.setR(r);
     gkTensorQI.recursion(tensor);
-    tensorFiniteDifference(gkTensorQI, delta2, order, tensor, tensorsPz, tensorsNz);
+    tensorFiniteDifference(gkTensorQI, delta2, 3, tensor, tensorsPz, tensorsNz);
 
     // Machine generated code.
-    gkTensorQI.setR(r, Ai, Aj);
+    gkTensorQI.setR(r);
     gkTensorQI.generateTensor();
     gkTensorQI.getTensor(tensor);
-    tensorFiniteDifference(gkTensorQI, delta2, order, tensor, tensorsPz, tensorsNz);
+    tensorFiniteDifference(gkTensorQI, delta2, 3, tensor, tensorsPz, tensorsNz);
   }
 
   private void tensorFiniteDifference(GKTensorQI gkTensorQI, double delta2, int order,

@@ -56,6 +56,15 @@ public class QIFrame {
   private double ir20, ir21, ir22;
 
   /**
+   * QIFrame constructor
+   *
+   * (dx = 0, dy = 0, dz = 1).
+   */
+  public QIFrame() {
+    setQIVector(0.0, 0.0, 1.0);
+  }
+
+  /**
    * QIFrame constructor.
    *
    * @param dx Separation along the x-axis.
@@ -195,9 +204,9 @@ public class QIFrame {
     double qyy = m.qyy;
     double qzz = m.qzz;
     // The Multipole class stores 2.0 times the off-diagonal components.
-    double qxy = m.qxy / 2.0;
-    double qxz = m.qxz / 2.0;
-    double qyz = m.qyz / 2.0;
+    double qxy = m.qxy * 0.5;
+    double qxz = m.qxz * 0.5;
+    double qyz = m.qyz * 0.5;
 
     m.qxx = r00 * (r00 * qxx + r01 * qxy + r02 * qxz)
         + r01 * (r00 * qxy + r01 * qyy + r02 * qyz)
