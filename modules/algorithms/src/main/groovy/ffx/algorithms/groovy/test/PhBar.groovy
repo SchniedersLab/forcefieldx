@@ -61,7 +61,7 @@ import static java.lang.String.format
 /**
  * The Thermodynamics script uses the BAR algorithm to estimate a free energy.
  * <br>
- * Usage:
+ * Usage: Umod calculation for model compounds
  * <br>
  * ffxc Thermodynamics [options] &lt;filename&gt [file2...];
  */
