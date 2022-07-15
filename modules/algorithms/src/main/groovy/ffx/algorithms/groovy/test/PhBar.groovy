@@ -48,6 +48,7 @@ import ffx.numerics.Potential
 import ffx.potential.bonded.Residue
 import ffx.potential.cli.WriteoutOptions
 import ffx.potential.extended.ExtendedSystem
+import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
@@ -220,6 +221,7 @@ class PhBar extends AlgorithmsScript {
             rankDirectory.mkdir()
         }
         final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
+        File newDynFile = new File(rankDirectory.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + ".dyn")
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
 
@@ -234,23 +236,51 @@ class PhBar extends AlgorithmsScript {
         if(natNMinusOne.exists() && natN.exists() && natNPlusOne.exists()){ //MolA should be set to the previous arc file
             logger.warning(" Initializing to last run. Since this program deletes these files on completion, runs in which these files already exist are assumed to be restarts.")
 
+            // Read in previous log files into this program
             for(int i = 0; i < 3; i++) {
                 try (FileReader fr = new FileReader(files[i])
                      BufferedReader br = new BufferedReader(fr)) {
                     String data = br.readLine()
                     while (data != null) {
-                        lists[i].add(Double.parseDouble(br.readLine()))
-                        data = br.readLine()
+                        if(myRank != 0 && myRank != world.size()-1) {
+                            lists[i].add(Double.parseDouble(data))
+                            data = br.readLine()
+                        } else if(myRank == 0) {
+                            if(i != 0){
+                                lists[i].add(Double.parseDouble(data))
+                                data = br.readLine()
+                            }
+                        } else {
+                            if(i != 2){
+                                lists[i].add(Double.parseDouble(data))
+                                data = br.readLine()
+                            }
+                        }
                     }
                 } catch (IOException e) {
                     e.printStackTrace()
                 }
             }
 
-            if(current.size() != next.size() || current.size() != previous.size()){
-                logger.severe(" Restart nAtN.log files are not of the same size")
-            } else {
-                logger.info(" Rank " + myRank + " starting from cycle" + current.size())
+            // Check that the program did not end unevenly
+            if(myRank != 0 && myRank != world.size()-1) {
+                if (current.size() != next.size() || current.size() != previous.size()) {
+                    logger.severe(" Restart nAtN.log files are not of the same size")
+                } else {
+                    logger.info(" Rank " + myRank + " starting from cycle " + (current.size()+1) + " of " + cycles)
+                }
+            } else if(myRank == 0){
+                if (current.size() != next.size()) {
+                    logger.severe(" Restart nAtN.log files are not of the same size")
+                } else {
+                    logger.info(" Rank " + myRank + " starting from cycle " + (current.size()+1) + " of " + cycles)
+                }
+            } else{
+                if (current.size() != previous.size()) {
+                    logger.severe(" Restart nAtN.log files are not of the same size")
+                } else {
+                    logger.info(" Rank " + myRank + " starting from cycle " + (current.size()+1) + " of " + cycles)
+                }
             }
         }
 
@@ -262,21 +292,25 @@ class PhBar extends AlgorithmsScript {
                     MolecularDynamics.DynamicsEngine.FFX)
             molecularDynamics.attachExtendedSystem(esvSystem, dynamicsOptions.report)
 
-            for (int i = 0; i < cycles - current.size(); i++) {
+            // Cycle MD runs
+            for (int i = current.size(); i < cycles; i++) {
+                logger.info(" --------------------------- Cycle " + (i+1) + " out of " + cycles + " ---------------------------")
+
                 molecularDynamics.setCoordinates(x)
                 molecularDynamics.dynamic(1, dynamicsOptions.dt, 1, dynamicsOptions.write,
-                        dynamicsOptions.temperature, true, null)
+                        dynamicsOptions.temperature, true, newDynFile)
 
                 molecularDynamicsOpenMM.setCoordinates(x)
                 forceFieldEnergy.energy(x)
 
                 molecularDynamicsOpenMM.dynamic(coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
-                        dynamicsOptions.temperature, true, null)
+                        dynamicsOptions.temperature, true, newDynFile)
                 x = molecularDynamicsOpenMM.getCoordinates()
 
                 double titrationNeighbor = lockTitration ? 0 : (double) 1 / nRanks
                 double tautomerNeighbor = lockTautomer ? 0 : (double) 1 / nRanks
 
+                // Evaluate different energies
                 if(myRank != nRanks-1) {
                     for (Residue res : esvSystem.getExtendedResidueList()) {
                         esvSystem.setTitrationLambda(res, fixedTitrationState + titrationNeighbor, false)
@@ -314,10 +348,21 @@ class PhBar extends AlgorithmsScript {
 
                 logger.info(" Previous: " + previous + "\n Current: " + current + "\n Next: " + next)
 
+                // Write to restart logs
                 for (int j = 0; j < 3; j++){
-                    try (FileWriter fw = new FileWriter(files[i])
+                    try (FileWriter fw = new FileWriter(files[j], true)
                          BufferedWriter bw = new BufferedWriter(fw)) {
-                        bw.append(lists[i].get(i) as String)
+                        if(myRank != 0 && myRank != world.size()-1) {
+                            bw.write(lists[j].get(i) as String + "\n")
+                        } else if(myRank == 0){
+                            if(j != 0){
+                                bw.write(lists[j].get(i) as String + "\n")
+                            }
+                        } else {
+                            if(j != 2){
+                                bw.write(lists[j].get(i) as String + "\n")
+                            }
+                        }
                     } catch (IOException e) {
                         e.printStackTrace()
                     }
@@ -369,6 +414,7 @@ class PhBar extends AlgorithmsScript {
             logger.log(Level.SEVERE, message, ex)
         }
 
+        // File manipulation to create bars
         if(myRank != nRanks - 1) {
             File outputDir = new File(rankDirectory.getParent() + File.separator + "barFiles")
             if (!outputDir.exists()) {
@@ -378,13 +424,12 @@ class PhBar extends AlgorithmsScript {
 
             try (FileWriter fw = new FileWriter(output)
                  BufferedWriter bw = new BufferedWriter(fw)) {
-                bw.write(format("   %d  %f  this.xyz\n", current.size(), dynamicsOptions.temperature))
-
+                bw.write(format("    %d  %f  this.xyz\n", current.size(), dynamicsOptions.temperature))
                 for (int i = 1; i <= current.size(); i++){
                     bw.write(format("%5d%17.9f%17.9f\n", i, parameters[myRank][current.size() + i - 1], parameters[myRank][current.size() * 2 + i - 2]))
                 }
 
-                bw.write(format("\n   %d  %f  this.xyz\n", current.size(), dynamicsOptions.temperature))
+                bw.write(format("    %d  %f  this.xyz\n", current.size(), dynamicsOptions.temperature))
                 for (int i = 1; i <= current.size(); i++){
                     bw.write(format("%5d%17.9f%17.9f\n", i, parameters[myRank + 1][i - 1], parameters[myRank + 1][current.size() + i - 1]))
                 }
@@ -393,9 +438,6 @@ class PhBar extends AlgorithmsScript {
             }
         }
 
-        for (int i = 0; i < 0; i++){
-            files[i].delete()
-        }
         return this
     }
 }
