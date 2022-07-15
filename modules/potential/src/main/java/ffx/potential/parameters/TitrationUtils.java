@@ -380,7 +380,7 @@ public class TitrationUtils {
     CYS, CYD
   }
 
-  /** Constant <code>CystineAtoms</code> */
+  /** Constant <code>CysteineAtoms</code> */
   public enum CystineAtomNames {
     CB(0, 0),
     HB2(1, 1),
@@ -389,7 +389,7 @@ public class TitrationUtils {
     HG(3, -1);
 
     /**
-     * Biotype offset relative to the CB biotype for neutral cystine (CYS).
+     * Biotype offset relative to the CB biotype for neutral cysteine (CYS).
      */
     private final int offsetCYS;
 
@@ -409,7 +409,7 @@ public class TitrationUtils {
     }
 
     /**
-     * Init the Cystin atom names.
+     * Init the Cysteine atom names.
      *
      * @param offsetCYS Biotype relative to the CB biotype for CYS.
      * @param offsetCYD Biotype relative to the CB biotype for CYD.
