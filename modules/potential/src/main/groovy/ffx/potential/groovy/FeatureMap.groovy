@@ -41,8 +41,10 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Residue
 import ffx.potential.cli.PotentialScript
 import ffx.potential.utils.GetProteinFeatures
+import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
+import picocli.CommandLine.Option
 
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.getBaseName
@@ -51,11 +53,34 @@ import static org.apache.commons.io.FilenameUtils.getFullPath
 @Command(description = " Create a Feature Map for a given protein structure", name = "ffxc FeatureMap")
 class FeatureMap extends PotentialScript {
 
+    @Option(names = ["-d", "--delimiter"], paramLabel = ",",
+            description = "Delimiter of input variant list file")
+    private String delimiter = ","
+
+    @Option(names = ["--iP", "--includePolarity"], paramLabel = "false",
+            description = "Include polarity change in feature map.")
+    private boolean includePolarity = false
+
+    @Option(names = ["--iA", "--includeAcidity"], paramLabel = "false",
+            description = "Include acidity change in feature map.")
+    private boolean includeAcidity = false
+
+    @Option(names = ["--iAng", "--includeAngles"], paramLabel = "false",
+            description = "Include ramachandran angles in feature map.")
+    private boolean includeAngles = false
+
+    @Option(names = ["--iS", "--includeStructure"], paramLabel = "false",
+            description = "Include secondary structure annotations in feature map.")
+    private boolean includeStructure = false
+
+    @Option(names = ["--mI", "--multiple isomers"], paramLabel = "false",
+            description = "Set this flag if the variant list contains variants from multiple isomers. Isomer should be in name of pdb file")
+    private boolean multipleIsomers = false
     /**
      * The final argument(s) should be one or more filenames.
      */
     @Parameters(arity = "1", paramLabel = "file",
-            description = 'The atomic coordinate file in PDB or XYZ format.')
+            description = 'The atomic coordinate file in PDB or XYZ format, variant list file, and a free energy file')
     private List<String> filenames = null
 
     private List<Residue> residues
@@ -104,29 +129,44 @@ class FeatureMap extends PotentialScript {
         residues = activeAssembly.getResidueList()
         GetProteinFeatures getProteinFeatures = new GetProteinFeatures()
 
-        // Use the current base directory, or update if necessary based on the given filename.
-        String dirString = getBaseDirString(filenames[0])
+        boolean[] additionalFeatures = new boolean[6]
+        additionalFeatures[0] = includePolarity
+        additionalFeatures[1] = includeAcidity
+        for(int i = 2; i < 5; i++){
+            additionalFeatures[i] = includeAngles
+        }
+        additionalFeatures[5] = includeStructure
 
-        String baseName = getBaseName(filenames[0])
-        String csvPath = getBaseDirString(filenames[0]).replace(baseName + '/', '')
-        String[] geneSplit = baseName.split('_')
-        String csvFileName = geneSplit[0] + ".csv"
-
-        logger.info(csvFileName)
+        // Handles when variant files will have multiple isoforms and will need to isoform specific variants when
+        // writing the file csv file
+        String[] geneSplit
+        String fileIsomer
+        if(multipleIsomers){
+            String baseName = getBaseName(filenames[0])
+            if(baseName.contains("ENS")){
+                geneSplit = baseName.replace(".pdb", "").split("_")
+                fileIsomer = geneSplit
+            } else {
+                geneSplit = baseName.replace(".pdb", "").split("_")
+                fileIsomer = geneSplit[1] + '_' + geneSplit[2]
+            }
+        }
 
         List<String[]> featureList = new ArrayList<>()
         //Store all features for each residue in an array list called Features
         for (int i = 0; i < residues.size(); i++) {
             double residueSurfaceArea =
                     forceFieldEnergy.getGK().getSurfaceAreaRegion().getResidueSurfaceArea(residues.get(i))
-            featureList.add(getProteinFeatures.saveFeatures(residues.get(i), residueSurfaceArea))
+            featureList.add(getProteinFeatures.saveFeatures(residues.get(i), residueSurfaceArea, includeAngles, includeStructure))
         }
 
-        BufferedReader txtReader = null;
+        BufferedReader txtReader = null
+
+        // Parse the ddGun output file for extracting free energy values for the map
         List<String> ddgunLines = new ArrayList<>()
         try {
-            File txtfile = new File(dirString, "output.txt")
-            txtReader = new BufferedReader(new FileReader(txtfile));
+            File freeEnergyFile = new File(filenames[2])
+            txtReader = new BufferedReader(new FileReader(freeEnergyFile));
             String line = txtReader.readLine();
             while (line != null) {
                 if (line.contains('.pdb')) {
@@ -140,61 +180,138 @@ class FeatureMap extends PotentialScript {
             e.printStackTrace();
         }
 
+        // Get ddGun features
         List<String> npChanges = getProteinFeatures.ddgunToNPChange(ddgunLines)
         List<Double[]> ddGun = getProteinFeatures.getDDGunValues(ddgunLines)
+
+        // Get Polarity and Acidity Features if flags are set
+        List<String[]> polarityAndAcidityChange = new ArrayList<>()
+        if(includePolarity || includeAcidity){
+            polarityAndAcidityChange = getProteinFeatures.getPolarityAndAcidityChange(npChanges,
+                    includePolarity, includeAcidity)
+        }
+
 
         BufferedReader br = null;
         BufferedWriter bw = null;
 
-        final String lineSep = System.getProperty("line.separator");
-        logger.info(lineSep)
-
+        // Write a new csv file with all the original data and the features determined through this script
         try {
-            File file = new File(csvPath, csvFileName)
-            File updatedFile = new File(csvPath, "update_" + csvFileName)
-
-            br = new BufferedReader(new InputStreamReader(new FileInputStream(file)))
-            if (csvFileName.length() == 0) {
+            File inputCSVFile = new File(filenames[1])
+            String inputCSVPath = inputCSVFile.getAbsolutePath().replace( "/" +filenames[1], '')
+            String newCSVFileName = "update_" + filenames[1]
+            File updatedFile = new File(inputCSVPath, newCSVFileName)
+            br = new BufferedReader(new InputStreamReader(new FileInputStream(inputCSVFile)))
+            if (newCSVFileName.length() == 0) {
                 bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(updatedFile)))
             } else {
                 FileWriter fw = new FileWriter(updatedFile, true)
                 bw = new BufferedWriter(fw)
             }
 
-            String line = null;
-            int i = 0;
+            String line = null
+            int i = 0
+            int npIndex
+            int isoformIndex
             for (line = br.readLine(); line != null; line = br.readLine(), i++) {
+                StringBuilder newCSVLine = new StringBuilder()
                 if (i == 0 || i == 1) {
                     if (updatedFile.length() == 0 && i == 1) {
-                        bw.write(line + ',\"Surface Area\",\"Normalized SA\",\"Confidence Score\",\"ddG\",\"|ddG|\"')
+                        newCSVLine.append(line + delimiter +'Surface Area'+ delimiter + 'Normalized SA'+ delimiter +
+                                'Confidence Score'+ delimiter + 'ddG' + delimiter + '|ddG|')
+                        if(includeAcidity){
+                            newCSVLine.append(delimiter + 'Acidity Change')
+                        }
+                        if(includePolarity){
+                            newCSVLine.append(delimiter + 'Polarity Change')
+                        }
+                        if(includeAngles){
+                            newCSVLine.append(delimiter + 'Phi' + delimiter + 'Psi' + delimiter + 'Omega')
+                        }
+                        if(includeStructure){
+                            newCSVLine.append(delimiter + 'Secondary Structure Annotation')
+                        }
+                        bw.write(newCSVLine.toString())
                     } else if (i == 0 && updatedFile.length() == 0) {
                         bw.write(line + '\n')
                     }
                 } else {
-                    String[] splits = line.split('\",\"')
+                    newCSVLine.append(line + delimiter)
+                    String[] splits = line.split(delimiter)
+                    if(i == 1 || i==2){
+                        for(int j=0; j < splits.length; j++){
+                            if(splits[j].contains("p.")){
+                                npIndex = j
+                            }
+                            if(multipleIsomers){
+                                if(splits[j].contains("NP") || splits[j].contains("XP") || splits[j].contains("ENS")){
+                                    isoformIndex = j
+                                }
+                            }
+                        }
+                    }
                     int length = splits.length
                     int position
                     String[] ddG = ""
-                    String proteinChange = splits[2]
-                    String[] feat = ""
+                    String[] pA = ""
+                    String npChange = splits[npIndex]
+
+                    String[] feat = new String[featureList.get(0).length]
                     if (splits[8].contains('-')) {
                         ddG = ["null", "null"]
-                        feat = ["null", "null", "null"]
+                        Arrays.fill(feat,null)
                     } else {
-                        position = splits[8].toInteger()
+                        String proteinChange = npChange.substring(npChange.indexOf('p'))
+                        String splitstring = "p\\."
+                        String sub = proteinChange.split(splitstring)[1]
+                        position = sub.replace(sub.substring(0,3),'').replace(sub.substring(sub.length()-3, sub.length()), '').toInteger()
                         if (position <= residues.size()) {
                             if (npChanges.indexOf(proteinChange) != -1) {
                                 ddG = ddGun.get(npChanges.indexOf(proteinChange))
+                                if(includeAcidity || includePolarity){
+                                    pA = polarityAndAcidityChange.get(npChanges.indexOf(proteinChange))
+                                }
                             } else {
                                 ddG = ["null", "null"]
+                                pA = ["null", "null"]
                             }
                             feat = featureList.get(position - 1)
                         }
                     }
-                    String isomer = proteinChange.split(':p.')[0]
-                    if (length == 14 && isomer == geneSplit[1] + '_' + geneSplit[2]) {
+                    String isomer
+                    if(multipleIsomers){
+                        if(splits[isoformIndex].contains(":p.")){
+                            isomer = splits[isoformIndex].split(":")[0]
+                        } else {
+                            isomer = splits[isoformIndex]
+                        }
+
+                    }
+
+                    if (length == splits.length) {
+                        if(multipleIsomers){
+                            if(isomer != fileIsomer){
+                                continue
+                            }
+                        }
+                        newCSVLine.append(line + delimiter + feat[0] + delimiter + feat[1] + delimiter + feat[2] + delimiter
+                                + String.valueOf(ddG[0]) + delimiter + String.valueOf(ddG[1]))
+                        if(includeAcidity){
+                            newCSVLine.append(delimiter + pA[0])
+                        }
+                        if(includePolarity){
+                            newCSVLine.append(delimiter + pA[1])
+                        }
+                        if(includeAngles){
+                            newCSVLine.append(delimiter + feat[3] + delimiter + feat[4] + delimiter + feat[5])
+                            if(includeStructure){
+                                newCSVLine.append(delimiter + feat[6])
+                            }
+                        } else if(includeStructure){
+                            newCSVLine.append(delimiter + feat[3])
+                        }
                         bw.newLine()
-                        bw.write(line + ',\"' + feat[0] + '\",\"' + feat[1] + '\",\"' + feat[2] + '\",\"' + String.valueOf(ddG[0]) + '\",\"' + String.valueOf(ddG[1]) + '\"')
+                        bw.write(newCSVLine.toString())
                     }
                 }
 
