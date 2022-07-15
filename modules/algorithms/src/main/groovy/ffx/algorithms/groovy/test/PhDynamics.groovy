@@ -224,7 +224,7 @@ class PhDynamics extends AlgorithmsScript {
         final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
-        File esvRestart = new File(rankDirectory.getPath() + File.separator + structureFile.getName() + ".esv")
+        File esvRestart = new File(rankDirectory.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + ".esv")
         esvSystem.setESVFile(esvRestart)
         PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, pHGap, dynamicsOptions.temperature, esvSystem)
 
@@ -305,6 +305,8 @@ class PhDynamics extends AlgorithmsScript {
         final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
+        File esvRestart = new File(rankDirectory.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + ".esv")
+        esvSystem.setESVFile(esvRestart)
         PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, pHGap, dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
 
         long totalSteps = dynamicsOptions.numSteps

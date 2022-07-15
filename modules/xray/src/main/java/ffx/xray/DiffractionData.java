@@ -69,6 +69,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -1162,6 +1163,48 @@ public class DiffractionData implements DataContainer {
       remark.append(assembly[i].getPotentialEnergy().getPDBHeaderString());
     }
     pdbFilter.writeFileWithHeader(file, remark);
+  }
+
+  /**
+   * Write current model to PDB file.
+   *
+   * @param filename output PDB filename
+   */
+  public void writeModel(String filename, Set<Atom> excludeAtoms, double pH) {
+    StringBuilder remark = new StringBuilder();
+
+    File file = version(new File(filename));
+    PDBFilter pdbFilter = new PDBFilter(file, Arrays.asList(assembly),null, null);
+    if(pH > 0){
+      pdbFilter.setRotamerTitration(true);
+    }
+
+    Date now = new Date();
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss ");
+    remark.append("REMARK FFX output ISO-8601 date: ").append(sdf.format(now)).append("\n");
+    remark.append("REMARK\n");
+    remark.append("REMARK   3\n");
+    remark.append("REMARK   3 REFINEMENT\n");
+    remark.append("REMARK   3   PROGRAM     : FORCE FIELD X\n");
+    remark.append("REMARK   3\n");
+    for (int i = 0; i < n; i++) {
+      remark.append("REMARK   3  DATA SET ").append(i + 1).append("\n");
+      if (dataFiles[i].isNeutron()) {
+        remark.append("REMARK   3   DATA SET TYPE   : NEUTRON\n");
+      } else {
+        remark.append("REMARK   3   DATA SET TYPE   : X-RAY\n");
+      }
+      remark.append("REMARK   3   DATA SET WEIGHT : ").append(dataFiles[i].getWeight()).append("\n");
+      remark.append("REMARK   3\n");
+      remark.append(crystalStats[i].getPDBHeaderString());
+    }
+    for (int i = 0; i < assembly.length; i++) {
+      remark.append("REMARK   3  CHEMICAL SYSTEM ").append(i + 1).append("\n");
+      remark.append(assembly[i].getPotentialEnergy().getPDBHeaderString());
+    }
+    remark.append("REMARK   3   TITRATION PH   : \n").append(pH).append("\n");
+    String[] remarks = remark.toString().split("\n");
+    pdbFilter.writeFile(file, false, excludeAtoms,true, true, remarks);
   }
 
   /**
