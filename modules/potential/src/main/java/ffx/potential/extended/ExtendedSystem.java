@@ -364,8 +364,10 @@ public class ExtendedSystem implements Potential {
             List<Atom> atomList = residue.getSideChainAtoms();
             for (Atom atom : atomList) {
                 //Detect disulfide sulfurs so we can exclude these when setting up titrating residues.
-                if(hasAttachedAtom(atom, 16)){
-                    residueList.remove(residue);
+                if(atom.getAtomicNumber()==16){
+                    if(hasAttachedAtom(atom, 16)){
+                        residueList.remove(residue);
+                    }
                 }
             }
         }
