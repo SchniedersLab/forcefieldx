@@ -129,14 +129,6 @@ class FeatureMap extends PotentialScript {
         residues = activeAssembly.getResidueList()
         GetProteinFeatures getProteinFeatures = new GetProteinFeatures()
 
-        boolean[] additionalFeatures = new boolean[6]
-        additionalFeatures[0] = includePolarity
-        additionalFeatures[1] = includeAcidity
-        for(int i = 2; i < 5; i++){
-            additionalFeatures[i] = includeAngles
-        }
-        additionalFeatures[5] = includeStructure
-
         // Handles when variant files will have multiple isoforms and will need to isoform specific variants when
         // writing the file csv file
         String[] geneSplit
@@ -236,7 +228,6 @@ class FeatureMap extends PotentialScript {
                         bw.write(line + '\n')
                     }
                 } else {
-                    newCSVLine.append(line + delimiter)
                     String[] splits = line.split(delimiter)
                     if(i == 1 || i==2){
                         for(int j=0; j < splits.length; j++){
@@ -257,7 +248,7 @@ class FeatureMap extends PotentialScript {
                     String npChange = splits[npIndex]
 
                     String[] feat = new String[featureList.get(0).length]
-                    if (splits[8].contains('-')) {
+                    if (splits[npIndex].contains('del')) {
                         ddG = ["null", "null"]
                         Arrays.fill(feat,null)
                     } else {
