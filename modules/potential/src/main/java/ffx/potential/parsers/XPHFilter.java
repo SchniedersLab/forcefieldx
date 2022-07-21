@@ -82,7 +82,7 @@ public class XPHFilter extends SystemFilter {
   private int snapShot;
   private String remarkLine;
   private ExtendedSystem extendedSystem;
-  private double[] extendedLambdas;
+  private MolecularAssembly system = null;
 
   /**
    * Constructor for XPHFilter.
@@ -102,6 +102,7 @@ public class XPHFilter extends SystemFilter {
     super(file, system, forceField, properties);
     this.fileType = FileType.XPH;
     extendedSystem = esvSystem;
+    this.system = system;
   }
 
   public XPHFilter(SystemFilter systemFilter, ExtendedSystem esvSystem) {
@@ -496,6 +497,7 @@ public class XPHFilter extends SystemFilter {
           data = br.readLine().trim();
 
           List<Residue> residueList = extendedSystem.getExtendedResidueList();
+          extendedSystem.setOccTemp(system);
 
           if (numOfESVs == residueList.size()) {
             int switchIndex = extendedSystem.getTitratingResidueList().size();
@@ -668,6 +670,7 @@ public class XPHFilter extends SystemFilter {
           data = bufferedReader.readLine().trim();
 
           List<Residue> residueList = extendedSystem.getExtendedResidueList();
+          extendedSystem.setOccTemp(system);
 
           if (numOfESVs == residueList.size()) {
             int switchIndex = extendedSystem.getTitratingResidueList().size();

@@ -39,8 +39,10 @@ package ffx.potential.groovy
 
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.SaveOptions
+import ffx.potential.extended.ExtendedSystem
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
+import ffx.potential.parsers.XPHFilter
 import ffx.potential.parsers.XYZFilter
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -69,6 +71,13 @@ class SaveAsPDB extends PotentialScript {
   @Option(names = ['--wS', '--writeSnapshot'], paramLabel = "0", defaultValue = "0",
       description = 'Write out a specific snapshot.')
   private int writeSnapshot = 0
+
+  /**
+   * --esv Handle an extended system at the bottom of XYZ files using XPHFilter.
+   */
+  @Option(names = ['--esv'], paramLabel = "0", defaultValue = "false",
+          description = 'Handle an ExtendedSystem.')
+  private boolean extended = false
 
   /**
    * The final argument is an XYZ or ARC coordinate file.
@@ -113,6 +122,13 @@ class SaveAsPDB extends PotentialScript {
     // Set the filename.
     filename = activeAssembly.getFile().getAbsolutePath()
     SystemFilter openFilter = potentialFunctions.getFilter()
+
+    if(openFilter instanceof XYZFilter && extended){
+      ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, null)
+      openFilter = new XPHFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties(), esvSystem)
+      openFilter.readFile()
+      logger.info("Reading ESV lambdas from XPH file")
+    }
 
     logger.info("\n Saving PDB for " + filename)
 
