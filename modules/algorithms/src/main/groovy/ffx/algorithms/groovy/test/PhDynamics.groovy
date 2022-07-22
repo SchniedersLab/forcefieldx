@@ -243,17 +243,11 @@ class PhDynamics extends AlgorithmsScript {
         String outputName = rankDirectory.getPath() + File.separator + "rankOutput.log"
         File output = new File(outputName)
 
-        String repExLogName = structureFile.getParent() + File.separator + "repEx.log"
+        String repExLogName = rankDirectory.getParent() + File.separator + "repEx.log"
         File repExLog = new File(repExLogName)
 
-        if (!repExLog.exists()) {
-          FileWriter wr = new FileWriter(repExLog)
-          wr.write("")
-          wr.close()
-        }
-
         if (world.size() > 1) {
-          try (FileReader r = new FileReader(structureFile.getParent() + File.separator + "repEx.log")
+          try (FileReader r = new FileReader(repExLog)
                BufferedReader br = new BufferedReader(r)
                FileWriter wr = new FileWriter(output)
                BufferedWriter bwr = new BufferedWriter(wr)) {

@@ -397,6 +397,9 @@ public class ExtendedSystem implements Potential {
                     tautomerizingResidueList.add(residue);
                     for (Atom atom : atomList) {
                         int atomIndex = atom.getArrayIndex();
+                        if(isTitratingHydrogen[atomIndex]){
+                            logger.info("Residue: "+residue+" Atom: "+atom+ " atomType: "+ atom.getAtomType().type);
+                        }
                         isTautomerizing[atomIndex] = true;
                         tautomerLambdas[atomIndex] = initialTautomerLambda;
                         int tautomerIndex = tautomerizingResidueList.indexOf(residue);
@@ -786,6 +789,15 @@ public class ExtendedSystem implements Potential {
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
         return AA3.isConstantPhTautomer;
     }
+
+    public void setOccTemp(MolecularAssembly molecularAssembly) {
+        for (Atom atom : molecularAssembly.getAtomList()) {
+            int atomIndex = atom.getIndex() - 1;
+            atom.setOccupancy(this.getTitrationLambda(atomIndex));
+            atom.setTempFactor(this.getTautomerLambda(atomIndex));
+        }
+    }
+
 
     /**
      * Update all theta (lambda) postions after each move from the Stochastic integrator

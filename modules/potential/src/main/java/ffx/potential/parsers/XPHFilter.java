@@ -82,7 +82,7 @@ public class XPHFilter extends SystemFilter {
   private int snapShot;
   private String remarkLine;
   private ExtendedSystem extendedSystem;
-  private double[] extendedLambdas;
+  private MolecularAssembly system = null;
 
   /**
    * Constructor for XPHFilter.
@@ -102,6 +102,7 @@ public class XPHFilter extends SystemFilter {
     super(file, system, forceField, properties);
     this.fileType = FileType.XPH;
     extendedSystem = esvSystem;
+    this.system = system;
   }
 
   public XPHFilter(SystemFilter systemFilter, ExtendedSystem esvSystem) {
@@ -262,6 +263,20 @@ public class XPHFilter extends SystemFilter {
         // Read lines 2-X of the XYZ.
         for (int i = 1; i < nAtoms; i++) {
           br.readLine();
+        }
+
+        String data = br.readLine();
+
+        //Read past blanklines
+        while(data != null && data.trim().equals("")){
+          data = br.readLine();
+        }
+
+        // Read Past ESV
+        if(data.contains("ESV")) {
+          while (data != null && !data.trim().equals("")) {
+            data = br.readLine();
+          }
         }
 
         ++nSnaps;
@@ -500,7 +515,7 @@ public class XPHFilter extends SystemFilter {
           if (numOfESVs == residueList.size()) {
             int switchIndex = extendedSystem.getTitratingResidueList().size();
             for (int i = 0; i < residueList.size(); i++) {
-              tokens = data.split(" +", 3);
+              tokens = data.split(" +");
 
               if (i < switchIndex) {
                 extendedSystem.setTitrationLambda(residueList.get(i), parseDouble(tokens[2]));
@@ -510,6 +525,13 @@ public class XPHFilter extends SystemFilter {
 
               data = br.readLine().trim();
             }
+
+            for (Atom atom : system.getAtomList()) {
+              int atomIndex = atom.getIndex() - 1;
+              atom.setOccupancy(extendedSystem.getTitrationLambda(atomIndex));
+              atom.setTempFactor(extendedSystem.getTautomerLambda(atomIndex));
+            }
+
           } else {
             logger.severe(" Number of ESVs in archive doesn't match extended system residue list size.");
             return false;
@@ -580,6 +602,7 @@ public class XPHFilter extends SystemFilter {
       snapShot++;
 
       data = bufferedReader.readLine();
+
       // Read past blank lines
       while (data != null && data.trim().equals("")) {
         data = bufferedReader.readLine();
@@ -656,13 +679,17 @@ public class XPHFilter extends SystemFilter {
       }
 
       // Read ESVs
-      while (data != null && data.equals("") && bufferedReader.ready()) {
+      int counter = 0;
+      while (data != null && !data.contains("ESV") && bufferedReader.ready()) {
         data = bufferedReader.readLine().trim();
+        counter++;
+        if(counter > 5){
+          logger.severe(" Read through too many lines");
+        }
       }
 
       if(data != null) {
         tokens = data.split(" +", 2);
-
         if (tokens[0].equalsIgnoreCase("ESV")) {
           int numOfESVs = parseInt(tokens[1]);
           data = bufferedReader.readLine().trim();
@@ -672,7 +699,7 @@ public class XPHFilter extends SystemFilter {
           if (numOfESVs == residueList.size()) {
             int switchIndex = extendedSystem.getTitratingResidueList().size();
             for (int i = 0; i < residueList.size(); i++) {
-              tokens = data.split(" +", 0);
+              tokens = data.split(" +");
 
               if (i < switchIndex) {
                 extendedSystem.setTitrationLambda(residueList.get(i), parseDouble(tokens[2]));
@@ -682,6 +709,7 @@ public class XPHFilter extends SystemFilter {
 
               data = bufferedReader.readLine().trim();
             }
+            logger.info(extendedSystem.getLambdaList());
           } else {
             logger.severe(" Number of ESVs in archive doesn't match extended system residue list size.");
             return false;
