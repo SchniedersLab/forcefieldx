@@ -223,6 +223,8 @@ public final class PDBFilter extends SystemFilter {
     rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.ASP, AminoAcidUtils.AminoAcid3.ASH);
     // Glutamate
     rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.GLU, AminoAcidUtils.AminoAcid3.GLH);
+    //Cysteine
+    rotamerResidueMap.put(AminoAcidUtils.AminoAcid3.CYD, AminoAcidUtils.AminoAcid3.CYS);
   }
 
   /**
@@ -834,9 +836,12 @@ public final class PDBFilter extends SystemFilter {
                   if (!altLocs.contains(altLoc)) {
                     altLocs.add(altLoc);
                   }
-                  if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
+                  if (!altLoc.equals(' ') && !altLoc.equals(currentAltLoc)) {
                     break;
                   }
+                  // if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
+                  //  break;
+                  // }
                   resName = line.substring(17, 20).trim();
                   chainID = line.substring(21, 22).charAt(0);
                   segID = getSegID(chainID);
@@ -863,7 +868,8 @@ public final class PDBFilter extends SystemFilter {
                     resSeq += offset;
                     if (offset != 0) {
                       logger.info(format(" Chain %c " + "residue %s-%s renumbered to %c %s-%d",
-                              chainID, pdbResNum.substring(1).trim(), resName, chainID, resName, resSeq));
+                          chainID, pdbResNum.substring(1).trim(), resName, chainID, resName,
+                          resSeq));
                     }
                     String newNum = format("%c%d", chainID, resSeq);
                     pdbToNewResMap.put(pdbResNum, newNum);
@@ -986,9 +992,12 @@ public final class PDBFilter extends SystemFilter {
                 if (!altLocs.contains(altLoc)) {
                   altLocs.add(altLoc);
                 }
-                if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
+                if (!altLoc.equals(' ') && !altLoc.equals(currentAltLoc)) {
                   break;
                 }
+                // if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
+                //  break;
+                //}
                 resName = line.substring(17, 20).trim();
                 chainID = line.substring(21, 22).charAt(0);
                 segID = getSegID(chainID);
@@ -1410,8 +1419,8 @@ public final class PDBFilter extends SystemFilter {
   @Override
   public boolean readNext(boolean resetPosition, boolean print, boolean parse) {
     modelsRead = resetPosition ? 1 : modelsRead + 1;
-    if(!parse){
-      if(print){
+    if (!parse) {
+      if (print) {
         logger.info(format(" Skipped Model %d.", modelsRead));
       }
       return true;
@@ -1523,9 +1532,12 @@ public final class PDBFilter extends SystemFilter {
                   fileStandard = VERSION3_2;
                 }
                 Character altLoc = line.substring(16, 17).toUpperCase().charAt(0);
-                if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
+                if (!altLoc.equals(' ') && !altLoc.equals(currentAltLoc)) {
                   break;
                 }
+                // if (!altLoc.equals(' ') && !altLoc.equals('A') && !altLoc.equals(currentAltLoc)) {
+                //  break;
+                // }
                 String resName = line.substring(17, 20).trim();
                 Character chainID = line.substring(21, 22).charAt(0);
                 String segID = getExistingSegID(chainID);
@@ -1537,7 +1549,7 @@ public final class PDBFilter extends SystemFilter {
                 double occupancy = 1.0;
                 double tempFactor = 1.0;
                 Atom newAtom = new Atom(0, name, altLoc, d, resName, resSeq,
-                        chainID, occupancy, tempFactor, segID);
+                    chainID, occupancy, tempFactor, segID);
                 newAtom.setHetero(hetatm);
                 // Check if this is a modified residue.
                 if (modRes.containsKey(resName.toUpperCase())) {
@@ -1602,12 +1614,12 @@ public final class PDBFilter extends SystemFilter {
 //                properties.addProperty("spacegroup", SpaceGroupInfo.pdb2ShortName(sg));
                 Crystal crystal = activeMolecularAssembly.getCrystal();
                 SpaceGroup spaceGroup = SpaceGroupDefinitions.spaceGroupFactory(sg);
-                if(Objects.equals(crystal.spaceGroup.shortName, spaceGroup.shortName)) {
+                if (Objects.equals(crystal.spaceGroup.shortName, spaceGroup.shortName)) {
                   crystal.changeUnitCellParameters(aaxis, baxis, caxis, alpha, beta, gamma);
-                }else{
+                } else {
                   // TODO: Handle changes in space groups... Means recalculating force field terms.
                   logger.warning(format(" Original space group %s could not be changed to %s",
-                          crystal.spaceGroup.shortName, spaceGroup.shortName));
+                      crystal.spaceGroup.shortName, spaceGroup.shortName));
                 }
                 break;
               case ENDMDL:
@@ -1853,8 +1865,14 @@ public final class PDBFilter extends SystemFilter {
         bw.write(format("%s\n", line));
       }
       if (extraLines != null) {
-        for (String line : extraLines) {
-          bw.write(format("REMARK 999 %s\n", line));
+        if (rotamerTitration && extraLines[0].contains("REMARK")) {
+          for (String line : extraLines) {
+            bw.write(line + "\n");
+          }
+        } else {
+          for (String line : extraLines) {
+            bw.write(format("REMARK 999 %s\n", line));
+          }
         }
       }
       if (model != null) {
@@ -2035,13 +2053,20 @@ public final class PDBFilter extends SystemFilter {
                 MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
                 Polymer altPolymer =
                     altMolecularAssembly.getPolymer(currentChainID, currentSegID, false);
-                Residue altResidue = altPolymer.getResidue(resName, resID, false);
+                Residue altResidue = altPolymer.getResidue(resName, resID, false,
+                    Residue.ResidueType.AA);
+                if (altResidue == null) {
+                  resName = AminoAcid3.UNK.name();
+                  altResidue = altPolymer.getResidue(resName, resID, false,
+                      Residue.ResidueType.AA);
+                }
                 backboneAtoms = altResidue.getBackboneAtoms();
                 residueAtoms = altResidue.getAtomList();
                 for (Atom atom : backboneAtoms) {
                   if (atom.getAltLoc() != null
                       && !atom.getAltLoc().equals(' ')
                       && !atom.getAltLoc().equals('A')) {
+                    sb.replace(17, 20, padLeft(atom.getResidueName().toUpperCase(), 3));
                     writeAtom(atom, serial++, sb, anisouSB, bw);
                   }
                   residueAtoms.remove(atom);
@@ -2409,6 +2434,7 @@ public final class PDBFilter extends SystemFilter {
     sb.replace(6, 16, format("%5s " + padLeft(name.toUpperCase(), 4), Hybrid36.encode(5, serial)));
     Character altLoc = atom.getAltLoc();
     sb.setCharAt(16, Objects.requireNonNullElse(altLoc, ' '));
+
 
     /*
      * On the following code:

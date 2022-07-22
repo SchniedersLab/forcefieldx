@@ -56,6 +56,15 @@ public class QIFrame {
   private double ir20, ir21, ir22;
 
   /**
+   * QIFrame constructor
+   *
+   * (dx = 0, dy = 0, dz = 1).
+   */
+  public QIFrame() {
+    setQIVector(0.0, 0.0, 1.0);
+  }
+
+  /**
    * QIFrame constructor.
    *
    * @param dx Separation along the x-axis.

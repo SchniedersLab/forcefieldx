@@ -47,6 +47,7 @@ import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
+import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TitrationUtils;
 import ffx.potential.parsers.ESVFilter;
@@ -63,6 +64,7 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static ffx.potential.bonded.BondedUtils.hasAttachedAtom;
 import static ffx.utilities.Constants.kB;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.*;
@@ -356,6 +358,20 @@ public class ExtendedSystem implements Potential {
         // If the atom does belong to this residue, set all corresponding variables in the respective titration or tautomer array (size = numAtoms).
         // Store the index of the residue in the respective list into a map array (size = numAtoms).
         List<Residue> residueList = mola.getResidueList();
+        logger.info(residueList.toString());
+        List<Residue> preprocessList = new ArrayList<>(residueList);
+        for(Residue residue : preprocessList){
+            List<Atom> atomList = residue.getSideChainAtoms();
+            for (Atom atom : atomList) {
+                //Detect disulfide sulfurs so we can exclude these when setting up titrating residues.
+                if(atom.getAtomicNumber()==16){
+                    if(hasAttachedAtom(atom, 16)){
+                        residueList.remove(residue);
+                    }
+                }
+            }
+        }
+        logger.info(residueList.toString());
         // Use only a list that contains AminoAcid residues so remove Nucleic Acid residues
         residueList.removeIf(residue -> (residue.getResidueType() == Residue.ResidueType.NA));
         for (Residue residue : residueList) {
@@ -381,6 +397,9 @@ public class ExtendedSystem implements Potential {
                     tautomerizingResidueList.add(residue);
                     for (Atom atom : atomList) {
                         int atomIndex = atom.getArrayIndex();
+                        if(isTitratingHydrogen[atomIndex]){
+                            logger.info("Residue: "+residue+" Atom: "+atom+ " atomType: "+ atom.getAtomType().type);
+                        }
                         isTautomerizing[atomIndex] = true;
                         tautomerLambdas[atomIndex] = initialTautomerLambda;
                         int tautomerIndex = tautomerizingResidueList.indexOf(residue);
@@ -770,6 +789,15 @@ public class ExtendedSystem implements Potential {
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
         return AA3.isConstantPhTautomer;
     }
+
+    public void setOccTemp(MolecularAssembly molecularAssembly) {
+        for (Atom atom : molecularAssembly.getAtomList()) {
+            int atomIndex = atom.getIndex() - 1;
+            atom.setOccupancy(this.getTitrationLambda(atomIndex));
+            atom.setTempFactor(this.getTautomerLambda(atomIndex));
+        }
+    }
+
 
     /**
      * Update all theta (lambda) postions after each move from the Stochastic integrator

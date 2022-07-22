@@ -224,7 +224,7 @@ class PhDynamics extends AlgorithmsScript {
         final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
-        File esvRestart = new File(rankDirectory.getPath() + File.separator + structureFile.getName() + ".esv")
+        File esvRestart = new File(rankDirectory.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + ".esv")
         esvSystem.setESVFile(esvRestart)
         PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, pHGap, dynamicsOptions.temperature, esvSystem)
 
@@ -243,17 +243,11 @@ class PhDynamics extends AlgorithmsScript {
         String outputName = rankDirectory.getPath() + File.separator + "rankOutput.log"
         File output = new File(outputName)
 
-        String repExLogName = structureFile.getParent() + File.separator + "repEx.log"
+        String repExLogName = rankDirectory.getParent() + File.separator + "repEx.log"
         File repExLog = new File(repExLogName)
 
-        if (!repExLog.exists()) {
-          FileWriter wr = new FileWriter(repExLog)
-          wr.write("")
-          wr.close()
-        }
-
         if (world.size() > 1) {
-          try (FileReader r = new FileReader(structureFile.getParent() + File.separator + "repEx.log")
+          try (FileReader r = new FileReader(repExLog)
                BufferedReader br = new BufferedReader(r)
                FileWriter wr = new FileWriter(output)
                BufferedWriter bwr = new BufferedWriter(wr)) {
@@ -305,6 +299,8 @@ class PhDynamics extends AlgorithmsScript {
         final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
+        File esvRestart = new File(rankDirectory.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + ".esv")
+        esvSystem.setESVFile(esvRestart)
         PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, pHGap, dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
 
         long totalSteps = dynamicsOptions.numSteps

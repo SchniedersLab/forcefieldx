@@ -303,7 +303,7 @@ class BAR extends AlgorithmsScript {
         } else {
           archiveName = FilenameUtils.getBaseName(files[j]) + ".arc"
         }
-        if (useTinkerBAR) {
+        if (useTinkerBAR && i != nWindows-1) {
           // Path to Tinker BAR files.
           fullFilePaths[i][0] = directoryPath + "barFiles" + File.separator + "energy_" + i + ".bar"
         } else if (!autodetect) {
@@ -400,14 +400,16 @@ class BAR extends AlgorithmsScript {
       if (useTinkerBAR) {
         File barFile = new File(fullFilePaths[w][0])
         barOpeners[w] = new BARFilter(barFile, startingSnapshot, endingSnapshot)
-        barOpeners[w].readFile()
+        if (w != nWindows-1){
+          barOpeners[w].readFile()
+        }
         if (w == 0) {
           energyLow[w] = new double[barOpeners[w].getSnaps()]
           energyAt[w] = barOpeners[w].getE1l1()
           energyHigh[w] = barOpeners[w].getE1l2()
         } else if (w == nWindows - 1) {
-          energyLow[w] = barOpeners[w].getE1l1()
-          energyAt[w] = barOpeners[w].getE1l2()
+          energyLow[w] = barOpeners[w-1].getE2l1()
+          energyAt[w] = barOpeners[w-1].getE2l2()
           energyHigh[w] = new double[barOpeners[w].getSnaps()]
         } else if (w > 0 && w < nWindows - 1) {
           energyLow[w] = barOpeners[w - 1].getE2l1()
@@ -427,7 +429,7 @@ class BAR extends AlgorithmsScript {
           energyLow[w] = new double[energy[0].length]
           energyAt[w] = energy[0]
           energyHigh[w] = energy[1]
-        } else if (w == nWindows - 1) {
+        }else if (w == nWindows - 1) {
           energyLow[w] = energy[0]
           energyAt[w] = energy[1]
           energyHigh[w] = new double[energy[0].length]
@@ -458,25 +460,23 @@ class BAR extends AlgorithmsScript {
           barWriters[w] = new BARFilter(xyzFile, energyAt[w], energyHigh[w], energyLow[w + 1],
               energyAt[w + 1], volume[w], volume[w + 1],
               this.temperature)
-        } else if (w == nWindows - 1) {
-          barWriters[w] = new BARFilter(xyzFile, energyLow[w], energyAt[w], energyAt[w - 1],
-              energyHigh[w - 1], volume[w], volume[w - 1],
-              this.temperature)
-        } else {
+        } else if (w != nWindows - 1) {
           barWriters[w] = new BARFilter(xyzFile, energyAt[w], energyHigh[w], energyLow[w + 1],
               energyAt[w + 1], volume[w], volume[w + 1],
               this.temperature)
         }
-        String barFileName = tinkerFilePath + "energy_" + w.toString() + ".bar"
-        barWriters[w].writeFile(barFileName, isPBC)
+        if (w != nWindows-1){
+          String barFileName = tinkerFilePath + "energy_" + w.toString() + ".bar"
+          barWriters[w].writeFile(barFileName, isPBC)
+        }
       }
     }
 
     for (int w = 0; w < nWindows + 1; w++) {
       if (w == nWindows) {
-        logger.info("\n\nEvaluating Overall:")
+        logger.info("\n\n Evaluating Overall:")
       } else {
-        logger.info(format("\n\nEvaluating Window %d:", w))
+        logger.info(format("\n\n Evaluating Window %d:", w))
       }
 
       if (w == 0) {
@@ -552,9 +552,9 @@ class BAR extends AlgorithmsScript {
       long MAX_BOOTSTRAP_TRIALS = 100000L
       long bootstrap = min(MAX_BOOTSTRAP_TRIALS, min(volume.length, volume.length))
       if (w == nWindows) {
-        logger.info("\n Free Energy Difference via FEP Method\n")
+        logger.info("\n Free Energy Difference:\n")
       } else {
-        logger.info(format("\n Free Energy Difference via FEP Method for Window %d\n", w))
+        logger.info(format("\n Free Energy Difference for Window %d\n", w))
       }
 
       long time = -System.nanoTime()
@@ -582,12 +582,6 @@ class BAR extends AlgorithmsScript {
               varBackFE))
       barEnergy = bar.getFreeEnergy()
 
-      if (w == nWindows) {
-        logger.info("\n Free Energy Difference via BAR Method\n")
-      } else {
-        logger.info(format("\n Free Energy Difference via BAR Method for Window %d\n", w))
-      }
-
       logger.info(format(" Free energy via BAR Iteration:  %12.4f +/- %6.4f kcal/mol.", barEnergy,
           bar.getUncertainty()))
       time = -System.nanoTime()
@@ -604,7 +598,7 @@ class BAR extends AlgorithmsScript {
               varBARFE))
 
       if (w == nWindows) {
-        logger.info("\n Enthalpy from Potential Energy Averages\n")
+        logger.info("\n Enthalpy from Potential Energy Averages:\n")
 
         for (int n = 0; n < nWindows; n++) {
           logger.info(format(" Average Energy for State %d:       %12.4f +/- %6.4f kcal/mol.",
@@ -613,12 +607,12 @@ class BAR extends AlgorithmsScript {
         }
         double enthalpyDiff = energyMean[nWindows - 1] - energyMean[0]
         double enthalpyDiffSD = Math.sqrt(energyVar[nWindows - 1] + energyVar[0])
-        logger.info(format(" Enthalpy via Direct Estimate:    %12.4f +/- %6.4f kcal/mol.",
+        logger.info(format(" Enthalpy via Direct Estimate:     %12.4f +/- %6.4f kcal/mol.",
             enthalpyDiff, enthalpyDiffSD))
 
-        logger.info("\n Enthalpy and Entropy via FEP:\n")
+        logger.info("\n Enthalpy and Entropy:\n")
       } else {
-        logger.info(format("\n Enthalpy and Entropy via FEP for Window %d\n", w))
+        logger.info(format("\n Enthalpy and Entropy for Window %d\n", w))
       }
 
       forwardEntropy = (forwardEnthalpy - forwardFEP) / this.temperature
