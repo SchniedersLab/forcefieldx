@@ -77,7 +77,6 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
       c = GKSource.cn(multipoleOrder.getOrder(), Eh, Es);
   }
 
-
   /**
    * GK Permanent multipole energy.
    *
@@ -364,6 +363,57 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
   }
 
   /**
+   * GK Polarization Energy.
+   *
+   * @param mI PolarizableMultipole at site I.
+   * @param mK PolarizableMultipole at site K.
+   * @return a double.
+   */
+  public double polarizationEnergyBorn(PolarizableMultipole mI, PolarizableMultipole mK) {
+    switch (multipoleOrder) {
+      default:
+      case MONOPOLE:
+        // Find the GK charge potential of site I at site K.
+        chargeIPotentialAtK(mI, 1);
+        // Energy of induced dipole K in the field of permanent charge I.
+        double eK = polarizationEnergyS(mK);
+        // Find the GK charge potential of site K at site I.
+        chargeKPotentialAtI(mK, 1);
+        // Energy of induced dipole I in the field of permanent charge K.
+        double eI = polarizationEnergyS(mI);
+        return c * 0.5 * (eK + eI);
+      case DIPOLE:
+        // Find the GK dipole potential of site I at site K.
+        dipoleIPotentialAtK(mI.dx, mI.dy, mI.dz, 1);
+        // Energy of induced dipole K in the field of permanent dipole I.
+        eK = polarizationEnergyS(mK);
+        // Find the GK induced dipole potential of site I at site K.
+        dipoleIPotentialAtK(mI.sx, mI.sy, mI.sz, 2);
+        // Energy of permanent multipole K in the field of induced dipole I.
+        eK += 0.5 * multipoleEnergy(mK);
+        // Find the GK dipole potential of site K at site I.
+        dipoleKPotentialAtI(mK.dx, mK.dy, mK.dz, 1);
+        // Energy of induced dipole I in the field of permanent dipole K.
+        eI = polarizationEnergyS(mI);
+        // Find the GK induced dipole potential of site K at site I.
+        dipoleKPotentialAtI(mK.sx, mK.sy, mK.sz, 2);
+        // Energy of permanent multipole I in the field of induced dipole K.
+        eI += 0.5 * multipoleEnergy(mI);
+        return c * 0.5 * (eK + eI);
+      case QUADRUPOLE:
+        // Find the GK quadrupole potential of site I at site K.
+        quadrupoleIPotentialAtK(mI, 1);
+        // Energy of induced dipole K in the field of permanent quadrupole I.
+        eK = polarizationEnergyS(mK);
+        // Find the GK quadrupole potential of site K at site I.
+        quadrupoleKPotentialAtI(mK, 1);
+        // Energy of induced dipole I in the field of permanent quadrupole K.
+        eI = polarizationEnergyS(mI);
+        return c * 0.5 * (eK + eI);
+    }
+  }
+
+  /**
    * Polarization Energy and Gradient.
    *
    * @param mI PolarizableMultipole at site I.
@@ -583,7 +633,7 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
    */
   public double polarizationEnergyBornGrad(PolarizableMultipole mI, PolarizableMultipole mK) {
     generateTensor();
-    return 2.0 * polarizationEnergy(mI, mK);
+    return 2.0 * polarizationEnergyBorn(mI, mK);
   }
 
   /**

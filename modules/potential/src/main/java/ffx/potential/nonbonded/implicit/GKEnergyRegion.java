@@ -37,6 +37,11 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
+import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.DIPOLE;
+import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.MONOPOLE;
+import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.QUADRUPOLE;
+import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.BORN;
+import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.POTENTIAL;
 import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_GKC;
 import static ffx.potential.parameters.MultipoleType.t000;
 import static ffx.potential.parameters.MultipoleType.t001;
@@ -51,6 +56,7 @@ import static ffx.potential.parameters.MultipoleType.t200;
 import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.utilities.Constants.dWater;
 import static java.lang.String.format;
+import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -64,12 +70,16 @@ import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.numerics.multipole.GKEnergyQI;
+import ffx.numerics.multipole.GKSource;
+import ffx.numerics.multipole.GKTensorQI;
+import ffx.numerics.multipole.PolarizableMultipole;
+import ffx.numerics.multipole.QIFrame;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.parameters.ForceField;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -84,23 +94,24 @@ public class GKEnergyRegion extends ParallelRegion {
 
   private static final Logger logger = Logger.getLogger(GKEnergyRegion.class.getName());
   /** Constant factor used with quadrupoles. */
-  private static final double oneThird = 1.0 / 3.0;
+  protected static final double oneThird = 1.0 / 3.0;
   /** Conversion from electron**2/Ang to kcal/mole. */
-  public final double electric;
+  protected final double electric;
+  protected final double epsilon;
   /** Treatment of polarization. */
-  private final Polarization polarization;
-  private final NonPolar nonPolar;
+  protected final Polarization polarization;
+  protected final NonPolar nonPolar;
   /**
    * Dielectric offset from:
    *
    * <p>W. C. Still, A. Tempczyk, R. C. Hawley and T. Hendrickson, "A Semianalytical Treatment of
    * Solvation for Molecular Mechanics and Dynamics", J. Amer. Chem. Soc., 112, 6127-6129 (1990)
    */
-  private final double dOffset = 0.09;
+  protected final double dOffset = 0.09;
   /** Cavitation surface tension coefficient (kcal/mol/A^2). */
-  private final double surfaceTension;
+  protected final double surfaceTension;
   /** Empirical constant that controls the GK cross-term. */
-  private final double gkc;
+  protected final double gkc;
   /** Kirkwood monopole reaction field constant. */
   private final double fc;
   /** Kirkwood dipole reaction field constant. */
@@ -108,47 +119,46 @@ public class GKEnergyRegion extends ParallelRegion {
   /** Kirkwood quadrupole reaction field constant. */
   private final double fq;
   /** Water probe radius. */
-  private final double probe;
-
-  private final SharedDouble sharedPermanentGKEnergy;
-  private final SharedDouble sharedPolarizationGKEnergy;
-  private final SharedDouble sharedGKEnergy;
-  private final SharedInteger sharedInteractions;
-  private final GKEnergyLoop[] gkEnergyLoop;
+  protected final double probe;
+  protected final SharedDouble sharedPermanentGKEnergy;
+  protected final SharedDouble sharedPolarizationGKEnergy;
+  protected final SharedDouble sharedGKEnergy;
+  protected final SharedInteger sharedInteractions;
+  protected final IntegerForLoop[] gkEnergyLoop;
   /** An ordered array of atoms in the system. */
   protected Atom[] atoms;
   /** Induced dipoles for each symmetry operator. */
-  private double[][][] inducedDipole;
+  protected double[][][] inducedDipole;
   /** Induced dipole chain rule terms for each symmetry operator. */
-  private double[][][] inducedDipoleCR;
+  protected double[][][] inducedDipoleCR;
   /** Multipole moments for each symmetry operator. */
-  private double[][][] globalMultipole;
+  protected double[][][] globalMultipole;
   /** Periodic boundary conditions and symmetry. */
-  private Crystal crystal;
+  protected Crystal crystal;
   /** Atomic coordinates for each symmetry operator. */
-  private double[][][] sXYZ;
+  protected double[][][] sXYZ;
   /** Neighbor lists for each atom and symmetry operator. */
-  private int[][][] neighborLists;
+  protected int[][][] neighborLists;
   /** Flag to indicate if an atom should be included. */
-  private boolean[] use = null;
+  protected boolean[] use = null;
   /** GK cut-off distance squared. */
-  private double cut2;
+  protected double cut2;
   /** Base radius of each atom (for Born radii based nonpolar energy). */
-  private double[] baseRadius;
+  protected double[] baseRadius;
   /** Born radius of each atom. */
-  private double[] born;
+  protected double[] born;
 
-  private boolean gradient = false;
+  protected boolean gradient = false;
   /** Atomic 3D Gradient array. */
-  private AtomicDoubleArray3D grad;
+  protected AtomicDoubleArray3D grad;
   /** Atomic 3D Torque array. */
-  private AtomicDoubleArray3D torque;
+  protected AtomicDoubleArray3D torque;
   /** Shared array for computation of Born radii gradient. */
-  private AtomicDoubleArray sharedBornGrad;
+  protected AtomicDoubleArray sharedBornGrad;
   /** Self-energy for each atom */
-  private AtomicDoubleArray selfEnergy;
+  protected AtomicDoubleArray selfEnergy;
   /** Cross-term energy for each atom */
-  private AtomicDoubleArray crossEnergy;
+  protected AtomicDoubleArray crossEnergy;
 
   public GKEnergyRegion(
       int nt,
@@ -163,7 +173,7 @@ public class GKEnergyRegion extends ParallelRegion {
     gkc = forceField.getDouble("GKC", DEFAULT_GKC);
 
     // Set the Kirkwood multipolar reaction field constants.
-    double epsilon = forceField.getDouble("GK_EPSILON", dWater);
+    epsilon = forceField.getDouble("GK_EPSILON", dWater);
     fc = 1.0 * (1.0 - epsilon) / (0.0 + 1.0 * epsilon);
     fd = 2.0 * (1.0 - epsilon) / (1.0 + 2.0 * epsilon);
     fq = 3.0 * (1.0 - epsilon) / (2.0 + 3.0 * epsilon);
@@ -173,9 +183,15 @@ public class GKEnergyRegion extends ParallelRegion {
     this.surfaceTension = surfaceTension;
     this.probe = probe;
 
-    gkEnergyLoop = new GKEnergyLoop[nt];
+    boolean gkQI = forceField.getBoolean("GK_QI", false);
+
+    gkEnergyLoop = new IntegerForLoop[nt];
     for (int i = 0; i < nt; i++) {
-      gkEnergyLoop[i] = new GKEnergyLoop();
+      if (gkQI) {
+        gkEnergyLoop[i] = new GKEnergyLoopQI();
+      } else {
+        gkEnergyLoop[i] = new GKEnergyLoop();
+      }
     }
     sharedPermanentGKEnergy = new SharedDouble();
     sharedPolarizationGKEnergy = new SharedDouble();
@@ -258,7 +274,6 @@ public class GKEnergyRegion extends ParallelRegion {
     try {
       int nAtoms = atoms.length;
       int threadIndex = getThreadIndex();
-      gkEnergyLoop[threadIndex].setGradient(gradient);
       execute(0, nAtoms - 1, gkEnergyLoop[threadIndex]);
     } catch (Exception e) {
       String message = "Fatal exception computing GK Energy in thread " + getThreadIndex() + "\n";
@@ -324,8 +339,6 @@ public class GKEnergyRegion extends ParallelRegion {
     private double dedxi, dedyi, dedzi;
     private double dborni;
     private double trqxi, trqyi, trqzi;
-
-    private boolean gradient = false;
     private int count;
     private int iSymm;
     private int threadID;
@@ -453,10 +466,6 @@ public class GKEnergyRegion extends ParallelRegion {
       }
     }
 
-    public void setGradient(boolean gradient) {
-      this.gradient = gradient;
-    }
-
     @Override
     public void start() {
       gkEnergy = 0.0;
@@ -566,18 +575,12 @@ public class GKEnergyRegion extends ParallelRegion {
         b[3][1] = b[4][0] - expcr * a[4][0] - expc * b[4][0];
 
         // Born radii derivatives of the 2nd reaction potential gradient auxiliary terms.
-        b[0][2] =
-            b[1][1]
-                - (expcr * (a[1][1] + dexpc * a[1][0])
-                + expc * (b[1][1] + dexpcr * a[1][0] + dexpc * b[1][0]));
-        b[1][2] =
-            b[2][1]
-                - (expcr * (a[2][1] + dexpc * a[2][0])
-                + expc * (b[2][1] + dexpcr * a[2][0] + dexpc * b[2][0]));
-        b[2][2] =
-            b[3][1]
-                - (expcr * (a[3][1] + dexpc * a[3][0])
-                + expc * (b[3][1] + dexpcr * a[3][0] + dexpc * b[3][0]));
+        b[0][2] = b[1][1] - (expcr * (a[1][1] + dexpc * a[1][0])
+            + expc * (b[1][1] + dexpcr * a[1][0] + dexpc * b[1][0]));
+        b[1][2] = b[2][1] - (expcr * (a[2][1] + dexpc * a[2][0])
+            + expc * (b[2][1] + dexpcr * a[2][0] + dexpc * b[2][0]));
+        b[2][2] = b[3][1] - (expcr * (a[3][1] + dexpc * a[3][0])
+            + expc * (b[3][1] + dexpcr * a[3][0] + dexpc * b[3][0]));
 
         // Multiply the Born radii auxiliary terms by their dielectric functions.
         b[0][0] = electric * fc * b[0][0];
@@ -610,24 +613,6 @@ public class GKEnergyRegion extends ParallelRegion {
 
       // Compute the GK interaction energy.
       double eik = energy(i, k);
-
-//      logger.info(format(" GK %d %d (%17.15f %17.15f %17.15f): %17.15f", i, k, xr, yr, zr, eik / electric));
-//      logger.info(format(" GK %d %d BornI: %17.15f BornK: %17.15f", i, k, rbi, rbk));
-//      logger.info(format(" GK %d multipole %s", i, Arrays.toString(globalMultipole[0][i])));
-//      logger.info(format(" GK %d multipole %s", k, Arrays.toString(multipolek)));
-//      logger.info(format(" GK %d induced %s", i, Arrays.toString(inducedDipole[iSymm][i])));
-//      logger.info(format(" GK %d induced %s", k, Arrays.toString(inducedDipole[iSymm][k])));
-
-      // Test the GK Tensor class.
-//     if (i == k) {
-//        PolarizableMultipole polarizableMultipole = new PolarizableMultipole(multipolek,
-//            inducedDipole[iSymm][k], inducedDipoleCR[iSymm][k]);
-//        GeneralizedKirkwoodTensor generalizedKirkwoodTensor = new GeneralizedKirkwoodTensor(0, 2,
-//            gkc, 1.0, 78.3);
-//        double energy = generalizedKirkwoodTensor.selfEnergy(polarizableMultipole, rbk);
-//        logger.info(format(" GK Tensor: %16.8f Code: %16.8f Rad: %16.8f", electric * energy, eik, rbk));
-//      }
-
       gkEnergy += eik;
       count++;
 
@@ -1409,9 +1394,6 @@ public class GKEnergyRegion extends ParallelRegion {
       grad.add(threadID, k, dedxk, dedyk, dedzk);
       sharedBornGrad.add(threadID, k, selfScale * drbk);
       permanentEnergyTorque(i, k);
-//      logger.info(format(" GK %d grad %17.15f %17.15f %17.15f", i, -dedx / electric, -dedy / electric, -dedz / electric));
-//      logger.info(format(" GK %d grad %17.15f %17.15f %17.15f", k, dedxk / electric, dedyk / electric, dedzk / electric));
-//      logger.info(format(" GK %d drbi %17.15f %d drbk %17.15f", i, drbi / electric, k, drbk / electric));
     }
 
     private double dEdZ() {
@@ -2232,9 +2214,6 @@ public class GKEnergyRegion extends ParallelRegion {
       final double rtky = tkx * transOp[0][1] + tky * transOp[1][1] + tkz * transOp[2][1];
       final double rtkz = tkx * transOp[0][2] + tky * transOp[1][2] + tkz * transOp[2][2];
       torque.add(threadID, k, rtkx, rtky, rtkz);
-
-//      logger.info(format(" GK %d torque %17.15f %17.15f %17.15f", i, tix / electric, tiy / electric, tiz / electric));
-//      logger.info(format(" GK %d torque %17.15f %17.15f %17.15f", k, rtkx / electric, rtky / electric, rtkz / electric));
     }
 
     private void polarizationEnergyGradient(int i, int k) {
@@ -2597,9 +2576,6 @@ public class GKEnergyRegion extends ParallelRegion {
         final double rdpdz = dpdx * transOp[0][2] + dpdy * transOp[1][2] + dpdz * transOp[2][2];
         grad.add(threadID, k, rdpdx, rdpdy, rdpdz);
         sharedBornGrad.add(threadID, k, dbk);
-//        logger.info(format(" GK %d pol grad %17.15f %17.15f %17.15f", i, -dpdx / electric, -dpdy / electric, -dpdz / electric));
-//        logger.info(format(" GK %d pol grad %17.15f %17.15f %17.15f", k, dpdx / electric, dpdy / electric, dpdz / electric));
-//        logger.info(format(" GK %d drbi %17.15f %d drbk %17.15f", i, dbi / electric, k, dbk / electric));
       }
       polarizationEnergyTorque(i, k);
     }
@@ -2724,8 +2700,297 @@ public class GKEnergyRegion extends ParallelRegion {
       tky = rx * transOp[0][1] + ry * transOp[1][1] + rz * transOp[2][1];
       tkz = rx * transOp[0][2] + ry * transOp[1][2] + rz * transOp[2][2];
       torque.add(threadID, k, tkx, tky, tkz);
-//      logger.info(format(" GK %d pol torque %17.15f %17.15f %17.15f", i, tix / electric, tiy / electric, tiz / electric));
-//      logger.info(format(" GK %d pol torque %17.15f %17.15f %17.15f", k, tkx / electric, tky / electric, tkz / electric));
+    }
+  }
+
+  /**
+   * Compute the GK Energy using a QI frame.
+   *
+   * @since 1.0
+   */
+  private class GKEnergyLoopQI extends IntegerForLoop {
+
+    private final double[] dx_local;
+    private final double[] gradI = new double[3];
+    private final double[] torqueI = new double[3];
+    private final double[] torqueK = new double[3];
+    private final double[] gI = new double[3];
+    private final double[] tI = new double[3];
+    private final double[] tK = new double[3];
+
+    private double rbi;
+    PolarizableMultipole mI;
+    PolarizableMultipole mK;
+    QIFrame qiFrame;
+    GKEnergyQI gkEnergyQI;
+    private double xi, yi, zi;
+    private double dedxi, dedyi, dedzi;
+    private double dborni;
+    private double trqxi, trqyi, trqzi;
+    private int count;
+    private int iSymm;
+    private int threadID;
+    private final double[][] transOp;
+    private double gkEnergy;
+    private double gkPermanentEnergy;
+    private double gkPolarizationEnergy;
+    // Extra padding to avert cache interference.
+    private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
+    private long pad8, pad9, pada, padb, padc, padd, pade, padf;
+
+    GKEnergyLoopQI() {
+      mI = new PolarizableMultipole();
+      mK = new PolarizableMultipole();
+      qiFrame = new QIFrame();
+      dx_local = new double[3];
+      transOp = new double[3][3];
+    }
+
+    @Override
+    public void start() {
+      gkEnergy = 0.0;
+      gkPermanentEnergy = 0.0;
+      gkPolarizationEnergy = 0.0;
+      count = 0;
+      threadID = getThreadIndex();
+      gkEnergyQI = new GKEnergyQI(gkc, epsilon, gradient);
+    }
+
+    @Override
+    public void finish() {
+      sharedInteractions.addAndGet(count);
+      sharedGKEnergy.addAndGet(gkEnergy);
+      sharedPermanentGKEnergy.addAndGet(gkPermanentEnergy);
+      sharedPolarizationGKEnergy.addAndGet(gkPolarizationEnergy);
+    }
+
+    @Override
+    public void run(int lb, int ub) {
+
+      double[] x = sXYZ[0][0];
+      double[] y = sXYZ[0][1];
+      double[] z = sXYZ[0][2];
+
+      int nSymm = crystal.spaceGroup.symOps.size();
+      List<SymOp> symOps = crystal.spaceGroup.symOps;
+
+      for (iSymm = 0; iSymm < nSymm; iSymm++) {
+        SymOp symOp = symOps.get(iSymm);
+        crystal.getTransformationOperator(symOp, transOp);
+        for (int i = lb; i <= ub; i++) {
+          if (!use[i]) {
+            continue;
+          }
+
+          // Zero out force accumulation for atom i.
+          dedxi = 0.0;
+          dedyi = 0.0;
+          dedzi = 0.0;
+          trqxi = 0.0;
+          trqyi = 0.0;
+          trqzi = 0.0;
+          dborni = 0.0;
+
+          // Collect the coordinates of atom i.
+          xi = x[i];
+          yi = y[i];
+          zi = z[i];
+          rbi = born[i];
+          int[] list = neighborLists[iSymm][i];
+          for (int k : list) {
+            if (!use[k]) {
+              continue;
+            }
+            interaction(i, k);
+          }
+          if (iSymm == 0) {
+            // Include self-interactions for the asymmetric unit atoms.
+            interaction(i, i);
+            /*
+             Formula for Born energy approximation for cavitation energy is:
+             e = surfaceTension / 6 * (ri + probe)^2 * (ri/rb)^6.
+             ri is the base atomic radius the atom.
+             rb is Born radius of the atom.
+            */
+            switch (nonPolar) {
+              case BORN_SOLV:
+              case BORN_CAV_DISP:
+                double r = baseRadius[i] + dOffset + probe;
+                double ratio = (baseRadius[i] + dOffset) / born[i];
+                ratio *= ratio;
+                ratio *= (ratio * ratio);
+                double saTerm = surfaceTension * r * r * ratio / 6.0;
+                gkEnergy += saTerm;
+                sharedBornGrad.sub(threadID, i, 6.0 * saTerm / born[i]);
+                break;
+              default:
+                break;
+            }
+          }
+          if (gradient) {
+            grad.add(threadID, i, dedxi, dedyi, dedzi);
+            torque.add(threadID, i, trqxi, trqyi, trqzi);
+            sharedBornGrad.add(threadID, i, dborni);
+          }
+        }
+      }
+    }
+
+    private void interaction(int i, int k) {
+      dx_local[0] = sXYZ[iSymm][0][k] - xi;
+      dx_local[1] = sXYZ[iSymm][1][k] - yi;
+      dx_local[2] = sXYZ[iSymm][2][k] - zi;
+      double r2 = crystal.image(dx_local);
+      if (r2 > cut2) {
+        return;
+      }
+
+      // Set the multipole moments for site I.
+      mI.setPermanentMultipole(globalMultipole[0][i]);
+      mI.setInducedDipole(inducedDipole[0][i], inducedDipoleCR[0][i]);
+      // Set the multipole moments for site K.
+      mK.setPermanentMultipole(globalMultipole[iSymm][k]);
+      mK.setInducedDipole(inducedDipole[iSymm][k], inducedDipoleCR[iSymm][k]);
+
+      double selfScale = 1.0;
+      if (i == k) {
+        selfScale = 0.5;
+      } else {
+        qiFrame.setAndRotate(dx_local, mI, mK);
+      }
+
+      // Set the GK energy tensor.
+      double rbk = born[k];
+      gkEnergyQI.initPotential(dx_local, r2, rbi, rbk);
+
+      // Compute the GK permanent multipole interaction.
+      double eik;
+      if (!gradient) {
+        // Compute the GK permanent interaction energy.
+        eik = electric * selfScale * gkEnergyQI.multipoleEnergy(mI, mK);
+        gkPermanentEnergy += eik;
+        if (polarization != Polarization.NONE) {
+          // Compute the GK polarization interaction energy.
+          double ep = electric * selfScale * gkEnergyQI.polarizationEnergy(mI, mK);
+          gkPolarizationEnergy += ep;
+          eik += ep;
+        }
+      } else {
+        if (i == k) {
+          // Compute the GK permanent interaction energy.
+          eik = electric * selfScale * gkEnergyQI.multipoleEnergy(mI, mK);
+          gkPermanentEnergy += eik;
+          // There is no dE/dR or torque for the i == k permanent self-energy.
+          if (polarization != Polarization.NONE) {
+            // Compute the GK polarization interaction energy.
+            // There is no dE/dR, but there can be a torque for the i == k polarization self-energy
+            // if the permanent dipole and induced dipole are not aligned.
+            double mutualMask = 1.0;
+            if (polarization == Polarization.DIRECT) {
+              mutualMask = 0.0;
+            }
+            double ep = electric * selfScale * gkEnergyQI.polarizationEnergyAndGradient(mI, mK, mutualMask,
+                    gradI, torqueI, torqueK);
+            gkPolarizationEnergy += ep;
+            eik += ep;
+            // The torque for the i == k polarization self-energy.
+            trqxi += electric * selfScale * torqueI[0];
+            trqyi += electric * selfScale * torqueI[1];
+            trqzi += electric * selfScale * torqueI[2];
+            double tkx = electric * selfScale * torqueK[0];
+            double tky = electric * selfScale * torqueK[1];
+            double tkz = electric * selfScale * torqueK[2];
+            final double rtkx = tkx * transOp[0][0] + tky * transOp[1][0] + tkz * transOp[2][0];
+            final double rtky = tkx * transOp[0][1] + tky * transOp[1][1] + tkz * transOp[2][1];
+            final double rtkz = tkx * transOp[0][2] + tky * transOp[1][2] + tkz * transOp[2][2];
+            torque.add(threadID, k, rtkx, rtky, rtkz);
+          }
+          // Compute the GK permanent Born chain-rule term.
+          gkEnergyQI.initBorn(dx_local, r2, rbi, rbk);
+          double db = gkEnergyQI.multipoleEnergyBornGrad(mI, mK);
+          if (polarization != Polarization.NONE) {
+            db += gkEnergyQI.polarizationEnergyBornGrad(mI, mK, polarization == Polarization.MUTUAL);
+          }
+          dborni += electric * rbi * db;
+        } else {
+          // Sum the GK permanent interaction energy.
+          eik = electric * gkEnergyQI.multipoleEnergyAndGradient(mI, mK, gradI, torqueI, torqueK);
+          gkPermanentEnergy += eik;
+          if (polarization != Polarization.NONE) {
+            double mutualMask = 1.0;
+            if (polarization == Polarization.DIRECT) {
+              mutualMask = 0.0;
+            }
+            // Sum the GK polarization interaction energy.
+            double ep = electric * gkEnergyQI.polarizationEnergyAndGradient(mI, mK, mutualMask, gI, tI, tK);
+            eik += ep;
+            gkPolarizationEnergy += ep;
+            for (int j = 0; j < 3; j++) {
+              gradI[j] += gI[j];
+              torqueI[j] += tI[j];
+              torqueK[j] += tK[j];
+            }
+          }
+
+          // Convert to units of kcal/mol
+          for (int j = 0; j < 3; j++) {
+            gradI[j] *= electric;
+            torqueI[j] *= electric;
+            torqueK[j] *= electric;
+          }
+
+          // Rotate gradient and torques from the QI frame into the Global frame.
+          qiFrame.toGlobal(gradI);
+          qiFrame.toGlobal(torqueI);
+          qiFrame.toGlobal(torqueK);
+
+          // Accumulate partial derivatives on site I.
+          dedxi += gradI[0];
+          dedyi += gradI[1];
+          dedzi += gradI[2];
+          trqxi += torqueI[0];
+          trqyi += torqueI[1];
+          trqzi += torqueI[2];
+
+          // Accumulate partial derivatives on site K.
+          double dedx = -gradI[0];
+          double dedy = -gradI[1];
+          double dedz = -gradI[2];
+          // Handle symmetry mate rotation.
+          final double dedxk = dedx * transOp[0][0] + dedy * transOp[1][0] + dedz * transOp[2][0];
+          final double dedyk = dedx * transOp[0][1] + dedy * transOp[1][1] + dedz * transOp[2][1];
+          final double dedzk = dedx * transOp[0][2] + dedy * transOp[1][2] + dedz * transOp[2][2];
+          double tkx = torqueK[0];
+          double tky = torqueK[1];
+          double tkz = torqueK[2];
+          final double rtkx = tkx * transOp[0][0] + tky * transOp[1][0] + tkz * transOp[2][0];
+          final double rtky = tkx * transOp[0][1] + tky * transOp[1][1] + tkz * transOp[2][1];
+          final double rtkz = tkx * transOp[0][2] + tky * transOp[1][2] + tkz * transOp[2][2];
+          grad.add(threadID, k, dedxk, dedyk, dedzk);
+          torque.add(threadID, k, rtkx, rtky, rtkz);
+
+          // Compute the Born-chain rule term.
+          gkEnergyQI.initBorn(dx_local, r2, rbi, rbk);
+          double db = gkEnergyQI.multipoleEnergyBornGrad(mI, mK);
+          if (polarization != Polarization.NONE) {
+            db += gkEnergyQI.polarizationEnergyBornGrad(mI, mK, polarization == Polarization.MUTUAL);
+          }
+          db *= electric;
+          dborni += rbk * db;
+          sharedBornGrad.add(threadID, k, rbi * db);
+        }
+      }
+
+      if (i == k) {
+        selfEnergy.add(threadID, i, eik);
+      } else {
+        double half = 0.5 * eik;
+        crossEnergy.add(threadID, i, half);
+        crossEnergy.add(threadID, k, half);
+      }
+
+      gkEnergy += eik;
+      count++;
     }
   }
 }
