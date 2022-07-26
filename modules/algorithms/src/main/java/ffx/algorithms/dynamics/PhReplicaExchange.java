@@ -237,7 +237,7 @@ public class PhReplicaExchange implements Terminatable {
    * @param saveInterval a double.
    */
   public void sample(
-      int cycles, long nSteps, double timeStep, double printInterval, double saveInterval, int initTitrDynamics) {
+      int cycles, long nSteps, double timeStep, double printInterval, double saveInterval, int initTitrDynamics, File dyn) {
     done = false;
     terminate = false;
 
@@ -263,10 +263,10 @@ public class PhReplicaExchange implements Terminatable {
           logger.severe("Increase number of steps per cycle.");
         }
 
-        dynamicsOpenMM(nSteps, timeStep, printInterval, saveInterval);
+        dynamicsOpenMM(nSteps, timeStep, printInterval, saveInterval, dyn);
       }
       else {
-        dynamics(nSteps, timeStep, printInterval, saveInterval);
+        dynamics(nSteps, timeStep, printInterval, saveInterval, dyn);
       }
 
       logger.info(" ");
@@ -420,7 +420,7 @@ public class PhReplicaExchange implements Terminatable {
    * @param printInterval the number of steps between loggging updates.
    * @param saveInterval the number of steps between saving snapshots.
    */
-  private void dynamicsOpenMM(final long nSteps, final double timeStep, final double printInterval, final double saveInterval) {
+  private void dynamicsOpenMM(final long nSteps, final double timeStep, final double printInterval, final double saveInterval, File dyn) {
 
     int i = rank2Ph[rank];
     extendedSystem.setConstantPh(pHScale[i]);
@@ -434,18 +434,18 @@ public class PhReplicaExchange implements Terminatable {
     int titrStepsTwo = (int) FastMath.ceil(titrSteps / 2.0);
     int conformSteps = (int) FastMath.ceil(nSteps / 2.0);
 
-    replica.dynamic(titrStepsOne, timeStep, printInterval, saveInterval, temp, initVelocities, null);
+    replica.dynamic(titrStepsOne, timeStep, printInterval, saveInterval, temp, initVelocities, dyn);
 
     x = replica.getCoordinates();
     potential.energy(x);
     openMM.setCoordinates(x);
 
-    openMM.dynamic(conformSteps, timeStep, printInterval, saveInterval, temp, initVelocities, null);
+    openMM.dynamic(conformSteps, timeStep, printInterval, saveInterval, temp, initVelocities, dyn);
 
     x = openMM.getCoordinates();
     replica.setCoordinates(x);
 
-    replica.dynamic(titrStepsTwo, timeStep, printInterval, saveInterval, temp, initVelocities, null);
+    replica.dynamic(titrStepsTwo, timeStep, printInterval, saveInterval, temp, initVelocities, dyn);
 
     // Update this ranks' parameter array to be consistent with the dynamics.
 
@@ -476,7 +476,7 @@ public class PhReplicaExchange implements Terminatable {
   }
 
 
-  private void dynamics(long nSteps, double timeStep, double printInterval, double saveInterval) {
+  private void dynamics(long nSteps, double timeStep, double printInterval, double saveInterval, File dyn) {
     int i = rank2Ph[rank];
 
     extendedSystem.setConstantPh(pHScale[i]);
@@ -489,7 +489,7 @@ public class PhReplicaExchange implements Terminatable {
     boolean initVelocities = true;
 
     replica.dynamic(
-            nSteps, timeStep, printInterval, saveInterval, temp, initVelocities, null);
+            nSteps, timeStep, printInterval, saveInterval, temp, initVelocities, dyn);
 
     // Update this ranks' parameter array to be consistent with the dynamics.
     myParameters[0] = pHScale[i];
