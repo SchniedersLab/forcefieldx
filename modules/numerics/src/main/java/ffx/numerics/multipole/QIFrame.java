@@ -42,6 +42,10 @@ import static ffx.numerics.math.DoubleMath.normalize;
 import static ffx.numerics.math.DoubleMath.scale;
 import static ffx.numerics.math.DoubleMath.sub;
 import static java.lang.Math.fma;
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.copyOf;
+
+import java.util.Arrays;
 
 public class QIFrame {
 
@@ -57,7 +61,7 @@ public class QIFrame {
 
   /**
    * QIFrame constructor
-   *
+   * <p>
    * (dx = 0, dy = 0, dz = 1).
    */
   public QIFrame() {
@@ -105,7 +109,7 @@ public class QIFrame {
     double[] zAxis = {dx, dy, dz};
 
     // The "guess" for the QI X-axis cannot be along the QI separation vector.
-    double[] xAxis = {dx, dy, dz};
+    double[] xAxis = copyOf(zAxis, 3);
     if (dy != 0.0 || dz != 0.0) {
       // The QI separation vector is not along the global X-axis.
       // Set the QI X-axis "guess" to the QI Z-axis plus add 1 to X-component.
@@ -204,9 +208,9 @@ public class QIFrame {
     double qyy = m.qyy;
     double qzz = m.qzz;
     // The Multipole class stores 2.0 times the off-diagonal components.
-    double qxy = m.qxy / 2.0;
-    double qxz = m.qxz / 2.0;
-    double qyz = m.qyz / 2.0;
+    double qxy = m.qxy * 0.5;
+    double qxz = m.qxz * 0.5;
+    double qyz = m.qyz * 0.5;
 
     m.qxx = r00 * (r00 * qxx + r01 * qxy + r02 * qxz)
         + r01 * (r00 * qxy + r01 * qyy + r02 * qyz)
@@ -270,16 +274,10 @@ public class QIFrame {
     double vy = v[1];
     double vz = v[2];
     // X-component.
-    double x = ir00 * vx;
-    x = fma(ir01, vy, x);
-    v[0] = fma(ir02, vz, x);
+    v[0] = ir00 * vx + ir01 * vy + ir02 * vz;
     // Y-component.
-    double y = ir10 * vx;
-    y = fma(ir11, vy, y);
-    v[1] = fma(ir12, vz, y);
+    v[1] = ir10 * vx + ir11 * vy + ir12 * vz;
     // Z-component.
-    double z = ir20 * vx;
-    z = fma(ir21, vy, z);
-    v[2] = fma(ir22, vz, z);
+    v[2] = ir20 * vx + ir21 * vy + ir22 * vz;
   }
 }
