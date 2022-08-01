@@ -23,7 +23,7 @@ jupyter==1.0.0
 jupyterlab-server==0.2.0
 jupyterlab==1.2.21
 kotlin-jupyter-kernel==0.8.028
-mistune==0.8.4
+mistune==2.0.3
 nbconvert==5.4.1
 nbformat==4.4.0
 notebook==6.4.12
