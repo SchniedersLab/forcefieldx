@@ -480,7 +480,6 @@ public class PhReplicaExchange implements Terminatable {
     int i = rank2Ph[rank];
 
     extendedSystem.setConstantPh(pHScale[i]);
-    logger.info("pHscale: " + pHScale[i] + "parameters[rankA][0]" + parameters[rank][0]);
 
     extendedSystem.copyESVHistogramTo(parametersHis[rank]);
     //TODO: check if this correct index
