@@ -236,8 +236,12 @@ public class PhReplicaExchange implements Terminatable {
    * @param printInterval a double.
    * @param saveInterval a double.
    */
+  public void sample(int cycles, long nSteps, double timeStep, double printInterval, double saveInterval, int initTitrDynamics) {
+    sample(cycles, nSteps, 0, timeStep, printInterval, saveInterval, initTitrDynamics);
+  }
+
   public void sample(
-      int cycles, long nSteps, double timeStep, double printInterval, double saveInterval, int initTitrDynamics) {
+          int cycles, long titrSteps, long confSteps, double timeStep, double printInterval, double saveInterval, int initTitrDynamics) {
     done = false;
     terminate = false;
 
@@ -258,15 +262,15 @@ public class PhReplicaExchange implements Terminatable {
       }
 
       if(openMM != null){
-        if(nSteps < 3)
+        if(confSteps < 3)
         {
           logger.severe("Increase number of steps per cycle.");
         }
 
-        dynamicsOpenMM(nSteps, timeStep, printInterval, saveInterval);
+        dynamicsOpenMM(titrSteps, confSteps, timeStep, printInterval, saveInterval);
       }
       else {
-        dynamics(nSteps, timeStep, printInterval, saveInterval);
+        dynamics(titrSteps, timeStep, printInterval, saveInterval);
       }
 
       logger.info(" ");
@@ -415,12 +419,13 @@ public class PhReplicaExchange implements Terminatable {
    * Blocking dynamic steps: when this method returns each replica has completed the requested
    * number of steps. Both OpenMM and CPU implementations exist
    *
-   * @param nSteps the number of time steps.
+   * @param titrSteps the number of time steps on CPU.
+   * @param confSteps the number of time steps on GPU.
    * @param timeStep the time step.
    * @param printInterval the number of steps between loggging updates.
    * @param saveInterval the number of steps between saving snapshots.
    */
-  private void dynamicsOpenMM(final long nSteps, final double timeStep, final double printInterval, final double saveInterval) {
+  private void dynamicsOpenMM(final long titrSteps, final long confSteps, final double timeStep, final double printInterval, final double saveInterval) {
 
     int i = rank2Ph[rank];
     extendedSystem.setConstantPh(pHScale[i]);
@@ -429,10 +434,8 @@ public class PhReplicaExchange implements Terminatable {
     // Start this processes MolecularDynamics instance sampling.
     boolean initVelocities = true;
 
-    double titrSteps = nSteps / 2.0;
     int titrStepsOne = (int) titrSteps / 2;
     int titrStepsTwo = (int) FastMath.ceil(titrSteps / 2.0);
-    int conformSteps = (int) FastMath.ceil(nSteps / 2.0);
 
     replica.dynamic(titrStepsOne, timeStep, printInterval, saveInterval, temp, initVelocities, null);
 
@@ -440,7 +443,7 @@ public class PhReplicaExchange implements Terminatable {
     potential.energy(x);
     openMM.setCoordinates(x);
 
-    openMM.dynamic(conformSteps, timeStep, printInterval, saveInterval, temp, initVelocities, null);
+    openMM.dynamic(confSteps, timeStep, printInterval, saveInterval, temp, initVelocities, null);
 
     x = openMM.getCoordinates();
     replica.setCoordinates(x);

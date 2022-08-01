@@ -90,7 +90,7 @@ class PhDynamics extends AlgorithmsScript {
 
   @Option(names = ['--coordinateSteps'], paramLabel = '100',
           description = 'Number of steps done propagating coordinates only on GPU in one cycle')
-  int coordSteps  = 10
+  int coordSteps  = 100
 
   @Option(names = ['--cycles', '--OMMcycles'], paramLabel = '5',
           description = 'Number of times to cycle between titrating protons on CPU and propagating coordinates only on GPU')
@@ -303,16 +303,8 @@ class PhDynamics extends AlgorithmsScript {
         esvSystem.setESVFile(esvRestart)
         PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, pHGap, dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
 
-        long totalSteps = dynamicsOptions.numSteps
-        int nSteps = repEx.replicaSteps
-        int exchangeCycles = (int) (totalSteps / nSteps)
-
-        if (exchangeCycles <= 0) {
-          exchangeCycles = 1
-        }
-
         pHReplicaExchange.
-                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
+                sample(cycles, titrSteps, coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
 
         String outputName = rankDirectory.getPath() + File.separator + "rankOutput.log"
         File output = new File(outputName)
