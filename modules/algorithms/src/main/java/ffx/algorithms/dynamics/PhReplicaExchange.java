@@ -436,6 +436,11 @@ public class PhReplicaExchange implements Terminatable {
 
     int titrStepsOne = (int) titrSteps / 2;
     int titrStepsTwo = (int) FastMath.ceil(titrSteps / 2.0);
+    if(replica.restartFrequency > titrStepsTwo){
+      logger.warning("Restart frequency is too long for Rep Ex with cycling between CPU/GPU implementations. Defaulting to twice per cycle");
+      double restartFreq = titrStepsTwo / 1000.0;
+      replica.setRestartFrequency(restartFreq);
+    }
 
     replica.dynamic(titrStepsOne, timeStep, printInterval, saveInterval, temp, initVelocities, null);
 

@@ -96,9 +96,9 @@ class PhDynamics extends AlgorithmsScript {
           description = 'Number of times to cycle between titrating protons on CPU and propagating coordinates only on GPU')
   int cycles  = 5
 
-  @Option(names = ['--titrationReport', '--esvLog'], paramLabel = '0.001 (psec)',
+  @Option(names = ['--titrationReport', '--esvLog'], paramLabel = '0.25 (psec)',
           description = 'Interval in psec to report ESV energy and lambdas when cycling between GPU and CPU.')
-  double titrReport  = 0.001
+  double titrReport  = 0.25
 
   @Option(names = ['--pHGaps'], paramLabel = '1',
           description = 'pH gap between replica exchange windows.')
