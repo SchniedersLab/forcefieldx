@@ -70,11 +70,11 @@ public class ESVFilter {
   public String getLambdaHistogram(List<Residue> titratingResidueList, final int[][][] esvHistogram, double pH){
     int nTitr = titratingResidueList.size();
 
-    StringBuilder tautomerHeader = new StringBuilder("      X→ ");
+    StringBuilder tautomerHeader = new StringBuilder("      X ");
     for (int k = 0; k < 10; k++) {
       tautomerHeader.append(String.format("%1$10s", "[" + k / 10.0 + "-" + (k + 1) / 10.0 + "]"));
     }
-    tautomerHeader.append("\nλ↓\n");
+    tautomerHeader.append("\nλ\n");
 
     StringBuilder[] histogram = new StringBuilder[nTitr];
     for (int i = 0; i < nTitr; i++) {
