@@ -195,15 +195,11 @@ public class GKSource {
     if (mode == GK_TENSOR_MODE.POTENTIAL) {
       // Max derivatives.
       int derivatives = order - mpoleOrder;
-      if (derivatives + 1 >= 0) {
-        arraycopy(anm[mpoleOrder], 0, work, mpoleOrder, derivatives + 1);
-      }
+      arraycopy(anm[mpoleOrder], 0, work, mpoleOrder, derivatives + 1);
     } else {
       // Max derivatives.
       int derivatives = (order - 1) - mpoleOrder;
-      if (derivatives + 1 >= 0) {
-        arraycopy(bnm[mpoleOrder], 0, work, mpoleOrder, derivatives + 1);
-      }
+      arraycopy(bnm[mpoleOrder], 0, work, mpoleOrder, derivatives + 1);
     }
   }
 
@@ -462,8 +458,8 @@ public class GKSource {
     }
   }
 
-  public static double selfEnergy(PolarizableMultipole polarizableMultipole, double ai, double aj,
-      double Eh, double Es) {
+  public static double selfEnergy(PolarizableMultipole polarizableMultipole, double ai, double Eh,
+      double Es) {
     double q2 = polarizableMultipole.q * polarizableMultipole.q;
     double dx = polarizableMultipole.dx;
     double dy = polarizableMultipole.dy;
@@ -481,13 +477,12 @@ public class GKSource {
     double qyy2 = polarizableMultipole.qyy * polarizableMultipole.qyy;
     double qzz2 = polarizableMultipole.qzz * polarizableMultipole.qzz;
 
-    double a = sqrt(ai * aj);
-    double a2 = a * a;
-    double a3 = a * a2;
+    double a2 = ai * ai;
+    double a3 = ai * a2;
     double a5 = a2 * a3;
 
     // Born partial charge
-    double e0 = cn(0, Eh, Es) * q2 / a;
+    double e0 = cn(0, Eh, Es) * q2 / ai;
     // Permanent Dipole
     double e1 = cn(1, Eh, Es) * (dx2 + dy2 + dz2) / a3;
     // Permanent Quadrupole
