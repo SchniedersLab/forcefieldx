@@ -488,11 +488,14 @@ public class PhReplicaExchange implements Terminatable {
     int i = rank2Ph[rank];
 
     extendedSystem.setConstantPh(pHScale[i]);
-    logger.info("pHscale: " + pHScale[i] + "parameters[rankA][0]" + parameters[rank][0]);
 
     extendedSystem.copyESVHistogramTo(parametersHis[rank]);
-    //TODO: check if this correct index
 
+    if(replica.restartFrequency > nSteps){
+      logger.warning("Restart frequency is too long for Rep Ex cycling. Defaulting to once per cycle");
+      double restartFreq = nSteps / 1000.0;
+      replica.setRestartFrequency(restartFreq);
+    }
     // Start this processes MolecularDynamics instance sampling.
     boolean initVelocities = true;
 
