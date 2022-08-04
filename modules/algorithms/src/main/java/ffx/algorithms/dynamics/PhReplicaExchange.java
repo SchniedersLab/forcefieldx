@@ -223,7 +223,7 @@ public class PhReplicaExchange implements Terminatable {
 
     // Set restart files
     if(restart) {
-      logger.info("Rank " + rank + " staring at pH " + pHScale[rank2Ph[rank]]);
+      logger.info(" Rank " + rank + " staring at pH " + pHScale[rank2Ph[rank]]);
       extendedSystem.setConstantPh(pHScale[rank2Ph[rank]]);
       extendedSystem.setESVFile(esv);
       logger.info(" Starting from ESV Histogram: ");
@@ -342,18 +342,21 @@ public class PhReplicaExchange implements Terminatable {
     if(initTitrDynamics > 0 && !restart) {
       replica.dynamic(initTitrDynamics, timeStep,
               printInterval, saveInterval, temp, true, dyn);
+
+
+      logger.info(" ");
+      logger.info(" ------------------End of Equilibration Dynamics------------------\n");
+      logger.info(" ");
     }
 
     int cyclesDone = 0;
     if(restart){
       logger.info(" Omitting initialization steps because this is a restart.");
-      int cyclesLeft = cycles - (int) ((restartStep+1) / nSteps);
-      cyclesDone = cycles - cyclesLeft;
-      logger.info(" Restarting pH-REX at cycle " + cyclesDone);
-      cycles = cyclesLeft;
+      cyclesDone = (int) ((restartStep+1) / nSteps);
+      logger.info(" Restarting pH-REX at cycle " + (cyclesDone+1) + " of " + cycles);
     }
 
-    for (int i = cyclesDone; i < cycles; i++) {
+    for (int i = cyclesDone+1; i < cycles; i++) {
       // Check for termination request.
       if (terminate) {
         done = true;
