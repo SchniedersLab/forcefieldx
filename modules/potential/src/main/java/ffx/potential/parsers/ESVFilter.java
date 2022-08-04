@@ -155,6 +155,7 @@ public class ESVFilter {
         a[i] = parseDouble(tokens[0]);
       }
 
+      // Histograms
       for (int i = 0; i < esvHist.length; i++){
         for (int j = 0; j < 4; j ++) {br.readLine();}
         for (int j = 0; j < esvHist[i].length; j++){

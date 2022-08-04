@@ -798,7 +798,6 @@ public class ExtendedSystem implements Potential {
         }
     }
 
-
     /**
      * Update all theta (lambda) postions after each move from the Stochastic integrator
      */
@@ -1291,6 +1290,9 @@ public class ExtendedSystem implements Potential {
 
     public void setESVFile(File esvFile){
         restartFile = esvFile;
+        if(!esvFilter.readESV(esvFile, thetaPosition, thetaVelocity, thetaAccel, esvHistogram)){
+            logger.warning(" Setting ESV hist to " + esvFile.getAbsolutePath() + " failed. This behavior is expected if not a restart.");
+        }
     }
 
     /**

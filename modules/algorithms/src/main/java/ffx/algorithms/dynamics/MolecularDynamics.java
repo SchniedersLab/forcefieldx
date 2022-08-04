@@ -958,9 +958,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
           logger.info(format("  Archive file %3d: %s", (i + 1), ai.archiveFile.getName()));
         }
       } else {
-        logger.info(format("  Archive file:     %s", assemblies.get(0).archiveFile.getName()));
+        logger.info(format("  Archive file:     %s", assemblies.get(0).archiveFile.getAbsolutePath()));
       }
-      logger.info(format("  Restart file:     %s", restartFile.getName()));
+      logger.info(format("  Restart file:     %s", restartFile.getAbsolutePath()));
     }
   }
 
