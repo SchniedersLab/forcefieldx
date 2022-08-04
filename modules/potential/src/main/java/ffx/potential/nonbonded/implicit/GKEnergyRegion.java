@@ -70,8 +70,8 @@ import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.numerics.multipole.GKEnergyQI;
 import ffx.numerics.multipole.GKSource;
-import ffx.numerics.multipole.GKSource.GK_TENSOR_MODE;
 import ffx.numerics.multipole.GKTensorQI;
 import ffx.numerics.multipole.PolarizableMultipole;
 import ffx.numerics.multipole.QIFrame;
@@ -184,8 +184,6 @@ public class GKEnergyRegion extends ParallelRegion {
     this.probe = probe;
 
     boolean gkQI = forceField.getBoolean("GK_QI", false);
-
-    logger.info(format(" QI frame: %b", gkQI));
 
     gkEnergyLoop = new IntegerForLoop[nt];
     for (int i = 0; i < nt; i++) {
@@ -2717,7 +2715,6 @@ public class GKEnergyRegion extends ParallelRegion {
     private final double[] torqueI = new double[3];
     private final double[] torqueK = new double[3];
     private final double[] gI = new double[3];
-    private final double[] gK = new double[3];
     private final double[] tI = new double[3];
     private final double[] tK = new double[3];
 
@@ -2725,8 +2722,7 @@ public class GKEnergyRegion extends ParallelRegion {
     PolarizableMultipole mI;
     PolarizableMultipole mK;
     QIFrame qiFrame;
-    GKSource gkSource;
-    GKTensorQI gkMonopoleQI, gkDipoleQI, gkQuadrupoleQI;
+    GKEnergyQI gkEnergyQI;
     private double xi, yi, zi;
     private double dedxi, dedyi, dedzi;
     private double dborni;
@@ -2757,6 +2753,7 @@ public class GKEnergyRegion extends ParallelRegion {
       gkPolarizationEnergy = 0.0;
       count = 0;
       threadID = getThreadIndex();
+      gkEnergyQI = new GKEnergyQI(gkc, epsilon, gradient);
     }
 
     @Override
@@ -2776,19 +2773,6 @@ public class GKEnergyRegion extends ParallelRegion {
 
       int nSymm = crystal.spaceGroup.symOps.size();
       List<SymOp> symOps = crystal.spaceGroup.symOps;
-
-      int monopoleOrder = 2;
-      int dipoleOrder = 3;
-      int quadrupoleOrder = 4;
-      if (gradient) {
-        monopoleOrder = 3;
-        dipoleOrder = 4;
-        quadrupoleOrder = 5;
-      }
-      gkSource = new GKSource(quadrupoleOrder + 1, gkc);
-      gkMonopoleQI = new GKTensorQI(MONOPOLE, monopoleOrder, gkSource, 1.0, epsilon);
-      gkDipoleQI = new GKTensorQI(DIPOLE, dipoleOrder, gkSource, 1.0, epsilon);
-      gkQuadrupoleQI = new GKTensorQI(QUADRUPOLE, quadrupoleOrder, gkSource, 1.0, epsilon);
 
       for (iSymm = 0; iSymm < nSymm; iSymm++) {
         SymOp symOp = symOps.get(iSymm);
@@ -2877,43 +2861,26 @@ public class GKEnergyRegion extends ParallelRegion {
 
       // Set the GK energy tensor.
       double rbk = born[k];
-      gkSource.generateSource(POTENTIAL, QUADRUPOLE, r2, rbi, rbk);
-      gkMonopoleQI.setR(dx_local);
-      gkDipoleQI.setR(dx_local);
-      gkQuadrupoleQI.setR(dx_local);
-      gkMonopoleQI.generateTensor();
-      gkDipoleQI.generateTensor();
-      gkQuadrupoleQI.generateTensor();
+      gkEnergyQI.initPotential(dx_local, r2, rbi, rbk);
 
       // Compute the GK permanent multipole interaction.
       double eik;
       if (!gradient) {
         // Compute the GK permanent interaction energy.
-        double em = gkMonopoleQI.multipoleEnergy(mI, mK);
-        double ed = gkDipoleQI.multipoleEnergy(mI, mK);
-        double eq = gkQuadrupoleQI.multipoleEnergy(mI, mK);
-        eik = electric * selfScale * (em + ed + eq);
+        eik = electric * selfScale * gkEnergyQI.multipoleEnergy(mI, mK);
         gkPermanentEnergy += eik;
-
         if (polarization != Polarization.NONE) {
           // Compute the GK polarization interaction energy.
-          double emp = gkMonopoleQI.polarizationEnergy(mI, mK);
-          double edp = gkDipoleQI.polarizationEnergy(mI, mK);
-          double eqp = gkQuadrupoleQI.polarizationEnergy(mI, mK);
-          double ep = electric * selfScale * (emp + edp + eqp);
-          gkPolarizationEnergy += eik;
+          double ep = electric * selfScale * gkEnergyQI.polarizationEnergy(mI, mK);
+          gkPolarizationEnergy += ep;
           eik += ep;
         }
       } else {
         if (i == k) {
           // Compute the GK permanent interaction energy.
-          double em = gkMonopoleQI.multipoleEnergy(mI, mK);
-          double ed = gkDipoleQI.multipoleEnergy(mI, mK);
-          double eq = gkQuadrupoleQI.multipoleEnergy(mI, mK);
-          eik = electric * selfScale * (em + ed + eq);
+          eik = electric * selfScale * gkEnergyQI.multipoleEnergy(mI, mK);
           gkPermanentEnergy += eik;
           // There is no dE/dR or torque for the i == k permanent self-energy.
-
           if (polarization != Polarization.NONE) {
             // Compute the GK polarization interaction energy.
             // There is no dE/dR, but there can be a torque for the i == k polarization self-energy
@@ -2922,35 +2889,10 @@ public class GKEnergyRegion extends ParallelRegion {
             if (polarization == Polarization.DIRECT) {
               mutualMask = 0.0;
             }
-            fill(tI, 0.0);
-            fill(tK, 0.0);
-            double emp = gkMonopoleQI.polarizationEnergyAndGradient(mI, mK, 1.0, 1.0, mutualMask, gI,
-                tI, tK);
-            for (int j = 0; j < 3; j++) {
-              torqueI[j] = tI[j];
-              torqueK[j] = tK[j];
-            }
-            fill(tI, 0.0);
-            fill(tK, 0.0);
-            double edp = gkDipoleQI.polarizationEnergyAndGradient(mI, mK, 1.0, 1.0, mutualMask, gI,
-                tI, tK);
-            for (int j = 0; j < 3; j++) {
-              torqueI[j] += tI[j];
-              torqueK[j] += tK[j];
-            }
-            fill(tI, 0.0);
-            fill(tK, 0.0);
-            double eqp = gkQuadrupoleQI.polarizationEnergyAndGradient(mI, mK, 1.0, 1.0, mutualMask,
-                gI, tI, tK);
-            for (int j = 0; j < 3; j++) {
-              torqueI[j] += tI[j];
-              torqueK[j] += tK[j];
-            }
-
-            double ep = electric * selfScale * (emp + edp + eqp);
+            double ep = electric * selfScale * gkEnergyQI.polarizationEnergyAndGradient(mI, mK, mutualMask,
+                    gradI, torqueI, torqueK);
             gkPolarizationEnergy += ep;
             eik += ep;
-
             // The torque for the i == k polarization self-energy.
             trqxi += electric * selfScale * torqueI[0];
             trqyi += electric * selfScale * torqueI[1];
@@ -2963,101 +2905,31 @@ public class GKEnergyRegion extends ParallelRegion {
             final double rtkz = tkx * transOp[0][2] + tky * transOp[1][2] + tkz * transOp[2][2];
             torque.add(threadID, k, rtkx, rtky, rtkz);
           }
-
           // Compute the GK permanent Born chain-rule term.
-          gkSource.generateSource(BORN, QUADRUPOLE, r2, rbi, rbk);
-          double db = gkMonopoleQI.multipoleEnergyBornGrad(mI, mK);
-          db += gkDipoleQI.multipoleEnergyBornGrad(mI, mK);
-          db += gkQuadrupoleQI.multipoleEnergyBornGrad(mI, mK);
-
+          gkEnergyQI.initBorn(dx_local, r2, rbi, rbk);
+          double db = gkEnergyQI.multipoleEnergyBornGrad(mI, mK);
           if (polarization != Polarization.NONE) {
-            // Compute the GK polarization Born chain-rule term.
-            db += gkMonopoleQI.polarizationEnergyBornGrad(mI, mK);
-            db += gkDipoleQI.polarizationEnergyBornGrad(mI, mK);
-            db += gkQuadrupoleQI.polarizationEnergyBornGrad(mI, mK);
-            // Add the mutual polarization contribution to Born chain-rule term.
-            if (polarization == Polarization.MUTUAL) {
-              db += gkDipoleQI.mutualPolarizationEnergyBornGrad(mI, mK);
-            }
+            db += gkEnergyQI.polarizationEnergyBornGrad(mI, mK, polarization == Polarization.MUTUAL);
           }
-
           dborni += electric * rbi * db;
         } else {
-          fill(gI, 0.0);
-          fill(gK, 0.0);
-          fill(tI, 0.0);
-          fill(tK, 0.0);
-          double em = gkMonopoleQI.multipoleEnergyAndGradient(mI, mK, gI, gK, tI, tK);
-          for (int j = 0; j < 3; j++) {
-            gradI[j] = gI[j];
-            torqueI[j] = tI[j];
-            torqueK[j] = tK[j];
-          }
-          fill(gI, 0.0);
-          fill(gK, 0.0);
-          fill(tI, 0.0);
-          fill(tK, 0.0);
-          double ed = gkDipoleQI.multipoleEnergyAndGradient(mI, mK, gI, gK, tI, tK);
-          for (int j = 0; j < 3; j++) {
-            gradI[j] += gI[j];
-            torqueI[j] += tI[j];
-            torqueK[j] += tK[j];
-          }
-          fill(gI, 0.0);
-          fill(gK, 0.0);
-          fill(tI, 0.0);
-          fill(tK, 0.0);
-          double eq = gkQuadrupoleQI.multipoleEnergyAndGradient(mI, mK, gI, gK, tI, tK);
-          for (int j = 0; j < 3; j++) {
-            gradI[j] += gI[j];
-            torqueI[j] += tI[j];
-            torqueK[j] += tK[j];
-          }
-
           // Sum the GK permanent interaction energy.
-          eik = electric * (em + ed + eq);
+          eik = electric * gkEnergyQI.multipoleEnergyAndGradient(mI, mK, gradI, torqueI, torqueK);
           gkPermanentEnergy += eik;
-
           if (polarization != Polarization.NONE) {
             double mutualMask = 1.0;
             if (polarization == Polarization.DIRECT) {
               mutualMask = 0.0;
             }
-            fill(gI, 0.0);
-            fill(tI, 0.0);
-            fill(tK, 0.0);
-            double emp = gkMonopoleQI.polarizationEnergyAndGradient(mI, mK, 1.0, 1.0, mutualMask, gI,
-                tI, tK);
-            for (int j = 0; j < 3; j++) {
-              gradI[j] += gI[j];
-              torqueI[j] += tI[j];
-              torqueK[j] += tK[j];
-            }
-            fill(gI, 0.0);
-            fill(tI, 0.0);
-            fill(tK, 0.0);
-            double edp = gkDipoleQI.polarizationEnergyAndGradient(mI, mK, 1.0, 1.0, mutualMask, gI,
-                tI, tK);
-            for (int j = 0; j < 3; j++) {
-              gradI[j] += gI[j];
-              torqueI[j] += tI[j];
-              torqueK[j] += tK[j];
-            }
-            fill(gI, 0.0);
-            fill(tI, 0.0);
-            fill(tK, 0.0);
-            double eqp = gkQuadrupoleQI.polarizationEnergyAndGradient(mI, mK, 1.0, 1.0, mutualMask,
-                gI, tI, tK);
-            for (int j = 0; j < 3; j++) {
-              gradI[j] += gI[j];
-              torqueI[j] += tI[j];
-              torqueK[j] += tK[j];
-            }
-
             // Sum the GK polarization interaction energy.
-            double ep = electric * (emp + edp + eqp);
+            double ep = electric * gkEnergyQI.polarizationEnergyAndGradient(mI, mK, mutualMask, gI, tI, tK);
             eik += ep;
-            gkPolarizationEnergy += eik;
+            gkPolarizationEnergy += ep;
+            for (int j = 0; j < 3; j++) {
+              gradI[j] += gI[j];
+              torqueI[j] += tI[j];
+              torqueK[j] += tK[j];
+            }
           }
 
           // Convert to units of kcal/mol
@@ -3098,22 +2970,11 @@ public class GKEnergyRegion extends ParallelRegion {
           torque.add(threadID, k, rtkx, rtky, rtkz);
 
           // Compute the Born-chain rule term.
-          gkSource.generateSource(BORN, QUADRUPOLE, r2, rbi, rbk);
-          double db = gkMonopoleQI.multipoleEnergyBornGrad(mI, mK);
-          db += gkDipoleQI.multipoleEnergyBornGrad(mI, mK);
-          db += gkQuadrupoleQI.multipoleEnergyBornGrad(mI, mK);
-
+          gkEnergyQI.initBorn(dx_local, r2, rbi, rbk);
+          double db = gkEnergyQI.multipoleEnergyBornGrad(mI, mK);
           if (polarization != Polarization.NONE) {
-            // Compute the GK polarization Born chain-rule term.
-            db += gkMonopoleQI.polarizationEnergyBornGrad(mI, mK);
-            db += gkDipoleQI.polarizationEnergyBornGrad(mI, mK);
-            db += gkQuadrupoleQI.polarizationEnergyBornGrad(mI, mK);
-            // Add the mutual polarization contribution to Born chain-rule term.
-            if (polarization == Polarization.MUTUAL) {
-              db += gkDipoleQI.mutualPolarizationEnergyBornGrad(mI, mK);
-            }
+            db += gkEnergyQI.polarizationEnergyBornGrad(mI, mK, polarization == Polarization.MUTUAL);
           }
-
           db *= electric;
           dborni += rbk * db;
           sharedBornGrad.add(threadID, k, rbi * db);

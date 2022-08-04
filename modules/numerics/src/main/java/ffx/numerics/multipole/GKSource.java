@@ -52,8 +52,8 @@ public class GKSource {
   public enum GK_TENSOR_MODE {POTENTIAL, BORN}
 
   /**
-   * The GK tensor can be constructed for a monopole potential (GB), a dipole potential
-   * or a quadrupole potential.
+   * The GK tensor can be constructed for a monopole potential (GB), a dipole potential or a
+   * quadrupole potential.
    */
   public enum GK_MULTIPOLE_ORDER {
     MONOPOLE(0), DIPOLE(1), QUADRUPOLE(2);
@@ -87,9 +87,39 @@ public class GKSource {
   private double f;
 
   /**
+   * The GK effective separation distance.
+   */
+  private double f1;
+
+  /**
+   * The GK effective separation distance.
+   */
+  private double f2;
+
+  /**
    * Generalized Kirkwood constant.
    */
   private final double gc;
+
+  /**
+   * Inverse generalized Kirkwood constant.
+   */
+  private final double igc;
+
+  /**
+   * The product: gc * Ai * Aj.
+   */
+  private double gcAiAj;
+
+  /**
+   * The ratio -r2 / (gc * Ai * Aj).
+   */
+  private double ratio;
+
+  /**
+   * The quantity: -2.0 / (gc * Ai * Aj);
+   */
+  private double fr;
 
   /**
    * Separation distance squared.
@@ -137,6 +167,7 @@ public class GKSource {
   public GKSource(int order, double gc) {
     this.order = order;
     this.gc = gc;
+    this.igc = 1.0 / gc;
 
     // Auxiliary terms for Generalized Kirkwood (equivalent to Coulomb and Thole Screening).
     kirkwoodSource = new double[order + 1];
@@ -164,15 +195,11 @@ public class GKSource {
     if (mode == GK_TENSOR_MODE.POTENTIAL) {
       // Max derivatives.
       int derivatives = order - mpoleOrder;
-      if (derivatives + 1 >= 0) {
-        arraycopy(anm[mpoleOrder], 0, work, mpoleOrder, derivatives + 1);
-      }
+      arraycopy(anm[mpoleOrder], 0, work, mpoleOrder, derivatives + 1);
     } else {
       // Max derivatives.
       int derivatives = (order - 1) - mpoleOrder;
-      if (derivatives + 1 >= 0) {
-        arraycopy(bnm[mpoleOrder], 0, work, mpoleOrder, derivatives + 1);
-      }
+      arraycopy(bnm[mpoleOrder], 0, work, mpoleOrder, derivatives + 1);
     }
   }
 
@@ -186,16 +213,20 @@ public class GKSource {
 
     this.r2 = r2;
     rb2 = ai * aj;
-    expTerm = exp(-r2 / (gc * rb2));
+    gcAiAj = gc * rb2;
+    ratio = -r2 / gcAiAj;
+    expTerm = exp(ratio);
+    fr = -2.0 / gcAiAj;
+
     f = sqrt(r2 + rb2 * expTerm);
+    f1 = 1.0 - expTerm * igc;
+    f2 = 2.0 * expTerm / (gc * gcAiAj);
 
     if (mode == GK_TENSOR_MODE.POTENTIAL) {
       // Prepare the GK Potential tensor.
-      fn(order);
       anm(order, order - multipoleOrder);
     } else {
       // Prepare the GK Born-chain rule tensor.
-      bn(order);
       bnm(order - 1, (order - 1) - multipoleOrder);
     }
   }
@@ -213,18 +244,47 @@ public class GKSource {
         break;
       case 1:
         fn[0] = f;
-        fn[1] = 1.0 - expTerm / gc;
+        fn[1] = f1;
+        break;
+      case 2:
+        fn[0] = f;
+        fn[1] = f1;
+        fn[2] = f2;
+        break;
+      case 3:
+        fn[0] = f;
+        fn[1] = f1;
+        fn[2] = f2;
+        fn[3] = fr * f2;
+        break;
+      case 4:
+        fn[0] = f;
+        fn[1] = f1;
+        fn[2] = f2;
+        fn[3] = fr * f2;
+        fn[4] = fr * fn[3];
+        break;
+      case 5:
+        fn[0] = f;
+        fn[1] = f1;
+        fn[2] = f2;
+        fn[3] = fr * f2;
+        fn[4] = fr * fn[3];
+        fn[5] = fr * fn[4];
+        break;
+      case 6:
+        fn[0] = f;
+        fn[1] = f1;
+        fn[2] = f2;
+        fn[3] = fr * f2;
+        fn[4] = fr * fn[3];
+        fn[5] = fr * fn[4];
+        fn[6] = fr * fn[5];
         break;
       default:
         fn[0] = f;
-        fn[1] = 1.0 - expTerm / gc;
-        var gcAiAj = gc * rb2;
-        var f2 = 2.0 * expTerm / (gc * gcAiAj);
+        fn[1] = f1;
         fn[2] = f2;
-        if (n == 2) {
-          break;
-        }
-        var fr = -2.0 / gcAiAj;
         for (int i = 3; i <= n; i++) {
           fn[i] = fr * fn[i - 1];
         }
@@ -238,8 +298,7 @@ public class GKSource {
    * @param n Multipole order.
    */
   protected void bn(int n) {
-    var gcAiAj = gc * rb2;
-    var ratio = -r2 / gcAiAj;
+    var b2 = 2.0 * expTerm / (gcAiAj * gcAiAj) * (-ratio - 1.0);
     switch (n) {
       case 0:
         bn[0] = 0.5 * expTerm * (1.0 - ratio);
@@ -248,17 +307,17 @@ public class GKSource {
         bn[0] = 0.5 * expTerm * (1.0 - ratio);
         bn[1] = -r2 * expTerm / (gcAiAj * gcAiAj);
         break;
+      case 2:
+        bn[0] = 0.5 * expTerm * (1.0 - ratio);
+        bn[1] = -r2 * expTerm / (gcAiAj * gcAiAj);
+        bn[2] = b2;
+        break;
       default:
         bn[0] = 0.5 * expTerm * (1.0 - ratio);
         bn[1] = -r2 * expTerm / (gcAiAj * gcAiAj);
-        var b2 = 2.0 * expTerm / (gcAiAj * gcAiAj) * (-ratio - 1.0);
         bn[2] = b2;
-        if (n == 2) {
-          break;
-        }
         var br = 2.0 / (gcAiAj * rb2);
         var f2 = 2.0 / (gc * gcAiAj) * expTerm;
-        var fr = -2.0 / (gcAiAj);
         var frA = 1.0;
         var frB = fr;
         // (n - 2) * pow(fr, n - 3) * br * f2 + pow(fr, n - 2) * b2;
@@ -306,11 +365,14 @@ public class GKSource {
    * @param derivatives Number of derivatives.
    */
   private void anm(int n, int derivatives) {
+    // Fill the fn chain rule terms.
+    fn(n);
+
     // Fill the auxiliary potential.
     an0(n);
 
     // Derivative loop over columns.
-    for (int d = 1; d < derivatives; d++) {
+    for (int d = 1; d <= derivatives; d++) {
       // The coefficients are the same for each order.
       var coef = anmc[d];
       // The current derivative can only be computed for order n - d.
@@ -338,6 +400,9 @@ public class GKSource {
    * @param derivatives Number of derivatives.
    */
   private void bnm(int n, int derivatives) {
+    // Fill the bn chain rule terms.
+    bn(n);
+
     // Fill the auxiliary potential derivatives.
     bn0(n);
 
@@ -393,8 +458,8 @@ public class GKSource {
     }
   }
 
-  public static double selfEnergy(PolarizableMultipole polarizableMultipole, double ai, double aj,
-      double Eh, double Es) {
+  public static double selfEnergy(PolarizableMultipole polarizableMultipole, double ai, double Eh,
+      double Es) {
     double q2 = polarizableMultipole.q * polarizableMultipole.q;
     double dx = polarizableMultipole.dx;
     double dy = polarizableMultipole.dy;
@@ -412,13 +477,12 @@ public class GKSource {
     double qyy2 = polarizableMultipole.qyy * polarizableMultipole.qyy;
     double qzz2 = polarizableMultipole.qzz * polarizableMultipole.qzz;
 
-    double a = sqrt(ai * aj);
-    double a2 = a * a;
-    double a3 = a * a2;
+    double a2 = ai * ai;
+    double a3 = ai * a2;
     double a5 = a2 * a3;
 
     // Born partial charge
-    double e0 = cn(0, Eh, Es) * q2 / a;
+    double e0 = cn(0, Eh, Es) * q2 / ai;
     // Permanent Dipole
     double e1 = cn(1, Eh, Es) * (dx2 + dy2 + dz2) / a3;
     // Permanent Quadrupole

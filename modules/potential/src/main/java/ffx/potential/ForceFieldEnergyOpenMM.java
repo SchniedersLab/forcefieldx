@@ -4956,7 +4956,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_AmoebaGKCavitationForce_setParticleParameters(
             amoebaCavitationForce,
             index,
-            radius * OpenMM_NmPerAngstrom,
+            radius * OpenMM_NmPerAngstrom * useFactor,
             surfaceTension * useFactor,
             isHydrogen);
       }
