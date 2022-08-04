@@ -74,7 +74,7 @@ public class ESVFilter {
     for (int k = 0; k < 10; k++) {
       tautomerHeader.append(String.format(" %1$10s", "[" + k / 10.0 + "-" + (k + 1) / 10.0 + "]"));
     }
-    tautomerHeader.append("\nλ↓\n");
+    tautomerHeader.append("\n λ↓\n");
 
     StringBuilder[] histogram = new StringBuilder[nTitr];
     for (int i = 0; i < nTitr; i++) {

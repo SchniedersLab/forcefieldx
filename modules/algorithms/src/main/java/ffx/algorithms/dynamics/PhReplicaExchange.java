@@ -185,7 +185,7 @@ public class PhReplicaExchange implements Terminatable {
               br.readLine();
               int sum = 0;
               for(int j = 0; j < 10; j++){ // 10 titr windows
-                data = br.readLine();
+                data = br.readLine().trim();
                 tokens = List.of(data.split(" +"));
                 for(int k = 0; k < 10; k++){ // 10 tautomer windows
                   sum += Integer.parseInt(tokens.get(k + 1));
@@ -193,7 +193,7 @@ public class PhReplicaExchange implements Terminatable {
               }
               if(i == 0) {
                 restartStep = sum;
-                logger.info(" Restart already completed " + restartStep + " steps.");
+                logger.info(" Restart already completed " + restartStep + " steps."); // Restart step loses one every restart???
               } else if(restartStep != sum){
                 logger.warning(" RestartStep: " + restartStep + " Sum: " + sum);
                 logger.warning(" Restart step is not the same in all windows. Starting from scratch.");
@@ -235,7 +235,7 @@ public class PhReplicaExchange implements Terminatable {
     random.setSeed(0);
 
     // Create arrays to store the parameters of all processes.
-    parameters = new double[nReplicas][4]; //
+    parameters = new double[nReplicas][4];
     parametersHis = new int[nReplicas][extendedSystem.getTitratingResidueList().size()][100];
     parametersBuf = new DoubleBuf[nReplicas];
     parametersHisBuf = new IntegerBuf[nReplicas];
@@ -349,14 +349,14 @@ public class PhReplicaExchange implements Terminatable {
       logger.info(" ");
     }
 
-    int cyclesDone = 0;
+    int startCycle = 0;
     if(restart){
       logger.info(" Omitting initialization steps because this is a restart.");
-      cyclesDone = (int) ((restartStep+1) / nSteps);
-      logger.info(" Restarting pH-REX at cycle " + (cyclesDone+1) + " of " + cycles);
+      startCycle = (int) ((restartStep) / nSteps) + 1;
+      logger.info(" Restarting pH-REX at cycle " + (startCycle) + " of " + cycles);
     }
 
-    for (int i = cyclesDone+1; i < cycles; i++) {
+    for (int i = startCycle; i < cycles; i++) {
       // Check for termination request.
       if (terminate) {
         done = true;
@@ -372,15 +372,15 @@ public class PhReplicaExchange implements Terminatable {
         dynamicsOpenMM(nSteps, timeStep, printInterval, saveInterval, dyn);
       }
       else {
-
-        dynamics(nSteps, timeStep, printInterval, saveInterval);
+        dynamics(nSteps+1, timeStep, printInterval, saveInterval); //nSteps+1 bc one gets cutoff from restarts (more steps better than less?)
       }
 
       logger.info(" ");
       logger.info(String.format(" ------------------Exchange Cycle %d------------------\n", i+1));
 
-      exchange();
-
+      if(i != cycles-1) {
+        exchange();
+      }
       logger.info(" ");
       logger.info(" Setting rank " + rank + " esv to pH " + pHScale[rank2Ph[rank]]);
       logger.info(" ");
