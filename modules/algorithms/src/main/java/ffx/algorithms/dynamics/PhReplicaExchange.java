@@ -194,20 +194,11 @@ public class PhReplicaExchange implements Terminatable {
               if(i == 0) {
                 restartStep = sum;
                 logger.info(" Restart already completed " + restartStep + " steps."); // Restart step loses one every restart???
-              } else if(restartStep > sum){
+              } else if(restartStep != sum){
                 logger.warning(" Restart received uneven sums. Starting from the lowest one. Some windows may have more data then expected");
                 logger.info("Restart Step Current: " + restartStep);
-                restartStep = sum;
+                restartStep = Math.min(sum, restartStep);
                 logger.info(" Restart Step New: " + restartStep);
-              }
-              else if(restartStep != sum){
-                logger.warning(" RestartStep: " + restartStep + " Sum: " + sum);
-                logger.warning(" Restart step is not the same in all windows. Starting from scratch.");
-                restart = false;
-                break;
-              }
-              if(!restart){
-                break;
               }
             }
             data = br.readLine();
