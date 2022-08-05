@@ -232,7 +232,7 @@ class PhDynamics extends AlgorithmsScript {
         }
 
         pHReplicaExchange.
-                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
+                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, initTitrDynamics)
 
       } else {
         // CPU Constant pH Dynamics

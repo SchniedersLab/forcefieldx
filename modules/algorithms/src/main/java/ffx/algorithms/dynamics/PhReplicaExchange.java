@@ -41,7 +41,6 @@ import edu.rit.mp.DoubleBuf;
 import edu.rit.mp.IntegerBuf;
 import edu.rit.mp.buf.IntegerMatrixBuf_1;
 import edu.rit.pj.Comm;
-import edu.rit.util.Searching;
 import ffx.algorithms.Terminatable;
 import ffx.numerics.Potential;
 import ffx.potential.extended.ExtendedSystem;
@@ -49,10 +48,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.FastMath;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -159,6 +155,7 @@ public class PhReplicaExchange implements Terminatable {
     restartStep = 0;
     // Count how far the restart should start at and make sure that each dir has the correct files and set up maps
     if(restart){
+      ArrayList<Double> readPhScale = new ArrayList<>();
       for(int i = 0; i < nReplicas; i++){
         File checkESV = new File(rankDir.getParent() + File.separator + i + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + ".esv");
         File checkDYN = new File(rankDir.getParent() + File.separator + i + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + ".dyn");
@@ -173,6 +170,15 @@ public class PhReplicaExchange implements Terminatable {
             List<String> tokens = Arrays.asList(data.split(" +"));
             if(tokens.contains("pH:")){
               double pHOfRankI = Double.parseDouble(tokens.get(tokens.indexOf("pH:") + 1));
+              if(readPhScale.contains(pHOfRankI)){
+                logger.warning(" Duplicate pH values found. ");
+                logger.warning(" Restart is unable to run due to a loss of data on program killing. ");
+                restart = false;
+                break;
+              }
+              else {
+                readPhScale.add(pHOfRankI);
+              }
               // Set up map
               for(int j = 0; j < pHScale.length; j++){
                 if(pHScale[j] == pHOfRankI){
@@ -217,6 +223,7 @@ public class PhReplicaExchange implements Terminatable {
         }
       }
     }
+
 
     // Set restart files
     if(restart) {
@@ -321,16 +328,17 @@ public class PhReplicaExchange implements Terminatable {
   /**
    * Sample.
    *
-   * @param cycles a int.
-   * @param nSteps a int.
-   * @param timeStep a double.
+   * @param cycles        a int.
+   * @param nSteps        a int.
+   * @param timeStep      a double.
    * @param printInterval a double.
-   * @param saveInterval a double.
    */
   public void sample(
-      int cycles, long nSteps, double timeStep, double printInterval, double saveInterval, int initTitrDynamics) {
+          int cycles, long nSteps, double timeStep, double printInterval, int initTitrDynamics) {
     done = false;
     terminate = false;
+    replica.setRestartFrequency(cycles * nSteps * replica.dt + 100);
+    double saveInterval = cycles * nSteps * replica.dt + 100;
 
     if(extendedSystem.guessTitrState){
       extendedSystem.reGuessLambdas();
@@ -370,6 +378,7 @@ public class PhReplicaExchange implements Terminatable {
       }
       else {
         dynamics(nSteps+1, timeStep, printInterval, saveInterval); //nSteps+1 bc one gets cutoff from restarts (more steps better than less?)
+        replica.writeRestart(); // Shrink window for program to end and not be restartable
       }
 
       logger.info(" ");
