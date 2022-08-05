@@ -150,9 +150,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
   private static final double DEFAULT_HCT_P = 0.6117;
   private static final double DEFAULT_HCT_S = 0.7204;
   /**
-   * Default Sneck scaling factor from Aguilar/Onufriev 2010
+   * Default Sneck scaling factor - Set to Sneck for proteins
    */
-  private static final double DEFAULT_SNECK = 0.6784;
+  private static final double DEFAULT_SNECK = 0.1125;
   /**
    * Default value of beta0 for tanh scaling
    */
@@ -1598,17 +1598,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
         if (chemicallyAwareSneck) {
           // Determine number of bound heavy atoms for each non-hydrogen atom if chemically aware Sneck is being used
           int numBoundHeavyAtoms = 0;
+          int numBoundAtoms = 0;
           for (Atom boundAtom : atom.get12List()) {
             if (!boundAtom.isHydrogen()) {
               numBoundHeavyAtoms++;
             }
+            numBoundAtoms++;
           }
           // Use this number to determine Sneck scaling parameter
-          if (numBoundHeavyAtoms == 0) {
+          //if (numBoundHeavyAtoms == 0) {
+          if (numBoundAtoms == 0) {
             // Sneck for lone ions or molecules like methane, which are not descreened by any other atoms
             neckScale[i] = 1.0;
           } else {
-            neckScale[i] = atom.getSoluteType().sneck * (5.0 - numBoundHeavyAtoms) / 4.0;
+            //neckScale[i] = atom.getSoluteType().sneck * (5.0 - numBoundHeavyAtoms) / 4.0;
+            neckScale[i] = atom.getSoluteType().sneck * (5.0 - numBoundAtoms) / 4.0;
           }
         } else {
           // Non-chemically aware Sneck - set neckScale to the max (input) Sneck value for all non-hydrogen atoms
