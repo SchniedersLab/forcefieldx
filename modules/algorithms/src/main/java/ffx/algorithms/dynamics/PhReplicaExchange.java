@@ -347,6 +347,7 @@ public class PhReplicaExchange implements Terminatable {
     if(initTitrDynamics > 0 && !restart) {
       replica.dynamic(initTitrDynamics, timeStep,
               printInterval, saveInterval, temp, true, dyn);
+      replica.writeRestart();
 
 
       logger.info(" ");
@@ -410,6 +411,10 @@ public class PhReplicaExchange implements Terminatable {
       rank2Ph[i] = i;
       pH2Rank[i] = i;
     }
+  }
+
+  public double[] getpHScale(){
+    return pHScale;
   }
 
   /**

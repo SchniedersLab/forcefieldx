@@ -56,6 +56,8 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import java.nio.Buffer
+
 import static java.lang.String.format
 
 /**
@@ -107,6 +109,10 @@ class PhDynamics extends AlgorithmsScript {
   @Option(names = ['--initTitrDynamics'], paramLabel = '1000',
           description = 'Number of initialization steps to take before replica exchange windows start.')
   int initTitrDynamics = 1000
+
+  @Option(names = "--sort", paramLabel = "false",
+          description = "Sort archive files by pH")
+  boolean sort = false
 
 
 
@@ -218,6 +224,7 @@ class PhDynamics extends AlgorithmsScript {
         logger.info(" Rank: " + rank.toString())
 
         File structureFile = new File(filename)
+
         final String newMolAssemblyFile = structureFile.getParent() + File.separator + rank + File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
@@ -233,6 +240,10 @@ class PhDynamics extends AlgorithmsScript {
 
         pHReplicaExchange.
                 sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, initTitrDynamics)
+
+        if(sort){
+          sortMyArc(structureFile, world.size(), pHReplicaExchange.getpHScale()[world.rank()], world.rank())
+        }
 
       } else {
         // CPU Constant pH Dynamics
@@ -285,7 +296,7 @@ class PhDynamics extends AlgorithmsScript {
         }
 
         pHReplicaExchange.
-                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics, dyn)
+                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, initTitrDynamics)
       } else {
         for (int i = 0; i < cycles; i++) {
           // Try running on the CPU
@@ -322,5 +333,79 @@ class PhDynamics extends AlgorithmsScript {
         potentials = Collections.singletonList(potential)
       }
       return potentials
+    }
+
+    /**
+     * Sort archive files by pH with string parsing
+     */
+    void sortMyArc(File structureFile, int nReplicas, double pH, int myRank){
+      String parent = structureFile.getParent()
+      String arcName = FilenameUtils.removeExtension(structureFile.getName()) + ".arc"
+      BufferedReader[] bufferedReaders = new BufferedReader[nReplicas]
+      File output = new File(parent + File.separator + myRank + File.separator + arcName + "_sorted")
+      BufferedWriter out = new BufferedWriter(new FileWriter(output))
+
+      // Get snap length from first directory
+      File temp = new File(parent + File.separator + 0 + arcName)
+      BufferedReader brTemp = new BufferedReader(new FileReader(temp))
+      String data = brTemp.readLine()
+      int snapLength = 0
+      boolean startSnap = false
+      while(data != null){
+        if(data.contains("pH:")){
+          startSnap = !startSnap
+          if(!startSnap){
+            break
+          }
+        }
+        snapLength++
+      }
+      int totalLines = snapLength
+      while(data != null) {
+        totalLines++
+        brTemp.readLine()
+      }
+      totalLines--
+      int numSnaps = (int) (totalLines / snapLength)
+      logger.info("Number of snaps: " + numSnaps)
+
+      // Build file readers
+      for(int i = 0; i < nReplicas; i++) {
+        File file = new File(parent + File.separator + i + arcName)
+        bufferedReaders[i] = new BufferedReader(new FileReader(file))
+      }
+
+      try{
+        for(int i = 0; i < numSnaps; i++) {
+          for(int j = 0; j < nReplicas; j++) {
+            // Read up to the first line
+            data = bufferedReaders[i].readLine()
+            while(data != null){
+              if(data.contains("pH:")){break}
+              bufferedReaders[i].readLine()
+            }
+
+            // Get pH from line
+            String[] tokens = data.split(" +")
+            double snapPh = Double.parseDouble(tokens[tokens.length-1])
+
+            // Add lines to file if correct, otherwise don't
+            for(int k = 0; k < snapLength-1; i++){
+              if(snapPh == pH){
+                out.write(data)
+              }
+              data = bufferedReaders[i].readLine()
+            }
+          }
+        }
+      }catch(IOException e){
+        e.printStackTrace()
+      }
+
+      // Cleanup
+      out.close()
+      for(int i = 0; i < nReplicas; i++){
+        bufferedReaders[i].close()
+      }
     }
   }
