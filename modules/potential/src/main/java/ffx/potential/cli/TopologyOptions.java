@@ -319,7 +319,7 @@ public class TopologyOptions {
    * @param unshared Atoms this dual topology isn't sharing.
    * @return A sorted List of Integers.
    */
-  public List<Integer> getUniqueAtoms(MolecularAssembly assembly, String label, String unshared) {
+  public static List<Integer> getUniqueAtoms(MolecularAssembly assembly, String label, String unshared) {
     if (!unshared.isEmpty()) {
       logger.info(" Finding unique atoms for dual topology " + label);
       Set<Integer> indices = new HashSet<>();
@@ -346,7 +346,8 @@ public class TopologyOptions {
       }
       int counter = 0;
       Set<Integer> adjustedIndices = new HashSet<>(); // Indexed by common variables in dtA.
-      for (int i = 0; i < atoms1.length; i++) {
+      int atomLength = atoms1.length;
+      for (int i = 0; i < atomLength; i++) {
         Atom ai = atoms1[i];
         if (indices.contains(i)) {
           if (ai.applyLambda()) {
