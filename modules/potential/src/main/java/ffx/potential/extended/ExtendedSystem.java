@@ -1314,9 +1314,9 @@ public class ExtendedSystem implements Potential {
     public void writeRestart() {
         String esvName = FileUtils.relativePathTo(restartFile).toString();
         if (esvFilter.writeESV(restartFile, thetaPosition, thetaVelocity, thetaAccel, titratingResidueList, esvHistogram, constantSystemPh)) {
-            logger.info(" Wrote dynamics restart file to " + esvName);
+            logger.info(" Wrote PhDynamics restart file to " + esvName);
         } else {
-            logger.info(" Writing dynamics restart file to " + esvName + " failed");
+            logger.info(" Writing PhDynamics restart file to " + esvName + " failed");
         }
     }
 

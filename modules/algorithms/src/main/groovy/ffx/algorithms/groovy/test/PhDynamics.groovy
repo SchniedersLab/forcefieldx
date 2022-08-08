@@ -335,7 +335,7 @@ class PhDynamics extends AlgorithmsScript {
       BufferedWriter out = new BufferedWriter(new FileWriter(output))
 
       // Get snap length from first directory
-      File temp = new File(parent + File.separator + 0 + arcName)
+      File temp = new File(parent + File.separator + 0 + File.separator + arcName)
       BufferedReader brTemp = new BufferedReader(new FileReader(temp))
       String data = brTemp.readLine()
       int snapLength = 0

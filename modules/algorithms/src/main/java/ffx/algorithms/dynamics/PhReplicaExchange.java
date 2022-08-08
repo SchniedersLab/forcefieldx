@@ -361,8 +361,8 @@ public class PhReplicaExchange implements Terminatable {
     int startCycle = 0;
     if(restart){
       logger.info(" Omitting initialization steps because this is a restart.");
-      startCycle = (int) ((restartStep) / titrSteps) + 1;
-      logger.info(" Restarting pH-REX at cycle " + (startCycle) + " of " + cycles);
+      startCycle = (int) (restartStep / titrSteps) + 1;
+      logger.info(" Restarting pH-REX at cycle " + startCycle + " of " + cycles);
     }
 
     for (int i = startCycle; i < cycles; i++) {
@@ -380,7 +380,7 @@ public class PhReplicaExchange implements Terminatable {
         dynamicsOpenMM(titrSteps, confSteps, timeStep, printInterval, saveInterval);
       }
       else {
-        dynamics(titrSteps, timeStep, printInterval, saveInterval);
+        dynamics(titrSteps + 1, timeStep, printInterval, saveInterval);
       }
       replica.writeRestart();
 
