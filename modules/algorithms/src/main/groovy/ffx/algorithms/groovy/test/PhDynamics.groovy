@@ -92,15 +92,15 @@ class PhDynamics extends AlgorithmsScript {
 
   @Option(names = ['--coordinateSteps'], paramLabel = '100',
           description = 'Number of steps done propagating coordinates only on GPU in one cycle')
-  int coordSteps  = 10
+  int coordSteps  = 100
 
   @Option(names = ['--cycles', '--OMMcycles'], paramLabel = '5',
           description = 'Number of times to cycle between titrating protons on CPU and propagating coordinates only on GPU')
   int cycles  = 5
 
-  @Option(names = ['--titrationReport', '--esvLog'], paramLabel = '0.001 (psec)',
+  @Option(names = ['--titrationReport', '--esvLog'], paramLabel = '0.25 (psec)',
           description = 'Interval in psec to report ESV energy and lambdas when cycling between GPU and CPU.')
-  double titrReport  = 0.001
+  double titrReport  = 0.25
 
   @Option(names = ['--pHGaps'], paramLabel = '1',
           description = 'pH gap between replica exchange windows.')
@@ -221,10 +221,8 @@ class PhDynamics extends AlgorithmsScript {
 
         logger.info("\n Running replica exchange molecular dynamics on " + filename)
         int rank = (size > 1) ? world.rank() : 0
-        logger.info(" Rank: " + rank.toString())
 
         File structureFile = new File(filename)
-
         final String newMolAssemblyFile = structureFile.getParent() + File.separator + rank + File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
@@ -241,9 +239,7 @@ class PhDynamics extends AlgorithmsScript {
         pHReplicaExchange.
                 sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, initTitrDynamics)
 
-        if(sort){
-          sortMyArc(structureFile, world.size(), pHReplicaExchange.getpHScale()[world.rank()], world.rank())
-        }
+        sortMyArc(structureFile, world.size(), pHReplicaExchange.getpHScale()[world.rank()], world.rank())
 
       } else {
         // CPU Constant pH Dynamics
@@ -287,16 +283,9 @@ class PhDynamics extends AlgorithmsScript {
         molecularDynamics.setFallbackDynFile(dyn)
         PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, pHGap, dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
 
-        long totalSteps = dynamicsOptions.numSteps
-        int nSteps = repEx.replicaSteps
-        int exchangeCycles = (int) (totalSteps / nSteps)
-
-        if (exchangeCycles <= 0) {
-          exchangeCycles = 1
-        }
-
         pHReplicaExchange.
-                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, initTitrDynamics)
+                sample(cycles, titrSteps, coordSteps, dynamicsOptions.dt, dynamicsOptions.report, initTitrDynamics)
+
       } else {
         for (int i = 0; i < cycles; i++) {
           // Try running on the CPU
@@ -338,7 +327,7 @@ class PhDynamics extends AlgorithmsScript {
     /**
      * Sort archive files by pH with string parsing
      */
-    void sortMyArc(File structureFile, int nReplicas, double pH, int myRank){
+  static void sortMyArc(File structureFile, int nReplicas, double pH, int myRank){
       String parent = structureFile.getParent()
       String arcName = FilenameUtils.removeExtension(structureFile.getName()) + ".arc"
       BufferedReader[] bufferedReaders = new BufferedReader[nReplicas]
@@ -376,13 +365,14 @@ class PhDynamics extends AlgorithmsScript {
       }
 
       try{
+        // Read all arc files one snap at a time
         for(int i = 0; i < numSnaps; i++) {
           for(int j = 0; j < nReplicas; j++) {
             // Read up to the first line
-            data = bufferedReaders[i].readLine()
+            data = bufferedReaders[j].readLine()
             while(data != null){
               if(data.contains("pH:")){break}
-              bufferedReaders[i].readLine()
+              data = bufferedReaders[j].readLine()
             }
 
             // Get pH from line
@@ -394,7 +384,7 @@ class PhDynamics extends AlgorithmsScript {
               if(snapPh == pH){
                 out.write(data)
               }
-              data = bufferedReaders[i].readLine()
+              data = bufferedReaders[j].readLine()
             }
           }
         }

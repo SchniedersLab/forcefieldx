@@ -333,12 +333,15 @@ public class PhReplicaExchange implements Terminatable {
    * @param timeStep      a double.
    * @param printInterval a double.
    */
-  public void sample(
-          int cycles, long nSteps, double timeStep, double printInterval, int initTitrDynamics) {
+  public void sample(int cycles, long nSteps, double timeStep, double printInterval, int initTitrDynamics) {
+    sample(cycles, nSteps, 0, timeStep, printInterval, initTitrDynamics);
+  }
+
+  public void sample(int cycles, long titrSteps, long confSteps, double timeStep, double printInterval, int initTitrDynamics) {
     done = false;
     terminate = false;
-    replica.setRestartFrequency(cycles * nSteps * replica.dt + 100);
-    double saveInterval = cycles * nSteps * replica.dt + 100;
+    replica.setRestartFrequency(cycles * (titrSteps + confSteps) * replica.dt + 100);
+    double saveInterval = cycles * (titrSteps + confSteps) * replica.dt + 100;
 
     if(extendedSystem.guessTitrState){
       extendedSystem.reGuessLambdas();
@@ -358,7 +361,7 @@ public class PhReplicaExchange implements Terminatable {
     int startCycle = 0;
     if(restart){
       logger.info(" Omitting initialization steps because this is a restart.");
-      startCycle = (int) ((restartStep) / nSteps) + 1;
+      startCycle = (int) ((restartStep) / titrSteps) + 1;
       logger.info(" Restarting pH-REX at cycle " + (startCycle) + " of " + cycles);
     }
 
@@ -370,17 +373,16 @@ public class PhReplicaExchange implements Terminatable {
       }
 
       if(openMM != null){
-        if(nSteps < 3)
+        if(confSteps < 3)
         {
           logger.severe("Increase number of steps per cycle.");
         }
-
-        dynamicsOpenMM(nSteps, timeStep, printInterval, saveInterval, dyn);
+        dynamicsOpenMM(titrSteps, confSteps, timeStep, printInterval, saveInterval);
       }
       else {
-        dynamics(nSteps+1, timeStep, printInterval, saveInterval); //nSteps+1 bc one gets cutoff from restarts (more steps better than less?)
-        replica.writeRestart(); // Shrink window for program to end and not be restartable
+        dynamics(titrSteps, timeStep, printInterval, saveInterval);
       }
+      replica.writeRestart();
 
       logger.info(" ");
       logger.info(String.format(" ------------------Exchange Cycle %d------------------\n", i+1));
@@ -394,11 +396,15 @@ public class PhReplicaExchange implements Terminatable {
     }
   }
 
+  public double[] getpHScale(){
+    return pHScale;
+  }
+
   /**
    * setEvenPhLadder.
    *
    */
-  public void setEvenSpacePhLadder(double pHGap){
+  private void setEvenSpacePhLadder(double pHGap){
     double range = world.size() * pHGap;
     double pHMin = pH - range/2;
 
@@ -411,10 +417,6 @@ public class PhReplicaExchange implements Terminatable {
       rank2Ph[i] = i;
       pH2Rank[i] = i;
     }
-  }
-
-  public double[] getpHScale(){
-    return pHScale;
   }
 
   /**
@@ -532,12 +534,13 @@ public class PhReplicaExchange implements Terminatable {
    * Blocking dynamic steps: when this method returns each replica has completed the requested
    * number of steps. Both OpenMM and CPU implementations exist
    *
-   * @param nSteps the number of time steps.
+   * @param titrSteps the number of time steps on CPU.
+   * @param confSteps the number of time steps on GPU.
    * @param timeStep the time step.
    * @param printInterval the number of steps between loggging updates.
    * @param saveInterval the number of steps between saving snapshots.
    */
-  private void dynamicsOpenMM(final long nSteps, final double timeStep, final double printInterval, final double saveInterval, File dyn) {
+  private void dynamicsOpenMM(final long titrSteps, final long confSteps, final double timeStep, final double printInterval, final double saveInterval) {
 
     int i = rank2Ph[rank];
     extendedSystem.setConstantPh(pHScale[i]);
@@ -546,10 +549,13 @@ public class PhReplicaExchange implements Terminatable {
     // Start this processes MolecularDynamics instance sampling.
     boolean initVelocities = true;
 
-    double titrSteps = nSteps / 2.0;
     int titrStepsOne = (int) titrSteps / 2;
     int titrStepsTwo = (int) FastMath.ceil(titrSteps / 2.0);
-    int conformSteps = (int) FastMath.ceil(nSteps / 2.0);
+    if(replica.restartFrequency > titrStepsTwo){
+      logger.warning("Restart frequency is too long for Rep Ex with cycling between CPU/GPU implementations. Defaulting to twice per cycle");
+      double restartFreq = titrStepsTwo / 1000.0;
+      replica.setRestartFrequency(restartFreq);
+    }
 
     replica.dynamic(titrStepsOne, timeStep, printInterval, saveInterval, temp, initVelocities, dyn);
 
@@ -557,7 +563,7 @@ public class PhReplicaExchange implements Terminatable {
     potential.energy(x);
     openMM.setCoordinates(x);
 
-    openMM.dynamic(conformSteps, timeStep, printInterval, saveInterval, temp, initVelocities, dyn);
+    openMM.dynamic(confSteps, timeStep, printInterval, saveInterval, temp, initVelocities, dyn);
 
     x = openMM.getCoordinates();
     replica.setCoordinates(x);

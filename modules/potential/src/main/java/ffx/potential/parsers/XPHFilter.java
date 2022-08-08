@@ -709,7 +709,6 @@ public class XPHFilter extends SystemFilter {
 
               data = bufferedReader.readLine().trim();
             }
-            logger.info(extendedSystem.getLambdaList());
           } else {
             logger.severe(" Number of ESVs in archive doesn't match extended system residue list size.");
             return false;
