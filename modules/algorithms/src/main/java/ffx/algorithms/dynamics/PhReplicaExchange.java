@@ -351,7 +351,6 @@ public class PhReplicaExchange implements Terminatable {
               printInterval, trajInterval, temp, true, dyn);
       replica.writeRestart();
 
-
       logger.info(" ");
       logger.info(" ------------------End of Equilibration Dynamics------------------\n");
       logger.info(" ");

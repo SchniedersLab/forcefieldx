@@ -328,75 +328,74 @@ class PhDynamics extends AlgorithmsScript {
      * Sort archive files by pH with string parsing
      */
   static void sortMyArc(File structureFile, int nReplicas, double pH, int myRank){
-      logger.info("Sorting archive for rank " + myRank)
-      String parent = structureFile.getParent()
-      String arcName = FilenameUtils.removeExtension(structureFile.getName()) + ".arc"
-      BufferedReader[] bufferedReaders = new BufferedReader[nReplicas]
-      File output = new File(parent + File.separator + myRank + File.separator + arcName + "_sorted")
-      BufferedWriter out = new BufferedWriter(new FileWriter(output))
+    logger.info("Sorting archive for rank " + myRank)
+    String parent = structureFile.getParent()
+    String arcName = FilenameUtils.removeExtension(structureFile.getName()) + ".arc"
+    BufferedReader[] bufferedReaders = new BufferedReader[nReplicas]
+    File output = new File(parent + File.separator + myRank + File.separator + arcName + "_sorted")
+    BufferedWriter out = new BufferedWriter(new FileWriter(output))
+    logger.info("Output file: " + out)
 
-      // Get snap length from first directory
-      File temp = new File(parent + File.separator + 0 + File.separator + arcName)
-      BufferedReader brTemp = new BufferedReader(new FileReader(temp))
-      String data = brTemp.readLine()
-      int snapLength = 0
-      boolean startSnap = false
-      while(data != null){
-        if(data.contains("pH:")){
-          startSnap = !startSnap
-          if(!startSnap){
-            break
-          }
+    // Get snap length from first directory
+    File temp = new File(parent + File.separator + 0 + File.separator + arcName)
+    BufferedReader brTemp = new BufferedReader(new FileReader(temp))
+    String data = brTemp.readLine()
+    int snapLength = 0
+    boolean startSnap = false
+    while(data != null){
+      if(data.contains("pH:")){
+        startSnap = !startSnap
+        if(!startSnap){
+          logger.info("Found snap length: " + snapLength)
+          break
         }
-        snapLength++
       }
-      int totalLines = snapLength
-      while(data != null) {
-        totalLines++
-        brTemp.readLine()
-      }
-      totalLines--
-      int numSnaps = (int) (totalLines / snapLength)
-      logger.info("Number of snaps: " + numSnaps)
-
-      // Build file readers
-      for(int i = 0; i < nReplicas; i++) {
-        File file = new File(parent + File.separator + i + arcName)
-        bufferedReaders[i] = new BufferedReader(new FileReader(file))
-      }
-
-      try{
-        // Read all arc files one snap at a time
-        for(int i = 0; i < numSnaps; i++) {
-          for(int j = 0; j < nReplicas; j++) {
-            // Read up to the first line
+      snapLength++
+    }
+    int totalLines = snapLength
+    while(data != null) {
+      totalLines++
+      brTemp.readLine()
+    }
+    totalLines--
+    int numSnaps = (int) (totalLines / snapLength)
+    logger.info("Number of snaps: " + numSnaps)
+    
+    // Build file readers
+    for(int i = 0; i < nReplicas; i++) {
+      File file = new File(parent + File.separator + i + arcName)
+      bufferedReaders[i] = new BufferedReader(new FileReader(file))
+    }
+    try{
+      // Read all arc files one snap at a time
+      for(int i = 0; i < numSnaps; i++) {
+        logger.info("Starting snap " + i)
+        for(int j = 0; j < nReplicas; j++) {
+          // Read up to the first line
+          data = bufferedReaders[j].readLine()
+          while(data != null){
+            if(data.contains("pH:")){break}
             data = bufferedReaders[j].readLine()
-            while(data != null){
-              if(data.contains("pH:")){break}
-              data = bufferedReaders[j].readLine()
+          }
+          // Get pH from line
+          String[] tokens = data.split(" +")
+          double snapPh = Double.parseDouble(tokens[tokens.length-1])
+          // Add lines to file if correct, otherwise don't
+          for(int k = 0; k < snapLength-1; i++){
+            if(snapPh == pH){
+              out.write(data)
             }
-
-            // Get pH from line
-            String[] tokens = data.split(" +")
-            double snapPh = Double.parseDouble(tokens[tokens.length-1])
-
-            // Add lines to file if correct, otherwise don't
-            for(int k = 0; k < snapLength-1; i++){
-              if(snapPh == pH){
-                out.write(data)
-              }
-              data = bufferedReaders[j].readLine()
-            }
+            data = bufferedReaders[j].readLine()
           }
         }
-      }catch(IOException e){
-        e.printStackTrace()
       }
-
-      // Cleanup
-      out.close()
-      for(int i = 0; i < nReplicas; i++){
-        bufferedReaders[i].close()
-      }
+    }catch(IOException e){
+      e.printStackTrace()
+    }
+    // Cleanup
+    out.close()
+    for(int i = 0; i < nReplicas; i++){
+      bufferedReaders[i].close()
     }
   }
+}
