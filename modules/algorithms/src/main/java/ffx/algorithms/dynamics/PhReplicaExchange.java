@@ -333,11 +333,11 @@ public class PhReplicaExchange implements Terminatable {
    * @param timeStep      a double.
    * @param printInterval a double.
    */
-  public void sample(int cycles, long nSteps, double timeStep, double printInterval, int initTitrDynamics) {
-    sample(cycles, nSteps, 0, timeStep, printInterval, initTitrDynamics);
+  public void sample(int cycles, long nSteps, double timeStep, double printInterval, double trajInterval, int initTitrDynamics) {
+    sample(cycles, nSteps, 0, timeStep, printInterval, trajInterval, initTitrDynamics);
   }
 
-  public void sample(int cycles, long titrSteps, long confSteps, double timeStep, double printInterval, int initTitrDynamics) {
+  public void sample(int cycles, long titrSteps, long confSteps, double timeStep, double printInterval, double trajInterval, int initTitrDynamics) {
     done = false;
     terminate = false;
     replica.setRestartFrequency(cycles * (titrSteps + confSteps) * replica.dt + 100);
@@ -348,7 +348,7 @@ public class PhReplicaExchange implements Terminatable {
 
     if(initTitrDynamics > 0 && !restart) {
       replica.dynamic(initTitrDynamics, timeStep,
-              printInterval, replica.trajectoryFrequency, temp, true, dyn);
+              printInterval, trajInterval, temp, true, dyn);
       replica.writeRestart();
 
 
@@ -376,10 +376,10 @@ public class PhReplicaExchange implements Terminatable {
         {
           logger.severe("Increase number of steps per cycle.");
         }
-        dynamicsOpenMM(titrSteps, confSteps, timeStep, printInterval, replica.trajectoryFrequency);
+        dynamicsOpenMM(titrSteps, confSteps, timeStep, printInterval, trajInterval);
       }
       else {
-        dynamics(titrSteps + 1, timeStep, printInterval, replica.trajectoryFrequency);
+        dynamics(titrSteps + 1, timeStep, printInterval, trajInterval);
       }
       replica.writeRestart();
 
