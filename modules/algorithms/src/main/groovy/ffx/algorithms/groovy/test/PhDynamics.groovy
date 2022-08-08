@@ -384,7 +384,7 @@ class PhDynamics extends AlgorithmsScript {
           for(int k = 0; k < snapLength-1; k++){
             if(snapPh == pH){
               logger.info(data)
-              out.write(data)
+              out.write(data + "\n")
             }
             data = bufferedReaders[j].readLine()
           }
