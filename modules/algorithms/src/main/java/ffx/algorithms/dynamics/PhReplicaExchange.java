@@ -341,7 +341,6 @@ public class PhReplicaExchange implements Terminatable {
     done = false;
     terminate = false;
     replica.setRestartFrequency(cycles * (titrSteps + confSteps) * replica.dt + 100);
-    double saveInterval = cycles * (titrSteps + confSteps) * replica.dt + 100;
 
     if(extendedSystem.guessTitrState){
       extendedSystem.reGuessLambdas();
@@ -349,7 +348,7 @@ public class PhReplicaExchange implements Terminatable {
 
     if(initTitrDynamics > 0 && !restart) {
       replica.dynamic(initTitrDynamics, timeStep,
-              printInterval, saveInterval, temp, true, dyn);
+              printInterval, replica.trajectoryFrequency, temp, true, dyn);
       replica.writeRestart();
 
 
@@ -377,10 +376,10 @@ public class PhReplicaExchange implements Terminatable {
         {
           logger.severe("Increase number of steps per cycle.");
         }
-        dynamicsOpenMM(titrSteps, confSteps, timeStep, printInterval, saveInterval);
+        dynamicsOpenMM(titrSteps, confSteps, timeStep, printInterval, replica.trajectoryFrequency);
       }
       else {
-        dynamics(titrSteps + 1, timeStep, printInterval, saveInterval);
+        dynamics(titrSteps + 1, timeStep, printInterval, replica.trajectoryFrequency);
       }
       replica.writeRestart();
 

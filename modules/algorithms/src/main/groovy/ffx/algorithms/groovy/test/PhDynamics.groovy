@@ -328,6 +328,7 @@ class PhDynamics extends AlgorithmsScript {
      * Sort archive files by pH with string parsing
      */
   static void sortMyArc(File structureFile, int nReplicas, double pH, int myRank){
+      logger.info("Sorting archive for rank " + myRank)
       String parent = structureFile.getParent()
       String arcName = FilenameUtils.removeExtension(structureFile.getName()) + ".arc"
       BufferedReader[] bufferedReaders = new BufferedReader[nReplicas]
