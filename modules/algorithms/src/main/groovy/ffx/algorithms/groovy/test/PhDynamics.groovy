@@ -334,7 +334,6 @@ class PhDynamics extends AlgorithmsScript {
     BufferedReader[] bufferedReaders = new BufferedReader[nReplicas]
     File output = new File(parent + File.separator + myRank + File.separator + arcName + "_sorted")
     BufferedWriter out = new BufferedWriter(new FileWriter(output))
-    logger.info(" Output file: " + output.getText())
 
     // Get snap length from first directory
     File temp = new File(parent + File.separator + 0 + File.separator + arcName)
@@ -346,7 +345,6 @@ class PhDynamics extends AlgorithmsScript {
       if(data.contains("pH:")){
         startSnap = !startSnap
         if(!startSnap){
-          logger.info(" Found snap length: " + snapLength)
           break
         }
       }
@@ -359,7 +357,6 @@ class PhDynamics extends AlgorithmsScript {
       data = brTemp.readLine()
     }
     int numSnaps = (int) (totalLines / snapLength)
-    logger.info(" Number of snaps: " + numSnaps)
 
     // Build file readers
     for(int i = 0; i < nReplicas; i++) {
@@ -369,7 +366,6 @@ class PhDynamics extends AlgorithmsScript {
     try{
       // Read all arc files one snap at a time
       for(int i = 0; i < numSnaps; i++) {
-        logger.info(" Starting snap " + i)
         for(int j = 0; j < nReplicas; j++) {
           // Read up to the first line
           data = bufferedReaders[j].readLine()
@@ -379,7 +375,6 @@ class PhDynamics extends AlgorithmsScript {
             }
             data = bufferedReaders[j].readLine()
           }
-          logger.info(" Found pH line")
           // Get pH from line
           String[] tokens = data.split(" +")
           double snapPh = Double.parseDouble(tokens[tokens.length-1])
@@ -396,7 +391,7 @@ class PhDynamics extends AlgorithmsScript {
     }catch(IOException e){
       e.printStackTrace()
     }
-    logger.info("At cleanup")
+
     // Cleanup
     out.close()
     for(int i = 0; i < nReplicas; i++){
