@@ -382,6 +382,7 @@ class PhDynamics extends AlgorithmsScript {
           // Add lines to file if correct, otherwise don't
           for(int k = 0; k < snapLength-1; k++){
             if(snapPh == pH){
+              logger.info(data)
               out.write(data)
             }
             data = bufferedReaders[j].readLine()
