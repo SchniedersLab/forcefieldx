@@ -376,14 +376,12 @@ class PhDynamics extends AlgorithmsScript {
             data = bufferedReaders[j].readLine()
           }
           // Get pH from line
-          logger.info(data)
           String[] tokens = data.split(" +")
           double snapPh = Double.parseDouble(tokens[tokens.length-3]) // FIXME: pH is not the last index of tokens 'Rank: #' is
 
           // Add lines to file if correct, otherwise don't
-          for(int k = 0; k < snapLength-1; k++){
+          for(int k = 0; k < snapLength; k++){
             if(snapPh == pH){
-              logger.info(data)
               out.write(data + "\n")
             }
             data = bufferedReaders[j].readLine()
