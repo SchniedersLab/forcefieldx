@@ -230,8 +230,6 @@ public class PhReplicaExchange implements Terminatable {
       logger.info(" Rank " + rank + " staring at pH " + pHScale[rank2Ph[rank]]);
       extendedSystem.setConstantPh(pHScale[rank2Ph[rank]]);
       extendedSystem.setESVFile(esv);
-      logger.info(" Starting from ESV Histogram: ");
-      extendedSystem.writeLambdaHistogram();
       molecularDynamics.setFallbackDynFile(dyn);
     }
 
