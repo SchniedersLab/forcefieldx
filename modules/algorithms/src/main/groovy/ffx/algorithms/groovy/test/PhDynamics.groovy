@@ -328,7 +328,7 @@ class PhDynamics extends AlgorithmsScript {
      * Sort archive files by pH with string parsing
      */
   static void sortMyArc(File structureFile, int nReplicas, double pH, int myRank){
-    logger.info("Sorting archive for rank " + myRank)
+    logger.info(" Sorting archive for rank " + myRank)
     String parent = structureFile.getParent()
     String arcName = FilenameUtils.removeExtension(structureFile.getName()) + ".arc"
     BufferedReader[] bufferedReaders = new BufferedReader[nReplicas]
@@ -385,7 +385,7 @@ class PhDynamics extends AlgorithmsScript {
           double snapPh = Double.parseDouble(tokens[tokens.length-1])
 
           // Add lines to file if correct, otherwise don't
-          for(int k = 0; k < snapLength-1; i++){
+          for(int k = 0; k < snapLength-1; k++){
             if(snapPh == pH){
               out.write(data)
               logger.info(data)
