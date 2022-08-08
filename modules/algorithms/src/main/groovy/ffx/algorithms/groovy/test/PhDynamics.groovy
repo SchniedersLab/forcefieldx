@@ -376,6 +376,7 @@ class PhDynamics extends AlgorithmsScript {
             data = bufferedReaders[j].readLine()
           }
           // Get pH from line
+          logger.info(data)
           String[] tokens = data.split(" +")
           double snapPh = Double.parseDouble(tokens[tokens.length-1])
 
