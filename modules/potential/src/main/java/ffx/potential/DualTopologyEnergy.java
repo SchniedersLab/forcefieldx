@@ -377,6 +377,10 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     if (symOpString != null) {
       // TODO make work for co-crystals (currently assumes same length).
       int z1 = topology1.getMolecules().size();
+      if(z1 == 0){
+        z1 = topology1.getAllBondedEntities().size();
+      }
+      logger.info(format(" Number of entities in first crystal (Z): %d", z1));
 //      int z2 = topology2.getMolecules().size();
       symOp = new SymOp[z1];
       inverse = new SymOp[z1];
@@ -416,6 +420,9 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       }else if(numTokens % 14 == 0){
         int numSymOps = numTokens/14;
         assert(numSymOps == z1);
+        if(logger.isLoggable(Level.FINER)) {
+          logger.finer(format(" Number of Tokens: %3d Number of Sym Ops: %2d", numTokens, numSymOps));
+        }
         for(int i = 0; i < numSymOps; i++) {
           int j = i * 14;
           z1index = parseInt(tokens[j + 0]);

@@ -40,7 +40,7 @@ package ffx.algorithms.groovy
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.math.RunningStatistics
 import ffx.potential.MolecularAssembly
-import ffx.potential.cli.AtomSelectionOptions
+import ffx.potential.cli.TopologyOptions
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.utils.ProgressiveAlignmentOfCrystals
 import picocli.CommandLine.Command
@@ -71,9 +71,6 @@ import static org.apache.commons.io.FilenameUtils.getFullPath
     name = "ffxc SuperposeCrystals")
 class SuperposeCrystals extends AlgorithmsScript {
 
-  @Mixin
-  AtomSelectionOptions atomSelectionOptions
-
   /**
    * --na or --numAU AUs in the RMSD.
    */
@@ -84,23 +81,47 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * --if or --inflationFactor Inflation factor used to determine replicates expansion.
    */
-  @Option(names = ['--if', '--inflationFactor'], paramLabel = '4.0', defaultValue = '4.0',
-      description = 'Inflation factor used to determine replicates expansion.')
+  @Option(names = ['--if', '--inflationFactor'], paramLabel = '13.0', defaultValue = '13.0',
+      description = 'Inflation factor used to determine replicates expansion (IF * nAU in replicates).')
   private double inflationFactor
 
   /**
-   * --zp or --zPrime Z' for crystal 1 (-1 to autodetect).
+   * --zp or --zPrime Z' for crystal 1 (default to autodetect).
    */
   @Option(names = ['--zp', '--zPrime'], paramLabel = '-1', defaultValue = '-1',
-      description = "Z'' for crystal 1 (-1 to autodetect).")
+      description = "Z'' for crystal 1 (default will try to autodetect).")
   private int zPrime
 
   /**
-   * --zp2 or --zPrime2 Z' for crystal 2 (-1 to autodetect).
+   * --zp2 or --zPrime2 Z' for crystal 2 (default to autodetect).
    */
   @Option(names = ['--zp2', '--zPrime2'], paramLabel = '-1', defaultValue = '-1',
-      description = "Z'' for crystal 2 (-1 to autodetect).")
+      description = "Z'' for crystal 2 (default will try to autodetect).")
   private int zPrime2
+
+  /**
+   * --us or --unshared sets atoms unique for both crystals, as period-separated hyphenated
+   * ranges or singletons.
+   */
+  @Option(names = ["--us", "--unshared"], paramLabel = "", defaultValue = "",
+          description = "Unshared atoms for both crystals (e.g. 1-24.32-65). Use if Z' = 1 for both crystals.")
+  private String unshared = ""
+
+  /**
+   * --usA or --unsharedA sets atoms unique to the base crystal, as period-separated hyphenated
+   * ranges or singletons.
+   */
+  @Option(names = ["--usA", "--unsharedA"], paramLabel = "", defaultValue = "",
+          description = "Unshared atoms in the first crystal (e.g. 1-24.32-65).")
+  private String unsharedA = ""
+
+  /**
+   * --usB or --unsharedB sets atoms unique to the target crystal, as period-separated hyphenated
+   * ranges or singletons.
+   */
+  @Option(names = ["--usB", "--unsharedB"], paramLabel = "", defaultValue = "",
+          description = "Unshared atoms in the second crystal (e.g. 1-24.32-65).")
+  private String unsharedB = ""
 
   /**
    * --mt or --matchTolerance Tolerance to determine if two AUs are different.
@@ -265,7 +286,10 @@ class SuperposeCrystals extends AlgorithmsScript {
     MolecularAssembly activeAssembly = baseFilter.getActiveMolecularSystem()
 
     // Apply atom selections
-    atomSelectionOptions.setActiveAtoms(activeAssembly)
+    if(unshared != null && !unshared.isEmpty()){
+      unsharedA = unshared;
+      unsharedB = unshared;
+    }
 
     // Number of files to read in.
     boolean isSymmetric = false
@@ -284,7 +308,6 @@ class SuperposeCrystals extends AlgorithmsScript {
       algorithmFunctions.openAll(filenames.get(1))
       targetFilter = algorithmFunctions.getFilter()
     }
-    atomSelectionOptions.setActiveAtoms(targetFilter.getActiveMolecularSystem())
 
     // Compare structures in baseFilter and targetFilter.
     ProgressiveAlignmentOfCrystals pac = new ProgressiveAlignmentOfCrystals(baseFilter, targetFilter,
@@ -295,7 +318,7 @@ class SuperposeCrystals extends AlgorithmsScript {
     String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt")
 
     runningStatistics =
-        pac.comparisons(numAU, inflationFactor, matchTol, zPrime, zPrime2, alphaCarbons,
+        pac.comparisons(numAU, inflationFactor, matchTol, zPrime, zPrime2, unsharedA, unsharedB, alphaCarbons,
             includeHydrogen, massWeighted, crystalPriority, permute, save,
             restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym, lowMemory, pacFilename)
 
