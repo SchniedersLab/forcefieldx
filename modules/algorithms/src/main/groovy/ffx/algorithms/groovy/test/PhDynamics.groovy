@@ -350,17 +350,18 @@ class PhDynamics extends AlgorithmsScript {
           break
         }
       }
+      data = brTemp.readLine()
       snapLength++
     }
     int totalLines = snapLength
     while(data != null) {
       totalLines++
-      brTemp.readLine()
+      data = brTemp.readLine()
     }
     totalLines--
     int numSnaps = (int) (totalLines / snapLength)
     logger.info("Number of snaps: " + numSnaps)
-    
+
     // Build file readers
     for(int i = 0; i < nReplicas; i++) {
       File file = new File(parent + File.separator + i + arcName)
