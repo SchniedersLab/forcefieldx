@@ -334,7 +334,7 @@ class PhDynamics extends AlgorithmsScript {
     BufferedReader[] bufferedReaders = new BufferedReader[nReplicas]
     File output = new File(parent + File.separator + myRank + File.separator + arcName + "_sorted")
     BufferedWriter out = new BufferedWriter(new FileWriter(output))
-    logger.info("Output file: " + out)
+    logger.info(" Output file: " + output.getText())
 
     // Get snap length from first directory
     File temp = new File(parent + File.separator + 0 + File.separator + arcName)
@@ -346,7 +346,7 @@ class PhDynamics extends AlgorithmsScript {
       if(data.contains("pH:")){
         startSnap = !startSnap
         if(!startSnap){
-          logger.info("Found snap length: " + snapLength)
+          logger.info(" Found snap length: " + snapLength)
           break
         }
       }
@@ -358,9 +358,8 @@ class PhDynamics extends AlgorithmsScript {
       totalLines++
       data = brTemp.readLine()
     }
-    totalLines--
     int numSnaps = (int) (totalLines / snapLength)
-    logger.info("Number of snaps: " + numSnaps)
+    logger.info(" Number of snaps: " + numSnaps)
 
     // Build file readers
     for(int i = 0; i < nReplicas; i++) {
@@ -370,17 +369,21 @@ class PhDynamics extends AlgorithmsScript {
     try{
       // Read all arc files one snap at a time
       for(int i = 0; i < numSnaps; i++) {
-        logger.info("Starting snap " + i)
+        logger.info(" Starting snap " + i)
         for(int j = 0; j < nReplicas; j++) {
           // Read up to the first line
           data = bufferedReaders[j].readLine()
           while(data != null){
-            if(data.contains("pH:")){break}
+            if(data.contains("pH:")){
+              break
+            }
             data = bufferedReaders[j].readLine()
           }
+          logger.info(" Found pH line")
           // Get pH from line
           String[] tokens = data.split(" +")
           double snapPh = Double.parseDouble(tokens[tokens.length-1])
+
           // Add lines to file if correct, otherwise don't
           for(int k = 0; k < snapLength-1; i++){
             if(snapPh == pH){
