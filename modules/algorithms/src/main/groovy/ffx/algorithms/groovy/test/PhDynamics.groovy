@@ -380,11 +380,14 @@ class PhDynamics extends AlgorithmsScript {
           double snapPh = Double.parseDouble(tokens[tokens.length-3]) // FIXME: pH is not the last index of tokens 'Rank: #' is
 
           // Add lines to file if correct, otherwise don't
-          for(int k = 0; k < snapLength; k++){
+          for(int k = 0; k < snapLength-1; k++){
             if(snapPh == pH){
               out.write(data + "\n")
             }
             data = bufferedReaders[j].readLine()
+          }
+          if(snapPh == pH){
+            out.write("\n")
           }
         }
       }
