@@ -364,7 +364,7 @@ class PhDynamics extends AlgorithmsScript {
 
     // Build file readers
     for(int i = 0; i < nReplicas; i++) {
-      File file = new File(parent + File.separator + i + arcName)
+      File file = new File(parent + File.separator + i + File.separator + arcName)
       bufferedReaders[i] = new BufferedReader(new FileReader(file))
     }
     try{
