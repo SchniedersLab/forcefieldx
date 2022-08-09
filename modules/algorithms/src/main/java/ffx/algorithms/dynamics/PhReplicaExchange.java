@@ -64,6 +64,9 @@ import static org.apache.commons.math3.util.FastMath.exp;
  */
 public class PhReplicaExchange implements Terminatable {
 
+  // TODO: Because the program now writes out histograms to restarts after each dynamics, there is no need to communicate the histograms, since they are written out on disk
+  // TODO: This means that if we save the map that tells us what rank used to have the pH we are at, we can just read that file back in
+
   private static final Logger logger = Logger.getLogger(PhReplicaExchange.class.getName());
   private final int nReplicas;
   private final Random random;
@@ -310,6 +313,7 @@ public class PhReplicaExchange implements Terminatable {
     dyn = new File(rankDir.getPath() + File.separator + FilenameUtils.removeExtension((structureFile.getName())) + ".dyn");
     extendedSystem.setESVFile(esv);
     molecularDynamics.setFallbackDynFile(dyn);
+    molecularDynamicsOpenMM.setAutomaticWriteouts(false);
 
     restartStep = 0;
     // Count how far the restart should start at and make sure that each dir has the correct files and set up maps
@@ -324,7 +328,6 @@ public class PhReplicaExchange implements Terminatable {
 
         try(BufferedReader br = new BufferedReader(new FileReader(checkESV))){
           String data = br.readLine();
-          //TODO: Think about how this works with protein restarts
           while(data != null){
             List<String> tokens = Arrays.asList(data.split(" +"));
             if(tokens.contains("pH:")){
@@ -398,7 +401,7 @@ public class PhReplicaExchange implements Terminatable {
     random.setSeed(0);
 
     // Create arrays to store the parameters of all processes.
-    parameters = new double[nReplicas][4]; //
+    parameters = new double[nReplicas][4];
     parametersHis = new int[nReplicas][extendedSystem.getTitratingResidueList().size()][100];
     parametersBuf = new DoubleBuf[nReplicas];
     parametersHisBuf = new IntegerMatrixBuf_1[nReplicas];
@@ -444,6 +447,7 @@ public class PhReplicaExchange implements Terminatable {
     if(initTitrDynamics > 0 && !restart) {
       replica.dynamic(initTitrDynamics, timeStep,
               printInterval, trajInterval, temp, true, dyn);
+      extendedSystem.getESVHistogram(parametersHis[rank]); // FIXME: Omission of initialization steps can be done easily here
       replica.writeRestart();
 
       logger.info(" ");

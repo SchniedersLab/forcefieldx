@@ -1329,7 +1329,7 @@ public class ExtendedSystem implements Potential {
     public void setESVFile(File esvFile){
         restartFile = esvFile;
         if(!esvFilter.readESV(esvFile, thetaPosition, thetaVelocity, thetaAccel, esvHistogram)){
-            logger.warning(" Setting ESV hist to " + esvFile.getAbsolutePath() + " failed. This behavior is expected if not a restart.");
+            logger.info(" Setting ESV hist to " + esvFile.getAbsolutePath() + " failed. This behavior is expected if not a restart.");
         }
     }
 
