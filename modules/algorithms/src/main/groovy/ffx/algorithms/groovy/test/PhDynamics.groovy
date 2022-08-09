@@ -277,14 +277,12 @@ class PhDynamics extends AlgorithmsScript {
         final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
-        esv = new File(rankDirectory.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + ".esv")
-        dyn = new File(rankDirectory.getPath() + File.separator + FilenameUtils.removeExtension((structureFile.getName())) + ".dyn")
-        esvSystem.setESVFile(esv)
-        molecularDynamics.setFallbackDynFile(dyn)
-        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, pHGap, dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
+        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHGap, dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
 
         pHReplicaExchange.
-                sample(cycles, titrSteps, coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write , initTitrDynamics)
+                sample(cycles, titrSteps, coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
+
+        sortMyArc(structureFile, world.size(), pH, world.rank())
 
       } else {
         for (int i = 0; i < cycles; i++) {
@@ -383,7 +381,7 @@ class PhDynamics extends AlgorithmsScript {
           for(int k = 0; k < snapLength-1; k++){
             if(snapPh == pH){
               out.write(data + "\n")
-            }
+            }// FIXME: do a readlines if not == and break
             data = bufferedReaders[j].readLine()
           }
           if(snapPh == pH){
