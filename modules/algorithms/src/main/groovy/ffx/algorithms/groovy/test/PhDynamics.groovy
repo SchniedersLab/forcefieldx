@@ -270,9 +270,6 @@ class PhDynamics extends AlgorithmsScript {
 
         File structureFile = new File(filename)
         File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank))
-        if (!rankDirectory.exists()) {
-          rankDirectory.mkdir()
-        }
 
         final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
@@ -304,6 +301,8 @@ class PhDynamics extends AlgorithmsScript {
         }
       }
     }
+
+    esvSystem.printProtonationRatios()
 
     return this
   }

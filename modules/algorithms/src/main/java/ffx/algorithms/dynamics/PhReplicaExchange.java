@@ -389,6 +389,8 @@ public class PhReplicaExchange implements Terminatable {
       logger.info(" Rank " + rank + " staring at pH " + pHScale[rank2Ph[rank]]);
       extendedSystem.setConstantPh(pHScale[rank2Ph[rank]]);
       extendedSystem.setESVFile(esv);
+      logger.info("Rank " + rank + " starting hist:");
+      extendedSystem.writeLambdaHistogram();
       molecularDynamics.setFallbackDynFile(dyn);
     }
 
@@ -403,6 +405,11 @@ public class PhReplicaExchange implements Terminatable {
     for (int i = 0; i < nReplicas; i++) {
       parametersBuf[i] = DoubleBuf.buffer(parameters[i]);
       parametersHisBuf[i] = IntegerMatrixBuf_1.buffer(parametersHis[i]);
+    }
+
+    // Set the ESV that this rank will share has correct values after a restart
+    if(restart){
+      extendedSystem.getESVHistogram(parametersHis[rank]);
     }
 
     // A convenience reference to the parameters of this process are updated
@@ -615,7 +622,6 @@ public class PhReplicaExchange implements Terminatable {
     logger.info(" ");
   }
 
-
   /**
    * Blocking dynamic steps: when this method returns each replica has completed the requested
    * number of steps. Both OpenMM and CPU implementations exist
@@ -637,11 +643,6 @@ public class PhReplicaExchange implements Terminatable {
 
     int titrStepsOne = (int) titrSteps / 2;
     int titrStepsTwo = (int) FastMath.ceil(titrSteps / 2.0);
-    if(replica.restartFrequency > titrStepsTwo){
-      logger.warning("Restart frequency is too long for Rep Ex with cycling between CPU/GPU implementations. Defaulting to twice per cycle");
-      double restartFreq = titrStepsTwo / 1000.0;
-      replica.setRestartFrequency(restartFreq);
-    }
 
     replica.dynamic(titrStepsOne, timeStep, printInterval, saveInterval, temp, initVelocities, dyn);
 
