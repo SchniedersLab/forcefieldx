@@ -426,6 +426,7 @@ public class ExtendedSystem implements Potential {
         thetaMassArray = new double[nESVs];
         esvHistogram = new int[nTitr][10][10];
         esvProtonationRatios = new ArrayList[nTitr];
+        for(int i = 0; i < nTitr; i++){ esvProtonationRatios[i] = new ArrayList<>();}
         esvVdwDerivs = new SharedDouble[nESVs];
         esvPermElecDerivs = new SharedDouble[nESVs];
         esvIndElecDerivs = new SharedDouble[nESVs];

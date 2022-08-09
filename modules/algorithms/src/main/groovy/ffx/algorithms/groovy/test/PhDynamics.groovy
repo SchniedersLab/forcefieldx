@@ -55,9 +55,6 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-
-import java.nio.Buffer
-
 import static java.lang.String.format
 
 /**
@@ -380,7 +377,7 @@ class PhDynamics extends AlgorithmsScript {
           for(int k = 0; k < snapLength-1; k++){
             if(snapPh == pH){
               out.write(data + "\n")
-            }// FIXME: do a readlines if not == and break
+            }// Readlines doesn't work as expected
             data = bufferedReaders[j].readLine()
           }
           if(snapPh == pH){
