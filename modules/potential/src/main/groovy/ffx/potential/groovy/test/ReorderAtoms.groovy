@@ -82,7 +82,7 @@ class ReorderAtoms extends PotentialScript {
      * The final argument(s) should be two or more filenames.
      */
     @Parameters(arity = "1..*", paramLabel = "files",
-            description = 'Atomic coordinate files to convert in XYZ/ARC format.')
+            description = 'Atomic coordinate files to reorder in XYZ/ARC format.')
     List<String> filenames = null
 
     /**
@@ -219,7 +219,7 @@ class ReorderAtoms extends PotentialScript {
     }
 
     /**
-     *
+     * Compare atoms based on connectivity and atom types to determine order.
      */
     class AtomComparator implements Comparator {
         /**
@@ -233,32 +233,32 @@ class ReorderAtoms extends PotentialScript {
             Atom a2 = (Atom) obj2
             int comp = Integer.compare(a1.getMoleculeNumber(), a2.getMoleculeNumber())
             if (logger.isLoggable(Level.FINER) && comp != 0) {
-                logger.finer(" Different Molecule Number.")
+                logger.finer(format(" Different Molecule Number (%d vs %d)", a1.getMoleculeNumber(), a2.getMoleculeNumber()))
             }
             if (comp == 0) {
                 comp = Integer.compare(a1.getResidueNumber(), a2.getResidueNumber())
                 if (logger.isLoggable(Level.FINER) && comp != 0) {
-                    logger.finer(" Different Residue Numbers.")
+                    logger.finer(format(" Different Residue Numbers %d vs %d", a1.getResidueNumber(), a2.getResidueNumber()))
                 }
                 if (comp == 0) {
                     comp = Double.compare(a1.getMass(), a2.getMass())
                     if (logger.isLoggable(Level.FINER) && comp != 0) {
-                        logger.finer(" Different Masses.")
+                        logger.finer(format(" Different Masses %6.3f %6.3f", a1.getMass(), a2.getMass()))
                     }
                     if (comp == 0) {
-                        comp = Integer.compare(a1.atomType.type, a2.getAtomType().type)
+                        comp = -Integer.compare(a1.atomType.type, a2.getAtomType().type)
                         if (logger.isLoggable(Level.FINER) && comp != 0) {
-                            logger.finer(" Different Atom Types.")
+                            logger.finer(format(" Different Atom Types (%d vs %s)", a1.atomType.type, a2.atomType.type))
                         }
                         if (comp == 0) {
                             comp = Integer.compare(a1.getBonds().size(), a2.getBonds().size())
                             if (logger.isLoggable(Level.FINER) && comp != 0) {
-                                logger.finer(" Different Bond Sizes.")
+                                logger.finer(format(" Different Bond Sizes (%d vs %d)", a1.getBonds().size(), a2.getBonds().size()))
                             }
                             if (comp == 0) {
                                 comp = Integer.compare(a1.get12List().size(), a2.get12List().size())
                                 if (logger.isLoggable(Level.FINER) && comp != 0) {
-                                    logger.finer(" Different 1-2 Size.")
+                                    logger.finer(format(" Different 1-2 Size (%d vs %d).", a1.get12List(), a2.get12List()))
                                 }
                                 if (comp == 0) {
                                     for (int i = 0; i < a1.get12List().size(); i++) {

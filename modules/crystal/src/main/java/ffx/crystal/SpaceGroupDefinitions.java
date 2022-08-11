@@ -7946,7 +7946,7 @@ public class SpaceGroupDefinitions {
                       new double[] {-1.0, -1.0, -1.0},
                       new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
                       new SymOp(SymOp.Rot_X_mY_Z, SymOp.Tr_12_0_0));
-    } else if (name.equalsIgnoreCase("Pcab") || name.equalsIgnoreCase("P 21/c 21/a 21/b")) {
+    } else if (name.equalsIgnoreCase("Pcab") || name.equalsIgnoreCase("P21/c21/a21/b")) {
       spaceGroup =
               new SpaceGroup(
                       61,
@@ -7967,7 +7967,7 @@ public class SpaceGroupDefinitions {
                       new SymOp(SymOp.Rot_X_mY_mZ, SymOp.Tr_12_0_12),
                       new SymOp(SymOp.Rot_mX_Y_mZ, SymOp.Tr_12_12_0),
                       new SymOp(SymOp.Rot_mX_mY_Z, SymOp.Tr_0_12_12));
-    } else if (name.equalsIgnoreCase("P21212A") || name.equalsIgnoreCase("P 21 21 2 A")) {
+    } else if (name.equalsIgnoreCase("P21212A")) {
       spaceGroup =
               new SpaceGroup(
                       18,
@@ -7985,7 +7985,7 @@ public class SpaceGroupDefinitions {
                       new SymOp(SymOp.Rot_mX_mY_Z, SymOp.Tr_12_12_0),
                       new SymOp(SymOp.Rot_mX_Y_mZ, SymOp.Tr_0_12_0),
                       new SymOp(SymOp.Rot_X_mY_mZ, SymOp.Tr_12_0_0));
-    } else if (name.equalsIgnoreCase("R3") || name.equalsIgnoreCase("R 3")) {
+    } else if (name.equalsIgnoreCase("R3")) {
       spaceGroup =
           new SpaceGroup(
               146,
@@ -8002,7 +8002,7 @@ public class SpaceGroupDefinitions {
               new SymOp(SymOp.Rot_X_Y_Z, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_Z_X_Y, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_Y_Z_X, SymOp.Tr_0_0_0));
-    } else if (name.equalsIgnoreCase("R-3") || name.equalsIgnoreCase("R -3")) {
+    } else if (name.equalsIgnoreCase("R-3")) {
       spaceGroup =
           new SpaceGroup(
               148,
@@ -8022,7 +8022,7 @@ public class SpaceGroupDefinitions {
               new SymOp(SymOp.Rot_mX_mY_mZ, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_mZ_mX_mY, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_mY_mZ_mX, SymOp.Tr_0_0_0));
-    } else if (name.equalsIgnoreCase("R32")  || name.equalsIgnoreCase("R 3 2")) {
+    } else if (name.equalsIgnoreCase("R32")) {
       spaceGroup =
           new SpaceGroup(
               155,
@@ -8042,7 +8042,7 @@ public class SpaceGroupDefinitions {
               new SymOp(SymOp.Rot_mY_mX_mZ, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_mZ_mY_mX, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_mX_mZ_mY, SymOp.Tr_0_0_0));
-    } else if (name.equalsIgnoreCase("R3m")  || name.equalsIgnoreCase("R 3 m")) {
+    } else if (name.equalsIgnoreCase("R3m")) {
       spaceGroup =
           new SpaceGroup(
               160,
@@ -8062,7 +8062,7 @@ public class SpaceGroupDefinitions {
               new SymOp(SymOp.Rot_Y_X_Z, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_Z_Y_X, SymOp.Tr_0_0_0),
               new SymOp(SymOp.Rot_X_Z_Y, SymOp.Tr_0_0_0));
-    } else if (name.equalsIgnoreCase("R3c")  || name.equalsIgnoreCase("R 3 c")) {
+    } else if (name.equalsIgnoreCase("R3c")) {
       spaceGroup =
           new SpaceGroup(
               161,

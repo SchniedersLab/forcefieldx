@@ -1,0 +1,620 @@
+parameters /Dedicated/schnieders/anessler/Software/poltype2/ParameterFiles/amoebabio18_header.prm
+OPENMP-THREADS 44
+digits 8
+RESP-WEIGHT 1
+renumberPatch false
+#############################
+##                         ##
+##  Literature References  ##
+##                         ##
+#############################
+
+Wu, J.C.; Chattree, G.; Ren, P.Y.; Automation of AMOEBA polarizable force field
+parameterization for small molecules. Theor Chem Acc.
+
+atom          401    401    O     "dameda              "         8    15.999    1
+atom          402    402    N     "dameda              "         7    14.007    3
+atom          403    403    C     "dameda              "         6    12.011    4
+atom          404    404    C     "dameda              "         6    12.011    4
+atom          405    405    C     "dameda              "         6    12.011    4
+atom         406   406    C     "dameda              "         6    12.011    3
+atom         407   407    C     "dameda              "         6    12.011    4
+atom         408   408    H     "dameda              "         1     1.008    1
+atom         409   409    H     "dameda              "         1     1.008    1
+atom         410   410    H     "dameda              "         1     1.008    1
+atom         411   411    H     "dameda              "         1     1.008    1
+atom         412   412    H     "dameda              "         1     1.008    1
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6])(-[#6])(-[H])-[H]', [3]]] to SMARTS from parameter file [['[#6](-[H])(-[H])(-[H])-[#6](-[H])(-[H])-[#6](-[H])(-[H])-[#6](-[H])(-[H])-[#6](-[H])(-[H])-[#6](-[H])(-[H])(-[H])', [8]]] with tinker type descriptions [[('C', '"Alkane -CH2-"')]]
+# [403] = [[5, 6]]
+vdw 403 3.8200 0.1010
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6])(-[#6](-[#6])(-[H])-[H])(-[H])-[H]', [1]]] to SMARTS from parameter file [['[#6](-[H])(-[H])(-[H])-[#6](-[H])(-[H])-[#6](-[H])(-[H])-[#6](-[H])(-[H])-[#6](-[H])(-[H])-[#6](-[H])(-[H])(-[H])', [5]]] with tinker type descriptions [[('C', '"Alkane -CH2-"')]]
+# [404] = [[7, 8]]
+vdw 404 3.8200 0.1010
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6])(-[#6])(-[H])-[H]', [5]]] to SMARTS from parameter file [['[#6](-[H])(-[H])(-[H])-[#6](-[H])(-[H])-[#6](-[H])(-[H])-[#6](-[H])(-[H])-[#6](-[H])(-[H])-[#6](-[H])(-[H])(-[H])', [7]]] with tinker type descriptions [[('H', '"Alkane -H2C-"')]]
+# [409] = [[19, 20, 21, 22]]
+vdw 409 2.9800 0.0240 0.940
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6])(-[#6](-[#7])(-[H])-[H])(-[H])-[H]', [3]]] to SMARTS from parameter file [['[#7](-[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H]', [2]]] with tinker type descriptions [[('C', '"Ethyl Amine CH2"')]]
+# [405] = [[9, 10]]
+vdw 405 3.8200 0.1010
+
+# amoeba09 matching SMARTS from molecule  [['[#6](=[#8])(-[#7])-[#6](-[H])(-[H])-[H]', [4]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H]', [12]]] with tinker type descriptions [[('C', '"DiMeAcetamide CH3-C"')]]
+# [407] = [[13, 14]]
+vdw 407 3.8200 0.1010
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6])(-[#6](-[#7])(-[H])-[H])(-[H])-[H]', [6]]] to SMARTS from parameter file [['[#7](-[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H]', [11]]] with tinker type descriptions [[('H', '"Ethyl Amine H2C"')]]
+# [410] = [[25, 26, 23, 24]]
+vdw 410 2.8800 0.0240 0.910
+
+# amoeba09 matching SMARTS from molecule  [['[#8]=[#6](-[#7])-[#6]', [2]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H]', [2]]] with tinker type descriptions [[('C', '"DiMeAcetamide C=O"')]]
+# [406] = [[11, 12]]
+vdw 406 3.8200 0.1060
+
+# amoeba09 matching SMARTS from molecule  [['[#8]=[#6](-[#7])-[#6]', [1]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H]', [1]]] with tinker type descriptions [[('O', '"DiMeAcetamide O"')]]
+# [401] = [[1, 2]]
+vdw 401 3.3000 0.1120
+
+# amoeba09 matching SMARTS from molecule  [['[#7](-[#6])(-[#6])-[H]', [1]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H])-[H])-[H]', [3]]] with tinker type descriptions [[('N', '"NMeFormamide N"')]]
+# [402] = [[3, 4]]
+vdw 402 3.7100 0.1100
+
+# amoeba09 matching SMARTS from molecule  [['[#7](-[#6])(-[#6])-[H]', [4]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H])-[H])-[H]', [11]]] with tinker type descriptions [[('H', '"NMeFormamide HN"')]]
+# [411] = [[27, 28]]
+vdw 411 2.5900 0.0220 0.900
+
+# amoeba09 matching SMARTS from molecule  [['[#6](=[#8])(-[#7])-[#6](-[H])(-[H])-[H]', [7]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H]', [15]]] with tinker type descriptions [[('H', '"DiMeAcetamide H3C-C"')]]
+# [412] = [[33, 34, 29, 30, 31, 32]]
+vdw 412 2.9500 0.0260 0.910
+
+# matching SMARTS from molecule  ('[#1]-[#6](-[#1])(-[#6])-[#6]', (15,)) from external database
+# [408] = [[17, 18, 15, 16]]
+vdw 408 2.96 0.024 0.92 
+
+# amoeba09 matching SMARTS from molecule  [['[#6](=[#8])(-[#7])-[#6](-[H])(-[H])-[H]', [7, 4]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H]', [15, 12]]] with tinker type descriptions [[('H', '"DiMeAcetamide H3C-C"'), ('C', '"DiMeAcetamide CH3-C"')]]
+# [401, 406] = [[1, 2], [11, 12]]
+bond         401   406          601.80     1.23
+
+# amoeba21 comments=C32, sp3 carbon with 2 Hydrogens NC=O, sp3 Nitrogen in amide SMARTS match = [CX4H2] [NX3]([CX3](=O))
+# [405, 402] = [[9, 10], [3, 4]]
+bond 405 402 232.730342 1.45
+
+# amoeba21 comments=CON, sp2 carbon, peptide bond (amide) NC=O, sp3 Nitrogen in amide SMARTS match = [CX3](=O)([NX3]) [NX3]([CX3](=O))
+# [406, 402] = [[11, 12], [3, 4]]
+bond 406 402 363.15688 1.37
+
+# amoeba21 comments=HN, H on Nitrogen NC=O, sp3 Nitrogen in amide SMARTS match = [H][N] [NX3]([CX3](=O))
+# [411, 402] = [[27, 28], [3, 4]]
+bond 411 402 475.798234 1.01
+
+# amoeba21 comments=C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens SMARTS match = [CX4H2] [CX4H2]
+# [403, 403] = [[5, 6], [5, 6]]
+bond 403 403 205.758598 1.53
+
+# amoeba21 comments=C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens SMARTS match = [CX4H2] [CX4H2]
+# [404, 403] = [[7, 8], [5, 6]]
+bond 404 403 205.758598 1.53
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens SMARTS match = [H][CH2] [CX4H2]
+# [408, 403] = [[17, 18, 15, 16], [5, 6]]
+bond 408 403 340.532535 1.1
+
+# amoeba21 comments=C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens SMARTS match = [CX4H2] [CX4H2]
+# [405, 404] = [[9, 10], [7, 8]]
+bond 405 404 205.758598 1.52
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens SMARTS match = [H][CH2] [CX4H2]
+# [409, 404] = [[19, 20, 21, 22], [7, 8]]
+bond 409 404 340.532535 1.1
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens SMARTS match = [H][CH2] [CX4H2]
+# [410, 405] = [[25, 26, 23, 24], [9, 10]]
+bond 410 405 340.532535 1.1
+
+# amoeba21 comments=C33, sp3 carbon with 3 Hydrogens CON, sp2 carbon, peptide bond (amide) SMARTS match = [CX4H3] [CX3](=O)([NX3])
+# [407, 406] = [[13, 14], [11, 12]]
+bond 407 406 288.657258 1.51
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C33, sp3 carbon with 3 Hydrogens SMARTS match = [H][CH3] [CX4H3]
+# [412, 407] = [[33, 34, 29, 30, 31, 32], [13, 14]]
+bond 412 407 345.97894 1.09
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6]=[#8])(-[H])(-[H])-[H]', [5, 1, 6]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H]', [14, 12, 15]]] with tinker type descriptions [[('H', '"DiMeAcetamide H3C-C"'), ('C', '"DiMeAcetamide CH3-C"'), ('H', '"DiMeAcetamide H3C-C"')]]
+# [401, 406, 407] = [[1, 2], [11, 12], [13, 14]]
+angle       401   406   407      80.00     123.4971
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6]=[#8])(-[H])(-[H])-[H]', [5, 1, 6]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H]', [14, 12, 15]]] with tinker type descriptions [[('H', '"DiMeAcetamide H3C-C"'), ('C', '"DiMeAcetamide CH3-C"'), ('H', '"DiMeAcetamide H3C-C"')]]
+# [402, 406, 401] = [[3, 4], [11, 12], [1, 2]]
+angle       402   406   401      76.98     122.31
+
+
+# amoeba21 comments=C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens N3, sp3 Nitrogen SMARTS match = [CX4H2] [CX4H2] [NX3]
+# [404, 405, 402] = [[7, 8], [9, 10], [3, 4]]
+angle 404 405 402 99.687701 110.81
+
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens NC=O, sp3 Nitrogen in amide SMARTS match = [H][CH2] [CX4H2] [NX3]([CX3](=O))
+# [410, 405, 402] = [[25, 26, 23, 24], [9, 10], [3, 4]]
+angle 410 405 402 57.622801 108.95
+
+
+# amoeba21 comments=C33, sp3 carbon with 3 Hydrogens CON, sp2 carbon, peptide bond (amide) NC=O, sp3 Nitrogen in amide SMARTS match = [CX4H3] [CX3](=O)([NX3]) [NX3]([CX3](=O))
+# [407, 406, 402] = [[13, 14], [11, 12], [3, 4]]
+angle 407 406 402 74.160939 113.0914
+
+
+# amoeba21 comments=C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens SMARTS match = [CX4H2] [CX4H2] [CX4H2]
+# [404, 403, 403] = [[7, 8], [5, 6], [5, 6]]
+angle 404 403 403 74.895704 111.44690000000001
+
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens SMARTS match = [H][CH2] [CX4H2] [CX4H2]
+# [408, 403, 403] = [[17, 18, 15, 16], [5, 6], [5, 6]]
+angle 408 403 403 48.260518 109.35
+
+
+# amoeba21 comments=C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens SMARTS match = [CX4H2] [CX4H2] [CX4H2]
+# [405, 404, 403] = [[9, 10], [7, 8], [5, 6]]
+angle 405 404 403 74.895704 112.16
+
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens SMARTS match = [H][CH2] [CX4H2] [CX4H2]
+# [409, 404, 403] = [[19, 20, 21, 22], [7, 8], [5, 6]]
+angle 409 404 403 48.260518 110.8502
+
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens SMARTS match = [H][CH2] [CX4H2] [CX4H2]
+# [408, 403, 404] = [[17, 18, 15, 16], [5, 6], [7, 8]]
+angle 408 403 404 48.260518 109.34
+
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens SMARTS match = [H][CH2] [CX4H2] [CX4H2]
+# [410, 405, 404] = [[25, 26, 23, 24], [9, 10], [7, 8]]
+angle 410 405 404 48.260518 110.63
+
+
+# amoeba21 comments=CON, sp2 carbon, peptide bond (amide) NC=O, sp3 Nitrogen in amide C32, sp3 carbon with 2 Hydrogens SMARTS match = [CX3](=O)([NX3]) [NX3]([CX3](=O)) [CX4H2]
+# [406, 402, 405] = [[11, 12], [3, 4], [9, 10]]
+angle 406 402 405 87.947117 118.71830000000001
+
+
+# amoeba21 comments=HN, H on Nitrogen NC=O, sp3 Nitrogen in amide C32, sp3 carbon with 2 Hydrogens SMARTS match = [H][N] [NX3]([CX3](=O)) [CX4H2]
+# [411, 402, 405] = [[27, 28], [3, 4], [9, 10]]
+angle 411 402 405 29.797294 117.55
+
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens SMARTS match = [H][CH2] [CX4H2] [CX4H2]
+# [409, 404, 405] = [[19, 20, 21, 22], [7, 8], [9, 10]]
+angle 409 404 405 48.260518 109.35
+
+
+# amoeba21 comments=HN, H on Nitrogen NC=O, sp3 Nitrogen in amide CON, sp2 carbon, peptide bond (amide) SMARTS match = [H][N] [NX3]([CX3](=O)) [CX3](=O)([NX3])
+# [411, 402, 406] = [[27, 28], [3, 4], [11, 12]]
+angle 411 402 406 40.855201 116.5068
+
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C33, sp3 carbon with 3 Hydrogens CON, sp2 carbon, peptide bond (amide) SMARTS match = [H][CH3] [CX4H3] [CX3](=O)([NX3])
+# [412, 407, 406] = [[33, 34, 29, 30, 31, 32], [13, 14], [11, 12]]
+angle 412 407 406 48.590153 107.7959
+
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens HCH3, H on sp3 carbon, -CH3 SMARTS match = [H][CH2] [CX4H2] [H][CH2]
+# [408, 403, 408] = [[17, 18, 15, 16], [5, 6], [17, 18, 15, 16]]
+angle 408 403 408 30.490529 107.70450000000001
+
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens HCH3, H on sp3 carbon, -CH3 SMARTS match = [H][CH2] [CX4H2] [H][CH2]
+# [409, 404, 409] = [[19, 20, 21, 22], [7, 8], [19, 20, 21, 22]]
+angle 409 404 409 30.490529 104.07889999999999
+
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens HCH3, H on sp3 carbon, -CH3 SMARTS match = [H][CH2] [CX4H2] [H][CH2]
+# [410, 405, 410] = [[25, 26, 23, 24], [9, 10], [25, 26, 23, 24]]
+angle 410 405 410 30.490529 106.75
+
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C33, sp3 carbon with 3 Hydrogens HCH3, H on sp3 carbon, -CH3 SMARTS match = [H][CH3] [CX4H3] [H][CH3]
+# [412, 407, 412] = [[33, 34, 29, 30, 31, 32], [13, 14], [33, 34, 29, 30, 31, 32]]
+angle 412 407 412 36.406852 108.7
+
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6]=[#8])(-[H])(-[H])-[H]', [5, 1, 6]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H]', [14, 12, 15]]] with tinker type descriptions [[('H', '"DiMeAcetamide H3C-C"'), ('C', '"DiMeAcetamide CH3-C"'), ('H', '"DiMeAcetamide H3C-C"')]]
+# [401, 406, 407] = [[1, 2], [11, 12], [13, 14]]
+strbnd       401   406   407      18.70      18.70
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6]=[#8])(-[H])(-[H])-[H]', [5, 1, 6]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H]', [14, 12, 15]]] with tinker type descriptions [[('H', '"DiMeAcetamide H3C-C"'), ('C', '"DiMeAcetamide CH3-C"'), ('H', '"DiMeAcetamide H3C-C"')]]
+# [402, 406, 401] = [[3, 4], [11, 12], [1, 2]]
+strbnd       402   406   401      18.70      18.70
+
+# amoeba21 comments=C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens N3, sp3 Nitrogen SMARTS match = [CX4H2] [CX4H2] [NX3]
+# [404, 405, 402] = [[7, 8], [9, 10], [3, 4]]
+strbnd 404 405 402 5.7126 5.7126
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens NC=O, sp3 Nitrogen in amide SMARTS match = [H][CH2] [CX4H2] [NX3]([CX3](=O))
+# [410, 405, 402] = [[25, 26, 23, 24], [9, 10], [3, 4]]
+strbnd 410 405 402 5.7126 5.7126
+
+# amoeba21 comments=C33, sp3 carbon with 3 Hydrogens CON, sp2 carbon, peptide bond (amide) NC=O, sp3 Nitrogen in amide SMARTS match = [CX4H3] [CX3](=O)([NX3]) [NX3]([CX3](=O))
+# [407, 406, 402] = [[13, 14], [11, 12], [3, 4]]
+strbnd 407 406 402 25.9885 25.9885
+
+# amoeba21 comments=C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens SMARTS match = [CX4H2] [CX4H2] [CX4H2]
+# [404, 403, 403] = [[7, 8], [5, 6], [5, 6]]
+strbnd 404 403 403 5.7126 5.7126
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens SMARTS match = [H][CH2] [CX4H2] [CX4H2]
+# [408, 403, 403] = [[17, 18, 15, 16], [5, 6], [5, 6]]
+strbnd 408 403 403 5.7126 5.7126
+
+# amoeba21 comments=C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens SMARTS match = [CX4H2] [CX4H2] [CX4H2]
+# [405, 404, 403] = [[9, 10], [7, 8], [5, 6]]
+strbnd 405 404 403 5.7126 5.7126
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens SMARTS match = [H][CH2] [CX4H2] [CX4H2]
+# [409, 404, 403] = [[19, 20, 21, 22], [7, 8], [5, 6]]
+strbnd 409 404 403 5.7126 5.7126
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens SMARTS match = [H][CH2] [CX4H2] [CX4H2]
+# [408, 403, 404] = [[17, 18, 15, 16], [5, 6], [7, 8]]
+strbnd 408 403 404 5.7126 5.7126
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens SMARTS match = [H][CH2] [CX4H2] [CX4H2]
+# [410, 405, 404] = [[25, 26, 23, 24], [9, 10], [7, 8]]
+strbnd 410 405 404 5.7126 5.7126
+
+# amoeba21 comments=CON, sp2 carbon, peptide bond (amide) NC=O, sp3 Nitrogen in amide C32, sp3 carbon with 2 Hydrogens SMARTS match = [CX3](=O)([NX3]) [NX3]([CX3](=O)) [CX4H2]
+# [406, 402, 405] = [[11, 12], [3, 4], [9, 10]]
+strbnd 406 402 405 25.9516 25.9516
+
+# amoeba21 comments=HN, H on Nitrogen NC=O, sp3 Nitrogen in amide C32, sp3 carbon with 2 Hydrogens SMARTS match = [H][N] [NX3]([CX3](=O)) [CX4H2]
+# [411, 402, 405] = [[27, 28], [3, 4], [9, 10]]
+strbnd 411 402 405 25.9516 25.9516
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens C32, sp3 carbon with 2 Hydrogens SMARTS match = [H][CH2] [CX4H2] [CX4H2]
+# [409, 404, 405] = [[19, 20, 21, 22], [7, 8], [9, 10]]
+strbnd 409 404 405 5.7126 5.7126
+
+# amoeba21 comments=HN, H on Nitrogen NC=O, sp3 Nitrogen in amide CON, sp2 carbon, peptide bond (amide) SMARTS match = [H][N] [NX3]([CX3](=O)) [CX3](=O)([NX3])
+# [411, 402, 406] = [[27, 28], [3, 4], [11, 12]]
+strbnd 411 402 406 25.9516 25.9516
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C33, sp3 carbon with 3 Hydrogens CON, sp2 carbon, peptide bond (amide) SMARTS match = [H][CH3] [CX4H3] [CX3](=O)([NX3])
+# [412, 407, 406] = [[33, 34, 29, 30, 31, 32], [13, 14], [11, 12]]
+strbnd 412 407 406 5.7126 5.7126
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens HCH3, H on sp3 carbon, -CH3 SMARTS match = [H][CH2] [CX4H2] [H][CH2]
+# [408, 403, 408] = [[17, 18, 15, 16], [5, 6], [17, 18, 15, 16]]
+strbnd 408 403 408 5.7126 5.7126
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens HCH3, H on sp3 carbon, -CH3 SMARTS match = [H][CH2] [CX4H2] [H][CH2]
+# [409, 404, 409] = [[19, 20, 21, 22], [7, 8], [19, 20, 21, 22]]
+strbnd 409 404 409 5.7126 5.7126
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C32, sp3 carbon with 2 Hydrogens HCH3, H on sp3 carbon, -CH3 SMARTS match = [H][CH2] [CX4H2] [H][CH2]
+# [410, 405, 410] = [[25, 26, 23, 24], [9, 10], [25, 26, 23, 24]]
+strbnd 410 405 410 5.7126 5.7126
+
+# amoeba21 comments=HCH3, H on sp3 carbon, -CH3 C33, sp3 carbon with 3 Hydrogens HCH3, H on sp3 carbon, -CH3 SMARTS match = [H][CH3] [CX4H3] [H][CH3]
+# [412, 407, 412] = [[33, 34, 29, 30, 31, 32], [13, 14], [33, 34, 29, 30, 31, 32]]
+strbnd 412 407 412 5.7126 5.7126
+
+# amoeba21 comments=C=O, sp2 carbon, ketone O=C, Oxygen of carbonyl group SMARTS match = [CX3H0](=O) [OX1]=[CX3]
+# [401, 406] = [[1, 2], [11, 12]]
+opbend 401 406 0 0 16.5045
+
+# amoeba21 comments=C32, sp3 carbon with 2 Hydrogens NC=O, sp3 Nitrogen in amide SMARTS match = [CX4H2] [NX3]([CX3](=O))
+# [405, 402] = [[9, 10], [3, 4]]
+opbend 405 402 0 0 16.5457
+
+# amoeba21 comments=CON, sp2 carbon, peptide bond (amide) NC=O, sp3 Nitrogen in amide SMARTS match = [CX3](=O)([NX3]) [NX3]([CX3](=O))
+# [406, 402] = [[11, 12], [3, 4]]
+opbend 406 402 0 0 21.7166
+
+# amoeba21 comments=CON, sp2 carbon, peptide bond (amide) NC=O, sp3 Nitrogen in amide SMARTS match = [CX3](=O)([NX3]) [NX3]([CX3](=O))
+# [402, 406] = [[3, 4], [11, 12]]
+opbend 402 406 0 0 21.7166
+
+# amoeba21 comments=HN, H on Nitrogen NC=O, sp3 Nitrogen in amide SMARTS match = [H][N] [NX3]([CX3](=O))
+# [411, 402] = [[27, 28], [3, 4]]
+opbend 411 402 0 0 26.8945
+
+# amoeba21 comments=C33, sp3 carbon with 3 Hydrogens CON, sp2 carbon, peptide bond (amide) SMARTS match = [CX4H3] [CX3](=O)([NX3])
+# [407, 406] = [[13, 14], [11, 12]]
+opbend 407 406 0 0 14.9526
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#6](-[#6](-[#7]-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H]', [1, 2, 3, 4]]] to SMARTS from parameter file [['[#7](-[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H]', [4, 3, 2, 1]]] with tinker type descriptions [[('C', '"Propyl Amine CH3"'), ('C', '"Propyl Amine Me-CH2"'), ('C', '"Ethyl Amine CH2"'), ('N', '"Ethyl Amine N"')]]
+# Missing torsion parameters, will attempt to fit parameters
+# [402, 405, 404, 403] = [[3, 4], [9, 10], [7, 8], [5, 6]]
+# Fitted from Fragment  SMARTS [#6](-[#6](-[#6](-[#7](-[#6](=[#8])-[H])-[H])(-[H])-[H])(-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] torsion atom indexes = 0,1,2,3 with smarts torsion indices 1,2,3,4 from fragment 7_9_Index_0.mol
+# Torsion 403 404 405 402 RMSD(MM2,QM) 0.3504650313354608 RelativeRMSD(MM2,QM) 0.17873601286146903
+# torsion % [#6](-[#6](-[#6](-[#7](-[#6](=[#8])-[H])-[H])(-[H])-[H])(-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] % 1,2,3,4 % 0.248,-0.064,1.002,-0.108,-0.110,-0.009
+torsion 403 404 405 402 0.248 0.0 1 -0.064 180.0 2 1.002 0.0 3 -0.108 180.0 4 -0.110 0.0 5 -0.009 180.0 6
+
+# Single bond detected for missing torsion
+# Transferring hydrogen torsion to reduce fit parameters
+# Transferring from ['Alkane -H2C-', 'Alkane -CH2-', 'Alkane -CH2-', 'Alkane -CH2-']
+# [402, 405, 404, 409] = [[3, 4], [9, 10], [7, 8], [19, 20, 21, 22]]
+# Fitted from Fragment  SMARTS [#6](-[#6](-[#6](-[#7](-[#6](=[#8])-[H])-[H])(-[H])-[H])(-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] torsion atom indexes = 5,1,2,3 with smarts torsion indices 12,2,3,4 from fragment 7_9_Index_0.mol
+# torsion % [#6](-[#6](-[#6](-[#7](-[#6](=[#8])-[H])-[H])(-[H])-[H])(-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] % 12,2,3,4 % 0,0,0.108
+torsion 409 404 405 402 0 0.0 1 0 180.0 2 0.108 0.0 3
+
+# Single bond detected for missing torsion
+# Transferring hydrogen torsion to reduce fit parameters
+# Transferring from ['Alkane -H2C-', 'Alkane -CH2-', 'Alkane -CH2-', 'Alkane -CH2-']
+# [411, 402, 405, 404] = [[27, 28], [3, 4], [9, 10], [7, 8]]
+# Fitted from Fragment  SMARTS [#6](-[#7](-[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])-[H])(=[#8])-[#6](-[H])(-[H])-[H] torsion atom indexes = 4,1,2,3 with smarts torsion indices 13,2,3,4 from fragment 3_9_Index_0.mol
+# torsion % [#6](-[#7](-[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])-[H])(=[#8])-[#6](-[H])(-[H])-[H] % 13,2,3,4 % 0,0,0.108
+torsion 411 402 405 404 0 0.0 1 0 180.0 2 0.108 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[H]-[#6](-[#6](=[#8])-[#7])(-[H])-[H]', [7, 2, 3, 4]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H])-[#6](-[H])(-[H])-[H]', [15, 12, 2, 1]]] with tinker type descriptions [[('H', '"DiMeAcetamide H3C-C"'), ('C', '"DiMeAcetamide CH3-C"'), ('C', '"DiMeAcetamide C=O"'), ('O', '"DiMeAcetamide O"')]]
+# [412, 407, 406, 401] = [[33, 34, 29, 30, 31, 32], [13, 14], [11, 12], [1, 2]]
+torsion 412 407 406 401 0.000 0.0 1 0.000 180.0 2 0.235 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[H]-[#7](-[#6](=[#8])-[#6](-[H])(-[H])-[H])-[#6]', [8, 5, 3, 2]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[H])(-[H])-[H])-[H])-[#6](-[H])(-[H])-[H]', [12, 9, 2, 3]]] with tinker type descriptions [[('H', '"NMeAcetamide H3C-C"'), ('C', '"NMeAcetamide CH3-C"'), ('C', '"NMeAcetamide C=O"'), ('N', '"NMeAcetamide N"')]]
+# [412, 407, 406, 402] = [[33, 34, 29, 30, 31, 32], [13, 14], [11, 12], [3, 4]]
+torsion 412 407 406 402 0.000 0.0 1 0.000 180.0 2 -0.010 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#7](-[#6](-[#6](-[H])-[H])(-[H])-[H])-[H])=[#8]', [1, 2, 3, 4]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H])-[H])-[H]', [2, 3, 4, 5]]] with tinker type descriptions [[('C', '"NMeFormamide C=O"'), ('N', '"NMeFormamide N"'), ('C', '"NEtFormamide CH2-N"'), ('C', '"NEtFormamide CH3-"')]]
+# Missing torsion parameters, will attempt to fit parameters
+# [406, 402, 405, 404] = [[11, 12], [3, 4], [9, 10], [7, 8]]
+# Fitted from Fragment  SMARTS [#6](-[#7](-[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])-[H])(=[#8])-[#6](-[H])(-[H])-[H] torsion atom indexes = 0,1,2,3 with smarts torsion indices 1,2,3,4 from fragment 3_9_Index_0.mol
+# Torsion 406 402 405 404 RMSD(MM2,QM) 0.1404213103911617 RelativeRMSD(MM2,QM) 0.081228736702323
+# torsion % [#6](-[#7](-[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])-[H])(=[#8])-[#6](-[H])(-[H])-[H] % 1,2,3,4 % 0.745,-0.240,-2.948,0.343,-0.203,0.777
+torsion 406 402 405 404 0.745 0.0 1 -0.240 180.0 2 -2.948 0.0 3 0.343 180.0 4 -0.203 0.0 5 0.777 180.0 6
+
+# Single bond detected for missing torsion
+# Transferring hydrogen torsion to reduce fit parameters
+# Transferring from ['Alkane -H2C-', 'Alkane -CH2-', 'Alkane -CH2-', 'Alkane -CH2-']
+# [410, 405, 402, 406] = [[25, 26, 23, 24], [9, 10], [3, 4], [11, 12]]
+# Fitted from Fragment  SMARTS [#6](-[#7](-[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])-[H])(=[#8])-[#6](-[H])(-[H])-[H] torsion atom indexes = 0,1,2,6 with smarts torsion indices 1,2,3,12 from fragment 3_9_Index_0.mol
+# torsion % [#6](-[#7](-[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])-[H])(=[#8])-[#6](-[H])(-[H])-[H] % 1,2,3,12 % 0,0,0.108
+torsion 406 402 405 410 0 0.0 1 0 180.0 2 0.108 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[H]-[#7](-[#6](=[#8])-[#6](-[H])(-[H])-[H])-[#6](-[H])-[H]', [5, 3, 2, 9]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[H])(-[H])-[H])-[H])-[#6](-[H])(-[H])-[H]', [9, 2, 3, 4]]] with tinker type descriptions [[('C', '"NMeAcetamide CH3-C"'), ('C', '"NMeAcetamide C=O"'), ('N', '"NMeAcetamide N"'), ('C', '"NMeAcetamide CH3-N"')]]
+# Missing torsion parameters, will attempt to fit parameters
+# [405, 402, 406, 407] = [[9, 10], [3, 4], [11, 12], [13, 14]]
+# Fitted from Fragment  SMARTS [#6](-[#7](-[#6](=[#8])-[#6](-[H])(-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] torsion atom indexes = 0,1,2,5 with smarts torsion indices 1,2,3,5 from fragment 3_11_Index_0.mol
+# Torsion 405 402 406 407 RMSD(MM2,QM) 2.1440752302311874 RelativeRMSD(MM2,QM) 0.16501569187296047
+# torsion % [#6](-[#7](-[#6](=[#8])-[#6](-[H])(-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] % 1,2,3,5 % -0.782,7.254,1.656,-3.288,-1.115,0.912
+torsion 405 402 406 407 -0.782 0.0 1 7.254 180.0 2 1.656 0.0 3 -3.288 180.0 4 -1.115 0.0 5 0.912 180.0 6
+
+# amoeba09 matching SMARTS from molecule  [['[H]-[#7](-[#6](=[#8])-[#6](-[H])(-[H])-[H])-[#6]', [1, 2, 3, 5]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[H])(-[H])-[H])-[H])-[#6](-[H])(-[H])-[H]', [8, 3, 2, 9]]] with tinker type descriptions [[('H', '"NMeAcetamide HN"'), ('N', '"NMeAcetamide N"'), ('C', '"NMeAcetamide C=O"'), ('C', '"NMeAcetamide CH3-C"')]]
+# [411, 402, 406, 407] = [[27, 28], [3, 4], [11, 12], [13, 14]]
+# Fitted from Fragment  SMARTS [#6](-[#7](-[#6](=[#8])-[#6](-[H])(-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] torsion atom indexes = 4,1,2,5 with smarts torsion indices 9,2,3,5 from fragment 3_11_Index_0.mol
+# torsion % [#6](-[#7](-[#6](=[#8])-[#6](-[H])(-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] % 9,2,3,5 % 0.55,6.187,-0.55
+torsion 411 402 406 407 0.55 0.0 1 6.187 180.0 2 -0.55 0.0 3
+
+# amoeba09 matching SMARTS from molecule  [['[#6](-[#7](-[#6]=[#8])-[H])(-[#6])(-[H])-[H]', [1, 2, 3, 4]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H])-[H])-[H]', [4, 3, 2, 1]]] with tinker type descriptions [[('C', '"NEtFormamide CH2-N"'), ('N', '"NMeFormamide N"'), ('C', '"NMeFormamide C=O"'), ('O', '"NMeFormamide O"')]]
+# Missing torsion parameters, will attempt to fit parameters
+# [401, 406, 402, 405] = [[1, 2], [11, 12], [3, 4], [9, 10]]
+# Fitted from Fragment  SMARTS [#6](-[#7](-[#6](=[#8])-[#6](-[H])(-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] torsion atom indexes = 0,1,2,3 with smarts torsion indices 1,2,3,4 from fragment 3_11_Index_0.mol
+# Torsion 405 402 406 401 RMSD(MM2,QM) 2.1440752302311874 RelativeRMSD(MM2,QM) 0.16501569187296047
+# torsion % [#6](-[#7](-[#6](=[#8])-[#6](-[H])(-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] % 1,2,3,4 % 0.396,-0.981,-0.005,2.231,-0.408,-0.632
+torsion 405 402 406 401 0.396 0.0 1 -0.981 180.0 2 -0.005 0.0 3 2.231 180.0 4 -0.408 0.0 5 -0.632 180.0 6
+
+# amoeba09 matching SMARTS from molecule  [['[#6]-[#7](-[#6](=[#8])-[#6])-[H]', [6, 2, 3, 4]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[H])(-[H])-[H])-[H])-[#6](-[H])(-[H])-[H]', [8, 3, 2, 1]]] with tinker type descriptions [[('H', '"NMeAcetamide HN"'), ('N', '"NMeAcetamide N"'), ('C', '"NMeAcetamide C=O"'), ('O', '"NMeAcetamide O"')]]
+# [411, 402, 406, 401] = [[27, 28], [3, 4], [11, 12], [1, 2]]
+# Fitted from Fragment  SMARTS [#6](-[#7](-[#6](=[#8])-[#6](-[H])(-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] torsion atom indexes = 4,1,2,3 with smarts torsion indices 9,2,3,4 from fragment 3_11_Index_0.mol
+# torsion % [#6](-[#7](-[#6](=[#8])-[#6](-[H])(-[H])-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] % 9,2,3,4 % 0.55,6.187,-0.55
+torsion 411 402 406 401 0.55 0.0 1 6.187 180.0 2 -0.55 0.0 3
+
+# matching SMARTS from molecule  ('[#6](-[#1])(-[#1])(-[#6](-[#1])-[#1])-[#6](-[#1])(-[#1])-[#6](-[#1])(-[#1])-[#6](-[#1])(-[#1])-[#6](-[#1])-[#1]', (16, 5, 6, 8)) from external database
+# [408, 403, 403, 404] = [[17, 18, 15, 16], [5, 6], [5, 6], [7, 8]]
+torsion 408 403 403 404 0.293 0 1 0.069 180 2 0.011 0 3 
+
+# matching SMARTS from molecule  ('[#6](-[#1])(-[#1])(-[#6](-[#1])-[#1])-[#6](-[#1])(-[#1])-[#6](-[#1])(-[#1])-[#6](-[#1])(-[#1])-[#6](-[#1])-[#1]', (7, 5, 6, 8)) from external database
+# [404, 403, 403, 404] = [[7, 8], [5, 6], [5, 6], [7, 8]]
+torsion 404 403 403 404 0.612 0 1 1.184 180 2 1.319 0 3 
+
+# matching SMARTS from molecule  ('[#6](-[#1])(-[#1])(-[#6](-[#1])-[#1])-[#6](-[#1])(-[#1])-[#6](-[#1])(-[#1])-[#6](-[#1])(-[#1])-[#6](-[#1])-[#1]', (16, 5, 6, 18)) from external database
+# [408, 403, 403, 408] = [[17, 18, 15, 16], [5, 6], [5, 6], [17, 18, 15, 16]]
+torsion 408 403 403 408 -0.721 0 1 -0.088 180 2 0.011 0 3 
+
+# matching SMARTS from molecule  ('[#6](-[#1])(-[#1])-[#6]-[#6](-[#6](-[#6](-[#7]-[#1])(-[#1])-[#1])(-[#1])-[#1])(-[#1])-[#1]', (18, 6, 8, 22)) from external database
+# [409, 404, 403, 408] = [[19, 20, 21, 22], [7, 8], [5, 6], [17, 18, 15, 16]]
+# Fitted from Fragment  SMARTS [#6](-[#6](-[#6](-[#6](-[#7](-[H])-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] torsion atom indexes = 5,1,2,7 with smarts torsion indices 13,2,3,11 from fragment 5_7_Index_0.mol
+# torsion % [#6](-[#6](-[#6](-[#6](-[#7](-[H])-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] % 13,2,3,11 % 0.0,0.0,0.299
+torsion 408 403 404 409 0.0 0 1 0.0 180 2 0.299 0 3
+
+# matching SMARTS from molecule  ('[#7](-[#6](-[#6](-[#6](-[#6](-[#6](-[#6](-[#1])-[#1])(-[#1])-[#1])(-[#1])-[#1])(-[#1])-[#1])(-[#1])-[#1])(-[#1])-[#1])-,:[#6]-[#6](-[#1])(-[#1])-[#1]', (9, 7, 5, 6)) from external database
+# Missing torsion parameters, will attempt to fit parameters
+# [405, 404, 403, 403] = [[9, 10], [7, 8], [5, 6], [5, 6]]
+# Fitted from Fragment  SMARTS [#6](-[#6](-[#6](-[#6](-[#7](-[H])-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] torsion atom indexes = 0,1,2,3 with smarts torsion indices 1,2,3,4 from fragment 5_7_Index_0.mol
+# Torsion 403 403 404 405 RMSD(MM2,QM) 0.2590869386553969 RelativeRMSD(MM2,QM) 0.1409438372889753
+# torsion % [#6](-[#6](-[#6](-[#6](-[#7](-[H])-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] % 1,2,3,4 % 2.217,-0.511,-1.450,-0.701,0.098,-0.062
+torsion 403 403 404 405 2.217 0.0 1 -0.511 180.0 2 -1.450 0.0 3 -0.701 180.0 4 0.098 0.0 5 -0.062 180.0 6
+
+# matching SMARTS from molecule  ('[#7](-[#6](-[#6](-[#6](-[#6](-[#6](-[#6](-[#1])-[#1])(-[#1])-[#1])(-[#1])-[#1])(-[#1])-[#1])(-[#1])-[#1])(-[#1])-[#1])-,:[#6]-[#6](-[#1])(-[#1])-[#1]', (20, 7, 5, 6)) from external database
+# [409, 404, 403, 403] = [[19, 20, 21, 22], [7, 8], [5, 6], [5, 6]]
+# Fitted from Fragment  SMARTS [#6](-[#6](-[#6](-[#6](-[#7](-[H])-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] torsion atom indexes = 0,1,2,7 with smarts torsion indices 1,2,3,11 from fragment 5_7_Index_0.mol
+# torsion % [#6](-[#6](-[#6](-[#6](-[#7](-[H])-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] % 1,2,3,11 % 1.499,0.08,0.964
+torsion 403 403 404 409 1.499 0 1 0.08 180 2 0.964 0 3
+
+# matching SMARTS from molecule  ('[#7](-[#6](-[#6](-[#6](-[#6](-[#6](-[#6](-[#1])-[#1])(-[#1])-[#1])(-[#1])-[#1])(-[#1])-[#1])(-[#1])-[#1])(-[#1])-[#1])-,:[#6]-[#6](-[#1])(-[#1])-[#1]', (9, 7, 5, 16)) from external database
+# [408, 403, 404, 405] = [[17, 18, 15, 16], [5, 6], [7, 8], [9, 10]]
+# Fitted from Fragment  SMARTS [#6](-[#6](-[#6](-[#6](-[#7](-[H])-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] torsion atom indexes = 5,1,2,3 with smarts torsion indices 13,2,3,4 from fragment 5_7_Index_0.mol
+# torsion % [#6](-[#6](-[#6](-[#6](-[#7](-[H])-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] % 13,2,3,4 % 0.0,0.0,0.108
+torsion 408 403 404 405 0.0 0 1 0.0 180 2 0.108 0 3
+
+# matching SMARTS from molecule  ('[#6](-[#6](-[#1])(-[#1])-[#1]):,-[#7]-[#6](-[#1])(-[#1])-[#6](-[#1])(-[#1])-[#6](-[#6](-[#1])(-[#1])-[#6](-[#1])-[#1])(-[#1])-[#1]', (5, 7, 9, 24)) from external database
+# [410, 405, 404, 403] = [[25, 26, 23, 24], [9, 10], [7, 8], [5, 6]]
+# Fitted from Fragment  SMARTS [#6](-[#6](-[#6](-[#7](-[#6](=[#8])-[H])-[H])(-[H])-[H])(-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] torsion atom indexes = 0,1,2,7 with smarts torsion indices 1,2,3,10 from fragment 7_9_Index_0.mol
+# torsion % [#6](-[#6](-[#6](-[#7](-[#6](=[#8])-[H])-[H])(-[H])-[H])(-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] % 1,2,3,10 % 0.0,0.0,0.108
+torsion 403 404 405 410 0.0 0 1 0.0 180 2 0.108 0 3
+
+# matching SMARTS from molecule  ('[#6](-[#6](-[#1])(-[#1])-[#1]):,-[#7]-[#6](-[#1])(-[#1])-[#6](-[#1])(-[#1])-[#6](-[#6](-[#1])(-[#1])-[#6](-[#1])-[#1])(-[#1])-[#1]', (20, 7, 9, 24)) from external database
+# [410, 405, 404, 409] = [[25, 26, 23, 24], [9, 10], [7, 8], [19, 20, 21, 22]]
+# Fitted from Fragment  SMARTS [#6](-[#6](-[#6](-[#7](-[#6](=[#8])-[H])-[H])(-[H])-[H])(-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] torsion atom indexes = 5,1,2,7 with smarts torsion indices 12,2,3,10 from fragment 7_9_Index_0.mol
+# torsion % [#6](-[#6](-[#6](-[#7](-[#6](=[#8])-[H])-[H])(-[H])-[H])(-[H])-[H])(-[#6](-[H])(-[H])-[H])(-[H])-[H] % 12,2,3,10 % 0.0,0.0,0.299
+torsion 409 404 405 410 0.0 0 1 0.0 180 2 0.299 0 3
+
+# matching SMARTS from molecule  ('[#6](:,-[#6](:,-[#6](:,-[#6]-[#1])-[#1])-[#1])-[#6](-[#1])-[#6](-[#7](-[#6])-[#1])(-[#1])-[#1]', (24, 9, 3, 27)) from external database
+# [411, 402, 405, 410] = [[27, 28], [3, 4], [9, 10], [25, 26, 23, 24]]
+# Fitted from Fragment  SMARTS [#6](-[#7](-[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])-[H])(=[#8])-[#6](-[H])(-[H])-[H] torsion atom indexes = 4,1,2,6 with smarts torsion indices 13,2,3,12 from fragment 3_9_Index_0.mol
+# torsion % [#6](-[#7](-[#6](-[#6](-[#6](-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])-[H])(=[#8])-[#6](-[H])(-[H])-[H] % 13,2,3,12 % 0.794,0.454,-1.866
+torsion 411 402 405 410 0.794 0 1 0.454 180 2 -1.866 0 3
+
+#SOLUTE-SMARTS 410 [#1][C;D4][N,c;D3]
+
+SOLUTE 410 3.0556 2.996 4.032
+
+#SOLUTE-SMARTS 411 [#1]([N;D3]([C]([#1])))
+
+SOLUTE 411 3.6491 3.404 2.9894
+
+#SOLUTE-SMARTS 412 [#1]([CH3](C=O))
+
+SOLUTE 412 2.9089 2.836 3.5214
+
+#SOLUTE-SMARTS 408 [#1]([CH2])
+
+SOLUTE 408 3.0205 3.885 4.0505
+
+#SOLUTE-SMARTS 409 [#1]([CH2]([CH2]([N])))
+
+SOLUTE 409 3.9912 4.144 3.8925
+
+#SOLUTE-SMARTS 406 [#6;D3]([*])([*])(=[*])
+
+SOLUTE 406 2.9301 4.506 4.2118
+
+#SOLUTE-SMARTS 407 [CH3]
+
+SOLUTE 407 3.5062 3.309 4.536
+
+#SOLUTE-SMARTS 403 [#6]
+
+SOLUTE 403 3.3025 2.854 4.9016
+
+#SOLUTE-SMARTS 404 [#6]
+
+SOLUTE 404 3.3025 2.854 4.9016
+
+#SOLUTE-SMARTS 405 [#6]
+
+SOLUTE 405 3.3025 2.854 4.9016
+
+#SOLUTE-SMARTS 402 [N]([C]([#1]))
+
+SOLUTE 402 2.8836 2.99 3.218
+
+#SOLUTE-SMARTS 401 [#8;D1]=[#6]
+
+SOLUTE 401 2.9835 3.356 2.9616
+
+
+# [401] = [[1, 2]]
+polarize           401          0.9138     0.3900 406
+# amoeba21 comments=N on amide SMARTS match = [NX3]([CX3](=O))
+# [402] = [[3, 4]]
+polarize           402          1.2433     0.3900 406 411
+# amoeba21 comments=C on non-aromatic carbon SMARTS match = [$([C][C])]
+# [403] = [[5, 6]]
+polarize           403          1.4150     0.3900 408
+# amoeba21 comments=C on non-aromatic carbon SMARTS match = [$([C][C])]
+# [404] = [[7, 8]]
+polarize           404          1.4150     0.3900 409
+# amoeba21 comments=C on non-aromatic nitrogen SMARTS match = [C][N]
+# [405] = [[9, 10]]
+polarize           405          1.6196     0.3900 410
+# amoeba21 comments=C on carbonyl O SMARTS match = [CX3](=O)
+# [406] = [[11, 12]]
+polarize          406          2.0645     0.3900 401 402
+# amoeba21 comments=C on non-aromatic carbon SMARTS match = [$([C][C])]
+# [407] = [[13, 14]]
+polarize          407          1.4150     0.3900 412
+# amoeba21 comments=H on non-aromatic carbon SMARTS match = [H][C]
+# [408] = [[17, 18, 15, 16]]
+polarize          408          0.4803     0.3900 403
+# amoeba21 comments=H on non-aromatic carbon SMARTS match = [H][C]
+# [409] = [[19, 20, 21, 22]]
+polarize          409          0.4803     0.3900 404
+# amoeba21 comments=H on non-aromatic carbon SMARTS match = [H][C]
+# [410] = [[25, 26, 23, 24]]
+polarize          410          0.4803     0.3900 405
+# amoeba21 comments=H on non-aromatic nitrogen SMARTS match = [H][N]
+# [411] = [[27, 28]]
+polarize          411          0.4573     0.3900 402
+# amoeba21 comments=H on non-aromatic carbon SMARTS match = [H][C]
+# [412] = [[33, 34, 29, 30, 31, 32]]
+polarize          412          0.4803     0.3900 407
+
+#
+# Multipoles from Electrostatic Potential Fitting
+#
+
+# [401] = [[1, 2]]
+multipole   401  406  407              -0.71741
+                                        0.07786    0.00000   -0.06655
+                                       -0.49033
+                                        0.00000    0.15106
+                                        0.11932    0.00000    0.33927
+# [402] = [[3, 4]]
+multipole   402  411  406              -0.24682
+                                       -0.10288    0.00000    0.23046
+                                        0.53745
+                                        0.00000   -0.80522
+                                        0.24756    0.00000    0.26777
+# [403] = [[5, 6]]
+multipole   403  404  403              -0.12417
+                                        0.20958    0.00000    0.03983
+                                        0.13270
+                                        0.00000   -0.52522
+                                       -0.23738    0.00000    0.39252
+# [404] = [[7, 8]]
+multipole   404  405  403              -0.09883
+                                        0.26939    0.00000    0.02883
+                                        0.06201
+                                        0.00000   -0.52425
+                                       -0.17617    0.00000    0.46224
+# [405] = [[9, 10]]
+multipole   405  404  402               0.01006
+                                        0.10359    0.00000    0.05342
+                                        0.35823
+                                        0.00000   -0.56366
+                                       -0.39967    0.00000    0.20543
+# [406] = [[11, 12]]
+multipole   406  407  402               0.69762
+                                       -0.17259    0.00000   -0.53731
+                                        0.03442
+                                        0.00000   -0.13326
+                                       -0.05798    0.00000    0.09884
+# [407] = [[13, 14]]
+multipole   407  406  402              -0.19044
+                                        0.01634    0.00000    0.25422
+                                       -0.19761
+                                        0.00000   -0.11016
+                                       -0.05018    0.00000    0.30777
+# [408] = [[17, 18, 15, 16]]
+multipole   408  403  408               0.06153
+                                       -0.02077    0.00000   -0.04616
+                                        0.03050
+                                        0.00000    0.02095
+                                        0.00825    0.00000   -0.05145
+# [409] = [[19, 20, 21, 22]]
+multipole   409  404  409               0.05968
+                                       -0.03588    0.00000   -0.10355
+                                        0.11848
+                                        0.00000   -0.08146
+                                       -0.00404    0.00000   -0.03702
+# [410] = [[25, 26, 23, 24]]
+multipole   410  405  410               0.05865
+                                       -0.06668    0.00000   -0.21521
+                                        0.15493
+                                        0.00000    0.17058
+                                       -0.04647    0.00000   -0.32551
+# [411] = [[27, 28]]
+multipole   411  402  406               0.08914
+                                       -0.05424    0.00000   -0.19893
+                                        0.14571
+                                        0.00000   -0.03314
+                                        0.04457    0.00000   -0.11257
+# [412] = [[33, 34, 29, 30, 31, 32]]
+multipole   412  407  406               0.07371
+                                       -0.01017    0.00000   -0.05380
+                                       -0.01165
+                                        0.00000    0.00270
+                                       -0.00926    0.00000    0.00895
