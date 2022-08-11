@@ -70,19 +70,19 @@ public class ESVFilter {
   public String getLambdaHistogram(List<Residue> titratingResidueList, final int[][][] esvHistogram, double pH){
     int nTitr = titratingResidueList.size();
 
-    StringBuilder tautomerHeader = new StringBuilder("      X→ ");
+    StringBuilder tautomerHeader = new StringBuilder("        X");
     for (int k = 0; k < 10; k++) {
-      tautomerHeader.append(String.format("%1$10s", "[" + k / 10.0 + "-" + (k + 1) / 10.0 + "]"));
+      tautomerHeader.append(String.format(" %1$10s", "[" + k / 10.0 + "-" + (k + 1) / 10.0 + "]"));
     }
-    tautomerHeader.append("\nλ↓\n");
+    tautomerHeader.append("\n λ\n");
 
     StringBuilder[] histogram = new StringBuilder[nTitr];
     for (int i = 0; i < nTitr; i++) {
       StringBuilder hist = new StringBuilder();
-      hist.append(format("ESV: %s (%d) pH: %4.2f\n", titratingResidueList.get(i), i, pH));
+      hist.append(format(" ESV: %s (%d) pH: %4.2f\n", titratingResidueList.get(i), i, pH));
       hist.append(tautomerHeader);
       for (int j = 0; j < 10; j++) {
-        hist.append("[").append(j / 10.0).append("-").append((j + 1) / 10.0).append("]");
+        hist.append(" [").append(j / 10.0).append("-").append((j + 1) / 10.0).append("]");
         for (int k = 0; k < 10; k++) {
           hist.append(String.format("%1$10s", esvHistogram[i][j][k]));
         }
@@ -155,6 +155,7 @@ public class ESVFilter {
         a[i] = parseDouble(tokens[0]);
       }
 
+      // Histograms
       for (int i = 0; i < esvHist.length; i++){
         for (int j = 0; j < 4; j ++) {br.readLine();}
         for (int j = 0; j < esvHist[i].length; j++){
