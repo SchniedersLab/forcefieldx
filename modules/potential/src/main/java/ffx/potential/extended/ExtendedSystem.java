@@ -47,7 +47,6 @@ import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
-import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TitrationUtils;
 import ffx.potential.parsers.ESVFilter;
@@ -543,9 +542,6 @@ public class ExtendedSystem implements Potential {
 
     /**
      * Collect respective pH, model, and discr bias terms and their derivatives for each titrating residue.
-     *
-     * @param residue
-     * @param biasEnergyAndDerivs
      */
     private void getBiasTerms(Residue residue, double[] biasEnergyAndDerivs) {
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
@@ -733,6 +729,11 @@ public class ExtendedSystem implements Potential {
         biasEnergyAndDerivs[8] = -dMod_dTaut;
     }
 
+    /**
+     * Gets the titration lambda for the input residue if the residue is titrating
+     * @param residue a titrating residue
+     * @return the titration lambda for the residue
+     */
     public double getTitrationLambda(Residue residue) {
         if (titratingResidueList.contains(residue)) {
             int resIndex = titratingResidueList.indexOf(residue);
@@ -742,6 +743,11 @@ public class ExtendedSystem implements Potential {
         }
     }
 
+    /**
+     * Gets the tautomer lambda for the input residue if the residue is tautomerizing
+     * @param residue a tautomer residue
+     * @return the tautomer lambda for the residue
+     */
     public double getTautomerLambda(Residue residue) {
         if (tautomerizingResidueList.contains(residue)) {
             int resIndex = tautomerizingResidueList.indexOf(residue);
@@ -751,19 +757,22 @@ public class ExtendedSystem implements Potential {
         }
     }
 
-    public void setFixTautomerState(boolean fixTautomerState){
+    /**
+     * Does not allow for changes to the tautomer states of tautomerizing residues
+     */
+    public void setFixedTautomerState(boolean fixTautomerState){
         this.fixTautomerState = fixTautomerState;
     }
 
-    public void setFixTitrationState(boolean fixTitrationState){
+    /**
+     * Does not allow for changes to the tautomer states of titrating residues
+     */
+    public void setFixedTitrationState(boolean fixTitrationState){
         this.fixTitrationState = fixTitrationState;
     }
 
     /**
      * get total dUvdw/dL for the selected extended system variable
-     *
-     * @param esvID
-     * @return
      */
     private double getVdwDeriv(int esvID) {
         return esvVdwDerivs[esvID].get();
@@ -777,6 +786,9 @@ public class ExtendedSystem implements Potential {
         return esvIndElecDerivs[esvID].get();
     }
 
+    /**
+     * Returns the titratibility of the passed residue
+     */
     public boolean isTitratable(Residue residue) {
         if (residue.getResidueType() == Residue.ResidueType.NA) {
             return false;
@@ -785,6 +797,9 @@ public class ExtendedSystem implements Potential {
         return AA3.isConstantPhTitratable;
     }
 
+    /**
+     * Returns the tautomerizibility of a residue
+     */
     public boolean isTautomer(Residue residue) {
         if (residue.getResidueType() == Residue.ResidueType.NA) {
             return false;
@@ -793,6 +808,10 @@ public class ExtendedSystem implements Potential {
         return AA3.isConstantPhTautomer;
     }
 
+    /**
+     * Sets the Occupancy and B-factor to titration and tautomer coordinates in PDB files
+     * @param molecularAssembly which mola to update
+     */
     public void setOccTemp(MolecularAssembly molecularAssembly) {
         for (Atom atom : molecularAssembly.getAtomList()) {
             int atomIndex = atom.getIndex() - 1;
@@ -826,18 +845,27 @@ public class ExtendedSystem implements Potential {
         setESVHistogram();
     }
 
+    /**
+     * Returns whether an atom is titrating
+     */
     public boolean isTitrating(int atomIndex) {
         return isTitrating[atomIndex];
     }
 
+    /**
+     * Returns whether an atom is tautomerizing
+     */
     public boolean isTautomerizing(int atomIndex) {
         return isTautomerizing[atomIndex];
     }
 
+    /**
+     * Goes through residues updates the ESV histogram based on the residues current state
+     */
     private void setESVHistogram() {
         for (Residue residue : titratingResidueList) {
             int index = titratingResidueList.indexOf(residue);
-            if (residue.getAminoAcid3().equals(AminoAcid3.LYS)) { // TODO: Add support for CYS?
+            if (residue.getAminoAcid3().equals(AminoAcid3.LYS)) { // TODO: Add support for CYS? by adding "|| residue.getAminoAcid3().equals(AminoAcid3.CYS))"
                 double titrLambda = getTitrationLambda(residue);
                 esvHistogram(index, titrLambda);
             } else {
@@ -848,6 +876,11 @@ public class ExtendedSystem implements Potential {
         }
     }
 
+    /**
+     * Updates the ESV histogram of the passed residue at the given lambda
+     * @param esv the index of the esv to be updated
+     * @param lambda the lambda value to be updated
+     */
     private void esvHistogram(int esv, double lambda) {
         int value = (int) (lambda * 10.0);
         //Cover the case where lambda could be exactly 1.0
@@ -857,6 +890,12 @@ public class ExtendedSystem implements Potential {
         esvHistogram[esv][value][0]++;
     }
 
+    /**
+     * Updates the ESV histogram of the passed residue at the given titr and taut state
+     * @param esv the index of the esv to be updated
+     * @param titrLambda the titration lambda coordinate to be updated
+     * @param tautLambda the tautomer lambda coordinate to be updated
+     */
     private void esvHistogram(int esv, double titrLambda, double tautLambda) {
         int titrValue = (int) (titrLambda * 10.0);
         //Cover the case where lambda could be exactly 1.0
@@ -870,7 +909,9 @@ public class ExtendedSystem implements Potential {
         esvHistogram[esv][titrValue][tautValue]++;
     }
 
-    //Naive guess as to what the best starting state should be based purely on the acidostat term.
+    /**
+     * Naive guess as to what the best starting state should be based purely on the acidostat term.
+     */
     private double initialTitrationState(Residue residue, double initialLambda) {
         AminoAcid3 AA3 = residue.getAminoAcid3();
         double initialTitrationLambda;
@@ -897,6 +938,9 @@ public class ExtendedSystem implements Potential {
         return initialTitrationLambda;
     }
 
+    /**
+     * Guess the lambda states for each extended residue
+     */
     public void reGuessLambdas() {
         for (Residue residue : titratingResidueList) {
             double lambda = initialTitrationState(residue, 1.0);
@@ -904,6 +948,11 @@ public class ExtendedSystem implements Potential {
         }
     }
 
+    /**
+     * Overwrites the histogram passed into it and returns the new one out ~output never used?~
+     * @param histogram 2D histogram list with the tautomer & titration states compressed to a 1D array
+     * @return another compressed histogram
+     */
     public int[][] getESVHistogram(int[][] histogram) {
         for (int i = 0; i < titratingResidueList.size(); i++) {
             int h = 0;
@@ -951,6 +1000,10 @@ public class ExtendedSystem implements Potential {
         }
     }
 
+    /**
+     * Changes this ESV's histogram to equal the one passed
+     * @param histogram histogram to set this ESV histogram to
+     */
     public void copyESVHistogramTo(int[][] histogram) {
         for (int i = 0; i < titratingResidueList.size(); i++) {
             int h = 0;
@@ -1004,6 +1057,12 @@ public class ExtendedSystem implements Potential {
         setTautomerLambda(residue, lambda, true);
     }
 
+    /**
+     * Set the tautomer lambda of a residue
+     * @param residue residue to set the lambda of
+     * @param lambda value to set the residue to
+     * @param changeThetas whether or not to change the theta positions ~comes with information loss~
+     */
     public void setTautomerLambda(Residue residue, double lambda, boolean changeThetas){
         if (tautomerizingResidueList.contains(residue) && !lockStates) {
             // The correct index in the theta arrays for tautomer coordinates is after the titration list.
@@ -1023,10 +1082,14 @@ public class ExtendedSystem implements Potential {
         }*/
     }
 
-    public void setTitrationLambda(Residue residue, double lambda) {
-        setTitrationLambda(residue, lambda, true);
-    }
+    public void setTitrationLambda(Residue residue, double lambda) { setTitrationLambda(residue, lambda, true);}
 
+    /**
+     * Set the titration lambda of a residue
+     * @param residue residue to set the lambda of
+     * @param lambda value to set the residue to
+     * @param changeThetas whether or not to change the theta positions ~comes with information loss~
+     */
     public void setTitrationLambda(Residue residue, double lambda, boolean changeThetas){
         if (titratingResidueList.contains(residue) && !lockStates) {
             int index = titratingResidueList.indexOf(residue);
@@ -1041,7 +1104,7 @@ public class ExtendedSystem implements Potential {
             }
         }/*else {
             logger.warning(format("This residue %s is not titrating or locked by user property.", residue.getName()));
-        }*/
+        }*/ //TODO: Decide on whether or not this is necessary
     }
 
     public List<Residue> getTitratingResidueList() {
@@ -1195,9 +1258,6 @@ public class ExtendedSystem implements Potential {
 
     /**
      * Calculate prefactor for scaling the van der Waals based on titration/tautomer state if titrating proton
-     *
-     * @param atomIndex
-     * @param vdwPrefactorAndDerivs
      */
     public void getVdwPrefactor(int atomIndex, double[] vdwPrefactorAndDerivs) {
         double prefactor = 1.0;
@@ -1256,11 +1316,7 @@ public class ExtendedSystem implements Potential {
 
     /**
      * Add van der Waals deriv to appropriate dU/dL term.
-     *
-     * @param atomI
      * @param vdwEnergy             van der Waals energy calculated with no titration/tautomer scaling
-     * @param vdwPrefactorAndDerivI
-     * @param vdwPrefactorJ
      */
     public void addVdwDeriv(int atomI, double vdwEnergy, double[] vdwPrefactorAndDerivI, double vdwPrefactorJ) {
         if (!isTitratingHydrogen(atomI)) {
