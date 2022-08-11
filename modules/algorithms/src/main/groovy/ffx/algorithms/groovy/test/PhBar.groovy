@@ -53,8 +53,6 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-
-import java.lang.reflect.Array
 import java.util.logging.Level
 
 import static java.lang.String.format
@@ -200,8 +198,8 @@ class PhBar extends AlgorithmsScript {
         }
 
         esvSystem.setConstantPh(pH)
-        esvSystem.setFixTitrationState(true)
-        esvSystem.setFixTautomerState(true)
+        esvSystem.setFixedTitrationState(true)
+        esvSystem.setFixedTautomerState(true)
         forceFieldEnergy.attachExtendedSystem(esvSystem)
 
         int numESVs = esvSystem.extendedResidueList.size()

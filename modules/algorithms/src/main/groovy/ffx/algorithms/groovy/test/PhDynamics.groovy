@@ -55,7 +55,6 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-
 import static java.lang.String.format
 
 /**
@@ -107,6 +106,10 @@ class PhDynamics extends AlgorithmsScript {
   @Option(names = ['--initTitrDynamics'], paramLabel = '1000',
           description = 'Number of initialization steps to take before replica exchange windows start.')
   int initTitrDynamics = 1000
+
+  @Option(names = "--sort", paramLabel = "false",
+          description = "Sort archive files by pH")
+  boolean sort = false
 
 
 
@@ -164,6 +167,7 @@ class PhDynamics extends AlgorithmsScript {
       logger.info(helpString())
       return this
     }
+
     potential = activeAssembly.getPotentialEnergy()
     // Set the filename.
     String filename = activeAssembly.getFile().getAbsolutePath()
@@ -173,6 +177,7 @@ class PhDynamics extends AlgorithmsScript {
     if (!esv.exists()) {
       esv = null
     }
+
     // Initialize and attach extended system first.
     ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, esv)
     esvSystem.setConstantPh(pH)
@@ -213,20 +218,12 @@ class PhDynamics extends AlgorithmsScript {
 
         logger.info("\n Running replica exchange molecular dynamics on " + filename)
         int rank = (size > 1) ? world.rank() : 0
-        logger.info(" Rank: " + rank.toString())
 
         File structureFile = new File(filename)
-        File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank))
-        if (!rankDirectory.exists()) {
-          rankDirectory.mkdir()
-        }
-
-        final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
+        final String newMolAssemblyFile = structureFile.getParent() + File.separator + rank + File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
-        File esvRestart = new File(rankDirectory.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + ".esv")
-        esvSystem.setESVFile(esvRestart)
-        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, pHGap, dynamicsOptions.temperature, esvSystem)
+        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHGap, dynamicsOptions.temperature, esvSystem)
 
         long totalSteps = dynamicsOptions.numSteps
         int nSteps = repEx.replicaSteps
@@ -239,38 +236,16 @@ class PhDynamics extends AlgorithmsScript {
         pHReplicaExchange.
                 sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
 
+        sortMyArc(structureFile, world.size(), pHReplicaExchange.getpHScale()[world.rank()], world.rank())
 
-        String outputName = rankDirectory.getPath() + File.separator + "rankOutput.log"
-        File output = new File(outputName)
-
-        String repExLogName = rankDirectory.getParent() + File.separator + "repEx.log"
-        File repExLog = new File(repExLogName)
-
-        if (world.size() > 1) {
-          try (FileReader r = new FileReader(repExLog)
-               BufferedReader br = new BufferedReader(r)
-               FileWriter wr = new FileWriter(output)
-               BufferedWriter bwr = new BufferedWriter(wr)) {
-
-            bwr.write("")
-            String data = br.readLine()
-            while (data != null) {
-              if (data.substring(0, 4).contains("[" + world.rank() + "]")) {
-                wr.write(data + "\n")
-              }
-              data = br.readLine()
-            }
-          } catch (IOException e) {
-            e.printStackTrace()
-          }
-        }
       } else {
         // CPU Constant pH Dynamics
         molecularDynamics.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
                 dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temperature, true, dyn)
         esvSystem.writeLambdaHistogram()
       }
-    } else {
+    }
+    else {
       // CPU Constant pH Dynamics alternatives with GPU Dynamics at fixed protonation states.
 
       // Save a reference to the OpenMM Molecular Dynamics
@@ -292,50 +267,17 @@ class PhDynamics extends AlgorithmsScript {
 
         File structureFile = new File(filename)
         File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank))
-        if (!rankDirectory.exists()) {
-          rankDirectory.mkdir()
-        }
 
         final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
-        File esvRestart = new File(rankDirectory.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + ".esv")
-        esvSystem.setESVFile(esvRestart)
-        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, pH, pHGap, dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
+        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHGap, dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
 
         pHReplicaExchange.
                 sample(cycles, titrSteps, coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
 
-        String outputName = rankDirectory.getPath() + File.separator + "rankOutput.log"
-        File output = new File(outputName)
+        sortMyArc(structureFile, world.size(), pH, world.rank())
 
-        String repExLogName = structureFile.getParent() + File.separator + "repEx.log"
-        File repExLog = new File(repExLogName)
-
-        if (!repExLog.exists()) {
-          FileWriter wr = new FileWriter(repExLog)
-          wr.write("")
-          wr.close()
-        }
-
-        if (world.size() > 1) {
-          try (FileReader r = new FileReader(structureFile.getParent() + File.separator + "repEx.log")
-               BufferedReader br = new BufferedReader(r)
-               FileWriter wr = new FileWriter(output)
-               BufferedWriter bwr = new BufferedWriter(wr)) {
-
-            bwr.write("")
-            String data = br.readLine()
-            while (data != null) {
-              if (data.substring(0, 4).contains("[" + world.rank() + "]")) {
-                wr.write(data + "\n")
-              }
-              data = br.readLine()
-            }
-          } catch (IOException e) {
-            e.printStackTrace()
-          }
-        }
       } else {
         for (int i = 0; i < cycles; i++) {
           // Try running on the CPU
@@ -357,6 +299,8 @@ class PhDynamics extends AlgorithmsScript {
       }
     }
 
+    esvSystem.printProtonationRatios()
+
     return this
   }
 
@@ -373,4 +317,82 @@ class PhDynamics extends AlgorithmsScript {
       }
       return potentials
     }
+
+    /**
+     * Sort archive files by pH with string parsing
+     */
+  static void sortMyArc(File structureFile, int nReplicas, double pH, int myRank){
+    logger.info(" Sorting archive for rank " + myRank)
+    String parent = structureFile.getParent()
+    String arcName = FilenameUtils.removeExtension(structureFile.getName()) + ".arc"
+    BufferedReader[] bufferedReaders = new BufferedReader[nReplicas]
+    File output = new File(parent + File.separator + myRank + File.separator + arcName + "_sorted")
+    BufferedWriter out = new BufferedWriter(new FileWriter(output))
+
+    // Get snap length from first directory
+    File temp = new File(parent + File.separator + 0 + File.separator + arcName)
+    BufferedReader brTemp = new BufferedReader(new FileReader(temp))
+    String data = brTemp.readLine()
+    int snapLength = 0
+    boolean startSnap = false
+    while(data != null){
+      if(data.contains("pH:")){
+        startSnap = !startSnap
+        if(!startSnap){
+          break
+        }
+      }
+      data = brTemp.readLine()
+      snapLength++
+    }
+    int totalLines = snapLength
+    while(data != null) {
+      totalLines++
+      data = brTemp.readLine()
+    }
+    int numSnaps = (int) (totalLines / snapLength)
+
+    // Build file readers
+    for(int i = 0; i < nReplicas; i++) {
+      File file = new File(parent + File.separator + i + File.separator + arcName)
+      bufferedReaders[i] = new BufferedReader(new FileReader(file))
+    }
+    try{
+      // Read all arc files one snap at a time
+      for(int i = 0; i < numSnaps; i++) {
+        for(int j = 0; j < nReplicas; j++) {
+          // Read up to the first line
+          data = bufferedReaders[j].readLine()
+          while(data != null){
+            if(data.contains("pH:")){
+              break
+            }
+            data = bufferedReaders[j].readLine()
+          }
+          // Get pH from line
+          String[] tokens = data.split(" +")
+          double snapPh = Double.parseDouble(tokens[tokens.length-3]) // FIXME: pH is not the last index of tokens 'Rank: #' is
+
+          // Add lines to file if correct, otherwise don't
+          for(int k = 0; k < snapLength-1; k++){
+            if(snapPh == pH){
+              out.write(data + "\n")
+            }// Readlines doesn't work as expected
+            data = bufferedReaders[j].readLine()
+          }
+          if(snapPh == pH){
+            out.write("\n")
+          }
+        }
+      }
+    }catch(IOException e){
+      e.printStackTrace()
+    }
+
+    // Cleanup
+    out.close()
+    for(int i = 0; i < nReplicas; i++){
+      bufferedReaders[i].close()
+    }
   }
+}
