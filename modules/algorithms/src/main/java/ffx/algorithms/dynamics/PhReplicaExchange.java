@@ -447,8 +447,7 @@ public class PhReplicaExchange implements Terminatable {
     if(initTitrDynamics > 0 && !restart) {
       replica.dynamic(initTitrDynamics, timeStep,
               printInterval, trajInterval, temp, true, dyn);
-      extendedSystem.getESVHistogram(parametersHis[rank]); // FIXME: Omission of initialization steps can be done easily here
-      replica.writeRestart();
+      extendedSystem.copyESVHistogramTo(parametersHis[rank]); // Copy the ESV hist to be empty
 
       logger.info(" ");
       logger.info(" ------------------End of Equilibration Dynamics------------------\n");
