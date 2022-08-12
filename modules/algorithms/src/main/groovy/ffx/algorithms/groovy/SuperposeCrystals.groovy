@@ -40,11 +40,9 @@ package ffx.algorithms.groovy
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.math.RunningStatistics
 import ffx.potential.MolecularAssembly
-import ffx.potential.cli.TopologyOptions
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.utils.ProgressiveAlignmentOfCrystals
 import picocli.CommandLine.Command
-import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
@@ -81,7 +79,7 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * --if or --inflationFactor Inflation factor used to determine replicates expansion.
    */
-  @Option(names = ['--if', '--inflationFactor'], paramLabel = '13.0', defaultValue = '13.0',
+  @Option(names = ['--if', '--inflationFactor'], paramLabel = '15.0', defaultValue = '15.0',
       description = 'Inflation factor used to determine replicates expansion (IF * nAU in replicates).')
   private double inflationFactor
 
@@ -126,7 +124,7 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * --mt or --matchTolerance Tolerance to determine if two AUs are different.
    */
-  @Option(names = ['--mt', '--moleculeTolerance'], paramLabel = '0.002', defaultValue = '0.002',
+  @Option(names = ['--mt', '--moleculeTolerance'], paramLabel = '0.0015', defaultValue = '0.0015',
           description = "Tolerance to determine if two AUs are different.")
   private double matchTol
 

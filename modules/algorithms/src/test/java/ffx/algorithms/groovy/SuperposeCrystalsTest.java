@@ -43,7 +43,7 @@ import ffx.algorithms.misc.AlgorithmsTest;
 import org.junit.Test;
 
 /**
- * Tests test.SuperposeCrystals command to verify crystals are being aligned and compared.
+ * Tests SuperposeCrystals command to verify crystals are being aligned and compared.
  *
  * @author Aaron J. Nessler
  */
@@ -110,6 +110,28 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     // Mean RMSD for 100 comparisons (10 by 10).
     assertEquals(0.199630, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
     assertEquals(0.199630, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
+  }
+
+  /** Tests the SuperposeCrystals script with small symmetric molecules (can be tricky to determine conformations). */
+  @Test
+  public void testBaseSingleMTSuperposeCrystals2() {
+
+    // Set up the input arguments for the SuperposeCrystals script.
+    String[] args = {"src/main/java/ffx/algorithms/structures/ace.arc",
+            "src/main/java/ffx/algorithms/structures/ace.arc_x"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the SuperposeCrystals script.
+    SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = superposeCrystals;
+
+    // Only off-diagonal values.
+    assertEquals(4, superposeCrystals.runningStatistics.getCount());
+    // Mean RMSD for 100 comparisons (10 by 10).
+    assertEquals(0.224877, superposeCrystals.runningStatistics.getMin(), TOLERANCE);
+    assertEquals(0.224877, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.224877, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script with default settings and average linkage. */
@@ -298,6 +320,26 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
 
     assertEquals(0.478175, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
     assertEquals(1.383652, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
+  }
+
+  /** Tests the SuperposeCrystals script on protein crystal. */
+  @Test
+  public void testBaseAverageSuperposeCrystalsSmallProtein() {
+
+    // Set up the input arguments for the SuperposeCrystals script.
+    String[] args = {"-l","1", "src/main/java/ffx/algorithms/structures/2olx.arc"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the SuperposeCrystals script.
+    SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = superposeCrystals;
+
+    assertEquals(6, superposeCrystals.runningStatistics.getCount());
+    // Mean RMSD for 6 comparisons.
+
+    assertEquals(0.441851, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(1.269418, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script print symmetry operator functionality. */
