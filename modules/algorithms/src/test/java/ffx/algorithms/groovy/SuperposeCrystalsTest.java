@@ -47,7 +47,6 @@ import org.junit.Test;
  *
  * @author Aaron J. Nessler
  */
-
 public class SuperposeCrystalsTest extends AlgorithmsTest {
 
   private final double TOLERANCE = 0.005;
@@ -69,7 +68,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
     assertEquals(0.087248318, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
-    assertEquals(0.226387398, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
+    assertEquals(0.216710494, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script with RMSD size of one. */
@@ -319,6 +318,26 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
 
     assertEquals(0.10510735, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
     assertEquals(0.10510735, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
+  }
+
+  /** Tests the SuperposeCrystals script on long molecule (potential issue with inflation factor). */
+  @Test
+  public void testSuperposeCrystalsLongMolecule() {
+
+    // Set up the input arguments for the SuperposeCrystals script.
+    String[] args = {"src/main/java/ffx/algorithms/structures/dameda.arc"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the SuperposeCrystals script.
+    SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = superposeCrystals;
+
+    assertEquals(3, superposeCrystals.runningStatistics.getCount());
+    // Mean RMSD for 6 comparisons.
+
+    assertEquals(0.200420, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.601259, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   @Test
