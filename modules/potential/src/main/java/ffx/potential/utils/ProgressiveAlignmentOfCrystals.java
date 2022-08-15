@@ -73,6 +73,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
 import ffx.crystal.Crystal;
+import ffx.crystal.LatticeSystem;
 import ffx.crystal.ReplicatesCrystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.math.RunningStatistics;
@@ -591,8 +592,7 @@ public class ProgressiveAlignmentOfCrystals {
     }
 
     centerOfMass(targetCoM, targetXYZ, massN, massSum, compareAtomsSize);
-    prioritizeReplicates(targetXYZ, massN, massSum, targetCoM, compareAtomsSize, targetAUDist, 0,
-            linkage);
+    prioritizeReplicates(targetXYZ, massN, massSum, targetCoM, compareAtomsSize, targetAUDist, 0, linkage);
 
     //Used for debugging. Can be removed.
     if (logger.isLoggable(Level.FINER)) {
@@ -1064,8 +1064,7 @@ public class ProgressiveAlignmentOfCrystals {
           arraycopy(targetXYZoriginal, 0, targetXYZ, 0, targetXYZoriginal.length);
 
           //Re-prioritize based on central AU if different from first prioritization.
-          prioritizeReplicates(targetXYZ, massN, massSum, targetCoM, compareAtomsSize, targetAUDist_2,
-                  targetInd, linkage);
+          prioritizeReplicates(targetXYZ, massN, massSum, targetCoM, compareAtomsSize, targetAUDist_2, targetInd, linkage);
 
           // Isolate the AU closest to center in the second crystal (targetAU).
           arraycopy(targetXYZ, targetAUDist_2[0].getIndex() * nCoords, targetAU, 0, nCoords);
@@ -1427,9 +1426,6 @@ public class ProgressiveAlignmentOfCrystals {
     // Each ASU contains z * comparisonAtoms species so treat each species individually.
     int compareAtomsSize = comparisonAtoms.length;
     int compareAtomsSize2 = comparisonAtoms2.length;
-    if (compareAtomsSize != compareAtomsSize2) {
-      logger.warning(" Selected atom sizes differ between crystals.");
-    }
     //Determine number of species within asymmetric unit.
     //TODO: Handle Z' > 1 for heterogeneous/co-crystals.
     int z1 = guessZPrime(zPrime, baseAssembly.getMolecules().size());
@@ -1440,11 +1436,17 @@ public class ProgressiveAlignmentOfCrystals {
     if (z2 > 1) {
       compareAtomsSize2 /= z2;
     }
+    if (compareAtomsSize != compareAtomsSize2) {
+      logger.warning(" Selected atom sizes differ between crystals.");
+    }
 
     // When printing Sym Ops it is imperative to find all molecules (decrease matchTol).
     boolean useSym = printSym >= 0.0;
     if (useSym && (z1 > 1 || z2 > 1)) {
       matchTol = 0.00000002;
+    }
+    if(useSym && z1 != z2){
+      logger.warning(" Comparisons to determine symmetry should have the same number of molecules in the asymmetric unit.");
     }
 
     Crystal baseCrystal = baseAssembly.getCrystal().getUnitCell();
@@ -1632,8 +1634,6 @@ public class ProgressiveAlignmentOfCrystals {
       // a different size (i.e. larger).
 
 
-      baseSymOps.clear();
-      baseDistMap.clear();
       baseXYZoriginal = generateInflatedSphere(baseCrystal.getUnitCell(), radius, baseLMN,
               reducedBaseCoords, z1, mass, baseSymOps, baseDistMap);
       int nBaseCoords = baseXYZoriginal.length;
@@ -1653,8 +1653,6 @@ public class ProgressiveAlignmentOfCrystals {
         if (logger.isLoggable(Level.FINER)) {
           logger.finer(format(" Revised Base L: %3d M: %3d N: %3d", baseLMN[0], baseLMN[1], baseLMN[2]));
         }
-        baseSymOps.clear();
-        baseDistMap.clear();
         baseXYZoriginal = generateInflatedSphere(baseCrystal.getUnitCell(), radius, baseLMN,
                 reducedBaseCoords, z1, mass, baseSymOps, baseDistMap);
         nBaseCoords = baseXYZoriginal.length;
@@ -1686,7 +1684,7 @@ public class ProgressiveAlignmentOfCrystals {
           }
           double rmsd = -9.0;
           // Used to determine static/mobile crystal. Needed to switch back after comparison.
-          boolean densityCheck = true;
+          boolean densityCheck;
           if (isSymmetric && row == column) {
             stringBuilder.append(
                     format("\n Comparing Model %4d (%s) of %s\n with      Model %4d (%s) of %s\n",
@@ -1712,8 +1710,6 @@ public class ProgressiveAlignmentOfCrystals {
             double targetVolume = targetCrystal.volume / targetCrystal.getNumSymOps() / z2;
             double asymmetricUnitVolume = max(abs(baseVolume), abs(targetVolume));
             radius = cbrt(0.75 / PI * asymmetricUnitVolume * nAU * inflationFactor);
-            targetSymOps.clear();
-            targetDistMap.clear();
             targetXYZoriginal = generateInflatedSphere(targetCrystal.getUnitCell(), radius, targetLMN,
                     reducedTargetCoords, z2, mass2, targetSymOps, targetDistMap);
             int nTargetCoords = targetXYZoriginal.length;
@@ -1733,8 +1729,6 @@ public class ProgressiveAlignmentOfCrystals {
               if (logger.isLoggable(Level.FINER)) {
                 logger.finer(format(" Revised Target L: %3d M: %3d N: %3d", targetLMN[0], targetLMN[1], targetLMN[2]));
               }
-              targetSymOps.clear();
-              targetDistMap.clear();
               targetXYZoriginal = generateInflatedSphere(targetCrystal.getUnitCell(), radius, targetLMN,
                       reducedTargetCoords, z2, mass, targetSymOps, targetDistMap);
               nTargetCoords = targetXYZoriginal.length;
@@ -1904,7 +1898,6 @@ public class ProgressiveAlignmentOfCrystals {
                 arraycopy(reducedTargetCoords, i * compareAtomsSize2 * 3, targetAUoriginal[i], 0, compareAtomsSize2 * 3);
               }
             }
-
 
             if (logger.isLoggable(Level.FINER)) {
               logger.finer(format(" %3d Molecules in Base Crystal \t %3d Molecules in Target Crystal",
@@ -2361,13 +2354,47 @@ public class ProgressiveAlignmentOfCrystals {
     crystal.getUnitCell().toFractionalCoordinates(new double[]{maxDistX, maxDistY, maxDistZ}, output);
     int[] lmn = new int[]{(int) ceil(output[0]), (int) ceil(output[1]), (int) ceil(output[2])};
     if (logger.isLoggable(Level.FINER)) {
-      logger.finer(format(" X: %9.3f-%7.3f Y: %9.3f-%7.3f Z: %9.3f-%7.3f", maxX, minX, maxY, minY, maxZ, minZ));
-      logger.finer(format(" DiffX: %9.3f DiffY: %9.3f DiffZ: %9.3f\n newL: %3d newM: %3d newN: %3d",
+      logger.finer(format(" X: %9.3f -%7.3f Y: %9.3f -%7.3f Z: %9.3f -%7.3f", maxX, minX, maxY, minY, maxZ, minZ));
+      logger.finer(format(" Sym Dist X: %9.3f Sym Dist Y: %9.3f Sym Dist Z: %9.3f\n newL: %3d newM: %3d newN: %3d",
               maxDistX, maxDistY, maxDistZ, lmn[0], lmn[1], lmn[2]));
     }
+    // TODO determine if below steps are necessary (change replicates expansion method?
+    LatticeSystem lattice = crystal.spaceGroup.latticeSystem;
+    int restriction;
+    switch(lattice) {
+      case HEXAGONAL_LATTICE:
+      case TETRAGONAL_LATTICE:
+        //a==b
+        restriction = 0;
+        break;
+      case CUBIC_LATTICE:
+      case RHOMBOHEDRAL_LATTICE:
+        //a==b==c
+        restriction = 1;
+        break;
+      default:
+        //no restriction
+        restriction = -1;
+        break;
+    }
+    if(restriction == 0){
+      if(lmn[0] != lmn[1]){
+        int max = max(lmn[0],lmn[1]);
+        lmn[0] = max;
+        lmn[1] = max;
+      }
+    }else if(restriction == 1){
+      if(lmn[0] != lmn[2] || lmn[1] != lmn[2]){
+        int max = max(lmn[0],max(lmn[1],lmn[2]));
+        lmn[0] = max;
+        lmn[1] = max;
+        lmn[2] = max;
+      }
+    }
     boolean redo = false;
+    int buffer = 1;
     for (int i = 0; i < 3; i++) {
-      while (lmn[i] + 1 >= startLMN[i]) {
+      while (lmn[i] + buffer >= startLMN[i]) {
         redo = true;
         startLMN[i]++;
       }
@@ -2398,8 +2425,7 @@ public class ProgressiveAlignmentOfCrystals {
    * @param includeHydrogen Boolean whether to include hydrogens.
    */
   private static void determineComparableAtoms(Atom[] atoms, ArrayList<Integer> indices, ArrayList<Integer> unique,
-                                               boolean alphaCarbons,
-                                               boolean includeHydrogen) {
+                                               boolean alphaCarbons, boolean includeHydrogen) {
     int nAtoms = atoms.length;
     for (int i = 0; i < nAtoms; i++) {
       if (!unique.contains(i)) {
@@ -2431,8 +2457,9 @@ public class ProgressiveAlignmentOfCrystals {
    * @param scaleFactor     Scaling factor to determine final size (default nAU * 10).
    * @return LMN values for replicates crystal.
    */
-  private static int[] determineExpansion(Crystal unitCell, double[] reducedCoords, int[] comparisonAtoms, double[] mass,
-                                          int nAU, int zPrime, double scaleFactor) {
+  private static int[] determineExpansion(final Crystal unitCell, final double[] reducedCoords, final int[] comparisonAtoms, final double[] mass,
+                                          final int nAU, final int zPrime, final double scaleFactor) {
+    // TODO Create better expansion criteria (hopefully can eliminate checkInflatedSphere method some day...).
     final int XX = 0;
     final int YY = 1;
     final int ZZ = 2;
@@ -2440,6 +2467,25 @@ public class ProgressiveAlignmentOfCrystals {
     final int nSymm = unitCell.spaceGroup.getNumberOfSymOps();
     final int numEntities = nSymm * zPrime;
     final int compareAtomsSize = comparisonAtoms.length;
+    // TODO determine if below steps are necessary (change replicates expansion method)
+    LatticeSystem lattice = unitCell.spaceGroup.latticeSystem;
+    int restriction;
+    switch(lattice) {
+      case HEXAGONAL_LATTICE:
+      case TETRAGONAL_LATTICE:
+        //a==b
+        restriction = 0;
+        break;
+      case CUBIC_LATTICE:
+      case RHOMBOHEDRAL_LATTICE:
+        //a==b==c
+        restriction = 1;
+        break;
+      default:
+        //no restriction
+        restriction = -1;
+        break;
+    }
 
     int zAtoms = compareAtomsSize / zPrime;
     // Collect asymmetric unit atomic coordinates.
@@ -2501,37 +2547,44 @@ public class ProgressiveAlignmentOfCrystals {
       }
     }
 
-
-
-
     // Loop over molecule(s) in unit cell to determine maximum dimensions of unit cell.
     double maxDistX = 0.0;
     double maxDistY = 0.0;
     double maxDistZ = 0.0;
     for (int i = 0; i < nSymm; i++) {
+      double maxSymDistX = 0.0;
+      double maxSymDistY = 0.0;
+      double maxSymDistZ = 0.0;
       for (int j = 0; j < compareAtomsSize; j++) {
         double x1 = xS[i][j];
         double y1 = yS[i][j];
         double z1 = zS[i][j];
-        for (int l = i; l < nSymm; l++) {
-          for (int m = 0; m < compareAtomsSize; m++) {
-            double x2 = xS[l][m];
-            double y2 = yS[l][m];
-            double z2 = zS[l][m];
-            double distX = abs(x2 - x1);
-            double distY = abs(y2 - y1);
-            double distZ = abs(z2 - z1);
-            if (distX > maxDistX) {
-              maxDistX = distX;
-            }
-            if (distY > maxDistY) {
-              maxDistY = distY;
-            }
-            if (distZ > maxDistZ) {
-              maxDistZ = distZ;
-            }
+        for (int m = j + 1; m < compareAtomsSize; m++) {
+          double x2 = xS[i][m];
+          double y2 = yS[i][m];
+          double z2 = zS[i][m];
+          double distX = abs(x2 - x1);
+          double distY = abs(y2 - y1);
+          double distZ = abs(z2 - z1);
+          if (distX > maxSymDistX) {
+            maxSymDistX = distX;
+          }
+          if (distY > maxSymDistY) {
+            maxSymDistY = distY;
+          }
+          if (distZ > maxSymDistZ) {
+            maxSymDistZ = distZ;
           }
         }
+      }
+      if (maxSymDistX > maxDistX) {
+        maxDistX = maxSymDistX;
+      }
+      if (maxSymDistY > maxDistY) {
+        maxDistY = maxSymDistY;
+      }
+      if (maxSymDistZ > maxDistZ) {
+        maxDistZ = maxSymDistZ;
       }
     }
     // We have calculated max distance between center of atoms. Add wiggle room to prevent overlap.
@@ -2551,7 +2604,7 @@ public class ProgressiveAlignmentOfCrystals {
     int[] adjust = new int[]{0, 0, 0};
     if (logger.isLoggable(Level.FINER)) {
       logger.info(format(" Number Sym Ops: %3d", nSymm));
-      logger.info(format(" Fractional Distancess: %9.3f %9.3f %9.3f", output[XX], output[YY], output[ZZ]));
+      logger.info(format(" Fractional Distances: %9.3f %9.3f %9.3f", output[XX], output[YY], output[ZZ]));
       logger.info(format(" LMN Guess: %3d %3d %3d (Total: %3d > %3d)", l, m, n, total, target));
     }
     // Increase l,m,n while maintaining ratio between them until target number of structures have been obtained.
@@ -2655,6 +2708,20 @@ public class ProgressiveAlignmentOfCrystals {
               adjust[2]++;
             }
           }
+        }
+      }
+      if(restriction == 0){
+       if(l != m){
+         int max = max(l,m);
+         l = max;
+         m = max;
+       }
+      }else if(restriction == 1){
+        if(l != n || m != n){
+          int max = max(l,max(m,n));
+          l = max;
+          m = max;
+          n = max;
         }
       }
       total = (l * m * n) * numEntities;
@@ -2794,9 +2861,11 @@ public class ProgressiveAlignmentOfCrystals {
    * @param indexOrder    Sorted list of index values (e.g. index 0 is contained in input file but may not be first).
    * @return double[] containing the coordinates for the expanded crystal.
    */
-  private static double[] generateInflatedSphere(Crystal unitCell, double radius, int[] lmn,
-                                                 double[] reducedCoords, int zPrime,
-                                                 double[] mass, ArrayList<SymOp> symOps, ArrayList<Integer> indexOrder) {
+  private static double[] generateInflatedSphere(Crystal unitCell, final double radius, int[] lmn,
+                                                 final double[] reducedCoords, final int zPrime,
+                                                 final double[] mass, ArrayList<SymOp> symOps, ArrayList<Integer> indexOrder) {
+    symOps.clear();
+    indexOrder.clear();
     int nAtoms = reducedCoords.length / 3;
     int zAtoms = nAtoms / zPrime;
     // Collect asymmetric unit atomic coordinates.
