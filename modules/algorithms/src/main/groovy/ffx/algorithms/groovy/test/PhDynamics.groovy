@@ -179,7 +179,7 @@ class PhDynamics extends AlgorithmsScript {
     }
 
     // Initialize and attach extended system first.
-    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, esv)
+    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, pH, esv)
     esvSystem.setConstantPh(pH)
     potential.attachExtendedSystem(esvSystem)
 

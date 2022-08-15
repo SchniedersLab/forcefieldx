@@ -281,10 +281,10 @@ public class ExtendedSystem implements Potential {
      *
      * @param mola a {@link MolecularAssembly} object.
      */
-    public ExtendedSystem(MolecularAssembly mola, final File esvFile) {
+    public ExtendedSystem(MolecularAssembly mola, double pH, final File esvFile) {
         extendedAtoms = mola.getActiveAtomArray();
         extendedMolecules = mola.getMoleculeNumbers();
-
+        setConstantPh(pH);
         ForceField forceField = mola.getForceField();
         forceFieldEnergy = mola.getPotentialEnergy();
         if (forceFieldEnergy == null) {
@@ -942,6 +942,7 @@ public class ExtendedSystem implements Potential {
      * Guess the lambda states for each extended residue
      */
     public void reGuessLambdas() {
+        logger.info("Reinitializing lambdas to match RepEx window pH");
         for (Residue residue : titratingResidueList) {
             double lambda = initialTitrationState(residue, 1.0);
             setTitrationLambda(residue, lambda);

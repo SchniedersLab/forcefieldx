@@ -193,7 +193,7 @@ class SortXPH extends AlgorithmsScript {
         }
 
         molecularAssembly = getActiveAssembly(filename)
-        extendedSystem = new ExtendedSystem(molecularAssembly, null)
+        extendedSystem = new ExtendedSystem(molecularAssembly, pH, null)
         molecularAssembly.getPotentialEnergy().attachExtendedSystem(extendedSystem)
 
 

@@ -139,7 +139,7 @@ class MinimizePh extends AlgorithmsScript {
     logger.info("\n Running Energy on " + filename)
     forceFieldEnergy = activeAssembly.getPotentialEnergy()
 
-    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, null)
+    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, pH, null)
     esvSystem.setConstantPh(pH)
     int numESVs = esvSystem.extendedResidueList.size()
     forceFieldEnergy.attachExtendedSystem(esvSystem)

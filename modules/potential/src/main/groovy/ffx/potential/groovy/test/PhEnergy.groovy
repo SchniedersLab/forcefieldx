@@ -194,7 +194,7 @@ class PhEnergy extends PotentialScript {
             esv = null
         }
 
-        ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, esv)
+        ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, pH, esv)
         esvSystem.setConstantPh(pH)
         int numESVs = esvSystem.extendedResidueList.size()
         forceFieldEnergy.attachExtendedSystem(esvSystem)

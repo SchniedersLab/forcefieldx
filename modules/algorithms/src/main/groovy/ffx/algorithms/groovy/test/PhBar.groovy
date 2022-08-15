@@ -187,7 +187,7 @@ class PhBar extends AlgorithmsScript {
         String filename = activeAssembly.getFile().getAbsolutePath()
 
         // Initialize and attach extended system first.
-        ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, null)
+        ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, pH, null)
 
         //Setting the systems locked states
         for(Residue res: esvSystem.getExtendedResidueList()){
