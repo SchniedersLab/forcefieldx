@@ -1667,6 +1667,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
     initAtomArrays();
   }
 
+  public double[] getTanhBetas() {
+    double[] betas = {beta0, beta1, beta2};
+    return betas;
+  }
+
   public void setTanhBetas(double[] betas) {
     this.beta0 = betas[0];
     this.beta1 = betas[1];
