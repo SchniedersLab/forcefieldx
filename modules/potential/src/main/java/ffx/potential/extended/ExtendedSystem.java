@@ -946,6 +946,8 @@ public class ExtendedSystem implements Potential {
         for (Residue residue : titratingResidueList) {
             double lambda = initialTitrationState(residue, 1.0);
             setTitrationLambda(residue, lambda);
+            int tautomerLambda = (int) Math.round(random());
+            setTautomerLambda(residue, tautomerLambda);
         }
     }
 
