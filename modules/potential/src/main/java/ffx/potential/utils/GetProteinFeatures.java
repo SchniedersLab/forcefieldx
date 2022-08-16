@@ -52,7 +52,7 @@ public class GetProteinFeatures {
     private static final NavigableMap<Double, String> phiToStructure = new TreeMap<>();
     private static final NavigableMap<Double, String> psiToStructure = new TreeMap<>();
     private static final HashMap<AminoAcid3, Double> standardSurfaceArea = new HashMap<>();
-    private static final HashMap<String, String> aminoAcidCodes = new HashMap<>();
+    private static final HashMap<String, AminoAcid3> aminoAcidCodes = new HashMap<>();
     private double phi;
     private double psi;
     private double omega;
@@ -103,11 +103,11 @@ public class GetProteinFeatures {
         acidityMap.put(AminoAcid3.HID, "basic");
         acidityMap.put(AminoAcid3.LYS, "basic");
         acidityMap.put(AminoAcid3.LYD, "basic");
+        acidityMap.put(AminoAcid3.LEU, "neutral");
         acidityMap.put(AminoAcid3.GLN, "neutral");
         acidityMap.put(AminoAcid3.GLY, "neutral");
         acidityMap.put(AminoAcid3.ALA, "neutral");
         acidityMap.put(AminoAcid3.VAL, "neutral");
-        acidityMap.put(AminoAcid3.LEU, "neutral");
         acidityMap.put(AminoAcid3.ILE, "neutral");
         acidityMap.put(AminoAcid3.SER, "neutral");
         acidityMap.put(AminoAcid3.CYS, "neutral");
@@ -167,33 +167,48 @@ public class GetProteinFeatures {
         standardSurfaceArea.put(AminoAcid3.TYR, 239.91172);
         standardSurfaceArea.put(AminoAcid3.VAL, 171.89211);
 
-        aminoAcidCodes.put("A", "Ala");
-        aminoAcidCodes.put("R", "Arg");
-        aminoAcidCodes.put("N", "Asn");
-        aminoAcidCodes.put("D", "Asp");
-        aminoAcidCodes.put("C", "Cys");
-        aminoAcidCodes.put("E", "Glu");
-        aminoAcidCodes.put("Q", "Gln");
-        aminoAcidCodes.put("G", "Gly");
-        aminoAcidCodes.put("H", "His");
-        aminoAcidCodes.put("I", "Ile");
-        aminoAcidCodes.put("L", "Leu");
-        aminoAcidCodes.put("K", "Lys");
-        aminoAcidCodes.put("M", "Met");
-        aminoAcidCodes.put("F", "Phe");
-        aminoAcidCodes.put("P", "Pro");
-        aminoAcidCodes.put("S", "Ser");
-        aminoAcidCodes.put("T", "Thr");
-        aminoAcidCodes.put("W", "Trp");
-        aminoAcidCodes.put("Y", "Tyr");
-        aminoAcidCodes.put("V", "Val");
+        // Map amino acid codes from 1 letter to 3 letter AA3
+        aminoAcidCodes.put("A", AminoAcid3.ALA);
+        aminoAcidCodes.put("R", AminoAcid3.ARG);
+        aminoAcidCodes.put("N", AminoAcid3.ASN);
+        aminoAcidCodes.put("D", AminoAcid3.ASP);
+        aminoAcidCodes.put("C", AminoAcid3.CYS);
+        aminoAcidCodes.put("E", AminoAcid3.GLU);
+        aminoAcidCodes.put("Q", AminoAcid3.GLN);
+        aminoAcidCodes.put("G", AminoAcid3.GLY);
+        aminoAcidCodes.put("H", AminoAcid3.HIS);
+        aminoAcidCodes.put("I", AminoAcid3.ILE);
+        aminoAcidCodes.put("L", AminoAcid3.LEU);
+        aminoAcidCodes.put("K", AminoAcid3.LYS);
+        aminoAcidCodes.put("M", AminoAcid3.MET);
+        aminoAcidCodes.put("F", AminoAcid3.PHE);
+        aminoAcidCodes.put("P", AminoAcid3.PRO);
+        aminoAcidCodes.put("S", AminoAcid3.SER);
+        aminoAcidCodes.put("T", AminoAcid3.THR);
+        aminoAcidCodes.put("W", AminoAcid3.TRP);
+        aminoAcidCodes.put("Y", AminoAcid3.TYR);
+        aminoAcidCodes.put("V", AminoAcid3.VAL);
     }
 
-    public String[] saveFeatures(Residue residue, double surfaceArea) {
-        String[] features = new String[3];
-        /*String name = residue.getName();
-        AminoAcid3 aa3 = residue.getAminoAcid3();
-        String acid = acidityMap.getOrDefault(aa3, null);
+    /**
+     * Make a string array of surface area and additional selected features (phi,psi,omega,and structure annotations)
+     * @param residue Residue
+     * @param surfaceArea residue surface area
+     * @param includeAngles select angles
+     * @param includeStructure select structure annotation
+     * @return String array of features
+     */
+    public String[] saveFeatures(Residue residue, double surfaceArea, boolean includeAngles, boolean includeStructure) {
+        int nFeat = 3;
+        if(includeAngles){
+            nFeat += 3;
+        }
+        if(includeStructure){
+            nFeat += 1;
+        }
+
+        String[] features = new String[nFeat];
+        String name = residue.getName();
         String structure = "";
         String phiString = "";
         String psiString = "";
@@ -222,7 +237,7 @@ public class GetProteinFeatures {
             psiString = String.valueOf(psi);
             omegaString = String.valueOf(omega);
             structure = getSecondaryStructure();
-        }*/
+        }
 
         totalSurfaceArea += surfaceArea;
         String surfaceAreaString = String.valueOf(surfaceArea);
@@ -237,10 +252,23 @@ public class GetProteinFeatures {
         features[0] = surfaceAreaString;
         features[1] = normalizedSA;
         features[2] = confidence;
-
+        if(includeAngles){
+            features[3] = phiString;
+            features[4] = psiString;
+            features[5] = omegaString;
+            if(includeStructure){
+                features[6] = structure;
+            }
+        } else if(includeStructure) {
+            features[3] = structure;
+        }
         return features;
     }
 
+    /**
+     * Get the phi angle of a residue
+     * @param currentRes current residue
+     */
     public void getPhi(Residue currentRes) {
         Residue previousRes = currentRes.getPreviousResidue();
         double[] cCoor = new double[3];
@@ -253,6 +281,10 @@ public class GetProteinFeatures {
                 currentRes.getAtomByName("C", true).getXYZ(c2Coor))) * 180 / Math.PI;
     }
 
+    /**
+     * Get the psi angle of a residue
+     * @param currentRes current residue
+     */
     public void getPsi(Residue currentRes) {
         //res[0] is always current Res
         Residue nextRes = currentRes.getNextResidue();
@@ -266,6 +298,10 @@ public class GetProteinFeatures {
                 nextRes.getAtomByName("N", true).getXYZ(n2Coor))) * 180 / Math.PI;
     }
 
+    /**
+     * Get the omega angle of a residue
+     * @param currentRes current residue
+     */
     public void getOmega(Residue currentRes) {
         //res[0] is always current Res
         Residue nextRes = currentRes.getNextResidue();
@@ -289,6 +325,11 @@ public class GetProteinFeatures {
     //Parallel Beta Sheet: phi,psi of approximately -120,+115
     //Antiparallel Beta Sheet: phi,psi of approximately -140,+135
     //Get surface area region to get surface area
+
+    /**
+     * Get the secondary structure annotation from the ramachandran angle map
+     * @return string of secondary structure
+     */
     public String getSecondaryStructure() {
         String secondaryStructure = "";
         //Use phi, psi ranges to determine which is the most likely secondary structure based on ramachandran values
@@ -311,43 +352,116 @@ public class GetProteinFeatures {
         }
         return secondaryStructure;
     }
-    
+
+    /**
+     * Get the total surface area for the protein
+     * @return
+     */
     public double getTotalSurfaceArea(){
         return totalSurfaceArea;
     }
 
+    /**
+     * Get the alphafold confidence score or b-factor from an xray model
+     * @param currentRes current residue
+     * @return confidence/b-factor value
+     */
     public double getConfidenceScore(Residue currentRes){
         double bFactor = 0;
         bFactor = currentRes.getAtomByName("CA", true).getTempFactor();
         return bFactor;
     }
 
+    /**
+     * Use the ddgun output file to get the amino acid changes
+     * @param ddgun List of lines from ddGun output file
+     * @return List of NP Changes
+     */
     public List<String> ddgunToNPChange(List<String> ddgun){
         List<String> npChanges = new ArrayList<>();
-        for (int i=0; i<ddgun.size(); i++){
-            String[] splits = ddgun.get(i).split("\t");
-            String[] splits2 = splits[0].split("_");
-            String isoform = splits2[1] + "_" + splits2[2].replace(".pdb", "");
+        for (String s : ddgun) {
+            String[] splits = s.split("\t");
             String currentNP = splits[2];
             String wt = String.valueOf(currentNP.charAt(0));
-            String mut = String.valueOf(currentNP.charAt(currentNP.length()-1));
-            String pos = currentNP.substring(1, currentNP.length()-1);
-            String npChange = isoform + ":p." + aminoAcidCodes.get(wt) + pos + aminoAcidCodes.get(mut);
+            String mut = String.valueOf(currentNP.charAt(currentNP.length() - 1));
+            String pos = currentNP.substring(1, currentNP.length() - 1);
+            String wt3Letter = aminoAcidCodes.get(wt).toString();
+            String mut3Letter = aminoAcidCodes.get(mut).toString();
+            String wildType = wt3Letter.charAt(0) + wt3Letter.substring(1, 3).toLowerCase();
+            String mutant = mut3Letter.charAt(0) + mut3Letter.substring(1, 3).toLowerCase();
+            String npChange = "p." + wildType + pos + mutant;
             npChanges.add(npChange);
         }
         return npChanges;
     }
 
+    /**
+     * Get ddgun values from ddgun file
+     * @param ddgun List of lines from ddGun output file
+     * @return List of ddGun values (raw and abs value)
+     */
     public List<Double[]> getDDGunValues(List<String> ddgun){
         List<Double[]> values= new ArrayList<>();
-        for (int i=0; i<ddgun.size(); i++){
-            String[] splits = ddgun.get(i).split("\t");
+        for (String s : ddgun) {
+            String[] splits = s.split("\t");
             Double[] value = new Double[2];
             value[0] = Double.parseDouble(splits[3]);
             value[1] = Math.abs(Double.parseDouble(splits[3]));
             values.add(value);
         }
         return values;
+    }
+
+    /**
+     * Get the polarity and acidity changes
+     * @param npChanges list of protein changes
+     * @param includePolarity select polarity
+     * @param includeAcidity select acidity
+     * @return list of polarity and acidity changes
+     */
+    public List<String[]> getPolarityAndAcidityChange(List<String> npChanges, boolean includePolarity,
+                                                      boolean includeAcidity){
+        List<String[]> polarityAndAcidity = new ArrayList<>();
+        for (String npChange : npChanges){
+            String change = npChange.split("p\\.")[1].toUpperCase(Locale.ROOT);
+            String[] value = new String[2];
+            AminoAcid3 wt = AminoAcid3.valueOf(change.substring(0,3));
+            AminoAcid3 mut = AminoAcid3.valueOf(change.substring(change.length()-3, change.length()));
+            if(includeAcidity){
+                if(acidityMap.get(wt).equals("basic") && acidityMap.get(mut).equals("neutral")){
+                    value[0] = "bn";
+                } else if(acidityMap.get(wt).equals("neutral") && acidityMap.get(mut).equals("basic")){
+                    value[0] = "nb";
+                } else if(acidityMap.get(wt).equals("acidic") && acidityMap.get(mut).equals("neutral")){
+                    value[0] = "an";
+                } else if(acidityMap.get(wt).equals("neutral") && acidityMap.get(mut).equals("acidic")){
+                    value[0] = "na";
+                }  else if(acidityMap.get(wt).equals("basic") && acidityMap.get(mut).equals("acidic")){
+                    value[0] = "ba";
+                } else if(acidityMap.get(wt).equals("acidic") && acidityMap.get(mut).equals("basic")){
+                    value[0] = "ab";
+                } else if(acidityMap.get(wt).equals(acidityMap.get(mut))){
+                    value[0] = "=";
+                }
+            } else {
+                value[0] = null;
+            }
+
+            if(includePolarity){
+                if(polarityMap.get(wt).equals("polar") && polarityMap.get(mut).equals("nonpolar")){
+                    value[1] = "-";
+                } else if(polarityMap.get(wt).equals("nonpolar") && polarityMap.get(mut).equals("polar")){
+                    value[1] = "+";
+                } else {
+                    value[1] = "=";
+                }
+            } else {
+                value[1] = null;
+            }
+
+            polarityAndAcidity.add(value);
+        }
+        return polarityAndAcidity;
     }
 
 
