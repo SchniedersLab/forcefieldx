@@ -445,8 +445,12 @@ public class PhReplicaExchange implements Terminatable {
     }
 
     if(initTitrDynamics > 0 && !restart) {
+      extendedSystem.setFixedTitrationState(true);
+      extendedSystem.setFixedTautomerState(true);
       replica.dynamic(initTitrDynamics, timeStep,
               printInterval, trajInterval, temp, true, dyn);
+      extendedSystem.setFixedTitrationState(false);
+      extendedSystem.setFixedTautomerState(false);
       logger.info(extendedSystem.getLambdaList());
       extendedSystem.writeLambdaHistogram();
       extendedSystem.copyESVHistogramTo(parametersHis[rank]); // Copy the ESV hist to be empty
