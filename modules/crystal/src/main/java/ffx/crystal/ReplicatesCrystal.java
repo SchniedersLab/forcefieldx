@@ -403,11 +403,12 @@ public class ReplicatesCrystal extends Crystal {
     double dY = 1.0 / (double) m;
     double dZ = 1.0 / (double) n;
     int symOpCount = 0;
+    List<SymOp> ucSymOps = unitCell.spaceGroup.symOps;
     for (int i = 0; i < l; i++) {
       for (int j = 0; j < m; j++) {
         for (int k = 0; k < n; k++) {
           int ii = 0;
-          for (SymOp symOp : unitCell.spaceGroup.symOps) {
+          for (SymOp symOp : ucSymOps) {
             double[] repTrans = new double[3];
             repTrans[0] = (symOp.tr[0] + i) * dX;
             repTrans[1] = (symOp.tr[1] + j) * dY;

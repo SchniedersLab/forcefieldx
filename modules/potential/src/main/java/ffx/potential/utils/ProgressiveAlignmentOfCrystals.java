@@ -552,24 +552,6 @@ public class ProgressiveAlignmentOfCrystals {
               " Comparing %3d of %5d in target sphere.\n", nAU, nBaseMols, nAU, nTargetMols));
     }
 
-    if (baseAUDist == null || baseAUDist.length != nBaseMols) {
-      baseAUDist = new DoubleIndexPair[nBaseMols];
-    }
-    if (targetAUDist == null || targetAUDist.length != nTargetMols) {
-      targetAUDist = new DoubleIndexPair[nTargetMols];
-    }
-    // Center of Masses for crystal 1.
-    if (baseCoM == null || baseCoM.length != nBaseMols) {
-      baseCoM = new double[3][nBaseMols][3];
-    }
-    // Center of Masses for crystal 2.
-    if (targetCoM == null || targetCoM.length != nTargetMols) {
-      targetCoM = new double[nTargetMols][3];
-    }
-    //Update coordinates for each new comparison.
-    centerOfMass(baseCoM[0], baseXYZ, massN, massSum, compareAtomsSize);
-    prioritizeReplicates(baseXYZ, massN, massSum, baseCoM[0], compareAtomsSize, baseAUDist, 0, linkage);
-
     if (useSym) {
       // Allocate variables used for Sym Op
       if (bestBaseSymOp == null || bestBaseSymOp.length != z1 || bestBaseSymOp[0].length != z2) {
@@ -590,9 +572,6 @@ public class ProgressiveAlignmentOfCrystals {
     if (logger.isLoggable(Level.FINER)) {
       stringBuilder.append(" Prioritize target system.\n");
     }
-
-    centerOfMass(targetCoM, targetXYZ, massN, massSum, compareAtomsSize);
-    prioritizeReplicates(targetXYZ, massN, massSum, targetCoM, compareAtomsSize, targetAUDist, 0, linkage);
 
     //Used for debugging. Can be removed.
     if (logger.isLoggable(Level.FINER)) {
@@ -1632,10 +1611,8 @@ public class ProgressiveAlignmentOfCrystals {
       // Retrieve a reference to the unit cell (not the replicates crystal).
       // Here we will use the unit cell, to create a new replicates crystal that may be
       // a different size (i.e. larger).
-
-
       baseXYZoriginal = generateInflatedSphere(baseCrystal.getUnitCell(), radius, baseLMN,
-              reducedBaseCoords, z1, mass, baseSymOps, baseDistMap);
+              reducedBaseCoords, z1, nAU, linkage, mass, baseSymOps, baseDistMap);
       int nBaseCoords = baseXYZoriginal.length;
       baseXYZ = new double[nBaseCoords];
       arraycopy(baseXYZoriginal, 0, baseXYZ, 0, nBaseCoords);
@@ -1648,17 +1625,8 @@ public class ProgressiveAlignmentOfCrystals {
       if (baseCoM == null || baseCoM.length != nBaseMols) {
         baseCoM = new double[3][nBaseMols][3];
       }
-      if (checkInflatedSphere(baseCrystal.getUnitCell(), baseCoM[0], baseXYZ, massN,
-              massSum, compareAtomsSize, nAU, nCoords, baseAUDist, linkage, baseLMN)) {
-        if (logger.isLoggable(Level.FINER)) {
-          logger.finer(format(" Revised Base L: %3d M: %3d N: %3d", baseLMN[0], baseLMN[1], baseLMN[2]));
-        }
-        baseXYZoriginal = generateInflatedSphere(baseCrystal.getUnitCell(), radius, baseLMN,
-                reducedBaseCoords, z1, mass, baseSymOps, baseDistMap);
-        nBaseCoords = baseXYZoriginal.length;
-        baseXYZ = new double[nBaseCoords];
-        arraycopy(baseXYZoriginal, 0, baseXYZ, 0, nBaseCoords);
-      }
+      centerOfMass(baseCoM[0], baseXYZ, massN, massSum, compareAtomsSize);
+      prioritizeReplicates(baseXYZ, massN, massSum, baseCoM[0], compareAtomsSize, baseAUDist, 0, linkage);
 
       for (int column = restartColumn; column < targetSize; column++) {
         int targetRank = column % numProc;
@@ -1711,30 +1679,10 @@ public class ProgressiveAlignmentOfCrystals {
             double asymmetricUnitVolume = max(abs(baseVolume), abs(targetVolume));
             radius = cbrt(0.75 / PI * asymmetricUnitVolume * nAU * inflationFactor);
             targetXYZoriginal = generateInflatedSphere(targetCrystal.getUnitCell(), radius, targetLMN,
-                    reducedTargetCoords, z2, mass2, targetSymOps, targetDistMap);
+                    reducedTargetCoords, z2, nAU, linkage, mass2, targetSymOps, targetDistMap);
             int nTargetCoords = targetXYZoriginal.length;
             targetXYZ = new double[nTargetCoords];
             arraycopy(targetXYZoriginal, 0, targetXYZ, 0, nTargetCoords);
-
-            // Center of Masses for crystal 1.
-            int nTargetMols = targetXYZ.length / (compareAtomsSize2 * 3);
-            if (targetAUDist == null || targetAUDist.length != nTargetMols) {
-              targetAUDist = new DoubleIndexPair[nTargetMols];
-            }
-            if (targetCoM == null || targetCoM.length != nTargetMols) {
-              targetCoM = new double[nTargetMols][3];
-            }
-            if (checkInflatedSphere(targetCrystal.getUnitCell(), targetCoM, targetXYZ, massN,
-                    massSum, compareAtomsSize2, nAU, nCoords, targetAUDist, linkage, targetLMN)) {
-              if (logger.isLoggable(Level.FINER)) {
-                logger.finer(format(" Revised Target L: %3d M: %3d N: %3d", targetLMN[0], targetLMN[1], targetLMN[2]));
-              }
-              targetXYZoriginal = generateInflatedSphere(targetCrystal.getUnitCell(), radius, targetLMN,
-                      reducedTargetCoords, z2, mass, targetSymOps, targetDistMap);
-              nTargetCoords = targetXYZoriginal.length;
-              targetXYZ = new double[nTargetCoords];
-              arraycopy(targetXYZoriginal, 0, targetXYZ, 0, nTargetCoords);
-            }
 
             // Prioritize crystal order based on user specification (High/low density or file order).
             double densityMass = 0;
@@ -1758,11 +1706,23 @@ public class ProgressiveAlignmentOfCrystals {
               int z_1 = guessZPrime(zPrime, baseAssembly.getMolecules().size());
               int z_2 = guessZPrime(zPrime2, targetAssembly.getMolecules().size());
               if (z1 != z_1 || z2 != z_2) {
-                stringBuilder.append(format("\n WARNING: Z' assumed to be constant for all structures in input.\n " +
-                        "Different Z' value detected within file:\n " +
-                        " z1: was %2d (now %2d) z2: was %2d (now %2d)\n", z1, z_1, z2, z_2));
+                stringBuilder.append(format("\n Different Z' value detected within file: \n" +
+                    " WARNING: Z' assumed to be constant for all structures in input.\n " +
+                        "       z1: was %2d (now %2d) z2: was %2d (now %2d)\n", z1, z_1, z2, z_2));
               }
             }
+
+            // Center of Masses for crystal 1.
+            int nTargetMols = targetXYZ.length / (compareAtomsSize2 * 3);
+            if (targetAUDist == null || targetAUDist.length != nTargetMols) {
+              targetAUDist = new DoubleIndexPair[nTargetMols];
+            }
+            if (targetCoM == null || targetCoM.length != nTargetMols) {
+              targetCoM = new double[nTargetMols][3];
+            }
+            //Update center of mass and priority for each target crystal..
+            centerOfMass(targetCoM, targetXYZ, massN, massSum, compareAtomsSize);
+            prioritizeReplicates(targetXYZ, massN, massSum, targetCoM, compareAtomsSize, targetAUDist, 0, linkage);
 
             // Flip system order based on crystalPriority if needed.
             File file1;
@@ -1816,6 +1776,18 @@ public class ProgressiveAlignmentOfCrystals {
               ArrayList<Integer> ali = new ArrayList<>(baseDistMap);
               baseDistMap = new ArrayList<>(targetDistMap);
               targetDistMap = new ArrayList<>(ali);
+              DoubleIndexPair[] tempDIP = new DoubleIndexPair[nBaseMols];
+              arraycopy(baseAUDist, 0, tempDIP, 0, nBaseMols);
+              baseAUDist = new DoubleIndexPair[nTargetMols];
+              arraycopy(targetAUDist, 0, baseAUDist, 0, nTargetMols);
+              targetAUDist = new DoubleIndexPair[nBaseMols];
+              arraycopy(tempDIP, 0, targetAUDist, 0, nBaseMols);
+              double[][] tempDD = new double[nBaseMols][3];
+              arraycopy(baseCoM[0], 0, tempDD, 0, nBaseMols);
+              baseCoM = new double[3][nTargetMols][3];
+              arraycopy(targetCoM, 0, baseCoM[0], 0, nTargetMols);
+              targetCoM = new double[nBaseMols][3];
+              arraycopy(tempDD, 0, targetCoM, 0, nBaseMols);
               atoms2 = baseAssembly.getAtomArray();
               file2 = baseAssembly.getFile();
               name2 = baseAssembly.getName();
@@ -1833,6 +1805,9 @@ public class ProgressiveAlignmentOfCrystals {
               temp = nBaseCoords;
               nBaseCoords = nTargetCoords;
               nTargetCoords = temp;
+              temp = nBaseMols;
+              nBaseMols = nTargetMols;
+              nTargetMols = temp;
               if (!lowMemory) {
                 atoms1 = atomCache[assemblyNum];
                 file1 = fileCache[assemblyNum];
@@ -1890,6 +1865,7 @@ public class ProgressiveAlignmentOfCrystals {
                 targetAUoriginal = new double[z2][nCoords];
               }
             }
+
             if (useSym) {
               for (int i = 0; i < z1; i++) {
                 arraycopy(reducedBaseCoords, i * compareAtomsSize * 3, baseAUoriginal[i], 0, compareAtomsSize * 3);
@@ -2110,6 +2086,18 @@ public class ProgressiveAlignmentOfCrystals {
               int[] tempAtoms = comparisonAtoms.clone();
               comparisonAtoms = comparisonAtoms2.clone();
               comparisonAtoms2 = tempAtoms.clone();
+              DoubleIndexPair[] tempDIP = new DoubleIndexPair[nBaseMols];
+              arraycopy(baseAUDist, 0, tempDIP, 0, nBaseMols);
+              baseAUDist = new DoubleIndexPair[nTargetMols];
+              arraycopy(targetAUDist, 0, baseAUDist, 0, nTargetMols);
+              targetAUDist = new DoubleIndexPair[nBaseMols];
+              arraycopy(tempDIP, 0, targetAUDist, 0, nBaseMols);
+              double[][] tempDD = new double[nBaseMols][3];
+              arraycopy(baseCoM[0], 0, tempDD, 0, nBaseMols);
+              baseCoM = new double[3][nTargetMols][3];
+              arraycopy(targetCoM, 0, baseCoM[0], 0, nTargetMols);
+              targetCoM = new double[nBaseMols][3];
+              arraycopy(tempDD, 0, targetCoM, 0, nBaseMols);
               int temp = z1;
               z1 = z2;
               z2 = temp;
@@ -2117,6 +2105,7 @@ public class ProgressiveAlignmentOfCrystals {
               baseSearchValue = targetSearchValue;
               targetSearchValue = temp;
               nBaseCoords = nTargetCoords;
+              nBaseMols = nTargetMols;
             }
           }
           myDistances[myIndex] = rmsd;
@@ -2360,6 +2349,24 @@ public class ProgressiveAlignmentOfCrystals {
     }
     // TODO determine if below steps are necessary (change replicates expansion method?
     LatticeSystem lattice = crystal.spaceGroup.latticeSystem;
+    checkLattice(lattice, lmn);
+    boolean redo = false;
+    int buffer = 1;
+    for (int i = 0; i < 3; i++) {
+      while (lmn[i] + buffer >= startLMN[i]) {
+        redo = true;
+        startLMN[i]++;
+      }
+    }
+    return redo;
+  }
+
+  /**
+   * FFX Replicates crystal has to obey lattice requirements. Update LMN accordingly.
+   * @param lattice Lattice system of the current crystal.
+   * @param lmn     Proposed LMN values (will be updated to satisfy lattice requirements).
+   */
+  private static void checkLattice(LatticeSystem lattice, int[] lmn){
     int restriction;
     switch(lattice) {
       case HEXAGONAL_LATTICE:
@@ -2391,15 +2398,6 @@ public class ProgressiveAlignmentOfCrystals {
         lmn[2] = max;
       }
     }
-    boolean redo = false;
-    int buffer = 1;
-    for (int i = 0; i < 3; i++) {
-      while (lmn[i] + buffer >= startLMN[i]) {
-        redo = true;
-        startLMN[i]++;
-      }
-    }
-    return redo;
   }
 
   /**
@@ -2467,25 +2465,6 @@ public class ProgressiveAlignmentOfCrystals {
     final int nSymm = unitCell.spaceGroup.getNumberOfSymOps();
     final int numEntities = nSymm * zPrime;
     final int compareAtomsSize = comparisonAtoms.length;
-    // TODO determine if below steps are necessary (change replicates expansion method)
-    LatticeSystem lattice = unitCell.spaceGroup.latticeSystem;
-    int restriction;
-    switch(lattice) {
-      case HEXAGONAL_LATTICE:
-      case TETRAGONAL_LATTICE:
-        //a==b
-        restriction = 0;
-        break;
-      case CUBIC_LATTICE:
-      case RHOMBOHEDRAL_LATTICE:
-        //a==b==c
-        restriction = 1;
-        break;
-      default:
-        //no restriction
-        restriction = -1;
-        break;
-    }
 
     int zAtoms = compareAtomsSize / zPrime;
     // Collect asymmetric unit atomic coordinates.
@@ -2595,17 +2574,15 @@ public class ProgressiveAlignmentOfCrystals {
     double[] output = new double[3];
     unitCell.toFractionalCoordinates(new double[]{maxDistX, maxDistY, maxDistZ}, output);
     // Initial guesses for l, m, n.
-    int l = (int) ceil(output[XX]);
-    int m = (int) ceil(output[YY]);
-    int n = (int) ceil(output[ZZ]);
+    int[] lmn = new int[]{(int) ceil(output[XX]), (int) ceil(output[YY]), (int) ceil(output[ZZ])};
     // Minimum number of asymmetric units desired in replicates crystal.
     int target = (int) (nAU * scaleFactor);
-    int total = (l * m * n) * numEntities;
+    int total = (lmn[0] * lmn[1] * lmn[2]) * numEntities;
     int[] adjust = new int[]{0, 0, 0};
     if (logger.isLoggable(Level.FINER)) {
       logger.info(format(" Number Sym Ops: %3d", nSymm));
       logger.info(format(" Fractional Distances: %9.3f %9.3f %9.3f", output[XX], output[YY], output[ZZ]));
-      logger.info(format(" LMN Guess: %3d %3d %3d (Total: %3d > %3d)", l, m, n, total, target));
+      logger.info(format(" LMN Guess: %3d %3d %3d (Total: %3d > %3d)", lmn[0], lmn[1], lmn[2], total, target));
     }
     // Increase l,m,n while maintaining ratio between them until target number of structures have been obtained.
     while (total < target) {
@@ -2617,124 +2594,113 @@ public class ProgressiveAlignmentOfCrystals {
         if (A) {
           adjust[1] = 0;
           adjust[2] = 0;
-          l++;
+          lmn[0]++;
         }
         if (B) {
           adjust[0] = 0;
           adjust[2] = 0;
-          m++;
+          lmn[1]++;
         }
         if (C) {
           adjust[0] = 0;
           adjust[1] = 0;
-          n++;
+          lmn[2]++;
         }
       } else {
-        if (adjust[0] == 0 && l < m) {
-          if (l < n) {
-            l++;
+        if (adjust[0] == 0 && lmn[0] < lmn[1]) {
+          if (lmn[0] < lmn[2]) {
+            lmn[0]++;
             adjust[0]++;
-          } else if (l == n) {
+          } else if (lmn[0] == lmn[2]) {
             if (output[XX] > output[ZZ]) {
-              l++;
+              lmn[0]++;
               adjust[0]++;
             } else if (adjust[2] == 0) {
-              n++;
+              lmn[2]++;
               adjust[2]++;
             } else {
-              l++;
+              lmn[0]++;
               adjust[0]++;
             }
           } else {
-            m++;
+            lmn[1]++;
             adjust[1]++;
           }
-        } else if (adjust[1] == 0 && m < l) {
-          if (m < n) {
-            m++;
+        } else if (adjust[1] == 0 && lmn[1] < lmn[0]) {
+          if (lmn[1] < lmn[2]) {
+            lmn[1]++;
             adjust[1]++;
-          } else if (m == n) {
+          } else if (lmn[1] == lmn[2]) {
             if (output[YY] > output[ZZ]) {
-              m++;
+              lmn[1]++;
               adjust[1]++;
             } else if (adjust[2] == 0) {
-              n++;
+              lmn[2]++;
               adjust[2]++;
             } else {
-              m++;
+              lmn[1]++;
               adjust[1]++;
             }
           } else {
-            n++;
+            lmn[2]++;
             adjust[2]++;
           }
-        } else if (adjust[2] == 0 && n < l) {
-          n++;
+        } else if (adjust[2] == 0 && lmn[2] < lmn[0]) {
+          lmn[2]++;
           adjust[2]++;
         } else {
           if (adjust[0] == 1) {
             if (output[YY] >= output[ZZ]) {
-              m++;
+              lmn[1]++;
               adjust[1]++;
             } else {
-              n++;
+              lmn[2]++;
               adjust[2]++;
             }
           } else if (adjust[1] == 1) {
             if (output[XX] >= output[ZZ]) {
-              l++;
+              lmn[0]++;
               adjust[0]++;
             } else {
-              n++;
+              lmn[2]++;
               adjust[2]++;
             }
           } else if (adjust[2] == 1) {
             if (output[XX] >= output[YY]) {
-              l++;
+              lmn[0]++;
               adjust[0]++;
             } else {
-              m++;
+              lmn[1]++;
               adjust[1]++;
             }
           } else {
             if (output[XX] >= output[YY] && output[XX] >= output[ZZ]) {
-              l++;
+              lmn[0]++;
               adjust[0]++;
             } else if (output[YY] >= output[XX] && output[YY] >= output[ZZ]) {
-              m++;
+              lmn[1]++;
               adjust[1]++;
             } else {
-              n++;
+              lmn[2]++;
               adjust[2]++;
             }
           }
         }
       }
-      if(restriction == 0){
-       if(l != m){
-         int max = max(l,m);
-         l = max;
-         m = max;
-       }
-      }else if(restriction == 1){
-        if(l != n || m != n){
-          int max = max(l,max(m,n));
-          l = max;
-          m = max;
-          n = max;
-        }
-      }
-      total = (l * m * n) * numEntities;
+      // TODO determine if below steps are necessary (change replicates expansion method)
+      LatticeSystem lattice = unitCell.spaceGroup.latticeSystem;
+      checkLattice(lattice, lmn);
+      total = (lmn[0] * lmn[1] * lmn[2]) * numEntities;
       if (logger.isLoggable(Level.FINEST)) {
-        logger.info(format(" \tLMN Guess: %3d %3d %3d (Total: %3d > %3d)", l, m, n, total, target));
+        logger.info(format(" \tLMN Guess: %3d %3d %3d (Total: %3d > %3d)", lmn[0], lmn[1], lmn[2], total, target));
       }
     }
     if (logger.isLoggable(Level.FINER)) {
-      logger.info(format(" Final LMN: %3d %3d %3d (Total: %3d > %3d)", l, m, n, total, target));
+      logger.info(format(" Final LMN: %3d %3d %3d (Total: %3d > %3d)", lmn[0], lmn[1], lmn[2], total, target));
     }
 
     //Return l,m,n for desired replicates crystal.
-    return new int[]{l, m, n};
+    return new int[]{lmn[0], lmn[1], lmn[2]};
   }
 
   /**
@@ -2862,11 +2828,12 @@ public class ProgressiveAlignmentOfCrystals {
    * @return double[] containing the coordinates for the expanded crystal.
    */
   private static double[] generateInflatedSphere(Crystal unitCell, final double radius, int[] lmn,
-                                                 final double[] reducedCoords, final int zPrime,
-                                                 final double[] mass, ArrayList<SymOp> symOps, ArrayList<Integer> indexOrder) {
+                   final double[] reducedCoords, final int zPrime, final int nAU, final int linkage,
+                   final double[] mass, ArrayList<SymOp> symOps, ArrayList<Integer> indexOrder) {
     symOps.clear();
     indexOrder.clear();
-    int nAtoms = reducedCoords.length / 3;
+    int nCoords = reducedCoords.length;
+    int nAtoms = nCoords / 3;
     int zAtoms = nAtoms / zPrime;
     // Collect asymmetric unit atomic coordinates.
     double[] x = new double[nAtoms];
@@ -2956,7 +2923,7 @@ public class ProgressiveAlignmentOfCrystals {
       }
       logger.finer(format(" Replicates Volume: %8.4f", replicatesCrystal.volume));
       logger.finer(format(" Expanded Crystal Center: %14.8f %14.8f %14.8f",
-              cartCenter[0], cartCenter[1], cartCenter[2]));
+          cartCenter[0], cartCenter[1], cartCenter[2]));
     }
 
     for (int i = 0; i < numEntities; i++) {
@@ -2981,7 +2948,7 @@ public class ProgressiveAlignmentOfCrystals {
         // Current molecule
         int iSym = auDist[index].getIndex();
         double distance = auDist[index].getDoubleValue();
-        if (logger.isLoggable(Level.FINEST) && n < 50) {
+        if (logger.isLoggable(Level.FINEST) && n < 30) {
           logger.finest(format(" %4d  %5d  %14.8f", index, iSym, sqrt(distance)));
         }
 
@@ -2997,6 +2964,17 @@ public class ProgressiveAlignmentOfCrystals {
         }
       }
     }
+    double massSum = Arrays.stream(mass).sum();
+    int[] startLMN = lmn.clone();
+    if (checkInflatedSphere(unitCell, centerMolsCart, systemCoords, mass, massSum, zAtoms, nAU, nCoords,
+        auDist, linkage, lmn)) {
+      systemCoords = generateInflatedSphere(unitCell, radius, lmn, reducedCoords, zPrime, nAU, linkage, mass, symOps, indexOrder);
+      if (logger.isLoggable(Level.FINER)) {
+        logger.finer(format(" Revised L: %3d (%3d) M: %3d (%3d) N: %3d (%3d)", lmn[0], startLMN[0], lmn[1], startLMN[1],
+            lmn[2], startLMN[2]));
+      }
+    }
+
     return systemCoords;
   }
 
