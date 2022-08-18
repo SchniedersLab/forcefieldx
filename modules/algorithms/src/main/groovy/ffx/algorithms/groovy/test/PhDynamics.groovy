@@ -329,6 +329,9 @@ class PhDynamics extends AlgorithmsScript {
     File output = new File(parent + File.separator + myRank + File.separator + arcName + "_sorted")
     BufferedWriter out = new BufferedWriter(new FileWriter(output))
 
+    // Find other archives and append them together
+
+
     // Get snap length from first directory
     File temp = new File(parent + File.separator + 0 + File.separator + arcName)
     BufferedReader brTemp = new BufferedReader(new FileReader(temp))

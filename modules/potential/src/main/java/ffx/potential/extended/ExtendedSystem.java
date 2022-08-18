@@ -999,7 +999,12 @@ public class ExtendedSystem implements Potential {
     public void printProtonationRatios(){
         for(int i = 0; i < esvProtonationRatios.length; i++){
             String resInfo = titratingResidueList.get(i).toString();
-            logger.info(resInfo + " Deprotonated/Protonated fractions through snaps: " + esvProtonationRatios[i].toString());
+            logger.info(resInfo + " Deprotonated/Protonated fractions through snaps: ");
+            for(int j = 0; j < esvProtonationRatios[i].size()/10; j++){
+                for(int k = 0; k < 10; k++){
+                    logger.info(String.valueOf(esvProtonationRatios[i].get(j * 10 + k)));
+                }
+            }
         }
     }
 
