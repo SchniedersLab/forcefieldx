@@ -103,9 +103,9 @@ class PhDynamics extends AlgorithmsScript {
           description = 'pH gap between replica exchange windows.')
   double pHGap = 1
 
-  @Option(names = ['--initTitrDynamics'], paramLabel = '1000',
+  @Option(names = ['--initTitrDynamics'], paramLabel = '10000',
           description = 'Number of initialization steps to take before replica exchange windows start.')
-  int initTitrDynamics = 1000
+  int initTitrDynamics = 10000
 
   @Option(names = "--sort", paramLabel = "false",
           description = "Sort archive files by pH")

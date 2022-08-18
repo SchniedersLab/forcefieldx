@@ -973,7 +973,7 @@ public class ExtendedSystem implements Potential {
      * @param residueIndex titrating residue index
      * @return the current deprotonated/protonated ratio for a residue
      */
-    public double getESVProtonationRatio(int residueIndex){
+    public double getESVProtonationFraction(int residueIndex){
         double protonatedSum = 0;
         double deprotonatedSum = 0;
 
@@ -981,7 +981,7 @@ public class ExtendedSystem implements Potential {
             deprotonatedSum += esvHistogram[residueIndex][0][i];
             protonatedSum += esvHistogram[residueIndex][esvHistogram[residueIndex].length-1][i];
         }
-        return deprotonatedSum / protonatedSum;
+        return deprotonatedSum / (protonatedSum + deprotonatedSum);
     }
 
     /**
@@ -989,7 +989,7 @@ public class ExtendedSystem implements Potential {
      */
     public void updateProtonationRatios(){
         for(int i = 0; i < esvHistogram.length; i++){
-            esvProtonationRatios[i].add(this.getESVProtonationRatio(i));
+            esvProtonationRatios[i].add(this.getESVProtonationFraction(i));
         }
     }
 
@@ -999,7 +999,7 @@ public class ExtendedSystem implements Potential {
     public void printProtonationRatios(){
         for(int i = 0; i < esvProtonationRatios.length; i++){
             String resInfo = titratingResidueList.get(i).toString();
-            logger.info(resInfo + " Deprotonated/Protonated fractions through snaps: ");
+            logger.info(resInfo + " Deprotonated/(Protonated+Deprotonated) fractions through snaps: ");
             for(int j = 0; j < esvProtonationRatios[i].size()/10; j++){
                 for(int k = 0; k < 10; k++){
                     logger.info(String.valueOf(esvProtonationRatios[i].get(j * 10 + k)));
