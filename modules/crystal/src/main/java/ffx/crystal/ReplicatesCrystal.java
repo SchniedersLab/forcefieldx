@@ -135,7 +135,24 @@ public class ReplicatesCrystal extends Crystal {
    */
   public static Crystal replicatesCrystalFactory(Crystal unitCell, double cutOff2) {
 
+    return replicatesCrystalFactory(unitCell, cutOff2, new int[3]);
+  }
+
+  /**
+   * Returns a ReplicatesCrystal large enough to satisfy the minimum image convention for the
+   * specified unit cell and cutoff criteria. If the unit cell is already sufficiently large, then it
+   * is returned.
+   *
+   * @param unitCell The unit cell of the crystal.
+   * @param cutOff2 Two times the cutoff distance.
+   * @return A Crystal or ReplicatesCrystal large enough to satisfy the minimum image convention.
+   */
+  public static Crystal replicatesCrystalFactory(Crystal unitCell, double cutOff2, int[] replicatesVector) {
+
     if (unitCell == null || unitCell.aperiodic()) {
+      replicatesVector[0] = 0;
+      replicatesVector[1] = 0;
+      replicatesVector[2] = 0;
       return unitCell;
     }
 
@@ -156,8 +173,14 @@ public class ReplicatesCrystal extends Crystal {
     }
 
     if (l * m * n > 1) {
+      replicatesVector[0] = l;
+      replicatesVector[1] = m;
+      replicatesVector[2] = n;
       return new ReplicatesCrystal(unitCell, l, m, n, cutOff2);
     } else {
+      replicatesVector[0] = 0;
+      replicatesVector[1] = 0;
+      replicatesVector[2] = 0;
       return unitCell;
     }
   }
@@ -413,7 +436,7 @@ public class ReplicatesCrystal extends Crystal {
             repTrans[0] = (symOp.tr[0] + i) * dX;
             repTrans[1] = (symOp.tr[1] + j) * dY;
             repTrans[2] = (symOp.tr[2] + k) * dZ;
-            SymOp repSymOp = new SymOp(symOp.rot, repTrans);
+            SymOp repSymOp = new SymOp(symOp.rot, repTrans, new int[]{i, j, k});
             symOps.add(repSymOp);
             if (logger.isLoggable(Level.FINEST)) {
               logger.finest(format("\n SymOp %d (%2d,%2d,%2d): %d", symOpCount, i, j, k, ii));

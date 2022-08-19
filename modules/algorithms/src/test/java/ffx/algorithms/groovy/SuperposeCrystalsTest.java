@@ -68,7 +68,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     assertEquals(6, superposeCrystals.runningStatistics.getCount());
     // Mean RMSD for 6 comparisons.
     assertEquals(0.087248318, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
-    assertEquals(0.216710494, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
+    assertEquals(0.226387, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script with RMSD size of one. */
@@ -339,7 +339,7 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     // Mean RMSD for 6 comparisons.
 
     assertEquals(0.441851, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
-    assertEquals(1.269418, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
+    assertEquals(1.2592210, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
   /** Tests the SuperposeCrystals script print symmetry operator functionality. */

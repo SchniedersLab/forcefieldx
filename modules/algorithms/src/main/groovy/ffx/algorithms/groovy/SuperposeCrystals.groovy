@@ -79,7 +79,7 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * --if or --inflationFactor Inflation factor used to determine replicates expansion.
    */
-  @Option(names = ['--if', '--inflationFactor'], paramLabel = '15.0', defaultValue = '15.0',
+  @Option(names = ['--if', '--inflationFactor'], paramLabel = '50.0', defaultValue = '50.0',
       description = 'Inflation factor used to determine replicates expansion (IF * nAU in replicates).')
   private double inflationFactor
 

@@ -41,7 +41,6 @@ import static ffx.crystal.SymOp.Tr_0_0_0;
 import static ffx.crystal.SymOp.ZERO_ROTATION;
 import static ffx.crystal.SymOp.applyCartesianSymOp;
 import static ffx.crystal.SymOp.invertSymOp;
-import static org.apache.commons.math3.util.FastMath.ceil;
 import static ffx.numerics.math.ScalarMath.mod;
 import static ffx.numerics.math.DoubleMath.dist2;
 import static ffx.numerics.math.MatrixMath.mat4Mat4;
@@ -63,12 +62,7 @@ import static java.util.Arrays.copyOf;
 import static java.util.Arrays.fill;
 import static java.util.Arrays.sort;
 import static org.apache.commons.io.FilenameUtils.getName;
-import static org.apache.commons.math3.util.FastMath.PI;
-import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.cbrt;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
-import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.*;
 
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
@@ -1589,30 +1583,26 @@ public class ProgressiveAlignmentOfCrystals {
         continue;
       }
 
-      int[] baseLMN = determineExpansion(baseCrystal.getUnitCell(), reducedBaseCoords, comparisonAtoms, mass, nAU, z1, inflationFactor);
       //Setup for comparison with crystal specific information.
       // Density changes based on mass weighted flag, therefore use volume.
 
-      double baseVolume = baseCrystal.volume / baseCrystal.getNumSymOps() / z1;
-
-      double radius = cbrt(0.75 / PI * baseVolume * nAU * inflationFactor);
       // Estimate a radius that will include desired number of asymmetric units (inflationFactor).
       if (logger.isLoggable(Level.FINER)) {
         logger.finer(format(" Unit Cell Volume:  (Base) %4.2f (Target) %4.2f", baseCrystal.volume, targetCrystal.volume));
         logger.finer(format(" Unit Cell Symm Ops: (Base) %d (Target) %d", baseCrystal.getNumSymOps(), targetCrystal.getNumSymOps()));
         logger.finer(format(" Z': (Base) %d (Target) %d", z1, z2));
-        logger.finer(format(" Base Asymmetric Unit Volume:  %4.2f", baseVolume));
-        logger.finer(format(" Base N Asymmetric Units Volume:  %4.2f", baseVolume * nAU));
-        logger.finer(format(" Replicates Cutoff Radius:  %4.2f", radius));
-        logger.finer(format(" LMN for Base Crystal Expansion: %3d %3d %3d", baseLMN[0], baseLMN[1], baseLMN[2]));
       }
 
       // When the system was read in, a replicates crystal may have been created to satisfy the cutoff.
       // Retrieve a reference to the unit cell (not the replicates crystal).
       // Here we will use the unit cell, to create a new replicates crystal that may be
       // a different size (i.e. larger).
-      baseXYZoriginal = generateInflatedSphere(baseCrystal.getUnitCell(), radius, baseLMN,
-              reducedBaseCoords, z1, nAU, linkage, mass, baseSymOps, baseDistMap);
+      // Used for LMN specific replicates expansion (add LMN as input to generateInflatedSphere).
+//      int[] baseLMN = determineExpansion(baseCrystal.getUnitCell(), reducedBaseCoords, comparisonAtoms, mass, nAU, z1, inflationFactor);
+      int[] baseLMN = new int[3];
+      logger.warning(" Base: " + baseAssembly.getName() + " Target: " + targetAssembly.getName());
+      baseXYZoriginal = generateInflatedSphere(baseCrystal.getUnitCell(),
+              reducedBaseCoords, comparisonAtoms, z1, nAU, linkage, mass, baseLMN, baseSymOps, baseDistMap, inflationFactor);
       int nBaseCoords = baseXYZoriginal.length;
       baseXYZ = new double[nBaseCoords];
       arraycopy(baseXYZoriginal, 0, baseXYZ, 0, nBaseCoords);
@@ -1673,13 +1663,12 @@ public class ProgressiveAlignmentOfCrystals {
 
             //Remove atoms not used in comparisons from the original molecular assembly (crystal 2).
             double[] reducedTargetCoords = reduceSystem(atoms2, comparisonAtoms2);
-            int[] targetLMN = determineExpansion(targetCrystal.getUnitCell(), reducedTargetCoords, comparisonAtoms2,
-                    mass2, nAU, z2, inflationFactor);
-            double targetVolume = targetCrystal.volume / targetCrystal.getNumSymOps() / z2;
-            double asymmetricUnitVolume = max(abs(baseVolume), abs(targetVolume));
-            radius = cbrt(0.75 / PI * asymmetricUnitVolume * nAU * inflationFactor);
-            targetXYZoriginal = generateInflatedSphere(targetCrystal.getUnitCell(), radius, targetLMN,
-                    reducedTargetCoords, z2, nAU, linkage, mass2, targetSymOps, targetDistMap);
+            // Used for LMN specific replicates expansion (add LMN as input to generateInflatedSphere).
+//            int[] targetLMN = determineExpansion(targetCrystal.getUnitCell(), reducedTargetCoords, comparisonAtoms2,
+//                mass2, nAU, z2, inflationFactor);
+            int[] targetLMN = new int[3];
+            targetXYZoriginal = generateInflatedSphere(targetCrystal.getUnitCell(), reducedTargetCoords,
+                comparisonAtoms2, z2, nAU, linkage, mass2, targetLMN, targetSymOps, targetDistMap, inflationFactor);
             int nTargetCoords = targetXYZoriginal.length;
             targetXYZ = new double[nTargetCoords];
             arraycopy(targetXYZoriginal, 0, targetXYZ, 0, nTargetCoords);
@@ -2274,89 +2263,49 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Determine if replicates crystal is large enough for approximate cluster to be used in PAC comparison.
    *
-   * @param crystal          Unit cell for structure in comparison.
-   * @param centerOMass      Center of masses for structures in crystal.
    * @param xyz              XYZ coordinates of structures.
    * @param massN            Masses per atom.
    * @param massSum          Sum of masses.
    * @param compareAtomsSize Number of atoms being compared from each structure.
    * @param nAU              Number of structures to compare between crystals.
-   * @param nCoords          Number of atoms * 3
-   * @param auDist           Sorted indexes based on distance from central structure.
    * @param linkage          Linkage method to be used.
    * @param startLMN         Current values for L x M x N (overwritten with new values)
    * @return Whether the LMN values have changed. If yes, recalculate replicates.
    */
-  private static boolean checkInflatedSphere(Crystal crystal, double[][] centerOMass, double[] xyz, double[] massN,
-                                             double massSum, int compareAtomsSize, int nAU, int nCoords,
-                                             DoubleIndexPair[] auDist, int linkage, int[] startLMN) {
-    centerOfMass(centerOMass, xyz, massN, massSum, compareAtomsSize);
-    prioritizeReplicates(xyz, massN, massSum, centerOMass, compareAtomsSize, auDist, 0, linkage);
-    double[] nAUs = new double[nAU * nCoords];
-    for (int j = 0; j < nAU; j++) {
-      int molIndex = auDist[j].getIndex() * nCoords;
-      arraycopy(xyz, molIndex, nAUs, j * nCoords, nCoords);
-    }
-    // Check if Replicates is too small.
-    double minX = Double.MAX_VALUE;
-    double maxX = -Double.MAX_VALUE;
-    double minY = Double.MAX_VALUE;
-    double maxY = -Double.MAX_VALUE;
-    double minZ = Double.MAX_VALUE;
-    double maxZ = -Double.MAX_VALUE;
-    int size = nAUs.length / (compareAtomsSize * 3);
-    for (int i = 0; i < size; i++) {
-      int auIndex = i * compareAtomsSize * 3;
-      for (int j = 0; j < compareAtomsSize; j++) {
-        int atomIndex = auIndex + j * 3;
-        for (int k = 0; k < 3; k++) {
-          double coordinate = nAUs[atomIndex + k];
-          if (k == 0) {
-            if (coordinate < minX) {
-              minX = coordinate;
-            }
-            if (coordinate > maxX) {
-              maxX = coordinate;
-            }
-          } else if (k == 1) {
-            if (coordinate < minY) {
-              minY = coordinate;
-            }
-            if (coordinate > maxY) {
-              maxY = coordinate;
-            }
-          } else {
-            if (coordinate < minZ) {
-              minZ = coordinate;
-            }
-            if (coordinate > maxZ) {
-              maxZ = coordinate;
-            }
-          }
-        }
-      }
-    }
-    double maxDistX = abs(maxX - minX);
-    double maxDistY = abs(maxY - minY);
-    double maxDistZ = abs(maxZ - minZ);
-    double[] output = new double[3];
-    crystal.getUnitCell().toFractionalCoordinates(new double[]{maxDistX, maxDistY, maxDistZ}, output);
-    int[] lmn = new int[]{(int) ceil(output[0]), (int) ceil(output[1]), (int) ceil(output[2])};
-    if (logger.isLoggable(Level.FINER)) {
-      logger.finer(format(" X: %9.3f -%7.3f Y: %9.3f -%7.3f Z: %9.3f -%7.3f", maxX, minX, maxY, minY, maxZ, minZ));
-      logger.finer(format(" Sym Dist X: %9.3f Sym Dist Y: %9.3f Sym Dist Z: %9.3f\n newL: %3d newM: %3d newN: %3d",
-              maxDistX, maxDistY, maxDistZ, lmn[0], lmn[1], lmn[2]));
-    }
-    // TODO determine if below steps are necessary (change replicates expansion method?
-    LatticeSystem lattice = crystal.spaceGroup.latticeSystem;
-    checkLattice(lattice, lmn);
+  private static boolean checkInflatedSphere(double[] xyz, double[] massN,
+         double massSum, int compareAtomsSize, int nAU, int linkage, int[] startLMN,
+         ArrayList<SymOp> symOps, ArrayList<Integer> indexOrder) {
+    // Recalculate center of mass based on XYZ order ([0] is the closest to center).
+    double[][] centerOfMass = new double[xyz.length/3][3];
+    centerOfMass(centerOfMass, xyz, massN, massSum, compareAtomsSize);
+    DoubleIndexPair[] auDist = new DoubleIndexPair[xyz.length/3 / compareAtomsSize];
+    prioritizeReplicates(xyz, massN, massSum, centerOfMass, compareAtomsSize, auDist, 0, linkage);
+
     boolean redo = false;
-    int buffer = 1;
-    for (int i = 0; i < 3; i++) {
-      while (lmn[i] + buffer >= startLMN[i]) {
-        redo = true;
-        startLMN[i]++;
+    for(int i = 0; i < nAU; i++) {
+      if(logger.isLoggable(Level.FINE)) {
+        logger.fine(format(" i: %3d\t auDist Index: %3d \t indexOrder: %3d\t indget(au): %3d\t ReplicatesVector:  %2d (%2d) %2d (%2d) %2d (%2d)",
+            i, auDist[i].getIndex(), indexOrder.get(i), indexOrder.get(auDist[i].getIndex()),
+            symOps.get(indexOrder.get(auDist[i].getIndex())).replicatesVector[0] + 1, startLMN[0],
+            symOps.get(indexOrder.get(auDist[i].getIndex())).replicatesVector[1] + 1, startLMN[1],
+            symOps.get(indexOrder.get(auDist[i].getIndex())).replicatesVector[2] + 1, startLMN[2]));
       }
+      int[] lmn = symOps.get(indexOrder.get(auDist[i].getIndex())).replicatesVector;
+      if(lmn[0] == 0 || lmn[0] == startLMN[0] - 1){
+        redo = true;
+      }
+      if(lmn[1] == 0 || lmn[1] == startLMN[1] - 1){
+        redo = true;
+      }
+      if(lmn[2] == 0 || lmn[2] == startLMN[2] - 1){
+        redo = true;
+      }
+      if(redo){
+        break;
+      }
+    }
+    if(redo && logger.isLoggable(Level.FINE)){
+      logger.fine(" REDO EXPANSION.");
     }
     return redo;
   }
@@ -2446,307 +2395,6 @@ public class ProgressiveAlignmentOfCrystals {
   }
 
   /**
-   * Determine replicates expansion based on the size of molecules contained in unit cell.
-   *
-   * @param unitCell        Unit cell to be expanded.
-   * @param reducedCoords           Atoms in system.
-   * @param comparisonAtoms Atoms active in comparison.
-   * @param nAU             Number of asymmetric units to be compared.
-   * @param scaleFactor     Scaling factor to determine final size (default nAU * 10).
-   * @return LMN values for replicates crystal.
-   */
-  private static int[] determineExpansion(final Crystal unitCell, final double[] reducedCoords, final int[] comparisonAtoms, final double[] mass,
-                                          final int nAU, final int zPrime, final double scaleFactor) {
-    // TODO Create better expansion criteria (hopefully can eliminate checkInflatedSphere method some day...).
-    final int XX = 0;
-    final int YY = 1;
-    final int ZZ = 2;
-    // Determine number of symmetry operators in unit cell.
-    final int nSymm = unitCell.spaceGroup.getNumberOfSymOps();
-    final int numEntities = nSymm * zPrime;
-    final int compareAtomsSize = comparisonAtoms.length;
-
-    int zAtoms = compareAtomsSize / zPrime;
-    // Collect asymmetric unit atomic coordinates.
-    double[] x = new double[compareAtomsSize];
-    double[] y = new double[compareAtomsSize];
-    double[] z = new double[compareAtomsSize];
-    for (int i = 0; i < compareAtomsSize; i++) {
-      int atomIndex = i * 3;
-      x[i] = reducedCoords[atomIndex];
-      y[i] = reducedCoords[atomIndex + 1];
-      z[i] = reducedCoords[atomIndex + 2];
-    }
-
-    // Symmetry coordinates for each molecule in replicates crystal
-    double[][] xS = new double[nSymm][compareAtomsSize];
-    double[][] yS = new double[nSymm][compareAtomsSize];
-    double[][] zS = new double[nSymm][compareAtomsSize];
-
-    // Loop over replicate crystal SymOps
-    List<SymOp> inflatedSymOps = unitCell.spaceGroup.symOps;
-    for (int iSym = 0; iSym < nSymm; iSym++) {
-      SymOp symOp = inflatedSymOps.get(iSym);
-      //Convert sym op into cartesian for later use.
-      double[][] rot = new double[3][3];
-      unitCell.getTransformationOperator(symOp, rot);
-      // Apply SymOp to the asymmetric unit reducedCoords Cartesian Coordinates.
-      unitCell.applySymOp(compareAtomsSize, x, y, z, xS[iSym], yS[iSym], zS[iSym], symOp);
-      for (int zp = 0; zp < zPrime; zp++) {
-        int symIndex = zp * zAtoms;
-        // Compute center-of-mass (CoM) for Cartesian coordinates
-        double[] centerOfMass = new double[3];
-        double totalMass = 0.0;
-        for (int i = 0; i < zAtoms; i++) {
-          double m = mass[i];
-          int coordIndex = symIndex + i;
-          centerOfMass[0] += xS[iSym][coordIndex] * m;
-          centerOfMass[1] += yS[iSym][coordIndex] * m;
-          centerOfMass[2] += zS[iSym][coordIndex] * m;
-          totalMass += m;
-        }
-        centerOfMass[0] /= totalMass;
-        centerOfMass[1] /= totalMass;
-        centerOfMass[2] /= totalMass;
-
-        double[] translate = moveIntoCrystal(unitCell, centerOfMass);
-        //Convert sym op into cartesian for later use.
-        double[] trans = symOp.tr.clone();
-        unitCell.toCartesianCoordinates(trans, trans);
-        int translateLength = translate.length;
-        for (int i = 0; i < translateLength; i++) {
-          trans[i] += translate[i];
-        }
-        for (int i = 0; i < zAtoms; i++) {
-          int coordIndex = symIndex + i;
-          xS[iSym][coordIndex] += translate[0];
-          yS[iSym][coordIndex] += translate[1];
-          zS[iSym][coordIndex] += translate[2];
-        }
-      }
-    }
-
-    // Loop over molecule(s) in unit cell to determine maximum dimensions of unit cell.
-    double maxDistX = 0.0;
-    double maxDistY = 0.0;
-    double maxDistZ = 0.0;
-    for (int i = 0; i < nSymm; i++) {
-      double maxSymDistX = 0.0;
-      double maxSymDistY = 0.0;
-      double maxSymDistZ = 0.0;
-      for (int j = 0; j < compareAtomsSize; j++) {
-        double x1 = xS[i][j];
-        double y1 = yS[i][j];
-        double z1 = zS[i][j];
-        for (int m = j + 1; m < compareAtomsSize; m++) {
-          double x2 = xS[i][m];
-          double y2 = yS[i][m];
-          double z2 = zS[i][m];
-          double distX = abs(x2 - x1);
-          double distY = abs(y2 - y1);
-          double distZ = abs(z2 - z1);
-          if (distX > maxSymDistX) {
-            maxSymDistX = distX;
-          }
-          if (distY > maxSymDistY) {
-            maxSymDistY = distY;
-          }
-          if (distZ > maxSymDistZ) {
-            maxSymDistZ = distZ;
-          }
-        }
-      }
-      if (maxSymDistX > maxDistX) {
-        maxDistX = maxSymDistX;
-      }
-      if (maxSymDistY > maxDistY) {
-        maxDistY = maxSymDistY;
-      }
-      if (maxSymDistZ > maxDistZ) {
-        maxDistZ = maxSymDistZ;
-      }
-    }
-    // We have calculated max distance between center of atoms. Add wiggle room to prevent overlap.
-    maxDistX += 4;
-    maxDistY += 4;
-    maxDistZ += 4;
-    // Convert X,Y,Z differences to % of a,b,c lattice lengths.
-    double[] output = new double[3];
-    unitCell.toFractionalCoordinates(new double[]{maxDistX, maxDistY, maxDistZ}, output);
-    // Initial guesses for l, m, n.
-    int[] lmn = new int[]{(int) ceil(output[XX]), (int) ceil(output[YY]), (int) ceil(output[ZZ])};
-    // Minimum number of asymmetric units desired in replicates crystal.
-    int target = (int) (nAU * scaleFactor);
-    int total = (lmn[0] * lmn[1] * lmn[2]) * numEntities;
-    int[] adjust = new int[]{0, 0, 0};
-    if (logger.isLoggable(Level.FINER)) {
-      logger.info(format(" Number Sym Ops: %3d", nSymm));
-      logger.info(format(" Fractional Distances: %9.3f %9.3f %9.3f", output[XX], output[YY], output[ZZ]));
-      logger.info(format(" LMN Guess: %3d %3d %3d (Total: %3d > %3d)", lmn[0], lmn[1], lmn[2], total, target));
-    }
-    // Increase l,m,n while maintaining ratio between them until target number of structures have been obtained.
-    while (total < target) {
-      // Maintain approximate ratio by enforcing each value has to increase before any increase twice.
-      boolean A = adjust[1] == 1 && adjust[2] == 1;
-      boolean B = adjust[0] == 1 && adjust[2] == 1;
-      boolean C = adjust[0] == 1 && adjust[1] == 1;
-      if (A || B || C) {
-        if (A) {
-          adjust[1] = 0;
-          adjust[2] = 0;
-          lmn[0]++;
-        }
-        if (B) {
-          adjust[0] = 0;
-          adjust[2] = 0;
-          lmn[1]++;
-        }
-        if (C) {
-          adjust[0] = 0;
-          adjust[1] = 0;
-          lmn[2]++;
-        }
-      } else {
-        if (adjust[0] == 0 && lmn[0] < lmn[1]) {
-          if (lmn[0] < lmn[2]) {
-            lmn[0]++;
-            adjust[0]++;
-          } else if (lmn[0] == lmn[2]) {
-            if (output[XX] > output[ZZ]) {
-              lmn[0]++;
-              adjust[0]++;
-            } else if (adjust[2] == 0) {
-              lmn[2]++;
-              adjust[2]++;
-            } else {
-              lmn[0]++;
-              adjust[0]++;
-            }
-          } else {
-            lmn[1]++;
-            adjust[1]++;
-          }
-        } else if (adjust[1] == 0 && lmn[1] < lmn[0]) {
-          if (lmn[1] < lmn[2]) {
-            lmn[1]++;
-            adjust[1]++;
-          } else if (lmn[1] == lmn[2]) {
-            if (output[YY] > output[ZZ]) {
-              lmn[1]++;
-              adjust[1]++;
-            } else if (adjust[2] == 0) {
-              lmn[2]++;
-              adjust[2]++;
-            } else {
-              lmn[1]++;
-              adjust[1]++;
-            }
-          } else {
-            lmn[2]++;
-            adjust[2]++;
-          }
-        } else if (adjust[2] == 0 && lmn[2] < lmn[0]) {
-          lmn[2]++;
-          adjust[2]++;
-        } else {
-          if (adjust[0] == 1) {
-            if (output[YY] >= output[ZZ]) {
-              lmn[1]++;
-              adjust[1]++;
-            } else {
-              lmn[2]++;
-              adjust[2]++;
-            }
-          } else if (adjust[1] == 1) {
-            if (output[XX] >= output[ZZ]) {
-              lmn[0]++;
-              adjust[0]++;
-            } else {
-              lmn[2]++;
-              adjust[2]++;
-            }
-          } else if (adjust[2] == 1) {
-            if (output[XX] >= output[YY]) {
-              lmn[0]++;
-              adjust[0]++;
-            } else {
-              lmn[1]++;
-              adjust[1]++;
-            }
-          } else {
-            if (output[XX] >= output[YY] && output[XX] >= output[ZZ]) {
-              lmn[0]++;
-              adjust[0]++;
-            } else if (output[YY] >= output[XX] && output[YY] >= output[ZZ]) {
-              lmn[1]++;
-              adjust[1]++;
-            } else {
-              lmn[2]++;
-              adjust[2]++;
-            }
-          }
-        }
-      }
-      // TODO determine if below steps are necessary (change replicates expansion method)
-      LatticeSystem lattice = unitCell.spaceGroup.latticeSystem;
-      checkLattice(lattice, lmn);
-      total = (lmn[0] * lmn[1] * lmn[2]) * numEntities;
-      if (logger.isLoggable(Level.FINEST)) {
-        logger.info(format(" \tLMN Guess: %3d %3d %3d (Total: %3d > %3d)", lmn[0], lmn[1], lmn[2], total, target));
-      }
-    }
-    if (logger.isLoggable(Level.FINER)) {
-      logger.info(format(" Final LMN: %3d %3d %3d (Total: %3d > %3d)", lmn[0], lmn[1], lmn[2], total, target));
-    }
-
-    //Return l,m,n for desired replicates crystal.
-    return new int[]{lmn[0], lmn[1], lmn[2]};
-  }
-
-  /**
-   * Determine translation needed to move center from x2 to x1.
-   *
-   * @param x1   Coordinates to whose center we wish to move
-   * @param x2   Coordinates whose center we wish to move
-   * @param mass Mass of the system.
-   * @return double[] translation needed to move center of x2 to x1.
-   */
-  public static double[] determineTranslation(double[] x1, double[] x2, final double[] mass) {
-    assert (x1.length == x2.length);
-    assert (x1.length % 3 == 0);
-    assert (x1.length / 3 == mass.length);
-
-    double x1mid = 0.0;
-    double y1mid = 0.0;
-    double z1mid = 0.0;
-    double x2mid = 0.0;
-    double y2mid = 0.0;
-    double z2mid = 0.0;
-    double norm = 0.0;
-    int n = x1.length / 3;
-
-    for (int i = 0; i < n; i++) {
-      int k = 3 * i;
-      double weigh = mass[i];
-      x1mid += x1[k] * weigh;
-      y1mid += x1[k + 1] * weigh;
-      z1mid += x1[k + 2] * weigh;
-      x2mid += x2[k] * weigh;
-      y2mid += x2[k + 1] * weigh;
-      z2mid += x2[k + 2] * weigh;
-      norm += weigh;
-    }
-    x1mid /= norm;
-    y1mid /= norm;
-    z1mid /= norm;
-    x2mid /= norm;
-    y2mid /= norm;
-    z2mid /= norm;
-
-    return new double[]{x1mid - x2mid, y1mid - y2mid, z1mid - z2mid};
-  }
-
-  /**
    * This method calls <code>world.gather</code> to collect numProc PAC RMSD values.
    *
    * @param row               Current row of the PAC RMSD matrix.
@@ -2818,22 +2466,28 @@ public class ProgressiveAlignmentOfCrystals {
    * distribution of replicates to facilitate comparisons that go beyond lattice parameters.
    *
    * @param unitCell      Crystal to define expansion.
-   * @param radius        Minimum radius desired for replicates crystal.
-   * @param lmn           Generate a replicates crystal of size L x M x N.
    * @param reducedCoords Coordinates of asymmetric unit we wish to expand.
+   * @param comparisonAtoms Used for LMN expansion... Not currently used.
    * @param zPrime        Number of molecules in asymmetric unit.
+   * @param nAU           Number of asymmetric units to compare in final shell (used to determine expansion guess).
+   * @param linkage       Type of linkage to be used in comparison (single, average, or complete).
    * @param mass          Masses for atoms within reduced asymmetric unit.
+   * @param lmn           Replicates lattice vecor lengths (L x M x N).
    * @param symOps        List of symmetry operators used to expand to replicates crystal.
    * @param indexOrder    Sorted list of index values (e.g. index 0 is contained in input file but may not be first).
+   * @param inflationFactor Scalar to over expand replicates crystal to obtain all necessary orientations.
    * @return double[] containing the coordinates for the expanded crystal.
    */
-  private static double[] generateInflatedSphere(Crystal unitCell, final double radius, int[] lmn,
-                   final double[] reducedCoords, final int zPrime, final int nAU, final int linkage,
-                   final double[] mass, ArrayList<SymOp> symOps, ArrayList<Integer> indexOrder) {
+  private static double[] generateInflatedSphere(final Crystal unitCell, final double[] reducedCoords, final int[] comparisonAtoms, final int zPrime,
+                   final int nAU, final int linkage, final double[] mass, int[] lmn,
+                                                 ArrayList<SymOp> symOps, ArrayList<Integer> indexOrder, double inflationFactor) {
     symOps.clear();
     indexOrder.clear();
+    // Num coords in asymmetric unit
     int nCoords = reducedCoords.length;
+    // Num atoms in asymmetric unit
     int nAtoms = nCoords / 3;
+    // Num atoms per molecule
     int zAtoms = nAtoms / zPrime;
     // Collect asymmetric unit atomic coordinates.
     double[] x = new double[nAtoms];
@@ -2846,18 +2500,21 @@ public class ProgressiveAlignmentOfCrystals {
       z[i] = reducedCoords[atomIndex + 2];
     }
 
-    Crystal replicatesCrystal = new ReplicatesCrystal(unitCell, lmn[0], lmn[1], lmn[2], radius * 2.0);
-
+    double volume = unitCell.volume / unitCell.getNumSymOps() / zPrime;
+    double radius = cbrt(0.75 / PI * volume * max(3, nAU) * inflationFactor);
+    Crystal replicatesCrystal = ReplicatesCrystal.replicatesCrystalFactory(unitCell, radius * 2.0, lmn);
+    // Used for LMN specific replicates expansion.
+//    Crystal replicatesCrystal = new ReplicatesCrystal(unitCell, lmn[0], lmn[1], lmn[2], radius * 2.0);
+//    startLMN = lmn;
     // Symmetry coordinates for each molecule in replicates crystal
     int nSymm = replicatesCrystal.getNumSymOps();
-
-    int numEntities = nSymm * zPrime;
-
     double[][] xS = new double[nSymm][nAtoms];
     double[][] yS = new double[nSymm][nAtoms];
     double[][] zS = new double[nSymm][nAtoms];
+
+    int numEntities = nSymm * zPrime;
     // Cartesian center of each molecule
-    double[][] centerMolsCart = new double[numEntities][3];
+    double[][] cartCenterOfMass = new double[numEntities][3];
 
     // Loop over replicate crystal SymOps
     List<SymOp> inflatedSymOps = replicatesCrystal.spaceGroup.symOps;
@@ -2872,18 +2529,18 @@ public class ProgressiveAlignmentOfCrystals {
         int symIndex = zp * zAtoms;
         // Compute center-of-mass (CoM) for Cartesian coordinates
         double[] centerOfMass = new double[3];
-        double totalMass = 0.0;
+        double zMass = 0.0;
         for (int i = 0; i < zAtoms; i++) {
           double m = mass[i];
           int coordIndex = symIndex + i;
           centerOfMass[0] += xS[iSym][coordIndex] * m;
           centerOfMass[1] += yS[iSym][coordIndex] * m;
           centerOfMass[2] += zS[iSym][coordIndex] * m;
-          totalMass += m;
+          zMass += m;
         }
-        centerOfMass[0] /= totalMass;
-        centerOfMass[1] /= totalMass;
-        centerOfMass[2] /= totalMass;
+        centerOfMass[0] /= zMass;
+        centerOfMass[1] /= zMass;
+        centerOfMass[2] /= zMass;
 
         double[] translate = moveIntoCrystal(replicatesCrystal, centerOfMass);
         //Convert sym op into cartesian for later use.
@@ -2893,16 +2550,19 @@ public class ProgressiveAlignmentOfCrystals {
         for (int i = 0; i < translateLength; i++) {
           trans[i] += translate[i];
         }
-        symOps.add(new SymOp(rot, trans));
+        symOps.add(new SymOp(rot, trans, symOp.replicatesVector));
         for (int i = 0; i < zAtoms; i++) {
           int coordIndex = symIndex + i;
           xS[iSym][coordIndex] += translate[0];
+          centerOfMass[0] += translate[0];
           yS[iSym][coordIndex] += translate[1];
+          centerOfMass[1] += translate[1];
           zS[iSym][coordIndex] += translate[2];
+          centerOfMass[2] += translate[2];
         }
 
         // Save CoM cartesian coordinates
-        centerMolsCart[iSym * zPrime + zp] = centerOfMass;
+        cartCenterOfMass[iSym * zPrime + zp] = centerOfMass;
       }
     }
 
@@ -2925,10 +2585,12 @@ public class ProgressiveAlignmentOfCrystals {
       logger.finer(format(" Expanded Crystal Center: %14.8f %14.8f %14.8f",
           cartCenter[0], cartCenter[1], cartCenter[2]));
     }
+    logger.fine(format(" Expanded Crystal Center: %14.8f %14.8f %14.8f",
+        cartCenter[0], cartCenter[1], cartCenter[2]));
 
     for (int i = 0; i < numEntities; i++) {
       // Then compute Euclidean distance from Cartesian center of the replicates cell
-      auDist[i] = new DoubleIndexPair(i, dist2(cartCenter, centerMolsCart[i]));
+      auDist[i] = new DoubleIndexPair(i, dist2(cartCenter, cartCenterOfMass[i]));
     }
 
     // Sort the molecules by their distance from the center.
@@ -2965,14 +2627,20 @@ public class ProgressiveAlignmentOfCrystals {
       }
     }
     double massSum = Arrays.stream(mass).sum();
-    int[] startLMN = lmn.clone();
-    if (checkInflatedSphere(unitCell, centerMolsCart, systemCoords, mass, massSum, zAtoms, nAU, nCoords,
-        auDist, linkage, lmn)) {
-      systemCoords = generateInflatedSphere(unitCell, radius, lmn, reducedCoords, zPrime, nAU, linkage, mass, symOps, indexOrder);
-      if (logger.isLoggable(Level.FINER)) {
-        logger.finer(format(" Revised L: %3d (%3d) M: %3d (%3d) N: %3d (%3d)", lmn[0], startLMN[0], lmn[1], startLMN[1],
-            lmn[2], startLMN[2]));
-      }
+    if(logger.isLoggable(Level.FINE)) {
+      logger.fine(" Checking replicates crystal.");
+      logger.fine(format(" SysCoords: %3d (%3d)(%3d), reducedCoords Size: %3d (%3d)\n mass Size %3d, massSum: %6.3f, nAU: %2d, nCoords: %3d\n " +
+              "auDist Size: %3d, l: %2d, m: %2d, n: %2d, numEntities: %3d, nAtoms: %3d, zPrime: %3d, zAtoms: %3d",
+          systemCoords.length, systemCoords.length / 3, systemCoords.length / 3 / zAtoms, reducedCoords.length,
+          reducedCoords.length / 3, mass.length, massSum, nAU, nCoords, auDist.length, lmn[0], lmn[1], lmn[2],
+           numEntities, nAtoms, zPrime, zAtoms));
+    }
+    if (checkInflatedSphere(systemCoords, mass, massSum, zAtoms, nAU, linkage, lmn, symOps, indexOrder)) {
+        logger.warning(format(" Default replicates crystal was too small for comparison. Increasing inflation factor from %9.3f to %9.3f",
+            inflationFactor, inflationFactor += 5));
+        // Used for LMN specific replicates expansion.
+//        startLMN = determineExpansion(unitCell, reducedCoords, comparisonAtoms, mass, nAU, zPrime, inflationFactor);
+        systemCoords = generateInflatedSphere(unitCell, reducedCoords, comparisonAtoms, zPrime, nAU, linkage, mass, lmn, symOps, indexOrder, inflationFactor);
     }
 
     return systemCoords;
@@ -3246,6 +2914,9 @@ public class ProgressiveAlignmentOfCrystals {
     int nCoords = nAtoms * 3;
     int length = coordsXYZ.length;
     int nMols = length / nCoords;
+    if(auDist.length != nMols){
+      logger.warning(" Number of molecules does not match distance sort array length.");
+    }
     if (linkage == 0) {
       // Prioritize based on closest atomic distances.
       int centerIndex = index * nCoords;
@@ -3685,6 +3356,281 @@ public class ProgressiveAlignmentOfCrystals {
     }
   }
 }
+
+// Used for LMN expansion. Computes ratio between a, b, c axis lengths to guess final L x M x N distribution.
+//  /**
+//   * Determine replicates expansion based on the size of molecules contained in unit cell.
+//   *
+//   * @param unitCell        Unit cell to be expanded.
+//   * @param reducedCoords           Atoms in system.
+//   * @param comparisonAtoms Atoms active in comparison.
+//   * @param nAU             Number of asymmetric units to be compared.
+//   * @param scaleFactor     Scaling factor to determine final size (default nAU * 10).
+//   * @return LMN values for replicates crystal.
+//   */
+//  private static int[] determineExpansion(final Crystal unitCell, final double[] reducedCoords, final int[] comparisonAtoms, final double[] mass,
+//                                          final int nAU, final int zPrime, final double scaleFactor) {
+//    // TODO Create better expansion criteria (hopefully can eliminate checkInflatedSphere method some day...).
+//    final int XX = 0;
+//    final int YY = 1;
+//    final int ZZ = 2;
+//    // Determine number of symmetry operators in unit cell.
+//    final int nSymm = unitCell.spaceGroup.getNumberOfSymOps();
+//    final int numEntities = nSymm * zPrime;
+//    final int compareAtomsSize = comparisonAtoms.length;
+//
+//    int zAtoms = compareAtomsSize / zPrime;
+//    // Collect asymmetric unit atomic coordinates.
+//    double[] x = new double[compareAtomsSize];
+//    double[] y = new double[compareAtomsSize];
+//    double[] z = new double[compareAtomsSize];
+//    for (int i = 0; i < compareAtomsSize; i++) {
+//      int atomIndex = i * 3;
+//      x[i] = reducedCoords[atomIndex];
+//      y[i] = reducedCoords[atomIndex + 1];
+//      z[i] = reducedCoords[atomIndex + 2];
+//    }
+//
+//    // Symmetry coordinates for each molecule in replicates crystal
+//    double[][] xS = new double[nSymm][compareAtomsSize];
+//    double[][] yS = new double[nSymm][compareAtomsSize];
+//    double[][] zS = new double[nSymm][compareAtomsSize];
+//
+//    // Loop over replicate crystal SymOps
+//    List<SymOp> inflatedSymOps = unitCell.spaceGroup.symOps;
+//    for (int iSym = 0; iSym < nSymm; iSym++) {
+//      SymOp symOp = inflatedSymOps.get(iSym);
+//      //Convert sym op into cartesian for later use.
+//      double[][] rot = new double[3][3];
+//      unitCell.getTransformationOperator(symOp, rot);
+//      // Apply SymOp to the asymmetric unit reducedCoords Cartesian Coordinates.
+//      unitCell.applySymOp(compareAtomsSize, x, y, z, xS[iSym], yS[iSym], zS[iSym], symOp);
+//      for (int zp = 0; zp < zPrime; zp++) {
+//        int symIndex = zp * zAtoms;
+//        // Compute center-of-mass (CoM) for Cartesian coordinates
+//        double[] centerOfMass = new double[3];
+//        double totalMass = 0.0;
+//        for (int i = 0; i < zAtoms; i++) {
+//          double m = mass[i];
+//          int coordIndex = symIndex + i;
+//          centerOfMass[0] += xS[iSym][coordIndex] * m;
+//          centerOfMass[1] += yS[iSym][coordIndex] * m;
+//          centerOfMass[2] += zS[iSym][coordIndex] * m;
+//          totalMass += m;
+//        }
+//        centerOfMass[0] /= totalMass;
+//        centerOfMass[1] /= totalMass;
+//        centerOfMass[2] /= totalMass;
+//
+//        double[] translate = moveIntoCrystal(unitCell, centerOfMass);
+//        //Convert sym op into cartesian for later use.
+//        double[] trans = symOp.tr.clone();
+//        unitCell.toCartesianCoordinates(trans, trans);
+//        int translateLength = translate.length;
+//        for (int i = 0; i < translateLength; i++) {
+//          trans[i] += translate[i];
+//        }
+//        for (int i = 0; i < zAtoms; i++) {
+//          int coordIndex = symIndex + i;
+//          xS[iSym][coordIndex] += translate[0];
+//          yS[iSym][coordIndex] += translate[1];
+//          zS[iSym][coordIndex] += translate[2];
+//        }
+//      }
+//    }
+//
+//    // Loop over molecule(s) in unit cell to determine maximum dimensions of unit cell.
+//    double maxDistX = 0.0;
+//    double maxDistY = 0.0;
+//    double maxDistZ = 0.0;
+//    for (int i = 0; i < nSymm; i++) {
+//      double maxSymDistX = 0.0;
+//      double maxSymDistY = 0.0;
+//      double maxSymDistZ = 0.0;
+//      for (int j = 0; j < compareAtomsSize; j++) {
+//        double x1 = xS[i][j];
+//        double y1 = yS[i][j];
+//        double z1 = zS[i][j];
+//        for (int m = j + 1; m < compareAtomsSize; m++) {
+//          double x2 = xS[i][m];
+//          double y2 = yS[i][m];
+//          double z2 = zS[i][m];
+//          double distX = abs(x2 - x1);
+//          double distY = abs(y2 - y1);
+//          double distZ = abs(z2 - z1);
+//          if (distX > maxSymDistX) {
+//            maxSymDistX = distX;
+//          }
+//          if (distY > maxSymDistY) {
+//            maxSymDistY = distY;
+//          }
+//          if (distZ > maxSymDistZ) {
+//            maxSymDistZ = distZ;
+//          }
+//        }
+//      }
+//      if (maxSymDistX > maxDistX) {
+//        maxDistX = maxSymDistX;
+//      }
+//      if (maxSymDistY > maxDistY) {
+//        maxDistY = maxSymDistY;
+//      }
+//      if (maxSymDistZ > maxDistZ) {
+//        maxDistZ = maxSymDistZ;
+//      }
+//    }
+//    // We have calculated max distance between center of atoms. Add wiggle room to prevent overlap.
+//    maxDistX += 4;
+//    maxDistY += 4;
+//    maxDistZ += 4;
+//    // Convert X,Y,Z differences to % of a,b,c lattice lengths.
+//    double[] output = new double[3];
+//    unitCell.toFractionalCoordinates(new double[]{maxDistX, maxDistY, maxDistZ}, output);
+//    // Initial guesses for l, m, n.
+//    double target = nAU * scaleFactor;
+//    output[XX] = ceil(output[XX]);
+//    output[YY] = ceil(output[YY]);
+//    output[ZZ] = ceil(output[ZZ]);
+//    double l = cbrt((target * output[XX] * output[XX])/(numEntities * output[YY] * output[ZZ]));
+//    double m = cbrt((target * output[YY] * output[YY])/(numEntities * output[XX] * output[ZZ]));
+//    double n = cbrt((target * output[ZZ] * output[ZZ])/(numEntities * output[XX] * output[YY]));
+//    int[] lmn = new int[]{(int) ceil(l), (int) ceil(m), (int) ceil(n)};
+//    // Minimum number of asymmetric units desired in replicates crystal.
+//    int total = (lmn[0] * lmn[1] * lmn[2]) * numEntities;
+//    int[] adjust = new int[]{0, 0, 0};
+//    if (logger.isLoggable(Level.FINER)) {
+//      logger.info(format(" Number Sym Ops: %3d", nSymm));
+//      logger.info(format(" Fractional Distances: %9.3f %9.3f %9.3f", output[XX], output[YY], output[ZZ]));
+//      logger.info(format(" LMN Guess: %3d %3d %3d (Total: %3d > %9.3f)", lmn[0], lmn[1], lmn[2], total, target));
+//    }
+//    // Increase l,m,n while maintaining ratio between them until target number of structures have been obtained.
+//    while (total < target) {
+//      // Maintain approximate ratio by enforcing each value has to increase before any increase twice.
+//      boolean A = adjust[1] == 1 && adjust[2] == 1;
+//      boolean B = adjust[0] == 1 && adjust[2] == 1;
+//      boolean C = adjust[0] == 1 && adjust[1] == 1;
+//      if (A || B || C) {
+//        if (A) {
+//          adjust[1] = 0;
+//          adjust[2] = 0;
+//          lmn[0]++;
+//        }
+//        if (B) {
+//          adjust[0] = 0;
+//          adjust[2] = 0;
+//          lmn[1]++;
+//        }
+//        if (C) {
+//          adjust[0] = 0;
+//          adjust[1] = 0;
+//          lmn[2]++;
+//        }
+//      } else {
+//        if (adjust[0] == 0 && lmn[0] < lmn[1]) {
+//          if (lmn[0] < lmn[2]) {
+//            lmn[0]++;
+//            adjust[0]++;
+//          } else if (lmn[0] == lmn[2]) {
+//            if (output[XX] > output[ZZ]) {
+//              lmn[0]++;
+//              adjust[0]++;
+//            } else if (adjust[2] == 0) {
+//              lmn[2]++;
+//              adjust[2]++;
+//            } else {
+//              lmn[0]++;
+//              adjust[0]++;
+//            }
+//          } else {
+//            lmn[1]++;
+//            adjust[1]++;
+//          }
+//        } else if (adjust[1] == 0 && lmn[1] < lmn[0]) {
+//          if (lmn[1] < lmn[2]) {
+//            lmn[1]++;
+//            adjust[1]++;
+//          } else if (lmn[1] == lmn[2]) {
+//            if (output[YY] > output[ZZ]) {
+//              lmn[1]++;
+//              adjust[1]++;
+//            } else if (adjust[2] == 0) {
+//              lmn[2]++;
+//              adjust[2]++;
+//            } else {
+//              lmn[1]++;
+//              adjust[1]++;
+//            }
+//          } else {
+//            lmn[2]++;
+//            adjust[2]++;
+//          }
+//        } else if (adjust[2] == 0 && lmn[2] < lmn[0]) {
+//          lmn[2]++;
+//          adjust[2]++;
+//        } else {
+//          if (adjust[0] == 1) {
+//            if (output[YY] >= output[ZZ]) {
+//              lmn[1]++;
+//              adjust[1]++;
+//            } else {
+//              lmn[2]++;
+//              adjust[2]++;
+//            }
+//          } else if (adjust[1] == 1) {
+//            if (output[XX] >= output[ZZ]) {
+//              lmn[0]++;
+//              adjust[0]++;
+//            } else {
+//              lmn[2]++;
+//              adjust[2]++;
+//            }
+//          } else if (adjust[2] == 1) {
+//            if (output[XX] >= output[YY]) {
+//              lmn[0]++;
+//              adjust[0]++;
+//            } else {
+//              lmn[1]++;
+//              adjust[1]++;
+//            }
+//          } else {
+//            if (output[XX] >= output[YY] && output[XX] >= output[ZZ]) {
+//              lmn[0]++;
+//              adjust[0]++;
+//            } else if (output[YY] >= output[XX] && output[YY] >= output[ZZ]) {
+//              lmn[1]++;
+//              adjust[1]++;
+//            } else {
+//              lmn[2]++;
+//              adjust[2]++;
+//            }
+//          }
+//        }
+//      }
+//      // TODO determine if below steps are necessary (change replicates expansion method)
+//      LatticeSystem lattice = unitCell.spaceGroup.latticeSystem;
+//      checkLattice(lattice, lmn);
+//      total = (lmn[0] * lmn[1] * lmn[2]) * numEntities;
+//      if (logger.isLoggable(Level.FINEST)) {
+//        logger.finest(format(" \tLMN Guess: %3d %3d %3d (Total: %3d > %9.3f)", lmn[0], lmn[1], lmn[2], total, target));
+//      }
+//    }
+//    // Want a 1 unit cell buffer on all sides. Must be at least 3 wide in each direction.
+//    if(lmn[0] < 3){
+//      lmn[0] = 3;
+//    }
+//    if(lmn[1] < 3){
+//      lmn[1] = 3;
+//    }
+//    if(lmn[2] < 3){
+//      lmn[2] = 3;
+//    }
+//    if (logger.isLoggable(Level.FINE)) {
+//      logger.fine(format(" Final LMN: %3d %3d %3d (Total: %3d > %9.3f)", lmn[0], lmn[1], lmn[2], total, target));
+//    }
+//
+//    //Return l,m,n for desired replicates crystal.
+//    return new int[]{lmn[0], lmn[1], lmn[2]};
+//  }
 
 //        // Used in QEtoXYZ.groovy which is not ready for git which is why this method appears unused.
 //    /**
