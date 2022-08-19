@@ -190,6 +190,7 @@ public class PhReplicaExchange implements Terminatable {
                   logger.warning(" Duplicate pH values found. Trying to read backups.");
                   backUpUsed = true;
                   br = new BufferedReader(new FileReader(checkBackupESV));
+                  readPhScale = new ArrayList<>();
                   continue;
                 } else {
                   restart = false;
@@ -256,7 +257,15 @@ public class PhReplicaExchange implements Terminatable {
       extendedSystem.setConstantPh(pHScale[rank2Ph[rank]]);
       if(backUpUsed) {
         extendedSystem.setESVFile(esvBackup);
-        molecularDynamics.setFallbackDynFile(dynBackup);
+        if(dyn.delete() && esv.delete()) {
+          esvBackup.renameTo(esv);
+          dynBackup.renameTo(dyn);
+          dyn = dynBackup;
+          esv = esvBackup;
+        } else{ // Clean up so that mistakes are not made TODO: Use this to make sure things work
+          esvBackup.delete();
+          dynBackup.delete();
+        }
       }
 
       logger.info("Rank " + rank + " starting hist:");
@@ -437,7 +446,15 @@ public class PhReplicaExchange implements Terminatable {
       extendedSystem.setConstantPh(pHScale[rank2Ph[rank]]);
       if(backUpUsed) {
         extendedSystem.setESVFile(esvBackup);
-        molecularDynamics.setFallbackDynFile(dynBackup);
+        if(dyn.delete() && esv.delete()) {
+          esvBackup.renameTo(esv);
+          dynBackup.renameTo(dyn);
+          dyn = dynBackup;
+          esv = esvBackup;
+        } else{ // Clean up so that mistakes are not made TODO: Use this to make sure things work
+          esvBackup.delete();
+          dynBackup.delete();
+        }
       }
 
       logger.info("Rank " + rank + " starting hist:");
@@ -538,6 +555,7 @@ public class PhReplicaExchange implements Terminatable {
       extendedSystem.setESVFile(esvBackup);
       extendedSystem.writeRestart();
       extendedSystem.setESVFile(esv);
+
       replica.writeRestart();
 
       logger.info(" ");
