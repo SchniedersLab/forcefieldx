@@ -67,7 +67,6 @@ import static org.apache.commons.math3.util.FastMath.*;
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
 import ffx.crystal.Crystal;
-import ffx.crystal.LatticeSystem;
 import ffx.crystal.ReplicatesCrystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.math.RunningStatistics;
@@ -1600,9 +1599,13 @@ public class ProgressiveAlignmentOfCrystals {
       // Used for LMN specific replicates expansion (add LMN as input to generateInflatedSphere).
 //      int[] baseLMN = determineExpansion(baseCrystal.getUnitCell(), reducedBaseCoords, comparisonAtoms, mass, nAU, z1, inflationFactor);
       int[] baseLMN = new int[3];
-      logger.warning(" Base: " + baseAssembly.getName() + " Target: " + targetAssembly.getName());
+      double inflationFactorOrig = inflationFactor;
       baseXYZoriginal = generateInflatedSphere(baseCrystal.getUnitCell(),
-              reducedBaseCoords, comparisonAtoms, z1, nAU, linkage, mass, baseLMN, baseSymOps, baseDistMap, inflationFactor);
+              reducedBaseCoords, z1, nAU, linkage, mass, baseLMN, permute, baseSymOps, baseDistMap, inflationFactor);
+      if(inflationFactorOrig != inflationFactor){
+        logger.warning(format(" Default replicates crystal was too small for comparison. Increasing inflation factor from %9.3f to %9.3f",
+            inflationFactor, inflationFactorOrig));
+      }
       int nBaseCoords = baseXYZoriginal.length;
       baseXYZ = new double[nBaseCoords];
       arraycopy(baseXYZoriginal, 0, baseXYZ, 0, nBaseCoords);
@@ -1667,8 +1670,13 @@ public class ProgressiveAlignmentOfCrystals {
 //            int[] targetLMN = determineExpansion(targetCrystal.getUnitCell(), reducedTargetCoords, comparisonAtoms2,
 //                mass2, nAU, z2, inflationFactor);
             int[] targetLMN = new int[3];
-            targetXYZoriginal = generateInflatedSphere(targetCrystal.getUnitCell(), reducedTargetCoords,
-                comparisonAtoms2, z2, nAU, linkage, mass2, targetLMN, targetSymOps, targetDistMap, inflationFactor);
+            inflationFactorOrig = inflationFactor;
+            targetXYZoriginal = generateInflatedSphere(targetCrystal.getUnitCell(), reducedTargetCoords, z2, nAU,
+                linkage, mass2, targetLMN, permute, targetSymOps, targetDistMap, inflationFactor);
+            if(inflationFactorOrig != inflationFactor){
+              logger.warning(format(" Default replicates crystal was too small for comparison. Increasing inflation factor from %9.3f to %9.3f",
+                  inflationFactor, inflationFactorOrig));
+            }
             int nTargetCoords = targetXYZoriginal.length;
             targetXYZ = new double[nTargetCoords];
             arraycopy(targetXYZoriginal, 0, targetXYZ, 0, nTargetCoords);
@@ -2311,45 +2319,6 @@ public class ProgressiveAlignmentOfCrystals {
   }
 
   /**
-   * FFX Replicates crystal has to obey lattice requirements. Update LMN accordingly.
-   * @param lattice Lattice system of the current crystal.
-   * @param lmn     Proposed LMN values (will be updated to satisfy lattice requirements).
-   */
-  private static void checkLattice(LatticeSystem lattice, int[] lmn){
-    int restriction;
-    switch(lattice) {
-      case HEXAGONAL_LATTICE:
-      case TETRAGONAL_LATTICE:
-        //a==b
-        restriction = 0;
-        break;
-      case CUBIC_LATTICE:
-      case RHOMBOHEDRAL_LATTICE:
-        //a==b==c
-        restriction = 1;
-        break;
-      default:
-        //no restriction
-        restriction = -1;
-        break;
-    }
-    if(restriction == 0){
-      if(lmn[0] != lmn[1]){
-        int max = max(lmn[0],lmn[1]);
-        lmn[0] = max;
-        lmn[1] = max;
-      }
-    }else if(restriction == 1){
-      if(lmn[0] != lmn[2] || lmn[1] != lmn[2]){
-        int max = max(lmn[0],max(lmn[1],lmn[2]));
-        lmn[0] = max;
-        lmn[1] = max;
-        lmn[2] = max;
-      }
-    }
-  }
-
-  /**
    * Deep copy of values from one array to another.
    *
    * @param newArray Destination of values.
@@ -2467,7 +2436,6 @@ public class ProgressiveAlignmentOfCrystals {
    *
    * @param unitCell      Crystal to define expansion.
    * @param reducedCoords Coordinates of asymmetric unit we wish to expand.
-   * @param comparisonAtoms Used for LMN expansion... Not currently used.
    * @param zPrime        Number of molecules in asymmetric unit.
    * @param nAU           Number of asymmetric units to compare in final shell (used to determine expansion guess).
    * @param linkage       Type of linkage to be used in comparison (single, average, or complete).
@@ -2478,8 +2446,8 @@ public class ProgressiveAlignmentOfCrystals {
    * @param inflationFactor Scalar to over expand replicates crystal to obtain all necessary orientations.
    * @return double[] containing the coordinates for the expanded crystal.
    */
-  private static double[] generateInflatedSphere(final Crystal unitCell, final double[] reducedCoords, final int[] comparisonAtoms, final int zPrime,
-                   final int nAU, final int linkage, final double[] mass, int[] lmn,
+  private static double[] generateInflatedSphere(final Crystal unitCell, final double[] reducedCoords, final int zPrime,
+                   final int nAU, final int linkage, final double[] mass, int[] lmn, boolean permute,
                                                  ArrayList<SymOp> symOps, ArrayList<Integer> indexOrder, double inflationFactor) {
     symOps.clear();
     indexOrder.clear();
@@ -2635,12 +2603,12 @@ public class ProgressiveAlignmentOfCrystals {
           reducedCoords.length / 3, mass.length, massSum, nAU, nCoords, auDist.length, lmn[0], lmn[1], lmn[2],
            numEntities, nAtoms, zPrime, zAtoms));
     }
-    if (checkInflatedSphere(systemCoords, mass, massSum, zAtoms, nAU, linkage, lmn, symOps, indexOrder)) {
-        logger.warning(format(" Default replicates crystal was too small for comparison. Increasing inflation factor from %9.3f to %9.3f",
-            inflationFactor, inflationFactor += 5));
+    if (checkInflatedSphere(systemCoords, mass, massSum, zAtoms, nAU, linkage, lmn, symOps, indexOrder) && permute) {
         // Used for LMN specific replicates expansion.
 //        startLMN = determineExpansion(unitCell, reducedCoords, comparisonAtoms, mass, nAU, zPrime, inflationFactor);
-        systemCoords = generateInflatedSphere(unitCell, reducedCoords, comparisonAtoms, zPrime, nAU, linkage, mass, lmn, symOps, indexOrder, inflationFactor);
+      inflationFactor += 5;
+        systemCoords = generateInflatedSphere(unitCell, reducedCoords, zPrime, nAU, linkage, mass, lmn, permute,
+            symOps, indexOrder, inflationFactor);
     }
 
     return systemCoords;
@@ -3358,6 +3326,45 @@ public class ProgressiveAlignmentOfCrystals {
 }
 
 // Used for LMN expansion. Computes ratio between a, b, c axis lengths to guess final L x M x N distribution.
+//  /**
+//   * FFX Replicates crystal has to obey lattice requirements. Update LMN accordingly.
+//   * @param lattice Lattice system of the current crystal.
+//   * @param lmn     Proposed LMN values (will be updated to satisfy lattice requirements).
+//   */
+//  private static void checkLattice(LatticeSystem lattice, int[] lmn){
+//    int restriction;
+//    switch(lattice) {
+//      case HEXAGONAL_LATTICE:
+//      case TETRAGONAL_LATTICE:
+//        //a==b
+//        restriction = 0;
+//        break;
+//      case CUBIC_LATTICE:
+//      case RHOMBOHEDRAL_LATTICE:
+//        //a==b==c
+//        restriction = 1;
+//        break;
+//      default:
+//        //no restriction
+//        restriction = -1;
+//        break;
+//    }
+//    if(restriction == 0){
+//      if(lmn[0] != lmn[1]){
+//        int max = max(lmn[0],lmn[1]);
+//        lmn[0] = max;
+//        lmn[1] = max;
+//      }
+//    }else if(restriction == 1){
+//      if(lmn[0] != lmn[2] || lmn[1] != lmn[2]){
+//        int max = max(lmn[0],max(lmn[1],lmn[2]));
+//        lmn[0] = max;
+//        lmn[1] = max;
+//        lmn[2] = max;
+//      }
+//    }
+//  }
+//    // Used in LMN expansion as well.
 //  /**
 //   * Determine replicates expansion based on the size of molecules contained in unit cell.
 //   *

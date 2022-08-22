@@ -79,7 +79,7 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * --if or --inflationFactor Inflation factor used to determine replicates expansion.
    */
-  @Option(names = ['--if', '--inflationFactor'], paramLabel = '50.0', defaultValue = '50.0',
+  @Option(names = ['--if', '--inflationFactor'], paramLabel = '5.0', defaultValue = '5.0',
       description = 'Inflation factor used to determine replicates expansion (IF * nAU in replicates).')
   private double inflationFactor
 
@@ -280,13 +280,11 @@ class SuperposeCrystals extends AlgorithmsScript {
 
     algorithmFunctions.openAll(filenames.get(0))
     baseFilter = algorithmFunctions.getFilter()
-    // Example atoms to determine single molecule characteristics (e.g. number of atoms, hydrogen, etc.)
-    MolecularAssembly activeAssembly = baseFilter.getActiveMolecularSystem()
 
     // Apply atom selections
     if(unshared != null && !unshared.isEmpty()){
-      unsharedA = unshared;
-      unsharedB = unshared;
+      unsharedA = unshared
+      unsharedB = unshared
     }
 
     // Number of files to read in.
