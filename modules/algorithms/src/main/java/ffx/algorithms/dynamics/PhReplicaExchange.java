@@ -51,7 +51,6 @@ import org.apache.commons.math3.util.FastMath;
 
 import java.io.*;
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -184,9 +183,9 @@ public class PhReplicaExchange implements Terminatable {
       extendedSystem.getESVHistogram(parametersHis[rank]);
     } else{
       logger.info(" Restart Unsuccessful! Starting from fresh. ");
-      // if(dyn.delete() & esv.delete() & dynBackup.delete() & esvBackup.delete()){
-        // logger.info(" Deleted extra files. ");
-      // }
+      if(dyn.delete() & esv.delete() & dynBackup.delete() & esvBackup.delete()){
+        logger.info(" Deleted extra files. ");
+      }
     }
   }
 
@@ -196,8 +195,9 @@ public class PhReplicaExchange implements Terminatable {
    * @param structureFile pdb file
    */
   private boolean manageFilesAndRestart(File structureFile){
-    // My directory
-    File rankDir = new File(structureFile.getParent() + File.separator + rank);
+    // My directory info
+    File parent = structureFile.getParentFile();
+    File rankDir = new File(parent + File.separator + rank);
     restart = !rankDir.mkdir();
 
     // My files
@@ -206,153 +206,125 @@ public class PhReplicaExchange implements Terminatable {
     esvBackup = new File(rankDir.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + "_backup.esv");
     dynBackup = new File(rankDir.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + "_backup.dyn");
 
+    // Set restart files - does not do any reading yet
+    extendedSystem.setRestartFile(esv);
+    replica.setFallbackDynFile(dyn);
+    replica.setTrajectoryFiles(new File[]{new File(rankDir.getPath() + File.separator + FilenameUtils.removeExtension((structureFile.getName())) + ".arc")});
+    if(openMM != null) {
+      openMM.setAutomaticWriteouts(false);
+    }
+
     // Build restart
     restartStep = 0;
     if(restart){
       ArrayList<Double> readPhScale = new ArrayList<>();
-      for(int i = 0; i < nReplicas; i++){
-        if(!restart && !backUpUsed){
-          break;
+
+      // Read normal restarts
+      boolean backupNeeded = false;
+      if(checkForRestartFiles(parent, esv.getName()) && checkForRestartFiles(parent, dyn.getName())){
+        for(int i = 0; i < nReplicas; i++){
+          File checkThisESV = new File(parent.getName() + File.separator + i + File.separator + esv.getName());
+          backupNeeded = readESV(checkThisESV, readPhScale, i);
         }
-
-        File checkESV = new File(rankDir.getParent() + File.separator + i + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + ".esv");
-        File checkDYN = new File(rankDir.getParent() + File.separator + i + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + ".dyn");
-        File checkBackupESV = new File(rankDir.getParent() + File.separator + i + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + "_backup.esv");
-        File checkBackupDYN = new File(rankDir.getParent() + File.separator + i + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + "_backup.dyn");
-
-        if(!(checkDYN.exists() && checkESV.exists())) {
-          logger.info(" Rank " + i + " does not contain the correct .dyn or .esv.");
-          restart = false;
+        if(!backupNeeded){
+          extendedSystem.readESVInfoFrom(esv);
         }
-        if(!(checkBackupDYN.exists() && checkBackupESV.exists())){
-          logger.info(" Restart not backed up on rank " + i);
-          backedUp = false;
+      }
+
+      // Read backup restarts
+      if(backupNeeded && checkForRestartFiles(parent, esvBackup.getName()) && checkForRestartFiles(parent, dynBackup.getName())){
+        for(int i = 0; i < nReplicas; i++){
+          File checkThisESV = new File(parent.getName() + File.separator + i + File.separator + esvBackup.getName());
+          if(readESV(checkThisESV, readPhScale, i)){
+            return false;
+          }
         }
-        if(!restart && !backedUp){
-          break;
-        }
+        extendedSystem.readESVInfoFrom(esvBackup);
+      }
+    }
+    else{
+      return false;
+    }
 
-        // Read ESV or backupESV file in each directory on restart
-        try{
-          File readFile = backUpUsed && backedUp ? checkBackupESV : checkESV;
-          BufferedReader br = new BufferedReader(new FileReader(readFile));
-          String data = br.readLine();
-          while(data != null){
-            List<String> tokens = Arrays.asList(data.split(" +"));
-            if(tokens.contains("pH:")){
-              double pHOfRankI = Double.parseDouble(tokens.get(tokens.indexOf("pH:") + 1));
+    logger.info(" Rank " + rank + " staring at pH " + pHScale[rank2Ph[rank]]);
+    extendedSystem.setConstantPh(pHScale[rank2Ph[rank]]);
+    logger.info("Rank " + rank + " starting hist:");
+    extendedSystem.writeLambdaHistogram();
 
-              if(rank == 0){
-                logger.info("Current list: " + readPhScale + "  New Value: " + pHOfRankI);
-              }
+    return true;
+  }
 
-              // Handle difficult restart conditions
-              if(readPhScale.stream().anyMatch(d -> (Math.abs(d/pHOfRankI - 1) < 0.00001))){
-                logger.warning(" Duplicate pH value found on rank " + i + ". Trying to read backups.");
-                if(backedUp && !backUpUsed) {
-                  readPhScale = new ArrayList<>();
-                  i = -1; // look through all ranks again
-                  backUpUsed = true;
-                } else {
-                  restart = false;
-                  backUpUsed = false;
-                }
-                break;
-              }
-              else {
-                readPhScale.add(pHOfRankI);
-              }
+  /**
+   * Reads an esv file to find the number of steps logged and if the pH matches the others in readPhScale
+   * @param esv file to read
+   * @return if the pH of the file is duplicated
+   */
+  private boolean readESV(File esv, ArrayList<Double> readPhScale, int rank){
+    try(BufferedReader br = new BufferedReader(new FileReader(esv))){
+      String data = br.readLine();
+      while(data != null) {
+        List<String> tokens = Arrays.asList(data.split(" +"));
+        if(tokens.contains("pH:")){
+          double pHOfRankI = Double.parseDouble(tokens.get(tokens.indexOf("pH:") + 1));
 
-              // Set up map
-              for(int j = 0; j < pHScale.length; j++){
-                if(pHScale[j] == pHOfRankI){
-                  rank2Ph[i] = j;
-                  pH2Rank[j] = i;
-                }
-              }
-
-              // Find restart step
-              br.readLine();
-              br.readLine();
-              int sum = 0;
-              for(int j = 0; j < 10; j++){ // 10 titr windows
-                data = br.readLine().trim();
-                tokens = List.of(data.split(" +"));
-                for(int k = 0; k < 10; k++){ // 10 tautomer windows
-                  sum += Integer.parseInt(tokens.get(k + 1));
-                }
-              }
-
-              // Set up restart step or lower restart step if necessary
-              if(i == 0) {
-                restartStep = sum;
-                logger.info(" Restart already completed " + restartStep + " steps.");
-              }
-              else if(restartStep != sum){
-                logger.warning(" Restart received uneven sums. Starting from the lowest one.");
-                logger.info(" Restart Step Current: " + restartStep);
-                restartStep = Math.min(sum, restartStep);
-                logger.info(" Restart Step New: " + restartStep);
-              }
+          // Set up map
+          for(int j = 0; j < pHScale.length; j++){
+            if(pHScale[j] == pHOfRankI){
+              rank2Ph[rank] = j;
+              pH2Rank[j] = rank;
             }
-            data = br.readLine();
           }
-          br.close();
-        }
-        catch (IOException e) {
-          logger.warning(" Error reading " + checkESV.getAbsolutePath());
-          restart = false;
-          if(!backedUp && backUpUsed) {
-            break;
+
+          // Check pH list for duplicates
+          if(readPhScale.stream().anyMatch(d -> (Math.abs(d/pHOfRankI - 1) < 0.00001))){
+            logger.warning(" Duplicate pH value found in file: " + esv.getAbsolutePath());
+            return true;
           }
-        }
-        catch (IndexOutOfBoundsException e){
-          logger.warning(" pH values changed or could not be found.");
-          restart = false;
-          backUpUsed = false;
-          break;
-        }
-      }
 
-    }
+          // Find restart steps
+          br.readLine();
+          br.readLine();
+          int sum = 0;
+          for(int j = 0; j < 10; j++){ // 10 titr windows
+            data = br.readLine().trim();
+            tokens = List.of(data.split(" +"));
+            for(int k = 0; k < 10; k++){ // 10 tautomer windows
+              sum += Integer.parseInt(tokens.get(k + 1));
+            }
+          }
 
-    // Necessary waiting so that ranks are not trying to read files already deleted in following code
-    try {
-      world.allGather(myParametersBuf, parametersBuf);
-    } catch (IOException ex) {
-      String message = " Replica Exchange file allGather failed.";
-      logger.log(Level.SEVERE, message, ex);
-    }
-
-    if(restart) {
-      replica.setTrajectoryFiles(new File[]{new File(rankDir.getPath() + File.separator + FilenameUtils.removeExtension((structureFile.getName())) + ".arc")});
-      logger.info(" Rank " + rank + " staring at pH " + pHScale[rank2Ph[rank]]);
-      extendedSystem.setConstantPh(pHScale[rank2Ph[rank]]);
-      if(backUpUsed) {
-        extendedSystem.setESVFile(esvBackup);
-        if(dyn.delete() && esv.delete()) {
-          if(esvBackup.renameTo(esv) && dynBackup.renameTo(dyn)) {
-            dyn = dynBackup;
-            esv = esvBackup;
+          if(restartStep != 0){
+            restartStep = sum;
+          }
+          else if(restartStep != sum){
+            logger.warning(" Restart received uneven sums. Starting from the lowest one.");
+            logger.info(" Restart Step Current: " + restartStep);
+            restartStep = Math.min(sum, restartStep);
+            logger.info(" Restart Step New: " + restartStep);
           }
         }
+        data = br.readLine();
       }
-
-      // Set restart files
-      extendedSystem.setESVFile(esv);
-      replica.setFallbackDynFile(dyn);
-      if(openMM != null) {
-        openMM.setAutomaticWriteouts(false);
-      }
-
-      // Quick insurance
-      esvBackup = new File(rankDir.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + "_backup.esv");
-      dynBackup = new File(rankDir.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + "_backup.dyn");
-
-      logger.info("Rank " + rank + " starting hist:");
-      extendedSystem.writeLambdaHistogram();
+      return false;
     }
-    return restart || backUpUsed;
+    catch (IOException | IndexOutOfBoundsException e){
+      return false;
+    }
+  }
+
+  /**
+   * Looks through directories to see if they all contain the right file
+   * @return whether they all contain the correct file
+   */
+  private boolean checkForRestartFiles(File parent, String fileNameWithExtension){
+    File searchFile;
+    for(int i = 0; i < nReplicas; i++){
+      searchFile = new File(parent.getAbsolutePath() + i + fileNameWithExtension);
+      if(!searchFile.exists()){
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
@@ -372,12 +344,9 @@ public class PhReplicaExchange implements Terminatable {
     terminate = false;
     replica.setRestartFrequency(cycles * (titrSteps + confSteps) * replica.dt + 100);
 
-    if(extendedSystem.guessTitrState){
-      extendedSystem.reGuessLambdas();
-    }
-
     int startCycle = 0;
     if(initTitrDynamics > 0 && !restart) {
+      extendedSystem.reGuessLambdas();
       extendedSystem.setFixedTitrationState(true);
       extendedSystem.setFixedTautomerState(true);
       replica.dynamic(initTitrDynamics, timeStep, printInterval, trajInterval, temp, true, dyn);
@@ -418,10 +387,7 @@ public class PhReplicaExchange implements Terminatable {
       // Set backups in case job is killed at bad time
       DYNFilter dynFilter = new DYNFilter(replica.getAssemblies()[0].getName());
       dynFilter.writeDYN(dynBackup, replica.getAssemblies()[0].getCrystal(), replica.x, replica.v, replica.a, replica.aPrevious);
-      extendedSystem.setESVFile(esvBackup);
-      extendedSystem.writeRestart();
-      extendedSystem.setESVFile(esv);
-
+      extendedSystem.writeESVInfoTo(esvBackup);
       replica.writeRestart();
 
       logger.info(" ");

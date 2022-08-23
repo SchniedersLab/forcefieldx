@@ -1390,11 +1390,33 @@ public class ExtendedSystem implements Potential {
         return titrationUtils;
     }
 
-    public void setESVFile(File esvFile){
+    /**
+     * Sets the restartFile field of this extended system to the passed file. This does not read the file, it only
+     * determines where the writeRestartFile() will write to.
+     * @param esvFile
+     */
+    public void setRestartFile(File esvFile){
         restartFile = esvFile;
-        if(!esvFilter.readESV(esvFile, thetaPosition, thetaVelocity, thetaAccel, esvHistogram)){
-            logger.info(" Setting ESV hist to " + esvFile.getAbsolutePath() + " failed. This behavior is expected if not a restart.");
-        }
+    }
+
+    /**
+     * Writes out the current state of the extended system to the specified file.
+     * @param esvFile file to be written to
+     * @return whether the read was successful or not
+     */
+    public boolean writeESVInfoTo(File esvFile){
+        return esvFilter.writeESV(esvFile, thetaPosition, thetaVelocity, thetaAccel, titratingResidueList, esvHistogram, constantSystemPh);
+    }
+
+    /**
+     * Method overwrites whatever is in the extended system at the time with the read data.
+     *
+     * CAUTION: If the old data is not written out to file before this is called, the data will be lost.
+     * @param esvFile esvFile to read
+     * @return whether the read was successful or not
+     */
+    public boolean readESVInfoFrom(File esvFile){
+        return esvFilter.readESV(esvFile, thetaPosition, thetaVelocity, thetaAccel, esvHistogram);
     }
 
     /**
