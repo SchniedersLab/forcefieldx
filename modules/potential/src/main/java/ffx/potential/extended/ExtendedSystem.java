@@ -942,7 +942,7 @@ public class ExtendedSystem implements Potential {
      * Guess the lambda states for each extended residue
      */
     public void reGuessLambdas() {
-        logger.info("Reinitializing lambdas to match RepEx window pH");
+        logger.info(" Reinitializing lambdas to match RepEx window pH");
         for (Residue residue : titratingResidueList) {
             double lambda = initialTitrationState(residue, 1.0);
             setTitrationLambda(residue, lambda);
