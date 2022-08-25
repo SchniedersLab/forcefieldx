@@ -173,7 +173,9 @@ public class PhReplicaExchange implements Terminatable {
             List<String> tokens = Arrays.asList(data.split(" +"));
             if(tokens.contains("pH:")){
               double pHOfRankI = Double.parseDouble(tokens.get(tokens.indexOf("pH:") + 1));
-              if(readPhScale.contains(pHOfRankI)){
+              //readPhScale.stream().anyMatch(d -> (Math.abs(d/pHOfRankI - 1) < 0.00001));
+              //if(readPhScale.contains(pHOfRankI)){
+              if(readPhScale.stream().anyMatch(d -> (Math.abs(d/pHOfRankI - 1) < 0.00001))){
                 logger.warning(" Duplicate pH values found. ");
                 logger.warning(" Restart is unable to run due to a loss of data on program killing. ");
                 restart = false;
@@ -332,7 +334,9 @@ public class PhReplicaExchange implements Terminatable {
             List<String> tokens = Arrays.asList(data.split(" +"));
             if(tokens.contains("pH:")){
               double pHOfRankI = Double.parseDouble(tokens.get(tokens.indexOf("pH:") + 1));
-              if(readPhScale.contains(pHOfRankI)){
+              //readPhScale.stream().anyMatch(d -> (Math.abs(d/pHOfRankI - 1) < 0.00001));
+              //if(readPhScale.contains(pHOfRankI)){
+              if(readPhScale.stream().anyMatch(d -> (Math.abs(d/pHOfRankI - 1) < 0.00001))){
                 logger.warning(" Duplicate pH values found. ");
                 logger.warning(" Restart is unable to run due to a loss of data on program killing. ");
                 restart = false;
