@@ -1405,6 +1405,7 @@ public class ExtendedSystem implements Potential {
      * @return whether the read was successful or not
      */
     public boolean writeESVInfoTo(File esvFile){
+        logger.info("Writing pH Dynamics out to: " + esvFile.getParentFile().getName() + File.separator + esvFile.getName());
         return esvFilter.writeESV(esvFile, thetaPosition, thetaVelocity, thetaAccel, titratingResidueList, esvHistogram, constantSystemPh);
     }
 
