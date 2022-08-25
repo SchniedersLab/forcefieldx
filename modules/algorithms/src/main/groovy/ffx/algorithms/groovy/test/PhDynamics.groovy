@@ -103,9 +103,9 @@ class PhDynamics extends AlgorithmsScript {
           description = 'pH gap between replica exchange windows.')
   double pHGap = 1
 
-  @Option(names = ['--initTitrDynamics'], paramLabel = '1000',
+  @Option(names = ['--initTitrDynamics'], paramLabel = '10000',
           description = 'Number of initialization steps to take before replica exchange windows start.')
-  int initTitrDynamics = 1000
+  int initTitrDynamics = 10000
 
   @Option(names = "--sort", paramLabel = "false",
           description = "Sort archive files by pH")
@@ -179,7 +179,7 @@ class PhDynamics extends AlgorithmsScript {
     }
 
     // Initialize and attach extended system first.
-    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, esv)
+    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, pH, esv)
     esvSystem.setConstantPh(pH)
     potential.attachExtendedSystem(esvSystem)
 
@@ -328,6 +328,9 @@ class PhDynamics extends AlgorithmsScript {
     BufferedReader[] bufferedReaders = new BufferedReader[nReplicas]
     File output = new File(parent + File.separator + myRank + File.separator + arcName + "_sorted")
     BufferedWriter out = new BufferedWriter(new FileWriter(output))
+
+    // Find other archives and append them together
+
 
     // Get snap length from first directory
     File temp = new File(parent + File.separator + 0 + File.separator + arcName)

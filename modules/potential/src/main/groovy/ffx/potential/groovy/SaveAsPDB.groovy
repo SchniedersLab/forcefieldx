@@ -127,7 +127,7 @@ class SaveAsPDB extends PotentialScript {
     ExtendedSystem esvSystem = null
 
     if(openFilter instanceof XYZFilter && extended){
-      esvSystem = new ExtendedSystem(activeAssembly, null)
+      esvSystem = new ExtendedSystem(activeAssembly, 7.4, null)
       openFilter = new XPHFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties(), esvSystem)
       openFilter.readFile()
       logger.info("Reading ESV lambdas from XPH file")
