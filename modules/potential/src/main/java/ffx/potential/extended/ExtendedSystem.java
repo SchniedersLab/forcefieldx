@@ -942,7 +942,7 @@ public class ExtendedSystem implements Potential {
      * Guess the lambda states for each extended residue
      */
     public void reGuessLambdas() {
-        logger.info("Reinitializing lambdas to match RepEx window pH");
+        logger.info(" Reinitializing lambdas to match RepEx window pH");
         for (Residue residue : titratingResidueList) {
             double lambda = initialTitrationState(residue, 1.0);
             setTitrationLambda(residue, lambda);
@@ -973,7 +973,7 @@ public class ExtendedSystem implements Potential {
      * @param residueIndex titrating residue index
      * @return the current deprotonated/protonated ratio for a residue
      */
-    public double getESVProtonationRatio(int residueIndex){
+    public double getESVProtonationFraction(int residueIndex){
         double protonatedSum = 0;
         double deprotonatedSum = 0;
 
@@ -981,7 +981,7 @@ public class ExtendedSystem implements Potential {
             deprotonatedSum += esvHistogram[residueIndex][0][i];
             protonatedSum += esvHistogram[residueIndex][esvHistogram[residueIndex].length-1][i];
         }
-        return deprotonatedSum / protonatedSum;
+        return deprotonatedSum / (protonatedSum + deprotonatedSum);
     }
 
     /**
@@ -989,7 +989,7 @@ public class ExtendedSystem implements Potential {
      */
     public void updateProtonationRatios(){
         for(int i = 0; i < esvHistogram.length; i++){
-            esvProtonationRatios[i].add(this.getESVProtonationRatio(i));
+            esvProtonationRatios[i].add(this.getESVProtonationFraction(i));
         }
     }
 
@@ -999,7 +999,12 @@ public class ExtendedSystem implements Potential {
     public void printProtonationRatios(){
         for(int i = 0; i < esvProtonationRatios.length; i++){
             String resInfo = titratingResidueList.get(i).toString();
-            logger.info(resInfo + " Deprotonated/Protonated fractions through snaps: " + esvProtonationRatios[i].toString());
+            logger.info(resInfo + " Deprotonated/(Protonated+Deprotonated) fractions through snaps: ");
+            for(int j = 0; j < esvProtonationRatios[i].size()/10; j++){
+                for(int k = 0; k < 10; k++){
+                    logger.info(String.valueOf(esvProtonationRatios[i].get(j * 10 + k)));
+                }
+            }
         }
     }
 
@@ -1385,11 +1390,33 @@ public class ExtendedSystem implements Potential {
         return titrationUtils;
     }
 
-    public void setESVFile(File esvFile){
+    /**
+     * Sets the restartFile field of this extended system to the passed file. This does not read the file, it only
+     * determines where the writeRestartFile() will write to.
+     * @param esvFile
+     */
+    public void setRestartFile(File esvFile){
         restartFile = esvFile;
-        if(!esvFilter.readESV(esvFile, thetaPosition, thetaVelocity, thetaAccel, esvHistogram)){
-            logger.info(" Setting ESV hist to " + esvFile.getAbsolutePath() + " failed. This behavior is expected if not a restart.");
-        }
+    }
+
+    /**
+     * Writes out the current state of the extended system to the specified file.
+     * @param esvFile file to be written to
+     * @return whether the read was successful or not
+     */
+    public boolean writeESVInfoTo(File esvFile){
+        return esvFilter.writeESV(esvFile, thetaPosition, thetaVelocity, thetaAccel, titratingResidueList, esvHistogram, constantSystemPh);
+    }
+
+    /**
+     * Method overwrites whatever is in the extended system at the time with the read data.
+     *
+     * CAUTION: If the old data is not written out to file before this is called, the data will be lost.
+     * @param esvFile esvFile to read
+     * @return whether the read was successful or not
+     */
+    public boolean readESVInfoFrom(File esvFile){
+        return esvFilter.readESV(esvFile, thetaPosition, thetaVelocity, thetaAccel, esvHistogram);
     }
 
     /**
