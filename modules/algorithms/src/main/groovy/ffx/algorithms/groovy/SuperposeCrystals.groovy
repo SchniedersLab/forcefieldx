@@ -39,7 +39,6 @@ package ffx.algorithms.groovy
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.math.RunningStatistics
-import ffx.potential.MolecularAssembly
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.utils.ProgressiveAlignmentOfCrystals
 import picocli.CommandLine.Command
@@ -150,11 +149,11 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static int save
 
   /**
-   * -p or --permute Compare all unique AUs between each crystal.
+   * --st or --strict Compare all unique AUs between each crystal.
    */
-  @Option(names = ['-p', '--permute'], paramLabel = "false", defaultValue = "false",
-      description = 'Compare all unique AUs between each crystal (more intensive).')
-  private static boolean permute
+  @Option(names = ['--st', '--strict'], paramLabel = "false", defaultValue = "false",
+      description = 'More intensive, less efficient version of PAC.')
+  private static boolean strict
 
   /**
    * --lm or --lowMemory Slower comparisons, but reduces memory usage.
@@ -315,7 +314,7 @@ class SuperposeCrystals extends AlgorithmsScript {
 
     runningStatistics =
         pac.comparisons(numAU, inflationFactor, matchTol, zPrime, zPrime2, unsharedA, unsharedB, alphaCarbons,
-            includeHydrogen, massWeighted, crystalPriority, permute, save,
+            includeHydrogen, massWeighted, crystalPriority, strict, save,
             restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym, lowMemory, pacFilename)
 
     return this
