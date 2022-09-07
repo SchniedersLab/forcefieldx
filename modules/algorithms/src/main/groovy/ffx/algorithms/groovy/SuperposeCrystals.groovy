@@ -39,12 +39,9 @@ package ffx.algorithms.groovy
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.numerics.math.RunningStatistics
-import ffx.potential.MolecularAssembly
-import ffx.potential.cli.TopologyOptions
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.utils.ProgressiveAlignmentOfCrystals
 import picocli.CommandLine.Command
-import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
@@ -81,7 +78,7 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * --if or --inflationFactor Inflation factor used to determine replicates expansion.
    */
-  @Option(names = ['--if', '--inflationFactor'], paramLabel = '13.0', defaultValue = '13.0',
+  @Option(names = ['--if', '--inflationFactor'], paramLabel = '5.0', defaultValue = '5.0',
       description = 'Inflation factor used to determine replicates expansion (IF * nAU in replicates).')
   private double inflationFactor
 
@@ -126,7 +123,7 @@ class SuperposeCrystals extends AlgorithmsScript {
   /**
    * --mt or --matchTolerance Tolerance to determine if two AUs are different.
    */
-  @Option(names = ['--mt', '--moleculeTolerance'], paramLabel = '0.002', defaultValue = '0.002',
+  @Option(names = ['--mt', '--moleculeTolerance'], paramLabel = '0.0015', defaultValue = '0.0015',
           description = "Tolerance to determine if two AUs are different.")
   private double matchTol
 
@@ -152,11 +149,11 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static int save
 
   /**
-   * -p or --permute Compare all unique AUs between each crystal.
+   * --st or --strict Compare all unique AUs between each crystal.
    */
-  @Option(names = ['-p', '--permute'], paramLabel = "false", defaultValue = "false",
-      description = 'Compare all unique AUs between each crystal (more intensive).')
-  private static boolean permute
+  @Option(names = ['--st', '--strict'], paramLabel = "false", defaultValue = "false",
+      description = 'More intensive, less efficient version of PAC.')
+  private static boolean strict
 
   /**
    * --lm or --lowMemory Slower comparisons, but reduces memory usage.
@@ -282,13 +279,11 @@ class SuperposeCrystals extends AlgorithmsScript {
 
     algorithmFunctions.openAll(filenames.get(0))
     baseFilter = algorithmFunctions.getFilter()
-    // Example atoms to determine single molecule characteristics (e.g. number of atoms, hydrogen, etc.)
-    MolecularAssembly activeAssembly = baseFilter.getActiveMolecularSystem()
 
     // Apply atom selections
     if(unshared != null && !unshared.isEmpty()){
-      unsharedA = unshared;
-      unsharedB = unshared;
+      unsharedA = unshared
+      unsharedB = unshared
     }
 
     // Number of files to read in.
@@ -319,7 +314,7 @@ class SuperposeCrystals extends AlgorithmsScript {
 
     runningStatistics =
         pac.comparisons(numAU, inflationFactor, matchTol, zPrime, zPrime2, unsharedA, unsharedB, alphaCarbons,
-            includeHydrogen, massWeighted, crystalPriority, permute, save,
+            includeHydrogen, massWeighted, crystalPriority, strict, save,
             restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym, lowMemory, pacFilename)
 
     return this

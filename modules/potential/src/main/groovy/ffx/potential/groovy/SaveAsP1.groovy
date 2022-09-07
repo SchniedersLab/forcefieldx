@@ -40,6 +40,7 @@ package ffx.potential.groovy
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.SaveOptions
 import ffx.potential.parsers.SystemFilter
+import picocli.CommandLine.Option
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
@@ -60,6 +61,13 @@ class SaveAsP1 extends PotentialScript {
 
   @Mixin
   SaveOptions saveOptions
+
+  /**
+   * --lmn or --replicatesVector Number of unit cells in replicates crystal.
+   */
+  @Option(names = ['--lmn', '--replicatesVector'], paramLabel = "", defaultValue = "",
+          description = "Number of unit cells in replicates crystal.")
+  private String lmn
 
   /**
    * The final argument is a PDB or XYZ coordinate file.
@@ -113,17 +121,40 @@ class SaveAsP1 extends PotentialScript {
     String name = getName(filename)
     String ext = getExtension(name)
     name = removeExtension(name)
-
+    String[] tokens = lmn.trim().replaceAll(" +","").split(",")
+    int numTokens = tokens.length
+    int[] replicatesVector = new int[3]
+    boolean noReplicate
+    if(numTokens == 0 || numTokens == 1 && tokens[0].isEmpty()){
+      noReplicate = true
+    }else if(numTokens == 1){
+      noReplicate = false
+      replicatesVector[0] = Integer.parseInt(tokens[0])
+      replicatesVector[1] =  Integer.parseInt(tokens[0])
+      replicatesVector[2] = Integer.parseInt(tokens[0])
+    }else if(numTokens == 3){
+      noReplicate = false
+      replicatesVector[0] = Integer.parseInt(tokens[0])
+      replicatesVector[1] =  Integer.parseInt(tokens[1])
+      replicatesVector[2] = Integer.parseInt(tokens[2])
+    }else{
+      logger.warning(" Replicates indices could not be parsed. Saving as P1.")
+      noReplicate = true;
+    }
     if (ext.toUpperCase().contains("XYZ")) {
       File saveLocation = SystemFilter.version(new File(dirString + name + ".xyz"))
       logger.info(" Saving P1 file to: " + saveLocation)
-      potentialFunctions.saveAsXYZinP1(activeAssembly, saveLocation)
+
+      if (noReplicate) {
+        potentialFunctions.saveAsXYZinP1(activeAssembly, saveLocation)
+      } else {
+        potentialFunctions.saveAsXYZasReplicates(activeAssembly, saveLocation, replicatesVector)
+      }
     } else {
       File saveLocation = SystemFilter.version(new File(dirString + name + ".pdb"))
       logger.info(" Saving symmetry mates file to: " + saveLocation)
       potentialFunctions.saveAsPDBinP1(activeAssembly, saveLocation)
     }
-
     return this
   }
 }

@@ -298,6 +298,8 @@ public class SymOp {
   private static final int YY = 1;
   /** A mask equal to 2 for Z-coordinates. */
   private static final int ZZ = 2;
+  /** Replicates position for the given symmetry operator (LxMxN). */
+  public final int[] replicatesVector;
 
   /**
    * The SymOp constructor using a rotation matrix and translation vector.
@@ -308,6 +310,20 @@ public class SymOp {
   public SymOp(double[][] rot, double[] tr) {
     this.rot = rot;
     this.tr = tr;
+    replicatesVector = new int[]{0, 0, 0};
+  }
+
+  /**
+   * The SymOp constructor using a rotation matrix and translation vector.
+   *
+   * @param rot The rotation matrix.
+   * @param tr The translation vector.
+   * @param replicatesVector Describes symmetry operators location within replicates crystal.
+   */
+  public SymOp(double[][] rot, double[] tr, int[] replicatesVector) {
+    this.rot = rot;
+    this.tr = tr;
+    this.replicatesVector = replicatesVector;
   }
 
 
@@ -332,6 +348,8 @@ public class SymOp {
     tr[0] = m[0][3] / m[3][3];
     tr[1] = m[1][3] / m[3][3];
     tr[2] = m[2][3] / m[3][3];
+
+    replicatesVector = new int[]{0, 0, 0};
   }
 
   /**
