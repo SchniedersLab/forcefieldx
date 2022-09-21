@@ -342,6 +342,34 @@ public class PotentialsUtils implements PotentialsFunctions {
 
   /**
    * {@inheritDoc}
+   * <p>Saves the current state of a MolecularAssembly to an XYZ file as a replicated crystal.
+   */
+  @Override
+  public void saveAsXYZasReplicates(MolecularAssembly assembly, File file, int[] lmn) {
+    if (assembly == null) {
+      logger.info(" Assembly to save was null.");
+    } else if (file == null) {
+      logger.info(" No valid file provided to save assembly to.");
+    } else {
+      XYZFilter filter = new XYZFilter(file, assembly, null, null);
+      ForceField forceField = assembly.getForceField();
+      final double a = forceField.getDouble("A_AXIS", 10.0);
+      final double b = forceField.getDouble("B_AXIS", a);
+      final double c = forceField.getDouble("C_AXIS", a);
+      final double alpha = forceField.getDouble("ALPHA", 90.0);
+      final double beta = forceField.getDouble("BETA", 90.0);
+      final double gamma = forceField.getDouble("GAMMA", 90.0);
+      final String spacegroup = forceField.getString("SPACEGROUP", "P1");
+      Crystal crystal = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
+      if (!filter.writeFileAsP1(file, false, crystal, lmn, null)) {
+        logger.info(format(" Save failed for %s", assembly));
+      }
+      lastFilter = filter;
+    }
+  }
+
+  /**
+   * {@inheritDoc}
    *
    * <p>Saves the current state of a MolecularAssembly to a PDB file.
    */

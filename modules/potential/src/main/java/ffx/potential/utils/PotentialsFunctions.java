@@ -224,6 +224,15 @@ public interface PotentialsFunctions {
   void saveAsXYZinP1(MolecularAssembly assembly, File file);
 
   /**
+   * Saves the current state of a MolecularAssembly to an XYZ file as a replicates crystal.
+   *
+   * @param assembly MolecularAssembly to save
+   * @param file Destination .xyz
+   * @param replicatesVector Dimensions for replicates crystal.
+   */
+  void saveAsXYZasReplicates(MolecularAssembly assembly, File file, int[] replicatesVector);
+
+  /**
    * Saves the current state of a MolecularAssembly to a PDB file.
    *
    * @param assembly MolecularAssembly to save

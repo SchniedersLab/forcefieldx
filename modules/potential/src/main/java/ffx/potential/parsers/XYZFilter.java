@@ -770,8 +770,11 @@ public class XYZFilter extends SystemFilter {
    * @param extraLines Additional lines to print in the header.
    * @return a boolean.
    */
+  public boolean writeFileAsP1(File saveFile, boolean append, Crystal crystal, String[] extraLines){
+    return writeFileAsP1(saveFile, append, crystal, new int[]{1,1,1}, extraLines);
+  }
   public boolean writeFileAsP1(
-      File saveFile, boolean append, Crystal crystal, String[] extraLines) {
+      File saveFile, boolean append, Crystal crystal, int[] lmn, String[] extraLines) {
     if (saveFile == null) {
       return false;
     }
@@ -785,9 +788,15 @@ public class XYZFilter extends SystemFilter {
 
     try (FileWriter fw = new FileWriter(newFile, append && newFile.exists());
         BufferedWriter bw = new BufferedWriter(fw)) {
-      int nSymm = crystal.spaceGroup.symOps.size();
+      final int nSymm = crystal.spaceGroup.symOps.size();
       // XYZ File First Line
-      int numberOfAtoms = activeMolecularAssembly.getAtomList().size() * nSymm;
+      final int l = lmn[0];
+      final int m = lmn[1];
+      final int n = lmn[2];
+      final int numReplicates = l * m * n;
+
+      int numberOfAtoms = activeMolecularAssembly.getAtomList().size() * nSymm * numReplicates;
+      activeMolecularAssembly.moveAllIntoUnitCell();
       StringBuilder sb =
           new StringBuilder(format("%7d  %s", numberOfAtoms, activeMolecularAssembly.toString()));
       if (extraLines != null) {
@@ -805,36 +814,52 @@ public class XYZFilter extends SystemFilter {
             uc.a, uc.b, uc.c, uc.alpha, uc.beta, uc.gamma);
         bw.write(params);
       }
-
       Atom a2;
       StringBuilder line;
       StringBuilder[] lines = new StringBuilder[numberOfAtoms];
       // XYZ File Atom Lines
       Atom[] atoms = activeMolecularAssembly.getAtomArray();
+      int atomsLength = atoms.length;
+      int numInUC = atomsLength * nSymm;
       double[] xyz = new double[3];
-      for (int iSym = 0; iSym < nSymm; iSym++) {
-        SymOp symOp = crystal.spaceGroup.getSymOp(iSym);
-        int indexOffset = iSym * atoms.length;
-        for (Atom a : atoms) {
-          int index = a.getIndex() + indexOffset;
-          String id = a.getAtomType().name;
-          if (vdwH) {
-            a.getRedXYZ(xyz);
-          } else {
-            xyz[0] = a.getX();
-            xyz[1] = a.getY();
-            xyz[2] = a.getZ();
+      int replicatesOffset = 0;
+      for(int i = 0; i < l; i++){
+        for(int j = 0; j < m; j++){
+          for(int k = 0; k < n; k++){
+            for (int iSym = 0; iSym < nSymm; iSym++) {
+              SymOp symOp = crystal.spaceGroup.getSymOp(iSym);
+              int indexOffset = iSym * atomsLength + replicatesOffset * numInUC;
+              for (Atom a : atoms) {
+                int index = a.getIndex() + indexOffset;
+                String id = a.getAtomType().name;
+                if (vdwH) {
+                  a.getRedXYZ(xyz);
+                } else {
+                  xyz[0] = a.getX();
+                  xyz[1] = a.getY();
+                  xyz[2] = a.getZ();
+                }
+                crystal.applySymOp(xyz, xyz, symOp);
+                if(i > 0 || j > 0 || k > 0) {
+                  double[] translation = new double[]{i, j, k};
+                  crystal.getUnitCell().toCartesianCoordinates(translation, translation);
+                  xyz[0] += translation[0];
+                  xyz[1] += translation[1];
+                  xyz[2] += translation[2];
+                }
+                int type = a.getType();
+                line =
+                    new StringBuilder(
+                        format("%7d %3s%14.8f%14.8f%14.8f%6d", index, id, xyz[0], xyz[1], xyz[2], type));
+                for (Bond b : a.getBonds()) {
+                  a2 = b.get1_2(a);
+                  line.append(format("%8d", a2.getIndex() + indexOffset));
+                }
+                lines[index - 1] = line.append("\n");
+              }
+            }
+            replicatesOffset++;
           }
-          crystal.applySymOp(xyz, xyz, symOp);
-          int type = a.getType();
-          line =
-              new StringBuilder(
-                  format("%7d %3s%14.8f%14.8f%14.8f%6d", index, id, xyz[0], xyz[1], xyz[2], type));
-          for (Bond b : a.getBonds()) {
-            a2 = b.get1_2(a);
-            line.append(format("%8d", a2.getIndex() + indexOffset));
-          }
-          lines[index - 1] = line.append("\n");
         }
       }
       try {
