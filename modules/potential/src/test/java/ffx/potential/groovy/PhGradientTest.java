@@ -231,7 +231,7 @@ public class PhGradientTest extends PotentialTest {
                 -22.44984448,
                 8280,
                 -8.00000000,
-                -150.27678000
+                -151.18988000
             }
         });
   }
