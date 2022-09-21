@@ -915,18 +915,14 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    */
   private void buildNeighborList(Atom[] atoms) {
     neighborList.setAtoms(atoms);
-    if (esvTerm) {
-      neighborList.buildList(reduced, neighborLists, null, neighborListOnly, true);
-    } else {
-      neighborListOnly = true;
-      try {
-        parallelTeam.execute(vanDerWaalsRegion);
-      } catch (Exception e) {
-        String message = " Fatal exception expanding coordinates.\n";
-        logger.log(Level.SEVERE, message, e);
-      }
-      neighborListOnly = false;
+    neighborListOnly = true;
+    try {
+      parallelTeam.execute(vanDerWaalsRegion);
+    } catch (Exception e) {
+      String message = " Fatal exception expanding coordinates.\n";
+      logger.log(Level.SEVERE, message, e);
     }
+    neighborListOnly = false;
   }
 
   /**

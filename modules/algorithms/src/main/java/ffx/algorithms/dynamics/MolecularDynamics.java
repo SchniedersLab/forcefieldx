@@ -596,9 +596,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
       logger.warning("An ExtendedSystem is already attached to this MD!");
     }
     esvSystem = system;
-    this.esvIntegrator = new Stochastic(esvSystem.getThetaFriction(), esvSystem.getExtendedResidueList().size(), esvSystem.getThetaPosition(),
+    this.esvIntegrator = new Stochastic(esvSystem.getThetaFriction(), esvSystem.getNumberOfVariables(), esvSystem.getThetaPosition(),
             esvSystem.getThetaVelocity(), esvSystem.getThetaAccel(), esvSystem.getThetaMassArray());
-    this.esvThermostat = new Adiabatic(esvSystem.getExtendedResidueList().size(), esvSystem.getThetaPosition(),
+    this.esvThermostat = new Adiabatic(esvSystem.getNumberOfVariables(), esvSystem.getThetaPosition(),
             esvSystem.getThetaVelocity(), esvSystem.getThetaMassArray(), potential.getVariableTypes());
     printEsvFrequency = intervalToFreq(reportFreq, "Reporting (logging) interval");
     logger.info(
@@ -958,9 +958,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
           logger.info(format("  Archive file %3d: %s", (i + 1), ai.archiveFile.getName()));
         }
       } else {
-        logger.info(format("  Archive file:     %s", assemblies.get(0).archiveFile.getName()));
+        logger.info(format("  Archive file:     %s", assemblies.get(0).archiveFile.getAbsolutePath()));
       }
-      logger.info(format("  Restart file:     %s", restartFile.getName()));
+      logger.info(format("  Restart file:     %s", restartFile.getAbsolutePath()));
     }
   }
 
@@ -1222,6 +1222,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     String tempString = format("Temp: %.2f", thermostat.getTargetTemperature());
     linesList.add(tempString);
+
+    if (esvSystem != null){
+      String pHString = format("pH: %.2f", esvSystem.getConstantPh());
+      linesList.add(pHString);
+    }
 
     Comm world = Comm.world();
     if (world != null && world.size() > 1) {

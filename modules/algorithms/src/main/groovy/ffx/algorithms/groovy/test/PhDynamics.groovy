@@ -37,19 +37,24 @@
 //******************************************************************************
 package ffx.algorithms.groovy.test
 
+import edu.rit.pj.Comm
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
+import ffx.algorithms.cli.RepExOptions
 import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.MolecularDynamicsOpenMM
+import ffx.algorithms.dynamics.PhReplicaExchange
 import ffx.numerics.Potential
 import ffx.potential.cli.WriteoutOptions
 import ffx.potential.extended.ExtendedSystem
+import ffx.potential.parsers.SystemFilter
+import ffx.potential.parsers.XPHFilter
+import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-
 import static java.lang.String.format
 
 /**
@@ -68,6 +73,9 @@ class PhDynamics extends AlgorithmsScript {
   @Mixin
   WriteoutOptions writeOutOptions
 
+  @Mixin
+  RepExOptions repEx
+
   /**
    * --pH or --constantPH Constant pH value for molecular dynamics.
    */
@@ -81,15 +89,29 @@ class PhDynamics extends AlgorithmsScript {
 
   @Option(names = ['--coordinateSteps'], paramLabel = '100',
           description = 'Number of steps done propagating coordinates only on GPU in one cycle')
-  int coordSteps  = 10
+  int coordSteps  = 100
 
   @Option(names = ['--cycles', '--OMMcycles'], paramLabel = '5',
           description = 'Number of times to cycle between titrating protons on CPU and propagating coordinates only on GPU')
   int cycles  = 5
 
-  @Option(names = ['--titrationReport', '--esvLog'], paramLabel = '0.001 (psec)',
+  @Option(names = ['--titrationReport', '--esvLog'], paramLabel = '0.25 (psec)',
           description = 'Interval in psec to report ESV energy and lambdas when cycling between GPU and CPU.')
-  double titrReport  = 0.001
+  double titrReport  = 0.25
+
+  @Option(names = ['--pHGaps'], paramLabel = '1',
+          description = 'pH gap between replica exchange windows.')
+  double pHGap = 1
+
+  @Option(names = ['--initTitrDynamics'], paramLabel = '10000',
+          description = 'Number of initialization steps to take before replica exchange windows start.')
+  int initTitrDynamics = 10000
+
+  @Option(names = "--sort", paramLabel = "false",
+          description = "Sort archive files by pH")
+  boolean sort = false
+
+
 
   /**
    * One or more filenames.
@@ -145,6 +167,7 @@ class PhDynamics extends AlgorithmsScript {
       logger.info(helpString())
       return this
     }
+
     potential = activeAssembly.getPotentialEnergy()
     // Set the filename.
     String filename = activeAssembly.getFile().getAbsolutePath()
@@ -154,8 +177,9 @@ class PhDynamics extends AlgorithmsScript {
     if (!esv.exists()) {
       esv = null
     }
+
     // Initialize and attach extended system first.
-    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, esv)
+    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, pH, esv)
     esvSystem.setConstantPh(pH)
     potential.attachExtendedSystem(esvSystem)
 
@@ -165,11 +189,19 @@ class PhDynamics extends AlgorithmsScript {
     double[] x = new double[potential.getNumberOfVariables()]
     potential.getCoordinates(x)
     potential.energy(x, true)
+    SystemFilter systemFilter = algorithmFunctions.getFilter()
+    if(systemFilter instanceof XYZFilter){
+      XPHFilter xphFilter = new XPHFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties(), esvSystem)
+      xphFilter.readFile()
+      logger.info("Reading ESV lambdas from XPH file")
+      potential.getCoordinates(x)
+      potential.energy(x, true)
+    }
 
     logger.info("\n Running molecular dynamics on " + filename)
 
     molecularDynamics =
-        dynamicsOptions.getDynamics(writeOutOptions, potential, activeAssembly, algorithmListener)
+            dynamicsOptions.getDynamics(writeOutOptions, potential, activeAssembly, algorithmListener)
 
     molecularDynamics.attachExtendedSystem(esvSystem, dynamicsOptions.report)
 
@@ -179,12 +211,41 @@ class PhDynamics extends AlgorithmsScript {
       dyn = null
     }
 
-    // CPU Constant pH Dynamics
     if (!(molecularDynamics instanceof MolecularDynamicsOpenMM)) {
-      molecularDynamics.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
-          dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temperature, true, dyn)
-      esvSystem.writeLambdaHistogram()
-    } else {
+      if (repEx.repEx) {
+        Comm world = Comm.world()
+        int size = world.size()
+
+        logger.info("\n Running replica exchange molecular dynamics on " + filename)
+        int rank = (size > 1) ? world.rank() : 0
+
+        File structureFile = new File(filename)
+        final String newMolAssemblyFile = structureFile.getParent() + File.separator + rank + File.separator + structureFile.getName()
+        logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
+        activeAssembly.setFile(new File(newMolAssemblyFile))
+        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHGap, dynamicsOptions.temperature, esvSystem)
+
+        long totalSteps = dynamicsOptions.numSteps
+        int nSteps = repEx.replicaSteps
+        int exchangeCycles = (int) (totalSteps / nSteps)
+
+        if (exchangeCycles <= 0) {
+          exchangeCycles = 1
+        }
+
+        pHReplicaExchange.
+                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
+
+        sortMyArc(structureFile, world.size(), pHReplicaExchange.getpHScale()[world.rank()], world.rank())
+
+      } else {
+        // CPU Constant pH Dynamics
+        molecularDynamics.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
+                dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temperature, true, dyn)
+        esvSystem.writeLambdaHistogram()
+      }
+    }
+    else {
       // CPU Constant pH Dynamics alternatives with GPU Dynamics at fixed protonation states.
 
       // Save a reference to the OpenMM Molecular Dynamics
@@ -192,44 +253,149 @@ class PhDynamics extends AlgorithmsScript {
 
       // Create an FFX Molecular Dynamics
       molecularDynamics =
-          dynamicsOptions.getDynamics(writeOutOptions, potential, activeAssembly, algorithmListener,
-              MolecularDynamics.DynamicsEngine.FFX)
+              dynamicsOptions.getDynamics(writeOutOptions, potential, activeAssembly, algorithmListener,
+                      MolecularDynamics.DynamicsEngine.FFX)
       molecularDynamics.attachExtendedSystem(esvSystem, titrReport)
 
-      for (int i = 0; i < cycles; i++) {
-        // Try running on the CPU
-        molecularDynamics.setCoordinates(x)
-        molecularDynamics.dynamic(titrSteps, dynamicsOptions.dt, titrReport, dynamicsOptions.write,
-                dynamicsOptions.temperature, true, dyn)
-        x = molecularDynamics.getCoordinates()
-        esvSystem.writeLambdaHistogram()
+      if (repEx.repEx) {
+        Comm world = Comm.world()
+        int size = world.size()
 
-        // Try running in OpenMM
-        potential.energy(x)
-	    molecularDynamicsOpenMM.setCoordinates(x)
-        if(coordSteps != 0){
-          molecularDynamicsOpenMM.dynamic(coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
+        logger.info("\n Running replica exchange molecular dynamics on " + filename)
+        int rank = (size > 1) ? world.rank() : 0
+        logger.info(" Rank: " + rank.toString())
+
+        File structureFile = new File(filename)
+        File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank))
+
+        final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
+        logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
+        activeAssembly.setFile(new File(newMolAssemblyFile))
+        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHGap, dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
+
+        pHReplicaExchange.
+                sample(cycles, titrSteps, coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
+
+        sortMyArc(structureFile, world.size(), pH, world.rank())
+
+      } else {
+        for (int i = 0; i < cycles; i++) {
+          // Try running on the CPU
+          molecularDynamics.setCoordinates(x)
+          molecularDynamics.dynamic(titrSteps, dynamicsOptions.dt, titrReport, dynamicsOptions.write,
                   dynamicsOptions.temperature, true, dyn)
-          x = molecularDynamicsOpenMM.getCoordinates()
+          x = molecularDynamics.getCoordinates()
+          esvSystem.writeLambdaHistogram()
+
+          // Try running in OpenMM
+          potential.energy(x)
+          molecularDynamicsOpenMM.setCoordinates(x)
+          if (coordSteps != 0) {
+            molecularDynamicsOpenMM.dynamic(coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
+                    dynamicsOptions.temperature, true, dyn)
+            x = molecularDynamicsOpenMM.getCoordinates()
+          }
         }
       }
     }
 
+    esvSystem.printProtonationRatios()
+
     return this
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  List<Potential> getPotentials() {
-    List<Potential> potentials
-    if (potential == null) {
-      potentials = Collections.emptyList()
-    } else {
-      potentials = Collections.singletonList(potential)
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    List<Potential> getPotentials() {
+      List<Potential> potentials
+      if (potential == null) {
+        potentials = Collections.emptyList()
+      } else {
+        potentials = Collections.singletonList(potential)
+      }
+      return potentials
     }
-    return potentials
-  }
 
+    /**
+     * Sort archive files by pH with string parsing
+     */
+  static void sortMyArc(File structureFile, int nReplicas, double pH, int myRank){
+    logger.info(" Sorting archive for rank " + myRank)
+    String parent = structureFile.getParent()
+    String arcName = FilenameUtils.removeExtension(structureFile.getName()) + ".arc"
+    BufferedReader[] bufferedReaders = new BufferedReader[nReplicas]
+    File output = new File(parent + File.separator + myRank + File.separator + arcName + "_sorted")
+    BufferedWriter out = new BufferedWriter(new FileWriter(output))
+
+    // Find other archives and append them together
+
+
+    // Get snap length from first directory
+    File temp = new File(parent + File.separator + 0 + File.separator + arcName)
+    BufferedReader brTemp = new BufferedReader(new FileReader(temp))
+    String data = brTemp.readLine()
+    int snapLength = 0
+    boolean startSnap = false
+    while(data != null){
+      if(data.contains("pH:")){
+        startSnap = !startSnap
+        if(!startSnap){
+          break
+        }
+      }
+      data = brTemp.readLine()
+      snapLength++
+    }
+    int totalLines = snapLength
+    while(data != null) {
+      totalLines++
+      data = brTemp.readLine()
+    }
+    int numSnaps = (int) (totalLines / snapLength)
+
+    // Build file readers
+    for(int i = 0; i < nReplicas; i++) {
+      File file = new File(parent + File.separator + i + File.separator + arcName)
+      bufferedReaders[i] = new BufferedReader(new FileReader(file))
+    }
+    try{
+      // Read all arc files one snap at a time
+      for(int i = 0; i < numSnaps; i++) {
+        for(int j = 0; j < nReplicas; j++) {
+          // Read up to the first line
+          data = bufferedReaders[j].readLine()
+          while(data != null){
+            if(data.contains("pH:")){
+              break
+            }
+            data = bufferedReaders[j].readLine()
+          }
+          // Get pH from line
+          String[] tokens = data.split(" +")
+          double snapPh = Double.parseDouble(tokens[tokens.length-3]) // FIXME: pH is not the last index of tokens 'Rank: #' is
+
+          // Add lines to file if correct, otherwise don't
+          for(int k = 0; k < snapLength-1; k++){
+            if(snapPh == pH){
+              out.write(data + "\n")
+            }// Readlines doesn't work as expected
+            data = bufferedReaders[j].readLine()
+          }
+          if(snapPh == pH){
+            out.write("\n")
+          }
+        }
+      }
+    }catch(IOException e){
+      e.printStackTrace()
+    }
+
+    // Cleanup
+    out.close()
+    for(int i = 0; i < nReplicas; i++){
+      bufferedReaders[i].close()
+    }
+  }
 }

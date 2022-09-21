@@ -37,10 +37,14 @@
 //******************************************************************************
 package ffx.potential.groovy
 
+import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.SaveOptions
+import ffx.potential.extended.ExtendedSystem
+import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
+import ffx.potential.parsers.XPHFilter
 import ffx.potential.parsers.XYZFilter
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -69,6 +73,13 @@ class SaveAsPDB extends PotentialScript {
   @Option(names = ['--wS', '--writeSnapshot'], paramLabel = "0", defaultValue = "0",
       description = 'Write out a specific snapshot.')
   private int writeSnapshot = 0
+
+  /**
+   * --esv Handle an extended system at the bottom of XYZ files using XPHFilter.
+   */
+  @Option(names = ['--esv'], paramLabel = "0", defaultValue = "false",
+          description = 'Handle an ExtendedSystem.')
+  private boolean extended = false
 
   /**
    * The final argument is an XYZ or ARC coordinate file.
@@ -113,6 +124,14 @@ class SaveAsPDB extends PotentialScript {
     // Set the filename.
     filename = activeAssembly.getFile().getAbsolutePath()
     SystemFilter openFilter = potentialFunctions.getFilter()
+    ExtendedSystem esvSystem = null
+
+    if(openFilter instanceof XYZFilter && extended){
+      esvSystem = new ExtendedSystem(activeAssembly, 7.4, null)
+      openFilter = new XPHFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties(), esvSystem)
+      openFilter.readFile()
+      logger.info("Reading ESV lambdas from XPH file")
+    }
 
     logger.info("\n Saving PDB for " + filename)
 
@@ -168,9 +187,19 @@ class SaveAsPDB extends PotentialScript {
     saveFilter.setModelNumbering(1)
 
     // Iterate through the rest of the models in am arc or pdb.
-    if (openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter)) {
+    if (openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter || openFilter instanceof XPHFilter)) {
       try {
         while (openFilter.readNext(false)) {
+          logger.info(" Occupancy of atom 12 before set one: " + activeAssembly.getAtomList().get(12).getOccupancy())
+          if(extended) {
+            for (Atom atom : activeAssembly.getAtomList()) {
+              int atomIndex = atom.getIndex() - 1
+              atom.setOccupancy(esvSystem.getTitrationLambda(atomIndex))
+              atom.setTempFactor(esvSystem.getTautomerLambda(atomIndex))
+            }
+          }
+          logger.info(" Occupancy of atom 12 after set one: " + activeAssembly.getAtomList().get(12).getOccupancy())
+
           saveOptions.preSaveOperations(activeAssembly)
           saveFilter.writeFile(saveFile, true, true, false)
         }

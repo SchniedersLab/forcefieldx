@@ -147,7 +147,7 @@ class PhGradient extends PotentialScript {
     // Select all possible titrating residues.
     energy = activeAssembly.getPotentialEnergy()
 
-    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, null)
+    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, pH, null)
     esvSystem.setConstantPh(pH)
     List<Residue> extendedResidues = esvSystem.getExtendedResidueList()
     List<Residue> titratingResidues = esvSystem.getTitratingResidueList()

@@ -4062,7 +4062,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     // Set object handles.
     esvTerm = true;
     extendedSystem = system;
-    numESVs = extendedSystem.getExtendedResidueList().size();
+    numESVs = extendedSystem.getNumberOfVariables();
 
     // Update atoms and reinitialize arrays for consistency with the ExtendedSystem.
     setAtoms(extendedSystem.getExtendedAtoms(), extendedSystem.getExtendedMolecule());

@@ -37,19 +37,18 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
-import com.google.common.collect.MinMaxPriorityQueue
 import ffx.crystal.Crystal
 import ffx.numerics.Potential
 import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
-import ffx.potential.bonded.Residue
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.PotentialScript
 import ffx.potential.extended.ExtendedSystem
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XPHFilter
+import ffx.potential.parsers.XYZFilter
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
@@ -189,8 +188,13 @@ class PhEnergy extends PotentialScript {
         logger.info("\n Running Energy on " + filename)
         forceFieldEnergy = activeAssembly.getPotentialEnergy()
 
+        // Restart File
+        File esv = new File(removeExtension(filename) + ".esv")
+        if (!esv.exists()) {
+            esv = null
+        }
 
-        ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, null)
+        ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, pH, esv)
         esvSystem.setConstantPh(pH)
         int numESVs = esvSystem.extendedResidueList.size()
         forceFieldEnergy.attachExtendedSystem(esvSystem)
@@ -229,12 +233,19 @@ class PhEnergy extends PotentialScript {
             double[][] inertiaValue = momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true, true)
         }
 
-        SystemFilter systemFilter = null
+        SystemFilter systemFilter
         if(arcFileName != null){
             File arcFile = new File(arcFileName)
             systemFilter = new XPHFilter(arcFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties(), esvSystem)
         } else{
             systemFilter = potentialFunctions.getFilter()
+            if(systemFilter instanceof XYZFilter){
+                systemFilter = new XPHFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties(), esvSystem)
+                systemFilter.readFile()
+                logger.info("Reading ESV lambdas from XPH file")
+                forceFieldEnergy.getCoordinates(x)
+                forceFieldEnergy.energy(x, true)
+            } 
         }
 
         if (systemFilter instanceof XPHFilter || systemFilter instanceof PDBFilter) {
