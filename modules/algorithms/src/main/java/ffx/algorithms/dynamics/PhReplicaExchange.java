@@ -59,7 +59,7 @@ import static ffx.utilities.Constants.kB;
 import static org.apache.commons.math3.util.FastMath.exp;
 
 /**
- * The ReplicaExchange implements pH replica exchange methods.
+ * The PhReplicaExchange implements pH replica exchange.
  * Adapted from "ReplicaExchange.java" by Timothy D. Fenn and Michael J. Schnieders
  * @author Matthew Speranza and Andrew Thiel
  * @since 1.0
