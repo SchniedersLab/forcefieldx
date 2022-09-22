@@ -997,7 +997,7 @@ public class ExtendedSystem implements Potential {
      * Prints off protonation ratios from throughout the simulation for all residues.
      */
     public void printProtonationRatios(){
-        int numberOfReports = 20;
+        int numberOfReports = 100;
         if(esvProtonationRatios[0].size() >= numberOfReports) {
             for (int i = 0; i < esvProtonationRatios.length; i++) {
                 double[] ratios = new double[numberOfReports];
