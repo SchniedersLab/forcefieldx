@@ -212,6 +212,7 @@ public class PhReplicaExchange implements Terminatable {
       logger.info(" Attempting to restart. ");
       readPhScale = new ArrayList<>();
 
+
       // Read normal restarts
       boolean backupNeeded = false;
       if(checkForRestartFiles(parent, esv.getName()) && checkForRestartFiles(parent, dyn.getName())){
