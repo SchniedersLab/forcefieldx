@@ -1663,20 +1663,20 @@ public class TitrationUtils {
    * side-chain pKa values in myoglobin and comparison with NMR data for histidines." Biochemistry
    * 32.31 (1993): 8045-8056.
    *
-   *                -(refEnergy * lambda^2 + lambdaIntercept * lambda)
+   *                -(quadratic * lambda^2 + linear * lambda)
    */
   public enum Titration {
 
-    ASHtoASP(3.67, -71.10, -72.113, 145.959, AminoAcid3.ASH, AminoAcid3.ASP),
-    GLHtoGLU(4.25, -83.40, -101.22, 179.8441, AminoAcid3.GLH, AminoAcid3.GLU),
-    LYStoLYD(10.40, 41.77, -69.29, 24.17778, AminoAcid3.LYS, AminoAcid3.LYD),
+    ASHtoASP(3.67, -71.10, 0.0, -72.113, 145.959, AminoAcid3.ASH, AminoAcid3.ASP),
+    GLHtoGLU(4.25, -83.40, 0.0, -101.22, 179.8441, AminoAcid3.GLH, AminoAcid3.GLU),
+    LYStoLYD(10.40, 41.77, 0.0, -69.29, 24.17778, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
-    CYStoCYD(8.55, -66.2, -103.85, 181.28, AminoAcid3.CYS, AminoAcid3.CYD),
+    CYStoCYD(8.55, -66.2, 34.567, -151.95, 196.33, AminoAcid3.CYS, AminoAcid3.CYD),
     //HE2 is the proton that is lost
-    HIStoHID(7.00, 40.20, -64.317, 30.719, AminoAcid3.HIS, AminoAcid3.HID),
+    HIStoHID(7.00, 40.20, 0.0, -64.317, 30.719, AminoAcid3.HIS, AminoAcid3.HID),
     //HD1 is the proton that is lost
-    HIStoHIE(6.60, 37.44, -62.931, 32.209, AminoAcid3.HIS, AminoAcid3.HIE),
-    HIDtoHIE(Double.NaN, 0.00, -36.83, 34.325, AminoAcid3.HID, AminoAcid3.HIE);
+    HIStoHIE(6.60, 37.44, 0.0, -62.931, 32.209, AminoAcid3.HIS, AminoAcid3.HIE),
+    HIDtoHIE(Double.NaN, 0.00, 0.0, -36.83, 34.325, AminoAcid3.HID, AminoAcid3.HIE);
     //TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     //TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
 
@@ -1684,19 +1684,21 @@ public class TitrationUtils {
     public final double pKa;
     // Free energy differences used in rotamer optimization
     public final double freeEnergyDiff;
-    public final double refEnergy;
-    public final double lambdaIntercept;
+    public final double cubic;
+    public final double quadratic;
+    public final double linear;
     public final AminoAcid3 protForm;
     public final AminoAcid3 deprotForm;
 
     /** Invoked by Enum; use the factory method to obtain instances. */
 
-    Titration(double pKa, double freeEnergyDiff, double refEnergy, double lambdaIntercept,
+    Titration(double pKa, double freeEnergyDiff, double cubic, double quadratic, double linear,
         AminoAcid3 protForm, AminoAcid3 deprotForm) {
       this.pKa = pKa;
       this.freeEnergyDiff = freeEnergyDiff;
-      this.refEnergy = refEnergy;
-      this.lambdaIntercept = lambdaIntercept;
+      this.cubic = cubic;
+      this.quadratic = quadratic;
+      this.linear = linear;
       this.protForm = protForm;
       this.deprotForm = deprotForm;
     }
