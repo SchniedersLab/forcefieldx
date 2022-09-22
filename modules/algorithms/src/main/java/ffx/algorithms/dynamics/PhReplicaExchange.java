@@ -410,19 +410,17 @@ public class PhReplicaExchange implements Terminatable {
     }
   }
 
-  public double[] getpHScale(){
-    return pHScale;
-  }
+  public double[] getpHScale(){ return pHScale; }
 
   /**
    * Sets an even pH ladder based on the pH gap.
    */
   private void setEvenSpacePhLadder(double pHGap){
-    double range = world.size() * pHGap;
+    double range = nReplicas * pHGap;
     double pHMin = pH - range/2;
 
     if(nReplicas % 2 != 0){
-      pHMin += pHGap/2;
+      pHMin += pHGap/2; // Center range if odd num windows
     }
 
     for(int i = 0; i < nReplicas; i++){

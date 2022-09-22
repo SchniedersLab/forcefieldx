@@ -111,6 +111,12 @@ class PhDynamics extends AlgorithmsScript {
           description = "Sort archive files by pH")
   boolean sort = false
 
+  @Option(names = "--printRatioData", paramLabel = "false",
+          description = "Print out the protonation ratios from throughout the simulation at the end")
+  boolean printRatio = false
+
+
+
 
 
   /**
@@ -215,9 +221,13 @@ class PhDynamics extends AlgorithmsScript {
       if (repEx.repEx) {
         Comm world = Comm.world()
         int size = world.size()
+        if(size == 1){
+          System.exit(0)
+          //Runtime.getRuntime().exec("qacct -j {job_number}")
+        }
 
         logger.info("\n Running replica exchange molecular dynamics on " + filename)
-        int rank = (size > 1) ? world.rank() : 0
+        int rank = world.rank()
 
         File structureFile = new File(filename)
         final String newMolAssemblyFile = structureFile.getParent() + File.separator + rank + File.separator + structureFile.getName()
@@ -236,7 +246,7 @@ class PhDynamics extends AlgorithmsScript {
         pHReplicaExchange.
                 sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
 
-        sortMyArc(structureFile, world.size(), pHReplicaExchange.getpHScale()[world.rank()], world.rank())
+        sortMyArc(structureFile, size, pHReplicaExchange.getpHScale()[world.rank()], world.rank())
 
       } else {
         // CPU Constant pH Dynamics
@@ -299,7 +309,9 @@ class PhDynamics extends AlgorithmsScript {
       }
     }
 
-    esvSystem.printProtonationRatios()
+    if(printRatio){
+      esvSystem.printProtonationRatios()
+    }
 
     return this
   }
@@ -328,9 +340,6 @@ class PhDynamics extends AlgorithmsScript {
     BufferedReader[] bufferedReaders = new BufferedReader[nReplicas]
     File output = new File(parent + File.separator + myRank + File.separator + arcName + "_sorted")
     BufferedWriter out = new BufferedWriter(new FileWriter(output))
-
-    // Find other archives and append them together
-
 
     // Get snap length from first directory
     File temp = new File(parent + File.separator + 0 + File.separator + arcName)
