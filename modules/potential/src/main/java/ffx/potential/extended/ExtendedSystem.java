@@ -979,7 +979,7 @@ public class ExtendedSystem implements Potential {
 
         for(int i = 0; i < esvHistogram[residueIndex][0].length; i++){
             deprotonatedSum += esvHistogram[residueIndex][0][i];
-            protonatedSum += esvHistogram[residueIndex][esvHistogram[residueIndex].length][i];
+            protonatedSum += esvHistogram[residueIndex][esvHistogram[residueIndex].length-1][i];
         }
         return deprotonatedSum / (protonatedSum + deprotonatedSum);
     }
