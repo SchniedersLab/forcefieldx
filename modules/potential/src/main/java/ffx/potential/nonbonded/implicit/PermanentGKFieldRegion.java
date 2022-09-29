@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
+import static ffx.numerics.multipole.GKSource.cn;
 import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_GKC;
 import static ffx.potential.parameters.MultipoleType.t000;
 import static ffx.potential.parameters.MultipoleType.t001;
@@ -57,6 +58,7 @@ import edu.rit.pj.ParallelRegion;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.numerics.multipole.GKSource;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 import java.util.List;
@@ -107,9 +109,10 @@ public class PermanentGKFieldRegion extends ParallelRegion {
 
     // Set the Kirkwood multipolar reaction field constants.
     double epsilon = forceField.getDouble("GK_EPSILON", dWater);
-    fc = 1.0 * (1.0 - epsilon) / (0.0 + 1.0 * epsilon);
-    fd = 2.0 * (1.0 - epsilon) / (1.0 + 2.0 * epsilon);
-    fq = 3.0 * (1.0 - epsilon) / (2.0 + 3.0 * epsilon);
+    double soluteEpsilon = forceField.getDouble("GK_SOLUTE_EPSILON", 1.0);
+    fc = cn(0, soluteEpsilon, epsilon);
+    fd = cn(1, soluteEpsilon, epsilon);
+    fq = cn(2, soluteEpsilon, epsilon);
 
     gkc = forceField.getDouble("GKC", DEFAULT_GKC);
 

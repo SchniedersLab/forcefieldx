@@ -45,7 +45,6 @@ import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.utilities.Constants.dWater;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.max;
 
 import edu.rit.pj.ParallelTeam;
@@ -129,7 +128,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * Default constant for the Generalized Kirkwood cross-term.
    */
   public static final double DEFAULT_GKC = 2.455;
-
   private static final Logger logger = Logger.getLogger(GeneralizedKirkwood.class.getName());
   /**
    * Default Bondi scale factor.
@@ -264,9 +262,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
    */
   private double crossOver;
   /**
-   * The requested permittivity.
+   * The requested permittivity for the solvent.
    */
   private final double epsilon;
+  /**
+   * The requested permittivity for the solute.
+   */
+  private final double soluteEpsilon;
+
   /**
    * Array of Atoms being considered.
    */
@@ -527,8 +530,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
     // Set the conversion from electron**2/Ang to kcal/mole
     electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
 
-    // Set the Kirkwood multipolar reaction field constants.
+    // Set the Kirkwood multipolar reaction field constants for solvent.
     epsilon = forceField.getDouble("GK_EPSILON", dWater);
+    // Set the Kirkwood multipolar reaction field constants for solute.
+    soluteEpsilon = forceField.getDouble("GK_SOLUTE_EPSILON", 1.0);
 
     // Define how force arrays will be accumulated.
     String value = forceField.getString("ARRAY_REDUCTION", "MULTI");
@@ -632,7 +637,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     // If PME includes polarization and is a function of lambda, GK must also.
-    if (!lambdaTerm && particleMeshEwald.getPolarizationType() != ParticleMeshEwald.Polarization.NONE) {
+    if (!lambdaTerm
+        && particleMeshEwald.getPolarizationType() != ParticleMeshEwald.Polarization.NONE) {
       if (forceField.getBoolean("ELEC_LAMBDATERM", forceField.getBoolean("LAMBDATERM", false))) {
         logger.info(" If PME includes polarization and is a function of lambda, GK must also.");
         lambdaTerm = true;
@@ -718,7 +724,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     initializationRegion = new InitializationRegion(threadCount);
-    bornRadiiRegion = new BornRadiiRegion(threadCount, nAtoms, forceField, neckCorrection, tanhCorrection, perfectHCTScale);
+    bornRadiiRegion = new BornRadiiRegion(threadCount, nAtoms, forceField, neckCorrection,
+        tanhCorrection, perfectHCTScale);
     permanentGKFieldRegion = new PermanentGKFieldRegion(threadCount, forceField);
     inducedGKFieldRegion = new InducedGKFieldRegion(threadCount, forceField);
     if (!perfectRadii) {
@@ -728,7 +735,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
       // No Born chain-rule terms when using Perfect Born Radii.
       bornGradRegion = null;
     }
-    gkEnergyRegion = new GKEnergyRegion(threadCount, forceField, polarization, nonPolar, surfaceTension, probe);
+    gkEnergyRegion = new GKEnergyRegion(threadCount, forceField, polarization, nonPolar,
+        surfaceTension, probe);
 
     logger.info("  Continuum Solvation ");
     logger.info(format("   Radii:                              %8s", soluteRadiiType));
@@ -736,6 +744,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     logger.info(format("   GKC:                                %8.4f",
         forceField.getDouble("GKC", DEFAULT_GKC)));
     logger.info(format("   Solvent Dielectric:                 %8.4f", epsilon));
+    logger.info(format("   Solute Dielectric:                  %8.4f", soluteEpsilon));
 
     if (perfectRadii) {
       logger.info(format("   Use Perfect Born Radii:             %8B", perfectRadii));
@@ -779,13 +788,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
     logger.info(
         format("   Non-Polar Model:                  %10s", nonPolar.toString().replace('_', '-')));
 
-    if(nonPolar.equals(NonPolar.GAUSS_DISP)){
+    if (nonPolar.equals(NonPolar.GAUSS_DISP)) {
       logger.info(
-              format("    GaussVol Radii Offset:               %2.4f",
-                      forceField.getDouble("GAUSSVOL_RADII_OFFSET",0.0)));
+          format("    GaussVol Radii Offset:               %2.4f",
+              forceField.getDouble("GAUSSVOL_RADII_OFFSET", 0.0)));
       logger.info(
-              format("    GaussVol Radii Scale:                %2.4f",
-                      forceField.getDouble("GAUSSVOL_RADII_SCALE",1.0)));
+          format("    GaussVol Radii Scale:                %2.4f",
+              forceField.getDouble("GAUSSVOL_RADII_SCALE", 1.0)));
     }
 
     if (dispersionRegion != null) {
@@ -813,13 +822,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
       for (int i = 0; i < nAtoms; i++) {
         logger.info(
             format("   %s %8.6f %8.6f %5.3f %5.3f",
-                atoms[i].toString(), baseRadius[i], descreenRadius[i], overlapScale[i], neckScale[i]));
+                atoms[i].toString(), baseRadius[i], descreenRadius[i], overlapScale[i],
+                neckScale[i]));
       }
     }
   }
 
   /**
    * GK is using perfect radii where available.
+   *
    * @return True if using perfect radii.
    */
   public boolean getUsePerfectRadii() {
@@ -827,7 +838,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
   }
 
   /**
-   * Return perfect Born radii read in as keywords, or base radii if perfect radii are not available.
+   * Return perfect Born radii read in as keywords, or base radii if perfect radii are not
+   * available.
    *
    * @return Array of perfect Born radii.
    */
@@ -998,6 +1010,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
   /**
    * Return the descreening dielectric offset.
+   *
    * @return The offset (A).
    */
   public double getDescreenOffset() {
@@ -1153,10 +1166,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * Returns the solvent relative permittivity (typically 78.3).
    *
-   * @return Relative permittivity of solvent.
+   * @return Relative permittivity of the solvent.
    */
   public double getSolventPermittivity() {
     return epsilon;
+  }
+
+  /**
+   * Returns the solvent relative permittivity (typically 1.0).
+   *
+   * @return Relative permittivity of the solute.
+   */
+  public double getSolutePermittivity() {
+    return soluteEpsilon;
   }
 
   /**
@@ -1536,8 +1558,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
   }
 
   /**
-   * Update GK solute parameters for a given atom. This should only be called after each
-   * atom is assigned a "SoluteType".
+   * Update GK solute parameters for a given atom. This should only be called after each atom is
+   * assigned a "SoluteType".
    *
    * @param i The atom to update.
    */

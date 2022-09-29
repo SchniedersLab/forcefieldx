@@ -42,6 +42,7 @@ import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.MONOPOLE;
 import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.QUADRUPOLE;
 import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.BORN;
 import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.POTENTIAL;
+import static ffx.numerics.multipole.GKSource.cn;
 import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_GKC;
 import static ffx.potential.parameters.MultipoleType.t000;
 import static ffx.potential.parameters.MultipoleType.t001;
@@ -174,9 +175,10 @@ public class GKEnergyRegion extends ParallelRegion {
 
     // Set the Kirkwood multipolar reaction field constants.
     epsilon = forceField.getDouble("GK_EPSILON", dWater);
-    fc = 1.0 * (1.0 - epsilon) / (0.0 + 1.0 * epsilon);
-    fd = 2.0 * (1.0 - epsilon) / (1.0 + 2.0 * epsilon);
-    fq = 3.0 * (1.0 - epsilon) / (2.0 + 3.0 * epsilon);
+    double soluteEpsilon = forceField.getDouble("GK_SOLUTE_EPSILON", 1.0);
+    fc = cn(0, soluteEpsilon, epsilon);
+    fd = cn(1, soluteEpsilon, epsilon);
+    fq = cn(2, soluteEpsilon, epsilon);
 
     this.polarization = polarization;
     this.nonPolar = nonPolar;
