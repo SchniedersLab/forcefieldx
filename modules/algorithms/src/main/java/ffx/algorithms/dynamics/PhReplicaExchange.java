@@ -143,6 +143,7 @@ public class PhReplicaExchange implements Terminatable {
     int numProc = world.size();
     rank = world.rank();
 
+
     nReplicas = numProc;
     pHScale = new double[nReplicas];
     pH2Rank = new int[nReplicas];
@@ -174,10 +175,8 @@ public class PhReplicaExchange implements Terminatable {
       logger.info(" Restart Successful! ");
       extendedSystem.getESVHistogram(parametersHis[rank]);
     } else{
-      logger.info(" Starting from fresh. ");
-      if(dyn.delete() & esv.delete() & dynBackup.delete() & esvBackup.delete()){
-        logger.info(" Deleted extra files. ");
-      }
+      logger.info(" Unable to restart. Fix issues with restart files.");
+      System.exit(1);
     }
   }
 
@@ -195,8 +194,8 @@ public class PhReplicaExchange implements Terminatable {
     // My files
     esv = new File(rankDir.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + ".esv");
     dyn = new File(rankDir.getPath() + File.separator + FilenameUtils.removeExtension((structureFile.getName())) + ".dyn");
-    esvBackup = new File(rankDir.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + "_backup.esv");
-    dynBackup = new File(rankDir.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + "_backup.dyn");
+    esvBackup = new File(FilenameUtils.removeExtension(esv.getAbsolutePath()) + "_backup.esv");
+    dynBackup = new File(FilenameUtils.removeExtension(dyn.getAbsolutePath()) + "_backup.dyn");
 
     // Set restart files - does not do any reading yet
     extendedSystem.setRestartFile(esv);
@@ -212,14 +211,14 @@ public class PhReplicaExchange implements Terminatable {
       logger.info(" Attempting to restart. ");
       readPhScale = new ArrayList<>();
 
-
       // Read normal restarts
       boolean backupNeeded = false;
       if(checkForRestartFiles(parent, esv.getName()) && checkForRestartFiles(parent, dyn.getName())){
         for(int i = 0; i < nReplicas; i++){
           File checkThisESV = new File(parent.getAbsolutePath() + File.separator + i + File.separator + esv.getName());
-          backupNeeded = readESV(checkThisESV, i);
+          backupNeeded = !readESV(checkThisESV, i);
           if(backupNeeded){
+            logger.warning(" Searching backup esv files.");
             break;
           }
         }
@@ -237,10 +236,11 @@ public class PhReplicaExchange implements Terminatable {
       if(backupNeeded && checkForRestartFiles(parent, esvBackup.getName()) && checkForRestartFiles(parent, dynBackup.getName())){
         for(int i = 0; i < nReplicas; i++){
           File checkThisESV = new File(parent.getAbsolutePath() + File.separator + i + File.separator + esvBackup.getName());
-          if(readESV(checkThisESV, i)){
+          if(!readESV(checkThisESV, i)){
             return false;
           }
         }
+        logger.info(" Reading in from: " + esvBackup);
         extendedSystem.readESVInfoFrom(esvBackup);
       }
       else if (backupNeeded){
@@ -249,7 +249,8 @@ public class PhReplicaExchange implements Terminatable {
       }
     }
     else{
-      return false;
+      logger.info(" Not a restart.");
+      return true;
     }
 
     logger.info(" Rank " + rank + " staring at pH " + pHScale[rank2Ph[rank]]);
@@ -262,11 +263,11 @@ public class PhReplicaExchange implements Terminatable {
 
   /**
    * Reads an esv file to find the number of steps logged and if the pH matches the others in readPhScale
-   * @param esv file to read
-   * @return if the pH of the file is duplicated
+   * @param file to read
+   * @return if the esv file of this name at this rank works with the others, or if i=0, then it sets the standards
    */
-  private boolean readESV(File esv, int i){
-    try(BufferedReader br = new BufferedReader(new FileReader(esv))){
+  private boolean readESV(File file, int i){
+    try(BufferedReader br = new BufferedReader(new FileReader(file))){
       String data = br.readLine();
       while(data != null) {
         List<String> tokens = Arrays.asList(data.split(" +"));
@@ -283,9 +284,9 @@ public class PhReplicaExchange implements Terminatable {
 
           // Check pH list for duplicates
           if(readPhScale.stream().anyMatch(d -> (Math.abs(d/pHOfRankI - 1) < 0.00001))){
-            logger.warning(" Duplicate pH value found in file: " + esv.getAbsolutePath());
+            logger.warning(" Duplicate pH value found in file: " + file.getAbsolutePath());
             readPhScale.clear();
-            return true;
+            return false;
           } else{
             readPhScale.add(pHOfRankI);
           }
@@ -306,18 +307,19 @@ public class PhReplicaExchange implements Terminatable {
             restartStep = sum;
           }
           else if(restartStep != sum){
-            logger.warning(" Restart received uneven sums. Starting from the lowest one.");
-            restartStep = Math.min(sum, restartStep);
-            logger.info(" Restart step New: " + restartStep);
+            logger.warning(" Restart received uneven sums from esv file.");
+            restartStep = 0;
+            readPhScale.clear();
+            return false;
           }
         }
         data = br.readLine();
       }
-      return false;
+      return true;
     }
     catch (IOException | IndexOutOfBoundsException e){
-      logger.warning("Failed to read file: " + esv.getAbsolutePath());
-      return true;
+      logger.warning("Failed to read file: " + file.getAbsolutePath());
+      return false;
     }
   }
 

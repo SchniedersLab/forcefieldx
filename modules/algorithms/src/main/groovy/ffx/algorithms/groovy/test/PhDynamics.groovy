@@ -223,7 +223,6 @@ class PhDynamics extends AlgorithmsScript {
         int size = world.size()
         if(size == 1){
           System.exit(0)
-          //Runtime.getRuntime().exec("qacct -j {job_number}")
         }
 
         logger.info("\n Running replica exchange molecular dynamics on " + filename)
