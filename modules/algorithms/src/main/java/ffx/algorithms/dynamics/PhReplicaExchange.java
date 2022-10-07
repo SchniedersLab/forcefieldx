@@ -312,6 +312,7 @@ public class PhReplicaExchange implements Terminatable {
             readPhScale.clear();
             return false;
           }
+          break;
         }
         data = br.readLine();
       }
