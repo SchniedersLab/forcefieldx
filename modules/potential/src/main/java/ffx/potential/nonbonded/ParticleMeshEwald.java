@@ -39,6 +39,7 @@ package ffx.potential.nonbonded;
 
 import static ffx.numerics.math.ScalarMath.binomial;
 import static ffx.numerics.special.Erf.erfc;
+import static ffx.potential.MolecularAssembly.atomIndexing;
 import static ffx.potential.parameters.ForceField.ELEC_FORM.PAM;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.parameters.MultipoleType.assignMultipole;
@@ -52,7 +53,6 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
-import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.utilities.Constants.ELEC_ANG_TO_DEBYE;
 import static ffx.utilities.Constants.NS2SEC;
 import static java.lang.String.format;
@@ -72,7 +72,6 @@ import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.multipole.MultipoleTensor;
 import ffx.potential.ForceFieldEnergy.Platform;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
@@ -162,6 +161,7 @@ public class ParticleMeshEwald implements LambdaInterface {
   /** Reference to the force field being used. */
   private final ForceField forceField;
   private final double poleps;
+  private final boolean directFallback;
   /** Specify an SCF predictor algorithm. */
   private final SCFPredictor scfPredictor;
   private final SCFPredictorParameters scfPredictorParameters;
@@ -258,8 +258,8 @@ public class ParticleMeshEwald implements LambdaInterface {
    * Disables windowed lambda ranges by setting permLambdaStart = polLambdaStart = 0.0 and
    * permLambdaEnd = polLambdaEnd = 1.0.
    */
-  public boolean noWindowing = false;
-  public double electric = DEFAULT_ELECTRIC;
+  public boolean noWindowing;
+  public double electric;
   /** An ordered array of atoms in the system. */
   protected Atom[] atoms;
   /** The number of atoms in the system. */
@@ -286,12 +286,12 @@ public class ParticleMeshEwald implements LambdaInterface {
   protected double inducedRealSpaceEnergy;
   protected double inducedSelfEnergy;
   protected double inducedReciprocalEnergy;
-  protected SCFAlgorithm scfAlgorithm = ParticleMeshEwald.SCFAlgorithm.CG;
+  protected SCFAlgorithm scfAlgorithm;
   /**
    * Log the induced dipole magnitudes and directions. Use the cgo_arrow.py script (available from
    * the wiki) to draw these easily in PyMol.
    */
-  protected boolean printInducedDipoles = false;
+  protected boolean printInducedDipoles;
 
   /** Partial derivative with respect to Lambda. */
   private final SharedDouble shareddEdLambda;
@@ -453,6 +453,9 @@ public class ParticleMeshEwald implements LambdaInterface {
     } catch (Exception e) {
       scfAlgorithm = SCFAlgorithm.CG;
     }
+
+    // Fall back to the direct
+    directFallback = forceField.getBoolean("DIRECT_SCF_FALLBACK", true);
 
     // Define how force arrays will be accumulated.
     String value = forceField.getString("ARRAY_REDUCTION", "MULTI");
@@ -2258,37 +2261,41 @@ public class ParticleMeshEwald implements LambdaInterface {
 
       return iterations;
     } catch (EnergyException ex) {
-      // SCF Failure: warn and revert to direct polarization.
-      logger.warning(ex.toString());
-      // Compute the direct induced dipoles.
-      if (generalizedKirkwoodTerm) {
-        pmeTimings.gkEnergyTotal = -System.nanoTime();
-        generalizedKirkwood.computePermanentGKField();
-        pmeTimings.gkEnergyTotal += System.nanoTime();
-        logger.fine(
-            format(" Computed GK permanent field %8.3f (sec)", pmeTimings.gkEnergyTotal * 1.0e-9));
+      if (directFallback) {
+        // SCF Failure: warn and revert to direct polarization.
+        logger.warning(ex.toString());
+        // Compute the direct induced dipoles.
+        if (generalizedKirkwoodTerm) {
+          pmeTimings.gkEnergyTotal = -System.nanoTime();
+          generalizedKirkwood.computePermanentGKField();
+          pmeTimings.gkEnergyTotal += System.nanoTime();
+          logger.fine(
+              format(" Computed GK permanent field %8.3f (sec)", pmeTimings.gkEnergyTotal * 1.0e-9));
+        }
+        directRegion.init(
+            atoms,
+            polarizability,
+            globalMultipole,
+            cartesianMultipolePhi,
+            field,
+            fieldCR,
+            generalizedKirkwoodTerm,
+            generalizedKirkwood,
+            ewaldParameters,
+            inducedDipole,
+            inducedDipoleCR,
+            directDipole,
+            directDipoleCR,
+            directField,
+            directFieldCR
+        );
+        directRegion.executeWith(parallelTeam);
+        expandInducedDipoles();
+        logger.info(" Direct induced dipoles computed due to SCF failure.");
+        return 0;
+      } else {
+        throw ex;
       }
-      directRegion.init(
-          atoms,
-          polarizability,
-          globalMultipole,
-          cartesianMultipolePhi,
-          field,
-          fieldCR,
-          generalizedKirkwoodTerm,
-          generalizedKirkwood,
-          ewaldParameters,
-          inducedDipole,
-          inducedDipoleCR,
-          directDipole,
-          directDipoleCR,
-          directField,
-          directFieldCR
-      );
-      directRegion.executeWith(parallelTeam);
-      expandInducedDipoles();
-      logger.info(" Direct induced dipoles computed due to SCF failure.");
-      return 0;
     }
   }
 
@@ -2664,7 +2671,7 @@ public class ParticleMeshEwald implements LambdaInterface {
       Atom a = atoms[i];
       if (a.getIndex() - 1 != i) {
         logger.info(format(" PME Index i: %d, %s Index: %d\n Atom: %s",
-            i, MolecularAssembly.atomIndexing, a.getIndex(), a));
+            i, atomIndexing, a.getIndex(), a));
         logger.severe(" Atom indexing is not consistent in PME.");
       }
     }
