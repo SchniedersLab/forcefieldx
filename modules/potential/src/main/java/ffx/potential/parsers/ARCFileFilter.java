@@ -54,6 +54,18 @@ public final class ARCFileFilter extends FileFilter {
   }
 
   /**
+   * This is a static version of the accept method.
+   *
+   * <p>This method return <code>true</code> if the file is a directory or TINKER Archive (*.ARC).
+   *
+   * @param file The File to examine.
+   * @return Returns true if this an ARC file.
+   */
+  public static boolean isARC(File file) {
+    return new ARCFileFilter().accept(file);
+  }
+
+  /**
    * {@inheritDoc}
    *
    * <p>This method return <code>true</code> if the file is a directory or TINKER Archive (*.ARC).

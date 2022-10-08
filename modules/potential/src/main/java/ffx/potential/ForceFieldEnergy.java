@@ -38,6 +38,7 @@
 package ffx.potential;
 
 import static ffx.potential.parameters.ForceField.toEnumForm;
+import static ffx.potential.parsers.XYZFileFilter.isXYZ;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
@@ -1790,13 +1791,17 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * Save coordinates when an EnergyException is caught.
    */
   private void printFailure() {
-    String timeString =
-        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd-HH_mm_ss"));
-    String filename = format("%s-ERROR-%s.pdb", removeExtension(molecularAssembly.getFile().getName()), timeString);
+    String timeString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd-HH_mm_ss"));
+    File file = molecularAssembly.getFile();
+    String ext = "pdb";
+    if (isXYZ(file)) {
+      ext = "xyz";
+    }
+    String filename = format("%s-ERROR-%s.%s", removeExtension(file.getName()), timeString, ext);
     PotentialsFunctions ef = new PotentialsUtils();
     filename = ef.versionFile(filename);
     logger.info(format(" Writing on-error snapshot to file %s", filename));
-    ef.saveAsPDB(molecularAssembly, new File(filename));
+    ef.save(molecularAssembly, new File(filename));
   }
 
   /**
