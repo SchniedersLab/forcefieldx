@@ -172,11 +172,10 @@ public class PhReplicaExchange implements Terminatable {
 
     // Set the ESV that this rank will share has correct values after a restart
     if(manageFilesAndRestart(structureFile)){
-      logger.info(" Restart Successful! ");
+      logger.info(" Startup Successful! ");
       extendedSystem.getESVHistogram(parametersHis[rank]);
     } else{
-      logger.info(" Unable to restart. Fix issues with restart files.");
-      System.exit(1);
+      logger.severe(" Unable to start. Fix issues with restart files.");
     }
   }
 
@@ -237,6 +236,7 @@ public class PhReplicaExchange implements Terminatable {
         for(int i = 0; i < nReplicas; i++){
           File checkThisESV = new File(parent.getAbsolutePath() + File.separator + i + File.separator + esvBackup.getName());
           if(!readESV(checkThisESV, i)){
+            logger.info(" Restart files & Backups are messed up.");
             return false;
           }
         }
@@ -262,7 +262,9 @@ public class PhReplicaExchange implements Terminatable {
   }
 
   /**
-   * Reads an esv file to find the number of steps logged and if the pH matches the others in readPhScale
+   * Reads an esv file to find the number of steps logged and if the pH matches the others in readPhScale.
+   *  (N.B. - This only checks the first esv in the system for uneven sums, since it is assumed that all counts
+   * will be messed up if the first one is.)
    * @param file to read
    * @return if the esv file of this name at this rank works with the others, or if i=0, then it sets the standards
    */
@@ -287,7 +289,7 @@ public class PhReplicaExchange implements Terminatable {
             logger.warning(" Duplicate pH value found in file: " + file.getAbsolutePath());
             readPhScale.clear();
             return false;
-          } else{
+          }else{
             readPhScale.add(pHOfRankI);
           }
 
@@ -361,7 +363,24 @@ public class PhReplicaExchange implements Terminatable {
       extendedSystem.reGuessLambdas();
       extendedSystem.setFixedTitrationState(true);
       extendedSystem.setFixedTautomerState(true);
-      replica.dynamic(initTitrDynamics, timeStep, printInterval, trajInterval, temp, true, dyn);
+
+      logger.info(" ");
+      logger.info(" ------------------Start of Equilibration Dynamics------------------\n");
+      logger.info(" ");
+
+      if(openMM == null) {
+        replica.dynamic(initTitrDynamics, timeStep, printInterval, trajInterval, temp, true, dyn);
+      } else{
+        x = replica.getCoordinates();
+        potential.energy(x);
+        openMM.setCoordinates(x);
+
+        openMM.dynamic(confSteps, timeStep, printInterval, trajInterval, temp, true, dyn);
+
+        x = openMM.getCoordinates();
+        replica.setCoordinates(x);
+      }
+
       extendedSystem.setFixedTitrationState(false);
       extendedSystem.setFixedTautomerState(false);
       logger.info(extendedSystem.getLambdaList());
