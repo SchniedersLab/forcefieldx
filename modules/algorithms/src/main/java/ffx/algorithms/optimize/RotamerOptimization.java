@@ -46,6 +46,7 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.exp;
 
 import edu.rit.pj.Comm;
 import edu.rit.pj.ParallelTeam;
@@ -201,6 +202,9 @@ public class RotamerOptimization implements Terminatable {
   private int evaluatedPermutations = 0;
   /** Permutations are printed when modulo this field is zero. */
   private int evaluatedPermutationsPrint = 0;
+
+  private double totalBoltzmann = 0;
+  private double refEnergy = 0;
   /** List of residues to optimize; they may not be contiguous or all members of the same chain. */
   private List<Residue> residueList;
   /**
@@ -2046,6 +2050,88 @@ public class RotamerOptimization implements Terminatable {
 
     return 0.0;
   }
+
+  /**
+   * A global optimization over side-chain rotamers using a recursive algorithm and information about
+   * eliminated rotamers, rotamer pairs and rotamer triples.
+   *
+   * @param residues Residue array.
+   * @param i Current number of permutations.
+   * @param currentRotamers Current rotamer list.
+   * @return 0.
+   */
+  public double partitionFunction(Residue[] residues, int i, int[] currentRotamers) throws Exception {
+    // This is the initialization condition.
+    if (i == 0) {
+      totalBoltzmann = 0;
+      evaluatedPermutations = 0;
+      evaluatedPermutationsPrint = 1000;
+    }
+
+    if (evaluatedPermutations >= evaluatedPermutationsPrint) {
+      if (evaluatedPermutations % evaluatedPermutationsPrint == 0) {
+        logIfMaster(
+                format(" The permutations have reached %10.4e.", (double) evaluatedPermutationsPrint));
+        evaluatedPermutationsPrint *= 10;
+      }
+    }
+
+    int nResidues = residues.length;
+    Residue residuei = residues[i];
+    Rotamer[] rotamersi = residuei.getRotamers();
+    int lenri = rotamersi.length;
+    if (i < nResidues - 1) {
+      for (int ri = 0; ri < lenri; ri++) {
+        if (eR.check(i, ri)) {
+          continue;
+        }
+        boolean deadEnd = false;
+        for (int j = 0; j < i; j++) {
+          int rj = currentRotamers[j];
+          deadEnd = eR.check(j, rj, i, ri);
+          if (deadEnd) {
+            break;
+          }
+        }
+        if (deadEnd) {
+          continue;
+        }
+        currentRotamers[i] = ri;
+        partitionFunction(residues, i + 1, currentRotamers);
+      }
+    } else {
+      // At the end of the recursion, check each rotamer of the final residue.
+      for (int ri = 0; ri < lenri; ri++) {
+        if (eR.check(i, ri)) {
+          continue;
+        }
+        currentRotamers[i] = ri;
+        boolean deadEnd = false;
+        for (int j = 0; j < i; j++) {
+          int rj = currentRotamers[j];
+          deadEnd = eR.check(j, rj, i, ri);
+          if (deadEnd) {
+            break;
+          }
+        }
+        if (!deadEnd) {
+          evaluatedPermutations++;
+          energyRegion.init(eE, residues, currentRotamers, threeBodyTerm);
+          parallelTeam.execute(energyRegion);
+          double totalEnergy = eE.getBackboneEnergy() + energyRegion.getSelf() +
+                  energyRegion.getTwoBody() + energyRegion.getThreeBody();
+          if(evaluatedPermutations == 1){
+            refEnergy = totalEnergy;
+          }
+          double boltzmannWeight= exp((-1.0/0.6)*(totalEnergy-refEnergy));
+          totalBoltzmann += boltzmannWeight;
+        }
+      }
+    }
+
+    return totalBoltzmann;
+  }
+
 
   /**
    * Finds all permutations within buffer energy of GMEC.

@@ -47,10 +47,7 @@ import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.logging.Logger;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
@@ -185,7 +182,7 @@ public class ManyBodyOptions {
             for (Residue residue : residues) {
               if (residue.getResidueNumber() == i) {
                 Rotamer[] rotamers = residue.setRotamers(rotamerLibrary);
-                if (rotamers != null || rotamers.length > 0) {
+                if (rotamers != null && rotamers.length > 0) {
                   residueList.add(residue);
                 }
               }
