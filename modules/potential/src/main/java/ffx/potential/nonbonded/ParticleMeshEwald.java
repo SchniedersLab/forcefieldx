@@ -521,13 +521,9 @@ public class ParticleMeshEwald implements LambdaInterface {
         if (scfAlgorithm == SCFAlgorithm.SOR) {
           sb.append(format("    SOR Parameter:                     %8.3f\n", sorRegion.getSOR()));
         } else {
-          sb.append(
-              format(
-                  "    CG Preconditioner Cut-Off:         %8.3f\n",
-                  pcgSolver.preconditionerCutoff));
-          sb.append(
-              format(
-                  "    CG Preconditioner Ewald Coeff.:    %8.3f\n", pcgSolver.preconditionerEwald));
+          sb.append(format("    CG Preconditioner Cut-Off:         %8.3f\n", pcgSolver.preconditionerCutoff));
+          sb.append(format("    CG Preconditioner Ewald Coeff.:    %8.3f\n", pcgSolver.preconditionerEwald));
+          sb.append(format("    CG Preconditioner Scale:           %8.3f\n", pcgSolver.preconditionerScale));
         }
       }
       if (ewaldParameters.aewald > 0.0) {
@@ -1131,7 +1127,8 @@ public class ParticleMeshEwald implements LambdaInterface {
     Atom atom = atoms[i];
     PolarizeType polarizeType = atom.getPolarizeType();
     if (polarizeType != null) {
-      if (esvTerm && extendedSystem.isTitrating(i) && (extendedSystem.isTitratingHydrogen(i) || extendedSystem.isTitratingSulfur(i))) {
+      if (esvTerm && extendedSystem.isTitrating(i) && (extendedSystem.isTitratingHydrogen(i)
+          || extendedSystem.isTitratingSulfur(i))) {
         double titrationLambda = extendedSystem.getTitrationLambda(i);
         double tautomerLambda = extendedSystem.getTautomerLambda(i);
         double esvPolarizability = extendedSystem.getTitrationUtils()
@@ -1720,7 +1717,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
       for (int i = 0; i < nAtoms; i++) {
         if (polarization != Polarization.NONE && esvTerm && extendedSystem.isTitrating(i)
-                && (extendedSystem.isTitratingHydrogen(i) || extendedSystem.isTitratingSulfur(i))) {
+            && (extendedSystem.isTitratingHydrogen(i) || extendedSystem.isTitratingSulfur(i))) {
           double dx = field.getX(i);
           double dy = field.getY(i);
           double dz = field.getZ(i);
@@ -1836,7 +1833,8 @@ public class ParticleMeshEwald implements LambdaInterface {
       reciprocalEnergyRegion.init(atoms, crystal, gradient, lambdaTerm, esvTerm, use,
           globalMultipole, fractionalMultipole, dMultipoledTirationESV, dMultipoledTautomerESV,
           cartesianMultipolePhi, fracMultipolePhi,
-          polarization, inputDipole, inputDipoleCR, inputPhi, inputPhiCR, fracInputPhi, fracInputPhiCR,
+          polarization, inputDipole, inputDipoleCR, inputPhi, inputPhiCR, fracInputPhi,
+          fracInputPhiCR,
           reciprocalSpace, alchemicalParameters, extendedSystem,
           // Output
           grad, torque, lambdaGrad, lambdaTorque, shareddEdLambda, sharedd2EdLambda2);
@@ -3061,7 +3059,8 @@ public class ParticleMeshEwald implements LambdaInterface {
 
     final int numThreads;
     /**
-     * Neighbor lists, without atoms beyond the real space cutoff. [nSymm][nAtoms][nIncludedNeighbors]
+     * Neighbor lists, without atoms beyond the real space cutoff.
+     * [nSymm][nAtoms][nIncludedNeighbors]
      */
     public int[][][] realSpaceLists;
     /** Number of neighboring atoms within the real space cutoff. [nSymm][nAtoms] */
@@ -3146,6 +3145,7 @@ public class ParticleMeshEwald implements LambdaInterface {
    * Scale factors and masking rules for electrostatics.
    */
   public class ScaleParameters {
+
     /** The interaction energy between 1-2 multipoles is scaled by m12scale. */
     public final double m12scale;
     /** The interaction energy between 1-3 multipoles is scaled by m13scale. */
@@ -3159,11 +3159,11 @@ public class ParticleMeshEwald implements LambdaInterface {
      * DIRECT-11-SCALE: Provides a multiplicative scale factor that is applied to the permanent
      * (direct) fielddue to atoms within a polarization group during an induced dipole calculation,
      * i.e., atoms that are in the same polarization group as the atom being polarized.
-     *
+     * <p>
      * The scaling is 0.0 in AMOEBA.
-     *
-     * DIRECT_12_SCALE, DIRECT_13_SCALE, DIRECT_14_SCALE and DIRECT_15_SCALE are assumed to
-     * be 1.0. If this assumption is violated by a keyword, FFX will exit.
+     * <p>
+     * DIRECT_12_SCALE, DIRECT_13_SCALE, DIRECT_14_SCALE and DIRECT_15_SCALE are assumed to be 1.0.
+     * If this assumption is violated by a keyword, FFX will exit.
      */
     public final double d11scale;
 
@@ -3189,9 +3189,9 @@ public class ParticleMeshEwald implements LambdaInterface {
     public final double p15scale;
 
     /**
-     * Provides a multiplicative scale factor that is applied to polarization interactions between 1-4
-     * connected atoms located in the same polarization group.
-     *
+     * Provides a multiplicative scale factor that is applied to polarization interactions between
+     * 1-4 connected atoms located in the same polarization group.
+     * <p>
      * The intra-12-scale, intra-13-scale and intra-15-scale factors are not supported.
      */
     public final double intra14Scale;

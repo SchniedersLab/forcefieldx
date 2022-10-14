@@ -64,6 +64,26 @@ import java.util.logging.Logger;
 
 /**
  * Parallel pre-conditioned conjugate gradient solver for the self-consistent field.
+ * <p>
+ * This solves the linear system A x = b using an iterative approach where A: is an N x N symmetric,
+ * positive definite matrix B: is a known vector of length N. x: is the unknown vector of length N.
+ * <p>
+ * For the AMOEBA SCF, the linear system Ax = b is usually denoted: C u = E_multipoles where C = [
+ * alpha^-1 - T ] u are the induced dipoles. E_multipoles is the direct field from permanent
+ * multipoles.
+ * <p>
+ * The matrix alpha^-1 is the inverse of the N x N diagonal polarizability matrix. The matrix T is
+ * the N x N matrix that produces the field due to induced dipoles.
+ * <p>
+ * Initialization: 1) Compute the residual:        r_0 = E_mutipoles - C u_direct = E_direct_induced
+ * 2) Compute the preconditioner:  z_0 = T r_0 3) Compute the conjugate:       p_0 = z_0 4) Initial
+ * loop index:          k = 0
+ * <p>
+ * Then loop over: 1) Update the step size:        alpha = r_k dot z_k / (p_k C p_k) 2) Update the
+ * induced dipoles:  u_k+1 = u_k + alpha p_k 3) Update the residual:         r_k+1 = r_k - alpha C
+ * p_k 4) Check for convergence of r_k+1. 5) Update the preconditioner:   z_k+1 = T r_k+1 6) Update
+ * the step size:        beta = r_k+1 dot z_k+1 / (r_k dot z_k) 7) Update the conjugate:        p_k+1
+ * = z_k+1 + beta p_k 8) Update the loop index:       k = k + 1
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -72,15 +92,19 @@ public class PCGSolver {
 
   private static final Logger logger = Logger.getLogger(PCGSolver.class.getName());
 
-  private final InducedDipolePreconditionerRegion inducedDipolePreconditionerRegion;
-  private final PCGInitRegion1 pcgInitRegion1;
-  private final PCGInitRegion2 pcgInitRegion2;
-  private final PCGIterRegion1 pcgIterRegion1;
-  private final PCGIterRegion2 pcgIterRegion2;
+  private final InitResidualRegion initResidualRegion;
+  private final InitConjugateRegion initConjugateRegion;
+  private final UpdateResidualRegion updateResidualRegion;
+  private final UpdateConjugateRegion updateConjugateRegion;
+  private final PreconditionerRegion preconditionerRegion;
   private final double poleps;
-  private final int preconditionerListSize = 50;
-  public double preconditionerCutoff;
-  public double preconditionerEwald = 0.0;
+  public final double preconditionerCutoff;
+  public final double preconditionerEwald;
+  /**
+   * Acceleration factor for induced dipole SCF iterations. This parameter weights the diagonol
+   * elements of the preconditioning matrix.
+   */
+  public final double preconditionerScale;
   /**
    * Neighbor lists, without atoms beyond the preconditioner cutoff.
    * [nSymm][nAtoms][nIncludedNeighbors]
@@ -88,18 +112,30 @@ public class PCGSolver {
   int[][][] preconditionerLists;
   /** Number of neighboring atoms within the preconditioner cutoff. [nSymm][nAtoms] */
   int[][] preconditionerCounts;
-  /** Residual vector. */
-  private double[][] rsd;
-  /** Residual vector for the chain-rule dipoles. */
-  private double[][] rsdCR;
-  /** Preconditioner residual. */
-  private double[][] rsdPre;
-  /** Preconditioner residual for the chain-rule dipoles. */
-  private double[][] rsdPreCR;
-  /** Conjugate search direction. */
-  private double[][] conj;
-  /** Conjugate search direction for the chain-rule dipoles. */
-  private double[][] conjCR;
+  /**
+   * Residual vector (an electric field).
+   */
+  private double[][] r;
+  /**
+   * Residual vector for the chain-rule dipoles (an electric field).
+   */
+  private double[][] rCR;
+  /**
+   * Preconditioner dipoles (z = M^-1 r).
+   */
+  private double[][] z;
+  /**
+   * Preconditioner dipoles for the chain-rule dipoles (zCR = M^-1 rCR).
+   */
+  private double[][] zCR;
+  /**
+   * Conjugate search direction (induced dipoles).
+   */
+  private double[][] p;
+  /**
+   * Conjugate search direction for the chain-rule dipoles (induced dipoles).
+   */
+  private double[][] pCR;
   /** Work vector. */
   private double[][] vec;
   /** Work vector for the chain-rule dipoles. */
@@ -108,14 +144,13 @@ public class PCGSolver {
   private Atom[] atoms;
   /** Dimensions of [nsymm][xyz][nAtoms]. */
   private double[][][] coordinates;
-
   private double[] polarizability;
   private double[] ipdamp;
   private double[] thole;
   /**
    * When computing the polarization energy at Lambda there are 3 pieces.
    *
-   * <p>1.) Upol(1) = The polarization energy computed normally (ie. system with ligand).
+   * <p>1.) Upol(1) = The polarization energy computed normally (i.e. system with ligand).
    *
    * <p>2.) Uenv = The polarization energy of the system without the ligand.
    *
@@ -123,9 +158,9 @@ public class PCGSolver {
    *
    * <p>Upol(L) = L*Upol(1) + (1-L)*(Uenv + Uligand)
    *
-   * <p>Set the "use" array to true for all atoms for part 1. Set the "use" array to true for all
-   * atoms except the ligand for part 2. Set the "use" array to true only for the ligand atoms for
-   * part 3.
+   * <p>Set the "use" array to true for all atoms for part 1.
+   * <p>Set the "use" array to true for all atoms except the ligand for part 2.
+   * <p>Set the "use" array to true only for the ligand atoms for part 3.
    *
    * <p>The "use" array can also be employed to turn off atoms for computing the electrostatic
    * energy of sub-structures.
@@ -144,7 +179,6 @@ public class PCGSolver {
   private AtomicDoubleArray3D field;
   /** Chain rule field array. */
   private AtomicDoubleArray3D fieldCR;
-
   private EwaldParameters ewaldParameters;
   /**
    * The default ParallelTeam encapsulates the maximum number of threads used to parallelize the
@@ -153,7 +187,6 @@ public class PCGSolver {
   private ParallelTeam parallelTeam;
   /** Pairwise schedule for load balancing. */
   private IntegerSchedule realSpaceSchedule;
-
   private long[] realSpaceSCFTime;
 
   /**
@@ -166,11 +199,11 @@ public class PCGSolver {
    */
   public PCGSolver(int maxThreads, double poleps, ForceField forceField, int nAtoms) {
     this.poleps = poleps;
-    inducedDipolePreconditionerRegion = new InducedDipolePreconditionerRegion(maxThreads);
-    pcgInitRegion1 = new PCGInitRegion1(maxThreads);
-    pcgInitRegion2 = new PCGInitRegion2(maxThreads);
-    pcgIterRegion1 = new PCGIterRegion1(maxThreads);
-    pcgIterRegion2 = new PCGIterRegion2(maxThreads);
+    preconditionerRegion = new PreconditionerRegion(maxThreads);
+    initResidualRegion = new InitResidualRegion(maxThreads);
+    initConjugateRegion = new InitConjugateRegion(maxThreads);
+    updateResidualRegion = new UpdateResidualRegion(maxThreads);
+    updateConjugateRegion = new UpdateConjugateRegion(maxThreads);
 
     // The size of the preconditioner neighbor list depends on the size of the preconditioner
     // cutoff.
@@ -178,8 +211,11 @@ public class PCGSolver {
     if (preconditioner) {
       preconditionerCutoff = forceField.getDouble("CG_PRECONDITIONER_CUTOFF", 4.5);
       preconditionerEwald = forceField.getDouble("CG_PRECONDITIONER_EWALD", 0.0);
+      preconditionerScale = forceField.getDouble("CG_PRECONDITIONER_SCALE", 2.0);
     } else {
       preconditionerCutoff = 0.0;
+      preconditionerEwald = 0.0;
+      preconditionerScale = 0.0;
     }
 
     allocateVectors(nAtoms);
@@ -192,6 +228,7 @@ public class PCGSolver {
    * @param nAtoms Number of atoms.
    */
   public void allocateLists(int nSymm, int nAtoms) {
+    int preconditionerListSize = 50;
     preconditionerLists = new int[nSymm][nAtoms][preconditionerListSize];
     preconditionerCounts = new int[nSymm][nAtoms];
   }
@@ -202,13 +239,13 @@ public class PCGSolver {
    * @param nAtoms The number of atoms.
    */
   public void allocateVectors(int nAtoms) {
-    if (rsd == null || rsd[0].length != nAtoms) {
-      rsd = new double[3][nAtoms];
-      rsdCR = new double[3][nAtoms];
-      rsdPre = new double[3][nAtoms];
-      rsdPreCR = new double[3][nAtoms];
-      conj = new double[3][nAtoms];
-      conjCR = new double[3][nAtoms];
+    if (r == null || r[0].length != nAtoms) {
+      r = new double[3][nAtoms];
+      rCR = new double[3][nAtoms];
+      z = new double[3][nAtoms];
+      zCR = new double[3][nAtoms];
+      p = new double[3][nAtoms];
+      pCR = new double[3][nAtoms];
       vec = new double[3][nAtoms];
       vecCR = new double[3][nAtoms];
     }
@@ -259,30 +296,19 @@ public class PCGSolver {
       sb = new StringBuilder("\n Self-Consistent Field\n Iter  RMS Change (Debye)  Time\n");
     }
 
-    // Find the induced dipole field due to direct dipoles (or predicted induced dipoles from
-    // previous steps).
+    // Find the induced dipole field due to direct dipoles
+    // (or predicted induced dipoles from previous steps).
     pme.computeInduceDipoleField();
 
     try {
-      // Set initial conjugate gradient residual (a field).
-      // Store the current induced dipoles and load the residual induced dipole.
-      parallelTeam.execute(pcgInitRegion1);
+      // Set the initial residual.
+      parallelTeam.execute(initResidualRegion);
 
-      // Compute preconditioner.
-      pme.expandInducedDipoles();
-      // Use a special Ewald coefficient for the pre-conditioner.
-      double aewaldTemp = ewaldParameters.aewald;
-      ewaldParameters.setEwaldParameters(ewaldParameters.off, preconditionerEwald);
-      int nAtoms = atoms.length;
-      field.reset(parallelTeam, 0, nAtoms - 1);
-      fieldCR.reset(parallelTeam, 0, nAtoms - 1);
-      parallelTeam.execute(inducedDipolePreconditionerRegion);
-      field.reduce(parallelTeam, 0, nAtoms - 1);
-      fieldCR.reduce(parallelTeam, 0, nAtoms - 1);
-      ewaldParameters.setEwaldParameters(ewaldParameters.off, aewaldTemp);
-      // Revert to the stored induce dipoles.
-      // Set initial conjugate vector (induced dipoles).
-      parallelTeam.execute(pcgInitRegion2);
+      // Compute the induced field due to the residual using short cut-offs.
+      computePreconditioner(pme);
+
+      // Set initial conjugate vector.
+      parallelTeam.execute(initConjugateRegion);
     } catch (Exception e) {
       String message = "Exception initializing preconditioned CG.";
       logger.log(Level.SEVERE, message, e);
@@ -297,64 +323,68 @@ public class PCGSolver {
     while (!done) {
       long cycleTime = -System.nanoTime();
 
-      // Store a copy of the current induced dipoles, then set the induced dipoles to the conjugate
-      // vector.
+      // Store a copy of the current induced dipoles,
+      // then set the induced dipoles to the conjugate vector.
       int nAtoms = atoms.length;
       for (int i = 0; i < nAtoms; i++) {
-        vec[0][i] = inducedDipole[0][i][0];
-        vec[1][i] = inducedDipole[0][i][1];
-        vec[2][i] = inducedDipole[0][i][2];
-        inducedDipole[0][i][0] = conj[0][i];
-        inducedDipole[0][i][1] = conj[1][i];
-        inducedDipole[0][i][2] = conj[2][i];
-        vecCR[0][i] = inducedDipoleCR[0][i][0];
-        vecCR[1][i] = inducedDipoleCR[0][i][1];
-        vecCR[2][i] = inducedDipoleCR[0][i][2];
-        inducedDipoleCR[0][i][0] = conjCR[0][i];
-        inducedDipoleCR[0][i][1] = conjCR[1][i];
-        inducedDipoleCR[0][i][2] = conjCR[2][i];
+        if (use[i]) {
+          vec[0][i] = inducedDipole[0][i][0];
+          vec[1][i] = inducedDipole[0][i][1];
+          vec[2][i] = inducedDipole[0][i][2];
+          inducedDipole[0][i][0] = p[0][i];
+          inducedDipole[0][i][1] = p[1][i];
+          inducedDipole[0][i][2] = p[2][i];
+          vecCR[0][i] = inducedDipoleCR[0][i][0];
+          vecCR[1][i] = inducedDipoleCR[0][i][1];
+          vecCR[2][i] = inducedDipoleCR[0][i][2];
+          inducedDipoleCR[0][i][0] = pCR[0][i];
+          inducedDipoleCR[0][i][1] = pCR[1][i];
+          inducedDipoleCR[0][i][2] = pCR[2][i];
+        } else {
+          vec[0][i] = 0.0;
+          vec[1][i] = 0.0;
+          vec[2][i] = 0.0;
+          inducedDipole[0][i][0] = 0.0;
+          inducedDipole[0][i][1] = 0.0;
+          inducedDipole[0][i][2] = 0.0;
+          vecCR[0][i] = 0.0;
+          vecCR[1][i] = 0.0;
+          vecCR[2][i] = 0.0;
+          inducedDipoleCR[0][i][0] = 0.0;
+          inducedDipoleCR[0][i][1] = 0.0;
+          inducedDipoleCR[0][i][2] = 0.0;
+        }
       }
 
-      // Find the induced dipole field.
+      // Find the induced dipole field due to the conjugate search direction p.
       pme.computeInduceDipoleField();
 
       try {
         /*
-         * Revert the induced dipoles to the saved values, then save the new residual field.
-         * Compute dot product of the conjugate vector and new residual.
-         * Reduce the residual field, add to the induced dipoles based
-         * on the scaled conjugate vector and finally set the induced
-         * dipoles to the polarizability times the residual field.
+         * 1) Using the induced dipole field, compute Ap.
+         * 2) Compute the step size alpha.
+         * 3) Update the residual and induced dipole solution.
          */
-        parallelTeam.execute(pcgIterRegion1);
+        parallelTeam.execute(updateResidualRegion);
 
-        // Compute preconditioner.
-        pme.expandInducedDipoles();
-        // Use a special Ewald coefficient for the pre-conditioner.
-        double aewaldTemp = ewaldParameters.aewald;
-        ewaldParameters.setEwaldParameters(ewaldParameters.off, preconditionerEwald);
-        field.reset(parallelTeam, 0, nAtoms - 1);
-        fieldCR.reset(parallelTeam, 0, nAtoms - 1);
-        parallelTeam.execute(inducedDipolePreconditionerRegion);
-        field.reduce(parallelTeam, 0, nAtoms - 1);
-        fieldCR.reduce(parallelTeam, 0, nAtoms - 1);
-        ewaldParameters.setEwaldParameters(ewaldParameters.off, aewaldTemp);
+        // Compute the induced field due to the residual using short cut-offs.
+        computePreconditioner(pme);
 
         /*
-         * Revert the induced dipoles to the saved values.
-         * Compute the dot product of the residual and preconditioner.
-         * Update the conjugate vector and sum the square of the residual field.
+         * 1) Compute the dot product of the residual (r) and preconditioner field (z).
+         * 2) Compute the step size beta.
+         * 3) Update the conjugate search direction (p).
          */
-        pcgIterRegion2.sum = pcgIterRegion1.getSum();
-        pcgIterRegion2.sumCR = pcgIterRegion1.getSumCR();
-        parallelTeam.execute(pcgIterRegion2);
+        updateConjugateRegion.previousRDotZ = updateResidualRegion.getRDotZ();
+        updateConjugateRegion.previousRDotZCR = updateResidualRegion.getRDotZCR();
+        parallelTeam.execute(updateConjugateRegion);
       } catch (Exception e) {
-        String message = "Exception in first CG iteration region.";
+        String message = "Exception during CG iteration.";
         logger.log(Level.SEVERE, message, e);
       }
 
       previousEps = eps;
-      eps = max(pcgIterRegion2.getEps(), pcgIterRegion2.getEpsCR());
+      eps = max(updateConjugateRegion.getEps(), updateConjugateRegion.getEpsCR());
       completedSCFCycles++;
       eps = Constants.ELEC_ANG_TO_DEBYE * sqrt(eps / (double) nAtoms);
       cycleTime += System.nanoTime();
@@ -402,23 +432,50 @@ public class PCGSolver {
     return completedSCFCycles;
   }
 
-  private class PCGInitRegion1 extends ParallelRegion {
+  /**
+   * Compute the induced field due to the Uind = polarizability * Eresidual.
+   *
+   * @param particleMeshEwald An instance of ParticleMeshEwald.
+   */
+  private void computePreconditioner(ParticleMeshEwald particleMeshEwald) {
+    try {
+      particleMeshEwald.expandInducedDipoles();
+      // Use a special Ewald coefficient for the pre-conditioner.
+      double aewaldTemp = ewaldParameters.aewald;
+      ewaldParameters.setEwaldParameters(ewaldParameters.off, preconditionerEwald);
+      int nAtoms = atoms.length;
+      field.reset(parallelTeam, 0, nAtoms - 1);
+      fieldCR.reset(parallelTeam, 0, nAtoms - 1);
+      parallelTeam.execute(preconditionerRegion);
+      field.reduce(parallelTeam, 0, nAtoms - 1);
+      fieldCR.reduce(parallelTeam, 0, nAtoms - 1);
+      ewaldParameters.setEwaldParameters(ewaldParameters.off, aewaldTemp);
+    } catch (Exception e) {
+      String message = "Exception computing the induced field for the preconditioner.";
+      logger.log(Level.SEVERE, message, e);
+    }
+  }
 
-    private final PCGInitLoop[] pcgLoop;
+  /**
+   * Set the initial Residual r_0 = E_perm - u_0 / alpha + E_u_0.
+   */
+  private class InitResidualRegion extends ParallelRegion {
 
-    public PCGInitRegion1(int nt) {
-      pcgLoop = new PCGInitLoop[nt];
+    private final InitResidualLoop[] initResidualLoops;
+
+    public InitResidualRegion(int nt) {
+      initResidualLoops = new InitResidualLoop[nt];
     }
 
     @Override
     public void run() throws Exception {
       try {
         int ti = getThreadIndex();
-        if (pcgLoop[ti] == null) {
-          pcgLoop[ti] = new PCGInitLoop();
+        if (initResidualLoops[ti] == null) {
+          initResidualLoops[ti] = new InitResidualLoop();
         }
         int nAtoms = atoms.length;
-        execute(0, nAtoms - 1, pcgLoop[ti]);
+        execute(0, nAtoms - 1, initResidualLoops[ti]);
       } catch (Exception e) {
         String message =
             "Fatal exception computing the mutual induced dipoles in thread "
@@ -428,46 +485,53 @@ public class PCGSolver {
       }
     }
 
-    private class PCGInitLoop extends IntegerForLoop {
+    private class InitResidualLoop extends IntegerForLoop {
 
       @Override
       public void run(int lb, int ub) throws Exception {
         for (int i = lb; i <= ub; i++) {
-          // Set initial conjugate gradient residual (a field).
-          double ipolar;
-          if (polarizability[i] > 0) {
-            ipolar = 1.0 / polarizability[i];
-            rsd[0][i] = (directDipole[i][0] - inducedDipole[0][i][0]) * ipolar + field.getX(i);
-            rsd[1][i] = (directDipole[i][1] - inducedDipole[0][i][1]) * ipolar + field.getY(i);
-            rsd[2][i] = (directDipole[i][2] - inducedDipole[0][i][2]) * ipolar + field.getZ(i);
-            rsdCR[0][i] =
-                (directDipoleCR[i][0] - inducedDipoleCR[0][i][0]) * ipolar + fieldCR.getX(i);
-            rsdCR[1][i] =
-                (directDipoleCR[i][1] - inducedDipoleCR[0][i][1]) * ipolar + fieldCR.getY(i);
-            rsdCR[2][i] =
-                (directDipoleCR[i][2] - inducedDipoleCR[0][i][2]) * ipolar + fieldCR.getZ(i);
+          // Set initial residual to the direct field.
+          if (use[i] && polarizability[i] > 0.0) {
+            double ipolar = 1.0 / polarizability[i];
+            r[0][i] = (directDipole[i][0] - inducedDipole[0][i][0]) * ipolar + field.getX(i);
+            r[1][i] = (directDipole[i][1] - inducedDipole[0][i][1]) * ipolar + field.getY(i);
+            r[2][i] = (directDipole[i][2] - inducedDipole[0][i][2]) * ipolar + field.getZ(i);
+            rCR[0][i] = (directDipoleCR[i][0] - inducedDipoleCR[0][i][0]) * ipolar + fieldCR.getX(i);
+            rCR[1][i] = (directDipoleCR[i][1] - inducedDipoleCR[0][i][1]) * ipolar + fieldCR.getY(i);
+            rCR[2][i] = (directDipoleCR[i][2] - inducedDipoleCR[0][i][2]) * ipolar + fieldCR.getZ(i);
           } else {
-            rsd[0][i] = 0.0;
-            rsd[1][i] = 0.0;
-            rsd[2][i] = 0.0;
-            rsdCR[0][i] = 0.0;
-            rsdCR[1][i] = 0.0;
-            rsdCR[2][i] = 0.0;
+            r[0][i] = 0.0;
+            r[1][i] = 0.0;
+            r[2][i] = 0.0;
+            rCR[0][i] = 0.0;
+            rCR[1][i] = 0.0;
+            rCR[2][i] = 0.0;
           }
+
           // Store the current induced dipoles and load the residual induced dipole
+          if (use[i]) {
+            vec[0][i] = inducedDipole[0][i][0];
+            vec[1][i] = inducedDipole[0][i][1];
+            vec[2][i] = inducedDipole[0][i][2];
+            vecCR[0][i] = inducedDipoleCR[0][i][0];
+            vecCR[1][i] = inducedDipoleCR[0][i][1];
+            vecCR[2][i] = inducedDipoleCR[0][i][2];
+          } else {
+            vec[0][i] = 0.0;
+            vec[1][i] = 0.0;
+            vec[2][i] = 0.0;
+            vecCR[0][i] = 0.0;
+            vecCR[1][i] = 0.0;
+            vecCR[2][i] = 0.0;
+          }
+
           double polar = polarizability[i];
-          vec[0][i] = inducedDipole[0][i][0];
-          vec[1][i] = inducedDipole[0][i][1];
-          vec[2][i] = inducedDipole[0][i][2];
-          vecCR[0][i] = inducedDipoleCR[0][i][0];
-          vecCR[1][i] = inducedDipoleCR[0][i][1];
-          vecCR[2][i] = inducedDipoleCR[0][i][2];
-          inducedDipole[0][i][0] = polar * rsd[0][i];
-          inducedDipole[0][i][1] = polar * rsd[1][i];
-          inducedDipole[0][i][2] = polar * rsd[2][i];
-          inducedDipoleCR[0][i][0] = polar * rsdCR[0][i];
-          inducedDipoleCR[0][i][1] = polar * rsdCR[1][i];
-          inducedDipoleCR[0][i][2] = polar * rsdCR[2][i];
+          inducedDipole[0][i][0] = polar * r[0][i];
+          inducedDipole[0][i][1] = polar * r[1][i];
+          inducedDipole[0][i][2] = polar * r[2][i];
+          inducedDipoleCR[0][i][0] = polar * rCR[0][i];
+          inducedDipoleCR[0][i][1] = polar * rCR[1][i];
+          inducedDipoleCR[0][i][2] = polar * rCR[2][i];
         }
       }
 
@@ -478,23 +542,28 @@ public class PCGSolver {
     }
   }
 
-  private class PCGInitRegion2 extends ParallelRegion {
+  /**
+   * Set the initial conjugate direction p_0 = z_0 = M^-1 * r_0.
+   * <p>
+   * Where M^-1 is the inverse of the preconditioner matrix.
+   */
+  private class InitConjugateRegion extends ParallelRegion {
 
-    private final PCGInitLoop[] pcgLoop;
+    private final InitConjugateLoop[] initConjugateLoops;
 
-    public PCGInitRegion2(int nt) {
-      pcgLoop = new PCGInitLoop[nt];
+    public InitConjugateRegion(int nt) {
+      initConjugateLoops = new InitConjugateLoop[nt];
     }
 
     @Override
     public void run() throws Exception {
       try {
         int ti = getThreadIndex();
-        if (pcgLoop[ti] == null) {
-          pcgLoop[ti] = new PCGInitLoop();
+        if (initConjugateLoops[ti] == null) {
+          initConjugateLoops[ti] = new InitConjugateLoop();
         }
         int nAtoms = atoms.length;
-        execute(0, nAtoms - 1, pcgLoop[ti]);
+        execute(0, nAtoms - 1, initConjugateLoops[ti]);
       } catch (Exception e) {
         String message =
             "Fatal exception computing the mutual induced dipoles in thread "
@@ -504,36 +573,55 @@ public class PCGSolver {
       }
     }
 
-    private class PCGInitLoop extends IntegerForLoop {
+    private class InitConjugateLoop extends IntegerForLoop {
 
       @Override
       public void run(int lb, int ub) throws Exception {
 
         for (int i = lb; i <= ub; i++) {
+          if (use[i]) {
+            // Revert to the stored induce dipoles.
+            inducedDipole[0][i][0] = vec[0][i];
+            inducedDipole[0][i][1] = vec[1][i];
+            inducedDipole[0][i][2] = vec[2][i];
+            inducedDipoleCR[0][i][0] = vecCR[0][i];
+            inducedDipoleCR[0][i][1] = vecCR[1][i];
+            inducedDipoleCR[0][i][2] = vecCR[2][i];
 
-          // Revert to the stored induce dipoles.
-          inducedDipole[0][i][0] = vec[0][i];
-          inducedDipole[0][i][1] = vec[1][i];
-          inducedDipole[0][i][2] = vec[2][i];
-          inducedDipoleCR[0][i][0] = vecCR[0][i];
-          inducedDipoleCR[0][i][1] = vecCR[1][i];
-          inducedDipoleCR[0][i][2] = vecCR[2][i];
-
-          // Set initial conjugate vector (induced dipoles).
-          double udiag = 2.0;
-          double polar = polarizability[i];
-          rsdPre[0][i] = polar * (field.getX(i) + udiag * rsd[0][i]);
-          rsdPre[1][i] = polar * (field.getY(i) + udiag * rsd[1][i]);
-          rsdPre[2][i] = polar * (field.getZ(i) + udiag * rsd[2][i]);
-          rsdPreCR[0][i] = polar * (fieldCR.getX(i) + udiag * rsdCR[0][i]);
-          rsdPreCR[1][i] = polar * (fieldCR.getY(i) + udiag * rsdCR[1][i]);
-          rsdPreCR[2][i] = polar * (fieldCR.getZ(i) + udiag * rsdCR[2][i]);
-          conj[0][i] = rsdPre[0][i];
-          conj[1][i] = rsdPre[1][i];
-          conj[2][i] = rsdPre[2][i];
-          conjCR[0][i] = rsdPreCR[0][i];
-          conjCR[1][i] = rsdPreCR[1][i];
-          conjCR[2][i] = rsdPreCR[2][i];
+            // Set initial conjugate vector p (induced dipoles).
+            double polar = polarizability[i];
+            z[0][i] = polar * (field.getX(i) + preconditionerScale * r[0][i]);
+            z[1][i] = polar * (field.getY(i) + preconditionerScale * r[1][i]);
+            z[2][i] = polar * (field.getZ(i) + preconditionerScale * r[2][i]);
+            zCR[0][i] = polar * (fieldCR.getX(i) + preconditionerScale * rCR[0][i]);
+            zCR[1][i] = polar * (fieldCR.getY(i) + preconditionerScale * rCR[1][i]);
+            zCR[2][i] = polar * (fieldCR.getZ(i) + preconditionerScale * rCR[2][i]);
+            p[0][i] = z[0][i];
+            p[1][i] = z[1][i];
+            p[2][i] = z[2][i];
+            pCR[0][i] = zCR[0][i];
+            pCR[1][i] = zCR[1][i];
+            pCR[2][i] = zCR[2][i];
+          } else {
+            inducedDipole[0][i][0] = 0.0;
+            inducedDipole[0][i][1] = 0.0;
+            inducedDipole[0][i][2] = 0.0;
+            inducedDipoleCR[0][i][0] = 0.0;
+            inducedDipoleCR[0][i][1] = 0.0;
+            inducedDipoleCR[0][i][2] = 0.0;
+            z[0][i] = 0.0;
+            z[1][i] = 0.0;
+            z[2][i] = 0.0;
+            zCR[0][i] = 0.0;
+            zCR[1][i] = 0.0;
+            zCR[2][i] = 0.0;
+            p[0][i] = 0.0;
+            p[1][i] = 0.0;
+            p[2][i] = 0.0;
+            pCR[0][i] = 0.0;
+            pCR[1][i] = 0.0;
+            pCR[2][i] = 0.0;
+          }
         }
       }
 
@@ -544,30 +632,33 @@ public class PCGSolver {
     }
   }
 
-  private class PCGIterRegion1 extends ParallelRegion {
+  /**
+   * Update the induced dipoles and residuals.
+   */
+  private class UpdateResidualRegion extends ParallelRegion {
 
-    private final PCGIterLoop1[] iterLoop1;
-    private final PCGIterLoop2[] iterLoop2;
-    private final SharedDouble dotShared;
-    private final SharedDouble dotCRShared;
-    private final SharedDouble sumShared;
-    private final SharedDouble sumCRShared;
+    private final UpdateApLoop[] updateApLoops;
+    private final UpdateResidualAndInducedLoop[] updateResidualAndInducedLoops;
+    private final SharedDouble pDotApShared;
+    private final SharedDouble pDotApCRShared;
+    private final SharedDouble rDotZShared;
+    private final SharedDouble rDotZCRShared;
 
-    public PCGIterRegion1(int nt) {
-      iterLoop1 = new PCGIterLoop1[nt];
-      iterLoop2 = new PCGIterLoop2[nt];
-      dotShared = new SharedDouble();
-      dotCRShared = new SharedDouble();
-      sumShared = new SharedDouble();
-      sumCRShared = new SharedDouble();
+    public UpdateResidualRegion(int nt) {
+      updateApLoops = new UpdateApLoop[nt];
+      updateResidualAndInducedLoops = new UpdateResidualAndInducedLoop[nt];
+      pDotApShared = new SharedDouble();
+      pDotApCRShared = new SharedDouble();
+      rDotZShared = new SharedDouble();
+      rDotZCRShared = new SharedDouble();
     }
 
-    public double getSum() {
-      return sumShared.get();
+    public double getRDotZ() {
+      return rDotZShared.get();
     }
 
-    public double getSumCR() {
-      return sumCRShared.get();
+    public double getRDotZCR() {
+      return rDotZCRShared.get();
     }
 
     @Override
@@ -575,21 +666,12 @@ public class PCGSolver {
       try {
         int ti = getThreadIndex();
         int nAtoms = atoms.length;
-        if (iterLoop1[ti] == null) {
-          iterLoop1[ti] = new PCGIterLoop1();
-          iterLoop2[ti] = new PCGIterLoop2();
+        if (updateApLoops[ti] == null) {
+          updateApLoops[ti] = new UpdateApLoop();
+          updateResidualAndInducedLoops[ti] = new UpdateResidualAndInducedLoop();
         }
-        execute(0, nAtoms - 1, iterLoop1[ti]);
-        if (ti == 0) {
-          if (dotShared.get() != 0.0) {
-            dotShared.set(sumShared.get() / dotShared.get());
-          }
-          if (dotCRShared.get() != 0.0) {
-            dotCRShared.set(sumCRShared.get() / dotCRShared.get());
-          }
-        }
-        barrier();
-        execute(0, nAtoms - 1, iterLoop2[ti]);
+        execute(0, nAtoms - 1, updateApLoops[ti]);
+        execute(0, nAtoms - 1, updateResidualAndInducedLoops[ti]);
       } catch (Exception e) {
         String message =
             "Fatal exception computing the mutual induced dipoles in thread "
@@ -601,44 +683,47 @@ public class PCGSolver {
 
     @Override
     public void start() {
-      dotShared.set(0.0);
-      dotCRShared.set(0.0);
-      sumShared.set(0.0);
-      sumCRShared.set(0.0);
+      pDotApShared.set(0.0);
+      pDotApCRShared.set(0.0);
+      rDotZShared.set(0.0);
+      rDotZCRShared.set(0.0);
     }
 
-    private class PCGIterLoop1 extends IntegerForLoop {
+    private class UpdateApLoop extends IntegerForLoop {
 
-      public double dot;
-      public double dotCR;
-      public double sum;
-      public double sumCR;
+      public double pDotAp;
+      public double pDotApCR;
+      public double rDotZ;
+      public double rDotZCR;
 
       @Override
       public void finish() {
-        dotShared.addAndGet(dot);
-        dotCRShared.addAndGet(dotCR);
-        sumShared.addAndGet(sum);
-        sumCRShared.addAndGet(sumCR);
+        pDotApShared.addAndGet(pDotAp);
+        pDotApCRShared.addAndGet(pDotApCR);
+        rDotZShared.addAndGet(rDotZ);
+        rDotZCRShared.addAndGet(rDotZCR);
       }
 
       @Override
       public void run(int lb, int ub) throws Exception {
         for (int i = lb; i <= ub; i++) {
-          if (polarizability[i] > 0) {
+          if (use[i] && polarizability[i] > 0) {
             double ipolar = 1.0 / polarizability[i];
             inducedDipole[0][i][0] = vec[0][i];
             inducedDipole[0][i][1] = vec[1][i];
             inducedDipole[0][i][2] = vec[2][i];
-            vec[0][i] = conj[0][i] * ipolar - field.getX(i);
-            vec[1][i] = conj[1][i] * ipolar - field.getY(i);
-            vec[2][i] = conj[2][i] * ipolar - field.getZ(i);
             inducedDipoleCR[0][i][0] = vecCR[0][i];
             inducedDipoleCR[0][i][1] = vecCR[1][i];
             inducedDipoleCR[0][i][2] = vecCR[2][i];
-            vecCR[0][i] = conjCR[0][i] * ipolar - fieldCR.getX(i);
-            vecCR[1][i] = conjCR[1][i] * ipolar - fieldCR.getY(i);
-            vecCR[2][i] = conjCR[2][i] * ipolar - fieldCR.getZ(i);
+            // Compute Ap = [1/alpha - T] * p
+            // Tp is the field due to the conjugate induced dipoles.
+            // p/alpha gives the field that induced the conjugate induced dipoles.
+            vec[0][i] = p[0][i] * ipolar - field.getX(i);
+            vec[1][i] = p[1][i] * ipolar - field.getY(i);
+            vec[2][i] = p[2][i] * ipolar - field.getZ(i);
+            vecCR[0][i] = pCR[0][i] * ipolar - fieldCR.getX(i);
+            vecCR[1][i] = pCR[1][i] * ipolar - fieldCR.getY(i);
+            vecCR[2][i] = pCR[2][i] * ipolar - fieldCR.getZ(i);
           } else {
             inducedDipole[0][i][0] = 0.0;
             inducedDipole[0][i][1] = 0.0;
@@ -654,16 +739,13 @@ public class PCGSolver {
             vecCR[2][i] = 0.0;
           }
 
-          // Compute dot product of the conjugate vector and new residual.
-          dot += conj[0][i] * vec[0][i] + conj[1][i] * vec[1][i] + conj[2][i] * vec[2][i];
-          dotCR +=
-              conjCR[0][i] * vecCR[0][i] + conjCR[1][i] * vecCR[1][i] + conjCR[2][i] * vecCR[2][i];
-          // Compute dot product of the previous residual and preconditioner.
-          sum += rsd[0][i] * rsdPre[0][i] + rsd[1][i] * rsdPre[1][i] + rsd[2][i] * rsdPre[2][i];
-          sumCR +=
-              rsdCR[0][i] * rsdPreCR[0][i]
-                  + rsdCR[1][i] * rsdPreCR[1][i]
-                  + rsdCR[2][i] * rsdPreCR[2][i];
+          // Compute dot product of the conjugate vector (p) with Ap (stored in vec).
+          pDotAp += p[0][i] * vec[0][i] + p[1][i] * vec[1][i] + p[2][i] * vec[2][i];
+          pDotApCR += pCR[0][i] * vecCR[0][i] + pCR[1][i] * vecCR[1][i] + pCR[2][i] * vecCR[2][i];
+
+          // Compute dot product of the residual (r) and preconditioner (z).
+          rDotZ += r[0][i] * z[0][i] + r[1][i] * z[1][i] + r[2][i] * z[2][i];
+          rDotZCR += rCR[0][i] * zCR[0][i] + rCR[1][i] * zCR[1][i] + rCR[2][i] * zCR[2][i];
         }
       }
 
@@ -674,45 +756,67 @@ public class PCGSolver {
 
       @Override
       public void start() {
-        dot = 0.0;
-        dotCR = 0.0;
-        sum = 0.0;
-        sumCR = 0.0;
+        pDotAp = 0.0;
+        pDotApCR = 0.0;
+        rDotZ = 0.0;
+        rDotZCR = 0.0;
       }
     }
 
-    private class PCGIterLoop2 extends IntegerForLoop {
+    private class UpdateResidualAndInducedLoop extends IntegerForLoop {
 
       @Override
       public void run(int lb, int ub) throws Exception {
-        double dot = dotShared.get();
-        double dotCR = dotCRShared.get();
+        double alpha = rDotZShared.get();
+        if (pDotApShared.get() != 0) {
+          alpha /= pDotApShared.get();
+        }
+        double alphaCR = rDotZCRShared.get();
+        if (pDotApCRShared.get() != 0) {
+          alphaCR /= pDotApCRShared.get();
+        }
         for (int i = lb; i <= ub; i++) {
-          /*
-           Reduce the residual field, add to the induced dipoles
-           based on the scaled conjugate vector and finally set the
-           induced dipoles to the polarizability times the residual
-           field.
-          */
-          rsd[0][i] -= dot * vec[0][i];
-          rsd[1][i] -= dot * vec[1][i];
-          rsd[2][i] -= dot * vec[2][i];
-          rsdCR[0][i] -= dotCR * vecCR[0][i];
-          rsdCR[1][i] -= dotCR * vecCR[1][i];
-          rsdCR[2][i] -= dotCR * vecCR[2][i];
-          vec[0][i] = inducedDipole[0][i][0] + dot * conj[0][i];
-          vec[1][i] = inducedDipole[0][i][1] + dot * conj[1][i];
-          vec[2][i] = inducedDipole[0][i][2] + dot * conj[2][i];
-          vecCR[0][i] = inducedDipoleCR[0][i][0] + dotCR * conjCR[0][i];
-          vecCR[1][i] = inducedDipoleCR[0][i][1] + dotCR * conjCR[1][i];
-          vecCR[2][i] = inducedDipoleCR[0][i][2] + dotCR * conjCR[2][i];
-          double polar = polarizability[i];
-          inducedDipole[0][i][0] = polar * rsd[0][i];
-          inducedDipole[0][i][1] = polar * rsd[1][i];
-          inducedDipole[0][i][2] = polar * rsd[2][i];
-          inducedDipoleCR[0][i][0] = polar * rsdCR[0][i];
-          inducedDipoleCR[0][i][1] = polar * rsdCR[1][i];
-          inducedDipoleCR[0][i][2] = polar * rsdCR[2][i];
+          if (use[i]) {
+            // Update the residual.
+            r[0][i] -= alpha * vec[0][i];
+            r[1][i] -= alpha * vec[1][i];
+            r[2][i] -= alpha * vec[2][i];
+            rCR[0][i] -= alphaCR * vecCR[0][i];
+            rCR[1][i] -= alphaCR * vecCR[1][i];
+            rCR[2][i] -= alphaCR * vecCR[2][i];
+
+            // Update the induced dipoles based on the scaled conjugate vector.
+            // Store them in the work array vec.
+            vec[0][i] = inducedDipole[0][i][0] + alpha * p[0][i];
+            vec[1][i] = inducedDipole[0][i][1] + alpha * p[1][i];
+            vec[2][i] = inducedDipole[0][i][2] + alpha * p[2][i];
+            vecCR[0][i] = inducedDipoleCR[0][i][0] + alphaCR * pCR[0][i];
+            vecCR[1][i] = inducedDipoleCR[0][i][1] + alphaCR * pCR[1][i];
+            vecCR[2][i] = inducedDipoleCR[0][i][2] + alphaCR * pCR[2][i];
+
+            // Prepare to compute the preconditioner.
+            // Set the induced dipoles to the polarizability times the residual field.
+            double polar = polarizability[i];
+            inducedDipole[0][i][0] = polar * r[0][i];
+            inducedDipole[0][i][1] = polar * r[1][i];
+            inducedDipole[0][i][2] = polar * r[2][i];
+            inducedDipoleCR[0][i][0] = polar * rCR[0][i];
+            inducedDipoleCR[0][i][1] = polar * rCR[1][i];
+            inducedDipoleCR[0][i][2] = polar * rCR[2][i];
+          } else {
+            vec[0][i] = 0.0;
+            vec[1][i] = 0.0;
+            vec[2][i] = 0.0;
+            vecCR[0][i] = 0.0;
+            vecCR[1][i] = 0.0;
+            vecCR[2][i] = 0.0;
+            inducedDipole[0][i][0] = 0.0;
+            inducedDipole[0][i][1] = 0.0;
+            inducedDipole[0][i][2] = 0.0;
+            inducedDipoleCR[0][i][0] = 0.0;
+            inducedDipoleCR[0][i][1] = 0.0;
+            inducedDipoleCR[0][i][2] = 0.0;
+          }
         }
       }
 
@@ -723,22 +827,25 @@ public class PCGSolver {
     }
   }
 
-  private class PCGIterRegion2 extends ParallelRegion {
+  /**
+   * Update the preconditioner and conjugate search direction.
+   */
+  private class UpdateConjugateRegion extends ParallelRegion {
 
-    private final PCGIterLoop1[] iterLoop1;
-    private final PCGIterLoop2[] iterLoop2;
-    private final SharedDouble dotShared;
-    private final SharedDouble dotCRShared;
+    private final UpdatePreconditionerLoop[] updatePreconditionerLoops;
+    private final UpdateConjugateLoop[] updateConjugateLoops;
+    private final SharedDouble betaShared;
+    private final SharedDouble betaCRShared;
     private final SharedDouble epsShared;
     private final SharedDouble epsCRShared;
-    public double sum;
-    public double sumCR;
+    public double previousRDotZ;
+    public double previousRDotZCR;
 
-    public PCGIterRegion2(int nt) {
-      iterLoop1 = new PCGIterLoop1[nt];
-      iterLoop2 = new PCGIterLoop2[nt];
-      dotShared = new SharedDouble();
-      dotCRShared = new SharedDouble();
+    public UpdateConjugateRegion(int nt) {
+      updatePreconditionerLoops = new UpdatePreconditionerLoop[nt];
+      updateConjugateLoops = new UpdateConjugateLoop[nt];
+      betaShared = new SharedDouble();
+      betaCRShared = new SharedDouble();
       epsShared = new SharedDouble();
       epsCRShared = new SharedDouble();
     }
@@ -755,13 +862,13 @@ public class PCGSolver {
     public void run() throws Exception {
       try {
         int ti = getThreadIndex();
-        if (iterLoop1[ti] == null) {
-          iterLoop1[ti] = new PCGIterLoop1();
-          iterLoop2[ti] = new PCGIterLoop2();
+        if (updatePreconditionerLoops[ti] == null) {
+          updatePreconditionerLoops[ti] = new UpdatePreconditionerLoop();
+          updateConjugateLoops[ti] = new UpdateConjugateLoop();
         }
         int nAtoms = atoms.length;
-        execute(0, nAtoms - 1, iterLoop1[ti]);
-        execute(0, nAtoms - 1, iterLoop2[ti]);
+        execute(0, nAtoms - 1, updatePreconditionerLoops[ti]);
+        execute(0, nAtoms - 1, updateConjugateLoops[ti]);
       } catch (Exception e) {
         String message =
             "Fatal exception computing the mutual induced dipoles in thread "
@@ -773,55 +880,65 @@ public class PCGSolver {
 
     @Override
     public void start() {
-      dotShared.set(0.0);
-      dotCRShared.set(0.0);
+      betaShared.set(0.0);
+      betaCRShared.set(0.0);
       epsShared.set(0.0);
       epsCRShared.set(0.0);
-      if (sum == 0.0) {
-        sum = 1.0;
+      if (previousRDotZ == 0.0) {
+        previousRDotZ = 1.0;
       }
-      if (sumCR == 0.0) {
-        sumCR = 1.0;
+      if (previousRDotZCR == 0.0) {
+        previousRDotZCR = 1.0;
       }
     }
 
-    private class PCGIterLoop1 extends IntegerForLoop {
+    private class UpdatePreconditionerLoop extends IntegerForLoop {
 
-      public double dot;
-      public double dotCR;
+      public double rDotZ;
+      public double rDotZCR;
 
       @Override
       public void finish() {
-        dotShared.addAndGet(dot / sum);
-        dotCRShared.addAndGet(dotCR / sumCR);
+        betaShared.addAndGet(rDotZ / previousRDotZ);
+        betaCRShared.addAndGet(rDotZCR / previousRDotZCR);
       }
 
       @Override
       public void run(int lb, int ub) throws Exception {
-        double udiag = 2.0;
         for (int i = lb; i <= ub; i++) {
+          if (use[i]) {
+            // Revert the induced dipoles to the saved values.
+            inducedDipole[0][i][0] = vec[0][i];
+            inducedDipole[0][i][1] = vec[1][i];
+            inducedDipole[0][i][2] = vec[2][i];
+            inducedDipoleCR[0][i][0] = vecCR[0][i];
+            inducedDipoleCR[0][i][1] = vecCR[1][i];
+            inducedDipoleCR[0][i][2] = vecCR[2][i];
 
-          // Revert the induced dipoles to the saved values.
-          inducedDipole[0][i][0] = vec[0][i];
-          inducedDipole[0][i][1] = vec[1][i];
-          inducedDipole[0][i][2] = vec[2][i];
-          inducedDipoleCR[0][i][0] = vecCR[0][i];
-          inducedDipoleCR[0][i][1] = vecCR[1][i];
-          inducedDipoleCR[0][i][2] = vecCR[2][i];
-
-          // Compute the dot product of the residual and preconditioner.
-          double polar = polarizability[i];
-          rsdPre[0][i] = polar * (field.getX(i) + udiag * rsd[0][i]);
-          rsdPre[1][i] = polar * (field.getY(i) + udiag * rsd[1][i]);
-          rsdPre[2][i] = polar * (field.getZ(i) + udiag * rsd[2][i]);
-          rsdPreCR[0][i] = polar * (fieldCR.getX(i) + udiag * rsdCR[0][i]);
-          rsdPreCR[1][i] = polar * (fieldCR.getY(i) + udiag * rsdCR[1][i]);
-          rsdPreCR[2][i] = polar * (fieldCR.getZ(i) + udiag * rsdCR[2][i]);
-          dot += rsd[0][i] * rsdPre[0][i] + rsd[1][i] * rsdPre[1][i] + rsd[2][i] * rsdPre[2][i];
-          dotCR +=
-              rsdCR[0][i] * rsdPreCR[0][i]
-                  + rsdCR[1][i] * rsdPreCR[1][i]
-                  + rsdCR[2][i] * rsdPreCR[2][i];
+            // Compute the dot product of the residual and preconditioner.
+            double polar = polarizability[i];
+            z[0][i] = polar * (field.getX(i) + preconditionerScale * r[0][i]);
+            z[1][i] = polar * (field.getY(i) + preconditionerScale * r[1][i]);
+            z[2][i] = polar * (field.getZ(i) + preconditionerScale * r[2][i]);
+            zCR[0][i] = polar * (fieldCR.getX(i) + preconditionerScale * rCR[0][i]);
+            zCR[1][i] = polar * (fieldCR.getY(i) + preconditionerScale * rCR[1][i]);
+            zCR[2][i] = polar * (fieldCR.getZ(i) + preconditionerScale * rCR[2][i]);
+            rDotZ += r[0][i] * z[0][i] + r[1][i] * z[1][i] + r[2][i] * z[2][i];
+            rDotZCR += rCR[0][i] * zCR[0][i] + rCR[1][i] * zCR[1][i] + rCR[2][i] * zCR[2][i];
+          } else {
+            inducedDipole[0][i][0] = 0.0;
+            inducedDipole[0][i][1] = 0.0;
+            inducedDipole[0][i][2] = 0.0;
+            inducedDipoleCR[0][i][0] = 0.0;
+            inducedDipoleCR[0][i][1] = 0.0;
+            inducedDipoleCR[0][i][2] = 0.0;
+            z[0][i] = 0.0;
+            z[1][i] = 0.0;
+            z[2][i] = 0.0;
+            zCR[0][i] = 0.0;
+            zCR[1][i] = 0.0;
+            zCR[2][i] = 0.0;
+          }
         }
       }
 
@@ -832,12 +949,12 @@ public class PCGSolver {
 
       @Override
       public void start() {
-        dot = 0.0;
-        dotCR = 0.0;
+        rDotZ = 0.0;
+        rDotZCR = 0.0;
       }
     }
 
-    private class PCGIterLoop2 extends IntegerForLoop {
+    private class UpdateConjugateLoop extends IntegerForLoop {
 
       public double eps;
       public double epsCR;
@@ -850,19 +967,28 @@ public class PCGSolver {
 
       @Override
       public void run(int lb, int ub) throws Exception {
-        double dot = dotShared.get();
-        double dotCR = dotCRShared.get();
+        double beta = betaShared.get();
+        double betaCR = betaCRShared.get();
         for (int i = lb; i <= ub; i++) {
-          // Update the conjugate vector and sum the square of the residual field.
-          conj[0][i] = rsdPre[0][i] + dot * conj[0][i];
-          conj[1][i] = rsdPre[1][i] + dot * conj[1][i];
-          conj[2][i] = rsdPre[2][i] + dot * conj[2][i];
-          conjCR[0][i] = rsdPreCR[0][i] + dotCR * conjCR[0][i];
-          conjCR[1][i] = rsdPreCR[1][i] + dotCR * conjCR[1][i];
-          conjCR[2][i] = rsdPreCR[2][i] + dotCR * conjCR[2][i];
-          eps += rsd[0][i] * rsd[0][i] + rsd[1][i] * rsd[1][i] + rsd[2][i] * rsd[2][i];
-          epsCR +=
-              rsdCR[0][i] * rsdCR[0][i] + rsdCR[1][i] * rsdCR[1][i] + rsdCR[2][i] * rsdCR[2][i];
+          if (use[i]) {
+            // Update the conjugate vector.
+            p[0][i] = z[0][i] + beta * p[0][i];
+            p[1][i] = z[1][i] + beta * p[1][i];
+            p[2][i] = z[2][i] + beta * p[2][i];
+            pCR[0][i] = zCR[0][i] + betaCR * pCR[0][i];
+            pCR[1][i] = zCR[1][i] + betaCR * pCR[1][i];
+            pCR[2][i] = zCR[2][i] + betaCR * pCR[2][i];
+            // Sum the square of the residual field.
+            eps += r[0][i] * r[0][i] + r[1][i] * r[1][i] + r[2][i] * r[2][i];
+            epsCR += rCR[0][i] * rCR[0][i] + rCR[1][i] * rCR[1][i] + rCR[2][i] * rCR[2][i];
+          } else {
+            p[0][i] = 0.0;
+            p[1][i] = 0.0;
+            p[2][i] = 0.0;
+            pCR[0][i] = 0.0;
+            pCR[1][i] = 0.0;
+            pCR[2][i] = 0.0;
+          }
         }
       }
 
@@ -880,10 +1006,11 @@ public class PCGSolver {
   }
 
   /** Evaluate the real space field due to induced dipoles using a short cutoff (~3-4 A). */
-  private class InducedDipolePreconditionerRegion extends ParallelRegion {
+  private class PreconditionerRegion extends ParallelRegion {
+
     private final InducedPreconditionerFieldLoop[] inducedPreconditionerFieldLoop;
 
-    InducedDipolePreconditionerRegion(int threadCount) {
+    PreconditionerRegion(int threadCount) {
       inducedPreconditionerFieldLoop = new InducedPreconditionerFieldLoop[threadCount];
     }
 
@@ -911,7 +1038,8 @@ public class PCGSolver {
       private double[] x, y, z;
       private double[][] ind, indCR;
 
-      InducedPreconditionerFieldLoop() {}
+      InducedPreconditionerFieldLoop() {
+      }
 
       @Override
       public void finish() {
