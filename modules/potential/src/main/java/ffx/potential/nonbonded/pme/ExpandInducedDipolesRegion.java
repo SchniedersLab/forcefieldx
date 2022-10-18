@@ -118,7 +118,7 @@ public class ExpandInducedDipolesRegion extends ParallelRegion {
       List<SymOp> symOps = crystal.spaceGroup.symOps;
       int nSymm = symOps.size();
       for (int s = 1; s < nSymm; s++) {
-        SymOp symOp = crystal.spaceGroup.symOps.get(s);
+        SymOp symOp = symOps.get(s);
         for (int ii = lb; ii <= ub; ii++) {
           crystal.applySymRot(inducedDipole[0][ii], inducedDipole[s][ii], symOp);
           crystal.applySymRot(inducedDipoleCR[0][ii], inducedDipoleCR[s][ii], symOp);

@@ -521,9 +521,9 @@ public class ParticleMeshEwald implements LambdaInterface {
         if (scfAlgorithm == SCFAlgorithm.SOR) {
           sb.append(format("    SOR Parameter:                     %8.3f\n", sorRegion.getSOR()));
         } else {
-          sb.append(format("    CG Preconditioner Cut-Off:         %8.3f\n", pcgSolver.preconditionerCutoff));
-          sb.append(format("    CG Preconditioner Ewald Coeff.:    %8.3f\n", pcgSolver.preconditionerEwald));
-          sb.append(format("    CG Preconditioner Scale:           %8.3f\n", pcgSolver.preconditionerScale));
+          sb.append(format("    CG Preconditioner Cut-Off:         %8.3f\n", pcgSolver.getPreconditionerCutoff()));
+          sb.append(format("    CG Preconditioner Ewald Coeff.:    %8.3f\n", pcgSolver.getPreconditionerEwald()));
+          sb.append(format("    CG Preconditioner Scale:           %8.3f\n", pcgSolver.getPreconditionerScale()));
         }
       }
       if (ewaldParameters.aewald > 0.0) {
