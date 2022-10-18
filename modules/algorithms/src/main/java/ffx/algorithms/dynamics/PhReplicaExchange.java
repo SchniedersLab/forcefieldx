@@ -46,6 +46,7 @@ import ffx.numerics.Potential;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
 import jline.internal.Nullable;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.FastMath;
 
@@ -95,7 +96,7 @@ public class PhReplicaExchange implements Terminatable {
   private boolean done = false, restart, terminate = false;
   private final double[] myParameters, pHScale;
   private double[] x;
-  private final double pH, gapSize, temp;
+  private final double pH, temp;
   private int restartStep;
 
   /**
@@ -104,12 +105,12 @@ public class PhReplicaExchange implements Terminatable {
    * @param molecularDynamics a {@link MolecularDynamics} object.
    * @param pH pH = pKa <-- will be changed from this initial value
    * @param extendedSystem extended system attached to this process
-   * @param pHGap the gap in pH units between replicas
+   * @param pHLadder range of pH's that replicas are created for
    * @param temp temperature of replica
    */
   public PhReplicaExchange(
-      MolecularDynamics molecularDynamics, File structureFile, double pH, double pHGap, double temp, ExtendedSystem extendedSystem) {
-    this(molecularDynamics, structureFile, pH, pHGap, temp, extendedSystem, null, null, null);
+      MolecularDynamics molecularDynamics, File structureFile, double pH, double[] pHLadder, double temp, ExtendedSystem extendedSystem) {
+    this(molecularDynamics, structureFile, pH, pHLadder, temp, extendedSystem, null, null, null);
   }
 
   /**
@@ -118,20 +119,21 @@ public class PhReplicaExchange implements Terminatable {
    * @param molecularDynamics a {@link MolecularDynamics} object.
    * @param pH pH = pKa <-- will be changed from this initial value
    * @param extendedSystem extended system attached to this process
-   * @param pHGap the gap in pH units between replicas
+   * @param pHLadder range of pH's that replicas are created for
    * @param temp temperature of replica
    * @param x array of coordinates
    * @param molecularDynamicsOpenMM for running config steps on GPU
    */
   public PhReplicaExchange(
-          MolecularDynamics molecularDynamics, File structureFile, double pH, double pHGap, double temp, ExtendedSystem extendedSystem,
+          MolecularDynamics molecularDynamics, File structureFile, double pH, double[] pHLadder, double temp, ExtendedSystem extendedSystem,
           @Nullable double[] x, @Nullable MolecularDynamicsOpenMM molecularDynamicsOpenMM, @Nullable Potential potential) {
 
     this.replica = molecularDynamics;
     this.temp = temp;
     this.extendedSystem = extendedSystem;
     this.pH = pH;
-    this.gapSize = pHGap;
+    this.pHScale = pHLadder;
+    logger.info("Ph Ladder: " + Arrays.toString(pHScale));
     this.x = x;
     this.openMM = molecularDynamicsOpenMM;
     this.potential = potential;
@@ -145,12 +147,16 @@ public class PhReplicaExchange implements Terminatable {
 
 
     nReplicas = numProc;
-    pHScale = new double[nReplicas];
     pH2Rank = new int[nReplicas];
     rank2Ph = new int[nReplicas];
     pHAcceptedCount = new int[nReplicas];
     pHTrialCount = new int[nReplicas];
-    setEvenSpacePhLadder(pHGap);
+
+    // Init map
+    for(int i = 0; i < nReplicas; i++){
+      rank2Ph[i] = i;
+      pH2Rank[i] = i;
+    }
     extendedSystem.setConstantPh(pHScale[rank]);
 
     random = new Random();
@@ -440,7 +446,7 @@ public class PhReplicaExchange implements Terminatable {
   /**
    * Sets an even pH ladder based on the pH gap.
    */
-  private void setEvenSpacePhLadder(double pHGap){
+  public static double[] setEvenSpacePhLadder(double pHGap, double pH, int nReplicas){
     double range = nReplicas * pHGap;
     double pHMin = pH - range/2;
 
@@ -448,11 +454,12 @@ public class PhReplicaExchange implements Terminatable {
       pHMin += pHGap/2; // Center range if odd num windows
     }
 
+    double[] pHScale = new double[nReplicas];
     for(int i = 0; i < nReplicas; i++){
       pHScale[i] = pHMin + i * pHGap;
-      rank2Ph[i] = i;
-      pH2Rank[i] = i;
     }
+
+    return pHScale;
   }
 
   /**
@@ -598,13 +605,26 @@ public class PhReplicaExchange implements Terminatable {
 
     myParameters[0] = pHScale[i];
     myParameters[2] = extendedSystem.getBiasEnergy();
-    logger.info(" ");
+
+    double lowPh = 0;
+    double highPh = 0;
+    try{
+      lowPh = pHScale[i-1];
+    } catch (IndexOutOfBoundsException e){
+      lowPh = 0;
+    }
+
+    try{
+      highPh = pHScale[i+1];
+    } catch (IndexOutOfBoundsException e){
+      highPh = 0;
+    }
 
     // Evaluate acidostat of ES at different pHs
-    extendedSystem.setConstantPh(myParameters[0] - gapSize);
+    extendedSystem.setConstantPh(lowPh);
     myParameters[1] = extendedSystem.getBiasEnergy();
 
-    extendedSystem.setConstantPh(myParameters[0] + gapSize);
+    extendedSystem.setConstantPh(highPh);
     myParameters[3] = extendedSystem.getBiasEnergy();
 
     extendedSystem.setConstantPh(myParameters[0]);
@@ -641,10 +661,24 @@ public class PhReplicaExchange implements Terminatable {
     myParameters[2] = extendedSystem.getBiasEnergy();
 
     // Evaluate acidostat of ES at different pHs
-    extendedSystem.setConstantPh(myParameters[0] - gapSize); // B at A-gap
+    double lowPh = 0;
+    double highPh = 0;
+    try{
+      lowPh = pHScale[i-1];
+    } catch (IndexOutOfBoundsException e){
+      lowPh = 0;
+    }
+
+    try{
+      highPh = pHScale[i+1];
+    } catch (IndexOutOfBoundsException e){
+      highPh = 0;
+    }
+
+    extendedSystem.setConstantPh(lowPh); // B at A-gap
     myParameters[1] = extendedSystem.getBiasEnergy();
 
-    extendedSystem.setConstantPh(myParameters[0] + gapSize); // A at A+gap(B)
+    extendedSystem.setConstantPh(highPh); // A at A+gap(B)
     myParameters[3] = extendedSystem.getBiasEnergy();
 
     extendedSystem.setConstantPh(myParameters[0]);

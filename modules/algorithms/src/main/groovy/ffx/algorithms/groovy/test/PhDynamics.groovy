@@ -50,6 +50,7 @@ import ffx.potential.extended.ExtendedSystem
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XPHFilter
 import ffx.potential.parsers.XYZFilter
+import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -225,6 +226,19 @@ class PhDynamics extends AlgorithmsScript {
           System.exit(0)
         }
 
+        String pHWindows = Arrays.toString(PhReplicaExchange.setEvenSpacePhLadder(pHGap, pH, size))
+        pHWindows = pHWindows.replace("[", "").replace("]","").replace(","," ")
+        CompositeConfiguration properties = activeAssembly.getProperties()
+        pHWindows = properties.getString("pH.Windows", pHWindows)
+        String[] temp = pHWindows.split(" +")
+        if(temp.length != size){
+          logger.severe("pHLadder specified in properties/key file has incorrect number of windows given world.size()")
+        }
+        double[] pHLadder = new double[size]
+        for(int i = 0; i< temp.length; i++){
+          pHLadder[i] = Double.parseDouble(temp[i])
+        }
+
         logger.info("\n Running replica exchange molecular dynamics on " + filename)
         int rank = world.rank()
 
@@ -232,7 +246,7 @@ class PhDynamics extends AlgorithmsScript {
         final String newMolAssemblyFile = structureFile.getParent() + File.separator + rank + File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
-        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHGap, dynamicsOptions.temperature, esvSystem)
+        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHLadder, dynamicsOptions.temperature, esvSystem)
 
         long totalSteps = dynamicsOptions.numSteps
         int nSteps = repEx.replicaSteps
@@ -274,13 +288,27 @@ class PhDynamics extends AlgorithmsScript {
         int rank = (size > 1) ? world.rank() : 0
         logger.info(" Rank: " + rank.toString())
 
+
+        String pHWindows = Arrays.toString(PhReplicaExchange.setEvenSpacePhLadder(pHGap, pH, size))
+        pHWindows = pHWindows.replace("[", "").replace("]","").replace(","," ")
+        CompositeConfiguration properties = activeAssembly.getProperties()
+        pHWindows = properties.getString("pH.Windows", pHWindows)
+        String[] temp = pHWindows.split(" +")
+        if(temp.length != size){
+          logger.severe("pHLadder specified in properties/key file has incorrect number of windows given world.size()")
+        }
+        double[] pHLadder = new double[size]
+        for(int i = 0; i< temp.length; i++){
+          pHLadder[i] = Double.parseDouble(temp[i])
+        }
+
         File structureFile = new File(filename)
         File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank))
 
         final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
-        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHGap, dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
+        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHLadder, dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
 
         pHReplicaExchange.
                 sample(cycles, titrSteps, coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initDynamics)
