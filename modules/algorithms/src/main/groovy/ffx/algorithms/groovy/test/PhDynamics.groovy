@@ -103,9 +103,9 @@ class PhDynamics extends AlgorithmsScript {
           description = 'pH gap between replica exchange windows.')
   double pHGap = 1
 
-  @Option(names = ['--initTitrDynamics'], paramLabel = '10000',
+  @Option(names = ['--initDynamics'], paramLabel = '10000',
           description = 'Number of initialization steps to take before replica exchange windows start.')
-  int initTitrDynamics = 10000
+  int initDynamics = 10000
 
   @Option(names = "--sort", paramLabel = "false",
           description = "Sort archive files by pH")
@@ -243,7 +243,7 @@ class PhDynamics extends AlgorithmsScript {
         }
 
         pHReplicaExchange.
-                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
+                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initDynamics)
 
         sortMyArc(structureFile, size, pHReplicaExchange.getpHScale()[world.rank()], world.rank())
 
@@ -283,7 +283,7 @@ class PhDynamics extends AlgorithmsScript {
         PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHGap, dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
 
         pHReplicaExchange.
-                sample(cycles, titrSteps, coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
+                sample(cycles, titrSteps, coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initDynamics)
 
         sortMyArc(structureFile, world.size(), pH, world.rank())
 

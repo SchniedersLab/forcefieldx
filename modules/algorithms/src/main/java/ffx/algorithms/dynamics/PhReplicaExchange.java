@@ -175,7 +175,7 @@ public class PhReplicaExchange implements Terminatable {
       logger.info(" Startup Successful! ");
       extendedSystem.getESVHistogram(parametersHis[rank]);
     } else{
-      logger.severe(" Unable to start. Fix issues with restart files.");
+      logger.severe(" Unable to restart. Fix issues with restart files.");
     }
   }
 
@@ -245,7 +245,9 @@ public class PhReplicaExchange implements Terminatable {
       }
       else if (backupNeeded){
         logger.info(" Directories do not contain all of the correct backup restart files.");
-        return false;
+        logger.warning(" No backup files found, treating as a fresh start.");
+        restart = false;
+        return true;
       }
     }
     else{
@@ -353,13 +355,13 @@ public class PhReplicaExchange implements Terminatable {
     sample(cycles, nSteps, 0, timeStep, printInterval, trajInterval, initTitrDynamics);
   }
 
-  public void sample(int cycles, long titrSteps, long confSteps, double timeStep, double printInterval, double trajInterval, int initTitrDynamics) {
+  public void sample(int cycles, long titrSteps, long confSteps, double timeStep, double printInterval, double trajInterval, int initDynamics) {
     done = false;
     terminate = false;
     replica.setRestartFrequency(cycles * (titrSteps + confSteps) * replica.dt + 100);
 
     int startCycle = 0;
-    if(initTitrDynamics > 0 && !restart) {
+    if(initDynamics > 0 && !restart) {
       extendedSystem.reGuessLambdas();
       extendedSystem.setFixedTitrationState(true);
       extendedSystem.setFixedTautomerState(true);
@@ -369,13 +371,13 @@ public class PhReplicaExchange implements Terminatable {
       logger.info(" ");
 
       if(openMM == null) {
-        replica.dynamic(initTitrDynamics, timeStep, printInterval, trajInterval, temp, true, dyn);
+        replica.dynamic(initDynamics, timeStep, printInterval, trajInterval, temp, true, dyn);
       } else{
         x = replica.getCoordinates();
         potential.energy(x);
         openMM.setCoordinates(x);
 
-        openMM.dynamic(confSteps, timeStep, printInterval, trajInterval, temp, true, dyn);
+        openMM.dynamic(initDynamics, timeStep, printInterval, trajInterval, temp, true, dyn);
 
         x = openMM.getCoordinates();
         replica.setCoordinates(x);
