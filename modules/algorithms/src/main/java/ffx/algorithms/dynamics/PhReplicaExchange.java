@@ -133,7 +133,6 @@ public class PhReplicaExchange implements Terminatable {
     this.extendedSystem = extendedSystem;
     this.pH = pH;
     this.pHScale = pHLadder;
-    logger.info("Ph Ladder: " + Arrays.toString(pHScale));
     this.x = x;
     this.openMM = molecularDynamicsOpenMM;
     this.potential = potential;
