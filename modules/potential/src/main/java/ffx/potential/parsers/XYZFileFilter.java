@@ -60,6 +60,19 @@ public final class XYZFileFilter extends FileFilter {
   }
 
   /**
+   * This is a static version of the accept method.
+   *
+   * <p>This method return <code>true</code> if the file is a directory or TINKER Cartesian
+   * coordinate (*.XYZ) file.
+   *
+   * @param file The File to examine.
+   * @return Returns true if this an XYZ file.
+   */
+  public static boolean isXYZ(File file) {
+    return new XYZFileFilter().accept(file);
+  }
+
+  /**
    * {@inheritDoc}
    *
    * <p>This method return <code>true</code> if the file is a directory or TINKER Cartesian

@@ -60,6 +60,19 @@ public final class PDBFileFilter extends FileFilter {
   public PDBFileFilter() {}
 
   /**
+   * This is a static version of the accept method.
+   *
+   * <p>This method return <code>true</code> if the file is a directory or Protein Databank File
+   * (*.PDB).
+   *
+   * @param file The File to examine.
+   * @return Returns true if this a PDB file.
+   */
+  public static boolean isPDB(File file) {
+    return new PDBFileFilter().accept(file);
+  }
+
+  /**
    * {@inheritDoc}
    *
    * <p>This method return <code>true</code> if the file is a directory or Protein Databank File

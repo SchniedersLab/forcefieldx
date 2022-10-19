@@ -405,6 +405,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
   /** Use two-sided finite difference dU/dL. */
   private boolean twoSidedFiniteDifference = true;
 
+  private final boolean freeOpenMM;
+
   /**
    * ForceFieldEnergyOpenMM constructor; offloads heavy-duty computation to an OpenMM Platform while
    * keeping track of information locally.
@@ -443,6 +445,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     finiteDifferenceStepSize = forceField.getDouble("FD_DLAMBDA", 0.001);
     twoSidedFiniteDifference = forceField.getBoolean("FD_TWO_SIDED", twoSidedFiniteDifference);
+
+    freeOpenMM = forceField.getBoolean("FREE_OPENMM", true);
   }
 
   /**
@@ -594,8 +598,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
   @Override
   public boolean destroy() {
     boolean ffxFFEDestroy = super.destroy();
-    free();
-    logger.fine(" Destroyed the Context, Integrator, and OpenMMSystem.");
+    if (freeOpenMM) {
+      free();
+      logger.fine(" Destroyed the Context, Integrator, and OpenMMSystem.");
+    }
     return ffxFFEDestroy;
   }
 
@@ -1096,7 +1102,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
       }
       OpenMM_Context_setPositions(contextPointer, positions);
-      OpenMM_Vec3Array_destroy(positions);
+      if (freeOpenMM) {
+        logger.finer(" Free OpenMM positions.");
+        OpenMM_Vec3Array_destroy(positions);
+        logger.finer(" Free OpenMM positions completed.");
+      }
     }
 
     /**
@@ -1127,7 +1137,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         }
       }
       OpenMM_Context_setVelocities(contextPointer, velocities);
-      OpenMM_Vec3Array_destroy(velocities);
+
+      if (freeOpenMM) {
+        logger.finer(" Free OpenMM velocities.");
+        OpenMM_Vec3Array_destroy(velocities);
+        logger.finer(" Free OpenMM velocities completed.");
+      }
     }
 
     /** Set the periodic box vectors for a context based on the crystal instance. */
@@ -1164,7 +1179,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       if (integrator != null) {
         integrator.free();
       }
-      if (contextPointer != null) {
+      if (contextPointer != null && freeOpenMM) {
         logger.fine(" Free OpenMM Context.");
         OpenMM_Context_destroy(contextPointer);
         logger.fine(" Free OpenMM Context completed.");
@@ -1198,7 +1213,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       this.temperature = temperature;
 
       if (contextPointer != null) {
+        logger.fine(" Free OpenMM Context.");
         OpenMM_Context_destroy(contextPointer);
+        logger.fine(" Free OpenMM Context completed.");
         contextPointer = null;
       }
 
@@ -1569,7 +1586,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     /** Destroy the integrator instance. */
     private void free() {
-      if (integratorPointer != null) {
+      if (integratorPointer != null && freeOpenMM) {
         logger.fine(" Free OpenMM Integrator.");
         OpenMM_Integrator_destroy(integratorPointer);
         logger.fine(" Free OpenMM Integrator completed.");
@@ -2002,7 +2019,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
     /** Destroy the system. */
     public void free() {
-      if (system != null) {
+      if (system != null && freeOpenMM) {
         logger.fine(" Free OpenMM system.");
         OpenMM_System_destroy(system);
         logger.fine(" Free OpenMM system completed.");
@@ -4591,8 +4608,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         tanhRescale = 1;
       }
       double[] betas = gk.getTanhBetas();
-      OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling(amoebaGeneralizedKirkwoodForce, tanhRescale);
-      OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhParameters(amoebaGeneralizedKirkwoodForce, betas[0], betas[1], betas[2]);
+      OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling(amoebaGeneralizedKirkwoodForce,
+          tanhRescale);
+      OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhParameters(amoebaGeneralizedKirkwoodForce,
+          betas[0], betas[1], betas[2]);
 
       double[] baseRadius = gk.getBaseRadii();
       if (usePerfectRadii) {
@@ -4618,13 +4637,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         if (!usePerfectRadii && logger.isLoggable(Level.FINE)) {
           logger.fine(format("   %s %8.6f %8.6f %5.3f",
-                  atoms[i].toString(), baseRadius[i], descreenRadius[i], overlapScale[i]));
+              atoms[i].toString(), baseRadius[i], descreenRadius[i], overlapScale[i]));
         }
       }
 
       OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius(
           amoebaGeneralizedKirkwoodForce, gk.getProbeRadius() * OpenMM_NmPerAngstrom);
-
 
       NonPolar nonpolar = gk.getNonPolarModel();
       switch (nonpolar) {
@@ -5330,7 +5348,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     public void free() {
-      OpenMM_State_destroy(state);
+      if (state != null && freeOpenMM) {
+        logger.fine(" Free OpenMM State.");
+        OpenMM_State_destroy(state);
+        logger.fine(" Free OpenMM State completed.");
+      }
     }
 
     /**

@@ -37,15 +37,20 @@
 // ******************************************************************************
 package ffx.potential.utils;
 
+import static ffx.potential.parsers.PDBFileFilter.isPDB;
+import static ffx.potential.parsers.XYZFileFilter.isXYZ;
 import static java.lang.String.format;
 
 import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parsers.INTFileFilter;
+import ffx.potential.parsers.PDBFileFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.PDBFilter.Mutation;
 import ffx.potential.parsers.SystemFilter;
+import ffx.potential.parsers.XYZFileFilter;
 import ffx.potential.parsers.XYZFilter;
 import java.io.File;
 import java.util.Arrays;
@@ -308,7 +313,11 @@ public class PotentialsUtils implements PotentialsFunctions {
    */
   @Override
   public void save(MolecularAssembly assembly, File file) {
-    saveAsXYZ(assembly, file);
+    if (isXYZ(file)) {
+      saveAsXYZ(assembly, file);
+    } else if (isPDB(file)) {
+      saveAsPDB(assembly, file);
+    }
   }
 
   /**
