@@ -998,7 +998,7 @@ public class ExtendedSystem implements Potential {
     }
 
     /**
-     * The current deprotonated/protonated ratio for a residue can be useful for understanding convergence of pH simulations
+     * The current deprotonated/(protonated+deprotonated) sum ratio for a residue can be useful for understanding convergence of pH simulations
      * @param residueIndex titrating residue index
      * @return the current deprotonated/protonated ratio for a residue
      */
@@ -1026,13 +1026,18 @@ public class ExtendedSystem implements Potential {
      * Prints off protonation ratios from throughout the simulation for all residues.
      */
     public void printProtonationRatios(){
-        for(int i = 0; i < esvProtonationRatios.length; i++){
-            String resInfo = titratingResidueList.get(i).toString();
-            logger.info(resInfo + " Deprotonated/(Protonated+Deprotonated) fractions through snaps: ");
-            for(int j = 0; j < esvProtonationRatios[i].size()/10; j++){
-                for(int k = 0; k < 10; k++){
-                    logger.info(String.valueOf(esvProtonationRatios[i].get(j * 10 + k)));
+        int numberOfReports = 100;
+        if(esvProtonationRatios[0].size() >= numberOfReports) {
+            for (int i = 0; i < esvProtonationRatios.length; i++) {
+                double[] ratios = new double[numberOfReports];
+                int baseIndex = esvProtonationRatios[i].size() / numberOfReports;
+                for (int j = 0; j < numberOfReports; j++) {
+                    ratios[j] = esvProtonationRatios[i].get(baseIndex * j);
                 }
+                String resInfo = titratingResidueList.get(i).toString();
+                logger.info(" " + resInfo + " Deprotonated/(Protonated+Deprotonated) fractions through snaps (showing " + numberOfReports + " out of " + esvProtonationRatios[i].size() + "): ");
+                logger.info(" " + Arrays.toString(ratios));
+                logger.info(" ");
             }
         }
     }
@@ -1442,6 +1447,7 @@ public class ExtendedSystem implements Potential {
      * Method overwrites whatever is in the extended system at the time with the read data.
      *
      * CAUTION: If the old data is not written out to file before this is called, the data will be lost.
+     *
      * @param esvFile esvFile to read
      * @return whether the read was successful or not
      */
