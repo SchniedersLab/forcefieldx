@@ -524,6 +524,7 @@ public class ParticleMeshEwald implements LambdaInterface {
           sb.append(format("    CG Preconditioner Cut-Off:         %8.3f\n", pcgSolver.getPreconditionerCutoff()));
           sb.append(format("    CG Preconditioner Ewald Coeff.:    %8.3f\n", pcgSolver.getPreconditionerEwald()));
           sb.append(format("    CG Preconditioner Scale:           %8.3f\n", pcgSolver.getPreconditionerScale()));
+          sb.append(format("    CG Preconditioner Mode:     %15s\n", pcgSolver.getPreconditionerMode()));
         }
       }
       if (ewaldParameters.aewald > 0.0) {

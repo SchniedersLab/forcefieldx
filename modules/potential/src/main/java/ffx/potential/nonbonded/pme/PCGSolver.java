@@ -135,6 +135,13 @@ public class PCGSolver {
    */
   private final PreconditionerRegion preconditionerRegion;
   /**
+   * The default Beta step size used to update the conjugate direction is based on the Fletcher-Reeves formula.
+   * An alternative Beta step size uses the Polak-Ribiere formula for the flexible preconditioned conjugate gradient method.
+   * For a symmetric positive definite preconditioner, the FR and PR steps sizes are equivalent.
+   * The steepest decent method sets beta to zero.
+   */
+  private enum PRECONDITION_MODE { FLETCHER_REEVES, FLEXIBLE, STEEPEST_DECENT }
+  /**
    * The SCF convergence criteria in Debye.
    */
   private final double poleps;
@@ -151,6 +158,13 @@ public class PCGSolver {
    * elements of the preconditioning matrix.
    */
   private final double preconditionerScale;
+  /**
+   * The default Beta step size used to update the conjugate direction is based on the Fletcher-Reeves formula.
+   * An alternative Beta step size uses the Polak-Ribiere formula for the flexible preconditioned conjugate gradient method.
+   * For a symmetric positive definite preconditioner, the FR and PR steps sizes are equivalent.
+   * The steepest decent method sets beta to zero.
+   */
+  private final PRECONDITION_MODE preconditionMode;
   /**
    * Neighbor lists, without atoms beyond the preconditioner cutoff.
    * [nSymm][nAtoms][nIncludedNeighbors]
@@ -295,10 +309,20 @@ public class PCGSolver {
       preconditionerCutoff = forceField.getDouble("CG_PRECONDITIONER_CUTOFF", DEFAULT_CG_PRECONDITIONER_CUTOFF);
       preconditionerEwald = forceField.getDouble("CG_PRECONDITIONER_EWALD", DEFAULT_CG_PRECONDITIONER_EWALD);
       preconditionerScale = forceField.getDouble("CG_PRECONDITIONER_SCALE", DEFAULT_CG_PRECONDITIONER_SCALE);
+      PRECONDITION_MODE mode = PRECONDITION_MODE.FLETCHER_REEVES;
+      try {
+        String m = forceField.getString("CG_PRECONDITIONER_MODE", PRECONDITION_MODE.FLETCHER_REEVES.toString());
+        m = ForceField.toEnumForm(m);
+        mode = PRECONDITION_MODE.valueOf(m);
+      } catch (Exception e) {
+        // Do nothing.
+      }
+      preconditionMode = mode;
     } else {
       preconditionerCutoff = 0.0;
       preconditionerEwald = 0.0;
       preconditionerScale = 0.0;
+      preconditionMode = PRECONDITION_MODE.FLETCHER_REEVES;
     }
 
     allocateVectors(nAtoms);
@@ -359,6 +383,14 @@ public class PCGSolver {
    */
   public double getPreconditionerScale() {
     return preconditionerScale;
+  }
+
+  /**
+   * Get the preconditioner mode.
+   * @return The mode.
+   */
+  public String getPreconditionerMode() {
+    return preconditionMode.toString();
   }
 
   /**
@@ -973,6 +1005,9 @@ public class PCGSolver {
       public double rDotZ;
       public double rDotZCR;
 
+      private double[] deltaZ = new double[3];
+      private double[] deltaZCR = new double[3];
+
       @Override
       public void finish() {
         betaShared.addAndGet(rDotZ / previousRDotZ);
@@ -983,6 +1018,14 @@ public class PCGSolver {
       public void run(int lb, int ub) throws Exception {
         for (int i = lb; i <= ub; i++) {
           if (use[i]) {
+            // Save the negative of the current preconditioner z_k.
+            deltaZ[0] = -zpre[0][i];
+            deltaZ[1] = -zpre[1][i];
+            deltaZ[2] = -zpre[2][i];
+            deltaZCR[0] = -zpreCR[0][i];
+            deltaZCR[1] = -zpreCR[1][i];
+            deltaZCR[2] = -zpreCR[2][i];
+
             // Update the preconditioner
             // z_k+1 = M^(-1) r_k+1
             //       = polar * (E_r_k+1 + diagonal scale * r_k+1)
@@ -994,10 +1037,28 @@ public class PCGSolver {
             zpreCR[1][i] = polar * (fieldCR.getY(i) + preconditionerScale * rCR[1][i]);
             zpreCR[2][i] = polar * (fieldCR.getZ(i) + preconditionerScale * rCR[2][i]);
 
-            // Compute the dot product of the residual and preconditioner.
-            rDotZ += r[0][i] * zpre[0][i] + r[1][i] * zpre[1][i] + r[2][i] * zpre[2][i];
-            rDotZCR +=
-                rCR[0][i] * zpreCR[0][i] + rCR[1][i] * zpreCR[1][i] + rCR[2][i] * zpreCR[2][i];
+            switch (preconditionMode) {
+              case FLEXIBLE:
+                // Set work to z_k+1 - z_k
+                deltaZ[0] += zpre[0][i];
+                deltaZ[1] += zpre[1][i];
+                deltaZ[2] += zpre[2][i];
+                deltaZCR[0] += zpreCR[0][i];
+                deltaZCR[1] += zpreCR[1][i];
+                deltaZCR[2] += zpreCR[2][i];
+                // For Flexible, compute the dot product of the residual with the change in preconditioner (z_k+1 - z_k).
+                rDotZ += r[0][i] * deltaZ[0] + r[1][i] * deltaZ[1] + r[2][i] * deltaZ[2];
+                rDotZCR += rCR[0][i] * deltaZCR[0] + rCR[1][i] * deltaZCR[1] + rCR[2][i] * deltaZCR[2];
+                break;
+              case STEEPEST_DECENT:
+                // For Steepest-Decent, rDotZ is zero (i.e. Beta is zero).
+                continue;
+              default:
+              case FLETCHER_REEVES:
+                // For Fletcher-Reeves, compute the dot product of the residual and preconditioner (z_k+1).
+                rDotZ += r[0][i] * zpre[0][i] + r[1][i] * zpre[1][i] + r[2][i] * zpre[2][i];
+                rDotZCR += rCR[0][i] * zpreCR[0][i] + rCR[1][i] * zpreCR[1][i] + rCR[2][i] * zpreCR[2][i];
+            }
           } else {
             zpre[0][i] = 0.0;
             zpre[1][i] = 0.0;
