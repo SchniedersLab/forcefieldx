@@ -50,6 +50,7 @@ import ffx.potential.extended.ExtendedSystem
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XPHFilter
 import ffx.potential.parsers.XYZFilter
+import org.apache.commons.configuration2.CompositeConfiguration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -103,13 +104,19 @@ class PhDynamics extends AlgorithmsScript {
           description = 'pH gap between replica exchange windows.')
   double pHGap = 1
 
-  @Option(names = ['--initTitrDynamics'], paramLabel = '10000',
+  @Option(names = ['--initDynamics'], paramLabel = '10000',
           description = 'Number of initialization steps to take before replica exchange windows start.')
-  int initTitrDynamics = 10000
+  int initDynamics = 10000
 
   @Option(names = "--sort", paramLabel = "false",
           description = "Sort archive files by pH")
   boolean sort = false
+
+  @Option(names = "--printRatioData", paramLabel = "false",
+          description = "Print out the protonation ratios from throughout the simulation at the end")
+  boolean printRatio = false
+
+
 
 
 
@@ -215,15 +222,31 @@ class PhDynamics extends AlgorithmsScript {
       if (repEx.repEx) {
         Comm world = Comm.world()
         int size = world.size()
+        if(size == 1){
+          System.exit(0)
+        }
+
+        String pHWindows = Arrays.toString(PhReplicaExchange.setEvenSpacePhLadder(pHGap, pH, size))
+        pHWindows = pHWindows.replace("[", "").replace("]","").replace(","," ")
+        CompositeConfiguration properties = activeAssembly.getProperties()
+        pHWindows = properties.getString("pH.Windows", pHWindows)
+        String[] temp = pHWindows.split(" +")
+        if(temp.length != size){
+          logger.severe("pHLadder specified in properties/key file has incorrect number of windows given world.size()")
+        }
+        double[] pHLadder = new double[size]
+        for(int i = 0; i< temp.length; i++){
+          pHLadder[i] = Double.parseDouble(temp[i])
+        }
 
         logger.info("\n Running replica exchange molecular dynamics on " + filename)
-        int rank = (size > 1) ? world.rank() : 0
+        int rank = world.rank()
 
         File structureFile = new File(filename)
         final String newMolAssemblyFile = structureFile.getParent() + File.separator + rank + File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
-        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHGap, dynamicsOptions.temperature, esvSystem)
+        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHLadder, dynamicsOptions.temperature, esvSystem)
 
         long totalSteps = dynamicsOptions.numSteps
         int nSteps = repEx.replicaSteps
@@ -234,9 +257,9 @@ class PhDynamics extends AlgorithmsScript {
         }
 
         pHReplicaExchange.
-                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
+                sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initDynamics)
 
-        sortMyArc(structureFile, world.size(), pHReplicaExchange.getpHScale()[world.rank()], world.rank())
+        sortMyArc(structureFile, size, pHReplicaExchange.getpHScale()[world.rank()], world.rank())
 
       } else {
         // CPU Constant pH Dynamics
@@ -265,16 +288,30 @@ class PhDynamics extends AlgorithmsScript {
         int rank = (size > 1) ? world.rank() : 0
         logger.info(" Rank: " + rank.toString())
 
+
+        String pHWindows = Arrays.toString(PhReplicaExchange.setEvenSpacePhLadder(pHGap, pH, size))
+        pHWindows = pHWindows.replace("[", "").replace("]","").replace(","," ")
+        CompositeConfiguration properties = activeAssembly.getProperties()
+        pHWindows = properties.getString("pH.Windows", pHWindows)
+        String[] temp = pHWindows.split(" +")
+        if(temp.length != size){
+          logger.severe("pHLadder specified in properties/key file has incorrect number of windows given world.size()")
+        }
+        double[] pHLadder = new double[size]
+        for(int i = 0; i< temp.length; i++){
+          pHLadder[i] = Double.parseDouble(temp[i])
+        }
+
         File structureFile = new File(filename)
         File rankDirectory = new File(structureFile.getParent() + File.separator + Integer.toString(rank))
 
         final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
-        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHGap, dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
+        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHLadder, dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
 
         pHReplicaExchange.
-                sample(cycles, titrSteps, coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initTitrDynamics)
+                sample(cycles, titrSteps, coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initDynamics)
 
         sortMyArc(structureFile, world.size(), pH, world.rank())
 
@@ -299,7 +336,9 @@ class PhDynamics extends AlgorithmsScript {
       }
     }
 
-    esvSystem.printProtonationRatios()
+    if(printRatio){
+      esvSystem.printProtonationRatios()
+    }
 
     return this
   }
@@ -328,9 +367,6 @@ class PhDynamics extends AlgorithmsScript {
     BufferedReader[] bufferedReaders = new BufferedReader[nReplicas]
     File output = new File(parent + File.separator + myRank + File.separator + arcName + "_sorted")
     BufferedWriter out = new BufferedWriter(new FileWriter(output))
-
-    // Find other archives and append them together
-
 
     // Get snap length from first directory
     File temp = new File(parent + File.separator + 0 + File.separator + arcName)
