@@ -998,51 +998,6 @@ public class ExtendedSystem implements Potential {
     }
 
     /**
-     * The current deprotonated/(protonated+deprotonated) sum ratio for a residue can be useful for understanding convergence of pH simulations
-     * @param residueIndex titrating residue index
-     * @return the current deprotonated/protonated ratio for a residue
-     */
-    public double getESVProtonationFraction(int residueIndex){
-        double protonatedSum = 0;
-        double deprotonatedSum = 0;
-
-        for(int i = 0; i < esvHistogram[residueIndex][0].length; i++){
-            deprotonatedSum += esvHistogram[residueIndex][0][i];
-            protonatedSum += esvHistogram[residueIndex][esvHistogram[residueIndex].length-1][i];
-        }
-        return deprotonatedSum / (protonatedSum + deprotonatedSum);
-    }
-
-    /**
-     * Updates esvProtonationRatios for all residues. Should be called on restart writes.
-     */
-    public void updateProtonationRatios(){
-        for(int i = 0; i < esvHistogram.length; i++){
-            esvProtonationRatios[i].add(this.getESVProtonationFraction(i));
-        }
-    }
-
-    /**
-     * Prints off protonation ratios from throughout the simulation for all residues.
-     */
-    public void printProtonationRatios(){
-        int numberOfReports = 100;
-        if(esvProtonationRatios[0].size() >= numberOfReports) {
-            for (int i = 0; i < esvProtonationRatios.length; i++) {
-                double[] ratios = new double[numberOfReports];
-                int baseIndex = esvProtonationRatios[i].size() / numberOfReports;
-                for (int j = 0; j < numberOfReports; j++) {
-                    ratios[j] = esvProtonationRatios[i].get(baseIndex * j);
-                }
-                String resInfo = titratingResidueList.get(i).toString();
-                logger.info(" " + resInfo + " Deprotonated/(Protonated+Deprotonated) fractions through snaps (showing " + numberOfReports + " out of " + esvProtonationRatios[i].size() + "): ");
-                logger.info(" " + Arrays.toString(ratios));
-                logger.info(" ");
-            }
-        }
-    }
-
-    /**
      * Changes this ESV's histogram to equal the one passed
      * @param histogram histogram to set this ESV histogram to
      */
@@ -1473,7 +1428,6 @@ public class ExtendedSystem implements Potential {
 
     public void writeRestart() {
         String esvName = FileUtils.relativePathTo(restartFile).toString();
-        this.updateProtonationRatios();
         if (esvFilter.writeESV(restartFile, thetaPosition, thetaVelocity, thetaAccel, titratingResidueList, esvHistogram, constantSystemPh)) {
             logger.info(" Wrote PhDynamics restart file to " + esvName);
         } else {

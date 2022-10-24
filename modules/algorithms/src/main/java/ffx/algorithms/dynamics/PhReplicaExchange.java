@@ -316,7 +316,7 @@ public class PhReplicaExchange implements Terminatable {
             restartStep = sum;
           }
           else if(restartStep != sum){
-            logger.warning(" Restart received uneven sums from esv file.");
+            logger.warning(" Restart received uneven sums from esv file: " + file.getAbsolutePath());
             restartStep = 0;
             readPhScale.clear();
             return false;
