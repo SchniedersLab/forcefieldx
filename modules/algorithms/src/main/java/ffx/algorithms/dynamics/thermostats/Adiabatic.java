@@ -108,4 +108,10 @@ public class Adiabatic extends Thermostat {
   public String toThermostatString() {
     return format("\n Adiabatic Thermostat\n%s", super.toString());
   }
+
+  /** {@inheritDoc} */
+  @Override
+  public String toString() {
+    return "Adiabatic";
+  }
 }

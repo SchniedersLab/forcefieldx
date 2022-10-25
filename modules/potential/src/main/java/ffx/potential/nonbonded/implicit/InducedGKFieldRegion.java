@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
+import static ffx.numerics.multipole.GKSource.cn;
 import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_GKC;
 import static ffx.utilities.Constants.dWater;
 import static org.apache.commons.math3.util.FastMath.exp;
@@ -96,9 +97,9 @@ public class InducedGKFieldRegion extends ParallelRegion {
   public InducedGKFieldRegion(int nt, ForceField forceField) {
     // Set the Kirkwood multipolar reaction field constants.
     double epsilon = forceField.getDouble("GK_EPSILON", dWater);
-    fd = 2.0 * (1.0 - epsilon) / (1.0 + 2.0 * epsilon);
-    fq = 3.0 * (1.0 - epsilon) / (2.0 + 3.0 * epsilon);
-
+    double soluteEpsilon = forceField.getDouble("GK_SOLUTE_EPSILON", 1.0);
+    fd = cn(1, soluteEpsilon, epsilon);
+    fq = cn(2, soluteEpsilon, epsilon);
     gkc = forceField.getDouble("GKC", DEFAULT_GKC);
 
     inducedGKFieldLoop = new InducedGKFieldLoop[nt];

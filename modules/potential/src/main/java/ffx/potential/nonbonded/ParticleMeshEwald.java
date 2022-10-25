@@ -39,6 +39,7 @@ package ffx.potential.nonbonded;
 
 import static ffx.numerics.math.ScalarMath.binomial;
 import static ffx.numerics.special.Erf.erfc;
+import static ffx.potential.MolecularAssembly.atomIndexing;
 import static ffx.potential.parameters.ForceField.ELEC_FORM.PAM;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.parameters.MultipoleType.assignMultipole;
@@ -52,7 +53,6 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
-import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.utilities.Constants.ELEC_ANG_TO_DEBYE;
 import static ffx.utilities.Constants.NS2SEC;
 import static java.lang.String.format;
@@ -72,7 +72,6 @@ import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.multipole.MultipoleTensor;
 import ffx.potential.ForceFieldEnergy.Platform;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
@@ -162,6 +161,7 @@ public class ParticleMeshEwald implements LambdaInterface {
   /** Reference to the force field being used. */
   private final ForceField forceField;
   private final double poleps;
+  private final boolean directFallback;
   /** Specify an SCF predictor algorithm. */
   private final SCFPredictor scfPredictor;
   private final SCFPredictorParameters scfPredictorParameters;
@@ -258,8 +258,8 @@ public class ParticleMeshEwald implements LambdaInterface {
    * Disables windowed lambda ranges by setting permLambdaStart = polLambdaStart = 0.0 and
    * permLambdaEnd = polLambdaEnd = 1.0.
    */
-  public boolean noWindowing = false;
-  public double electric = DEFAULT_ELECTRIC;
+  public boolean noWindowing;
+  public double electric;
   /** An ordered array of atoms in the system. */
   protected Atom[] atoms;
   /** The number of atoms in the system. */
@@ -286,12 +286,12 @@ public class ParticleMeshEwald implements LambdaInterface {
   protected double inducedRealSpaceEnergy;
   protected double inducedSelfEnergy;
   protected double inducedReciprocalEnergy;
-  protected SCFAlgorithm scfAlgorithm = ParticleMeshEwald.SCFAlgorithm.CG;
+  protected SCFAlgorithm scfAlgorithm;
   /**
    * Log the induced dipole magnitudes and directions. Use the cgo_arrow.py script (available from
    * the wiki) to draw these easily in PyMol.
    */
-  protected boolean printInducedDipoles = false;
+  protected boolean printInducedDipoles;
 
   /** Partial derivative with respect to Lambda. */
   private final SharedDouble shareddEdLambda;
@@ -454,6 +454,9 @@ public class ParticleMeshEwald implements LambdaInterface {
       scfAlgorithm = SCFAlgorithm.CG;
     }
 
+    // Fall back to the direct
+    directFallback = forceField.getBoolean("DIRECT_SCF_FALLBACK", true);
+
     // Define how force arrays will be accumulated.
     String value = forceField.getString("ARRAY_REDUCTION", "MULTI");
     try {
@@ -518,13 +521,10 @@ public class ParticleMeshEwald implements LambdaInterface {
         if (scfAlgorithm == SCFAlgorithm.SOR) {
           sb.append(format("    SOR Parameter:                     %8.3f\n", sorRegion.getSOR()));
         } else {
-          sb.append(
-              format(
-                  "    CG Preconditioner Cut-Off:         %8.3f\n",
-                  pcgSolver.preconditionerCutoff));
-          sb.append(
-              format(
-                  "    CG Preconditioner Ewald Coeff.:    %8.3f\n", pcgSolver.preconditionerEwald));
+          sb.append(format("    CG Preconditioner Cut-Off:         %8.3f\n", pcgSolver.getPreconditionerCutoff()));
+          sb.append(format("    CG Preconditioner Ewald Coeff.:    %8.3f\n", pcgSolver.getPreconditionerEwald()));
+          sb.append(format("    CG Preconditioner Scale:           %8.3f\n", pcgSolver.getPreconditionerScale()));
+          sb.append(format("    CG Preconditioner Mode:     %15s\n", pcgSolver.getPreconditionerMode()));
         }
       }
       if (ewaldParameters.aewald > 0.0) {
@@ -1128,7 +1128,8 @@ public class ParticleMeshEwald implements LambdaInterface {
     Atom atom = atoms[i];
     PolarizeType polarizeType = atom.getPolarizeType();
     if (polarizeType != null) {
-      if (esvTerm && extendedSystem.isTitrating(i) && (extendedSystem.isTitratingHydrogen(i) || extendedSystem.isTitratingSulfur(i))) {
+      if (esvTerm && extendedSystem.isTitrating(i) && (extendedSystem.isTitratingHydrogen(i)
+          || extendedSystem.isTitratingSulfur(i))) {
         double titrationLambda = extendedSystem.getTitrationLambda(i);
         double tautomerLambda = extendedSystem.getTautomerLambda(i);
         double esvPolarizability = extendedSystem.getTitrationUtils()
@@ -1717,7 +1718,7 @@ public class ParticleMeshEwald implements LambdaInterface {
 
       for (int i = 0; i < nAtoms; i++) {
         if (polarization != Polarization.NONE && esvTerm && extendedSystem.isTitrating(i)
-                && (extendedSystem.isTitratingHydrogen(i) || extendedSystem.isTitratingSulfur(i))) {
+            && (extendedSystem.isTitratingHydrogen(i) || extendedSystem.isTitratingSulfur(i))) {
           double dx = field.getX(i);
           double dy = field.getY(i);
           double dz = field.getZ(i);
@@ -1833,7 +1834,8 @@ public class ParticleMeshEwald implements LambdaInterface {
       reciprocalEnergyRegion.init(atoms, crystal, gradient, lambdaTerm, esvTerm, use,
           globalMultipole, fractionalMultipole, dMultipoledTirationESV, dMultipoledTautomerESV,
           cartesianMultipolePhi, fracMultipolePhi,
-          polarization, inputDipole, inputDipoleCR, inputPhi, inputPhiCR, fracInputPhi, fracInputPhiCR,
+          polarization, inputDipole, inputDipoleCR, inputPhi, inputPhiCR, fracInputPhi,
+          fracInputPhiCR,
           reciprocalSpace, alchemicalParameters, extendedSystem,
           // Output
           grad, torque, lambdaGrad, lambdaTorque, shareddEdLambda, sharedd2EdLambda2);
@@ -2258,37 +2260,41 @@ public class ParticleMeshEwald implements LambdaInterface {
 
       return iterations;
     } catch (EnergyException ex) {
-      // SCF Failure: warn and revert to direct polarization.
-      logger.warning(ex.toString());
-      // Compute the direct induced dipoles.
-      if (generalizedKirkwoodTerm) {
-        pmeTimings.gkEnergyTotal = -System.nanoTime();
-        generalizedKirkwood.computePermanentGKField();
-        pmeTimings.gkEnergyTotal += System.nanoTime();
-        logger.fine(
-            format(" Computed GK permanent field %8.3f (sec)", pmeTimings.gkEnergyTotal * 1.0e-9));
+      if (directFallback) {
+        // SCF Failure: warn and revert to direct polarization.
+        logger.warning(ex.toString());
+        // Compute the direct induced dipoles.
+        if (generalizedKirkwoodTerm) {
+          pmeTimings.gkEnergyTotal = -System.nanoTime();
+          generalizedKirkwood.computePermanentGKField();
+          pmeTimings.gkEnergyTotal += System.nanoTime();
+          logger.fine(
+              format(" Computed GK permanent field %8.3f (sec)", pmeTimings.gkEnergyTotal * 1.0e-9));
+        }
+        directRegion.init(
+            atoms,
+            polarizability,
+            globalMultipole,
+            cartesianMultipolePhi,
+            field,
+            fieldCR,
+            generalizedKirkwoodTerm,
+            generalizedKirkwood,
+            ewaldParameters,
+            inducedDipole,
+            inducedDipoleCR,
+            directDipole,
+            directDipoleCR,
+            directField,
+            directFieldCR
+        );
+        directRegion.executeWith(parallelTeam);
+        expandInducedDipoles();
+        logger.info(" Direct induced dipoles computed due to SCF failure.");
+        return 0;
+      } else {
+        throw ex;
       }
-      directRegion.init(
-          atoms,
-          polarizability,
-          globalMultipole,
-          cartesianMultipolePhi,
-          field,
-          fieldCR,
-          generalizedKirkwoodTerm,
-          generalizedKirkwood,
-          ewaldParameters,
-          inducedDipole,
-          inducedDipoleCR,
-          directDipole,
-          directDipoleCR,
-          directField,
-          directFieldCR
-      );
-      directRegion.executeWith(parallelTeam);
-      expandInducedDipoles();
-      logger.info(" Direct induced dipoles computed due to SCF failure.");
-      return 0;
     }
   }
 
@@ -2664,7 +2670,7 @@ public class ParticleMeshEwald implements LambdaInterface {
       Atom a = atoms[i];
       if (a.getIndex() - 1 != i) {
         logger.info(format(" PME Index i: %d, %s Index: %d\n Atom: %s",
-            i, MolecularAssembly.atomIndexing, a.getIndex(), a));
+            i, atomIndexing, a.getIndex(), a));
         logger.severe(" Atom indexing is not consistent in PME.");
       }
     }
@@ -3054,7 +3060,8 @@ public class ParticleMeshEwald implements LambdaInterface {
 
     final int numThreads;
     /**
-     * Neighbor lists, without atoms beyond the real space cutoff. [nSymm][nAtoms][nIncludedNeighbors]
+     * Neighbor lists, without atoms beyond the real space cutoff.
+     * [nSymm][nAtoms][nIncludedNeighbors]
      */
     public int[][][] realSpaceLists;
     /** Number of neighboring atoms within the real space cutoff. [nSymm][nAtoms] */
@@ -3139,6 +3146,7 @@ public class ParticleMeshEwald implements LambdaInterface {
    * Scale factors and masking rules for electrostatics.
    */
   public class ScaleParameters {
+
     /** The interaction energy between 1-2 multipoles is scaled by m12scale. */
     public final double m12scale;
     /** The interaction energy between 1-3 multipoles is scaled by m13scale. */
@@ -3152,11 +3160,11 @@ public class ParticleMeshEwald implements LambdaInterface {
      * DIRECT-11-SCALE: Provides a multiplicative scale factor that is applied to the permanent
      * (direct) fielddue to atoms within a polarization group during an induced dipole calculation,
      * i.e., atoms that are in the same polarization group as the atom being polarized.
-     *
+     * <p>
      * The scaling is 0.0 in AMOEBA.
-     *
-     * DIRECT_12_SCALE, DIRECT_13_SCALE, DIRECT_14_SCALE and DIRECT_15_SCALE are assumed to
-     * be 1.0. If this assumption is violated by a keyword, FFX will exit.
+     * <p>
+     * DIRECT_12_SCALE, DIRECT_13_SCALE, DIRECT_14_SCALE and DIRECT_15_SCALE are assumed to be 1.0.
+     * If this assumption is violated by a keyword, FFX will exit.
      */
     public final double d11scale;
 
@@ -3182,9 +3190,9 @@ public class ParticleMeshEwald implements LambdaInterface {
     public final double p15scale;
 
     /**
-     * Provides a multiplicative scale factor that is applied to polarization interactions between 1-4
-     * connected atoms located in the same polarization group.
-     *
+     * Provides a multiplicative scale factor that is applied to polarization interactions between
+     * 1-4 connected atoms located in the same polarization group.
+     * <p>
      * The intra-12-scale, intra-13-scale and intra-15-scale factors are not supported.
      */
     public final double intra14Scale;

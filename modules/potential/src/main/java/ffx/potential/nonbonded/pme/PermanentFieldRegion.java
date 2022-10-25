@@ -285,9 +285,9 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
     this.reciprocalSpaceTerm = reciprocalSpaceTerm;
     this.reciprocalSpace = reciprocalSpace;
     if (pcgSolver != null) {
-      this.preconditionerCutoff = pcgSolver.preconditionerCutoff;
-      this.preconditionerLists = pcgSolver.preconditionerLists;
-      this.preconditionerCounts = pcgSolver.preconditionerCounts;
+      this.preconditionerCutoff = pcgSolver.getPreconditionerCutoff();
+      this.preconditionerLists = pcgSolver.getPreconditionerLists();
+      this.preconditionerCounts = pcgSolver.getPreconditionerCounts();
     }
     this.aewald = ewaldParameters.aewald;
     this.an0 = ewaldParameters.an0;

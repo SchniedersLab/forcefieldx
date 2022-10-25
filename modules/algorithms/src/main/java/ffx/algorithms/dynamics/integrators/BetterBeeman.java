@@ -107,4 +107,10 @@ public class BetterBeeman extends Integrator {
     dt_8 = 0.125 * dt;
     dt2_8 = dt * dt_8;
   }
+
+  /** {@inheritDoc} */
+  @Override
+  public String toString() {
+    return "Better Beeman";
+  }
 }

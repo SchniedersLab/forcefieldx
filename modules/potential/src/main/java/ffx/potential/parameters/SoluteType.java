@@ -67,10 +67,7 @@ public final class SoluteType extends BaseType implements Comparator<String> {
 
   /** This maps atomic number to reasonable GK base radii. */
   static final Map<Integer, SoluteType> CONSENSUS_RADII = new HashMap<>();
-
-  /** This maps atomic number to force field VDW base radii. */
-  static final Map<Integer, SoluteType> VDW_RADII = new HashMap<>();
-
+  
   /** Solute atomic diameter for PB. */
   public double pbDiameter;
   /** Solute atomic diameter for ddCOSMO. */
@@ -288,11 +285,7 @@ public final class SoluteType extends BaseType implements Comparator<String> {
   }
 
   public static SoluteType getVDWSoluteType(VDWType vdwType) {
-    int atomClass = vdwType.atomClass;
-    if (!VDW_RADII.containsKey(atomClass)) {
-      VDW_RADII.put(atomClass, new SoluteType(atomClass, vdwType.radius));
-    }
-    return VDW_RADII.get(atomClass);
+    return new SoluteType(vdwType.atomClass, vdwType.radius);
   }
 
   public static SoluteType getFitSoluteType(ForceField forceField, int type) {

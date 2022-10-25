@@ -197,10 +197,14 @@ public class Respa extends Integrator {
     halfInnerTimeStep = 0.5 * innerTimeStep;
 
     if (logger.isLoggable(Level.FINE)) {
-      logger.fine(
-          format(
-              " Time step set at %f (psec) and inner time step set at %f (psec) \n",
+      logger.fine(format(" Time step set at %f (psec) and inner time step set at %f (psec) \n",
               this.dt, innerTimeStep));
     }
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  public String toString() {
+    return "Respa";
   }
 }

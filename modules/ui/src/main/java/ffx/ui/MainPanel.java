@@ -251,6 +251,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
             + "          Rae A. Corrigan      2019-2022 \n"
             + "          Guowei Qi            2019-2022 \n"
             + "          Mallory R. Tollefson 2019-2022 \n"
+            + "          Aaron J. Nessler     2021-2022 \n"
             + "\n"
             + "        All Rights Reserved \n"
             + "\n"
