@@ -103,6 +103,7 @@ public abstract class Thermostat {
   private boolean removeCenterOfMassMotion;
   /** Reduce logging. */
   private boolean quiet = false;
+
   /**
    * Constructor for Thermostat.
    *
@@ -313,7 +314,7 @@ public abstract class Thermostat {
 
   /**
    * If center of mass motion is being removed, then the mean kinetic energy of the system will be 3
-   * * kT/2 less than if center of mass motion is allowed.
+   * kT/2 less than if center of mass motion is allowed.
    *
    * @param remove <code>true</code> if center of mass motion is being removed.
    */
@@ -471,6 +472,10 @@ public abstract class Thermostat {
   /** {@inheritDoc} */
   @Override
   public String toString() {
+    return logTemp();
+  }
+
+  public String logTemp() {
     StringBuilder sb =
         new StringBuilder(
             format("  Target temperature:           %7.2f Kelvin\n", targetTemperature));
@@ -478,10 +483,8 @@ public abstract class Thermostat {
     sb.append(format("  Number of variables:          %7d\n", nVariables));
     sb.append(format("  Number of degrees of freedom: %7d\n", degreesOfFreedom));
     sb.append(format("  Kinetic Energy:               %7.2f\n", currentKineticEnergy));
-    sb.append(
-        format(
-            "  kT per degree of freedom:     %7.2f",
-            KCAL_TO_GRAM_ANG2_PER_PS2 * currentKineticEnergy / (degreesOfFreedom * kT)));
+    sb.append(format("  kT per degree of freedom:     %7.2f",
+        KCAL_TO_GRAM_ANG2_PER_PS2 * currentKineticEnergy / (degreesOfFreedom * kT)));
     return sb.toString();
   }
 
@@ -493,7 +496,7 @@ public abstract class Thermostat {
    */
   protected void log(Level level) {
     if (logger.isLoggable(level) && !quiet) {
-      logger.log(level, toString());
+      logger.log(level, logTemp());
     }
   }
 

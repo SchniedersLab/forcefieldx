@@ -414,14 +414,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     }
   }
 
-  /** detachExtendedSystem. */
-  public void detachExtendedSystem() {
-    setAtoms(previousAtoms, molecule);
-    esvTerm = false;
-    esvSystem = null;
-    initSoftCore(); // To remove entries from isSoft[] that were due only to ESVs.
-  }
-
   /**
    * The energy routine may be called repeatedly.
    *

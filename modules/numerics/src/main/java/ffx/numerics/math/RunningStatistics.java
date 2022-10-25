@@ -116,6 +116,20 @@ public class RunningStatistics {
     }
   }
 
+  public void reset() {
+    // Weight-sensitive values.
+    mean = 0;
+    var = 0;
+    weight = 0;
+    // Weight-insensitive values.
+    min = Double.MAX_VALUE;
+    max = Double.MIN_VALUE;
+    count = 0;
+    sum = 0;
+    dof = -1;
+    comp = 0;
+  }
+
   /**
    * Get the count.
    *

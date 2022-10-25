@@ -1470,21 +1470,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
   }
 
-  /** detachExtendedSystem. */
-  public void detachExtendedSystem() {
-    esvTerm = false;
-    esvSystem = null;
-    if (vanderWaalsTerm && vanderWaals != null) {
-      vanderWaals.detachExtendedSystem();
-    }
-
-    // if (multipoleTerm && particleMeshEwald != null) {
-    //    particleMeshEwald.detachExtendedSystem();
-    // }
-
-    reInit();
-  }
-
   /**
    * energy.
    *
