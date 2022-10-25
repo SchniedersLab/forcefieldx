@@ -163,9 +163,9 @@
       <version>${clustering.version}</version>
     </dependency>
     <dependency>
-      <artifactId>ciftools-java-jdk8</artifactId>
+      <artifactId>ciftools-java</artifactId>
       <groupId>org.rcsb</groupId>
-      <version>${ciftools-java-jdk8.version}</version>
+      <version>${ciftools-java.version}</version>
     </dependency>
     <dependency>
       <artifactId>cdk-data</artifactId>

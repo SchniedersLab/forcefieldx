@@ -233,7 +233,7 @@
                 <!-- dependencyConvergence/ -->
                 <!-- reactorModuleConvergence/ -->
                 <requireJavaVersion>
-                  <version>[10,19.1]</version>
+                  <version>[11,20.1]</version>
                 </requireJavaVersion>
                 <requireMavenVersion>
                   <version>3.2.5</version>
@@ -831,7 +831,7 @@
   <properties>
     <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
     <!-- antlr4 4.10.1 requires jdk 11 -->
-    <antlr4.version>4.9.3</antlr4.version>
+    <antlr4.version>4.10.1</antlr4.version>
     <antrun.version>3.1.0</antrun.version>
     <appassembler.version>2.1.0</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
@@ -843,7 +843,7 @@
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
     <checkstyle.version>3.2.0</checkstyle.version>
-    <ciftools-java-jdk8.version>4.0.2</ciftools-java-jdk8.version>
+    <ciftools-java.version>4.0.2</ciftools-java.version>
     <clean.version>3.2.0</clean.version>
     <clover.version>4.4.1</clover.version>
     <clustering.version>1.2.0</clustering.version>
@@ -854,7 +854,7 @@
     <commons-lang3.version>3.12.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
     <!-- Control the source version version -->
-    <compileVersion>10</compileVersion>
+    <compileVersion>11</compileVersion>
     <compiler.version>3.10.1</compiler.version>
     <dependency.version>3.3.0</dependency.version>
     <dependencyDetails>false</dependencyDetails>
@@ -912,7 +912,7 @@
     <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
     <surefire.version>3.0.0-M7</surefire.version>
     <!-- Control the target JRE version -->
-    <targetVersion>10</targetVersion>
+    <targetVersion>11</targetVersion>
     <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
     <tensorflow.version>1.13.1</tensorflow.version>
     <timestamp>${maven.build.timestamp}</timestamp>
@@ -1035,7 +1035,7 @@
           <linkXRef>true</linkXRef>
           <minimumPriority>2</minimumPriority>
           <minimumTokens>500</minimumTokens>
-          <targetJdk>10</targetJdk>
+          <targetJdk>11</targetJdk>
           <typeResolution>true</typeResolution>
           <aggregate>true</aggregate>
         </configuration>
