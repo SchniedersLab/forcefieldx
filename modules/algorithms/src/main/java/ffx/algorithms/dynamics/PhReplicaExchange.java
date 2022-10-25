@@ -51,6 +51,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.FastMath;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -404,12 +406,14 @@ public class PhReplicaExchange implements Terminatable {
       logger.info(" Restarting pH-REX at cycle " + startCycle + " of " + cycles);
     }
 
+    replica.writeRestart();
     for (int i = startCycle; i < cycles; i++) {
       // Check for termination request.
       if (terminate) {
         done = true;
         break;
       }
+      copyToBackups();
 
       if(openMM != null){
         if(confSteps < 3)
@@ -423,9 +427,6 @@ public class PhReplicaExchange implements Terminatable {
       }
 
       // Set backups in case job is killed at bad time
-      DYNFilter dynFilter = new DYNFilter(replica.getAssemblies()[0].getName());
-      dynFilter.writeDYN(dynBackup, replica.getAssemblies()[0].getCrystal(), replica.x, replica.v, replica.a, replica.aPrevious);
-      extendedSystem.writeESVInfoTo(esvBackup);
       replica.writeRestart();
 
       logger.info(" ");
@@ -692,6 +693,24 @@ public class PhReplicaExchange implements Terminatable {
     } catch (IOException ex) {
       String message = " Replica Exchange allGather failed.";
       logger.log(Level.SEVERE, message, ex);
+    }
+  }
+
+  private void copyToBackups(){
+    try {
+      Files.move(esv.toPath(),esv.toPath().resolveSibling(esvBackup.getName()), StandardCopyOption.REPLACE_EXISTING);
+    } catch (IOException e) {
+      String message = " Could not copy ESV histogram to backup - dynamics terminated.";
+      logger.log(Level.WARNING, message);
+      throw new RuntimeException(e);
+    }
+
+    try {
+      Files.move(dyn.toPath(),dyn.toPath().resolveSibling(dynBackup.getName()), StandardCopyOption.REPLACE_EXISTING);
+    } catch (IOException e) {
+      String message = " Could not copy dyn restart to backup - dynamics terminated.";
+      logger.log(Level.WARNING, message);
+      throw new RuntimeException(e);
     }
   }
 }
