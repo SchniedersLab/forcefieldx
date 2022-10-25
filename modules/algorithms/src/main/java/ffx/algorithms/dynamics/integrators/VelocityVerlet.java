@@ -117,4 +117,10 @@ public class VelocityVerlet extends Integrator {
     this.dt = dt;
     dt_2 = dt * 0.5;
   }
+
+  /** {@inheritDoc} */
+  @Override
+  public String toString() {
+    return "Velocity Verlet";
+  }
 }

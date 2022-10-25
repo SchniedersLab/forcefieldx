@@ -269,4 +269,10 @@ public class Stochastic extends Integrator {
       inverseFriction = Double.POSITIVE_INFINITY;
     }
   }
+
+  /** {@inheritDoc} */
+  @Override
+  public String toString() {
+    return "Stochastic";
+  }
 }
