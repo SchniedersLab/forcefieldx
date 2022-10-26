@@ -406,14 +406,12 @@ public class PhReplicaExchange implements Terminatable {
       logger.info(" Restarting pH-REX at cycle " + startCycle + " of " + cycles);
     }
 
-    replica.writeRestart();
     for (int i = startCycle; i < cycles; i++) {
       // Check for termination request.
       if (terminate) {
         done = true;
         break;
       }
-      copyToBackups();
 
       if(openMM != null){
         if(confSteps < 3)
@@ -427,6 +425,10 @@ public class PhReplicaExchange implements Terminatable {
       }
 
       // Set backups in case job is killed at bad time
+      if(i == 0){
+        replica.writeRestart();
+      }
+      copyToBackups();
       replica.writeRestart();
 
       logger.info(" ");
