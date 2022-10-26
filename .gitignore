@@ -37,3 +37,5 @@ bin/build.properties
 modules/ffx-all/dependency-reduced-pom.xml
 /archiveTesting/
 /amoebabio18_cphmd.prm
+
+python/__pycache__
