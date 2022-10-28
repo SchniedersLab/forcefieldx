@@ -95,7 +95,7 @@
     </dependency>
     <dependency>
       <artifactId>commons-io</artifactId>
-      <groupId>org.apache.commons</groupId>
+      <groupId>commons-io</groupId>
       <type>jar</type>
       <version>${commons-io.version}</version>
     </dependency>

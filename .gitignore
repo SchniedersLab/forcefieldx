@@ -39,3 +39,6 @@ modules/ffx-all/dependency-reduced-pom.xml
 /amoebabio18_cphmd.prm
 
 python/__pycache__
+
+bin/native-image
+bin/reports

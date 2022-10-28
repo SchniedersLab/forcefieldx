@@ -70,7 +70,7 @@
       <version>${commons-math3.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.commons</groupId>
+      <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <type>jar</type>
       <version>${commons-io.version}</version>
