@@ -32,7 +32,7 @@ parso==0.3.4
 pickleshare==0.7.5
 prometheus-client==0.6.0
 prompt-toolkit==2.0.9
-pyrsistent==0.14.11
+pyrsistent==0.18.1
 python-dateutil==2.8.0
 pywinpty==0.5.5
 pyzmq==18.0.1

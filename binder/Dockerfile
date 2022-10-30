@@ -58,9 +58,11 @@ COPY . $HOME
 RUN chown -R $NB_UID $HOME
 
 # Set up the FFX Kotlin library
+WORKDIR /
+RUN git clone https://github.com/SchniedersLab/forcefieldx.git 
 RUN mkdir $HOME/.jupyter_kotlin
 RUN mkdir $HOME/.jupyter_kotlin/libraries
-RUN cp $HOME/binder/ffx.json $HOME/.jupyter_kotlin/libraries/.
+COPY /binder/ffx.json $HOME/.jupyter_kotlin/libraries/.
 
 USER $NB_USER
 
