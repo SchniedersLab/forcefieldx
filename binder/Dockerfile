@@ -1,4 +1,4 @@
-FROM openjdk:11.0.7
+FROM openjdk:11.0.7 
 
 # Version of FFX to Download
 ENV FFX_VERSION 1.0.0-beta
@@ -9,6 +9,7 @@ ENV FFX_VERSION 1.0.0-beta
 RUN apt-get update
 RUN apt-get install -y python3-pip
 RUN apt-get install -y libffi-dev
+RUN pip3 install pyrsistent==0.18.1
 
 # add requirements.txt, written this way to gracefully ignore a missing file
 COPY . .
@@ -58,11 +59,10 @@ COPY . $HOME
 RUN chown -R $NB_UID $HOME
 
 # Set up the FFX Kotlin library
-WORKDIR /
-RUN git clone https://github.com/SchniedersLab/forcefieldx.git 
 RUN mkdir $HOME/.jupyter_kotlin
 RUN mkdir $HOME/.jupyter_kotlin/libraries
-COPY /binder/ffx.json $HOME/.jupyter_kotlin/libraries/.
+RUN wget https://raw.githubusercontent.com/SchniedersLab/forcefieldx/master/binder/ffx.json
+RUN cp ffx.json $HOME/.jupyter_kotlin/libraries/.
 
 USER $NB_USER
 
