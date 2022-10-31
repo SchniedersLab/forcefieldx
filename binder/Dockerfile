@@ -12,6 +12,9 @@ RUN apt-get install -y python3-pip
 
 # add requirements.txt, written this way to gracefully ignore a missing file
 COPY . .
+
+SHELL ["/bin/bash", "-c"]
+
 RUN ([ -f requirements.txt ] \
     && pip3 install --no-cache-dir -r requirements.txt) \
         || pip3 install --no-cache-dir jupyter jupyterlab kotlin-jupyter-kernel
