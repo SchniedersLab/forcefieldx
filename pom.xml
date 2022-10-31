@@ -888,9 +888,9 @@
     <maven.jxr.skip>false</maven.jxr.skip>
     <picocli.version>4.6.3</picocli.version>
     <pj.version>1.0.1</pj.version>
-    <pmd.skip>false</pmd.skip>
     <!-- There is a bug in 3.15.0 and newer PMD that doesn't handle repository resolution correctly -->
-    <pmd.version>3.19.0</pmd.version>
+    <pmd.version>3.14.0</pmd.version>
+    <pmd.skip>false</pmd.skip>
     <project-info-reports.version>3.4.1</project-info-reports.version>
     <!-- Setting the source encoding is required for builds that are platform independent. -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -1048,7 +1048,7 @@
               <report>aggregate-cpd</report>
             </reports>
           </reportSet -->
-         <reportSet>
+          <reportSet>
             <id>default</id>
             <reports>
               <report>pmd</report>
