@@ -1,4 +1,4 @@
-FROM openjdk:11.0.7 
+FROM eclipse-temurin:17.0.4.1_1-jdk-centos7
 
 # Version of FFX to Download
 ENV FFX_VERSION 1.0.0-beta
