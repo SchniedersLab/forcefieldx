@@ -8,5 +8,6 @@
 
 export FFX_JVM_FLAGS="--vm.Dj3d.rend=noop --vm.Djava.awt.headless=true"
 
-graalpython --jvm --vm.classpath=$FFX_HOME/bin/ffx-all-1.0.0-beta.jar $FFX_JVM_FLAGS ffx-script.py 
+graalpy --jvm --vm.classpath=$FFX_HOME/bin/ffx-all-1.0.0-beta.jar $FFX_JVM_FLAGS ffx-script.py 
+
 

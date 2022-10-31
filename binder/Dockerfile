@@ -1,15 +1,14 @@
-FROM eclipse-temurin:17.0.4.1_1-jdk-centos7
+FROM ubuntu:focal
 
-# Version of FFX to Download
-ENV FFX_VERSION 1.0.0-beta
-
-# Use GraalVM for JavaScript and Python
-# FROM findepi/graalvm:20.0.0-java11-polyglot
+# Install Temurin JDK 17
+ENV JAVA_HOME=/opt/java/openjdk
+COPY --from=eclipse-temurin:17 $JAVA_HOME $JAVA_HOME
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 RUN apt-get update
+RUN apt-get install -y wget unzip
+RUN apt-get install -y libfreetype6 fontconfig fonts-dejavu
 RUN apt-get install -y python3-pip
-RUN apt-get install -y libffi-dev
-RUN pip3 install pyrsistent==0.18.1
 
 # add requirements.txt, written this way to gracefully ignore a missing file
 COPY . .
@@ -18,6 +17,9 @@ RUN ([ -f requirements.txt ] \
         || pip3 install --no-cache-dir jupyter jupyterlab kotlin-jupyter-kernel
 
 USER root
+
+# Version of FFX to Download
+ENV FFX_VERSION 1.0.0-beta
 
 # Download Force Field X
 ENV FFX_TAR ffx-$FFX_VERSION-bin.tar.gz
