@@ -59,8 +59,10 @@ RUN /usr/sbin/adduser --disabled-password \
     --gecos "Default user" \
     --uid $NB_UID \
     --shell /usr/bin/bash \
+    --no-create-home \
     $NB_USER
 
+RUN mkdir $HOME
 COPY . $HOME
 RUN chown -R $NB_UID $HOME
 
