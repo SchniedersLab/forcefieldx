@@ -51,11 +51,11 @@ RUN unzip ijava-1.3.0.zip -d ijava-kernel \
 
 # Set up the user environment
 ENV NB_USER ffx
-ENV SHELL /bin/bash
+ENV SHELL /usr/bin/bash
 ENV NB_UID 1000
 ENV HOME /home/$NB_USER
 
-RUN adduser --disabled-password \
+RUN /usr/sbin/adduser --disabled-password \
     --gecos "Default user" \
     --uid $NB_UID \
     $NB_USER
