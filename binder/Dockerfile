@@ -58,6 +58,7 @@ ENV HOME /home/$NB_USER
 RUN /usr/sbin/adduser --disabled-password \
     --gecos "Default user" \
     --uid $NB_UID \
+    --shell /usr/bin/bash \
     $NB_USER
 
 COPY . $HOME
