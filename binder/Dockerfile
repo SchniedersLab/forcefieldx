@@ -55,10 +55,10 @@ ENV SHELL /usr/bin/bash
 ENV NB_UID 1000
 ENV HOME /home/$NB_USER
 
-RUN /usr/sbin/adduser --disabled-password \
+RUN adduser --disabled-password \
     --gecos "Default user" \
     --uid $NB_UID \
-    --shell /usr/bin/bash \
+    --shell $SHELL \
     $NB_USER
 
 COPY . $HOME
