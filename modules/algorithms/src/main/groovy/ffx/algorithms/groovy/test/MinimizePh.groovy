@@ -42,53 +42,46 @@ import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.MinimizeOptions
 import ffx.algorithms.optimize.PhMinimize
 import ffx.crystal.Crystal
-import ffx.numerics.Potential
 import ffx.potential.ForceFieldEnergy
-import ffx.potential.MolecularAssembly
-import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.extended.ExtendedSystem
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XPHFilter
 import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
+import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
 import static org.apache.commons.math3.util.FastMath.abs
-import static org.apache.commons.math3.util.FastMath.abs
 
 /**
- * The Minimize script uses a limited-memory BFGS algorithm to minimize the energy of a molecular system.
+ * The MinimizePh command uses a limited-memory BFGS algorithm to minimize the energy of a CpHMD molecular system.
  * <br>
  * Usage:
  * <br>
- * ffxc Minimize [options] &lt;filename [file2...]&gt;
+ * ffxc test.MinimizePh [options] &lt;filename [file2...]&gt;
  */
-@Command(description = " Run L-BFGS minimization on a system.", name = "ffxc Minimize")
+@Command(description = " Run L-BFGS minimization on a CpHMD system.", name = "test.MinimizePh")
 class MinimizePh extends AlgorithmsScript {
 
   @Mixin
   MinimizeOptions minimizeOptions
 
-  @Mixin
-  AtomSelectionOptions atomSelectionOptions
-
   /**
    * --pH or --constantPH Constant pH value for the test.
    */
-  @CommandLine.Option(names = ['--pH', '--constantPH'], paramLabel = '7.4',
-          description = 'pH value for the energy evaluation. (Only applies when esvTerm is true)')
+  @Option(names = ['--pH', '--constantPH'], paramLabel = '7.4',
+      description = 'pH value for the energy evaluation. (Only applies when esvTerm is true)')
   double pH = 7.4
 
   /**
    * --coords
    */
-  @CommandLine.Option(names = ['--coords'], paramLabel = 'false',
-          description = 'Minimize spatial coordinates along with titration')
+  @Option(names = ['--coords'], paramLabel = 'false',
+      description = 'Minimize spatial coordinates along with titration')
   boolean coords = false
   /**
    * The final argument(s) should be one or more filenames.
@@ -103,7 +96,7 @@ class MinimizePh extends AlgorithmsScript {
   /**
    * Minimize Constructor.
    */
-    MinimizePh() {
+  MinimizePh() {
     this(new Binding())
   }
 
@@ -111,7 +104,7 @@ class MinimizePh extends AlgorithmsScript {
    * Minimize Constructor.
    * @param binding The Groovy Binding to use.
    */
-    MinimizePh(Binding binding) {
+  MinimizePh(Binding binding) {
     super(binding)
   }
 
@@ -150,19 +143,21 @@ class MinimizePh extends AlgorithmsScript {
     forceFieldEnergy.energy(x, true)
 
     SystemFilter systemFilter = algorithmFunctions.getFilter()
-    if(systemFilter instanceof XYZFilter){
-      XPHFilter xphFilter = new XPHFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties(), esvSystem)
+    if (systemFilter instanceof XYZFilter) {
+      XPHFilter xphFilter = new XPHFilter(activeAssembly.getFile(), activeAssembly,
+          activeAssembly.getForceField(), activeAssembly.getProperties(), esvSystem)
       xphFilter.readFile()
       logger.info("Reading ESV lambdas from XPH file")
       forceFieldEnergy.getCoordinates(x)
       forceFieldEnergy.energy(x, true)
     }
-    PhMinimize minimize = new PhMinimize(activeAssembly, forceFieldEnergy, algorithmListener, esvSystem)
+    PhMinimize minimize = new PhMinimize(activeAssembly, forceFieldEnergy, algorithmListener,
+        esvSystem)
 
     double energy = minimize.getEnergy()
     double tolerance = 1.0e-10
 
-    if(coords){
+    if (coords) {
       while (true) {
         // Complete a round of coordinate optimization.
         minimize.minimizeCoordinates(minimizeOptions.eps, minimizeOptions.iterations)
@@ -188,8 +183,7 @@ class MinimizePh extends AlgorithmsScript {
         }
         energy = newEnergy
       }
-    }
-    else{
+    } else {
       minimize.minimizeTitration(minimizeOptions.getEps(), minimizeOptions.getIterations())
     }
 

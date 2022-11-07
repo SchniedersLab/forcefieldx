@@ -58,7 +58,7 @@ import static java.lang.String.format
  * <br>
  * ffxc xray.Timer [options] &lt;filename&gt;
  */
-@Command(description = " Time calculation of the X-ray target.", name = "ffxc xray.Timer")
+@Command(description = " Time calculation of the X-ray target.", name = "xray.Timer")
 class Timer extends AlgorithmsScript {
 
   @Mixin

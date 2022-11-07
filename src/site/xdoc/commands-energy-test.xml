@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document
+  xmlns="http://maven.apache.org/XDOC/2.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties>
+    <title>Energy and Structure Analysis Commands</title>
+    <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+  </properties>
+  <body>
+    <section name="Energy and Structure Analysis Commands for Testing Purposes">
+      <table>
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <a href="commands/test.CoordShakeEnergy.html">test.CoordShakeEnergy</a>
+            </td>
+            <td>The CoordShakeEnergy command evaluates the energy of a system before and after moving
+              coordinates by a fixed offset. This is useful to test coordinate restraints.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/test.EnergyOpenMM.html">test.EnergyOpenMM</a>
+            </td>
+            <td>The EnergyOpenMM command computes the energy and gradient using both FFX and
+              OpenMM.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/test.Gradient.html">test.Gradient</a>
+            </td>
+            <td>The Gradient command tests the analytic energy gradient against one computed using
+              finite-differences of the potential energy.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/test.LambdaGradient.html">test.LambdaGradient</a>
+            </td>
+            <td>The LambdaGradient command tests the analytic thermodynamic path parameterized by
+              Lambda numerically.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/test.MultiRes.html">test.MultiRes</a>
+            </td>
+            <td>The MultRes command evaluates the energy of a MultiResidue system.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/test.PrmToProperty.html">test.PrmToProperty</a>
+            </td>
+            <td>The PrmToProperty command converts a TINKER *.prm file to Java properties.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/test.RGNtoPDB.html">test.RGNtoPDB</a>
+            </td>
+            <td>The RGNtoPDB command converts RGN output (a *.tertiary file) to PDB format.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/test.SaveAsConstantPhPDB.html">test.SaveAsConstantPhPDB</a>
+            </td>
+            <td>THe SaveAsConstantPhPDB command saves a PDB file that includes all titrating tautomer
+              hydrogen atoms.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </body>
+</document>

@@ -66,7 +66,7 @@ import static java.lang.String.format
  * <br>
  * ffxc ManyBody [options] &lt;filename&gt;
  */
-@Command(description = " Discrete optimization using a many-body expansion and elimination expressions.", name = "ffxc realspace.ManyBody")
+@Command(description = " Discrete optimization using a many-body expansion and elimination expressions.", name = "realspace.ManyBody")
 class ManyBody extends AlgorithmsScript {
 
   @Mixin

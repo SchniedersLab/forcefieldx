@@ -53,7 +53,8 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc test.PrmToProperty &lt;filename&gt;
  */
-@Command(description = "PrmToProperty converts a TINKER *.prm file to Java properties.", name = "ffxc PrmToProperty")
+@Command(description = "PrmToProperty converts a TINKER *.prm file to Java properties.",
+    name = "test.PrmToProperty")
 class PrmToProperty extends PotentialScript {
 
   /**

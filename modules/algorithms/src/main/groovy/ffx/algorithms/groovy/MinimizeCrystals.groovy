@@ -65,7 +65,7 @@ import static org.apache.commons.math3.util.FastMath.abs
  * <br>
  * ffxc MinimizeCrystals [options] &lt;filename&gt;
  */
-@Command(description = " Minimize crystal unit cell parameters.", name = "ffxc MinimizeCrystals")
+@Command(description = " Minimize crystal unit cell parameters.", name = "MinimizeCrystals")
 class MinimizeCrystals extends AlgorithmsScript {
 
   @Mixin

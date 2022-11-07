@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.xray.groovy
+package ffx.xray.groovy.test
 
 import edu.rit.pj.Comm
 import ffx.algorithms.cli.AlgorithmsScript
@@ -73,7 +73,7 @@ import java.util.logging.Logger
  * ffxc xray.Alchemical [options] &lt;filename&gt;
  */
 
-@Command(description = " Simulated annealing on an X-ray target.", name = "ffxc xray.Alchemical")
+@Command(description = " Simulated annealing on an X-ray target.", name = "xray.test.Alchemical")
 class Alchemical extends AlgorithmsScript {
 
   @Mixin

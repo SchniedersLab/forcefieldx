@@ -61,7 +61,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * <br>
  * ffxc SaveAsPDB [options] &lt;filename&gt;
  */
-@Command(description = " Save the system as a PDB file.", name = "ffxc SaveAsPDB")
+@Command(description = " Save the system as a PDB file.", name = "SaveAsPDB")
 class SaveAsPDB extends PotentialScript {
 
   @Mixin

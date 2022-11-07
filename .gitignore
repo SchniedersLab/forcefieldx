@@ -42,3 +42,6 @@ python/__pycache__
 
 bin/native-image
 bin/reports
+bin/META-INF
+
+src/site/asciidoc/commands

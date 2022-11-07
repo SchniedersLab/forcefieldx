@@ -50,7 +50,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc xray.MTZInfo &lt;filename&gt;
  */
-@Command(description = " Write out information on an MTZ file.", name = "ffxc xray.MTZInfo")
+@Command(description = " Write out information on an MTZ file.", name = "xray.MTZInfo")
 class MTZInfo extends AlgorithmsScript {
 
   /**

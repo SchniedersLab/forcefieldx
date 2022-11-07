@@ -59,7 +59,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc realspace.Anneal [options] &lt;filename&gt;
  */
-@Command(description = " Simulated annealing on a Real Space target.", name = "ffxc realspace.Anneal")
+@Command(description = " Simulated annealing on a Real Space target.", name = "realspace.Anneal")
 class Anneal extends AlgorithmsScript {
 
   @Mixin

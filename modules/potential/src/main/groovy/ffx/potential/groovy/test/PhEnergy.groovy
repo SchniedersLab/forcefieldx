@@ -64,9 +64,10 @@ import static org.apache.commons.io.FilenameUtils.*
  * <br>
  * Usage:
  * <br>
- * ffxc Energy &lt;filename&gt;
+ * ffxc test.PhEnergy &lt;filename&gt;
  */
-@Command(description = " Compute the force field potential energy.", name = "ffxc Energy")
+@Command(description = " Compute the force field potential energy for a CpHMD system.",
+    name = "test.PhEnergy")
 class PhEnergy extends PotentialScript {
 
     @Mixin

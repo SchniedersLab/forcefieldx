@@ -51,7 +51,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc xray.AverageMTZ &lt;filename1&gt; &lt;filename2&gt;
  */
-@Command(description = " Average two MTZ files.", name = "ffxc xray.AverageMTZ")
+@Command(description = " Average two MTZ files.", name = "xray.AverageMTZ")
 class AverageMTZ extends AlgorithmsScript {
 
   /**

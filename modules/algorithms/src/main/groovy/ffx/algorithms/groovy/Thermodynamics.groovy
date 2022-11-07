@@ -69,7 +69,7 @@ import static java.lang.String.format
  * <br>
  * ffxc Thermodynamics [options] &lt;filename&gt [file2...];
  */
-@Command(description = " Use the Transition-Tempered Orthogonal Space Random Walk algorithm to estimate a free energy.", name = "ffxc Thermodynamics")
+@Command(description = " Use the Transition-Tempered Orthogonal Space Random Walk algorithm to estimate a free energy.", name = "Thermodynamics")
 class Thermodynamics extends AlgorithmsScript {
 
   @Mixin

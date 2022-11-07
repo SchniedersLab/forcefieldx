@@ -54,7 +54,7 @@ import static java.lang.String.format
 
  * @author Michael Schnieders
  */
-@Command(description = " The Scheduler runs parallel jobs over nodes.", name = "ffxc Scheduler")
+@Command(description = " The Scheduler runs parallel jobs over nodes.", name = "Scheduler")
 class Scheduler extends AlgorithmsScript {
 
   /**

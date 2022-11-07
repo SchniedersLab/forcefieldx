@@ -61,7 +61,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * <br>
  * ffxc xray.Anneal [options] &lt;filename&gt;
  */
-@Command(description = " Simulated annealing on an X-ray target.", name = "ffxc xray.Anneal")
+@Command(description = " Simulated annealing on an X-ray target.", name = "xray.Anneal")
 class Anneal extends AlgorithmsScript {
 
   @Mixin

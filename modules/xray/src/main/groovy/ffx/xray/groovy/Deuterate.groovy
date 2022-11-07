@@ -55,7 +55,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * <br>
  * ffxc xray.Deuterate &lt;pdbfile1&gt;
  */
-@Command(description = " Deuterate exchangable hydrogen of the PDB model.", name = "ffxc Deuterate")
+@Command(description = " Deuterate exchangable hydrogen of the PDB model.", name = "xray.Deuterate")
 class Deuterate extends AlgorithmsScript {
 
   /**

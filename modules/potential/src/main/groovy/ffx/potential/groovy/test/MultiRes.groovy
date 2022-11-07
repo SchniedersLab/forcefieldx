@@ -55,9 +55,9 @@ import static java.lang.String.format
  * <br>
  * Usage:
  * <br>
- * ffxc test.MultiResidue [options] &lt;filename&gt;
+ * ffxc test.MultiRes [options] &lt;filename&gt;
  */
-@Command(description = " Evaluates the energy of a MultiResidue system.", name = "ffxc test.MultiResidue")
+@Command(description = " Evaluates the energy of a MultiResidue system.", name = "test.MultiRes")
 class MultiRes extends PotentialScript {
 
   /**

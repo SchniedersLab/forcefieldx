@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.potential.groovy
+package ffx.potential.groovy.test
 
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.AminoAcidUtils
@@ -61,7 +61,8 @@ import static java.lang.String.format
  * <br>
  * ffxc RGNtoPDB [options] &lt;filename.tertiary&gt; &lt;filename.fasta&gt;
  */
-@Command(description = " RGNtoPDB converts RGN *tertiary file to PDB with side-chains format.", name = "ffxc RGNtoPDB")
+@Command(description = " RGNtoPDB converts RGN *tertiary file to PDB with side-chains format.",
+    name = "test.RGNtoPDB")
 class RGNtoPDB extends PotentialScript {
 
   /**

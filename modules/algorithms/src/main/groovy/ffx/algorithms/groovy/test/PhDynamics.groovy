@@ -58,13 +58,13 @@ import picocli.CommandLine.Parameters
 import static java.lang.String.format
 
 /**
- * The PhDynamics script implements constant pH molecular dynamics .
+ * The PhDynamics command implements constant pH molecular dynamics.
  * <br>
  * Usage:
  * <br>
- * ffxc PhDynamics [options] &lt;filename&gt; [file2...]
+ * ffxc test.PhDynamics [options] &lt;filename&gt; [file2...]
  */
-@Command(description = " Run constant pH dynamics on a system.", name = "ffxc PHDynamics")
+@Command(description = " Run constant pH dynamics on a system.", name = "test.PhDynamics")
 class PhDynamics extends AlgorithmsScript {
 
   @Mixin

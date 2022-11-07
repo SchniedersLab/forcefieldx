@@ -51,13 +51,13 @@ import java.util.logging.Level
 import static java.lang.String.format
 
 /**
- * The Energy script compares the energy of a system with OpenMM versus FFX platforms.
+ * The EnergyOpenMM script compares the energy of a system with OpenMM versus FFX platforms.
  * <br>
  * Usage:
  * <br>
  * ffxc test.EnergyOpenMM &lt;filename&gt;
  */
-@Command(description = " Compute energies and gradients with both FFX and OpenMM.", name = "ffxc test.EnergyOpenMM")
+@Command(description = " Compute the energy and gradient with both FFX and OpenMM.", name = "test.EnergyOpenMM")
 class EnergyOpenMM extends PotentialScript {
 
   public double energy = 0.0

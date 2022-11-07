@@ -60,7 +60,7 @@ import static ffx.utilities.TinkerUtils.version
  * <br>
  * ffxc realspace.Dynamics [options] &lt;filename&gt;
  */
-@Command(description = " Molecular dynamics on a Real Space target.", name = "ffxc realspace.Dynamics")
+@Command(description = " Molecular dynamics on a Real Space target.", name = "realspace.Dynamics")
 class Dynamics extends AlgorithmsScript {
 
   @Mixin

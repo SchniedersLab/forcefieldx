@@ -1,50 +1,66 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document
-        xmlns="http://maven.apache.org/XDOC/2.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+  xmlns="http://maven.apache.org/XDOC/2.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
-    <properties>
-        <title>Commands</title>
-        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
-    </properties>
-    <body>
-        <section name="Potential Energy Commands">
-            <p>Calculate Potential Energy, Test the Analytic Gradient, Time Energy and Gradient.</p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Command</th>
-                        <th>Purpose</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>
-                            <a href="commands/energy.html">Energy</a>
-                        </td>
-                        <td>Calculate the potential energy of the system.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/timer.html">Timer</a>
-                        </td>
-                        <td>Time the computation of the potential energy and gradient.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/test.Gradient.html">test.Gradient</a>
-                        </td>
-                        <td>Test the analytic Cartesian coordinate energy gradient numerically.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/test.LambdaGradient.html">test.LambdaGradient</a>
-                        </td>
-                        <td>Test the analytic thermodynamic path parameterized by Lambda numerically.</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-    </body>
+  <properties>
+    <title>Energy and Structure Analysis Commands</title>
+    <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+  </properties>
+  <body>
+    <section name="Energy and Structure Analysis Commands">
+      <table>
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <a href="commands/Density.html">Density</a>
+            </td>
+            <td>The Density command calculates the mean system density for single topology systems.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/Energy.html">Energy</a>
+            </td>
+            <td>The Energy command calculates the potential energy of the system.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/FeatureMap.html">FeatureMap</a>
+            </td>
+            <td>The FeatureMap command creates a feature map for a given protein structure.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/Solvator.html">Solvator</a>
+            </td>
+            <td>The Solvator command adds a box of solvent and optionally couter-ions around a
+              solute.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/Timer.html">Timer</a>
+            </td>
+            <td>The Timer command times the computation of the potential energy and gradient.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/Volume.html">Volume</a>
+            </td>
+            <td>The Volume command calculates the surface area and volume using the GaussVol
+              (default) or Connolly algorithm.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </body>
 </document>

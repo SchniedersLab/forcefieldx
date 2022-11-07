@@ -66,7 +66,7 @@ import static java.lang.String.format
  * <br>
  * ffxc ManyBody [options] &lt;filename&gt;
  */
-@Command(description = " Run ManyBody algorithm on a system.", name = "ffxc ManyBody")
+@Command(description = " Run ManyBody algorithm on a system.", name = "ManyBody")
 class ManyBody extends AlgorithmsScript {
 
   @Mixin

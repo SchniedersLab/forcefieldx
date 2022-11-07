@@ -66,7 +66,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * <br>
  * ffxc SaveAsXYZ [options] &lt;filename&gt;
  */
-@Command(description = " Create sub-directories for selected space groups.", name = "ffxc PrepareSpaceGroups")
+@Command(description = " Create sub-directories for selected space groups.", name = "PrepareSpaceGroups")
 class PrepareSpaceGroups extends PotentialScript {
 
   /**

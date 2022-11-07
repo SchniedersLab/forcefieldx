@@ -65,7 +65,7 @@ import static org.apache.commons.io.FilenameUtils.*
  * <br>
  * ffxc Energy &lt;filename&gt;
  */
-@Command(description = " Compute the force field potential energy.", name = "ffxc Energy")
+@Command(description = " Compute the force field potential energy.", name = "Energy")
 class Energy extends PotentialScript {
 
   @Mixin
@@ -436,5 +436,15 @@ class Energy extends PotentialScript {
     }
   }
 
+  /**
+   * This entry point is being used to test GraalVM ahead-of-time compilation.
+   * @param args Command line arguments.
+   */
+  public static void main(String... args) {
+    Binding binding = new Binding(args)
+    Energy energyScript = new Energy(binding)
+    energyScript.run()
+    System.exit(0)
+  }
 }
 

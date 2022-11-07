@@ -61,8 +61,8 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * <br>
  * ffxc xray.CIF2MTZ &lt;filename&gt;
  */
-@Command(description = " Convert a CIF file to MTZ format.", name = "ffxc xray.CIF2MTZ")
-class CIF2MTZ extends AlgorithmsScript {
+@Command(description = " Convert a CIF file to MTZ format.", name = "xray.CIFtoMTZ")
+class CIFtoMTZ extends AlgorithmsScript {
 
   /**
    * A CIF filename.
@@ -76,7 +76,7 @@ class CIF2MTZ extends AlgorithmsScript {
   /**
    * CIF2MTZ constructor.
    */
-  CIF2MTZ() {
+  CIFtoMTZ() {
     this(new Binding())
   }
 
@@ -84,7 +84,7 @@ class CIF2MTZ extends AlgorithmsScript {
    * CIF2MTZ constructor.
    * @param binding The Groovy Binding to use.
    */
-  CIF2MTZ(Binding binding) {
+  CIFtoMTZ(Binding binding) {
     super(binding)
   }
 
@@ -92,7 +92,7 @@ class CIF2MTZ extends AlgorithmsScript {
    * Execute the script.
    */
   @Override
-  CIF2MTZ run() {
+  CIFtoMTZ run() {
 
     if (!init()) {
       return this

@@ -188,7 +188,7 @@ fi
 EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS}"
 
 # This is for trying to use the GraalVM native image generation
-# EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} -agentlib:native-image-agent=config-merge-dir=${BASEDIR}/bin/native-image/META-INF"
+# EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} -agentlib:native-image-agent=config-merge-dir=${BASEDIR}/bin/META-INF/native-image"
 
 # TornadoVM Flags
 JAVA_FLAGS=""

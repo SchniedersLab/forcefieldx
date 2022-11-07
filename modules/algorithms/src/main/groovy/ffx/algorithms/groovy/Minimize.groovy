@@ -63,7 +63,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc Minimize [options] &lt;filename [file2...]&gt;
  */
-@Command(description = " Run L-BFGS minimization on a system.", name = "ffxc Minimize")
+@Command(description = " Run L-BFGS minimization on a system.", name = "Minimize")
 class Minimize extends AlgorithmsScript {
 
   @Mixin

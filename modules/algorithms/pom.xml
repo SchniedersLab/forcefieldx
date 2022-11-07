@@ -48,6 +48,64 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${exec.version}</version>
+        <executions>
+          <execution>
+            <id>generateManPages</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <includeProjectDependencies>true</includeProjectDependencies>
+          <includePluginDependencies>true</includePluginDependencies>
+          <mainClass>picocli.codegen.docgen.manpage.ManPageGenerator</mainClass>
+          <arguments>
+            <argument>--outdir=${project.parent.basedir}/src/site/asciidoc/commands</argument>
+            <argument>ffx.algorithms.groovy.Anneal</argument>
+            <argument>ffx.algorithms.groovy.BAR</argument>
+            <argument>ffx.algorithms.groovy.Cluster</argument>
+            <argument>ffx.algorithms.groovy.Dynamics</argument>
+            <argument>ffx.algorithms.groovy.ForEachFile</argument>
+            <argument>ffx.algorithms.groovy.Histogram</argument>
+            <argument>ffx.algorithms.groovy.ManyBody</argument>
+            <argument>ffx.algorithms.groovy.Minimize</argument>
+            <argument>ffx.algorithms.groovy.MinimizeCrystals</argument>
+            <argument>ffx.algorithms.groovy.MinimizeOpenMM</argument>
+            <argument>ffx.algorithms.groovy.MutatePDB</argument>
+            <argument>ffx.algorithms.groovy.Scheduler</argument>
+            <argument>ffx.algorithms.groovy.SortArc</argument>
+            <argument>ffx.algorithms.groovy.Superpose</argument>
+            <argument>ffx.algorithms.groovy.SuperposeCrystals</argument>
+            <argument>ffx.algorithms.groovy.Thermodynamics</argument>
+            <argument>ffx.algorithms.groovy.test.ApplyTorsions</argument>
+            <argument>ffx.algorithms.groovy.test.CreateRotamers</argument>
+            <argument>ffx.algorithms.groovy.test.CrystalSearch</argument>
+            <argument>ffx.algorithms.groovy.test.IdentifyRotamers</argument>
+            <argument>ffx.algorithms.groovy.test.ManyBodyPhScan</argument>
+            <argument>ffx.algorithms.groovy.test.MinimizePh</argument>
+            <argument>ffx.algorithms.groovy.test.MostBar</argument>
+            <argument>ffx.algorithms.groovy.test.OSTBias</argument>
+            <argument>ffx.algorithms.groovy.test.PhBar</argument>
+            <argument>ffx.algorithms.groovy.test.PhDynamics</argument>
+            <argument>ffx.algorithms.groovy.test.RepexThermo</argument>
+            <argument>ffx.algorithms.groovy.test.SortXPH</argument>
+          </arguments>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli-codegen</artifactId>
+            <version>${picocli.version}</version>
+            <type>jar</type>
+          </dependency>
+        </dependencies>
+      </plugin>
     </plugins>
     <resources>
       <resource>

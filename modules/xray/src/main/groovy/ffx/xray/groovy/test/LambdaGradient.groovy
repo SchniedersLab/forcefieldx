@@ -65,7 +65,7 @@ import static java.lang.String.format
  * <br>
  * ffxc xray.test.LambdaGradient [options] &lt;filename&gt;
  */
-@Command(description = " Test Lambda Derivatives on an X-ray target.", name = "ffxc xray.test.LambdaGradient")
+@Command(description = " Test Lambda Derivatives on an X-ray target.", name = "xray.test.LambdaGradient")
 class LambdaGradient extends AlgorithmsScript {
 
   @Mixin

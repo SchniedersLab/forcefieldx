@@ -57,13 +57,14 @@ import java.util.logging.Level
 import static java.lang.String.format
 
 /**
- * The Gradient script evaluates the consistency of the energy and gradient.
+ * Save a PDB file that includes all titrating tautomer hydrogen atoms.
  * <br>
  * Usage:
  * <br>
- * ffxc test.Gradient [options] &lt;filename&gt;
+ * ffxc test.SaveAsConstantPhPDB [options] &lt;filename&gt;
  */
-@Command(description = " Test the potential energy gradient.", name = "ffxc test.Gradient")
+@Command(description = " Save a PDB file that includes all titrating tautomer hydrogen atoms.",
+    name = "test.SaveAsConstantPhPDB")
 class SaveAsConstantPhPDB extends PotentialScript {
 
   @CommandLine.Option(names = ["--rt", "--rotamerTitration"], paramLabel = "false",

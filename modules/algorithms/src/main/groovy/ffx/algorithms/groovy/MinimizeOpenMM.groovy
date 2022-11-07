@@ -59,7 +59,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc MinimizeOpenMM [options] &lt;filename&gt;
  */
-@Command(description = " Run OpenMM Accelerated L-BFGS minimization on a system.", name = "ffxc MinimizeOpenMM")
+@Command(description = " Run OpenMM Accelerated L-BFGS minimization on a system.", name = "MinimizeOpenMM")
 class MinimizeOpenMM extends AlgorithmsScript {
 
   @Mixin
