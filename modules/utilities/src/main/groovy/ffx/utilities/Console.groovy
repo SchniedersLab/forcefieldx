@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.ui
+package ffx.utilities
 
 import com.github.javaparser.ParseProblemException
 import com.github.javaparser.StaticJavaParser

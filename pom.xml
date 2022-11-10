@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-         http://maven.apache.org/maven-v4_0_0.xsd">
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <artifactId>ffx</artifactId>
   <build>
     <defaultGoal>install</defaultGoal>
@@ -44,7 +43,6 @@
             <source>${compileVersion}</source>
             <target>${targetVersion}</target>
             <useIncrementalCompilation>true</useIncrementalCompilation>
-            <verbose>false</verbose>
             <annotationProcessorPaths>
               <path>
                 <groupId>info.picocli</groupId>
@@ -290,6 +288,19 @@
         <artifactId>maven-site-plugin</artifactId>
         <configuration>
           <generateSitemap>true</generateSitemap>
+          <asciidoc>
+            <!-- templateDirs>
+              <dir>src/site/asciidoc/templates</dir>
+            </templateDirs>
+            <requires>
+              <require>asciidoctor-diagram</require>
+            </requires -->
+            <attributes>
+              <source-highlighter>coderay</source-highlighter>
+              <coderay-css>style</coderay-css>
+              <icons>font</icons>
+            </attributes>
+          </asciidoc>
         </configuration>
         <inherited>true</inherited>
         <version>${site.version}</version>
@@ -307,47 +318,17 @@
           <filesets>
             <fileset>
               <directory>scripts</directory>
+            </fileset>
+            <fileset>
+              <directory>src/site/asciidoc/keywords</directory>
+            </fileset>
+            <fileset>
               <directory>src/site/asciidoc/commands</directory>
             </fileset>
           </filesets>
         </configuration>
         <inherited>false</inherited>
         <version>${clean.version}</version>
-      </plugin>
-      <plugin>
-        <artifactId>maven-scm-plugin</artifactId>
-        <configuration>
-          <connectionType>connection</connectionType>
-        </configuration>
-        <version>${scm.version}</version>
-      </plugin>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <compilerArgs>
-            <compilerArg>-Xlint:all</compilerArg>
-          </compilerArgs>
-          <debug>true</debug>
-          <optimize>true</optimize>
-          <source>${compileVersion}</source>
-          <target>${targetVersion}</target>
-          <useIncrementalCompilation>true</useIncrementalCompilation>
-        </configuration>
-        <version>${compiler.version}</version>
-      </plugin>
-      <plugin>
-        <artifactId>maven-source-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-            <id>attach-source</id>
-            <phase>verify</phase>
-          </execution>
-        </executions>
-        <inherited>false</inherited>
-        <version>${source.version}</version>
       </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
@@ -465,6 +446,39 @@
         <groupId>org.codehaus.mojo</groupId>
         <inherited>false</inherited>
         <version>${properties.version}</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>${antrun.version}</version>
+        <executions>
+          <execution>
+            <id>Create Keyword AsciiDoc Files</id>
+            <phase>pre-site</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <mkdir
+                  dir="${project.basedir}/src/site/asciidoc/keywords/CrystalLatticeAndPeriodicBoundary"/>
+                <delete
+                  file="${project.basedir}/src/site/asciidoc/keywords/CrystalLatticeAndPeriodicBoundary.adoc"
+                  failonerror="false"/>
+                <concat
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/CrystalLatticeAndPeriodicBoundary.adoc">
+                  == Crystal Lattice and Periodic Boundary Properties
+                </concat>
+                <concat append="true"
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/CrystalLatticeAndPeriodicBoundary.adoc">
+                  <fileset
+                    dir="${project.basedir}/src/site/asciidoc/keywords/CrystalLatticeAndPeriodicBoundary">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

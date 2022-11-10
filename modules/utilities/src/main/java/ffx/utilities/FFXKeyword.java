@@ -35,30 +35,60 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.crystal;
+package ffx.utilities;
+
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
 /**
- * Enumeration of the 7 crystal systems.
- *
- * <ul>
- * <li>TRICLINIC: a&ne;b&ne;c &alpha;&ne;&beta;&ne;&gamma;&ne;90&deg;</li>
- * <li>MONOCLINIC: a&ne;b&ne;c &alpha;=&gamma;=90&deg;&ne;&beta;</li>
- * <li>ORTHORHOMBIC: a&ne;b&ne;c &alpha;=&beta;=&gamma;=90&deg;</li>
- * <li>TETRAGONAL: a=b&ne;c &alpha;=&beta;=&gamma;=90&deg;</li>
- * <li>TRIGONAL: a=b=c &alpha;=&beta;=&gamma;&ne;90&deg;</li>
- * <li>HEXAGONAL: a=b&ne;c &alpha;=&beta;=90&deg;, &gamma;=120&deg;</li>
- * <li>CUBIC: a=b=c &alpha;=&beta;=&gamma;=90&deg;</li>
- * </ul>
- *
- * @author Michael J. Schnieders
- * @since 1.0
+ * The FFXKeyword Annotation should be used to document fields that are set using property files,
+ * keyword files, force field parameter files and the Java property system.
  */
-public enum CrystalSystem {
-  TRICLINIC,
-  MONOCLINIC,
-  ORTHORHOMBIC,
-  TETRAGONAL,
-  TRIGONAL,
-  HEXAGONAL,
-  CUBIC
+@Retention(RUNTIME)
+@Documented
+@Target(FIELD)
+public @interface FFXKeyword {
+
+  /**
+   * The name of this FFXKeyword.
+   *
+   * @return The name of this FFXKeyword.
+   */
+  String name();
+
+  /**
+   * The Class used to represent the value of this FFXKeyword.
+   *
+   * The default is an instance of Double, which may be stored as a primitive double.
+   *
+   * @return The Class used to represent this FFXKeyword.
+   */
+  Class<?> clazz() default Double.class;
+
+  /**
+   * The Keyword Group this FFXKeyword belongs to.
+   *
+   * @return The keyword group for this FFXKeyword.
+   */
+  KeywordGroup keywordGroup();
+
+  /**
+   * The default value for this FFXKeyword. If there is no default value, then the field is an empty
+   * String.
+   *
+   * @return The default value of this keyword.
+   */
+  String defaultValue() default "";
+
+  /**
+   * A description of this FFXKeyword.
+   *
+   * @return The description.
+   */
+  String description();
+
 }

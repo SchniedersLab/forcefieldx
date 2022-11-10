@@ -130,23 +130,15 @@ public class TopologyOptions {
    *
    * <p>Sets the switching function to be used by dual topologies.
    *
-   * <p>
-   *
    * <ul>
-   *   TRIG produces the function sin^2(pi/2*lambda)*E1(lambda) + cos^2(pi/2*lambda)*E2(1-lambda)
-   * </ul>
-   *
-   * <ul>
-   *   MULT uses a 5th-order polynomial switching function with zero first and second derivatives at
-   *   the end (same function as used for van der Waals switch)
-   * </ul>
-   *
-   * <ul>
-   *   A number uses the original function, of l^beta*E1(lambda) + (1-lambda)^beta*E2(1-lambda).
+   *   <li>TRIG produces the function sin^2(pi/2*lambda)*E1(lambda) + cos^2(pi/2*lambda)*E2(1-lambda)</li>
+   *   <li>MULT uses a 5th-order polynomial switching function with zero first and second derivatives at
+   *   the end (same function as used for van der Waals switch)</li>
+   *   <li>A number uses the original function, of l^beta*E1(lambda) + (1-lambda)^beta*E2(1-lambda).</li>
    * </ul>
    *
    * <p>All of these are generalizations of <code>Udt = f(l)*E1(l) + f(1-l)*E2(1-lambda)</code>,
-   * where f(l) is a continuous switching function such that f(0) = 0, f(1) = 1, and 0 <= f(l) <= 1
+   * where f(l) is a continuous switching function such that f(0) = 0, f(1) = 1, and 0 &lt;= f(l) &lt;= 1
    * for lambda 0-1. The trigonometric switch can be restated thusly, since cos^2(pi/2*lambda) is
    * identical to sin^2(pi/2*(1-lambda)), f(1-l).
    *
@@ -319,7 +311,8 @@ public class TopologyOptions {
    * @param unshared Atoms this dual topology isn't sharing.
    * @return A sorted List of Integers.
    */
-  public static List<Integer> getUniqueAtoms(MolecularAssembly assembly, String label, String unshared) {
+  public static List<Integer> getUniqueAtoms(MolecularAssembly assembly, String label,
+      String unshared) {
     if (!unshared.isEmpty()) {
       logger.info(" Finding unique atoms for dual topology " + label);
       Set<Integer> indices = new HashSet<>();

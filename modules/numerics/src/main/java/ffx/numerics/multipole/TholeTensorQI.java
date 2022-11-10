@@ -40,7 +40,7 @@ package ffx.numerics.multipole;
 import static org.apache.commons.math3.util.FastMath.exp;
 
 /**
- * The TholeTensorQI class computes derivatives of Thole dampling via recursion to order <= 4 for
+ * The TholeTensorQI class computes derivatives of Thole dampling via recursion to order &lt;= 4 for
  * Cartesian multipoles in a quasi-internal frame.
  *
  * @author Michael J. Schnieders

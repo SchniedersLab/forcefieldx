@@ -35,30 +35,15 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.crystal;
+package ffx.utilities;
 
 /**
- * Enumeration of the 7 crystal systems.
- *
- * <ul>
- * <li>TRICLINIC: a&ne;b&ne;c &alpha;&ne;&beta;&ne;&gamma;&ne;90&deg;</li>
- * <li>MONOCLINIC: a&ne;b&ne;c &alpha;=&gamma;=90&deg;&ne;&beta;</li>
- * <li>ORTHORHOMBIC: a&ne;b&ne;c &alpha;=&beta;=&gamma;=90&deg;</li>
- * <li>TETRAGONAL: a=b&ne;c &alpha;=&beta;=&gamma;=90&deg;</li>
- * <li>TRIGONAL: a=b=c &alpha;=&beta;=&gamma;&ne;90&deg;</li>
- * <li>HEXAGONAL: a=b&ne;c &alpha;=&beta;=90&deg;, &gamma;=120&deg;</li>
- * <li>CUBIC: a=b=c &alpha;=&beta;=&gamma;=90&deg;</li>
- * </ul>
- *
- * @author Michael J. Schnieders
- * @since 1.0
+ * The Keyword Group for an FFX Keyword.
  */
-public enum CrystalSystem {
-  TRICLINIC,
-  MONOCLINIC,
-  ORTHORHOMBIC,
-  TETRAGONAL,
-  TRIGONAL,
-  HEXAGONAL,
-  CUBIC
+public enum KeywordGroup {
+  CrystalLatticeAndPeriodicBoundary,
+  ForceFieldSelection,
+  PotentialFunctionSelection,
+  NonBondedForceField,
+  XrayRefinement
 }
