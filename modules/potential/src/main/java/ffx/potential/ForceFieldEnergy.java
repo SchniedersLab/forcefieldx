@@ -39,6 +39,7 @@ package ffx.potential;
 
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.parsers.XYZFileFilter.isXYZ;
+import static ffx.utilities.KeywordGroup.ForceFieldSelection;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
@@ -111,6 +112,7 @@ import ffx.potential.utils.EnergyException;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.potential.utils.PotentialsUtils;
 import ffx.utilities.Constants;
+import ffx.utilities.FFXKeyword;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -125,7 +127,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.io.FilenameUtils;
 
 /**
  * Compute the potential energy and derivatives of a molecular system described by a force field.
@@ -219,10 +220,17 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   private final RelativeSolvation relativeSolvation;
   private final boolean relativeSolvationTerm;
   private final Platform platform = Platform.FFX;
+
+  /** Indicates use of the Lambda state variable. */
+  @FFXKeyword(name = "lambdaterm", clazz = Boolean.class,
+      keywordGroup = ForceFieldSelection, defaultValue = "false",
+      description = "Specifies use of the Lambda state variable."
+  )
+  protected boolean lambdaTerm;
   /** Current value of the Lambda state variable. */
   private double lambda = 1.0;
-  /** Indicates use of the Lambda state variable. */
-  protected boolean lambdaTerm;
+
+
   /** Optimization scaling value to use for each degree of freedom. */
   protected double[] optimizationScaling = null;
   /** Indicates only bonded energy terms effected by Lambda should be evaluated. */
@@ -253,6 +261,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   private TorsionTorsion[] torsionTorsions;
   /** An array of Improper Torsion terms. */
   private ImproperTorsion[] improperTorsions;
+  /** An array of Torsion terms. */
+  private Torsion[] torsions;
+  /** An array of Pi-Orbital Torsion terms. */
+  private PiOrbitalTorsion[] piOrbitalTorsions;
+  /** An array of Bond Restraint terms. */
+  private RestraintBond[] restraintBonds;
   protected RestraintTorsion[] rTors;
   /** Number of atoms in the system. */
   private int nAtoms;
@@ -272,6 +286,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   private int nPiOrbitalTorsions;
   /** Number of Torsion-Torsion terms in the system. */
   private int nTorsionTorsions;
+  /** Number of Torsion terms in the system. */
+  private int nTorsions;
   /** Number of Restraint Bond terms in the system. */
   private int nRestraintBonds = 0;
   /** Number of Restraint Bond terms in the system. */
@@ -280,43 +296,113 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   private int nVanDerWaalInteractions;
   /** Number of electrostatic interactions evaluated. */
   private int nPermanentInteractions;
+  /** Number of implicit solvent interactions evaluated. */
+  private int nGKInteractions;
   private int nRestTors = 0;
   /** The boundary conditions used when evaluating the force field energy. */
   private Crystal crystal;
   /** A Parallel Java Region used to evaluate Bonded energy values. */
   private BondedRegion bondedRegion;
-  /** An array of Torsion terms. */
-  private Torsion[] torsions;
-  /** An array of Pi-Orbital Torsion terms. */
-  private PiOrbitalTorsion[] piOrbitalTorsions;
-  /** An array of Bond Restraint terms. */
-  private RestraintBond[] restraintBonds;
-  /** Number of Torsion terms in the system. */
-  private int nTorsions;
-  /** Number of implicit solvent interactions evaluated. */
-  private int nGKInteractions;
-  /** Evaluate Bond energy terms. */
+
+  /** Specifies use of the bond stretch potential. */
+  @FFXKeyword(name = "bondterm", clazz = Boolean.class,
+      keywordGroup = ForceFieldSelection, defaultValue = "true",
+      description = "Specifies use of the bond stretch potential."
+  )
   private boolean bondTerm;
-  /** Evaluate Angle energy terms. */
+
+  /** Specifies use of the angle bend potential. */
+  @FFXKeyword(name = "angleterm", clazz = Boolean.class,
+      keywordGroup = ForceFieldSelection, defaultValue = "true",
+      description = "Specifies use of the angle bend potential.")
   private boolean angleTerm;
+
   /** Evaluate Stretch-Bend energy terms. */
+  @FFXKeyword(name = "strbndterm", clazz = Boolean.class,
+      keywordGroup = ForceFieldSelection, defaultValue = "true",
+      description = "Specifies use of the stretch-bend potential.")
   private boolean stretchBendTerm;
+
   /** Evaluate Urey-Bradley energy terms. */
+  @FFXKeyword(name = "ureyterm", clazz = Boolean.class,
+      keywordGroup = ForceFieldSelection, defaultValue = "true",
+      description = "Specifies use of the Urey-Bradley potential.")
   private boolean ureyBradleyTerm;
+
   /** Evaluate Out of Plane Bend energy terms. */
+  @FFXKeyword(name = "opbendterm", clazz = Boolean.class,
+      keywordGroup = ForceFieldSelection, defaultValue = "true",
+      description = "Specifies use of the out-of-plane potential.")
   private boolean outOfPlaneBendTerm;
+
   /** Evaluate Torsion energy terms. */
+  @FFXKeyword(name = "torsionterm", clazz = Boolean.class,
+      keywordGroup = ForceFieldSelection, defaultValue = "true",
+      description = "Specifies use of the torsional potential.")
   private boolean torsionTerm;
+
   /** Evaluate Stretch-Torsion energy terms. */
+  @FFXKeyword(name = "strtorterm", clazz = Boolean.class,
+      keywordGroup = ForceFieldSelection, defaultValue = "true",
+      description = "Specifies use of the stretch-torsion potential.")
   private boolean stretchTorsionTerm;
+
   /** Evaluate Angle-Torsion energy terms. */
+  @FFXKeyword(name = "angtorterm", clazz = Boolean.class,
+      keywordGroup = ForceFieldSelection, defaultValue = "true",
+      description = "Specifies use of the angle-torsion potential.")
   private boolean angleTorsionTerm;
+
   /** Evaluate Improper Torsion energy terms. */
+  @FFXKeyword(name = "imptorterm", clazz = Boolean.class,
+      keywordGroup = ForceFieldSelection, defaultValue = "true",
+      description = "Specifies use of the improper torsion potential.")
   private boolean improperTorsionTerm;
+
   /** Evaluate Pi-Orbital Torsion energy terms. */
+  @FFXKeyword(name = "pitorsterm", clazz = Boolean.class,
+      keywordGroup = ForceFieldSelection, defaultValue = "true",
+      description = "Specifies use of the pi-system torsion potential.")
   private boolean piOrbitalTorsionTerm;
+
   /** Evaluate Torsion-Torsion energy terms. */
+  @FFXKeyword(name = "tortorterm", clazz = Boolean.class,
+      keywordGroup = ForceFieldSelection, defaultValue = "true",
+      description = "Specifies use of the pi-system torsion potential.")
   private boolean torsionTorsionTerm;
+
+  /** Evaluate van der Waals energy term. */
+  @FFXKeyword(name = "vdwterm", clazz = Boolean.class,
+      keywordGroup = ForceFieldSelection, defaultValue = "true",
+      description = "Specifies use of the vdw der Waals potential. "
+          + "If set to false, all non-bonded terms are turned off.")
+  private boolean vanderWaalsTerm;
+
+  /** Evaluate permanent multipole electrostatics energy term. */
+  @FFXKeyword(name = "mpoleterm", clazz = Boolean.class,
+      keywordGroup = ForceFieldSelection, defaultValue = "true",
+      description = "Specifies use of the fixed charge electrostatic potential. "
+          + "Setting mpoleterm to false also turns off polarization and generalized Kirkwood, "
+          + "overriding the polarizeterm and gkterm properties.")
+  private boolean multipoleTerm;
+
+  /** Evaluate polarization energy term. */
+  @FFXKeyword(name = "polarizeterm", clazz = Boolean.class,
+      keywordGroup = ForceFieldSelection, defaultValue = "true",
+      description = "Specifies use of the polarizable electrostatic potential. "
+          + "Setting polarizeterm to false overrides the polarization property.")
+  private boolean polarizationTerm;
+
+  /** Evaluate generalized Kirkwood energy term. */
+  @FFXKeyword(name = "gkterm", clazz = Boolean.class,
+      keywordGroup = ForceFieldSelection, defaultValue = "false",
+      description = "Specifies use of generalized Kirkwood electrostatics.")
+  private boolean generalizedKirkwoodTerm;
+
+  /** Evaluate COM energy term. */
+  private boolean comTerm;
+  /** Original state of the COM energy term flag. */
+  private boolean comTermOrig;
   /** Evaluate NCS energy term. */
   private boolean ncsTerm;
   /** Original state of the NCS energy term flag. */
@@ -326,16 +412,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /** Evaluate Restraint Bond energy terms. */
   private boolean restraintBondTerm;
   private boolean rTorsTerm;
-  /** Evaluate van der Waals energy term. */
-  private boolean vanderWaalsTerm;
-  /** Evaluate permanent multipole electrostatics energy term. */
-  private boolean multipoleTerm;
-  /** Evaluate COM energy term. */
-  private boolean comTerm;
-  /** Original state of the COM energy term flag. */
-  private boolean comTermOrig;
-  /** Evaluate polarization energy term. */
-  private boolean polarizationTerm;
   /** Scale factor for increasing the strength of bonded terms involving hydrogen atoms. */
   private double rigidScale;
   /** The total Bond term energy. */
@@ -422,8 +498,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   /** Time to evaluate Restraint Bond term. */
   private long restraintBondTime;
   private long rTorsTime;
-  /** Evaluate generalized Kirkwood energy term. */
-  private boolean generalizedKirkwoodTerm;
   /** Original state of the Restrain energy term flag. */
   private boolean restrainTermOrig;
   /** Time to evaluate Center of Mass restraint term. */
@@ -447,7 +521,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   private double esvBias;
   /** Time to evaluate NCS term. */
   private long ncsTime;
-
   private int nRelativeSolvations;
   /** Time to evaluate coordinate restraint term. */
   private long coordRestraintTime;
@@ -514,8 +587,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     ureyBradleyTerm = forceField.getBoolean("UREYTERM", true);
     outOfPlaneBendTerm = forceField.getBoolean("OPBENDTERM", true);
     torsionTerm = forceField.getBoolean("TORSIONTERM", true);
-    stretchTorsionTerm = forceField.getBoolean("STRTORSTERM", true);
-    angleTorsionTerm = forceField.getBoolean("ANGTORSTERM", true);
+    stretchTorsionTerm = forceField.getBoolean("STRTORTERM", true);
+    angleTorsionTerm = forceField.getBoolean("ANGTORTERM", true);
     piOrbitalTorsionTerm = forceField.getBoolean("PITORSTERM", true);
     torsionTorsionTerm = forceField.getBoolean("TORTORTERM", true);
     improperTorsionTerm = forceField.getBoolean("IMPROPERTERM", true);
@@ -1776,7 +1849,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * Save coordinates when an EnergyException is caught.
    */
   private void printFailure() {
-    String timeString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd-HH_mm_ss"));
+    String timeString = LocalDateTime.now()
+        .format(DateTimeFormatter.ofPattern("yyyy_MM_dd-HH_mm_ss"));
     File file = molecularAssembly.getFile();
     String ext = "pdb";
     if (isXYZ(file)) {

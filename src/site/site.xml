@@ -203,9 +203,9 @@
         </item>
       </item>
       <item name="Properties" href="/properties.html" collapse="true">
-        <item name="Force Field" href="/properties-forcefield.html"/>
-        <item name="PME Electrostatics" href="/properties-pme.html"/>
-        <item name="Unit Cell and Space Ggroup" href="/properties-spacegroup.html"/>
+        <item name="Force Field Selection" href="/keywords/ForceFieldSelection.html"/>
+        <item name="Electrostatics" href="/properties-pme.html"/>
+        <item name="Unit Cell and Space Group" href="/keywords/CrystalLatticeAndPeriodicBoundary.html"/>
         <item name="Structural Refinement" href="/properties-refine.html"/>
       </item>
       <item name="Examples" href="/examples.html" collapse="true">

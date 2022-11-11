@@ -256,7 +256,7 @@
         </executions>
         <version>${enforcer.version}</version>
       </plugin>
-      <plugin>
+      <!-- plugin>
         <artifactId>maven-antrun-plugin</artifactId>
         <executions>
           <execution>
@@ -283,7 +283,7 @@
         </executions>
         <inherited>false</inherited>
         <version>${antrun.version}</version>
-      </plugin>
+      </plugin -->
       <plugin>
         <artifactId>maven-site-plugin</artifactId>
         <configuration>
@@ -450,6 +450,7 @@
       <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
         <version>${antrun.version}</version>
+        <inherited>false</inherited>
         <executions>
           <execution>
             <id>Create Keyword AsciiDoc Files</id>
@@ -461,17 +462,33 @@
               <target>
                 <mkdir
                   dir="${project.basedir}/src/site/asciidoc/keywords/CrystalLatticeAndPeriodicBoundary"/>
+                <mkdir
+                  dir="${project.basedir}/src/site/asciidoc/keywords/ForceFieldSelection"/>
                 <delete
                   file="${project.basedir}/src/site/asciidoc/keywords/CrystalLatticeAndPeriodicBoundary.adoc"
+                  failonerror="false"/>
+                <delete
+                  file="${project.basedir}/src/site/asciidoc/keywords/ForceFieldSelection.adoc"
                   failonerror="false"/>
                 <concat
                   destfile="${project.basedir}/src/site/asciidoc/keywords/CrystalLatticeAndPeriodicBoundary.adoc">
                   == Crystal Lattice and Periodic Boundary Properties
                 </concat>
+                <concat
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/ForceFieldSelection.adoc">
+                  == Force Field Selection
+                </concat>
                 <concat append="true"
                   destfile="${project.basedir}/src/site/asciidoc/keywords/CrystalLatticeAndPeriodicBoundary.adoc">
                   <fileset
                     dir="${project.basedir}/src/site/asciidoc/keywords/CrystalLatticeAndPeriodicBoundary">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+                <concat append="true"
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/ForceFieldSelection.adoc">
+                  <fileset
+                    dir="${project.basedir}/src/site/asciidoc/keywords/ForceFieldSelection">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>

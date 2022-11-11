@@ -74,7 +74,7 @@ public class KeywordProcessor extends AbstractProcessor {
     }
 
     String keywordDir = processingEnv.getOptions().get("keywordDir");
-    System.out.println(" KeywordDir: " + keywordDir);
+    // System.out.println(" KeywordDir: " + keywordDir);
 
     // Create the Keyword directory
     Path keyPath = Paths.get(keywordDir);
@@ -91,7 +91,7 @@ public class KeywordProcessor extends AbstractProcessor {
     // System.out.println(" First Annotation Type:   " + typeElements[0]);
 
     Set<? extends Element> annotatedKeywords = roundEnv.getElementsAnnotatedWith(FFXKeyword.class);
-    System.out.println(" FFXKeywords Annotations: " + annotatedKeywords.size());
+    // System.out.println(" FFXKeyword Annotations Processed: " + annotatedKeywords.size());
     // Loop over FFXKeyword annotations.
     for (Element element : annotatedKeywords) {
       FFXKeyword ffxKeyword = element.getAnnotation(FFXKeyword.class);
@@ -131,7 +131,7 @@ public class KeywordProcessor extends AbstractProcessor {
         System.out.println(" Exception writing keyword:\n " + e);
       }
 
-      System.out.println(sb);
+      // System.out.println(sb);
     }
 
     return true;
