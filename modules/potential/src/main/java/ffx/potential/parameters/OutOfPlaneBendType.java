@@ -38,12 +38,16 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.OPBEND;
+import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
+import static ffx.utilities.KeywordGroup.LocalGeometryFunctionalForm;
+import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.copyOf;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.pow;
 
+import ffx.utilities.FFXKeyword;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -56,24 +60,81 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@FFXKeyword(name = "opbend", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = "[4 integers and 1 real] "
+        + "Provides the values for a single out-of-plane bending potential parameter. "
+        + "The first integer modifier is the atom class of the out-of-plane atom and the second integer is the atom class of the central trigonal atom. "
+        + "The third and fourth integers give the atom classes of the two remaining atoms attached to the trigonal atom. "
+        + "Values of zero for the third and fourth integers are treated as wildcards, and can represent any atom type. "
+        + "The real number modifier gives the force constant value for the out-of-plane angle. "
+        + "The default units for the force constant are kcal/mole/radian^2, but this can be controlled via the opbendunit keyword.")
 public final class OutOfPlaneBendType extends BaseType implements Comparator<String> {
 
+  /** Default cubic coefficient in out-of-plane angle bending potential. */
+  public static final double DEFAULT_OPBEND_CUBIC = 0.0;
+  /** Default quartic coefficient in out-of-plane angle bending potential. */
+  public static final double DEFAULT_OPBEND_QUARTIC = 0.0;
+  /** Default pentic coefficient in out-of-plane angle bending potential. */
+  public static final double DEFAULT_OPBEND_PENTIC = 0.0;
+  /** Default quintic coefficient in out-of-plane angle bending potential. */
+  public static final double DEFAULT_OPBEND_SEXTIC = 0.0;
+
   /** Cubic coefficient in out-of-plane angle bending potential. */
-  public static final double cubic = -0.014;
+  @FFXKeyword(name = "opbend-cubic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0",
+      description =
+          "Sets the value of the cubic term in the Taylor series expansion form of the out-of-plane bending potential energy. "
+              + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
+              + "This term multiplied by the out-of-plane bending energy unit conversion factor, the force constant, "
+              + "and the cube of the deviation of the out-of-plane angle from zero gives the cubic contribution to the out-of-plane bending energy. "
+              + "The default value in the absence of the opbend-cubic keyword is zero; i.e., the cubic out-of-plane bending term is omitted.")
+  public double cubic = DEFAULT_OPBEND_CUBIC;
+
   /** Quartic coefficient in out-of-plane angle bending potential. */
-  public static final double quartic = 0.000056;
+  @FFXKeyword(name = "opbend-quartic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0",
+      description =
+          "Sets the value of the quartic term in the Taylor series expansion form of the out-of-plane bending potential energy. "
+              + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
+              + "This term multiplied by the out-of-plane bending energy unit conversion factor, the force constant, "
+              + "and the forth power of the deviation of the out-of-plane angle from zero gives the quartic contribution to the out-of-plane bending energy. "
+              + "The default value in the absence of the opbend-quartic keyword is zero; i.e., the quartic out-of-plane bending term is omitted.")
+  public double quartic = DEFAULT_OPBEND_QUARTIC;
+
   /** Quintic coefficient in out-of-plane angle bending potential. */
-  public static final double quintic = -0.0000007;
+  @FFXKeyword(name = "opbend-pentic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0",
+      description =
+          "Sets the value of the fifth power term in the Taylor series expansion form of the out-of-plane bending potential energy. "
+              + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
+              + "This term multiplied by the out-of-plane bending energy unit conversion factor, the force constant, "
+              + "and the fifth power of the deviation of the out-of-plane angle from zero gives the pentic contribution to the out-of-plane bending energy. "
+              + "The default value in the absence of the opbend-pentic keyword is zero; i.e., the pentic out-of-plane bending term is omitted.")
+  public double pentic = DEFAULT_OPBEND_PENTIC;
+
   /** Sextic coefficient in out-of-plane angle bending potential. */
-  public static final double sextic = 0.000000022;
+  @FFXKeyword(name = "opbend-sextic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0",
+      description =
+          "Sets the value of the sixth power term in the Taylor series expansion form of the out-of-plane bending potential energy. "
+              + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
+              + "This term multiplied by the out-of-plane bending energy unit conversion factor, the force constant, "
+              + "and the sixth power of the deviation of the out-of-plane angle from zero gives the sextic contribution to the out-of-plane bending energy. "
+              + "The default value in the absence of the opbend-sextic keyword is zero; i.e., the sextic out-of-plane bending term is omitted.")
+  public double sextic = DEFAULT_OPBEND_SEXTIC;
+
   /**
    * Convert Out-of-Plane bending energy to kcal/mole.
-   *
-   * <p>TINKER v.5 and v.6 Units: 1.0 / (180.0/PI)^2 = 0.00030461741979 TINKER v.4 Units: 0.02191418
-   *
-   * <p>Ratio of v.4 to v.5/6 = 0.02191418 / 1.0 / (180.0/PI)^2 = 71.94
+   * <p>
+   * TINKER v.5 and v.6 Units: 1.0 / (180.0/PI)^2 = 0.00030461741979
+   * <p>
+   * TINKER v.4 Units: 0.02191418
+   * <p>
+   * Ratio of v.4 to v.5/6 = 0.02191418 / 1.0 / (180.0/PI)^2 = 71.94
    */
-  public static final double units = 1.0 / pow(180.0 / PI, 2);
+  @FFXKeyword(name = "opbendunit", keywordGroup = EnergyUnitConversion, defaultValue = "(Pi/180)^2",
+      description =
+          "Sets the scale factor needed to convert the energy value computed by the out-of-plane bending potential into units of kcal/mole. "
+              + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  public double opBendUnit = DEFAULT_OPBEND_UNIT;
+
+  public static final double DEFAULT_OPBEND_UNIT = pow(PI / 180.0, 2);
   /** A Logger for the OutOfPlaneBendType class. */
   private static final Logger logger = Logger.getLogger(OutOfPlaneBendType.class.getName());
   /** Atom classes for this out-of-plane angle bending type. */
@@ -177,8 +238,12 @@ public final class OutOfPlaneBendType extends BaseType implements Comparator<Str
   /** {@inheritDoc} */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     OutOfPlaneBendType outOfPlaneBendType = (OutOfPlaneBendType) o;
     return Arrays.equals(atomClasses, outOfPlaneBendType.atomClasses);
   }

@@ -44,7 +44,7 @@ import static ffx.numerics.math.MatrixMath.mat3SymVec6;
 import static ffx.numerics.math.MatrixMath.transpose3;
 import static ffx.numerics.math.ScalarMath.mod;
 import static ffx.utilities.Constants.AVOGADRO;
-import static ffx.utilities.KeywordGroup.CrystalLatticeAndPeriodicBoundary;
+import static ffx.utilities.KeywordGroup.UnitCellAndSpaceGroup;
 import static ffx.utilities.StringUtils.padRight;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -61,8 +61,6 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
 import ffx.utilities.FFXKeyword;
-import ffx.utilities.KeywordGroup;
-import ffx.utilities.KeywordProcessor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -87,37 +85,37 @@ public class Crystal {
   private static final Logger logger = Logger.getLogger(Crystal.class.getName());
 
   /** The space group of the crystal. */
-  @FFXKeyword(name = "SpaceGroup", keywordGroup = CrystalLatticeAndPeriodicBoundary, clazz = SpaceGroup.class, defaultValue = "P1",
+  @FFXKeyword(name = "SpaceGroup", keywordGroup = UnitCellAndSpaceGroup, clazz = SpaceGroup.class, defaultValue = "P1",
       description = "This keyword selects the space group to be used in manipulation of crystal unit cells and asymmetric units.")
   public final SpaceGroup spaceGroup;
 
   /** Length of the cell edge in the direction of the <b>a</b> basis vector. */
-  @FFXKeyword(name = "A-Axis", keywordGroup = CrystalLatticeAndPeriodicBoundary, defaultValue = "None",
+  @FFXKeyword(name = "a-axis", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "None",
       description = "Sets the value of the a-axis length for a crystal unit cell, or, equivalently, the X-axis length for a periodic box (Angstroms).")
   public double a;
 
   /** Length of the cell edge in the direction of the <b>b</b> basis vector. */
-  @FFXKeyword(name = "B-Axis", keywordGroup = CrystalLatticeAndPeriodicBoundary, defaultValue = "A-Axis",
+  @FFXKeyword(name = "b-axis", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "A-Axis",
       description = "Sets the value of the b-axis length for a crystal unit cell, or, equivalently, the Y-axis length for a periodic box (Angstroms).")
   public double b;
 
   /** Length of the cell edge in the direction of the <b>c</b> basis vector. */
-  @FFXKeyword(name = "C-Axis", keywordGroup = CrystalLatticeAndPeriodicBoundary, defaultValue = "A-Axis",
+  @FFXKeyword(name = "c-axis", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "A-Axis",
       description = "Sets the value of the c-axis length for a crystal unit cell, or, equivalently, the Z-axis length for a periodic box (Angstroms).")
   public double c;
 
   /** The interaxial lattice angle between <b>b</b> and <b>c</b>. */
-  @FFXKeyword(name = "Alpha", keywordGroup = CrystalLatticeAndPeriodicBoundary, defaultValue = "90.0",
+  @FFXKeyword(name = "alpha", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "90.0",
       description = "Sets the value of the α-angle of a crystal unit cell, i.e., the angle between the b-axis and c-axis of a unit cell, or, equivalently, the angle between the Y-axis and Z-axis of a periodic box.")
   public double alpha;
 
   /** The interaxial lattice angle between <b>a</b> and <b>c</b>. */
-  @FFXKeyword(name = "Beta", keywordGroup = CrystalLatticeAndPeriodicBoundary, defaultValue = "Alpha",
+  @FFXKeyword(name = "beta", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "Alpha",
       description = "Sets the value of the β-angle of a crystal unit cell, i.e., the angle between the a-axis and c-axis of a unit cell, or, equivalently, the angle between the X-axis and Z-axis of a periodic box.")
   public double beta;
 
   /** The interaxial lattice angle between <b>a</b> and <b>b</b>. */
-  @FFXKeyword(name = "Gamma", keywordGroup = CrystalLatticeAndPeriodicBoundary, defaultValue = "Alpha",
+  @FFXKeyword(name = "gamma", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "Alpha",
       description = "Sets the value of the γ-angle of a crystal unit cell, i.e., the angle between the a-axis and b-axis of a unit cell, or, equivalently, the angle between the X-axis and Y-axis of a periodic box.")
   public double gamma;
 

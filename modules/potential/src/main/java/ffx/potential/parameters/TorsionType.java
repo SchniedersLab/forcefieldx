@@ -39,6 +39,8 @@ package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.IMPROPER;
 import static ffx.potential.parameters.ForceField.ForceFieldType.TORSION;
+import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
+import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -47,6 +49,7 @@ import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
+import ffx.utilities.FFXKeyword;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -59,6 +62,18 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@FFXKeyword(name = "improper", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = "[4 integers and 2 reals]"
+        + "Provides the values for a single CHARMM-style improper dihedral angle parameter. "
+        + "The integer modifiers give the atom class numbers for the four kinds of atoms involved in the torsion which is to be defined. "
+        + "The real number modifiers give the force constant value for the deviation from the target improper torsional angle, and the target value for the torsional angle, respectively. "
+        + "The default units for the improper force constant are kcal/mole/radian^2, but this can be controlled via the impropunit keyword.")
+@FFXKeyword(name = "torsion", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = "[4 integers and up to 6 real/real/integer triples] "
+        + "Provides the values for a single torsional angle parameter. "
+        + "The first four integer modifiers give the atom class numbers for the atoms involved in the torsional angle to be defined. "
+        + "Each of the remaining triples of real/real/integer modifiers give the amplitude, phase offset in degrees and periodicity of a particular torsional function term, respectively. "
+        + "Periodicities through 6-fold are allowed for torsional parameters.")
 public final class TorsionType extends BaseType implements Comparator<String> {
 
   private static final Logger logger = Logger.getLogger(TorsionType.class.getName());
@@ -78,6 +93,14 @@ public final class TorsionType extends BaseType implements Comparator<String> {
   public final int[] periodicity;
   /** The torsion mode in use. */
   private final TorsionMode torsionMode;
+
+  public static final double DEFAULT_TORSION_UNIT = 1.0;
+  /** Unit conversion. */
+  @FFXKeyword(name = "torsionunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0",
+      description = "Sets the scale factor needed to convert the energy value computed by the torsional angle potential into units of kcal/mole. "
+          + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  public double torsionUnit = DEFAULT_TORSION_UNIT;
+
   /**
    * TorsionType Constructor.
    *
@@ -333,8 +356,12 @@ public final class TorsionType extends BaseType implements Comparator<String> {
    */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     TorsionType torsionType = (TorsionType) o;
     return Arrays.equals(atomClasses, torsionType.atomClasses);
   }

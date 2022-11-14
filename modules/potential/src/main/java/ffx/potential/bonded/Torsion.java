@@ -64,8 +64,6 @@ public class Torsion extends BondedTerm implements LambdaInterface {
   private static final Logger logger = Logger.getLogger(Torsion.class.getName());
   /** The force field Torsion type in use. */
   public TorsionType torsionType = null;
-  /** Unit conversion. */
-  public double units = 0.5;
   /** Value of lambda. */
   private double lambda = 1.0;
   /** Value of dE/dL. */
@@ -240,8 +238,6 @@ public class Torsion extends BondedTerm implements LambdaInterface {
 
     Torsion torsion = new Torsion(bond1, middleBond, bond3);
     torsion.setTorsionType(torsionType);
-    torsion.units = forceField.getDouble("TORSIONUNIT", 1.0);
-
     return torsion;
   }
 
@@ -338,10 +334,10 @@ public class Torsion extends BondedTerm implements LambdaInterface {
         cosprev = cosn;
         sinprev = sinn;
       }
-      energy = units * energy * lambda;
-      dEdL = units * energy;
+      energy = torsionType.torsionUnit * energy * lambda;
+      dEdL = torsionType.torsionUnit * energy;
       if (gradient || lambdaTerm) {
-        dedphi = units * dedphi;
+        dedphi = torsionType.torsionUnit * dedphi;
         var vca = vc.sub(va);
         var vdb = vd.sub(vb);
         var dedt = vt.X(vcb).scaleI(dedphi / (rt2 * rcb));

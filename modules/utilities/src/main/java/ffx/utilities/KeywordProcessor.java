@@ -46,6 +46,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -60,7 +63,7 @@ import javax.lang.model.type.TypeMirror;
 /**
  * Log out FFXKeyword Annotations for documentation purposes.
  */
-@SupportedAnnotationTypes("ffx.utilities.FFXKeyword")
+@SupportedAnnotationTypes({"ffx.utilities.FFXKeyword", "ffx.utilities.FFXKeywords"})
 @SupportedOptions({"keywordDir"})
 public class KeywordProcessor extends AbstractProcessor {
 
@@ -90,13 +93,26 @@ public class KeywordProcessor extends AbstractProcessor {
     // System.out.println(" Total Annotations Types: " + typeElements.length);
     // System.out.println(" First Annotation Type:   " + typeElements[0]);
 
+    // Collect fields and classes annotated once.
+    List<FFXKeyword> keywordList = new ArrayList<>();
     Set<? extends Element> annotatedKeywords = roundEnv.getElementsAnnotatedWith(FFXKeyword.class);
-    // System.out.println(" FFXKeyword Annotations Processed: " + annotatedKeywords.size());
-    // Loop over FFXKeyword annotations.
     for (Element element : annotatedKeywords) {
       FFXKeyword ffxKeyword = element.getAnnotation(FFXKeyword.class);
+      keywordList.add(ffxKeyword);
+    }
+    // Collect classes annotated more than once.
+    Set<? extends Element> keywordArrays = roundEnv.getElementsAnnotatedWith(FFXKeywords.class);
+    for (Element element : keywordArrays) {
+      FFXKeywords ffxKeywords = element.getAnnotation(FFXKeywords.class);
+      FFXKeyword[] keywords = ffxKeywords.value();
+      Collections.addAll(keywordList, keywords);
+    }
+
+    // System.out.println(" FFXKeyword Annotations Processed: " + keywordList.size());
+    // Loop over FFXKeyword annotations.
+    for (FFXKeyword ffxKeyword : keywordList) {
       StringBuilder sb = new StringBuilder(format("\n=== %s\n", ffxKeyword.name()));
-      sb.append(format("  Definition:   %s\n", ffxKeyword.description()));
+      sb.append("[%collapsible]\n====\n");
       // This causes a MirroredTypeException, which has a TypeMirror whose value is the class.
       try {
         Class clazz = ffxKeyword.clazz();
@@ -110,6 +126,8 @@ public class KeywordProcessor extends AbstractProcessor {
       if (defaultValue != null && !defaultValue.equals("")) {
         sb.append(format("  Default:      %s\n", ffxKeyword.defaultValue()));
       }
+      sb.append(format("  Definition:   %s\n", ffxKeyword.description()));
+      sb.append("====\n");
 
       // Create the Keyword Group sub-directory
       KeywordGroup group = ffxKeyword.keywordGroup();

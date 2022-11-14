@@ -38,9 +38,11 @@
 package ffx.utilities;
 
 import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Documented;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
@@ -50,7 +52,8 @@ import java.lang.annotation.Target;
  */
 @Retention(RUNTIME)
 @Documented
-@Target(FIELD)
+@Target({TYPE, FIELD})
+@Repeatable(value = FFXKeywords.class)
 public @interface FFXKeyword {
 
   /**
@@ -62,7 +65,7 @@ public @interface FFXKeyword {
 
   /**
    * The Class used to represent the value of this FFXKeyword.
-   *
+   * <p>
    * The default is an instance of Double, which may be stored as a primitive double.
    *
    * @return The Class used to represent this FFXKeyword.

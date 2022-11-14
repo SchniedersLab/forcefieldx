@@ -203,15 +203,17 @@
         </item>
       </item>
       <item name="Properties" href="/properties.html" collapse="true">
-        <item name="Force Field Selection" href="/keywords/ForceFieldSelection.html"/>
+        <item name="Energy Unit Conversion" href="/keywords/EnergyUnitConversion.html"/>
+        <item name="Local Geometry Functional Form" href="/keywords/LocalGeometryFunctionalForm.html"/>
+        <item name="Potential Function Parameter" href="/keywords/PotentialFunctionParameter.html"/>
+        <item name="Potential Function Selection" href="/keywords/PotentialFunctionSelection.html"/>
         <item name="Electrostatics" href="/properties-pme.html"/>
-        <item name="Unit Cell and Space Group" href="/keywords/CrystalLatticeAndPeriodicBoundary.html"/>
+        <item name="Unit Cell and Space Group" href="/keywords/UnitCellAndSpaceGroup.html"/>
         <item name="Structural Refinement" href="/properties-refine.html"/>
       </item>
       <item name="Examples" href="/examples.html" collapse="true">
         <item name="GPU Accelerated Side-Chain Optimization" href="/examples-gpuSideChain.html"/>
-        <item name="Side-Chain Optimization and Mutation via Many-Body DEE"
-          href="/examples-dee.html"/>
+        <item name="Side-Chain Optimization and Mutation via Many-Body DEE" href="/examples-dee.html"/>
         <item name="Organic Crystal Thermodynamics" href="/examples-gauche.html"/>
         <item name="AMOEBA-assisted X-ray Refinement" href="/examples-xray.html"/>
         <item name="Thermodynamic Polymorph Search" href="/examples-CrystalNPT.html"/>

@@ -37,15 +37,23 @@
 // ******************************************************************************
 package ffx.utilities;
 
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
 /**
- * The Keyword Group for an FFX Keyword.
+ * The FFXKeyword Annotation can be applied multiple times to some classes.
  */
-public enum KeywordGroup {
-  PotentialFunctionParameter,
-  UnitCellAndSpaceGroup,
-  PotentialFunctionSelection,
-  LocalGeometryFunctionalForm,
-  NonBondedInteractions,
-  Refinement,
-  EnergyUnitConversion
+@Retention(RUNTIME)
+@Documented
+@Target({TYPE})
+public @interface FFXKeywords {
+
+  /**
+   * An array of FFXKeyword annotations.
+   */
+  FFXKeyword[] value();
 }

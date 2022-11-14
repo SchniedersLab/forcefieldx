@@ -38,6 +38,8 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.TORTORS;
+import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
+import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -45,6 +47,7 @@ import static java.lang.System.arraycopy;
 import static java.util.Arrays.sort;
 import static org.apache.commons.math3.util.FastMath.abs;
 
+import ffx.utilities.FFXKeyword;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Arrays;
@@ -59,10 +62,23 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@FFXKeyword(name = "tortors", clazz = String[].class, keywordGroup = PotentialFunctionParameter,
+    description = "[7 integers, then multiple lines of 2 integers and 1 real] "
+        + "Provides the values for a single torsion-torsion parameter. "
+        + "The first five integer modifiers give the atom class numbers for the atoms involved in the two adjacent torsional angles to be defined. "
+        + "The last two integer modifiers contain the number of data grid points that lie along each axis of the torsion-torsion map. "
+        + "For example, this value will be 13 for a 30 degree torsional angle spacing, i.e., 360/30 = 12, but 13 values are required since data values for -180 and +180 degrees must both be supplied. "
+        + "The subsequent lines contain the torsion-torsion map data as the integer values in degrees of each torsional angle and the target energy value in kcal/mole.")
 public final class TorsionTorsionType extends BaseType implements Comparator<String> {
 
+  /** Default units to convert Torsion-Torsion energy to kcal/mole. */
+  public static final double DEFAULT_TORTOR_UNIT = 1.0;
   /** Convert Torsion-Torsion energy to kcal/mole. */
-  public static final double units = 1.0;
+  @FFXKeyword(name = "tortorunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0",
+      description =
+          "Sets the scale factor needed to convert the energy value computed by the torsion-torsion potential into units of kcal/mole. "
+              + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  public double torTorUnit = DEFAULT_TORTOR_UNIT;
 
   private static final Logger logger = Logger.getLogger(TorsionTorsionType.class.getName());
   /** Atom classes that form this Torsion-Torsion type. */
@@ -391,8 +407,8 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
   }
 
   /**
-   * Finds the Cholesky factors of a cyclically tridiagonal symmetric, positive definite matrix
-   * given by two vectors.
+   * Finds the Cholesky factors of a cyclically tridiagonal symmetric, positive definite matrix given
+   * by two vectors.
    *
    * @param n
    * @param dm
@@ -517,8 +533,12 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
   /** {@inheritDoc} */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     TorsionTorsionType torsionTorsionType = (TorsionTorsionType) o;
     return Arrays.equals(atomClasses, torsionTorsionType.atomClasses);
   }
@@ -707,7 +727,9 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
     }
     h[n] = h[0];
 
-    if (n - 1 >= 0) arraycopy(h, 1, du, 1, n - 1);
+    if (n - 1 >= 0) {
+      arraycopy(h, 1, du, 1, n - 1);
+    }
 
     du[n] = h[0];
     for (int i = 1; i <= n; i++) {

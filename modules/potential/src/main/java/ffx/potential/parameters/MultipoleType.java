@@ -45,6 +45,7 @@ import static ffx.potential.parameters.ForceField.ELEC_FORM.FIXED_CHARGE;
 import static ffx.potential.parameters.ForceField.ForceFieldType.MULTIPOLE;
 import static ffx.utilities.Constants.BOHR;
 import static ffx.utilities.Constants.BOHR2;
+import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -55,6 +56,7 @@ import static org.apache.commons.math3.util.FastMath.abs;
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField.ELEC_FORM;
+import ffx.utilities.FFXKeyword;
 import java.io.BufferedReader;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -70,6 +72,15 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@FFXKeyword(name = "multipole", clazz = String[].class, keywordGroup = PotentialFunctionParameter,
+    description = "[5 lines with: 3 or 4 integers and 1 real; 3 reals; 1 real; 2 reals; 3 reals] "
+        + "Provides the values for a set of atomic multipole parameters at a single site. "
+        + "A complete keyword entry consists of five consecutive lines, the first line containing the multipole keyword and the four following lines. "
+        + "The first line contains three integers which define the atom type on which the multipoles are centered, and the Z-axis and X-axis defining atom types for this center. "
+        + "The optional fourth integer contains the Y-axis defining atom type, and is only required for locally chiral multipole sites. "
+        + "The real number on the first line gives the monopole (atomic charge) in electrons."
+        + "The second line contains three real numbers which give the X-, Y- and Z-components of the atomic dipole in electron-Ang. "
+        + "The final three lines, consisting of one, two and three real numbers give the upper triangle of the traceless atomic quadrupole tensor in electron-Ang^2.")
 public final class MultipoleType extends BaseType implements Comparator<String> {
 
   /** Constant <code>zeroM</code> */
@@ -145,8 +156,8 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
    *
    * @param multipole an array of {@link double} objects.
    * @param frameAtomTypes an array of {@link int} objects.
-   * @param frameDefinition a {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition}
-   *     object.
+   * @param frameDefinition a
+   *     {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition} object.
    * @param convertFromBohr a boolean.
    */
   public MultipoleType(
@@ -182,8 +193,8 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
    * @param dipole an array of {@link double} objects.
    * @param quadrupole an array of {@link double} objects.
    * @param frameAtomTypes an array of {@link int} objects.
-   * @param frameDefinition a {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition}
-   *     object.
+   * @param frameDefinition a
+   *     {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition} object.
    * @param convertFromBohr a boolean.
    */
   public MultipoleType(
@@ -218,8 +229,8 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
    * @param multipole an array of {@link double} objects.
    * @param i a int.
    * @param axisAtom an array of {@link int} objects.
-   * @param frame an array of {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition}
-   *     objects.
+   * @param frame an array of
+   *     {@link ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition} objects.
    * @return a boolean.
    */
   public static boolean assignMultipole(
@@ -508,7 +519,8 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
         double thole = 0.0;
         double ddp = 0.0;
         int[] polarizationGroup = null;
-        polarizeType = new PolarizeType(atomType.type, polarizability, thole, ddp, polarizationGroup);
+        polarizeType = new PolarizeType(atomType.type, polarizability, thole, ddp,
+            polarizationGroup);
         forceField.addForceFieldType(polarizeType);
         atom.setPolarizeType(polarizeType);
       }
@@ -621,6 +633,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
 
   /**
    * Assign local multipole frame defining atoms.
+   *
    * @param atom Assign local multipole frame defining atoms for this atom.
    */
   public static void assignAxisAtoms(Atom atom) {

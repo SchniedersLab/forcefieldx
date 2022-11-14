@@ -38,11 +38,13 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.SOLUTE;
+import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
 import ffx.potential.bonded.Atom;
+import ffx.utilities.FFXKeyword;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.Comparator;
@@ -58,6 +60,11 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@FFXKeyword(name = "solute", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = "[integers & 3 reals] "
+        + "Provides values for a single implicit solvation parameter. "
+        + "The integer modifier gives the atom type number for which solvation atom size parameters are to be defined. "
+        + "The three real number modifiers give the values of the atomic diameter in Angstroms, for use in Poisson-Boltzmann (APBS), ddCOSMO and Generalized Kirkwood (GK) calculations, respectively.")
 public final class SoluteType extends BaseType implements Comparator<String> {
 
   /** A Logger for the SoluteType class. */
@@ -67,7 +74,7 @@ public final class SoluteType extends BaseType implements Comparator<String> {
 
   /** This maps atomic number to reasonable GK base radii. */
   static final Map<Integer, SoluteType> CONSENSUS_RADII = new HashMap<>();
-  
+
   /** Solute atomic diameter for PB. */
   public double pbDiameter;
   /** Solute atomic diameter for ddCOSMO. */
@@ -126,7 +133,8 @@ public final class SoluteType extends BaseType implements Comparator<String> {
    * @param gkDiameter Diameter for GK continuum electrostatics.
    * @param sneck Sneck scaling factor for implicit solvent interstitial space corrections
    */
-  public SoluteType(int atomType, double pbDiameter, double cosDiameter, double gkDiameter, double sneck) {
+  public SoluteType(int atomType, double pbDiameter, double cosDiameter, double gkDiameter,
+      double sneck) {
     super(SOLUTE, Integer.toString(atomType));
     this.atomType = atomType;
     this.pbDiameter = pbDiameter;
@@ -173,7 +181,7 @@ public final class SoluteType extends BaseType implements Comparator<String> {
         } else {
           // A SOLUTE line with length six could have a description or an Sneck value
           // Need to check if the entry at index 2 is a parseable number to determine which constructor to use
-          if(NumberUtils.isParsable(tokens[2].trim())){
+          if (NumberUtils.isParsable(tokens[2].trim())) {
             // Use Sneck included constructor
             int atomType = parseInt(tokens[1].trim());
             double pbDiameter = parseDouble(tokens[2].trim());
@@ -298,7 +306,8 @@ public final class SoluteType extends BaseType implements Comparator<String> {
     return soluteType;
   }
 
-  public static SoluteType getSoluteType(Atom atom, ForceField forceField, SOLUTE_RADII_TYPE soluteRadiiType) {
+  public static SoluteType getSoluteType(Atom atom, ForceField forceField,
+      SOLUTE_RADII_TYPE soluteRadiiType) {
     // Begin by setting the base radius to a consensus radius.
     SoluteType soluteType = getCensusSoluteType(atom.getAtomicNumber());
     // Overwrite consensus radii with VDW or SOLUTE radii.
@@ -316,7 +325,8 @@ public final class SoluteType extends BaseType implements Comparator<String> {
     return soluteType;
   }
 
-  public static void setSoluteRadii(ForceField forceField, Atom[] atoms, SOLUTE_RADII_TYPE soluteRadiiType) {
+  public static void setSoluteRadii(ForceField forceField, Atom[] atoms,
+      SOLUTE_RADII_TYPE soluteRadiiType) {
     for (Atom atom : atoms) {
       atom.setSoluteType(getSoluteType(atom, forceField, soluteRadiiType));
     }

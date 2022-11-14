@@ -37,8 +37,10 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
+import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.String.format;
 
+import ffx.utilities.FFXKeyword;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,6 +60,10 @@ import org.apache.commons.configuration2.CompositeConfiguration;
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@FFXKeyword(name = "forcefield", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = "[name] "
+        + "Provides a name for the force field to be used in the current calculation. "
+        + "Its value is usually set in the master force field parameter file for the calculation (see the PARAMETERS keyword) instead of in the property file.")
 public class ForceField {
 
   private static final Logger logger = Logger.getLogger(ForceField.class.getName());
@@ -74,7 +80,6 @@ public class ForceField {
 
   /** The CompositeConfiguration that contains key=value property pairs from a number of sources. */
   private final CompositeConfiguration properties;
-
   private final Map<String, AngleType> angleTypes;
   private final Map<String, AngleType> anglepTypes;
   private final Map<String, AtomType> atomTypes;
@@ -97,7 +102,6 @@ public class ForceField {
   private final Map<String, VDWType> vanderWaalsTypes;
   private final Map<String, VDWType> vanderWaals14Types;
   private final Map<String, VDWPairType> vanderWaalsPairTypes;
-
   private final Map<String, RelativeSolvationType> relativeSolvationTypes;
   private final Map<ForceFieldType, Map<String, ? extends BaseType>> forceFieldTypes;
   /** URL to the force field parameter file. */
@@ -429,7 +433,11 @@ public class ForceField {
    * @return a {@link ffx.potential.parameters.AngleTorsionType} object.
    */
   public AngleTorsionType getAngleTorsionType(String key) {
-    return angleTorsionTypes.get(key);
+    AngleTorsionType angleTorsionType = angleTorsionTypes.get(key);
+    if (angleTorsionType != null) {
+      angleTorsionType.angtorunit = getDouble("ANGTORUNIT", AngleTorsionType.DEFAULT_ANGTOR_UNIT);
+    }
+    return angleTorsionType;
   }
 
   /**
@@ -442,6 +450,13 @@ public class ForceField {
     AngleType angleType = angleTypes.get(key);
     if (angleType == null) {
       angleType = anglepTypes.get(key);
+    }
+    if (angleType != null) {
+      angleType.angleUnit = getDouble("ANGLEUNIT", AngleType.DEFAULT_ANGLE_UNIT);
+      angleType.cubic = getDouble("ANGLE-CUBIC", AngleType.DEFAULT_ANGLE_CUBIC);
+      angleType.quartic = getDouble("ANGLE-QUARTIC", AngleType.DEFAULT_ANGLE_QUARTIC);
+      angleType.pentic = getDouble("ANGLE-PENTIC", AngleType.DEFAULT_ANGLE_PENTIC);
+      angleType.sextic = getDouble("ANGLE-SEXTIC", AngleType.DEFAULT_ANGLE_SEXTIC);
     }
     return angleType;
   }
@@ -566,7 +581,13 @@ public class ForceField {
    * @return a {@link ffx.potential.parameters.BondType} object.
    */
   public BondType getBondType(String key) {
-    return bondTypes.get(key);
+    BondType bondType = bondTypes.get(key);
+    if (bondType != null) {
+      bondType.bondUnit = getDouble("BONDUNIT", BondType.DEFAULT_BOND_UNIT);
+      bondType.cubic = getDouble("BOND_CUBIC", BondType.DEFAULT_BOND_CUBIC);
+      bondType.quartic = getDouble("BOND_QUARTIC", BondType.DEFAULT_BOND_QUARTIC);
+    }
+    return bondType;
   }
 
   /**
@@ -688,7 +709,12 @@ public class ForceField {
    * @return a {@link ffx.potential.parameters.TorsionType} object.
    */
   public ImproperTorsionType getImproperType(String key) {
-    return imptorsTypes.get(key);
+    ImproperTorsionType improperTorsionType = imptorsTypes.get(key);
+    if (improperTorsionType != null) {
+      double units = getDouble("IMPTORUNIT", ImproperTorsionType.DEFAULT_IMPTOR_UNIT);
+      improperTorsionType.impTorUnit = getDouble("IMPTORSUNIT", units);
+    }
+    return improperTorsionType;
   }
 
   /**
@@ -697,6 +723,11 @@ public class ForceField {
    * @return a {@link ffx.potential.parameters.TorsionType} object.
    */
   public Collection<ImproperTorsionType> getImproperTypes() {
+    double units = getDouble("IMPTORUNIT", ImproperTorsionType.DEFAULT_IMPTOR_UNIT);
+    units = getDouble("IMPTORSUNIT", units);
+    for (ImproperTorsionType improperTorsionType : imptorsTypes.values()) {
+      improperTorsionType.impTorUnit = units;
+    }
     return imptorsTypes.values();
   }
 
@@ -791,7 +822,20 @@ public class ForceField {
    * @return a {@link ffx.potential.parameters.OutOfPlaneBendType} object.
    */
   public OutOfPlaneBendType getOutOfPlaneBendType(String key) {
-    return outOfPlaneBendTypes.get(key);
+    OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBendTypes.get(key);
+    if (outOfPlaneBendType != null) {
+      outOfPlaneBendType.opBendUnit = getDouble("OPBENDUNIT",
+          OutOfPlaneBendType.DEFAULT_OPBEND_UNIT);
+      outOfPlaneBendType.cubic = getDouble("OPBEND-CUBIC",
+          OutOfPlaneBendType.DEFAULT_OPBEND_CUBIC);
+      outOfPlaneBendType.quartic = getDouble("OPBEND-QUARTIC",
+          OutOfPlaneBendType.DEFAULT_OPBEND_QUARTIC);
+      outOfPlaneBendType.pentic = getDouble("OPBEND-PENTIC",
+          OutOfPlaneBendType.DEFAULT_OPBEND_PENTIC);
+      outOfPlaneBendType.sextic = getDouble("OPBEND-SEXTIC",
+          OutOfPlaneBendType.DEFAULT_OPBEND_SEXTIC);
+    }
+    return outOfPlaneBendType;
   }
 
   /**
@@ -812,19 +856,19 @@ public class ForceField {
 
     // First check for an atom4-center-edge-edge type (also checking reversed edges).
     String key = OutOfPlaneBendType.sortKey(new int[] {class4, class1, class0, class2});
-    OutOfPlaneBendType oopBendType = getOutOfPlaneBendType(key);
-    if (oopBendType == null) {
+    OutOfPlaneBendType outOfPlaneBendType = getOutOfPlaneBendType(key);
+    if (outOfPlaneBendType == null) {
       key = OutOfPlaneBendType.sortKey(new int[] {class4, class1, class2, class0});
-      oopBendType = getOutOfPlaneBendType(key);
+      outOfPlaneBendType = getOutOfPlaneBendType(key);
     }
 
     // Then, check for a generic OOP bend type atom4-center-any-any
-    if (oopBendType == null) {
+    if (outOfPlaneBendType == null) {
       key = OutOfPlaneBendType.sortKey(new int[] {class4, class1, 0, 0});
-      oopBendType = getOutOfPlaneBendType(key);
+      outOfPlaneBendType = getOutOfPlaneBendType(key);
     }
 
-    return oopBendType;
+    return outOfPlaneBendType;
   }
 
   /**
@@ -834,7 +878,12 @@ public class ForceField {
    * @return a {@link PiOrbitalTorsionType} object.
    */
   public PiOrbitalTorsionType getPiOrbitalTorsionType(String key) {
-    return piOrbitalTorsionTypes.get(key);
+    PiOrbitalTorsionType piOrbitalTorsionType = piOrbitalTorsionTypes.get(key);
+    if (piOrbitalTorsionType != null) {
+      piOrbitalTorsionType.piTorsUnit = getDouble("PITORSUNIT",
+          PiOrbitalTorsionType.DEFAULT_PITORS_UNIT);
+    }
+    return piOrbitalTorsionType;
   }
 
   /**
@@ -905,7 +954,11 @@ public class ForceField {
    * @return a {@link ffx.potential.parameters.StretchBendType} object.
    */
   public StretchBendType getStretchBendType(String key) {
-    return stretchBendTypes.get(key);
+    StretchBendType stretchBendType = stretchBendTypes.get(key);
+    if (stretchBendType != null) {
+      stretchBendType.strbndunit = getDouble("STRBNDUNIT", StretchBendType.DEFAULT_STRBND_UNIT);
+    }
+    return stretchBendType;
   }
 
   /**
@@ -929,7 +982,12 @@ public class ForceField {
    * @return a {@link ffx.potential.parameters.StretchTorsionType} object.
    */
   public StretchTorsionType getStretchTorsionType(String key) {
-    return stretchTorsionTypes.get(key);
+    StretchTorsionType stretchTorsionType = stretchTorsionTypes.get(key);
+    if (stretchTorsionType != null) {
+      stretchTorsionType.strTorUnit = getDouble("STRTORUNIT",
+          StretchTorsionType.DEFAULT_STRTOR_UNIT);
+    }
+    return stretchTorsionType;
   }
 
   /**
@@ -972,7 +1030,12 @@ public class ForceField {
    * @return a {@link ffx.potential.parameters.TorsionTorsionType} object.
    */
   public TorsionTorsionType getTorsionTorsionType(String key) {
-    return torsionTorsionTypes.get(key);
+    TorsionTorsionType torsionTorsionType = torsionTorsionTypes.get(key);
+    if (torsionTorsionType != null) {
+      torsionTorsionType.torTorUnit = getDouble("TORTORUNIT",
+          TorsionTorsionType.DEFAULT_TORTOR_UNIT);
+    }
+    return torsionTorsionType;
   }
 
   /**
@@ -982,7 +1045,11 @@ public class ForceField {
    * @return a {@link ffx.potential.parameters.TorsionType} object.
    */
   public TorsionType getTorsionType(String key) {
-    return torsionTypes.get(key);
+    TorsionType torsionType = torsionTypes.get(key);
+    if (torsionType != null) {
+      torsionType.torsionUnit = getDouble("TORSIONUNIT", TorsionType.DEFAULT_TORSION_UNIT);
+    }
+    return torsionType;
   }
 
   /**
@@ -1048,7 +1115,13 @@ public class ForceField {
    * @return a {@link ffx.potential.parameters.UreyBradleyType} object.
    */
   public UreyBradleyType getUreyBradleyType(String key) {
-    return ureyBradleyTypes.get(key);
+    UreyBradleyType ureyBradleyType = ureyBradleyTypes.get(key);
+    if (ureyBradleyType != null) {
+      ureyBradleyType.ureyUnit = getDouble("UREYUNIT", UreyBradleyType.DEFAULT_UREY_UNIT);
+      ureyBradleyType.cubic = getDouble("UREY_CUBIC", UreyBradleyType.DEFAULT_UREY_CUBIC);
+      ureyBradleyType.quartic = getDouble("UREY_QUARTIC", UreyBradleyType.DEFAULT_UREY_QUARTIC);
+    }
+    return ureyBradleyType;
   }
 
   /**
