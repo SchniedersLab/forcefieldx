@@ -62,6 +62,18 @@
             <tr>
               <td>
                 <p>
+                  <a href="keywords/ElectrostaticsFunctionalForm.html">Electrostatics Functional Form</a>
+                </p>
+              </td>
+              <td>
+                <p>Provides a multiplicative scale factors that are applied to fixed partial charges,
+                  permanent atomic multipoles and induced dipoles.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>
                   <a href="keywords/EnergyUnitConversion.html">Energy Unit Conversion</a>
                 </p>
               </td>
@@ -142,6 +154,16 @@
               </td>
               <td>
                 <p>Define the simulation unit cell and space group symmetry.</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>
+                  <a href="keywords/VanDerWaalsFunctionalForm.html">Van Der Waals Functional Form</a>
+                </p>
+              </td>
+              <td>
+                <p>Define the functional form of van Der Waals interactions.</p>
               </td>
             </tr>
             <tr>

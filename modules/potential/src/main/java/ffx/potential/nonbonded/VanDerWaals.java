@@ -38,6 +38,7 @@
 package ffx.potential.nonbonded;
 
 import static ffx.potential.parameters.ForceField.toEnumForm;
+import static ffx.utilities.KeywordGroup.VanDerWaalsFunctionalForm;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
@@ -66,16 +67,17 @@ import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.VDWType;
+import ffx.utilities.FFXKeyword;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The Van der Waals class computes Van der Waals interaction in parallel using a {@link
- * ffx.potential.nonbonded.NeighborList} for any {@link ffx.crystal.Crystal}. The repulsive power
- * (e.g. 12), attractive power (e.g. 6) and buffering (e.g. for the AMOEBA buffered-14-7) can all be
- * specified such that both Lennard-Jones and AMOEBA are supported.
+ * The Van der Waals class computes Van der Waals interaction in parallel using a
+ * {@link ffx.potential.nonbonded.NeighborList} for any {@link ffx.crystal.Crystal}. The repulsive
+ * power (e.g. 12), attractive power (e.g. 6) and buffering (e.g. for the AMOEBA buffered-14-7) can
+ * all be specified such that both Lennard-Jones and AMOEBA are supported.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -104,6 +106,14 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private final long[] vdwTime;
   private final long[] reductionTime;
   private final VanDerWaalsForm vdwForm;
+
+  @FFXKeyword(name = "vdwindex", clazz = String.class, keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "class",
+      description = "[CLASS / TYPE] "
+          + "Specifies whether van der Waals parameters are provided for atom classes or atom types. "
+          + "While most force fields are indexed by atom class, in OPLS models the vdW values are indexed by atom type. "
+          + "The default in the absence of the vdwindex property is to index vdW parameters by atom class.")
+  private final String vdwIndex;
+
   private final NonbondedCutoff nonbondedCutoff;
   private final MultiplicativeSwitch multiplicativeSwitch;
   /** This field specifies resolution for multi-scale modeling. */
@@ -112,8 +122,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private Crystal crystal;
   /** An array of all atoms in the system. */
   private Atom[] atoms;
-  /** Previous atom array. */
-  private Atom[] previousAtoms;
   /** Specification of the molecular index for each atom. */
   private int[] molecule;
   /** The Force Field that defines the Van der Waals interactions. */
@@ -124,7 +132,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private int nAtoms;
   /** A local convenience variable equal to the number of crystal symmetry operators. */
   private int nSymm;
-  /** ********************************************************************* Lambda variables. */
+  /** ******************************************************************** Lambda variables. */
   private boolean gradient;
   private boolean lambdaTerm;
   private boolean esvTerm;
@@ -225,6 +233,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     vdwForm = null;
     nonbondedCutoff = null;
     multiplicativeSwitch = null;
+    vdwIndex = null;
   }
 
   /**
@@ -257,6 +266,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     nSymm = crystal.spaceGroup.getNumberOfSymOps();
 
     vdwForm = new VanDerWaalsForm(forceField);
+
+    vdwIndex = forceField.getString("VDWINDEX", "Class");
+
     reducedHydrogens = forceField.getBoolean("REDUCE_HYDROGENS", true);
 
     // Lambda parameters.
@@ -388,7 +400,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     intermolecularSoftcore = forceField.getBoolean("INTERMOLECULAR_SOFTCORE", false);
     intramolecularSoftcore = forceField.getBoolean("INTRAMOLECULAR_SOFTCORE", false);
 
-    previousAtoms = atoms;
     Atom[] atomsExt = esvSystem.getExtendedAtoms();
     int[] moleculeExt = esvSystem.getExtendedMolecule();
     setAtoms(atomsExt, moleculeExt);
@@ -824,8 +835,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       }
     }
 
-    String vdwIndex = forceField.getString("VDWINDEX", "Class");
-
     for (int i = 0; i < nAtoms; i++) {
       Atom ai = atoms[i];
       assert (i == ai.getXyzIndex() - 1);
@@ -1051,12 +1060,12 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     Atom ai = atoms[i];
     Atom ak = atoms[k];
     logger.info(format("VDW %6d-%s %d %6d-%s %d %10.4f  %10.4f  %10.4f",
-            ai.getIndex(), ai.getAtomType().name, ai.getVDWType().atomClass,
-            ak.getIndex(), ak.getAtomType().name, ak.getVDWType().atomClass,
-            minr, r, eij));
+        ai.getIndex(), ai.getAtomType().name, ai.getVDWType().atomClass,
+        ak.getIndex(), ak.getAtomType().name, ak.getVDWType().atomClass,
+        minr, r, eij));
     logger.info(format("    %d %s\n    %d %s",
-        i+1, Arrays.toString(ai.getXYZ(null)),
-        k+1, Arrays.toString(ak.getXYZ(null))));
+        i + 1, Arrays.toString(ai.getXYZ(null)),
+        k + 1, Arrays.toString(ak.getXYZ(null))));
   }
 
   private void initSoftCore() {

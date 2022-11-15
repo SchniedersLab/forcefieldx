@@ -41,11 +41,14 @@ package ffx.utilities;
  * The Keyword Group for an FFX Keyword.
  */
 public enum KeywordGroup {
-  PotentialFunctionParameter,
-  UnitCellAndSpaceGroup,
-  PotentialFunctionSelection,
+  EnergyUnitConversion,
+  ElectrostaticsFunctionalForm,
   LocalGeometryFunctionalForm,
+  PotentialFunctionParameter,
+  PotentialFunctionSelection,
+  UnitCellAndSpaceGroup,
+  VanDerWaalsFunctionalForm,
   NonBondedInteractions,
+  ConstantPhMolecularDynamics,
   Refinement,
-  EnergyUnitConversion
 }

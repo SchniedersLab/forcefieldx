@@ -461,6 +461,14 @@
             <configuration>
               <target>
                 <concat
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/ElectrostaticsFunctionalForm.adoc">
+                  <header>== Electrostatics Functional Form</header>
+                  <fileset erroronmissingdir="false"
+                    dir="${project.basedir}/src/site/asciidoc/keywords/ElectrostaticsFunctionalForm">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+                <concat
                   destfile="${project.basedir}/src/site/asciidoc/keywords/EnergyUnitConversion.adoc">
                   <header>== Energy Unit Conversion</header>
                   <fileset erroronmissingdir="false"
@@ -499,6 +507,14 @@
                     dir="${project.basedir}/src/site/asciidoc/keywords/UnitCellAndSpaceGroup">
                     <include name="*.adoc"/>
                   </fileset>
+                </concat>
+                <concat
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/VanDerWaalsFunctionalForm.adoc">
+                <header>== Van Der Waals Functional Form</header>
+                <fileset erroronmissingdir="false"
+                  dir="${project.basedir}/src/site/asciidoc/keywords/VanDerWaalsFunctionalForm">
+                  <include name="*.adoc"/>
+                </fileset>
                 </concat>
               </target>
             </configuration>

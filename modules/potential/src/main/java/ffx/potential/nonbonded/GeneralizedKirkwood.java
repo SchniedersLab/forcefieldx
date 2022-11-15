@@ -41,7 +41,6 @@ import static ffx.numerics.atomic.AtomicDoubleArray.atomicDoubleArrayFactory;
 import static ffx.potential.nonbonded.implicit.DispersionRegion.DEFAULT_DISPERSION_OFFSET;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.parameters.SoluteType.setSoluteRadii;
-import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.utilities.Constants.dWater;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
@@ -511,24 +510,18 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * @param crystal a {@link ffx.crystal.Crystal} object.
    * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
    */
-  public GeneralizedKirkwood(
-      ForceField forceField,
-      Atom[] atoms,
-      ParticleMeshEwald particleMeshEwald,
-      Crystal crystal,
-      ParallelTeam parallelTeam) {
-
+  public GeneralizedKirkwood(ForceField forceField, Atom[] atoms,
+      ParticleMeshEwald particleMeshEwald, Crystal crystal, ParallelTeam parallelTeam,
+      double electric) {
     this.forceField = forceField;
     this.atoms = atoms;
     this.particleMeshEwald = particleMeshEwald;
     this.crystal = crystal;
     this.parallelTeam = parallelTeam;
+    this.electric = electric;
     nAtoms = atoms.length;
     maxNumAtoms = nAtoms;
     polarization = particleMeshEwald.polarization;
-
-    // Set the conversion from electron**2/Ang to kcal/mole
-    electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
 
     // Set the Kirkwood multipolar reaction field constants for solvent.
     epsilon = forceField.getDouble("GK_EPSILON", dWater);
@@ -736,7 +729,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
       bornGradRegion = null;
     }
     gkEnergyRegion = new GKEnergyRegion(threadCount, forceField, polarization, nonPolar,
-        surfaceTension, probe);
+        surfaceTension, probe, electric);
 
     logger.info("  Continuum Solvation ");
     logger.info(format("   Radii:                              %8s", soluteRadiiType));

@@ -49,7 +49,6 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
-import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.utilities.Constants.dWater;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.exp;
@@ -159,10 +158,9 @@ public class GKEnergyRegion extends ParallelRegion {
       Polarization polarization,
       NonPolar nonPolar,
       double surfaceTension,
-      double probe) {
+      double probe,
+      double electric) {
 
-    // Set the conversion from electron**2/Ang to kcal/mole
-    electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
     gkc = forceField.getDouble("GKC", DEFAULT_GKC);
 
     // Set the Kirkwood multipolar reaction field constants.
@@ -176,6 +174,8 @@ public class GKEnergyRegion extends ParallelRegion {
     this.nonPolar = nonPolar;
     this.surfaceTension = surfaceTension;
     this.probe = probe;
+    // Set the conversion from electron**2/Ang to kcal/mole
+    this.electric = electric;
 
     boolean gkQI = forceField.getBoolean("GK_QI", false);
 
