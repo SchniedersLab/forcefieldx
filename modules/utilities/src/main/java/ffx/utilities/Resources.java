@@ -56,7 +56,9 @@ public class Resources {
 
   private static final Logger logger = Logger.getLogger(Resources.class.getName());
 
-  /** logResources. */
+  /**
+   * logResources.
+   */
   public static void logResources() {
     if (logger.isLoggable(Level.INFO)) {
       StringBuilder sb = new StringBuilder("\n System Resources\n");

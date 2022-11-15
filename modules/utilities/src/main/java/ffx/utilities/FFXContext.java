@@ -50,15 +50,25 @@ import java.util.Map;
  * script object or created outside of a script and passed into it.
  * <p>
  * The Binding API is not supposed to be used in a multithreaded context.
+ *
+ * @author Michael J. Schnieders
  */
 public class FFXContext extends CompositeConfiguration {
 
   private Map<String, Object> variables;
 
+  /**
+   * <p>Constructor for FFXContext.</p>
+   */
   public FFXContext() {
     super();
   }
 
+  /**
+   * <p>Constructor for FFXContext.</p>
+   *
+   * @param variables a {@link java.util.Map} object
+   */
   public FFXContext(Map<String, Object> variables) {
     this();
     this.variables = variables;
@@ -75,8 +85,11 @@ public class FFXContext extends CompositeConfiguration {
   }
 
   /**
+   * <p>getVariable.</p>
+   *
    * @param name the name of the variable to lookup
    * @return the variable value
+   * @throws java.lang.Exception if any.
    */
   public Object getVariable(String name) throws Exception {
     if (variables == null) {
@@ -122,6 +135,7 @@ public class FFXContext extends CompositeConfiguration {
    * Simple check for whether the context contains a particular variable or not.
    *
    * @param name the name of the variable to check for
+   * @return a boolean
    */
   public boolean hasVariable(String name) {
     return variables != null && variables.containsKey(name);

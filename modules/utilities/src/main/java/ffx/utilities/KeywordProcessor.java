@@ -62,13 +62,21 @@ import javax.lang.model.type.TypeMirror;
 
 /**
  * Log out FFXKeyword Annotations for documentation purposes.
+ *
+ * @author Michael J. Schnieders
  */
 @SupportedAnnotationTypes({"ffx.utilities.FFXKeyword", "ffx.utilities.FFXKeywords"})
 @SupportedOptions({"keywordDir"})
 public class KeywordProcessor extends AbstractProcessor {
 
   /**
-   * {@inheritdoc}
+   * Processes a set of annotation types on type elements originating from the prior round and
+   * returns whether or not these annotations are claimed by this processor. If true is returned, the
+   * annotations are claimed and subsequent processors will not be asked to process them; if false is
+   * returned, the annotations are unclaimed and subsequent processors may be asked to process them.
+   * A processor may always return the same boolean value or may vary the result based on chosen
+   * criteria. The input set will be empty if the processor supports "*" and the root elements have
+   * no annotations. A Processor must gracefully handle an empty set of annotations.
    */
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {

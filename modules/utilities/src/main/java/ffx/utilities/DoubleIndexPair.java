@@ -73,6 +73,8 @@ public class DoubleIndexPair implements Comparable<DoubleIndexPair> {
 
   /**
    * Returns a string containing the index and double value.
+   *
+   * @return a {@link java.lang.String} object
    */
   public String toString() {
     return format(" %6d %16.8f", index, doubleValue);

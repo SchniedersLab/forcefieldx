@@ -102,7 +102,11 @@ public abstract class FFXScript extends Script {
       description = "Print command help and exit.")
   public boolean help;
 
-  /** Default constructor for an FFX Script. */
+  /**
+   * Default constructor for an FFX Script.
+   *
+   * @param binding a {@link groovy.lang.Binding} object
+   */
   public FFXScript(Binding binding) {
     super(binding);
     if (GraphicsEnvironment.isHeadless()) {

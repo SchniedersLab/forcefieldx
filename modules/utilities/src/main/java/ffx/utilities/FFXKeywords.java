@@ -47,6 +47,8 @@ import java.lang.annotation.Target;
 
 /**
  * The FFXKeyword Annotation can be applied multiple times to some classes.
+ *
+ * @author Michael J. Schnieders
  */
 @Retention(RUNTIME)
 @Documented

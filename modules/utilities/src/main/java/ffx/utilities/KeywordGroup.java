@@ -39,6 +39,8 @@ package ffx.utilities;
 
 /**
  * The Keyword Group for an FFX Keyword.
+ *
+ * @author Michael J. Schnieders
  */
 public enum KeywordGroup {
   EnergyUnitConversion,

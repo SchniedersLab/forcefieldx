@@ -49,6 +49,8 @@ import java.lang.annotation.Target;
 /**
  * The FFXKeyword Annotation should be used to document fields that are set using property files,
  * keyword files, force field parameter files and the Java property system.
+ *
+ * @author Michael J. Schnieders
  */
 @Retention(RUNTIME)
 @Documented

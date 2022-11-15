@@ -102,7 +102,11 @@ public abstract class FFXCommand {
       description = "Print command help and exit.")
   public boolean help;
 
-  /** Default constructor for an FFX Script. */
+  /**
+   * Default constructor for an FFX Script.
+   *
+   * @param ffxContext a {@link ffx.utilities.FFXContext} object
+   */
   public FFXCommand(FFXContext ffxContext) {
     this.ffxContext = ffxContext;
     if (GraphicsEnvironment.isHeadless()) {
@@ -304,6 +308,8 @@ public abstract class FFXCommand {
    * {@inheritDoc}
    *
    * <p>Execute the command.
+   *
+   * @return a {@link ffx.utilities.FFXCommand} object
    */
   public FFXCommand run() {
     logger.info(helpString());
