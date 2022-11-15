@@ -365,7 +365,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>Before and After Broadcast.</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -385,7 +385,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -420,7 +420,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>Scatter.</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -448,7 +448,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -479,7 +479,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>Scatter</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -502,7 +502,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -540,7 +540,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>Gather</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -568,7 +568,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -599,7 +599,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>Gather</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -622,7 +622,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -661,7 +661,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>All-Gather</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -689,7 +689,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -719,7 +719,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>All-Gather</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -742,7 +742,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -780,7 +780,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>Reduce</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -794,7 +794,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -823,7 +823,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>All-Reduce</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -837,7 +837,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -867,7 +867,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>All-to-All</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -904,7 +904,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -954,7 +954,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>Scan</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -968,7 +968,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -1000,7 +1000,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>Exclusive-Scan</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -1014,7 +1014,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
