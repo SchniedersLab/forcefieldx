@@ -57,6 +57,8 @@ public @interface FFXKeywords {
 
   /**
    * An array of FFXKeyword annotations.
+   *
+   * @return the FFXKeyword annotations.
    */
   FFXKeyword[] value();
 }
