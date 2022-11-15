@@ -241,7 +241,6 @@ public class HybridTeam
      *
      * Determine the rank of the process that contains the worker thread with
      * the given index.
-     *
      * @exception IllegalArgumentException (unchecked exception) Thrown if
      * <code>w</code> is not in the range 0 ..
      * <code>getTotalThreadCount()</code>&minus;1.

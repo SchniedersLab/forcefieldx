@@ -81,7 +81,7 @@ public class DataOutputStream
      * written, either 0 (if <code>v</code> is false) or 1 (if <code>v</code> is true).
      *
      * @param v Boolean value.
-     * @throws IOException         Thrown if an I/O error occurred.
+     * @throws java.io.IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public void writeBoolean(boolean v)
@@ -117,7 +117,7 @@ public class DataOutputStream
      * </UL>
      *
      * @param v Integer value.
-     * @throws IOException         Thrown if an I/O error occurred.
+     * @throws java.io.IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public void writeInt(int v)
@@ -173,7 +173,7 @@ public class DataOutputStream
      * </UL>
      *
      * @param v Integer value.
-     * @throws IOException         Thrown if an I/O error occurred.
+     * @throws java.io.IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public void writeUnsignedInt(int v)
@@ -248,7 +248,7 @@ public class DataOutputStream
      * </UL>
      *
      * @param v Integer value.
-     * @throws IOException         Thrown if an I/O error occurred.
+     * @throws java.io.IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public void writeLong(long v)
@@ -355,7 +355,7 @@ public class DataOutputStream
      * </UL>
      *
      * @param v Integer value.
-     * @throws IOException         Thrown if an I/O error occurred.
+     * @throws java.io.IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public void writeUnsignedLong(long v)
@@ -423,7 +423,7 @@ public class DataOutputStream
      * <code>Float.floatToRawIntBits(v)</code>.
      *
      * @param v Float value.
-     * @throws IOException         Thrown if an I/O error occurred.
+     * @throws java.io.IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public void writeFloat(float v)
@@ -441,7 +441,7 @@ public class DataOutputStream
      * <code>Double.doubleToRawLongBits(v)</code>.
      *
      * @param v Double value.
-     * @throws IOException         Thrown if an I/O error occurred.
+     * @throws java.io.IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public void writeDouble(double v)
@@ -463,7 +463,7 @@ public class DataOutputStream
      * character of the string is written using <code>writeUnsignedInt()</code>.
      *
      * @param v String value.
-     * @throws IOException         Thrown if an I/O error occurred.
+     * @throws java.io.IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public void writeString(String v)

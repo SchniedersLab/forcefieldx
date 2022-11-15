@@ -121,7 +121,7 @@ public abstract class IntegerSchedule
      *
      * @param theChunkSize Chunk size, &gt;= 1.
      * @return Dynamic schedule object.
-     * @throws IllegalArgumentException (unchecked exception) Thrown if
+     * @throws java.lang.IllegalArgumentException (unchecked exception) Thrown if
      *                                  <code>theChunkSize</code> &lt; 1.
      */
     public static IntegerSchedule dynamic(int theChunkSize) {
@@ -156,7 +156,7 @@ public abstract class IntegerSchedule
      *
      * @param theChunkSize Minimum chunk size, &gt;= 1.
      * @return Self-guided schedule object.
-     * @throws IllegalArgumentException (unchecked exception) Thrown if
+     * @throws java.lang.IllegalArgumentException (unchecked exception) Thrown if
      *                                  <code>theChunkSize</code> &lt; 1.
      */
     public static IntegerSchedule guided(int theChunkSize) {
@@ -175,7 +175,7 @@ public abstract class IntegerSchedule
      * </PRE>
      *
      * @return Schedule object.
-     * @throws IllegalArgumentException (unchecked exception) Thrown if the
+     * @throws java.lang.IllegalArgumentException (unchecked exception) Thrown if the
      *                                  <code>"pj.schedule"</code> property value cannot be parsed.
      */
     public static IntegerSchedule runtime() {
@@ -197,7 +197,7 @@ public abstract class IntegerSchedule
      * @param defaultSchedule Schedule to use if the <code>"pj.schedule"</code>
      *                        Java property is not specified.
      * @return Schedule object.
-     * @throws IllegalArgumentException (unchecked exception) Thrown if the
+     * @throws java.lang.IllegalArgumentException (unchecked exception) Thrown if the
      *                                  <code>"pj.schedule"</code> property value cannot be parsed.
      */
     public static IntegerSchedule runtime(IntegerSchedule defaultSchedule) {
@@ -233,9 +233,9 @@ public abstract class IntegerSchedule
      *
      * @param s String to parse.
      * @return Schedule object.
-     * @throws NullPointerException     (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException     (unchecked exception) Thrown if
      *                                  <code>s</code> is null.
-     * @throws IllegalArgumentException (unchecked exception) Thrown if
+     * @throws java.lang.IllegalArgumentException (unchecked exception) Thrown if
      *                                  <code>s</code> is not one of the above.
      */
     public static IntegerSchedule parse(String s) {

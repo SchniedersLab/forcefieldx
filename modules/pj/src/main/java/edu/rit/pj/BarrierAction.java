@@ -109,7 +109,7 @@ public abstract class BarrierAction
      * <p>
      * The <code>run()</code> method must be implemented in a subclass.
      *
-     * @throws Exception           The <code>run()</code> method may throw any exception.
+     * @throws java.lang.Exception           The <code>run()</code> method may throw any exception.
      * @throws java.lang.Exception if any.
      */
     public abstract void run()
