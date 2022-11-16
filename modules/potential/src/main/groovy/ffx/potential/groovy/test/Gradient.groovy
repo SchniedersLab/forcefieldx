@@ -61,7 +61,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt
  * <br>
  * ffxc test.Gradient [options] &lt;filename&gt;
  */
-@Command(description = " Test the potential energy gradient.", name = "ffxc test.Gradient")
+@Command(description = " Test the potential energy gradient.", name = "test.Gradient")
 class Gradient extends PotentialScript {
 
   @Mixin

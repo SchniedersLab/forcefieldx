@@ -59,7 +59,7 @@ import static ffx.utilities.TinkerUtils.version
  * <br>
  * ffxc realspace.Minimize [options] &lt;filename [file2...]&gt;
  */
-@Command(description = " Minimization on a Real Space target.", name = "ffxc realspace.Minimize")
+@Command(description = " Minimization on a Real Space target.", name = "realspace.Minimize")
 class Minimize extends AlgorithmsScript {
 
   @Mixin

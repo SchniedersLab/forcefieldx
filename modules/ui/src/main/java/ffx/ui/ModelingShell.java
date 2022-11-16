@@ -53,6 +53,7 @@ import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.cli.PotentialScript;
 import ffx.potential.utils.PotentialsFunctions;
+import ffx.utilities.Console;
 import ffx.utilities.FFXScript;
 // import groovy.console.ui.Console;
 import groovy.lang.Binding;

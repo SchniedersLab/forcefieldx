@@ -649,10 +649,23 @@ public abstract class MultipoleTensor {
   protected abstract void source(double[] T000);
 
   /**
-   * Multidimensional arrays into 1-D; doing so should be much more efficient (less cache misses from
-   * indirection).
+   * The index is based on the idea of filling tetrahedron.
    *
-   * @see {@code MultipoleTensor::ti(int dx, int dy, int dz, int order)}
+   * <p>1/r has an index of 0 <br>
+   * derivatives of x are first; indeces from 1..o for d/dx..(d/dx)^o <br> derivatives of x and y are
+   * second; base triangle of size (o+1)(o+2)/2 <br> derivatives of x, y and z are last; total size
+   * (o+1)*(o+2)*(o+3)/6 <br>
+   *
+   * <p>This function is useful to set up masking constants: <br>
+   * static int Tlmn = ti(l,m,n,order) <br> For example the (d/dy)^2 (1/R) storage location: <br>
+   * static int T020 = ti(0,2,0,order)
+   *
+   * <p>
+   *
+   * @param dx int The number of d/dx operations.
+   * @param dy int The number of d/dy operations.
+   * @param dz int The number of d/dz operations.
+   * @return int in the range (0..binomial(order + 3, 3) - 1)
    */
   protected final int ti(int dx, int dy, int dz) {
     return ti(dx, dy, dz, order);

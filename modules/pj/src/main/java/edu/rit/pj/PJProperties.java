@@ -94,7 +94,7 @@ package edu.rit.pj;
  * <LI>
  * <B>pj.jvmflags</B> -- JVM flags to include on the Java command line when
  * running a backend process in a cluster parallel program. ({@link
- * #getPjJvmFlags()})
+ *#getPjJvmFlags()})
  * <LI>
  * <B>pj.prng</B> -- The fully-qualified class name of the default pseudorandom
  * number generator (PRNG) class. ({@link #getPjPrng()})
@@ -122,7 +122,7 @@ public class PJProperties {
      * integer greater than or equal to 1.
      *
      * @return Number of backend nodes for a parallel program.
-     * @throws IllegalArgumentException (unchecked exception) Thrown if the
+     * @throws java.lang.IllegalArgumentException (unchecked exception) Thrown if the
      *                                  <code>"pj.nn"</code> property value is not an integer greater than or equal
      *                                  to 1.
      */
@@ -165,7 +165,7 @@ public class PJProperties {
      * integer greater than or equal to 1.
      *
      * @return Number of processes for a parallel program.
-     * @throws IllegalArgumentException (unchecked exception) Thrown if the
+     * @throws java.lang.IllegalArgumentException (unchecked exception) Thrown if the
      *                                  <code>"pj.np"</code> property value is not an integer greater than or equal
      *                                  to 1.
      */
@@ -211,7 +211,7 @@ public class PJProperties {
      *
      * @return Number of CPUs per process for a parallel program, or 0 if not
      * specified.
-     * @throws IllegalArgumentException (unchecked exception) Thrown if the
+     * @throws java.lang.IllegalArgumentException (unchecked exception) Thrown if the
      *                                  <code>"pj.nt"</code> property value is not an integer greater than or equal
      *                                  to 1.
      */
@@ -310,7 +310,7 @@ public class PJProperties {
      * well-known Parallel Java port number (20617) is returned.
      *
      * @return Job Scheduler Daemon port number.
-     * @throws IllegalArgumentException (unchecked exception) Thrown if the
+     * @throws java.lang.IllegalArgumentException (unchecked exception) Thrown if the
      *                                  <code>"pj.port"</code> property value is not an integer.
      */
     public static int getPjPort() {
@@ -345,7 +345,7 @@ public class PJProperties {
      * value of 0 is returned to signify that there is no job timeout.
      *
      * @return Job timeout (seconds), or 0 if no job timeout.
-     * @throws IllegalArgumentException (unchecked exception) Thrown if the
+     * @throws java.lang.IllegalArgumentException (unchecked exception) Thrown if the
      *                                  <code>"pj.jobtime"</code> property value is not an integer greater than or
      *                                  equal to 1.
      */

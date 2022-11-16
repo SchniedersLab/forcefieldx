@@ -1,96 +1,105 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document
-        xmlns="http://maven.apache.org/XDOC/2.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+  xmlns="http://maven.apache.org/XDOC/2.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
-    <properties>
-        <title>X-ray Commands</title>
-        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
-    </properties>
-    <body>
-        <section name="X-ray Crystallography Refinement">
-            <p>Algorithms to optimize an atomic resolution crystal structure against X-ray diffraction data.</p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Command</th>
-                        <th>Purpose</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>
-                            <a href="commands/xray.Anneal.html">xray.Anneal</a>
-                        </td>
-                        <td>Run simulated annealing to optimize a structure using a reciprocal space objective
-                            function.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/xray.AverageMTZ.html">xray.AverageMTZ</a>
-                        </td>
-                        <td>Average multiple MTZ files.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/xray.CIF2MTZ.html">xray.CIF2MTZ</a>
-                        </td>
-                        <td>Convert a CIF diffraction file to MTZ format.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/xray.ComputeFc.html">xray.ComputeFc</a>
-                        </td>
-                        <td>Write out computed structure factors.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/xray.Deuterate.html">xray.Deuterate</a>
-                        </td>
-                        <td>Deuterate exchangable hydrogens of the PDB model.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/xray.Dynamics.html">xray.Dynamics</a>
-                        </td>
-                        <td>Run Dynamics simulations using a reciprocal space objective function.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/xray.ManyBody.html">xray.ManyBody</a>
-                        </td>
-                        <td>Globally optimize the side-chains of a protein using a reciprocal space objective
-                            function.
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/xray.Minimize.html">xray.Minimize</a>
-                        </td>
-                        <td>X-ray Refinement using a reciprocal space objective function.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/xray.ModelvsData.html">xray.ModelvsData</a>
-                        </td>
-                        <td>Compare the calculated diffraction of the model to the diffraction data.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/xray.MTZInfo.html">xray.MTZInfo</a>
-                        </td>
-                        <td>Write out information on an MTZ file.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/xray.Timer.html">xray.Timer</a>
-                        </td>
-                        <td>Time the computation of the reciprocal space objective function and gradient.</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-    </body>
+  <properties>
+    <title>X-ray and Neutron Crystallography Refinement Commands</title>
+    <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+  </properties>
+  <body>
+    <section name="X-ray and Neutron Crystallography Refinement Commands">
+      <p>Algorithms to optimize an atomic resolution crystal structure against X-ray and/or Neutron
+        diffraction data.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <a href="commands/xray.Anneal.html">xray.Anneal</a>
+            </td>
+            <td>The xray.Anneal command runs simulated annealing to optimize a structure using a
+              reciprocal space objective function.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/xray.AverageMTZ.html">xray.AverageMTZ</a>
+            </td>
+            <td>The xray.AverageMTZ command averages multiple MTZ files.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/xray.CIFtoMTZ.html">xray.CIFtoMTZ</a>
+            </td>
+            <td>The xray.CIFtoMTZ command converts a CIF diffraction file to MTZ format.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/xray.ComputeFc.html">xray.ComputeFc</a>
+            </td>
+            <td>The xray.ComputeFc command writes out computed structure factors.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/xray.Deuterate.html">xray.Deuterate</a>
+            </td>
+            <td>The xray.Deuterate command deuterates exchangable hydrogen atoms of the PDB model.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/xray.Dynamics.html">xray.Dynamics</a>
+            </td>
+            <td>Run Dynamics simulations using a reciprocal space objective function.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/xray.ManyBody.html">xray.ManyBody</a>
+            </td>
+            <td>The xray.ManyBody command globally optimizes the side-chains of a protein using a
+              reciprocal space objective function.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/xray.Minimize.html">xray.Minimize</a>
+            </td>
+            <td>The xray.Minimize command minimizes a system using a reciprocal space objective
+              function.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/xray.ModelvsData.html">xray.ModelvsData</a>
+            </td>
+            <td>The xray.ModelvsData command compares the calculated diffraction of the model to
+              measured diffraction data.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/xray.MTZInfo.html">xray.MTZInfo</a>
+            </td>
+            <td>The xray.MTZInfo command writes out information on an MTZ file.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/xray.Timer.html">xray.Timer</a>
+            </td>
+            <td>The xray.Timer command times the computation of the reciprocal space objective
+              function and gradient.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </body>
 </document>

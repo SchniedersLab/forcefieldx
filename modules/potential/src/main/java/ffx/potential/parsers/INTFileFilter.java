@@ -58,6 +58,19 @@ public final class INTFileFilter extends FileFilter {
   }
 
   /**
+   * This is a static version of the accept method.
+   *
+   * <p>This method return <code>true</code> if the file is a directory or matches the extension for
+   * TINKER internal coordinates (*.INT).
+   *
+   * @param file The File to examine.
+   * @return Returns true if this an INT file.
+   */
+  public static boolean isINT(File file) {
+    return new INTFileFilter().accept(file);
+  }
+
+  /**
    * {@inheritDoc}
    *
    * <p>This method return <code>true</code> if the file is a directory or matches the extension for

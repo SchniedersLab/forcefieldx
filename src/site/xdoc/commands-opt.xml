@@ -1,74 +1,146 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document
-        xmlns="http://maven.apache.org/XDOC/2.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+  xmlns="http://maven.apache.org/XDOC/2.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
-    <properties>
-        <title>Commands</title>
-        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
-    </properties>
-    <body>
-        <section name="Optimization and Sampling">
-            <p>Local and Global Minimization, Dynamics, and Alchemical Free Energy Simulations.</p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Command</th>
-                        <th>Purpose</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>
-                            <a href="commands/anneal.html">Anneal</a>
-                        </td>
-                        <td>Run simulated annealing to optimize a structure.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/dynamics.html">Dynamics</a>
-                        </td>
-                        <td>Run dynamics simulations in a variety of ensembles.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/dynamicsOpenMM.html">DynamicsOpenMM</a>
-                        </td>
-                        <td>Run dynamics simulations in a variety of ensembles accelerated by OpenMM.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/histogram.html">Histogram</a>
-                        </td>
-                        <td>Examine a histogram produced by orthogonal space sampling.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/manyBody.html">ManyBody</a>
-                        </td>
-                        <td>Globally optimize the side-chains of a protein.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/minimize.html">Minimize</a>
-                        </td>
-                        <td>Minimize a structure using a variety of force fields.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/minimizeOpenMM.html">MinimizeOpenMM</a>
-                        </td>
-                        <td>Minimize a structure using a variety of force fields accelerated by OpenMM.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/thermodynamics.html">Thermodynamics</a>
-                        </td>
-                        <td>Compute free energy differences using orthogonal space sampling.</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-    </body>
+  <properties>
+    <title>Optimization and Sampling Commands</title>
+    <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+  </properties>
+  <body>
+    <section name="Optimization and Sampling Commands">
+      <p>Local and Global Minimization, Dynamics, Clustering, Superposition and Alchemical Free Energy Simulations.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <a href="commands/Anneal.html">Anneal</a>
+            </td>
+            <td>The Anneal command runs simulated annealing to optimize a structure.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/BAR.html">BAR</a>
+            </td>
+            <td>The BAR command evaluates a free energy difference using the Bennett Acceptance Ratio
+              algorithm based on archives of snapshots.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/Cluster.html">Cluster</a>
+            </td>
+            <td>The Cluster command clusters structures utilizing RMSD.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/Dynamics.html">Dynamics</a>
+            </td>
+            <td>The Dynamics command implements molecular and stochastic dynamics algorithms.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/ForEachFile.html">ForEachFile</a>
+            </td>
+            <td>The ForEachFile command runs another command (i.e., Energy or Minimize) on a series
+              of files with support for MPI parallelization across nodes.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/Histogram.html">Histogram</a>
+            </td>
+            <td>The Histogram command prints out an Orthogonal Space Tempering histogram using an
+              input structure and histogram (*.his) file.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/ManyBody.html">ManyBody</a>
+            </td>
+            <td>The ManyBody command performs a discrete optimization using a many-body energy
+              expansion and elimination expressions.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/Minimize.html">Minimize</a>
+            </td>
+            <td>The Minimize command uses a limited-memory BFGS algorithm to minimize the energy of a
+              molecular system.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/MinimizeCrystals.html">MinimizeCrystals</a>
+            </td>
+            <td>The MinimizeCrystals command uses a limited-memory BFGS algorithm to minimize the
+              energy of a crystal, including both coordinates and/or unit cell parameters.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/MinimizeOpenMM.html">MinimizeOpenMM</a>
+            </td>
+            <td>The Minimize command uses an OpenMM accelerated L-BFGS algorithm to minimize the
+              energy of a molecular system.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/MutatePDB.html">MutatePDB</a>
+            </td>
+            <td>The MutatePDB command mutates a residue of a PDB file.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/Scheduler.html">Scheduler</a>
+            </td>
+            <td>The Scheduler command runs a Parallel Java job scheduler on a cluster with multiple
+              nodes.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/SortArc.html">SortArc</a>
+            </td>
+            <td>The SortArc command sorts archive file snapshots from Monte Carlo Thermodynamics jobs
+              by lambda value.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/Superpose.html">Superpose</a>
+            </td>
+            <td>The Superpose command superposes molecules form an ARC or multiple model PDB file
+              (all v. all or one v. all) or between two PDB/XYZ files.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/SuperposeCrystals.html">SuperposeCrystals</a>
+            </td>
+            <td>The SuperposeCrystals command quantifies the similarity of input crystals based on a
+              novel progressive alignment approach.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/Thermodynamics.html">Thermodynamics</a>
+            </td>
+            <td>The Thermodynamics command computes free energy differences using orthogonal space
+              tempering or via windowed approaches.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </body>
 </document>

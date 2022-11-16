@@ -61,7 +61,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc MutatePDB [options] &lt;pdb&gt;
  */
-@Command(description = " Mutate a PDB residue.", name = "ffxc MutatePDB")
+@Command(description = " Mutate a PDB residue.", name = "MutatePDB")
 class MutatePDB extends AlgorithmsScript {
 
   /**

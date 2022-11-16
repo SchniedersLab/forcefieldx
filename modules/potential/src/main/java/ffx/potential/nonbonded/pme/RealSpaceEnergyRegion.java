@@ -91,11 +91,9 @@ import java.util.logging.Logger;
  * @since 1.0
  */
 public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInterface {
-
   private static final Logger logger = Logger.getLogger(RealSpaceEnergyRegion.class.getName());
   /** Constant applied to multipole interactions. */
   private static final double oneThird = 1.0 / 3.0;
-
   private final int maxThreads;
   private final double electric;
   private final SharedInteger sharedInteractions;
@@ -232,13 +230,11 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
   private double polarizationEnergy;
   private ScaleParameters scaleParameters;
 
-  public RealSpaceEnergyRegion(
-      int nt, ForceField forceField, boolean lambdaTerm) {
+  public RealSpaceEnergyRegion(int nt, ForceField forceField, boolean lambdaTerm, double electric) {
     maxThreads = nt;
-    electric = forceField.getDouble("ELECTRIC", Constants.DEFAULT_ELECTRIC);
+    this.electric = electric;
     sharedInteractions = new SharedInteger();
     realSpaceEnergyLoop = new RealSpaceEnergyLoop[nt];
-
     // Flag to indicate application of an intermolecular softcore potential.
     if (lambdaTerm) {
       intermolecularSoftcore = forceField.getBoolean("INTERMOLECULAR_SOFTCORE", false);
@@ -899,6 +895,16 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                       i, k, iSymm, ei, r);
               throw new EnergyException(message);
             }
+
+            // List<Atom> i12 = atoms[i].get12List();
+            // List<Atom> i13 = atoms[i].get13List();
+            // List<Atom> i14 = atoms[i].get14List();
+            // List<Atom> i15 = atoms[i].get15List();
+            // Atom aK = atoms[k];
+            // if (!i12.contains(aK) && !i13.contains(aK) && !i14.contains(aK) && !i15.contains(aK)) {
+            //  logger.info(format(" PERM %s %s %7.4f %7.4f", atoms[i], atoms[k], r, ei * electric));
+            // }
+
             if (ei != 0.0) {
               permanentEnergy += ei;
               count++;

@@ -57,7 +57,6 @@ import static ffx.potential.parameters.MultipoleType.t200;
 import static ffx.potential.parameters.MultipoleType.t201;
 import static ffx.potential.parameters.MultipoleType.t210;
 import static ffx.potential.parameters.MultipoleType.t300;
-import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.pj.IntegerForLoop;
@@ -74,7 +73,6 @@ import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.nonbonded.ParticleMeshEwald.AlchemicalParameters;
 import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.nonbonded.ReciprocalSpace;
-import ffx.potential.parameters.ForceField;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -181,14 +179,14 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
   private double d2lPowPol;
   private double dEdLSign;
 
-  public ReciprocalEnergyRegion(int nt, double aewald, ForceField forceField) {
+  public ReciprocalEnergyRegion(int nt, double aewald, double electric) {
     permanentReciprocalEnergyLoop = new PermanentReciprocalEnergyLoop[nt];
     inducedDipoleReciprocalEnergyLoop = new InducedDipoleReciprocalEnergyLoop[nt];
     inducedDipoleSelfEnergy = new SharedDouble();
     inducedDipoleRecipEnergy = new SharedDouble();
     maxThreads = nt;
 
-    electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
+    this.electric = electric;
     aewald1 = -electric * aewald / SQRT_PI;
     aewald2 = 2.0 * aewald * aewald;
     aewald3 = -2.0 / 3.0 * electric * aewald * aewald * aewald / SQRT_PI;

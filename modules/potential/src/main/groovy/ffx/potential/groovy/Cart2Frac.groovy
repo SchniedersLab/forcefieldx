@@ -58,7 +58,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * <br>
  * ffxc Cart2Frac &lt;filename&gt;
  */
-@Command(description = " Convert Cartesian coordinates to fractional.", name = "ffxc Cart2Frac")
+@Command(description = " Convert Cartesian coordinates to fractional.", name = "Cart2Frac")
 class Cart2Frac extends PotentialScript {
 
   /**

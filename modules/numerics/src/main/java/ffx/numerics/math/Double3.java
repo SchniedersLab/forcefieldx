@@ -76,7 +76,7 @@ public class Double3 {
   }
 
   /**
-   * Compute <code>this * b + c></code> and return the result in a new Double3.
+   * Compute <code>this * b + c</code> and return the result in a new Double3.
    *
    * @param b Scalar.
    * @param c Double3.

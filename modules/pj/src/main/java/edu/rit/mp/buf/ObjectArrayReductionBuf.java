@@ -95,10 +95,8 @@ class ObjectArrayReductionBuf<T>
      *
      * @param i Item index in the range 0 .. <code>length()</code>-1.
      * @param item Item to be stored at index <code>i</code>.
-     * @param item Item to be stored at index <code>i</code>.
      */
-    public void put(int i,
-            T item) {
+    public void put(int i, T item) {
         int off = myArrayOffset + i * myStride;
         myArray[off] = myOp.op(myArray[off], item);
         reset();

@@ -58,9 +58,9 @@ import java.util.stream.Collectors
  * <br>
  * Usage:
  * <br>
- * ffxc CreateRotamers [options] &lt;filename&gt;
+ * ffxc test.CreateRotamers [options] &lt;filename&gt;
  */
-@Command(description = " Creates a set of conformation dependent rotamers.", name = "ffxc CreateRotamers")
+@Command(description = " Creates a set of conformation dependent rotamers.", name = "test.CreateRotamers")
 class CreateRotamers extends AlgorithmsScript {
 
   @Mixin

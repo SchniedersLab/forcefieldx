@@ -37,11 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
-import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.DIPOLE;
-import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.MONOPOLE;
-import static ffx.numerics.multipole.GKSource.GK_MULTIPOLE_ORDER.QUADRUPOLE;
-import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.BORN;
-import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.POTENTIAL;
 import static ffx.numerics.multipole.GKSource.cn;
 import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_GKC;
 import static ffx.potential.parameters.MultipoleType.t000;
@@ -54,10 +49,8 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
-import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.utilities.Constants.dWater;
 import static java.lang.String.format;
-import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -72,8 +65,6 @@ import ffx.numerics.atomic.AtomicDoubleArray;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.multipole.GKEnergyQI;
-import ffx.numerics.multipole.GKSource;
-import ffx.numerics.multipole.GKTensorQI;
 import ffx.numerics.multipole.PolarizableMultipole;
 import ffx.numerics.multipole.QIFrame;
 import ffx.potential.bonded.Atom;
@@ -167,10 +158,9 @@ public class GKEnergyRegion extends ParallelRegion {
       Polarization polarization,
       NonPolar nonPolar,
       double surfaceTension,
-      double probe) {
+      double probe,
+      double electric) {
 
-    // Set the conversion from electron**2/Ang to kcal/mole
-    electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
     gkc = forceField.getDouble("GKC", DEFAULT_GKC);
 
     // Set the Kirkwood multipolar reaction field constants.
@@ -184,6 +174,8 @@ public class GKEnergyRegion extends ParallelRegion {
     this.nonPolar = nonPolar;
     this.surfaceTension = surfaceTension;
     this.probe = probe;
+    // Set the conversion from electron**2/Ang to kcal/mole
+    this.electric = electric;
 
     boolean gkQI = forceField.getBoolean("GK_QI", false);
 
@@ -617,6 +609,15 @@ public class GKEnergyRegion extends ParallelRegion {
       double eik = energy(i, k);
       gkEnergy += eik;
       count++;
+
+      // List<Atom> i12 = atoms[i].get12List();
+      // List<Atom> i13 = atoms[i].get13List();
+      // List<Atom> i14 = atoms[i].get14List();
+      // List<Atom> i15 = atoms[i].get15List();
+      // Atom aK = atoms[k];
+      // if (i != k && !i12.contains(aK) && !i13.contains(aK) && !i14.contains(aK) && !i15.contains(aK)) {
+      //   logger.info(format(" GK %s %7.4f %s %7.4f %7.4f %7.4f", atoms[i], rbi, atoms[k], rbk, sqrt(r2), eik));
+      // }
 
       if (gradient) {
         // Compute the additional GK tensors required to compute the energy gradient.

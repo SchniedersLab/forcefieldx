@@ -69,7 +69,7 @@ import static org.apache.commons.math3.util.FastMath.floorDiv
  * <br>
  * ffxc Cluster [options] &lt;filename&gt;
  */
-@Command(description = " Cluster structures using an RMSD matrix.", name = "ffxc Cluster")
+@Command(description = " Cluster structures using an RMSD matrix.", name = "Cluster")
 class Cluster extends AlgorithmsScript {
 
   /**

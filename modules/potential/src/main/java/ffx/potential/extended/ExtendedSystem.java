@@ -953,7 +953,7 @@ public class ExtendedSystem implements Potential {
 
     /**
      * Overwrites the histogram passed into it and returns the new one out ~output never used?~
-     * @param histogram 2D histogram list with the tautomer & titration states compressed to a 1D array
+     * @param histogram 2D histogram list with the tautomer and titration states compressed to a 1D array
      * @return another compressed histogram
      */
     public int[][] getESVHistogram(int[][] histogram) {

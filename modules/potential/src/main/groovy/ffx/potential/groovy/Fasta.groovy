@@ -56,7 +56,7 @@ import static org.apache.commons.io.FilenameUtils.getName
  * <br>
  * ffxc Fasta [options] &lt;filename.fasta&gt;
  */
-@Command(description = " Fasta outputs a sub-sequence from a FASTA file.", name = "ffxc Fasta")
+@Command(description = " Fasta outputs a sub-sequence from a FASTA file.", name = "Fasta")
 class Fasta extends PotentialScript {
 
   /**

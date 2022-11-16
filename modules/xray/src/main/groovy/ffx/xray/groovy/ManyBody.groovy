@@ -71,7 +71,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * <br>
  * ffxc xray.ManyBody [options] &lt;filename&gt;
  */
-@Command(description = " Discrete optimization using a many-body expansion and elimination expressions.", name = "ffxc xray.ManyBody")
+@Command(description = " Discrete optimization using a many-body expansion and elimination expressions.", name = "xray.ManyBody")
 class ManyBody extends AlgorithmsScript {
 
     @Mixin

@@ -66,7 +66,7 @@ import static java.lang.String.format
  * ffxc SortArc [options] &lt;structures1&gt &lt;structures2&gt;
  */
 
-@Command(description = " Unwind .ARC files for nWindows", name = "ffxc SortArc")
+@Command(description = " Unwind .ARC files for nWindows", name = "SortArc")
 class SortArc extends AlgorithmsScript {
 
     @Mixin

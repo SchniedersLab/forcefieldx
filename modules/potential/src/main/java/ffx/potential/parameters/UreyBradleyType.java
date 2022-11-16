@@ -38,10 +38,14 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.UREYBRAD;
+import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
+import static ffx.utilities.KeywordGroup.LocalGeometryFunctionalForm;
+import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
+import ffx.utilities.FFXKeyword;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -54,14 +58,44 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@FFXKeyword(name = "ureybrad", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = "[3 integers and 2 reals] "
+        + "Provides the values for a single Urey-Bradley cross term potential parameter. "
+        + "The integer modifiers give the atom class numbers for the three kinds of atoms involved in the angle for which a Urey-Bradley term is to be defined. "
+        + "The real number modifiers give the force constant value for the term and the target value for the 1-3 distance in Angstroms. "
+        + "The default units for the force constant are kcal/mole/Ang^2, but this can be controlled via the ureyunit keyword")
 public final class UreyBradleyType extends BaseType implements Comparator<String> {
 
-  /** Convert bond stretch energy to kcal/mole. */
-  public static final double units = 1.0;
+  /** Default conversion Urey-Bradley stretch energy to kcal/mole. */
+  public static final double DEFAULT_UREY_UNIT = 1.0;
+  /** Default cubic coefficient in Urey-Bradley stretch potential. */
+  public static final double DEFAULT_UREY_CUBIC = 0.0;
+  /** Default quartic coefficient in Urey-Bradley stretch potential. */
+  public static final double DEFAULT_UREY_QUARTIC = 0.0;
+
+  /** Convert Urey-Bradley stretch energy to kcal/mole. */
+  @FFXKeyword(name = "ureyunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0",
+      description =
+          "Sets the scale factor needed to convert the energy value computed by the Urey-Bradley potential into units of kcal/mole. "
+              + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  public double ureyUnit = DEFAULT_UREY_UNIT;
+
   /** Cubic coefficient in bond stretch potential. */
-  public static final double cubic = 0.0;
+  @FFXKeyword(name = "urey-cubic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0",
+      description =
+          "Sets the value of the cubic term in the Taylor series expansion form of the Urey-Bradley potential energy. "
+              + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
+              + "The default value in the absence of the urey-cubic keyword is zero; i.e., the cubic Urey-Bradley term is omitted.")
+  public double cubic = DEFAULT_UREY_CUBIC;
+
   /** Quartic coefficient in bond stretch potential. */
-  public static final double quartic = 0.0;
+  @FFXKeyword(name = "urey-quartic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0",
+      description =
+          "Sets the value of the quartic term in the Taylor series expansion form of the Urey-Bradley potential energy. "
+              + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
+              + "The default value in the absence of the urey-quartic keyword is zero; i.e., the quartic Urey-Bradley term is omitted.")
+  public double quartic = DEFAULT_UREY_QUARTIC;
+
   /** A Logger for the UreyBradleyType class. */
   private static final Logger logger = Logger.getLogger(UreyBradleyType.class.getName());
   /** Atom classes that form this Urey-Bradley cross term. */
@@ -181,8 +215,12 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
   /** {@inheritDoc} */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     UreyBradleyType ureyBradleyType = (UreyBradleyType) o;
     return Arrays.equals(atomClasses, ureyBradleyType.atomClasses);
   }

@@ -1,85 +1,86 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <project
-    name="Force Field X"
-    xmlns="http://maven.apache.org/DECORATION/1.8.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/DECORATION/1.8.0 http://maven.apache.org/xsd/decoration-1.8.0.xsd">
-    <version position="right" />
-    <publishDate position="right" format="MMM dd yyyy" />
-    <skin>
-        <groupId>org.apache.maven.skins</groupId>
-        <artifactId>maven-fluido-skin</artifactId>
-        <version>1.11.0</version>
-    </skin>
-    <poweredBy>
-        <logo
-            target="_blank"
-            name="Force Field X Development"
-            href="https://github.com/schniederslab/forcefieldx"
-            img="/images/icon90.png"
-        />
-    </poweredBy>
-    <bannerLeft>
-        <name>
-            <![CDATA[
+  name="Force Field X"
+  xmlns="http://maven.apache.org/DECORATION/1.8.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/DECORATION/1.8.0 http://maven.apache.org/xsd/decoration-1.8.0.xsd">
+  <version position="right"/>
+  <publishDate position="right" format="MMM dd yyyy"/>
+  <skin>
+    <groupId>org.apache.maven.skins</groupId>
+    <artifactId>maven-fluido-skin</artifactId>
+    <version>1.11.1</version>
+  </skin>
+  <poweredBy>
+    <logo
+      target="_blank"
+      name="Force Field X Development"
+      href="https://github.com/schniederslab/forcefieldx"
+      img="/images/icon90.png"
+    />
+  </poweredBy>
+  <bannerLeft>
+    <name>
+      <![CDATA[
              <span style="color:black">Force Field X</span>
              <br>
              <h4>
              <span style="color:green">Sustainable</span><span style="color:black"> Software for Molecular Biophysics</span>
              </h4>
             ]]>
-        </name>
-        <href>http://ffx.biochem.uiowa.edu</href>
-    </bannerLeft>
-    <bannerRight>
-        <name>The University of Iowa</name>
-        <src>/images/UofI.png</src>
-        <href>http://www.uiowa.edu</href>
-        <width>100px</width>
-        <height>100px</height>
-    </bannerRight>
-    <custom>
-        <fluidoSkin>
-            <!-- leftColumnClass (span2) plus bodyColumnClass (span10) should sum to 12 -->
-            <leftColumnClass>span2</leftColumnClass>
-            <bodyColumnClass>span10</bodyColumnClass>
-            <sideBarEnabled>true</sideBarEnabled>
-            <topBarEnabled>true</topBarEnabled>
-            <topBarContainerStyle>width: 90%;</topBarContainerStyle>
-            <topBarIcon>
-                <name>Force Field X</name>
-                <alt>Force Field X</alt>
-                <src>/images/icon90.png</src>
-                <href>/index.html</href>
-            </topBarIcon>
-            <navBarStyle>navbar-inverse</navBarStyle>
-            <googleSearch>
-                <sitesearch/>
-            </googleSearch>
-            <sourceLineNumbersEnabled>false</sourceLineNumbersEnabled>
-            <copyrightClass>pull-right</copyrightClass>
-            <gitHub>
-                <projectId>mjschnie/ffx</projectId>
-                <!-- ribbonOrientation: left/right -->
-                <ribbonOrientation>right</ribbonOrientation>
-                <!-- ribbonColor: red/green/black/darkblue/orange/gray -->
-                <ribbonColor>green</ribbonColor>
-            </gitHub>
-            <!-- profile: pre-release|sandbox|retired -->
-            <profile>production</profile>
-            <!-- ohloh>
-                <projectId>487436</projectId>
-                <widget>factoids</widget>
-            </ohloh -->
-            <!-- default is a forward / -->
-            <breadcrumbDivider>»</breadcrumbDivider>
-        </fluidoSkin>
-    </custom>
+    </name>
+    <href>http://ffx.biochem.uiowa.edu</href>
+  </bannerLeft>
+  <bannerRight>
+    <name>The University of Iowa</name>
+    <src>/images/UofI.png</src>
+    <href>http://www.uiowa.edu</href>
+    <width>100px</width>
+    <height>100px</height>
+  </bannerRight>
+  <custom>
+    <fluidoSkin>
+      <!-- leftColumnClass (span2) plus bodyColumnClass (span10) should sum to 12 -->
+      <leftColumnClass>span2</leftColumnClass>
+      <bodyColumnClass>span10</bodyColumnClass>
+      <sideBarEnabled>true</sideBarEnabled>
+      <topBarEnabled>true</topBarEnabled>
+      <topBarContainerStyle>width: 90%;</topBarContainerStyle>
+      <topBarIcon>
+        <name>Force Field X</name>
+        <alt>Force Field X</alt>
+        <src>/images/icon90.png</src>
+        <href>/index.html</href>
+      </topBarIcon>
+      <navBarStyle>navbar-inverse</navBarStyle>
+      <googleSearch>
+        <sitesearch/>
+      </googleSearch>
+      <sourceLineNumbersEnabled>false</sourceLineNumbersEnabled>
+      <copyrightClass>pull-right</copyrightClass>
+      <gitHub>
+        <projectId>mjschnie/ffx</projectId>
+        <!-- ribbonOrientation: left/right -->
+        <ribbonOrientation>right</ribbonOrientation>
+        <!-- ribbonColor: red/green/black/darkblue/orange/gray -->
+        <ribbonColor>green</ribbonColor>
+      </gitHub>
+      <!-- profile: pre-release|sandbox|retired -->
+      <profile>production</profile>
+      <!-- ohloh>
+          <projectId>487436</projectId>
+          <widget>factoids</widget>
+      </ohloh -->
+      <!-- default is a forward / -->
+      <breadcrumbDivider>»</breadcrumbDivider>
+    </fluidoSkin>
+  </custom>
 
-    <!-- googleAnalyticsAccountId>UA-12576019-1</googleAnalyticsAccountId -->
+  <!-- googleAnalyticsAccountId>UA-12576019-1</googleAnalyticsAccountId -->
 
-    <body>
-        <head>
-            <![CDATA[
+  <body>
+    <head>
+      <![CDATA[
                 <!-- Global site tag (gtag.js) - Google Analytics -->
                 <script async src="https://www.googletagmanager.com/gtag/js?id=UA-12576019-1"></script>
                 <script>
@@ -90,72 +91,159 @@
                     gtag('config', 'UA-12576019-1');
                 </script>
             ]]>
-        </head>
-        <links>
-            <!-- item name="Biochemisty" href="http://www.medicine.uiowa.edu/biochemistry"/>
-            <item name="Biomedical Engineering"  href="http://www.engineering.uiowa.edu/bme"/>
-            <item name="CBCB" href="https://genome.uiowa.edu/home"/>
-            <item name="IIHG" href="https://www.medicine.uiowa.edu/humangenetics"/>
-            <item name="IVR"  href="http://ivr.uiowa.edu"/>
-            <item name="HCCC" href="http://www.uihealthcare.org/holdencomprehensivecancercenter"/ -->
-        </links>
-        <breadcrumbs>
-            <item name="Sitemap" href="/sitemap.html"/>
-            <item name="Home" href="/index.html"/>
-        </breadcrumbs>
-        <menu name="Overview" inherit="top">
-            <item name="Welcome" href="/index.html"/>
-            <item name="Recent Work" href="/recentWork.html"/>
-            <item name="Download" href="/download.html"/>
-            <item name="Install" href="/install.html"/>
-            <item name="Source Code" href="/source.html"/>
-            <item name="Publications" href="/publications.html"/>
-            <item name="Collaborations" href="/scope.html"/>
-        </menu>
-        <menu name="Manual" inherit="top">
-            <item name="Commands" href="/commands.html" collapse="true">
-                <item name="Optimization and Sampling" href="/commands-opt.html"/>
-                <item name="Potential Energy" href="/commands-energy.html"/>
-                <item name="Realspace Refinement" href="/commands-realspace.html"/>
-                <item name="Utilities" href="/commands-util.html"/>
-                <item name="X-ray Refinement" href="/commands-xray.html"/>
-            </item>
-            <item name="Properties" href="/properties.html" collapse="true">
-                <item name="Force Field" href="/properties-forcefield.html"/>
-                <item name="PME Electrostatics" href="/properties-pme.html"/>
-                <item name="Unit Cell and Space Ggroup" href="/properties-spacegroup.html"/>
-                <item name="Structural Refinement" href="/properties-refine.html"/>
-            </item>
-            <item name="Examples" href="/examples.html" collapse="true">
-               <item name="GPU Accelerated Side-Chain Optimization" href="/examples-gpuSideChain.html"/>
-               <item name="Side-Chain Optimization and Mutation via Many-Body DEE" href="/examples-dee.html"/>
-               <item name="Organic Crystal Thermodynamics" href="/examples-gauche.html" />
-               <item name="AMOEBA-assisted X-ray Refinement" href="/examples-xray.html" />
-               <item name="Thermodynamic Polymorph Search" href="/examples-CrystalNPT.html" />
-               <item name="GPU Accelerated MC-OST Solvation Free Energy" href="/examples-mcOSRWSolvationFreeEnergy.html" />
-            </item>
-            <item name="Parallelization" href="/parallel.html"/>
-            <item name="License" href="/licenses.html"/>
-            <item name="FFX Team" href="/team.html"/>
-        </menu>
-        <menu name="Integrations">
-            <item name="Binder" href="/binder.html"/>
-            <item name="Google Colab" href="/colab.html"/>
-            <item name="Mathematica" href="/mathematica.html"/>
-            <item name="Matlab" href="/matlab.html"/>
-        </menu>
-        <menu name="Modules" inherit="top">
-            <item name="Modules" href="/modules.html"/>
-            <item name="Algorithms"  href="modules/algorithms/index.html"/>
-            <item name="Crystal" href="modules/crystal/index.html"/>
-            <item name="Numerics" href="modules/numerics/index.html"/>
-            <item name="OpenMM Wrappers" href="modules/openmm/index.html"/>
-            <item name="Parallel Java" href="modules/pj/index.html"/>
-            <item name="Potential" href="modules/potential/index.html"/>
-            <item name="User Interfaces" href="modules/ui/index.html"/>
-            <item name="Utilities" href="modules/utilities/index.html"/>
-            <item name="X-Ray Refinement" href="modules/xray/index.html"/>
-        </menu>
-        <menu name="Project Info" ref="reports"/>
-    </body>
+    </head>
+    <links>
+      <!-- item name="Biochemisty" href="http://www.medicine.uiowa.edu/biochemistry"/>
+      <item name="Biomedical Engineering"  href="http://www.engineering.uiowa.edu/bme"/>
+      <item name="CBCB" href="https://genome.uiowa.edu/home"/>
+      <item name="IIHG" href="https://www.medicine.uiowa.edu/humangenetics"/>
+      <item name="IVR"  href="http://ivr.uiowa.edu"/>
+      <item name="HCCC" href="http://www.uihealthcare.org/holdencomprehensivecancercenter"/ -->
+    </links>
+    <breadcrumbs>
+      <item name="Sitemap" href="/sitemap.html"/>
+      <item name="Home" href="/index.html"/>
+    </breadcrumbs>
+    <menu name="Overview" inherit="top">
+      <item name="Welcome" href="/index.html"/>
+      <item name="Recent Work" href="/recentWork.html"/>
+      <item name="Download" href="/download.html"/>
+      <item name="Install" href="/install.html"/>
+      <item name="Source Code" href="/source.html"/>
+      <item name="Publications" href="/publications.html"/>
+      <item name="Collaborations" href="/scope.html"/>
+    </menu>
+    <menu name="Manual" inherit="top">
+      <item name="Commands" href="/commands.html" collapse="true">
+        <item name="Energy and Structure Analysis" href="/commands-energy.html" collapse="true">
+          <item name="Density" href="/commands/Density.html"/>
+          <item name="Energy" href="/commands/Energy.html"/>
+          <item name="FeatureMap" href="/commands/FeatureMap.html"/>
+          <item name="Solvator" href="/commands/Solvator.html"/>
+          <item name="Timer" href="/commands/Timer.html"/>
+          <item name="Volume" href="/commands/Volume.html"/>
+          <item name="Testing" href="/commands-energy-test.html" collapse="true">
+            <item name="CoordShakeEnergy" href="/commands/test.CoordShakeEnergy.html"/>
+            <item name="EnergyOpenMM" href="/commands/test.EnergyOpenMM.html"/>
+            <item name="Gradient" href="/commands/test.Gradient.html"/>
+            <item name="LambdaGradient" href="/commands/test.LambdaGradient.html"/>
+            <item name="MultiRes" href="/commands/test.MultiRes.html"/>
+            <item name="MultiTopTimer" href="/commands/test.MultiTopTimer.html"/>
+            <item name="PrmToProperty" href="/commands/test.PrmToProperty.html"/>
+            <item name="RGNtoPDB" href="/commands/test.RGNtoPDB.html"/>
+            <item name="SaveAsConstantPhPDB" href="/commands/test.SaveAsConstantPhPDB.html"/>
+          </item>
+        </item>
+        <item name="Optimization and Sampling" href="/commands-opt.html" collapse="true">
+          <item name="Anneal" href="/commands/Anneal.html"/>
+          <item name="BAR" href="/commands/BAR.html"/>
+          <item name="Cluster" href="/commands/Cluster.html"/>
+          <item name="Dynamics" href="/commands/Dynamics.html"/>
+          <item name="ForEachFile" href="/commands/ForEachFile.html"/>
+          <item name="Histogram" href="/commands/Histogram.html"/>
+          <item name="ManyBody" href="/commands/ManyBody.html"/>
+          <item name="Minimize" href="/commands/Minimize.html"/>
+          <item name="MinimizeCrystals" href="/commands/MinimizeCrystals.html"/>
+          <item name="MinimizeOpenMM" href="/commands/MinimizeOpenMM.html"/>
+          <item name="MutatePDB" href="/commands/MutatePDB.html"/>
+          <item name="Scheduler" href="/commands/Scheduler.html"/>
+          <item name="SortArc" href="/commands/SortArc.html"/>
+          <item name="Superpose" href="/commands/Superpose.html"/>
+          <item name="SuperposeCrystals" href="/commands/SuperposeCrystals.html"/>
+          <item name="Thermodynamics" href="/commands/Thermodynamics.html"/>
+          <item name="Testing" href="/commands-opt-test.html" collapse="true">
+            <item name="ApplyTorsions" href="/commands/test.ApplyTorsions.html"/>
+            <item name="CreateRotamers" href="/commands/test.CreateRotamers.html"/>
+            <item name="CrystalSearch" href="/commands/test.CrystalSearch.html"/>
+            <item name="IdentifyRotamers" href="/commands/test.IdentifyRotamers.html"/>
+            <item name="ManyBodyPhScan" href="/commands/test.ManyBodyPhScan.html"/>
+            <item name="MinimizePh" href="/commands/test.MinimizePh.html"/>
+            <!-- item name="MostBar" href="/commands/test.CoordShakeEnergy.html"/ -->
+            <item name="OSTBias" href="/commands/test.OSTBias.html"/>
+            <item name="PhBar" href="/commands/test.PhBar.html"/>
+            <item name="PhDynamics" href="/commands/test.PhDynamics.html"/>
+            <!-- item name="RepexThermo" href="/commands/test.CoordShakeEnergy.html"/ -->
+            <item name="SortXPH" href="/commands/test.SortXPH.html"/>
+          </item>
+        </item>
+        <item name="Real-Space Refinement" href="/commands-realspace.html" collapse="true">
+          <item name="realspace.Anneal" href="/commands/realspace.Anneal.html"/>
+          <item name="realspace.Dynamics" href="/commands/realspace.Dynamics.html"/>
+          <item name="realspace.ManyBody" href="/commands/realspace.ManyBody.html"/>
+          <item name="realspace.Minimize" href="/commands/realspace.Minimize.html"/>
+        </item>
+        <item name="X-ray and Neutron Refinement" href="/commands-xray.html" collapse="true">
+          <item name="xray.Anneal" href="/commands/xray.Anneal.html"/>
+          <item name="xray.AverageMTZ" href="/commands/xray.AverageMTZ.html"/>
+          <item name="xray.CIFtoMTZ" href="/commands/xray.CIFtoMTZ.html"/>
+          <item name="xray.ComputeFc" href="/commands/xray.ComputeFc.html"/>
+          <item name="xray.Deuterate" href="/commands/xray.Deuterate.html"/>
+          <item name="xray.Dynamics" href="/commands/xray.Dynamics.html"/>
+          <item name="xray.ManyBody" href="/commands/xray.ManyBody.html"/>
+          <item name="xray.Minimize" href="/commands/xray.Minimize.html"/>
+          <item name="xray.ModelvsData" href="/commands/xray.ModelvsData.html"/>
+          <item name="xray.MTZInfo" href="/commands/xray.MTZInfo.html"/>
+          <item name="xray.SaveConformerPDB" href="/commands/xray.SaveConformerPDB.html"/>
+          <item name="xray.Timer" href="/commands/xray.Timer.html"/>
+        </item>
+        <item name="Utilities" href="/commands-util.html" collapse="true">
+          <item name="Biotype" href="/commands/Biotype.html"/>
+          <item name="Cart2Frac" href="/commands/Cart2Frac.html"/>
+          <item name="ChainBreaks" href="/commands/ChainBreaks.html"/>
+          <item name="CIFtoXYZ" href="/commands/CIFtoXYZ.html"/>
+          <item name="Fasta" href="/commands/Fasta.html"/>
+          <item name="Frac2Cart" href="/commands/Frac2Cart.html"/>
+          <item name="MoveIntoUnitCell" href="/commands/MoveIntoUnitCell.html"/>
+          <item name="PrepareSpaceGroups" href="/commands/PrepareSpaceGroups.html"/>
+          <item name="SaveAsP1" href="/commands/SaveAsP1.html"/>
+          <item name="SaveAsPDB" href="/commands/SaveAsPDB.html"/>
+          <item name="SaveAsXYZ" href="/commands/SaveAsXYZ.html"/>
+          <item name="SaveRotamers" href="/commands/SaveRotamers.html"/>
+          <item name="XYZtoQE" href="/commands/XYZtoQE.html"/>
+        </item>
+      </item>
+      <item name="Properties" href="/properties.html" collapse="true">
+        <item name="Electrostatics Functional Form" href="/keywords/ElectrostaticsFunctionalForm.html"/>
+        <item name="Energy Unit Conversion" href="/keywords/EnergyUnitConversion.html"/>
+        <item name="Local Geometry Functional Form" href="/keywords/LocalGeometryFunctionalForm.html"/>
+        <item name="Potential Function Parameter" href="/keywords/PotentialFunctionParameter.html"/>
+        <item name="Potential Function Selection" href="/keywords/PotentialFunctionSelection.html"/>
+        <item name="Electrostatics" href="/properties-pme.html"/>
+        <item name="Unit Cell and Space Group" href="/keywords/UnitCellAndSpaceGroup.html"/>
+        <item name="Van Der Waals Functional Form" href="/keywords/VanDerWaalsFunctionalForm.html"/>
+        <item name="Structural Refinement" href="/properties-refine.html"/>
+      </item>
+      <item name="Examples" href="/examples.html" collapse="true">
+        <item name="GPU Accelerated Side-Chain Optimization" href="/examples-gpuSideChain.html"/>
+        <item name="Side-Chain Optimization and Mutation via Many-Body DEE" href="/examples-dee.html"/>
+        <item name="Organic Crystal Thermodynamics" href="/examples-gauche.html"/>
+        <item name="AMOEBA-assisted X-ray Refinement" href="/examples-xray.html"/>
+        <item name="Thermodynamic Polymorph Search" href="/examples-CrystalNPT.html"/>
+        <item name="GPU Accelerated MC-OST Solvation Free Energy"
+          href="/examples-mcOSRWSolvationFreeEnergy.html"/>
+      </item>
+      <item name="Parallelization" href="/parallel.html"/>
+      <item name="License" href="/licenses.html"/>
+      <item name="FFX Team" href="/team.html"/>
+    </menu>
+    <menu name="Integrations">
+      <item name="Binder" href="/binder.html"/>
+      <item name="Google Colab" href="/colab.html"/>
+      <item name="Mathematica" href="/mathematica.html"/>
+      <item name="Matlab" href="/matlab.html"/>
+    </menu>
+    <menu name="Modules" inherit="top">
+      <item name="Modules" href="/modules.html"/>
+      <item name="Algorithms" href="modules/algorithms/index.html"/>
+      <item name="Crystal" href="modules/crystal/index.html"/>
+      <item name="Numerics" href="modules/numerics/index.html"/>
+      <item name="OpenMM Wrappers" href="modules/openmm/index.html"/>
+      <item name="Parallel Java" href="modules/pj/index.html"/>
+      <item name="Potential" href="modules/potential/index.html"/>
+      <item name="User Interfaces" href="modules/ui/index.html"/>
+      <item name="Utilities" href="modules/utilities/index.html"/>
+      <item name="X-Ray Refinement" href="modules/xray/index.html"/>
+    </menu>
+    <menu name="Project Info" ref="reports"/>
+  </body>
 </project>

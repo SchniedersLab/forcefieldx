@@ -45,99 +45,100 @@ import ffx.potential.bonded.Residue
 import ffx.xray.DiffractionData
 import ffx.xray.cli.XrayOptions
 import org.apache.commons.configuration2.CompositeConfiguration
-import picocli.CommandLine
+import picocli.CommandLine.Command
+import picocli.CommandLine.Mixin
+import picocli.CommandLine.Parameters
+
 import static org.apache.commons.io.FilenameUtils.removeExtension
 
-@CommandLine.Command(description = " Discrete optimization using a many-body expansion and elimination expressions.", name = "ffxc xray.ManyBody")
+@Command(description = " Discrete optimization using a many-body expansion and elimination expressions.", name = "xray.SaveConformerPDB")
 class SaveConformerPDB extends AlgorithmsScript {
 
-    @CommandLine.Mixin
-    XrayOptions xrayOptions
+  @Mixin
+  XrayOptions xrayOptions
 
-    /**
-     * One or more filenames.
-     */
-    @CommandLine.Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
-    private List<String> filenames
-    private MolecularAssembly[] molecularAssemblies
-    private DiffractionData diffractionData
+  /**
+   * One or more filenames.
+   */
+  @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
+  private List<String> filenames
+  private MolecularAssembly[] molecularAssemblies
+  private DiffractionData diffractionData
 
-    /**
-     * SaveConformerPDB constructor.
-     */
-    SaveConformerPDB() {
-        this(new Binding())
+  /**
+   * SaveConformerPDB constructor.
+   */
+  SaveConformerPDB() {
+    this(new Binding())
+  }
+
+  /**
+   * SaveConformerPDB constructor.
+   * @param binding The Groovy Binding to use.
+   */
+  SaveConformerPDB(Binding binding) {
+    super(binding)
+  }
+
+  @Override
+  SaveConformerPDB run() {
+    if (!init()) {
+      return this
     }
 
-    /**
-     * SaveConformerPDB constructor.
-     * @param binding The Groovy Binding to use.
-     */
-    SaveConformerPDB(Binding binding) {
-        super(binding)
+    xrayOptions.init()
+
+    String filename
+    if (filenames != null && filenames.size() > 0) {
+      // Each alternate conformer is returned in a separate MolecularAssembly.
+      molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
+      activeAssembly = molecularAssemblies[0]
+      filename = filenames.get(0)
+    } else if (activeAssembly == null) {
+      logger.info(helpString())
+      return this
+    } else {
+      molecularAssemblies = [activeAssembly]
+      filename = activeAssembly.getFile().getAbsolutePath()
     }
 
-    @Override
-    SaveConformerPDB run() {
-        if (!init()) {
-            return this
-        }
-
-        xrayOptions.init()
-
-        String filename
-        if (filenames != null && filenames.size() > 0) {
-            // Each alternate conformer is returned in a separate MolecularAssembly.
-            molecularAssemblies = algorithmFunctions.openAll(filenames.get(0))
-            activeAssembly = molecularAssemblies[0]
-            filename = filenames.get(0)
-        } else if (activeAssembly == null) {
-            logger.info(helpString())
-            return this
-        } else {
-            molecularAssemblies = [activeAssembly]
-            filename = activeAssembly.getFile().getAbsolutePath()
-        }
-
-        if (molecularAssemblies.length == 1) {
-            logger.info("No alternate conformers")
-            return this
-        }
-
-        // Combine script flags (in parseResult) with properties.
-        CompositeConfiguration properties = activeAssembly.getProperties()
-        xrayOptions.setProperties(parseResult, properties)
-
-        // Set up diffraction data (can be multiple files)
-        diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, parseResult)
-        diffractionData.scaleBulkFit()
-        diffractionData.printStats()
-        algorithmFunctions.energy(molecularAssemblies)
-
-
-        List<Residue> residuesA = molecularAssemblies[0].getResidueList()
-        List<Residue> residuesB = molecularAssemblies[1].getResidueList()
-
-        for (int j = 0; j < residuesA.size(); j++) {
-            List<Atom> atomsA = residuesA.get(j).getAtomList()
-            List<Atom> atomsB = residuesB.get(j).getAtomList()
-            for (int i = 0; i < atomsA.size(); i++) {
-                Atom atomA = atomsA.get(i)
-                Atom atomB = atomsB.get(i)
-
-                if (atomA.getAltLoc() == null || atomA.getAltLoc() == ' ') {
-                    atomA.setAltLoc('A' as Character)
-                }
-                if (atomB.getAltLoc() == null || atomB.getAltLoc() == ' ') {
-                    atomB.setAltLoc('B' as Character)
-                }
-            }
-        }
-
-
-        logger.info(" ")
-        diffractionData.writeModel(removeExtension(filename) + ".pdb")
-        diffractionData.writeData(removeExtension(filename) + ".mtz")
-
+    if (molecularAssemblies.length == 1) {
+      logger.info("No alternate conformers")
+      return this
     }
+
+    // Combine script flags (in parseResult) with properties.
+    CompositeConfiguration properties = activeAssembly.getProperties()
+    xrayOptions.setProperties(parseResult, properties)
+
+    // Set up diffraction data (can be multiple files)
+    diffractionData = xrayOptions.getDiffractionData(filenames, molecularAssemblies, parseResult)
+    diffractionData.scaleBulkFit()
+    diffractionData.printStats()
+    algorithmFunctions.energy(molecularAssemblies)
+
+    List<Residue> residuesA = molecularAssemblies[0].getResidueList()
+    List<Residue> residuesB = molecularAssemblies[1].getResidueList()
+
+    for (int j = 0; j < residuesA.size(); j++) {
+      List<Atom> atomsA = residuesA.get(j).getAtomList()
+      List<Atom> atomsB = residuesB.get(j).getAtomList()
+      for (int i = 0; i < atomsA.size(); i++) {
+        Atom atomA = atomsA.get(i)
+        Atom atomB = atomsB.get(i)
+
+        if (atomA.getAltLoc() == null || atomA.getAltLoc() == ' ') {
+          atomA.setAltLoc('A' as Character)
+        }
+        if (atomB.getAltLoc() == null || atomB.getAltLoc() == ' ') {
+          atomB.setAltLoc('B' as Character)
+        }
+      }
+    }
+
+    logger.info(" ")
+    diffractionData.writeModel(removeExtension(filename) + ".pdb")
+    diffractionData.writeData(removeExtension(filename) + ".mtz")
+
+  }
 }

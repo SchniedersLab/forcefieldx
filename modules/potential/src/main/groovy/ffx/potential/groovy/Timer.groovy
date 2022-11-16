@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2022.
 //
 // This file is part of Force Field X.
 //
@@ -55,7 +55,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt
  * <br>
  * ffxc Timer [options] &lt;filename&gt;
  */
-@Command(description = " Time energy evaluations.", name = "ffxc Timer")
+@Command(description = " Time energy evaluations.", name = "Timer")
 class Timer extends PotentialScript {
 
   /**

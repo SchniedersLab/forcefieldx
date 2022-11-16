@@ -63,12 +63,6 @@ public class ImproperTorsion extends BondedTerm {
   public ImproperTorsionType improperType = null;
   /** Scale factor. */
   public double scaleFactor = 1.0;
-  /**
-   * Convert Torsional Angle energy to kcal/mole.
-   *
-   * @since 1.0
-   */
-  public double units = 0.5;
 
   /**
    * ImproperTorsion constructor.
@@ -88,12 +82,9 @@ public class ImproperTorsion extends BondedTerm {
     setID_Key(false);
   }
 
-  private static void createWildCardImproperTorsion(
-      Atom[] atoms,
-      int[] classes,
-      ImproperTorsionType type,
-      double units,
-      ArrayList<ImproperTorsion> improperTorsions) {
+  private static void createWildCardImproperTorsion(Atom[] atoms, int[] classes,
+      ImproperTorsionType type, ArrayList<ImproperTorsion> improperTorsions) {
+
     // Finalize atom ordering.
     if (classes[3] == atoms[3].getAtomType().atomClass || type.atomClasses[3] == 0) {
       // do nothing.
@@ -118,21 +109,18 @@ public class ImproperTorsion extends BondedTerm {
     // One or more zero classes in the improper torsion type
     ImproperTorsion improperTorsion = new ImproperTorsion(atoms[0], atoms[1], atoms[2], atoms[3]);
     improperTorsion.setImproperType(type);
-    improperTorsion.units = units;
     improperTorsions.add(improperTorsion);
     improperTorsion.scaleFactor = 1.0 / 3.0;
     improperTorsions.add(improperTorsion);
 
     improperTorsion = new ImproperTorsion(atoms[1], atoms[3], atoms[2], atoms[0]);
     improperTorsion.setImproperType(type);
-    improperTorsion.units = units;
     improperTorsions.add(improperTorsion);
     improperTorsion.scaleFactor = 1.0 / 3.0;
     improperTorsions.add(improperTorsion);
 
     improperTorsion = new ImproperTorsion(atoms[3], atoms[0], atoms[2], atoms[1]);
     improperTorsion.setImproperType(type);
-    improperTorsion.units = units;
     improperTorsions.add(improperTorsion);
     improperTorsion.scaleFactor = 1.0 / 3.0;
     improperTorsions.add(improperTorsion);
@@ -169,9 +157,7 @@ public class ImproperTorsion extends BondedTerm {
     }
 
     ArrayList<ImproperTorsion> improperTorsions = new ArrayList<>();
-
     Collection<ImproperTorsionType> types = forceField.getImproperTypes();
-    double units = forceField.getDouble("IMPTORUNIT", 1.0);
     boolean done = false;
 
     // No wild card matches.
@@ -209,7 +195,6 @@ public class ImproperTorsion extends BondedTerm {
         ImproperTorsion improperTorsion =
             new ImproperTorsion(atoms[0], atoms[1], atoms[2], atoms[3]);
         improperTorsion.setImproperType(type);
-        improperTorsion.units = units;
         improperTorsions.add(improperTorsion);
         int c0 = type.atomClasses[0];
         int c1 = type.atomClasses[1];
@@ -218,48 +203,40 @@ public class ImproperTorsion extends BondedTerm {
           improperTorsion.scaleFactor = 1.0 / 6.0;
           improperTorsion = new ImproperTorsion(atoms[0], atoms[3], atoms[2], atoms[1]);
           improperTorsion.setImproperType(type);
-          improperTorsion.units = units;
           improperTorsion.scaleFactor = 1.0 / 6.0;
           improperTorsions.add(improperTorsion);
           improperTorsion = new ImproperTorsion(atoms[1], atoms[0], atoms[2], atoms[3]);
           improperTorsion.setImproperType(type);
-          improperTorsion.units = units;
           improperTorsion.scaleFactor = 1.0 / 6.0;
           improperTorsions.add(improperTorsion);
           improperTorsion = new ImproperTorsion(atoms[1], atoms[3], atoms[2], atoms[0]);
           improperTorsion.setImproperType(type);
-          improperTorsion.units = units;
           improperTorsion.scaleFactor = 1.0 / 6.0;
           improperTorsions.add(improperTorsion);
           improperTorsion = new ImproperTorsion(atoms[3], atoms[0], atoms[2], atoms[1]);
           improperTorsion.setImproperType(type);
-          improperTorsion.units = units;
           improperTorsion.scaleFactor = 1.0 / 6.0;
           improperTorsions.add(improperTorsion);
           improperTorsion = new ImproperTorsion(atoms[3], atoms[1], atoms[2], atoms[0]);
           improperTorsion.setImproperType(type);
-          improperTorsion.units = units;
           improperTorsion.scaleFactor = 1.0 / 6.0;
           improperTorsions.add(improperTorsion);
         } else if (c0 == c1) {
           improperTorsion.scaleFactor = 0.5;
           improperTorsion = new ImproperTorsion(atoms[1], atoms[0], atoms[2], atoms[3]);
           improperTorsion.setImproperType(type);
-          improperTorsion.units = units;
           improperTorsion.scaleFactor = 0.5;
           improperTorsions.add(improperTorsion);
         } else if (c0 == c3) {
           improperTorsion.scaleFactor = 0.5;
           improperTorsion = new ImproperTorsion(atoms[3], atoms[1], atoms[2], atoms[0]);
           improperTorsion.setImproperType(type);
-          improperTorsion.units = units;
           improperTorsion.scaleFactor = 0.5;
           improperTorsions.add(improperTorsion);
         } else if (c1 == c3) {
           improperTorsion.scaleFactor = 0.5;
           improperTorsion = new ImproperTorsion(atoms[0], atoms[3], atoms[2], atoms[1]);
           improperTorsion.setImproperType(type);
-          improperTorsion.units = units;
           improperTorsion.scaleFactor = 0.5;
           improperTorsions.add(improperTorsion);
         }
@@ -281,7 +258,7 @@ public class ImproperTorsion extends BondedTerm {
         boolean assigned = type.assigned(classes, true, false);
         if (assigned) {
           done = true;
-          createWildCardImproperTorsion(atoms, classes, type, units, improperTorsions);
+          createWildCardImproperTorsion(atoms, classes, type, improperTorsions);
           break;
         }
       }
@@ -297,7 +274,7 @@ public class ImproperTorsion extends BondedTerm {
         classes[3] = atoms[3].getAtomType().atomClass;
         boolean assigned = type.assigned(classes, true, true);
         if (assigned) {
-          createWildCardImproperTorsion(atoms, classes, type, units, improperTorsions);
+          createWildCardImproperTorsion(atoms, classes, type, improperTorsions);
           break;
         }
       }
@@ -377,7 +354,7 @@ public class ImproperTorsion extends BondedTerm {
       var dphi2 = 2.0 * (cosine2 * s2 - sine2 * c2);
       // Calculate improper torsion energy and master chain rule term
       value = toDegrees(acos(cosine));
-      var prefactor = units * scaleFactor;
+      var prefactor = improperType.impTorUnit * scaleFactor;
       energy = prefactor * (v2 * phi2);
       var dedphi = prefactor * (v2 * dphi2);
       if (gradient) {

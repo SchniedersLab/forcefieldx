@@ -50,13 +50,13 @@ import static org.apache.commons.io.FilenameUtils.getExtension
 import static org.apache.commons.io.FilenameUtils.removeExtension
 
 /**
- * The SaveRotamers script saves a file as a PDB file
+ * The SaveRotamers script saves out rotamers.
  * <br>
  * Usage:
  * <br>
  * ffxc SaveRotamers [options] &lt;filename&gt;
  */
-@Command(description = " Save out rotamers.", name = "ffxc SaveRotamers")
+@Command(description = " Save out rotamers.", name = "SaveRotamers")
 class SaveRotamers extends PotentialScript {
 
   /**

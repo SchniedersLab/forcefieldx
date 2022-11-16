@@ -112,7 +112,9 @@ public abstract class FFXTest {
     System.setProperty("ffx.log", testLevel.toString());
   }
 
-  /** afterClass. */
+  /**
+   * afterClass.
+   */
   @AfterClass
   public static void afterClass() {
     Logger.getGlobal().setLevel(origLevel);
@@ -120,7 +122,9 @@ public abstract class FFXTest {
     logger.setLevel(origLevel);
   }
 
-  /** beforeClass. */
+  /**
+   * beforeClass.
+   */
   @BeforeClass
   public static void beforeClass() {
     // Set appropriate logging levels for interior/exterior Loggers.
@@ -160,7 +164,9 @@ public abstract class FFXTest {
     }
   }
 
-  /** afterTest. */
+  /**
+   * afterTest.
+   */
   @After
   public void afterTest() {
     // All properties are set to the values they were at the beginning of the test.
@@ -173,7 +179,9 @@ public abstract class FFXTest {
     System.gc();
   }
 
-  /** beforeTest. */
+  /**
+   * beforeTest.
+   */
   @Before
   public void beforeTest() {
     // New properties object that will hold the property key-value pairs that were present

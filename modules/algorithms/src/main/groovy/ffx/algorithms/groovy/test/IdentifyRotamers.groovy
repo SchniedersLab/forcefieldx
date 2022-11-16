@@ -54,9 +54,9 @@ import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard
  * <br>
  * Usage:
  * <br>
- * ffxc IdentifyRotamers [options] &lt;filename&gt;
+ * ffxc test.IdentifyRotamers [options] &lt;filename&gt;
  */
-@Command(description = " Identify the rotamers a system is in.", name = "ffxc IdentifyRotamers")
+@Command(description = " Identify the rotamers a system is in.", name = "test.IdentifyRotamers")
 class IdentifyRotamers extends AlgorithmsScript {
 
   @Mixin

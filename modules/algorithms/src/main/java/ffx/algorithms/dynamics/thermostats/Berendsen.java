@@ -164,4 +164,10 @@ public class Berendsen extends Thermostat {
   public String toThermostatString() {
     return format("\n Berendsen Thermostat (tau = %8.3f psec)\n  %s", tau, super.toString());
   }
+
+  /** {@inheritDoc} */
+  @Override
+  public String toString() {
+    return "Berendsen";
+  }
 }

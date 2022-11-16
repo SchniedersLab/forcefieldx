@@ -38,10 +38,12 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.BIOTYPE;
+import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
+import ffx.utilities.FFXKeyword;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -53,6 +55,9 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@FFXKeyword(name = "biotype", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = "[integer, name, quoted string and integer] "
+        + "Provides the values to define the correspondence between a single biopolymer atom type and its force field atom type.")
 public final class BioType extends BaseType implements Comparator<String> {
 
   /** A Logger for the BioType class. */
@@ -145,8 +150,12 @@ public final class BioType extends BaseType implements Comparator<String> {
   /** {@inheritDoc} */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     BioType bioType = (BioType) o;
     return bioType.index == this.index;
   }

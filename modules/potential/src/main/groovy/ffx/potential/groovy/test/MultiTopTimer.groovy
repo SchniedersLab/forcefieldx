@@ -58,9 +58,10 @@ import static java.lang.String.format
  * <br>
  * Usage:
  * <br>
- * ffxc MultiTopTimer [options] &lt;filename [file2...]&gt;
+ * ffxc test.MultiTopTimer [options] &lt;filename [file2...]&gt;
  */
-@Command(description = " Time energy and gradients for 1-4 topologies with optional lambda scaling.", name = "ffxc MultiTopTimer")
+@Command(description = " Time energy and gradients for 1-4 topologies with optional lambda scaling.",
+    name = "test.MultiTopTimer")
 class MultiTopTimer extends PotentialScript {
 
   @Mixin

@@ -37,10 +37,6 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static ffx.potential.parameters.UreyBradleyType.cubic;
-import static ffx.potential.parameters.UreyBradleyType.quartic;
-import static ffx.potential.parameters.UreyBradleyType.units;
-
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.UreyBradleyType;
@@ -121,11 +117,11 @@ public class UreyBradley extends BondedTerm {
     value = vac.length();
     var dv = value - ureyBradleyType.distance;
     var dv2 = dv * dv;
-    energy = units * rigidScale * ureyBradleyType.forceConstant
-        * dv2 * (1.0 + cubic * dv + quartic * dv2);
+    energy = ureyBradleyType.ureyUnit * rigidScale * ureyBradleyType.forceConstant
+        * dv2 * (1.0 + ureyBradleyType.cubic * dv + ureyBradleyType.quartic * dv2);
     if (gradient) {
-      var deddt = 2.0 * units * rigidScale * ureyBradleyType.forceConstant
-          * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
+      var deddt = 2.0 * ureyBradleyType.ureyUnit * rigidScale * ureyBradleyType.forceConstant
+          * dv * (1.0 + 1.5 * ureyBradleyType.cubic * dv + 2.0 * ureyBradleyType.quartic * dv2);
       var de = 0.0;
       if (value > 0.0) {
         de = deddt / value;

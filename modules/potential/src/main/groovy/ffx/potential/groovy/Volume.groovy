@@ -51,14 +51,14 @@ import static java.lang.String.format
 import static org.apache.commons.math3.util.FastMath.pow
 
 /**
- * The SaveAsP1 script expands a specified file to P1
+ * Calculate the surface area and volume using the GaussVol (default) or Connolly algorithm.
  * <br>
  * Usage:
  * <br>
- * ffxc SaveAsP1 [options] &lt;filename&gt;
+ * ffxc Volume [options] &lt;filename&gt;
  */
 @Command(description = " Calculate the surface area and volume using the GaussVol (default) or Connolly algorithm.",
-    name = "ffxc Volume")
+    name = "Volume")
 class Volume extends PotentialScript {
 
   private static final double rminToSigma = 1.0 / pow((double) 2.0, (double) 1.0 / 6.0)

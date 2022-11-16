@@ -63,7 +63,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * <br>
  * ffxc xray.Minimize [options] &lt;filename [file2...]&gt;
  */
-@Command(description = " Refine an X-ray/Neutron target.", name = "ffxc xray.Minimize")
+@Command(description = " Refine an X-ray/Neutron target.", name = "xray.Minimize")
 class Minimize extends AlgorithmsScript {
 
   @Mixin

@@ -63,7 +63,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc Dynamics [options] &lt;filename&gt; [file2...]
  */
-@Command(description = " Run dynamics on a system.", name = "ffxc Dynamics")
+@Command(description = " Run dynamics on a system.", name = "Dynamics")
 class Dynamics extends AlgorithmsScript {
 
     @Mixin

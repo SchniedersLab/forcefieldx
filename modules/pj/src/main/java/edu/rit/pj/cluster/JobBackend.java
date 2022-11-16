@@ -406,8 +406,6 @@ public class JobBackend
      * {@inheritDoc}
      * <p>
      * Cancel the job.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void cancelJob(JobFrontendRef theJobFrontend,
                                        String errmsg)
@@ -435,7 +433,7 @@ public class JobBackend
      * @param mainClassName     Fully qualified class name of the Java main program
      *                          class to execute.
      * @param args              Array of 0 or more Java command line arguments.
-     * @throws IOException         Thrown if an I/O error occurred.
+     * @throws java.io.IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public synchronized void commenceJob(JobFrontendRef theJobFrontend,
@@ -463,8 +461,6 @@ public class JobBackend
      * {@inheritDoc}
      * <p>
      * Report that the job finished.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void jobFinished(JobFrontendRef theJobFrontend)
             throws IOException {
@@ -475,8 +471,6 @@ public class JobBackend
      * {@inheritDoc}
      * <p>
      * Renew the lease on the job.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void renewLease(JobFrontendRef theJobFrontend)
             throws IOException {
@@ -489,7 +483,7 @@ public class JobBackend
      * @param theJobFrontend Job Frontend that is calling this method.
      * @param resourceName   Resource name.
      * @param content        Resource content, or null if resource not found.
-     * @throws IOException         Thrown if an I/O error occurred.
+     * @throws java.io.IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public synchronized void reportResource(JobFrontendRef theJobFrontend,
@@ -504,7 +498,10 @@ public class JobBackend
      * <p>
      * Report the content for a previously-requested resource.
      *
-     * @throws IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException Thrown if an I/O error occurred.
+     * @param theJobFrontend a {@link edu.rit.pj.cluster.JobFrontendRef} object
+     * @param resourceName a {@link java.lang.String} object
+     * @param content a {@link edu.rit.util.ByteSequence} object
      */
     public synchronized void reportResource(JobFrontendRef theJobFrontend,
                                             String resourceName,
@@ -518,8 +515,6 @@ public class JobBackend
      * {@inheritDoc}
      * <p>
      * Report the result of opening the given output file.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void outputFileOpenResult(JobFrontendRef theJobFrontend,
                                                   int bfd,
@@ -533,8 +528,6 @@ public class JobBackend
      * {@inheritDoc}
      * <p>
      * Report the result of writing the given output file.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void outputFileWriteResult(JobFrontendRef theJobFrontend,
                                                    int ffd,
@@ -547,8 +540,6 @@ public class JobBackend
      * {@inheritDoc}
      * <p>
      * Report the result of flushing the given output file.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void outputFileFlushResult(JobFrontendRef theJobFrontend,
                                                    int ffd,
@@ -561,8 +552,6 @@ public class JobBackend
      * {@inheritDoc}
      * <p>
      * Report the result of closing the given output file.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void outputFileCloseResult(JobFrontendRef theJobFrontend,
                                                    int ffd,
@@ -575,8 +564,6 @@ public class JobBackend
      * {@inheritDoc}
      * <p>
      * Report the result of opening the given input file.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void inputFileOpenResult(JobFrontendRef theJobFrontend,
                                                  int bfd,
@@ -590,8 +577,6 @@ public class JobBackend
      * {@inheritDoc}
      * <p>
      * Report the result of reading the given input file.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void inputFileReadResult(JobFrontendRef theJobFrontend,
                                                  int ffd,
@@ -606,8 +591,6 @@ public class JobBackend
      * {@inheritDoc}
      * <p>
      * Report the result of skipping the given input file.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void inputFileSkipResult(JobFrontendRef theJobFrontend,
                                                  int ffd,
@@ -621,8 +604,6 @@ public class JobBackend
      * {@inheritDoc}
      * <p>
      * Report the result of closing the given input file.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void inputFileCloseResult(JobFrontendRef theJobFrontend,
                                                   int ffd,

@@ -72,7 +72,7 @@ import static org.apache.commons.math3.util.FastMath.min
  * <br>
  * ffxc BAR [options] &lt;structures1&gt &lt;structures2&gt;
  */
-@Command(description = " Evaluates a free energy change with the Bennett Acceptance Ratio algorithm using pregenerated snapshots.", name = "ffxc BAR")
+@Command(description = " Evaluates a free energy change with the Bennett Acceptance Ratio algorithm using pregenerated snapshots.", name = "BAR")
 class BAR extends AlgorithmsScript {
 
   @Mixin
