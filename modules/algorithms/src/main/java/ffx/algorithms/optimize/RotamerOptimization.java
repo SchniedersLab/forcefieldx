@@ -2132,6 +2132,10 @@ public class RotamerOptimization implements Terminatable {
     return totalBoltzmann;
   }
 
+  public double getRefEnergy(){
+    return refEnergy;
+  }
+
 
   /**
    * Finds all permutations within buffer energy of GMEC.

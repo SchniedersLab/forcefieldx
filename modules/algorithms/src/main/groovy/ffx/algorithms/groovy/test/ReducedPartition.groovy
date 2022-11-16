@@ -82,6 +82,8 @@ class ReducedPartition extends  AlgorithmsScript{
         }
         activeAssembly = getActiveAssembly(filenames.get(0))
         double[] boltzmannWeights = new double[filenames.size()]
+        double[] offsets = new double[filenames.size()]
+
         List<Residue> residueList = activeAssembly.getResidueList()
         List<Integer> residueNumber = new ArrayList<>()
         for(Residue residue : residueList){
@@ -160,10 +162,10 @@ class ReducedPartition extends  AlgorithmsScript{
             int[] currentRotamers = new int[residues1.size()]
 
             boltzmannWeights[j] = rotamerOptimization.partitionFunction(residues1.toArray() as Residue[], 0, currentRotamers)
-
+            offsets[j] = rotamerOptimization.getRefEnergy()
         }
 
-        double gibbs = -(0.6)*Math.log(boltzmannWeights[1]/boltzmannWeights[0])
+        double gibbs = -(0.6)*(Math.log(boltzmannWeights[1]/boltzmannWeights[0]))
         logger.info("\n Gibbs Free Energy Change: " + gibbs)
 
 
