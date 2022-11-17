@@ -62,7 +62,9 @@
             <tr>
               <td>
                 <p>
-                  <a href="keywords/ElectrostaticsFunctionalForm.html">Electrostatics Functional Form</a>
+                  <a href="keywords/ElectrostaticsFunctionalForm.html">Electrostatics Functional
+                    Form
+                  </a>
                 </p>
               </td>
               <td>
@@ -94,7 +96,8 @@
               </td>
               <td>
                 <p>Set the value of the cubic, quartic, pentic and sextic terms in the Taylor series
-                  expansion form of bond, angle, Urey-Bradley and out-of-plane bend potential energy terms.
+                  expansion form of bond, angle, Urey-Bradley and out-of-plane bend potential energy
+                  terms.
                 </p>
               </td>
             </tr>
@@ -125,12 +128,24 @@
             <tr>
               <td>
                 <p>
-                  <a href="properties-pme.html">Particle Mesh Ewald Electrostatics</a>
+                  <a href="keywords/NonBondedCutoff.html">Non-Bonded Cutoff</a>
                 </p>
               </td>
               <td>
-                <p>Define PME electrostatics parameters such as real space cutoff, interpolation
-                  order and mesh density.
+                <p>Define how van der Waals, electrostatics and generalized Kirkwood interactions are
+                  cutoff.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>
+                  <a href="keywords/ParticleMeshEwald.html">Particle-Mesh Ewald Electrostatics</a>
+                </p>
+              </td>
+              <td>
+                <p>Define particle-mesh Ewald electrostatics parameters such as b-spline interpolation
+                  order and reciprocal space grid dimensions.
                 </p>
               </td>
             </tr>

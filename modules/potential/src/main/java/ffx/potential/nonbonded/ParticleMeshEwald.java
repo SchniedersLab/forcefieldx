@@ -57,7 +57,6 @@ import static ffx.utilities.Constants.ELEC_ANG_TO_DEBYE;
 import static ffx.utilities.Constants.NS2SEC;
 import static ffx.utilities.KeywordGroup.ElectrostaticsFunctionalForm;
 import static ffx.utilities.KeywordGroup.LocalGeometryFunctionalForm;
-import static ffx.utilities.KeywordGroup.VanDerWaalsFunctionalForm;
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static java.util.Collections.sort;
@@ -103,6 +102,7 @@ import ffx.potential.parameters.PolarizeType;
 import ffx.potential.utils.EnergyException;
 import ffx.utilities.Constants;
 import ffx.utilities.FFXKeyword;
+import ffx.utilities.KeywordGroup;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -147,10 +147,6 @@ import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer
 @SuppressWarnings("deprecation")
 public class ParticleMeshEwald implements LambdaInterface {
 
-  /** Default cutoff values for PME and aperiodic systems. */
-  public static final double PERIODIC_DEFAULT_EWALD_CUTOFF = 7.0;
-  /** Constant <code>APERIODIC_DEFAULT_EWALD_CUTOFF=1000.0</code> */
-  public static final double APERIODIC_DEFAULT_EWALD_CUTOFF = 1000.0;
   private static final Logger logger = Logger.getLogger(ParticleMeshEwald.class.getName());
   /** Number of unique tensors for given order. */
   private static final int tensorCount = MultipoleTensor.tensorCount(3);
@@ -164,6 +160,15 @@ public class ParticleMeshEwald implements LambdaInterface {
   private final boolean reciprocalSpaceTerm;
   /** Reference to the force field being used. */
   private final ForceField forceField;
+  /** Default cutoff values for PME under periodic boundary conditions. */
+  public static final double DEFAULT_EWALD_CUTOFF = 7.0;
+  private static final double DEFAULT_POLAR_EPS = 1.0e-6;
+  @FFXKeyword(name = "polar-eps", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0e-6",
+      description =
+          "Sets the convergence criterion applied during computation of self-consistent induced dipoles. "
+              + "The calculation is deemed to have converged when the rms change in Debyes in "
+              + "the induced dipole at all polarizable sites is less than the value specified with this property. "
+              + "The default value in the absence of the keyword is 0.000001 Debyes")
   private final double poleps;
   private final boolean directFallback;
   /** Specify an SCF predictor algorithm. */
@@ -336,7 +341,6 @@ public class ParticleMeshEwald implements LambdaInterface {
   private double lambda = 1.0;
   /** Permanent multipoles in their local frame. */
   private double[][] localMultipole;
-
   private MultipoleFrameDefinition[] frame;
   private int[][] axisAtom;
   private double[] ipdamp;
@@ -370,7 +374,6 @@ public class ParticleMeshEwald implements LambdaInterface {
    * energy of sub-structures.
    */
   private boolean[] use;
-
   private IntegerSchedule permanentSchedule;
   private double[][] cartesianMultipolePhi;
   private double[][] fracMultipolePhi;
@@ -406,6 +409,8 @@ public class ParticleMeshEwald implements LambdaInterface {
    * @param crystal The boundary conditions.
    * @param elecForm The electrostatics functional form.
    * @param neighborList The NeighborList for both van der Waals and PME.
+   * @param ewaldCutoff The Ewald real space cutoff.
+   * @param gkCutoff The generalized Kirkwood cutoff.
    * @param parallelTeam A ParallelTeam that delegates parallelization.
    */
   public ParticleMeshEwald(
@@ -415,6 +420,8 @@ public class ParticleMeshEwald implements LambdaInterface {
       Crystal crystal,
       NeighborList neighborList,
       ELEC_FORM elecForm,
+      double ewaldCutoff,
+      double gkCutoff,
       ParallelTeam parallelTeam) {
     this.atoms = atoms;
     this.molecule = molecule;
@@ -430,7 +437,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     maxThreads = parallelTeam.getThreadCount();
 
     electric = forceField.getDouble("ELECTRIC", Constants.DEFAULT_ELECTRIC);
-    poleps = forceField.getDouble("POLAR_EPS", 1e-5);
+    poleps = forceField.getDouble("POLAR_EPS", DEFAULT_POLAR_EPS);
 
     // If PME-specific lambda term not set, default to force field-wide lambda term.
     lambdaTerm =
@@ -440,7 +447,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     printInducedDipoles = properties.getBoolean("pme.printInducedDipoles", false);
     noWindowing = properties.getBoolean("pme.noWindowing", false);
 
-    ewaldParameters = new EwaldParameters();
+    ewaldParameters = new EwaldParameters(ewaldCutoff);
     scaleParameters = new ScaleParameters(forceField);
     reciprocalSpaceTerm = forceField.getBoolean("RECIPTERM", true);
 
@@ -547,10 +554,13 @@ public class ParticleMeshEwald implements LambdaInterface {
         sb.append("   Particle-mesh Ewald\n");
         sb.append(format("    Ewald Coefficient:                 %8.3f\n", ewaldParameters.aewald));
         sb.append(format("    Particle Cut-Off:                  %8.3f (A)", ewaldParameters.off));
+      } else if (ewaldParameters.off != Double.POSITIVE_INFINITY) {
+        sb.append(format("    Electrostatics Cut-Off:            %8.3f (A)\n",
+            ewaldParameters.off));
       } else {
-        sb.append(
-            format("    Electrostatics Cut-Off:            %8.3f (A)\n", ewaldParameters.off));
+        sb.append("    Electrostatics Cut-Off:                NONE\n");
       }
+
       logger.info(sb.toString());
     }
 
@@ -639,7 +649,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     generalizedKirkwoodTerm = forceField.getBoolean("GKTERM", false);
     if (generalizedKirkwoodTerm || alchemicalParameters.doLigandGKElec) {
       generalizedKirkwood = new GeneralizedKirkwood(forceField, atoms,
-          this, crystal, parallelTeam, electric);
+          this, crystal, parallelTeam, electric, gkCutoff);
     } else {
       generalizedKirkwood = null;
     }
@@ -3005,6 +3015,16 @@ public class ParticleMeshEwald implements LambdaInterface {
             eij));
   }
 
+  @FFXKeyword(name = "polarization", clazz = String.class,
+      keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "mutual",
+      description = "[DIRECT / MUTUAL / NONE] "
+          + "Selects between the use of direct and mutual dipole polarization for force fields "
+          + "that incorporate the polarization term. "
+          + "The direct modifier avoids an iterative calculation by using only the permanent "
+          + "electric field in computation of induced dipoles. "
+          + "The mutual option, which is the default in the absence of the polarization property, "
+          + "iterates the induced dipoles to self-consistency."
+          + "The none option turns off polarization and takes precedence over the polarizeterm property.")
   public enum Polarization {
     MUTUAL,
     DIRECT,
@@ -3103,6 +3123,10 @@ public class ParticleMeshEwald implements LambdaInterface {
   /** Mutable Particle Mesh Ewald constants. */
   public class EwaldParameters {
 
+    @FFXKeyword(name = "ewald-alpha", keywordGroup = KeywordGroup.ParticleMeshEwald, defaultValue = "0.545",
+        description =
+            "Sets the value of the Ewald coefficient, which controls the width of the Gaussian screening charges during particle mesh Ewald summation for multipole electrostatics. "
+                + "In the absence of the ewald-alpha keyword, the default value is 0.545, which is appropriate for most applications.")
     public double aewald;
     public double aewald3;
     public double an0;
@@ -3114,15 +3138,9 @@ public class ParticleMeshEwald implements LambdaInterface {
     public double off;
     public double off2;
 
-    public EwaldParameters() {
-      double off;
-      if (!crystal.aperiodic()) {
-        off = forceField.getDouble("EWALD_CUTOFF", PERIODIC_DEFAULT_EWALD_CUTOFF);
-      } else {
-        off = forceField.getDouble("EWALD_CUTOFF", APERIODIC_DEFAULT_EWALD_CUTOFF);
-      }
+    public EwaldParameters(double cutoff) {
       double aewald = forceField.getDouble("EWALD_ALPHA", 0.545);
-      setEwaldParameters(off, aewald);
+      setEwaldParameters(cutoff, aewald);
     }
 
     /**
@@ -3299,10 +3317,11 @@ public class ParticleMeshEwald implements LambdaInterface {
      * scaled by p12scale.
      */
     @FFXKeyword(name = "polar-12-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
-        description = "Provides a multiplicative scale factor that is applied to polarization interactions "
-            + "between 1-2 connected atoms located in different polarization groups. "
-            + "The default value of 0.0 is used, if the polar-12-scale keyword is not given"
-            + " in either the parameter file or the property file.")
+        description =
+            "Provides a multiplicative scale factor that is applied to polarization interactions "
+                + "between 1-2 connected atoms located in different polarization groups. "
+                + "The default value of 0.0 is used, if the polar-12-scale keyword is not given"
+                + " in either the parameter file or the property file.")
     public final double p12scale;
 
     /**
@@ -3310,10 +3329,11 @@ public class ParticleMeshEwald implements LambdaInterface {
      * scaled by p13scale.
      */
     @FFXKeyword(name = "polar-13-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
-        description = "Provides a multiplicative scale factor that is applied to polarization interactions "
-            + "between 1-3 connected atoms located in different polarization groups. "
-            + "The default value of 0.0 is used, if the polar-13-scale keyword is not given "
-            + "in either the parameter file or the property file.")
+        description =
+            "Provides a multiplicative scale factor that is applied to polarization interactions "
+                + "between 1-3 connected atoms located in different polarization groups. "
+                + "The default value of 0.0 is used, if the polar-13-scale keyword is not given "
+                + "in either the parameter file or the property file.")
     public final double p13scale;
 
     /**
@@ -3321,10 +3341,11 @@ public class ParticleMeshEwald implements LambdaInterface {
      * scaled by p14scale.
      */
     @FFXKeyword(name = "polar-14-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
-        description = "Provides a multiplicative scale factor that is applied to polarization interactions "
-            + "between 1-4 connected atoms located in different polarization groups. "
-            + "The default value of 1.0 is used, if the polar-14-scale keyword is not given "
-            + "in either the parameter file or the property file.")
+        description =
+            "Provides a multiplicative scale factor that is applied to polarization interactions "
+                + "between 1-4 connected atoms located in different polarization groups. "
+                + "The default value of 1.0 is used, if the polar-14-scale keyword is not given "
+                + "in either the parameter file or the property file.")
     public final double p14scale;
 
     /**
@@ -3332,10 +3353,11 @@ public class ParticleMeshEwald implements LambdaInterface {
      * scaled by p15scale. Only 1.0 is supported.
      */
     @FFXKeyword(name = "polar-15-scale", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
-        description = "Provides a multiplicative scale factor that is applied to polarization interactions "
-            + "between 1-5 connected atoms located in different polarization groups. "
-            + "The default value of 1.0 is used, if the polar-15-scale keyword is not given "
-            + "in either the parameter file or the property file.")
+        description =
+            "Provides a multiplicative scale factor that is applied to polarization interactions "
+                + "between 1-5 connected atoms located in different polarization groups. "
+                + "The default value of 1.0 is used, if the polar-15-scale keyword is not given "
+                + "in either the parameter file or the property file.")
     public final double p15scale;
 
     private static final double DEFAULT_POLAR_12_INTRA = 0.0;
@@ -3350,38 +3372,42 @@ public class ParticleMeshEwald implements LambdaInterface {
      * An intra-12-scale factor other than 0.0 is not supported and will cause FFX to exit.
      */
     @FFXKeyword(name = "polar-12-intra", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
-        description = "Provides a multiplicative scale factor that is applied to polarization interactions "
-            + "between 1-2 connected atoms located in the same polarization group. "
-            + "The default value of 0.0 is used, if the polar-12-intra keyword is not given "
-            + "in either the parameter file or the property file.")
+        description =
+            "Provides a multiplicative scale factor that is applied to polarization interactions "
+                + "between 1-2 connected atoms located in the same polarization group. "
+                + "The default value of 0.0 is used, if the polar-12-intra keyword is not given "
+                + "in either the parameter file or the property file.")
     public final double intra12Scale;
     /**
      * An intra-13-scale factor other than 0.0 is not supported and will cause FFX to exit.
      */
     @FFXKeyword(name = "polar-13-intra", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "0.0",
-        description = "Provides a multiplicative scale factor that is applied to polarization interactions "
-            + "between 1-3 connected atoms located in the same polarization group. "
-            + "The default value of 0.0 is used, if the polar-13-intra keyword is not given "
-            + "in either the parameter file or the property file.")
+        description =
+            "Provides a multiplicative scale factor that is applied to polarization interactions "
+                + "between 1-3 connected atoms located in the same polarization group. "
+                + "The default value of 0.0 is used, if the polar-13-intra keyword is not given "
+                + "in either the parameter file or the property file.")
     public final double intra13Scale;
     /**
      * Provides a multiplicative scale factor that is applied to polarization interactions between
      * 1-4 connected atoms located in the same polarization group.
      */
     @FFXKeyword(name = "polar-14-intra", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "0.5",
-        description = "Provides a multiplicative scale factor that is applied to polarization interactions "
-            + "between 1-4 connected atoms located in the same polarization group. "
-            + "The default value of 0.5 is used, if the polar-14-intra keyword is not given "
-            + "in either the parameter file or the property file.")
+        description =
+            "Provides a multiplicative scale factor that is applied to polarization interactions "
+                + "between 1-4 connected atoms located in the same polarization group. "
+                + "The default value of 0.5 is used, if the polar-14-intra keyword is not given "
+                + "in either the parameter file or the property file.")
     public final double intra14Scale;
     /**
      * An intra-15-scale factor other than 1.0 is not supported and will cause FFX to exit.
      */
     @FFXKeyword(name = "polar-15-intra", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "1.0",
-        description = "Provides a multiplicative scale factor that is applied to polarization interactions "
-            + "between 1-5 connected atoms located in the same polarization group. "
-            + "The default value of 1.0 is used, if the polar-15-intra keyword is not given "
-            + "in either the parameter file or the property file.")
+        description =
+            "Provides a multiplicative scale factor that is applied to polarization interactions "
+                + "between 1-5 connected atoms located in the same polarization group. "
+                + "The default value of 1.0 is used, if the polar-15-intra keyword is not given "
+                + "in either the parameter file or the property file.")
     public final double intra15Scale;
 
     public ScaleParameters(ForceField forceField) {

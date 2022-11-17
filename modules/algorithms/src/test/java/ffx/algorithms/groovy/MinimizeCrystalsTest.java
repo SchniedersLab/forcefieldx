@@ -62,7 +62,7 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
     MinimizeCrystals xtalMin = new MinimizeCrystals(binding).run();
     algorithmsScript = xtalMin;
 
-    double expectedPotentialEnergy = -32.72657252765883;
+    double expectedPotentialEnergy = -32.72657973215976;
 
     double actualPotentialEnergy =
         xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
@@ -81,7 +81,7 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
     MinimizeCrystals xtalMin = new MinimizeCrystals(binding).run();
     algorithmsScript = xtalMin;
 
-    double expectedPotentialEnergy = -32.535694367226576;
+    double expectedPotentialEnergy = -32.53569940765405;
 
     double actualPotentialEnergy =
         xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
@@ -102,7 +102,7 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
     MinimizeCrystals xtalMin = new MinimizeCrystals(binding).run();
     algorithmsScript = xtalMin;
 
-    double expectedPotentialEnergy = -32.54442936288904;
+    double expectedPotentialEnergy = -32.54443451197122;
 
     double actualPotentialEnergy =
         xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();
@@ -134,7 +134,7 @@ public class MinimizeCrystalsTest extends AlgorithmsTest {
     MinimizeCrystals xtalMin = new MinimizeCrystals(binding).run();
     algorithmsScript = xtalMin;
 
-    double expectedPotentialEnergy = -32.63130589380454;
+    double expectedPotentialEnergy = -32.63131283241016;
 
     double actualPotentialEnergy =
         xtalMin.getPotentials().get(xtalMin.getPotentials().size() - 1).getTotalEnergy();

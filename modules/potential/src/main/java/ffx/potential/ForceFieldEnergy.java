@@ -37,8 +37,11 @@
 // ******************************************************************************
 package ffx.potential;
 
+import static ffx.potential.nonbonded.ParticleMeshEwald.DEFAULT_EWALD_CUTOFF;
+import static ffx.potential.nonbonded.VanDerWaals.DEFAULT_VDW_CUTOFF;
 import static ffx.potential.parameters.ForceField.toEnumForm;
 import static ffx.potential.parsers.XYZFileFilter.isXYZ;
+import static ffx.utilities.KeywordGroup.NonBondedCutoff;
 import static ffx.utilities.KeywordGroup.PotentialFunctionSelection;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
@@ -165,6 +168,36 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   private final VanDerWaals vanderWaals;
 
   private final List<Constraint> constraints;
+
+  @FFXKeyword(name = "vdw-cutoff", keywordGroup = NonBondedCutoff, defaultValue = "12.0",
+      description =
+          "Sets the cutoff distance value in Angstroms for van der Waals potential energy interactions. "
+              + "The energy for any pair of van der Waals sites beyond the cutoff distance will be set to zero. "
+              + "Other properties can be used to define the smoothing scheme near the cutoff distance. "
+              + "The default cutoff distance in the absence of the vdw-cutoff keyword is infinite for nonperiodic "
+              + "systems and 12.0 for periodic systems.")
+  private double vdwCutoff;
+
+  @FFXKeyword(name = "ewald-cutoff", keywordGroup = NonBondedCutoff, defaultValue = "7.0",
+      description =
+          "Sets the value in Angstroms of the real-space distance cutoff for use during Ewald summation "
+              + "By default, in the absence of the ewald-cutoff property, a value of 7.0 is used.")
+  private double ewaldCutoff;
+
+  @FFXKeyword(name = "gk-cutoff", keywordGroup = NonBondedCutoff, defaultValue = "12.0",
+      description =
+          "Sets the value in Angstroms of the generalized Kirkwood distance cutoff for use during implicit solvent simulations. "
+              + "By default, in the absence of the gk-cutoff property, no cutoff is used under aperiodic boundary conditions and the vdw-cutoff is used under PBC.")
+  private double gkCutoff;
+
+  private static final double DEFAULT_LIST_BUFFER = 2.0;
+
+  @FFXKeyword(name = "list-buffer", keywordGroup = NonBondedCutoff, defaultValue = "2.0",
+      description = "Sets the size of the neighbor list buffer in Angstroms for potential energy functions. "
+          + "This value is added to the actual cutoff distance to determine which pairs will be kept on the neighbor list. This buffer value is used for all potential function neighbor lists. "
+          + "The default value in the absence of the list-buffer keyword is 2.0 Angstroms.")
+  private double listBuffer;
+
   /** 2.0 times the neighbor list cutoff. */
   private final double cutOff2;
   /** The non-bonded cut-off plus buffer distance (Angstroms). */
@@ -722,70 +755,52 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     Crystal unitCell = new Crystal(a, b, c, alpha, beta, gamma, spacegroup);
     unitCell.setAperiodic(aperiodic);
 
-    // Define the cutoff lengths.
-    double buff = 2.0;
-    double defaultVdwCut = 12.0;
+    // First set cutoffs assuming PBC.
+    vdwCutoff = DEFAULT_VDW_CUTOFF;
+    ewaldCutoff = DEFAULT_EWALD_CUTOFF;
+    gkCutoff = vdwCutoff;
     if (unitCell.aperiodic()) {
-      double maxDim = max(max(unitCell.a, unitCell.b), unitCell.c);
-      defaultVdwCut = (maxDim * 0.5) - (buff + 1.0);
+      // Default to no cutoffs for aperiodic systems.
+      vdwCutoff = Double.POSITIVE_INFINITY;
+      ewaldCutoff = Double.POSITIVE_INFINITY;
+      gkCutoff = Double.POSITIVE_INFINITY;
     }
-    double vdwOff = forceField.getDouble("VDW_CUTOFF", defaultVdwCut);
-    double ewaldOff =
-        aperiodic
-            ? ParticleMeshEwald.APERIODIC_DEFAULT_EWALD_CUTOFF
-            : ParticleMeshEwald.PERIODIC_DEFAULT_EWALD_CUTOFF;
-    ewaldOff = forceField.getDouble("EWALD_CUTOFF", ewaldOff);
-    if (ewaldOff > vdwOff) {
-      vdwOff = ewaldOff;
+    // Load user specified cutoffs.
+    vdwCutoff = forceField.getDouble("VDW_CUTOFF", vdwCutoff);
+    ewaldCutoff = forceField.getDouble("EWALD_CUTOFF", ewaldCutoff);
+    gkCutoff = forceField.getDouble("GK_CUTOFF", gkCutoff);
+
+    // Neighbor list cutoff is the maximum of the vdW, Ewald and GK cutoffs (i.e. to use a single list).
+    double nlistCutoff = vdwCutoff;
+    if (multipoleTerm) {
+      nlistCutoff = max(vdwCutoff, ewaldCutoff);
+    }
+    if (generalizedKirkwoodTerm) {
+      nlistCutoff = max(nlistCutoff, gkCutoff);
     }
 
-    /*
-     Neighbor list cutoff is at least max(PME cutoff, vdW cutoff).
-     For a non-frozen neighbor list, it is max(PME, vdW, GK).
-     Then, if a larger neighbor-list cutoff is specified, we use that.
-
-     GK cutoff may be > neighbor-list cutoff for frozen neighbor lists.
-     This indicates we are running full real-space GK on a frozen neighbor list.
-
-     Error is indicated for a frozen neighbor list if a specified NL cutoff < PME,vdW.
-     Error is indicated for a non-frozen neighbor list if the NL cutoff was specified by the user.
-    */
-
-    double nlistCutoff = vdwOff;
     // Check for a frozen neighbor list.
     boolean disabledNeighborUpdates = forceField.getBoolean("DISABLE_NEIGHBOR_UPDATES", false);
     if (disabledNeighborUpdates) {
-      nlistCutoff = forceField.getDouble("NEIGHBOR_LIST_CUTOFF", vdwOff);
-      logger.info(
-          format(
-              " Neighbor list updates disabled; interactions will "
-                  + "only be calculated between atoms that started the simulation "
-                  + "within a radius of %9.3g Angstroms of each other",
-              nlistCutoff));
-      if (nlistCutoff < vdwOff) {
-        logger.severe(
-            format(
-                " Specified a neighbor-list cutoff %10.4g < max(PME, vdW) cutoff %10.4g !",
-                nlistCutoff, vdwOff));
-      }
-    } else {
-      nlistCutoff = Math.max(forceField.getDouble("GK_CUTOFF", 0.0), nlistCutoff);
-      if (forceField.hasProperty("NEIGHBOR_LIST_CUTOFF")) {
-        logger.severe(" Specified a neighbor list cutoff for a non-frozen neighbor list!");
-      }
+      logger.info(format(" Neighbor list updates disabled; interactions will "
+          + "only be calculated between atoms that started the simulation "
+          + "within a radius of %9.3g Angstroms of each other.", nlistCutoff));
+      // The individual cutoffs are infinity (i.e. they are limited by interactions in the list).
+      vdwCutoff = Double.POSITIVE_INFINITY;
+      ewaldCutoff = Double.POSITIVE_INFINITY;
+      gkCutoff = Double.POSITIVE_INFINITY;
     }
 
-    cutoffPlusBuffer = nlistCutoff + buff;
+    listBuffer = forceField.getDouble("LIST_BUFFER", DEFAULT_LIST_BUFFER);
+    cutoffPlusBuffer = nlistCutoff + listBuffer;
     cutOff2 = 2.0 * cutoffPlusBuffer;
     unitCell = configureNCS(forceField, unitCell);
 
     // If necessary, create a ReplicatesCrystal.
     if (!aperiodic) {
       this.crystal = ReplicatesCrystal.replicatesCrystalFactory(unitCell, cutOff2);
-      logger.info(
-          format(
-              "\n Density:                                %6.3f (g/cc)",
-              crystal.getDensity(molecularAssembly.getMass())));
+      logger.info(format("\n Density:                                %6.3f (g/cc)",
+          crystal.getDensity(molecularAssembly.getMass())));
       logger.info(crystal.toString());
     } else {
       this.crystal = unitCell;
@@ -1043,11 +1058,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (vanderWaalsTerm) {
       logger.info("\n Non-Bonded Terms");
       if (!tornadoVM) {
-        vanderWaals =
-            new VanDerWaals(
-                atoms, molecule, crystal, forceField, parallelTeam, vdwOff, nlistCutoff);
+        vanderWaals = new VanDerWaals(
+            atoms, molecule, crystal, forceField, parallelTeam, vdwCutoff, nlistCutoff);
       } else {
-        vanderWaals = new VanDerWaalsTornado(atoms, crystal, forceField, vdwOff);
+        vanderWaals = new VanDerWaalsTornado(atoms, crystal, forceField, vdwCutoff);
       }
     } else {
       vanderWaals = null;
@@ -1069,6 +1083,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
               crystal,
               vanderWaals.getNeighborList(),
               form,
+              ewaldCutoff,
+              gkCutoff,
               parallelTeam);
       double charge = molecularAssembly.getCharge(checkAllNodeCharges);
       logger.info(format("\n  Overall system charge:             %10.3f", charge));
@@ -1116,7 +1132,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     String[] restrainTorsionCos = properties.getStringArray("restrain-torsion-cos");
-    double torsUnits = forceField.getDouble("TORSIONUNIT", 1.0);
+    double torsUnits = forceField.getDouble("TORSIONUNIT", TorsionType.DEFAULT_TORSION_UNIT);
     List<RestraintTorsion> rTorsList = new ArrayList<>(restrainTorsionCos.length);
     for (String rtc : restrainTorsionCos) {
       String[] toks = rtc.split("\\s+");

@@ -38,6 +38,7 @@
 package ffx.potential.nonbonded;
 
 import static ffx.potential.parameters.ForceField.toEnumForm;
+import static ffx.utilities.KeywordGroup.NonBondedCutoff;
 import static ffx.utilities.KeywordGroup.VanDerWaalsFunctionalForm;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
@@ -90,6 +91,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private static final byte XX = 0;
   private static final byte YY = 1;
   private static final byte ZZ = 2;
+
+  public static final double DEFAULT_VDW_CUTOFF = 12.0;
+
   private final boolean doLongRangeCorrection;
   // *************************************************************************
   // Parallel variables.
@@ -114,6 +118,13 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
           + "The default in the absence of the vdwindex property is to index vdW parameters by atom class.")
   private final String vdwIndex;
 
+  private static final double DEFAULT_VDW_TAPER = 0.9;
+
+  @FFXKeyword(name = "vdw-taper", keywordGroup = NonBondedCutoff, defaultValue = "0.9",
+      description = "Allows modification of the cutoff windows for van der Waals potential energy interactions. "
+          + "The default value in the absence of the vdw-taper keyword is to begin the cutoff window at 0.9 of the vdw cutoff distance.")
+  private final double vdwTaper;
+
   private final NonbondedCutoff nonbondedCutoff;
   private final MultiplicativeSwitch multiplicativeSwitch;
   /** This field specifies resolution for multi-scale modeling. */
@@ -132,7 +143,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private int nAtoms;
   /** A local convenience variable equal to the number of crystal symmetry operators. */
   private int nSymm;
-  /** ******************************************************************** Lambda variables. */
+  /** ******************************************************************* Lambda variables. */
   private boolean gradient;
   private boolean lambdaTerm;
   private boolean esvTerm;
@@ -234,6 +245,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     nonbondedCutoff = null;
     multiplicativeSwitch = null;
     vdwIndex = null;
+    vdwTaper = DEFAULT_VDW_TAPER;
   }
 
   /**
@@ -261,19 +273,15 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     this.crystal = crystal;
     this.parallelTeam = parallelTeam;
     this.forceField = forceField;
-
     nAtoms = atoms.length;
     nSymm = crystal.spaceGroup.getNumberOfSymOps();
-
     vdwForm = new VanDerWaalsForm(forceField);
-
     vdwIndex = forceField.getString("VDWINDEX", "Class");
-
     reducedHydrogens = forceField.getBoolean("REDUCE_HYDROGENS", true);
 
     // Lambda parameters.
-    lambdaTerm =
-        forceField.getBoolean("VDW_LAMBDATERM", forceField.getBoolean("LAMBDATERM", false));
+    lambdaTerm = forceField.getBoolean("VDW_LAMBDATERM",
+        forceField.getBoolean("LAMBDATERM", false));
     if (lambdaTerm) {
       shareddEdL = new SharedDouble();
       sharedd2EdL2 = new SharedDouble();
@@ -316,9 +324,8 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     try {
       atomicDoubleArrayImpl = AtomicDoubleArrayImpl.valueOf(toEnumForm(value));
     } catch (Exception e) {
-      logger.info(
-          format(
-              " Unrecognized ARRAY-REDUCTION %s; defaulting to %s", value, atomicDoubleArrayImpl));
+      logger.info(format(
+          " Unrecognized ARRAY-REDUCTION %s; defaulting to %s", value, atomicDoubleArrayImpl));
     }
 
     // Allocate coordinate arrays and set up reduction indices and values.
@@ -329,7 +336,8 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
      at the cutoff distance using a window that begin at 90% of the
      cutoff distance.
     */
-    double vdwTaper = 0.9 * vdwCutoff;
+    double taper = forceField.getDouble("VDW_TAPER", DEFAULT_VDW_TAPER);
+    vdwTaper = taper * vdwCutoff;
     double buff = 2.0;
     nonbondedCutoff = new NonbondedCutoff(vdwCutoff, vdwTaper, buff);
     multiplicativeSwitch = new MultiplicativeSwitch(vdwTaper, vdwCutoff);
@@ -773,17 +781,18 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   @Override
   public String toString() {
     StringBuffer sb = new StringBuffer("\n  Van der Waals\n");
-    sb.append(
-        format(
-            "   Switch Start:                         %6.3f (A)\n",
-            multiplicativeSwitch.getSwitchStart()));
-    sb.append(
-        format(
-            "   Cut-Off:                              %6.3f (A)\n",
-            multiplicativeSwitch.getSwitchEnd()));
-    sb.append(format("   Long-Range Correction:                %b\n", doLongRangeCorrection));
+    if (multiplicativeSwitch.getSwitchStart() != Double.POSITIVE_INFINITY) {
+      sb.append(format("   Switch Start:                         %6.3f (A)\n",
+          multiplicativeSwitch.getSwitchStart()));
+      sb.append(format("   Cut-Off:                              %6.3f (A)\n",
+          multiplicativeSwitch.getSwitchEnd()));
+    } else {
+      sb.append("   Cut-Off:                                NONE\n");
+    }
+
+    sb.append(format("   Long-Range Correction:                %6B\n", doLongRangeCorrection));
     if (!reducedHydrogens) {
-      sb.append(format("   Reduce Hydrogens:                     %b\n", reducedHydrogens));
+      sb.append(format("   Reduce Hydrogens:                     %6B\n", reducedHydrogens));
     }
     if (lambdaTerm) {
       sb.append("   Alchemical Parameters\n");

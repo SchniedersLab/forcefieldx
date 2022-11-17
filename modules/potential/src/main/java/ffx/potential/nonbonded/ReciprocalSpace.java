@@ -61,6 +61,7 @@ import static ffx.potential.parameters.MultipoleType.t200;
 import static ffx.potential.parameters.MultipoleType.t201;
 import static ffx.potential.parameters.MultipoleType.t210;
 import static ffx.potential.parameters.MultipoleType.t300;
+import static ffx.utilities.KeywordGroup.ElectrostaticsFunctionalForm;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -83,6 +84,8 @@ import ffx.numerics.fft.Complex;
 import ffx.numerics.fft.Complex3DParallel;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
+import ffx.utilities.FFXKeyword;
+import ffx.utilities.KeywordGroup;
 import java.nio.DoubleBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -119,7 +122,15 @@ public class ReciprocalSpace {
   private final int nSymm;
   /** Number of threads. */
   private final int threadCount;
+
+  /** The default b-Spline order to use for discretization to/from the reciprocal grid. */
+  private static final int DEFAULT_PME_ORDER = 5;
+
   /** The b-Spline order to use for discretization to/from the reciprocal grid. */
+  @FFXKeyword(name = "pme-order", clazz = Integer.class,
+      keywordGroup = KeywordGroup.ParticleMeshEwald, defaultValue = "5",
+      description = "Sets the order of the B-spline interpolation used during particle mesh Ewald summation for partial charge or atomic multipole electrostatics. "
+          + "A default value of 5 is used in the absence of the pme-order keyword.")
   private final int bSplineOrder;
   /**
    * Three derivatives of the potential are needed for AMOEBA. Specifically, the field gradient is
@@ -165,12 +176,44 @@ public class ReciprocalSpace {
   private Atom[] atoms;
   /** Number of atoms in the asymmetric unit. */
   private int nAtoms;
+
+  private static final double DEFAULT_PME_MESH_DENSITY = 1.2;
+
+  @FFXKeyword(name = "pme-mesh-density", clazz = Integer.class,
+      keywordGroup = KeywordGroup.ParticleMeshEwald, defaultValue = "1.2",
+      description = "The default in the absence of the pme-grid keyword is to set the grid size along each "
+          + " axis to the smallest factor of 2, 3 and/or 5 that is at least as large as "
+          + "pme-mesh-density times the axis length in Angstroms.")
+  private double density;
+
   /** The X-dimension of the FFT grid. */
+  @FFXKeyword(name = "pme-grid-x", clazz = Integer.class,
+      keywordGroup = KeywordGroup.ParticleMeshEwald, defaultValue = "NONE",
+      description = "Specifies the PME grid dimension along the x-axis and takes precedence over the pme-grid keyword.")
+  @FFXKeyword(name = "pme-grid", clazz = Integer.class,
+      keywordGroup = KeywordGroup.ParticleMeshEwald, defaultValue = "NONE",
+      description = "[3 integers] "
+          + "Sets the dimensions of the reciprocal space grid used during particle mesh Ewald "
+          + "summation for electrostatics. The three modifiers give the size along the X-, Y- and Z- axes, "
+          + "respectively. If either the Y- or Z-axis dimensions are omitted, then they are set equal "
+          + "to the X-axis dimension. The default in the absence of the pme-grid keyword is to set the "
+          + "grid size along each axis to the smallest value that can be factored by 2, 3, 4 and/or 5 "
+          + "and is at least as large as 1.2 times the axis length in Angstroms. "
+          + "The value 1.2 can be changed using the pme-mesh-density property.")
   private int fftX;
+
   /** The Y-dimension of the FFT grid. */
+  @FFXKeyword(name = "pme-grid-y", clazz = Integer.class,
+      keywordGroup = KeywordGroup.ParticleMeshEwald, defaultValue = "NONE",
+      description = "Specifies the PME grid dimension along the y-axis and takes precedence over the pme-grid keyword.")
   private int fftY;
+
   /** The Z-dimension of the FFT grid. */
+  @FFXKeyword(name = "pme-grid-z", clazz = Integer.class,
+      keywordGroup = KeywordGroup.ParticleMeshEwald, defaultValue = "NONE",
+      description = "Specifies the PME grid dimension along the z-axis and takes precedence over the pme-grid keyword.")
   private int fftZ;
+
   /** Number of doubles needed to compute a complex to complex 3D FFT (fftX * fftY * fftZ * 2). */
   private int fftSpace;
   /** Reciprocal space grid. [fftSpace] */
@@ -255,7 +298,7 @@ public class ReciprocalSpace {
       gridMethod = GridMethod.SPATIAL;
     }
 
-    bSplineOrder = forceField.getInteger("PME_ORDER", 5);
+    bSplineOrder = forceField.getInteger("PME_ORDER", DEFAULT_PME_ORDER);
 
     // Initialize convolution objects that may be re-allocated during NPT simulations.
     double density = initConvolution();
@@ -879,8 +922,29 @@ public class ReciprocalSpace {
     int fftYCurrent = fftY;
     int fftZCurrent = fftZ;
 
-    double density = forceField.getDouble("PME_MESH_DENSITY", 1.2);
-    int nX = forceField.getInteger("PME_GRID_X", -1);
+    // Support the PME-GRID keyword.
+    int defaultX = -1;
+    int defaultY = -1;
+    int defaultZ = -1;
+    if (forceField.hasProperty("PME_GRID")) {
+      String grid = forceField.getString("PME_GRID", "-1 -1 -1");
+      String[] values = grid.trim().split(" +");
+      if (values != null) {
+        defaultX = Integer.parseInt(values[0]);
+        defaultY = defaultX;
+        defaultZ = defaultX;
+        if (values.length > 1) {
+          defaultY = Integer.parseInt(values[1]);
+          if (values.length > 2) {
+            defaultZ = Integer.parseInt(values[2]);
+          }
+        }
+      }
+    }
+
+    double density = forceField.getDouble("PME_MESH_DENSITY", DEFAULT_PME_MESH_DENSITY);
+
+    int nX = forceField.getInteger("PME_GRID_X", defaultX);
     if (nX < 2) {
       nX = (int) floor(crystal.a * density) + 1;
       if (nX % 2 != 0) {
@@ -890,7 +954,8 @@ public class ReciprocalSpace {
         nX += 2;
       }
     }
-    int nY = forceField.getInteger("PME_GRID_Y", -1);
+
+    int nY = forceField.getInteger("PME_GRID_Y", defaultY);
     if (nY < 2) {
       nY = (int) floor(crystal.b * density) + 1;
       if (nY % 2 != 0) {
@@ -900,7 +965,8 @@ public class ReciprocalSpace {
         nY += 2;
       }
     }
-    int nZ = forceField.getInteger("PME_GRID_Z", -1);
+
+    int nZ = forceField.getInteger("PME_GRID_Z", defaultZ);
     if (nZ < 2) {
       nZ = (int) floor(crystal.c * density) + 1;
       if (nZ % 2 != 0) {

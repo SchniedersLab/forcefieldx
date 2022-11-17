@@ -209,6 +209,8 @@
         <item name="Potential Function Parameter" href="/keywords/PotentialFunctionParameter.html"/>
         <item name="Potential Function Selection" href="/keywords/PotentialFunctionSelection.html"/>
         <item name="Electrostatics" href="/properties-pme.html"/>
+        <item name="Non-Bonded Cutoff" href="/keywords/NonBondedCutoff.html"/>
+        <item name="Particle-Mesh Ewald" href="/keywords/ParticleMeshEwald.html"/>
         <item name="Unit Cell and Space Group" href="/keywords/UnitCellAndSpaceGroup.html"/>
         <item name="Van Der Waals Functional Form" href="/keywords/VanDerWaalsFunctionalForm.html"/>
         <item name="Structural Refinement" href="/properties-refine.html"/>

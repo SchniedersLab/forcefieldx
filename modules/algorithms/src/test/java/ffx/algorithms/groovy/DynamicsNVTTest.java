@@ -78,7 +78,7 @@ public class DynamicsNVTTest extends AlgorithmsTest {
                 "Water Box NVT", // info
                 "ffx/algorithms/structures/waterbox_eq.xyz", // filename
                 296.18798, // Final temperature.
-                -24952.0595 // Final total energy
+                -24952.08001403058 // Final total energy
             }
         });
   }

@@ -50,7 +50,8 @@ public enum KeywordGroup {
   PotentialFunctionSelection,
   UnitCellAndSpaceGroup,
   VanDerWaalsFunctionalForm,
-  NonBondedInteractions,
+  NonBondedCutoff,
+  ParticleMeshEwald,
   ConstantPhMolecularDynamics,
   Refinement,
 }

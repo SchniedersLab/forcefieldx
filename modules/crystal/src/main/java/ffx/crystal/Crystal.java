@@ -1040,7 +1040,7 @@ public class Crystal {
   }
 
   /**
-   * Is this a finite system - ie. one unit cell in isolation?
+   * Is this a finite system without periodic boundary conditions.
    *
    * @param aperiodic a boolean.
    */

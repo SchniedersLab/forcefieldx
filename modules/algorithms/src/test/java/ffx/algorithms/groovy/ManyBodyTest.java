@@ -242,7 +242,7 @@ public class ManyBodyTest extends AlgorithmsTest {
     ManyBody manyBody = new ManyBody(binding).run();
     algorithmsScript = manyBody;
 
-    double expectedTotalPotential = -93.18375176;
+    double expectedTotalPotential = -93.18377835710643;
     double actualTotalPotential =
             manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);

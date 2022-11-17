@@ -512,13 +512,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
    */
   public GeneralizedKirkwood(ForceField forceField, Atom[] atoms,
       ParticleMeshEwald particleMeshEwald, Crystal crystal, ParallelTeam parallelTeam,
-      double electric) {
+      double electric, double gkCutoff) {
     this.forceField = forceField;
     this.atoms = atoms;
     this.particleMeshEwald = particleMeshEwald;
     this.crystal = crystal;
     this.parallelTeam = parallelTeam;
     this.electric = electric;
+    this.cutoff = gkCutoff;
     nAtoms = atoms.length;
     maxNumAtoms = nAtoms;
     polarization = particleMeshEwald.polarization;
@@ -615,14 +616,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
     nativeEnvironmentApproximation =
         forceField.getBoolean("NATIVE_ENVIRONMENT_APPROXIMATION", false);
     probe = forceField.getDouble("PROBE_RADIUS", 1.4);
-    cutoff = forceField.getDouble("GK_CUTOFF", particleMeshEwald.getEwaldCutoff());
     cut2 = cutoff * cutoff;
     lambdaTerm = forceField.getBoolean("GK_LAMBDATERM", forceField.getBoolean("LAMBDATERM", false));
 
-        /*
-         If polarization lambda exponent is set to 0.0, then we're running
-         Dual-Topology and the GK energy will be scaled with the overall system lambda value.
-        */
+    // If polarization lambda exponent is set to 0.0, then we're running
+    // Dual-Topology and the GK energy will be scaled with the overall system lambda value.
     double polLambdaExp = forceField.getDouble("POLARIZATION_LAMBDA_EXPONENT", 3.0);
     if (polLambdaExp == 0.0) {
       lambdaTerm = false;
@@ -733,7 +731,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     logger.info("  Continuum Solvation ");
     logger.info(format("   Radii:                              %8s", soluteRadiiType));
-    logger.info(format("   Generalized Kirkwood Cut-Off:       %8.4f (A)", cutoff));
+    if (cutoff != Double.POSITIVE_INFINITY) {
+      logger.info(format("   Generalized Kirkwood Cut-Off:       %8.4f (A)", cutoff));
+    } else {
+      logger.info("   Generalized Kirkwood Cut-Off:           NONE");
+    }
     logger.info(format("   GKC:                                %8.4f",
         forceField.getDouble("GKC", DEFAULT_GKC)));
     logger.info(format("   Solvent Dielectric:                 %8.4f", epsilon));
