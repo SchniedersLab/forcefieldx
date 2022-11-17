@@ -295,6 +295,7 @@ public class Minimize implements OptimizationListener, Terminatable {
   @Override
   public boolean optimizationUpdate(
       int iteration,
+      int nBFGS,
       int functionEvaluations,
       double rmsGradient,
       double rmsCoordinateChange,
@@ -310,7 +311,11 @@ public class Minimize implements OptimizationListener, Terminatable {
     this.energy = energy;
 
     if (iteration == 0) {
-      logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n");
+      if (nBFGS > 0) {
+        logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n");
+      } else {
+        logger.info("\n Steepest Decent Optimization: \n");
+      }
       logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
     }
     if (lineSearchResult == null) {

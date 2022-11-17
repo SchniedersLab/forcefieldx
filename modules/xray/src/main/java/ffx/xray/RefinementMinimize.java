@@ -477,6 +477,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
   @Override
   public boolean optimizationUpdate(
       int iter,
+      int nBFGS,
       int nfun,
       double grms,
       double xrms,
@@ -499,7 +500,11 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     }
 
     if (iter == 0) {
-      logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n");
+      if (nBFGS > 0) {
+        logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n");
+      } else {
+        logger.info("\n Steepest Decent Optimization: \n");
+      }
       logger.info(
           " Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time      "
               + dataContainer.printOptimizationHeader());

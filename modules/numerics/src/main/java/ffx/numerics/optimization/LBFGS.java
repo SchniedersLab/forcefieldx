@@ -170,7 +170,7 @@ public class LBFGS {
       OptimizationListener listener) {
 
     assert (n > 0);
-    assert (mSave > 0);
+    assert (mSave > -1);
     assert (maxIterations > 0);
     assert (x != null && x.length >= n);
     assert (g != null && g.length >= n);
@@ -195,8 +195,10 @@ public class LBFGS {
     // Initial search direction is the steepest decent direction.
     double[][] s = new double[mSave][n];
     double[][] y = new double[mSave][n];
-    for (int i = 0; i < n; i++) {
-      s[0][i] = -g[i];
+    if (mSave > 0) {
+      for (int i = 0; i < n; i++) {
+        s[0][i] = -g[i];
+      }
     }
 
     double grms = 0.0;
@@ -216,7 +218,7 @@ public class LBFGS {
 
     // Notify the listeners of initial conditions.
     if (listener != null) {
-      if (!listener.optimizationUpdate(iterations, evaluations, grms, 0.0, f, 0.0, 0.0, null)) {
+      if (!listener.optimizationUpdate(iterations, mSave, evaluations, grms, 0.0, f, 0.0, 0.0, null)) {
         // Terminate the optimization.
         return 1;
       }
@@ -254,42 +256,50 @@ public class LBFGS {
         return 1;
       }
 
-      int muse = min(iterations - 1, mSave);
-      m++;
-      if (m > mSave - 1) {
-        m = 0;
+      if (mSave > 0) {
+        int muse = min(iterations - 1, mSave);
+        m++;
+        if (m > mSave - 1) {
+          m = 0;
+        }
+
+        // Estimate the Hessian Diagonal.
+        fill(h0, gamma);
+        arraycopy(g, 0, q, 0, n);
+        int k = m;
+        for (int j = 0; j < muse; j++) {
+          k--;
+          if (k < 0) {
+            k = mSave - 1;
+          }
+          alpha[k] = v1DotV2(n, s[k], 0, 1, q, 0, 1);
+          alpha[k] *= rho[k];
+          aV1PlusV2(n, -alpha[k], y[k], 0, 1, q, 0, 1);
+        }
+        for (int i = 0; i < n; i++) {
+          r[i] = h0[i] * q[i];
+        }
+        for (int j = 0; j < muse; j++) {
+          double beta = v1DotV2(n, r, 0, 1, y[k], 0, 1);
+          beta *= rho[k];
+          aV1PlusV2(n, alpha[k] - beta, s[k], 0, 1, r, 0, 1);
+          k++;
+          if (k > mSave - 1) {
+            k = 0;
+          }
+        }
+
+        // Set the search direction.
+        for (int i = 0; i < n; i++) {
+          p[i] = -r[i];
+        }
+      } else {
+        // Steepest-decent
+        for (int i = 0; i < n; i++) {
+          p[i] = -g[i];
+        }
       }
 
-      // Estimate the Hessian Diagonal.
-      fill(h0, gamma);
-      arraycopy(g, 0, q, 0, n);
-      int k = m;
-      for (int j = 0; j < muse; j++) {
-        k--;
-        if (k < 0) {
-          k = mSave - 1;
-        }
-        alpha[k] = v1DotV2(n, s[k], 0, 1, q, 0, 1);
-        alpha[k] *= rho[k];
-        aV1PlusV2(n, -alpha[k], y[k], 0, 1, q, 0, 1);
-      }
-      for (int i = 0; i < n; i++) {
-        r[i] = h0[i] * q[i];
-      }
-      for (int j = 0; j < muse; j++) {
-        double beta = v1DotV2(n, r, 0, 1, y[k], 0, 1);
-        beta *= rho[k];
-        aV1PlusV2(n, alpha[k] - beta, s[k], 0, 1, r, 0, 1);
-        k++;
-        if (k > mSave - 1) {
-          k = 0;
-        }
-      }
-
-      // Set the search direction.
-      for (int i = 0; i < n; i++) {
-        p[i] = -r[i];
-      }
       arraycopy(x, 0, prevX, 0, n);
       arraycopy(g, 0, prevG, 0, n);
 
@@ -300,14 +310,17 @@ public class LBFGS {
       evaluations += nFunctionEvals[0];
 
       // Update variables based on the results of this iteration.
-      for (int i = 0; i < n; i++) {
-        s[m][i] = x[i] - prevX[i];
-        y[m][i] = g[i] - prevG[i];
+      if (mSave > 0) {
+        for (int i = 0; i < n; i++) {
+          s[m][i] = x[i] - prevX[i];
+          y[m][i] = g[i] - prevG[i];
+        }
+        double ys = v1DotV2(n, y[m], 0, 1, s[m], 0, 1);
+        double yy = v1DotV2(n, y[m], 0, 1, y[m], 0, 1);
+        gamma = abs(ys / yy);
+        rho[m] = 1.0 / ys;
       }
-      double ys = v1DotV2(n, y[m], 0, 1, s[m], 0, 1);
-      double yy = v1DotV2(n, y[m], 0, 1, y[m], 0, 1);
-      gamma = abs(ys / yy);
-      rho[m] = 1.0 / ys;
+
 
       // Get the sizes of the moves made during this iteration.
       df = prevF - f;
@@ -333,8 +346,7 @@ public class LBFGS {
       }
 
       if (listener != null) {
-        if (!listener.optimizationUpdate(iterations, evaluations, grms, xrms, f, df, angle[0],
-            info[0])) {
+        if (!listener.optimizationUpdate(iterations, mSave, evaluations, grms, xrms, f, df, angle[0], info[0])) {
           // Terminate the optimization.
           return 1;
         }

@@ -187,6 +187,7 @@ public class MinimizeOpenMM extends Minimize {
   @Override
   public boolean optimizationUpdate(
       int iteration,
+      int nBFGS,
       int functionEvaluations,
       double rmsGradient,
       double rmsCoordinateChange,
