@@ -208,7 +208,6 @@
         <item name="Local Geometry Functional Form" href="/keywords/LocalGeometryFunctionalForm.html"/>
         <item name="Potential Function Parameter" href="/keywords/PotentialFunctionParameter.html"/>
         <item name="Potential Function Selection" href="/keywords/PotentialFunctionSelection.html"/>
-        <item name="Electrostatics" href="/properties-pme.html"/>
         <item name="Non-Bonded Cutoff" href="/keywords/NonBondedCutoff.html"/>
         <item name="Particle-Mesh Ewald" href="/keywords/ParticleMeshEwald.html"/>
         <item name="Unit Cell and Space Group" href="/keywords/UnitCellAndSpaceGroup.html"/>

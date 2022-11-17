@@ -144,20 +144,9 @@
                 </p>
               </td>
               <td>
-                <p>Define particle-mesh Ewald electrostatics parameters such as b-spline interpolation
+                <p>Define particle-mesh Ewald electrostatics parameters such as b-spline
+                  interpolation
                   order and reciprocal space grid dimensions.
-                </p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <p>
-                  <a href="properties-refine.html">X-ray, Neutron and Real Space Refinement</a>
-                </p>
-              </td>
-              <td>
-                <p>Control details of structural refinement against experimental data sets and
-                  advanced force fields.
                 </p>
               </td>
             </tr>
@@ -189,6 +178,18 @@
               </td>
               <td>
                 <p>Properties associated with the GK Implicit Solvent Model.</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>
+                  <a href="properties-refine.html">X-ray, Neutron and Real Space Refinement</a>
+                </p>
+              </td>
+              <td>
+                <p>Control details of structural refinement against experimental data sets and
+                  advanced force fields.
+                </p>
               </td>
             </tr>
           </tbody>
