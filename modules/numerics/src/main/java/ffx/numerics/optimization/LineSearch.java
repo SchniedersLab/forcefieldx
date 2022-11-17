@@ -37,12 +37,12 @@
 // ******************************************************************************
 package ffx.numerics.optimization;
 
-import static ffx.numerics.optimization.LBFGS.ANGLEMAX;
-import static ffx.numerics.optimization.LBFGS.CAPPA;
-import static ffx.numerics.optimization.LBFGS.INTMAX;
-import static ffx.numerics.optimization.LBFGS.SLOPEMAX;
-import static ffx.numerics.optimization.LBFGS.STEPMAX;
-import static ffx.numerics.optimization.LBFGS.STEPMIN;
+import static ffx.numerics.optimization.LBFGS.DEFAULT_ANGLEMAX;
+import static ffx.numerics.optimization.LBFGS.DEFAULT_CAPPA;
+import static ffx.numerics.optimization.LBFGS.DEFAULT_INTMAX;
+import static ffx.numerics.optimization.LBFGS.DEFAULT_SLOPEMAX;
+import static ffx.numerics.optimization.LBFGS.DEFAULT_STEPMAX;
+import static ffx.numerics.optimization.LBFGS.DEFAULT_STEPMIN;
 import static ffx.numerics.optimization.LBFGS.aV1PlusV2;
 import static ffx.numerics.optimization.LBFGS.v1DotV2;
 import static java.lang.System.arraycopy;
@@ -59,8 +59,7 @@ import ffx.numerics.Potential;
  * This class implements an algorithm for uni-dimensional line search. This file is a translation of
  * FORTRAN code written by Jay Ponder.<br>
  *
- * @author Michael J. Schnieders <br>
- *     Derived from Jay Ponder's FORTRAN code (search.f).
+ * @author Michael J. Schnieders <br> Derived from Jay Ponder's FORTRAN code (search.f).
  * @since 1.0
  */
 public class LineSearch {
@@ -179,7 +178,7 @@ public class LineSearch {
     double cosang = -sg0 / gNorm;
     cosang = min(1.0, max(-1.0, cosang));
     angle[0] = toDegrees(acos(cosang));
-    if (angle[0] > ANGLEMAX) {
+    if (angle[0] > DEFAULT_ANGLEMAX) {
       info[0] = LineSearchResult.WideAngle;
       return f;
     }
@@ -190,11 +189,11 @@ public class LineSearch {
     */
     step = 2.0 * abs(fMove / sg0);
     step = min(step, sNorm);
-    if (step > STEPMAX) {
-      step = STEPMAX;
+    if (step > DEFAULT_STEPMAX) {
+      step = DEFAULT_STEPMAX;
     }
-    if (step < STEPMIN) {
-      step = STEPMIN;
+    if (step < DEFAULT_STEPMIN) {
+      step = DEFAULT_STEPMIN;
     }
 
     return begin();
@@ -221,7 +220,7 @@ public class LineSearch {
     sgB = v1DotV2(n, s, 0, 1, g, 0, 1);
 
     // Scale step size if initial gradient change is too large
-    if (abs(sgB / sgA) >= SLOPEMAX && restart) {
+    if (abs(sgB / sgA) >= DEFAULT_SLOPEMAX && restart) {
       arraycopy(x0, 0, x, 0, n);
       step /= 10.0;
       info[0] = LineSearchResult.ScaleStep;
@@ -233,7 +232,7 @@ public class LineSearch {
      We now have an appropriate step size. Return if the gradient is small
      and function decreases.
     */
-    if (abs(sgB / sg0) <= CAPPA && fB < fA) {
+    if (abs(sgB / sg0) <= DEFAULT_CAPPA && fB < fA) {
       if (info[0] == null) {
         info[0] = LineSearchResult.Success;
       }
@@ -263,8 +262,8 @@ public class LineSearch {
       }
       step = parab;
     }
-    if (step > STEPMAX) {
-      step = STEPMAX;
+    if (step > DEFAULT_STEPMAX) {
+      step = DEFAULT_STEPMAX;
     }
     return step();
   }
@@ -294,7 +293,7 @@ public class LineSearch {
     functionEvaluations[0]++;
     fC = optimizationSystem.energyAndGradient(x, g);
     sgC = v1DotV2(n, s, 0, 1, g, 0, 1);
-    if (abs(sgC / sg0) <= CAPPA) {
+    if (abs(sgC / sg0) <= DEFAULT_CAPPA) {
       if (info[0] == null) {
         info[0] = LineSearchResult.Success;
       }
@@ -308,7 +307,7 @@ public class LineSearch {
     */
     if (fC <= fA || fC <= fB) {
       double cubstp = min(abs(cube), abs(step - cube));
-      if (cubstp >= STEPMIN && interpolation < INTMAX) {
+      if (cubstp >= DEFAULT_STEPMIN && interpolation < DEFAULT_INTMAX) {
         if (sgA * sgB < 0.0) {
           /*
            If the current brackets have slopes of opposite sign,
@@ -377,8 +376,8 @@ public class LineSearch {
       sg0 = -sg1;
     }
     step = max(cube, step - cube) / 10.0;
-    if (step < STEPMIN) {
-      step = STEPMIN;
+    if (step < DEFAULT_STEPMIN) {
+      step = DEFAULT_STEPMIN;
     }
 
     // If already restarted once, then return with the best point.
@@ -396,8 +395,9 @@ public class LineSearch {
   }
 
   /**
-   * The six possible line search results (Success, WideAngle, ScaleStep, IntplnErr, ReSearch,
-   * BadIntpln).
+   * The six possible line search results:
+   * <p>
+   * Success, WideAngle, ScaleStep, IntplnErr, ReSearch, BadIntpln
    */
   public enum LineSearchResult {
     Success,

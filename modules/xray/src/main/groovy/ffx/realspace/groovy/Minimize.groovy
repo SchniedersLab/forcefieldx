@@ -129,8 +129,9 @@ class Minimize extends AlgorithmsScript {
     RefinementMinimize refinementMinimize = new RefinementMinimize(realspaceData,
         realSpaceOptions.refinementMode)
 
-    double eps = minimizeOptions.eps
-    int maxiter = minimizeOptions.iterations
+    int nBFGS = minimizeOptions.getNBFGS()
+    double eps = minimizeOptions.getEps()
+    int maxiter = minimizeOptions.getIterations()
     if (eps < 0.0) {
       eps = 1.0
     }
@@ -143,7 +144,7 @@ class Minimize extends AlgorithmsScript {
       logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", eps))
     }
 
-    refinementMinimize.minimize(eps, maxiter)
+    refinementMinimize.minimize(nBFGS, eps, maxiter)
 
     // Final target function.
     algorithmFunctions.energy(activeAssembly)

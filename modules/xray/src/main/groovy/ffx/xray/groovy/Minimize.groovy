@@ -148,8 +148,11 @@ class Minimize extends AlgorithmsScript {
     double bfactorEPS = eps3[1]
     double occupancyEPS = eps3[2]
 
+    // The number of corrections used in the BFGS update.
+    int nBFGS = minimizeOptions.getNBFGS()
+
     // Maximum number of refinement cycles.
-    int maxIterations = minimizeOptions.iterations
+    int maxIterations = minimizeOptions.getIterations()
 
     if (threeStage) {
       // Coordinates
@@ -165,7 +168,7 @@ class Minimize extends AlgorithmsScript {
       } else {
         logger.info(format("\n RMS gradient convergence criteria: %8.5f", coordinateEPS))
       }
-      refinementMinimize.minimize(coordinateEPS, maxIterations)
+      refinementMinimize.minimize(nBFGS, coordinateEPS, maxIterations)
       diffractionData.scaleBulkFit()
       diffractionData.printStats()
       algorithmFunctions.energy(molecularAssemblies)
@@ -182,13 +185,14 @@ class Minimize extends AlgorithmsScript {
       } else {
         logger.info(format("\n RMS gradient convergence criteria: %8.5f", bfactorEPS))
       }
-      refinementMinimize.minimize(bfactorEPS, maxIterations)
+      refinementMinimize.minimize(nBFGS, bfactorEPS, maxIterations)
       diffractionData.scaleBulkFit()
       diffractionData.printStats()
 
       // Occupancies
       if (
-      diffractionData.getAltResidues().size() > 0 || diffractionData.getAltMolecules().size() > 0) {
+          diffractionData.getAltResidues().size() > 0 || diffractionData.getAltMolecules().size() >
+              0) {
         refinementMinimize = new RefinementMinimize(diffractionData, RefinementMode.OCCUPANCIES)
         if (occupancyEPS < 0.0) {
           occupancyEPS = refinementMinimize.getEps()

@@ -186,7 +186,7 @@ class Minimize extends AlgorithmsScript {
 
     ffx.algorithms.optimize.Minimize minimize = new ffx.algorithms.optimize.Minimize(topologies[0],
         potential, algorithmListener)
-    minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
+    minimize.minimize(minimizeOptions.getNBFGS(), minimizeOptions.getEps(), minimizeOptions.getIterations())
 
     potential.getCoordinates(x)
     potential.energy(x, true)

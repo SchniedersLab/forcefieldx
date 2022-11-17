@@ -69,6 +69,19 @@ public class MinimizeOptions {
   }
 
   /**
+   * The number of corrections used in the BFGS update.
+   *
+   * @return an int.
+   */
+  public int getNBFGS() {
+    return group.nbfgs;
+  }
+
+  public void setNBFGS(int nbfgs) {
+    group.nbfgs = nbfgs;
+  }
+
+  /**
    * Number of minimization steps.
    *
    * @return a int.
@@ -102,5 +115,14 @@ public class MinimizeOptions {
         defaultValue = "1.0",
         description = "Convergence criteria.")
     private double eps;
+
+    /** --nbfgs The number of corrections used in the BFGS update (0 for steepest decent). */
+    @Option(
+        names = {"--nbfgs"},
+        paramLabel = "7",
+        defaultValue = "7",
+        description = "The number of correction vectors used by the L-BFGS optimization routine (0 for steepest-decent).")
+    private int nbfgs;
+
   }
 }
