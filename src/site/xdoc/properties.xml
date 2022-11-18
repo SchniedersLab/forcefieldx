@@ -89,6 +89,16 @@
             <tr>
               <td>
                 <p>
+                  <a href="keywords/ImplicitSolvent.html">Implicit Solvent</a>
+                </p>
+              </td>
+              <td>
+                <p>Properties associated with the generalized Kirkwood implicit solvent model.</p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>
                   <a href="keywords/LocalGeometryFunctionalForm.html">Local Geometry Functional
                     Form
                   </a>
@@ -98,6 +108,30 @@
                 <p>Set the value of the cubic, quartic, pentic and sextic terms in the Taylor series
                   expansion form of bond, angle, Urey-Bradley and out-of-plane bend potential energy
                   terms.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>
+                  <a href="keywords/NonBondedCutoff.html">Non-Bonded Cutoff</a>
+                </p>
+              </td>
+              <td>
+                <p>Define how van der Waals, electrostatics and generalized Kirkwood interactions are
+                  cutoff.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>
+                  <a href="keywords/ParticleMeshEwald.html">Particle-Mesh Ewald Electrostatics</a>
+                </p>
+              </td>
+              <td>
+                <p>Define particle-mesh Ewald electrostatics parameters such as b-spline
+                  interpolation order and reciprocal space grid dimensions.
                 </p>
               </td>
             </tr>
@@ -128,31 +162,6 @@
             <tr>
               <td>
                 <p>
-                  <a href="keywords/NonBondedCutoff.html">Non-Bonded Cutoff</a>
-                </p>
-              </td>
-              <td>
-                <p>Define how van der Waals, electrostatics and generalized Kirkwood interactions are
-                  cutoff.
-                </p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <p>
-                  <a href="keywords/ParticleMeshEwald.html">Particle-Mesh Ewald Electrostatics</a>
-                </p>
-              </td>
-              <td>
-                <p>Define particle-mesh Ewald electrostatics parameters such as b-spline
-                  interpolation
-                  order and reciprocal space grid dimensions.
-                </p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <p>
                   <a href="keywords/UnitCellAndSpaceGroup.html">Unit Cell and Space Group</a>
                 </p>
               </td>
@@ -168,16 +177,6 @@
               </td>
               <td>
                 <p>Define the functional form of van Der Waals interactions.</p>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <p>
-                  <a href="properties-implicitsolvent.html">Implicit Solvent</a>
-                </p>
-              </td>
-              <td>
-                <p>Properties associated with the GK Implicit Solvent Model.</p>
               </td>
             </tr>
             <tr>

@@ -477,10 +477,34 @@
                   </fileset>
                 </concat>
                 <concat
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/ImplicitSolvent.adoc">
+                  <header>== Implicit Solvent</header>
+                  <fileset erroronmissingdir="false"
+                    dir="${project.basedir}/src/site/asciidoc/keywords/ImplicitSolvent">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+                <concat
                   destfile="${project.basedir}/src/site/asciidoc/keywords/LocalGeometryFunctionalForm.adoc">
                   <header>== Local Geometry Functional Form</header>
                   <fileset erroronmissingdir="false"
                     dir="${project.basedir}/src/site/asciidoc/keywords/LocalGeometryFunctionalForm">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+                <concat
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/NonBondedCutoff.adoc">
+                  <header>== Non-Bonded Cutoff</header>
+                  <fileset erroronmissingdir="false"
+                    dir="${project.basedir}/src/site/asciidoc/keywords/NonBondedCutoff">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+                <concat
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/ParticleMeshEwald.adoc">
+                  <header>== Particle-Mesh Ewald</header>
+                  <fileset erroronmissingdir="false"
+                    dir="${project.basedir}/src/site/asciidoc/keywords/ParticleMeshEwald">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>
@@ -513,22 +537,6 @@
                   <header>== Van Der Waals Functional Form</header>
                   <fileset erroronmissingdir="false"
                     dir="${project.basedir}/src/site/asciidoc/keywords/VanDerWaalsFunctionalForm">
-                    <include name="*.adoc"/>
-                  </fileset>
-                </concat>
-                <concat
-                  destfile="${project.basedir}/src/site/asciidoc/keywords/NonBondedCutoff.adoc">
-                  <header>== Non-Bonded Cutoff</header>
-                  <fileset erroronmissingdir="false"
-                    dir="${project.basedir}/src/site/asciidoc/keywords/NonBondedCutoff">
-                    <include name="*.adoc"/>
-                  </fileset>
-                </concat>
-                <concat
-                  destfile="${project.basedir}/src/site/asciidoc/keywords/ParticleMeshEwald.adoc">
-                  <header>== Particle-Mesh Ewald</header>
-                  <fileset erroronmissingdir="false"
-                    dir="${project.basedir}/src/site/asciidoc/keywords/ParticleMeshEwald">
                     <include name="*.adoc"/>
                   </fileset>
                 </concat>

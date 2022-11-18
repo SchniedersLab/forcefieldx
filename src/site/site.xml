@@ -134,7 +134,8 @@
             <item name="SaveAsConstantPhPDB" href="/commands/test.SaveAsConstantPhPDB.html"/>
           </item>
         </item>
-        <item name="Optimization and Sampling" href="/commands-opt.html" collapse="true">
+        <item name="Optimization, Superposition, MD and Thermodynamics" href="/commands-opt.html"
+          collapse="true">
           <item name="Anneal" href="/commands/Anneal.html"/>
           <item name="BAR" href="/commands/BAR.html"/>
           <item name="Cluster" href="/commands/Cluster.html"/>
@@ -203,20 +204,24 @@
         </item>
       </item>
       <item name="Properties" href="/properties.html" collapse="true">
-        <item name="Electrostatics Functional Form" href="/keywords/ElectrostaticsFunctionalForm.html"/>
+        <item name="Electrostatics Functional Form"
+          href="/keywords/ElectrostaticsFunctionalForm.html"/>
         <item name="Energy Unit Conversion" href="/keywords/EnergyUnitConversion.html"/>
-        <item name="Local Geometry Functional Form" href="/keywords/LocalGeometryFunctionalForm.html"/>
-        <item name="Potential Function Parameter" href="/keywords/PotentialFunctionParameter.html"/>
-        <item name="Potential Function Selection" href="/keywords/PotentialFunctionSelection.html"/>
+        <item name="Implicit Solvent" href="/keywords/ImplicitSolvent.html"/>
+        <item name="Local Geometry Functional Form"
+          href="/keywords/LocalGeometryFunctionalForm.html"/>
         <item name="Non-Bonded Cutoff" href="/keywords/NonBondedCutoff.html"/>
         <item name="Particle-Mesh Ewald" href="/keywords/ParticleMeshEwald.html"/>
+        <item name="Potential Function Parameter" href="/keywords/PotentialFunctionParameter.html"/>
+        <item name="Potential Function Selection" href="/keywords/PotentialFunctionSelection.html"/>
         <item name="Unit Cell and Space Group" href="/keywords/UnitCellAndSpaceGroup.html"/>
         <item name="Van Der Waals Functional Form" href="/keywords/VanDerWaalsFunctionalForm.html"/>
         <item name="Structural Refinement" href="/properties-refine.html"/>
       </item>
       <item name="Examples" href="/examples.html" collapse="true">
         <item name="GPU Accelerated Side-Chain Optimization" href="/examples-gpuSideChain.html"/>
-        <item name="Side-Chain Optimization and Mutation via Many-Body DEE" href="/examples-dee.html"/>
+        <item name="Side-Chain Optimization and Mutation via Many-Body DEE"
+          href="/examples-dee.html"/>
         <item name="Organic Crystal Thermodynamics" href="/examples-gauche.html"/>
         <item name="AMOEBA-assisted X-ray Refinement" href="/examples-xray.html"/>
         <item name="Thermodynamic Polymorph Search" href="/examples-CrystalNPT.html"/>

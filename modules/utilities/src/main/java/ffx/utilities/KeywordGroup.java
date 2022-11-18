@@ -45,6 +45,7 @@ package ffx.utilities;
 public enum KeywordGroup {
   EnergyUnitConversion,
   ElectrostaticsFunctionalForm,
+  ImplicitSolvent,
   LocalGeometryFunctionalForm,
   PotentialFunctionParameter,
   PotentialFunctionSelection,
