@@ -68,18 +68,9 @@ import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.MaskingInterface;
-import ffx.potential.nonbonded.ParticleMeshEwald;
-import ffx.potential.nonbonded.ParticleMeshEwald.AlchemicalParameters;
-import ffx.potential.nonbonded.ParticleMeshEwald.EwaldParameters;
-import ffx.potential.nonbonded.ParticleMeshEwald.LambdaMode;
-import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
-import ffx.potential.nonbonded.ParticleMeshEwald.RealSpaceNeighborParameters;
-import ffx.potential.nonbonded.ParticleMeshEwald.ScaleParameters;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.utils.EnergyException;
-import ffx.utilities.Constants;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -185,7 +176,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
    */
   private boolean lambdaTerm;
   /** The current LambdaMode of this PME instance (or OFF for no lambda dependence). */
-  private LambdaMode lambdaMode = ParticleMeshEwald.LambdaMode.OFF;
+  private LambdaMode lambdaMode = LambdaMode.OFF;
 
   private Polarization polarization;
   /** lAlpha = α*(1 - L)^2 */
@@ -784,7 +775,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
             continue;
           }
           boolean sameMolecule = (moleculei == molecule[k]);
-          if (lambdaMode == ParticleMeshEwald.LambdaMode.VAPOR) {
+          if (lambdaMode == LambdaMode.VAPOR) {
             if ((intermolecularSoftcore && !sameMolecule)
                 || (intramolecularSoftcore && sameMolecule)) {
               continue;
@@ -946,7 +937,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
               }
             }
           }
-          if (polarization != ParticleMeshEwald.Polarization.NONE && doPolarization) {
+          if (polarization != Polarization.NONE && doPolarization) {
             // Polarization does not use the softcore tensors.
             if (soft && doPermanentRealSpace) {
               scale3 = 1.0;
@@ -2006,7 +1997,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
       ftm2iz = ftm2iz - fridmpz - findmpz;
 
       // Correction to convert mutual to direct polarization force.
-      if (polarization == ParticleMeshEwald.Polarization.DIRECT) {
+      if (polarization == Polarization.DIRECT) {
         final double gfd = 0.5 * (bn2 * scip2 - bn3 * (scip3 * sci4 + sci3 * scip4));
         final double gfdr = 0.5 * (rr5 * scip2 * usc3 - rr7 * (scip3 * sci4 + sci3 * scip4) * usc5);
         ftm2ix =

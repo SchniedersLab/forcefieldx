@@ -40,7 +40,6 @@ package ffx.algorithms.groovy;
 import static org.junit.Assert.assertEquals;
 
 import ffx.algorithms.misc.AlgorithmsTest;
-import ffx.potential.PotentialComponent;
 import org.junit.Test;
 
 /**
@@ -75,8 +74,7 @@ public class ManyBodyTest extends AlgorithmsTest {
     algorithmsScript = manyBody;
 
     double expectedTotalPotential = -221.48751140045158;
-    double actualTotalPotential = manyBody.getPotential()
-        .getEnergyComponent(PotentialComponent.ForceFieldEnergy);
+    double actualTotalPotential = manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-7);
 
     double expectedApproximateEnergy = -217.34182006245888;
@@ -110,7 +108,7 @@ public class ManyBodyTest extends AlgorithmsTest {
 
     double expectedTotalPotential = -221.48751140045158;
     double actualTotalPotential =
-        manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
+        manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-7);
 
     double expectedApproximateEnergy = -220.72737768799902;
@@ -134,8 +132,7 @@ public class ManyBodyTest extends AlgorithmsTest {
     // Evaluate the script.
     manyBody.run();
     double expectedTotalPotential = -221.48751140045158;
-    double actualTotalPotential =
-        manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
+    double actualTotalPotential = manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
 
     double expectedApproximateEnergy = -212.8797699192298;
@@ -188,8 +185,7 @@ public class ManyBodyTest extends AlgorithmsTest {
     manyBody.run();
 
     double expectedTotalPotential = -205.32717394768866;
-    double actualTotalPotential =
-        manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
+    double actualTotalPotential = manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
 
     double expectedApproximateEnergy = -195.699298;
@@ -219,8 +215,7 @@ public class ManyBodyTest extends AlgorithmsTest {
     algorithmsScript = manyBody;
 
     double expectedTotalPotential = -220.12787129;
-    double actualTotalPotential =
-        manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
+    double actualTotalPotential = manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
 
     double expectedApproximateEnergy = -262.512834;
@@ -243,8 +238,7 @@ public class ManyBodyTest extends AlgorithmsTest {
     algorithmsScript = manyBody;
 
     double expectedTotalPotential = -93.18377835710643;
-    double actualTotalPotential =
-            manyBody.getPotential().getEnergyComponent(PotentialComponent.ForceFieldEnergy);
+    double actualTotalPotential = manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
 
     double expectedApproximateEnergy = -168.30101072;

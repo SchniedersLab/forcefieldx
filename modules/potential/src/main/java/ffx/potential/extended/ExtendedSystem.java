@@ -42,7 +42,6 @@ import edu.rit.pj.reduction.SharedDouble;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.PotentialComponent;
 import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Atom;
@@ -1225,43 +1224,6 @@ public class ExtendedSystem implements Potential {
         return format("    %-16s %16.8f\n", "Discretizer", discrBias)
                 + format("    %-16s %16.8f\n", "Acidostat", phBias)
                 + format("    %-16s %16.8f\n", "Fmod", modelBias);
-    }
-
-    /**
-     * getEnergyComponent for use by ForceFieldEnergy
-     *
-     * @param component a {@link ffx.potential.PotentialComponent} object.
-     * @return a double.
-     */
-    public double getEnergyComponent(PotentialComponent component) {
-        double uComp = 0.0;
-        double[] biasEnergyAndDerivs = new double[9];
-        switch (component) {
-            case Bias:
-            case pHMD:
-                return getBiasEnergy();
-            case DiscretizeBias:
-                for (Residue residue : titratingResidueList) {
-                    getBiasTerms(residue, biasEnergyAndDerivs);
-                    uComp += biasEnergyAndDerivs[discrBiasIndex];
-                }
-                return uComp;
-            case ModelBias:
-                for (Residue residue : titratingResidueList) {
-                    getBiasTerms(residue, biasEnergyAndDerivs);
-                    //Reminder: Ubias = UpH + Udiscr - Umod
-                    uComp += biasEnergyAndDerivs[modelBiasIndex];
-                }
-                return uComp;
-            case pHBias:
-                for (Residue residue : titratingResidueList) {
-                    getBiasTerms(residue, biasEnergyAndDerivs);
-                    uComp += biasEnergyAndDerivs[pHBiasIndex];
-                }
-                return uComp;
-            default:
-                throw new AssertionError(component.name());
-        }
     }
 
     /**

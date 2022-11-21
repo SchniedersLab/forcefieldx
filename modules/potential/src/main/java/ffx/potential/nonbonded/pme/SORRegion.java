@@ -50,7 +50,6 @@ import edu.rit.pj.reduction.SharedDouble;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
-import ffx.potential.nonbonded.ParticleMeshEwald.EwaldParameters;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.FFXKeyword;
 import java.util.logging.Level;

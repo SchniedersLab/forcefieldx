@@ -61,7 +61,6 @@ import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.switching.MultiplicativeSwitch;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.extended.ExtendedSystem;
@@ -91,12 +90,10 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private static final byte XX = 0;
   private static final byte YY = 1;
   private static final byte ZZ = 2;
-
-  public static final double DEFAULT_VDW_CUTOFF = 12.0;
-
   private final boolean doLongRangeCorrection;
-  // *************************************************************************
-  // Parallel variables.
+  /**
+   * The ParallelTeam used to evaluate van der Waals interactions.
+   */
   private final ParallelTeam parallelTeam;
   private final int threadCount;
   private final IntegerSchedule pairwiseSchedule;
@@ -110,31 +107,28 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private final long[] vdwTime;
   private final long[] reductionTime;
   private final VanDerWaalsForm vdwForm;
-
   @FFXKeyword(name = "vdwindex", clazz = String.class, keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "class",
       description = "[CLASS / TYPE] "
           + "Specifies whether van der Waals parameters are provided for atom classes or atom types. "
           + "While most force fields are indexed by atom class, in OPLS models the vdW values are indexed by atom type. "
           + "The default in the absence of the vdwindex property is to index vdW parameters by atom class.")
   private final String vdwIndex;
-
-  private static final double DEFAULT_VDW_TAPER = 0.9;
-
   @FFXKeyword(name = "vdw-taper", keywordGroup = NonBondedCutoff, defaultValue = "0.9",
-      description = "Allows modification of the cutoff windows for van der Waals potential energy interactions. "
-          + "The default value in the absence of the vdw-taper keyword is to begin the cutoff window at 0.9 of the vdw cutoff distance.")
+      description =
+          "Allows modification of the cutoff windows for van der Waals potential energy interactions. "
+              + "The default value in the absence of the vdw-taper keyword is to begin the cutoff window at 0.9 of the vdw cutoff distance.")
   private final double vdwTaper;
 
   private final NonbondedCutoff nonbondedCutoff;
   private final MultiplicativeSwitch multiplicativeSwitch;
-  /** This field specifies resolution for multi-scale modeling. */
-  private Resolution resolution = null;
   /** Boundary conditions and crystal symmetry. */
   private Crystal crystal;
   /** An array of all atoms in the system. */
   private Atom[] atoms;
   /** Specification of the molecular index for each atom. */
   private int[] molecule;
+  /** Flag to indicate the atom is treated by a neural network. */
+  private boolean[] neuralNetwork;
   /** The Force Field that defines the Van der Waals interactions. */
   private ForceField forceField;
   /** An array of whether each atom in the system should be used in the calculations. */
@@ -143,7 +137,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private int nAtoms;
   /** A local convenience variable equal to the number of crystal symmetry operators. */
   private int nSymm;
-  /** ******************************************************************* Lambda variables. */
+  /** ****************************************************************** Lambda variables. */
   private boolean gradient;
   private boolean lambdaTerm;
   private boolean esvTerm;
@@ -245,7 +239,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     nonbondedCutoff = null;
     multiplicativeSwitch = null;
     vdwIndex = null;
-    vdwTaper = DEFAULT_VDW_TAPER;
+    vdwTaper = VanDerWaalsForm.DEFAULT_VDW_TAPER;
   }
 
   /**
@@ -253,6 +247,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    *
    * @param atoms the Atom array to do Van Der Waals calculations on.
    * @param molecule the molecule number for each atom.
+   * @param neuralNetwork an array of flags to indicate the atom is treated by a neural network.
    * @param crystal The boundary conditions.
    * @param forceField the ForceField parameters to apply.
    * @param parallelTeam The parallel environment.
@@ -263,6 +258,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   public VanDerWaals(
       Atom[] atoms,
       int[] molecule,
+      boolean[] neuralNetwork,
       Crystal crystal,
       ForceField forceField,
       ParallelTeam parallelTeam,
@@ -270,6 +266,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       double neighborListCutoff) {
     this.atoms = atoms;
     this.molecule = molecule;
+    this.neuralNetwork = neuralNetwork;
     this.crystal = crystal;
     this.parallelTeam = parallelTeam;
     this.forceField = forceField;
@@ -336,7 +333,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
      at the cutoff distance using a window that begin at 90% of the
      cutoff distance.
     */
-    double taper = forceField.getDouble("VDW_TAPER", DEFAULT_VDW_TAPER);
+    double taper = forceField.getDouble("VDW_TAPER", VanDerWaalsForm.DEFAULT_VDW_TAPER);
     vdwTaper = taper * vdwCutoff;
     double buff = 2.0;
     nonbondedCutoff = new NonbondedCutoff(vdwCutoff, vdwTaper, buff);
@@ -410,7 +407,18 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
 
     Atom[] atomsExt = esvSystem.getExtendedAtoms();
     int[] moleculeExt = esvSystem.getExtendedMolecule();
-    setAtoms(atomsExt, moleculeExt);
+
+    // The combination of an extended system and neural networks are not supported.
+    boolean[] nn = new boolean[atomsExt.length];
+    Arrays.fill(nn, false);
+    for (Atom a : atomsExt) {
+      if (a.isNeuralNetwork()) {
+        logger.severe(
+            "The combination of an extended system and neural networks are not supported.");
+      }
+    }
+
+    setAtoms(atomsExt, moleculeExt, nn);
   }
 
   /**
@@ -610,15 +618,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   }
 
   /**
-   * Getter for the field <code>pairwiseSchedule</code>.
-   *
-   * @return a {@link edu.rit.pj.IntegerSchedule} object.
-   */
-  public IntegerSchedule getPairwiseSchedule() {
-    return pairwiseSchedule;
-  }
-
-  /**
    * Get the reduction index.
    *
    * @return an array of {@link int} objects.
@@ -698,16 +697,20 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    *
    * @param atoms an array of {@link ffx.potential.bonded.Atom} objects.
    * @param molecule an array of {@link int} objects.
+   * @param neuralNetwork an array of flags to indicate if the atom is treated by a neural
+   *     network.
    */
-  public void setAtoms(Atom[] atoms, int[] molecule) {
+  public void setAtoms(Atom[] atoms, int[] molecule, boolean[] neuralNetwork) {
     this.atoms = atoms;
     this.nAtoms = atoms.length;
     this.molecule = molecule;
+    this.neuralNetwork = neuralNetwork;
 
     if (nAtoms != molecule.length) {
       logger.warning("Atom and molecule arrays are of different lengths.");
       throw new IllegalArgumentException();
     }
+
     initAtomArrays();
     buildNeighborList(atoms);
   }
@@ -740,41 +743,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       String message = " Fatal exception expanding coordinates.\n";
       logger.log(Level.SEVERE, message, e);
     }
-  }
-
-  /**
-   * Setter for the field <code>intermolecularSoftcore</code>.
-   *
-   * @param intermolecularSoftcore a boolean.
-   */
-  public void setIntermolecularSoftcore(boolean intermolecularSoftcore) {
-    if (!(lambdaTerm || esvTerm)) {
-      logger.warning("Illegal softcoring.");
-      throw new IllegalArgumentException();
-    }
-    this.intermolecularSoftcore = intermolecularSoftcore;
-  }
-
-  /**
-   * Setter for the field <code>intramolecularSoftcore</code>.
-   *
-   * @param intramolecularSoftcore a boolean.
-   */
-  public void setIntramolecularSoftcore(boolean intramolecularSoftcore) {
-    if (!(lambdaTerm || esvTerm)) {
-      logger.warning("Illegal softcoring.");
-      throw new IllegalArgumentException();
-    }
-    this.intramolecularSoftcore = intramolecularSoftcore;
-  }
-
-  /**
-   * Setter for the field <code>resolution</code>.
-   *
-   * @param resolution a {@link ffx.potential.bonded.Atom.Resolution} object.
-   */
-  public void setResolution(Resolution resolution) {
-    this.resolution = resolution;
   }
 
   /** {@inheritDoc} */
@@ -1107,12 +1075,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
         softCore[SOFT][i] = true;
       }
     }
-  }
-
-  /** Test if both atoms match the set Resolution (or true when unset). */
-  private boolean include(Atom atom1, Atom atom2) {
-    return ((resolution == null)
-        || (atom1.getResolution() == resolution && atom2.getResolution() == resolution));
   }
 
   /**
@@ -1560,10 +1522,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
 
       @Override
       public void finish() {
-        /*
-         Reduce the energy, interaction count and gradients from this
-         thread into the shared variables.
-        */
+        // Reduce the energy, interaction count and gradients into the shared variables.
         sharedEnergy.addAndGet(energy);
         sharedInteractions.addAndGet(count);
         if (lambdaTerm) {
@@ -1608,6 +1567,8 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
           final int classI = atomClass[i];
           // Molecule index for atom i.
           final int moleculei = molecule[i];
+          // Neural network identity.
+          boolean iNN = neuralNetwork[i];
           // Zero out local gradient accumulation variables.
           double gxi = 0.0;
           double gyi = 0.0;
@@ -1635,9 +1596,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
           // Loop over the neighbor list.
           final int[] neighbors = list[i];
           for (final int k : neighbors) {
-            Atom atomk = atoms[k];
-            // Check if atom k is in use, and if we're including the pairwise interaction.
-            if (!use[k] || !include(atomi, atomk)) {
+            // Check that atom k is in use.
+            // Do not compute vdW interactions between asymmetric unit neural network atoms.
+            if (!use[k] || (iNN && neuralNetwork[k])) {
               continue;
             }
             // Flag to indicate if atom k is effected by an extended system variable.
@@ -1883,8 +1844,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
             // Loop over the neighbor list.
             final int[] neighbors = list[i];
             for (final int k : neighbors) {
-              Atom atomk = atoms[k];
-              if (!use[k] || !include(atomi, atomk)) {
+              if (!use[k]) {
                 continue;
               }
               final boolean esvk = esvTerm && esvSystem.isTitratingHydrogen(k);

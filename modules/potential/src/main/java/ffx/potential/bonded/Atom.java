@@ -295,12 +295,12 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /** Persistent (unmodifiable) indexing alternative to xyzIndex. */
   private final int persistentIndex;
   /**
-   * Array of XYZ coordinates for each altLoc.
+   * Array of XYZ coordinates.
    *
    * @since 1.0
    */
   private final double[] xyz = new double[3];
-
+  /** Array of velocities */
   private final double[] velocity = new double[3];
   private final double[] acceleration = new double[3];
   private final double[] previousAcceleration = new double[3];
@@ -352,7 +352,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
    */
   private Character altLoc;
 
-  /** Array of velocities */
   private double mass;
   /**
    * Array of XYZ coordinates for the electron (van der Waals) centers of each atom: if null, methods
@@ -423,6 +422,11 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * calculations.
    */
   private boolean electrostatics = true;
+  /**
+   * If true, this atom is part of a molecule whose intramolecular energetics are treated by a neural
+   * network potential.
+   */
+  private boolean neuralNetwork = false;
 
   private String segID = null;
   private double formFactorWidth = 3.5;
@@ -2028,6 +2032,27 @@ public class Atom extends MSNode implements Comparable<Atom> {
    */
   public void setActive(boolean active) {
     this.active = active;
+  }
+
+  /**
+   * If true, this atom is part of a molecule whose intramolecular interactions are handled by a
+   * neural network.
+   *
+   * @return true if this atom is part of a molecule whose intramolecular interactions are handled by
+   *     a neural network.
+   */
+  public boolean isNeuralNetwork() {
+    return neuralNetwork;
+  }
+
+  /**
+   * If true, this atom is part of a molecule whose intramolecular interactions are handled by a
+   * neural network.
+   *
+   * @param neuralNetwork a boolean.
+   */
+  public void setNeuralNetwork(boolean neuralNetwork) {
+    this.neuralNetwork = neuralNetwork;
   }
 
   /**

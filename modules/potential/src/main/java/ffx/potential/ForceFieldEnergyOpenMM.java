@@ -329,7 +329,8 @@ import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolarModel;
 import ffx.potential.nonbonded.NonbondedCutoff;
 import ffx.potential.nonbonded.ParticleMeshEwald;
-import ffx.potential.nonbonded.ParticleMeshEwald.SCFAlgorithm;
+import ffx.potential.nonbonded.pme.Polarization;
+import ffx.potential.nonbonded.pme.SCFAlgorithm;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.nonbonded.RestrainGroups;
 import ffx.potential.nonbonded.VanDerWaals;
@@ -4242,19 +4243,19 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       double polarScale = 1.0;
       SCFAlgorithm scfAlgorithm = null;
 
-      if (pme.getPolarizationType() != ParticleMeshEwald.Polarization.MUTUAL) {
+      if (pme.getPolarizationType() != Polarization.MUTUAL) {
         OpenMM_AmoebaMultipoleForce_setPolarizationType(
             amoebaMultipoleForce, OpenMM_AmoebaMultipoleForce_Direct);
-        if (pme.getPolarizationType() == ParticleMeshEwald.Polarization.NONE) {
+        if (pme.getPolarizationType() == Polarization.NONE) {
           polarScale = 0.0;
         }
       } else {
         String algorithm = forceField.getString("SCF_ALGORITHM", "CG");
         try {
           algorithm = algorithm.replaceAll("-", "_").toUpperCase();
-          scfAlgorithm = ParticleMeshEwald.SCFAlgorithm.valueOf(algorithm);
+          scfAlgorithm = SCFAlgorithm.valueOf(algorithm);
         } catch (Exception e) {
-          scfAlgorithm = ParticleMeshEwald.SCFAlgorithm.CG;
+          scfAlgorithm = SCFAlgorithm.CG;
         }
 
         switch (scfAlgorithm) {
@@ -4470,7 +4471,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         addGeneralizedKirkwoodForce();
       }
 
-      if (scfAlgorithm == ParticleMeshEwald.SCFAlgorithm.EPT) {
+      if (scfAlgorithm == SCFAlgorithm.EPT) {
         logger.info("   Using extrapolated perturbation theory for polarization energy.");
       }
     }
@@ -4488,7 +4489,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
 
       double polarScale = 1.0;
-      if (pme.getPolarizationType() == ParticleMeshEwald.Polarization.NONE) {
+      if (pme.getPolarizationType() == Polarization.NONE) {
         polarScale = 0.0;
       }
 

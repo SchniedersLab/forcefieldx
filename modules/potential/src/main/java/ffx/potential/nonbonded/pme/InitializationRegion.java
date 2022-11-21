@@ -113,8 +113,6 @@ public class InitializationRegion extends ParallelRegion {
    */
   private boolean esvTerm;
 
-  /** Scale multipole moments by a lambda scale factor. */
-  private double lambdaScaleMultipoles;
   /** An ordered array of atoms in the system. */
   private Atom[] atoms;
   /** Dimensions of [nsymm][xyz][nAtoms]. */
@@ -160,7 +158,8 @@ public class InitializationRegion extends ParallelRegion {
   /** Partial derivative of the torque with respect to Lambda. */
   private AtomicDoubleArray3D lambdaTorque;
 
-  public InitializationRegion(ParticleMeshEwald particleMeshEwald, int maxThreads, ForceField forceField) {
+  public InitializationRegion(ParticleMeshEwald particleMeshEwald, int maxThreads,
+      ForceField forceField) {
     initializationLoop = new InitializationLoop[maxThreads];
     rotateMultipolesLoop = new RotateMultipolesLoop[maxThreads];
     useCharges = forceField.getBoolean("USE_CHARGES", true);
@@ -191,7 +190,6 @@ public class InitializationRegion extends ParallelRegion {
   public void init(
       boolean lambdaTerm,
       ExtendedSystem esvSystem,
-      double lambdaScaleMultipoles,
       Atom[] atoms,
       double[][][] coordinates,
       Crystal crystal,
@@ -218,7 +216,6 @@ public class InitializationRegion extends ParallelRegion {
     if (esvSystem != null) {
       this.esvTerm = true;
     }
-    this.lambdaScaleMultipoles = lambdaScaleMultipoles;
     this.atoms = atoms;
     this.coordinates = coordinates;
     this.crystal = crystal;
@@ -369,12 +366,6 @@ public class InitializationRegion extends ParallelRegion {
           double dipoleScale = 1.0;
           double quadrupoleScale = 1.0;
           double polarizabilityScale = 1.0;
-          if (atom.applyLambda()) {
-            chargeScale = lambdaScaleMultipoles;
-            dipoleScale = lambdaScaleMultipoles;
-            quadrupoleScale = lambdaScaleMultipoles;
-            polarizabilityScale = lambdaScaleMultipoles;
-          }
           if (!useCharges) {
             chargeScale = 0.0;
           }
@@ -608,7 +599,8 @@ public class InitializationRegion extends ParallelRegion {
           PolarizeType polarizeType = particleMeshEwald.getPolarizeType(ii);
           if (polarizeType != null) {
             polarizability[ii] = polarizeType.polarizability * polarizabilityScale * elecScale;
-            if (esvTerm && esvSystem.isTitrating(ii) && (esvSystem.isTitratingHydrogen(ii) || esvSystem.isTitratingSulfur(ii))) {
+            if (esvTerm && esvSystem.isTitrating(ii) && (esvSystem.isTitratingHydrogen(ii)
+                || esvSystem.isTitratingSulfur(ii))) {
               titrationPolarizability[ii] = 0.0;
               tautomerPolarizability[ii] = 0.0;
               double titrationLambda = esvSystem.getTitrationLambda(ii);

@@ -359,6 +359,36 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
   }
 
   /**
+   * A recursive method that checks all atoms bonded to the seed atom for inclusion in the
+   * polarization group. The method is called on each newly found group member.
+   *
+   * @param group XYZ indeces of current group members.
+   * @param seed The bonds of the seed atom are queried for inclusion in the group.
+   */
+  public static void growGroup(List<Integer> group, Atom seed) {
+    List<Bond> bonds = seed.getBonds();
+    for (Bond bond : bonds) {
+      Atom atom = bond.get1_2(seed);
+      int tj = atom.getType();
+      boolean added = false;
+      PolarizeType polarizeType = seed.getPolarizeType();
+      for (int type : polarizeType.polarizationGroup) {
+        if (type == tj) {
+          Integer index = atom.getIndex() - 1;
+          if (!group.contains(index)) {
+            group.add(index);
+            added = true;
+            break;
+          }
+        }
+      }
+      if (added) {
+        growGroup(group, atom);
+      }
+    }
+  }
+
+  /**
    * add
    *
    * @param key a int.

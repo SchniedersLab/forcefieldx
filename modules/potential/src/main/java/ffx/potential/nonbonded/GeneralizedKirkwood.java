@@ -54,7 +54,7 @@ import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
+import ffx.potential.nonbonded.pme.Polarization;
 import ffx.potential.nonbonded.implicit.BornGradRegion;
 import ffx.potential.nonbonded.implicit.BornRadiiRegion;
 import ffx.potential.nonbonded.implicit.BornTanhRescaling;
@@ -717,7 +717,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     // If PME includes polarization and is a function of lambda, GK must also.
     if (!lambdaTerm
-        && particleMeshEwald.getPolarizationType() != ParticleMeshEwald.Polarization.NONE) {
+        && particleMeshEwald.getPolarizationType() != Polarization.NONE) {
       if (forceField.getBoolean("ELEC_LAMBDATERM",
           forceField.getBoolean("LAMBDATERM", false))) {
         logger.info(" If PME includes polarization and is a function of lambda, GK must also.");
