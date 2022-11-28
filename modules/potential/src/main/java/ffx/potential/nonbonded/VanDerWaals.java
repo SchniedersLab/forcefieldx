@@ -273,6 +273,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     nAtoms = atoms.length;
     nSymm = crystal.spaceGroup.getNumberOfSymOps();
     vdwForm = new VanDerWaalsForm(forceField);
+
     vdwIndex = forceField.getString("VDWINDEX", "Class");
     reducedHydrogens = forceField.getBoolean("REDUCE_HYDROGENS", true);
 
@@ -338,8 +339,8 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     double buff = 2.0;
     nonbondedCutoff = new NonbondedCutoff(vdwCutoff, vdwTaper, buff);
     multiplicativeSwitch = new MultiplicativeSwitch(vdwTaper, vdwCutoff);
-    neighborList =
-        new NeighborList(null, this.crystal, atoms, neighborListCutoff, buff, parallelTeam);
+    neighborList = new NeighborList(null, this.crystal,
+        atoms, neighborListCutoff, buff, parallelTeam);
     pairwiseSchedule = neighborList.getPairwiseSchedule();
     neighborLists = new int[nSymm][][];
 

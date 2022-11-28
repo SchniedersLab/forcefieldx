@@ -65,7 +65,6 @@ public class AlchemicalParameters {
    * atoms nearly overlap.
    */
   public double polLambdaStart = 0.75;
-
   public double polLambdaEnd = 1.0;
   /** Power on L in front of the polarization energy. */
   public double polLambdaExponent = 3.0;
@@ -80,20 +79,17 @@ public class AlchemicalParameters {
   public boolean doNoLigandCondensedSCF = true;
   /** lAlpha = α*(1 - L)^2 */
   public double lAlpha = 0.0;
-
   public double dlAlpha = 0.0;
   public double d2lAlpha = 0.0;
   public double dEdLSign = 1.0;
   /** lPowPerm = L^permanentLambdaExponent */
   public double lPowPerm = 1.0;
-
   public double dlPowPerm = 0.0;
   public double d2lPowPerm = 0.0;
   public boolean doPermanentRealSpace = true;
   public double permanentScale = 1.0;
   /** lPowPol = L^polarizationLambdaExponent */
   public double lPowPol = 1.0;
-
   public double dlPowPol = 0.0;
   public double d2lPowPol = 0.0;
   public boolean doPolarization = true;
@@ -123,17 +119,14 @@ public class AlchemicalParameters {
   public double permLambda = 1.0;
   /** Boundary conditions for the vapor end of the alchemical path. */
   public Crystal vaporCrystal = null;
-
   public int[][][] vaporLists = null;
   public Range[] vacuumRanges = null;
   public IntegerSchedule vaporPermanentSchedule = null;
   public IntegerSchedule vaporEwaldSchedule = null;
 
   public AlchemicalParameters(ForceField forceField, boolean lambdaTerm,
-      boolean noWindowing, Polarization polarization) {
-
+      boolean nnTerm, Polarization polarization) {
     this.polarization = polarization;
-
     if (lambdaTerm) {
       // Values of PERMANENT_LAMBDA_ALPHA below 2 can lead to unstable  trajectories.
       permLambdaAlpha = forceField.getDouble("PERMANENT_LAMBDA_ALPHA", 2.0);
@@ -170,27 +163,19 @@ public class AlchemicalParameters {
         polLambdaExponent = 3.0;
       }
 
-      if (noWindowing) {
-        permLambdaStart = 0.0;
-        polLambdaStart = 0.0;
-        permLambdaEnd = 1.0;
-        polLambdaEnd = 1.0;
-        logger.info(
-            "PME lambda windowing disabled. Permanent and polarization lambda affect entire [0,1].");
-      } else {
-        // Values of PERMANENT_LAMBDA_START below 0.5 can lead to unstable trajectories.
-        permLambdaStart = forceField.getDouble("PERMANENT_LAMBDA_START", 0.4);
-        if (permLambdaStart < 0.0 || permLambdaStart > 1.0) {
-          logger.warning("Invalid value for perm-lambda-start (<0.0 || >1.0); reverting to 0.4");
-          permLambdaStart = 0.4;
-        }
+      // Values of PERMANENT_LAMBDA_START below 0.5 can lead to unstable trajectories.
+      permLambdaStart = forceField.getDouble("PERMANENT_LAMBDA_START", 0.4);
+      if (permLambdaStart < 0.0 || permLambdaStart > 1.0) {
+        logger.warning("Invalid value for perm-lambda-start (<0.0 || >1.0); reverting to 0.4");
+        permLambdaStart = 0.4;
+      }
 
-        // Values of PERMANENT_LAMBDA_END must be greater than permLambdaStart and <= 1.0.
-        permLambdaEnd = forceField.getDouble("PERMANENT_LAMBDA_END", 1.0);
-        if (permLambdaEnd < permLambdaStart || permLambdaEnd > 1.0) {
-          logger.warning("Invalid value for perm-lambda-end (<start || >1.0); reverting to 1.0");
-          permLambdaEnd = 1.0;
-        }
+      // Values of PERMANENT_LAMBDA_END must be greater than permLambdaStart and <= 1.0.
+      permLambdaEnd = forceField.getDouble("PERMANENT_LAMBDA_END", 1.0);
+      if (permLambdaEnd < permLambdaStart || permLambdaEnd > 1.0) {
+        logger.warning("Invalid value for perm-lambda-end (<start || >1.0); reverting to 1.0");
+        permLambdaEnd = 1.0;
+      }
 
         /*
          The POLARIZATION_LAMBDA_START defines the point in the lambda
@@ -201,23 +186,22 @@ public class AlchemicalParameters {
          condensed phase SCF calculations are necessary from the
          beginning of the window to lambda=1.
         */
-        polLambdaStart = forceField.getDouble("POLARIZATION_LAMBDA_START", 0.75);
-        if (polLambdaStart < 0.0 || polLambdaStart > 1.0) {
-          logger.warning("Invalid value for polarization-lambda-start; reverting to 0.75");
-          polLambdaStart = 0.75;
-        }
+      polLambdaStart = forceField.getDouble("POLARIZATION_LAMBDA_START", 0.75);
+      if (polLambdaStart < 0.0 || polLambdaStart > 1.0) {
+        logger.warning("Invalid value for polarization-lambda-start; reverting to 0.75");
+        polLambdaStart = 0.75;
+      }
 
         /*
          The POLARIZATION_LAMBDA_END defines the point in the lambda
          schedule when the condensed phase polarization of ligand has
          been completely turned on. Values other than 1.0 have not been tested.
         */
-        polLambdaEnd = forceField.getDouble("POLARIZATION_LAMBDA_END", 1.0);
-        if (polLambdaEnd < polLambdaStart || polLambdaEnd > 1.0) {
-          logger.warning(
-              "Invalid value for polarization-lambda-end (<start || >1.0); reverting to 1.0");
-          polLambdaEnd = 1.0;
-        }
+      polLambdaEnd = forceField.getDouble("POLARIZATION_LAMBDA_END", 1.0);
+      if (polLambdaEnd < polLambdaStart || polLambdaEnd > 1.0) {
+        logger.warning(
+            "Invalid value for polarization-lambda-end (<start || >1.0); reverting to 1.0");
+        polLambdaEnd = 1.0;
       }
 
       // The LAMBDA_VAPOR_ELEC defines if intramolecular electrostatics of the ligand in vapor
@@ -225,6 +209,19 @@ public class AlchemicalParameters {
       doLigandVaporElec = forceField.getBoolean("LIGAND_VAPOR_ELEC", true);
       doLigandGKElec = forceField.getBoolean("LIGAND_GK_ELEC", false);
       doNoLigandCondensedSCF = forceField.getBoolean("NO_LIGAND_CONDENSED_SCF", true);
+    } else if (nnTerm) {
+      permLambdaAlpha = 0.0;
+      permLambdaExponent = 1.0;
+      polLambdaExponent = 1.0;
+      permLambdaStart = 0.0;
+      permLambdaEnd = 1.0;
+      polLambdaStart = 0.0;
+      polLambdaEnd = 1.0;
+      // The LAMBDA_VAPOR_ELEC defines if intramolecular electrostatics of the neural network
+      // atoms in vapor will be removed.
+      doLigandVaporElec = forceField.getBoolean("LIGAND_VAPOR_ELEC", true);
+      doLigandGKElec = false;
+      doNoLigandCondensedSCF = false;
     }
   }
 

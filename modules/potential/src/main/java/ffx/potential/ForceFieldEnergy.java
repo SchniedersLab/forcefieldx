@@ -3552,36 +3552,32 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    if (nnTerm) {
-      sb.append(format("  %s %16.8f %12d %12.3f\n",
-          "Neural Network    ", nnEnergy, nAtoms, nnTime * toSeconds));
-    }
     if (bondTerm && nBonds > 0) {
-      sb.append(format("  %s %16.8f %12d %12.3f (%8.5f)\n",
+      sb.append(format("  %s %20.8f %12d %12.3f (%8.5f)\n",
           "Bond Stretching   ", bondEnergy, nBonds, bondTime * toSeconds, bondRMSD));
     }
     if (angleTerm && nAngles > 0) {
       sb.append(
           format(
-              "  %s %16.8f %12d %12.3f (%8.5f)\n",
+              "  %s %20.8f %12d %12.3f (%8.5f)\n",
               "Angle Bending     ", angleEnergy, nAngles, angleTime * toSeconds, angleRMSD));
     }
     if (stretchBendTerm && nStretchBends > 0) {
       sb.append(
           format(
-              "  %s %16.8f %12d %12.3f\n",
+              "  %s %20.8f %12d %12.3f\n",
               "Stretch-Bend      ", stretchBendEnergy, nStretchBends, stretchBendTime * toSeconds));
     }
     if (ureyBradleyTerm && nUreyBradleys > 0) {
       sb.append(
           format(
-              "  %s %16.8f %12d %12.3f\n",
+              "  %s %20.8f %12d %12.3f\n",
               "Urey-Bradley      ", ureyBradleyEnergy, nUreyBradleys, ureyBradleyTime * toSeconds));
     }
     if (outOfPlaneBendTerm && nOutOfPlaneBends > 0) {
       sb.append(
           format(
-              "  %s %16.8f %12d %12.3f\n",
+              "  %s %20.8f %12d %12.3f\n",
               "Out-of-Plane Bend ",
               outOfPlaneBendEnergy,
               nOutOfPlaneBends,
@@ -3590,13 +3586,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (torsionTerm && nTorsions > 0) {
       sb.append(
           format(
-              "  %s %16.8f %12d %12.3f\n",
+              "  %s %20.8f %12d %12.3f\n",
               "Torsional Angle   ", torsionEnergy, nTorsions, torsionTime * toSeconds));
     }
     if (piOrbitalTorsionTerm && nPiOrbitalTorsions > 0) {
       sb.append(
           format(
-              "  %s %16.8f %12d %12.3f\n",
+              "  %s %20.8f %12d %12.3f\n",
               "Pi-Orbital Torsion",
               piOrbitalTorsionEnergy,
               nPiOrbitalTorsions,
@@ -3605,7 +3601,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (stretchTorsionTerm && nStretchTorsions > 0) {
       sb.append(
           format(
-              "  %s %16.8f %12d %12.3f\n",
+              "  %s %20.8f %12d %12.3f\n",
               "Stretch-Torsion   ",
               stretchTorsionEnergy,
               nStretchTorsions,
@@ -3614,7 +3610,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (angleTorsionTerm && nAngleTorsions > 0) {
       sb.append(
           format(
-              "  %s %16.8f %12d %12.3f\n",
+              "  %s %20.8f %12d %12.3f\n",
               "Angle-Torsion     ",
               angleTorsionEnergy,
               nAngleTorsions,
@@ -3623,7 +3619,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (torsionTorsionTerm && nTorsionTorsions > 0) {
       sb.append(
           format(
-              "  %s %16.8f %12d %12.3f\n",
+              "  %s %20.8f %12d %12.3f\n",
               "Torsion-Torsion   ",
               torsionTorsionEnergy,
               nTorsionTorsions,
@@ -3632,7 +3628,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (improperTorsionTerm && nImproperTorsions > 0) {
       sb.append(
           format(
-              "  %s %16.8f %12d %12.3f\n",
+              "  %s %20.8f %12d %12.3f\n",
               "Improper Torsion  ",
               improperTorsionEnergy,
               nImproperTorsions,
@@ -3641,7 +3637,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (restraintBondTerm && nRestraintBonds > 0) {
       sb.append(
           format(
-              "  %s %16.8f %12d %12.3f\n",
+              "  %s %20.8f %12d %12.3f\n",
               "Bond Restraint    ",
               restraintBondEnergy,
               nRestraintBonds,
@@ -3650,7 +3646,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (ncsTerm) {
       sb.append(
           format(
-              "  %s %16.8f %12d %12.3f\n",
+              "  %s %20.8f %12d %12.3f\n",
               "NCS Restraint     ", ncsEnergy, nAtoms, ncsTime * toSeconds));
     }
     if (restrainTerm && !coordRestraints.isEmpty()) {
@@ -3660,19 +3656,19 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       }
       sb.append(
           format(
-              "  %s %16.8f %12d %12.3f\n",
+              "  %s %20.8f %12d %12.3f\n",
               "Coord. Restraints ", restrainEnergy, nRests, coordRestraintTime * toSeconds));
     }
     if (comTerm) {
       sb.append(
           format(
-              "  %s %16.8f %12d %12.3f\n",
+              "  %s %20.8f %12d %12.3f\n",
               "COM Restraint     ", comRestraintEnergy, nAtoms, comRestraintTime * toSeconds));
     }
     if (restrainGroupTerm) {
       sb.append(
           format(
-              "  %s %16.8f %12d %12.3f\n",
+              "  %s %20.8f %12d %12.3f\n",
               "Restrain Groups   ",
               restrainGroupEnergy,
               nRestrainGroups,
@@ -3680,7 +3676,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
     if (rTorsTerm) {
       sb.append(
-          format("  %s %16.8f %12d %12.3f\n",
+          format("  %s %20.8f %12d %12.3f\n",
               "Dihedral Restraints",
               rTorsEnergy,
               nRestTors,
@@ -3690,7 +3686,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (vanderWaalsTerm && nVanDerWaalInteractions > 0) {
       sb.append(
           format(
-              "  %s %16.8f %12d %12.3f\n",
+              "  %s %20.8f %12d %12.3f\n",
               "Van der Waals     ",
               vanDerWaalsEnergy,
               nVanDerWaalInteractions,
@@ -3699,12 +3695,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (multipoleTerm && nPermanentInteractions > 0) {
       String pmeTitle = "Atomic Multipoles ";
       if (polarizationTerm) {
-        sb.append(format("  %s %16.8f %12d\n", pmeTitle, permanentMultipoleEnergy,
+        sb.append(format("  %s %20.8f %12d\n", pmeTitle, permanentMultipoleEnergy,
             nPermanentInteractions));
       } else {
         sb.append(
             format(
-                "  %s %16.8f %12d %12.3f\n",
+                "  %s %20.8f %12d %12.3f\n",
                 pmeTitle,
                 permanentMultipoleEnergy,
                 nPermanentInteractions,
@@ -3714,7 +3710,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (polarizationTerm && nPermanentInteractions > 0) {
       sb.append(
           format(
-              "  %s %16.8f %12d %12.3f\n",
+              "  %s %20.8f %12d %12.3f\n",
               "Polarization      ",
               polarizationEnergy,
               nPermanentInteractions,
@@ -3722,34 +3718,34 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
     if (generalizedKirkwoodTerm && nGKInteractions > 0) {
       sb.append(
-          format("  %s %16.8f %12d\n", "Solvation         ", solvationEnergy, nGKInteractions));
+          format("  %s %20.8f %12d\n", "Solvation         ", solvationEnergy, nGKInteractions));
     }
     if (relativeSolvationTerm) {
       sb.append(
           format(
-              "  %s %16.8f %12d\n",
+              "  %s %20.8f %12d\n",
               "Relative Solvation", relativeSolvationEnergy, nRelativeSolvations));
     }
-
     if (esvTerm) {
       sb.append(
-          format("  %s %16.8f  %s\n", "ExtendedSystemBias", esvBias, esvSystem.getLambdaList()));
+          format("  %s %20.8f  %s\n", "ExtendedSystemBias", esvBias, esvSystem.getLambdaList()));
       sb.append(esvSystem.getBiasDecomposition());
     }
-
-    sb.append(
-        format(
-            "  %s %16.8f  %s %12.3f (sec)",
-            "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
-
+    if (nnTerm) {
+      sb.append(format("  %s %20.8f %12d %12.3f\n",
+          "Neural Network    ", nnEnergy, nAtoms, nnTime * toSeconds));
+    }
+    sb.append(format("  %s %20.8f  %s %12.3f (sec)",
+        "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
     int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
     if (nsymm > 1) {
-      sb.append(format("\n  %s %16.8f", "Unit Cell         ", totalEnergy * nsymm));
+      sb.append(format("\n  %s %20.8f", "Unit Cell         ", totalEnergy * nsymm));
     }
     if (crystal.getUnitCell() != crystal) {
       nsymm = crystal.spaceGroup.getNumberOfSymOps();
-      sb.append(format("\n  %s %16.8f", "Replicates Cell   ", totalEnergy * nsymm));
+      sb.append(format("\n  %s %20.8f", "Replicates Cell   ", totalEnergy * nsymm));
     }
+
     return sb.toString();
   }
 

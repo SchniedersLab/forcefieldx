@@ -138,7 +138,6 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
   private int[] molecule;
   /** Flag for ligand atoms. */
   private boolean[] isSoft;
-
   private double[] ipdamp;
   private double[] thole;
   /** Masking of 1-2, 1-3, 1-4 and 1-5 interactions. */
@@ -154,7 +153,6 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
   private int[][] realSpaceCounts;
   /** Pairwise schedule for load balancing. */
   private IntegerSchedule realSpaceSchedule;
-
   private long[] realSpaceEnergyTime;
   /** Atomic Gradient array. */
   private AtomicDoubleArray3D grad;
@@ -175,9 +173,13 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
    * on/off.
    */
   private boolean lambdaTerm;
+  /**
+   * If nnTerm is true, all intramolecular interactions are treated with a neural network.
+   */
+  private boolean nnTerm;
+
   /** The current LambdaMode of this PME instance (or OFF for no lambda dependence). */
   private LambdaMode lambdaMode = LambdaMode.OFF;
-
   private Polarization polarization;
   /** lAlpha = α*(1 - L)^2 */
   private double lAlpha = 0.0;
@@ -361,6 +363,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
       RealSpaceNeighborParameters realSpaceNeighborParameters,
       boolean gradient,
       boolean lambdaTerm,
+      boolean nnTerm,
       LambdaMode lambdaMode,
       Polarization polarization,
       EwaldParameters ewaldParameters,
@@ -401,6 +404,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
     this.realSpaceSchedule = realSpaceNeighborParameters.realSpaceSchedule;
     this.gradient = gradient;
     this.lambdaTerm = lambdaTerm;
+    this.nnTerm = nnTerm;
     this.lambdaMode = lambdaMode;
     this.polarization = polarization;
     this.lAlpha = alchemicalParameters.lAlpha;
@@ -791,6 +795,8 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
           if (soft && doPermanentRealSpace) {
             beta = lAlpha;
             l2 = permanentScale;
+          } else if (nnTerm) {
+            l2 = permanentScale;
           }
           final double xk = neighborX[k];
           final double yk = neighborY[k];
@@ -846,9 +852,7 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
           ddsc7z = 0.0;
           double damp = pdi * pdk;
           double thole = min(pti, ptk);
-
           // logger.info(format(" %d %d Thole: %17.15f AiAk: %17.15f", i, k, thole, damp));
-
           double rdamp = r * damp;
           damp = -thole * rdamp * rdamp * rdamp;
           if (damp > -50.0) {
@@ -870,13 +874,11 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
             ddsc7z = temp7 * ddsc5z;
           }
           if (doPermanentRealSpace) {
-
             double ei = permanentPair(gradient, lambdaTerm);
             // logger.info(format(" Permanent %d %d %17.15f", i, k, ei));
             // logger.info(format(" %16.14f %16.14f %16.14f", xr, yr, zr));
             // logger.info(format(" %d multipole:  %s", i, Arrays.toString(globalMultipolei)));
             // logger.info(format(" %d multipole:  %s", k, Arrays.toString(globalMultipolek)));
-
             if (isNaN(ei) || isInfinite(ei)) {
               String message =
                   format(
@@ -992,15 +994,12 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                 ddsc7z = temp7 * ddsc5z;
               }
             }
-
             double ei = polarizationPair(gradient, lambdaTerm);
-
 //            logger.info(format(" Total Polarization %d %d %17.15f", i, k, ei));
 //            logger.info(format(" %d induced:    %s", i, Arrays.toString(inducedDipolei)));
 //            logger.info(format(" %d induced cr: %s", i, Arrays.toString(inducedDipolepi)));
 //            logger.info(format(" %d induced:    %s", k, Arrays.toString(inducedDipolek)));
 //            logger.info(format(" %d induced cr: %s", k, Arrays.toString(inducedDipolepk)));
-
             if (isNaN(ei) || isInfinite(ei)) {
               String message =
                   format(
@@ -1086,7 +1085,6 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
                 setMultipoleI(globalMultipolei);
                 setMultipoleK(globalMultipolek);
               }
-
               // Collect further terms if atom i and atom k are controlled by different ESVs.
               if (extendedSystem.isTitrating(k) && esvI != esvK) {
                 double titrdUdL = 0.0;
