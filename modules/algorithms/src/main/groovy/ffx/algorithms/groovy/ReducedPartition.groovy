@@ -83,15 +83,14 @@ class ReducedPartition extends  AlgorithmsScript{
         if (!init()) {
             return this
         }
-        logger.info("The Script gets to line 95")
-        logger.info('Filenames.size: ' + filenames.toString())
+
         double titrationPH = manyBodyOptions.getTitrationPH()
         if (titrationPH > 0) {
             System.setProperty("manybody-titration", "true")
         }
         activeAssembly = getActiveAssembly(filenames.get(0))
-        double[] boltzmannWeights = new double[filenames.size()]
-        double[] offsets = new double[filenames.size()]
+        double[] boltzmannWeights = new double[2]
+        double[] offsets = new double[2]
         List<Residue> residueList = activeAssembly.getResidueList()
 
         List<Integer> residueNumber = new ArrayList<>()
@@ -100,14 +99,13 @@ class ReducedPartition extends  AlgorithmsScript{
         }
 
 
-
+        String mutatedFileName = ""
         //Call the MutatePDB script
         if(filenames.size() == 1){
             mutatorBinding = new Binding('-r', mutatingResidue.toString(), '-n', resName, filenames.get(0))
             MutatePDB mutatePDB = new MutatePDB(mutatorBinding)
             mutatePDB.run()
-            mutatedAssembly = mutatorBinding.getVariable('mutatedAssembly') as MolecularAssembly
-            logger.info(mutatedAssembly.getResidueList().toString())
+            mutatedFileName = mutatorBinding.getProperty('versionFileName')
         }
 
         double[] mutatingResCoor = new double[3]
@@ -133,6 +131,7 @@ class ReducedPartition extends  AlgorithmsScript{
             // Load the MolecularAssembly.
             if(j>0){
                 if(filenames.size() == 1){
+                    mutatedAssembly = getActiveAssembly(mutatedFileName)
                     setActiveAssembly(mutatedAssembly)
                     logger.info(activeAssembly.getResidueList().toString())
                     activeAssembly.getPotentialEnergy().energy()

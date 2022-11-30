@@ -2123,7 +2123,7 @@ public class RotamerOptimization implements Terminatable {
           if(evaluatedPermutations == 1){
             refEnergy = totalEnergy;
           }
-          double boltzmannWeight= exp((-1.0/0.6)*(totalEnergy-refEnergy));
+          double boltzmannWeight = exp((-1.0/0.6)*(totalEnergy-refEnergy));
           totalBoltzmann += boltzmannWeight;
         }
       }

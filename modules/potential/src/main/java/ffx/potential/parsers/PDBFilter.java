@@ -174,6 +174,7 @@ public final class PDBFilter extends SystemFilter {
   private int modelsRead = 1;
   /** Tracks output MODEL numbers. Unused if below zero. */
   private int modelsWritten = -1;
+  private String versionFileName;
 
   private final File readFile;
   private List<String> remarkLines = Collections.emptyList();
@@ -1841,7 +1842,7 @@ public final class PDBFilter extends SystemFilter {
     if (!append) {
       if (versioning) {
         newFile = version(saveFile);
-        logger.info("This is the file name: " + saveFile.getName());
+        versionFileName = newFile.getName();
       }
     } else if (modelsWritten >= 0) {
       model = new StringBuilder(format("MODEL     %-4d", ++modelsWritten));
@@ -2530,6 +2531,10 @@ public final class PDBFilter extends SystemFilter {
       bw.write(anisouSB.toString());
       bw.newLine();
     }
+  }
+
+  public String getVersionFileName() {
+    return versionFileName;
   }
 
   /** PDB records that are recognized. */
