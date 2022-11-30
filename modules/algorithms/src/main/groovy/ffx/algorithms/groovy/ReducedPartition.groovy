@@ -1,15 +1,17 @@
-package ffx.algorithms.groovy.test
+package ffx.algorithms.groovy
 
-
+import edu.rit.pj.Comm
 import ffx.algorithms.TitrationManyBody
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization
 import ffx.numerics.math.DoubleMath
 import ffx.potential.ForceFieldEnergy
+import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary
 import ffx.potential.cli.AlchemicalOptions
+import ffx.potential.parameters.ForceField
 import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine
 import picocli.CommandLine.Command
@@ -19,13 +21,13 @@ import picocli.CommandLine.Parameters
 import static ffx.potential.bonded.NamingUtils.renameAtomsToPDBStandard
 
 /**
- * The ManyBody script performs a discrete optimization using a many-body expansion and elimination expressions.
+ * The ReductionPartition script performs a discrete optimization using a many-body expansion and elimination expressions.
  * <br>
  * Usage:
  * <br>
  * ffxc ManyBody [options] &lt;filename&gt;
  */
-@Command(description = " Run Grazer algorithm on a system.", name = "ffxc Grazer")
+@Command(description = " Run ReducedPartition function for free energy change.", name = "ffxc ReducedPartition")
 class ReducedPartition extends  AlgorithmsScript{
 
     @Mixin
@@ -42,6 +44,10 @@ class ReducedPartition extends  AlgorithmsScript{
             description = "Residues within the distance cutoff from the mutating residue will be optimized.")
     private double distanceCutoff = 10.0
 
+    @CommandLine.Option(names = ["-n", "--residueName"], paramLabel = "ALA",
+            description = "Mutant residue.")
+    private String resName
+
     /**
      * An XYZ or PDB input file.
      */
@@ -51,6 +57,8 @@ class ReducedPartition extends  AlgorithmsScript{
 
     ForceFieldEnergy potentialEnergy
     TitrationManyBody titrationManyBody
+    MolecularAssembly mutatedAssembly
+    Binding mutatorBinding
 
     /**
      * ManyBody Constructor.
@@ -75,7 +83,8 @@ class ReducedPartition extends  AlgorithmsScript{
         if (!init()) {
             return this
         }
-
+        logger.info("The Script gets to line 95")
+        logger.info('Filenames.size: ' + filenames.toString())
         double titrationPH = manyBodyOptions.getTitrationPH()
         if (titrationPH > 0) {
             System.setProperty("manybody-titration", "true")
@@ -83,11 +92,22 @@ class ReducedPartition extends  AlgorithmsScript{
         activeAssembly = getActiveAssembly(filenames.get(0))
         double[] boltzmannWeights = new double[filenames.size()]
         double[] offsets = new double[filenames.size()]
-
         List<Residue> residueList = activeAssembly.getResidueList()
+
         List<Integer> residueNumber = new ArrayList<>()
         for(Residue residue : residueList){
             residueNumber.add(residue.getResidueNumber())
+        }
+
+
+
+        //Call the MutatePDB script
+        if(filenames.size() == 1){
+            mutatorBinding = new Binding('-r', mutatingResidue.toString(), '-n', resName, filenames.get(0))
+            MutatePDB mutatePDB = new MutatePDB(mutatorBinding)
+            mutatePDB.run()
+            mutatedAssembly = mutatorBinding.getVariable('mutatedAssembly') as MolecularAssembly
+            logger.info(mutatedAssembly.getResidueList().toString())
         }
 
         double[] mutatingResCoor = new double[3]
@@ -109,12 +129,16 @@ class ReducedPartition extends  AlgorithmsScript{
             }
         }
 
-
-        for(int j=0; j<filenames.size(); j++){
+        for(int j=0; j<2; j++){
             // Load the MolecularAssembly.
-
             if(j>0){
-                setActiveAssembly(getActiveAssembly(filenames.get(j)))
+                if(filenames.size() == 1){
+                    setActiveAssembly(mutatedAssembly)
+                    logger.info(activeAssembly.getResidueList().toString())
+                    activeAssembly.getPotentialEnergy().energy()
+                } else{
+                    setActiveAssembly(getActiveAssembly(filenames.get(j)))
+                }
             }
 
             if (activeAssembly == null) {
@@ -137,6 +161,24 @@ class ReducedPartition extends  AlgorithmsScript{
             if (residues == null || residues.isEmpty()) {
                 logger.info(" There are no residues in the active system to optimize.")
                 return this
+            }
+
+            // Handle rotamer optimization with titration.
+            if (titrationPH > 0) {
+                logger.info("\n Adding titration hydrogen to : " + filenames.get(0) + "\n")
+
+                // Collect residue numbers.
+                List<Integer> resNumberList = new ArrayList<>()
+                for (Residue residue : residues) {
+                    resNumberList.add(residue.getResidueNumber())
+                }
+
+                // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
+                titrationManyBody = new TitrationManyBody(filenames.get(0), activeAssembly.getForceField(),
+                        resNumberList, titrationPH)
+                MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly()
+                setActiveAssembly(protonatedAssembly)
+                potentialEnergy = protonatedAssembly.getPotentialEnergy()
             }
 
 

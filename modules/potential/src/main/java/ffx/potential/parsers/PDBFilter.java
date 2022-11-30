@@ -1841,6 +1841,7 @@ public final class PDBFilter extends SystemFilter {
     if (!append) {
       if (versioning) {
         newFile = version(saveFile);
+        logger.info("This is the file name: " + saveFile.getName());
       }
     } else if (modelsWritten >= 0) {
       model = new StringBuilder(format("MODEL     %-4d", ++modelsWritten));
