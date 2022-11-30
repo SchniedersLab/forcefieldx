@@ -160,7 +160,8 @@ class MinimizePh extends AlgorithmsScript {
     if (coords) {
       while (true) {
         // Complete a round of coordinate optimization.
-        minimize.minimizeCoordinates(minimizeOptions.eps, minimizeOptions.iterations)
+        minimize.minimizeCoordinates(minimizeOptions.getNBFGS(),
+            minimizeOptions.getEps(), minimizeOptions.getIterations())
         double newEnergy = minimize.getEnergy()
         int status = minimize.getStatus()
         if (status != 0) {
@@ -172,7 +173,8 @@ class MinimizePh extends AlgorithmsScript {
         energy = newEnergy
 
         // Complete a round of titration optimization.
-        minimize.minimizeTitration(minimizeOptions.eps, minimizeOptions.iterations)
+        minimize.minimizeTitration(minimizeOptions.getNBFGS(),
+            minimizeOptions.getEps(), minimizeOptions.getIterations())
         newEnergy = minimize.getEnergy()
         status = minimize.getStatus()
         if (status != 0) {
@@ -184,7 +186,8 @@ class MinimizePh extends AlgorithmsScript {
         energy = newEnergy
       }
     } else {
-      minimize.minimizeTitration(minimizeOptions.getEps(), minimizeOptions.getIterations())
+      minimize.minimizeTitration(minimizeOptions.getNBFGS(),
+          minimizeOptions.getEps(), minimizeOptions.getIterations())
     }
 
     forceFieldEnergy.getCoordinates(x)

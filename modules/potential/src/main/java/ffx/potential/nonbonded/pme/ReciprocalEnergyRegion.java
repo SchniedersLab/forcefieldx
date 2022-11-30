@@ -69,9 +69,6 @@ import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.multipole.MultipoleTensor;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.nonbonded.ParticleMeshEwald;
-import ffx.potential.nonbonded.ParticleMeshEwald.AlchemicalParameters;
-import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -320,7 +317,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
     try {
       int nAtoms = atoms.length;
       execute(0, nAtoms - 1, permanentReciprocalEnergyLoop[threadIndex]);
-      if (polarization != ParticleMeshEwald.Polarization.NONE) {
+      if (polarization != Polarization.NONE) {
         execute(0, nAtoms - 1, inducedDipoleReciprocalEnergyLoop[threadIndex]);
       }
     } catch (Exception e) {
@@ -606,7 +603,7 @@ public class ReciprocalEnergyRegion extends ParallelRegion {
             double gx = insx * fPhi[t200] + insy * fPhi[t110] + insz * fPhi[t101];
             double gy = insx * fPhi[t110] + insy * fPhi[t020] + insz * fPhi[t011];
             double gz = insx * fPhi[t101] + insy * fPhi[t011] + insz * fPhi[t002];
-            if (polarization == ParticleMeshEwald.Polarization.MUTUAL) {
+            if (polarization == Polarization.MUTUAL) {
               gx += indx * fiCRPhi[t200] + inpx * fiPhi[t200] + indy * fiCRPhi[t110]
                   + inpy * fiPhi[t110] + indz * fiCRPhi[t101] + inpz * fiPhi[t101];
               gy += indx * fiCRPhi[t110] + inpx * fiPhi[t110] + indy * fiCRPhi[t020]

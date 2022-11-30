@@ -276,7 +276,7 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_destroy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_get;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_VerletIntegrator_create;
-import static ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar.GAUSS_DISP;
+import static ffx.potential.nonbonded.GeneralizedKirkwood.NonPolarModel.GAUSS_DISP;
 import static ffx.potential.nonbonded.VanDerWaalsForm.EPSILON_RULE.GEOMETRIC;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.ARITHMETIC;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_SIZE.RADIUS;
@@ -326,10 +326,11 @@ import ffx.potential.bonded.UreyBradley;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
-import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
+import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolarModel;
 import ffx.potential.nonbonded.NonbondedCutoff;
 import ffx.potential.nonbonded.ParticleMeshEwald;
-import ffx.potential.nonbonded.ParticleMeshEwald.SCFAlgorithm;
+import ffx.potential.nonbonded.pme.Polarization;
+import ffx.potential.nonbonded.pme.SCFAlgorithm;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.nonbonded.RestrainGroups;
 import ffx.potential.nonbonded.VanDerWaals;
@@ -3899,8 +3900,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       }
 
       double sTens = 0.0;
-      if (gk.getNonPolarModel() == NonPolar.BORN_SOLV
-          || gk.getNonPolarModel() == NonPolar.BORN_CAV_DISP) {
+      if (gk.getNonPolarModel() == NonPolarModel.BORN_SOLV
+          || gk.getNonPolarModel() == NonPolarModel.BORN_CAV_DISP) {
         sTens = gk.getSurfaceTension();
         sTens *= OpenMM_KJPerKcal;
         sTens *= 100.0; // 100 square Angstroms per square nanometer.
@@ -4006,8 +4007,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       boolean nea = gk.getNativeEnvironmentApproximation();
 
       double sTens = 0.0;
-      if (gk.getNonPolarModel() == NonPolar.BORN_SOLV
-          || gk.getNonPolarModel() == NonPolar.BORN_CAV_DISP) {
+      if (gk.getNonPolarModel() == NonPolarModel.BORN_SOLV
+          || gk.getNonPolarModel() == NonPolarModel.BORN_CAV_DISP) {
         sTens = gk.getSurfaceTension();
         sTens *= OpenMM_KJPerKcal;
         sTens *= 100.0; // 100 square Angstroms per square nanometer.
@@ -4242,19 +4243,19 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       double polarScale = 1.0;
       SCFAlgorithm scfAlgorithm = null;
 
-      if (pme.getPolarizationType() != ParticleMeshEwald.Polarization.MUTUAL) {
+      if (pme.getPolarizationType() != Polarization.MUTUAL) {
         OpenMM_AmoebaMultipoleForce_setPolarizationType(
             amoebaMultipoleForce, OpenMM_AmoebaMultipoleForce_Direct);
-        if (pme.getPolarizationType() == ParticleMeshEwald.Polarization.NONE) {
+        if (pme.getPolarizationType() == Polarization.NONE) {
           polarScale = 0.0;
         }
       } else {
         String algorithm = forceField.getString("SCF_ALGORITHM", "CG");
         try {
           algorithm = algorithm.replaceAll("-", "_").toUpperCase();
-          scfAlgorithm = ParticleMeshEwald.SCFAlgorithm.valueOf(algorithm);
+          scfAlgorithm = SCFAlgorithm.valueOf(algorithm);
         } catch (Exception e) {
-          scfAlgorithm = ParticleMeshEwald.SCFAlgorithm.CG;
+          scfAlgorithm = SCFAlgorithm.CG;
         }
 
         switch (scfAlgorithm) {
@@ -4470,7 +4471,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         addGeneralizedKirkwoodForce();
       }
 
-      if (scfAlgorithm == ParticleMeshEwald.SCFAlgorithm.EPT) {
+      if (scfAlgorithm == SCFAlgorithm.EPT) {
         logger.info("   Using extrapolated perturbation theory for polarization energy.");
       }
     }
@@ -4488,7 +4489,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
 
       double polarScale = 1.0;
-      if (pme.getPolarizationType() == ParticleMeshEwald.Polarization.NONE) {
+      if (pme.getPolarizationType() == Polarization.NONE) {
         polarScale = 0.0;
       }
 
@@ -4653,7 +4654,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius(
           amoebaGeneralizedKirkwoodForce, gk.getProbeRadius() * OpenMM_NmPerAngstrom);
 
-      NonPolar nonpolar = gk.getNonPolarModel();
+      NonPolarModel nonpolar = gk.getNonPolarModel();
       switch (nonpolar) {
         case BORN_SOLV:
         case BORN_CAV_DISP:

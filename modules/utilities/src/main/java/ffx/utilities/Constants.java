@@ -53,6 +53,10 @@ public class Constants {
   // Below constants are the seven defining constants of SI as of May 20 2019 (BIPM).
 
   /**
+   * Convert Hartree to kcal/mol.
+   */
+  public static final double HARTREE_TO_KCAL_PER_MOL = 627.5094738898777;
+  /**
    * Degrees per radian.
    */
   public static final double DEGREES_PER_RADIAN = 180.0 / PI;

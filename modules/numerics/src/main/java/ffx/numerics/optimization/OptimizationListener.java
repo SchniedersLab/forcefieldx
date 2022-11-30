@@ -55,6 +55,7 @@ public interface OptimizationListener {
    * the optimizer.
    *
    * @param iter Number of iterations.
+   * @param nBFGS Number of L-BFGS correction vectors.
    * @param nfun Number of function evaluations.
    * @param grms RMS gradient at current solution.
    * @param xrms RMS coordinate change at current solution.
@@ -67,6 +68,7 @@ public interface OptimizationListener {
    */
   boolean optimizationUpdate(
       int iter,
+      int nBFGS,
       int nfun,
       double grms,
       double xrms,

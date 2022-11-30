@@ -35,24 +35,11 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.utilities;
+package ffx.potential.nonbonded.pme;
 
-/**
- * The Keyword Group for an FFX Keyword.
- *
- * @author Michael J. Schnieders
- */
-public enum KeywordGroup {
-  EnergyUnitConversion,
-  ElectrostaticsFunctionalForm,
-  ImplicitSolvent,
-  LocalGeometryFunctionalForm,
-  PotentialFunctionParameter,
-  PotentialFunctionSelection,
-  UnitCellAndSpaceGroup,
-  VanDerWaalsFunctionalForm,
-  NonBondedCutoff,
-  ParticleMeshEwald,
-  ConstantPhMolecularDynamics,
-  Refinement,
+public enum SCFPredictor {
+  NONE,
+  LS,
+  POLY,
+  ASPC
 }

@@ -64,7 +64,7 @@ public class LambdaGradientTest extends PotentialTest {
     potentialScript = lambdaGradient;
 
     double expectedPotentialEnergyVac = -7.70864934;
-    double expectedPotentialEnergyXtal = -36.22707541638729;
+    double expectedPotentialEnergyXtal = -36.227069280713586;
     double actualPotentialEnergyVac = lambdaGradient.e0;
     double actualPotentialEnergyXtal = lambdaGradient.e1;
 
@@ -123,8 +123,8 @@ public class LambdaGradientTest extends PotentialTest {
     LambdaGradient lambdaGradient = new LambdaGradient(binding).run();
     potentialScript = lambdaGradient;
 
-    double expectedPotentialEnergyVac = -33.519321973744496;
-    double expectedPotentialEnergyXtal = -41.768837155671626;
+    double expectedPotentialEnergyVac = -33.51932427659555;
+    double expectedPotentialEnergyXtal = -41.76872879469449;
     double actualPotentialEnergyVac = lambdaGradient.e0;
     double actualPotentialEnergyXtal = lambdaGradient.e1;
 

@@ -35,24 +35,24 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.utilities;
+package ffx.potential.nonbonded.pme;
 
-/**
- * The Keyword Group for an FFX Keyword.
- *
- * @author Michael J. Schnieders
- */
-public enum KeywordGroup {
-  EnergyUnitConversion,
-  ElectrostaticsFunctionalForm,
-  ImplicitSolvent,
-  LocalGeometryFunctionalForm,
-  PotentialFunctionParameter,
-  PotentialFunctionSelection,
-  UnitCellAndSpaceGroup,
-  VanDerWaalsFunctionalForm,
-  NonBondedCutoff,
-  ParticleMeshEwald,
-  ConstantPhMolecularDynamics,
-  Refinement,
+import static ffx.utilities.KeywordGroup.ElectrostaticsFunctionalForm;
+
+import ffx.utilities.FFXKeyword;
+
+@FFXKeyword(name = "polarization", clazz = String.class,
+    keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "mutual",
+    description = "[DIRECT / MUTUAL / NONE] "
+        + "Selects between the use of direct and mutual dipole polarization for force fields "
+        + "that incorporate the polarization term. "
+        + "The direct modifier avoids an iterative calculation by using only the permanent "
+        + "electric field in computation of induced dipoles. "
+        + "The mutual option, which is the default in the absence of the polarization property, "
+        + "iterates the induced dipoles to self-consistency."
+        + "The none option turns off polarization and takes precedence over the polarizeterm property.")
+public enum Polarization {
+  MUTUAL,
+  DIRECT,
+  NONE
 }

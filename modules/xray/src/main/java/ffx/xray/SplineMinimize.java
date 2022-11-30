@@ -174,6 +174,7 @@ public class SplineMinimize implements OptimizationListener, Terminatable {
   @Override
   public boolean optimizationUpdate(
       int iter,
+      int nBFGS,
       int nfun,
       double grms,
       double xrms,

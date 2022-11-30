@@ -35,24 +35,34 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.utilities;
+package ffx.potential.nonbonded.pme;
 
-/**
- * The Keyword Group for an FFX Keyword.
- *
- * @author Michael J. Schnieders
- */
-public enum KeywordGroup {
-  EnergyUnitConversion,
-  ElectrostaticsFunctionalForm,
-  ImplicitSolvent,
-  LocalGeometryFunctionalForm,
-  PotentialFunctionParameter,
-  PotentialFunctionSelection,
-  UnitCellAndSpaceGroup,
-  VanDerWaalsFunctionalForm,
-  NonBondedCutoff,
-  ParticleMeshEwald,
-  ConstantPhMolecularDynamics,
-  Refinement,
+import edu.rit.pj.IntegerSchedule;
+import edu.rit.util.Range;
+import ffx.potential.nonbonded.PairwiseSchedule;
+
+public class RealSpaceNeighborParameters {
+
+  public final int numThreads;
+  /**
+   * Neighbor lists, without atoms beyond the real space cutoff. [nSymm][nAtoms][nIncludedNeighbors]
+   */
+  public int[][][] realSpaceLists;
+  /** Number of neighboring atoms within the real space cutoff. [nSymm][nAtoms] */
+  public int[][] realSpaceCounts;
+  /** Optimal pairwise ranges. */
+  public Range[] realSpaceRanges;
+  /** Pairwise schedule for load balancing. */
+  public IntegerSchedule realSpaceSchedule;
+
+  public RealSpaceNeighborParameters(int maxThreads) {
+    numThreads = maxThreads;
+    realSpaceRanges = new Range[maxThreads];
+  }
+
+  public void allocate(int nAtoms, int nSymm) {
+    realSpaceSchedule = new PairwiseSchedule(numThreads, nAtoms, realSpaceRanges);
+    realSpaceLists = new int[nSymm][nAtoms][];
+    realSpaceCounts = new int[nSymm][nAtoms];
+  }
 }

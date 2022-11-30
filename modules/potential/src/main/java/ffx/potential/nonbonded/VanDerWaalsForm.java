@@ -117,6 +117,16 @@ public class VanDerWaalsForm {
    */
   private static final double DEFAULT_VDW_14_SCALE = 1.0;
 
+  /**
+   * The default van der Waals taper location is at 90% of the cut-off distance.
+   */
+  public static final double DEFAULT_VDW_TAPER = 0.9;
+
+  /**
+   * The default van der Waals cut-off radius is 12.0 Angstroms.
+   */
+  public static final double DEFAULT_VDW_CUTOFF = 12.0;
+
   /** First constant suggested by Halgren for the Buffered-14-7 potential. */
   @FFXKeyword(name = "halgren-gamma", keywordGroup = VanDerWaalsFunctionalForm, defaultValue = "0.12",
       description =

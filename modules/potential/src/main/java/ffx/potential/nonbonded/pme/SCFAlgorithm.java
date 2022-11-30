@@ -35,97 +35,55 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential;
+package ffx.potential.nonbonded.pme;
 
+import ffx.potential.ForceFieldEnergy.Platform;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
- * PotentialComponent class.
- *
- * @author Michael J. Schnieders
- * @since 1.0
+ * Describes available SCF algorithms, and whether they are supported by the FFX and/or CUDA
+ * implementations.
  */
-public enum PotentialComponent {
-  Topology(null),
-  ForceFieldEnergy(Topology),
-  VanDerWaals(ForceFieldEnergy),
-  Bonded(ForceFieldEnergy),
-  Bond(Bonded),
-  Angle(Bonded),
-  Torsion(Bonded),
-  StretchBend(Bonded),
-  OutOfPlaneBend(Bonded),
-  PiOrbitalTorsion(Bonded),
-  TorsionTorsion(Bonded),
-  UreyBradley(Bonded),
-  RestraintBond(Bonded),
-  ImproperTorsion(Bonded),
-  NCS(Bonded),
-  Restrain(Bonded),
-  Electrostatics(ForceFieldEnergy),
-  Multipoles(Electrostatics),
-  Permanent(Multipoles),
-  PermanentRealSpace(Permanent),
-  PermanentSelf(Permanent),
-  PermanentReciprocal(Permanent),
-  Induced(Multipoles),
-  InducedRealSpace(Induced),
-  InducedSelf(Induced),
-  InducedReciprocal(Induced),
-  GeneralizedKirkwood(Electrostatics),
-  Bias(Topology),
-  OSRW(Bias),
-  pHMD(Bias),
-  pHBias(pHMD),
-  ModelBias(pHMD),
-  DiscretizeBias(pHMD),
-  XRay(Topology),
-  ;
+public enum SCFAlgorithm {
+  SOR(true, true),
+  CG(true, true),
+  EPT(true, true);
 
-  private final PotentialComponent parent;
-  private final List<PotentialComponent> children;
+  private final List<Platform> supportedPlatforms;
 
-  PotentialComponent(PotentialComponent parent) {
-    this.parent = parent;
-    this.children = new ArrayList<>();
-    if (parent != null) {
-      parent.addChild(this);
+  SCFAlgorithm(boolean ffx, boolean openMM, Platform... otherPlatforms) {
+    List<Platform> platforms = new ArrayList<>();
+    if (ffx) {
+      platforms.add(Platform.FFX);
     }
-  }
-
-  /**
-   * Getter for the field <code>children</code>.
-   *
-   * @return a {@link java.util.List} object.
-   */
-  public List<PotentialComponent> getChildren() {
-    return children;
-  }
-
-  /**
-   * Getter for the field <code>parent</code>.
-   *
-   * @return a {@link ffx.potential.PotentialComponent} object.
-   */
-  public PotentialComponent getParent() {
-    return parent;
-  }
-
-  /**
-   * is.
-   *
-   * @param category a {@link ffx.potential.PotentialComponent} object.
-   * @return a boolean.
-   */
-  public boolean is(PotentialComponent category) {
-    if (this == category) {
-      return true;
+    if (openMM) {
+      platforms.add(Platform.OMM);
+      platforms.add(Platform.OMM_CUDA);
+      platforms.add(Platform.OMM_REF);
     }
-    return (parent != null) && parent.is(category);
+    platforms.addAll(Arrays.asList(otherPlatforms));
+    supportedPlatforms = Collections.unmodifiableList(platforms);
   }
 
-  private void addChild(PotentialComponent child) {
-    children.add(child);
+  /**
+   * Returns the list of supported Platforms.
+   *
+   * @return The supported platform List. Unmodifiable.
+   */
+  public List<Platform> getSupportedPlatforms() {
+    return supportedPlatforms;
+  }
+
+  /**
+   * Checks if this platform is supported
+   *
+   * @param platform To check
+   * @return Supported
+   */
+  public boolean isSupported(Platform platform) {
+    return supportedPlatforms.contains(platform);
   }
 }

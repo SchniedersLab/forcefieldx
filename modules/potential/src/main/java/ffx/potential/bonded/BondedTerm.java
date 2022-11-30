@@ -136,6 +136,36 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
   }
 
   /**
+   * This method returns true if any atom is marked as being part of a neural network.
+   *
+   * @return True if any atom is marked as being part of a neural network.
+   */
+  public boolean isNeuralNetwork() {
+    for (Atom atom : atoms) {
+      if (atom.isNeuralNetwork()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * This method removes terms from a list that are marked as being part of a neural network.
+   * @param list The list to check.
+   * @param <T> The Bonded term class.
+   */
+  public static <T extends BondedTerm> void removeNeuralNetworkTerms(List<T> list) {
+    // Remove terms handled by a neutral network.
+    List<T> removeList = new ArrayList<>();
+    for (T term : list) {
+      if (term.isNeuralNetwork()) {
+        removeList.add(term);
+      }
+    }
+    list.removeAll(removeList);
+  }
+
+  /**
    * Checks if at least one atom in this BondedTerm is of the given resolution.
    *
    * @param resolution a {@link ffx.potential.bonded.Atom.Resolution} object.
@@ -453,6 +483,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
   }
 
   public static class BondedComparator implements Comparator<BondedTerm> {
+
     private static final List<Class<? extends BondedTerm>> naturalOrder =
         new ArrayList<>() {
           {
@@ -470,7 +501,8 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
           }
         };
 
-    private BondedComparator() {} // singleton
+    private BondedComparator() {
+    } // singleton
 
     /** Sort using position in the naturalOrder list; fallback to alphabetical. */
     @Override

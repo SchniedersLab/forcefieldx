@@ -218,7 +218,7 @@ class CreateRotamers extends AlgorithmsScript {
             Minimize minimize = Minimize.minimizeFactory(activeAssembly,
                 activeAssembly.getPotentialEnergy(), algorithmListener, engine)
             // Locally minimize.
-            minimize.minimize(minimizeOptions.getEps(), minimizeOptions.getIterations())
+            minimize.minimize(minimizeOptions.getNBFGS(), minimizeOptions.getEps(), minimizeOptions.getIterations())
           } else {
             logger.info(" Skipping minimization of original-coordinates rotamer.")
           }

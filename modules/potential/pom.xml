@@ -231,11 +231,11 @@
       <groupId>edu.uiowa.jopenmm</groupId>
       <version>${jopenmm.version}</version>
     </dependency>
-    <!-- dependency>
+    <dependency>
       <artifactId>jtorchani-fat</artifactId>
       <groupId>edu.uiowa.jtorchani</groupId>
       <version>1.0.0-beta</version>
-    </dependency -->
+    </dependency>
     <dependency>
       <artifactId>guava</artifactId>
       <groupId>com.google.guava</groupId>
