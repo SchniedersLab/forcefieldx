@@ -83,10 +83,13 @@ public class AminoAcidUtils {
   public static final List<AminoAcid1> aminoAcid1List = Arrays.asList(AminoAcid1.values());
   /** Constant <code>aminoAcidList</code> */
   public static final List<AminoAcid3> aminoAcidList = Arrays.asList(AminoAcid3.values());
+
   /** Constant <code>AminoAcidBackboneAtoms</code> */
   public enum AminoAcidBackboneAtoms {N, H, CA, HA, C, O}
+
   /** Constant <code>GlycineBackboneAtoms</code> */
   public enum GlycineBackboneAtoms {N, H, CA, HA2, HA3, C, O}
+
   /** Constant <code>ProlineBackboneAtoms</code> */
   public enum ProlineBackboneAtoms {N, CA, HA, C, O}
 
@@ -101,10 +104,16 @@ public class AminoAcidUtils {
   }
 
   /**
-   * Stoichiometry of side chains can be used for identification, accept for a couple cases: 1.)
-   * Proline & Valine 2.) (Iso)Leucine 3.) DNA Gaunine/RNA Adenine. This Hashtable returns the
-   * 3-letter name for amino acids, a single character for nucleic acids, or an integer indicating a
-   * special case.
+   * Stoichiometry of side chains can be used for identification, accept for a couple cases:
+   * <p>
+   * 1.) Proline and Valine
+   * <p>
+   * 2.) (Iso)Leucine
+   * <p>
+   * 3.) DNA Gaunine/RNA Adenine.
+   * <p>
+   * This Hashtable returns the 3-letter name for amino acids, a single character for nucleic acids,
+   * or an integer indicating a special case.
    */
   public static final HashMap<String, String> sidechainStoichiometry = new HashMap<>();
 

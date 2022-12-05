@@ -59,7 +59,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc Superpose [options] &lt;filename&gt;
  */
-@Command(description = " Superpose frames one or two trajectory files to calculate RMSD.", name = "ffxc Superpose")
+@Command(description = " Superpose frames one or two trajectory files to calculate RMSD.", name = "Superpose")
 class Superpose extends AlgorithmsScript {
 
   @Mixin

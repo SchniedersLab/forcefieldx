@@ -43,9 +43,6 @@ import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.DoubleMath.normalize;
 import static ffx.numerics.math.DoubleMath.scale;
 import static ffx.numerics.math.DoubleMath.sub;
-import static ffx.potential.parameters.BondType.cubic;
-import static ffx.potential.parameters.BondType.quartic;
-import static ffx.potential.parameters.BondType.units;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
@@ -58,9 +55,7 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Geometry;
@@ -89,12 +84,12 @@ public class Bond extends BondedTerm {
   private static final Logger logger = Logger.getLogger(Bond.class.getName());
   // Some static variables used for computing cylinder orientations
   private static final float[] a0col = {
-    0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f
+      0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f
   };
   private static final float[] f4a = {0.0f, 0.0f, 0.0f, 0.9f};
   private static final float[] f4b = {0.0f, 0.0f, 0.0f, 0.9f};
   private static final float[] f16 = {
-    0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f, 0.9f
+      0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f, 0.9f, 0.0f, 0.0f, 0.0f, 0.9f
   };
   private static final double[] a13d = new double[3];
   private static final double[] a23d = new double[3];
@@ -171,7 +166,7 @@ public class Bond extends BondedTerm {
     String key = BondType.sortKey(c);
     StringBuilder sb = new StringBuilder(
         format(" No BondType for key: %s\n %s -> %s\n %s -> %s", key,
-        a1, atomType1, a2, atomType2));
+            a1, atomType1, a2, atomType2));
     int c1 = atomType1.atomClass;
     int c2 = atomType2.atomClass;
     List<AtomType> types1 = forceField.getSimilarAtomTypes(atomType1);
@@ -240,7 +235,7 @@ public class Bond extends BondedTerm {
     var vb = atomB.getXYZ();
     var vab = va.sub(vb);
     value = vab.length();
-    var prefactor = units * rigidScale * bondType.forceConstant;
+    var prefactor = bondType.bondUnit * rigidScale * bondType.forceConstant;
     // dv is deviation from ideal
     var dv = value - bondType.distance;
     if (bondType.bondFunction.hasFlatBottom()) {
@@ -253,28 +248,26 @@ public class Bond extends BondedTerm {
     var dv2 = dv * dv;
     switch (bondType.bondFunction) {
       case QUARTIC:
-      case FLAT_BOTTOM_QUARTIC:
-        {
-          energy = prefactor * dv2 * (1.0 + cubic * dv + quartic * dv2);
-          if (gradient) {
-            // Compute the magnitude of the gradient.
-            var dedr = 2.0 * prefactor * dv * (1.0 + 1.5 * cubic * dv + 2.0 * quartic * dv2);
-            computeGradient(threadID, grad, atomA, atomB, vab, dedr);
-          }
-          break;
+      case FLAT_BOTTOM_QUARTIC: {
+        energy = prefactor * dv2 * (1.0 + bondType.cubic * dv + bondType.quartic * dv2);
+        if (gradient) {
+          // Compute the magnitude of the gradient.
+          var dedr = 2.0 * prefactor * dv * (1.0 + 1.5 * bondType.cubic * dv + 2.0 * bondType.quartic * dv2);
+          computeGradient(threadID, grad, atomA, atomB, vab, dedr);
         }
+        break;
+      }
       case HARMONIC:
       case FLAT_BOTTOM_HARMONIC:
-      default:
-        {
-          energy = prefactor * dv2;
-          if (gradient) {
-            // Compute the magnitude of the gradient.
-            var dedr = 2.0 * prefactor * dv;
-            computeGradient(threadID, grad, atomA, atomB, vab, dedr);
-          }
-          break;
+      default: {
+        energy = prefactor * dv2;
+        if (gradient) {
+          // Compute the magnitude of the gradient.
+          var dedr = 2.0 * prefactor * dv;
+          computeGradient(threadID, grad, atomA, atomB, vab, dedr);
         }
+        break;
+      }
     }
     value = dv;
     return energy;
@@ -358,6 +351,7 @@ public class Bond extends BondedTerm {
 
   /**
    * Return the BondType for this Bond.
+   *
    * @return Returns the BondType.
    */
   public BondType getBondType() {
@@ -602,8 +596,8 @@ public class Bond extends BondedTerm {
    * Find the Atom that <b>this</b> Bond and Bond b do not have in common.
    *
    * @param b Bond to compare with
-   * @return The Atom that Bond b and <b>this</b> Bond do not have in common, or Null if they have
-   *     no Atom in common
+   * @return The Atom that Bond b and <b>this</b> Bond do not have in common, or Null if they have no
+   *     Atom in common
    */
   Atom getOtherAtom(Bond b) {
     if (b == this || b == null) {

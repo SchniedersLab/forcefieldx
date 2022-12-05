@@ -38,7 +38,6 @@
 package ffx.potential.bonded;
 
 import static ffx.numerics.math.DoubleMath.sub;
-import static ffx.potential.parameters.TorsionTorsionType.units;
 import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
@@ -309,15 +308,15 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
       dxy[3] = torsionTorsionType.dxy[pos2];
       if (!gradient && !lambdaTerm) {
         var bcu = bcuint(x1l, x1u, y1l, y1u, t1, t2, e, dx, dy, dxy);
-        energy = units * bcu * lambda;
-        dEdL = units * bcu;
+        energy = torsionTorsionType.torTorUnit * bcu * lambda;
+        dEdL = torsionTorsionType.torTorUnit * bcu;
       } else {
         var ansy = new double[2];
         var bcu1 = bcuint1(x1l, x1u, y1l, y1u, t1, t2, e, dx, dy, dxy, ansy);
-        energy = units * bcu1 * lambda;
-        dEdL = units * bcu1;
-        var dedang1 = sign * units * toDegrees(ansy[0]) * lambda;
-        var dedang2 = sign * units * toDegrees(ansy[1]) * lambda;
+        energy = torsionTorsionType.torTorUnit * bcu1 * lambda;
+        dEdL = torsionTorsionType.torTorUnit * bcu1;
+        var dedang1 = sign * torsionTorsionType.torTorUnit * toDegrees(ansy[0]) * lambda;
+        var dedang2 = sign * torsionTorsionType.torTorUnit * toDegrees(ansy[1]) * lambda;
         // Derivative components for the first angle.
         var vca = vc.sub(va);
         var vdb = vd.sub(vb);

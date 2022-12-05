@@ -261,6 +261,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
   @Override
   public boolean optimizationUpdate(
       int iter,
+      int nBFGS,
       int nfun,
       double grms,
       double xrms,
@@ -275,8 +276,11 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
     this.nSteps = iter;
 
     if (iter == 0) {
-      logger.info(
-          "\n Limited Memory BFGS Quasi-Newton Optimization of Fc to Fo Scaling Parameters\n");
+      if (nBFGS > 0) {
+        logger.info("\n Limited Memory BFGS Quasi-Newton Optimization of Fc to Fo Scaling Parameters\n");
+      } else {
+        logger.info("\n Steepest Decent Optimization of Fc to Fo Scaling Parameters\n");
+      }
       logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time");
     }
     if (info == null) {

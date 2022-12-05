@@ -365,7 +365,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>Before and After Broadcast.</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -385,7 +385,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -420,7 +420,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>Scatter.</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -448,7 +448,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -479,7 +479,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>Scatter</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -502,7 +502,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -540,7 +540,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>Gather</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -568,7 +568,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -599,7 +599,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>Gather</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -622,7 +622,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -661,7 +661,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>All-Gather</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -689,7 +689,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -719,7 +719,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>All-Gather</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -742,7 +742,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -780,7 +780,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>Reduce</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -794,7 +794,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -823,7 +823,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>All-Reduce</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -837,7 +837,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -867,7 +867,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>All-to-All</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -904,7 +904,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -954,7 +954,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>Scan</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -968,7 +968,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -1000,7 +1000,7 @@ import edu.rit.util.Range;
  * <TABLE>
  * <CAPTION>Exclusive-Scan</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * Before:
  * <pre>
  * Process   Process   Process   Process
@@ -1014,7 +1014,7 @@ import edu.rit.util.Range;
  * <pre>
  *  ... </pre>
  * </TD>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * After:
  * <pre>
  * Process   Process   Process   Process
@@ -1143,11 +1143,11 @@ public class Comm {
      * further information, see class {@linkplain PJProperties}.
      *
      * @param args Command line arguments.
-     * @throws NullPointerException     (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException     (unchecked exception) Thrown if
      *                                  <code>args</code> is null.
-     * @throws IllegalArgumentException (unchecked exception) Thrown if the
+     * @throws java.lang.IllegalArgumentException (unchecked exception) Thrown if the
      *                                  value of one of the Java system properties is illegal.
-     * @throws IOException              Thrown if an I/O error occurred.
+     * @throws java.io.IOException              Thrown if an I/O error occurred.
      */
     public static void init(String[] args)
             throws IOException {
@@ -1230,7 +1230,7 @@ public class Comm {
      * Obtain a reference to the world communicator.
      *
      * @return World communicator.
-     * @throws IllegalStateException (unchecked exception) Thrown if
+     * @throws java.lang.IllegalStateException (unchecked exception) Thrown if
      *                               <code>Comm.init()</code> has not been called. Thrown if <code>world()</code> is
      *                               called in the job frontend process; the world communicator does not exist
      *                               in the job frontend process.
@@ -1295,7 +1295,7 @@ public class Comm {
      *                    communicator; false otherwise.
      * @return New communicator if this process will participate in the new
      * communicator; null otherwise.
-     * @throws IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException Thrown if an I/O error occurred.
      */
     public Comm createComm(boolean participate)
             throws IOException {
@@ -1324,7 +1324,7 @@ public class Comm {
      * @param tag         Message tag.
      * @return New communicator if this process will participate in the new
      * communicator; null otherwise.
-     * @throws IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException Thrown if an I/O error occurred.
      */
     public Comm createComm(boolean participate,
                            int tag)
@@ -1390,11 +1390,11 @@ public class Comm {
      *
      * @param toRank Destination process's rank in this communicator.
      * @param buffer Buffer of data items to be sent.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>toRank</code> is not in the range 0 .. <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>buffer</code> is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public void send(int toRank,
                      Buf buffer)
@@ -1415,11 +1415,11 @@ public class Comm {
      * @param toRank Destination process's rank in this communicator.
      * @param tag    Message tag.
      * @param buffer Buffer of data items to be sent.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>toRank</code> is not in the range 0 .. <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>buffer</code> is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public void send(int toRank,
                      int tag,
@@ -1451,11 +1451,11 @@ public class Comm {
      *                <code>request</code> is null, a new CommRequest object is created and
      *                returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>toRank</code> is not in the range 0 .. <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>buffer</code> is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public CommRequest send(int toRank,
                             Buf buffer,
@@ -1488,11 +1488,11 @@ public class Comm {
      *                <code>request</code> is null, a new CommRequest object is created and
      *                returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>toRank</code> is not in the range 0 .. <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>buffer</code> is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public CommRequest send(int toRank,
                             int tag,
@@ -1536,12 +1536,12 @@ public class Comm {
      *                 receive from any process.
      * @param buffer   Buffer of data items to be received.
      * @return Status object giving the outcome of the message reception.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>fromRank</code> is not null and is not in the range 0 ..
      *                                   <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>buffer</code> is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public CommStatus receive(Integer fromRank,
                               Buf buffer)
@@ -1574,12 +1574,12 @@ public class Comm {
      * @param tag      Message tag.
      * @param buffer   Buffer of data items to be received.
      * @return Status object giving the outcome of the message reception.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>fromRank</code> is not null and is not in the range 0 ..
      *                                   <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>buffer</code> is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public CommStatus receive(Integer fromRank,
                               int tag,
@@ -1634,12 +1634,12 @@ public class Comm {
      * @param tagRange Message tag range, or null to receive any tag.
      * @param buffer   Buffer of data items to be received.
      * @return Status object giving the outcome of the message reception.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>fromRank</code> is not null and is not in the range 0 ..
      *                                   <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>buffer</code> is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public CommStatus receive(Integer fromRank,
                               Range tagRange,
@@ -1690,12 +1690,12 @@ public class Comm {
      *                 <code>request</code> is null, a new CommRequest object is created and
      *                 returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>fromRank</code> is not null and is not in the range 0 ..
      *                                   <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>buffer</code> is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public CommRequest receive(Integer fromRank,
                                Buf buffer,
@@ -1731,12 +1731,12 @@ public class Comm {
      *                 <code>request</code> is null, a new CommRequest object is created and
      *                 returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>fromRank</code> is not null and is not in the range 0 ..
      *                                   <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>buffer</code> is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public CommRequest receive(Integer fromRank,
                                int tag,
@@ -1794,12 +1794,12 @@ public class Comm {
      *                 <code>request</code> is null, a new CommRequest object is created and
      *                 returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>fromRank</code> is not null and is not in the range 0 ..
      *                                   <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>buffer</code> is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public CommRequest receive(Integer fromRank,
                                Range tagRange,
@@ -1861,13 +1861,13 @@ public class Comm {
      * @param fromRank Source process's rank in this communicator.
      * @param recvBuf  Buffer of data items to be received.
      * @return Status object giving the outcome of the message reception.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>toRank</code> or <code>fromRank</code>
      *                                   is not in the range 0 .. <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>sendBuf</code> or <code>recvBuf</code>
      *                                   is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public CommStatus sendReceive(int toRank,
                                   Buf sendBuf,
@@ -1912,13 +1912,13 @@ public class Comm {
      * @param recvTag  Message tag for incoming message.
      * @param recvBuf  Buffer of data items to be received.
      * @return Status object giving the outcome of the message reception.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>toRank</code> or <code>fromRank</code>
      *                                   is not in the range 0 .. <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>sendBuf</code> or <code>recvBuf</code>
      *                                   is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public CommStatus sendReceive(int toRank,
                                   int sendTag,
@@ -1977,13 +1977,13 @@ public class Comm {
      *                 <code>request</code> is null, a new CommRequest object is created and
      *                 returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>toRank</code> or <code>fromRank</code>
      *                                   is not in the range 0 .. <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>sendBuf</code> or <code>recvBuf</code>
      *                                   is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public CommRequest sendReceive(int toRank,
                                    Buf sendBuf,
@@ -2030,13 +2030,13 @@ public class Comm {
      *                 <code>request</code> is null, a new CommRequest object is created and
      *                 returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>toRank</code> or <code>fromRank</code>
      *                                   is not in the range 0 .. <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>sendBuf</code> or <code>recvBuf</code>
      *                                   is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public CommRequest sendReceive(int toRank,
                                    int sendTag,
@@ -2074,9 +2074,9 @@ public class Comm {
      * outgoing buffer in the <code>floodSend()</code> method call.
      *
      * @param buffer Buffer of data items to be sent.
-     * @throws NullPointerException (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException (unchecked exception) Thrown if
      *                              <code>buffer</code> is null.
-     * @throws IOException          Thrown if an I/O error occurred.
+     * @throws java.io.IOException          Thrown if an I/O error occurred.
      */
     public void floodSend(Buf buffer)
             throws IOException {
@@ -2097,9 +2097,9 @@ public class Comm {
      *
      * @param tag    Message tag.
      * @param buffer Buffer of data items to be sent.
-     * @throws NullPointerException (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException (unchecked exception) Thrown if
      *                              <code>buffer</code> is null.
-     * @throws IOException          Thrown if an I/O error occurred.
+     * @throws java.io.IOException          Thrown if an I/O error occurred.
      */
     public void floodSend(int tag,
                           Buf buffer)
@@ -2131,9 +2131,9 @@ public class Comm {
      *                <code>request</code> is null, a new CommRequest object is created and
      *                returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     * @throws NullPointerException (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException (unchecked exception) Thrown if
      *                              <code>buffer</code> is null.
-     * @throws IOException          Thrown if an I/O error occurred.
+     * @throws java.io.IOException          Thrown if an I/O error occurred.
      */
     public CommRequest floodSend(Buf buffer,
                                  CommRequest request)
@@ -2166,9 +2166,9 @@ public class Comm {
      *                <code>request</code> is null, a new CommRequest object is created and
      *                returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     * @throws NullPointerException (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException (unchecked exception) Thrown if
      *                              <code>buffer</code> is null.
-     * @throws IOException          Thrown if an I/O error occurred.
+     * @throws java.io.IOException          Thrown if an I/O error occurred.
      */
     public CommRequest floodSend(int tag,
                                  Buf buffer,
@@ -2204,9 +2204,9 @@ public class Comm {
      *
      * @param buffer Buffer of data items to be received.
      * @return Status object giving the outcome of the message reception.
-     * @throws NullPointerException (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException (unchecked exception) Thrown if
      *                              <code>buffer</code> is null.
-     * @throws IOException          Thrown if an I/O error occurred.
+     * @throws java.io.IOException          Thrown if an I/O error occurred.
      */
     public CommStatus floodReceive(Buf buffer)
             throws IOException {
@@ -2232,9 +2232,9 @@ public class Comm {
      * @param tag    Message tag, or null to receive any tag.
      * @param buffer Buffer of data items to be received.
      * @return Status object giving the outcome of the message reception.
-     * @throws NullPointerException (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException (unchecked exception) Thrown if
      *                              <code>buffer</code> is null.
-     * @throws IOException          Thrown if an I/O error occurred.
+     * @throws java.io.IOException          Thrown if an I/O error occurred.
      */
     public CommStatus floodReceive(Integer tag,
                                    Buf buffer)
@@ -2266,9 +2266,9 @@ public class Comm {
      *                <code>request</code> is null, a new CommRequest object is created and
      *                returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     * @throws NullPointerException (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException (unchecked exception) Thrown if
      *                              <code>buffer</code> is null.
-     * @throws IOException          Thrown if an I/O error occurred.
+     * @throws java.io.IOException          Thrown if an I/O error occurred.
      */
     public CommRequest floodReceive(Buf buffer,
                                     CommRequest request)
@@ -2301,9 +2301,9 @@ public class Comm {
      *                <code>request</code> is null, a new CommRequest object is created and
      *                returned.
      * @return CommRequest object to use to wait for the operation to finish.
-     * @throws NullPointerException (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException (unchecked exception) Thrown if
      *                              <code>buffer</code> is null.
-     * @throws IOException          Thrown if an I/O error occurred.
+     * @throws java.io.IOException          Thrown if an I/O error occurred.
      */
     public CommRequest floodReceive(Integer tag,
                                     Buf buffer,
@@ -2447,11 +2447,11 @@ public class Comm {
      * @param root   Root process's rank in this communicator.
      * @param buffer Buffer of data items to be sent (root process) or received
      *               (non-root processes).
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>root</code> is not in the range 0 .. <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>buffer</code> is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public void broadcast(int root,
                           Buf buffer)
@@ -2479,11 +2479,11 @@ public class Comm {
      * @param tag    Message tag.
      * @param buffer Buffer of data items to be sent (root process) or received
      *               (non-root processes).
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>root</code> is not in the range 0 .. <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>buffer</code> is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public void broadcast(int root,
                           int tag,
@@ -2570,13 +2570,13 @@ public class Comm {
      * @param srcarray Array of source buffers to be sent by the root process.
      *                 Ignored in the non-root processes.
      * @param dst      Destination buffer to be received.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>root</code> is not in the range 0 .. <code>size()</code>-1. Thrown if
      *                                   <code>srcarray</code>'s length does not equal the size of this communicator.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>srcarray</code> or any element thereof is null. Thrown if <code>dst</code>
      *                                   is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public void scatter(int root,
                         Buf[] srcarray,
@@ -2611,13 +2611,13 @@ public class Comm {
      * @param srcarray Array of source buffers to be sent by the root process.
      *                 Ignored in the non-root processes.
      * @param dst      Destination buffer to be received.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>root</code> is not in the range 0 .. <code>size()</code>-1. Thrown if
      *                                   <code>srcarray</code>'s length does not equal the size of this communicator.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>srcarray</code> or any element thereof is null. Thrown if <code>dst</code>
      *                                   is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public void scatter(int root,
                         int tag,
@@ -2712,13 +2712,13 @@ public class Comm {
      * @param src      Source buffer to be sent.
      * @param dstarray Array of destination buffers to be received by the root
      *                 process. Ignored in the non-root processes.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>root</code> is not in the range 0 .. <code>size()</code>-1. Thrown if
      *                                   <code>dstarray</code>'s length does not equal the size of this communicator.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>dstarray</code> or any element thereof is null. Thrown if <code>src</code>
      *                                   is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public void gather(int root,
                        Buf src,
@@ -2754,13 +2754,13 @@ public class Comm {
      * @param src      Source buffer to be sent.
      * @param dstarray Array of destination buffers to be received by the root
      *                 process. Ignored in the non-root processes.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>root</code> is not in the range 0 .. <code>size()</code>-1. Thrown if
      *                                   <code>dstarray</code>'s length does not equal the size of this communicator.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>dstarray</code> or any element thereof is null. Thrown if <code>src</code>
      *                                   is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public void gather(int root,
                        int tag,
@@ -2851,12 +2851,12 @@ public class Comm {
      *
      * @param src      Source buffer to be sent.
      * @param dstarray Array of destination buffers to be received.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>dstarray</code>'s length does not equal the size of this communicator.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>dstarray</code> or any element thereof is null. Thrown if <code>src</code>
      *                                   is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public void allGather(Buf src,
                           Buf[] dstarray)
@@ -2887,12 +2887,12 @@ public class Comm {
      * @param tag      Message tag.
      * @param src      Source buffer to be sent.
      * @param dstarray Array of destination buffers to be received.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>dstarray</code>'s length does not equal the size of this communicator.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>dstarray</code> or any element thereof is null. Thrown if <code>src</code>
      *                                   is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public void allGather(int tag,
                           Buf src,
@@ -2958,14 +2958,14 @@ public class Comm {
      * @param root   Root process's rank in this communicator.
      * @param buffer Buffer of data items to be reduced.
      * @param op     Binary operation.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>root</code> is not in the range 0 .. <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>buf</code> is null or <code>op</code>
      *                                   is null.
-     * @throws ClassCastException        (unchecked exception) Thrown if
+     * @throws java.lang.ClassCastException        (unchecked exception) Thrown if
      *                                   <code>buf</code> and <code>op</code> do not use the same item data type.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public void reduce(int root,
                        Buf buffer,
@@ -3014,14 +3014,14 @@ public class Comm {
      * @param tag    Message tag.
      * @param buffer Buffer of data items to be reduced.
      * @param op     Binary operation.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>root</code> is not in the range 0 .. <code>size()</code>-1.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>buf</code> is null or <code>op</code>
      *                                   is null.
-     * @throws ClassCastException        (unchecked exception) Thrown if
+     * @throws java.lang.ClassCastException        (unchecked exception) Thrown if
      *                                   <code>buf</code> and <code>op</code> do not use the same item data type.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public void reduce(int root,
                        int tag,
@@ -3114,12 +3114,12 @@ public class Comm {
      *
      * @param buffer Buffer of data items to be reduced.
      * @param op     Binary operation.
-     * @throws NullPointerException (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException (unchecked exception) Thrown if
      *                              <code>buf</code> is null or <code>op</code>
      *                              is null.
-     * @throws ClassCastException   (unchecked exception) Thrown if
+     * @throws java.lang.ClassCastException   (unchecked exception) Thrown if
      *                              <code>buf</code> and <code>op</code> do not use the same item data type.
-     * @throws IOException          Thrown if an I/O error occurred.
+     * @throws java.io.IOException          Thrown if an I/O error occurred.
      */
     public void allReduce(Buf buffer,
                           Op op)
@@ -3158,12 +3158,12 @@ public class Comm {
      * @param tag    Message tag.
      * @param buffer Buffer of data items to be reduced.
      * @param op     Binary operation.
-     * @throws NullPointerException (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException (unchecked exception) Thrown if
      *                              <code>buf</code> is null or <code>op</code>
      *                              is null.
-     * @throws ClassCastException   (unchecked exception) Thrown if
+     * @throws java.lang.ClassCastException   (unchecked exception) Thrown if
      *                              <code>buf</code> and <code>op</code> do not use the same item data type.
-     * @throws IOException          Thrown if an I/O error occurred.
+     * @throws java.io.IOException          Thrown if an I/O error occurred.
      */
     public void allReduce(int tag,
                           Buf buffer,
@@ -3289,14 +3289,14 @@ public class Comm {
      * @param srcarray Array of source buffers to be sent by this process.
      * @param dstarray Array of destination buffers to be received by this
      *                 process.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>srcarray</code>'s length does not equal the size of this communicator.
      *                                   Thrown if <code>dstarray</code>'s length does not equal the size of this
      *                                   communicator.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>srcarray</code> or any element thereof is null. Thrown if
      *                                   <code>dstarray</code> or any element thereof is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public void allToAll(Buf[] srcarray,
                          Buf[] dstarray)
@@ -3321,14 +3321,14 @@ public class Comm {
      * @param srcarray Array of source buffers to be sent by this process.
      * @param dstarray Array of destination buffers to be received by this
      *                 process.
-     * @throws IndexOutOfBoundsException (unchecked exception) Thrown if
+     * @throws java.lang.IndexOutOfBoundsException (unchecked exception) Thrown if
      *                                   <code>srcarray</code>'s length does not equal the size of this communicator.
      *                                   Thrown if <code>dstarray</code>'s length does not equal the size of this
      *                                   communicator.
-     * @throws NullPointerException      (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException      (unchecked exception) Thrown if
      *                                   <code>srcarray</code> or any element thereof is null. Thrown if
      *                                   <code>dstarray</code> or any element thereof is null.
-     * @throws IOException               Thrown if an I/O error occurred.
+     * @throws java.io.IOException               Thrown if an I/O error occurred.
      */
     public void allToAll(int tag,
                          Buf[] srcarray,
@@ -3409,12 +3409,12 @@ public class Comm {
      *
      * @param buf Buffer of data items to be scanned.
      * @param op  Binary operation.
-     * @throws NullPointerException (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException (unchecked exception) Thrown if
      *                              <code>buf</code> is null or <code>op</code>
      *                              is null.
-     * @throws ClassCastException   (unchecked exception) Thrown if
+     * @throws java.lang.ClassCastException   (unchecked exception) Thrown if
      *                              <code>buf</code> and <code>op</code> do not use the same item data type.
-     * @throws IOException          Thrown if an I/O error occurred.
+     * @throws java.io.IOException          Thrown if an I/O error occurred.
      */
     public void scan(Buf buf,
                      Op op)
@@ -3450,12 +3450,12 @@ public class Comm {
      * @param tag Message tag.
      * @param buf Buffer of data items to be scanned.
      * @param op  Binary operation.
-     * @throws NullPointerException (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException (unchecked exception) Thrown if
      *                              <code>buf</code> is null or <code>op</code>
      *                              is null.
-     * @throws ClassCastException   (unchecked exception) Thrown if
+     * @throws java.lang.ClassCastException   (unchecked exception) Thrown if
      *                              <code>buf</code> and <code>op</code> do not use the same item data type.
-     * @throws IOException          Thrown if an I/O error occurred.
+     * @throws java.io.IOException          Thrown if an I/O error occurred.
      */
     public void scan(int tag,
                      Buf buf,
@@ -3564,12 +3564,12 @@ public class Comm {
      * @param buf  Buffer of data items to be scanned.
      * @param op   Binary operation.
      * @param item Initial data value.
-     * @throws NullPointerException (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException (unchecked exception) Thrown if
      *                              <code>buf</code> is null or <code>op</code>
      *                              is null.
-     * @throws ClassCastException   (unchecked exception) Thrown if
+     * @throws java.lang.ClassCastException   (unchecked exception) Thrown if
      *                              <code>buf</code> and <code>op</code> do not use the same item data type.
-     * @throws IOException          Thrown if an I/O error occurred.
+     * @throws java.io.IOException          Thrown if an I/O error occurred.
      */
     public void exclusiveScan(Buf buf,
                               Op op,
@@ -3623,12 +3623,12 @@ public class Comm {
      * @param buf  Buffer of data items to be scanned.
      * @param op   Binary operation.
      * @param item Initial data value.
-     * @throws NullPointerException (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException (unchecked exception) Thrown if
      *                              <code>buf</code> is null or <code>op</code>
      *                              is null.
-     * @throws ClassCastException   (unchecked exception) Thrown if
+     * @throws java.lang.ClassCastException   (unchecked exception) Thrown if
      *                              <code>buf</code> and <code>op</code> do not use the same item data type.
-     * @throws IOException          Thrown if an I/O error occurred.
+     * @throws java.io.IOException          Thrown if an I/O error occurred.
      */
     public void exclusiveScan(int tag,
                               Buf buf,
@@ -3703,7 +3703,7 @@ public class Comm {
      * called <code>barrier()</code>, then the calling thread unblocks and returns
      * from the <code>barrier()</code> call.
      *
-     * @throws IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException Thrown if an I/O error occurred.
      */
     public void barrier()
             throws IOException {
@@ -3718,7 +3718,7 @@ public class Comm {
      * <code>barrier()</code> call.
      *
      * @param tag Message tag.
-     * @throws IOException Thrown if an I/O error occurred.
+     * @throws java.io.IOException Thrown if an I/O error occurred.
      */
     public void barrier(int tag)
             throws IOException {

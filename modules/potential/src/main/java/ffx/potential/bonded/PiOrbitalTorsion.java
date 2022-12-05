@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static ffx.potential.parameters.PiOrbitalTorsionType.units;
 import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
@@ -196,13 +195,13 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
       }
       var cosine2 = cosine * cosine - sine * sine;
       var phi2 = 1.0 - cosine2;
-      energy = units * piOrbitalTorsionType.forceConstant * phi2;
+      energy = piOrbitalTorsionType.piTorsUnit * piOrbitalTorsionType.forceConstant * phi2;
       dEdL = energy;
       energy = lambda * energy;
       if (gradient || lambdaTerm) {
         var sine2 = 2.0 * cosine * sine;
         var dphi2 = 2.0 * sine2;
-        var dedphi = units * piOrbitalTorsionType.forceConstant * dphi2;
+        var dedphi = piOrbitalTorsionType.piTorsUnit * piOrbitalTorsionType.forceConstant * dphi2;
 
         // Chain rule terms for first derivative components.
         var vdp = vd.sub(vp);

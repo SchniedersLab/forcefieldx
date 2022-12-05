@@ -42,7 +42,6 @@ import edu.rit.pj.reduction.SharedDouble;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.PotentialComponent;
 import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Atom;
@@ -984,7 +983,7 @@ public class ExtendedSystem implements Potential {
 
     /**
      * Overwrites the histogram passed into it and returns the new one out ~output never used?~
-     * @param histogram 2D histogram list with the tautomer & titration states compressed to a 1D array
+     * @param histogram 2D histogram list with the tautomer and titration states compressed to a 1D array
      * @return another compressed histogram
      */
     public int[][] getESVHistogram(int[][] histogram) {
@@ -1261,43 +1260,6 @@ public class ExtendedSystem implements Potential {
         return format("    %-16s %16.8f\n", "Discretizer", discrBias)
                 + format("    %-16s %16.8f\n", "Acidostat", phBias)
                 + format("    %-16s %16.8f\n", "Fmod", modelBias);
-    }
-
-    /**
-     * getEnergyComponent for use by ForceFieldEnergy
-     *
-     * @param component a {@link ffx.potential.PotentialComponent} object.
-     * @return a double.
-     */
-    public double getEnergyComponent(PotentialComponent component) {
-        double uComp = 0.0;
-        double[] biasEnergyAndDerivs = new double[9];
-        switch (component) {
-            case Bias:
-            case pHMD:
-                return getBiasEnergy();
-            case DiscretizeBias:
-                for (Residue residue : titratingResidueList) {
-                    getBiasTerms(residue, biasEnergyAndDerivs);
-                    uComp += biasEnergyAndDerivs[discrBiasIndex];
-                }
-                return uComp;
-            case ModelBias:
-                for (Residue residue : titratingResidueList) {
-                    getBiasTerms(residue, biasEnergyAndDerivs);
-                    //Reminder: Ubias = UpH + Udiscr - Umod
-                    uComp += biasEnergyAndDerivs[modelBiasIndex];
-                }
-                return uComp;
-            case pHBias:
-                for (Residue residue : titratingResidueList) {
-                    getBiasTerms(residue, biasEnergyAndDerivs);
-                    uComp += biasEnergyAndDerivs[pHBiasIndex];
-                }
-                return uComp;
-            default:
-                throw new AssertionError(component.name());
-        }
     }
 
     /**

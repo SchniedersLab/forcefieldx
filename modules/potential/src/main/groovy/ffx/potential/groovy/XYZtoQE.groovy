@@ -35,7 +35,6 @@
 // exception statement from your version.
 //
 //******************************************************************************
-
 package ffx.potential.groovy
 
 import ffx.crystal.Crystal
@@ -51,7 +50,7 @@ import static org.apache.commons.io.FilenameUtils.*
 import static org.apache.commons.math3.util.FastMath.cos
 
 /**
- * Automatic generation of Quantum Espresso input files based off of a XYZ file.
+ * The XYZtoQE command creates Quantum Espresso input files based on an XYZ file.
  *
  * @author Aaron J. Nessler
  * @author Michael J. Schnieders
@@ -60,7 +59,7 @@ import static org.apache.commons.math3.util.FastMath.cos
  * <br>
  * ffxc XYZtoQE [options] &lt;filename&gt;
  */
-@Command(description = "Generate QE input from a XYZ file.", name = "ffxc XYZtoQE")
+@Command(description = "Generate QE input from a XYZ file.", name = "XYZtoQE")
 class XYZtoQE extends PotentialScript {
 
   /**

@@ -56,7 +56,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * <br>
  * ffxc CIFtoXYZ &lt;filename.cif&gt; &lt;filename.xyz&gt;
  */
-@Command(description = " Convert a CIF file to XYZ format.", name = "ffxc CIFtoXYZ")
+@Command(description = " Convert a CIF file to XYZ format.", name = "CIFtoXYZ")
 class CIFtoXYZ extends PotentialScript {
 
   /**

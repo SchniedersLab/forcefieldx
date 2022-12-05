@@ -95,6 +95,14 @@ public class Minimize implements OptimizationListener, Terminatable {
   double rmsGradient;
 
   /**
+   * The default number of correction vectors used by the limited-memory L-BFGS optimization routine.
+   * <p>
+   * Values of less than 3 are not recommended and large values will result in excessive computing time.
+   * The range from <code>3 &lt;= mSave &lt;= 7</code> is recommended.
+   */
+  public static final int DEFAULT_LBFGS_VECTORS = 7;
+
+  /**
    * Constructor for Minimize.
    *
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
@@ -210,7 +218,7 @@ public class Minimize implements OptimizationListener, Terminatable {
    * @return a {@link ffx.numerics.Potential} object.
    */
   public Potential minimize() {
-    return minimize(7, 1.0, Integer.MAX_VALUE);
+    return minimize(DEFAULT_LBFGS_VECTORS, 1.0, Integer.MAX_VALUE);
   }
 
   /**
@@ -220,7 +228,7 @@ public class Minimize implements OptimizationListener, Terminatable {
    * @return a {@link ffx.numerics.Potential} object.
    */
   public Potential minimize(double eps) {
-    return minimize(7, eps, Integer.MAX_VALUE);
+    return minimize(DEFAULT_LBFGS_VECTORS, eps, Integer.MAX_VALUE);
   }
 
   /**
@@ -231,7 +239,7 @@ public class Minimize implements OptimizationListener, Terminatable {
    * @return a {@link ffx.numerics.Potential} object.
    */
   public Potential minimize(double eps, int maxIterations) {
-    return minimize(7, eps, maxIterations);
+    return minimize(DEFAULT_LBFGS_VECTORS, eps, maxIterations);
   }
 
   /**
@@ -287,6 +295,7 @@ public class Minimize implements OptimizationListener, Terminatable {
   @Override
   public boolean optimizationUpdate(
       int iteration,
+      int nBFGS,
       int functionEvaluations,
       double rmsGradient,
       double rmsCoordinateChange,
@@ -302,7 +311,11 @@ public class Minimize implements OptimizationListener, Terminatable {
     this.energy = energy;
 
     if (iteration == 0) {
-      logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n");
+      if (nBFGS > 0) {
+        logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n");
+      } else {
+        logger.info("\n Steepest Decent Optimization: \n");
+      }
       logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
     }
     if (lineSearchResult == null) {

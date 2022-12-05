@@ -39,22 +39,38 @@ package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.VDW;
 import static ffx.potential.parameters.ForceField.ForceFieldType.VDW14;
+import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.StrictMath.abs;
 import static java.lang.String.format;
 
+import ffx.utilities.FFXKeyword;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The VDWType class defines a van der Waals type.
+ * The VDWType class defines van der Waals type for a normal interaction or a special 1-4
+ * interaction.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@FFXKeyword(name = "vdw", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = "[1 integer and 3 reals] "
+        + "Provides values for a single van der Waals parameter. "
+        + "The integer modifier, if positive, gives the atom class number for which vdw parameters are to be defined. "
+        + "Note that vdw parameters are given for atom classes, not atom types. "
+        + "The three real number modifiers give the values of the atom size in Angstroms, homoatomic well depth in kcal/mole, and an optional reduction factor for univalent atoms.")
+@FFXKeyword(name = "vdw14", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = "[1 integer and 2 reals] "
+        + "Provides values for a single van der Waals parameter for use in 1-4 nonbonded interactions. "
+        + "The integer modifier, if positive, gives the atom class number for which vdw parameters are to be defined. "
+        + "Note that vdw parameters are given for atom classes, not atom types. "
+        + "The two real number modifiers give the values of the atom size in Angstroms and the homoatomic well depth in kcal/mole. "
+        + "Reduction factors, if used, are carried over from the vdw keyword for the same atom class.")
 public final class VDWType extends BaseType implements Comparator<String> {
 
   private static final Logger logger = Logger.getLogger(VDWType.class.getName());
@@ -64,14 +80,14 @@ public final class VDWType extends BaseType implements Comparator<String> {
   public final double wellDepth;
   /**
    * Reduction factor for evaluating van der Waals pairs. Valid range: 0.0 .GT. reduction .LE. 1.0
-   * Usually only hydrogen atoms have a reduction factor. Setting the reduction to .LT. 0.0
-   * indicates it is not being used.
+   * Usually only hydrogen atoms have a reduction factor. Setting the reduction to .LT. 0.0 indicates
+   * it is not being used.
    */
   public final double reductionFactor;
   /** The atom class that uses this van der Waals parameter. */
   public int atomClass;
   /** Is this a normal vdW parameter or is it for 1-4 interactions. */
-  private VDWMode vdwMode;
+  private final VDWMode vdwMode;
 
   /**
    * van der Waals constructor. If the reduction factor is .LE. 0.0, no reduction is used for this
@@ -196,8 +212,12 @@ public final class VDWType extends BaseType implements Comparator<String> {
   /** {@inheritDoc} */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     VDWType vdwType = (VDWType) o;
     return (vdwType.atomClass == this.atomClass);
   }

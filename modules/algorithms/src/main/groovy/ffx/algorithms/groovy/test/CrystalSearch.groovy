@@ -59,7 +59,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc test.CrystalSearch [options] &lt;filename&gt;
  */
-@Command(description = " Search for minimum energy polymoprhs for a given space group.", name = "ffxc test.CrystalSearch")
+@Command(description = " Search for minimum energy polymoprhs for a given space group.", name = "test.CrystalSearch")
 class CrystalSearch extends AlgorithmsScript {
 
   /**

@@ -55,7 +55,7 @@ import static org.apache.commons.io.FilenameUtils.*
  * <br>
  * ffxc MoveIntoUnitCell &lt;filename&gt;
  */
-@Command(description = " Move all molecules into the unit cell.", name = "ffxc MoveIntoUnitCell")
+@Command(description = " Move all molecules into the unit cell.", name = "MoveIntoUnitCell")
 class MoveIntoUnitCell extends PotentialScript {
 
   /**

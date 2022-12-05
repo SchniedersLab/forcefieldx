@@ -56,7 +56,7 @@ import static org.apache.commons.io.FilenameUtils.getName
  * <br>
  * ffxc SaveAsP1 [options] &lt;filename&gt;
  */
-@Command(description = " Expand the system to P1 and then save it.", name = "ffxc SaveAsP1")
+@Command(description = " Expand the system to P1 and then save it.", name = "SaveAsP1")
 class SaveAsP1 extends PotentialScript {
 
   @Mixin

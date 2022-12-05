@@ -74,7 +74,7 @@ import static org.apache.commons.io.FilenameUtils.normalize
  * <br>
  * ffxc ForEachFile Command [options] &ltFILE&gt;
  */
-@Command(description = " Run an FFX command on a series of files.", name = "ffxc ForEachFile")
+@Command(description = " Run an FFX command on a series of files.", name = "ForEachFile")
 class ForEachFile extends AlgorithmsScript {
 
   /**

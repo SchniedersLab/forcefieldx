@@ -37,14 +37,11 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.pme;
 
-import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
-
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.reduction.SharedDouble;
 import ffx.potential.bonded.Atom;
-import ffx.potential.parameters.ForceField;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -71,8 +68,8 @@ public class PolarizationEnergyRegion extends ParallelRegion {
 
   private double polarizationScale;
 
-  public PolarizationEnergyRegion(int nt, ForceField forceField) {
-    electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
+  public PolarizationEnergyRegion(int nt, double electric) {
+    this.electric = electric;
     polarizationLoop = new PolarizationEnergyLoop[nt];
   }
 

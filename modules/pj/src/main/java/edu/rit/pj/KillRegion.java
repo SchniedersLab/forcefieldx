@@ -59,6 +59,5 @@ public class KillRegion extends ParallelRegion {
     @Override
     public void run() throws Exception {
         // Does precisely nothing save exist.
-        // Post-modern poetry to be implemented.
     }
 }

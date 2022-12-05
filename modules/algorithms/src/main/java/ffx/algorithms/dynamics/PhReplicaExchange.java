@@ -105,7 +105,7 @@ public class PhReplicaExchange implements Terminatable {
    * pHReplicaExchange constructor.
    *
    * @param molecularDynamics a {@link MolecularDynamics} object.
-   * @param pH pH = pKa <-- will be changed from this initial value
+   * @param pH pH = pKa will be changed from this initial value
    * @param extendedSystem extended system attached to this process
    * @param pHLadder range of pH's that replicas are created for
    * @param temp temperature of replica
@@ -119,7 +119,7 @@ public class PhReplicaExchange implements Terminatable {
    * OpenMM cycled pHReplicaExchange constructor.
    *
    * @param molecularDynamics a {@link MolecularDynamics} object.
-   * @param pH pH = pKa <-- will be changed from this initial value
+   * @param pH pH = pKa will be changed from this initial value
    * @param extendedSystem extended system attached to this process
    * @param pHLadder range of pH's that replicas are created for
    * @param temp temperature of replica

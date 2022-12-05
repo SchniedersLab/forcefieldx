@@ -38,12 +38,16 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.IMPTORS;
+import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
+import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
+import ffx.utilities.FFXKeyword;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -56,6 +60,14 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@FFXKeyword(name = "imptors", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = "[4 integers and up to 3 real/real/integer triples] "
+        + "Provides the values for a single AMBER-style improper torsional angle parameter. "
+        + "The first four integer modifiers give the atom class numbers for the atoms involved in the improper torsional angle to be defined. "
+        + "By convention, the third atom class of the four is the trigonal atom on which the improper torsion is centered. "
+        + "The torsional angle computed is literally that defined by the four atom classes in the order specified by the keyword. "
+        + "Each of the remaining triples of real/real/integer modifiers give the half-amplitude, phase offset in degrees and periodicity of a particular improper torsional term, respectively. "
+        + "Periodicities through 3-fold are allowed for improper torsional parameters.")
 public final class ImproperTorsionType extends BaseType implements Comparator<String> {
 
   /** A Logger for the ImproperTorsionType class. */
@@ -73,6 +85,14 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
   public final double cos;
   /** Value of sin(toRadians(phase)). */
   public final double sin;
+
+  /** Convert angle bending energy to kcal/mole. */
+  @FFXKeyword(name = "imptorunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0",
+      description =
+          "Sets the scale factor needed to convert the energy value computed by the AMBER-style improper torsional angle potential into units of kcal/mole. "
+              + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  public double impTorUnit = DEFAULT_IMPTOR_UNIT;
+  public static final double DEFAULT_IMPTOR_UNIT = 1.0;
 
   /**
    * TorsionType Constructor.
@@ -262,8 +282,12 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
    */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     ImproperTorsionType improperTorsionType = (ImproperTorsionType) o;
     return Arrays.equals(atomClasses, improperTorsionType.atomClasses);
   }

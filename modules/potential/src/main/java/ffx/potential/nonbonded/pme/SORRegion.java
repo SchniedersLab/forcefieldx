@@ -40,6 +40,7 @@ package ffx.potential.nonbonded.pme;
 import static ffx.potential.parameters.MultipoleType.t001;
 import static ffx.potential.parameters.MultipoleType.t010;
 import static ffx.potential.parameters.MultipoleType.t100;
+import static ffx.utilities.KeywordGroup.ElectrostaticsFunctionalForm;
 import static org.apache.commons.math3.util.FastMath.max;
 
 import edu.rit.pj.IntegerForLoop;
@@ -49,8 +50,8 @@ import edu.rit.pj.reduction.SharedDouble;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
-import ffx.potential.nonbonded.ParticleMeshEwald.EwaldParameters;
 import ffx.potential.parameters.ForceField;
+import ffx.utilities.FFXKeyword;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -64,6 +65,10 @@ public class SORRegion extends ParallelRegion {
 
   private static final Logger logger = Logger.getLogger(SORRegion.class.getName());
   private final int maxThreads;
+
+  private static final double DEFAULT_POLAR_SOR = 0.7;
+  @FFXKeyword(name = "polar-sor", keywordGroup = ElectrostaticsFunctionalForm, defaultValue = "0.7",
+      description = "The induced dipole successive over-relaxation convergence acceleration factor.")
   private final double polsor;
   private final SORLoop[] sorLoop;
   private final SharedDouble sharedEps;
@@ -98,7 +103,7 @@ public class SORRegion extends ParallelRegion {
     sorLoop = new SORLoop[nt];
     sharedEps = new SharedDouble();
     sharedEpsCR = new SharedDouble();
-    polsor = forceField.getDouble("POLAR_SOR", 0.70);
+    polsor = forceField.getDouble("POLAR_SOR", DEFAULT_POLAR_SOR);
   }
 
   public double getEps() {

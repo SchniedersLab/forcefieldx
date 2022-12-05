@@ -63,7 +63,7 @@ import static ffx.utilities.StringUtils.parseAtomRanges
  * <br>
  * ffxc realspace.test.LambdaGradient [options] &lt;filename&gt;
  */
-@Command(description = " Test Lambda Derivatives on a Real Space target.", name = "ffxc realspace.test.LambdaGradient")
+@Command(description = " Test Lambda Derivatives on a Real Space target.", name = "realspace.test.LambdaGradient")
 class LambdaGradient extends AlgorithmsScript {
 
   @Mixin

@@ -48,60 +48,71 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.Potential;
 import ffx.numerics.optimization.LineSearch.LineSearchResult;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * This class implements the limited-memory Broyden-Fletcher-Goldfarb-Shanno (L-BFGS) algorithm for
  * large-scale multidimensional unconstrained optimization problems.<br>
  *
- * @author Michael J. Schnieders<br>
- *     Derived from: <br>
- *     Robert Dodier's Java translation of original FORTRAN code by Jorge Nocedal. <br>
- *     J. Nocedal, "Updating Quasi-Newton Matrices with Limited Storage", Mathematics of
- *     Computation, 35, 773-782 (1980) <br>
- *     D. C. Lui and J. Nocedal, "On the Limited Memory BFGS Method for Large Scale Optimization",
- *     Mathematical Programming, 45, 503-528 (1989) <br>
- *     J. Nocedal and S. J. Wright, "Numerical Optimization", Springer-Verlag, New York, 1999,
- *     Section 9.1
+ * @author Michael J. Schnieders<br> Derived from: <br> Robert Dodier's Java translation of original
+ *     FORTRAN code by Jorge Nocedal. <br> J. Nocedal, "Updating Quasi-Newton Matrices with Limited
+ *     Storage", Mathematics of Computation, 35, 773-782 (1980) <br> D. C. Lui and J. Nocedal, "On
+ *     the Limited Memory BFGS Method for Large Scale Optimization", Mathematical Programming, 45,
+ *     503-528 (1989) <br> J. Nocedal and S. J. Wright, "Numerical Optimization", Springer-Verlag,
+ *     New York, 1999, Section 9.1
  * @since 1.0
  */
 public class LBFGS {
 
   /**
    * Controls the accuracy of the line search.
-   *
-   * <p>If the function and gradient evaluations are inexpensive with respect to the cost of the
+   * <p>
+   * If the function and gradient evaluations are inexpensive with respect to the cost of the
    * iteration (which is sometimes the case when solving very large problems) it may be advantageous
-   * to set <code>CAPPA</code> to a small value. A typical small value is 0.1. Restriction: <code>
-   * CAPPA</code> should be greater than 1e-4.
+   * to set <code>CAPPA</code> to a small value.
+   * <p>
+   * A typical small value is 0.1.
+   * <p>
+   * Restriction: <code>CAPPA</code> should be greater than 1e-4.
    */
-  static final double CAPPA = 0.9;
+  public static final double DEFAULT_CAPPA = 0.9;
+
   /**
-   * This specifies the lower bound for the step in the line search.
-   *
-   * <p>The default value is 1.0e-16. This value need not be modified unless the problem is
-   * extremely badly scaled (in which case the exponent should be increased).
+   * This specifies the default lower bound for the step in the line search.
+   * <p>
+   * The default value of 1.0e-16 does not need to be modified unless the problem is extremely badly
+   * scaled (in which case the exponent should be increased).
    */
-  static final double STEPMIN = 1.0e-16;
+  public static final double DEFAULT_STEPMIN = 1.0e-16;
+
   /**
-   * This specifies the upper bound for the step in the line search.
-   *
-   * <p>The default value is 5.0. This value need not be modified unless the problem is extremely
-   * badly scaled (in which case the exponent should be increased).
+   * This specifies the default upper bound for the step in the line search.
+   * <p>
+   * The default value of 5.0e0 does not need to be modified unless the problem is extremely badly
+   * scaled (in which case the exponent should be increased).
    */
-  static final double STEPMAX = 5.0;
-  /** Constant <code>SLOPEMAX=1.0e4</code> */
-  static final double SLOPEMAX = 1.0e4;
-  /** Constant <code>ANGLEMAX=180.0</code> */
-  static final double ANGLEMAX = 180.0;
-  /** Constant <code>INTMAX=5</code> */
-  static final int INTMAX = 5;
+  public static final double DEFAULT_STEPMAX = 5.0e0;
+
+  /**
+   * The default projected gradient above which stepsize is reduced.
+   */
+  public static final double DEFAULT_SLOPEMAX = 1.0e4;
+
+  /**
+   * The default maximum angle between search direction and -gradient.
+   */
+  public static final double DEFAULT_ANGLEMAX = 180.0;
+
+  /**
+   * The default maximum number of interpolations during line search.
+   */
+  public static final int DEFAULT_INTMAX = 5;
 
   private static final Logger logger = Logger.getLogger(LBFGS.class.getName());
 
   /** Make the constructor private so that the L-BFGS cannot be instantiated. */
-  private LBFGS() {}
+  private LBFGS() {
+  }
 
   /**
    * This method solves the unconstrained minimization problem
@@ -109,7 +120,7 @@ public class LBFGS {
    * <pre>
    *     min f(x),    x = (x1,x2,...,x_n),
    * </pre>
-   *
+   * <p>
    * using the limited-memory BFGS method. The routine is especially effective on problems involving
    * a large number of variables. In a typical iteration of this method an approximation <code>Hk
    * </code> to the inverse of the Hessian is obtained by applying <code>m</code> BFGS updates to a
@@ -128,11 +139,12 @@ public class LBFGS {
    * @param n The number of variables in the minimization problem. Restriction: <code>n &gt; 0
    *     </code>.
    * @param mSave The number of corrections used in the BFGS update. Values of <code>mSave</code>
-   *     less than 3 are not recommended; large values of <code>mSave</code> will result in
-   *     excessive computing time. <code>3 &lt;= mSave &lt;= 7</code> is recommended. * Restriction:
-   *     <code>mSave &gt; 0</code>.
-   * @param x On initial entry this must be set by the user to the values of the initial estimate of
-   *     the solution vector. On exit it contains the values of the variables at the best point
+   *     less than 3 are not recommended; large values of <code>mSave</code> will result in excessive
+   *     computing time. <code>3 &lt;= mSave &lt;= 7</code> is recommended.
+   *     <p>
+   *     Restriction: <code>mSave &gt; 0</code>.
+   * @param x On initial entry this must be set by the user to the values of the initial estimate
+   *     of the solution vector. On exit it contains the values of the variables at the best point
    *     found (usually a solution).
    * @param f The value of the function <code>f</code> at the point <code>x</code>.
    * @param g The components of the gradient <code>g</code> at the point <code>x</code>.
@@ -158,7 +170,7 @@ public class LBFGS {
       OptimizationListener listener) {
 
     assert (n > 0);
-    assert (mSave > 0);
+    assert (mSave > -1);
     assert (maxIterations > 0);
     assert (x != null && x.length >= n);
     assert (g != null && g.length >= n);
@@ -183,8 +195,10 @@ public class LBFGS {
     // Initial search direction is the steepest decent direction.
     double[][] s = new double[mSave][n];
     double[][] y = new double[mSave][n];
-    for (int i = 0; i < n; i++) {
-      s[0][i] = -g[i];
+    if (mSave > 0) {
+      for (int i = 0; i < n; i++) {
+        s[0][i] = -g[i];
+      }
     }
 
     double grms = 0.0;
@@ -204,7 +218,7 @@ public class LBFGS {
 
     // Notify the listeners of initial conditions.
     if (listener != null) {
-      if (!listener.optimizationUpdate(iterations, evaluations, grms, 0.0, f, 0.0, 0.0, null)) {
+      if (!listener.optimizationUpdate(iterations, mSave, evaluations, grms, 0.0, f, 0.0, 0.0, null)) {
         // Terminate the optimization.
         return 1;
       }
@@ -232,7 +246,7 @@ public class LBFGS {
     final LineSearchResult[] info = {LineSearchResult.Success};
     final int[] nFunctionEvals = {0};
     final double[] angle = {0.0};
-    double df = 0.5 * STEPMAX * gnorm;
+    double df = 0.5 * DEFAULT_STEPMAX * gnorm;
     int m = -1;
 
     while (true) {
@@ -242,42 +256,50 @@ public class LBFGS {
         return 1;
       }
 
-      int muse = min(iterations - 1, mSave);
-      m++;
-      if (m > mSave - 1) {
-        m = 0;
+      if (mSave > 0) {
+        int muse = min(iterations - 1, mSave);
+        m++;
+        if (m > mSave - 1) {
+          m = 0;
+        }
+
+        // Estimate the Hessian Diagonal.
+        fill(h0, gamma);
+        arraycopy(g, 0, q, 0, n);
+        int k = m;
+        for (int j = 0; j < muse; j++) {
+          k--;
+          if (k < 0) {
+            k = mSave - 1;
+          }
+          alpha[k] = v1DotV2(n, s[k], 0, 1, q, 0, 1);
+          alpha[k] *= rho[k];
+          aV1PlusV2(n, -alpha[k], y[k], 0, 1, q, 0, 1);
+        }
+        for (int i = 0; i < n; i++) {
+          r[i] = h0[i] * q[i];
+        }
+        for (int j = 0; j < muse; j++) {
+          double beta = v1DotV2(n, r, 0, 1, y[k], 0, 1);
+          beta *= rho[k];
+          aV1PlusV2(n, alpha[k] - beta, s[k], 0, 1, r, 0, 1);
+          k++;
+          if (k > mSave - 1) {
+            k = 0;
+          }
+        }
+
+        // Set the search direction.
+        for (int i = 0; i < n; i++) {
+          p[i] = -r[i];
+        }
+      } else {
+        // Steepest-decent
+        for (int i = 0; i < n; i++) {
+          p[i] = -g[i];
+        }
       }
 
-      // Estimate the Hessian Diagonal.
-      fill(h0, gamma);
-      arraycopy(g, 0, q, 0, n);
-      int k = m;
-      for (int j = 0; j < muse; j++) {
-        k--;
-        if (k < 0) {
-          k = mSave - 1;
-        }
-        alpha[k] = v1DotV2(n, s[k], 0, 1, q, 0, 1);
-        alpha[k] *= rho[k];
-        aV1PlusV2(n, -alpha[k], y[k], 0, 1, q, 0, 1);
-      }
-      for (int i = 0; i < n; i++) {
-        r[i] = h0[i] * q[i];
-      }
-      for (int j = 0; j < muse; j++) {
-        double beta = v1DotV2(n, r, 0, 1, y[k], 0, 1);
-        beta *= rho[k];
-        aV1PlusV2(n, alpha[k] - beta, s[k], 0, 1, r, 0, 1);
-        k++;
-        if (k > mSave - 1) {
-          k = 0;
-        }
-      }
-
-      // Set the search direction.
-      for (int i = 0; i < n; i++) {
-        p[i] = -r[i];
-      }
       arraycopy(x, 0, prevX, 0, n);
       arraycopy(g, 0, prevG, 0, n);
 
@@ -288,14 +310,17 @@ public class LBFGS {
       evaluations += nFunctionEvals[0];
 
       // Update variables based on the results of this iteration.
-      for (int i = 0; i < n; i++) {
-        s[m][i] = x[i] - prevX[i];
-        y[m][i] = g[i] - prevG[i];
+      if (mSave > 0) {
+        for (int i = 0; i < n; i++) {
+          s[m][i] = x[i] - prevX[i];
+          y[m][i] = g[i] - prevG[i];
+        }
+        double ys = v1DotV2(n, y[m], 0, 1, s[m], 0, 1);
+        double yy = v1DotV2(n, y[m], 0, 1, y[m], 0, 1);
+        gamma = abs(ys / yy);
+        rho[m] = 1.0 / ys;
       }
-      double ys = v1DotV2(n, y[m], 0, 1, s[m], 0, 1);
-      double yy = v1DotV2(n, y[m], 0, 1, y[m], 0, 1);
-      gamma = abs(ys / yy);
-      rho[m] = 1.0 / ys;
+
 
       // Get the sizes of the moves made during this iteration.
       df = prevF - f;
@@ -321,7 +346,7 @@ public class LBFGS {
       }
 
       if (listener != null) {
-        if (!listener.optimizationUpdate(iterations, evaluations, grms, xrms, f, df, angle[0], info[0])) {
+        if (!listener.optimizationUpdate(iterations, mSave, evaluations, grms, xrms, f, df, angle[0], info[0])) {
           // Terminate the optimization.
           return 1;
         }
@@ -347,7 +372,7 @@ public class LBFGS {
    * <pre>
    *     min f(x),    x = (x1,x2,...,x_n),
    * </pre>
-   *
+   * <p>
    * using the limited-memory BFGS method. The routine is especially effective on problems involving
    * a large number of variables. In a typical iteration of this method an approximation <code>Hk
    * </code> to the inverse of the Hessian is obtained by applying <code>m</code> BFGS updates to a
@@ -366,11 +391,11 @@ public class LBFGS {
    * @param n The number of variables in the minimization problem. Restriction: <code>n &gt; 0
    *     </code>.
    * @param mSave The number of corrections used in the BFGS update. Values of <code>mSave</code>
-   *     less than 3 are not recommended; large values of <code>mSave</code> will result in
-   *     excessive computing time. <code>3 &lt;= mSave &lt;= 7</code> is recommended. * Restriction:
+   *     less than 3 are not recommended; large values of <code>mSave</code> will result in excessive
+   *     computing time. <code>3 &lt;= mSave &lt;= 7</code> is recommended. * Restriction:
    *     <code>mSave &gt; 0</code>.
-   * @param x On initial entry this must be set by the user to the values of the initial estimate of
-   *     the solution vector. On exit it contains the values of the variables at the best point
+   * @param x On initial entry this must be set by the user to the values of the initial estimate
+   *     of the solution vector. On exit it contains the values of the variables at the best point
    *     found (usually a solution).
    * @param f The value of the function <code>f</code> at the point <code>x</code>.
    * @param g The components of the gradient <code>g</code> at the point <code>x</code>.

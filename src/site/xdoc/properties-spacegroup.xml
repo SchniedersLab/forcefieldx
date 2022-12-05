@@ -25,10 +25,8 @@
                         <td>a-axis</td>
                         <td>double</td>
                         <td>none</td>
-                        <td>Length of the
-                            <code>a-axis</code> of the unit cell in Angstroms. There is no
-                            default for
-                            <code>a-axis</code>. If it is not specified, the calculation is
+                        <td>Length of the<code>a-axis</code> of the unit cell in Angstroms. There is no
+                            default for<code>a-axis</code>. If it is not specified, the calculation is
                             treated as aperiodic.
                         </td>
                     </tr>

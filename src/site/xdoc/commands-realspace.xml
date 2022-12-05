@@ -5,12 +5,12 @@
         xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
     <properties>
-        <title>Commands</title>
+        <title>Real-Space Refinement Commands</title>
         <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
     </properties>
     <body>
-        <section name="Real Space Refinement">
-            <p>Optimize an atomic resolution structure against real space data (i.e. X-ray Diffraction or CryoEM Map).
+        <section name="Real Space Refinement Commands">
+            <p>Optimize an atomic resolution structure against real space data (i.e. a map from X-ray Diffraction or CryoEM).
             </p>
             <table>
                 <thead>
@@ -24,25 +24,25 @@
                         <td>
                             <a href="commands/realspace.Anneal.html">realspace.Anneal</a>
                         </td>
-                        <td>Apply simulated annealing using a real space objective function.</td>
+                        <td>The realspace.Anneal command applies simulated annealing using a real space objective function.</td>
                     </tr>
                     <tr>
                         <td>
                             <a href="commands/realspace.Dynamics.html">realspace.Dynamics</a>
                         </td>
-                        <td>Run Dynamics simulations using a real space objective function.</td>
+                        <td>The realspace.Dynamics command runs a dynamics simulation using a real space objective function.</td>
                     </tr>
                     <tr>
                         <td>
                             <a href="commands/realspace.ManyBody.html">realspace.ManyBody</a>
                         </td>
-                        <td>Globally optimize the side-chains of a protein using a real space objective function.</td>
+                        <td>The realspace.ManyBody command globally optimizes the side-chains of a protein using a real space objective function.</td>
                     </tr>
                     <tr>
                         <td>
                             <a href="commands/realspace.Minimize.html">realspace.Minimize</a>
                         </td>
-                        <td>Minimize using a real space objective function.</td>
+                        <td>The realspace.Minimize command minimizes the system using a real space objective function.</td>
                     </tr>
                 </tbody>
             </table>

@@ -385,55 +385,6 @@ public abstract class MSGroup extends MSNode {
     termNode.setName("Valence Terms (" + numberOfValenceTerms + ")");
   }
 
-  /** constructValenceTerms */
-  public void constructValenceTerms() {
-    MSNode b = new MSNode("Bonds");
-    MSNode a = new MSNode("Angles");
-    MSNode d = new MSNode("Dihedrals");
-    int index = 0;
-    double[] da = new double[3];
-    double[] db = new double[3];
-    List<Atom> atomList = getAtomList();
-    for (Atom a1 : atomList) {
-      index++;
-      for (ListIterator<Atom> li = atomList.listIterator(index); li.hasNext(); ) {
-        Atom a2 = li.next();
-        a1.getXYZ(da);
-        a2.getXYZ(db);
-        double d1 = DoubleMath.dist(da, db);
-        double d2 = Bond.BUFF + a1.getVDWR() / 2 + a2.getVDWR() / 2;
-        if (d1 < d2) {
-          List<Bond> adjunctBonds = new ArrayList<>();
-          if (a1.getNumBonds() > 0) {
-            adjunctBonds.addAll(a1.getBonds());
-          }
-          if (a2.getNumBonds() > 0) {
-            adjunctBonds.addAll(a2.getBonds());
-          }
-          Bond newbond = new Bond(a1, a2);
-          b.add(newbond);
-          for (Bond adjunctBond : adjunctBonds) {
-            if (newbond == adjunctBond) {
-              logger.info("New Bond = Adjunct Bond");
-            } else {
-              Angle newangle = new Angle(newbond, adjunctBond);
-              a.add(newangle);
-              Atom atom13 = adjunctBond.getOtherAtom(newbond);
-              for (Bond bond14 : atom13.getBonds()) {
-                if (bond14 != adjunctBond) {
-                  d.add(new Torsion(newangle, bond14));
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    setBonds(b);
-    setAngles(a);
-    setTorsions(d);
-  }
-
   /**
    * Create a joint between two chemical groups.
    *

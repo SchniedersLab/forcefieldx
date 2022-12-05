@@ -38,11 +38,13 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.ATOM;
+import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.abs;
 
+import ffx.utilities.FFXKeyword;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -54,6 +56,14 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@FFXKeyword(name = "atom", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = "[2 integers, name, quoted string, integer, real and integer] "
+        + "Provides the values needed to define a single force field atom type. "
+        + "The first two integer modifiers denote the atom type and class numbers. "
+        + "If the type and class are identical, only a single integer value is required. "
+        + "The next modifier is a three-character atom name, followed by an 24-character or less atom description contained in single quotes. "
+        + "The next two modifiers are the atomic number and atomic mass. "
+        + "The final integer modifier is the \"valence\" of the atom, defined as the expected number of attached or bonded atoms.")
 public final class AtomType extends BaseType implements Comparator<String> {
 
   /** A Logger for the AngleType class. */

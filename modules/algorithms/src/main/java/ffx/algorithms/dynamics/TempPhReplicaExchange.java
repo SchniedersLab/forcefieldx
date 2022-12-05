@@ -97,7 +97,7 @@ public class TempPhReplicaExchange implements Terminatable {
    *
    * @param molecularDynamics a {@link MolecularDynamics} object.
    * @param listener a {@link AlgorithmListener} object.
-   * @param pH pH = pKa <-- will be changed from this initial value
+   * @param pH pH = pKa will be changed from this initial value
    * @param extendedSystem extended system attached to this process
    */
   public TempPhReplicaExchange(

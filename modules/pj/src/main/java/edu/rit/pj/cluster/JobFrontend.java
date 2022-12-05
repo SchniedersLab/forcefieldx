@@ -189,9 +189,7 @@ public class JobFrontend
      *                        false if it doesn't.
      * @param mainClassName   Main class name.
      * @param args            Command line arguments.
-     * @throws JobSchedulerException (subclass of IOException) Thrown if the
-     *                               job frontend object could not contact the Job Scheduler Daemon.
-     * @throws IOException           Thrown if an I/O error occurred.
+     * @throws java.io.IOException           Thrown if an I/O error occurred.
      * @throws java.io.IOException   if any.
      */
     public JobFrontend(String username,
@@ -393,8 +391,6 @@ public class JobFrontend
      * {@inheritDoc}
      * <p>
      * Assign a backend process to the job.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public void assignBackend(JobSchedulerRef theJobScheduler,
                               String name,
@@ -554,8 +550,6 @@ public class JobFrontend
      * <p>
      * Assign a job number to the job. The host name for the job frontend's
      * middleware channel group is also specified.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void assignJobNumber(JobSchedulerRef theJobScheduler,
                                              int jobnum,
@@ -586,8 +580,6 @@ public class JobFrontend
      * {@inheritDoc}
      * <p>
      * Cancel the job.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void cancelJob(JobSchedulerRef theJobScheduler,
                                        String errmsg)
@@ -599,7 +591,7 @@ public class JobFrontend
      * Renew the lease on the job.
      *
      * @param theJobScheduler Job Scheduler that is calling this method.
-     * @throws IOException         Thrown if an I/O error occurred.
+     * @throws java.io.IOException         Thrown if an I/O error occurred.
      * @throws java.io.IOException if any.
      */
     public synchronized void renewLease(JobSchedulerRef theJobScheduler)
@@ -611,8 +603,6 @@ public class JobFrontend
      * {@inheritDoc}
      * <p>
      * Report that a backend process has finished executing the job.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void backendFinished(JobBackendRef theJobBackend)
             throws IOException {
@@ -646,8 +636,6 @@ public class JobFrontend
      * {@inheritDoc}
      * <p>
      * Report that a backend process is ready to commence executing the job.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void backendReady(JobBackendRef theJobBackend,
                                           int rank,
@@ -714,8 +702,6 @@ public class JobFrontend
      * {@inheritDoc}
      * <p>
      * Cancel the job.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void cancelJob(JobBackendRef theJobBackend,
                                        String errmsg)
@@ -727,8 +713,6 @@ public class JobFrontend
      * {@inheritDoc}
      * <p>
      * Renew the lease on the job.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void renewLease(JobBackendRef theJobBackend)
             throws IOException {
@@ -742,8 +726,6 @@ public class JobFrontend
      * {@inheritDoc}
      * <p>
      * Request the given resource from this job frontend's class loader.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void requestResource(JobBackendRef theJobBackend,
                                              String resourceName)
@@ -773,8 +755,6 @@ public class JobFrontend
      * {@inheritDoc}
      * <p>
      * Open the given output file for writing or appending.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void outputFileOpen(JobBackendRef theJobBackend,
                                             int bfd,
@@ -790,8 +770,6 @@ public class JobFrontend
      * Write the given bytes to the given output file. <code>ffd</code> = 1 refers
      * to the job's standard output stream; <code>ffd</code> = 2 refers to the job's
      * standard error stream; other values refer to a previously opened file.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void outputFileWrite(JobBackendRef theJobBackend,
                                              int ffd,
@@ -806,8 +784,6 @@ public class JobFrontend
      * {@inheritDoc}
      * <p>
      * Flush accumulated bytes to the given output file.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void outputFileFlush(JobBackendRef theJobBackend,
                                              int ffd)
@@ -819,8 +795,6 @@ public class JobFrontend
      * {@inheritDoc}
      * <p>
      * Close the given output file.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void outputFileClose(JobBackendRef theJobBackend,
                                              int ffd)
@@ -832,8 +806,6 @@ public class JobFrontend
      * {@inheritDoc}
      * <p>
      * Open the given input file for reading.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void inputFileOpen(JobBackendRef theJobBackend,
                                            int bfd,
@@ -848,8 +820,6 @@ public class JobFrontend
      * Read bytes from the given input file. <code>ffd</code> = 1 refers to the
      * job's standard input stream; other values refer to a previously opened
      * file.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void inputFileRead(JobBackendRef theJobBackend,
                                            int ffd,
@@ -862,8 +832,6 @@ public class JobFrontend
      * {@inheritDoc}
      * <p>
      * Skip bytes from the given input file.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void inputFileSkip(JobBackendRef theJobBackend,
                                            int ffd,
@@ -876,8 +844,6 @@ public class JobFrontend
      * {@inheritDoc}
      * <p>
      * Close the given input file.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void inputFileClose(JobBackendRef theJobBackend,
                                             int ffd)
@@ -889,8 +855,6 @@ public class JobFrontend
      * {@inheritDoc}
      * <p>
      * Report a comment for a process.
-     *
-     * @throws IOException Thrown if an I/O error occurred.
      */
     public synchronized void reportComment(JobBackendRef theJobBackend,
                                            int rank,

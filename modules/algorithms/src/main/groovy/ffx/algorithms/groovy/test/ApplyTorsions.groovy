@@ -49,16 +49,16 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 /**
- * The ApplyTorsions script is used to apply a custom set of torsions to a side 
- * chain.
+ * The ApplyTorsions script is used to apply a custom set of torsions to a side chain.
  * <br>
  * Usage:
  * <br>
- * ffxc ApplyTorsions [options] &lt;filename&gt;
+ * ffxc test.ApplyTorsions [options] &lt;filename&gt;
+ *
  * @author Jacob Litman
  * @author Michael Schnieders
  */
-@Command(description = " Apply a set of torsions to a system.", name = "ffxc ApplyTorsions")
+@Command(description = " Apply a set of torsions to a system.", name = "test.ApplyTorsions")
 class ApplyTorsions extends AlgorithmsScript {
 
   /**

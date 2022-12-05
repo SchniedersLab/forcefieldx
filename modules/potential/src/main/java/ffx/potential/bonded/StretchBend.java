@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import static ffx.potential.parameters.StretchBendType.units;
 import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
@@ -197,11 +196,11 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
     this.stretchBendType = stretchBendType;
     // Match the atom class of the angle to the atom class of the stretch-bend type.
     if (atoms[0].getAtomType().atomClass == stretchBendType.atomClasses[0]) {
-      force0 = units * stretchBendType.forceConstants[0];
-      force1 = units * stretchBendType.forceConstants[1];
+      force0 = stretchBendType.strbndunit * stretchBendType.forceConstants[0];
+      force1 = stretchBendType.strbndunit * stretchBendType.forceConstants[1];
     } else {
-      force0 = units * stretchBendType.forceConstants[1];
-      force1 = units * stretchBendType.forceConstants[0];
+      force0 = stretchBendType.strbndunit * stretchBendType.forceConstants[1];
+      force1 = stretchBendType.strbndunit * stretchBendType.forceConstants[0];
     }
     atoms = angle.atoms;
     bonds = angle.bonds;

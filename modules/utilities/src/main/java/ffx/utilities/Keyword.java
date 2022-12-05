@@ -272,7 +272,9 @@ public class Keyword {
     data.addAll(Arrays.asList(entry));
   }
 
-  /** clear */
+  /**
+   * clear
+   */
   public void clear() {
     data.clear();
   }
@@ -305,7 +307,9 @@ public class Keyword {
     return keyword;
   }
 
-  /** print */
+  /**
+   * print
+   */
   public void print() {
     logger.info(this.toString());
   }

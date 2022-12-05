@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-         http://maven.apache.org/maven-v4_0_0.xsd">
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <artifactId>ffx</artifactId>
   <build>
     <defaultGoal>install</defaultGoal>
@@ -36,14 +35,21 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <configuration>
             <compilerArgs>
-              <compilerArg>-Xlint:all</compilerArg>
+              <arg>-Xlint:all</arg>
+              <arg>-Aproject=${project.groupId}/${project.artifactId}</arg>
             </compilerArgs>
             <debug>true</debug>
             <optimize>true</optimize>
             <source>${compileVersion}</source>
             <target>${targetVersion}</target>
             <useIncrementalCompilation>true</useIncrementalCompilation>
-            <verbose>false</verbose>
+            <annotationProcessorPaths>
+              <path>
+                <groupId>info.picocli</groupId>
+                <artifactId>picocli-codegen</artifactId>
+                <version>${picocli.version}</version>
+              </path>
+            </annotationProcessorPaths>
           </configuration>
           <version>${compiler.version}</version>
         </plugin>
@@ -233,7 +239,7 @@
                 <!-- dependencyConvergence/ -->
                 <!-- reactorModuleConvergence/ -->
                 <requireJavaVersion>
-                  <version>[10,19.1]</version>
+                  <version>[11,20.1]</version>
                 </requireJavaVersion>
                 <requireMavenVersion>
                   <version>3.2.5</version>
@@ -250,7 +256,7 @@
         </executions>
         <version>${enforcer.version}</version>
       </plugin>
-      <plugin>
+      <!-- plugin>
         <artifactId>maven-antrun-plugin</artifactId>
         <executions>
           <execution>
@@ -277,14 +283,34 @@
         </executions>
         <inherited>false</inherited>
         <version>${antrun.version}</version>
-      </plugin>
+      </plugin -->
       <plugin>
         <artifactId>maven-site-plugin</artifactId>
         <configuration>
           <generateSitemap>true</generateSitemap>
+          <asciidoc>
+            <!-- templateDirs>
+              <dir>src/site/asciidoc/templates</dir>
+            </templateDirs>
+            <requires>
+              <require>asciidoctor-diagram</require>
+            </requires -->
+            <attributes>
+              <source-highlighter>coderay</source-highlighter>
+              <coderay-css>style</coderay-css>
+              <icons>font</icons>
+            </attributes>
+          </asciidoc>
         </configuration>
         <inherited>true</inherited>
         <version>${site.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.asciidoctor</groupId>
+            <artifactId>asciidoctor-maven-plugin</artifactId>
+            <version>${asciidoc.version}</version>
+          </dependency>
+        </dependencies>
       </plugin>
       <plugin>
         <artifactId>maven-clean-plugin</artifactId>
@@ -293,45 +319,16 @@
             <fileset>
               <directory>scripts</directory>
             </fileset>
+            <fileset>
+              <directory>src/site/asciidoc/keywords</directory>
+            </fileset>
+            <fileset>
+              <directory>src/site/asciidoc/commands</directory>
+            </fileset>
           </filesets>
         </configuration>
         <inherited>false</inherited>
         <version>${clean.version}</version>
-      </plugin>
-      <plugin>
-        <artifactId>maven-scm-plugin</artifactId>
-        <configuration>
-          <connectionType>connection</connectionType>
-        </configuration>
-        <version>${scm.version}</version>
-      </plugin>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <compilerArgs>
-            <compilerArg>-Xlint:all</compilerArg>
-          </compilerArgs>
-          <debug>true</debug>
-          <optimize>true</optimize>
-          <source>${compileVersion}</source>
-          <target>${targetVersion}</target>
-          <useIncrementalCompilation>true</useIncrementalCompilation>
-        </configuration>
-        <version>${compiler.version}</version>
-      </plugin>
-      <plugin>
-        <artifactId>maven-source-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-            <id>attach-source</id>
-            <phase>verify</phase>
-          </execution>
-        </executions>
-        <inherited>false</inherited>
-        <version>${source.version}</version>
       </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
@@ -450,6 +447,104 @@
         <inherited>false</inherited>
         <version>${properties.version}</version>
       </plugin>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>${antrun.version}</version>
+        <inherited>false</inherited>
+        <executions>
+          <execution>
+            <id>Create Keyword AsciiDoc Files</id>
+            <phase>pre-site</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <concat
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/ElectrostaticsFunctionalForm.adoc">
+                  <header>== Electrostatics Functional Form</header>
+                  <fileset erroronmissingdir="false"
+                    dir="${project.basedir}/src/site/asciidoc/keywords/ElectrostaticsFunctionalForm">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+                <concat
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/EnergyUnitConversion.adoc">
+                  <header>== Energy Unit Conversion</header>
+                  <fileset erroronmissingdir="false"
+                    dir="${project.basedir}/src/site/asciidoc/keywords/EnergyUnitConversion">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+                <concat
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/ImplicitSolvent.adoc">
+                  <header>== Implicit Solvent</header>
+                  <fileset erroronmissingdir="false"
+                    dir="${project.basedir}/src/site/asciidoc/keywords/ImplicitSolvent">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+                <concat
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/LocalGeometryFunctionalForm.adoc">
+                  <header>== Local Geometry Functional Form</header>
+                  <fileset erroronmissingdir="false"
+                    dir="${project.basedir}/src/site/asciidoc/keywords/LocalGeometryFunctionalForm">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+                <concat
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/NonBondedCutoff.adoc">
+                  <header>== Non-Bonded Cutoff</header>
+                  <fileset erroronmissingdir="false"
+                    dir="${project.basedir}/src/site/asciidoc/keywords/NonBondedCutoff">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+                <concat
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/ParticleMeshEwald.adoc">
+                  <header>== Particle-Mesh Ewald</header>
+                  <fileset erroronmissingdir="false"
+                    dir="${project.basedir}/src/site/asciidoc/keywords/ParticleMeshEwald">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+                <concat
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/PotentialFunctionParameter.adoc">
+                  <header>== Potential Function Parameter</header>
+                  <fileset erroronmissingdir="false"
+                    dir="${project.basedir}/src/site/asciidoc/keywords/PotentialFunctionParameter">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+                <concat
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/PotentialFunctionSelection.adoc">
+                  <header>== Potential Function Selection</header>
+                  <fileset erroronmissingdir="false"
+                    dir="${project.basedir}/src/site/asciidoc/keywords/PotentialFunctionSelection">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+                <concat
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/UnitCellAndSpaceGroup.adoc">
+                  <header>== Unit Cell and Space Group</header>
+                  <fileset erroronmissingdir="false"
+                    dir="${project.basedir}/src/site/asciidoc/keywords/UnitCellAndSpaceGroup">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+                <concat
+                  destfile="${project.basedir}/src/site/asciidoc/keywords/VanDerWaalsFunctionalForm.adoc">
+                  <header>== Van Der Waals Functional Form</header>
+                  <fileset erroronmissingdir="false"
+                    dir="${project.basedir}/src/site/asciidoc/keywords/VanDerWaalsFunctionalForm">
+                    <include name="*.adoc"/>
+                  </fileset>
+                </concat>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
   <ciManagement>
@@ -466,7 +561,7 @@
       </notifier>
     </notifiers>
     <system>Travis CI</system>
-    <url>https://travis-ci.org/SchniedersLab/forcefieldx</url>
+    <url>https://app.travis-ci.com/github/SchniedersLab/forcefieldx</url>
   </ciManagement>
   <contributors>
     <contributor>
@@ -831,30 +926,30 @@
   <properties>
     <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
     <!-- antlr4 4.10.1 requires jdk 11 -->
-    <antlr4.version>4.9.3</antlr4.version>
+    <antlr4.version>4.10.1</antlr4.version>
     <antrun.version>3.1.0</antrun.version>
     <appassembler.version>2.1.0</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
     <assembly.version>3.4.2</assembly.version>
-    <biojava.version>6.0.5</biojava.version>
+    <biojava.version>6.1.0</biojava.version>
     <buildnumber.version>1.2.10</buildnumber.version>
     <cdk.version>2.8</cdk.version>
     <changes.jira.skip>true</changes.jira.skip>
     <changes.version>2.12.1</changes.version>
     <checkstyle.skip>true</checkstyle.skip>
     <checkstyle.version>3.2.0</checkstyle.version>
-    <ciftools-java-jdk8.version>4.0.2</ciftools-java-jdk8.version>
+    <ciftools-java.version>4.0.2</ciftools-java.version>
     <clean.version>3.2.0</clean.version>
     <clover.version>4.4.1</clover.version>
     <clustering.version>1.2.0</clustering.version>
     <commons-beanutils.version>1.9.4</commons-beanutils.version>
     <commons-collections4.version>4.4</commons-collections4.version>
     <commons-configuration2.version>2.8.0</commons-configuration2.version>
-    <commons-io.version>2.6</commons-io.version>
+    <commons-io.version>2.11.0</commons-io.version>
     <commons-lang3.version>3.12.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
     <!-- Control the source version version -->
-    <compileVersion>10</compileVersion>
+    <compileVersion>11</compileVersion>
     <compiler.version>3.10.1</compiler.version>
     <dependency.version>3.3.0</dependency.version>
     <dependencyDetails>false</dependencyDetails>
@@ -882,15 +977,15 @@
     <jxr.version>3.3.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
-    <log4j.version>2.19.0</log4j.version>
+    <log4j.version>2.17.1</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
-    <picocli.version>4.6.3</picocli.version>
+    <picocli.version>4.7.0</picocli.version>
     <pj.version>1.0.1</pj.version>
-    <pmd.skip>false</pmd.skip>
     <!-- There is a bug in 3.15.0 and newer PMD that doesn't handle repository resolution correctly -->
-    <pmd.version>3.19.0</pmd.version>
+    <pmd.version>3.14.0</pmd.version>
+    <pmd.skip>false</pmd.skip>
     <project-info-reports.version>3.4.1</project-info-reports.version>
     <!-- Setting the source encoding is required for builds that are platform independent. -->
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -898,12 +993,14 @@
     <quickhull3D.version>1.0.0</quickhull3D.version>
     <!-- Default locations for deploying a release (can be over-ridden by settings.xml) -->
     <release.repo>file:release</release.repo>
-    <release.version>3.0.0-M6</release.version>
+    <release.version>3.0.0-M7</release.version>
     <resources.version>3.3.0</resources.version>
-    <scm.version>2.0.0-M2</scm.version>
+    <scm.version>2.0.0-M3</scm.version>
     <slf4j-nop.version>2.0.3</slf4j-nop.version>
-    <shade.version>3.4.0</shade.version>
-    <site.version>4.0.0-M3</site.version>
+    <shade.version>3.4.1</shade.version>
+    <!-- AsciiDoc is not compatible with site version 4.0.0-M3 yet -->
+    <site.version>3.12.1</site.version>
+    <asciidoc.version>2.2.2</asciidoc.version>
     <skipSurefireReport>false</skipSurefireReport>
     <skipTests>true</skipTests>
     <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
@@ -912,12 +1009,12 @@
     <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
     <surefire.version>3.0.0-M7</surefire.version>
     <!-- Control the target JRE version -->
-    <targetVersion>10</targetVersion>
+    <targetVersion>11</targetVersion>
     <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
     <tensorflow.version>1.13.1</tensorflow.version>
     <timestamp>${maven.build.timestamp}</timestamp>
     <tornado.version>0.6</tornado.version>
-    <versions.version>2.12.0</versions.version>
+    <versions.version>2.13.0</versions.version>
     <!-- Default locations for deploying the website (can be over-ridden by settings.xml) -->
     <website.repo>file:website</website.repo>
   </properties>
@@ -1035,7 +1132,7 @@
           <linkXRef>true</linkXRef>
           <minimumPriority>2</minimumPriority>
           <minimumTokens>500</minimumTokens>
-          <targetJdk>10</targetJdk>
+          <targetJdk>11</targetJdk>
           <typeResolution>true</typeResolution>
           <aggregate>true</aggregate>
         </configuration>
@@ -1048,7 +1145,7 @@
               <report>aggregate-cpd</report>
             </reports>
           </reportSet -->
-         <reportSet>
+          <reportSet>
             <id>default</id>
             <reports>
               <report>pmd</report>

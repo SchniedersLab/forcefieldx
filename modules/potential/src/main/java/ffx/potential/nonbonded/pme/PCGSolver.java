@@ -54,7 +54,6 @@ import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.ParticleMeshEwald;
-import ffx.potential.nonbonded.ParticleMeshEwald.EwaldParameters;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.utils.EnergyException;
 import ffx.utilities.Constants;

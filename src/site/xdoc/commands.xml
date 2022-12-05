@@ -40,6 +40,16 @@
                         <tr>
                             <td>
                                 <p>
+                                    <a href="commands-energy.html">Energy and Structure Analysis</a>
+                                </p>
+                            </td>
+                            <td>
+                                <p>Calculate Potential Energy, Test the Analytic Gradient, Time Energy and Gradient.</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <p>
                                     <a href="commands-opt.html">Optimization and Sampling</a>
                                 </p>
                             </td>
@@ -52,22 +62,26 @@
                         <tr>
                             <td>
                                 <p>
-                                    <a href="commands-energy.html">Potential Energy</a>
-                                </p>
-                            </td>
-                            <td>
-                                <p>Calculate Potential Energy, Test the Analytic Gradient, Time Energy and Gradient.</p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <p>
-                                    <a href="commands-realspace.html">Real Space Refinement</a>
+                                    <a href="commands-realspace.html">Real-Space Refinement</a>
                                 </p>
                             </td>
                             <td>
                                 <p>
                                     Optimize an atomic resolution structure against real space data (i.e. CryoEM data).
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <p>
+                                    <a href="commands-xray.html">X-ray and Neutron Crystallography
+                                        Refinement</a>
+                                </p>
+                            </td>
+                            <td>
+                                <p>
+                                    Algorithms to optimize an atomic resolution structure against X-ray crystallography
+                                    data.
                                 </p>
                             </td>
                         </tr>
@@ -80,19 +94,6 @@
                             <td>
                                 <p>
                                     Utilities to convert between file types or expand from a space group into P1.
-                                </p>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <p>
-                                    <a href="commands-xray.html">X-ray Crystallography Refinement</a>
-                                </p>
-                            </td>
-                            <td>
-                                <p>
-                                    Algorithms to optimize an atomic resolution structure against X-ray crystallography
-                                    data.
                                 </p>
                             </td>
                         </tr>

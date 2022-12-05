@@ -69,7 +69,7 @@ import java.util.logging.Logger
  * <br>
  * ffxc realspace.Alchemical [options] &lt;filename&gt;
  */
-@Command(description = " Alchemical changes on a Real Space target.", name = "ffxc realspace.Alchemical")
+@Command(description = " Alchemical changes on a Real Space target.", name = "realspace.test.Alchemical")
 class Alchemical extends AlgorithmsScript {
 
   @Mixin

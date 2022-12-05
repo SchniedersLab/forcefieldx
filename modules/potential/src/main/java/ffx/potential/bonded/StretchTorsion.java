@@ -279,7 +279,7 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
     var c3 = constants[2];
     var rba = sqrt(rba2);
     var dr1 = rba - bondType1.distance;
-    var units = StretchTorsionType.units;
+    var units = stretchTorsionType.strTorUnit;
     var s1 = c1 * phi1 + c2 * phi2 + c3 * phi3;
     var e1 = units * dr1 * s1;
 

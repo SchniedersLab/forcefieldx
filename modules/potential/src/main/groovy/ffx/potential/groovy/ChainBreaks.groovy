@@ -53,7 +53,7 @@ import static org.apache.commons.io.FilenameUtils.getName
 import static org.apache.commons.io.FilenameUtils.removeExtension
 import static org.apache.commons.math3.util.FastMath.abs
 
-@Command(description = " Fix chain breaks in a pdb file.", name = "ffxc ChainBreaks")
+@Command(description = " Fix chain breaks in a pdb file.", name = "ChainBreaks")
 class ChainBreaks extends PotentialScript {
 
   /**

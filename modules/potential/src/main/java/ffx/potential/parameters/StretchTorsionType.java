@@ -38,11 +38,14 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.STRTORS;
+import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
+import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.util.Arrays.copyOf;
 
+import ffx.utilities.FFXKeyword;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -55,10 +58,23 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@FFXKeyword(name = "strtors", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = "[2 integers and 1 real] "
+        + "Provides the values for a single stretch-torsion cross term potential parameter. "
+        + "The two integer modifiers give the atom class numbers for the atoms involved in the central bond of the torsional angles to be parameterized. "
+        + "The real modifier gives the value of the stretch-torsion force constant for all torsional angles with the defined atom classes for the central bond. "
+        + "The default units for the stretch-torsion force constant can be controlled via the strtorunit keyword.")
 public final class StretchTorsionType extends BaseType implements Comparator<String> {
 
+  public static final double DEFAULT_STRTOR_UNIT = 1.0;
+
   /** Unit conversion. */
-  public static final double units = 1.0;
+  @FFXKeyword(name = "strtorunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0",
+      description =
+          "Sets the scale factor needed to convert the energy value computed by the bond stretching-torsional angle cross term potential into units of kcal/mole. "
+              + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  public double strTorUnit = DEFAULT_STRTOR_UNIT;
+
   /** A Logger for the StretchTorsionType class. */
   private static final Logger logger = Logger.getLogger(StretchTorsionType.class.getName());
   /** Atom classes for this stretch-torsion type. */
@@ -194,8 +210,12 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
   /** {@inheritDoc} */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     StretchTorsionType stretchTorsionType = (StretchTorsionType) o;
     return Arrays.equals(atomClasses, stretchTorsionType.atomClasses);
   }

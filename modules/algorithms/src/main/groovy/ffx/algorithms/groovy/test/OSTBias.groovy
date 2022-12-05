@@ -59,7 +59,7 @@ import static java.lang.String.format
  * <br>
  * ffxc test.OSTBias [options] &lt;filename&gt;
  */
-@Command(description = " Search for minimum energy polymoprhs for a given space group.", name = "ffxc test.CrystalSearch")
+@Command(description = " OSTBias script tests the Transition-Tempered Orthogonal Space Random Walk Potential.", name = "test.OSTBias")
 class OSTBias extends AlgorithmsScript {
 
   /**

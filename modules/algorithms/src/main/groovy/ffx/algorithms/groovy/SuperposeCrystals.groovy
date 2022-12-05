@@ -62,10 +62,10 @@ import static org.apache.commons.io.FilenameUtils.getFullPath
  * <br>
  * Usage:
  * <br>
- * ffxc test.SuperposeCrystals &lt;filename&gt; &lt;filename&gt;
+ * ffxc SuperposeCrystals &lt;filename&gt; &lt;filename&gt;
  */
 @Command(description = " Determine the RMSD for crystal polymorphs using the Progressive Alignment of Crystals (PAC) algorithm.",
-    name = "ffxc SuperposeCrystals")
+    name = "SuperposeCrystals")
 class SuperposeCrystals extends AlgorithmsScript {
 
   /**
@@ -101,7 +101,7 @@ class SuperposeCrystals extends AlgorithmsScript {
    * ranges or singletons.
    */
   @Option(names = ["--us", "--unshared"], paramLabel = "", defaultValue = "",
-          description = "Unshared atoms for both crystals (e.g. 1-24.32-65). Use if Z' = 1 for both crystals.")
+      description = "Unshared atoms for both crystals (e.g. 1-24.32-65). Use if Z' = 1 for both crystals.")
   private String unshared = ""
 
   /**
@@ -109,7 +109,7 @@ class SuperposeCrystals extends AlgorithmsScript {
    * ranges or singletons.
    */
   @Option(names = ["--usA", "--unsharedA"], paramLabel = "", defaultValue = "",
-          description = "Unshared atoms in the first crystal (e.g. 1-24.32-65).")
+      description = "Unshared atoms in the first crystal (e.g. 1-24.32-65).")
   private String unsharedA = ""
 
   /**
@@ -117,14 +117,14 @@ class SuperposeCrystals extends AlgorithmsScript {
    * ranges or singletons.
    */
   @Option(names = ["--usB", "--unsharedB"], paramLabel = "", defaultValue = "",
-          description = "Unshared atoms in the second crystal (e.g. 1-24.32-65).")
+      description = "Unshared atoms in the second crystal (e.g. 1-24.32-65).")
   private String unsharedB = ""
 
   /**
    * --mt or --matchTolerance Tolerance to determine if two AUs are different.
    */
   @Option(names = ['--mt', '--moleculeTolerance'], paramLabel = '0.0015', defaultValue = '0.0015',
-          description = "Tolerance to determine if two AUs are different.")
+      description = "Tolerance to determine if two AUs are different.")
   private double matchTol
 
   /**
@@ -159,7 +159,7 @@ class SuperposeCrystals extends AlgorithmsScript {
    * --lm or --lowMemory Slower comparisons, but reduces memory usage.
    */
   @Option(names = ['--lm', '--lowMemory'], paramLabel = "false", defaultValue = "false",
-          description = 'Reduce memory usage at the cost of efficiency.')
+      description = 'Reduce memory usage at the cost of efficiency.')
   private static boolean lowMemory
 
   /**
@@ -187,14 +187,14 @@ class SuperposeCrystals extends AlgorithmsScript {
    * --in or --inertia Display moments of inertia for final clusters.
    */
   @Option(names = ['--in', '--inertia'], paramLabel = "false", defaultValue = "false",
-          description = 'Display moments of inertia for final clusters.')
+      description = 'Display moments of inertia for final clusters.')
   private static boolean inertia
 
   /**
    * --rgc or --gyrationComponents Display components for radius of gyration for final clusters.
    */
   @Option(names = ['--gc', '--gyrationComponents'], paramLabel = "false", defaultValue = "false",
-          description = 'Display components for radius of gyration for final clusters.')
+      description = 'Display components for radius of gyration for final clusters.')
   private static boolean gyrationComponents
 
   /**
@@ -208,7 +208,7 @@ class SuperposeCrystals extends AlgorithmsScript {
    * --ps or --printSymOp Print optimal SymOp to align crystal 2 to crystal 1.
    */
   @Option(names = ['--ps', '--printSymOp'], paramLabel = "-1.0", defaultValue = "-1.0",
-          description = 'Print optimal SymOp to align input crystals (print out atom deviations above value).')
+      description = 'Print optimal SymOp to align input crystals (print out atom deviations above value).')
   private static double printSym
 
   /**
@@ -222,7 +222,7 @@ class SuperposeCrystals extends AlgorithmsScript {
    * --pc or --prioritizeCrystals Prioritize the crystals being compared based on high density (0), low density (1), or file order (2).
    */
   @Option(names = ['--pc', '--prioritizeCrystals'], paramLabel = '0', defaultValue = '0',
-          description = 'Prioritize crystals based on high density (0), low density (1), or file order (2).')
+      description = 'Prioritize crystals based on high density (0), low density (1), or file order (2).')
   private int crystalPriority
 
   /**
@@ -281,7 +281,7 @@ class SuperposeCrystals extends AlgorithmsScript {
     baseFilter = algorithmFunctions.getFilter()
 
     // Apply atom selections
-    if(unshared != null && !unshared.isEmpty()){
+    if (unshared != null && !unshared.isEmpty()) {
       unsharedA = unshared
       unsharedB = unshared
     }
@@ -313,9 +313,11 @@ class SuperposeCrystals extends AlgorithmsScript {
     String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt")
 
     runningStatistics =
-        pac.comparisons(numAU, inflationFactor, matchTol, zPrime, zPrime2, unsharedA, unsharedB, alphaCarbons,
+        pac.comparisons(numAU, inflationFactor, matchTol, zPrime, zPrime2, unsharedA, unsharedB,
+            alphaCarbons,
             includeHydrogen, massWeighted, crystalPriority, strict, save,
-            restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym, lowMemory, pacFilename)
+            restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym,
+            lowMemory, pacFilename)
 
     return this
   }

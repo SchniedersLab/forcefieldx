@@ -37,14 +37,12 @@
 // ******************************************************************************
 package ffx.potential.nonbonded.implicit;
 
-import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_BETA0;
-import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_BETA1;
-import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_BETA2;
+import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_TANH_BETA0;
+import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_TANH_BETA1;
+import static ffx.potential.nonbonded.GeneralizedKirkwood.DEFAULT_TANH_BETA2;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.tanh;
-
-import ffx.potential.nonbonded.GeneralizedKirkwood;
 
 /**
  * Rescale the Born radius integral to account for interstitial spaces.
@@ -75,9 +73,9 @@ public class BornTanhRescaling {
   /**
    * Tanh coefficients from Corrigan et al.
    */
-  private static double beta0 = DEFAULT_BETA0;
-  private static double beta1 = DEFAULT_BETA1;
-  private static double beta2 = DEFAULT_BETA2;
+  private static double beta0 = DEFAULT_TANH_BETA0;
+  private static double beta1 = DEFAULT_TANH_BETA1;
+  private static double beta2 = DEFAULT_TANH_BETA2;
 
   /**
    * Rescale the Born radius integral to account for interstitial spaces.

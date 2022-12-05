@@ -38,9 +38,11 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.CHARGE;
+import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
+import ffx.utilities.FFXKeyword;
 import java.util.Comparator;
 
 /**
@@ -49,6 +51,13 @@ import java.util.Comparator;
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@FFXKeyword(name = "charge", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = "[1 integer and 1 real] "
+        + "Provides a value for a single atomic partial charge electrostatic parameter. "
+        + "The integer modifier, if positive, gives the atom type number for which the charge parameter is to be defined. "
+        + "Note that charge parameters are given for atom types, not atom classes. "
+        + "If the integer modifier is negative, then the parameter value to follow applies only to the individual atom whose atom number is the negative of the modifier. "
+        + "The real number modifier gives the values of the atomic partial charge in electrons.")
 public final class ChargeType extends BaseType implements Comparator<String> {
 
   /** Partial atomic charge in units of electrons. */

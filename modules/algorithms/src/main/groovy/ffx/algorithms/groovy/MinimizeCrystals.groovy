@@ -65,7 +65,7 @@ import static org.apache.commons.math3.util.FastMath.abs
  * <br>
  * ffxc MinimizeCrystals [options] &lt;filename&gt;
  */
-@Command(description = " Minimize crystal unit cell parameters.", name = "ffxc MinimizeCrystals")
+@Command(description = " Minimize crystal unit cell parameters.", name = "MinimizeCrystals")
 class MinimizeCrystals extends AlgorithmsScript {
 
   @Mixin
@@ -224,7 +224,7 @@ class MinimizeCrystals extends AlgorithmsScript {
 
   void runMinimize() {
     crystalMinimize = new CrystalMinimize(activeAssembly, xtalEnergy, algorithmListener)
-    crystalMinimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
+    crystalMinimize.minimize(minimizeOptions.NBFGS, minimizeOptions.eps, minimizeOptions.iterations)
     double energy = crystalMinimize.getEnergy()
 
     double tolerance = 1.0e-10
@@ -235,7 +235,7 @@ class MinimizeCrystals extends AlgorithmsScript {
       Minimize minimize = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
       while (true) {
         // Complete a round of coordinate optimization.
-        minimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
+        minimize.minimize(minimizeOptions.NBFGS, minimizeOptions.eps, minimizeOptions.iterations)
         double newEnergy = minimize.getEnergy()
         int status = minimize.getStatus()
         if (status != 0) {
@@ -247,7 +247,8 @@ class MinimizeCrystals extends AlgorithmsScript {
         energy = newEnergy
 
         // Complete a round of lattice optimization.
-        crystalMinimize.minimize(minimizeOptions.eps, minimizeOptions.iterations)
+        crystalMinimize
+            .minimize(minimizeOptions.NBFGS, minimizeOptions.eps, minimizeOptions.iterations)
         newEnergy = crystalMinimize.getEnergy()
         status = crystalMinimize.getStatus()
         if (status != 0) {

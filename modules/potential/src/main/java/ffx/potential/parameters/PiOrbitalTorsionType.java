@@ -38,10 +38,13 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.PITORS;
+import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
+import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
+import ffx.utilities.FFXKeyword;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -54,15 +57,28 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@FFXKeyword(name = "pitors", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = "[2 integers and 1 real] "
+        + "Provides the values for a single pi-orbital torsional angle potential parameter. "
+        + "The two integer modifiers give the atom class numbers for the atoms involved in the central bond of the torsional angle to be parameterized. "
+        + "The real modifier gives the value of the 2-fold Fourier amplitude for the torsional angle between p-orbitals centered on the defined bond atom classes. "
+        + "The default units for the stretch-torsion force constant can be controlled via the pitorsunit keyword.")
 public final class PiOrbitalTorsionType extends BaseType implements Comparator<String> {
 
   /** A Logger for the PiTorsionType class. */
   private static final Logger logger = Logger.getLogger(PiOrbitalTorsionType.class.getName());
 
+  public static final double DEFAULT_PITORS_UNIT = 1.0;
+
   /** Convert Pi-Torsion energy to kcal/mole. */
-  public static double units = 1.0;
+  @FFXKeyword(name = "pitorsunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0",
+      description = "Sets the scale factor needed to convert the energy value computed by the pi-orbital torsional angle potential into units of kcal/mole. "
+          + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  public double piTorsUnit = DEFAULT_PITORS_UNIT;
+
   /** Atom classes that form this Pi-Torsion. */
   public final int[] atomClasses;
+
   /** Force constant. */
   public double forceConstant;
 

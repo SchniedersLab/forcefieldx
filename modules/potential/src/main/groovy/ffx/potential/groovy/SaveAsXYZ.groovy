@@ -62,7 +62,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * <br>
  * ffxc SaveAsXYZ [options] &lt;filename&gt;
  */
-@Command(description = " Save the system as an XYZ file.", name = "ffxc SaveAsXYZ")
+@Command(description = " Save the system as an XYZ file.", name = "SaveAsXYZ")
 class SaveAsXYZ extends PotentialScript {
 
   @Mixin
