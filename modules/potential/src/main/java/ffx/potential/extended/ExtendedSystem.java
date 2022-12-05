@@ -386,7 +386,7 @@ public class ExtendedSystem implements Potential {
         // If the atom does belong to this residue, set all corresponding variables in the respective titration or tautomer array (size = numAtoms).
         // Store the index of the residue in the respective list into a map array (size = numAtoms).
         List<Residue> residueList = mola.getResidueList();
-        logger.info(residueList.toString());
+        //logger.info(residueList.toString());
         List<Residue> preprocessList = new ArrayList<>(residueList);
         for(Residue residue : preprocessList){
             List<Atom> atomList = residue.getSideChainAtoms();
@@ -399,7 +399,7 @@ public class ExtendedSystem implements Potential {
                 }
             }
         }
-        logger.info(residueList.toString());
+        //logger.info(residueList.toString());
         // Use only a list that contains AminoAcid residues so remove Nucleic Acid residues
         residueList.removeIf(residue -> (residue.getResidueType() == Residue.ResidueType.NA));
         for (Residue residue : residueList) {
@@ -510,11 +510,13 @@ public class ExtendedSystem implements Potential {
     private void initializeThetaArrays(int index, double lambda) {
         extendedLambdas[index] = lambda;
         thetaPosition[index] = Math.asin(Math.sqrt(lambda));
-        Random random = new Random();
-        thetaVelocity[index] = random.nextGaussian() * sqrt(kB * 298.15 / thetaMass);
+        //Perform unit analysis carefully
+        //Random random = new Random();
+        thetaVelocity[index] = 0.0; //random.nextGaussian() * sqrt(kB * 298.15 / thetaMass);
         double dUdL = getDerivatives()[index];
         double dUdTheta = dUdL * sin(2 * thetaPosition[index]);
         thetaAccel[index] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
+        //logger.info(format("Index: %d, dU/dL: %6.8f, dU/dTheta: %6.8f Theta Accel: %6.8f, Theta Velocity: %6.8f", index, -Constants.KCAL_TO_GRAM_ANG2_PER_PS2*dUdL, -Constants.KCAL_TO_GRAM_ANG2_PER_PS2*dUdTheta, thetaAccel[index], thetaVelocity[index]));
     }
 
     /**
@@ -850,7 +852,7 @@ public class ExtendedSystem implements Potential {
     }
 
     /**
-     * Update all theta (lambda) postions after each move from the Stochastic integrator
+     * Update all theta (lambda) positions after each move from the Stochastic integrator
      */
     private void updateLambdas() {
         //This will prevent recalculating multiple sinTheta*sinTheta that are the same number.

@@ -187,7 +187,6 @@ class PhDynamics extends AlgorithmsScript {
 
     // Initialize and attach extended system first.
     ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, pH, esv)
-    esvSystem.setConstantPh(pH)
     potential.attachExtendedSystem(esvSystem)
 
     int numESVs = esvSystem.extendedResidueList.size()
@@ -210,7 +209,7 @@ class PhDynamics extends AlgorithmsScript {
     molecularDynamics =
             dynamicsOptions.getDynamics(writeOutOptions, potential, activeAssembly, algorithmListener)
 
-    molecularDynamics.attachExtendedSystem(esvSystem, dynamicsOptions.report)
+    molecularDynamics.attachExtendedSystem(esvSystem, titrReport)
 
     // Restart File
     File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn")
