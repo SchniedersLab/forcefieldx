@@ -8,10 +8,12 @@ import ffx.algorithms.optimize.RotamerOptimization
 import ffx.numerics.math.DoubleMath
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.parameters.ForceField
+import ffx.potential.parsers.PDBFilter
 import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine
 import picocli.CommandLine.Command
@@ -48,6 +50,11 @@ class ReducedPartition extends  AlgorithmsScript{
             description = "Mutant residue.")
     private String resName
 
+    @CommandLine.Option(names = ["--un", "--unfolded"], paramLabel = "false",
+            description = "Run the unfolded state tripeptide.")
+    private boolean unfolded = false
+
+
     /**
      * An XYZ or PDB input file.
      */
@@ -59,6 +66,8 @@ class ReducedPartition extends  AlgorithmsScript{
     TitrationManyBody titrationManyBody
     MolecularAssembly mutatedAssembly
     Binding mutatorBinding
+
+    private String unfoldedFileName
 
     /**
      * ManyBody Constructor.
@@ -89,6 +98,25 @@ class ReducedPartition extends  AlgorithmsScript{
             System.setProperty("manybody-titration", "true")
         }
         activeAssembly = getActiveAssembly(filenames.get(0))
+
+        if(unfolded){
+            unfoldedFileName = "wt" + mutatingResidue + ".pdb"
+            List<Atom> atoms = activeAssembly.getAtomList()
+            Set<Atom> excludeAtoms = new HashSet<>()
+            for(Atom atom : atoms){
+                if(atom.getResidueNumber() < mutatingResidue-1 || atom.getResidueNumber() > mutatingResidue+1){
+                    excludeAtoms.add(atom)
+                } else if(atom.getResidueNumber() == mutatingResidue-1 && atom.getName() == "H"){
+                    excludeAtoms.add(atom)
+                }
+            }
+            File file = new File(unfoldedFileName)
+            PDBFilter pdbFilter = new PDBFilter(file, activeAssembly, activeAssembly.getForceField(),
+                    activeAssembly.getProperties())
+            pdbFilter.writeFile(file, false, excludeAtoms, true, true)
+            setActiveAssembly(getActiveAssembly(unfoldedFileName))
+        }
+
         double[] boltzmannWeights = new double[2]
         double[] offsets = new double[2]
         List<Residue> residueList = activeAssembly.getResidueList()
@@ -102,7 +130,12 @@ class ReducedPartition extends  AlgorithmsScript{
         String mutatedFileName = ""
         //Call the MutatePDB script
         if(filenames.size() == 1){
-            mutatorBinding = new Binding('-r', mutatingResidue.toString(), '-n', resName, filenames.get(0))
+            if(unfolded){
+                mutatorBinding = new Binding('-r', mutatingResidue.toString(), '-n', resName, unfoldedFileName)
+            } else {
+                mutatorBinding = new Binding('-r', mutatingResidue.toString(), '-n', resName, filenames.get(0))
+            }
+
             MutatePDB mutatePDB = new MutatePDB(mutatorBinding)
             mutatePDB.run()
             mutatedFileName = mutatorBinding.getProperty('versionFileName')
