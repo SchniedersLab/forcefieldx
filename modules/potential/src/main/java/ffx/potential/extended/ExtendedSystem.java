@@ -157,7 +157,6 @@ public class ExtendedSystem implements Potential {
      * 3D array to store the titration and tautomer population states for each ESV
      */
     final private int[][][] esvHistogram;
-    final private ArrayList<Double>[] esvProtonationRatios;
     private final SharedDouble[] esvIndElecDerivs;
     private final SharedDouble[] esvPermElecDerivs;
     /**
@@ -452,8 +451,6 @@ public class ExtendedSystem implements Potential {
         thetaAccel = new double[nESVs];
         thetaMassArray = new double[nESVs];
         esvHistogram = new int[nTitr][10][10];
-        esvProtonationRatios = new ArrayList[nTitr];
-        for(int i = 0; i < nTitr; i++){ esvProtonationRatios[i] = new ArrayList<>();}
         esvVdwDerivs = new SharedDouble[nESVs];
         esvPermElecDerivs = new SharedDouble[nESVs];
         esvIndElecDerivs = new SharedDouble[nESVs];
@@ -1389,7 +1386,7 @@ public class ExtendedSystem implements Potential {
     }
 
     /**
-     * Writes out the current state of the extended system to the specified file.
+     * Writes out the current state of the extended system to the specified file without setting the file to that location.
      * @param esvFile file to be written to
      * @return whether the read was successful or not
      */
@@ -1435,8 +1432,28 @@ public class ExtendedSystem implements Potential {
         }
     }
 
-    public void writeLambdaHistogram() {
-        logger.info(esvFilter.getLambdaHistogram(titratingResidueList, esvHistogram, constantSystemPh));
+    public void printProtonationRatios(){
+        for(int i = 0; i < esvHistogram.length; i++){
+            int[] rowSums = new int[esvHistogram[i].length];
+            for(int j = 0; j < esvHistogram[i].length; j++){
+                for(int k = 0; k < esvHistogram[i][j].length; k++){
+                    rowSums[j] += esvHistogram[i][j][k];
+                }
+            }
+            int i1 = rowSums[0] + rowSums[rowSums.length - 1];
+            double buf = i1 == 0 ? 0.0 : .001;
+            logger.info(" " + extendedResidueList.get(i).toString() + " Deprotonation Fraction at pH " + constantSystemPh + ": " + (rowSums[0] / (i1+buf)));
+            if(buf == 0.0) {
+                logger.info(" Buffer required to avoid division by 0");
+            }
+        }
+    }
+
+    public void writeLambdaHistogram(boolean printHistograms) {
+        printProtonationRatios();
+        if(printHistograms) {
+            logger.info(esvFilter.getLambdaHistogram(titratingResidueList, esvHistogram, constantSystemPh));
+        }
     }
 
     @Override
