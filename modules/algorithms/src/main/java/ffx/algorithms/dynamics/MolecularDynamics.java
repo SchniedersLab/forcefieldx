@@ -1243,7 +1243,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
     if (esvSystem != null) {
       esvSystem.writeRestart();
-      esvSystem.writeLambdaHistogram();
+      esvSystem.writeLambdaHistogram(false);
     }
   }
 

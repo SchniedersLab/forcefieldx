@@ -156,7 +156,6 @@ public class ExtendedSystem implements Potential {
      * 3D array to store the titration and tautomer population states for each ESV
      */
     final private int[][][] esvHistogram;
-    final private ArrayList<Double>[] esvProtonationRatios;
     private final SharedDouble[] esvIndElecDerivs;
     private final SharedDouble[] esvPermElecDerivs;
     /**
@@ -451,8 +450,6 @@ public class ExtendedSystem implements Potential {
         thetaAccel = new double[nESVs];
         thetaMassArray = new double[nESVs];
         esvHistogram = new int[nTitr][10][10];
-        esvProtonationRatios = new ArrayList[nTitr];
-        for(int i = 0; i < nTitr; i++){ esvProtonationRatios[i] = new ArrayList<>();}
         esvVdwDerivs = new SharedDouble[nESVs];
         esvPermElecDerivs = new SharedDouble[nESVs];
         esvIndElecDerivs = new SharedDouble[nESVs];
@@ -999,51 +996,6 @@ public class ExtendedSystem implements Potential {
     }
 
     /**
-     * The current deprotonated/(protonated+deprotonated) sum ratio for a residue can be useful for understanding convergence of pH simulations
-     * @param residueIndex titrating residue index
-     * @return the current deprotonated/protonated ratio for a residue
-     */
-    public double getESVProtonationFraction(int residueIndex){
-        double protonatedSum = 0;
-        double deprotonatedSum = 0;
-
-        for(int i = 0; i < esvHistogram[residueIndex][0].length; i++){
-            deprotonatedSum += esvHistogram[residueIndex][0][i];
-            protonatedSum += esvHistogram[residueIndex][esvHistogram[residueIndex].length-1][i];
-        }
-        return deprotonatedSum / (protonatedSum + deprotonatedSum);
-    }
-
-    /**
-     * Updates esvProtonationRatios for all residues. Should be called on restart writes.
-     */
-    public void updateProtonationRatios(){
-        for(int i = 0; i < esvHistogram.length; i++){
-            esvProtonationRatios[i].add(this.getESVProtonationFraction(i));
-        }
-    }
-
-    /**
-     * Prints off protonation ratios from throughout the simulation for all residues.
-     */
-    public void printProtonationRatios(){
-        int numberOfReports = 100;
-        if(esvProtonationRatios[0].size() >= numberOfReports) {
-            for (int i = 0; i < esvProtonationRatios.length; i++) {
-                double[] ratios = new double[numberOfReports];
-                int baseIndex = esvProtonationRatios[i].size() / numberOfReports;
-                for (int j = 0; j < numberOfReports; j++) {
-                    ratios[j] = esvProtonationRatios[i].get(baseIndex * j);
-                }
-                String resInfo = titratingResidueList.get(i).toString();
-                logger.info(" " + resInfo + " Deprotonated/(Protonated+Deprotonated) fractions through snaps (showing " + numberOfReports + " out of " + esvProtonationRatios[i].size() + "): ");
-                logger.info(" " + Arrays.toString(ratios));
-                logger.info(" ");
-            }
-        }
-    }
-
-    /**
      * Changes this ESV's histogram to equal the one passed
      * @param histogram histogram to set this ESV histogram to
      */
@@ -1398,7 +1350,7 @@ public class ExtendedSystem implements Potential {
     }
 
     /**
-     * Writes out the current state of the extended system to the specified file.
+     * Writes out the current state of the extended system to the specified file without setting the file to that location.
      * @param esvFile file to be written to
      * @return whether the read was successful or not
      */
@@ -1437,7 +1389,6 @@ public class ExtendedSystem implements Potential {
 
     public void writeRestart() {
         String esvName = FileUtils.relativePathTo(restartFile).toString();
-        this.updateProtonationRatios();
         if (esvFilter.writeESV(restartFile, thetaPosition, thetaVelocity, thetaAccel, titratingResidueList, esvHistogram, constantSystemPh)) {
             logger.info(" Wrote PhDynamics restart file to " + esvName);
         } else {
@@ -1445,8 +1396,28 @@ public class ExtendedSystem implements Potential {
         }
     }
 
-    public void writeLambdaHistogram() {
-        logger.info(esvFilter.getLambdaHistogram(titratingResidueList, esvHistogram, constantSystemPh));
+    public void printProtonationRatios(){
+        for(int i = 0; i < esvHistogram.length; i++){
+            int[] rowSums = new int[esvHistogram[i].length];
+            for(int j = 0; j < esvHistogram[i].length; j++){
+                for(int k = 0; k < esvHistogram[i][j].length; k++){
+                    rowSums[j] += esvHistogram[i][j][k];
+                }
+            }
+            int i1 = rowSums[0] + rowSums[rowSums.length - 1];
+            double buf = i1 == 0 ? 0.0 : .001;
+            logger.info(" " + extendedResidueList.get(i).toString() + " Deprotonation Fraction at pH " + constantSystemPh + ": " + (rowSums[0] / (i1+buf)));
+            if(buf == 0.0) {
+                logger.info(" Buffer required to avoid division by 0");
+            }
+        }
+    }
+
+    public void writeLambdaHistogram(boolean printHistograms) {
+        printProtonationRatios();
+        if(printHistograms) {
+            logger.info(esvFilter.getLambdaHistogram(titratingResidueList, esvHistogram, constantSystemPh));
+        }
     }
 
     @Override

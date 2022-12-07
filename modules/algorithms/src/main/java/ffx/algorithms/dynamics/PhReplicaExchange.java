@@ -265,7 +265,7 @@ public class PhReplicaExchange implements Terminatable {
     logger.info(" Rank " + rank + " staring at pH " + pHScale[rank2Ph[rank]]);
     extendedSystem.setConstantPh(pHScale[rank2Ph[rank]]);
     logger.info(" Rank " + rank + " starting hist:");
-    extendedSystem.writeLambdaHistogram();
+    extendedSystem.writeLambdaHistogram(true);
 
     return true;
   }
@@ -318,7 +318,7 @@ public class PhReplicaExchange implements Terminatable {
             restartStep = sum;
           }
           else if(restartStep != sum){
-            logger.warning(" Restart received uneven sums from esv file.");
+            logger.warning(" Restart received uneven sums from esv file: " + file.getAbsolutePath());
             restartStep = 0;
             readPhScale.clear();
             return false;
@@ -393,7 +393,7 @@ public class PhReplicaExchange implements Terminatable {
       extendedSystem.setFixedTitrationState(false);
       extendedSystem.setFixedTautomerState(false);
       logger.info(extendedSystem.getLambdaList());
-      extendedSystem.writeLambdaHistogram();
+      extendedSystem.writeLambdaHistogram(true);
       extendedSystem.copyESVHistogramTo(parametersHis[rank]); // Copy the ESV hist to be empty
 
       logger.info(" ");
@@ -430,6 +430,10 @@ public class PhReplicaExchange implements Terminatable {
       }
       copyToBackups();
       replica.writeRestart();
+
+      if(i % 100 == 0){
+        extendedSystem.writeLambdaHistogram(true);
+      }
 
       logger.info(" ");
       logger.info(String.format(" ------------------Exchange Cycle %d------------------\n", i+1));
@@ -522,7 +526,6 @@ public class PhReplicaExchange implements Terminatable {
 
     // Compute the change in energy over kT (E/kT) for the Metropolis criteria.
     double deltaE = beta * ((acidostatAatB + acidostatBatA) - (acidostatA + acidostatB));
-    logger.info(" deltaE = " + beta + " * ((" + acidostatAatB + " + " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + "))");
     logger.info(" DeltaE: " + deltaE);
 
     //Count the number of trials for each temp
@@ -630,9 +633,7 @@ public class PhReplicaExchange implements Terminatable {
     myParameters[3] = extendedSystem.getBiasEnergy();
 
     extendedSystem.setConstantPh(myParameters[0]);
-
     extendedSystem.getESVHistogram(parametersHis[rank]);
-    extendedSystem.writeLambdaHistogram();
 
     // Gather all parameters from the other processes.
     try {
@@ -686,7 +687,6 @@ public class PhReplicaExchange implements Terminatable {
     extendedSystem.setConstantPh(myParameters[0]);
 
     extendedSystem.getESVHistogram(parametersHis[rank]);
-    extendedSystem.writeLambdaHistogram();
 
     // Gather all parameters from the other processes.
     try {
