@@ -264,7 +264,7 @@ class PhDynamics extends AlgorithmsScript {
         // CPU Constant pH Dynamics
         molecularDynamics.dynamic(dynamicsOptions.steps, dynamicsOptions.dt,
                 dynamicsOptions.report, dynamicsOptions.write, dynamicsOptions.temperature, true, dyn)
-        esvSystem.writeLambdaHistogram()
+        esvSystem.writeLambdaHistogram(true)
       }
     }
     else {
@@ -321,7 +321,7 @@ class PhDynamics extends AlgorithmsScript {
           molecularDynamics.dynamic(titrSteps, dynamicsOptions.dt, titrReport, dynamicsOptions.write,
                   dynamicsOptions.temperature, true, dyn)
           x = molecularDynamics.getCoordinates()
-          esvSystem.writeLambdaHistogram()
+          esvSystem.writeLambdaHistogram(true)
 
           // Try running in OpenMM
           potential.energy(x)
