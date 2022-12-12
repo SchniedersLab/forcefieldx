@@ -54,7 +54,7 @@ import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
-import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
+import ffx.potential.nonbonded.pme.Polarization;
 import ffx.potential.nonbonded.implicit.BornGradRegion;
 import ffx.potential.nonbonded.implicit.BornRadiiRegion;
 import ffx.potential.nonbonded.implicit.BornTanhRescaling;
@@ -75,7 +75,6 @@ import ffx.utilities.FFXKeyword;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -220,16 +219,16 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * The requested permittivity for the solvent.
    */
   @FFXKeyword(name = "solvent-dielectric", keywordGroup = ImplicitSolvent, defaultValue = "78.3",
-          description = "The dielectric constant used for the solvent in generalized Kirkwood calculations."
-                  + "The default of 78.3 corresponds to water.")
+      description = "The dielectric constant used for the solvent in generalized Kirkwood calculations."
+          + "The default of 78.3 corresponds to water.")
   private final double solventDielectric;
   /**
    * The requested permittivity for the solute.
    */
   @FFXKeyword(name = "solute-dielectric", keywordGroup = ImplicitSolvent, defaultValue = "1.0",
-          description = "The dielectric constant used for the solute(s) in generalized Kirkwood calculations."
-                  + "The default of 1.0 is consistent with all solute dielectric response arising from either"
-                  + "polarization via induced dipoles and/or permanent dipole realignment.")
+      description = "The dielectric constant used for the solute(s) in generalized Kirkwood calculations."
+          + "The default of 1.0 is consistent with all solute dielectric response arising from either"
+          + "polarization via induced dipoles and/or permanent dipole realignment.")
   private final double soluteDielectric;
 
   /**
@@ -242,14 +241,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * Base overlap HCT overlap scale factor.
    */
   @FFXKeyword(name = "hct-scale", keywordGroup = ImplicitSolvent, defaultValue = "0.72",
-          description = "The default overlap scale factor for Hawkins-Cramer-Truhlar pairwise descreening.")
+      description = "The default overlap scale factor for Hawkins-Cramer-Truhlar pairwise descreening.")
   private final double hctScale;
 
   /**
    * If true, HCT overlap scale factors are element-specific
    */
   @FFXKeyword(name = "element-hct-scale", clazz = Boolean.class, keywordGroup = ImplicitSolvent, defaultValue = "false",
-          description = "Flag to turn on element specific overlap scale factors for Hawkins-Cramer-Truhlar pairwise descreening.")
+      description = "Flag to turn on element specific overlap scale factors for Hawkins-Cramer-Truhlar pairwise descreening.")
   private final boolean elementHCTScale;
 
   /**
@@ -261,14 +260,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * If true, the descreening size of atoms is based on their force field vdW radius
    */
   @FFXKeyword(name = "descreen-vdw", keywordGroup = ImplicitSolvent, defaultValue = "true",
-          description = "If true, the descreening size of each atom is based on its force field van der Waals radius.")
+      description = "If true, the descreening size of each atom is based on its force field van der Waals radius.")
   private final boolean descreenVDW;
 
   /**
    * If true, hydrogen atoms displace solvent during the pairwise descreening integral.
    */
   @FFXKeyword(name = "descreen-hydrogen", keywordGroup = ImplicitSolvent, defaultValue = "false",
-          description = "If true, hydrogen atoms are contribute to the pairwise descreening integrals.")
+      description = "If true, hydrogen atoms are contribute to the pairwise descreening integrals.")
   private final boolean descreenHydrogen;
 
   private static final double DEFAULT_DESCREEN_OFFSET = 0.0;
@@ -276,14 +275,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * Offset applied to the pairwise descreening integral to improve stability at small separation.
    */
   @FFXKeyword(name = "descreen-offset", keywordGroup = ImplicitSolvent, defaultValue = "0.0",
-          description = "Offset applied to the pairwise descreening integral to improve stability at small separation.")
+      description = "Offset applied to the pairwise descreening integral to improve stability at small separation.")
   private final double descreenOffset;
 
   /**
    * Apply a neck correction during descreening.
    */
   @FFXKeyword(name = "neck-correction", keywordGroup = ImplicitSolvent, defaultValue = "false",
-          description = "Apply a neck correction during descreening.")
+      description = "Apply a neck correction during descreening.")
   private final boolean neckCorrection;
 
   /**
@@ -294,7 +293,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * Maximum Sneck scaling parameter value
    */
   @FFXKeyword(name = "neck-scale", keywordGroup = ImplicitSolvent, defaultValue = "",
-          description = "The overlap scale factor to use during the descreening neck correction.")
+      description = "The overlap scale factor to use during the descreening neck correction.")
   private double sneck;
 
   /**
@@ -302,8 +301,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * less capable of forming interstitial necks.
    */
   @FFXKeyword(name = "chemically-aware-neck-scale", keywordGroup = ImplicitSolvent, defaultValue = "true",
-          description = "If the neck descreening correction is being used, apply a smaller overlap scale"
-                  + "factors as the number of bonded heavy atoms increases.")
+      description = "If the neck descreening correction is being used, apply a smaller overlap scale"
+          + "factors as the number of bonded heavy atoms increases.")
   private final boolean chemicallyAwareSneck;
 
   /**
@@ -311,8 +310,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * surface
    */
   @FFXKeyword(name = "tanh-correction", keywordGroup = ImplicitSolvent, defaultValue = "false",
-          description = "If the neck descreening correction is being used, apply a smaller overlap scale"
-                  + "factors as the number of bonded heavy atoms increases.")
+      description = "If the neck descreening correction is being used, apply a smaller overlap scale"
+          + "factors as the number of bonded heavy atoms increases.")
   private final boolean tanhCorrection;
 
   /**
@@ -332,21 +331,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * The coefficient beta0 for tanh rescaling of descreening integrals.
    */
   @FFXKeyword(name = "tanh-beta0", keywordGroup = ImplicitSolvent, defaultValue = "0.9563",
-          description = "The coefficient beta0 for tanh rescaling of descreening integrals.")
+      description = "The coefficient beta0 for tanh rescaling of descreening integrals.")
   private double beta0;
 
   /**
    * The coefficient beta1 for tanh rescaling of descreening integrals.
    */
   @FFXKeyword(name = "tanh-beta1", keywordGroup = ImplicitSolvent, defaultValue = "0.2578",
-          description = "The coefficient beta1 for tanh rescaling of descreening integrals.")
+      description = "The coefficient beta1 for tanh rescaling of descreening integrals.")
   private double beta1;
 
   /**
    * The coefficient beta2 for tanh rescaling of descreening integrals.
    */
   @FFXKeyword(name = "tanh-beta2", keywordGroup = ImplicitSolvent, defaultValue = "0.0810",
-          description = "The coefficient beta2 for tanh rescaling of descreening integrals.")
+      description = "The coefficient beta2 for tanh rescaling of descreening integrals.")
   private double beta2;
 
   /**
@@ -357,7 +356,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * The Generalized Kirkwood cross-term parameter.
    */
   @FFXKeyword(name = "gkc", keywordGroup = ImplicitSolvent, defaultValue = "2.455",
-          description = "The Generalized Kirkwood cross-term parameter.")
+      description = "The Generalized Kirkwood cross-term parameter.")
   public final double gkc;
 
   private static final NonPolarModel DEFAULT_NONPOLAR_MODEL = NonPolarModel.CAV_DISP;
@@ -366,9 +365,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * Treatment of non-polar interactions.
    */
   @FFXKeyword(name = "nonpolar-model", clazz = String.class,
-          keywordGroup = ImplicitSolvent, defaultValue = "cav-disp",
-          description = "[CAV / CAV-DISP / GAUSS-DISP / SEV-DISP / NONE ] "
-                  + "The non-polar contribution to the implicit solvent.")
+      keywordGroup = ImplicitSolvent, defaultValue = "cav-disp",
+      description = "[CAV / CAV-DISP / GAUSS-DISP / SEV-DISP / NONE ] "
+          + "The non-polar contribution to the implicit solvent.")
   private final NonPolarModel nonPolarModel;
 
   /**
@@ -415,30 +414,30 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * <p>9.251 A = 3 * 0.103 kcal/mol/A^2 / 0.0334 kcal/mol/A^3.
    */
   public static final double DEFAULT_CROSSOVER =
-          3.0 * DEFAULT_CAVDISP_SURFACE_TENSION / DEFAULT_SOLVENT_PRESSURE;
+      3.0 * DEFAULT_CAVDISP_SURFACE_TENSION / DEFAULT_SOLVENT_PRESSURE;
 
   /**
    * Cavitation surface tension coefficient (kcal/mol/A^2).
    */
   @FFXKeyword(name = "surface-tension", keywordGroup = ImplicitSolvent, defaultValue = "0.103",
-          description = "The cavitation surface tension coefficient (kcal/mol/A^2).")
+      description = "The cavitation surface tension coefficient (kcal/mol/A^2).")
   private final double surfaceTension;
 
   /**
    * Cavitation solvent pressure coefficient (kcal/mol/A^3).
    */
   @FFXKeyword(name = "solvent-pressure", keywordGroup = ImplicitSolvent, defaultValue = "0.0334",
-          description = "The solvent pressure for nonpolar models with an explicit volume term (kcal/mol/A^3).")
+      description = "The solvent pressure for nonpolar models with an explicit volume term (kcal/mol/A^3).")
   private final double solventPressue;
 
   /**
    * The base radii to use for GK.
    */
   @FFXKeyword(name = "gk-radius", clazz = String.class, keywordGroup = ImplicitSolvent, defaultValue = "solute",
-          description = "[SOLUTE / VDW / CONSENSUS] "
-                  + "The base atomic radii to use for generalized Kirkwood calculations. The default is to use solute radii, "
-                  + "which were fit to experimental solvation free energy differences. Alternatively, force field"
-                  + "specific van der Waals radii (vdw) or consensus Bondi radii (consensus) can be chosen.")
+      description = "[SOLUTE / VDW / CONSENSUS] "
+          + "The base atomic radii to use for generalized Kirkwood calculations. The default is to use solute radii, "
+          + "which were fit to experimental solvation free energy differences. Alternatively, force field"
+          + "specific van der Waals radii (vdw) or consensus Bondi radii (consensus) can be chosen.")
   private SOLUTE_RADII_TYPE soluteRadiiType;
 
   /**
@@ -587,8 +586,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
    */
   public GeneralizedKirkwood(ForceField forceField, Atom[] atoms,
-                             ParticleMeshEwald particleMeshEwald, Crystal crystal, ParallelTeam parallelTeam,
-                             double electric, double gkCutoff) {
+      ParticleMeshEwald particleMeshEwald, Crystal crystal, ParallelTeam parallelTeam,
+      double electric, double gkCutoff) {
     this.forceField = forceField;
     this.atoms = atoms;
     this.particleMeshEwald = particleMeshEwald;
@@ -612,8 +611,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
     } catch (Exception e) {
       atomicDoubleArrayImpl = AtomicDoubleArrayImpl.MULTI;
       logger.info(
-              format(" Unrecognized ARRAY-REDUCTION %s; defaulting to %s", value,
-                      atomicDoubleArrayImpl));
+          format(" Unrecognized ARRAY-REDUCTION %s; defaulting to %s", value,
+              atomicDoubleArrayImpl));
     }
 
     String gkRadius = forceField.getString("GK_RADIUS", "SOLUTE");
@@ -653,7 +652,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     beta0 = forceField.getDouble("TANH_BETA0", b0);
     beta1 = forceField.getDouble("TANH_BETA1", b1);
     beta2 = forceField.getDouble("TANH_BETA2", b2);
-    
+
     // Default overlap element specific scale factors for the Hawkins, Cramer & Truhlar pairwise descreening algorithm.
     HashMap<Integer, Double> DEFAULT_HCT_ELEMENTS = new HashMap<>();
     // Fit default values from Corrigan et. al. interstitial spaces work
@@ -721,7 +720,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     fieldGKCR = new AtomicDoubleArray3D(atomicDoubleArrayImpl, nAtoms, threadCount);
 
     nativeEnvironmentApproximation =
-            forceField.getBoolean("NATIVE_ENVIRONMENT_APPROXIMATION", false);
+        forceField.getBoolean("NATIVE_ENVIRONMENT_APPROXIMATION", false);
     probe = forceField.getDouble("PROBE_RADIUS", 1.4);
     cut2 = cutoff * cutoff;
     lambdaTerm = forceField.getBoolean("GK_LAMBDATERM", forceField.getBoolean("LAMBDATERM", false));
@@ -736,9 +735,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     // If PME includes polarization and is a function of lambda, GK must also.
     if (!lambdaTerm
-            && particleMeshEwald.getPolarizationType() != ParticleMeshEwald.Polarization.NONE) {
+        && particleMeshEwald.getPolarizationType() != Polarization.NONE) {
       if (forceField.getBoolean("ELEC_LAMBDATERM",
-              forceField.getBoolean("LAMBDATERM", false))) {
+          forceField.getBoolean("LAMBDATERM", false))) {
         logger.info(" If PME includes polarization and is a function of lambda, GK must also.");
         lambdaTerm = true;
       }
@@ -751,14 +750,14 @@ public class GeneralizedKirkwood implements LambdaInterface {
       case CAV:
         tensionDefault = DEFAULT_CAVONLY_SURFACE_TENSION;
         surfaceAreaRegion = new SurfaceAreaRegion(atoms, x, y, z, use,
-                neighborLists, grad, threadCount, probe, tensionDefault);
+            neighborLists, grad, threadCount, probe, tensionDefault);
         dispersionRegion = null;
         chandlerCavitation = null;
         break;
       case CAV_DISP:
         tensionDefault = DEFAULT_CAVDISP_SURFACE_TENSION;
         surfaceAreaRegion = new SurfaceAreaRegion(atoms, x, y, z, use,
-                neighborLists, grad, threadCount, probe, tensionDefault);
+            neighborLists, grad, threadCount, probe, tensionDefault);
         dispersionRegion = new DispersionRegion(threadCount, atoms, forceField);
         chandlerCavitation = null;
         break;
@@ -825,18 +824,18 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     initializationRegion = new InitializationRegion(threadCount);
     bornRadiiRegion = new BornRadiiRegion(threadCount, nAtoms, forceField, neckCorrection,
-            tanhCorrection, perfectHCTScale);
-    permanentGKFieldRegion = new PermanentGKFieldRegion(threadCount, forceField);
-    inducedGKFieldRegion = new InducedGKFieldRegion(threadCount, forceField);
+        tanhCorrection, perfectHCTScale);
+    permanentGKFieldRegion = new PermanentGKFieldRegion(threadCount, soluteDielectric, solventDielectric, gkc);
+    inducedGKFieldRegion = new InducedGKFieldRegion(threadCount, soluteDielectric, solventDielectric, gkc);
     if (!perfectRadii) {
-      bornGradRegion = new BornGradRegion(threadCount, neckCorrection, tanhCorrection,
-              perfectHCTScale);
+      bornGradRegion = new BornGradRegion(threadCount, neckCorrection, tanhCorrection, perfectHCTScale);
     } else {
       // No Born chain-rule terms when using Perfect Born Radii.
       bornGradRegion = null;
     }
-    gkEnergyRegion = new GKEnergyRegion(threadCount, forceField, polarization, nonPolarModel,
-            surfaceTension, probe, electric);
+    boolean gkQI = forceField.getBoolean("GK_QI", false);
+    gkEnergyRegion = new GKEnergyRegion(threadCount, polarization, nonPolarModel, surfaceTension,
+        probe, electric, soluteDielectric, solventDielectric, gkc, gkQI);
 
     logger.info("  Continuum Solvation ");
     logger.info(format("   Radii:                              %8s", soluteRadiiType));
@@ -870,7 +869,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
         logger.info(format("   GaussVol HCT Scale Factors:         %8B", perfectHCTScale));
       }
       logger.info(format("   General HCT Scale Factor:           %8.4f",
-              forceField.getDouble("HCT-SCALE", DEFAULT_HCT_SCALE)));
+          forceField.getDouble("HCT-SCALE", DEFAULT_HCT_SCALE)));
       if (elementHCTScale) {
         logger.info(format("   Element-Specific HCT Scale Factors: %8B", elementHCTScale));
         Integer[] elementHCTkeyset = elementHCTScaleFactors.keySet().toArray(new Integer[0]);
@@ -882,34 +881,34 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     logger.info(
-            format("   Non-Polar Model:                  %10s",
-                    nonPolarModel.toString().replace('_', '-')));
+        format("   Non-Polar Model:                  %10s",
+            nonPolarModel.toString().replace('_', '-')));
 
     if (nonPolarModel.equals(NonPolarModel.GAUSS_DISP)) {
       logger.info(
-              format("    GaussVol Radii Offset:               %2.4f",
-                      forceField.getDouble("GAUSSVOL_RADII_OFFSET", 0.0)));
+          format("    GaussVol Radii Offset:               %2.4f",
+              forceField.getDouble("GAUSSVOL_RADII_OFFSET", 0.0)));
       logger.info(
-              format("    GaussVol Radii Scale:                %2.4f",
-                      forceField.getDouble("GAUSSVOL_RADII_SCALE", 1.0)));
+          format("    GaussVol Radii Scale:                %2.4f",
+              forceField.getDouble("GAUSSVOL_RADII_SCALE", 1.0)));
     }
 
     if (dispersionRegion != null) {
       logger.info(
-              format(
-                      "   Dispersion Integral Offset:         %8.4f (A)",
-                      dispersionRegion.getDispersionOffset()));
+          format(
+              "   Dispersion Integral Offset:         %8.4f (A)",
+              dispersionRegion.getDispersionOffset()));
     }
 
     if (surfaceAreaRegion != null) {
       logger.info(format("   Cavitation Probe Radius:            %8.4f (A)", probe));
       logger.info(
-              format("   Cavitation Surface Tension:         %8.4f (Kcal/mol/A^2)", surfaceTension));
+          format("   Cavitation Surface Tension:         %8.4f (Kcal/mol/A^2)", surfaceTension));
     } else if (chandlerCavitation != null) {
       logger.info(
-              format("   Cavitation Solvent Pressure:        %8.4f (Kcal/mol/A^3)", solventPressue));
+          format("   Cavitation Solvent Pressure:        %8.4f (Kcal/mol/A^3)", solventPressue));
       logger.info(
-              format("   Cavitation Surface Tension:         %8.4f (Kcal/mol/A^2)", surfaceTension));
+          format("   Cavitation Surface Tension:         %8.4f (Kcal/mol/A^2)", surfaceTension));
       logger.info(format("   Cavitation Cross-Over Radius:       %8.4f (A)", crossOver));
     }
 
@@ -918,9 +917,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
       logger.fine("      Base Radii  Descreen Radius  Overlap Scale  Neck Scale");
       for (int i = 0; i < nAtoms; i++) {
         logger.info(
-                format("   %s %8.6f %8.6f %5.3f %5.3f",
-                        atoms[i].toString(), baseRadius[i], descreenRadius[i], overlapScale[i],
-                        neckScale[i]));
+            format("   %s %8.6f %8.6f %5.3f %5.3f",
+                atoms[i].toString(), baseRadius[i], descreenRadius[i], overlapScale[i],
+                neckScale[i]));
       }
     }
   }
@@ -942,7 +941,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
    */
   public double[] getPerfectRadii() {
     bornRadiiRegion.init(atoms, crystal, sXYZ, neighborLists, baseRadius, descreenRadius,
-            overlapScale, neckScale, descreenOffset, use, cut2, nativeEnvironmentApproximation, born);
+        overlapScale, neckScale, descreenOffset, use, cut2, nativeEnvironmentApproximation, born);
     return bornRadiiRegion.getPerfectRadii();
   }
 
@@ -977,19 +976,19 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     try {
       bornRadiiRegion.init(
-              atoms,
-              crystal,
-              sXYZ,
-              neighborLists,
-              baseRadius,
-              descreenRadius,
-              overlapScale,
-              neckScale,
-              descreenOffset,
-              use,
-              cut2,
-              nativeEnvironmentApproximation,
-              born);
+          atoms,
+          crystal,
+          sXYZ,
+          neighborLists,
+          baseRadius,
+          descreenRadius,
+          overlapScale,
+          neckScale,
+          descreenOffset,
+          use,
+          cut2,
+          nativeEnvironmentApproximation,
+          born);
       parallelTeam.execute(bornRadiiRegion);
     } catch (Exception e) {
       String message = "Fatal exception computing Born radii.";
@@ -1005,17 +1004,17 @@ public class GeneralizedKirkwood implements LambdaInterface {
       fieldGK.reset(parallelTeam, 0, nAtoms - 1);
       fieldGKCR.reset(parallelTeam, 0, nAtoms - 1);
       inducedGKFieldRegion.init(
-              atoms,
-              inducedDipole,
-              inducedDipoleCR,
-              crystal,
-              sXYZ,
-              neighborLists,
-              use,
-              cut2,
-              born,
-              fieldGK,
-              fieldGKCR);
+          atoms,
+          inducedDipole,
+          inducedDipoleCR,
+          crystal,
+          sXYZ,
+          neighborLists,
+          use,
+          cut2,
+          born,
+          fieldGK,
+          fieldGKCR);
       parallelTeam.execute(inducedGKFieldRegion);
       fieldGK.reduce(parallelTeam, 0, nAtoms - 1);
       fieldGKCR.reduce(parallelTeam, 0, nAtoms - 1);
@@ -1032,7 +1031,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     try {
       fieldGK.reset(parallelTeam, 0, nAtoms - 1);
       permanentGKFieldRegion.init(
-              atoms, globalMultipole, crystal, sXYZ, neighborLists, use, cut2, born, fieldGK);
+          atoms, globalMultipole, crystal, sXYZ, neighborLists, use, cut2, born, fieldGK);
       parallelTeam.execute(permanentGKFieldRegion);
       fieldGK.reduce(parallelTeam, 0, nAtoms - 1);
     } catch (Exception e) {
@@ -1332,10 +1331,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
   }
 
   public void reduce(
-          AtomicDoubleArray3D g,
-          AtomicDoubleArray3D t,
-          AtomicDoubleArray3D lg,
-          AtomicDoubleArray3D lt) {
+      AtomicDoubleArray3D g,
+      AtomicDoubleArray3D t,
+      AtomicDoubleArray3D lg,
+      AtomicDoubleArray3D lt) {
     grad.reduce(parallelTeam, 0, nAtoms - 1);
     torque.reduce(parallelTeam, 0, nAtoms - 1);
     for (int i = 0; i < nAtoms; i++) {
@@ -1440,22 +1439,22 @@ public class GeneralizedKirkwood implements LambdaInterface {
       // Find the GK energy.
       gkTime = -System.nanoTime();
       gkEnergyRegion.init(
-              atoms,
-              globalMultipole,
-              inducedDipole,
-              inducedDipoleCR,
-              crystal,
-              sXYZ,
-              neighborLists,
-              use,
-              cut2,
-              baseRadius,
-              born,
-              gradient,
-              parallelTeam,
-              grad,
-              torque,
-              bornRadiiChainRule);
+          atoms,
+          globalMultipole,
+          inducedDipole,
+          inducedDipoleCR,
+          crystal,
+          sXYZ,
+          neighborLists,
+          use,
+          cut2,
+          baseRadius,
+          born,
+          gradient,
+          parallelTeam,
+          grad,
+          torque,
+          bornRadiiChainRule);
       parallelTeam.execute(gkEnergyRegion);
       gkTime += System.nanoTime();
 
@@ -1536,10 +1535,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
       try {
         gkTime -= System.nanoTime();
         bornGradRegion.init(
-                atoms, crystal, sXYZ, neighborLists,
-                baseRadius, descreenRadius, overlapScale, neckScale, descreenOffset,
-                bornRadiiRegion.getUnscaledBornIntegral(), use, cut2,
-                nativeEnvironmentApproximation, born, grad, bornRadiiChainRule);
+            atoms, crystal, sXYZ, neighborLists,
+            baseRadius, descreenRadius, overlapScale, neckScale, descreenOffset,
+            bornRadiiRegion.getUnscaledBornIntegral(), use, cut2,
+            nativeEnvironmentApproximation, born, grad, bornRadiiChainRule);
         bornGradRegion.executeWith(parallelTeam);
         gkTime += System.nanoTime();
       } catch (Exception e) {
@@ -1563,23 +1562,23 @@ public class GeneralizedKirkwood implements LambdaInterface {
       switch (nonPolarModel) {
         case CAV:
           logger.info(
-                  format(
-                          " Cavitation          %16.8f %10.3f", cavitationEnergy, cavitationTime * 1e-9));
+              format(
+                  " Cavitation          %16.8f %10.3f", cavitationEnergy, cavitationTime * 1e-9));
           break;
         case CAV_DISP:
         case SEV_DISP:
         case GAUSS_DISP:
           logger.info(
-                  format(
-                          " Cavitation          %16.8f %10.3f", cavitationEnergy, cavitationTime * 1e-9));
+              format(
+                  " Cavitation          %16.8f %10.3f", cavitationEnergy, cavitationTime * 1e-9));
           logger.info(
-                  format(
-                          " Dispersion          %16.8f %10.3f", dispersionEnergy, dispersionTime * 1e-9));
+              format(
+                  " Dispersion          %16.8f %10.3f", dispersionEnergy, dispersionTime * 1e-9));
           break;
         case BORN_CAV_DISP:
           logger.info(
-                  format(
-                          " Dispersion          %16.8f %10.3f", dispersionEnergy, dispersionTime * 1e-9));
+              format(
+                  " Dispersion          %16.8f %10.3f", dispersionEnergy, dispersionTime * 1e-9));
           break;
         case HYDROPHOBIC_PMF:
         case BORN_SOLV:
@@ -1692,8 +1691,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
       // Remove default bondiFactor, and apply override.
       baseRadius[i] = baseRadius[i] * override / bondiScale;
       logger.fine(format(
-              " Scaling %s (atom type %d) to %7.4f (Bondi factor %7.4f)",
-              atom, atomType.type, baseRadius[i], override));
+          " Scaling %s (atom type %d) to %7.4f (Bondi factor %7.4f)",
+          atom, atomType.type, baseRadius[i], override));
       descreenRadius[i] = baseRadius[i];
     }
 
