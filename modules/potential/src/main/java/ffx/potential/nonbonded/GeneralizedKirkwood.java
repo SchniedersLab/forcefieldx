@@ -809,17 +809,17 @@ public class GeneralizedKirkwood implements LambdaInterface {
     initializationRegion = new InitializationRegion(threadCount);
     bornRadiiRegion = new BornRadiiRegion(threadCount, nAtoms, forceField, neckCorrection,
         tanhCorrection, perfectHCTScale);
-    permanentGKFieldRegion = new PermanentGKFieldRegion(threadCount, forceField);
-    inducedGKFieldRegion = new InducedGKFieldRegion(threadCount, forceField);
+    permanentGKFieldRegion = new PermanentGKFieldRegion(threadCount, soluteDielectric, solventDielectric, gkc);
+    inducedGKFieldRegion = new InducedGKFieldRegion(threadCount, soluteDielectric, solventDielectric, gkc);
     if (!perfectRadii) {
-      bornGradRegion = new BornGradRegion(threadCount, neckCorrection, tanhCorrection,
-          perfectHCTScale);
+      bornGradRegion = new BornGradRegion(threadCount, neckCorrection, tanhCorrection, perfectHCTScale);
     } else {
       // No Born chain-rule terms when using Perfect Born Radii.
       bornGradRegion = null;
     }
-    gkEnergyRegion = new GKEnergyRegion(threadCount, forceField, polarization, nonPolarModel,
-        surfaceTension, probe, electric);
+    boolean gkQI = forceField.getBoolean("GK_QI", false);
+    gkEnergyRegion = new GKEnergyRegion(threadCount, polarization, nonPolarModel, surfaceTension,
+        probe, electric, soluteDielectric, solventDielectric, gkc, gkQI);
 
     logger.info("  Continuum Solvation ");
     logger.info(format("   Radii:                              %8s", soluteRadiiType));
