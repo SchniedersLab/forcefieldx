@@ -54,6 +54,11 @@ class ReducedPartition extends  AlgorithmsScript{
             description = "Run the unfolded state tripeptide.")
     private boolean unfolded = false
 
+    @CommandLine.Option(names = ["--pKa"], paramLabel = "false",
+            description = "Calculating free energy change for pKa shift. Do not titrate mutating residue.")
+    private boolean pKa = false
+
+
 
     /**
      * An XYZ or PDB input file.
@@ -159,7 +164,7 @@ class ReducedPartition extends  AlgorithmsScript{
                 count++
             }
         }
-
+        String filename = filenames.get(0)
         for(int j=0; j<2; j++){
             // Load the MolecularAssembly.
             if(j>0){
@@ -168,11 +173,14 @@ class ReducedPartition extends  AlgorithmsScript{
                     setActiveAssembly(mutatedAssembly)
                     logger.info(activeAssembly.getResidueList().toString())
                     activeAssembly.getPotentialEnergy().energy()
+                    filename = mutatedFileName
                 } else{
                     setActiveAssembly(getActiveAssembly(filenames.get(j)))
+                    filename = filenames.get(j)
                 }
             }
 
+            logger.info("FileName: " + filename)
             if (activeAssembly == null) {
                 logger.info(helpString())
                 return this
@@ -188,6 +196,8 @@ class ReducedPartition extends  AlgorithmsScript{
             activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
             potentialEnergy = activeAssembly.getPotentialEnergy()
             manyBodyOptions.setListResidues(listResidues)
+
+
             // Collect residues to optimize.
             List<Residue> residues = manyBodyOptions.collectResidues(activeAssembly)
             if (residues == null || residues.isEmpty()) {
@@ -205,15 +215,23 @@ class ReducedPartition extends  AlgorithmsScript{
                     resNumberList.add(residue.getResidueNumber())
                 }
 
+                logger.info('pKa:' + pKa.toString())
                 // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
-                titrationManyBody = new TitrationManyBody(filenames.get(0), activeAssembly.getForceField(),
-                        resNumberList, titrationPH)
+                if(pKa){
+                    int removeResidue = resNumberList.indexOf(mutatingResidue)
+                    resNumberList.remove(removeResidue)
+                    logger.info(resNumberList.toString())
+                    titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
+                            resNumberList, titrationPH, mutatingResidue)
+                } else {
+                    titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
+                            resNumberList, titrationPH)
+                }
+
                 MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly()
                 setActiveAssembly(protonatedAssembly)
                 potentialEnergy = protonatedAssembly.getPotentialEnergy()
             }
-
-
 
             RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,
                     potentialEnergy, algorithmListener)
