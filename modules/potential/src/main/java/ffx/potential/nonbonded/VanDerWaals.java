@@ -1552,7 +1552,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
           Atom atomi = atoms[i];
           // Flag to indicate if atom i is effected by an extended system variable.
           final boolean esvi = esvTerm && esvSystem.isTitratingHydrogen(i);
-          if (esvTerm) {
+          if (esvi) {
             esvSystem.getVdwPrefactor(i, esvVdwPrefactori);
           }
           int i3 = i * 3;
@@ -1604,7 +1604,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
             }
             // Flag to indicate if atom k is effected by an extended system variable.
             final boolean esvk = esvTerm && esvSystem.isTitratingHydrogen(k);
-            if (esvTerm) {
+            if (esvk) {
               esvSystem.getVdwPrefactor(k, esvVdwPrefactork);
             }
             // Hide these global variable names for thread safety.
@@ -1814,7 +1814,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
             }
             Atom atomi = atoms[i];
             final boolean esvi = esvTerm && esvSystem.isTitratingHydrogen(i);
-            if (esvTerm) {
+            if (esvi) {
               esvSystem.getVdwPrefactor(i, esvVdwPrefactori);
             }
             final double xi = reducedXYZ[i3++];
@@ -1849,7 +1849,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
                 continue;
               }
               final boolean esvk = esvTerm && esvSystem.isTitratingHydrogen(k);
-              if (esvTerm) {
+              if (esvk) {
                 esvSystem.getVdwPrefactor(k, esvVdwPrefactork);
               }
               // Hide these global variable names for thread safety.
