@@ -324,15 +324,15 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * Default value of beta0 for tanh scaling
    */
-  public static final double DEFAULT_TANH_BETA0 = 0.770;
+  public static final double DEFAULT_TANH_BETA0 = 0.9563;
   /**
    * Default value of beta1 for tanh scaling
    */
-  public static final double DEFAULT_TANH_BETA1 = 0.280;
+  public static final double DEFAULT_TANH_BETA1 = 0.2578;
   /**
    * Default value of beta2 for tanh scaling
    */
-  public static final double DEFAULT_TANH_BETA2 = 0.112;
+  public static final double DEFAULT_TANH_BETA2 = 0.0810;
 
   /**
    * The coefficient beta0 for tanh rescaling of descreening integrals.
@@ -659,6 +659,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
     beta0 = forceField.getDouble("TANH_BETA0", b0);
     beta1 = forceField.getDouble("TANH_BETA1", b1);
     beta2 = forceField.getDouble("TANH_BETA2", b2);
+    BornTanhRescaling.setBeta0(beta0);
+    BornTanhRescaling.setBeta1(beta1);
+    BornTanhRescaling.setBeta2(beta2);
+
     // Add default values for all elements
     elementHCTScaleFactors = new HashMap<>();
     elementHCTScaleFactors.put(1, forceField.getDouble("HCT_H", DEFAULT_HCT_SCALE));
@@ -786,9 +790,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
 
     surfaceTension = forceField.getDouble("SURFACE_TENSION", tensionDefault);
     solventPressue = forceField.getDouble("SOLVENT_PRESSURE", DEFAULT_SOLVENT_PRESSURE);
-    /**
-     * Volume to surface area cross-over point (A).
-     */
+    // Volume to surface area cross-over point (A).
     double crossOver = forceField.getDouble("CROSS_OVER", DEFAULT_CROSSOVER);
     if (chandlerCavitation != null) {
       // Set the cross-over first.
