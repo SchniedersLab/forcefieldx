@@ -69,6 +69,8 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.nonbonded.MaskingInterface;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.parameters.ForceField;
+
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
