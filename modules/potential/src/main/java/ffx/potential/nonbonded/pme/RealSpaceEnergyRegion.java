@@ -71,6 +71,8 @@ import ffx.potential.nonbonded.MaskingInterface;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.utils.EnergyException;
+
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -875,10 +877,10 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
           }
           if (doPermanentRealSpace) {
             double ei = permanentPair(gradient, lambdaTerm);
-            // logger.info(format(" Permanent %d %d %17.15f", i, k, ei));
-            // logger.info(format(" %16.14f %16.14f %16.14f", xr, yr, zr));
-            // logger.info(format(" %d multipole:  %s", i, Arrays.toString(globalMultipolei)));
-            // logger.info(format(" %d multipole:  %s", k, Arrays.toString(globalMultipolek)));
+             //logger.info(format(" Permanent %d %d %17.15f", i, k, ei));
+             //logger.info(format(" %16.14f %16.14f %16.14f", xr, yr, zr));
+             //logger.info(format(" %d multipole:  %s", i, Arrays.toString(globalMultipolei)));
+             //logger.info(format(" %d multipole:  %s", k, Arrays.toString(globalMultipolek)));
             if (isNaN(ei) || isInfinite(ei)) {
               String message =
                   format(
