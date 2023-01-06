@@ -920,8 +920,6 @@ public class TitrationUtils {
 
   }
 
-  // TODO: Andrew - please update the titration API for CYS/CYD
-
   public double[] getMultipole(Atom atom,
       double titrationLambda, double tautomerLambda, double[] multipole) {
     /*

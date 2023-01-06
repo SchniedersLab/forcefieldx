@@ -49,7 +49,6 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
-import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.max;
 
 import edu.rit.pj.IntegerForLoop;
@@ -67,7 +66,6 @@ import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.PolarizeType;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -387,11 +385,8 @@ public class InitializationRegion extends ParallelRegion {
           // Collect the MultipoleType for Atom i.
           MultipoleType multipoleType = particleMeshEwald.getMultipoleType(ii);
           double[] in = multipoleType.getMultipole();
-          logger.info(format(" %d multipole:  %s", ii, Arrays.toString(in)));
           // Update the frame
           frame[ii] = multipoleType.frameDefinition;
-          logger.info(format(" %d frameDefinition:  %s", ii, multipoleType.frameDefinition.toString()));
-          logger.info(format(" %d frameAtomTypes:  %s", ii, Arrays.toString(multipoleType.frameAtomTypes)));
           // Update the axis defining atom.
           axisAtom[ii] = atom.getAxisAtomIndices();
 

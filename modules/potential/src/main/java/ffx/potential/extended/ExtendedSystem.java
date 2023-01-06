@@ -1262,7 +1262,6 @@ public class ExtendedSystem implements Potential {
         vdwPrefactorAndDerivs[0] = prefactor;
         vdwPrefactorAndDerivs[1] = titrationDeriv;
         vdwPrefactorAndDerivs[2] = tautomerDeriv;
-        logger.info(format("atomIndex: %d prefactor: %6.8f",atomIndex,prefactor));
     }
 
     public boolean isTitratingHydrogen(int atomIndex) {
