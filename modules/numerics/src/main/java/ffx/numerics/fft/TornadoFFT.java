@@ -39,9 +39,9 @@ package ffx.numerics.fft;
 
 import static java.lang.String.format;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.floatCos;
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.cos;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.floatPI;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.floatSin;
+import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.sin;
 
 import ffx.numerics.tornado.FFXTornado;
 import java.util.logging.Logger;
@@ -76,8 +76,8 @@ public class TornadoFFT {
       float simImag = 0;
       for (int t = 0; t < n; t++) { // For each input element
         float angle = (2 * floatPI() * t * k) / n;
-        sumReal += inreal[t] * floatCos(angle) + inimag[t] * floatSin(angle);
-        simImag += -inreal[t] * floatSin(angle) + inimag[t] * floatCos(angle);
+        sumReal += inreal[t] * cos(angle) + inimag[t] * sin(angle);
+        simImag += -inreal[t] * sin(angle) + inimag[t] * cos(angle);
       }
       outreal[k] = sumReal;
       outimag[k] = simImag;
@@ -117,7 +117,10 @@ public class TornadoFFT {
 
   public void validate(int deviceID) {
     TornadoDevice device = FFXTornado.getDevice(deviceID);
+    validate(device);
+  }
 
+  public void validate(TornadoDevice device) {
     execute(device);
 
     boolean validation = true;
@@ -140,9 +143,9 @@ public class TornadoFFT {
     System.out.println(" ");
     FFXTornado.logDevice(device);
     System.out.println(" Correct: " + validation);
-    System.out.println(
-        format(
-            " %10s %8.6f (sec)\n %10s %8.6f (sec)",
-            " Java", 1.0e-9 * javaTime, " OpenCL", 1.0e-9 * time));
+    double speedUp = (double) javaTime / (double) time;
+    System.out.println(format(" %10s %8.6f (sec)\n %10s %8.6f (sec) Speed-Up %8.6f",
+        " Java", 1.0e-9 * javaTime, " OpenCL", 1.0e-9 * time, speedUp));
+
   }
 }
