@@ -1346,7 +1346,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         setRestraintBond(a1, a2, dist, forceConst, flatBottomRadius, lamStart, lamEnd, switchF);
       } catch (Exception ex) {
-        logger.info(format(" Exception in parsing restrain-distance: %s", ex.toString()));
+        logger.info(format(" Exception in parsing restrain-distance: %s", ex));
       }
     }
 
@@ -3844,20 +3844,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       UnivariateSwitchingFunction switchingFunction) {
     restraintBondTerm = true;
     boolean rbLambda = !(switchingFunction instanceof ConstantSwitch) && lambdaTerm;
-    RestraintBond rb =
-        new RestraintBond(a1, a2, crystal, rbLambda, lamStart, lamEnd, switchingFunction);
+    RestraintBond rb = new RestraintBond(a1, a2, crystal, rbLambda, lamStart, lamEnd, switchingFunction);
     int[] classes = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
     if (flatBottom != 0) {
-      rb.setBondType(
-          new BondType(
-              classes,
-              forceConstant,
-              distance,
-              BondType.BondFunction.FLAT_BOTTOM_HARMONIC,
-              flatBottom));
+      BondType bondType = new BondType(classes, forceConstant, distance, BondType.BondFunction.FLAT_BOTTOM_HARMONIC, flatBottom);
+      rb.setBondType(bondType);
     } else {
-      rb.setBondType(
-          (new BondType(classes, forceConstant, distance, BondType.BondFunction.HARMONIC)));
+      BondType bondType = new BondType(classes, forceConstant, distance, BondType.BondFunction.HARMONIC);
+      rb.setBondType(bondType);
     }
 
     // As long as we continue to add elements one-at-a-time to an array, this code will continue to

@@ -4618,10 +4618,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         tanhRescale = 1;
       }
       double[] betas = gk.getTanhBetas();
-      OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling(amoebaGeneralizedKirkwoodForce,
-          tanhRescale);
-      OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhParameters(amoebaGeneralizedKirkwoodForce,
-          betas[0], betas[1], betas[2]);
+      OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling(amoebaGeneralizedKirkwoodForce, tanhRescale);
+      OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhParameters(amoebaGeneralizedKirkwoodForce, betas[0], betas[1], betas[2]);
 
       double[] baseRadius = gk.getBaseRadii();
       if (usePerfectRadii) {
@@ -5078,15 +5076,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_CustomBondForce_addPerBondParameter(theForce, "fb");
           }
 
-          // Wholly untested code.
           switch (bondFunction) {
             case QUARTIC:
             case FLAT_BOTTOM_QUARTIC:
               OpenMM_CustomBondForce_addGlobalParameter(
                   theForce, "cubic", bondType.cubic / OpenMM_NmPerAngstrom);
               OpenMM_CustomBondForce_addGlobalParameter(
-                  theForce, "quartic",
-                  bondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
+                  theForce, "quartic", bondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
               break;
             default:
               break;
@@ -5113,8 +5109,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_DoubleArray_destroy(bondParams);
       }
 
-      logger.log(
-          Level.INFO,
+      logger.log(Level.INFO,
           format("  Restraint bonds force \t%6d\t%d", restraintBonds.size(), forceGroup));
     }
 

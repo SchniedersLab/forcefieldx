@@ -72,7 +72,7 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
   private double switchd2UdL2 = 1.0;
   private double dEdL = 0.0;
   private double d2EdL2 = 0.0;
-  private double[][] dEdXdL = new double[2][3];
+  private final double[][] dEdXdL = new double[2][3];
   private Crystal crystal;
 
   /**
@@ -125,8 +125,7 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
    * <p>Evaluate this Bond energy.
    */
   @Override
-  public double energy(
-      boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
 
     double[] a0 = new double[3];
     double[] a1 = new double[3];

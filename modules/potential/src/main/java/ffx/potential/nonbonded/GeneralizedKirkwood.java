@@ -652,6 +652,10 @@ public class GeneralizedKirkwood implements LambdaInterface {
     beta0 = forceField.getDouble("TANH_BETA0", b0);
     beta1 = forceField.getDouble("TANH_BETA1", b1);
     beta2 = forceField.getDouble("TANH_BETA2", b2);
+    
+    BornTanhRescaling.setBeta0(beta0);
+    BornTanhRescaling.setBeta1(beta1);
+    BornTanhRescaling.setBeta2(beta2);
 
     // Default overlap element specific scale factors for the Hawkins, Cramer & Truhlar pairwise descreening algorithm.
     HashMap<Integer, Double> DEFAULT_HCT_ELEMENTS = new HashMap<>();

@@ -66,17 +66,18 @@ import java.util.logging.Logger;
         + "The default value of 1.0 is used, if the bondunit keyword is not given in the force field parameter file or the keyfile.")
 public final class BondType extends BaseType implements Comparator<String> {
 
-  /** Convert bond stretch energy to kcal/mole. */
-  @FFXKeyword(name = "bondunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0",
-      description = "Sets the scale factor needed to convert the energy value computed by the bond stretching potential into units of kcal/mole. "
-          + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
-  public double bondUnit = DEFAULT_BOND_UNIT;
   public static final double DEFAULT_BOND_UNIT = 1.0;
 
   /** Default cubic coefficient in bond stretch potential. */
   public static final double DEFAULT_BOND_CUBIC = 0.0;
   /** Default quartic coefficient in bond stretch potential. */
   public static final double DEFAULT_BOND_QUARTIC = 0.0;
+
+  /** Convert bond stretch energy to kcal/mole. */
+  @FFXKeyword(name = "bondunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0",
+      description = "Sets the scale factor needed to convert the energy value computed by the bond stretching potential into units of kcal/mole. "
+          + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  public double bondUnit = DEFAULT_BOND_UNIT;
 
   /** Cubic coefficient in bond stretch potential. */
   @FFXKeyword(name = "bond-cubic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0",
@@ -145,12 +146,8 @@ public final class BondType extends BaseType implements Comparator<String> {
    * @param bondFunction the BondFunction type to apply.
    * @param flatBottomRadius a double.
    */
-  public BondType(
-      int[] atomClasses,
-      double forceConstant,
-      double distance,
-      BondFunction bondFunction,
-      double flatBottomRadius) {
+  public BondType(int[] atomClasses, double forceConstant, double distance,
+      BondFunction bondFunction, double flatBottomRadius) {
     super(BOND, sortKey(atomClasses));
     this.atomClasses = atomClasses;
     this.forceConstant = forceConstant;
