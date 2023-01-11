@@ -58,12 +58,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ffx.potential.bonded.BondedUtils.hasAttachedAtom;
-import static ffx.utilities.Constants.kB;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.*;
 
@@ -202,7 +200,11 @@ public class ExtendedSystem implements Potential {
      * specifically a titrating hydrogen.
      */
     private final boolean[] isTitratingHydrogen;
-    private final boolean[] isTitratingSulfur;
+    /**
+     * Array of booleans that is initialized to match the number of atoms in the assembly to note whether an atom is
+     * specifically a heavy atom with changing polarizability (CYS SG, ASP OD1/OD2, GLU OE1/OE2).
+     */
+    private final boolean[] isTitratingHeavy;
     private final boolean lockStates;
     public final boolean guessTitrState;
     /**
@@ -358,7 +360,7 @@ public class ExtendedSystem implements Potential {
         nAtoms = atoms.length;
         isTitrating = new boolean[nAtoms];
         isTitratingHydrogen = new boolean[nAtoms];
-        isTitratingSulfur = new boolean[nAtoms];
+        isTitratingHeavy = new boolean[nAtoms];
         isTautomerizing = new boolean[nAtoms];
         titrationLambdas = new double[nAtoms];
         tautomerLambdas = new double[nAtoms];
@@ -369,7 +371,7 @@ public class ExtendedSystem implements Potential {
 
         Arrays.fill(isTitrating, false);
         Arrays.fill(isTitratingHydrogen, false);
-        Arrays.fill(isTitratingSulfur, false);
+        Arrays.fill(isTitratingHeavy, false);
         Arrays.fill(isTautomerizing, false);
         Arrays.fill(titrationLambdas, 1.0);
         Arrays.fill(tautomerLambdas, 0.0);
@@ -416,7 +418,17 @@ public class ExtendedSystem implements Potential {
                     int titrationIndex = titratingResidueList.indexOf(residue);
                     titrationIndexMap[atomIndex] = titrationIndex;
                     isTitratingHydrogen[atomIndex] = TitrationUtils.isTitratingHydrogen(residue.getAminoAcid3(), atom);
-                    isTitratingSulfur[atomIndex] = TitrationUtils.isTitratingSulfur(residue.getAminoAcid3(), atom);
+                    isTitratingHeavy[atomIndex] = TitrationUtils.isTitratingHeavy(residue.getAminoAcid3(), atom);
+                    // Average out pdamp values of the atoms with changing polarizability which will then be used as fixed values throughout simulation.
+                    // When testing end state energies don't average pdamp.
+                    // Default pdamp is set from protonated polarizability so it must be changed when testing deprotonated end state (Titration lambda = 0.0.)
+                    if (isTitratingHeavy(atomIndex)) {
+                        double deprotPolar = titrationUtils.getPolarizability(atom, 0.0, 0.0, atom.getPolarizeType().polarizability);
+                        double protPolar = titrationUtils.getPolarizability(atom, 1.0, 1.0, atom.getPolarizeType().polarizability);
+                        double avgPolar = 0.5 * deprotPolar + 0.5 * protPolar;
+                        double sixth = 1.0 / 6.0;
+                        atom.getPolarizeType().pdamp = pow(avgPolar, sixth);
+                    }
                 }
                 // If is a tautomer, it must also be titrating.
                 if (isTautomer(residue)) {
@@ -1100,6 +1112,7 @@ public class ExtendedSystem implements Potential {
         }/*else {
             logger.warning(format("This residue %s is not titrating or locked by user property.", residue.getName()));
         }*/ //TODO: Decide on whether or not this is necessary
+
     }
 
     public List<Residue> getTitratingResidueList() {
@@ -1268,8 +1281,14 @@ public class ExtendedSystem implements Potential {
         return isTitratingHydrogen[atomIndex];
     }
 
-    public boolean isTitratingSulfur(int atomIndex) {
-        return isTitratingSulfur[atomIndex];
+    /**
+     * Questions whether the current atom's polarizability is changing in response to lambda being updated.
+     * Only affects carboxylic oxygen and sulfur.
+     * @param atomIndex
+     * @return
+     */
+    public boolean isTitratingHeavy(int atomIndex) {
+        return isTitratingHeavy[atomIndex];
     }
 
     /**

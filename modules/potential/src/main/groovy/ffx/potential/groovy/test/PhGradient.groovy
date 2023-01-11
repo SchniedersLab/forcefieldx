@@ -56,6 +56,7 @@ import java.util.stream.IntStream
 import static ffx.utilities.StringUtils.parseAtomRanges
 import static java.lang.String.format
 import static org.apache.commons.math3.util.FastMath.abs
+import static org.apache.commons.math3.util.FastMath.pow
 import static org.apache.commons.math3.util.FastMath.sqrt
 
 /**
@@ -95,6 +96,13 @@ class PhGradient extends PotentialScript {
   @Option(names = ['--scanLambdas'], paramLabel = 'false',
           description = 'Scan titration and tautomer lambda landscape.')
   boolean scan = false
+
+  /**
+   * --testEndStateEnergies
+   */
+  @Option(names = ['--testEndStateEnergies'], paramLabel = 'false',
+          description = 'Test both ESV energy end states as if the polarization damping factor is initialized from the respective protonated or deprotonated state')
+  boolean testEndstateEnergies = false
 
   /**
    * The final argument should be a PDB coordinate file.
@@ -409,18 +417,18 @@ class PhGradient extends PotentialScript {
       }
     }
 
-    if (print) {
-      //String lambdaList = esvSystem.getLambdaList()
-      //logger.info(format("Lambda List: %s", lambdaList))
-      energy.energy(x, false)
-      printPermutations(esvSystem, titratingResidues.size(), energy, x)
-    }
     if(scan){
       for (Residue residue : esvSystem.getTitratingResidueList()) {
         esvSystem.setTitrationLambda(residue, 0.0)
         esvSystem.setTautomerLambda(residue, 0.0)
       }
       scanLambdas(esvSystem, energy, x)
+      printPermutations(esvSystem, titratingResidues.size(), energy, x)
+    }
+
+    if (testEndstateEnergies) {
+      testEndState(x, esvSystem, 0.0, 0.0)
+      testEndState(x, esvSystem, 1.0, 0.0)
     }
 
     return this
@@ -442,59 +450,13 @@ class PhGradient extends PotentialScript {
       if (esvID != 0) {
         printPermutationsR(esvSystem, esvID - 1, energy, x)
       } else {
-        double[] energyAndInteractionList = new double[26]
         String lambdaList = esvSystem.getLambdaList()
         logger.info(format("Lambda List: %s", lambdaList))
-
-        //Add ForceFieldEnergy to hashmap for testing. Protonation endstates used as key in map.
         double stateEnergy = energy.energy(x, true)
         if(stateEnergy < minEnergy){
           minEnergy = stateEnergy
           minLambdaList = lambdaList
         }
-
-        // Bond Energy
-        energyAndInteractionList[0] = energy.getBondEnergy()
-        energyAndInteractionList[1] = (double) energy.getNumberofBonds()
-        // Angle Energy
-        energyAndInteractionList[2] = energy.getAngleEnergy()
-        energyAndInteractionList[3] = (double) energy.getNumberofAngles()
-        // Stretch-Bend Energy
-        energyAndInteractionList[4] = energy.getStrenchBendEnergy()
-        energyAndInteractionList[5] = (double) energy.getNumberofStretchBends()
-        // Urey-Bradley Energy,
-        energyAndInteractionList[6] = energy.getUreyBradleyEnergy()
-        energyAndInteractionList[7] = (double) energy.getNumberofUreyBradleys()
-        // Out-of-Plane Bend
-        energyAndInteractionList[8] = energy.getOutOfPlaneBendEnergy()
-        energyAndInteractionList[9] = (double) energy.getNumberofOutOfPlaneBends()
-        // Torsional Angle
-        energyAndInteractionList[10] = energy.getTorsionEnergy()
-        energyAndInteractionList[11] = (double) energy.getNumberofTorsions()
-        // Improper Torsional Angle
-        energyAndInteractionList[12] = energy.getImproperTorsionEnergy()
-        energyAndInteractionList[13] = (double) energy.getNumberofImproperTorsions()
-        // Pi-Orbital Torsion
-        energyAndInteractionList[14] = energy.getPiOrbitalTorsionEnergy()
-        energyAndInteractionList[15] = (double) energy.getNumberofPiOrbitalTorsions()
-        // Torsion-Torsion
-        energyAndInteractionList[16] = energy.getTorsionTorsionEnergy()
-        energyAndInteractionList[17] = (double) energy.getNumberofTorsionTorsions()
-        // van Der Waals
-        energyAndInteractionList[18] = energy.getVanDerWaalsEnergy()
-        energyAndInteractionList[19] = (double) energy.getVanDerWaalsInteractions()
-        // Permanent Multipoles
-        energyAndInteractionList[20] = energy.getPermanentMultipoleEnergy()
-        energyAndInteractionList[21] = (double) energy.getPermanentInteractions()
-        // Polarization Energy
-        energyAndInteractionList[22] = energy.getPolarizationEnergy()
-        energyAndInteractionList[23] = (double) energy.getPermanentInteractions()
-        // Extended System Bias
-        energyAndInteractionList[24] = energy.getEsvBiasEnergy()
-        // Total Energy
-        energyAndInteractionList[25] = energy.getTotalEnergy()
-
-        endstateEnergyMap.put(lambdaList, energyAndInteractionList)
         logger.info(format("\n"))
       }
     }
@@ -537,6 +499,71 @@ class PhGradient extends PotentialScript {
       }
       logger.info("\n");
     }
+  }
+
+  private void testEndState(double[] x, ExtendedSystem esvSystem, double titrLambda, double tautLambda){
+    for (Residue residue : esvSystem.getTitratingResidueList()) {
+      esvSystem.setTitrationLambda(residue, titrLambda)
+      esvSystem.setTautomerLambda(residue, tautLambda)
+    }
+    //Manually sets the pdamp value to match that of the polarizability of the desired endstate.
+    //This behavior is different from the ExtendedSystem's treatment of averaging the pdamps and keeping them constant.
+    //Currently we cannot handle changing the pdamp with changing lambdas as the derivatives are not set up to handle that.
+    //So what is happening below should not happen in the course of a simulation.
+    for(Atom atom : esvSystem.getExtendedAtoms()){
+      int atomIndex = atom.getArrayIndex()
+      if (esvSystem.isTitratingHeavy(atomIndex)) {
+        double endstatePolar = esvSystem.titrationUtils.getPolarizability(atom, titrLambda, tautLambda, atom.getPolarizeType().polarizability)
+        double sixth = 1.0 / 6.0
+        atom.getPolarizeType().pdamp = pow(endstatePolar, sixth)
+      }
+    }
+
+    //Add ForceFieldEnergy to hashmap for testing. Protonation endstates used as key in map.
+    String lambdaList = esvSystem.getLambdaList()
+    double stateEnergy = energy.energy(x, true)
+    double[] energyAndInteractionList = new double[26]
+    // Bond Energy
+    energyAndInteractionList[0] = energy.getBondEnergy()
+    energyAndInteractionList[1] = (double) energy.getNumberofBonds()
+    // Angle Energy
+    energyAndInteractionList[2] = energy.getAngleEnergy()
+    energyAndInteractionList[3] = (double) energy.getNumberofAngles()
+    // Stretch-Bend Energy
+    energyAndInteractionList[4] = energy.getStrenchBendEnergy()
+    energyAndInteractionList[5] = (double) energy.getNumberofStretchBends()
+    // Urey-Bradley Energy,
+    energyAndInteractionList[6] = energy.getUreyBradleyEnergy()
+    energyAndInteractionList[7] = (double) energy.getNumberofUreyBradleys()
+    // Out-of-Plane Bend
+    energyAndInteractionList[8] = energy.getOutOfPlaneBendEnergy()
+    energyAndInteractionList[9] = (double) energy.getNumberofOutOfPlaneBends()
+    // Torsional Angle
+    energyAndInteractionList[10] = energy.getTorsionEnergy()
+    energyAndInteractionList[11] = (double) energy.getNumberofTorsions()
+    // Improper Torsional Angle
+    energyAndInteractionList[12] = energy.getImproperTorsionEnergy()
+    energyAndInteractionList[13] = (double) energy.getNumberofImproperTorsions()
+    // Pi-Orbital Torsion
+    energyAndInteractionList[14] = energy.getPiOrbitalTorsionEnergy()
+    energyAndInteractionList[15] = (double) energy.getNumberofPiOrbitalTorsions()
+    // Torsion-Torsion
+    energyAndInteractionList[16] = energy.getTorsionTorsionEnergy()
+    energyAndInteractionList[17] = (double) energy.getNumberofTorsionTorsions()
+    // van Der Waals
+    energyAndInteractionList[18] = energy.getVanDerWaalsEnergy()
+    energyAndInteractionList[19] = (double) energy.getVanDerWaalsInteractions()
+    // Permanent Multipoles
+    energyAndInteractionList[20] = energy.getPermanentMultipoleEnergy()
+    energyAndInteractionList[21] = (double) energy.getPermanentInteractions()
+    // Polarization Energy
+    energyAndInteractionList[22] = energy.getPolarizationEnergy()
+    energyAndInteractionList[23] = (double) energy.getPermanentInteractions()
+    // Extended System Bias
+    energyAndInteractionList[24] = energy.getEsvBiasEnergy()
+    // Total Energy
+    energyAndInteractionList[25] = energy.getTotalEnergy()
+    endstateEnergyMap.put(lambdaList, energyAndInteractionList)
   }
 
 

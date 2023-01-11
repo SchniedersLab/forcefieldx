@@ -53,6 +53,7 @@ import static ffx.potential.bonded.BondedUtils.findAtomType;
 import static ffx.potential.parameters.MultipoleType.assignAxisAtoms;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.log;
+import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Angle;
@@ -381,7 +382,7 @@ public class TitrationUtils {
   }
 
   /** Constant <code>CysteineAtoms</code> */
-  public enum CystineAtomNames {
+  public enum CysteineAtomNames {
     CB(0, 0),
     HB2(1, 1),
     HB3(1, 1),
@@ -414,7 +415,7 @@ public class TitrationUtils {
      * @param offsetCYS Biotype relative to the CB biotype for CYS.
      * @param offsetCYD Biotype relative to the CB biotype for CYD.
      */
-    CystineAtomNames(int offsetCYS, int offsetCYD) {
+    CysteineAtomNames(int offsetCYS, int offsetCYD) {
       this.offsetCYS = offsetCYS;
       this.offsetCYD = offsetCYD;
     }
@@ -467,7 +468,7 @@ public class TitrationUtils {
   /**
    * Cystine atom types.
    */
-  private final int nCysAtomNames = CystineAtomNames.values().length;
+  private final int nCysAtomNames = CysteineAtomNames.values().length;
   private final int nCysStates = CysStates.values().length;
   private final AtomType[][] cysAtomTypes = new AtomType[nCysAtomNames][nCysStates];
   private final MultipoleType[][] cysMultipoleTypes = new MultipoleType[nCysAtomNames][nCysStates];
@@ -582,7 +583,7 @@ public class TitrationUtils {
             break;
           case CYS:
           case CYD:
-            index = CystineAtomNames.valueOf(atomName).ordinal();
+            index = CysteineAtomNames.valueOf(atomName).ordinal();
             atom.setAtomType(cysAtomTypes[index][state]);
             atom.setMultipoleType(cysMultipoleTypes[index][state]);
             break;
@@ -761,7 +762,7 @@ public class TitrationUtils {
           // Use CYD types
           cysIndex = CysStates.CYD.ordinal();
         }
-        for (CystineAtomNames atomName : CystineAtomNames.values()) {
+        for (CysteineAtomNames atomName : CysteineAtomNames.values()) {
           int atomIndex = atomName.ordinal();
           Atom atom = (Atom) residue.getAtomNode(atomName.name());
           if (atom == null) {
@@ -947,7 +948,7 @@ public class TitrationUtils {
         }
         break;
       case CYS:
-        atomIndex = CystineAtomNames.valueOf(atomName).ordinal();
+        atomIndex = CysteineAtomNames.valueOf(atomName).ordinal();
         MultipoleType cysM = cysMultipoleTypes[atomIndex][CysStates.CYS.ordinal()];
         MultipoleType cydM = cysMultipoleTypes[atomIndex][CysStates.CYD.ordinal()];
         double[] cys = cysM.getMultipole();
@@ -1023,7 +1024,7 @@ public class TitrationUtils {
         }
         break;
       case CYS:
-        atomIndex = CystineAtomNames.valueOf(atomName).ordinal();
+        atomIndex = CysteineAtomNames.valueOf(atomName).ordinal();
         double[] cys = cysMultipoleTypes[atomIndex][CysStates.CYS.ordinal()].getMultipole();
         double[] cyd = cysMultipoleTypes[atomIndex][CysStates.CYD.ordinal()].getMultipole();
         for (int i = 0; i < multipole.length; i++) {
@@ -1124,7 +1125,7 @@ public class TitrationUtils {
         double lyd = lysPolarizeTypes[atomIndex][LysStates.LYD.ordinal()].polarizability;
         return titrationLambda * lys + (1.0 - titrationLambda) * lyd;
       case CYS:
-        atomIndex = CystineAtomNames.valueOf(atomName).ordinal();
+        atomIndex = CysteineAtomNames.valueOf(atomName).ordinal();
         double cys = cysPolarizeTypes[atomIndex][CysStates.CYS.ordinal()].polarizability;
         double cyd = cysPolarizeTypes[atomIndex][CysStates.CYD.ordinal()].polarizability;
         return titrationLambda * cys + (1.0 - titrationLambda) * cyd;
@@ -1134,20 +1135,20 @@ public class TitrationUtils {
         double hid = hisPolarizeTypes[atomIndex][HisStates.HID.ordinal()].polarizability;
         double hie = hisPolarizeTypes[atomIndex][HisStates.HIE.ordinal()].polarizability;
         return titrationLambda * his + (1.0 - titrationLambda) * (tautomerLambda * hie
-            + (1 - tautomerLambda) * hid);
+            + (1.0 - tautomerLambda) * hid);
       case ASD:
         atomIndex = AspartateAtomNames.valueOf(atomName).ordinal();
         double asp = aspPolarizeTypes[atomIndex][AspStates.ASP.ordinal()].polarizability;
         double ash1 = aspPolarizeTypes[atomIndex][AspStates.ASH1.ordinal()].polarizability;
         double ash2 = aspPolarizeTypes[atomIndex][AspStates.ASH2.ordinal()].polarizability;
-        return titrationLambda * (tautomerLambda * ash1 + (1 - tautomerLambda) * ash2)
+        return titrationLambda * (tautomerLambda * ash1 + (1.0 - tautomerLambda) * ash2)
             + (1.0 - titrationLambda) * asp;
       case GLD:
         atomIndex = GlutamateAtomNames.valueOf(atomName).ordinal();
         double glu = gluPolarizeTypes[atomIndex][GluStates.GLU.ordinal()].polarizability;
         double glh1 = gluPolarizeTypes[atomIndex][GluStates.GLH1.ordinal()].polarizability;
         double glh2 = gluPolarizeTypes[atomIndex][GluStates.GLH2.ordinal()].polarizability;
-        return titrationLambda * (tautomerLambda * glh1 + (1 - tautomerLambda) * glh2)
+        return titrationLambda * (tautomerLambda * glh1 + (1.0 - tautomerLambda) * glh2)
             + (1.0 - titrationLambda) * glu;
       default:
         return defaultPolarizability;
@@ -1170,7 +1171,7 @@ public class TitrationUtils {
         double lyd = lysPolarizeTypes[atomIndex][LysStates.LYD.ordinal()].polarizability;
         return lys - lyd;
       case CYS:
-        atomIndex = CystineAtomNames.valueOf(atomName).ordinal();
+        atomIndex = CysteineAtomNames.valueOf(atomName).ordinal();
         double cys = cysPolarizeTypes[atomIndex][CysStates.CYS.ordinal()].polarizability;
         double cyd = cysPolarizeTypes[atomIndex][CysStates.CYD.ordinal()].polarizability;
         return cys - cyd;
@@ -1179,19 +1180,19 @@ public class TitrationUtils {
         double his = hisPolarizeTypes[atomIndex][HisStates.HIS.ordinal()].polarizability;
         double hid = hisPolarizeTypes[atomIndex][HisStates.HID.ordinal()].polarizability;
         double hie = hisPolarizeTypes[atomIndex][HisStates.HIE.ordinal()].polarizability;
-        return his - (tautomerLambda * hie + (1 - tautomerLambda) * hid);
+        return his - (tautomerLambda * hie + (1.0 - tautomerLambda) * hid);
       case ASD:
         atomIndex = AspartateAtomNames.valueOf(atomName).ordinal();
         double asp = aspPolarizeTypes[atomIndex][AspStates.ASP.ordinal()].polarizability;
         double ash1 = aspPolarizeTypes[atomIndex][AspStates.ASH1.ordinal()].polarizability;
         double ash2 = aspPolarizeTypes[atomIndex][AspStates.ASH2.ordinal()].polarizability;
-        return (tautomerLambda * ash1 + (1 - tautomerLambda) * ash2) - asp;
+        return (tautomerLambda * ash1 + (1.0 - tautomerLambda) * ash2) - asp;
       case GLD:
         atomIndex = GlutamateAtomNames.valueOf(atomName).ordinal();
         double glu = gluPolarizeTypes[atomIndex][GluStates.GLU.ordinal()].polarizability;
         double glh1 = gluPolarizeTypes[atomIndex][GluStates.GLH1.ordinal()].polarizability;
         double glh2 = gluPolarizeTypes[atomIndex][GluStates.GLH2.ordinal()].polarizability;
-        return (tautomerLambda * glh1 + (1 - tautomerLambda) * glh2) - glu;
+        return (tautomerLambda * glh1 + (1.0 - tautomerLambda) * glh2) - glu;
       default:
         return 0.0;
     }
@@ -1218,13 +1219,13 @@ public class TitrationUtils {
         double asp = aspPolarizeTypes[atomIndex][AspStates.ASP.ordinal()].polarizability;
         double ash1 = aspPolarizeTypes[atomIndex][AspStates.ASH1.ordinal()].polarizability;
         double ash2 = aspPolarizeTypes[atomIndex][AspStates.ASH2.ordinal()].polarizability;
-        return titrationLambda * (ash1 - ash2) + (1.0 - titrationLambda) * asp;
+        return titrationLambda * (ash1 - ash2);
       case GLD:
         atomIndex = GlutamateAtomNames.valueOf(atomName).ordinal();
         double glu = gluPolarizeTypes[atomIndex][GluStates.GLU.ordinal()].polarizability;
         double glh1 = gluPolarizeTypes[atomIndex][GluStates.GLH1.ordinal()].polarizability;
         double glh2 = gluPolarizeTypes[atomIndex][GluStates.GLH2.ordinal()].polarizability;
-        return titrationLambda * (glh1 - glh2) + (1.0 - titrationLambda) * glu;
+        return titrationLambda * (glh1 - glh2);
       case LYS: // No tautomers for LYS.
       case CYS: // No tautomers for LYS.
       default:
@@ -1260,20 +1261,43 @@ public class TitrationUtils {
         }
         break;
       case CYS:
-        if (atomName.equals(CystineAtomNames.HG.name())){
+        if (atomName.equals(CysteineAtomNames.HG.name())){
           isTitratingHydrogen = true;
         }
     }
     return isTitratingHydrogen;
   }
 
-  public static boolean isTitratingSulfur(AminoAcid3 aminoAcid3, Atom atom){
-    boolean isTitratingSulfur = false;
+  /**
+   * Used to keep track of heavy atoms with changing polarizability.
+   * Only affects carboxylic oxygen and sulfur.
+   * @param aminoAcid3
+   * @param atom
+   * @return
+   */
+
+  public static boolean isTitratingHeavy(AminoAcid3 aminoAcid3, Atom atom){
+    boolean isTitratingHeavy = false;
     String atomName = atom.getName();
-    if (atomName.equals(CystineAtomNames.SG.name())){
-      isTitratingSulfur = true;
+    switch (aminoAcid3) {
+      case ASD:
+        if (atomName.equals(AspartateAtomNames.OD1.name()) || atomName.equals(
+                AspartateAtomNames.OD2.name())) {
+          isTitratingHeavy = true;
+        }
+        break;
+      case GLD:
+        if (atomName.equals(GlutamateAtomNames.OE1.name()) || atomName.equals(
+                GlutamateAtomNames.OE2.name())) {
+          isTitratingHeavy = true;
+        }
+        break;
+      case CYS:
+        if (atomName.equals(CysteineAtomNames.SG.name())){
+          isTitratingHeavy = true;
+        }
     }
-    return isTitratingSulfur;
+    return isTitratingHeavy;
   }
 
   public static int getTitratingHydrogenDirection(AminoAcid3 aminoAcid3, Atom atom) {
@@ -1452,7 +1476,7 @@ public class TitrationUtils {
 
   private void constructCYSState(int biotypeCB, CysStates cysState) {
     int state = cysState.ordinal();
-    for (CystineAtomNames atomName : CystineAtomNames.values()) {
+    for (CysteineAtomNames atomName : CysteineAtomNames.values()) {
       int index = atomName.ordinal();
       int offset = atomName.getOffsetCYS(cysState);
       if (offset < 0) {
@@ -1471,14 +1495,14 @@ public class TitrationUtils {
         // This is an edge case since the CB/HB atom types have more than 1 matching multipole
         if (cysMultipoleTypes[index][state] == null) {
           if (cysState == CysStates.CYS) {
-            if (atomName == CystineAtomNames.CB) {
+            if (atomName == CysteineAtomNames.CB) {
               cysMultipoleTypes[index][state] = forceField.getMultipoleType(key + " 8 45");
             } else {
               // HB2 & HB3
               cysMultipoleTypes[index][state] = forceField.getMultipoleType(key + " 43 8");
             }
           } else {
-            if (atomName == CystineAtomNames.CB) {
+            if (atomName == CysteineAtomNames.CB) {
               cysMultipoleTypes[index][state] = forceField.getMultipoleType(key + " 8 49");
             } else {
               // HB2 & HB3
