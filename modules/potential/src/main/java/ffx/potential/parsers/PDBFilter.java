@@ -1955,26 +1955,31 @@ public final class PDBFilter extends SystemFilter {
                   SG1 = atom;
                   break;
                 }
+
               }
-              List<Bond> bonds = SG1.getBonds();
-              for (Bond bond : bonds) {
-                Atom SG2 = bond.get1_2(SG1);
-                if (SG2.getAtomType().atomicNumber == 16 && !atomExclusions.contains(SG2)) {
-                  if (SG1.getIndex() < SG2.getIndex()) {
-                    bond.energy(false);
-                    bw.write(
-                        format(
-                            "SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",
-                            serNum++,
-                            SG1.getChainID().toString(),
-                            Hybrid36.encode(4, SG1.getResidueNumber()),
-                            SG2.getChainID().toString(),
-                            Hybrid36.encode(4, SG2.getResidueNumber()),
-                            "",
-                            bond.getValue()));
+
+              if(!toExclude.contains(SG1)){
+                List<Bond> bonds = SG1.getBonds();
+                for (Bond bond : bonds) {
+                  Atom SG2 = bond.get1_2(SG1);
+                  if (SG2.getAtomType().atomicNumber == 16 && !atomExclusions.contains(SG2)) {
+                    if (SG1.getIndex() < SG2.getIndex()) {
+                      bond.energy(false);
+                      bw.write(
+                              format(
+                                      "SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",
+                                      serNum++,
+                                      SG1.getChainID().toString(),
+                                      Hybrid36.encode(4, SG1.getResidueNumber()),
+                                      SG2.getChainID().toString(),
+                                      Hybrid36.encode(4, SG2.getResidueNumber()),
+                                      "",
+                                      bond.getValue()));
+                    }
                   }
                 }
               }
+
             }
           }
         }
