@@ -71,8 +71,6 @@ import ffx.potential.nonbonded.MaskingInterface;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.utils.EnergyException;
-
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;

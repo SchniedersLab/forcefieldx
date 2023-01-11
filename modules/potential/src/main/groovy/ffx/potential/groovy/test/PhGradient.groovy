@@ -326,7 +326,7 @@ class PhGradient extends PotentialScript {
     } else {
       logger.info(format(" RMS gradient: %10.6f", avGrad))
     }
-
+    energy.setCoordinates(x)
     energy.getCoordinates(x)
     energy.energyAndGradient(x, g)
     double[] esvDerivs = esvSystem.getDerivatives()
@@ -341,7 +341,7 @@ class PhGradient extends PotentialScript {
       Residue residue = titratingResidues.get(i)
       int tautomerIndex = tautomerResidues.indexOf(residue) + titratingResidues.size()
       // Calculate backward finite difference if very close to lambda=1
-      if (esvLambda + step > 1) {
+      if (esvLambda + step > 1.0) {
         logger.info("Backward finite difference being applied. Consider using a smaller step size than the default in this case.\n")
         esvSystem.setTitrationLambda(residue, esvLambda - 2 * step)
         eMinusTitr = energy.energy(x)
@@ -357,7 +357,7 @@ class PhGradient extends PotentialScript {
       }
 
       // Calculate forward finite difference if very close to lambda=0
-      else if (esvLambda - step < 0) {
+      else if (esvLambda - step < 0.0) {
         logger.info("Forward finite difference being applied. Consider using a smaller step size than the default in this case.\n")
         esvSystem.setTitrationLambda(residue, esvLambda + 2 * step)
         ePlusTitr = energy.energy(x)
@@ -427,6 +427,7 @@ class PhGradient extends PotentialScript {
     }
 
     if (testEndstateEnergies) {
+
       testEndState(x, esvSystem, 0.0, 0.0)
       testEndState(x, esvSystem, 1.0, 0.0)
     }
@@ -521,6 +522,8 @@ class PhGradient extends PotentialScript {
 
     //Add ForceFieldEnergy to hashmap for testing. Protonation endstates used as key in map.
     String lambdaList = esvSystem.getLambdaList()
+    energy.setCoordinates(x)
+    energy.getCoordinates(x)
     double stateEnergy = energy.energy(x, true)
     double[] energyAndInteractionList = new double[26]
     // Bond Energy

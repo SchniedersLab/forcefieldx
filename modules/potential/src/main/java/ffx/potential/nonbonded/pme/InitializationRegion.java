@@ -65,7 +65,6 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.PolarizeType;
-
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
