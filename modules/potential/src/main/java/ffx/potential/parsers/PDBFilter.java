@@ -1937,6 +1937,7 @@ public final class PDBFilter extends SystemFilter {
       // =============================================================================
       int serNum = 1;
       Polymer[] polymers = activeMolecularAssembly.getChains();
+      boolean noCys = false;
       if (polymers != null) {
         for (Polymer polymer : polymers) {
           List<Residue> residues = polymer.getResidues();
@@ -1947,7 +1948,11 @@ public final class PDBFilter extends SystemFilter {
                       .filter(a -> !atomExclusions.contains(a))
                       .collect(Collectors.toList());
               Atom SG1 = null;
+              if(cysAtoms.size() == 0){
+                noCys = true;
+              }
               for (Atom atom : cysAtoms) {
+
                 String atName = atom.getName().toUpperCase();
                 if (atName.equals("SG")
                     || atName.equals("SH")
@@ -1958,7 +1963,7 @@ public final class PDBFilter extends SystemFilter {
 
               }
 
-              if(!toExclude.contains(SG1)){
+              if(!noCys){
                 List<Bond> bonds = SG1.getBonds();
                 for (Bond bond : bonds) {
                   Atom SG2 = bond.get1_2(SG1);
