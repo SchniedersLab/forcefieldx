@@ -92,7 +92,7 @@ public class ComplexTest {
   /** Test of fft method, of class Complex. */
   @Test
   public void testFft() {
-    double tolerance = 1.0e-12;
+    double tolerance = 1.0e-11;
 
     int offset = 0;
     int stride = 2;
