@@ -600,7 +600,7 @@ public class InitializationRegion extends ParallelRegion {
           if (polarizeType != null) {
             polarizability[ii] = polarizeType.polarizability * polarizabilityScale * elecScale;
             if (esvTerm && esvSystem.isTitrating(ii) && (esvSystem.isTitratingHydrogen(ii)
-                || esvSystem.isTitratingSulfur(ii))) {
+                || esvSystem.isTitratingHeavy(ii))) {
               titrationPolarizability[ii] = 0.0;
               tautomerPolarizability[ii] = 0.0;
               double titrationLambda = esvSystem.getTitrationLambda(ii);

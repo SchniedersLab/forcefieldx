@@ -46,10 +46,13 @@ import ffx.numerics.Potential;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.parsers.DYNFilter;
 import jline.internal.Nullable;
+import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.FastMath;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -59,9 +62,9 @@ import static ffx.utilities.Constants.kB;
 import static org.apache.commons.math3.util.FastMath.exp;
 
 /**
- * The ReplicaExchange implements pH replica exchange methods.
- *
- * @author Timothy D. Fenn and Michael J. Schnieders
+ * The PhReplicaExchange implements pH replica exchange.
+ * Adapted from "ReplicaExchange.java" by Timothy D. Fenn and Michael J. Schnieders
+ * @author Matthew Speranza and Andrew Thiel
  * @since 1.0
  */
 public class PhReplicaExchange implements Terminatable {
@@ -92,10 +95,10 @@ public class PhReplicaExchange implements Terminatable {
   private final int[] pH2Rank, rank2Ph, pHAcceptedCount, pHTrialCount;
   /** Rank of this process. */
   private final int rank, nReplicas;
-  private boolean done = false, restart, terminate = false;
+  private boolean done = false, restart, terminate = false, backupNeeded = false;
   private final double[] myParameters, pHScale;
   private double[] x;
-  private final double pH, gapSize, temp;
+  private final double pH, temp;
   private int restartStep;
 
   /**
@@ -104,12 +107,12 @@ public class PhReplicaExchange implements Terminatable {
    * @param molecularDynamics a {@link MolecularDynamics} object.
    * @param pH pH = pKa will be changed from this initial value
    * @param extendedSystem extended system attached to this process
-   * @param pHGap the gap in pH units between replicas
+   * @param pHLadder range of pH's that replicas are created for
    * @param temp temperature of replica
    */
   public PhReplicaExchange(
-      MolecularDynamics molecularDynamics, File structureFile, double pH, double pHGap, double temp, ExtendedSystem extendedSystem) {
-    this(molecularDynamics, structureFile, pH, pHGap, temp, extendedSystem, null, null, null);
+      MolecularDynamics molecularDynamics, File structureFile, double pH, double[] pHLadder, double temp, ExtendedSystem extendedSystem) {
+    this(molecularDynamics, structureFile, pH, pHLadder, temp, extendedSystem, null, null, null);
   }
 
   /**
@@ -118,20 +121,20 @@ public class PhReplicaExchange implements Terminatable {
    * @param molecularDynamics a {@link MolecularDynamics} object.
    * @param pH pH = pKa will be changed from this initial value
    * @param extendedSystem extended system attached to this process
-   * @param pHGap the gap in pH units between replicas
+   * @param pHLadder range of pH's that replicas are created for
    * @param temp temperature of replica
    * @param x array of coordinates
    * @param molecularDynamicsOpenMM for running config steps on GPU
    */
   public PhReplicaExchange(
-          MolecularDynamics molecularDynamics, File structureFile, double pH, double pHGap, double temp, ExtendedSystem extendedSystem,
+          MolecularDynamics molecularDynamics, File structureFile, double pH, double[] pHLadder, double temp, ExtendedSystem extendedSystem,
           @Nullable double[] x, @Nullable MolecularDynamicsOpenMM molecularDynamicsOpenMM, @Nullable Potential potential) {
 
     this.replica = molecularDynamics;
     this.temp = temp;
     this.extendedSystem = extendedSystem;
     this.pH = pH;
-    this.gapSize = pHGap;
+    this.pHScale = pHLadder;
     this.x = x;
     this.openMM = molecularDynamicsOpenMM;
     this.potential = potential;
@@ -143,13 +146,18 @@ public class PhReplicaExchange implements Terminatable {
     int numProc = world.size();
     rank = world.rank();
 
+
     nReplicas = numProc;
-    pHScale = new double[nReplicas];
     pH2Rank = new int[nReplicas];
     rank2Ph = new int[nReplicas];
     pHAcceptedCount = new int[nReplicas];
     pHTrialCount = new int[nReplicas];
-    setEvenSpacePhLadder(pHGap);
+
+    // Init map
+    for(int i = 0; i < nReplicas; i++){
+      rank2Ph[i] = i;
+      pH2Rank[i] = i;
+    }
     extendedSystem.setConstantPh(pHScale[rank]);
 
     random = new Random();
@@ -171,13 +179,10 @@ public class PhReplicaExchange implements Terminatable {
 
     // Set the ESV that this rank will share has correct values after a restart
     if(manageFilesAndRestart(structureFile)){
-      logger.info(" Restart Successful! ");
+      logger.info(" Startup Successful! ");
       extendedSystem.getESVHistogram(parametersHis[rank]);
     } else{
-      logger.info(" Starting from fresh. ");
-      if(dyn.delete() & esv.delete() & dynBackup.delete() & esvBackup.delete()){
-        logger.info(" Deleted extra files. ");
-      }
+      logger.severe(" Unable to restart. Fix issues with restart files.");
     }
   }
 
@@ -195,8 +200,8 @@ public class PhReplicaExchange implements Terminatable {
     // My files
     esv = new File(rankDir.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + ".esv");
     dyn = new File(rankDir.getPath() + File.separator + FilenameUtils.removeExtension((structureFile.getName())) + ".dyn");
-    esvBackup = new File(rankDir.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + "_backup.esv");
-    dynBackup = new File(rankDir.getPath() + File.separator + FilenameUtils.removeExtension(structureFile.getName()) + "_backup.dyn");
+    esvBackup = new File(FilenameUtils.removeExtension(esv.getAbsolutePath()) + "_backup.esv");
+    dynBackup = new File(FilenameUtils.removeExtension(dyn.getAbsolutePath()) + "_backup.dyn");
 
     // Set restart files - does not do any reading yet
     extendedSystem.setRestartFile(esv);
@@ -212,14 +217,14 @@ public class PhReplicaExchange implements Terminatable {
       logger.info(" Attempting to restart. ");
       readPhScale = new ArrayList<>();
 
-
       // Read normal restarts
-      boolean backupNeeded = false;
+      backupNeeded = false;
       if(checkForRestartFiles(parent, esv.getName()) && checkForRestartFiles(parent, dyn.getName())){
         for(int i = 0; i < nReplicas; i++){
           File checkThisESV = new File(parent.getAbsolutePath() + File.separator + i + File.separator + esv.getName());
-          backupNeeded = readESV(checkThisESV, i);
+          backupNeeded = !readESV(checkThisESV, i);
           if(backupNeeded){
+            logger.warning(" Searching backup esv files.");
             break;
           }
         }
@@ -237,36 +242,43 @@ public class PhReplicaExchange implements Terminatable {
       if(backupNeeded && checkForRestartFiles(parent, esvBackup.getName()) && checkForRestartFiles(parent, dynBackup.getName())){
         for(int i = 0; i < nReplicas; i++){
           File checkThisESV = new File(parent.getAbsolutePath() + File.separator + i + File.separator + esvBackup.getName());
-          if(readESV(checkThisESV, i)){
+          if(!readESV(checkThisESV, i)){
+            logger.info(" Restart files & Backups are messed up.");
             return false;
           }
         }
+        logger.info(" Reading in from: " + esvBackup);
         extendedSystem.readESVInfoFrom(esvBackup);
       }
       else if (backupNeeded){
         logger.info(" Directories do not contain all of the correct backup restart files.");
-        return false;
+        logger.warning(" No backup files found, treating as a fresh start.");
+        restart = false;
+        return true;
       }
     }
     else{
-      return false;
+      logger.info(" Not a restart.");
+      return true;
     }
 
     logger.info(" Rank " + rank + " staring at pH " + pHScale[rank2Ph[rank]]);
     extendedSystem.setConstantPh(pHScale[rank2Ph[rank]]);
     logger.info(" Rank " + rank + " starting hist:");
-    extendedSystem.writeLambdaHistogram();
+    extendedSystem.writeLambdaHistogram(true);
 
     return true;
   }
 
   /**
-   * Reads an esv file to find the number of steps logged and if the pH matches the others in readPhScale
-   * @param esv file to read
-   * @return if the pH of the file is duplicated
+   * Reads an esv file to find the number of steps logged and if the pH matches the others in readPhScale.
+   *  (N.B. - This only checks the first esv in the system for uneven sums, since it is assumed that all counts
+   * will be messed up if the first one is.)
+   * @param file to read
+   * @return if the esv file of this name at this rank works with the others, or if i=0, then it sets the standards
    */
-  private boolean readESV(File esv, int i){
-    try(BufferedReader br = new BufferedReader(new FileReader(esv))){
+  private boolean readESV(File file, int i){
+    try(BufferedReader br = new BufferedReader(new FileReader(file))){
       String data = br.readLine();
       while(data != null) {
         List<String> tokens = Arrays.asList(data.split(" +"));
@@ -283,10 +295,10 @@ public class PhReplicaExchange implements Terminatable {
 
           // Check pH list for duplicates
           if(readPhScale.stream().anyMatch(d -> (Math.abs(d/pHOfRankI - 1) < 0.00001))){
-            logger.warning(" Duplicate pH value found in file: " + esv.getAbsolutePath());
+            logger.warning(" Duplicate pH value found in file: " + file.getAbsolutePath());
             readPhScale.clear();
-            return true;
-          } else{
+            return false;
+          }else{
             readPhScale.add(pHOfRankI);
           }
 
@@ -306,18 +318,20 @@ public class PhReplicaExchange implements Terminatable {
             restartStep = sum;
           }
           else if(restartStep != sum){
-            logger.warning(" Restart received uneven sums. Starting from the lowest one.");
-            restartStep = Math.min(sum, restartStep);
-            logger.info(" Restart step New: " + restartStep);
+            logger.warning(" Restart received uneven sums from esv file: " + file.getAbsolutePath());
+            restartStep = 0;
+            readPhScale.clear();
+            return false;
           }
+          break;
         }
         data = br.readLine();
       }
-      return false;
+      return true;
     }
     catch (IOException | IndexOutOfBoundsException e){
-      logger.warning("Failed to read file: " + esv.getAbsolutePath());
-      return true;
+      logger.warning("Failed to read file: " + file.getAbsolutePath());
+      return false;
     }
   }
 
@@ -348,21 +362,38 @@ public class PhReplicaExchange implements Terminatable {
     sample(cycles, nSteps, 0, timeStep, printInterval, trajInterval, initTitrDynamics);
   }
 
-  public void sample(int cycles, long titrSteps, long confSteps, double timeStep, double printInterval, double trajInterval, int initTitrDynamics) {
+  public void sample(int cycles, long titrSteps, long confSteps, double timeStep, double printInterval, double trajInterval, int initDynamics) {
     done = false;
     terminate = false;
     replica.setRestartFrequency(cycles * (titrSteps + confSteps) * replica.dt + 100);
 
     int startCycle = 0;
-    if(initTitrDynamics > 0 && !restart) {
+    if(initDynamics > 0 && !restart) {
       extendedSystem.reGuessLambdas();
       extendedSystem.setFixedTitrationState(true);
       extendedSystem.setFixedTautomerState(true);
-      replica.dynamic(initTitrDynamics, timeStep, printInterval, trajInterval, temp, true, dyn);
+
+      logger.info(" ");
+      logger.info(" ------------------Start of Equilibration Dynamics------------------\n");
+      logger.info(" ");
+
+      if(openMM == null) {
+        replica.dynamic(initDynamics, timeStep, printInterval, trajInterval, temp, true, dyn);
+      } else{
+        x = replica.getCoordinates();
+        potential.energy(x);
+        openMM.setCoordinates(x);
+
+        openMM.dynamic(initDynamics, timeStep, printInterval, trajInterval, temp, true, dyn);
+
+        x = openMM.getCoordinates();
+        replica.setCoordinates(x);
+      }
+
       extendedSystem.setFixedTitrationState(false);
       extendedSystem.setFixedTautomerState(false);
       logger.info(extendedSystem.getLambdaList());
-      extendedSystem.writeLambdaHistogram();
+      extendedSystem.writeLambdaHistogram(true);
       extendedSystem.copyESVHistogramTo(parametersHis[rank]); // Copy the ESV hist to be empty
 
       logger.info(" ");
@@ -394,10 +425,15 @@ public class PhReplicaExchange implements Terminatable {
       }
 
       // Set backups in case job is killed at bad time
-      DYNFilter dynFilter = new DYNFilter(replica.getAssemblies()[0].getName());
-      dynFilter.writeDYN(dynBackup, replica.getAssemblies()[0].getCrystal(), replica.x, replica.v, replica.a, replica.aPrevious);
-      extendedSystem.writeESVInfoTo(esvBackup);
+      if(i == 0 || backupNeeded){
+        replica.writeRestart();
+      }
+      copyToBackups();
       replica.writeRestart();
+
+      if(i % 100 == 0){
+        extendedSystem.writeLambdaHistogram(true);
+      }
 
       logger.info(" ");
       logger.info(String.format(" ------------------Exchange Cycle %d------------------\n", i+1));
@@ -411,26 +447,25 @@ public class PhReplicaExchange implements Terminatable {
     }
   }
 
-  public double[] getpHScale(){
-    return pHScale;
-  }
+  public double[] getpHScale(){ return pHScale; }
 
   /**
    * Sets an even pH ladder based on the pH gap.
    */
-  private void setEvenSpacePhLadder(double pHGap){
-    double range = world.size() * pHGap;
+  public static double[] setEvenSpacePhLadder(double pHGap, double pH, int nReplicas){
+    double range = nReplicas * pHGap;
     double pHMin = pH - range/2;
 
     if(nReplicas % 2 != 0){
-      pHMin += pHGap/2;
+      pHMin += pHGap/2; // Center range if odd num windows
     }
 
+    double[] pHScale = new double[nReplicas];
     for(int i = 0; i < nReplicas; i++){
       pHScale[i] = pHMin + i * pHGap;
-      rank2Ph[i] = i;
-      pH2Rank[i] = i;
     }
+
+    return pHScale;
   }
 
   /**
@@ -491,7 +526,6 @@ public class PhReplicaExchange implements Terminatable {
 
     // Compute the change in energy over kT (E/kT) for the Metropolis criteria.
     double deltaE = beta * ((acidostatAatB + acidostatBatA) - (acidostatA + acidostatB));
-    logger.info(" deltaE = " + beta + " * ((" + acidostatAatB + " + " + acidostatBatA + ") - (" + acidostatA + " + " + acidostatB + "))");
     logger.info(" DeltaE: " + deltaE);
 
     //Count the number of trials for each temp
@@ -576,19 +610,30 @@ public class PhReplicaExchange implements Terminatable {
 
     myParameters[0] = pHScale[i];
     myParameters[2] = extendedSystem.getBiasEnergy();
-    logger.info(" ");
+
+    double lowPh = 0;
+    double highPh = 0;
+    try{
+      lowPh = pHScale[i-1];
+    } catch (IndexOutOfBoundsException e){
+      lowPh = 0;
+    }
+
+    try{
+      highPh = pHScale[i+1];
+    } catch (IndexOutOfBoundsException e){
+      highPh = 0;
+    }
 
     // Evaluate acidostat of ES at different pHs
-    extendedSystem.setConstantPh(myParameters[0] - gapSize);
+    extendedSystem.setConstantPh(lowPh);
     myParameters[1] = extendedSystem.getBiasEnergy();
 
-    extendedSystem.setConstantPh(myParameters[0] + gapSize);
+    extendedSystem.setConstantPh(highPh);
     myParameters[3] = extendedSystem.getBiasEnergy();
 
     extendedSystem.setConstantPh(myParameters[0]);
-
     extendedSystem.getESVHistogram(parametersHis[rank]);
-    extendedSystem.writeLambdaHistogram();
 
     // Gather all parameters from the other processes.
     try {
@@ -619,16 +664,29 @@ public class PhReplicaExchange implements Terminatable {
     myParameters[2] = extendedSystem.getBiasEnergy();
 
     // Evaluate acidostat of ES at different pHs
-    extendedSystem.setConstantPh(myParameters[0] - gapSize); // B at A-gap
+    double lowPh = 0;
+    double highPh = 0;
+    try{
+      lowPh = pHScale[i-1];
+    } catch (IndexOutOfBoundsException e){
+      lowPh = 0;
+    }
+
+    try{
+      highPh = pHScale[i+1];
+    } catch (IndexOutOfBoundsException e){
+      highPh = 0;
+    }
+
+    extendedSystem.setConstantPh(lowPh); // B at A-gap
     myParameters[1] = extendedSystem.getBiasEnergy();
 
-    extendedSystem.setConstantPh(myParameters[0] + gapSize); // A at A+gap(B)
+    extendedSystem.setConstantPh(highPh); // A at A+gap(B)
     myParameters[3] = extendedSystem.getBiasEnergy();
 
     extendedSystem.setConstantPh(myParameters[0]);
 
     extendedSystem.getESVHistogram(parametersHis[rank]);
-    extendedSystem.writeLambdaHistogram();
 
     // Gather all parameters from the other processes.
     try {
@@ -637,6 +695,24 @@ public class PhReplicaExchange implements Terminatable {
     } catch (IOException ex) {
       String message = " Replica Exchange allGather failed.";
       logger.log(Level.SEVERE, message, ex);
+    }
+  }
+
+  private void copyToBackups(){
+    try {
+      Files.move(esv.toPath(),esv.toPath().resolveSibling(esvBackup.getName()), StandardCopyOption.REPLACE_EXISTING);
+    } catch (IOException e) {
+      String message = " Could not copy ESV histogram to backup - dynamics terminated.";
+      logger.log(Level.WARNING, message);
+      throw new RuntimeException(e);
+    }
+
+    try {
+      Files.move(dyn.toPath(),dyn.toPath().resolveSibling(dynBackup.getName()), StandardCopyOption.REPLACE_EXISTING);
+    } catch (IOException e) {
+      String message = " Could not copy dyn restart to backup - dynamics terminated.";
+      logger.log(Level.WARNING, message);
+      throw new RuntimeException(e);
     }
   }
 }
