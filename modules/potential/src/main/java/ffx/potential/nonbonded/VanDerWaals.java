@@ -49,6 +49,7 @@ import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import edu.rit.pj.BarrierAction;
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
@@ -1110,6 +1111,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     private final ExpandLoop[] expandLoop;
     private final VanDerWaalsLoop[] vanDerWaalsLoop;
     private final ReductionLoop[] reductionLoop;
+    private final NeighborListBarrier neighborListAction;
 
     /** Timing variables. */
     private long initTimeTotal, energyTimeTotal, reductionTimeTotal;
@@ -1123,6 +1125,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       expandLoop = new ExpandLoop[threadCount];
       vanDerWaalsLoop = new VanDerWaalsLoop[threadCount];
       reductionLoop = new ReductionLoop[threadCount];
+      neighborListAction = new NeighborListBarrier();
       initializationTime = new long[threadCount];
       energyTime = new long[threadCount];
       reductionTime = new long[threadCount];
@@ -1131,14 +1134,54 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     @Override
     public void finish() {
       neighborListOnly = false;
+      vdwTimeTotal += System.nanoTime();
+      // Log timings.
+      if (logger.isLoggable(Level.FINE)) {
+        logger.fine(format("\n Van der Waals: %7.4f (sec)", vdwTimeTotal * 1e-9));
+        logger.fine(" Thread    Init    Energy  Reduce  Total     Counts");
+        long initMax = 0;
+        long vdwMax = 0;
+        long reductionMax = 0;
+        long initMin = Long.MAX_VALUE;
+        long vdwMin = Long.MAX_VALUE;
+        long reductionMin = Long.MAX_VALUE;
+        int countMin = Integer.MAX_VALUE;
+        int countMax = 0;
+        for (int i = 0; i < threadCount; i++) {
+          int count = vanDerWaalsLoop[i].getCount();
+          long totalTime = initializationTime[i] + energyTime[i] + reductionTime[i];
+          logger.fine(format("    %3d   %7.4f %7.4f %7.4f %7.4f %10d",
+              i, initializationTime[i] * 1e-9, energyTime[i] * 1e-9,
+              reductionTime[i] * 1e-9, totalTime * 1e-9, count));
+          initMax = max(initializationTime[i], initMax);
+          vdwMax = max(energyTime[i], vdwMax);
+          reductionMax = max(reductionTime[i], reductionMax);
+          countMax = max(countMax, count);
+          initMin = min(initializationTime[i], initMin);
+          vdwMin = min(energyTime[i], vdwMin);
+          reductionMin = min(reductionTime[i], reductionMin);
+          countMin = min(countMin, count);
+        }
+        long totalMin = initMin + vdwMin + reductionMin;
+        long totalMax = initMax + vdwMax + reductionMax;
+        long totalActual = initTimeTotal + energyTimeTotal + reductionTimeTotal;
+        logger.fine(format(" Min      %7.4f %7.4f %7.4f %7.4f %10d",
+            initMin * 1e-9, vdwMin * 1e-9, reductionMin * 1e-9, totalMin * 1e-9, countMin));
+        logger.fine(format(" Max      %7.4f %7.4f %7.4f %7.4f %10d",
+            initMax * 1e-9, vdwMax * 1e-9, reductionMax * 1e-9, totalMax * 1e-9, countMax));
+        logger.fine(format(" Delta    %7.4f %7.4f %7.4f %7.4f %10d",
+            (initMax - initMin) * 1e-9, (vdwMax - vdwMin) * 1e-9,
+            (reductionMax - reductionMin) * 1e-9, (totalMax - totalMin) * 1e-9,
+            (countMax - countMin)));
+        logger.fine(format(" Actual   %7.4f %7.4f %7.4f %7.4f %10d\n",
+            initTimeTotal * 1e-9, energyTimeTotal * 1e-9, reductionTimeTotal * 1e-9,
+            totalActual * 1e-9, sharedInteractions.get()));
+      }
     }
 
     @Override
     public void run() throws Exception {
       int threadIndex = getThreadIndex();
-      if (threadIndex == 0) {
-        vdwTimeTotal = -System.nanoTime();
-      }
 
       // Locally initialize the Loops to help with NUMA?
       if (initializationLoop[threadIndex] == null) {
@@ -1167,11 +1210,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       }
 
       // Build the neighbor-list (if necessary) using reduced coordinates.
-      if (threadIndex == 0) {
-        neighborList.buildList(reduced, neighborLists, null, neighborListOnly, false);
-      }
-      barrier();
-
+      barrier(neighborListAction);
       if (neighborListOnly) {
         return;
       }
@@ -1213,52 +1252,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
           logger.log(Level.SEVERE, message, e);
         }
       }
-
-      // Log timings.
-      if (threadIndex == 0 && logger.isLoggable(Level.FINE)) {
-        if (threadIndex == 0) {
-          vdwTimeTotal += System.nanoTime();
-        }
-        logger.fine(format("\n Van der Waals: %7.4f (sec)", vdwTimeTotal * 1e-9));
-        logger.fine(" Thread    Init    Energy  Reduce  Total     Counts");
-        long initMax = 0;
-        long vdwMax = 0;
-        long reductionMax = 0;
-        long initMin = Long.MAX_VALUE;
-        long vdwMin = Long.MAX_VALUE;
-        long reductionMin = Long.MAX_VALUE;
-        int countMin = Integer.MAX_VALUE;
-        int countMax = 0;
-        for (int i = 0; i < threadCount; i++) {
-          int count = vanDerWaalsLoop[i].getCount();
-          long totalTime = initializationTime[i] + energyTime[i] + reductionTime[i];
-          logger.fine(format("    %3d   %7.4f %7.4f %7.4f %7.4f %10d",
-                  i, initializationTime[i] * 1e-9, energyTime[i] * 1e-9,
-                  reductionTime[i] * 1e-9, totalTime * 1e-9, count));
-          initMax = max(initializationTime[i], initMax);
-          vdwMax = max(energyTime[i], vdwMax);
-          reductionMax = max(reductionTime[i], reductionMax);
-          countMax = max(countMax, count);
-          initMin = min(initializationTime[i], initMin);
-          vdwMin = min(energyTime[i], vdwMin);
-          reductionMin = min(reductionTime[i], reductionMin);
-          countMin = min(countMin, count);
-        }
-        long totalMin = initMin + vdwMin + reductionMin;
-        long totalMax = initMax + vdwMax + reductionMax;
-        long totalActual = initTimeTotal + energyTimeTotal + reductionTimeTotal;
-        logger.fine(format(" Min      %7.4f %7.4f %7.4f %7.4f %10d",
-                initMin * 1e-9, vdwMin * 1e-9, reductionMin * 1e-9, totalMin * 1e-9, countMin));
-        logger.fine(format(" Max      %7.4f %7.4f %7.4f %7.4f %10d",
-                initMax * 1e-9, vdwMax * 1e-9, reductionMax * 1e-9, totalMax * 1e-9, countMax));
-        logger.fine(format(" Delta    %7.4f %7.4f %7.4f %7.4f %10d",
-                (initMax - initMin) * 1e-9, (vdwMax - vdwMin) * 1e-9,
-                (reductionMax - reductionMin) * 1e-9, (totalMax - totalMin) * 1e-9,
-                (countMax - countMin)));
-        logger.fine(format(" Actual   %7.4f %7.4f %7.4f %7.4f %10d\n",
-                initTimeTotal * 1e-9, energyTimeTotal * 1e-9, reductionTimeTotal * 1e-9,
-                totalActual * 1e-9, sharedInteractions.get()));
-      }
     }
 
     /**
@@ -1270,6 +1263,8 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
      */
     @Override
     public void start() {
+      // Start timing.
+      vdwTimeTotal = -System.nanoTime();
 
       // Initialize the shared variables.
       if (doLongRangeCorrection) {
@@ -1314,7 +1309,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
           // Load the vdw type.
           VDWType vdwType = atom.getVDWType();
           if (vdwType == null) {
-            logger.info(" No VdW type for atom " + atom);
             logger.severe(" No VdW type for atom " + atom);
             return;
           }
@@ -1448,8 +1442,10 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
             reducedXYZ[iX] = a * (x - rx) + rx;
             reducedXYZ[iY] = a * (y - ry) + ry;
             reducedXYZ[iZ] = a * (z - rz) + rz;
-            double[] rxyz = {reducedXYZ[iX], reducedXYZ[iY], reducedXYZ[iZ]};
-            atoms[i].setRedXYZ(rxyz);
+            in[0] = reducedXYZ[iX];
+            in[1] = reducedXYZ[iY];
+            in[2] = reducedXYZ[iZ];
+            atoms[i].setRedXYZ(in);
           } else {
             reducedXYZ[iX] = x;
             reducedXYZ[iY] = y;
@@ -2166,6 +2162,17 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       long preventOptimization() {
         return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7 +
             p8 + p9 + pa + pb + pc + pd + pe + pf;
+      }
+    }
+
+    /**
+     * Build the NeighborList.
+     */
+    private class NeighborListBarrier extends BarrierAction {
+
+      @Override
+      public void run() throws Exception {
+        neighborList.buildList(reduced, neighborLists, null, neighborListOnly, false);
       }
     }
   }
