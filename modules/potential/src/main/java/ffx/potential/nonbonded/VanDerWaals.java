@@ -1114,8 +1114,8 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     private final NeighborListBarrier neighborListAction;
 
     /** Timing variables. */
-    private long initTimeTotal, energyTimeTotal, reductionTimeTotal;
-    private long vdwTimeTotal;
+    private long initLoopTotalTime, vdWLoopTotalTime, reductionLoopTimeTotal;
+    private long neighborListTotalTime, vdwTimeTotal;
     private final long[] initializationTime;
     private final long[] energyTime;
     private final long[] reductionTime;
@@ -1137,7 +1137,8 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       vdwTimeTotal += System.nanoTime();
       // Log timings.
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format("\n Van der Waals: %7.4f (sec)", vdwTimeTotal * 1e-9));
+        logger.fine(format("\n Neighbor-List:  %7.4f (sec)", neighborListTotalTime * 1e-9));
+        logger.fine(format(" Van der Waals:  %7.4f (sec)", (vdwTimeTotal - neighborListTotalTime) * 1e-9));
         logger.fine(" Thread    Init    Energy  Reduce  Total     Counts");
         long initMax = 0;
         long vdwMax = 0;
@@ -1164,7 +1165,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
         }
         long totalMin = initMin + vdwMin + reductionMin;
         long totalMax = initMax + vdwMax + reductionMax;
-        long totalActual = initTimeTotal + energyTimeTotal + reductionTimeTotal;
+        long totalActual = initLoopTotalTime + vdWLoopTotalTime + reductionLoopTimeTotal;
         logger.fine(format(" Min      %7.4f %7.4f %7.4f %7.4f %10d",
             initMin * 1e-9, vdwMin * 1e-9, reductionMin * 1e-9, totalMin * 1e-9, countMin));
         logger.fine(format(" Max      %7.4f %7.4f %7.4f %7.4f %10d",
@@ -1174,7 +1175,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
             (reductionMax - reductionMin) * 1e-9, (totalMax - totalMin) * 1e-9,
             (countMax - countMin)));
         logger.fine(format(" Actual   %7.4f %7.4f %7.4f %7.4f %10d\n",
-            initTimeTotal * 1e-9, energyTimeTotal * 1e-9, reductionTimeTotal * 1e-9,
+            initLoopTotalTime * 1e-9, vdWLoopTotalTime * 1e-9, reductionLoopTimeTotal * 1e-9,
             totalActual * 1e-9, sharedInteractions.get()));
       }
     }
@@ -1194,12 +1195,12 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       // Initialize and expand coordinates.
       try {
         if (threadIndex == 0) {
-          initTimeTotal = -System.nanoTime();
+          initLoopTotalTime = -System.nanoTime();
         }
         execute(0, nAtoms - 1, initializationLoop[threadIndex]);
         execute(0, nAtoms - 1, expandLoop[threadIndex]);
         if (threadIndex == 0) {
-          initTimeTotal += System.nanoTime();
+          initLoopTotalTime += System.nanoTime();
         }
       } catch (RuntimeException ex) {
         logger.warning("Runtime exception expanding coordinates in thread: " + threadIndex);
@@ -1218,11 +1219,11 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       // Compute Van der Waals energy and gradient.
       try {
         if (threadIndex == 0) {
-          energyTimeTotal = -System.nanoTime();
+          vdWLoopTotalTime = -System.nanoTime();
         }
         execute(0, nAtoms - 1, vanDerWaalsLoop[threadIndex]);
         if (threadIndex == 0) {
-          energyTimeTotal += System.nanoTime();
+          vdWLoopTotalTime += System.nanoTime();
         }
       } catch (RuntimeException ex) {
         logger.warning("Runtime exception evaluating van der Waals energy in thread: " + threadIndex);
@@ -1236,11 +1237,11 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       if (gradient || lambdaTerm) {
         try {
           if (threadIndex == 0) {
-            reductionTimeTotal = -System.nanoTime();
+            reductionLoopTimeTotal = -System.nanoTime();
           }
           execute(0, nAtoms - 1, reductionLoop[threadIndex]);
           if (threadIndex == 0) {
-            reductionTimeTotal += System.nanoTime();
+            reductionLoopTimeTotal += System.nanoTime();
           }
         } catch (RuntimeException ex) {
           logger.warning(
@@ -2172,7 +2173,9 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
 
       @Override
       public void run() throws Exception {
+        neighborListTotalTime = -System.nanoTime();
         neighborList.buildList(reduced, neighborLists, null, neighborListOnly, false);
+        neighborListTotalTime += System.nanoTime();
       }
     }
   }
