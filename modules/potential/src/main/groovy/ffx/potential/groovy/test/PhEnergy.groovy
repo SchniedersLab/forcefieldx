@@ -42,6 +42,7 @@ import ffx.numerics.Potential
 import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Atom
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.PotentialScript
 import ffx.potential.extended.ExtendedSystem
@@ -58,15 +59,17 @@ import static ffx.potential.utils.StructureMetrics.momentsOfInertia
 import static ffx.potential.utils.StructureMetrics.radiusOfGyration
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.*
+import static org.apache.commons.math3.util.FastMath.pow
 
 /**
  * The Energy script evaluates the energy of a system.
  * <br>
  * Usage:
  * <br>
- * ffxc Energy &lt;filename&gt;
+ * ffxc test.PhEnergy &lt;filename&gt;
  */
-@Command(description = " Compute the force field potential energy.", name = "ffxc Energy")
+@Command(description = " Compute the force field potential energy for a CpHMD system.",
+    name = "test.PhEnergy")
 class PhEnergy extends PotentialScript {
 
     @Mixin
@@ -141,6 +144,13 @@ class PhEnergy extends PotentialScript {
     private String arcFileName = null
 
     /**
+     * --testEndStateEnergies
+     */
+    @Option(names = ['--testEndStateEnergies'], paramLabel = 'false',
+            description = 'Test both ESV energy end states as if the polarization damping factor is initialized from the respective protonated or deprotonated state')
+    boolean testEndstateEnergies = false
+
+    /**
      * The final argument is a PDB or XPH coordinate file.
      */
     @Parameters(arity = "1", paramLabel = "file",
@@ -195,6 +205,25 @@ class PhEnergy extends PotentialScript {
         }
 
         ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, pH, esv)
+        if(testEndstateEnergies && BigDecimal.valueOf(esvSystem.getExtendedLambdas()[0]) ==  0.0){
+            for(Atom atom : esvSystem.getExtendedAtoms()){
+                int atomIndex = atom.getArrayIndex()
+                if (esvSystem.isTitratingHeavy(atomIndex)) {
+                    double endstatePolar = esvSystem.titrationUtils.getPolarizability(atom, 0.0, 0.0, atom.getPolarizeType().polarizability)
+                    double sixth = 1.0 / 6.0
+                    atom.getPolarizeType().pdamp = pow(endstatePolar, sixth)
+                }
+            }
+        } else if(testEndstateEnergies && BigDecimal.valueOf(esvSystem.getExtendedLambdas()[0]) ==  1.0){
+            for(Atom atom : esvSystem.getExtendedAtoms()){
+                int atomIndex = atom.getArrayIndex()
+                if (esvSystem.isTitratingHeavy(atomIndex)) {
+                    double endstatePolar = esvSystem.titrationUtils.getPolarizability(atom, 1.0, 0.0, atom.getPolarizeType().polarizability)
+                    double sixth = 1.0 / 6.0
+                    atom.getPolarizeType().pdamp = pow(endstatePolar, sixth)
+                }
+            }
+        }
         esvSystem.setConstantPh(pH)
         int numESVs = esvSystem.extendedResidueList.size()
         forceFieldEnergy.attachExtendedSystem(esvSystem)

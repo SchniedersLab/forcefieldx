@@ -35,7 +35,6 @@
 // exception statement from your version.
 //
 //******************************************************************************
-
 package ffx.algorithms.groovy.test
 
 import edu.rit.pj.ParallelTeam
@@ -72,9 +71,9 @@ import static org.apache.commons.math3.util.FastMath.*
  * <br>
  * Usage:
  * <br>
- * ffxc MostBar [options] &lt;structures1&gt
+ * ffxc test.MostBar [options] &lt;structures1&gt
  */
-@Command(description = " Evaluates free energy of an M-OST run using the BAR estimator.", name = "ffxc MostBar")
+@Command(description = " Evaluates free energy of an M-OST run using the BAR estimator.", name = "test.MostBar")
 class MostBar extends AlgorithmsScript {
 
   @Mixin

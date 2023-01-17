@@ -42,7 +42,6 @@ import edu.rit.pj.reduction.SharedDouble;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
-import ffx.potential.PotentialComponent;
 import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Atom;
@@ -59,12 +58,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ffx.potential.bonded.BondedUtils.hasAttachedAtom;
-import static ffx.utilities.Constants.kB;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.*;
 
@@ -203,7 +200,11 @@ public class ExtendedSystem implements Potential {
      * specifically a titrating hydrogen.
      */
     private final boolean[] isTitratingHydrogen;
-    private final boolean[] isTitratingSulfur;
+    /**
+     * Array of booleans that is initialized to match the number of atoms in the assembly to note whether an atom is
+     * specifically a heavy atom with changing polarizability (CYS SG, ASP OD1/OD2, GLU OE1/OE2).
+     */
+    private final boolean[] isTitratingHeavy;
     private final boolean lockStates;
     public final boolean guessTitrState;
     /**
@@ -359,7 +360,7 @@ public class ExtendedSystem implements Potential {
         nAtoms = atoms.length;
         isTitrating = new boolean[nAtoms];
         isTitratingHydrogen = new boolean[nAtoms];
-        isTitratingSulfur = new boolean[nAtoms];
+        isTitratingHeavy = new boolean[nAtoms];
         isTautomerizing = new boolean[nAtoms];
         titrationLambdas = new double[nAtoms];
         tautomerLambdas = new double[nAtoms];
@@ -370,7 +371,7 @@ public class ExtendedSystem implements Potential {
 
         Arrays.fill(isTitrating, false);
         Arrays.fill(isTitratingHydrogen, false);
-        Arrays.fill(isTitratingSulfur, false);
+        Arrays.fill(isTitratingHeavy, false);
         Arrays.fill(isTautomerizing, false);
         Arrays.fill(titrationLambdas, 1.0);
         Arrays.fill(tautomerLambdas, 0.0);
@@ -385,7 +386,7 @@ public class ExtendedSystem implements Potential {
         // If the atom does belong to this residue, set all corresponding variables in the respective titration or tautomer array (size = numAtoms).
         // Store the index of the residue in the respective list into a map array (size = numAtoms).
         List<Residue> residueList = mola.getResidueList();
-        logger.info(residueList.toString());
+        //logger.info(residueList.toString());
         List<Residue> preprocessList = new ArrayList<>(residueList);
         for(Residue residue : preprocessList){
             List<Atom> atomList = residue.getSideChainAtoms();
@@ -398,7 +399,7 @@ public class ExtendedSystem implements Potential {
                 }
             }
         }
-        logger.info(residueList.toString());
+        //logger.info(residueList.toString());
         // Use only a list that contains AminoAcid residues so remove Nucleic Acid residues
         residueList.removeIf(residue -> (residue.getResidueType() == Residue.ResidueType.NA));
         for (Residue residue : residueList) {
@@ -417,7 +418,17 @@ public class ExtendedSystem implements Potential {
                     int titrationIndex = titratingResidueList.indexOf(residue);
                     titrationIndexMap[atomIndex] = titrationIndex;
                     isTitratingHydrogen[atomIndex] = TitrationUtils.isTitratingHydrogen(residue.getAminoAcid3(), atom);
-                    isTitratingSulfur[atomIndex] = TitrationUtils.isTitratingSulfur(residue.getAminoAcid3(), atom);
+                    isTitratingHeavy[atomIndex] = TitrationUtils.isTitratingHeavy(residue.getAminoAcid3(), atom);
+                    // Average out pdamp values of the atoms with changing polarizability which will then be used as fixed values throughout simulation.
+                    // When testing end state energies don't average pdamp.
+                    // Default pdamp is set from protonated polarizability so it must be changed when testing deprotonated end state (Titration lambda = 0.0.)
+                    if (isTitratingHeavy(atomIndex)) {
+                        double deprotPolar = titrationUtils.getPolarizability(atom, 0.0, 0.0, atom.getPolarizeType().polarizability);
+                        double protPolar = titrationUtils.getPolarizability(atom, 1.0, 1.0, atom.getPolarizeType().polarizability);
+                        double avgPolar = 0.5 * deprotPolar + 0.5 * protPolar;
+                        double sixth = 1.0 / 6.0;
+                        atom.getPolarizeType().pdamp = pow(avgPolar, sixth);
+                    }
                 }
                 // If is a tautomer, it must also be titrating.
                 if (isTautomer(residue)) {
@@ -425,7 +436,7 @@ public class ExtendedSystem implements Potential {
                     for (Atom atom : atomList) {
                         int atomIndex = atom.getArrayIndex();
                         if(isTitratingHydrogen[atomIndex]){
-                            logger.info("Residue: "+residue+" Atom: "+atom+ " atomType: "+ atom.getAtomType().type);
+                            logger.info("Residue: "+residue+" Atom: "+atom+ " atomType: "+ atom.getAtomType().type+" "+atom.getAtomType().atomClass);
                         }
                         isTautomerizing[atomIndex] = true;
                         tautomerLambdas[atomIndex] = initialTautomerLambda;
@@ -507,11 +518,13 @@ public class ExtendedSystem implements Potential {
     private void initializeThetaArrays(int index, double lambda) {
         extendedLambdas[index] = lambda;
         thetaPosition[index] = Math.asin(Math.sqrt(lambda));
-        Random random = new Random();
-        thetaVelocity[index] = random.nextGaussian() * sqrt(kB * 298.15 / thetaMass);
+        //Perform unit analysis carefully
+        //Random random = new Random();
+        thetaVelocity[index] = 0.0; //random.nextGaussian() * sqrt(kB * 298.15 / thetaMass);
         double dUdL = getDerivatives()[index];
         double dUdTheta = dUdL * sin(2 * thetaPosition[index]);
         thetaAccel[index] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
+        //logger.info(format("Index: %d, dU/dL: %6.8f, dU/dTheta: %6.8f Theta Accel: %6.8f, Theta Velocity: %6.8f", index, -Constants.KCAL_TO_GRAM_ANG2_PER_PS2*dUdL, -Constants.KCAL_TO_GRAM_ANG2_PER_PS2*dUdTheta, thetaAccel[index], thetaVelocity[index]));
     }
 
     /**
@@ -847,7 +860,7 @@ public class ExtendedSystem implements Potential {
     }
 
     /**
-     * Update all theta (lambda) postions after each move from the Stochastic integrator
+     * Update all theta (lambda) positions after each move from the Stochastic integrator
      */
     private void updateLambdas() {
         //This will prevent recalculating multiple sinTheta*sinTheta that are the same number.
@@ -979,7 +992,7 @@ public class ExtendedSystem implements Potential {
 
     /**
      * Overwrites the histogram passed into it and returns the new one out ~output never used?~
-     * @param histogram 2D histogram list with the tautomer & titration states compressed to a 1D array
+     * @param histogram 2D histogram list with the tautomer and titration states compressed to a 1D array
      * @return another compressed histogram
      */
     public int[][] getESVHistogram(int[][] histogram) {
@@ -1099,6 +1112,7 @@ public class ExtendedSystem implements Potential {
         }/*else {
             logger.warning(format("This residue %s is not titrating or locked by user property.", residue.getName()));
         }*/ //TODO: Decide on whether or not this is necessary
+
     }
 
     public List<Residue> getTitratingResidueList() {
@@ -1214,43 +1228,6 @@ public class ExtendedSystem implements Potential {
     }
 
     /**
-     * getEnergyComponent for use by ForceFieldEnergy
-     *
-     * @param component a {@link ffx.potential.PotentialComponent} object.
-     * @return a double.
-     */
-    public double getEnergyComponent(PotentialComponent component) {
-        double uComp = 0.0;
-        double[] biasEnergyAndDerivs = new double[9];
-        switch (component) {
-            case Bias:
-            case pHMD:
-                return getBiasEnergy();
-            case DiscretizeBias:
-                for (Residue residue : titratingResidueList) {
-                    getBiasTerms(residue, biasEnergyAndDerivs);
-                    uComp += biasEnergyAndDerivs[discrBiasIndex];
-                }
-                return uComp;
-            case ModelBias:
-                for (Residue residue : titratingResidueList) {
-                    getBiasTerms(residue, biasEnergyAndDerivs);
-                    //Reminder: Ubias = UpH + Udiscr - Umod
-                    uComp += biasEnergyAndDerivs[modelBiasIndex];
-                }
-                return uComp;
-            case pHBias:
-                for (Residue residue : titratingResidueList) {
-                    getBiasTerms(residue, biasEnergyAndDerivs);
-                    uComp += biasEnergyAndDerivs[pHBiasIndex];
-                }
-                return uComp;
-            default:
-                throw new AssertionError(component.name());
-        }
-    }
-
-    /**
      * Calculate prefactor for scaling the van der Waals based on titration/tautomer state if titrating proton
      */
     public void getVdwPrefactor(int atomIndex, double[] vdwPrefactorAndDerivs) {
@@ -1304,8 +1281,14 @@ public class ExtendedSystem implements Potential {
         return isTitratingHydrogen[atomIndex];
     }
 
-    public boolean isTitratingSulfur(int atomIndex) {
-        return isTitratingSulfur[atomIndex];
+    /**
+     * Questions whether the current atom's polarizability is changing in response to lambda being updated.
+     * Only affects carboxylic oxygen and sulfur.
+     * @param atomIndex
+     * @return
+     */
+    public boolean isTitratingHeavy(int atomIndex) {
+        return isTitratingHeavy[atomIndex];
     }
 
     /**

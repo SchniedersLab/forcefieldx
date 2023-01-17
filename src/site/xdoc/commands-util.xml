@@ -1,68 +1,109 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document
-        xmlns="http://maven.apache.org/XDOC/2.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+  xmlns="http://maven.apache.org/XDOC/2.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
     http://maven.apache.org/xsd/xdoc-2.0.xsd">
-    <properties>
-        <title>Utility Commands</title>
-        <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
-    </properties>
-    <body>
-        <section name="Utility Commands">
-            <p>Utilities to convert between file types or expand from a space group into P1.</p>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Command</th>
-                        <th>Purpose</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>
-                            <a href="commands/biotype.html">Biotype</a>
-                        </td>
-                        <td>Print out a lookup table from PDB atom names to force field atom types.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/cart2Frac.html">Cart2Frac</a>
-                        </td>
-                        <td>Convert Cartesian coordinates to fractional coordinates.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/frac2Cart.html">Frac2Cart</a>
-                        </td>
-                        <td>Convert fractional coordinates to Cartesian coordinates.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/moveIntoUnitCell.html">MoveIntoUnitCell</a>
-                        </td>
-                        <td>Move the center of mass of each molecule into the unit cell.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/SaveAsP1.html">SaveAsP1</a>
-                        </td>
-                        <td>Generate a P1 unit cell from an asymmetric unit.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/SaveAsPDB.html">SaveAsPDB</a>
-                        </td>
-                        <td>Convert input XYZ file to PDB format.</td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <a href="commands/SaveAsXYZ.html">SaveAsXYZ</a>
-                        </td>
-                        <td>Convert input PDB file to XYZ format.</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-    </body>
+  <properties>
+    <title>Utility Commands</title>
+    <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+  </properties>
+  <body>
+    <section name="Utility Commands">
+      <table>
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <a href="commands/Biotype.html">Biotype</a>
+            </td>
+            <td>The Biotype command prints a lookup table from PDB atom names to force field atom
+              types.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/Cart2Frac.html">Cart2Frac</a>
+            </td>
+            <td>The Cart2Frac command converts Cartesian coordinates to fractional coordinates.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/ChainBreaks.html">ChainBreaks</a>
+            </td>
+            <td>The ChainBreaks command fixes chain breaks in a PDB file.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/CIFtoXYZ.html">CIFtoXYZ</a>
+            </td>
+            <td>The CIFtoXYZ command converts a CIF file to an XYZ file including atom types.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/Fasta.html">Fasta</a>
+            </td>
+            <td>The Fasta command outputs a sub-sequence from a FASTA file.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/Frac2Cart.html">Frac2Cart</a>
+            </td>
+            <td>The Frac2Cart command converts fractional coordinates to Cartesian coordinates.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/MoveIntoUnitCell.html">MoveIntoUnitCell</a>
+            </td>
+            <td>The MoveIntoUnitCell command moves the center of mass of each molecule into the unit
+              cell.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/PrepareSpaceGroups.html">PrepareSpaceGroups</a>
+            </td>
+            <td>The PrepareSpaceGroups command creates sub-directories for the selected space
+              groups.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/SaveAsP1.html">SaveAsP1</a>
+            </td>
+            <td>The SaveAsP1 command generates a P1 unit cell from an asymmetric unit.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/SaveAsPDB.html">SaveAsPDB</a>
+            </td>
+            <td>The SaveAsPDB command converts and input XYZ file to PDB format.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/SaveAsXYZ.html">SaveAsXYZ</a>
+            </td>
+            <td>The SaveAsXYZ command converts an input PDB file to XYZ format.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/SaveRotamers.html">SaveRotamers</a>
+            </td>
+            <td>The SaveRotamers command saves out rotamers.</td>
+          </tr>
+          <tr>
+            <td>
+              <a href="commands/XYZtoQE.html">XYZtoQE</a>
+            </td>
+            <td>The XYZtoQE command creates Quantum Espresso input files based on an XYZ file.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </body>
 </document>

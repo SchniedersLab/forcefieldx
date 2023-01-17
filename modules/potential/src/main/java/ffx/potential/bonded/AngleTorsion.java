@@ -211,6 +211,7 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
       } else {
         angleTorsion.setFlipped(true);
       }
+
       return angleTorsion;
     }
     return null;
@@ -289,14 +290,13 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
     var dphi3 = 3.0 * (cosine3 * tsin[2] - sine3 * tcos[2]);
 
     // Set the angle-torsion parameters for the first angle
-    var units = AngleTorsionType.units;
     var c1 = constants[0];
     var c2 = constants[1];
     var c3 = constants[2];
     var angle1 = toDegrees(acos(-vba.dot(vcb) / sqrt(rba2 * rcb2)));
     var dt1 = angle1 - angleType1.angle[0];
     var s1 = c1 * phi1 + c2 * phi2 + c3 * phi3;
-    var e1 = units * dt1 * s1;
+    var e1 = angleTorsionType.angtorunit * dt1 * s1;
 
     // Set the angle-torsion values for the second angle
     var c4 = constants[3];
@@ -305,14 +305,14 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
     var angle2 = toDegrees(acos(-vcb.dot(vdc) / sqrt(rcb2 * rdc2)));
     var dt2 = angle2 - angleType2.angle[0];
     var s2 = c4 * phi1 + c5 * phi2 + c6 * phi3;
-    var e2 = units * dt2 * s2;
+    var e2 = angleTorsionType.angtorunit * dt2 * s2;
     energy = e1 + e2;
     energy = energy * lambda;
     dEdL = energy;
     if (gradient || lambdaTerm) {
       // Compute derivative components for this interaction.
-      var dedphi = units * dt1 * (c1 * dphi1 + c2 * dphi2 + c3 * dphi3);
-      var ddt = units * toDegrees(s1);
+      var dedphi = angleTorsionType.angtorunit * dt1 * (c1 * dphi1 + c2 * dphi2 + c3 * dphi3);
+      var ddt = angleTorsionType.angtorunit * toDegrees(s1);
       var vdt = vt.X(vcb).scaleI(dedphi / (rt2 * rcb));
       var vdu = vcb.X(vu).scaleI(dedphi / (ru2 * rcb));
 
@@ -326,8 +326,8 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
       var gd = vdu.X(vcb);
 
       // Compute derivative components for the 2nd angle.
-      dedphi = units * dt2 * (c4 * dphi1 + c5 * dphi2 + c6 * dphi3);
-      ddt = units * toDegrees(s2);
+      dedphi = angleTorsionType.angtorunit * dt2 * (c4 * dphi1 + c5 * dphi2 + c6 * dphi3);
+      ddt = angleTorsionType.angtorunit * toDegrees(s2);
       vdt = vt.X(vcb).scaleI(dedphi / (rt2 * rcb));
       vdu = vcb.X(vu).scaleI(dedphi / (ru2 * rcb));
 
@@ -361,8 +361,8 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
   }
 
   /**
-   * If the specified atom is not a central atom of <b>this</b> torsion, the atom at the opposite
-   * end is returned. These atoms are said to be 1-4 to each other.
+   * If the specified atom is not a central atom of <b>this</b> torsion, the atom at the opposite end
+   * is returned. These atoms are said to be 1-4 to each other.
    *
    * @param a Atom
    * @return Atom

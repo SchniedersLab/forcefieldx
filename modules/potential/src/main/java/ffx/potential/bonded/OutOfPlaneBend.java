@@ -38,11 +38,6 @@
 package ffx.potential.bonded;
 
 import static ffx.potential.parameters.AngleType.AngleMode.IN_PLANE;
-import static ffx.potential.parameters.OutOfPlaneBendType.cubic;
-import static ffx.potential.parameters.OutOfPlaneBendType.quartic;
-import static ffx.potential.parameters.OutOfPlaneBendType.quintic;
-import static ffx.potential.parameters.OutOfPlaneBendType.sextic;
-import static ffx.potential.parameters.OutOfPlaneBendType.units;
 import static org.apache.commons.math3.util.FastMath.acos;
 import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.min;
@@ -89,6 +84,7 @@ public class OutOfPlaneBend extends BondedTerm {
 
   /**
    * The atom of this out-of-plane bend that was not part of the Angle.
+   *
    * @return Fourth atom.
    */
   public Atom getFourthAtom() {
@@ -97,6 +93,7 @@ public class OutOfPlaneBend extends BondedTerm {
 
   /**
    * Get the triognal atom of this out-of-plane bend (central atom of the Angle).
+   *
    * @return Fourth atom.
    */
   public Atom getTrigonalAtom() {
@@ -105,6 +102,7 @@ public class OutOfPlaneBend extends BondedTerm {
 
   /**
    * Get the first atom of the Angle.
+   *
    * @return Fourth atom.
    */
   public Atom getFirstAngleAtom() {
@@ -113,6 +111,7 @@ public class OutOfPlaneBend extends BondedTerm {
 
   /**
    * Get the first atom of the Angle.
+   *
    * @return Fourth atom.
    */
   public Atom getLastAngleAtom() {
@@ -124,8 +123,8 @@ public class OutOfPlaneBend extends BondedTerm {
    *
    * @param angle the Angle to create an OutOfPlaneBend around.
    * @param forceField the ForceField parameters to use.
-   * @return a new OutOfPlaneBend if the central atom of the angle is trigonal and a force field
-   *     type exists.
+   * @return a new OutOfPlaneBend if the central atom of the angle is trigonal and a force field type
+   *     exists.
    */
   public static OutOfPlaneBend outOfPlaneBendFactory(Angle angle, ForceField forceField) {
     Atom centralAtom = angle.atoms[1];
@@ -133,8 +132,9 @@ public class OutOfPlaneBend extends BondedTerm {
       Atom fourthAtom = angle.getFourthAtomOfTrigonalCenter();
       Atom[] atoms = angle.atoms;
 
-      OutOfPlaneBendType outOfPlaneBendType = forceField.getOutOfPlaneBendType(fourthAtom.getAtomType(),
-         atoms[0].getAtomType(), atoms[1].getAtomType(), atoms[2].getAtomType());
+      OutOfPlaneBendType outOfPlaneBendType = forceField.getOutOfPlaneBendType(
+          fourthAtom.getAtomType(),
+          atoms[0].getAtomType(), atoms[1].getAtomType(), atoms[2].getAtomType());
 
       if (outOfPlaneBendType != null) {
         if (angle.getAngleMode() == IN_PLANE) {
@@ -211,19 +211,18 @@ public class OutOfPlaneBend extends BondedTerm {
       var dv2 = dv * dv;
       var dv3 = dv2 * dv;
       var dv4 = dv2 * dv2;
-      energy =
-          units
-              * outOfPlaneBendType.forceConstant
-              * dv2
-              * (1.0 + cubic * dv + quartic * dv2 + quintic * dv3 + sextic * dv4);
+      energy = outOfPlaneBendType.opBendUnit * outOfPlaneBendType.forceConstant * dv2 * (1.0
+          + outOfPlaneBendType.cubic * dv
+          + outOfPlaneBendType.quartic * dv2
+          + outOfPlaneBendType.pentic * dv3
+          + outOfPlaneBendType.sextic * dv4);
       if (gradient) {
-        var deddt =
-            units * outOfPlaneBendType.forceConstant * dv * toDegrees(
-                    2.0
-                        + 3.0 * cubic * dv
-                        + 4.0 * quartic * dv2
-                        + 5.0 * quintic * dv3
-                        + 6.0 * sextic * dv4);
+        var deddt = outOfPlaneBendType.opBendUnit * outOfPlaneBendType.forceConstant * dv *
+            toDegrees(2.0
+                + 3.0 * outOfPlaneBendType.cubic * dv
+                + 4.0 * outOfPlaneBendType.quartic * dv2
+                + 5.0 * outOfPlaneBendType.pentic * dv3
+                + 6.0 * outOfPlaneBendType.sextic * dv4);
         var dedcos = 0.0;
         if (ee != 0.0) {
           dedcos = -deddt * signum(ee) / sqrt(cc * bkk2);

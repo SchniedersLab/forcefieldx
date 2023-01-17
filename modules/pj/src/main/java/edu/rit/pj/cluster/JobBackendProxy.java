@@ -163,7 +163,12 @@ public class JobBackendProxy
      * {@inheritDoc}
      *
      * Report the content for a previously-requested resource.
+     *
      * @exception IOException Thrown if an I/O error occurred.
+     * @param theJobFrontend a {@link edu.rit.pj.cluster.JobFrontendRef} object
+     * @param resourceName a {@link java.lang.String} object
+     * @param content a {@link edu.rit.util.ByteSequence} object
+     * @throws java.io.IOException if any.
      */
     public void reportResource(JobFrontendRef theJobFrontend,
             String resourceName,

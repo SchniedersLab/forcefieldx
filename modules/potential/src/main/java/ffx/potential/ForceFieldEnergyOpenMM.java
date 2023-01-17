@@ -276,7 +276,7 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_create;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_destroy;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_Vec3Array_get;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_VerletIntegrator_create;
-import static ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar.GAUSS_DISP;
+import static ffx.potential.nonbonded.GeneralizedKirkwood.NonPolarModel.GAUSS_DISP;
 import static ffx.potential.nonbonded.VanDerWaalsForm.EPSILON_RULE.GEOMETRIC;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_RULE.ARITHMETIC;
 import static ffx.potential.nonbonded.VanDerWaalsForm.RADIUS_SIZE.RADIUS;
@@ -326,10 +326,11 @@ import ffx.potential.bonded.UreyBradley;
 import ffx.potential.extended.ExtendedSystem;
 import ffx.potential.nonbonded.CoordRestraint;
 import ffx.potential.nonbonded.GeneralizedKirkwood;
-import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
+import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolarModel;
 import ffx.potential.nonbonded.NonbondedCutoff;
 import ffx.potential.nonbonded.ParticleMeshEwald;
-import ffx.potential.nonbonded.ParticleMeshEwald.SCFAlgorithm;
+import ffx.potential.nonbonded.pme.Polarization;
+import ffx.potential.nonbonded.pme.SCFAlgorithm;
 import ffx.potential.nonbonded.ReciprocalSpace;
 import ffx.potential.nonbonded.RestrainGroups;
 import ffx.potential.nonbonded.VanDerWaals;
@@ -2286,10 +2287,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       }
 
       String energy;
-      if (bonds[0].bondType.bondFunction == BondFunction.QUARTIC) {
+      BondType bondType = bonds[0].getBondType();
+      if (bondType.bondFunction == BondFunction.QUARTIC) {
         energy = format("k*(d^2 + %.15g*d^3 + %.15g*d^4); d=r-r0",
-            BondType.cubic / OpenMM_NmPerAngstrom,
-            BondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
+            bondType.cubic / OpenMM_NmPerAngstrom,
+            bondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
       } else {
         energy = "k*(d^2); d=r-r0";
       }
@@ -2305,9 +2307,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       for (Bond bond : bonds) {
         int i1 = bond.getAtom(0).getXyzIndex() - 1;
         int i2 = bond.getAtom(1).getXyzIndex() - 1;
-        BondType bondType = bond.bondType;
+        bondType = bond.bondType;
         double r0 = bondType.distance * OpenMM_NmPerAngstrom;
-        double k = kParameterConversion * bondType.forceConstant * BondType.units;
+        double k = kParameterConversion * bondType.forceConstant * bond.bondType.bondUnit;
         OpenMM_DoubleArray_append(parameters, r0);
         OpenMM_DoubleArray_append(parameters, k);
         OpenMM_CustomBondForce_addBond(bondForce, i1, i2, parameters);
@@ -2338,7 +2340,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int i2 = bond.getAtom(1).getXyzIndex() - 1;
         BondType bondType = bond.bondType;
         double r0 = bondType.distance * OpenMM_NmPerAngstrom;
-        double k = kParameterConversion * bondType.forceConstant * BondType.units;
+        double k = kParameterConversion * bondType.forceConstant * bondType.bondUnit;
         OpenMM_DoubleArray_append(parameters, r0);
         OpenMM_DoubleArray_append(parameters, k);
         OpenMM_CustomBondForce_setBondParameters(bondForce, index++, i1, i2, parameters);
@@ -2360,10 +2362,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       }
       boolean rigidHydrogenAngles = forceField.getBoolean("RIGID_HYDROGEN_ANGLES", false);
       String energy;
-      if (angles[0].angleType.angleFunction == AngleFunction.SEXTIC) {
+      AngleType angleType = angles[0].angleType;
+      if (angleType.angleFunction == AngleFunction.SEXTIC) {
         energy = format(
             "k*(d^2 + %.15g*d^3 + %.15g*d^4 + %.15g*d^5 + %.15g*d^6); d=%.15g*theta-theta0",
-            AngleType.cubic, AngleType.quartic, AngleType.quintic, AngleType.sextic, 180.0 / PI);
+            angleType.cubic, angleType.quartic, angleType.pentic, angleType.sextic, 180.0 / PI);
       } else {
         energy = format("k*(d^2); d=%.15g*theta-theta0", 180.0 / PI);
       }
@@ -2387,7 +2390,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           int i2 = angle.getAtom(1).getXyzIndex() - 1;
           int i3 = angle.getAtom(2).getXyzIndex() - 1;
           double theta0 = angle.angleType.angle[angle.nh];
-          double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
+          double k = OpenMM_KJPerKcal * angle.angleType.angleUnit * angle.angleType.forceConstant;
           if (angleMode == AngleMode.IN_PLANE) {
             // This is a place-holder Angle, in case the In-Plane Angle is swtiched to a
             // Normal Angle during in the udpateAngleForce.
@@ -2429,7 +2432,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           int i2 = angle.getAtom(1).getXyzIndex() - 1;
           int i3 = angle.getAtom(2).getXyzIndex() - 1;
           double theta0 = angle.angleType.angle[angle.nh];
-          double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
+          double k = OpenMM_KJPerKcal * angle.angleType.angleUnit * angle.angleType.forceConstant;
           if (angleMode == AngleMode.IN_PLANE) {
             // Zero the force constant for In-Plane Angles.
             k = 0.0;
@@ -2455,6 +2458,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return;
       }
 
+      AngleType angleType = angles[0].angleType;
       String energy = format(
           "k*(d^2 + %.15g*d^3 + %.15g*d^4 + %.15g*d^5 + %.15g*d^6); d=theta-theta0; "
               + "theta = %.15g*pointangle(x1, y1, z1, projx, projy, projz, x3, y3, z3); "
@@ -2465,7 +2469,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
               + "px = (d1y*d2z-d1z*d2y); py = (d1z*d2x-d1x*d2z); pz = (d1x*d2y-d1y*d2x); "
               + "d1x = x1-x4; d1y = y1-y4; d1z = z1-z4; "
               + "d2x = x3-x4; d2y = y3-y4; d2z = z3-z4",
-          AngleType.cubic, AngleType.quartic, AngleType.quintic, AngleType.sextic, 180.0 / PI);
+          angleType.cubic, angleType.quartic, angleType.pentic, angleType.sextic, 180.0 / PI);
       inPlaneAngleForce = OpenMM_CustomCompoundBondForce_create(4, energy);
       OpenMM_CustomCompoundBondForce_addPerBondParameter(inPlaneAngleForce, "theta0");
       OpenMM_CustomCompoundBondForce_addPerBondParameter(inPlaneAngleForce, "k");
@@ -2481,7 +2485,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           continue;
         } else {
           double theta0 = angle.angleType.angle[angle.nh];
-          double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
+          double k = OpenMM_KJPerKcal * angle.angleType.angleUnit * angle.angleType.forceConstant;
           int i1 = angle.getAtom(0).getXyzIndex() - 1;
           int i2 = angle.getAtom(1).getXyzIndex() - 1;
           int i3 = angle.getAtom(2).getXyzIndex() - 1;
@@ -2538,7 +2542,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           continue;
         } else {
           double theta0 = angle.angleType.angle[angle.nh];
-          double k = OpenMM_KJPerKcal * AngleType.units * angle.angleType.forceConstant;
+          double k = OpenMM_KJPerKcal * angle.angleType.angleUnit * angle.angleType.forceConstant;
           int i1 = angle.getAtom(0).getXyzIndex() - 1;
           int i2 = angle.getAtom(1).getXyzIndex() - 1;
           int i3 = angle.getAtom(2).getXyzIndex() - 1;
@@ -2587,8 +2591,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       }
 
       ureyBradleyForce = OpenMM_HarmonicBondForce_create();
-      double kParameterConversion =
-          UreyBradleyType.units * OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
+      double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
 
       for (UreyBradley ureyBradley : ureyBradleys) {
         int i1 = ureyBradley.getAtom(0).getXyzIndex() - 1;
@@ -2597,7 +2600,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         double length = ureyBradleyType.distance * OpenMM_NmPerAngstrom;
         // The implementation of UreyBradley in FFX & Tinker: k x^2
         // The implementation of Harmonic Bond Force in OpenMM:  k x^2 / 2
-        double k = 2.0 * ureyBradleyType.forceConstant * kParameterConversion;
+        double k =
+            2.0 * ureyBradleyType.forceConstant * ureyBradleyType.ureyUnit * kParameterConversion;
         OpenMM_HarmonicBondForce_addBond(ureyBradleyForce, i1, i2, length, k);
       }
 
@@ -2615,8 +2619,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return;
       }
 
-      double kParameterConversion =
-          UreyBradleyType.units * OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
+      double kParameterConversion = OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
 
       int index = 0;
       for (UreyBradley ureyBradley : ureyBradleys) {
@@ -2626,7 +2629,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         double length = ureyBradleyType.distance * OpenMM_NmPerAngstrom;
         // The implementation of UreyBradley in FFX & Tinker: k x^2
         // The implementation of Harmonic Bond Force in OpenMM:  k x^2 / 2
-        double k = 2.0 * ureyBradleyType.forceConstant * kParameterConversion;
+        double k =
+            2.0 * ureyBradleyType.forceConstant * ureyBradleyType.ureyUnit * kParameterConversion;
         OpenMM_HarmonicBondForce_setBondParameters(ureyBradleyForce, index++, i1, i2, length, k);
       }
 
@@ -2643,6 +2647,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         return;
       }
 
+      OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBends[0].outOfPlaneBendType;
       String energy = format(
           "k*(theta^2 + %.15g*theta^3 + %.15g*theta^4 + %.15g*theta^5 + %.15g*theta^6); "
               + "theta = %.15g*pointangle(x2, y2, z2, x4, y4, z4, projx, projy, projz); "
@@ -2653,8 +2658,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
               + "px = (d1y*d2z-d1z*d2y); py = (d1z*d2x-d1x*d2z); pz = (d1x*d2y-d1y*d2x); "
               + "d1x = x1-x4; d1y = y1-y4; d1z = z1-z4; "
               + "d2x = x3-x4; d2y = y3-y4; d2z = z3-z4",
-          OutOfPlaneBendType.cubic, OutOfPlaneBendType.quartic, OutOfPlaneBendType.quintic,
-          OutOfPlaneBendType.sextic, 180.0 / PI);
+          outOfPlaneBendType.cubic, outOfPlaneBendType.quartic, outOfPlaneBendType.pentic,
+          outOfPlaneBendType.sextic, 180.0 / PI);
       outOfPlaneBendForce = OpenMM_CustomCompoundBondForce_create(4, energy);
       OpenMM_CustomCompoundBondForce_addPerBondParameter(outOfPlaneBendForce, "k");
       OpenMM_Force_setName(outOfPlaneBendForce, "OutOfPlaneBend");
@@ -2662,12 +2667,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       PointerByReference particles = OpenMM_IntArray_create(0);
       PointerByReference parameters = OpenMM_DoubleArray_create(0);
       for (OutOfPlaneBend outOfPlaneBend : outOfPlaneBends) {
-        OutOfPlaneBendType outOfPlaneBendType = outOfPlaneBend.outOfPlaneBendType;
+        outOfPlaneBendType = outOfPlaneBend.outOfPlaneBendType;
         int i1 = outOfPlaneBend.getAtom(0).getXyzIndex() - 1;
         int i2 = outOfPlaneBend.getAtom(1).getXyzIndex() - 1;
         int i3 = outOfPlaneBend.getAtom(2).getXyzIndex() - 1;
         int i4 = outOfPlaneBend.getAtom(3).getXyzIndex() - 1;
-        double k = OpenMM_KJPerKcal * outOfPlaneBendType.forceConstant * OutOfPlaneBendType.units;
+        double k =
+            OpenMM_KJPerKcal * outOfPlaneBendType.forceConstant * outOfPlaneBendType.opBendUnit;
         OpenMM_IntArray_append(particles, i1);
         OpenMM_IntArray_append(particles, i2);
         OpenMM_IntArray_append(particles, i3);
@@ -2702,7 +2708,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int i2 = outOfPlaneBend.getAtom(1).getXyzIndex() - 1;
         int i3 = outOfPlaneBend.getAtom(2).getXyzIndex() - 1;
         int i4 = outOfPlaneBend.getAtom(3).getXyzIndex() - 1;
-        double k = OpenMM_KJPerKcal * outOfPlaneBendType.forceConstant * OutOfPlaneBendType.units;
+        double k =
+            OpenMM_KJPerKcal * outOfPlaneBendType.forceConstant * outOfPlaneBendType.opBendUnit;
         OpenMM_IntArray_append(particles, i1);
         OpenMM_IntArray_append(particles, i2);
         OpenMM_IntArray_append(particles, i3);
@@ -2833,7 +2840,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         for (int j = 0; j < nTerms; j++) {
           OpenMM_PeriodicTorsionForce_addTorsion(torsionForce, a1, a2, a3, a4, j + 1,
               torsionType.phase[j] * OpenMM_RadiansPerDegree,
-              OpenMM_KJPerKcal * torsion.units * torsionType.amplitude[j]);
+              OpenMM_KJPerKcal * torsionType.torsionUnit * torsionType.amplitude[j]);
         }
         // Enforce 6-fold torsions since TorsionType instances can have different lengths
         // when side-chain protonation changes.
@@ -2870,7 +2877,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int a4 = torsion.getAtom(3).getXyzIndex() - 1;
         for (int j = 0; j < nTerms; j++) {
           double forceConstant =
-              OpenMM_KJPerKcal * torsion.units * torsionType.amplitude[j] * lambdaTorsion;
+              OpenMM_KJPerKcal * torsionType.torsionUnit * torsionType.amplitude[j] * lambdaTorsion;
           OpenMM_PeriodicTorsionForce_setTorsionParameters(torsionForce, index++, a1, a2, a3, a4,
               j + 1, torsionType.phase[j] * OpenMM_RadiansPerDegree, forceConstant);
         }
@@ -2914,7 +2921,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             improperTorsionType.periodicity,
             improperTorsionType.phase * OpenMM_RadiansPerDegree,
             OpenMM_KJPerKcal
-                * improperTorsion.units
+                * improperTorsion.improperType.impTorUnit
                 * improperTorsion.scaleFactor
                 * improperTorsionType.k);
       }
@@ -2944,8 +2951,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int a3 = improperTorsion.getAtom(2).getXyzIndex() - 1;
         int a4 = improperTorsion.getAtom(3).getXyzIndex() - 1;
         ImproperTorsionType improperTorsionType = improperTorsion.improperType;
-        double forceConstant = OpenMM_KJPerKcal * improperTorsion.units * improperTorsion.scaleFactor
-            * improperTorsionType.k * lambdaTorsion;
+        double forceConstant =
+            OpenMM_KJPerKcal * improperTorsion.improperType.impTorUnit * improperTorsion.scaleFactor
+                * improperTorsionType.k * lambdaTorsion;
         OpenMM_PeriodicTorsionForce_setTorsionParameters(improperTorsionForce, i, a1, a2, a3, a4,
             improperTorsionType.periodicity, improperTorsionType.phase * OpenMM_RadiansPerDegree,
             forceConstant);
@@ -2986,7 +2994,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int a5 = piOrbitalTorsion.getAtom(4).getXyzIndex() - 1;
         int a6 = piOrbitalTorsion.getAtom(5).getXyzIndex() - 1;
         PiOrbitalTorsionType type = piOrbitalTorsion.piOrbitalTorsionType;
-        double k = OpenMM_KJPerKcal * type.forceConstant * PiOrbitalTorsionType.units;
+        double k =
+            OpenMM_KJPerKcal * type.forceConstant * piOrbitalTorsion.piOrbitalTorsionType.piTorsUnit;
         OpenMM_IntArray_append(particles, a1);
         OpenMM_IntArray_append(particles, a2);
         OpenMM_IntArray_append(particles, a3);
@@ -3026,7 +3035,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         int a5 = piOrbitalTorsion.getAtom(4).getXyzIndex() - 1;
         int a6 = piOrbitalTorsion.getAtom(5).getXyzIndex() - 1;
         PiOrbitalTorsionType type = piOrbitalTorsion.piOrbitalTorsionType;
-        double k = OpenMM_KJPerKcal * type.forceConstant * PiOrbitalTorsionType.units;
+        double k =
+            OpenMM_KJPerKcal * type.forceConstant * piOrbitalTorsion.piOrbitalTorsionType.piTorsUnit;
         OpenMM_IntArray_append(particles, a1);
         OpenMM_IntArray_append(particles, a2);
         OpenMM_IntArray_append(particles, a3);
@@ -3890,8 +3900,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       }
 
       double sTens = 0.0;
-      if (gk.getNonPolarModel() == NonPolar.BORN_SOLV
-          || gk.getNonPolarModel() == NonPolar.BORN_CAV_DISP) {
+      if (gk.getNonPolarModel() == NonPolarModel.BORN_SOLV
+          || gk.getNonPolarModel() == NonPolarModel.BORN_CAV_DISP) {
         sTens = gk.getSurfaceTension();
         sTens *= OpenMM_KJPerKcal;
         sTens *= 100.0; // 100 square Angstroms per square nanometer.
@@ -3997,8 +4007,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       boolean nea = gk.getNativeEnvironmentApproximation();
 
       double sTens = 0.0;
-      if (gk.getNonPolarModel() == NonPolar.BORN_SOLV
-          || gk.getNonPolarModel() == NonPolar.BORN_CAV_DISP) {
+      if (gk.getNonPolarModel() == NonPolarModel.BORN_SOLV
+          || gk.getNonPolarModel() == NonPolarModel.BORN_CAV_DISP) {
         sTens = gk.getSurfaceTension();
         sTens *= OpenMM_KJPerKcal;
         sTens *= 100.0; // 100 square Angstroms per square nanometer.
@@ -4233,19 +4243,19 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       double polarScale = 1.0;
       SCFAlgorithm scfAlgorithm = null;
 
-      if (pme.getPolarizationType() != ParticleMeshEwald.Polarization.MUTUAL) {
+      if (pme.getPolarizationType() != Polarization.MUTUAL) {
         OpenMM_AmoebaMultipoleForce_setPolarizationType(
             amoebaMultipoleForce, OpenMM_AmoebaMultipoleForce_Direct);
-        if (pme.getPolarizationType() == ParticleMeshEwald.Polarization.NONE) {
+        if (pme.getPolarizationType() == Polarization.NONE) {
           polarScale = 0.0;
         }
       } else {
         String algorithm = forceField.getString("SCF_ALGORITHM", "CG");
         try {
           algorithm = algorithm.replaceAll("-", "_").toUpperCase();
-          scfAlgorithm = ParticleMeshEwald.SCFAlgorithm.valueOf(algorithm);
+          scfAlgorithm = SCFAlgorithm.valueOf(algorithm);
         } catch (Exception e) {
-          scfAlgorithm = ParticleMeshEwald.SCFAlgorithm.CG;
+          scfAlgorithm = SCFAlgorithm.CG;
         }
 
         switch (scfAlgorithm) {
@@ -4461,7 +4471,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         addGeneralizedKirkwoodForce();
       }
 
-      if (scfAlgorithm == ParticleMeshEwald.SCFAlgorithm.EPT) {
+      if (scfAlgorithm == SCFAlgorithm.EPT) {
         logger.info("   Using extrapolated perturbation theory for polarization energy.");
       }
     }
@@ -4479,7 +4489,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
 
       double polarScale = 1.0;
-      if (pme.getPolarizationType() == ParticleMeshEwald.Polarization.NONE) {
+      if (pme.getPolarizationType() == Polarization.NONE) {
         polarScale = 0.0;
       }
 
@@ -4608,10 +4618,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         tanhRescale = 1;
       }
       double[] betas = gk.getTanhBetas();
-      OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling(amoebaGeneralizedKirkwoodForce,
-          tanhRescale);
-      OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhParameters(amoebaGeneralizedKirkwoodForce,
-          betas[0], betas[1], betas[2]);
+      OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhRescaling(amoebaGeneralizedKirkwoodForce, tanhRescale);
+      OpenMM_AmoebaGeneralizedKirkwoodForce_setTanhParameters(amoebaGeneralizedKirkwoodForce, betas[0], betas[1], betas[2]);
 
       double[] baseRadius = gk.getBaseRadii();
       if (usePerfectRadii) {
@@ -4644,7 +4652,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       OpenMM_AmoebaGeneralizedKirkwoodForce_setProbeRadius(
           amoebaGeneralizedKirkwoodForce, gk.getProbeRadius() * OpenMM_NmPerAngstrom);
 
-      NonPolar nonpolar = gk.getNonPolarModel();
+      NonPolarModel nonpolar = gk.getNonPolarModel();
       switch (nonpolar) {
         case BORN_SOLV:
         case BORN_CAV_DISP:
@@ -5049,7 +5057,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       // OpenMM's HarmonicBondForce class uses k, not 1/2*k as does FFX.
       double kParameterConversion =
-          BondType.units * 2.0 * OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
+          2.0 * OpenMM_KJPerKcal / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom);
 
       // Map from bond functional forms to the restraint-bonds using that functional form.
       Map<BondType.BondFunction, PointerByReference> restraintForces = new HashMap<>();
@@ -5068,16 +5076,13 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
             OpenMM_CustomBondForce_addPerBondParameter(theForce, "fb");
           }
 
-          // Wholly untested code.
           switch (bondFunction) {
             case QUARTIC:
             case FLAT_BOTTOM_QUARTIC:
               OpenMM_CustomBondForce_addGlobalParameter(
-                  theForce, "cubic", BondType.cubic / OpenMM_NmPerAngstrom);
+                  theForce, "cubic", bondType.cubic / OpenMM_NmPerAngstrom);
               OpenMM_CustomBondForce_addGlobalParameter(
-                  theForce,
-                  "quartic",
-                  BondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
+                  theForce, "quartic", bondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
               break;
             default:
               break;
@@ -5088,7 +5093,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           restraintForces.put(bondFunction, theForce);
         }
 
-        double forceConst = bondType.forceConstant * kParameterConversion;
+        double forceConst = bondType.forceConstant * bondType.bondUnit * kParameterConversion;
         double equilDist = bondType.distance * OpenMM_NmPerAngstrom;
         Atom[] ats = restraintBond.getAtomArray();
         int at1 = ats[0].getXyzIndex() - 1;
@@ -5104,8 +5109,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_DoubleArray_destroy(bondParams);
       }
 
-      logger.log(
-          Level.INFO,
+      logger.log(Level.INFO,
           format("  Restraint bonds force \t%6d\t%d", restraintBonds.size(), forceGroup));
     }
 

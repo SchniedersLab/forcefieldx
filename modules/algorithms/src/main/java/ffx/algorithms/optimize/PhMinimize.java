@@ -138,7 +138,8 @@ public class PhMinimize implements OptimizationListener, Terminatable {
    * @param molecularAssembly a {@link MolecularAssembly} object.
    * @param algorithmListener a {@link AlgorithmListener} object.
    */
-  public PhMinimize(MolecularAssembly molecularAssembly, AlgorithmListener algorithmListener, ExtendedSystem esvSystem) {
+  public PhMinimize(MolecularAssembly molecularAssembly, AlgorithmListener algorithmListener,
+      ExtendedSystem esvSystem) {
     this.molecularAssembly = molecularAssembly;
     this.algorithmListener = algorithmListener;
     this.esvSystem = esvSystem;
@@ -294,7 +295,7 @@ public class PhMinimize implements OptimizationListener, Terminatable {
     switch (status) {
       case 0:
         logger.info(format("\n Optimization achieved convergence criteria: %8.5f", rmsGradient));
-        for(Atom atom : molecularAssembly.getAtomList()){
+        for (Atom atom : molecularAssembly.getAtomList()) {
           int atomIndex = atom.getIndex() - 1;
           atom.setOccupancy(esvSystem.getTitrationLambda(atomIndex));
           atom.setTempFactor(esvSystem.getTautomerLambda(atomIndex));
@@ -321,6 +322,7 @@ public class PhMinimize implements OptimizationListener, Terminatable {
   @Override
   public boolean optimizationUpdate(
       int iteration,
+      int nBFGS,
       int functionEvaluations,
       double rmsGradient,
       double rmsCoordinateChange,
@@ -336,7 +338,11 @@ public class PhMinimize implements OptimizationListener, Terminatable {
     this.energy = energy;
 
     if (iteration == 0) {
-      logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n");
+      if (nBFGS > 0) {
+        logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n");
+      } else {
+        logger.info("\n Steepest Decent Optimization: \n");
+      }
       logger.info(" Cycle       Energy      G RMS    Delta E   Delta X    Angle  Evals     Time\n");
     }
     if (lineSearchResult == null) {

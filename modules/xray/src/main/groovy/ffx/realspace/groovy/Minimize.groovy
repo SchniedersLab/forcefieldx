@@ -59,7 +59,7 @@ import static ffx.utilities.TinkerUtils.version
  * <br>
  * ffxc realspace.Minimize [options] &lt;filename [file2...]&gt;
  */
-@Command(description = " Minimization on a Real Space target.", name = "ffxc realspace.Minimize")
+@Command(description = " Minimization on a Real Space target.", name = "realspace.Minimize")
 class Minimize extends AlgorithmsScript {
 
   @Mixin
@@ -129,8 +129,9 @@ class Minimize extends AlgorithmsScript {
     RefinementMinimize refinementMinimize = new RefinementMinimize(realspaceData,
         realSpaceOptions.refinementMode)
 
-    double eps = minimizeOptions.eps
-    int maxiter = minimizeOptions.iterations
+    int nBFGS = minimizeOptions.getNBFGS()
+    double eps = minimizeOptions.getEps()
+    int maxiter = minimizeOptions.getIterations()
     if (eps < 0.0) {
       eps = 1.0
     }
@@ -143,7 +144,7 @@ class Minimize extends AlgorithmsScript {
       logger.info(String.format("\n RMS gradient convergence criteria: %8.5f", eps))
     }
 
-    refinementMinimize.minimize(eps, maxiter)
+    refinementMinimize.minimize(nBFGS, eps, maxiter)
 
     // Final target function.
     algorithmFunctions.energy(activeAssembly)

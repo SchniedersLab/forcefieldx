@@ -52,9 +52,9 @@ import picocli.CommandLine.Parameters
  * <br>
  * Usage:
  * <br>
- * ffxc CoordShakeEnergy &lt;filename&gt;
+ * ffxc test.CoordShakeEnergy &lt;filename&gt;
  */
-@Command(description = " Compute the energy after shaking coordinates.", name = "ffxc CoordShakeEnergy")
+@Command(description = " Compute the energy after shaking coordinates.", name = "test.CoordShakeEnergy")
 class CoordShakeEnergy extends PotentialScript {
 
   /**

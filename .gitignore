@@ -37,3 +37,12 @@ bin/build.properties
 modules/ffx-all/dependency-reduced-pom.xml
 /archiveTesting/
 /amoebabio18_cphmd.prm
+
+python/__pycache__
+
+bin/native-image
+bin/reports
+bin/META-INF
+
+src/site/asciidoc/commands
+src/site/asciidoc/keywords

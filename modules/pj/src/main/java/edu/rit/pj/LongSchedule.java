@@ -122,7 +122,7 @@ public abstract class LongSchedule
      *
      * @param theChunkSize Chunk size, &gt;= 1.
      * @return Dynamic schedule object.
-     * @throws IllegalArgumentException (unchecked exception) Thrown if
+     * @throws java.lang.IllegalArgumentException (unchecked exception) Thrown if
      *                                  <code>theChunkSize</code> &lt; 1.
      */
     public static LongSchedule dynamic(long theChunkSize) {
@@ -157,7 +157,7 @@ public abstract class LongSchedule
      *
      * @param theChunkSize Minimum chunk size, &gt;= 1.
      * @return Self-guided schedule object.
-     * @throws IllegalArgumentException (unchecked exception) Thrown if
+     * @throws java.lang.IllegalArgumentException (unchecked exception) Thrown if
      *                                  <code>theChunkSize</code> &lt; 1.
      */
     public static LongSchedule guided(long theChunkSize) {
@@ -176,7 +176,7 @@ public abstract class LongSchedule
      * </PRE>
      *
      * @return Schedule object.
-     * @throws IllegalArgumentException (unchecked exception) Thrown if the
+     * @throws java.lang.IllegalArgumentException (unchecked exception) Thrown if the
      *                                  <code>"pj.schedule"</code> property value cannot be parsed.
      */
     public static LongSchedule runtime() {
@@ -198,7 +198,7 @@ public abstract class LongSchedule
      * @param defaultSchedule Schedule to use if the <code>"pj.schedule"</code>
      *                        Java property is not specified.
      * @return Schedule object.
-     * @throws IllegalArgumentException (unchecked exception) Thrown if the
+     * @throws java.lang.IllegalArgumentException (unchecked exception) Thrown if the
      *                                  <code>"pj.schedule"</code> property value cannot be parsed.
      */
     public static LongSchedule runtime(LongSchedule defaultSchedule) {
@@ -234,9 +234,9 @@ public abstract class LongSchedule
      *
      * @param s String to parse.
      * @return Schedule object.
-     * @throws NullPointerException     (unchecked exception) Thrown if
+     * @throws java.lang.NullPointerException     (unchecked exception) Thrown if
      *                                  <code>s</code> is null.
-     * @throws IllegalArgumentException (unchecked exception) Thrown if
+     * @throws java.lang.IllegalArgumentException (unchecked exception) Thrown if
      *                                  <code>s</code> is not one of the above.
      */
     public static LongSchedule parse(String s) {

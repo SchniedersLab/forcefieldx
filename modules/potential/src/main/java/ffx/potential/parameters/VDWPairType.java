@@ -37,11 +37,13 @@
 // ******************************************************************************
 package ffx.potential.parameters;
 
+import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
 import ffx.potential.parameters.ForceField.ForceFieldType;
+import ffx.utilities.FFXKeyword;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.logging.Level;
@@ -53,6 +55,11 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@FFXKeyword(name = "vdwpr", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = "[2 integers and 2 reals] "
+        + "Provides the values for the vdw parameters for a single special heteroatomic pair of atoms. "
+        + "The integer modifiers give the pair of atom class numbers for which special vdw parameters are to be defined. "
+        + "The two real number modifiers give the values of the minimum energy contact distance in Angstroms and the well depth at the minimum distance in kcal/mole.")
 public final class VDWPairType extends BaseType implements Comparator<String> {
 
   private static final Logger logger = Logger.getLogger(VDWPairType.class.getName());

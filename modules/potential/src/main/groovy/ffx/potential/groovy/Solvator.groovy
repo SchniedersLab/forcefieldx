@@ -70,7 +70,7 @@ import static java.lang.String.format
  * <br>
  * ffxc Solvator [options] &lt;filename&gt;
  */
-@Command(description = " Solvate a system.", name = "ffxc Solvator")
+@Command(description = " Creates a box of solvent around a solute.", name = "Solvator")
 class Solvator extends PotentialScript {
 
   /**

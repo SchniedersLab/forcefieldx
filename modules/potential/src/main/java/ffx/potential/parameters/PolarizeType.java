@@ -38,6 +38,7 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.POLARIZE;
+import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -46,6 +47,7 @@ import static org.apache.commons.math3.util.FastMath.pow;
 
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
+import ffx.utilities.FFXKeyword;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -62,6 +64,18 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@FFXKeyword(name = "polarize", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = "[1 integer, up to 3 reals and up to 8 integers] "
+        + "Provides the values for a single atomic dipole polarizability parameter. "
+        + "The initial integer modifier, if positive, gives the atom type number for which a polarizability parameter is to be defined. "
+        + "If the first integer modifier is negative, then the parameter value to follow applies only to the specific atom whose atom number is the negative of the modifier. "
+        + "The first real number modifier gives the value of the dipole polarizability in Ang^3. "
+        + "The second real number modifier, if present, gives the Thole damping value. "
+        + "A Thole value of zero implies undamped polarization. "
+        // + "If this modifier is not present, then charge penetration values will be used for polarization damping, as in the HIPPO polarization model. "
+        + "The third real modifier, if present, gives a direct field damping value only used with the AMOEBA+ polarization model. "
+        + "The remaining integer modifiers list the atom type numbers of atoms directly bonded to the current atom and which will be considered to be part of the current atom’s polarization group. "
+        + "If the parameter is for a specific atom, then the integers defining the polarization group are ignored.")
 public final class PolarizeType extends BaseType implements Comparator<String> {
 
   private static final Logger logger = Logger.getLogger(PolarizeType.class.getName());
@@ -88,7 +102,8 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
    * @param thole The Thole dampling constant.
    * @param polarizationGroup The atom types in the polarization group.
    */
-  public PolarizeType(int atomType, double polarizability, double thole, double ddp, int[] polarizationGroup) {
+  public PolarizeType(int atomType, double polarizability, double thole, double ddp,
+      int[] polarizationGroup) {
     super(POLARIZE, Integer.toString(atomType));
     this.type = atomType;
     this.thole = thole;
@@ -344,6 +359,36 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
   }
 
   /**
+   * A recursive method that checks all atoms bonded to the seed atom for inclusion in the
+   * polarization group. The method is called on each newly found group member.
+   *
+   * @param group XYZ indeces of current group members.
+   * @param seed The bonds of the seed atom are queried for inclusion in the group.
+   */
+  public static void growGroup(List<Integer> group, Atom seed) {
+    List<Bond> bonds = seed.getBonds();
+    for (Bond bond : bonds) {
+      Atom atom = bond.get1_2(seed);
+      int tj = atom.getType();
+      boolean added = false;
+      PolarizeType polarizeType = seed.getPolarizeType();
+      for (int type : polarizeType.polarizationGroup) {
+        if (type == tj) {
+          Integer index = atom.getIndex() - 1;
+          if (!group.contains(index)) {
+            group.add(index);
+            added = true;
+            break;
+          }
+        }
+      }
+      if (added) {
+        growGroup(group, atom);
+      }
+    }
+  }
+
+  /**
    * add
    *
    * @param key a int.
@@ -372,8 +417,12 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
   /** {@inheritDoc} */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     PolarizeType polarizeType = (PolarizeType) o;
     return polarizeType.type == this.type;
   }

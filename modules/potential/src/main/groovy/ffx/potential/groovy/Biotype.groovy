@@ -51,7 +51,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc Biotype &lt;filename&gt;
  */
-@Command(description = " Print out Biotype records for the atoms in an XYZ file.", name = "ffxc Biotype")
+@Command(description = " Print out Biotype records for the atoms in an XYZ file.", name = "Biotype")
 class Biotype extends PotentialScript {
 
   /**

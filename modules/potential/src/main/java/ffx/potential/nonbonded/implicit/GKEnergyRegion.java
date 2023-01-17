@@ -49,7 +49,6 @@ import static ffx.potential.parameters.MultipoleType.t100;
 import static ffx.potential.parameters.MultipoleType.t101;
 import static ffx.potential.parameters.MultipoleType.t110;
 import static ffx.potential.parameters.MultipoleType.t200;
-import static ffx.utilities.Constants.DEFAULT_ELECTRIC;
 import static ffx.utilities.Constants.dWater;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.exp;
@@ -69,9 +68,8 @@ import ffx.numerics.multipole.GKEnergyQI;
 import ffx.numerics.multipole.PolarizableMultipole;
 import ffx.numerics.multipole.QIFrame;
 import ffx.potential.bonded.Atom;
-import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolar;
-import ffx.potential.nonbonded.ParticleMeshEwald;
-import ffx.potential.nonbonded.ParticleMeshEwald.Polarization;
+import ffx.potential.nonbonded.GeneralizedKirkwood.NonPolarModel;
+import ffx.potential.nonbonded.pme.Polarization;
 import ffx.potential.parameters.ForceField;
 import java.util.List;
 import java.util.logging.Level;
@@ -90,10 +88,13 @@ public class GKEnergyRegion extends ParallelRegion {
   protected static final double oneThird = 1.0 / 3.0;
   /** Conversion from electron**2/Ang to kcal/mole. */
   protected final double electric;
-  protected final double epsilon;
   /** Treatment of polarization. */
   protected final Polarization polarization;
-  protected final NonPolar nonPolar;
+  protected final NonPolarModel nonPolarModel;
+
+  private final double soluteDielectric;
+  private final double solventDielectric;
+
   /**
    * Dielectric offset from:
    *
@@ -153,31 +154,26 @@ public class GKEnergyRegion extends ParallelRegion {
   /** Cross-term energy for each atom */
   protected AtomicDoubleArray crossEnergy;
 
-  public GKEnergyRegion(
-      int nt,
-      ForceField forceField,
-      Polarization polarization,
-      NonPolar nonPolar,
-      double surfaceTension,
-      double probe) {
 
-    // Set the conversion from electron**2/Ang to kcal/mole
-    electric = forceField.getDouble("ELECTRIC", DEFAULT_ELECTRIC);
-    gkc = forceField.getDouble("GKC", DEFAULT_GKC);
+  public GKEnergyRegion(
+      int nt, Polarization polarization, NonPolarModel nonPolarModel,
+      double surfaceTension, double probe, double electric,
+      double soluteDieletric, double solventDieletric, double gkc, boolean gkQI) {
 
     // Set the Kirkwood multipolar reaction field constants.
-    epsilon = forceField.getDouble("GK_EPSILON", dWater);
-    double soluteEpsilon = forceField.getDouble("GK_SOLUTE_EPSILON", 1.0);
-    fc = cn(0, soluteEpsilon, epsilon);
-    fd = cn(1, soluteEpsilon, epsilon);
-    fq = cn(2, soluteEpsilon, epsilon);
+    this.soluteDielectric = soluteDieletric;
+    this.solventDielectric = solventDieletric;
+    fc = cn(0, soluteDieletric, solventDieletric);
+    fd = cn(1, soluteDieletric, solventDieletric);
+    fq = cn(2, soluteDieletric, solventDieletric);
+    this.gkc = gkc;
 
     this.polarization = polarization;
-    this.nonPolar = nonPolar;
+    this.nonPolarModel = nonPolarModel;
     this.surfaceTension = surfaceTension;
     this.probe = probe;
-
-    boolean gkQI = forceField.getBoolean("GK_QI", false);
+    // Set the conversion from electron**2/Ang to kcal/mole
+    this.electric = electric;
 
     gkEnergyLoop = new IntegerForLoop[nt];
     for (int i = 0; i < nt; i++) {
@@ -436,7 +432,7 @@ public class GKEnergyRegion extends ParallelRegion {
              ri is the base atomic radius the atom.
              rb is Born radius of the atom.
             */
-            switch (nonPolar) {
+            switch (nonPolarModel) {
               case BORN_SOLV:
               case BORN_CAV_DISP:
                 double r = baseRadius[i] + dOffset + probe;
@@ -626,7 +622,7 @@ public class GKEnergyRegion extends ParallelRegion {
         // Compute the permanent GK energy gradient.
         permanentEnergyGradient(i, k);
 
-        if (polarization != ParticleMeshEwald.Polarization.NONE) {
+        if (polarization != Polarization.NONE) {
           // Compute the induced GK energy gradient.
           polarizationEnergyGradient(i, k);
         }
@@ -902,7 +898,7 @@ public class GKEnergyRegion extends ParallelRegion {
 
       // Electrostatic solvation energy of the permanent multipoles in the
       // GK reaction potential of the induced dipoles.
-      if (polarization != ParticleMeshEwald.Polarization.NONE) {
+      if (polarization != Polarization.NONE) {
         double esymi =
             -uxi * (dxk * gux[2] + dyk * guy[2] + dzk * guz[2])
                 - uyi * (dxk * gux[3] + dyk * guy[3] + dzk * guz[3])
@@ -2523,7 +2519,7 @@ public class GKEnergyRegion extends ParallelRegion {
       double dsumdri = dsymdr + 0.5 * (dwipdr + dwkpdr);
       double dbi = 0.5 * rbk * dsumdri;
       double dbk = 0.5 * rbi * dsumdri;
-      if (polarization == ParticleMeshEwald.Polarization.MUTUAL) {
+      if (polarization == Polarization.MUTUAL) {
         dpdx -=
             0.5
                 * (dxi * (pxk * gux[5] + pyk * gux[6] + pzk * gux[7])
@@ -2737,6 +2733,7 @@ public class GKEnergyRegion extends ParallelRegion {
     private double gkEnergy;
     private double gkPermanentEnergy;
     private double gkPolarizationEnergy;
+
     // Extra padding to avert cache interference.
     private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
     private long pad8, pad9, pada, padb, padc, padd, pade, padf;
@@ -2756,7 +2753,7 @@ public class GKEnergyRegion extends ParallelRegion {
       gkPolarizationEnergy = 0.0;
       count = 0;
       threadID = getThreadIndex();
-      gkEnergyQI = new GKEnergyQI(gkc, epsilon, gradient);
+      gkEnergyQI = new GKEnergyQI(soluteDielectric, solventDielectric, gkc, gradient);
     }
 
     @Override
@@ -2815,7 +2812,7 @@ public class GKEnergyRegion extends ParallelRegion {
              ri is the base atomic radius the atom.
              rb is Born radius of the atom.
             */
-            switch (nonPolar) {
+            switch (nonPolarModel) {
               case BORN_SOLV:
               case BORN_CAV_DISP:
                 double r = baseRadius[i] + dOffset + probe;
@@ -2892,7 +2889,8 @@ public class GKEnergyRegion extends ParallelRegion {
             if (polarization == Polarization.DIRECT) {
               mutualMask = 0.0;
             }
-            double ep = electric * selfScale * gkEnergyQI.polarizationEnergyAndGradient(mI, mK, mutualMask,
+            double ep =
+                electric * selfScale * gkEnergyQI.polarizationEnergyAndGradient(mI, mK, mutualMask,
                     gradI, torqueI, torqueK);
             gkPolarizationEnergy += ep;
             eik += ep;
@@ -2925,7 +2923,8 @@ public class GKEnergyRegion extends ParallelRegion {
               mutualMask = 0.0;
             }
             // Sum the GK polarization interaction energy.
-            double ep = electric * gkEnergyQI.polarizationEnergyAndGradient(mI, mK, mutualMask, gI, tI, tK);
+            double ep =
+                electric * gkEnergyQI.polarizationEnergyAndGradient(mI, mK, mutualMask, gI, tI, tK);
             eik += ep;
             gkPolarizationEnergy += ep;
             for (int j = 0; j < 3; j++) {

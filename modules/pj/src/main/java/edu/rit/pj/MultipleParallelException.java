@@ -113,11 +113,11 @@ public class MultipleParallelException
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Print this throwable and its backtrace to the specified print stream. The
      * stack traces of this multiple parallel exception itself and of all the
      * wrapped exceptions in the exception map are printed.
-     *
-     * @param s Print stream to use for output.
      */
     public void printStackTrace(PrintStream s) {
         synchronized (s) {

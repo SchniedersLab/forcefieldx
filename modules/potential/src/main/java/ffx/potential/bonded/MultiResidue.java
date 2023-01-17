@@ -171,12 +171,6 @@ public class MultiResidue extends Residue {
 
   /** {@inheritDoc} */
   @Override
-  public void constructValenceTerms() {
-    activeResidue.constructValenceTerms();
-  }
-
-  /** {@inheritDoc} */
-  @Override
   public Joint createJoint(Bond bond, MSGroup group1, MSGroup group2, ForceField forceField) {
     return activeResidue.createJoint(bond, group1, group2, forceField);
   }

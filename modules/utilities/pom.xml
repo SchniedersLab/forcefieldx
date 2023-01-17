@@ -17,6 +17,40 @@
   <description>
     The Utilities module includes support for byte-swapping, keywords and Hybrid36.
   </description>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>${antrun.version}</version>
+        <executions>
+          <execution>
+            <id>compile</id>
+            <phase>compile</phase>
+            <configuration>
+              <target>
+                <taskdef name="groovyc"
+                  classname="org.codehaus.groovy.ant.Groovyc">
+                  <classpath refid="maven.compile.classpath"/>
+                </taskdef>
+                <mkdir dir="${project.build.outputDirectory}"/>
+                <groovyc destdir="${project.build.outputDirectory}"
+                  srcdir="${basedir}/src/main/groovy/"
+                  listfiles="false" verbose="true"
+                  targetBytecode="${targetVersion}"
+                  stacktrace="true" parameters="true">
+                  <classpath refid="maven.compile.classpath"/>
+                </groovyc>
+                <!-- configscript="${basedir}/src/config/config.groovy" -->
+              </target>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
   <dependencies>
     <dependency>
       <groupId>info.picocli</groupId>
@@ -31,7 +65,7 @@
       <version>${commons-configuration2.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.commons</groupId>
+      <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <type>jar</type>
       <version>${commons-io.version}</version>
@@ -51,6 +85,11 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>pj</artifactId>
       <version>${pj.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>antlr4</artifactId>
+      <version>${antlr4.version}</version>
     </dependency>
   </dependencies>
 </project>

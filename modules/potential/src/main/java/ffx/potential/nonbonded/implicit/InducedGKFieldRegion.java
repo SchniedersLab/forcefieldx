@@ -94,14 +94,19 @@ public class InducedGKFieldRegion extends ParallelRegion {
   /** Atomic GK field chain-rule array. */
   private AtomicDoubleArray3D sharedGKFieldCR;
 
-  public InducedGKFieldRegion(int nt, ForceField forceField) {
+  /**
+   * Compute the GK field due to induced dipoles.
+   *
+   * @param nt  Number of threads.
+   * @param soluteDieletric The solute dielectric.
+   * @param solventDieletric The solvent dielectric.
+   * @param gkc The generalizing function parameter.
+   */
+  public InducedGKFieldRegion(int nt, double soluteDieletric, double solventDieletric, double gkc) {
     // Set the Kirkwood multipolar reaction field constants.
-    double epsilon = forceField.getDouble("GK_EPSILON", dWater);
-    double soluteEpsilon = forceField.getDouble("GK_SOLUTE_EPSILON", 1.0);
-    fd = cn(1, soluteEpsilon, epsilon);
-    fq = cn(2, soluteEpsilon, epsilon);
-    gkc = forceField.getDouble("GKC", DEFAULT_GKC);
-
+    fd = cn(1, soluteDieletric, solventDieletric);
+    fq = cn(2, soluteDieletric, solventDieletric);
+    this.gkc = gkc;
     inducedGKFieldLoop = new InducedGKFieldLoop[nt];
     for (int i = 0; i < nt; i++) {
       inducedGKFieldLoop[i] = new InducedGKFieldLoop();

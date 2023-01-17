@@ -60,7 +60,7 @@ import static org.apache.commons.io.FilenameUtils.getBaseName
  * <br>
  * ffxc xray.ComputeFc [options] &lt;filename [file2...]&gt;
  */
-@Command(description = " Write out computed structure factors.", name = "ffxc ComputeFc")
+@Command(description = " Write out computed structure factors.", name = "xray.ComputeFc")
 class ComputeFc extends AlgorithmsScript {
 
   @Mixin

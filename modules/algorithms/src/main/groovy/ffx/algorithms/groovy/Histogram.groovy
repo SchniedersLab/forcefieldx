@@ -54,7 +54,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc Histogram [options] &lt;filename&gt;
  */
-@Command(description = " Evaluate the Orthogonal Space Histogram.", name = "ffxc Histogram")
+@Command(description = " Evaluate the Orthogonal Space Histogram.", name = "Histogram")
 class Histogram extends AlgorithmsScript {
 
   /**

@@ -50,7 +50,7 @@ import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.getBaseName
 import static org.apache.commons.io.FilenameUtils.getFullPath
 
-@Command(description = " Create a Feature Map for a given protein structure", name = "ffxc FeatureMap")
+@Command(description = " Create a Feature Map for a given protein structure", name = "FeatureMap")
 class FeatureMap extends PotentialScript {
 
     @Option(names = ["-d", "--delimiter"], paramLabel = ",",

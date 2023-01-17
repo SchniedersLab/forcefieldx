@@ -36,6 +36,90 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${exec.version}</version>
+        <executions>
+          <execution>
+            <id>generateManPages</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <includeProjectDependencies>true</includeProjectDependencies>
+          <includePluginDependencies>true</includePluginDependencies>
+          <mainClass>picocli.codegen.docgen.manpage.ManPageGenerator</mainClass>
+          <arguments>
+            <argument>--outdir=${project.parent.basedir}/src/site/asciidoc/commands</argument>
+            <argument>ffx.potential.groovy.Biotype</argument>
+            <argument>ffx.potential.groovy.Cart2Frac</argument>
+            <argument>ffx.potential.groovy.ChainBreaks</argument>
+            <argument>ffx.potential.groovy.CIFtoXYZ</argument>
+            <argument>ffx.potential.groovy.Density</argument>
+            <argument>ffx.potential.groovy.Energy</argument>
+            <argument>ffx.potential.groovy.Fasta</argument>
+            <argument>ffx.potential.groovy.FeatureMap</argument>
+            <argument>ffx.potential.groovy.Frac2Cart</argument>
+            <argument>ffx.potential.groovy.MoveIntoUnitCell</argument>
+            <argument>ffx.potential.groovy.PrepareSpaceGroups</argument>
+            <argument>ffx.potential.groovy.SaveAsP1</argument>
+            <argument>ffx.potential.groovy.SaveAsPDB</argument>
+            <argument>ffx.potential.groovy.SaveAsXYZ</argument>
+            <argument>ffx.potential.groovy.SaveRotamers</argument>
+            <argument>ffx.potential.groovy.Solvator</argument>
+            <argument>ffx.potential.groovy.Timer</argument>
+            <argument>ffx.potential.groovy.Volume</argument>
+            <argument>ffx.potential.groovy.VolumeArc</argument>
+            <argument>ffx.potential.groovy.XYZtoQE</argument>
+            <argument>ffx.potential.groovy.test.CoordShakeEnergy</argument>
+            <argument>ffx.potential.groovy.test.EnergyOpenMM</argument>
+            <argument>ffx.potential.groovy.test.Gradient</argument>
+            <argument>ffx.potential.groovy.test.LambdaGradient</argument>
+            <argument>ffx.potential.groovy.test.MultiRes</argument>
+            <argument>ffx.potential.groovy.test.MultiTopTimer</argument>
+            <argument>ffx.potential.groovy.test.PhEnergy</argument>
+            <argument>ffx.potential.groovy.test.PhGradient</argument>
+            <argument>ffx.potential.groovy.test.PrmToProperty</argument>
+            <argument>ffx.potential.groovy.test.ReorderAtoms</argument>
+            <argument>ffx.potential.groovy.test.RGNtoPDB</argument>
+            <argument>ffx.potential.groovy.test.SaveAsConstantPhPDB</argument>
+          </arguments>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>info.picocli</groupId>
+            <artifactId>picocli-codegen</artifactId>
+            <version>${picocli.version}</version>
+            <type>jar</type>
+          </dependency>
+        </dependencies>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <compilerArg>-Xlint:all</compilerArg>
+            <compilerArg>-AkeywordDir=${project.parent.basedir}/src/site/asciidoc/keywords</compilerArg>
+          </compilerArgs>
+          <debug>true</debug>
+          <optimize>true</optimize>
+          <source>${compileVersion}</source>
+          <target>${targetVersion}</target>
+          <useIncrementalCompilation>true</useIncrementalCompilation>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>edu.uiowa.eng.ffx</groupId>
+              <artifactId>utilities</artifactId>
+              <version>${project.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+        <version>${compiler.version}</version>
+      </plugin>
     </plugins>
     <resources>
       <resource>
@@ -95,7 +179,7 @@
     </dependency>
     <dependency>
       <artifactId>commons-io</artifactId>
-      <groupId>org.apache.commons</groupId>
+      <groupId>commons-io</groupId>
       <type>jar</type>
       <version>${commons-io.version}</version>
     </dependency>
@@ -148,6 +232,11 @@
       <version>${jopenmm.version}</version>
     </dependency>
     <dependency>
+      <artifactId>jtorchani-fat</artifactId>
+      <groupId>edu.uiowa.jtorchani</groupId>
+      <version>1.0.0-beta</version>
+    </dependency>
+    <dependency>
       <artifactId>guava</artifactId>
       <groupId>com.google.guava</groupId>
       <version>${guava.version}</version>
@@ -163,9 +252,9 @@
       <version>${clustering.version}</version>
     </dependency>
     <dependency>
-      <artifactId>ciftools-java-jdk8</artifactId>
+      <artifactId>ciftools-java</artifactId>
       <groupId>org.rcsb</groupId>
-      <version>${ciftools-java-jdk8.version}</version>
+      <version>${ciftools-java.version}</version>
     </dependency>
     <dependency>
       <artifactId>cdk-data</artifactId>

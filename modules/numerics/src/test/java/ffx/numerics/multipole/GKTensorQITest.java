@@ -99,7 +99,7 @@ public class GKTensorQITest {
     qiFrame.rotatePolarizableMultipole(mI);
     qiFrame.rotatePolarizableMultipole(mK);
 
-    GKEnergyQI gkEnergyQI = new GKEnergyQI(gc, Es, false);
+    GKEnergyQI gkEnergyQI = new GKEnergyQI(Eh, Es, gc, false);
     gkEnergyQI.initPotential(rWater, length2(rWater), bornI, bornK);
     var e = gkEnergyQI.multipoleEnergy(mI, mK);
     assertEquals("GK Permanent Energy", watPermEnergy, e, tolerance);
@@ -118,7 +118,7 @@ public class GKTensorQITest {
     double[] torqueK = new double[3];
 
     double r2 = length2(rWater);
-    GKEnergyQI gkEnergyQI = new GKEnergyQI(gc, Es, true);
+    GKEnergyQI gkEnergyQI = new GKEnergyQI(Eh, Es, gc, true);
     gkEnergyQI.initPotential(rWater, r2, bornI, bornK);
     var e = gkEnergyQI.multipoleEnergyAndGradient(mI, mK, gradI, torqueI, torqueK);
 
@@ -151,7 +151,7 @@ public class GKTensorQITest {
     qiFrame.rotatePolarizableMultipole(mI);
     qiFrame.rotatePolarizableMultipole(mK);
 
-    GKEnergyQI gkEnergyQI = new GKEnergyQI(gc, Es, false);
+    GKEnergyQI gkEnergyQI = new GKEnergyQI(Eh, Es, gc, false);
     gkEnergyQI.initPotential(rWater, length2(rWater), bornI, bornK);
     var e = gkEnergyQI.polarizationEnergy(mI, mK);
 
@@ -167,7 +167,7 @@ public class GKTensorQITest {
     qiFrame.rotatePolarizableMultipole(mI);
     qiFrame.rotatePolarizableMultipole(mK);
 
-    GKEnergyQI gkEnergyQI = new GKEnergyQI(gc, Es, false);
+    GKEnergyQI gkEnergyQI = new GKEnergyQI(Eh, Es, gc, false);
     gkEnergyQI.initPotential(rWater, length2(rWater), bornI, bornK);
     var e = gkEnergyQI.polarizationEnergy(mI, mK);
 
@@ -188,7 +188,7 @@ public class GKTensorQITest {
     double[] torqueK = new double[3];
 
     double r2 = length2(rWater);
-    GKEnergyQI gkEnergyQI = new GKEnergyQI(gc, Es, true);
+    GKEnergyQI gkEnergyQI = new GKEnergyQI(Eh, Es, gc, true);
     gkEnergyQI.initPotential(rWater, r2, bornI, bornK);
     var e = gkEnergyQI.polarizationEnergyAndGradient(mI, mK, 1.0, gradI, torqueI, torqueK);
 
@@ -226,7 +226,7 @@ public class GKTensorQITest {
     double[] torqueK = new double[3];
 
     double r2 = length2(rWater);
-    GKEnergyQI gkEnergyQI = new GKEnergyQI(gc, Es, true);
+    GKEnergyQI gkEnergyQI = new GKEnergyQI(Eh, Es, gc,true);
     gkEnergyQI.initPotential(rWater, r2, bornI, bornK);
     var e = gkEnergyQI.polarizationEnergyAndGradient(mI, mK, 0.0, gradI, torqueI, torqueK);
 

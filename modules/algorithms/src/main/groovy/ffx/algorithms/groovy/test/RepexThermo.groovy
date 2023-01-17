@@ -57,14 +57,13 @@ import picocli.CommandLine.Mixin
 import java.util.stream.Collectors
 
 /**
- * The Thermodynamics script uses the Transition-Tempered Orthogonal Space Random Walk
- * algorithm to estimate a free energy.
+ * The RepexThermo command uses the Orthogonal Space Tempering with histogram replica exchange to estimate a free energy difference.
  * <br>
  * Usage:
  * <br>
- * ffxc Thermodynamics [options] &lt;filename&gt [file2...];
+ * ffxc test.RepexThermo [options] &lt;filename&gt [file2...];
  */
-@Command(description = " Use Orthogonal Space Tempering with histogram replica exchange to estimate a free energy.", name = "ffxc RepexThermo")
+@Command(description = " Use Orthogonal Space Tempering with histogram replica exchange to estimate a free energy difference.", name = "test.RepexThermo")
 class RepexThermo extends Thermodynamics {
 
   @Mixin

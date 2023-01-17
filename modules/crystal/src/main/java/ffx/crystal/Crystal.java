@@ -44,6 +44,7 @@ import static ffx.numerics.math.MatrixMath.mat3SymVec6;
 import static ffx.numerics.math.MatrixMath.transpose3;
 import static ffx.numerics.math.ScalarMath.mod;
 import static ffx.utilities.Constants.AVOGADRO;
+import static ffx.utilities.KeywordGroup.UnitCellAndSpaceGroup;
 import static ffx.utilities.StringUtils.padRight;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -59,6 +60,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
+import ffx.utilities.FFXKeyword;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -81,14 +83,49 @@ import org.apache.commons.math3.linear.RealMatrix;
 public class Crystal {
 
   private static final Logger logger = Logger.getLogger(Crystal.class.getName());
+
+  /** The space group of the crystal. */
+  @FFXKeyword(name = "SpaceGroup", keywordGroup = UnitCellAndSpaceGroup, clazz = SpaceGroup.class, defaultValue = "P1",
+      description = "This keyword selects the space group to be used in manipulation of crystal unit cells and asymmetric units.")
+  public final SpaceGroup spaceGroup;
+
+  /** Length of the cell edge in the direction of the <b>a</b> basis vector. */
+  @FFXKeyword(name = "a-axis", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "None",
+      description = "Sets the value of the a-axis length for a crystal unit cell, or, equivalently, the X-axis length for a periodic box (Angstroms).")
+  public double a;
+
+  /** Length of the cell edge in the direction of the <b>b</b> basis vector. */
+  @FFXKeyword(name = "b-axis", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "A-Axis",
+      description = "Sets the value of the b-axis length for a crystal unit cell, or, equivalently, the Y-axis length for a periodic box (Angstroms).")
+  public double b;
+
+  /** Length of the cell edge in the direction of the <b>c</b> basis vector. */
+  @FFXKeyword(name = "c-axis", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "A-Axis",
+      description = "Sets the value of the c-axis length for a crystal unit cell, or, equivalently, the Z-axis length for a periodic box (Angstroms).")
+  public double c;
+
+  /** The interaxial lattice angle between <b>b</b> and <b>c</b>. */
+  @FFXKeyword(name = "alpha", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "90.0",
+      description = "Sets the value of the α-angle of a crystal unit cell, i.e., the angle between the b-axis and c-axis of a unit cell, or, equivalently, the angle between the Y-axis and Z-axis of a periodic box.")
+  public double alpha;
+
+  /** The interaxial lattice angle between <b>a</b> and <b>c</b>. */
+  @FFXKeyword(name = "beta", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "Alpha",
+      description = "Sets the value of the β-angle of a crystal unit cell, i.e., the angle between the a-axis and c-axis of a unit cell, or, equivalently, the angle between the X-axis and Z-axis of a periodic box.")
+  public double beta;
+
+  /** The interaxial lattice angle between <b>a</b> and <b>b</b>. */
+  @FFXKeyword(name = "gamma", keywordGroup = UnitCellAndSpaceGroup, defaultValue = "Alpha",
+      description = "Sets the value of the γ-angle of a crystal unit cell, i.e., the angle between the a-axis and b-axis of a unit cell, or, equivalently, the angle between the X-axis and Y-axis of a periodic box.")
+  public double gamma;
+
   /** A mask equal to 0 for X-coordinates. */
   private static final int XX = 0;
   /** A mask equal to 1 for Y-coordinates. */
   private static final int YY = 1;
   /** A mask equal to 2 for Z-coordinates. */
   private static final int ZZ = 2;
-  /** The space group of the crystal. */
-  public final SpaceGroup spaceGroup;
+
   /**
    * Matrix to convert from fractional to Cartesian coordinates.
    * <br>a-axis vector is the first row of A^(-1).
@@ -102,23 +139,11 @@ public class Crystal {
   private final CrystalSystem crystalSystem;
   /** Reference to the space group lattice system. */
   private final LatticeSystem latticeSystem;
-  /** Length of the cell edge in the direction of the <b>a</b> basis vector. */
-  public double a;
-  /** Length of the cell edge in the direction of the <b>b</b> basis vector. */
-  public double b;
-  /** Length of the cell edge in the direction of the <b>c</b> basis vector. */
-  public double c;
-  /** The interaxial lattice angle between <b>b</b> and <b>c</b>. */
-  public double alpha;
-  /** The interaxial lattice angle between <b>a</b> and <b>c</b>. */
-  public double beta;
-  /** The interaxial lattice angle between <b>a</b> and <b>b</b>. */
-  public double gamma;
   /** The crystal unit cell volume. */
   public double volume;
   /** Matrix to convert from Cartesian to fractional coordinates. */
   public double[][] A;
-  /** Entries in the A array. */
+  /** Entry in the A matrix. */
   public double A00, A01, A02, A10, A11, A12, A20, A21, A22;
   /** Interfacial radius in the direction of the A-axis. */
   public double interfacialRadiusA;
@@ -134,7 +159,7 @@ public class Crystal {
    * Number of bulk solvent B-factor components.
    */
   public int scaleN;
-  /** Entries in the Ai array. */
+  /** Entry in the Ai matrix. */
   public double Ai00, Ai01, Ai02, Ai10, Ai11, Ai12, Ai20, Ai21, Ai22;
   /** Change in the volume with respect to a. */
   public double dVdA;
@@ -1015,7 +1040,7 @@ public class Crystal {
   }
 
   /**
-   * Is this a finite system - ie. one unit cell in isolation?
+   * Is this a finite system without periodic boundary conditions.
    *
    * @param aperiodic a boolean.
    */

@@ -80,7 +80,9 @@ public class StringOutputStream extends PrintStream {
     this.charset = charset;
   }
 
-  /** close. */
+  /**
+   * close.
+   */
   public void close() {
     super.close();
     try {

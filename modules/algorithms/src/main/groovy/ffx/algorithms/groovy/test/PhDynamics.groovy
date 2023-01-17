@@ -59,13 +59,13 @@ import picocli.CommandLine.Parameters
 import static java.lang.String.format
 
 /**
- * The PhDynamics script implements constant pH molecular dynamics .
+ * The PhDynamics command implements constant pH molecular dynamics.
  * <br>
  * Usage:
  * <br>
- * ffxc PhDynamics [options] &lt;filename&gt; [file2...]
+ * ffxc test.PhDynamics [options] &lt;filename&gt; [file2...]
  */
-@Command(description = " Run constant pH dynamics on a system.", name = "ffxc PHDynamics")
+@Command(description = " Run constant pH dynamics on a system.", name = "test.PhDynamics")
 class PhDynamics extends AlgorithmsScript {
 
   @Mixin
@@ -187,7 +187,6 @@ class PhDynamics extends AlgorithmsScript {
 
     // Initialize and attach extended system first.
     ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, pH, esv)
-    esvSystem.setConstantPh(pH)
     potential.attachExtendedSystem(esvSystem)
 
     int numESVs = esvSystem.extendedResidueList.size()
@@ -210,7 +209,7 @@ class PhDynamics extends AlgorithmsScript {
     molecularDynamics =
             dynamicsOptions.getDynamics(writeOutOptions, potential, activeAssembly, algorithmListener)
 
-    molecularDynamics.attachExtendedSystem(esvSystem, dynamicsOptions.report)
+    molecularDynamics.attachExtendedSystem(esvSystem, titrReport)
 
     // Restart File
     File dyn = new File(FilenameUtils.removeExtension(filename) + ".dyn")

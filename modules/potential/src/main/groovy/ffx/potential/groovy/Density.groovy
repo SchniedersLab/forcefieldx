@@ -35,7 +35,6 @@
 // exception statement from your version.
 //
 //******************************************************************************
-
 package ffx.potential.groovy
 
 import ffx.crystal.Crystal
@@ -58,7 +57,7 @@ import static java.lang.String.format
  * <br>
  * ffxc Density [options] &lt;filename&gt;
  */
-@Command(description = " Calculates system density.", name = "ffxc Density")
+@Command(description = " Calculate the mean system density for single topology systems.", name = "Density")
 class Density extends PotentialScript {
 
   @Mixin

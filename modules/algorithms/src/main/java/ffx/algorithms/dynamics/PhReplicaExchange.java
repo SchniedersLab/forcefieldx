@@ -95,7 +95,7 @@ public class PhReplicaExchange implements Terminatable {
   private final int[] pH2Rank, rank2Ph, pHAcceptedCount, pHTrialCount;
   /** Rank of this process. */
   private final int rank, nReplicas;
-  private boolean done = false, restart, terminate = false;
+  private boolean done = false, restart, terminate = false, backupNeeded = false;
   private final double[] myParameters, pHScale;
   private double[] x;
   private final double pH, temp;
@@ -105,7 +105,7 @@ public class PhReplicaExchange implements Terminatable {
    * pHReplicaExchange constructor.
    *
    * @param molecularDynamics a {@link MolecularDynamics} object.
-   * @param pH pH = pKa <-- will be changed from this initial value
+   * @param pH pH = pKa will be changed from this initial value
    * @param extendedSystem extended system attached to this process
    * @param pHLadder range of pH's that replicas are created for
    * @param temp temperature of replica
@@ -119,7 +119,7 @@ public class PhReplicaExchange implements Terminatable {
    * OpenMM cycled pHReplicaExchange constructor.
    *
    * @param molecularDynamics a {@link MolecularDynamics} object.
-   * @param pH pH = pKa <-- will be changed from this initial value
+   * @param pH pH = pKa will be changed from this initial value
    * @param extendedSystem extended system attached to this process
    * @param pHLadder range of pH's that replicas are created for
    * @param temp temperature of replica
@@ -218,7 +218,7 @@ public class PhReplicaExchange implements Terminatable {
       readPhScale = new ArrayList<>();
 
       // Read normal restarts
-      boolean backupNeeded = false;
+      backupNeeded = false;
       if(checkForRestartFiles(parent, esv.getName()) && checkForRestartFiles(parent, dyn.getName())){
         for(int i = 0; i < nReplicas; i++){
           File checkThisESV = new File(parent.getAbsolutePath() + File.separator + i + File.separator + esv.getName());
@@ -425,7 +425,7 @@ public class PhReplicaExchange implements Terminatable {
       }
 
       // Set backups in case job is killed at bad time
-      if(i == 0){
+      if(i == 0 || backupNeeded){
         replica.writeRestart();
       }
       copyToBackups();

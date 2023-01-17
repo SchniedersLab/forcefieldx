@@ -58,16 +58,14 @@ import picocli.CommandLine.Parameters
 import static java.lang.String.format
 
 /**
- * The SortArc script sort Monte Carlo archive files by lambda value. It presently assumes
- * that the number of files composing the first end of the window equals the number of files
- * composing the other end.
+ * The SortXPH command unwinds .ARC files from CpHMD runs.
  * <br>
  * Usage:
  * <br>
- * ffxc SortArc [options] &lt;structures1&gt &lt;structures2&gt;
+ * ffxc test.SortXPH [options] &lt;structures1&gt &lt;structures2&gt;
  */
 
-@Command(description = " Unwind .ARC files for nWindows", name = "ffxc SortXPH")
+@Command(description = " The SortXPH command unwinds .ARC files from CpHMD runs.", name = "test.SortXPH")
 class SortXPH extends AlgorithmsScript {
 
     @Mixin

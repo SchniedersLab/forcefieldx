@@ -131,7 +131,7 @@ import java.util.Scanner;
  * <TABLE BORDER=1>
  * <CAPTION>Parallel Java Job Scheduler configuration file</CAPTION>
  * <TR>
- * <TD VALIGN="top">
+ * <TD style="vertical-align:top;">
  * <PRE> # Parallel Java Job Scheduler configuration file
  * # Frontend node: tardis.cs.rit.edu
  * # Backend nodes: dr00-dr09

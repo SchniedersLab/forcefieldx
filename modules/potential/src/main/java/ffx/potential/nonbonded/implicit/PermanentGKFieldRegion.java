@@ -105,16 +105,20 @@ public class PermanentGKFieldRegion extends ParallelRegion {
   /** Atomic GK field array. */
   private AtomicDoubleArray3D sharedGKField;
 
-  public PermanentGKFieldRegion(int nt, ForceField forceField) {
+  /**
+   * Compute the GK field due to the permanent multipoles.
+   *
+   * @param nt  Number of threads.
+   * @param soluteDieletric The solute dielectric.
+   * @param solventDieletric The solvent dielectric.
+   * @param gkc The generalizing function parameter.
+   */
+  public PermanentGKFieldRegion(int nt, double soluteDieletric, double solventDieletric, double gkc) {
 
-    // Set the Kirkwood multipolar reaction field constants.
-    double epsilon = forceField.getDouble("GK_EPSILON", dWater);
-    double soluteEpsilon = forceField.getDouble("GK_SOLUTE_EPSILON", 1.0);
-    fc = cn(0, soluteEpsilon, epsilon);
-    fd = cn(1, soluteEpsilon, epsilon);
-    fq = cn(2, soluteEpsilon, epsilon);
-
-    gkc = forceField.getDouble("GKC", DEFAULT_GKC);
+    fc = cn(0, soluteDieletric, solventDieletric);
+    fd = cn(1, soluteDieletric, solventDieletric);
+    fq = cn(2, soluteDieletric, solventDieletric);
+    this.gkc = gkc;
 
     permanentGKFieldLoop = new PermanentGKFieldLoop[nt];
     for (int i = 0; i < nt; i++) {

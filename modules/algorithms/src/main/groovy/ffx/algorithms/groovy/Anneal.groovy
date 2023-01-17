@@ -57,7 +57,7 @@ import picocli.CommandLine.Parameters
  * <br>
  * ffxc Anneal [options] &lt;filename&gt;
  */
-@Command(description = " Run simulated annealing on a system.", name = "ffxc Anneal")
+@Command(description = " Run simulated annealing on a system.", name = "Anneal")
 class Anneal extends AlgorithmsScript {
 
   @Mixin

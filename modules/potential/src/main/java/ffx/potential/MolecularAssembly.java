@@ -1148,6 +1148,21 @@ public class MolecularAssembly extends MSGroup {
   }
 
   /**
+   * Construct a boolean orray of flags to indicate atoms treated by a neural network.
+   *
+   * @return The boolean orray of flags to indicate atoms treated by a neural network.
+   */
+  public boolean[] getNeuralNetworkIdentity() {
+    Atom[] atomArray = getAtomArray();
+    int nAtoms = atomArray.length;
+    boolean[] neuralNetwork = new boolean[nAtoms];
+    for (int i = 0; i < nAtoms; i++) {
+      neuralNetwork[i] = atomArray[i].isNeuralNetwork();
+    }
+    return neuralNetwork;
+  }
+
+  /**
    * This method assigns a unique integer to every molecule in the MolecularAssembly beginning at 0.
    * An integer array with these values for each atom is returned.
    *
@@ -1218,12 +1233,12 @@ public class MolecularAssembly extends MSGroup {
   }
 
   /**
-   * This method sets all HETATM molecules, including water and ions, to use the given
-   * chainID and then renumbers the molecules.
-   *
+   * This method sets all HETATM molecules, including water and ions, to use the given chainID and
+   * then renumbers the molecules.
+   * <p>
    * If there is a polymer with the given chainID, then numbering begins after the final ResID.
    * Otherwise numbering begins at 1.
-   *
+   * <p>
    * This is useful for producing consistent PDB file output.
    *
    * @param chainID The Character chainID to use for all HETATM molecules.

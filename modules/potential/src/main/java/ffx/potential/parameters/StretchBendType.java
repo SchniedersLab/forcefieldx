@@ -38,11 +38,14 @@
 package ffx.potential.parameters;
 
 import static ffx.potential.parameters.ForceField.ForceFieldType.STRBND;
+import static ffx.utilities.KeywordGroup.EnergyUnitConversion;
+import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.copyOf;
 import static org.apache.commons.math3.util.FastMath.PI;
 
+import ffx.utilities.FFXKeyword;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -55,10 +58,22 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
+@FFXKeyword(name = "strbnd", clazz = String.class, keywordGroup = PotentialFunctionParameter,
+    description = "[3 integers and 2 reals] "
+        + "Provides the values for a single stretch-bend cross term potential parameter. "
+        + "The integer modifiers give the atom class numbers for the three kinds of atoms involved in the angle which is to be defined. "
+        + "The real number modifiers give the force constant values for the first bond (first two atom classes) with the angle, and the second bond with the angle, respectively. "
+        + "The default units for the stretch-bend force constant are kcal/mole/Ang-radian, but this can be controlled via the strbndunit keyword.")
 public final class StretchBendType extends BaseType implements Comparator<String> {
 
   /** Constant <code>units=PI / 180.0</code> */
-  public static final double units = PI / 180.0;
+  public static final double DEFAULT_STRBND_UNIT = PI / 180.0;
+
+  @FFXKeyword(name = "strbndunit", keywordGroup = EnergyUnitConversion, defaultValue = "(Pi/180)",
+      description =
+          "Sets the scale factor needed to convert the energy value computed by the bond stretching-angle bending cross term potential into units of kcal/mole. "
+              + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  public double strbndunit = DEFAULT_STRBND_UNIT;
 
   private static final Logger logger = Logger.getLogger(StretchBendType.class.getName());
   /** Atom class for this stretch-bend type. */
@@ -188,8 +203,12 @@ public final class StretchBendType extends BaseType implements Comparator<String
   /** {@inheritDoc} */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     StretchBendType stretchBendType = (StretchBendType) o;
     return Arrays.equals(atomClasses, stretchBendType.atomClasses);
   }

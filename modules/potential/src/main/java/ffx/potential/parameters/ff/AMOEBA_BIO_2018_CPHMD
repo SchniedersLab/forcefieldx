@@ -4430,7 +4430,7 @@ polarize     39   0.83700  0.39000     37     40
 polarize     40   0.49600  0.39000     39
 polarize     41   1.33400  0.39000     42
 polarize     42   0.49600  0.39000     41
-polarize     43   1.33400  0.39000     44     48     49
+# polarize     43   1.33400  0.39000     44     48     49
 polarize     44   0.49600  0.39000     43
 # Replaced by values for CpHMD at the end of the file.
 # polarize     45   2.80000  0.39000     46
@@ -8252,7 +8252,7 @@ polarize    501          1.3340     0.3900    502  503
 polarize    502          0.4960     0.3900    501
 polarize    503          1.3340     0.3900    501  504
 polarize    504          0.8370     0.3900    503  505
-polarize    505          0.4960     0.3900    505
+polarize    505          0.4960     0.3900    504
 
 # GLD side-chain has hydrogen on both Oxygen atoms to support tautomers.
 atom        506    8    C     "GLD CB"             6    12.011    4
@@ -8270,7 +8270,7 @@ multipole   157 -158 -158               1.05691 \
                                         0.00000    0.00000 \
                                         0.00000    0.00000    0.00000
 
-# GLH C-Beta Carbon (replaced 160 159 8 in AMOEBA_BIO_2018)
+# GLH C-Beta Hydrogen (replaced 160 159 8 in AMOEBA_BIO_2018)
 multipole   160  159  161               0.09513 \
                                         0.02939    0.05101   -0.04640 \
                                        -0.02414 \
@@ -8283,19 +8283,21 @@ multipole   163 -164 -165               0.90086 \
                                         0.12045 \
                                         0.00000    0.03649 \
                                         0.00000    0.00000   -0.15694
-
 # GLD Multipoles
 multipole    12    8  506               0.08514 \
                                         0.02910    0.00000    0.05267 \
                                         0.04149 \
                                         0.00000   -0.00658 \
                                        -0.00600    0.00000   -0.03491
+# atom        506    8    C     "GLD CB"             6    12.011    4
 multipole   506    8  508              -0.10668 \
                                         0.29642    0.00000    0.28365 \
                                         0.39855 \
                                         0.00000   -0.41154 \
                                         0.04273    0.00000    0.01299
-multipole   507  506    8               0.09513 \
+# atom        507    9    H     "GLD HB"             1     1.008    1
+# Fixed Jan 3 2023 (507 506 8 -> 507 506 508)
+multipole   507  506  508               0.09513 \
                                        -0.05887    0.00000   -0.04640 \
                                        -0.03611 \
                                         0.00000   -0.02016 \
@@ -8305,7 +8307,9 @@ multipole   508  506  510              -0.23637 \
                                        -0.40537 \
                                         0.00000   -0.00346 \
                                        -0.52649    0.00000    0.40883
-multipole   509  508  509               0.10600 \
+# atom        509    9    H     "GLD HG"             1     1.008    1
+# Fixed Jan 3 2023 (509 508 509 -> 509 508 510)
+multipole   509  508  510               0.10600 \
                                        -0.20910    0.00000   -0.08841 \
                                        -0.14892 \
                                         0.00000    0.17218 \
@@ -8375,8 +8379,10 @@ multipole    45   43    8              -0.03264 \
 # For protonated CYS, SG and HG were originally their own polarization group.
 # Here we expand the polarization group to include CB (43) to match the CYD.
 # In principle, the SG multipole should be re-optimized to account for the change in polarization group.
+# The polarization group list removed 48 which was a special type of the CA for CYD
 # As of June 8, 2022, this has not been done.
-polarize     45   2.80000  0.39000     46    43
+polarize     43   1.33400  0.39000     44     45     49
+polarize     45   2.80000  0.39000     43    46
 
 # CYD SG- now uses the default CA multipole (48 replaced with 8 below); the components do not need to be changed.
 multipole     49     43     8          -0.85155 \
@@ -8385,8 +8391,8 @@ multipole     49     43     8          -0.85155 \
                                         0.00000 -1.58110 \
                                        -0.20334  0.00000  3.07320
 
-# Changed the partial charge from (q = -0.08027) by (-0.21433) to below to maintain charge neutrality with new HB multipole definition
-multipole     43     8     49           -0.37333 \
+# Changed the partial charge from (q = -0.08027) by (-0.293) to below to maintain charge neutrality with new HB multipole definition
+multipole     43     8     49           -0.373272 \
                                         0.13313  0.00000  0.28094 \
                                        -0.73267 \
                                         0.00000  0.44660 \

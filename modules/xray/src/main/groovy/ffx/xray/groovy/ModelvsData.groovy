@@ -61,7 +61,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * <br>
  * ffxc xray.ModelvsData [options] &lt;filename [file2...]&gt;
  */
-@Command(description = " Compare the PDB model to the diffraction data.", name = "ffxc ModelvsData")
+@Command(description = " Compare the PDB model to the diffraction data.", name = "xray.ModelvsData")
 class ModelvsData extends AlgorithmsScript {
 
   @Mixin

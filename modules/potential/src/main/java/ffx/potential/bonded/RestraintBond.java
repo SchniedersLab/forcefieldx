@@ -40,7 +40,6 @@ package ffx.potential.bonded;
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.DoubleMath.scale;
 import static ffx.numerics.math.DoubleMath.sub;
-import static ffx.potential.parameters.BondType.units;
 
 import ffx.crystal.Crystal;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
@@ -54,7 +53,6 @@ import java.util.logging.Logger;
  *
  * @author Michael J. Schnieders
  * @since 1.0
- *     <p>TODO: RestraintBond should extend the Bond class.
  */
 public class RestraintBond extends BondedTerm implements LambdaInterface {
 
@@ -74,7 +72,7 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
   private double switchd2UdL2 = 1.0;
   private double dEdL = 0.0;
   private double d2EdL2 = 0.0;
-  private double[][] dEdXdL = new double[2][3];
+  private final double[][] dEdXdL = new double[2][3];
   private Crystal crystal;
 
   /**
@@ -127,8 +125,7 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
    * <p>Evaluate this Bond energy.
    */
   @Override
-  public double energy(
-      boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
 
     double[] a0 = new double[3];
     double[] a1 = new double[3];
@@ -159,11 +156,11 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
     }
 
     double dv2 = dv * dv;
-    double kx2 = units * bondType.forceConstant * dv2;
+    double kx2 = bondType.bondUnit * bondType.forceConstant * dv2;
     energy = switchVal * kx2;
     dEdL = switchdUdL * kx2;
     d2EdL2 = switchd2UdL2 * kx2;
-    double deddt = 2.0 * units * bondType.forceConstant * dv;
+    double deddt = 2.0 * bondType.bondUnit * bondType.forceConstant * dv;
     double de = 0.0;
 
     if (value > 0.0) {

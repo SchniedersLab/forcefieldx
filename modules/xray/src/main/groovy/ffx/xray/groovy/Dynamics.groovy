@@ -62,7 +62,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
  * <br>
  * ffxc xray.Dynamics [options] &lt;filename&gt;
  */
-@Command(description = " Run Dynamics on an X-ray target.", name = "ffxc xray.Dynamics")
+@Command(description = " Run Dynamics on an X-ray target.", name = "xray.Dynamics")
 class Dynamics extends AlgorithmsScript {
 
   @Mixin

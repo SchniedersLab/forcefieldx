@@ -117,7 +117,7 @@ public class Clustering {
    * a dendrogram is printed of the clustered results. A PDB file for the centroid of each cluster is
    * saved.
    *
-   * @param distanceMatrix An ArrayList<double[]> that holds the distance matrix.
+   * @param distanceMatrix An List of double[] entries that holds the distance matrix.
    * @param threshold the distance used to separate clusters.
    * @return Return a list of CentroidClusters.
    */

@@ -48,7 +48,9 @@ package ffx.utilities;
  * @since 1.0
  */
 public class LoggerSevereError extends Error {
-  /** Constructor for LoggerSevereError. */
+  /**
+   * Constructor for LoggerSevereError.
+   */
   public LoggerSevereError() {
     super();
   }
