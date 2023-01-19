@@ -361,7 +361,9 @@ class PhBar extends AlgorithmsScript {
         energy = forceFieldEnergy.energy(x, false)
         current.add(energy)
 
-        logger.info(" Previous: " + previous + "\n Current: " + current + "\n Next: " + next)
+        if(i == current.size()) {
+          logger.info(" Previous: " + previous + "\n Current: " + current + "\n Next: " + next)
+        }
 
         // Write to restart logs
         for (int j = 0; j < 3; j++) {
