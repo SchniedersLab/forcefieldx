@@ -96,8 +96,12 @@ public class CrystalReciprocalSpaceTest {
     ComplexNumber a = refinementData.getFc(hkl.getIndex());
     System.out.println("1 1 4: " + a + " | " + b + " | " + a.divides(b));
 
-    assertEquals("1 1 4 reflection should be correct", -753.4722104328415, a.re(), 0.0001);
-    assertEquals("1 1 4 reflection should be correct", -1012.1341308707798, a.im(), 0.0001);
+    // This uses FFT Factors 2, 3, 4, 5
+    // assertEquals("1 1 4 reflection should be correct", -753.4722104328415, a.re(), 0.0001);
+    // assertEquals("1 1 4 reflection should be correct", -1012.1341308707798, a.im(), 0.0001);
+    // This uses FFT Factors 2, 3, 4, 5, 6, and 7
+    assertEquals("1 1 4 reflection should be correct", -753.5167129023503, a.re(), 0.0001);
+    assertEquals("1 1 4 reflection should be correct", -1012.107931155532, a.im(), 0.0001);
 
     b.re(-70.4582);
     b.im(-486.142);
@@ -105,8 +109,12 @@ public class CrystalReciprocalSpaceTest {
     a = refinementData.getFc(hkl.getIndex());
     System.out.println("2 1 10: " + a + " | " + b + " | " + a.divides(b));
 
-    assertEquals("2 1 10 reflection should be correct", -69.3966088405437, a.re(), 0.0001);
-    assertEquals("2 1 10 reflection should be correct", -412.0147625765327, a.im(), 0.0001);
+    // This uses FFT Factors 2, 3, 4, 5
+    // assertEquals("2 1 10 reflection should be correct", -69.3966088405437, a.re(), 0.0001);
+    // assertEquals("2 1 10 reflection should be correct", -412.0147625765327, a.im(), 0.0001);
+    // This uses FFT Factors 2, 3, 4, 5, 6, and 7
+    assertEquals("2 1 10 reflection should be correct", -69.38705883664473, a.re(), 0.0001);
+    assertEquals("2 1 10 reflection should be correct", -412.01967983851665, a.im(), 0.0001);
   }
 
   @Test
@@ -156,8 +164,12 @@ public class CrystalReciprocalSpaceTest {
     ComplexNumber a = refinementData.getFc(hkl.getIndex());
     System.out.println("1 9 4: " + a + " | " + b + " | " + a.divides(b));
 
-    assertEquals("1 9 4 reflection should be correct", -493.7799429881329, a.re(), 0.0001);
-    assertEquals("1 9 4 reflection should be correct", 460.7022632345927, a.im(), 0.0001);
+    // This uses FFT Factors 2, 3, 4, 5
+    // assertEquals("1 9 4 reflection should be correct", -493.7799429881329, a.re(), 0.0001);
+    // assertEquals("1 9 4 reflection should be correct", 460.7022632345927, a.im(), 0.0001);
+    // This uses FFT Factors 2, 3, 4, 5, 6, and 7
+    assertEquals("1 9 4 reflection should be correct", -493.71908655557087, a.re(), 0.0001);
+    assertEquals("1 9 4 reflection should be correct", 460.7406135181142, a.im(), 0.0001);
 
     b.re(-129.767);
     b.im(-76.9812);
@@ -165,7 +177,12 @@ public class CrystalReciprocalSpaceTest {
     a = refinementData.getFc(hkl.getIndex());
     System.out.println("5 26 8: " + a + " | " + b + " | " + a.divides(b));
 
-    assertEquals("5 26 8 reflection should be correct", -123.05535567943379, a.re(), 0.0001);
-    assertEquals("5 26 8 reflection should be correct", -74.59007322382718, a.im(), 0.0001);
+    // This uses FFT Factors 2, 3, 4, 5
+    // assertEquals("5 26 8 reflection should be correct", -123.05535567943379, a.re(), 0.0001);
+    // assertEquals("5 26 8 reflection should be correct", -74.59007322382718, a.im(), 0.0001);
+    // This uses FFT Factors 2, 3, 4, 5, 6, and 7
+    assertEquals("5 26 8 reflection should be correct", -122.99479244281358, a.re(), 0.0001);
+    assertEquals("5 26 8 reflection should be correct", -74.567914170119, a.im(), 0.0001);
+
   }
 }

@@ -217,7 +217,8 @@ if [ ! -z "$TORNADO_SDK" ] ; then
       
    JLP="${TORNADO_SDK}/lib:$JLP"
 
-   JAVA_FLAGS="-server -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI ${TORNADO_FLAGS} ${PROVIDERS} "
+#   JAVA_FLAGS="-Dtornado.fullDebug=True -Dtornado.debug=True -Dtornado.print.kernel=True -server -XX:+UseParallelGC -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI ${TORNADO_FLAGS} ${PROVIDERS} "
+   JAVA_FLAGS="-server -XX:+UseParallelGC -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI ${TORNADO_FLAGS} ${PROVIDERS} "
 fi 
 
 exec "$JAVACMD" $JAVA_OPTS $JAVA_FLAGS \
