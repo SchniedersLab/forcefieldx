@@ -62,6 +62,11 @@ public class AtomicDoubleArray3D {
   /** Each dimension is stored in its own AtomicDoubleArray. */
   private final AtomicDoubleArray[] atomicDoubleArray;
 
+  private final AtomicDoubleArrayImpl atomicDoubleArrayImpl;
+
+  /** Private ParallelRegion3D for parallel reduction and resets. */
+  private ParallelRegion3D parallelRegion3D = new ParallelRegion3D();
+
   /**
    * Construct an atomic 3D double array of the specified size using the specified implementation.
    *
@@ -85,6 +90,7 @@ public class AtomicDoubleArray3D {
     atomicDoubleArray[0] = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, size);
     atomicDoubleArray[1] = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, size);
     atomicDoubleArray[2] = atomicDoubleArrayFactory(atomicDoubleArrayImpl, nThreads, size);
+    this.atomicDoubleArrayImpl = atomicDoubleArrayImpl;
   }
 
   public AtomicDoubleArray3D(AtomicDoubleArray x, AtomicDoubleArray y, AtomicDoubleArray z) {
@@ -92,6 +98,13 @@ public class AtomicDoubleArray3D {
     atomicDoubleArray[0] = x;
     atomicDoubleArray[1] = y;
     atomicDoubleArray[2] = z;
+    if (x instanceof MultiDoubleArray) {
+      this.atomicDoubleArrayImpl = AtomicDoubleArrayImpl.MULTI;
+    } else if (x instanceof AdderDoubleArray) {
+      this.atomicDoubleArrayImpl = AtomicDoubleArrayImpl.ADDER;
+    } else {
+      this.atomicDoubleArrayImpl = AtomicDoubleArrayImpl.PJ;
+    }
   }
 
   /**
@@ -199,38 +212,38 @@ public class AtomicDoubleArray3D {
    * @param ub a int.
    */
   public void reduce(int lb, int ub) {
-    atomicDoubleArray[0].reduce(lb, ub);
-    atomicDoubleArray[1].reduce(lb, ub);
-    atomicDoubleArray[2].reduce(lb, ub);
+    switch (atomicDoubleArrayImpl) {
+      case PJ:
+      case ADDER:
+      default:
+        // Nothing to do for PJ/Addder.
+        return;
+      case MULTI:
+        atomicDoubleArray[0].reduce(lb, ub);
+        atomicDoubleArray[1].reduce(lb, ub);
+        atomicDoubleArray[2].reduce(lb, ub);
+    }
   }
 
   /**
-   * Perform reduction between the given lower bound (lb) and upper bound (up) if necessary.
+   * Perform a reduction on the entire array.
    *
    * @param parallelTeam ParallelTeam to use.
-   * @param lb a int.
-   * @param ub a int.
    */
-  public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
-
-    try {
-      parallelTeam.execute(
-          new ParallelRegion() {
-            @Override
-            public void run() throws Exception {
-              execute(
-                  lb,
-                  ub,
-                  new IntegerForLoop() {
-                    @Override
-                    public void run(int first, int last) {
-                      reduce(first, last);
-                    }
-                  });
-            }
-          });
-    } catch (Exception e) {
-      logger.log(Level.WARNING, " Exception reducing an AtomicDoubleArray3D", e);
+  public void reduce(ParallelTeam parallelTeam) {
+    switch (atomicDoubleArrayImpl) {
+      case PJ:
+      case ADDER:
+      default:
+        // Nothing to do for PJ/Addder.
+        return;
+      case MULTI:
+        parallelRegion3D.setOperation(Operation.REDUCE);
+        try {
+          parallelTeam.execute(parallelRegion3D);
+        } catch (Exception e) {
+          throw new RuntimeException(e);
+        }
     }
   }
 
@@ -251,31 +264,13 @@ public class AtomicDoubleArray3D {
    * Reset the double array to Zero.
    *
    * @param parallelTeam a ParallelTeam.
-   * @param lb a int.
-   * @param ub a int.
    */
-  public void reset(ParallelTeam parallelTeam, int lb, int ub) {
+  public void reset(ParallelTeam parallelTeam) {
+    parallelRegion3D.setOperation(Operation.RESET);
     try {
-      parallelTeam.execute(
-          new ParallelRegion() {
-            @Override
-            public void run() throws Exception {
-              int nThreads = parallelTeam.getThreadCount();
-              execute(
-                  0,
-                  nThreads - 1,
-                  new IntegerForLoop() {
-                    @Override
-                    public void run(int first, int last) {
-                      for (int i = first; i <= last; i++) {
-                        reset(i, lb, ub);
-                      }
-                    }
-                  });
-            }
-          });
+      parallelTeam.execute(parallelRegion3D);
     } catch (Exception e) {
-      logger.log(Level.WARNING, " Exception resetting an AtomicDoubleArray3D", e);
+      throw new RuntimeException(e);
     }
   }
 
@@ -403,4 +398,66 @@ public class AtomicDoubleArray3D {
     }
     return sb.toString();
   }
+
+  /**
+   * Available parallel operations.
+   */
+  private enum Operation {
+    RESET,
+    REDUCE
+  }
+
+  /**
+   * Private ParallelRegion for parallel reset and reduction operations.
+   */
+  private class ParallelRegion3D extends ParallelRegion {
+
+    private Operation operation;
+    private IntegerForLoop3D[] integerForLoop3D;
+
+    public ParallelRegion3D() {
+      operation = Operation.RESET;
+    }
+
+    public void setOperation(Operation operation) {
+      this.operation = operation;
+    }
+
+    @Override
+    public void start() {
+      int nThreads = getThreadCount();
+      if (integerForLoop3D == null) {
+        integerForLoop3D = new IntegerForLoop3D[nThreads];
+      }
+    }
+
+    @Override
+    public void run() throws Exception {
+      int threadID = getThreadIndex();
+      if (integerForLoop3D[threadID] == null) {
+        integerForLoop3D[threadID] = new IntegerForLoop3D();
+      }
+      int size = atomicDoubleArray[0].size();
+      execute(0, size - 1, integerForLoop3D[threadID]);
+    }
+    
+    // Loops for parallel reset and reduction operations.
+    private class IntegerForLoop3D extends IntegerForLoop {
+
+      @Override
+      public void run(int lb, int ub) throws Exception {
+        int threadID = getThreadIndex();
+        switch (operation) {
+          case RESET:
+            reset(threadID, lb, ub);
+            break;
+          case REDUCE:
+            reduce(lb, ub);
+            break;
+        }
+      }
+    }
+  }
+
+
 }

@@ -263,8 +263,8 @@ public class Complex3DParallel {
   }
 
   /**
-   * Compute the 3D FFT, perfrom a multiplication in reciprocal space, and the inverese 3D FFT all
-   * in parallel.
+   * Compute the 3D FFT, perform a multiplication in reciprocal space,
+   * and the inverse 3D FFT in parallel.
    *
    * @param input The input array must be of size 2 * nX * nY * nZ.
    * @since 1.0

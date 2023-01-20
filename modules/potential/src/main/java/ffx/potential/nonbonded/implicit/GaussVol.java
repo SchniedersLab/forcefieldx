@@ -1425,7 +1425,7 @@ public class GaussVol {
       // Initialize output variables.
       totalVolume.set(0.0);
       energy.set(0.0);
-      grad.reset(parallelTeam, 0, nAtoms - 1);
+      grad.reset(parallelTeam);
       gradV.reset(parallelTeam, 0, nAtoms - 1);
       freeVolume.reset(parallelTeam, 0, nAtoms - 1);
       selfVolume.reset(parallelTeam, 0, nAtoms - 1);

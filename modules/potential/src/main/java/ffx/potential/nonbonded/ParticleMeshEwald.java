@@ -634,26 +634,12 @@ public class ParticleMeshEwald implements LambdaInterface {
     if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
       reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
     }
-    field.reset(parallelTeam, 0, nAtoms - 1);
-    fieldCR.reset(parallelTeam, 0, nAtoms - 1);
+    field.reset(parallelTeam);
+    fieldCR.reset(parallelTeam);
     inducedDipoleFieldRegion.init(
-        atoms,
-        crystal,
-        use,
-        molecule,
-        ipdamp,
-        thole,
-        coordinates,
-        realSpaceNeighborParameters,
-        inducedDipole,
-        inducedDipoleCR,
-        reciprocalSpaceTerm,
-        reciprocalSpace,
-        lambdaMode,
-        ewaldParameters,
-        field,
-        fieldCR,
-        pmeTimings);
+        atoms, crystal, use, molecule, ipdamp, thole, coordinates, realSpaceNeighborParameters,
+        inducedDipole, inducedDipoleCR, reciprocalSpaceTerm, reciprocalSpace, lambdaMode,
+        ewaldParameters, field, fieldCR, pmeTimings);
     inducedDipoleFieldRegion.executeWith(sectionTeam);
     pmeTimings.realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
 
@@ -1791,8 +1777,8 @@ public class ParticleMeshEwald implements LambdaInterface {
       if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
         if (gradient && polarization == Polarization.DIRECT) {
           reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
-          field.reset(parallelTeam, 0, nAtoms - 1);
-          fieldCR.reset(parallelTeam, 0, nAtoms - 1);
+          field.reset(parallelTeam);
+          fieldCR.reset(parallelTeam);
           inducedDipoleFieldRegion.init(
               atoms, crystal, use, molecule,
               ipdamp, thole, coordinates, realSpaceNeighborParameters,
@@ -2045,35 +2031,14 @@ public class ParticleMeshEwald implements LambdaInterface {
         reciprocalSpace.splinePermanentMultipoles(globalMultipole, fractionalMultipole, use);
       }
 
-      field.reset(parallelTeam, 0, nAtoms - 1);
-      fieldCR.reset(parallelTeam, 0, nAtoms - 1);
-      permanentFieldRegion.init(
-          atoms,
-          crystal,
-          coordinates,
-          globalMultipole,
-          inducedDipole,
-          inducedDipoleCR,
-          neighborLists,
-          scaleParameters,
-          use,
-          molecule,
-          ipdamp,
-          thole,
-          ip11,
-          mask12,
-          mask13,
-          mask14,
-          lambdaMode,
-          reciprocalSpaceTerm,
-          reciprocalSpace,
-          ewaldParameters,
-          pcgSolver,
-          permanentSchedule,
-          realSpaceNeighborParameters,
-          field,
-          fieldCR,
-          pmeTimings);
+      field.reset(parallelTeam);
+      fieldCR.reset(parallelTeam);
+      permanentFieldRegion.init(atoms, crystal, coordinates,
+          globalMultipole, inducedDipole, inducedDipoleCR, neighborLists,
+          scaleParameters, use, molecule, ipdamp, thole, ip11,
+          mask12, mask13, mask14, lambdaMode, reciprocalSpaceTerm, reciprocalSpace,
+          ewaldParameters, pcgSolver, permanentSchedule, realSpaceNeighborParameters,
+          field, fieldCR, pmeTimings);
       // The real space contribution can be calculated at the same time
       // the reciprocal space convolution is being done.
       sectionTeam.execute(permanentFieldRegion);
@@ -2270,26 +2235,13 @@ public class ParticleMeshEwald implements LambdaInterface {
         if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
           reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
         }
-        field.reset(parallelTeam, 0, nAtoms - 1);
-        fieldCR.reset(parallelTeam, 0, nAtoms - 1);
+        field.reset(parallelTeam);
+        fieldCR.reset(parallelTeam);
         inducedDipoleFieldRegion.init(
-            atoms,
-            crystal,
-            use,
-            molecule,
-            ipdamp,
-            thole,
-            coordinates,
-            realSpaceNeighborParameters,
-            inducedDipole,
-            inducedDipoleCR,
-            reciprocalSpaceTerm,
-            reciprocalSpace,
-            lambdaMode,
-            ewaldParameters,
-            field,
-            fieldCR,
-            pmeTimings);
+            atoms, crystal, use, molecule, ipdamp, thole, coordinates,
+            realSpaceNeighborParameters, inducedDipole, inducedDipoleCR,
+            reciprocalSpaceTerm, reciprocalSpace, lambdaMode, ewaldParameters,
+            field, fieldCR, pmeTimings);
         inducedDipoleFieldRegion.executeWith(sectionTeam);
         pmeTimings.realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
         if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
@@ -2388,26 +2340,12 @@ public class ParticleMeshEwald implements LambdaInterface {
         if (reciprocalSpaceTerm && ewaldParameters.aewald > 0.0) {
           reciprocalSpace.splineInducedDipoles(inducedDipole, inducedDipoleCR, use);
         }
-        field.reset(parallelTeam, 0, nAtoms - 1);
-        fieldCR.reset(parallelTeam, 0, nAtoms - 1);
+        field.reset(parallelTeam);
+        fieldCR.reset(parallelTeam);
         inducedDipoleFieldRegion.init(
-            atoms,
-            crystal,
-            use,
-            molecule,
-            ipdamp,
-            thole,
-            coordinates,
-            realSpaceNeighborParameters,
-            inducedDipole,
-            inducedDipoleCR,
-            reciprocalSpaceTerm,
-            reciprocalSpace,
-            lambdaMode,
-            ewaldParameters,
-            field,
-            fieldCR,
-            pmeTimings);
+            atoms, crystal, use, molecule, ipdamp, thole, coordinates, realSpaceNeighborParameters,
+            inducedDipole, inducedDipoleCR, reciprocalSpaceTerm, reciprocalSpace, lambdaMode,
+            ewaldParameters, field, fieldCR, pmeTimings);
         inducedDipoleFieldRegion.executeWith(sectionTeam);
         pmeTimings.realSpaceSCFTotal = inducedDipoleFieldRegion.getRealSpaceSCFTotal();
 
