@@ -46,8 +46,6 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.ResidueState;
 import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.RotamerLibrary;
-import ffx.potential.nonbonded.NeighborList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -97,7 +95,8 @@ public class BoxOptCell {
    * @param residue Residue to check.
    * @param crystal A Crystal.
    * @param symOp A symmetry operator to apply.
-   * @param variableOnly If using only variable (protein side-chain, nucleic acid backbone) atoms.
+   * @param variableOnly If using only variable (protein side-chain, nucleic acid backbone)
+   *     atoms.
    * @return If contained inside this BoxOptCell.
    */
   public boolean anyRotamerInsideCell(
@@ -130,9 +129,41 @@ public class BoxOptCell {
     double[] atXYZ = new double[3];
     atXYZ = atom.getXYZ(atXYZ);
     crystal.toFractionalCoordinates(atXYZ, atXYZ);
-    NeighborList.moveValuesBetweenZeroAndOne(atXYZ);
+    moveValuesBetweenZeroAndOne(atXYZ);
     applyFracSymOp(atXYZ, atXYZ, symOp);
     return checkIfContained(atXYZ);
+  }
+
+  /**
+   * Moves an array of doubles to be within 0.0 and 1.0 by addition or subtraction of a multiple of
+   * 1.0. Typical use is moving an atom placed outside crystal boundaries from the symmetry mate back
+   * into the crystal.
+   *
+   * @param valuesToMove Doubles to be moved between 0 and 1.
+   */
+  public static void moveValuesBetweenZeroAndOne(double[] valuesToMove) {
+    for (int i = 0; i < valuesToMove.length; i++) {
+      valuesToMove[i] = moveBetweenZeroAndOne(valuesToMove[i]);
+    }
+  }
+
+  /**
+   * Moves a double to be within 0.0 and 1.0 by addition or subtraction of a multiple of 1.0. Typical
+   * use is moving an atom place outside crystal boundaries from the symmetry mate back into the
+   * crystal.
+   *
+   * @param value Double to be moved between 0 and 1.
+   * @return Shifted double.
+   */
+  private static double moveBetweenZeroAndOne(double value) {
+    if (value < 0.0) {
+      int belowZero = (int) (value);
+      belowZero = 1 + (-1 * belowZero);
+      value = value + belowZero;
+    } else {
+      value = value % 1.0;
+    }
+    return value;
   }
 
   /**
@@ -179,7 +210,8 @@ public class BoxOptCell {
    * @param residue Residue to check.
    * @param crystal A Crystal.
    * @param symOp A symmetry operator to apply.
-   * @param variableOnly If using only variable (protein side-chain, nucleic acid backbone) atoms.
+   * @param variableOnly If using only variable (protein side-chain, nucleic acid backbone)
+   *     atoms.
    * @return If contained inside this BoxOptCell.
    */
   public boolean residueInsideCell(

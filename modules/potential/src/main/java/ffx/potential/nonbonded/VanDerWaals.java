@@ -1258,8 +1258,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
     /**
      * {@inheritDoc}
      *
-     * <p>This is method should not be called; it is invoked by Parallel Java.
-     *
      * @since 1.0
      */
     @Override

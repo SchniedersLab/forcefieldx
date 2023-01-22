@@ -49,15 +49,14 @@ import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
+import edu.rit.pj.reduction.SharedBoolean;
 import edu.rit.pj.reduction.SharedInteger;
 import edu.rit.util.Range;
 import ffx.crystal.Crystal;
-import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -98,10 +97,6 @@ public class NeighborList extends ParallelRegion {
   private static final int ZZ = 2;
   /** The masking rules to apply when building the neighbor list. */
   private final MaskingInterface maskingRules;
-  /** Total number of interactions. */
-  private final SharedInteger sharedCount;
-  /** Optimal pairwise ranges. */
-  private final Range[] ranges;
   /** The cutoff beyond which the pairwise energy is zero. */
   private final double cutoff;
   /**
@@ -119,9 +114,37 @@ public class NeighborList extends ParallelRegion {
   private final ParallelTeam parallelTeam;
   /** Number of threads used by the parallelTeam. */
   private final int threadCount;
+  /**
+   * If this flag is set, then the Verlet lists will be rebuilt even in the absence of motion.
+   */
+  private boolean forceRebuild = false;
+  /**
+   * If this flag is set then the Verlet lists will be printed to the logger.
+   */
+  private boolean print = false;
+  /**
+   * Shared Boolean used to detect list rebuild. If any thread detects motion in the MotionLoop, the
+   * value is set to true.
+   */
+  private final SharedBoolean sharedMotion;
+  /**
+   * Detect motion in the asymmetric unit.
+   */
+  private final MotionLoop[] motionLoops;
+  /**
+   * Assign atoms to cells in parallel. This loop is executed once per list rebuild.
+   */
+  private final AssignAtomsToCellsLoop[] assignAtomsToCellsLoops;
   /** A Verlet list loop for each thread. */
   private final NeighborListLoop[] verletListLoop;
-  /** The crystal object defines the unit cell dimensions and space group. */
+  /** Total number of interactions. */
+  private final SharedInteger sharedCount;
+  /** Optimal pairwise ranges. */
+  private final Range[] ranges;
+  /**
+   * The crystal object defines the unit cell dimensions and space group. If replicates of the unit
+   * cell are being used, this should be the overall replicates crystal and not the small unit cell.
+   */
   private Crystal crystal;
   /** The number of asymmetric units in the unit cell. */
   private int nSymm;
@@ -166,43 +189,27 @@ public class NeighborList extends ParallelRegion {
   private int nA;
   /** The number of divisions along the B-axis. */
   private int nB;
-  /** The number of divisions along the C-Axis. */
-  private int nC;
-  /** The number of cells in one plane (nDivisions^2). */
-  private int nAB;
-  /** The number of cells (nDivisions^3). */
-  private int nCells;
   /**
-   * A temporary array that holds the index of the cell each atom is assigned to. [nSymm][nAtoms]
+   * The number of divisions along the C-Axis.
    */
-  private int[][] cellIndex;
+  private int nC;
   /** The cell indices of each atom along a A-axis. */
   private int[] cellA;
   /** The cell indices of each atom along a B-axis. */
   private int[] cellB;
   /** The cell indices of each atom along a C-axis. */
   private int[] cellC;
-  /** The list of atoms in each cell. [nSymm][nAtoms] = atom index */
-  private int[][] cellList;
-
-  // *************************************************************************
-  // Parallel variables.
   /**
-   * The offset of each atom from the start of the cell. The first atom atom in the cell has 0
-   * offset. [nSymm][nAtom] = offset of the atom
+   * The fractional sub-volumes of the unit cell.
    */
-  private int[][] cellOffset;
-  /** The number of atoms in each cell. [nSymm][nCell] */
-  private int[][] cellCount;
-  /** The index of the first atom in each cell. [nSymm][nCell] */
-  private int[][] cellStart;
-  /** The array of fractional "a", "b", and "c" coordinates. */
-  private double[] frac;
+  private Cell[][][] cells;
   /** Atoms being used list. */
   private boolean[] use;
   /** List of atoms. */
   private Atom[] atoms;
-
+  /**
+   * Time building the neighbor list.
+   */
   private long time;
   /** Include intermolecular interactions. */
   private boolean intermolecular = true;
@@ -210,10 +217,10 @@ public class NeighborList extends ParallelRegion {
   private int[] molecules = null;
   /**
    * If true, interactions between two inactive atoms are included in the Neighborlist. Set to true
-   * to match OpenMM behavior (i.e. interactions between two atoms with zero mass are included). Set
-   * to false for more efficient "pure Java" optimizations.
+   * to match OpenMM behavior (i.e. interactions between two atoms with zero mass are included).
+   * Set to false for more efficient "pure Java" optimizations.
    */
-  private boolean inactiveInteractions = true;
+  private final boolean inactiveInteractions = true;
   /** Disable updates to the NeighborList; use with caution. */
   private boolean disableUpdates = false;
 
@@ -228,13 +235,8 @@ public class NeighborList extends ParallelRegion {
    * @param parallelTeam Specifies the parallel environment.
    * @since 1.0
    */
-  public NeighborList(
-      MaskingInterface maskingRules,
-      Crystal crystal,
-      Atom[] atoms,
-      double cutoff,
-      double buffer,
-      ParallelTeam parallelTeam) {
+  public NeighborList(MaskingInterface maskingRules, Crystal crystal,
+      Atom[] atoms, double cutoff, double buffer, ParallelTeam parallelTeam) {
     this.maskingRules = maskingRules;
     this.crystal = crystal;
     this.cutoff = cutoff;
@@ -253,46 +255,19 @@ public class NeighborList extends ParallelRegion {
     sharedCount = new SharedInteger();
     ranges = new Range[threadCount];
 
+    sharedMotion = new SharedBoolean();
+    motionLoops = new MotionLoop[threadCount];
     verletListLoop = new NeighborListLoop[threadCount];
+    assignAtomsToCellsLoops = new AssignAtomsToCellsLoop[threadCount];
     for (int i = 0; i < threadCount; i++) {
+      motionLoops[i] = new MotionLoop();
       verletListLoop[i] = new NeighborListLoop();
+      assignAtomsToCellsLoops[i] = new AssignAtomsToCellsLoop();
     }
 
     // Initialize the neighbor list builder subcells.
     boolean print = logger.isLoggable(Level.FINE);
     initNeighborList(print);
-  }
-
-  /**
-   * Moves an array of doubles to be within 0.0 and 1.0 by addition or subtraction of a multiple of
-   * 1.0. Typical use is moving an atom placed outside crystal boundaries from the symmetry mate
-   * back into the crystal.
-   *
-   * @param valuesToMove Doubles to be moved between 0 and 1.
-   */
-  public static void moveValuesBetweenZeroAndOne(double[] valuesToMove) {
-    for (int i = 0; i < valuesToMove.length; i++) {
-      valuesToMove[i] = moveBetweenZeroAndOne(valuesToMove[i]);
-    }
-  }
-
-  /**
-   * Moves a double to be within 0.0 and 1.0 by addition or subtraction of a multiple of 1.0.
-   * Typical use is moving an atom place outside crystal boundaries from the symmetry mate back into
-   * the crystal.
-   *
-   * @param value Double to be moved between 0 and 1.
-   * @return Shifted double.
-   */
-  private static double moveBetweenZeroAndOne(double value) {
-    if (value < 0.0) {
-      int belowZero = (int) (value / 1.0);
-      belowZero = 1 + (-1 * belowZero);
-      value = value + belowZero;
-    } else {
-      value = value % 1.0;
-    }
-    return value;
   }
 
   /**
@@ -306,39 +281,22 @@ public class NeighborList extends ParallelRegion {
    * @param print a boolean.
    * @since 1.0
    */
-  public void buildList(
-      final double[][] coordinates,
-      final int[][][] lists,
-      boolean[] use,
-      boolean forceRebuild,
-      boolean print) {
+  public void buildList(final double[][] coordinates, final int[][][] lists,
+      boolean[] use, boolean forceRebuild, boolean print) {
     if (disableUpdates) {
       return;
     }
     this.coordinates = coordinates;
     this.lists = lists;
     this.use = use;
-    if (forceRebuild || motion()) {
+    this.forceRebuild = forceRebuild;
+    this.print = print;
 
-      // Save the current coordinates.
-      double[] current = coordinates[0];
-      for (int i = 0; i < nAtoms; i++) {
-        int i3 = i * 3;
-        int iX = i3 + XX;
-        int iY = i3 + YY;
-        int iZ = i3 + ZZ;
-        previous[iX] = current[iX];
-        previous[iY] = current[iY];
-        previous[iZ] = current[iZ];
-      }
-
-      assignAtomsToCells();
-      createNeighborList();
-      if (print) {
-        print();
-      }
-
-      pairwiseSchedule.updateRanges(sharedCount.get(), atomsWithIteractions, listCount);
+    try {
+      parallelTeam.execute(this);
+    } catch (Exception e) {
+      String message = "Fatal exception building neighbor list.\n";
+      logger.log(Level.SEVERE, message, e);
     }
   }
 
@@ -360,11 +318,42 @@ public class NeighborList extends ParallelRegion {
    */
   @Override
   public void finish() {
+    if (disableUpdates) {
+      return;
+    }
+    if (!forceRebuild && !sharedMotion.get()) {
+      return;
+    }
+
+    // Collect interactions.
+    atomsWithIteractions = 0;
+    asymmetricUnitCount = 0;
+    symmetryMateCount = 0;
+    int[][] list = lists[0];
+    for (int i = 0; i < nAtoms; i++) {
+      asymmetricUnitCount += list[i].length;
+      if (listCount[i] > 0) {
+        atomsWithIteractions++;
+      }
+    }
+    for (int iSymm = 1; iSymm < nSymm; iSymm++) {
+      list = lists[iSymm];
+      for (int i = 0; i < nAtoms; i++) {
+        symmetryMateCount += list[i].length;
+      }
+    }
+
+    // Print the interactions counts.
+    if (print) {
+      print();
+    }
+
+    // Update the pairwise schedule.
+    pairwiseSchedule.updateRanges(sharedCount.get(), atomsWithIteractions, listCount);
+
     if (logger.isLoggable(Level.FINE)) {
-      logger.fine(
-          format(
-              "   Parallel Neighbor List:           %10.3f sec",
-              (System.nanoTime() - time) * 1e-9));
+      logger.fine(format("   Parallel Neighbor List:           %10.3f sec",
+          (System.nanoTime() - time) * 1e-9));
     }
   }
 
@@ -378,15 +367,6 @@ public class NeighborList extends ParallelRegion {
   }
 
   /**
-   * Getter for the disableUpdates field.
-   *
-   * @return If neighbor list updates disabled
-   */
-  public boolean getDisableUpdates() {
-    return disableUpdates;
-  }
-
-  /**
    * If disableUpdates true, disable updating the neighbor list upon motion. Use with caution; best
    * recommendation is to only use if all atoms have a coordinate restraint.
    *
@@ -394,23 +374,6 @@ public class NeighborList extends ParallelRegion {
    */
   public void setDisableUpdates(boolean disableUpdate) {
     this.disableUpdates = disableUpdate;
-  }
-
-  /**
-   * Returns a set of Atoms neighboring those passed in. If their indices are already available,
-   * preferentially use getNeighborIndices instead. Is exclusive of passed atoms.
-   *
-   * @param atomList Atoms to find neighbors of
-   * @param maxDist Maximum distance to consider a neighbor
-   * @return Set of neighboring Atoms
-   */
-  public Set<Atom> getNeighborAtoms(List<Atom> atomList, double maxDist) {
-    Set<Integer> atomIndices = getNeighborIndices(atomsToIndices(atomList), maxDist);
-    Set<Atom> atomSet = new HashSet<>();
-    for (Integer ai : atomIndices) {
-      atomSet.add(atoms[ai]);
-    }
-    return atomSet;
   }
 
   /**
@@ -440,8 +403,21 @@ public class NeighborList extends ParallelRegion {
    */
   @Override
   public void run() {
+    if (disableUpdates) {
+      return;
+    }
+
+    int threadIndex = getThreadIndex();
     try {
-      execute(0, nAtoms - 1, verletListLoop[getThreadIndex()]);
+      if (!forceRebuild) {
+        // Check for motion.
+        execute(0, nAtoms - 1, motionLoops[threadIndex]);
+      }
+      if (!forceRebuild && !sharedMotion.get()) {
+        return;
+      }
+      execute(0, nAtoms - 1, assignAtomsToCellsLoops[threadIndex]);
+      execute(0, nAtoms - 1, verletListLoop[threadIndex]);
     } catch (Exception e) {
       String message =
           "Fatal exception building neighbor list in thread: " + getThreadIndex() + "\n";
@@ -491,8 +467,29 @@ public class NeighborList extends ParallelRegion {
    */
   @Override
   public void start() {
+    if (disableUpdates) {
+      return;
+    }
+
     time = System.nanoTime();
+    sharedMotion.set(false);
     sharedCount.set(0);
+
+    // Clear cell contents.
+    for (int i = 0; i < nA; i++) {
+      for (int j = 0; j < nB; j++) {
+        for (int k = 0; k < nC; k++) {
+          cells[i][j][k].clear();
+        }
+      }
+    }
+
+    // Allocate memory for neighbor lists.
+    for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+      if (lists[iSymm] == null || lists[iSymm].length < nAtoms) {
+        lists[iSymm] = new int[nAtoms][];
+      }
+    }
   }
 
   private void initNeighborList(boolean print) {
@@ -502,7 +499,6 @@ public class NeighborList extends ParallelRegion {
       cellA = new int[nAtoms];
       cellB = new int[nAtoms];
       cellC = new int[nAtoms];
-      frac = new double[3 * nAtoms];
       previous = new double[3 * nAtoms];
       listCount = new int[nAtoms];
       pairwiseSchedule = new PairwiseSchedule(threadCount, nAtoms, ranges);
@@ -517,10 +513,8 @@ public class NeighborList extends ParallelRegion {
     }
 
     // Find the largest sphere that is enclosed by the unit cell.
-    final double sphere =
-        min(
-            min(crystal.interfacialRadiusA, crystal.interfacialRadiusB),
-            crystal.interfacialRadiusC);
+    final double sphere = min(min(crystal.interfacialRadiusA, crystal.interfacialRadiusB),
+        crystal.interfacialRadiusC);
 
     /*
      Assert that the boundary conditions defined by the crystal allow use
@@ -531,6 +525,7 @@ public class NeighborList extends ParallelRegion {
     }
 
     // nEdgeA, nEdgeB and nEdgeC must be >= 1.
+    // If nEdgeA = 2, then there will be 5x5x5 subcells to search for neighbors.
     nEdgeA = 2;
     nEdgeB = nEdgeA;
     nEdgeC = nEdgeA;
@@ -554,107 +549,23 @@ public class NeighborList extends ParallelRegion {
     if (nC < nEdgeC * 2 + 1) {
       nC = 1;
     }
-    nAB = nA * nB;
-    nCells = nAB * nC;
 
-    if (print) {
-      StringBuilder sb = new StringBuilder("  Neighbor List Builder\n");
-      sb.append(format("   Sub-volumes:                        %8d\n", nCells));
-      sb.append(format("   Average Atoms Per Sub-Volume:       %8d", nAtoms * nSymm / nCells));
-      logger.info(sb.toString());
-    }
-
-    // Allocate memory, if necessary.
-    if (cellList == null) {
-      cellList = new int[nSymm][nAtoms];
-      cellIndex = new int[nSymm][nAtoms];
-      cellOffset = new int[nSymm][nAtoms];
-    } else if (cellList.length < nSymm) {
-      logger.info(
-          String.format(
-              "  Neighbor-List: Increasing memory for nSymm (%d -> %d)", cellList.length, nSymm));
-      int nAtomMax = cellList[0].length;
-      cellList = new int[nSymm][nAtomMax];
-      cellIndex = new int[nSymm][nAtomMax];
-      cellOffset = new int[nSymm][nAtomMax];
-    } else if (cellList[0].length < nAtoms) {
-      int nSymmMax = cellList.length;
-      cellList = new int[nSymmMax][nAtoms];
-      cellIndex = new int[nSymmMax][nAtoms];
-      cellOffset = new int[nSymmMax][nAtoms];
-    }
-
-    if (cellStart == null) {
-      cellStart = new int[nSymm][nCells];
-      cellCount = new int[nSymm][nCells];
-    } else if (cellStart.length < nSymm) {
-      int maxCells = Math.max(nCells, cellStart[0].length);
-      cellStart = new int[nSymm][maxCells];
-      cellCount = new int[nSymm][maxCells];
-    } else if (cellStart[0].length < nCells) {
-      logger.info(
-          String.format(
-              "  Neighbor-List: Increasing memory for nCell (%d -> %d)",
-              cellStart[0].length, nCells));
-      for (int i = 0; i < cellStart.length; i++) {
-        cellStart[i] = new int[nCells];
-        cellCount[i] = new int[nCells];
-      }
-    }
-  }
-
-  /**
-   * Takes a list of Atoms and obtains the local indices for these atoms.
-   *
-   * @param atomsToIndex Atoms to index
-   * @return Indices thereof
-   */
-  private List<Integer> atomsToIndices(List<Atom> atomsToIndex) {
-    Set<Atom> indexedAtoms = new HashSet<>(atomsToIndex);
-    List<Integer> indices = new ArrayList<>(atomsToIndex.size());
-    for (int i = 0; i < atoms.length; i++) {
-      if (indexedAtoms.contains(atoms[i])) {
-        indices.add(i);
-      }
-    }
-    return indices;
-  }
-
-  /**
-   * Returns the indices of atoms neighboring the passed set of atom indices. Returned Set is
-   * exclusive of the passed-in indices.
-   *
-   * @param atomIndices Atom indices
-   * @param maxDist Maximum distance to consider
-   * @return Set of neighboring atoms indices
-   */
-  private Set<Integer> getNeighborIndices(List<Integer> atomIndices, double maxDist) {
-    double md2 = maxDist * maxDist;
-    Set<Integer> neighbors = new HashSet<>();
-    for (int i : atomIndices) {
-      double[] xyzI = new double[3];
-      atoms[i].getXYZ(xyzI);
-      for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-        SymOp symOp = crystal.spaceGroup.getSymOp(iSymm);
-        int[] listi = lists[iSymm][i];
-        for (int indexJ : listi) {
-          if (atomIndices.contains(indexJ) || neighbors.contains(indexJ)) {
-            continue;
-          }
-          double[] xyzJ = new double[3];
-          atoms[indexJ].getXYZ(xyzJ);
-          crystal.applySymOp(xyzJ, xyzJ, symOp);
-          for (int k = 0; k < 3; k++) {
-            xyzJ[k] -= xyzI[k];
-          }
-          if (crystal.image(xyzJ) <= md2) {
-            neighbors.add(indexJ);
-          }
+    cells = new Cell[nA][nB][nC];
+    for (int i = 0; i < nA; i++) {
+      for (int j = 0; j < nB; j++) {
+        for (int k = 0; k < nC; k++) {
+          cells[i][j][k] = new Cell(i, j, k);
         }
       }
     }
 
-    return neighbors;
+    if (print) {
+      int nCells = nA * nB * nC;
+      StringBuilder sb = new StringBuilder("  Neighbor List Builder\n");
+      sb.append(format("   Cells:               %8d\n", nCells));
+      sb.append(format("   Mean Atoms per Cell: %8d", nAtoms * nSymm / nCells));
+      logger.info(sb.toString());
+    }
   }
 
   private void print() {
@@ -672,143 +583,104 @@ public class NeighborList extends ParallelRegion {
   }
 
   /**
-   * Assign asymmetric and symmetry mate atoms to cells.
-   *
-   * <p>This is very fast; there is little to be gained from parallelizing it at this point.
-   *
-   * @since 1.0
-   */
-  private void assignAtomsToCells() {
-    for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-      final int[] cellIndexs = cellIndex[iSymm];
-      final int[] cellCounts = cellCount[iSymm];
-      final int[] cellStarts = cellStart[iSymm];
-      final int[] cellLists = cellList[iSymm];
-      final int[] cellOffsets = cellOffset[iSymm];
-      // Zero out the cell counts.
-      for (int i = 0; i < nCells; i++) {
-        cellCounts[i] = 0;
-      }
-      // Convert to fractional coordinates.
-      final double[] xyz = coordinates[iSymm];
-      crystal.toFractionalCoordinates(nAtoms, xyz, frac);
-      // Assign each atom to a cell using fractional coordinates.
-      for (int i = 0; i < nAtoms; i++) {
-        int i3 = i * 3;
-        double xu = frac[i3 + XX];
-        double yu = frac[i3 + YY];
-        double zu = frac[i3 + ZZ];
-        // Move the atom into the range 0.0 <= x < 1.0
-        while (xu < 0.0) {
-          xu += 1.0;
-        }
-        while (xu >= 1.0) {
-          xu -= 1.0;
-        }
-        while (yu < 0.0) {
-          yu += 1.0;
-        }
-        while (yu >= 1.0) {
-          yu -= 1.0;
-        }
-        while (zu < 0.0) {
-          zu += 1.0;
-        }
-        while (zu >= 1.0) {
-          zu -= 1.0;
-        }
-        // The cell indices of this atom.
-        final int a = (int) floor(xu * nA);
-        final int b = (int) floor(yu * nB);
-        final int c = (int) floor(zu * nC);
-        if (iSymm == 0) {
-          cellA[i] = a;
-          cellB[i] = b;
-          cellC[i] = c;
-        }
-        // The cell index of this atom.
-        final int index = a + b * nA + c * nAB;
-        cellIndexs[i] = index;
-        // The offset of this atom from the beginning of the cell.
-        cellOffsets[i] = cellCounts[index]++;
-      }
-      // Define the starting indices.
-      cellStarts[0] = 0;
-      for (int i = 1; i < nCells; i++) {
-        final int i1 = i - 1;
-        cellStarts[i] = cellStarts[i1] + cellCounts[i1];
-      }
-      // Move atom locations into a list ordered by cell.
-      for (int i = 0; i < nAtoms; i++) {
-        final int index = cellIndexs[i];
-        cellLists[cellStarts[index]++] = i;
-      }
-      // Define the starting indices again.
-      cellStarts[0] = 0;
-      for (int i = 1; i < nCells; i++) {
-        final int i1 = i - 1;
-        cellStarts[i] = cellStarts[i1] + cellCounts[i1];
-      }
-    }
-  }
-
-  /**
-   * Execute the parallel Verlet list builder.
-   *
-   * @since 1.0
-   */
-  private void createNeighborList() {
-    asymmetricUnitCount = 0;
-    symmetryMateCount = 0;
-    for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-      if (lists[iSymm] == null || lists[iSymm].length < nAtoms) {
-        lists[iSymm] = new int[nAtoms][];
-      }
-    }
-    try {
-      parallelTeam.execute(this);
-    } catch (Exception e) {
-      String message = "Fatal exception building neighbor list.\n";
-      logger.log(Level.SEVERE, message, e);
-    }
-    int[][] list = lists[0];
-    atomsWithIteractions = 0;
-    for (int i = 0; i < nAtoms; i++) {
-      asymmetricUnitCount += list[i].length;
-      if (listCount[i] > 0) {
-        atomsWithIteractions++;
-      }
-    }
-    for (int iSymm = 1; iSymm < nSymm; iSymm++) {
-      list = lists[iSymm];
-      for (int i = 0; i < nAtoms; i++) {
-        symmetryMateCount += list[i].length;
-      }
-    }
-  }
-
-  /**
    * Detect if any atom has moved 1/2 the buffer size.
    *
-   * @return True if an atom has moved 1/2 the buffer size.
    * @since 1.0
    */
-  private boolean motion() {
-    double[] current = coordinates[0];
-    for (int i = 0; i < nAtoms; i++) {
-      int i3 = i * 3;
-      int iX = i3 + XX;
-      int iY = i3 + YY;
-      int iZ = i3 + ZZ;
-      double dx = previous[iX] - current[iX];
-      double dy = previous[iY] - current[iY];
-      double dz = previous[iZ] - current[iZ];
-      double dr2 = crystal.image(dx, dy, dz);
-      if (dr2 > motion2) {
-        return true;
+  private class MotionLoop extends IntegerForLoop {
+
+    @Override
+    public void run(int lb, int ub) throws Exception {
+      double[] current = coordinates[0];
+      for (int i = lb; i <= ub; i++) {
+        int i3 = i * 3;
+        int iX = i3 + XX;
+        int iY = i3 + YY;
+        int iZ = i3 + ZZ;
+        double dx = previous[iX] - current[iX];
+        double dy = previous[iY] - current[iY];
+        double dz = previous[iZ] - current[iZ];
+        double dr2 = crystal.image(dx, dy, dz);
+        if (dr2 > motion2) {
+          sharedMotion.set(true);
+          return;
+        } else if (sharedMotion.get()) {
+          return;
+        }
       }
     }
-    return false;
+  }
+
+  /**
+   * Assign atoms to cells.
+   *
+   * @since 1.0
+   */
+  private class AssignAtomsToCellsLoop extends IntegerForLoop {
+
+    private final double[] cart = new double[3];
+    private final double[] frac = new double[3];
+
+    @Override
+    public void run(int lb, int ub) throws Exception {
+
+      // Save the current coordinates.
+      double[] current = coordinates[0];
+      for (int i = lb; i <= ub; i++) {
+        int i3 = i * 3;
+        int iX = i3 + XX;
+        int iY = i3 + YY;
+        int iZ = i3 + ZZ;
+        previous[iX] = current[iX];
+        previous[iY] = current[iY];
+        previous[iZ] = current[iZ];
+      }
+
+      for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+        // Convert to fractional coordinates.
+        final double[] xyz = coordinates[iSymm];
+        // Assign each atom to a cell using fractional coordinates.
+        for (int i = lb; i <= ub; i++) {
+          int i3 = i * 3;
+          cart[0] = xyz[i3 + XX];
+          cart[1] = xyz[i3 + YY];
+          cart[2] = xyz[i3 + ZZ];
+          crystal.toFractionalCoordinates(cart, frac);
+          double xu = frac[0];
+          double yu = frac[1];
+          double zu = frac[2];
+          // Move the atom into the range 0.0 <= x < 1.0
+          while (xu < 0.0) {
+            xu += 1.0;
+          }
+          while (xu >= 1.0) {
+            xu -= 1.0;
+          }
+          while (yu < 0.0) {
+            yu += 1.0;
+          }
+          while (yu >= 1.0) {
+            yu -= 1.0;
+          }
+          while (zu < 0.0) {
+            zu += 1.0;
+          }
+          while (zu >= 1.0) {
+            zu -= 1.0;
+          }
+          // The cell indices of this atom.
+          final int a = (int) floor(xu * nA);
+          final int b = (int) floor(yu * nB);
+          final int c = (int) floor(zu * nC);
+          if (iSymm == 0) {
+            cellA[i] = a;
+            cellB[i] = b;
+            cellC[i] = c;
+          }
+          cells[a][b][c].add(i, iSymm);
+        }
+      }
+    }
   }
 
   /**
@@ -826,9 +698,10 @@ public class NeighborList extends ParallelRegion {
     private int atomIndex;
     private boolean iactive = true;
     private int count;
-    private int[] asymmetricIndex;
     private double[] xyz;
     private int[] pairs;
+    private Cell cellForCurrentAtom;
+    private int[] pairCellAtoms;
     private double[] mask;
     private boolean[] vdw14;
     // Extra padding to avert cache interference.
@@ -839,6 +712,7 @@ public class NeighborList extends ParallelRegion {
       int len = 1000;
       pairs = new int[len];
       schedule = IntegerSchedule.dynamic(10);
+      pairCellAtoms = new int[len];
     }
 
     @Override
@@ -848,7 +722,6 @@ public class NeighborList extends ParallelRegion {
 
     @Override
     public void run(final int lb, final int ub) {
-      asymmetricIndex = cellIndex[0];
       for (iSymm = 0; iSymm < nSymm; iSymm++) {
         int[][] list = lists[iSymm];
         // Loop over all atoms.
@@ -867,7 +740,7 @@ public class NeighborList extends ParallelRegion {
             final int b = cellB[atomIndex];
             final int c = cellC[atomIndex];
 
-            final int index = a + b * nA + c * nAB;
+            cellForCurrentAtom = cells[a][b][c];
 
             int a1 = a + 1;
             int aStart = a - nEdgeA;
@@ -898,10 +771,8 @@ public class NeighborList extends ParallelRegion {
 
             if (iSymm == 0) {
               // Interactions within the "self-volume".
-              atomCellPairs(index);
-
-              // Half of the neighboring volumes are searched to avoid double counting.
-
+              atomCellPairs(cellForCurrentAtom);
+              // Search half of the neighboring volumes to avoid double counting.
               // (a, b+1..b+nE, c)
               for (int bi = b1; bi <= bStop; bi++) {
                 atomCellPairs(image(a, bi, c));
@@ -921,7 +792,6 @@ public class NeighborList extends ParallelRegion {
                 }
               }
             } else {
-
               // Interactions with all adjacent symmetry mate cells.
               for (int ai = aStart; ai <= aStop; ai++) {
                 for (int bi = bStart; bi <= bStop; bi++) {
@@ -966,9 +836,9 @@ public class NeighborList extends ParallelRegion {
      * @param i The index along the a-axis.
      * @param j The index along the b-axis.
      * @param k The index along the c-axis.
-     * @return The pointer into the 1D cell array.
+     * @return The requested Cell.
      */
-    private int image(int i, int j, int k) {
+    private Cell image(int i, int j, int k) {
       if (i >= nA) {
         i -= nA;
       } else if (i < 0) {
@@ -984,41 +854,39 @@ public class NeighborList extends ParallelRegion {
       } else if (k < 0) {
         k += nC;
       }
-      return i + j * nA + k * nAB;
+      return cells[i][j][k];
     }
 
-    private void atomCellPairs(final int pairCellIndex) {
-      final int atomCellIndex = asymmetricIndex[atomIndex];
+    private void atomCellPairs(final Cell cell) {
       final int i3 = atomIndex * 3;
       final double xi = xyz[i3 + XX];
       final double yi = xyz[i3 + YY];
       final double zi = xyz[i3 + ZZ];
-      final int[] pairCellAtoms = cellList[iSymm];
-      int start = cellStart[iSymm][pairCellIndex];
-      final int pairStop = start + cellCount[iSymm][pairCellIndex];
+
+      if (pairCellAtoms.length < cell.getCount()) {
+        pairCellAtoms = new int[cell.getCount()];
+      }
+      // Load the cell's atom indices into an array for the specified SymOp.
+      int num = cell.getSymOpAtoms(iSymm, pairCellAtoms);
       final double[] pair = coordinates[iSymm];
 
       // Check if this pair search is over atoms in the asymmetric unit.
-      if (iSymm == 0) {
-
+      if (iSymm == 0 && maskingRules != null) {
         // Interactions between atoms in the asymmetric unit may be masked.
-        if (maskingRules != null) {
-          maskingRules.applyMask(atomIndex, vdw14, mask);
-        }
-
-        // If the self-volume is being searched for pairs, we must avoid double counting.
-        if (atomCellIndex == pairCellIndex) {
-          /*
-           The cellOffset is the index of the current atom in the
-           cell that is being searched for neighbors.
-          */
-          start += cellOffset[0][atomIndex] + 1;
-        }
+        maskingRules.applyMask(atomIndex, vdw14, mask);
       }
 
       // Loop over atoms in the "pair" cell.
-      for (int j = start; j < pairStop; j++) {
+      for (int j = 0; j < num; j++) {
         final int aj = pairCellAtoms[j];
+        // If the self-volume is being searched for pairs, avoid double counting.
+        if (iSymm == 0 && cell == cellForCurrentAtom) {
+          // Only consider atoms with a higher index than the current atom.
+          if (aj <= atomIndex) {
+            continue;
+          }
+        }
+
         if (use != null && !use[aj]) {
           continue;
         }
@@ -1039,13 +907,10 @@ public class NeighborList extends ParallelRegion {
           final double zr = zi - zj;
           final double d2 = crystal.image(xr, yr, zr);
           if (d2 <= cutoffPlusBuffer2) {
-
             // Warn about close overlaps.
             if (d2 < crystal.getSpecialPositionCutoff2() && logger.isLoggable(Level.FINE)) {
-              logger.fine(
-                  format(
-                      " Close overlap (%6.3f) between atoms (iSymm = %d):\n %s\n %s\n",
-                      sqrt(d2), iSymm, atoms[atomIndex].toString(), atoms[aj].toString()));
+              logger.fine(format(" Close overlap (%6.3f) between atoms (iSymm = %d):\n %s\n %s\n",
+                  sqrt(d2), iSymm, atoms[atomIndex].toString(), atoms[aj].toString()));
             }
 
             // Add the pair to the list, reallocating the array size if necessary.
@@ -1065,5 +930,100 @@ public class NeighborList extends ParallelRegion {
         maskingRules.removeMask(atomIndex, vdw14, mask);
       }
     }
+  }
+  
+  /**
+   * Hold the atom index and its symmetry operator.
+   */
+  private static class AtomIndex {
+
+    public final int iSymm;
+    public final int i;
+
+    public AtomIndex(int iSymm, int i) {
+      this.iSymm = iSymm;
+      this.i = i;
+    }
+  }
+
+  /**
+   * Hold the atoms in each cell.
+   */
+  private static class Cell {
+
+    /**
+     * The cell index along the A-axis.
+     */
+    final int a;
+    /**
+     * The cell index along the B-axis.
+     */
+    final int b;
+    /**
+     * The cell index along the C-axis.
+     */
+    final int c;
+
+    /**
+     * The list of atoms in the cell, together with their symmetry operator.
+     */
+    final List<AtomIndex> list;
+
+    public Cell(int a, int b, int c) {
+      this.a = a;
+      this.b = b;
+      this.c = c;
+      list = Collections.synchronizedList(new ArrayList<>());
+    }
+
+    /**
+     * Add an atom to the cell.
+     *
+     * @param atomIndex The atom index.
+     * @param symOpIndex The symmetry operator index.
+     */
+    public void add(int atomIndex, int symOpIndex) {
+      list.add(new AtomIndex(symOpIndex, atomIndex));
+    }
+
+    public AtomIndex get(int index) {
+      if (index >= list.size()) {
+        return null;
+      }
+      return list.get(index);
+    }
+
+    public int getCount() {
+      return list.size();
+    }
+
+    /**
+     * Return the number of atoms in the cell for a given symmetry operator.
+     *
+     * @param symOpIndex The symmetry operator index.
+     * @param index The list of indexes for the given symmetry operator.
+     * @return The number of atoms in the cell for the symmetry operator.
+     */
+    public int getSymOpAtoms(int symOpIndex, int[] index) {
+      int count = 0;
+      for (AtomIndex atomIndex : list) {
+        if (atomIndex.iSymm == symOpIndex) {
+          if (count >= index.length) {
+            throw new IndexOutOfBoundsException("Index out of bounds: count "
+                + count + " " + index.length + " " + list.size());
+          }
+          index[count++] = atomIndex.i;
+        }
+      }
+      return count;
+    }
+
+    /**
+     * Clear the list of atoms in the cell.
+     */
+    public void clear() {
+      list.clear();
+    }
+
   }
 }
