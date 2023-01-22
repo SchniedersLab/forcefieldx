@@ -45,6 +45,7 @@ import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import edu.rit.pj.BarrierAction;
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
@@ -132,6 +133,10 @@ public class NeighborList extends ParallelRegion {
    */
   private final MotionLoop[] motionLoops;
   /**
+   * Perform some initialization tasks prior to rebuilding the list.
+   */
+  private final ListInitBarrierAction listInitBarrierAction;
+  /**
    * Assign atoms to cells in parallel. This loop is executed once per list rebuild.
    */
   private final AssignAtomsToCellsLoop[] assignAtomsToCellsLoops;
@@ -217,8 +222,8 @@ public class NeighborList extends ParallelRegion {
   private int[] molecules = null;
   /**
    * If true, interactions between two inactive atoms are included in the Neighborlist. Set to true
-   * to match OpenMM behavior (i.e. interactions between two atoms with zero mass are included).
-   * Set to false for more efficient "pure Java" optimizations.
+   * to match OpenMM behavior (i.e. interactions between two atoms with zero mass are included). Set
+   * to false for more efficient "pure Java" optimizations.
    */
   private final boolean inactiveInteractions = true;
   /** Disable updates to the NeighborList; use with caution. */
@@ -257,6 +262,7 @@ public class NeighborList extends ParallelRegion {
 
     sharedMotion = new SharedBoolean();
     motionLoops = new MotionLoop[threadCount];
+    listInitBarrierAction = new ListInitBarrierAction();
     verletListLoop = new NeighborListLoop[threadCount];
     assignAtomsToCellsLoops = new AssignAtomsToCellsLoop[threadCount];
     for (int i = 0; i < threadCount; i++) {
@@ -416,6 +422,7 @@ public class NeighborList extends ParallelRegion {
       if (!forceRebuild && !sharedMotion.get()) {
         return;
       }
+      barrier(listInitBarrierAction);
       execute(0, nAtoms - 1, assignAtomsToCellsLoops[threadIndex]);
       execute(0, nAtoms - 1, verletListLoop[threadIndex]);
     } catch (Exception e) {
@@ -470,26 +477,8 @@ public class NeighborList extends ParallelRegion {
     if (disableUpdates) {
       return;
     }
-
     time = System.nanoTime();
     sharedMotion.set(false);
-    sharedCount.set(0);
-
-    // Clear cell contents.
-    for (int i = 0; i < nA; i++) {
-      for (int j = 0; j < nB; j++) {
-        for (int k = 0; k < nC; k++) {
-          cells[i][j][k].clear();
-        }
-      }
-    }
-
-    // Allocate memory for neighbor lists.
-    for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-      if (lists[iSymm] == null || lists[iSymm].length < nAtoms) {
-        lists[iSymm] = new int[nAtoms][];
-      }
-    }
   }
 
   private void initNeighborList(boolean print) {
@@ -590,7 +579,7 @@ public class NeighborList extends ParallelRegion {
   private class MotionLoop extends IntegerForLoop {
 
     @Override
-    public void run(int lb, int ub) throws Exception {
+    public void run(int lb, int ub) {
       double[] current = coordinates[0];
       for (int i = lb; i <= ub; i++) {
         int i3 = i * 3;
@@ -604,8 +593,33 @@ public class NeighborList extends ParallelRegion {
         if (dr2 > motion2) {
           sharedMotion.set(true);
           return;
-        } else if (sharedMotion.get()) {
-          return;
+        }
+      }
+    }
+  }
+
+  /**
+   * Perform some initialization tasks prior to list rebuild.
+   */
+  private class ListInitBarrierAction extends BarrierAction {
+
+    @Override
+    public void run() {
+      sharedCount.set(0);
+
+      // Clear cell contents.
+      for (int i = 0; i < nA; i++) {
+        for (int j = 0; j < nB; j++) {
+          for (int k = 0; k < nC; k++) {
+            cells[i][j][k].clear();
+          }
+        }
+      }
+
+      // Allocate memory for neighbor lists.
+      for (int iSymm = 0; iSymm < nSymm; iSymm++) {
+        if (lists[iSymm] == null || lists[iSymm].length < nAtoms) {
+          lists[iSymm] = new int[nAtoms][];
         }
       }
     }
@@ -931,7 +945,7 @@ public class NeighborList extends ParallelRegion {
       }
     }
   }
-  
+
   /**
    * Hold the atom index and its symmetry operator.
    */
