@@ -172,24 +172,14 @@ public class NeighborList extends ParallelRegion {
   /** Number of atoms in the asymmetric unit with interactions lists greater than 0. */
   private int atomsWithIteractions;
   /**
-   * The number of subcells that must be searched along the a-axis to find all neighbors within the
+   * The number of subcells that must be searched along the an axis to find all neighbors within the
    * cutoff + buffer distance.
    *
-   * <p>If each nEdgeX == 1 for (X=A,B,C} then all neighbors will be found in 3x3x3 = 27 cells. If
-   * each nEdgeX == 2, then all neighbors will be found in 5x5x5 = 125 cells (in this case the cells
-   * are smaller).
+   * <p>If the nEdge == 1 for {X=A,B,C} then all neighbors will be found in 3x3x3 = 27 cells.
+   * If each nEdge == 2, then all neighbors will be found in 5x5x5 = 125 cells (in this case the
+   * cells are smaller).
    */
-  private int nEdgeA;
-  /**
-   * The number of subcells that must be searched along the b-axis to find all neighbors within the
-   * cutoff + buffer distance.
-   */
-  private int nEdgeB;
-  /**
-   * The number of subcells that must be searched along the c-axis to find all neighbors within the
-   * cutoff + buffer distance.
-   */
-  private int nEdgeC;
+  private int nEdge;
   /** The number of divisions along the A-axis. */
   private int nA;
   /** The number of divisions along the B-axis. */
@@ -513,29 +503,27 @@ public class NeighborList extends ParallelRegion {
       assert (sphere >= cutoffPlusBuffer);
     }
 
-    // nEdgeA, nEdgeB and nEdgeC must be >= 1.
-    // If nEdgeA = 2, then there will be 5x5x5 subcells to search for neighbors.
-    nEdgeA = 2;
-    nEdgeB = nEdgeA;
-    nEdgeC = nEdgeA;
+    // nEdge >= 1.
+    // For nEdge == 1, then 3x3x3 subcells are searched for neighbors (mean of ~440 water atoms per cell).
+    // For nEdge == 2, then 5x5x5 subcells are searched for neighbors (mean of ~40 water atoms per cell).
+    // For nEdge == 3, then 7x7x7 subcells are searched for neighbors (mean of ~12 water atoms per cell).
+    nEdge = 2;
 
     /*
-     totalA is the smallest a-axis for a subcell, given nEdgeA subcells
-     along the a-axis, that assures all neighbors will be found.
+     The targetInterfacialRadius is the smallest interfacial radius for a subcell,
+     given nEdge subcells along an axis, that assures all neighbors will be found.
     */
-    double totalA = cutoffPlusBuffer / (double) nEdgeA;
-    double totalB = cutoffPlusBuffer / (double) nEdgeB;
-    double totalC = cutoffPlusBuffer / (double) nEdgeC;
-    nA = (int) floor(crystal.interfacialRadiusA / totalA);
-    nB = (int) floor(crystal.interfacialRadiusB / totalB);
-    nC = (int) floor(crystal.interfacialRadiusC / totalC);
-    if (nA < nEdgeA * 2 + 1) {
+    double targetInterfacialRadius = cutoffPlusBuffer / (double) nEdge;
+    nA = (int) floor(2 * crystal.interfacialRadiusA / targetInterfacialRadius);
+    nB = (int) floor(2 * crystal.interfacialRadiusB / targetInterfacialRadius);
+    nC = (int) floor(2 * crystal.interfacialRadiusC / targetInterfacialRadius);
+    if (nA < 2 * nEdge + 1) {
       nA = 1;
     }
-    if (nB < nEdgeB * 2 + 1) {
+    if (nB < 2 * nEdge + 1) {
       nB = 1;
     }
-    if (nC < nEdgeC * 2 + 1) {
+    if (nC < 2 * nEdge + 1) {
       nC = 1;
     }
 
@@ -551,8 +539,16 @@ public class NeighborList extends ParallelRegion {
     if (print) {
       int nCells = nA * nB * nC;
       StringBuilder sb = new StringBuilder("  Neighbor List Builder\n");
-      sb.append(format("   Cells:               %8d\n", nCells));
-      sb.append(format("   Mean Atoms per Cell: %8d", nAtoms * nSymm / nCells));
+      sb.append(format("   Total Cells:          %8d\n", nCells));
+      if (nCells > 1) {
+        sb.append(format("   Interfacial radius    %8.3f A\n", targetInterfacialRadius));
+        int searchA = nA == 1 ? 1 : 2 * nEdge + 1;
+        int searchB = nB == 1 ? 1 : 2 * nEdge + 1;
+        int searchC = nC == 1 ? 1 : 2 * nEdge + 1;
+        sb.append(format("   Domain Decomposition: %8d %4d %4d\n", nA, nB, nC));
+        sb.append(format("   Neighbor Search:      %8d x%3d x%3d\n", searchA, searchB, searchC));
+        sb.append(format("   Mean Atoms per Cell:  %8d", nAtoms * nSymm / nCells));
+      }
       logger.info(sb.toString());
     }
   }
@@ -757,14 +753,14 @@ public class NeighborList extends ParallelRegion {
             cellForCurrentAtom = cells[a][b][c];
 
             int a1 = a + 1;
-            int aStart = a - nEdgeA;
-            int aStop = a + nEdgeA;
+            int aStart = a - nEdge;
+            int aStop = a + nEdge;
             int b1 = b + 1;
-            int bStart = b - nEdgeB;
-            int bStop = b + nEdgeB;
+            int bStart = b - nEdge;
+            int bStop = b + nEdge;
             int c1 = c + 1;
-            int cStart = c - nEdgeC;
-            int cStop = c + nEdgeC;
+            int cStart = c - nEdge;
+            int cStop = c + nEdge;
 
             /*
              If the number of divisions is 1 in any direction then
