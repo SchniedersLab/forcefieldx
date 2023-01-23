@@ -214,7 +214,10 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    * energy code. The AMOEBA force field includes 1-4 interactions fully.
    */
   private NeighborList neighborList;
-  private boolean neighborListOnly = true;
+  /**
+   * Force building of the neighbor list.
+   */
+  private boolean forceNeighborListRebuild = true;
 
   public VanDerWaals() {
     // Empty constructor for use with VanDerWaalsTornado
@@ -731,7 +734,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       }
     }
     neighborList.setCrystal(crystal);
-    neighborListOnly = true;
+    forceNeighborListRebuild = true;
     try {
       parallelTeam.execute(vanDerWaalsRegion);
     } catch (Exception e) {
@@ -888,14 +891,14 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    */
   private void buildNeighborList(Atom[] atoms) {
     neighborList.setAtoms(atoms);
-    neighborListOnly = true;
+    forceNeighborListRebuild = true;
     try {
       parallelTeam.execute(vanDerWaalsRegion);
     } catch (Exception e) {
       String message = " Fatal exception expanding coordinates.\n";
       logger.log(Level.SEVERE, message, e);
     }
-    neighborListOnly = false;
+    forceNeighborListRebuild = false;
   }
 
   /**
@@ -1133,7 +1136,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
 
     @Override
     public void finish() {
-      neighborListOnly = false;
+      forceNeighborListRebuild = false;
       vdwTimeTotal += System.nanoTime();
       // Log timings.
       if (logger.isLoggable(Level.FINE)) {
@@ -1212,7 +1215,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
 
       // Build the neighbor-list (if necessary) using reduced coordinates.
       barrier(neighborListAction);
-      if (neighborListOnly) {
+      if (forceNeighborListRebuild) {
         return;
       }
 
@@ -2172,7 +2175,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       @Override
       public void run() throws Exception {
         neighborListTotalTime = -System.nanoTime();
-        neighborList.buildList(reduced, neighborLists, null, neighborListOnly, false);
+        neighborList.buildList(reduced, neighborLists, null, forceNeighborListRebuild, false);
         neighborListTotalTime += System.nanoTime();
       }
     }
