@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -1005,23 +1005,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
    */
   public void computeInducedGKField() {
     try {
-      fieldGK.reset(parallelTeam, 0, nAtoms - 1);
-      fieldGKCR.reset(parallelTeam, 0, nAtoms - 1);
-      inducedGKFieldRegion.init(
-          atoms,
-          inducedDipole,
-          inducedDipoleCR,
-          crystal,
-          sXYZ,
-          neighborLists,
-          use,
-          cut2,
-          born,
-          fieldGK,
-          fieldGKCR);
+      fieldGK.reset(parallelTeam);
+      fieldGKCR.reset(parallelTeam);
+      inducedGKFieldRegion.init(atoms, inducedDipole, inducedDipoleCR, crystal, sXYZ,
+          neighborLists, use, cut2, born, fieldGK, fieldGKCR);
       parallelTeam.execute(inducedGKFieldRegion);
-      fieldGK.reduce(parallelTeam, 0, nAtoms - 1);
-      fieldGKCR.reduce(parallelTeam, 0, nAtoms - 1);
+      fieldGK.reduce(parallelTeam);
+      fieldGKCR.reduce(parallelTeam);
     } catch (Exception e) {
       String message = "Fatal exception computing induced GK field.";
       logger.log(Level.SEVERE, message, e);
@@ -1033,11 +1023,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
    */
   public void computePermanentGKField() {
     try {
-      fieldGK.reset(parallelTeam, 0, nAtoms - 1);
+      fieldGK.reset(parallelTeam);
       permanentGKFieldRegion.init(
           atoms, globalMultipole, crystal, sXYZ, neighborLists, use, cut2, born, fieldGK);
       parallelTeam.execute(permanentGKFieldRegion);
-      fieldGK.reduce(parallelTeam, 0, nAtoms - 1);
+      fieldGK.reduce(parallelTeam);
     } catch (Exception e) {
       String message = "Fatal exception computing permanent GK field.";
       logger.log(Level.SEVERE, message, e);
@@ -1339,8 +1329,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
       AtomicDoubleArray3D t,
       AtomicDoubleArray3D lg,
       AtomicDoubleArray3D lt) {
-    grad.reduce(parallelTeam, 0, nAtoms - 1);
-    torque.reduce(parallelTeam, 0, nAtoms - 1);
+    grad.reduce(parallelTeam);
+    torque.reduce(parallelTeam);
     for (int i = 0; i < nAtoms; i++) {
       g.add(0, i, lPow * grad.getX(i), lPow * grad.getY(i), lPow * grad.getZ(i));
       t.add(0, i, lPow * torque.getX(i), lPow * torque.getY(i), lPow * torque.getZ(i));
