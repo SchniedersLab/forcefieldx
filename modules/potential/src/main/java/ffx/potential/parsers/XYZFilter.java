@@ -811,7 +811,7 @@ public class XYZFilter extends SystemFilter {
       if (!crystal.aperiodic()) {
         Crystal uc = crystal.getUnitCell();
         String params = format("%14.8f%14.8f%14.8f%14.8f%14.8f%14.8f\n",
-            uc.a, uc.b, uc.c, uc.alpha, uc.beta, uc.gamma);
+            uc.a * l, uc.b * m, uc.c * n, uc.alpha, uc.beta, uc.gamma);
         bw.write(params);
       }
       Atom a2;
