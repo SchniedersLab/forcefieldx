@@ -8,12 +8,11 @@
         <author email="aaron-nessler@uiowa.edu">Aaron Nessler</author>
     </properties>
     <body>
-        <section name="Thermodynamic Organic Crystal Polymorph Search">
+        <section name="Thermodynamic NPT Organic Crystal Polymorph Search">
             <p>The majority of polymorph search algorithms are based on searching a potential energy surface over
                 space groups, unit cell parameters and molecular coordinates. Here we present a novel thermodynamic
-                search
-                procedure that samples the phase space of polymorphs at a prescribed temperature and pressure (i.e.
-                NPT).
+                search procedure<sub>1</sub> that samples the phase space of polymorphs at a prescribed temperature and
+                pressure (<italic>i.e.</italic> NPT).
             </p>
             <p>The general procedure for the thermodynamic polymorph search is as follows:
             </p>
@@ -62,9 +61,9 @@
                 </source>
                 <p>The property file (analogous to a TINKER keyword file) specifies the space group, (starting) unit
                     cell information, and
-                    AMOEBA parameters for the molecule. The latter can be generated using the PolType program
-                    developed in the lab of Pengyu Ren (in this case carbamazepine AMOEBA parameters are contained in
-                    CBZ.patch).
+                    AMOEBA parameters for the molecule. The latter can be generated using the PolType 2<sub>2,3</sub>
+                    program developed in the lab of Professor Pengyu Ren (in this case carbamazepine AMOEBA parameters are
+                    contained in CBZ.patch).
                     It is important to specify a space group (e.g. P1) and unit cell parameters so that the FFX
                     PrepareSpaceGroups command recognizes the system as respecting periodic boundary conditions.
                 </p>
@@ -83,7 +82,7 @@
                     For the purpose of this example, we will search for known carbamazepine polymorphs archived at the
                     Cambridge Crystallography Data Centre <a href="https://www.ccdc.cam.ac.uk">(CCDC)</a>.
                     First, we will search in the space group P21/c
-                    <a href="https://www.ccdc.cam.ac.uk/structures/Search?Compound=carbamazepine&amp;DatabaseToSearch=Published">
+                    <a href="https://www.ccdc.cam.ac.uk/structures/Search?Ccdcid=CBMZPN&amp;DatabaseToSearch=Published">
                         (CBMZPN01)</a>.
                     Other helpful flags can be identified for the creation of space groups by using the following
                     command: ffxc PrepareSpaceGroups -h.
@@ -507,7 +506,7 @@
             <subsection name="References:">
                 <p>
                     <i>
-                        34th Annual Meeting of the Academy of Pharmaceutical Science and Technology, June 16-18 2019,
+                        1. 34th Annual Meeting of the Academy of Pharmaceutical Science and Technology, June 16-18 2019,
                         Toyama, Japan, Prospects for applying in-silico
                         crystal structure prediction to drug development. Hiroomi Nagata*, Okimasa Okada*, Aaron
                         Nessler**, and Michael Schnieders**.
@@ -518,6 +517,20 @@
                 </p>
                 <p>
                     The University of Iowa**
+                </p>
+                <p>
+                    <i>
+                        2. Wu, J. C., Chattree, G., Ren, P. (2012). Automation of AMOEBA polarizable force field
+                        parameterization for small molecules. Theoretical chemistry accounts, 131(3), 1138.
+                        https://doi.org/10.1007/s00214-012-1138-6
+                    </i>
+                </p>
+                <p>
+                    <i>
+                        3. Walker, B., Liu, C., Wait, E., Ren, P. (2022). Automation of AMOEBA polarizable force field
+                        parameterization for small molecules: Poltype 2. J. Comput. Chem. 2022, 43( 23), 1530.
+                        https://doi.org/10.1002/jcc.26954
+                    </i>
                 </p>
             </subsection>
         </section>

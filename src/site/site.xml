@@ -219,12 +219,14 @@
         <item name="Structural Refinement" href="/properties-refine.html"/>
       </item>
       <item name="Examples" href="/examples.html" collapse="true">
+        <item name="Input Files for FFX" href="/examples-input.html"/>
+        <item name="Convert File Format" href="/examples-convertFileFormat.html"/>
         <item name="GPU Accelerated Side-Chain Optimization" href="/examples-gpuSideChain.html"/>
         <item name="Side-Chain Optimization and Mutation via Many-Body DEE"
           href="/examples-dee.html"/>
         <item name="Organic Crystal Thermodynamics" href="/examples-gauche.html"/>
         <item name="AMOEBA-assisted X-ray Refinement" href="/examples-xray.html"/>
-        <item name="Thermodynamic Polymorph Search" href="/examples-CrystalNPT.html"/>
+        <item name="Thermodynamic Polymorph Search" href="/examples-polymorphNPTsearch.html"/>
         <item name="GPU Accelerated MC-OST Solvation Free Energy"
           href="/examples-mcOSRWSolvationFreeEnergy.html"/>
       </item>
