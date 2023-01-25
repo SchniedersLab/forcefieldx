@@ -75,7 +75,7 @@ public class ExtendedSystem implements Potential {
 
     private static final double DISCR_BIAS = 1.0; // kcal/mol
     private static final double LOG10 = log(10.0);
-    private static final double THETA_FRICTION = 5.0; // psec^-1
+    private static final double THETA_FRICTION = 0.5; // psec^-1
     private static final double THETA_MASS = 5.0; //Atomic Mass Units
     private static final int dDiscr_dTautIndex = 6;
     private static final int dDiscr_dTitrIndex = 3;
@@ -206,6 +206,12 @@ public class ExtendedSystem implements Potential {
      * specifically a titrating hydrogen.
      */
     private final boolean[] isTitratingHydrogen;
+    /**
+     * Boolean similar to fixTitrationState/fixTautomerState but is even more restrictive in that set methods
+     * are not allowed to change lambda values from their initialized values.
+     * Mainly used when evaluating archive snapshots at different initialized lambda values.
+     * If not set to true the archive and esv files set the lambdas automatically.
+     */
     private final boolean lockStates;
     /**
      * Number of atoms in the molecular assembly. Since all protons are instantiated at start, this int will not change.
@@ -281,7 +287,8 @@ public class ExtendedSystem implements Potential {
      */
     File restartFile = null;
     /**
-     * Boolean to keep the lambdas from updating over the course of dynamics. Useful for when
+     * Boolean to keep the lambdas from updating over the course of dynamics. Useful for running dynamics
+     * with extended system variables at fixed windows (i.e. BAR)
      */
     private boolean fixTautomerState;
     private boolean fixTitrationState;
@@ -430,11 +437,14 @@ public class ExtendedSystem implements Potential {
                     // When testing end state energies don't average pdamp.
                     // Default pdamp is set from protonated polarizability so it must be changed when testing deprotonated end state (Titration lambda = 0.0.)
                     if (isTitratingHeavy(atomIndex)) {
-                        double deprotPolar = titrationUtils.getPolarizability(atom, 0.0, 0.0, atom.getPolarizeType().polarizability);
-                        double protPolar = titrationUtils.getPolarizability(atom, 1.0, 1.0, atom.getPolarizeType().polarizability);
-                        double avgPolar = 0.5 * deprotPolar + 0.5 * protPolar;
-                        double sixth = 1.0 / 6.0;
-                        atom.getPolarizeType().pdamp = pow(avgPolar, sixth);
+                        //If polarization is turned off atom.getPolarizeType() will return null
+                        if(atom.getPolarizeType() != null){
+                            double deprotPolar = titrationUtils.getPolarizability(atom, 0.0, 0.0, atom.getPolarizeType().polarizability);
+                            double protPolar = titrationUtils.getPolarizability(atom, 1.0, 1.0, atom.getPolarizeType().polarizability);
+                            double avgPolar = 0.5 * deprotPolar + 0.5 * protPolar;
+                            double sixth = 1.0 / 6.0;
+                            atom.getPolarizeType().pdamp = pow(avgPolar, sixth);
+                        }
                     }
                 }
                 // If is a tautomer, it must also be titrating.
@@ -996,7 +1006,7 @@ public class ExtendedSystem implements Potential {
     }
 
     /**
-     * Guess the lambda states for each extended residue
+     * Reset initialized lambdas to a naive guess based on the model pKa for each extended residue
      */
     public void reGuessLambdas() {
         logger.info(" Reinitializing lambdas to match RepEx window pH");
@@ -1008,12 +1018,17 @@ public class ExtendedSystem implements Potential {
         }
     }
 
+    /**
+     * Set the tautomer lambda of a residue and update corresponding theta
+     * @param residue
+     * @param lambda
+     */
     public void setTautomerLambda(Residue residue, double lambda) {
         setTautomerLambda(residue, lambda, true);
     }
 
     /**
-     * Set the tautomer lambda of a residue
+     * Set the tautomer lambda of a residue and update corresponding theta if desired
      *
      * @param residue      residue to set the lambda of
      * @param lambda       value to set the residue to
@@ -1037,13 +1052,18 @@ public class ExtendedSystem implements Potential {
             logger.warning(format("This residue %s does not have any titrating tautomers.", residue.getName()));
         }*/
     }
-
+    /**
+     * Set the titration lambda of a residue and update corresponding theta
+     *
+     * @param residue      residue to set the lambda of
+     * @param lambda       value to set the residue to
+     */
     public void setTitrationLambda(Residue residue, double lambda) {
         setTitrationLambda(residue, lambda, true);
     }
 
     /**
-     * Set the titration lambda of a residue
+     * Set the titration lambda of a residue and update corresponding theta if desired
      *
      * @param residue      residue to set the lambda of
      * @param lambda       value to set the residue to
@@ -1128,18 +1148,28 @@ public class ExtendedSystem implements Potential {
         }
     }
 
-    public boolean isExtended(Residue residue) {
-        return extendedResidueList.contains(residue);
-    }
-
+    /**
+     * get Titration Lambda for an extended atom
+     * @param atomIndex
+     * @return titrationLambdas[atomIndex]
+     */
     public double getTitrationLambda(int atomIndex) {
         return titrationLambdas[atomIndex];
     }
 
+    /**
+     * get the index of the extended residue list that corresponds to this atom
+     * @param i
+     * @return titrationIndexMap[i]
+     */
     public int getTitrationESVIndex(int i) {
         return titrationIndexMap[i];
     }
-
+    /**
+     * get Tautomer Lambda for an extended atom
+     * @param atomIndex
+     * @return tautomerLambdas[atomIndex]
+     */
     public double getTautomerLambda(int atomIndex) {
         return tautomerLambdas[atomIndex];
     }
@@ -1148,14 +1178,26 @@ public class ExtendedSystem implements Potential {
         return tautomerIndexMap[i];
     }
 
+    /**
+     * Return the List of Titrating Residues
+     * @return titratingResidueList
+     */
     public List<Residue> getTitratingResidueList() {
         return titratingResidueList;
     }
 
+    /**
+     * Return the List of Tautomerizing Residues
+     * @return tautomerizingResidueList
+     */
     public List<Residue> getTautomerizingResidueList() {
         return tautomerizingResidueList;
     }
 
+    /**
+     * Return the List of Extended Residues which = TitratingResidueList + TautomerizingResidueList
+     * @return extendedResidueList
+     */
     public List<Residue> getExtendedResidueList() {
         return extendedResidueList;
     }
@@ -1168,6 +1210,10 @@ public class ExtendedSystem implements Potential {
         return thetaFriction;
     }
 
+    /**
+     * Gets a copy of the array of doubles that matches the nESVs correspoding to each titration and tautomer lambda
+     * @return double array of length nESVs
+     */
     public double[] getExtendedLambdas() {
         double[] lambdas = new double[nESVs];
         System.arraycopy(extendedLambdas, 0, lambdas, 0, lambdas.length);
