@@ -139,7 +139,7 @@ if [ -x "$awkCmd" ]; then
     fi
 fi
 
-# Detect JDK version; disallow JDKs below 11 and above 20.
+# Detect JDK version; disallow JDKs below 17 and above 20.
 if [ $hasAwkSed ]; then
     JVERS="`java -version 2>&1 | awk '/version/ {print $3;}' | sed 's/\"//g'`"
     JVFIRST="`echo "$JVERS" | awk 'BEGIN { FS = "[.-]"; } { print $1 }'`"

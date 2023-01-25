@@ -1081,7 +1081,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    * instead, which contains an empty version of setFactors(i,k). The OST version sets new factors
    * only on lambda updates, in setLambda().
    */
-  public class LambdaFactors {
+  public static class LambdaFactors {
 
     double sc1 = 0.0;
     double dsc1dL = 0.0;
