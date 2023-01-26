@@ -238,7 +238,7 @@
       <item name="Binder" href="/binder.html"/>
       <item name="Google Colab" href="/colab.html"/>
       <item name="Mathematica" href="/mathematica.html"/>
-      <item name="Matlab" href="/matlab.html"/>
+      <!-- item name="Matlab" href="/matlab.html"/ -->
     </menu>
     <menu name="Modules" inherit="top">
       <item name="Modules" href="/modules.html"/>
