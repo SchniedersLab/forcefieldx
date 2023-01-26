@@ -356,6 +356,7 @@ public class ForceFieldFilter {
                 baseType = VDWType.parseVDW14(input, tokens);
                 break;
               case VDWPR:
+              case VDWPAIR:
                 baseType = VDWPairType.parse(input, tokens);
                 break;
               case POLARIZE:
@@ -482,6 +483,7 @@ public class ForceFieldFilter {
           baseType = VDWType.parseVDW14(input, tokens);
           break;
         case VDWPR:
+        case VDWPAIR:
           baseType = VDWPairType.parse(input, tokens);
           break;
         case POLARIZE:

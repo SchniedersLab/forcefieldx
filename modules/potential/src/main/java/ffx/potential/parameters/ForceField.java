@@ -1817,6 +1817,7 @@ public class ForceField {
     VDW,
     VDW14,
     VDWPR,
+    VDWPAIR,
     RELATIVESOLV
   }
 
