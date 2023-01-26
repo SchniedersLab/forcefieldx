@@ -289,9 +289,6 @@ public class DispersionRegion extends ParallelRegion {
     private double r, r2, r3;
     private double xr, yr, zr;
     private int threadID;
-    // Extra padding to avert cache interference.
-    private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-    private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
     DispersionLoop() {
       dx_local = new double[3];

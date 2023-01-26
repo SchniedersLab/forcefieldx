@@ -428,4 +428,29 @@ public abstract class LongForLoop
         run(first, last);
     }
 
+    // Kludge to avert false sharing in multithreaded programs.
+    // Padding fields.
+    volatile long p0 = 1000L;
+    volatile long p1 = 1001L;
+    volatile long p2 = 1002L;
+    volatile long p3 = 1003L;
+    volatile long p4 = 1004L;
+    volatile long p5 = 1005L;
+    volatile long p6 = 1006L;
+    volatile long p7 = 1007L;
+    volatile long p8 = 1008L;
+    volatile long p9 = 1009L;
+    volatile long pa = 1010L;
+    volatile long pb = 1011L;
+    volatile long pc = 1012L;
+    volatile long pd = 1013L;
+    volatile long pe = 1014L;
+    volatile long pf = 1015L;
+
+    // Method to prevent the JDK from optimizing away the padding fields.
+    long preventOptimization() {
+        return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7 +
+            p8 + p9 + pa + pb + pc + pd + pe + pf;
+    }
+    
 }

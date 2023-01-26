@@ -383,9 +383,6 @@ public class BornRadiiRegion extends ParallelRegion {
   private class BornRadiiLoop extends IntegerForLoop {
 
     private double[] localBorn;
-    // Extra padding to avert cache interference.
-    private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-    private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
     @Override
     public void finish() {

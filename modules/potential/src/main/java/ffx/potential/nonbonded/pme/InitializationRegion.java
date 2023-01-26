@@ -265,9 +265,6 @@ public class InitializationRegion extends ParallelRegion {
     private double[] y;
     private double[] z;
     private int threadID;
-    // Extra padding to avert cache interference.
-    private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-    private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
     @Override
     public void run(int lb, int ub) {
@@ -348,9 +345,6 @@ public class InitializationRegion extends ParallelRegion {
     private final double[][] tempQuadrupole = new double[3][3];
     private final double[] dipole = new double[3];
     private final double[][] quadrupole = new double[3][3];
-    // Extra padding to avert cache interference.
-    private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-    private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
     @Override
     public void run(int lb, int ub) {

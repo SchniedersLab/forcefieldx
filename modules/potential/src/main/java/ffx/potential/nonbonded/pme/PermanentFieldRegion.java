@@ -528,9 +528,6 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
       private double[] inductionMaskLocal;
       private double[] energyMaskLocal;
       private int count;
-      // Extra padding to avert cache interference.
-      private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-      private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
       PermanentRealSpaceFieldLoop() {
         super();
