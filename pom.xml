@@ -239,10 +239,10 @@
                 <!-- dependencyConvergence/ -->
                 <!-- reactorModuleConvergence/ -->
                 <requireJavaVersion>
-                  <version>[11,20.1]</version>
+                  <version>[17,20.1]</version>
                 </requireJavaVersion>
                 <requireMavenVersion>
-                  <version>3.2.5</version>
+                  <version>3.8</version>
                 </requireMavenVersion>
                 <requirePluginVersions/>
               </rules>
@@ -612,16 +612,16 @@
       <timezone>-5</timezone>
     </contributor>
     <contributor>
-      <email>inessler@umich.edu</email>
+      <email>iannessler@gmail.com</email>
       <name>Ian J. Nessler</name>
-      <organization>Chemical Engineering Graduate Student, The U. of Michigan</organization>
-      <organizationUrl>http://www.umich.edu</organizationUrl>
+      <organization>Senior Scientist, AbbVie</organization>
+      <organizationUrl>https://www.abbvie.com</organizationUrl>
       <roles>
         <role>
           Drug Crystal Structure, Thermodynamics and Solubility
         </role>
       </roles>
-      <timezone>-5</timezone>
+      <timezone>-7</timezone>
     </contributor>
     <contributor>
       <email>julia-park@gmail.com</email>
@@ -949,7 +949,7 @@
     <commons-lang3.version>3.12.0</commons-lang3.version>
     <commons-math3.version>3.6.1</commons-math3.version>
     <!-- Control the source version version -->
-    <compileVersion>11</compileVersion>
+    <compileVersion>17</compileVersion>
     <compiler.version>3.10.1</compiler.version>
     <dependency.version>3.4.0</dependency.version>
     <dependencyDetails>false</dependencyDetails>
@@ -1009,7 +1009,7 @@
     <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
     <surefire.version>3.0.0-M7</surefire.version>
     <!-- Control the target JRE version -->
-    <targetVersion>11</targetVersion>
+    <targetVersion>17</targetVersion>
     <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
     <tensorflow.version>1.13.1</tensorflow.version>
     <timestamp>${maven.build.timestamp}</timestamp>

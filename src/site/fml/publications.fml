@@ -4,6 +4,166 @@
       xsi:schemaLocation="http://maven.apache.org/FML/1.0.1 http://maven.apache.org/xsd/fml-1.0.1.xsd"
       title="Publications"
       toplink="false">
+    <part id="2023">
+        <title>2023</title>
+        <faq id="27">
+          <question>
+              Tollefson, M. R., Gogal, R. A., Weaver, A. M., Schaefer, A. M., Marini, R. J.,
+              Azaiez, H., Kolbe, D. L., Wang, D., Weaver, A. E., Casavant, T. L., Braun, T. A.,
+              Smith, R. J. H., and Schnieders, M. J.,
+              Assessing Variants of Uncertain Significance Implicated in Hearing Loss
+              Using a Comprehensive Deafness Proteome
+              <i>Submitted</i>
+          </question>
+          <answer>
+            <p>
+                Hearing loss is the leading sensory deficit, affecting ~5% of the population.
+                It exhibits remarkable heterogeneity across 223 genes with 6,328 pathogenic missense
+                variants, making deafness-specific expertise a prerequisite for ascribing phenotypic
+                consequences to genetic variants. Deafness-implicated variants are curated in the
+                Deafness Variation Database (DVD) after classification by a genetic hearing loss
+                expert panel and thorough informatics pipeline. However, seventy percent of the
+                128,167 missense variants in the DVD are “variants of uncertain significance” (VUS)
+                due to insufficient evidence for classification. Here, we use the deep learning protein
+                prediction algorithm, AlphaFold2, to curate structures for all DVD genes. We refine these
+                structures with global optimization and the AMOEBA force field and use DDGun3D to
+                predict folding free energy differences (∆∆GFold) for all DVD missense variants.
+                We find that 5,772 VUSs have a large, destabilizing ∆∆GFold that is consistent
+                with pathogenic variants. When also filtered for CADD scores (>25.7), we determine
+                3,456 VUSs are likely pathogenic at a probability of 99.0%. These VUSs affect
+                119 patients (~3% of cases) sequenced by the OtoSCOPE targeted panel. Approximately
+                half of these patients previously received an inconclusive report, and reclassification
+                of these VUSs as pathogenic provides a new genetic diagnosis for six patients.
+            </p>
+          </answer>
+        </faq>
+    </part>
+    <part id="2022">
+        <title>2022</title>
+        <faq id="26">
+            <question>
+                Nessler, A. J., Okada, O., Hermon, M. J., Nagata, H., and Schnieders, M. J.,
+                Progressive alignment of crystals: reproducible and efficient assessment of crystal structure similarity.
+                <i>Journal of Applied Crystallography</i>
+                <b>2022</b>, 55, 1528-1537.
+                <a href="http://dx.doi.org/10.1107/S1600576722009670">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>
+                    During in silico crystal structure prediction of organic molecules, millions of
+                    candidate structures are often generated. These candidates must be compared to
+                    remove duplicates prior to further analysis (e.g. optimization with electronic
+                    structure methods) and ultimately compared with structures determined
+                    experimentally. The agreement of predicted and experimental structures forms the
+                    basis of evaluating the results from the Cambridge Crystallographic Data Centre
+                    (CCDC) blind assessment of crystal structure prediction, which further motivates
+                    the pursuit of rigorous alignments. Evaluating crystal structure packings
+                    using coordinate root-mean-square deviation (RMSD) for N molecules (or N
+                    asymmetric units) in a reproducible manner requires metrics to describe the
+                    shape of the compared molecular clusters to account for alternative approaches
+                    used to prioritize selection of molecules. Described here is a flexible
+                    algorithm called Progressive Alignment of Crystals (PAC) to evaluate crystal
+                    packing similarity using coordinate RMSD and introducing the radius of gyration
+                    (Rg) as a metric to quantify the shape of the superimposed clusters. It is shown
+                    that the absence of metrics to describe cluster shape adds ambiguity to the
+                    results of the CCDC blind assessments because it is not possible to determine
+                    whether the superposition algorithm has prioritized tightly packed molecular
+                    clusters (i.e. to minimize Rg) or prioritized reduced RMSD (i.e. via possibly
+                    elongated clusters with relatively larger Rg). For example, it is shown that
+                    when the PAC algorithm described here uses single linkage to prioritize
+                    molecules for inclusion in the superimposed clusters, the results are nearly
+                    identical to those calculated by the widely used program COMPACK. However, the
+                    lower Rg values obtained by the use of average linkage are favored for molecule
+                    prioritization because the resulting RMSDs more equally reflect the importance
+                    of packing along each dimension. It is shown that the PAC algorithm is faster
+                    than COMPACK when using a single process and its utility for biomolecular
+                    crystals is demonstrated. Finally, parallel scaling up to 64 processes in the
+                    open-source code Force Field X is presented.
+                </p>
+            </answer>
+        </faq>
+        <faq id="25">
+            <question>
+                Dybeck, E. C., Thiel, A., Schnieders, M. J., Pickard, F. C. I. V., Wood, G. P. F.,
+                Krzyzaniak, J. F., and Hancock, B. C.,
+                A Comparison of Methods for Computing Relative Anhydrous–Hydrate Stability
+                with Molecular Simulation,
+                <i>Crystal Growth and Design</i>
+                <b>2022</b>, 23, 142-167.
+                <a href="http://dx.doi.org/10.1021/acs.cgd.2c00832">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>
+                    The transformation of a pharmaceutical solid from an anhydrous crystal
+                    into a hydrated form during drug development represents a risk to a product’s
+                    safety and efficacy due to the potential impact on stability, bioavailability,
+                    and manufacturability. In this work, we examine 10 classical free energy
+                    simulation protocols to evaluate the thermodynamic stability of hydrated
+                    crystals relative to their anhydrous forms. Molecular dynamics simulations
+                    are used to compute the Gibbs free energies of the crystals of three
+                    pharmaceutically relevant systems using two fixed-charge potentials,
+                    GAFF and OPLS, as well as the polarizable AMOEBA model. In addition, we
+                    explore a variety of water models, including TIP3P, TIP4P, and AMOEBA, for
+                    both the interstitial water and the effects of ambient humidity. The AMOEBA
+                    model predicts free energy values most consistent with experimental measurements
+                    among the models examined. The benefits of a fully polarizable water model
+                    relative to fixed-charged models appear to derive predominantly from a better
+                    treatment of water’s dipole moment in the crystalline phase. Despite this
+                    improved physical treatment, we find that no single model produces reliable
+                    predictions of the phase boundary between hydrated and anhydrous crystals from
+                    theory alone. However, we show that accurate phase diagrams can be constructed
+                    from the simulations by introducing a single experimentally determined
+                    coexistence point. With this single experimental data point as input,
+                    the phase boundary is correctly predicted within 10% relative humidity on the
+                    temperature range of 15 to 75 °C for all three systems examined. Furthermore,
+                    we demonstrate that with this known coexistence point as an input, the differences
+                    between the various potentials and the water models become insignificant, as all
+                    models yield accurate phase boundaries regardless of whether polarization is
+                    included due to significant temperature-dependent error cancellation between models.
+                </p>
+            </answer>
+        </faq>
+    </part>
+    <part id="2021">
+      <title>2021</title>
+      <faq id="24">
+        <question>
+          Corrigan, R. A., Qi, G., Thiel, A. C., Lynn, J. R., Walker, B. D., Casavant, T. L.,
+          Lagardere, L., Piquemal, J.-P., Ponder, J. W., Ren, P., and Schnieders, M. J.,
+          Implicit Solvents for the Polarizable Atomic Multipole AMOEBA Force Field.
+          <i>Journal of Chemical Theory and Computation</i>
+          <b>2021</b>,  17 (4), 2323-2341.
+          <a href="http://dx.doi.org/10.1021/acs.jctc.0c01286">
+             <img src="images/pdf.png" alt="PDF"/>
+          </a>
+        </question>
+        <answer>
+          <p>
+            Computational protein design, ab initio protein/RNA folding, and protein–ligand screening
+            can be too computationally demanding for explicit treatment of solvent. For these applications,
+            implicit solvent offers a compelling alternative, which we describe here for the polarizable
+            atomic multipole AMOEBA force field based on three treatments of continuum electrostatics:
+            numerical solutions to the nonlinear and linearized versions of the Poisson–Boltzmann equation (PBE),
+            the domain-decomposition conductor-like screening model (ddCOSMO) approximation to the PBE,
+            and the analytic generalized Kirkwood (GK) approximation. The continuum electrostatics models are
+            combined with a nonpolar estimator based on novel cavitation and dispersion terms. Electrostatic
+            model parameters are numerically optimized using a least-squares style target function based on a
+            library of 103 small-molecule solvation free energy differences. Mean signed errors for the adaptive
+            Poisson–Boltzmann solver (APBS), ddCOSMO, and GK models are 0.05, 0.00, and 0.00 kcal/mol,
+            respectively, while the mean unsigned errors are 0.70, 0.63, and 0.58 kcal/mol, respectively.
+            Validation of the electrostatic response of the resulting implicit solvents, which are available
+            in the Tinker (or Tinker-HP), OpenMM, and Force Field X software packages, is based on
+            comparisons to explicit solvent simulations for a series of proteins and nucleic acids.
+            Overall, the emergence of performative implicit solvent models for polarizable force fields
+            opens the door to their use for folding and design applications.
+          </p>
+         </answer>
+      </faq>
+    </part>
     <part id="2019">
         <title>2019</title>
         <faq id="23">

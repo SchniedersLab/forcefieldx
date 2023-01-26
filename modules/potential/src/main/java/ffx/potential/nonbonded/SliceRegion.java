@@ -253,9 +253,6 @@ public class SliceRegion extends ParallelRegion {
   private class GridInitLoop extends IntegerForLoop {
 
     private final IntegerSchedule schedule = IntegerSchedule.fixed();
-    // Extra padding to avert cache interference.
-    long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-    long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
     @Override
     public void run(int lb, int ub) {

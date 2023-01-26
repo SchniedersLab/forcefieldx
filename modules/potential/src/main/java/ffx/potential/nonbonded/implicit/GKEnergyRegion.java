@@ -336,9 +336,6 @@ public class GKEnergyRegion extends ParallelRegion {
     private double gkPermanentEnergy;
     private double gkPolarizationEnergy;
     private double gkEnergy;
-    // Extra padding to avert cache interference.
-    private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-    private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
     GKEnergyLoop() {
       a = new double[6][4];
@@ -2733,10 +2730,6 @@ public class GKEnergyRegion extends ParallelRegion {
     private double gkEnergy;
     private double gkPermanentEnergy;
     private double gkPolarizationEnergy;
-
-    // Extra padding to avert cache interference.
-    private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-    private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
     GKEnergyLoopQI() {
       mI = new PolarizableMultipole();

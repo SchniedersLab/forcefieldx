@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<document
+        xmlns="http://maven.apache.org/XDOC/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>Input Files for FFX</title>
+        <author email="aaron-nessler@uiowa.edu">Aaron Nessler</author>
+    </properties>
+    <body>
+        <section name="Input Files for Force Field X (FFX) Calculations">
+            <p>The FFX software package contains a very powerful and ever expanding library of functions to aid in a
+                variety of computational chemistry endeavors. It is difficult to utilize FFX without
+                properly formatted input files. The following is a brief and general guide on how to set up files for an
+                FFX command.
+            </p>
+            <subsection name="Necessary Files">
+                <p>
+                    In general, FFX commands need coordinates to perform their function. The standard FFX coordinate file
+                    follows TINKER<sup>1</sup> XYZ file format conventions (however most FFX commands also function with PDB files).
+                    The first line of an XYZ file contains the number of
+                    atoms within the structure followed by an identifier (this identifier is handled as a comment).
+                    Optionally, the next line can contain lattice parameters for a crystal that is produced with the
+                    provided coordinates (space group is specified within the properties file). Finally, the
+                    remaining lines consist of specific atoms. The atomic coordinate lines contain the following
+                    information
+                    from left to right: atom number, atomic label, x-coordinate, y-coordinate, z-coordinate, atom type,
+                    and bonded atoms. Contents of the file "CBZ.xyz" are provided below as an example:
+                </p>
+                <source>
+                    30 CBZ.xyz
+                    10.32830623   10.95565862   17.24348658   90.00000000   86.28198726   90.00000000
+                     1   O  3.80927596  1.34427638  0.60716888  415   14
+                     2   N  2.81747690  1.03638807 -1.57326561  407    4    5   14
+                     3   N  3.37765424 -0.75657908 -0.16702976  409   14   29   30
+                     4   C  2.49090571  2.40659604 -1.86571082  402    2    6   10
+                     5   C  2.03565503  0.12640028 -2.41840836  402    2    7   11
+                     6   C  1.16225543  2.88826730 -1.49404155  406    4    8   12
+                     7   C  0.60983897 -0.01518350 -2.33704738  406    5    9   13
+                     8   C  0.21565062  2.02225648 -0.83539346  404    6    9   19
+                     9   C -0.04625716  0.76418164 -1.25711359  404    7    8   20
+                     10  C  3.39292036  3.28514942 -2.51085999  408    4   15   21
+                     11  C  2.71013427 -0.70305940 -3.35553573  408    5   16   22
+                     12  C  0.83676064  4.23291832 -1.76894534  403    6   17   23
+                     13  C -0.06386162 -0.85693639 -3.23715672  403    7   18   24
+                     14  C  3.36416024  0.61469239 -0.31033724  401    1    2    3
+                     15  C  3.04253626  4.61212300 -2.74187904  405   10   17   25
+                     16  C  2.02730138 -1.50085488 -4.23375119  405   11   18   26
+                     17  C  1.79008186  5.10526234 -2.35301895  410   12   15   27
+                     18  C  0.59592378 -1.57566716 -4.23801013  410   13   16   28
+                     19  H -0.39097751  2.36441559 -0.00063083  414    8
+                     20  H -0.88106295  0.23645393 -0.75844449  414    9
+                     21  H  4.37373437  2.92419678 -2.72332680  412   10
+                     22  H  3.74724689 -0.70451346 -3.34950963  412   11
+                     23  H -0.18755136  4.59412309 -1.56957313  417   12
+                     24  H -1.15698939 -0.82123003 -3.08699193  417   13
+                     25  H  3.79716480  5.28962322 -3.13293051  416   15
+                     26  H  2.53972796 -2.12433359 -4.91011776  416   16
+                     27  H  1.47993023  6.10054327 -2.45187745  413   17
+                     28  H  0.03252031 -2.28886293 -4.83185282  413   18
+                     29  H  3.56217740 -1.12279241  0.76008088  411    3
+                     30  H  3.35446649 -1.48152092 -0.86332390  411    3
+                </source>
+                <p>In addition to a coordinate file, you will likely need a Properties file
+                    (analogous to a TINKER<sup>1</sup> keyword file). Traditionally, these files have the same name as the
+                    coordinate
+                    file (<italic>e.g.</italic> CBZ.xyz would have either CBZ.properties or CBZ.key), however this file
+                    can
+                    also be specified from the commands line by adding "-Dkey=NAME.key" before your FFX command.
+                    Many specifications can be made within the Properties file
+                    (see <a href="https://ffx.biochem.uiowa.edu/properties.html">here</a>). One of the most important is
+                    either the "forcefield" or "parameters" variables as they control how to
+                    represent the supplied coordinates. The "forcefield" keyword specifies a given force field
+                    (<italic>e.g.</italic> "forcefield AMOEBA_BIO_2018", which is sufficient for most proteins). The
+                    "parameters" keyword references a stand-alone file containing force field parameters, scaling terms,
+                    and units.
+                    FFX can also augment a given force field with additional parameters using the "patch" variable.
+                    For example, atomic parameters for small molecules can be generated by auto-parameterization tools
+                    (<italic>e.g.</italic>
+                    <a href="https://github.com/TinkerTools/poltype2">PolType2</a>
+                    <sup>2,3</sup>
+                    can
+                    be used to generate AMOEBA patch files).
+                    An example Properties file is below (CBZ.properties):
+                </p>
+                <source>
+                    forcefield AMOEBA_BIO_2018
+                    patch /PATH/TO/CBZ.patch
+                    spacegroup P1
+                    a-axis 10.0
+                    b-axis 10.0
+                    c-axis 10.0
+                    alpha 90.0
+                    beta 90.0
+                    gamma 90.0
+                    vdw-cutoff 15.0
+                </source>
+            </subsection>
+        </section>
+        <section name="References:">
+            <p>
+                <i>
+                    1. J. A. Rackers, Z. Wang, C. Lu, M. L. Maury, L. Lagardère, M. J. Schnieders, J.-P. Piquemal,
+                    P. Ren, J. W. Ponder, (2018). Tinker 8: Software Tools for Molecular Design.
+                    J. Chem. Theory. Comput., 14 (10), 5273–5289 DOI: http://dx.doi.org/10.1021/acs.jctc.8b00529
+                </i>
+            </p>
+            <p>
+                <i>
+                    2. Wu, J. C., Chattree, G., Ren, P. (2012). Automation of AMOEBA polarizable force field
+                    parameterization for small molecules. Theoretical chemistry accounts, 131(3), 1138.
+                    https://doi.org/10.1007/s00214-012-1138-6
+                </i>
+            </p>
+            <p>
+                <i>
+                    3. Walker, B., Liu, C., Wait, E., Ren, P. (2022). Automation of AMOEBA polarizable force field
+                    parameterization for small molecules: Poltype 2. J. Comput. Chem. 2022, 43( 23), 1530.
+                    https://doi.org/10.1002/jcc.26954
+                </i>
+            </p>
+        </section>
+    </body>
+</document>

@@ -67,22 +67,22 @@ import java.util.logging.Logger;
  * <ol>
  *   <li>The unit cell is partitioned into <code>nA * nB * nC</code> smaller axis-aligned cells,
  *       where {nA, nB, nC} are chosen as large as possible subject to the criteria that the length
- *       of each side of a sub-volume (rCellA, rCellB, rCellC) multiplied by (nEdgeA, nEdgeB,
- *       nEdgeC), respectively, must be greater than the cutoff distance <code>Rcut</code> plus a
+ *       of each side of a sub-volume (rCellA, rCellB, rCellC) multiplied by nEdge
+ *       must be greater than the cutoff distance <code>Rcut</code> plus a
  *       buffer distance <code>delta</code>: <br>
- *       <code>rCellA * nEdgeA .GE. (Rcut + delta)</code> <br>
- *       <code>rCellB * nEdgeB .GE. (Rcut + delta)</code> <br>
- *       <code>rCellC * nEdgeC .GE. (Rcut + delta)</code> <br>
- *       All neighbors of an atom are in a block of (2*nEdgeA+1)(2*nEdgeB+1)(2*nEdgeC+1)
- *       neighborCells.
+ *       <code>rCellA * nEdge .GE. (Rcut + delta)</code> <br>
+ *       <code>rCellB * nEdge .GE. (Rcut + delta)</code> <br>
+ *       <code>rCellC * nEdge .GE. (Rcut + delta)</code> <br>
+ *       All neighbors of an atom are in a block of (2*nEdge+1)^3 neighborCells.
  *   <li>Interactions between an atom and neighbors in the asymmetric unit require only half the
  *       neighboring cells to be searched to avoid double counting. However, enumeration of
  *       interactions between an atom in the asymmetric unit and its neighbors in a symmetry mate
  *       require all cells to be searched.
  *   <li>Verlet lists from the search are stored, which reduces the number of neighbors whose
  *       distances must be calculated by a factor of approximately: <br>
- *       <code>(4/3*Pi*Rcut^3)/(neighborCells*Vcell)</code> About 1/3 as many interactions are
- *       contained in the Verlet lists as in the neighboring cells.
+ *       <code>(4/3*Pi*Rcut^3)/(neighborCells*Vcell)</code>
+ *       About 1/3 as many interactions are contained in the Verlet lists compared to
+ *       the total amount in the neighboring cells.
  * </ol>
  *
  * @author Michael J. Schnieders
@@ -694,33 +694,21 @@ public class NeighborList extends ParallelRegion {
             int a = cellForCurrentAtom.a;
             int b = cellForCurrentAtom.b;
             int c = cellForCurrentAtom.c;
-
             int a1 = a + 1;
-            int aStart = a - nEdge;
-            int aStop = a + nEdge;
             int b1 = b + 1;
-            int bStart = b - nEdge;
-            int bStop = b + nEdge;
             int c1 = c + 1;
-            int cStart = c - nEdge;
-            int cStop = c + nEdge;
 
             /*
              If the number of divisions is 1 in any direction then
              set the loop limits to the current cell value.
+             Otherwise search from a - nEdge to a + nEdge.
             */
-            if (nA == 1) {
-              aStart = a;
-              aStop = a;
-            }
-            if (nB == 1) {
-              bStart = b;
-              bStop = b;
-            }
-            if (nC == 1) {
-              cStart = c;
-              cStop = c;
-            }
+            int aStart = nA == 1 ? a : a - nEdge;
+            int aStop = nA == 1 ? a : a + nEdge;
+            int bStart = nB == 1 ? b : b - nEdge;
+            int bStop = nB == 1 ? b : b + nEdge;
+            int cStart = nC == 1 ? c : c - nEdge;
+            int cStop = nC == 1 ? c : c + nEdge;
 
             if (iSymm == 0) {
               // Interactions within the "self-volume".
@@ -865,30 +853,6 @@ public class NeighborList extends ParallelRegion {
       }
     }
 
-    // Kludge to avert false sharing in multithreaded programs.
-    // Padding fields.
-    volatile long p0 = 1000L;
-    volatile long p1 = 1001L;
-    volatile long p2 = 1002L;
-    volatile long p3 = 1003L;
-    volatile long p4 = 1004L;
-    volatile long p5 = 1005L;
-    volatile long p6 = 1006L;
-    volatile long p7 = 1007L;
-    volatile long p8 = 1008L;
-    volatile long p9 = 1009L;
-    volatile long pa = 1010L;
-    volatile long pb = 1011L;
-    volatile long pc = 1012L;
-    volatile long pd = 1013L;
-    volatile long pe = 1014L;
-    volatile long pf = 1015L;
-
-    // Method to prevent the JDK from optimizing away the padding fields.
-    long preventOptimization() {
-      return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7 +
-          p8 + p9 + pa + pb + pc + pd + pe + pf;
-    }
   }
 
   /**

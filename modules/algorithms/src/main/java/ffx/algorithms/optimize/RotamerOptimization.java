@@ -3020,8 +3020,7 @@ public class RotamerOptimization implements Terminatable {
                         ex));
               }
               if (startingEnergy <= finalEnergy) {
-                logger.warning(
-                    "Optimization did not yield a better energy. Reverting to original coordinates.");
+                logger.info("Optimization did not yield a better energy. Reverting to original coordinates.");
                 ResidueState.revertAllCoordinates(currentWindow, coordinates);
               } else {
                 // Copy sliding window optimal rotamers into the overall optimum array.
@@ -4653,8 +4652,7 @@ public class RotamerOptimization implements Terminatable {
                       ex));
             }
             if (startingEnergy <= finalEnergy) {
-              logger.warning(
-                  "Optimization did not yield a better energy. Reverting to original coordinates.");
+              logger.info("Optimization did not yield a better energy. Reverting to original coordinates.");
               ResidueState.revertAllCoordinates(residueSubsetList, coordinates);
             } else {
               // Copy sliding window optimal rotamers into the overall optimum array.

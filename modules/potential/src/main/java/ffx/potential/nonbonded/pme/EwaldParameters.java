@@ -54,6 +54,13 @@ public class EwaldParameters {
 
   /**
    * The default Ewald coefficient.
+   * <br>
+   * For charged systems, the converged Ewald electrostatic energy is a function of the
+   * Ewald coefficient. For this reason, we've chosen to use a default value of 0.545,
+   * for all real space Ewald cutoff values.
+   * <br>
+   * In this way, systemically more accurate values for the real space cutoff,
+   * b-spline order and reciprocal space grid will converge the total electrostatic energy.
    */
   public static final double DEFAULT_EWALD_COEFFICIENT = 0.545;
 

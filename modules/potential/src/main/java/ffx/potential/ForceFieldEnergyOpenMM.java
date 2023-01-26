@@ -4234,8 +4234,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       int[][] axisAtom = pme.getAxisAtoms();
       double quadrupoleConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
-      double polarityConversion =
-          OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
+      double polarityConversion = OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom;
       double dampingFactorConversion = sqrt(OpenMM_NmPerAngstrom);
 
       amoebaMultipoleForce = OpenMM_AmoebaMultipoleForce_create();
@@ -4330,22 +4329,20 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         // Load local multipole coefficients.
         for (int j = 0; j < 3; j++) {
-          OpenMM_DoubleArray_set(
-              dipoles, j, multipoleType.dipole[j] * OpenMM_NmPerAngstrom * useFactor);
+          OpenMM_DoubleArray_set(dipoles, j,
+              multipoleType.dipole[j] * OpenMM_NmPerAngstrom * useFactor);
         }
         int l = 0;
         for (int j = 0; j < 3; j++) {
           for (int k = 0; k < 3; k++) {
-            OpenMM_DoubleArray_set(
-                quadrupoles,
-                l++,
+            OpenMM_DoubleArray_set(quadrupoles, l++,
                 multipoleType.quadrupole[j][k] * quadrupoleConversion * useFactor / 3.0);
           }
         }
 
-        int zaxis = 1;
-        int xaxis = 1;
-        int yaxis = 1;
+        int zaxis = -1;
+        int xaxis = -1;
+        int yaxis = -1;
         int[] refAtoms = axisAtom[i];
         if (refAtoms != null) {
           zaxis = refAtoms[0];
@@ -4362,18 +4359,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         double charge = multipoleType.charge * useFactor;
 
         // Add the multipole.
-        OpenMM_AmoebaMultipoleForce_addMultipole(
-            amoebaMultipoleForce,
-            charge,
-            dipoles,
-            quadrupoles,
-            axisType,
-            zaxis,
-            xaxis,
-            yaxis,
-            polarType.thole,
-            polarType.pdamp * dampingFactorConversion,
+        OpenMM_AmoebaMultipoleForce_addMultipole(amoebaMultipoleForce,
+            charge, dipoles, quadrupoles, axisType, zaxis, xaxis, yaxis,
+            polarType.thole, polarType.pdamp * dampingFactorConversion,
             polarType.polarizability * polarityConversion * polarScale);
+        logger.info(" Multipole: " + atom + " " + Arrays.toString(multipoleType.getMultipole()) + " "
+            + axisType + " " + zaxis + " " + xaxis + " " + yaxis);
       }
       OpenMM_DoubleArray_destroy(dipoles);
       OpenMM_DoubleArray_destroy(quadrupoles);
@@ -4403,8 +4394,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       }
 
       OpenMM_AmoebaMultipoleForce_setMutualInducedMaxIterations(amoebaMultipoleForce, 500);
-      OpenMM_AmoebaMultipoleForce_setMutualInducedTargetEpsilon(
-          amoebaMultipoleForce, pme.getPolarEps());
+      OpenMM_AmoebaMultipoleForce_setMutualInducedTargetEpsilon(amoebaMultipoleForce, pme.getPolarEps());
 
       int[][] ip11 = pme.getPolarization11();
 
@@ -4450,9 +4440,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           OpenMM_IntArray_append(covalentMap, ip11[i][j]);
         }
         OpenMM_AmoebaMultipoleForce_setCovalentMap(
-            amoebaMultipoleForce,
-            i,
-            OpenMM_AmoebaMultipoleForce_PolarizationCovalent11,
+            amoebaMultipoleForce, i, OpenMM_AmoebaMultipoleForce_PolarizationCovalent11,
             covalentMap);
 
         // AMOEBA does not scale between 1-2, 1-3, etc polarization groups.
@@ -4570,16 +4558,9 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         // Set the multipole parameters.
         OpenMM_AmoebaMultipoleForce_setMultipoleParameters(
-            amoebaMultipoleForce,
-            index,
-            multipoleType.charge * useFactor,
-            dipoles,
-            quadrupoles,
-            axisType,
-            zaxis,
-            xaxis,
-            yaxis,
-            polarizeType.thole,
+            amoebaMultipoleForce, index,
+            multipoleType.charge * useFactor, dipoles, quadrupoles,
+            axisType, zaxis, xaxis, yaxis, polarizeType.thole,
             polarizeType.pdamp * dampingFactorConversion,
             polarizeType.polarizability * polarityConversion * polarScale * useFactor);
       }

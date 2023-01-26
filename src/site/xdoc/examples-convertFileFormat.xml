@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<document
+        xmlns="http://maven.apache.org/XDOC/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/XDOC/2.0 http://maven.apache.org/xsd/xdoc-2.0.xsd">
+    <properties>
+        <title>File Format Conversion</title>
+        <author email="aaron-nessler@uiowa.edu">Aaron Nessler</author>
+    </properties>
+    <body>
+        <p>
+            The FFX software package contains a very powerful and ever expanding library of functions to aid in a
+        variety of computational chemistry endeavors. However, it is impossible to utilize FFX without
+        files that are formatted in a manner that FFX can handle.
+        </p>
+        <section name="Conversion Between CIF and XYZ Formats">
+            <p>
+                The following is a brief and general guide on how to convert between CIF and XYZ formats.
+            </p>
+            <subsection name="Conversion from CIF to XYZ">
+                <p>
+                    The CIFtoXYZ conversion algorithm in FFX relies on two input files. The first being the CIF we
+                    wish to convert. The second is an XYZ file that will supply parameters for the converted structure
+                    (Note: The CIFtoXYZ converter does not generate parameters. Parameterization needs to occur prior to
+                    conversion.
+                    For more information on creating input files, see
+                    <a href="https://ffx.biochem.uiowa.edu/examples-input.html">here</a>). Finally, the CIF and XYZ
+                    files should have different names because CIFtoXYZ will create
+                    an XYZ file by the same name as the provided CIF. The command may look something like:
+                </p>
+                <source>ffxc CIFtoXYZ NAME.cif NAME.xyz
+                </source>
+                <p>
+                    There should be a newly generated XYZ and Properties file with the same name as the selected CIF
+                    file (in the above example: NAME.xyz and NAME.properties). The files should be ready for further
+                    calculations, but it is recommended that Minimize and/or MinimizeCrystals is performed as newly
+                    converted files tend to be in strained conformations with respect to the applied model.
+                </p>
+                <p>
+                    CIFtoXYZ can handle appended CIFs, but the space group of the CIF will be appended to the
+                    file name as appended CIFs may have different space groups, but appended XYZ (aka ARC) files must
+                    consist of a single space group specified in the Properties file (<italic>e.g.</italic> NAME_P21c.arc
+                    and NAME_P21c.properties). CIFtoXYZ can attempt to fix crystal parameters to conform to the supplied
+                    lattice system, but since this alters the structure from the original CIF, the user must indicate
+                    that this is desired by adding the &quot;--fixLattice&quot; or &quot;--fl&quot; flag to the command. The default values
+                    are sufficient for most cases, but additional options can be seen through the help message:
+                </p>
+                <source>ffxc CIFtoXYZ --help
+                </source>
+            </subsection>
+            <subsection name="From XYZ to CIF">
+                <p>
+                    The CIFtoXYZ conversion algorithm also allows for the conversion to CIF format. However, this will
+                    require an XYZ file that has been parameterized.
+                    (Note: The CIFtoXYZ converter does not generate parameters. Parameterization needs to occur prior to
+                    conversion.
+                    For more information on creating input files, see
+                    <a href="https://ffx.biochem.uiowa.edu/examples-input.html">here</a>). Finally, the
+                    &quot;--saveCIF&quot; or &quot;--sc&quot; flag should be added to the command.
+                    The command may look something like:
+                </p>
+                <source>ffxc CIFtoXYZ --sc NAME.xyz
+                </source>
+                <p>
+                    The result from the above command should be a generally formatted CIF with the coordinates and
+                    crystallographic information of the original XYZ.
+                </p>
+            </subsection>
+            <subsection name="Utilized Software">
+                <p>
+                    The CIFtoXYZ converter uses CIFTools provided by the RCSB
+                    (<a href="https://github.com/rcsb/ciftools-java">CIFTools</a><sup>1</sup>) and objects provided by
+                    the Chemistry Development Kit (<a href="https://cdk.github.io">CDK</a><sup>2</sup>)
+                </p>
+            </subsection>
+        </section>
+        <section name="Conversion Between PDB and XYZ Formats">
+            <p>
+                The following is a brief and general guide on how to convert between PDB and XYZ formats.
+            </p>
+            <subsection name="Conversion from XYZ to PDB">
+                <p>
+                    The SaveAsPDB conversion algorithm only needs the parameterized XYZ file as input.
+                    (Note: Again, parameterization needs to occur prior to conversion.
+                    For more on creating input files, see <a href="https://ffx.biochem.uiowa.edu/examples-input.html">
+                    here</a>).
+                    <source>ffxc SaveAsPDB NAME.xyz
+                    </source>
+                    This is sufficient to generate the PDB file, however PDB files inherently do not contain
+                    model parameters. Therefore, if you wish to use parameters on a PDB file that
+                    contains definitions outside the default force field of interest, Biotype records should be appended
+                    to either the corresponding PATCH or KEY/PROPERTIES file. Prior to the generation of Biotype records,
+                    each atom should have a unique name (<italic>e.g.</italic> a series of carbons &quot;C&quot;
+                    &quot;C&quot; &quot;C&quot;... could be replaced by &quot;C1&quot; &quot;C2&quot; &quot;C3&quot;...
+                    <italic>etc.</italic>).
+                    Biotype records can be generated with the following command:
+                    <source>ffxc Biotype NAME.xyz
+                    </source>
+                    The resulting Biotype record should have a format similar to the following:
+                    <source>biotype    1  O1  "NAME         "  415 C11
+                    </source>
+                    The first column specifies the information contained (a Biotype record), the second an atom index (1),
+                    the third the atom name (O1), the fourth is the molecule name (NAME), the fifth the atom type or
+                    parameter identifier, and finally bonded information (in this case O1 is bonded to a carbon, C11).
+                    (Note: The PDB residue name and the Biotype molecule name must match. SaveAsPDB uses the default
+                    residue name of MOL, which signifies water in FFX, so you will likely want to change the PDB residue
+                    name if you intend to analyze your PDB file with a model.)
+                </p>
+            </subsection>
+            <subsection name="Conversion from PDB to XYZ">
+                <p>
+                    If you are utilizing parameters outside the default force field, you will need to have access to
+                    Biotype records to map the parameters to the corresponding atoms. Assuming all atoms in the system
+                    are defined (either by the force field or seperate parameter file) the following command should be
+                    sufficient to convert a PDB file to an XYZ:
+                    <source>ffxc SaveAsXYZ NAME.xyz
+                    </source>
+                </p>
+            </subsection>
+        </section>
+        <section name="References:">
+            <p>
+                <i>
+                    1. Sehnal D, Bittrich S, Velankar S, Koča J, Svobodová R, Burley SK, Rose AS (2020)
+                    BinaryCIF and CIFTools—Lightweight, efficient and extensible macromolecular data management.
+                    PLoS Comput Biol 16(10): e1008247. https://doi.org/10.1371/journal.pcbi.1008247
+                </i>
+            </p>
+            <p>
+                <i>
+                    2. Willighagen et al. The Chemistry Development Kit (CDK) v2.0: atom typing, depiction,
+                    molecular formulas, and substructure searching. J. Cheminform. 2017; 9(3),
+                    doi:10.1186/s13321-017-0220-4
+                </i>
+            </p>
+        </section>
+    </body>
+</document>

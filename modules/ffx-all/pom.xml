@@ -101,6 +101,12 @@
                 <exclude>META-INF/services/org.codehaus.groovy.transform.ASTTransformation</exclude>
               </excludes>
             </filter>
+            <filter>
+              <artifact>org.apache.logging.log4j:log4j-core</artifact>
+              <excludes>
+                <exclude>META-INF/services/javax.annotation.processing.Processor</exclude>
+              </excludes>
+            </filter>
           </filters>
           <!-- finalName>ffx-all</finalName -->
           <transformers combine.children="append">
