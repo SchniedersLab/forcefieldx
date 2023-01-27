@@ -65,6 +65,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.configuration2.CompositeConfiguration;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import org.openscience.cdk.AtomContainer;
 import org.openscience.cdk.config.AtomTypeFactory;
@@ -127,6 +128,8 @@ public class CIFFilter extends SystemFilter{
      * Minimum bond distance for CDK Rebonder Tool
      */
     private static final double MIN_BOND_DISTANCE = 0.5;
+
+    private static final double EQUALITY_TOLERANCE = 0.0001;
 
     /**
      * List of output files created from converted CIF file.
@@ -699,8 +702,20 @@ public class CIFFilter extends SystemFilter{
                                                 double diAng =
                                                         dihedralAngle(hydrogen.getXYZ(null), atom1.getXYZ(null),
                                                                 atom2.getXYZ(null), atom3.getXYZ(null));
-                                                intxyz(hydrogen, atom1, bond0.bondType.distance, atom2, angle0_2, atom3,
+                                                if(atom1!=atom3) {
+                                                    intxyz(hydrogen, atom1, bond0.bondType.distance, atom2, angle0_2, atom3,
                                                         Math.toDegrees(diAng), 0);
+                                                }
+                                                else{
+                                                    // Likely water as Atom 3 is not unique. Since no hydrogen atoms
+                                                    //  are present, there isn't a third atom...
+                                                    double[] coord = new double[]{atom2.getX(), atom2.getY(), atom3.getZ()};
+                                                    double mag = sqrt(coord[0] * coord[0] + coord[1] * coord[1] + coord[2] * coord[2]);
+                                                    coord[0] /= mag;
+                                                    coord[1] /= mag;
+                                                    coord[2] /= mag;
+                                                    hydrogen.moveTo(atom1.getX() - coord[0], atom1.getY() - coord[1], atom1.getZ() - coord[2]);
+                                                }
                                                 break;
                                             default:
                                                 // H-C(-C)(-C)-C
