@@ -948,7 +948,7 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
       logger.log(Level.WARNING, "Invalid CHARGE type:\n{0}", input);
     } else {
       try {
-        int[] atomTypes = new int[] {parseInt(tokens[1]), 0, 0};
+        int[] atomTypes = new int[] {parseInt(tokens[1])};
         double charge = parseDouble(tokens[2]);
         double[] dipole = new double[3];
         double[][] quadrupole = new double[3][3];
