@@ -37,10 +37,18 @@
 // ******************************************************************************
 package ffx.numerics.tornado;
 
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
+import uk.ac.manchester.tornado.api.TornadoDeviceContext;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
+import uk.ac.manchester.tornado.api.common.Event;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.TornadoDeviceType;
+import uk.ac.manchester.tornado.api.enums.TornadoVMBackendType;
+import uk.ac.manchester.tornado.api.memory.TornadoDeviceObjectState;
+import uk.ac.manchester.tornado.api.memory.TornadoMemoryProvider;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /** Utility Routines to use the TornadoVM */
@@ -60,24 +68,13 @@ public class FFXTornado {
   /**
    * Get the Tornado Device using specified driver and device index.
    *
-   * @param backendName Backend Name.
-   * @param driverIndex Driver index.
-   * @param deviceIndex Device index.
-   * @return The TornadoDevice instance.
-   */
-  public static TornadoDevice getDevice(String backendName, int driverIndex, int deviceIndex) {
-    return TornadoRuntime.createDevice(backendName, driverIndex, deviceIndex);
-  }
-
-  /**
-   * Get the Tornado Device using specified driver and device index.
-   *
    * @param driverIndex Driver index.
    * @param deviceIndex Device index.
    * @return The TornadoDevice instance.
    */
   public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
-    return TornadoRuntime.createDevice("opencl", driverIndex, deviceIndex);
+    TornadoDriver tornadoDriver = TornadoRuntime.getTornadoRuntime().getDriver(driverIndex);
+    return tornadoDriver.getDevice(deviceIndex);
   }
 
   /**
@@ -94,8 +91,7 @@ public class FFXTornado {
       for (int deviceIndex = 0; deviceIndex < driver.getDeviceCount(); deviceIndex++) {
         if (n == deviceID) {
           TornadoRuntime.setProperty("devices", driverIndex + ":" + deviceIndex);
-          String name = driver.getName();
-          return TornadoRuntime.createDevice("opencl", driverIndex, deviceIndex);
+          return getDevice(driverIndex, deviceIndex);
         }
         n++;
       }
@@ -142,9 +138,13 @@ public class FFXTornado {
     System.out.printf("\n Device Name:         %s%n", tornadoTargetDevice.getDeviceName());
     System.out.printf(" Backend:             %s%n", device.getTornadoVMBackend().name());
     System.out.printf(" Compute Units:       %s%n", tornadoTargetDevice.getDeviceMaxComputeUnits());
-    System.out.printf(" Max Work Item Sizes: [%d, %d, %d]%n", workItemSize[0], workItemSize[1], workItemSize[2]);
-    System.out.printf(" Clock Frequency:     %6d Ghz%n", tornadoTargetDevice.getDeviceMaxClockFrequency());
-    System.out.printf(" Global Memory:       %6d MB%n", tornadoTargetDevice.getDeviceGlobalMemorySize() / 1024 / 1024);
-    System.out.printf(" Local Memory:        %6d KB%n", tornadoTargetDevice.getDeviceLocalMemorySize() / 1024);
+    System.out.printf(" Max Work Item Sizes: [%d, %d, %d]%n", workItemSize[0], workItemSize[1],
+        workItemSize[2]);
+    System.out.printf(" Clock Frequency:     %6d Ghz%n",
+        tornadoTargetDevice.getDeviceMaxClockFrequency());
+    System.out.printf(" Global Memory:       %6d MB%n",
+        tornadoTargetDevice.getDeviceGlobalMemorySize() / 1024 / 1024);
+    System.out.printf(" Local Memory:        %6d KB%n",
+        tornadoTargetDevice.getDeviceLocalMemorySize() / 1024);
   }
 }
