@@ -1272,57 +1272,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     return Arrays.hashCode(frameAtomTypes);
   }
 
-  /**
-   * Nicely formatted multipole string. Dipole and qaudrupole are in electron-Bohrs and
-   * electron-Bohrs^2, respectively.
-   *
-   * @return String
-   */
-  public String toCompactBohrString() {
-    StringBuilder multipoleBuffer = new StringBuilder("mpol ");
-    switch (frameDefinition) {
-      case NONE:
-        multipoleBuffer.append(format("(%3d):", frameAtomTypes[0]));
-        break;
-      case ZONLY:
-        multipoleBuffer.append(format("(%3d,%3d):", frameAtomTypes[0], frameAtomTypes[1]));
-        break;
-      case ZTHENX:
-        multipoleBuffer.append(
-            format("(%3d,%3d,%3d):", frameAtomTypes[0], frameAtomTypes[1], frameAtomTypes[2]));
-        break;
-      case BISECTOR:
-        multipoleBuffer.append(
-            format("(%3d,%3d,%3d):", frameAtomTypes[0], -frameAtomTypes[1], -frameAtomTypes[2]));
-        break;
-      case ZTHENBISECTOR:
-        multipoleBuffer.append(
-            format(
-                "(%3d,%3d,%3d,%3d):",
-                frameAtomTypes[0], frameAtomTypes[1], -frameAtomTypes[2], -frameAtomTypes[3]));
-        break;
-      case THREEFOLD:
-        multipoleBuffer.append(
-            format(
-                "(%3d,%3d,%3d,%3d):",
-                frameAtomTypes[0], -frameAtomTypes[1], -frameAtomTypes[2], -frameAtomTypes[3]));
-    }
-    multipoleBuffer.append(
-        format(
-            "[%6.3f / %6.3f %6.3f %6.3f / %6.3f %6.3f %6.3f %6.3f %6.3f %6.3f]",
-            charge,
-            dipole[0] / BOHR,
-            dipole[1] / BOHR,
-            dipole[2] / BOHR,
-            quadrupole[0][0] / BOHR2,
-            quadrupole[1][0] / BOHR2,
-            quadrupole[1][1] / BOHR2,
-            quadrupole[2][0] / BOHR2,
-            quadrupole[2][1] / BOHR2,
-            quadrupole[2][2] / BOHR2));
-    return multipoleBuffer.toString();
-  }
-
   /** {@inheritDoc} */
   @Override
   public String toString() {
@@ -1416,44 +1365,28 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
   private String toBohrString() {
     StringBuilder multipoleBuffer = new StringBuilder("multipole");
     switch (frameDefinition) {
-      case NONE:
-        multipoleBuffer.append(format("  %5d  %5s  %5s  %5s", frameAtomTypes[0], "", "", ""));
-        break;
-      case ZONLY:
-        multipoleBuffer.append(
-            format("  %5d  %5d  %5s  %5s", frameAtomTypes[0], frameAtomTypes[1], "", ""));
-        break;
-      case ZTHENX:
+      case NONE -> multipoleBuffer.append(format("  %5d  %5s  %5s  %5s",
+          frameAtomTypes[0], "", "", ""));
+      case ZONLY -> multipoleBuffer.append(format("  %5d  %5d  %5s  %5s",
+          frameAtomTypes[0], frameAtomTypes[1], "", ""));
+      case ZTHENX -> {
         if (frameAtomTypes.length == 3) {
           multipoleBuffer.append(format("  %5d  %5d  %5d  %5s",
-                  frameAtomTypes[0], frameAtomTypes[1], frameAtomTypes[2], ""));
+              frameAtomTypes[0], frameAtomTypes[1], frameAtomTypes[2], ""));
         } else {
           // Chiral
           multipoleBuffer.append(format("  %5d  %5d  %5d  %5d",
-                  frameAtomTypes[0], frameAtomTypes[1], frameAtomTypes[2], frameAtomTypes[3]));
+              frameAtomTypes[0], frameAtomTypes[1], frameAtomTypes[2], frameAtomTypes[3]));
         }
-        break;
-      case BISECTOR:
-        multipoleBuffer.append(
-            format(
-                "  %5d  %5d  %5d  %5s",
-                frameAtomTypes[0], -frameAtomTypes[1], -frameAtomTypes[2], ""));
-        break;
-      case ZTHENBISECTOR:
-        multipoleBuffer.append(
-            format(
-                "  %5d  %5d  %5d  %5d",
-                frameAtomTypes[0], frameAtomTypes[1], -frameAtomTypes[2], -frameAtomTypes[3]));
-        break;
-      case THREEFOLD:
-        multipoleBuffer.append(
-            format(
-                "  %5d  %5d  %5d  %5d",
-                frameAtomTypes[0], -frameAtomTypes[1], -frameAtomTypes[2], -frameAtomTypes[3]));
+      }
+      case BISECTOR -> multipoleBuffer.append(format("  %5d  %5d  %5d  %5s",
+              frameAtomTypes[0], -frameAtomTypes[1], -frameAtomTypes[2], ""));
+      case ZTHENBISECTOR -> multipoleBuffer.append(format("  %5d  %5d  %5d  %5d",
+              frameAtomTypes[0], frameAtomTypes[1], -frameAtomTypes[2], -frameAtomTypes[3]));
+      case THREEFOLD -> multipoleBuffer.append(format("  %5d  %5d  %5d  %5d",
+              frameAtomTypes[0], -frameAtomTypes[1], -frameAtomTypes[2], -frameAtomTypes[3]));
     }
-    multipoleBuffer.append(
-        format(
-            "  % 7.5f \\\n"
+    multipoleBuffer.append(format("  % 7.5f \\\n"
                 + "%11$s % 7.5f % 7.5f % 7.5f \\\n"
                 + "%11$s % 7.5f \\\n"
                 + "%11$s % 7.5f % 7.5f \\\n"

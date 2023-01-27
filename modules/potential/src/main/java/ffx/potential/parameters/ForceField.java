@@ -816,6 +816,27 @@ public class ForceField {
   }
 
   /**
+   * Return all force field types of a given type.
+   *
+   * @param type The type of force field type to clear.
+   * @return a {@link java.util.Map} object.
+   */
+  public Map<String, ? extends BaseType> getTypes(ForceFieldType type) {
+    Map<String, ? extends BaseType> map = forceFieldTypes.get(type);
+    return map;
+  }
+
+  /**
+   * Clear all force field types of a given type.
+   *
+   * @param type The type of force field type to clear.
+   */
+  public void clearForceFieldType(ForceFieldType type) {
+    Map<String, ? extends BaseType> map = forceFieldTypes.get(type);
+    map.clear();
+  }
+
+  /**
    * getOutOfPlaneBendType
    *
    * @param key a {@link java.lang.String} object.
@@ -1106,7 +1127,6 @@ public class ForceField {
 
     return torsionType;
   }
-
 
   /**
    * getUreyBradleyType
@@ -1821,12 +1841,4 @@ public class ForceField {
     RELATIVESOLV
   }
 
-  /** Enumerates the types of constraints that can be applied. */
-  public enum ConstraintTypes {
-    // Constrain a Bond.
-    BOND,
-    // Constrain a 3-atom Angle and its two component Bonds.
-    ANGLEBONDS
-    // TODO: Support dihedral constraints, lone angle constraints, etc.
-  }
 }
