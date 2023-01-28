@@ -171,7 +171,7 @@ public class GKSource {
 
     // Auxiliary terms for Generalized Kirkwood (equivalent to Coulomb and Thole Screening).
     kirkwoodSource = new double[order + 1];
-    for (int n = 0; n <= order; n++) {
+    for (short n = 0; n <= order; n++) {
       kirkwoodSource[n] = pow(-1, n) * doubleFactorial(2 * n - 1);
     }
 
@@ -239,40 +239,38 @@ public class GKSource {
    */
   private void fn(int n) {
     switch (n) {
-      case 0:
-        fn[0] = f;
-        break;
-      case 1:
+      case 0 -> fn[0] = f;
+      case 1 -> {
         fn[0] = f;
         fn[1] = f1;
-        break;
-      case 2:
+      }
+      case 2 -> {
         fn[0] = f;
         fn[1] = f1;
         fn[2] = f2;
-        break;
-      case 3:
+      }
+      case 3 -> {
         fn[0] = f;
         fn[1] = f1;
         fn[2] = f2;
         fn[3] = fr * f2;
-        break;
-      case 4:
+      }
+      case 4 -> {
         fn[0] = f;
         fn[1] = f1;
         fn[2] = f2;
         fn[3] = fr * f2;
         fn[4] = fr * fn[3];
-        break;
-      case 5:
+      }
+      case 5 -> {
         fn[0] = f;
         fn[1] = f1;
         fn[2] = f2;
         fn[3] = fr * f2;
         fn[4] = fr * fn[3];
         fn[5] = fr * fn[4];
-        break;
-      case 6:
+      }
+      case 6 -> {
         fn[0] = f;
         fn[1] = f1;
         fn[2] = f2;
@@ -280,14 +278,15 @@ public class GKSource {
         fn[4] = fr * fn[3];
         fn[5] = fr * fn[4];
         fn[6] = fr * fn[5];
-        break;
-      default:
+      }
+      default -> {
         fn[0] = f;
         fn[1] = f1;
         fn[2] = f2;
         for (int i = 3; i <= n; i++) {
           fn[i] = fr * fn[i - 1];
         }
+      }
     }
   }
 
@@ -300,19 +299,17 @@ public class GKSource {
   protected void bn(int n) {
     var b2 = 2.0 * expTerm / (gcAiAj * gcAiAj) * (-ratio - 1.0);
     switch (n) {
-      case 0:
-        bn[0] = 0.5 * expTerm * (1.0 - ratio);
-        break;
-      case 1:
+      case 0 -> bn[0] = 0.5 * expTerm * (1.0 - ratio);
+      case 1 -> {
         bn[0] = 0.5 * expTerm * (1.0 - ratio);
         bn[1] = -r2 * expTerm / (gcAiAj * gcAiAj);
-        break;
-      case 2:
+      }
+      case 2 -> {
         bn[0] = 0.5 * expTerm * (1.0 - ratio);
         bn[1] = -r2 * expTerm / (gcAiAj * gcAiAj);
         bn[2] = b2;
-        break;
-      default:
+      }
+      default -> {
         bn[0] = 0.5 * expTerm * (1.0 - ratio);
         bn[1] = -r2 * expTerm / (gcAiAj * gcAiAj);
         bn[2] = b2;
@@ -320,12 +317,13 @@ public class GKSource {
         var f2 = 2.0 / (gc * gcAiAj) * expTerm;
         var frA = 1.0;
         var frB = fr;
-        // (n - 2) * pow(fr, n - 3) * br * f2 + pow(fr, n - 2) * b2;
         for (int i = 3; i < n; i++) {
+          // bn[i] = (i - 2) * pow(fr, i - 3) * br * f2 + pow(fr, i - 2) * b2;
           bn[i] = (i - 2) * frA * br * f2 + frB * b2;
           frA *= fr;
           frB *= fr;
         }
+      }
     }
   }
 
@@ -357,7 +355,7 @@ public class GKSource {
   /**
    * Fill the GK auxiliary matrix.
    * <p>
-   * The first row is the GK potential and derivatives for monpoles. The second row is the GK
+   * The first row is the GK potential and derivatives for monopoles. The second row is the GK
    * potential and derivatives for dipoles. The third row is the GK potential and derivatives for
    * quadrupoles.
    *
@@ -393,7 +391,7 @@ public class GKSource {
   /**
    * Fill the GK auxiliary matrix derivatives with respect to Born radii.
    * <p>
-   * The first row are derivatives for the monpole potential. The second row are derivatives for the
+   * The first row are derivatives for the monopole potential. The second row are derivatives for the
    * dipole potential. The third row are derivatives for the quadrupole potential.
    *
    * @param n Order.
@@ -437,14 +435,16 @@ public class GKSource {
     double[] ret = new double[n + 1];
     ret[0] = 1.0;
     switch (n) {
-      case 0:
+      case 0 -> {
         return ret;
-      case 1:
+      }
+      case 1 -> {
         ret[1] = 1.0;
         return ret;
-      default:
+      }
+      default -> {
         ret[1] = 1.0;
-        double[] prev = new double[n];
+        var prev = new double[n];
         prev[0] = 1.0;
         prev[1] = 1.0;
         for (int i = 3; i <= n; i++) {
@@ -455,11 +455,12 @@ public class GKSource {
           arraycopy(ret, 0, prev, 0, i);
         }
         return ret;
+      }
     }
   }
 
-  public static double selfEnergy(PolarizableMultipole polarizableMultipole, double ai, double Eh,
-      double Es) {
+  public static double selfEnergy(PolarizableMultipole polarizableMultipole,
+      double ai, double Eh, double Es) {
     double q2 = polarizableMultipole.q * polarizableMultipole.q;
     double dx = polarizableMultipole.dx;
     double dy = polarizableMultipole.dy;

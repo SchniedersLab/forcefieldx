@@ -68,13 +68,13 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
    * @param Es Solvent dielectric constant.
    */
   public GKTensorGlobal(GK_MULTIPOLE_ORDER multipoleOrder, int order, GKSource gkSource, double Eh,
-    double Es) {
-      super(order);
-      this.multipoleOrder = multipoleOrder;
-      this.gkSource = gkSource;
+      double Es) {
+    super(order);
+    this.multipoleOrder = multipoleOrder;
+    this.gkSource = gkSource;
 
-      // Load the dielectric function
-      c = GKSource.cn(multipoleOrder.getOrder(), Eh, Es);
+    // Load the dielectric function
+    c = GKSource.cn(multipoleOrder.getOrder(), Eh, Es);
   }
 
   /**
@@ -123,15 +123,11 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
   @Override
   public double multipoleEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
       double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
-    switch (multipoleOrder) {
-      default:
-      case MONOPOLE:
-        return monopoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
-      case DIPOLE:
-        return dipoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
-      case QUADRUPOLE:
-        return quadrupoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
-    }
+    return switch (multipoleOrder) {
+      default -> monopoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
+      case DIPOLE -> dipoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
+      case QUADRUPOLE -> quadrupoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
+    };
   }
 
   /**
@@ -209,7 +205,7 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
     multipoleGradient(mI, Gi);
     multipoleTorque(mI, Ti);
 
-    // Need the torque on site K pole due to site I multipole.
+    // Need the torque on site K pole due to multipole on site I.
     // Only torque on the site K dipole.
     multipoleIPotentialAtK(mI, 1);
     dipoleTorque(mK, Tk);
@@ -432,15 +428,11 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
   public double polarizationEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
       double inductionMask, double energyMask, double mutualMask,
       double[] Gi, double[] Ti, double[] Tk) {
-    switch (multipoleOrder) {
-      default:
-      case MONOPOLE:
-        return monopolePolarizationEnergyAndGradient(mI, mK, Gi, Ti, Tk);
-      case DIPOLE:
-        return dipolePolarizationEnergyAndGradient(mI, mK, mutualMask, Gi, Ti, Tk);
-      case QUADRUPOLE:
-        return quadrupolePolarizationEnergyAndGradient(mI, mK, Gi, Ti, Tk);
-    }
+    return switch (multipoleOrder) {
+      default -> monopolePolarizationEnergyAndGradient(mI, mK, Gi);
+      case DIPOLE -> dipolePolarizationEnergyAndGradient(mI, mK, mutualMask, Gi, Ti, Tk);
+      case QUADRUPOLE -> quadrupolePolarizationEnergyAndGradient(mI, mK, Gi, Ti, Tk);
+    };
   }
 
   /**
@@ -449,12 +441,10 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
    * @param mI PolarizableMultipole at site I.
    * @param mK PolarizableMultipole at site K.
    * @param Gi an array of {@link double} objects.
-   * @param Ti an array of {@link double} objects.
-   * @param Tk an array of {@link double} objects.
    * @return a double.
    */
   public double monopolePolarizationEnergyAndGradient(
-      PolarizableMultipole mI, PolarizableMultipole mK, double[] Gi, double[] Ti, double[] Tk) {
+      PolarizableMultipole mI, PolarizableMultipole mK, double[] Gi) {
 
     // Find the permanent multipole potential at site k.
     chargeIPotentialAtK(mI, 2);
@@ -505,7 +495,7 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
     Gi[0] = -(mK.sx * E200 + mK.sy * E110 + mK.sz * E101);
     Gi[1] = -(mK.sx * E110 + mK.sy * E020 + mK.sz * E011);
     Gi[2] = -(mK.sx * E101 + mK.sy * E011 + mK.sz * E002);
-    // Find the potential at K due to the averaged induced dipole at i.
+    // Find the potential at K due to the averaged induced dipole at site i.
     dipoleIPotentialAtK(mI.sx, mI.sy, mI.sz, 2);
     dipoleTorque(mK, Tk);
 
@@ -612,7 +602,7 @@ public class GKTensorGlobal extends CoulombTensorGlobal {
     Gi[1] *= scale;
     Gi[2] *= scale;
 
-    // Find the potential and its derivatives at K due to the averaged induced dipole at i.
+    // Find the potential and its derivatives at K due to the averaged induced dipole at site i.
     dipoleIPotentialAtK(scale * mI.sx, scale * mI.sy, scale * mI.sz, 2);
     quadrupoleTorque(mK, Tk);
 

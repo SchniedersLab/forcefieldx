@@ -123,15 +123,11 @@ public class GKTensorQI extends CoulombTensorQI {
   @Override
   public double multipoleEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
       double[] Gi, double[] Gk, double[] Ti, double[] Tk) {
-    switch (multipoleOrder) {
-      default:
-      case MONOPOLE:
-        return monopoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
-      case DIPOLE:
-        return dipoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
-      case QUADRUPOLE:
-        return quadrupoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
-    }
+    return switch (multipoleOrder) {
+      default -> monopoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
+      case DIPOLE -> dipoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
+      case QUADRUPOLE -> quadrupoleEnergyAndGradient(mI, mK, Gi, Gk, Ti, Tk);
+    };
   }
 
   /**
@@ -430,15 +426,11 @@ public class GKTensorQI extends CoulombTensorQI {
   public double polarizationEnergyAndGradient(PolarizableMultipole mI, PolarizableMultipole mK,
       double inductionMask, double energyMask, double mutualMask,
       double[] Gi, double[] Ti, double[] Tk) {
-    switch (multipoleOrder) {
-      default:
-      case MONOPOLE:
-        return monopolePolarizationEnergyAndGradient(mI, mK, Gi);
-      case DIPOLE:
-        return dipolePolarizationEnergyAndGradient(mI, mK, mutualMask, Gi, Ti, Tk);
-      case QUADRUPOLE:
-        return quadrupolePolarizationEnergyAndGradient(mI, mK, Gi, Ti, Tk);
-    }
+    return switch (multipoleOrder) {
+      default -> monopolePolarizationEnergyAndGradient(mI, mK, Gi);
+      case DIPOLE -> dipolePolarizationEnergyAndGradient(mI, mK, mutualMask, Gi, Ti, Tk);
+      case QUADRUPOLE -> quadrupolePolarizationEnergyAndGradient(mI, mK, Gi, Ti, Tk);
+    };
   }
 
   /**
@@ -501,7 +493,7 @@ public class GKTensorQI extends CoulombTensorQI {
     Gi[0] = -(mK.sx * E200 + mK.sy * E110 + mK.sz * E101);
     Gi[1] = -(mK.sx * E110 + mK.sy * E020 + mK.sz * E011);
     Gi[2] = -(mK.sx * E101 + mK.sy * E011 + mK.sz * E002);
-    // Find the potential at K due to the averaged induced dipole at I.
+    // Find the potential at K due to the averaged induced dipole at site I.
     dipoleKPotentialAtI(mK.sx, mK.sy, mK.sz, 2);
     dipoleTorque(mI, Ti);
 
@@ -612,7 +604,7 @@ public class GKTensorQI extends CoulombTensorQI {
     Gi[1] *= scale;
     Gi[2] *= scale;
 
-    // Find the potential and its derivatives at K due to the averaged induced dipole at i.
+    // Find the potential and its derivatives at K due to the averaged induced dipole at site i.
     dipoleIPotentialAtK(scale * mI.sx, scale * mI.sy, scale * mI.sz, 2);
     quadrupoleTorque(mK, Tk);
 

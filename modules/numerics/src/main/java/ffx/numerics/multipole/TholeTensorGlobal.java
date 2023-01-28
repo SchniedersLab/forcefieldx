@@ -40,7 +40,7 @@ package ffx.numerics.multipole;
 import static org.apache.commons.math3.util.FastMath.exp;
 
 /**
- * The TholeTensorGlobal class computes derivatives of Thole dampling via recursion to order &lt;= 4 for
+ * The TholeTensorGlobal class computes derivatives of Thole damping via recursion to order &lt;= 4 for
  * Cartesian multipoles in either a global frame.
  *
  * @author Michael J. Schnieders
@@ -64,7 +64,7 @@ public class TholeTensorGlobal extends CoulombTensorGlobal {
   private double thole;
 
   /**
-   * AiAk parameter = 1/(alphai^6*alphak^6) where alpha is polarizability.
+   * AiAk parameter = 1/(alphaI^6*alphaK^6) where alpha is polarizability.
    */
   private double AiAk;
 
@@ -72,8 +72,8 @@ public class TholeTensorGlobal extends CoulombTensorGlobal {
    * Constructor for EwaldMultipoleTensorGlobal.
    *
    * @param order Tensor order.
-   * @param thole Thole dampling parameter is set to min(pti,ptk)).
-   * @param AiAk parameter = 1/(alphai^6*alphak^6) where alpha is polarizability.
+   * @param thole Thole damping parameter is set to min(pti,ptk)).
+   * @param AiAk parameter = 1/(alphaI^6*alphaK^6) where alpha is polarizability.
    */
   public TholeTensorGlobal(int order, double thole, double AiAk) {
     super(order);
