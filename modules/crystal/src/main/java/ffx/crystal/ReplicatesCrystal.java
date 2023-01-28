@@ -46,12 +46,15 @@ import java.util.logging.Logger;
 
 /**
  * The ReplicatesCrystal class extends Crystal to generate additional symmetry operators needed to
- * describe a "replicated" super cell. The replicated crystal cell edges are of length {l*a, m*b,
- * n*c} where l, m and n are integers and a, b and c are the original unit cell edge lengths. <br>
+ * describe a "replicated" super-cell.
+ * <p>
+ * The replicated crystal cell edges are of length {l*a, m*b, n*c} where l, m and n are integers and
+ * a, b and c are the original unit cell edge lengths.
+ * <br>
  * The replicates integers l, m and n are chosen large enough for the ReplicatesCrystal to allow
  * consistent application of the minimum image convention. This is ensured by increasing l, m and/or
- * n until a sphere of of necessary radius fits entirely inside the ReplicatedCrystal. <br>
- *
+ * n until a sphere of necessary radius fits entirely inside the ReplicatedCrystal.
+ * <br>
  * @author Michael J. Schnieders
  * @see Crystal
  * @since 1.0
@@ -147,7 +150,8 @@ public class ReplicatesCrystal extends Crystal {
    * @param cutOff2 Two times the cutoff distance.
    * @return A Crystal or ReplicatesCrystal large enough to satisfy the minimum image convention.
    */
-  public static Crystal replicatesCrystalFactory(Crystal unitCell, double cutOff2, int[] replicatesVector) {
+  public static Crystal replicatesCrystalFactory(Crystal unitCell, double cutOff2,
+      int[] replicatesVector) {
 
     if (unitCell == null || unitCell.aperiodic()) {
       replicatesVector[0] = 0;
@@ -408,7 +412,7 @@ public class ReplicatesCrystal extends Crystal {
   }
 
   /**
-   * Update the list of symmetry operators used to generate the replicates super cell from the
+   * Update the list of symmetry operators used to generate the replicates super-cell from the
    * asymmetric unit.
    */
   private void updateReplicateOperators() {
@@ -436,7 +440,7 @@ public class ReplicatesCrystal extends Crystal {
             repTrans[0] = (symOp.tr[0] + i) * dX;
             repTrans[1] = (symOp.tr[1] + j) * dY;
             repTrans[2] = (symOp.tr[2] + k) * dZ;
-            SymOp repSymOp = new SymOp(symOp.rot, repTrans, new int[]{i, j, k});
+            SymOp repSymOp = new SymOp(symOp.rot, repTrans, new int[] {i, j, k});
             symOps.add(repSymOp);
             if (logger.isLoggable(Level.FINEST)) {
               logger.finest(format("\n SymOp %d (%2d,%2d,%2d): %d", symOpCount, i, j, k, ii));

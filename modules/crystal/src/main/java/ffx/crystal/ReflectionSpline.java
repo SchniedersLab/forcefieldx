@@ -61,7 +61,7 @@ public class ReflectionSpline {
    * Constructor for ReflectionSpline.
    *
    * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
-   * @param nParams a int.
+   * @param nParams an int.
    */
   public ReflectionSpline(ReflectionList reflectionList, int nParams) {
     this.reflectionList = reflectionList;
@@ -105,15 +105,16 @@ public class ReflectionSpline {
   }
 
   /**
-   * Evaluate basis function and derivative at a given resolution (Equations 24 and 25 in Cowtan et
-   * al.).
+   * Evaluate basis function and derivative at a given resolution
+   * <p>
+   * Equations 24 and 25 in Cowtan et al.
    *
-   * @param invressq resolution of desired spline interpolation
+   * @param invResSq resolution of desired spline interpolation
    * @param params current spline parameters
-   * @return value at invressq
+   * @return value at invResSq
    */
-  public double f(double invressq, double[] params) {
-    double s = nParams * reflectionList.ordinal(invressq);
+  public double f(double invResSq, double[] params) {
+    double s = nParams * reflectionList.ordinal(invResSq);
     int i = (int) floor(s);
     double ds = s - i - 0.5;
     i0 = min(max(0, i - 1), nParams - 1);
@@ -135,7 +136,7 @@ public class ReflectionSpline {
   /**
    * i0
    *
-   * @return a int.
+   * @return an int.
    */
   public int i0() {
     return i0;
@@ -144,7 +145,7 @@ public class ReflectionSpline {
   /**
    * i1
    *
-   * @return a int.
+   * @return an int.
    */
   public int i1() {
     return i1;
@@ -153,7 +154,7 @@ public class ReflectionSpline {
   /**
    * i2
    *
-   * @return a int.
+   * @return an int.
    */
   public int i2() {
     return i2;
