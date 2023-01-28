@@ -37,14 +37,12 @@
 // ******************************************************************************
 package ffx.numerics.fft;
 
-import static java.lang.String.format;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.cos;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.floatPI;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.sin;
 import static uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION;
 
 import ffx.numerics.tornado.FFXTornado;
-import java.util.logging.Logger;
 import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
 import uk.ac.manchester.tornado.api.TaskGraph;
 import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
@@ -55,16 +53,13 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 /** Proof-of-concept use of the TornadoVM for parallelization of Java code. */
 public class TornadoDFT {
 
-  private static final Logger logger = Logger.getLogger(TornadoDFT.class.getName());
   float[] inReal;
   float[] inImag;
   float[] outReal;
   float[] outImag;
   long time;
-  private int size;
 
   public TornadoDFT(int size) {
-    this.size = size;
     inReal = new float[size];
     inImag = new float[size];
     outReal = new float[size];
@@ -124,8 +119,8 @@ public class TornadoDFT {
     System.out.println(" ");
     FFXTornado.logDevice(device);
     double speedUp = (double) javaTime / (double) time;
-    System.out.println(format(" %12s %8.6f (sec)\n %12s %8.6f (sec) Speed-Up %8.6f",
-        " Java", 1.0e-9 * javaTime, " OpenCL", 1.0e-9 * time, speedUp));
+    System.out.printf(" %12s %8.6f (sec)\n %12s %8.6f (sec) Speed-Up %8.6f%n",
+        " Java", 1.0e-9 * javaTime, " OpenCL", 1.0e-9 * time, speedUp);
 
   }
 }

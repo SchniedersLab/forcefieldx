@@ -38,6 +38,7 @@
 package ffx.numerics.fft;
 
 import static java.lang.Math.fma;
+import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
@@ -100,7 +101,7 @@ public class Complex {
    */
   private final double[][][] twiddle;
   /**
-   * Packing of noncontiguous data.
+   * Packing of non-contiguous data.
    */
   private final double[] packedData;
   /**
@@ -116,7 +117,7 @@ public class Complex {
   /**
    * Construct a Complex instance for data of length n. Factorization of n is designed to use special
    * methods for small factors, and a general routine for large odd prime factors. Scratch memory is
-   * created of length 2*n, which is reused each time a tranform is computed.
+   * created of length 2*n, which is reused each time a transform is computed.
    *
    * @param n Number of complex numbers (n .GT. 1).
    */
@@ -131,10 +132,10 @@ public class Complex {
   }
 
   /**
-   * preferredDimension
+   * Check if a dimension is a preferred dimension.
    *
-   * @param dim a int.
-   * @return a boolean.
+   * @param dim the dimension to check.
+   * @return true if the dimension is a preferred dimension.
    */
   public static boolean preferredDimension(int dim) {
     if (dim < 2) {
@@ -164,8 +165,7 @@ public class Complex {
    * contain the data points in the following locations:
    *
    * <PRE>
-   * Re(d[i]) = data[offset + stride*i]
-   * Im(d[i]) = data[offset + stride*i+1]
+   * Re(d[i]) = data[offset + stride*i] Im(d[i]) = data[offset + stride*i+1]
    * </PRE>
    *
    * @param data an array of double.
@@ -177,12 +177,11 @@ public class Complex {
   }
 
   /**
-   * Compute the (unnormalized) inverse FFT of data, leaving it in place. The frequency domain data
+   * Compute the (un-normalized) inverse FFT of data, leaving it in place. The frequency domain data
    * must be in wrap-around order, and be stored in the following locations:
    *
    * <PRE>
-   * Re(D[i]) = data[offset + stride*i]
-   * Im(D[i]) = data[offset + stride*i+1]
+   * Re(D[i]) = data[offset + stride*i] Im(D[i]) = data[offset + stride*i+1]
    * </PRE>
    *
    * @param data an array of double.
@@ -198,8 +197,7 @@ public class Complex {
    * be stored in the following locations:
    *
    * <PRE>
-   * Re(D[i]) = data[offset + stride*i]
-   * Im(D[i]) = data[offset + stride*i+1]
+   * Re(D[i]) = data[offset + stride*i] Im(D[i]) = data[offset + stride*i+1]
    * </PRE>
    *
    * @param data an array of double.
@@ -229,23 +227,23 @@ public class Complex {
       return null;
     }
     Vector<Integer> v = new Vector<>();
-    int ntest = n;
+    int nTest = n;
 
     // Use the preferred factors first
     for (int factor : availableFactors) {
-      while ((ntest % factor) == 0) {
-        ntest /= factor;
+      while ((nTest % factor) == 0) {
+        nTest /= factor;
         v.add(factor);
       }
     }
 
     // Unavailable odd prime factors.
     int factor = firstUnavailablePrime;
-    while (ntest > 1) {
-      while ((ntest % factor) != 0) {
+    while (nTest > 1) {
+      while ((nTest % factor) != 0) {
         factor += 2;
       }
-      ntest /= factor;
+      nTest /= factor;
       v.add(factor);
     }
     int product = 1;
@@ -285,43 +283,14 @@ public class Complex {
 
   /**
    * References to the input and output data arrays.
+   *
+   * @param in Input data for the current pass.
+   * @param inOffset Offset into the input data.
+   * @param out Output data for the current pass.
+   * @param outOffset Offset into output array.
    */
-  private static class PassData {
-
-    /**
-     * Input data for the current pass.
-     */
-    public final double[] in;
-
-    /**
-     * Offset into the input data.
-     */
-    public final int inOffset;
-
-    /**
-     * Output data for the current pass.
-     */
-    public final double[] out;
-
-    /**
-     * Offset into output array.
-     */
-    public final int outOffset;
-
-    /**
-     * Construct a PassData instance.
-     *
-     * @param in Input data.
-     * @param inOffset Input data offset.
-     * @param out Output data.
-     * @param outOffset Output data offset.
-     */
-    public PassData(double[] in, int inOffset, double[] out, int outOffset) {
-      this.in = in;
-      this.inOffset = inOffset;
-      this.out = out;
-      this.outOffset = outOffset;
-    }
+  private record PassData(double[] in, int inOffset, double[] out, int outOffset) {
+    // Empty.
   }
 
   /**
@@ -338,7 +307,7 @@ public class Complex {
     PassData[] passData;
     boolean packed = false;
     if (stride != 2) {
-      // Pack noncontiguous (stride > 2) data into a contiguous array.
+      // Pack non-contiguous (stride > 2) data into a contiguous array.
       packed = true;
       for (int i = 0, i2 = 0, index = offset; i < n; i++, i2 += 2, index += stride) {
         packedData[i2] = data[index];
@@ -362,26 +331,13 @@ public class Complex {
       final int factor = factors[i];
       product *= factor;
       switch (factor) {
-        case 2:
-          pass2(product, passData[pass], twiddle[i]);
-          break;
-        case 3:
-          pass3(product, passData[pass], twiddle[i]);
-          break;
-        case 4:
-          pass4(product, passData[pass], twiddle[i]);
-          break;
-        case 5:
-          pass5(product, passData[pass], twiddle[i]);
-          break;
-        case 6:
-          pass6(product, passData[pass], twiddle[i]);
-          break;
-        case 7:
-          pass7(product, passData[pass], twiddle[i]);
-          break;
-        default:
-          passOdd(factor, product, passData[pass], twiddle[i]);
+        case 2 -> pass2(product, passData[pass], twiddle[i]);
+        case 3 -> pass3(product, passData[pass], twiddle[i]);
+        case 4 -> pass4(product, passData[pass], twiddle[i]);
+        case 5 -> pass5(product, passData[pass], twiddle[i]);
+        case 6 -> pass6(product, passData[pass], twiddle[i]);
+        case 7 -> pass7(product, passData[pass], twiddle[i]);
+        default -> passOdd(factor, product, passData[pass], twiddle[i]);
       }
     }
 
@@ -389,7 +345,7 @@ public class Complex {
     if (nfactors % 2 == 1) {
       // Copy the scratch array to the data array.
       if (stride == 2) {
-        System.arraycopy(scratch, 0, data, offset, 2 * n);
+        arraycopy(scratch, 0, data, offset, 2 * n);
       } else {
         for (int i = 0, i2 = 0, index = offset; i < n; i++, i2 += 2, index += stride) {
           data[index] = scratch[i2];
@@ -857,22 +813,30 @@ public class Complex {
         final double t7i = t5i + t3i;
         final double b0r = z0r + t6r + t4r;
         final double b0i = z0i + t6i + t4i;
-        final double b1r = (((c1 + c2 + c3) * oneThird - 1.0) * (t6r + t4r));
-        final double b1i = (((c1 + c2 + c3) * oneThird - 1.0) * (t6i + t4i));
-        final double b2r = (((2.0 * c1 - c2 - c3) * oneThird) * (t0r - t4r));
-        final double b2i = (((2.0 * c1 - c2 - c3) * oneThird) * (t0i - t4i));
-        final double b3r = (((c1 - 2.0 * c2 + c3) * oneThird) * (t4r - t2r));
-        final double b3i = (((c1 - 2.0 * c2 + c3) * oneThird) * (t4i - t2i));
-        final double b4r = (((c1 + c2 - 2.0 * c3) * oneThird) * (t2r - t0r));
-        final double b4i = (((c1 + c2 - 2.0 * c3) * oneThird) * (t2i - t0i));
-        final double b5r = ((s1 + s2 - s3) * oneThird) * (t7r + t1r);
-        final double b5i = ((s1 + s2 - s3) * oneThird) * (t7i + t1i);
-        final double b6r = ((2.0 * s1 - s2 + s3) * oneThird) * (t1r - t5r);
-        final double b6i = ((2.0 * s1 - s2 + s3) * oneThird) * (t1i - t5i);
-        final double b7r = ((s1 - 2.0 * s2 - s3) * oneThird) * (t5r - t3r);
-        final double b7i = ((s1 - 2.0 * s2 - s3) * oneThird) * (t5i - t3i);
-        final double b8r = ((s1 + s2 + 2.0 * s3) * oneThird) * (t3r - t1r);
-        final double b8i = ((s1 + s2 + 2.0 * s3) * oneThird) * (t3i - t1i);
+        final double v1 = (c1 + c2 + c3) * oneThird - 1.0;
+        final double v2 = (2.0 * c1 - c2 - c3) * oneThird;
+        final double v3 = (c1 - 2.0 * c2 + c3) * oneThird;
+        final double v4 = (c1 + c2 - 2.0 * c3) * oneThird;
+        final double v5 = (s1 + s2 - s3) * oneThird;
+        final double v6 = (2.0 * s1 - s2 + s3) * oneThird;
+        final double v7 = (s1 - 2.0 * s2 - s3) * oneThird;
+        final double v8 = (s1 + s2 + 2.0 * s3) * oneThird;
+        final double b1r = v1 * (t6r + t4r);
+        final double b1i = v1 * (t6i + t4i);
+        final double b2r = v2 * (t0r - t4r);
+        final double b2i = v2 * (t0i - t4i);
+        final double b3r = v3 * (t4r - t2r);
+        final double b3i = v3 * (t4i - t2i);
+        final double b4r = v4 * (t2r - t0r);
+        final double b4i = v4 * (t2i - t0i);
+        final double b5r = v5 * (t7r + t1r);
+        final double b5i = v5 * (t7i + t1i);
+        final double b6r = v6 * (t1r - t5r);
+        final double b6i = v6 * (t1i - t5i);
+        final double b7r = v7 * (t5r - t3r);
+        final double b7i = v7 * (t5i - t3i);
+        final double b8r = v8 * (t3r - t1r);
+        final double b8i = v8 * (t3i - t1i);
         final double u0r = b0r + b1r;
         final double u0i = b0i + b1i;
         final double u1r = b2r + b3r;
@@ -975,8 +939,9 @@ public class Complex {
     }
     for (int e1 = 1; e1 < (factor - 1) / 2 + 1; e1++) {
       for (int i = 0; i < m; i++) {
-        data[dataOffset + 2 * i] += ret[retOffset + 2 * (i + e1 * m)];
-        data[dataOffset + 2 * i + 1] += ret[retOffset + 2 * (i + e1 * m) + 1];
+        int i1 = retOffset + 2 * (i + e1 * m);
+        data[dataOffset + 2 * i] += ret[i1];
+        data[dataOffset + 2 * i + 1] += ret[i1 + 1];
       }
     }
     double[] twiddl = twiddles[q];
@@ -1000,10 +965,12 @@ public class Complex {
           wi = -sign * twiddl[2 * (idx - 1) + 1];
         }
         for (int i = 0; i < m; i++) {
-          double ap = wr * ret[retOffset + 2 * (i + e1 * m)];
-          double am = wi * ret[retOffset + 2 * (i + (factor - e1) * m) + 1];
-          double bp = wr * ret[retOffset + 2 * (i + e1 * m) + 1];
-          double bm = wi * ret[retOffset + 2 * (i + (factor - e1) * m)];
+          int i1 = retOffset + 2 * (i + e1 * m);
+          int i2 = retOffset + 2 * (i + (factor - e1) * m);
+          double ap = wr * ret[i1];
+          double am = wi * ret[i2 + 1];
+          double bp = wr * ret[i1 + 1];
+          double bm = wi * ret[i2];
           data[dataOffset + 2 * (i + em)] += (ap - am);
           data[dataOffset + 2 * (i + em) + 1] += (bp + bm);
           data[dataOffset + 2 * (i + ecm)] += (ap + am);
@@ -1020,8 +987,10 @@ public class Complex {
     }
     for (int e1 = 1; e1 < factor; e1++) {
       for (int k1 = 0; k1 < p_1; k1++) {
-        ret[retOffset + 2 * (k1 + e1 * p_1)] = data[dataOffset + 2 * (k1 + e1 * m)];
-        ret[retOffset + 2 * (k1 + e1 * p_1) + 1] = data[dataOffset + 2 * (k1 + e1 * m) + 1];
+        int i = retOffset + 2 * (k1 + e1 * p_1);
+        int i1 = dataOffset + 2 * (k1 + e1 * m);
+        ret[i] = data[i1];
+        ret[i + 1] = data[i1 + 1];
       }
     }
     int i = p_1;
@@ -1041,12 +1010,14 @@ public class Complex {
       twiddl = twiddles[k];
       for (int k1 = 0; k1 < p_1; k1++) {
         for (int e1 = 1; e1 < factor; e1++) {
-          double xr = data[dataOffset + 2 * (i + e1 * m)];
-          double xi = data[dataOffset + 2 * (i + e1 * m) + 1];
+          int i1 = dataOffset + 2 * (i + e1 * m);
+          double xr = data[i1];
+          double xi = data[i1 + 1];
           double wr = twiddl[2 * (e1 - 1)];
           double wi = -sign * twiddl[2 * (e1 - 1) + 1];
-          ret[retOffset + 2 * (j + e1 * p_1)] = fma(wr, xr, -wi * xi);
-          ret[retOffset + 2 * (j + e1 * p_1) + 1] = fma(wr, xi, wi * xr);
+          int i2 = retOffset + 2 * (j + e1 * p_1);
+          ret[i2] = fma(wr, xr, -wi * xi);
+          ret[i2 + 1] = fma(wr, xi, wi * xr);
         }
         i++;
         j++;
