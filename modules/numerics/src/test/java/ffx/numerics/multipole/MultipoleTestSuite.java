@@ -35,34 +35,19 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.numerics;
+package ffx.numerics.multipole;
 
-import ffx.numerics.fft.FFTTestSuite;
-import ffx.numerics.func1d.QuasiLinearSwitchTest;
-import ffx.numerics.integrate.Integrate1DTest;
-import ffx.numerics.integrate.IntegrationTest;
-import ffx.numerics.math.SquareRootTest;
-import ffx.numerics.multipole.MultipoleTestSuite;
-import ffx.numerics.special.ErfTest;
-import ffx.numerics.special.ModifiedBesselTest;
-import ffx.numerics.spline.UniformBSplineTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-/** NumericsTestSuite collects all Unit tests from the ffx.numerics package. */
+/** MultipoleTestSuite collects all Unit tests from the ffx.numerics.multipole package. */
 @RunWith(Suite.class)
 @SuiteClasses({
-    ErfTest.class,
-    FFTTestSuite.class,
-    Integrate1DTest.class,
-    IntegrationTest.class,
-    ModifiedBesselTest.class,
-    MultipoleTestSuite.class,
-    SquareRootTest.class,
-    UniformBSplineTest.class,
-    QuasiLinearSwitchTest.class
+    GKTensorGlobalTest.class,
+    GKTensorQITest.class,
+    GlobalMultipoleTensorTest.class,
+    MultipoleTensorTest.class,
+    QIMultipoleTensorTest.class,
 })
-public class NumericsTestSuite {
-
-}
+public class MultipoleTestSuite {}
