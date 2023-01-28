@@ -50,13 +50,14 @@ import static org.apache.commons.math3.util.FastMath.ulp;
  * @author Jacob M. Litman
  */
 public abstract class FunctionDataCurve implements DataSet {
+
   /** Lower bound. */
   protected double lb;
   /** Upper bound. */
   protected double ub;
   /** Function values. */
   protected double[] points;
-  /** Input pounts. */
+  /** Input points. */
   protected double[] x;
   /** If ends should have 1/2 regular separation. */
   protected boolean halfWidthEnd;
@@ -75,16 +76,16 @@ public abstract class FunctionDataCurve implements DataSet {
   /**
    * Compare two doubles to machine precision.
    *
-   * @param x1 a double.
-   * @param x2 a double.
-   * @param ulpMult a double.
-   * @return a boolean.
+   * @param x1 The first point.
+   * @param x2 The second point.
+   * @param ulpMultiple A multiple to apply to the ULP of the larger of the two values.
+   * @return True if the two values are within the specified ULPs of each other.
    */
-  public static boolean approxEquals(double x1, double x2, double ulpMult) {
+  public static boolean approxEquals(double x1, double x2, double ulpMultiple) {
     double diff = abs(x1 - x2);
     // Ulp the larger of the two values.
     double ulp = ulp(max(abs(x1), abs(x2)));
-    return (diff < (ulp * ulpMult));
+    return (diff < (ulp * ulpMultiple));
   }
 
   /**
@@ -125,9 +126,9 @@ public abstract class FunctionDataCurve implements DataSet {
   /** {@inheritDoc} */
   @Override
   public double[] getAllFxPoints() {
-    int npoints = points.length;
-    double[] retArray = new double[npoints];
-    arraycopy(points, 0, retArray, 0, npoints);
+    int nPoints = points.length;
+    double[] retArray = new double[nPoints];
+    arraycopy(points, 0, retArray, 0, nPoints);
     return retArray;
   }
 

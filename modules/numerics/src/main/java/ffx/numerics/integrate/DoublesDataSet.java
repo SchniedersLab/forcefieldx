@@ -42,7 +42,7 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
 /**
- * Descibes a set of x, f(x) obtained by some mechanism; intended for numerical integration.
+ * Describes a set of x, f(x) obtained by some mechanism; intended for numerical integration.
  *
  * @author Jacob M. Litman
  */
@@ -194,7 +194,7 @@ public class DoublesDataSet implements DataSet {
   /**
    * Used to check that the passed-in x array is composed of equally-spaced points from lb to ub.
    *
-   * @param x
+   * @param x The array to check.
    */
   private void assertXIntegrity(double[] x) {
     assert ub > lb;

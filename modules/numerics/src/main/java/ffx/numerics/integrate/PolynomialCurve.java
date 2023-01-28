@@ -48,7 +48,7 @@ import static java.lang.System.arraycopy;
 public class PolynomialCurve extends FunctionDataCurve {
 
   /** Coefficients of the polynomial curve. */
-  private final double[] coeff;
+  private final double[] coefficients;
 
   /**
    * Default constructor, assumes constant-width bins. Functional form will be a0 + a1x + a2x^2 +
@@ -70,17 +70,17 @@ public class PolynomialCurve extends FunctionDataCurve {
    * @param coefficients Lowest-order coefficients first
    */
   public PolynomialCurve(double[] x, boolean halfWidthEnds, double[] coefficients) {
-    int npoints = x.length;
-    points = new double[npoints];
-    coeff = new double[coefficients.length];
-    arraycopy(coefficients, 0, coeff, 0, coefficients.length);
+    int nPoints = x.length;
+    points = new double[nPoints];
+    this.coefficients = new double[coefficients.length];
+    arraycopy(coefficients, 0, this.coefficients, 0, coefficients.length);
     this.halfWidthEnd = halfWidthEnds;
 
     for (int i = 0; i < points.length; i++) {
       points[i] = polynomialAt(x[i]);
     }
     lb = x[0];
-    ub = x[npoints - 1];
+    ub = x[nPoints - 1];
     assertXIntegrity(x);
     this.x = new double[x.length];
     arraycopy(x, 0, this.x, 0, x.length);
@@ -96,9 +96,9 @@ public class PolynomialCurve extends FunctionDataCurve {
   @Override
   public double integralAt(double x) {
     double total = 0;
-    for (int i = 0; i < coeff.length; i++) {
+    for (int i = 0; i < coefficients.length; i++) {
       double val = 1.0 / ((double) i + 1);
-      val *= coeff[i];
+      val *= coefficients[i];
       for (int j = 0; j <= i; j++) {
         val *= x;
       }
@@ -111,7 +111,7 @@ public class PolynomialCurve extends FunctionDataCurve {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder("Polynomial curve of degree ");
-    sb.append(coeff.length)
+    sb.append(coefficients.length)
         .append(
             format(
                 " with %d points from lower bound %9.3g and upper bound %9.3g",
@@ -120,11 +120,11 @@ public class PolynomialCurve extends FunctionDataCurve {
       sb.append(" and half-width start/end bins");
     }
     sb.append(".\nCoefficients: ");
-    if (coeff.length > 0) {
-      sb.append(coeff[0]);
+    if (coefficients.length > 0) {
+      sb.append(coefficients[0]);
     }
-    for (int i = 1; i < coeff.length; i++) {
-      sb.append(",").append(coeff[i]);
+    for (int i = 1; i < coefficients.length; i++) {
+      sb.append(",").append(coefficients[i]);
     }
 
     return sb.toString();
@@ -133,8 +133,8 @@ public class PolynomialCurve extends FunctionDataCurve {
   // Private, non-overrideable method for use in the constructor.
   private double polynomialAt(double x) {
     double total = 0.0;
-    for (int i = 0; i < coeff.length; i++) {
-      double val = coeff[i];
+    for (int i = 0; i < coefficients.length; i++) {
+      double val = coefficients[i];
       for (int j = 0; j < i; j++) {
         val *= x;
       }
