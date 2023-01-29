@@ -71,7 +71,7 @@ public class KeywordProcessor extends AbstractProcessor {
 
   /**
    * Processes a set of annotation types on type elements originating from the prior round and
-   * returns whether or not these annotations are claimed by this processor. If true is returned, the
+   * returns whether these annotations are claimed by this processor. If true is returned, the
    * annotations are claimed and subsequent processors will not be asked to process them; if false is
    * returned, the annotations are unclaimed and subsequent processors may be asked to process them.
    * A processor may always return the same boolean value or may vary the result based on chosen
@@ -137,7 +137,7 @@ public class KeywordProcessor extends AbstractProcessor {
       sb.append(format("  Definition:   %s\n", ffxKeyword.description()));
       sb.append("====\n");
 
-      // Create the Keyword Group sub-directory
+      // Create the Keyword Group subdirectory.
       KeywordGroup group = ffxKeyword.keywordGroup();
       Path groupPath = Paths.get(keyPath.toString(), group.name());
 

@@ -41,42 +41,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * ObjectPair record.
+ * <p>
  * Implements a comparable pair, where a non-comparable T can be compared via a comparable S.
  *
- * @param <T> Some object
- * @param <S> Some indexing, comparable object
+ * @param <T> Some object.
+ * @param <S> Some indexing, comparable object.
  * @author Jacob Litman
  * @since 1.0
  */
-public class ObjectPair<T, S extends Comparable<S>> implements Comparable<ObjectPair<T, S>> {
-
-  private final T val;
-  private final S key;
-
-  /**
-   * Constructor for ObjectPair.
-   *
-   * @param val a T object.
-   * @param key a S object.
-   */
-  public ObjectPair(T val, S key) {
-    this.val = val;
-    this.key = key;
-  }
+public record ObjectPair<T, S extends Comparable<S>>(T val, S key) implements
+    Comparable<ObjectPair<T, S>> {
 
   /**
    * sortAndReturn.
    *
-   * @param theList a {@link java.util.List} object.
-   * @param <U> a U object.
-   * @param <V> a V object.
-   * @return a {@link java.util.List} object.
+   * @param theList a {@link List} object.
+   * @param <U> Some object.
+   * @param <V> Some indexing, comparable object
+   * @return the sorted {@link List} of objects.
    */
   public static <U, V extends Comparable<V>> List<U> sortAndReturn(List<ObjectPair<U, V>> theList) {
     theList.sort(null);
     List<U> retList = new ArrayList<>(theList.size());
     for (ObjectPair<U, V> e : theList) {
-      retList.add(e.getVal());
+      retList.add(e.val());
     }
     return retList;
   }
@@ -84,24 +73,7 @@ public class ObjectPair<T, S extends Comparable<S>> implements Comparable<Object
   /** {@inheritDoc} */
   @Override
   public int compareTo(ObjectPair<T, S> o) {
-    return key.compareTo(o.getKey());
+    return key.compareTo(o.key());
   }
 
-  /**
-   * Getter for the field <code>key</code>.
-   *
-   * @return a S object.
-   */
-  public S getKey() {
-    return key;
-  }
-
-  /**
-   * Getter for the field <code>val</code>.
-   *
-   * @return a T object.
-   */
-  public T getVal() {
-    return val;
-  }
 }

@@ -571,12 +571,12 @@ public class ProgressiveAlignmentOfCrystals {
       stringBuilder.append(" System 1 distances to center AU:\n");
       for (int i = 0; i < 10; i++) {
         stringBuilder.append(
-                format(" %2d %2d\t%16.8f\n", i, baseAUDist[i].getIndex(), sqrt(baseAUDist[i].getDoubleValue())));
+                format(" %2d %2d\t%16.8f\n", i, baseAUDist[i].index(), sqrt(baseAUDist[i].doubleValue())));
       }
       stringBuilder.append(" System 2 distances to center AU:\n");
       for (int i = 0; i < 10; i++) {
         stringBuilder.append(
-                format(" %2d %2d\t%16.8f\n", i, targetAUDist[i].getIndex(), sqrt(targetAUDist[i].getDoubleValue())));
+                format(" %2d %2d\t%16.8f\n", i, targetAUDist[i].index(), sqrt(targetAUDist[i].doubleValue())));
       }
     }
 
@@ -585,7 +585,7 @@ public class ProgressiveAlignmentOfCrystals {
       stringBuilder.append(" Search conformations of each crystal:\n");
     }
     // NOTE not Z' representatives, just first Z closest AUs.
-    arraycopy(baseXYZ, baseAUDist[0].getIndex() * nCoords, baseAU, 0, nCoords);
+    arraycopy(baseXYZ, baseAUDist[0].index() * nCoords, baseAU, 0, nCoords);
 
     tempListIndices.clear();
     // Compare replicates to initial molecule to determine unique conformations.
@@ -598,7 +598,7 @@ public class ProgressiveAlignmentOfCrystals {
     tempListIndices.toArray(uniqueBase);
 
     // NOTE not Z' representatives, just first Z closest AUs.
-    arraycopy(targetXYZ, targetAUDist[0].getIndex() * nCoords, targetAU, 0, nCoords);
+    arraycopy(targetXYZ, targetAUDist[0].index() * nCoords, targetAU, 0, nCoords);
     tempListIndices.clear();
     // Compare replicates to initial molecule to determine unique conformations.
     numberUniqueAUs(targetXYZ, targetAUDist, targetAU.clone(), nCoords, targetSearchValue, strict,
@@ -647,7 +647,7 @@ public class ProgressiveAlignmentOfCrystals {
     }
     for (int i = 0; i < baseLength; i++) {
       int bIndex = uniqueBase[i];
-      int baseInd = baseAUDist[bIndex].getIndex();
+      int baseInd = baseAUDist[bIndex].index();
       int currZ1 = baseDistMap.get(baseInd) % z1;
 
       double[] baseXYZ = new double[nCoords];
@@ -655,7 +655,7 @@ public class ProgressiveAlignmentOfCrystals {
         // Need to remove translation/rotation from previous check.
         arraycopy(this.baseXYZ, baseInd * nCoords, baseXYZ, 0, nCoords);
         int tIndex = uniqueTarget[j];
-        int targetInd = targetAUDist[tIndex].getIndex();
+        int targetInd = targetAUDist[tIndex].index();
         int currZ2 = targetDistMap.get(targetInd) % z2;
 
         double[] targetXYZ = new double[nCoords];
@@ -708,17 +708,17 @@ public class ProgressiveAlignmentOfCrystals {
           targetTransformSymOp = new SymOp(ZERO_ROTATION, tempTranT);
           targetTransformSymOp = targetTransformSymOp.append(new SymOp(tempRotT, Tr_0_0_0));
           bestTargetTransformSymOp[currZ1][currZ2] = targetTransformSymOp;
-          SymOp base = baseSymOps.get(baseDistMap.get(minZinds[currZ1][currZ2].getSortedIndex()));
+          SymOp base = baseSymOps.get(baseDistMap.get(minZinds[currZ1][currZ2].sortedIndex()));
           baseSymOp = new SymOp(base.rot, base.tr);
-          SymOp target = targetSymOps.get(targetDistMap.get(minZinds[currZ1][currZ2].getReferenceIndex()));
+          SymOp target = targetSymOps.get(targetDistMap.get(minZinds[currZ1][currZ2].referenceIndex()));
           targetSymOp = new SymOp(target.rot, target.tr);
           bestBaseSymOp[currZ1][currZ2] = baseSymOp;
           bestTargetSymOp[currZ1][currZ2] = targetSymOp;
 
           if (logger.isLoggable(Level.FINEST)) {
             stringBuilder.append(format("\n \t Base sym op %2d (%3d):  \t\t\t  Target sym op %2d (%3d):",
-                    currZ1, minZinds[currZ1][currZ2].getSortedIndex(),
-                    currZ2, minZinds[currZ1][currZ2].getReferenceIndex()));
+                    currZ1, minZinds[currZ1][currZ2].sortedIndex(),
+                    currZ2, minZinds[currZ1][currZ2].referenceIndex()));
             for (int k = 0; k < nAU * compareAtomsSize; k++) {
               int l = k * 3;
               double[] bXYZ = new double[nCoords];
@@ -783,8 +783,8 @@ public class ProgressiveAlignmentOfCrystals {
       }
     }
     // Index of the most similar uniques... need to expand to Z'>1
-    int baseBestZ = baseDistMap.get(baseAUDist[minBIndex].getIndex()) % z1;
-    int targetBestZ = targetDistMap.get(targetAUDist[minTIndex].getIndex()) % z2;
+    int baseBestZ = baseDistMap.get(baseAUDist[minBIndex].index()) % z1;
+    int targetBestZ = targetDistMap.get(targetAUDist[minTIndex].index()) % z2;
     if (logger.isLoggable(Level.FINER)) {
       stringBuilder.append(format("\n Base min index: %d (Z'=%d) Target min Index %d (Z'=%d)", minBIndex, baseBestZ,
               minTIndex, targetBestZ));
@@ -930,7 +930,7 @@ public class ProgressiveAlignmentOfCrystals {
         for (int j = 0; j < targetLength; j++) {
           stringBuilder.append(
                   format(" %d %d (%4d %4d) %4.4f\n", i, j,
-                          baseAUDist[uniqueBase[i]].getIndex(), targetAUDist[uniqueTarget[j]].getIndex(), minDiffs[i][j]));
+                          baseAUDist[uniqueBase[i]].index(), targetAUDist[uniqueTarget[j]].index(), minDiffs[i][j]));
         }
       }
     }
@@ -952,7 +952,7 @@ public class ProgressiveAlignmentOfCrystals {
     int currentComparison = 1;
     for (int l = 0; l < baseLength; l++) {
       final int bIndex = uniqueBase[l];
-      final int baseInd = baseAUDist[bIndex].getIndex();
+      final int baseInd = baseAUDist[bIndex].index();
       final int currZ1 = baseDistMap.get(baseInd) % z1;
 
       if (l > 0) {
@@ -962,11 +962,11 @@ public class ProgressiveAlignmentOfCrystals {
       //Re-prioritize based on center-most molecule
       prioritizeReplicates(baseXYZ, massN, massSum, baseCoM[0], compareAtomsSize, baseAUDist_2, baseInd, linkage);
       //Translate base system based on center-most molecule
-      int baseAUIndex = baseAUDist_2[0].getIndex() * nCoords;
+      int baseAUIndex = baseAUDist_2[0].index() * nCoords;
       arraycopy(baseXYZ, baseAUIndex, baseAU, 0, nCoords);
       for (int i = 0; i < 4; i++) {
         for (int j = 0; j < nAU; j++) {
-          int molIndex = baseAUDist_2[j].getIndex() * nCoords;
+          int molIndex = baseAUDist_2[j].index() * nCoords;
           arraycopy(baseXYZ, molIndex, baseNAUs[i], j * nCoords, nCoords);
         }
       }
@@ -997,7 +997,7 @@ public class ProgressiveAlignmentOfCrystals {
         stringBuilder.append("\n Base 3 Conformations:\n");
       }
       for (int i = 0; i < 3; i++) {
-        int baseIndex = baseAUDist_2[i].getIndex() * nCoords;
+        int baseIndex = baseAUDist_2[i].index() * nCoords;
         arraycopy(baseXYZ, baseIndex, base3AUs, i * nCoords, nCoords);
       }
       translation = calculateTranslation(base3AUs, massN);
@@ -1016,12 +1016,12 @@ public class ProgressiveAlignmentOfCrystals {
       }
 
       // Acquire coordinates for final comparison
-      double maxDist = baseAUDist[baseAUDist.length - 1].getDoubleValue();
+      double maxDist = baseAUDist[baseAUDist.length - 1].doubleValue();
       if (logger.isLoggable(Level.FINEST)) {
         stringBuilder.append(format("\n System 1 farthest distance: %4.8f", sqrt(maxDist)));
       }
       for (int i = 0; i < nAU; i++) {
-        int molIndex = baseAUDist_2[i].getIndex() * nCoords;
+        int molIndex = baseAUDist_2[i].index() * nCoords;
         arraycopy(baseXYZ, molIndex, baseNAUs[3], i * nCoords, nCoords);
       }
       translation = calculateTranslation(baseNAUs[3], massN);
@@ -1038,7 +1038,7 @@ public class ProgressiveAlignmentOfCrystals {
 
       for (int m = 0; m < targetLength; m++) {
         final int tIndex = uniqueTarget[m];
-        final int targetInd = targetAUDist[tIndex].getIndex();
+        final int targetInd = targetAUDist[tIndex].index();
         final int currZ2 = targetDistMap.get(targetInd) % z2;
         if (strict || !reverse && baseTargetMap[m] == bIndex
                 || reverse && baseTargetMap[l] == tIndex) {
@@ -1049,7 +1049,7 @@ public class ProgressiveAlignmentOfCrystals {
           prioritizeReplicates(targetXYZ, massN, massSum, targetCoM, compareAtomsSize, targetAUDist_2, targetInd, linkage);
 
           // Isolate the AU closest to center in the second crystal (targetAU).
-          arraycopy(targetXYZ, targetAUDist_2[0].getIndex() * nCoords, targetAU, 0, nCoords);
+          arraycopy(targetXYZ, targetAUDist_2[0].index() * nCoords, targetAU, 0, nCoords);
 
           // Translate target to origin
           translation = calculateTranslation(targetAU, massN);
@@ -1099,7 +1099,7 @@ public class ProgressiveAlignmentOfCrystals {
             checkRMSD1 = rmsd(baseAU, targetAU, massN);
             for (int i = 0; i < nAU; i++) {
               int offset = i * nCoords;
-              int molIndex = pairedAUs[i].getIndex() * nCoords;
+              int molIndex = pairedAUs[i].index() * nCoords;
               arraycopy(targetXYZ, molIndex, targetNAUs, offset, nCoords);
             }
             n1RMSD = rmsd(baseNAUs[1], targetNAUs, massN);
@@ -1117,7 +1117,7 @@ public class ProgressiveAlignmentOfCrystals {
 
           // Load coordinates for 3 molecules for the target systems
           for (int i = 0; i < 3; i++) {
-            int targetIndex = pairedAUs[i].getIndex() * nCoords;
+            int targetIndex = pairedAUs[i].index() * nCoords;
             int coordIndex = i * nCoords;
             arraycopy(targetXYZ, targetIndex, target3AUs, coordIndex, nCoords);
           }
@@ -1169,7 +1169,7 @@ public class ProgressiveAlignmentOfCrystals {
 
           for (int i = 0; i < nAU; i++) {
             int offset = i * nCoords;
-            int molIndex = pairedAUs[i].getIndex() * nCoords;
+            int molIndex = pairedAUs[i].index() * nCoords;
             arraycopy(targetXYZ, molIndex, targetNAUs, offset, nCoords);
           }
 
@@ -1219,13 +1219,13 @@ public class ProgressiveAlignmentOfCrystals {
 
             if (logger.isLoggable(Level.FINER)) {
               if (reverse) {
-                output += format(" b: %2d t: %2d bt: %2d", baseAUDist[bIndex].getIndex(),
-                        targetAUDist[uniqueTarget[m]].getIndex(),
-                        targetAUDist[baseTargetMap[m]].getIndex());
+                output += format(" b: %2d t: %2d bt: %2d", baseAUDist[bIndex].index(),
+                        targetAUDist[uniqueTarget[m]].index(),
+                        targetAUDist[baseTargetMap[m]].index());
               } else {
-                output += format(" b: %2d t: %2d tb: %2d", baseAUDist[bIndex].getIndex(),
-                        targetAUDist[uniqueTarget[m]].getIndex(),
-                        baseAUDist[baseTargetMap[m]].getIndex());
+                output += format(" b: %2d t: %2d tb: %2d", baseAUDist[bIndex].index(),
+                        targetAUDist[uniqueTarget[m]].index(),
+                        baseAUDist[baseTargetMap[m]].index());
               }
             }
             stringBuilder.append(output).append("\n");
@@ -2311,12 +2311,12 @@ public class ProgressiveAlignmentOfCrystals {
     for(int i = 0; i < nAU; i++) {
       if(logger.isLoggable(Level.FINE)) {
         logger.fine(format(" i: %3d\t auDist Index: %3d \t indexOrder: %3d\t indget(au): %3d\t ReplicatesVector:  %2d (%2d) %2d (%2d) %2d (%2d)",
-            i, auDist[i].getIndex(), indexOrder.get(i), indexOrder.get(auDist[i].getIndex()),
-            symOps.get(indexOrder.get(auDist[i].getIndex())).replicatesVector[0] + 1, startLMN[0],
-            symOps.get(indexOrder.get(auDist[i].getIndex())).replicatesVector[1] + 1, startLMN[1],
-            symOps.get(indexOrder.get(auDist[i].getIndex())).replicatesVector[2] + 1, startLMN[2]));
+            i, auDist[i].index(), indexOrder.get(i), indexOrder.get(auDist[i].index()),
+            symOps.get(indexOrder.get(auDist[i].index())).replicatesVector[0] + 1, startLMN[0],
+            symOps.get(indexOrder.get(auDist[i].index())).replicatesVector[1] + 1, startLMN[1],
+            symOps.get(indexOrder.get(auDist[i].index())).replicatesVector[2] + 1, startLMN[2]));
       }
-      int[] lmn = symOps.get(indexOrder.get(auDist[i].getIndex())).replicatesVector;
+      int[] lmn = symOps.get(indexOrder.get(auDist[i].index())).replicatesVector;
       if(lmn[0] == 0 || lmn[0] == startLMN[0] - 1){
         redo = true;
       }
@@ -2583,7 +2583,7 @@ public class ProgressiveAlignmentOfCrystals {
     // Note that the smallest distances are first in the array after the sort.
     sort(auDist);
     for (DoubleIndexPair molsDist : auDist) {
-      indexOrder.add(molsDist.getIndex());
+      indexOrder.add(molsDist.index());
     }
 
     if (logger.isLoggable(Level.FINEST)) {
@@ -2594,8 +2594,8 @@ public class ProgressiveAlignmentOfCrystals {
       for (int zp = 0; zp < zPrime; zp++) {
         int index = n * zPrime + zp;
         // Current molecule
-        int iSym = auDist[index].getIndex();
-        double distance = auDist[index].getDoubleValue();
+        int iSym = auDist[index].index();
+        double distance = auDist[index].doubleValue();
         if (logger.isLoggable(Level.FINEST) && n < 30) {
           logger.finest(format(" %4d  %5d  %14.8f", index, iSym, sqrt(distance)));
         }
@@ -2735,7 +2735,7 @@ public class ProgressiveAlignmentOfCrystals {
     translate(target, massN);
     while ((uniqueDiffs.size() < numConfCheck)) {
       double[] baseCheckMol = new double[nCoords];
-      int auIndex = auDist[index].getIndex();
+      int auIndex = auDist[index].index();
       arraycopy(allCoords, auIndex * nCoords, baseCheckMol, 0, nCoords);
       translate(baseCheckMol, massN);
       rotate(target, baseCheckMol, massN);
@@ -2757,7 +2757,7 @@ public class ProgressiveAlignmentOfCrystals {
       int numUnique = uniqueDiffs.size();
       for (int i = 0; i < numUnique; i++) {
         logger.finer(format(" %d %4.4f    %4d", i, uniqueDiffs.get(i),
-                auDist[tempListIndices.get(i)].getIndex()));
+                auDist[tempListIndices.get(i)].index()));
       }
     }
   }
@@ -2774,14 +2774,14 @@ public class ProgressiveAlignmentOfCrystals {
     for (DoubleIndexPair doubleIndexPair : targetAUDist_2) {
       // Only search molecules within range of the desired number of molecules.
       // Must have enough molecules for matching (using exhaustive till better heuristic is determined)
-      tempListIndices.add(doubleIndexPair.getIndex());
+      tempListIndices.add(doubleIndexPair.index());
     }
 
     // Compare distances between center of masses from system 1 and 2.
     for (int i = 0; i < desiredAUs; i++) {
       double minDist = Double.MAX_VALUE;
       Integer minIndex = -1;
-      double[] baseCoMCurr = baseCoM[comparisonNum][baseAUDist_2[i].getIndex()];
+      double[] baseCoMCurr = baseCoM[comparisonNum][baseAUDist_2[i].index()];
       for (Integer target : tempListIndices) {
         double dist = dist2(baseCoMCurr, targetCoM[target]);
         if (dist < minDist) {
@@ -2803,12 +2803,12 @@ public class ProgressiveAlignmentOfCrystals {
       if (logger.isLoggable(Level.FINEST)) {
         stringBuilder.append(
                 format("\n Base position:   %d: %8.4f %8.4f %8.4f\n", i,
-                        baseCoM[comparisonNum][baseAUDist_2[i].getIndex()][0],
-                        baseCoM[comparisonNum][baseAUDist_2[i].getIndex()][1],
-                        baseCoM[comparisonNum][baseAUDist_2[i].getIndex()][2]));
+                        baseCoM[comparisonNum][baseAUDist_2[i].index()][0],
+                        baseCoM[comparisonNum][baseAUDist_2[i].index()][1],
+                        baseCoM[comparisonNum][baseAUDist_2[i].index()][2]));
         stringBuilder.append(
-                format(" Match Distance:  %d: %8.4f\n", i, sqrt(pairedAUs[i].getDoubleValue())));
-        int pairedIndex = pairedAUs[i].getIndex();
+                format(" Match Distance:  %d: %8.4f\n", i, sqrt(pairedAUs[i].doubleValue())));
+        int pairedIndex = pairedAUs[i].index();
         stringBuilder.append(
                 format(" Target position: %d: %8.4f %8.4f %8.4f\n", i,
                         targetCoM[pairedIndex][0],
@@ -2821,8 +2821,8 @@ public class ProgressiveAlignmentOfCrystals {
               " Index  Base Index  Target Index    Match Index    Distance\n");
       for (int i = 0; i < desiredAUs; i++) {
         stringBuilder.append(format(" %5d %10d %14d %14d %10.4f\n", i,
-                baseAUDist_2[i].getIndex(), targetAUDist_2[i].getIndex(), pairedAUs[i].getIndex(),
-                sqrt(pairedAUs[i].getDoubleValue())));
+                baseAUDist_2[i].index(), targetAUDist_2[i].index(), pairedAUs[i].index(),
+                sqrt(pairedAUs[i].doubleValue())));
       }
     }
   }
@@ -2943,9 +2943,9 @@ public class ProgressiveAlignmentOfCrystals {
         for (int i = 0; i < numCheck; i++) {
           logger.finest(
                   format("  AU %d Center: %3d Index: %3d Dist %4.4f CoM:(%6.4f %6.4f %6.4f)", i, index,
-                          auDist[i].getIndex(),
-                          sqrt(auDist[i].getDoubleValue()), targetMol[auDist[i].getIndex()][0],
-                          targetMol[auDist[i].getIndex()][1], targetMol[auDist[i].getIndex()][2]));
+                          auDist[i].index(),
+                          sqrt(auDist[i].doubleValue()), targetMol[auDist[i].index()][0],
+                          targetMol[auDist[i].index()][1], targetMol[auDist[i].index()][2]));
         }
         logger.finest("\n");
       }
@@ -2966,9 +2966,9 @@ public class ProgressiveAlignmentOfCrystals {
         for (int i = 0; i < numCheck; i++) {
           logger.finest(
                   format("  1AU %d Center: %3d Index: %3d Dist %4.4f CoM:(%6.4f %6.4f %6.4f)", i, index,
-                          auDist[i].getIndex(),
-                          sqrt(auDist[i].getDoubleValue()), targetMol[auDist[i].getIndex()][0],
-                          targetMol[auDist[i].getIndex()][1], targetMol[auDist[i].getIndex()][2]));
+                          auDist[i].index(),
+                          sqrt(auDist[i].doubleValue()), targetMol[auDist[i].index()][0],
+                          targetMol[auDist[i].index()][1], targetMol[auDist[i].index()][2]));
         }
       }
 
@@ -2976,9 +2976,9 @@ public class ProgressiveAlignmentOfCrystals {
       // Want the first two molecules chosen in this manner, but third molecule to be closest to both
       // Assigning distance from auDist ensures correct ordering of center most molecule.
       DoubleIndexPair[] molDists2 = new DoubleIndexPair[nMols];
-      int auIndex0 = auDist[0].getIndex();
-      int auIndex1 = auDist[1].getIndex();
-      molDists2[0] = new DoubleIndexPair(auIndex0, auDist[0].getDoubleValue());
+      int auIndex0 = auDist[0].index();
+      int auIndex1 = auDist[1].index();
+      molDists2[0] = new DoubleIndexPair(auIndex0, auDist[0].doubleValue());
 
       double[] avgCenter = new double[3];
       avgCenter[0] =
@@ -2989,7 +2989,7 @@ public class ProgressiveAlignmentOfCrystals {
               (centerOfMasses[auIndex0][2] + centerOfMasses[auIndex1][2]) / 2;
 
       for (int i = 1; i < nMols; i++) {
-        auIndex0 = auDist[i].getIndex();
+        auIndex0 = auDist[i].index();
         double[] moleculeCenter = centerOfMasses[auIndex0];
         molDists2[i] = new DoubleIndexPair(auIndex0, dist2(avgCenter, moleculeCenter));
       }
@@ -3000,21 +3000,21 @@ public class ProgressiveAlignmentOfCrystals {
         centerOfMass(targetMol, coordsXYZ, mass, massSum, nAtoms);
         for (int i = 0; i < numCheck; i++) {
           logger.finest(format("  1,2AU %d Center: %3d Index: %3d Dist %4.4f CoM:(%6.4f %6.4f %6.4f)", i,
-                          index, molDists2[i].getIndex(),
-                          sqrt(molDists2[i].getDoubleValue()), targetMol[molDists2[i].getIndex()][0],
-                          targetMol[molDists2[i].getIndex()][1], targetMol[molDists2[i].getIndex()][2]));
+                          index, molDists2[i].index(),
+                          sqrt(molDists2[i].doubleValue()), targetMol[molDists2[i].index()][0],
+                          targetMol[molDists2[i].index()][1], targetMol[molDists2[i].index()][2]));
         }
       }
       // Molecules in crystal sorted based on distance to center of mass of center 2 most molecule
       // Want the first three molecules chosen in this manner, but rest to be closest to all three
       // Assigning distance from molDists2 ensures correct ordering of center most molecule.
       DoubleIndexPair[] molDists3 = new DoubleIndexPair[nMols];
-      molDists3[0] = new DoubleIndexPair(molDists2[0].getIndex(), molDists2[0].getDoubleValue());
-      molDists3[1] = new DoubleIndexPair(molDists2[1].getIndex(), molDists2[1].getDoubleValue());
+      molDists3[0] = new DoubleIndexPair(molDists2[0].index(), molDists2[0].doubleValue());
+      molDists3[1] = new DoubleIndexPair(molDists2[1].index(), molDists2[1].doubleValue());
       avgCenter = new double[3];
       int bound = min(3, molDists2.length);
       for (int i = 0; i < bound; i++) {
-        int molIndex = molDists2[i].getIndex();
+        int molIndex = molDists2[i].index();
         avgCenter[0] += centerOfMasses[molIndex][0];
         avgCenter[1] += centerOfMasses[molIndex][1];
         avgCenter[2] += centerOfMasses[molIndex][2];
@@ -3024,7 +3024,7 @@ public class ProgressiveAlignmentOfCrystals {
       }
 
       for (int i = 2; i < nMols; i++) {
-        auIndex0 = molDists2[i].getIndex();
+        auIndex0 = molDists2[i].index();
         double[] moleculeCenter = centerOfMasses[auIndex0];
         molDists3[i] = new DoubleIndexPair(auIndex0,
                 dist2(avgCenter, moleculeCenter));
@@ -3037,10 +3037,10 @@ public class ProgressiveAlignmentOfCrystals {
         double[][] targetMol = new double[length / nCoords][3];
         centerOfMass(targetMol, coordsXYZ, mass, massSum, nAtoms);
         for (int i = 0; i < numCheck; i++) {
-          auIndex0 = molDists3[i].getIndex();
+          auIndex0 = molDists3[i].index();
           logger.finest(format("  1,2,3AU %d Center: %3d Index: %3d Dist %4.4f CoM:(%6.4f %6.4f %6.4f)", i,
                           index, auIndex0,
-                          sqrt(molDists3[i].getDoubleValue()), targetMol[auIndex0][0],
+                          sqrt(molDists3[i].doubleValue()), targetMol[auIndex0][0],
                           targetMol[auIndex0][1], targetMol[auIndex0][2]));
         }
       }
@@ -3081,9 +3081,9 @@ public class ProgressiveAlignmentOfCrystals {
         double[][] targetMol = new double[length / nCoords][3];
         centerOfMass(targetMol, coordsXYZ, mass, massSum, nAtoms);
         for (int i = 0; i < numCheck; i++) {
-          int auIndex = auDist[i].getIndex();
+          int auIndex = auDist[i].index();
           logger.finest(format("  AU %d Center: %3d Index: %3d Dist %4.4f CoM:(%6.4f %6.4f %6.4f)", i, index,
-                          auIndex, sqrt(auDist[i].getDoubleValue()), targetMol[auIndex][0],
+                          auIndex, sqrt(auDist[i].doubleValue()), targetMol[auIndex][0],
                           targetMol[auIndex][1], targetMol[auIndex][2]));
         }
       }

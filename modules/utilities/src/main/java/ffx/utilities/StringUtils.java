@@ -228,8 +228,8 @@ public class StringUtils {
 
   /**
    * Prints a fixed-width decimal, similar to String.format(%width.precf, val), but ensuring the
-   * resulting string is never longer than width. If the result would end in a period (such as 14.),
-   * will leave off decimal. Will throw an exception if the value cannot be formatted in the
+   * resulting string is never longer than width. If the result ends in a period (such as 14.), the
+   * method leaves off the decimal. An exception is thrown if the value cannot be formatted in the
    * specified width.
    *
    * @param val Value to print
@@ -265,14 +265,15 @@ public class StringUtils {
   }
 
   /**
-   * Prints a fixed-width decimal using String.format conventions, throwing an error if the value
-   * cannot be formatted within that space.
+   * Prints a fixed-width decimal using <code>String.format</code> conventions, throwing an error if
+   * the value cannot be formatted within that space.
    *
-   * @param val a double.
-   * @param width a int.
-   * @param prec a int.
+   * @param val the value to print.
+   * @param width the width of the field.
+   * @param prec the number of decimal places.
    * @return a {@link java.lang.String} object.
-   * @throws java.lang.IllegalArgumentException If the length of String is greater than the width.
+   * @throws java.lang.IllegalArgumentException If the length of String is greater than the
+   *     width.
    */
   public static String fwFpDec(double val, int width, int prec) throws IllegalArgumentException {
     String str = String.format("%" + width + "." + prec + "f", val);
@@ -285,12 +286,12 @@ public class StringUtils {
   }
 
   /**
-   * Prints a fixed-width decimal using String.format conventions, reducing the value if necessary
-   * to fit within the width.
+   * Prints a fixed-width decimal using <code>String.format</code> conventions, reducing the value if
+   * necessary to fit within the width.
    *
-   * @param val a double.
-   * @param width a int.
-   * @param prec a int.
+   * @param val The value to print.
+   * @param width The width of the field.
+   * @param prec The number of decimal places.
    * @return a {@link java.lang.String} object.
    */
   public static String fwFpTrunc(double val, int width, int prec) {
@@ -353,7 +354,7 @@ public class StringUtils {
    * padLeft
    *
    * @param s a {@link java.lang.String} object.
-   * @param n a int.
+   * @param n The number of spaces to pad.
    * @return a {@link java.lang.String} object.
    */
   public static String padLeft(String s, int n) {
@@ -364,7 +365,7 @@ public class StringUtils {
    * padRight
    *
    * @param s a {@link java.lang.String} object.
-   * @param n a int.
+   * @param n The number of spaces to pad.
    * @return a {@link java.lang.String} object.
    */
   public static String padRight(String s, int n) {
@@ -497,8 +498,8 @@ public class StringUtils {
   }
 
   /**
-   * Checks if a String looks like a water. Returns either a standardized water name, or null if it
-   * doesn't look like water.
+   * Checks if a String looks like a water molecule. Returns either a standardized water name, or
+   * null if it doesn't look like water.
    *
    * @param name String to check.
    * @return Standard water name (matches) or null (no match).

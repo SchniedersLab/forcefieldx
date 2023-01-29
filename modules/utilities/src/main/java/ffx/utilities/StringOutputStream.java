@@ -98,6 +98,6 @@ public class StringOutputStream extends PrintStream {
    * @return a {@link java.lang.String} object.
    */
   public String toString() {
-    return new String(byteArrayOutputStream.toByteArray(), charset);
+    return byteArrayOutputStream.toString(charset);
   }
 }
