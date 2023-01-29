@@ -93,13 +93,13 @@ public class BondedUtils {
   }
 
   /**
-   * buildBond.
+   * Build a bond between two atoms.
    *
-   * @param a1 a {@link ffx.potential.bonded.Atom} object.
-   * @param a2 a {@link ffx.potential.bonded.Atom} object.
-   * @param forceField a {@link ForceField} object.
-   * @param bondList a {@link java.util.List} object.
-   * @return a {@link ffx.potential.bonded.Bond} object.
+   * @param a1 The first atom.
+   * @param a2 The second atom.
+   * @param forceField The force field to use.
+   * @param bondList The list of bonds to add to.
+   * @return The new bond.
    */
   public static Bond buildBond(Atom a1, Atom a2, ForceField forceField, List<Bond> bondList) {
     Bond bond = new Bond(a1, a2);
@@ -116,30 +116,25 @@ public class BondedUtils {
   }
 
   /**
-   * buildHeavy.
+   * Build a heavy atom.
    *
-   * @param residue a {@link ffx.potential.bonded.MSGroup} object.
-   * @param atomName a {@link java.lang.String} object.
-   * @param bondedTo a {@link ffx.potential.bonded.Atom} object.
-   * @param key a int.
-   * @param forceField a {@link ForceField} object.
-   * @param bondList a {@link java.util.List} object.
-   * @return a {@link ffx.potential.bonded.Atom} object.
+   * @param residue The residue to add the atom to.
+   * @param atomName The name of the atom.
+   * @param bondedTo The atom the heavy atom is bonded to.
+   * @param key The atom type key.
+   * @param forceField The force field to use.
+   * @param bondList The list of bonds to add to.
+   * @return The heavy atom.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
    */
-  public static Atom buildHeavy(
-      MSGroup residue,
-      String atomName,
-      Atom bondedTo,
-      int key,
-      ForceField forceField,
-      List<Bond> bondList)
+  public static Atom buildHeavy(MSGroup residue, String atomName, Atom bondedTo,
+      int key, ForceField forceField, List<Bond> bondList)
       throws MissingHeavyAtomException, MissingAtomTypeException {
     Atom atom = (Atom) residue.getAtomNode(atomName);
     AtomType atomType = findAtomType(key, forceField);
     if (atomType == null) {
-       Residue res = (Residue) residue;
-       throw new MissingAtomTypeException(res, atom);
+      Residue res = (Residue) residue;
+      throw new MissingAtomTypeException(res, atom);
     }
     if (atom == null) {
       throw new MissingHeavyAtomException(atomName, atomType, bondedTo);
@@ -152,247 +147,146 @@ public class BondedUtils {
   }
 
   /**
-   * buildHeavy.
+   * Build a heavy atom.
    *
-   * @param residue a {@link ffx.potential.bonded.MSGroup} object.
-   * @param atomName a {@link java.lang.String} object.
-   * @param ia a {@link ffx.potential.bonded.Atom} object.
-   * @param bond a double.
-   * @param ib a {@link ffx.potential.bonded.Atom} object.
-   * @param angle1 a double.
-   * @param ic a {@link ffx.potential.bonded.Atom} object.
-   * @param angle2 a double.
-   * @param chiral a int.
-   * @param lookUp a int.
-   * @param forceField a {@link ForceField} object.
-   * @return a {@link ffx.potential.bonded.Atom} object.
+   * @param residue The residue to add the atom to.
+   * @param atomName The name of the atom.
+   * @param ia The first atom.
+   * @param bond The bond length.
+   * @param ib The second atom.
+   * @param angle1 The angle.
+   * @param ic The third atom.
+   * @param angle2 The second angle (either a bond angle or a dihedral angle).
+   * @param chiral The chiral flag.
+   * @param lookUp The BioType key.
+   * @param forceField The force field to use.
+   * @return The new atom.
    */
-  public static Atom buildHeavy(
-      MSGroup residue,
-      String atomName,
-      Atom ia,
-      double bond,
-      Atom ib,
-      double angle1,
-      Atom ic,
-      double angle2,
-      int chiral,
-      int lookUp,
+  public static Atom buildHeavy(MSGroup residue, String atomName, Atom ia, double bond,
+      Atom ib, double angle1, Atom ic, double angle2, int chiral, int lookUp,
       ForceField forceField) {
     AtomType atomType = findAtomType(lookUp, forceField);
     return buildHeavyAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType);
   }
 
   /**
-   * buildHeavy.
+   * Build a heavy atom.
    *
-   * @param residue a {@link ffx.potential.bonded.MSGroup} object.
-   * @param atomName a {@link java.lang.String} object.
-   * @param ia a {@link ffx.potential.bonded.Atom} object.
-   * @param bond a double.
-   * @param ib a {@link ffx.potential.bonded.Atom} object.
-   * @param angle1 a double.
-   * @param ic a {@link ffx.potential.bonded.Atom} object.
-   * @param angle2 a double.
-   * @param chiral a int.
-   * @param lookUp a int.
-   * @param forceField a {@link ForceField} object.
-   * @param bondList a {@link java.util.List} object.
-   * @return a {@link ffx.potential.bonded.Atom} object.
+   * @param residue The residue to add the atom to.
+   * @param atomName The name of the atom.
+   * @param ia The first atom.
+   * @param bond The bond length.
+   * @param ib The second atom.
+   * @param angle1 The angle.
+   * @param ic The third atom.
+   * @param angle2 The second angle (either a bond angle or a dihedral angle).
+   * @param chiral The chiral flag.
+   * @param lookUp The BioType key.
+   * @param forceField The force field to use.
+   * @param bondList A list of bonds to add to.
+   * @return The new heavy atom.
    */
-  public static Atom buildHeavy(
-      MSGroup residue,
-      String atomName,
-      Atom ia,
-      double bond,
-      Atom ib,
-      double angle1,
-      Atom ic,
-      double angle2,
-      int chiral,
-      int lookUp,
-      ForceField forceField,
+  public static Atom buildHeavy(MSGroup residue, String atomName, Atom ia, double bond, Atom ib,
+      double angle1, Atom ic, double angle2, int chiral, int lookUp, ForceField forceField,
       List<Bond> bondList) {
     AtomType atomType = findAtomType(lookUp, forceField);
-    return buildHeavyAtom(
-        residue,
-        atomName,
-        ia,
-        bond,
-        ib,
-        angle1,
-        ic,
-        angle2,
-        chiral,
-        atomType,
-        forceField,
-        bondList);
+    return buildHeavyAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType,
+        forceField, bondList);
   }
 
   /**
-   * buildHeavy.
+   * Build a heavy atom.
    *
-   * @param residue a {@link ffx.potential.bonded.MSGroup} object.
-   * @param atomName a {@link ffx.potential.bonded.AminoAcidUtils.SideChainType} object.
-   * @param ia a {@link ffx.potential.bonded.Atom} object.
-   * @param bond a double.
-   * @param ib a {@link ffx.potential.bonded.Atom} object.
-   * @param angle1 a double.
-   * @param ic a {@link ffx.potential.bonded.Atom} object.
-   * @param angle2 a double.
-   * @param chiral a int.
-   * @param forceField a {@link ForceField} object.
-   * @param bondList a {@link java.util.List} object.
-   * @return a {@link ffx.potential.bonded.Atom} object.
+   * @param residue The residue to add the atom to.
+   * @param atomName The name of the atom.
+   * @param ia The first atom.
+   * @param bond The bond length.
+   * @param ib The second atom.
+   * @param angle1 The angle.
+   * @param ic The third atom.
+   * @param angle2 The second angle (either a bond angle or a dihedral angle).
+   * @param chiral The chiral flag.
+   * @param forceField The force field to use.
+   * @param bondList A list of bonds to add to.
+   * @return The new heavy atom.
    */
-  public static Atom buildHeavy(
-      MSGroup residue,
-      SideChainType atomName,
-      Atom ia,
-      double bond,
-      Atom ib,
-      double angle1,
-      Atom ic,
-      double angle2,
-      int chiral,
-      ForceField forceField,
+  public static Atom buildHeavy(MSGroup residue, SideChainType atomName, Atom ia, double bond,
+      Atom ib, double angle1, Atom ic, double angle2, int chiral, ForceField forceField,
       List<Bond> bondList) {
     AtomType atomType = findAtomType(atomName.getType(), forceField);
-    return buildHeavyAtom(
-        residue,
-        atomName.name(),
-        ia,
-        bond,
-        ib,
-        angle1,
-        ic,
-        angle2,
-        chiral,
-        atomType,
-        forceField,
-        bondList);
+    return buildHeavyAtom(residue, atomName.name(), ia, bond, ib, angle1, ic, angle2, chiral,
+        atomType, forceField, bondList);
   }
 
   /**
-   * buildHydrogen.
+   * Build a hydrogen atom.
    *
-   * @param residue a {@link ffx.potential.bonded.MSGroup} object.
-   * @param atomName a {@link java.lang.String} object.
-   * @param ia a {@link ffx.potential.bonded.Atom} object.
-   * @param bond a double.
-   * @param ib a {@link ffx.potential.bonded.Atom} object.
-   * @param angle1 a double.
-   * @param ic a {@link ffx.potential.bonded.Atom} object.
-   * @param angle2 a double.
-   * @param chiral a int.
-   * @param lookUp a int.
-   * @param forceField a {@link ForceField} object.
-   * @param bondList a {@link java.util.List} object.
-   * @return a {@link ffx.potential.bonded.Atom} object.
+   * @param residue The residue to add the atom to.
+   * @param atomName The name of the atom.
+   * @param ia The first atom.
+   * @param bond The bond length.
+   * @param ib The second atom.
+   * @param angle1 The angle.
+   * @param ic The third atom.
+   * @param angle2 The second angle (either a bond angle or a dihedral angle).
+   * @param chiral The chiral flag.
+   * @param lookUp The BioType key.
+   * @param forceField The force field to use.
+   * @param bondList A list of bonds to add to.
+   * @return The new hydrogen atom.
    */
-  public static Atom buildH(
-      MSGroup residue,
-      String atomName,
-      Atom ia,
-      double bond,
-      Atom ib,
-      double angle1,
-      Atom ic,
-      double angle2,
-      int chiral,
-      int lookUp,
-      ForceField forceField,
+  public static Atom buildH(MSGroup residue, String atomName, Atom ia, double bond, Atom ib,
+      double angle1, Atom ic, double angle2, int chiral, int lookUp, ForceField forceField,
       List<Bond> bondList) {
     AtomType atomType = findAtomType(lookUp, forceField);
-    return buildHydrogenAtom(
-        residue,
-        atomName,
-        ia,
-        bond,
-        ib,
-        angle1,
-        ic,
-        angle2,
-        chiral,
-        atomType,
-        forceField,
-        bondList);
+    return buildHydrogenAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral,
+        atomType, forceField, bondList);
   }
 
   /**
-   * buildHydrogen.
+   * Build a hydrogen atom.
    *
-   * @param residue a {@link ffx.potential.bonded.MSGroup} object.
-   * @param atomName a {@link ffx.potential.bonded.AminoAcidUtils.SideChainType} object.
-   * @param ia a {@link ffx.potential.bonded.Atom} object.
-   * @param bond a double.
-   * @param ib a {@link ffx.potential.bonded.Atom} object.
-   * @param angle1 a double.
-   * @param ic a {@link ffx.potential.bonded.Atom} object.
-   * @param angle2 a double.
-   * @param chiral a int.
-   * @param forceField a {@link ForceField} object.
-   * @param bondList a {@link java.util.List} object.
-   * @return a {@link ffx.potential.bonded.Atom} object.
+   * @param residue The residue to add the atom to.
+   * @param atomName The name of the atom.
+   * @param ia The first atom.
+   * @param bond The bond length.
+   * @param ib The second atom.
+   * @param angle1 The angle.
+   * @param ic The third atom.
+   * @param angle2 The second angle (either a bond angle or a dihedral angle).
+   * @param chiral The chiral flag.
+   * @param forceField The force field to use.
+   * @param bondList A list of bonds to add to.
+   * @return The new hydrogen atom.
    */
-  public static Atom buildH(
-      MSGroup residue,
-      SideChainType atomName,
-      Atom ia,
-      double bond,
-      Atom ib,
-      double angle1,
-      Atom ic,
-      double angle2,
-      int chiral,
-      ForceField forceField,
+  public static Atom buildH(MSGroup residue, SideChainType atomName, Atom ia, double bond,
+      Atom ib, double angle1, Atom ic, double angle2, int chiral, ForceField forceField,
       List<Bond> bondList) {
     AtomType atomType = findAtomType(atomName.getType(), forceField);
-    return buildHydrogenAtom(
-        residue,
-        atomName.name(),
-        ia,
-        bond,
-        ib,
-        angle1,
-        ic,
-        angle2,
-        chiral,
-        atomType,
-        forceField,
-        bondList);
+    return buildHydrogenAtom(residue, atomName.name(), ia, bond, ib, angle1, ic, angle2,
+        chiral, atomType, forceField, bondList);
   }
 
   /**
-   * buildHydrogenAtom.
+   * Build a hydrogen atom.
    *
-   * @param residue a {@link ffx.potential.bonded.MSGroup} object.
-   * @param atomName a {@link java.lang.String} object.
-   * @param ia a {@link ffx.potential.bonded.Atom} object.
-   * @param bond a double.
-   * @param ib a {@link ffx.potential.bonded.Atom} object.
-   * @param angle1 a double.
-   * @param ic a {@link ffx.potential.bonded.Atom} object.
-   * @param angle2 a double.
-   * @param chiral a int.
-   * @param atomType a {@link ffx.potential.parameters.AtomType} object.
-   * @param forceField a {@link ForceField} object.
-   * @param bondList a {@link java.util.List} object.
-   * @return a {@link ffx.potential.bonded.Atom} object.
+   * @param residue The residue to add the atom to.
+   * @param atomName The name of the atom.
+   * @param ia The first atom.
+   * @param bond The bond length.
+   * @param ib The second atom.
+   * @param angle1 The angle.
+   * @param ic The third atom.
+   * @param angle2 The second angle (either a bond angle or a dihedral angle).
+   * @param chiral The chiral flag.
+   * @param atomType The atom type.
+   * @param forceField The force field to use.
+   * @param bondList A list of bonds to add to.
+   * @return The new hydrogen atom.
    */
-  public static Atom buildHydrogenAtom(
-      MSGroup residue,
-      String atomName,
-      Atom ia,
-      double bond,
-      Atom ib,
-      double angle1,
-      Atom ic,
-      double angle2,
-      int chiral,
-      AtomType atomType,
-      ForceField forceField,
-      List<Bond> bondList) {
+  public static Atom buildHydrogenAtom(MSGroup residue, String atomName, Atom ia, double bond,
+      Atom ib, double angle1, Atom ic, double angle2, int chiral, AtomType atomType,
+      ForceField forceField, List<Bond> bondList) {
     if (atomType == null) {
       return null;
     }
@@ -404,19 +298,19 @@ public class BondedUtils {
     }
 
     // Basic checking for unspecified H atoms attached to water.
-    if (residue instanceof Molecule && atom == null) {
-      Molecule molec = (Molecule) residue;
-      String molName = molec.getName().toUpperCase();
+    if (atom == null && residue instanceof Molecule molecule) {
+      String molName = molecule.getName().toUpperCase();
       if (molName.startsWith("HOH") || molName.startsWith("WAT") || molName.startsWith("TIP3")) {
-        atom = (Atom) molec.getAtomNode("H");
+        atom = (Atom) molecule.getAtomNode("H");
         if (atom == null) {
-          atom = (Atom) molec.getAtomNode("D");
+          atom = (Atom) molecule.getAtomNode("D");
         }
         if (atom != null) {
           atom.setName(atomName);
         }
       }
     }
+
     if (atom == null) {
       String resName = ia.getResidueName();
       int resSeq = ia.getResidueNumber();
@@ -425,19 +319,8 @@ public class BondedUtils {
       String segID = ia.getSegID();
       double occupancy = ia.getOccupancy();
       double tempFactor = ia.getTempFactor();
-      atom =
-          new Atom(
-              0,
-              atomName,
-              altLoc,
-              new double[3],
-              resName,
-              resSeq,
-              chainID,
-              occupancy,
-              tempFactor,
-              segID,
-              true);
+      atom = new Atom(0, atomName, altLoc, new double[3], resName, resSeq, chainID,
+          occupancy, tempFactor, segID, true);
       residue.addMSNode(atom);
       intxyz(atom, ia, bond, ib, angle1, ic, angle2, chiral);
     }
@@ -449,7 +332,7 @@ public class BondedUtils {
   /**
    * findAtomType.
    *
-   * @param key a int.
+   * @param key The BioType key.
    * @param forceField a {@link ForceField} object.
    * @return a {@link ffx.potential.parameters.AtomType} object.
    */
@@ -460,10 +343,8 @@ public class BondedUtils {
       if (atomType != null) {
         return atomType;
       } else {
-        logger.severe(
-            format(
-                "The atom type %s was not found for biotype %s.",
-                bioType.atomType, bioType));
+        logger.severe(format("The atom type %s was not found for biotype %s.",
+            bioType.atomType, bioType));
       }
     }
     return null;
@@ -523,11 +404,10 @@ public class BondedUtils {
     List<Atom> nitrogenCandidates = new ArrayList<>(2);
 
     switch (residue.getAminoAcid3()) {
-      case LYS:
-      case LYD: {
+      case LYS, LYD -> {
         /* For lysine: find the nitrogen bonded to a carbon that does not have two protons. */
-        List<Atom> nitrogens = findAtomsOfElement(residue, 7);
-        for (Atom nitrogen : nitrogens) {
+        List<Atom> nitrogenList = findAtomsOfElement(residue, 7);
+        for (Atom nitrogen : nitrogenList) {
           List<Atom> carbons = findBondedAtoms(nitrogen, 6);
           if (carbons.size() == 2) {
             nitrogenCandidates.add(nitrogen);
@@ -540,36 +420,27 @@ public class BondedUtils {
               format(" Could not identify N atom of residue %s!", residue));
         }
       }
-      break;
       // Arginine and histidine can be handled very similarly.
-      case ARG:
-      case HIS:
-      case HIE:
-      case HID: {
+      case ARG, HIS, HIE, HID -> {
         /*
-         * Easiest to the carbon bonded to all the sidechain nitrogens, then find the nitrogen not
-         * thus bonded.
+         * Easiest to the carbon bonded to all the side-chain nitrogen atoms,
+         * then find the nitrogen not thus bonded.
          */
-        List<Atom> nitrogens = findAtomsOfElement(residue, 7);
-        Atom commonC =
-            findAtomsOfElement(residue, 6).stream()
-                .filter((Atom carbon) -> findBondedAtoms(carbon, 7).size() >= 2)
-                .findAny()
-                .get();
-        nitrogenCandidates =
-            nitrogens.stream()
-                .filter((Atom nitr) -> !atomAttachedToAtom(nitr, commonC))
-                .collect(Collectors.toList());
+        List<Atom> nitrogenList = findAtomsOfElement(residue, 7);
+        Atom commonC = findAtomsOfElement(residue, 6).stream()
+            .filter((Atom carbon) -> findBondedAtoms(carbon, 7).size() >= 2)
+            .findAny().get();
+        nitrogenCandidates = nitrogenList.stream()
+            .filter((Atom nitr) -> !atomAttachedToAtom(nitr, commonC))
+            .collect(Collectors.toList());
       }
-      break;
-      case ASN:
-      case GLN: {
+      case ASN, GLN -> {
         /*
          * Find a bonded carbon that is not bonded to an oxygen. Both N and ND/NE have an attached
          * carbonyl carbon. Only N will have CA attached.
          */
-        List<Atom> nitrogens = findAtomsOfElement(residue, 7);
-        for (Atom nitrogen : nitrogens) {
+        List<Atom> nitrogenList = findAtomsOfElement(residue, 7);
+        for (Atom nitrogen : nitrogenList) {
           List<Atom> bondedCarbs = findBondedAtoms(nitrogen, 6);
           for (Atom carbon : bondedCarbs) {
             if (!hasAttachedAtom(carbon, 8)) {
@@ -582,14 +453,13 @@ public class BondedUtils {
               format(" Could not identify N atom of residue %s!", residue));
         }
       }
-      break;
-      case TRP: {
+      case TRP -> {
         /*
          * For tryptophan: If at an N-terminus, there will be only one bonded carbon. Else, one
          * carbon will be a carbonyl carbon.
          */
-        List<Atom> nitrogens = findAtomsOfElement(residue, 7);
-        for (Atom nitrogen : nitrogens) {
+        List<Atom> nitrogenList = findAtomsOfElement(residue, 7);
+        for (Atom nitrogen : nitrogenList) {
           List<Atom> bondedCarbs = findBondedAtoms(nitrogen, 6);
           if (bondedCarbs.size() == 1) {
             nitrogenCandidates.add(nitrogen);
@@ -605,48 +475,48 @@ public class BondedUtils {
               format(" Could not identify N atom of residue %s!", residue));
         }
       }
-      break;
-      case ACE:
+      case ACE -> {
         return null;
-      default:
-        /* All others should only have one nitrogen atom. */
-        nitrogenCandidates = findAtomsOfElement(residue, 7);
-        break;
+      }
+      /* All others should only have one nitrogen atom. */
+      default -> nitrogenCandidates = findAtomsOfElement(residue, 7);
     }
 
     switch (nitrogenCandidates.size()) {
-      case 0:
+      case 0 -> {
         logger.warning(
-            " Did not find any atoms that might be the amide nitrogen for residue "
-                + residue);
+            " Did not find any atoms that might be the amide nitrogen for residue " + residue);
         return null;
-      case 1:
+      }
+      case 1 -> {
         return nitrogenCandidates.get(0);
-      case 2:
-        logger.fine(format(" Probable NME C-terminal cap attached to residue %s, some atom names may be duplicated!", residue));
+      }
+      case 2 -> {
+        logger.fine(format(
+            " Probable NME C-terminal cap attached to residue %s, some atom names may be duplicated!",
+            residue));
         Atom N = null;
         for (Atom nitro : nitrogenCandidates) {
           nitro.setName("N");
-          Optional<Atom> capMethyl =
-              findBondedAtoms(nitro, 6).stream()
-                  .filter((Atom carb) -> findBondedAtoms(carb, 1).size() == 3)
-                  .findAny();
+          Optional<Atom> capMethyl = findBondedAtoms(nitro, 6).stream()
+              .filter((Atom carb) -> findBondedAtoms(carb, 1).size() == 3)
+              .findAny();
           if (capMethyl.isPresent()) {
             findBondedAtoms(nitro, 1).get(0).setName("H");
             Atom theCap = capMethyl.get();
             theCap.setName("CH3");
-            List<Atom> capHydrogens = findBondedAtoms(theCap, 1);
+            List<Atom> capHydrogenList = findBondedAtoms(theCap, 1);
             for (int i = 0; i < 3; i++) {
-              capHydrogens.get(i).setName(format("H%d", i + 1));
+              capHydrogenList.get(i).setName(format("H%d", i + 1));
             }
           } else {
             N = nitro;
           }
         }
         return N;
-      default:
-        throw new IllegalArgumentException(
-            format(" Could not definitely identify amide nitrogen for residue %s", residue));
+      }
+      default -> throw new IllegalArgumentException(
+          format(" Could not definitely identify amide nitrogen for residue %s", residue));
     }
   }
 
@@ -673,10 +543,7 @@ public class BondedUtils {
    */
   public static Atom getAlphaCarbon(Residue residue, Atom N) {
     List<Atom> resAtoms = residue.getAtomList();
-    List<Atom> caCandidates =
-        findBondedAtoms(N, 6).stream()
-            .filter(resAtoms::contains)
-            .collect(Collectors.toList());
+    List<Atom> caCandidates = findBondedAtoms(N, 6).stream().filter(resAtoms::contains).toList();
 
     if (residue.getAminoAcid3() == AminoAcid3.PRO) {
       Atom CA = null;
@@ -735,14 +602,14 @@ public class BondedUtils {
   /**
    * This routine was derived from a similar routine in TINKER.
    *
-   * @param atom a {@link ffx.potential.bonded.Atom} object.
-   * @param ia a {@link ffx.potential.bonded.Atom} object.
-   * @param bond a double.
-   * @param ib a {@link ffx.potential.bonded.Atom} object.
-   * @param angle1 a double.
-   * @param ic a {@link ffx.potential.bonded.Atom} object.
-   * @param angle2 a double.
-   * @param chiral a int.
+   * @param atom The atom to be placed.
+   * @param ia The first atom.
+   * @param bond The bond length.
+   * @param ib The second atom.
+   * @param angle1 The angle.
+   * @param ic The third atom.
+   * @param angle2 The second angle (either a bond angle or a dihedral angle).
+   * @param chiral The chiral flag.
    */
   public static void intxyz(
       Atom atom, Atom ia, double bond, Atom ib, double angle1, Atom ic, double angle2, int chiral) {
@@ -827,31 +694,22 @@ public class BondedUtils {
   }
 
   /**
-   * buildHeavyAtom.
+   * Builds a heavy atom.
    *
-   * @param residue a {@link ffx.potential.bonded.MSGroup} object.
-   * @param atomName a {@link java.lang.String} object.
-   * @param ia a {@link ffx.potential.bonded.Atom} object.
-   * @param bond a double.
-   * @param ib a {@link ffx.potential.bonded.Atom} object.
-   * @param angle1 a double.
-   * @param ic a {@link ffx.potential.bonded.Atom} object.
-   * @param angle2 a double.
-   * @param chiral a int.
-   * @param atomType a {@link ffx.potential.parameters.AtomType} object.
-   * @return a {@link ffx.potential.bonded.Atom} object.
+   * @param residue The residue to add the atom to.
+   * @param atomName The name of the atom.
+   * @param ia The first atom.
+   * @param bond The bond length.
+   * @param ib The second atom.
+   * @param angle1 The angle.
+   * @param ic The third atom.
+   * @param angle2 The second angle (either a bond angle or a dihedral angle).
+   * @param chiral The chiral flag.
+   * @param atomType The atom type.
+   * @return The new heavy atom.
    */
-  private static Atom buildHeavyAtom(
-      MSGroup residue,
-      String atomName,
-      Atom ia,
-      double bond,
-      Atom ib,
-      double angle1,
-      Atom ic,
-      double angle2,
-      int chiral,
-      AtomType atomType) {
+  private static Atom buildHeavyAtom(MSGroup residue, String atomName, Atom ia, double bond,
+      Atom ib, double angle1, Atom ic, double angle2, int chiral, AtomType atomType) {
     Atom atom = (Atom) residue.getAtomNode(atomName);
     if (atomType == null) {
       return null;
@@ -885,35 +743,25 @@ public class BondedUtils {
   }
 
   /**
-   * buildHeavyAtom.
+   * Builds a heavy atom.
    *
-   * @param residue a {@link ffx.potential.bonded.MSGroup} object.
-   * @param atomName a {@link java.lang.String} object.
-   * @param ia a {@link ffx.potential.bonded.Atom} object.
-   * @param bond a double.
-   * @param ib a {@link ffx.potential.bonded.Atom} object.
-   * @param angle1 a double.
-   * @param ic a {@link ffx.potential.bonded.Atom} object.
-   * @param angle2 a double.
-   * @param chiral a int.
-   * @param atomType a {@link ffx.potential.parameters.AtomType} object.
-   * @param forceField a {@link ForceField} object.
-   * @param bondList a {@link java.util.List} object.
-   * @return a {@link ffx.potential.bonded.Atom} object.
+   * @param residue The residue to add the atom to.
+   * @param atomName The name of the atom.
+   * @param ia The first atom.
+   * @param bond The bond length.
+   * @param ib The second atom.
+   * @param angle1 The angle.
+   * @param ic The third atom.
+   * @param angle2 The second angle (either a bond angle or a dihedral angle).
+   * @param chiral The chiral flag.
+   * @param atomType The atom type.
+   * @param forceField The force field to use.
+   * @param bondList A list of bonds to add to.
+   * @return The new heavy atom.
    */
-  private static Atom buildHeavyAtom(
-      MSGroup residue,
-      String atomName,
-      Atom ia,
-      double bond,
-      Atom ib,
-      double angle1,
-      Atom ic,
-      double angle2,
-      int chiral,
-      AtomType atomType,
-      ForceField forceField,
-      List<Bond> bondList) {
+  private static Atom buildHeavyAtom(MSGroup residue, String atomName, Atom ia, double bond,
+      Atom ib, double angle1, Atom ic, double angle2, int chiral, AtomType atomType,
+      ForceField forceField, List<Bond> bondList) {
     Atom atom =
         buildHeavyAtom(residue, atomName, ia, bond, ib, angle1, ic, angle2, chiral, atomType);
     buildBond(ia, atom, forceField, bondList);
@@ -933,22 +781,16 @@ public class BondedUtils {
    * minimized, equipartitioned deviation from angle1 and angle2.
    *
    * @param ia a double[] of atomic coordinates.
-   * @param bond a double.
+   * @param bond The bond length.
    * @param ib a double[] of atomic coordinates.
-   * @param angle1 a double.
+   * @param angle1 The angle.
    * @param ic a double[] of atomic coordinates.
-   * @param angle2 a double.
-   * @param chiral 0, 1, -1, or 3.
+   * @param angle2 The second angle (either a bond angle or a dihedral angle).
+   * @param chiral The chiral flag (0, 1, -1, or 3).
    * @return A double[] with XYZ coordinates at which an atom would be placed.
    */
-  public static double[] determineIntxyz(
-      double[] ia,
-      double bond,
-      double[] ib,
-      double angle1,
-      double[] ic,
-      double angle2,
-      int chiral) {
+  public static double[] determineIntxyz(double[] ia, double bond, double[] ib, double angle1,
+      double[] ic, double angle2, int chiral) {
     if (ia != null && !Double.isFinite(bond)) {
       throw new IllegalArgumentException(
           String.format(" Passed bond length is non-finite %f", bond));

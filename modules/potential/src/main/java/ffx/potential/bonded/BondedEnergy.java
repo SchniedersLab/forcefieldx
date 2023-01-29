@@ -60,8 +60,8 @@ public interface BondedEnergy {
   /**
    * energy.
    *
-   * @param gradient a boolean.
-   * @param threadID a int.
+   * @param gradient If true, compute the gradient.
+   * @param threadID The thread ID.
    * @param grad a {@link AtomicDoubleArray3D} object.
    * @return a double.
    */
@@ -72,14 +72,14 @@ public interface BondedEnergy {
   /**
    * energy.
    *
-   * @param gradient a boolean.
-   * @param threadID a int.
+   * @param gradient If true, compute the gradient.
+   * @param threadID The thread ID.
    * @param grad a {@link AtomicDoubleArray3D} object.
    * @param lambdaGrad a {@link AtomicDoubleArray3D} object.
    * @return a double.
    */
-  double energy(
-      boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad);
+  double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad,
+      AtomicDoubleArray3D lambdaGrad);
 
   /** update. */
   default void update() {

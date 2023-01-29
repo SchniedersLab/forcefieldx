@@ -41,11 +41,12 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
+import javax.swing.tree.TreeNode;
 import org.jogamp.java3d.BranchGroup;
 
 /**
  * The ROLSP class is used for Proof-Of-Concept Parallel Recusive Over Length Scales (ROLS) Methods
- * (currently only on shared memory systems). Simply Simply inserting a ParallelMSM node into the
+ * (currently only on shared memory systems). Simply inserting a ParallelMSM node into the
  * Hierarchy causes a seperate thread of execution to be created for all operations on nodes below
  * the ROLSP node. This is very preliminary code, but a useful concept for parallelizing ROLS in
  * ffe.lang.
@@ -132,7 +133,7 @@ public class ROLSP extends MSNode implements ROLS, Runnable {
     } else if (parallelMethod == PARALLELMETHOD.SETVIEW) {
       // setView has been called from within the 'run' method of the
       // "setView" thread
-      for (Enumeration e = children(); e.hasMoreElements(); ) {
+      for (Enumeration<TreeNode> e = children(); e.hasMoreElements(); ) {
         MSNode node = (MSNode) e.nextElement();
         node.setView(viewModel, newShapes);
       }

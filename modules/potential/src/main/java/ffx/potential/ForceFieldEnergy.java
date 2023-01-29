@@ -2114,7 +2114,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     int index = 0;
     for (int i = 0; i < nAtoms; i++) {
       Atom a = atoms[i];
-      if (a.isActive() && !a.isBackground()) {
+      if (a.isActive()) {
         x[index++] = a.getX();
         x[index++] = a.getY();
         x[index++] = a.getZ();
@@ -2406,7 +2406,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   public int getNumberOfVariables() {
     int nActive = 0;
     for (int i = 0; i < nAtoms; i++) {
-      if (atoms[i].isActive() && !atoms[i].isBackground()) {
+      if (atoms[i].isActive()) {
         nActive++;
       }
     }
@@ -3440,7 +3440,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     int index = 0;
     for (int i = 0; i < nAtoms; i++) {
       Atom a = atoms[i];
-      if (a.isActive() && !a.isBackground()) {
+      if (a.isActive()) {
         double x = coords[index++];
         double y = coords[index++];
         double z = coords[index++];

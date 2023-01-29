@@ -146,66 +146,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
           return 0;
         }
       };
-  /**
-   * Compare two atoms (implementation of the Comparator interface).
-   *
-   * <p>First, if atom1.equals(atom2), then 0 is returned.
-   *
-   * <p>Next, atoms are compared based on their atomic number. A heavier atom is greater than (comes
-   * after) a lighter atom.
-   *
-   * <p>Finally, atoms are compared based on their XYZ index. A lower XYZ index is less than (comes
-   * before) a higher index.
-   */
-  public static Comparator<Atom> atomicNumberXYZComparator =
-      new Comparator<>() {
-
-        /**
-         * Compare two atoms (implementation of the Comparator interface).
-         *
-         * <p>First, if atom1.equals(atom2), then 0 is returned.
-         *
-         * <p>Next, atoms are compared based on their atomic number. A heavier atom is less than
-         * (comes before) a lighter atom.
-         *
-         * <p>Finally, atoms are compared based on their XYZ index. A lower XYZ index is less than
-         * (comes before) a higher index.
-         *
-         * @param atom1 First atom to compare.
-         * @param atom2 Second atom to compare.
-         * @return Returns a negative integer, zero, or a positive integer as the first argument is
-         *     less than, equal to, or greater than the second.
-         */
-        @Override
-        public int compare(Atom atom1, Atom atom2) {
-          boolean equal = atom1.equals(atom2);
-          if (equal) {
-            return 0;
-          }
-
-          int atomic1 = atom1.getAtomicNumber();
-          int atomic2 = atom2.getAtomicNumber();
-          if (atomic1 != atomic2) {
-            if (atomic1 > atomic2) {
-              return -1;
-            } else {
-              return 1;
-            }
-          }
-
-          int index1 = atom1.getXyzIndex();
-          int index2 = atom2.getXyzIndex();
-          if (index1 != index2) {
-            if (index1 < index2) {
-              return -1;
-            } else {
-              return 1;
-            }
-          }
-
-          return 0;
-        }
-      };
 
   static {
     // Initialize HashMaps
@@ -405,7 +345,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
   private double[] anisouVelocity;
   private double[] anisouAcceleration;
   private double[] anisouPreviousAcceleration;
-  private boolean isBackground = false;
   private Resolution resolution = Resolution.AMOEBA;
   /** If use is true, this atom should be included in target functions. */
   private boolean use = true;
@@ -526,17 +465,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * @param segID Unique segment ID.
    * @since 1.0.
    */
-  public Atom(
-      int xyzIndex,
-      String name,
-      Character altLoc,
-      double[] xyz,
-      String resName,
-      int resSeq,
-      Character chainID,
-      double occupancy,
-      double tempFactor,
-      String segID) {
+  public Atom(int xyzIndex, String name, Character altLoc, double[] xyz, String resName,
+      int resSeq, Character chainID, double occupancy, double tempFactor, String segID) {
     this(xyzIndex, name, null, xyz);
     this.resName = resName;
     this.resSeq = resSeq;
@@ -550,29 +480,20 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * Constructor for Atom.
    *
-   * @param xyzIndex a int.
+   * @param xyzIndex The atom's contiguous, unique index between 1..nAtoms.
    * @param name a {@link java.lang.String} object.
    * @param altLoc a {@link java.lang.Character} object.
    * @param xyz an array of {@link double} objects.
    * @param resName a {@link java.lang.String} object.
-   * @param resSeq a int.
+   * @param resSeq The residue sequence number.
    * @param chainID a {@link java.lang.Character} object.
-   * @param occupancy a double.
-   * @param tempFactor a double.
+   * @param occupancy The crystallographic occupancy.
+   * @param tempFactor The crystallographic B-factor.
    * @param segID a {@link java.lang.String} object.
    * @param built a boolean.
    */
-  public Atom(
-      int xyzIndex,
-      String name,
-      Character altLoc,
-      double[] xyz,
-      String resName,
-      int resSeq,
-      Character chainID,
-      double occupancy,
-      double tempFactor,
-      String segID,
+  public Atom(int xyzIndex, String name, Character altLoc, double[] xyz, String resName,
+      int resSeq, Character chainID, double occupancy, double tempFactor, String segID,
       boolean built) {
     this(xyzIndex, name, altLoc, xyz, resName, resSeq, chainID, occupancy, tempFactor, segID);
     this.built = built;
@@ -687,8 +608,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * addToXYZGradient.
    *
-   * @param axis a int.
-   * @param value a double.
+   * @param axis The axis to add to.
+   * @param value The value to add.
    */
   public void addToXYZGradient(int axis, double value) {
     if (active) {
@@ -728,19 +649,13 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * @return a {@link java.lang.String} object.
    */
   public String describe(Descriptions type) {
-    switch (type) {
-      default:
-      case Default:
-        return toString();
-      case Trim:
-        return format("%d-%-3s %s %s%d", getIndex(), getName(), resName, segID, resSeq);
-      case XyzIndex_Name:
-        return format("%d-%s", getIndex(), getName());
-      case ArrayIndex_Name:
-        return format("%d-%s", getIndex() - 1, getName());
-      case Resnum_Name:
-        return format("%d-%s", resSeq, getName());
-    }
+    return switch (type) {
+      default -> toString();
+      case Trim -> format("%d-%-3s %s %s%d", getIndex(), getName(), resName, segID, resSeq);
+      case XyzIndex_Name -> format("%d-%s", getIndex(), getName());
+      case ArrayIndex_Name -> format("%d-%s", getIndex() - 1, getName());
+      case Resnum_Name -> format("%d-%s", resSeq, getName());
+    };
   }
 
   /** {@inheritDoc} */
@@ -767,7 +682,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     }
     Atom atom = (Atom) o;
 
-    // TDOO: Check initialization of the segID field.
+    // TODO: Check initialization of the segID field.
     if ((segID == null || atom.segID == null)) {
       return false;
     }
@@ -1011,7 +926,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * getArrayIndex.
    *
-   * @return a int.
+   * @return The index of this atom in the array of atoms (xyzIndex - 1).
    */
   public final int getArrayIndex() {
     return xyzIndex - 1;
@@ -1189,7 +1104,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * Getter for the field <code>formFactorIndex</code>.
    *
-   * @return a int.
+   * @return The index of the form factor in the form factor array.
    */
   public int getFormFactorIndex() {
     return formFactorIndex;
@@ -1198,7 +1113,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * Setter for the field <code>formFactorIndex</code>.
    *
-   * @param formFactorIndex a int.
+   * @param formFactorIndex The index of the form factor in the form factor array.
    */
   public void setFormFactorIndex(int formFactorIndex) {
     this.formFactorIndex = formFactorIndex;
@@ -1251,19 +1166,15 @@ public class Atom extends MSNode implements Comparable<Atom> {
   }
 
   /**
-   * Note: the MolecularAssembly to which this Atom belongs is cached. If you wanna move atoms
-   * between assemblies, un-cache it.
+   * Getter for the field <code>index</code>.
    *
-   * @return a int.
+   * @return The index of this atom in the molecular assembly.
    */
   public final int getIndex() {
-    switch (MolecularAssembly.atomIndexing) {
-      case PERSIST:
-        return persistentIndex;
-      default:
-      case XYZ:
-        return xyzIndex;
-    }
+    return switch (MolecularAssembly.atomIndexing) {
+      case PERSIST -> persistentIndex;
+      case XYZ -> xyzIndex;
+    };
   }
 
   /**
@@ -1313,7 +1224,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * Getter for the field <code>moleculeNumber</code>.
    *
-   * @return a int.
+   * @return The molecule number of this atom.
    */
   public int getMoleculeNumber() {
     return moleculeNumber;
@@ -1322,7 +1233,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * Setter for the field <code>moleculeNumber</code>.
    *
-   * @param molecule a int.
+   * @param molecule The molecule number of this atom.
    */
   public void setMoleculeNumber(int molecule) {
     this.moleculeNumber = molecule;
@@ -1349,7 +1260,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * getNumAngles
    *
-   * @return a int.
+   * @return The number of angles involving this atom.
    */
   public final int getNumAngles() {
     return angles.size();
@@ -1367,7 +1278,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * getNumDihedrals
    *
-   * @return a int.
+   * @return The number of dihedrals involving this atom.
    */
   public final int getNumDihedrals() {
     return torsions.size();
@@ -1615,7 +1526,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * getResidueNumber
    *
-   * @return a int.
+   * @return The residue number of this atom.
    */
   public int getResidueNumber() {
     return resSeq;
@@ -1804,7 +1715,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * getTrajectoryCoords
    *
-   * @param position a int.
+   * @param position The position in the trajectory.
    * @return a {@link org.jogamp.vecmath.Vector3d} object.
    */
   public Vector3d getTrajectoryCoords(int position) {
@@ -1814,7 +1725,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * getTrajectoryLength
    *
-   * @return a int.
+   * @return The length of the trajectory.
    */
   public int getTrajectoryLength() {
     return trajectory.size();
@@ -1823,7 +1734,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * getType
    *
-   * @return a int.
+   * @return The type of this atom.
    */
   public int getType() {
     return atomType.type;
@@ -1977,7 +1888,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * Getter for the field <code>xyzIndex</code>.
    *
-   * @return a int.
+   * @return The index of this atom in XYZ files.
    */
   public final int getXyzIndex() {
     return xyzIndex;
@@ -1986,7 +1897,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * Setter for the field <code>xyzIndex</code>.
    *
-   * @param set a int.
+   * @param set The index of this atom in XYZ files.
    */
   public final void setXyzIndex(int set) {
     xyzIndex = set;
@@ -2056,19 +1967,10 @@ public class Atom extends MSNode implements Comparable<Atom> {
   }
 
   /**
-   * isBackground.
-   *
-   * @return a boolean.
-   */
-  public boolean isBackground() {
-    return isBackground;
-  }
-
-  /**
    * Checks to see if an Atom is bonded to <b>this</b> Atom
    *
    * @param a Atom to check
-   * @return True is Atom a is bonded to <b>this</b>this atom
+   * @return True if Atom <code>a</code> is bonded to <b>this</b>this atom
    */
   public boolean isBonded(Atom a) {
     for (Bond bond : bonds) {
@@ -2509,24 +2411,20 @@ public class Atom extends MSNode implements Comparable<Atom> {
   @Override
   public void setColor(ColorModel newColorModel, Color3f newCol, Material newMat) {
     switch (newColorModel) {
-      case CPK:
+      case CPK -> {
         newCol = RendererCache.getColor(this, ColorModel.CPK);
         if (newCol == currentCol) {
           return;
         }
         currentCol = previousCol = newCol;
-        break;
-      case USERCOLOR:
-        currentCol = previousCol = userColor;
-        break;
-      case APPLYUSERCOLOR:
+      }
+      case USERCOLOR -> currentCol = previousCol = userColor;
+      case APPLYUSERCOLOR -> {
         userColor = RendererCache.userColor;
         currentCol = previousCol = userColor;
-        break;
-      case MONOCHROME:
-        currentCol = previousCol = RendererCache.WHITE;
-        break;
-      case SELECT:
+      }
+      case MONOCHROME -> currentCol = previousCol = RendererCache.WHITE;
+      case SELECT -> {
         if (isSelected()) {
           newCol = RendererCache.selectionColor;
           if (newCol != currentCol) {
@@ -2537,36 +2435,37 @@ public class Atom extends MSNode implements Comparable<Atom> {
         } else {
           currentCol = previousCol;
         }
-        break;
-      case PICK:
+      }
+      case PICK -> {
         newCol = RendererCache.pickingColor;
         if (newCol != currentCol) {
           currentCol = newCol;
         } else {
           return;
         }
-        break;
-      case REVERT:
+      }
+      case REVERT -> {
         if (RendererCache.highlightSelections && isSelected()) {
           currentCol = RendererCache.selectionColor;
         } else {
           currentCol = previousCol;
         }
-        break;
-      case PARTIALCHARGE:
+      }
+      case PARTIALCHARGE -> {
         newCol = RendererCache.getColor(this, ColorModel.PARTIALCHARGE);
         if (newCol == currentCol) {
           return;
         }
         currentCol = previousCol = newCol;
-        break;
-      default:
+      }
+      default -> {
         // Check for a Color Choice sent from a higher level structure
         // (residue,polymer,etc)
         if (newCol == currentCol || newCol == null) {
           return;
         }
         currentCol = previousCol = newCol;
+      }
     }
 
     // Apply the Color Change
@@ -2583,7 +2482,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
   /**
    * setCurrentCycle
    *
-   * @param cycle a int.
+   * @param cycle Sets the current cycle to the specified value.
    */
   public void setCurrentCycle(int cycle) {
     if (trajectory == null) {
@@ -2652,14 +2551,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
       }
     }
 
-    if (!isBackground) {
-      for (Atom atom : torsion.getAtomArray()) {
-        if (atom.isBackground()) {
-          return;
-        }
-      }
-    }
-
     torsions.add(torsion);
   }
 
@@ -2698,54 +2589,46 @@ public class Atom extends MSNode implements Comparable<Atom> {
   public void setView(ViewModel newViewModel, List<BranchGroup> newShapes) {
     switch (newViewModel) {
       // case INVISIBLE through case TUBE change the "ViewModel"
-      case INVISIBLE:
+      case INVISIBLE, WIREFRAME -> {
         viewModel = ViewModel.INVISIBLE;
         setSphereVisible(false, newShapes);
-        break;
-      case WIREFRAME:
-        viewModel = ViewModel.INVISIBLE;
-        setSphereVisible(false, newShapes);
-        break;
-      case SPACEFILL:
+      }
+      case SPACEFILL -> {
         viewModel = ViewModel.SPACEFILL;
         scale = AtomVDW.get(atomType.atomicNumber) * radius;
         setSphereVisible(true, newShapes);
-        break;
-      case RMIN:
+      }
+      case RMIN -> {
         viewModel = ViewModel.RMIN;
-        scale = 1.0 * radius;
+        scale = radius;
         setSphereVisible(true, newShapes);
-        break;
-      case BALLANDSTICK:
+      }
+      case BALLANDSTICK -> {
         viewModel = ViewModel.BALLANDSTICK;
         scale = AtomVDW.get(atomType.atomicNumber) / 5.0d * radius;
         setSphereVisible(true, newShapes);
-        break;
-      case TUBE:
+      }
+      case TUBE -> {
         viewModel = ViewModel.TUBE;
         scale = RendererCache.radius * 0.2d;
         setSphereVisible(true, newShapes);
-        break;
-      case SHOWHYDROGENS:
-        if (atomType.atomicNumber == 1) {
-          return;
-        }
-        break;
-      case HIDEHYDROGENS:
+      }
+      case SHOWHYDROGEN -> {
+        setView(viewModel, newShapes);
+      }
+      case HIDEHYDROGEN -> {
         if (atomType.atomicNumber == 1) {
           viewModel = ViewModel.INVISIBLE;
           setSphereVisible(false, newShapes);
-          return;
         }
-        break;
-      case RESTRICT:
+      }
+      case RESTRICT -> {
         if (!isSelected()) {
           viewModel = ViewModel.INVISIBLE;
           setSphereVisible(false, newShapes);
-          return;
         }
-        break;
-      case DETAIL:
+      }
+      case DETAIL -> {
         int newdetail = RendererCache.detail;
         if (newdetail != detail) {
           detail = newdetail;
@@ -2760,17 +2643,15 @@ public class Atom extends MSNode implements Comparable<Atom> {
           radius = newradius;
           setView(viewModel, newShapes);
         }
-        break;
+      }
       // Polygon Appearance Selection
-      case FILL:
-      case POINTS:
-      case LINES:
+      case FILL, POINTS, LINES -> {
         polygonType = newViewModel;
         appearance = RendererCache.appearanceFactory(currentCol, polygonType);
         if (viewModel != ViewModel.INVISIBLE) {
           setSphereVisible(true, newShapes);
         }
-        break;
+      }
     }
   }
 
@@ -2830,7 +2711,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * addTrajectoryCoords
    *
    * @param coords a {@link org.jogamp.vecmath.Vector3d} object.
-   * @param position a int.
+   * @param position The position in the trajectory to add the coordinates.
    */
   void addTrajectoryCoords(Vector3d coords, int position) {
     if (trajectory == null) {
@@ -2885,9 +2766,9 @@ public class Atom extends MSNode implements Comparable<Atom> {
   }
 
   /**
-   * Gets whether or not the Atom is under-constrained
+   * Gets whether the Atom is under-constrained.
    *
-   * @return True if the atom is under-constrained (ie has can accept bonds)
+   * @return True if the atom is under-constrained (i,e., it can accept bonds).
    */
   boolean isDangeling() {
     Integer hybrid = hybridTable.get("" + atomType.atomicNumber);
@@ -3057,7 +2938,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
     Sg,
     Bh,
     Hs,
-    Mt;
+    Mt
   }
 
   public enum Indexing {

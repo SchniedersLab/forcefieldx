@@ -92,10 +92,10 @@ public class PolymerUtils {
    *
    * @param molecularAssembly MolecularAssembly to operate on.
    * @param fileStandard PDB file standard to follow.
-   * @return An List of created bonds.
+   * @return A List of created bonds.
    */
-  public static List<Bond> assignAtomTypes(
-      MolecularAssembly molecularAssembly, PDBFileStandard fileStandard) {
+  public static List<Bond> assignAtomTypes(MolecularAssembly molecularAssembly,
+      PDBFileStandard fileStandard) {
     // Create a list to store bonds defined by PDB atom names.
     List<Bond> bondList = new ArrayList<>();
 
@@ -163,40 +163,21 @@ public class PolymerUtils {
         // Check if all residues have known nucleic acids names.
         boolean isNucleicAcid = true;
         for (Residue residue : residues) {
-          String name = residue.getName().toUpperCase();
+          String currentName = residue.getName().toUpperCase();
           // Convert 1 and 2-character nucleic acid names to 3-character names.
-          switch (name) {
-            case "A":
-              name = NucleicAcidUtils.NucleicAcid3.ADE.toString();
-              break;
-            case "C":
-              name = NucleicAcidUtils.NucleicAcid3.CYT.toString();
-              break;
-            case "G":
-              name = NucleicAcidUtils.NucleicAcid3.GUA.toString();
-              break;
-            case "T":
-              name = NucleicAcidUtils.NucleicAcid3.THY.toString();
-              break;
-            case "U":
-              name = NucleicAcidUtils.NucleicAcid3.URI.toString();
-              break;
-            case "YG":
-              name = NucleicAcidUtils.NucleicAcid3.YYG.toString();
-              break;
-            case "DA":
-              name = NucleicAcidUtils.NucleicAcid3.DAD.toString();
-              break;
-            case "DC":
-              name = NucleicAcidUtils.NucleicAcid3.DCY.toString();
-              break;
-            case "DG":
-              name = NucleicAcidUtils.NucleicAcid3.DGU.toString();
-              break;
-            case "DT":
-              name = NucleicAcidUtils.NucleicAcid3.DTY.toString();
-              break;
-          }
+          String name = switch (currentName) {
+            case "A" -> NucleicAcid3.ADE.toString();
+            case "C" -> NucleicAcid3.CYT.toString();
+            case "G" -> NucleicAcid3.GUA.toString();
+            case "T" -> NucleicAcid3.THY.toString();
+            case "U" -> NucleicAcid3.URI.toString();
+            case "YG" -> NucleicAcid3.YYG.toString();
+            case "DA" -> NucleicAcid3.DAD.toString();
+            case "DC" -> NucleicAcid3.DCY.toString();
+            case "DG" -> NucleicAcid3.DGU.toString();
+            case "DT" -> NucleicAcid3.DTY.toString();
+            default -> currentName;
+          };
           residue.setName(name);
           NucleicAcid3 nucleicAcid = null;
           for (NucleicAcid3 nucleic : nucleicAcidList) {
@@ -224,8 +205,7 @@ public class PolymerUtils {
 
             if (logger.isLoggable(Level.FINE)) {
               logger.fine(
-                  format(
-                      " EXPERIMENTAL: Finding chain breaks for possible nucleic acid chain %s",
+                  format(" EXPERIMENTAL: Finding chain breaks for possible nucleic acid chain %s",
                       polymer.getName()));
             }
             double dist = properties.getDouble("chainbreak", DEFAULT_AA_CHAINBREAK);
@@ -254,37 +234,19 @@ public class PolymerUtils {
         NamingUtils.HetAtoms hetatm = NamingUtils.HetAtoms.parse(name);
         Atom atom = ion.getAtomList().get(0);
         if (ion.getAtomList().size() != 1) {
-          logger.severe(format(" Check residue %s of chain %s.", ion.toString(), ion.getChainID()));
+          logger.severe(format(" Check residue %s of chain %s.", ion, ion.getChainID()));
         }
         try {
           switch (hetatm) {
-            case NA:
-              atom.setAtomType(findAtomType(2004, forceField));
-              break;
-            case K:
-              atom.setAtomType(findAtomType(2005, forceField));
-              break;
-            case MG:
-            case MG2:
-              atom.setAtomType(findAtomType(2008, forceField));
-              break;
-            case CA:
-            case CA2:
-              atom.setAtomType(findAtomType(2009, forceField));
-              break;
-            case ZN:
-            case ZN2:
-              atom.setAtomType(findAtomType(2016, forceField));
-              break;
-            case CL:
-              atom.setAtomType(findAtomType(2013, forceField));
-              break;
-            case BR:
-              atom.setAtomType(findAtomType(2012, forceField));
-              break;
-            default:
-              logger.severe(
-                  format(" Check residue %s of chain %s.", ion, ion.getChainID()));
+            case NA -> atom.setAtomType(findAtomType(2004, forceField));
+            case K -> atom.setAtomType(findAtomType(2005, forceField));
+            case MG, MG2 -> atom.setAtomType(findAtomType(2008, forceField));
+            case CA, CA2 -> atom.setAtomType(findAtomType(2009, forceField));
+            case ZN, ZN2 -> atom.setAtomType(findAtomType(2016, forceField));
+            case CL -> atom.setAtomType(findAtomType(2013, forceField));
+            case BR -> atom.setAtomType(findAtomType(2012, forceField));
+            default ->
+                logger.severe(format(" Check residue %s of chain %s.", ion, ion.getChainID()));
           }
         } catch (Exception e) {
           logger.log(Level.INFO, Utilities.stackTraceToString(e));
@@ -381,18 +343,9 @@ public class PolymerUtils {
           }
           // Get the heavy atom the hydrogen is bonded to.
           Atom ia = atomMap.get(bonds[0].toUpperCase());
-          Atom hydrogen =
-              new Atom(
-                  0,
-                  atomName,
-                  ia.getAltLoc(),
-                  new double[3],
-                  ia.getResidueName(),
-                  ia.getResidueNumber(),
-                  ia.getChainID(),
-                  ia.getOccupancy(),
-                  ia.getTempFactor(),
-                  ia.getSegID());
+          Atom hydrogen = new Atom(0, atomName, ia.getAltLoc(), new double[3], ia.getResidueName(),
+              ia.getResidueNumber(), ia.getChainID(), ia.getOccupancy(), ia.getTempFactor(),
+              ia.getSegID());
           logger.fine(" Created hydrogen " + atomName + ".");
           hydrogen.setAtomType(type);
           hydrogen.setHetero(true);
@@ -417,22 +370,15 @@ public class PolymerUtils {
             id = bond.get1_2(ia);
           }
 
-          // Building the hydrogens depends on hybridization and the locations of other bonded
+          // Building the hydrogen depends on hybridization and the locations of other bonded
           // atoms.
           logger.fine(
-              " Bonding "
-                  + atomName
-                  + " to "
-                  + ia.getName()
-                  + " ("
-                  + numBonds
-                  + " of "
-                  + valence
+              " Bonding " + atomName + " to " + ia.getName() + " (" + numBonds + " of " + valence
                   + ").");
           switch (valence) {
-            case 4:
+            case 4 -> {
               switch (numBonds) {
-                case 3:
+                case 3 -> {
                   // Find the average coordinates of atoms ib, ic and id.
                   double[] b = ib.getXYZ(null);
                   double[] c = ic.getXYZ(null);
@@ -458,61 +404,49 @@ public class PolymerUtils {
                   if (l1 > l2) {
                     hydrogen.setXYZ(e1);
                   }
-                  break;
-                case 2:
-                  intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);
-                  break;
-                case 1:
-                  intxyz(hydrogen, ia, 1.0, ib, 109.5, null, 0.0, 0);
-                  break;
-                case 0:
-                  intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
-                  break;
-                default:
+                }
+                case 2 -> intxyz(hydrogen, ia, 1.0, ib, 109.5, ic, 109.5, 0);
+                case 1 -> intxyz(hydrogen, ia, 1.0, ib, 109.5, null, 0.0, 0);
+                case 0 -> intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                default -> {
                   logger.info(" Check biotype for hydrogen " + atomName + ".");
                   patched = false;
+                }
               }
-              break;
-            case 3:
+            }
+            case 3 -> {
               switch (numBonds) {
-                case 2:
-                  intxyz(hydrogen, ia, 1.0, ib, 120.0, ic, 0.0, 0);
-                  break;
-                case 1:
-                  intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
-                  break;
-                case 0:
-                  intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
-                  break;
-                default:
+                case 2 -> intxyz(hydrogen, ia, 1.0, ib, 120.0, ic, 0.0, 0);
+                case 1 -> intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
+                case 0 -> intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                default -> {
                   logger.info(" Check biotype for hydrogen " + atomName + ".");
                   patched = false;
+                }
               }
-              break;
-            case 2:
+            }
+            case 2 -> {
               switch (numBonds) {
-                case 1:
-                  intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
-                  break;
-                case 0:
-                  intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
-                  break;
-                default:
+                case 1 -> intxyz(hydrogen, ia, 1.0, ib, 120.0, null, 0.0, 0);
+                case 0 -> intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
+                default -> {
                   logger.info(" Check biotype for hydrogen " + atomName + ".");
                   patched = false;
+                }
               }
-              break;
-            case 1:
+            }
+            case 1 -> {
               if (numBonds == 0) {
                 intxyz(hydrogen, ia, 1.0, null, 0.0, null, 0.0, 0);
               } else {
                 logger.info(" Check biotype for hydrogen " + atomName + ".");
                 patched = false;
               }
-              break;
-            default:
+            }
+            default -> {
               logger.info(" Check biotype for hydrogen " + atomName + ".");
               patched = false;
+            }
           }
           if (!patched) {
             break;
@@ -539,8 +473,8 @@ public class PolymerUtils {
    * @param molecularAssembly MolecularAssembly to operate on.
    * @param bondList Add new SS-Bonds to this list.
    */
-  public static void buildDisulfideBonds(
-      List<Bond> ssBondList, MolecularAssembly molecularAssembly, List<Bond> bondList) {
+  public static void buildDisulfideBonds(List<Bond> ssBondList, MolecularAssembly molecularAssembly,
+      List<Bond> bondList) {
     StringBuilder sb = new StringBuilder(" Disulfide Bonds:");
     ForceField forceField = molecularAssembly.getForceField();
     for (Bond bond : ssBondList) {
@@ -577,11 +511,8 @@ public class PolymerUtils {
    * @param dbref Map of DBREF entries.
    * @return xyzIndex updated based on built atoms.
    */
-  public static int buildMissingResidues(
-      int xyzIndex,
-      MolecularAssembly molecularAssembly,
-      Map<Character, String[]> seqres,
-      Map<Character, int[]> dbref) {
+  public static int buildMissingResidues(int xyzIndex, MolecularAssembly molecularAssembly,
+      Map<Character, String[]> seqres, Map<Character, int[]> dbref) {
 
     // Only build loops if the buildLoops flag is true.
     CompositeConfiguration properties = molecularAssembly.getProperties();
@@ -600,9 +531,8 @@ public class PolymerUtils {
       int seqBegin = seqRange[0];
       int seqEnd = seqRange[1];
       logger.info(
-          format(
-              "\n Checking for missing residues in chain %s between residues %d and %d.",
-              polymer, seqBegin, seqEnd));
+          format("\n Checking for missing residues in chain %s between residues %d and %d.", polymer,
+              seqBegin, seqEnd));
 
       int firstResID = polymer.getFirstResidue().getResidueNumber();
       for (int i = 0; i < resNames.length; i++) {
@@ -622,8 +552,7 @@ public class PolymerUtils {
         Residue previousResidue = polymer.getResidue(currentID - 1);
         if (previousResidue == null) {
           logger.info(
-              format(
-                  " Residue %d is missing, but could not be build (previous residue missing).",
+              format(" Residue %d is missing, but could not be build (previous residue missing).",
                   currentID));
           continue;
         }
@@ -662,19 +591,8 @@ public class PolymerUtils {
         nXYZ[0] += random() - 0.5;
         nXYZ[1] += random() - 0.5;
         nXYZ[2] += random() - 0.5;
-        Atom newN =
-            new Atom(
-                xyzIndex++,
-                "N",
-                C.getAltLoc(),
-                nXYZ,
-                resNames[i],
-                currentID,
-                chainID,
-                1.0,
-                C.getTempFactor(),
-                C.getSegID(),
-                true);
+        Atom newN = new Atom(xyzIndex++, "N", C.getAltLoc(), nXYZ, resNames[i], currentID, chainID,
+            1.0, C.getTempFactor(), C.getSegID(), true);
         currentResidue.addMSNode(newN);
 
         double[] caXYZ = new double[3];
@@ -683,19 +601,8 @@ public class PolymerUtils {
         caXYZ[0] += Math.random() - 0.5;
         caXYZ[1] += Math.random() - 0.5;
         caXYZ[2] += Math.random() - 0.5;
-        Atom newCA =
-            new Atom(
-                xyzIndex++,
-                "CA",
-                C.getAltLoc(),
-                caXYZ,
-                resNames[i],
-                currentID,
-                chainID,
-                1.0,
-                C.getTempFactor(),
-                C.getSegID(),
-                true);
+        Atom newCA = new Atom(xyzIndex++, "CA", C.getAltLoc(), caXYZ, resNames[i], currentID,
+            chainID, 1.0, C.getTempFactor(), C.getSegID(), true);
         currentResidue.addMSNode(newCA);
 
         double[] cXYZ = new double[3];
@@ -704,19 +611,8 @@ public class PolymerUtils {
         cXYZ[0] += Math.random() - 0.5;
         cXYZ[1] += Math.random() - 0.5;
         cXYZ[2] += Math.random() - 0.5;
-        Atom newC =
-            new Atom(
-                xyzIndex++,
-                "C",
-                C.getAltLoc(),
-                cXYZ,
-                resNames[i],
-                currentID,
-                chainID,
-                1.0,
-                C.getTempFactor(),
-                C.getSegID(),
-                true);
+        Atom newC = new Atom(xyzIndex++, "C", C.getAltLoc(), cXYZ, resNames[i], currentID, chainID,
+            1.0, C.getTempFactor(), C.getSegID(), true);
         currentResidue.addMSNode(newC);
 
         double[] oXYZ = new double[3];
@@ -724,19 +620,8 @@ public class PolymerUtils {
         vector[1] = Math.random() - 0.5;
         vector[2] = Math.random() - 0.5;
         add(cXYZ, vector, oXYZ);
-        Atom newO =
-            new Atom(
-                xyzIndex++,
-                "O",
-                C.getAltLoc(),
-                oXYZ,
-                resNames[i],
-                currentID,
-                chainID,
-                1.0,
-                C.getTempFactor(),
-                C.getSegID(),
-                true);
+        Atom newO = new Atom(xyzIndex++, "O", C.getAltLoc(), oXYZ, resNames[i], currentID, chainID,
+            1.0, C.getTempFactor(), C.getSegID(), true);
         currentResidue.addMSNode(newO);
         logger.info(format(" Building residue %8s.", currentResidue));
       }
@@ -750,18 +635,16 @@ public class PolymerUtils {
     // Chain-start atom: N (amino)/O5* (nucleic)
     // Chain-end atom:   C (amino)/O3* (nucleic)
     ResidueType rType = residues.get(0).getResidueType();
-    String startAtName;
-    String endAtName;
+    String startAtName = null;
+    String endAtName = null;
     switch (rType) {
-      case AA:
+      case AA -> {
         startAtName = "N";
         endAtName = "C";
-        break;
-      case NA:
-        boolean namedStar =
-            residues.stream()
-                .flatMap((Residue r) -> r.getAtomList().stream())
-                .anyMatch((Atom a) -> a.getName().equals("O5*"));
+      }
+      case NA -> {
+        boolean namedStar = residues.stream().flatMap((Residue r) -> r.getAtomList().stream())
+            .anyMatch((Atom a) -> a.getName().equals("O5*"));
         if (namedStar) {
           startAtName = "O5*";
           endAtName = "O3*";
@@ -769,15 +652,14 @@ public class PolymerUtils {
           startAtName = "O5'";
           endAtName = "O3'";
         }
-        break;
-      case UNK:
-      default:
-        logger.fine(
-            " Not attempting to find chain breaks for chain with residue "
-                + residues.get(0).toString());
+      }
+      case UNK -> {
+        logger.fine(" Not attempting to find chain breaks for chain with residue " + residues.get(0)
+            .toString());
         List<List<Residue>> retList = new ArrayList<>();
         retList.add(residues);
         return retList;
+      }
     }
 
     List<Residue> subChain = null;
@@ -815,9 +697,8 @@ public class PolymerUtils {
           char ch1 = previousResidue.getChainID();
           char ch2 = residue.getChainID();
           sb.append(
-              format(
-                  "\n C-N distance of %6.2f A for %c-%s and %c-%s.",
-                  r, ch1, previousResidue, ch2, residue));
+              format("\n C-N distance of %6.2f A for %c-%s and %c-%s.", r, ch1, previousResidue, ch2,
+                  residue));
         } else {
           // Continue the current chain.
           subChain.add(residue);
@@ -848,12 +729,10 @@ public class PolymerUtils {
    * @param molecularAssembly The MolecularAssembly to operate on.
    * @param pdbToNewResMap Maps chainIDResNumInsCode to renumbered chainIDResNum. For example,
    *     residue 52A in chain C might be renumbered to residue 53, and mapped as "C52A" to "C53".
-   * @return An List of Bond instances for SS-Bonds.
+   * @return A List of Bond instances for SS-Bonds.
    */
-  public static List<Bond> locateDisulfideBonds(
-      List<String> ssbonds,
-      MolecularAssembly molecularAssembly,
-      Map<String, String> pdbToNewResMap) {
+  public static List<Bond> locateDisulfideBonds(List<String> ssbonds,
+      MolecularAssembly molecularAssembly, Map<String, String> pdbToNewResMap) {
     List<Bond> ssBondList = new ArrayList<>();
     for (String ssbond : ssbonds) {
       // =============================================================================
@@ -970,8 +849,8 @@ public class PolymerUtils {
    * @param molecularAssembly MolecularAssembly to operate on.
    * @param bondList Add created bonds to this list.
    */
-  public static void resolvePolymerLinks(
-      List<MSNode> molecules, MolecularAssembly molecularAssembly, List<Bond> bondList) {
+  public static void resolvePolymerLinks(List<MSNode> molecules, MolecularAssembly molecularAssembly,
+      List<Bond> bondList) {
 
     ForceField forceField = molecularAssembly.getForceField();
     CompositeConfiguration properties = molecularAssembly.getProperties();
