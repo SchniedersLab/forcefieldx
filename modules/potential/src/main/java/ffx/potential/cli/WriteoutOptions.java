@@ -52,11 +52,8 @@ import picocli.CommandLine.Option;
 public class WriteoutOptions {
 
   /** -F or --fileFormat Choose the file type to write [PDB/XYZ]. */
-  @Option(
-      names = {"-F", "--fileFormat"},
-      paramLabel = "XYZ",
-      defaultValue = "XYZ",
-      description = "Choose file type to write [PDB/XYZ].")
+  @Option(names = {"-F",
+      "--fileFormat"}, paramLabel = "XYZ", defaultValue = "XYZ", description = "Choose file type to write [PDB/XYZ].")
   public String fileType = "XYZ";
 
   public static String toArchiveExtension(String fileType) {
@@ -80,9 +77,7 @@ public class WriteoutOptions {
    * @param molecularAssembly MolecularAssembly to save.
    * @return File written to.
    */
-  public File saveFile(
-      String baseFileName,
-      PotentialsFunctions potentialsFunctions,
+  public File saveFile(String baseFileName, PotentialsFunctions potentialsFunctions,
       MolecularAssembly molecularAssembly) {
     String outFileName = baseFileName;
     File outFile;
@@ -99,8 +94,7 @@ public class WriteoutOptions {
   }
 
   private enum Extensions {
-    XYZ("xyz", "arc"),
-    PDB("pdb", "pdb");
+    XYZ("xyz", "arc"), PDB("pdb", "pdb");
 
     private final String single;
     private final String archive;
@@ -111,14 +105,10 @@ public class WriteoutOptions {
     }
 
     static Extensions nameToExt(String name) {
-      switch (name.toUpperCase()) {
-        case "PDB":
-          return PDB;
-        case "XYZ":
-        case "ARC":
-        default:
-          return XYZ;
-      }
+      return switch (name.toUpperCase()) {
+        case "PDB" -> PDB;
+        default -> XYZ;
+      };
     }
   }
 }
