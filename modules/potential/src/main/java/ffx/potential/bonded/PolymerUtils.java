@@ -522,7 +522,7 @@ public class PolymerUtils {
         }
       }
       if (!patched) {
-        logger.log(Level.WARNING, format(" Deleting unrecognized molecule %s.", m));
+        logger.log(Level.INFO, format(" Deleting unrecognized molecule %s.", m));
         molecularAssembly.deleteMolecule((Molecule) m);
       } else {
         logger.info(" Patch for " + moleculeName + " succeeded.");
