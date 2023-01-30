@@ -50,7 +50,8 @@ import org.apache.commons.io.FilenameUtils;
 public final class DYNFileFilter extends FileFilter {
 
   /** Default Constructor. */
-  public DYNFileFilter() {}
+  public DYNFileFilter() {
+  }
 
   /**
    * This is a static version of the accept method.

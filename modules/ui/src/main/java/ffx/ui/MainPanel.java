@@ -49,7 +49,6 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MSRoot;
-import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parameters.ForceField;
@@ -833,7 +832,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
       }
     }
 
-    MolecularAssembly[] systems = activeFilter.getMolecularAssemblys();
+    MolecularAssembly[] systems = activeFilter.getMolecularAssemblyArray();
     if (systems != null) {
       int n = systems.length;
       FFXSystem[] ffxSystems = new FFXSystem[n];
@@ -1554,7 +1553,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
       }
     }
 
-    MolecularAssembly[] systems = activeFilter.getMolecularAssemblys();
+    MolecularAssembly[] systems = activeFilter.getMolecularAssemblyArray();
     if (systems != null) {
       int n = systems.length;
       FFXSystem[] ffxSystems = new FFXSystem[n];
@@ -1599,7 +1598,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
       }
     }
 
-    MolecularAssembly[] systems = activeFilter.getMolecularAssemblys();
+    MolecularAssembly[] systems = activeFilter.getMolecularAssemblyArray();
     if (systems != null) {
       int n = systems.length;
       FFXSystem[] ffxSystems = new FFXSystem[n];
