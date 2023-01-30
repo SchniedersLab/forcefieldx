@@ -60,9 +60,8 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "solute", clazz = String.class, keywordGroup = PotentialFunctionParameter,
-    description = "[integers & 3 reals] "
-        + "Provides values for a single implicit solvation parameter. "
+@FFXKeyword(name = "solute", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
+    "[integers & 3 reals] " + "Provides values for a single implicit solvation parameter. "
         + "The integer modifier gives the atom type number for which solvation atom size parameters are to be defined. "
         + "The three real number modifiers give the values of the atomic diameter in Angstroms, for use in Poisson-Boltzmann (APBS), ddCOSMO and Generalized Kirkwood (GK) calculations, respectively.")
 public final class SoluteType extends BaseType implements Comparator<String> {
@@ -179,7 +178,7 @@ public final class SoluteType extends BaseType implements Comparator<String> {
           double gkDiameter = parseDouble(tokens[4].trim());
           return new SoluteType(atomType, pbDiameter, cosDiameter, gkDiameter);
         } else {
-          // A SOLUTE line with length six could have a description or an Sneck value
+          // A SOLUTE line with length six could have a description or a Sneck value.
           // Need to check if the entry at index 2 is a parseable number to determine which constructor to use
           if (NumberUtils.isParsable(tokens[2].trim())) {
             // Use Sneck included constructor
@@ -252,9 +251,9 @@ public final class SoluteType extends BaseType implements Comparator<String> {
   }
 
   /**
-   * incrementType
+   * Increment the atom type by a specified value.
    *
-   * @param increment a int.
+   * @param increment The value to increment the atom type by.
    */
   void incrementType(int increment) {
     atomType += increment;

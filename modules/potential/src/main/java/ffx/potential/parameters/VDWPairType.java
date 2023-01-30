@@ -55,8 +55,8 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "vdwpr", clazz = String.class, keywordGroup = PotentialFunctionParameter,
-    description = "[2 integers and 2 reals] "
+@FFXKeyword(name = "vdwpr", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
+    "[2 integers and 2 reals] "
         + "Provides the values for the vdw parameters for a single special heteroatomic pair of atoms. "
         + "The integer modifiers give the pair of atom class numbers for which special vdw parameters are to be defined. "
         + "The two real number modifiers give the values of the minimum energy contact distance in Angstroms and the well depth at the minimum distance in kcal/mole.")
@@ -206,9 +206,9 @@ public final class VDWPairType extends BaseType implements Comparator<String> {
   }
 
   /**
-   * incrementClasses
+   * Increment the atom classes by a specified amount.
    *
-   * @param increment a int.
+   * @param increment The increment to add to the atom classes.
    */
   public void incrementClasses(int increment) {
     for (int i = 0; i < atomClasses.length; i++) {

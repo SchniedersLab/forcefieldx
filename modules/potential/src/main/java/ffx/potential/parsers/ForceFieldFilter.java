@@ -275,7 +275,7 @@ public class ForceFieldFilter {
           String key = (String) i.next();
 
           // If the key is not recognized as a force field keyword, continue to the next key.
-          if (!ForceField.isForceFieldKeyword(key)) {
+          if (!ForceField.isForceFieldType(key)) {
             continue;
           }
 
