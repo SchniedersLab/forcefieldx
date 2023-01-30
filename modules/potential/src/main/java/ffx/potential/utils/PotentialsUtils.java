@@ -45,12 +45,9 @@ import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parsers.INTFileFilter;
-import ffx.potential.parsers.PDBFileFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.PDBFilter.Mutation;
 import ffx.potential.parsers.SystemFilter;
-import ffx.potential.parsers.XYZFileFilter;
 import ffx.potential.parsers.XYZFilter;
 import java.io.File;
 import java.util.Arrays;
@@ -178,7 +175,7 @@ public class PotentialsUtils implements PotentialsFunctions {
   }
 
   /**
-   * One one file object.
+   * Return one MolecularAssembly.
    *
    * @param file a {@link java.io.File} object.
    * @return a {@link ffx.potential.MolecularAssembly} object.
@@ -188,8 +185,7 @@ public class PotentialsUtils implements PotentialsFunctions {
     opener.run();
     lastFilter = opener.getFilter();
     if (opener.getAllAssemblies().length > 1) {
-      logger.log(
-          Level.WARNING, "Found multiple assemblies in file {0}, opening first.", file.getName());
+      logger.log(Level.WARNING, "Found multiple assemblies in file {0}, opening first.", file.getName());
     }
     return opener.getAssembly();
   }
@@ -260,9 +256,9 @@ public class PotentialsUtils implements PotentialsFunctions {
    */
   public MolecularAssembly openQuietly(String filename) {
     setSilentPotential(true);
-    MolecularAssembly mola = open(filename);
+    MolecularAssembly molecularAssembly = open(filename);
     setSilentPotential(false);
-    return mola;
+    return molecularAssembly;
   }
 
   /**
