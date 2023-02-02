@@ -329,7 +329,6 @@ class PhBar extends AlgorithmsScript {
         if (myRank != nRanks - 1) {
           for (Residue res : esvSystem.getExtendedResidueList()) {
             esvSystem.setTitrationLambda(res, fixedTitrationState + titrationNeighbor, false)
-            //esvSystem.perturbLambdas(lockTautomer, fixedTitrationState + titrationNeighbor) //TODO: get this to work
             if (esvSystem.isTautomer(res)) {
               esvSystem.setTautomerLambda(res, fixedTautomerState + tautomerNeighbor, false)
             }
