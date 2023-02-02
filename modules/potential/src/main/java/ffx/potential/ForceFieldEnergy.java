@@ -173,34 +173,30 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
   private final List<Constraint> constraints;
 
-  @FFXKeyword(name = "vdw-cutoff", keywordGroup = NonBondedCutoff, defaultValue = "12.0",
-      description =
-          "Sets the cutoff distance value in Angstroms for van der Waals potential energy interactions. "
-              + "The energy for any pair of van der Waals sites beyond the cutoff distance will be set to zero. "
-              + "Other properties can be used to define the smoothing scheme near the cutoff distance. "
-              + "The default cutoff distance in the absence of the vdw-cutoff keyword is infinite for nonperiodic "
-              + "systems and 12.0 for periodic systems.")
+  @FFXKeyword(name = "vdw-cutoff", keywordGroup = NonBondedCutoff, defaultValue = "12.0", description =
+      "Sets the cutoff distance value in Angstroms for van der Waals potential energy interactions. "
+          + "The energy for any pair of van der Waals sites beyond the cutoff distance will be set to zero. "
+          + "Other properties can be used to define the smoothing scheme near the cutoff distance. "
+          + "The default cutoff distance in the absence of the vdw-cutoff keyword is infinite for nonperiodic "
+          + "systems and 12.0 for periodic systems.")
   private double vdwCutoff;
 
-  @FFXKeyword(name = "ewald-cutoff", keywordGroup = NonBondedCutoff, defaultValue = "7.0",
-      description =
-          "Sets the value in Angstroms of the real-space distance cutoff for use during Ewald summation "
-              + "By default, in the absence of the ewald-cutoff property, a value of 7.0 is used.")
+  @FFXKeyword(name = "ewald-cutoff", keywordGroup = NonBondedCutoff, defaultValue = "7.0", description =
+      "Sets the value in Angstroms of the real-space distance cutoff for use during Ewald summation "
+          + "By default, in the absence of the ewald-cutoff property, a value of 7.0 is used.")
   private double ewaldCutoff;
 
-  @FFXKeyword(name = "gk-cutoff", keywordGroup = NonBondedCutoff, defaultValue = "12.0",
-      description =
-          "Sets the value in Angstroms of the generalized Kirkwood distance cutoff for use during implicit solvent simulations. "
-              + "By default, in the absence of the gk-cutoff property, no cutoff is used under aperiodic boundary conditions and the vdw-cutoff is used under PBC.")
+  @FFXKeyword(name = "gk-cutoff", keywordGroup = NonBondedCutoff, defaultValue = "12.0", description =
+      "Sets the value in Angstroms of the generalized Kirkwood distance cutoff for use during implicit solvent simulations. "
+          + "By default, in the absence of the gk-cutoff property, no cutoff is used under aperiodic boundary conditions and the vdw-cutoff is used under PBC.")
   private double gkCutoff;
 
   private static final double DEFAULT_LIST_BUFFER = 2.0;
 
-  @FFXKeyword(name = "list-buffer", keywordGroup = NonBondedCutoff, defaultValue = "2.0",
-      description =
-          "Sets the size of the neighbor list buffer in Angstroms for potential energy functions. "
-              + "This value is added to the actual cutoff distance to determine which pairs will be kept on the neighbor list. This buffer value is used for all potential function neighbor lists. "
-              + "The default value in the absence of the list-buffer keyword is 2.0 Angstroms.")
+  @FFXKeyword(name = "list-buffer", keywordGroup = NonBondedCutoff, defaultValue = "2.0", description =
+      "Sets the size of the neighbor list buffer in Angstroms for potential energy functions. "
+          + "This value is added to the actual cutoff distance to determine which pairs will be kept on the neighbor list. This buffer value is used for all potential function neighbor lists. "
+          + "The default value in the absence of the list-buffer keyword is 2.0 Angstroms.")
   private double listBuffer;
 
   /** 2.0 times the neighbor list cutoff. */
@@ -255,10 +251,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   private final Platform platform = Platform.FFX;
 
   /** Indicates use of the Lambda state variable. */
-  @FFXKeyword(name = "lambdaterm", clazz = Boolean.class,
-      keywordGroup = PotentialFunctionSelection, defaultValue = "false",
-      description = "Specifies use of the Lambda state variable."
-  )
+  @FFXKeyword(name = "lambdaterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection, defaultValue = "false", description = "Specifies use of the Lambda state variable.")
   protected boolean lambdaTerm;
   /** Current value of the Lambda state variable. */
   private double lambda = 1.0;
@@ -349,98 +342,70 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   private boolean nnTerm;
 
   /** Specifies use of the bond stretch potential. */
-  @FFXKeyword(name = "bondterm", clazz = Boolean.class,
-      keywordGroup = PotentialFunctionSelection, defaultValue = "true",
-      description = "Specifies use of the bond stretch potential."
-  )
+  @FFXKeyword(name = "bondterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection, defaultValue = "true", description = "Specifies use of the bond stretch potential.")
   private boolean bondTerm;
 
   /** Specifies use of the angle bend potential. */
-  @FFXKeyword(name = "angleterm", clazz = Boolean.class,
-      keywordGroup = PotentialFunctionSelection, defaultValue = "true",
-      description = "Specifies use of the angle bend potential.")
+  @FFXKeyword(name = "angleterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection, defaultValue = "true", description = "Specifies use of the angle bend potential.")
   private boolean angleTerm;
 
   /** Evaluate Stretch-Bend energy terms. */
-  @FFXKeyword(name = "strbndterm", clazz = Boolean.class,
-      keywordGroup = PotentialFunctionSelection, defaultValue = "true",
-      description = "Specifies use of the stretch-bend potential.")
+  @FFXKeyword(name = "strbndterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection, defaultValue = "true", description = "Specifies use of the stretch-bend potential.")
   private boolean stretchBendTerm;
 
   /** Evaluate Urey-Bradley energy terms. */
-  @FFXKeyword(name = "ureyterm", clazz = Boolean.class,
-      keywordGroup = PotentialFunctionSelection, defaultValue = "true",
-      description = "Specifies use of the Urey-Bradley potential.")
+  @FFXKeyword(name = "ureyterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection, defaultValue = "true", description = "Specifies use of the Urey-Bradley potential.")
   private boolean ureyBradleyTerm;
 
   /** Evaluate Out of Plane Bend energy terms. */
-  @FFXKeyword(name = "opbendterm", clazz = Boolean.class,
-      keywordGroup = PotentialFunctionSelection, defaultValue = "true",
-      description = "Specifies use of the out-of-plane potential.")
+  @FFXKeyword(name = "opbendterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection, defaultValue = "true", description = "Specifies use of the out-of-plane potential.")
   private boolean outOfPlaneBendTerm;
 
   /** Evaluate Torsion energy terms. */
-  @FFXKeyword(name = "torsionterm", clazz = Boolean.class,
-      keywordGroup = PotentialFunctionSelection, defaultValue = "true",
-      description = "Specifies use of the torsional potential.")
+  @FFXKeyword(name = "torsionterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection, defaultValue = "true", description = "Specifies use of the torsional potential.")
   private boolean torsionTerm;
 
   /** Evaluate Stretch-Torsion energy terms. */
-  @FFXKeyword(name = "strtorterm", clazz = Boolean.class,
-      keywordGroup = PotentialFunctionSelection, defaultValue = "true",
-      description = "Specifies use of the stretch-torsion potential.")
+  @FFXKeyword(name = "strtorterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection, defaultValue = "true", description = "Specifies use of the stretch-torsion potential.")
   private boolean stretchTorsionTerm;
 
   /** Evaluate Angle-Torsion energy terms. */
-  @FFXKeyword(name = "angtorterm", clazz = Boolean.class,
-      keywordGroup = PotentialFunctionSelection, defaultValue = "true",
-      description = "Specifies use of the angle-torsion potential.")
+  @FFXKeyword(name = "angtorterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection, defaultValue = "true", description = "Specifies use of the angle-torsion potential.")
   private boolean angleTorsionTerm;
 
   /** Evaluate Improper Torsion energy terms. */
-  @FFXKeyword(name = "imptorterm", clazz = Boolean.class,
-      keywordGroup = PotentialFunctionSelection, defaultValue = "true",
-      description = "Specifies use of the improper torsion potential.")
+  @FFXKeyword(name = "imptorterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection, defaultValue = "true", description = "Specifies use of the improper torsion potential.")
   private boolean improperTorsionTerm;
 
   /** Evaluate Pi-Orbital Torsion energy terms. */
-  @FFXKeyword(name = "pitorsterm", clazz = Boolean.class,
-      keywordGroup = PotentialFunctionSelection, defaultValue = "true",
-      description = "Specifies use of the pi-system torsion potential.")
+  @FFXKeyword(name = "pitorsterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection, defaultValue = "true", description = "Specifies use of the pi-system torsion potential.")
   private boolean piOrbitalTorsionTerm;
 
   /** Evaluate Torsion-Torsion energy terms. */
-  @FFXKeyword(name = "tortorterm", clazz = Boolean.class,
-      keywordGroup = PotentialFunctionSelection, defaultValue = "true",
-      description = "Specifies use of the pi-system torsion potential.")
+  @FFXKeyword(name = "tortorterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection, defaultValue = "true", description = "Specifies use of the pi-system torsion potential.")
   private boolean torsionTorsionTerm;
 
   /** Evaluate van der Waals energy term. */
-  @FFXKeyword(name = "vdwterm", clazz = Boolean.class,
-      keywordGroup = PotentialFunctionSelection, defaultValue = "true",
-      description = "Specifies use of the vdw der Waals potential. "
+  @FFXKeyword(name = "vdwterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection, defaultValue = "true", description =
+      "Specifies use of the vdw der Waals potential. "
           + "If set to false, all non-bonded terms are turned off.")
   private boolean vanderWaalsTerm;
 
   /** Evaluate permanent multipole electrostatics energy term. */
-  @FFXKeyword(name = "mpoleterm", clazz = Boolean.class,
-      keywordGroup = PotentialFunctionSelection, defaultValue = "true",
-      description = "Specifies use of the fixed charge electrostatic potential. "
+  @FFXKeyword(name = "mpoleterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection, defaultValue = "true", description =
+      "Specifies use of the fixed charge electrostatic potential. "
           + "Setting mpoleterm to false also turns off polarization and generalized Kirkwood, "
           + "overriding the polarizeterm and gkterm properties.")
   private boolean multipoleTerm;
 
   /** Evaluate polarization energy term. */
-  @FFXKeyword(name = "polarizeterm", clazz = Boolean.class,
-      keywordGroup = PotentialFunctionSelection, defaultValue = "true",
-      description = "Specifies use of the polarizable electrostatic potential. "
+  @FFXKeyword(name = "polarizeterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection, defaultValue = "true", description =
+      "Specifies use of the polarizable electrostatic potential. "
           + "Setting polarizeterm to false overrides the polarization property.")
   private boolean polarizationTerm;
 
   /** Evaluate generalized Kirkwood energy term. */
-  @FFXKeyword(name = "gkterm", clazz = Boolean.class,
-      keywordGroup = PotentialFunctionSelection, defaultValue = "false",
-      description = "Specifies use of generalized Kirkwood electrostatics.")
+  @FFXKeyword(name = "gkterm", clazz = Boolean.class, keywordGroup = PotentialFunctionSelection, defaultValue = "false", description = "Specifies use of generalized Kirkwood electrostatics.")
   private boolean generalizedKirkwoodTerm;
 
   /** Evaluate COM energy term. */
@@ -564,8 +529,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   private double[] xyz;
   /** Original state of the Restrain Group energy term flag. */
   private boolean restrainGroupTermOrig;
-  /** Indicate resolution of this ForceFieldEnergy (TODO: needs further testing). */
-  private Resolution resolution = Resolution.AMOEBA;
   /** Constant pH extended system (TODO: needs further testing). */
   private ExtendedSystem esvSystem = null;
 
@@ -607,11 +570,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * @param restraints a {@link java.util.List} object.
    * @param numThreads a int.
    */
-  protected ForceFieldEnergy(
-      MolecularAssembly molecularAssembly, List<CoordRestraint> restraints, int numThreads) {
+  protected ForceFieldEnergy(MolecularAssembly molecularAssembly, List<CoordRestraint> restraints,
+      int numThreads) {
     // Get a reference to the sorted atom array.
     this.molecularAssembly = molecularAssembly;
-    molecularAssembly.renameWaterProtons();
     atoms = molecularAssembly.getAtomArray();
     nAtoms = atoms.length;
     xyz = new double[nAtoms * 3];
@@ -632,6 +594,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     logger.info(format(" Constructing Force Field %s", name));
     logger.info(format("\n SMP threads:                        %10d", nThreads));
+
+    // Rename water protons if requested.
+    boolean standardizeAtomNames = properties.getBoolean("standardizeAtomNames", true);
+    if (standardizeAtomNames) {
+      molecularAssembly.renameWaterProtons();
+    }
 
     nnTerm = forceField.getBoolean("NNTERM", false);
     // For now, all atoms are neural network atoms, or none are.
@@ -755,16 +723,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         hullTime += System.nanoTime();
         double diff = maxr - maxC;
         if (Math.abs(diff) > 1.0E-5) {
-          logger.warning(
-              String.format(
-                  " Max particle-particle distance by convex hull %12.6g "
-                      + "disagrees with max distance by brute-force loop %12.6g: difference %12.6g!",
-                  maxC, maxr, diff));
+          logger.warning(format(" Max particle-particle distance by convex hull %12.6g "
+                  + "disagrees with max distance by brute-force loop %12.6g: difference %12.6g!", maxC,
+              maxr, diff));
         }
-        logger.fine(
-            String.format(
-                " Time for convex hull calculation: %12.6g sec. By O(n^2) " + "loop: %12.6g sec.",
-                hullTime * Constants.NS2SEC, convTime * Constants.NS2SEC));
+        logger.fine(format(
+            " Time for convex hull calculation: %12.6g sec. By O(n^2) loop: %12.6g sec.",
+            hullTime * Constants.NS2SEC, convTime * Constants.NS2SEC));
       } // At N < 4, the 3D convex hull may not even be defined properly, nevermind be more
       // efficient.
 
@@ -841,6 +806,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       ncsTerm = false;
       ncsTermOrig = false;
     }
+
+    // Now that the crystal is set, check for special positions.
+    int nSpecial = checkForSpecialPositions(forceField);
 
     rigidHydrogens = forceField.getBoolean("RIGID_HYDROGENS", false);
     rigidScale = forceField.getDouble("RIGID_SCALE", 10.0);
@@ -1073,8 +1041,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         if (torsionScale == 1.0) {
           logger.info(format("  Pi-Orbital Torsions:               %10d", nPiOrbitalTorsions));
         } else {
-          logger.info(format(
-                  "  Pi-Orbital Torsions (%5.2f):       %10d", torsionScale, nPiOrbitalTorsions));
+          logger.info(
+              format("  Pi-Orbital Torsions (%5.2f):       %10d", torsionScale, nPiOrbitalTorsions));
         }
       }
     } else {
@@ -1126,8 +1094,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       }
 
       if (!tornadoVM) {
-        vanderWaals = new VanDerWaals(
-            atoms, molecule, nn, crystal, forceField, parallelTeam, vdwCutoff, nlistCutoff);
+        vanderWaals = new VanDerWaals(atoms, molecule, nn, crystal, forceField, parallelTeam,
+            vdwCutoff, nlistCutoff);
       } else {
         vanderWaals = new VanDerWaalsTornado(atoms, crystal, forceField, vdwCutoff);
       }
@@ -1149,17 +1117,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         form = ELEC_FORM.PAM;
       }
 
-      particleMeshEwald =
-          new ParticleMeshEwald(
-              atoms,
-              molecule,
-              forceField,
-              crystal,
-              vanderWaals.getNeighborList(),
-              form,
-              ewaldCutoff,
-              gkCutoff,
-              parallelTeam);
+      particleMeshEwald = new ParticleMeshEwald(atoms, molecule, forceField, crystal,
+          vanderWaals.getNeighborList(), form, ewaldCutoff, gkCutoff, parallelTeam);
       double charge = molecularAssembly.getCharge(checkAllNodeCharges);
       logger.info(format("\n  Overall system charge:             %10.3f", charge));
     } else {
@@ -1348,8 +1307,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       }
     }
 
-    String constraintStrings =
-        forceField.getString("CONSTRAIN", forceField.getString("RATTLE", null));
+    String constraintStrings = forceField.getString("CONSTRAIN",
+        forceField.getString("RATTLE", null));
     if (constraintStrings != null) {
       constraints = new ArrayList<>();
       logger.info(format(" Experimental: parsing constraints option %s", constraintStrings));
@@ -1361,13 +1320,9 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       if (constraintStrings.isEmpty() || constraintStrings.matches("^\\s*$")) {
         // Assume constraining only X-H bonds (i.e. RIGID-HYDROGEN).
         logger.info(" Constraining X-H bonds.");
-        numericBonds =
-            Arrays.stream(bonds)
-                .filter(
-                    (Bond bond) ->
-                        bond.getAtom(0).getAtomicNumber() == 1
-                            || bond.getAtom(1).getAtomicNumber() == 1)
-                .collect(Collectors.toSet());
+        numericBonds = Arrays.stream(bonds).filter(
+            (Bond bond) -> bond.getAtom(0).getAtomicNumber() == 1
+                || bond.getAtom(1).getAtomicNumber() == 1).collect(Collectors.toSet());
       } else {
         String[] constraintToks = constraintStrings.split("\\s+");
 
@@ -1377,32 +1332,27 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
             logger.info(" Constraining waters to be rigid based on angle & bonds.");
             // XYZ files, in particular, have waters mislabeled as generic Molecules.
             // First, find any such mislabeled water.
-            Stream<MSNode> settleStream =
-                molecularAssembly.getMolecules().stream()
-                    .filter((MSNode m) -> m.getAtomList().size() == 3)
-                    .filter(
-                        (MSNode m) -> {
-                          List<Atom> atoms = m.getAtomList();
-                          Atom O = null;
-                          List<Atom> H = new ArrayList<>(2);
-                          for (Atom at : atoms) {
-                            int atN = at.getAtomicNumber();
-                            if (atN == 8) {
-                              O = at;
-                            } else if (atN == 1) {
-                              H.add(at);
-                            }
-                          }
-                          return O != null && H.size() == 2;
-                        });
+            Stream<MSNode> settleStream = molecularAssembly.getMolecules().stream()
+                .filter((MSNode m) -> m.getAtomList().size() == 3).filter((MSNode m) -> {
+                  List<Atom> atoms = m.getAtomList();
+                  Atom O = null;
+                  List<Atom> H = new ArrayList<>(2);
+                  for (Atom at : atoms) {
+                    int atN = at.getAtomicNumber();
+                    if (atN == 8) {
+                      O = at;
+                    } else if (atN == 1) {
+                      H.add(at);
+                    }
+                  }
+                  return O != null && H.size() == 2;
+                });
             // Now concatenate the stream with the properly labeled waters.
             settleStream = Stream.concat(settleStream, molecularAssembly.getWater().stream());
             // Map them into new Settle constraints and collect.
-            List<SettleConstraint> settleConstraints =
-                settleStream
-                    .map((MSNode m) -> m.getAngleList().get(0))
-                    .map(SettleConstraint::settleFactory)
-                    .collect(Collectors.toList());
+            List<SettleConstraint> settleConstraints = settleStream.map(
+                    (MSNode m) -> m.getAngleList().get(0)).map(SettleConstraint::settleFactory)
+                .collect(Collectors.toList());
             constraints.addAll(settleConstraints);
 
           } else if (tok.equalsIgnoreCase("DIATOMIC")) {
@@ -1429,18 +1379,13 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       }
 
       // Remove already-constrained angles and bonds (e.g. SETTLE-constrained ones).
-      List<Angle> ccmaAngles =
-          numericAngles.stream()
-              .filter((Angle ang) -> !ang.isConstrained())
-              .collect(Collectors.toList());
-      List<Bond> ccmaBonds =
-          numericBonds.stream()
-              .filter((Bond bond) -> !bond.isConstrained())
-              .collect(Collectors.toList());
+      List<Angle> ccmaAngles = numericAngles.stream().filter((Angle ang) -> !ang.isConstrained())
+          .collect(Collectors.toList());
+      List<Bond> ccmaBonds = numericBonds.stream().filter((Bond bond) -> !bond.isConstrained())
+          .collect(Collectors.toList());
 
-      CcmaConstraint ccmaConstraint =
-          CcmaConstraint.ccmaFactory(
-              ccmaBonds, ccmaAngles, atoms, getMass(), CcmaConstraint.DEFAULT_CCMA_NONZERO_CUTOFF);
+      CcmaConstraint ccmaConstraint = CcmaConstraint.ccmaFactory(ccmaBonds, ccmaAngles, atoms,
+          getMass(), CcmaConstraint.DEFAULT_CCMA_NONZERO_CUTOFF);
       constraints.add(ccmaConstraint);
 
       logger.info(format(" Added %d constraints.", constraints.size()));
@@ -1450,7 +1395,51 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
     if (lambdaTerm) {
       this.setLambda(1.0);
+      if (nSpecial == 0) {
+        // For lambda calculations (e.g. polymorph searches), turn-off special position checks.
+        // In this case, as the crystal lattice is alchemically turned on, special position
+        // overlaps are expected.
+        crystal.setSpecialPositionCutoff(0.0);
+      } else {
+        // If special positions have already been identified, leave checks on.
+        logger.info(" Special positions checking will be performed during a lambda simulation.");
+      }
     }
+  }
+
+  private int checkForSpecialPositions(ForceField forceField) {
+    // Check for atoms at special positions. These should normally be set to inactive.
+    boolean specialPositionsInactive = forceField.getBoolean("SPECIAL_POSITIONS_INACTIVE", true);
+    int nSpecial = 0;
+    if (specialPositionsInactive) {
+      int nSymm = crystal.getNumSymOps();
+      if (nSymm > 1) {
+        SpaceGroup spaceGroup = crystal.spaceGroup;
+        double sp2 = crystal.getSpecialPositionCutoff2();
+        double[] mate = new double[3];
+        StringBuilder sb = new StringBuilder("\n Atoms at Special Positions set to Inactive:\n");
+        for (int i = 0; i < nAtoms; i++) {
+          Atom atom = atoms[i];
+          double[] xyz = atom.getXYZ(null);
+          for (int iSymm = 1; iSymm < nSymm; iSymm++) {
+            SymOp symOp = spaceGroup.getSymOp(iSymm);
+            crystal.applySymOp(xyz, mate, symOp);
+            double dr2 = crystal.image(xyz, mate);
+            if (dr2 < sp2) {
+              sb.append(
+                  format("  %s separation with SymOp %d at %8.6f A.\n", atoms[i], iSymm, sqrt(dr2)));
+              atom.setActive(false);
+              nSpecial++;
+              break;
+            }
+          }
+        }
+        if (nSpecial > 0) {
+          logger.info(sb.toString());
+        }
+      }
+    }
+    return nSpecial;
   }
 
   /**
@@ -1470,8 +1459,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * @param restraints Harmonic restraints
    * @return a {@link ffx.potential.ForceFieldEnergy} object.
    */
-  public static ForceFieldEnergy energyFactory(
-      MolecularAssembly assembly, List<CoordRestraint> restraints) {
+  public static ForceFieldEnergy energyFactory(MolecularAssembly assembly,
+      List<CoordRestraint> restraints) {
     return energyFactory(assembly, restraints, ParallelTeam.getDefaultThreadCount());
   }
 
@@ -1483,8 +1472,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * @param numThreads Number of threads to use for FFX energy
    * @return A ForceFieldEnergy on some Platform
    */
-  public static ForceFieldEnergy energyFactory(
-      MolecularAssembly assembly, List<CoordRestraint> restraints, int numThreads) {
+  public static ForceFieldEnergy energyFactory(MolecularAssembly assembly,
+      List<CoordRestraint> restraints, int numThreads) {
     ForceField ffield = assembly.getForceField();
     String platformString = toEnumForm(ffield.getString("PLATFORM", "FFX"));
     try {
@@ -1578,12 +1567,11 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     if (multipoleTerm) {
       if (particleMeshEwald == null) {
         logger.warning("Null PME during ESV setup.");
+      } else {
+        particleMeshEwald.attachExtendedSystem(system);
       }
-      particleMeshEwald.attachExtendedSystem(system);
     }
-    if (crystal != null) {
-      crystal.setSpecialPositionCutoff(0.0);
-    }
+
     // Check if reInit is needed, now that we init with fully protonated residues ASD/GLD/HIS
     reInit();
   }
@@ -1807,23 +1795,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
       totalTime = System.nanoTime() - totalTime;
 
-      totalBondedEnergy = nnEnergy
-          + bondEnergy
-          + restraintBondEnergy
-          + angleEnergy
-          + stretchBendEnergy
-          + ureyBradleyEnergy
-          + outOfPlaneBendEnergy
-          + torsionEnergy
-          + angleTorsionEnergy
-          + stretchTorsionEnergy
-          + piOrbitalTorsionEnergy
-          + improperTorsionEnergy
-          + torsionTorsionEnergy
-          + ncsEnergy
-          + restrainEnergy
-          + restrainGroupEnergy
-          + rTorsEnergy;
+      totalBondedEnergy =
+          nnEnergy + bondEnergy + restraintBondEnergy + angleEnergy + stretchBendEnergy
+              + ureyBradleyEnergy + outOfPlaneBendEnergy + torsionEnergy + angleTorsionEnergy
+              + stretchTorsionEnergy + piOrbitalTorsionEnergy + improperTorsionEnergy
+              + torsionTorsionEnergy + ncsEnergy + restrainEnergy + restrainGroupEnergy
+              + rTorsEnergy;
       totalNonBondedEnergy = vanDerWaalsEnergy + totalMultipoleEnergy + relativeSolvationEnergy;
       totalEnergy = totalBondedEnergy + totalNonBondedEnergy + solvationEnergy;
       if (esvTerm) {
@@ -1908,24 +1885,20 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       scaleCoordinatesAndGradient(x, g);
 
       if (maxDebugGradient < Double.MAX_VALUE) {
-        boolean extremeGrad =
-            Arrays.stream(g)
-                .anyMatch((double gi) -> (gi > maxDebugGradient || gi < -maxDebugGradient));
+        boolean extremeGrad = Arrays.stream(g)
+            .anyMatch((double gi) -> (gi > maxDebugGradient || gi < -maxDebugGradient));
         if (extremeGrad) {
           File origFile = molecularAssembly.getFile();
-          String timeString =
-              LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd-HH_mm_ss"));
+          String timeString = LocalDateTime.now()
+              .format(DateTimeFormatter.ofPattern("yyyy_MM_dd-HH_mm_ss"));
 
-          String filename =
-              format(
-                  "%s-LARGEGRAD-%s.pdb",
-                  removeExtension(molecularAssembly.getFile().getName()), timeString);
+          String filename = format("%s-LARGEGRAD-%s.pdb",
+              removeExtension(molecularAssembly.getFile().getName()), timeString);
           PotentialsFunctions ef = new PotentialsUtils();
           filename = ef.versionFile(filename);
 
-          logger.warning(
-              format(
-                  " Excessively large gradient detected; printing snapshot to file %s", filename));
+          logger.warning(format(" Excessively large gradient detected; printing snapshot to file %s",
+              filename));
           ef.saveAsPDB(molecularAssembly, new File(filename));
           molecularAssembly.setFile(origFile);
         }
@@ -2549,58 +2522,46 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       sb.append(format("REMARK   3   %s %g\n", "BOND RMSD                  : ", bondRMSD));
     }
     if (angleTerm) {
-      sb.append(
-          format(
-              "REMARK   3   %s %g (%d)\n", "ANGLE BENDING              : ", angleEnergy, nAngles));
+      sb.append(format("REMARK   3   %s %g (%d)\n", "ANGLE BENDING              : ", angleEnergy,
+          nAngles));
       sb.append(format("REMARK   3   %s %g\n", "ANGLE RMSD                 : ", angleRMSD));
     }
     if (stretchBendTerm) {
       sb.append(
-          format(
-              "REMARK   3   %s %g (%d)\n",
-              "STRETCH-BEND               : ", stretchBendEnergy, nStretchBends));
+          format("REMARK   3   %s %g (%d)\n", "STRETCH-BEND               : ", stretchBendEnergy,
+              nStretchBends));
     }
     if (ureyBradleyTerm) {
       sb.append(
-          format(
-              "REMARK   3   %s %g (%d)\n",
-              "UREY-BRADLEY               : ", ureyBradleyEnergy, nUreyBradleys));
+          format("REMARK   3   %s %g (%d)\n", "UREY-BRADLEY               : ", ureyBradleyEnergy,
+              nUreyBradleys));
     }
     if (outOfPlaneBendTerm) {
       sb.append(
-          format(
-              "REMARK   3   %s %g (%d)\n",
-              "OUT-OF-PLANE BEND          : ", outOfPlaneBendEnergy, nOutOfPlaneBends));
+          format("REMARK   3   %s %g (%d)\n", "OUT-OF-PLANE BEND          : ", outOfPlaneBendEnergy,
+              nOutOfPlaneBends));
     }
     if (torsionTerm) {
-      sb.append(
-          format(
-              "REMARK   3   %s %g (%d)\n",
-              "TORSIONAL ANGLE            : ", torsionEnergy, nTorsions));
+      sb.append(format("REMARK   3   %s %g (%d)\n", "TORSIONAL ANGLE            : ", torsionEnergy,
+          nTorsions));
     }
     if (piOrbitalTorsionTerm) {
-      sb.append(
-          format(
-              "REMARK   3   %s %g (%d)\n",
-              "PI-ORBITAL TORSION         : ", piOrbitalTorsionEnergy, nPiOrbitalTorsions));
+      sb.append(format("REMARK   3   %s %g (%d)\n", "PI-ORBITAL TORSION         : ",
+          piOrbitalTorsionEnergy, nPiOrbitalTorsions));
     }
     if (torsionTorsionTerm) {
       sb.append(
-          format(
-              "REMARK   3   %s %g (%d)\n",
-              "TORSION-TORSION            : ", torsionTorsionEnergy, nTorsionTorsions));
+          format("REMARK   3   %s %g (%d)\n", "TORSION-TORSION            : ", torsionTorsionEnergy,
+              nTorsionTorsions));
     }
     if (improperTorsionTerm) {
       sb.append(
-          format(
-              "REMARK   3   %s %g (%d)\n",
-              "IMPROPER TORSION           : ", improperTorsionEnergy, nImproperTorsions));
+          format("REMARK   3   %s %g (%d)\n", "IMPROPER TORSION           : ", improperTorsionEnergy,
+              nImproperTorsions));
     }
     if (restraintBondTerm) {
-      sb.append(
-          format(
-              "REMARK   3   %s %g (%d)\n",
-              "RESTRAINT BOND STRETCHING            : ", restraintBondEnergy, nRestraintBonds));
+      sb.append(format("REMARK   3   %s %g (%d)\n", "RESTRAINT BOND STRETCHING            : ",
+          restraintBondEnergy, nRestraintBonds));
     }
 
     if (ncsTerm) {
@@ -2613,36 +2574,29 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       for (CoordRestraint restraint : coordRestraints) {
         nRests += restraint.getNumAtoms();
       }
-      sb.append(
-          format(
-              "REMARK   3   %s %g (%d)\n",
-              "COORDINATE RESTRAINTS      : ", restrainEnergy, nRests));
+      sb.append(format("REMARK   3   %s %g (%d)\n", "COORDINATE RESTRAINTS      : ", restrainEnergy,
+          nRests));
     }
 
     if (comTerm) {
       sb.append(
-          format(
-              "REMARK   3   %s %g (%d)\n",
-              "COM RESTRAINT              : ", comRestraintEnergy, nAtoms));
+          format("REMARK   3   %s %g (%d)\n", "COM RESTRAINT              : ", comRestraintEnergy,
+              nAtoms));
     }
 
     if (vanderWaalsTerm) {
       sb.append(
-          format(
-              "REMARK   3   %s %g (%d)\n",
-              "VAN DER WAALS              : ", vanDerWaalsEnergy, nVanDerWaalInteractions));
+          format("REMARK   3   %s %g (%d)\n", "VAN DER WAALS              : ", vanDerWaalsEnergy,
+              nVanDerWaalInteractions));
     }
     if (multipoleTerm) {
-      sb.append(
-          format(
-              "REMARK   3   %s %g (%d)\n",
-              "ATOMIC MULTIPOLES          : ", permanentMultipoleEnergy, nPermanentInteractions));
+      sb.append(format("REMARK   3   %s %g (%d)\n", "ATOMIC MULTIPOLES          : ",
+          permanentMultipoleEnergy, nPermanentInteractions));
     }
     if (polarizationTerm) {
       sb.append(
-          format(
-              "REMARK   3   %s %g (%d)\n",
-              "POLARIZATION               : ", polarizationEnergy, nPermanentInteractions));
+          format("REMARK   3   %s %g (%d)\n", "POLARIZATION               : ", polarizationEnergy,
+              nPermanentInteractions));
     }
     sb.append(format("REMARK   3   %s %g\n", "TOTAL POTENTIAL (KCAL/MOL) : ", totalEnergy));
     int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
@@ -2748,8 +2702,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * @return a {@link ParticleMeshEwald} object.
    */
   public ParticleMeshEwald getPmeCartNode() {
-    return (particleMeshEwald instanceof ParticleMeshEwald)
-        ? (ParticleMeshEwald) particleMeshEwald
+    return (particleMeshEwald instanceof ParticleMeshEwald) ? (ParticleMeshEwald) particleMeshEwald
         : null;
   }
 
@@ -3551,144 +3504,83 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     if (bondTerm && nBonds > 0) {
-      sb.append(format("  %s %20.8f %12d %12.3f (%8.5f)\n",
-          "Bond Stretching   ", bondEnergy, nBonds, bondTime * toSeconds, bondRMSD));
+      sb.append(format("  %s %20.8f %12d %12.3f (%8.5f)\n", "Bond Stretching   ", bondEnergy, nBonds,
+          bondTime * toSeconds, bondRMSD));
     }
     if (angleTerm && nAngles > 0) {
       sb.append(
-          format(
-              "  %s %20.8f %12d %12.3f (%8.5f)\n",
-              "Angle Bending     ", angleEnergy, nAngles, angleTime * toSeconds, angleRMSD));
+          format("  %s %20.8f %12d %12.3f (%8.5f)\n", "Angle Bending     ", angleEnergy, nAngles,
+              angleTime * toSeconds, angleRMSD));
     }
     if (stretchBendTerm && nStretchBends > 0) {
       sb.append(
-          format(
-              "  %s %20.8f %12d %12.3f\n",
-              "Stretch-Bend      ", stretchBendEnergy, nStretchBends, stretchBendTime * toSeconds));
+          format("  %s %20.8f %12d %12.3f\n", "Stretch-Bend      ", stretchBendEnergy, nStretchBends,
+              stretchBendTime * toSeconds));
     }
     if (ureyBradleyTerm && nUreyBradleys > 0) {
       sb.append(
-          format(
-              "  %s %20.8f %12d %12.3f\n",
-              "Urey-Bradley      ", ureyBradleyEnergy, nUreyBradleys, ureyBradleyTime * toSeconds));
+          format("  %s %20.8f %12d %12.3f\n", "Urey-Bradley      ", ureyBradleyEnergy, nUreyBradleys,
+              ureyBradleyTime * toSeconds));
     }
     if (outOfPlaneBendTerm && nOutOfPlaneBends > 0) {
-      sb.append(
-          format(
-              "  %s %20.8f %12d %12.3f\n",
-              "Out-of-Plane Bend ",
-              outOfPlaneBendEnergy,
-              nOutOfPlaneBends,
-              outOfPlaneBendTime * toSeconds));
+      sb.append(format("  %s %20.8f %12d %12.3f\n", "Out-of-Plane Bend ", outOfPlaneBendEnergy,
+          nOutOfPlaneBends, outOfPlaneBendTime * toSeconds));
     }
     if (torsionTerm && nTorsions > 0) {
-      sb.append(
-          format(
-              "  %s %20.8f %12d %12.3f\n",
-              "Torsional Angle   ", torsionEnergy, nTorsions, torsionTime * toSeconds));
+      sb.append(format("  %s %20.8f %12d %12.3f\n", "Torsional Angle   ", torsionEnergy, nTorsions,
+          torsionTime * toSeconds));
     }
     if (piOrbitalTorsionTerm && nPiOrbitalTorsions > 0) {
-      sb.append(
-          format(
-              "  %s %20.8f %12d %12.3f\n",
-              "Pi-Orbital Torsion",
-              piOrbitalTorsionEnergy,
-              nPiOrbitalTorsions,
-              piOrbitalTorsionTime * toSeconds));
+      sb.append(format("  %s %20.8f %12d %12.3f\n", "Pi-Orbital Torsion", piOrbitalTorsionEnergy,
+          nPiOrbitalTorsions, piOrbitalTorsionTime * toSeconds));
     }
     if (stretchTorsionTerm && nStretchTorsions > 0) {
-      sb.append(
-          format(
-              "  %s %20.8f %12d %12.3f\n",
-              "Stretch-Torsion   ",
-              stretchTorsionEnergy,
-              nStretchTorsions,
-              stretchTorsionTime * toSeconds));
+      sb.append(format("  %s %20.8f %12d %12.3f\n", "Stretch-Torsion   ", stretchTorsionEnergy,
+          nStretchTorsions, stretchTorsionTime * toSeconds));
     }
     if (angleTorsionTerm && nAngleTorsions > 0) {
-      sb.append(
-          format(
-              "  %s %20.8f %12d %12.3f\n",
-              "Angle-Torsion     ",
-              angleTorsionEnergy,
-              nAngleTorsions,
-              angleTorsionTime * toSeconds));
+      sb.append(format("  %s %20.8f %12d %12.3f\n", "Angle-Torsion     ", angleTorsionEnergy,
+          nAngleTorsions, angleTorsionTime * toSeconds));
     }
     if (torsionTorsionTerm && nTorsionTorsions > 0) {
-      sb.append(
-          format(
-              "  %s %20.8f %12d %12.3f\n",
-              "Torsion-Torsion   ",
-              torsionTorsionEnergy,
-              nTorsionTorsions,
-              torsionTorsionTime * toSeconds));
+      sb.append(format("  %s %20.8f %12d %12.3f\n", "Torsion-Torsion   ", torsionTorsionEnergy,
+          nTorsionTorsions, torsionTorsionTime * toSeconds));
     }
     if (improperTorsionTerm && nImproperTorsions > 0) {
-      sb.append(
-          format(
-              "  %s %20.8f %12d %12.3f\n",
-              "Improper Torsion  ",
-              improperTorsionEnergy,
-              nImproperTorsions,
-              improperTorsionTime * toSeconds));
+      sb.append(format("  %s %20.8f %12d %12.3f\n", "Improper Torsion  ", improperTorsionEnergy,
+          nImproperTorsions, improperTorsionTime * toSeconds));
     }
     if (restraintBondTerm && nRestraintBonds > 0) {
-      sb.append(
-          format(
-              "  %s %20.8f %12d %12.3f\n",
-              "Bond Restraint    ",
-              restraintBondEnergy,
-              nRestraintBonds,
-              restraintBondTime * toSeconds));
+      sb.append(format("  %s %20.8f %12d %12.3f\n", "Bond Restraint    ", restraintBondEnergy,
+          nRestraintBonds, restraintBondTime * toSeconds));
     }
     if (ncsTerm) {
-      sb.append(
-          format(
-              "  %s %20.8f %12d %12.3f\n",
-              "NCS Restraint     ", ncsEnergy, nAtoms, ncsTime * toSeconds));
+      sb.append(format("  %s %20.8f %12d %12.3f\n", "NCS Restraint     ", ncsEnergy, nAtoms,
+          ncsTime * toSeconds));
     }
     if (restrainTerm && !coordRestraints.isEmpty()) {
       int nRests = 0;
       for (CoordRestraint restraint : coordRestraints) {
         nRests += restraint.getNumAtoms();
       }
-      sb.append(
-          format(
-              "  %s %20.8f %12d %12.3f\n",
-              "Coord. Restraints ", restrainEnergy, nRests, coordRestraintTime * toSeconds));
+      sb.append(format("  %s %20.8f %12d %12.3f\n", "Coord. Restraints ", restrainEnergy, nRests,
+          coordRestraintTime * toSeconds));
     }
     if (comTerm) {
-      sb.append(
-          format(
-              "  %s %20.8f %12d %12.3f\n",
-              "COM Restraint     ", comRestraintEnergy, nAtoms, comRestraintTime * toSeconds));
+      sb.append(format("  %s %20.8f %12d %12.3f\n", "COM Restraint     ", comRestraintEnergy, nAtoms,
+          comRestraintTime * toSeconds));
     }
     if (restrainGroupTerm) {
-      sb.append(
-          format(
-              "  %s %20.8f %12d %12.3f\n",
-              "Restrain Groups   ",
-              restrainGroupEnergy,
-              nRestrainGroups,
-              restrainGroupTime * toSeconds));
+      sb.append(format("  %s %20.8f %12d %12.3f\n", "Restrain Groups   ", restrainGroupEnergy,
+          nRestrainGroups, restrainGroupTime * toSeconds));
     }
     if (rTorsTerm) {
-      sb.append(
-          format("  %s %20.8f %12d %12.3f\n",
-              "Dihedral Restraints",
-              rTorsEnergy,
-              nRestTors,
-              rTorsTime * toSeconds)
-      );
+      sb.append(format("  %s %20.8f %12d %12.3f\n", "Dihedral Restraints", rTorsEnergy, nRestTors,
+          rTorsTime * toSeconds));
     }
     if (vanderWaalsTerm && nVanDerWaalInteractions > 0) {
-      sb.append(
-          format(
-              "  %s %20.8f %12d %12.3f\n",
-              "Van der Waals     ",
-              vanDerWaalsEnergy,
-              nVanDerWaalInteractions,
-              vanDerWaalsTime * toSeconds));
+      sb.append(format("  %s %20.8f %12d %12.3f\n", "Van der Waals     ", vanDerWaalsEnergy,
+          nVanDerWaalInteractions, vanDerWaalsTime * toSeconds));
     }
     if (multipoleTerm && nPermanentInteractions > 0) {
       String pmeTitle = "Atomic Multipoles ";
@@ -3696,33 +3588,21 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         sb.append(format("  %s %20.8f %12d\n", pmeTitle, permanentMultipoleEnergy,
             nPermanentInteractions));
       } else {
-        sb.append(
-            format(
-                "  %s %20.8f %12d %12.3f\n",
-                pmeTitle,
-                permanentMultipoleEnergy,
-                nPermanentInteractions,
-                electrostaticTime * toSeconds));
+        sb.append(format("  %s %20.8f %12d %12.3f\n", pmeTitle, permanentMultipoleEnergy,
+            nPermanentInteractions, electrostaticTime * toSeconds));
       }
     }
     if (polarizationTerm && nPermanentInteractions > 0) {
-      sb.append(
-          format(
-              "  %s %20.8f %12d %12.3f\n",
-              "Polarization      ",
-              polarizationEnergy,
-              nPermanentInteractions,
-              electrostaticTime * toSeconds));
+      sb.append(format("  %s %20.8f %12d %12.3f\n", "Polarization      ", polarizationEnergy,
+          nPermanentInteractions, electrostaticTime * toSeconds));
     }
     if (generalizedKirkwoodTerm && nGKInteractions > 0) {
       sb.append(
           format("  %s %20.8f %12d\n", "Solvation         ", solvationEnergy, nGKInteractions));
     }
     if (relativeSolvationTerm) {
-      sb.append(
-          format(
-              "  %s %20.8f %12d\n",
-              "Relative Solvation", relativeSolvationEnergy, nRelativeSolvations));
+      sb.append(format("  %s %20.8f %12d\n", "Relative Solvation", relativeSolvationEnergy,
+          nRelativeSolvations));
     }
     if (esvTerm) {
       sb.append(
@@ -3730,11 +3610,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       sb.append(esvSystem.getBiasDecomposition());
     }
     if (nnTerm) {
-      sb.append(format("  %s %20.8f %12d %12.3f\n",
-          "Neural Network    ", nnEnergy, nAtoms, nnTime * toSeconds));
+      sb.append(format("  %s %20.8f %12d %12.3f\n", "Neural Network    ", nnEnergy, nAtoms,
+          nnTime * toSeconds));
     }
-    sb.append(format("  %s %20.8f  %s %12.3f (sec)",
-        "Total Potential   ", totalEnergy, "(Kcal/mole)", totalTime * toSeconds));
+    sb.append(
+        format("  %s %20.8f  %s %12.3f (sec)", "Total Potential   ", totalEnergy, "(Kcal/mole)",
+            totalTime * toSeconds));
     int nsymm = crystal.getUnitCell().spaceGroup.getNumberOfSymOps();
     if (nsymm > 1) {
       sb.append(format("\n  %s %20.8f", "Unit Cell         ", totalEnergy * nsymm));
@@ -3790,16 +3671,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         double gx = grad[0];
         double gy = grad[1];
         double gz = grad[2];
-        if (isNaN(gx)
-            || isInfinite(gx)
-            || isNaN(gy)
-            || isInfinite(gy)
-            || isNaN(gz)
-            || isInfinite(gz)) {
-          StringBuilder sb =
-              new StringBuilder(
-                  format(
-                      "The gradient of atom %s is (%8.3f,%8.3f,%8.3f).", a.toString(), gx, gy, gz));
+        if (isNaN(gx) || isInfinite(gx) || isNaN(gy) || isInfinite(gy) || isNaN(gz) || isInfinite(
+            gz)) {
+          StringBuilder sb = new StringBuilder(
+              format("The gradient of atom %s is (%8.3f,%8.3f,%8.3f).", a.toString(), gx, gy, gz));
           double[] vals = new double[3];
           a.getVelocity(vals);
           sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
@@ -3831,24 +3706,21 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * @param lamEnd At what lambda does the restraint hit full strength?
    * @param switchingFunction Switching function to use as a lambda dependence.
    */
-  private void setRestraintBond(
-      Atom a1,
-      Atom a2,
-      double distance,
-      double forceConstant,
-      double flatBottom,
-      double lamStart,
-      double lamEnd,
+  private void setRestraintBond(Atom a1, Atom a2, double distance, double forceConstant,
+      double flatBottom, double lamStart, double lamEnd,
       UnivariateSwitchingFunction switchingFunction) {
     restraintBondTerm = true;
     boolean rbLambda = !(switchingFunction instanceof ConstantSwitch) && lambdaTerm;
-    RestraintBond rb = new RestraintBond(a1, a2, crystal, rbLambda, lamStart, lamEnd, switchingFunction);
+    RestraintBond rb = new RestraintBond(a1, a2, crystal, rbLambda, lamStart, lamEnd,
+        switchingFunction);
     int[] classes = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
     if (flatBottom != 0) {
-      BondType bondType = new BondType(classes, forceConstant, distance, BondType.BondFunction.FLAT_BOTTOM_HARMONIC, flatBottom);
+      BondType bondType = new BondType(classes, forceConstant, distance,
+          BondType.BondFunction.FLAT_BOTTOM_HARMONIC, flatBottom);
       rb.setBondType(bondType);
     } else {
-      BondType bondType = new BondType(classes, forceConstant, distance, BondType.BondFunction.HARMONIC);
+      BondType bondType = new BondType(classes, forceConstant, distance,
+          BondType.BondFunction.HARMONIC);
       rb.setBondType(bondType);
     }
 
@@ -3868,17 +3740,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     // MTRIXn to be permuted with standard space group in NCSCrystal.java for experimental
     // refinement.
     if (forceField.getProperties().containsKey("MTRIX1")
-        && forceField.getProperties().containsKey("MTRIX2")
-        && forceField.getProperties().containsKey("MTRIX3")) {
-      Crystal unitCell2 =
-          new Crystal(
-              unitCell.a,
-              unitCell.b,
-              unitCell.c,
-              unitCell.alpha,
-              unitCell.beta,
-              unitCell.gamma,
-              unitCell.spaceGroup.pdbName);
+        && forceField.getProperties().containsKey("MTRIX2") && forceField.getProperties()
+        .containsKey("MTRIX3")) {
+      Crystal unitCell2 = new Crystal(unitCell.a, unitCell.b, unitCell.c, unitCell.alpha,
+          unitCell.beta, unitCell.gamma, unitCell.spaceGroup.pdbName);
       SpaceGroup spaceGroup = unitCell2.spaceGroup;
       // Separate string list MTRIXn into Double matricies then pass into symops
       CompositeConfiguration properties = forceField.getProperties();
@@ -3960,12 +3825,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
    * <p>OMM_OPENCL: OpenMM OpenCL implementation (no AMOEBA)
    */
   public enum Platform {
-    FFX,
-    OMM,
-    OMM_CUDA,
-    OMM_REF,
-    OMM_OPTCPU,
-    OMM_OPENCL
+    FFX, OMM, OMM_CUDA, OMM_REF, OMM_OPTCPU, OMM_OPENCL
   }
 
   private class BondedRegion extends ParallelRegion {
@@ -4068,10 +3928,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       try {
         atomicDoubleArrayImpl = AtomicDoubleArrayImpl.valueOf(toEnumForm(value));
       } catch (Exception e) {
-        logger.info(
-            format(
-                " Unrecognized ARRAY-REDUCTION %s; defaulting to %s",
-                value, atomicDoubleArrayImpl));
+        logger.info(format(" Unrecognized ARRAY-REDUCTION %s; defaulting to %s", value,
+            atomicDoubleArrayImpl));
       }
       logger.fine(format("  Bonded using %s arrays.", atomicDoubleArrayImpl.toString()));
 
@@ -4151,8 +4009,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
       if (improperTorsionTerm) {
         if (improperTorsionLoops[threadID] == null) {
-          improperTorsionLoops[threadID] =
-              new BondedTermLoop(improperTorsions, sharedImproperTorsionEnergy);
+          improperTorsionLoops[threadID] = new BondedTermLoop(improperTorsions,
+              sharedImproperTorsionEnergy);
         }
         if (threadID == 0) {
           improperTorsionTime = -System.nanoTime();
@@ -4165,8 +4023,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
       if (outOfPlaneBendTerm) {
         if (outOfPlaneBendLoops[threadID] == null) {
-          outOfPlaneBendLoops[threadID] =
-              new BondedTermLoop(outOfPlaneBends, sharedOutOfPlaneBendEnergy);
+          outOfPlaneBendLoops[threadID] = new BondedTermLoop(outOfPlaneBends,
+              sharedOutOfPlaneBendEnergy);
         }
         if (threadID == 0) {
           outOfPlaneBendTime = -System.nanoTime();
@@ -4179,8 +4037,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
       if (piOrbitalTorsionTerm) {
         if (piOrbitalTorsionLoops[threadID] == null) {
-          piOrbitalTorsionLoops[threadID] =
-              new BondedTermLoop(piOrbitalTorsions, sharedPiOrbitalTorsionEnergy);
+          piOrbitalTorsionLoops[threadID] = new BondedTermLoop(piOrbitalTorsions,
+              sharedPiOrbitalTorsionEnergy);
         }
         if (threadID == 0) {
           piOrbitalTorsionTime = -System.nanoTime();
@@ -4219,8 +4077,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
       if (stretchTorsionTerm) {
         if (stretchTorsionLoops[threadID] == null) {
-          stretchTorsionLoops[threadID] =
-              new BondedTermLoop(stretchTorsions, sharedStretchTorsionEnergy);
+          stretchTorsionLoops[threadID] = new BondedTermLoop(stretchTorsions,
+              sharedStretchTorsionEnergy);
         }
         if (threadID == 0) {
           stretchTorsionTime = -System.nanoTime();
@@ -4246,8 +4104,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
       if (torsionTorsionTerm) {
         if (torsionTorsionLoops[threadID] == null) {
-          torsionTorsionLoops[threadID] =
-              new BondedTermLoop(torsionTorsions, sharedTorsionTorsionEnergy);
+          torsionTorsionLoops[threadID] = new BondedTermLoop(torsionTorsions,
+              sharedTorsionTorsionEnergy);
         }
         if (threadID == 0) {
           torsionTorsionTime = -System.nanoTime();
@@ -4274,8 +4132,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       // Evaluate restraint terms in parallel.
       if (restraintBondTerm) {
         if (restraintBondLoops[threadID] == null) {
-          restraintBondLoops[threadID] =
-              new BondedTermLoop(restraintBonds, sharedRestraintBondEnergy);
+          restraintBondLoops[threadID] = new BondedTermLoop(restraintBonds,
+              sharedRestraintBondEnergy);
         }
         if (threadID == 0) {
           restraintBondTime = -System.nanoTime();

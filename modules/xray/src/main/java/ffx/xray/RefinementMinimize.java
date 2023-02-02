@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.xray;
 
+import static java.lang.String.format;
+
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
 import ffx.numerics.optimization.LBFGS;
@@ -259,7 +261,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
       return RefinementMode.valueOf(str.toUpperCase());
     } catch (Exception e) {
       logger.info(
-          String.format(
+          format(
               " Could not parse %s as a refinement mode; defaulting to coordinates.", str));
       return RefinementMode.COORDINATES;
     }
@@ -454,10 +456,10 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     done = true;
     switch (status) {
       case 0:
-        logger.info(String.format("\n Optimization achieved convergence criteria: %8.5f", grms));
+        logger.info(format("\n Optimization achieved convergence criteria: %8.5f", grms));
         break;
       case 1:
-        logger.info(String.format("\n Optimization terminated at step %d.", nSteps));
+        logger.info(format("\n Optimization terminated at step %d.", nSteps));
         break;
       default:
         logger.warning("\n Optimization failed.");
@@ -466,7 +468,7 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
     if (logger.isLoggable(Level.INFO)) {
       StringBuilder sb = new StringBuilder();
       mtime += System.nanoTime();
-      sb.append(String.format(" Optimization time: %g (sec)", mtime * toSeconds));
+      sb.append(format(" Optimization time: %g (sec)", mtime * toSeconds));
       logger.info(sb.toString());
     }
 
@@ -510,20 +512,17 @@ public class RefinementMinimize implements OptimizationListener, Terminatable {
               + dataContainer.printOptimizationHeader());
     }
     if (info == null) {
-      logger.info(String.format("%6d %12.3f %10.3f", iter, f, grms));
+      logger.info(format("%6d %12.3f %10.3f", iter, f, grms));
     } else if (info == LineSearchResult.Success) {
       StringBuilder sb = new StringBuilder();
-      sb.append(
-          String.format(
-              "%6d %12.3f %10.3f %10.3f %9.4f %8.2f %6d %8.3f ",
+      sb.append(format("%6d %12.3f %10.3f %10.3f %9.4f %8.2f %6d %8.3f ",
               iter, f, grms, df, xrms, angle, nfun, seconds));
       sb.append(dataContainer.printOptimizationUpdate());
       logger.info(sb.toString());
     } else {
       logger.info(
-          String.format(
-              "%6d %12.3g %10.3f %10.3f %9.4f %8.2f %6d %8s",
-              iter, f, grms, df, xrms, angle, nfun, info.toString()));
+          format("%6d %12.3f %10.3f %10.3f %9.4f %8.2f %6d %8s",
+              iter, f, grms, df, xrms, angle, nfun, info));
     }
     if (terminate) {
       logger.info(" The optimization recieved a termination request.");

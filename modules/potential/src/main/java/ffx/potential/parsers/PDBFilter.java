@@ -572,9 +572,10 @@ public final class PDBFilter extends SystemFilter {
           if (currentAltLoc == 'A') {
             logger.info(format(" Reading %s", currentFile.getName()));
           } else {
-            logger.info(
-                format(" Reading %s alternate location %s", currentFile.getName(), currentAltLoc));
+            logger.info(format(" Reading %s alternate location %s", currentFile.getName(), currentAltLoc));
+
           }
+          activeMolecularAssembly.setAlternateLocation(currentAltLoc);
 
           // Reset the current chain and segID.
           currentChainID = null;
@@ -1298,7 +1299,7 @@ public final class PDBFilter extends SystemFilter {
     // Build missing backbone atoms in loops.
     buildMissingResidues(xyzIndex, activeMolecularAssembly, seqRes, dbRef);
 
-    // Assign atom types. Missing side-chains atoms and missing hydrogens will be built in.
+    // Assign atom types. Missing side-chains atoms and missing hydrogen will be built in.
     bondList = assignAtomTypes(activeMolecularAssembly, fileStandard);
 
     // Assign disulfide bonds parameters and log their creation.
@@ -1718,6 +1719,7 @@ public final class PDBFilter extends SystemFilter {
   public boolean writeFile(File saveFile, boolean append, Set<Atom> toExclude, boolean writeEnd,
       boolean versioning, String[] extraLines) {
     if (standardizeAtomNames) {
+      logger.info(" Setting atom names to PDB standard.");
       renameAtomsToPDBStandard(activeMolecularAssembly);
     }
     final Set<Atom> atomExclusions = toExclude == null ? Collections.emptySet() : toExclude;
@@ -1761,8 +1763,8 @@ public final class PDBFilter extends SystemFilter {
       logger.log(Level.INFO, " Saving {0}", newFile.getName());
     }
 
-    try (FileWriter fw = new FileWriter(newFile, append); BufferedWriter bw = new BufferedWriter(
-        fw)) {
+    try (FileWriter fw = new FileWriter(newFile, append);
+        BufferedWriter bw = new BufferedWriter(fw)) {
       /*
        Will come before CRYST1 and ATOM records, but after anything
        written by writeFileWithHeader (particularly X-ray refinement statistics).
@@ -2163,6 +2165,7 @@ public final class PDBFilter extends SystemFilter {
    */
   public boolean writeFileWithHeader(File saveFile, String header, boolean append) {
     if (standardizeAtomNames) {
+      logger.info(" Setting atom names to PDB standard.");
       renameAtomsToPDBStandard(activeMolecularAssembly);
     }
     activeMolecularAssembly.setFile(saveFile);

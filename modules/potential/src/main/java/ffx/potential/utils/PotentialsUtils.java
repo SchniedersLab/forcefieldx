@@ -54,6 +54,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * PotentialsUtils implements core functionality for many Force Field X algorithms and scripts, such
@@ -417,7 +418,9 @@ public class PotentialsUtils implements PotentialsFunctions {
     } else if (file == null) {
       logger.info(" No valid file to write to.");
     } else {
-      PDBFilter pdbFilter = new PDBFilter(file, Arrays.asList(assemblies), null, null);
+      ForceField forceField = assemblies[0].getForceField();
+      CompositeConfiguration properties = forceField.getProperties();
+      PDBFilter pdbFilter = new PDBFilter(file, Arrays.asList(assemblies), forceField, properties);
       pdbFilter.writeFile(file, false);
       lastFilter = pdbFilter;
     }
@@ -435,7 +438,9 @@ public class PotentialsUtils implements PotentialsFunctions {
     } else if (file == null) {
       logger.info(" No valid file provided to save assembly to.");
     } else {
-      XYZFilter xyzFilter = new XYZFilter(file, assembly, null, null);
+      ForceField forceField = assembly.getForceField();
+      CompositeConfiguration properties = forceField.getProperties();
+      XYZFilter xyzFilter = new XYZFilter(file, assembly, forceField, properties);
       if (!xyzFilter.writeFile(file, false)) {
         logger.info(format(" Save failed for %s", assembly));
       }
@@ -451,7 +456,9 @@ public class PotentialsUtils implements PotentialsFunctions {
     } else if (file == null) {
       logger.info(" No valid file provided to save assembly to.");
     } else {
-      PDBFilter pdbFilter = new PDBFilter(file, assembly, null, null);
+      ForceField forceField = assembly.getForceField();
+      CompositeConfiguration properties = forceField.getProperties();
+      PDBFilter pdbFilter = new PDBFilter(file, assembly, forceField, properties);
       lastFilter = pdbFilter;
       pdbFilter.writeFileAsP1(file);
     }

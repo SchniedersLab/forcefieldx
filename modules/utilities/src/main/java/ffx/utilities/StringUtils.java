@@ -82,8 +82,7 @@ public class StringUtils {
   public static final String STANDARD_WATER_NAME = "HOH";
 
   private static final Logger logger = Logger.getLogger(StringUtils.class.getName());
-  private static final Set<String> waterNames =
-      Set.of("HOH", "DOD", "WAT", "TIP", "TIP3", "TIP4", "MOL");
+  private static final Set<String> waterNames = Set.of("HOH", "DOD", "WAT", "TIP", "TIP3", "TIP4", "MOL");
   private static final Map<String, String> ionNames;
   private static final Pattern intRangePattern = Pattern.compile("(\\d+)-(\\d+)");
 

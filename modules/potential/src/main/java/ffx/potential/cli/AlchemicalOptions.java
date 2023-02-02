@@ -239,11 +239,6 @@ public class AlchemicalOptions {
         topologyOptions.setSecondSystemUnchargedAtoms(molecularAssembly);
       }
     }
-
-    // Turn off checks for overlapping atoms, which is expected for lambda=0.
-    ForceFieldEnergy energy = molecularAssembly.getPotentialEnergy();
-    energy.getCrystal().setSpecialPositionCutoff(0.0);
-
     return molecularAssembly;
   }
 

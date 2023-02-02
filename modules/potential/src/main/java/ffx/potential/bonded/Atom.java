@@ -109,43 +109,42 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * <p>Finally, atoms are compared based on their XYZ index. A lower XYZ index is less than (comes
    * before) a higher index.
    */
-  public static Comparator<Atom> XYZIndexComparator =
-      new Comparator<>() {
+  public static Comparator<Atom> XYZIndexComparator = new Comparator<>() {
 
-        /**
-         * Compare two atoms (implementation of the Comparator interface).
-         *
-         * <p>First, if atom1.equals(atom2), then 0 is returned.
-         *
-         * <p>Then, atoms are compared based on their XYZ index. A lower XYZ index is less than
-         * (comes before) a higher index.
-         *
-         * @param atom1 First atom to compare.
-         * @param atom2 Second atom to compare.
-         * @return Returns a negative integer, zero, or a positive integer as the first argument is
-         *     less than, equal to, or greater than the second.
-         */
-        @Override
-        public int compare(Atom atom1, Atom atom2) {
+    /**
+     * Compare two atoms (implementation of the Comparator interface).
+     *
+     * <p>First, if atom1.equals(atom2), then 0 is returned.
+     *
+     * <p>Then, atoms are compared based on their XYZ index. A lower XYZ index is less than
+     * (comes before) a higher index.
+     *
+     * @param atom1 First atom to compare.
+     * @param atom2 Second atom to compare.
+     * @return Returns a negative integer, zero, or a positive integer as the first argument is
+     *     less than, equal to, or greater than the second.
+     */
+    @Override
+    public int compare(Atom atom1, Atom atom2) {
 
-          boolean equal = atom1.equals(atom2);
-          if (equal) {
-            return 0;
-          }
+      boolean equal = atom1.equals(atom2);
+      if (equal) {
+        return 0;
+      }
 
-          int index1 = atom1.getXyzIndex();
-          int index2 = atom2.getXyzIndex();
-          if (index1 != index2) {
-            if (index1 < index2) {
-              return -1;
-            } else {
-              return 1;
-            }
-          }
-
-          return 0;
+      int index1 = atom1.getXyzIndex();
+      int index2 = atom2.getXyzIndex();
+      if (index1 != index2) {
+        if (index1 < index2) {
+          return -1;
+        } else {
+          return 1;
         }
-      };
+      }
+
+      return 0;
+    }
+  };
 
   static {
     // Initialize HashMaps
@@ -232,8 +231,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
     hybridTable.put("26", 8);
   }
 
-  /** Persistent (unmodifiable) indexing alternative to xyzIndex. */
-  private final int persistentIndex;
   /**
    * Array of XYZ coordinates.
    *
@@ -366,6 +363,12 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * network potential.
    */
   private boolean neuralNetwork = false;
+  /**
+   * If this List is not empty, then the atom is at a special position. The list contains the index
+   * of the symmetry operators that leave the atom (or an atom in this atom's molecule)
+   * at its special position.
+   */
+  private List<Integer> specialPositionSymOps = null;
 
   private String segID = null;
   private double formFactorWidth = 3.5;
@@ -425,7 +428,6 @@ public class Atom extends MSNode implements Comparable<Atom> {
     super(name, 1);
     currentCol = previousCol = RendererCache.toAtomColor(name);
     redXYZ = null;
-    persistentIndex = MolecularAssembly.persistentAtomIndexer++;
     mass = 1.0080;
   }
 
@@ -465,8 +467,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * @param segID Unique segment ID.
    * @since 1.0.
    */
-  public Atom(int xyzIndex, String name, Character altLoc, double[] xyz, String resName,
-      int resSeq, Character chainID, double occupancy, double tempFactor, String segID) {
+  public Atom(int xyzIndex, String name, Character altLoc, double[] xyz, String resName, int resSeq,
+      Character chainID, double occupancy, double tempFactor, String segID) {
     this(xyzIndex, name, null, xyz);
     this.resName = resName;
     this.resSeq = resSeq;
@@ -492,9 +494,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * @param segID a {@link java.lang.String} object.
    * @param built a boolean.
    */
-  public Atom(int xyzIndex, String name, Character altLoc, double[] xyz, String resName,
-      int resSeq, Character chainID, double occupancy, double tempFactor, String segID,
-      boolean built) {
+  public Atom(int xyzIndex, String name, Character altLoc, double[] xyz, String resName, int resSeq,
+      Character chainID, double occupancy, double tempFactor, String segID, boolean built) {
     this(xyzIndex, name, altLoc, xyz, resName, resSeq, chainID, occupancy, tempFactor, segID);
     this.built = built;
   }
@@ -511,17 +512,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * @param segID Segment identifier.
    */
   public Atom(int xyzIndex, Atom copyFrom, double[] xyz, int resSeq, char chainID, String segID) {
-    this(
-        xyzIndex,
-        copyFrom.getName(),
-        copyFrom.getAltLoc(),
-        xyz,
-        copyFrom.getResidueName(),
-        resSeq,
-        chainID,
-        copyFrom.getOccupancy(),
-        copyFrom.getTempFactor(),
-        segID);
+    this(xyzIndex, copyFrom.getName(), copyFrom.getAltLoc(), xyz, copyFrom.getResidueName(), resSeq,
+        chainID, copyFrom.getOccupancy(), copyFrom.getTempFactor(), segID);
     setAtomType(copyFrom.getAtomType());
     double[] aniso = new double[3];
     aniso = copyFrom.getAnisou(aniso);
@@ -666,8 +658,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
       point3d.y = getY();
       point3d.z = getZ();
       RendererCache.getScreenCoordinate(canvas, node, point3d, point2d);
-      g2d.drawString(
-          describe(Atom.Descriptions.XyzIndex_Name), (float) point2d.x, (float) point2d.y);
+      g2d.drawString(describe(Atom.Descriptions.XyzIndex_Name), (float) point2d.x,
+          (float) point2d.y);
     }
   }
 
@@ -687,10 +679,8 @@ public class Atom extends MSNode implements Comparable<Atom> {
       return false;
     }
 
-    return Objects.equals(resName, atom.resName)
-        && resSeq == atom.resSeq
-        && Objects.equals(getName(), atom.getName())
-        && Objects.equals(segID, atom.segID);
+    return Objects.equals(resName, atom.resName) && resSeq == atom.resSeq
+        && Objects.equals(getName(), atom.getName()) && Objects.equals(segID, atom.segID);
   }
 
   /**
@@ -1171,10 +1161,7 @@ public class Atom extends MSNode implements Comparable<Atom> {
    * @return The index of this atom in the molecular assembly.
    */
   public final int getIndex() {
-    return switch (MolecularAssembly.atomIndexing) {
-      case PERSIST -> persistentIndex;
-      case XYZ -> xyzIndex;
-    };
+    return xyzIndex;
   }
 
   /**
@@ -1966,6 +1953,36 @@ public class Atom extends MSNode implements Comparable<Atom> {
     this.neuralNetwork = neuralNetwork;
   }
 
+
+  /**
+   * If true, this atom is at a special position.
+   *
+   * @return True if this atom is at a special position.
+   */
+  public boolean isSpecialPosition() {
+    return specialPositionSymOps != null;
+  }
+
+  /**
+   * Set the symmetry operations that leave this atom's molecule at a special position.
+   *
+   * @param specialPositionSymOps The symmetry operations that leave this atom's molecule at a
+   *     special position.
+   */
+  public void setSpecialPositionSymOps(List<Integer> specialPositionSymOps) {
+    this.specialPositionSymOps = specialPositionSymOps;
+  }
+
+  /**
+   * If true, this atom is at a special position for the specified symmetry operation.
+   *
+   * @param symOp The symmetry operation to check.
+   * @return True if this atom is at a special position for the specified symmetry operation.
+   */
+  public boolean isSpecialPositionSymOp(int symOp) {
+    return specialPositionSymOps != null && specialPositionSymOps.contains(symOp);
+  }
+
   /**
    * Checks to see if an Atom is bonded to <b>this</b> Atom
    *
@@ -2680,16 +2697,14 @@ public class Atom extends MSNode implements Comparable<Atom> {
       sid = " " + segID;
     }
     if (altLoc != null && altLoc != ' ') {
-      return format(
-          "%s %7d-%s %s %d (%7.2f,%7.2f,%7.2f)%s",
-          altLoc, getIndex(), getName(), resName, resSeq, xyz[0], xyz[1], xyz[2], sid);
+      return format("%s %7d-%s %s %d (%7.2f,%7.2f,%7.2f)%s", altLoc, getIndex(), getName(), resName,
+          resSeq, xyz[0], xyz[1], xyz[2], sid);
     }
     if (resName == null) {
       return format("%7d-%s (%7.2f,%7.2f,%7.2f)", getIndex(), getName(), xyz[0], xyz[1], xyz[2]);
     }
-    return format(
-        "%7d-%s %s %d (%7.2f,%7.2f,%7.2f)%s",
-        getIndex(), getName(), resName, resSeq, xyz[0], xyz[1], xyz[2], sid);
+    return format("%7d-%s %s %d (%7.2f,%7.2f,%7.2f)%s", getIndex(), getName(), resName, resSeq,
+        xyz[0], xyz[1], xyz[2], sid);
   }
 
   /**
@@ -2821,133 +2836,15 @@ public class Atom extends MSNode implements Comparable<Atom> {
   }
 
   public enum Descriptions {
-    Default,
-    Trim,
-    XyzIndex_Name,
-    ArrayIndex_Name,
-    Resnum_Name
+    Default, Trim, XyzIndex_Name, ArrayIndex_Name, Resnum_Name
   }
 
   /** Element symbols for the first 109 elements. */
   public enum ElementSymbol {
-    H,
-    He,
-    Li,
-    Be,
-    B,
-    C,
-    N,
-    O,
-    F,
-    Ne,
-    Na,
-    Mg,
-    Al,
-    Si,
-    P,
-    S,
-    Cl,
-    Ar,
-    K,
-    Ca,
-    Sc,
-    Ti,
-    V,
-    Cr,
-    Mn,
-    Fe,
-    Co,
-    Ni,
-    Cu,
-    Zn,
-    Ga,
-    Ge,
-    As,
-    Se,
-    Br,
-    Kr,
-    Rb,
-    Sr,
-    Y,
-    Zr,
-    Nb,
-    Mo,
-    Tc,
-    Ru,
-    Rh,
-    Pd,
-    Ag,
-    Cd,
-    In,
-    Sn,
-    Sb,
-    Te,
-    I,
-    Xe,
-    Cs,
-    Ba,
-    La,
-    Ce,
-    Pr,
-    Nd,
-    Pm,
-    Sm,
-    Eu,
-    Gd,
-    Tb,
-    Dy,
-    Ho,
-    Er,
-    Tm,
-    Yb,
-    Lu,
-    Hf,
-    Ta,
-    W,
-    Re,
-    Os,
-    Ir,
-    Pt,
-    Au,
-    Hg,
-    Tl,
-    Pb,
-    Bi,
-    Po,
-    At,
-    Rn,
-    Fr,
-    Ra,
-    Ac,
-    Th,
-    Pa,
-    U,
-    Np,
-    Pu,
-    Am,
-    Cm,
-    Bk,
-    Cf,
-    Es,
-    Fm,
-    Md,
-    No,
-    Lr,
-    Rf,
-    Db,
-    Sg,
-    Bh,
-    Hs,
-    Mt
-  }
-
-  public enum Indexing {
-    XYZ,
-    PERSIST
+    H, He, Li, Be, B, C, N, O, F, Ne, Na, Mg, Al, Si, P, S, Cl, Ar, K, Ca, Sc, Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, Ga, Ge, As, Se, Br, Kr, Rb, Sr, Y, Zr, Nb, Mo, Tc, Ru, Rh, Pd, Ag, Cd, In, Sn, Sb, Te, I, Xe, Cs, Ba, La, Ce, Pr, Nd, Pm, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Hf, Ta, W, Re, Os, Ir, Pt, Au, Hg, Tl, Pb, Bi, Po, At, Rn, Fr, Ra, Ac, Th, Pa, U, Np, Pu, Am, Cm, Bk, Cf, Es, Fm, Md, No, Lr, Rf, Db, Sg, Bh, Hs, Mt
   }
 
   public enum Resolution {
-    FIXEDCHARGE,
-    AMOEBA
+    FIXEDCHARGE, AMOEBA
   }
 }

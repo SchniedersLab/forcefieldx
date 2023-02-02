@@ -102,6 +102,9 @@ public class PolymerUtils {
     ForceField forceField = molecularAssembly.getForceField();
     CompositeConfiguration properties = molecularAssembly.getProperties();
 
+    // Only rename atoms if requested.
+    boolean standardizeAtomNames = properties.getBoolean("standardizeAtomNames", true);
+
     // To Do: Look for cyclic peptides and disulfides.
     Polymer[] polymers = molecularAssembly.getChains();
 
@@ -118,7 +121,9 @@ public class PolymerUtils {
           for (AminoAcid3 amino : aminoAcidList) {
             if (amino.toString().equalsIgnoreCase(name)) {
               aa = true;
-              checkHydrogenAtomNames(residue, fileStandard);
+              if (standardizeAtomNames) {
+                checkHydrogenAtomNames(residue, fileStandard);
+              }
               break;
             }
           }

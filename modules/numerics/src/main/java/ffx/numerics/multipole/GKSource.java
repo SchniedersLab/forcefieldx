@@ -232,6 +232,79 @@ public class GKSource {
   }
 
   /**
+   * Fill the GK auxiliary matrix.
+   * <p>
+   * The first row is the GK potential and derivatives for monopoles. The second row is the GK
+   * potential and derivatives for dipoles. The third row is the GK potential and derivatives for
+   * quadrupoles.
+   *
+   * @param n Order.
+   * @param derivatives Number of derivatives.
+   */
+  private void anm(int n, int derivatives) {
+    // Fill the fn chain rule terms.
+    fn(n);
+
+    // Fill the auxiliary potential.
+    an0(n);
+
+    // Derivative loop over columns.
+    for (int d = 1; d <= derivatives; d++) {
+      // The coefficients are the same for each order.
+      var coef = anmc[d];
+      // The current derivative can only be computed for order n - d.
+      int limit = n - d;
+      // Order loop over rows.
+      for (int order = 0; order <= limit; order++) {
+        // Compute this term from previous terms for 1 higher order.
+        var terms = anm[order + 1];
+        var sum = 0.0;
+        for (int i = 1; i <= d; i++) {
+          sum += coef[i - 1] * fn[i] * terms[d - i];
+        }
+        anm[order][d] = sum;
+      }
+    }
+  }
+
+  /**
+   * Fill the GK auxiliary matrix derivatives with respect to Born radii.
+   * <p>
+   * The first row are derivatives for the monopole potential. The second row are derivatives for the
+   * dipole potential. The third row are derivatives for the quadrupole potential.
+   *
+   * @param n Order.
+   * @param derivatives Number of derivatives.
+   */
+  private void bnm(int n, int derivatives) {
+    // Fill the bn chain rule terms.
+    bn(n);
+
+    // Fill the auxiliary potential derivatives.
+    bn0(n);
+
+    // Derivative loop over columns.
+    for (int d = 1; d <= derivatives; d++) {
+      // The coefficients are the same for each order.
+      var coef = anmc[d];
+      // The current derivative can only be computed for order n - d.
+      int limit = n - d;
+      // Order loop over rows.
+      for (int order = 0; order <= limit; order++) {
+        // Compute this term from previous terms for 1 higher order.
+        var terma = anm[order + 1];
+        var termb = bnm[order + 1];
+        var sum = 0.0;
+        for (int i = 1; i <= d; i++) {
+          sum += coef[i - 1] * bn[i] * terma[d - i];
+          sum += coef[i - 1] * fn[i] * termb[d - i];
+        }
+        bnm[order][d] = sum;
+      }
+    }
+  }
+
+  /**
    * Sets the function f, which are chain rule terms from differentiating zeroth order auxiliary
    * functions (an0) with respect to x, y or z.
    *
@@ -349,79 +422,6 @@ public class GKSource {
   private void bn0(int n) {
     for (int i = 0; i <= n; i++) {
       bnm[i][0] = bn[0] * anm[i + 1][0];
-    }
-  }
-
-  /**
-   * Fill the GK auxiliary matrix.
-   * <p>
-   * The first row is the GK potential and derivatives for monopoles. The second row is the GK
-   * potential and derivatives for dipoles. The third row is the GK potential and derivatives for
-   * quadrupoles.
-   *
-   * @param n Order.
-   * @param derivatives Number of derivatives.
-   */
-  private void anm(int n, int derivatives) {
-    // Fill the fn chain rule terms.
-    fn(n);
-
-    // Fill the auxiliary potential.
-    an0(n);
-
-    // Derivative loop over columns.
-    for (int d = 1; d <= derivatives; d++) {
-      // The coefficients are the same for each order.
-      var coef = anmc[d];
-      // The current derivative can only be computed for order n - d.
-      int limit = n - d;
-      // Order loop over rows.
-      for (int order = 0; order <= limit; order++) {
-        // Compute this term from previous terms for 1 higher order.
-        var terms = anm[order + 1];
-        var sum = 0.0;
-        for (int i = 1; i <= d; i++) {
-          sum += coef[i - 1] * fn[i] * terms[d - i];
-        }
-        anm[order][d] = sum;
-      }
-    }
-  }
-
-  /**
-   * Fill the GK auxiliary matrix derivatives with respect to Born radii.
-   * <p>
-   * The first row are derivatives for the monopole potential. The second row are derivatives for the
-   * dipole potential. The third row are derivatives for the quadrupole potential.
-   *
-   * @param n Order.
-   * @param derivatives Number of derivatives.
-   */
-  private void bnm(int n, int derivatives) {
-    // Fill the bn chain rule terms.
-    bn(n);
-
-    // Fill the auxiliary potential derivatives.
-    bn0(n);
-
-    // Derivative loop over columns.
-    for (int d = 1; d <= derivatives; d++) {
-      // The coefficients are the same for each order.
-      var coef = anmc[d];
-      // The current derivative can only be computed for order n - d.
-      int limit = n - d;
-      // Order loop over rows.
-      for (int order = 0; order <= limit; order++) {
-        // Compute this term from previous terms for 1 higher order.
-        var terma = anm[order + 1];
-        var termb = bnm[order + 1];
-        var sum = 0.0;
-        for (int i = 1; i <= d; i++) {
-          sum += coef[i - 1] * bn[i] * terma[d - i];
-          sum += coef[i - 1] * fn[i] * termb[d - i];
-        }
-        bnm[order][d] = sum;
-      }
     }
   }
 

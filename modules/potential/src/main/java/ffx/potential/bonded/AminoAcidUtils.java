@@ -185,8 +185,7 @@ public class AminoAcidUtils {
       if (residueNumber < numberOfResidues - 1) {
         nextResidue = residues.get(residueNumber + 1);
       }
-      AminoAcidUtils.assignAminoAcidAtomTypes(
-          residue, previousResidue, nextResidue, forceField, bondList);
+      assignAminoAcidAtomTypes(residue, previousResidue, nextResidue, forceField, bondList);
     }
   }
 
@@ -325,7 +324,7 @@ public class AminoAcidUtils {
               H1.get().setName("H3");
             } else if (H1.isPresent() && H3.isPresent()) {
               H1.get().setName("H2");
-            } // Else, all is hunky-dory!
+            }
             buildHydrogenAtom(
                 residue, "H2", N, 1.02, CA, 109.5, C, 0.0, 0, atomType, forceField, bondList);
             buildHydrogenAtom(

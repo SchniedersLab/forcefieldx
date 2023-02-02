@@ -912,6 +912,20 @@ public class Crystal {
   /**
    * Apply the minimum image convention.
    *
+   * @param xyz the coordinates of the first atom.
+   * @param xyz2 the coordinates of the second atom.
+   * @return the output distance squared.
+   */
+  public double image(double[] xyz, double[] xyz2) {
+    double dx = xyz[0] - xyz2[0];
+    double dy = xyz[1] - xyz2[1];
+    double dz = xyz[2] - xyz2[2];
+    return image(dx, dy, dz);
+  }
+
+  /**
+   * Apply the minimum image convention.
+   *
    * @param xyz input distances that are over-written.
    * @return the output distance squared.
    */

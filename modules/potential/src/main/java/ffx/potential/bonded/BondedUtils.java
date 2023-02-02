@@ -60,6 +60,7 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
+import ffx.utilities.StringUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -299,8 +300,7 @@ public class BondedUtils {
 
     // Basic checking for unspecified H atoms attached to water.
     if (atom == null && residue instanceof Molecule molecule) {
-      String molName = molecule.getName().toUpperCase();
-      if (molName.startsWith("HOH") || molName.startsWith("WAT") || molName.startsWith("TIP3")) {
+      if (StringUtils.looksLikeWater(molecule.getName())) {
         atom = (Atom) molecule.getAtomNode("H");
         if (atom == null) {
           atom = (Atom) molecule.getAtomNode("D");

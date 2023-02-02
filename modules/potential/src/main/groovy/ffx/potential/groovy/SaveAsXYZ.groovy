@@ -39,10 +39,12 @@ package ffx.potential.groovy
 
 import ffx.crystal.Crystal
 import ffx.crystal.SymOp
+import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.SaveOptions
 import ffx.potential.parameters.ForceField
+import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
 import picocli.CommandLine.Command
@@ -97,6 +99,13 @@ class SaveAsXYZ extends PotentialScript {
   private int writeSnapshot = 0
 
   /**
+   * --alt or --alternateLocation Choose an alternate location for a PDB file.
+   */
+  @Option(names = ['--alt', '--alternateLocation'], paramLabel = "A", defaultValue = "A",
+      description = 'Choose an alternate location for the PDB file (not supported for PDBs with multiple models.')
+  private Character alternateLocation = 'A'
+
+  /**
    * The final argument is a PDB coordinate file.
    */
   @Parameters(arity = "1", paramLabel = "file",
@@ -130,10 +139,25 @@ class SaveAsXYZ extends PotentialScript {
     }
 
     // Load the MolecularAssembly.
-    activeAssembly = getActiveAssembly(filename)
-    if (activeAssembly == null) {
+    MolecularAssembly[] molecularAssemblies = getActiveAssemblies(filename)
+    if (molecularAssemblies == null) {
       logger.info(helpString())
       return this
+    }
+
+    if (molecularAssemblies.length > 1) {
+      Character currentAltLoc = activeAssembly.getAlternateLocation()
+      logger.info("\n Current alternate location: " + currentAltLoc)
+      if (currentAltLoc != alternateLocation) {
+        for (MolecularAssembly molecularAssembly : molecularAssemblies) {
+          Character altLoc = molecularAssembly.getAlternateLocation()
+          if (altLoc == alternateLocation) {
+            activeAssembly = molecularAssembly
+            logger.info(" Switching to alternate location: " + altLoc)
+            break
+          }
+        }
+      }
     }
 
     // Set the filename.
@@ -164,7 +188,6 @@ class SaveAsXYZ extends PotentialScript {
     if (scalar > 0.0) {
       SymOp symOp = SymOp.randomSymOpFactory(scalar)
       logger.info(format("\n Applying random Cartesian SymOp\n: %s", symOp.toString()))
-      Crystal crystal = activeAssembly.getCrystal()
       Atom[] atoms = activeAssembly.getAtomArray()
       double[] xyz = new double[3]
       for (int i = 0; i < atoms.length; i++) {
@@ -173,7 +196,6 @@ class SaveAsXYZ extends PotentialScript {
         atoms[i].setXYZ(xyz)
       }
     }
-
 
     String dirString = getBaseDirString(filename)
     String name = getName(filename)
