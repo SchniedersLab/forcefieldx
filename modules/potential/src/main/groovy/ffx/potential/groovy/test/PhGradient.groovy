@@ -415,6 +415,11 @@ class PhGradient extends PotentialScript {
                   format(" Analytic: %12.4f vs. Numeric: %12.4f\n", esvDerivs[tautomerIndex], fdDerivTaut))
         }
       }
+      if(nESVFailures > 0){
+        logger.info(format(" %d ESVs failed the gradient test.\n", nESVFailures))
+      } else {
+        logger.info(" All ESVs passed the gradient test.\n")
+      }
     }
 
     if(scan){
