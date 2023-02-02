@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -3168,10 +3168,6 @@ public class CrystalReciprocalSpace {
       final int[] optLocal = new int[nAtoms];
       long timer;
 
-      // Extra padding to avert cache interference.
-      long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-      long pad8, pad9, pada, padb, padc, padd, pade, padf;
-
       @Override
       public void finish() {
         timer += System.nanoTime();
@@ -3278,9 +3274,6 @@ public class CrystalReciprocalSpace {
       double[] uvw = new double[3];
       double[] xc = new double[3];
       double[] xf = new double[3];
-      // Extra padding to avert cache interference.
-      long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-      long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
       @Override
       public void run(final int lb, final int ub) {

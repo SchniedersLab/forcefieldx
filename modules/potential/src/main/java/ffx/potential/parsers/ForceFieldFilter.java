@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -356,6 +356,7 @@ public class ForceFieldFilter {
                 baseType = VDWType.parseVDW14(input, tokens);
                 break;
               case VDWPR:
+              case VDWPAIR:
                 baseType = VDWPairType.parse(input, tokens);
                 break;
               case POLARIZE:
@@ -482,6 +483,7 @@ public class ForceFieldFilter {
           baseType = VDWType.parseVDW14(input, tokens);
           break;
         case VDWPR:
+        case VDWPAIR:
           baseType = VDWPairType.parse(input, tokens);
           break;
         case POLARIZE:

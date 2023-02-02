@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -47,7 +47,6 @@ import static ffx.utilities.KeywordGroup.PotentialFunctionSelection;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
-import static java.util.Arrays.fill;
 import static java.util.Arrays.sort;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -1074,8 +1073,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         if (torsionScale == 1.0) {
           logger.info(format("  Pi-Orbital Torsions:               %10d", nPiOrbitalTorsions));
         } else {
-          logger.info(
-              format(
+          logger.info(format(
                   "  Pi-Orbital Torsions (%5.2f):       %10d", torsionScale, nPiOrbitalTorsions));
         }
       }

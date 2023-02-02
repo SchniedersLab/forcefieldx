@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -1004,8 +1004,8 @@ public class PCGSolver {
       public double rDotZ;
       public double rDotZCR;
 
-      private double[] deltaZ = new double[3];
-      private double[] deltaZCR = new double[3];
+      private final double[] deltaZ = new double[3];
+      private final double[] deltaZCR = new double[3];
 
       @Override
       public void finish() {
@@ -1148,12 +1148,11 @@ public class PCGSolver {
       // Use a special Ewald coefficient for the pre-conditioner.
       double aewaldTemp = ewaldParameters.aewald;
       ewaldParameters.setEwaldParameters(ewaldParameters.off, preconditionerEwald);
-      int nAtoms = atoms.length;
-      field.reset(parallelTeam, 0, nAtoms - 1);
-      fieldCR.reset(parallelTeam, 0, nAtoms - 1);
+      field.reset(parallelTeam);
+      fieldCR.reset(parallelTeam);
       parallelTeam.execute(preconditionerRegion);
-      field.reduce(parallelTeam, 0, nAtoms - 1);
-      fieldCR.reduce(parallelTeam, 0, nAtoms - 1);
+      field.reduce(parallelTeam);
+      fieldCR.reduce(parallelTeam);
       ewaldParameters.setEwaldParameters(ewaldParameters.off, aewaldTemp);
     } catch (Exception e) {
       String message = "Exception computing the induced field for the preconditioner.";

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -387,7 +387,7 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
     @Override
     public void run() {
       if (reciprocalSpaceTerm && aewald > 0.0) {
-        reciprocalSpace.permanentMultipoleConvolution();
+        reciprocalSpace.performConvolution();
       }
     }
   }
@@ -465,6 +465,7 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
     @Override
     public void run() {
       int threadIndex = getThreadIndex();
+      realSpacePermTime[threadIndex] -= System.nanoTime();
       if (initializationLoop[threadIndex] == null) {
         initializationLoop[threadIndex] = new InitializationLoop();
         permanentRealSpaceFieldLoop[threadIndex] = new PermanentRealSpaceFieldLoop();
@@ -481,6 +482,7 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
             "Fatal exception computing the real space field in thread " + getThreadIndex() + "\n";
         logger.log(Level.SEVERE, message, e);
       }
+      realSpacePermTime[threadIndex] += System.nanoTime();
     }
 
     @Override
@@ -489,12 +491,6 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
     }
 
     private class InitializationLoop extends IntegerForLoop {
-
-      @Override
-      public void finish() {
-        int threadIndex = getThreadIndex();
-        realSpacePermTime[threadIndex] += System.nanoTime();
-      }
 
       @Override
       public void run(int lb, int ub) {
@@ -522,12 +518,6 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
         return IntegerSchedule.fixed();
       }
 
-      /** Initialize the field arrays. */
-      @Override
-      public void start() {
-        int threadIndex = getThreadIndex();
-        realSpacePermTime[threadIndex] -= System.nanoTime();
-      }
     }
 
     private class PermanentRealSpaceFieldLoop extends IntegerForLoop {
@@ -538,9 +528,6 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
       private double[] inductionMaskLocal;
       private double[] energyMaskLocal;
       private int count;
-      // Extra padding to avert cache interference.
-      private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-      private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
       PermanentRealSpaceFieldLoop() {
         super();
@@ -551,7 +538,6 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
       @Override
       public void finish() {
         sharedCount.addAndGet(count);
-        realSpacePermTime[threadID] += System.nanoTime();
       }
 
       @Override
@@ -950,7 +936,6 @@ public class PermanentFieldRegion extends ParallelRegion implements MaskingInter
       @Override
       public void start() {
         threadID = getThreadIndex();
-        realSpacePermTime[threadID] -= System.nanoTime();
         count = 0;
         int nAtoms = atoms.length;
         if (inductionMaskLocal == null || inductionMaskLocal.length < nAtoms) {

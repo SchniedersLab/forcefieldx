@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -3020,8 +3020,7 @@ public class RotamerOptimization implements Terminatable {
                         ex));
               }
               if (startingEnergy <= finalEnergy) {
-                logger.warning(
-                    "Optimization did not yield a better energy. Reverting to original coordinates.");
+                logger.info("Optimization did not yield a better energy. Reverting to original coordinates.");
                 ResidueState.revertAllCoordinates(currentWindow, coordinates);
               } else {
                 // Copy sliding window optimal rotamers into the overall optimum array.
@@ -4653,8 +4652,7 @@ public class RotamerOptimization implements Terminatable {
                       ex));
             }
             if (startingEnergy <= finalEnergy) {
-              logger.warning(
-                  "Optimization did not yield a better energy. Reverting to original coordinates.");
+              logger.info("Optimization did not yield a better energy. Reverting to original coordinates.");
               ResidueState.revertAllCoordinates(residueSubsetList, coordinates);
             } else {
               // Copy sliding window optimal rotamers into the overall optimum array.

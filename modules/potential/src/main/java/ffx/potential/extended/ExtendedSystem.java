@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2022.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -602,6 +602,7 @@ public class ExtendedSystem implements Potential {
         AminoAcidUtils.AminoAcid3 AA3 = residue.getAminoAcid3();
         double titrationLambda = getTitrationLambda(residue);
         double titrationLambdaSquared = titrationLambda * titrationLambda;
+        double titrationLambdaCubed = titrationLambdaSquared * titrationLambda;
         double discrBias;
         double pHBias;
         double modelBias;
@@ -640,7 +641,7 @@ public class ExtendedSystem implements Potential {
                 double cubic = ASHcubic;
                 double quadratic = ASHquadratic;
                 double linear = ASHlinear;
-                modelBias = cubic * titrationLambdaSquared * titrationLambda + quadratic * titrationLambdaSquared + linear * titrationLambda;
+                modelBias = cubic * titrationLambdaCubed + quadratic * titrationLambdaSquared + linear * titrationLambda;
                 dMod_dTitr = 3 * cubic * titrationLambdaSquared + 2 * quadratic * titrationLambda + linear;
                 dMod_dTaut = 0.0;
                 break;
@@ -668,7 +669,7 @@ public class ExtendedSystem implements Potential {
                 cubic = GLHcubic;
                 quadratic = GLHquadratic;
                 linear = GLHlinear;
-                modelBias = cubic * titrationLambdaSquared * titrationLambda + quadratic * titrationLambdaSquared + linear * titrationLambda;
+                modelBias = cubic * titrationLambdaCubed + quadratic * titrationLambdaSquared + linear * titrationLambda;
                 dMod_dTitr = 3 * cubic * titrationLambdaSquared + 2 * quadratic * titrationLambda + linear;
                 dMod_dTaut = 0.0;
                 break;
@@ -760,7 +761,7 @@ public class ExtendedSystem implements Potential {
                 cubic = CYScubic;
                 quadratic = CYSquadratic;
                 linear = CYSlinear;
-                modelBias = cubic * titrationLambdaSquared * titrationLambda + quadratic * titrationLambdaSquared + linear * titrationLambda;
+                modelBias = cubic * titrationLambdaCubed + quadratic * titrationLambdaSquared + linear * titrationLambda;
                 dMod_dTitr = 3 * cubic * titrationLambdaSquared + 2 * quadratic * titrationLambda + linear;
                 dMod_dTaut = 0.0;
                 break;
@@ -864,6 +865,10 @@ public class ExtendedSystem implements Potential {
      * Update all theta (lambda) positions after each move from the Stochastic integrator
      */
     private void updateLambdas() {
+        //If lockStates is true, then the titration and tautomer states are permanently locked.
+        if (lockStates) {
+            return;
+        }
         //This will prevent recalculating multiple sinTheta*sinTheta that are the same number.
         for (int i = 0; i < nESVs; i++) {
             //Check to see if titration/tautomer lambdas are to be fixed

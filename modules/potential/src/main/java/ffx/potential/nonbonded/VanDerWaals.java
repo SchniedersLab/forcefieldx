@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -162,14 +162,18 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
   private double vdwLambdaExponent = 3.0;
   /** Offset in Angstroms (alpha). */
   private double vdwLambdaAlpha = 0.25;
-  /** Polymorphic inner class to set sc1,sc2,dsc1,etc only when necessary. [nThreads] */
+  /**
+   * Polymorphic inner class to set sc1,sc2,dsc1,etc only when necessary. [nThreads]
+   */
   private LambdaFactors[] lambdaFactors = null;
-
-  private double sc1 = 0.0; // alpha * (1 - lambdaProduct)^2
-  private double sc2 = 1.0; // lambdaProduct
-
-  // *************************************************************************
-  // Force field parameters and constants for the Buffered-14-7 potential.
+  /**
+   * alpha * (1 - lambda)^2
+   */
+  private double sc1 = 0.0;
+  /**
+   * lambda^lambdaExponent
+   */
+  private double sc2 = 1.0;
   private double dsc1dL = 0.0;
   private double dsc2dL = 0.0;
   private double d2sc1dL2 = 0.0;
@@ -214,7 +218,10 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    * energy code. The AMOEBA force field includes 1-4 interactions fully.
    */
   private NeighborList neighborList;
-  private boolean neighborListOnly = true;
+  /**
+   * Force building of the neighbor list.
+   */
+  private boolean forceNeighborListRebuild = true;
 
   public VanDerWaals() {
     // Empty constructor for use with VanDerWaalsTornado
@@ -731,7 +738,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       }
     }
     neighborList.setCrystal(crystal);
-    neighborListOnly = true;
+    forceNeighborListRebuild = true;
     try {
       parallelTeam.execute(vanDerWaalsRegion);
     } catch (Exception e) {
@@ -888,14 +895,14 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    */
   private void buildNeighborList(Atom[] atoms) {
     neighborList.setAtoms(atoms);
-    neighborListOnly = true;
+    forceNeighborListRebuild = true;
     try {
       parallelTeam.execute(vanDerWaalsRegion);
     } catch (Exception e) {
       String message = " Fatal exception expanding coordinates.\n";
       logger.log(Level.SEVERE, message, e);
     }
-    neighborListOnly = false;
+    forceNeighborListRebuild = false;
   }
 
   /**
@@ -1078,7 +1085,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
    * instead, which contains an empty version of setFactors(i,k). The OST version sets new factors
    * only on lambda updates, in setLambda().
    */
-  public class LambdaFactors {
+  public static class LambdaFactors {
 
     double sc1 = 0.0;
     double dsc1dL = 0.0;
@@ -1133,7 +1140,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
 
     @Override
     public void finish() {
-      neighborListOnly = false;
+      forceNeighborListRebuild = false;
       vdwTimeTotal += System.nanoTime();
       // Log timings.
       if (logger.isLoggable(Level.FINE)) {
@@ -1212,7 +1219,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
 
       // Build the neighbor-list (if necessary) using reduced coordinates.
       barrier(neighborListAction);
-      if (neighborListOnly) {
+      if (forceNeighborListRebuild) {
         return;
       }
 
@@ -1257,8 +1264,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
 
     /**
      * {@inheritDoc}
-     *
-     * <p>This is method should not be called; it is invoked by Parallel Java.
      *
      * @since 1.0
      */
@@ -1380,31 +1385,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
         // The timing finished in the ExpandLoop.
         initializationTime[threadID] = -System.nanoTime();
       }
-
-      // Kludge to avert false sharing in multithreaded programs.
-      // Padding fields.
-      volatile long p0 = 1000L;
-      volatile long p1 = 1001L;
-      volatile long p2 = 1002L;
-      volatile long p3 = 1003L;
-      volatile long p4 = 1004L;
-      volatile long p5 = 1005L;
-      volatile long p6 = 1006L;
-      volatile long p7 = 1007L;
-      volatile long p8 = 1008L;
-      volatile long p9 = 1009L;
-      volatile long pa = 1010L;
-      volatile long pb = 1011L;
-      volatile long pc = 1012L;
-      volatile long pd = 1013L;
-      volatile long pe = 1014L;
-      volatile long pf = 1015L;
-
-      // Method to prevent the JDK from optimizing away the padding fields.
-      long preventOptimization() {
-        return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7 +
-            p8 + p9 + pa + pb + pc + pd + pe + pf;
-      }
     }
 
     private class ExpandLoop extends IntegerForLoop {
@@ -1504,30 +1484,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
         threadID = getThreadIndex();
       }
 
-      // Kludge to avert false sharing in multithreaded programs.
-      // Padding fields.
-      volatile long p0 = 1000L;
-      volatile long p1 = 1001L;
-      volatile long p2 = 1002L;
-      volatile long p3 = 1003L;
-      volatile long p4 = 1004L;
-      volatile long p5 = 1005L;
-      volatile long p6 = 1006L;
-      volatile long p7 = 1007L;
-      volatile long p8 = 1008L;
-      volatile long p9 = 1009L;
-      volatile long pa = 1010L;
-      volatile long pb = 1011L;
-      volatile long pc = 1012L;
-      volatile long pd = 1013L;
-      volatile long pe = 1014L;
-      volatile long pf = 1015L;
-
-      // Method to prevent the JDK from optimizing away the padding fields.
-      long preventOptimization() {
-        return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7 +
-            p8 + p9 + pa + pb + pc + pd + pe + pf;
-      }
     }
 
     /**
@@ -2084,30 +2040,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
         }
       }
 
-      // Kludge to avert false sharing in multithreaded programs.
-      // Padding fields.
-      volatile long p0 = 1000L;
-      volatile long p1 = 1001L;
-      volatile long p2 = 1002L;
-      volatile long p3 = 1003L;
-      volatile long p4 = 1004L;
-      volatile long p5 = 1005L;
-      volatile long p6 = 1006L;
-      volatile long p7 = 1007L;
-      volatile long p8 = 1008L;
-      volatile long p9 = 1009L;
-      volatile long pa = 1010L;
-      volatile long pb = 1011L;
-      volatile long pc = 1012L;
-      volatile long pd = 1013L;
-      volatile long pe = 1014L;
-      volatile long pf = 1015L;
-
-      // Method to prevent the JDK from optimizing away the padding fields.
-      long preventOptimization() {
-        return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7 +
-            p8 + p9 + pa + pb + pc + pd + pe + pf;
-      }
     }
 
     /** Reduce Van der Waals gradient. */
@@ -2140,30 +2072,6 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
         reductionTime[threadID] = -System.nanoTime();
       }
 
-      // Kludge to avert false sharing in multithreaded programs.
-      // Padding fields.
-      volatile long p0 = 1000L;
-      volatile long p1 = 1001L;
-      volatile long p2 = 1002L;
-      volatile long p3 = 1003L;
-      volatile long p4 = 1004L;
-      volatile long p5 = 1005L;
-      volatile long p6 = 1006L;
-      volatile long p7 = 1007L;
-      volatile long p8 = 1008L;
-      volatile long p9 = 1009L;
-      volatile long pa = 1010L;
-      volatile long pb = 1011L;
-      volatile long pc = 1012L;
-      volatile long pd = 1013L;
-      volatile long pe = 1014L;
-      volatile long pf = 1015L;
-
-      // Method to prevent the JDK from optimizing away the padding fields.
-      long preventOptimization() {
-        return p0 + p1 + p2 + p3 + p4 + p5 + p6 + p7 +
-            p8 + p9 + pa + pb + pc + pd + pe + pf;
-      }
     }
 
     /**
@@ -2174,7 +2082,7 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
       @Override
       public void run() throws Exception {
         neighborListTotalTime = -System.nanoTime();
-        neighborList.buildList(reduced, neighborLists, null, neighborListOnly, false);
+        neighborList.buildList(reduced, neighborLists, null, forceNeighborListRebuild, false);
         neighborListTotalTime += System.nanoTime();
       }
     }

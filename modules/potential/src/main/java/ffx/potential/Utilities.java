@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -479,9 +479,9 @@ public final class Utilities {
 
   /**
    * Given an array of bonded atoms, this function recursively collects all other connected atoms,
-   * without backtracking over atoms already in the list. Disulfide bonds are not crossed. (the
-   * intent is to search along a peptide backbone) Atoms preloaded into the List provide search
-   * termination.
+   * without backtracking over atoms already in the list. Disulfide bonds can be crossed. (the
+   * intent is to not cross disulfide bonds in a protein, but cross disulfide bonds within molecules)
+   * Atoms preloaded into the List provide search termination.
    *
    * @param seed Atom
    * @param atoms List
@@ -497,7 +497,7 @@ public final class Utilities {
       if (nextAtom.getParent() != null) {
         continue;
       }
-      // Avoid crossing disulfide bonds?
+      // If true, search across disulfide bonds.
       if ((searchDisulfide || (nextAtom.getAtomicNumber() != 16 || seed.getAtomicNumber() != 16))
           && !atoms.contains(nextAtom)) {
         collectAtoms(nextAtom, atoms, searchDisulfide);

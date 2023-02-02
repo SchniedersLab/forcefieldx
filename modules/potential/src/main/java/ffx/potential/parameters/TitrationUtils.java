@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -1360,7 +1360,7 @@ public class TitrationUtils {
         if (hisMultipoleTypes[index][state] == null
             || hisPolarizeTypes[index][state] == null
             || hisSoluteTypes[index][state] == null) {
-          logger.severe(format(" Titration parameters could not be assigned for Lys atom %s.\n %s\n",
+          logger.severe(format(" Titration parameters could not be assigned for His atom %s.\n %s\n",
               atomName, hisAtomTypes[index][state]));
         }
       }

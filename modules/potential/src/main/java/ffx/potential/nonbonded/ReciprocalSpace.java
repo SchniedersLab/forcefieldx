@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -145,6 +145,8 @@ public class ReciprocalSpace {
   private final ParallelTeam parallelTeam;
   private final ParallelTeam fftTeam;
   private final BSplineRegion bSplineRegion;
+  private final FractionalMultipoleRegion fractionalMultipoleRegion;
+  private final FractionalInducedRegion fractionalInducedRegion;
   private final SpatialPermanentLoop[] spatialPermanentLoops;
   private final SpatialInducedLoop[] spatialInducedLoops;
   private final SlicePermanentLoop[] slicePermanentLoops;
@@ -168,6 +170,8 @@ public class ReciprocalSpace {
   private final double[][] transformFieldMatrix = new double[10][10];
   private final double[][] transformMultipoleMatrix = new double[10][10];
   private final double[][] a = new double[3][3];
+  private double[][][] inducedDipoleFrac;
+  private double[][][] inducedDipoleFracCR;
   /**
    * The unit cell for the simulation. A ReplicatesCrystal will give equivalent results up to the
    * limits of double precision, but is more expensive.
@@ -318,6 +322,8 @@ public class ReciprocalSpace {
 
     // Construct the parallel BSplineRegion, DensityLoops and Phi objects.
     bSplineRegion = new BSplineRegion();
+    fractionalMultipoleRegion = new FractionalMultipoleRegion();
+    fractionalInducedRegion = new FractionalInducedRegion();
     switch (gridMethod) {
       case SPATIAL:
         spatialPermanentLoops = new SpatialPermanentLoop[threadCount];
@@ -548,70 +554,14 @@ public class ReciprocalSpace {
   }
 
   /**
-   * globalToFracDipole.
-   *
-   * @param globalDipole an array of {@link double} objects.
-   * @return an array of {@link double} objects.
+   * Compute the reciprocal space field using a convolution.
    */
-  public double[] globalToFracDipole(double[] globalDipole) {
-    final double[] fracDipole = new double[3];
-    // Dipole
-    for (int j = 0; j < 3; j++) {
-      fracDipole[j] = 0.0;
-      for (int k = 0; k < 3; k++) {
-        fracDipole[j] = fracDipole[j] + transformMultipoleMatrix[j + 1][k + 1] * globalDipole[k];
-      }
-    }
-    return fracDipole;
-  }
-
-  /**
-   * globalToFracMultipole.
-   *
-   * @param globalMultipole an array of {@link double} objects.
-   * @return an array of {@link double} objects.
-   */
-  public double[] globalToFracMultipole(double[] globalMultipole) {
-    double[] fracMultipole = new double[10];
-    // Charge
-    fracMultipole[0] = globalMultipole[0];
-    // Dipole
-    for (int j = 1; j < 4; j++) {
-      fracMultipole[j] = 0.0;
-      for (int k = 1; k < 4; k++) {
-        fracMultipole[j] = fracMultipole[j] + transformMultipoleMatrix[j][k] * globalMultipole[k];
-      }
-    }
-    // Quadrupole
-    for (int j = 4; j < 10; j++) {
-      fracMultipole[j] = 0.0;
-      for (int k = 4; k < 7; k++) {
-        fracMultipole[j] = fracMultipole[j] + transformMultipoleMatrix[j][k] * globalMultipole[k];
-      }
-      for (int k = 7; k < 10; k++) {
-        fracMultipole[j] =
-            fracMultipole[j] + transformMultipoleMatrix[j][k] * 2.0 * globalMultipole[k];
-      }
-      // Apply the oneThird factor for quadrupole components.
-      fracMultipole[j] = fracMultipole[j] / 3.0;
-    }
-    return fracMultipole;
-  }
-
-  /**
-   * Note that the Java function "signum" and the FORTRAN version have different definitions for an
-   * argument of zero.
-   *
-   * <p>JAVA: Math.signum(0.0) == 0.0
-   *
-   * <p>FORTRAN: signum(0.0) .eq. 1.0
-   */
-  public void inducedDipoleConvolution() {
+  public void performConvolution() {
     convTotal -= System.nanoTime();
     try {
       complex3DFFT.convolution(splineGrid);
     } catch (Exception e) {
-      String message = "Fatal exception evaluating induced convolution.";
+      String message = "Fatal exception evaluating the convolution.";
       logger.log(Level.SEVERE, message, e);
     }
     convTotal += System.nanoTime();
@@ -643,32 +593,15 @@ public class ReciprocalSpace {
     }
   }
 
-  /** permanentMultipoleConvolution */
-  public void permanentMultipoleConvolution() {
-    convTotal -= System.nanoTime();
-    try {
-      complex3DFFT.convolution(splineGrid);
-    } catch (Exception e) {
-      String message = " Fatal exception evaluating permanent convolution.";
-      logger.log(Level.SEVERE, message, e);
-    }
-    convTotal += System.nanoTime();
-  }
-
   /** printTimings. */
   public void printTimings() {
     if (logger.isLoggable(Level.FINE)) {
       if (complex3DFFT != null) {
-        double total =
-            (bSplineTotal
-                + convTotal
-                + splinePermanentTotal
-                + permanentPhiTotal
-                + splineInducedTotal
-                + inducedPhiTotal)
-                * toSeconds;
+        double total = (bSplineTotal + convTotal
+            + splinePermanentTotal + permanentPhiTotal
+            + splineInducedTotal + inducedPhiTotal) * toSeconds;
 
-        logger.fine(String.format("\n Reciprocal Space: %7.4f (sec)", total));
+        logger.fine(format("\n Reciprocal Space: %7.4f (sec)", total));
         long[] convTime = complex3DFFT.getTimings();
         logger.fine("                           Direct Field    SCF Field");
         logger.fine(" Thread  B-Spline  3DConv  Spline  Phi     Spline  Phi      Count");
@@ -689,17 +622,11 @@ public class ReciprocalSpace {
         int maxCount = 0;
 
         for (int i = 0; i < threadCount; i++) {
-          logger.fine(
-              String.format(
-                  "    %3d   %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d",
-                  i,
-                  bSplineTime[i] * toSeconds,
-                  convTime[i] * toSeconds,
-                  splinePermanentTime[i] * toSeconds,
-                  permanentPhiTime[i] * toSeconds,
-                  splineInducedTime[i] * toSeconds,
-                  inducedPhiTime[i] * toSeconds,
-                  splineCount[i]));
+          logger.fine(format("    %3d   %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d",
+              i, bSplineTime[i] * toSeconds, convTime[i] * toSeconds,
+              splinePermanentTime[i] * toSeconds, permanentPhiTime[i] * toSeconds,
+              splineInducedTime[i] * toSeconds, inducedPhiTime[i] * toSeconds,
+              splineCount[i]));
           minBSpline = min(bSplineTime[i], minBSpline);
           maxBSpline = max(bSplineTime[i], maxBSpline);
           minConv = min(convTime[i], minConv);
@@ -715,46 +642,29 @@ public class ReciprocalSpace {
           minCount = min(splineCount[i], minCount);
           maxCount = max(splineCount[i], maxCount);
         }
-        logger.fine(
-            String.format(
-                " Min      %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d",
-                minBSpline * toSeconds,
-                minConv * toSeconds,
-                minBSPerm * toSeconds,
-                minPhiPerm * toSeconds,
-                minBSInduced * toSeconds,
-                minPhiInduced * toSeconds,
-                minCount));
-        logger.fine(
-            String.format(
-                " Max      %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d",
-                maxBSpline * toSeconds,
-                maxConv * toSeconds,
-                maxBSPerm * toSeconds,
-                maxPhiPerm * toSeconds,
-                maxBSInduced * toSeconds,
-                maxPhiInduced * toSeconds,
-                maxCount));
-        logger.fine(
-            String.format(
-                " Delta    %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d",
-                (maxBSpline - minBSpline) * toSeconds,
-                (maxConv - minConv) * toSeconds,
-                (maxBSPerm - minBSPerm) * toSeconds,
-                (maxPhiPerm - minPhiPerm) * toSeconds,
-                (maxBSInduced - minBSInduced) * toSeconds,
-                (maxPhiInduced - minPhiInduced) * toSeconds,
-                (maxCount - minCount)));
-        logger.fine(
-            String.format(
-                " Actual   %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d",
-                bSplineTotal * toSeconds,
-                convTotal * toSeconds,
-                splinePermanentTotal * toSeconds,
-                permanentPhiTotal * toSeconds,
-                splineInducedTotal * toSeconds,
-                inducedPhiTotal * toSeconds,
-                nAtoms * nSymm));
+        logger.fine(format(" Min      %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d",
+            minBSpline * toSeconds, minConv * toSeconds,
+            minBSPerm * toSeconds, minPhiPerm * toSeconds,
+            minBSInduced * toSeconds, minPhiInduced * toSeconds,
+            minCount));
+        logger.fine(format(" Max      %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d",
+            maxBSpline * toSeconds, maxConv * toSeconds,
+            maxBSPerm * toSeconds, maxPhiPerm * toSeconds,
+            maxBSInduced * toSeconds, maxPhiInduced * toSeconds,
+            maxCount));
+        logger.fine(format(" Delta    %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d",
+            (maxBSpline - minBSpline) * toSeconds,
+            (maxConv - minConv) * toSeconds,
+            (maxBSPerm - minBSPerm) * toSeconds,
+            (maxPhiPerm - minPhiPerm) * toSeconds,
+            (maxBSInduced - minBSInduced) * toSeconds,
+            (maxPhiInduced - minPhiInduced) * toSeconds,
+            (maxCount - minCount)));
+        logger.fine(format(" Actual   %7.4f %7.4f %7.4f %7.4f %7.4f %7.4f  %6d",
+            bSplineTotal * toSeconds, convTotal * toSeconds,
+            splinePermanentTotal * toSeconds, permanentPhiTotal * toSeconds,
+            splineInducedTotal * toSeconds, inducedPhiTotal * toSeconds,
+            nAtoms * nSymm));
       }
     }
   }
@@ -812,11 +722,31 @@ public class ReciprocalSpace {
       double[][][] inducedDipole, double[][][] inducedDipoleCR, boolean[] use) {
     splineInducedTotal -= System.nanoTime();
 
+    try {
+      // Allocate memory if needed.
+      if (inducedDipoleFrac == null ||
+          inducedDipoleFrac.length != inducedDipole.length ||
+          inducedDipoleFrac[0].length != inducedDipole[0].length) {
+        int nAtoms = inducedDipole.length;
+        int nSymm = inducedDipole[0].length;
+        inducedDipoleFrac = new double[nAtoms][nSymm][3];
+        inducedDipoleFracCR = new double[nAtoms][nSymm][3];
+      }
+      // Compute fractional induced dipoles.
+      fractionalInducedRegion.setUse(use);
+      fractionalInducedRegion.setInducedDipoles(inducedDipole, inducedDipoleCR,
+          inducedDipoleFrac, inducedDipoleFracCR);
+      parallelTeam.execute(fractionalInducedRegion);
+    } catch (Exception e) {
+      String message = " Fatal exception evaluating fractional induced dipoles.";
+      logger.log(Level.SEVERE, message, e);
+    }
+
     switch (gridMethod) {
       case SPATIAL:
         spatialDensityRegion.setDensityLoop(spatialInducedLoops);
         for (int i = 0; i < threadCount; i++) {
-          spatialInducedLoops[i].setInducedDipoles(inducedDipole, inducedDipoleCR);
+          spatialInducedLoops[i].setInducedDipoles(inducedDipoleFrac, inducedDipoleFracCR);
           spatialInducedLoops[i].setUse(use);
           spatialInducedLoops[i].setRegion(spatialDensityRegion);
         }
@@ -830,7 +760,7 @@ public class ReciprocalSpace {
       case ROW:
         rowRegion.setDensityLoop(rowInducedLoops);
         for (int i = 0; i < threadCount; i++) {
-          rowInducedLoops[i].setInducedDipoles(inducedDipole, inducedDipoleCR);
+          rowInducedLoops[i].setInducedDipoles(inducedDipoleFrac, inducedDipoleFracCR);
           rowInducedLoops[i].setUse(use);
         }
         try {
@@ -843,7 +773,7 @@ public class ReciprocalSpace {
       default:
         sliceRegion.setDensityLoop(sliceInducedLoops);
         for (int i = 0; i < threadCount; i++) {
-          sliceInducedLoops[i].setInducedDipoles(inducedDipole, inducedDipoleCR);
+          sliceInducedLoops[i].setInducedDipoles(inducedDipoleFrac, inducedDipoleFracCR);
           sliceInducedLoops[i].setUse(use);
         }
         try {
@@ -868,13 +798,22 @@ public class ReciprocalSpace {
       boolean[] use) {
     splinePermanentTotal -= System.nanoTime();
 
+    try {
+      fractionalMultipoleRegion.setUse(use);
+      fractionalMultipoleRegion.setPermanent(globalMultipoles, fracMultipoles);
+      parallelTeam.execute(fractionalMultipoleRegion);
+    } catch (Exception e) {
+      String message = " Fatal exception evaluating fractional multipoles.";
+      logger.log(Level.SEVERE, message, e);
+    }
+
     switch (gridMethod) {
       case SPATIAL:
         spatialDensityRegion.setCrystal(crystal.getUnitCell(), fftX, fftY, fftZ);
         spatialDensityRegion.assignAtomsToCells();
         spatialDensityRegion.setDensityLoop(spatialPermanentLoops);
         for (int i = 0; i < threadCount; i++) {
-          spatialPermanentLoops[i].setPermanent(globalMultipoles, fracMultipoles);
+          spatialPermanentLoops[i].setPermanent(fracMultipoles);
           spatialPermanentLoops[i].setUse(use);
           spatialPermanentLoops[i].setRegion(spatialDensityRegion);
         }
@@ -889,7 +828,7 @@ public class ReciprocalSpace {
         rowRegion.setCrystal(crystal.getUnitCell(), fftX, fftY, fftZ);
         rowRegion.setDensityLoop(rowPermanentLoops);
         for (int i = 0; i < threadCount; i++) {
-          rowPermanentLoops[i].setPermanent(globalMultipoles, fracMultipoles);
+          rowPermanentLoops[i].setPermanent(fracMultipoles);
           rowPermanentLoops[i].setUse(use);
         }
         try {
@@ -904,7 +843,7 @@ public class ReciprocalSpace {
         sliceRegion.setCrystal(crystal.getUnitCell(), fftX, fftY, fftZ);
         sliceRegion.setDensityLoop(slicePermanentLoops);
         for (int i = 0; i < threadCount; i++) {
-          slicePermanentLoops[i].setPermanent(globalMultipoles, fracMultipoles);
+          slicePermanentLoops[i].setPermanent(fracMultipoles);
           slicePermanentLoops[i].setUse(use);
         }
         try {
@@ -946,7 +885,7 @@ public class ReciprocalSpace {
       }
     }
 
-    double density = forceField.getDouble("PME_MESH_DENSITY", DEFAULT_PME_MESH_DENSITY);
+    density = forceField.getDouble("PME_MESH_DENSITY", DEFAULT_PME_MESH_DENSITY);
 
     int nX = forceField.getInteger("PME_GRID_X", defaultX);
     if (nX < 2) {
@@ -1265,6 +1204,21 @@ public class ReciprocalSpace {
     }
   }
 
+  /**
+   * Convert a dipole in the global frame into a factional dipole.
+   *
+   * @param gd an array of {@link double} objects.
+   * @param fd an array of {@link double} objects.
+   */
+  public void toFractionalDipole(double[] gd, double[] fd) {
+    for (int j = 0; j < 3; j++) {
+      fd[j] = 0.0;
+      for (int k = 0; k < 3; k++) {
+        fd[j] = fma(transformMultipoleMatrix[j + 1][k + 1], gd[k], fd[j]);
+      }
+    }
+  }
+
   public enum GridMethod {
     SPATIAL,
     SLICE,
@@ -1348,11 +1302,9 @@ public class ReciprocalSpace {
 
     public class BSplineLoop extends IntegerForLoop {
 
+      private int threadID;
       private final double[][] bSplineWork;
       private final IntegerSchedule schedule = IntegerSchedule.fixed();
-      // Extra padding to avert cache interference.
-      private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-      private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
       BSplineLoop() {
         bSplineWork = new double[bSplineOrder][bSplineOrder];
@@ -1360,7 +1312,7 @@ public class ReciprocalSpace {
 
       @Override
       public void finish() {
-        bSplineTime[getThreadIndex()] += System.nanoTime();
+        bSplineTime[threadID] += System.nanoTime();
       }
 
       @Override
@@ -1419,7 +1371,8 @@ public class ReciprocalSpace {
 
       @Override
       public void start() {
-        bSplineTime[getThreadIndex()] -= System.nanoTime();
+        threadID = getThreadIndex();
+        bSplineTime[threadID] -= System.nanoTime();
       }
     }
   }
@@ -1427,7 +1380,6 @@ public class ReciprocalSpace {
   private class SpatialPermanentLoop extends SpatialDensityLoop {
 
     private final BSplineRegion bSplines;
-    private double[][][] globalMultipoles = null;
     private double[][][] fracMultipoles = null;
     private boolean[] use = null;
     private int threadIndex;
@@ -1444,18 +1396,13 @@ public class ReciprocalSpace {
 
     @Override
     public void gridDensity(int iSymm, int n) {
-      splineCount[threadIndex]++;
-
-      // Convert Cartesian multipoles in the global frame to fractional multipoles.
-      final double[] gm = globalMultipoles[iSymm][n];
-      final double[] fm = fracMultipoles[iSymm][n];
-      toFractionalMultipole(gm, fm);
-
       // Some atoms are not used during Lambda dynamics.
       if (use != null && !use[n]) {
         return;
       }
 
+      splineCount[threadIndex]++;
+      final double[] fm = fracMultipoles[iSymm][n];
       final double[][] splx = bSplines.splineX[iSymm][n];
       final double[][] sply = bSplines.splineY[iSymm][n];
       final double[][] splz = bSplines.splineZ[iSymm][n];
@@ -1522,8 +1469,7 @@ public class ReciprocalSpace {
       splinePermanentTime[threadIndex] -= System.nanoTime();
     }
 
-    void setPermanent(double[][][] globalMultipoles, double[][][] fracMultipoles) {
-      this.globalMultipoles = globalMultipoles;
+    void setPermanent(double[][][] fracMultipoles) {
       this.fracMultipoles = fracMultipoles;
     }
 
@@ -1534,14 +1480,10 @@ public class ReciprocalSpace {
 
   private class SpatialInducedLoop extends SpatialDensityLoop {
 
-    private final double[][] m = new double[3][3];
     private final BSplineRegion bSplineRegion;
-    private double[][][] inducedDipole = null;
-    private double[][][] inducedDipoleCR = null;
+    private double[][][] inducedDipoleFrac = null;
+    private double[][][] inducedDipoleFracCR = null;
     private boolean[] use = null;
-    private double a00, a01, a02;
-    private double a10, a11, a12;
-    private double a20, a21, a22;
 
     SpatialInducedLoop(SpatialDensityRegion region, BSplineRegion splines) {
       super(region, region.nSymm, region.actualCount);
@@ -1555,35 +1497,19 @@ public class ReciprocalSpace {
 
     @Override
     public void gridDensity(int iSymm, int n) {
-
-      // Convert Cartesian induced dipole to fractional induced dipole.
-      double[] ind = inducedDipole[iSymm][n];
-      double dx = ind[0];
-      double dy = ind[1];
-      double dz = ind[2];
-      final double ux = a00 * dx + a01 * dy + a02 * dz;
-      final double uy = a10 * dx + a11 * dy + a12 * dz;
-      final double uz = a20 * dx + a21 * dy + a22 * dz;
-      // final double[] find = fracInducedDipole[iSymm][n];
-      // find[0] = ux;
-      // find[1] = uy;
-      // find[2] = uz;
-
-      // Convert Cartesian induced dipole CR term to fractional induced dipole CR term.
-      double[] indCR = inducedDipoleCR[iSymm][n];
-      dx = indCR[0];
-      dy = indCR[1];
-      dz = indCR[2];
-      final double px = a00 * dx + a01 * dy + a02 * dz;
-      final double py = a10 * dx + a11 * dy + a12 * dz;
-      final double pz = a20 * dx + a21 * dy + a22 * dz;
-      // final double[] findCR = fracInducedDipoleCR[iSymm][n];
-      // findCR[0] = px;
-      // findCR[1] = py;
-      // findCR[2] = pz;
       if (use != null && !use[n]) {
         return;
       }
+
+      // Convert Cartesian induced dipole to fractional induced dipole.
+      final double[] ind = inducedDipoleFrac[iSymm][n];
+      final double ux = ind[0];
+      final double uy = ind[1];
+      final double uz = ind[2];
+      final double[] indCR = inducedDipoleFracCR[iSymm][n];
+      final double px = indCR[0];
+      final double py = indCR[1];
+      final double pz = indCR[2];
       final double[][] splx = bSplineRegion.splineX[iSymm][n];
       final double[][] sply = bSplineRegion.splineY[iSymm][n];
       final double[][] splz = bSplineRegion.splineZ[iSymm][n];
@@ -1634,32 +1560,17 @@ public class ReciprocalSpace {
     @Override
     public void start() {
       splineInducedTime[getThreadIndex()] -= System.nanoTime();
-      for (int i = 0; i < 3; i++) {
-        m[0][i] = fftX * crystal.A[i][0];
-        m[1][i] = fftY * crystal.A[i][1];
-        m[2][i] = fftZ * crystal.A[i][2];
-      }
-      a00 = m[0][0];
-      a01 = m[0][1];
-      a02 = m[0][2];
-      a10 = m[1][0];
-      a11 = m[1][1];
-      a12 = m[1][2];
-      a20 = m[2][0];
-      a21 = m[2][1];
-      a22 = m[2][2];
     }
 
-    void setInducedDipoles(double[][][] inducedDipole, double[][][] inducedDipoleCR) {
-      this.inducedDipole = inducedDipole;
-      this.inducedDipoleCR = inducedDipoleCR;
+    void setInducedDipoles(double[][][] inducedDipoleFrac, double[][][] inducedDipoleFracCR) {
+      this.inducedDipoleFrac = inducedDipoleFrac;
+      this.inducedDipoleFracCR = inducedDipoleFracCR;
     }
   }
 
   private class RowPermanentLoop extends RowLoop {
 
     private final BSplineRegion bSplines;
-    private double[][][] globalMultipoles = null;
     private double[][][] fracMultipoles = null;
     private boolean[] use = null;
     private int threadIndex;
@@ -1676,6 +1587,11 @@ public class ReciprocalSpace {
 
     @Override
     public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
+      // Some atoms are not used during Lambda dynamics.
+      if (use != null && !use[iAtom]) {
+        return;
+      }
+
       boolean atomContributes = false;
       int k0 = bSplines.initGrid[iSymm][iAtom][2];
       int lbZ = RowIndexZ(lb);
@@ -1697,17 +1613,7 @@ public class ReciprocalSpace {
       int index = gridAtomCount[iSymm][threadIndex];
       gridAtomList[iSymm][threadIndex][index] = iAtom;
       gridAtomCount[iSymm][threadIndex]++;
-
-      // Convert Cartesian multipoles in the global frame to fractional multipoles.
-      final double[] gm = globalMultipoles[iSymm][iAtom];
       final double[] fm = fracMultipoles[iSymm][iAtom];
-      toFractionalMultipole(gm, fm);
-
-      // Some atoms are not used during Lambda dynamics.
-      if (use != null && !use[iAtom]) {
-        return;
-      }
-
       final double[][] splx = bSplines.splineX[iSymm][iAtom];
       final double[][] sply = bSplines.splineY[iSymm][iAtom];
       final double[][] splz = bSplines.splineZ[iSymm][iAtom];
@@ -1785,8 +1691,7 @@ public class ReciprocalSpace {
       }
     }
 
-    void setPermanent(double[][][] globalMultipoles, double[][][] fracMultipoles) {
-      this.globalMultipoles = globalMultipoles;
+    void setPermanent(double[][][] fracMultipoles) {
       this.fracMultipoles = fracMultipoles;
     }
 
@@ -1797,14 +1702,10 @@ public class ReciprocalSpace {
 
   private class RowInducedLoop extends RowLoop {
 
-    private final double[][] m = new double[3][3];
     private final BSplineRegion bSplineRegion;
-    private double[][][] inducedDipole = null;
-    private double[][][] inducedDipoleCR = null;
+    private double[][][] inducedDipoleFrac = null;
+    private double[][][] inducedDipoleFracCR = null;
     private boolean[] use = null;
-    private double a00, a01, a02;
-    private double a10, a11, a12;
-    private double a20, a21, a22;
 
     RowInducedLoop(RowRegion region, BSplineRegion splines) {
       super(region.nAtoms, region.nSymm, region);
@@ -1819,37 +1720,19 @@ public class ReciprocalSpace {
 
     @Override
     public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-
-      // Convert Cartesian induced dipole to fractional induced dipole.
-      int lbZ = RowIndexZ(lb);
-      int ubZ = RowIndexZ(ub);
-      double[] ind = inducedDipole[iSymm][iAtom];
-      double dx = ind[0];
-      double dy = ind[1];
-      double dz = ind[2];
-      final double ux = a00 * dx + a01 * dy + a02 * dz;
-      final double uy = a10 * dx + a11 * dy + a12 * dz;
-      final double uz = a20 * dx + a21 * dy + a22 * dz;
-      // final double[] find = fracInducedDipole[iSymm][iAtom];
-      // find[0] = ux;
-      // find[1] = uy;
-      // find[2] = uz;
-
-      // Convert Cartesian induced dipole CR term to fractional induced dipole CR term.
-      double[] indCR = inducedDipoleCR[iSymm][iAtom];
-      dx = indCR[0];
-      dy = indCR[1];
-      dz = indCR[2];
-      final double px = a00 * dx + a01 * dy + a02 * dz;
-      final double py = a10 * dx + a11 * dy + a12 * dz;
-      final double pz = a20 * dx + a21 * dy + a22 * dz;
-      // final double[] findCR = fracInducedDipoleCR[iSymm][iAtom];
-      // findCR[0] = px;
-      // findCR[1] = py;
-      // findCR[2] = pz;
       if (use != null && !use[iAtom]) {
         return;
       }
+      final int lbZ = RowIndexZ(lb);
+      final int ubZ = RowIndexZ(ub);
+      final double[] ind = inducedDipoleFrac[iSymm][iAtom];
+      final double ux = ind[0];
+      final double uy = ind[1];
+      final double uz = ind[2];
+      double[] indCR = inducedDipoleFracCR[iSymm][iAtom];
+      final double px = indCR[0];
+      final double py = indCR[1];
+      final double pz = indCR[2];
       final double[][] splx = bSplineRegion.splineX[iSymm][iAtom];
       final double[][] sply = bSplineRegion.splineY[iSymm][iAtom];
       final double[][] splz = bSplineRegion.splineZ[iSymm][iAtom];
@@ -1921,32 +1804,17 @@ public class ReciprocalSpace {
     public void start() {
       int threadIndex = getThreadIndex();
       splineInducedTime[threadIndex] -= System.nanoTime();
-      for (int i = 0; i < 3; i++) {
-        m[0][i] = fftX * crystal.A[i][0];
-        m[1][i] = fftY * crystal.A[i][1];
-        m[2][i] = fftZ * crystal.A[i][2];
-      }
-      a00 = m[0][0];
-      a01 = m[0][1];
-      a02 = m[0][2];
-      a10 = m[1][0];
-      a11 = m[1][1];
-      a12 = m[1][2];
-      a20 = m[2][0];
-      a21 = m[2][1];
-      a22 = m[2][2];
     }
 
-    void setInducedDipoles(double[][][] inducedDipole, double[][][] inducedDipoleCR) {
-      this.inducedDipole = inducedDipole;
-      this.inducedDipoleCR = inducedDipoleCR;
+    void setInducedDipoles(double[][][] inducedDipoleFrac, double[][][] inducedDipoleFracCR) {
+      this.inducedDipoleFrac = inducedDipoleFrac;
+      this.inducedDipoleFracCR = inducedDipoleFracCR;
     }
   }
 
   private class SlicePermanentLoop extends SliceLoop {
 
     private final BSplineRegion bSplines;
-    private double[][][] globalMultipoles = null;
     private double[][][] fracMultipoles = null;
     private boolean[] use = null;
     private int threadIndex;
@@ -1963,6 +1831,11 @@ public class ReciprocalSpace {
 
     @Override
     public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
+      // Some atoms are not used during Lambda dynamics.
+      if (use != null && !use[iAtom]) {
+        return;
+      }
+
       boolean atomContributes = false;
       int k0 = bSplines.initGrid[iSymm][iAtom][2];
       for (int ith3 = 0; ith3 < bSplineOrder; ith3++) {
@@ -1982,17 +1855,7 @@ public class ReciprocalSpace {
       int index = gridAtomCount[iSymm][threadIndex];
       gridAtomList[iSymm][threadIndex][index] = iAtom;
       gridAtomCount[iSymm][threadIndex]++;
-
-      // Convert Cartesian multipoles in the global frame to fractional multipoles.
-      final double[] gm = globalMultipoles[iSymm][iAtom];
       final double[] fm = fracMultipoles[iSymm][iAtom];
-      toFractionalMultipole(gm, fm);
-
-      // Some atoms are not used during Lambda dynamics.
-      if (use != null && !use[iAtom]) {
-        return;
-      }
-
       final double[][] splx = bSplines.splineX[iSymm][iAtom];
       final double[][] sply = bSplines.splineY[iSymm][iAtom];
       final double[][] splz = bSplines.splineZ[iSymm][iAtom];
@@ -2066,8 +1929,7 @@ public class ReciprocalSpace {
       }
     }
 
-    void setPermanent(double[][][] globalMultipoles, double[][][] fracMultipoles) {
-      this.globalMultipoles = globalMultipoles;
+    void setPermanent(double[][][] fracMultipoles) {
       this.fracMultipoles = fracMultipoles;
     }
 
@@ -2078,14 +1940,10 @@ public class ReciprocalSpace {
 
   private class SliceInducedLoop extends SliceLoop {
 
-    private final double[][] m = new double[3][3];
     private final BSplineRegion bSplineRegion;
-    private double[][][] inducedDipole = null;
-    private double[][][] inducedDipoleCR = null;
+    private double[][][] inducedDipoleFrac = null;
+    private double[][][] inducedDipoleFracCR = null;
     private boolean[] use = null;
-    private double a00, a01, a02;
-    private double a10, a11, a12;
-    private double a20, a21, a22;
 
     SliceInducedLoop(SliceRegion region, BSplineRegion splines) {
       super(region.nAtoms, region.nSymm, region);
@@ -2100,35 +1958,18 @@ public class ReciprocalSpace {
 
     @Override
     public void gridDensity(int iSymm, int iAtom, int lb, int ub) {
-      // Convert Cartesian induced dipole to fractional induced dipole.
-      double[] ind = inducedDipole[iSymm][iAtom];
-      double dx = ind[0];
-      double dy = ind[1];
-      double dz = ind[2];
-      final double ux = a00 * dx + a01 * dy + a02 * dz;
-      final double uy = a10 * dx + a11 * dy + a12 * dz;
-      final double uz = a20 * dx + a21 * dy + a22 * dz;
-      // final double[] find = fracInducedDipole[iSymm][iAtom];
-      // find[0] = ux;
-      // find[1] = uy;
-      // find[2] = uz;
-
-      // Convert Cartesian induced dipole CR term to fractional induced dipole CR term.
-      double[] indCR = inducedDipoleCR[iSymm][iAtom];
-      dx = indCR[0];
-      dy = indCR[1];
-      dz = indCR[2];
-      final double px = a00 * dx + a01 * dy + a02 * dz;
-      final double py = a10 * dx + a11 * dy + a12 * dz;
-      final double pz = a20 * dx + a21 * dy + a22 * dz;
-      // final double[] findCR = fracInducedDipoleCR[iSymm][iAtom];
-      // findCR[0] = px;
-      // findCR[1] = py;
-      // findCR[2] = pz;
-
       if (use != null && !use[iAtom]) {
         return;
       }
+      // Convert Cartesian induced dipole to fractional induced dipole.
+      double[] ind = inducedDipoleFrac[iSymm][iAtom];
+      double ux = ind[0];
+      double uy = ind[1];
+      double uz = ind[2];
+      double[] indCR = inducedDipoleFracCR[iSymm][iAtom];
+      double px = indCR[0];
+      double py = indCR[1];
+      double pz = indCR[2];
       final double[][] splx = bSplineRegion.splineX[iSymm][iAtom];
       final double[][] sply = bSplineRegion.splineY[iSymm][iAtom];
       final double[][] splz = bSplineRegion.splineZ[iSymm][iAtom];
@@ -2196,25 +2037,11 @@ public class ReciprocalSpace {
     public void start() {
       int threadIndex = getThreadIndex();
       splineInducedTime[threadIndex] -= System.nanoTime();
-      for (int i = 0; i < 3; i++) {
-        m[0][i] = fftX * crystal.A[i][0];
-        m[1][i] = fftY * crystal.A[i][1];
-        m[2][i] = fftZ * crystal.A[i][2];
-      }
-      a00 = m[0][0];
-      a01 = m[0][1];
-      a02 = m[0][2];
-      a10 = m[1][0];
-      a11 = m[1][1];
-      a12 = m[1][2];
-      a20 = m[2][0];
-      a21 = m[2][1];
-      a22 = m[2][2];
     }
 
-    void setInducedDipoles(double[][][] inducedDipole, double[][][] inducedDipoleCR) {
-      this.inducedDipole = inducedDipole;
-      this.inducedDipoleCR = inducedDipoleCR;
+    void setInducedDipoles(double[][][] inducedDipoleFrac, double[][][] inducedDipoleFracCR) {
+      this.inducedDipoleFrac = inducedDipoleFrac;
+      this.inducedDipoleFracCR = inducedDipoleFracCR;
     }
   }
 
@@ -2740,5 +2567,127 @@ public class ReciprocalSpace {
         inducedPhiTime[threadIndex] -= System.nanoTime();
       }
     }
+  }
+
+  private class FractionalMultipoleRegion extends ParallelRegion {
+
+    private double[][][] globalMultipoles = null;
+    private double[][][] fracMultipoles = null;
+    private boolean[] use = null;
+    private FractionalMultipoleLoop[] fractionalMultipoleLoops;
+
+    @Override
+    public void start() {
+      if (fractionalMultipoleLoops == null) {
+        int nThreads = getThreadCount();
+        fractionalMultipoleLoops = new FractionalMultipoleLoop[nThreads];
+        for (int i = 0; i < nThreads; i++) {
+          fractionalMultipoleLoops[i] = new FractionalMultipoleLoop();
+        }
+      }
+    }
+
+    void setPermanent(double[][][] globalMultipoles, double[][][] fracMultipoles) {
+      this.globalMultipoles = globalMultipoles;
+      this.fracMultipoles = fracMultipoles;
+    }
+
+    private void setUse(boolean[] use) {
+      this.use = use;
+    }
+
+    @Override
+    public void run() {
+      int threadIndex = getThreadIndex();
+      try {
+        execute(0, nAtoms - 1, fractionalMultipoleLoops[threadIndex]);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    private class FractionalMultipoleLoop extends IntegerForLoop {
+
+      @Override
+      public void run(int lb, int ub) throws Exception {
+        for (int s = 0; s < nSymm; s++) {
+          for (int i = lb; i <= ub; i++) {
+            if (use[i]) {
+              toFractionalMultipole(globalMultipoles[s][i], fracMultipoles[s][i]);
+            }
+          }
+        }
+      }
+
+      @Override
+      public IntegerSchedule schedule() {
+        return IntegerSchedule.fixed();
+      }
+    }
+
+  }
+
+  private class FractionalInducedRegion extends ParallelRegion {
+
+    private double[][][] inducedDipole;
+    private double[][][] inducedDipoleCR;
+    private double[][][] inducedDipoleFrac;
+    private double[][][] inducedDipoleFracCR;
+    private boolean[] use = null;
+    private FractionalInducedLoop[] fractionalInducedLoops;
+
+    @Override
+    public void start() {
+      if (fractionalInducedLoops == null) {
+        int nThreads = getThreadCount();
+        fractionalInducedLoops = new FractionalInducedLoop[nThreads];
+        for (int i = 0; i < nThreads; i++) {
+          fractionalInducedLoops[i] = new FractionalInducedLoop();
+        }
+      }
+    }
+
+    void setInducedDipoles(double[][][] inducedDipole, double[][][] inducedDipoleCR,
+        double[][][] inducedDipoleFrac, double[][][] inducedDipoleFracCR) {
+      this.inducedDipole = inducedDipole;
+      this.inducedDipoleCR = inducedDipoleCR;
+      this.inducedDipoleFrac = inducedDipoleFrac;
+      this.inducedDipoleFracCR = inducedDipoleFracCR;
+    }
+
+    private void setUse(boolean[] use) {
+      this.use = use;
+    }
+
+    @Override
+    public void run() {
+      int threadIndex = getThreadIndex();
+      try {
+        execute(0, nAtoms - 1, fractionalInducedLoops[threadIndex]);
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    private class FractionalInducedLoop extends IntegerForLoop {
+
+      @Override
+      public void run(int lb, int ub) throws Exception {
+        for (int s = 0; s < nSymm; s++) {
+          for (int i = lb; i <= ub; i++) {
+            if (use[i]) {
+              toFractionalDipole(inducedDipole[s][i], inducedDipoleFrac[s][i]);
+              toFractionalDipole(inducedDipoleCR[s][i], inducedDipoleFracCR[s][i]);
+            }
+          }
+        }
+      }
+
+      @Override
+      public IntegerSchedule schedule() {
+        return IntegerSchedule.fixed();
+      }
+    }
+
   }
 }

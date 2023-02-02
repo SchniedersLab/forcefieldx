@@ -25,7 +25,7 @@
                     directoies into the base project directory. Then execute:
                 </p>
                 <source>mvn</source>
-                <p>This requires Maven v. 3.2 or later to be installed with its bin directory included in your $PATH environment variable.
+                <p>This requires Maven v. 3.8 or later to be installed with its bin directory included in your $PATH environment variable.
                     The first time this command is executed, Maven will download build dependencies and Force Field X runtime dependecies.
                     Future executions are quicker. Force Field X will self-test its modules and report failures.
                     Only code that passes all testing should be pushed to the GitHub repository, so if any test fails it may be
@@ -85,7 +85,7 @@
                                 portability, and security that today’s applications require.
                             </td>
                             <td>
-                                1.8 to 10.
+                                17 to 20.
                             </td>
                         </tr>
                         <tr>
@@ -98,7 +98,7 @@
                                 reporting and documentation from a central piece of information.
                             </td>
                             <td>
-                                3.5 or later.
+                                3.8 or later.
                             </td>
                         </tr>
                         <tr>
@@ -118,31 +118,6 @@
                         </tr>
                         <tr>
                             <td>
-                                <a target="_blank" href="http://www.atlassian.com/software/clover">
-                                    <img src="images/clover.png" alt="Clover Code Coverage"/>
-                                </a>
-                            </td>
-                            <td>
-                                Clover provides the metrics you need to better balance the effort between writing code that does stuff, and code that tests stuff.
-                            </td>
-                            <td>
-                                4.2 or later.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <a target="_blank" href="http://netbeans.org">NetBeans IDE</a>
-                            </td>
-                            <td>
-                                The NetBeans IDE is an award-winning integrated development environment available
-                                for Windows, Mac, Linux, and Solaris.
-                            </td>
-                            <td>
-                                8.2 or later.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
                                 <a target="_blank" href="http://git-scm.com">GIT Version Control</a>
                             </td>
                             <td>
@@ -150,19 +125,7 @@
                                 everything from small to very large projects with speed and efficiency.
                             </td>
                             <td>
-                                2.15 or later.
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <a target="_blank" href="http://www.ej-technologies.com/products/install4j/overview.html">Install4j</a>
-                            </td>
-                            <td>
-                                Install4j is a powerful multi-platform Java installer builder that generates
-                                native installers and application launchers for Java applications.
-                            </td>
-                            <td>
-                                7.0 or later.
+                                2.3 or later.
                             </td>
                         </tr>
                         <!-- tr>

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -457,6 +457,10 @@ public class CIFFilter extends SystemFilter{
                 atoms[i] = new Atom(i + 1, label.getStringData(i), altLoc, xyz, resName, i, chain, occupancy,
                         bfactor, segID);
                 atoms[i].setHetero(true);
+                if(logger.isLoggable(Level.FINE)){
+                    logger.fine(format(" Atom (%2d) Name: " + atoms[i].getName() + " Label: " + label.getStringData(i) +
+                        " Symbol: " + symbols[i], i));
+                }
             }
 
             MolecularAssembly outputAssembly = new MolecularAssembly(block.getBlockHeader());
@@ -1098,8 +1102,15 @@ public class CIFFilter extends SystemFilter{
      * @return String specifying atom element.
      */
     private static String getAtomElement(String name) {
-        return name.replaceAll("[()]", "").replaceAll("_", "").replaceAll("-", "").replaceAll(" +", "")
+        String value = "";
+        try {
+            value = name.replaceAll("[()]", "").replaceAll("_", "").replaceAll("-", "").replaceAll(" +", "")
                 .split("[0-9]")[0];
+        }catch(Exception e){
+            e.printStackTrace();
+            logger.severe(" Error extracting atom element. Please ensure the CIF is formatted correctly.");
+        }
+        return value;
     }
 
     /**

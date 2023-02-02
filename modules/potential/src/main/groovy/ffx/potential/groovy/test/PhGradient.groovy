@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2022.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -414,6 +414,11 @@ class PhGradient extends PotentialScript {
           logger.info(format(" Residue: %s (Tautomer) Chain: %s ESV %d\n Passed: %10.6f\n", residue.toString(), residue.chainID, tautomerIndex, errorTaut) +
                   format(" Analytic: %12.4f vs. Numeric: %12.4f\n", esvDerivs[tautomerIndex], fdDerivTaut))
         }
+      }
+      if(nESVFailures > 0){
+        logger.info(format(" %d ESVs failed the gradient test.\n", nESVFailures))
+      } else {
+        logger.info(" All ESVs passed the gradient test.\n")
       }
     }
 

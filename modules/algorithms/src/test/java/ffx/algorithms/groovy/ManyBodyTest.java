@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -73,11 +73,11 @@ public class ManyBodyTest extends AlgorithmsTest {
     ManyBody manyBody = new ManyBody(binding).run();
     algorithmsScript = manyBody;
 
-    double expectedTotalPotential = -221.48751140045158;
+    double expectedTotalPotential = -221.0842558097416;
     double actualTotalPotential = manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-7);
 
-    double expectedApproximateEnergy = -217.34182006245888;
+    double expectedApproximateEnergy = -216.93107790352414;
     double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-7);
   }
@@ -106,12 +106,12 @@ public class ManyBodyTest extends AlgorithmsTest {
     ManyBody manyBody = new ManyBody(binding).run();
     algorithmsScript = manyBody;
 
-    double expectedTotalPotential = -221.48751140045158;
+    double expectedTotalPotential = -221.0842558097416; //-221.48751140045158
     double actualTotalPotential =
         manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-7);
 
-    double expectedApproximateEnergy = -220.72737768799902;
+    double expectedApproximateEnergy = -220.31899441275732;
     double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-7);
   }
@@ -131,11 +131,11 @@ public class ManyBodyTest extends AlgorithmsTest {
 
     // Evaluate the script.
     manyBody.run();
-    double expectedTotalPotential = -221.48751140045158;
+    double expectedTotalPotential = -221.0842558097416;
     double actualTotalPotential = manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
 
-    double expectedApproximateEnergy = -212.8797699192298;
+    double expectedApproximateEnergy = -212.4798252638091;
     double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-5);
 
@@ -184,11 +184,11 @@ public class ManyBodyTest extends AlgorithmsTest {
     algorithmsScript = manyBody;
     manyBody.run();
 
-    double expectedTotalPotential = -205.32717394768866;
+    double expectedTotalPotential = -204.72742343060315;
     double actualTotalPotential = manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
 
-    double expectedApproximateEnergy = -195.699298;
+    double expectedApproximateEnergy = -195.16120410395288;
     double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-5);
 
@@ -214,11 +214,11 @@ public class ManyBodyTest extends AlgorithmsTest {
     ManyBody manyBody = new ManyBody(binding).run();
     algorithmsScript = manyBody;
 
-    double expectedTotalPotential = -220.12787129;
+    double expectedTotalPotential = -220.14890239220347;
     double actualTotalPotential = manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
 
-    double expectedApproximateEnergy = -262.512834;
+    double expectedApproximateEnergy = -261.3576520811798;
     double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-5);
   }
