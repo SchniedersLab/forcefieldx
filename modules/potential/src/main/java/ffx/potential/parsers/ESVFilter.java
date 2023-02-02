@@ -61,7 +61,7 @@ public class ESVFilter {
   /**
    * Constructor for ESVFilter.
    *
-   * @param label a Label for the this restart file.
+   * @param label a Label for this restart file.
    */
   public ESVFilter(String label) {
     this.label = label;

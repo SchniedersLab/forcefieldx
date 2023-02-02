@@ -45,6 +45,7 @@ import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -157,6 +158,9 @@ public class ReduceRegion extends ParallelRegion {
 
     private Torque torques;
     private int threadID;
+    double[] trq = new double[3];
+    double[][] g = new double[4][3];
+    int[] frameIndex = new int[4];
 
     TorqueLoop() {
       torques = new Torque();
@@ -166,10 +170,9 @@ public class ReduceRegion extends ParallelRegion {
     public void run(int lb, int ub) {
       if (gradient) {
         torque.reduce(lb, ub);
-        double[] trq = new double[3];
         for (int i = lb; i <= ub; i++) {
-          double[][] g = new double[4][3];
-          int[] frameIndex = {-1, -1, -1, -1};
+          // Gradients from torques will exist if the frameIndex is not -1.
+          Arrays.fill(frameIndex, -1);
           trq[0] = torque.getX(i);
           trq[1] = torque.getY(i);
           trq[2] = torque.getZ(i);
@@ -185,10 +188,9 @@ public class ReduceRegion extends ParallelRegion {
       }
       if (lambdaTerm) {
         lambdaTorque.reduce(lb, ub);
-        double[] trq = new double[3];
         for (int i = lb; i <= ub; i++) {
-          double[][] g = new double[4][3];
-          int[] frameIndex = {-1, -1, -1, -1};
+          // Gradients from torques will exist if the frameIndex is not -1.
+          Arrays.fill(frameIndex, -1);
           trq[0] = lambdaTorque.getX(i);
           trq[1] = lambdaTorque.getY(i);
           trq[2] = lambdaTorque.getZ(i);

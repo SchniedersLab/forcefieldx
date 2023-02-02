@@ -574,9 +574,9 @@ public class EnergyTest extends PotentialTest {
                 0,
                 12862.34983956,
                 1482946,
-                -32736.92207773,
+                -32737.08497141565, // or -32736.92207773 (with no FFT factors of 6 & 7)
                 623627,
-                -12934.93512829,
+                -12934.94219259, // or -12934.93512829 (with no FFT factors of 6 & 7)
                 623627,
                 0.0,
                 0,

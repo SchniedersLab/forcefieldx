@@ -61,7 +61,7 @@ import static ffx.potential.parameters.MultipoleType.t200;
 import static ffx.potential.parameters.MultipoleType.t201;
 import static ffx.potential.parameters.MultipoleType.t210;
 import static ffx.potential.parameters.MultipoleType.t300;
-import static ffx.utilities.KeywordGroup.ElectrostaticsFunctionalForm;
+import static java.lang.Math.fma;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.PI;
@@ -129,8 +129,9 @@ public class ReciprocalSpace {
   /** The b-Spline order to use for discretization to/from the reciprocal grid. */
   @FFXKeyword(name = "pme-order", clazz = Integer.class,
       keywordGroup = KeywordGroup.ParticleMeshEwald, defaultValue = "5",
-      description = "Sets the order of the B-spline interpolation used during particle mesh Ewald summation for partial charge or atomic multipole electrostatics. "
-          + "A default value of 5 is used in the absence of the pme-order keyword.")
+      description =
+          "Sets the order of the B-spline interpolation used during particle mesh Ewald summation for partial charge or atomic multipole electrostatics. "
+              + "A default value of 5 is used in the absence of the pme-order keyword.")
   private final int bSplineOrder;
   /**
    * Three derivatives of the potential are needed for AMOEBA. Specifically, the field gradient is
@@ -178,12 +179,14 @@ public class ReciprocalSpace {
   private int nAtoms;
 
   private static final double DEFAULT_PME_MESH_DENSITY = 1.2;
+  private static final double oneThird = 1.0 / 3.0;
 
   @FFXKeyword(name = "pme-mesh-density", clazz = Integer.class,
       keywordGroup = KeywordGroup.ParticleMeshEwald, defaultValue = "1.2",
-      description = "The default in the absence of the pme-grid keyword is to set the grid size along each "
-          + " axis to the smallest factor of 2, 3 and/or 5 that is at least as large as "
-          + "pme-mesh-density times the axis length in Angstroms.")
+      description =
+          "The default in the absence of the pme-grid keyword is to set the grid size along each "
+              + " axis to the smallest factor of 2, 3 and/or 5 that is at least as large as "
+              + "pme-mesh-density times the axis length in Angstroms.")
   private double density;
 
   /** The X-dimension of the FFT grid. */
@@ -861,7 +864,8 @@ public class ReciprocalSpace {
    * @param fracMultipoles an array of double.
    * @param use an array of boolean.
    */
-  public void splinePermanentMultipoles(double[][][] globalMultipoles, double[][][] fracMultipoles, boolean[] use) {
+  public void splinePermanentMultipoles(double[][][] globalMultipoles, double[][][] fracMultipoles,
+      boolean[] use) {
     splinePermanentTotal -= System.nanoTime();
 
     switch (gridMethod) {
@@ -1226,6 +1230,41 @@ public class ReciprocalSpace {
     }
   }
 
+  /**
+   * Convert a Cartesian multipole in the global frame into a factional multipole.
+   *
+   * @param gm Multipole in the global frame.
+   * @param fm Fractional multipole.
+   */
+  private void toFractionalMultipole(double[] gm, double[] fm) {
+    // Charge.
+    fm[0] = gm[0];
+
+    // Dipole.
+    for (int j = 1; j < 4; j++) {
+      fm[j] = 0.0;
+      for (int k = 1; k < 4; k++) {
+        fm[j] = fma(transformMultipoleMatrix[j][k], gm[k], fm[j]);
+      }
+    }
+
+    // Quadrupole.
+    for (int j = 4; j < 10; j++) {
+      fm[j] = 0.0;
+      for (int k = 4; k < 7; k++) {
+        fm[j] = fma(transformMultipoleMatrix[j][k], gm[k], fm[j]);
+      }
+      for (int k = 7; k < 10; k++) {
+        fm[j] = fma(transformMultipoleMatrix[j][k] * 2.0, gm[k], fm[j]);
+      }
+      /*
+        Fractional quadrupole components are pre-multiplied by a
+        factor of 1/3 that arises in their potential.
+       */
+      fm[j] = fm[j] * oneThird;
+    }
+  }
+
   public enum GridMethod {
     SPATIAL,
     SLICE,
@@ -1410,33 +1449,7 @@ public class ReciprocalSpace {
       // Convert Cartesian multipoles in the global frame to fractional multipoles.
       final double[] gm = globalMultipoles[iSymm][n];
       final double[] fm = fracMultipoles[iSymm][n];
-
-      // Charge.
-      fm[0] = gm[0];
-
-      // Dipole.
-      for (int j = 1; j < 4; j++) {
-        fm[j] = 0.0;
-        for (int k = 1; k < 4; k++) {
-          fm[j] = fm[j] + transformMultipoleMatrix[j][k] * gm[k];
-        }
-      }
-
-      // Quadrupole.
-      for (int j = 4; j < 10; j++) {
-        fm[j] = 0.0;
-        for (int k = 4; k < 7; k++) {
-          fm[j] = fm[j] + transformMultipoleMatrix[j][k] * gm[k];
-        }
-        for (int k = 7; k < 10; k++) {
-          fm[j] = fm[j] + transformMultipoleMatrix[j][k] * 2.0 * gm[k];
-        }
-        /*
-         Fractional quadrupole components are pre-multiplied by a
-         factor of 1/3 that arises in their potential.
-        */
-        fm[j] = fm[j] / 3.0;
-      }
+      toFractionalMultipole(gm, fm);
 
       // Some atoms are not used during Lambda dynamics.
       if (use != null && !use[n]) {
@@ -1474,6 +1487,9 @@ public class ReciprocalSpace {
         final double qxy0 = qxy * v0;
         final double qxz1 = qxz * v1;
         final double qyz1 = qyz * v1;
+        final double c0dz1qzz2 = c0 + dz1 + qzz2;
+        final double dy0qyz1 = dy0 + qyz1;
+        final double dx0qxz1 = dx0 + qxz1;
         final int k = mod(++k0, fftZ);
         int j0 = jgrd0;
         for (int ith2 = 0; ith2 < bSplineOrder; ith2++) {
@@ -1481,8 +1497,8 @@ public class ReciprocalSpace {
           final double u0 = splyi[0];
           final double u1 = splyi[1];
           final double u2 = splyi[2];
-          final double term0 = (c0 + dz1 + qzz2) * u0 + (dy0 + qyz1) * u1 + qyy0 * u2;
-          final double term1 = (dx0 + qxz1) * u0 + qxy0 * u1;
+          final double term0 = fma(c0dz1qzz2, u0, fma(dy0qyz1, u1, qyy0 * u2));
+          final double term1 = fma(dx0qxz1, u0, qxy0 * u1);
           final double term2 = qxx0 * u0;
           final int j = mod(++j0, fftY);
           int i0 = igrd0;
@@ -1490,9 +1506,11 @@ public class ReciprocalSpace {
             final int i = mod(++i0, fftX);
             final int ii = iComplex3D(i, j, k, fftX, fftY);
             final double[] splxi = splx[ith1];
-            final double add = splxi[0] * term0 + splxi[1] * term1 + splxi[2] * term2;
             final double current = splineBuffer.get(ii);
-            splineBuffer.put(ii, current + add);
+            double updated = fma(splxi[0], term0, current);
+            updated = fma(splxi[1], term1, updated);
+            updated = fma(splxi[2], term2, updated);
+            splineBuffer.put(ii, updated);
           }
         }
       }
@@ -1588,9 +1606,9 @@ public class ReciprocalSpace {
           final double[] splyi = sply[ith2];
           final double u0 = splyi[0];
           final double u1 = splyi[1];
-          final double term0 = dz1 * u0 + dy0 * u1;
+          final double term0 = fma(dz1, u0, dy0 * u1);
           final double term1 = dx0 * u0;
-          final double termp0 = pz1 * u0 + py0 * u1;
+          final double termp0 = fma(pz1, u0, py0 * u1);
           final double termp1 = px0 * u0;
           final int j = mod(++j0, fftY);
           int i0 = igrd0;
@@ -1598,14 +1616,12 @@ public class ReciprocalSpace {
             final int i = mod(++i0, fftX);
             final int ii = iComplex3D(i, j, k, fftX, fftY);
             final double[] splxi = splx[ith1];
-            final double add = splxi[0] * term0 + splxi[1] * term1;
-            final double addi = splxi[0] * termp0 + splxi[1] * termp1;
             final double current = splineBuffer.get(ii);
             final double currenti = splineBuffer.get(ii + 1);
-            splineBuffer.put(ii, current + add);
-            splineBuffer.put(ii + 1, currenti + addi);
-            // splineGrid[ii] += add;
-            // splineGrid[ii + 1] += addi;
+            final double updated = fma(splxi[0], term0, fma(splxi[1], term1, current));
+            final double udpatedi = fma(splxi[0], termp0, fma(splxi[1], termp1, currenti));
+            splineBuffer.put(ii, updated);
+            splineBuffer.put(ii + 1, udpatedi);
           }
         }
       }
@@ -1642,7 +1658,6 @@ public class ReciprocalSpace {
 
   private class RowPermanentLoop extends RowLoop {
 
-    private final double[] fracMPole = new double[10];
     private final BSplineRegion bSplines;
     private double[][][] globalMultipoles = null;
     private double[][][] fracMultipoles = null;
@@ -1664,9 +1679,7 @@ public class ReciprocalSpace {
       boolean atomContributes = false;
       int k0 = bSplines.initGrid[iSymm][iAtom][2];
       int lbZ = RowIndexZ(lb);
-      // int lbY = RowIndexY(lb);
       int ubZ = RowIndexZ(ub);
-      // int ubY = RowIndexY(ub);
       for (int ith3 = 0; ith3 < bSplineOrder; ith3++) {
         final int k = mod(++k0, fftZ);
         if (lbZ <= k && k <= ubZ) {
@@ -1674,7 +1687,6 @@ public class ReciprocalSpace {
           break;
         }
       }
-
       if (!atomContributes) {
         return;
       }
@@ -1688,34 +1700,8 @@ public class ReciprocalSpace {
 
       // Convert Cartesian multipoles in the global frame to fractional multipoles.
       final double[] gm = globalMultipoles[iSymm][iAtom];
-      final double[] fm = fracMPole;
-
-      // Charge.
-      fm[0] = gm[0];
-
-      // Dipole.
-      for (int j = 1; j < 4; j++) {
-        fm[j] = 0.0;
-        for (int k = 1; k < 4; k++) {
-          fm[j] = fm[j] + transformMultipoleMatrix[j][k] * gm[k];
-        }
-      }
-
-      // Quadrupole.
-      for (int j = 4; j < 10; j++) {
-        fm[j] = 0.0;
-        for (int k = 4; k < 7; k++) {
-          fm[j] = fm[j] + transformMultipoleMatrix[j][k] * gm[k];
-        }
-        for (int k = 7; k < 10; k++) {
-          fm[j] = fm[j] + transformMultipoleMatrix[j][k] * 2.0 * gm[k];
-        }
-        // Fractional quadrupole components are pre-multiplied by a
-        // factor of 1/3 that arises in their potential.
-        fm[j] = fm[j] / 3.0;
-      }
-
-      arraycopy(fm, 0, fracMultipoles[iSymm][iAtom], 0, 10);
+      final double[] fm = fracMultipoles[iSymm][iAtom];
+      toFractionalMultipole(gm, fm);
 
       // Some atoms are not used during Lambda dynamics.
       if (use != null && !use[iAtom]) {
@@ -1739,6 +1725,10 @@ public class ReciprocalSpace {
       final double qxz = fm[t101];
       final double qyz = fm[t011];
       for (int ith3 = 0; ith3 < bSplineOrder; ith3++) {
+        final int k = mod(++k0, fftZ);
+        if (k < lbZ || k > ubZ) {
+          continue;
+        }
         final double[] splzi = splz[ith3];
         final double v0 = splzi[0];
         final double v1 = splzi[1];
@@ -1753,33 +1743,34 @@ public class ReciprocalSpace {
         final double qxy0 = qxy * v0;
         final double qxz1 = qxz * v1;
         final double qyz1 = qyz * v1;
-        final int k = mod(++k0, fftZ);
-        if (k < lbZ || k > ubZ) {
-          continue;
-        }
+        final double c0dz1qzz2 = c0 + dz1 + qzz2;
+        final double dy0qyz1 = dy0 + qyz1;
+        final double dx0qxz1 = dx0 + qxz1;
         int j0 = jgrd0;
         for (int ith2 = 0; ith2 < bSplineOrder; ith2++) {
-          final double[] splyi = sply[ith2];
-          final double u0 = splyi[0];
-          final double u1 = splyi[1];
-          final double u2 = splyi[2];
-          // Pieces of a multipole
-          final double term0 = (c0 + dz1 + qzz2) * u0 + (dy0 + qyz1) * u1 + qyy0 * u2;
-          final double term1 = (dx0 + qxz1) * u0 + qxy0 * u1;
-          final double term2 = qxx0 * u0;
           final int j = mod(++j0, fftY);
           int rowIndex = rowRegion.rowIndexForYZ(j, k);
           if (lb > rowIndex || rowIndex > ub) {
             continue;
           }
+          final double[] splyi = sply[ith2];
+          final double u0 = splyi[0];
+          final double u1 = splyi[1];
+          final double u2 = splyi[2];
+          // Pieces of a multipole
+          final double term0 = fma(c0dz1qzz2, u0, fma(dy0qyz1, u1, qyy0 * u2));
+          final double term1 = fma(dx0qxz1, u0, qxy0 * u1);
+          final double term2 = qxx0 * u0;
           int i0 = igrd0;
           for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
             final int i = mod(++i0, fftX);
             final int ii = iComplex3D(i, j, k, fftX, fftY);
             final double[] splxi = splx[ith1];
-            final double add = splxi[0] * term0 + splxi[1] * term1 + splxi[2] * term2;
-            final double current = splineBuffer.get(ii);
-            splineBuffer.put(ii, current + add);
+            double current = splineBuffer.get(ii);
+            double updated = fma(splxi[0], term0, current);
+            updated = fma(splxi[1], term1, updated);
+            updated = fma(splxi[2], term2, updated);
+            splineBuffer.put(ii, updated);
           }
         }
       }
@@ -1866,6 +1857,10 @@ public class ReciprocalSpace {
       final int jgrd0 = bSplineRegion.initGrid[iSymm][iAtom][1];
       int k0 = bSplineRegion.initGrid[iSymm][iAtom][2];
       for (int ith3 = 0; ith3 < bSplineOrder; ith3++) {
+        final int k = mod(++k0, fftZ);
+        if (k < lbZ || k > ubZ) {
+          continue;
+        }
         final double[] splzi = splz[ith3];
         final double v0 = splzi[0];
         final double v1 = splzi[1];
@@ -1875,37 +1870,31 @@ public class ReciprocalSpace {
         final double px0 = px * v0;
         final double py0 = py * v0;
         final double pz1 = pz * v1;
-        final int k = mod(++k0, fftZ);
-        if (k < lbZ || k > ubZ) {
-          continue;
-        }
         int j0 = jgrd0;
         for (int ith2 = 0; ith2 < bSplineOrder; ith2++) {
-          final double[] splyi = sply[ith2];
-          final double u0 = splyi[0];
-          final double u1 = splyi[1];
-          final double term0 = dz1 * u0 + dy0 * u1;
-          final double term1 = dx0 * u0;
-          final double termp0 = pz1 * u0 + py0 * u1;
-          final double termp1 = px0 * u0;
           final int j = mod(++j0, fftY);
           int rowIndex = rowRegion.rowIndexForYZ(j, k);
           if (lb > rowIndex || rowIndex > ub) {
             continue;
           }
+          final double[] splyi = sply[ith2];
+          final double u0 = splyi[0];
+          final double u1 = splyi[1];
+          final double term0 = fma(dz1, u0, dy0 * u1);
+          final double term1 = dx0 * u0;
+          final double termp0 = fma(pz1, u0, py0 * u1);
+          final double termp1 = px0 * u0;
           int i0 = igrd0;
           for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
             final int i = mod(++i0, fftX);
             final int ii = iComplex3D(i, j, k, fftX, fftY);
             final double[] splxi = splx[ith1];
-            final double add = splxi[0] * term0 + splxi[1] * term1;
-            final double addi = splxi[0] * termp0 + splxi[1] * termp1;
             final double current = splineBuffer.get(ii);
             final double currenti = splineBuffer.get(ii + 1);
-            splineBuffer.put(ii, current + add);
-            splineBuffer.put(ii + 1, currenti + addi);
-            // splineGrid[ii] += add;
-            // splineGrid[ii + 1] += addi;
+            final double updated = fma(splxi[0], term0, fma(splxi[1], term1, current));
+            final double udpatedi = fma(splxi[0], termp0, fma(splxi[1], termp1, currenti));
+            splineBuffer.put(ii, updated);
+            splineBuffer.put(ii + 1, udpatedi);
           }
         }
       }
@@ -1956,7 +1945,6 @@ public class ReciprocalSpace {
 
   private class SlicePermanentLoop extends SliceLoop {
 
-    private final double[] fracMPole = new double[10];
     private final BSplineRegion bSplines;
     private double[][][] globalMultipoles = null;
     private double[][][] fracMultipoles = null;
@@ -1997,34 +1985,8 @@ public class ReciprocalSpace {
 
       // Convert Cartesian multipoles in the global frame to fractional multipoles.
       final double[] gm = globalMultipoles[iSymm][iAtom];
-      final double[] fm = fracMPole;
-
-      // Charge
-      fm[0] = gm[0];
-      // Dipole
-      for (int j = 1; j < 4; j++) {
-        fm[j] = 0.0;
-        for (int k = 1; k < 4; k++) {
-          fm[j] = fm[j] + transformMultipoleMatrix[j][k] * gm[k];
-        }
-      }
-      // Quadrupole
-      for (int j = 4; j < 10; j++) {
-        fm[j] = 0.0;
-        for (int k = 4; k < 7; k++) {
-          fm[j] = fm[j] + transformMultipoleMatrix[j][k] * gm[k];
-        }
-        for (int k = 7; k < 10; k++) {
-          fm[j] = fm[j] + transformMultipoleMatrix[j][k] * 2.0 * gm[k];
-        }
-        /*
-        Fractional quadrupole components are pre-multiplied by a
-        factor of 1/3 that arises in their potential.
-        */
-        fm[j] = fm[j] / 3.0;
-      }
-
-      arraycopy(fm, 0, fracMultipoles[iSymm][iAtom], 0, 10);
+      final double[] fm = fracMultipoles[iSymm][iAtom];
+      toFractionalMultipole(gm, fm);
 
       // Some atoms are not used during Lambda dynamics.
       if (use != null && !use[iAtom]) {
@@ -2048,6 +2010,10 @@ public class ReciprocalSpace {
       final double qxz = fm[t101];
       final double qyz = fm[t011];
       for (int ith3 = 0; ith3 < bSplineOrder; ith3++) {
+        final int k = mod(++k0, fftZ);
+        if (k < lb || k > ub) {
+          continue;
+        }
         final double[] splzi = splz[ith3];
         final double v0 = splzi[0];
         final double v1 = splzi[1];
@@ -2062,10 +2028,9 @@ public class ReciprocalSpace {
         final double qxy0 = qxy * v0;
         final double qxz1 = qxz * v1;
         final double qyz1 = qyz * v1;
-        final int k = mod(++k0, fftZ);
-        if (k < lb || k > ub) {
-          continue;
-        }
+        final double c0dz1qzz2 = c0 + dz1 + qzz2;
+        final double dy0qyz1 = dy0 + qyz1;
+        final double dx0qxz1 = dx0 + qxz1;
         int j0 = jgrd0;
         for (int ith2 = 0; ith2 < bSplineOrder; ith2++) {
           final double[] splyi = sply[ith2];
@@ -2073,8 +2038,8 @@ public class ReciprocalSpace {
           final double u1 = splyi[1];
           final double u2 = splyi[2];
           // Pieces of a multipole
-          final double term0 = (c0 + dz1 + qzz2) * u0 + (dy0 + qyz1) * u1 + qyy0 * u2;
-          final double term1 = (dx0 + qxz1) * u0 + qxy0 * u1;
+          final double term0 = fma(c0dz1qzz2, u0, fma(dy0qyz1, u1, qyy0 * u2));
+          final double term1 = fma(dx0qxz1, u0, qxy0 * u1);
           final double term2 = qxx0 * u0;
           final int j = mod(++j0, fftY);
           int i0 = igrd0;
@@ -2082,14 +2047,11 @@ public class ReciprocalSpace {
             final int i = mod(++i0, fftX);
             final int ii = iComplex3D(i, j, k, fftX, fftY);
             final double[] splxi = splx[ith1];
-            final double add = splxi[0] * term0 + splxi[1] * term1 + splxi[2] * term2;
-            final double current = splineBuffer.get(ii);
-            splineBuffer.put(ii, current + add);
-            /*
-            if (n == 0) {
-            logger.info(String.format(" %d %16.8f", ii, current + add));
-            } */
-            // splineGrid[ii] += add;
+            double current = splineBuffer.get(ii);
+            double updated = fma(splxi[0], term0, current);
+            updated = fma(splxi[1], term1, updated);
+            updated = fma(splxi[2], term2, updated);
+            splineBuffer.put(ii, updated);
           }
         }
       }
@@ -2174,6 +2136,10 @@ public class ReciprocalSpace {
       final int jgrd0 = bSplineRegion.initGrid[iSymm][iAtom][1];
       int k0 = bSplineRegion.initGrid[iSymm][iAtom][2];
       for (int ith3 = 0; ith3 < bSplineOrder; ith3++) {
+        final int k = mod(++k0, fftZ);
+        if (k < lb || k > ub) {
+          continue;
+        }
         final double[] splzi = splz[ith3];
         final double v0 = splzi[0];
         final double v1 = splzi[1];
@@ -2183,18 +2149,14 @@ public class ReciprocalSpace {
         final double px0 = px * v0;
         final double py0 = py * v0;
         final double pz1 = pz * v1;
-        final int k = mod(++k0, fftZ);
-        if (k < lb || k > ub) {
-          continue;
-        }
         int j0 = jgrd0;
         for (int ith2 = 0; ith2 < bSplineOrder; ith2++) {
           final double[] splyi = sply[ith2];
           final double u0 = splyi[0];
           final double u1 = splyi[1];
-          final double term0 = dz1 * u0 + dy0 * u1;
+          final double term0 = fma(dz1, u0, dy0 * u1);
           final double term1 = dx0 * u0;
-          final double termp0 = pz1 * u0 + py0 * u1;
+          final double termp0 = fma(pz1, u0, py0 * u1);
           final double termp1 = px0 * u0;
           final int j = mod(++j0, fftY);
           int i0 = igrd0;
@@ -2202,14 +2164,12 @@ public class ReciprocalSpace {
             final int i = mod(++i0, fftX);
             final int ii = iComplex3D(i, j, k, fftX, fftY);
             final double[] splxi = splx[ith1];
-            final double add = splxi[0] * term0 + splxi[1] * term1;
-            final double addi = splxi[0] * termp0 + splxi[1] * termp1;
             final double current = splineBuffer.get(ii);
             final double currenti = splineBuffer.get(ii + 1);
-            splineBuffer.put(ii, current + add);
-            splineBuffer.put(ii + 1, currenti + addi);
-            // splineGrid[ii] += add;
-            // splineGrid[ii + 1] += addi;
+            final double updated = fma(splxi[0], term0, fma(splxi[1], term1, current));
+            final double udpatedi = fma(splxi[0], termp0, fma(splxi[1], termp1, currenti));
+            splineBuffer.put(ii, updated);
+            splineBuffer.put(ii + 1, udpatedi);
           }
         }
       }
@@ -2362,52 +2322,52 @@ public class ReciprocalSpace {
                 final int ii = iComplex3D(i, j, k, fftX, fftY);
                 final double tq = splineBuffer.get(ii);
                 final double[] splxi = splx[ith1];
-                t0 += tq * splxi[0];
-                t1 += tq * splxi[1];
-                t2 += tq * splxi[2];
-                t3 += tq * splxi[3];
+                t0 = fma(tq, splxi[0], t0);
+                t1 = fma(tq, splxi[1], t1);
+                t2 = fma(tq, splxi[2], t2);
+                t3 = fma(tq, splxi[3], t3);
               }
               final double[] splyi = sply[ith2];
               final double u0 = splyi[0];
               final double u1 = splyi[1];
               final double u2 = splyi[2];
               final double u3 = splyi[3];
-              tu00 += t0 * u0;
-              tu10 += t1 * u0;
-              tu01 += t0 * u1;
-              tu20 += t2 * u0;
-              tu11 += t1 * u1;
-              tu02 += t0 * u2;
-              tu30 += t3 * u0;
-              tu21 += t2 * u1;
-              tu12 += t1 * u2;
-              tu03 += t0 * u3;
+              tu00 = fma(t0, u0, tu00);
+              tu10 = fma(t1, u0, tu10);
+              tu01 = fma(t0, u1, tu01);
+              tu20 = fma(t2, u0, tu20);
+              tu11 = fma(t1, u1, tu11);
+              tu02 = fma(t0, u2, tu02);
+              tu30 = fma(t3, u0, tu30);
+              tu21 = fma(t2, u1, tu21);
+              tu12 = fma(t1, u2, tu12);
+              tu03 = fma(t0, u3, tu03);
             }
             final double[] splzi = splz[ith3];
             final double v0 = splzi[0];
             final double v1 = splzi[1];
             final double v2 = splzi[2];
             final double v3 = splzi[3];
-            tuv000 += tu00 * v0;
-            tuv100 += tu10 * v0;
-            tuv010 += tu01 * v0;
-            tuv001 += tu00 * v1;
-            tuv200 += tu20 * v0;
-            tuv020 += tu02 * v0;
-            tuv002 += tu00 * v2;
-            tuv110 += tu11 * v0;
-            tuv101 += tu10 * v1;
-            tuv011 += tu01 * v1;
-            tuv300 += tu30 * v0;
-            tuv030 += tu03 * v0;
-            tuv003 += tu00 * v3;
-            tuv210 += tu21 * v0;
-            tuv201 += tu20 * v1;
-            tuv120 += tu12 * v0;
-            tuv021 += tu02 * v1;
-            tuv102 += tu10 * v2;
-            tuv012 += tu01 * v2;
-            tuv111 += tu11 * v1;
+            tuv000 = fma(tu00, v0, tuv000);
+            tuv100 = fma(tu10, v0, tuv100);
+            tuv010 = fma(tu01, v0, tuv010);
+            tuv001 = fma(tu00, v1, tuv001);
+            tuv200 = fma(tu20, v0, tuv200);
+            tuv020 = fma(tu02, v0, tuv020);
+            tuv002 = fma(tu00, v2, tuv002);
+            tuv110 = fma(tu11, v0, tuv110);
+            tuv101 = fma(tu10, v1, tuv101);
+            tuv011 = fma(tu01, v1, tuv011);
+            tuv300 = fma(tu30, v0, tuv300);
+            tuv030 = fma(tu03, v0, tuv030);
+            tuv003 = fma(tu00, v3, tuv003);
+            tuv210 = fma(tu21, v0, tuv210);
+            tuv201 = fma(tu20, v1, tuv201);
+            tuv120 = fma(tu12, v0, tuv120);
+            tuv021 = fma(tu02, v1, tuv021);
+            tuv102 = fma(tu10, v2, tuv102);
+            tuv012 = fma(tu01, v2, tuv012);
+            tuv111 = fma(tu11, v1, tuv111);
           }
           double[] out = fracPermPhi[n];
           out[t000] = tuv000;
@@ -2436,13 +2396,13 @@ public class ReciprocalSpace {
           for (int j = 1; j < 4; j++) {
             out[j] = 0.0;
             for (int k = 1; k < 4; k++) {
-              out[j] += transformFieldMatrix[j][k] * in[k];
+              out[j] = fma(transformFieldMatrix[j][k], in[k], out[j]);
             }
           }
           for (int j = 4; j < 10; j++) {
             out[j] = 0.0;
             for (int k = 4; k < 10; k++) {
-              out[j] += transformFieldMatrix[j][k] * in[k];
+              out[j] = fma(transformFieldMatrix[j][k], in[k], out[j]);
             }
           }
         }
@@ -2605,91 +2565,93 @@ public class ReciprocalSpace {
               for (int ith1 = 0; ith1 < bSplineOrder; ith1++) {
                 final int i = mod(++i0, fftX);
                 final int ii = iComplex3D(i, j, k, fftX, fftY);
-                // final double tq = splineGrid[ii];
-                // final double tp = splineGrid[ii + 1];
                 final double tq = splineBuffer.get(ii);
                 final double tp = splineBuffer.get(ii + 1);
                 final double[] splxi = splx[ith1];
-                t0 += tq * splxi[0];
-                t1 += tq * splxi[1];
-                t2 += tq * splxi[2];
-                t3 += tq * splxi[3];
-                t0p += tp * splxi[0];
-                t1p += tp * splxi[1];
-                t2p += tp * splxi[2];
-                t3p += tp * splxi[3];
+                final double s0 = splxi[0];
+                final double s1 = splxi[1];
+                final double s2 = splxi[2];
+                final double s3 = splxi[3];
+                t0 = fma(tq, s0, t0);
+                t1 = fma(tq, s1, t1);
+                t2 = fma(tq, s2, t2);
+                t3 = fma(tq, s3, t3);
+                t0p = fma(tp, s0, t0p);
+                t1p = fma(tp, s1, t1p);
+                t2p = fma(tp, s2, t2p);
+                t3p = fma(tp, s3, t3p);
               }
               final double[] splyi = sply[ith2];
               final double u0 = splyi[0];
               final double u1 = splyi[1];
               final double u2 = splyi[2];
               final double u3 = splyi[3];
-              tu00 += t0 * u0;
-              tu10 += t1 * u0;
-              tu01 += t0 * u1;
-              tu20 += t2 * u0;
-              tu11 += t1 * u1;
-              tu02 += t0 * u2;
-              tu30 += t3 * u0;
-              tu21 += t2 * u1;
-              tu12 += t1 * u2;
-              tu03 += t0 * u3;
-              tu00p += t0p * u0;
-              tu10p += t1p * u0;
-              tu01p += t0p * u1;
-              tu20p += t2p * u0;
-              tu11p += t1p * u1;
-              tu02p += t0p * u2;
-              tu30p += t3p * u0;
-              tu21p += t2p * u1;
-              tu12p += t1p * u2;
-              tu03p += t0p * u3;
+              tu00 = fma(t0, u0, tu00);
+              tu10 = fma(t1, u0, tu10);
+              tu01 = fma(t0, u1, tu01);
+              tu20 = fma(t2, u0, tu20);
+              tu11 = fma(t1, u1, tu11);
+              tu02 = fma(t0, u2, tu02);
+              tu30 = fma(t3, u0, tu30);
+              tu21 = fma(t2, u1, tu21);
+              tu12 = fma(t1, u2, tu12);
+              tu03 = fma(t0, u3, tu03);
+              tu00p = fma(t0p, u0, tu00p);
+              tu10p = fma(t1p, u0, tu10p);
+              tu01p = fma(t0p, u1, tu01p);
+              tu20p = fma(t2p, u0, tu20p);
+              tu11p = fma(t1p, u1, tu11p);
+              tu02p = fma(t0p, u2, tu02p);
+              tu30p = fma(t3p, u0, tu30p);
+              tu21p = fma(t2p, u1, tu21p);
+              tu12p = fma(t1p, u2, tu12p);
+              tu03p = fma(t0p, u3, tu03p);
             }
             final double[] splzi = splz[ith3];
             final double v0 = splzi[0];
             final double v1 = splzi[1];
             final double v2 = splzi[2];
             final double v3 = splzi[3];
-            tuv000 += tu00 * v0;
-            tuv100 += tu10 * v0;
-            tuv010 += tu01 * v0;
-            tuv001 += tu00 * v1;
-            tuv200 += tu20 * v0;
-            tuv020 += tu02 * v0;
-            tuv002 += tu00 * v2;
-            tuv110 += tu11 * v0;
-            tuv101 += tu10 * v1;
-            tuv011 += tu01 * v1;
-            tuv300 += tu30 * v0;
-            tuv030 += tu03 * v0;
-            tuv003 += tu00 * v3;
-            tuv210 += tu21 * v0;
-            tuv201 += tu20 * v1;
-            tuv120 += tu12 * v0;
-            tuv021 += tu02 * v1;
-            tuv102 += tu10 * v2;
-            tuv012 += tu01 * v2;
-            tuv111 += tu11 * v1;
-            tuv000p += tu00p * v0;
-            tuv100p += tu10p * v0;
-            tuv010p += tu01p * v0;
-            tuv001p += tu00p * v1;
-            tuv200p += tu20p * v0;
-            tuv020p += tu02p * v0;
-            tuv002p += tu00p * v2;
-            tuv110p += tu11p * v0;
-            tuv101p += tu10p * v1;
-            tuv011p += tu01p * v1;
-            tuv300p += tu30p * v0;
-            tuv030p += tu03p * v0;
-            tuv003p += tu00p * v3;
-            tuv210p += tu21p * v0;
-            tuv201p += tu20p * v1;
-            tuv120p += tu12p * v0;
-            tuv021p += tu02p * v1;
-            tuv102p += tu10p * v2;
-            tuv012p += tu01p * v2;
-            tuv111p += tu11p * v1;
+            tuv000 = fma(tu00, v0, tuv000);
+            tuv100 = fma(tu10, v0, tuv100);
+            tuv010 = fma(tu01, v0, tuv010);
+            tuv001 = fma(tu00, v1, tuv001);
+            tuv200 = fma(tu20, v0, tuv200);
+            tuv020 = fma(tu02, v0, tuv020);
+            tuv002 = fma(tu00, v2, tuv002);
+            tuv110 = fma(tu11, v0, tuv110);
+            tuv101 = fma(tu10, v1, tuv101);
+            tuv011 = fma(tu01, v1, tuv011);
+            tuv300 = fma(tu30, v0, tuv300);
+            tuv030 = fma(tu03, v0, tuv030);
+            tuv003 = fma(tu00, v3, tuv003);
+            tuv210 = fma(tu21, v0, tuv210);
+            tuv201 = fma(tu20, v1, tuv201);
+            tuv120 = fma(tu12, v0, tuv120);
+            tuv021 = fma(tu02, v1, tuv021);
+            tuv102 = fma(tu10, v2, tuv102);
+            tuv012 = fma(tu01, v2, tuv012);
+            tuv111 = fma(tu11, v1, tuv111);
+            tuv000p = fma(tu00p, v0, tuv000p);
+            tuv100p = fma(tu10p, v0, tuv100p);
+            tuv010p = fma(tu01p, v0, tuv010p);
+            tuv001p = fma(tu00p, v1, tuv001p);
+            tuv200p = fma(tu20p, v0, tuv200p);
+            tuv020p = fma(tu02p, v0, tuv020p);
+            tuv002p = fma(tu00p, v2, tuv002p);
+            tuv110p = fma(tu11p, v0, tuv110p);
+            tuv101p = fma(tu10p, v1, tuv101p);
+            tuv011p = fma(tu01p, v1, tuv011p);
+            tuv300p = fma(tu30p, v0, tuv300p);
+            tuv030p = fma(tu03p, v0, tuv030p);
+            tuv003p = fma(tu00p, v3, tuv003p);
+            tuv210p = fma(tu21p, v0, tuv210p);
+            tuv201p = fma(tu20p, v1, tuv201p);
+            tuv120p = fma(tu12p, v0, tuv120p);
+            tuv021p = fma(tu02p, v1, tuv021p);
+            tuv102p = fma(tu10p, v2, tuv102p);
+            tuv012p = fma(tu01p, v2, tuv012p);
+            tuv111p = fma(tu11p, v1, tuv111p);
           }
           double[] out = fracInducedDipolePhi[n];
           out[t000] = tuv000;
@@ -2718,13 +2680,13 @@ public class ReciprocalSpace {
           for (int j = 1; j < 4; j++) {
             out[j] = 0.0;
             for (int k = 1; k < 4; k++) {
-              out[j] += transformFieldMatrix[j][k] * in[k];
+              out[j] = fma(transformFieldMatrix[j][k], in[k], out[j]);
             }
           }
           for (int j = 4; j < 10; j++) {
             out[j] = 0.0;
             for (int k = 4; k < 10; k++) {
-              out[j] += transformFieldMatrix[j][k] * in[k];
+              out[j] = fma(transformFieldMatrix[j][k], in[k], out[j]);
             }
           }
 
@@ -2755,13 +2717,13 @@ public class ReciprocalSpace {
           for (int j = 1; j < 4; j++) {
             out[j] = 0.0;
             for (int k = 1; k < 4; k++) {
-              out[j] += transformFieldMatrix[j][k] * in[k];
+              out[j] = fma(transformFieldMatrix[j][k], in[k], out[j]);
             }
           }
           for (int j = 4; j < 10; j++) {
             out[j] = 0.0;
             for (int k = 4; k < 10; k++) {
-              out[j] += transformFieldMatrix[j][k] * in[k];
+              out[j] = fma(transformFieldMatrix[j][k], in[k], out[j]);
             }
           }
         }
