@@ -508,7 +508,6 @@ public class ExtendedSystem implements Potential {
             esvFilter = new ESVFilter(mola.getName());
         }
         if (esvFile == null) {
-
             String firstFileName = FilenameUtils.removeExtension(mola.getFile().getAbsolutePath());
             restartFile = new File(firstFileName + ".esv");
         } else {
