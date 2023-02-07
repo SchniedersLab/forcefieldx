@@ -385,7 +385,7 @@ class PhBar extends AlgorithmsScript {
           }
         }
       }
-    } else if (current.size() != 0){
+    } else if (current.size() == 0){
       logger.severe(" MD is not an instance of MDOMM (try adding -Dplatform=OMM --mdE OpenMM)")
     }
 
