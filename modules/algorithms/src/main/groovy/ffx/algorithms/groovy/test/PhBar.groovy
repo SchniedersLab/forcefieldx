@@ -244,7 +244,7 @@ class PhBar extends AlgorithmsScript {
     if (natNMinusOne.exists() && natN.exists() && natNPlusOne.exists()) {
       //MolA should be set to the previous arc file
       logger.warning(
-          " Initializing to last run. Since this program deletes these files on completion, runs in which these files already exist are assumed to be restarts.")
+          " Initializing to last run.")
 
       // Read in previous log files into this program
       for (int i = 0; i < 3; i++) {
@@ -385,7 +385,7 @@ class PhBar extends AlgorithmsScript {
           }
         }
       }
-    } else {
+    } else if (current.size() != 0){
       logger.severe(" MD is not an instance of MDOMM (try adding -Dplatform=OMM --mdE OpenMM)")
     }
 
