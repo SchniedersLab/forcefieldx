@@ -174,8 +174,7 @@ class Minimize extends AlgorithmsScript {
 
     logger.info(sb.toString())
 
-    LambdaInterface linter = (potential instanceof LambdaInterface) ? (LambdaInterface) potential :
-        null
+    LambdaInterface linter = (potential instanceof LambdaInterface) ? (LambdaInterface) potential : null
     linter?.setLambda(lambda)
 
     SystemFilter systemFilter = algorithmFunctions.getFilter()
@@ -184,8 +183,7 @@ class Minimize extends AlgorithmsScript {
     potential.getCoordinates(x)
     potential.energy(x, true)
 
-    ffx.algorithms.optimize.Minimize minimize = new ffx.algorithms.optimize.Minimize(topologies[0],
-        potential, algorithmListener)
+    ffx.algorithms.optimize.Minimize minimize = new ffx.algorithms.optimize.Minimize(topologies[0], potential, algorithmListener)
     minimize.minimize(minimizeOptions.getNBFGS(), minimizeOptions.getEps(), minimizeOptions.getIterations())
 
     potential.getCoordinates(x)

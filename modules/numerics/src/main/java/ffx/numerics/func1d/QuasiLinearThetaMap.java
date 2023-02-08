@@ -38,6 +38,7 @@
 package ffx.numerics.func1d;
 
 import static ffx.numerics.math.ScalarMath.modToRange;
+import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
@@ -50,6 +51,7 @@ import static org.apache.commons.math3.util.FastMath.sin;
  * @author Michael J. Schnieders
  */
 public class QuasiLinearThetaMap implements UnivariateDiffFunction {
+
   private final double theta0;
   private final double r;
   private final double a;
@@ -65,18 +67,17 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
   }
 
   /**
-   * Constructs a QuasiLinearThetaMap which is roughly V-shaped from [-pi,+pi], is periodic, and
-   * uses trigonometric functions to spline between the linear ranges (theta0-pi, -theta0),
-   * (+theta0, pi-theta0) and the trigonometric interpolating regions [-pi, theta0-pi],
-   * [-theta0,+theta0] and [pi-theta0, pi].
+   * Constructs a QuasiLinearThetaMap which is roughly V-shaped from [-pi,+pi], is periodic, and uses
+   * trigonometric functions to spline between the linear ranges (theta0-pi, -theta0), (+theta0,
+   * pi-theta0) and the trigonometric interpolating regions [-pi, theta0-pi], [-theta0,+theta0] and
+   * [pi-theta0, pi].
    *
    * @param theta0 Defines the width of the trigonometric interpolating regions.
    */
   public QuasiLinearThetaMap(double theta0) {
     if (theta0 <= 0 || theta0 >= PI) {
       throw new IllegalArgumentException(
-          String.format(
-              " QuasiLinearThetaMap " + "must receive theta0 from (0 to +pi), received %11.5g",
+          format(" QuasiLinearThetaMap must receive theta0 from (0 to +pi), received %11.5g",
               theta0));
     }
 
@@ -103,16 +104,12 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
   @Override
   public double nthDerivative(double x, int order) throws IllegalArgumentException {
     x = modToRange(x, -PI, PI);
-    switch (order) {
-      case 0:
-        return val(x);
-      case 1:
-        return fd(x);
-      case 2:
-        return sd(x);
-      default:
-        return nd(x, order);
-    }
+    return switch (order) {
+      case 0 -> val(x);
+      case 1 -> fd(x);
+      case 2 -> sd(x);
+      default -> nd(x, order);
+    };
   }
 
   @Override
@@ -150,22 +147,22 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
 
   double val(double x, Branch branch) throws IllegalArgumentException {
     switch (branch) {
-      case A:
-        {
-          double sinT = sin(x * 0.5);
-          return r * sinT * sinT;
-        }
-      case B:
+      case A -> {
+        double sinT = sin(x * 0.5);
+        return r * sinT * sinT;
+      }
+      case B -> {
         return b + a * x;
-      case C:
+      }
+      case C -> {
         return b - a * x;
-      case D:
-        {
-          double sinT = sin(x * 0.5);
-          return (r * sinT * sinT) + c;
-        }
-      default:
-        throw new IllegalArgumentException("Could not pick a branch! Should be impossible!");
+      }
+      case D -> {
+        double sinT = sin(x * 0.5);
+        return (r * sinT * sinT) + c;
+      }
+      default ->
+          throw new IllegalArgumentException("Could not pick a branch! Should be impossible!");
     }
   }
 
@@ -175,21 +172,17 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
 
   double fd(double x, Branch branch) throws IllegalArgumentException {
     switch (branch) {
-      case A:
-      case D:
-        {
-          return halfR * sin(x);
-        }
-      case B:
-        {
-          return a;
-        }
-      case C:
-        {
-          return -1.0 * a;
-        }
-      default:
-        throw new IllegalArgumentException("Could not pick a branch! Should be impossible!");
+      case A, D -> {
+        return halfR * sin(x);
+      }
+      case B -> {
+        return a;
+      }
+      case C -> {
+        return -1.0 * a;
+      }
+      default ->
+          throw new IllegalArgumentException("Could not pick a branch! Should be impossible!");
     }
   }
 
@@ -199,18 +192,14 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
 
   double sd(double x, Branch branch) throws IllegalArgumentException {
     switch (branch) {
-      case A:
-      case D:
-        {
-          return halfR * cos(x);
-        }
-      case B:
-      case C:
-        {
-          return 0;
-        }
-      default:
-        throw new IllegalArgumentException("Could not pick a branch! Should be impossible!");
+      case A, D -> {
+        return halfR * cos(x);
+      }
+      case B, C -> {
+        return 0;
+      }
+      default ->
+          throw new IllegalArgumentException("Could not pick a branch! Should be impossible!");
     }
   }
 
@@ -220,40 +209,29 @@ public class QuasiLinearThetaMap implements UnivariateDiffFunction {
       throw new IllegalArgumentException(" Order was " + order + ", must be > 2!");
     }
     switch (br) {
-      case B:
-      case C:
+      case B, C -> {
         return 0;
+      }
     }
 
     switch (order % 4) {
-      case 0:
-        {
-          return halfR * sin(x);
-        }
-      case 1:
-        {
-          return halfR * cos(x);
-        }
-      case 2:
-        {
-          return -1.0 * halfR * sin(x);
-        }
-      case 3:
-        {
-          return -1.0 * halfR * cos(x);
-        }
-      default:
-        {
-          throw new ArithmeticException(
-              String.format(" Value %d modulo 4 somehow not 0-3!", order));
-        }
+      case 0 -> {
+        return halfR * sin(x);
+      }
+      case 1 -> {
+        return halfR * cos(x);
+      }
+      case 2 -> {
+        return -1.0 * halfR * sin(x);
+      }
+      case 3 -> {
+        return -1.0 * halfR * cos(x);
+      }
+      default -> throw new ArithmeticException(format(" Value %d modulo 4 somehow not 0-3!", order));
     }
   }
 
   enum Branch {
-    A,
-    B,
-    C,
-    D
+    A, B, C, D
   }
 }

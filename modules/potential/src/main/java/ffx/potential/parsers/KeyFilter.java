@@ -107,15 +107,15 @@ public class KeyFilter {
         if (s.startsWith("#") || s.toUpperCase().startsWith("ECHO")) {
           comments.append(s);
         } else {
-          int firstspace = s.indexOf(" ");
+          int firstSpace = s.indexOf(" ");
           String keyword, data;
-          if (firstspace == -1) { // no parameters
+          if (firstSpace == -1) { // no parameters
             keyword = s.trim().toUpperCase();
             // Rattle is special case, because it can be active
             // without being checked
             // Valid Key files can have: RATTLE
             // or RATTLE BONDS
-            // or RATTLE & RATTLE BONDS as seperate lines
+            // or RATTLE & RATTLE BONDS as separate lines
             // Each of these valid cases mean different things...
             if (keyword.equalsIgnoreCase("rattle")) {
               data = "RATTLE";
@@ -123,8 +123,8 @@ public class KeyFilter {
               data = null;
             }
           } else {
-            keyword = s.substring(0, firstspace).toUpperCase();
-            data = s.substring(firstspace).trim();
+            keyword = s.substring(0, firstSpace).toUpperCase();
+            data = s.substring(firstSpace).trim();
           }
           Keyword kd = keywordHash.get(keyword);
           if (kd == null) {

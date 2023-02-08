@@ -91,10 +91,7 @@ public class XYZFilter extends SystemFilter {
    * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
    *     object.
    */
-  public XYZFilter(
-      List<File> files,
-      MolecularAssembly system,
-      ForceField forceField,
+  public XYZFilter(List<File> files, MolecularAssembly system, ForceField forceField,
       CompositeConfiguration properties) {
     super(files, system, forceField, properties);
     this.fileType = FileType.XYZ;
@@ -109,10 +106,7 @@ public class XYZFilter extends SystemFilter {
    * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
    *     object.
    */
-  public XYZFilter(
-      File file,
-      MolecularAssembly system,
-      ForceField forceField,
+  public XYZFilter(File file, MolecularAssembly system, ForceField forceField,
       CompositeConfiguration properties) {
     super(file, system, forceField, properties);
     this.fileType = FileType.XYZ;
@@ -250,9 +244,8 @@ public class XYZFilter extends SystemFilter {
   public int countNumModels() {
     File xyzFile = activeMolecularAssembly.getFile();
     int nAtoms = activeMolecularAssembly.getAtomArray().length;
-    Pattern crystInfoPattern =
-        Pattern.compile(
-            "^ *(?:[0-9]+\\.[0-9]+ +){3}(?:-?[0-9]+\\.[0-9]+ +){2}(?:-?[0-9]+\\.[0-9]+) *$");
+    Pattern crystInfoPattern = Pattern.compile(
+        "^ *(?:[0-9]+\\.[0-9]+ +){3}(?:-?[0-9]+\\.[0-9]+ +){2}(?:-?[0-9]+\\.[0-9]+) *$");
 
     try (BufferedReader br = new BufferedReader(new FileReader(xyzFile))) {
       String line = br.readLine();
@@ -277,8 +270,8 @@ public class XYZFilter extends SystemFilter {
       }
       return nSnaps;
     } catch (Exception ex) {
-      logger.log(
-          Level.WARNING, String.format(" Exception reading trajectory file %s: %s", xyzFile, ex));
+      logger.log(Level.WARNING,
+          String.format(" Exception reading trajectory file %s: %s", xyzFile, ex));
       return 1;
     }
   }
@@ -286,11 +279,11 @@ public class XYZFilter extends SystemFilter {
   /** {@inheritDoc} */
   @Override
   public OptionalDouble getLastReadLambda() {
-    String[] toks = remarkLine.split("\\s+");
-    int nToks = toks.length;
-    for (int i = 0; i < (nToks - 1); i++) {
-      if (toks[i].equals("Lambda:")) {
-        return OptionalDouble.of(Double.parseDouble(toks[i + 1]));
+    String[] tokens = remarkLine.split("\\s+");
+    int nTokens = tokens.length;
+    for (int i = 0; i < (nTokens - 1); i++) {
+      if (tokens[i].equals("Lambda:")) {
+        return OptionalDouble.of(Double.parseDouble(tokens[i + 1]));
       }
     }
     return OptionalDouble.empty();
@@ -361,15 +354,13 @@ public class XYZFilter extends SystemFilter {
         data = br.readLine();
         if (data == null) {
           logger.warning(
-              format(
-                  " Check atom %d in %s.", (i + 1), activeMolecularAssembly.getFile().getName()));
+              format(" Check atom %d in %s.", (i + 1), activeMolecularAssembly.getFile().getName()));
           return false;
         }
         tokens = data.trim().split(" +");
         if (tokens.length < 6) {
           logger.warning(
-              format(
-                  " Check atom %d in %s.", (i + 1), activeMolecularAssembly.getFile().getName()));
+              format(" Check atom %d in %s.", (i + 1), activeMolecularAssembly.getFile().getName()));
           return false;
         }
         // Valid number of tokens, so try to parse this line.
@@ -440,17 +431,14 @@ public class XYZFilter extends SystemFilter {
         }
       }
       bondList = new ArrayList<>();
-      int[] c = new int[2];
       for (int a1 = 1; a1 <= numberOfAtoms; a1++) {
         int j = -1;
         while (j < 7 && bonds[a1 - 1][++j] > 0) {
           int a2 = bonds[a1 - 1][j];
           if (a1 < a2) {
             if (a2 > numberOfAtoms) {
-              logger.warning(
-                  format(
-                      " Check the bond between %d and %d in %s.",
-                      a1, a2, activeMolecularAssembly.getFile().getName()));
+              logger.warning(format(" Check the bond between %d and %d in %s.", a1, a2,
+                  activeMolecularAssembly.getFile().getName()));
               return false;
             }
             // Check for bidirectional connection
@@ -464,19 +452,15 @@ public class XYZFilter extends SystemFilter {
               }
             }
             if (!bidirectional) {
-              logger.warning(
-                  format(
-                      " Check the bond between %d and %d in %s.",
-                      a1, a2, activeMolecularAssembly.getFile().getName()));
+              logger.warning(format(" Check the bond between %d and %d in %s.", a1, a2,
+                  activeMolecularAssembly.getFile().getName()));
               return false;
             }
             Atom atom1 = atomList.get(a1 - 1);
             Atom atom2 = atomList.get(a2 - 1);
             if (atom1 == null || atom2 == null) {
-              logger.warning(
-                  format(
-                      " Check the bond between %d and %d in %s.",
-                      a1, a2, activeMolecularAssembly.getFile().getName()));
+              logger.warning(format(" Check the bond between %d and %d in %s.", a1, a2,
+                  activeMolecularAssembly.getFile().getName()));
               return false;
             }
             Bond bond = new Bond(atom1, atom2);
@@ -506,7 +490,7 @@ public class XYZFilter extends SystemFilter {
   /**
    * {@inheritDoc}
    *
-   * <p>Reads the next snap-shot of an archive into the activeMolecularAssembly. After calling this
+   * <p>Reads the next snapshot of an archive into the activeMolecularAssembly. After calling this
    * function, a BufferedReader will remain open until the <code>close</code> method is called.
    */
   @Override
@@ -517,7 +501,7 @@ public class XYZFilter extends SystemFilter {
   /**
    * {@inheritDoc}
    *
-   * <p>Reads the next snap-shot of an archive into the activeMolecularAssembly. After calling this
+   * <p>Reads the next snapshot of an archive into the activeMolecularAssembly. After calling this
    * function, a BufferedReader will remain open until the <code>close</code> method is called.
    */
   @Override
@@ -526,7 +510,7 @@ public class XYZFilter extends SystemFilter {
   }
 
   /**
-   * Reads the next snap-shot of an archive into the activeMolecularAssembly. After calling this
+   * Reads the next snapshot of an archive into the activeMolecularAssembly. After calling this
    * function, a BufferedReader will remain open until the <code>close</code> method is called.
    */
   public boolean readNext(boolean resetPosition, boolean print, boolean parse) {
@@ -546,7 +530,7 @@ public class XYZFilter extends SystemFilter {
         }
         snapShot = 1;
       } else if (resetPosition) {
-        // Reset the reader to the beginning of the file. Do not skip reading the first entry if resetPostion is true.
+        // Reset the reader to the beginning of the file. Do not skip reading the first entry if resetPosition is true.
         bufferedReader = new BufferedReader(new FileReader(currentFile));
         snapShot = 0;
       }
@@ -574,15 +558,15 @@ public class XYZFilter extends SystemFilter {
           String[] tokens = data.trim().split(" +");
           int nArchive = parseInt(tokens[0]);
           if (nArchive != nSystem) {
-            String message =
-                    format("Number of atoms mismatch (Archive: %d, System: %d).", nArchive, nSystem);
+            String message = format("Number of atoms mismatch (Archive: %d, System: %d).", nArchive,
+                nSystem);
             if (dieOnMissingAtom) {
               logger.severe(message);
             }
             logger.warning(message);
             return false;
           }
-          if(tokens.length > 1) {
+          if (tokens.length > 1) {
             activeMolecularAssembly.setName(tokens[1]);
           }
         } catch (NumberFormatException e) {
@@ -616,15 +600,14 @@ public class XYZFilter extends SystemFilter {
           double z = parseDouble(tokens[4]);
           int xyzIndex = atoms[i].getIndex();
           if (xyzIndex != i + 1) {
-            String message =
-                    format(
-                            "Archive atom index %d being read onto system atom index %d.", i + 1, xyzIndex);
+            String message = format("Archive atom index %d being read onto system atom index %d.",
+                i + 1, xyzIndex);
             logger.warning(message);
           }
           atoms[i].moveTo(x, y, z);
         }
-      }else{
-        // Header line skipped. Check for crstal information.
+      } else {
+        // Header line skipped. Check for crystal information.
         bufferedReader.mark(10000);
         data = bufferedReader.readLine();
         if (!readPBC(data, activeMolecularAssembly)) {
@@ -666,12 +649,12 @@ public class XYZFilter extends SystemFilter {
       activeMolecularAssembly.setName(newFile.getName());
     }
 
-    try (FileWriter fw = new FileWriter(newFile, append && newFile.exists());
-        BufferedWriter bw = new BufferedWriter(fw)) {
+    try (FileWriter fw = new FileWriter(newFile,
+        append && newFile.exists()); BufferedWriter bw = new BufferedWriter(fw)) {
       // XYZ File First Line
       int numberOfAtoms = activeMolecularAssembly.getAtomList().size();
-      StringBuilder sb =
-          new StringBuilder(format("%7d  %s", numberOfAtoms, activeMolecularAssembly.getName()));
+      StringBuilder sb = new StringBuilder(
+          format("%7d  %s", numberOfAtoms, activeMolecularAssembly.getName()));
       if (extraLines != null) {
         for (String line : extraLines) {
           line = line.replaceAll("\n", " ");
@@ -682,11 +665,10 @@ public class XYZFilter extends SystemFilter {
       bw.write(output);
 
       Crystal crystal = activeMolecularAssembly.getCrystal();
-      if (crystal!=null && !crystal.aperiodic()) {
+      if (crystal != null && !crystal.aperiodic()) {
         Crystal uc = crystal.getUnitCell();
-        String params =
-            format("%14.8f%14.8f%14.8f%14.8f%14.8f%14.8f\n",
-                uc.a, uc.b, uc.c, uc.alpha, uc.beta, uc.gamma);
+        String params = format("%14.8f%14.8f%14.8f%14.8f%14.8f%14.8f\n", uc.a, uc.b, uc.c, uc.alpha,
+            uc.beta, uc.gamma);
         bw.write(params);
       }
 
@@ -698,27 +680,14 @@ public class XYZFilter extends SystemFilter {
       Vector3d offset = activeMolecularAssembly.getOffset();
       for (Atom a : atoms) {
         if (vdwH) {
-          line =
-              new StringBuilder(
-                  format(
-                      "%7d %3s%14.8f%14.8f%14.8f%6d",
-                      a.getIndex(),
-                      a.getAtomType().name,
-                      a.getRedX() - offset.x,
-                      a.getRedY() - offset.y,
-                      a.getRedZ() - offset.z,
-                      a.getType()));
+          line = new StringBuilder(
+              format("%7d %3s%14.8f%14.8f%14.8f%6d", a.getIndex(), a.getAtomType().name,
+                  a.getRedX() - offset.x, a.getRedY() - offset.y, a.getRedZ() - offset.z,
+                  a.getType()));
         } else {
-          line =
-              new StringBuilder(
-                  format(
-                      "%7d %3s%14.8f%14.8f%14.8f%6d",
-                      a.getIndex(),
-                      a.getAtomType().name,
-                      a.getX() - offset.x,
-                      a.getY() - offset.y,
-                      a.getZ() - offset.z,
-                      a.getType()));
+          line = new StringBuilder(
+              format("%7d %3s%14.8f%14.8f%14.8f%6d", a.getIndex(), a.getAtomType().name,
+                  a.getX() - offset.x, a.getY() - offset.y, a.getZ() - offset.z, a.getType()));
         }
         for (Bond b : a.getBonds()) {
           a2 = b.get1_2(a);
@@ -731,18 +700,14 @@ public class XYZFilter extends SystemFilter {
           bw.write(lines[i].toString());
         }
       } catch (IOException e) {
-        String message =
-            format(
-                " There was an unexpected error writing to %s.",
-                getActiveMolecularSystem().toString());
+        String message = format(" There was an unexpected error writing to %s.",
+            getActiveMolecularSystem().toString());
         logger.log(Level.WARNING, message, e);
         return false;
       }
     } catch (IOException e) {
-      String message =
-          format(
-              " There was an unexpected error writing to %s.",
-              getActiveMolecularSystem().toString());
+      String message = format(" There was an unexpected error writing to %s.",
+          getActiveMolecularSystem().toString());
       logger.log(Level.WARNING, message, e);
       return false;
     }
@@ -770,11 +735,12 @@ public class XYZFilter extends SystemFilter {
    * @param extraLines Additional lines to print in the header.
    * @return a boolean.
    */
-  public boolean writeFileAsP1(File saveFile, boolean append, Crystal crystal, String[] extraLines){
-    return writeFileAsP1(saveFile, append, crystal, new int[]{1,1,1}, extraLines);
+  public boolean writeFileAsP1(File saveFile, boolean append, Crystal crystal, String[] extraLines) {
+    return writeFileAsP1(saveFile, append, crystal, new int[] {1, 1, 1}, extraLines);
   }
-  public boolean writeFileAsP1(
-      File saveFile, boolean append, Crystal crystal, int[] lmn, String[] extraLines) {
+
+  public boolean writeFileAsP1(File saveFile, boolean append, Crystal crystal, int[] lmn,
+      String[] extraLines) {
     if (saveFile == null) {
       return false;
     }
@@ -786,8 +752,8 @@ public class XYZFilter extends SystemFilter {
     activeMolecularAssembly.setFile(newFile);
     activeMolecularAssembly.setName(newFile.getName());
 
-    try (FileWriter fw = new FileWriter(newFile, append && newFile.exists());
-        BufferedWriter bw = new BufferedWriter(fw)) {
+    try (FileWriter fw = new FileWriter(newFile,
+        append && newFile.exists()); BufferedWriter bw = new BufferedWriter(fw)) {
       final int nSymm = crystal.spaceGroup.symOps.size();
       // XYZ File First Line
       final int l = lmn[0];
@@ -797,8 +763,8 @@ public class XYZFilter extends SystemFilter {
 
       int numberOfAtoms = activeMolecularAssembly.getAtomList().size() * nSymm * numReplicates;
       activeMolecularAssembly.moveAllIntoUnitCell();
-      StringBuilder sb =
-          new StringBuilder(format("%7d  %s", numberOfAtoms, activeMolecularAssembly.toString()));
+      StringBuilder sb = new StringBuilder(
+          format("%7d  %s", numberOfAtoms, activeMolecularAssembly.toString()));
       if (extraLines != null) {
         for (String line : extraLines) {
           line = line.replaceAll("\n", " ");
@@ -810,8 +776,8 @@ public class XYZFilter extends SystemFilter {
 
       if (!crystal.aperiodic()) {
         Crystal uc = crystal.getUnitCell();
-        String params = format("%14.8f%14.8f%14.8f%14.8f%14.8f%14.8f\n",
-            uc.a * l, uc.b * m, uc.c * n, uc.alpha, uc.beta, uc.gamma);
+        String params = format("%14.8f%14.8f%14.8f%14.8f%14.8f%14.8f\n", uc.a * l, uc.b * m,
+            uc.c * n, uc.alpha, uc.beta, uc.gamma);
         bw.write(params);
       }
       Atom a2;
@@ -823,9 +789,9 @@ public class XYZFilter extends SystemFilter {
       int numInUC = atomsLength * nSymm;
       double[] xyz = new double[3];
       int replicatesOffset = 0;
-      for(int i = 0; i < l; i++){
-        for(int j = 0; j < m; j++){
-          for(int k = 0; k < n; k++){
+      for (int i = 0; i < l; i++) {
+        for (int j = 0; j < m; j++) {
+          for (int k = 0; k < n; k++) {
             for (int iSym = 0; iSym < nSymm; iSym++) {
               SymOp symOp = crystal.spaceGroup.getSymOp(iSym);
               int indexOffset = iSym * atomsLength + replicatesOffset * numInUC;
@@ -840,17 +806,16 @@ public class XYZFilter extends SystemFilter {
                   xyz[2] = a.getZ();
                 }
                 crystal.applySymOp(xyz, xyz, symOp);
-                if(i > 0 || j > 0 || k > 0) {
-                  double[] translation = new double[]{i, j, k};
+                if (i > 0 || j > 0 || k > 0) {
+                  double[] translation = new double[] {i, j, k};
                   crystal.getUnitCell().toCartesianCoordinates(translation, translation);
                   xyz[0] += translation[0];
                   xyz[1] += translation[1];
                   xyz[2] += translation[2];
                 }
                 int type = a.getType();
-                line =
-                    new StringBuilder(
-                        format("%7d %3s%14.8f%14.8f%14.8f%6d", index, id, xyz[0], xyz[1], xyz[2], type));
+                line = new StringBuilder(
+                    format("%7d %3s%14.8f%14.8f%14.8f%6d", index, id, xyz[0], xyz[1], xyz[2], type));
                 for (Bond b : a.getBonds()) {
                   a2 = b.get1_2(a);
                   line.append(format("%8d", a2.getIndex() + indexOffset));
@@ -867,18 +832,14 @@ public class XYZFilter extends SystemFilter {
           bw.write(lines[i].toString());
         }
       } catch (IOException e) {
-        String message =
-            format(
-                " There was an unexpected error writing to %s.",
-                getActiveMolecularSystem().toString());
+        String message = format(" There was an unexpected error writing to %s.",
+            getActiveMolecularSystem().toString());
         logger.log(Level.WARNING, message, e);
         return false;
       }
     } catch (IOException e) {
-      String message =
-          format(
-              " There was an unexpected error writing to %s.",
-              getActiveMolecularSystem().toString());
+      String message = format(" There was an unexpected error writing to %s.",
+          getActiveMolecularSystem().toString());
       logger.log(Level.WARNING, message, e);
       return false;
     }

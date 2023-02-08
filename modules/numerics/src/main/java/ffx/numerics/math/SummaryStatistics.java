@@ -58,6 +58,7 @@ import org.apache.commons.math3.distribution.TDistribution;
  * @since 1.0
  */
 public class SummaryStatistics {
+
   // Weight-sensitive values.
   public final double mean;
   public final double var;

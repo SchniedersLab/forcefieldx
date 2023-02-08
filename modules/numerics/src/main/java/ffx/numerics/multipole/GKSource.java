@@ -171,7 +171,7 @@ public class GKSource {
 
     // Auxiliary terms for Generalized Kirkwood (equivalent to Coulomb and Thole Screening).
     kirkwoodSource = new double[order + 1];
-    for (int n = 0; n <= order; n++) {
+    for (short n = 0; n <= order; n++) {
       kirkwoodSource[n] = pow(-1, n) * doubleFactorial(2 * n - 1);
     }
 
@@ -232,132 +232,9 @@ public class GKSource {
   }
 
   /**
-   * Sets the function f, which are chain rule terms from differentiating zeroth order auxiliary
-   * functions (an0) with respect to x, y or z.
-   *
-   * @param n Multipole order.
-   */
-  private void fn(int n) {
-    switch (n) {
-      case 0:
-        fn[0] = f;
-        break;
-      case 1:
-        fn[0] = f;
-        fn[1] = f1;
-        break;
-      case 2:
-        fn[0] = f;
-        fn[1] = f1;
-        fn[2] = f2;
-        break;
-      case 3:
-        fn[0] = f;
-        fn[1] = f1;
-        fn[2] = f2;
-        fn[3] = fr * f2;
-        break;
-      case 4:
-        fn[0] = f;
-        fn[1] = f1;
-        fn[2] = f2;
-        fn[3] = fr * f2;
-        fn[4] = fr * fn[3];
-        break;
-      case 5:
-        fn[0] = f;
-        fn[1] = f1;
-        fn[2] = f2;
-        fn[3] = fr * f2;
-        fn[4] = fr * fn[3];
-        fn[5] = fr * fn[4];
-        break;
-      case 6:
-        fn[0] = f;
-        fn[1] = f1;
-        fn[2] = f2;
-        fn[3] = fr * f2;
-        fn[4] = fr * fn[3];
-        fn[5] = fr * fn[4];
-        fn[6] = fr * fn[5];
-        break;
-      default:
-        fn[0] = f;
-        fn[1] = f1;
-        fn[2] = f2;
-        for (int i = 3; i <= n; i++) {
-          fn[i] = fr * fn[i - 1];
-        }
-    }
-  }
-
-  /**
-   * Compute the function b, which are chain rule terms from differentiating zeroth order auxiliary
-   * functions (an0) with respect to Ai or Aj.
-   *
-   * @param n Multipole order.
-   */
-  protected void bn(int n) {
-    var b2 = 2.0 * expTerm / (gcAiAj * gcAiAj) * (-ratio - 1.0);
-    switch (n) {
-      case 0:
-        bn[0] = 0.5 * expTerm * (1.0 - ratio);
-        break;
-      case 1:
-        bn[0] = 0.5 * expTerm * (1.0 - ratio);
-        bn[1] = -r2 * expTerm / (gcAiAj * gcAiAj);
-        break;
-      case 2:
-        bn[0] = 0.5 * expTerm * (1.0 - ratio);
-        bn[1] = -r2 * expTerm / (gcAiAj * gcAiAj);
-        bn[2] = b2;
-        break;
-      default:
-        bn[0] = 0.5 * expTerm * (1.0 - ratio);
-        bn[1] = -r2 * expTerm / (gcAiAj * gcAiAj);
-        bn[2] = b2;
-        var br = 2.0 / (gcAiAj * rb2);
-        var f2 = 2.0 / (gc * gcAiAj) * expTerm;
-        var frA = 1.0;
-        var frB = fr;
-        // (n - 2) * pow(fr, n - 3) * br * f2 + pow(fr, n - 2) * b2;
-        for (int i = 3; i < n; i++) {
-          bn[i] = (i - 2) * frA * br * f2 + frB * b2;
-          frA *= fr;
-          frB *= fr;
-        }
-    }
-  }
-
-  /**
-   * Compute the potential auxiliary function up to order n.
-   *
-   * @param n order.
-   */
-  private void an0(int n) {
-    double inverseF = 1.0 / f;
-    double inverseF2 = inverseF * inverseF;
-    for (int i = 0; i <= n; i++) {
-      anm[i][0] = kirkwoodSource[i] * inverseF;
-      inverseF *= inverseF2;
-    }
-  }
-
-  /**
-   * Compute the Born chain-rule auxiliary function up to order n.
-   *
-   * @param n order.
-   */
-  private void bn0(int n) {
-    for (int i = 0; i <= n; i++) {
-      bnm[i][0] = bn[0] * anm[i + 1][0];
-    }
-  }
-
-  /**
    * Fill the GK auxiliary matrix.
    * <p>
-   * The first row is the GK potential and derivatives for monpoles. The second row is the GK
+   * The first row is the GK potential and derivatives for monopoles. The second row is the GK
    * potential and derivatives for dipoles. The third row is the GK potential and derivatives for
    * quadrupoles.
    *
@@ -393,7 +270,7 @@ public class GKSource {
   /**
    * Fill the GK auxiliary matrix derivatives with respect to Born radii.
    * <p>
-   * The first row are derivatives for the monpole potential. The second row are derivatives for the
+   * The first row are derivatives for the monopole potential. The second row are derivatives for the
    * dipole potential. The third row are derivatives for the quadrupole potential.
    *
    * @param n Order.
@@ -428,6 +305,127 @@ public class GKSource {
   }
 
   /**
+   * Sets the function f, which are chain rule terms from differentiating zeroth order auxiliary
+   * functions (an0) with respect to x, y or z.
+   *
+   * @param n Multipole order.
+   */
+  private void fn(int n) {
+    switch (n) {
+      case 0 -> fn[0] = f;
+      case 1 -> {
+        fn[0] = f;
+        fn[1] = f1;
+      }
+      case 2 -> {
+        fn[0] = f;
+        fn[1] = f1;
+        fn[2] = f2;
+      }
+      case 3 -> {
+        fn[0] = f;
+        fn[1] = f1;
+        fn[2] = f2;
+        fn[3] = fr * f2;
+      }
+      case 4 -> {
+        fn[0] = f;
+        fn[1] = f1;
+        fn[2] = f2;
+        fn[3] = fr * f2;
+        fn[4] = fr * fn[3];
+      }
+      case 5 -> {
+        fn[0] = f;
+        fn[1] = f1;
+        fn[2] = f2;
+        fn[3] = fr * f2;
+        fn[4] = fr * fn[3];
+        fn[5] = fr * fn[4];
+      }
+      case 6 -> {
+        fn[0] = f;
+        fn[1] = f1;
+        fn[2] = f2;
+        fn[3] = fr * f2;
+        fn[4] = fr * fn[3];
+        fn[5] = fr * fn[4];
+        fn[6] = fr * fn[5];
+      }
+      default -> {
+        fn[0] = f;
+        fn[1] = f1;
+        fn[2] = f2;
+        for (int i = 3; i <= n; i++) {
+          fn[i] = fr * fn[i - 1];
+        }
+      }
+    }
+  }
+
+  /**
+   * Compute the function b, which are chain rule terms from differentiating zeroth order auxiliary
+   * functions (an0) with respect to Ai or Aj.
+   *
+   * @param n Multipole order.
+   */
+  protected void bn(int n) {
+    var b2 = 2.0 * expTerm / (gcAiAj * gcAiAj) * (-ratio - 1.0);
+    switch (n) {
+      case 0 -> bn[0] = 0.5 * expTerm * (1.0 - ratio);
+      case 1 -> {
+        bn[0] = 0.5 * expTerm * (1.0 - ratio);
+        bn[1] = -r2 * expTerm / (gcAiAj * gcAiAj);
+      }
+      case 2 -> {
+        bn[0] = 0.5 * expTerm * (1.0 - ratio);
+        bn[1] = -r2 * expTerm / (gcAiAj * gcAiAj);
+        bn[2] = b2;
+      }
+      default -> {
+        bn[0] = 0.5 * expTerm * (1.0 - ratio);
+        bn[1] = -r2 * expTerm / (gcAiAj * gcAiAj);
+        bn[2] = b2;
+        var br = 2.0 / (gcAiAj * rb2);
+        var f2 = 2.0 / (gc * gcAiAj) * expTerm;
+        var frA = 1.0;
+        var frB = fr;
+        for (int i = 3; i < n; i++) {
+          // bn[i] = (i - 2) * pow(fr, i - 3) * br * f2 + pow(fr, i - 2) * b2;
+          bn[i] = (i - 2) * frA * br * f2 + frB * b2;
+          frA *= fr;
+          frB *= fr;
+        }
+      }
+    }
+  }
+
+  /**
+   * Compute the potential auxiliary function up to order n.
+   *
+   * @param n order.
+   */
+  private void an0(int n) {
+    double inverseF = 1.0 / f;
+    double inverseF2 = inverseF * inverseF;
+    for (int i = 0; i <= n; i++) {
+      anm[i][0] = kirkwoodSource[i] * inverseF;
+      inverseF *= inverseF2;
+    }
+  }
+
+  /**
+   * Compute the Born chain-rule auxiliary function up to order n.
+   *
+   * @param n order.
+   */
+  private void bn0(int n) {
+    for (int i = 0; i <= n; i++) {
+      bnm[i][0] = bn[0] * anm[i + 1][0];
+    }
+  }
+
+  /**
    * Return coefficients needed when taking derivatives of auxiliary functions.
    *
    * @param n Multipole order.
@@ -437,14 +435,16 @@ public class GKSource {
     double[] ret = new double[n + 1];
     ret[0] = 1.0;
     switch (n) {
-      case 0:
+      case 0 -> {
         return ret;
-      case 1:
+      }
+      case 1 -> {
         ret[1] = 1.0;
         return ret;
-      default:
+      }
+      default -> {
         ret[1] = 1.0;
-        double[] prev = new double[n];
+        var prev = new double[n];
         prev[0] = 1.0;
         prev[1] = 1.0;
         for (int i = 3; i <= n; i++) {
@@ -455,11 +455,12 @@ public class GKSource {
           arraycopy(ret, 0, prev, 0, i);
         }
         return ret;
+      }
     }
   }
 
-  public static double selfEnergy(PolarizableMultipole polarizableMultipole, double ai, double Eh,
-      double Es) {
+  public static double selfEnergy(PolarizableMultipole polarizableMultipole,
+      double ai, double Eh, double Es) {
     double q2 = polarizableMultipole.q * polarizableMultipole.q;
     double dx = polarizableMultipole.dx;
     double dy = polarizableMultipole.dy;

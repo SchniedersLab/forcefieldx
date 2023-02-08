@@ -59,8 +59,8 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "angtors", clazz = String.class, keywordGroup = PotentialFunctionParameter,
-    description = "[4 integers and 6 reals] "
+@FFXKeyword(name = "angtors", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
+    "[4 integers and 6 reals] "
         + "Provides the values for a single bond angle bending-torsional angle parameter. "
         + "The integer modifiers give the atom class numbers for the four kinds of atoms involved in the torsion and its contained angles. "
         + "The real number modifiers give the force constant values for both angles coupled with 1-, 2- and 3-fold torsional terms."
@@ -70,8 +70,8 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
   public static final double DEFAULT_ANGTOR_UNIT = 1.0 / DEGREES_PER_RADIAN;
 
   /** Convert angle-torsion to kcal/mole. */
-  @FFXKeyword(name = "angtorunit", keywordGroup = EnergyUnitConversion, defaultValue = "Pi/180",
-      description = "Sets the scale factor needed to convert the energy value computed by the angle bending-torsional angle cross term into units of kcal/mole. "
+  @FFXKeyword(name = "angtorunit", keywordGroup = EnergyUnitConversion, defaultValue = "Pi/180", description =
+      "Sets the scale factor needed to convert the energy value computed by the angle bending-torsional angle cross term into units of kcal/mole. "
           + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
   public double angtorunit = DEFAULT_ANGTOR_UNIT;
 
@@ -102,8 +102,8 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
    * @param atomClasses an array of {@link int} objects.
    * @return a {@link ffx.potential.parameters.AngleTorsionType} object.
    */
-  public static AngleTorsionType average(
-      AngleTorsionType angleTorsionType1, AngleTorsionType angleTorsionType2, int[] atomClasses) {
+  public static AngleTorsionType average(AngleTorsionType angleTorsionType1,
+      AngleTorsionType angleTorsionType2, int[] atomClasses) {
     if (angleTorsionType1 == null || angleTorsionType2 == null || atomClasses == null) {
       return null;
     }
@@ -223,7 +223,7 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
   /**
    * incrementClasses
    *
-   * @param increment a int.
+   * @param increment the value to increment the atom classes by.
    */
   public void incrementClasses(int increment) {
     for (int i = 0; i < atomClasses.length; i++) {
@@ -275,17 +275,9 @@ public final class AngleTorsionType extends BaseType implements Comparator<Strin
    */
   @Override
   public String toString() {
-    return format(
-        "angtors  %5d  %5d  %5d  %5d  %6.3f  %6.3f  %6.3f  %6.3f  %6.3f  %6.3f",
-        atomClasses[0],
-        atomClasses[1],
-        atomClasses[2],
-        atomClasses[3],
-        forceConstants[0],
-        forceConstants[1],
-        forceConstants[2],
-        forceConstants[3],
-        forceConstants[4],
+    return format("angtors  %5d  %5d  %5d  %5d  %6.3f  %6.3f  %6.3f  %6.3f  %6.3f  %6.3f",
+        atomClasses[0], atomClasses[1], atomClasses[2], atomClasses[3], forceConstants[0],
+        forceConstants[1], forceConstants[2], forceConstants[3], forceConstants[4],
         forceConstants[5]);
   }
 }

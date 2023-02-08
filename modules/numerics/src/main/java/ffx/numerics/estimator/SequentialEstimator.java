@@ -53,7 +53,7 @@ import static java.util.Arrays.stream;
  */
 public abstract class SequentialEstimator implements StatisticalEstimator {
 
-  protected final double[] lamVals;
+  protected final double[] lamValues;
   protected final double[][] eLow;
   protected final double[][] eAt;
   protected final double[][] eHigh;
@@ -62,8 +62,8 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
 
   /**
    * The SequentialEstimator constructor largely just copies its parameters into local variables.
-   * Most arrays are deep copied. The temperature array can be of length 1 if all elements are meant
-   * to be the same temperature.
+   * Most arrays are duplicated (rather a just copying their reference).
+   * The temperature array can be of length 1 if all elements are meant to be the same temperature.
    *
    * <p>The first dimension of the energies arrays corresponds to the lambda values/windows. The
    * second dimension (can be of uneven length) corresponds to potential energies of snapshots
@@ -90,7 +90,7 @@ public abstract class SequentialEstimator implements StatisticalEstimator {
         && nTrajectories == energiesHigh.length
         : "One of the energy arrays is of the incorrect length in the first dimension!";
 
-    this.lamVals = copyOf(lambdaValues, nTrajectories);
+    this.lamValues = copyOf(lambdaValues, nTrajectories);
     temperatures = new double[nTrajectories];
     if (temperature.length == 1) {
       fill(temperatures, temperature[0]);

@@ -39,6 +39,7 @@ package ffx.numerics.optimization;
 
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
+import static java.lang.Math.fma;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
@@ -94,12 +95,12 @@ public class LBFGS {
   public static final double DEFAULT_STEPMAX = 5.0e0;
 
   /**
-   * The default projected gradient above which stepsize is reduced.
+   * The default projected gradient above which step size is reduced.
    */
   public static final double DEFAULT_SLOPEMAX = 1.0e4;
 
   /**
-   * The default maximum angle between search direction and -gradient.
+   * The default maximum angle between search direction and gradient.
    */
   public static final double DEFAULT_ANGLEMAX = 180.0;
 
@@ -132,9 +133,9 @@ public class LBFGS {
    * <p>The user is required to calculate the function value <code>f</code> and its gradient <code>g
    * </code>.
    *
-   * <p>The steplength is determined at each iteration by means of the line search routine <code>
+   * <p>The step length is determined at each iteration by means of the line search routine <code>
    * lineSearch</code>, which is a slight modification of the routine <code>CSRCH</code> written by
-   * More' and Thuente.
+   * More and Thuente.
    *
    * @param n The number of variables in the minimization problem. Restriction: <code>n &gt; 0
    *     </code>.
@@ -144,7 +145,7 @@ public class LBFGS {
    *     <p>
    *     Restriction: <code>mSave &gt; 0</code>.
    * @param x On initial entry this must be set by the user to the values of the initial estimate
-   *     of the solution vector. On exit it contains the values of the variables at the best point
+   *     of the solution vector. On exit, it contains the values of the variables at the best point
    *     found (usually a solution).
    * @param f The value of the function <code>f</code> at the point <code>x</code>.
    * @param g The components of the gradient <code>g</code> at the point <code>x</code>.
@@ -158,15 +159,8 @@ public class LBFGS {
    * @return status code (0 = success, 1 = max iterations reached, -1 = failed)
    * @since 1.0
    */
-  public static int minimize(
-      final int n,
-      int mSave,
-      final double[] x,
-      double f,
-      double[] g,
-      final double eps,
-      final int maxIterations,
-      Potential potential,
+  public static int minimize(final int n, int mSave, final double[] x, double f, double[] g,
+      final double eps, final int maxIterations, Potential potential,
       OptimizationListener listener) {
 
     assert (n > 0);
@@ -218,7 +212,8 @@ public class LBFGS {
 
     // Notify the listeners of initial conditions.
     if (listener != null) {
-      if (!listener.optimizationUpdate(iterations, mSave, evaluations, grms, 0.0, f, 0.0, 0.0, null)) {
+      if (!listener.optimizationUpdate(iterations, mSave, evaluations, grms, 0.0, f, 0.0, 0.0,
+          null)) {
         // Terminate the optimization.
         return 1;
       }
@@ -321,7 +316,6 @@ public class LBFGS {
         rho[m] = 1.0 / ys;
       }
 
-
       // Get the sizes of the moves made during this iteration.
       df = prevF - f;
       double xrms = 0.0;
@@ -346,7 +340,8 @@ public class LBFGS {
       }
 
       if (listener != null) {
-        if (!listener.optimizationUpdate(iterations, mSave, evaluations, grms, xrms, f, df, angle[0], info[0])) {
+        if (!listener.optimizationUpdate(iterations, mSave, evaluations, grms, xrms, f, df, angle[0],
+            info[0])) {
           // Terminate the optimization.
           return 1;
         }
@@ -384,9 +379,9 @@ public class LBFGS {
    * <p>The user is required to calculate the function value <code>f</code> and its gradient <code>g
    * </code>.
    *
-   * <p>The steplength is determined at each iteration by means of the line search routine <code>
+   * <p>The step length is determined at each iteration by means of the line search routine <code>
    * lineSearch</code>, which is a slight modification of the routine <code>CSRCH</code> written by
-   * More' and Thuente.
+   * More and Thuente.
    *
    * @param n The number of variables in the minimization problem. Restriction: <code>n &gt; 0
    *     </code>.
@@ -395,7 +390,7 @@ public class LBFGS {
    *     computing time. <code>3 &lt;= mSave &lt;= 7</code> is recommended. * Restriction:
    *     <code>mSave &gt; 0</code>.
    * @param x On initial entry this must be set by the user to the values of the initial estimate
-   *     of the solution vector. On exit it contains the values of the variables at the best point
+   *     of the solution vector. On exit, it contains the values of the variables at the best point
    *     found (usually a solution).
    * @param f The value of the function <code>f</code> at the point <code>x</code>.
    * @param g The components of the gradient <code>g</code> at the point <code>x</code>.
@@ -408,15 +403,8 @@ public class LBFGS {
    * @return status code (0 = success, -1 = failed)
    * @since 1.0
    */
-  public static int minimize(
-      int n,
-      int mSave,
-      double[] x,
-      double f,
-      double[] g,
-      double eps,
-      Potential potential,
-      OptimizationListener listener) {
+  public static int minimize(int n, int mSave, double[] x, double f, double[] g, double eps,
+      Potential potential, OptimizationListener listener) {
     return minimize(n, mSave, x, f, g, eps, Integer.MAX_VALUE - 1, potential, listener);
   }
 
@@ -433,15 +421,8 @@ public class LBFGS {
    * @param v2Step The Y array increment.
    * @since 1.0
    */
-  static void aV1PlusV2(
-      final int n,
-      final double a,
-      final double[] v1,
-      final int v1Start,
-      final int v1Step,
-      final double[] v2,
-      final int v2Start,
-      final int v2Step) {
+  static void aV1PlusV2(final int n, final double a, final double[] v1, final int v1Start,
+      final int v1Step, final double[] v2, final int v2Start, final int v2Step) {
     /*
      Require the number of entries (n) to be greater than zero. If the
      scalar (a) is zero, then the v2 array is unchanged.
@@ -452,8 +433,7 @@ public class LBFGS {
 
     int stop = v1Start + v1Step * n;
     for (int i = v1Start, j = v2Start; i != stop; i += v1Step, j += v2Step) {
-      // v2[j] += a * v1[i];
-      v2[j] = Math.fma(a, v1[i], v2[j]);
+      v2[j] = fma(a, v1[i], v2[j]);
     }
   }
 
@@ -469,15 +449,8 @@ public class LBFGS {
    * @param angle Current angle between gradient and search direction.
    * @since 1.0
    */
-  private static void log(
-      int iter,
-      int nfun,
-      double grms,
-      double xrms,
-      double f,
-      double df,
-      double angle,
-      LineSearchResult info) {
+  private static void log(int iter, int nfun, double grms, double xrms, double f, double df,
+      double angle, LineSearchResult info) {
     if (iter == 0) {
       logger.info("\n Limited Memory BFGS Quasi-Newton Optimization: \n");
       logger.info(
@@ -485,13 +458,11 @@ public class LBFGS {
     }
     if (info == null) {
       logger.info(
-          String.format(
-              "%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d", iter, f, grms, df, xrms, angle, nfun));
+          format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d", iter, f, grms, df, xrms, angle, nfun));
     } else {
       logger.info(
-          String.format(
-              "%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d   %8s",
-              iter, f, grms, df, xrms, angle, nfun, info.toString()));
+          format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d   %8s", iter, f, grms, df, xrms, angle, nfun,
+              info));
     }
   }
 
@@ -508,14 +479,8 @@ public class LBFGS {
    * @return dot product
    * @since 1.0
    */
-  static double v1DotV2(
-      final int n,
-      final double[] v1,
-      final int v1Start,
-      final int v1Step,
-      final double[] v2,
-      final int v2Start,
-      final int v2Step) {
+  static double v1DotV2(final int n, final double[] v1, final int v1Start, final int v1Step,
+      final double[] v2, final int v2Start, final int v2Step) {
 
     // Require the number of entries to be greater than zero.
     if (n <= 0) {
@@ -525,8 +490,7 @@ public class LBFGS {
     double sum = 0.0;
     int stop = v1Start + v1Step * n;
     for (int i = v1Start, j = v2Start; i != stop; i += v1Step, j += v2Step) {
-      //sum += v1[i] * v2[j];
-      sum = Math.fma(v1[i], v2[j], sum);
+      sum = fma(v1[i], v2[j], sum);
     }
     return sum;
   }

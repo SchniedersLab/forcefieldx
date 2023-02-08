@@ -40,8 +40,9 @@ package ffx.potential.utils;
 /**
  * This Exception class indicates an error in calculating energy or gradients. Expected behavior is
  * that it will be caught by Potential.energy(), resulting in any necessary cleanup. Then, if the
- * causeSevere flag is set true, FFE will issue a logger.severe (resulting in exit); else, FFE will
- * simply rethrow the exception. The default is to rethrow the exception.
+ * causeSevere flag is set true, ForceFieldEnergy will issue a <code>logger.severe</code> (resulting
+ * in exit). Otherwise, ForceFieldEnergy will simply rethrow the exception. The default is to rethrow
+ * the exception.
  *
  * @author Jacob Litman
  * @author Michael J. Schnieders

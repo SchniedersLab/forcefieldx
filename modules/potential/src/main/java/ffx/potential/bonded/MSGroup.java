@@ -50,7 +50,7 @@ import org.jogamp.java3d.Material;
 import org.jogamp.vecmath.Color3f;
 
 /**
- * The MSGroup class has one subnode containing atoms, and one that contains molecular
+ * The MSGroup class has one sub-node containing atoms, and one that contains molecular
  * mechanics/geometry terms.
  *
  * @author Michael J. Schnieders
@@ -107,8 +107,8 @@ public abstract class MSGroup extends MSNode {
   private boolean finalized;
   /** Center of the MultiScaleGroup */
   private double[] center;
-  /** List of underconstrained Atoms */
-  private List<Atom> dangelingatoms;
+  /** List of under-constrained Atoms */
+  private List<Atom> danglingAtomList;
 
   /** Default Constructor initializes a MultiScaleGroup and a few of its sub-nodes. */
   public MSGroup() {
@@ -405,11 +405,11 @@ public abstract class MSGroup extends MSNode {
     MSNode newUreyBradleyNode = new MSNode("Urey-Bradleys");
     MSNode newOutOfPlaneNode = new MSNode("Out-of-Plane Bends");
     MSNode newTorsionNode = new MSNode("Torsions");
+    // MSNode newImproperTorsionNode = new MSNode("Improper Torsions");
     MSNode newStretchTorsionNode = new MSNode("Stretch-Torsions");
     MSNode newAngleTorsionNode = new MSNode("Angle-Torsions");
     MSNode newPiOrbitalTorsionNode = new MSNode("Pi-Orbital Torsions");
     MSNode newTorsionTorsionNode = new MSNode("Torsion-Torsions");
-    // MSNode newImproperTorsionNode = new MSNode("Improper Torsions");
     newBondNode.add(bond);
     newBondNode.setName("Bonds (" + newBondNode.getChildCount() + ")");
 
@@ -524,20 +524,9 @@ public abstract class MSGroup extends MSNode {
     newTorsionTorsionNode.setName(
         "Torsion-Torsions (" + newTorsionTorsionNode.getChildCount() + ")");
 
-    Joint newJoint =
-        new Joint(
-            group1,
-            group2,
-            newBondNode,
-            newAngleNode,
-            newStretchBendNode,
-            newUreyBradleyNode,
-            newOutOfPlaneNode,
-            newTorsionNode,
-            newStretchTorsionNode,
-            newAngleTorsionNode,
-            newPiOrbitalTorsionNode,
-            newTorsionTorsionNode);
+    Joint newJoint = new Joint(group1, group2, newBondNode, newAngleNode, newStretchBendNode,
+        newUreyBradleyNode, newOutOfPlaneNode, newTorsionNode, null, newStretchTorsionNode,
+        newAngleTorsionNode, newPiOrbitalTorsionNode, newTorsionTorsionNode);
 
     group1.addJoint(newJoint);
     group2.addJoint(newJoint);
@@ -586,7 +575,7 @@ public abstract class MSGroup extends MSNode {
   public abstract void finalize(boolean finalizeGroups, ForceField forceField);
 
   /**
-   * This method constructs an List of atoms which are under-constrained. (i.e. They can except more
+   * This method constructs a List of atoms which are under-constrained. (i.e. They can except more
    * bonds)
    */
   public void findDangelingAtoms() {
@@ -596,7 +585,7 @@ public abstract class MSGroup extends MSNode {
         d.add(a);
       }
     }
-    setDangelingAtoms(d);
+    setDanglingAtoms(d);
   }
 
   /**
@@ -659,7 +648,7 @@ public abstract class MSGroup extends MSNode {
   /**
    * Returns the MSNode at the given index.
    *
-   * @param index a int.
+   * @param index The index of the AtomNode to return.
    * @return a {@link ffx.potential.bonded.MSNode} object.
    */
   public MSNode getAtomNode(int index) {
@@ -683,7 +672,7 @@ public abstract class MSGroup extends MSNode {
   }
 
   /**
-   * Returns an List of the AtomNode's children.
+   * Returns a List of the AtomNode's children.
    *
    * @return a {@link java.util.List} object.
    */
@@ -694,7 +683,7 @@ public abstract class MSGroup extends MSNode {
   /**
    * Returns the Bond at the supplied index.
    *
-   * @param index a int.
+   * @param index The index of the Bond to return.
    * @return a {@link ffx.potential.bonded.Bond} object.
    */
   public Bond getBond(int index) {
@@ -755,21 +744,21 @@ public abstract class MSGroup extends MSNode {
   }
 
   /**
-   * Returns the MultiScaleGroup's dangelingatoms list.
+   * Returns the MultiScaleGroup's dangling Atoms list.
    *
    * @return a {@link java.util.List} object.
    */
-  public List<Atom> getDangelingAtoms() {
-    return dangelingatoms;
+  public List<Atom> getDanglingAtoms() {
+    return danglingAtomList;
   }
 
   /**
-   * Sets the MultiScaleGroup's dangelingatoms member to a.
+   * Sets the MultiScaleGroup's danglingAtoms member to <code>a</code>.
    *
    * @param a a {@link java.util.List} object.
    */
-  public void setDangelingAtoms(List<Atom> a) {
-    dangelingatoms = a;
+  public void setDanglingAtoms(List<Atom> a) {
+    danglingAtomList = a;
   }
 
   /**

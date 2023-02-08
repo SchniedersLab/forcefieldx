@@ -64,8 +64,8 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "polarize", clazz = String.class, keywordGroup = PotentialFunctionParameter,
-    description = "[1 integer, up to 3 reals and up to 8 integers] "
+@FFXKeyword(name = "polarize", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
+    "[1 integer, up to 3 reals and up to 8 integers] "
         + "Provides the values for a single atomic dipole polarizability parameter. "
         + "The initial integer modifier, if positive, gives the atom type number for which a polarizability parameter is to be defined. "
         + "If the first integer modifier is negative, then the parameter value to follow applies only to the specific atom whose atom number is the negative of the modifier. "
@@ -91,7 +91,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
   public final double polarizability;
   /** Atom type number. */
   public int type;
-  /** Connected types in the polarization group of each atom. (may be null) */
+  /** Connected types in the polarization group of each atom (can be null). */
   public int[] polarizationGroup;
 
   /**
@@ -99,7 +99,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
    *
    * @param atomType The atom type.
    * @param polarizability The polarizability.
-   * @param thole The Thole dampling constant.
+   * @param thole The Thole damping constant.
    * @param polarizationGroup The atom types in the polarization group.
    */
   public PolarizeType(int atomType, double polarizability, double thole, double ddp,
@@ -138,8 +138,8 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
    * @param ip12 an array of {@link int} objects.
    * @param ip13 an array of {@link int} objects.
    */
-  public static void assignPolarizationGroups(
-      Atom[] atoms, int[][] ip11, int[][] ip12, int[][] ip13) {
+  public static void assignPolarizationGroups(Atom[] atoms, int[][] ip11, int[][] ip12,
+      int[][] ip13) {
 
     // Find directly connected group members for each atom.
     List<Integer> group = new ArrayList<>();
@@ -147,7 +147,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
     for (Atom ai : atoms) {
       group.clear();
       polarizationGroup.clear();
-      Integer index = ai.getIndex() - 1;
+      int index = ai.getIndex() - 1;
       group.add(index);
       polarizationGroup.add(ai.getType());
       PolarizeType polarizeType = ai.getPolarizeType();
@@ -173,11 +173,8 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
           }
         }
       } else {
-        String message =
-            "The polarize keyword was not found for atom "
-                + (index + 1)
-                + " with type "
-                + ai.getType();
+        String message = "The polarize keyword was not found for atom " + (index + 1) + " with type "
+            + ai.getType();
         logger.severe(message);
       }
     }
@@ -256,17 +253,14 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
    * Average two PolarizeType instances. The atom types to include in the new polarizationGroup must
    * be supplied.
    *
-   * @param polarizeType1 a {@link ffx.potential.parameters.PolarizeType} object.
-   * @param polarizeType2 a {@link ffx.potential.parameters.PolarizeType} object.
-   * @param atomType a int.
-   * @param polarizationGroup an array of {@link int} objects.
-   * @return a {@link ffx.potential.parameters.PolarizeType} object.
+   * @param polarizeType1 The first PolarizeType.
+   * @param polarizeType2 The second PolarizeType.
+   * @param atomType The atom type to use for the new PolarizeType.
+   * @param polarizationGroup The atom types to include in the new polarizationGroup.
+   * @return The averaged PolarizeType.
    */
-  public static PolarizeType average(
-      PolarizeType polarizeType1,
-      PolarizeType polarizeType2,
-      int atomType,
-      int[] polarizationGroup) {
+  public static PolarizeType average(PolarizeType polarizeType1, PolarizeType polarizeType2,
+      int atomType, int[] polarizationGroup) {
     if (polarizeType1 == null || polarizeType2 == null) {
       return null;
     }
@@ -362,7 +356,7 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
    * A recursive method that checks all atoms bonded to the seed atom for inclusion in the
    * polarization group. The method is called on each newly found group member.
    *
-   * @param group XYZ indeces of current group members.
+   * @param group XYZ indices of current group members.
    * @param seed The bonds of the seed atom are queried for inclusion in the group.
    */
   public static void growGroup(List<Integer> group, Atom seed) {
@@ -389,20 +383,20 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
   }
 
   /**
-   * add
+   * Add an atom type to the polarization group.
    *
-   * @param key a int.
+   * @param atomType The atom type to add.
    */
-  public void add(int key) {
+  public void add(int atomType) {
     for (int i : polarizationGroup) {
-      if (key == i) {
+      if (atomType == i) {
         return;
       }
     }
     int len = polarizationGroup.length;
     int[] newGroup = new int[len + 1];
     arraycopy(polarizationGroup, 0, newGroup, 0, len);
-    newGroup[len] = key;
+    newGroup[len] = atomType;
     polarizationGroup = newGroup;
   }
 
@@ -440,8 +434,8 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
    */
   @Override
   public String toString() {
-    StringBuilder polarizeString =
-        new StringBuilder(format("polarize  %5d  %8.5f %8.5f", type, polarizability, thole));
+    StringBuilder polarizeString = new StringBuilder(
+        format("polarize  %5d  %8.5f %8.5f", type, polarizability, thole));
     if (ddp != 0.0) {
       polarizeString.append(format(" %8.5f", ddp));
     }
@@ -454,9 +448,9 @@ public final class PolarizeType extends BaseType implements Comparator<String> {
   }
 
   /**
-   * incrementType
+   * Both the type and polarization group are incremented by the same amount.
    *
-   * @param increment a int.
+   * @param increment The increment to add to the type.
    */
   void incrementType(int increment) {
     type += increment;

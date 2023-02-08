@@ -35,23 +35,19 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.parsers;
+package ffx.numerics.multipole;
 
-/**
- * The FileCloser interface returns a Runnable object which removes any higher-level references to a
- * MolecularAssembly object (highly implementation- specific). UIFileCloser removes it from the
- * Hierarchy, while PotentialsFileCloser does exactly nothing, because that does not depend on a
- * higher-level structure.
- *
- * <p>Also legacy code whose functions could probably be wrapped directly into implementations of
- * PotentialsFunctions.
- *
- * @author Jacob M. Litman
- * @author Michael J. Schnieders
- */
-public interface FileCloser extends Runnable {
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
 
-  /** {@inheritDoc} */
-  @Override
-  void run();
-}
+/** MultipoleTestSuite collects all Unit tests from the ffx.numerics.multipole package. */
+@RunWith(Suite.class)
+@SuiteClasses({
+    GKTensorGlobalTest.class,
+    GKTensorQITest.class,
+    GlobalMultipoleTensorTest.class,
+    MultipoleTensorTest.class,
+    QIMultipoleTensorTest.class,
+})
+public class MultipoleTestSuite {}

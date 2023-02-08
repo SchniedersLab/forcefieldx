@@ -58,8 +58,8 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "strtors", clazz = String.class, keywordGroup = PotentialFunctionParameter,
-    description = "[2 integers and 1 real] "
+@FFXKeyword(name = "strtors", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
+    "[2 integers and 1 real] "
         + "Provides the values for a single stretch-torsion cross term potential parameter. "
         + "The two integer modifiers give the atom class numbers for the atoms involved in the central bond of the torsional angles to be parameterized. "
         + "The real modifier gives the value of the stretch-torsion force constant for all torsional angles with the defined atom classes for the central bond. "
@@ -69,10 +69,9 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
   public static final double DEFAULT_STRTOR_UNIT = 1.0;
 
   /** Unit conversion. */
-  @FFXKeyword(name = "strtorunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0",
-      description =
-          "Sets the scale factor needed to convert the energy value computed by the bond stretching-torsional angle cross term potential into units of kcal/mole. "
-              + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  @FFXKeyword(name = "strtorunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0", description =
+      "Sets the scale factor needed to convert the energy value computed by the bond stretching-torsional angle cross term potential into units of kcal/mole. "
+          + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
   public double strTorUnit = DEFAULT_STRTOR_UNIT;
 
   /** A Logger for the StretchTorsionType class. */
@@ -103,10 +102,8 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
    * @param atomClasses an array of {@link int} objects.
    * @return a {@link ffx.potential.parameters.StretchTorsionType} object.
    */
-  public static StretchTorsionType average(
-      StretchTorsionType stretchTorsionType1,
-      StretchTorsionType stretchTorsionType2,
-      int[] atomClasses) {
+  public static StretchTorsionType average(StretchTorsionType stretchTorsionType1,
+      StretchTorsionType stretchTorsionType2, int[] atomClasses) {
     if (stretchTorsionType1 == null || stretchTorsionType2 == null || atomClasses == null) {
       return null;
     }
@@ -227,9 +224,9 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
   }
 
   /**
-   * incrementClasses
+   * Increment the atom classes by a specified amount.
    *
-   * @param increment a int.
+   * @param increment The increment to add to the atom classes.
    */
   public void incrementClasses(int increment) {
     for (int i = 0; i < atomClasses.length; i++) {
@@ -282,18 +279,8 @@ public final class StretchTorsionType extends BaseType implements Comparator<Str
   public String toString() {
     return format(
         "strtors  %5d  %5d  %5d  %5d  %6.3f  %6.3f  %6.3f  %6.3f  %6.3f  %6.3f  %6.3f  %6.3f  %6.3f",
-        atomClasses[0],
-        atomClasses[1],
-        atomClasses[2],
-        atomClasses[3],
-        forceConstants[0],
-        forceConstants[1],
-        forceConstants[2],
-        forceConstants[3],
-        forceConstants[4],
-        forceConstants[5],
-        forceConstants[6],
-        forceConstants[7],
-        forceConstants[8]);
+        atomClasses[0], atomClasses[1], atomClasses[2], atomClasses[3], forceConstants[0],
+        forceConstants[1], forceConstants[2], forceConstants[3], forceConstants[4],
+        forceConstants[5], forceConstants[6], forceConstants[7], forceConstants[8]);
   }
 }

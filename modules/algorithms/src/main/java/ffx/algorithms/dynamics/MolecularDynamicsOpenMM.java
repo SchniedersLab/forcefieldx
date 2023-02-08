@@ -91,8 +91,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
   /**
    * Constructs an MolecularDynamicsOpenMM object, to perform molecular dynamics using native OpenMM
-   * routines, avoiding the cost of communicating coordinates, gradients, and energies back and
-   * forth across the PCI bus.
+   * routines, avoiding the cost of communicating coordinates, gradients, and energies back and forth
+   * across the PCI bus.
    *
    * @param assembly MolecularAssembly to operate on
    * @param potential Either a ForceFieldEnergyOpenMM, or a Barostat.
@@ -101,12 +101,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    * @param thermostat May have to be slightly modified for native OpenMM routines
    * @param integrator May have to be slightly modified for native OpenMM routines
    */
-  public MolecularDynamicsOpenMM(
-      MolecularAssembly assembly,
-      Potential potential,
-      CompositeConfiguration properties,
-      AlgorithmListener listener,
-      ThermostatEnum thermostat,
+  public MolecularDynamicsOpenMM(MolecularAssembly assembly, Potential potential,
+      CompositeConfiguration properties, AlgorithmListener listener, ThermostatEnum thermostat,
       IntegratorEnum integrator) {
     super(assembly, potential, properties, listener, thermostat, integrator);
 
@@ -117,31 +113,24 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
     List<Potential> potentialStack = new ArrayList<>(potential.getUnderlyingPotentials());
     potentialStack.add(potential);
 
-    List<ForceFieldEnergyOpenMM> feOMM =
-        potentialStack.stream()
-            .filter((Potential p) -> p instanceof ForceFieldEnergyOpenMM)
-            .map((Potential p) -> (ForceFieldEnergyOpenMM) p)
-            .collect(Collectors.toList());
+    List<ForceFieldEnergyOpenMM> feOMM = potentialStack.stream()
+        .filter((Potential p) -> p instanceof ForceFieldEnergyOpenMM)
+        .map((Potential p) -> (ForceFieldEnergyOpenMM) p).collect(Collectors.toList());
     if (feOMM.size() != 1) {
-      logger.severe(
-          format(
-              " Attempting to create a MolecularDynamicsOpenMM with %d OpenMM force field energies: this presently only allows one!",
-              feOMM.size()));
+      logger.severe(format(
+          " Attempting to create a MolecularDynamicsOpenMM with %d OpenMM force field energies: this presently only allows one!",
+          feOMM.size()));
     }
     forceFieldEnergyOpenMM = feOMM.get(0);
 
-    List<Barostat> barostats =
-        potentialStack.stream()
-            .filter((Potential p) -> p instanceof Barostat)
-            .map((Potential p) -> (Barostat) p)
-            .collect(Collectors.toList());
+    List<Barostat> barostats = potentialStack.stream().filter((Potential p) -> p instanceof Barostat)
+        .map((Potential p) -> (Barostat) p).collect(Collectors.toList());
     if (barostats.isEmpty()) {
       constantPressure = false;
     } else if (barostats.size() > 1) {
-      logger.severe(
-          format(
-              " Attempting to create a MolecularDynamicsOpenMM with %d barostats: this presently only allows 0-1!",
-              barostats.size()));
+      logger.severe(format(
+          " Attempting to create a MolecularDynamicsOpenMM with %d barostats: this presently only allows 0-1!",
+          barostats.size()));
     } else {
       barostat = barostats.get(0);
       barostat.setActive(false);
@@ -172,22 +161,16 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    * then calls methods openMMUpdate and takeOpenMMSteps to run the molecular dynamics simulation.
    */
   @Override
-  public void dynamic(
-      long numSteps,
-      double timeStep,
-      double printInterval,
-      double saveInterval,
-      double temperature,
-      boolean initVelocities,
-      File dyn) {
+  public void dynamic(long numSteps, double timeStep, double printInterval, double saveInterval,
+      double temperature, boolean initVelocities, File dyn) {
     // Return if already running and a second thread calls the dynamic method.
     if (!done) {
       logger.warning(" Programming error - a thread invoked dynamic when it was already running.");
       return;
     }
 
-    init(numSteps, timeStep, printInterval, saveInterval, fileType, restartInterval,
-        temperature, initVelocities, dyn);
+    init(numSteps, timeStep, printInterval, saveInterval, fileType, restartInterval, temperature,
+        initVelocities, dyn);
 
     if (intervalSteps == 0 || intervalSteps > numSteps) {
       // Safe cast: if intervalSteps > numSteps, then numSteps must be less than Integer.MAX_VALUE.
@@ -244,29 +227,14 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
   /** {@inheritDoc} */
   @Override
-  public void init(
-      long numSteps,
-      double timeStep,
-      double loggingInterval,
-      double trajectoryInterval,
-      String fileType,
-      double restartInterval,
-      double temperature,
-      boolean initVelocities,
+  public void init(long numSteps, double timeStep, double loggingInterval, double trajectoryInterval,
+      String fileType, double restartInterval, double temperature, boolean initVelocities,
       File dyn) {
 
-    super.init(
-        numSteps,
-        timeStep,
-        loggingInterval,
-        trajectoryInterval,
-        fileType,
-        restartInterval,
-        temperature,
-        initVelocities,
-        dyn);
+    super.init(numSteps, timeStep, loggingInterval, trajectoryInterval, fileType, restartInterval,
+        temperature, initVelocities, dyn);
 
-    boolean isLangevin = integratorType.equals(IntegratorEnum.STOCHASTIC);
+    boolean isLangevin = IntegratorEnum.isStochastic(integratorType);
 
     ForceFieldEnergyOpenMM.System system = forceFieldEnergyOpenMM.getSystem();
     if (!isLangevin && !thermostatType.equals(ThermostatEnum.ADIABATIC)) {
@@ -305,8 +273,8 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
   }
 
   /**
-   * Sets whether or not to obtain all variables (velocities, gradients) from OpenMM, or just
-   * positions and energies.
+   * Sets whether to obtain all variables (velocities, gradients) from OpenMM, or just positions and
+   * energies.
    *
    * @param obtainVA If true, obtain all variables from OpenMM each update.
    */
@@ -437,25 +405,14 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
     if (running) {
       if (i == 0) {
-        logger.log(
-            basicLogging,
-            format(
-                "\n  %8s %12s %12s %12s %8s %8s",
-                "Time", "Kinetic", "Potential", "Total", "Temp", "CPU"));
-        logger.log(
-            basicLogging,
-            format(
-                "  %8s %12s %12s %12s %8s %8s",
-                "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
-        logger.log(
-            basicLogging,
-            format(
-                "  %8s %12.4f %12.4f %12.4f %8.2f",
-                "",
-                currentKineticEnergy,
-                currentPotentialEnergy,
-                currentTotalEnergy,
-                currentTemperature));
+        logger.log(basicLogging,
+            format("\n  %8s %12s %12s %12s %8s %8s", "Time", "Kinetic", "Potential", "Total", "Temp",
+                "CPU"));
+        logger.log(basicLogging,
+            format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K",
+                "sec"));
+        logger.log(basicLogging, format("  %8s %12.4f %12.4f %12.4f %8.2f", "", currentKineticEnergy,
+            currentPotentialEnergy, currentTotalEnergy, currentTemperature));
       }
       time = logThermoForTime(i, time);
 
@@ -473,25 +430,25 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
   private void integratorToString(IntegratorEnum integrator) {
     if (integrator == null) {
       integratorString = "VERLET";
-      logger.info(" No specified integrator, will use Verlet");
+      logger.info(" An integrator was not specified. Verlet will be used.");
     } else {
       switch (integratorType) {
-        case STOCHASTIC:
-          integratorString = "LANGEVIN";
-          break;
         case VERLET:
-        case VELOCITYVERLET:
-          integratorString = "VERLET";
-          break;
-        case RESPA:
-          integratorString = "RESPA";
-          break;
+        case VELOCITY_VERLET:
         default:
           integratorString = "VERLET";
-          logger.warning(
-              String.format(
-                  " Integrator %s incompatible with " + "OpenMM MD integration; defaulting to %s",
-                  integratorType, integratorString));
+          break;
+        case STOCHASTIC:
+        case LANGEVIN:
+          integratorString = "LANGEVIN";
+          break;
+        case RESPA:
+        case MTS:
+          integratorString = "MTS";
+          break;
+        case STOCHASTIC_MTS:
+        case LANGEVIN_MTS:
+          integratorString = "LANGEVIN-MTS";
           break;
       }
     }

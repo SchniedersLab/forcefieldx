@@ -1013,7 +1013,7 @@
     <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
     <tensorflow.version>1.13.1</tensorflow.version>
     <timestamp>${maven.build.timestamp}</timestamp>
-    <tornado.version>0.14.1</tornado.version>
+    <tornado.version>0.15</tornado.version>
     <versions.version>2.14.2</versions.version>
     <!-- Default locations for deploying the website (can be over-ridden by settings.xml) -->
     <website.repo>file:website</website.repo>

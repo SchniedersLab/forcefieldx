@@ -91,7 +91,7 @@ public class Integration {
    * halfBinComposite.
    *
    * @param inputData an array of {@link double} objects.
-   * @param mode a int.
+   * @param mode the integration mode.
    * @param side a {@link java.lang.String} object.
    * @return a double.
    */
@@ -104,23 +104,22 @@ public class Integration {
       double lowerHalfBin = (inputData[1] + inputData[0]) / 2.0 * (x[1] - x[0]);
       halfBinComposite += lowerHalfBin;
       switch (mode) {
-          // Case 1 is the Simpson's method, uses trapezoid on right for bin left out of Simpson's
-        case 1:
-          double upperTrapArea =
-              (inputData[n - 3] + inputData[n - 2]) / 2.0 * (x[n - 2] - x[n - 3]);
+        // Case 1 is the Simpson's method, uses trapezoid on right for bin left out of Simpson's
+        case 1 -> {
+          double upperTrapArea = (inputData[n - 3] + inputData[n - 2]) / 2.0 * (x[n - 2] - x[n - 3]);
           halfBinComposite += upperTrapArea;
-          break;
-          // Case 2 is the Boole's method, uses Simpsons and trapezoidal integral on right to cover
-          // remaining bins
-        case 2:
+        }
+        // Case 2 is the Boole's method, uses Simpsons and trapezoidal integral on right to cover
+        // remaining bins
+        case 2 -> {
           double upperSimpson =
               (1.0 / 3.0)
                   * (x[n - 4] - x[n - 5])
                   * (inputData[n - 5] + 4 * inputData[n - 4] + inputData[n - 3]);
           halfBinComposite += upperSimpson;
-          upperTrapArea = (inputData[n - 3] + inputData[n - 2]) / 2.0 * (x[n - 2] - x[n - 3]);
+          double upperTrapArea = (inputData[n - 3] + inputData[n - 2]) / 2.0 * (x[n - 2] - x[n - 3]);
           halfBinComposite += upperTrapArea;
-          break;
+        }
       }
     } else if (side.equalsIgnoreCase("right")) {
       // Upper half bin calculated with trapezoid
@@ -227,8 +226,7 @@ public class Integration {
         trapIntegral = sum;
       }
       if (a == 0) {
-        double area = (inputData[a + 1] + inputData[a]) / (double) 2 * (x[a + 1] - x[a]);
-        total = area;
+        total = (inputData[a + 1] + inputData[a]) / (double) 2 * (x[a + 1] - x[a]);
       }
     }
 
@@ -373,8 +371,7 @@ public class Integration {
         trapIntegral = sum;
       }
       if (a == 1) {
-        double area = (inputData[a + 1] + inputData[a]) / 2.0 * (x[a + 1] - x[a]);
-        total = area;
+        total = (inputData[a + 1] + inputData[a]) / 2.0 * (x[a + 1] - x[a]);
       }
     }
 

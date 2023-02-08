@@ -54,13 +54,9 @@ public enum ASULimit {
    * @return True if the point is within the real space asymmetric unit, false otherwise.
    */
   public boolean check(double limit, double x) {
-    switch (this) {
-      case LT:
-        return x >= 0.0 && x < limit;
-      case LTE:
-        return x >= 0.0 && x <= limit;
-      default:
-        return false;
-    }
+    return switch (this) {
+      case LT -> x >= 0.0 && x < limit;
+      case LTE -> x >= 0.0 && x <= limit;
+    };
   }
 }

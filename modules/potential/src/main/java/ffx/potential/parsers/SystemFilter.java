@@ -81,7 +81,7 @@ public abstract class SystemFilter {
   protected final boolean standardizeAtomNames;
   /**
    * True if atoms are to be printed to their van der Waals centers instead of nuclear centers
-   * (applies primarily to hydrogens).
+   * (applies primarily to hydrogen).
    */
   protected final boolean vdwH;
   /** The atomList is filled by filters that extend SystemFilter. */
@@ -142,10 +142,7 @@ public abstract class SystemFilter {
    * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
    *     object.
    */
-  public SystemFilter(
-      List<File> files,
-      MolecularAssembly molecularAssembly,
-      ForceField forceField,
+  public SystemFilter(List<File> files, MolecularAssembly molecularAssembly, ForceField forceField,
       CompositeConfiguration properties) {
     this(forceField, properties);
     this.files = files;
@@ -164,10 +161,7 @@ public abstract class SystemFilter {
    * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
    *     object.
    */
-  public SystemFilter(
-      File file,
-      MolecularAssembly molecularAssembly,
-      ForceField forceField,
+  public SystemFilter(File file, MolecularAssembly molecularAssembly, ForceField forceField,
       CompositeConfiguration properties) {
     this(forceField, properties);
     files = new ArrayList<>();
@@ -187,10 +181,7 @@ public abstract class SystemFilter {
    * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
    *     object.
    */
-  public SystemFilter(
-      File file,
-      List<MolecularAssembly> molecularAssemblies,
-      ForceField forceField,
+  public SystemFilter(File file, List<MolecularAssembly> molecularAssemblies, ForceField forceField,
       CompositeConfiguration properties) {
     this(forceField, properties);
     files = new ArrayList<>();
@@ -279,25 +270,21 @@ public abstract class SystemFilter {
 
   private static Set<Atom> parseAtomicRanges(MolecularAssembly mola, String[] toks) {
     Atom[] atoms = mola.getAtomArray();
-    return Arrays.stream(toks)
-        .parallel()
-        .flatMap(
-            (String tok) -> {
-              if (tok.equalsIgnoreCase("HEAVY")) {
-                return Arrays.stream(mola.getChains())
-                    .flatMap((Polymer poly) -> poly.getAtomList().stream().filter(Atom::isHeavy));
-              } else if (tok.matches("^[0-9]+$")) {
-                return Stream.of(atoms[Integer.parseInt(tok) - 1]);
-              } else if (tok.matches("^[0-9]+-[0-9]+")) {
-                String[] subtoks = tok.split("-");
-                int first = Integer.parseInt(subtoks[0]) - 1;
-                int last = Integer.parseInt(subtoks[1]) - 1;
-                return IntStream.rangeClosed(first, last).mapToObj((int i) -> atoms[i]);
-              } else {
-                return Arrays.stream(atoms).filter((Atom a) -> a.getName().equals(tok));
-              }
-            })
-        .collect(Collectors.toSet());
+    return Arrays.stream(toks).parallel().flatMap((String tok) -> {
+      if (tok.equalsIgnoreCase("HEAVY")) {
+        return Arrays.stream(mola.getChains())
+            .flatMap((Polymer poly) -> poly.getAtomList().stream().filter(Atom::isHeavy));
+      } else if (tok.matches("^[0-9]+$")) {
+        return Stream.of(atoms[Integer.parseInt(tok) - 1]);
+      } else if (tok.matches("^[0-9]+-[0-9]+")) {
+        String[] subtoks = tok.split("-");
+        int first = Integer.parseInt(subtoks[0]) - 1;
+        int last = Integer.parseInt(subtoks[1]) - 1;
+        return IntStream.rangeClosed(first, last).mapToObj((int i) -> atoms[i]);
+      } else {
+        return Arrays.stream(atoms).filter((Atom a) -> a.getName().equals(tok));
+      }
+    }).collect(Collectors.toSet());
   }
 
   private static File version(File file, boolean prefix) {
@@ -317,10 +304,8 @@ public abstract class SystemFilter {
     String name = (prefix) ? fn.substring(0, under) : fn.substring(0, dot);
     String extension = (prefix) ? fn.substring(dot + 1) : fn.substring(dot + 1, under);
     int number = 0;
-    String newFn =
-        (prefix)
-            ? format("%s_%d.%s", name, number, extension)
-            : format("%s.%s_%d", name, extension, number);
+    String newFn = (prefix) ? format("%s_%d.%s", name, number, extension)
+        : format("%s.%s_%d", name, extension, number);
     if (prefix && under < dot) {
       try {
         number = Integer.parseInt(fn.substring(under + 1, dot));
@@ -341,10 +326,8 @@ public abstract class SystemFilter {
     File newFile = new File(newFn);
     while (newFile.exists()) {
       ++number;
-      newFn =
-          (prefix)
-              ? format("%s_%d.%s", name, number, extension)
-              : format("%s.%s_%d", name, extension, number);
+      newFn = (prefix) ? format("%s_%d.%s", name, number, extension)
+          : format("%s.%s_%d", name, extension, number);
       newFile = new File(newFn);
     }
     return newFile;
@@ -366,17 +349,13 @@ public abstract class SystemFilter {
     }
     String name = (prefix) ? fn.substring(0, under) : fn.substring(0, dot);
     String extension = (prefix) ? fn.substring(dot + 1) : fn.substring(dot + 1, under);
-    String newFn =
-        (prefix)
-            ? format("%s_%d.%s", name, absoluteCounter, extension)
-            : format("%s.%s_%d", name, extension, absoluteCounter);
+    String newFn = (prefix) ? format("%s_%d.%s", name, absoluteCounter, extension)
+        : format("%s.%s_%d", name, extension, absoluteCounter);
     File newFile = new File(newFn);
     while (newFile.exists()) {
       absoluteCounter++;
-      newFn =
-          (prefix)
-              ? format("%s_%d.%s", name, absoluteCounter, extension)
-              : format("%s.%s_%d", name, extension, absoluteCounter);
+      newFn = (prefix) ? format("%s_%d.%s", name, absoluteCounter, extension)
+          : format("%s.%s_%d", name, extension, absoluteCounter);
       newFile = new File(newFn);
     }
     return newFile;
@@ -493,21 +472,18 @@ public abstract class SystemFilter {
       try {
         forceconst = Double.parseDouble(toks[0]);
       } catch (NumberFormatException ex) {
-        logger.log(
-            Level.INFO,
+        logger.log(Level.INFO,
             " First argument to coordinate restraint must be a positive force constant; discarding coordinate restraint.");
         continue;
       }
       if (forceconst < 0) {
-        logger.log(
-            Level.INFO, " Force constants must be positive. Discarding coordinate restraint.");
+        logger.log(Level.INFO,
+            " Force constants must be positive. Discarding coordinate restraint.");
         continue;
       }
-      logger.info(
-          format(
-              " Adding lambda-disabled coordinate restraint "
-                  + "with force constant %10.4f kcal/mol/A",
-              forceconst));
+      logger.info(format(
+          " Adding lambda-disabled coordinate restraint " + "with force constant %10.4f kcal/mol/A",
+          forceconst));
       Set<Atom> restraintAtoms = parseAtomicRanges(activeMolecularAssembly, toks, 1);
       if (!(restraintAtoms == null || restraintAtoms.isEmpty())) {
         Atom[] ats = restraintAtoms.toArray(new Atom[0]);
@@ -521,11 +497,9 @@ public abstract class SystemFilter {
     for (String coordRestraint : lamRestraintStrings) {
       String[] toks = coordRestraint.split("\\s+");
       double forceconst = Double.parseDouble(toks[0]);
-      logger.info(
-          format(
-              " Adding lambda-enabled coordinate restraint "
-                  + "with force constant %10.4f kcal/mol/A",
-              forceconst));
+      logger.info(format(
+          " Adding lambda-enabled coordinate restraint " + "with force constant %10.4f kcal/mol/A",
+          forceconst));
       Set<Atom> restraintAtoms = new HashSet<>();
 
       for (int i = 1; i < toks.length; i++) {
@@ -545,13 +519,9 @@ public abstract class SystemFilter {
           if (atomFound) {
             logger.info(format(" Added atoms with name %s to restraint", toks[i]));
           } else {
-            logger.log(
-                Level.INFO,
-                format(
-                    " Restraint input %s "
-                        + "could not be parsed as a numerical range or "
-                        + "an atom type present in assembly",
-                    toks[i]));
+            logger.log(Level.INFO, format(
+                " Restraint input %s " + "could not be parsed as a numerical range or "
+                    + "an atom type present in assembly", toks[i]));
           }
         }
       }
@@ -596,8 +566,8 @@ public abstract class SystemFilter {
                   restXYZ[i][j] = coords.get(j)[i];
                 }
               }
-              CoordRestraint thePin =
-                  new CoordRestraint(atArr, forceField, lastUseLam, lastForceConst);
+              CoordRestraint thePin = new CoordRestraint(atArr, forceField, lastUseLam,
+                  lastForceConst);
               thePin.setCoordinatePin(restXYZ);
               thePin.setIgnoreHydrogen(false);
               coordRestraints.add(thePin);
@@ -616,7 +586,7 @@ public abstract class SystemFilter {
           restraintAts.add(molaAtoms[atNum]);
           coords.add(atXYZ);
         } catch (Exception ex) {
-          logger.info(format(" Exception parsing xyzRestraint %s: %s", xR, ex.toString()));
+          logger.info(format(" Exception parsing xyzRestraint %s: %s", xR, ex));
         }
       }
     }
@@ -656,12 +626,9 @@ public abstract class SystemFilter {
           if (atomFound) {
             logger.info(format(" Disabled electrostatics for atoms with name %s", tok));
           } else {
-            logger.log(
-                Level.INFO,
-                format(
-                    " No electrostatics input %s could not be parsed as a numerical "
-                        + "range or atom type present in assembly",
-                    tok));
+            logger.log(Level.INFO, format(
+                " No electrostatics input %s could not be parsed as a numerical "
+                    + "range or atom type present in assembly", tok));
           }
         }
       }
@@ -703,18 +670,6 @@ public abstract class SystemFilter {
    */
   public List<Atom> getAtomList() {
     return atomList;
-  }
-
-  /**
-   * getBondCount
-   *
-   * @return a int.
-   */
-  public int getBondCount() {
-    if (bondList == null) {
-      return 0;
-    }
-    return bondList.size();
   }
 
   /**
@@ -785,11 +740,11 @@ public abstract class SystemFilter {
   }
 
   /**
-   * getMolecularAssemblys
+   * Get the MolecularAssembly array.
    *
    * @return an array of {@link ffx.potential.MolecularAssembly} objects.
    */
-  public MolecularAssembly[] getMolecularAssemblys() {
+  public MolecularAssembly[] getMolecularAssemblyArray() {
     if (systems.size() > 0) {
       return systems.toArray(new MolecularAssembly[0]);
     } else {
@@ -834,7 +789,7 @@ public abstract class SystemFilter {
   }
 
   /**
-   * This method is different for each subclass and must be overidden
+   * This method is different for each subclass and must be overridden.
    *
    * @return a boolean.
    */
@@ -894,9 +849,10 @@ public abstract class SystemFilter {
   }
 
   /**
-   * This method is different for each subclass and must be overidden.
+   * This method is different for each subclass and must be overridden.
    *
-   * <p>If the append flag is true, "saveFile" will be appended to. Otherwise the default versioning
+   * <p>If the append flag is true, "saveFile" will be appended to. Otherwise, the default
+   * versioning
    * scheme will be applied.
    *
    * @param saveFile a {@link java.io.File} object.
@@ -908,9 +864,10 @@ public abstract class SystemFilter {
   }
 
   /**
-   * This method is different for each subclass and must be overidden.
+   * This method is different for each subclass and must be overridden.
    *
-   * <p>If the append flag is true, "saveFile" will be appended to. Otherwise the default versioning
+   * <p>If the append flag is true, "saveFile" will be appended to. Otherwise, the default
+   * versioning
    * scheme will be applied.
    *
    * @param saveFile a {@link java.io.File} object.
@@ -939,11 +896,6 @@ public abstract class SystemFilter {
   }
 
   public enum Versioning {
-    TINKER,
-    PREFIX,
-    POSTFIX,
-    PREFIX_ABSOLUTE,
-    POSTFIX_ABSOLUTE,
-    NONE;
+    TINKER, PREFIX, POSTFIX, PREFIX_ABSOLUTE, POSTFIX_ABSOLUTE, NONE
   }
 }

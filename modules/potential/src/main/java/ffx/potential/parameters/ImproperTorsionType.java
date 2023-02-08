@@ -43,7 +43,6 @@ import static ffx.utilities.KeywordGroup.PotentialFunctionParameter;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static org.apache.commons.math3.util.FastMath.cos;
-import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
@@ -60,8 +59,8 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "imptors", clazz = String.class, keywordGroup = PotentialFunctionParameter,
-    description = "[4 integers and up to 3 real/real/integer triples] "
+@FFXKeyword(name = "imptors", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
+    "[4 integers and up to 3 real/real/integer triples] "
         + "Provides the values for a single AMBER-style improper torsional angle parameter. "
         + "The first four integer modifiers give the atom class numbers for the atoms involved in the improper torsional angle to be defined. "
         + "By convention, the third atom class of the four is the trigonal atom on which the improper torsion is centered. "
@@ -87,10 +86,9 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
   public final double sin;
 
   /** Convert angle bending energy to kcal/mole. */
-  @FFXKeyword(name = "imptorunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0",
-      description =
-          "Sets the scale factor needed to convert the energy value computed by the AMBER-style improper torsional angle potential into units of kcal/mole. "
-              + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  @FFXKeyword(name = "imptorunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0", description =
+      "Sets the scale factor needed to convert the energy value computed by the AMBER-style improper torsional angle potential into units of kcal/mole. "
+          + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
   public double impTorUnit = DEFAULT_IMPTOR_UNIT;
   public static final double DEFAULT_IMPTOR_UNIT = 1.0;
 
@@ -124,10 +122,8 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
    * @param atomClasses an array of {@link int} objects.
    * @return a {@link ffx.potential.parameters.ImproperTorsionType} object.
    */
-  public static ImproperTorsionType average(
-      ImproperTorsionType improperTorsionType1,
-      ImproperTorsionType improperTorsionType2,
-      int[] atomClasses) {
+  public static ImproperTorsionType average(ImproperTorsionType improperTorsionType1,
+      ImproperTorsionType improperTorsionType2, int[] atomClasses) {
 
     if (improperTorsionType1 == null || improperTorsionType2 == null || atomClasses == null) {
       return null;
@@ -196,8 +192,8 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
    * @param allowFinalWildCard Allow wildcard match for final class.
    * @return True if this torsionType is assignable to the atom array.
    */
-  public boolean assigned(
-      int[] inputClasses, boolean allowInitialWildCards, boolean allowFinalWildCard) {
+  public boolean assigned(int[] inputClasses, boolean allowInitialWildCards,
+      boolean allowFinalWildCard) {
     // Assign the trigonal atom.
     if (inputClasses[2] != atomClasses[2]) {
       return false;
@@ -307,7 +303,7 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
   /**
    * incrementClasses
    *
-   * @param increment a int.
+   * @param increment The increment to add to the atom classes.
    */
   public void incrementClasses(int increment) {
     for (int i = 0; i < atomClasses.length; i++) {
@@ -324,11 +320,7 @@ public final class ImproperTorsionType extends BaseType implements Comparator<St
    * @return True if there are no zero "wildcard" atom classes for this type.
    */
   public boolean noZeroClasses() {
-    if (atomClasses[0] != 0 && atomClasses[1] != 0 && atomClasses[3] != 0) {
-      return true;
-    }
-
-    return false;
+    return atomClasses[0] != 0 && atomClasses[1] != 0 && atomClasses[3] != 0;
   }
 
   /**

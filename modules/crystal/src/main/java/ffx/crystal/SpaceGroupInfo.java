@@ -44,7 +44,7 @@ import java.util.HashMap;
 public class SpaceGroupInfo {
 
   /**
-   * Names of the 230 three dimensional space groups.
+   * Names of the 230 three-dimensional space groups.
    *
    * @since 1.0
    */

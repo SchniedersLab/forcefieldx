@@ -43,7 +43,7 @@ import static org.apache.commons.math3.util.FastMath.random;
 /**
  * Enumeration of the 7 lattice systems.
  * <p>
- * Currently the SpaceGroup class uses the HEXAGONAL_LATTICE in all cases where its also possible to
+ * Currently, the SpaceGroup class uses the HEXAGONAL_LATTICE in all cases where its also possible to
  * use a RHOMBOHEDRAL_LATTICE.
  * <p>
  * This includes space groups 146, 148, 155, 160, 161, 166 and 167.
@@ -161,31 +161,39 @@ public enum LatticeSystem {
   public boolean validParameters(double a, double b, double c, double alpha, double beta,
       double gamma) {
     switch (this) {
-      case TRICLINIC_LATTICE:
+      case TRICLINIC_LATTICE -> {
         // No restrictions.
         return true;
-      case MONOCLINIC_LATTICE:
+      }
+      case MONOCLINIC_LATTICE -> {
         // alpha = gamma = 90
         return check(alpha, 90.0) && check(gamma, 90.0);
-      case ORTHORHOMBIC_LATTICE:
+      }
+      case ORTHORHOMBIC_LATTICE -> {
         // alpha = beta = gamma = 90
         return check(alpha, 90.0) && check(beta, 90.0) && check(gamma, 90.0);
-      case TETRAGONAL_LATTICE:
+      }
+      case TETRAGONAL_LATTICE -> {
         // a = b, alpha = beta = gamma = 90
         return check(a, b) && check(alpha, 90.0) && check(beta, 90.0) && check(gamma, 90.0);
-      case RHOMBOHEDRAL_LATTICE:
+      }
+      case RHOMBOHEDRAL_LATTICE -> {
         // a = b = c, alpha = beta = gamma.
         return check(a, b) && check(b, c) && check(alpha, beta) && check(beta, gamma);
-      case HEXAGONAL_LATTICE:
+      }
+      case HEXAGONAL_LATTICE -> {
         // a = b, alpha = beta = 90, gamma = 120
         return check(a, b) && check(alpha, 90.0) && check(beta, 90.0) && check(gamma, 120.0);
-      case CUBIC_LATTICE:
+      }
+      case CUBIC_LATTICE -> {
         // a = b = c; alpha = beta = gamma = 90
         return check(a, b) && check(b, c) && check(alpha, 90.0) && check(beta, 90.0) && check(gamma,
             90.0);
-      default:
+      }
+      default -> {
         assert (2 != 2);
         return false;
+      }
     }
   }
 
@@ -201,26 +209,29 @@ public enum LatticeSystem {
    * @return Adjusted parameters if the restrictions are satisfied, original parameters otherwise.
    */
   public double[] fixParameters(double a, double b, double c, double alpha, double beta,
-                                 double gamma) {
-    double[] parameters = {a,b,c,alpha,beta,gamma};
-    double ab = (parameters[0] + parameters[1])/2;
-    double abc = (parameters[0] + parameters[1] + parameters[2])/3;
+      double gamma) {
+    double[] parameters = {a, b, c, alpha, beta, gamma};
+    double ab = (parameters[0] + parameters[1]) / 2;
+    double abc = (parameters[0] + parameters[1] + parameters[2]) / 3;
     switch (this) {
-      case TRICLINIC_LATTICE:
+      case TRICLINIC_LATTICE -> {
         // No restrictions.
         return parameters;
-      case MONOCLINIC_LATTICE:
+      }
+      case MONOCLINIC_LATTICE -> {
         // alpha = gamma = 90
         parameters[3] = 90.0;
         parameters[5] = 90.0;
         return parameters;
-      case ORTHORHOMBIC_LATTICE:
+      }
+      case ORTHORHOMBIC_LATTICE -> {
         // alpha = beta = gamma = 90
         parameters[3] = 90.0;
         parameters[4] = 90.0;
         parameters[5] = 90.0;
         return parameters;
-      case TETRAGONAL_LATTICE:
+      }
+      case TETRAGONAL_LATTICE -> {
         // a = b, alpha = beta = gamma = 90
         parameters[0] = ab;
         parameters[1] = ab;
@@ -228,9 +239,10 @@ public enum LatticeSystem {
         parameters[4] = 90.0;
         parameters[5] = 90.0;
         return parameters;
-      case RHOMBOHEDRAL_LATTICE:
+      }
+      case RHOMBOHEDRAL_LATTICE -> {
         // a = b = c, alpha = beta = gamma.
-        double angles = (parameters[3] + parameters[4] + parameters[5])/3;
+        double angles = (parameters[3] + parameters[4] + parameters[5]) / 3;
         parameters[0] = abc;
         parameters[1] = abc;
         parameters[2] = abc;
@@ -238,15 +250,17 @@ public enum LatticeSystem {
         parameters[4] = angles;
         parameters[5] = angles;
         return parameters;
-        case HEXAGONAL_LATTICE:
+      }
+      case HEXAGONAL_LATTICE -> {
         // a = b, alpha = beta = 90, gamma = 120
-          parameters[0] = ab;
-          parameters[1] = ab;
-          parameters[3] = 90.0;
-          parameters[4] = 90.0;
-          parameters[5] = 120.0;
-          return parameters;
-      case CUBIC_LATTICE:
+        parameters[0] = ab;
+        parameters[1] = ab;
+        parameters[3] = 90.0;
+        parameters[4] = 90.0;
+        parameters[5] = 120.0;
+        return parameters;
+      }
+      case CUBIC_LATTICE -> {
         // a = b = c; alpha = beta = gamma = 90
         parameters[0] = abc;
         parameters[1] = abc;
@@ -255,9 +269,11 @@ public enum LatticeSystem {
         parameters[4] = 90.0;
         parameters[5] = 90.0;
         return parameters;
-      default:
+      }
+      default -> {
         assert (2 != 2);
         return parameters;
+      }
     }
   }
 
@@ -277,7 +293,7 @@ public enum LatticeSystem {
    * @return default c-axis value
    */
   public double getDefaultCAxis(double aaxis, double baxis) {
-    return (aaxis+baxis)/2;
+    return (aaxis + baxis) / 2;
   }
 
   /**
@@ -305,7 +321,7 @@ public enum LatticeSystem {
    */
   public double getDefaultGamma() {
     double gamma = 90.0;
-    if(this==HEXAGONAL_LATTICE){
+    if (this == HEXAGONAL_LATTICE) {
       gamma = 120.0;
     }
     return gamma;

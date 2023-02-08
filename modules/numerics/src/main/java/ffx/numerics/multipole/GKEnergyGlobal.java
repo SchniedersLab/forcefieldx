@@ -44,8 +44,6 @@ import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.BORN;
 import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.POTENTIAL;
 import static java.util.Arrays.fill;
 
-import ffx.numerics.math.DoubleMath;
-
 public class GKEnergyGlobal {
 
   private final GKSource gkSource;
@@ -53,6 +51,13 @@ public class GKEnergyGlobal {
   private final GKTensorGlobal gkDipole;
   private final GKTensorGlobal gkQuadrupole;
 
+  /**
+   * Constructor for GKEnergyGlobal.
+   *
+   * @param gkc The GK generalizing function constant.
+   * @param epsilon The solvent dielectric.
+   * @param gradient If true, compute the gradient and torque.
+   */
   public GKEnergyGlobal(double gkc, double epsilon, boolean gradient) {
     int monopoleOrder = 2;
     int dipoleOrder = 3;

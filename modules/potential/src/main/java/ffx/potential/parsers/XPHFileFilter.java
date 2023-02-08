@@ -49,7 +49,7 @@ import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 
 /**
- * The XYZFileFilter class is used to choose a TINKER Cartesian Coordinate (*.XYZ) file.
+ * The XPHFileFilter class is used to choose a XPH Coordinate (*.XPH) file.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -62,9 +62,9 @@ public final class XPHFileFilter extends FileFilter {
 
   /**
    * {@inheritDoc}
-   *
-   * <p>This method return <code>true</code> if the file is a directory or TINKER Cartesian
-   * coordinate (*.XYZ) file.
+   * <p>
+   * This method return <code>true</code> if the file is a directory or an XPH coordinate (*.XPH)
+   * file.
    */
   @Override
   public boolean accept(File file) {
@@ -76,70 +76,12 @@ public final class XPHFileFilter extends FileFilter {
   }
 
   /**
-   * acceptDeep
-   *
-   * @param file a {@link File} object.
-   * @return a boolean.
-   */
-  public boolean acceptDeep(File file) {
-    if (file == null || file.isDirectory() || !file.canRead()) {
-      return false;
-    }
-
-    try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-      if (!br.ready()) {
-        return false;
-      }
-
-      /*
-       If the first token is not an integer this file is not a TINKER
-       Cartesian Coordinate File.
-      */
-      String rawdata = br.readLine();
-      String[] header = rawdata.trim().split(" +");
-      if (header.length == 0) {
-        return false;
-      }
-      try {
-        parseInt(header[0]);
-      } catch (Exception e) {
-        return false;
-      }
-      /*
-       If the the first line does not begin with an integer (an Atom Line)
-       or a double (a unit cell parameter line) and contain at least
-       six tokens, this is not a TINKER cartesian coordinate file.
-      */
-      String firstAtom = br.readLine();
-      if (firstAtom == null) {
-        return false;
-      }
-      String[] data = firstAtom.trim().split(" +");
-      if (data.length < 6) {
-        return false;
-      }
-      try {
-        parseInt(data[0]);
-      } catch (NumberFormatException e) {
-        try {
-          parseDouble(data[0]);
-        } catch (NumberFormatException e2) {
-          return false;
-        }
-      }
-      return true;
-    } catch (IOException e) {
-      return true;
-    }
-  }
-
-  /**
    * {@inheritDoc}
    *
-   * <p>Provides a description of the XYZFileFilter.
+   * <p>Provides a description of the XPHFileFilter.
    */
   @Override
   public String getDescription() {
-    return "TINKER Cartesian Coordinates (*.XYZ)";
+    return "XPH Coordinates (*.XPH)";
   }
 }

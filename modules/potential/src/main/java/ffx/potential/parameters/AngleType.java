@@ -62,17 +62,16 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "angle", clazz = String.class, keywordGroup = PotentialFunctionParameter,
-    description = "[3 integers and 4 reals] "
-        + "Provides the values for a single bond angle bending parameter. "
+@FFXKeyword(name = "angle", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
+    "[3 integers and 4 reals] " + "Provides the values for a single bond angle bending parameter. "
         + "The integer modifiers give the atom class numbers for the three kinds of atoms involved in the angle which is to be defined. "
         + "The real number modifiers give the force constant value for the angle and up to three ideal bond angles in degrees. "
         + "In most cases only one ideal bond angle is given, and that value is used for all occurrences of the specified bond angle. "
         + "If all three ideal angles are given, the values apply when the central atom of the angle is attached to 0, 1 or 2 additional hydrogen atoms, respectively. "
         + "This \"hydrogen environment\" option is provided to implement the corresponding feature of the AMOEBA force field."
         + "The default units for the force constant are kcal/mole/radian^2, but this can be controlled via the angleunit keyword.")
-@FFXKeyword(name = "anglep", clazz = String.class, keywordGroup = PotentialFunctionParameter,
-    description = "[3 integers and 3 reals] "
+@FFXKeyword(name = "anglep", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
+    "[3 integers and 3 reals] "
         + "Provides the values for a single projected in-plane bond angle bending parameter. "
         + "The integer modifiers give the atom class numbers for the three kinds of atoms involved in the angle which is to be defined. "
         + "The real number modifiers give the force constant value for the angle and up to two ideal bond angles in degrees. "
@@ -94,50 +93,45 @@ public final class AngleType extends BaseType implements Comparator<String> {
   public static final double DEFAULT_ANGLE_SEXTIC = 0.0;
 
   /** Convert angle bending energy to kcal/mole. */
-  @FFXKeyword(name = "angleunit", keywordGroup = EnergyUnitConversion, defaultValue = "(Pi/180)^2",
-      description =
-          "Sets the scale factor needed to convert the energy value computed by the bond angle bending potential into units of kcal/mole. "
-              + "The correct value is force field dependent and typically provided in the header of the master force field parameter file. ")
+  @FFXKeyword(name = "angleunit", keywordGroup = EnergyUnitConversion, defaultValue = "(Pi/180)^2", description =
+      "Sets the scale factor needed to convert the energy value computed by the bond angle bending potential into units of kcal/mole. "
+          + "The correct value is force field dependent and typically provided in the header of the master force field parameter file. ")
   public double angleUnit = DEFAULT_ANGLE_UNIT;
 
   /** Cubic coefficient in angle bending potential. */
-  @FFXKeyword(name = "angle-cubic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0",
-      description =
-          "Sets the value of the cubic term in the Taylor series expansion form of the bond angle bending potential energy. "
-              + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
-              + "This term multiplied by the angle bending energy unit conversion factor, the force constant, "
-              + "and the cube of the deviation of the bond angle from its ideal value gives the cubic contribution to the angle bending energy. "
-              + "The default value in the absence of the angle-cubic keyword is zero; i.e., the cubic angle bending term is omitted.")
+  @FFXKeyword(name = "angle-cubic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description =
+      "Sets the value of the cubic term in the Taylor series expansion form of the bond angle bending potential energy. "
+          + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
+          + "This term multiplied by the angle bending energy unit conversion factor, the force constant, "
+          + "and the cube of the deviation of the bond angle from its ideal value gives the cubic contribution to the angle bending energy. "
+          + "The default value in the absence of the angle-cubic keyword is zero; i.e., the cubic angle bending term is omitted.")
   public double cubic = DEFAULT_ANGLE_CUBIC;
 
   /** Quartic coefficient in angle bending potential. */
-  @FFXKeyword(name = "angle-quartic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0",
-      description =
-          "Sets the value of the quartic term in the Taylor series expansion form of the bond angle bending potential energy. "
-              + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
-              + "This term multiplied by the angle bending energy unit conversion factor, the force constant, "
-              + "and the forth power of the deviation of the bond angle from its ideal value gives the quartic contribution to the angle bending energy."
-              + "The default value in the absence of the angle-quartic keyword is zero; i.e., the quartic angle bending term is omitted.")
+  @FFXKeyword(name = "angle-quartic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description =
+      "Sets the value of the quartic term in the Taylor series expansion form of the bond angle bending potential energy. "
+          + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
+          + "This term multiplied by the angle bending energy unit conversion factor, the force constant, "
+          + "and the forth power of the deviation of the bond angle from its ideal value gives the quartic contribution to the angle bending energy."
+          + "The default value in the absence of the angle-quartic keyword is zero; i.e., the quartic angle bending term is omitted.")
   public double quartic = DEFAULT_ANGLE_QUARTIC;
 
   /** Pentic coefficient in angle bending potential. */
-  @FFXKeyword(name = "angle-pentic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0",
-      description =
-          "Sets the value of the fifth power term in the Taylor series expansion form of the bond angle bending potential energy. "
-              + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
-              + "This term multiplied by the angle bending energy unit conversion factor, the force constant, "
-              + "and the fifth power of the deviation of the bond angle from its ideal value gives the pentic contribution to the angle bending energy. "
-              + "The default value in the absence of the angle-pentic keyword is zero; i.e., the pentic angle bending term is omitted.")
+  @FFXKeyword(name = "angle-pentic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description =
+      "Sets the value of the fifth power term in the Taylor series expansion form of the bond angle bending potential energy. "
+          + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
+          + "This term multiplied by the angle bending energy unit conversion factor, the force constant, "
+          + "and the fifth power of the deviation of the bond angle from its ideal value gives the pentic contribution to the angle bending energy. "
+          + "The default value in the absence of the angle-pentic keyword is zero; i.e., the pentic angle bending term is omitted.")
   public double pentic = DEFAULT_ANGLE_PENTIC;
 
   /** Sextic coefficient in angle bending potential. */
-  @FFXKeyword(name = "angle-sextic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0",
-      description =
-          "Sets the value of the sixth power term in the Taylor series expansion form of the bond angle bending potential energy. "
-              + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
-              + "This term multiplied by the angle bending energy unit conversion factor, the force constant, "
-              + "and the sixth power of the deviation of the bond angle from its ideal value gives the sextic contribution to the angle bending energy. "
-              + "The default value in the absence of the angle-sextic keyword is zero; i.e., the sextic angle bending term is omitted.")
+  @FFXKeyword(name = "angle-sextic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description =
+      "Sets the value of the sixth power term in the Taylor series expansion form of the bond angle bending potential energy. "
+          + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
+          + "This term multiplied by the angle bending energy unit conversion factor, the force constant, "
+          + "and the sixth power of the deviation of the bond angle from its ideal value gives the sextic contribution to the angle bending energy. "
+          + "The default value in the absence of the angle-sextic keyword is zero; i.e., the sextic angle bending term is omitted.")
   public double sextic = DEFAULT_ANGLE_SEXTIC;
 
 
@@ -189,11 +183,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
    * @param angleMode the AngleMode to apply.
    * @param angleFunction the AngleFunction to use.
    */
-  public AngleType(
-      int[] atomClasses,
-      double forceConstant,
-      double[] angle,
-      AngleMode angleMode,
+  public AngleType(int[] atomClasses, double forceConstant, double[] angle, AngleMode angleMode,
       AngleFunction angleFunction) {
     super(ANGLE, sortKey(atomClasses));
     this.atomClasses = atomClasses;
@@ -382,7 +372,7 @@ public final class AngleType extends BaseType implements Comparator<String> {
   /**
    * incrementClasses
    *
-   * @param increment a int.
+   * @param increment the value to add to each atom class.
    */
   public void incrementClasses(int increment) {
     for (int i = 0; i < atomClasses.length; i++) {
@@ -445,17 +435,13 @@ public final class AngleType extends BaseType implements Comparator<String> {
   public String toString() {
     StringBuilder angleString;
     if (angleMode == AngleMode.NORMAL) {
-      angleString =
-          new StringBuilder(
-              format(
-                  "angle  %5d  %5d  %5d  %6.2f",
-                  atomClasses[0], atomClasses[1], atomClasses[2], forceConstant));
+      angleString = new StringBuilder(
+          format("angle  %5d  %5d  %5d  %6.2f", atomClasses[0], atomClasses[1], atomClasses[2],
+              forceConstant));
     } else {
-      angleString =
-          new StringBuilder(
-              format(
-                  "anglep  %5d  %5d  %5d  %6.2f",
-                  atomClasses[0], atomClasses[1], atomClasses[2], forceConstant));
+      angleString = new StringBuilder(
+          format("anglep  %5d  %5d  %5d  %6.2f", atomClasses[0], atomClasses[1], atomClasses[2],
+              forceConstant));
     }
     for (double eq : angle) {
       angleString.append(format("  %6.2f", eq));
@@ -465,13 +451,11 @@ public final class AngleType extends BaseType implements Comparator<String> {
 
   /** Angle function types include harmonic or sextic. */
   public enum AngleFunction {
-    HARMONIC,
-    SEXTIC
+    HARMONIC, SEXTIC
   }
 
   /** Angle modes include Normal or In-Plane */
   public enum AngleMode {
-    NORMAL,
-    IN_PLANE
+    NORMAL, IN_PLANE
   }
 }

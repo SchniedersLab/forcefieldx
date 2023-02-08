@@ -64,9 +64,9 @@ public class CNSMapWriter {
   /**
    * Constructor for CNSMapWriter.
    *
-   * @param nx a int.
-   * @param ny a int.
-   * @param nz a int.
+   * @param nx an int.
+   * @param ny an int.
+   * @param nz an int.
    * @param crystal a {@link ffx.crystal.Crystal} object.
    * @param filename a {@link java.lang.String} object.
    */

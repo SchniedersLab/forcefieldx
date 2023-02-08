@@ -42,12 +42,8 @@ package ffx.numerics.fft;
  * FFTs.
  *
  * <p>The location of the input point [i, j, k] within the input array must be: <br>
- * double real = input[x*nextX + y*nextY + z*nextZ] <br>
- * double imag = input[x*nextX + y*nextY + z*nextZ + 1] <br>
- * where <br>
- * int nextX = 2 <br>
- * int nextY = 2*nX <br>
- * int nextZ = 2*nX*nY<br>
+ * double real = input[x*nextX + y*nextY + z*nextZ] <br> double imag = input[x*nextX + y*nextY +
+ * z*nextZ + 1] <br> where <br> int nextX = 2 <br> int nextY = 2*nX <br> int nextZ = 2*nX*nY<br>
  *
  * <p>
  *
@@ -89,23 +85,23 @@ public class Complex3D {
   }
 
   /**
-   * iComplex3D
+   * Determine the index of the complex number in the 1D array from the X, Y and Z indices.
    *
-   * @param i a int.
-   * @param j a int.
-   * @param k a int.
-   * @param nX a int.
-   * @param nY a int.
-   * @return a int.
+   * @param i the index along the X-axis.
+   * @param j the index along the Y-axis.
+   * @param k the index along the Z-axis.
+   * @param nX the number of points along the X-axis.
+   * @param nY the number of points along the Y-axis.
+   * @return the index of the complex number in the 1D array.
    */
   public static int iComplex3D(int i, int j, int k, int nX, int nY) {
     return 2 * (i + nX * (j + nY * k));
   }
 
   /**
-   * convolution
+   * Perform a convolution.
    *
-   * @param input an array of double.
+   * @param input The input array.
    */
   public void convolution(final double[] input) {
     for (int z = 0; z < nZ; z++) {

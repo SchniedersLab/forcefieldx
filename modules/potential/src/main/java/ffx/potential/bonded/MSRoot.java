@@ -45,12 +45,9 @@ package ffx.potential.bonded;
  */
 public class MSRoot extends MSNode {
 
-  /** Constant <code>MultiScaleLevel=ROLS.MaxLengthScale</code> */
-  public static final int MultiScaleLevel = ROLS.MaxLengthScale;
-
   /** Default MSRoot Constructor */
   public MSRoot() {
-    super("Structural Heirarchy");
+    super("Structural Hierarchy");
   }
 
   /** {@inheritDoc} */
@@ -68,6 +65,6 @@ public class MSRoot extends MSNode {
   /** {@inheritDoc} */
   @Override
   public String toString() {
-    return "Structural Heirarchy";
+    return "Structural Hierarchy";
   }
 }

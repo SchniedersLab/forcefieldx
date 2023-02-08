@@ -39,15 +39,13 @@ package ffx.numerics.multipole;
 
 import static ffx.numerics.special.Erf.erfc;
 import static java.lang.Math.PI;
-import static java.lang.Math.fma;
-import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
- * The EwaldMultipoleTensorGlobal class computes derivatives of erfc(<b>r</b>)/|<b>r</b>| via recursion to arbitrary
- * order for Cartesian multipoles in the global frame.
+ * The EwaldMultipoleTensorGlobal class computes derivatives of erfc(<b>r</b>)/|<b>r</b>| via
+ * recursion to arbitrary order for Cartesian multipoles in the global frame.
  *
  * @author Michael J. Schnieders
  * @see <a href="http://doi.org/10.1142/9789812830364_0002" target="_blank"> Matt Challacombe, Eric
@@ -67,7 +65,7 @@ public class EwaldTensorGlobal extends CoulombTensorGlobal {
   private final double[] ewaldSource;
 
   /**
-   * Ewald convergence parameter.
+   * The Ewald convergence parameter.
    */
   private final double beta;
 
@@ -75,14 +73,14 @@ public class EwaldTensorGlobal extends CoulombTensorGlobal {
    * Constructor for EwaldMultipoleTensorGlobal.
    *
    * @param order Tensor order.
-   * @param beta Ewald covergence parameter.
+   * @param beta The Ewald convergence parameter.
    */
   public EwaldTensorGlobal(int order, double beta) {
     super(order);
     this.beta = beta;
     operator = OPERATOR.SCREENED_COULOMB;
 
-    // Auxillary terms for screened Coulomb (Sagui et al. Eq. 2.28)
+    // Auxiliary terms for screened Coulomb (Sagui et al. Eq. 2.28)
     ewaldSource = new double[o1];
     double prefactor = 2.0 * beta / sqrtPI;
     double twoBeta2 = -2.0 * beta * beta;

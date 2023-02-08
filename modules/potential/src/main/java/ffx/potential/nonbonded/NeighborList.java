@@ -42,6 +42,7 @@ import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
@@ -57,7 +58,9 @@ import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -171,7 +174,7 @@ public class NeighborList extends ParallelRegion {
   private int nAtoms;
   /** Reduced coordinates for each symmetry copy. [nSymm][3*nAtoms] */
   private double[][] coordinates;
-  /** The reduced coordinates of the asymmetric unit when the list was last rebuilt. */
+  /** The Cartesian coordinates of the asymmetric unit when the list was last rebuilt. */
   private double[] previous;
   /** The Verlet lists. [nSymm][nAtoms][nNeighbors] */
   private int[][][] lists;
@@ -195,8 +198,6 @@ public class NeighborList extends ParallelRegion {
   private long time;
   /** Include intermolecular interactions. */
   private boolean intermolecular = true;
-  /** Molecule number for each atom. */
-  private int[] molecules = null;
   /**
    * If true, interactions between two inactive atoms are included in the Neighborlist. Set to true
    * to match OpenMM behavior (i.e. interactions between two atoms with zero mass are included). Set
@@ -217,8 +218,8 @@ public class NeighborList extends ParallelRegion {
    * @param parallelTeam Specifies the parallel environment.
    * @since 1.0
    */
-  public NeighborList(MaskingInterface maskingRules, Crystal crystal,
-      Atom[] atoms, double cutoff, double buffer, ParallelTeam parallelTeam) {
+  public NeighborList(MaskingInterface maskingRules, Crystal crystal, Atom[] atoms, double cutoff,
+      double buffer, ParallelTeam parallelTeam) {
     this.maskingRules = maskingRules;
     this.crystal = crystal;
     this.cutoff = cutoff;
@@ -265,8 +266,8 @@ public class NeighborList extends ParallelRegion {
    * @param print a boolean.
    * @since 1.0
    */
-  public void buildList(final double[][] coordinates, final int[][][] lists,
-      boolean[] use, boolean forceRebuild, boolean print) {
+  public void buildList(final double[][] coordinates, final int[][][] lists, boolean[] use,
+      boolean forceRebuild, boolean print) {
     if (disableUpdates) {
       return;
     }
@@ -332,7 +333,7 @@ public class NeighborList extends ParallelRegion {
       print();
     }
 
-    // Update the pairwise schedule.
+    // Update the pair-wise schedule.
     long scheduleTime = -System.nanoTime();
     pairwiseSchedule.updateRanges(sharedCount.get(), atomsWithIteractions, listCount);
     scheduleTime += System.nanoTime();
@@ -464,12 +465,10 @@ public class NeighborList extends ParallelRegion {
   /**
    * Setter for the field <code>intermolecular</code>.
    *
-   * @param intermolecular a boolean.
-   * @param molecules an array of {@link int} objects.
+   * @param intermolecular If true, the NeighborList will include intermolecular interactions.
    */
-  public void setIntermolecular(boolean intermolecular, int[] molecules) {
+  public void setIntermolecular(boolean intermolecular) {
     this.intermolecular = intermolecular;
-    this.molecules = molecules;
   }
 
   /**
@@ -494,19 +493,19 @@ public class NeighborList extends ParallelRegion {
 
   private void initNeighborList(boolean print) {
 
+    // Set the number of symmetry operators.
+    int newNSymm = crystal.spaceGroup.symOps.size();
+    if (nSymm != newNSymm) {
+      nSymm = newNSymm;
+    }
+
     // Allocate memory for fractional coordinates and subcell pointers for each atom.
-    if (previous == null || previous.length < nAtoms) {
+    if (previous == null || previous.length < 3 * nAtoms) {
       previous = new double[3 * nAtoms];
       listCount = new int[nAtoms];
       pairwiseSchedule = new PairwiseSchedule(threadCount, nAtoms, ranges);
     } else {
       pairwiseSchedule.setAtoms(nAtoms);
-    }
-
-    // Set the number of symmetry operators.
-    int newNSymm = crystal.spaceGroup.symOps.size();
-    if (nSymm != newNSymm) {
-      nSymm = newNSymm;
     }
 
     // Find the largest sphere that is enclosed by the unit cell.
@@ -565,8 +564,10 @@ public class NeighborList extends ParallelRegion {
         double dz = previous[iZ] - current[iZ];
         double dr2 = crystal.image(dx, dy, dz);
         if (dr2 > motion2) {
+          if (logger.isLoggable(Level.FINE)) {
+            logger.fine(format(" Motion detected for atom %d (%8.6f A).", i, sqrt(dr2)));
+          }
           sharedMotion.set(true);
-          return;
         }
       }
     }
@@ -602,7 +603,17 @@ public class NeighborList extends ParallelRegion {
    */
   private class AssignAtomsToCellsLoop extends IntegerForLoop {
 
+    /**
+     * The cartesian coordinates of the atom in the asymmetric unit.
+     */
+    private final double[] auCart = new double[3];
+    /**
+     * The cartesian coordinates of the atom after symmetry application.
+     */
     private final double[] cart = new double[3];
+    /**
+     * The fractional coordinates of the atom after symmetry application.
+     */
     private final double[] frac = new double[3];
 
     @Override
@@ -620,8 +631,9 @@ public class NeighborList extends ParallelRegion {
         previous[iZ] = current[iZ];
       }
 
+      final double[] auXYZ = coordinates[0];
+      final double spCutoff2 = crystal.getSpecialPositionCutoff2();
       for (int iSymm = 0; iSymm < nSymm; iSymm++) {
-        // Convert to fractional coordinates.
         final double[] xyz = coordinates[iSymm];
         // Assign each atom to a cell using fractional coordinates.
         for (int i = lb; i <= ub; i++) {
@@ -629,6 +641,30 @@ public class NeighborList extends ParallelRegion {
           cart[0] = xyz[i3 + XX];
           cart[1] = xyz[i3 + YY];
           cart[2] = xyz[i3 + ZZ];
+          if (iSymm != 0) {
+            auCart[0] = auXYZ[i3 + XX];
+            auCart[1] = auXYZ[i3 + YY];
+            auCart[2] = auXYZ[i3 + ZZ];
+            double dx = auCart[0] - cart[0];
+            double dy = auCart[1] - cart[1];
+            double dz = auCart[2] - cart[2];
+            double dr2 = crystal.image(dx, dy, dz);
+            if (dr2 < spCutoff2) {
+              int molecule = atoms[i].getMoleculeNumber();
+              if (atoms[i].isActive()) {
+                logger.info(format(
+                    "   Active Atom %s at Special Position in Molecule %d with SymOp %d (%8.6f A).",
+                    atoms[i], molecule, iSymm, sqrt(dr2)));
+              } else if (logger.isLoggable(Level.FINE)) {
+                logger.fine(
+                    format("   Atom %s at Special Position in Molecule %d with SymOp %d (%8.6f A).",
+                        atoms[i], molecule, iSymm, sqrt(dr2)));
+              }
+              // Exclude molecule-molecule interactions between the asymmetric unit and the iSymm symmetry mate.
+              domainDecomposition.addSpecialPositionExclusion(molecule, iSymm);
+            }
+          }
+          // Convert to fractional coordinates.
           crystal.toFractionalCoordinates(cart, frac);
           domainDecomposition.addAtomToCell(i, iSymm, frac);
         }
@@ -684,6 +720,9 @@ public class NeighborList extends ParallelRegion {
 
           if (iSymm == 0) {
             listCount[atomIndex] = 0;
+            int molecule = atoms[atomIndex].getMoleculeNumber();
+            List<Integer> symOpList = domainDecomposition.getSpecialPositionSymOps(molecule);
+            atoms[atomIndex].setSpecialPositionSymOps(symOpList);
           }
 
           if (use == null || use[atomIndex]) {
@@ -786,6 +825,8 @@ public class NeighborList extends ParallelRegion {
         maskingRules.applyMask(atomIndex, vdw14, mask);
       }
 
+      final int moleculeIndex = atoms[atomIndex].getMoleculeNumber();
+
       boolean logClosePairs = logger.isLoggable(Level.FINE);
 
       final int i3 = atomIndex * 3;
@@ -797,6 +838,7 @@ public class NeighborList extends ParallelRegion {
       // Loop over atoms in the "pair" cell.
       for (int j = 0; j < num; j++) {
         final int aj = pairCellAtoms[j];
+
         // If the self-volume is being searched for pairs, avoid double counting.
         if (iSymm == 0 && cell == cellForCurrentAtom) {
           // Only consider atoms with a higher index than the current atom.
@@ -815,9 +857,24 @@ public class NeighborList extends ParallelRegion {
           }
         }
 
-        if (!intermolecular && (molecules[atomIndex] != molecules[aj])) {
+        int moleculeIndexJ = atoms[aj].getMoleculeNumber();
+        // Check if this pair search is only intra-molecular.
+        if (!intermolecular && (moleculeIndex != moleculeIndexJ)) {
           continue;
         }
+
+        // Check for a special position exclusion between two atoms in the same molecule.
+        if (iSymm != 0 && (moleculeIndex == moleculeIndexJ)) {
+          if (domainDecomposition.isSpecialPositionExclusion(moleculeIndex, iSymm)) {
+            if (logger.isLoggable(Level.FINEST)) {
+              logger.finest(
+                  format("   Excluding Interaction for Atoms %d and %d in Molecule %d for SymOp %d.",
+                      atomIndex, aj, moleculeIndex, iSymm));
+            }
+            continue;
+          }
+        }
+
         if (mask[aj] > 0 && (iSymm == 0 || aj >= atomIndex)) {
           int aj3 = aj * 3;
           final double xj = pair[aj3 + XX];
@@ -905,6 +962,11 @@ public class NeighborList extends ParallelRegion {
      * The fractional sub-volumes of the unit cell.
      */
     private Cell[][][] cells;
+    /**
+     * Special position exclusions. Map<Molecule, List<SymOpIndex>>
+     */
+    private Map<Integer, List<Integer>> specialPositionExclusionMap;
+
 
     /**
      * DomainDecomposition Constructor.
@@ -958,8 +1020,7 @@ public class NeighborList extends ParallelRegion {
       nC = maxC < nSearch ? 1 : maxC;
 
       // Allocate memory for the subcells.
-      if (cells == null || cells.length != nA ||
-          cells[0].length != nB || cells[0][0].length != nC) {
+      if (cells == null || cells.length != nA || cells[0].length != nB || cells[0][0].length != nC) {
         cells = new Cell[nA][nB][nC];
         for (int i = 0; i < nA; i++) {
           for (int j = 0; j < nB; j++) {
@@ -986,6 +1047,77 @@ public class NeighborList extends ParallelRegion {
           }
         }
       }
+
+      // Clear special position exclusions.
+      // if (specialPositionExclusionMap != null) {
+      // Clear the lists, but don't remove the keys.
+      //   for (List<Integer> list : specialPositionExclusionMap.values()) {
+      //     list.clear();
+      //   }
+      //   specialPositionExclusionMap.clear();
+      // }
+    }
+
+    /**
+     * Add a special position exclusion.
+     *
+     * @param molecule The molecule.
+     * @param symOpIndex The symmetry operation index.
+     */
+    public void addSpecialPositionExclusion(int molecule, int symOpIndex) {
+      // Initialize the map.
+      if (specialPositionExclusionMap == null) {
+        specialPositionExclusionMap = new HashMap<>();
+      }
+      // Initialize the list for the molecule.
+      List<Integer> list = specialPositionExclusionMap.get(molecule);
+      if (list == null) {
+        list = new ArrayList<>();
+        specialPositionExclusionMap.put(molecule, list);
+      }
+      // Add the symOpIndex to the list.
+      if (!list.contains(symOpIndex)) {
+        list.add(symOpIndex);
+      }
+    }
+
+    /**
+     * Check if a special position exclusion exists.
+     *
+     * @param molecule The molecule.
+     * @param symOpIndex The symmetry operation index.
+     * @return True if the special position exclusion exists.
+     */
+    public boolean isSpecialPositionExclusion(int molecule, int symOpIndex) {
+      if (specialPositionExclusionMap == null) {
+        return false;
+      }
+      List<Integer> list = specialPositionExclusionMap.get(molecule);
+      if (list == null) {
+        return false;
+      }
+      return list.contains(symOpIndex);
+    }
+
+    /**
+     * Get the special position SymOps for a molecule.
+     *
+     * @param molecule The molecule.
+     * @return The special position SymOps.
+     */
+    public List<Integer> getSpecialPositionSymOps(int molecule) {
+      if (specialPositionExclusionMap == null) {
+        return null;
+      }
+      if (specialPositionExclusionMap.containsKey(molecule)) {
+        List<Integer> list = specialPositionExclusionMap.get(molecule);
+        if (list.isEmpty()) {
+          return null;
+        } else {
+          return list;
+        }
+      }
+      return null;
     }
 
     /**
@@ -1169,8 +1301,8 @@ public class NeighborList extends ParallelRegion {
       for (AtomIndex atomIndex : list) {
         if (atomIndex.iSymm == symOpIndex) {
           if (count >= index.length) {
-            throw new IndexOutOfBoundsException("Index out of bounds: count "
-                + count + " " + index.length + " " + list.size());
+            throw new IndexOutOfBoundsException(
+                "Index out of bounds: count " + count + " " + index.length + " " + list.size());
           }
           index[count++] = atomIndex.i;
         }

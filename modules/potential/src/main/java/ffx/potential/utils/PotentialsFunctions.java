@@ -109,9 +109,9 @@ public interface PotentialsFunctions {
    * @return A MolecularAssembly or null
    */
   default MolecularAssembly getActiveAssembly() {
-    SystemFilter filt = getFilter();
-    if (filt != null) {
-      return filt.getActiveMolecularSystem();
+    SystemFilter systemFilter = getFilter();
+    if (systemFilter != null) {
+      return systemFilter.getActiveMolecularSystem();
     } else {
       return null;
     }
@@ -130,7 +130,7 @@ public interface PotentialsFunctions {
   }
 
   /**
-   * Returns the last SystemFilter created by this (may be null).
+   * Returns the last SystemFilter created by this (can be null).
    *
    * @return Last SystemFilter
    */
@@ -241,7 +241,7 @@ public interface PotentialsFunctions {
   void saveAsPDB(MolecularAssembly assembly, File file);
 
   /**
-   * Saves the current state of an array of MolecularAssemblys to a PDB file.
+   * Saves the current state of an array of MolecularAssembly instances to a PDB file.
    *
    * @param assemblies MolecularAssembly array to save
    * @param file Destination .pdb

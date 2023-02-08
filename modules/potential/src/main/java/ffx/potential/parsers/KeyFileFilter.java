@@ -51,7 +51,8 @@ import org.apache.commons.io.FilenameUtils;
 public final class KeyFileFilter extends FileFilter {
 
   /** Default Constructor. */
-  public KeyFileFilter() {}
+  public KeyFileFilter() {
+  }
 
   /**
    * {@inheritDoc}
@@ -70,8 +71,8 @@ public final class KeyFileFilter extends FileFilter {
 
   /**
    * {@inheritDoc}
-   *
-   * <p>Provides a description of the KeyFileFilter.
+   * <p>
+   * Provides a description of the KeyFileFilter.
    */
   @Override
   public String getDescription() {

@@ -816,7 +816,7 @@ public class RotamerOptimization implements Terminatable {
       return null;
     } else {
       List<ResidueState[]> states = new ArrayList<>(ensembleStates.size());
-      ensembleStates.forEach((es) -> states.add(es.getVal()));
+      ensembleStates.forEach((es) -> states.add(es.val()));
       return states;
     }
   }
@@ -1240,7 +1240,7 @@ public class RotamerOptimization implements Terminatable {
   public void setCoordinatesToEnsemble(int ensnum) {
     if (ensembleStates != null && !ensembleStates.isEmpty()) {
       ensnum %= ensembleStates.size();
-      ResidueState.revertAllCoordinates(residueList, ensembleStates.get(ensnum).getVal());
+      ResidueState.revertAllCoordinates(residueList, ensembleStates.get(ensnum).val());
     } else {
       throw new IllegalArgumentException(" Ensemble states not initialized!");
     }
