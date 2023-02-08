@@ -1408,7 +1408,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         currentPotentialEnergy = ((ForceFieldEnergyOpenMM) potential).energyAndGradientFFX(x,
             gradient);
       } else {
-        currentPotentialEnergy = potential.energyAndGradient(x, gradient);
+        currentPotentialEnergy = potential.energyAndGradient(x, gradient,true);
       }
     } catch (EnergyException ex) {
       writeStoredSnapshots();
