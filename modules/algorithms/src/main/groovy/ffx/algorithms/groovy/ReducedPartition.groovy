@@ -50,6 +50,10 @@ class ReducedPartition extends  AlgorithmsScript{
             description = "Mutant residue.")
     private String resName
 
+    @CommandLine.Option(names = ["--rEE", "--ro-ensembleEnergy"], paramLabel = "0.0",
+            description = "Keep permutations within ensemble Energy kcal/mol from the GMEC.")
+    private double ensembleEnergy = 0.0
+
     @CommandLine.Option(names = ["--un", "--unfolded"], paramLabel = "false",
             description = "Run the unfolded state tripeptide.")
     private boolean unfolded = false
@@ -98,11 +102,13 @@ class ReducedPartition extends  AlgorithmsScript{
             return this
         }
 
+
         double titrationPH = manyBodyOptions.getTitrationPH()
         if (titrationPH > 0) {
             System.setProperty("manybody-titration", "true")
         }
         activeAssembly = getActiveAssembly(filenames.get(0))
+        System.setProperty("ro-ensembleEnergy", ensembleEnergy as String)
 
         if(unfolded){
             unfoldedFileName = "wt" + mutatingResidue + ".pdb"
@@ -123,6 +129,7 @@ class ReducedPartition extends  AlgorithmsScript{
         }
 
         double[] boltzmannWeights = new double[2]
+        int[] adjustPerm = new int[2]
         double[] offsets = new double[2]
         List<Residue> residueList = activeAssembly.getResidueList()
 
@@ -166,6 +173,7 @@ class ReducedPartition extends  AlgorithmsScript{
         }
         String filename = filenames.get(0)
         for(int j=0; j<2; j++){
+
             // Load the MolecularAssembly.
             if(j>0){
                 if(filenames.size() == 1){
@@ -253,7 +261,8 @@ class ReducedPartition extends  AlgorithmsScript{
 
             int[] currentRotamers = new int[residues1.size()]
 
-            boltzmannWeights[j] = rotamerOptimization.partitionFunction(residues1.toArray() as Residue[], 0, currentRotamers)
+            rotamerOptimization.checkPermutations(residues1.toArray() as Residue[], 0, currentRotamers, manyBodyOptions.getAlgorithm())
+            boltzmannWeights[j] = rotamerOptimization.getTotalBoltzmann()
             offsets[j] = rotamerOptimization.getRefEnergy()
         }
 

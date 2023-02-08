@@ -2060,8 +2060,9 @@ public class RotamerOptimization implements Terminatable {
    * @param currentRotamers Current rotamer list.
    * @return 0.
    */
-  public double partitionFunction(Residue[] residues, int i, int[] currentRotamers) throws Exception {
+  public int partitionFunction(Residue[] residues, int i, int[] currentRotamers) throws Exception {
     // This is the initialization condition.
+    int adjustPerm = 0;
     if (i == 0) {
       totalBoltzmann = 0;
       evaluatedPermutations = 0;
@@ -2073,6 +2074,9 @@ public class RotamerOptimization implements Terminatable {
         logIfMaster(
                 format(" The permutations have reached %10.4e.", (double) evaluatedPermutationsPrint));
         evaluatedPermutationsPrint *= 10;
+        if(evaluatedPermutations > 10e7){
+          adjustPerm = 1;
+        }
       }
     }
 
@@ -2116,6 +2120,9 @@ public class RotamerOptimization implements Terminatable {
         }
         if (!deadEnd) {
           evaluatedPermutations++;
+          if(evaluatedPermutations > 10e7){
+            return adjustPerm;
+          }
           energyRegion.init(eE, residues, currentRotamers, threeBodyTerm);
           parallelTeam.execute(energyRegion);
           double totalEnergy = eE.getBackboneEnergy() + energyRegion.getSelf() +
@@ -2129,14 +2136,34 @@ public class RotamerOptimization implements Terminatable {
       }
     }
 
-    return totalBoltzmann;
+    return adjustPerm;
   }
 
   public double getRefEnergy(){
     return refEnergy;
   }
 
+  public double getTotalBoltzmann() {return totalBoltzmann;}
 
+  public boolean checkPermutations(Residue[] residues, int i,  int[] currentRotamers, Algorithm algorithm) throws Exception {
+    boolean perm = false;
+    partitionFunction(residues, i, currentRotamers);
+    try{
+      if(evaluatedPermutations > 10e7){
+        throw new ArithmeticException("The number of permutations has reach" + evaluatedPermutations + " . Permutations must be eliminated.");
+      }
+    } catch (Exception e){
+      //change ensemble energy
+      ensembleEnergy -= 0.5;
+      //adjust 2-body cutoff
+      twoBodyCutoffDist -= 1.0;
+      //re-run optimize rotamer optimization with new parameters
+      optimize(algorithm);
+      //re-run partitionFunction
+      checkPermutations(residues, i, currentRotamers, algorithm);
+    }
+    return perm;
+  }
   /**
    * Finds all permutations within buffer energy of GMEC.
    *
