@@ -187,7 +187,6 @@ import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_addGlobalV
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_addPerDofVariable;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_addUpdateContextState;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_create;
-import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomIntegrator_setKineticEnergyExpression;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_addExclusion;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_addGlobalParameter;
 import static edu.uiowa.jopenmm.OpenMMLibrary.OpenMM_CustomNonbondedForce_addInteractionGroup;
@@ -297,7 +296,6 @@ import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.pow;
-import static org.apache.commons.math3.util.FastMath.round;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
@@ -403,7 +401,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
   /** OpenMM System. */
   private System system;
   /**
-   * Truncate the normal OpenMM Lambda Path from 0..1 to Lambda_Start..1. This is useful for
+   * Truncate the normal OpenMM Lambda Path from 0 ... 1 to Lambda_Start ... 1. This is useful for
    * conformational optimization if full removal of vdW interactions is not desired (i.e. lambdaStart
    * = ~0.2).
    */
@@ -453,7 +451,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
   }
 
   /**
-   * Gets the default co-processor device, ignoring any CUDA_DEVICE over-ride. This is either
+   * Gets the default coprocessor device, ignoring any CUDA_DEVICE over-ride. This is either
    * determined by process rank and the availableDevices/CUDA_DEVICES property, or just 0 if neither
    * property is sets.
    *
@@ -774,13 +772,12 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
   /** {@inheritDoc} */
   @Override
-  public void finalize() throws Throwable {
+  protected void finalize() throws Throwable {
     // Safer to leave super.finalize() in, even though right now that calls Object.finalize().
     logger.info(" ForceFieldEnergyOpenMM instance is being finalized.");
     super.finalize();
     if (destroyed) {
-      logger.info(String.format(" Finalize called on a destroyed OpenMM ForceFieldEnergy %s",
-          this.toString()));
+      logger.info(format(" Finalize called on a destroyed OpenMM ForceFieldEnergy %s", this));
     } else {
       destroy();
     }
@@ -867,7 +864,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         setLambda(currentLambda);
       }
     } else {
-      // One sided finite difference estimates of dE/dL
+      // One-sided finite difference estimates of dE/dL
       if (currentLambda + finiteDifferenceStepSize > 1.0) {
         setLambda(currentLambda - finiteDifferenceStepSize);
         eMinus = energy(x);
@@ -1282,9 +1279,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      *
      * <p>When a Context is created, it may cache information about the System being simulated and
      * the Force objects contained in it. This means that, if the System or Forces are then modified,
-     * the Context might not see all of the changes. Call reinitialize() to force the Context to
-     * rebuild its internal representation of the System and pick up any changes that have been
-     * made.
+     * the Context might not see all changes. Call reinitialize() to force the Context to rebuild its
+     * internal representation of the System and pick up any changes that have been made.
      *
      * <p>This is an expensive operation, so you should try to avoid calling it too frequently.
      */
@@ -1375,17 +1371,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           .toLowerCase();
       precision = precision.replace("-precision", "");
       switch (precision) {
-        case "double":
-        case "mixed":
-        case "single":
-          logger.info(String.format(" Precision level: %s", precision));
-          break;
-        default:
+        case "double", "mixed", "single" ->
+            logger.info(String.format(" Precision level: %s", precision));
+        default -> {
           logger.info(
               String.format(" Could not interpret precision level %s, defaulting to %s", precision,
                   defaultPrecision));
           precision = defaultPrecision;
-          break;
+        }
       }
 
       if (cuda && requestedPlatform != Platform.OMM_REF) {
@@ -1463,44 +1456,24 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     PointerByReference createIntegrator(String integratorString, double timeStep,
         double temperature) {
       switch (integratorString) {
-        case "VERLET":
-        default:
-          createVerletIntegrator(timeStep);
-        case "LANGEVIN":
-          createLangevinIntegrator(temperature, frictionCoeff, timeStep);
-          break;
-        case "MTS":
-          // Read in the inner time step in psec.
-          int in = molecularAssembly.getProperties().getInt("respa-dt", 4);
-          if (in < 2) {
-            in = 2;
-          }
-          double inner = timeStep / in;
-          createCustomMTSIntegrator(inner, timeStep);
-          break;
-        case "LANGEVIN-MTS":
-          // Read in the inner time step in psec.
-          in = molecularAssembly.getProperties().getInt("respa-dt", 4);
-          if (in < 2) {
-            in = 2;
-          }
-          inner = timeStep / in;
-          createCustomMTSLangevinIntegrator(inner, timeStep, temperature, frictionCoeff);
-          break;
+        default -> createVerletIntegrator(timeStep);
+        case "LANGEVIN" -> createLangevinIntegrator(timeStep, temperature, frictionCoeff);
+        case "MTS" -> createCustomMTSIntegrator(timeStep);
+        case "LANGEVIN-MTS" ->
+            createCustomMTSLangevinIntegrator(timeStep, temperature, frictionCoeff);
       }
 
       return integratorPointer;
     }
 
-
     /**
      * Create a Langevin integrator.
      *
+     * @param dt Time step (psec).
      * @param temperature Temperature (K).
      * @param frictionCoeff Frictional coefficient.
-     * @param dt Time step (psec).
      */
-    private void createLangevinIntegrator(double temperature, double frictionCoeff, double dt) {
+    private void createLangevinIntegrator(double dt, double temperature, double frictionCoeff) {
       free();
       integratorPointer = OpenMM_LangevinIntegrator_create(temperature, frictionCoeff, dt);
       CompositeConfiguration properties = molecularAssembly.getProperties();
@@ -1520,22 +1493,36 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     /**
      * Create a Custom MTS Integrator.
      *
-     * @param inner The inner time step (psec).
      * @param dt The outer time step (psec).
      */
-    private void createCustomMTSIntegrator(double inner, double dt) {
+    private void createCustomMTSIntegrator(double dt) {
       createCustomIntegrator(dt);
-      OpenMM_CustomIntegrator_addPerDofVariable(integratorPointer, "x1", 0.0);
-      OpenMM_CustomIntegrator_addUpdateContextState(integratorPointer);
-      // The 1 force group contains slowly varying forces, while the 0 force group contains the fast varying forces;
+
+      int n = 4;
+      // Force group 1 contains slowly varying forces.
+      // Force group 0 contains the fast varying forces.
       int[] forceGroups = {1, 0};
       // There will be 1 force evaluation per outer step, and 4 per inner step.
       int[] subSteps = {1, 4};
+      if (system.amoebaCavitationForce != null) {
+        n = 8;
+        // Force group 2 contains the cavitation force.
+        // Force group 1 contains slowly varying forces.
+        // Force group 0 contains the fast varying forces.
+        forceGroups = new int[] {2, 1, 0};
+        // There will be 1 force evaluation per outer step.
+        // There will be 2 force evaluations per middle step.
+        // There will be 8 force evaluations per inner step.
+        subSteps = new int[] {1, 2, 8};
+      }
+
+      OpenMM_CustomIntegrator_addPerDofVariable(integratorPointer, "x1", 0.0);
+      OpenMM_CustomIntegrator_addUpdateContextState(integratorPointer);
       createMTSSubStep(1, forceGroups, subSteps);
       OpenMM_CustomIntegrator_addConstrainVelocities(integratorPointer);
       logger.info("  Custom MTS Integrator");
       logger.info(format("  Time step:            %6.2f (fsec)", dt * 1000));
-      logger.info(format("  Inner Time step:      %6.2f (fsec)", inner * 1000));
+      logger.info(format("  Inner Time step:      %6.2f (fsec)", dt / n * 1000));
       logger.info(format("  Friction Coefficient: %6.2f", frictionCoeff));
       logger.info(format("  Degrees of Freedom:   %6d", system.calculateDegreesOfFreedom()));
     }
@@ -1577,35 +1564,52 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       }
     }
 
-
     /**
      * Create a Custom MTS Langevin integrator.
      *
-     * @param inner The inner time step (psec).
      * @param dt The outer time step (psec).
      * @param temperature The target temperature (K).
      * @param frictionCoeff The friction coefficient (1/psec).
      */
-    private void createCustomMTSLangevinIntegrator(double inner, double dt, double temperature,
+    private void createCustomMTSLangevinIntegrator(double dt, double temperature,
         double frictionCoeff) {
       createCustomIntegrator(dt);
-      int n = (int) (round(dt / inner));
+
+      int n = 4;
+      // Force group 1 contains slowly varying forces.
+      // Force group 0 contains the fast varying forces.
+      int[] forceGroups = {1, 0};
+      // There will be 1 force evaluation per outer step, and 4 per inner step.
+      int[] subSteps = {1, 4};
+      if (system.amoebaCavitationForce != null) {
+        n = 8;
+        // Force group 2 contains the cavitation force.
+        // Force group 1 contains slowly varying forces.
+        // Force group 0 contains the fast varying forces.
+        forceGroups = new int[] {2, 1, 0};
+        // There will be 1 force evaluation per outer step.
+        // There will be 2 force evaluations per middle step.
+        // There will be 8 force evaluations per inner step.
+        subSteps = new int[] {1, 2, 8};
+      }
+
       OpenMM_CustomIntegrator_addGlobalVariable(integratorPointer, "a",
           exp(-frictionCoeff * dt / n));
       OpenMM_CustomIntegrator_addGlobalVariable(integratorPointer, "b",
           sqrt(1.0 - exp(-2.0 * frictionCoeff * dt / n)));
-      OpenMM_CustomIntegrator_addGlobalVariable(integratorPointer, "kT", R * temperature * KCAL_TO_KJ);
+      OpenMM_CustomIntegrator_addGlobalVariable(integratorPointer, "kT",
+          R * temperature * KCAL_TO_KJ);
       OpenMM_CustomIntegrator_addPerDofVariable(integratorPointer, "x1", 0.0);
+      StringBuilder sb = new StringBuilder(" Update Context State\n");
       OpenMM_CustomIntegrator_addUpdateContextState(integratorPointer);
-      // The 1 force group contains slowly varying forces, while the 0 force group contains the fast varying forces;
-      int[] forceGroups = {1, 0};
-      // There will be 1 force evaluation per outer step, and 4 per inner step.
-      int[] subSteps = {1, 4};
-      createMTSLangevinSubStep(1, forceGroups, subSteps);
+
+      createMTSLangevinSubStep(1, forceGroups, subSteps, sb);
+      // Log the substeps.
+      logger.finest(" Langevin-MTS steps:" + sb);
       OpenMM_CustomIntegrator_addConstrainVelocities(integratorPointer);
       logger.info("  Custom MTS Langevin Integrator");
       logger.info(format("  Time step:            %6.2f (fsec)", dt * 1000));
-      logger.info(format("  Inner Time step:      %6.2f (fsec)", inner * 1000));
+      logger.info(format("  Inner Time step:      %6.2f (fsec)", dt / n * 1000));
       logger.info(format("  Friction Coefficient: %6.2f (1/psec)", frictionCoeff));
       logger.info(format("  Degrees of Freedom:   %6d", system.calculateDegreesOfFreedom()));
     }
@@ -1617,7 +1621,8 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * @param forceGroups The force groups to be evaluated.
      * @param subSteps The number of substeps for each force group.
      */
-    private void createMTSLangevinSubStep(int parentSubsteps, int[] forceGroups, int[] subSteps) {
+    private void createMTSLangevinSubStep(int parentSubsteps, int[] forceGroups, int[] subSteps,
+        StringBuilder sb) {
       int forceGroup = forceGroups[0];
       int steps = subSteps[0];
       int stepsPerParentStep = steps / parentSubsteps;
@@ -1628,27 +1633,43 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       if (forceGroup < 0 || forceGroup > 31) {
         throw new IllegalArgumentException("Force group must be between 0 and 31");
       }
+
+      sb.append(" Force Group: ").append(forceGroup).append(" ForceGroup length: ")
+          .append(forceGroups.length).append(" Steps: ").append(steps)
+          .append(" Step Per Parent Step: ").append(stepsPerParentStep).append(" Parent Sub Steps: ")
+          .append(parentSubsteps).append("\n");
+
       for (int i = 0; i < stepsPerParentStep; i++) {
         String step = "v+0.5*(dt/" + steps + ")*f" + forceGroup + "/m";
+        sb.append(" v = ").append(step).append("\n");
         OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v", step);
+        // String step;
         if (forceGroups.length == 1) {
           step = "x+(dt/" + 2 * steps + ")*v";
+          sb.append(" x = ").append(step).append("\n");
           OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "x", step);
           step = "a*v + b*sqrt(kT/m)*gaussian";
+          sb.append(" v = ").append(step).append("\n");
           OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v", step);
           step = "x+(dt/" + 2 * steps + ")*v";
+          sb.append(" x = ").append(step).append("\n");
           OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "x", step);
           step = "x";
+          sb.append(" x1 = ").append(step).append("\n");
           OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "x1", step);
+          sb.append(" Constrain Positions\n");
           OpenMM_CustomIntegrator_addConstrainPositions(integratorPointer);
           step = "v+(x-x1)/(dt/" + steps + ")";
+          sb.append(" v = ").append(step).append("\n");
           OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v", step);
+          sb.append(" Constrain Velocities\n");
           OpenMM_CustomIntegrator_addConstrainVelocities(integratorPointer);
         } else {
           createMTSLangevinSubStep(steps, copyOfRange(forceGroups, 1, forceGroups.length),
-              copyOfRange(subSteps, 1, subSteps.length));
+              copyOfRange(subSteps, 1, subSteps.length), sb);
         }
         step = "v+0.5*(dt/" + steps + ")*f" + forceGroup + "/m";
+        sb.append(" v = ").append(step).append("\n");
         OpenMM_CustomIntegrator_addComputePerDof(integratorPointer, "v", step);
       }
     }
@@ -1799,7 +1820,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     private boolean vdwLambdaTerm;
     /**
      * Lambda flag to indicate control of torsional force constants (L=0 corresponds to torsions
-     * being off, and L=1 to torsions at full strength.
+     * being off, and L=1 to torsions at full strength).
      */
     private boolean torsionLambdaTerm;
     /** Value of the van der Waals lambda state variable. */
@@ -1820,7 +1841,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     private double electrostaticLambdaPower;
     /** van der Waals softcore alpha. */
     private double vdWSoftcoreAlpha = 0.25;
-    /** OpenMM thermostat. Currently an Andersen thermostat is supported. */
+    /** OpenMM thermostat. Currently, an Andersen thermostat is supported. */
     private PointerByReference ommThermostat = null;
     /** van der Waals softcore beta. */
     private double vdwSoftcorePower = 3.0;
@@ -2349,7 +2370,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           throw new Exception(" Atom with mass less than 0.");
         }
         if (mass == 0.0) {
-          logger.info(format(" Atom %s has zero mass.", atom.toString()));
+          logger.info(format(" Atom %s has zero mass.", atom));
         }
         OpenMM_System_addParticle(system, mass);
       }
@@ -2357,7 +2378,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       logger.log(Level.INFO, format("  Mass  \t\t%12.3f", totalMass));
     }
 
-    /** This methods sets the mass of inactive atoms to zero. */
+    /** This method sets the mass of inactive atoms to zero. */
     private void updateAtomMass() {
       int index = 0;
       for (Atom atom : atoms) {
@@ -2469,7 +2490,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         if (!manyBodyTitration && angleMode == AngleMode.IN_PLANE) {
           // Skip In-Plane angles unless this is ManyBody Titration.
-          continue;
         } else if (isHydrogenAngle(angle) && rigidHydrogenAngles) {
           logger.log(Level.INFO, " Constrained angle %s was not added the AngleForce.", angle);
         } else {
@@ -2511,7 +2531,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         AngleMode angleMode = angle.angleType.angleMode;
         if (!manyBodyTitration && angleMode == AngleMode.IN_PLANE) {
           // Skip In-Plane angles unless this is ManyBody Titration.
-          continue;
         }
         // Update angles that do not involve rigid hydrogen atoms.
         else if (!rigidHydrogenAngles || !isHydrogenAngle(angle)) {
@@ -2566,7 +2585,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
         if (!manyBodyTitration && angleMode == AngleMode.NORMAL) {
           // Skip Normal angles unless this is ManyBody Titration.
-          continue;
         } else {
           double theta0 = angle.angleType.angle[angle.nh];
           double k = OpenMM_KJPerKcal * angle.angleType.angleUnit * angle.angleType.forceConstant;
@@ -2575,7 +2593,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           int i3 = angle.getAtom(2).getXyzIndex() - 1;
           int i4 = 0;
           if (angleMode == AngleMode.NORMAL) {
-            // This is a place-holder Angle, in case the Normal Angle is switched to a
+            // This is a place-holder Angle, in case the Normal Angle is switched to an
             // In-Plane Angle during in the udpateInPlaneAngleForce.
             k = 0.0;
             Atom fourthAtom = angle.getFourthAtomOfTrigonalCenter();
@@ -2622,7 +2640,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         AngleMode angleMode = angle.angleType.angleMode;
         if (!manyBodyTitration && angleMode == AngleMode.NORMAL) {
           // Skip Normal angles unless this is ManyBody Titration.
-          continue;
         } else {
           double theta0 = angle.angleType.angle[angle.nh];
           double k = OpenMM_KJPerKcal * angle.angleType.angleUnit * angle.angleType.forceConstant;
@@ -2666,7 +2683,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       }
     }
 
-    /** Add a Urey-Bradley force to the OpenMM System. */
+    /** Add the Urey-Bradley force to the OpenMM System. */
     private void addUreyBradleyForce() {
       UreyBradley[] ureyBradleys = getUreyBradleys();
       if (ureyBradleys == null || ureyBradleys.length < 1) {
@@ -2695,7 +2712,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           format("  Urey-Bradleys \t%6d\t\t%1d", ureyBradleys.length, forceGroup));
     }
 
-    /** Add a Urey-Bradley force to the OpenMM System. */
+    /** Update the Urey-Bradley force. */
     private void updateUreyBradleyForce() {
       UreyBradley[] ureyBradleys = getUreyBradleys();
       if (ureyBradleys == null || ureyBradleys.length < 1) {
@@ -3695,10 +3712,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     }
 
     /**
-     * 1.) Handle interactions between non-alchemical atoms with our default OpenMM NonBondedForce.
+     * 1. Handle interactions between non-alchemical atoms with our default OpenMM NonBondedForce.
      * Note that alchemical atoms must have eps=0 to turn them off in this force.
-     *
-     * <p>2.) Handle interactions between alchemical atoms and mixed non-alchemical <-> alchemical
+     * <p>
+     * 2. Handle interactions between alchemical atoms and mixed non-alchemical <-> alchemical
      * interactions with an OpenMM CustomNonBondedForce.
      */
     private void addCustomNonbondedSoftcoreForce() {
@@ -4268,29 +4285,24 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           scfAlgorithm = SCFAlgorithm.CG;
         }
 
-        switch (scfAlgorithm) {
-          case EPT:
-            /*
-             * Citation:
-             * Simmonett, A. C.;  Pickard, F. C. t.;  Shao, Y.;  Cheatham, T. E., 3rd; Brooks, B. R., Efficient treatment of induced dipoles. The Journal of chemical physics 2015, 143 (7), 074115-074115.
-             */
-            OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce,
-                OpenMM_AmoebaMultipoleForce_Extrapolated);
-            PointerByReference exptCoefficients = OpenMM_DoubleArray_create(4);
-            OpenMM_DoubleArray_set(exptCoefficients, 0, -0.154);
-            OpenMM_DoubleArray_set(exptCoefficients, 1, 0.017);
-            OpenMM_DoubleArray_set(exptCoefficients, 2, 0.657);
-            OpenMM_DoubleArray_set(exptCoefficients, 3, 0.475);
-            OpenMM_AmoebaMultipoleForce_setExtrapolationCoefficients(amoebaMultipoleForce,
-                exptCoefficients);
-            OpenMM_DoubleArray_destroy(exptCoefficients);
-            break;
-          case CG:
-          case SOR:
-          default:
-            OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce,
-                OpenMM_AmoebaMultipoleForce_Mutual);
-            break;
+        if (scfAlgorithm == SCFAlgorithm.EPT) {
+          /*
+           * Citation:
+           * Simmonett, A. C.;  Pickard, F. C. t.;  Shao, Y.;  Cheatham, T. E., 3rd; Brooks, B. R., Efficient treatment of induced dipoles. The Journal of chemical physics 2015, 143 (7), 074115-074115.
+           */
+          OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce,
+              OpenMM_AmoebaMultipoleForce_Extrapolated);
+          PointerByReference exptCoefficients = OpenMM_DoubleArray_create(4);
+          OpenMM_DoubleArray_set(exptCoefficients, 0, -0.154);
+          OpenMM_DoubleArray_set(exptCoefficients, 1, 0.017);
+          OpenMM_DoubleArray_set(exptCoefficients, 2, 0.657);
+          OpenMM_DoubleArray_set(exptCoefficients, 3, 0.475);
+          OpenMM_AmoebaMultipoleForce_setExtrapolationCoefficients(amoebaMultipoleForce,
+              exptCoefficients);
+          OpenMM_DoubleArray_destroy(exptCoefficients);
+        } else {
+          OpenMM_AmoebaMultipoleForce_setPolarizationType(amoebaMultipoleForce,
+              OpenMM_AmoebaMultipoleForce_Mutual);
         }
       }
 
@@ -4303,28 +4315,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         PolarizeType polarType = pme.getPolarizeType(i);
 
         // Define the frame definition.
-        int axisType;
-        switch (multipoleType.frameDefinition) {
-          default:
-          case NONE:
-            axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
-            break;
-          case ZONLY:
-            axisType = OpenMM_AmoebaMultipoleForce_ZOnly;
-            break;
-          case ZTHENX:
-            axisType = OpenMM_AmoebaMultipoleForce_ZThenX;
-            break;
-          case BISECTOR:
-            axisType = OpenMM_AmoebaMultipoleForce_Bisector;
-            break;
-          case ZTHENBISECTOR:
-            axisType = OpenMM_AmoebaMultipoleForce_ZBisect;
-            break;
-          case THREEFOLD:
-            axisType = OpenMM_AmoebaMultipoleForce_ThreeFold;
-            break;
-        }
+        int axisType = switch (multipoleType.frameDefinition) {
+          case NONE -> OpenMM_AmoebaMultipoleForce_NoAxisType;
+          case ZONLY -> OpenMM_AmoebaMultipoleForce_ZOnly;
+          case ZTHENX -> OpenMM_AmoebaMultipoleForce_ZThenX;
+          case BISECTOR -> OpenMM_AmoebaMultipoleForce_Bisector;
+          case ZTHENBISECTOR -> OpenMM_AmoebaMultipoleForce_ZBisect;
+          case THREEFOLD -> OpenMM_AmoebaMultipoleForce_ThreeFold;
+        };
 
         double useFactor = 1.0;
         if (!atoms[i].getUse() || !atoms[i].getElectrostatics()) {
@@ -4452,7 +4450,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         OpenMM_AmoebaMultipoleForce_setCovalentMap(amoebaMultipoleForce, i,
             OpenMM_AmoebaMultipoleForce_PolarizationCovalent11, covalentMap);
 
-        // AMOEBA does not scale between 1-2, 1-3, etc polarization groups.
+        // AMOEBA does not scale between 1-2, 1-3, etc. polarization groups.
       }
 
       OpenMM_IntArray_destroy(covalentMap);
@@ -4510,28 +4508,14 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
         useFactor *= lambdaScale;
 
         // Define the frame definition.
-        int axisType;
-        switch (multipoleType.frameDefinition) {
-          default:
-          case NONE:
-            axisType = OpenMM_AmoebaMultipoleForce_NoAxisType;
-            break;
-          case ZONLY:
-            axisType = OpenMM_AmoebaMultipoleForce_ZOnly;
-            break;
-          case ZTHENX:
-            axisType = OpenMM_AmoebaMultipoleForce_ZThenX;
-            break;
-          case BISECTOR:
-            axisType = OpenMM_AmoebaMultipoleForce_Bisector;
-            break;
-          case ZTHENBISECTOR:
-            axisType = OpenMM_AmoebaMultipoleForce_ZBisect;
-            break;
-          case THREEFOLD:
-            axisType = OpenMM_AmoebaMultipoleForce_ThreeFold;
-            break;
-        }
+        int axisType = switch (multipoleType.frameDefinition) {
+          case NONE -> OpenMM_AmoebaMultipoleForce_NoAxisType;
+          case ZONLY -> OpenMM_AmoebaMultipoleForce_ZOnly;
+          case ZTHENX -> OpenMM_AmoebaMultipoleForce_ZThenX;
+          case BISECTOR -> OpenMM_AmoebaMultipoleForce_Bisector;
+          case ZTHENBISECTOR -> OpenMM_AmoebaMultipoleForce_ZBisect;
+          case THREEFOLD -> OpenMM_AmoebaMultipoleForce_ThreeFold;
+        };
 
         // Load local multipole coefficients.
         for (int j = 0; j < 3; j++) {
@@ -4640,9 +4624,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       NonPolarModel nonpolar = gk.getNonPolarModel();
       switch (nonpolar) {
-        case BORN_SOLV:
-        case BORN_CAV_DISP:
-        default:
+        default -> {
           // Configure a Born Radii based surface area term.
           double surfaceTension = gk.getSurfaceTension() * OpenMM_KJPerKcal * OpenMM_AngstromsPerNm
               * OpenMM_AngstromsPerNm;
@@ -4650,17 +4632,11 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
               OpenMM_True);
           OpenMM_AmoebaGeneralizedKirkwoodForce_setSurfaceAreaFactor(amoebaGeneralizedKirkwoodForce,
               -surfaceTension);
-          break;
-        case CAV:
-        case CAV_DISP:
-        case GAUSS_DISP:
-        case SEV_DISP:
-        case HYDROPHOBIC_PMF:
-        case NONE:
+        }
+        case CAV, CAV_DISP, GAUSS_DISP, SEV_DISP, HYDROPHOBIC_PMF, NONE ->
           // This NonPolar model does not use a Born Radii based surface area term.
-          OpenMM_AmoebaGeneralizedKirkwoodForce_setIncludeCavityTerm(amoebaGeneralizedKirkwoodForce,
-              OpenMM_False);
-          break;
+            OpenMM_AmoebaGeneralizedKirkwoodForce_setIncludeCavityTerm(
+                amoebaGeneralizedKirkwoodForce, OpenMM_False);
       }
 
       int forceGroup = forceField.getInteger("GK_FORCE_GROUP", 1);
@@ -4671,18 +4647,10 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
 
       // Add dispersion
       switch (nonpolar) {
-        case CAV_DISP:
-        case GAUSS_DISP:
-        case SEV_DISP:
-        case BORN_CAV_DISP:
-          addWCAForce();
-          break;
-        case CAV:
-        case HYDROPHOBIC_PMF:
-        case BORN_SOLV:
-        case NONE:
-        default:
+        case CAV_DISP, GAUSS_DISP, SEV_DISP, BORN_CAV_DISP -> addWCAForce();
+        default -> {
           // WCA force is not being used.
+        }
       }
 
       // Add cavitation
@@ -4900,7 +4868,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
       OpenMM_AmoebaGKCavitationForce_setNonbondedMethod(amoebaCavitationForce,
           OpenMM_AmoebaGKCavitationForce_NoCutoff);
 
-      int forceGroup = forceField.getInteger("GK_FORCE_GROUP", 1);
+      int forceGroup = forceField.getInteger("GK_FORCE_GROUP", 2);
       OpenMM_Force_setForceGroup(amoebaCavitationForce, forceGroup);
       OpenMM_System_addForce(system, amoebaCavitationForce);
 
@@ -5042,15 +5010,15 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           }
 
           switch (bondFunction) {
-            case QUARTIC:
-            case FLAT_BOTTOM_QUARTIC:
+            case QUARTIC, FLAT_BOTTOM_QUARTIC -> {
               OpenMM_CustomBondForce_addGlobalParameter(theForce, "cubic",
                   bondType.cubic / OpenMM_NmPerAngstrom);
               OpenMM_CustomBondForce_addGlobalParameter(theForce, "quartic",
                   bondType.quartic / (OpenMM_NmPerAngstrom * OpenMM_NmPerAngstrom));
-              break;
-            default:
-              break;
+            }
+            default -> {
+              // Do nothing.
+            }
           }
 
           OpenMM_Force_setForceGroup(theForce, forceGroup);
@@ -5222,8 +5190,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * angles that are less than 160 degrees.
      *
      * @param angle Angle to check.
-     * @return boolean indicating whether or not an angle is a hydrogen angle that is less than 160
-     *     degrees.
+     * @return boolean indicating whether an angle is a hydrogen angle that is less than 160 degrees.
      */
     private boolean isHydrogenAngle(Angle angle) {
       if (angle.containsHydrogen()) {
@@ -5261,8 +5228,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
     private final PointerByReference state;
     /** If true, positions are available. */
     private final boolean positions;
-    /** If true, energies are available. */
-    private final boolean energies;
     /** If true, velocities are available. */
     private final boolean velocities;
     /** If true. forces are available. */
@@ -5278,7 +5243,6 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      */
     public State(boolean positions, boolean energies, boolean forces, boolean velocities) {
       this.positions = positions;
-      this.energies = energies;
       this.forces = forces;
       this.velocities = velocities;
 
@@ -5327,7 +5291,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
      * contains accelerations for active atoms only.
      *
      * @param a Acceleration components for only active atomic coordinates.
-     * @return a The acceleration for each active atomic coordinate.
+     * @return The acceleration for each active atomic coordinate.
      */
     public double[] getAccelerations(double[] a) {
       if (!forces) {
@@ -5386,8 +5350,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
           if (isNaN(xx) || isInfinite(xx) || isNaN(yy) || isInfinite(yy) || isNaN(zz) || isInfinite(
               zz)) {
             StringBuilder sb = new StringBuilder(
-                format(" The gradient of atom %s is (%8.3f,%8.3f,%8.3f).", atom.toString(), xx, yy,
-                    zz));
+                format(" The gradient of atom %s is (%8.3f,%8.3f,%8.3f).", atom, xx, yy, zz));
             double[] vals = new double[3];
             atom.getVelocity(vals);
             sb.append(format("\n Velocities: %8.3g %8.3g %8.3g", vals[0], vals[1], vals[2]));
