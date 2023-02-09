@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -178,16 +178,19 @@ public class RefinementModel {
       if (!a.getUse()) {
         continue;
       }
-      a.setFormFactorIndex(index);
-      xIndex[0].add(index);
-      index++;
       totalAtomList.add(a);
+//      a.setFormFactorIndex(index);
+//      xIndex[0].add(index);
+//      index++;
       if (a.isActive()) {
         activeAtomList.add(a);
+        a.setFormFactorIndex(index);
+        xIndex[0].add(index);
+        index++;
       }
     }
 
-    // Now add cross references to root and any alternate atoms not in root
+    // Now add cross-references to root and any alternate atoms not in root
     for (int i = 1; i < assembly.length; i++) {
       atomList = assembly[i].getAtomList();
       for (Atom a : atomList) {
@@ -196,14 +199,20 @@ public class RefinementModel {
         }
         Atom root = assembly[0].findAtom(a);
         if (root != null && root.getAltLoc().equals(a.getAltLoc())) {
-          xIndex[i].add(root.getFormFactorIndex());
-          a.setFormFactorIndex(root.getFormFactorIndex());
+//          xIndex[i].add(root.getFormFactorIndex());
+//          a.setFormFactorIndex(root.getFormFactorIndex());
+          if (a.isActive()) {
+            xIndex[i].add(root.getFormFactorIndex());
+            a.setFormFactorIndex(root.getFormFactorIndex());
+          }
         } else {
-          xIndex[i].add(index);
-          index++;
+//          xIndex[i].add(index);
+//          index++;
           totalAtomList.add(a);
           if (a.isActive()) {
             activeAtomList.add(a);
+            xIndex[i].add(index);
+            index++;
           }
         }
       }

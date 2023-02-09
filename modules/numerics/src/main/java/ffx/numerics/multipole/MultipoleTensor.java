@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -108,7 +108,7 @@ public abstract class MultipoleTensor {
   protected final double[] work;
 
   /**
-   * Store the auxillary tensor memory to avoid memory consumption.
+   * Store the auxiliary tensor memory to avoid memory consumption.
    */
   protected final double[] T000;
 
@@ -281,9 +281,9 @@ public abstract class MultipoleTensor {
     this.coordinates = coordinates;
     this.operator = OPERATOR.COULOMB;
 
-    // Auxillary terms for Coulomb and Thole Screening.
+    // Auxiliary terms for Coulomb and Thole Screening.
     coulombSource = new double[o1];
-    for (int n = 0; n <= order; n++) {
+    for (short n = 0; n <= order; n++) {
       /*
        Math.pow(-1.0, j) returns positive for all j, with -1.0 as the //
        argument rather than -1. This is a bug?
@@ -475,7 +475,7 @@ public abstract class MultipoleTensor {
     // Energy of induced dipole k in the field of permanent multipole i.
     double eK = polarizationEnergy(mK);
 
-    // Find the permanent multipole potential and derivatives at i.
+    // Find the permanent multipole potential and derivatives at site i.
     multipoleKPotentialAtI(mK, 1);
     // Energy of induced dipole i in the field of permanent multipole k.
     double eI = polarizationEnergy(mI);
@@ -542,11 +542,11 @@ public abstract class MultipoleTensor {
       Gi[2] += 0.5 * mutualMask * (mI.px * E101 + mI.py * E011 + mI.pz * E002);
     }
 
-    // Find the potential and its derivatives at K due to the averaged induced dipole at i.
+    // Find the potential and its derivatives at K due to the averaged induced dipole at site i.
     dipoleIPotentialAtK(mI.sx, mI.sy, mI.sz, 2);
     multipoleTorque(mK, Tk);
 
-    // Find the potential and its derivatives at I due to the averaged induced dipole at k.
+    // Find the potential and its derivatives at I due to the averaged induced dipole at site k.
     dipoleKPotentialAtI(mK.sx, mK.sy, mK.sz, 2);
     multipoleTorque(mI, Ti);
 
@@ -570,7 +570,7 @@ public abstract class MultipoleTensor {
     // The field E_x = -E100.
     double eK = -(mK.ux * E100 + mK.uy * E010 + mK.uz * E001);
 
-    // Find the permanent multipole potential and derivatives at i.
+    // Find the permanent multipole potential and derivatives at site i.
     multipoleKPotentialAtI(mK, 2);
     // Energy of multipole i in the field of induced dipole k.
     double eI = -(mI.ux * E100 + mI.uy * E010 + mI.uz * E001);
@@ -617,27 +617,16 @@ public abstract class MultipoleTensor {
    */
   public void generateTensor() {
     switch (order) {
-      case 1:
-        order1();
-        break;
-      case 2:
-        order2();
-        break;
-      case 3:
-        order3();
-        break;
-      case 4:
-        order4();
-        break;
-      case 5:
-        order5();
-        break;
-      case 6:
-        order6();
-        break;
-      default:
+      case 1 -> order1();
+      case 2 -> order2();
+      case 3 -> order3();
+      case 4 -> order4();
+      case 5 -> order5();
+      case 6 -> order6();
+      default -> {
         double[] r = {x, y, z};
         recursion(r, work);
+      }
     }
   }
 
@@ -650,16 +639,23 @@ public abstract class MultipoleTensor {
 
   /**
    * The index is based on the idea of filling tetrahedron.
-   *
-   * <p>1/r has an index of 0 <br>
-   * derivatives of x are first; indeces from 1..o for d/dx..(d/dx)^o <br> derivatives of x and y are
-   * second; base triangle of size (o+1)(o+2)/2 <br> derivatives of x, y and z are last; total size
-   * (o+1)*(o+2)*(o+3)/6 <br>
-   *
-   * <p>This function is useful to set up masking constants: <br>
-   * static int Tlmn = ti(l,m,n,order) <br> For example the (d/dy)^2 (1/R) storage location: <br>
+   * <p>
+   * 1/r has an index of 0.
+   * <br>
+   * derivatives of x are first; indices from 1..o for d/dx..(d/dx)^o
+   * <br>
+   * derivatives of x and y are second; base triangle of size (o+1)(o+2)/2
+   * <br>
+   * derivatives of x, y and z are last; total size (o+1)*(o+2)*(o+3)/6
+   * <br>
+   * <p>
+   * This function is useful to set up masking constants:
+   * <br>
+   * static int Tlmn = ti(l,m,n,order)
+   * <br>
+   * For example the (d/dy)^2 (1/R) storage location:
+   * <br>
    * static int T020 = ti(0,2,0,order)
-   *
    * <p>
    *
    * @param dx int The number of d/dx operations.
@@ -745,7 +741,7 @@ public abstract class MultipoleTensor {
    * @param l apply (d/dx)^l to the potential
    * @param m apply (d/dy)^l to the potential
    * @param n apply (d/dz)^l to the potential
-   * @param sb the code will be appended to the StringBuilfer.
+   * @param sb the code will be appended to the StringBuilder.
    * @return the contracted interaction.
    */
   private double codeContractMultipoleK(PolarizableMultipole mK, double[] T, int l, int m, int n,
@@ -1517,7 +1513,7 @@ public abstract class MultipoleTensor {
    * @param l apply (d/dx)^l to the potential
    * @param m apply (d/dy)^l to the potential
    * @param n apply (d/dz)^l to the potential
-   * @param sb the code will be appended to the StringBuilfer.
+   * @param sb the code will be appended to the StringBuilder.
    * @return the contracted interaction.
    */
   private double codeContractMultipoleI(PolarizableMultipole mI, double[] T, int l, int m, int n,
@@ -1668,7 +1664,7 @@ public abstract class MultipoleTensor {
    * @param l number of d/dx partial derivatives.
    * @param m number of d/dx partial derivatives.
    * @param n number of d/dx partial derivatives.
-   * @return a String of the form <code>termlmnj</code>.
+   * @return a String of the form <code>termLMN</code>.
    */
   protected static String term(int l, int m, int n) {
     return format("term%d%d%d", l, m, n);
@@ -1681,7 +1677,7 @@ public abstract class MultipoleTensor {
    * @param m number of d/dx partial derivatives.
    * @param n number of d/dx partial derivatives.
    * @param j the jth intermediate term.
-   * @return a String of the form <code>termlmnj</code>.
+   * @return a String of the form <code>termLMNJ</code>.
    */
   protected static String term(int l, int m, int n, int j) {
     return format("term%d%d%d%d", l, m, n, j);
@@ -1689,16 +1685,23 @@ public abstract class MultipoleTensor {
 
   /**
    * The index is based on the idea of filling tetrahedron.
-   *
-   * <p>1/r has an index of 0 <br>
-   * derivatives of x are first; indeces from 1..o for d/dx..(d/dx)^o <br> derivatives of x and y are
-   * second; base triangle of size (o+1)(o+2)/2 <br> derivatives of x, y and z are last; total size
-   * (o+1)*(o+2)*(o+3)/6 <br>
-   *
-   * <p>This function is useful to set up masking constants: <br>
-   * static int Tlmn = ti(l,m,n,order) <br> For example the (d/dy)^2 (1/R) storage location: <br>
+   * <p>
+   * 1/r has an index of 0.
+   * <br>
+   * derivatives of x are first; indices from 1..o for d/dx..(d/dx)^o
+   * <br>
+   * derivatives of x and y are second; base triangle of size (o+1)(o+2)/2
+   * <br>
+   * derivatives of x, y and z are last; total size (o+1)*(o+2)*(o+3)/6
+   * <br>
+   * <p>
+   * This function is useful to set up masking constants:
+   * <br>
+   * static int Tlmn = ti(l,m,n,order)
+   * <br>
+   * For example the (d/dy)^2 (1/R) storage location:
+   * <br>
    * static int T020 = ti(0,2,0,order)
-   *
    * <p>
    *
    * @param dx int The number of d/dx operations.
@@ -1720,19 +1723,18 @@ public abstract class MultipoleTensor {
     */
     int top = order + 1 - dz;
     top = top * (top + 1) * (top + 2) / 6;
-    int zindex = size - top;
+    int zIndex = size - top;
     /*
-     Given the "dz level", dy can range from 0..order - dz) To get to the
-     row for a specific value of dy, dy*(order + 1) - dy*(dy-1)/2 indeces
-     are skipped. This is an operation that looks like the area of
-     rectangle, minus the area of an empty triangle.
+     Given the "dz level", dy can range from (0 .. order - dz).
+     To get to the row for a specific value of dy, dy*(order + 1) - dy*(dy-1)/2 indices are skipped.
+     This is an operation that looks like the area of rectangle, minus the area of an empty triangle.
     */
-    int yindex = dy * (order - dz) - (dy - 1) * (dy - 2) / 2 + 1;
+    int yIndex = dy * (order - dz) - (dy - 1) * (dy - 2) / 2 + 1;
     /*
      Given the dz level and dy row, dx can range from (0..order - dz - dy)
      The dx index is just walking down the dy row for "dx" steps.
     */
-    return dx + yindex + zindex;
+    return dx + yIndex + zIndex;
   }
 
   /**

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -445,7 +445,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
     */
     return Arrays.asList(
         new Object[][] {
-           {
+            {
                 "Thermodynamics Help Message Test",
                 new String[] {},
                 ThermoTestMode.HELP,
@@ -497,7 +497,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
 //                0,
 //                0,
 //                new int[] {1, 100, 421, 426, 919, 921, 1203, 1204, 1205, 1206, 1207, 1208},
-//                // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+//                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
 //                new double[] {-8422.43552052, 0},
 //                new double[] {0, 0},
 //                new double[] {-187.708505969645246, Double.NaN},
@@ -516,7 +516,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
 //                        {-0.09630989055561034, 0.9691000112562431, -0.2005707212562129},
 //                        {0.167130858362869, -0.62725014243849, 1.175516097449706}
 //                    },
-//                    // Fill in once I can get the bias-deposition actually working.
+//                    // Fill in once the test harness supports bias-deposition.
 //                    new double[12][3]
 //                },
 //                new double[][][] {
@@ -534,7 +534,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
 //                        {1.8526851397737774E-17, -1.8642292909391106E-16, 3.8583201849920577E-17},
 //                        {-3.215047342492132E-17, 1.2066227166417432E-16, -2.2613058666622065E-16}
 //                    },
-//                    // Fill in once I can get the bias-deposition actually working.
+//                    // Fill in once the test harness supports bias-deposition.
 //                    new double[12][3]
 //                },
 //                new String[] {
@@ -565,7 +565,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
 //                0,
 //                0,
 //                new int[] {1, 100, 421, 426, 919, 921, 1203, 1204, 1205, 1206, 1207, 1208},
-//                // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+//                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
 //                new double[] {-8441.45436853, 0},
 //                new double[] {-59.7520122, 0},
 //                new double[] {0, Double.NaN},
@@ -584,7 +584,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
 //                        {-0.09630970969676556, 0.9690984223562502, -0.20056743541628919},
 //                        {0.16711991894934464, -0.6272519054249652, 1.1755119757400072}
 //                    },
-//                    // Fill in once I can get the bias-deposition actually working.
+//                    // Fill in once the test harness supports bias-deposition.
 //                    new double[12][3]
 //                },
 //                new double[][][] {
@@ -602,7 +602,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
 //                        {5.681848183058946E-7, -4.991676597398964E-6, 1.0322770563675476E-5},
 //                        {-3.436718115423787E-5, -5.538585353903613E-6, -1.2948732912576588E-5}
 //                    },
-//                    // Fill in once I can get the bias-deposition actually working.
+//                    // Fill in once the test harness supports bias-deposition.
 //                    new double[12][3]
 //                },
 //                new String[] {
@@ -633,26 +633,26 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 0,
                 0,
                 new int[] {1, 100, 421, 426, 919, 921, 1203, 1204, 1205, 1206, 1207, 1208},
-                // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                new double[] {-8479.23336094915, 0},
+                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
+                new double[] {-8478.143922064253, 0},
                 new double[] {0, 0},
-                new double[] {205.85667664546781, Double.NaN},
+                new double[] {205.8018333335931, Double.NaN},
                 new double[][][] {
                     {
-                        {1.5160279105638157, -0.16798268028609797, 1.1908988796148456},
-                        {-1.2287092349018947, 0.3317194646514121, -1.1686986621093438},
-                        {1.3308087682369107, -0.8783223565504423, 0.10963623474384576},
-                        {-1.0136642012148873, 0.7372394679746987, -0.5963134848140097},
-                        {-0.1781582473683545, -0.35265149608749957, -0.6111620973010643},
-                        {-0.2591712741232506, 0.07022000126236438, 0.15836563898503053},
-                        {-0.5324333958135048, 0.718741561543808, -0.6184426849003377},
-                        {0.29939717212359174, -0.3907327357932422, 0.4139612315602017},
-                        {0.05474893132634229, 0.3356540659816183, 0.921540679720797},
-                        {-0.8822762556654258, 0.5899859105014462, -0.9015127818167441},
-                        {-0.09630952883792121, 0.9690968334562342, -0.20056414957637436},
-                        {0.1671089795358247, -0.6272536684114378, 1.1755078540303066}
+                        {1.5229178263056111, -0.15677963159712682, 1.1816872925903983},
+                        {-1.224135286541821, 0.3201779704385803, -1.1483158020643944},
+                        {1.2969488018273694, -0.8376981151127962, 0.09660091060711373},
+                        {-1.0033472564565908, 0.7283612031936482, -0.5947650554794823},
+                        {-0.17802197322041113, -0.34399197898615985, -0.6113921282564965},
+                        {-0.25687293667935585, 0.07341668289540859, 0.15584681242862208},
+                        {-0.530878661936121, 0.7208093361614316, -0.6200446160740853},
+                        {0.29982215558798053, -0.40520052950990504, 0.4147977845799842},
+                        {0.05351938289450864, 0.3348510487959171, 0.9222262189021788},
+                        {-0.8823224520772985, 0.6039483343281296, -0.894180455908895},
+                        {-0.08825723194619872, 0.9833060568981935, -0.1570236438711472},
+                        {0.1637236555517756, -0.6228719840792594, 1.1789882530493676},
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[12][3]
                 },
                 new double[][][] {
@@ -670,7 +670,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {-1.8526781815166296E-17, 1.8642231778983455E-16, -3.858193767513045E-17},
                         {3.214626465908195E-17, -1.2066294994525673E-16, 2.2612900090378923E-16}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[12][3]
                 },
                 new String[] {
@@ -701,26 +701,26 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 0,
                 0,
                 new int[] {1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
-                // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                new double[] {-10390.690452217978, 0},
+                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
+                new double[] {-10389.28471472707, 0},
                 new double[] {0, 0},
-                new double[] {-204.6304970000092, Double.NaN},
+                new double[] {-204.10881484981655, Double.NaN},
                 new double[][][] {
                     {
-                        {-1.1610229302444828, 0.8877842196621852, -0.38190472079527416},
-                        {0.17141739386080523, -0.6936874602017804, -0.2646850671524603},
-                        {1.7845002387380973, 0.06252966517014968, 0.6441113717050584},
-                        {-0.8091327019583163, -0.03278919597876184, -0.6934281103867814},
-                        {-0.009204859689755152, -0.03031752596955206, -0.2231311840527026},
-                        {0.44438169596232324, -0.03623403581690088, -0.09120393985608466},
-                        {0.6143253257220098, -0.559457100728987, 0.7795004807627701},
-                        {-0.4100603133810665, 0.27711514086384526, -0.3596263242692279},
-                        {0.2060111442204393, -1.6995161698485726, 0.316094377538672},
-                        {0.17044049656085825, 1.3626089754787625, 0.18294188325894245},
-                        {-0.1369658985076594, 0.28860743562734736, -0.23182335542775423},
-                        {-0.3317851447377951, 0.10693619585058839, 0.07599282491286408}
+                        {-1.1609578854274971, 0.8877442339271191, -0.381997307744788},
+                        {0.17136471973564316, -0.6936945821429843, -0.26469263318865544},
+                        {1.7842973607219292, 0.06247987009760436, 0.6436711554923047},
+                        {-0.80901615978728, -0.03278744764172048, -0.6933431691420533},
+                        {-0.009221945771183293, -0.03024427307941413, -0.22321841071848292},
+                        {0.44453213441769357, -0.03618099829897137, -0.09130836864141911},
+                        {0.6143060586860591, -0.5593900343333869, 0.7793559372609127},
+                        {-0.4099919820212454, 0.2771241953804595, -0.3596606825033808},
+                        {0.2058491063283956, -1.6995564152580624, 0.3162941963413184},
+                        {0.17045731075675363, 1.3626300067862616, 0.1829234871604033},
+                        {-0.1369296520341554, 0.28864175741664555, -0.23181864232968774},
+                        {-0.3317934170646355, 0.1069795784815214, 0.07598972633102496},
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[12][3]
                 },
                 new double[][][] {
@@ -738,7 +738,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {2.6347728499845737E-17, -5.55185665906526E-17, 4.459517949566215E-17},
                         {6.382453595443383E-17, -2.0571002605587047E-17, -1.4618517021800703E-17}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[12][3]
                 },
                 new String[] {
@@ -767,9 +767,9 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 0,
                 0,
                 new int[] {1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
-                // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                new double[] {-10411.423856383333, 0},
-                new double[] {-65.13591020980766, 0},
+                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
+                new double[] {-10409.965261439502, 0},
+                new double[] {-64.96985362393843, 0},
                 new double[] {0, Double.NaN},
                 new double[][][] {
                     {
@@ -786,7 +786,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {-0.13696614734124157, 0.2886080953858223, -0.23182359983306977},
                         {-0.33178545555019134, 0.10693683664021286, 0.07599211616273438}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[12][3]
                 },
                 new double[][][] {
@@ -804,7 +804,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {-7.817337568383209E-7, 2.0726923768421557E-6, -7.678219411388909E-7},
                         {-9.764459392158642E-7, 2.0130999769385483E-6, -2.226604200572524E-6}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[12][3]
                 },
                 new String[] {
@@ -833,26 +833,26 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 0,
                 0,
                 new int[] {1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
-                // Fill in the post-bias PE and dU/dL once I have bias deposition working.
-                new double[] {-10432.157260548698, 0},
+                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
+                new double[] {-10430.645808151916, 0},
                 new double[] {0, 0},
-                new double[] {204.63049700001284, Double.NaN},
+                new double[] {204.1088148497838, Double.NaN},
                 new double[][][] {
                     {
-                        {-1.1610211762120812, 0.887780797890894, -0.3819065056421289},
-                        {0.17141594219890166, -0.6936862268447639, -0.2646858974541544},
-                        {1.78449734438124, 0.06253513289318713, 0.644100940099138},
-                        {-0.8091300753421411, -0.03279630251186161, -0.6934187681336814},
-                        {-0.009209020067800555, -0.030312677944171362, -0.22313803814504962},
-                        {0.44438043018045414, -0.03623102271780709, -0.0912076231256933},
-                        {0.614324439446083, -0.5594536282678209, 0.7794983867762828},
-                        {-0.4100603834657077, 0.27711502484985173, -0.35962749740490985},
-                        {0.20601315041987167, -1.699520917111661, 0.31609872448705456},
-                        {0.17043982918581357, 1.362609802254478, 0.18294040044978965},
-                        {-0.13696639617482465, 0.2886087551442973, -0.2318238442383853},
-                        {-0.3317857663625876, 0.10693747742983745, 0.07599140741260468}
+                        {-1.1609561125944228, 0.8877407807597617, -0.3819990910861595},
+                        {0.17136321710200875, -0.6936932915411145, -0.2646933907193276},
+                        {1.78429435562491, 0.06248553884406727, 0.6436609576859738},
+                        {-0.8090134265871809, -0.032794734757721766, -0.693334070333059},
+                        {-0.009226164435848005, -0.03023937880286831, -0.22322518458123763},
+                        {0.4445308404726829, -0.03617792937772801, -0.09131197683309833},
+                        {0.6143051128396353, -0.5593864905811907, 0.7793539392457256},
+                        {-0.40999206546827605, 0.27712408910913533, -0.35966183105159466},
+                        {0.205851177042927, -1.6995612712832284, 0.31629838909722086},
+                        {0.17045662254298133, 1.3626308508037734, 0.1829220337727313},
+                        {-0.13693017608623448, 0.2886431027192988, -0.23181908891834802},
+                        {-0.3317940476955181, 0.10698088476669532, 0.07598834048574243},
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[12][3]
                 },
                 new double[][][] {
@@ -870,7 +870,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {-2.6347824234619856E-17, 5.551882042226125E-17, -4.459527352673071E-17},
                         {-6.382465553457344E-17, 2.057124913923137E-17, 1.4618244341429974E-17}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[12][3]
                 },
                 new String[] {
@@ -897,21 +897,21 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 0,
                 0,
                 intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
                 new double[] {2.61926128937, 0},
                 new double[] {17.7107919457, 0},
                 new double[] {-403.664911547, Double.NaN},
                 new double[][][] {
                     {
-                        {-5.677212457329941, 1.4246439517642553, -2.2981580040498444},
-                        {-16.262337142221504, -4.01152481099988, 2.8309493281407083},
-                        {20.234575856650853, -2.575942513845196, 0.3415783090214405},
-                        {-4.107688955265742E-5, -3.0491094574426836E-4, 1.5088773834574196E-4},
-                        {3.855038222953342E-5, 3.0678248144100465E-4, -1.5278355755630972E-4},
-                        {2.5265073231240012E-6, -1.8715356967362725E-6, 1.895819210567746E-6},
-                        {1.7049737429005947, 5.162823373080822, -0.8743696331123039}
+                        {-5.677212525948178, 1.424643968949981, -2.2981580317913504},
+                        {-16.262337326126076, -4.011524859855653, 2.8309493626240676},
+                        {20.234576106276727, -2.5759425460558103, 0.34157831359509483},
+                        {-4.107688957377534E-5, -3.0491094575808766E-4, 1.5088773834586063E-4},
+                        {3.855038213179264E-5, 3.0678248136167547E-4, -1.527835575474326E-4},
+                        {2.526507441982699E-6, -1.8715356035878577E-6, 1.8958192015719713E-6},
+                        {1.7049737457975327, 5.1628234369614825, -0.8743696444278124},
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new double[][][] {
@@ -924,7 +924,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {0.0, 0.0, 0.0},
                         {45.94772906403098, -33.29064549875034, 6.401008301641785}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new String[] {"-l", "0.0", "--ac", "1-3", "--ac2", "1"},
@@ -942,7 +942,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 0,
                 0,
                 intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
                 new double[] {2.850550906, 0},
                 new double[] {-8.71629068942, 0},
                 new double[] {-141.329823284, Double.NaN},
@@ -956,7 +956,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {5.712456879867664E-6, -9.857865557163607E-7, 1.145744081896436E-6},
                         {3.425241486013779, 2.548260471307343, -0.38868219515588814}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new double[][][] {
@@ -969,7 +969,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {1.7176239889004114E-4, 3.3106310006263015E-5, -3.056405648898283E-5},
                         {-3.9762008391856365, -19.684869938173087, 3.4734701633955916}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new String[] {"-l", "0.1", "--ac", "1-3", "--ac2", "1"},
@@ -987,7 +987,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 0,
                 0,
                 intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
                 new double[] {0.974157909812, 0},
                 new double[] {-10.6503844408, 0},
                 new double[] {85.6111397243, Double.NaN},
@@ -1001,7 +1001,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {4.178187790317917E-4, 1.7909105729778537E-5, -3.118731586794815E-5},
                         {1.3727596548303362, 0.6583705285471645, -0.08173782369167623}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new double[][][] {
@@ -1014,7 +1014,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {0.008777938573427544, 2.1069797116961348E-4, -5.578096868382651E-4},
                         {-13.606860493017741, -7.026604599323282, 1.006581478055631}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new String[] {"-l", "0.25", "--ac", "1-3", "--ac2", "1"},
@@ -1032,7 +1032,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 0,
                 0,
                 intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
                 new double[] {0.110037916292, 0},
                 new double[] {-2.26607999096, 0},
                 new double[] {30.1632932351, Double.NaN},
@@ -1046,7 +1046,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {0.004965647007413021, 1.9626489810683822E-5, -2.4565648661058724E-4},
                         {0.24413054496442746, 0.08121207290200799, -0.005502771964648001}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new double[][][] {
@@ -1059,7 +1059,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {0.0653051230131746, -5.218785659658921E-4, -0.002695798950450919},
                         {-3.1906844150123317, -1.5369018977200506, 0.16524619704337926}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new String[] {"-l", "0.4", "--ac", "1-3", "--ac2", "1"},
@@ -1077,7 +1077,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 0,
                 0,
                 intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
                 new double[] {-0.00563228503, 0},
                 new double[] {-0.384474276341, 0},
                 new double[] {9.92344157784, Double.NaN},
@@ -1091,7 +1091,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {0.013110199299505135, -0.0030608519096883596, -6.447454233376755E-4},
                         {0.06276193810551062, 0.00375821835084032, 0.0013984902693433081}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new double[][][] {
@@ -1104,7 +1104,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {0.06748923520446536, -0.09680681673784088, -0.004103281313994225},
                         {-0.8524954538377344, -0.24413245666460826, 0.008290175300342928}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new String[] {"-l", "0.5", "--ac", "1-3", "--ac2", "1"},
@@ -1122,7 +1122,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 0,
                 0,
                 intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
                 new double[] {-0.010482021204, 0},
                 new double[] {0.180367758296, 0},
                 new double[] {3.43489697899, Double.NaN},
@@ -1136,7 +1136,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {0.0064502702618650975, -0.028665281917196323, -2.4419049163833308E-5},
                         {0.017486608039202628, -0.0017063902089100456, 7.31881057760824E-4}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new double[][][] {
@@ -1149,7 +1149,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {-0.2968358770072303, -0.4711447951314603, 0.027030911889720764},
                         {-0.21961103396608955, 0.02162837189470477, -0.009506552851734766}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new String[] {"-l", "0.6", "--ac", "1-3", "--ac2", "1"},
@@ -1167,7 +1167,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 0,
                 0,
                 intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
                 new double[] {0.0829830017977, 0},
                 new double[] {1.27996801166, 0},
                 new double[] {11.9168667081, Double.NaN},
@@ -1181,7 +1181,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {-0.17340305926115046, -0.1836639508243553, 0.019217340035074935},
                         {0.0017129151303696705, -1.5973731939765025E-4, 6.403345504972649E-5}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new double[][][] {
@@ -1194,7 +1194,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {-2.5478012735172113, -1.7548767300847088, 0.28852239893802845},
                         {-0.033232949450470756, 0.003190852991440346, -0.0013213153097627725}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new String[] {"-l", "0.75", "--ac", "1-3", "--ac2", "1"},
@@ -1212,7 +1212,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 0,
                 0,
                 intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
                 new double[] {0.397347160918, 0},
                 new double[] {2.75351951766, 0},
                 new double[] {5.37105253479, Double.NaN},
@@ -1226,7 +1226,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {-0.8650389649167101, -0.6105053956998422, 0.11296922972554538},
                         {2.3913685674263586E-5, -1.84460182457579E-6, 6.030248161425271E-7}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new double[][][] {
@@ -1239,7 +1239,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {-6.796164346239962, -4.168990151630222, 1.065450769329658},
                         {-0.001072855594543585, 8.733802493437212E-5, -3.0297796539917875E-5}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new String[] {"-l", "0.9", "--ac", "1-3", "--ac2", "1"},
@@ -1257,7 +1257,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                 0,
                 0,
                 intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once I have bias deposition working.
+                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
                 new double[] {0.678991455919, 0},
                 new double[] {2.62955540214, 0},
                 new double[] {-9.66072732215, Double.NaN},
@@ -1271,7 +1271,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {-1.6769948479628611, -1.150418751991301, 0.2570278756685478},
                         {0.0, 0.0, 0.0}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new double[][][] {
@@ -1284,7 +1284,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                         {-9.243751991761942, -6.81242770637627, 1.826368234010993},
                         {0.0, 0.0, 0.0}
                     },
-                    // Fill in once I can get the bias-deposition actually working.
+                    // Fill in once the test harness supports bias-deposition.
                     new double[7][3]
                 },
                 new String[] {"-l", "1.0", "--ac", "1-3", "--ac2", "1"},
@@ -1620,7 +1620,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
                     "445"
                 },
                 new String[] {"--mc", "true", "--ts", "true"}
-            } 
+            }
         });
   }
 
@@ -1803,23 +1803,26 @@ public class ThermodynamicsTest extends AlgorithmsTest {
   private void checkThGradArray(
       double[] actual, double[][][] expected, int tableIndex, double tol, String description) {
     double[] actualSlice = new double[3];
+    StringBuilder sb = null;
     for (int i = 0; i < numGradAtoms; i++) {
       int i3 = i * 3;
       arraycopy(actual, i3, actualSlice, 0, 3);
       if (debugMode) {
-        logger.info(
-            format(" %s at atom %d is %s", description, i, Arrays.toString(actualSlice)));
+        if (i == 0) {
+          sb = new StringBuilder(
+              format("\n Array %s for test %s at atom %d\n", description, info, i));
+          sb.append(format(" Expected %s\n", Arrays.toString(expected[tableIndex][i])));
+        }
+        sb.append(format("%s\n", Arrays.toString(actualSlice)));
       } else {
         double[] exp = expected[tableIndex][i];
-        assertArrayEquals(
-            format(
-                " Discrepancy found on array of %s for test %s on atom %d."
-                    + "\n Expected: %s\n Found: %s",
-                description, info, i, Arrays.toString(exp), Arrays.toString(actualSlice)),
-            exp,
-            actualSlice,
-            tol);
+        assertArrayEquals(format(" Discrepancy found on array of %s for test %s on atom %d."
+                + "\n Expected: %s\n Found: %s", description, info, i,
+            Arrays.toString(exp), Arrays.toString(actualSlice)), exp, actualSlice, tol);
       }
+    }
+    if (debugMode) {
+      logger.info(sb.toString());
     }
   }
 

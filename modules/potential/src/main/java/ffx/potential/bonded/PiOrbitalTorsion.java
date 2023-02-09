@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -121,7 +121,7 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
    *
    * @param bond the Bond to create a PiOrbitalTorsion around.
    * @param forceField the ForceField parameters to use.
-   * @return a new PiOrbitalToersion, or null.
+   * @return a new PiOrbitalTorsion, or null.
    */
   public static PiOrbitalTorsion piOrbitalTorsionFactory(Bond bond, ForceField forceField) {
     Atom atom1 = bond.getAtom(0);
@@ -147,8 +147,8 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
    * <p>Evaluate the Pi-Orbital Torsion energy.
    */
   @Override
-  public double energy(
-      boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad,
+      AtomicDoubleArray3D lambdaGrad) {
     energy = 0.0;
     value = 0.0;
     dEdL = 0.0;
@@ -289,14 +289,8 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
   /** Log details for this Pi-Orbital Torsion energy term. */
   public void log() {
     logger.info(
-        String.format(
-            " %s %6d-%s %6d-%s %10.4f %10.4f",
-            "Pi-Orbital Torsion",
-            atoms[2].getIndex(),
-            atoms[2].getAtomType().name,
-            atoms[3].getIndex(),
-            atoms[3].getAtomType().name,
-            value,
+        String.format(" %s %6d-%s %6d-%s %10.4f %10.4f", "Pi-Orbital Torsion", atoms[2].getIndex(),
+            atoms[2].getAtomType().name, atoms[3].getIndex(), atoms[3].getAtomType().name, value,
             energy));
   }
 

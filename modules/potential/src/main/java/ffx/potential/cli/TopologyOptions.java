@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -151,23 +151,21 @@ public class TopologyOptions {
   /**
    * The number of topologies to run in parallel.
    *
-   * @param threadsAvail a int.
-   * @param nArgs a int.
-   * @return a int.
+   * @param nThreads The number of threads available.
+   * @param nTopologies The number of topologies to run in parallel.
+   * @return Number of topologies to run in parallel.
    */
-  public int getNumParallel(int threadsAvail, int nArgs) {
+  public int getNumParallel(int nThreads, int nTopologies) {
     int numParallel = getNPar();
-    if (threadsAvail % numParallel != 0) {
-      logger.warning(
-          format(
-              " Number of threads available %d not evenly divisible by np %d reverting to sequential",
-              threadsAvail, numParallel));
+    if (nThreads % numParallel != 0) {
+      logger.warning(format(
+          " Number of threads available %d not evenly divisible by np %d; reverting to sequential.",
+          nThreads, numParallel));
       numParallel = 1;
-    } else if (nArgs % numParallel != 0) {
+    } else if (nTopologies % numParallel != 0) {
       logger.warning(
-          format(
-              " Number of topologies %d not evenly divisible by np %d reverting to sequential",
-              nArgs, numParallel));
+          format(" Number of topologies %d not evenly divisible by np %d; reverting to sequential.",
+              nTopologies, numParallel));
       numParallel = 1;
     }
     return numParallel;
@@ -184,8 +182,8 @@ public class TopologyOptions {
    * @param sb A StringBuilder describing what is to be done.
    * @return a {@link ffx.numerics.Potential} object.
    */
-  public Potential assemblePotential(
-      MolecularAssembly[] assemblies, int threadsAvail, StringBuilder sb) {
+  public Potential assemblePotential(MolecularAssembly[] assemblies, int threadsAvail,
+      StringBuilder sb) {
     int nargs = assemblies.length;
     int numPar = getNumParallel(threadsAvail, nargs);
     UnivariateSwitchingFunction sf = nargs > 1 ? getSwitchingFunction() : null;
@@ -212,23 +210,19 @@ public class TopologyOptions {
     if (!lambdaFunction.equalsIgnoreCase("1.0")) {
       String lf = lambdaFunction.toUpperCase();
       switch (lf) {
-        case "TRIG":
-          sf = new SquaredTrigSwitch(false);
-          break;
-        case "MULT":
-          sf = new MultiplicativeSwitch(1.0, 0.0);
-          break;
-        default:
+        case "TRIG" -> sf = new SquaredTrigSwitch(false);
+        case "MULT" -> sf = new MultiplicativeSwitch(1.0, 0.0);
+        default -> {
           try {
             double beta = parseDouble(lf);
             sf = new PowerSwitch(1.0, beta);
           } catch (NumberFormatException ex) {
-            logger.warning(
-                format(
-                    "Argument to option -sf %s could not be properly parsed; using default linear switch",
-                    lambdaFunction));
+            logger.warning(format(
+                "Argument to option -sf %s could not be properly parsed; using default linear switch",
+                lambdaFunction));
             sf = new PowerSwitch(1.0, 1.0);
           }
+        }
       }
     } else {
       sf = new PowerSwitch(1.0, 1.0);
@@ -257,28 +251,23 @@ public class TopologyOptions {
    * @param sb A StringBuilder for logging.
    * @return The Potential for the Topology.
    */
-  public Potential getTopology(
-      MolecularAssembly[] topologies,
-      UnivariateSwitchingFunction sf,
-      List<Integer> uniqueA,
-      List<Integer> uniqueB,
-      int numParallel,
-      StringBuilder sb) {
+  public Potential getTopology(MolecularAssembly[] topologies, UnivariateSwitchingFunction sf,
+      List<Integer> uniqueA, List<Integer> uniqueB, int numParallel, StringBuilder sb) {
     Potential potential = null;
     switch (topologies.length) {
-      case 1:
+      case 1 -> {
         sb.append("Single Topology ");
         potential = topologies[0].getPotentialEnergy();
-        break;
-      case 2:
+      }
+      case 2 -> {
         sb.append("Dual Topology ");
         DualTopologyEnergy dte = new DualTopologyEnergy(topologies[0], topologies[1], sf);
         if (numParallel == 2) {
           dte.setParallel(true);
         }
         potential = dte;
-        break;
-      case 4:
+      }
+      case 4 -> {
         sb.append("Quad Topology ");
         DualTopologyEnergy dta = new DualTopologyEnergy(topologies[0], topologies[1], sf);
         DualTopologyEnergy dtb = new DualTopologyEnergy(topologies[3], topologies[2], sf);
@@ -291,15 +280,11 @@ public class TopologyOptions {
           }
         }
         potential = qte;
-        break;
-      default:
-        logger.severe(" Must have 2, 4, or 8 topologies!");
-        break;
+      }
+      default -> logger.severe(" Must have 2, 4, or 8 topologies!");
     }
-    sb.append(
-        Arrays.stream(topologies)
-            .map(MolecularAssembly::toString)
-            .collect(Collectors.joining(", ", " [", "] ")));
+    sb.append(Arrays.stream(topologies).map(MolecularAssembly::toString)
+        .collect(Collectors.joining(", ", " [", "] ")));
     return potential;
   }
 
@@ -344,10 +329,9 @@ public class TopologyOptions {
         Atom ai = atoms1[i];
         if (indices.contains(i)) {
           if (ai.applyLambda()) {
-            logger.warning(
-                format(
-                    " Ranges defined in %s should not overlap with ligand atoms they are assumed to not be shared.",
-                    label));
+            logger.warning(format(
+                " Ranges defined in %s should not overlap with ligand atoms they are assumed to not be shared.",
+                label));
           } else {
             logger.fine(format(" Unshared %s: %d variables %d-%d", label, i, counter, counter + 2));
             for (int j = 0; j < 3; j++) {
@@ -382,8 +366,7 @@ public class TopologyOptions {
    */
   public boolean hasSoftcore() {
     String alchemicalAtoms2 = getAlchemicalAtoms2();
-    return (alchemicalAtoms2 != null
-        && !alchemicalAtoms2.equalsIgnoreCase("NONE")
+    return (alchemicalAtoms2 != null && !alchemicalAtoms2.equalsIgnoreCase("NONE")
         && !alchemicalAtoms2.equalsIgnoreCase(""));
   }
 
@@ -413,53 +396,40 @@ public class TopologyOptions {
   private static class TopologyOptionGroup {
 
     /** --ac2 or --alchemicalAtoms2 Specify alchemical atoms [ALL, NONE, Range(s): 1-3,6-N]. */
-    @Option(
-        names = {"--ac2", "--alchemicalAtoms2"},
-        paramLabel = "<selection>",
-        defaultValue = "",
-        description = "Specify alchemical atoms for the 2nd topology [ALL, NONE, Range(s): 1-3,6-N].")
+    @Option(names = {"--ac2",
+        "--alchemicalAtoms2"}, paramLabel = "<selection>", defaultValue = "", description = "Specify alchemical atoms for the 2nd topology [ALL, NONE, Range(s): 1-3,6-N].")
     String alchemicalAtoms2;
 
     /**
      * --uc2 or --unchargedAtoms2 Specify atoms without electrostatics [ALL, NONE, Range(s):
      * 1-3,6-N]."
      */
-    @Option(
-        names = {"--uc2", "--unchargedAtoms2"},
-        paramLabel = "<selection>",
-        defaultValue = "",
-        description =
-            "Specify atoms without electrostatics for the 2nd topology [ALL, NONE, Range(s): 1-3,6-N].")
+    @Option(names = {"--uc2",
+        "--unchargedAtoms2"}, paramLabel = "<selection>", defaultValue = "", description = "Specify atoms without electrostatics for the 2nd topology [ALL, NONE, Range(s): 1-3,6-N].")
     String unchargedAtoms2;
 
     /**
      * -np or --nParallel sets the number of topologies to evaluate in parallel; currently 1, 2, or
      * 4.
      */
-    @Option(
-        names = {"--np", "--nParallel"},
-        paramLabel = "1",
-        description = "Number of topologies to evaluate in parallel")
+    @Option(names = {"--np",
+        "--nParallel"}, paramLabel = "1", description = "Number of topologies to evaluate in parallel")
     int nPar = 1;
 
     /**
      * --uaA or --unsharedA sets atoms unique to the A dual-topology, as period-separated hyphenated
      * ranges or singletons.
      */
-    @Option(
-        names = {"--uaA", "--unsharedA"},
-        paramLabel = "-1",
-        description = "Unshared atoms in the A dual topology (e.g. 1-24.32-65).")
+    @Option(names = {"--uaA",
+        "--unsharedA"}, paramLabel = "-1", description = "Unshared atoms in the A dual topology (e.g. 1-24.32-65).")
     String unsharedA = null;
 
     /**
      * --uaB or --unsharedB sets atoms unique to the B dual-topology, as period-separated hyphenated
      * ranges or singletons.
      */
-    @Option(
-        names = {"--uaB", "--unsharedB"},
-        paramLabel = "-1",
-        description = "Unshared atoms in the B dual topology (e.g. 1-24.32-65).")
+    @Option(names = {"--uaB",
+        "--unsharedB"}, paramLabel = "-1", description = "Unshared atoms in the B dual topology (e.g. 1-24.32-65).")
     String unsharedB = null;
 
     /**
@@ -487,11 +457,8 @@ public class TopologyOptions {
      * for lambda 0-1. The trigonometric switch can be restated thusly, since cos^2(pi/2*lambda) is
      * identical to sin^2(pi/2*(1-lambda)), f(1-l).
      */
-    @Option(
-        names = {"--sf", "--switchingFunction"},
-        paramLabel = "1.0",
-        description =
-            "Switching function to use for dual topology: options are TRIG, MULT, or a number (original behavior with specified lambda exponent)")
+    @Option(names = {"--sf",
+        "--switchingFunction"}, paramLabel = "1.0", description = "Switching function to use for dual topology: options are TRIG, MULT, or a number (original behavior with specified lambda exponent)")
     String lambdaFunction = "1.0";
   }
 }

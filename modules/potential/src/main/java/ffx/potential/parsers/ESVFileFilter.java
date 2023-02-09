@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -51,12 +51,14 @@ import java.io.File;
 public final class ESVFileFilter extends FileFilter {
 
   /** Default Constructor. */
-  public ESVFileFilter() {}
+  public ESVFileFilter() {
+  }
 
   /**
    * {@inheritDoc}
    *
-   * <p>This method return <code>true</code> if the file is a directory or ExtendedSystem Variable Restart file
+   * <p>This method return <code>true</code> if the file is a directory or ExtendedSystem Variable
+   * Restart file
    * (*.ESV).
    */
   @Override

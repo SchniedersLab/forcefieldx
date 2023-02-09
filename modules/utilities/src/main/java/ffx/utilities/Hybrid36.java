@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -64,7 +64,8 @@ public class Hybrid36 {
   /**
    * Hybrid-36 decoder: converts string s to integer result.
    *
-   * @param width must be 4 (e.g. for residue sequence numbers) or 5 (e.g. for atom serial numbers)
+   * @param width must be 4 (e.g. for residue sequence numbers) or 5 (e.g. for atom serial
+   *     numbers)
    * @param s the {@link java.lang.String} to be converted.
    * @return Returns the conversion result.
    */
@@ -136,7 +137,8 @@ public class Hybrid36 {
   /**
    * Hybrid-36 encoder: converts integer value to string result.
    *
-   * @param width must be 4 (e.g. for residue sequence numbers) or 5 (e.g. for atom serial numbers).
+   * @param width must be 4 (e.g. for residue sequence numbers) or 5 (e.g. for atom serial
+   *     numbers).
    * @param value the integer value to be converted.
    * @return a {@link java.lang.String} String of size width.
    */

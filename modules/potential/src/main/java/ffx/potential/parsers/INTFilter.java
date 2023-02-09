@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -78,10 +78,7 @@ public class INTFilter extends SystemFilter {
    * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
    *     object.
    */
-  public INTFilter(
-      List<File> files,
-      MolecularAssembly molecularAssembly,
-      ForceField forceField,
+  public INTFilter(List<File> files, MolecularAssembly molecularAssembly, ForceField forceField,
       CompositeConfiguration properties) {
     super(files, molecularAssembly, forceField, properties);
     fileType = FileType.INT;
@@ -96,10 +93,7 @@ public class INTFilter extends SystemFilter {
    * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
    *     object.
    */
-  public INTFilter(
-      File file,
-      MolecularAssembly molecularAssembly,
-      ForceField forceField,
+  public INTFilter(File file, MolecularAssembly molecularAssembly, ForceField forceField,
       CompositeConfiguration properties) {
     super(file, molecularAssembly, forceField, properties);
     fileType = FileType.INT;
@@ -229,11 +223,8 @@ public class INTFilter extends SystemFilter {
             } else {
               tokens = data.trim().split(" +");
               if (tokens.length != 2) {
-                logger.severe(
-                    "  Check Additional Bond Pair: "
-                        + (zadd.size() + 1)
-                        + " in "
-                        + activeMolecularAssembly.getFile().getName());
+                logger.severe("  Check Additional Bond Pair: " + (zadd.size() + 1) + " in "
+                    + activeMolecularAssembly.getFile().getName());
                 return false;
               }
               int[] pair = new int[2];
@@ -247,11 +238,8 @@ public class INTFilter extends SystemFilter {
             data = br.readLine();
             tokens = data.trim().split(" +");
             if (tokens.length != 2) {
-              logger.severe(
-                  "  Check Bond Pair to Remove: "
-                      + (zadd.size() + 1)
-                      + " in "
-                      + activeMolecularAssembly.getFile().getName());
+              logger.severe("  Check Bond Pair to Remove: " + (zadd.size() + 1) + " in "
+                  + activeMolecularAssembly.getFile().getName());
               return false;
             }
             int[] pair = new int[2];
@@ -325,8 +313,8 @@ public class INTFilter extends SystemFilter {
         }
         return true;
       }
-      logger.warning("\n Reported number of Atoms: " + numberOfAtoms
-          + "\n Number of Atoms Found: " + atomList.size());
+      logger.warning("\n Reported number of Atoms: " + numberOfAtoms + "\n Number of Atoms Found: "
+          + atomList.size());
     } catch (IOException e) {
       logger.severe(e.toString());
     }
@@ -344,6 +332,7 @@ public class INTFilter extends SystemFilter {
   public boolean readNext(boolean resetPosition, boolean print) {
     return false;
   }
+
   /** {@inheritDoc} */
   @Override
   public boolean readNext(boolean resetPosition, boolean print, boolean parse) {

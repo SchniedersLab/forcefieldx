@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -100,30 +100,23 @@ public class CCP4MapWriter {
   /**
    * Constructor for CCP4MapWriter.
    *
-   * @param orix a int.
-   * @param oriy a int.
-   * @param oriz a int.
-   * @param extx a int.
-   * @param exty a int.
-   * @param extz a int.
-   * @param nx a int.
-   * @param ny a int.
-   * @param nz a int.
+   * @param orix an int.
+   * @param oriy an int.
+   * @param oriz an int.
+   * @param extx an int.
+   * @param exty an int.
+   * @param extz an int.
+   * @param nx an int.
+   * @param ny an int.
+   * @param nz an int.
    * @param crystal a {@link ffx.crystal.Crystal} object.
    * @param filename a {@link java.lang.String} object.
    */
   public CCP4MapWriter(
-      int orix,
-      int oriy,
-      int oriz,
-      int extx,
-      int exty,
-      int extz,
-      int nx,
-      int ny,
-      int nz,
-      Crystal crystal,
-      String filename) {
+      int orix, int oriy, int oriz,
+      int extx, int exty, int extz,
+      int nx, int ny, int nz,
+      Crystal crystal, String filename) {
     this.orix = orix;
     this.oriy = oriy;
     this.oriz = oriz;

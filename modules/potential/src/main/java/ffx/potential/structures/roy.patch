@@ -522,7 +522,7 @@ opbend 419 412 0 0 107.91
 # matching SMARTS from molecule  [['[*]~[*]', [1, 2]]] to SMARTS from parameter file [['[#6](-[H])(-[H])(-[H])-[#6](-[H])(-[H])(-[H])', [1, 2]]] with tinker type descriptions [[('C', '"Alkane CH3-"'), ('H', '"Alkane H3C-"')]]
 # WARNING DEFAULT MM3 OPBEND VALUES USED 
 
-opbend 412 405 0 0 107.91
+# opbend 412 405 0 0 107.91
 # matching SMARTS from molecule  [['[*]~[*]', [1, 2]]] to SMARTS from parameter file [['[#6](-[H])(-[H])(-[H])-[#6](-[H])(-[H])(-[H])', [1, 2]]] with tinker type descriptions [[('C', '"Alkane CH3-"'), ('H', '"Alkane H3C-"')]]
 # WARNING DEFAULT MM3 OPBEND VALUES USED 
 
@@ -530,7 +530,7 @@ opbend 412 405 0 0 14.39
 # matching SMARTS from molecule  [['[*]~[*]', [1, 2]]] to SMARTS from parameter file [['[#6](-[H])(-[H])(-[H])-[#6](-[H])(-[H])(-[H])', [1, 2]]] with tinker type descriptions [[('C', '"Alkane CH3-"'), ('H', '"Alkane H3C-"')]]
 # WARNING DEFAULT MM3 OPBEND VALUES USED 
 
-opbend 405 412 0 0 14.39
+# opbend 405 412 0 0 14.39
 # matching SMARTS from molecule  [['[*]~[*]', [1, 2]]] to SMARTS from parameter file [['[#6](-[H])(-[H])(-[H])-[#6](-[H])(-[H])(-[H])', [1, 2]]] with tinker type descriptions [[('C', '"Alkane CH3-"'), ('H', '"Alkane H3C-"')]]
 # WARNING DEFAULT MM3 OPBEND VALUES USED 
 
@@ -594,7 +594,7 @@ opbend 408 413 0 0 14.39
 # matching SMARTS from molecule  [['[#6]-[#6]-[#7](-[#6])-[#1]', [2, 3]]] to SMARTS from parameter file [['[#7]1(-[#6](-[#6](-[#6](-[#6]-1(-[H])-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])-[H]', [2, 1]]] with tinker type descriptions [[('C', '"Pyrrolidine CH2-N"'), ('N', '"Pyrrolidine N"')]]
 # WARNING DEFAULT MM3 OPBEND VALUES USED 
 
-opbend 406 409 0 0 3.6
+# opbend 406 409 0 0 3.6
 # matching SMARTS from molecule  [['[#6]-[#6]-[#7](-[#6])-[#1]', [2, 3]]] to SMARTS from parameter file [['[#7]1(-[#6](-[#6](-[#6](-[#6]-1(-[H])-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])-[H]', [2, 1]]] with tinker type descriptions [[('C', '"Pyrrolidine CH2-N"'), ('N', '"Pyrrolidine N"')]]
 # WARNING DEFAULT MM3 OPBEND VALUES USED 
 
@@ -602,7 +602,7 @@ opbend 406 409 0 0 14.39
 # matching SMARTS from molecule  [['[#6]-[#6]-[#7](-[#6])-[#1]', [2, 3]]] to SMARTS from parameter file [['[#7]1(-[#6](-[#6](-[#6](-[#6]-1(-[H])-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])-[H]', [2, 1]]] with tinker type descriptions [[('C', '"Pyrrolidine CH2-N"'), ('N', '"Pyrrolidine N"')]]
 # WARNING DEFAULT MM3 OPBEND VALUES USED 
 
-opbend 409 406 0 0 14.39
+# opbend 409 406 0 0 14.39
 # matching SMARTS from molecule  [['[#6]-[#6]-[#7](-[#6])-[#1]', [2, 3]]] to SMARTS from parameter file [['[#7]1(-[#6](-[#6](-[#6](-[#6]-1(-[H])-[H])(-[H])-[H])(-[H])-[H])(-[H])-[H])-[H]', [2, 1]]] with tinker type descriptions [[('C', '"Pyrrolidine CH2-N"'), ('N', '"Pyrrolidine N"')]]
 # WARNING DEFAULT MM3 OPBEND VALUES USED 
 
@@ -610,7 +610,7 @@ opbend 409 406 0 0 3.6
 # matching SMARTS from molecule  [['[#7](-[#6])(-[#1])-[#6]-[#6]', [2, 1]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[H])(-[H])-[H])-[H])-[#6](-[H])(-[H])-[H]', [4, 3]]] with tinker type descriptions [[('C', '"NMeAcetamide CH3-N"'), ('N', '"NMeAcetamide N"')]]
 # WARNING DEFAULT MM3 OPBEND VALUES USED 
 
-opbend 406 410 0 0 3.6
+# opbend 406 410 0 0 3.6
 # matching SMARTS from molecule  [['[#7](-[#6])(-[#1])-[#6]-[#6]', [2, 1]]] to SMARTS from parameter file [['[#8]=[#6](-[#7](-[#6](-[H])(-[H])-[H])-[H])-[#6](-[H])(-[H])-[H]', [4, 3]]] with tinker type descriptions [[('C', '"NMeAcetamide CH3-N"'), ('N', '"NMeAcetamide N"')]]
 # WARNING DEFAULT MM3 OPBEND VALUES USED 
 

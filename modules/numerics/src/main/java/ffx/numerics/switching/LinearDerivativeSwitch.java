@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -49,7 +49,8 @@ package ffx.numerics.switching;
 public class LinearDerivativeSwitch implements UnivariateSwitchingFunction {
 
   /** Constructor for the LinearDerivativeSwitch. */
-  public LinearDerivativeSwitch() {}
+  public LinearDerivativeSwitch() {
+  }
 
   /** {@inheritDoc} */
   @Override
@@ -87,14 +88,11 @@ public class LinearDerivativeSwitch implements UnivariateSwitchingFunction {
     if (order < 1) {
       throw new IllegalArgumentException("Order must be >= 1");
     }
-    switch (order) {
-      case 1:
-        return firstDerivative(x);
-      case 2:
-        return secondDerivative(x);
-      default:
-        return 0;
-    }
+    return switch (order) {
+      case 1 -> firstDerivative(x);
+      case 2 -> secondDerivative(x);
+      default -> 0;
+    };
   }
 
   /** {@inheritDoc} */

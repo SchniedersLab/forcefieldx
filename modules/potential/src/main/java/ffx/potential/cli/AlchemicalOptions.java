@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -226,24 +226,19 @@ public class AlchemicalOptions {
 
     int remainder = (topNum % 2) + 1;
     switch (remainder) {
-      case 1:
+      case 1 -> {
         setFirstSystemAlchemistry(molecularAssembly);
         setFirstSystemUnchargedAtoms(molecularAssembly);
-        break;
-      case 2:
+      }
+      case 2 -> {
         if (topologyOptions == null) {
           throw new IllegalArgumentException(
               " For >= 2 systems, topologyOptions must not be empty!");
         }
         topologyOptions.setSecondSystemAlchemistry(molecularAssembly);
         topologyOptions.setSecondSystemUnchargedAtoms(molecularAssembly);
-        break;
+      }
     }
-
-    // Turn off checks for overlapping atoms, which is expected for lambda=0.
-    ForceFieldEnergy energy = molecularAssembly.getPotentialEnergy();
-    energy.getCrystal().setSpecialPositionCutoff(0.0);
-
     return molecularAssembly;
   }
 

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -44,8 +44,6 @@ import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.BORN;
 import static ffx.numerics.multipole.GKSource.GK_TENSOR_MODE.POTENTIAL;
 import static java.util.Arrays.fill;
 
-import ffx.numerics.math.DoubleMath;
-
 public class GKEnergyQI {
 
   private final GKSource gkSource;
@@ -56,12 +54,12 @@ public class GKEnergyQI {
   /**
    * Compute the GK Energy using a QI frame.
    *
-   * @param soluteDieletric Solute dielectric constant.
+   * @param soluteDielectric Solute dielectric constant.
    * @param solventDielectric Solvent dielectric constant.
    * @param gkc The GK interaction parameter.
    * @param gradient If true, the gradient will be computed.
    */
-  public GKEnergyQI(double soluteDieletric, double solventDielectric, double gkc, boolean gradient) {
+  public GKEnergyQI(double soluteDielectric, double solventDielectric, double gkc, boolean gradient) {
     int monopoleOrder = 2;
     int dipoleOrder = 3;
     int quadrupoleOrder = 4;
@@ -71,9 +69,9 @@ public class GKEnergyQI {
       quadrupoleOrder = 5;
     }
     gkSource = new GKSource(quadrupoleOrder, gkc);
-    gkMonopole = new GKTensorQI(MONOPOLE, monopoleOrder, gkSource, soluteDieletric, solventDielectric);
-    gkDipole = new GKTensorQI(DIPOLE, dipoleOrder, gkSource, soluteDieletric, solventDielectric);
-    gkQuadrupole = new GKTensorQI(QUADRUPOLE, quadrupoleOrder, gkSource, soluteDieletric, solventDielectric);
+    gkMonopole = new GKTensorQI(MONOPOLE, monopoleOrder, gkSource, soluteDielectric, solventDielectric);
+    gkDipole = new GKTensorQI(DIPOLE, dipoleOrder, gkSource, soluteDielectric, solventDielectric);
+    gkQuadrupole = new GKTensorQI(QUADRUPOLE, quadrupoleOrder, gkSource, soluteDielectric, solventDielectric);
   }
 
   public void initPotential(double[] r, double r2, double rbi, double rbk) {

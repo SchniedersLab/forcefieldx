@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -218,8 +218,6 @@ class OSTBias extends AlgorithmsScript {
       ai.print()
     }
 
-    // Turn off checks for overlapping atoms, which is expected for lambda=0.
-    energy.getCrystal().setSpecialPositionCutoff((double) 0.0)
     // OST will be configured for either single or dual topology.
     OrthogonalSpaceTempering orthogonalSpaceTempering
     // Save a reference to the first topology.
@@ -264,9 +262,6 @@ class OSTBias extends AlgorithmsScript {
         ai.print()
       }
 
-      // Save a reference to the second topology.
-      // Turn off checks for overlapping atoms, which is expected for lambda=0.
-      energy.getCrystal().setSpecialPositionCutoff((double) 0.0)
       // Create the DualTopology potential energy.
       DualTopologyEnergy dualTopologyEnergy = new DualTopologyEnergy(topology1, active,
           new PowerSwitch())

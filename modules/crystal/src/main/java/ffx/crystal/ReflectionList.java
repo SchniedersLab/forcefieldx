@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -206,9 +206,9 @@ public class ReflectionList {
   /**
    * findSymHKL
    *
-   * @param h a int.
-   * @param k a int.
-   * @param l a int.
+   * @param h an int.
+   * @param k an int.
+   * @param l an int.
    * @param mate a {@link ffx.crystal.HKL} object.
    * @return a boolean.
    */
@@ -219,9 +219,9 @@ public class ReflectionList {
   /**
    * findSymHKL
    *
-   * @param h a int.
-   * @param k a int.
-   * @param l a int.
+   * @param h an int.
+   * @param k an int.
+   * @param l an int.
    * @param mate a {@link ffx.crystal.HKL} object.
    * @param transpose a boolean.
    * @return a boolean.
@@ -233,9 +233,9 @@ public class ReflectionList {
   /**
    * getHKL
    *
-   * @param h a int.
-   * @param k a int.
-   * @param l a int.
+   * @param h an int.
+   * @param k an int.
+   * @param l an int.
    * @return a {@link ffx.crystal.HKL} object.
    */
   public HKL getHKL(int h, int k, int l) {
@@ -345,9 +345,9 @@ public class ReflectionList {
   /**
    * hasHKL
    *
-   * @param h a int.
-   * @param k a int.
-   * @param l a int.
+   * @param h an int.
+   * @param k an int.
+   * @param l an int.
    * @return a boolean.
    */
   private boolean hasHKL(int h, int k, int l) {

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -51,8 +51,8 @@ import java.util.Comparator;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "charge", clazz = String.class, keywordGroup = PotentialFunctionParameter,
-    description = "[1 integer and 1 real] "
+@FFXKeyword(name = "charge", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
+    "[1 integer and 1 real] "
         + "Provides a value for a single atomic partial charge electrostatic parameter. "
         + "The integer modifier, if positive, gives the atom type number for which the charge parameter is to be defined. "
         + "Note that charge parameters are given for atom types, not atom classes. "
@@ -82,7 +82,7 @@ public final class ChargeType extends BaseType implements Comparator<String> {
    *
    * @param chargeType1 a {@link ffx.potential.parameters.ChargeType} object.
    * @param chargeType2 a {@link ffx.potential.parameters.ChargeType} object.
-   * @param atomType a int.
+   * @param atomType The atom type that defines the new type.
    * @return a {@link ffx.potential.parameters.ChargeType} object.
    */
   public static ChargeType average(ChargeType chargeType1, ChargeType chargeType2, int atomType) {
@@ -104,7 +104,7 @@ public final class ChargeType extends BaseType implements Comparator<String> {
   /**
    * incrementType
    *
-   * @param increment a int.
+   * @param increment The amount to increment the atom type by.
    */
   public void incrementType(int increment) {
     this.atomType += increment;

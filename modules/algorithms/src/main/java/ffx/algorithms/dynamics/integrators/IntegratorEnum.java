@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -44,10 +44,18 @@ package ffx.algorithms.dynamics.integrators;
  */
 public enum IntegratorEnum {
   BEEMAN(false, true),
-  RESPA(true, true),
+  // Stochastic and Langevin are equivalent to each other.
   STOCHASTIC(false, false),
-  VELOCITYVERLET(true, true),
-  VERLET(true, true);
+  LANGEVIN(false, false),
+  // Verlet and Velocity Verlet are equivalent to each other.
+  VERLET(true, true),
+  VELOCITY_VERLET(true, true),
+  // MTS and RESPA are equivalent to each other.
+  MTS(true, true),
+  RESPA(true, true),
+  // Stochastic and Langevin MTS are equivalent to each other.
+  STOCHASTIC_MTS(false, false),
+  LANGEVIN_MTS(false, false);
 
   public final boolean knownReversible;
   public final boolean knownDeterministic;
@@ -55,5 +63,9 @@ public enum IntegratorEnum {
   IntegratorEnum(boolean reversible, boolean deterministic) {
     knownReversible = reversible;
     knownDeterministic = deterministic;
+  }
+
+  public static boolean isStochastic(IntegratorEnum integrator) {
+    return integrator == STOCHASTIC || integrator == LANGEVIN || integrator == STOCHASTIC_MTS || integrator == LANGEVIN_MTS;
   }
 }

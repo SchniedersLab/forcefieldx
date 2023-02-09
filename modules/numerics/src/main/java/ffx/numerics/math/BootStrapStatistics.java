@@ -3,7 +3,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -41,9 +41,6 @@ package ffx.numerics.math;
 
 import static java.lang.String.format;
 import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.max;
-import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import java.util.Random;
@@ -134,21 +131,21 @@ public class BootStrapStatistics {
         if (values == null) {
             throw new IllegalArgumentException(" Cannot have null values!");
         }
-        int nVals = values.length;
+        int nValues = values.length;
 
-        if (first < 0 || first > (nVals - 1)) {
+        if (first < 0 || first > (nValues - 1)) {
             throw new IllegalArgumentException(
                     format(" First entry %d was not in valid range 0-%d (0 to length of values - 1)",
-                            first, nVals - 1));
+                            first, nValues - 1));
         }
-        if (last <= first || last > nVals) {
+        if (last <= first || last > nValues) {
             throw new IllegalArgumentException(
                     format(" Last entry %d was not in valid range %d-%d (first+1 to length of values",
-                            last, (first + 1), nVals));
+                            last, (first + 1), nValues));
         }
 
         if (weights == null) {
-            weights = new double[nVals];
+            weights = new double[nValues];
             fill(weights, 1.0);
         }
 

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -944,7 +944,7 @@ public class CoulombTensorQI extends MultipoleTensor {
     tensor[ti(1, 0, 0)] = 0.0;
     for (int l = 2; l < o1; l++) {
       // Initial condition for the inner loop is formation of T100(l-1).
-      // Starting the inner loop at a=2 avoid an if statement.
+      // Starting the inner loop at a=1 avoids an if statement.
       // T100(l-1) = 0.0 * T000(l)
       current = 0.0;
       int iw = il + l - 1;

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -40,7 +40,7 @@ package ffx.numerics.multipole;
 import static org.apache.commons.math3.util.FastMath.exp;
 
 /**
- * The TholeTensorQI class computes derivatives of Thole dampling via recursion to order &lt;= 4 for
+ * The TholeTensorQI class computes derivatives of Thole damping via recursion to order &lt;= 4 for
  * Cartesian multipoles in a quasi-internal frame.
  *
  * @author Michael J. Schnieders
@@ -59,12 +59,12 @@ public class TholeTensorQI extends CoulombTensorQI {
   private static final double oneThirtyFifth = 1.0 / 35.0;
 
   /**
-   * Thole dampling parameter is set to min(pti,ptk)).
+   * Thole damping parameter is set to min(pti,ptk)).
    */
   private double thole;
 
   /**
-   * AiAk parameter = 1/(alphai^6*alphak^6) where alpha is polarizability.
+   * AiAk parameter = 1/(alphaI^6*alphaK^6) where alpha is polarizability.
    */
   private double AiAk;
 
@@ -72,8 +72,8 @@ public class TholeTensorQI extends CoulombTensorQI {
    * Constructor for TholeTensorQI.
    *
    * @param order Tensor order.
-   * @param thole Thole dampling parameter is set to min(pti,ptk)).
-   * @param AiAk parameter = 1/(alphai^6*alphak^6) where alpha is polarizability.
+   * @param thole Thole damping parameter is set to min(pti,ptk)).
+   * @param AiAk parameter = 1/(alphaI^6*alphaK^6) where alpha is polarizability.
    */
   public TholeTensorQI(int order, double thole, double AiAk) {
     super(order);

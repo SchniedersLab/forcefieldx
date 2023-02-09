@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -39,7 +39,6 @@ package ffx.potential.utils;
 
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.PI;
-import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.numerics.math.Double3;
 import ffx.potential.bonded.Atom;
@@ -91,7 +90,7 @@ public class StructureMetrics {
   public static double radiusOfGyration(double[] x, double[] y, double[] z, double[] mass) {
     assert (x.length == y.length);
     assert (y.length == z.length);
-    Double3 radius = new Double3(radiusOfGyrationComponents(x,y,z, mass, true));
+    Double3 radius = new Double3(radiusOfGyrationComponents(x, y, z, mass, true));
     return radius.length();
   }
 
@@ -165,7 +164,8 @@ public class StructureMetrics {
    * @param pmp Principal moment plane
    * @return radius of gyration about planes (yz, xz, xy).
    */
-  public static double[] radiusOfGyrationComponents(double[] x, double[] y, double[] z, double[] mass, boolean pmp) {
+  public static double[] radiusOfGyrationComponents(double[] x, double[] y, double[] z,
+      double[] mass, boolean pmp) {
     assert (x.length == y.length);
     assert (y.length == z.length);
     assert (x.length <= mass.length);
@@ -186,7 +186,6 @@ public class StructureMetrics {
 
     // Compute the radius of gyration.
     Double3 radius = new Double3();
-    double[][] vec;
     if (pmp) {
       // gyration tensor about principal planes
       double xterm;
@@ -223,7 +222,7 @@ public class StructureMetrics {
       Array2DRowRealMatrix cMatrix = new Array2DRowRealMatrix(tensor, false);
       EigenDecomposition eigenDecomposition = new EigenDecomposition(cMatrix);
       // Extract the quaternions.
-      radius.set(eigenDecomposition.getRealEigenvalues()).scaleI(1.0/nAtoms).sqrtI();
+      radius.set(eigenDecomposition.getRealEigenvalues()).scaleI(1.0 / nAtoms).sqrtI();
 //      vec = eigenDecomposition.getV().getData();
 //
 //      // Select the direction for each principal moment axis
@@ -247,8 +246,8 @@ public class StructureMetrics {
 //          break;
 //        }
 //      }
-    }else{
-      for(int i = 0; i < nAtoms; i++) {
+    } else {
+      for (int i = 0; i < nAtoms; i++) {
         Double3 xyz = new Double3(x[i], y[i], z[i]);
         xyz.subI(centroid);
         radius.addI(xyz.squareI());
@@ -293,7 +292,7 @@ public class StructureMetrics {
    *
    * @param xyz Array of atomic coordinates (xyz = [X0, Y0, Z0, X1, Y1, Z1, ...].
    * @param mass Mass of atoms
-   * @param moved Move the from original coordinates to selection
+   * @param moved Move from original coordinates to selection
    * @param print Display values to user
    * @param pma Use principal moment axes.
    * @return The radius of gyration.

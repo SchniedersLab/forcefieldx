@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -41,12 +41,20 @@ import static ffx.numerics.math.DoubleMath.dot;
 import static ffx.numerics.math.DoubleMath.normalize;
 import static ffx.numerics.math.DoubleMath.scale;
 import static ffx.numerics.math.DoubleMath.sub;
-import static java.lang.Math.fma;
-import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 
-import java.util.Arrays;
-
+/**
+ * The QIFrame class defines a quasi-internal frame between two atoms.
+ * <p>
+ * The Z-axis of the QI frame is defined as the vector between the two atoms. The X- and Y-axes are
+ * then defined to create a right-handed coordinate system.
+ * <p>
+ * A rotation matrix from the global frame to the QI frame is constructed, and vice versa. Using the
+ * rotation matrices, methods are provided to rotate vectors and multipoles between the two frames.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class QIFrame {
 
   // Rotation Matrix from Global to QI.

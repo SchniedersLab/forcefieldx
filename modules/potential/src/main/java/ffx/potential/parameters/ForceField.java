@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -60,9 +60,8 @@ import org.apache.commons.configuration2.CompositeConfiguration;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "forcefield", clazz = String.class, keywordGroup = PotentialFunctionParameter,
-    description = "[name] "
-        + "Provides a name for the force field to be used in the current calculation. "
+@FFXKeyword(name = "forcefield", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
+    "[name] " + "Provides a name for the force field to be used in the current calculation. "
         + "Its value is usually set in the master force field parameter file for the calculation (see the PARAMETERS keyword) instead of in the property file.")
 public class ForceField {
 
@@ -136,10 +135,10 @@ public class ForceField {
     stretchTorsionTypes = new TreeMap<>(new StretchTorsionType(new int[4], new double[1]));
     angleTorsionTypes = new TreeMap<>(new AngleTorsionType(new int[4], new double[1]));
     torsionTorsionTypes = new TreeMap<>();
-    torsionTypes =
-        new TreeMap<>(new TorsionType(new int[4], new double[1], new double[1], new int[1]));
-    improperTypes =
-        new TreeMap<>(new TorsionType(new int[4], new double[1], new double[1], new int[1]));
+    torsionTypes = new TreeMap<>(
+        new TorsionType(new int[4], new double[1], new double[1], new int[1]));
+    improperTypes = new TreeMap<>(
+        new TorsionType(new int[4], new double[1], new double[1], new int[1]));
     imptorsTypes = new TreeMap<>(new ImproperTorsionType(new int[4], 0.0, 0.0, 2));
     ureyBradleyTypes = new TreeMap<>(new UreyBradleyType(new int[3], 0, 0));
     vanderWaalsTypes = new TreeMap<>(new VDWType(0, 0, 0, 0));
@@ -190,12 +189,12 @@ public class ForceField {
   }
 
   /**
-   * isForceFieldKeyword.
+   * Check if a keyword is a force field type.
    *
-   * @param keyword a {@link java.lang.String} object.
-   * @return a boolean.
+   * @param keyword The keyword to check.
+   * @return True if the keyword is a force field type.
    */
-  public static boolean isForceFieldKeyword(String keyword) {
+  public static boolean isForceFieldType(String keyword) {
     keyword = toEnumForm(keyword);
     try {
       ForceFieldType.valueOf(keyword);
@@ -257,18 +256,16 @@ public class ForceField {
         // Ignore this type if it's identical to an existing type.
         return;
       }
-      logger.log(
-          Level.WARNING,
+      logger.log(Level.WARNING,
           " A force field entry of type {0} already exists with the key: {1}\n The (discarded) old entry: {2}\n The new entry            : {3}",
-          new Object[] {
-              type.forceFieldType, type.key, treeMap.get(type.key).toString(), type.toString()
-          });
+          new Object[] {type.forceFieldType, type.key, treeMap.get(type.key).toString(),
+              type.toString()});
     }
     treeMap.put(type.key, type);
   }
 
   /**
-   * Add a property from a external parameter file.
+   * Add a property from an external parameter file.
    *
    * @param property Property string.
    * @param value double
@@ -494,8 +491,8 @@ public class ForceField {
    */
   public AtomType getAtomType(String moleculeName, String atomName) {
     for (BioType bioType : bioTypes.values()) {
-      if (bioType.moleculeName.equalsIgnoreCase(moleculeName)
-          && bioType.atomName.equalsIgnoreCase(atomName)) {
+      if (bioType.moleculeName.equalsIgnoreCase(moleculeName) && bioType.atomName.equalsIgnoreCase(
+          atomName)) {
         String key = Integer.toString(bioType.atomType);
         return atomTypes.get(key);
       }
@@ -518,7 +515,6 @@ public class ForceField {
     }
     return types;
   }
-
 
   /**
    * Getter for the field <code>atomTypes</code>.
@@ -547,8 +543,8 @@ public class ForceField {
    */
   public BioType getBioType(String moleculeName, String atomName) {
     for (BioType bioType : bioTypes.values()) {
-      if (bioType.moleculeName.equalsIgnoreCase(moleculeName)
-          && bioType.atomName.equalsIgnoreCase(atomName)) {
+      if (bioType.moleculeName.equalsIgnoreCase(moleculeName) && bioType.atomName.equalsIgnoreCase(
+          atomName)) {
         return bioType;
       }
     }
@@ -612,8 +608,8 @@ public class ForceField {
    */
   public String[] getBonds(String moleculeName, String atomName) {
     for (BioType bioType : bioTypes.values()) {
-      if (bioType.moleculeName.equalsIgnoreCase(moleculeName)
-          && bioType.atomName.equalsIgnoreCase(atomName)) {
+      if (bioType.moleculeName.equalsIgnoreCase(moleculeName) && bioType.atomName.equalsIgnoreCase(
+          atomName)) {
         return bioType.bonds;
       }
     }
@@ -657,7 +653,7 @@ public class ForceField {
    * getDouble
    *
    * @param property The property to return.
-   * @return an double.
+   * @return The value of the property.
    * @throws java.lang.Exception if any.
    */
   public double getDouble(String property) throws Exception {
@@ -676,7 +672,7 @@ public class ForceField {
    *
    * @param property The property to return.
    * @param defaultDouble The default to return.
-   * @return an double.
+   * @return The value of the property.
    */
   public double getDouble(String property, Double defaultDouble) {
     try {
@@ -690,7 +686,7 @@ public class ForceField {
    * getForceFieldTypeCount
    *
    * @param type a {@link ForceField.ForceFieldType} object.
-   * @return a int.
+   * @return The number of ForceFieldTypes of the specified type.
    */
   @SuppressWarnings("unchecked")
   public int getForceFieldTypeCount(ForceFieldType type) {
@@ -816,6 +812,26 @@ public class ForceField {
   }
 
   /**
+   * Return all force field types of a given type.
+   *
+   * @param type The type of force field type to clear.
+   * @return a {@link java.util.Map} object.
+   */
+  public Map<String, ? extends BaseType> getTypes(ForceFieldType type) {
+    return forceFieldTypes.get(type);
+  }
+
+  /**
+   * Clear all force field types of a given type.
+   *
+   * @param type The type of force field type to clear.
+   */
+  public void clearForceFieldType(ForceFieldType type) {
+    Map<String, ? extends BaseType> map = forceFieldTypes.get(type);
+    map.clear();
+  }
+
+  /**
    * getOutOfPlaneBendType
    *
    * @param key a {@link java.lang.String} object.
@@ -826,8 +842,7 @@ public class ForceField {
     if (outOfPlaneBendType != null) {
       outOfPlaneBendType.opBendUnit = getDouble("OPBENDUNIT",
           OutOfPlaneBendType.DEFAULT_OPBEND_UNIT);
-      outOfPlaneBendType.cubic = getDouble("OPBEND-CUBIC",
-          OutOfPlaneBendType.DEFAULT_OPBEND_CUBIC);
+      outOfPlaneBendType.cubic = getDouble("OPBEND-CUBIC", OutOfPlaneBendType.DEFAULT_OPBEND_CUBIC);
       outOfPlaneBendType.quartic = getDouble("OPBEND-QUARTIC",
           OutOfPlaneBendType.DEFAULT_OPBEND_QUARTIC);
       outOfPlaneBendType.pentic = getDouble("OPBEND-PENTIC",
@@ -1107,7 +1122,6 @@ public class ForceField {
     return torsionType;
   }
 
-
   /**
    * getUreyBradleyType
    *
@@ -1185,12 +1199,11 @@ public class ForceField {
    * Checks if a property was specified.
    *
    * @param property String to check.
-   * @return Ever specified.
-   * @throws java.lang.NullPointerException If forceFieldDouble is null.
+   * @return Returns true if the property has been specified.
    */
-  public boolean hasProperty(String property) throws NullPointerException {
+  public boolean hasProperty(String property) {
     if (property == null) {
-      throw new NullPointerException("NULL keyword");
+      return false;
     }
     String key = toPropertyForm(property);
     return properties.containsKey(key);
@@ -1233,9 +1246,9 @@ public class ForceField {
   /**
    * Renumber ForceField class, type and biotype values.
    *
-   * @param classOffset a int.
-   * @param typeOffset a int.
-   * @param bioTypeOffset a int.
+   * @param classOffset The class offset.
+   * @param typeOffset The type offset.
+   * @param bioTypeOffset The biotype offset.
    */
   public void renumberForceField(int classOffset, int typeOffset, int bioTypeOffset) {
     for (AngleType angleType : angleTypes.values()) {
@@ -1430,27 +1443,27 @@ public class ForceField {
   }
 
   /**
-   * All atoms whose atomName begins with name in the passed molecule will be updated to the new
-   * type. The case where an atom such as CD is should map to both CD1 and CD2.
+   * All atoms whose atomName begins with <code>name</code> for the given molecule will be updated to
+   * the new type. For an atomName such as CD, it will map to both CD1 and CD2.
    *
-   * @param molecule a {@link java.lang.String} object.
-   * @param atom a {@link java.lang.String} object.
-   * @param newType a int.
-   * @return a {@link ffx.potential.parameters.AtomType} object.
+   * @param molecule The molecule name.
+   * @param atom The atom name.
+   * @param newType The new atom type.
+   * @return The AtomType that was replaced.
    */
   private AtomType updateBioType(String molecule, String atom, int newType) {
-    int type = 0;
+    int oldType = 0;
     for (BioType bioType : bioTypes.values()) {
       if (bioType.moleculeName.equalsIgnoreCase(molecule)) {
         if (atom.length() <= bioType.atomName.length()) {
           if (bioType.atomName.toUpperCase().startsWith(atom.toUpperCase())) {
-            type = bioType.atomType;
+            oldType = bioType.atomType;
             bioType.atomType = newType;
           }
         }
       }
     }
-    return getAtomType(Integer.toString(type));
+    return getAtomType(Integer.toString(oldType));
   }
 
   /**
@@ -1460,13 +1473,13 @@ public class ForceField {
    * @param typeMap A look-up from new types to existing types.
    * @param patchTypes a {@link java.util.HashMap} object.
    */
-  private void patchClassesAndTypes(
-      HashMap<AtomType, AtomType> typeMap, HashMap<String, AtomType> patchTypes) {
+  private void patchClassesAndTypes(HashMap<AtomType, AtomType> typeMap,
+      HashMap<String, AtomType> patchTypes) {
 
     for (BondType bondType : bondTypes.values().toArray(new BondType[0])) {
       BondType newType = bondType.patchClasses(typeMap);
       if (newType != null) {
-        logger.info(" " + newType.toString());
+        logger.info(" " + newType);
         addForceFieldType(newType);
       }
     }
@@ -1474,16 +1487,16 @@ public class ForceField {
     for (AngleType angleType : angleTypes.values().toArray(new AngleType[0])) {
       AngleType newType = angleType.patchClasses(typeMap);
       if (newType != null) {
-        logger.info(" " + newType.toString());
+        logger.info(" " + newType);
         addForceFieldType(newType);
       }
     }
 
-    for (OutOfPlaneBendType outOfPlaneBendType :
-        outOfPlaneBendTypes.values().toArray(new OutOfPlaneBendType[0])) {
+    for (OutOfPlaneBendType outOfPlaneBendType : outOfPlaneBendTypes.values()
+        .toArray(new OutOfPlaneBendType[0])) {
       OutOfPlaneBendType newType = outOfPlaneBendType.patchClasses(typeMap);
       if (newType != null) {
-        logger.info(" " + newType.toString());
+        logger.info(" " + newType);
         addForceFieldType(newType);
       }
     }
@@ -1492,16 +1505,16 @@ public class ForceField {
         .toArray(new PiOrbitalTorsionType[0])) {
       PiOrbitalTorsionType newType = piOrbitalTorsionType.patchClasses(typeMap);
       if (newType != null) {
-        logger.info(" " + newType.toString());
+        logger.info(" " + newType);
         addForceFieldType(newType);
       }
     }
 
-    for (StretchBendType stretchBendType :
-        stretchBendTypes.values().toArray(new StretchBendType[0])) {
+    for (StretchBendType stretchBendType : stretchBendTypes.values()
+        .toArray(new StretchBendType[0])) {
       StretchBendType newType = stretchBendType.patchClasses(typeMap);
       if (newType != null) {
-        logger.info(" " + newType.toString());
+        logger.info(" " + newType);
         addForceFieldType(newType);
       }
     }
@@ -1518,7 +1531,7 @@ public class ForceField {
     for (TorsionType torsionType : torsionTypes.values().toArray(new TorsionType[0])) {
       TorsionType newType = torsionType.patchClasses(typeMap);
       if (newType != null) {
-        logger.info(" " + newType.toString());
+        logger.info(" " + newType);
         addForceFieldType(newType);
       }
     }
@@ -1541,10 +1554,11 @@ public class ForceField {
             addForceFieldType(ureyBradleyType);
         }
     } */
+
     for (MultipoleType multipoleType : multipoleTypes.values().toArray(new MultipoleType[0])) {
       MultipoleType newType = multipoleType.patchTypes(typeMap);
       if (newType != null) {
-        logger.info(" " + newType.toString());
+        logger.info(" " + newType);
         addForceFieldType(newType);
       }
     }
@@ -1553,7 +1567,7 @@ public class ForceField {
       for (AtomType atomType : patchTypes.values()) {
         PolarizeType polarizeType = getPolarizeType(atomType.key);
         if (polarizeType != null && polarizeType.patchTypes(typeMap)) {
-          logger.info(" " + polarizeType.toString());
+          logger.info(" " + polarizeType);
         }
       }
     } catch (Exception e) {
@@ -1564,7 +1578,7 @@ public class ForceField {
   /**
    * Returns the minimum atom class value.
    *
-   * @return a int.
+   * @return The minimum atom class value.
    */
   private int minClass() {
     int minClass = maxClass();
@@ -1579,7 +1593,7 @@ public class ForceField {
   /**
    * Returns the minimum atom type value.
    *
-   * @return a int.
+   * @return The minimum atom type value.
    */
   private int minType() {
     int minType = maxType();
@@ -1595,7 +1609,7 @@ public class ForceField {
   /**
    * Returns the minimum Biotype value.
    *
-   * @return a int.
+   * @return The minimum Biotype value.
    */
   private int minBioType() {
     int minBioType = maxBioType();
@@ -1611,7 +1625,7 @@ public class ForceField {
   /**
    * Returns the maximum atom class value.
    *
-   * @return a int.
+   * @return The maximum atom class value.
    */
   private int maxClass() {
     int maxClass = 0;
@@ -1626,7 +1640,7 @@ public class ForceField {
   /**
    * Returns the maximum atom type value.
    *
-   * @return a int.
+   * @return The maximum atom type value.
    */
   private int maxType() {
     int maxType = 0;
@@ -1642,7 +1656,7 @@ public class ForceField {
   /**
    * Returns the maximum Biotype.
    *
-   * @return a int.
+   * @return The maximum Biotype.
    */
   private int maxBioType() {
     int maxBioType = 0;
@@ -1765,67 +1779,16 @@ public class ForceField {
   }
 
   public enum ELEC_FORM {
-    PAM,
-    FIXED_CHARGE
+    PAM, FIXED_CHARGE
   }
 
   /** Available force fields. */
   public enum ForceFieldName {
-    AMBER_1994,
-    AMBER_1996,
-    AMBER_1998,
-    AMBER_1999,
-    AMBER_1999_SB,
-    AMOEBA_2004,
-    AMOEBA_2009,
-    AMOEBA_BIO_2009,
-    AMOEBA_BIO_2018,
-    AMOEBA_BIO_2018_CPHMD,
-    AMOEBA_NUC_2017,
-    AMOEBA_PROTEIN_2004,
-    AMOEBA_PROTEIN_2013,
-    AMOEBA_WATER_2003,
-    AMOEBA_WATER_2014,
-    CHARMM_22,
-    CHARMM_22_CMAP,
-    IAMOEBA_WATER,
-    OPLS_AA,
-    OPLS_AAL
+    AMBER_1994, AMBER_1996, AMBER_1998, AMBER_1999, AMBER_1999_SB, AMOEBA_2004, AMOEBA_2009, AMOEBA_BIO_2009, AMOEBA_BIO_2018, AMOEBA_BIO_2018_CPHMD, AMOEBA_NUC_2017, AMOEBA_PROTEIN_2004, AMOEBA_PROTEIN_2013, AMOEBA_WATER_2003, AMOEBA_WATER_2014, CHARMM_22, CHARMM_22_CMAP, IAMOEBA_WATER, OPLS_AA, OPLS_AAL
   }
 
   public enum ForceFieldType {
-    KEYWORD,
-    ANGLE,
-    ANGLEP,
-    ANGTORS,
-    ATOM,
-    BIOTYPE,
-    BOND,
-    CHARGE,
-    IMPROPER,
-    IMPTORS,
-    MULTIPOLE,
-    OPBEND,
-    PITORS,
-    POLARIZE,
-    SOLUTE,
-    STRBND,
-    STRTORS,
-    TORSION,
-    TORTORS,
-    UREYBRAD,
-    VDW,
-    VDW14,
-    VDWPR,
-    RELATIVESOLV
+    KEYWORD, ANGLE, ANGLEP, ANGTORS, ATOM, BIOTYPE, BOND, CHARGE, IMPROPER, IMPTORS, MULTIPOLE, OPBEND, PITORS, POLARIZE, SOLUTE, STRBND, STRTORS, TORSION, TORTORS, UREYBRAD, VDW, VDW14, VDWPR, VDWPAIR, RELATIVESOLV
   }
 
-  /** Enumerates the types of constraints that can be applied. */
-  public enum ConstraintTypes {
-    // Constrain a Bond.
-    BOND,
-    // Constrain a 3-atom Angle and its two component Bonds.
-    ANGLEBONDS
-    // TODO: Support dihedral constraints, lone angle constraints, etc.
-  }
 }

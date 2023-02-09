@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -97,13 +97,17 @@ public class AdderDoubleArray implements AtomicDoubleArray {
     return array[index].sum();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * The AtomicDoubleArray handles the reduction automatically, so this method does nothing.
+   */
   @Override
   public void reduce(int lb, int ub) {
     // Nothing to do.
   }
 
-  /** {@inheritDoc} */
+  /**
+   * The AtomicDoubleArray handles the reduction automatically, so this method does nothing.
+   */
   @Override
   public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
     // Nothing to do.

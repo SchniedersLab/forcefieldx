@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -42,6 +42,7 @@ import static java.util.Arrays.fill;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.floor;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.sqrt;
+import static uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION;
 
 import ffx.crystal.Crystal;
 import ffx.numerics.tornado.FFXTornado;
@@ -53,10 +54,13 @@ import ffx.potential.parameters.VDWType;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.annotations.Reduce;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
+import uk.ac.manchester.tornado.api.enums.DataTransferMode;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /**
@@ -554,49 +558,21 @@ public class VanDerWaalsTornado extends VanDerWaals {
 
     TornadoDevice device = TornadoRuntime.getTornadoRuntime().getDefaultDevice();
     FFXTornado.logDevice(device);
-    TaskSchedule graph =
-        new TaskSchedule("vdW")
-            .streamIn(
-                atomClass,
-                eps,
-                rmin,
-                reducedXYZ,
-                reductionIndex,
-                reductionValue,
-                bondedScaleFactors,
-                maskPointer,
-                mask,
-                A,
-                Ai,
-                cutoffs,
-                energy,
-                interactions,
-                grad)
-            .task(
-                "energy",
-                VanDerWaalsTornado::tornadoEnergy,
-                atomClass,
-                eps,
-                rmin,
-                reducedXYZ,
-                reductionIndex,
-                reductionValue,
-                bondedScaleFactors,
-                maskPointer,
-                mask,
-                A,
-                Ai,
-                cutoffs,
-                energy,
-                interactions,
-                grad)
-            .streamOut(energy, interactions, grad);
+    TaskGraph graph =
+        new TaskGraph("vdW").transferToDevice(EVERY_EXECUTION,
+                atomClass, eps, rmin, reducedXYZ, reductionIndex, reductionValue,
+                bondedScaleFactors, maskPointer, mask,
+                A, Ai, cutoffs, energy, interactions, grad)
+            .task("energy", VanDerWaalsTornado::tornadoEnergy,
+                atomClass, eps, rmin, reducedXYZ, reductionIndex, reductionValue,
+                bondedScaleFactors, maskPointer, mask,
+                A, Ai, cutoffs, energy, interactions, grad)
+            .transferToHost(EVERY_EXECUTION, energy, interactions, grad);
 
-    graph.setDevice(device);
-    graph.warmup();
-    graph.execute();
-    graph.dumpProfiles();
-    device.reset();
+    ImmutableTaskGraph itg = graph.snapshot();
+    TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(itg);
+    executionPlan.withWarmUp().withDevice(device);
+    executionPlan.execute();
 
     logger.info(format(" Tornado OpenCL: %16.8f %d", energy[0], interactions[0]));
 

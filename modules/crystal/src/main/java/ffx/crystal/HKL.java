@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -68,9 +68,9 @@ public class HKL {
   /**
    * Constructor for HKL.
    *
-   * @param h a int.
-   * @param k a int.
-   * @param l a int.
+   * @param h an int.
+   * @param k an int.
+   * @param l an int.
    */
   public HKL(int h, int k, int l) {
     this.h = h;
@@ -82,11 +82,11 @@ public class HKL {
   /**
    * Constructor for HKL.
    *
-   * @param h a int.
-   * @param k a int.
-   * @param l a int.
-   * @param eps a int.
-   * @param allowed a int.
+   * @param h an int.
+   * @param k an int.
+   * @param l an int.
+   * @param eps an int.
+   * @param allowed an int.
    */
   public HKL(int h, int k, int l, int eps, int allowed) {
     this.h = h;
@@ -138,7 +138,7 @@ public class HKL {
   /**
    * setAllowed
    *
-   * @param allowed a int.
+   * @param allowed an int.
    */
   public void setAllowed(int allowed) {
     this.allowed = allowed;
@@ -147,7 +147,7 @@ public class HKL {
   /**
    * getBin
    *
-   * @return a int.
+   * @return an int.
    */
   public int getBin() {
     return bin;
@@ -156,7 +156,7 @@ public class HKL {
   /**
    * setBin
    *
-   * @param bin a int.
+   * @param bin an int.
    */
   public void setBin(int bin) {
     this.bin = bin;
@@ -174,7 +174,7 @@ public class HKL {
   /**
    * getEpsilon
    *
-   * @return a int.
+   * @return an int.
    */
   public int getEpsilon() {
     return epsilon;
@@ -183,7 +183,7 @@ public class HKL {
   /**
    * setEpsilon
    *
-   * @param eps a int.
+   * @param eps an int.
    */
   public void setEpsilon(int eps) {
     this.epsilon = eps;
@@ -192,7 +192,7 @@ public class HKL {
   /**
    * epsilonc
    *
-   * @return a int.
+   * @return an int.
    */
   public int epsilonc() {
     if (centric()) {
@@ -218,7 +218,7 @@ public class HKL {
   /**
    * h
    *
-   * @return a int.
+   * @return an int.
    */
   public int getH() {
     return h;
@@ -227,7 +227,7 @@ public class HKL {
   /**
    * h
    *
-   * @param h a int.
+   * @param h an int.
    */
   public void setH(int h) {
     this.h = h;
@@ -242,7 +242,7 @@ public class HKL {
   /**
    * index
    *
-   * @return a int.
+   * @return an int.
    */
   public int getIndex() {
     return index;
@@ -251,7 +251,7 @@ public class HKL {
   /**
    * index
    *
-   * @param index a int.
+   * @param index an int.
    */
   public void setIndex(int index) {
     this.index = index;
@@ -260,7 +260,7 @@ public class HKL {
   /**
    * k
    *
-   * @return a int.
+   * @return an int.
    */
   public int getK() {
     return k;
@@ -269,7 +269,7 @@ public class HKL {
   /**
    * k
    *
-   * @param k a int.
+   * @param k an int.
    */
   public void setK(int k) {
     this.k = k;
@@ -278,7 +278,7 @@ public class HKL {
   /**
    * l
    *
-   * @return a int.
+   * @return an int.
    */
   public int getL() {
     return l;
@@ -287,7 +287,7 @@ public class HKL {
   /**
    * l
    *
-   * @param l a int.
+   * @param l an int.
    */
   public void setL(int l) {
     this.l = l;

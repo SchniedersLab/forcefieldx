@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -248,6 +248,9 @@ public final class NeutronFormFactor implements FormFactor {
 
     String key;
     if (atom.getAtomicNumber() == 1) {
+      // if (!atom.getResidueName().equalsIgnoreCase("DOD")) {
+      //  logger.info(" Atom:" + atom + " " + atom.isDeuterium());
+      //}
       if (atom.isDeuterium()) {
         key = "" + atom.getAtomicNumber() + "_2";
       } else {
@@ -266,9 +269,8 @@ public final class NeutronFormFactor implements FormFactor {
 
     if (occ <= 0.0) {
       StringBuilder sb = new StringBuilder();
-      sb.append("zero occ for atom: ").append(atom).append("\n");
-      sb.append("(atom will not contribute to electron density calculation)\n");
-      logger.warning(sb.toString());
+      sb.append(" Zero occupancy: ").append(atom);
+      logger.fine(sb.toString());
     }
 
     update(xyz, uadd);

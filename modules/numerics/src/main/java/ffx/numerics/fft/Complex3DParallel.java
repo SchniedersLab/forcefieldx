@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -148,7 +148,7 @@ public class Complex3DParallel {
    */
   public static void main(String[] args) throws Exception {
     int dimNotFinal = 128;
-    int ncpu = ParallelTeam.getDefaultThreadCount();
+    int nCPU = ParallelTeam.getDefaultThreadCount();
     int reps = 5;
     if (args != null) {
       try {
@@ -156,9 +156,9 @@ public class Complex3DParallel {
         if (dimNotFinal < 1) {
           dimNotFinal = 100;
         }
-        ncpu = Integer.parseInt(args[1]);
-        if (ncpu < 1) {
-          ncpu = ParallelTeam.getDefaultThreadCount();
+        nCPU = Integer.parseInt(args[1]);
+        if (nCPU < 1) {
+          nCPU = ParallelTeam.getDefaultThreadCount();
         }
         reps = Integer.parseInt(args[2]);
         if (reps < 1) {
@@ -169,14 +169,12 @@ public class Complex3DParallel {
       }
     }
     final int dim = dimNotFinal;
-    System.out.println(
-        String.format(
-            "Initializing a %d cubed grid for %d CPUs.\n"
-                + "The best timing out of %d repititions will be used.",
-            dim, ncpu, reps));
+    System.out.printf("Initializing a %d cubed grid for %d CPUs.\n"
+            + "The best timing out of %d repetitions will be used.%n",
+        dim, nCPU, reps);
     // One dimension of the serial array divided by the number of threads.
     Complex3D complexDoubleFFT3D = new Complex3D(dim, dim, dim);
-    ParallelTeam parallelTeam = new ParallelTeam(ncpu);
+    ParallelTeam parallelTeam = new ParallelTeam(nCPU);
     Complex3DParallel parallelComplexDoubleFFT3D =
         new Complex3DParallel(dim, dim, dim, parallelTeam);
     final int dimCubed = dim * dim * dim;
@@ -209,13 +207,13 @@ public class Complex3DParallel {
                       }
                     });
               } catch (Exception e) {
-                System.out.println(e.toString());
+                System.out.println(e.getMessage());
                 System.exit(-1);
               }
             }
           });
     } catch (Exception e) {
-      System.out.println(e.toString());
+      System.out.println(e.getMessage());
       System.exit(-1);
     }
     double toSeconds = 0.000000001;
@@ -224,19 +222,19 @@ public class Complex3DParallel {
     complexDoubleFFT3D.setRecip(work);
     parallelComplexDoubleFFT3D.setRecip(work);
     for (int i = 0; i < reps; i++) {
-      System.out.println(String.format("Iteration %d", i + 1));
+      System.out.printf("Iteration %d%n", i + 1);
       long time = System.nanoTime();
       complexDoubleFFT3D.fft(data);
       complexDoubleFFT3D.ifft(data);
       time = (System.nanoTime() - time);
-      System.out.println(String.format("Sequential: %8.3f", toSeconds * time));
+      System.out.printf("Sequential: %8.3f%n", toSeconds * time);
       if (time < seqTime) {
         seqTime = time;
       }
       time = System.nanoTime();
       complexDoubleFFT3D.convolution(data);
       time = (System.nanoTime() - time);
-      System.out.println(String.format("Sequential: %8.3f (Convolution)", toSeconds * time));
+      System.out.printf("Sequential: %8.3f (Convolution)%n", toSeconds * time);
       if (time < seqTime) {
         seqTime = time;
       }
@@ -244,27 +242,27 @@ public class Complex3DParallel {
       parallelComplexDoubleFFT3D.fft(data);
       parallelComplexDoubleFFT3D.ifft(data);
       time = (System.nanoTime() - time);
-      System.out.println(String.format("Parallel:   %8.3f", toSeconds * time));
+      System.out.printf("Parallel:   %8.3f%n", toSeconds * time);
       if (time < parTime) {
         parTime = time;
       }
       time = System.nanoTime();
       parallelComplexDoubleFFT3D.convolution(data);
       time = (System.nanoTime() - time);
-      System.out.println(String.format("Parallel:   %8.3f (Convolution)\n", toSeconds * time));
+      System.out.printf("Parallel:   %8.3f (Convolution)\n%n", toSeconds * time);
       if (time < parTime) {
         parTime = time;
       }
     }
-    System.out.println(String.format("Best Sequential Time:  %8.3f", toSeconds * seqTime));
-    System.out.println(String.format("Best Parallel Time:    %8.3f", toSeconds * parTime));
-    System.out.println(String.format("Speedup: %15.5f", (double) seqTime / parTime));
+    System.out.printf("Best Sequential Time:  %8.3f%n", toSeconds * seqTime);
+    System.out.printf("Best Parallel Time:    %8.3f%n", toSeconds * parTime);
+    System.out.printf("Speedup: %15.5f%n", (double) seqTime / parTime);
     parallelTeam.shutdown();
   }
 
   /**
-   * Compute the 3D FFT, perfrom a multiplication in reciprocal space, and the inverese 3D FFT all
-   * in parallel.
+   * Compute the 3D FFT, perform a multiplication in reciprocal space,
+   * and the inverse 3D FFT in parallel.
    *
    * @param input The input array must be of size 2 * nX * nY * nZ.
    * @since 1.0
@@ -280,7 +278,7 @@ public class Complex3DParallel {
   }
 
   /**
-   * Compute the 3D FFT in pararallel.
+   * Compute the 3D FFT in parallel.
    *
    * @param input The input array must be of size 2 * nX * nY * nZ.
    * @since 1.0

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -40,10 +40,10 @@ package ffx.numerics.switching;
 import ffx.numerics.func1d.UnivariateDiffFunction;
 
 /**
- * A UnivariateSwitchingFunction describes a function of a single value (often lambda), where f(lb)
- * = 0, f(ub) = 1, and df(x)/dx &gt;= 0 for all x lb-ub.
+ * A UnivariateSwitchingFunction describes a function of a single value (often lambda), where f(lb) =
+ * 0, f(ub) = 1, and df(x)/dx &gt;= 0 for all x lb-ub.
  *
- * <p>Additionally, its often useful for switching functions to have zero first and second
+ * <p>Additionally, it's often useful for switching functions to have zero first and second
  * derivatives at the lower and upper bound.
  *
  * <p>A number of methods exist to check for various properties of a switching function; these will
@@ -85,7 +85,7 @@ public interface UnivariateSwitchingFunction extends UnivariateDiffFunction {
   /**
    * Returns the highest-order, guaranteed-zero derivative at the zero bound.
    *
-   * @return a int.
+   * @return Highest-order zero derivative at zero bound.
    */
   default int highestOrderZeroDerivativeAtZeroBound() {
     return getHighestOrderZeroDerivative();

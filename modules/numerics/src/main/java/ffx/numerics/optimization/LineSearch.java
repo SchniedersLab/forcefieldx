@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -123,16 +123,8 @@ public class LineSearch {
    * @return The final function value.
    * @since 1.0
    */
-  public double search(
-      int n,
-      double[] x,
-      double f,
-      double[] g,
-      double[] p,
-      double[] angle,
-      double fMove,
-      LineSearchResult[] info,
-      int[] functionEvaluations,
+  public double search(int n, double[] x, double f, double[] g, double[] p, double[] angle,
+      double fMove, LineSearchResult[] info, int[] functionEvaluations,
       Potential optimizationSystem) {
 
     assert (n > 0);
@@ -346,7 +338,7 @@ public class LineSearch {
       }
     }
 
-    // Interpolation has failed; reset to best current point
+    // Interpolation has failed; reset to the best current point.
     double f1 = min(fA, min(fB, fC));
     double sg1;
     if (f1 == fA) {

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -37,6 +37,12 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
+/**
+ * The PolarizableMultipole class defines a polarizable multipole.
+ *
+ * @author Michael J. Schnieders
+ * @since 1.0
+ */
 public class PolarizableMultipole {
 
   private static final double oneThird = 1.0 / 3.0;
@@ -203,8 +209,8 @@ public class PolarizableMultipole {
   /**
    * Compute the scaled and averaged induced dipole.
    *
-   * @param scaleInduction a double.
-   * @param scaleEnergy a double.
+   * @param scaleInduction Induction mask scale factor.
+   * @param scaleEnergy Energy mask scale factor.
    */
   public final void applyMasks(double scaleInduction, double scaleEnergy) {
     // [Ux, Uy, Uz] resulted from induction masking rules, and we now apply the energy mask.

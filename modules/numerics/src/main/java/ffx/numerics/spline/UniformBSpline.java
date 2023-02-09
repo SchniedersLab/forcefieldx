@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -37,41 +37,34 @@
 // ******************************************************************************
 package ffx.numerics.spline;
 
-import static java.lang.String.format;
-
 import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Static methods to generate and differentiate uniform b-Splines.
  *
  * @author Michael J. Schnieders
- * @see
- *     <ul>
- *       <li><a href="http://www.springer.com/mathematics/analysis/book/978-0-387-95366-3"
- *           target="_blank"> C. de Boor, A Practical Guide to Splines. (Springer, New York, 2001)
- *           </a>
- *       <li><a href="http://www.wikipedia.org/wiki/B-spline" target="_blank">b-Splines at
- *           Wikipedia</a>
- *       <li><a href="http://mathworld.wolfram.com/B-Spline.html" target="_blank">b-Splines at
- *           MathWorld</a>
+ * @see <ul>
+ *     <li><a href="http://www.springer.com/mathematics/analysis/book/978-0-387-95366-3"
+ *     target="_blank"> C. de Boor, A Practical Guide to Splines. (Springer, New York, 2001)
+ *     </a>
+ *     <li><a href="http://www.wikipedia.org/wiki/B-spline" target="_blank">b-Splines at
+ *     Wikipedia</a>
+ *     <li><a href="http://mathworld.wolfram.com/B-Spline.html" target="_blank">b-Splines at
+ *     MathWorld</a>
  *     </ul>
- *
  * @since 1.0
  */
 public class UniformBSpline {
 
-  private static final Logger logger = Logger.getLogger(UniformBSpline.class.getName());
-
   /** Do not allow instantiation of UniformBSpline. All methods are static. */
-  private UniformBSpline() {}
+  private UniformBSpline() {
+  }
 
   /**
    * Generate uniform b-Spline coefficients.
    *
-   * @param x A double in the range [0.0, 1.0] where 0.5 is over a grid point (0.0 is half way to
-   * the previous grid point, and 1.0 is half way to the next grid point).
+   * @param x A double in the range [0.0, 1.0] where 0.5 is over a grid point (0.0 is half-way to
+   *     the previous grid point, and 1.0 is half-way to the next grid point).
    * @param order b-Spline order (degree + 1).
    * @param coefficients b-Spline coefficients (n coefficients for order n).
    * @since 1.0
@@ -93,11 +86,9 @@ public class UniformBSpline {
    *
    * @param x A double in the range [0.0, 1.0].
    * @param order b-Spline order (degree + 1).
-   * @param deriveOrder Derivative order. <br>
-   *     0 = no derivative. <br>
-   *     1 = 1rst derivative. <br>
-   *     It must not be greater than the b-Spline degree (order - 1). <br>
-   *     The method is currently limited to deriveOrder .LE. 5. <br>
+   * @param deriveOrder Derivative order. <br> 0 = no derivative. <br> 1 = 1rst derivative. <br>
+   *     It must not be greater than the b-Spline degree (order - 1). <br> The method is currently
+   *     limited to deriveOrder .LE. 5. <br>
    * @param coefficients The b-Spline coefficient array of size [order][deriveOrder + 1].
    * @param work A work array of size [order][order].
    * @since 1.0
@@ -212,8 +203,6 @@ public class UniformBSpline {
       final int order,
       final double[] coefficients,
       final double[] newCoefficients) {
-    // The logging statement below prevents a bug in the GraalVM JIT that perhaps
-    // is involved with in-lining or un-rolling this method.
     final double div = 1.0 / (double) order;
     final double k1mw = order + (1.0 - x);
     final int km1 = order - 1;
@@ -224,10 +213,6 @@ public class UniformBSpline {
       final double x1 = x + (double) i;
       final double k1mwi = k1mw - (double) i;
       newCoefficients[kmi] = div * (x1 * coefficients[km1i] + k1mwi * coefficients[kmi]);
-//      if (logger.isLoggable(Level.OFF)) {
-//        logger.finest(format(" BSR %16.8f %16.8f %16.8f %16.8f %16.8f",
-//                div, x1, coefficients[km1i], k1mwi, coefficients[kmi]));
-//      }
     }
     double oneX = 1.0 - x;
     newCoefficients[0] = div * oneX * coefficients[0];

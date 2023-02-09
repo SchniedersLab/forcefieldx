@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -81,14 +81,14 @@ public class Real3D {
   }
 
   /**
-   * iReal3D
+   * Determine the index of the real number in the 1D array from the X, Y and Z indices.
    *
-   * @param i a int.
-   * @param j a int.
-   * @param k a int.
-   * @param nX a int.
-   * @param nY a int.
-   * @return a int.
+   * @param i the index along the X-axis.
+   * @param j the index along the Y-axis.
+   * @param k the index along the Z-axis.
+   * @param nX the number of points along the X-axis.
+   * @param nY the number of points along the Y-axis.
+   * @return the index of the real number in the 1D array.
    */
   public static int iReal3D(int i, int j, int k, int nX, int nY) {
     int xSide = nX + 2;

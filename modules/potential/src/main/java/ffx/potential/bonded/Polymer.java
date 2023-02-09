@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -44,10 +44,8 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
-import java.util.logging.Logger;
 import javax.swing.tree.TreeNode;
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Material;
@@ -60,8 +58,6 @@ import org.jogamp.vecmath.Color3f;
  * @since 1.0
  */
 public class Polymer extends MSGroup {
-
-  private static final Logger logger = Logger.getLogger(Polymer.class.getName());
 
   /** Constant <code>polymerColor</code> */
   private static final Map<Integer, Color3f> polymerColor = new HashMap<>();
@@ -204,23 +200,6 @@ public class Polymer extends MSGroup {
   }
 
   /**
-   * addMultiTerminus.
-   *
-   * @param residue a {@link ffx.potential.bonded.Residue} object.
-   * @param multiTerminus a {@link ffx.potential.bonded.MultiTerminus} object.
-   */
-  public void addMultiTerminus(Residue residue, MultiTerminus multiTerminus) {
-    List<MSNode> children = residue.getChildList();
-    for (MSNode child : children) {
-      multiTerminus.add(child);
-    }
-    MSNode residueNode = getAtomNode();
-    int index = residueNode.getIndex(residue);
-    residueNode.remove(index);
-    residueNode.insert(multiTerminus, index);
-  }
-
-  /**
    * {@inheritDoc}
    *
    * <p>Joiner joins Moieties m1 and m2 and returns the Geometry objects formed in a Joint.
@@ -254,7 +233,7 @@ public class Polymer extends MSGroup {
   /**
    * {@inheritDoc}
    *
-   * <p>Overidden equals method.
+   * <p>Overridden equals method.
    */
   @Override
   public boolean equals(Object o) {
@@ -372,23 +351,21 @@ public class Polymer extends MSGroup {
   }
 
   /**
-   * TODO: Was the sole hook on BondedTerm equality definition via getID(); will rewrite with a
-   * simple Comparator soon.
+   * Get lists of the phi and psi torsions.
    *
-   * @return An List of Dihedral objects representing the Phi/Psi angles of the Polymer, useful for
-   *     creating Ramachandran plots
+   * @return A List of Dihedral objects representing the Phi/Psi angles of the Polymer.
    */
   public List<List<Torsion>> getPhiPsiList() {
-    List<List<Torsion>> phipsi = new ArrayList<>();
+    List<List<Torsion>> phiPsi = new ArrayList<>();
     List<Torsion> phi = new ArrayList<>();
     List<Torsion> psi = new ArrayList<>();
-    phipsi.add(phi);
-    phipsi.add(psi);
+    phiPsi.add(phi);
+    phiPsi.add(psi);
     for (Residue residue : this.getResidues()) {
       for (Torsion torsion : residue.getTorsionList()) {
         Atom[] atoms = torsion.atoms;
         StringBuilder s = new StringBuilder(atoms[0].getName());
-        for (int i=1; i<4; i++) {
+        for (int i = 1; i < 4; i++) {
           s.append("-").append(atoms[i].getName());
         }
         // Phi
@@ -400,13 +377,13 @@ public class Polymer extends MSGroup {
         }
       }
     }
-    return phipsi;
+    return phiPsi;
   }
 
   /**
    * getResidue
    *
-   * @param resNum a int.
+   * @param resNum The residue number.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
   public Residue getResidue(int resNum) {
@@ -430,7 +407,7 @@ public class Polymer extends MSGroup {
    * getResidue
    *
    * @param resName a {@link java.lang.String} object.
-   * @param resNum a int.
+   * @param resNum The residue number.
    * @param create a boolean.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
@@ -441,9 +418,9 @@ public class Polymer extends MSGroup {
   /**
    * getResidue
    *
-   * @param resName a {@link java.lang.String} object.
-   * @param resNum a int.
-   * @param create a boolean.
+   * @param resName The residue name.
+   * @param resNum The residue number.
+   * @param create If true, create the residue if it does not exist.
    * @param defaultRT Default ResidueType if it cannot be assigned.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
@@ -452,7 +429,8 @@ public class Polymer extends MSGroup {
       Residue r = (Residue) e.nextElement();
       if (r.getResidueNumber() == resNum && r.getName().equalsIgnoreCase(resName)) {
         return r;
-      } else if(resName.equals(AminoAcidUtils.AminoAcid3.UNK.name()) && resNum == r.getResidueNumber()){
+      } else if (resName.equals(AminoAcidUtils.AminoAcid3.UNK.name())
+          && resNum == r.getResidueNumber()) {
         return r;
       }
     }

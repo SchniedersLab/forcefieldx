@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -49,7 +49,6 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MSRoot;
-import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.parameters.ForceField;
@@ -244,14 +243,14 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
             + commitDate
             + " \n"
             + commitSCM // Will contain its own spacing/newline, or be empty.
-            + "\n        Copyright (c)  Michael J. Schnieders  2001-2022 \n"
+            + "\n        Copyright (c)  Michael J. Schnieders  2001-2023 \n"
             + "        Portions Copyright (c):\n"
-            + "          Timothy D. Fenn      2009-2022 \n"
-            + "          Jacob M. Litman      2015-2022 \n"
-            + "          Rae A. Corrigan      2019-2022 \n"
-            + "          Guowei Qi            2019-2022 \n"
-            + "          Mallory R. Tollefson 2019-2022 \n"
-            + "          Aaron J. Nessler     2021-2022 \n"
+            + "          Timothy D. Fenn      2009-2023 \n"
+            + "          Jacob M. Litman      2015-2023 \n"
+            + "          Rae A. Corrigan      2019-2023 \n"
+            + "          Guowei Qi            2019-2023 \n"
+            + "          Mallory R. Tollefson 2019-2023 \n"
+            + "          Aaron J. Nessler     2021-2023 \n"
             + "\n"
             + "        All Rights Reserved \n"
             + "\n"
@@ -833,7 +832,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
       }
     }
 
-    MolecularAssembly[] systems = activeFilter.getMolecularAssemblys();
+    MolecularAssembly[] systems = activeFilter.getMolecularAssemblyArray();
     if (systems != null) {
       int n = systems.length;
       FFXSystem[] ffxSystems = new FFXSystem[n];
@@ -1554,7 +1553,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
       }
     }
 
-    MolecularAssembly[] systems = activeFilter.getMolecularAssemblys();
+    MolecularAssembly[] systems = activeFilter.getMolecularAssemblyArray();
     if (systems != null) {
       int n = systems.length;
       FFXSystem[] ffxSystems = new FFXSystem[n];
@@ -1599,7 +1598,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
       }
     }
 
-    MolecularAssembly[] systems = activeFilter.getMolecularAssemblys();
+    MolecularAssembly[] systems = activeFilter.getMolecularAssemblyArray();
     if (systems != null) {
       int n = systems.length;
       FFXSystem[] ffxSystems = new FFXSystem[n];

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -155,17 +155,16 @@ public class Torsion extends BondedTerm implements LambdaInterface {
     int[] c = {atomType0.atomClass, atomType1.atomClass, atomType2.atomClass, atomType3.atomClass};
     String key = TorsionType.sortKey(c);
     StringBuilder sb = new StringBuilder(
-        format(
-            "No TorsionType for key: %s\n %s -> %s\n %s -> %s\n %s -> %s\n %s -> %s",
-            key, a0, atomType0, a1, atomType1, a2, atomType2, a3, atomType3));
+        format("No TorsionType for key: %s\n %s -> %s\n %s -> %s\n %s -> %s\n %s -> %s", key, a0,
+            atomType0, a1, atomType1, a2, atomType2, a3, atomType3));
     if (matchTorsions(a0, a1, a2, a3, forceField, sb, true) <= 0) {
       matchTorsions(a0, a1, a2, a3, forceField, sb, false);
     }
     logger.severe(sb.toString());
   }
 
-  private static int matchTorsions(Atom a0, Atom a1, Atom a2, Atom a3,
-      ForceField forceField, StringBuilder sb, boolean strict) {
+  private static int matchTorsions(Atom a0, Atom a1, Atom a2, Atom a3, ForceField forceField,
+      StringBuilder sb, boolean strict) {
     AtomType atomType0 = a0.getAtomType();
     AtomType atomType1 = a1.getAtomType();
     AtomType atomType2 = a2.getAtomType();
@@ -183,14 +182,14 @@ public class Torsion extends BondedTerm implements LambdaInterface {
     for (AtomType type1 : types1) {
       for (AtomType type2 : types2) {
         // Match both inner atom classes.
-        if ((type1.atomClass == c1 && type2.atomClass == c2) ||
-            (type1.atomClass == c2 && type2.atomClass == c1)) {
+        if ((type1.atomClass == c1 && type2.atomClass == c2) || (type1.atomClass == c2
+            && type2.atomClass == c1)) {
           for (AtomType type0 : types0) {
             for (AtomType type3 : types3) {
               // Match one distal atom class.
               if (strict) {
-                if ((type0.atomClass != c0) && (type0.atomClass != c3) &&
-                    (type3.atomClass != c0) && (type3.atomClass != c3)) {
+                if ((type0.atomClass != c0) && (type0.atomClass != c3) && (type3.atomClass != c0)
+                    && (type3.atomClass != c3)) {
                   continue;
                 }
               }
@@ -272,11 +271,8 @@ public class Torsion extends BondedTerm implements LambdaInterface {
    * @return The torsion in degrees.
    */
   public double measure() {
-    double angle = DoubleMath.dihedralAngle(
-        atoms[0].getXYZ(null),
-        atoms[1].getXYZ(null),
-        atoms[2].getXYZ(null),
-        atoms[3].getXYZ(null));
+    double angle = DoubleMath.dihedralAngle(atoms[0].getXYZ(null), atoms[1].getXYZ(null),
+        atoms[2].getXYZ(null), atoms[3].getXYZ(null));
     return toDegrees(angle);
   }
 
@@ -286,8 +282,8 @@ public class Torsion extends BondedTerm implements LambdaInterface {
    * <p>Evaluate the Torsional Angle energy.
    */
   @Override
-  public double energy(
-      boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad,
+      AtomicDoubleArray3D lambdaGrad) {
     energy = 0.0;
     value = 0.0;
     dEdL = 0.0;
@@ -424,26 +420,16 @@ public class Torsion extends BondedTerm implements LambdaInterface {
 
   /** Log details for this Torsional Angle energy term. */
   public void log() {
-    logger.info(
-        format(
-            " %-8s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f %10.4f",
-            "Torsional-Angle",
-            atoms[0].getIndex(),
-            atoms[0].getAtomType().name,
-            atoms[1].getIndex(),
-            atoms[1].getAtomType().name,
-            atoms[2].getIndex(),
-            atoms[2].getAtomType().name,
-            atoms[3].getIndex(),
-            atoms[3].getAtomType().name,
-            value,
-            energy));
+    logger.info(format(" %-8s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f %10.4f", "Torsional-Angle",
+        atoms[0].getIndex(), atoms[0].getAtomType().name, atoms[1].getIndex(),
+        atoms[1].getAtomType().name, atoms[2].getIndex(), atoms[2].getAtomType().name,
+        atoms[3].getIndex(), atoms[3].getAtomType().name, value, energy));
   }
 
   /**
    * {@inheritDoc}
    *
-   * <p>Overidden toString Method returns the Term's id.
+   * <p>Overridden toString Method returns the Term's id.
    */
   @Override
   public String toString() {
@@ -462,11 +448,7 @@ public class Torsion extends BondedTerm implements LambdaInterface {
     atoms[2].setTorsion(this);
     atoms[3].setTorsion(this);
     setID_Key(false);
-    value =
-        dihedralAngle(
-            atoms[0].getXYZ(null),
-            atoms[1].getXYZ(null),
-            atoms[2].getXYZ(null),
-            atoms[3].getXYZ(null));
+    value = dihedralAngle(atoms[0].getXYZ(null), atoms[1].getXYZ(null), atoms[2].getXYZ(null),
+        atoms[3].getXYZ(null));
   }
 }

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -177,38 +177,36 @@ public abstract class FFXScript extends Script {
     }
     String scriptPath = scriptURL.getPath();
     String ffx = scriptPath.substring(5, scriptURL.getPath().indexOf("!"));
-    JarFile jar;
-    try {
-      jar = new JarFile(URLDecoder.decode(ffx, StandardCharsets.UTF_8));
+    List<String> scripts = new ArrayList<>();
+    List<String> testScripts = new ArrayList<>();
+
+    try (JarFile jar = new JarFile(URLDecoder.decode(ffx, StandardCharsets.UTF_8))) {
+      // Iterates over Jar entries.
+      Enumeration<JarEntry> enumeration = jar.entries();
+      while (enumeration.hasMoreElements()) {
+        ZipEntry zipEntry = enumeration.nextElement();
+        String className = zipEntry.getName();
+        if (className.startsWith("ffx")
+            && className.contains("groovy")
+            && className.endsWith(".class")
+            && !className.contains("$")) {
+          className = className.replace("/", ".");
+          className = className.replace(".class", "");
+          // Present the classes using "short-cut" names.
+          className = className.replace("ffx.potential.groovy.", "");
+          className = className.replace("ffx.algorithms.groovy.", "");
+          className = className.replace("ffx.realspace.groovy", "realspace");
+          className = className.replace("ffx.xray.groovy", "xray");
+          if (className.toUpperCase().contains("TEST")) {
+            testScripts.add(className);
+          } else {
+            scripts.add(className);
+          }
+        }
+      }
     } catch (Exception e) {
       logger.info(format(" The %s resource could not be decoded.", location));
       return;
-    }
-
-    List<String> scripts = new ArrayList<>();
-    List<String> testScripts = new ArrayList<>();
-    // Iterates over Jar entries.
-    Enumeration<JarEntry> enumeration = jar.entries();
-    while (enumeration.hasMoreElements()) {
-      ZipEntry zipEntry = enumeration.nextElement();
-      String className = zipEntry.getName();
-      if (className.startsWith("ffx")
-          && className.contains("groovy")
-          && className.endsWith(".class")
-          && !className.contains("$")) {
-        className = className.replace("/", ".");
-        className = className.replace(".class", "");
-        // Present the classes using "short-cut" names.
-        className = className.replace("ffx.potential.groovy.", "");
-        className = className.replace("ffx.algorithms.groovy.", "");
-        className = className.replace("ffx.realspace.groovy", "realspace");
-        className = className.replace("ffx.xray.groovy", "xray");
-        if (className.toUpperCase().contains("TEST")) {
-          testScripts.add(className);
-        } else {
-          scripts.add(className);
-        }
-      }
     }
 
     // Sort the scripts alphabetically.
@@ -254,8 +252,7 @@ public abstract class FFXScript extends Script {
 
     // The args property could either be a list or an array of String arguments.
     Object arguments = binding.getProperty("args");
-    if (arguments instanceof List<?>) {
-      List<?> list = (List<?>) arguments;
+    if (arguments instanceof List<?> list) {
       int numArgs = list.size();
       args = new String[numArgs];
       for (int i = 0; i < numArgs; i++) {
@@ -281,13 +278,9 @@ public abstract class FFXScript extends Script {
     }
 
     // Version info is printed by default.
-    if (version) {
-      // This should not be reached, due to the FFX Main class handling the "-V, --version" flag and
-      // exiting.
-      return false;
-    }
-
-    return true;
+    // This should not be reached, due to the FFX Main class handling the "-V, --version" flag and
+    // exiting.
+    return !version;
   }
 
   /**

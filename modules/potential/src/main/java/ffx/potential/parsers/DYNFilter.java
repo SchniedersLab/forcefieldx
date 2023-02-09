@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -64,7 +64,7 @@ public class DYNFilter {
   /**
    * Constructor for DYNFilter.
    *
-   * @param label a Label for the this restart file.
+   * @param label a Label for the restart file.
    */
   public DYNFilter(String label) {
     this.label = label;
@@ -81,8 +81,8 @@ public class DYNFilter {
    * @param ap an array of double.
    * @return a boolean.
    */
-  public boolean readDYN(
-      File dynFile, Crystal crystal, double[] x, double[] v, double[] a, double[] ap) {
+  public boolean readDYN(File dynFile, Crystal crystal, double[] x, double[] v, double[] a,
+      double[] ap) {
     if (!dynFile.exists() || !dynFile.canRead()) {
       return false;
     }
@@ -94,7 +94,7 @@ public class DYNFilter {
       if (tokens.length == 0) {
         return false;
       }
-      int numatoms = Integer.parseInt(tokens[0]);
+      int numAtoms = Integer.parseInt(tokens[0]);
 
       // Box size and angles
       br.readLine();
@@ -103,9 +103,9 @@ public class DYNFilter {
       if (tokens.length != 3) {
         return false;
       }
-      double aaxis = parseDouble(tokens[0]);
-      double baxis = parseDouble(tokens[1]);
-      double caxis = parseDouble(tokens[2]);
+      double aAxis = parseDouble(tokens[0]);
+      double bAxis = parseDouble(tokens[1]);
+      double cAxis = parseDouble(tokens[2]);
 
       data = br.readLine().trim();
       tokens = data.split(" +");
@@ -116,11 +116,11 @@ public class DYNFilter {
       double beta = parseDouble(tokens[1]);
       double gamma = parseDouble(tokens[2]);
 
-      crystal.changeUnitCellParameters(aaxis, baxis, caxis, alpha, beta, gamma);
+      crystal.changeUnitCellParameters(aAxis, bAxis, cAxis, alpha, beta, gamma);
 
       // Atomic coordinates
       br.readLine();
-      for (int i = 0; i < numatoms; i++) {
+      for (int i = 0; i < numAtoms; i++) {
         data = br.readLine().trim();
         tokens = data.split(" +");
         if (tokens.length != 3) {
@@ -134,7 +134,7 @@ public class DYNFilter {
 
       // Velocities
       br.readLine();
-      for (int i = 0; i < numatoms; i++) {
+      for (int i = 0; i < numAtoms; i++) {
         data = br.readLine().trim();
         tokens = data.split(" +");
         if (tokens.length != 3) {
@@ -148,7 +148,7 @@ public class DYNFilter {
 
       // Accelerations
       br.readLine();
-      for (int i = 0; i < numatoms; i++) {
+      for (int i = 0; i < numAtoms; i++) {
         data = br.readLine().trim();
         tokens = data.split(" +");
         if (tokens.length != 3) {
@@ -162,7 +162,7 @@ public class DYNFilter {
 
       // Previous Accelerations
       br.readLine();
-      for (int i = 0; i < numatoms; i++) {
+      for (int i = 0; i < numAtoms; i++) {
         data = br.readLine().trim();
         tokens = data.split(" +");
         if (tokens.length != 3) {
@@ -183,51 +183,41 @@ public class DYNFilter {
   /**
    * writeDYN
    *
-   * @param dynFile a {@link java.io.File} object.
-   * @param x an array of double.
-   * @param v an array of double.
-   * @param a an array of double.
-   * @param ap an array of double.
-   * @param crystal a {@link ffx.crystal.Crystal} object.
-   * @return a boolean.
+   * @param dynFile The file to write.
+   * @param x The atomic coordinates.
+   * @param v The atomic velocities.
+   * @param a The atomic accelerations.
+   * @param ap The atomic previous accelerations.
+   * @param crystal The crystal unit cell.
+   * @return Returns true if the file was written successfully.
    */
-  public boolean writeDYN(
-      File dynFile, Crystal crystal, double[] x, double[] v, double[] a, double[] ap) {
-    FileWriter fw = null;
-    BufferedWriter bw = null;
-    try {
-      fw = new FileWriter(dynFile);
-      bw = new BufferedWriter(fw);
-
+  public boolean writeDYN(File dynFile, Crystal crystal, double[] x, double[] v, double[] a,
+      double[] ap) {
+    try (FileWriter fw = new FileWriter(dynFile); BufferedWriter bw = new BufferedWriter(fw)) {
       bw.write(" Number of Atoms and Title :\n");
       assert (x.length % 3 == 0);
       int numberOfAtoms = x.length / 3;
       String output = format("%7d  %s\n", numberOfAtoms, label);
       bw.write(output);
-
       bw.write(" Periodic Box Dimensions :\n");
       Crystal unitCell = crystal.getUnitCell();
       bw.write(format("%26.16E%26.16E%26.16E\n", unitCell.a, unitCell.b, unitCell.c));
       bw.write(format("%26.16E%26.16E%26.16E\n", unitCell.alpha, unitCell.beta, unitCell.gamma));
-
       bw.write(" Current Atomic Positions :\n");
       for (int i = 0; i < numberOfAtoms; i++) {
         int k = i * 3;
         bw.write(format("%26.16E%26.16E%26.16E\n", x[k], x[k + 1], x[k + 2]));
       }
-
       bw.write(" Current Atomic Velocities :\n");
       for (int i = 0; i < numberOfAtoms; i++) {
         int k = i * 3;
         bw.write(format("%26.16E%26.16E%26.16E\n", v[k], v[k + 1], v[k + 2]));
       }
-
       bw.write(" Current Atomic Accelerations :\n");
       for (int i = 0; i < numberOfAtoms; i++) {
         int k = i * 3;
         bw.write(format("%26.16E%26.16E%26.16E\n", a[k], a[k + 1], a[k + 2]));
       }
-
       bw.write(" Previous Atomic Accelerations :\n");
       for (int i = 0; i < numberOfAtoms; i++) {
         int k = i * 3;
@@ -237,16 +227,7 @@ public class DYNFilter {
       String message = " Exception writing dynamic restart file " + dynFile;
       logger.log(Level.SEVERE, message, e);
       return false;
-    } finally {
-      try {
-        bw.close();
-        fw.close();
-        return true;
-      } catch (IOException e) {
-        String message = " Exception closing dynamic restart file " + dynFile;
-        logger.log(Level.WARNING, message, e);
-        return false;
-      }
     }
+    return true;
   }
 }

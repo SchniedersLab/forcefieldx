@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -63,11 +63,13 @@ public class SpaceGroupConversions {
    * @return Converted crystal.
    */
   public static Crystal hrConversion(Crystal crystal) {
-    return hrConversion(crystal.a, crystal.b, crystal.c, crystal.alpha, crystal.beta, crystal.gamma, crystal.spaceGroup);
+    return hrConversion(crystal.a, crystal.b, crystal.c, crystal.alpha, crystal.beta, crystal.gamma,
+        crystal.spaceGroup);
   }
 
   /**
    * Convert between hexagonal and rhombohedral space groups.
+   *
    * @param a proposed axis length
    * @param b proposed axis length
    * @param c proposed axis length
@@ -77,86 +79,88 @@ public class SpaceGroupConversions {
    * @param currentSG Space group to be converted
    * @return Converted crystal satisfying other lattice system.
    */
-  public static Crystal hrConversion(double a, double b, double c, double alpha, double beta, double gamma, SpaceGroup currentSG) {
+  public static Crystal hrConversion(double a, double b, double c, double alpha, double beta,
+      double gamma, SpaceGroup currentSG) {
     //Name for converted space group.
-    String xtalName = "";
+    String xtalName;
     // Going from hexagonal to rhombohedral (true), or visa versa (false).
     boolean hexStart = false;
     // Determine starting space group.
     switch (currentSG.shortName) {
-      case ("H3"):
+      case ("H3") -> {
         logger.info(" Converting from H3 to R3:");
         xtalName = "R3";
         hexStart = true;
-        break;
-      case ("H-3"):
+      }
+      case ("H-3") -> {
         logger.info(" Converting from H-3 to R-3:");
         xtalName = "R-3";
         hexStart = true;
-        break;
-      case ("H32"):
+      }
+      case ("H32") -> {
         logger.info(" Converting from H32 to R32:");
         xtalName = "R32";
         hexStart = true;
-        break;
-      case ("H3m"):
+      }
+      case ("H3m") -> {
         logger.info(" Converting from H3m to R3m:");
         xtalName = "R3m";
         hexStart = true;
-        break;
-      case ("H3c"):
+      }
+      case ("H3c") -> {
         logger.info(" Converting from H3c to R3c:");
         xtalName = "R3c";
         hexStart = true;
-        break;
-      case ("H-3m"):
+      }
+      case ("H-3m") -> {
         logger.info(" Converting from H-3m to R-3m:");
         xtalName = "R-3m";
         hexStart = true;
-        break;
-      case ("H-3c"):
+      }
+      case ("H-3c") -> {
         logger.info(" Converting from H-3c to R-3c:");
         xtalName = "R-3c";
         hexStart = true;
-        break;
-      case ("R3"):
+      }
+      case ("R3") -> {
         logger.info(" Converting from R3 to H3:");
         xtalName = "H3";
-        break;
-      case ("R-3"):
+      }
+      case ("R-3") -> {
         logger.info(" Converting from R-3 to H-3:");
         xtalName = "H-3";
-        break;
-      case ("R32"):
+      }
+      case ("R32") -> {
         logger.info(" Converting from R32 to H32:");
         xtalName = "H32";
-        break;
-      case ("R3m"):
+      }
+      case ("R3m") -> {
         logger.info(" Converting from R3m to H3m:");
         xtalName = "H3m";
-        break;
-      case ("R3c"):
+      }
+      case ("R3c") -> {
         logger.info(" Converting from R3c to H3c:");
         xtalName = "H3c";
-        break;
-      case ("R-3m"):
+      }
+      case ("R-3m") -> {
         logger.info(" Converting from R-3m to H-3m:");
         xtalName = "H-3m";
-        break;
-      case ("R-3c"):
+      }
+      case ("R-3c") -> {
         logger.info(" Converting from R-3c to H-3c:");
         xtalName = "H-3c";
-        break;
-      default:
-        logger.severe(format(" Unable to determine converted version for space group: %s",
-            currentSG));
+      }
+      default -> {
+        logger.severe(
+            format(" Unable to determine converted version for space group: %s", currentSG));
         return new Crystal(a, b, c, alpha, beta, gamma, currentSG.shortName);
+      }
     }
 
     // Hexagonal and Rhombohedral space groups are frequently treated synonymously, therefore check if mislabeled.
     if (hexStart) {
       //Hexagonal aH = bH, alpha = beta = 90 gamma = 120
-      if(LatticeSystem.RHOMBOHEDRAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)){
+      if (LatticeSystem.RHOMBOHEDRAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)) {
         logger.info(" Crystal already has valid lattice parameters for new space group " + xtalName);
         return new Crystal(a, b, c, alpha, beta, gamma, xtalName);
       }
@@ -167,7 +171,7 @@ public class SpaceGroupConversions {
 
       return new Crystal(aR, aR, aR, aRAlpha, aRAlpha, aRAlpha, xtalName);
     } else {
-      if(LatticeSystem.HEXAGONAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)){
+      if (LatticeSystem.HEXAGONAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)) {
         logger.info(" Crystal already has valid lattice parameters for new space group " + xtalName);
         return new Crystal(a, b, c, alpha, beta, gamma, xtalName);
       }

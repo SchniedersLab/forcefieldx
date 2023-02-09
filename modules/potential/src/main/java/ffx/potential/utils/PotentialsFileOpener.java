@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -297,8 +297,7 @@ public class PotentialsFileOpener implements FileOpener {
         assemblies.add(assembly);
         propertyList.add(properties);
 
-        if (filter instanceof PDBFilter) {
-          PDBFilter pdbFilter = (PDBFilter) filter;
+        if (filter instanceof PDBFilter pdbFilter) {
           List<Character> altLocs = pdbFilter.getAltLocs();
           if (altLocs.size() > 1 || altLocs.get(0) != ' ') {
             StringBuilder altLocString = new StringBuilder("\n Alternate locations found [ ");
@@ -332,8 +331,8 @@ public class PotentialsFileOpener implements FileOpener {
               filter.applyAtomProperties();
               newAssembly.finalize(true, assembly.getForceField());
               if (nThreads > 0) {
-                energy =
-                    ForceFieldEnergy.energyFactory(assembly, filter.getCoordRestraints(), nThreads);
+                energy = ForceFieldEnergy.energyFactory(assembly, filter.getCoordRestraints(),
+                    nThreads);
               } else {
                 energy = ForceFieldEnergy.energyFactory(assembly, filter.getCoordRestraints());
               }
@@ -362,7 +361,7 @@ public class PotentialsFileOpener implements FileOpener {
   /**
    * Setter for the field <code>nThreads</code>.
    *
-   * @param nThreads a int.
+   * @param nThreads Set the number of threads to use for energy calculations.
    */
   void setNThreads(int nThreads) {
     this.nThreads = nThreads;

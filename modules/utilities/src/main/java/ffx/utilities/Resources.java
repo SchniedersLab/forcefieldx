@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -57,7 +57,7 @@ public class Resources {
   private static final Logger logger = Logger.getLogger(Resources.class.getName());
 
   /**
-   * logResources.
+   * Log resources.
    */
   public static void logResources() {
     if (logger.isLoggable(Level.INFO)) {
@@ -70,9 +70,7 @@ public class Resources {
       long MB = 1024 * 1024;
       OperatingSystemMXBean operatingSystemMXBean = getOperatingSystemMXBean();
 
-      if (operatingSystemMXBean instanceof UnixOperatingSystemMXBean) {
-        UnixOperatingSystemMXBean unixOS = (UnixOperatingSystemMXBean) operatingSystemMXBean;
-
+      if (operatingSystemMXBean instanceof UnixOperatingSystemMXBean unixOS) {
         // CPU Time and Average System Load.
         long time = unixOS.getProcessCpuTime();
         sb.append(format("  Total CPU time:         %6.2f (sec)\n", time * 1.0e-9));
@@ -86,23 +84,20 @@ public class Resources {
         sb.append(format("  Open file handles:      %6d of %6d allowed\n", open, allowed));
 
         // System Memory.
-        long freePhysical = unixOS.getFreePhysicalMemorySize() / MB;
-        long totalPhysical = unixOS.getTotalPhysicalMemorySize() / MB;
+        long freePhysical = unixOS.getFreeMemorySize() / MB;
+        long totalPhysical = unixOS.getTotalMemorySize() / MB;
         long freeSwap = unixOS.getFreeSwapSpaceSize() / MB;
         long totalSwap = unixOS.getTotalSwapSpaceSize() / MB;
-        sb.append(
-            format(
-                "  System memory:          %6d MB free out of %6d MB\n",
-                freePhysical, totalPhysical));
+        sb.append(format("  System memory:          %6d MB free out of %6d MB\n", freePhysical,
+            totalPhysical));
         sb.append(
             format("  System swap space:      %6d MB free out of %6d MB\n", freeSwap, totalSwap));
       }
 
       // JVM Memory.
       sb.append(
-          format(
-              "  JVM memory:             %6d MB free out of %6d MB",
-              runtime.freeMemory() / MB, runtime.totalMemory() / MB));
+          format("  JVM memory:             %6d MB free out of %6d MB", runtime.freeMemory() / MB,
+              runtime.totalMemory() / MB));
 
       logger.info(sb.toString());
     }

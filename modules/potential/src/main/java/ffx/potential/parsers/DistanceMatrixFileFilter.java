@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -56,7 +56,7 @@ public final class DistanceMatrixFileFilter extends FileFilter {
   /**
    * {@inheritDoc}
    *
-   * <p>This method return <code>true</code> if the file is a directory or DistanceMatrix (*.TXT).
+   * <p>This method returns <code>true</code> if the file is a directory or DistanceMatrix (*.TXT).
    */
   @Override
   public boolean accept(File file) {

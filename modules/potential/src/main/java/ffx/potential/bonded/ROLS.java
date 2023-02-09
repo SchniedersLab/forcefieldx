@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -40,6 +40,7 @@ package ffx.potential.bonded;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import java.util.List;
+import javax.swing.tree.TreeNode;
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Canvas3D;
 import org.jogamp.java3d.J3DGraphics2D;
@@ -83,7 +84,7 @@ public interface ROLS {
    * @param <T> Node Type to collect.
    * @return a {@link java.util.List} object.
    */
-  <T> List<T> getList(Class<T> c, List<T> nodes);
+  <T extends TreeNode> List<T> getList(Class<T> c, List<T> nodes);
 
   /**
    * getMSCount
@@ -93,7 +94,7 @@ public interface ROLS {
    * @param <T> Node Type to count.
    * @return a long.
    */
-  <T> long getMSCount(Class<T> c, long count);
+  <T extends TreeNode> long getMSCount(Class<T> c, long count);
 
   /**
    * getMSNode
@@ -102,7 +103,7 @@ public interface ROLS {
    * @param <T> Node Type to look for.
    * @return The node.
    */
-  <T> T getMSNode(Class<T> c);
+  <T extends TreeNode> T getMSNode(Class<T> c);
 
   /**
    * getMW

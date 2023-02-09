@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -81,7 +81,7 @@ public class RelativeSolvation {
   }
 
   /**
-   * Gets the solvation energy (desolvation penalty) for a given residue, allowing for sequence
+   * Gets the solvation energy (de-solvation penalty) for a given residue, allowing for sequence
    * optimization to include an estimate of energy relative to the unfolded state.
    *
    * @param residue Residue to check
@@ -97,29 +97,27 @@ public class RelativeSolvation {
     Residue theRes =
         (residue instanceof MultiResidue) ? ((MultiResidue) residue).getActive() : residue;
     switch (theRes.getResidueType()) {
-      case AA:
+      case AA -> {
         if (theRes instanceof MultiResidue) {
           resName = ((MultiResidue) theRes).getActive().getName();
         } else {
           resName = theRes.getName();
         }
         energy = getAASolvationEnergy(theRes);
-        break;
-      case NA:
+      }
+      case NA -> {
         if (theRes instanceof MultiResidue) {
           resName = ((MultiResidue) theRes).getActive().getName();
         } else {
           resName = theRes.getName();
         }
         energy = getNASolvationEnergy(theRes);
-        break;
-      default:
-        energy = 0;
+      }
+      default -> energy = 0;
     }
     if (checkZeroes && energy == 0) {
       throw new IllegalArgumentException(
-          format(
-              " Zero desolvation energy for residue %s: likely not in solvation library.",
+          format(" Zero de-solvation energy for residue %s: likely not in solvation library.",
               resName));
     }
     return energy;
@@ -138,22 +136,15 @@ public class RelativeSolvation {
    * @return Solvation energy
    */
   private double getAASolvationEnergy(Residue residue) {
-    switch (solvationLibrary) {
-      case WOLFENDEN:
-        return getWolfendenSolvationEnergy(residue);
-      case CABANI:
-        return getCabaniSolvationEnergy(residue);
-      case EXPLICIT:
-        return getExplicitSolvationEnergy(residue);
-      case GK:
-        return getGKSolvationEnergy(residue);
-      case MACCALLUM_SPC:
-        return getMacCallumSPCSolvationEnergy(residue);
-      case MACCALLUM_TIP4P:
-        return getMacCallumTIP4PSolvationEnergy(residue);
-      default:
-        return 0;
-    }
+    return switch (solvationLibrary) {
+      case WOLFENDEN -> getWolfendenSolvationEnergy(residue);
+      case CABANI -> getCabaniSolvationEnergy(residue);
+      case EXPLICIT -> getExplicitSolvationEnergy(residue);
+      case GK -> getGKSolvationEnergy(residue);
+      case MACCALLUM_SPC -> getMacCallumSPCSolvationEnergy(residue);
+      case MACCALLUM_TIP4P -> getMacCallumTIP4PSolvationEnergy(residue);
+      default -> 0;
+    };
   }
 
   /**
@@ -186,64 +177,36 @@ public class RelativeSolvation {
    */
   private double getExplicitSolvationEnergy(Residue residue) {
     AminoAcid3 name = residue.getAminoAcid3();
-    switch (name) {
-      case ALA:
-        return 0.58;
-      case CYS:
-        return -0.85;
-      case CYD:
-        return -69.82;
-      case ASP:
-        return -69.45;
-      case ASH:
-        return -4.00;
-      case GLU:
-        return -71.40;
-      case GLH:
-        return -3.61;
-      case PHE:
-        return -1.59;
-      case GLY:
-        return 0.67;
-      case HIS:
-        return -45.36;
-      case HID:
-        return -8.42;
-      case HIE:
-        return -7.53;
-      case ILE:
-        return 0.14;
-      case LYS:
-        return -43.98;
-      case LYD:
-        return +0.35;
-      case MET:
-        return -3.48;
-      case ASN:
-        return -5.89;
-      case PRO:
-        return 7.82;
-      case GLN:
-        return -6.89;
-      case ARG:
-        return -42.57;
-      case SER:
-        return -2.14;
-      case THR:
-        return 0.58;
-      case VAL:
-        return 0.10;
-      case TRP:
-        return -4.64;
-      case TYR:
-        return 1.76;
-      case TYD:
-        return -41.71;
-      case UNK:
-        return nonStdEnergies.getOrDefault(residue.getName().toUpperCase(), 0.0);
-      default:
-        return 0;
-    }
+    return switch (name) {
+      case ALA -> 0.58;
+      case CYS -> -0.85;
+      case CYD -> -69.82;
+      case ASP -> -69.45;
+      case ASH -> -4.00;
+      case GLU -> -71.40;
+      case GLH -> -3.61;
+      case PHE -> -1.59;
+      case GLY -> 0.67;
+      case HIS -> -45.36;
+      case HID -> -8.42;
+      case HIE -> -7.53;
+      case ILE -> 0.14;
+      case LYS -> -43.98;
+      case LYD -> +0.35;
+      case MET -> -3.48;
+      case ASN -> -5.89;
+      case PRO -> 7.82;
+      case GLN -> -6.89;
+      case ARG -> -42.57;
+      case SER -> -2.14;
+      case THR -> 0.58;
+      case VAL -> 0.10;
+      case TRP -> -4.64;
+      case TYR -> 1.76;
+      case TYD -> -41.71;
+      case UNK -> nonStdEnergies.getOrDefault(residue.getName().toUpperCase(), 0.0);
+      default -> 0;
+    };
   }
 
   /**
@@ -255,50 +218,29 @@ public class RelativeSolvation {
    */
   private double getMacCallumTIP4PSolvationEnergy(Residue residue) {
     AminoAcid3 name = residue.getAminoAcid3();
-    switch (name) {
-      case ALA:
-        return 9.8;
-      case CYS:
-        return -0.5;
-      case ASP:
-        return -30.5;
-      case GLU:
-        return -19.0;
-      case PHE:
-        return -1.2;
-      case HIS:
-        return -28.0;
-      case ILE:
-        return 12.2;
-      case LYS:
-        return -13.6;
-      case LEU:
-        return 13.7;
-      case MET:
-        return -7.1;
-      case ASN:
-        return -34.5;
-      case GLN:
-        return -31.4;
-      case ARG:
-        return -43.9;
-      case SER:
-        return -20.2;
-      case THR:
-        return -20.3;
-      case VAL:
-        return 12.0;
-      case TRP:
-        return -16.2;
-      case TYR:
-        return -18.8;
-      case UNK:
-        return nonStdEnergies.getOrDefault(residue.getName().toUpperCase(), 0.0);
-      case GLY:
-      case PRO:
-      default:
-        return 0;
-    }
+    return switch (name) {
+      case ALA -> 9.8;
+      case CYS -> -0.5;
+      case ASP -> -30.5;
+      case GLU -> -19.0;
+      case PHE -> -1.2;
+      case HIS -> -28.0;
+      case ILE -> 12.2;
+      case LYS -> -13.6;
+      case LEU -> 13.7;
+      case MET -> -7.1;
+      case ASN -> -34.5;
+      case GLN -> -31.4;
+      case ARG -> -43.9;
+      case SER -> -20.2;
+      case THR -> -20.3;
+      case VAL -> 12.0;
+      case TRP -> -16.2;
+      case TYR -> -18.8;
+      case UNK -> nonStdEnergies.getOrDefault(residue.getName().toUpperCase(), 0.0);
+      case GLY, PRO -> 0;
+      default -> 0;
+    };
   }
 
   /**
@@ -310,50 +252,29 @@ public class RelativeSolvation {
    */
   private double getMacCallumSPCSolvationEnergy(Residue residue) {
     AminoAcid3 name = residue.getAminoAcid3();
-    switch (name) {
-      case ALA:
-        return 9.3;
-      case CYS:
-        return -1.1;
-      case ASP:
-        return -30.1;
-      case GLU:
-        return -18.8;
-      case PHE:
-        return -1.4;
-      case HIS:
-        return -27.2;
-      case ILE:
-        return 11.9;
-      case LYS:
-        return -8.6;
-      case LEU:
-        return 12.6;
-      case MET:
-        return -5.1;
-      case ASN:
-        return -34.3;
-      case GLN:
-        return -30.8;
-      case ARG:
-        return -46.3;
-      case SER:
-        return -18.5;
-      case THR:
-        return -19.3;
-      case VAL:
-        return 11.3;
-      case TRP:
-        return -15.1;
-      case TYR:
-        return -18.2;
-      case UNK:
-        return nonStdEnergies.getOrDefault(residue.getName().toUpperCase(), 0.0);
-      case GLY:
-      case PRO:
-      default:
-        return 0;
-    }
+    return switch (name) {
+      case ALA -> 9.3;
+      case CYS -> -1.1;
+      case ASP -> -30.1;
+      case GLU -> -18.8;
+      case PHE -> -1.4;
+      case HIS -> -27.2;
+      case ILE -> 11.9;
+      case LYS -> -8.6;
+      case LEU -> 12.6;
+      case MET -> -5.1;
+      case ASN -> -34.3;
+      case GLN -> -30.8;
+      case ARG -> -46.3;
+      case SER -> -18.5;
+      case THR -> -19.3;
+      case VAL -> 11.3;
+      case TRP -> -15.1;
+      case TYR -> -18.2;
+      case UNK -> nonStdEnergies.getOrDefault(residue.getName().toUpperCase(), 0.0);
+      case GLY, PRO -> 0;
+      default -> 0;
+    };
   }
 
   /**
@@ -467,27 +388,18 @@ public class RelativeSolvation {
   }
 
   /**
-   * Citations: Wolfenden et al: Wolfenden, R., Andersson, L., Cullis, P. M. and Southgate, C. C.
-   * B. (1981) AFFINITIES OF AMINO-ACID SIDE-CHAINS FOR SOLVENT WATER. Biochemistry. 20, 849-855
+   * Citations: Wolfenden et al: Wolfenden, R., Andersson, L., Cullis, P. M. and Southgate, C. C. B.
+   * (1981) AFFINITIES OF AMINO-ACID SIDE-CHAINS FOR SOLVENT WATER. Biochemistry. 20, 849-855
    *
    * <p>Cabani et al: Cabani, S., Gianni, P., Mollica, V. and Lepori, L. (1981) GROUP
    * CONTRIBUTIONS TO THE THERMODYNAMIC PROPERTIES OF NON-IONIC ORGANIC SOLUTES IN DILUTE
    * AQUEOUS-SOLUTION. Journal of Solution Chemistry. 10, 563-595
    *
    * <p>MacCallum OPLS libraries: Maccallum, J. L. and Tieleman, D. P. (2003) Calculation of the
-   * water-cyclohexane transfer free energies of neutral amino acid side-chain analogs using the
-   * OPLS all-atom force field. Journal of Computational Chemistry. 24, 1930-1935
+   * water-cyclohexane transfer free energies of neutral amino acid side-chain analogs using the OPLS
+   * all-atom force field. Journal of Computational Chemistry. 24, 1930-1935
    */
   public enum SolvationLibrary {
-    WOLFENDEN,
-    CABANI,
-    EXPLICIT,
-    GK,
-    MACCALLUM_SPC,
-    MACCALLUM_TIP4P,
-    OPLS_EXPLICIT,
-    OPLS_GK,
-    AUTO,
-    NONE
+    WOLFENDEN, CABANI, EXPLICIT, GK, MACCALLUM_SPC, MACCALLUM_TIP4P, OPLS_EXPLICIT, OPLS_GK, AUTO, NONE
   }
 }

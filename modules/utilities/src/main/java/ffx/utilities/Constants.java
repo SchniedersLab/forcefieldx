@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -41,6 +41,10 @@ import static org.apache.commons.math3.util.FastMath.PI;
 
 /**
  * Library class containing constants such as Avogadro's number.
+ * <p>
+ * SI units: kg, m, s, C, K, mol, lm
+ * <p>
+ * Our typical units: g/mol, Angstrom, psec, elementary charges (+1 proton charge), K, mol, N/A
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
@@ -48,41 +52,57 @@ import static org.apache.commons.math3.util.FastMath.PI;
  */
 public class Constants {
 
-  // SI units: kg, m, s, C, K, mol, lm
-  // Our typical units: g/mol, Angstrom, psec, elementary charges (+1 proton charge), K, mol, N/A
-  // Below constants are the seven defining constants of SI as of May 20 2019 (BIPM).
+  // The first seven constants the defining constants of SI as of May 20, 2019 (BIPM).
 
   /**
-   * Convert Hartree to kcal/mol.
-   */
-  public static final double HARTREE_TO_KCAL_PER_MOL = 627.5094738898777;
-  /**
-   * Degrees per radian.
-   */
-  public static final double DEGREES_PER_RADIAN = 180.0 / PI;
-  /**
-   * Hyperfine transition frequency of cesium in Hertz, defining the second. <code>
-   * DEL_V_Cs_SI=9192631770L</code>
+   * Hyperfine transition frequency of cesium in Hertz, defining the second.
+   * <p>
+   * <code>DEL_V_Cs_SI = 9192631770L</code>
    */
   public static final long DEL_V_Cs_SI = 9192631770L;
-  /** Speed of light in m/s, defining the meter. <code>SPEED_OF_LIGHT_SI=299792458</code> */
-  public static final int SPEED_OF_LIGHT_SI = 299792458;
+
   /**
-   * Planck constant in J*s, defining the kilogram (by defining the derived Joule) <code>
-   * PLANCK_CONSTANT_SI=6.62607015E-34d</code>
+   * Speed of light in m/s, defining the meter.
+   * <p>
+   * <code>SPEED_OF_LIGHT_SI = 299792458</code>
+   */
+  public static final int SPEED_OF_LIGHT_SI = 299792458;
+
+  /**
+   * Planck constant in J*s, defining the kilogram (by defining the derived Joule).
+   * <p>
+   * <code>PLANCK_CONSTANT_SI = 6.62607015E-34d</code>
    */
   public static final double PLANCK_CONSTANT_SI = 6.62607015E-34d;
+
   /**
-   * Elementary charge in Coulombs, defining the Coulomb. <code>
-   *  ELEMENTARY_CHARGE_SI=1.602176634E-19d</code>
+   * Elementary charge in Coulombs, defining the Coulomb.
+   * <p>
+   * <code>ELEMENTARY_CHARGE_SI = 1.602176634E-19d</code>
    */
   public static final double ELEMENTARY_CHARGE_SI = 1.602176634E-19d;
-  /** Boltzmann's constant in J/K, defining the Kelvin. <code>BOLTZMANN_SI=1.380649E-23d</code> */
+
+  /**
+   * Boltzmann's constant in J/K, defining the Kelvin.
+   * <p>
+   * <code>BOLTZMANN_SI = 1.380649E-23d</code>
+   */
   public static final double BOLTZMANN_SI = 1.380649E-23d;
-  /** Avogadro's number, defining the mol. <code>AVOGADRO=6.02214076E23d</code> */
+
+  /**
+   * Avogadro's number, defining the mol.
+   * <p>
+   * <code>AVOGADRO = 6.02214076E23d</code>
+   */
   public static final double AVOGADRO = 6.02214076E23d;
-  /** Luminous efficacy in lm/W, defining the lumen. <code>K_CD_SI=683</code> */
+
+  /**
+   * Luminous efficacy in lm/W, defining the lumen.
+   * <p>
+   * <code>K_CD_SI = 683</code>
+   */
   public static final int K_CD_SI = 683;
+
   /** Constant <code>LITERS_PER_CUBIC_ANGSTROM=1E-30</code> */
   public static final double LITERS_PER_CUBIC_ANGSTROM = 1E-30;
   /** Constant <code>ATM_TO_BAR=1.01325</code> */
@@ -126,8 +146,8 @@ public class Constants {
   /** Room temperature ~= 298.15 Kelvins. <code>ROOM_TEMPERATURE=298.15</code> */
   public static final double ROOM_TEMPERATURE = 298.15;
   /**
-   * Coulomb constant in units of kcal*Ang/(mol*electron^2), as derived from CODATA 2018
-   * permittivity of free space measured at 8.8541878128*10^-12 F/m <code>
+   * Coulomb constant in units of kcal*Ang/(mol*electron^2), as derived from CODATA 2018 permittivity
+   * of free space measured at 8.8541878128*10^-12 F/m <code>
    * ELECTRIC_CODATA_2018=332.063713299</code>
    */
   public static final double ELECTRIC_CODATA_2018 = 332.063713299;
@@ -135,13 +155,13 @@ public class Constants {
    * Coulomb constant in units of kcal*Ang/(mol*electron^2)
    *
    * <p>Note -- this value varies slightly between force field definitions and can be set using the
-   * ELECTRIC property. As such, it's not updated to SI/CODATA standards, but rather kept
-   * up-to-date with the coulomb parameter in Tinker/source/units.f. At present, the Tinker value
-   * is a truncated version of the Coulomb constant derived from CODATA 2018.<code>
+   * ELECTRIC property. As such, it's not updated to SI/CODATA standards, but rather kept up-to-date
+   * with the coulomb parameter in Tinker/source/units.f. At present, the Tinker value is a truncated
+   * version of the Coulomb constant derived from CODATA 2018.<code>
    * DEFAULT_ELECTRIC=332.063713</code>
    */
   public static final double DEFAULT_ELECTRIC = 332.063713;
-  /** Conversion from electron-Angstroms to Debyes. <code>ELEC_ANG_TO_DEBYE=4.80321</code> */
+  /** Conversion from electron-Angstroms to Debye. <code>ELEC_ANG_TO_DEBYE=4.80321</code> */
   public static final double ELEC_ANG_TO_DEBYE = 4.80321;
   /**
    * Conversion from electron-Angstroms^2 to Buckinghams. <code> ELEC_ANG2_TO_BUCKINGHAMS =
@@ -156,7 +176,16 @@ public class Constants {
   public static final double BOHR = 0.52917720859;
   /** Conversion from Bohr^2 to Angstroms^2. <code>BOHR2 = BOHR * BOHR</code> */
   public static final double BOHR2 = BOHR * BOHR;
+  /**
+   * Convert Hartree to kcal/mol.
+   */
+  public static final double HARTREE_TO_KCAL_PER_MOL = 627.5094738898777;
+  /**
+   * Degrees per radian.
+   */
+  public static final double DEGREES_PER_RADIAN = 180.0 / PI;
 
   // Library class: make the default constructor private to ensure it's never constructed.
-  private Constants() {}
+  private Constants() {
+  }
 }

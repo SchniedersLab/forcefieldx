@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -58,8 +58,8 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "strbnd", clazz = String.class, keywordGroup = PotentialFunctionParameter,
-    description = "[3 integers and 2 reals] "
+@FFXKeyword(name = "strbnd", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
+    "[3 integers and 2 reals] "
         + "Provides the values for a single stretch-bend cross term potential parameter. "
         + "The integer modifiers give the atom class numbers for the three kinds of atoms involved in the angle which is to be defined. "
         + "The real number modifiers give the force constant values for the first bond (first two atom classes) with the angle, and the second bond with the angle, respectively. "
@@ -69,10 +69,9 @@ public final class StretchBendType extends BaseType implements Comparator<String
   /** Constant <code>units=PI / 180.0</code> */
   public static final double DEFAULT_STRBND_UNIT = PI / 180.0;
 
-  @FFXKeyword(name = "strbndunit", keywordGroup = EnergyUnitConversion, defaultValue = "(Pi/180)",
-      description =
-          "Sets the scale factor needed to convert the energy value computed by the bond stretching-angle bending cross term potential into units of kcal/mole. "
-              + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  @FFXKeyword(name = "strbndunit", keywordGroup = EnergyUnitConversion, defaultValue = "(Pi/180)", description =
+      "Sets the scale factor needed to convert the energy value computed by the bond stretching-angle bending cross term potential into units of kcal/mole. "
+          + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
   public double strbndunit = DEFAULT_STRBND_UNIT;
 
   private static final Logger logger = Logger.getLogger(StretchBendType.class.getName());
@@ -110,8 +109,8 @@ public final class StretchBendType extends BaseType implements Comparator<String
    * @param atomClasses an array of {@link int} objects.
    * @return a {@link ffx.potential.parameters.StretchBendType} object.
    */
-  public static StretchBendType average(
-      StretchBendType stretchBendType1, StretchBendType stretchBendType2, int[] atomClasses) {
+  public static StretchBendType average(StretchBendType stretchBendType1,
+      StretchBendType stretchBendType2, int[] atomClasses) {
     if (stretchBendType1 == null || stretchBendType2 == null || atomClasses == null) {
       return null;
     }
@@ -220,9 +219,9 @@ public final class StretchBendType extends BaseType implements Comparator<String
   }
 
   /**
-   * incrementClasses
+   * Increment the atom classes by a given value.
    *
-   * @param increment a int.
+   * @param increment The increment to apply to the atom classes.
    */
   public void incrementClasses(int increment) {
     for (int i = 0; i < atomClasses.length; i++) {
@@ -274,8 +273,7 @@ public final class StretchBendType extends BaseType implements Comparator<String
    */
   @Override
   public String toString() {
-    return String.format(
-        "strbnd  %5d  %5d  %5d  %6.2f  %6.2f",
-        atomClasses[0], atomClasses[1], atomClasses[2], forceConstants[0], forceConstants[1]);
+    return String.format("strbnd  %5d  %5d  %5d  %6.2f  %6.2f", atomClasses[0], atomClasses[1],
+        atomClasses[2], forceConstants[0], forceConstants[1]);
   }
 }

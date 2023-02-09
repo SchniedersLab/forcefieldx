@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -51,9 +51,9 @@ import org.jogamp.java3d.BranchGroup;
 public class Joint extends MSNode {
 
   /** First group forming this Joint */
-  private MSGroup group1;
+  private final MSGroup group1;
   /** Second group forming this Joint */
-  private MSGroup group2;
+  private final MSGroup group2;
 
   /** Default Constructor */
   public Joint() {
@@ -82,25 +82,17 @@ public class Joint extends MSNode {
    * @param ureyBradleyNode a {@link ffx.potential.bonded.MSNode} object.
    * @param outOfPlaneNode a {@link ffx.potential.bonded.MSNode} object.
    * @param torsionNode a {@link ffx.potential.bonded.MSNode} object.
+   * @param improperTorsionNode a {@link ffx.potential.bonded.MSNode} object.
    * @param stretchTorsionNode a {@link ffx.potential.bonded.MSNode} object.
    * @param angleTorsionNode a {@link ffx.potential.bonded.MSNode} object.
    * @param piOrbitalTorsionNode a {@link ffx.potential.bonded.MSNode} object.
    * @param torsionTorsionNode a {@link ffx.potential.bonded.MSNode} object.
    */
-  public Joint(
-      MSGroup group1,
-      MSGroup group2,
-      MSNode bondNode,
-      MSNode angleNode,
-      MSNode stretchBendNode,
-      MSNode ureyBradleyNode,
-      MSNode outOfPlaneNode,
-      MSNode torsionNode,
-      MSNode stretchTorsionNode,
-      MSNode angleTorsionNode,
-      MSNode piOrbitalTorsionNode,
-      MSNode torsionTorsionNode) {
-    super(group1.toString() + "  " + group2.toString());
+  public Joint(MSGroup group1, MSGroup group2, MSNode bondNode, MSNode angleNode,
+      MSNode stretchBendNode, MSNode ureyBradleyNode, MSNode outOfPlaneNode, MSNode torsionNode,
+      MSNode improperTorsionNode, MSNode stretchTorsionNode, MSNode angleTorsionNode,
+      MSNode piOrbitalTorsionNode, MSNode torsionTorsionNode) {
+    super(group1 + "  " + group2);
     this.group1 = group1;
     this.group2 = group2;
     if (bondNode != null && bondNode.getChildCount() != 0) {
@@ -121,6 +113,9 @@ public class Joint extends MSNode {
     if (torsionNode != null && torsionNode.getChildCount() != 0) {
       add(torsionNode);
     }
+    if (improperTorsionNode != null && improperTorsionNode.getChildCount() != 0) {
+      add(improperTorsionNode);
+    }
     if (stretchTorsionNode != null && stretchTorsionNode.getChildCount() != 0) {
       add(stretchTorsionNode);
     }
@@ -133,178 +128,8 @@ public class Joint extends MSNode {
     if (torsionTorsionNode != null && torsionTorsionNode.getChildCount() != 0) {
       add(torsionTorsionNode);
     }
-    refresh(null, null, null, null, null, null, null, null, null, null);
-  }
-
-  /**
-   * assignReferences.
-   *
-   * @param atom a {@link ffx.potential.bonded.Atom} object.
-   */
-  public void assignReferences(Atom atom) {
-    assignBonds(atom);
-    assignAngles(atom);
-    assignTorsions(atom);
-  }
-
-  /**
-   * getAngleTorsions
-   *
-   * @return a {@link ffx.potential.bonded.MSNode} object.
-   */
-  public MSNode getAngleTorsions() {
-    for (Enumeration e = children(); e.hasMoreElements(); ) {
-      MSNode m = (MSNode) e.nextElement();
-      TreeNode node = m.getChildAt(0);
-      if (node instanceof AngleTorsion) {
-        return m;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * getAngles
-   *
-   * @return a {@link ffx.potential.bonded.MSNode} object.
-   */
-  public MSNode getAngles() {
-    for (Enumeration e = children(); e.hasMoreElements(); ) {
-      MSNode m = (MSNode) e.nextElement();
-      TreeNode node = m.getChildAt(0);
-      if (node instanceof Angle) {
-        return m;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * getBonds
-   *
-   * @return a {@link ffx.potential.bonded.MSNode} object.
-   */
-  public MSNode getBonds() {
-    for (Enumeration e = children(); e.hasMoreElements(); ) {
-      MSNode m = (MSNode) e.nextElement();
-      TreeNode node = m.getChildAt(0);
-      if (node instanceof Bond) {
-        return m;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * getOutOfPlaneBends
-   *
-   * @return a {@link ffx.potential.bonded.MSNode} object.
-   */
-  public MSNode getOutOfPlaneBends() {
-    for (Enumeration e = children(); e.hasMoreElements(); ) {
-      MSNode m = (MSNode) e.nextElement();
-      TreeNode node = m.getChildAt(0);
-      if (node instanceof OutOfPlaneBend) {
-        return m;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * getPiOrbitalTorsions
-   *
-   * @return a {@link ffx.potential.bonded.MSNode} object.
-   */
-  public MSNode getPiOrbitalTorsions() {
-    for (Enumeration e = children(); e.hasMoreElements(); ) {
-      MSNode m = (MSNode) e.nextElement();
-      TreeNode node = m.getChildAt(0);
-      if (node instanceof PiOrbitalTorsion) {
-        return m;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * getStretchBends
-   *
-   * @return a {@link ffx.potential.bonded.MSNode} object.
-   */
-  public MSNode getStretchBends() {
-    for (Enumeration e = children(); e.hasMoreElements(); ) {
-      MSNode m = (MSNode) e.nextElement();
-      TreeNode node = m.getChildAt(0);
-      if (node instanceof StretchBend) {
-        return m;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * getStretchTorsions
-   *
-   * @return a {@link ffx.potential.bonded.MSNode} object.
-   */
-  public MSNode getStretchTorsions() {
-    for (Enumeration e = children(); e.hasMoreElements(); ) {
-      MSNode m = (MSNode) e.nextElement();
-      TreeNode node = m.getChildAt(0);
-      if (node instanceof StretchTorsion) {
-        return m;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * getTorsionTorsions
-   *
-   * @return a {@link ffx.potential.bonded.MSNode} object.
-   */
-  public MSNode getTorsionTorsions() {
-    for (Enumeration e = children(); e.hasMoreElements(); ) {
-      MSNode m = (MSNode) e.nextElement();
-      TreeNode node = m.getChildAt(0);
-      if (node instanceof TorsionTorsion) {
-        return m;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * getTorsions
-   *
-   * @return a {@link ffx.potential.bonded.MSNode} object.
-   */
-  public MSNode getTorsions() {
-    for (Enumeration e = children(); e.hasMoreElements(); ) {
-      MSNode m = (MSNode) e.nextElement();
-      TreeNode node = m.getChildAt(0);
-      if (node instanceof Torsion) {
-        return m;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * getUreyBradleys
-   *
-   * @return a {@link ffx.potential.bonded.MSNode} object.
-   */
-  public MSNode getUreyBradleys() {
-    for (Enumeration e = children(); e.hasMoreElements(); ) {
-      MSNode m = (MSNode) e.nextElement();
-      TreeNode node = m.getChildAt(0);
-      if (node instanceof UreyBradley) {
-        return m;
-      }
-    }
-    return null;
+    refresh(null, null, null, null, null,
+        null, null, null, null, null, null);
   }
 
   /**
@@ -317,17 +142,11 @@ public class Joint extends MSNode {
         || (group2 == j.group1 && group1 == j.group2))) {
       return;
     }
-    refresh(
-        j.getBonds(),
-        j.getAngles(),
-        j.getStretchBends(),
-        j.getUreyBradleys(),
-        j.getOutOfPlaneBends(),
-        j.getTorsions(),
-        j.getStretchTorsions(),
-        j.getAngleTorsions(),
-        j.getPiOrbitalTorsions(),
-        j.getTorsionTorsions());
+    refresh(j.getNode(Bond.class), j.getNode(Angle.class), j.getNode(StretchBend.class),
+        j.getNode(UreyBradley.class), j.getNode(OutOfPlaneBend.class), j.getNode(Torsion.class),
+        j.getNode(ImproperTorsion.class), j.getNode(StretchTorsion.class),
+        j.getNode(AngleTorsion.class), j.getNode(PiOrbitalTorsion.class),
+        j.getNode(TorsionTorsion.class));
   }
 
   /**
@@ -336,11 +155,11 @@ public class Joint extends MSNode {
    * @param newColorModel a {@link ffx.potential.bonded.RendererCache.ColorModel} object.
    */
   public void setColor(RendererCache.ColorModel newColorModel) {
-    MSNode bonds = getBonds();
+    MSNode bonds = getNode(Bond.class);
     if (bonds == null) {
       return;
     }
-    for (Enumeration e = bonds.children(); e.hasMoreElements(); ) {
+    for (Enumeration<TreeNode> e = bonds.children(); e.hasMoreElements(); ) {
       Bond b = (Bond) e.nextElement();
       b.setColor(b.getAtom(0));
       b.setColor(b.getAtom(1));
@@ -350,11 +169,11 @@ public class Joint extends MSNode {
   /** {@inheritDoc} */
   @Override
   public void setView(RendererCache.ViewModel newViewModel, List<BranchGroup> newShapes) {
-    MSNode bonds = getBonds();
+    MSNode bonds = getNode(Bond.class);
     if (bonds == null) {
       return;
     }
-    for (Enumeration e = bonds.children(); e.hasMoreElements(); ) {
+    for (Enumeration<TreeNode> e = bonds.children(); e.hasMoreElements(); ) {
       Bond b = (Bond) e.nextElement();
       b.setView(newViewModel, newShapes);
     }
@@ -363,113 +182,77 @@ public class Joint extends MSNode {
   /**
    * {@inheritDoc}
    *
-   * <p>Overidden toString method returns: "Joint: m1 Name - m2 Name"
+   * <p>Overridden toString method returns: "Joint: m1 Name - m2 Name"
    */
   @Override
   public String toString() {
     return getName();
   }
 
-  private void refresh(
-      MSNode bonds,
-      MSNode angles,
-      MSNode stretchBends,
-      MSNode ureyBradleys,
-      MSNode outOfPlaneBends,
-      MSNode torsions,
-      MSNode stretchTorsions,
-      MSNode angleTorsions,
-      MSNode piOrbitalTorsions,
-      MSNode torsionTorsions) {
-    for (Enumeration e = children(); e.hasMoreElements(); ) {
+  /**
+   * Refresh the Joint.
+   *
+   * @param bonds Bond node.
+   * @param angles Angle node.
+   * @param stretchBends StretchBend node.
+   * @param ureyBradleys UreyBradley node.
+   * @param outOfPlaneBends OutOfPlaneBend node.
+   * @param torsions Torsion node.
+   * @param improperTorsions ImproperTorsion node.
+   * @param stretchTorsions StretchTorsion node.
+   * @param angleTorsions AngleTorsion node.
+   * @param piOrbitalTorsions PiOrbitalTorsion node.
+   * @param torsionTorsions TorsionTorsion node.
+   */
+  private void refresh(MSNode bonds, MSNode angles, MSNode stretchBends, MSNode ureyBradleys,
+      MSNode outOfPlaneBends, MSNode torsions, MSNode improperTorsions, MSNode stretchTorsions,
+      MSNode angleTorsions, MSNode piOrbitalTorsions, MSNode torsionTorsions) {
+
+    // Loop over all children of the Joint.
+    for (Enumeration<TreeNode> e = children(); e.hasMoreElements(); ) {
       MSNode jointChild = (MSNode) e.nextElement();
       if (jointChild.getChildCount() == 0) {
         jointChild.removeFromParent();
         continue;
       }
       MSNode node = (MSNode) jointChild.getChildAt(0);
+
       if (node instanceof Bond) {
-        jointChild.setName("Bonds (" + jointChild.getChildCount() + ")");
-        if (bonds != null) {
-          for (MSNode bond : bonds.getChildList()) {
-            jointChild.add(bond);
-          }
-        }
+        addAll("Bonds", jointChild, bonds);
         bonds = null;
       } else if (node instanceof Angle) {
-        jointChild.setName("Angles (" + jointChild.getChildCount() + ")");
-        if (angles != null) {
-          for (MSNode angle : angles.getChildList()) {
-            jointChild.add(angle);
-          }
-        }
+        addAll("Angles", jointChild, angles);
         angles = null;
       } else if (node instanceof StretchBend) {
-        jointChild.setName("Stretch-Bends (" + jointChild.getChildCount() + ")");
-        if (stretchBends != null) {
-          for (MSNode sb : stretchBends.getChildList()) {
-            jointChild.add(sb);
-          }
-        }
+        addAll("Stretch-Bends", jointChild, stretchBends);
         stretchBends = null;
       } else if (node instanceof UreyBradley) {
-        jointChild.setName("Urey-Bradleys (" + jointChild.getChildCount() + ")");
-        if (ureyBradleys != null) {
-          for (MSNode ureyBradley : ureyBradleys.getChildList()) {
-            jointChild.add(ureyBradley);
-          }
-        }
+        addAll("Urey-Bradleys", jointChild, ureyBradleys);
         ureyBradleys = null;
       } else if (node instanceof OutOfPlaneBend) {
-        jointChild.setName("Out-of-Plane Bends (" + jointChild.getChildCount() + ")");
-        if (outOfPlaneBends != null) {
-          for (MSNode outOfPlaneBend : outOfPlaneBends.getChildList()) {
-            jointChild.add(outOfPlaneBend);
-          }
-        }
+        addAll("Out-of-Plane Bends", jointChild, outOfPlaneBends);
         outOfPlaneBends = null;
       } else if (node instanceof Torsion) {
-        jointChild.setName("Torsional Angles (" + jointChild.getChildCount() + ")");
-        if (torsions != null) {
-          for (MSNode torsion : torsions.getChildList()) {
-            jointChild.add(torsion);
-          }
-        }
+        addAll("Torsional Angles", jointChild, torsions);
         torsions = null;
+      } else if (node instanceof ImproperTorsion) {
+        addAll("Improper Torsions", jointChild, improperTorsions);
+        improperTorsions = null;
       } else if (node instanceof StretchTorsion) {
-        jointChild.setName("Stretch-Torsions (" + jointChild.getChildCount() + ")");
-        if (torsions != null) {
-          for (MSNode stretchTorsion : stretchTorsions.getChildList()) {
-            jointChild.add(stretchTorsion);
-          }
-        }
+        addAll("Stretch-Torsions", jointChild, stretchTorsions);
         stretchTorsions = null;
       } else if (node instanceof AngleTorsion) {
-        jointChild.setName("Angle-Torsions (" + jointChild.getChildCount() + ")");
-        if (torsions != null) {
-          for (MSNode angleTorsion : angleTorsions.getChildList()) {
-            jointChild.add(angleTorsion);
-          }
-        }
+        addAll("Angle-Torsions", jointChild, angleTorsions);
         angleTorsions = null;
       } else if (node instanceof PiOrbitalTorsion) {
-        jointChild.setName("Pi-Orbital Torsions (" + jointChild.getChildCount() + ")");
-        if (piOrbitalTorsions != null) {
-          for (MSNode piOrbitalTorsion : piOrbitalTorsions.getChildList()) {
-            jointChild.add(piOrbitalTorsion);
-          }
-        }
-        torsions = null;
+        addAll("Pi-Orbital Torsions", jointChild, piOrbitalTorsions);
+        piOrbitalTorsions = null;
       } else if (node instanceof TorsionTorsion) {
-        jointChild.setName("Torsion-Torsions (" + jointChild.getChildCount() + ")");
-        if (torsionTorsions != null) {
-          for (MSNode torsionTorsion : torsionTorsions.getChildList()) {
-            jointChild.add(torsionTorsion);
-          }
-        }
+        addAll("Torsion-Torsions", jointChild, torsionTorsions);
         torsionTorsions = null;
       }
     }
+
     if (bonds != null) {
       add(bonds);
     }
@@ -488,6 +271,9 @@ public class Joint extends MSNode {
     if (torsions != null) {
       add(torsions);
     }
+    if (improperTorsions != null) {
+      add(improperTorsions);
+    }
     if (stretchTorsions != null) {
       add(stretchTorsions);
     }
@@ -503,44 +289,37 @@ public class Joint extends MSNode {
   }
 
   /**
-   * assignBonds.
+   * Add all the children of the node to the parent.
    *
-   * @param atom a {@link ffx.potential.bonded.Atom} object.
+   * @param name Name of the parent.
+   * @param parent Parent node.
+   * @param node Node to add.
    */
-  private void assignBonds(Atom atom) {
-    for (ROLS bond : getBondList()) {
-      Bond b = (Bond) bond;
-      if (b.containsAtom(atom)) {
-        atom.setBond(b);
-      }
+  private void addAll(String name, MSNode parent, MSNode node) {
+    if (node == null) {
+      return;
     }
+    for (MSNode bond : node.getChildList()) {
+      parent.add(bond);
+    }
+    parent.setName(name + " (" + parent.getChildCount() + ")");
   }
 
   /**
-   * assignAngles.
+   * Get the Joint node for the specified class.
    *
-   * @param atom a {@link ffx.potential.bonded.Atom} object.
+   * @param clazz The class of the bonded term to search for.
+   * @return The Joint node for the specified class.
    */
-  private void assignAngles(Atom atom) {
-    for (ROLS angle : getAngleList()) {
-      Angle a = (Angle) angle;
-      if (a.containsAtom(atom)) {
-        atom.setAngle(a);
+  private MSNode getNode(Class<? extends BondedTerm> clazz) {
+    for (Enumeration<TreeNode> e = children(); e.hasMoreElements(); ) {
+      MSNode m = (MSNode) e.nextElement();
+      TreeNode node = m.getChildAt(0);
+      if (node.getClass().equals(clazz)) {
+        return m;
       }
     }
+    return null;
   }
 
-  /**
-   * assignTorsions.
-   *
-   * @param atom a {@link ffx.potential.bonded.Atom} object.
-   */
-  private void assignTorsions(Atom atom) {
-    for (ROLS torsion : getTorsionList()) {
-      Torsion t = (Torsion) torsion;
-      if (t.containsAtom(atom)) {
-        atom.setTorsion(t);
-      }
-    }
-  }
 }

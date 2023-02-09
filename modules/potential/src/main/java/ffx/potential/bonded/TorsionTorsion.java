@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -75,8 +75,7 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
       {0.0, 0.0, 0.0, 0.0, 0.0, 1.0, -2.0, 1.0, 0.0, -2.0, 4.0, -2.0, 0.0, 1.0, -2.0, 1.0},
       {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 2.0, -1.0, 0.0, 1.0, -2.0, 1.0},
       {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, -1.0, 0.0, 0.0, -1.0, 1.0},
-      {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 2.0, -2.0, 0.0, 0.0, -1.0, 1.0}
-  };
+      {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0, 2.0, -2.0, 0.0, 0.0, -1.0, 1.0}};
   /** The two torsions that are coupled. */
   public final Torsion[] torsions = new Torsion[2];
   /** The force field Torsion-Torsion type in use. */
@@ -135,8 +134,8 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
    * @param forceField the ForceField parameters to apply.
    * @return the new TorsionTorsion, or null.
    */
-  public static TorsionTorsion torsionTorsionFactory(
-      Bond firstBond, Angle angle, Bond lastBond, ForceField forceField) {
+  public static TorsionTorsion torsionTorsionFactory(Bond firstBond, Angle angle, Bond lastBond,
+      ForceField forceField) {
     int[] c5 = new int[5];
     Atom atom1 = angle.atoms[0];
     Atom atom3 = angle.atoms[2];
@@ -161,8 +160,8 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
     return torsionTorsion;
   }
 
-  private static void bcucof(
-      double t1, double t2, double[] e, double[] dx, double[] dy, double[] dxy, double[][] c) {
+  private static void bcucof(double t1, double t2, double[] e, double[] dx, double[] dy,
+      double[] dxy, double[][] c) {
 
     var x16 = new double[16];
     var cl = new double[16];
@@ -200,8 +199,8 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
    * <p>Evaluate the Torsion-Torsion energy.
    */
   @Override
-  public double energy(
-      boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad,
+      AtomicDoubleArray3D lambdaGrad) {
     energy = 0.0;
     value = 0.0;
     dEdL = 0.0;
@@ -456,30 +455,21 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
 
   /** Log details for this Torsion-Torsion energy term. */
   public void log() {
-    logger.info(
-        String.format(
-            " %s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f",
-            "Torsional-Torsion",
-            atoms[0].getIndex(),
-            atoms[0].getAtomType().name,
-            atoms[1].getIndex(),
-            atoms[1].getAtomType().name,
-            atoms[2].getIndex(),
-            atoms[2].getAtomType().name,
-            atoms[3].getIndex(),
-            atoms[3].getAtomType().name,
-            energy));
+    logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f", "Torsional-Torsion",
+        atoms[0].getIndex(), atoms[0].getAtomType().name, atoms[1].getIndex(),
+        atoms[1].getAtomType().name, atoms[2].getIndex(), atoms[2].getAtomType().name,
+        atoms[3].getIndex(), atoms[3].getAtomType().name, energy));
   }
 
   /**
    * {@inheritDoc}
    *
-   * <p>Overidden toString Method returns the Term's id.
+   * <p>Overridden toString Method returns the Term's id.
    */
   @Override
   public String toString() {
-    return String.format(
-        "%s  (%7.2f,%7.2f,%7.2f)", id, torsions[0].value, torsions[1].value, energy);
+    return String.format("%s  (%7.2f,%7.2f,%7.2f)", id, torsions[0].value, torsions[1].value,
+        energy);
   }
 
   /**
@@ -543,10 +533,9 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
         sub(ad, a2, vc0);
         sub(a1, a2, vc1);
         sub(a3, a2, vc2);
-        double volume =
-            vc0[0] * (vc1[1] * vc2[2] - vc1[2] * vc2[1])
-                + vc1[0] * (vc2[1] * vc0[2] - vc2[2] * vc0[1])
-                + vc2[0] * (vc0[1] * vc1[2] - vc0[2] * vc1[1]);
+        double volume = vc0[0] * (vc1[1] * vc2[2] - vc1[2] * vc2[1])
+            + vc1[0] * (vc2[1] * vc0[2] - vc2[2] * vc0[1]) + vc2[0] * (vc0[1] * vc1[2]
+            - vc0[2] * vc1[1]);
         if (volume < 0.0) {
           return -1.0;
         }
@@ -570,17 +559,8 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
    * @param dxy an array of {@link double} objects.
    * @return a double.
    */
-  private double bcuint(
-      double x1l,
-      double x1u,
-      double y1l,
-      double y1u,
-      double t1,
-      double t2,
-      double[] e,
-      double[] dx,
-      double[] dy,
-      double[] dxy) {
+  private double bcuint(double x1l, double x1u, double y1l, double y1u, double t1, double t2,
+      double[] e, double[] dx, double[] dy, double[] dxy) {
 
     var c = new double[4][4];
     var deltax = x1u - x1l;
@@ -611,18 +591,8 @@ public class TorsionTorsion extends BondedTerm implements LambdaInterface {
    * @param ansy an array of {@link double} objects.
    * @return a double.
    */
-  private double bcuint1(
-      double x1l,
-      double x1u,
-      double y1l,
-      double y1u,
-      double t1,
-      double t2,
-      double[] e,
-      double[] dx,
-      double[] dy,
-      double[] dxy,
-      double[] ansy) {
+  private double bcuint1(double x1l, double x1u, double y1l, double y1u, double t1, double t2,
+      double[] e, double[] dx, double[] dy, double[] dxy, double[] ansy) {
 
     var c = new double[4][4];
     var deltax = x1u - x1l;

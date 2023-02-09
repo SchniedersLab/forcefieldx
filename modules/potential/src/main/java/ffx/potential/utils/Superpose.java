@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -93,7 +93,7 @@ public class Superpose {
    */
   private final int rank;
   /**
-   * The distances matrix stores a single RSMD value from each process. The array is of size
+   * The distances matrix stores a single RMSD value from each process. The array is of size
    * [numProc][1].
    */
   private final double[][] distances;
@@ -147,7 +147,7 @@ public class Superpose {
       buffers[i] = DoubleBuf.buffer(distances[i]);
     }
 
-    // Reference to each processors individual task (for convenience).
+    // Reference to each processor's individual task (for convenience).
     myDistance = distances[rank];
     myBuffer = buffers[rank];
   }

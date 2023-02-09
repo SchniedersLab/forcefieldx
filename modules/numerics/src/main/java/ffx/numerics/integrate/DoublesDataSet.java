@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -42,7 +42,7 @@ import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 
 /**
- * Descibes a set of x, f(x) obtained by some mechanism; intended for numerical integration.
+ * Describes a set of x, f(x) obtained by some mechanism; intended for numerical integration.
  *
  * @author Jacob M. Litman
  */
@@ -194,7 +194,7 @@ public class DoublesDataSet implements DataSet {
   /**
    * Used to check that the passed-in x array is composed of equally-spaced points from lb to ub.
    *
-   * @param x
+   * @param x The array to check.
    */
   private void assertXIntegrity(double[] x) {
     assert ub > lb;

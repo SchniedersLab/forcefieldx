@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -92,7 +92,7 @@ public class OutOfPlaneBend extends BondedTerm {
   }
 
   /**
-   * Get the triognal atom of this out-of-plane bend (central atom of the Angle).
+   * Get the trigonal atom of this out-of-plane bend (central atom of the Angle).
    *
    * @return Fourth atom.
    */
@@ -133,8 +133,8 @@ public class OutOfPlaneBend extends BondedTerm {
       Atom[] atoms = angle.atoms;
 
       OutOfPlaneBendType outOfPlaneBendType = forceField.getOutOfPlaneBendType(
-          fourthAtom.getAtomType(),
-          atoms[0].getAtomType(), atoms[1].getAtomType(), atoms[2].getAtomType());
+          fourthAtom.getAtomType(), atoms[0].getAtomType(), atoms[1].getAtomType(),
+          atoms[2].getAtomType());
 
       if (outOfPlaneBendType != null) {
         if (angle.getAngleMode() == IN_PLANE) {
@@ -179,8 +179,8 @@ public class OutOfPlaneBend extends BondedTerm {
    * <p>Evaluate this Out-of-Plane Bend energy.
    */
   @Override
-  public double energy(
-      boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad,
+      AtomicDoubleArray3D lambdaGrad) {
     energy = 0.0;
     value = 0.0;
     var atomA = atoms[0];
@@ -212,17 +212,13 @@ public class OutOfPlaneBend extends BondedTerm {
       var dv3 = dv2 * dv;
       var dv4 = dv2 * dv2;
       energy = outOfPlaneBendType.opBendUnit * outOfPlaneBendType.forceConstant * dv2 * (1.0
-          + outOfPlaneBendType.cubic * dv
-          + outOfPlaneBendType.quartic * dv2
-          + outOfPlaneBendType.pentic * dv3
-          + outOfPlaneBendType.sextic * dv4);
+          + outOfPlaneBendType.cubic * dv + outOfPlaneBendType.quartic * dv2
+          + outOfPlaneBendType.pentic * dv3 + outOfPlaneBendType.sextic * dv4);
       if (gradient) {
-        var deddt = outOfPlaneBendType.opBendUnit * outOfPlaneBendType.forceConstant * dv *
-            toDegrees(2.0
-                + 3.0 * outOfPlaneBendType.cubic * dv
-                + 4.0 * outOfPlaneBendType.quartic * dv2
-                + 5.0 * outOfPlaneBendType.pentic * dv3
-                + 6.0 * outOfPlaneBendType.sextic * dv4);
+        var deddt =
+            outOfPlaneBendType.opBendUnit * outOfPlaneBendType.forceConstant * dv * toDegrees(
+                2.0 + 3.0 * outOfPlaneBendType.cubic * dv + 4.0 * outOfPlaneBendType.quartic * dv2
+                    + 5.0 * outOfPlaneBendType.pentic * dv3 + 6.0 * outOfPlaneBendType.sextic * dv4);
         var dedcos = 0.0;
         if (ee != 0.0) {
           dedcos = -deddt * signum(ee) / sqrt(cc * bkk2);
@@ -265,14 +261,8 @@ public class OutOfPlaneBend extends BondedTerm {
   /** Log details for this Out-of-Plane Bend energy term. */
   public void log() {
     logger.info(
-        String.format(
-            " %s %6d-%s %6d-%s %6.4f %10.4f",
-            "Out-of-Plane Bend",
-            atoms[1].getIndex(),
-            atoms[1].getAtomType().name,
-            atoms[3].getIndex(),
-            atoms[3].getAtomType().name,
-            value,
+        String.format(" %s %6d-%s %6d-%s %6.4f %10.4f", "Out-of-Plane Bend", atoms[1].getIndex(),
+            atoms[1].getAtomType().name, atoms[3].getIndex(), atoms[3].getAtomType().name, value,
             energy));
   }
 

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -72,6 +72,8 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.SoluteType;
 import ffx.potential.parameters.SoluteType.SOLUTE_RADII_TYPE;
 import ffx.utilities.FFXKeyword;
+
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -234,15 +236,6 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * 0.69 New default overlap scale factor set during implicit solvent model optimization: 0.72
    */
   private static final double DEFAULT_HCT_SCALE = 0.72;
-  /**
-   * Default overlap element specific scale factors for the Hawkins, Cramer & Truhlar pairwise
-   * descreening algorithm.
-   */
-  private static final double DEFAULT_HCT_C = 0.6950;
-  private static final double DEFAULT_HCT_N = 0.7673;
-  private static final double DEFAULT_HCT_O = 0.7965;
-  private static final double DEFAULT_HCT_P = 0.6117;
-  private static final double DEFAULT_HCT_S = 0.7204;
 
   /**
    * Base overlap HCT overlap scale factor.
@@ -337,21 +330,21 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * The coefficient beta0 for tanh rescaling of descreening integrals.
    */
-  @FFXKeyword(name = "tanh-beta0", keywordGroup = ImplicitSolvent, defaultValue = "0.770",
+  @FFXKeyword(name = "tanh-beta0", keywordGroup = ImplicitSolvent, defaultValue = "0.9563",
       description = "The coefficient beta0 for tanh rescaling of descreening integrals.")
   private double beta0;
 
   /**
    * The coefficient beta1 for tanh rescaling of descreening integrals.
    */
-  @FFXKeyword(name = "tanh-beta1", keywordGroup = ImplicitSolvent, defaultValue = "0.280",
+  @FFXKeyword(name = "tanh-beta1", keywordGroup = ImplicitSolvent, defaultValue = "0.2578",
       description = "The coefficient beta1 for tanh rescaling of descreening integrals.")
   private double beta1;
 
   /**
    * The coefficient beta2 for tanh rescaling of descreening integrals.
    */
-  @FFXKeyword(name = "tanh-beta2", keywordGroup = ImplicitSolvent, defaultValue = "0.112",
+  @FFXKeyword(name = "tanh-beta2", keywordGroup = ImplicitSolvent, defaultValue = "0.0810",
       description = "The coefficient beta2 for tanh rescaling of descreening integrals.")
   private double beta2;
 
@@ -659,18 +652,43 @@ public class GeneralizedKirkwood implements LambdaInterface {
     beta0 = forceField.getDouble("TANH_BETA0", b0);
     beta1 = forceField.getDouble("TANH_BETA1", b1);
     beta2 = forceField.getDouble("TANH_BETA2", b2);
+    
     BornTanhRescaling.setBeta0(beta0);
     BornTanhRescaling.setBeta1(beta1);
     BornTanhRescaling.setBeta2(beta2);
 
+    // Default overlap element specific scale factors for the Hawkins, Cramer & Truhlar pairwise descreening algorithm.
+    HashMap<Integer, Double> DEFAULT_HCT_ELEMENTS = new HashMap<>();
+    // Fit default values from Corrigan et. al. interstitial spaces work
+    DEFAULT_HCT_ELEMENTS.put(1,0.7200);
+    DEFAULT_HCT_ELEMENTS.put(6,0.6950);
+    DEFAULT_HCT_ELEMENTS.put(7,0.7673);
+    DEFAULT_HCT_ELEMENTS.put(8,0.7965);
+    DEFAULT_HCT_ELEMENTS.put(15,0.6117);
+    DEFAULT_HCT_ELEMENTS.put(16,0.7204);
+
     // Add default values for all elements
     elementHCTScaleFactors = new HashMap<>();
-    elementHCTScaleFactors.put(1, forceField.getDouble("HCT_H", DEFAULT_HCT_SCALE));
-    elementHCTScaleFactors.put(6, forceField.getDouble("HCT_C", DEFAULT_HCT_C));
-    elementHCTScaleFactors.put(7, forceField.getDouble("HCT_N", DEFAULT_HCT_N));
-    elementHCTScaleFactors.put(8, forceField.getDouble("HCT_O", DEFAULT_HCT_O));
-    elementHCTScaleFactors.put(15, forceField.getDouble("HCT_P", DEFAULT_HCT_P));
-    elementHCTScaleFactors.put(16, forceField.getDouble("HCT_S", DEFAULT_HCT_S));
+    elementHCTScaleFactors.put(1, DEFAULT_HCT_ELEMENTS.get(1));
+    elementHCTScaleFactors.put(6, DEFAULT_HCT_ELEMENTS.get(6));
+    elementHCTScaleFactors.put(7, DEFAULT_HCT_ELEMENTS.get(7));
+    elementHCTScaleFactors.put(8, DEFAULT_HCT_ELEMENTS.get(8));
+    elementHCTScaleFactors.put(15, DEFAULT_HCT_ELEMENTS.get(15));
+    elementHCTScaleFactors.put(16, DEFAULT_HCT_ELEMENTS.get(16));
+
+    // Fill elementHCTScaleFactors array based on input hct-element property flags
+    // Overwrite defaults with input values, add new values if input elements aren't represented
+    // Input lines read in as "hct-element atomicNumber hctValue"
+    // So "hct-element 1 0.7200" would set the HCT scaling factor value for hydrogen (atomic number 1) to 0.7200
+    String[] tmpElemScaleFactors = forceField.getProperties().getStringArray("hct-element");
+    for(String elemScale : tmpElemScaleFactors){
+      String[] singleScale = elemScale.trim().split(" +");
+      if(elementHCTScaleFactors.containsKey(Integer.parseInt(singleScale[0]))) {
+        elementHCTScaleFactors.replace(Integer.parseInt(singleScale[0]), Double.parseDouble(singleScale[1]));
+      } else {
+        elementHCTScaleFactors.put(Integer.parseInt(singleScale[0]), Double.parseDouble(singleScale[1]));
+      }
+    }
 
     perfectRadii = forceField.getBoolean("PERFECT_RADII", false);
 
@@ -823,7 +841,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
     gkEnergyRegion = new GKEnergyRegion(threadCount, polarization, nonPolarModel, surfaceTension,
         probe, electric, soluteDielectric, solventDielectric, gkc, gkQI);
 
-    logger.info("  Continuum Solvation ");
+    if (gkQI) {
+      logger.info("  Continuum Solvation (QI)");
+    } else {
+      logger.info("  Continuum Solvation");
+    }
     logger.info(format("   Radii:                              %8s", soluteRadiiType));
     if (cutoff != Double.POSITIVE_INFINITY) {
       logger.info(format("   Generalized Kirkwood Cut-Off:       %8.4f (A)", cutoff));
@@ -858,12 +880,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
           forceField.getDouble("HCT-SCALE", DEFAULT_HCT_SCALE)));
       if (elementHCTScale) {
         logger.info(format("   Element-Specific HCT Scale Factors: %8B", elementHCTScale));
-        logger.info(format("    HCT-H:                             %8.4f", elementHCTScaleFactors.get(1)));
-        logger.info(format("    HCT-C:                             %8.4f", elementHCTScaleFactors.get(6)));
-        logger.info(format("    HCT-N:                             %8.4f", elementHCTScaleFactors.get(7)));
-        logger.info(format("    HCT-O:                             %8.4f", elementHCTScaleFactors.get(8)));
-        logger.info(format("    HCT-P:                             %8.4f", elementHCTScaleFactors.get(15)));
-        logger.info(format("    HCT-S:                             %8.4f", elementHCTScaleFactors.get(16)));
+        Integer[] elementHCTkeyset = elementHCTScaleFactors.keySet().toArray(new Integer[0]);
+        Arrays.sort(elementHCTkeyset);
+        for(Integer key : elementHCTkeyset){
+          logger.info(format("    HCT-Element # %d:                   %8.4f",key,elementHCTScaleFactors.get(key)));
+        }
       }
     }
 
@@ -988,23 +1009,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
    */
   public void computeInducedGKField() {
     try {
-      fieldGK.reset(parallelTeam, 0, nAtoms - 1);
-      fieldGKCR.reset(parallelTeam, 0, nAtoms - 1);
-      inducedGKFieldRegion.init(
-          atoms,
-          inducedDipole,
-          inducedDipoleCR,
-          crystal,
-          sXYZ,
-          neighborLists,
-          use,
-          cut2,
-          born,
-          fieldGK,
-          fieldGKCR);
+      fieldGK.reset(parallelTeam);
+      fieldGKCR.reset(parallelTeam);
+      inducedGKFieldRegion.init(atoms, inducedDipole, inducedDipoleCR, crystal, sXYZ,
+          neighborLists, use, cut2, born, fieldGK, fieldGKCR);
       parallelTeam.execute(inducedGKFieldRegion);
-      fieldGK.reduce(parallelTeam, 0, nAtoms - 1);
-      fieldGKCR.reduce(parallelTeam, 0, nAtoms - 1);
+      fieldGK.reduce(parallelTeam);
+      fieldGKCR.reduce(parallelTeam);
     } catch (Exception e) {
       String message = "Fatal exception computing induced GK field.";
       logger.log(Level.SEVERE, message, e);
@@ -1016,11 +1027,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
    */
   public void computePermanentGKField() {
     try {
-      fieldGK.reset(parallelTeam, 0, nAtoms - 1);
+      fieldGK.reset(parallelTeam);
       permanentGKFieldRegion.init(
           atoms, globalMultipole, crystal, sXYZ, neighborLists, use, cut2, born, fieldGK);
       parallelTeam.execute(permanentGKFieldRegion);
-      fieldGK.reduce(parallelTeam, 0, nAtoms - 1);
+      fieldGK.reduce(parallelTeam);
     } catch (Exception e) {
       String message = "Fatal exception computing permanent GK field.";
       logger.log(Level.SEVERE, message, e);
@@ -1322,8 +1333,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
       AtomicDoubleArray3D t,
       AtomicDoubleArray3D lg,
       AtomicDoubleArray3D lt) {
-    grad.reduce(parallelTeam, 0, nAtoms - 1);
-    torque.reduce(parallelTeam, 0, nAtoms - 1);
+    grad.reduce(parallelTeam);
+    torque.reduce(parallelTeam);
     for (int i = 0; i < nAtoms; i++) {
       g.add(0, i, lPow * grad.getX(i), lPow * grad.getY(i), lPow * grad.getZ(i));
       t.add(0, i, lPow * torque.getX(i), lPow * torque.getY(i), lPow * torque.getZ(i));

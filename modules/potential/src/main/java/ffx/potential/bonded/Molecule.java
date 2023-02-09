@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -60,7 +60,7 @@ public class Molecule extends MSGroup {
   /** Possibly redundant chainID assigned in PDB files. */
   private Character chainID;
   /** Unique segID. */
-  private String segID;
+  private final String segID;
 
   /**
    * Constructor for Molecule.
@@ -79,7 +79,7 @@ public class Molecule extends MSGroup {
    * Constructor for Molecule.
    *
    * @param name a {@link java.lang.String} object.
-   * @param residueNum a int.
+   * @param residueNum The residue number.
    * @param chainID a {@link java.lang.Character} object.
    * @param segID a {@link java.lang.String} object.
    */
@@ -154,8 +154,12 @@ public class Molecule extends MSGroup {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     Molecule molecule = (Molecule) o;
     return residueNum == molecule.residueNum
         && Objects.equals(residueName, molecule.residueName)
@@ -215,7 +219,7 @@ public class Molecule extends MSGroup {
   /**
    * getResidueNumber
    *
-   * @return a int.
+   * @return The residue number.
    */
   public int getResidueNumber() {
     return residueNum;

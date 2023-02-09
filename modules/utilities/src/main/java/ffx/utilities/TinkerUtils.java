@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -98,8 +98,7 @@ public class TinkerUtils {
         int start = Integer.parseInt(m.group(1));
         ++i;
         if (i == n) {
-          logger.info(
-              format(
+          logger.info(format(
                   " Attempted to parse -%d as a Tinker-style range, but it was ignored because it was the last token provided.",
                   start));
           continue;

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -35,30 +35,19 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.utils;
+package ffx.numerics.multipole;
 
-import static java.lang.String.format;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
 
-/**
- * SystemTemperatureException class.
- *
- * @author Stephen D. LuCore
- */
-public class SystemTemperatureException extends RuntimeException {
-  private final double temperature;
-
-  /**
-   * Constructor for SystemTemperatureException.
-   *
-   * @param temperature a double.
-   */
-  public SystemTemperatureException(double temperature) {
-    this.temperature = temperature;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public String getMessage() {
-    return format(" System unstable due to high temperature: %6.2f", temperature);
-  }
-}
+/** MultipoleTestSuite collects all Unit tests from the ffx.numerics.multipole package. */
+@RunWith(Suite.class)
+@SuiteClasses({
+    GKTensorGlobalTest.class,
+    GKTensorQITest.class,
+    GlobalMultipoleTensorTest.class,
+    MultipoleTensorTest.class,
+    QIMultipoleTensorTest.class,
+})
+public class MultipoleTestSuite {}

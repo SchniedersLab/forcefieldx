@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -37,14 +37,13 @@
 // ******************************************************************************
 package ffx.numerics.math;
 
-import static java.lang.Math.fma;
 import static org.apache.commons.math3.util.FastMath.floor;
 
 import java.util.Random;
 
 /**
  * java -cp target/numerics-1.0.0-beta.jar -XX:+UnlockDiagnosticVMOptions -XX:+PrintAssembly
- * -Djava.libraryath=hsdis-amd64.dylib ffx.numerics.math.SSETest
+ * -Djava.library.path=hsdis-amd64.dylib ffx.numerics.math.SSETest
  *
  * @author M. J. Schnieders
  */
@@ -57,8 +56,8 @@ public class SSETest {
   /**
    * Constructor for SSETest.
    *
-   * @param m a int.
-   * @param n a int.
+   * @param m the number of rows.
+   * @param n the number of columns.
    */
   private SSETest(int m, int n) {
     A = new double[m][n];
@@ -139,8 +138,8 @@ public class SSETest {
    *
    * @param A an array of {@link double} objects.
    * @param x an array of {@link double} objects.
-   * @param m a int.
-   * @param n a int.
+   * @param m the number of rows.
+   * @param n the number of columns.
    * @return an array of {@link double} objects.
    */
   private double[] matVec(final double[][] A, final double[] x, final int m, final int n) {
@@ -159,8 +158,8 @@ public class SSETest {
    *
    * @param A an array of {@link double} objects.
    * @param x an array of {@link double} objects.
-   * @param m a int.
-   * @param n a int.
+   * @param m the number of rows.
+   * @param n the number of columns.
    * @return an array of {@link double} objects.
    */
   private double[] matVec(final double[] A, final double[] x, final int m, final int n) {
@@ -178,9 +177,9 @@ public class SSETest {
                 + A[ptr + 2] * x[j + 2]
                 + A[ptr + 3] * x[j + 3];
         acc += A[ptr + 4] * x[j + 4]
-                + A[ptr + 5] * x[j + 5]
-                + A[ptr + 6] * x[j + 6]
-                + A[ptr + 7] * x[j + 7];
+            + A[ptr + 5] * x[j + 5]
+            + A[ptr + 6] * x[j + 6]
+            + A[ptr + 7] * x[j + 7];
       }
       y[i] += acc;
       for (int j = extra; j < n; j++) {

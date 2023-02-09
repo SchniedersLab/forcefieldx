@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -44,7 +44,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
-import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.After;
@@ -63,7 +62,7 @@ import org.junit.BeforeClass;
  * 2) Configures the logging level, using the ffx.test.log System property (default: INFO).
  * <br>
  * 3) Stores System properties prior to each test, and restores them after each test (i.e. properties
- * set by a test do not effect the next test).
+ * set by a test do not affect the next test).
  * <br>
  * 4) Upon request, creates a temporary that is deleted after the current test is completed.
  * <br>
@@ -101,12 +100,10 @@ public abstract class FFXTest {
       level = Level.INFO;
     }
     origLevel = level;
-
     try {
       level = Level.parse(System.getProperty("ffx.test.log", "WARNING").toUpperCase());
     } catch (Exception ex) {
       logger.warning(format(" Exception %s in parsing value of ffx.test.log", ex));
-      level = origLevel;
     }
     testLevel = level;
     System.setProperty("ffx.log", testLevel.toString());
@@ -157,7 +154,7 @@ public abstract class FFXTest {
       try {
         DirectoryUtils.deleteDirectoryTree(path);
       } catch (IOException e) {
-        System.out.println(e.toString());
+        System.out.println(e.getMessage());
         fail(" Exception deleting files created by Frac2Cart.");
       }
       path = null;

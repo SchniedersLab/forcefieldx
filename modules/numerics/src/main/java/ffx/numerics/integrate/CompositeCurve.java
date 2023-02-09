@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -51,16 +51,17 @@ import java.util.List;
  * @author Jacob M. Litman
  */
 public class CompositeCurve extends FunctionDataCurve {
+
   /** Array of FunctionDataCurve instances. */
   private final FunctionDataCurve[] curves;
   /** Array of coefficients for each curve. */
-  private final double[] coeffs;
+  private final double[] coefficients;
   /** Number of curves. */
   private final int nCurves;
 
   /**
-   * Constructs a CompositeCurve that aggregates multiple FunctionDataCurves with variable weights
-   * to each component FunctionDataCurve.
+   * Constructs a CompositeCurve that aggregates multiple FunctionDataCurves with variable weights to
+   * each component FunctionDataCurve.
    *
    * @param componentCurves Underlying FunctionDataCurves
    * @param coefficients Weight to each component curve
@@ -74,10 +75,10 @@ public class CompositeCurve extends FunctionDataCurve {
     assert (coefficients == null || nCurves == coefficients.size());
 
     if (coefficients == null) {
-      coeffs = new double[nCurves];
-      fill(coeffs, 1.0);
+      this.coefficients = new double[nCurves];
+      fill(this.coefficients, 1.0);
     } else {
-      coeffs = coefficients.stream().mapToDouble(Double::doubleValue).toArray();
+      this.coefficients = coefficients.stream().mapToDouble(Double::doubleValue).toArray();
     }
 
     FunctionDataCurve curve0 = curves[0];
@@ -112,7 +113,7 @@ public class CompositeCurve extends FunctionDataCurve {
     for (int i = 0; i < nPoints; i++) {
       points[i] = 0.0;
       for (int j = 0; j < nCurves; j++) {
-        points[i] += (coeffs[j] * curves[j].getFxPoint(i));
+        points[i] += (this.coefficients[j] * curves[j].getFxPoint(i));
       }
     }
   }
@@ -138,7 +139,7 @@ public class CompositeCurve extends FunctionDataCurve {
    * @return Constant weights
    */
   public double[] getWeights() {
-    return copyOf(coeffs, coeffs.length);
+    return copyOf(coefficients, coefficients.length);
   }
 
   /** {@inheritDoc} */
@@ -146,7 +147,7 @@ public class CompositeCurve extends FunctionDataCurve {
   public double integralAt(double x) {
     double val = 0.0;
     for (int i = 0; i < nCurves; i++) {
-      val += (curves[i].integralAt(x) * coeffs[i]);
+      val += (curves[i].integralAt(x) * coefficients[i]);
     }
     return val;
   }
@@ -172,7 +173,7 @@ public class CompositeCurve extends FunctionDataCurve {
   private double valAt(double x) {
     double val = 0.0;
     for (int i = 0; i < nCurves; i++) {
-      val += (curves[i].fX(x) * coeffs[i]);
+      val += (curves[i].fX(x) * coefficients[i]);
     }
     return val;
   }

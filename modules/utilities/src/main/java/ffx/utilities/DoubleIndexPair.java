@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -40,27 +40,17 @@ package ffx.utilities;
 import static java.lang.String.format;
 
 /**
- * DoubleIndexPair class.
+ * DoubleIndexPair record.
+ * <p>
+ * Allows sorting of floating-point values while retaining knowledge of where that value was in some
+ * original list or array.
  *
+ * @param index the original index of this double.
+ * @param doubleValue the double value.
  * @author Jacob M. Litman
  * @since 1.0
  */
-public class DoubleIndexPair implements Comparable<DoubleIndexPair> {
-
-  private final int index;
-  private final double doubleValue;
-
-  /**
-   * Allows sorting of floating-point values while retaining knowledge of where that value was in
-   * some original list or array.
-   *
-   * @param index the original index of this double.
-   * @param doubleValue the double value.
-   */
-  public DoubleIndexPair(int index, double doubleValue) {
-    this.index = index;
-    this.doubleValue = doubleValue;
-  }
+public record DoubleIndexPair(int index, double doubleValue) implements Comparable<DoubleIndexPair> {
 
   /** {@inheritDoc} */
   @Override
@@ -74,27 +64,11 @@ public class DoubleIndexPair implements Comparable<DoubleIndexPair> {
   /**
    * Returns a string containing the index and double value.
    *
-   * @return a {@link java.lang.String} object
+   * @return a {@link String} object
    */
+  @Override
   public String toString() {
     return format(" %6d %16.8f", index, doubleValue);
   }
 
-  /**
-   * Getter for the field <code>doubleValue</code>.
-   *
-   * @return a double.
-   */
-  public double getDoubleValue() {
-    return doubleValue;
-  }
-
-  /**
-   * Getter for the field <code>index</code>.
-   *
-   * @return a int.
-   */
-  public int getIndex() {
-    return index;
-  }
 }

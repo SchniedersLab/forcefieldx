@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -564,9 +564,6 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
     private double[] maskingp_local;
     private double[] maskingd_local;
     private int threadID;
-    // Extra padding to avert cache interference.
-    private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-    private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
     RealSpaceEnergyLoop() {
       super();
@@ -875,10 +872,10 @@ public class RealSpaceEnergyRegion extends ParallelRegion implements MaskingInte
           }
           if (doPermanentRealSpace) {
             double ei = permanentPair(gradient, lambdaTerm);
-            // logger.info(format(" Permanent %d %d %17.15f", i, k, ei));
-            // logger.info(format(" %16.14f %16.14f %16.14f", xr, yr, zr));
-            // logger.info(format(" %d multipole:  %s", i, Arrays.toString(globalMultipolei)));
-            // logger.info(format(" %d multipole:  %s", k, Arrays.toString(globalMultipolek)));
+             //logger.info(format(" Permanent %d %d %17.15f", i, k, ei));
+             //logger.info(format(" %16.14f %16.14f %16.14f", xr, yr, zr));
+             //logger.info(format(" %d multipole:  %s", i, Arrays.toString(globalMultipolei)));
+             //logger.info(format(" %d multipole:  %s", k, Arrays.toString(globalMultipolek)));
             if (isNaN(ei) || isInfinite(ei)) {
               String message =
                   format(

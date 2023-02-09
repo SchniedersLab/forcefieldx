@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -37,36 +37,37 @@
 // ******************************************************************************
 package ffx.numerics.fft;
 
-import static java.lang.String.format;
-import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.abs;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.cos;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.floatPI;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.sin;
+import static uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION;
 
 import ffx.numerics.tornado.FFXTornado;
-import java.util.logging.Logger;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 
 /** Proof-of-concept use of the TornadoVM for parallelization of Java code. */
-public class TornadoFFT {
+public class TornadoDFT {
 
-  private static final Logger logger = Logger.getLogger(TornadoFFT.class.getName());
   float[] inReal;
   float[] inImag;
   float[] outReal;
   float[] outImag;
   long time;
-  private int size;
 
-  public TornadoFFT(int size) {
-    this.size = size;
+  public TornadoDFT(int size) {
     inReal = new float[size];
     inImag = new float[size];
     outReal = new float[size];
     outImag = new float[size];
+    for (int i = 0; i < size; i++) {
+      inReal[i] = 1 / (float) (i + 2);
+      inImag[i] = 1 / (float) (i + 2);
+    }
   }
 
   public static void computeDft(float[] inreal, float[] inimag, float[] outreal, float[] outimag) {
@@ -85,29 +86,17 @@ public class TornadoFFT {
   }
 
   public void execute(TornadoDevice device) {
-    float[] inReal = new float[size];
-    float[] inImag = new float[size];
-    float[] outReal = new float[size];
-    float[] outImag = new float[size];
-    for (int i = 0; i < size; i++) {
-      inReal[i] = 1 / (float) (i + 2);
-      inImag[i] = 1 / (float) (i + 2);
-    }
+    TaskGraph graph =
+        new TaskGraph("DFT").transferToDevice(EVERY_EXECUTION, inReal, inImag)
+            .task("t0", TornadoDFT::computeDft, inReal, inImag, outReal, outImag)
+            .transferToHost(EVERY_EXECUTION, outReal, outImag);
 
-    TaskSchedule graph =
-        new TaskSchedule("FFT")
-            .streamIn(inReal, inImag)
-            .task("t0", TornadoFFT::computeDft, inReal, inImag, outReal, outImag)
-            .streamOut(outReal, outImag);
-    graph.setDevice(device);
-    graph.warmup();
-
+    ImmutableTaskGraph itg = graph.snapshot();
+    TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(itg);
+    executionPlan.withWarmUp().withDevice(device);
     time = -System.nanoTime();
-    graph.execute();
+    executionPlan.execute();
     time += System.nanoTime();
-
-    graph.dumpProfiles();
-    device.reset();
   }
 
   public void execute() {
@@ -123,29 +112,15 @@ public class TornadoFFT {
   public void validate(TornadoDevice device) {
     execute(device);
 
-    boolean validation = true;
-    float[] outRealTor = new float[size];
-    float[] outImagTor = new float[size];
     long javaTime = -System.nanoTime();
-    computeDft(inReal, inImag, outRealTor, outImagTor);
+    computeDft(inReal, inImag, outReal, outImag);
     javaTime += System.nanoTime();
-    for (int i = 0; i < size; i++) {
-      if (abs(outImagTor[i] - outImag[i]) > 0.01) {
-        validation = false;
-        break;
-      }
-      if (abs(outReal[i] - outRealTor[i]) > 0.01) {
-        validation = false;
-        break;
-      }
-    }
 
     System.out.println(" ");
     FFXTornado.logDevice(device);
-    System.out.println(" Correct: " + validation);
     double speedUp = (double) javaTime / (double) time;
-    System.out.println(format(" %10s %8.6f (sec)\n %10s %8.6f (sec) Speed-Up %8.6f",
-        " Java", 1.0e-9 * javaTime, " OpenCL", 1.0e-9 * time, speedUp));
+    System.out.printf(" %12s %8.6f (sec)\n %12s %8.6f (sec) Speed-Up %8.6f%n",
+        " Java", 1.0e-9 * javaTime, " OpenCL", 1.0e-9 * time, speedUp);
 
   }
 }

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -103,7 +103,7 @@ public class ForceFieldFilter {
   /** A CompositeConfiguration instance to search for force field types. */
   private final CompositeConfiguration properties;
   /** The ForceField instance that will be returned. */
-  private ForceField forceField;
+  private final ForceField forceField;
 
   /**
    * Constructor for ForceFieldFilter.
@@ -178,7 +178,7 @@ public class ForceFieldFilter {
    */
   public ForceField parse() {
     try {
-      // Try to parse an external (ie. not in the FFX jar) parameter file.
+      // Try to parse an external (i.e., not in the FFX jar) parameter file.
       if (forceFieldFile != null) {
         File fileToOpen = forceFieldFile;
         if (!fileToOpen.exists()) {
@@ -201,27 +201,22 @@ public class ForceFieldFilter {
         try {
           ff = ForceField.ForceFieldName.valueOf(forceFieldString.toUpperCase().replace('-', '_'));
         } catch (Exception e) {
-          logger.info(
-              format(" The forcefield property %s was not recognized.\n", forceFieldString));
+          logger.info(format(" The forcefield property %s was not recognized.\n", forceFieldString));
           ff = DEFAULT_FORCE_FIELD;
         }
         URL url = ForceField.getForceFieldURL(ff);
         if (url != null) {
           forceField.forceFieldURL = url;
           try {
-            FileBasedConfigurationBuilder<PropertiesConfiguration> builder =
-                new FileBasedConfigurationBuilder<>(PropertiesConfiguration.class)
-                    .configure(
-                        new Parameters()
-                            .properties()
-                            .setURL(url)
-                            .setThrowExceptionOnMissing(true)
-                            // .setListDelimiterHandler(new DefaultListDelimiterHandler(','))
-                            .setIncludesAllowed(false));
-            PropertiesConfiguration forcefieldConfiguration = builder.getConfiguration();
+            FileBasedConfigurationBuilder<PropertiesConfiguration> builder = new FileBasedConfigurationBuilder<>(
+                PropertiesConfiguration.class).configure(
+                new Parameters().properties().setURL(url).setThrowExceptionOnMissing(true)
+                    // .setListDelimiterHandler(new DefaultListDelimiterHandler(','))
+                    .setIncludesAllowed(false));
+            PropertiesConfiguration forceFieldConfiguration = builder.getConfiguration();
             String name = ForceField.toPropertyForm(ff.toString());
-            forcefieldConfiguration.setHeader("Internal force field (" + name + ").");
-            properties.addConfiguration(forcefieldConfiguration);
+            forceFieldConfiguration.setHeader("Internal force field (" + name + ").");
+            properties.addConfiguration(forceFieldConfiguration);
           } catch (ConfigurationException e) {
             e.printStackTrace();
             logger.warning(e.toString());
@@ -241,8 +236,7 @@ public class ForceFieldFilter {
     String forceFieldName = forceField.getString("forcefield", "none");
     if (forceFieldName != null) {
       forceFieldName = forceFieldName.toUpperCase();
-      if (forceFieldName.contains("AMBER")
-          || forceFieldName.contains("OPLS")
+      if (forceFieldName.contains("AMBER") || forceFieldName.contains("OPLS")
           || forceFieldName.contains("CHARMM")) {
         forceField.setBondFunction(BondFunction.HARMONIC);
         forceField.setAngleFunction(AngleFunction.HARMONIC);
@@ -257,25 +251,24 @@ public class ForceFieldFilter {
       int numConfigs = properties.getNumberOfConfigurations();
 
       /*
-       Loop over the configurations starting with lowest precedence.
+       Loop over the configurations starting with the lowest precedence.
        This way higher precedence entries will overwrite lower
        precedence entries within the ForceField instance.
       */
       for (int n = numConfigs - 1; n >= 0; n--) {
         Configuration config = properties.getConfiguration(n);
-        if (config instanceof PropertiesConfiguration) {
-          PropertiesConfiguration propertiesConfiguration = (PropertiesConfiguration) config;
+        if (config instanceof PropertiesConfiguration propertiesConfiguration) {
           if (propertiesConfiguration.getHeader() != null) {
             logger.info(" Parsing: " + propertiesConfiguration.getHeader());
           }
         }
 
-        Iterator i = config.getKeys();
+        Iterator<String> i = config.getKeys();
         while (i.hasNext()) {
-          String key = (String) i.next();
+          String key = i.next();
 
           // If the key is not recognized as a force field keyword, continue to the next key.
-          if (!ForceField.isForceFieldKeyword(key)) {
+          if (!ForceField.isForceFieldType(key)) {
             continue;
           }
 
@@ -296,80 +289,35 @@ public class ForceFieldFilter {
               break;
             }
 
-            BaseType baseType = null;
-            switch (type) {
-              case ATOM:
-                baseType = AtomType.parse(input, tokens);
-                break;
-              case ANGTORS:
-                baseType = AngleTorsionType.parse(input, tokens);
-                break;
-              case ANGLE:
-                baseType = AngleType.parse(input, tokens);
-                break;
-              case ANGLEP:
-                baseType = AngleType.parseInPlane(input, tokens);
-                break;
-              case BIOTYPE:
-                baseType = BioType.parse(input, tokens);
-                break;
-              case BOND:
-                baseType = BondType.parse(input, tokens);
-                break;
-              case CHARGE:
-                baseType = MultipoleType.parseChargeType(input, tokens);
-                break;
-              case MULTIPOLE:
-                baseType = MultipoleType.parse(input, tokens);
-                break;
-              case OPBEND:
-                baseType = OutOfPlaneBendType.parse(input, tokens);
-                break;
-              case STRBND:
-                baseType = StretchBendType.parse(input, tokens);
-                break;
-              case PITORS:
-                baseType = PiOrbitalTorsionType.parse(input, tokens);
-                break;
-              case IMPTORS:
-                baseType = ImproperTorsionType.parse(input, tokens);
-                break;
-              case TORSION:
-                baseType = TorsionType.parse(input, tokens);
-                break;
-              case IMPROPER:
-                baseType = TorsionType.parseImproper(input, tokens);
-                break;
-              case STRTORS:
-                baseType = StretchTorsionType.parse(input, tokens);
-                break;
-              case TORTORS:
-                baseType = TorsionTorsionType.parse(input, tokens);
-                break;
-              case UREYBRAD:
-                baseType = UreyBradleyType.parse(input, tokens);
-                break;
-              case VDW:
-                baseType = VDWType.parse(input, tokens);
-                break;
-              case VDW14:
-                baseType = VDWType.parseVDW14(input, tokens);
-                break;
-              case VDWPR:
-                baseType = VDWPairType.parse(input, tokens);
-                break;
-              case POLARIZE:
-                baseType = PolarizeType.parse(input, tokens);
-                break;
-              case RELATIVESOLV:
-                baseType = RelativeSolvationType.parse(input, tokens);
-                break;
-              case SOLUTE:
-                baseType = SoluteType.parse(input, tokens);
-                break;
-              default:
+            BaseType baseType = switch (type) {
+              case ATOM -> AtomType.parse(input, tokens);
+              case ANGTORS -> AngleTorsionType.parse(input, tokens);
+              case ANGLE -> AngleType.parse(input, tokens);
+              case ANGLEP -> AngleType.parseInPlane(input, tokens);
+              case BIOTYPE -> BioType.parse(input, tokens);
+              case BOND -> BondType.parse(input, tokens);
+              case CHARGE -> MultipoleType.parseChargeType(input, tokens);
+              case MULTIPOLE -> MultipoleType.parse(input, tokens);
+              case OPBEND -> OutOfPlaneBendType.parse(input, tokens);
+              case STRBND -> StretchBendType.parse(input, tokens);
+              case PITORS -> PiOrbitalTorsionType.parse(input, tokens);
+              case IMPTORS -> ImproperTorsionType.parse(input, tokens);
+              case TORSION -> TorsionType.parse(input, tokens);
+              case IMPROPER -> TorsionType.parseImproper(input, tokens);
+              case STRTORS -> StretchTorsionType.parse(input, tokens);
+              case TORTORS -> TorsionTorsionType.parse(input, tokens);
+              case UREYBRAD -> UreyBradleyType.parse(input, tokens);
+              case VDW -> VDWType.parse(input, tokens);
+              case VDW14 -> VDWType.parseVDW14(input, tokens);
+              case VDWPR, VDWPAIR -> VDWPairType.parse(input, tokens);
+              case POLARIZE -> PolarizeType.parse(input, tokens);
+              case RELATIVESOLV -> RelativeSolvationType.parse(input, tokens);
+              case SOLUTE -> SoluteType.parse(input, tokens);
+              default -> {
                 logger.log(Level.WARNING, "ForceField type recognized, but not stored:{0}", type);
-            }
+                yield null;
+              }
+            };
             if (baseType != null) {
               forceField.addForceFieldType(baseType);
             }
@@ -380,7 +328,6 @@ public class ForceFieldFilter {
       String message = "Exception parsing force field.";
       logger.log(Level.WARNING, message, e);
     }
-
     logger.info("");
   }
 
@@ -401,102 +348,50 @@ public class ForceFieldFilter {
     // Split the line on the pound symbol to remove comments.
     String originalInput = input;
     String[] inputs = input.split("#");
-
     if (inputs.length < 1) {
       return;
     }
 
     input = inputs[0].split("#")[0];
-
     // Split the line into tokens between instances of 1 or more spaces.
     String[] tokens = input.trim().split(" +");
-
-    // Check for the case of no tokens or a Keyword.
-    // if (parseKeyword(tokens)) {
-    //     return;
-    // }
-
     if (tokens[0].equalsIgnoreCase("")) {
       return;
     }
 
     try {
       ForceFieldType type = ForceFieldType.valueOf(tokens[0].toUpperCase());
-      BaseType baseType = null;
-      switch (type) {
-        case ATOM:
-          baseType = AtomType.parse(input, tokens);
-          break;
-        case ANGLE:
-          baseType = AngleType.parse(input, tokens);
-          break;
-        case ANGLEP:
-          baseType = AngleType.parseInPlane(input, tokens);
-          break;
-        case ANGTORS:
-          baseType = AngleTorsionType.parse(input, tokens);
-          break;
-        case BIOTYPE:
-          baseType = BioType.parse(input, tokens);
-          break;
-        case BOND:
-          baseType = BondType.parse(input, tokens);
-          break;
-        case CHARGE:
-          baseType = MultipoleType.parseChargeType(input, tokens);
-          break;
-        case MULTIPOLE:
-          baseType = MultipoleType.parse(input, tokens, br);
-          break;
-        case OPBEND:
-          baseType = OutOfPlaneBendType.parse(input, tokens);
-          break;
-        case STRBND:
-          baseType = StretchBendType.parse(input, tokens);
-          break;
-        case PITORS:
-          baseType = PiOrbitalTorsionType.parse(input, tokens);
-          break;
-        case IMPTORS:
-          baseType = ImproperTorsionType.parse(input, tokens);
-          break;
-        case STRTORS:
-          baseType = StretchTorsionType.parse(input, tokens);
-          break;
-        case TORSION:
-          baseType = TorsionType.parse(input, tokens);
-          break;
-        case IMPROPER:
-          baseType = TorsionType.parseImproper(input, tokens);
-          break;
-        case TORTORS:
-          baseType = TorsionTorsionType.parse(input, tokens, br);
-          break;
-        case UREYBRAD:
-          baseType = UreyBradleyType.parse(input, tokens);
-          break;
-        case VDW:
-          baseType = VDWType.parse(input, tokens);
-          break;
-        case VDW14:
-          baseType = VDWType.parseVDW14(input, tokens);
-          break;
-        case VDWPR:
-          baseType = VDWPairType.parse(input, tokens);
-          break;
-        case POLARIZE:
-          baseType = PolarizeType.parse(input, tokens);
-          break;
-        case RELATIVESOLV:
-          baseType = RelativeSolvationType.parse(input, tokens);
-          break;
-        case SOLUTE:
+      BaseType baseType = switch (type) {
+        case ATOM -> AtomType.parse(input, tokens);
+        case ANGLE -> AngleType.parse(input, tokens);
+        case ANGLEP -> AngleType.parseInPlane(input, tokens);
+        case ANGTORS -> AngleTorsionType.parse(input, tokens);
+        case BIOTYPE -> BioType.parse(input, tokens);
+        case BOND -> BondType.parse(input, tokens);
+        case CHARGE -> MultipoleType.parseChargeType(input, tokens);
+        case MULTIPOLE -> MultipoleType.parse(input, tokens, br);
+        case OPBEND -> OutOfPlaneBendType.parse(input, tokens);
+        case STRBND -> StretchBendType.parse(input, tokens);
+        case PITORS -> PiOrbitalTorsionType.parse(input, tokens);
+        case IMPTORS -> ImproperTorsionType.parse(input, tokens);
+        case STRTORS -> StretchTorsionType.parse(input, tokens);
+        case TORSION -> TorsionType.parse(input, tokens);
+        case IMPROPER -> TorsionType.parseImproper(input, tokens);
+        case TORTORS -> TorsionTorsionType.parse(input, tokens, br);
+        case UREYBRAD -> UreyBradleyType.parse(input, tokens);
+        case VDW -> VDWType.parse(input, tokens);
+        case VDW14 -> VDWType.parseVDW14(input, tokens);
+        case VDWPR, VDWPAIR -> VDWPairType.parse(input, tokens);
+        case POLARIZE -> PolarizeType.parse(input, tokens);
+        case RELATIVESOLV -> RelativeSolvationType.parse(input, tokens);
+        case SOLUTE ->
           // SOLUTE lines can't be split on #'s because of SMARTS strings syntax
-          baseType = SoluteType.parse(originalInput, originalInput.trim().split(" +"));
-          break;
-        default:
+            SoluteType.parse(originalInput, originalInput.trim().split(" +"));
+        default -> {
           logger.log(Level.WARNING, "ForceField type recognized, but not stored:{0}", type);
-      }
+          yield null;
+        }
+      };
       if (baseType != null) {
         forceField.addForceFieldType(baseType);
       }
@@ -504,7 +399,7 @@ public class ForceFieldFilter {
     } catch (Exception e) {
       // Note -- this serves to skip blank lines in *.patch files but also hide an actual bug's
       // exception
-      // String message = "Exception parsing force field parametesr.\n";
+      // String message = "Exception parsing force field parameters.\n";
       // logger.log(Level.WARNING, message, e);
     }
 

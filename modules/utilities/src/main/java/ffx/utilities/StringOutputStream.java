@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -98,6 +98,6 @@ public class StringOutputStream extends PrintStream {
    * @return a {@link java.lang.String} object.
    */
   public String toString() {
-    return new String(byteArrayOutputStream.toByteArray(), charset);
+    return byteArrayOutputStream.toString(charset);
   }
 }

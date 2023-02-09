@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -242,20 +242,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum}
    *     object.
    */
-  public MolecularDynamics(
-      MolecularAssembly assembly,
-      Potential potentialEnergy,
-      CompositeConfiguration properties,
-      AlgorithmListener listener,
-      ThermostatEnum requestedThermostat,
-      IntegratorEnum requestedIntegrator) {
-    this(
-        assembly,
-        potentialEnergy,
-        properties,
-        listener,
-        requestedThermostat,
-        requestedIntegrator,
+  public MolecularDynamics(MolecularAssembly assembly, Potential potentialEnergy,
+      CompositeConfiguration properties, AlgorithmListener listener,
+      ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
+    this(assembly, potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator,
         defaultFallbackDyn(assembly));
   }
 
@@ -272,14 +262,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
    *     object.
    * @param fallbackDyn File to write restarts to if none is provided by the dynamics method.
    */
-  public MolecularDynamics(
-      MolecularAssembly assembly,
-      Potential potentialEnergy,
-      CompositeConfiguration properties,
-      AlgorithmListener listener,
-      ThermostatEnum requestedThermostat,
-      IntegratorEnum requestedIntegrator,
-      File fallbackDyn) {
+  public MolecularDynamics(MolecularAssembly assembly, Potential potentialEnergy,
+      CompositeConfiguration properties, AlgorithmListener listener,
+      ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator, File fallbackDyn) {
     this.molecularAssembly = assembly;
     assemblies = new ArrayList<>();
     assemblies.add(new AssemblyInfo(assembly));
@@ -303,7 +288,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
     // If an Integrator wasn't passed to the MD constructor, check for one specified as a property.
     if (requestedIntegrator == null) {
-      String integrate = properties.getString("integrate", "verlet").trim();
+      String integrate = properties.getString("integrate", "VERLET").trim();
       try {
         requestedIntegrator = IntegratorEnum.valueOf(integrate);
       } catch (Exception e) {
@@ -318,7 +303,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     List<Constraint> constraints = potentialEnergy.getConstraints();
 
     switch (requestedIntegrator) {
-      case RESPA:
+      case RESPA, MTS:
         Respa respa = new Respa(numberOfVariables, x, v, a, aPrevious, mass);
         int in = molecularAssembly.getProperties().getInt("respa-dt", 4);
         if (in < 2) {
@@ -330,7 +315,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         logger.log(Level.FINE, format(" Created a RESPA integrator with %d inner time steps.", in));
         integrator = respa;
         break;
-      case STOCHASTIC:
+      case STOCHASTIC, LANGEVIN:
         double friction = properties.getDouble("friction", 91.0);
         logger.log(Level.FINE, format(" Friction set at %.3f collisions/picosecond", friction));
 
@@ -348,7 +333,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
         integrator = new BetterBeeman(numberOfVariables, x, v, a, aPrevious, mass);
         break;
       case VERLET:
-      case VELOCITYVERLET:
+      case VELOCITY_VERLET:
       default:
         integrator = new VelocityVerlet(numberOfVariables, x, v, a, mass);
     }
@@ -368,24 +353,21 @@ public class MolecularDynamics implements Runnable, Terminatable {
     switch (requestedThermostat) {
       case BERENDSEN:
         double tau = properties.getDouble("tau-temperature", 0.2);
-        thermostat =
-            new Berendsen(numberOfVariables, x, v, mass,
-                potentialEnergy.getVariableTypes(), targetTemperature,
-                tau, constraints);
+        thermostat = new Berendsen(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(),
+            targetTemperature, tau, constraints);
         break;
       case BUSSI:
         tau = properties.getDouble("tau-temperature", 0.2);
-        thermostat = new Bussi(numberOfVariables, x, v, mass,
-                potentialEnergy.getVariableTypes(), targetTemperature,
-                tau, constraints);
+        thermostat = new Bussi(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(),
+            targetTemperature, tau, constraints);
         if (properties.containsKey("randomseed")) {
           thermostat.setRandomSeed(properties.getInt("randomseed", 0));
         }
         break;
       case ADIABATIC:
       default:
-        thermostat = new Adiabatic(numberOfVariables, x, v, mass,
-            potentialEnergy.getVariableTypes(), constraints);
+        thermostat = new Adiabatic(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(),
+            constraints);
     }
 
     if (properties.containsKey("randomseed")) {
@@ -420,13 +402,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
    *     object.
    * @param esvSystem a {@link ffx.potential.extended.ExtendedSystem} object.
    */
-  public MolecularDynamics(
-      MolecularAssembly assembly,
-      Potential potentialEnergy,
-      CompositeConfiguration properties,
-      AlgorithmListener listener,
-      ThermostatEnum requestedThermostat,
-      IntegratorEnum requestedIntegrator,
+  public MolecularDynamics(MolecularAssembly assembly, Potential potentialEnergy,
+      CompositeConfiguration properties, AlgorithmListener listener,
+      ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator,
       ExtendedSystem esvSystem) {
     this(assembly, potentialEnergy, properties, listener, requestedThermostat, requestedIntegrator);
     this.esvSystem = esvSystem;
@@ -446,22 +424,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
    *     object.
    * @return a {@link MolecularDynamics} object.
    */
-  public static MolecularDynamics dynamicsFactory(
-      MolecularAssembly assembly,
-      Potential potentialEnergy,
-      CompositeConfiguration properties,
-      AlgorithmListener listener,
-      ThermostatEnum requestedThermostat,
-      IntegratorEnum requestedIntegrator) {
+  public static MolecularDynamics dynamicsFactory(MolecularAssembly assembly,
+      Potential potentialEnergy, CompositeConfiguration properties, AlgorithmListener listener,
+      ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
 
-    return dynamicsFactory(
-        assembly,
-        potentialEnergy,
-        properties,
-        listener,
-        requestedThermostat,
-        requestedIntegrator,
-        defaultEngine(assembly, potentialEnergy));
+    return dynamicsFactory(assembly, potentialEnergy, properties, listener, requestedThermostat,
+        requestedIntegrator, defaultEngine(assembly, potentialEnergy));
   }
 
   /**
@@ -478,13 +446,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @param engine a {@link MolecularDynamics.DynamicsEngine} object.
    * @return a {@link MolecularDynamics} object.
    */
-  public static MolecularDynamics dynamicsFactory(
-      MolecularAssembly assembly,
-      Potential potentialEnergy,
-      CompositeConfiguration properties,
-      AlgorithmListener listener,
-      ThermostatEnum requestedThermostat,
-      IntegratorEnum requestedIntegrator,
+  public static MolecularDynamics dynamicsFactory(MolecularAssembly assembly,
+      Potential potentialEnergy, CompositeConfiguration properties, AlgorithmListener listener,
+      ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator,
       DynamicsEngine engine) {
     switch (engine) {
       case OPENMM:
@@ -493,38 +457,26 @@ public class MolecularDynamics implements Runnable, Terminatable {
         // Unfortunately, neither Java, nor Apache Commons, nor Guava has an arbitrary tree
         // implementing Collection.
         // Nor does javax.swing have a quick "get me the leaves" method that I was able to find.
-        boolean ommLeaves =
-            potentialEnergy.getUnderlyingPotentials().stream()
-                .anyMatch((Potential p) -> p instanceof ForceFieldEnergyOpenMM);
+        boolean ommLeaves = potentialEnergy.getUnderlyingPotentials().stream()
+            .anyMatch((Potential p) -> p instanceof ForceFieldEnergyOpenMM);
         ommLeaves = ommLeaves || potentialEnergy instanceof ForceFieldEnergyOpenMM;
         if (ommLeaves) {
-          return new MolecularDynamicsOpenMM(
-              assembly,
-              potentialEnergy,
-              properties,
-              listener,
-              requestedThermostat,
-              requestedIntegrator);
+          return new MolecularDynamicsOpenMM(assembly, potentialEnergy, properties, listener,
+              requestedThermostat, requestedIntegrator);
         } else {
-          throw new IllegalArgumentException(
-              format(
-                  " Requested OpenMM engine %s, but at least one leaf of the potential %s is not an OpenMM force field!",
-                  engine, potentialEnergy));
+          throw new IllegalArgumentException(format(
+              " Requested OpenMM engine %s, but at least one leaf of the potential %s is not an OpenMM force field!",
+              engine, potentialEnergy));
         }
       case FFX:
       default:
-        return new MolecularDynamics(
-            assembly,
-            potentialEnergy,
-            properties,
-            listener,
-            requestedThermostat,
-            requestedIntegrator);
+        return new MolecularDynamics(assembly, potentialEnergy, properties, listener,
+            requestedThermostat, requestedIntegrator);
     }
   }
 
-  private static DynamicsEngine defaultEngine(
-      MolecularAssembly molecularAssembly, Potential potentialEnergy) {
+  private static DynamicsEngine defaultEngine(MolecularAssembly molecularAssembly,
+      Potential potentialEnergy) {
     CompositeConfiguration properties = molecularAssembly.getProperties();
     String mdEngine = properties.getString("MD-engine");
     if (mdEngine != null) {
@@ -537,9 +489,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
       }
     } else {
       // TODO: Replace this with a better check.
-      boolean ommLeaves =
-          potentialEnergy.getUnderlyingPotentials().stream()
-              .anyMatch((Potential p) -> p instanceof ForceFieldEnergyOpenMM);
+      boolean ommLeaves = potentialEnergy.getUnderlyingPotentials().stream()
+          .anyMatch((Potential p) -> p instanceof ForceFieldEnergyOpenMM);
       ommLeaves = ommLeaves || potentialEnergy instanceof ForceFieldEnergyOpenMM;
       if (ommLeaves) {
         return DynamicsEngine.OPENMM;
@@ -584,11 +535,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
     }
     esvSystem = system;
     this.esvIntegrator = new Stochastic(esvSystem.getThetaFriction(),
-        esvSystem.getNumberOfVariables(), esvSystem.getThetaPosition(),
-        esvSystem.getThetaVelocity(), esvSystem.getThetaAccel(), esvSystem.getThetaMassArray());
+        esvSystem.getNumberOfVariables(), esvSystem.getThetaPosition(), esvSystem.getThetaVelocity(),
+        esvSystem.getThetaAccel(), esvSystem.getThetaMassArray());
     this.esvThermostat = new Adiabatic(esvSystem.getNumberOfVariables(),
-        esvSystem.getThetaPosition(),
-        esvSystem.getThetaVelocity(), esvSystem.getThetaMassArray(), potential.getVariableTypes());
+        esvSystem.getThetaPosition(), esvSystem.getThetaVelocity(), esvSystem.getThetaMassArray(),
+        potential.getVariableTypes());
     printEsvFrequency = intervalToFreq(reportFreq, "Reporting (logging) interval");
     logger.info(
         format("  Attached extended system (%s) to molecular dynamics.", esvSystem.toString()));
@@ -612,9 +563,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @param restartInterval Interval between writing new restart files in picoseconds.
    * @param dyn A {@link java.io.File} object to write the restart file to.
    */
-  public void dynamic(final long nSteps, final double timeStep,
-      final double loggingInterval, final double trajectoryInterval,
-      final double temperature, final boolean initVelocities,
+  public void dynamic(final long nSteps, final double timeStep, final double loggingInterval,
+      final double trajectoryInterval, final double temperature, final boolean initVelocities,
       String fileType, double restartInterval, final File dyn) {
     this.fileType = fileType;
     setRestartFrequency(restartInterval);
@@ -633,9 +583,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @param initVelocities Initialize new velocities from a Maxwell-Boltzmann distribution.
    * @param dyn A {@link java.io.File} object to write the restart file to.
    */
-  public void dynamic(final long nSteps, final double timeStep,
-      final double loggingInterval, final double trajectoryInterval,
-      final double temperature, final boolean initVelocities, final File dyn) {
+  public void dynamic(final long nSteps, final double timeStep, final double loggingInterval,
+      final double trajectoryInterval, final double temperature, final boolean initVelocities,
+      final File dyn) {
     // Return if already running;
     // Could happen if two threads call dynamic on the same MolecularDynamics instance.
     if (!done) {
@@ -839,16 +789,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @param initVelocities Initialize new velocities from a Maxwell-Boltzmann distribution.
    * @param dyn A {@link java.io.File} object to write the restart file to.
    */
-  public void init(
-      final long nSteps,
-      final double timeStep,
-      final double loggingInterval,
-      final double trajectoryInterval,
-      final String fileType,
-      final double restartInterval,
-      final double temperature,
-      final boolean initVelocities,
-      final File dyn) {
+  public void init(final long nSteps, final double timeStep, final double loggingInterval,
+      final double trajectoryInterval, final String fileType, final double restartInterval,
+      final double temperature, final boolean initVelocities, final File dyn) {
 
     // Return if already running.
     if (!done) {
@@ -934,7 +877,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
           logger.info(format("  Archive file %3d: %s", (i + 1), ai.archiveFile.getName()));
         }
       } else {
-        logger.info(format("  Archive file:     %s", assemblies.get(0).archiveFile.getAbsolutePath()));
+        logger.info(
+            format("  Archive file:     %s", assemblies.get(0).archiveFile.getAbsolutePath()));
       }
       logger.info(format("  Restart file:     %s", restartFile.getAbsolutePath()));
     }
@@ -953,24 +897,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @param initVelocities Initialize new velocities from a Maxwell-Boltzmann distribution.
    * @param dyn A {@link java.io.File} object to write the restart file to.
    */
-  public void init(
-      final long nSteps,
-      final double timeStep,
-      final double loggingInterval,
-      final double trajectoryInterval,
-      final double temperature,
-      final boolean initVelocities,
+  public void init(final long nSteps, final double timeStep, final double loggingInterval,
+      final double trajectoryInterval, final double temperature, final boolean initVelocities,
       final File dyn) {
-    init(
-        nSteps,
-        timeStep,
-        loggingInterval,
-        trajectoryInterval,
-        "XYZ",
-        restartInterval,
-        temperature,
-        initVelocities,
-        dyn);
+    init(nSteps, timeStep, loggingInterval, trajectoryInterval, "XYZ", restartInterval, temperature,
+        initVelocities, dyn);
   }
 
   /** Reinitialize the MD engine after a chemical change. */
@@ -989,8 +920,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     if (potential instanceof ForceFieldEnergy) {
       gradient = ((ForceFieldEnergy) potential).getGradient(gradient);
     }
-    thermostat.setNumberOfVariables(
-        numberOfVariables, x, v, mass, potential.getVariableTypes(), true);
+    thermostat.setNumberOfVariables(numberOfVariables, x, v, mass, potential.getVariableTypes(),
+        true);
     integrator.setNumberOfVariables(numberOfVariables, x, v, a, aPrevious, mass);
   }
 
@@ -1148,8 +1079,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @param tryRestart If false, do not write a restart file even if the timestep is correct.
    * @return EnumSet of actions taken by this method.
    */
-  public EnumSet<WriteActions> writeFilesForStep(
-      long step, boolean trySnapshot, boolean tryRestart) {
+  public EnumSet<WriteActions> writeFilesForStep(long step, boolean trySnapshot,
+      boolean tryRestart) {
     return writeFilesForStep(step, trySnapshot, tryRestart, null);
   }
 
@@ -1164,8 +1095,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
    *     null).
    * @return EnumSet of actions taken by this method.
    */
-  public EnumSet<WriteActions> writeFilesForStep(
-      long step, boolean trySnapshot, boolean tryRestart, String[] extraLines) {
+  public EnumSet<WriteActions> writeFilesForStep(long step, boolean trySnapshot, boolean tryRestart,
+      String[] extraLines) {
     List<String> linesList =
         (extraLines == null) ? new ArrayList<>() : new ArrayList<>(Arrays.asList(extraLines));
 
@@ -1197,16 +1128,20 @@ public class MolecularDynamics implements Runnable, Terminatable {
       if (trySnapshot && trajectoryFrequency > 0 && step % trajectoryFrequency == 0) {
 
         // Log stats.
-        logger.info(format("\n Average Values for the Last %d Out of %d Dynamics Steps\n", trajectoryFrequency, step));
+        logger.info(format("\n Average Values for the Last %d Out of %d Dynamics Steps\n",
+            trajectoryFrequency, step));
         logger.info(format("  Simulation Time  %16.4f Picosecond", step * dt));
-        logger.info(format("  Total Energy     %16.4f Kcal/mole   (+/-%9.4f)",
-            totalEnergyStats.getMean(), totalEnergyStats.getStandardDeviation()));
+        logger.info(
+            format("  Total Energy     %16.4f Kcal/mole   (+/-%9.4f)", totalEnergyStats.getMean(),
+                totalEnergyStats.getStandardDeviation()));
         logger.info(format("  Potential Energy %16.4f Kcal/mole   (+/-%9.4f)",
             potentialEnergyStats.getMean(), potentialEnergyStats.getStandardDeviation()));
-        logger.info(format("  Kinetic Energy   %16.4f Kcal/mole   (+/-%9.4f)",
-            kineticEnergyStats.getMean(), kineticEnergyStats.getStandardDeviation()));
-        logger.info(format("  Temperature      %16.4f Kelvin      (+/-%9.4f)\n",
-            temperatureStats.getMean(), temperatureStats.getStandardDeviation()));
+        logger.info(
+            format("  Kinetic Energy   %16.4f Kcal/mole   (+/-%9.4f)", kineticEnergyStats.getMean(),
+                kineticEnergyStats.getStandardDeviation()));
+        logger.info(
+            format("  Temperature      %16.4f Kelvin      (+/-%9.4f)\n", temperatureStats.getMean(),
+                temperatureStats.getStandardDeviation()));
         totalEnergyStats.reset();
         potentialEnergyStats.reset();
         kineticEnergyStats.reset();
@@ -1239,11 +1174,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
     if (dynFilter.writeDYN(restartFile, molecularAssembly.getCrystal(), x, v, a, aPrevious)) {
       logger.log(basicLogging, " Wrote dynamics restart file to " + dynName);
     } else {
-      logger.log(basicLogging, " Writing ESV dynamics restart file to " + dynName + " failed");
+      logger.log(basicLogging, " Writing dynamics restart file to " + dynName + " failed");
     }
     if (esvSystem != null) {
       esvSystem.writeRestart();
-      esvSystem.writeLambdaHistogram();
+      esvSystem.writeLambdaHistogram(false);
     }
   }
 
@@ -1258,53 +1193,50 @@ public class MolecularDynamics implements Runnable, Terminatable {
     String timeString = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH_mm_ss"));
     PotentialsFunctions potentialsFunctions = new PotentialsUtils();
 
-    String filename =
-        format(
-            "%s-%s-SNAP.pdb",
-            FilenameUtils.removeExtension(molecularAssembly.getFile().getName()), timeString);
+    String filename = format("%s-%s-SNAP.pdb",
+        FilenameUtils.removeExtension(molecularAssembly.getFile().getName()), timeString);
 
     for (int is = 0; is < numSnaps; is++) {
       CoordinateSnapshot oldState = lastSnapshots.poll();
       if (oldState != null) {
         oldState.revertState();
       }
-      potentialsFunctions.saveAsPDB(
-          molecularAssembly, new File(potentialsFunctions.versionFile(filename)));
+      potentialsFunctions.saveAsPDB(molecularAssembly,
+          new File(potentialsFunctions.versionFile(filename)));
     }
     molecularAssembly.setFile(origFile);
   }
 
   /** assemblyInfo. */
   void assemblyInfo() {
-    assemblies.forEach(
-        (ainfo) -> {
-          MolecularAssembly mola = ainfo.getAssembly();
-          CompositeConfiguration aprops = ainfo.compositeConfiguration;
-          File file = mola.getFile();
-          String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
-          File archFile = ainfo.archiveFile;
-          if (archFile == null) {
-            archFile = new File(filename + ".arc");
-            ainfo.archiveFile = XYZFilter.version(archFile);
-          }
-          if (ainfo.pdbFile == null) {
-            String extName = FilenameUtils.getExtension(file.getName());
-            if (extName.toLowerCase().startsWith("pdb")) {
-              ainfo.pdbFile = file;
-            } else {
-              ainfo.pdbFile = new File(filename + ".pdb");
-            }
-          }
-          if (ainfo.xyzFilter == null && esvSystem == null) {
-            ainfo.xyzFilter = new XYZFilter(file, mola, mola.getForceField(), aprops);
-          }
-          if (ainfo.xphFilter == null) {
-            ainfo.xphFilter = new XPHFilter(file, mola, mola.getForceField(), aprops, esvSystem);
-          }
-          if (ainfo.pdbFilter == null) {
-            ainfo.pdbFilter = new PDBFilter(ainfo.pdbFile, mola, mola.getForceField(), aprops);
-          }
-        });
+    assemblies.forEach((ainfo) -> {
+      MolecularAssembly mola = ainfo.getAssembly();
+      CompositeConfiguration aprops = ainfo.compositeConfiguration;
+      File file = mola.getFile();
+      String filename = FilenameUtils.removeExtension(file.getAbsolutePath());
+      File archFile = ainfo.archiveFile;
+      if (archFile == null) {
+        archFile = new File(filename + ".arc");
+        ainfo.archiveFile = XYZFilter.version(archFile);
+      }
+      if (ainfo.pdbFile == null) {
+        String extName = FilenameUtils.getExtension(file.getName());
+        if (extName.toLowerCase().startsWith("pdb")) {
+          ainfo.pdbFile = file;
+        } else {
+          ainfo.pdbFile = new File(filename + ".pdb");
+        }
+      }
+      if (ainfo.xyzFilter == null && esvSystem == null) {
+        ainfo.xyzFilter = new XYZFilter(file, mola, mola.getForceField(), aprops);
+      }
+      if (ainfo.xphFilter == null) {
+        ainfo.xphFilter = new XPHFilter(file, mola, mola.getForceField(), aprops, esvSystem);
+      }
+      if (ainfo.pdbFilter == null) {
+        ainfo.pdbFilter = new PDBFilter(ainfo.pdbFile, mola, mola.getForceField(), aprops);
+      }
+    });
   }
 
   /**
@@ -1323,11 +1255,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
     if (interval >= dt) {
       return (int) (interval / dt);
     } else {
-      logger.warning(
-          format(
-              " Specified %s of %.6f ps < timestep %.6f ps; "
-                  + "interval is set to once per timestep!",
-              describe, interval, dt));
+      logger.warning(format(
+          " Specified %s of %.6f ps < timestep %.6f ps; " + "interval is set to once per timestep!",
+          describe, interval, dt));
       return 1;
     }
   }
@@ -1452,25 +1382,15 @@ public class MolecularDynamics implements Runnable, Terminatable {
   void postInitEnergies() {
     initialized = true;
 
-    logger.log(
-        basicLogging,
-        format(
-            "\n  %8s %12s %12s %12s %8s %8s",
-            "Time", "Kinetic", "Potential", "Total", "Temp", "CPU"));
-    logger.log(
-        basicLogging,
-        format(
-            "  %8s %12s %12s %12s %8s %8s",
-            "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K", "sec"));
-    logger.log(
-        basicLogging,
-        format(
-            "  %8s %12.4f %12.4f %12.4f %8.2f",
-            "",
-            currentKineticEnergy,
-            currentPotentialEnergy,
-            currentTotalEnergy,
-            currentTemperature));
+    logger.log(basicLogging,
+        format("\n  %8s %12s %12s %12s %8s %8s", "Time", "Kinetic", "Potential", "Total", "Temp",
+            "CPU"));
+    logger.log(basicLogging,
+        format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K",
+            "sec"));
+    logger.log(basicLogging,
+        format("  %8s %12.4f %12.4f %12.4f %8.2f", "", currentKineticEnergy, currentPotentialEnergy,
+            currentTotalEnergy, currentTemperature));
 
     // Store the initialized state.
     storeState();
@@ -1551,15 +1471,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
    */
   private long logThermodynamics(long time) {
     time = System.nanoTime() - time;
-    logger.log(
-        basicLogging,
-        format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.3f",
-            totalSimTime,
-            currentKineticEnergy,
-            currentPotentialEnergy,
-            currentTotalEnergy,
-            currentTemperature,
-            time * NS2SEC));
+    logger.log(basicLogging,
+        format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.3f", totalSimTime, currentKineticEnergy,
+            currentPotentialEnergy, currentTotalEnergy, currentTemperature, time * NS2SEC));
     return System.nanoTime();
   }
 
@@ -1572,9 +1486,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
       if (step > 1) {
         List<Constraint> constraints = potential.getConstraints();
         // TODO: Replace magic numbers with named constants.
-        long constraintFails =
-            constraints.stream().filter((Constraint c) -> !c.constraintSatisfied(x, v, 1E-7, 1E-7))
-                .count();
+        long constraintFails = constraints.stream()
+            .filter((Constraint c) -> !c.constraintSatisfied(x, v, 1E-7, 1E-7)).count();
         if (constraintFails > 0) {
           logger.info(format(" %d constraint failures in step %d", constraintFails, step));
         }
@@ -1713,22 +1626,16 @@ public class MolecularDynamics implements Runnable, Terminatable {
     double maxPEThresh = 1.0E100; // 1.0E100 kcal/mol is well into the territory of the absurd.
     double absPE = Math.abs(currentPotentialEnergy);
 
-    if (absPE > maxPEThresh
-        || !Double.isFinite(currentPotentialEnergy)
+    if (absPE > maxPEThresh || !Double.isFinite(currentPotentialEnergy)
         || Math.abs(deltaPE) > delPEThresh) {
-      logger.info(
-          format(
-              " Unusual potential energy %12.5g detected, writing snapshots.",
-              currentPotentialEnergy));
+      logger.info(format(" Unusual potential energy %12.5g detected, writing snapshots.",
+          currentPotentialEnergy));
       writeStoredSnapshots();
-      currState
-          .revertState(); // May be unnecessary, thanks to the current state always being last on
+      currState.revertState(); // May be unnecessary, thanks to the current state always being last on
       // the queue.
       if (absPE > 1.0E100 || !Double.isFinite(currentPotentialEnergy)) {
-        logger.severe(
-            format(
-                " Dynamics exiting with atypical potential energy of %12.5g",
-                currentPotentialEnergy));
+        logger.severe(format(" Dynamics exiting with atypical potential energy of %12.5g",
+            currentPotentialEnergy));
       }
     }
   }
@@ -1743,8 +1650,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
    */
   private void sanityCheckFrequency(String describe, int frequency, DoubleConsumer setter) {
     if (frequency > nSteps) {
-      logger.fine(format(" Specified %s frequency of %d is greater than the number of steps %d",
-          describe, frequency, nSteps));
+      logger.fine(
+          format(" Specified %s frequency of %d is greater than the number of steps %d", describe,
+              frequency, nSteps));
     }
   }
 
@@ -1769,9 +1677,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
   }
 
   public enum VerbosityLevel {
-    VERBOSE(false),
-    QUIET(true),
-    SILENT(true);
+    VERBOSE(false), QUIET(true), SILENT(true);
 
     private final boolean isQuiet;
 
@@ -1787,8 +1693,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
   /** Describes actions taken by writeFilesForStep */
   public enum WriteActions {
     // TODO: Flesh this out if more functionality is needed.
-    RESTART,
-    SNAPSHOT
+    RESTART, SNAPSHOT
   }
 
   /**
@@ -1799,14 +1704,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * but not vice-versa.
    */
   public enum DynamicsEngine {
-    FFX(true, true),
-    OMM(false, true),
-    OPENMM(false, true);
+    FFX(true, true), OMM(false, true), OPENMM(false, true);
 
     // Set of supported Platforms. The EnumSet paradigm is very efficient, as it
     // is internally stored as a bit field.
-    private final EnumSet<ForceFieldEnergy.Platform> platforms =
-        EnumSet.noneOf(ForceFieldEnergy.Platform.class);
+    private final EnumSet<ForceFieldEnergy.Platform> platforms = EnumSet.noneOf(
+        ForceFieldEnergy.Platform.class);
 
     /**
      * Constructs a DynamicsEngine using the two presently known types of Platform.
@@ -1865,8 +1768,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
       this.assembly = assembly;
       pdbFile = SystemFilter.version(assembly.getFile());
       compositeConfiguration = assembly.getProperties();
-      pdbFilter = new PDBFilter(pdbFile, assembly,
-          assembly.getForceField(),
+      pdbFilter = new PDBFilter(pdbFile, assembly, assembly.getForceField(),
           assembly.getProperties());
       // Turn on use of MODEL records.
       pdbFilter.setModelNumbering(0);
@@ -1944,13 +1846,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
       Arrays.stream(mass).forEach(val -> sb.append(format("%.2g, ", val)));
       sb.append("\ng: ");
       Arrays.stream(gradient).forEach(val -> sb.append(format("%.2g, ", val)));
-      sb.append(
-          format(
-              "\nK,U,E,T: %g %g %g %g\n",
-              currentKineticEnergy,
-              currentPotentialEnergy,
-              currentTotalEnergy,
-              currentTemperature));
+      sb.append(format("\nK,U,E,T: %g %g %g %g\n", currentKineticEnergy, currentPotentialEnergy,
+          currentTotalEnergy, currentTemperature));
       logger.info(sb.toString());
     }
 

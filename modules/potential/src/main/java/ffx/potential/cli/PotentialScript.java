@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -175,7 +175,7 @@ public abstract class PotentialScript extends FFXScript {
    * supplied filename, including updating the script Binding instance.
    *
    * @param dirFromFilename Set the base directory variable <code>baseDir</code> using
-   *     this filename if its not set to a writeable directory.
+   *     this filename if it's not set to a writeable directory.
    * @return Return the base directory as a String (including an appended
    *     <code>File.separator</code>).
    */

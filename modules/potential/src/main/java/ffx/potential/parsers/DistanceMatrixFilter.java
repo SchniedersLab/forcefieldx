@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -146,8 +146,8 @@ public class DistanceMatrixFilter {
    * @param expectedColumns The number of columns to expect.
    * @return Statistics for the parsed values.
    */
-  public RunningStatistics readDistanceMatrix(
-      String filename, int expectedRows, int expectedColumns) {
+  public RunningStatistics readDistanceMatrix(String filename, int expectedRows,
+      int expectedColumns) {
 
     if (filename == null) {
       return null;
@@ -159,8 +159,8 @@ public class DistanceMatrixFilter {
     }
 
     // Read in the RMSD matrix.
-    try (FileReader fr = new FileReader(distanceMatrixFile);
-        BufferedReader br = new BufferedReader(fr)) {
+    try (FileReader fr = new FileReader(distanceMatrixFile); BufferedReader br = new BufferedReader(
+        fr)) {
 
       String data = br.readLine();
 
@@ -320,8 +320,8 @@ public class DistanceMatrixFilter {
     }
 
     // Write one row.
-    try (FileWriter fw = new FileWriter(distanceMatrixFile, true);
-        BufferedWriter bw = new BufferedWriter(fw)) {
+    try (FileWriter fw = new FileWriter(distanceMatrixFile,
+        true); BufferedWriter bw = new BufferedWriter(fw)) {
       int nColumn = distanceMatrixRow.length;
       for (int column = firstColumn; column < nColumn; column++) {
         bw.write(format("%16.14f", distanceMatrixRow[column]));

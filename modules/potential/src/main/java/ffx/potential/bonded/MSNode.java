@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -41,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Objects;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
@@ -90,7 +89,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
    * Constructor for MSNode.
    *
    * @param n a {@link java.lang.String} object.
-   * @param multiScaleLevel a int.
+   * @param multiScaleLevel The multiscale level of this node.
    */
   public MSNode(String n, int multiScaleLevel) {
     this.name = n;
@@ -98,8 +97,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
   }
 
   /**
-   * If <code>this</code> MSNode or any MSNode below it <code>equals</code> the argument, that
-   * MSNode is returned.
+   * If <code>this</code> MSNode or any MSNode below it <code>equals</code> the argument, that MSNode
+   * is returned.
    *
    * @param msNode a {@link ffx.potential.bonded.MSNode} object.
    * @return a {@link ffx.potential.bonded.MSNode} object.
@@ -136,9 +135,8 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
     if (!isSelected()) {
       return;
     }
-    MSNode dataNode;
-    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
-      dataNode = (MSNode) e.nextElement();
+    for (Enumeration<TreeNode> e = children(); e.hasMoreElements(); ) {
+      MSNode dataNode = (MSNode) e.nextElement();
       dataNode.drawLabel(graphics, g2d, node);
     }
   }
@@ -151,48 +149,43 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
    */
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     MSNode msNode = (MSNode) o;
     return Objects.equals(name, msNode.getName());
   }
 
   /**
-   * Returns an List of all Angles below the present MSNode.
+   * Returns a List of all Angles below the present MSNode.
    *
    * @return a {@link java.util.List} object.
    */
   public List<Angle> getAngleList() {
-    return getList(Angle.class, new ArrayList<>());
+    return getList(Angle.class);
   }
 
   /**
-   * Returns an List of all AngleTorsions below the present MSNode.
+   * Returns a List of all AngleTorsions below the present MSNode.
    *
    * @return a {@link java.util.List} object.
    */
   public List<AngleTorsion> getAngleTorsionList() {
-    return getList(AngleTorsion.class, new ArrayList<>());
+    return getList(AngleTorsion.class);
   }
 
   /**
-   * Returns an List of all Atoms below the present MSNode.
+   * Returns a List of all Atoms below the present MSNode.
    *
    * @return a new {@link java.util.List} object.
    */
   public List<Atom> getAtomList() {
-    @SuppressWarnings("unchecked")
-    Enumeration<TreeNode> e = depthFirstEnumeration();
-    List<TreeNode> list = Collections.list(e);
-    List<Atom> arrayList = new ArrayList<>();
-    for (TreeNode node : list) {
-      if (node instanceof Atom) {
-        arrayList.add((Atom) node);
-      }
-    }
-
-    Collections.sort(arrayList);
-    return arrayList;
+    List<Atom> atomList = getList(Atom.class);
+    Collections.sort(atomList);
+    return atomList;
   }
 
   /**
@@ -208,12 +201,12 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
   }
 
   /**
-   * Returns an List of all Bonds below the present MSNode.
+   * Returns a List of all Bonds below the present MSNode.
    *
    * @return a {@link java.util.List} object.
    */
   public List<Bond> getBondList() {
-    return getList(Bond.class, new ArrayList<>());
+    return getList(Bond.class);
   }
 
   /** {@inheritDoc} */
@@ -241,32 +234,17 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
   }
 
   /**
-   * Returns an List of the MSNode's Children (instead of using an Enumeration).
+   * Returns a List of the MSNode's Children (instead of using an Enumeration).
    *
    * @return a {@link java.util.List} object.
    */
   public List<MSNode> getChildList() {
     List<MSNode> l = new ArrayList<>();
-    Enumeration<?> e = children();
+    Enumeration<TreeNode> e = children();
     while (e.hasMoreElements()) {
       l.add((MSNode) e.nextElement());
     }
     return l;
-  }
-
-  /**
-   * Request all descendants of the given type; returned list will automatically conform to any
-   * superclass thereof.
-   *
-   * @param c a {@link java.lang.Class} object.
-   * @param <U> a U object.
-   * @param <T> a T object.
-   * @return a {@link java.util.List} object.
-   */
-  public <U extends MSNode, T extends U> List<U> getDescendants(Class<T> c) {
-    List<U> nodes = new ArrayList<>();
-    castDescendants(c, nodes);
-    return nodes;
   }
 
   /**
@@ -276,7 +254,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
    */
   public double getExtent() {
     double extent = 0.0;
-    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+    for (Enumeration<TreeNode> e = children(); e.hasMoreElements(); ) {
       MSNode node = (MSNode) e.nextElement();
       double temp = node.getExtent();
       if (temp > extent) {
@@ -287,24 +265,29 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
   }
 
   /**
-   * Returns an List of all ImproperTorsions below the present MSNode.
+   * Returns a List of all ImproperTorsions below the present MSNode.
    *
    * @return a {@link java.util.List} object.
    */
   public List<ImproperTorsion> getImproperTorsionList() {
-    return getList(ImproperTorsion.class, new ArrayList<>());
+    return getList(ImproperTorsion.class);
+  }
+
+  /** {@inheritDoc} */
+  public <T extends TreeNode> List<T> getList(Class<T> c) {
+    return getList(c, new ArrayList<>());
   }
 
   /** {@inheritDoc} */
   @Override
-  public <T> List<T> getList(Class<T> c, List<T> nodes) {
+  public <T extends TreeNode> List<T> getList(Class<T> c, List<T> nodes) {
     if (c.isInstance(this)) {
       nodes.add(c.cast(this));
     }
     if (isLeaf() || !canBeChild(c)) {
       return nodes;
     }
-    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+    for (Enumeration<TreeNode> e = children(); e.hasMoreElements(); ) {
       MSNode node = (MSNode) e.nextElement();
       node.getList(c, nodes);
     }
@@ -313,14 +296,14 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
 
   /** {@inheritDoc} */
   @Override
-  public <T> long getMSCount(Class<T> c, long count) {
+  public <T extends TreeNode> long getMSCount(Class<T> c, long count) {
     if (c.isInstance(this)) {
       count++;
     }
     if (!canBeChild(c)) {
       return count;
     }
-    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+    for (Enumeration<TreeNode> e = children(); e.hasMoreElements(); ) {
       MSNode node = (MSNode) e.nextElement();
       count += node.getMSCount(c, count);
     }
@@ -329,7 +312,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
 
   /** {@inheritDoc} */
   @Override
-  public <T> T getMSNode(Class<T> c) {
+  public <T extends TreeNode> T getMSNode(Class<T> c) {
     TreeNode[] nodes = getPath();
     for (TreeNode n : nodes) {
       if (c.isInstance(n)) {
@@ -350,15 +333,6 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
   }
 
   /**
-   * getMultiScaleLevel
-   *
-   * @return a int.
-   */
-  public int getMultiScaleLevel() {
-    return MultiScaleLevel;
-  }
-
-  /**
    * Returns the name of this MSNode.
    *
    * @return a {@link java.lang.String} object.
@@ -368,7 +342,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
   }
 
   /**
-   * Sets the name of this NodeObect to n.
+   * Sets the name of this NodeObject to n.
    *
    * @param n a {@link java.lang.String} object.
    */
@@ -377,62 +351,62 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
   }
 
   /**
-   * Returns an List of all Out-of-Plane Bends below the present MSNode.
+   * Returns a List of all Out-of-Plane Bends below the present MSNode.
    *
    * @return a {@link java.util.List} object.
    */
   public List<OutOfPlaneBend> getOutOfPlaneBendList() {
-    return getList(OutOfPlaneBend.class, new ArrayList<>());
+    return getList(OutOfPlaneBend.class);
   }
 
   /**
-   * Returns an List of all Pi-Orbital Torsions below the present MSNode.
+   * Returns a List of all Pi-Orbital Torsions below the present MSNode.
    *
    * @return a {@link java.util.List} object.
    */
   public List<PiOrbitalTorsion> getPiOrbitalTorsionList() {
-    return getList(PiOrbitalTorsion.class, new ArrayList<>());
+    return getList(PiOrbitalTorsion.class);
   }
 
   /**
-   * Returns an List of all Stretch-Bends below the present MSNode.
+   * Returns a List of all Stretch-Bends below the present MSNode.
    *
    * @return a {@link java.util.List} object.
    */
   public List<StretchBend> getStretchBendList() {
-    return getList(StretchBend.class, new ArrayList<>());
+    return getList(StretchBend.class);
   }
 
   /**
-   * Returns an List of all StretchTorsions below the present MSNode.
+   * Returns a List of all StretchTorsions below the present MSNode.
    *
    * @return a {@link java.util.List} object.
    */
   public List<StretchTorsion> getStretchTorsionList() {
-    return getList(StretchTorsion.class, new ArrayList<>());
+    return getList(StretchTorsion.class);
   }
 
   /**
-   * Returns an List of all Torsions below the present MSNode.
+   * Returns a List of all Torsions below the present MSNode.
    *
    * @return a {@link java.util.List} object.
    */
   public List<Torsion> getTorsionList() {
-    return getList(Torsion.class, new ArrayList<>());
+    return getList(Torsion.class);
   }
 
   /**
-   * Returns an List of all Torsion-Torsions below the present MSNode.
+   * Returns a List of all Torsion-Torsions below the present MSNode.
    *
    * @return a {@link java.util.List} object.
    */
   public List<TorsionTorsion> getTorsionTorsionList() {
-    return getList(TorsionTorsion.class, new ArrayList<>());
+    return getList(TorsionTorsion.class);
   }
 
   /**
-   * Returns the total mass of all atoms in the MolecularAssembly, calculating the mass if it has
-   * not already been done, defaulting to simple addition.
+   * Returns the total mass of all atoms in the MolecularAssembly, calculating the mass if it has not
+   * already been done, defaulting to simple addition.
    *
    * @return Total mass of atoms in system.
    */
@@ -444,12 +418,12 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
   }
 
   /**
-   * Returns an List of all Urey-Bradleys below the present MSNode.
+   * Returns a List of all Urey-Bradleys below the present MSNode.
    *
    * @return a {@link java.util.List} object.
    */
   public List<UreyBradley> getUreyBradleyList() {
-    return getList(UreyBradley.class, new ArrayList<>());
+    return getList(UreyBradley.class);
   }
 
   /** {@inheritDoc} */
@@ -474,7 +448,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
    */
   public void setSelected(boolean b) {
     selected = b;
-    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+    for (Enumeration<TreeNode> e = children(); e.hasMoreElements(); ) {
       MSNode node = (MSNode) e.nextElement();
       node.setSelected(b);
     }
@@ -499,7 +473,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
   /** {@inheritDoc} */
   @Override
   public void setColor(RendererCache.ColorModel colorModel, Color3f color, Material mat) {
-    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+    for (Enumeration<TreeNode> e = children(); e.hasMoreElements(); ) {
       MSNode node = (MSNode) e.nextElement();
       node.setColor(colorModel, color, mat);
     }
@@ -508,7 +482,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
   /** {@inheritDoc} */
   @Override
   public void setView(RendererCache.ViewModel viewModel, List<BranchGroup> newShapes) {
-    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+    for (Enumeration<TreeNode> e = children(); e.hasMoreElements(); ) {
       MSNode node = (MSNode) e.nextElement();
       node.setView(viewModel, newShapes);
     }
@@ -517,7 +491,7 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
   /**
    * {@inheritDoc}
    *
-   * <p>Overidden toString method returns the MSNode's name
+   * <p>Overridden toString method returns the MSNode's name
    */
   @Override
   public String toString() {
@@ -527,37 +501,9 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
   /** {@inheritDoc} */
   @Override
   public void update() {
-    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
+    for (Enumeration<TreeNode> e = children(); e.hasMoreElements(); ) {
       MSNode node = (MSNode) e.nextElement();
       node.update();
-    }
-  }
-
-  /**
-   * Returns a ListIterator containing this MSNode's children.
-   *
-   * @return a {@link java.util.ListIterator} object.
-   */
-  ListIterator<MSNode> getChildListIterator() {
-    return getChildList().listIterator();
-  }
-
-  /**
-   * @param c a {@link java.lang.Class} object.
-   * @param nodes Nodes
-   * @param <U> a U object.
-   * @param <T> a T object.
-   */
-  private <U extends MSNode, T extends U> void castDescendants(Class<T> c, List<U> nodes) {
-    if (c.isInstance(this)) {
-      nodes.add(c.cast(this));
-    }
-    if (isLeaf()) {
-      return;
-    }
-    for (Enumeration<?> e = children(); e.hasMoreElements(); ) {
-      MSNode node = (MSNode) e.nextElement();
-      node.castDescendants(c, nodes);
     }
   }
 
@@ -622,16 +568,16 @@ public class MSNode extends DefaultMutableTreeNode implements ROLS {
    * @param c Class
    * @return boolean
    */
-  private boolean canBeChild(Class<?> c) {
+  private <T extends TreeNode> boolean canBeChild(Class<T> c) {
     try {
       int multiScaleLevel = c.getDeclaredField("MultiScaleLevel").getInt(null);
       if (multiScaleLevel >= this.MultiScaleLevel) {
         return false;
       }
     } catch (NoSuchFieldException
-        | SecurityException
-        | IllegalArgumentException
-        | IllegalAccessException e) {
+             | SecurityException
+             | IllegalArgumentException
+             | IllegalAccessException e) {
       return true;
     }
     return true;

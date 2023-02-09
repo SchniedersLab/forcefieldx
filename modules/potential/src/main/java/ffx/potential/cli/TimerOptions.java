@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -58,7 +58,7 @@ public class TimerOptions {
   /**
    * Getter for the field <code>iterations</code>.
    *
-   * @return a int.
+   * @return The number of iterations.
    */
   public int getIterations() {
     return group.iterations;
@@ -76,7 +76,7 @@ public class TimerOptions {
   /**
    * Getter for the field <code>threads</code>.
    *
-   * @return a int.
+   * @return The number of threads.
    */
   public int getThreads() {
     return group.threads;
@@ -97,32 +97,24 @@ public class TimerOptions {
   private static class TimerOptionGroup {
 
     /** -n or --iterations to set the number of iterations */
-    @Option(
-        names = {"-n", "--iterations"},
-        paramLabel = "5",
-        description = "Number of iterations.")
+    @Option(names = {"-n", "--iterations"}, paramLabel = "5", description = "Number of iterations.")
     public int iterations = 5;
 
     /**
      * --nt or --threads to set the number of SMP threads (the default of 0 specifies use of all CPU
      * cores)
      */
-    @Option(
-        names = {"--nt", "--threads"},
-        paramLabel = "0",
+    @Option(names = {"--nt", "--threads"}, paramLabel = "0",
         description = "Number of SMP threads (0 specifies use of all CPU cores).")
     public int threads = 0;
 
     /** -g or --noGradient to ignore computation of the atomic coordinates noGradient */
-    @Option(
-        names = {"-g", "--noGradient"},
+    @Option(names = {"-g", "--noGradient"},
         description = "Ignore computation of the atomic coordinates gradient.")
     public boolean noGradient = false;
 
     /** -v or --verbose to suppress printing of the energy for each iteration */
-    @Option(
-        names = {"-v", "--verbose"},
-        description = "Print the energy for each iteration.")
+    @Option(names = {"-v", "--verbose"}, description = "Print the energy for each iteration.")
     public boolean verbose = false;
   }
 }

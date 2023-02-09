@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -59,7 +59,7 @@ import org.apache.commons.math3.ml.distance.EuclideanDistance;
 import org.apache.commons.math3.random.RandomGenerator;
 
 /**
- * Cluster contains methods utilized in the Cluster.groovy file.
+ * Cluster contains methods utilized in the <code>Cluster.groovy</code> file.
  *
  * @author Aaron J. Nessler
  * @author Michael J. Schnieders
@@ -91,8 +91,8 @@ public class Clustering {
       double[] row = distMatrix.get(i);
       // Check that the input data is appropriate.
       if (row.length != dim) {
-        log.severe(format(" Row %d of the distance matrix (%d x %d) has %d columns.",
-            i, dim, dim, row.length));
+        log.severe(format(" Row %d of the distance matrix (%d x %d) has %d columns.", i, dim, dim,
+            row.length));
       }
       conformationList.add(new Conformation(row, i));
     }
@@ -105,8 +105,8 @@ public class Clustering {
     RandomGenerator randomGenerator = kMeansPlusPlusClusterer.getRandomGenerator();
     randomGenerator.setSeed(seed);
     // Create a MultiKMeansPlusPlusClusterer
-    MultiKMeansPlusPlusClusterer<Conformation> multiKMeansPlusPlusClusterer =
-        new MultiKMeansPlusPlusClusterer<>(kMeansPlusPlusClusterer, numTrials);
+    MultiKMeansPlusPlusClusterer<Conformation> multiKMeansPlusPlusClusterer = new MultiKMeansPlusPlusClusterer<>(
+        kMeansPlusPlusClusterer, numTrials);
 
     // Perform the clustering.
     return multiKMeansPlusPlusClusterer.cluster(conformationList);
@@ -117,7 +117,7 @@ public class Clustering {
    * a dendrogram is printed of the clustered results. A PDB file for the centroid of each cluster is
    * saved.
    *
-   * @param distanceMatrix An List of double[] entries that holds the distance matrix.
+   * @param distanceMatrix A List of double[] entries that holds the distance matrix.
    * @param threshold the distance used to separate clusters.
    * @return Return a list of CentroidClusters.
    */
@@ -144,26 +144,24 @@ public class Clustering {
   }
 
   /**
-   * Perform an iterative clustering for a specified number of clusters.
-   *
-   * Designed and tested by researchers at Takeda:
-   * @author Yuya, Kinoshita
-   * @author Koki, Nishimura
-   * @author Masatoshi, Karashima
-   * Implemented by:
-   * @author Aaron J. Nessler
+   * Perform an iterative clustering for a specified number of clusters. Designed and tested by
+   * researchers at Takeda:
    *
    * @param distMatrix Coordinate input serves as the data points.
    * @param trials Number of iterations to perform clustering.
    * @param tolerance RMSD cutoff to divide same values from different.
    * @return The clusters.
+   * @author Yuya, Kinoshita
+   * @author Koki, Nishimura
+   * @author Masatoshi, Karashima Implemented by:
+   * @author Aaron J. Nessler
    */
   public static List<CentroidCluster<Conformation>> iterativeClustering(List<double[]> distMatrix,
-                                                                     int trials, double tolerance) {
+      int trials, double tolerance) {
     // Square distance matrix size (dim x dim).
     int dim = distMatrix.size();
     ArrayList<CentroidCluster<Conformation>> bestClusters = new ArrayList<>();
-    for(int i = 0; i<trials; i++) {
+    for (int i = 0; i < trials; i++) {
 
       ArrayList<Integer> remaining = new ArrayList<>();
       for (int j = 0; j < dim; j++) {
@@ -173,34 +171,38 @@ public class Clustering {
       while (remaining.size() > 0) {
         int seed = (int) floor(random() * (remaining.size() - 1));
         int index = remaining.get(seed);
-        CentroidCluster<Conformation> cluster = new CentroidCluster<>(new Conformation(distMatrix.get(index), index));
+        CentroidCluster<Conformation> cluster = new CentroidCluster<>(
+            new Conformation(distMatrix.get(index), index));
         double[] row = distMatrix.get(index);
         // Check that the input data is complete.
-        if(log.isLoggable(Level.FINER)) {
+        if (log.isLoggable(Level.FINER)) {
           log.finer(format(" Remaining clusters: %3d of %3d", remaining.size(), dim));
           log.finer(format("  Row: %3d (seed %3d) has %3d entries.", index + 1, seed, row.length));
         }
         if (row.length != dim) {
-          log.severe(format(" Row %d of the distance matrix (%d x %d) has %d columns.",
-                  index, dim, dim, row.length));
+          log.severe(
+              format(" Row %d of the distance matrix (%d x %d) has %d columns.", index, dim, dim,
+                  row.length));
         }
         for (int j = 0; j < dim; j++) {
           if (row[j] < tolerance && remaining.contains(j)) {
             cluster.addPoint(new Conformation(distMatrix.get(j), j));
             if (!remaining.remove((Integer) j)) {
-              log.warning(format(" Row %3d matched %3d, but could not be removed.", j + 1, index + 1));
+              log.warning(
+                  format(" Row %3d matched %3d, but could not be removed.", j + 1, index + 1));
             }
           }
         }
         clusters.add(cluster);
       }
-      if(bestClusters.size() == 0 || clusters.size() < bestClusters.size()){
-        if(log.isLoggable(Level.FINE)) {
+      if (bestClusters.size() == 0 || clusters.size() < bestClusters.size()) {
+        if (log.isLoggable(Level.FINE)) {
           int numStructs = 0;
-          for(CentroidCluster clust: clusters){
-            numStructs += clust.getPoints().size();
+          for (CentroidCluster<Conformation> cluster : clusters) {
+            numStructs += cluster.getPoints().size();
           }
-          log.fine(format(" New Best: Num clusters: %3d Num Structs: %3d ", clusters.size(), numStructs));
+          log.fine(
+              format(" New Best: Num clusters: %3d Num Structs: %3d ", clusters.size(), numStructs));
         }
         bestClusters = new ArrayList<>(clusters);
       }
@@ -216,8 +218,7 @@ public class Clustering {
    * @param verbose If true, use verbose printing.
    */
   public static void analyzeClusters(List<CentroidCluster<Conformation>> clusters,
-      List<Integer> repStructs,
-      boolean verbose) {
+      List<Integer> repStructs, boolean verbose) {
     // Number of clusters.
     int nClusters = clusters.size();
     double meanClusterRMSD = 0.0;

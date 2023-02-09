@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -53,7 +53,6 @@ import org.apache.commons.configuration2.SystemConfiguration;
 import org.apache.commons.configuration2.builder.FileBasedConfigurationBuilder;
 import org.apache.commons.configuration2.builder.fluent.Parameters;
 import org.apache.commons.configuration2.ex.ConfigurationException;
-import org.apache.commons.io.FilenameUtils;
 
 /**
  * The Keyword class holds a single Force Field X keyword entry.
@@ -156,7 +155,8 @@ public class Keyword {
           logger.log(Level.INFO, " Error loading {0}.", keyFile);
         }
       } else {
-        logger.severe(format(" Keyword file supplied at the command line does not exist: %s.", keyString));
+        logger.severe(
+            format(" Keyword file supplied at the command line does not exist: %s.", keyString));
       }
     } else if (file != null) {
       String structureBasename = removeExtension(file.getAbsolutePath());
@@ -214,7 +214,7 @@ public class Keyword {
       }
     }
 
-    // System wide options are 2nd to last.
+    // System-wide options are 2nd to last.
     filename = System.getenv("FFX_PROPERTIES");
     if (filename != null) {
       File systemPropFile = new File(filename);
@@ -291,7 +291,7 @@ public class Keyword {
   /**
    * getEntry
    *
-   * @param i a int.
+   * @param i The index of the entry to return.
    * @return a {@link java.lang.String} object.
    */
   public String getEntry(int i) {

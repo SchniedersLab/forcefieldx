@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -86,7 +86,7 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
     StringBuilder mathFormBuilder = new StringBuilder();
     for (int m = 1; m < 3; m++) {
       for (int n = 1; n < 4; n++) {
-        // kmn * (am - am(equil)) * (1 + cos(n*tors + phi(n)))
+        // kmn * (am - am0) * (1 + cos(n*tors + phi(n)))
         mathFormBuilder.append(
             format("k%d%d*(aVal%d-a%d)*(1+cos(%d*tVal+phi%d))+", m, n, m, m, n, n));
       }
@@ -107,7 +107,6 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
   private final double[] constants = new double[6];
   /** The AngleTorsion may use more sine and cosine terms than are defined in the TorsionType. */
   private final double[] tsin = new double[] {0.0, 0.0, 0.0};
-
   private final double[] tcos = new double[] {1.0, 1.0, 1.0};
   /** First angle force field type. */
   public AngleType angleType1 = null;
@@ -203,14 +202,10 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
       angleTorsion.angleType1 = angle1.angleType;
       angleTorsion.angleType2 = angle2.angleType;
 
-      if (atom1.getAtomType().atomClass == angleTorsionType.atomClasses[0]
-          && atom2.getAtomType().atomClass == angleTorsionType.atomClasses[1]
-          && atom3.getAtomType().atomClass == angleTorsionType.atomClasses[2]
-          && atom4.getAtomType().atomClass == angleTorsionType.atomClasses[3]) {
-        angleTorsion.setFlipped(false);
-      } else {
-        angleTorsion.setFlipped(true);
-      }
+      angleTorsion.setFlipped(atom1.getAtomType().atomClass != angleTorsionType.atomClasses[0]
+          || atom2.getAtomType().atomClass != angleTorsionType.atomClasses[1]
+          || atom3.getAtomType().atomClass != angleTorsionType.atomClasses[2]
+          || atom4.getAtomType().atomClass != angleTorsionType.atomClasses[3]);
 
       return angleTorsion;
     }
@@ -240,8 +235,8 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
    * <p>Evaluate the Angle-Torsion energy.
    */
   @Override
-  public double energy(
-      boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+  public double energy(boolean gradient, int threadID,
+      AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
     energy = 0.0;
     value = 0.0;
     dEdL = 0.0;
@@ -427,26 +422,18 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
 
   /** Log details for this Angle-Torsion energy term. */
   public void log() {
-    logger.info(
-        format(
-            " %-8s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f %10.4f",
-            "Angle-Torsion",
-            atoms[0].getIndex(),
-            atoms[0].getAtomType().name,
-            atoms[1].getIndex(),
-            atoms[1].getAtomType().name,
-            atoms[2].getIndex(),
-            atoms[2].getAtomType().name,
-            atoms[3].getIndex(),
-            atoms[3].getAtomType().name,
-            value,
-            energy));
+    logger.info(format(" %-8s %6d-%s %6d-%s %6d-%s %6d-%s %10.4f %10.4f", "Angle-Torsion",
+        atoms[0].getIndex(), atoms[0].getAtomType().name,
+        atoms[1].getIndex(), atoms[1].getAtomType().name,
+        atoms[2].getIndex(), atoms[2].getAtomType().name,
+        atoms[3].getIndex(), atoms[3].getAtomType().name,
+        value, energy));
   }
 
   /**
    * {@inheritDoc}
    *
-   * <p>Overidden toString Method returns the Term's id.
+   * <p>Overridden toString Method returns the Term's id.
    */
   @Override
   public String toString() {
@@ -461,12 +448,8 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
     atoms[2] = bonds[1].get1_2(atoms[1]);
     atoms[3] = bonds[2].get1_2(atoms[2]);
     setID_Key(false);
-    value =
-        dihedralAngle(
-            atoms[0].getXYZ(null),
-            atoms[1].getXYZ(null),
-            atoms[2].getXYZ(null),
-            atoms[3].getXYZ(null));
+    value = dihedralAngle(atoms[0].getXYZ(null), atoms[1].getXYZ(null),
+        atoms[2].getXYZ(null), atoms[3].getXYZ(null));
   }
 
   /**

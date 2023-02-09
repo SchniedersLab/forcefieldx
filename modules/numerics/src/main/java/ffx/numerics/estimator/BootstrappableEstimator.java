@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -82,9 +82,18 @@ public interface BootstrappableEstimator extends StatisticalEstimator {
     return stream(freeEnergyDifferences).sum();
   }
 
+  /**
+   * Obtains bootstrap enthalpy. Default implementation sums by-bin enthalpies.
+   *
+   * <p>May be over-ridden by non-sequential estimators like MBAR.
+   *
+   * @param totalEnthalpy By-bin bootstrap results.
+   * @return Overall enthalpy.
+   */
   default double sumEnthalpyBootstrapResults(double[] totalEnthalpy) {
     return stream(totalEnthalpy).sum();
   }
+
   /**
    * Obtains bootstrap uncertainty. Default implementation is square root of summed variances.
    *
@@ -97,6 +106,15 @@ public interface BootstrappableEstimator extends StatisticalEstimator {
     return sqrt(stream(variances).sum());
   }
 
+  /**
+   * Obtains bootstrap enthalpy uncertainty. Default implementation is square root of summed enthalpy
+   * variances.
+   *
+   * <p>May be over-ridden by non-sequential estimators like MBAR.
+   *
+   * @param enthalpyVariances Variance (not uncertainty) in by-bin bootstrap results.
+   * @return Overall enthalpy uncertainty.
+   */
   default double sumBootstrapEnthalpyUncertainty(double[] enthalpyVariances) {
     return sqrt(stream(enthalpyVariances).sum());
   }

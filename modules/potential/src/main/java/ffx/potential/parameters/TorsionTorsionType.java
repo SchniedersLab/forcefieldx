@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -62,8 +62,8 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "tortors", clazz = String[].class, keywordGroup = PotentialFunctionParameter,
-    description = "[7 integers, then multiple lines of 2 integers and 1 real] "
+@FFXKeyword(name = "tortors", clazz = String[].class, keywordGroup = PotentialFunctionParameter, description =
+    "[7 integers, then multiple lines of 2 integers and 1 real] "
         + "Provides the values for a single torsion-torsion parameter. "
         + "The first five integer modifiers give the atom class numbers for the atoms involved in the two adjacent torsional angles to be defined. "
         + "The last two integer modifiers contain the number of data grid points that lie along each axis of the torsion-torsion map. "
@@ -74,10 +74,9 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
   /** Default units to convert Torsion-Torsion energy to kcal/mole. */
   public static final double DEFAULT_TORTOR_UNIT = 1.0;
   /** Convert Torsion-Torsion energy to kcal/mole. */
-  @FFXKeyword(name = "tortorunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0",
-      description =
-          "Sets the scale factor needed to convert the energy value computed by the torsion-torsion potential into units of kcal/mole. "
-              + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  @FFXKeyword(name = "tortorunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0", description =
+      "Sets the scale factor needed to convert the energy value computed by the torsion-torsion potential into units of kcal/mole. "
+          + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
   public double torTorUnit = DEFAULT_TORTOR_UNIT;
 
   private static final Logger logger = Logger.getLogger(TorsionTorsionType.class.getName());
@@ -111,8 +110,8 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
    * @param torsion2 an array of double.
    * @param energy an array of double.
    */
-  public TorsionTorsionType(
-      int[] atomClasses, int[] gridPoints, double[] torsion1, double[] torsion2, double[] energy) {
+  public TorsionTorsionType(int[] atomClasses, int[] gridPoints, double[] torsion1,
+      double[] torsion2, double[] energy) {
     super(TORTORS, sortKey(atomClasses));
     this.atomClasses = atomClasses;
     nx = gridPoints[0];
@@ -160,13 +159,8 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
         if (abs(energy[k] - energy[k + nx - 1]) > eps) {
           isCyclic = false;
           if (logger.isLoggable(Level.FINEST)) {
-            logger.finest(
-                " tortor is apreriodic: "
-                    + k
-                    + ", "
-                    + (k + nx - 1)
-                    + ": "
-                    + abs(energy[k] - energy[k + nx - 1]));
+            logger.finest(" tortor is apreriodic: " + k + ", " + (k + nx - 1) + ": " + abs(
+                energy[k] - energy[k + nx - 1]));
           }
           break;
         }
@@ -178,13 +172,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
         if (abs(energy[i] - energy[i + k]) > eps) {
           if (logger.isLoggable(Level.FINEST)) {
             logger.fine(
-                " tortor is aperiodic: "
-                    + i
-                    + ", "
-                    + i
-                    + k
-                    + ": "
-                    + abs(energy[i] - energy[i + k]));
+                " tortor is aperiodic: " + i + ", " + i + k + ": " + abs(energy[i] - energy[i + k]));
           }
           isCyclic = false;
           break;
@@ -264,10 +252,8 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
    * @param atomClasses an array of {@link int} objects.
    * @return a {@link ffx.potential.parameters.TorsionTorsionType} object.
    */
-  public static TorsionTorsionType average(
-      TorsionTorsionType torsionTorsionType1,
-      TorsionTorsionType torsionTorsionType2,
-      int[] atomClasses) {
+  public static TorsionTorsionType average(TorsionTorsionType torsionTorsionType1,
+      TorsionTorsionType torsionTorsionType2, int[] atomClasses) {
     if (torsionTorsionType1 == null || torsionTorsionType2 == null || atomClasses == null) {
       return null;
     }
@@ -490,8 +476,7 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
    * @param rs
    * @param c
    */
-  private static void cytsys(
-      int n, double[] dm, double[] du, double[] cr, double[] rs, double[] c) {
+  private static void cytsys(int n, double[] dm, double[] du, double[] cr, double[] rs, double[] c) {
     // Updating phase.
     double temp = rs[1];
     rs[1] = temp / dm[1];
@@ -550,9 +535,9 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
   }
 
   /**
-   * incrementClasses
+   * Increment the atom classes by a value.
    *
-   * @param increment a int.
+   * @param increment The increment to add to the atom classes.
    */
   public void incrementClasses(int increment) {
     for (int i = 0; i < atomClasses.length; i++) {
@@ -625,19 +610,8 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
    * @param dla
    * @param dmu
    */
-  private void nspline(
-      int n,
-      double[] x0,
-      double[] y0,
-      double y21,
-      double y2n,
-      double[] s1,
-      double[] s2,
-      double[] h,
-      double[] g,
-      double[] dy,
-      double[] dla,
-      double[] dmu) {
+  private void nspline(int n, double[] x0, double[] y0, double y21, double y2n, double[] s1,
+      double[] s2, double[] h, double[] g, double[] dy, double[] dla, double[] dmu) {
 
     // Calculate the intervals.
     for (int i = 0; i < n; i++) {
@@ -699,18 +673,8 @@ public final class TorsionTorsionType extends BaseType implements Comparator<Str
    * @param rc
    * @param rs
    */
-  private void cspline(
-      int n,
-      double[] xn,
-      double[] fn,
-      double[] b,
-      double[] c,
-      double[] d,
-      double[] h,
-      double[] du,
-      double[] dm,
-      double[] rc,
-      double[] rs) {
+  private void cspline(int n, double[] xn, double[] fn, double[] b, double[] c, double[] d,
+      double[] h, double[] du, double[] dm, double[] rc, double[] rs) {
     double eps = 0.000001;
     if (abs(fn[n] - fn[0]) > eps) {
       logger.severe("TORTOR values are not periodic.");

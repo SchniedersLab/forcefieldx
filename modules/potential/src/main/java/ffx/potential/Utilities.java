@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -40,14 +40,12 @@ package ffx.potential;
 import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.potential.bonded.NamingUtils.renameAminoAcidToPDBStandard;
 import static ffx.potential.bonded.NamingUtils.renameNucleicAcidToPDBStandard;
-import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.NamingUtils;
 import ffx.potential.bonded.NucleicAcidUtils;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;
@@ -479,9 +477,9 @@ public final class Utilities {
 
   /**
    * Given an array of bonded atoms, this function recursively collects all other connected atoms,
-   * without backtracking over atoms already in the list. Disulfide bonds are not crossed. (the
-   * intent is to search along a peptide backbone) Atoms preloaded into the List provide search
-   * termination.
+   * without backtracking over atoms already in the list. Disulfide bonds can be crossed. (the
+   * intent is to not cross disulfide bonds in a protein, but cross disulfide bonds within molecules)
+   * Atoms preloaded into the List provide search termination.
    *
    * @param seed Atom
    * @param atoms List
@@ -497,7 +495,7 @@ public final class Utilities {
       if (nextAtom.getParent() != null) {
         continue;
       }
-      // Avoid crossing disulfide bonds?
+      // If true, search across disulfide bonds.
       if ((searchDisulfide || (nextAtom.getAtomicNumber() != 16 || seed.getAtomicNumber() != 16))
           && !atoms.contains(nextAtom)) {
         collectAtoms(nextAtom, atoms, searchDisulfide);

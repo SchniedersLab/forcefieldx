@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -78,6 +78,7 @@ class Minimize extends AlgorithmsScript {
   @Option(names = ['-t', '--threeStage'], paramLabel = 'false',
       description = 'Perform refinement in 3 stages: coordinates, b-factors, and then occupancies (overrides mode setting if true)')
   boolean threeStage = false
+
   /**
    * -E or --eps3 RMS gradient convergence criteria for three stage refinement (default of -1.0 automatically determine eps for each stage).
    */

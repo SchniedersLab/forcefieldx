@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -57,7 +57,7 @@ import java.util.logging.Logger;
  */
 @FFXKeyword(name = "biotype", clazz = String.class, keywordGroup = PotentialFunctionParameter,
     description = "[integer, name, quoted string and integer] "
-        + "Provides the values to define the correspondence between a single biopolymer atom type and its force field atom type.")
+        + "Provides the values to define the correspondence between a single bio-polymer atom type and its force field atom type.")
 public final class BioType extends BaseType implements Comparator<String> {
 
   /** A Logger for the BioType class. */
@@ -176,7 +176,7 @@ public final class BioType extends BaseType implements Comparator<String> {
     StringBuilder sb =
         new StringBuilder(
             format("biotype  %5d  %-4s  \"%-23s\"  %5d", index, atomName, moleculeName, atomType));
-    if (bonds != null && bonds.length > 0) {
+    if (bonds != null) {
       for (String bond : bonds) {
         sb.append(format("  %-4s", bond));
       }
@@ -187,8 +187,8 @@ public final class BioType extends BaseType implements Comparator<String> {
   /**
    * incrementIndexAndType
    *
-   * @param indexIncrement a int.
-   * @param typeIncrement a int.
+   * @param indexIncrement The index increment.
+   * @param typeIncrement The type increment.
    */
   void incrementIndexAndType(int indexIncrement, int typeIncrement) {
     index += indexIncrement;

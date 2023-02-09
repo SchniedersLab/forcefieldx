@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -58,14 +58,13 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "vdw", clazz = String.class, keywordGroup = PotentialFunctionParameter,
-    description = "[1 integer and 3 reals] "
-        + "Provides values for a single van der Waals parameter. "
+@FFXKeyword(name = "vdw", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
+    "[1 integer and 3 reals] " + "Provides values for a single van der Waals parameter. "
         + "The integer modifier, if positive, gives the atom class number for which vdw parameters are to be defined. "
         + "Note that vdw parameters are given for atom classes, not atom types. "
         + "The three real number modifiers give the values of the atom size in Angstroms, homoatomic well depth in kcal/mole, and an optional reduction factor for univalent atoms.")
-@FFXKeyword(name = "vdw14", clazz = String.class, keywordGroup = PotentialFunctionParameter,
-    description = "[1 integer and 2 reals] "
+@FFXKeyword(name = "vdw14", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
+    "[1 integer and 2 reals] "
         + "Provides values for a single van der Waals parameter for use in 1-4 nonbonded interactions. "
         + "The integer modifier, if positive, gives the atom class number for which vdw parameters are to be defined. "
         + "Note that vdw parameters are given for atom classes, not atom types. "
@@ -112,8 +111,8 @@ public final class VDWType extends BaseType implements Comparator<String> {
    * @param reductionFactor Reduction factor for evaluating van der Waals pairs.
    * @param vdwMode The VDWMode to use.
    */
-  public VDWType(
-      int atomClass, double radius, double wellDepth, double reductionFactor, VDWMode vdwMode) {
+  public VDWType(int atomClass, double radius, double wellDepth, double reductionFactor,
+      VDWMode vdwMode) {
     super(VDW, Integer.toString(atomClass));
     this.atomClass = atomClass;
     this.radius = radius;
@@ -126,22 +125,20 @@ public final class VDWType extends BaseType implements Comparator<String> {
   }
 
   /**
-   * average.
+   * Average two VDWType objects.
    *
-   * @param vdwType1 a {@link ffx.potential.parameters.VDWType} object.
-   * @param vdwType2 a {@link ffx.potential.parameters.VDWType} object.
-   * @param atomClass a int.
-   * @return a {@link ffx.potential.parameters.VDWType} object.
+   * @param vdwType1 The first VDWType.
+   * @param vdwType2 The second VDWType.
+   * @param atomClass The new atom class.
+   * @return The new averaged VDWType.
    */
   public static VDWType average(VDWType vdwType1, VDWType vdwType2, int atomClass) {
     if (vdwType1 == null || vdwType2 == null) {
       return null;
     }
-
     double radius = (vdwType1.radius + vdwType2.radius) / 2.0;
     double wellDepth = (vdwType1.wellDepth + vdwType2.wellDepth) / 2.0;
     double reductionFactor = (vdwType1.reductionFactor + vdwType2.reductionFactor) / 2.0;
-
     return new VDWType(atomClass, radius, wellDepth, reductionFactor);
   }
 
@@ -252,9 +249,9 @@ public final class VDWType extends BaseType implements Comparator<String> {
   }
 
   /**
-   * incrementClass
+   * Increment the atom class by a specified amount.
    *
-   * @param increment a int.
+   * @param increment The increment to add to the atom class.
    */
   void incrementClass(int increment) {
     atomClass += increment;
@@ -263,7 +260,6 @@ public final class VDWType extends BaseType implements Comparator<String> {
 
   /** Torsion modes include Normal or In-Plane */
   public enum VDWMode {
-    NORMAL,
-    VDW14
+    NORMAL, VDW14
   }
 }

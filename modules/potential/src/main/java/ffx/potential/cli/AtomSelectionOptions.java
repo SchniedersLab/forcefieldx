@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -146,10 +146,7 @@ public class AtomSelectionOptions {
     if (group.activeAtoms != null && !(group.activeAtoms.length() > 0)) {
       return true;
     }
-    if (group.inactiveAtoms != null && !(group.inactiveAtoms.length() > 0)) {
-      return true;
-    }
-    return false;
+    return group.inactiveAtoms != null && !(group.inactiveAtoms.length() > 0);
   }
 
   private void setInactive(MolecularAssembly assembly) {
@@ -166,18 +163,14 @@ public class AtomSelectionOptions {
   private static class AtomSelectionOptionGroup {
 
     /** --aa or --activeAtoms Ranges of active atoms [NONE, ALL, Range(s): 1-3,6-N]. */
-    @Option(
-        names = {"--aa", "--active"},
-        paramLabel = "<selection>",
-        defaultValue = "",
+    @Option(names = {"--aa",
+        "--active"}, paramLabel = "<selection>", defaultValue = "",
         description = "Ranges of active atoms [NONE, ALL, Range(s): 1-3,6-N].")
     public String activeAtoms;
 
     /** --ia or --inactiveAtoms Ranges of inactive atoms [NONE, ALL, Range(s): 1-3,6-N]. */
-    @Option(
-        names = {"--ia", "--inactive"},
-        paramLabel = "<selection>",
-        defaultValue = "",
+    @Option(names = {"--ia",
+        "--inactive"}, paramLabel = "<selection>", defaultValue = "",
         description = "Ranges of inactive atoms [NONE, ALL, Range(s): 1-3,6-N].")
     public String inactiveAtoms;
   }

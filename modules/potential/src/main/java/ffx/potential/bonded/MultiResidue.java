@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -83,12 +83,8 @@ public class MultiResidue extends Residue {
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
    */
   public MultiResidue(Residue residue, ForceField forceField) {
-    super(
-        "" + residue.getResidueNumber() + "-" + "MultiResidue",
-        residue.getResidueNumber(),
-        residue.residueType,
-        residue.getChainID(),
-        residue.getChainID().toString());
+    super("" + residue.getResidueNumber() + "-" + "MultiResidue", residue.getResidueNumber(),
+        residue.residueType, residue.getChainID(), residue.getChainID().toString());
     this.forceField = forceField;
     activeResidue = residue;
     // Initialize consideredResidue list.
@@ -184,7 +180,7 @@ public class MultiResidue extends Residue {
   /**
    * {@inheritDoc}
    *
-   * <p>Overidden equals method that return true if object is not equals to this, is of the same
+   * <p>Overridden equals method that return true if object is not equals to this, is of the same
    * class, has the same parent Polymer, the same sequence number, the same ResidueType, and the same
    * AA3/NA3.
    */
@@ -322,14 +318,14 @@ public class MultiResidue extends Residue {
 
   /** {@inheritDoc} */
   @Override
-  public List<Atom> getDangelingAtoms() {
-    return activeResidue.getDangelingAtoms();
+  public List<Atom> getDanglingAtoms() {
+    return activeResidue.getDanglingAtoms();
   }
 
   /** {@inheritDoc} */
   @Override
-  public void setDangelingAtoms(List<Atom> a) {
-    activeResidue.setDangelingAtoms(a);
+  public void setDanglingAtoms(List<Atom> a) {
+    activeResidue.setDanglingAtoms(a);
   }
 
   /**
@@ -366,7 +362,7 @@ public class MultiResidue extends Residue {
   /**
    * getResidueCount.
    *
-   * @return a int.
+   * @return The number of residues in this MultiResidue.
    */
   public int getResidueCount() {
     if (consideredResidues == null) {
@@ -414,9 +410,9 @@ public class MultiResidue extends Residue {
         int index = 1;
         allRotamers[0] = originalRotamer;
         for (Rotamer[] rotamersI : usual) {
-          int nrotamers = rotamersI.length;
-          arraycopy(rotamersI, 0, allRotamers, index, nrotamers);
-          index += nrotamers;
+          int nRotamers = rotamersI.length;
+          arraycopy(rotamersI, 0, allRotamers, index, nRotamers);
+          index += nRotamers;
         }
       } else {
         allRotamers = addAllDefaultRotamers(usual, nRots);
@@ -488,29 +484,9 @@ public class MultiResidue extends Residue {
   }
 
   /**
-   * Request the passed amino acid be set as the active residue.
-   *
-   * @param aa a {@link AminoAcid3} object.
-   * @return true if the request is satisfied.
-   */
-  public boolean requestSetActiveResidue(AminoAcid3 aa) {
-    if (aa == AminoAcidUtils.AminoAcid3.valueOf(activeResidue.getName())) {
-      return true;
-    }
-    for (Residue res : consideredResidues) {
-      if (aa == AminoAcidUtils.AminoAcid3.valueOf(res.getName())) {
-        return setActiveResidue(res);
-      }
-    }
-    logger.warning(
-        format(" Couldn't assign residue %s to MultiResidue %s.", aa, this));
-    return false;
-  }
-
-  /**
    * Request the ith residue be set active.
    *
-   * @param i a int.
+   * @param i The index of the residue to set active.
    * @return true if the ith residue was set active, false otherwise.
    */
   public boolean setActiveResidue(int i) {
@@ -696,9 +672,9 @@ public class MultiResidue extends Residue {
     Rotamer[] allRotamers = new Rotamer[nRots];
     int index = 0;
     for (Rotamer[] rotamers : rotamerList) {
-      int nrotamers = rotamers.length;
-      arraycopy(rotamers, 0, allRotamers, index, nrotamers);
-      index += nrotamers;
+      int nRotamers = rotamers.length;
+      arraycopy(rotamers, 0, allRotamers, index, nRotamers);
+      index += nRotamers;
     }
     return allRotamers;
   }

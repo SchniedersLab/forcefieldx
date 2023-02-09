@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -132,7 +132,9 @@ public abstract class Integrator {
    */
   public static IntegratorEnum parseIntegrator(String str) {
     try {
-      return IntegratorEnum.valueOf(str.toUpperCase().replaceAll("\\s+", ""));
+      String integrator = str.toUpperCase().replaceAll("\\s+", "");
+      integrator = integrator.replaceAll("-", "_");
+      return IntegratorEnum.valueOf(integrator);
     } catch (Exception e) {
       logger.info(
           String.format(" Could not parse %s as an integrator; defaulting to Verlet.", str));

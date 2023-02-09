@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -65,7 +65,7 @@ public class EwaldTensorQI extends CoulombTensorQI {
   private final double[] ewaldSource;
 
   /**
-   * Ewald convergence parameter.
+   * The Ewald convergence parameter.
    */
   private final double beta;
 
@@ -73,14 +73,14 @@ public class EwaldTensorQI extends CoulombTensorQI {
    * Constructor for EwaldTensorQI.
    *
    * @param order Tensor order.
-   * @param beta Ewald covergence parameter.
+   * @param beta The Ewald convergence parameter.
    */
   public EwaldTensorQI(int order, double beta) {
     super(order);
     this.beta = beta;
     operator = OPERATOR.SCREENED_COULOMB;
 
-    // Auxillary terms for screened Coulomb (Sagui et al. Eq. 2.28)
+    // Auxiliary terms for screened Coulomb (Sagui et al. Eq. 2.28)
     ewaldSource = new double[o1];
     double prefactor = 2.0 * beta / sqrtPI;
     double twoBeta2 = -2.0 * beta * beta;

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -91,7 +91,7 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
   /**
    * Attempt to create a new StretchBend if a StretchBendType exists for the specified Angle.
    *
-   * @param angle the Angle to created the StrechBend around.
+   * @param angle the Angle used to create the StretchBend.
    * @param forceField the ForceField parameters to use.
    * @return a new StretchBend, or null.
    */
@@ -120,8 +120,8 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
    * <p>Evaluate the Stretch-Bend energy.
    */
   @Override
-  public double energy(
-      boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad,
+      AtomicDoubleArray3D lambdaGrad) {
     energy = 0.0;
     value = 0.0;
     var atomA = atoms[0];
@@ -164,18 +164,10 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
 
   /** log */
   public void log() {
-    logger.info(
-        String.format(
-            " %s %6d-%s %6d-%s %6d-%s" + "%7.4f %10.4f",
-            "Stretch-Bend",
-            atoms[0].getIndex(),
-            atoms[0].getAtomType().name,
-            atoms[1].getIndex(),
-            atoms[1].getAtomType().name,
-            atoms[2].getIndex(),
-            atoms[2].getAtomType().name,
-            value,
-            energy));
+    logger.info(String.format(" %s %6d-%s %6d-%s %6d-%s" + "%7.4f %10.4f", "Stretch-Bend",
+        atoms[0].getIndex(), atoms[0].getAtomType().name, atoms[1].getIndex(),
+        atoms[1].getAtomType().name, atoms[2].getIndex(), atoms[2].getAtomType().name, value,
+        energy));
   }
 
   /**
@@ -212,11 +204,11 @@ public class StretchBend extends BondedTerm implements Comparable<BondedTerm> {
   /**
    * {@inheritDoc}
    *
-   * <p>Overidden toString Method returns the Term's id.
+   * <p>Overridden toString Method returns the Term's id.
    */
   @Override
   public String toString() {
-    return String.format(
-        "%s  (%7.2f,%7.2f,%7.1f,%7.2f)", id, bonds[0].value, bonds[1].value, angle.value, energy);
+    return String.format("%s  (%7.2f,%7.2f,%7.1f,%7.2f)", id, bonds[0].value, bonds[1].value,
+        angle.value, energy);
   }
 }

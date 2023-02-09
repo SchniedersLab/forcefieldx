@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -67,7 +67,7 @@ public class PJDoubleArray implements AtomicDoubleArray {
   /**
    * Constructor for PJDoubleArray.
    *
-   * @param size a int.
+   * @param size the size of the array.
    */
   public PJDoubleArray(int size) {
     this.size = size;
@@ -96,16 +96,16 @@ public class PJDoubleArray implements AtomicDoubleArray {
   }
 
   /**
-   * {@inheritDoc}
-   *
-   * <p>Reduction is handled atomically by the PJ SharedDoubleArray.
+   * Reduction is handled atomically by the PJ SharedDoubleArray, so this method does nothing.
    */
   @Override
   public void reduce(int lb, int ub) {
     // Nothing to do.
   }
 
-  /** {@inheritDoc} Reduction is handled atomically by the PJ SharedDoubleArray. */
+  /**
+   * Reduction is handled atomically by the PJ SharedDoubleArray, so this method does nothing.
+   */
   @Override
   public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
     // Nothing to do.

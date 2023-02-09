@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -104,7 +104,7 @@ public final class DoubleMath {
    *
    * @param a First vector
    * @param b Second vector
-   * @param ret The cross-product a x b.
+   * @param ret The cross-product of a x b.
    * @return Returns the cross-product ret.
    */
   public static double[] X(double[] a, double[] b, double[] ret) {
@@ -400,7 +400,7 @@ public final class DoubleMath {
    * logVector.
    *
    * @param v an array of double.
-   * @return Returns the a String description of the vector.
+   * @return Returns a String description of the vector.
    */
   public static String toString(double[] v) {
     StringBuilder sb = new StringBuilder(" [ ");
@@ -416,19 +416,16 @@ public final class DoubleMath {
    *
    * @param v an array of {@link double} objects.
    * @param label a {@link String} object.
-   * @return Returns the a String description of the vector.
+   * @return Returns a String description of the vector.
    */
   public static String toString(double[] v, String label) {
     if (v == null) {
       return null;
     }
-    StringBuilder sb;
-    if (label != null) {
-      sb = new StringBuilder(format(" %16s = [", label));
-    } else {
-      sb = new StringBuilder(format(" %16s = [", "v"));
+    if (label == null) {
+      label = "v";
     }
-
+    StringBuilder sb = new StringBuilder(format(" %16s = [", label));
     for (double value : v) {
       sb.append(format(" %16.8f", value));
     }

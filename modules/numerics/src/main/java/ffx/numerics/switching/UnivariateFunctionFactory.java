@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -39,6 +39,7 @@ package ffx.numerics.switching;
 
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.Double.parseDouble;
+import static java.lang.String.format;
 import static java.util.Arrays.copyOfRange;
 
 import java.util.Arrays;
@@ -52,7 +53,8 @@ import java.util.Arrays;
 public class UnivariateFunctionFactory {
 
   /** Static only class. */
-  private UnivariateFunctionFactory() {}
+  private UnivariateFunctionFactory() {
+  }
 
   /**
    * Parse an array of Strings terminating in the description of a univariate switching function.
@@ -72,40 +74,24 @@ public class UnivariateFunctionFactory {
    * @return A parsed univariate switching function.
    */
   public static UnivariateSwitchingFunction parseUSF(String[] toks) {
-    String selectionString =
-        toks[0].toUpperCase().replaceAll("-", "").replaceAll("_", "").replaceAll(" ", "");
-    switch (selectionString) {
-      case "BELL":
-      case "BELLCURVE":
-      case "BELLCURVESWITCH":
-        return parseBell(toks);
-      case "CONSTANT":
-      case "NONE":
-      case "FLAT":
-        return new ConstantSwitch();
-      case "LINEARDERIVATIVE":
-        return new LinearDerivativeSwitch();
-      case "MULTIPLICATIVE":
-      case "PENTICHERMITE":
-        return parseMultiplicative(toks);
-      case "POWER":
-        return parsePower(toks);
-      case "LINEAR":
-        return parseSpecificPow(1.0, toks);
-      case "QUADRATIC":
-        return parseSpecificPow(2.0, toks);
-      case "CUBIC":
-        return parseSpecificPow(3.0, toks);
-      case "TRIGONOMETRIC":
-      case "TRIG":
-      case "SINSQUARED":
-        return parseTrig(toks);
-      default:
-        throw new IllegalArgumentException(
-            String.format(
-                " Could not parse %s as a valid univariate switching function!",
-                Arrays.toString(toks)));
-    }
+    String selectionString = toks[0].toUpperCase()
+        .replaceAll("-", "")
+        .replaceAll("_", "")
+        .replaceAll(" ", "");
+    return switch (selectionString) {
+      case "BELL", "BELLCURVE", "BELLCURVESWITCH" -> parseBell(toks);
+      case "CONSTANT", "NONE", "FLAT" -> new ConstantSwitch();
+      case "LINEARDERIVATIVE" -> new LinearDerivativeSwitch();
+      case "MULTIPLICATIVE", "PENTICHERMITE" -> parseMultiplicative(toks);
+      case "POWER" -> parsePower(toks);
+      case "LINEAR" -> parseSpecificPow(1.0, toks);
+      case "QUADRATIC" -> parseSpecificPow(2.0, toks);
+      case "CUBIC" -> parseSpecificPow(3.0, toks);
+      case "TRIGONOMETRIC", "TRIG", "SINSQUARED" -> parseTrig(toks);
+      default -> throw new IllegalArgumentException(
+          format(" Could not parse %s as a valid univariate switching function!",
+              Arrays.toString(toks)));
+    };
   }
 
   private static BellCurveSwitch parseBell(String[] toks) {

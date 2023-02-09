@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -64,9 +64,9 @@ public class CNSMapWriter {
   /**
    * Constructor for CNSMapWriter.
    *
-   * @param nx a int.
-   * @param ny a int.
-   * @param nz a int.
+   * @param nx an int.
+   * @param ny an int.
+   * @param nz an int.
    * @param crystal a {@link ffx.crystal.Crystal} object.
    * @param filename a {@link java.lang.String} object.
    */

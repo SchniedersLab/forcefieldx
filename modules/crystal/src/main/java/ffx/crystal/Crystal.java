@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -466,9 +466,11 @@ public class Crystal {
   }
 
   /**
-   * Apply a fractional symmetry operator to an array of Cartesian coordinates. If the arrays x, y or
-   * z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are null
-   * or not of length n, new arrays are allocated.
+   * Apply a fractional symmetry operator to an array of Cartesian coordinates.
+   * <p>
+   * If the arrays x, y or z are null or not of length n, an exception is thrown.
+   * <p>
+   * If mateX, mateY or mateZ are null or not of length n, an exception is thrown.
    *
    * @param n Number of atoms.
    * @param x Input fractional x-coordinates.
@@ -479,31 +481,20 @@ public class Crystal {
    * @param mateZ Output fractional z-coordinates.
    * @param symOp The fractional symmetry operator.
    */
-  public void applySymOp(
-      int n,
-      double[] x,
-      double[] y,
-      double[] z,
-      double[] mateX,
-      double[] mateY,
-      double[] mateZ,
-      SymOp symOp) {
+  public void applySymOp(int n, double[] x, double[] y, double[] z,
+      double[] mateX, double[] mateY, double[] mateZ, SymOp symOp) {
     if (x == null || y == null || z == null) {
-      return;
+      throw new IllegalArgumentException("The input arrays x, y and z must not be null.");
     }
     if (x.length < n || y.length < n || z.length < n) {
-      return;
+      throw new IllegalArgumentException("The input arrays x, y and z must be of length n: " + n);
     }
-    if (mateX == null || mateX.length < n) {
-      mateX = new double[n];
+    if (mateX == null || mateY == null || mateZ == null) {
+      throw new IllegalArgumentException("The output arrays mateX, mateY and mateZ must not be null.");
     }
-    if (mateY == null || mateY.length < n) {
-      mateY = new double[n];
+    if (mateX.length < n || mateY.length < n || mateZ.length < n) {
+      throw new IllegalArgumentException("The output arrays mateX, mateY and mateZ must be of length n: " + n);
     }
-    if (mateZ == null || mateZ.length < n) {
-      mateZ = new double[n];
-    }
-
     final double[][] rot = symOp.rot;
     final double[] trans = symOp.tr;
 
@@ -616,9 +607,11 @@ public class Crystal {
   }
 
   /**
-   * Apply the transpose of a symmetry rotation to an array of Cartesian coordinates. If the arrays
-   * x, y or z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ
-   * are null or not of length n, new arrays are allocated.
+   * Apply the transpose of a symmetry rotation to an array of Cartesian coordinates.
+   * <p>
+   * If the arrays x, y or z are null or not of length n, an exception is thrown.
+   * <p>
+   * If mateX, mateY or mateZ are null or not of length n, an exception is thrown.
    *
    * @param n Number of atoms.
    * @param x Input x-coordinates.
@@ -635,19 +628,16 @@ public class Crystal {
       double[] mateX, double[] mateY, double[] mateZ, SymOp symOp, double[][] rotmat) {
 
     if (x == null || y == null || z == null) {
-      return;
+      throw new IllegalArgumentException("The input arrays x, y and z must not be null.");
     }
     if (x.length < n || y.length < n || z.length < n) {
-      return;
+      throw new IllegalArgumentException("The input arrays x, y and z must be of length n: " + n);
     }
-    if (mateX == null || mateX.length < n) {
-      mateX = new double[n];
+    if (mateX == null || mateY == null || mateZ == null) {
+      throw new IllegalArgumentException("The output arrays mateX, mateY and mateZ must not be null.");
     }
-    if (mateY == null || mateY.length < n) {
-      mateY = new double[n];
-    }
-    if (mateZ == null || mateZ.length < n) {
-      mateZ = new double[n];
+    if (mateX.length < n || mateY.length < n || mateZ.length < n) {
+      throw new IllegalArgumentException("The output arrays mateX, mateY and mateZ must be of length n: " + n);
     }
 
     // The transformation operator R = ToCart * Rot * ToFrac
@@ -922,6 +912,20 @@ public class Crystal {
   /**
    * Apply the minimum image convention.
    *
+   * @param xyz the coordinates of the first atom.
+   * @param xyz2 the coordinates of the second atom.
+   * @return the output distance squared.
+   */
+  public double image(double[] xyz, double[] xyz2) {
+    double dx = xyz[0] - xyz2[0];
+    double dy = xyz[1] - xyz2[1];
+    double dz = xyz[2] - xyz2[2];
+    return image(dx, dy, dz);
+  }
+
+  /**
+   * Apply the minimum image convention.
+   *
    * @param xyz input distances that are over-written.
    * @return the output distance squared.
    */
@@ -1103,9 +1107,7 @@ public class Crystal {
     double scale = cbrt(currentDensity / dens);
     changeUnitCellParameters(a * scale, b * scale, c * scale, alpha, beta, gamma);
     currentDensity = getDensity(mass);
-    logger.info(
-        format(
-            " Updated density %6.3f (g/cc) with unit cell %s.", currentDensity, toShortString()));
+    logger.info(format(" Updated density %6.3f (g/cc) with unit cell %s.", currentDensity, toShortString()));
   }
 
   /**
@@ -1122,7 +1124,7 @@ public class Crystal {
   /**
    * toCartesianCoordinates
    *
-   * @param n a int.
+   * @param n an int.
    * @param xf an array of double for fractional x-coordinates.
    * @param yf an array of double for fractional y-coordinates.
    * @param zf an array of double for fractional z-coordinates.
@@ -1145,7 +1147,7 @@ public class Crystal {
   /**
    * toCartesianCoordinates
    *
-   * @param n a int.
+   * @param n an int.
    * @param frac an array of double for fractional coordinates.
    * @param cart an array of double for cartesian coordinates.
    */
@@ -1184,7 +1186,7 @@ public class Crystal {
   /**
    * toFractionalCoordinates
    *
-   * @param n a int.
+   * @param n an int.
    * @param x an array of double for cartesian x-coordinates.
    * @param y an array of double for cartesian y-coordinates.
    * @param z an array of double for cartesian z-coordinates.
@@ -1207,7 +1209,7 @@ public class Crystal {
   /**
    * toFractionalCoordinates
    *
-   * @param n a int.
+   * @param n an int.
    * @param cart an array of double for cartesian coordinates.
    * @param frac an array of double for fractional coordinates.
    */
@@ -1302,9 +1304,8 @@ public class Crystal {
     double gamma_term;
 
     switch (crystalSystem) {
-      case CUBIC:
-      case ORTHORHOMBIC:
-      case TETRAGONAL:
+      default -> {
+        // CUBIC, ORTHORHOMBIC, TETRAGONAL
         cos_alpha = 0.0;
         cos_beta = 0.0;
         sin_gamma = 1.0;
@@ -1318,8 +1319,8 @@ public class Crystal {
         dVdAlpha = 0.0;
         dVdBeta = 0.0;
         dVdGamma = 0.0;
-        break;
-      case MONOCLINIC:
+      }
+      case MONOCLINIC -> {
         cos_alpha = 0.0;
         sin_beta = sin(toRadians(beta));
         cos_beta = cos(toRadians(beta));
@@ -1334,11 +1335,8 @@ public class Crystal {
         dVdAlpha = 0.0;
         dVdBeta = cos_beta * a * b * c;
         dVdGamma = 0.0;
-        break;
-      case HEXAGONAL:
-      case TRICLINIC:
-      case TRIGONAL:
-      default:
+      }
+      case HEXAGONAL, TRICLINIC, TRIGONAL -> {
         double sin_alpha = sin(toRadians(alpha));
         cos_alpha = cos(toRadians(alpha));
         sin_beta = sin(toRadians(beta));
@@ -1348,29 +1346,21 @@ public class Crystal {
         beta_term = (cos_alpha - cos_beta * cos_gamma) / sin_gamma;
         gamma_term = sqrt(sin_beta * sin_beta - beta_term * beta_term);
         volume = sin_gamma * gamma_term * a * b * c;
-
         dVdA = sin_gamma * gamma_term * b * c;
         dVdB = sin_gamma * gamma_term * a * c;
         dVdC = sin_gamma * gamma_term * a * b;
-
-        double dbeta =
-            2.0 * sin_beta * cos_beta
+        double dbeta = 2.0 * sin_beta * cos_beta
                 - (2.0 * (cos_alpha - cos_beta * cos_gamma) * sin_beta * cos_gamma)
                 / (sin_gamma * sin_gamma);
         double dgamma1 = -2.0 * (cos_alpha - cos_beta * cos_gamma) * cos_beta / sin_gamma;
         double dgamma2 = cos_alpha - cos_beta * cos_gamma;
         dgamma2 *= dgamma2 * 2.0 * cos_gamma / (sin_gamma * sin_gamma * sin_gamma);
-
-        dVdAlpha =
-            (cos_alpha - cos_beta * cos_gamma) * sin_alpha / (sin_gamma * gamma_term) * a * b * c;
+        dVdAlpha = (cos_alpha - cos_beta * cos_gamma) * sin_alpha
+            / (sin_gamma * gamma_term) * a * b * c;
         dVdBeta = 0.5 * sin_gamma * dbeta / gamma_term * a * b * c;
-        dVdGamma =
-            (cos_gamma * gamma_term + 0.5 * sin_gamma * (dgamma1 + dgamma2) / gamma_term)
-                * a
-                * b
-                * c;
-
-        break;
+        dVdGamma = (cos_gamma * gamma_term + 0.5 * sin_gamma * (dgamma1 + dgamma2) / gamma_term)
+                * a * b * c;
+      }
     }
 
     G[0][0] = a * a;

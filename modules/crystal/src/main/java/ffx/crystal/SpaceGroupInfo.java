@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -44,7 +44,7 @@ import java.util.HashMap;
 public class SpaceGroupInfo {
 
   /**
-   * Names of the 230 three dimensional space groups.
+   * Names of the 230 three-dimensional space groups.
    *
    * @since 1.0
    */

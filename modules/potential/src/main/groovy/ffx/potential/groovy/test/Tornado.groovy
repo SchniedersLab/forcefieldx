@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -37,13 +37,12 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
+import ffx.numerics.fft.TornadoDFT
 import ffx.potential.cli.PotentialScript
-import ffx.numerics.fft.TornadoFFT
 import ffx.numerics.tornado.FFXTornado
 
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
-
 
 /**
  * The Tornado script runs an FFT written in Java using OpenCL, PTX or a SPIRV backend.
@@ -89,10 +88,15 @@ class Tornado extends PotentialScript {
     }
 
     for (Integer length : lengths) {
-      TornadoFFT tornadoFFT = new TornadoFFT(length)
-      int num = FFXTornado.getNumberOfDevices()
-      for (int i = 0; i < num; i++) {
-        tornadoFFT.validate(i)
+      TornadoDFT tornadoDFT = new TornadoDFT(length)
+      float[] data = new float[2 * length]
+      for (int i = 0; i < 2 * length; i++) {
+        data[i] = 1.0f / (float) (i + 2)
+      }
+
+      int numDevices = FFXTornado.getNumberOfDevices()
+      for (int i = 0; i < numDevices; i++) {
+        tornadoDFT.validate(FFXTornado.getDevice(i))
       }
     }
 

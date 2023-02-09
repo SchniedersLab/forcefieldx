@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -62,7 +62,7 @@ public interface DataSet {
   /**
    * Point f(x) at index.
    *
-   * @param index a int.
+   * @param index the index of the point to return.
    * @return a double.
    */
   double getFxPoint(int index);
@@ -92,7 +92,7 @@ public interface DataSet {
   /**
    * Number of points along x.
    *
-   * @return a int.
+   * @return the number of points.
    */
   int numPoints();
 

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -72,35 +72,14 @@ public class NucleicAcidUtils {
   private static final Logger logger = Logger.getLogger(NucleicAcidUtils.class.getName());
 
   /**
-   * The 4 RNA bases, 4 DNA bases, and mono- di- and triphospate.
+   * The 4 RNA bases, 4 DNA bases, and mono- di- and triphosphate.
    */
   public enum NA {
-    ADENINE,
-    CYTOSINE,
-    GUANINE,
-    URACIL,
-    DEOXYADENINE,
-    DEOXYCYTOSINE,
-    DEOXYGUANINE,
-    THYMINE,
-    MONOPHOSPHATE,
-    DIPHOSPHATE,
-    TRIPHOSPHATE
+    ADENINE, CYTOSINE, GUANINE, URACIL, DEOXYADENINE, DEOXYCYTOSINE, DEOXYGUANINE, THYMINE, MONOPHOSPHATE, DIPHOSPHATE, TRIPHOSPHATE
   }
 
   public enum NucleicAcid1 {
-    A,
-    G,
-    C,
-    U,
-    D,
-    B,
-    I,
-    T,
-    O,
-    W,
-    H,
-    X
+    A, G, C, U, D, B, I, T, O, W, H, X
   }
 
   /**
@@ -108,30 +87,7 @@ public class NucleicAcidUtils {
    * name starts with an integer.
    */
   public enum NucleicAcid3 {
-    ADE,
-    GUA,
-    CYT,
-    URI,
-    DAD,
-    DGU,
-    DCY,
-    DTY,
-    THY,
-    MP1,
-    DP2,
-    TP3,
-    UNK,
-    M2MG,
-    H2U,
-    M2G,
-    OMC,
-    OMG,
-    PSU,
-    M5MC,
-    M7MG,
-    M5MU,
-    M1MA,
-    YYG;
+    ADE, GUA, CYT, URI, DAD, DGU, DCY, DTY, THY, MP1, DP2, TP3, UNK, M2MG, H2U, M2G, OMC, OMG, PSU, M5MC, M7MG, M5MU, M1MA, YYG;
 
     /**
      * Best-guess parse of a String to an NA3.
@@ -142,43 +98,21 @@ public class NucleicAcidUtils {
      */
     public static NucleicAcid3 parse(String name) throws IllegalArgumentException {
       // Only semi-abnormal cases: THY parses to DT instead of T, and DU throws an exception.
-      switch (name.toUpperCase()) {
-        case "ADE":
-        case "A":
-          return NucleicAcid3.ADE;
-        case "CYT":
-        case "C":
-          return NucleicAcid3.CYT;
-        case "GUA":
-        case "G":
-          return NucleicAcid3.GUA;
-        case "URI":
-        case "U":
-          return NucleicAcid3.URI;
-        case "DAD":
-        case "DA":
-          return NucleicAcid3.DAD;
-        case "DCY":
-        case "DC":
-          return NucleicAcid3.DCY;
-        case "DGU":
-        case "DG":
-          return NucleicAcid3.DGU;
-        case "DTY":
-        case "THY":
-        case "DT":
-          return NucleicAcid3.DTY;
-        case "DU":
-          throw new IllegalArgumentException(" No NA3 value exists for deoxy-uracil!");
-        case "MPO":
-          return NucleicAcid3.MP1;
-        case "DPO":
-          return NucleicAcid3.DP2;
-        case "TPO":
-          return NucleicAcid3.TP3;
-        default:
-          return NucleicAcid3.UNK;
-      }
+      return switch (name.toUpperCase()) {
+        case "ADE", "A" -> NucleicAcid3.ADE;
+        case "CYT", "C" -> NucleicAcid3.CYT;
+        case "GUA", "G" -> NucleicAcid3.GUA;
+        case "URI", "U" -> NucleicAcid3.URI;
+        case "DAD", "DA" -> NucleicAcid3.DAD;
+        case "DCY", "DC" -> NucleicAcid3.DCY;
+        case "DGU", "DG" -> NucleicAcid3.DGU;
+        case "DTY", "THY", "DT" -> NucleicAcid3.DTY;
+        case "MPO" -> NucleicAcid3.MP1;
+        case "DPO" -> NucleicAcid3.DP2;
+        case "TPO" -> NucleicAcid3.TP3;
+        case "DU" -> throw new IllegalArgumentException(" No NA3 value exists for deoxy-uracil!");
+        default -> NucleicAcid3.UNK;
+      };
     }
   }
 
@@ -186,113 +120,73 @@ public class NucleicAcidUtils {
    * Biotype keys for nucleic acid backbone atom types. These are consistent with parameter files
    * from TINKER v. 6.1 (June 2012).
    */
-  public static final int[] NA_O5 = {
-      1001, 1031, 1062, 1090, 1117, 1146, 1176, 1203, 0, 0, 0, 0, 1300, 1334, 1363, 1400, 1431, 1465,
-      1492, 1523, 1559, 1589, 1624
-  };
+  public static final int[] NA_O5 = {1001, 1031, 1062, 1090, 1117, 1146, 1176, 1203, 0, 0, 0, 0,
+      1300, 1334, 1363, 1400, 1431, 1465, 1492, 1523, 1559, 1589, 1624};
   /** Constant <code>NA_C5</code> */
-  public static final int[] NA_C5 = {
-      1002, 1032, 1063, 1091, 1118, 1147, 1177, 1204, 0, 0, 0, 0, 1301, 1335, 1364, 1401, 1432, 1466,
-      1493, 1524, 1560, 1590, 1625
-  };
+  public static final int[] NA_C5 = {1002, 1032, 1063, 1091, 1118, 1147, 1177, 1204, 0, 0, 0, 0,
+      1301, 1335, 1364, 1401, 1432, 1466, 1493, 1524, 1560, 1590, 1625};
   /** Constant <code>NA_H51</code> */
-  public static final int[] NA_H51 = {
-      1003, 1033, 1064, 1092, 1119, 1148, 1178, 1205, 0, 0, 0, 0, 1302, 1336, 1365, 1402, 1433, 1467,
-      1494, 1525, 1561, 1591, 1626
-  };
+  public static final int[] NA_H51 = {1003, 1033, 1064, 1092, 1119, 1148, 1178, 1205, 0, 0, 0, 0,
+      1302, 1336, 1365, 1402, 1433, 1467, 1494, 1525, 1561, 1591, 1626};
   /** Constant <code>NA_H52</code> */
-  public static final int[] NA_H52 = {
-      1004, 1034, 1065, 1093, 1120, 1149, 1179, 1206, 0, 0, 0, 0, 1303, 1337, 1366, 1403, 1434, 1468,
-      1495, 1526, 1562, 1592, 1627
-  };
+  public static final int[] NA_H52 = {1004, 1034, 1065, 1093, 1120, 1149, 1179, 1206, 0, 0, 0, 0,
+      1303, 1337, 1366, 1403, 1434, 1468, 1495, 1526, 1562, 1592, 1627};
   /** Constant <code>NA_C4</code> */
-  public static final int[] NA_C4 = {
-      1005, 1035, 1066, 1094, 1121, 1150, 1180, 1207, 0, 0, 0, 0, 1304, 1338, 1367, 1404, 1435, 1469,
-      1496, 1527, 1563, 1593, 1628
-  };
+  public static final int[] NA_C4 = {1005, 1035, 1066, 1094, 1121, 1150, 1180, 1207, 0, 0, 0, 0,
+      1304, 1338, 1367, 1404, 1435, 1469, 1496, 1527, 1563, 1593, 1628};
   /** Constant <code>NA_H4</code> */
-  public static final int[] NA_H4 = {
-      1006, 1036, 1067, 1095, 1122, 1151, 1181, 1208, 0, 0, 0, 0, 1305, 1339, 1368, 1405, 1436, 1470,
-      1497, 1528, 1564, 1594, 1629
-  };
+  public static final int[] NA_H4 = {1006, 1036, 1067, 1095, 1122, 1151, 1181, 1208, 0, 0, 0, 0,
+      1305, 1339, 1368, 1405, 1436, 1470, 1497, 1528, 1564, 1594, 1629};
   /** Constant <code>NA_O4</code> */
-  public static final int[] NA_O4 = {
-      1007, 1037, 1068, 1096, 1123, 1152, 1182, 1209, 0, 0, 0, 0, 1306, 1340, 1369, 1406, 1437, 1471,
-      1498, 1529, 1565, 1595, 1630
-  };
+  public static final int[] NA_O4 = {1007, 1037, 1068, 1096, 1123, 1152, 1182, 1209, 0, 0, 0, 0,
+      1306, 1340, 1369, 1406, 1437, 1471, 1498, 1529, 1565, 1595, 1630};
   /** Constant <code>NA_C1</code> */
-  public static final int[] NA_C1 = {
-      1008, 1038, 1069, 1097, 1124, 1153, 1183, 1210, 0, 0, 0, 0, 1307, 1341, 1370, 1407, 1438, 1472,
-      1499, 1530, 1566, 1596, 1631
-  };
+  public static final int[] NA_C1 = {1008, 1038, 1069, 1097, 1124, 1153, 1183, 1210, 0, 0, 0, 0,
+      1307, 1341, 1370, 1407, 1438, 1472, 1499, 1530, 1566, 1596, 1631};
   /** Constant <code>NA_H1</code> */
-  public static final int[] NA_H1 = {
-      1009, 1039, 1070, 1098, 1125, 1154, 1184, 1211, 0, 0, 0, 0, 1308, 1342, 1371, 1408, 1439, 1473,
-      1500, 1531, 1567, 1597, 1632
-  };
+  public static final int[] NA_H1 = {1009, 1039, 1070, 1098, 1125, 1154, 1184, 1211, 0, 0, 0, 0,
+      1308, 1342, 1371, 1408, 1439, 1473, 1500, 1531, 1567, 1597, 1632};
   /** Constant <code>NA_C3</code> */
-  public static final int[] NA_C3 = {
-      1010, 1040, 1071, 1099, 1126, 1155, 1185, 1212, 0, 0, 0, 0, 1309, 1343, 1372, 1409, 1440, 1474,
-      1501, 1532, 1568, 1598, 1633
-  };
+  public static final int[] NA_C3 = {1010, 1040, 1071, 1099, 1126, 1155, 1185, 1212, 0, 0, 0, 0,
+      1309, 1343, 1372, 1409, 1440, 1474, 1501, 1532, 1568, 1598, 1633};
   /** Constant <code>NA_H3</code> */
-  public static final int[] NA_H3 = {
-      1011, 1041, 1072, 1100, 1127, 1156, 1186, 1213, 0, 0, 0, 0, 1310, 1344, 1373, 1410, 1441, 1475,
-      1502, 1533, 1569, 1599, 1634
-  };
+  public static final int[] NA_H3 = {1011, 1041, 1072, 1100, 1127, 1156, 1186, 1213, 0, 0, 0, 0,
+      1310, 1344, 1373, 1410, 1441, 1475, 1502, 1533, 1569, 1599, 1634};
   /** Constant <code>NA_C2</code> */
-  public static final int[] NA_C2 = {
-      1012, 1042, 1073, 1101, 1128, 1157, 1187, 1214, 0, 0, 0, 0, 1311, 1345, 1374, 1411, 1442, 1476,
-      1503, 1534, 1570, 1600, 1635
-  };
+  public static final int[] NA_C2 = {1012, 1042, 1073, 1101, 1128, 1157, 1187, 1214, 0, 0, 0, 0,
+      1311, 1345, 1374, 1411, 1442, 1476, 1503, 1534, 1570, 1600, 1635};
   /** Constant <code>NA_H21</code> */
-  public static final int[] NA_H21 = {
-      1013, 1043, 1074, 1102, 1129, 1158, 1188, 1215, 0, 0, 0, 0, 1312, 1346, 1375, 1412, 1443, 1477,
-      1504, 1535, 1571, 1601, 1636
-  };
+  public static final int[] NA_H21 = {1013, 1043, 1074, 1102, 1129, 1158, 1188, 1215, 0, 0, 0, 0,
+      1312, 1346, 1375, 1412, 1443, 1477, 1504, 1535, 1571, 1601, 1636};
   /** Constant <code>NA_O2</code> */
-  public static final int[] NA_O2 = {
-      1014, 1044, 1075, 1103, 0, 0, 0, 0, 0, 0, 0, 0, 1313, 1347, 1376, 1413, 1444, 1478, 1505, 1536,
-      1572, 1602, 1637
-  };
+  public static final int[] NA_O2 = {1014, 1044, 1075, 1103, 0, 0, 0, 0, 0, 0, 0, 0, 1313, 1347,
+      1376, 1413, 1444, 1478, 1505, 1536, 1572, 1602, 1637};
   /** Constant <code>NA_H22</code> */
-  public static final int[] NA_H22 = {
-      1015, 1045, 1076, 1104, 1130, 1159, 1189, 1216, 0, 0, 0, 0, 1314, 1348, 1377, 0, 0, 1479, 1506,
-      1537, 1573, 1603, 1638
-  };
+  public static final int[] NA_H22 = {1015, 1045, 1076, 1104, 1130, 1159, 1189, 1216, 0, 0, 0, 0,
+      1314, 1348, 1377, 0, 0, 1479, 1506, 1537, 1573, 1603, 1638};
   /** Constant <code>NA_O3</code> */
-  public static final int[] NA_O3 = {
-      1016, 1046, 1077, 1105, 1131, 1160, 1190, 1217, 0, 0, 0, 0, 1315, 1349, 1378, 1414, 1445, 1480,
-      1507, 1538, 1574, 1604, 1639
-  };
+  public static final int[] NA_O3 = {1016, 1046, 1077, 1105, 1131, 1160, 1190, 1217, 0, 0, 0, 0,
+      1315, 1349, 1378, 1414, 1445, 1480, 1507, 1538, 1574, 1604, 1639};
   /** Constant <code>NA_P</code> */
-  public static final int[] NA_P = {
-      1230, 1230, 1230, 1230, 1242, 1242, 1242, 1242, 0, 0, 0, 0, 1230, 1230, 1230, 1230, 1230, 1230,
-      1230, 1230, 1230, 1230, 1230
-  };
+  public static final int[] NA_P = {1230, 1230, 1230, 1230, 1242, 1242, 1242, 1242, 0, 0, 0, 0, 1230,
+      1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230, 1230};
   /** Constant <code>NA_OP</code> */
-  public static final int[] NA_OP = {
-      1231, 1231, 1231, 1231, 1243, 1243, 1243, 1243, 0, 0, 0, 0, 1231, 1231, 1231, 1231, 1231, 1231,
-      1231, 1231, 1231, 1231, 1231
-  };
+  public static final int[] NA_OP = {1231, 1231, 1231, 1231, 1243, 1243, 1243, 1243, 0, 0, 0, 0,
+      1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231, 1231};
   /**
    * Should be NA_HO5' (' replaced by T in the name).
    *
    * <p>Constant <code>NA_HO5T</code>
    */
-  public static final int[] NA_HO5T = {
-      1233, 1233, 1233, 1233, 1245, 1245, 1245, 1245, 0, 0, 0, 0, 1233, 1233, 1233, 1233, 1233, 1233,
-      1233, 1233, 1233, 1233, 1233
-  };
+  public static final int[] NA_HO5T = {1233, 1233, 1233, 1233, 1245, 1245, 1245, 1245, 0, 0, 0, 0,
+      1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233, 1233};
   /**
    * Should be NA_HO3' (' replaced by T in the name).
    *
    * <p>Constant <code>NA_HO3T</code>
    */
-  public static final int[] NA_HO3T = {
-      1238, 1238, 1238, 1238, 1250, 1250, 1250, 1250, 0, 0, 0, 0, 1238, 1238, 1238, 1238, 1238, 1238,
-      1238, 1238, 1238, 1238, 1238
-  };
+  public static final int[] NA_HO3T = {1238, 1238, 1238, 1238, 1250, 1250, 1250, 1250, 0, 0, 0, 0,
+      1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238, 1238};
 
   /** Constant <code>nucleicAcidList</code> */
   public static final List<NucleicAcid3> nucleicAcidList = Arrays.asList(NucleicAcid3.values());
@@ -307,9 +201,8 @@ public class NucleicAcidUtils {
   public static final int[] NAPATTERN = {8, 6, 6, 6, 8};
 
   static {
-    newNucleicAcidAtomNames = Map
-        .of("HO'", "HO2'", "H3T", "HO3'", "H5'1", "H5'", "H5'2", "H5''", "H5T", "HO5'", "H2'1",
-            "H2'", "H2'2", "H2''");
+    newNucleicAcidAtomNames = Map.of("HO'", "HO2'", "H3T", "HO3'", "H5'1", "H5'", "H5'2", "H5''",
+        "H5T", "HO5'", "H2'1", "H2'", "H2'2", "H2''");
 
     NucleicAcid1[] na1 = NucleicAcid1.values();
     NucleicAcid3[] na3 = NucleicAcid3.values();
@@ -327,9 +220,8 @@ public class NucleicAcidUtils {
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
    * @throws ffx.potential.bonded.BondedUtils.MissingAtomTypeException if any.
    */
-  public static void assignNucleicAcidAtomTypes(
-      List<Residue> residues, ForceField forceField, List<Bond> bondList)
-      throws MissingHeavyAtomException, MissingAtomTypeException {
+  public static void assignNucleicAcidAtomTypes(List<Residue> residues, ForceField forceField,
+      List<Bond> bondList) throws MissingHeavyAtomException, MissingAtomTypeException {
 
     // A reference to the O3* atom of the previous base.
     Atom pSugarO3 = null;
@@ -355,7 +247,7 @@ public class NucleicAcidUtils {
 
       // Do atom name conversions.
       List<Atom> resAtoms = residue.getAtomList();
-      int natoms = resAtoms.size();
+      int nAtoms = resAtoms.size();
       for (Atom atom : resAtoms) {
         String name = atom.getName();
         name = name.replace('*', '\'');
@@ -379,13 +271,13 @@ public class NucleicAcidUtils {
 
       // Check if this is a lone 3'-terminal phosphate cap; if so, will skip a lot of logic.
       boolean threePrimeCap = false;
-      if (natoms < 7) {
+      if (nAtoms < 7) {
         boolean unrecognized = false;
         for (Atom atom : resAtoms) {
-          String aname = atom.getName();
-          // Recognized: P, OP[1-3], O5' (will be renamed to OP3), HOP[1-3], and DOP[1-3]
-          // (deuterated)
-          if (!(aname.equals("P") || aname.matches("[HD]?OP[1-3]") || aname.matches("O5'"))) {
+          String atomName = atom.getName();
+          // Recognized: P, OP[1-3], O5' (will be renamed to OP3), HOP[1-3], and DOP[1-3])
+          if (!(atomName.equals("P") || atomName.matches("[HD]?OP[1-3]") || atomName.matches(
+              "O5'"))) {
             unrecognized = true;
             break;
           }
@@ -403,54 +295,56 @@ public class NucleicAcidUtils {
         isDNA = true;
         if (!residueName.startsWith("D")) {
           switch (nucleicAcid) {
-            case ADE:
+            case ADE -> {
               nucleicAcid = NucleicAcid3.DAD;
               residueName = "DAD";
               residue.setName(residueName);
-              break;
-            case CYT:
+            }
+            case CYT -> {
               nucleicAcid = NucleicAcid3.DCY;
               residueName = "DCY";
               residue.setName(residueName);
-              break;
-            case GUA:
+            }
+            case GUA -> {
               nucleicAcid = NucleicAcid3.DGU;
               residueName = "DGU";
               residue.setName(residueName);
-              break;
-            case THY:
+            }
+            case THY -> {
               nucleicAcid = NucleicAcid3.DTY;
               residueName = "DTY";
               residue.setName(residueName);
-              break;
-            default:
+            }
+            default -> {
+            }
           }
         }
       } else {
         // Assume ribose (RNA) since there is no O2* atom.
         if (residueName.startsWith("D")) {
           switch (nucleicAcid) {
-            case DAD:
+            case DAD -> {
               nucleicAcid = NucleicAcid3.ADE;
               residueName = "ADE";
               residue.setName(residueName);
-              break;
-            case DCY:
+            }
+            case DCY -> {
               nucleicAcid = NucleicAcid3.CYT;
               residueName = "CYT";
               residue.setName(residueName);
-              break;
-            case DGU:
+            }
+            case DGU -> {
               nucleicAcid = NucleicAcid3.GUA;
               residueName = "GUA";
               residue.setName(residueName);
-              break;
-            case DTY:
+            }
+            case DTY -> {
               nucleicAcid = NucleicAcid3.THY;
               residueName = "THY";
               residue.setName(residueName);
-              break;
-            default:
+            }
+            default -> {
+            }
           }
         }
       }
@@ -471,25 +365,18 @@ public class NucleicAcidUtils {
         phosphate = buildHeavy(residue, "P", pSugarO3, phosType, forceField, bondList);
         buildHeavy(residue, "OP1", phosphate, oxygenType, forceField, bondList);
         buildHeavy(residue, "OP2", phosphate, oxygenType, forceField, bondList);
-        switch (natoms) {
-          case 3: {
-            buildOP3(residue, phosphate, oxygenType, forceField, bondList, priorResidue, false);
-          }
-          break;
-          case 4: {
+        switch (nAtoms) {
+          case 3 ->
+              buildOP3(residue, phosphate, oxygenType, forceField, bondList, priorResidue, false);
+          case 4 -> {
             MSNode bogusO5s = residue.getAtomNode("O5'");
             if (bogusO5s != null) {
               bogusO5s.setName("OP3");
             }
             buildHeavy(residue, "OP3", phosphate, oxygenType, forceField, bondList);
           }
-          break;
-          case 5:
-          case 6: {
-            logger.severe(
-                " Currently, FFX does not support partially-protonated "
-                    + "3'-terminal phosphate caps from PDB files!");
-          }
+          case 5, 6 -> logger.severe(" Currently, FFX does not support partially-protonated "
+              + "3'-terminal phosphate caps from PDB files!");
         }
       } else {
         if (position == FIRST_RESIDUE) {
@@ -555,9 +442,7 @@ public class NucleicAcidUtils {
           boolean nextResIsCap = (residues.get(residueNumber + 1).getAtomList().size() < 7);
           int o3Type = NA_O3[naNumber];
           if (nextResIsCap) {
-            logger.fine(
-                " Applying a 3'-terminal-phos-cap O3' atom type to residue "
-                    + residue);
+            logger.fine(" Applying a 3'-terminal-phos-cap O3' atom type to residue " + residue);
             o3Type = isDNA ? 1251 : 1239;
           }
           sugarO3 = buildHeavy(residue, "O3'", sugarC3, o3Type, forceField, bondList);
@@ -568,196 +453,52 @@ public class NucleicAcidUtils {
 
         // Build the backbone hydrogen atoms.
         if (position == FIRST_RESIDUE && phosphate == null) {
-          buildH(
-              residue,
-              "HO5'",
-              sugarO5,
-              1.00e0,
-              sugarC5,
-              109.5e0,
-              sugarC4,
-              180.0e0,
-              0,
-              NA_HO5T[naNumber],
-              forceField,
-              bondList);
+          buildH(residue, "HO5'", sugarO5, 1.00e0, sugarC5, 109.5e0, sugarC4, 180.0e0, 0,
+              NA_HO5T[naNumber], forceField, bondList);
         }
-        buildH(
-            residue,
-            "H5'",
-            sugarC5,
-            1.09e0,
-            sugarO5,
-            109.5e0,
-            sugarC4,
-            109.5e0,
-            1,
-            NA_H51[naNumber],
-            forceField,
-            bondList);
-        buildH(
-            residue,
-            "H5''",
-            sugarC5,
-            1.09e0,
-            sugarO5,
-            109.5e0,
-            sugarC4,
-            109.5e0,
-            -1,
-            NA_H52[naNumber],
-            forceField,
-            bondList);
-        buildH(
-            residue,
-            "H4'",
-            sugarC4,
-            1.09e0,
-            sugarC5,
-            109.5e0,
-            sugarC3,
-            109.5e0,
-            -1,
-            NA_H4[naNumber],
-            forceField,
-            bondList);
-        buildH(
-            residue,
-            "H3'",
-            sugarC3,
-            1.09e0,
-            sugarC4,
-            109.5e0,
-            sugarC2,
-            109.5e0,
-            -1,
-            NA_H3[naNumber],
-            forceField,
-            bondList);
+        buildH(residue, "H5'", sugarC5, 1.09e0, sugarO5, 109.5e0, sugarC4, 109.5e0, 1,
+            NA_H51[naNumber], forceField, bondList);
+        buildH(residue, "H5''", sugarC5, 1.09e0, sugarO5, 109.5e0, sugarC4, 109.5e0, -1,
+            NA_H52[naNumber], forceField, bondList);
+        buildH(residue, "H4'", sugarC4, 1.09e0, sugarC5, 109.5e0, sugarC3, 109.5e0, -1,
+            NA_H4[naNumber], forceField, bondList);
+        buildH(residue, "H3'", sugarC3, 1.09e0, sugarC4, 109.5e0, sugarC2, 109.5e0, -1,
+            NA_H3[naNumber], forceField, bondList);
         if (isDNA) {
-          buildH(
-              residue,
-              "H2'",
-              sugarC2,
-              1.09e0,
-              sugarC3,
-              109.5e0,
-              sugarC1,
-              109.5e0,
-              -1,
-              NA_H21[naNumber],
-              forceField,
-              bondList);
-          buildH(
-              residue,
-              "H2''",
-              sugarC2,
-              1.09e0,
-              sugarC3,
-              109.5e0,
-              sugarC1,
-              109.5e0,
-              1,
-              NA_H22[naNumber],
-              forceField,
-              bondList);
+          buildH(residue, "H2'", sugarC2, 1.09e0, sugarC3, 109.5e0, sugarC1, 109.5e0, -1,
+              NA_H21[naNumber], forceField, bondList);
+          buildH(residue, "H2''", sugarC2, 1.09e0, sugarC3, 109.5e0, sugarC1, 109.5e0, 1,
+              NA_H22[naNumber], forceField, bondList);
         } else {
-          buildH(
-              residue,
-              "H2'",
-              sugarC2,
-              1.09e0,
-              sugarC3,
-              109.5e0,
-              sugarC1,
-              109.5e0,
-              -1,
-              NA_H21[naNumber],
-              forceField,
-              bondList);
+          buildH(residue, "H2'", sugarC2, 1.09e0, sugarC3, 109.5e0, sugarC1, 109.5e0, -1,
+              NA_H21[naNumber], forceField, bondList);
           // Add the NA_O2' Methyl for OMC and OMG
           // Note: may be completely out-of-date with the current Chemical Component Dictionary.
           if (nucleicAcid == NucleicAcid3.OMC || nucleicAcid == NucleicAcid3.OMG) {
             Atom CM2 = buildHeavy(residue, "CM2", sugarO2, 1427, forceField, bondList);
-            Atom HM21 =
-                buildH(
-                    residue,
-                    "HM21",
-                    CM2,
-                    1.08e0,
-                    sugarO2,
-                    109.5e0,
-                    sugarC2,
-                    0.0e0,
-                    0,
-                    1428,
-                    forceField,
-                    bondList);
-            buildH(
-                residue,
-                "HM22",
-                CM2,
-                1.08e0,
-                sugarO2,
-                109.5e0,
-                HM21,
-                109.5e0,
-                1,
-                1429,
-                forceField,
-                bondList);
-            buildH(
-                residue,
-                "HM23",
-                CM2,
-                1.08e0,
-                sugarO2,
-                109.5e0,
-                HM21,
-                109.5e0,
-                -1,
-                1430,
-                forceField,
-                bondList);
+            Atom HM21 = buildH(residue, "HM21", CM2, 1.08e0, sugarO2, 109.5e0, sugarC2, 0.0e0, 0,
+                1428, forceField, bondList);
+            buildH(residue, "HM22", CM2, 1.08e0, sugarO2, 109.5e0, HM21, 109.5e0, 1, 1429,
+                forceField, bondList);
+            buildH(residue, "HM23", CM2, 1.08e0, sugarO2, 109.5e0, HM21, 109.5e0, -1, 1430,
+                forceField, bondList);
           } else {
-            buildH(
-                residue,
-                "HO2'",
-                sugarO2,
-                1.00e0,
-                sugarC2,
-                109.5e0,
-                sugarC3,
-                180.0e0,
-                0,
-                NA_H22[naNumber],
-                forceField,
-                bondList);
+            buildH(residue, "HO2'", sugarO2, 1.00e0, sugarC2, 109.5e0, sugarC3, 180.0e0, 0,
+                NA_H22[naNumber], forceField, bondList);
           }
         }
-        buildH(
-            residue,
-            "H1'",
-            sugarC1,
-            1.09e0,
-            sugarO4,
-            109.5e0,
-            sugarC2,
-            109.5e0,
-            -1,
-            NA_H1[naNumber],
-            forceField,
-            bondList);
+        buildH(residue, "H1'", sugarC1, 1.09e0, sugarO4, 109.5e0, sugarC2, 109.5e0, -1,
+            NA_H1[naNumber], forceField, bondList);
         if (position == LAST_RESIDUE || numberOfResidues == 1) {
-          buildH(residue, "HO3'", sugarO3, 1.00e0, sugarC3, 109.5e0,
-              sugarC4, 180.0e0, 0, NA_HO3T[naNumber], forceField, bondList);
+          buildH(residue, "HO3'", sugarO3, 1.00e0, sugarC3, 109.5e0, sugarC4, 180.0e0, 0,
+              NA_HO3T[naNumber], forceField, bondList);
           // Else, if it is terminated by a 3' phosphate cap:
           // Will need to see how PDB would label a 3' phosphate cap.
         }
 
         // Build the nucleic acid base.
-        assignNucleicAcidBaseAtomTypes(
-            nucleicAcid, residue, sugarC1, sugarO4, sugarC2, forceField, bondList);
+        assignNucleicAcidBaseAtomTypes(nucleicAcid, residue, sugarC1, sugarO4, sugarC2, forceField,
+            bondList);
       }
 
       // Do some checks on the current base to make sure all atoms have been assigned an atom type.
@@ -769,16 +510,13 @@ public class NucleicAcidUtils {
         }
         int numberOfBonds = atom.getNumBonds();
         if (numberOfBonds != atomType.valence) {
-          if (atom == sugarO3
-              && numberOfBonds == atomType.valence - 1
-              && position != LAST_RESIDUE
+          if (atom == sugarO3 && numberOfBonds == atomType.valence - 1 && position != LAST_RESIDUE
               && numberOfResidues != 1) {
             continue;
           }
           logger.warning(
-              format(
-                  " An atom for residue %s has the wrong number of bonds:\n %s",
-                  residueName, atom));
+              format(" An atom for residue %s has the wrong number of bonds:\n %s", residueName,
+                  atom));
           logger.info(format(" Expected: %d Actual: %d.", atomType.valence, numberOfBonds));
           for (Bond bond : atom.getBonds()) {
             logger.info(" " + bond.toString());
@@ -804,74 +542,30 @@ public class NucleicAcidUtils {
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
    * @since 1.0
    */
-  private static void assignNucleicAcidBaseAtomTypes(
-      NucleicAcid3 nucleicAcid,
-      Residue residue,
-      Atom C1s,
-      Atom O4s,
-      Atom C2s,
-      ForceField forceField,
-      List<Bond> bondList)
+  private static void assignNucleicAcidBaseAtomTypes(NucleicAcid3 nucleicAcid, Residue residue,
+      Atom C1s, Atom O4s, Atom C2s, ForceField forceField, List<Bond> bondList)
       throws MissingHeavyAtomException, MissingAtomTypeException {
     double glyco = 0;
     switch (nucleicAcid) {
-      case ADE:
-        buildADE(residue, C1s, O4s, C2s, glyco, forceField, bondList);
-        break;
-      case M1MA:
-        buildM1MA(residue, C1s, forceField, bondList);
-        break;
-      case CYT:
-        buildCYT(residue, C1s, O4s, C2s, glyco, forceField, bondList);
-        break;
-      case OMC:
-        buildOMC(residue, C1s, O4s, C2s, glyco, forceField, bondList);
-        break;
-      case M5MC:
-        buildM5MC(residue, C1s, forceField, bondList);
-        break;
-      case GUA:
-        buildGUA(residue, C1s, O4s, C2s, glyco, forceField, bondList);
-        break;
-      case OMG:
-        buildOMG(residue, C1s, O4s, C2s, glyco, forceField, bondList);
-        break;
-      case YYG:
-        buildYYG(residue, C1s, forceField, bondList);
-        break;
-      case M2MG:
-        buildM2MG(residue, C1s, forceField, bondList);
-        break;
-      case M2G:
-        buildM2G(residue, C1s, forceField, bondList);
-        break;
-      case M7MG:
-        buildM7MG(residue, C1s, forceField, bondList);
-        break;
-      case URI:
-        buildURI(residue, C1s, O4s, C2s, glyco, forceField, bondList);
-        break;
-      case PSU:
-        buildPSU(residue, C1s, forceField, bondList);
-        break;
-      case H2U:
-        buildH2U(residue, C1s, forceField, bondList);
-        break;
-      case M5MU:
-        buildM5MU(residue, C1s, forceField, bondList);
-        break;
-      case DAD:
-        buildDAD(residue, C1s, O4s, C2s, glyco, forceField, bondList);
-        break;
-      case DCY:
-        buildDCY(residue, C1s, O4s, C2s, glyco, forceField, bondList);
-        break;
-      case DGU:
-        buildDGU(residue, C1s, O4s, C2s, glyco, forceField, bondList);
-        break;
-      case DTY:
-        buildDTY(residue, C1s, O4s, C2s, glyco, forceField, bondList);
-        break;
+      case ADE -> buildADE(residue, C1s, O4s, C2s, glyco, forceField, bondList);
+      case M1MA -> buildM1MA(residue, C1s, forceField, bondList);
+      case CYT -> buildCYT(residue, C1s, O4s, C2s, glyco, forceField, bondList);
+      case OMC -> buildOMC(residue, C1s, O4s, C2s, glyco, forceField, bondList);
+      case M5MC -> buildM5MC(residue, C1s, forceField, bondList);
+      case GUA -> buildGUA(residue, C1s, O4s, C2s, glyco, forceField, bondList);
+      case OMG -> buildOMG(residue, C1s, O4s, C2s, glyco, forceField, bondList);
+      case YYG -> buildYYG(residue, C1s, forceField, bondList);
+      case M2MG -> buildM2MG(residue, C1s, forceField, bondList);
+      case M2G -> buildM2G(residue, C1s, forceField, bondList);
+      case M7MG -> buildM7MG(residue, C1s, forceField, bondList);
+      case URI -> buildURI(residue, C1s, O4s, C2s, glyco, forceField, bondList);
+      case PSU -> buildPSU(residue, C1s, forceField, bondList);
+      case H2U -> buildH2U(residue, C1s, forceField, bondList);
+      case M5MU -> buildM5MU(residue, C1s, forceField, bondList);
+      case DAD -> buildDAD(residue, C1s, O4s, C2s, glyco, forceField, bondList);
+      case DCY -> buildDCY(residue, C1s, O4s, C2s, glyco, forceField, bondList);
+      case DGU -> buildDGU(residue, C1s, O4s, C2s, glyco, forceField, bondList);
+      case DTY -> buildDTY(residue, C1s, O4s, C2s, glyco, forceField, bondList);
     }
   }
 
@@ -887,45 +581,29 @@ public class NucleicAcidUtils {
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
-  private static Residue buildADE(
-      Residue residue,
-      Atom C1s,
-      Atom O4s,
-      Atom C2s,
-      double glyco,
-      ForceField forceField,
-      List<Bond> bondList) {
-    Atom N9 =
-        buildHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1017, forceField, bondList);
-    Atom C8 =
-        buildHeavy(
-            residue, "C8", N9, 1.37, C1s, 128.4, O4s, glyco + 180.0, 0, 1021, forceField, bondList);
-    Atom N7 =
-        buildHeavy(residue, "N7", C8, 1.30, N9, 113.8, C1s, 180.0, 0, 1020, forceField, bondList);
-    Atom C5 =
-        buildHeavy(residue, "C5", N7, 1.39, C8, 104.0, N9, 0.0, 0, 1019, forceField, bondList);
-    Atom C6 =
-        buildHeavy(residue, "C6", C5, 1.40, N7, 132.4, C8, 180.0, 0, 1025, forceField, bondList);
-    Atom N6 =
-        buildHeavy(residue, "N6", C6, 1.34, C5, 123.5, N7, 0.0, 0, 1027, forceField, bondList);
-    Atom N1 =
-        buildHeavy(residue, "N1", C6, 1.35, C5, 117.4, N7, 180.0, 0, 1024, forceField, bondList);
-    Atom C2 =
-        buildHeavy(residue, "C2", N1, 1.33, C6, 118.8, C5, 0.0, 0, 1023, forceField, bondList);
-    Atom N3 =
-        buildHeavy(residue, "N3", C2, 1.32, N1, 129.2, C6, 0.0, 0, 1022, forceField, bondList);
-    Atom C4 =
-        buildHeavy(residue, "C4", N3, 1.35, C2, 110.9, N1, 0.0, 0, 1018, forceField, bondList);
+  private static Residue buildADE(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
+      ForceField forceField, List<Bond> bondList) {
+    Atom N9 = buildHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1017, forceField,
+        bondList);
+    Atom C8 = buildHeavy(residue, "C8", N9, 1.37, C1s, 128.4, O4s, glyco + 180.0, 0, 1021,
+        forceField, bondList);
+    Atom N7 = buildHeavy(residue, "N7", C8, 1.30, N9, 113.8, C1s, 180.0, 0, 1020, forceField,
+        bondList);
+    Atom C5 = buildHeavy(residue, "C5", N7, 1.39, C8, 104.0, N9, 0.0, 0, 1019, forceField, bondList);
+    Atom C6 = buildHeavy(residue, "C6", C5, 1.40, N7, 132.4, C8, 180.0, 0, 1025, forceField,
+        bondList);
+    Atom N6 = buildHeavy(residue, "N6", C6, 1.34, C5, 123.5, N7, 0.0, 0, 1027, forceField, bondList);
+    Atom N1 = buildHeavy(residue, "N1", C6, 1.35, C5, 117.4, N7, 180.0, 0, 1024, forceField,
+        bondList);
+    Atom C2 = buildHeavy(residue, "C2", N1, 1.33, C6, 118.8, C5, 0.0, 0, 1023, forceField, bondList);
+    Atom N3 = buildHeavy(residue, "N3", C2, 1.32, N1, 129.2, C6, 0.0, 0, 1022, forceField, bondList);
+    Atom C4 = buildHeavy(residue, "C4", N3, 1.35, C2, 110.9, N1, 0.0, 0, 1018, forceField, bondList);
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
-    buildH(
-        residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1030, forceField, bondList);
-    buildH(
-        residue, "H61", N6, 1.00e0, C6, 120.0e0, N7, 180.0e0, 0, 1028, forceField, bondList);
-    buildH(
-        residue, "H62", N6, 1.00e0, C6, 120.0e0, N7, 0.0e0, 0, 1029, forceField, bondList);
-    buildH(
-        residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1026, forceField, bondList);
+    buildH(residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1030, forceField, bondList);
+    buildH(residue, "H61", N6, 1.00e0, C6, 120.0e0, N7, 180.0e0, 0, 1028, forceField, bondList);
+    buildH(residue, "H62", N6, 1.00e0, C6, 120.0e0, N7, 0.0e0, 0, 1029, forceField, bondList);
+    buildH(residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1026, forceField, bondList);
     return residue;
   }
 
@@ -941,40 +619,26 @@ public class NucleicAcidUtils {
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
-  private static Residue buildCYT(
-      Residue residue,
-      Atom C1s,
-      Atom O4s,
-      Atom C2s,
-      double glyco,
-      ForceField forceField,
-      List<Bond> bondList) {
-    Atom N1 =
-        buildHeavy(residue, "N1", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1078, forceField, bondList);
-    Atom C2 =
-        buildHeavy(
-            residue, "C2", N1, 1.37, C1s, 117.8, O4s, glyco + 180, 0, 1079, forceField, bondList);
-    Atom O2 =
-        buildHeavy(residue, "O2", C2, 1.24, N1, 118.9, C1s, 0.0, 0, 1084, forceField, bondList);
-    Atom N3 =
-        buildHeavy(residue, "N3", C2, 1.38, N1, 118.7, C1s, 180.0, 0, 1080, forceField, bondList);
-    Atom C4 =
-        buildHeavy(residue, "C4", N3, 1.34, C2, 120.6, N1, 0.0, 0, 1081, forceField, bondList);
-    Atom N4 =
-        buildHeavy(residue, "N4", C4, 1.32, N3, 118.3, O2, 180.0, 0, 1085, forceField, bondList);
-    Atom C5 =
-        buildHeavy(residue, "C5", C4, 1.43, N3, 121.6, C2, 0.0, 0, 1082, forceField, bondList);
-    Atom C6 =
-        buildHeavy(residue, "C6", C5, 1.36, C4, 116.9, N3, 0.0, 0, 1083, forceField, bondList);
+  private static Residue buildCYT(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
+      ForceField forceField, List<Bond> bondList) {
+    Atom N1 = buildHeavy(residue, "N1", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1078, forceField,
+        bondList);
+    Atom C2 = buildHeavy(residue, "C2", N1, 1.37, C1s, 117.8, O4s, glyco + 180, 0, 1079, forceField,
+        bondList);
+    Atom O2 = buildHeavy(residue, "O2", C2, 1.24, N1, 118.9, C1s, 0.0, 0, 1084, forceField,
+        bondList);
+    Atom N3 = buildHeavy(residue, "N3", C2, 1.38, N1, 118.7, C1s, 180.0, 0, 1080, forceField,
+        bondList);
+    Atom C4 = buildHeavy(residue, "C4", N3, 1.34, C2, 120.6, N1, 0.0, 0, 1081, forceField, bondList);
+    Atom N4 = buildHeavy(residue, "N4", C4, 1.32, N3, 118.3, O2, 180.0, 0, 1085, forceField,
+        bondList);
+    Atom C5 = buildHeavy(residue, "C5", C4, 1.43, N3, 121.6, C2, 0.0, 0, 1082, forceField, bondList);
+    Atom C6 = buildHeavy(residue, "C6", C5, 1.36, C4, 116.9, N3, 0.0, 0, 1083, forceField, bondList);
     buildBond(C6, N1, forceField, bondList);
-    buildH(
-        residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1086, forceField, bondList);
-    buildH(
-        residue, "H42", N4, 1.00e0, C4, 120.0e0, N3, 180.0e0, 0, 1087, forceField, bondList);
-    buildH(
-        residue, "H5", C5, 1.08e0, C4, 121.6e0, N3, 180.0e0, 0, 1088, forceField, bondList);
-    buildH(
-        residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1089, forceField, bondList);
+    buildH(residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1086, forceField, bondList);
+    buildH(residue, "H42", N4, 1.00e0, C4, 120.0e0, N3, 180.0e0, 0, 1087, forceField, bondList);
+    buildH(residue, "H5", C5, 1.08e0, C4, 121.6e0, N3, 180.0e0, 0, 1088, forceField, bondList);
+    buildH(residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1089, forceField, bondList);
     return residue;
   }
 
@@ -990,46 +654,30 @@ public class NucleicAcidUtils {
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
-  private static Residue buildDAD(
-      Residue residue,
-      Atom C1s,
-      Atom O4s,
-      Atom C2s,
-      double glyco,
-      ForceField forceField,
-      List<Bond> bondList) {
+  private static Residue buildDAD(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
+      ForceField forceField, List<Bond> bondList) {
 
-    Atom N9 =
-        buildHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1132, forceField, bondList);
-    Atom C8 =
-        buildHeavy(
-            residue, "C8", N9, 1.37, C1s, 128.4, O4s, glyco + 180, 0, 1136, forceField, bondList);
-    Atom N7 =
-        buildHeavy(residue, "N7", C8, 1.30, N9, 113.8, C1s, 180.0, 0, 1135, forceField, bondList);
-    Atom C5 =
-        buildHeavy(residue, "C5", N7, 1.39, C8, 104.0, N9, 0.0, 0, 1134, forceField, bondList);
-    Atom C6 =
-        buildHeavy(residue, "C6", C5, 1.40, N7, 132.4, C8, 180.0, 0, 1140, forceField, bondList);
-    Atom N6 =
-        buildHeavy(residue, "N6", C6, 1.34, C5, 123.5, N7, 0.0, 0, 1142, forceField, bondList);
-    Atom N1 =
-        buildHeavy(residue, "N1", C6, 1.35, C5, 117.4, N7, 180.0, 0, 1139, forceField, bondList);
-    Atom C2 =
-        buildHeavy(residue, "C2", N1, 1.33, C6, 118.8, C5, 0.0, 0, 1138, forceField, bondList);
-    Atom N3 =
-        buildHeavy(residue, "N3", C2, 1.32, N1, 129.2, C6, 0.0, 0, 1137, forceField, bondList);
-    Atom C4 =
-        buildHeavy(residue, "C4", N3, 1.35, C2, 110.9, N1, 0.0, 0, 1133, forceField, bondList);
+    Atom N9 = buildHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1132, forceField,
+        bondList);
+    Atom C8 = buildHeavy(residue, "C8", N9, 1.37, C1s, 128.4, O4s, glyco + 180, 0, 1136, forceField,
+        bondList);
+    Atom N7 = buildHeavy(residue, "N7", C8, 1.30, N9, 113.8, C1s, 180.0, 0, 1135, forceField,
+        bondList);
+    Atom C5 = buildHeavy(residue, "C5", N7, 1.39, C8, 104.0, N9, 0.0, 0, 1134, forceField, bondList);
+    Atom C6 = buildHeavy(residue, "C6", C5, 1.40, N7, 132.4, C8, 180.0, 0, 1140, forceField,
+        bondList);
+    Atom N6 = buildHeavy(residue, "N6", C6, 1.34, C5, 123.5, N7, 0.0, 0, 1142, forceField, bondList);
+    Atom N1 = buildHeavy(residue, "N1", C6, 1.35, C5, 117.4, N7, 180.0, 0, 1139, forceField,
+        bondList);
+    Atom C2 = buildHeavy(residue, "C2", N1, 1.33, C6, 118.8, C5, 0.0, 0, 1138, forceField, bondList);
+    Atom N3 = buildHeavy(residue, "N3", C2, 1.32, N1, 129.2, C6, 0.0, 0, 1137, forceField, bondList);
+    Atom C4 = buildHeavy(residue, "C4", N3, 1.35, C2, 110.9, N1, 0.0, 0, 1133, forceField, bondList);
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
-    buildH(
-        residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1145, forceField, bondList);
-    buildH(
-        residue, "H61", N6, 1.00e0, C6, 120.0e0, N7, 180.0e0, 0, 1143, forceField, bondList);
-    buildH(
-        residue, "H62", N6, 1.00e0, C6, 120.0e0, N7, 0.0e0, 0, 1144, forceField, bondList);
-    buildH(
-        residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1141, forceField, bondList);
+    buildH(residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1145, forceField, bondList);
+    buildH(residue, "H61", N6, 1.00e0, C6, 120.0e0, N7, 180.0e0, 0, 1143, forceField, bondList);
+    buildH(residue, "H62", N6, 1.00e0, C6, 120.0e0, N7, 0.0e0, 0, 1144, forceField, bondList);
+    buildH(residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1141, forceField, bondList);
     return residue;
   }
 
@@ -1045,40 +693,27 @@ public class NucleicAcidUtils {
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
-  private static Residue buildDCY(
-      Residue residue,
-      Atom C1s,
-      Atom O4s,
-      Atom C2s,
-      double glyco,
-      ForceField forceField,
-      List<Bond> bondList) {
+  private static Residue buildDCY(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
+      ForceField forceField, List<Bond> bondList) {
 
-    Atom N1 =
-        buildHeavy(residue, "N1", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1191, forceField, bondList);
-    Atom C2 =
-        buildHeavy(residue, "C2", N1, 1.37, C1s, 117.8, O4s, glyco, 0, 1192, forceField, bondList);
-    Atom O2 =
-        buildHeavy(residue, "O2", C2, 1.24, N1, 118.9, C1s, 0.0, 0, 1197, forceField, bondList);
-    Atom N3 =
-        buildHeavy(residue, "N3", C2, 1.38, N1, 118.7, C1s, 180, 0, 1193, forceField, bondList);
-    Atom C4 =
-        buildHeavy(residue, "C4", N3, 1.34, C2, 120.6, N1, 0.0, 0, 1194, forceField, bondList);
-    Atom N4 =
-        buildHeavy(residue, "N4", C4, 1.32, N3, 118.3, C2, 180.0, 0, 1198, forceField, bondList);
-    Atom C5 =
-        buildHeavy(residue, "C5", C4, 1.43, N3, 121.6, C2, 0.0, 0, 1195, forceField, bondList);
-    Atom C6 =
-        buildHeavy(residue, "C6", C5, 1.36, C4, 116.9, N3, 0.0, 0, 1196, forceField, bondList);
+    Atom N1 = buildHeavy(residue, "N1", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1191, forceField,
+        bondList);
+    Atom C2 = buildHeavy(residue, "C2", N1, 1.37, C1s, 117.8, O4s, glyco, 0, 1192, forceField,
+        bondList);
+    Atom O2 = buildHeavy(residue, "O2", C2, 1.24, N1, 118.9, C1s, 0.0, 0, 1197, forceField,
+        bondList);
+    Atom N3 = buildHeavy(residue, "N3", C2, 1.38, N1, 118.7, C1s, 180, 0, 1193, forceField,
+        bondList);
+    Atom C4 = buildHeavy(residue, "C4", N3, 1.34, C2, 120.6, N1, 0.0, 0, 1194, forceField, bondList);
+    Atom N4 = buildHeavy(residue, "N4", C4, 1.32, N3, 118.3, C2, 180.0, 0, 1198, forceField,
+        bondList);
+    Atom C5 = buildHeavy(residue, "C5", C4, 1.43, N3, 121.6, C2, 0.0, 0, 1195, forceField, bondList);
+    Atom C6 = buildHeavy(residue, "C6", C5, 1.36, C4, 116.9, N3, 0.0, 0, 1196, forceField, bondList);
     buildBond(C6, N1, forceField, bondList);
-    buildH(
-        residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1199, forceField, bondList);
-    buildH(
-        residue, "H42", N4, 1.00e0, C4, 120.0e0, N3, 180.0e0, 0, 1200, forceField, bondList);
-    buildH(
-        residue, "H5", C5, 1.08e0, C4, 121.6e0, N3, 180.0e0, 0, 1201, forceField, bondList);
-    buildH(
-        residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1202, forceField, bondList);
+    buildH(residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1199, forceField, bondList);
+    buildH(residue, "H42", N4, 1.00e0, C4, 120.0e0, N3, 180.0e0, 0, 1200, forceField, bondList);
+    buildH(residue, "H5", C5, 1.08e0, C4, 121.6e0, N3, 180.0e0, 0, 1201, forceField, bondList);
+    buildH(residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1202, forceField, bondList);
     return residue;
   }
 
@@ -1094,48 +729,32 @@ public class NucleicAcidUtils {
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
-  private static Residue buildDGU(
-      Residue residue,
-      Atom C1s,
-      Atom O4s,
-      Atom C2s,
-      double glyco,
-      ForceField forceField,
-      List<Bond> bondList) {
+  private static Residue buildDGU(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
+      ForceField forceField, List<Bond> bondList) {
 
-    Atom N9 =
-        buildHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1161, forceField, bondList);
-    Atom C8 =
-        buildHeavy(
-            residue, "C8", N9, 1.38, C1s, 128.4, O4s, glyco + 180, 0, 1165, forceField, bondList);
-    Atom N7 =
-        buildHeavy(residue, "N7", C8, 1.31, N9, 114.0, C1s, 180.0, 0, 1164, forceField, bondList);
-    Atom C5 =
-        buildHeavy(residue, "C5", N7, 1.39, C8, 103.8, N9, 0.0, 0, 1163, forceField, bondList);
-    Atom C6 =
-        buildHeavy(residue, "C6", C5, 1.40, N7, 130.1, C8, 180.0, 0, 1169, forceField, bondList);
-    Atom O6 =
-        buildHeavy(residue, "O6", C6, 1.23, C5, 128.8, N7, 0.0, 0, 1174, forceField, bondList);
-    Atom N1 =
-        buildHeavy(residue, "N1", C6, 1.40, C5, 111.4, N7, 180.0, 0, 1168, forceField, bondList);
-    Atom C2 =
-        buildHeavy(residue, "C2", N1, 1.38, C6, 125.2, C5, 0.0, 0, 1167, forceField, bondList);
-    Atom N2 =
-        buildHeavy(residue, "N2", C2, 1.34, N1, 116.1, C6, 180.0, 0, 1171, forceField, bondList);
-    Atom N3 =
-        buildHeavy(residue, "N3", C2, 1.33, N1, 123.3, O6, 0.0, 0, 1166, forceField, bondList);
-    Atom C4 =
-        buildHeavy(residue, "C4", N3, 1.36, C2, 112.3, N1, 0.0, 0, 1162, forceField, bondList);
+    Atom N9 = buildHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1161, forceField,
+        bondList);
+    Atom C8 = buildHeavy(residue, "C8", N9, 1.38, C1s, 128.4, O4s, glyco + 180, 0, 1165, forceField,
+        bondList);
+    Atom N7 = buildHeavy(residue, "N7", C8, 1.31, N9, 114.0, C1s, 180.0, 0, 1164, forceField,
+        bondList);
+    Atom C5 = buildHeavy(residue, "C5", N7, 1.39, C8, 103.8, N9, 0.0, 0, 1163, forceField, bondList);
+    Atom C6 = buildHeavy(residue, "C6", C5, 1.40, N7, 130.1, C8, 180.0, 0, 1169, forceField,
+        bondList);
+    Atom O6 = buildHeavy(residue, "O6", C6, 1.23, C5, 128.8, N7, 0.0, 0, 1174, forceField, bondList);
+    Atom N1 = buildHeavy(residue, "N1", C6, 1.40, C5, 111.4, N7, 180.0, 0, 1168, forceField,
+        bondList);
+    Atom C2 = buildHeavy(residue, "C2", N1, 1.38, C6, 125.2, C5, 0.0, 0, 1167, forceField, bondList);
+    Atom N2 = buildHeavy(residue, "N2", C2, 1.34, N1, 116.1, C6, 180.0, 0, 1171, forceField,
+        bondList);
+    Atom N3 = buildHeavy(residue, "N3", C2, 1.33, N1, 123.3, O6, 0.0, 0, 1166, forceField, bondList);
+    Atom C4 = buildHeavy(residue, "C4", N3, 1.36, C2, 112.3, N1, 0.0, 0, 1162, forceField, bondList);
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
-    buildH(
-        residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1175, forceField, bondList);
-    buildH(
-        residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1170, forceField, bondList);
-    buildH(
-        residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1172, forceField, bondList);
-    buildH(
-        residue, "H22", N2, 1.00e0, C2, 120.0e0, N1, 180.0e0, 0, 1173, forceField, bondList);
+    buildH(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1175, forceField, bondList);
+    buildH(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1170, forceField, bondList);
+    buildH(residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1172, forceField, bondList);
+    buildH(residue, "H22", N2, 1.00e0, C2, 120.0e0, N1, 180.0e0, 0, 1173, forceField, bondList);
     return residue;
   }
 
@@ -1151,44 +770,30 @@ public class NucleicAcidUtils {
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
-  private static Residue buildDTY(
-      Residue residue,
-      Atom C1s,
-      Atom O4s,
-      Atom C2s,
-      double glyco,
-      ForceField forceField,
-      List<Bond> bondList) {
-    Atom N1 =
-        buildHeavy(residue, "N1", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1218, forceField, bondList);
-    Atom C2 =
-        buildHeavy(residue, "C2", N1, 1.37, C1s, 117.1, O4s, glyco, 0, 1219, forceField, bondList);
-    Atom O2 =
-        buildHeavy(residue, "O2", C2, 1.22, N1, 122.9, C1s, 0.0, 0, 1224, forceField, bondList);
-    Atom N3 =
-        buildHeavy(residue, "N3", C2, 1.38, N1, 115.4, C1s, 180.0, 0, 1220, forceField, bondList);
-    Atom C4 =
-        buildHeavy(residue, "C4", N3, 1.38, C2, 126.4, N1, 0.0, 0, 1221, forceField, bondList);
-    Atom O4 =
-        buildHeavy(residue, "O4", C4, 1.23, N3, 120.5, C2, 180.0, 0, 1226, forceField, bondList);
-    Atom C5 =
-        buildHeavy(residue, "C5", C4, 1.44, N3, 114.1, C2, 0.0, 0, 1222, forceField, bondList);
-    Atom C7 =
-        buildHeavy(residue, "C7", C5, 1.50, C4, 117.5, N3, 180.0, 0, 1227, forceField, bondList);
-    Atom C6 =
-        buildHeavy(residue, "C6", C5, 1.34, C4, 120.8, N3, 0.0, 0, 1223, forceField, bondList);
+  private static Residue buildDTY(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
+      ForceField forceField, List<Bond> bondList) {
+    Atom N1 = buildHeavy(residue, "N1", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1218, forceField,
+        bondList);
+    Atom C2 = buildHeavy(residue, "C2", N1, 1.37, C1s, 117.1, O4s, glyco, 0, 1219, forceField,
+        bondList);
+    Atom O2 = buildHeavy(residue, "O2", C2, 1.22, N1, 122.9, C1s, 0.0, 0, 1224, forceField,
+        bondList);
+    Atom N3 = buildHeavy(residue, "N3", C2, 1.38, N1, 115.4, C1s, 180.0, 0, 1220, forceField,
+        bondList);
+    Atom C4 = buildHeavy(residue, "C4", N3, 1.38, C2, 126.4, N1, 0.0, 0, 1221, forceField, bondList);
+    Atom O4 = buildHeavy(residue, "O4", C4, 1.23, N3, 120.5, C2, 180.0, 0, 1226, forceField,
+        bondList);
+    Atom C5 = buildHeavy(residue, "C5", C4, 1.44, N3, 114.1, C2, 0.0, 0, 1222, forceField, bondList);
+    Atom C7 = buildHeavy(residue, "C7", C5, 1.50, C4, 117.5, N3, 180.0, 0, 1227, forceField,
+        bondList);
+    Atom C6 = buildHeavy(residue, "C6", C5, 1.34, C4, 120.8, N3, 0.0, 0, 1223, forceField, bondList);
     buildBond(C6, N1, forceField, bondList);
-    buildH(
-        residue, "H3", N3, 1.00e0, C2, 116.8e0, N1, 180.0e0, 0, 1225, forceField, bondList);
-    Atom H =
-        buildH(
-            residue, "H71", C7, 1.09e0, C5, 109.5e0, C4, 0.0e0, 0, 1228, forceField, bondList);
-    buildH(
-        residue, "H72", C7, 1.09e0, C5, 109.5e0, H, 109.5e0, 1, 1228, forceField, bondList);
-    buildH(
-        residue, "H73", C7, 1.09e0, C5, 109.5e0, H, 109.5e0, -1, 1228, forceField, bondList);
-    buildH(
-        residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1229, forceField, bondList);
+    buildH(residue, "H3", N3, 1.00e0, C2, 116.8e0, N1, 180.0e0, 0, 1225, forceField, bondList);
+    Atom H = buildH(residue, "H71", C7, 1.09e0, C5, 109.5e0, C4, 0.0e0, 0, 1228, forceField,
+        bondList);
+    buildH(residue, "H72", C7, 1.09e0, C5, 109.5e0, H, 109.5e0, 1, 1228, forceField, bondList);
+    buildH(residue, "H73", C7, 1.09e0, C5, 109.5e0, H, 109.5e0, -1, 1228, forceField, bondList);
+    buildH(residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1229, forceField, bondList);
     return residue;
   }
 
@@ -1204,47 +809,31 @@ public class NucleicAcidUtils {
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
-  private static Residue buildGUA(
-      Residue residue,
-      Atom C1s,
-      Atom O4s,
-      Atom C2s,
-      double glyco,
-      ForceField forceField,
-      List<Bond> bondList) {
-    Atom N9 =
-        buildHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1047, forceField, bondList);
-    Atom C8 =
-        buildHeavy(
-            residue, "C8", N9, 1.38, C1s, 128.4, O4s, glyco + 180, 0, 1051, forceField, bondList);
-    Atom N7 =
-        buildHeavy(residue, "N7", C8, 1.31, N9, 114.0, C1s, 180.0, 0, 1050, forceField, bondList);
-    Atom C5 =
-        buildHeavy(residue, "C5", N7, 1.39, C8, 103.8, N9, 0.0, 0, 1049, forceField, bondList);
-    Atom C6 =
-        buildHeavy(residue, "C6", C5, 1.40, N7, 130.1, C8, 180.0, 0, 1055, forceField, bondList);
-    Atom O6 =
-        buildHeavy(residue, "O6", C6, 1.23, C5, 128.8, N7, 0.0, 0, 1060, forceField, bondList);
-    Atom N1 =
-        buildHeavy(residue, "N1", C6, 1.40, C5, 111.4, N7, 180.0, 0, 1054, forceField, bondList);
-    Atom C2 =
-        buildHeavy(residue, "C2", N1, 1.38, C6, 125.2, C5, 0.0, 0, 1053, forceField, bondList);
-    Atom N2 =
-        buildHeavy(residue, "N2", C2, 1.34, N1, 116.1, C6, 180.0, 0, 1057, forceField, bondList);
-    Atom N3 =
-        buildHeavy(residue, "N3", C2, 1.33, N1, 123.3, O6, 0.0, 0, 1052, forceField, bondList);
-    Atom C4 =
-        buildHeavy(residue, "C4", N3, 1.36, C2, 112.3, N1, 0.0, 0, 1048, forceField, bondList);
+  private static Residue buildGUA(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
+      ForceField forceField, List<Bond> bondList) {
+    Atom N9 = buildHeavy(residue, "N9", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1047, forceField,
+        bondList);
+    Atom C8 = buildHeavy(residue, "C8", N9, 1.38, C1s, 128.4, O4s, glyco + 180, 0, 1051, forceField,
+        bondList);
+    Atom N7 = buildHeavy(residue, "N7", C8, 1.31, N9, 114.0, C1s, 180.0, 0, 1050, forceField,
+        bondList);
+    Atom C5 = buildHeavy(residue, "C5", N7, 1.39, C8, 103.8, N9, 0.0, 0, 1049, forceField, bondList);
+    Atom C6 = buildHeavy(residue, "C6", C5, 1.40, N7, 130.1, C8, 180.0, 0, 1055, forceField,
+        bondList);
+    Atom O6 = buildHeavy(residue, "O6", C6, 1.23, C5, 128.8, N7, 0.0, 0, 1060, forceField, bondList);
+    Atom N1 = buildHeavy(residue, "N1", C6, 1.40, C5, 111.4, N7, 180.0, 0, 1054, forceField,
+        bondList);
+    Atom C2 = buildHeavy(residue, "C2", N1, 1.38, C6, 125.2, C5, 0.0, 0, 1053, forceField, bondList);
+    Atom N2 = buildHeavy(residue, "N2", C2, 1.34, N1, 116.1, C6, 180.0, 0, 1057, forceField,
+        bondList);
+    Atom N3 = buildHeavy(residue, "N3", C2, 1.33, N1, 123.3, O6, 0.0, 0, 1052, forceField, bondList);
+    Atom C4 = buildHeavy(residue, "C4", N3, 1.36, C2, 112.3, N1, 0.0, 0, 1048, forceField, bondList);
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
-    buildH(
-        residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1061, forceField, bondList);
-    buildH(
-        residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1056, forceField, bondList);
-    buildH(
-        residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1058, forceField, bondList);
-    buildH(
-        residue, "H22", N2, 1.00e0, C2, 120.0e0, N1, 180.0e0, 0, 1059, forceField, bondList);
+    buildH(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1061, forceField, bondList);
+    buildH(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1056, forceField, bondList);
+    buildH(residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1058, forceField, bondList);
+    buildH(residue, "H22", N2, 1.00e0, C2, 120.0e0, N1, 180.0e0, 0, 1059, forceField, bondList);
     return residue;
   }
 
@@ -1258,9 +847,8 @@ public class NucleicAcidUtils {
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
    */
-  private static Residue buildH2U(
-      Residue residue, Atom C1s, ForceField forceField, List<Bond> bondList)
-      throws MissingHeavyAtomException, MissingAtomTypeException {
+  private static Residue buildH2U(Residue residue, Atom C1s, ForceField forceField,
+      List<Bond> bondList) throws MissingHeavyAtomException, MissingAtomTypeException {
 
     Atom N1 = buildHeavy(residue, "N1", C1s, 1350, forceField, bondList);
     Atom C2 = buildHeavy(residue, "C2", N1, 1351, forceField, bondList);
@@ -1271,16 +859,11 @@ public class NucleicAcidUtils {
     Atom C5 = buildHeavy(residue, "C5", C4, 1354, forceField, bondList);
     Atom C6 = buildHeavy(residue, "C6", C5, 1355, forceField, bondList);
     buildBond(C6, N1, forceField, bondList);
-    buildH(
-        residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1357, forceField, bondList);
-    buildH(
-        residue, "H51", C5, 1.08e0, C4, 109.5e0, C6, 109.5e0, 1, 1359, forceField, bondList);
-    buildH(
-        residue, "H52", C5, 1.08e0, C4, 109.5e0, C6, 109.5e0, -1, 1360, forceField, bondList);
-    buildH(
-        residue, "H61", C6, 1.08e0, C5, 109.5e0, N1, 109.5e0, 1, 1361, forceField, bondList);
-    buildH(
-        residue, "H62", C6, 1.08e0, C5, 109.5e0, N1, 109.5e0, -1, 1362, forceField, bondList);
+    buildH(residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1357, forceField, bondList);
+    buildH(residue, "H51", C5, 1.08e0, C4, 109.5e0, C6, 109.5e0, 1, 1359, forceField, bondList);
+    buildH(residue, "H52", C5, 1.08e0, C4, 109.5e0, C6, 109.5e0, -1, 1360, forceField, bondList);
+    buildH(residue, "H61", C6, 1.08e0, C5, 109.5e0, N1, 109.5e0, 1, 1361, forceField, bondList);
+    buildH(residue, "H62", C6, 1.08e0, C5, 109.5e0, N1, 109.5e0, -1, 1362, forceField, bondList);
     return residue;
   }
 
@@ -1294,9 +877,8 @@ public class NucleicAcidUtils {
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
    */
-  private static Residue buildM1MA(
-      Residue residue, Atom C1s, ForceField forceField, List<Bond> bondList)
-      throws MissingHeavyAtomException, MissingAtomTypeException {
+  private static Residue buildM1MA(Residue residue, Atom C1s, ForceField forceField,
+      List<Bond> bondList) throws MissingHeavyAtomException, MissingAtomTypeException {
     Atom N9 = buildHeavy(residue, "N9", C1s, 1605, forceField, bondList);
     Atom C8 = buildHeavy(residue, "C8", N9, 1609, forceField, bondList);
     Atom N7 = buildHeavy(residue, "N7", C8, 1608, forceField, bondList);
@@ -1310,23 +892,15 @@ public class NucleicAcidUtils {
     Atom CM1 = buildHeavy(residue, "CM1", N1, 1619, forceField, bondList);
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
-    buildH(
-        residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1614, forceField, bondList);
-    buildH(
-        residue, "H6", C6, 1.08e0, C5, 109.5e0, C4, 180.0e0, 0, 1623, forceField, bondList);
-    buildH(
-        residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1618, forceField, bondList);
-    buildH(
-        residue, "HN61", N6, 1.00e0, C6, 109.5e0, C5, 0.0e0, 0, 1616, forceField, bondList);
-    buildH(
-        residue, "HN62", N6, 1.00e0, C6, 109.5e0, C5, 109.5e0, 0, 1617, forceField, bondList);
-    Atom HM11 =
-        buildH(
-            residue, "HM11", CM1, 1.08e0, N1, 109.5e0, C2, 0.0e0, 0, 1620, forceField, bondList);
-    buildH(
-        residue, "HM12", CM1, 1.08e0, N1, 109.5e0, HM11, 109.5e0, 1, 1621, forceField, bondList);
-    buildH(
-        residue, "HM13", CM1, 1.08e0, N1, 109.5e0, HM11, 109.5e0, -1, 1622, forceField, bondList);
+    buildH(residue, "H2", C2, 1.08e0, N3, 115.4e0, C4, 180.0e0, 0, 1614, forceField, bondList);
+    buildH(residue, "H6", C6, 1.08e0, C5, 109.5e0, C4, 180.0e0, 0, 1623, forceField, bondList);
+    buildH(residue, "H8", C8, 1.08e0, N7, 123.1e0, C5, 180.0e0, 0, 1618, forceField, bondList);
+    buildH(residue, "HN61", N6, 1.00e0, C6, 109.5e0, C5, 0.0e0, 0, 1616, forceField, bondList);
+    buildH(residue, "HN62", N6, 1.00e0, C6, 109.5e0, C5, 109.5e0, 0, 1617, forceField, bondList);
+    Atom HM11 = buildH(residue, "HM11", CM1, 1.08e0, N1, 109.5e0, C2, 0.0e0, 0, 1620, forceField,
+        bondList);
+    buildH(residue, "HM12", CM1, 1.08e0, N1, 109.5e0, HM11, 109.5e0, 1, 1621, forceField, bondList);
+    buildH(residue, "HM13", CM1, 1.08e0, N1, 109.5e0, HM11, 109.5e0, -1, 1622, forceField, bondList);
     return residue;
   }
 
@@ -1340,9 +914,8 @@ public class NucleicAcidUtils {
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
    */
-  private static Residue buildM2G(
-      Residue residue, Atom C1s, ForceField forceField, List<Bond> bondList)
-      throws MissingHeavyAtomException, MissingAtomTypeException {
+  private static Residue buildM2G(Residue residue, Atom C1s, ForceField forceField,
+      List<Bond> bondList) throws MissingHeavyAtomException, MissingAtomTypeException {
     Atom N9 = buildHeavy(residue, "N9", C1s, 1379, forceField, bondList);
     Atom C8 = buildHeavy(residue, "C8", N9, 1383, forceField, bondList);
     Atom N7 = buildHeavy(residue, "N7", C8, 1382, forceField, bondList);
@@ -1358,24 +931,16 @@ public class NucleicAcidUtils {
     Atom CM2 = buildHeavy(residue, "CM2", N2, 1396, forceField, bondList);
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
-    buildH(
-        residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1391, forceField, bondList);
-    buildH(
-        residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1388, forceField, bondList);
-    Atom HM11 =
-        buildH(
-            residue, "HM11", CM1, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1393, forceField, bondList);
-    buildH(
-        residue, "HM12", CM1, 1.08e0, N2, 109.5e0, HM11, 109.5e0, 1, 1394, forceField, bondList);
-    buildH(
-        residue, "HM13", CM1, 1.08e0, N2, 109.5e0, HM11, 109.5e0, -1, 1395, forceField, bondList);
-    Atom HM21 =
-        buildH(
-            residue, "HM21", CM2, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1397, forceField, bondList);
-    buildH(
-        residue, "HM22", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, 1, 1398, forceField, bondList);
-    buildH(
-        residue, "HM23", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, -1, 1399, forceField, bondList);
+    buildH(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1391, forceField, bondList);
+    buildH(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1388, forceField, bondList);
+    Atom HM11 = buildH(residue, "HM11", CM1, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1393, forceField,
+        bondList);
+    buildH(residue, "HM12", CM1, 1.08e0, N2, 109.5e0, HM11, 109.5e0, 1, 1394, forceField, bondList);
+    buildH(residue, "HM13", CM1, 1.08e0, N2, 109.5e0, HM11, 109.5e0, -1, 1395, forceField, bondList);
+    Atom HM21 = buildH(residue, "HM21", CM2, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1397, forceField,
+        bondList);
+    buildH(residue, "HM22", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, 1, 1398, forceField, bondList);
+    buildH(residue, "HM23", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, -1, 1399, forceField, bondList);
     return residue;
   }
 
@@ -1389,9 +954,8 @@ public class NucleicAcidUtils {
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
    */
-  private static Residue buildM2MG(
-      Residue residue, Atom C1s, ForceField forceField, List<Bond> bondList)
-      throws MissingHeavyAtomException, MissingAtomTypeException {
+  private static Residue buildM2MG(Residue residue, Atom C1s, ForceField forceField,
+      List<Bond> bondList) throws MissingHeavyAtomException, MissingAtomTypeException {
     Atom N9 = buildHeavy(residue, "N9", C1s, 1316, forceField, bondList);
     Atom C8 = buildHeavy(residue, "C8", N9, 1320, forceField, bondList);
     Atom N7 = buildHeavy(residue, "N7", C8, 1319, forceField, bondList);
@@ -1406,18 +970,13 @@ public class NucleicAcidUtils {
     Atom CM2 = buildHeavy(residue, "CM2", N2, 1330, forceField, bondList);
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
-    buildH(
-        residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1329, forceField, bondList);
-    buildH(
-        residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1325, forceField, bondList);
+    buildH(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1329, forceField, bondList);
+    buildH(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1325, forceField, bondList);
     buildH(residue, "H2", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1327, forceField, bondList);
-    Atom HM21 =
-        buildH(
-            residue, "HM21", CM2, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1331, forceField, bondList);
-    buildH(
-        residue, "HM22", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, 1, 1332, forceField, bondList);
-    buildH(
-        residue, "HM23", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, -1, 1333, forceField, bondList);
+    Atom HM21 = buildH(residue, "HM21", CM2, 1.08e0, N2, 109.5e0, C2, 0.0e0, 0, 1331, forceField,
+        bondList);
+    buildH(residue, "HM22", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, 1, 1332, forceField, bondList);
+    buildH(residue, "HM23", CM2, 1.08e0, N2, 109.5e0, HM21, 109.5e0, -1, 1333, forceField, bondList);
     return residue;
   }
 
@@ -1431,9 +990,8 @@ public class NucleicAcidUtils {
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
    */
-  private static Residue buildM5MC(
-      Residue residue, Atom C1s, ForceField forceField, List<Bond> bondList)
-      throws MissingHeavyAtomException, MissingAtomTypeException {
+  private static Residue buildM5MC(Residue residue, Atom C1s, ForceField forceField,
+      List<Bond> bondList) throws MissingHeavyAtomException, MissingAtomTypeException {
     Atom N1 = buildHeavy(residue, "N1", C1s, 1508, forceField, bondList);
     Atom C2 = buildHeavy(residue, "C2", N1, 1509, forceField, bondList);
     Atom O2 = buildHeavy(residue, "O2", C2, 1514, forceField, bondList);
@@ -1444,19 +1002,13 @@ public class NucleicAcidUtils {
     Atom C6 = buildHeavy(residue, "C6", C5, 1513, forceField, bondList);
     Atom CM5 = buildHeavy(residue, "CM5", C5, 1519, forceField, bondList);
     buildBond(C6, N1, forceField, bondList);
-    buildH(
-        residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1516, forceField, bondList);
-    buildH(
-        residue, "H42", N4, 1.00e0, C4, 120.0e0, C5, 0.0e0, 0, 1517, forceField, bondList);
-    buildH(
-        residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1518, forceField, bondList);
-    Atom HM51 =
-        buildH(
-            residue, "HM51", CM5, 1.08e0, C5, 109.5e0, C4, 0.0e0, 0, 1520, forceField, bondList);
-    buildH(
-        residue, "HM52", CM5, 1.08e0, C5, 109.5e0, HM51, 109.5e0, 1, 1521, forceField, bondList);
-    buildH(
-        residue, "HM53", CM5, 1.08e0, C5, 109.5e0, HM51, 109.5e0, -1, 1522, forceField, bondList);
+    buildH(residue, "H41", N4, 1.00e0, C4, 120.0e0, N3, 0.0e0, 0, 1516, forceField, bondList);
+    buildH(residue, "H42", N4, 1.00e0, C4, 120.0e0, C5, 0.0e0, 0, 1517, forceField, bondList);
+    buildH(residue, "H6", C6, 1.08e0, C5, 119.4e0, C4, 180.0e0, 0, 1518, forceField, bondList);
+    Atom HM51 = buildH(residue, "HM51", CM5, 1.08e0, C5, 109.5e0, C4, 0.0e0, 0, 1520, forceField,
+        bondList);
+    buildH(residue, "HM52", CM5, 1.08e0, C5, 109.5e0, HM51, 109.5e0, 1, 1521, forceField, bondList);
+    buildH(residue, "HM53", CM5, 1.08e0, C5, 109.5e0, HM51, 109.5e0, -1, 1522, forceField, bondList);
     return residue;
   }
 
@@ -1470,9 +1022,8 @@ public class NucleicAcidUtils {
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
    */
-  private static Residue buildM5MU(
-      Residue residue, Atom C1s, ForceField forceField, List<Bond> bondList)
-      throws MissingHeavyAtomException, MissingAtomTypeException {
+  private static Residue buildM5MU(Residue residue, Atom C1s, ForceField forceField,
+      List<Bond> bondList) throws MissingHeavyAtomException, MissingAtomTypeException {
 
     Atom N1 = buildHeavy(residue, "N1", C1s, 1575, forceField, bondList);
     Atom C2 = buildHeavy(residue, "C2", N1, 1576, forceField, bondList);
@@ -1484,17 +1035,12 @@ public class NucleicAcidUtils {
     Atom C6 = buildHeavy(residue, "C6", C5, 1580, forceField, bondList);
     Atom C5M = buildHeavy(residue, "C5M", C5, 1585, forceField, bondList);
     buildBond(C6, N1, forceField, bondList);
-    buildH(
-        residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1582, forceField, bondList);
-    buildH(
-        residue, "H6", C6, 1.08e0, C5, 118.6e0, C4, 180.0e0, 0, 1584, forceField, bondList);
-    Atom H5M1 =
-        buildH(
-            residue, "H5M1", C5M, 1.08e0, C5, 109.5e0, C6, 0.0e0, 0, 1586, forceField, bondList);
-    buildH(
-        residue, "H5M2", C5M, 1.08e0, C5, 109.5e0, H5M1, 109.5e0, 1, 1587, forceField, bondList);
-    buildH(
-        residue, "H5M3", C5M, 1.08e0, C5, 109.5e0, H5M1, 109.5e0, -1, 1588, forceField, bondList);
+    buildH(residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1582, forceField, bondList);
+    buildH(residue, "H6", C6, 1.08e0, C5, 118.6e0, C4, 180.0e0, 0, 1584, forceField, bondList);
+    Atom H5M1 = buildH(residue, "H5M1", C5M, 1.08e0, C5, 109.5e0, C6, 0.0e0, 0, 1586, forceField,
+        bondList);
+    buildH(residue, "H5M2", C5M, 1.08e0, C5, 109.5e0, H5M1, 109.5e0, 1, 1587, forceField, bondList);
+    buildH(residue, "H5M3", C5M, 1.08e0, C5, 109.5e0, H5M1, 109.5e0, -1, 1588, forceField, bondList);
     return residue;
   }
 
@@ -1508,9 +1054,8 @@ public class NucleicAcidUtils {
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
    */
-  private static Residue buildM7MG(
-      Residue residue, Atom C1s, ForceField forceField, List<Bond> bondList)
-      throws MissingHeavyAtomException, MissingAtomTypeException {
+  private static Residue buildM7MG(Residue residue, Atom C1s, ForceField forceField,
+      List<Bond> bondList) throws MissingHeavyAtomException, MissingAtomTypeException {
     Atom N9 = buildHeavy(residue, "N9", C1s, 1539, forceField, bondList);
     Atom C8 = buildHeavy(residue, "C8", N9, 1543, forceField, bondList);
     Atom N7 = buildHeavy(residue, "N7", C8, 1542, forceField, bondList);
@@ -1525,23 +1070,15 @@ public class NucleicAcidUtils {
     Atom CM7 = buildHeavy(residue, "CM7", N7, 1555, forceField, bondList);
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
-    buildH(
-        residue, "H81", C8, 1.08e0, N7, 109.5e0, N9, 109.5e0, 1, 1553, forceField, bondList);
-    buildH(
-        residue, "H82", C8, 1.08e0, N7, 109.5e0, N9, 109.5e0, -1, 1554, forceField, bondList);
-    buildH(
-        residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1548, forceField, bondList);
-    buildH(
-        residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1550, forceField, bondList);
-    buildH(
-        residue, "H22", N2, 1.00e0, C2, 120.0e0, N3, 0.0e0, 0, 1551, forceField, bondList);
-    Atom HM71 =
-        buildH(
-            residue, "HM71", CM7, 1.08e0, N7, 109.5e0, C8, 0.0e0, 0, 1556, forceField, bondList);
-    buildH(
-        residue, "HM72", CM7, 1.08e0, N7, 109.5e0, HM71, 109.5e0, 1, 1557, forceField, bondList);
-    buildH(
-        residue, "HM73", CM7, 1.08e0, N7, 109.5e0, HM71, 109.5e0, -1, 1558, forceField, bondList);
+    buildH(residue, "H81", C8, 1.08e0, N7, 109.5e0, N9, 109.5e0, 1, 1553, forceField, bondList);
+    buildH(residue, "H82", C8, 1.08e0, N7, 109.5e0, N9, 109.5e0, -1, 1554, forceField, bondList);
+    buildH(residue, "H1", N1, 1.00e0, C6, 117.4e0, C5, 180.0e0, 0, 1548, forceField, bondList);
+    buildH(residue, "H21", N2, 1.00e0, C2, 120.0e0, N1, 0.0e0, 0, 1550, forceField, bondList);
+    buildH(residue, "H22", N2, 1.00e0, C2, 120.0e0, N3, 0.0e0, 0, 1551, forceField, bondList);
+    Atom HM71 = buildH(residue, "HM71", CM7, 1.08e0, N7, 109.5e0, C8, 0.0e0, 0, 1556, forceField,
+        bondList);
+    buildH(residue, "HM72", CM7, 1.08e0, N7, 109.5e0, HM71, 109.5e0, 1, 1557, forceField, bondList);
+    buildH(residue, "HM73", CM7, 1.08e0, N7, 109.5e0, HM71, 109.5e0, -1, 1558, forceField, bondList);
     return residue;
   }
 
@@ -1557,14 +1094,8 @@ public class NucleicAcidUtils {
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
-  private static Residue buildOMC(
-      Residue residue,
-      Atom C1s,
-      Atom O4s,
-      Atom C2s,
-      double glyco,
-      ForceField forceField,
-      List<Bond> bondList) {
+  private static Residue buildOMC(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
+      ForceField forceField, List<Bond> bondList) {
     return buildCYT(residue, C1s, O4s, C2s, glyco, forceField, bondList);
   }
 
@@ -1580,14 +1111,8 @@ public class NucleicAcidUtils {
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
-  private static Residue buildOMG(
-      Residue residue,
-      Atom C1s,
-      Atom O4s,
-      Atom C2s,
-      double glyco,
-      ForceField forceField,
-      List<Bond> bondList) {
+  private static Residue buildOMG(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
+      ForceField forceField, List<Bond> bondList) {
     return buildGUA(residue, C1s, O4s, C2s, glyco, forceField, bondList);
   }
 
@@ -1603,14 +1128,8 @@ public class NucleicAcidUtils {
    * @param at5prime If this residue is at the 5' terminus (vs. 3').
    * @throws MissingHeavyAtomException Thrown if a needed heavy atom is missing.
    */
-  private static void buildOP3(
-      Residue residue,
-      Atom phosphate,
-      int aType,
-      ForceField forceField,
-      List<Bond> bondList,
-      Residue adjacentResidue,
-      boolean at5prime)
+  private static void buildOP3(Residue residue, Atom phosphate, int aType, ForceField forceField,
+      List<Bond> bondList, Residue adjacentResidue, boolean at5prime)
       throws MissingHeavyAtomException, MissingAtomTypeException {
     Atom P = null;
     Atom OP1 = null;
@@ -1651,25 +1170,20 @@ public class NucleicAcidUtils {
       riboOxygen = (Atom) adjacentResidue.getAtomNode("O3'");
       riboCarbon = (Atom) adjacentResidue.getAtomNode("C3'");
       if (riboCarbon == null || riboOxygen == null) {
-        logger.severe(
-            format(
-                " Could not find either O3' "
-                    + "or C3' in residue %s prior to presumed 3' "
-                    + "phosphate cap %s",
-                adjacentResidue, residue));
+        logger.severe(format(
+            " Could not find either O3' " + "or C3' in residue %s prior to presumed 3' "
+                + "phosphate cap %s", adjacentResidue, residue));
       }
     }
 
     if (!foundOP3) {
       logger.fine(
-          format(
-              " EXPERIMENTAL: OP3 of residue %s not found, being rebuilt based on ideal geometry",
+          format(" EXPERIMENTAL: OP3 of residue %s not found, being rebuilt based on ideal geometry",
               residue));
       if (P == null || OP1 == null || OP2 == null) {
-        throw new IllegalArgumentException(
-            format(
-                " Attempted to build OP3 for residue %s, but one of P, OP1, OP2, O5', or C5' were null",
-                residue));
+        throw new IllegalArgumentException(format(
+            " Attempted to build OP3 for residue %s, but one of P, OP1, OP2, O5', or C5' were null",
+            residue));
       }
       if (at5prime) {
         if (riboOxygen == null) {
@@ -1699,20 +1213,8 @@ public class NucleicAcidUtils {
       xyzRiboC = riboCarbon.getXYZ(xyzRiboC);
       double dihedralOP1 = toDegrees(DoubleMath.dihedralAngle(xyzRiboC, xyzRiboO, xyzP, xyzOP1));
 
-      Atom OP3 =
-          buildH(
-              residue,
-              "OP3",
-              P,
-              distance,
-              riboOxygen,
-              angle,
-              riboCarbon,
-              dihedralOP1 + 120,
-              0,
-              aType,
-              forceField,
-              bondList);
+      Atom OP3 = buildH(residue, "OP3", P, distance, riboOxygen, angle, riboCarbon,
+          dihedralOP1 + 120, 0, aType, forceField, bondList);
 
       // Measure OP3-OP2 distance for test dihedral + 120 degrees.
       double[] xyzOP2 = new double[3];
@@ -1731,14 +1233,10 @@ public class NucleicAcidUtils {
         logger.fine(
             format(" Bond: %10.5f Angle: %10.5f Dihedral: %10.5f", distance, angle, dihedralOP1));
         logger.fine(format(" OP2 position: %s", Arrays.toString(xyzOP2)));
-        logger.fine(
-            format(
-                " Position 1: %10.6g %10.6g %10.6g with distance %10.6g",
-                xyzChiral1[0], xyzChiral1[1], xyzChiral1[2], distChiral1));
-        logger.fine(
-            format(
-                " Position 2: %10.6g %10.6g %10.6g with distance %10.6g",
-                xyzChiral2[0], xyzChiral2[1], xyzChiral2[2], distChiral2));
+        logger.fine(format(" Position 1: %10.6g %10.6g %10.6g with distance %10.6g", xyzChiral1[0],
+            xyzChiral1[1], xyzChiral1[2], distChiral1));
+        logger.fine(format(" Position 2: %10.6g %10.6g %10.6g with distance %10.6g", xyzChiral2[0],
+            xyzChiral2[1], xyzChiral2[2], distChiral2));
       }
       if (distChiral1 > distChiral2) {
         logger.fine(" Picked dihedral +120");
@@ -1760,9 +1258,8 @@ public class NucleicAcidUtils {
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
    */
-  private static Residue buildPSU(
-      Residue residue, Atom C1s, ForceField forceField, List<Bond> bondList)
-      throws MissingHeavyAtomException, MissingAtomTypeException {
+  private static Residue buildPSU(Residue residue, Atom C1s, ForceField forceField,
+      List<Bond> bondList) throws MissingHeavyAtomException, MissingAtomTypeException {
     // C1s bonds to C5 in PsuedoUridine
     Atom C5 = buildHeavy(residue, "C5", C1s, 1485, forceField, bondList);
     Atom C6 = buildHeavy(residue, "C6", C5, 1486, forceField, bondList);
@@ -1775,8 +1272,7 @@ public class NucleicAcidUtils {
     buildBond(C4, C5, forceField, bondList);
     buildH(residue, "H1", N1, 1.00e0, C2, 120.0e0, O2, 0.0e0, 0, 1491, forceField, bondList);
     buildH(residue, "H3", N3, 1.00e0, C2, 120.0e0, O2, 0.0e0, 0, 1488, forceField, bondList);
-    buildH(
-        residue, "H6", C6, 1.08e0, C5, 120.0e0, C1s, 0.0e0, 0, 1490, forceField, bondList);
+    buildH(residue, "H6", C6, 1.08e0, C5, 120.0e0, C1s, 0.0e0, 0, 1490, forceField, bondList);
     return residue;
   }
 
@@ -1807,37 +1303,25 @@ public class NucleicAcidUtils {
    * @param bondList a {@link java.util.List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
-  private static Residue buildURI(
-      Residue residue,
-      Atom C1s,
-      Atom O4s,
-      Atom C2s,
-      double glyco,
-      ForceField forceField,
-      List<Bond> bondList) {
-    Atom N1 =
-        buildHeavy(residue, "N1", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1106, forceField, bondList);
-    Atom C2 =
-        buildHeavy(residue, "C2", N1, 1.38, C1s, 117.1, O4s, glyco, 0, 1107, forceField, bondList);
-    Atom O2 =
-        buildHeavy(residue, "O2", C2, 1.22, N1, 123.2, C1s, 0.0, 0, 1112, forceField, bondList);
-    Atom N3 =
-        buildHeavy(residue, "N3", C2, 1.37, N1, 114.8, C1s, 180.0, 0, 1108, forceField, bondList);
-    Atom C4 =
-        buildHeavy(residue, "C4", N3, 1.38, C2, 127.0, N1, 0.0, 0, 1109, forceField, bondList);
-    Atom O4 =
-        buildHeavy(residue, "O4", C4, 1.23, N3, 119.8, C2, 180.0, 0, 1114, forceField, bondList);
-    Atom C5 =
-        buildHeavy(residue, "C5", C4, 1.44, N3, 114.7, C2, 0.0, 0, 1110, forceField, bondList);
-    Atom C6 =
-        buildHeavy(residue, "C6", C5, 1.34, O4, 119.2, C4, 0.0, 0, 1111, forceField, bondList);
+  private static Residue buildURI(Residue residue, Atom C1s, Atom O4s, Atom C2s, double glyco,
+      ForceField forceField, List<Bond> bondList) {
+    Atom N1 = buildHeavy(residue, "N1", C1s, 1.48, O4s, 108.1, C2s, 113.7, 1, 1106, forceField,
+        bondList);
+    Atom C2 = buildHeavy(residue, "C2", N1, 1.38, C1s, 117.1, O4s, glyco, 0, 1107, forceField,
+        bondList);
+    Atom O2 = buildHeavy(residue, "O2", C2, 1.22, N1, 123.2, C1s, 0.0, 0, 1112, forceField,
+        bondList);
+    Atom N3 = buildHeavy(residue, "N3", C2, 1.37, N1, 114.8, C1s, 180.0, 0, 1108, forceField,
+        bondList);
+    Atom C4 = buildHeavy(residue, "C4", N3, 1.38, C2, 127.0, N1, 0.0, 0, 1109, forceField, bondList);
+    Atom O4 = buildHeavy(residue, "O4", C4, 1.23, N3, 119.8, C2, 180.0, 0, 1114, forceField,
+        bondList);
+    Atom C5 = buildHeavy(residue, "C5", C4, 1.44, N3, 114.7, C2, 0.0, 0, 1110, forceField, bondList);
+    Atom C6 = buildHeavy(residue, "C6", C5, 1.34, O4, 119.2, C4, 0.0, 0, 1111, forceField, bondList);
     buildBond(C6, N1, forceField, bondList);
-    buildH(
-        residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1113, forceField, bondList);
-    buildH(
-        residue, "H5", C5, 1.08e0, C4, 120.4e0, N3, 180.0e0, 0, 1115, forceField, bondList);
-    buildH(
-        residue, "H6", C6, 1.08e0, C5, 118.6e0, C4, 180.0e0, 0, 1116, forceField, bondList);
+    buildH(residue, "H3", N3, 1.00e0, C2, 116.5e0, N1, 180.0e0, 0, 1113, forceField, bondList);
+    buildH(residue, "H5", C5, 1.08e0, C4, 120.4e0, N3, 180.0e0, 0, 1115, forceField, bondList);
+    buildH(residue, "H6", C6, 1.08e0, C5, 118.6e0, C4, 180.0e0, 0, 1116, forceField, bondList);
 
     return residue;
   }
@@ -1852,9 +1336,8 @@ public class NucleicAcidUtils {
    * @return a {@link ffx.potential.bonded.Residue} object.
    * @throws ffx.potential.bonded.BondedUtils.MissingHeavyAtomException if any.
    */
-  private static Residue buildYYG(
-      Residue residue, Atom C1s, ForceField forceField, List<Bond> bondList)
-      throws MissingHeavyAtomException, MissingAtomTypeException {
+  private static Residue buildYYG(Residue residue, Atom C1s, ForceField forceField,
+      List<Bond> bondList) throws MissingHeavyAtomException, MissingAtomTypeException {
     Atom N9 = buildHeavy(residue, "N9", C1s, 1640, forceField, bondList);
     Atom C8 = buildHeavy(residue, "C8", N9, 1644, forceField, bondList);
     Atom N7 = buildHeavy(residue, "N7", C8, 1643, forceField, bondList);
@@ -1885,48 +1368,32 @@ public class NucleicAcidUtils {
     buildBond(C4, C5, forceField, bondList);
     buildBond(C4, N9, forceField, bondList);
     buildBond(N1, C12, forceField, bondList);
-    buildH(
-        residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1651, forceField, bondList);
-    Atom H31 =
-        buildH(
-            residue, "H31", C3, 1.08e0, N3, 109.5e0, C4, 0.0e0, 0, 1653, forceField, bondList);
-    buildH(
-        residue, "H32", C3, 1.08e0, N3, 109.5e0, H31, 109.5e0, 1, 1654, forceField, bondList);
-    buildH(
-        residue, "H33", C3, 1.08e0, N3, 109.5e0, H31, 109.5e0, -1, 1655, forceField, bondList);
-    Atom H101 =
-        buildH(
-            residue, "H101", C10, 1.08e0, C11, 109.5e0, N2, 0.0e0, 0, 1659, forceField, bondList);
-    buildH(
-        residue, "H102", C10, 1.08e0, C11, 109.5e0, H101, 109.5e0, 1, 1660, forceField, bondList);
-    buildH(
-        residue, "H103", C10, 1.08e0, C11, 109.5e0, H101, 109.5e0, -1, 1661, forceField, bondList);
-    buildH(
-        residue, "H131", C13, 1.08e0, C12, 109.5e0, C14, 109.5e0, 1, 1663, forceField, bondList);
-    buildH(
-        residue, "H132", C13, 1.08e0, C12, 109.5e0, C14, 109.5e0, -1, 1664, forceField, bondList);
-    buildH(
-        residue, "H141", C14, 1.08e0, C13, 109.5e0, C15, 109.5e0, 1, 1666, forceField, bondList);
-    buildH(
-        residue, "H142", C14, 1.08e0, C13, 109.5e0, C15, 109.5e0, -1, 1667, forceField, bondList);
-    buildH(
-        residue, "H15", C15, 1.08e0, C14, 109.5e0, O18, 180.e0, 0, 1669, forceField, bondList);
-    Atom H191 =
-        buildH(
-            residue, "H191", C19, 1.08e0, O18, 109.5e0, C16, 0.0e0, 0, 1671, forceField, bondList);
-    buildH(
-        residue, "H192", C19, 1.08e0, O18, 109.5e0, H191, 109.5e0, 1, 1672, forceField, bondList);
-    buildH(
-        residue, "H193", C19, 1.08e0, O18, 109.5e0, H191, 109.5e0, -1, 1673, forceField, bondList);
-    buildH(
-        residue, "HN2", N20, 1.00e0, C15, 109.5e0, O22, 180.0e0, 0, 1678, forceField, bondList);
-    Atom H241 =
-        buildH(
-            residue, "H241", C24, 1.08e0, O23, 109.5e0, C21, 0.0e0, 0, 1683, forceField, bondList);
-    buildH(
-        residue, "H242", C24, 1.08e0, O23, 109.5e0, H241, 109.5e0, 1, 1684, forceField, bondList);
-    buildH(
-        residue, "H243", C24, 1.08e0, O23, 109.5e0, H241, 109.5e0, -1, 1685, forceField, bondList);
+    buildH(residue, "H8", C8, 1.08e0, N7, 123.0e0, C5, 180.0e0, 0, 1651, forceField, bondList);
+    Atom H31 = buildH(residue, "H31", C3, 1.08e0, N3, 109.5e0, C4, 0.0e0, 0, 1653, forceField,
+        bondList);
+    buildH(residue, "H32", C3, 1.08e0, N3, 109.5e0, H31, 109.5e0, 1, 1654, forceField, bondList);
+    buildH(residue, "H33", C3, 1.08e0, N3, 109.5e0, H31, 109.5e0, -1, 1655, forceField, bondList);
+    Atom H101 = buildH(residue, "H101", C10, 1.08e0, C11, 109.5e0, N2, 0.0e0, 0, 1659, forceField,
+        bondList);
+    buildH(residue, "H102", C10, 1.08e0, C11, 109.5e0, H101, 109.5e0, 1, 1660, forceField, bondList);
+    buildH(residue, "H103", C10, 1.08e0, C11, 109.5e0, H101, 109.5e0, -1, 1661, forceField,
+        bondList);
+    buildH(residue, "H131", C13, 1.08e0, C12, 109.5e0, C14, 109.5e0, 1, 1663, forceField, bondList);
+    buildH(residue, "H132", C13, 1.08e0, C12, 109.5e0, C14, 109.5e0, -1, 1664, forceField, bondList);
+    buildH(residue, "H141", C14, 1.08e0, C13, 109.5e0, C15, 109.5e0, 1, 1666, forceField, bondList);
+    buildH(residue, "H142", C14, 1.08e0, C13, 109.5e0, C15, 109.5e0, -1, 1667, forceField, bondList);
+    buildH(residue, "H15", C15, 1.08e0, C14, 109.5e0, O18, 180.e0, 0, 1669, forceField, bondList);
+    Atom H191 = buildH(residue, "H191", C19, 1.08e0, O18, 109.5e0, C16, 0.0e0, 0, 1671, forceField,
+        bondList);
+    buildH(residue, "H192", C19, 1.08e0, O18, 109.5e0, H191, 109.5e0, 1, 1672, forceField, bondList);
+    buildH(residue, "H193", C19, 1.08e0, O18, 109.5e0, H191, 109.5e0, -1, 1673, forceField,
+        bondList);
+    buildH(residue, "HN2", N20, 1.00e0, C15, 109.5e0, O22, 180.0e0, 0, 1678, forceField, bondList);
+    Atom H241 = buildH(residue, "H241", C24, 1.08e0, O23, 109.5e0, C21, 0.0e0, 0, 1683, forceField,
+        bondList);
+    buildH(residue, "H242", C24, 1.08e0, O23, 109.5e0, H241, 109.5e0, 1, 1684, forceField, bondList);
+    buildH(residue, "H243", C24, 1.08e0, O23, 109.5e0, H241, 109.5e0, -1, 1685, forceField,
+        bondList);
     return residue;
   }
 
@@ -1942,8 +1409,8 @@ public class NucleicAcidUtils {
   private static Atom getNextResAtom(Residue residue, Residue nextResidue, String atomName) {
     if (nextResidue == null) {
       throw new IllegalArgumentException(
-          String.format(
-              " Residue %s: No subsequent residue to find atom %s in!", residue, atomName));
+          String.format(" Residue %s: No subsequent residue to find atom %s in!", residue,
+              atomName));
     }
     List<Atom> nrAtoms = nextResidue.getAtomList();
     for (Atom atom : nrAtoms) {
@@ -1952,9 +1419,8 @@ public class NucleicAcidUtils {
       }
     }
     throw new IllegalArgumentException(
-        String.format(
-            " Residue %s: Subsequent residue %s did not contain an atom %s",
-            residue, nextResidue, atomName));
+        String.format(" Residue %s: Subsequent residue %s did not contain an atom %s", residue,
+            nextResidue, atomName));
   }
 
 }

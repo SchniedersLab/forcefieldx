@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -47,7 +47,7 @@ import java.util.Map;
  * CompositeConfiguration is extended by adding the API used by the Groovy Binding class.
  * <p>
  * The Binding API represents the variable bindings of a script which can be altered from outside the
- * script object or created outside of a script and passed into it.
+ * script object or created and passed into it.
  * <p>
  * The Binding API is not supposed to be used in a multithreaded context.
  *

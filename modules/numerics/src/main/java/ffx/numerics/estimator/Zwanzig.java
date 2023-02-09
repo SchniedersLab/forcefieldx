@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -130,7 +130,7 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
   /** {@inheritDoc} */
   @Override
   public Zwanzig copyEstimator() {
-    return new Zwanzig(lamVals, eLow, eAt, eHigh, temperatures, directionality);
+    return new Zwanzig(lamValues, eLow, eAt, eHigh, temperatures, directionality);
   }
 
   /** {@inheritDoc} */
@@ -161,31 +161,28 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
 
       double sum = 0.0;
       double num = 0.0;
-      double term = 0.0;
       double uAve = 0.0;
       for (int indJ = 0; indJ < len; indJ++) {
         int j = samples[indJ];
         double dE = e2[j] - e1[j];
-        if (sign > 0){
+        if (sign > 0) {
           uAve += e1[j];
-          term = exp(invBeta*dE);
+          var term = exp(invBeta * dE);
           sum += term;
           num += e2[j] * term;
         } else {
           uAve += e2[j];
-          term = exp(invBeta*dE);
+          var term = exp(invBeta * dE);
           sum += term;
           num += e1[j] * term;
         }
-
-
       }
 
-      uAve = uAve/len;
+      uAve = uAve / len;
 
       double dG = sign * beta * log(sum / len);
       windowFreeEnergyDifferences[i] = dG;
-      windowEnthalpies[i] = sign*((num / sum) - uAve);
+      windowEnthalpies[i] = sign * ((num / sum) - uAve);
       windowFreeEnergyUncertainties[i] = 0.0;
       totalEnthalpy += windowEnthalpies[i];
       cumDG += dG;
@@ -233,7 +230,7 @@ public class Zwanzig extends SequentialEstimator implements BootstrappableEstima
 
   /** {@inheritDoc} */
   @Override
-  public double[] getBinEthalpies() {
+  public double[] getBinEnthalpies() {
     return copyOf(windowEnthalpies, nWindows);
   }
 

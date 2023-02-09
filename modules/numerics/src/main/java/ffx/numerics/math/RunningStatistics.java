@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -112,7 +112,7 @@ public class RunningStatistics {
     if (isNaN(var)) {
       throw new IllegalArgumentException(
           format(" Val %.5f w/ wt %.3f resulted in NaN varAcc; current state %s",
-              val, weight, new SummaryStatistics(this).toString()));
+              val, weight, new SummaryStatistics(this)));
     }
   }
 

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -175,8 +175,8 @@ public interface Potential {
   double[] getScaling();
 
   /**
-   * Scale the problem. A good choice for optimization is the square root of the median eigenvalue
-   * of a typical Hessian.
+   * Scale the problem. A good choice for optimization is the square root of the median eigenvalue of
+   * a typical Hessian.
    *
    * @param scaling The scaling value to use for each variable.
    * @since 1.0
@@ -284,8 +284,8 @@ public interface Potential {
   }
 
   /**
-   * Writes additional restart information, if any (e.g. OST histogram and lambda restart files).
-   * The recursive flag should generally only be true for the top-level Potential called.
+   * Writes additional restart information, if any (e.g. OST histogram and lambda restart files). The
+   * recursive flag should generally only be true for the top-level Potential called.
    *
    * @param recursive Whether to have all underlying Potentials write additional restart info.
    */

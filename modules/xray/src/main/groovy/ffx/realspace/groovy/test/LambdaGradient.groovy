@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -136,10 +136,6 @@ class LambdaGradient extends AlgorithmsScript {
         realSpaceOptions.refinementMode)
     potential = refinementEnergy
     LambdaInterface lambdaInterface = refinementEnergy
-
-    // Turn off checks for overlapping atoms, which is expected for lambda=0.
-    ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
-    forceFieldEnergy.getCrystal().setSpecialPositionCutoff((double) 0.0)
 
     // Reset the number of variables for the case of dual topology.
     int n = potential.getNumberOfVariables()

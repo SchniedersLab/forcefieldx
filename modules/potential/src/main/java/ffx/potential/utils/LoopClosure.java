@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -39,6 +39,8 @@ package ffx.potential.utils;
 
 import static ffx.numerics.math.DoubleMath.X;
 import static ffx.numerics.math.DoubleMath.dot;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.acos;
@@ -68,42 +70,41 @@ public class LoopClosure {
   private static final Logger logger = Logger.getLogger(LoopClosure.class.getName());
 
   private final SturmMethod sturmMethod;
-
-  private int max_soln = 16;
-  private int[] deg_pol = new int[1];
-  private double[] len0 = new double[6];
-  private double[] b_ang0 = new double[7];
-  private double[] t_ang0 = new double[2];
+  private final int max_soln = 16;
+  private final int[] deg_pol = new int[1];
+  private final double[] len0 = new double[6];
+  private final double[] b_ang0 = new double[7];
+  private final double[] t_ang0 = new double[2];
+  private final double[][] delta = new double[4][1];
+  private final double[][] xi = new double[3][1];
+  private final double[][] eta = new double[3][1];
+  private final double[] alpha = new double[3];
+  private final double[] theta = new double[3];
+  private final double[] cos_alpha = new double[3];
+  private final double[] sin_alpha = new double[3];
+  private final double[] cos_theta = new double[3];
+  private final double[] cos_delta = new double[4];
+  private final double[] sin_delta = new double[4];
+  private final double[] cos_xi = new double[3];
+  private final double[] cos_eta = new double[3];
+  private final double[] sin_xi = new double[3];
+  private final double[] sin_eta = new double[3];
+  private final double[] r_a1a3 = new double[3];
+  private final double[] r_a1n1 = new double[3];
+  private final double[] r_a3c3 = new double[3];
+  private final double[] b_a1a3 = new double[3];
+  private final double[] b_a1n1 = new double[3];
+  private final double[] b_a3c3 = new double[3];
+  private final double[] len_na = new double[3];
+  private final double[] len_ac = new double[3];
+  private final double[] len_aa = new double[3];
+  private final double[][] C0 = new double[3][3];
+  private final double[][] C1 = new double[3][3];
+  private final double[][] C2 = new double[3][3];
+  private final double[][] Q = new double[5][17];
+  private final double[][] R = new double[3][17];
   private double aa13_min_sqr;
   private double aa13_max_sqr;
-  private double[][] delta = new double[4][1];
-  private double[][] xi = new double[3][1];
-  private double[][] eta = new double[3][1];
-  private double[] alpha = new double[3];
-  private double[] theta = new double[3];
-  private double[] cos_alpha = new double[3];
-  private double[] sin_alpha = new double[3];
-  private double[] cos_theta = new double[3];
-  private double[] cos_delta = new double[4];
-  private double[] sin_delta = new double[4];
-  private double[] cos_xi = new double[3];
-  private double[] cos_eta = new double[3];
-  private double[] sin_xi = new double[3];
-  private double[] sin_eta = new double[3];
-  private double[] r_a1a3 = new double[3];
-  private double[] r_a1n1 = new double[3];
-  private double[] r_a3c3 = new double[3];
-  private double[] b_a1a3 = new double[3];
-  private double[] b_a1n1 = new double[3];
-  private double[] b_a3c3 = new double[3];
-  private double[] len_na = new double[3];
-  private double[] len_ac = new double[3];
-  private double[] len_aa = new double[3];
-  private double[][] C0 = new double[3][3];
-  private double[][] C1 = new double[3][3];
-  private double[][] C2 = new double[3][3];
-  private double[][] Q = new double[5][17];
-  private double[][] R = new double[3][17];
 
   /** LoopClosure Constructor. */
   public LoopClosure() {
@@ -162,9 +163,8 @@ public class LoopClosure {
     double U31 = C0[1][0] + C0[1][1] * t2 + C0[1][2] * t2_2;
     double U32 = C1[1][0] + C1[1][1] * t2 + C1[1][2] * t2_2;
     double U33 = C2[1][0] + C2[1][1] * t2 + C2[1][2] * t2_2;
-    double tmp_value = (U31 * U13 - U11 * U33) / (U12 * U33 - U13 * U32);
 
-    return tmp_value;
+    return (U31 * U13 - U11 * U33) / (U12 * U33 - U13 * U32);
   }
 
   /**
@@ -195,9 +195,8 @@ public class LoopClosure {
     double K1 = A3 * B2 - A4 * B1;
     double K2 = A1 * B2_2 - K1 * B0;
     double K3 = K0 * B2 - K1 * B1;
-    double tmp_value = (K3 * B0 - A0 * B2_3) / (K2 * B2 - K3 * B1);
 
-    return tmp_value;
+    return (K3 * B0 - A0 * B2_3) / (K2 * B2 - K3 * B1);
   }
 
   /**
@@ -213,16 +212,14 @@ public class LoopClosure {
    * @param r_soln_a an array of {@link double} objects.
    * @param r_soln_c an array of {@link double} objects.
    */
-  public void getCoordsFromPolyRoots(
-      int[] n_soln,
-      double[] roots,
-      double[] r_n1,
-      double[] r_a1,
-      double[] r_a3,
-      double[] r_c3,
-      double[][][] r_soln_n,
-      double[][][] r_soln_a,
+  public void getCoordsFromPolyRoots(int[] n_soln, double[] roots, double[] r_n1, double[] r_a1,
+      double[] r_a3, double[] r_c3, double[][][] r_soln_n, double[][][] r_soln_a,
       double[][][] r_soln_c) {
+
+    if (n_soln[0] == 0) {
+      return;
+    }
+
     double[] ex = new double[3];
     double[] ey = new double[3];
     double[] ez = new double[3];
@@ -286,13 +283,7 @@ public class LoopClosure {
     double[] mat44 = new double[3];
     double[] mat55 = new double[3];
 
-    if (n_soln[0] == 0) {
-      return;
-    }
-
-    for (int i = 0; i < 3; i++) {
-      ex[i] = b_a1a3[i];
-    }
+    arraycopy(b_a1a3, 0, ex, 0, 3);
     X(r_a1n1, ex, ez);
     double tmp_value = sqrt(dot(ez, ez));
     for (int i = 0; i < 3; i++) {
@@ -421,11 +412,10 @@ public class LoopClosure {
       }
 
       if (logger.isLoggable(Level.FINE)) {
-        StringBuilder string1 = new StringBuilder();
-        string1.append(String.format("roots: t0\t\t t2\t\t t1\t\t %d\n", i_soln));
-        string1.append(
-            String.format("%15.6f %15.6f %15.6f\n", half_tan[2], half_tan[1], half_tan[0]));
-        logger.fine(string1.toString());
+        StringBuilder sb = new StringBuilder();
+        sb.append(format("roots: t0\t\t t2\t\t t1\t\t %d\n", i_soln));
+        sb.append(format("%15.6f %15.6f %15.6f\n", half_tan[2], half_tan[1], half_tan[0]));
+        logger.fine(sb.toString());
       }
 
       for (int i = 0; i < 3; i++) {
@@ -449,17 +439,13 @@ public class LoopClosure {
       double a2a3 = sqrt(dot(rr_a2a3, rr_a2a3));
 
       if (logger.isLoggable(Level.FINE)) {
-        StringBuilder string2 = new StringBuilder();
-        string2.append(
-            String.format("na: n2a2, n3a3 = %9.3f%9.3f%9.3f%9.3f\n", len0[2], n2a2, len0[5], n3a3));
-        string2.append(
-            String.format("ac: a1c1, a2c2 = %9.3f%9.3f%9.3f%9.3f\n", len0[0], a1c1, len0[3], a2c2));
-        string2.append(
-            String.format("cn: c1n2, c2n3 = %9.3f%9.3f%9.3f%9.3f\n", len0[1], c1n2, len0[4], c2n3));
-        string2.append(
-            String.format(
-                "aa: a1a2, a2a3 = %9.3f%9.3f%9.3f%9.3f\n", len_aa[1], a1a2, len_aa[2], a2a3));
-        logger.info(string2.toString());
+        StringBuilder sb = new StringBuilder();
+        sb.append(format("na: n2a2, n3a3 = %9.3f%9.3f%9.3f%9.3f\n", len0[2], n2a2, len0[5], n3a3));
+        sb.append(format("ac: a1c1, a2c2 = %9.3f%9.3f%9.3f%9.3f\n", len0[0], a1c1, len0[3], a2c2));
+        sb.append(format("cn: c1n2, c2n3 = %9.3f%9.3f%9.3f%9.3f\n", len0[1], c1n2, len0[4], c2n3));
+        sb.append(
+            format("aa: a1a2, a2a3 = %9.3f%9.3f%9.3f%9.3f\n", len_aa[1], a1a2, len_aa[2], a2a3));
+        logger.fine(sb.toString());
       }
 
       for (int i = 0; i < 3; i++) {
@@ -489,14 +475,11 @@ public class LoopClosure {
       calcBondAngle(tmp_array1, tmp_array2, n2a2c2);
 
       if (logger.isLoggable(Level.FINE)) {
-        StringBuilder string3 = new StringBuilder();
-        string3.append(
-            String.format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[0]), toDegrees(n1a1c1[0])));
-        string3.append(
-            String.format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[3]), toDegrees(n2a2c2[0])));
-        string3.append(
-            String.format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[6]), toDegrees(n3a3c3[0])));
-        logger.fine(string3.toString());
+        StringBuilder sb = new StringBuilder();
+        sb.append(format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[0]), toDegrees(n1a1c1[0])));
+        sb.append(format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[3]), toDegrees(n2a2c2[0])));
+        sb.append(format("ang_nac = %9.3f%9.3f\n", toDegrees(b_ang0[6]), toDegrees(n3a3c3[0])));
+        logger.fine(sb.toString());
       }
 
       for (int i = 0; i < 3; i++) {
@@ -514,12 +497,10 @@ public class LoopClosure {
       calcDihedralAngle(tmp_array1, tmp_array2, tmp_array3, a2c2n3a3);
 
       if (logger.isLoggable(Level.FINE)) {
-        StringBuilder string4 = new StringBuilder();
-        string4.append(
-            String.format("t_ang1 = %9.3f%9.3f\n", toDegrees(t_ang0[0]), toDegrees(a1c1n2a2[0])));
-        string4.append(
-            String.format("t_ang2 = %9.3f%9.3f\n", toDegrees(t_ang0[1]), toDegrees(a2c2n3a3[0])));
-        logger.fine(string4.toString());
+        StringBuilder sb = new StringBuilder();
+        sb.append(format("t_ang1 = %9.3f%9.3f\n", toDegrees(t_ang0[0]), toDegrees(a1c1n2a2[0])));
+        sb.append(format("t_ang2 = %9.3f%9.3f\n", toDegrees(t_ang0[1]), toDegrees(a2c2n3a3[0])));
+        logger.fine(sb.toString());
       }
     }
   }
@@ -533,13 +514,10 @@ public class LoopClosure {
    * @param r_a3 an array of {@link double} objects.
    * @param r_c3 an array of {@link double} objects.
    */
-  public void getInputAngles(
-      int[] n_soln, double[] r_n1, double[] r_a1, double[] r_a3, double[] r_c3) {
+  public void getInputAngles(int[] n_soln, double[] r_n1, double[] r_a1, double[] r_a3, double[] r_c3) {
     double[] tmp_val = new double[3];
-    char[] cone_type = new char[2];
 
     n_soln[0] = max_soln;
-
     for (int i = 0; i < 3; i++) {
       r_a1a3[i] = r_a3[i] - r_a1[i];
     }
@@ -613,13 +591,13 @@ public class LoopClosure {
     }
 
     cos_alpha[0] =
-        -((len_aa[0] * len_aa[0]) + (len_aa[1] * len_aa[1]) - (len_aa[2] * len_aa[2]))
-            / (2.0 * len_aa[0] * len_aa[1]);
+        -((len_aa[0] * len_aa[0]) + (len_aa[1] * len_aa[1]) - (len_aa[2] * len_aa[2])) / (2.0
+            * len_aa[0] * len_aa[1]);
     alpha[0] = acos(cos_alpha[0]);
     sin_alpha[0] = sin(alpha[0]);
     cos_alpha[1] =
-        ((len_aa[1] * len_aa[1]) + (len_aa[2] * len_aa[2]) - (len_aa[0] * len_aa[0]))
-            / (2.0 * len_aa[1] * len_aa[2]);
+        ((len_aa[1] * len_aa[1]) + (len_aa[2] * len_aa[2]) - (len_aa[0] * len_aa[0])) / (2.0
+            * len_aa[1] * len_aa[2]);
     alpha[1] = acos(cos_alpha[1]);
     sin_alpha[1] = sin(alpha[1]);
     alpha[2] = PI - alpha[0] + alpha[1];
@@ -628,31 +606,21 @@ public class LoopClosure {
 
     if (logger.isLoggable(Level.FINE)) {
       StringBuilder sb = new StringBuilder();
-      sb.append(
-          String.format(
-              " xi = %9.4f%9.4f%9.4f\n",
-              toDegrees(xi[0][0]), toDegrees(xi[1][0]), toDegrees(xi[2][0])));
-      sb.append(
-          String.format(
-              " eta = %9.4f%9.4f%9.4f\n",
-              toDegrees(eta[0][0]), toDegrees(eta[1][0]), toDegrees(eta[2][0])));
-      sb.append(
-          String.format(
-              " delta = %9.4f%9.4f%9.4f\n",
-              toDegrees(delta[1][0]), toDegrees(delta[2][0]), toDegrees(delta[3][0])));
-      sb.append(
-          String.format(
-              " theta = %9.4f%9.4f%9.4f\n",
-              toDegrees(theta[0]), toDegrees(theta[1]), toDegrees(theta[2])));
-      sb.append(
-          String.format(
-              " alpha = %9.4f%9.4f%9.4f\n",
-              toDegrees(alpha[0]), toDegrees(alpha[1]), toDegrees(alpha[2])));
+      sb.append(format(" xi = %9.4f%9.4f%9.4f\n", toDegrees(xi[0][0]), toDegrees(xi[1][0]),
+          toDegrees(xi[2][0])));
+      sb.append(format(" eta = %9.4f%9.4f%9.4f\n", toDegrees(eta[0][0]), toDegrees(eta[1][0]),
+          toDegrees(eta[2][0])));
+      sb.append(format(" delta = %9.4f%9.4f%9.4f\n", toDegrees(delta[1][0]), toDegrees(delta[2][0]),
+          toDegrees(delta[3][0])));
+      sb.append(format(" theta = %9.4f%9.4f%9.4f\n", toDegrees(theta[0]), toDegrees(theta[1]),
+          toDegrees(theta[2])));
+      sb.append(format(" alpha = %9.4f%9.4f%9.4f\n", toDegrees(alpha[0]), toDegrees(alpha[1]),
+          toDegrees(alpha[2])));
       logger.fine(sb.toString());
     }
 
     for (int i = 0; i < 3; i++) {
-      testTwoConeExistenceSoln(theta[i], xi[i][0], eta[i][0], alpha[i], n_soln, cone_type);
+      testTwoConeExistenceSoln(theta[i], xi[i][0], eta[i][0], alpha[i], n_soln);
       if (n_soln[0] == 0) {
         return;
       }
@@ -756,13 +724,12 @@ public class LoopClosure {
       double A2 = sin_alpha[i] * sin_xi[i] * cos_eta[i];
       double A3 = sin_xi[i] * sin_eta[i];
       double A4 = A3 * cos_alpha[i];
-      int j = i;
-      double A21 = A2 * cos_delta[j];
-      double A22 = A2 * sin_delta[j];
-      double A31 = A3 * cos_delta[j];
-      double A32 = A3 * sin_delta[j];
-      double A41 = A4 * cos_delta[j];
-      double A42 = A4 * sin_delta[j];
+      double A21 = A2 * cos_delta[i];
+      double A22 = A2 * sin_delta[i];
+      double A31 = A3 * cos_delta[i];
+      double A32 = A3 * sin_delta[i];
+      double A41 = A4 * cos_delta[i];
+      double A42 = A4 * sin_delta[i];
       B0[i] = A0 + A22 + A31;
       B1[i] = 2.0 * (A1 + A42);
       B2[i] = 2.0 * (A32 - A21);
@@ -819,9 +786,7 @@ public class LoopClosure {
     polyMulSub2(u11, um5, u31, um6, p1, p_um5, p3, p_um6, q_tmp, p_Q);
 
     for (int i = 0; i < 5; i++) {
-      for (int j = 0; j < 5; j++) {
-        Q[i][j] = q_tmp[i][j];
-      }
+      arraycopy(q_tmp[i], 0, Q[i], 0, 5);
     }
 
     for (int i = 0; i < 3; i++) {
@@ -868,7 +833,7 @@ public class LoopClosure {
     polyMulSub1(Q[0], f9, R[0], f26, p4, p_f9[0], p2, p_f26[0], polyCoeff, p_final);
 
     if (p_final[0] != 16) {
-      logger.info(String.format("Error. Degree of polynomial is not 16!"));
+      logger.info("Error. Degree of polynomial is not 16!");
       return;
     }
 
@@ -880,11 +845,11 @@ public class LoopClosure {
 
     if (logger.isLoggable(Level.FINE)) {
       StringBuilder string = new StringBuilder();
-      string.append(String.format(" Polynomial Coefficients\n"));
+      string.append(" Polynomial Coefficients\n");
       for (int i = 0; i < 17; i++) {
-        string.append(String.format(" %5d %15.6f\n", i, polyCoeff[i]));
+        string.append(format(" %5d %15.6f\n", i, polyCoeff[i]));
       }
-      string.append(String.format("\n"));
+      string.append("\n");
       logger.fine(string.toString());
     }
   }
@@ -911,8 +876,8 @@ public class LoopClosure {
    *
    * @param u1 an array of {@link double} objects.
    * @param u2 an array of {@link double} objects.
-   * @param p1 a int.
-   * @param p2 a int.
+   * @param p1 an int.
+   * @param p2 an int.
    * @param u3 an array of {@link double} objects.
    * @param p3 an array of {@link int} objects.
    */
@@ -974,24 +939,15 @@ public class LoopClosure {
    * @param u2 an array of {@link double} objects.
    * @param u3 an array of {@link double} objects.
    * @param u4 an array of {@link double} objects.
-   * @param p1 a int.
-   * @param p2 a int.
-   * @param p3 a int.
-   * @param p4 a int.
+   * @param p1 an int.
+   * @param p2 an int.
+   * @param p3 an int.
+   * @param p4 an int.
    * @param u5 an array of {@link double} objects.
    * @param p5 an array of {@link int} objects.
    */
-  public void polyMulSub1(
-      double[] u1,
-      double[] u2,
-      double[] u3,
-      double[] u4,
-      int p1,
-      int p2,
-      int p3,
-      int p4,
-      double[] u5,
-      int[] p5) {
+  public void polyMulSub1(double[] u1, double[] u2, double[] u3, double[] u4, int p1, int p2, int p3,
+      int p4, double[] u5, int[] p5) {
 
     double[] d1 = new double[17];
     double[] d2 = new double[17];
@@ -1017,17 +973,8 @@ public class LoopClosure {
    * @param u5 an array of {@link double} objects.
    * @param p5 an array of {@link int} objects.
    */
-  public void polyMulSub2(
-      double[][] u1,
-      double[][] u2,
-      double[][] u3,
-      double[][] u4,
-      int[] p1,
-      int[] p2,
-      int[] p3,
-      int[] p4,
-      double[][] u5,
-      int[] p5) {
+  public void polyMulSub2(double[][] u1, double[][] u2, double[][] u3, double[][] u4, int[] p1,
+      int[] p2, int[] p3, int[] p4, double[][] u5, int[] p5) {
     double[][] d1 = new double[5][5];
     double[][] d2 = new double[5][5];
     int[] pd1 = new int[2];
@@ -1094,7 +1041,7 @@ public class LoopClosure {
   }
 
   /**
-   * Quotient of two vectors in three dimensional space.
+   * Quotient of two vectors in three-dimensional space.
    *
    * @param axis an array of {@link double} objects.
    * @param quarter_ang a double.
@@ -1177,15 +1124,8 @@ public class LoopClosure {
    * @param r_soln_c an array of {@link double} objects.
    * @param n_soln an array of {@link int} objects.
    */
-  public void solve3PepPoly(
-      double[] r_n1,
-      double[] r_a1,
-      double[] r_a3,
-      double[] r_c3,
-      double[][][] r_soln_n,
-      double[][][] r_soln_a,
-      double[][][] r_soln_c,
-      int[] n_soln) {
+  public void solve3PepPoly(double[] r_n1, double[] r_a1, double[] r_a3, double[] r_c3,
+      double[][][] r_soln_n, double[][][] r_soln_a, double[][][] r_soln_c, int[] n_soln) {
     double[] polyCoeff = new double[deg_pol[0] + 1];
     double[] roots = new double[max_soln];
 
@@ -1212,54 +1152,15 @@ public class LoopClosure {
    * @param et a double.
    * @param ap a double.
    * @param n_soln an array of {@link int} objects.
-   * @param cone_type an array of {@link char} objects.
    */
-  public void testTwoConeExistenceSoln(
-      double tt, double kx, double et, double ap, int[] n_soln, char[] cone_type) {
+  public void testTwoConeExistenceSoln(double tt, double kx, double et, double ap, int[] n_soln) {
 
     n_soln[0] = max_soln;
-    double ap1 = ap;
-    double kx1 = kx;
-    double et1 = et;
-    double at = ap1 - tt;
-    double ex = kx1 + et1;
+    double at = ap - tt;
+    double ex = kx + et;
     double abs_at = abs(at);
     if (abs_at > ex) {
       n_soln[0] = 0;
-      return;
-    }
-
-    boolean complicated = false;
-    if (complicated) {
-      double cos_tx1 = cos(tt + kx1);
-      double cos_tx2 = cos(tt - kx1);
-      double cos_te1 = cos(tt + et1);
-      double cos_te2 = cos(tt - et1);
-      double cos_ea1 = cos(et1 + ap1);
-      double cos_ea2 = cos(et1 - ap1);
-      double cos_xa1 = cos(kx1 + ap1);
-      double cos_xa2 = cos(kx1 - ap1);
-
-      double s1 = 0;
-      double s2 = 0;
-      double t1 = 0;
-      double t2 = 0;
-
-      if ((cos_te1 - cos_xa2) * (cos_te1 - cos_xa1) <= 0.0e0) {
-        s1 = 0;
-      }
-
-      if ((cos_te2 - cos_xa2) * (cos_te2 - cos_xa1) <= 0.0e0) {
-        s2 = 0;
-      }
-
-      if ((cos_tx1 - cos_ea2) * (cos_tx1 - cos_ea1) <= 0.0e0) {
-        t1 = 0;
-      }
-
-      if ((cos_tx2 - cos_ea2) * (cos_tx2 - cos_ea1) <= 0.0e0) {
-        t2 = 0;
-      }
     }
   }
 

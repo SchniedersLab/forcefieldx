@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -57,7 +57,7 @@ public class CoulombTensorGlobal extends MultipoleTensor {
   /**
    * Constructor for CoulombTensorGlobal.
    *
-   * @param order a int.
+   * @param order The order of the tensor.
    */
   public CoulombTensorGlobal(int order) {
     super(COORDINATES.GLOBAL, order);
@@ -1912,7 +1912,7 @@ public class CoulombTensorGlobal extends MultipoleTensor {
     // Starting the loop at l=2 avoids an if statement.
     for (int l = 2; l < o1; l++) {
       // Initial condition for the inner loop is formation of T100(l-1).
-      // Starting the inner loop at a=2 avoid an if statement.
+      // Starting the inner loop at a=1 avoids an if statement.
       // T100(l-1) = x * T000(l)
       current = x * work[l];
       int iw = il + l - 1;

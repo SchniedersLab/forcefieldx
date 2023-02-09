@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -62,14 +62,14 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "improper", clazz = String.class, keywordGroup = PotentialFunctionParameter,
-    description = "[4 integers and 2 reals]"
+@FFXKeyword(name = "improper", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
+    "[4 integers and 2 reals]"
         + "Provides the values for a single CHARMM-style improper dihedral angle parameter. "
         + "The integer modifiers give the atom class numbers for the four kinds of atoms involved in the torsion which is to be defined. "
         + "The real number modifiers give the force constant value for the deviation from the target improper torsional angle, and the target value for the torsional angle, respectively. "
         + "The default units for the improper force constant are kcal/mole/radian^2, but this can be controlled via the impropunit keyword.")
-@FFXKeyword(name = "torsion", clazz = String.class, keywordGroup = PotentialFunctionParameter,
-    description = "[4 integers and up to 6 real/real/integer triples] "
+@FFXKeyword(name = "torsion", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
+    "[4 integers and up to 6 real/real/integer triples] "
         + "Provides the values for a single torsional angle parameter. "
         + "The first four integer modifiers give the atom class numbers for the atoms involved in the torsional angle to be defined. "
         + "Each of the remaining triples of real/real/integer modifiers give the amplitude, phase offset in degrees and periodicity of a particular torsional function term, respectively. "
@@ -96,8 +96,8 @@ public final class TorsionType extends BaseType implements Comparator<String> {
 
   public static final double DEFAULT_TORSION_UNIT = 1.0;
   /** Unit conversion. */
-  @FFXKeyword(name = "torsionunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0",
-      description = "Sets the scale factor needed to convert the energy value computed by the torsional angle potential into units of kcal/mole. "
+  @FFXKeyword(name = "torsionunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0", description =
+      "Sets the scale factor needed to convert the energy value computed by the torsional angle potential into units of kcal/mole. "
           + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
   public double torsionUnit = DEFAULT_TORSION_UNIT;
 
@@ -122,11 +122,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
    * @param periodicity Periodicity of the Fourier series.
    * @param torsionMode Define the TorsionMode for this TorsionType.
    */
-  public TorsionType(
-      int[] atomClasses,
-      double[] amplitude,
-      double[] phase,
-      int[] periodicity,
+  public TorsionType(int[] atomClasses, double[] amplitude, double[] phase, int[] periodicity,
       TorsionMode torsionMode) {
     super(TORSION, sortKey(atomClasses));
     this.atomClasses = atomClasses;
@@ -173,8 +169,8 @@ public final class TorsionType extends BaseType implements Comparator<String> {
    * @param atomClasses an array of {@link int} objects.
    * @return a {@link ffx.potential.parameters.TorsionType} object.
    */
-  public static TorsionType average(
-      TorsionType torsionType1, TorsionType torsionType2, int[] atomClasses) {
+  public static TorsionType average(TorsionType torsionType1, TorsionType torsionType2,
+      int[] atomClasses) {
     if (torsionType1 == null || torsionType2 == null || atomClasses == null) {
       return null;
     }
@@ -234,7 +230,7 @@ public final class TorsionType extends BaseType implements Comparator<String> {
   }
 
   /**
-   * Construct a TorsionType with TorsionMode.IMPROPER from an input string.
+   * Construct a TorsionType with <code>TorsionMode.IMPROPER</code> from an input string.
    *
    * @param input The overall input String.
    * @param tokens The input String tokenized.
@@ -379,9 +375,9 @@ public final class TorsionType extends BaseType implements Comparator<String> {
   }
 
   /**
-   * incrementClasses
+   * Increment the atom classes by a specified amount.
    *
-   * @param increment a int.
+   * @param increment The increment to add to the atom classes.
    */
   public void incrementClasses(int increment) {
     for (int i = 0; i < atomClasses.length; i++) {
@@ -480,7 +476,6 @@ public final class TorsionType extends BaseType implements Comparator<String> {
 
   /** Torsion modes include Normal or In-Plane */
   public enum TorsionMode {
-    NORMAL,
-    IMPROPER
+    NORMAL, IMPROPER
   }
 }

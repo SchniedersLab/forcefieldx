@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -87,7 +87,7 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
 
     for (int m = 1; m < 4; m++) {
       for (int n = 1; n < 4; n++) {
-        // kmn * (bm - bm(equil)) * (1 + cos(n*tors + phi(n)))
+        // kmn * (bm - bm0) * (1 + cos(n*tors + phi(n)))
         mathFormBuilder.append(
             String.format("k%d%d*(bVal%d-b%d)*(1+cos(%d*tVal+phi%d))+", m, n, m, m, n, n));
       }
@@ -180,14 +180,12 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
       Atom atom2 = torsion.atoms[1];
       Atom atom3 = torsion.atoms[2];
       Atom atom4 = torsion.atoms[3];
-      if (atom1.getAtomType().atomClass == stretchTorsionType.atomClasses[0]
-          && atom2.getAtomType().atomClass == stretchTorsionType.atomClasses[1]
-          && atom3.getAtomType().atomClass == stretchTorsionType.atomClasses[2]
-          && atom4.getAtomType().atomClass == stretchTorsionType.atomClasses[3]) {
-        stretchTorsion.setFlipped(false);
-      } else {
-        stretchTorsion.setFlipped(true);
-      }
+
+      stretchTorsion.setFlipped(atom1.getAtomType().atomClass != stretchTorsionType.atomClasses[0]
+          || atom2.getAtomType().atomClass != stretchTorsionType.atomClasses[1]
+          || atom3.getAtomType().atomClass != stretchTorsionType.atomClasses[2]
+          || atom4.getAtomType().atomClass != stretchTorsionType.atomClasses[3]);
+
       return stretchTorsion;
     }
     return null;
@@ -442,7 +440,7 @@ public class StretchTorsion extends BondedTerm implements LambdaInterface {
   /**
    * {@inheritDoc}
    *
-   * <p>Overidden toString Method returns the Term's id.
+   * <p>Overridden toString Method returns the Term's id.
    */
   @Override
   public String toString() {
