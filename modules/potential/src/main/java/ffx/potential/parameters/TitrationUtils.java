@@ -1301,14 +1301,8 @@ public class TitrationUtils {
             hisVDWTypes[index][state]);
         if (hisMultipoleTypes[index][state] == null || hisPolarizeTypes[index][state] == null
             || hisSoluteTypes[index][state] == null) {
-<<<<<<< HEAD
           logger.severe(format(" Titration parameters could not be assigned for His atom %s.\n %s\n",
               atomName, hisAtomTypes[index][state]));
-=======
-          logger.severe(
-              format(" Titration parameters could not be assigned for Lys atom %s.\n %s\n", atomName,
-                  hisAtomTypes[index][state]));
->>>>>>> upstream/master
         }
       }
     }
