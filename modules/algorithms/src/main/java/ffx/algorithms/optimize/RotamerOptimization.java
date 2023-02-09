@@ -2120,7 +2120,7 @@ public class RotamerOptimization implements Terminatable {
         }
         if (!deadEnd) {
           evaluatedPermutations++;
-          if(evaluatedPermutations > 10e7){
+          if(evaluatedPermutations > 10e4){
             return adjustPerm;
           }
           energyRegion.init(eE, residues, currentRotamers, threeBodyTerm);
@@ -2149,7 +2149,7 @@ public class RotamerOptimization implements Terminatable {
     boolean perm = false;
     partitionFunction(residues, i, currentRotamers);
     try{
-      if(evaluatedPermutations > 10e7){
+      if(evaluatedPermutations > 10e4){
         throw new ArithmeticException("The number of permutations has reach" + evaluatedPermutations + " . Permutations must be eliminated.");
       }
     } catch (Exception e){

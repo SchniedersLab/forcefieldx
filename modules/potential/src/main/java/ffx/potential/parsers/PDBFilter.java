@@ -1707,9 +1707,9 @@ public final class PDBFilter extends SystemFilter {
   /**
    * writeFile
    *
-   * @param saveFile a {@link java.io.File} object to save to.
+   * @param saveFile a {@link File} object to save to.
    * @param append Whether to append to saveFile (vs over-write).
-   * @param toExclude A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude
+   * @param toExclude A {@link Set} of {@link Atom}s to exclude
    *     from writing.
    * @param writeEnd True if this is the final model.
    * @param versioning True if the file being saved to should be versioned. False if the file
