@@ -362,6 +362,27 @@ public class SuperposeCrystalsTest extends AlgorithmsTest {
     assertEquals(0.10510735, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
   }
 
+  /** Tests the SuperposeCrystals script alchemical atoms functionality. */
+  @Test
+  public void testBaseAverageSuperposeCrystalsAlchemicalAtoms() {
+
+    // Set up the input arguments for the SuperposeCrystals script.
+    String[] args = {"--na","1","--ps","1.0","--ac","4,7,9,11,13,15,17,19,21,23,25,27",
+        "src/main/java/ffx/algorithms/structures/ZEYBIO01.xyz_amoebax",
+        "src/main/java/ffx/algorithms/structures/ZEYBIO04_zero.xyz_amoebax"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the SuperposeCrystals script.
+    SuperposeCrystals superposeCrystals = new SuperposeCrystals(binding).run();
+    algorithmsScript = superposeCrystals;
+
+    assertEquals(1, superposeCrystals.runningStatistics.getCount());
+    // Mean RMSD for 6 comparisons.
+    assertEquals(0.14180274, superposeCrystals.runningStatistics.getMean(), TOLERANCE);
+    assertEquals(0.14180274, superposeCrystals.runningStatistics.getMax(), TOLERANCE);
+  }
+
   /** Tests the SuperposeCrystals script on long molecule (potential issue with inflation factor). */
   @Test
   public void testSuperposeCrystalsLongMolecule() {
