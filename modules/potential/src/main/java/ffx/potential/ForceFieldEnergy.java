@@ -698,6 +698,12 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         logger.info(message);
         throw new Exception(message);
       }
+      if(a <= 0.0 || b <= 0.0 || c <= 0.0 || alpha <= 0.0 || beta <= 0.0 || gamma <= 0.0) {
+        // Parameters are not valid. Switch to aperiodic.
+        String message = " Crystal parameters are not valid due to negative or zero value.";
+        logger.warning(message);
+        throw new Exception(message);
+      }
     } catch (Exception e) {
       logger.info(" The system will be treated as aperiodic.");
       aperiodic = true;

@@ -83,9 +83,9 @@ class SuperposeCrystals extends AlgorithmsScript {
   private double inflationFactor
 
   /**
-   * --zp or --zPrime Z' for crystal 1 (default to autodetect).
+   * --zp1 or --zPrime1 Z' for crystal 1 (default to autodetect).
    */
-  @Option(names = ['--zp', '--zPrime'], paramLabel = '-1', defaultValue = '-1',
+  @Option(names = ['--zp1', '--zPrime1'], paramLabel = '-1', defaultValue = '-1',
       description = "Z'' for crystal 1 (default will try to autodetect).")
   private int zPrime
 
@@ -97,28 +97,28 @@ class SuperposeCrystals extends AlgorithmsScript {
   private int zPrime2
 
   /**
-   * --us or --unshared sets atoms unique for both crystals, as period-separated hyphenated
+   * --ac or --alchemicalAtoms sets atoms unique for both crystals, as comma-separated hyphenated
    * ranges or singletons.
    */
-  @Option(names = ["--us", "--unshared"], paramLabel = "", defaultValue = "",
-      description = "Unshared atoms for both crystals (e.g. 1-24.32-65). Use if Z' = 1 for both crystals.")
-  private String unshared = ""
+  @Option(names = ["--ac", "--alchemicalAtoms"], paramLabel = "", defaultValue = "",
+      description = "Atom indices to be excluded from both crystals (e.g. 1-24,32-65). Use if molecular identity is the same for both crystals.")
+  private String excludeAtoms = ""
 
   /**
-   * --usA or --unsharedA sets atoms unique to the base crystal, as period-separated hyphenated
+   * --ac1 or --alchemicalAtoms1 sets atoms unique to the base crystal, as comma-separated hyphenated
    * ranges or singletons.
    */
-  @Option(names = ["--usA", "--unsharedA"], paramLabel = "", defaultValue = "",
-      description = "Unshared atoms in the first crystal (e.g. 1-24.32-65).")
-  private String unsharedA = ""
+  @Option(names = ["--ac1", "--alchemicalAtoms1"], paramLabel = "", defaultValue = "",
+      description = "Atom indices to be excluded in the first crystal (e.g. 1-24,32-65).")
+  private String excludeAtomsA = ""
 
   /**
-   * --usB or --unsharedB sets atoms unique to the target crystal, as period-separated hyphenated
+   * --ac2 or --alchemicalAtoms2 sets atoms unique to the target crystal, as comma-separated hyphenated
    * ranges or singletons.
    */
-  @Option(names = ["--usB", "--unsharedB"], paramLabel = "", defaultValue = "",
-      description = "Unshared atoms in the second crystal (e.g. 1-24.32-65).")
-  private String unsharedB = ""
+  @Option(names = ["--ac2", "--alchemicalAtoms2"], paramLabel = "", defaultValue = "",
+      description = "Atom indices to be excluded in the second crystal (e.g. 1-24,32-65).")
+  private String excludeAtomsB = ""
 
   /**
    * --mt or --matchTolerance Tolerance to determine if two AUs are different.
@@ -163,9 +163,9 @@ class SuperposeCrystals extends AlgorithmsScript {
   private static boolean lowMemory
 
   /**
-   * --ac or --alphaCarbons Consider only alpha carbons for proteins.
+   * --ca or --carbonAlphas Consider only alpha carbons for proteins.
    */
-  @Option(names = ['--ac', '--alphaCarbons'], paramLabel = "false", defaultValue = "false",
+  @Option(names = ['--ca', '--carbonAlphas'], paramLabel = "false", defaultValue = "false",
       description = 'Consider only alpha carbons for proteins.')
   private static boolean alphaCarbons
 
@@ -281,9 +281,9 @@ class SuperposeCrystals extends AlgorithmsScript {
     baseFilter = algorithmFunctions.getFilter()
 
     // Apply atom selections
-    if (unshared != null && !unshared.isEmpty()) {
-      unsharedA = unshared
-      unsharedB = unshared
+    if (excludeAtoms != null && !excludeAtoms.isEmpty()) {
+      excludeAtomsA = excludeAtoms
+      excludeAtomsB = excludeAtoms
     }
 
     // Number of files to read in.
@@ -313,9 +313,8 @@ class SuperposeCrystals extends AlgorithmsScript {
     String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt")
 
     runningStatistics =
-        pac.comparisons(numAU, inflationFactor, matchTol, zPrime, zPrime2, unsharedA, unsharedB,
-            alphaCarbons,
-            includeHydrogen, massWeighted, crystalPriority, strict, save,
+        pac.comparisons(numAU, inflationFactor, matchTol, zPrime, zPrime2, excludeAtomsA, excludeAtomsB,
+            alphaCarbons, includeHydrogen, massWeighted, crystalPriority, strict, save,
             restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym,
             lowMemory, pacFilename)
 

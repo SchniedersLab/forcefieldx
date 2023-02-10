@@ -45,19 +45,20 @@ import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import static org.apache.commons.io.FilenameUtils.getExtension;
 import static org.apache.commons.io.FilenameUtils.getName
 import static org.apache.commons.io.FilenameUtils.removeExtension
 
 /**
- * The CIFtoXYZ script converts a CIF file to an XYZ file including atom types.
+ * The ImportCIF script converts a CIF file to PDB or XYZ file(s) including atom types.
  * TODO: Move CIF parsing into a parsers.CIFFilter class.
  * <br>
  * Usage:
  * <br>
- * ffxc CIFtoXYZ &lt;filename.cif&gt; &lt;filename.xyz&gt;
+ * ffxc ImportCIF &lt;filename.cif&gt; &lt;filename.xyz&gt;
  */
-@Command(description = " Convert a CIF file to XYZ format.", name = "CIFtoXYZ")
-class CIFtoXYZ extends PotentialScript {
+@Command(description = " Convert a CIF file to PDB/XYZ format.", name = "ImportCIF")
+class ImportCIF extends PotentialScript {
 
   /**
    * --zp or --zPrime Manually specify Z' (only affects writing CIF files)."
@@ -109,10 +110,10 @@ class CIFtoXYZ extends PotentialScript {
   private boolean cifAppend
 
   /**
-   * The final argument(s) should be a CIF file and an XYZ file with atom types.
+   * The final argument(s) should be a CIF file and a PDB or XYZ file that has been parameterized.
    */
   @Parameters(arity = "1..2", paramLabel = "files",
-      description = "A CIF file and an XYZ file (already parameterized) containing one of each molecule from the CIF.")
+      description = "A CIF file and a PDB or XYZ file (already parameterized) containing one of each molecule from the CIF.")
   List<String> filenames = null
 
   /**
@@ -121,17 +122,17 @@ class CIFtoXYZ extends PotentialScript {
   public String[] createdFiles
 
   /**
-   * CIFtoXYZ Constructor.
+   * ImportCIF Constructor.
    */
-  CIFtoXYZ() {
+  ImportCIF() {
     this(new Binding())
   }
 
   /**
-   * CIFtoXYZ Constructor.
+   * ImportCIF Constructor.
    * @param binding Groovy Binding to use.
    */
-  CIFtoXYZ(Binding binding) {
+  ImportCIF(Binding binding) {
     super(binding)
   }
 
@@ -139,7 +140,7 @@ class CIFtoXYZ extends PotentialScript {
    * Execute the script.
    */
   @Override
-  CIFtoXYZ run() {
+  ImportCIF run() {
 
     // Turn off CDK logging.
     System.setProperty("cdk.logging.level", "fatal")
@@ -176,7 +177,8 @@ class CIFtoXYZ extends PotentialScript {
         }while(systemFilter.readNext())
       } else if (fileInputs == 2) {
         getActiveAssembly(filenames[1])
-        saveFile = new File(dirString + name + ".xyz")
+        String ext = getExtension(filenames[1])
+        saveFile = new File(dirString + name + "." + ext)
         CIFFilter cifFilter = new CIFFilter(saveFile, activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties(), saveCIF)
         cifFilter.setBondTolerance(bondTolerance)
         cifFilter.setFixLattice(fixLattice)
@@ -195,7 +197,7 @@ class CIFtoXYZ extends PotentialScript {
       }
     } else {
       logger.info(helpString())
-      logger.info(" Expected 1 or 2 file(s) as input to CIFtoXYZ.")
+      logger.info(" Expected 1 or 2 file(s) as input to ImportCIF.")
       return this
     }
     return this

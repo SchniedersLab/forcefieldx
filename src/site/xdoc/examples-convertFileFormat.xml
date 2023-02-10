@@ -13,53 +13,58 @@
         variety of computational chemistry endeavors. However, it is impossible to utilize FFX without
         files that are formatted in a manner that FFX can handle.
         </p>
-        <section name="Conversion Between CIF and XYZ Formats">
+        <section name="Conversion Between CIF and PDB or XYZ Formats">
             <p>
-                The following is a brief and general guide on how to convert between CIF and XYZ formats.
+                The following is a brief and general guide on how to convert between CIF and PDB or XYZ formats.
             </p>
-            <subsection name="Conversion from CIF to XYZ">
+            <subsection name="Conversion from CIF to PDB or XYZ">
                 <p>
-                    The CIFtoXYZ conversion algorithm in FFX relies on two input files. The first being the CIF we
-                    wish to convert. The second is an XYZ file that will supply parameters for the converted structure
-                    (Note: The CIFtoXYZ converter does not generate parameters. Parameterization needs to occur prior to
+                    The ImportCIF conversion algorithm in FFX relies on two input files. The first being the CIF we
+                    wish to convert. The second is a PDB or XYZ file that will supply parameters for the converted structure
+                    (Note: The ImportCIF converter does not generate parameters. Parameterization needs to occur prior to
                     conversion.
                     For more information on creating input files, see
-                    <a href="https://ffx.biochem.uiowa.edu/examples-input.html">here</a>). Finally, the CIF and XYZ
-                    files should have different names because CIFtoXYZ will create
-                    an XYZ file by the same name as the provided CIF. The command may look something like:
+                    <a href="https://ffx.biochem.uiowa.edu/examples-input.html">here</a>). Finally, the CIF and PDB/XYZ
+                    files should have different names because ImportCIF will create
+                    a PDB or XYZ file (depending on the input file format) with the same name as the provided CIF.
+                    The command may look something like:
                 </p>
-                <source>ffxc CIFtoXYZ NAME.cif NAME.xyz
+                <source>
+                    ffxc ImportCIF NAME.cif NAME.pdb
+                    or
+                    ffxc ImportCIF NAME.cif NAME.xyz
                 </source>
                 <p>
-                    There should be a newly generated XYZ and Properties file with the same name as the selected CIF
-                    file (in the above example: NAME.xyz and NAME.properties). The files should be ready for further
+                    There should be a newly generated PDB/XYZ and Properties file with the same name as the selected CIF
+                    file (in the above examples: NAME.pdb and NAME.properties or NAME.xyz and NAME.properties,
+                    respectively). The files should be ready for further
                     calculations, but it is recommended that Minimize and/or MinimizeCrystals is performed as newly
                     converted files tend to be in strained conformations with respect to the applied model.
                 </p>
                 <p>
-                    CIFtoXYZ can handle appended CIFs, but the space group of the CIF will be appended to the
+                    ImportCIF can handle appended CIFs, however, in the case of XYZ format, the space group of the CIF will be appended to the
                     file name as appended CIFs may have different space groups, but appended XYZ (aka ARC) files must
                     consist of a single space group specified in the Properties file (<italic>e.g.</italic> NAME_P21c.arc
-                    and NAME_P21c.properties). CIFtoXYZ can attempt to fix crystal parameters to conform to the supplied
+                    and NAME_P21c.properties). ImportCIF can attempt to fix crystal parameters to conform to the supplied
                     lattice system, but since this alters the structure from the original CIF, the user must indicate
                     that this is desired by adding the &quot;--fixLattice&quot; or &quot;--fl&quot; flag to the command. The default values
                     are sufficient for most cases, but additional options can be seen through the help message:
                 </p>
-                <source>ffxc CIFtoXYZ --help
+                <source>ffxc ImportCIF --help
                 </source>
             </subsection>
-            <subsection name="From XYZ to CIF">
+            <subsection name="From PDB or XYZ to CIF">
                 <p>
-                    The CIFtoXYZ conversion algorithm also allows for the conversion to CIF format. However, this will
-                    require an XYZ file that has been parameterized.
-                    (Note: The CIFtoXYZ converter does not generate parameters. Parameterization needs to occur prior to
+                    The ImportCIF conversion algorithm also allows for the conversion to CIF format. However, this will
+                    require a PDB or XYZ file that has been parameterized.
+                    (Note: The ImportCIF converter does not generate parameters. Parameterization needs to occur prior to
                     conversion.
                     For more information on creating input files, see
                     <a href="https://ffx.biochem.uiowa.edu/examples-input.html">here</a>). Finally, the
                     &quot;--saveCIF&quot; or &quot;--sc&quot; flag should be added to the command.
                     The command may look something like:
                 </p>
-                <source>ffxc CIFtoXYZ --sc NAME.xyz
+                <source>ffxc ImportCIF --sc NAME.xyz
                 </source>
                 <p>
                     The result from the above command should be a generally formatted CIF with the coordinates and
@@ -68,7 +73,7 @@
             </subsection>
             <subsection name="Utilized Software">
                 <p>
-                    The CIFtoXYZ converter uses CIFTools provided by the RCSB
+                    The ImportCIF converter uses CIFTools provided by the RCSB
                     (<a href="https://github.com/rcsb/ciftools-java">CIFTools</a><sup>1</sup>) and objects provided by
                     the Chemistry Development Kit (<a href="https://cdk.github.io">CDK</a><sup>2</sup>)
                 </p>
