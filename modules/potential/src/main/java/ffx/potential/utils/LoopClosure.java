@@ -37,10 +37,9 @@
 // ******************************************************************************
 package ffx.potential.utils;
 
-import static ffx.numerics.math.DoubleMath.X;
-import static ffx.numerics.math.DoubleMath.dot;
 //import static ffx.numerics.math.DoubleMath.dihedralAngle;
-import static java.lang.String.format;
+import static ffx.numerics.math.DoubleMath.*;
+        import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -84,7 +83,7 @@ public class LoopClosure {
     private final SturmMethod sturmMethod;
     private final int maxSolutions = 16;
     private final int[] deg_pol = new int[1];
-    private final double[] len0 = new double[6];
+    private final double[] len0 = new double[4];
     private final double[] b_ang0 = new double[7];
     private final double[] t_ang0 = new double[2];
     private final double[][] delta = new double[4][1];
@@ -424,16 +423,16 @@ public class LoopClosure {
                 rr_a2a3[i] = r_soln_a[i_soln][2][i] - r_soln_a[i_soln][1][i];
             }
 
-            double a1c1 = sqrt(dot(rr_a1c1, rr_a1c1));
-            double c1n2 = sqrt(dot(rr_c1n2, rr_c1n2));
-            double n2a2 = sqrt(dot(rr_n2a2, rr_n2a2));
-            double a2c2 = sqrt(dot(rr_a2c2, rr_a2c2));
-            double c2n3 = sqrt(dot(rr_c2n3, rr_c2n3));
-            double n3a3 = sqrt(dot(rr_n3a3, rr_n3a3));
-            double a1a2 = sqrt(dot(rr_a1a2, rr_a1a2));
-            double a2a3 = sqrt(dot(rr_a2a3, rr_a2a3));
-
             if (logger.isLoggable(Level.FINE)) {
+                double a1c1 = sqrt(dot(rr_a1c1, rr_a1c1));
+                double c1n2 = sqrt(dot(rr_c1n2, rr_c1n2));
+                double n2a2 = sqrt(dot(rr_n2a2, rr_n2a2));
+                double a2c2 = sqrt(dot(rr_a2c2, rr_a2c2));
+                double c2n3 = sqrt(dot(rr_c2n3, rr_c2n3));
+                double n3a3 = sqrt(dot(rr_n3a3, rr_n3a3));
+                double a1a2 = sqrt(dot(rr_a1a2, rr_a1a2));
+                double a2a3 = sqrt(dot(rr_a2a3, rr_a2a3));
+
                 StringBuilder sb = new StringBuilder();
                 sb.append(format("na: n2a2, n3a3 = %9.3f%9.3f%9.3f%9.3f\n", len0[2], n2a2, len0[5], n3a3));
                 sb.append(format("ac: a1c1, a2c2 = %9.3f%9.3f%9.3f%9.3f\n", len0[0], a1c1, len0[3], a2c2));
@@ -441,65 +440,55 @@ public class LoopClosure {
                 sb.append(
                         format("aa: a1a2, a2a3 = %9.3f%9.3f%9.3f%9.3f\n", len_aa[1], a1a2, len_aa[2], a2a3));
                 logger.fine(sb.toString());
-            }
+                sb.setLength(0);
 
-            for (int i = 0; i < 3; i++) {
-                tmp_array[i] = rr_a1a2[i] / a1a2;
-            }
+                for (int i = 0; i < 3; i++) {
+                    tmp_array[i] = rr_a1a2[i] / a1a2;
+                }
 
-            DoubleMath.angle(b_a1a3, tmp_array);
+                DoubleMath.angle(b_a1a3, tmp_array);
 
-            for (int i = 0; i < 3; i++) {
-                tmp_array[i] = rr_a2a3[i] / a2a3;
-            }
+                for (int i = 0; i < 3; i++) {
+                    tmp_array[i] = rr_a2a3[i] / a2a3;
+                }
 
-            DoubleMath.angle(tmp_array, b_a1a3);
+                DoubleMath.angle(tmp_array, b_a1a3);
 
-            for (int i = 0; i < 3; i++) {
-                tmp_array[i] = rr_a1c1[i] / a1c1;
-            }
+                for (int i = 0; i < 3; i++) {
+                    tmp_array[i] = rr_a1c1[i] / a1c1;
+                }
 
-            DoubleMath.angle(b_a1n1, tmp_array);
+                DoubleMath.angle(b_a1n1, tmp_array);
 
-            for (int i = 0; i < 3; i++) {
-                tmp_array[i] = -rr_n3a3[i] / n3a3;
-            }
+                for (int i = 0; i < 3; i++) {
+                    tmp_array[i] = -rr_n3a3[i] / n3a3;
+                }
 
-            DoubleMath.angle(b_a3c3, tmp_array);
+                DoubleMath.angle(b_a3c3, tmp_array);
 
-            for (int i = 0; i < 3; i++) {
-                tmp_array1[i] = rr_a2c2[i] / a2c2;
-                tmp_array2[i] = -rr_n2a2[i] / n2a2;
-            }
+                for (int i = 0; i < 3; i++) {
+                    tmp_array1[i] = rr_a2c2[i] / a2c2;
+                    tmp_array2[i] = -rr_n2a2[i] / n2a2;
+                }
 
-            DoubleMath.angle(tmp_array1, tmp_array2);
+                DoubleMath.angle(tmp_array1, tmp_array2);
 
-            if (logger.isLoggable(Level.FINE)) {
-                StringBuilder sb = new StringBuilder();
-                sb.append(format("ang_nac = %9.3f\n", toDegrees(b_ang0[0])));
-                sb.append(format("ang_nac = %9.3f\n", toDegrees(b_ang0[3])));
-                sb.append(format("ang_nac = %9.3f\n", toDegrees(b_ang0[6])));
-                logger.fine(sb.toString());
-            }
+                for (int i = 0; i < 3; i++) {
+                    tmp_array1[i] = rr_a1c1[i] / a1c1;
+                    tmp_array2[i] = rr_c1n2[i] / c1n2;
+                    tmp_array3[i] = rr_n2a2[i] / n2a2;
+                }
+                //dihedralAngle(tmp_array1, tmp_array2, tmp_array3, a1c1n2a2);
+                calcDihedralAngle(tmp_array1, tmp_array2, tmp_array3, a1c1n2a2);
 
-            for (int i = 0; i < 3; i++) {
-                tmp_array1[i] = rr_a1c1[i] / a1c1;
-                tmp_array2[i] = rr_c1n2[i] / c1n2;
-                tmp_array3[i] = rr_n2a2[i] / n2a2;
-            }
-            //dihedralAngle(tmp_array1, tmp_array2, tmp_array3, a1c1n2a2);
-            calcDihedralAngle(tmp_array1, tmp_array2, tmp_array3, a1c1n2a2);
+                for (int i = 0; i < 3; i++) {
+                    tmp_array1[i] = rr_a2c2[i] / a2c2;
+                    tmp_array2[i] = rr_c2n3[i] / c2n3;
+                    tmp_array3[i] = rr_n3a3[i] / n3a3;
+                }
+                //dihedralAngle(tmp_array1, tmp_array2, tmp_array3, a2c2n3a3);
+                calcDihedralAngle(tmp_array1, tmp_array2, tmp_array3, a2c2n3a3);
 
-            for (int i = 0; i < 3; i++) {
-                tmp_array1[i] = rr_a2c2[i] / a2c2;
-                tmp_array2[i] = rr_c2n3[i] / c2n3;
-                tmp_array3[i] = rr_n3a3[i] / n3a3;
-            }
-            //dihedralAngle(tmp_array1, tmp_array2, tmp_array3, a2c2n3a3);
-            calcDihedralAngle(tmp_array1, tmp_array2, tmp_array3, a2c2n3a3);
-
-            if (logger.isLoggable(Level.FINE)) {
-                StringBuilder sb = new StringBuilder();
                 sb.append(format("t_ang1 = %9.3f%9.3f\n", toDegrees(t_ang0[0]), toDegrees(a1c1n2a2[0])));
                 sb.append(format("t_ang2 = %9.3f%9.3f\n", toDegrees(t_ang0[1]), toDegrees(a2c2n3a3[0])));
                 logger.fine(sb.toString());
@@ -538,7 +527,7 @@ public class LoopClosure {
 
         len_na[0] = sqrt(dot(r_a1n1, r_a1n1));
         len_na[1] = len0[2];
-        len_na[2] = len0[5];
+        len_na[2] = len0[2];
 
         for (int i = 0; i < 3; i++) {
             r_a3c3[i] = r_c3[i] - r_a3[i];
@@ -558,9 +547,7 @@ public class LoopClosure {
             tmp_val[i] = -b_a1n1[i];
         }
 
-        //dihedralAngle(tmp_val, b_a1a3, b_a3c3, delta[3]);
-        calcDihedralAngle(tmp_val, b_a1a3, b_a3c3, delta[3]);
-
+        delta[3][0] = dihedralAngle(r_n1, r_a1, r_a3, r_c3);
         delta[0][0] = delta[3][0];
 
         for (int i = 0; i < 3; i++) {
@@ -586,7 +573,7 @@ public class LoopClosure {
         sin_delta[0] = sin_delta[3];
         theta[0] = b_ang0[0];
         theta[1] = b_ang0[3];
-        theta[2] = b_ang0[6];
+        theta[2] = b_ang0[3];
 
         for (int i = 0; i < 3; i++) {
             cos_theta[i] = cos(theta[i]);
@@ -1190,16 +1177,11 @@ public class LoopClosure {
         len0[1] = 1.33;
         len0[2] = 1.45;
         len0[3] = 1.52;
-        len0[4] = 1.33;
-        len0[5] = 1.45;
 
         b_ang0[0] = Math.toRadians(111.6);
         b_ang0[1] = Math.toRadians(117.5);
         b_ang0[2] = Math.toRadians(120.0);
         b_ang0[3] = Math.toRadians(111.6);
-        b_ang0[4] = Math.toRadians(117.5);
-        b_ang0[5] = Math.toRadians(120.0);
-        b_ang0[6] = Math.toRadians(111.6);
 
         t_ang0[0] = Math.PI;
         t_ang0[1] = Math.PI;
@@ -1213,11 +1195,11 @@ public class LoopClosure {
         axis[2] = 0.0;
         for (int i = 0; i < 2; i++) {
             // iniitalizing rr_a1 array
-            rr_a1[0] = cos(b_ang0[3 * i + 1]) * len0[3 * i];
-            rr_a1[1] = sin(b_ang0[3 * i + 1]) * len0[3 * i];
+            rr_a1[0] = cos(b_ang0[1]) * len0[0];
+            rr_a1[1] = sin(b_ang0[1]) * len0[0];
             rr_a1[2] = 0.0e0;
             // initializing rr_n2 array
-            rr_n2[0] = len0[3 * i + 1];
+            rr_n2[0] = len0[1];
             rr_n2[1] = 0.0e0;
             rr_n2[2] = 0.0e0;
             // initializing rr_c1a1 array
@@ -1225,8 +1207,8 @@ public class LoopClosure {
                 rr_c1a1[j] = rr_a1[j] - rr_c1[j];
             }
             // initializing rr_n2a2_ref array
-            rr_n2a2_ref[0] = -cos(b_ang0[3 * i + 2]) * len0[3 * i + 2];
-            rr_n2a2_ref[1] = sin(b_ang0[3 * i + 2]) * len0[3 * i + 2];
+            rr_n2a2_ref[0] = -cos(b_ang0[2]) * len0[2];
+            rr_n2a2_ref[1] = sin(b_ang0[2]) * len0[2];
             rr_n2a2_ref[2] = 0.0e0;
             // quaternion is the quotient of two vectors in 3D space
             quaternion(axis, t_ang0[i] * 0.25e0, p);
@@ -1243,9 +1225,9 @@ public class LoopClosure {
             double len1 = sqrt(len2);
             len_aa[i + 1] = len1;
             for (int j = 0; j < 3; j++) {
-                bb_c1a1[j] = rr_c1a1[j] / len0[3 * i];
+                bb_c1a1[j] = rr_c1a1[j] / len0[0];
                 bb_a1a2[j] = rr_a1a2[j] / len1;
-                bb_a2n2[j] = (rr_n2[j] - rr_a2[j]) / len0[3 * i + 2];
+                bb_a2n2[j] = (rr_n2[j] - rr_a2[j]) / len0[2];
             }
             for (int j = 0; j < 3; j++) {
                 tmp_val[j] = -bb_a1a2[j];
