@@ -240,6 +240,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   private final boolean polarizationTermOrig;
   /** Original state of the GK energy term flag. */
   private final boolean generalizedKirkwoodTermOrig;
+
+  private boolean esvTermOrig;
   private final boolean rTorsTermOrig;
   /** Flag to indicate hydrogen bonded terms should be scaled up. */
   private final boolean rigidHydrogens;
@@ -1556,6 +1558,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       throw new IllegalArgumentException();
     }
     esvTerm = true;
+    esvTermOrig = esvTerm;
     esvSystem = system;
     if (vanderWaalsTerm) {
       if (vanderWaals == null) {
@@ -2180,12 +2183,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         multipoleTerm = false;
         polarizationTerm = false;
         generalizedKirkwoodTerm = false;
+        esvTerm = false;
         break;
       case SLOW:
         vanderWaalsTerm = vanderWaalsTermOrig;
         multipoleTerm = multipoleTermOrig;
         polarizationTerm = polarizationTermOrig;
         generalizedKirkwoodTerm = generalizedKirkwoodTermOrig;
+        esvTerm = esvTermOrig;
         nnTerm = false;
         bondTerm = false;
         angleTerm = false;
