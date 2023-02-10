@@ -261,7 +261,7 @@ class ReducedPartition extends  AlgorithmsScript{
 
             int[] currentRotamers = new int[residues1.size()]
 
-            rotamerOptimization.checkPermutations(residues1.toArray() as Residue[], 0, currentRotamers, manyBodyOptions.getAlgorithm())
+            rotamerOptimization.checkPermutations(residues1.toArray() as Residue[], 0, currentRotamers, manyBodyOptions.getAlgorithm(residues1.size()))
             boltzmannWeights[j] = rotamerOptimization.getTotalBoltzmann()
             offsets[j] = rotamerOptimization.getRefEnergy()
         }
