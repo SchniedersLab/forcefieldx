@@ -150,11 +150,11 @@ public class SturmMethod {
    * @param poly_coeffs an array of {@link double} objects.
    * @param roots an array of {@link double} objects.
    */
-  public void solveSturm(int[] p_order, int[] n_root, double[] poly_coeffs, double[] roots) {
+  public void solveSturm(int order, int[] n_root, double[] poly_coeffs, double[] roots) {
 
     Polynomial[] sseq = new Polynomial[Polynomial.MAX_ORDER * 2];
     double min, max;
-    int order, nroots, nchanges, np;
+    int nroots, nchanges, np;
     int[] atmin = new int[1];
     int[] atmax = new int[1];
     this.roots = roots;
@@ -162,8 +162,6 @@ public class SturmMethod {
     for (int i = 0; i < Polynomial.MAX_ORDER * 2; i++) {
       sseq[i] = new Polynomial();
     }
-
-    order = p_order[0];
 
     if (order + 1 >= 0) arraycopy(poly_coeffs, 0, sseq[0].coefficients, 0, order + 1);
 

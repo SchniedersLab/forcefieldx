@@ -39,7 +39,7 @@ package ffx.potential.utils;
 
 //import static ffx.numerics.math.DoubleMath.dihedralAngle;
 import static ffx.numerics.math.DoubleMath.*;
-        import static java.lang.String.format;
+import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.abs;
@@ -80,9 +80,9 @@ public class LoopClosure {
 
     private static final Logger logger = Logger.getLogger(LoopClosure.class.getName());
 
+    private static final int MAX_SOLUTIONS = 16;
+
     private final SturmMethod sturmMethod;
-    private final int maxSolutions = 16;
-    private final int[] deg_pol = new int[1];
     private final double[] len0 = new double[4];
     private final double[] b_ang0 = new double[7];
     private final double[] t_ang0 = new double[2];
@@ -121,30 +121,8 @@ public class LoopClosure {
      * LoopClosure Constructor.
      */
     public LoopClosure() {
-        deg_pol[0] = 16;
         sturmMethod = new SturmMethod();
         initializeLoopClosure();
-    }
-
-    /**
-     * Calculate dihedral angle.
-     *
-     * @param r1    an array of {@link double} objects.
-     * @param r2    an array of {@link double} objects.
-     * @param r3    an array of {@link double} objects.
-     * @param angle an array of {@link double} objects.
-     */
-    public void calcDihedralAngle(double[] r1, double[] r2, double[] r3, double[] angle) {
-        double[] p = new double[3];
-        double[] q = new double[3];
-        double[] s = new double[3];
-
-        X(r1, r2, p);
-        X(r2, r3, q);
-        X(r3, r1, s);
-        double arg = dot(p, q) / sqrt(dot(p, p) * dot(q, q));
-        arg = signOfAngle(min(abs(arg), 1.0), arg);
-        angle[0] = signOfAngle(acos(arg), dot(s, r2));
     }
 
     /**
@@ -259,18 +237,11 @@ public class LoopClosure {
         double[] rr_n3a3 = new double[3];
         double[] rr_a1a2 = new double[3];
         double[] rr_a2a3 = new double[3];
-        double[] a1c1n2a2 = new double[1];
-        double[] a2c2n3a3 = new double[1];
         double[] ex_tmp = new double[3];
         double[] tmp_array = new double[3];
         double[] tmp_array1 = new double[3];
         double[] tmp_array2 = new double[3];
         double[] tmp_array3 = new double[3];
-        double[] mat1 = new double[3];
-        double[] mat2 = new double[3];
-        double[] mat3 = new double[3];
-        double[] mat4 = new double[3];
-        double[] mat5 = new double[3];
         double[] mat11 = new double[3];
         double[] mat22 = new double[3];
         double[] mat33 = new double[3];
@@ -332,7 +303,7 @@ public class LoopClosure {
             r_tmp[i] = (r_a1n1[i] / len_na[0] - p_s_c[0][i]) / sin_xi[0];
         }
 
-        double sig1Init = signOfAngle(DoubleMath.angle(s1[0], r_tmp), dot(r_tmp, s2[0]));
+        double sig1Init = sign(DoubleMath.angle(s1[0], r_tmp), dot(r_tmp, s2[0]));
 
         for (int i = 0; i < 3; i++) {
             r_a[0][i] = r_a1[i];
@@ -387,11 +358,11 @@ public class LoopClosure {
                 mat55[i] = r_n[2][i] - r0[i];
             }
 
-            mat1 = matrixMultiplication(Us, mat11);
-            mat2 = matrixMultiplication(Us, mat22);
-            mat3 = matrixMultiplication(Us, mat33);
-            mat4 = matrixMultiplication(Us, mat44);
-            mat5 = matrixMultiplication(Us, mat55);
+            var mat1 = matrixMultiplication(Us, mat11);
+            var mat2 = matrixMultiplication(Us, mat22);
+            var mat3 = matrixMultiplication(Us, mat33);
+            var mat4 = matrixMultiplication(Us, mat44);
+            var mat5 = matrixMultiplication(Us, mat55);
 
             for (int i = 0; i < 3; i++) {
                 r_soln_n[i_soln][0][i] = r_n1[i];
@@ -406,10 +377,8 @@ public class LoopClosure {
             }
 
             if (logger.isLoggable(Level.FINE)) {
-                StringBuilder sb = new StringBuilder();
-                sb.append(format("roots: t0\t\t t2\t\t t1\t\t %d\n", i_soln));
-                sb.append(format("%15.6f %15.6f %15.6f\n", half_tan[2], half_tan[1], half_tan[0]));
-                logger.fine(sb.toString());
+                logger.fine(format("roots: t0\t\t t2\t\t t1\t\t %d\n%15.6f %15.6f %15.6f\n",
+                        i_soln, half_tan[2], half_tan[1], half_tan[0]));
             }
 
             for (int i = 0; i < 3; i++) {
@@ -478,19 +447,19 @@ public class LoopClosure {
                     tmp_array2[i] = rr_c1n2[i] / c1n2;
                     tmp_array3[i] = rr_n2a2[i] / n2a2;
                 }
-                //dihedralAngle(tmp_array1, tmp_array2, tmp_array3, a1c1n2a2);
-                calcDihedralAngle(tmp_array1, tmp_array2, tmp_array3, a1c1n2a2);
+
+                var a1c1n2a2 = dihedralAngle(tmp_array1, tmp_array2, tmp_array3);
 
                 for (int i = 0; i < 3; i++) {
                     tmp_array1[i] = rr_a2c2[i] / a2c2;
                     tmp_array2[i] = rr_c2n3[i] / c2n3;
                     tmp_array3[i] = rr_n3a3[i] / n3a3;
                 }
-                //dihedralAngle(tmp_array1, tmp_array2, tmp_array3, a2c2n3a3);
-                calcDihedralAngle(tmp_array1, tmp_array2, tmp_array3, a2c2n3a3);
 
-                sb.append(format("t_ang1 = %9.3f%9.3f\n", toDegrees(t_ang0[0]), toDegrees(a1c1n2a2[0])));
-                sb.append(format("t_ang2 = %9.3f%9.3f\n", toDegrees(t_ang0[1]), toDegrees(a2c2n3a3[0])));
+                var a2c2n3a3 = dihedralAngle(tmp_array1, tmp_array2, tmp_array3);
+
+                sb.append(format("t_ang1 = %9.3f%9.3f\n", toDegrees(t_ang0[0]), toDegrees(a1c1n2a2)));
+                sb.append(format("t_ang2 = %9.3f%9.3f\n", toDegrees(t_ang0[1]), toDegrees(a2c2n3a3)));
                 logger.fine(sb.toString());
             }
         }
@@ -508,7 +477,7 @@ public class LoopClosure {
     public void getInputAngles(int[] n_soln, double[] r_n1, double[] r_a1, double[] r_a3, double[] r_c3) {
         double[] tmp_val = new double[3];
 
-        n_soln[0] = maxSolutions;
+        n_soln[0] = MAX_SOLUTIONS;
         for (int i = 0; i < 3; i++) {
             r_a1a3[i] = r_a3[i] - r_a1[i];
         }
@@ -1091,7 +1060,7 @@ public class LoopClosure {
      * @param b A corresponding variable that determines directionality of the sign.
      * @return If b is positive or zero, return abs(a), else return -abs(a).
      */
-    public double signOfAngle(double a, double b) {
+    public double sign(double a, double b) {
         if (b >= 0.0) {
             return FastMath.abs(a);
         } else {
@@ -1113,8 +1082,8 @@ public class LoopClosure {
      */
     public void solve3PepPoly(double[] r_n1, double[] r_a1, double[] r_a3, double[] r_c3,
                               double[][][] r_soln_n, double[][][] r_soln_a, double[][][] r_soln_c, int[] n_soln) {
-        double[] polyCoeff = new double[deg_pol[0] + 1];
-        double[] roots = new double[maxSolutions];
+        double[] polyCoeff = new double[MAX_SOLUTIONS + 1];
+        double[] roots = new double[MAX_SOLUTIONS];
 
         getInputAngles(n_soln, r_n1, r_a1, r_a3, r_c3);
 
@@ -1123,7 +1092,7 @@ public class LoopClosure {
         }
 
         getPolyCoeff(polyCoeff);
-        sturmMethod.solveSturm(deg_pol, n_soln, polyCoeff, roots);
+        sturmMethod.solveSturm(MAX_SOLUTIONS, n_soln, polyCoeff, roots);
         if (n_soln[0] == 0) {
             logger.info("Could not find alternative loop solutions using KIC.");
         }
@@ -1142,7 +1111,7 @@ public class LoopClosure {
      */
     public void testTwoConeExistenceSoln(double tt, double kx, double et, double ap, int[] n_soln) {
 
-        n_soln[0] = maxSolutions;
+        n_soln[0] = MAX_SOLUTIONS;
         double at = ap - tt;
         double ex = kx + et;
         double abs_at = abs(at);
@@ -1169,7 +1138,6 @@ public class LoopClosure {
         double[] bb_a2n2 = new double[3];
         double[] p = new double[4];
         double[][] Us = new double[3][3];
-        double[] mulpro = new double[3];
         double[] tmp_val = new double[3];
 
         // initializing length, angle, and torsion arrays
@@ -1194,7 +1162,7 @@ public class LoopClosure {
         axis[1] = 0.0;
         axis[2] = 0.0;
         for (int i = 0; i < 2; i++) {
-            // iniitalizing rr_a1 array
+            // initializing rr_a1 array
             rr_a1[0] = cos(b_ang0[1]) * len0[0];
             rr_a1[1] = sin(b_ang0[1]) * len0[0];
             rr_a1[2] = 0.0e0;
@@ -1215,7 +1183,7 @@ public class LoopClosure {
             // means of representing a rotation of an axis about an origin
             //      with no angular specification
             rotationMatrix(p, Us);
-            mulpro = matrixMultiplication(Us, rr_n2a2_ref);
+            var mulpro = matrixMultiplication(Us, rr_n2a2_ref);
             for (int j = 0; j < 3; j++) {
                 rr_a2[j] = mulpro[j] + rr_n2[j];
                 rr_a1a2[j] = rr_a2[j] - rr_a1[j];
@@ -1239,9 +1207,7 @@ public class LoopClosure {
             }
 
             eta[i][0] = DoubleMath.angle(bb_a1a2, tmp_val);
-            //dihedralAngle(bb_c1a1, bb_a1a2, bb_a2n2, delta[i + 1]);
-            calcDihedralAngle(bb_c1a1, bb_a1a2, bb_a2n2, delta[i + 1]);
-            delta[i + 1][0] = PI - delta[i + 1][0];
+            delta[i + 1][0] = PI - dihedralAngle(bb_c1a1, bb_a1a2, bb_a2n2);
         }
 
         double a_min = b_ang0[3] - (xi[1][0] + eta[1][0]);
