@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.potential.utils;
 
-//import static ffx.numerics.math.DoubleMath.dihedralAngle;
 import static ffx.numerics.math.DoubleMath.*;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
@@ -81,6 +80,7 @@ public class LoopClosure {
     private static final Logger logger = Logger.getLogger(LoopClosure.class.getName());
 
     private static final int MAX_SOLUTIONS = 16;
+    private static final int NO_SOLUTIONS = 0;
 
     private final SturmMethod sturmMethod;
     private final double[] len0 = new double[4];
@@ -180,7 +180,7 @@ public class LoopClosure {
     /**
      * Get coordinates from polynomial roots.
      *
-     * @param n_soln   an array of {@link int} objects.
+     * @param numSolutions the number of potential solutions to be tested.
      * @param roots    an array of {@link double} objects.
      * @param r_n1     an array of {@link double} objects.
      * @param r_a1     an array of {@link double} objects.
@@ -190,14 +190,9 @@ public class LoopClosure {
      * @param r_soln_a an array of {@link double} objects.
      * @param r_soln_c an array of {@link double} objects.
      */
-    public void getCoordsFromPolyRoots(int[] n_soln, double[] roots, double[] r_n1, double[] r_a1,
-                                       double[] r_a3, double[] r_c3, double[][][] r_soln_n, double[][][] r_soln_a,
-                                       double[][][] r_soln_c) {
-
-        if (n_soln[0] == 0) {
-            return;
-        }
-
+    private void getCoordsFromPolyRoots(int numSolutions, double[] roots, double[] r_n1, double[] r_a1,
+                                        double[] r_a3, double[] r_c3, double[][][] r_soln_n, double[][][] r_soln_a,
+                                        double[][][] r_soln_c) {
         double[] ex = new double[3];
         double[] ey = new double[3];
         double[] ez = new double[3];
@@ -312,7 +307,7 @@ public class LoopClosure {
             r0[i] = r_a1[i];
         }
 
-        for (int i_soln = 0; i_soln < n_soln[0]; i_soln++) {
+        for (int i_soln = 0; i_soln < numSolutions; i_soln++) {
             half_tan[2] = roots[i_soln];
             half_tan[1] = calcT2(half_tan[2]);
             half_tan[0] = calcT1(half_tan[2], half_tan[1]);
@@ -468,16 +463,13 @@ public class LoopClosure {
     /**
      * Get the input angles.
      *
-     * @param n_soln an array of {@link int} objects.
      * @param r_n1   an array of {@link double} objects.
      * @param r_a1   an array of {@link double} objects.
      * @param r_a3   an array of {@link double} objects.
      * @param r_c3   an array of {@link double} objects.
      */
-    public void getInputAngles(int[] n_soln, double[] r_n1, double[] r_a1, double[] r_a3, double[] r_c3) {
+    public boolean getInputAngles(double[] r_n1, double[] r_a1, double[] r_a3, double[] r_c3) {
         double[] tmp_val = new double[3];
-
-        n_soln[0] = MAX_SOLUTIONS;
         for (int i = 0; i < 3; i++) {
             r_a1a3[i] = r_a3[i] - r_a1[i];
         }
@@ -486,8 +478,7 @@ public class LoopClosure {
         len_aa[0] = sqrt(dr_sqr);
 
         if ((dr_sqr < aa13_min_sqr) || (dr_sqr > aa13_max_sqr)) {
-            n_soln[0] = 0;
-            return;
+            return false;
         }
 
         for (int i = 0; i < 3; i++) {
@@ -578,11 +569,13 @@ public class LoopClosure {
         }
 
         for (int i = 0; i < 3; i++) {
-            testTwoConeExistenceSoln(theta[i], xi[i][0], eta[i][0], alpha[i], n_soln);
-            if (n_soln[0] == 0) {
-                return;
+            if (!testTwoConeExistenceSoln(theta[i], xi[i][0], eta[i][0], alpha[i])) {
+                return false;
             }
         }
+
+        // No errors, return true;
+        return true;
     }
 
     /**
@@ -1078,26 +1071,25 @@ public class LoopClosure {
      * @param r_soln_n an array of {@link double} objects.
      * @param r_soln_a an array of {@link double} objects.
      * @param r_soln_c an array of {@link double} objects.
-     * @param n_soln   an array of {@link int} objects.
      */
-    public void solve3PepPoly(double[] r_n1, double[] r_a1, double[] r_a3, double[] r_c3,
-                              double[][][] r_soln_n, double[][][] r_soln_a, double[][][] r_soln_c, int[] n_soln) {
+    public int solve3PepPoly(double[] r_n1, double[] r_a1, double[] r_a3, double[] r_c3,
+                             double[][][] r_soln_n, double[][][] r_soln_a, double[][][] r_soln_c) {
         double[] polyCoeff = new double[MAX_SOLUTIONS + 1];
         double[] roots = new double[MAX_SOLUTIONS];
 
-        getInputAngles(n_soln, r_n1, r_a1, r_a3, r_c3);
-
-        if (n_soln[0] == 0) {
-            return;
+        if (!getInputAngles(r_n1, r_a1, r_a3, r_c3)) {
+            return NO_SOLUTIONS;
         }
 
         getPolyCoeff(polyCoeff);
-        sturmMethod.solveSturm(MAX_SOLUTIONS, n_soln, polyCoeff, roots);
-        if (n_soln[0] == 0) {
+        var solutions = sturmMethod.solveSturm(MAX_SOLUTIONS, polyCoeff, roots);
+        if (solutions > 0) {
+            getCoordsFromPolyRoots(solutions, roots, r_n1, r_a1, r_a3, r_c3, r_soln_n, r_soln_a, r_soln_c);
+        } else {
             logger.info("Could not find alternative loop solutions using KIC.");
         }
 
-        getCoordsFromPolyRoots(n_soln, roots, r_n1, r_a1, r_a3, r_c3, r_soln_n, r_soln_a, r_soln_c);
+        return solutions;
     }
 
     /**
@@ -1107,17 +1099,12 @@ public class LoopClosure {
      * @param kx     a double.
      * @param et     a double.
      * @param ap     a double.
-     * @param n_soln an array of {@link int} objects.
      */
-    public void testTwoConeExistenceSoln(double tt, double kx, double et, double ap, int[] n_soln) {
-
-        n_soln[0] = MAX_SOLUTIONS;
+    private boolean testTwoConeExistenceSoln(double tt, double kx, double et, double ap) {
         double at = ap - tt;
         double ex = kx + et;
         double abs_at = abs(at);
-        if (abs_at > ex) {
-            n_soln[0] = 0;
-        }
+        return (abs_at <= ex);
     }
 
     /**
