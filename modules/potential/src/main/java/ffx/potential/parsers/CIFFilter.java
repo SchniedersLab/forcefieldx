@@ -151,7 +151,7 @@ public class CIFFilter extends SystemFilter {
    */
   private boolean fixLattice = false;
   /**
-   * Whether to use PDB  format.
+   * Whether to use PDB format.
    */
   private boolean usePDB = false;
   /**
@@ -419,11 +419,11 @@ public class CIFFilter extends SystemFilter {
       }
     }
 
-    List<MSNode> entitiesXYZ = activeMolecularAssembly.getAllBondedEntities();
-    int numEntitiesXYZ = entitiesXYZ.size();
+    List<MSNode> entitiesInput = activeMolecularAssembly.getAllBondedEntities();
+    int numEntitiesInput = entitiesInput.size();
     if (logger.isLoggable(Level.FINE)) {
-      logger.fine(format(" Number of entities in XYZ: %d", numEntitiesXYZ));
-      for (MSNode entity : entitiesXYZ) {
+      logger.fine(format(" Number of entities in input: %d", numEntitiesInput));
+      for (MSNode entity : entitiesInput) {
         logger.fine(format(" Entity: " + entity.getName()));
         int size = entity.getAtomList().size();
         logger.fine(format("   Entity Size: %3d", size));
@@ -625,13 +625,13 @@ public class CIFFilter extends SystemFilter {
         logger.info(format(" Detected more than one copy in asymmetric unit of CIF file (Z'=%d)."
             + " -- attempting to separate.", zPrime));
       }
-      for (MSNode mol : entitiesXYZ) {
+      for (MSNode mol : entitiesInput) {
         xyzatoms.add((ArrayList<Atom>) mol.getAtomList());
       }
       int atomIndex = 1;
-      for (int i = 0; i < numEntitiesXYZ; i++) {
-        MSNode mol = entitiesXYZ.get(i);
-        int numXYZMolAtoms = xyzatoms.get(i).size();
+      for (int i = 0; i < numEntitiesInput; i++) {
+        MSNode mol = entitiesInput.get(i);
+        int numInputMolAtoms = xyzatoms.get(i).size();
         int numMolHydrogen = 0;
         for (Atom atom : xyzatoms.get(i)) {
           if (atom.isHydrogen()) {
@@ -639,8 +639,8 @@ public class CIFFilter extends SystemFilter {
           }
         }
         if (logger.isLoggable(Level.FINE)) {
-          logger.fine(format(" Current Entity Number of Atoms: %d (%d + %dH)", numXYZMolAtoms,
-              numXYZMolAtoms - numMolHydrogen, numMolHydrogen));
+          logger.fine(format(" Current entity number of atoms: %d (%d + %dH)", numInputMolAtoms,
+              numInputMolAtoms - numMolHydrogen, numMolHydrogen));
         }
 
         // Set up input file contents as CDK variable
@@ -660,8 +660,8 @@ public class CIFFilter extends SystemFilter {
         IBond.Order order = IBond.Order.SINGLE;
         int xyzBonds = bonds.size();
         if (xyzBonds == 0) {
-          logger.warning(" Input structure has no bonds. Please check the input.");
-          continue;
+          logger.warning(" No bonds detected in input structure. Please check input.\n " +
+              "If correct, separate non-bonded entities into multiple CIFs.");
         }
         for (Bond xyzBond : bonds) {
           int atom0Index = xyzBond.getAtom(0).getXyzIndex();
@@ -695,7 +695,7 @@ public class CIFFilter extends SystemFilter {
         int cifBonds = bondAtoms(atoms, bondTolerance);
         if (logger.isLoggable(Level.FINE)) {
           logger.fine(
-              format(" Created %d bonds between CIF atoms (%d in xyz).", cifBonds, xyzBonds));
+              format(" Created %d bonds between CIF atoms (%d in input).", cifBonds, xyzBonds));
         }
         List<Atom> atomPool = new ArrayList<>(Arrays.asList(atoms));
 
@@ -715,7 +715,7 @@ public class CIFFilter extends SystemFilter {
 
             if (logger.isLoggable(Level.FINER)) {
               logger.finer(format(
-                  " Molecule %d: %d atoms are ready and %d remain (%d atoms in XYZ, %d atoms in CIF). ",
+                  " Molecule %d: %d atoms are ready and %d remain (%d atoms in input, %d atoms in CIF). ",
                   counter + 1, indices.size(), atomPool.size(), nInputAtoms, nAtoms));
             }
             zindices.add(indices);
@@ -739,8 +739,8 @@ public class CIFFilter extends SystemFilter {
           if (logger.isLoggable(Level.FINE)) {
             logger.fine(format(" CIF atoms in current: %d", cifMolAtoms));
           }
-          if (cifMolAtoms % numXYZMolAtoms == 0
-              || cifMolAtoms % (numXYZMolAtoms - numMolHydrogen) == 0) {
+          if (cifMolAtoms % numInputMolAtoms == 0
+              || cifMolAtoms % (numInputMolAtoms - numMolHydrogen) == 0) {
             cifCDKAtomsArr[j] = new AtomContainer();
             for (Integer integer : currentList) {
               cifCDKAtomsArr[j].addAtom(new org.openscience.cdk.Atom(symbols[integer - 1],
@@ -780,7 +780,7 @@ public class CIFFilter extends SystemFilter {
 
             int cifMolBonds = cifCDKAtomsArr[j].getBondCount();
             if (logger.isLoggable(Level.FINE)) {
-              logger.fine(format(" Number of CIF bonds: %d (%d in XYZ)", cifMolBonds, xyzBonds));
+              logger.fine(format(" Number of CIF bonds: %d (%d in input)", cifMolBonds, xyzBonds));
             }
             // Number of bonds matches.
             // If cifMolBonds == 0 then ion or atom with implicit hydrogens (e.g. water, methane, etc.)
@@ -788,9 +788,9 @@ public class CIFFilter extends SystemFilter {
               org.openscience.cdk.isomorphism.Pattern pattern = VentoFoggia.findIdentical(
                   xyzCDKAtoms, AtomMatcher.forElement(), BondMatcher.forAny());
               int[] p = pattern.match(cifCDKAtomsArr[j]);
-              if (p != null && p.length == numXYZMolAtoms) {
+              int pLength = p.length;
+              if (p != null && pLength == numInputMolAtoms) {
                 // Used matched atoms to update the positions of the input file atoms.
-                int pLength = p.length;
                 for (int k = 0; k < pLength; k++) {
                   if (logger.isLoggable(Level.FINEST)) {
                     logger.finest(
@@ -810,17 +810,17 @@ public class CIFFilter extends SystemFilter {
               }
             } else if ((xyzBonds - numMolHydrogen) == 0
                 || cifMolBonds % ((xyzBonds - numMolHydrogen)) == 0) {
-              // Hydrogen most likely missing from file. If zero then potentially water.
+              // Hydrogen most likely missing from file. If zero, then potentially water/methane (implicit hydrogen atoms).
               if (logger.isLoggable(Level.FINE)) {
                 logger.info(" CIF may contain implicit hydrogen -- attempting to patch.");
               }
-              // Match heavy atoms between CIF and XYZ
+              // Match heavy atoms between CIF and input
               org.openscience.cdk.isomorphism.Pattern pattern = VentoFoggia.findSubstructure(
                   cifCDKAtomsArr[j], AtomMatcher.forElement(), BondMatcher.forAny());
               int[] p = pattern.match(xyzCDKAtoms);
-              if (p != null && p.length == numXYZMolAtoms - numMolHydrogen) {
+              int pLength = p.length;
+              if (p != null && pLength == numInputMolAtoms - numMolHydrogen) {
                 // Used matched atoms to update the positions of the input file atoms.
-                int pLength = p.length;
                 for (int k = 0; k < pLength; k++) {
                   Point3d point3d = cifCDKAtomsArr[j].getAtom(k).getPoint3d();
                   xyzatoms.get(i).get(p[k]).setXYZ(new double[]{point3d.x, point3d.y, point3d.z});
@@ -936,11 +936,11 @@ public class CIFFilter extends SystemFilter {
                 }
               } else {
                 if (logger.isLoggable(Level.FINE)) {
-                  logger.fine(" Could not match heavy atoms between CIF and XYZ.");
+                  logger.fine(" Could not match heavy atoms between CIF and input.");
                 }
                 if (p != null && logger.isLoggable(Level.FINE)) {
                   logger.fine(
-                      format(" Matched %d atoms out of %d in CIF (%d in XYZ)", p.length, nAtoms,
+                      format(" Matched %d atoms out of %d in CIF (%d in input)", pLength, nAtoms,
                           nInputAtoms - numMolHydrogen));
                 }
                 continue;
