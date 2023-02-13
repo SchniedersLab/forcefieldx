@@ -2153,6 +2153,7 @@ public class RotamerOptimization implements Terminatable {
         throw new ArithmeticException("The number of permutations has reach" + evaluatedPermutations + " . Permutations must be eliminated.");
       }
     } catch (Exception e){
+      logger.info("Too many permutations. Re-setting parameters and re-running");
       //change ensemble energy
       ensembleEnergy -= 0.5;
       //adjust 2-body cutoff
