@@ -86,8 +86,8 @@ public class Respa extends Integrator {
    * @param aPrevious Previous accelerations.
    * @param mass Mass of the variables.
    */
-  public Respa(
-      int nVariables, double[] x, double[] v, double[] a, double[] aPrevious, double[] mass) {
+  public Respa(int nVariables, double[] x, double[] v, double[] a, double[] aPrevious,
+      double[] mass) {
     super(nVariables, x, v, a, aPrevious, mass);
 
     innerSteps = 4;
@@ -150,7 +150,6 @@ public class Respa extends Integrator {
       // Update accelerations from fast varying forces.
       halfStepEnergy = potential.energyAndGradient(x, gradient);
       for (int i = 0; i < nVariables; i++) {
-
         /*
          Use Newton's second law to get fast-evolving accelerations.
          Update fast-evolving velocities using the Verlet recursion.
@@ -197,8 +196,9 @@ public class Respa extends Integrator {
     halfInnerTimeStep = 0.5 * innerTimeStep;
 
     if (logger.isLoggable(Level.FINE)) {
-      logger.fine(format(" Time step set at %f (psec) and inner time step set at %f (psec) \n",
-              this.dt, innerTimeStep));
+      logger.fine(
+          format(" Time step set at %f (psec) and inner time step set at %f (psec) \n", this.dt,
+              innerTimeStep));
     }
   }
 

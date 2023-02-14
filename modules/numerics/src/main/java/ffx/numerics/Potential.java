@@ -216,7 +216,7 @@ public interface Potential {
   double[] getVelocity(double[] velocity);
 
   /**
-   * Default method to unscale coordinates.
+   * Default method to scale coordinates.
    *
    * @param x Input parameters.
    */

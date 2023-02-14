@@ -39,7 +39,7 @@ package ffx.algorithms.cli;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
-import ffx.algorithms.dynamics.MolecularDynamics.DynamicsEngine;
+import ffx.algorithms.dynamics.MDEngine;
 import ffx.algorithms.dynamics.integrators.Integrator;
 import ffx.algorithms.dynamics.integrators.IntegratorEnum;
 import ffx.algorithms.dynamics.thermostats.Thermostat;
@@ -71,7 +71,7 @@ public class DynamicsOptions {
    */
   @ArgGroup(heading = "%n Dynamics Options%n", validate = false)
   public DynamicsOptionGroup group = new DynamicsOptionGroup();
-  private DynamicsEngine engine = null;
+  private MDEngine engine = null;
 
   /**
    * The restart save frequency in picoseconds (1.0 psec default).
@@ -126,7 +126,7 @@ public class DynamicsOptions {
    */
   public MolecularDynamics getDynamics(WriteoutOptions writeoutOptions, Potential potential,
       MolecularAssembly activeAssembly, AlgorithmListener algorithmListener,
-      DynamicsEngine requestedEngine) {
+      MDEngine requestedEngine) {
     MolecularDynamics molDyn;
 
     if (requestedEngine == null) {
@@ -198,7 +198,7 @@ public class DynamicsOptions {
     integrator = Integrator.parseIntegrator(group.integratorString);
     if (group.engineString != null) {
       try {
-        engine = DynamicsEngine.valueOf(group.engineString.toUpperCase());
+        engine = MDEngine.valueOf(group.engineString.toUpperCase());
       } catch (Exception ex) {
         logger.warning(String.format(
             " Could not parse %s as a valid dynamics engine! Defaulting to the Platform-recommended engine.",

@@ -43,6 +43,8 @@ import static java.lang.String.format;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.dynamics.MDVerbosity;
+import ffx.algorithms.dynamics.MDWriteAction;
 import ffx.algorithms.dynamics.MolecularDynamicsOpenMM;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
@@ -123,7 +125,7 @@ public class MDMove implements MCMove {
     double dtPs = timeStep * Constants.FSEC_TO_PSEC;
     mdSteps = stepsPerCycle;
 
-    molecularDynamics.setVerbosityLevel(MolecularDynamics.VerbosityLevel.QUIET);
+    molecularDynamics.setVerbosityLevel(MDVerbosity.QUIET);
     molecularDynamics.setObtainVelAcc(false);
     collectEnergies();
     molecularDynamics.setRestartFrequency(dynamics.getCheckpoint());
@@ -183,7 +185,7 @@ public class MDMove implements MCMove {
   /** {@inheritDoc} */
   @Override
   public void move() {
-    move(MolecularDynamics.VerbosityLevel.QUIET);
+    move(MDVerbosity.QUIET);
   }
 
   /**
@@ -191,8 +193,8 @@ public class MDMove implements MCMove {
    *
    * @param verbosityLevel How verbose to be.
    */
-  public void move(MolecularDynamics.VerbosityLevel verbosityLevel) {
-    MolecularDynamics.VerbosityLevel origLevel = molecularDynamics.getVerbosityLevel();
+  public void move(MDVerbosity verbosityLevel) {
+    MDVerbosity origLevel = molecularDynamics.getVerbosityLevel();
     molecularDynamics.setVerbosityLevel(verbosityLevel);
     mdMoveCounter++;
 
@@ -244,11 +246,6 @@ public class MDMove implements MCMove {
     molecularDynamics.setIntervalSteps(intervalSteps);
   }
 
-  /** Triggers MD to write out its stored snapshots in case of error. */
-  public void writeErrorFiles() {
-    molecularDynamics.writeStoredSnapshots();
-  }
-
   /**
    * Write restart and trajectory files if the provided step matches the frequency.
    *
@@ -257,7 +254,7 @@ public class MDMove implements MCMove {
    * @param tryRestart If false, do not write a restart file even if the timestep is correct.
    * @return Returns the write actions.
    */
-  public EnumSet<MolecularDynamics.WriteActions> writeFilesForStep(
+  public EnumSet<MDWriteAction> writeFilesForStep(
       long mdStep, boolean trySnapshot, boolean tryRestart) {
     return molecularDynamics.writeFilesForStep(mdStep, trySnapshot, tryRestart);
   }
