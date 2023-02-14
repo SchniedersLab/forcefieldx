@@ -243,6 +243,7 @@ class ReducedPartition extends  AlgorithmsScript{
 
             RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,
                     potentialEnergy, algorithmListener)
+            rotamerOptimization.setWriteEnergyRestart(false)
 
             manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
 

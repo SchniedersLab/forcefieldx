@@ -142,8 +142,13 @@ public class RotamerOptimization implements Terminatable {
   private final boolean print = false;
   /** Flag to calculate and print additional energies (mostly for debugging). */
   private final boolean verboseEnergies = true;
+
+  public void setWriteEnergyRestart(boolean writeEnergyRestart) {
+    this.writeEnergyRestart = writeEnergyRestart;
+  }
+
   /** If true, write out an energy restart file. */
-  private final boolean writeEnergyRestart = true;
+  private boolean writeEnergyRestart = true;
   /**
    * Parameters for box optimization are stored here.
    */
