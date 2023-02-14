@@ -2120,7 +2120,8 @@ public class RotamerOptimization implements Terminatable {
         }
         if (!deadEnd) {
           evaluatedPermutations++;
-          if(evaluatedPermutations > 10e4){
+          if(evaluatedPermutations > 1e4){
+            logger.info("The number of permutations: " + evaluatedPermutations);
             return adjustPerm;
           }
           energyRegion.init(eE, residues, currentRotamers, threeBodyTerm);
@@ -2139,17 +2140,35 @@ public class RotamerOptimization implements Terminatable {
     return adjustPerm;
   }
 
+  /**
+   * Get reference energy for partition function boltzmann weights
+   * @return ref energy
+   */
   public double getRefEnergy(){
     return refEnergy;
   }
 
+  /**
+   * Get the total boltzmann weight for an ensemble
+   * @return total boltzmann
+   */
   public double getTotalBoltzmann() {return totalBoltzmann;}
 
+  /**
+   * Re-compute permutations with new parameters if too many permutations present
+   * @param residues residue array
+   * @param i int
+   * @param currentRotamers empty array
+   * @param algorithm manybody algorithm
+   * @return permutation check
+   * @throws Exception too many permutations to continue
+   */
   public boolean checkPermutations(Residue[] residues, int i,  int[] currentRotamers, Algorithm algorithm) throws Exception {
     boolean perm = false;
     partitionFunction(residues, i, currentRotamers);
     try{
-      if(evaluatedPermutations > 10e4){
+      if(evaluatedPermutations > 1e4){
+        logger.info("Made it to the exception if statement");
         throw new ArithmeticException("The number of permutations has reach" + evaluatedPermutations + " . Permutations must be eliminated.");
       }
     } catch (Exception e){
