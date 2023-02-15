@@ -240,7 +240,7 @@ public class XPHFilter extends SystemFilter {
   }
 
   @Override
-  public int countNumModels() throws FileNotFoundException {
+  public int countNumModels(){
     File xphFile = activeMolecularAssembly.getFile();
     int nAtoms = activeMolecularAssembly.getAtomArray().length;
     Pattern crystInfoPattern =
