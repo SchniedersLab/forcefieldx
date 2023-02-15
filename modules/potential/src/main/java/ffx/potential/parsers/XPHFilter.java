@@ -273,7 +273,8 @@ public class XPHFilter extends SystemFilter {
         }
 
         // Read Past ESV
-        if(data != null && data.contains("ESV")) {
+        assert data != null;
+        if(data.contains("ESV")) {
           while (data != null && !data.trim().equals("")) {
             data = br.readLine();
           }
