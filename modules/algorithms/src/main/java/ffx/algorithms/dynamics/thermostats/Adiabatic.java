@@ -59,19 +59,14 @@ public class Adiabatic extends Thermostat {
    * @param n Number of degrees of freedom.
    * @param x Atomic coordinates.
    * @param v Velocities.
-   * @param mass Mass of each degrees of freedom.
+   * @param mass Mass of each degree of freedom.
    * @param type the VARIABLE_TYPE of each variable.
    */
   public Adiabatic(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type) {
     this(n, x, v, mass, type, Collections.emptyList());
   }
 
-  public Adiabatic(
-      int n,
-      double[] x,
-      double[] v,
-      double[] mass,
-      VARIABLE_TYPE[] type,
+  public Adiabatic(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type,
       List<Constraint> constraints) {
     super(n, x, v, mass, type, 1.0, constraints);
     this.name = ThermostatEnum.ADIABATIC;
@@ -83,7 +78,8 @@ public class Adiabatic extends Thermostat {
    * <p>No full-step velocity modifications are made.
    */
   @Override
-  public void fullStep(double dt) {}
+  public void fullStep(double dt) {
+  }
 
   /**
    * {@inheritDoc}
@@ -91,7 +87,8 @@ public class Adiabatic extends Thermostat {
    * <p>No half-step velocity modifications are made.
    */
   @Override
-  public void halfStep(double dt) {}
+  public void halfStep(double dt) {
+  }
 
   /** {@inheritDoc} */
   @Override

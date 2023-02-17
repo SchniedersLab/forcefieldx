@@ -39,6 +39,7 @@ package ffx.algorithms.cli;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.dynamics.MDEngine;
 import ffx.algorithms.thermodynamics.HistogramSettings;
 import ffx.algorithms.thermodynamics.MonteCarloOST;
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering;
@@ -227,9 +228,9 @@ public class OSTOptions {
             algorithmListener,
             dynamicsOptions.thermostat,
             dynamicsOptions.integrator,
-            MolecularDynamics.DynamicsEngine.FFX);
+            MDEngine.FFX);
     for (int i = 1; i < molecularAssemblies.length; i++) {
-      molDyn.addAssembly(molecularAssemblies[i], molecularAssemblies[i].getProperties());
+      molDyn.addAssembly(molecularAssemblies[i]);
     }
     molDyn.setRestartFrequency(dynamicsOptions.getCheckpoint());
 
@@ -532,7 +533,7 @@ public class OSTOptions {
 
     MolecularDynamics md = monteCarloOST.getMD();
     for (int i = 1; i < molecularAssemblies.length; i++) {
-      md.addAssembly(molecularAssemblies[i], molecularAssemblies[i].getProperties());
+      md.addAssembly(molecularAssemblies[i]);
     }
 
     long nEquil = thermodynamicsOptions.getEquilSteps();

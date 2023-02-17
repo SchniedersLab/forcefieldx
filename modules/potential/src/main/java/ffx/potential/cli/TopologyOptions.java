@@ -54,6 +54,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
@@ -313,9 +314,11 @@ public class TopologyOptions {
           }
           logger.info(
               format(" Range %s for %s, start %d end %d", range, label, rangeStart, rangeEnd));
-          logger.fine(format(" First atom in range: %s", atoms1[rangeStart - 1]));
-          if (rangeEnd > rangeStart) {
-            logger.fine(format(" Last atom in range: %s", atoms1[rangeEnd - 1]));
+          if(logger.isLoggable(Level.FINE)) {
+            logger.fine(format(" First atom in range: %s", atoms1[rangeStart - 1]));
+            if (rangeEnd > rangeStart) {
+              logger.fine(format(" Last atom in range: %s", atoms1[rangeEnd - 1]));
+            }
           }
           for (int i = rangeStart; i <= rangeEnd; i++) {
             indices.add(i - 1);

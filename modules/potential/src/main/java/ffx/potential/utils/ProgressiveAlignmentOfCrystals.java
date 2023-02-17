@@ -55,6 +55,7 @@ import static ffx.potential.utils.Superpose.calculateTranslation;
 import static ffx.potential.utils.Superpose.rmsd;
 import static ffx.potential.utils.Superpose.rotate;
 import static ffx.potential.utils.Superpose.translate;
+import static ffx.utilities.StringUtils.parseAtomRanges;
 import static ffx.utilities.Resources.logResources;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
@@ -74,7 +75,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
-import ffx.potential.cli.TopologyOptions;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.DistanceMatrixFilter;
 import ffx.potential.parsers.PDBFilter;
@@ -423,6 +423,11 @@ public class ProgressiveAlignmentOfCrystals {
    * If molecules between two crystals differ below this tolerance, they are treated as equivalent.
    */
   private static final double MATCH_TOLERANCE = 1.0E-12;
+
+  /**
+   * Adjusted tolerance used when printing symmetry operators.
+   */
+  private static final double SYM_TOLERANCE = 2.0E-8;
 
   /**
    * Constructor for the ProgressiveAlignmentOfCrystals class.
@@ -1356,8 +1361,8 @@ public class ProgressiveAlignmentOfCrystals {
    * @param matchTol Tolerance to determine whether two AUs are the same (increases efficiency).
    * @param zPrime Number of asymmetric units in first crystal (default attempts detection).
    * @param zPrime2 Number of asymmetric units in second crystal (default attempts detection).
-   * @param unsharedA List of atoms specific to first crystal.
-   * @param unsharedB List of atoms specific to second crystal.
+   * @param excludeAtomsA List of atoms specific to first crystal.
+   * @param excludeAtomsB List of atoms specific to second crystal.
    * @param alphaCarbons Perform comparisons on only alpha carbons.
    * @param includeHydrogen Perform comparisons without hydrogen atoms.
    * @param massWeighted Perform comparisons with mass weighted coordinates (center of mass
@@ -1381,7 +1386,7 @@ public class ProgressiveAlignmentOfCrystals {
    * @return RunningStatistics Statistics for comparisons performed.
    */
   public RunningStatistics comparisons(int nAU, double inflationFactor, double matchTol, int zPrime,
-      int zPrime2, String unsharedA, String unsharedB, boolean alphaCarbons, boolean includeHydrogen,
+      int zPrime2, String excludeAtomsA, String excludeAtomsB, boolean alphaCarbons, boolean includeHydrogen,
       boolean massWeighted, int crystalPriority, boolean strict, int save, boolean restart,
       boolean write, boolean machineLearning, boolean inertia, boolean gyrationComponents,
       int linkage, double printSym, boolean lowMemory, String pacFileName) {
@@ -1425,42 +1430,17 @@ public class ProgressiveAlignmentOfCrystals {
     int nAtoms2 = atoms2.length;
 
     // Collect selected atoms.
-    ArrayList<Integer> unique = new ArrayList<>(
-        TopologyOptions.getUniqueAtoms(baseAssembly, "base", unsharedA));
-    // TopologyOptions assumes we want indices for a concatenated XYZ object... recreate atom index.
-    ArrayList<Integer> uniqueB = new ArrayList<>();
-    for (Integer value : unique) {
-      if (value % 3 == 0) {
-        int index = (value / 3);
-        if (!uniqueB.contains(index)) {
-          uniqueB.add(index);
-        }
-      }
-    }
-    unique.clear();
-    determineComparableAtoms(atoms1, unique, uniqueB, alphaCarbons, includeHydrogen);
-    if (unique.size() < 1) {
-      logger.info("\n No atoms were selected for the PAC RMSD in first crystal.");
+    ArrayList<Integer> unique = new ArrayList<>(parseAtomRanges("Base Assembly", excludeAtomsA, nAtoms));
+    if(invalidAtomSelection(unique, atoms1, alphaCarbons, includeHydrogen)){
+      logger.warning("\n No atoms were selected for the PAC RMSD in first crystal.");
       return null;
     }
     int[] comparisonAtoms = unique.stream().mapToInt(i -> i).toArray();
-    unique.clear();
-    // Collect selected atoms.
-    unique = new ArrayList<>(TopologyOptions.getUniqueAtoms(targetAssembly, "target", unsharedB));
-    ArrayList<Integer> uniqueT = new ArrayList<>();
-    for (Integer value : unique) {
-      if (value % 3 == 0) {
-        int index = (value / 3);
-        if (!uniqueT.contains(index)) {
-          uniqueT.add(index);
-        }
-      }
-    }
-    unique.clear();
-    determineComparableAtoms(atoms2, unique, uniqueT, alphaCarbons, includeHydrogen);
 
-    if (unique.size() < 1) {
-      logger.info("\n No atoms were selected for the PAC RMSD in second crystal.");
+    // Collect selected atoms.
+    unique = new ArrayList<>(parseAtomRanges( "target", excludeAtomsB, nAtoms2));
+    if(invalidAtomSelection(unique, atoms2, alphaCarbons, includeHydrogen)){
+      logger.warning("\n No atoms were selected for the PAC RMSD in second crystal.");
       return null;
     }
     int[] comparisonAtoms2 = unique.stream().mapToInt(i -> i).toArray();
@@ -1485,7 +1465,7 @@ public class ProgressiveAlignmentOfCrystals {
     // When printing Sym Ops it is imperative to find all molecules (decrease matchTol).
     boolean useSym = printSym >= 0.0;
     if (useSym && (z1 > 1 || z2 > 1)) {
-      matchTol = 0.00000002;
+      matchTol = SYM_TOLERANCE;
     }
     if (useSym && z1 != z2) {
       logger.warning(
@@ -2736,6 +2716,26 @@ public class ProgressiveAlignmentOfCrystals {
       logger.finer(format(" Number of species in asymmetric unit (Z Prime): %d", z));
     }
     return z;
+  }
+
+  /**
+   * Determine if the user selected atoms are invalid.
+   * @param indices Atom indices to be included in this comparison.
+   * @param atoms  All available atoms.
+   * @param alphaCarbons Only include alpha carbons.
+   * @param includeHydrogen Include hydrogen atoms.
+   * @return Whether any atoms were selected.
+   */
+  private static boolean invalidAtomSelection(ArrayList<Integer> indices, Atom[] atoms, boolean alphaCarbons, boolean includeHydrogen){
+    ArrayList<Integer> unique = new ArrayList<>();
+    for(Integer value : indices){
+        if (!unique.contains(value)) {
+          unique.add(value);
+        }
+    }
+    indices.clear();
+    determineComparableAtoms(atoms, indices, unique, alphaCarbons, includeHydrogen);
+    return indices.size() < 1;
   }
 
   /**
