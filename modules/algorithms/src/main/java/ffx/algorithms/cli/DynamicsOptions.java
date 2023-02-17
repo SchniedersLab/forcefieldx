@@ -87,10 +87,10 @@ public class DynamicsOptions {
   }
 
   /**
-   * The timestep in femtoseconds (default of 1.0). A value of 2.0 is possible for the RESPA
+   * The time step in femtoseconds (default of 1.0). A value of 2.0 is possible for the RESPA
    * integrator.
    *
-   * @return Timestep in femtoseconds.
+   * @return Time step in femtoseconds.
    */
   public double getDt() {
     return group.dt;
@@ -314,7 +314,7 @@ public class DynamicsOptions {
   private static class DynamicsOptionGroup {
 
     /**
-     * -d or --dt sets the timestep in femtoseconds (default of 1.0). A value of 2.0 is possible for
+     * -d or --dt sets the time step in femtoseconds (default of 1.0). A value of 2.0 is possible for
      * the RESPA integrator.
      */
     @Option(names = {"-d",
