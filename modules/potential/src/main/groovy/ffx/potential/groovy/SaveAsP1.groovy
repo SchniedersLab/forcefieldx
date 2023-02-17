@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -66,7 +66,7 @@ class SaveAsP1 extends PotentialScript {
    * --lmn or --replicatesVector Number of unit cells in replicates crystal.
    */
   @Option(names = ['--lmn', '--replicatesVector'], paramLabel = "", defaultValue = "",
-          description = "Number of unit cells in replicates crystal.")
+          description = "Dimension of replicates crystal (e.g., \"2,2,2\" for a 2 x 2 x 2).")
   private String lmn
 
   /**
@@ -138,7 +138,8 @@ class SaveAsP1 extends PotentialScript {
       replicatesVector[1] =  Integer.parseInt(tokens[1])
       replicatesVector[2] = Integer.parseInt(tokens[2])
     }else{
-      logger.warning(" Replicates indices could not be parsed. Saving as P1.")
+      logger.warning(" Replicates indices could not be parsed (should be a comma separated list of integers)." +
+              " Saving as P1.")
       noReplicate = true;
     }
     if (ext.toUpperCase().contains("XYZ")) {

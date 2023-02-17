@@ -365,7 +365,7 @@ atom        277   92    C     "4-Ethylimidazole CD"          6    12.011    3
 atom        278   93    H     "4-Ethylimidazole HCD"         1     1.008    1
 atom        279   92    C     "4-Ethylimidazole CG"          6    12.011    3
 atom        280   91    N     "Indole N"                     7    14.007    3
-atom        281   46    H     "Indole HN"                    6     1.008    1
+atom        281   46    H     "Indole HN"                    1     1.008    1
 atom        282   94    C     "Indole C2"                    6    12.011    3
 atom        283   94    C     "Indole C3"                    6    12.011    3
 atom        284   94    C     "Indole C4"                    6    12.011    3
@@ -612,7 +612,7 @@ bond         40   89          453.20     1.4990
 bond         40   92          453.20     1.4930
 bond         41   95          341.00     1.1120
 bond         45   46          516.50     1.0120
-bond         46   91          461.90     1.0150
+# bond         46   91          461.90     1.0150
 bond         46   91          467.60     1.0300
 bond         47   48          461.90     1.0150
 bond         49   50          515.90     1.0100

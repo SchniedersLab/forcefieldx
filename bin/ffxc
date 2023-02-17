@@ -5,7 +5,7 @@
 # 
 # Description: Force Field X - Software for Molecular Biophysics.
 # 
-# Copyright: Copyright (c) Michael J. Schnieders 2001-2021.
+# Copyright: Copyright (c) Michael J. Schnieders 2001-2023.
 # 
 # This file is part of Force Field X.
 # 
@@ -139,7 +139,7 @@ if [ -x "$awkCmd" ]; then
     fi
 fi
 
-# Detect JDK version; disallow JDKs below 11 and above 20.
+# Detect JDK version; disallow JDKs below 17 and above 20.
 if [ $hasAwkSed ]; then
     JVERS="`java -version 2>&1 | awk '/version/ {print $3;}' | sed 's/\"//g'`"
     JVFIRST="`echo "$JVERS" | awk 'BEGIN { FS = "[.-]"; } { print $1 }'`"
@@ -192,23 +192,33 @@ EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS}"
 
 # TornadoVM Flags
 JAVA_FLAGS=""
-if [ ! -z "$TORNADO_HOME" ] ; then
-  source tornadoExportList.sh
+if [ ! -z "$TORNADO_SDK" ] ; then
+  echo "TORNADO detected at: $TORNADO_SDK"
 
   PROVIDERS=" \
    -Dtornado.load.api.implementation=uk.ac.manchester.tornado.runtime.tasks.TornadoTaskSchedule \
    -Dtornado.load.runtime.implementation=uk.ac.manchester.tornado.runtime.TornadoCoreRuntime \
    -Dtornado.load.tornado.implementation=uk.ac.manchester.tornado.runtime.common.Tornado \
-   -Dtornado.load.device.implementation=uk.ac.manchester.tornado.drivers.opencl.runtime.TornadoDeviceFactory \
+   -Dtornado.load.device.implementation.opencl=uk.ac.manchester.tornado.drivers.opencl.runtime.OCLDeviceFactory \
    -Dtornado.load.annotation.implementation=uk.ac.manchester.tornado.annotation.ASMClassVisitor \
-   -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel "
+   -Dtornado.load.annotation.parallel=uk.ac.manchester.tornado.api.annotations.Parallel \
+   -Dtornado.load.device.implementation.ptx=uk.ac.manchester.tornado.drivers.ptx.runtime.PTXDeviceFactory \
+   -Dtornado.load.device.implementation.spirv=uk.ac.manchester.tornado.drivers.spirv.runtime.SPIRVDeviceFactory "
 
-   TORNADO_SDK="$TORNADO_HOME/bin/sdk"
-   TORNADO_FLAGS="--module-path .:${TORNADO_SDK}/share/java/tornado:."
+   TORNADO_FLAGS="--module-path ${TORNADO_SDK}/share/java/tornado \
+      --add-modules ALL-SYSTEM,tornado.runtime,tornado.annotation,tornado.drivers.common \
+      @${TORNADO_SDK}/etc/exportLists/common-exports \
+      --add-modules tornado.drivers.opencl \
+      @${TORNADO_SDK}/etc/exportLists/opencl-exports "
+#      --add-modules tornado.drivers.ptx \
+#      @${TORNADO_SDK}/etc/exportLists/ptx-exports \
+#      --add-modules tornado.drivers.spirv \
+#      @${TORNADO_SDK}/etc/exportLists/spirv-exports" 
+      
    JLP="${TORNADO_SDK}/lib:$JLP"
 
-   JAVA_FLAGS="-server -XX:-UseCompressedOops ${TORNADO_FLAGS} ${PROVIDERS} "
-   JAVA_FLAGS="${JAVA_FLAGS} -XX:+UseParallelOldGC -XX:-UseBiasedLocking ${PACKAGE_LIST[*]} "
+#   JAVA_FLAGS="-Dtornado.fullDebug=True -Dtornado.debug=True -Dtornado.print.kernel=True -server -XX:+UseParallelGC -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI ${TORNADO_FLAGS} ${PROVIDERS} "
+   JAVA_FLAGS="-server -XX:+UseParallelGC -XX:-UseCompressedOops -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI ${TORNADO_FLAGS} ${PROVIDERS} "
 fi 
 
 exec "$JAVACMD" $JAVA_OPTS $JAVA_FLAGS \

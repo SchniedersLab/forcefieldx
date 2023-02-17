@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -53,6 +53,7 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 import java.util.logging.Level
+import java.util.logging.LogRecord
 
 import static java.lang.String.format
 
@@ -243,7 +244,7 @@ class PhBar extends AlgorithmsScript {
     if (natNMinusOne.exists() && natN.exists() && natNPlusOne.exists()) {
       //MolA should be set to the previous arc file
       logger.warning(
-          " Initializing to last run. Since this program deletes these files on completion, runs in which these files already exist are assumed to be restarts.")
+          " Initializing to last run.")
 
       // Read in previous log files into this program
       for (int i = 0; i < 3; i++) {
@@ -329,7 +330,6 @@ class PhBar extends AlgorithmsScript {
         if (myRank != nRanks - 1) {
           for (Residue res : esvSystem.getExtendedResidueList()) {
             esvSystem.setTitrationLambda(res, fixedTitrationState + titrationNeighbor, false)
-            //esvSystem.perturbLambdas(lockTautomer, fixedTitrationState + titrationNeighbor) //TODO: get this to work
             if (esvSystem.isTautomer(res)) {
               esvSystem.setTautomerLambda(res, fixedTautomerState + tautomerNeighbor, false)
             }
@@ -361,7 +361,9 @@ class PhBar extends AlgorithmsScript {
         energy = forceFieldEnergy.energy(x, false)
         current.add(energy)
 
-        logger.info(" Previous: " + previous + "\n Current: " + current + "\n Next: " + next)
+        if(i == current.size()) {
+          logger.info(" Previous: " + previous + "\n Current: " + current + "\n Next: " + next)
+        }
 
         // Write to restart logs
         for (int j = 0; j < 3; j++) {
@@ -383,38 +385,41 @@ class PhBar extends AlgorithmsScript {
           }
         }
       }
-    } else {
+    } else if (current.size() == 0){
       logger.severe(" MD is not an instance of MDOMM (try adding -Dplatform=OMM --mdE OpenMM)")
     }
 
-    if (current.size() != cycles) {
-      logger.severe(" Size of the self energies array is not equal to number of cycles")
-      return this
-    }
-
-    double[][] parameters = new double[nRanks][current.size() * 3]
+    double[][] parameters = new double[nRanks][cycles * 3]
     DoubleBuf[] parametersBuf = new DoubleBuf[nRanks]
-    int counter = 0
     if (myRank != 0) {
+      if(previous.size() != cycles) {
+        logger.severe(" Size of the previous energies array is not equal to number of cycles")
+        return this
+      }
       for (int i = 0; i < previous.size(); i++) {
         parameters[myRank][i] = previous.get(i)
-        counter = i
       }
-    } else {
-      counter = current.size()
     }
 
+    if(current.size() != cycles) {
+      logger.severe(" Size of the current energies array is not equal to number of cycles")
+      return this
+    }
     for (int i = 0; i < current.size(); i++) {
-      parameters[myRank][counter] = current.get(i)
-      counter += 1
+      parameters[myRank][current.size() + i] = current.get(i)
     }
 
     if (myRank != nRanks - 1) {
+      if(next.size() != cycles) {
+        logger.severe(" Size of the next energies array is not equal to number of cycles")
+        return this
+      }
       for (int i = 0; i < next.size(); i++) {
-        parameters[myRank][counter] = next.get(i)
-        counter += 1
+        parameters[myRank][2 * current.size() + i] = next.get(i)
       }
     }
+
+    logger.info("Parameters: " + parameters[myRank] as String)
 
     for (int i = 0; i < nRanks; i++) {
       parametersBuf[i] = DoubleBuf.buffer(parameters[i])
@@ -440,15 +445,15 @@ class PhBar extends AlgorithmsScript {
       try (FileWriter fw = new FileWriter(output)
           BufferedWriter bw = new BufferedWriter(fw)) {
         bw.write(format("    %d  %f  this.xyz\n", current.size(), dynamicsOptions.temperature))
-        for (int i = 1; i <= current.size(); i++) {
-          bw.write(format("%5d%17.9f%17.9f\n", i, parameters[myRank][current.size() + i - 1],
-              parameters[myRank][current.size() * 2 + i - 2]))
+        for (int i = 0; i < current.size(); i++) {
+          bw.write(format("%5d%17.9f%17.9f\n", i+1, parameters[myRank][current.size() + i],
+              parameters[myRank][current.size() * 2 + i]))
         }
 
         bw.write(format("    %d  %f  this.xyz\n", current.size(), dynamicsOptions.temperature))
-        for (int i = 1; i <= current.size(); i++) {
-          bw.write(format("%5d%17.9f%17.9f\n", i, parameters[myRank + 1][i - 1],
-              parameters[myRank + 1][current.size() + i - 1]))
+        for (int i = 0; i <= current.size(); i++) {
+          bw.write(format("%5d%17.9f%17.9f\n", i+1, parameters[myRank + 1][i],
+              parameters[myRank + 1][current.size() + i]))
         }
       } catch (IOException e) {
         e.printStackTrace()

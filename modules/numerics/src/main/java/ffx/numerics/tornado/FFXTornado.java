@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -37,8 +37,6 @@
 // ******************************************************************************
 package ffx.numerics.tornado;
 
-import static java.lang.String.format;
-
 import java.util.logging.Logger;
 import uk.ac.manchester.tornado.api.TornadoDriver;
 import uk.ac.manchester.tornado.api.TornadoTargetDevice;
@@ -62,12 +60,24 @@ public class FFXTornado {
   /**
    * Get the Tornado Device using specified driver and device index.
    *
+   * @param backendName Backend Name.
+   * @param driverIndex Driver index.
+   * @param deviceIndex Device index.
+   * @return The TornadoDevice instance.
+   */
+  public static TornadoDevice getDevice(String backendName, int driverIndex, int deviceIndex) {
+    return TornadoRuntime.createDevice(backendName, driverIndex, deviceIndex);
+  }
+
+  /**
+   * Get the Tornado Device using specified driver and device index.
+   *
    * @param driverIndex Driver index.
    * @param deviceIndex Device index.
    * @return The TornadoDevice instance.
    */
   public static TornadoDevice getDevice(int driverIndex, int deviceIndex) {
-    return TornadoRuntime.createDevice(driverIndex, deviceIndex);
+    return TornadoRuntime.createDevice("opencl", driverIndex, deviceIndex);
   }
 
   /**
@@ -84,7 +94,8 @@ public class FFXTornado {
       for (int deviceIndex = 0; deviceIndex < driver.getDeviceCount(); deviceIndex++) {
         if (n == deviceID) {
           TornadoRuntime.setProperty("devices", driverIndex + ":" + deviceIndex);
-          return TornadoRuntime.createDevice(driverIndex, deviceIndex);
+          String name = driver.getName();
+          return TornadoRuntime.createDevice("opencl", driverIndex, deviceIndex);
         }
         n++;
       }
@@ -114,7 +125,7 @@ public class FFXTornado {
    * @param device The TornadoDevice instance.
    */
   public static void logDevice(TornadoDevice device) {
-    TornadoTargetDevice tornadoTargetDevice = device.getDevice();
+    TornadoTargetDevice tornadoTargetDevice = device.getPhysicalDevice();
     long[] workItemSize = tornadoTargetDevice.getDeviceMaxWorkItemSizes();
     //        logger.info(format("\n Device Name:         %s",
     // tornadoTargetDevice.getDeviceName()));
@@ -128,21 +139,12 @@ public class FFXTornado {
     // tornadoTargetDevice.getDeviceGlobalMemorySize() / 1024 / 1024));
     //        logger.info(format(" Local Memory:        %6d KB",
     // tornadoTargetDevice.getDeviceLocalMemorySize() / 1024));
-    System.out.println(format("\n Device Name:         %s", tornadoTargetDevice.getDeviceName()));
-    System.out.println(
-        format(" Compute Units:       %s", tornadoTargetDevice.getDeviceMaxComputeUnits()));
-    System.out.println(
-        format(
-            " Max Work Item Sizes: [%d, %d, %d]",
-            workItemSize[0], workItemSize[1], workItemSize[2]));
-    System.out.println(
-        format(" Clock Frequency:     %6d Ghz", tornadoTargetDevice.getDeviceMaxClockFrequency()));
-    System.out.println(
-        format(
-            " Global Memory:       %6d MB",
-            tornadoTargetDevice.getDeviceGlobalMemorySize() / 1024 / 1024));
-    System.out.println(
-        format(
-            " Local Memory:        %6d KB", tornadoTargetDevice.getDeviceLocalMemorySize() / 1024));
+    System.out.printf("\n Device Name:         %s%n", tornadoTargetDevice.getDeviceName());
+    System.out.printf(" Backend:             %s%n", device.getTornadoVMBackend().name());
+    System.out.printf(" Compute Units:       %s%n", tornadoTargetDevice.getDeviceMaxComputeUnits());
+    System.out.printf(" Max Work Item Sizes: [%d, %d, %d]%n", workItemSize[0], workItemSize[1], workItemSize[2]);
+    System.out.printf(" Clock Frequency:     %6d Ghz%n", tornadoTargetDevice.getDeviceMaxClockFrequency());
+    System.out.printf(" Global Memory:       %6d MB%n", tornadoTargetDevice.getDeviceGlobalMemorySize() / 1024 / 1024);
+    System.out.printf(" Local Memory:        %6d KB%n", tornadoTargetDevice.getDeviceLocalMemorySize() / 1024);
   }
 }

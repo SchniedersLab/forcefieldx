@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -55,7 +55,6 @@ import ffx.potential.cli.PotentialScript;
 import ffx.potential.utils.PotentialsFunctions;
 import ffx.utilities.Console;
 import ffx.utilities.FFXScript;
-// import groovy.console.ui.Console;
 import groovy.lang.Binding;
 import groovy.lang.Script;
 import java.awt.Color;

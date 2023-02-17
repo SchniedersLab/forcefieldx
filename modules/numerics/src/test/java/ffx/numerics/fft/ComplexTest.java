@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -38,6 +38,7 @@
 package ffx.numerics.fft;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -55,19 +56,21 @@ public class ComplexTest {
   private final String info;
   private final boolean preferred;
   private final double[] data;
-  private final double[] expected;
+  private final double[] orig;
+  private final double[] dft;
 
   public ComplexTest(String info, int n, boolean preferred) {
     this.info = info;
     this.n = n;
     this.preferred = preferred;
     data = new double[n * 2];
-    expected = new double[n * 2];
+    orig = new double[n * 2];
+    dft = new double[n * 2];
     Random r = new Random();
     for (int i = 0; i < n; i++) {
       double d = r.nextDouble();
       data[i * 2] = d;
-      expected[i * 2] = d;
+      orig[i * 2] = d;
     }
   }
 
@@ -75,26 +78,53 @@ public class ComplexTest {
   public static Collection<Object[]> data() {
     return Arrays.asList(
         new Object[][] {
-          // This test will fail without the factor 7 {"Test n = 21", 21, true},
-          {"Test n = 22", 22, false},
-          {"Test n = 120", 120, true}
+            {"Test n = 162 with factors [6, 3, 3, 3]", 162, true},
+            {"Test n = 160 with factors [5, 4, 4, 2]", 160, true},
+            {"Test n = 120 with factors [6, 5, 4]", 120, true},
+            {"Test n = 64 with factors [4, 4, 4]", 64, true},
+            {"Test n = 48 with factors [6, 4, 2]", 48, true},
+            {"Test n = 21 with factors [7, 3]", 21, true},
+            {"Test n = 38 with factors [2, 19]", 38, false},
+            {"Test n = 22 with factors [2, 11]", 22, false},
         });
   }
 
   /** Test of fft method, of class Complex. */
   @Test
   public void testFft() {
-    double tolerance = 1.0e-14;
+    double tolerance = 1.0e-11;
 
     int offset = 0;
     int stride = 2;
     Complex complex = new Complex(n);
+
+    // System.out.println(info + "\n Factors " + Arrays.toString(complex.getFactors()));
+
+    long dftTime = System.nanoTime();
+    Complex.dft(data, dft);
+    dftTime = System.nanoTime() - dftTime;
+    String dftString = " DFT Time: " + dftTime * 1.0e-9 + " s\n";
+
+    long fftTime = System.nanoTime();
     complex.fft(data, offset, stride);
+    fftTime = System.nanoTime() - fftTime;
+    String fftString = " FFT Time: " + fftTime * 1.0e-9 + " s";
+
+    // Test the FFT is equals the DFT result.
+    for (int i = 0; i < 2 * n; i++) {
+      assertEquals(" Forward " + info + " at position: " + i, dft[i], data[i], tolerance);
+    }
+
+    // The FFT is faster than the DFT.
+    String message = fftString + dftString;
+    // assertTrue(message, fftTime < dftTime);
+
+    // Test that X = IFFT(FFT(X)).
     complex.inverse(data, offset, stride);
     for (int i = 0; i < n; i++) {
-      double orig = expected[i * 2];
+      double orig = this.orig[i * 2];
       double actual = data[i * 2];
-      assertEquals(info, orig, actual, tolerance);
+      assertEquals(" IFFT(FFT(X)) " + info + " at position: " + i, orig, actual, tolerance);
     }
   }
 

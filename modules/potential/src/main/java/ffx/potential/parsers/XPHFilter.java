@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -240,7 +240,7 @@ public class XPHFilter extends SystemFilter {
   }
 
   @Override
-  public int countNumModels() {
+  public int countNumModels(){
     File xphFile = activeMolecularAssembly.getFile();
     int nAtoms = activeMolecularAssembly.getAtomArray().length;
     Pattern crystInfoPattern =
@@ -273,6 +273,7 @@ public class XPHFilter extends SystemFilter {
         }
 
         // Read Past ESV
+        assert data != null;
         if(data.contains("ESV")) {
           while (data != null && !data.trim().equals("")) {
             data = br.readLine();

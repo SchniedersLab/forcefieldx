@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -173,12 +173,12 @@ public class PhGradientTest extends PotentialTest {
                 "HDECK peptide",
                 "src/main/java/ffx/potential/structures/HDECK.pdb",
                 "\n  Titration Lambdas: 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, " +
-                        "\n  Tautomer Lambdas: 0.0000, 0.0000, 0.0000",
-                28.05521549,
+                "\n  Tautomer Lambdas: 0.0000, 0.0000, 0.0000",
+                28.05522192,
                 134,
-                19.63246538,
+                19.63246647,
                 236,
-                -1.43838543,
+                -1.43838685,
                 201,
                 0.0,
                 0,
@@ -192,11 +192,11 @@ public class PhGradientTest extends PotentialTest {
                 15,
                 0.0,
                 0,
-                100.22151788,
+                100.22152394,
                 8541,
-                -48.40886042,
+                -51.85815355,
                 7648,
-                -43.04177031,
+                -42.77517305,
                 7648,
                 -8.00000000,
                 -4.27009315
@@ -205,12 +205,12 @@ public class PhGradientTest extends PotentialTest {
                 "HDECK peptide",
                 "src/main/java/ffx/potential/structures/HDECK.pdb",
                 "\n  Titration Lambdas: 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, " +
-                        "\n  Tautomer Lambdas: 0.0000, 0.0000, 0.0000",
-                28.05521549,
+                "\n  Tautomer Lambdas: 0.0000, 0.0000, 0.0000",
+                28.05522192,
                 134,
-                19.63246538,
+                19.63246647,
                 236,
-                -1.43838543,
+                -1.43838685,
                 201,
                 0.0,
                 0,
@@ -224,14 +224,14 @@ public class PhGradientTest extends PotentialTest {
                 15,
                 0.0,
                 0,
-                101.39983161,
+                101.39983768,
                 8541,
-                -175.68024074,
+                -170.80150311,
                 8280,
-                -22.44984448,
+                -22.35053436,
                 8280,
                 -8.00000000,
-                -152.70688000
+                -159.08878000
             }
         });
   }
@@ -245,7 +245,7 @@ public class PhGradientTest extends PotentialTest {
     Random random = new Random();
     String randomAtom = Integer.toString(random.nextInt(110) + 1);
 
-    String[] args = {"-v", "--esvLambda", "0.0", "-d", "0.000001", "--ga", randomAtom, filename};
+    String[] args = {"--testEndStateEnergies", "--esvLambda", "0.0", "-d", "0.000001", "--ga", randomAtom, filename};
     binding.setVariable("args", args);
     // Construct and evaluate the Volume script.
     PhGradient pHGradient = new PhGradient(binding).run();

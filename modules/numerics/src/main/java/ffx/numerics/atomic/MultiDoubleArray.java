@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -156,7 +156,9 @@ public class MultiDoubleArray implements AtomicDoubleArray {
    */
   @Override
   public void reset(int threadID, int lb, int ub) {
-    Arrays.fill(array[threadID], 0.0);
+    // Note that fill is appears slightly faster than arraycopy for 10,000 to 100,000 elements.
+    Arrays.fill(array[threadID],0.0);
+    // System.arraycopy(zeros, 0, array[threadID], 0, size);
   }
 
   /**

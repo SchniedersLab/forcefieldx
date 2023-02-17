@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -283,28 +283,44 @@ public class ScaleParameters {
 
   public ScaleParameters(ELEC_FORM elecForm, ForceField forceField) {
     if (elecForm == PAM) {
-      m12scale = forceField.getDouble("MPOLE_12_SCALE", DEFAULT_MPOLE_12_SCALE);
-      m13scale = forceField.getDouble("MPOLE_13_SCALE", DEFAULT_MPOLE_13_SCALE);
-      m14scale = forceField.getDouble("MPOLE_14_SCALE", DEFAULT_MPOLE_14_SCALE);
-      m15scale = forceField.getDouble("MPOLE_15_SCALE", DEFAULT_MPOLE_15_SCALE);
+      double m12 = forceField.getDouble("MPOLE_12_SCALE", DEFAULT_MPOLE_12_SCALE);
+      if (m12 > 1.0) {
+        m12 = 1.0 / m12;
+      }
+      m12scale = m12;
+      double m13 = forceField.getDouble("MPOLE_13_SCALE", DEFAULT_MPOLE_13_SCALE);
+      if (m13 > 1.0) {
+        m13 = 1.0 / m13;
+      }
+      m13scale = m13;
+      double m14 = forceField.getDouble("MPOLE_14_SCALE", DEFAULT_MPOLE_14_SCALE);
+      if (m14 > 1.0) {
+        m14 = 1.0 / m14;
+      }
+      m14scale = m14;
+      double m15 = forceField.getDouble("MPOLE_15_SCALE", DEFAULT_MPOLE_15_SCALE);
+      if (m15 > 1.0) {
+        m15 = 1.0 / m15;
+      }
+      m15scale = m15;
     } else {
       double m12 = forceField.getDouble("CHG_12_SCALE", DEFAULT_CHG_12_SCALE);
-      if (m12 > 0.0) {
+      if (m12 > 1.0) {
         m12 = 1.0 / m12;
       }
       m12scale = m12;
       double m13 = forceField.getDouble("CHG_13_SCALE", DEFAULT_CHG_13_SCALE);
-      if (m13 > 0.0) {
+      if (m13 > 1.0) {
         m13 = 1.0 / m13;
       }
       m13scale = m13;
       double m14 = forceField.getDouble("CHG_14_SCALE", DEFAULT_CHG_14_SCALE);
-      if (m14 > 0.0) {
+      if (m14 > 1.0) {
         m14 = 1.0 / m14;
       }
       m14scale = m14;
       double m15 = forceField.getDouble("CHG_15_SCALE", DEFAULT_CHG_15_SCALE);
-      if (m15 > 0.0) {
+      if (m15 > 1.0) {
         m15 = 1.0 / m15;
       }
       m15scale = m15;

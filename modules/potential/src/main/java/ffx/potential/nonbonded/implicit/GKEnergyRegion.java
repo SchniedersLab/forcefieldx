@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -88,10 +88,13 @@ public class GKEnergyRegion extends ParallelRegion {
   protected static final double oneThird = 1.0 / 3.0;
   /** Conversion from electron**2/Ang to kcal/mole. */
   protected final double electric;
-  protected final double epsilon;
   /** Treatment of polarization. */
   protected final Polarization polarization;
   protected final NonPolarModel nonPolarModel;
+
+  private final double soluteDielectric;
+  private final double solventDielectric;
+
   /**
    * Dielectric offset from:
    *
@@ -151,23 +154,19 @@ public class GKEnergyRegion extends ParallelRegion {
   /** Cross-term energy for each atom */
   protected AtomicDoubleArray crossEnergy;
 
-  public GKEnergyRegion(
-      int nt,
-      ForceField forceField,
-      Polarization polarization,
-      NonPolarModel nonPolarModel,
-      double surfaceTension,
-      double probe,
-      double electric) {
 
-    gkc = forceField.getDouble("GKC", DEFAULT_GKC);
+  public GKEnergyRegion(
+      int nt, Polarization polarization, NonPolarModel nonPolarModel,
+      double surfaceTension, double probe, double electric,
+      double soluteDieletric, double solventDieletric, double gkc, boolean gkQI) {
 
     // Set the Kirkwood multipolar reaction field constants.
-    epsilon = forceField.getDouble("GK_EPSILON", dWater);
-    double soluteEpsilon = forceField.getDouble("GK_SOLUTE_EPSILON", 1.0);
-    fc = cn(0, soluteEpsilon, epsilon);
-    fd = cn(1, soluteEpsilon, epsilon);
-    fq = cn(2, soluteEpsilon, epsilon);
+    this.soluteDielectric = soluteDieletric;
+    this.solventDielectric = solventDieletric;
+    fc = cn(0, soluteDieletric, solventDieletric);
+    fd = cn(1, soluteDieletric, solventDieletric);
+    fq = cn(2, soluteDieletric, solventDieletric);
+    this.gkc = gkc;
 
     this.polarization = polarization;
     this.nonPolarModel = nonPolarModel;
@@ -175,8 +174,6 @@ public class GKEnergyRegion extends ParallelRegion {
     this.probe = probe;
     // Set the conversion from electron**2/Ang to kcal/mole
     this.electric = electric;
-
-    boolean gkQI = forceField.getBoolean("GK_QI", false);
 
     gkEnergyLoop = new IntegerForLoop[nt];
     for (int i = 0; i < nt; i++) {
@@ -339,9 +336,6 @@ public class GKEnergyRegion extends ParallelRegion {
     private double gkPermanentEnergy;
     private double gkPolarizationEnergy;
     private double gkEnergy;
-    // Extra padding to avert cache interference.
-    private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-    private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
     GKEnergyLoop() {
       a = new double[6][4];
@@ -2736,9 +2730,6 @@ public class GKEnergyRegion extends ParallelRegion {
     private double gkEnergy;
     private double gkPermanentEnergy;
     private double gkPolarizationEnergy;
-    // Extra padding to avert cache interference.
-    private long pad0, pad1, pad2, pad3, pad4, pad5, pad6, pad7;
-    private long pad8, pad9, pada, padb, padc, padd, pade, padf;
 
     GKEnergyLoopQI() {
       mI = new PolarizableMultipole();
@@ -2755,7 +2746,7 @@ public class GKEnergyRegion extends ParallelRegion {
       gkPolarizationEnergy = 0.0;
       count = 0;
       threadID = getThreadIndex();
-      gkEnergyQI = new GKEnergyQI(gkc, epsilon, gradient);
+      gkEnergyQI = new GKEnergyQI(soluteDielectric, solventDielectric, gkc, gradient);
     }
 
     @Override
@@ -2891,7 +2882,8 @@ public class GKEnergyRegion extends ParallelRegion {
             if (polarization == Polarization.DIRECT) {
               mutualMask = 0.0;
             }
-            double ep = electric * selfScale * gkEnergyQI.polarizationEnergyAndGradient(mI, mK, mutualMask,
+            double ep =
+                electric * selfScale * gkEnergyQI.polarizationEnergyAndGradient(mI, mK, mutualMask,
                     gradI, torqueI, torqueK);
             gkPolarizationEnergy += ep;
             eik += ep;
@@ -2924,7 +2916,8 @@ public class GKEnergyRegion extends ParallelRegion {
               mutualMask = 0.0;
             }
             // Sum the GK polarization interaction energy.
-            double ep = electric * gkEnergyQI.polarizationEnergyAndGradient(mI, mK, mutualMask, gI, tI, tK);
+            double ep =
+                electric * gkEnergyQI.polarizationEnergyAndGradient(mI, mK, mutualMask, gI, tI, tK);
             eik += ep;
             gkPolarizationEnergy += ep;
             for (int j = 0; j < 3; j++) {

@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -133,11 +133,12 @@ public class InducedDipoleFieldRegion extends ParallelRegion {
   /** Chain rule field array. */
   private AtomicDoubleArray3D fieldCR;
 
-  private InducedDipoleRealSpaceFieldSection inducedRealSpaceFieldSection;
-  private InducedDipoleReciprocalFieldSection inducedReciprocalFieldSection;
+  private final InducedDipoleRealSpaceFieldSection inducedRealSpaceFieldSection;
+  private final InducedDipoleReciprocalFieldSection inducedReciprocalFieldSection;
 
-  public InducedDipoleFieldRegion(ParallelTeam pt, ForceField forceField, boolean lambdaTerm) {
-    inducedRealSpaceFieldSection = new InducedDipoleRealSpaceFieldSection(pt);
+  public InducedDipoleFieldRegion(ParallelTeam parallelTeam,
+      ForceField forceField, boolean lambdaTerm) {
+    inducedRealSpaceFieldSection = new InducedDipoleRealSpaceFieldSection(parallelTeam);
     inducedReciprocalFieldSection = new InducedDipoleReciprocalFieldSection();
 
     // Flag to indicate application of an intermolecular softcore potential.
@@ -233,19 +234,19 @@ public class InducedDipoleFieldRegion extends ParallelRegion {
   private class InducedDipoleRealSpaceFieldSection extends ParallelSection {
 
     private final InducedDipoleRealSpaceFieldRegion polarizationRealSpaceFieldRegion;
-    private final ParallelTeam pt;
+    private final ParallelTeam parallelTeam;
 
-    InducedDipoleRealSpaceFieldSection(ParallelTeam pt) {
-      this.pt = pt;
-      int nt = pt.getThreadCount();
-      polarizationRealSpaceFieldRegion = new InducedDipoleRealSpaceFieldRegion(nt);
+    InducedDipoleRealSpaceFieldSection(ParallelTeam parallelTeam) {
+      this.parallelTeam = parallelTeam;
+      int nThreads = parallelTeam.getThreadCount();
+      polarizationRealSpaceFieldRegion = new InducedDipoleRealSpaceFieldRegion(nThreads);
     }
 
     @Override
     public void run() {
       try {
         realSpaceSCFTotal -= System.nanoTime();
-        pt.execute(polarizationRealSpaceFieldRegion);
+        parallelTeam.execute(polarizationRealSpaceFieldRegion);
         realSpaceSCFTotal += System.nanoTime();
       } catch (Exception e) {
         String message = "Fatal exception computing the real space field.\n";
@@ -258,7 +259,7 @@ public class InducedDipoleFieldRegion extends ParallelRegion {
 
     @Override
     public void run() {
-      reciprocalSpace.inducedDipoleConvolution();
+      reciprocalSpace.performConvolution();
     }
   }
 

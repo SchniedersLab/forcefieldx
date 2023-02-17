@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -53,7 +53,15 @@ public class GKEnergyQI {
   private final GKTensorQI gkDipole;
   private final GKTensorQI gkQuadrupole;
 
-  public GKEnergyQI(double gkc, double epsilon, boolean gradient) {
+  /**
+   * Compute the GK Energy using a QI frame.
+   *
+   * @param soluteDieletric Solute dielectric constant.
+   * @param solventDielectric Solvent dielectric constant.
+   * @param gkc The GK interaction parameter.
+   * @param gradient If true, the gradient will be computed.
+   */
+  public GKEnergyQI(double soluteDieletric, double solventDielectric, double gkc, boolean gradient) {
     int monopoleOrder = 2;
     int dipoleOrder = 3;
     int quadrupoleOrder = 4;
@@ -63,9 +71,9 @@ public class GKEnergyQI {
       quadrupoleOrder = 5;
     }
     gkSource = new GKSource(quadrupoleOrder, gkc);
-    gkMonopole = new GKTensorQI(MONOPOLE, monopoleOrder, gkSource, 1.0, epsilon);
-    gkDipole = new GKTensorQI(DIPOLE, dipoleOrder, gkSource, 1.0, epsilon);
-    gkQuadrupole = new GKTensorQI(QUADRUPOLE, quadrupoleOrder, gkSource, 1.0, epsilon);
+    gkMonopole = new GKTensorQI(MONOPOLE, monopoleOrder, gkSource, soluteDieletric, solventDielectric);
+    gkDipole = new GKTensorQI(DIPOLE, dipoleOrder, gkSource, soluteDieletric, solventDielectric);
+    gkQuadrupole = new GKTensorQI(QUADRUPOLE, quadrupoleOrder, gkSource, soluteDieletric, solventDielectric);
   }
 
   public void initPotential(double[] r, double r2, double rbi, double rbk) {

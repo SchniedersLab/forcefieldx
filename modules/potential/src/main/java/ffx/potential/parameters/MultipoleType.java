@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -1424,10 +1424,14 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             format("  %5d  %5d  %5s  %5s", frameAtomTypes[0], frameAtomTypes[1], "", ""));
         break;
       case ZTHENX:
-        multipoleBuffer.append(
-            format(
-                "  %5d  %5d  %5d  %5s",
-                frameAtomTypes[0], frameAtomTypes[1], frameAtomTypes[2], ""));
+        if (frameAtomTypes.length == 3) {
+          multipoleBuffer.append(format("  %5d  %5d  %5d  %5s",
+                  frameAtomTypes[0], frameAtomTypes[1], frameAtomTypes[2], ""));
+        } else {
+          // Chiral
+          multipoleBuffer.append(format("  %5d  %5d  %5d  %5d",
+                  frameAtomTypes[0], frameAtomTypes[1], frameAtomTypes[2], frameAtomTypes[3]));
+        }
         break;
       case BISECTOR:
         multipoleBuffer.append(
@@ -1446,9 +1450,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
             format(
                 "  %5d  %5d  %5d  %5d",
                 frameAtomTypes[0], -frameAtomTypes[1], -frameAtomTypes[2], -frameAtomTypes[3]));
-    }
-    if (frameAtomTypes.length == 3) {
-      multipoleBuffer.append("       ");
     }
     multipoleBuffer.append(
         format(

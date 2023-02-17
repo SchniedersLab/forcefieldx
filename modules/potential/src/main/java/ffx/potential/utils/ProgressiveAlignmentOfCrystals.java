@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -822,13 +822,15 @@ public class ProgressiveAlignmentOfCrystals {
       double targetGyration = radiusOfGyration(bestTargetNAUs[baseBestZ][targetBestZ].clone(), massN);
       gyrations[1] = targetGyration;
       if (useSym) {
+        // Check for multiple asymmetric units in the crystals
+        boolean multisym = z1 > 1 || z2 > 1;
         StringBuilder alchemicalAtoms = null;
         StringBuilder alchemicalAtoms2 = null;
         StringBuilder separation = new StringBuilder();
         for (int i = 0; i < z1; i++) {
           for (int j = 0; j < z2; j++) {
             separation.append("\n Atom Separation (A)  Description");
-            if (z1 > 1 || z2 > 1) {
+            if (multisym) {
               separation.append(format(" (z1=%2d z2=%2d)\n  Base: Target:  Distance:\n", i, j));
             } else {
               separation.append(" \n");
@@ -847,8 +849,16 @@ public class ProgressiveAlignmentOfCrystals {
                   // Collect alchemical atoms
 
                   if (alchemicalAtoms == null) {
-                    alchemicalAtoms = new StringBuilder(format(" %3d %3d  ", i, j)).append(i * compareAtomsSize + comparisonAtoms[k] + 1);
-                    alchemicalAtoms2 = new StringBuilder(format(" %3d %3d  ", i, j)).append(j * compareAtomsSize + comparisonAtoms[k] + 1);
+                    alchemicalAtoms = new StringBuilder();
+                    if(multisym) {
+                      alchemicalAtoms.append(format(" %3d %3d  ", i, j));
+                    }
+                    alchemicalAtoms.append(i * compareAtomsSize + comparisonAtoms[k] + 1);
+                    alchemicalAtoms2 = new StringBuilder();
+                    if(multisym){
+                      alchemicalAtoms2.append(format(" %3d %3d  ", i, j));
+                    }
+                    alchemicalAtoms2.append(j * compareAtomsSize + comparisonAtoms[k] + 1);
                   } else if (alchemicalAtoms.charAt(alchemicalAtoms.length() - 1) == '\n') {
                     alchemicalAtoms.append(format(" %3d %3d  ", i, j)).append(i * compareAtomsSize + comparisonAtoms[k] + 1);
                     alchemicalAtoms2.append(format(" %3d %3d  ", i, j)).append(j * compareAtomsSize + comparisonAtoms[k] + 1);
@@ -880,13 +890,13 @@ public class ProgressiveAlignmentOfCrystals {
         }
         if (alchemicalAtoms != null) {
           stringBuilder.append(separation);
-          stringBuilder.append("\n Alchemical Atoms:\n");
+          stringBuilder.append("\n Suggested Alchemical Atoms:\n");
           // If more than one entity being compared, specify which atoms belong to which molecule of each crystal.
-          if (z1 > 1 || z2 > 1) {
+          if (multisym) {
             stringBuilder.append(" Base: (").append(baseLabel).append(")\n");
           }
           stringBuilder.append(alchemicalAtoms).append("\n");
-          if (z1 > 1 || z2 > 1) {
+          if (multisym) {
             stringBuilder.append(" Target: (").append(targetLabel).append(")\n").append(alchemicalAtoms2).append("\n");
           }
         }
@@ -2142,12 +2152,20 @@ public class ProgressiveAlignmentOfCrystals {
     targetFilter.closeReader();
 
     if (rank == 0 || logger.isLoggable(Level.FINER)) {
-      logger.info(format(" RMSD Minimum:  %8.6f", runningStatistics.getMin()));
-      logger.info(format(" RMSD Maximum:  %8.6f", runningStatistics.getMax()));
-      logger.info(format(" RMSD Mean:     %8.6f", runningStatistics.getMean()));
-      double variance = runningStatistics.getVariance();
-      if (!Double.isNaN(variance)) {
-        logger.info(format(" RMSD Variance: %8.6f", variance));
+      double min = runningStatistics.getMin();
+      if(Double.MAX_VALUE - min < matchTol){
+        logger.warning(" SuperposeCrystals was not able to compare the provided structures.");
+        if(logger.isLoggable(Level.FINE)){
+          logger.info(format(" RMSD Minimum:  %8.6f", min));
+        }
+      }else {
+        logger.info(format(" RMSD Minimum:  %8.6f", min));
+        logger.info(format(" RMSD Maximum:  %8.6f", runningStatistics.getMax()));
+        logger.info(format(" RMSD Mean:     %8.6f", runningStatistics.getMean()));
+        double variance = runningStatistics.getVariance();
+        if (!Double.isNaN(variance)) {
+          logger.info(format(" RMSD Variance: %8.6f", variance));
+        }
       }
     }
 

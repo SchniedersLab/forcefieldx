@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -47,7 +47,6 @@ import static ffx.utilities.KeywordGroup.PotentialFunctionSelection;
 import static java.lang.Double.isInfinite;
 import static java.lang.Double.isNaN;
 import static java.lang.String.format;
-import static java.util.Arrays.fill;
 import static java.util.Arrays.sort;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
 import static org.apache.commons.math3.util.FastMath.max;
@@ -1074,8 +1073,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         if (torsionScale == 1.0) {
           logger.info(format("  Pi-Orbital Torsions:               %10d", nPiOrbitalTorsions));
         } else {
-          logger.info(
-              format(
+          logger.info(format(
                   "  Pi-Orbital Torsions (%5.2f):       %10d", torsionScale, nPiOrbitalTorsions));
         }
       }
@@ -1346,7 +1344,7 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
 
         setRestraintBond(a1, a2, dist, forceConst, flatBottomRadius, lamStart, lamEnd, switchF);
       } catch (Exception ex) {
-        logger.info(format(" Exception in parsing restrain-distance: %s", ex.toString()));
+        logger.info(format(" Exception in parsing restrain-distance: %s", ex));
       }
     }
 
@@ -3844,20 +3842,14 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
       UnivariateSwitchingFunction switchingFunction) {
     restraintBondTerm = true;
     boolean rbLambda = !(switchingFunction instanceof ConstantSwitch) && lambdaTerm;
-    RestraintBond rb =
-        new RestraintBond(a1, a2, crystal, rbLambda, lamStart, lamEnd, switchingFunction);
+    RestraintBond rb = new RestraintBond(a1, a2, crystal, rbLambda, lamStart, lamEnd, switchingFunction);
     int[] classes = {a1.getAtomType().atomClass, a2.getAtomType().atomClass};
     if (flatBottom != 0) {
-      rb.setBondType(
-          new BondType(
-              classes,
-              forceConstant,
-              distance,
-              BondType.BondFunction.FLAT_BOTTOM_HARMONIC,
-              flatBottom));
+      BondType bondType = new BondType(classes, forceConstant, distance, BondType.BondFunction.FLAT_BOTTOM_HARMONIC, flatBottom);
+      rb.setBondType(bondType);
     } else {
-      rb.setBondType(
-          (new BondType(classes, forceConstant, distance, BondType.BondFunction.HARMONIC)));
+      BondType bondType = new BondType(classes, forceConstant, distance, BondType.BondFunction.HARMONIC);
+      rb.setBondType(bondType);
     }
 
     // As long as we continue to add elements one-at-a-time to an array, this code will continue to

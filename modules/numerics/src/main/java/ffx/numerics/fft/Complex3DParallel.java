@@ -2,7 +2,7 @@
 //
 // Title:       Force Field X.
 // Description: Force Field X - Software for Molecular Biophysics.
-// Copyright:   Copyright (c) Michael J. Schnieders 2001-2021.
+// Copyright:   Copyright (c) Michael J. Schnieders 2001-2023.
 //
 // This file is part of Force Field X.
 //
@@ -263,8 +263,8 @@ public class Complex3DParallel {
   }
 
   /**
-   * Compute the 3D FFT, perfrom a multiplication in reciprocal space, and the inverese 3D FFT all
-   * in parallel.
+   * Compute the 3D FFT, perform a multiplication in reciprocal space,
+   * and the inverse 3D FFT in parallel.
    *
    * @param input The input array must be of size 2 * nX * nY * nZ.
    * @since 1.0
