@@ -761,7 +761,10 @@ public class XYZFilter extends SystemFilter {
       final int n = lmn[2];
       final int numReplicates = l * m * n;
 
-      int numberOfAtoms = activeMolecularAssembly.getAtomList().size() * nSymm * numReplicates;
+      Atom[] atoms = activeMolecularAssembly.getAtomArray();
+      int atomsLength = atoms.length;
+      int numInUC = atomsLength * nSymm;
+      int numberOfAtoms = numInUC * numReplicates;
       activeMolecularAssembly.moveAllIntoUnitCell();
       StringBuilder sb = new StringBuilder(
           format("%7d  %s", numberOfAtoms, activeMolecularAssembly.toString()));
@@ -784,9 +787,6 @@ public class XYZFilter extends SystemFilter {
       StringBuilder line;
       StringBuilder[] lines = new StringBuilder[numberOfAtoms];
       // XYZ File Atom Lines
-      Atom[] atoms = activeMolecularAssembly.getAtomArray();
-      int atomsLength = atoms.length;
-      int numInUC = atomsLength * nSymm;
       double[] xyz = new double[3];
       int replicatesOffset = 0;
       for (int i = 0; i < l; i++) {

@@ -40,9 +40,9 @@
           </tr>
           <tr>
             <td>
-              <a href="commands/CIFtoXYZ.html">CIFtoXYZ</a>
+              <a href="commands/ImportCIF.html">ImportCIF</a>
             </td>
-            <td>The CIFtoXYZ command converts a CIF file to an XYZ file including atom types.</td>
+            <td>The ImportCIF command converts a CIF file to an XYZ file (including atom types) or a PDB.</td>
           </tr>
           <tr>
             <td>

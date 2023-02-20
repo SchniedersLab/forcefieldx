@@ -41,7 +41,7 @@ A Maven project file (pom.xml) is provided to build Force Field X on any platfor
 
     mvn
 
-This requires Maven v. 3.2 or later to be installed with its bin directory included in your $PATH environment variable. The first time this command is executed, Maven will download build dependencies and Force Field X runtime dependecies. Future executions are quicker. Force Field X will self-test its modules and report failures. Only code that passes all testing should be pushed to the GitHub repository, so if any test fails it may be due to a local configuration issue. To execute the tests:
+This requires Maven v. 3.8 or later to be installed with its bin directory included in your $PATH environment variable. The first time this command is executed, Maven will download build dependencies and Force Field X runtime dependecies. Future executions are quicker. Force Field X will self-test its modules and report failures. Only code that passes all testing should be pushed to the GitHub repository, so if any test fails it may be due to a local configuration issue. To execute the tests:
 
     mvn -DskipTests=false
 
@@ -49,7 +49,7 @@ Additional tests, ordinarily skipped due to length of running them (~15 minutes 
 
    mvn -DskipTests=false -Dffx.ci=true
 
-Currently, JDKs 1.8, 9, 10, 11, and 12 are supported. 
+Currently, JDKs 17, 18 and 19 are supported. 
 After installing a supported JDK, point the JAVA\_HOME environment variable to the JDK directory, and then add the JDK bin directory to your path. 
 
 ---

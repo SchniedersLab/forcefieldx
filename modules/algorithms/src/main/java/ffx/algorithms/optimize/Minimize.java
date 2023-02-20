@@ -43,6 +43,7 @@ import static java.util.Arrays.fill;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
 import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.dynamics.MDEngine;
 import ffx.numerics.Potential;
 import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch;
@@ -168,7 +169,7 @@ public class Minimize implements OptimizationListener, Terminatable {
    * @param assembly a {@link ffx.potential.MolecularAssembly} object.
    * @param potentialEnergy a {@link ffx.numerics.Potential} object.
    * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
-   * @param engine a {@link MolecularDynamics.DynamicsEngine} object.
+   * @param engine a {@link MDEngine} object.
    * @return a {@link MolecularDynamics} object.
    */
   public static Minimize minimizeFactory(

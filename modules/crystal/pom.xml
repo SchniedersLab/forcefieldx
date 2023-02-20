@@ -53,7 +53,6 @@
                         <compilerArg>-AkeywordDir=${project.parent.basedir}/src/site/asciidoc/keywords</compilerArg>
                     </compilerArgs>
                     <debug>true</debug>
-                    <optimize>true</optimize>
                     <source>${compileVersion}</source>
                     <target>${targetVersion}</target>
                     <useIncrementalCompilation>true</useIncrementalCompilation>

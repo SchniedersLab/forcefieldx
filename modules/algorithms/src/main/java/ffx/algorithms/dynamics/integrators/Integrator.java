@@ -67,11 +67,11 @@ public abstract class Integrator {
   protected int nVariables;
   /** Mass of each degree of freedom. */
   protected double[] mass;
-  /** Coordinates for each degree of freedom in Angstroms. */
+  /** Coordinates for each degree of freedom in (Ang.). */
   protected double[] x;
-  /** Velocity of each degree of freedom in Angstroms per picosecond. */
+  /** Velocity of each degree of freedom (Ang. per psec). */
   protected double[] v;
-  /** Acceleration of each degree of freedom in Angstroms per square picosecond. */
+  /** Acceleration of each degree of freedom in (Ang. per psec^2). */
   protected double[] a;
   /** Time step (psec). */
   protected double dt;
@@ -83,6 +83,7 @@ public abstract class Integrator {
   double[] aPrevious;
   /** Half the time step (psec). */
   double dt_2;
+
   /**
    * Constructor for Integrator.
    *
@@ -93,8 +94,8 @@ public abstract class Integrator {
    * @param aPrevious Previous Accelerations.
    * @param mass Mass.
    */
-  public Integrator(
-      int nVariables, double[] x, double[] v, double[] a, double[] aPrevious, double[] mass) {
+  public Integrator(int nVariables, double[] x, double[] v, double[] a, double[] aPrevious,
+      double[] mass) {
     this.nVariables = nVariables;
     this.x = x;
     this.v = v;
@@ -136,8 +137,7 @@ public abstract class Integrator {
       integrator = integrator.replaceAll("-", "_");
       return IntegratorEnum.valueOf(integrator);
     } catch (Exception e) {
-      logger.info(
-          String.format(" Could not parse %s as an integrator; defaulting to Verlet.", str));
+      logger.info(String.format(" Could not parse %s as an integrator; defaulting to Verlet.", str));
       return IntegratorEnum.VERLET;
     }
   }
@@ -205,10 +205,8 @@ public abstract class Integrator {
   }
 
   public void removeConstraints(Collection<Constraint> toRemove) {
-    constraints =
-        constraints.stream()
-            .filter((Constraint c) -> !toRemove.contains(c))
-            .collect(Collectors.toList());
+    constraints = constraints.stream().filter((Constraint c) -> !toRemove.contains(c))
+        .collect(Collectors.toList());
     useConstraints = !constraints.isEmpty();
   }
 
@@ -222,8 +220,8 @@ public abstract class Integrator {
    * @param aPrevious the previous acceleration of each variable.
    * @param mass the mass for each variable.
    */
-  public void setNumberOfVariables(
-      int nVariables, double[] x, double[] v, double[] a, double[] aPrevious, double[] mass) {
+  public void setNumberOfVariables(int nVariables, double[] x, double[] v, double[] a,
+      double[] aPrevious, double[] mass) {
     this.nVariables = nVariables;
     this.x = x;
     this.v = v;
@@ -241,8 +239,8 @@ public abstract class Integrator {
    * @param a the current acceleration of each variable.
    * @param mass the mass for each variable.
    */
-  public void setNumberOfVariables(
-      int nVariables, double[] x, double[] v, double[] a, double[] mass) {
+  public void setNumberOfVariables(int nVariables, double[] x, double[] v, double[] a,
+      double[] mass) {
     this.nVariables = nVariables;
     this.x = x;
     this.v = v;

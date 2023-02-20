@@ -41,6 +41,7 @@ import static ffx.numerics.math.DoubleMath.dihedralAngle;
 import static ffx.potential.bonded.AminoAcidUtils.ResiduePosition.FIRST_RESIDUE;
 import static ffx.potential.bonded.AminoAcidUtils.ResiduePosition.LAST_RESIDUE;
 import static ffx.potential.bonded.AminoAcidUtils.ResiduePosition.MIDDLE_RESIDUE;
+import static ffx.potential.bonded.AminoAcidUtils.ResiduePosition.SINGLE_RESIDUE;
 import static ffx.potential.bonded.BondedUtils.buildBond;
 import static ffx.potential.bonded.BondedUtils.buildH;
 import static ffx.potential.bonded.BondedUtils.buildHeavy;
@@ -170,9 +171,8 @@ public class AminoAcidUtils {
    * @throws MissingAtomTypeException An atom type could not be found.
    * @since 1.0
    */
-  public static void assignAminoAcidAtomTypes(
-      List<Residue> residues, ForceField forceField, List<Bond> bondList)
-      throws MissingHeavyAtomException, MissingAtomTypeException {
+  public static void assignAminoAcidAtomTypes(List<Residue> residues, ForceField forceField,
+      List<Bond> bondList) throws MissingHeavyAtomException, MissingAtomTypeException {
     // Loop over amino acid residues.
     int numberOfResidues = residues.size();
     for (int residueNumber = 0; residueNumber < numberOfResidues; residueNumber++) {
@@ -206,13 +206,12 @@ public class AminoAcidUtils {
 
     String residueName = residue.getName().toUpperCase();
 
-    int j = 1;
     ResiduePosition position = MIDDLE_RESIDUE;
-    if (previousResidue == null) {
-      j = 0;
+    if (previousResidue == null && nextResidue == null) {
+      position = SINGLE_RESIDUE;
+    } else if (previousResidue == null) {
       position = FIRST_RESIDUE;
     } else if (nextResidue == null) {
-      j = 2;
       position = LAST_RESIDUE;
       // If the last residue only contains a nitrogen turn it into an NH2 group.
       Atom N = (Atom) residue.getAtomNode("N");
@@ -259,12 +258,20 @@ public class AminoAcidUtils {
       pCA = (Atom) previousResidue.getAtomNode("CA");
     }
 
-    // Backbone heavy atoms.
+    // Backbone nitrogen atom.
+    boolean neutralNTerminus = false;
     Atom N = (Atom) residue.getAtomNode("N");
     if (N != null) {
-      N.setAtomType(findAtomType(AA_N[j][aminoAcidNumber], forceField));
-      if (position != FIRST_RESIDUE) {
+      N.setAtomType(findAtomType(AA_N[position.ordinal()][aminoAcidNumber], forceField));
+      if (position != FIRST_RESIDUE && position != SINGLE_RESIDUE) {
         buildBond(pC, N, forceField, bondList);
+      } else {
+        // Check for neutral N-terminal.
+        neutralNTerminus = forceField.getBoolean("neutral-nterminus", false);
+        if (neutralNTerminus) {
+          // Biotype is 762
+          N.setAtomType(findAtomType(762, forceField));
+        }
       }
     }
 
@@ -272,13 +279,19 @@ public class AminoAcidUtils {
     Atom C = null;
     Atom O = null;
     if (!(position == LAST_RESIDUE && aminoAcid == AminoAcid3.NH2)) {
+      // Backbone carbon alpha atom.
       if (aminoAcid == AminoAcid3.ACE || aminoAcid == AminoAcid3.NME) {
-        CA = buildHeavy(residue, "CH3", N, AA_CA[j][aminoAcidNumber], forceField, bondList);
+        CA = buildHeavy(residue, "CH3", N, AA_CA[position.ordinal()][aminoAcidNumber], forceField,
+            bondList);
       } else {
-        CA = buildHeavy(residue, "CA", N, AA_CA[j][aminoAcidNumber], forceField, bondList);
+        CA = buildHeavy(residue, "CA", N, AA_CA[position.ordinal()][aminoAcidNumber], forceField,
+            bondList);
       }
+
+      // Backbone carbonyl carbon and carbonyl oxygen atoms.
       if (!(position == LAST_RESIDUE && aminoAcid == AminoAcid3.NME)) {
-        C = buildHeavy(residue, "C", CA, AA_C[j][aminoAcidNumber], forceField, bondList);
+        C = buildHeavy(residue, "C", CA, AA_C[position.ordinal()][aminoAcidNumber], forceField,
+            bondList);
         O = (Atom) residue.getAtomNode("O");
         if (O == null) {
           O = (Atom) residue.getAtomNode("OT1");
@@ -288,13 +301,13 @@ public class AminoAcidUtils {
           double psi = 135.0;
           if (nextResidue != null && N != null) {
             Atom nextN = (Atom) nextResidue.getAtomNode("N");
-            psi = toDegrees(dihedralAngle(
-                N.getXYZ(null), CA.getXYZ(null), C.getXYZ(null), nextN.getXYZ(null)));
+            psi = toDegrees(
+                dihedralAngle(N.getXYZ(null), CA.getXYZ(null), C.getXYZ(null), nextN.getXYZ(null)));
           }
-          O = buildHeavy(residue, "O", C, 1.25, CA, 117.0, N,
-              psi - 180.0, 0, AA_O[j][aminoAcidNumber], forceField, bondList);
+          O = buildHeavy(residue, "O", C, 1.25, CA, 117.0, N, psi - 180.0, 0,
+              AA_O[position.ordinal()][aminoAcidNumber], forceField, bondList);
         } else {
-          AtomType atomType = findAtomType(AA_O[j][aminoAcidNumber], forceField);
+          AtomType atomType = findAtomType(AA_O[position.ordinal()][aminoAcidNumber], forceField);
           O.setAtomType(atomType);
           buildBond(C, O, forceField, bondList);
         }
@@ -302,66 +315,93 @@ public class AminoAcidUtils {
     }
 
     // Nitrogen hydrogen atoms.
-    AtomType atomType = findAtomType(AA_HN[j][aminoAcidNumber], forceField);
+    AtomType atomType = findAtomType(AA_HN[position.ordinal()][aminoAcidNumber], forceField);
     switch (position) {
-      case FIRST_RESIDUE -> {
+      case FIRST_RESIDUE, SINGLE_RESIDUE -> {
         switch (aminoAcid) {
           case PRO:
-            // Check if, for some reason, the structure has an H1 but not an H2 or H3.
+            // Check for the presence of H1, H2 and H3.
             List<Atom> resAtoms = residue.getAtomList();
-            Optional<Atom> H1 =
-                resAtoms.stream().filter((Atom a) -> a.getName().equals("H1")).findAny();
-            Optional<Atom> H2 =
-                resAtoms.stream().filter((Atom a) -> a.getName().equals("H2")).findAny();
-            Optional<Atom> H3 =
-                resAtoms.stream().filter((Atom a) -> a.getName().equals("H3")).findAny();
+            Optional<Atom> H1 = resAtoms.stream().filter((Atom a) -> a.getName().equals("H1"))
+                .findAny();
+            Optional<Atom> H2 = resAtoms.stream().filter((Atom a) -> a.getName().equals("H2"))
+                .findAny();
+            Optional<Atom> H3 = resAtoms.stream().filter((Atom a) -> a.getName().equals("H3"))
+                .findAny();
+            // Delete the extra hydrogen.
             if (H1.isPresent() && H2.isPresent() && H3.isPresent()) {
-              logger.severe(
-                  String.format(
-                      " Proline residue %s somehow has three N-terminal hydrogens!", residue));
+              residue.deleteAtom(H1.get());
+              // Otherwise rename the H1 hydrogen to H2 or H3.
+            } else if (H1.isPresent()) {
+              if (H2.isPresent()) {
+                H1.get().setName("H3");
+              } else {
+                H1.get().setName("H2");
+              }
             }
-            if (H1.isPresent() && H2.isPresent()) {
-              H1.get().setName("H3");
-            } else if (H1.isPresent() && H3.isPresent()) {
-              H1.get().setName("H2");
-            }
-            buildHydrogenAtom(
-                residue, "H2", N, 1.02, CA, 109.5, C, 0.0, 0, atomType, forceField, bondList);
-            buildHydrogenAtom(
-                residue, "H3", N, 1.02, CA, 109.5, C, -120.0, 0, atomType, forceField, bondList);
+            buildHydrogenAtom(residue, "H2", N, 1.02, CA, 109.5, C, 0.0, 0, atomType, forceField,
+                bondList);
+            buildHydrogenAtom(residue, "H3", N, 1.02, CA, 109.5, C, -120.0, 0, atomType, forceField,
+                bondList);
             break;
           case PCA:
-            buildHydrogenAtom(
-                residue, "H", N, 1.02, CA, 109.5, C, -60.0, 0, atomType, forceField, bondList);
+            buildHydrogenAtom(residue, "H", N, 1.02, CA, 109.5, C, -60.0, 0, atomType, forceField,
+                bondList);
             break;
           case ACE:
             break;
           default:
-            buildHydrogenAtom(
-                residue, "H1", N, 1.02, CA, 109.5, C, 180.0, 0, atomType, forceField, bondList);
-            buildHydrogenAtom(
-                residue, "H2", N, 1.02, CA, 109.5, C, 60.0, 0, atomType, forceField, bondList);
-            buildHydrogenAtom(
-                residue, "H3", N, 1.02, CA, 109.5, C, -60.0, 0, atomType, forceField, bondList);
+            if (neutralNTerminus) {
+              // Biotype is 763
+              atomType = findAtomType(763, forceField);
+              Atom h1 = (Atom) residue.getAtomNode("H1");
+              Atom h2 = (Atom) residue.getAtomNode("H2");
+              Atom h3 = (Atom) residue.getAtomNode("H3");
+              // Delete the extra hydrogen.
+              if (h1 != null && h2 != null && h3 != null) {
+                residue.deleteAtom(h3);
+                // Otherwise rename the H3 hydrogen to H1 or H2.
+              } else if (h3 != null) {
+                if (h1 == null) {
+                  h3.setName("H1");
+                } else {
+                  h3.setName("H2");
+                }
+              }
+              buildHydrogenAtom(residue, "H1", N, 1.02, CA, 109.5, C, 180.0, 0, atomType, forceField,
+                  bondList);
+              buildHydrogenAtom(residue, "H2", N, 1.02, CA, 109.5, C, 60.0, 0, atomType, forceField,
+                  bondList);
+            } else {
+              buildHydrogenAtom(residue, "H1", N, 1.02, CA, 109.5, C, 180.0, 0, atomType, forceField,
+                  bondList);
+              buildHydrogenAtom(residue, "H2", N, 1.02, CA, 109.5, C, 60.0, 0, atomType, forceField,
+                  bondList);
+              buildHydrogenAtom(residue, "H3", N, 1.02, CA, 109.5, C, -60.0, 0, atomType, forceField,
+                  bondList);
+            }
         }
       }
       case LAST_RESIDUE -> {
         switch (aminoAcid) {
           case NH2 -> {
-            buildHydrogenAtom(
-                residue, "H1", N, 1.02, pC, 119.0, pCA, 0.0, 0, atomType, forceField, bondList);
-            buildHydrogenAtom(
-                residue, "H2", N, 1.02, pC, 119.0, pCA, 180.0, 0, atomType, forceField, bondList);
+            buildHydrogenAtom(residue, "H1", N, 1.02, pC, 119.0, pCA, 0.0, 0, atomType, forceField,
+                bondList);
+            buildHydrogenAtom(residue, "H2", N, 1.02, pC, 119.0, pCA, 180.0, 0, atomType, forceField,
+                bondList);
           }
-          case NME -> buildHydrogenAtom(
-              residue, "H", N, 1.02, pC, 118.0, CA, 121.0, 1, atomType, forceField, bondList);
-          default -> buildHydrogenAtom(
-              residue, "H", N, 1.02, pC, 119.0, CA, 119.0, 1, atomType, forceField, bondList);
+          case NME ->
+              buildHydrogenAtom(residue, "H", N, 1.02, pC, 118.0, CA, 121.0, 1, atomType, forceField,
+                  bondList);
+          default ->
+              buildHydrogenAtom(residue, "H", N, 1.02, pC, 119.0, CA, 119.0, 1, atomType, forceField,
+                  bondList);
         }
       }
       // Mid-chain nitrogen hydrogen.
-      default -> buildHydrogenAtom(residue, "H", N, 1.02, pC, 119.0,
-          CA, 119.0, 1, atomType, forceField, bondList);
+      default ->
+          buildHydrogenAtom(residue, "H", N, 1.02, pC, 119.0, CA, 119.0, 1, atomType, forceField,
+              bondList);
     }
 
     // C-alpha hydrogen atoms.
@@ -369,46 +409,50 @@ public class AminoAcidUtils {
     if (aminoAcid == AminoAcid3.GLY) {
       haName = "HA2";
     }
-    atomType = findAtomType(AA_HA[j][aminoAcidNumber], forceField);
+    atomType = findAtomType(AA_HA[position.ordinal()][aminoAcidNumber], forceField);
     switch (position) {
       case FIRST_RESIDUE -> {
         switch (aminoAcid) {
-          case FOR -> buildHydrogenAtom(
-              residue, "H", C, 1.12, O, 0.0, null, 0.0, 0, atomType, forceField, bondList);
+          case FOR ->
+              buildHydrogenAtom(residue, "H", C, 1.12, O, 0.0, null, 0.0, 0, atomType, forceField,
+                  bondList);
           case ACE -> {
-            buildHydrogenAtom(
-                residue, "H1", CA, 1.10, C, 109.5, O, 180.0, 0, atomType, forceField, bondList);
-            buildHydrogenAtom(
-                residue, "H2", CA, 1.10, C, 109.5, O, 60.0, 0, atomType, forceField, bondList);
-            buildHydrogenAtom(
-                residue, "H3", CA, 1.10, C, 109.5, O, -60.0, 0, atomType, forceField, bondList);
+            buildHydrogenAtom(residue, "H1", CA, 1.10, C, 109.5, O, 180.0, 0, atomType, forceField,
+                bondList);
+            buildHydrogenAtom(residue, "H2", CA, 1.10, C, 109.5, O, 60.0, 0, atomType, forceField,
+                bondList);
+            buildHydrogenAtom(residue, "H3", CA, 1.10, C, 109.5, O, -60.0, 0, atomType, forceField,
+                bondList);
           }
-          default -> buildHydrogenAtom(
-              residue, haName, CA, 1.10, N, 109.5, C, 109.5, -1, atomType, forceField, bondList);
+          default -> buildHydrogenAtom(residue, haName, CA, 1.10, N, 109.5, C, 109.5, -1, atomType,
+              forceField, bondList);
         }
       }
       case LAST_RESIDUE -> {
         if (aminoAcid == AminoAcid3.NME) {
-          buildHydrogenAtom(
-              residue, "H1", CA, 1.10, N, 109.5, pC, 180.0, 0, atomType, forceField, bondList);
-          buildHydrogenAtom(
-              residue, "H2", CA, 1.10, N, 109.5, pC, 60.0, 0, atomType, forceField, bondList);
-          buildHydrogenAtom(
-              residue, "H3", CA, 1.10, N, 109.5, pC, -60.0, 0, atomType, forceField, bondList);
+          buildHydrogenAtom(residue, "H1", CA, 1.10, N, 109.5, pC, 180.0, 0, atomType, forceField,
+              bondList);
+          buildHydrogenAtom(residue, "H2", CA, 1.10, N, 109.5, pC, 60.0, 0, atomType, forceField,
+              bondList);
+          buildHydrogenAtom(residue, "H3", CA, 1.10, N, 109.5, pC, -60.0, 0, atomType, forceField,
+              bondList);
         } else {
-          buildHydrogenAtom(
-              residue, haName, CA, 1.10, N, 109.5, C, 109.5, -1, atomType, forceField, bondList);
+          buildHydrogenAtom(residue, haName, CA, 1.10, N, 109.5, C, 109.5, -1, atomType, forceField,
+              bondList);
         }
       }
-      default -> buildHydrogenAtom(
-          residue, haName, CA, 1.10, N, 109.5, C, 109.0, -1, atomType, forceField, bondList);
+      // MIDDLE_RESIDUE or SINGLE_RESIDUE.
+      default ->
+          buildHydrogenAtom(residue, haName, CA, 1.10, N, 109.5, C, 109.0, -1, atomType, forceField,
+              bondList);
     }
 
     // Build the amino acid side chain.
     assignAminoAcidSideChain(position, aminoAcid, residue, CA, N, C, forceField, bondList);
 
     // Build the terminal oxygen if the residue is not NH2 or NME.
-    if (position == LAST_RESIDUE && !(aminoAcid == AminoAcid3.NH2 || aminoAcid == AminoAcid3.NME)) {
+    if ((position == LAST_RESIDUE || position == SINGLE_RESIDUE) && !(aminoAcid == AminoAcid3.NH2
+        || aminoAcid == AminoAcid3.NME)) {
       atomType = findAtomType(AA_O[2][aminoAcidNumber], forceField);
       Atom OXT = (Atom) residue.getAtomNode("OXT");
       if (OXT == null) {
@@ -425,8 +469,8 @@ public class AminoAcidUtils {
         String segID = C.getSegID();
         double occupancy = C.getOccupancy();
         double tempFactor = C.getTempFactor();
-        OXT = new Atom(0, "OXT", altLoc,
-            new double[3], resName, resSeq, chainID, occupancy, tempFactor, segID);
+        OXT = new Atom(0, "OXT", altLoc, new double[3], resName, resSeq, chainID, occupancy,
+            tempFactor, segID);
         OXT.setAtomType(atomType);
         residue.addMSNode(OXT);
         intxyz(OXT, C, 1.25, CA, 117.0, O, 126.0, 1);
@@ -449,9 +493,8 @@ public class AminoAcidUtils {
         String protonEq = atom.getName().replaceFirst("D", "H");
         Atom correspH = (Atom) residue.getAtomNode(protonEq);
         if (correspH == null || correspH.getAtomType() == null) {
-          MissingAtomTypeException missingAtomTypeException =
-              new MissingAtomTypeException(residue, atom);
-          logger.warning("MissingAtomTypeException incoming from 393.");
+          MissingAtomTypeException missingAtomTypeException = new MissingAtomTypeException(residue,
+              atom);
           throw missingAtomTypeException;
         } else {
           correspH.setName(atom.getName());
@@ -465,8 +508,9 @@ public class AminoAcidUtils {
         if (atom == C && numberOfBonds == atomType.valence - 1 && position != LAST_RESIDUE) {
           continue;
         }
-        logger.warning(format(" An atom for residue %s has the wrong number of bonds:\n %s",
-            residueName, atom));
+        logger.warning(
+            format(" An atom for residue %s has the wrong number of bonds:\n %s", residueName,
+                atom));
         logger.info(format(" Expected: %d Actual: %d.", atomType.valence, numberOfBonds));
         for (Bond bond : atom.getBonds()) {
           logger.info(" " + bond.toString());
@@ -496,9 +540,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>AIB</code> */
   public enum AIB implements SideChainType {
-    CB1(0), CB2(0),
-    HB11(1), HB12(1), HB13(1),
-    HB21(1), HB22(1), HB23(1);
+    CB1(0), CB2(0), HB11(1), HB12(1), HB13(1), HB21(1), HB22(1), HB23(1);
 
     /**
      * Biotype for this atom.
@@ -524,10 +566,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>ALA</code> */
   public enum ALA implements SideChainType {
-    CB(0),
-    HB1(1),
-    HB2(1),
-    HB3(1);
+    CB(0), HB1(1), HB2(1), HB3(1);
 
     /**
      * Biotype for this atom.
@@ -553,13 +592,8 @@ public class AminoAcidUtils {
 
   /** Constant <code>ARG</code> */
   public enum ARG implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2), HG2(3), HG3(3),
-    CD(4), HD2(5), HD3(5),
-    NE(6), HE(7),
-    CZ(8),
-    NH1(9), HH11(10), HH12(10),
-    NH2(9), HH21(10), HH22(10);
+    CB(0), HB2(1), HB3(1), CG(2), HG2(3), HG3(3), CD(4), HD2(5), HD3(5), NE(6), HE(7), CZ(8), NH1(
+        9), HH11(10), HH12(10), NH2(9), HH21(10), HH22(10);
 
     /**
      * Biotype for this atom.
@@ -585,9 +619,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>ASN</code> */
   public enum ASN implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2),
-    OD1(3), ND2(4), HD21(5), HD22(5);
+    CB(0), HB2(1), HB3(1), CG(2), OD1(3), ND2(4), HD21(5), HD22(5);
 
     /**
      * Biotype for this atom.
@@ -613,9 +645,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>ASP</code> */
   public enum ASP implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2),
-    OD1(3), OD2(3);
+    CB(0), HB2(1), HB3(1), CG(2), OD1(3), OD2(3);
 
     /**
      * Biotype for this atom.
@@ -641,9 +671,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>ASH</code> */
   public enum ASH implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2),
-    OD1(3), OD2(4), HD2(5);
+    CB(0), HB2(1), HB3(1), CG(2), OD1(3), OD2(4), HD2(5);
 
     /**
      * Biotype for this atom.
@@ -669,9 +697,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>ASD</code> */
   public enum ASD implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2),
-    OD1(3), OD2(3), HD1(4), HD2(4);
+    CB(0), HB2(1), HB3(1), CG(2), OD1(3), OD2(3), HD1(4), HD2(4);
 
     /**
      * Biotype for this atom.
@@ -697,8 +723,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>CYS</code> */
   public enum CYS implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    SG(2), HG(3);
+    CB(0), HB2(1), HB3(1), SG(2), HG(3);
 
     /**
      * Biotype for this atom.
@@ -724,8 +749,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>CYS</code> */
   public enum CYX implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    SG(2);
+    CB(0), HB2(1), HB3(1), SG(2);
 
     /**
      * Biotype for this atom.
@@ -751,8 +775,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>CYD</code> */
   public enum CYD implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    SG(2);
+    CB(0), HB2(1), HB3(1), SG(2);
 
     /**
      * Biotype for this atom.
@@ -778,10 +801,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>GLU</code> */
   public enum GLU implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2), HG2(3), HG3(3),
-    CD(4),
-    OE1(5), OE2(5);
+    CB(0), HB2(1), HB3(1), CG(2), HG2(3), HG3(3), CD(4), OE1(5), OE2(5);
 
     /**
      * Biotype for this atom.
@@ -807,10 +827,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>GLH</code> */
   public enum GLH implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2), HG2(3), HG3(3),
-    CD(4),
-    OE1(5), OE2(6), HE2(7);
+    CB(0), HB2(1), HB3(1), CG(2), HG2(3), HG3(3), CD(4), OE1(5), OE2(6), HE2(7);
 
     /**
      * Biotype for this atom.
@@ -836,10 +853,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>GLD</code> */
   public enum GLD implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2), HG2(3), HG3(3),
-    CD(4),
-    OE1(5), OE2(5), HE1(6), HE2(6);
+    CB(0), HB2(1), HB3(1), CG(2), HG2(3), HG3(3), CD(4), OE1(5), OE2(5), HE1(6), HE2(6);
 
     /**
      * Biotype for this atom.
@@ -865,10 +879,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>GlutamineAtomNames</code> */
   public enum GLN implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2), HG2(3), HG3(3),
-    CD(4),
-    OE1(5), NE2(6), HE21(7), HE22(7);
+    CB(0), HB2(1), HB3(1), CG(2), HG2(3), HG3(3), CD(4), OE1(5), NE2(6), HE21(7), HE22(7);
 
     /**
      * Biotype for this atom.
@@ -897,12 +908,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>HistidineAtoms</code> */
   public enum HIS implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2),
-    ND1(3), HD1(4),
-    CD2(5), HD2(6),
-    CE1(7), HE1(8),
-    NE2(9), HE2(10);
+    CB(0), HB2(1), HB3(1), CG(2), ND1(3), HD1(4), CD2(5), HD2(6), CE1(7), HE1(8), NE2(9), HE2(10);
 
     /**
      * Biotype for this atom.
@@ -928,12 +934,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>HID</code> */
   public enum HID implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2),
-    ND1(3), HD1(4),
-    CD2(5), HD2(6),
-    CE1(7), HE1(8),
-    NE2(9);
+    CB(0), HB2(1), HB3(1), CG(2), ND1(3), HD1(4), CD2(5), HD2(6), CE1(7), HE1(8), NE2(9);
 
     /**
      * Biotype for this atom.
@@ -959,12 +960,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>HIE</code> */
   public enum HIE implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2),
-    ND1(3),
-    CD2(4), HD2(5),
-    CE1(6), HE1(7),
-    NE2(8), HE2(9);
+    CB(0), HB2(1), HB3(1), CG(2), ND1(3), CD2(4), HD2(5), CE1(6), HE1(7), NE2(8), HE2(9);
 
     /**
      * Biotype for this atom.
@@ -990,10 +986,8 @@ public class AminoAcidUtils {
 
   /** Constant <code>ILE</code> */
   public enum ILE implements SideChainType {
-    CB(0), HB(1),
-    CG1(2), HG12(3), HG13(3),
-    CG2(4), HG21(5), HG22(5), HG23(5),
-    CD1(6), HD11(7), HD12(7), HD13(7);
+    CB(0), HB(1), CG1(2), HG12(3), HG13(3), CG2(4), HG21(5), HG22(5), HG23(5), CD1(6), HD11(7), HD12(
+        7), HD13(7);
 
     /**
      * Biotype for this atom.
@@ -1019,10 +1013,8 @@ public class AminoAcidUtils {
 
   /** Constant <code>LEU</code> */
   public enum LEU implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2), HG(3),
-    CD1(4), HD11(5), HD12(5), HD13(5),
-    CD2(6), HD21(7), HD22(7), HD23(7);
+    CB(0), HB2(1), HB3(1), CG(2), HG(3), CD1(4), HD11(5), HD12(5), HD13(5), CD2(6), HD21(7), HD22(
+        7), HD23(7);
 
     /**
      * Biotype for this atom.
@@ -1048,11 +1040,8 @@ public class AminoAcidUtils {
 
   /** Constant <code>LYS</code> */
   public enum LYS implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2), HG2(3), HG3(3),
-    CD(4), HD2(5), HD3(5),
-    CE(6), HE2(7), HE3(7),
-    NZ(8), HZ1(9), HZ2(9), HZ3(9);
+    CB(0), HB2(1), HB3(1), CG(2), HG2(3), HG3(3), CD(4), HD2(5), HD3(5), CE(6), HE2(7), HE3(7), NZ(
+        8), HZ1(9), HZ2(9), HZ3(9);
 
     /**
      * Biotype for this atom.
@@ -1078,11 +1067,8 @@ public class AminoAcidUtils {
 
   /** Constant <code>LYD</code> */
   public enum LYD implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2), HG2(3), HG3(3),
-    CD(4), HD2(5), HD3(5),
-    CE(6), HE2(7), HE3(7),
-    NZ(8), HZ1(9), HZ2(9);
+    CB(0), HB2(1), HB3(1), CG(2), HG2(3), HG3(3), CD(4), HD2(5), HD3(5), CE(6), HE2(7), HE3(7), NZ(
+        8), HZ1(9), HZ2(9);
 
     /**
      * Biotype for this atom.
@@ -1108,10 +1094,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>MethionineAtomNames</code> */
   public enum MET implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2), HG2(3), HG3(3),
-    SD(4),
-    CE(5), HE1(6), HE2(6), HE3(6);
+    CB(0), HB2(1), HB3(1), CG(2), HG2(3), HG3(3), SD(4), CE(5), HE1(6), HE2(6), HE3(6);
 
     /**
      * Biotype for this atom.
@@ -1137,10 +1120,8 @@ public class AminoAcidUtils {
 
   /** Constant <code>ORN</code> */
   public enum ORN implements SideChainType {
-    CB(0), HB2(1), HB3(2),
-    CG(2), HG2(3), HG3(3),
-    CD(4), HD2(5), HD3(5),
-    NE(6), HE1(7), HE2(7), HE3(7);
+    CB(0), HB2(1), HB3(2), CG(2), HG2(3), HG3(3), CD(4), HD2(5), HD3(5), NE(6), HE1(7), HE2(7), HE3(
+        7);
 
     /**
      * Biotype for this atom.
@@ -1166,10 +1147,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>PCA</code> */
   public enum PCA implements SideChainType {
-    CB(0), HB2(1), HB3(2),
-    CG(2), HG2(3), HG3(3),
-    CD(4),
-    OE(5);
+    CB(0), HB2(1), HB3(2), CG(2), HG2(3), HG3(3), CD(4), OE(5);
 
     /**
      * Biotype for this atom.
@@ -1195,13 +1173,8 @@ public class AminoAcidUtils {
 
   /** Constant <code>PHE</code> */
   public enum PHE implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2),
-    CD1(3), HD1(4),
-    CD2(3), HD2(4),
-    CE1(5), HE1(6),
-    CE2(5), HE2(6),
-    CZ(7), HZ(8);
+    CB(0), HB2(1), HB3(1), CG(2), CD1(3), HD1(4), CD2(3), HD2(4), CE1(5), HE1(6), CE2(5), HE2(6), CZ(
+        7), HZ(8);
 
     /**
      * Biotype for this atom.
@@ -1227,9 +1200,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>PRO</code> */
   public enum PRO implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2), HG2(3), HG3(3),
-    CD(4), HD2(5), HD3(5);
+    CB(0), HB2(1), HB3(1), CG(2), HG2(3), HG3(3), CD(4), HD2(5), HD3(5);
 
     /**
      * Biotype for this atom.
@@ -1255,8 +1226,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>SER</code> */
   public enum SER implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    OG(2), HG(3);
+    CB(0), HB2(1), HB3(1), OG(2), HG(3);
 
     /**
      * Biotype for this atom.
@@ -1282,9 +1252,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>THR</code> */
   public enum THR implements SideChainType {
-    CB(0), HB(1),
-    OG1(2), HG1(3),
-    CG2(4), HG21(5), HG22(5), HG23(5);
+    CB(0), HB(1), OG1(2), HG1(3), CG2(4), HG21(5), HG22(5), HG23(5);
 
     /**
      * Biotype for this atom.
@@ -1310,16 +1278,8 @@ public class AminoAcidUtils {
 
   /** Constant <code>TRP</code> */
   public enum TRP implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2),
-    CD1(3), HD1(4),
-    CD2(5),
-    NE1(6), HE1(7),
-    CE2(8),
-    CE3(9), HE3(10),
-    CZ2(11), HZ2(12),
-    CZ3(13), HZ3(14),
-    CH2(15), HH2(16);
+    CB(0), HB2(1), HB3(1), CG(2), CD1(3), HD1(4), CD2(5), NE1(6), HE1(7), CE2(8), CE3(9), HE3(
+        10), CZ2(11), HZ2(12), CZ3(13), HZ3(14), CH2(15), HH2(16);
 
     /**
      * Biotype for this atom.
@@ -1345,14 +1305,8 @@ public class AminoAcidUtils {
 
   /** Constant <code>TYR</code> */
   public enum TYR implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2),
-    CD1(3), HD1(4),
-    CD2(3), HD2(4),
-    CE1(5), HE1(6),
-    CE2(5), HE2(6),
-    CZ(7),
-    OH(8), HH(9);
+    CB(0), HB2(1), HB3(1), CG(2), CD1(3), HD1(4), CD2(3), HD2(4), CE1(5), HE1(6), CE2(5), HE2(6), CZ(
+        7), OH(8), HH(9);
 
     /**
      * Biotype for this atom.
@@ -1378,14 +1332,8 @@ public class AminoAcidUtils {
 
   /** Constant <code>TYD</code> */
   public enum TYD implements SideChainType {
-    CB(0), HB2(1), HB3(1),
-    CG(2),
-    CD1(3), HD1(4),
-    CD2(3), HD2(4),
-    CE1(5), HE1(6),
-    CE2(5), HE2(6),
-    CZ(7),
-    OH(8);
+    CB(0), HB2(1), HB3(1), CG(2), CD1(3), HD1(4), CD2(3), HD2(4), CE1(5), HE1(6), CE2(5), HE2(6), CZ(
+        7), OH(8);
 
     /**
      * Biotype for this atom.
@@ -1411,9 +1359,7 @@ public class AminoAcidUtils {
 
   /** Constant <code>VAL</code> */
   public enum VAL implements SideChainType {
-    CB(0), HB(1),
-    CG1(2), HG11(3), HG12(3), HG13(3),
-    CG2(4), HG21(5), HG22(5), HG23(5);
+    CB(0), HB(1), CG1(2), HG11(3), HG12(3), HG13(3), CG2(4), HG21(5), HG22(5), HG23(5);
 
     /**
      * Biotype for this atom.
@@ -1662,8 +1608,8 @@ public class AminoAcidUtils {
    * @param bonds a {@link List} object.
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
-  public static Residue buildDeprotonatedLysine(Residue res, Atom CA, Atom N, Atom C,
-      ForceField ff, List<Bond> bonds) {
+  public static Residue buildDeprotonatedLysine(Residue res, Atom CA, Atom N, Atom C, ForceField ff,
+      List<Bond> bonds) {
     Atom CB = buildHeavy(res, LYD.CB, CA, 1.54, N, 109.5, C, 107.8, 1, ff, bonds);
     Atom CG = buildHeavy(res, LYD.CG, CB, 1.54, CA, 109.5, N, 180, 0, ff, bonds);
     Atom CD = buildHeavy(res, LYD.CD, CG, 1.54, CB, 109.5, CA, 180, 0, ff, bonds);
@@ -2599,8 +2545,8 @@ public class AminoAcidUtils {
               // Get the heavy atom the hydrogen is bonded to.
               Atom ia = atomMap.get(bonds[0].toUpperCase());
               Atom hydrogen = new Atom(0, atomName, ia.getAltLoc(), new double[3],
-                  ia.getResidueName(), ia.getResidueNumber(), ia.getChainID(),
-                  ia.getOccupancy(), ia.getTempFactor(), ia.getSegID());
+                  ia.getResidueName(), ia.getResidueNumber(), ia.getChainID(), ia.getOccupancy(),
+                  ia.getTempFactor(), ia.getSegID());
               logger.log(Level.FINE, " Created hydrogen {0}.", atomName);
               hydrogen.setAtomType(type);
               hydrogen.setHetero(true);
@@ -2758,9 +2704,8 @@ public class AminoAcidUtils {
         if (N == null) {
           MissingHeavyAtomException e = new MissingHeavyAtomException("N", null, null);
           logger.warning(
-              format(
-                  " Residue %c-%s is missing its N-terminal amide nitrogen",
-                  residue.getChainID(), residue));
+              format(" Residue %c-%s is missing its N-terminal amide nitrogen", residue.getChainID(),
+                  residue));
           throw e;
         }
         Atom CA = (Atom) residue.getAtomNode("CA");
@@ -2773,10 +2718,8 @@ public class AminoAcidUtils {
         Atom C = (Atom) residue.getAtomNode("C");
         if (C == null) {
           MissingHeavyAtomException e = new MissingHeavyAtomException("C", null, null);
-          logger.warning(
-              format(
-                  " Residue %c-%s is missing its C-terminal carboxyl carbon",
-                  residue.getChainID(), residue));
+          logger.warning(format(" Residue %c-%s is missing its C-terminal carboxyl carbon",
+              residue.getChainID(), residue));
           throw e;
         }
       }
@@ -2856,114 +2799,31 @@ public class AminoAcidUtils {
    * The 20 standard amino acids.
    */
   public enum AA {
-    GLYCINE,
-    ALANINE,
-    VALINE,
-    LEUCINE,
-    ISOLEUCINE,
-    SERINE,
-    THREONINE,
-    CYSTEINE,
-    PROLINE,
-    PHENYLALANINE,
-    TYROSINE,
-    TRYPTOPHAN,
-    ASPARTATE,
-    ASPARAGINE,
-    GLUTAMATE,
-    GLUTAMINE,
-    METHIONINE,
-    LYSINE,
-    ARGININE,
-    HISTIDINE
+    GLYCINE, ALANINE, VALINE, LEUCINE, ISOLEUCINE, SERINE, THREONINE, CYSTEINE, PROLINE, PHENYLALANINE, TYROSINE, TRYPTOPHAN, ASPARTATE, ASPARAGINE, GLUTAMATE, GLUTAMINE, METHIONINE, LYSINE, ARGININE, HISTIDINE
   }
 
   /** Single letter amino acid codes (need to */
   public enum AminoAcid1 {
-    G,
-    A,
-    V,
-    L,
-    I,
-    S,
-    T,
-    C,
-    X,
-    c,
-    P,
-    F,
-    Y,
-    y,
-    W,
-    H,
-    U,
-    Z,
-    D, // ASP
+    G, A, V, L, I, S, T, C, X, c, P, F, Y, y, W, H, U, Z, D, // ASP
     d, // ASH
     p, // ASD (double protonation)
-    N,
-    E, // GLU
+    N, E, // GLU
     e, // GLH
     q, // GLD (double protonation)
-    Q,
-    M,
-    K,
-    k,
-    R,
-    O,
-    B,
-    J,
-    t,
-    f,
-    a,
-    o,
-    n,
-    m,
-    x
+    Q, M, K, k, R, O, B, J, t, f, a, o, n, m, x
   }
 
   public enum AminoAcid3 {
     // TODO: Check GLY, SER, THR, CYS and CYD multipole assignment during MultiResidue use.
-    GLY(4),
-    ALA(5, true),
-    VAL(7, true),
-    LEU(8, true),
-    ILE(8, true),
-    SER(6),
-    THR(7),
-    CYS(6, false, true, false, false),
-    CYX(6),
-    CYD(6, false, false, false, false),
-    PRO(7),
-    PHE(11, true),
-    TYR(12, true, false, false, false),
-    TYD(12, true, false, false, false),
-    TRP(14, true),
-    HIS(10, true, true, true, false),
-    HID(10, true, false, false, false),
-    HIE(10, true, false, false, false),
-    ASP(8, true, false, false, false),
-    ASH(8, true, false, false, false),
-    ASD(8, true, true, true, true),
-    ASN(8, true),
-    GLU(9, true, false, false, false),
-    GLH(9, true, false, false, false),
-    GLD(9, true, true, true, true),
-    GLN(9, true),
-    MET(8, true),
-    LYS(9, true, true, false, false),
-    LYD(9, true, false, false, false),
-    ARG(11, true),
-    ORN(8),
-    AIB(6),
-    PCA(8),
-    H2N(0),
-    FOR(0),
-    ACE(0),
-    COH(0),
-    NH2(0),
-    NME(0),
-    UNK(0);
+    GLY(4), ALA(5, true), VAL(7, true), LEU(8, true), ILE(8, true), SER(6), THR(7), CYS(6, false,
+        true, false, false), CYX(6), CYD(6, false, false, false, false), PRO(7), PHE(11, true), TYR(
+        12, true, false, false, false), TYD(12, true, false, false, false), TRP(14, true), HIS(10,
+        true, true, true, false), HID(10, true, false, false, false), HIE(10, true, false, false,
+        false), ASP(8, true, false, false, false), ASH(8, true, false, false, false), ASD(8, true,
+        true, true, true), ASN(8, true), GLU(9, true, false, false, false), GLH(9, true, false,
+        false, false), GLD(9, true, true, true, true), GLN(9, true), MET(8, true), LYS(9, true, true,
+        false, false), LYD(9, true, false, false, false), ARG(11, true), ORN(8), AIB(6), PCA(8), H2N(
+        0), FOR(0), ACE(0), COH(0), NH2(0), NME(0), UNK(0);
 
     public final int heavyAtoms;
     public final boolean useWithMultiResidue;
@@ -2988,8 +2848,7 @@ public class AminoAcidUtils {
     }
 
     AminoAcid3(int heavyAtoms, boolean useWithMultiResidue, boolean isConstantPhTitratable,
-        boolean isConstantPhTautomer,
-        boolean nonStandardProtonation) {
+        boolean isConstantPhTautomer, boolean nonStandardProtonation) {
       this.heavyAtoms = heavyAtoms;
       this.useWithMultiResidue = useWithMultiResidue;
       this.isConstantPhTitratable = isConstantPhTitratable;
@@ -2997,17 +2856,14 @@ public class AminoAcidUtils {
       this.nonStandardProtonation = nonStandardProtonation;
       if (nonStandardProtonation && !this.isConstantPhTitratable) {
         throw new IllegalArgumentException(
-            format(
-                " Amino acid class %s cannot be both nonstandard and non-titratable!", this));
+            format(" Amino acid class %s cannot be both nonstandard and non-titratable!", this));
       }
     }
   }
 
   /** The location of a residue within a chain. */
   public enum ResiduePosition {
-    FIRST_RESIDUE,
-    MIDDLE_RESIDUE,
-    LAST_RESIDUE
+    FIRST_RESIDUE, MIDDLE_RESIDUE, LAST_RESIDUE, SINGLE_RESIDUE
   }
 
   /**
@@ -3019,28 +2875,17 @@ public class AminoAcidUtils {
    * GLD GLN MET LYS LYD ARG ORN AIB PCA H2N FOR ACE COH NH2 NME UNK
    */
   public static final int[][] AA_N = {
-      {
-          403, 409, 415, 421, 427, 433, 439, 445,
-          451, 457, 463, 471, 477, 483, 489, 495,
-          501, 507, 513, 519, 519, 525, 531, 537,
-          537, 543, 549, 555, 561, 567, 573, 579,
-          391, 762, 0, 0, 0, 0, 0, 403
-      },
-      {
-          1, 7, 15, 27, 41, 55, 65, 77,
-          87, 96, 105, 116, 131, 147, 162, 185,
-          202, 218, 234, 244, 244, 256, 268, 280,
-          280, 294, 308, 321, 337, 353, 370, 384,
-          391, 0, 0, 0, 0, 0, 0, 1
-      },
-      {
-          584, 590, 596, 602, 608, 614, 620, 626,
-          632, 638, 644, 649, 655, 661, 667, 673,
-          679, 685, 691, 697, 697, 703, 709, 715,
-          715, 721, 727, 733, 739, 745, 751, 757,
-          0, 0, 0, 0, 773, 775, 777, 584
-      }
-  };
+      {403, 409, 415, 421, 427, 433, 439, 445, 451, 457, 463, 471, 477, 483, 489, 495, 501, 507, 513,
+          519, 519, 525, 531, 537, 537, 543, 549, 555, 561, 567, 573, 579, 391, 762, 0, 0, 0, 0, 0,
+          403},
+      {1, 7, 15, 27, 41, 55, 65, 77, 87, 96, 105, 116, 131, 147, 162, 185, 202, 218, 234, 244, 244,
+          256, 268, 280, 280, 294, 308, 321, 337, 353, 370, 384, 391, 0, 0, 0, 0, 0, 0, 1},
+      {584, 590, 596, 602, 608, 614, 620, 626, 632, 638, 644, 649, 655, 661, 667, 673, 679, 685, 691,
+          697, 697, 703, 709, 715, 715, 721, 727, 733, 739, 745, 751, 757, 0, 0, 0, 0, 773, 775, 777,
+          584},
+      {403, 409, 415, 421, 427, 433, 439, 445, 451, 457, 463, 471, 477, 483, 489, 495, 501, 507, 513,
+          519, 519, 525, 531, 537, 537, 543, 549, 555, 561, 567, 573, 579, 391, 762, 0, 0, 0, 0, 0,
+          403}};
 
   /**
    * Constant <code>AA_CA</code>
@@ -3049,28 +2894,16 @@ public class AminoAcidUtils {
    * GLD GLN MET LYS LYD ARG ORN AIB PCA H2N FOR ACE COH NH2 NME UNK
    */
   public static final int[][] AA_CA = {
-      {
-          404, 410, 416, 422, 428, 434, 440, 446,
-          452, 458, 464, 472, 478, 484, 490, 496,
-          502, 508, 514, 520, 520, 526, 532, 538,
-          538, 544, 550, 556, 562, 568, 574, 580,
-          392, 0, 0, 767, 0, 0, 0, 404
-      },
-      {
-          2, 8, 16, 28, 42, 56, 66, 78,
-          88, 97, 106, 117, 132, 148, 163, 186,
-          203, 219, 235, 245, 245, 257, 269, 281,
-          281, 295, 309, 322, 338, 354, 371, 385,
-          392, 0, 0, 0, 0, 0, 0, 2
-      },
-      {
-          585, 591, 597, 603, 609, 615, 621, 627,
-          633, 639, 645, 650, 656, 662, 668, 674,
-          680, 686, 692, 698, 698, 704, 710, 716,
-          716, 722, 728, 734, 740, 746, 752, 758,
-          0, 0, 0, 0, 0, 0, 779, 585
-      }
-  };
+      {404, 410, 416, 422, 428, 434, 440, 446, 452, 458, 464, 472, 478, 484, 490, 496, 502, 508, 514,
+          520, 520, 526, 532, 538, 538, 544, 550, 556, 562, 568, 574, 580, 392, 0, 0, 767, 0, 0, 0,
+          404},
+      {2, 8, 16, 28, 42, 56, 66, 78, 88, 97, 106, 117, 132, 148, 163, 186, 203, 219, 235, 245, 245,
+          257, 269, 281, 281, 295, 309, 322, 338, 354, 371, 385, 392, 0, 0, 0, 0, 0, 0, 2},
+      {585, 591, 597, 603, 609, 615, 621, 627, 633, 639, 645, 650, 656, 662, 668, 674, 680, 686, 692,
+          698, 698, 704, 710, 716, 716, 722, 728, 734, 740, 746, 752, 758, 0, 0, 0, 0, 0, 0, 779,
+          585},
+      {2, 8, 16, 28, 42, 56, 66, 78, 88, 97, 106, 117, 132, 148, 163, 186, 203, 219, 235, 245, 245,
+          257, 269, 281, 281, 295, 309, 322, 338, 354, 371, 385, 392, 0, 0, 0, 0, 0, 0, 2}};
 
   /**
    * Constant <code>AA_C</code>
@@ -3079,28 +2912,18 @@ public class AminoAcidUtils {
    * GLD GLN MET LYS LYD ARG ORN AIB PCA H2N FOR ACE COH NH2 NME UNK
    */
   public static final int[][] AA_C = {
-      {
-          405, 411, 417, 423, 429, 435, 441, 447,
-          453, 459, 465, 473, 479, 485, 491, 497,
-          503, 509, 515, 521, 521, 527, 533, 539,
-          539, 545, 551, 557, 563, 569, 575, 581,
-          393, 0, 764, 769, 0, 0, 0, 405
-      },
-      {
-          3, 9, 17, 29, 43, 57, 67, 79,
-          89, 98, 107, 118, 133, 149, 164, 187,
-          204, 220, 236, 246, 246, 258, 270, 282,
-          282, 296, 310, 323, 339, 355, 372, 386,
-          393, 0, 0, 0, 0, 0, 0, 3
-      },
-      {
-          586, 592, 598, 604, 610, 616, 622, 628,
-          634, 640, 646, 651, 657, 663, 669, 675,
-          681, 687, 693, 699, 699, 705, 711, 717,
-          717, 723, 729, 735, 741, 747, 753, 759,
-          0, 0, 0, 0, 771, 0, 0, 586
-      }
-  };
+      {405, 411, 417, 423, 429, 435, 441, 447, 453, 459, 465, 473, 479, 485, 491, 497, 503, 509, 515,
+          521, 521, 527, 533, 539, 539, 545, 551, 557, 563, 569, 575, 581, 393, 0, 764, 769, 0, 0, 0,
+          405},
+      {3, 9, 17, 29, 43, 57, 67, 79, 89, 98, 107, 118, 133, 149, 164, 187, 204, 220, 236, 246, 246,
+          258, 270, 282, 282, 296, 310, 323, 339, 355, 372, 386, 393, 0, 0, 0, 0, 0, 0, 3},
+      {586, 592, 598, 604, 610, 616, 622, 628, 634, 640, 646, 651, 657, 663, 669, 675, 681, 687, 693,
+          699, 699, 705, 711, 717, 717, 723, 729, 735, 741, 747, 753, 759, 0, 0, 0, 0, 771, 0, 0,
+          586},
+      {586, 592, 598, 604, 610, 616, 622, 628, 634, 640, 646, 651, 657, 663, 669, 675, 681, 687, 693,
+          699, 699, 705, 711, 717, 717, 723, 729, 735, 741, 747, 753, 759, 0, 0, 0, 0, 771, 0, 0,
+          586}};
+
   /**
    * Constant <code>AA_HN</code>
    * <p>
@@ -3108,28 +2931,17 @@ public class AminoAcidUtils {
    * GLD GLN MET LYS LYD ARG ORN AIB PCA H2N FOR ACE COH NH2 NME UNK
    */
   public static final int[][] AA_HN = {
-      {
-          406, 412, 418, 424, 430, 436, 442, 448,
-          454, 460, 466, 474, 480, 486, 492, 498,
-          504, 510, 516, 522, 522, 528, 534, 540,
-          540, 546, 552, 558, 564, 570, 576, 582,
-          394, 763, 0, 0, 0, 0, 0, 406
-      },
-      {
-          4, 10, 18, 30, 44, 58, 68, 80,
-          90, 99, 0, 119, 134, 150, 165, 188,
-          205, 221, 237, 247, 247, 259, 271, 283,
-          283, 297, 311, 324, 340, 356, 373, 387,
-          394, 0, 0, 0, 0, 0, 0, 4
-      },
-      {
-          587, 593, 599, 605, 611, 617, 623, 629,
-          635, 641, 0, 652, 658, 664, 670, 676,
-          682, 688, 694, 700, 700, 706, 712, 718,
-          718, 724, 730, 736, 742, 748, 754, 760,
-          0, 0, 0, 0, 774, 776, 778, 587
-      }
-  };
+      {406, 412, 418, 424, 430, 436, 442, 448, 454, 460, 466, 474, 480, 486, 492, 498, 504, 510, 516,
+          522, 522, 528, 534, 540, 540, 546, 552, 558, 564, 570, 576, 582, 394, 763, 0, 0, 0, 0, 0,
+          406},
+      {4, 10, 18, 30, 44, 58, 68, 80, 90, 99, 0, 119, 134, 150, 165, 188, 205, 221, 237, 247, 247,
+          259, 271, 283, 283, 297, 311, 324, 340, 356, 373, 387, 394, 0, 0, 0, 0, 0, 0, 4},
+      {587, 593, 599, 605, 611, 617, 623, 629, 635, 641, 0, 652, 658, 664, 670, 676, 682, 688, 694,
+          700, 700, 706, 712, 718, 718, 724, 730, 736, 742, 748, 754, 760, 0, 0, 0, 0, 774, 776, 778,
+          587},
+      {406, 412, 418, 424, 430, 436, 442, 448, 454, 460, 466, 474, 480, 486, 492, 498, 504, 510, 516,
+          522, 522, 528, 534, 540, 540, 546, 552, 558, 564, 570, 576, 582, 394, 763, 0, 0, 0, 0, 0,
+          406}};
 
   /**
    * Constant <code>AA_O</code>
@@ -3138,28 +2950,18 @@ public class AminoAcidUtils {
    * GLD GLN MET LYS LYD ARG ORN AIB PCA H2N FOR ACE COH NH2 NME UNK
    */
   public static final int[][] AA_O = {
-      {
-          407, 413, 419, 425, 431, 437, 443, 449,
-          455, 461, 467, 475, 481, 487, 493, 499,
-          505, 511, 517, 523, 523, 529, 535, 541,
-          541, 547, 553, 559, 565, 571, 577, 583,
-          395, 0, 766, 770, 0, 0, 0, 407
-      },
-      {
-          5, 11, 19, 31, 45, 59, 69, 81,
-          91, 100, 108, 120, 135, 151, 166, 189,
-          206, 222, 238, 248, 248, 260, 272, 284,
-          284, 298, 312, 325, 341, 357, 374, 388,
-          395, 0, 0, 0, 0, 0, 0, 5
-      },
-      {
-          588, 594, 600, 606, 612, 618, 624, 630,
-          636, 642, 647, 653, 659, 665, 671, 677,
-          683, 689, 695, 701, 701, 707, 713, 719,
-          719, 725, 731, 737, 743, 749, 755, 761,
-          0, 0, 0, 0, 772, 0, 0, 588
-      }
-  };
+      {407, 413, 419, 425, 431, 437, 443, 449, 455, 461, 467, 475, 481, 487, 493, 499, 505, 511, 517,
+          523, 523, 529, 535, 541, 541, 547, 553, 559, 565, 571, 577, 583, 395, 0, 766, 770, 0, 0, 0,
+          407},
+      {5, 11, 19, 31, 45, 59, 69, 81, 91, 100, 108, 120, 135, 151, 166, 189, 206, 222, 238, 248, 248,
+          260, 272, 284, 284, 298, 312, 325, 341, 357, 374, 388, 395, 0, 0, 0, 0, 0, 0, 5},
+      {588, 594, 600, 606, 612, 618, 624, 630, 636, 642, 647, 653, 659, 665, 671, 677, 683, 689, 695,
+          701, 701, 707, 713, 719, 719, 725, 731, 737, 743, 749, 755, 761, 0, 0, 0, 0, 772, 0, 0,
+          588},
+      {588, 594, 600, 606, 612, 618, 624, 630, 636, 642, 647, 653, 659, 665, 671, 677, 683, 689, 695,
+          701, 701, 707, 713, 719, 719, 725, 731, 737, 743, 749, 755, 761, 0, 0, 0, 0, 772, 0, 0,
+          588}};
+
   /**
    * Constant <code>AA_HA</code>
    * <p>
@@ -3167,39 +2969,23 @@ public class AminoAcidUtils {
    * GLD GLN MET LYS LYD ARG ORN AIB PCA H2N FOR ACE COH NH2 NME UNK
    */
   public static final int[][] AA_HA = {
-      {
-          408, 414, 420, 426, 432, 438, 444, 450,
-          456, 462, 468, 476, 482, 488, 494, 500,
-          506, 512, 518, 524, 524, 530, 536, 542,
-          542, 548, 554, 560, 566, 572, 578, 0,
-          396, 0, 765, 768, 0, 0, 0, 408
-      },
-      {
-          6, 12, 20, 32, 46, 60, 70, 82,
-          92, 101, 109, 121, 136, 152, 167, 190,
-          207, 223, 239, 249, 249, 261, 273, 285,
-          285, 299, 313, 326, 342, 358, 375, 0,
-          396, 0, 0, 0, 0, 0, 0, 6
-      },
-      {
-          589, 595, 601, 607, 613, 619, 625, 631,
-          637, 643, 648, 654, 660, 666, 672, 678,
-          684, 690, 696, 702, 702, 708, 714, 720,
-          720, 726, 732, 738, 744, 750, 756, 0,
-          0, 0, 0, 0, 0, 0, 780, 589
-      }
-  };
+      {408, 414, 420, 426, 432, 438, 444, 450, 456, 462, 468, 476, 482, 488, 494, 500, 506, 512, 518,
+          524, 524, 530, 536, 542, 542, 548, 554, 560, 566, 572, 578, 0, 396, 0, 765, 768, 0, 0, 0,
+          408},
+      {6, 12, 20, 32, 46, 60, 70, 82, 92, 101, 109, 121, 136, 152, 167, 190, 207, 223, 239, 249, 249,
+          261, 273, 285, 285, 299, 313, 326, 342, 358, 375, 0, 396, 0, 0, 0, 0, 0, 0, 6},
+      {589, 595, 601, 607, 613, 619, 625, 631, 637, 643, 648, 654, 660, 666, 672, 678, 684, 690, 696,
+          702, 702, 708, 714, 720, 720, 726, 732, 738, 744, 750, 756, 0, 0, 0, 0, 0, 0, 0, 780, 589},
+      {6, 12, 20, 32, 46, 60, 70, 82, 92, 101, 109, 121, 136, 152, 167, 190, 207, 223, 239, 249, 249,
+          261, 273, 285, 285, 299, 313, 326, 342, 358, 375, 0, 396, 0, 0, 0, 0, 0, 0, 6}};
+
   /**
    * Constant <code>AA_CB</code>
    * <p>
    * GLY ALA VAL LEU ILE SER THR CYS CYX CYD PRO PHE TYR TYD TRP HIS HID HIE ASP ASH ASD ASN GLU GLH
    * GLD GLN MET LYS LYD ARG ORN AIB PCA H2N FOR ACE COH NH2 NME UNK
    */
-  public static final int[] AA_CB = {
-      0, 13, 21, 33, 47, 61, 71, 83,
-      93, 102, 110, 122, 137, 153, 168, 191,
-      208, 224, 240, 250, 806, 262, 274, 286,
-      817, 300, 314, 327, 343, 359, 376, 389,
-      397, 0, 0, 0, 0, 0, 0, 0
-  };
+  public static final int[] AA_CB = {0, 13, 21, 33, 47, 61, 71, 83, 93, 102, 110, 122, 137, 153, 168,
+      191, 208, 224, 240, 250, 806, 262, 274, 286, 817, 300, 314, 327, 343, 359, 376, 389, 397, 0, 0,
+      0, 0, 0, 0, 0};
 }

@@ -114,9 +114,12 @@ public class MolecularAssembly extends MSGroup {
   private final MSNode molecules = new MSNode("Hetero Molecules");
   private final HashMap<String, Molecule> moleculeHashMap = new HashMap<>();
   private final List<BranchGroup> myNewShapes = new ArrayList<>();
-  protected ForceField forceField;
   // MolecularAssembly member variables
+  protected ForceField forceField;
+  // The File that was read to create this MolecularAssembly.
   private File file;
+  // The File to use for writing archives.
+  private File archiveFile;
   private ForceFieldEnergy potentialEnergy;
   private CompositeConfiguration properties;
   private Vector3d offset;
@@ -1070,13 +1073,36 @@ public class MolecularAssembly extends MSGroup {
   /**
    * Setter for the field <code>file</code>.
    *
-   * @param f a {@link java.io.File} object.
+   * @param file a {@link java.io.File} object.
    */
-  public void setFile(File f) {
-    if (f == null) {
+  public void setFile(File file) {
+    if (file == null) {
+      // Keep the current file.
       return;
     }
-    file = f;
+    this.file = file;
+  }
+
+  /**
+   * Getter for the field <code>archiveFile</code>.
+   *
+   * @return a {@link java.io.File} object.
+   */
+  public File getArchiveFile() {
+    return archiveFile;
+  }
+
+  /**
+   * Set the File for writing out an archive.
+   *
+   * @param archiveFile The archive file.
+   */
+  public void setArchiveFile(File archiveFile) {
+    if (archiveFile == null) {
+      // Keep the current archive file.
+      return;
+    }
+    this.archiveFile = archiveFile;
   }
 
   /**

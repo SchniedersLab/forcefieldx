@@ -35,31 +35,34 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.algorithms.dynamics.integrators;
+package ffx.algorithms.dynamics;
 
 /**
- * An enumeration of available integrators.
+ * A record class to hold the state of a Dynamics object.
  *
- * @author Michael J. Schnieders
+ * @param x The coordinates.
+ * @param v The velocities.
+ * @param a The accelerations.
+ * @param aPrevious The previous accelerations.
+ * @param mass The masses.
+ * @param gradient The gradients.
+ * @param kineticEnergy The kinetic energy.
+ * @param potentialEnergy The potential energy.
+ * @param totalEnergy The total energy.
+ * @param temperature The temperature.
  */
-public enum IntegratorEnum {
-  // Stochastic and Langevin are equivalent to each other.
-  BEEMAN(false, true), STOCHASTIC(false, false), LANGEVIN(false,
-      false), // Verlet and Velocity Verlet are equivalent to each other.
-  VERLET(true, true), VELOCITY_VERLET(true, true), // MTS and RESPA are equivalent to each other.
-  MTS(true, true), RESPA(true, true), // Stochastic and Langevin MTS are equivalent to each other.
-  STOCHASTIC_MTS(false, false), LANGEVIN_MTS(false, false);
+public record MDState(double[] x, double[] v, double[] a, double[] aPrevious, double[] mass,
+                      double[] gradient, double kineticEnergy, double potentialEnergy,
+                      double totalEnergy, double temperature) {
 
-  public final boolean knownReversible;
-  public final boolean knownDeterministic;
-
-  IntegratorEnum(boolean reversible, boolean deterministic) {
-    knownReversible = reversible;
-    knownDeterministic = deterministic;
-  }
-
-  public static boolean isStochastic(IntegratorEnum integrator) {
-    return integrator == STOCHASTIC || integrator == LANGEVIN || integrator == STOCHASTIC_MTS
-        || integrator == LANGEVIN_MTS;
+  /**
+   * This constructor does a defensive copy of all arrays.
+   */
+  public MDState {
+    x = x.clone();
+    a = a.clone();
+    aPrevious = aPrevious.clone();
+    mass = mass.clone();
+    gradient = gradient.clone();
   }
 }

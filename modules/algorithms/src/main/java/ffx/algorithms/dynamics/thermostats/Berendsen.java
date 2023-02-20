@@ -66,31 +66,18 @@ public class Berendsen extends Thermostat {
    * @param n Number of degrees of freedom.
    * @param x Atomic coordinates.
    * @param v Velocities.
-   * @param mass Mass of each degrees of freedom.
+   * @param mass Mass of each degree of freedom.
    * @param type The VARIABLE_TYPE of each variable.
    * @param targetTemperature The target temperatures.
    * @param tau Berendsen thermostat time constant (psec).
    */
-  public Berendsen(
-      int n,
-      double[] x,
-      double[] v,
-      double[] mass,
-      VARIABLE_TYPE[] type,
-      double targetTemperature,
-      double tau) {
+  public Berendsen(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type,
+      double targetTemperature, double tau) {
     this(n, x, v, mass, type, targetTemperature, tau, Collections.emptyList());
   }
 
-  public Berendsen(
-      int n,
-      double[] x,
-      double[] v,
-      double[] mass,
-      VARIABLE_TYPE[] type,
-      double targetTemperature,
-      double tau,
-      List<Constraint> constraints) {
+  public Berendsen(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type,
+      double targetTemperature, double tau, List<Constraint> constraints) {
     super(n, x, v, mass, type, targetTemperature, constraints);
     this.name = ThermostatEnum.BERENDSEN;
     this.tau = tau;
@@ -102,16 +89,11 @@ public class Berendsen extends Thermostat {
    * @param n Number of degrees of freedom.
    * @param x Atomic coordinates.
    * @param v Velocities.
-   * @param mass Mass of each degrees of freedom.
+   * @param mass Mass of each degree of freedom.
    * @param type The VARIABLE_TYPE of each variable.
    * @param targetTemperature The target temperatures.
    */
-  public Berendsen(
-      int n,
-      double[] x,
-      double[] v,
-      double[] mass,
-      VARIABLE_TYPE[] type,
+  public Berendsen(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type,
       double targetTemperature) {
     this(n, x, v, mass, type, targetTemperature, 0.2e0);
   }
@@ -154,7 +136,8 @@ public class Berendsen extends Thermostat {
    * <p>No velocity modifications are made by the Berendsen method at the half-step.
    */
   @Override
-  public void halfStep(double dt) {}
+  public void halfStep(double dt) {
+  }
 
   /**
    * Add Thermostat details to the kinetic energy and temperature details.
