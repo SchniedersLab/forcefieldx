@@ -80,12 +80,9 @@ public class LoopClosure {
     private static final Logger logger = Logger.getLogger(LoopClosure.class.getName());
 
     private static final int MAX_SOLUTIONS = 16;
-    private static final int NO_SOLUTIONS = 0;
 
-    private final SturmMethod sturmMethod;
-    private final double[] len0 = new double[4];
-    private final double[] b_ang0 = new double[7];
-    private final double[] t_ang0 = new double[2];
+    private static final double[] BOND_LENS;
+    private static final double[] BOND_ANGLES;
     private final double[][] delta = new double[4][1];
     private final double[][] xi = new double[3][1];
     private final double[][] eta = new double[3][1];
@@ -117,11 +114,22 @@ public class LoopClosure {
     private double aa13_min_sqr;
     private double aa13_max_sqr;
 
+    static {
+        // Initialize bond length and angle arrays.
+        BOND_LENS = new double[3];
+        BOND_LENS[0] = 1.52;  // Ca - C
+        BOND_LENS[1] = 1.33;  // C - N
+        BOND_LENS[2] = 1.45;  // N - Ca
+        BOND_ANGLES = new double[3];
+        BOND_ANGLES[0] = Math.toRadians(111.6);
+        BOND_ANGLES[1] = Math.toRadians(117.5);
+        BOND_ANGLES[2] = Math.toRadians(120.0);
+    }
+
     /**
      * LoopClosure Constructor.
      */
     public LoopClosure() {
-        sturmMethod = new SturmMethod();
         initializeLoopClosure();
     }
 
@@ -222,8 +230,6 @@ public class LoopClosure {
         double[][] r_n = new double[3][3];
         double[][] r_a = new double[3][3];
         double[][] r_c = new double[3][3];
-        double[] p = new double[4];
-        double[][] Us = new double[3][3];
         double[] rr_a1c1 = new double[3];
         double[] rr_c1n2 = new double[3];
         double[] rr_n2a2 = new double[3];
@@ -298,7 +304,13 @@ public class LoopClosure {
             r_tmp[i] = (r_a1n1[i] / len_na[0] - p_s_c[0][i]) / sin_xi[0];
         }
 
-        double sig1Init = sign(DoubleMath.angle(s1[0], r_tmp), dot(r_tmp, s2[0]));
+        // Determine sign of the angle based on the dot product.
+        double sig1Init = DoubleMath.angle(s1[0], r_tmp);
+        if (dot(r_tmp, s2[0]) >= 0.0) {
+            sig1Init = FastMath.abs(sig1Init);
+        } else {
+            sig1Init = -FastMath.abs(sig1Init);
+        }
 
         for (int i = 0; i < 3; i++) {
             r_a[0][i] = r_a1[i];
@@ -341,9 +353,7 @@ public class LoopClosure {
             ex_tmp[1] = -ex[1];
             ex_tmp[2] = -ex[2];
             tmp_value = -(sig1 - sig1Init) * 0.25;
-            quaternion(ex_tmp, tmp_value, p);
-
-            rotationMatrix(p, Us);
+            var rotMatrix = rotationMatrix(ex_tmp, tmp_value);
 
             for (int i = 0; i < 3; i++) {
                 mat11[i] = r_c[0][i] - r0[i];
@@ -353,11 +363,11 @@ public class LoopClosure {
                 mat55[i] = r_n[2][i] - r0[i];
             }
 
-            var mat1 = matrixMultiplication(Us, mat11);
-            var mat2 = matrixMultiplication(Us, mat22);
-            var mat3 = matrixMultiplication(Us, mat33);
-            var mat4 = matrixMultiplication(Us, mat44);
-            var mat5 = matrixMultiplication(Us, mat55);
+            var mat1 = matrixMultiplication(rotMatrix, mat11);
+            var mat2 = matrixMultiplication(rotMatrix, mat22);
+            var mat3 = matrixMultiplication(rotMatrix, mat33);
+            var mat4 = matrixMultiplication(rotMatrix, mat44);
+            var mat5 = matrixMultiplication(rotMatrix, mat55);
 
             for (int i = 0; i < 3; i++) {
                 r_soln_n[i_soln][0][i] = r_n1[i];
@@ -398,9 +408,9 @@ public class LoopClosure {
                 double a2a3 = sqrt(dot(rr_a2a3, rr_a2a3));
 
                 StringBuilder sb = new StringBuilder();
-                sb.append(format("na: n2a2, n3a3 = %9.3f%9.3f%9.3f%9.3f\n", len0[2], n2a2, len0[5], n3a3));
-                sb.append(format("ac: a1c1, a2c2 = %9.3f%9.3f%9.3f%9.3f\n", len0[0], a1c1, len0[3], a2c2));
-                sb.append(format("cn: c1n2, c2n3 = %9.3f%9.3f%9.3f%9.3f\n", len0[1], c1n2, len0[4], c2n3));
+                sb.append(format("na: n2a2, n3a3 = %9.3f%9.3f%9.3f\n", BOND_LENS[2], n2a2, n3a3));
+                sb.append(format("ac: a1c1, a2c2 = %9.3f%9.3f%9.3f\n", BOND_LENS[0], a1c1, a2c2));
+                sb.append(format("cn: c1n2, c2n3 = %9.3f%9.3f%9.3f\n", BOND_LENS[1], c1n2, c2n3));
                 sb.append(
                         format("aa: a1a2, a2a3 = %9.3f%9.3f%9.3f%9.3f\n", len_aa[1], a1a2, len_aa[2], a2a3));
                 logger.fine(sb.toString());
@@ -452,9 +462,8 @@ public class LoopClosure {
                 }
 
                 var a2c2n3a3 = dihedralAngle(tmp_array1, tmp_array2, tmp_array3);
-
-                sb.append(format("t_ang1 = %9.3f%9.3f\n", toDegrees(t_ang0[0]), toDegrees(a1c1n2a2)));
-                sb.append(format("t_ang2 = %9.3f%9.3f\n", toDegrees(t_ang0[1]), toDegrees(a2c2n3a3)));
+                sb.append(format("t_ang1 = %9.3f\n", toDegrees(a1c1n2a2)));
+                sb.append(format("t_ang2 = %9.3f\n", toDegrees(a2c2n3a3)));
                 logger.fine(sb.toString());
             }
         }
@@ -486,15 +495,15 @@ public class LoopClosure {
         }
 
         len_na[0] = sqrt(dot(r_a1n1, r_a1n1));
-        len_na[1] = len0[2];
-        len_na[2] = len0[2];
+        len_na[1] = BOND_LENS[2];
+        len_na[2] = BOND_LENS[2];
 
         for (int i = 0; i < 3; i++) {
             r_a3c3[i] = r_c3[i] - r_a3[i];
         }
 
-        len_ac[0] = len0[0];
-        len_ac[1] = len0[3];
+        len_ac[0] = BOND_LENS[0];
+        len_ac[1] = BOND_LENS[0];
         len_ac[2] = sqrt(dot(r_a3c3, r_a3c3));
 
         for (int i = 0; i < 3; i++) {
@@ -531,9 +540,9 @@ public class LoopClosure {
 
         cos_delta[0] = cos_delta[3];
         sin_delta[0] = sin_delta[3];
-        theta[0] = b_ang0[0];
-        theta[1] = b_ang0[3];
-        theta[2] = b_ang0[3];
+        theta[0] = BOND_ANGLES[0];
+        theta[1] = BOND_ANGLES[0];
+        theta[2] = BOND_ANGLES[0];
 
         for (int i = 0; i < 3; i++) {
             cos_theta[i] = cos(theta[i]);
@@ -990,75 +999,50 @@ public class LoopClosure {
     }
 
     /**
-     * Quotient of two vectors in three-dimensional space.
+     * Calculates a rotation matrix about an origin with no angular specification using the quaternion.
      *
-     * @param axis        an array of {@link double} objects.
-     * @param quarter_ang a double.
-     * @param p           an array of {@link double} objects.
+     * @param axis Quaternion input position vector.
+     * @param angle Angle to calculate the quaternion of given axis.
+     * @return Returns an output rotation matrix.
      */
-    public void quaternion(double[] axis, double quarter_ang, double[] p) {
-        double tan_w = tan(quarter_ang);
-        double tan_sqr = tan_w * tan_w;
-        double tan1 = 1.0 + tan_sqr;
-        double cosine = (1.0 - tan_sqr) / tan1;
-        double sine = 2.0 * tan_w / tan1;
-        p[0] = cosine;
-        p[1] = axis[0] * sine;
-        p[2] = axis[1] * sine;
-        p[3] = axis[2] * sine;
-    }
+    public double[][] rotationMatrix(double[] axis, double angle) {
+        // Calculate the quaternion.
+        var tan_w = tan(angle);
+        var tan_sqr = tan_w * tan_w;
+        var tan1 = 1.0 + tan_sqr;
+        var cosine = (1.0 - tan_sqr) / tan1;
+        var sine = 2.0 * tan_w / tan1;
+        var quaternion = new double[]{cosine, axis[0] * sine, axis[1] * sine, axis[2] * sine};
 
-    /**
-     * Means of representing a rotation of an axis about an origin with no angular specification.
-     *
-     * @param q input Axis angle.
-     * @param U output rotation matrix.
-     */
-    public void rotationMatrix(double[] q, double[][] U) {
+        // Calculate intermediate values.
+        var b0 = 2.0 * quaternion[0];
+        var b1 = 2.0 * quaternion[1];
+        var q00 = b0 * quaternion[0] - 1.0;
+        var q02 = b0 * quaternion[2];
+        var q03 = b0 * quaternion[3];
+        var q11 = b1 * quaternion[1];
+        var q12 = b1 * quaternion[2];
+        var q13 = b1 * quaternion[3];
+        var b2 = 2.0 * quaternion[2];
+        var b3 = 2.0 * quaternion[3];
+        var q01 = b0 * quaternion[1];
+        var q22 = b2 * quaternion[2];
+        var q23 = b2 * quaternion[3];
+        var q33 = b3 * quaternion[3];
 
-        double q0 = q[0];
-        double q1 = q[1];
-        double q2 = q[2];
-        double q3 = q[3];
-        double b0 = 2.0 * q0;
-        double b1 = 2.0 * q1;
-        double q00 = b0 * q0 - 1.0;
-        double q02 = b0 * q2;
-        double q03 = b0 * q3;
-        double q11 = b1 * q1;
-        double q12 = b1 * q2;
-        double q13 = b1 * q3;
-        double b2 = 2.0 * q2;
-        double b3 = 2.0 * q3;
-        double q01 = b0 * q1;
-        double q22 = b2 * q2;
-        double q23 = b2 * q3;
-        double q33 = b3 * q3;
+        // Finish calculating the result.
+        var result = new double[3][3];
+        result[0][0] = q00 + q11;
+        result[0][1] = q12 - q03;
+        result[0][2] = q13 + q02;
+        result[1][0] = q12 + q03;
+        result[1][1] = q00 + q22;
+        result[1][2] = q23 - q01;
+        result[2][0] = q13 - q02;
+        result[2][1] = q23 + q01;
+        result[2][2] = q00 + q33;
 
-        U[0][0] = q00 + q11;
-        U[0][1] = q12 - q03;
-        U[0][2] = q13 + q02;
-        U[1][0] = q12 + q03;
-        U[1][1] = q00 + q22;
-        U[1][2] = q23 - q01;
-        U[2][0] = q13 - q02;
-        U[2][1] = q23 + q01;
-        U[2][2] = q00 + q33;
-    }
-
-    /**
-     * Assigns a sign (positive or negative) to an angle based on the value of a corresponding variable (b).
-     *
-     * @param a The angle that a sign is being determined for.
-     * @param b A corresponding variable that determines directionality of the sign.
-     * @return If b is positive or zero, return abs(a), else return -abs(a).
-     */
-    public double sign(double a, double b) {
-        if (b >= 0.0) {
-            return FastMath.abs(a);
-        } else {
-            return -FastMath.abs(a);
-        }
+        return result;
     }
 
     /**
@@ -1078,10 +1062,13 @@ public class LoopClosure {
         double[] roots = new double[MAX_SOLUTIONS];
 
         if (!getInputAngles(r_n1, r_a1, r_a3, r_c3)) {
-            return NO_SOLUTIONS;
+            // No solutions are available in this case.
+            return 0;
         }
 
         getPolyCoeff(polyCoeff);
+
+        var sturmMethod = new SturmMethod();
         var solutions = sturmMethod.solveSturm(MAX_SOLUTIONS, polyCoeff, roots);
         if (solutions > 0) {
             getCoordsFromPolyRoots(solutions, roots, r_n1, r_a1, r_a3, r_c3, r_soln_n, r_soln_a, r_soln_c);
@@ -1111,94 +1098,57 @@ public class LoopClosure {
      * Initialize Loop Closure.
      */
     private void initializeLoopClosure() {
-        double[] axis = new double[3];
-        double[] rr_a1 = new double[3];
-        double[] rr_c1 = new double[3];
-        double[] rr_n2 = new double[3];
-        double[] rr_a2 = new double[3];
-        double[] rr_n2a2_ref = new double[3];
-        double[] rr_c1a1 = new double[3];
-        double[] rr_a1a2 = new double[3];
-        double[] dr = new double[3];
-        double[] bb_c1a1 = new double[3];
-        double[] bb_a1a2 = new double[3];
-        double[] bb_a2n2 = new double[3];
-        double[] p = new double[4];
-        double[][] Us = new double[3][3];
-        double[] tmp_val = new double[3];
 
-        // initializing length, angle, and torsion arrays
-        len0[0] = 1.52;
-        len0[1] = 1.33;
-        len0[2] = 1.45;
-        len0[3] = 1.52;
+        // Calculate the pi/4 rotation matrix about the x axis.
+        var rotMatrix = rotationMatrix(new double[]{1.0, 0.0, 0.0}, Math.PI * 0.25e0);
 
-        b_ang0[0] = Math.toRadians(111.6);
-        b_ang0[1] = Math.toRadians(117.5);
-        b_ang0[2] = Math.toRadians(120.0);
-        b_ang0[3] = Math.toRadians(111.6);
+        // Relative cartesian coordinates for the carboxyl carbon, nitrogen, and other alpha carbon. The base alpha
+        // carbon is assumed to be at the origin.
+        var relCarboxyl = new double[3];
+        relCarboxyl[0] = cos(BOND_ANGLES[1]) * BOND_LENS[0];
+        relCarboxyl[1] = sin(BOND_ANGLES[1]) * BOND_LENS[0];
+        relCarboxyl[2] = 0.0e0;
+        var relNitrogen = new double[3];
+        relNitrogen[0] = BOND_LENS[1];
+        relNitrogen[1] = 0.0e0;
+        relNitrogen[2] = 0.0e0;
+        var relAlpha2 = new double[3];
+        relAlpha2[0] = -cos(BOND_ANGLES[2]) * BOND_LENS[2];
+        relAlpha2[1] = sin(BOND_ANGLES[2]) * BOND_LENS[2];
+        relAlpha2[2] = 0.0e0;
 
-        t_ang0[0] = Math.PI;
-        t_ang0[1] = Math.PI;
-
+        // Calculate the relative position of the second alpha carbon.
+        relAlpha2 = matrixMultiplication(rotMatrix, relAlpha2);
+        var alpha1Alpha2 = new double[3];
+        var alpha2N = new double[3];
         for (int i = 0; i < 3; i++) {
-            rr_c1[i] = 0.0;
+            alpha1Alpha2[i] = relAlpha2[i] + relNitrogen[i] - relCarboxyl[i];
+            alpha2N[i] = -relAlpha2[i];
         }
-        // initializing axis
-        axis[0] = 1.0;
-        axis[1] = 0.0;
-        axis[2] = 0.0;
+
+        // Calculate the space between the two alpha carbons.
+        var a1A2Len = sqrt(dot(alpha1Alpha2, alpha1Alpha2));
+        double[] tmp_val = new double[3];
         for (int i = 0; i < 2; i++) {
-            // initializing rr_a1 array
-            rr_a1[0] = cos(b_ang0[1]) * len0[0];
-            rr_a1[1] = sin(b_ang0[1]) * len0[0];
-            rr_a1[2] = 0.0e0;
-            // initializing rr_n2 array
-            rr_n2[0] = len0[1];
-            rr_n2[1] = 0.0e0;
-            rr_n2[2] = 0.0e0;
-            // initializing rr_c1a1 array
+            // Assume next alpha carbon will have same length.
+            len_aa[i + 1] = a1A2Len;
+
+            // Temporary variables to calculate relevant angles.
             for (int j = 0; j < 3; j++) {
-                rr_c1a1[j] = rr_a1[j] - rr_c1[j];
-            }
-            // initializing rr_n2a2_ref array
-            rr_n2a2_ref[0] = -cos(b_ang0[2]) * len0[2];
-            rr_n2a2_ref[1] = sin(b_ang0[2]) * len0[2];
-            rr_n2a2_ref[2] = 0.0e0;
-            // quaternion is the quotient of two vectors in 3D space
-            quaternion(axis, t_ang0[i] * 0.25e0, p);
-            // means of representing a rotation of an axis about an origin
-            //      with no angular specification
-            rotationMatrix(p, Us);
-            var mulpro = matrixMultiplication(Us, rr_n2a2_ref);
-            for (int j = 0; j < 3; j++) {
-                rr_a2[j] = mulpro[j] + rr_n2[j];
-                rr_a1a2[j] = rr_a2[j] - rr_a1[j];
-                dr[j] = rr_a1a2[j];
-            }
-            double len2 = dot(dr, dr);
-            double len1 = sqrt(len2);
-            len_aa[i + 1] = len1;
-            for (int j = 0; j < 3; j++) {
-                bb_c1a1[j] = rr_c1a1[j] / len0[0];
-                bb_a1a2[j] = rr_a1a2[j] / len1;
-                bb_a2n2[j] = (rr_n2[j] - rr_a2[j]) / len0[2];
-            }
-            for (int j = 0; j < 3; j++) {
-                tmp_val[j] = -bb_a1a2[j];
+                tmp_val[j] = -alpha1Alpha2[j];
             }
 
-            xi[i + 1][0] = DoubleMath.angle(tmp_val, bb_a2n2);
+            xi[i + 1][0] = DoubleMath.angle(tmp_val, alpha2N);
             for (int j = 0; j < 3; j++) {
-                tmp_val[j] = -bb_c1a1[j];
+                tmp_val[j] = -relCarboxyl[j];
             }
 
-            eta[i][0] = DoubleMath.angle(bb_a1a2, tmp_val);
-            delta[i + 1][0] = PI - dihedralAngle(bb_c1a1, bb_a1a2, bb_a2n2);
+            eta[i][0] = DoubleMath.angle(alpha1Alpha2, tmp_val);
+            delta[i + 1][0] = PI - dihedralAngle(relCarboxyl, alpha1Alpha2, alpha2N);
         }
 
-        double a_min = b_ang0[3] - (xi[1][0] + eta[1][0]);
-        double a_max = min((b_ang0[3] + (xi[1][0] + eta[1][0])), PI);
+        double a_min = BOND_ANGLES[0] - (xi[1][0] + eta[1][0]);
+        double a_max = min((BOND_ANGLES[0] + (xi[1][0] + eta[1][0])), PI);
         aa13_min_sqr = pow(len_aa[1], 2) + pow(len_aa[2], 2) - 2.0 * len_aa[1] * len_aa[2] * cos(a_min);
         aa13_max_sqr = pow(len_aa[1], 2) + pow(len_aa[2], 2) - 2.0 * len_aa[1] * len_aa[2] * cos(a_max);
     }
