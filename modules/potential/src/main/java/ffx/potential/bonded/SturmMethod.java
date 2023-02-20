@@ -145,16 +145,14 @@ public class SturmMethod {
   /**
    * Solve using the Sturm method.
    *
-   * @param p_order an array of {@link int} objects.
-   * @param n_root an array of {@link int} objects.
+   * @param order the order of the polynomial.
    * @param poly_coeffs an array of {@link double} objects.
    * @param roots an array of {@link double} objects.
    */
-  public void solveSturm(int[] p_order, int[] n_root, double[] poly_coeffs, double[] roots) {
-
+  public int solveSturm(int order, double[] poly_coeffs, double[] roots) {
     Polynomial[] sseq = new Polynomial[Polynomial.MAX_ORDER * 2];
     double min, max;
-    int order, nroots, nchanges, np;
+    int nroots, nchanges, np;
     int[] atmin = new int[1];
     int[] atmax = new int[1];
     this.roots = roots;
@@ -162,8 +160,6 @@ public class SturmMethod {
     for (int i = 0; i < Polynomial.MAX_ORDER * 2; i++) {
       sseq[i] = new Polynomial();
     }
-
-    order = p_order[0];
 
     if (order + 1 >= 0) arraycopy(poly_coeffs, 0, sseq[0].coefficients, 0, order + 1);
 
@@ -196,11 +192,6 @@ public class SturmMethod {
 
     // get the number of real roots
     nroots = numRoots(np, sseq, atmin, atmax);
-
-    if (nroots == 0) {
-      n_root[0] = nroots;
-    }
-
     if (logger.isLoggable(Level.FINE)) {
       logger.fine(format(" Number of real roots: %d\n", nroots));
     }
@@ -234,7 +225,6 @@ public class SturmMethod {
     // Perform the bisection
     nroots = atmin[0] - atmax[0];
     sturmBisection(np, sseq, min, max, atmin[0], atmax[0], this.roots);
-    n_root[0] = nroots;
 
     // write out the roots
     if (logger.isLoggable(Level.FINE)) {
@@ -249,6 +239,8 @@ public class SturmMethod {
         logger.fine(string2.toString());
       }
     }
+
+    return nroots;
   }
 
   /**

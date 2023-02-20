@@ -173,20 +173,17 @@ public class Loop {
     double[][][] rSolnN = new double[maxSolution][3][3];
     double[][][] rSolnA = new double[maxSolution][3][3];
     double[][][] rSolnC = new double[maxSolution][3][3];
-    int[] nSoln = new int[1];
 
-    loopClosure.solve3PepPoly(rN[0], rA[0], rA[2], rC[2], rSolnN, rSolnA, rSolnC, nSoln);
+    var numSolutions = loopClosure.solve3PepPoly(rN[0], rA[0], rA[2], rC[2], rSolnN, rSolnA, rSolnC);
 
     StringBuilder sb = new StringBuilder();
     sb.append(format(" First residue:                %d\n", firstResidue));
     sb.append(format(" Ending residue:               %d\n", endResidue));
-    sb.append(format(" Number of solutions:          %d\n", nSoln[0]));
+    sb.append(format(" Number of solutions:          %d\n", numSolutions));
     logger.info(sb.toString());
 
-    for (int k = 0; k < nSoln[0]; k++) {
-      double[] coordsArray;
-      coordsArray = getSolutionCoordinates(k, rSolnN, rSolnA, rSolnC, firstResidue, endResidue);
-      solutions.add(coordsArray);
+    for (int k = 0; k < numSolutions; k++) {
+      solutions.add(getSolutionCoordinates(k, rSolnN, rSolnA, rSolnC, firstResidue, endResidue));
     }
 
     return solutions;
