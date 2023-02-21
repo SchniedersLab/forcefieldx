@@ -67,7 +67,7 @@ import org.apache.commons.math3.util.FastMath;
  *
  * <p>Residue-residue distance is defined as the shortest atom-atom distance in any possible
  * rotamer-rotamer pair if the residues are neighbors (central atom-central atom distances are within
- * a cutoff). Otherewise, distances are set to a default of Double.MAX_VALUE.
+ * a cutoff). Otherwise, distances are set to a default of Double.MAX_VALUE.
  *
  * <p>The intent of using a neighbor list is to avoid tediously searching rotamer- rotamer pairs
  * when two residues are so far apart we will never need the exact distance. We use the distance
@@ -119,17 +119,10 @@ public class DistanceMatrix {
    */
   private double[][][][] distanceMatrix;
 
-  public DistanceMatrix(
-      RotamerOptimization rO,
-      MolecularAssembly molecularAssembly,
-      AlgorithmListener algorithmListener,
-      Residue[] allResiduesArray,
-      List<Residue> allResiduesList,
-      RotamerOptimization.DistanceMethod distanceMethod,
-      double distance,
-      double twoBodyCutoffDist,
-      double threeBodyCutoffDist,
-      boolean lazyMatrix) {
+  public DistanceMatrix(RotamerOptimization rO, MolecularAssembly molecularAssembly,
+      AlgorithmListener algorithmListener, Residue[] allResiduesArray, List<Residue> allResiduesList,
+      RotamerOptimization.DistanceMethod distanceMethod, double distance, double twoBodyCutoffDist,
+      double threeBodyCutoffDist, boolean lazyMatrix) {
     this.rO = rO;
     this.molecularAssembly = molecularAssembly;
     this.algorithmListener = algorithmListener;
@@ -213,12 +206,10 @@ public class DistanceMatrix {
    * @param rl A rotamer index for l.
    * @return If i,ri,j,rj,k,rk,l,rl is greater than the threshold distances.
    */
-  public boolean checkQuadDistThreshold(
-      int i, int ri, int j, int rj, int k, int rk, int l, int rl) {
-    if (checkTriDistThreshold(i, ri, j, rj, k, rk)
-        || checkTriDistThreshold(i, ri, j, rj, l, rl)
-        || checkTriDistThreshold(i, ri, k, rk, l, rl)
-        || checkTriDistThreshold(j, rj, k, rk, l, rl)) {
+  public boolean checkQuadDistThreshold(int i, int ri, int j, int rj, int k, int rk, int l, int rl) {
+    if (checkTriDistThreshold(i, ri, j, rj, k, rk) || checkTriDistThreshold(i, ri, j, rj, l, rl)
+        || checkTriDistThreshold(i, ri, k, rk, l, rl) || checkTriDistThreshold(j, rj, k, rk, l,
+        rl)) {
       return true;
     }
     // Use the 3-body cutoff distance for now.
@@ -241,8 +232,7 @@ public class DistanceMatrix {
    * @return If i,ri,j,rj,k,rk is greater than the threshold distances.
    */
   public boolean checkTriDistThreshold(int i, int ri, int j, int rj, int k, int rk) {
-    if (checkPairDistThreshold(i, ri, j, rj)
-        || checkPairDistThreshold(i, ri, k, rk)
+    if (checkPairDistThreshold(i, ri, j, rj) || checkPairDistThreshold(i, ri, k, rk)
         || checkPairDistThreshold(j, rj, k, rk)) {
       return true;
     }
@@ -318,8 +308,7 @@ public class DistanceMatrix {
    * @param rl Rotamer for l
    * @return RMS separation distance
    */
-  public double get4BodyResidueDistance(
-      int i, int ri, int j, int rj, int k, int rk, int l, int rl) {
+  public double get4BodyResidueDistance(int i, int ri, int j, int rj, int k, int rk, int l, int rl) {
     double ij = getResidueDistance(i, ri, j, rj);
     double ik = getResidueDistance(i, ri, k, rk);
     double il = getResidueDistance(i, ri, l, rl);
@@ -336,11 +325,11 @@ public class DistanceMatrix {
   /**
    * Returns the RMS distance between an arbitrary set of rotamers.
    *
-   * @param resrot Residue index-rotamer index pairs.
+   * @param resRot Residue index-rotamer index pairs.
    * @return RMS distance, or Double.MAX_VALUE if ill-defined.
    */
-  public double getRawNBodyDistance(int... resrot) {
-    int nRes = resrot.length;
+  public double getRawNBodyDistance(int... resRot) {
+    int nRes = resRot.length;
     if (nRes % 2 != 0) {
       throw new IllegalArgumentException(" Must have an even number of arguments; res-rot pairs!");
     }
@@ -357,7 +346,7 @@ public class DistanceMatrix {
       int i2 = 2 * i;
       for (int j = i + 1; j < nRes; j++) {
         int j2 = 2 * j;
-        double rawDist = checkDistMatrix(resrot[i2], resrot[i2 + 1], resrot[j2], resrot[j2 + 1]);
+        double rawDist = checkDistMatrix(resRot[i2], resRot[i2 + 1], resRot[j2], resRot[j2 + 1]);
         if (!Double.isFinite(rawDist) || rawDist == Double.MAX_VALUE) {
           return Double.MAX_VALUE;
         }
@@ -434,8 +423,7 @@ public class DistanceMatrix {
         lengthRi = residuei.getRotamers().length;
       } catch (IndexOutOfBoundsException ex) {
         rO.logIfMaster(
-            format(" Residue i %s has null rotamers.",
-                residuei.toFormattedString(false, true)),
+            format(" Residue i %s has null rotamers.", residuei.toFormattedString(false, true)),
             Level.WARNING);
         continue;
       }
@@ -448,8 +436,8 @@ public class DistanceMatrix {
           try {
             lengthRj = residuej.getRotamers().length;
           } catch (IndexOutOfBoundsException ex) {
-            rO.logIfMaster(format(" Residue j %s has null rotamers.",
-                residuej.toFormattedString(false, true)));
+            rO.logIfMaster(
+                format(" Residue j %s has null rotamers.", residuej.toFormattedString(false, true)));
             continue;
           }
           distanceMatrix[i][ri][j] = new double[lengthRj];
@@ -469,7 +457,7 @@ public class DistanceMatrix {
       ResidueState[] orig = ResidueState.storeAllCoordinates(allResiduesList);
       int nMultiRes = 0;
 
-      // Build a list that contains one atom from each Residues: CA from
+      // Build a list that contains one atom from each Residue: CA from
       // amino acids, C1 from nucleic acids, or the first atom otherwise.
       Atom[] atoms = new Atom[numResidues];
       for (int i = 0; i < numResidues; i++) {
@@ -488,10 +476,8 @@ public class DistanceMatrix {
       */
       int nThreads;
       if (molecularAssembly.getPotentialEnergy().getParallelTeam() != null) {
-        nThreads =
-            (nMultiRes > 1)
-                ? 1
-                : molecularAssembly.getPotentialEnergy().getParallelTeam().getThreadCount();
+        nThreads = (nMultiRes > 1) ? 1
+            : molecularAssembly.getPotentialEnergy().getParallelTeam().getThreadCount();
       } else {
         // Suggested: nThreads = (nMultiRes > 1) ? 1 : ParallelTeam.getDefaultThreadCount();
         nThreads = 16;
@@ -514,17 +500,15 @@ public class DistanceMatrix {
        interfacial radius.
       */
       if (!crystal.aperiodic()) {
-        double sphere =
-            min(
-                min(crystal.interfacialRadiusA, crystal.interfacialRadiusB),
-                crystal.interfacialRadiusC);
+        double sphere = min(min(crystal.interfacialRadiusA, crystal.interfacialRadiusB),
+            crystal.interfacialRadiusC);
         if (nlistCutoff > sphere) {
           nlistCutoff = sphere;
         }
       }
 
-      NeighborList neighborList =
-          new NeighborList(null, crystal, atoms, nlistCutoff, 0.0, parallelTeam);
+      NeighborList neighborList = new NeighborList(null, crystal, atoms, nlistCutoff, 0.0,
+          parallelTeam);
 
       // Expand coordinates
       double[][] xyz = new double[nSymm][3 * numResidues];
@@ -560,9 +544,8 @@ public class DistanceMatrix {
       logger.info(
           format(" Built residue neighbor list:           %8.3f sec", neighborTime * 1.0e-9));
 
-      DistanceRegion distanceRegion = new DistanceRegion(
-          parallelTeam.getThreadCount(), numResidues, crystal, lists,
-          neighborList.getPairwiseSchedule());
+      DistanceRegion distanceRegion = new DistanceRegion(parallelTeam.getThreadCount(), numResidues,
+          crystal, lists, neighborList.getPairwiseSchedule());
 
       long parallelTime = -System.nanoTime();
       try {
@@ -639,7 +622,7 @@ public class DistanceMatrix {
   }
 
   /**
-   * Evaluates the pairwise distance between two residues' rotamers under any symmetry operator; does
+   * Evaluate the pairwise distance between two residues' rotamers under any symmetry operator; does
    * "lazy loading" for the distance matrix.
    *
    * @param i Residue i

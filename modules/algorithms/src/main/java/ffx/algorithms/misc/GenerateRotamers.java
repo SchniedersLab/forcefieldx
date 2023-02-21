@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.algorithms.misc;
 
+import static java.lang.String.format;
+
 import ffx.algorithms.AlgorithmListener;
 import ffx.numerics.Potential;
 import ffx.potential.MolecularAssembly;
@@ -66,13 +68,14 @@ import java.util.regex.Pattern;
  * @author Michael J. Schnieders
  */
 public class GenerateRotamers {
+
   private static final Logger logger = Logger.getLogger(GenerateRotamers.class.getName());
   private static final Pattern atRangePatt = Pattern.compile("(\\d+)-(\\d+)");
   private final Residue residue;
   private final int nChi;
   private final double[] currentChi;
   private final File outFile;
-  private final MolecularAssembly mola;
+  private final MolecularAssembly molecularAssembly;
   private final AlgorithmListener listener;
   private final RotamerLibrary library;
   private final Potential potential;
@@ -93,27 +96,23 @@ public class GenerateRotamers {
   /**
    * Intended to create rotamer sets for nonstandard amino acids.
    *
-   * @param mola a {@link ffx.potential.MolecularAssembly} object.
+   * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
    * @param potential a {@link ffx.numerics.Potential} object.
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param file Output file
    * @param nChi Number of rotameric torsions in the residue
    * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
    */
-  public GenerateRotamers(
-      MolecularAssembly mola,
-      Potential potential,
-      Residue residue,
-      File file,
-      int nChi,
-      AlgorithmListener listener) {
-    this(mola, potential, residue, file, nChi, listener, RotamerLibrary.getDefaultLibrary());
+  public GenerateRotamers(MolecularAssembly molecularAssembly, Potential potential, Residue residue,
+      File file, int nChi, AlgorithmListener listener) {
+    this(molecularAssembly, potential, residue, file, nChi, listener,
+        RotamerLibrary.getDefaultLibrary());
   }
 
   /**
    * Intended to create rotamer sets for nonstandard amino acids.
    *
-   * @param mola a {@link ffx.potential.MolecularAssembly} object.
+   * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
    * @param potential a {@link ffx.numerics.Potential} object.
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param file Output file
@@ -121,19 +120,13 @@ public class GenerateRotamers {
    * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
    * @param library Rotamer library to use
    */
-  public GenerateRotamers(
-      MolecularAssembly mola,
-      Potential potential,
-      Residue residue,
-      File file,
-      int nChi,
-      AlgorithmListener listener,
-      RotamerLibrary library) {
+  public GenerateRotamers(MolecularAssembly molecularAssembly, Potential potential, Residue residue,
+      File file, int nChi, AlgorithmListener listener, RotamerLibrary library) {
     this.residue = residue;
     this.nChi = nChi;
     endDepth = nChi - 1;
     this.potential = potential;
-    this.mola = mola;
+    this.molecularAssembly = molecularAssembly;
     this.listener = listener;
     this.currentChi = new double[nChi];
     this.library = library;
@@ -142,13 +135,13 @@ public class GenerateRotamers {
     if (outputFile.exists()) {
       String outName = outputFile.getName();
       for (int i = 1; i < 1000; i++) {
-        outputFile = new File(String.format("%s_%d", outName, i));
+        outputFile = new File(format("%s_%d", outName, i));
         if (!outputFile.exists()) {
           break;
         }
       }
       if (outputFile.exists()) {
-        logger.severe(String.format(" Could not version file %s", outName));
+        logger.severe(format(" Could not version file %s", outName));
       }
     }
     outFile = outputFile;
@@ -179,7 +172,7 @@ public class GenerateRotamers {
 
   /**
    * Sets a standard amino acid to be the baseline for rotamer generation. For example, use TYR as a
-   * baseline for phosphotyrosine.
+   * baseline for phospho-tyrosine.
    *
    * @param aa3 a {@link AminoAcid3} object.
    */
@@ -197,11 +190,11 @@ public class GenerateRotamers {
   }
 
   /**
-   * Set which torsions to work on. Negative end values set the final depth to be the total number
-   * of torsions.
+   * Set which torsions to work on. Negative end values set the final depth to be the total number of
+   * torsions.
    *
-   * @param start a int.
-   * @param end a int.
+   * @param start The first torsion to work on.
+   * @param end The last torsion to work on.
    */
   public void setDepth(int start, int end) {
     startDepth = start;
@@ -219,21 +212,21 @@ public class GenerateRotamers {
    */
   public void setElectrostatics(String electrostatics) {
     if (electrostatics != null) {
-      String[] toks = electrostatics.split(",");
-      Atom[] atoms = mola.getAtomArray();
-      for (String tok : toks) {
+      String[] tokens = electrostatics.split(",");
+      Atom[] atoms = molecularAssembly.getAtomArray();
+      for (String tok : tokens) {
         Matcher m = atRangePatt.matcher(tok);
         if (m.matches()) {
           int begin = Integer.parseInt(m.group(1));
           int end = Integer.parseInt(m.group(2));
-          logger.info(String.format(" Inactivating electrostatics for atoms %d-%d", begin, end));
+          logger.info(format(" Inactivating electrostatics for atoms %d-%d", begin, end));
           for (int i = begin; i <= end; i++) {
             Atom ai = atoms[i - 1];
             ai.setElectrostatics(false);
             ai.print(Level.FINE);
           }
         } else {
-          logger.info(String.format(" Discarding electrostatics input %s", tok));
+          logger.info(format(" Discarding electrostatics input %s", tok));
         }
       }
     }
@@ -246,21 +239,21 @@ public class GenerateRotamers {
    */
   public void setInactiveAtoms(String iatoms) {
     if (iatoms != null) {
-      String[] toks = iatoms.split(",");
-      Atom[] atoms = mola.getAtomArray();
-      for (String tok : toks) {
+      String[] tokens = iatoms.split(",");
+      Atom[] atoms = molecularAssembly.getAtomArray();
+      for (String tok : tokens) {
         Matcher m = atRangePatt.matcher(tok);
         if (m.matches()) {
           int begin = Integer.parseInt(m.group(1));
           int end = Integer.parseInt(m.group(2));
-          logger.info(String.format(" Inactivating atoms %d-%d", begin, end));
+          logger.info(format(" Inactivating atoms %d-%d", begin, end));
           for (int i = begin; i <= end; i++) {
             Atom ai = atoms[i - 1];
             ai.setUse(false);
             ai.print(Level.FINE);
           }
         } else {
-          logger.info(String.format(" Discarding inactive atoms input %s", tok));
+          logger.info(format(" Discarding inactive atoms input %s", tok));
         }
       }
     }
@@ -304,22 +297,24 @@ public class GenerateRotamers {
       File vidFile = new File(videoFile);
       if (vidFile.exists()) {
         for (int i = 0; i < 1000; i++) {
-          vidFile = new File(String.format("%s_%d", videoFile, i));
+          vidFile = new File(format("%s_%d", videoFile, i));
           if (!vidFile.exists()) {
             this.videoFile = vidFile;
             writeVideo = true;
-            videoFilter = new PDBFilter(this.videoFile, mola, mola.getForceField(), null);
+            videoFilter = new PDBFilter(this.videoFile, molecularAssembly,
+                molecularAssembly.getForceField(), null);
             videoFilter.setLogWrites(false);
             break;
           }
         }
         if (vidFile.exists()) {
-          logger.warning(String.format(" Could not version video file %s", videoFile));
+          logger.warning(format(" Could not version video file %s", videoFile));
         }
       } else {
         this.videoFile = vidFile;
         writeVideo = true;
-        videoFilter = new PDBFilter(this.videoFile, mola, mola.getForceField(), null);
+        videoFilter = new PDBFilter(this.videoFile, molecularAssembly,
+            molecularAssembly.getForceField(), null);
         videoFilter.setLogWrites(false);
       }
     } else {
@@ -340,7 +335,7 @@ public class GenerateRotamers {
         turnChi(startDepth, bw);
       }
     } catch (IOException ex) {
-      logger.warning(String.format(" IO exception in rotamer generation: %s", ex.toString()));
+      logger.warning(format(" IO exception in rotamer generation: %s", ex));
     }
   }
 
@@ -348,7 +343,7 @@ public class GenerateRotamers {
    * Applies a library rotamer, filling in the end with 0s as necessary. For example, PTR requires
    * more torsions than TYR, so one cannot simply apply a TYR rotamer to a PTR residue.
    *
-   * @param rotamer
+   * @param rotamer The rotamer to apply.
    */
   private void applyLibRotamer(Rotamer rotamer) {
     double[] rotValues = new double[nChi * 2];
@@ -368,20 +363,22 @@ public class GenerateRotamers {
   /**
    * Generates an aa/na/unk Rotamer for the selected residue given values.
    *
-   * @param values
-   * @return
+   * @param values The values to use.
+   * @return The Rotamer.
    */
   private Rotamer generateRotamer(double[] values) {
     switch (residue.getResidueType()) {
-      case AA:
+      case AA -> {
         AminoAcid3 aa3 = residue.getAminoAcid3();
         return new Rotamer(aa3, values);
-      case NA:
+      }
+      case NA -> {
         NucleicAcid3 na3 = residue.getNucleicAcid3();
         return new Rotamer(na3, values);
-      case UNK:
-      default:
+      }
+      default -> {
         return new Rotamer(values);
+      }
     }
   }
 
@@ -389,8 +386,8 @@ public class GenerateRotamers {
    * Recursive method for turning the torsions.
    *
    * @param depth Current depth of the recursion
-   * @param bw
-   * @throws IOException
+   * @param bw The BufferedWriter to write to.
+   * @throws IOException If there is an IO exception.
    */
   private void turnChi(int depth, BufferedWriter bw) throws IOException {
     double chi = currentChi[depth];
@@ -399,7 +396,7 @@ public class GenerateRotamers {
       if (depth == endDepth) {
         evaluateChi(bw);
         if (listener != null) {
-          listener.algorithmUpdate(mola);
+          listener.algorithmUpdate(molecularAssembly);
         }
         if (writeVideo) {
           writeSnapshot();
@@ -413,9 +410,9 @@ public class GenerateRotamers {
 
   private void writeSnapshot() {
     try (BufferedWriter bw = new BufferedWriter(new FileWriter(videoFile, true))) {
-      bw.write(String.format("MODEL %d", nEval));
+      bw.write(format("MODEL %d", nEval));
       bw.newLine();
-      bw.write(String.format("REMARK 301 TORSIONS %s", formatChi()));
+      bw.write(format("REMARK 301 TORSIONS %s", formatChi()));
       bw.newLine();
       bw.flush();
       videoFilter.writeFile(videoFile, true);
@@ -424,34 +421,32 @@ public class GenerateRotamers {
       bw.flush();
     } catch (IOException ex) {
       logger.warning(
-          String.format(
-              " Exception writing to video file %s: " + "%s", videoFile.getName(), ex.toString()));
+          format(" Exception writing to video file %s: " + "%s", videoFile.getName(), ex));
     }
   }
 
   /**
    * Called at a leaf of the recursion.
    *
-   * @param bw
-   * @throws IOException
+   * @param bw The BufferedWriter to write to.
+   * @throws IOException If there is an IO exception.
    */
   private void evaluateChi(BufferedWriter bw) throws IOException {
     try {
       applyChi();
       double e = currentEnergy();
-      String result = String.format("%s,%12f", formatChi(), e);
+      String result = format("%s,%12f", formatChi(), e);
       ++nEval;
       if (print) {
-        logger.info(
-            String.format(" Evaluation %10d %s, energy %10.5f kcal/mol", nEval, formatChi(), e));
+        logger.info(format(" Evaluation %10d %s, energy %10.5f kcal/mol", nEval, formatChi(), e));
       }
       bw.write(result);
       bw.newLine();
       if (nEval % 1000 == 0) {
-        logger.info(String.format(" %12.7e states evaluated", (double) nEval));
+        logger.info(format(" %12.7e states evaluated", (double) nEval));
       }
     } catch (ArithmeticException ex) {
-      logger.info(String.format(" Force field exception at chi %s", formatChi()));
+      logger.info(format(" Force field exception at chi %s", formatChi()));
     }
   }
 
@@ -469,13 +464,13 @@ public class GenerateRotamers {
   /**
    * Returns a formatted String with chi values.
    *
-   * @return
+   * @return A formatted String with chi values.
    */
   private String formatChi() {
-    StringBuilder sb = new StringBuilder(String.format("%8f", currentChi[0]));
+    StringBuilder sb = new StringBuilder(format("%8f", currentChi[0]));
     for (int i = 1; i < nChi; i++) {
       // sb.append(",").append(currentChi[i]);
-      sb.append(String.format(",%8f", currentChi[i]));
+      sb.append(format(",%8f", currentChi[i]));
     }
     return sb.toString();
   }

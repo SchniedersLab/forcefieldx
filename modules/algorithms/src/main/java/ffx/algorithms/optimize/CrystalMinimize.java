@@ -74,9 +74,7 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
    * @param xtalEnergy a {@link ffx.potential.XtalEnergy} object.
    * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener} object.
    */
-  public CrystalMinimize(
-      MolecularAssembly molecularAssembly,
-      XtalEnergy xtalEnergy,
+  public CrystalMinimize(MolecularAssembly molecularAssembly, XtalEnergy xtalEnergy,
       AlgorithmListener algorithmListener) {
     super(molecularAssembly, xtalEnergy, algorithmListener);
     crystal = molecularAssembly.getCrystal();
@@ -239,9 +237,8 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
         c44 = c55 = cavg;
         c66 = dE2dA2(6, 6, delta, x, eps) * PRESCON * GPA / volume;
         pg = crystal.getUnitCell().spaceGroup.pointGroupName;
-        if (pg.equalsIgnoreCase("PG4")
-            || pg.equalsIgnoreCase("PG4bar")
-            || pg.equalsIgnoreCase("PG4/m")) {
+        if (pg.equalsIgnoreCase("PG4") || pg.equalsIgnoreCase("PG4bar") || pg.equalsIgnoreCase(
+            "PG4/m")) {
           // Should be equal in magnitude and opposite sign.
           c16 = dE2dA2(1, 6, delta, x, eps) * PRESCON * GPA / volume;
           c26 = dE2dA2(2, 6, delta, x, eps) * PRESCON * GPA / volume;
@@ -313,15 +310,13 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
       logger.info(
           format(" Elasticity Tensor using minimization and FD step size of %6.3e (GPa) =", delta));
     } else {
-      logger.info(
-          format(
-              " Elasticity Tensor using rigid body fractional coordinates and FD step size of %6.3e (GPa) =",
-              delta));
+      logger.info(format(
+          " Elasticity Tensor using rigid body fractional coordinates and FD step size of %6.3e (GPa) =",
+          delta));
     }
     logger.info(
         format(" [ %12.3f %12.3f %12.3f %12.3f %12.3f %12.3f ]", c11, c12, c13, c14, c15, c16));
-    logger.info(
-        format(" [ %12s %12.3f %12.3f %12.3f %12.3f %12.3f ]", "", c22, c23, c24, c25, c26));
+    logger.info(format(" [ %12s %12.3f %12.3f %12.3f %12.3f %12.3f ]", "", c22, c23, c24, c25, c26));
     logger.info(format(" [ %12s %12s %12.3f %12.3f %12.3f %12.3f ]", "", "", c33, c34, c35, c36));
     logger.info(format(" [ %12s %12s %12s %12.3f %12.3f %12.3f ]", "", "", "", c44, c45, c46));
     logger.info(format(" [ %12s %12s %12s %12s %12.3f %12.3f ]", "", "", "", "", c55, c56));
@@ -350,8 +345,8 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
   }
 
   /**
-   * Print out the partial derivatives of the Energy with respect to components of the 3 vectors
-   * that define the primitive cell.
+   * Print out the partial derivatives of the Energy with respect to components of the 3 vectors that
+   * define the primitive cell.
    */
   public void printTensor() {
     computeStressTensor(true);
@@ -366,33 +361,32 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
    */
   private void applyStrain(int voight, double delta, double[][] strain) {
     switch (voight) {
-      case 1: // XX
-        strain[0][0] += delta;
-        // strain[1][1] -= 1.0 * delta / 3.0;
-        // strain[2][2] -= 1.0 * delta / 3.0;
-        break;
-      case 2: // YY
+      case 1 -> // XX
+          strain[0][0] += delta;
+
+      // strain[1][1] -= 1.0 * delta / 3.0;
+      // strain[2][2] -= 1.0 * delta / 3.0;
+      case 2 -> // YY
         // strain[0][0] -= 1.0 * delta / 3.0;
-        strain[1][1] += delta;
-        // strain[2][2] -= 1.0 * delta / 3.0;
-        break;
-      case 3: // ZZ
+          strain[1][1] += delta;
+
+      // strain[2][2] -= 1.0 * delta / 3.0;
+      case 3 -> // ZZ
         // strain[0][0] -= 1.0 * delta / 3.0;
         // strain[1][1] -= 1.0 * delta / 3.0;
-        strain[2][2] += delta;
-        break;
-      case 4: // YZ
+          strain[2][2] += delta;
+      case 4 -> { // YZ
         strain[1][2] += delta / 2.0;
         strain[2][1] += delta / 2.0;
-        break;
-      case 5: // XZ
+      }
+      case 5 -> { // XZ
         strain[0][2] += delta / 2.0;
         strain[2][0] += delta / 2.0;
-        break;
-      case 6: // XY
+      }
+      case 6 -> { // XY
         strain[0][1] += delta / 2.0;
         strain[1][0] += delta / 2.0;
-        break;
+      }
     }
   }
 
@@ -536,11 +530,11 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
     applyStrain(voight2, delta, dStrain);
     try {
       if (!crystal.perturbCellVectors(dStrain)) {
-        logger.info(" Crytsal method perturbCellVectors returned false.");
+        logger.info(" Crystal method perturbCellVectors returned false.");
         return 0.0;
       }
     } catch (Exception e) {
-      logger.info(" Exception from Crytsal method perturbCellVectors.");
+      logger.info(" Exception from Crystal method perturbCellVectors.");
       return 0.0;
     }
     forceFieldEnergy.setCrystal(crystal);
@@ -560,11 +554,11 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
     applyStrain(voight2, -delta, dStrain);
     try {
       if (!crystal.perturbCellVectors(dStrain)) {
-        logger.info(" Crytsal method perturbCellVectors returned false.");
+        logger.info(" Crystal method perturbCellVectors returned false.");
         return 0.0;
       }
     } catch (Exception e) {
-      logger.info(" Exception from Crytsal method perturbCellVectors.");
+      logger.info(" Exception from Crystal method perturbCellVectors.");
       return 0.0;
     }
     forceFieldEnergy.setCrystal(crystal);
@@ -584,11 +578,11 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
     applyStrain(voight2, -delta, dStrain);
     try {
       if (!crystal.perturbCellVectors(dStrain)) {
-        logger.info(" Crytsal method perturbCellVectors returned false.");
+        logger.info(" Crystal method perturbCellVectors returned false.");
         return 0.0;
       }
     } catch (Exception e) {
-      logger.info(" Exception from Crytsal method perturbCellVectors.");
+      logger.info(" Exception from Crystal method perturbCellVectors.");
       return 0.0;
     }
     forceFieldEnergy.setCrystal(crystal);
@@ -608,11 +602,11 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
     applyStrain(voight2, delta, dStrain);
     try {
       if (!crystal.perturbCellVectors(dStrain)) {
-        logger.info(" Crytsal method perturbCellVectors returned false.");
+        logger.info(" Crystal method perturbCellVectors returned false.");
         return 0.0;
       }
     } catch (Exception e) {
-      logger.info(" Exception from Crytsal method perturbCellVectors.");
+      logger.info(" Exception from Crystal method perturbCellVectors.");
       return 0.0;
     }
     forceFieldEnergy.setCrystal(crystal);
