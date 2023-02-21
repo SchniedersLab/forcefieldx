@@ -131,12 +131,8 @@ public class Constants {
    * KG_TO_GRAMS * METERS_TO_ANG * METERS_TO_ANG * AVOGADRO / (SEC_TO_PSEC * SEC_TO_PSEC)</code>
    */
   public static final double kB =
-      BOLTZMANN_SI
-          * KG_TO_GRAMS
-          * METERS_TO_ANG
-          * METERS_TO_ANG
-          * AVOGADRO
-          / (SEC_TO_PSEC * SEC_TO_PSEC);
+      BOLTZMANN_SI * KG_TO_GRAMS * METERS_TO_ANG * METERS_TO_ANG * AVOGADRO / (SEC_TO_PSEC
+          * SEC_TO_PSEC);
   /** Conversion from kcal/mol/Ang^3 to Atm. <code>PRESCON=6.85684112e4</code> */
   public static final double PRESCON = 6.85684112e4;
   /** Permittivity of water at STP. <code>dWater=78.3</code> */

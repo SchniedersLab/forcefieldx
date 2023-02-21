@@ -89,8 +89,8 @@ public class LambdaMove implements MCMove {
   }
 
   /**
-   * Applies 0-1 mirroring conditions to lam + dL. Skips any moves where dL is greater than 1 or
-   * less than -1, and skips 50% of moves from 0 or 1 (exact).
+   * Applies 0-1 mirroring conditions to lam + dL. Skips any moves where dL is greater than 1 or less
+   * than -1, and skips 50% of moves from 0 or 1 (exact).
    *
    * @param random Source of randomness.
    * @param lam Initial lambda.
@@ -106,8 +106,7 @@ public class LambdaMove implements MCMove {
     }
     // Eliminate really weird edge cases.
     if (abs(dL) > 1.0) {
-      logger.warning(
-          String.format(" Skipping large lambda move of %.3f not between -1 and +1", dL));
+      logger.warning(String.format(" Skipping large lambda move of %.3f not between -1 and +1", dL));
       return lam;
     }
     // Math.abs to mirror negative values.
@@ -195,8 +194,8 @@ public class LambdaMove implements MCMove {
   }
 
   /**
-   * Applies 0-1 mirroring conditions to lam + dL. Skips any moves where dL is greater than 1 or
-   * less than -1, and skips 50% of moves from 0 or 1 (exact).
+   * Applies 0-1 mirroring conditions to lam + dL. Skips any moves where dL is greater than 1 or less
+   * than -1, and skips 50% of moves from 0 or 1 (exact).
    *
    * @param lam Initial lambda.
    * @param dL Change in lambda.
