@@ -70,14 +70,14 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
   }
 
   /**
-   * Constructor permitting a custom frequency a in the form sin^2(a*x) or cos^2(a*x). The sine form
-   * will switch 0-1, and the cosine form switch 1-0.
+   * Constructor permitting a custom frequency "a" in the form sin^2(a*x) or cos^2(a*x). The sine
+   * form will switch 0-1, and the cosine form switch 1-0.
    *
-   * @param mult Value of a
+   * @param coefficient Value of a
    * @param cosine Use a cos^2(ax) transform instead of sin^2(ax).
    */
-  public SquaredTrigSwitch(double mult, boolean cosine) {
-    multiplier = mult;
+  public SquaredTrigSwitch(double coefficient, boolean cosine) {
+    multiplier = coefficient;
     halfPeriod = PI_OVER_TWO / multiplier;
     xTransform = cosine ? this::cosineTransform : this::sineTransform;
     this.cosine = cosine;
@@ -143,18 +143,13 @@ public class SquaredTrigSwitch implements UnivariateSwitchingFunction {
     double cosVal = cos(x);
     double multPow = pow(multiplier, order);
 
-    switch (order % 4) {
-      case 0:
-        return pow(2.0, order - 1) * multPow * ((sinVal * sinVal) - (cosVal * cosVal));
-      case 1:
-        return pow(2.0, order) * multPow * sinVal * cosVal;
-      case 2:
-        return pow(2.0, order - 1) * multPow * ((cosVal * cosVal) - (sinVal * sinVal));
-      case 3:
-        return -1.0 * pow(2.0, order) * multPow * sinVal * cosVal;
-      default:
-        throw new ArithmeticException("A positive number modulo 4 was not 0-3");
-    }
+    return switch (order % 4) {
+      case 0 -> pow(2.0, order - 1) * multPow * ((sinVal * sinVal) - (cosVal * cosVal));
+      case 1 -> pow(2.0, order) * multPow * sinVal * cosVal;
+      case 2 -> pow(2.0, order - 1) * multPow * ((cosVal * cosVal) - (sinVal * sinVal));
+      case 3 -> -1.0 * pow(2.0, order) * multPow * sinVal * cosVal;
+      default -> throw new ArithmeticException("A positive number modulo 4 was not 0-3");
+    };
   }
 
   /** {@inheritDoc} */

@@ -42,6 +42,7 @@ import edu.rit.pj.Comm
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.dynamics.MolecularDynamics
+import ffx.algorithms.dynamics.MDEngine
 import ffx.algorithms.dynamics.MolecularDynamicsOpenMM
 import ffx.numerics.Potential
 import ffx.potential.bonded.Residue
@@ -303,7 +304,7 @@ class PhBar extends AlgorithmsScript {
       molecularDynamics =
           dynamicsOptions
               .getDynamics(writeOutOptions, forceFieldEnergy, activeAssembly, algorithmListener,
-                  MolecularDynamics.DynamicsEngine.FFX)
+                  MDEngine.FFX)
       molecularDynamics.attachExtendedSystem(esvSystem, dynamicsOptions.report)
 
       // Cycle MD runs

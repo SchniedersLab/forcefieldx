@@ -278,11 +278,11 @@ public class Rotamer {
     ResidueState resState = residue.storeState();
     double[] chi = RotamerLibrary.measureRotamer(residue, false);
 
-    double[] vals = new double[chi.length * 2];
+    double[] values = new double[chi.length * 2];
     for (int i = 0; i < chi.length; i++) {
       int index = i * 2;
-      vals[index] = chi[i];
-      vals[index + 1] = 0.0;
+      values[index] = chi[i];
+      values[index + 1] = 0.0;
     }
 
     switch (residue.getResidueType()) {
@@ -290,52 +290,52 @@ public class Rotamer {
         // Only one rotamer for non-titrating cases.
         if (titrationUtils == null) {
           Rotamer[] rotamers = new Rotamer[1];
-          rotamers[0] = new Rotamer(residue.getAminoAcid3(), resState, titrationUtils, vals);
+          rotamers[0] = new Rotamer(residue.getAminoAcid3(), resState, titrationUtils, values);
           return rotamers;
         }
         switch (residue.getAminoAcid3()) {
           case ASH:
             Rotamer[] rotamers = new Rotamer[2];
-            rotamers[0] = new Rotamer(AminoAcid3.ASP, resState, titrationUtils, vals);
-            rotamers[1] = new Rotamer(AminoAcid3.ASH, resState, titrationUtils, vals);
+            rotamers[0] = new Rotamer(AminoAcid3.ASP, resState, titrationUtils, values);
+            rotamers[1] = new Rotamer(AminoAcid3.ASH, resState, titrationUtils, values);
             return rotamers;
           case GLH:
             rotamers = new Rotamer[2];
-            rotamers[0] = new Rotamer(AminoAcid3.GLU, resState, titrationUtils, vals);
-            rotamers[1] = new Rotamer(AminoAcid3.GLH, resState, titrationUtils, vals);
+            rotamers[0] = new Rotamer(AminoAcid3.GLU, resState, titrationUtils, values);
+            rotamers[1] = new Rotamer(AminoAcid3.GLH, resState, titrationUtils, values);
             return rotamers;
           case HIS:
             rotamers = new Rotamer[3];
-            rotamers[0] = new Rotamer(AminoAcid3.HIS, resState, titrationUtils, vals);
-            rotamers[1] = new Rotamer(AminoAcid3.HID, resState, titrationUtils, vals);
-            rotamers[2] = new Rotamer(AminoAcid3.HIE, resState, titrationUtils, vals);
+            rotamers[0] = new Rotamer(AminoAcid3.HIS, resState, titrationUtils, values);
+            rotamers[1] = new Rotamer(AminoAcid3.HID, resState, titrationUtils, values);
+            rotamers[2] = new Rotamer(AminoAcid3.HIE, resState, titrationUtils, values);
             return rotamers;
           case LYS:
             rotamers = new Rotamer[2];
-            rotamers[0] = new Rotamer(AminoAcid3.LYS, resState, titrationUtils, vals);
-            rotamers[1] = new Rotamer(AminoAcid3.LYD, resState, titrationUtils, vals);
+            rotamers[0] = new Rotamer(AminoAcid3.LYS, resState, titrationUtils, values);
+            rotamers[1] = new Rotamer(AminoAcid3.LYD, resState, titrationUtils, values);
             return rotamers;
           case CYS:
             rotamers = new Rotamer[2];
-            rotamers[0] = new Rotamer(AminoAcid3.CYS, resState, titrationUtils, vals);
-            rotamers[1] = new Rotamer(AminoAcid3.CYD, resState, titrationUtils, vals);
+            rotamers[0] = new Rotamer(AminoAcid3.CYS, resState, titrationUtils, values);
+            rotamers[1] = new Rotamer(AminoAcid3.CYD, resState, titrationUtils, values);
             return rotamers;
           default:
-            // Null TitrationUtils reference to indicates this residue does not support titration.
+            // Null TitrationUtils reference indicates this residue does not support titration.
             rotamers = new Rotamer[1];
-            rotamers[0] = new Rotamer(residue.getAminoAcid3(), resState, null, vals);
+            rotamers[0] = new Rotamer(residue.getAminoAcid3(), resState, null, values);
             return rotamers;
         }
       case NA:
-        // Null TitrationUtils reference to indicates this residue does not support titration.
+        // Null TitrationUtils reference indicates this residue does not support titration.
         Rotamer[] rotamers = new Rotamer[1];
-        rotamers[0] = new Rotamer(residue.getNucleicAcid3(), resState, null, vals);
+        rotamers[0] = new Rotamer(residue.getNucleicAcid3(), resState, null, values);
         return rotamers;
       case UNK:
       default:
         // Null TitrationUtils reference to indicates this residue does not support titration.
         rotamers = new Rotamer[1];
-        rotamers[0] = new Rotamer(resState, null, vals);
+        rotamers[0] = new Rotamer(resState, null, values);
         return rotamers;
     }
   }

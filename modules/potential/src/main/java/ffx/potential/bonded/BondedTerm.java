@@ -37,12 +37,10 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
-import edu.rit.pj.reduction.SharedDouble;
 import ffx.numerics.Constraint;
 import ffx.potential.bonded.Atom.Resolution;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
@@ -65,7 +63,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
    * that are used in forming the term. Order can be reversed for help in assigning force field
    * parameters for the Term.
    */
-  private static final StringBuilder idtemp = new StringBuilder();
+  private static final StringBuilder idTemp = new StringBuilder();
   /** Constant <code>bondedComparator</code> */
   private static final BondedComparator bondedComparator = new BondedComparator();
   /** ID of this BondedTerm. */
@@ -78,12 +76,8 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
   protected double value;
   /** Energy of the term (kcal/mol). */
   protected double energy;
-  /** If set, derivative components are filed by source type. */
-  private HashMap<Class<? extends BondedTerm>, SharedDouble> decompositionMap = null;
   /** Flag indicating if this term is constrained. */
   private boolean isConstrained = false;
-  /** Constraint on this BondedTerm, if any (else null). */
-  private Constraint constraint = null;
 
   /** Default Constructor */
   public BondedTerm() {
@@ -151,6 +145,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
 
   /**
    * This method removes terms from a list that are marked as being part of a neural network.
+   *
    * @param list The list to check.
    * @param <T> The Bonded term class.
    */
@@ -209,7 +204,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
   /**
    * Get the constituent Atom specified by index.
    *
-   * @param index a int.
+   * @param index The index of the Atom to return.
    * @return a {@link ffx.potential.bonded.Atom} object.
    */
   public Atom getAtom(int index) {
@@ -220,8 +215,8 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
   }
 
   /**
-   * Returns all of the Atoms contained in this BondedTerm, regardless of whether they are child
-   * nodes in the tree structure. Returns a new array, not a reference to the original array.
+   * Returns all Atoms contained in this BondedTerm, regardless of whether they are child nodes in
+   * the tree structure. Returns a new array, not a reference to the original array.
    *
    * @return Atoms in this BondedTerm
    */
@@ -230,8 +225,8 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
   }
 
   /**
-   * Returns all of the Atoms contained in this BondedTerm, regardless of whether they are child
-   * nodes in the tree structure.
+   * Returns all Atoms contained in this BondedTerm, regardless of whether they are child nodes in
+   * the tree structure.
    *
    * @param returnCopy If true, return a new copy of the Atom array.
    * @return Atoms in this BondedTerm
@@ -250,7 +245,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
   /**
    * Get the constituent Bond specified by index.
    *
-   * @param index a int.
+   * @param index The index of the Bond to return.
    * @return a {@link ffx.potential.bonded.Bond} object.
    */
   public Bond getBond(int index) {
@@ -312,27 +307,12 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
   }
 
   /**
-   * Check if this BondedTerm is lambda-sensitive (e.g. a softcored dihedral).
+   * Check if this BondedTerm is lambda-sensitive (e.g., a softcore dihedral).
    *
    * @return True if Lambda affects the energy of this term.
    */
   public boolean isLambdaScaled() {
     return false;
-  }
-
-  /**
-   * Checks if all atoms in this BondedTerm are of the given resolution.
-   *
-   * @param resolution a {@link ffx.potential.bonded.Atom.Resolution} object.
-   * @return true if all atoms in this term are at the same resolution.
-   */
-  public boolean isResolution(Resolution resolution) {
-    for (Atom atom : atoms) {
-      if (atom.getResolution() != resolution) {
-        return false;
-      }
-    }
-    return true;
   }
 
   /**
@@ -381,7 +361,6 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
    * @param c Constraint or null to clear.
    */
   public void setConstraint(Constraint c) {
-    this.constraint = c;
     isConstrained = c != null;
   }
 
@@ -395,15 +374,15 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
       return;
     }
     // Reuse the string buffers
-    idtemp.delete(0, idtemp.length());
+    idTemp.delete(0, idTemp.length());
     for (int i = 0; i < atoms.length; i++) {
       Atom a = (reverse) ? atoms[atoms.length - 1 - i] : atoms[i];
       if (i != 0) {
-        idtemp.append("  ");
+        idTemp.append("  ");
       }
-      idtemp.append(a.describe(Atom.Descriptions.XyzIndex_Name));
+      idTemp.append(a.describe(Atom.Descriptions.XyzIndex_Name));
     }
-    id = idtemp.toString().intern();
+    id = idTemp.toString().intern();
   }
 
   /** {@inheritDoc} */
@@ -446,7 +425,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
   /**
    * {@inheritDoc}
    *
-   * <p>Overidden toString Method returns the Term's id.
+   * <p>Overridden toString Method returns the Term's id.
    */
   @Override
   public String toString() {
@@ -456,7 +435,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
   /**
    * Check if all atoms of this BondedTerm have the Lambda flag set.
    *
-   * @return True if Lambda is applied to all of the BondedTerm atoms.
+   * @return True if Lambda is applied to all BondedTerm atoms.
    */
   boolean applyAllLambda() {
     for (Atom atom : atoms) {

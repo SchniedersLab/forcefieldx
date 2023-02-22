@@ -73,11 +73,9 @@ public class Residue extends MSGroup implements Comparable<Residue> {
 
   private static final Logger logger = Logger.getLogger(Residue.class.getName());
   /** Compare residues first on seg ID, then residue number, then residue type, then name. */
-  private static final Comparator<Residue> resComparator =
-      Comparator.comparing(Residue::getSegID)
-          .thenComparingInt(Residue::getResidueNumber)
-          .thenComparing(Residue::getResidueType)
-          .thenComparing(Residue::getName);
+  private static final Comparator<Residue> resComparator = Comparator.comparing(Residue::getSegID)
+      .thenComparingInt(Residue::getResidueNumber).thenComparing(Residue::getResidueType)
+      .thenComparing(Residue::getName);
 
   /** Constant <code>NA3Color</code> */
   private static final HashMap<NucleicAcid3, Color3f> NA3Color = new HashMap<>();
@@ -202,69 +200,71 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   /**
    * Default Constructor where num is this Residue's position in the Polymer.
    *
-   * @param num a int.
-   * @param rt a {@link ResidueType} object.
+   * @param num The residue number.
+   * @param residueType The residue type.
    */
-  public Residue(int num, ResidueType rt) {
+  public Residue(int num, ResidueType residueType) {
     super();
     resNumber = num;
-    residueType = rt;
+    this.residueType = residueType;
     assignResidueType();
   }
 
   /**
    * Constructor for Residue.
    *
-   * @param name a {@link java.lang.String} object.
-   * @param rt a {@link ResidueType} object.
+   * @param name The residue name.
+   * @param residueType The residue type.
    */
-  public Residue(String name, ResidueType rt) {
+  public Residue(String name, ResidueType residueType) {
     super(name);
-    residueType = rt;
+    this.residueType = residueType;
     assignResidueType();
   }
 
   /**
    * Name is the residue's 3 letter abbreviation and num is its position in the Polymer.
    *
-   * @param name a {@link java.lang.String} object.
-   * @param num a int.
-   * @param rt a {@link ResidueType} object.
+   * @param name The residue name.
+   * @param num The residue number.
+   * @param residueType The residue type.
    */
-  public Residue(String name, int num, ResidueType rt) {
-    this(name, rt);
+  public Residue(String name, int num, ResidueType residueType) {
+    this(name, residueType);
     resNumber = num;
   }
 
   /**
    * Name is the residue's 3 letter abbreviation and num is its position in the Polymer.
    *
-   * @param name a {@link java.lang.String} object.
-   * @param resNumber a int.
-   * @param rt a {@link ResidueType} object.
-   * @param chainID a {@link java.lang.Character} object.
-   * @param segID a {@link java.lang.String} object.
+   * @param name The residue name.
+   * @param resNumber The residue number.
+   * @param residueType The residue type.
+   * @param chainID The chain ID.
+   * @param segID The segment ID.
    */
-  public Residue(String name, int resNumber, ResidueType rt, Character chainID, String segID) {
-    this(name, rt);
+  public Residue(String name, int resNumber, ResidueType residueType, Character chainID,
+      String segID) {
+    this(name, residueType);
     this.resNumber = resNumber;
     this.chainID = chainID;
     this.segID = segID;
   }
 
   /**
-   * As above, with atoms being a FNode with this Residue's atoms as child nodes
+   * As above, with atoms being a MSNode with this Residue's atoms as child nodes
    *
-   * @param name a {@link java.lang.String} object.
-   * @param num a int.
+   * @param name The residue name.
+   * @param resNumber The residue number.
+   * @param residueType The residue type.
    * @param atoms a {@link ffx.potential.bonded.MSNode} object.
-   * @param rt a {@link ResidueType} object.
    * @param forceField the ForceField to use when created bonded terms.
    */
-  public Residue(String name, int num, MSNode atoms, ResidueType rt, ForceField forceField) {
+  public Residue(String name, int resNumber, MSNode atoms, ResidueType residueType,
+      ForceField forceField) {
     super(name, atoms);
-    resNumber = num;
-    residueType = rt;
+    this.resNumber = resNumber;
+    this.residueType = residueType;
     assignResidueType();
     finalize(true, forceField);
   }
@@ -288,8 +288,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   @Override
   public MSNode addMSNode(MSNode o) {
     Atom currentAtom = null;
-    if (o instanceof Atom) {
-      Atom newAtom = (Atom) o;
+    if (o instanceof Atom newAtom) {
       Character newAlt = newAtom.getAltLoc();
       MSNode atoms = getAtomNode();
       currentAtom = (Atom) atoms.contains(newAtom);
@@ -358,8 +357,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     Residue residue = (Residue) o;
     return Objects.equals(segID, residue.segID)
         && Objects.equals(getResidueNumber(), residue.getResidueNumber())
-        && residueType == residue.residueType
-        && Objects.equals(getName(), residue.getName());
+        && residueType == residue.residueType && Objects.equals(getName(), residue.getName());
   }
 
   /**
@@ -367,7 +365,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
    *
    * <p>The Finalize method should be called once all atoms have been added to the Residue. Geometry
    * objects (Bonds, Angles, etc) are then formed, followed by a determination of under-constrained
-   * (Dangeling) atoms.
+   * (Dangling) atoms.
    */
   @Override
   public void finalize(boolean finalizeGeometry, ForceField forceField) {
@@ -412,20 +410,18 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     List<Atom> atoms = getAtomList();
     List<Atom> ret;
     switch (residueType) {
-      case NA:
+      case NA -> {
         ret = new ArrayList<>(atoms);
         for (Atom atom : atoms) {
           String name = atom.getName().toUpperCase();
-          if (name.contains("'")
-              || name.equals("P")
-              || name.startsWith("OP")
-              || name.equals("H5T")
+          if (name.contains("'") || name.equals("P") || name.startsWith("OP") || name.equals("H5T")
               || name.equals("H3T")) {
             ret.remove(atom);
           }
         }
         return ret;
-      case AA:
+      }
+      case AA -> {
         ret = new ArrayList<>();
         tryAddAtom(ret, "N");
         tryAddAtom(ret, "CA");
@@ -441,8 +437,10 @@ public class Residue extends MSGroup implements Comparable<Residue> {
         tryAddAtom(ret, "HA2"); // Glycines
         tryAddAtom(ret, "HA3");
         return ret;
-      default:
+      }
+      default -> {
         return new ArrayList<>(1); // Return empty list.
+      }
     }
   }
 
@@ -491,7 +489,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
    */
   public Residue getNextResidue() {
     switch (residueType) {
-      case AA: {
+      case AA -> {
         Atom carbon = (Atom) getAtomNode("C");
         if (carbon == null) {
           return null;
@@ -503,9 +501,8 @@ public class Residue extends MSGroup implements Comparable<Residue> {
             return (Residue) other.getParent().getParent();
           }
         }
-        break;
       }
-      case NA:
+      case NA -> {
         Atom oxygen = (Atom) getAtomNode("O3'");
         if (oxygen == null) {
           return null;
@@ -517,9 +514,10 @@ public class Residue extends MSGroup implements Comparable<Residue> {
             return (Residue) other.getParent().getParent();
           }
         }
-        break;
-      default:
+      }
+      default -> {
         return null;
+      }
     }
     return null;
     // Will generally indicate that you passed in a chain-terminal residue.
@@ -549,27 +547,35 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     NucleicAcid3 na3 = getNucleicAcid3();
     if (na3 == NucleicAcidUtils.NucleicAcid3.UNK && matchShortName) {
       switch (getName()) {
-        case "A":
-          return NucleicAcidUtils.NucleicAcid3.ADE;
-        case "C":
-          return NucleicAcidUtils.NucleicAcid3.CYT;
-        case "G":
-          return NucleicAcidUtils.NucleicAcid3.GUA;
-        case "T":
-          return NucleicAcidUtils.NucleicAcid3.THY;
-        case "U":
-          return NucleicAcidUtils.NucleicAcid3.URI;
-        case "DA":
-          return NucleicAcidUtils.NucleicAcid3.DAD;
-        case "DC":
-          return NucleicAcidUtils.NucleicAcid3.DCY;
-        case "DG":
-          return NucleicAcidUtils.NucleicAcid3.DGU;
-        case "DT":
-          return NucleicAcidUtils.NucleicAcid3.DTY;
-        case "DU":
-          throw new IllegalArgumentException(
-              " No NucleicAcid3 enum exists for DU (presumed to be deoxy-uracil)!");
+        case "A" -> {
+          return NucleicAcid3.ADE;
+        }
+        case "C" -> {
+          return NucleicAcid3.CYT;
+        }
+        case "G" -> {
+          return NucleicAcid3.GUA;
+        }
+        case "T" -> {
+          return NucleicAcid3.THY;
+        }
+        case "U" -> {
+          return NucleicAcid3.URI;
+        }
+        case "DA" -> {
+          return NucleicAcid3.DAD;
+        }
+        case "DC" -> {
+          return NucleicAcid3.DCY;
+        }
+        case "DG" -> {
+          return NucleicAcid3.DGU;
+        }
+        case "DT" -> {
+          return NucleicAcid3.DTY;
+        }
+        case "DU" -> throw new IllegalArgumentException(
+            " No NucleicAcid3 enum exists for DU (presumed to be deoxy-uracil)!");
       }
     }
     return na3;
@@ -585,7 +591,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
    */
   public Residue getPreviousResidue() {
     switch (residueType) {
-      case AA: {
+      case AA -> {
         Atom nitrogen = (Atom) getAtomNode("N");
         if (nitrogen == null) {
           return null;
@@ -597,9 +603,8 @@ public class Residue extends MSGroup implements Comparable<Residue> {
             return (Residue) other.getParent().getParent();
           }
         }
-        break;
       }
-      case NA:
+      case NA -> {
         Atom phosphate = (Atom) getAtomNode("P");
         if (phosphate == null) {
           return null;
@@ -611,9 +616,10 @@ public class Residue extends MSGroup implements Comparable<Residue> {
             return (Residue) other.getParent().getParent();
           }
         }
-        break;
-      default:
+      }
+      default -> {
         return null;
+      }
     }
     return null;
     // Will generally indicate that you passed in a chain-starting residue.
@@ -628,19 +634,17 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   public Atom getReferenceAtom() {
     Atom atom = null;
     switch (this.getResidueType()) {
-      case AA:
-        atom = (Atom) this.getAtomNode("CA");
-        break;
-      case NA:
+      case AA -> atom = (Atom) this.getAtomNode("CA");
+      case NA -> {
         // If pyrimidine, atom will be N1.  Else, if purine,
         // N1 will return null, so grab N9.
         atom = (Atom) this.getAtomNode("N1");
         if (atom == null) {
           atom = (Atom) this.getAtomNode("N9");
         }
-        break;
-      default:
-        break;
+      }
+      default -> {
+      }
     }
     if (atom == null) {
       atom = (Atom) this.getAtomNode(0);
@@ -651,7 +655,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   /**
    * Returns this Residue's sequence number.
    *
-   * @return a int.
+   * @return The sequence number.
    */
   public int getResidueNumber() {
     return resNumber;
@@ -745,7 +749,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     List<Atom> atoms = getAtomList();
     List<Atom> ret;
     switch (residueType) {
-      case NA:
+      case NA -> {
         ret = new ArrayList<>();
         for (Atom atom : atoms) {
           String name = atom.getName().toUpperCase();
@@ -759,34 +763,29 @@ public class Residue extends MSGroup implements Comparable<Residue> {
           }
         }
         return ret;
-      case AA:
+      }
+      case AA -> {
         ret = new ArrayList<>(atoms);
         for (Atom atom : atoms) {
           String name = atom.getName().toUpperCase();
-          if (name.equals("N")
-              || name.equals("H")
-              || name.equals("H1")
-              || name.equals("H2")
-              || name.equals("H3")
-              || name.equals("CA")
-              || name.startsWith("HA")
-              || name.equals("C")
-              || name.equals("O")
-              || name.equals("OXT")
-              || name.equals("OT2")) {
+          if (name.equals("N") || name.equals("H") || name.equals("H1") || name.equals("H2")
+              || name.equals("H3") || name.equals("CA") || name.startsWith("HA") || name.equals("C")
+              || name.equals("O") || name.equals("OXT") || name.equals("OT2")) {
             ret.remove(atom);
           }
         }
         return ret;
-      default:
+      }
+      default -> {
         return null;
+      }
     }
   }
 
   /**
    * Returns a list of atoms liable to change during dead-end elimination repacking. For ordinary
    * amino acids: side chain atoms. For ordinary nucleic acids: sugar/phosphate backbone atoms.
-   * MultiResidue over-rides this to return all atoms (as backbone atom types are nonconstant).
+   * MultiResidue over-rides this to return all atoms (as backbone atom types are non-constant).
    *
    * @return Atoms changeable during DEE.
    */
@@ -811,22 +810,11 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     }
     boolean isDeoxy;
     try {
-      switch (NucleicAcidUtils.NucleicAcid3.valueOf(this.getName())) {
-        case DAD:
-        case DCY:
-        case DGU:
-        case DTY:
-          isDeoxy = true;
-          break;
-        case CYT:
-        case ADE:
-        case THY:
-        case URI:
-        case GUA:
-        default:
-          isDeoxy = false;
-          break;
-      }
+      isDeoxy = switch (NucleicAcid3.valueOf(this.getName())) {
+        case DAD, DCY, DGU, DTY -> true;
+        case CYT, ADE, THY, URI, GUA -> false;
+        default -> false;
+      };
       C1sCoords = new double[3];
       ((Atom) getAtomNode("C1'")).getXYZ(C1sCoords);
       O4sCoords = new double[3];
@@ -839,12 +827,10 @@ public class Residue extends MSGroup implements Comparable<Residue> {
        hypothetical O3' coordinates based on default atom positions and
        the supplied sugar pucker.
       */
-      O3sNorthCoords =
-          RotamerLibrary.applySugarPucker(
-              this, RotamerLibrary.NucleicSugarPucker.C3_ENDO, isDeoxy, false);
-      O3sSouthCoords =
-          RotamerLibrary.applySugarPucker(
-              this, RotamerLibrary.NucleicSugarPucker.C2_ENDO, isDeoxy, false);
+      O3sNorthCoords = RotamerLibrary.applySugarPucker(this,
+          RotamerLibrary.NucleicSugarPucker.C3_ENDO, isDeoxy, false);
+      O3sSouthCoords = RotamerLibrary.applySugarPucker(this,
+          RotamerLibrary.NucleicSugarPucker.C2_ENDO, isDeoxy, false);
     } catch (Exception e) {
       logger.log(Level.WARNING, toString(), e);
     }
@@ -881,14 +867,9 @@ public class Residue extends MSGroup implements Comparable<Residue> {
     // If Color by Residue, pass this Residue's Color
     if (newColorModel == RendererCache.ColorModel.RESIDUE) {
       switch (residueType) {
-        case AA:
-          color = AA3Color.get(aa);
-          break;
-        case NA:
-          color = NA3Color.get(na);
-          break;
-        default:
-          color = null;
+        case AA -> color = AA3Color.get(aa);
+        case NA -> color = NA3Color.get(na);
+        default -> color = null;
       }
       if (color == null) {
         return;
@@ -904,7 +885,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   /**
    * setNumber
    *
-   * @param n a int.
+   * @param n The residue number.
    */
   public void setNumber(int n) {
     resNumber = n;
@@ -1017,8 +998,7 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   void deleteAtom(Atom atomToDelete) {
     MSNode atoms = getAtomNode();
     if (atoms.contains(atomToDelete) != null) {
-      logger.info(
-          " The following atom is being deleted from the model:\n" + atomToDelete);
+      logger.info(" The following atom is being deleted from the model:\n" + atomToDelete);
       atoms.remove(atomToDelete);
     }
   }
@@ -1104,49 +1084,44 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   private void assignResidueType() {
     String name = getName().toUpperCase();
     switch (residueType) {
-      case AA:
+      case AA -> {
         aa = null;
         try {
           if (name.length() >= 2) {
-            aa = AminoAcidUtils.AminoAcid3.valueOf(name);
+            aa = AminoAcid3.valueOf(name);
           } else if (name.length() == 1) {
-            AminoAcid1 aa1 = AminoAcidUtils.AminoAcid1.valueOf(name);
+            AminoAcid1 aa1 = AminoAcid1.valueOf(name);
             aa = AA1toAA3.get(aa1);
           }
         } catch (Exception e) {
           logger.fine(String.format("Exception assigning AA3 for residue: %s", name));
-          aa = AminoAcidUtils.AminoAcid3.UNK;
+          aa = AminoAcid3.UNK;
         }
-        break;
-      case NA:
+      }
+      case NA -> {
         na = null;
         try {
           if (name.length() >= 2) {
-            na = NucleicAcidUtils.NucleicAcid3.parse(name);
+            na = NucleicAcid3.parse(name);
           } else if (name.length() == 1) {
-            NucleicAcid1 na1 = NucleicAcidUtils.NucleicAcid1.valueOf(name);
+            NucleicAcid1 na1 = NucleicAcid1.valueOf(name);
             na = NA1toNA3.get(na1);
           }
         } catch (Exception e) {
-          na = NucleicAcidUtils.NucleicAcid3.UNK;
+          na = NucleicAcid3.UNK;
         }
-        break;
+      }
     }
   }
 
   public enum SSType {
-    NONE,
-    HELIX,
-    SHEET,
-    TURN
+    NONE, HELIX, SHEET, TURN
   }
 
   /**
    * Residue type [NA, AA, UNK].
    */
   public enum ResidueType {
-    NA,
-    AA,
-    UNK
+    NA, AA, UNK
   }
 }

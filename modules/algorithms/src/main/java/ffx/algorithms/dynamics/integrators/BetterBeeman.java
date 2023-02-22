@@ -63,8 +63,8 @@ public class BetterBeeman extends Integrator {
    * @param aPrevious Previous Accelerations.
    * @param mass Mass.
    */
-  public BetterBeeman(
-      int nVariables, double[] x, double[] v, double[] a, double[] aPrevious, double[] mass) {
+  public BetterBeeman(int nVariables, double[] x, double[] v, double[] a, double[] aPrevious,
+      double[] mass) {
     super(nVariables, x, v, a, aPrevious, mass);
     dt_8 = 0.125 * dt;
     dt2_8 = dt * dt_8;
@@ -74,7 +74,7 @@ public class BetterBeeman extends Integrator {
    * {@inheritDoc}
    *
    * <p>Use Newton's second law to get the next acceleration and find the full-step velocities using
-   * the Beeman recusion.
+   * the Beeman recursion.
    */
   @Override
   public void postForce(double[] gradient) {

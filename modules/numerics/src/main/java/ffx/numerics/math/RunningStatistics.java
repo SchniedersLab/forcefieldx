@@ -112,7 +112,7 @@ public class RunningStatistics {
     if (isNaN(var)) {
       throw new IllegalArgumentException(
           format(" Val %.5f w/ wt %.3f resulted in NaN varAcc; current state %s",
-              val, weight, new SummaryStatistics(this).toString()));
+              val, weight, new SummaryStatistics(this)));
     }
   }
 

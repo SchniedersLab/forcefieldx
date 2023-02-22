@@ -35,27 +35,11 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.parsers;
+package ffx.algorithms.dynamics;
 
 /**
- * DataFilter interface.
- *
- * @author Jacob Litman
+ * Describe actions taken by writeFilesForStep.
  */
-public interface DataFilter {
-
-  /**
-   * accept.
-   *
-   * @param ob a {@link java.lang.Object} object.
-   * @return a boolean.
-   */
-  boolean accept(Object ob);
-
-  /**
-   * getDescription.
-   *
-   * @return a {@link java.lang.String} object.
-   */
-  String getDescription();
+public enum MDWriteAction {
+  RESTART, SNAPSHOT
 }

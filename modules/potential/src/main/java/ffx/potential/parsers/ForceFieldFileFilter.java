@@ -50,7 +50,8 @@ import org.apache.commons.io.FilenameUtils;
 public final class ForceFieldFileFilter extends FileFilter {
 
   /** Default Constructor */
-  public ForceFieldFileFilter() {}
+  public ForceFieldFileFilter() {
+  }
 
   /**
    * {@inheritDoc}

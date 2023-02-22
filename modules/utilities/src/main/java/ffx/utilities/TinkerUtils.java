@@ -98,8 +98,7 @@ public class TinkerUtils {
         int start = Integer.parseInt(m.group(1));
         ++i;
         if (i == n) {
-          logger.info(
-              format(
+          logger.info(format(
                   " Attempted to parse -%d as a Tinker-style range, but it was ignored because it was the last token provided.",
                   start));
           continue;

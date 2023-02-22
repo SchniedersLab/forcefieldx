@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
+import static java.lang.String.format;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -45,8 +47,8 @@ import java.util.logging.Logger;
 
 /**
  * The ResidueState class encodes the current chemical and coordinate state of a Residue,
- * particularly a MultiResidue, for ease of reverting coordinates. Should not be too difficult to
- * get it to also store velocities, etc.
+ * particularly a MultiResidue, for ease of reverting coordinates. Should not be too difficult to get
+ * it to also store velocities, etc.
  *
  * @author Michael J. Schnieders
  * @author Jacob M. Litman
@@ -63,29 +65,21 @@ public class ResidueState {
    */
   private final Residue parent;
 
-  private final Residue res;
+  private final Residue residue;
   private final HashMap<Atom, double[]> atomMap;
   private final Atom[] atoms;
-  private final boolean isNeutralTerminus;
 
   /**
    * Constructor for ResidueState.
    *
    * @param parent a {@link ffx.potential.bonded.Residue} object.
-   * @param res a {@link ffx.potential.bonded.Residue} object.
+   * @param residue a {@link ffx.potential.bonded.Residue} object.
    */
-  public ResidueState(Residue parent, Residue res) {
+  public ResidueState(Residue parent, Residue residue) {
     this.parent = parent;
-    this.res = res;
-    if (res.getPreviousResidue() == null) {
-      isNeutralTerminus = (res.getAtomNode("H3") == null);
-    } else if (res.getNextResidue() == null) {
-      isNeutralTerminus = (res.getAtomNode("HO") != null);
-    } else {
-      isNeutralTerminus = false;
-    }
+    this.residue = residue;
 
-    List<Atom> atomList = res.getAtomList();
+    List<Atom> atomList = residue.getAtomList();
     int nAtoms = atomList.size();
     atomMap = new HashMap<>(nAtoms);
     atoms = new Atom[nAtoms];
@@ -106,25 +100,10 @@ public class ResidueState {
   public ResidueState(Residue residue) {
     this(residue, residue);
     if (residue instanceof MultiResidue) {
-      throw new IllegalArgumentException(
-          String.format(
-              " Residue %s is a MultiResidue: this ResidueState has been incorrectly constructed!",
-              residue));
+      throw new IllegalArgumentException(format(
+          " Residue %s is a MultiResidue: this ResidueState has been incorrectly constructed!",
+          residue));
     }
-  }
-
-  /**
-   * revertAllCoordinates.
-   *
-   * @param res a {@link ffx.potential.bonded.Residue} object.
-   * @param state a {@link ffx.potential.bonded.ResidueState} object.
-   */
-  public static void revertAllCoordinates(Residue res, ResidueState state) {
-    Residue residues[] = new Residue[1];
-    ResidueState states[] = new ResidueState[1];
-    residues[0] = res;
-    states[0] = state;
-    revertAllCoordinates(residues, states);
   }
 
   /**
@@ -134,7 +113,7 @@ public class ResidueState {
    * @param states an array of {@link ffx.potential.bonded.ResidueState} objects.
    */
   public static void revertAllCoordinates(List<Residue> residueList, ResidueState[] states) {
-    revertAllCoordinates(residueList.toArray(new Residue[residueList.size()]), states);
+    revertAllCoordinates(residueList.toArray(new Residue[0]), states);
   }
 
   /**
@@ -148,23 +127,12 @@ public class ResidueState {
     int nAtoms = atoms.length;
     if (coords.length != nAtoms) {
       throw new IllegalArgumentException(
-          String.format(
-              " Length %d of atoms " + "array does not match length %d of coordinates array",
+          format(" Length %d of atoms " + "array does not match length %d of coordinates array",
               nAtoms, coords.length));
     }
     for (int i = 0; i < nAtoms; i++) {
       atoms[i].setXYZ(coords[i]);
     }
-  }
-
-  /**
-   * storeAllCoordinateArrays.
-   *
-   * @param residueList a {@link java.util.List} object.
-   * @return an array of {@link double} objects.
-   */
-  public static double[][][] storeAllCoordinateArrays(List<Residue> residueList) {
-    return storeAllCoordinateArrays(residueList.toArray(new Residue[residueList.size()]));
   }
 
   /**
@@ -174,7 +142,7 @@ public class ResidueState {
    * @return an array of {@link ffx.potential.bonded.ResidueState} objects.
    */
   public static ResidueState[] storeAllCoordinates(List<Residue> residueList) {
-    return storeAllCoordinates(residueList.toArray(new Residue[residueList.size()]));
+    return storeAllCoordinates(residueList.toArray(new Residue[0]));
   }
 
   /**
@@ -190,18 +158,6 @@ public class ResidueState {
       states[i] = residues[i].storeState();
     }
     return states;
-  }
-
-  /**
-   * storeAllCoordinates.
-   *
-   * @param res a {@link ffx.potential.bonded.Residue} object.
-   * @return a {@link ffx.potential.bonded.ResidueState} object.
-   */
-  public static ResidueState storeAllCoordinates(Residue res) {
-    Residue[] residues = new Residue[1];
-    residues[0] = res;
-    return storeAllCoordinates(residues)[0];
   }
 
   /**
@@ -229,8 +185,7 @@ public class ResidueState {
     int nResidues = residueArray.length;
     if (nResidues != states.length) {
       throw new IllegalArgumentException(
-          String.format(
-              "Length of residue " + "array %d and residue state array %d do not match.",
+          format("Length of residue " + "array %d and residue state array %d do not match.",
               nResidues, states.length));
     }
 
@@ -252,27 +207,10 @@ public class ResidueState {
 
         if (!matchFound) {
           throw new IllegalArgumentException(
-              String.format(
-                  "Could not " + "find match for residue %s among residue states array.",
-                  resi.toString()));
+              format("Could not " + "find match for residue %s among residue states array.", resi));
         }
       }
     }
-  }
-
-  /**
-   * storeAllCoordinateArrays.
-   *
-   * @param residueArray an array of {@link ffx.potential.bonded.Residue} objects.
-   * @return an array of {@link double} objects.
-   */
-  private static double[][][] storeAllCoordinateArrays(Residue[] residueArray) {
-    int nResidues = residueArray.length;
-    double[][][] xyz = new double[nResidues][][];
-    for (int i = 0; i < nResidues; i++) {
-      xyz[i] = residueArray[i].storeCoordinateArray();
-    }
-    return xyz;
   }
 
   public double compareTo(ResidueState residueState) {
@@ -323,39 +261,7 @@ public class ResidueState {
     // Create a mass array of ones so the RMSD isn't mass weighted
     double[] mass = new double[x1.length];
     Arrays.fill(mass, 1);
-
-    // logger.info("\nStarting RMSD comparison between rotamers\n");
-    double rmsd = ffx.potential.utils.Superpose.rmsd(x1, x2, mass);
-
-    return rmsd;
-  }
-
-  /**
-   * If parameter true, returns atomic coordinates indexed by the atom list as this ResidueState was
-   * constructed; else, uses the residue's current atom list. Use with care.
-   *
-   * @param useOriginalOrder Use the original atom ordering.
-   * @return An array of coordinate arrays.
-   */
-  public double[][] getAllAtomCoords(boolean useOriginalOrder) {
-    int nAtoms = atoms.length;
-    double[][] xyz = new double[nAtoms][3];
-
-    if (useOriginalOrder) {
-      for (int i = 0; i < nAtoms; i++) {
-        double[] atXYZ = atomMap.get(atoms[i]);
-        System.arraycopy(atXYZ, 0, xyz[i], 0, 3);
-      }
-    } else {
-      List<Atom> atomList = res.getAtomList();
-      int i = 0;
-      for (Atom atom : atomList) {
-        double[] atXYZ = atomMap.get(atom);
-        System.arraycopy(atXYZ, 0, xyz[i++], 0, 3);
-      }
-    }
-
-    return xyz;
+    return ffx.potential.utils.Superpose.rmsd(x1, x2, mass);
   }
 
   /**
@@ -376,19 +282,11 @@ public class ResidueState {
     return parent;
   }
 
-  /** Resets stored coordinates to current coordinates of residue. */
-  public void resetAtomicCoordinates() {
-    for (Atom atom : atoms) {
-      atom.getXYZ(atomMap.get(atom));
-    }
-  }
-
   /** {@inheritDoc} */
   @Override
   public String toString() {
-    return String.format(
-        " ResidueState with parent residue %s, state residue " + "%s, number of atoms %d",
-        parent, res, atoms.length);
+    return format(" ResidueState with parent residue %s, state residue " + "%s, number of atoms %d",
+        parent, residue, atoms.length);
   }
 
   /**
@@ -397,16 +295,7 @@ public class ResidueState {
    * @return a {@link ffx.potential.bonded.Residue} object.
    */
   Residue getStateResidue() {
-    return res;
-  }
-
-  /**
-   * Getter for the field <code>isNeutralTerminus</code>.
-   *
-   * @return a boolean.
-   */
-  boolean getIsNeutralTerminus() {
-    return isNeutralTerminus;
+    return residue;
   }
 
   /**
@@ -419,19 +308,16 @@ public class ResidueState {
     double[] xyz = new double[3];
     if (!atomMap.containsKey(atom)) {
       logger.info(
-          String.format(
-              " Illegal call to ResidueState.getAtomCoords: atom %s not found: hashcode %d",
-              atom, atom.hashCode()));
-      for (Atom ratom : res.getAtomList()) {
-        logger.info(String.format(" Atoms in residue: %s hashcode: %d", ratom, ratom.hashCode()));
+          format(" Illegal call to ResidueState.getAtomCoords: atom %s not found: hashcode %d", atom,
+              atom.hashCode()));
+      for (Atom ratom : residue.getAtomList()) {
+        logger.info(format(" Atoms in residue: %s hashcode: %d", ratom, ratom.hashCode()));
       }
       for (Atom matom : atomMap.keySet()) {
         logger.info(
-            String.format(
-                " Atoms in ResidueState atom cache: %s hashcode: %d", matom, matom.hashCode()));
+            format(" Atoms in ResidueState atom cache: %s hashcode: %d", matom, matom.hashCode()));
       }
-      logger.log(
-          Level.SEVERE, " Error in ResidueState.getAtomCoords.", new IllegalStateException());
+      logger.log(Level.SEVERE, " Error in ResidueState.getAtomCoords.", new IllegalStateException());
     }
     System.arraycopy(atomMap.get(atom), 0, xyz, 0, 3);
     return xyz;

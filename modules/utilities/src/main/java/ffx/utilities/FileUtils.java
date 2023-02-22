@@ -38,7 +38,6 @@
 package ffx.utilities;
 
 import static java.io.File.createTempFile;
-import static java.lang.String.format;
 import static java.nio.file.Paths.get;
 
 import java.io.BufferedOutputStream;
@@ -75,8 +74,8 @@ public class FileUtils {
     try {
       tmpFile = createTempFile(name, "." + suffix);
     } catch (IOException e) {
-      System.out.println(format(" Could not extract %s.", name));
-      System.err.println(e.toString());
+      System.out.printf(" Could not extract %s.%n", name);
+      System.err.println(e.getMessage());
       System.exit(-1);
     }
     tmpFile.deleteOnExit();
@@ -96,7 +95,7 @@ public class FileUtils {
   /**
    * Constructs a relative path from the present working directory to a file.
    *
-   * @param file Construct a relative path to File file.
+   * @param file Construct a relative path to file.
    * @return Relative path to file.
    */
   public static Path relativePathTo(File file) {

@@ -63,23 +63,21 @@ public class Erf {
   private static final double oneSixteenth = 1.0 / 16.0;
   private static final double thresh = 0.46875;
   /**
-   * xsmall argument below which erf(x) may be represented by 2*x/sqrt(pi) and above which x*x won't
-   * underflow.
-   *
-   * <p>A conservative value is the largest machine number X such that 1.0 + X = 1.0 to machine
-   * precision
+   * The xSmall argument below which erf(x) may be represented by 2*x/sqrt(pi) and above which x*x won't underflow.
+   * <p>
+   * A conservative value is the largest machine number X such that 1.0 + X = 1.0 to machine precision.
    */
-  private static final double xsmall = 1.11e-16;
+  private static final double xSmall = 1.11e-16;
   /**
-   * xbig largest argument acceptable for erfc.
-   *
-   * <p>Solution to the equation:
-   *
-   * <p>W(x) * (1-0.5/x**2) = XMIN, where
-   *
-   * <p>W(x) = exp(-x*x)/[x*sqrt(pi)]
+   * xBig is the largest argument acceptable for erfc.
+   * <p>
+   * Solution to the equation:
+   * <p>
+   * W(x) * (1-0.5/x**2) = xMin, where
+   * <p>
+   * W(x) = exp(-x*x)/[x*sqrt(pi)]
    */
-  private static final double xbig = 26.543;
+  private static final double xBig = 26.543;
 
   private Erf() {}
 
@@ -124,40 +122,40 @@ public class Erf {
     // Evaluate error function for |x| less than 0.46875.
     if (y <= thresh) {
       double ysq = 0.0;
-      if (y > xsmall) {
+      if (y > xSmall) {
         ysq = y * y;
       }
-      double xnum = 1.85777706184603153e-1 * ysq;
-      double xden = ysq;
-      xnum = (xnum + 3.16112374387056560e0) * ysq;
-      xden = (xden + 2.36012909523441209e1) * ysq;
-      xnum = (xnum + 1.13864154151050156e2) * ysq;
-      xden = (xden + 2.44024637934444173e2) * ysq;
-      xnum = (xnum + 3.77485237685302021e2) * ysq;
-      xden = (xden + 1.28261652607737228e3) * ysq;
-      result = x * (xnum + 3.20937758913846947e3) / (xden + 2.84423683343917062e3);
+      double xNum = 1.85777706184603153e-1 * ysq;
+      double xDen = ysq;
+      xNum = (xNum + 3.16112374387056560e0) * ysq;
+      xDen = (xDen + 2.36012909523441209e1) * ysq;
+      xNum = (xNum + 1.13864154151050156e2) * ysq;
+      xDen = (xDen + 2.44024637934444173e2) * ysq;
+      xNum = (xNum + 3.77485237685302021e2) * ysq;
+      xDen = (xDen + 1.28261652607737228e3) * ysq;
+      result = x * (xNum + 3.20937758913846947e3) / (xDen + 2.84423683343917062e3);
       if (mode) {
         result = 1.0 - result;
       }
     } else if (y <= 4.0) {
       // Get complementary error function for 0.46875 <= |x| <= 4.0.
-      double xnum = 2.15311535474403846e-8 * y;
-      double xden = y;
-      xnum = (xnum + 5.64188496988670089e-1) * y;
-      xden = (xden + 1.57449261107098347e1) * y;
-      xnum = (xnum + 8.88314979438837594e0) * y;
-      xden = (xden + 1.17693950891312499e2) * y;
-      xnum = (xnum + 6.61191906371416295e1) * y;
-      xden = (xden + 5.37181101862009858e2) * y;
-      xnum = (xnum + 2.98635138197400131e2) * y;
-      xden = (xden + 1.62138957456669019e3) * y;
-      xnum = (xnum + 8.81952221241769090e2) * y;
-      xden = (xden + 3.29079923573345963e3) * y;
-      xnum = (xnum + 1.71204761263407058e3) * y;
-      xden = (xden + 4.36261909014324716e3) * y;
-      xnum = (xnum + 2.05107837782607147e3) * y;
-      xden = (xden + 3.43936767414372164e3) * y;
-      result = (xnum + 1.23033935479799725e3) / (xden + 1.23033935480374942e3);
+      double xNum = 2.15311535474403846e-8 * y;
+      double xDen = y;
+      xNum = (xNum + 5.64188496988670089e-1) * y;
+      xDen = (xDen + 1.57449261107098347e1) * y;
+      xNum = (xNum + 8.88314979438837594e0) * y;
+      xDen = (xDen + 1.17693950891312499e2) * y;
+      xNum = (xNum + 6.61191906371416295e1) * y;
+      xDen = (xDen + 5.37181101862009858e2) * y;
+      xNum = (xNum + 2.98635138197400131e2) * y;
+      xDen = (xDen + 1.62138957456669019e3) * y;
+      xNum = (xNum + 8.81952221241769090e2) * y;
+      xDen = (xDen + 3.29079923573345963e3) * y;
+      xNum = (xNum + 1.71204761263407058e3) * y;
+      xDen = (xDen + 4.36261909014324716e3) * y;
+      xNum = (xNum + 2.05107837782607147e3) * y;
+      xDen = (xDen + 3.43936767414372164e3) * y;
+      result = (xNum + 1.23033935479799725e3) / (xDen + 1.23033935480374942e3);
       double ysq = floor(16.0 * y) * oneSixteenth;
       double del = (y - ysq) * (y + ysq);
       result = exp(-ysq * ysq - del) * result;
@@ -171,20 +169,20 @@ public class Erf {
       }
     } else {
       // Get complementary error function for |x| greater than 4.0.
-      if (y < xbig) {
+      if (y < xBig) {
         double iy = 1.0 / y;
         double ysq = iy * iy;
-        double xnum = 1.63153871373020978e-2 * ysq;
-        double xden = ysq;
-        xnum = (xnum + 3.05326634961232344e-1) * ysq;
-        xden = (xden + 2.56852019228982242e0) * ysq;
-        xnum = (xnum + 3.60344899949804439e-1) * ysq;
-        xden = (xden + 1.87295284992346047e0) * ysq;
-        xnum = (xnum + 1.25781726111229246e-1) * ysq;
-        xden = (xden + 5.27905102951428412e-1) * ysq;
-        xnum = (xnum + 1.60837851487422766e-2) * ysq;
-        xden = (xden + 6.05183413124413191e-2) * ysq;
-        result = ysq * (xnum + 6.58749161529837803e-4) / (xden + 2.33520497626869185e-3);
+        double xNum = 1.63153871373020978e-2 * ysq;
+        double xDen = ysq;
+        xNum = (xNum + 3.05326634961232344e-1) * ysq;
+        xDen = (xDen + 2.56852019228982242e0) * ysq;
+        xNum = (xNum + 3.60344899949804439e-1) * ysq;
+        xDen = (xDen + 1.87295284992346047e0) * ysq;
+        xNum = (xNum + 1.25781726111229246e-1) * ysq;
+        xDen = (xDen + 5.27905102951428412e-1) * ysq;
+        xNum = (xNum + 1.60837851487422766e-2) * ysq;
+        xDen = (xDen + 6.05183413124413191e-2) * ysq;
+        result = ysq * (xNum + 6.58749161529837803e-4) / (xDen + 2.33520497626869185e-3);
         result = (sqrtPI - result) * iy;
         ysq = floor(16.0 * y) * oneSixteenth;
         double del = (y - ysq) * (y + ysq);

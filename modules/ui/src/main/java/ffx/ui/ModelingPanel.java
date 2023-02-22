@@ -1448,20 +1448,20 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
           } else if (conditionalName.toUpperCase().startsWith("REFLECTION")) {
             String[] condModifiers;
             if (conditionalValues.equalsIgnoreCase("AltLoc")) {
-              condModifiers = activeSystem.getAltLocations();
-              if (condModifiers != null && condModifiers.length > 1) {
-                isEnabled = true;
-                bg = new ButtonGroup();
-                for (int j = 0; j < condModifiers.length; j++) {
-                  JRadioButton jrbmi = new JRadioButton(condModifiers[j]);
-                  jrbmi.addMouseListener(this);
-                  bg.add(jrbmi);
-                  optionValuesPanel.add(jrbmi);
-                  if (j == 0) {
-                    jrbmi.setSelected(true);
-                  }
-                }
-              }
+//              condModifiers = activeSystem.getAltLocs();
+//              if (condModifiers != null && condModifiers.length > 1) {
+//                isEnabled = true;
+//                bg = new ButtonGroup();
+//                for (int j = 0; j < condModifiers.length; j++) {
+//                  JRadioButton jrbmi = new JRadioButton(condModifiers[j]);
+//                  jrbmi.addMouseListener(this);
+//                  bg.add(jrbmi);
+//                  optionValuesPanel.add(jrbmi);
+//                  if (j == 0) {
+//                    jrbmi.setSelected(true);
+//                  }
+//                }
+//              }
             } else if (conditionalValues.equalsIgnoreCase("Chains")) {
               condModifiers = activeSystem.getChainNames();
               if (condModifiers != null && condModifiers.length > 0) {

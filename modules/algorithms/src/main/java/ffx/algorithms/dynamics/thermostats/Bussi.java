@@ -72,31 +72,18 @@ public class Bussi extends Thermostat {
    * @param n Number of degrees of freedom.
    * @param x Atomic coordinates.
    * @param v Velocities.
-   * @param mass Mass of each degrees of freedom.
+   * @param mass Mass of each degree of freedom.
    * @param type the VARIABLE_TYPE of each variable.
    * @param targetTemperature The target temperature.
    * @param tau Bussi thermostat time constant (psec).
    */
-  public Bussi(
-      int n,
-      double[] x,
-      double[] v,
-      double[] mass,
-      VARIABLE_TYPE[] type,
-      double targetTemperature,
-      double tau) {
+  public Bussi(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type,
+      double targetTemperature, double tau) {
     this(n, x, v, mass, type, targetTemperature, tau, Collections.emptyList());
   }
 
-  public Bussi(
-      int n,
-      double[] x,
-      double[] v,
-      double[] mass,
-      VARIABLE_TYPE[] type,
-      double targetTemperature,
-      double tau,
-      List<Constraint> constraints) {
+  public Bussi(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type,
+      double targetTemperature, double tau, List<Constraint> constraints) {
     super(n, x, v, mass, type, targetTemperature, constraints);
     this.name = ThermostatEnum.BUSSI;
     this.tau = tau;
@@ -109,16 +96,11 @@ public class Bussi extends Thermostat {
    * @param n Number of degrees of freedom.
    * @param x Atomic coordinates.
    * @param v Velocities.
-   * @param mass Mass of each degrees of freedom.
+   * @param mass Mass of each degree of freedom.
    * @param type the VARIABLE_TYPE of each variable.
    * @param targetTemperature a double.
    */
-  public Bussi(
-      int n,
-      double[] x,
-      double[] v,
-      double[] mass,
-      VARIABLE_TYPE[] type,
+  public Bussi(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type,
       double targetTemperature) {
     this(n, x, v, mass, type, targetTemperature, 0.2e0);
   }
@@ -173,7 +155,8 @@ public class Bussi extends Thermostat {
    * <p>No velocity modifications are made by the Bussi method at the half-step.
    */
   @Override
-  public void halfStep(double dt) {}
+  public void halfStep(double dt) {
+  }
 
   /**
    * {@inheritDoc}

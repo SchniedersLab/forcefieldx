@@ -37,14 +37,15 @@
 // ******************************************************************************
 package ffx.numerics.fft;
 
-import static java.lang.String.format;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.cos;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.floatPI;
 import static uk.ac.manchester.tornado.api.collections.math.TornadoMath.sin;
+import static uk.ac.manchester.tornado.api.enums.DataTransferMode.EVERY_EXECUTION;
 
 import ffx.numerics.tornado.FFXTornado;
-import java.util.logging.Logger;
-import uk.ac.manchester.tornado.api.TaskSchedule;
+import uk.ac.manchester.tornado.api.ImmutableTaskGraph;
+import uk.ac.manchester.tornado.api.TaskGraph;
+import uk.ac.manchester.tornado.api.TornadoExecutionPlan;
 import uk.ac.manchester.tornado.api.annotations.Parallel;
 import uk.ac.manchester.tornado.api.common.TornadoDevice;
 import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
@@ -52,16 +53,13 @@ import uk.ac.manchester.tornado.api.runtime.TornadoRuntime;
 /** Proof-of-concept use of the TornadoVM for parallelization of Java code. */
 public class TornadoDFT {
 
-  private static final Logger logger = Logger.getLogger(TornadoDFT.class.getName());
   float[] inReal;
   float[] inImag;
   float[] outReal;
   float[] outImag;
   long time;
-  private int size;
 
   public TornadoDFT(int size) {
-    this.size = size;
     inReal = new float[size];
     inImag = new float[size];
     outReal = new float[size];
@@ -88,17 +86,16 @@ public class TornadoDFT {
   }
 
   public void execute(TornadoDevice device) {
-    TaskSchedule graph =
-        new TaskSchedule("DFT")
-            .streamIn(inReal, inImag)
+    TaskGraph graph =
+        new TaskGraph("DFT").transferToDevice(EVERY_EXECUTION, inReal, inImag)
             .task("t0", TornadoDFT::computeDft, inReal, inImag, outReal, outImag)
-            .streamOut(outReal, outImag);
+            .transferToHost(EVERY_EXECUTION, outReal, outImag);
 
-    graph.setDevice(device);
-    graph.warmup();
-
+    ImmutableTaskGraph itg = graph.snapshot();
+    TornadoExecutionPlan executionPlan = new TornadoExecutionPlan(itg);
+    executionPlan.withWarmUp().withDevice(device);
     time = -System.nanoTime();
-    graph.execute();
+    executionPlan.execute();
     time += System.nanoTime();
   }
 
@@ -122,8 +119,8 @@ public class TornadoDFT {
     System.out.println(" ");
     FFXTornado.logDevice(device);
     double speedUp = (double) javaTime / (double) time;
-    System.out.println(format(" %12s %8.6f (sec)\n %12s %8.6f (sec) Speed-Up %8.6f",
-        " Java", 1.0e-9 * javaTime, " OpenCL", 1.0e-9 * time, speedUp));
+    System.out.printf(" %12s %8.6f (sec)\n %12s %8.6f (sec) Speed-Up %8.6f%n",
+        " Java", 1.0e-9 * javaTime, " OpenCL", 1.0e-9 * time, speedUp);
 
   }
 }

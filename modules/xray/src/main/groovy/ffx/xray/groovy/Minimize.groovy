@@ -78,6 +78,7 @@ class Minimize extends AlgorithmsScript {
   @Option(names = ['-t', '--threeStage'], paramLabel = 'false',
       description = 'Perform refinement in 3 stages: coordinates, b-factors, and then occupancies (overrides mode setting if true)')
   boolean threeStage = false
+
   /**
    * -E or --eps3 RMS gradient convergence criteria for three stage refinement (default of -1.0 automatically determine eps for each stage).
    */

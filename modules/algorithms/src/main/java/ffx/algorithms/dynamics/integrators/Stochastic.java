@@ -86,8 +86,8 @@ public class Stochastic extends Integrator {
    * @param a Current accelerations.
    * @param mass Mass of the variables.
    */
-  public Stochastic(
-      double friction, int nVariables, double[] x, double[] v, double[] a, double[] mass) {
+  public Stochastic(double friction, int nVariables, double[] x, double[] v, double[] a,
+      double[] mass) {
     super(nVariables, x, v, a, mass);
     this.friction = friction;
     if (friction >= 0) {
@@ -161,45 +161,18 @@ public class Stochastic extends Integrator {
           double fdt8 = fdt * fdt7;
           double fdt9 = fdt * fdt8;
           afric =
-              (fdt2 / 2.0
-                      - fdt3 / 6.0
-                      + fdt4 / 24.0
-                      - fdt5 / 120.0
-                      + fdt6 / 720.0
-                      - fdt7 / 5040.0
-                      + fdt8 / 40320.0
-                      - fdt9 / 362880.0)
-                  / (friction * friction);
+              (fdt2 / 2.0 - fdt3 / 6.0 + fdt4 / 24.0 - fdt5 / 120.0 + fdt6 / 720.0 - fdt7 / 5040.0
+                  + fdt8 / 40320.0 - fdt9 / 362880.0) / (friction * friction);
           vFriction[i] = dt - friction * afric;
           pfric = 1.0 - friction * vFriction[i];
           pterm =
-              2.0 * fdt3 / 3.0
-                  - fdt4 / 2.0
-                  + 7.0 * fdt5 / 30.0
-                  - fdt6 / 12.0
-                  + 31.0 * fdt7 / 1260.0
-                  - fdt8 / 160.0
-                  + 127.0 * fdt9 / 90720.0;
-          vterm =
-              2.0 * fdt
-                  - 2.0 * fdt2
-                  + 4.0 * fdt3 / 3.0
-                  - 2.0 * fdt4 / 3.0
-                  + 4.0 * fdt5 / 15.0
-                  - 4.0 * fdt6 / 45.0
-                  + 8.0 * fdt7 / 315.0
-                  - 2.0 * fdt8 / 315.0
-                  + 4.0 * fdt9 / 2835.0;
-          rho =
-              sqrt(3.0)
-                  * (0.5
-                      - fdt / 16.0
-                      - 17.0 * fdt2 / 1280.0
-                      + 17.0 * fdt3 / 6144.0
-                      + 40967.0 * fdt4 / 34406400.0
-                      - 57203.0 * fdt5 / 275251200.0
-                      - 1429487.0 * fdt6 / 13212057600.0
-                      + 1877509.0 * fdt7 / 105696460800.0);
+              2.0 * fdt3 / 3.0 - fdt4 / 2.0 + 7.0 * fdt5 / 30.0 - fdt6 / 12.0 + 31.0 * fdt7 / 1260.0
+                  - fdt8 / 160.0 + 127.0 * fdt9 / 90720.0;
+          vterm = 2.0 * fdt - 2.0 * fdt2 + 4.0 * fdt3 / 3.0 - 2.0 * fdt4 / 3.0 + 4.0 * fdt5 / 15.0
+              - 4.0 * fdt6 / 45.0 + 8.0 * fdt7 / 315.0 - 2.0 * fdt8 / 315.0 + 4.0 * fdt9 / 2835.0;
+          rho = sqrt(3.0) * (0.5 - fdt / 16.0 - 17.0 * fdt2 / 1280.0 + 17.0 * fdt3 / 6144.0
+              + 40967.0 * fdt4 / 34406400.0 - 57203.0 * fdt5 / 275251200.0
+              - 1429487.0 * fdt6 / 13212057600.0 + 1877509.0 * fdt7 / 105696460800.0);
         }
         // Compute random terms to thermostat the nonzero friction case.
         double ktm = kB * temperature / m;
@@ -226,8 +199,8 @@ public class Stochastic extends Integrator {
    * default implementation so that the vFriction and vRandom arrays can be resized.
    */
   @Override
-  public void setNumberOfVariables(
-      int nVariables, double[] x, double[] v, double[] a, double[] aPrevious, double[] mass) {
+  public void setNumberOfVariables(int nVariables, double[] x, double[] v, double[] a,
+      double[] aPrevious, double[] mass) {
     super.setNumberOfVariables(nVariables, x, v, a, aPrevious, mass);
     if (nVariables > vFriction.length) {
       vFriction = new double[nVariables];

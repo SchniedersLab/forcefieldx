@@ -39,7 +39,7 @@ package ffx.algorithms.cli;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
-import ffx.algorithms.dynamics.MolecularDynamics.DynamicsEngine;
+import ffx.algorithms.dynamics.MDEngine;
 import ffx.algorithms.dynamics.integrators.Integrator;
 import ffx.algorithms.dynamics.integrators.IntegratorEnum;
 import ffx.algorithms.dynamics.thermostats.Thermostat;
@@ -71,7 +71,7 @@ public class DynamicsOptions {
    */
   @ArgGroup(heading = "%n Dynamics Options%n", validate = false)
   public DynamicsOptionGroup group = new DynamicsOptionGroup();
-  private DynamicsEngine engine = null;
+  private MDEngine engine = null;
 
   /**
    * The restart save frequency in picoseconds (1.0 psec default).
@@ -109,12 +109,9 @@ public class DynamicsOptions {
    * @param writeoutOptions a {@link WriteoutOptions} object.
    * @return a {@link MolecularDynamics} object.
    */
-  public MolecularDynamics getDynamics(
-      WriteoutOptions writeoutOptions,
-      Potential potential,
-      MolecularAssembly activeAssembly,
-      AlgorithmListener algorithmListener) {
-      return getDynamics(writeoutOptions, potential, activeAssembly, algorithmListener, engine);
+  public MolecularDynamics getDynamics(WriteoutOptions writeoutOptions, Potential potential,
+      MolecularAssembly activeAssembly, AlgorithmListener algorithmListener) {
+    return getDynamics(writeoutOptions, potential, activeAssembly, algorithmListener, engine);
   }
 
   /**
@@ -127,33 +124,18 @@ public class DynamicsOptions {
    * @param requestedEngine The requested engine (either FFX or OpenMM).
    * @return a {@link MolecularDynamics} object.
    */
-  public MolecularDynamics getDynamics(
-      WriteoutOptions writeoutOptions,
-      Potential potential,
-      MolecularAssembly activeAssembly,
-      AlgorithmListener algorithmListener,
-      DynamicsEngine requestedEngine) {
+  public MolecularDynamics getDynamics(WriteoutOptions writeoutOptions, Potential potential,
+      MolecularAssembly activeAssembly, AlgorithmListener algorithmListener,
+      MDEngine requestedEngine) {
     MolecularDynamics molDyn;
 
     if (requestedEngine == null) {
-      molDyn =
-          MolecularDynamics.dynamicsFactory(
-              activeAssembly,
-              potential,
-              activeAssembly.getProperties(),
-              algorithmListener,
-              thermostat,
-              integrator);
+      molDyn = MolecularDynamics.dynamicsFactory(activeAssembly, potential,
+          activeAssembly.getProperties(), algorithmListener, thermostat, integrator);
     } else {
-      molDyn =
-          MolecularDynamics.dynamicsFactory(
-              activeAssembly,
-              potential,
-              activeAssembly.getProperties(),
-              algorithmListener,
-              thermostat,
-              integrator,
-              requestedEngine);
+      molDyn = MolecularDynamics.dynamicsFactory(activeAssembly, potential,
+          activeAssembly.getProperties(), algorithmListener, thermostat, integrator,
+          requestedEngine);
     }
     molDyn.setFileType(writeoutOptions.getFileType());
     molDyn.setRestartFrequency(group.checkpoint);
@@ -216,12 +198,11 @@ public class DynamicsOptions {
     integrator = Integrator.parseIntegrator(group.integratorString);
     if (group.engineString != null) {
       try {
-        engine = DynamicsEngine.valueOf(group.engineString.toUpperCase());
+        engine = MDEngine.valueOf(group.engineString.toUpperCase());
       } catch (Exception ex) {
-        logger.warning(
-            String.format(
-                " Could not parse %s as a valid dynamics engine! Defaulting to the Platform-recommended engine.",
-                group.engineString));
+        logger.warning(String.format(
+            " Could not parse %s as a valid dynamics engine! Defaulting to the Platform-recommended engine.",
+            group.engineString));
         engine = null;
       }
     }
@@ -336,103 +317,72 @@ public class DynamicsOptions {
      * -d or --dt sets the timestep in femtoseconds (default of 1.0). A value of 2.0 is possible for
      * the RESPA integrator.
      */
-    @Option(
-        names = {"-d", "--dt"},
-        paramLabel = "1.0",
-        defaultValue = "1.0",
-        description = "Time discretization step in femtoseconds.")
+    @Option(names = {"-d",
+        "--dt"}, paramLabel = "1.0", defaultValue = "1.0", description = "Time discretization step in femtoseconds.")
     private double dt;
 
     /**
      * -b or --thermostat sets the desired thermostat: current choices are Adiabatic, Berendsen, or
      * Bussi.
      */
-    @Option(
-        names = {"-b", "--thermostat"},
-        paramLabel = "Bussi",
-        defaultValue = "Bussi",
-        description = "Thermostat: [Adiabatic / Berendsen / Bussi].")
+    @Option(names = {"-b",
+        "--thermostat"}, paramLabel = "Bussi", defaultValue = "Bussi", description = "Thermostat: [Adiabatic / Berendsen / Bussi].")
     private String thermostatString;
 
     /**
      * -i or --integrator sets the desired integrator: current choices are Beeman, RESPA, Stochastic
-     * (i.e. Langevin dynamics) or Verlet.
+     * (i.e., Langevin dynamics) or Verlet.
      */
-    @Option(
-        names = {"-i", "--integrator"},
-        paramLabel = "Verlet",
-        defaultValue = "Verlet",
-        description = "Integrator: [Beeman / Respa / Stochastic / Verlet].")
+    @Option(names = {"-i",
+        "--integrator"}, paramLabel = "Verlet", defaultValue = "Verlet", description = "Integrator: [Beeman / Respa / Stochastic / Verlet].")
     private String integratorString;
 
     /**
      * -r or --report sets the thermodynamics reporting frequency in picoseconds (0.1 psec default).
      */
-    @Option(
-        names = {"-r", "--report"},
-        paramLabel = "0.25",
-        defaultValue = "0.25",
-        description = "Interval in psec to report thermodynamics (psec).")
+    @Option(names = {"-r",
+        "--report"}, paramLabel = "0.25", defaultValue = "0.25", description = "Interval in psec to report thermodynamics (psec).")
     private double report;
 
     /** -w or --write sets snapshot save frequency in picoseconds (1.0 psec default). */
-    @Option(
-        names = {"-w", "--write"},
-        paramLabel = "10.0",
-        defaultValue = "10.0",
-        description = "Interval in psec to write out coordinates (psec).")
+    @Option(names = {"-w",
+        "--write"}, paramLabel = "10.0", defaultValue = "10.0", description = "Interval in psec to write out coordinates (psec).")
     private double write;
 
     /** -t or --temperature sets the simulation temperature (Kelvin). */
-    @Option(
-        names = {"-t", "--temperature"},
-        paramLabel = "298.15",
-        defaultValue = "298.15",
-        description = "Temperature (Kelvin).")
+    @Option(names = {"-t",
+        "--temperature"}, paramLabel = "298.15", defaultValue = "298.15", description = "Temperature (Kelvin).")
     private double temperature;
 
     /** -n or --steps sets the number of molecular dynamics steps (default is 1 nsec). */
-    @Option(
-        names = {"-n", "--numberOfSteps"},
-        paramLabel = "1000000",
-        defaultValue = "1000000",
-        description = "Number of molecular dynamics steps.")
+    @Option(names = {"-n",
+        "--numberOfSteps"}, paramLabel = "1000000", defaultValue = "1000000", description = "Number of molecular dynamics steps.")
     private long steps;
 
     /** -z or --trajSteps Number of steps for each OpenMM MD cycle. */
-    @Option(
-        names = {"-z", "--trajSteps"},
-        paramLabel = "100",
-        defaultValue = "100",
-        description = "Number of steps per MD cycle (--mdE = OpenMM only).")
+    @Option(names = {"-z",
+        "--trajSteps"}, paramLabel = "100", defaultValue = "100", description = "Number of steps per MD cycle (--mdE = OpenMM only).")
     private int trajSteps;
 
     /**
      * -o or --optimize saves low-energy snapshots discovered (only for single topology
      * simulations).
      */
-    @Option(
-        names = {"-o", "--optimize"},
-        defaultValue = "false",
-        description = "Optimize and save low-energy snapshots.")
+    @Option(names = {"-o",
+        "--optimize"}, defaultValue = "false", description = "Optimize and save low-energy snapshots.")
     private boolean optimize;
 
     /** -k or --checkpoint sets the restart save frequency in picoseconds (1.0 psec default). */
-    @Option(
-        names = {"-k", "--checkpoint"},
-        paramLabel = "1.0",
-        defaultValue = "1.0",
-        description = "Interval in psec to write out restart files (.dyn, .his, etc).")
+    @Option(names = {"-k",
+        "--checkpoint"}, paramLabel = "1.0", defaultValue = "1.0", description = "Interval in psec to write out restart files (.dyn, .his, etc).")
     private double checkpoint = 1.0;
 
     /**
      * --mdE or --molecularDynamicsEngine over-rides the default engine choice for integrating the
      * equations of motion
      */
-    @Option(
-        names = {"--mdE", "--molecularDynamicsEngine"},
-        paramLabel = "FFX",
-        description = "Use FFX or OpenMM to integrate dynamics.")
+    @Option(names = {"--mdE",
+        "--molecularDynamicsEngine"}, paramLabel = "FFX", description = "Use FFX or OpenMM to integrate dynamics.")
     private String engineString = null;
   }
 }

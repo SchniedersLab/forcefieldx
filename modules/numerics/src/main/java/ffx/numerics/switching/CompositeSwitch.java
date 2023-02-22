@@ -50,25 +50,26 @@ import java.util.logging.Logger;
  * linear switch by a MultiplicativeSwitch in the range 0-0.1.
  *
  * <p>At present, there is an assumption that x gets linearly scaled when passed to the switch; at
- * the ends, s(x) = f(g(x))*h(x), where h(x) is the primary switch, g(x) = x / (switching range),
- * and f(g(x)) is the secondary switch.
+ * the ends, s(x) = f(g(x))*h(x), where h(x) is the primary switch, g(x) = x / (switching range), and
+ * f(g(x)) is the secondary switch.
  *
  * @author Jacob M. Litman
  * @author Michael J. Schnieders
  */
 public class CompositeSwitch implements UnivariateSwitchingFunction {
+
   private static final Logger logger = Logger.getLogger(CompositeSwitch.class.getName());
 
   /** Primary switching function to be obeyed exactly in the middle. */
   private final UnivariateSwitchingFunction primaryFunction;
   /**
    * Secondary switching function used to interpolate smoothly (usually from 0/0/0) into
-   * primaryFunction over lb to lbPrmary.
+   * primaryFunction over lb to lbPrimary.
    */
   private final UnivariateSwitchingFunction startSwitch;
   /**
    * Secondary switching function used to interpolate smoothly from primaryFunction (usually to
-   * 1/0/0) over lb to lbPrmary.
+   * 1/0/0) over lb to lbPrimary.
    */
   private final UnivariateSwitchingFunction endSwitch;
   /** Lower bound of the primary switch/upper bound of startSwitch * primarySwitch. */
@@ -179,7 +180,7 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
     fdUB2 = fdUB * fdUB;
 
     if (!testJoints()) {
-      logger.warning(format(" Switch %s is not smooth at one of its joints!", toString()));
+      logger.warning(format(" Switch %s is not smooth at one of its joints!", this));
     }
   }
 
@@ -219,17 +220,13 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
 
   @Override
   public double nthDerivative(double x, int order) throws IllegalArgumentException {
-    switch (order) {
-      case 0:
-        return valueAt(x);
-      case 1:
-        return firstDerivative(x);
-      case 2:
-        return secondDerivative(x);
-      default:
-        throw new IllegalArgumentException(
-            " Composite switches do not yet have support for arbitrary derivatives");
-    }
+    return switch (order) {
+      case 0 -> valueAt(x);
+      case 1 -> firstDerivative(x);
+      case 2 -> secondDerivative(x);
+      default -> throw new IllegalArgumentException(
+          " Composite switches do not yet have support for arbitrary derivatives");
+    };
   }
 
   @Override
@@ -252,12 +249,9 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
 
   @Override
   public String toString() {
-    StringBuilder sb =
-        new StringBuilder(
-            format(
-                " Composite switch with overall range %12.5g-%12.5g, "
-                    + "with an inner range %12.5g-%12.5g",
-                lb, ub, lbPrimary, ubPrimary));
+    StringBuilder sb = new StringBuilder(
+        format(" Composite switch with overall range %12.5g-%12.5g, "
+            + "with an inner range %12.5g-%12.5g", lb, ub, lbPrimary, ubPrimary));
     sb.append("\n Primary switch: ").append(primaryFunction.toString());
     sb.append("\n Start switch:   ").append(startSwitch.toString());
     sb.append("\n End switch:     ").append(endSwitch.toString());
@@ -287,9 +281,9 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
   /**
    * Tests double equality to within a reasonable tolerance.
    *
-   * @param x1
-   * @param x2
-   * @param tol
+   * @param x1 First value.
+   * @param x2 Second value.
+   * @param tol Tolerance.
    * @return Fuzzy equality.
    */
   private boolean approxEquals(double x1, double x2, double tol) {
@@ -344,7 +338,7 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
   /**
    * Broken out from valueAt to make testing joints easier.
    *
-   * @param x x value to evalute.
+   * @param x x value to evaluate.
    * @return f(x) using both startSwitch and primary function.
    */
   private double valLower(double x) {
@@ -354,7 +348,7 @@ public class CompositeSwitch implements UnivariateSwitchingFunction {
   /**
    * Broken out from valueAt to make testing joints easier.
    *
-   * @param x x value to evalute.
+   * @param x x value to evaluate.
    * @return f(x) using both endSwitch and primary function.
    */
   private double valUpper(double x) {

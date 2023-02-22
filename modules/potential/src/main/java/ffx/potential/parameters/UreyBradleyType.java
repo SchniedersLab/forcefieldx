@@ -58,8 +58,8 @@ import java.util.logging.Logger;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-@FFXKeyword(name = "ureybrad", clazz = String.class, keywordGroup = PotentialFunctionParameter,
-    description = "[3 integers and 2 reals] "
+@FFXKeyword(name = "ureybrad", clazz = String.class, keywordGroup = PotentialFunctionParameter, description =
+    "[3 integers and 2 reals] "
         + "Provides the values for a single Urey-Bradley cross term potential parameter. "
         + "The integer modifiers give the atom class numbers for the three kinds of atoms involved in the angle for which a Urey-Bradley term is to be defined. "
         + "The real number modifiers give the force constant value for the term and the target value for the 1-3 distance in Angstroms. "
@@ -74,26 +74,23 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
   public static final double DEFAULT_UREY_QUARTIC = 0.0;
 
   /** Convert Urey-Bradley stretch energy to kcal/mole. */
-  @FFXKeyword(name = "ureyunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0",
-      description =
-          "Sets the scale factor needed to convert the energy value computed by the Urey-Bradley potential into units of kcal/mole. "
-              + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
+  @FFXKeyword(name = "ureyunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0", description =
+      "Sets the scale factor needed to convert the energy value computed by the Urey-Bradley potential into units of kcal/mole. "
+          + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
   public double ureyUnit = DEFAULT_UREY_UNIT;
 
   /** Cubic coefficient in bond stretch potential. */
-  @FFXKeyword(name = "urey-cubic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0",
-      description =
-          "Sets the value of the cubic term in the Taylor series expansion form of the Urey-Bradley potential energy. "
-              + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
-              + "The default value in the absence of the urey-cubic keyword is zero; i.e., the cubic Urey-Bradley term is omitted.")
+  @FFXKeyword(name = "urey-cubic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description =
+      "Sets the value of the cubic term in the Taylor series expansion form of the Urey-Bradley potential energy. "
+          + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
+          + "The default value in the absence of the urey-cubic keyword is zero; i.e., the cubic Urey-Bradley term is omitted.")
   public double cubic = DEFAULT_UREY_CUBIC;
 
   /** Quartic coefficient in bond stretch potential. */
-  @FFXKeyword(name = "urey-quartic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0",
-      description =
-          "Sets the value of the quartic term in the Taylor series expansion form of the Urey-Bradley potential energy. "
-              + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
-              + "The default value in the absence of the urey-quartic keyword is zero; i.e., the quartic Urey-Bradley term is omitted.")
+  @FFXKeyword(name = "urey-quartic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description =
+      "Sets the value of the quartic term in the Taylor series expansion form of the Urey-Bradley potential energy. "
+          + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
+          + "The default value in the absence of the urey-quartic keyword is zero; i.e., the quartic Urey-Bradley term is omitted.")
   public double quartic = DEFAULT_UREY_QUARTIC;
 
   /** A Logger for the UreyBradleyType class. */
@@ -127,8 +124,8 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
    * @param atomClasses an array of {@link int} objects.
    * @return a {@link ffx.potential.parameters.UreyBradleyType} object.
    */
-  public static UreyBradleyType average(
-      UreyBradleyType ureyBradleyType1, UreyBradleyType ureyBradleyType2, int[] atomClasses) {
+  public static UreyBradleyType average(UreyBradleyType ureyBradleyType1,
+      UreyBradleyType ureyBradleyType2, int[] atomClasses) {
     if (ureyBradleyType1 == null || ureyBradleyType2 == null || atomClasses == null) {
       return null;
     }
@@ -232,9 +229,9 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
   }
 
   /**
-   * incrementClasses
+   * Increment the atom classes by a specified amount.
    *
-   * @param increment a int.
+   * @param increment The increment to apply to the atom classes.
    */
   public void incrementClasses(int increment) {
     for (int i = 0; i < atomClasses.length; i++) {
@@ -277,8 +274,7 @@ public final class UreyBradleyType extends BaseType implements Comparator<String
    */
   @Override
   public String toString() {
-    return format(
-        "ureybrad  %5d  %5d  %5d  %6.2f  %7.4f",
-        atomClasses[0], atomClasses[1], atomClasses[2], forceConstant, distance);
+    return format("ureybrad  %5d  %5d  %5d  %6.2f  %7.4f", atomClasses[0], atomClasses[1],
+        atomClasses[2], forceConstant, distance);
   }
 }

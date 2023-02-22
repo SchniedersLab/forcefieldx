@@ -287,14 +287,10 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
       logger.info(format("%6d %12.5f %10.6f", iter, f, grms));
     } else {
       if (info == LineSearchResult.Success) {
-        logger.info(
-            format(
-                "%6d %12.5f %10.6f %10.6f %9.5f %8.2f %6d %8.3f",
+        logger.info(format("%6d %12.5f %10.6f %10.6f %9.5f %8.2f %6d %8.3f",
                 iter, f, grms, df, xrms, angle, nfun, seconds));
       } else {
-        logger.info(
-            format(
-                "%6d %12.5f %10.6f %10.6f %9.5f %8.2f %6d %8s",
+        logger.info(format("%6d %12.5f %10.6f %10.6f %9.5f %8.2f %6d %8s",
                 iter, f, grms, df, xrms, angle, nfun, info));
       }
     }

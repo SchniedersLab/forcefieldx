@@ -42,6 +42,7 @@ import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.cli.RepExOptions
 import ffx.algorithms.dynamics.MolecularDynamics
+import ffx.algorithms.dynamics.MDEngine
 import ffx.algorithms.dynamics.MolecularDynamicsOpenMM
 import ffx.algorithms.dynamics.PhReplicaExchange
 import ffx.numerics.Potential
@@ -276,7 +277,7 @@ class PhDynamics extends AlgorithmsScript {
       // Create an FFX Molecular Dynamics
       molecularDynamics =
               dynamicsOptions.getDynamics(writeOutOptions, potential, activeAssembly, algorithmListener,
-                      MolecularDynamics.DynamicsEngine.FFX)
+                  MDEngine.FFX)
       molecularDynamics.attachExtendedSystem(esvSystem, titrReport)
 
       if (repEx.repEx) {

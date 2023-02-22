@@ -113,7 +113,7 @@ public final class INTFileFilter extends FileFilter {
       } catch (Exception e) {
         return false;
       }
-      // If the the first Atom line does not begin with an integer and
+      // If the first Atom line does not begin with an integer and
       // contain three tokens, it is not an internal coordinate file.
       String firstAtom = br.readLine();
       if (firstAtom == null) {

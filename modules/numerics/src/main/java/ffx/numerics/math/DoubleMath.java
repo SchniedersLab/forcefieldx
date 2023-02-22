@@ -104,7 +104,7 @@ public final class DoubleMath {
    *
    * @param a First vector
    * @param b Second vector
-   * @param ret The cross-product a x b.
+   * @param ret The cross-product of a x b.
    * @return Returns the cross-product ret.
    */
   public static double[] X(double[] a, double[] b, double[] ret) {
@@ -172,6 +172,36 @@ public final class DoubleMath {
   }
 
   /**
+   * Finds the dihedral angle formed between 4 atoms, a, b, c, d, via position
+   * vectors AB, BC, and CD.
+   *
+   * @param ab Position vector AB.
+   * @param bc Position vector BC.
+   * @param cd Position vector CD.
+   * @return The dihedral angle in the range [ -pi, pi ].
+   */
+  public static double dihedralAngle(double[] ab, double[] bc, double[] cd) {
+    var t = X(ab, bc);
+    var u = X(bc, cd);
+    var rt = dot(t, t);
+    var ru = dot(u, u);
+    var rtu = sqrt(rt * ru);
+    if (rtu != 0.0) {
+      var rcb = length(bc);
+      var cosine = dot(t, u) / rtu;
+      var tu = X(t, u);
+      var sine = dot(bc, tu) / (rcb * rtu);
+      cosine = min(1.0, max(-1.0, cosine));
+      var angle = acos(cosine);
+      if (sine < 0.0) {
+        angle = -angle;
+      }
+      return angle;
+    }
+    return 0;
+  }
+
+  /**
    * Finds the dihedral angle formed between 4 atoms.
    *
    * @param a Atom position vector.
@@ -181,27 +211,7 @@ public final class DoubleMath {
    * @return The dihedral angle in the range [ -pi, pi ].
    */
   public static double dihedralAngle(double[] a, double[] b, double[] c, double[] d) {
-    var ba = sub(b, a);
-    var cb = sub(c, b);
-    var dc = sub(d, c);
-    var t = X(ba, cb);
-    var u = X(cb, dc);
-    var rt = dot(t, t);
-    var ru = dot(u, u);
-    var rtu = sqrt(rt * ru);
-    if (rtu != 0.0) {
-      var rcb = length(cb);
-      var cosine = dot(t, u) / rtu;
-      var tu = X(t, u);
-      var sine = dot(cb, tu) / (rcb * rtu);
-      cosine = min(1.0, max(-1.0, cosine));
-      var angle = acos(cosine);
-      if (sine < 0.0) {
-        angle = -angle;
-      }
-      return angle;
-    }
-    return 0;
+    return dihedralAngle(sub(b, a), sub(c, b), sub(d, c));
   }
 
   /**
@@ -400,7 +410,7 @@ public final class DoubleMath {
    * logVector.
    *
    * @param v an array of double.
-   * @return Returns the a String description of the vector.
+   * @return Returns a String description of the vector.
    */
   public static String toString(double[] v) {
     StringBuilder sb = new StringBuilder(" [ ");
@@ -416,19 +426,16 @@ public final class DoubleMath {
    *
    * @param v an array of {@link double} objects.
    * @param label a {@link String} object.
-   * @return Returns the a String description of the vector.
+   * @return Returns a String description of the vector.
    */
   public static String toString(double[] v, String label) {
     if (v == null) {
       return null;
     }
-    StringBuilder sb;
-    if (label != null) {
-      sb = new StringBuilder(format(" %16s = [", label));
-    } else {
-      sb = new StringBuilder(format(" %16s = [", "v"));
+    if (label == null) {
+      label = "v";
     }
-
+    StringBuilder sb = new StringBuilder(format(" %16s = [", label));
     for (double value : v) {
       sb.append(format(" %16.8f", value));
     }

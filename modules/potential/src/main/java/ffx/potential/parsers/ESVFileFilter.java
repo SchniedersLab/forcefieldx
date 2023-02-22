@@ -51,12 +51,14 @@ import java.io.File;
 public final class ESVFileFilter extends FileFilter {
 
   /** Default Constructor. */
-  public ESVFileFilter() {}
+  public ESVFileFilter() {
+  }
 
   /**
    * {@inheritDoc}
    *
-   * <p>This method return <code>true</code> if the file is a directory or ExtendedSystem Variable Restart file
+   * <p>This method return <code>true</code> if the file is a directory or ExtendedSystem Variable
+   * Restart file
    * (*.ESV).
    */
   @Override

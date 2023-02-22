@@ -40,14 +40,12 @@ package ffx.potential;
 import static ffx.numerics.math.DoubleMath.sub;
 import static ffx.potential.bonded.NamingUtils.renameAminoAcidToPDBStandard;
 import static ffx.potential.bonded.NamingUtils.renameNucleicAcidToPDBStandard;
-import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Molecule;
-import ffx.potential.bonded.NamingUtils;
 import ffx.potential.bonded.NucleicAcidUtils;
 import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.Residue;

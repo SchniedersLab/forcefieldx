@@ -147,11 +147,13 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
       throw new IllegalArgumentException("Order must be >= 1");
     }
     switch (order) {
-      case 1:
+      case 1 -> {
         return firstDerivative(x);
-      case 2:
+      }
+      case 2 -> {
         return secondDerivative(x);
-      default:
+      }
+      default -> {
         double orderDiff = order - beta;
         if (orderDiff % 1.0 == 0 && orderDiff >= 1.0) {
           return 0.0;
@@ -162,6 +164,7 @@ public class PowerSwitch implements UnivariateSwitchingFunction {
           }
           return val;
         }
+      }
     }
   }
 

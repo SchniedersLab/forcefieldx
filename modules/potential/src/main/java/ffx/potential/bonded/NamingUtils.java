@@ -63,7 +63,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Utilities for importing atoms from PDB files and checking their names.
@@ -77,8 +76,8 @@ public class NamingUtils {
   private static final Logger logger = Logger.getLogger(NamingUtils.class.getName());
 
   /**
-   * Ensures proper naming of hydrogens according to latest PDB format. Presently mostly guesses at
-   * which hydrogens to re-assign, which may cause chirality errors for prochiral hydrogens. If
+   * Ensures proper naming of hydrogen according to latest PDB format. Presently mostly guesses at
+   * which hydrogen to re-assign, which may cause chirality errors for prochiral hydrogen. If
    * necessary, we will implement more specific mapping.
    *
    * @param residue Residue to examine.
@@ -133,7 +132,7 @@ public class NamingUtils {
             alphas.add(atom);
           }
         }
-        renameGlycineAlphaHydrogens(residue, alphas);
+        renameGlycineAlphaHydrogen(residue, alphas);
         break;
       case ALA:
         // No known errors with alanine
@@ -151,7 +150,7 @@ public class NamingUtils {
             betas.add(atom);
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
+        renameBetaHydrogen(residue, betas, 23);
         break;
       case ILE:
         List<Atom> ileAtoms = new ArrayList<>();
@@ -160,7 +159,7 @@ public class NamingUtils {
             ileAtoms.add(atom);
           }
         }
-        renameIsoleucineHydrogens(residue, ileAtoms);
+        renameIsoleucineHydrogen(residue, ileAtoms);
         break;
       case THR:
         Atom HG1 = (Atom) residue.getAtomNode("HG1");
@@ -188,7 +187,7 @@ public class NamingUtils {
             HG.setName("HG");
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
+        renameBetaHydrogen(residue, betas, 23);
         break;
       case CYX:
         // I pray this is never important, because I don't have an example CYX to work from.
@@ -207,9 +206,9 @@ public class NamingUtils {
             deltas.add(atom);
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
-        renameGammaHydrogens(residue, gammas, 23);
-        renameDeltaHydrogens(residue, deltas, 23);
+        renameBetaHydrogen(residue, betas, 23);
+        renameGammaHydrogen(residue, gammas, 23);
+        renameDeltaHydrogen(residue, deltas, 23);
         break;
       case PHE:
         betas = new ArrayList<>();
@@ -229,9 +228,9 @@ public class NamingUtils {
             HZ.setName("HZ");
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
-        renameDeltaHydrogens(residue, deltas, 12);
-        renameEpsilonHydrogens(residue, epsilons, 12);
+        renameBetaHydrogen(residue, betas, 23);
+        renameDeltaHydrogen(residue, deltas, 12);
+        renameEpsilonHydrogen(residue, epsilons, 12);
         break;
       case TYR:
         betas = new ArrayList<>();
@@ -255,9 +254,9 @@ public class NamingUtils {
             OH.setName("OH");
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
-        renameDeltaHydrogens(residue, deltas, 12);
-        renameEpsilonHydrogens(residue, epsilons, 12);
+        renameBetaHydrogen(residue, betas, 23);
+        renameDeltaHydrogen(residue, deltas, 12);
+        renameEpsilonHydrogen(residue, epsilons, 12);
         break;
       case TYD:
         betas = new ArrayList<>();
@@ -277,9 +276,9 @@ public class NamingUtils {
             OH.setName("OH");
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
-        renameDeltaHydrogens(residue, deltas, 12);
-        renameEpsilonHydrogens(residue, epsilons, 12);
+        renameBetaHydrogen(residue, betas, 23);
+        renameDeltaHydrogen(residue, deltas, 12);
+        renameEpsilonHydrogen(residue, epsilons, 12);
         break;
       case TRP:
         betas = new ArrayList<>();
@@ -303,9 +302,9 @@ public class NamingUtils {
             HH2.setName("HH2");
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
-        renameEpsilonHydrogens(residue, epsilons, 13);
-        renameZetaHydrogens(residue, zetas, 23);
+        renameBetaHydrogen(residue, betas, 23);
+        renameEpsilonHydrogen(residue, epsilons, 13);
+        renameZetaHydrogen(residue, zetas, 23);
         break;
       case HIS:
         betas = new ArrayList<>();
@@ -321,9 +320,9 @@ public class NamingUtils {
             epsilons.add(atom);
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
-        renameDeltaHydrogens(residue, deltas, 12);
-        renameEpsilonHydrogens(residue, epsilons, 12);
+        renameBetaHydrogen(residue, betas, 23);
+        renameDeltaHydrogen(residue, deltas, 12);
+        renameEpsilonHydrogen(residue, epsilons, 12);
         break;
       case HID:
         betas = new ArrayList<>();
@@ -340,8 +339,8 @@ public class NamingUtils {
             HE1.setName("HE1");
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
-        renameDeltaHydrogens(residue, deltas, 12);
+        renameBetaHydrogen(residue, betas, 23);
+        renameDeltaHydrogen(residue, deltas, 12);
         break;
       case HIE:
         betas = new ArrayList<>();
@@ -358,8 +357,8 @@ public class NamingUtils {
             HD2.setName("HD2");
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
-        renameEpsilonHydrogens(residue, epsilons, 12);
+        renameBetaHydrogen(residue, betas, 23);
+        renameEpsilonHydrogen(residue, epsilons, 12);
         break;
       case ASH:
         betas = new ArrayList<>();
@@ -373,7 +372,7 @@ public class NamingUtils {
             HD2.setName("HD2");
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
+        renameBetaHydrogen(residue, betas, 23);
         break;
       case ASD:
         betas = new ArrayList<>();
@@ -386,8 +385,8 @@ public class NamingUtils {
             deltas.add(atom);
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
-        renameDeltaHydrogens(residue, deltas, 12);
+        renameBetaHydrogen(residue, betas, 23);
+        renameDeltaHydrogen(residue, deltas, 12);
         break;
       case ASN:
         betas = new ArrayList<>();
@@ -400,8 +399,8 @@ public class NamingUtils {
             HD2s.add(atom);
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
-        renameAsparagineHydrogens(residue, HD2s);
+        renameBetaHydrogen(residue, betas, 23);
+        renameAsparagineHydrogen(residue, HD2s);
         break;
       case GLU:
       case MET:
@@ -415,8 +414,8 @@ public class NamingUtils {
             gammas.add(atom);
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
-        renameGammaHydrogens(residue, gammas, 23);
+        renameBetaHydrogen(residue, betas, 23);
+        renameGammaHydrogen(residue, gammas, 23);
         break;
       case GLH:
         betas = new ArrayList<>();
@@ -433,8 +432,8 @@ public class NamingUtils {
             HE2.setName("HE2");
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
-        renameGammaHydrogens(residue, gammas, 23);
+        renameBetaHydrogen(residue, betas, 23);
+        renameGammaHydrogen(residue, gammas, 23);
         break;
       case GLD:
         betas = new ArrayList<>();
@@ -450,9 +449,9 @@ public class NamingUtils {
             epsilons.add(atom);
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
-        renameGammaHydrogens(residue, gammas, 23);
-        renameEpsilonHydrogens(residue, epsilons, 12);
+        renameBetaHydrogen(residue, betas, 23);
+        renameGammaHydrogen(residue, gammas, 23);
+        renameEpsilonHydrogen(residue, epsilons, 12);
         break;
       case GLN:
         betas = new ArrayList<>();
@@ -468,9 +467,9 @@ public class NamingUtils {
             epsilons.add(atom);
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
-        renameGammaHydrogens(residue, gammas, 23);
-        renameGlutamineHydrogens(residue, epsilons);
+        renameBetaHydrogen(residue, betas, 23);
+        renameGammaHydrogen(residue, gammas, 23);
+        renameGlutamineHydrogen(residue, epsilons);
         break;
       // Epsilons should not break, as they are 1-3.
       case LYS:
@@ -491,10 +490,10 @@ public class NamingUtils {
             epsilons.add(atom);
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
-        renameGammaHydrogens(residue, gammas, 23);
-        renameDeltaHydrogens(residue, deltas, 23);
-        renameEpsilonHydrogens(residue, epsilons, 23);
+        renameBetaHydrogen(residue, betas, 23);
+        renameGammaHydrogen(residue, gammas, 23);
+        renameDeltaHydrogen(residue, deltas, 23);
+        renameEpsilonHydrogen(residue, epsilons, 23);
         break;
       case LYD:
         betas = new ArrayList<>();
@@ -516,11 +515,11 @@ public class NamingUtils {
             zetas.add(atom);
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
-        renameGammaHydrogens(residue, gammas, 23);
-        renameDeltaHydrogens(residue, deltas, 23);
-        renameEpsilonHydrogens(residue, epsilons, 23);
-        renameZetaHydrogens(residue, zetas, 12);
+        renameBetaHydrogen(residue, betas, 23);
+        renameGammaHydrogen(residue, gammas, 23);
+        renameDeltaHydrogen(residue, deltas, 23);
+        renameEpsilonHydrogen(residue, epsilons, 23);
+        renameZetaHydrogen(residue, zetas, 12);
         break;
       case ARG:
         betas = new ArrayList<>();
@@ -543,10 +542,10 @@ public class NamingUtils {
             HHn.add(atom);
           }
         }
-        renameBetaHydrogens(residue, betas, 23);
-        renameGammaHydrogens(residue, gammas, 23);
-        renameDeltaHydrogens(residue, deltas, 23);
-        renameArginineHydrogens(residue, HHn);
+        renameBetaHydrogen(residue, betas, 23);
+        renameGammaHydrogen(residue, gammas, 23);
+        renameDeltaHydrogen(residue, deltas, 23);
+        renameArginineHydrogen(residue, HHn);
         break;
       case ORN:
       case AIB:
@@ -579,7 +578,7 @@ public class NamingUtils {
   }
 
   /**
-   * Renames an atom, its bonded hydrogens, and returns the next atom in the chain.
+   * Renames an atom, its bonded hydrogen, and returns the next atom in the chain.
    *
    * <p>If applied to an atom that is not a carbon, it will be misnamed as a carbon, so fix that
    * afterwards.
@@ -590,23 +589,23 @@ public class NamingUtils {
    * @param posName Name of the position (such as B for CB).
    * @return Next atom in the chain if present.
    */
-  public static Optional<Atom> renameAlkyl(
-      Atom carbon, Atom priorAtom, int protonOffset, char posName) {
+  public static Optional<Atom> renameAlkyl(Atom carbon, Atom priorAtom, int protonOffset,
+      char posName) {
     carbon.setName(format("C%c", posName));
-    List<Atom> hydrogens = findBondedAtoms(carbon, 1);
-    int numH = hydrogens.size();
+    List<Atom> hydrogen = findBondedAtoms(carbon, 1);
+    int numH = hydrogen.size();
     if (numH == 1) {
-      hydrogens.get(0).setName(format("H%c", posName));
+      hydrogen.get(0).setName(format("H%c", posName));
     } else {
       for (int i = 0; i < numH; i++) {
-        hydrogens.get(i).setName(format("H%c%d", posName, i + protonOffset));
+        hydrogen.get(i).setName(format("H%c%d", posName, i + protonOffset));
       }
     }
 
     return carbon.getBonds().stream()
         .map((Bond b) -> b.get1_2(carbon))
         .filter((Atom a) -> a != priorAtom)
-        .filter((Atom a) -> !hydrogens.contains(a))
+        .filter((Atom a) -> !hydrogen.contains(a))
         .findAny();
   }
 
@@ -635,7 +634,7 @@ public class NamingUtils {
       // C-alpha hydrogen
       List<Atom> hydrogenForCA = findBondedAtoms(CA, 1);
       switch (aa3) {
-        case NME:
+        case NME -> {
           // Do all renaming here then return out of the method.
           findBondedAtoms(N, 1).get(0).setName("H");
           CA.setName("CH3");
@@ -643,13 +642,12 @@ public class NamingUtils {
             hydrogenForCA.get(i - 1).setName(format("H%d", i));
           }
           return;
-        case GLY:
+        }
+        case GLY -> {
           hydrogenForCA.get(0).setName("HA2");
           hydrogenForCA.get(1).setName("HA3");
-          break;
-        default:
-          hydrogenForCA.get(0).setName("HA");
-          break;
+        }
+        default -> hydrogenForCA.get(0).setName("HA");
       }
 
       // Carbonyl carbon
@@ -678,11 +676,10 @@ public class NamingUtils {
       // Carbonyl oxygen (1 for mid-chain, 2 for last residue)
       List<Atom> cTerminalOxygen = findBondedAtoms(C, 8);
       switch (cTerminalOxygen.size()) {
-        case 1:
+        case 1 ->
           // Mid-chain
-          cTerminalOxygen.get(0).setName("O");
-          break;
-        case 2:
+            cTerminalOxygen.get(0).setName("O");
+        case 2 -> {
           Atom O = null;
           for (Atom oxygen : cTerminalOxygen) {
             if (oxygen.getBonds().size() == 2) {
@@ -695,6 +692,7 @@ public class NamingUtils {
             cTerminalOxygen.get(0).setName("O");
             cTerminalOxygen.get(1).setName("OXT");
           }
+        }
       }
 
       // Nitrogen hydrogen atoms
@@ -716,9 +714,9 @@ public class NamingUtils {
       C.setName("C");
       Atom CH3 = findBondedAtoms(C, 6).get(0);
       CH3.setName("CH3");
-      List<Atom> hydrogens = findBondedAtoms(CH3, 1);
+      List<Atom> hydrogen = findBondedAtoms(CH3, 1);
       for (int i = 1; i <= 3; i++) {
-        hydrogens.get(i - 1).setName(format("H%d", i));
+        hydrogen.get(i - 1).setName(format("H%d", i));
       }
     } else {
       throw new IllegalArgumentException(
@@ -727,12 +725,12 @@ public class NamingUtils {
   }
 
   /**
-   * renameArginineHydrogens.
+   * renameArginineHydrogen.
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param resAtoms a {@link java.util.List} object.
    */
-  public static void renameArginineHydrogens(Residue residue, List<Atom> resAtoms) {
+  public static void renameArginineHydrogen(Residue residue, List<Atom> resAtoms) {
     Atom HH11 = (Atom) residue.getAtomNode("HH11");
     Atom HH12 = (Atom) residue.getAtomNode("HH12");
     Atom HH21 = (Atom) residue.getAtomNode("HH21");
@@ -768,12 +766,12 @@ public class NamingUtils {
   }
 
   /**
-   * renameAsparagineHydrogens.
+   * renameAsparagineHydrogen.
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param resAtoms a {@link java.util.List} object.
    */
-  public static void renameAsparagineHydrogens(Residue residue, List<Atom> resAtoms) {
+  public static void renameAsparagineHydrogen(Residue residue, List<Atom> resAtoms) {
     Atom HD21 = (Atom) residue.getAtomNode("HD21");
     Atom HD22 = (Atom) residue.getAtomNode("HD22");
     if (HD21 != null) {
@@ -802,19 +800,15 @@ public class NamingUtils {
    */
   public static void renameAtomsToPDBStandard(MolecularAssembly molecularAssembly) {
     Polymer[] polymers = molecularAssembly.getChains();
-    if (polymers != null && polymers.length > 0) {
+    if (polymers != null) {
       for (Polymer polymer : polymers) {
         for (Residue residue : polymer.getResidues()) {
           switch (residue.getResidueType()) {
-            case AA:
-              renameAminoAcidToPDBStandard(residue);
-              break;
-            case NA:
-              renameNucleicAcidToPDBStandard(residue);
-              break;
-            case UNK:
-            default:
-              break;
+            case AA -> renameAminoAcidToPDBStandard(residue);
+            case NA -> renameNucleicAcidToPDBStandard(residue);
+            case UNK -> {
+              // Do nothing.
+            }
           }
         }
       }
@@ -822,29 +816,30 @@ public class NamingUtils {
   }
 
   /**
-   * renameBetaHydrogens.
+   * renameBetaHydrogen.
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param resAtoms a {@link java.util.List} object.
-   * @param indexes a int.
+   * @param indexes The HB indexes to use.
    */
-  public static void renameBetaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
+  public static void renameBetaHydrogen(Residue residue, List<Atom> resAtoms, int indexes) {
     Atom[] HBn = new Atom[3];
     switch (indexes) {
-      case 12:
+      case 12 -> {
         HBn[0] = (Atom) residue.getAtomNode("HB1");
         HBn[1] = (Atom) residue.getAtomNode("HB2");
-        break;
-      case 13:
+      }
+      case 13 -> {
         HBn[0] = (Atom) residue.getAtomNode("HB1");
         HBn[2] = (Atom) residue.getAtomNode("HB3");
-        break;
-      case 23:
+      }
+      case 23 -> {
         HBn[1] = (Atom) residue.getAtomNode("HB2");
         HBn[2] = (Atom) residue.getAtomNode("HB3");
-        break;
-      default:
+      }
+      default -> {
         return;
+      }
     }
     for (Atom HBatom : HBn) {
       resAtoms.remove(HBatom);
@@ -864,7 +859,7 @@ public class NamingUtils {
   }
 
   /**
-   * Renames a numbered carbon, its bonded hydrogens, and returns the next atom in the chain.
+   * Renames a numbered carbon, its bonded hydrogen, and returns the next atom in the chain.
    *
    * <p>If applied to an atom that is not a carbon, it will be misnamed as a carbon, so fix that
    * afterwards.
@@ -878,23 +873,23 @@ public class NamingUtils {
    * @param posName Name of the position (such as B for CB).
    * @return Next atom in the chain if present.
    */
-  public static Optional<Atom> renameBranchedAlkyl(
-      Atom carbon, Atom priorAtom, int protonOffset, int branchNum, char posName) {
+  public static Optional<Atom> renameBranchedAlkyl(Atom carbon, Atom priorAtom, int protonOffset,
+      int branchNum, char posName) {
     carbon.setName(format("C%c%d", posName, branchNum));
-    List<Atom> hydrogens = findBondedAtoms(carbon, 1);
-    int numH = hydrogens.size();
+    List<Atom> hydrogen = findBondedAtoms(carbon, 1);
+    int numH = hydrogen.size();
     if (numH == 1) {
-      hydrogens.get(0).setName(format("H%c%d", posName, branchNum));
+      hydrogen.get(0).setName(format("H%c%d", posName, branchNum));
     } else {
       for (int i = 0; i < numH; i++) {
-        hydrogens.get(i).setName(format("H%c%d%d", posName, branchNum, i + protonOffset));
+        hydrogen.get(i).setName(format("H%c%d%d", posName, branchNum, i + protonOffset));
       }
     }
 
     return carbon.getBonds().stream()
         .map((Bond b) -> b.get1_2(carbon))
         .filter((Atom a) -> a != priorAtom)
-        .filter((Atom a) -> !hydrogens.contains(a))
+        .filter((Atom a) -> !hydrogen.contains(a))
         .findAny();
   }
 
@@ -947,35 +942,35 @@ public class NamingUtils {
         }
 
         switch (protonatedOD) {
-          case -1:
+          case -1 -> {
             ODs.get(0).setName("OD1");
             ODs.get(1).setName("OD2");
-            break;
-          case 0:
-            if (aa3 != AminoAcidUtils.AminoAcid3.ASH) {
+          }
+          case 0 -> {
+            if (aa3 != AminoAcid3.ASH) {
               residue.setName("ASH");
             }
             ODs.get(0).setName("OD2");
             findBondedAtoms(ODs.get(0), 1).get(0).setName("HD2");
             ODs.get(1).setName("OD1");
-            break;
-          case 1:
-            if (aa3 != AminoAcidUtils.AminoAcid3.ASH) {
+          }
+          case 1 -> {
+            if (aa3 != AminoAcid3.ASH) {
               residue.setName("ASH");
             }
             ODs.get(1).setName("OD2");
             findBondedAtoms(ODs.get(1), 1).get(0).setName("HD2");
             ODs.get(0).setName("OD1");
-            break;
-          case 2:
-            if (aa3 != AminoAcidUtils.AminoAcid3.ASD) {
+          }
+          case 2 -> {
+            if (aa3 != AminoAcid3.ASD) {
               residue.setName("ASD");
             }
             ODs.get(0).setName("OD1");
             findBondedAtoms(ODs.get(0), 1).get(0).setName("HD1");
             ODs.get(1).setName("OD2");
             findBondedAtoms(ODs.get(1), 1).get(0).setName("HD2");
-            break;
+          }
         }
       }
       break;
@@ -1001,35 +996,35 @@ public class NamingUtils {
         }
 
         switch (protonatedOE) {
-          case -1:
+          case -1 -> {
             OEs.get(0).setName("OE1");
             OEs.get(1).setName("OE2");
-            break;
-          case 0:
-            if (aa3 != AminoAcidUtils.AminoAcid3.GLH) {
+          }
+          case 0 -> {
+            if (aa3 != AminoAcid3.GLH) {
               residue.setName("GLH");
             }
             OEs.get(0).setName("OE2");
             findBondedAtoms(OEs.get(0), 1).get(0).setName("HE2");
             OEs.get(1).setName("OE1");
-            break;
-          case 1:
-            if (aa3 != AminoAcidUtils.AminoAcid3.GLH) {
+          }
+          case 1 -> {
+            if (aa3 != AminoAcid3.GLH) {
               residue.setName("GLH");
             }
             OEs.get(1).setName("OE2");
             findBondedAtoms(OEs.get(1), 1).get(0).setName("HE2");
             OEs.get(0).setName("OE1");
-            break;
-          case 2:
-            if (aa3 != AminoAcidUtils.AminoAcid3.GLD) {
+          }
+          case 2 -> {
+            if (aa3 != AminoAcid3.GLD) {
               residue.setName("GLD");
             }
             OEs.get(0).setName("OE1");
             findBondedAtoms(OEs.get(0), 1).get(0).setName("HE1");
             OEs.get(1).setName("OE2");
             findBondedAtoms(OEs.get(1), 1).get(0).setName("HE2");
-            break;
+          }
         }
       }
       break;
@@ -1108,7 +1103,7 @@ public class NamingUtils {
           } else {
             throw new IllegalArgumentException(
                 format(
-                    " Isoleucine residue %s had %d gamma hydrogens, expecting 2-3!",
+                    " Isoleucine residue %s had %d gamma hydrogen, expecting 2-3!",
                     residue, numHGs));
           }
         }
@@ -1125,15 +1120,12 @@ public class NamingUtils {
         NZ.setName("NZ");
         int numH = findBondedAtoms(NZ, 1).size();
         switch (numH) {
-          case 2:
-            residue.setName("LYD");
-            break;
-          case 3:
-            assert aa3 == AminoAcidUtils.AminoAcid3.LYS;
-            break;
-          default:
-            throw new IllegalArgumentException(
-                format(" Lysine residue %s had %d amine protons, expecting 2-3!", residue, numH));
+          case 2 -> residue.setName("LYD");
+          case 3 -> {
+            assert aa3 == AminoAcid3.LYS;
+          }
+          default -> throw new IllegalArgumentException(
+              format(" Lysine residue %s had %d amine protons, expecting 2-3!", residue, numH));
         }
       }
       break;
@@ -1382,19 +1374,15 @@ public class NamingUtils {
         Atom P = findBondedAtoms(O5s, 15).get(0);
         P.setName("P");
         List<Atom> bondedO = findBondedAtoms(P, O5s, 8);
-        List<Atom> thisResO =
-            bondedO.stream()
-                .filter(o -> residue.getAtomList().contains(o))
-                .collect(Collectors.toList());
+        List<Atom> thisResO = bondedO.stream().filter(o -> residue.getAtomList().contains(o))
+            .toList();
         int nBonded = bondedO.size();
         int nRes = thisResO.size();
-
         if (nBonded == 0) {
           // Do nothing.
         } else if (nBonded == nRes) {
           Atom OP1 = bondedO.get(0);
           OP1.setName("OP1");
-
           // OP2 is approximately +120 degrees from OP1, OP3 is -120 degrees.
           final double[] xyzC5s = C5s.getXYZ(new double[3]);
           final double[] xyzO5s = O5s.getXYZ(new double[3]);
@@ -1403,21 +1391,16 @@ public class NamingUtils {
           double dihedral = dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzOP1);
           double twoPiOver3 = 2.0 * PI / 3.0;
           double target = modToRange(dihedral + twoPiOver3, -PI, PI);
-          List<Atom> otherO =
-              bondedO.stream()
-                  .filter(o -> o != OP1)
-                  .sorted(
-                      Comparator.comparingDouble(
-                          (Atom o) -> {
-                            double[] xyzO = o.getXYZ(new double[3]);
-                            double dihedO = dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzO);
-                            double diff = dihedO - target;
-                            double twoPi = 2 * PI;
-                            diff = modToRange(diff, 0, twoPi);
-                            diff = diff < PI ? diff : twoPi - diff;
-                            return diff;
-                          }))
-                  .collect(Collectors.toList());
+          List<Atom> otherO = bondedO.stream().filter(o -> o != OP1).sorted(
+              Comparator.comparingDouble((Atom o) -> {
+                double[] xyzO = o.getXYZ(new double[3]);
+                double dihedO = dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzO);
+                double diff = dihedO - target;
+                double twoPi = 2 * PI;
+                diff = modToRange(diff, 0, twoPi);
+                diff = diff < PI ? diff : twoPi - diff;
+                return diff;
+              })).toList();
           for (int i = 0; i < otherO.size(); i++) {
             otherO.get(i).setName(format("OP%d", i + 2));
           }
@@ -1433,21 +1416,16 @@ public class NamingUtils {
           double dihedral = dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzNextO3s);
           double twoPiOver3 = 2.0 * PI / 3.0;
           double target = modToRange(dihedral + twoPiOver3, -PI, PI);
-          List<Atom> otherO =
-              bondedO.stream()
-                  .filter(o -> o != nextO3s)
-                  .sorted(
-                      Comparator.comparingDouble(
-                          (Atom o) -> {
-                            double[] xyzO = o.getXYZ(new double[3]);
-                            double dihedO = dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzO);
-                            double diff = dihedO - target;
-                            double twoPi = 2 * PI;
-                            diff = modToRange(diff, 0, twoPi);
-                            diff = diff < PI ? diff : twoPi - diff;
-                            return diff;
-                          }))
-                  .collect(Collectors.toList());
+          List<Atom> otherO = bondedO.stream().filter(o -> o != nextO3s).sorted(
+              Comparator.comparingDouble((Atom o) -> {
+                double[] xyzO = o.getXYZ(new double[3]);
+                double dihedO = dihedralAngle(xyzC5s, xyzO5s, xyzP, xyzO);
+                double diff = dihedO - target;
+                double twoPi = 2 * PI;
+                diff = modToRange(diff, 0, twoPi);
+                diff = diff < PI ? diff : twoPi - diff;
+                return diff;
+              })).toList();
           for (int i = 0; i < otherO.size(); i++) {
             otherO.get(i).setName(format("OP%d", i + 1));
           }
@@ -1472,11 +1450,9 @@ public class NamingUtils {
    * @param C1s C1' of the ribose sugar.
    * @param na3 Identity of the nucleic acid.
    */
-  public static void renameCommonNucleobase(
-      Atom N19, Atom C1s, NucleicAcid3 na3) {
+  public static void renameCommonNucleobase(Atom N19, Atom C1s, NucleicAcid3 na3) {
     switch (na3) {
-      case ADE:
-      case DAD: {
+      case ADE, DAD -> {
         Map<String, Atom> purineBase = renameCommonPurine(N19, C1s);
         // Unique to A: H2, N6, H6[12]
         findBondedAtoms(purineBase.get("C2"), 1).get(0).setName("H2");
@@ -1489,9 +1465,7 @@ public class NamingUtils {
         allH6[0].setName("H61");
         allH6[1].setName("H62");
       }
-      break;
-      case CYT:
-      case DCY: {
+      case CYT, DCY -> {
         Map<String, Atom> pyrimidineBase = renameCommonPyrimidine(N19, C1s);
         // Unique to C: N4, H4[12]
         Atom C4 = pyrimidineBase.get("C4");
@@ -1502,9 +1476,7 @@ public class NamingUtils {
         allH4[0].setName("H41");
         allH4[1].setName("H42");
       }
-      break;
-      case GUA:
-      case DGU: {
+      case GUA, DGU -> {
         Map<String, Atom> purineBase = renameCommonPurine(N19, C1s);
         // Unique to G: H1, N2, H2[12], O6
         Atom N1 = purineBase.get("N1");
@@ -1522,16 +1494,13 @@ public class NamingUtils {
         allH2[1].setName("H22");
         findBondedAtoms(C6, 8).get(0).setName("O6");
       }
-      break;
-      case URI: {
+      case URI -> {
         Map<String, Atom> pyrimidineBase = renameCommonPyrimidine(N19, C1s);
         // Unique to U: H3, O4
         findBondedAtoms(pyrimidineBase.get("N3"), 1).get(0).setName("H3");
         findBondedAtoms(pyrimidineBase.get("C4"), 8).get(0).setName("O4");
       }
-      break;
-      case THY:
-      case DTY: {
+      case THY, DTY -> {
         Map<String, Atom> pyrimidineBase = renameCommonPyrimidine(N19, C1s);
         // Unique to T: H3, O4, C7
         findBondedAtoms(pyrimidineBase.get("N3"), 1).get(0).setName("H3");
@@ -1548,7 +1517,6 @@ public class NamingUtils {
           }
         }
       }
-      break;
     }
   }
 
@@ -1630,29 +1598,30 @@ public class NamingUtils {
   }
 
   /**
-   * renameDeltaHydrogens.
+   * renameDeltaHydrogen.
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param resAtoms a {@link java.util.List} object.
-   * @param indexes a int.
+   * @param indexes The HD indexes to use.
    */
-  public static void renameDeltaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
+  public static void renameDeltaHydrogen(Residue residue, List<Atom> resAtoms, int indexes) {
     Atom[] HDn = new Atom[3];
     switch (indexes) {
-      case 12:
+      case 12 -> {
         HDn[0] = (Atom) residue.getAtomNode("HD1");
         HDn[1] = (Atom) residue.getAtomNode("HD2");
-        break;
-      case 13:
+      }
+      case 13 -> {
         HDn[0] = (Atom) residue.getAtomNode("HD1");
         HDn[2] = (Atom) residue.getAtomNode("HD3");
-        break;
-      case 23:
+      }
+      case 23 -> {
         HDn[1] = (Atom) residue.getAtomNode("HD2");
         HDn[2] = (Atom) residue.getAtomNode("HD3");
-        break;
-      default:
+      }
+      default -> {
         return;
+      }
     }
     for (Atom HDatom : HDn) {
       resAtoms.remove(HDatom);
@@ -1672,29 +1641,30 @@ public class NamingUtils {
   }
 
   /**
-   * renameEpsilonHydrogens.
+   * renameEpsilonHydrogen.
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param resAtoms a {@link java.util.List} object.
-   * @param indexes a int.
+   * @param indexes The HE indexes to use.
    */
-  public static void renameEpsilonHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
+  public static void renameEpsilonHydrogen(Residue residue, List<Atom> resAtoms, int indexes) {
     Atom[] HEn = new Atom[3];
     switch (indexes) {
-      case 12:
+      case 12 -> {
         HEn[0] = (Atom) residue.getAtomNode("HE1");
         HEn[1] = (Atom) residue.getAtomNode("HE2");
-        break;
-      case 13:
+      }
+      case 13 -> {
         HEn[0] = (Atom) residue.getAtomNode("HE1");
         HEn[2] = (Atom) residue.getAtomNode("HE3");
-        break;
-      case 23:
+      }
+      case 23 -> {
         HEn[1] = (Atom) residue.getAtomNode("HE2");
         HEn[2] = (Atom) residue.getAtomNode("HE3");
-        break;
-      default:
+      }
+      default -> {
         return;
+      }
     }
     for (Atom HEatom : HEn) {
       resAtoms.remove(HEatom);
@@ -1714,29 +1684,30 @@ public class NamingUtils {
   }
 
   /**
-   * renameGammaHydrogens.
+   * renameGammaHydrogen.
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param resAtoms a {@link java.util.List} object.
-   * @param indexes a int.
+   * @param indexes The HG indexes to use.
    */
-  public static void renameGammaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
+  public static void renameGammaHydrogen(Residue residue, List<Atom> resAtoms, int indexes) {
     Atom[] HGn = new Atom[3];
     switch (indexes) {
-      case 12:
+      case 12 -> {
         HGn[0] = (Atom) residue.getAtomNode("HG1");
         HGn[1] = (Atom) residue.getAtomNode("HG2");
-        break;
-      case 13:
+      }
+      case 13 -> {
         HGn[0] = (Atom) residue.getAtomNode("HG1");
         HGn[2] = (Atom) residue.getAtomNode("HG3");
-        break;
-      case 23:
+      }
+      case 23 -> {
         HGn[1] = (Atom) residue.getAtomNode("HG2");
         HGn[2] = (Atom) residue.getAtomNode("HG3");
-        break;
-      default:
+      }
+      default -> {
         return;
+      }
     }
     for (Atom HGatom : HGn) {
       resAtoms.remove(HGatom);
@@ -1756,12 +1727,12 @@ public class NamingUtils {
   }
 
   /**
-   * renameGlutamineHydrogens.
+   * renameGlutamineHydrogen.
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param resAtoms a {@link java.util.List} object.
    */
-  public static void renameGlutamineHydrogens(Residue residue, List<Atom> resAtoms) {
+  public static void renameGlutamineHydrogen(Residue residue, List<Atom> resAtoms) {
     Atom HE21 = (Atom) residue.getAtomNode("HE21");
     Atom HE22 = (Atom) residue.getAtomNode("HE22");
     if (HE21 != null) {
@@ -1780,12 +1751,12 @@ public class NamingUtils {
   }
 
   /**
-   * renameGlycineAlphaHydrogens.
+   * renameGlycineAlphaHydrogen.
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param resAtoms a {@link java.util.List} object.
    */
-  public static void renameGlycineAlphaHydrogens(Residue residue, List<Atom> resAtoms) {
+  public static void renameGlycineAlphaHydrogen(Residue residue, List<Atom> resAtoms) {
     Atom HA2 = (Atom) residue.getAtomNode("HA2");
     Atom HA3 = (Atom) residue.getAtomNode("HA3");
     if (HA2 != null) {
@@ -1804,12 +1775,12 @@ public class NamingUtils {
   }
 
   /**
-   * renameIsoleucineHydrogens.
+   * renameIsoleucineHydrogen.
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param resAtoms a {@link java.util.List} object.
    */
-  public static void renameIsoleucineHydrogens(Residue residue, List<Atom> resAtoms) {
+  public static void renameIsoleucineHydrogen(Residue residue, List<Atom> resAtoms) {
     Atom HG12 = (Atom) residue.getAtomNode("HG12");
     Atom HG13 = (Atom) residue.getAtomNode("HG13");
     if (HG12 != null) {
@@ -1828,11 +1799,11 @@ public class NamingUtils {
   }
 
   /**
-   * renameNTerminusHydrogens.
+   * renameNTerminusHydrogen.
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    */
-  public static void renameNTerminusHydrogens(Residue residue) {
+  public static void renameNTerminusHydrogen(Residue residue) {
     Atom[] h = new Atom[3];
     h[0] = (Atom) residue.getAtomNode("H1");
     h[1] = (Atom) residue.getAtomNode("H2");
@@ -1890,47 +1861,36 @@ public class NamingUtils {
     NucleicAcid3 na3 = residue.getNucleicAcid3(true);
     residue.setName(na3.toString());
     switch (na3) {
-      case ADE:
-      case DAD:
-      case CYT:
-      case DCY:
-      case GUA:
-      case DGU:
-      case THY:
-      case DTY:
-      case URI:
-        renameCommonNucleicAcid(residue, na3);
-        break;
-      default:
-        logger.info(" Could not rename atoms for nonstandard nucleic acid " + na3);
-        break;
+      case ADE, DAD, CYT, DCY, GUA, DGU, THY, DTY, URI -> renameCommonNucleicAcid(residue, na3);
+      default -> logger.info(" Could not rename atoms for nonstandard nucleic acid " + na3);
     }
   }
 
   /**
-   * renameZetaHydrogens.
+   * renameZetaHydrogen.
    *
    * @param residue a {@link ffx.potential.bonded.Residue} object.
    * @param resAtoms a {@link java.util.List} object.
-   * @param indexes a int.
+   * @param indexes The HZ atom indices to use.
    */
-  public static void renameZetaHydrogens(Residue residue, List<Atom> resAtoms, int indexes) {
+  public static void renameZetaHydrogen(Residue residue, List<Atom> resAtoms, int indexes) {
     Atom[] HZn = new Atom[3];
     switch (indexes) {
-      case 12:
+      case 12 -> {
         HZn[0] = (Atom) residue.getAtomNode("HZ1");
         HZn[1] = (Atom) residue.getAtomNode("HZ2");
-        break;
-      case 13:
+      }
+      case 13 -> {
         HZn[0] = (Atom) residue.getAtomNode("HZ1");
         HZn[2] = (Atom) residue.getAtomNode("HZ3");
-        break;
-      case 23:
+      }
+      case 23 -> {
         HZn[1] = (Atom) residue.getAtomNode("HZ2");
         HZn[2] = (Atom) residue.getAtomNode("HZ3");
-        break;
-      default:
+      }
+      default -> {
         return;
+      }
     }
     for (Atom HZatom : HZn) {
       resAtoms.remove(HZatom);

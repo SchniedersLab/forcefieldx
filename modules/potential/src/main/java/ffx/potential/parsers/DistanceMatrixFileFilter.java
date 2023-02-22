@@ -56,7 +56,7 @@ public final class DistanceMatrixFileFilter extends FileFilter {
   /**
    * {@inheritDoc}
    *
-   * <p>This method return <code>true</code> if the file is a directory or DistanceMatrix (*.TXT).
+   * <p>This method returns <code>true</code> if the file is a directory or DistanceMatrix (*.TXT).
    */
   @Override
   public boolean accept(File file) {

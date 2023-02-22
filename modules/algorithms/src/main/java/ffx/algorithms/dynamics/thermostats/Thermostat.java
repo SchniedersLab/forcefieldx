@@ -110,28 +110,17 @@ public abstract class Thermostat {
    * @param n Number of degrees of freedom.
    * @param x Atomic coordinates.
    * @param v Velocities.
-   * @param mass Mass of each degrees of freedom.
+   * @param mass Mass of each degree of freedom.
    * @param type the VARIABLE_TYPE of each variable.
    * @param targetTemperature a double.
    */
-  public Thermostat(
-      int n,
-      double[] x,
-      double[] v,
-      double[] mass,
-      VARIABLE_TYPE[] type,
+  public Thermostat(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type,
       double targetTemperature) {
     this(n, x, v, mass, type, targetTemperature, new ArrayList<>());
   }
 
-  public Thermostat(
-      int n,
-      double[] x,
-      double[] v,
-      double[] mass,
-      VARIABLE_TYPE[] type,
-      double targetTemperature,
-      List<Constraint> constraints) {
+  public Thermostat(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type,
+      double targetTemperature, List<Constraint> constraints) {
     assert (n > 3);
 
     this.nVariables = n;
@@ -231,18 +220,10 @@ public abstract class Thermostat {
     linearMomentum[2] /= totalMass;
 
     if (print) {
-      String sb =
-          format(
-              "  Center of Mass   (%12.3f,%12.3f,%12.3f)\n  Linear Momentum  (%12.3f,%12.3f,%12.3f)\n  Angular Momentum (%12.3f,%12.3f,%12.3f)",
-              centerOfMass[0],
-              centerOfMass[1],
-              centerOfMass[2],
-              linearMomentum[0],
-              linearMomentum[1],
-              linearMomentum[2],
-              angularMomentum[0],
-              angularMomentum[1],
-              angularMomentum[2]);
+      String sb = format(
+          "  Center of Mass   (%12.3f,%12.3f,%12.3f)\n  Linear Momentum  (%12.3f,%12.3f,%12.3f)\n  Angular Momentum (%12.3f,%12.3f,%12.3f)",
+          centerOfMass[0], centerOfMass[1], centerOfMass[2], linearMomentum[0], linearMomentum[1],
+          linearMomentum[2], angularMomentum[0], angularMomentum[1], angularMomentum[2]);
       logger.info(sb);
     }
 
@@ -427,17 +408,12 @@ public abstract class Thermostat {
    * @param n Number of degrees of freedom.
    * @param x Atomic coordinates.
    * @param v Velocities.
-   * @param mass Mass of each degrees of freedom.
+   * @param mass Mass of each degree of freedom.
    * @param type the VARIABLE_TYPE of each variable.
    * @param removeCenterOfMassMotion a boolean.
    */
-  public void setNumberOfVariables(
-      int n,
-      double[] x,
-      double[] v,
-      double[] mass,
-      VARIABLE_TYPE[] type,
-      boolean removeCenterOfMassMotion) {
+  public void setNumberOfVariables(int n, double[] x, double[] v, double[] mass,
+      VARIABLE_TYPE[] type, boolean removeCenterOfMassMotion) {
     this.nVariables = n;
     this.x = x;
     this.v = v;
@@ -476,9 +452,8 @@ public abstract class Thermostat {
   }
 
   public String logTemp() {
-    StringBuilder sb =
-        new StringBuilder(
-            format("  Target temperature:           %7.2f Kelvin\n", targetTemperature));
+    StringBuilder sb = new StringBuilder(
+        format("  Target temperature:           %7.2f Kelvin\n", targetTemperature));
     sb.append(format("  Current temperature:          %7.2f Kelvin\n", currentTemperature));
     sb.append(format("  Number of variables:          %7d\n", nVariables));
     sb.append(format("  Number of degrees of freedom: %7d\n", degreesOfFreedom));

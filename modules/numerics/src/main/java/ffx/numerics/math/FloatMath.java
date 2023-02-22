@@ -104,7 +104,7 @@ public class FloatMath {
    *
    * @param a First vector.
    * @param b Second vector.
-   * @param ret The cross-product a x b.
+   * @param ret The cross-product of a x b.
    * @return Returns the cross-product ret.
    */
   public static float[] X(float[] a, float[] b, float[] ret) {
@@ -402,7 +402,7 @@ public class FloatMath {
    * logVector.
    *
    * @param v an array of float.
-   * @return Returns the a String description of the vector.
+   * @return Returns a String description of the vector.
    */
   public static String toString(float[] v) {
     StringBuilder sb = new StringBuilder("Vector ( ");
@@ -418,19 +418,16 @@ public class FloatMath {
    *
    * @param v an array of {@link float} objects.
    * @param label a {@link String} object.
-   * @return Returns the a String description of the vector.
+   * @return Returns a String description of the vector.
    */
   public static String toString(float[] v, String label) {
     if (v == null) {
       return null;
     }
-    StringBuilder sb;
-    if (label != null) {
-      sb = new StringBuilder(format(" %16s = [", label));
-    } else {
-      sb = new StringBuilder(format(" %16s = [", "v"));
+    if (label == null) {
+      label = "v";
     }
-
+    StringBuilder sb = new StringBuilder(format(" %16s = [", label));
     for (float value : v) {
       sb.append(format(" %16.8f", value));
     }

@@ -35,30 +35,15 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.utils;
-
-import static java.lang.String.format;
+package ffx.algorithms.dynamics;
 
 /**
- * SystemTemperatureException class.
+ * Enumerates available molecular dynamics engines; presently limited to the FFX reference engine and
+ * the OpenMM engine.
  *
- * @author Stephen D. LuCore
+ * <p>This is distinct from the force field energy Platform, as the FFX engine can use OpenMM
+ * energies, but not vice-versa.
  */
-public class SystemTemperatureException extends RuntimeException {
-  private final double temperature;
-
-  /**
-   * Constructor for SystemTemperatureException.
-   *
-   * @param temperature a double.
-   */
-  public SystemTemperatureException(double temperature) {
-    this.temperature = temperature;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public String getMessage() {
-    return format(" System unstable due to high temperature: %6.2f", temperature);
-  }
+public enum MDEngine {
+  FFX, OMM, OPENMM
 }

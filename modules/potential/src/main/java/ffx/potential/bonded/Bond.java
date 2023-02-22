@@ -121,7 +121,7 @@ public class Bond extends BondedTerm {
   private boolean wireVisible = true;
 
   /**
-   * Simple Bond constructor that is intended to be used with the equals method.
+   * Simple Bond constructor that is intended to be used with the <code>equals</code> method.
    *
    * @param n Bond id
    */
@@ -247,26 +247,22 @@ public class Bond extends BondedTerm {
     }
     var dv2 = dv * dv;
     switch (bondType.bondFunction) {
-      case QUARTIC:
-      case FLAT_BOTTOM_QUARTIC: {
+      case QUARTIC, FLAT_BOTTOM_QUARTIC -> {
         energy = prefactor * dv2 * (1.0 + bondType.cubic * dv + bondType.quartic * dv2);
         if (gradient) {
           // Compute the magnitude of the gradient.
-          var dedr = 2.0 * prefactor * dv * (1.0 + 1.5 * bondType.cubic * dv + 2.0 * bondType.quartic * dv2);
+          var dedr = 2.0 * prefactor * dv * (1.0 + 1.5 * bondType.cubic * dv
+              + 2.0 * bondType.quartic * dv2);
           computeGradient(threadID, grad, atomA, atomB, vab, dedr);
         }
-        break;
       }
-      case HARMONIC:
-      case FLAT_BOTTOM_HARMONIC:
-      default: {
+      case HARMONIC, FLAT_BOTTOM_HARMONIC -> {
         energy = prefactor * dv2;
         if (gradient) {
           // Compute the magnitude of the gradient.
           var dedr = 2.0 * prefactor * dv;
           computeGradient(threadID, grad, atomA, atomB, vab, dedr);
         }
-        break;
       }
     }
     value = dv;
@@ -277,7 +273,8 @@ public class Bond extends BondedTerm {
    * Find the other Atom in <b>this</b> Bond. These two atoms are said to be 1-2.
    *
    * @param a The known Atom.
-   * @return The other Atom that makes up <b>this</b> Bond, or Null if Atom a is not part of
+   * @return The other Atom that makes up <b>this</b> Bond, or Null if Atom <code>a</code> is not
+   *     part of
    *     <b>this</b> Bond.
    */
   public Atom get1_2(Atom a) {
@@ -393,32 +390,29 @@ public class Bond extends BondedTerm {
   @Override
   public void setView(RendererCache.ViewModel newViewModel, List<BranchGroup> newShapes) {
     switch (newViewModel) {
-      case WIREFRAME:
+      case WIREFRAME -> {
         viewModel = ViewModel.WIREFRAME;
         setWireVisible(true);
         setCylinderVisible(false, newShapes);
-        break;
-      case SPACEFILL:
-      case INVISIBLE:
-      case RMIN:
+      }
+      case SPACEFILL, INVISIBLE, RMIN -> {
         viewModel = ViewModel.INVISIBLE;
         setWireVisible(false);
         setCylinderVisible(false, newShapes);
-        break;
-      case RESTRICT:
+      }
+      case RESTRICT -> {
         if (!atoms[0].isSelected() || !atoms[1].isSelected()) {
           viewModel = ViewModel.INVISIBLE;
           setWireVisible(false);
           setCylinderVisible(false, newShapes);
         }
-        break;
-      case BALLANDSTICK:
-      case TUBE:
+      }
+      case BALLANDSTICK, TUBE -> {
         viewModel = newViewModel;
         // Get the radius to use
         double rad;
         double len = getValue() / 2.0d;
-        if (viewModel == RendererCache.ViewModel.BALLANDSTICK) {
+        if (viewModel == ViewModel.BALLANDSTICK) {
           rad = 0.1d * RendererCache.radius;
         } else {
           rad = 0.2d * RendererCache.radius;
@@ -429,8 +423,8 @@ public class Bond extends BondedTerm {
         scale.set(rad, len, rad);
         setWireVisible(false);
         setCylinderVisible(true, newShapes);
-        break;
-      case DETAIL:
+      }
+      case DETAIL -> {
         int res = RendererCache.detail;
         if (res != detail) {
           detail = res;
@@ -452,9 +446,9 @@ public class Bond extends BondedTerm {
           scale = new Vector3d();
         }
         double newRadius;
-        if (viewModel == RendererCache.ViewModel.BALLANDSTICK) {
+        if (viewModel == ViewModel.BALLANDSTICK) {
           newRadius = 0.1d * RendererCache.radius;
-        } else if (viewModel == RendererCache.ViewModel.TUBE) {
+        } else if (viewModel == ViewModel.TUBE) {
           newRadius = 0.2d * RendererCache.radius;
         } else {
           break;
@@ -466,27 +460,25 @@ public class Bond extends BondedTerm {
             setView(viewModel, newShapes);
           }
         }
-        break;
-      case SHOWHYDROGENS:
+      }
+      case SHOWHYDROGEN -> {
         if (atoms[0].getAtomicNumber() == 1 || atoms[1].getAtomicNumber() == 1) {
           setView(viewModel, newShapes);
         }
-        break;
-      case HIDEHYDROGENS:
+      }
+      case HIDEHYDROGEN -> {
         if (atoms[0].getAtomicNumber() == 1 || atoms[1].getAtomicNumber() == 1) {
           viewModel = ViewModel.INVISIBLE;
           setWireVisible(false);
           setCylinderVisible(false, newShapes);
         }
-        break;
-      case FILL:
-      case POINTS:
-      case LINES:
+      }
+      case FILL, POINTS, LINES -> {
         if (branchGroup != null && viewModel != ViewModel.INVISIBLE) {
           cy1.setAppearance(atoms[0].getAtomAppearance());
           cy2.setAppearance(atoms[1].getAtomAppearance());
         }
-        break;
+      }
     }
   }
 
@@ -494,7 +486,7 @@ public class Bond extends BondedTerm {
    * setWire
    *
    * @param l a {@link org.jogamp.java3d.LineArray} object.
-   * @param i a int.
+   * @param i The index of the LineArray to use.
    */
   public void setWire(LineArray l, int i) {
     la = l;
@@ -504,7 +496,7 @@ public class Bond extends BondedTerm {
   /**
    * {@inheritDoc}
    *
-   * <p>Update recomputes the bonds length, Wireframe vertices, and Cylinder Transforms
+   * <p>Update recomputes bonds length, Wireframe vertices, and Cylinder Transforms
    */
   @Override
   public void update() {
@@ -673,7 +665,7 @@ public class Bond extends BondedTerm {
       axisAngle.set(bcross);
     }
     // Scale the orientation vector to be a fourth the bond length
-    // and add it to the position vector of the of the first atom
+    // and add it to the position vector of the first atom
     scale(orient, len / 4.0d, cstart);
     DoubleMath.add(cstart, pos, cstart);
     pos3d.set(cstart);
