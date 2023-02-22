@@ -337,6 +337,11 @@ public class ExtendedSystem implements Potential {
         double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
         guessTitrState = properties.getBoolean("guess.titration.state", false);
         specialResidues = getPropertyList(properties, "esv.special.residues");
+        for(double res : specialResidues){
+            if(!isTitratable(mola.getResidueList().get((int) res))){
+                logger.severe("Given special residue: " + res + " is not titratable.");
+            }
+        }
         specialResiduePKAs = getPropertyList(properties, "esv.special.residues.pka");
         if(specialResidues.size() != specialResiduePKAs.size()) {
             logger.severe("The number of special residues and their associated values do not match.");
@@ -985,15 +990,16 @@ public class ExtendedSystem implements Potential {
      */
     private double initialTitrationState(Residue residue, double initialLambda) {
         AminoAcid3 AA3 = residue.getAminoAcid3();
-        double residueNumber = residue.getResidueNumber()+1;
+        double residueNumber = residue.getResidueNumber();
         double initialTitrationLambda = 0.0;
-        if(specialResidues.contains(residueNumber)) {
-                initialTitrationLambda =
-                        (constantSystemPh < specialResiduePKAs.get(specialResidues.indexOf(residueNumber))) ? 1.0 : 0.0;
-                logger.info("Resi " + residueNumber + " is a special residue with pKa " +
-                        specialResiduePKAs.get(specialResidues.indexOf(residueNumber)) + " and initial lambda " + initialTitrationLambda +
-                        ".");
-        }
+         if (specialResidues.contains(residueNumber)) {
+             initialTitrationLambda =
+                     (constantSystemPh < specialResiduePKAs.get(specialResidues.indexOf(residueNumber))) ? 1.0 : 0.0;
+
+             logger.info("Resi " + residueNumber + " is a special residue with pKa " +
+                     specialResiduePKAs.get(specialResidues.indexOf(residueNumber)) + " and initial lambda " +
+                     initialTitrationLambda + ".");
+         }
         else {
             initialTitrationLambda = switch (AA3) {
                 case ASD -> (constantSystemPh < TitrationUtils.Titration.ASHtoASP.pKa) ? 1.0 : 0.0;
