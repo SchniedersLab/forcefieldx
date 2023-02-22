@@ -292,6 +292,9 @@ public class ExtendedSystem implements Potential {
      */
     private boolean fixTautomerState;
     private boolean fixTitrationState;
+    private final ArrayList<Double> specialResidues;
+    private final ArrayList<Double> specialResiduePKAs;
+
     /**
      * Filter to parse the dynamics restart file.
      */
@@ -333,6 +336,11 @@ public class ExtendedSystem implements Potential {
         double initialTitrationLambda = properties.getDouble("lambda.titration.initial", 0.5);
         double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
         guessTitrState = properties.getBoolean("guess.titration.state", false);
+        specialResidues = getPropertyList(properties, "esv.special.residues");
+        specialResiduePKAs = getPropertyList(properties, "esv.special.residues.pka");
+        if(specialResidues.size() != specialResiduePKAs.size()) {
+            logger.severe("The number of special residues and their associated values do not match.");
+        }
         fixTitrationState = properties.getBoolean("fix.titration.lambda", false);
         fixTautomerState = properties.getBoolean("fix.tautomer.lambda", false);
 
@@ -520,6 +528,23 @@ public class ExtendedSystem implements Potential {
                 updateLambdas();
             }
         }
+    }
+
+    // Method that takes in properties, a string, and a class type such as Integer or Double for the property list.
+    private ArrayList<Double> getPropertyList(CompositeConfiguration properties, String s) {
+        ArrayList<Double> list = new ArrayList<>();
+        String[] split = properties.getString(s, "").trim()
+                .replace("[", "")
+                .replace("]","")
+                .replace(","," ")
+                .split(" ");
+        for (String s1 : split) {
+            if (s1.isEmpty()) {
+                continue;
+            }
+            list.add(Double.parseDouble(s1));
+        }
+        return list;
     }
 
     /**
@@ -960,26 +985,24 @@ public class ExtendedSystem implements Potential {
      */
     private double initialTitrationState(Residue residue, double initialLambda) {
         AminoAcid3 AA3 = residue.getAminoAcid3();
-        double initialTitrationLambda;
-        switch (AA3) {
-            case ASD:
-                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.ASHtoASP.pKa) ? 1.0 : 0.0;
-                break;
-            case GLD:
-                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.GLHtoGLU.pKa) ? 1.0 : 0.0;
-                break;
-            case HIS:
-                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.HIStoHID.pKa) ? 1.0 : 0.0;
-                break;
-            case LYS:
-                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.LYStoLYD.pKa) ? 1.0 : 0.0;
-                break;
-            case CYS:
-                initialTitrationLambda = (constantSystemPh < TitrationUtils.Titration.CYStoCYD.pKa) ? 1.0 : 0.0;
-                break;
-            default:
-                initialTitrationLambda = initialLambda;
-                break;
+        double residueNumber = residue.getResidueNumber()+1;
+        double initialTitrationLambda = 0.0;
+        if(specialResidues.contains(residueNumber)) {
+                initialTitrationLambda =
+                        (constantSystemPh < specialResiduePKAs.get(specialResidues.indexOf(residueNumber))) ? 1.0 : 0.0;
+                logger.info("Resi " + residueNumber + " is a special residue with pKa " +
+                        specialResiduePKAs.get(specialResidues.indexOf(residueNumber)) + " and initial lambda " + initialTitrationLambda +
+                        ".");
+        }
+        else {
+            initialTitrationLambda = switch (AA3) {
+                case ASD -> (constantSystemPh < TitrationUtils.Titration.ASHtoASP.pKa) ? 1.0 : 0.0;
+                case GLD -> (constantSystemPh < TitrationUtils.Titration.GLHtoGLU.pKa) ? 1.0 : 0.0;
+                case HIS -> (constantSystemPh < TitrationUtils.Titration.HIStoHID.pKa) ? 1.0 : 0.0;
+                case LYS -> (constantSystemPh < TitrationUtils.Titration.LYStoLYD.pKa) ? 1.0 : 0.0;
+                case CYS -> (constantSystemPh < TitrationUtils.Titration.CYStoCYD.pKa) ? 1.0 : 0.0;
+                default -> initialLambda;
+            };
         }
         return initialTitrationLambda;
     }
