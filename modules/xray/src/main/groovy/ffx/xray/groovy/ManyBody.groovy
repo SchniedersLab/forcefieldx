@@ -38,12 +38,11 @@
 package ffx.xray.groovy
 
 import edu.rit.pj.Comm
-import ffx.algorithms.TitrationManyBody
+import ffx.algorithms.optimize.TitrationManyBody
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization
 import ffx.numerics.Potential
-import ffx.numerics.math.Double3
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
@@ -61,7 +60,6 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
 
 import static java.lang.String.format
-import static org.apache.commons.io.FilenameUtils.removeExtension
 import static org.apache.commons.io.FilenameUtils.removeExtension
 
 /**
