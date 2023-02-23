@@ -42,7 +42,7 @@ class ReducedPartition extends  AlgorithmsScript{
             description = "The residue that is mutating.")
     private int mutatingResidue = 1
 
-    @CommandLine.Option(names = ["--mC", "--mutatingChain"], paramLabel = "A",
+    @CommandLine.Option(names = ["--resC", "--residueChain"], paramLabel = "A",
             description = "The chain that is mutating.")
     private String mutatingChain = 'A'
 
