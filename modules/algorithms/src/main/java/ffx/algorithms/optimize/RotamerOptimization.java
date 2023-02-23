@@ -2125,7 +2125,7 @@ public class RotamerOptimization implements Terminatable {
         }
         if (!deadEnd) {
           evaluatedPermutations++;
-          if(evaluatedPermutations > 1e4){
+          if(evaluatedPermutations > 1e8){
             return adjustPerm;
           }
           energyRegion.init(eE, residues, currentRotamers, threeBodyTerm);
@@ -2171,22 +2171,22 @@ public class RotamerOptimization implements Terminatable {
     boolean perm = false;
     partitionFunction(residues, i, currentRotamers);
     try{
-      if(evaluatedPermutations > 1e4){
+      if(evaluatedPermutations > 1e8){
         logger.info("Made it to the exception if statement");
         throw new ArithmeticException("The number of permutations has reach" + evaluatedPermutations + " . Permutations must be eliminated.");
       }
     } catch (Exception e){
-      logger.info("Too many permutations. Re-setting parameters and re-running");
+      logger.info("Too many permutations. Re-set parameters and re-run");
       //change ensemble energy
-      logger.info("Ensemble Energy Before: " + ensembleEnergy);
-      ensembleEnergy -= 0.5;
-      logger.info("Ensemble Energy After: " + ensembleEnergy);
+      //logger.info("Ensemble Energy Before: " + ensembleEnergy);
+      //ensembleEnergy -= 0.5;
+      //logger.info("Ensemble Energy After: " + ensembleEnergy);
       //adjust 2-body cutoff
-      twoBodyCutoffDist -= 1.0;
+      //twoBodyCutoffDist -= 1.0;
       //re-run optimize rotamer optimization with new parameters
-      optimize(algorithm);
+      //optimize(algorithm);
       //re-run partitionFunction
-      checkPermutations(residues, i, currentRotamers, algorithm);
+      //checkPermutations(residues, i, currentRotamers, algorithm);
     }
     return perm;
   }
