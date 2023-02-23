@@ -42,6 +42,10 @@ class ReducedPartition extends  AlgorithmsScript{
             description = "The residue that is mutating.")
     private int mutatingResidue = 1
 
+    @CommandLine.Option(names = ["--mC", "--mutatingChain"], paramLabel = "A",
+            description = "The chain that is mutating.")
+    private String mutatingChain = 'A'
+
     @CommandLine.Option(names = ["--dC", "--distanceCutoff"], paramLabel = "10.0",
             description = "Residues within the distance cutoff from the mutating residue will be optimized.")
     private double distanceCutoff = 10.0
@@ -145,7 +149,7 @@ class ReducedPartition extends  AlgorithmsScript{
             if(unfolded){
                 mutatorBinding = new Binding('-r', mutatingResidue.toString(), '-n', resName, unfoldedFileName)
             } else {
-                mutatorBinding = new Binding('-r', mutatingResidue.toString(), '-n', resName, filenames.get(0))
+                mutatorBinding = new Binding('-r', mutatingResidue.toString(), '-n', resName, filenames.get(0), '--ch', mutatingChain)
             }
 
             MutatePDB mutatePDB = new MutatePDB(mutatorBinding)
