@@ -337,14 +337,17 @@ public class ExtendedSystem implements Potential {
         double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
         guessTitrState = properties.getBoolean("guess.titration.state", false);
         specialResidues = getPropertyList(properties, "esv.special.residues");
-        for(double res : specialResidues){
-            if(!isTitratable(mola.getResidueList().get((int) res))){
-                logger.severe("Given special residue: " + res + " is not titratable.");
-            }
-        }
         specialResiduePKAs = getPropertyList(properties, "esv.special.residues.pka");
         if(specialResidues.size() != specialResiduePKAs.size()) {
             logger.severe("The number of special residues and their associated values do not match.");
+        }
+        logger.info("Special residues: " + specialResidues);
+        logger.info("Special residues pKa: " + specialResiduePKAs);
+        for(double res : specialResidues){
+            Residue residue = mola.getResidueList().get((int) res - 1);
+            if(!isTitratable(residue)){
+                logger.severe("Given special residue: " + residue + " is not titratable.");
+            }
         }
         fixTitrationState = properties.getBoolean("fix.titration.lambda", false);
         fixTautomerState = properties.getBoolean("fix.tautomer.lambda", false);
@@ -996,9 +999,9 @@ public class ExtendedSystem implements Potential {
              initialTitrationLambda =
                      (constantSystemPh < specialResiduePKAs.get(specialResidues.indexOf(residueNumber))) ? 1.0 : 0.0;
 
-             logger.info("Resi " + residueNumber + " is a special residue with pKa " +
+             /*logger.info("Resi " + residueNumber + " is a special residue with pKa " +
                      specialResiduePKAs.get(specialResidues.indexOf(residueNumber)) + " and initial lambda " +
-                     initialTitrationLambda + ".");
+                     initialTitrationLambda + ".");*/
          }
         else {
             initialTitrationLambda = switch (AA3) {
