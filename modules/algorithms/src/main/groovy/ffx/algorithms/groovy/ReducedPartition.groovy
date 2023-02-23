@@ -164,9 +164,9 @@ class ReducedPartition extends  AlgorithmsScript{
             double dist = DoubleMath.dist(mutatingResCoor,currentResCoor)
             if(dist < distanceCutoff){
                 if(count == 0){
-                    listResidues += "A" + residueList.get(k).getResidueNumber()
+                    listResidues += residueList.get(k).getChainID() + residueList.get(k).getResidueNumber()
                 } else {
-                    listResidues += ",A" + residueList.get(k).getResidueNumber()
+                    listResidues += "," + residueList.get(k).getChainID() + residueList.get(k).getResidueNumber()
                 }
                 count++
             }
