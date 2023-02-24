@@ -60,6 +60,7 @@ public record MDState(double[] x, double[] v, double[] a, double[] aPrevious, do
    */
   public MDState {
     x = x.clone();
+    v = v.clone();
     a = a.clone();
     aPrevious = aPrevious.clone();
     mass = mass.clone();
