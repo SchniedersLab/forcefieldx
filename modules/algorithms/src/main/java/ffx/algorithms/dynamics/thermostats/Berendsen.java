@@ -40,6 +40,7 @@ package ffx.algorithms.dynamics.thermostats;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import ffx.potential.SystemState;
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential.VARIABLE_TYPE;
 import java.util.Collections;
@@ -63,22 +64,17 @@ public class Berendsen extends Thermostat {
   /**
    * Constructor for Berendsen.
    *
-   * @param n Number of degrees of freedom.
-   * @param x Atomic coordinates.
-   * @param v Velocities.
-   * @param mass Mass of each degree of freedom.
    * @param type The VARIABLE_TYPE of each variable.
    * @param targetTemperature The target temperatures.
    * @param tau Berendsen thermostat time constant (psec).
    */
-  public Berendsen(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type,
-      double targetTemperature, double tau) {
-    this(n, x, v, mass, type, targetTemperature, tau, Collections.emptyList());
+  public Berendsen(SystemState state, VARIABLE_TYPE[] type, double targetTemperature, double tau) {
+    this(state, type, targetTemperature, tau, Collections.emptyList());
   }
 
-  public Berendsen(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type,
-      double targetTemperature, double tau, List<Constraint> constraints) {
-    super(n, x, v, mass, type, targetTemperature, constraints);
+  public Berendsen(SystemState state, VARIABLE_TYPE[] type, double targetTemperature, double tau,
+      List<Constraint> constraints) {
+    super(state, type, targetTemperature, constraints);
     this.name = ThermostatEnum.BERENDSEN;
     this.tau = tau;
   }
@@ -86,16 +82,12 @@ public class Berendsen extends Thermostat {
   /**
    * Constructor for Berendsen.
    *
-   * @param n Number of degrees of freedom.
-   * @param x Atomic coordinates.
-   * @param v Velocities.
-   * @param mass Mass of each degree of freedom.
+   * @param state The MDState to operate on.
    * @param type The VARIABLE_TYPE of each variable.
    * @param targetTemperature The target temperatures.
    */
-  public Berendsen(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type,
-      double targetTemperature) {
-    this(n, x, v, mass, type, targetTemperature, 0.2e0);
+  public Berendsen(SystemState state, VARIABLE_TYPE[] type, double targetTemperature) {
+    this(state, type, targetTemperature, 0.2e0);
   }
 
   /**
@@ -105,9 +97,10 @@ public class Berendsen extends Thermostat {
    */
   @Override
   public void fullStep(double dt) {
-    double ratio = targetTemperature / currentTemperature;
+    double ratio = targetTemperature / state.getTemperature();
     double scale = sqrt(1.0 + (dt / tau) * (ratio - 1.0));
-    for (int i = 0; i < nVariables; i++) {
+    double[] v = state.v();
+    for (int i = 0; i < state.getNumberOfVariables(); i++) {
       v[i] *= scale;
     }
   }

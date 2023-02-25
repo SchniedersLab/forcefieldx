@@ -135,12 +135,10 @@ public class ModelingShell extends Console implements AlgorithmListener {
     time = System.nanoTime() - time;
     scriptRunning = false;
     if (!interrupted) {
-      appendOutput(
-          String.format("\n Script wall clock time: %6.3f (sec)", time * toSeconds),
+      appendOutput(String.format("\n Script wall clock time: %6.3f (sec)", time * toSeconds),
           getPromptStyle());
     } else {
-      appendOutput(
-          String.format("\n Script interrupted after: %6.3f (sec)", time * toSeconds),
+      appendOutput(String.format("\n Script interrupted after: %6.3f (sec)", time * toSeconds),
           getPromptStyle());
     }
     mainPanel.getModelingPanel().enableLaunch(true);
@@ -178,12 +176,9 @@ public class ModelingShell extends Console implements AlgorithmListener {
     if (!scriptRunning) {
       return true;
     }
-    int rc =
-        JOptionPane.showConfirmDialog(
-            getScrollArea(),
-            "Script executing. Press 'OK' to attempt to interrupt it before exiting.",
-            "Force Field X Shell",
-            JOptionPane.OK_CANCEL_OPTION);
+    int rc = JOptionPane.showConfirmDialog(getScrollArea(),
+        "Script executing. Press 'OK' to attempt to interrupt it before exiting.",
+        "Force Field X Shell", JOptionPane.OK_CANCEL_OPTION);
     if (rc == JOptionPane.OK_OPTION) {
       doInterrupt();
       return true;
@@ -203,18 +198,13 @@ public class ModelingShell extends Console implements AlgorithmListener {
     if (file == null || !getDirty()) {
       return true;
     }
-    switch (JOptionPane.showConfirmDialog(
-        (Component) getFrame(),
-        "Save changes to " + file.getName() + "?",
-        "Force Field X Shell",
+    return switch (JOptionPane.showConfirmDialog((Component) getFrame(),
+        "Save changes to " + file.getName() + "?", "Force Field X Shell",
         JOptionPane.YES_NO_CANCEL_OPTION)) {
-      case JOptionPane.YES_OPTION:
-        return fileSave();
-      case JOptionPane.NO_OPTION:
-        return true;
-      default:
-        return false;
-    }
+      case JOptionPane.YES_OPTION -> fileSave();
+      case JOptionPane.NO_OPTION -> true;
+      default -> false;
+    };
   }
 
   /** before */
@@ -250,14 +240,8 @@ public class ModelingShell extends Console implements AlgorithmListener {
       JTextPane output = getOutputArea();
       output.setText("");
       appendOutput(
-          MainPanel.border
-              + "\n"
-              + MainPanel.title
-              + MainPanel.aboutString
-              + "\n"
-              + MainPanel.border
-              + "\n",
-          getCommandStyle());
+          MainPanel.border + "\n" + MainPanel.title + MainPanel.aboutString + "\n" + MainPanel.border
+              + "\n", getCommandStyle());
     }
   }
 
@@ -315,7 +299,7 @@ public class ModelingShell extends Console implements AlgorithmListener {
   /**
    * md
    *
-   * @param nStep a int.
+   * @param nStep The number of MD steps.
    * @param timeStep a double.
    * @param printInterval a double.
    * @param saveInterval a double.
@@ -323,30 +307,18 @@ public class ModelingShell extends Console implements AlgorithmListener {
    * @param initVelocities a boolean.
    * @param dyn a {@link java.io.File} object.
    */
-  public void md(
-      int nStep,
-      double timeStep,
-      double printInterval,
-      double saveInterval,
-      double temperature,
-      boolean initVelocities,
-      File dyn) {
+  public void md(int nStep, double timeStep, double printInterval, double saveInterval,
+      double temperature, boolean initVelocities, File dyn) {
     if (interrupted || terminatableAlgorithm != null) {
       return;
     }
     FFXSystem active = mainPanel.getHierarchy().getActive();
     if (active != null) {
-      MolecularDynamics molecularDynamics =
-          new MolecularDynamics(
-              active,
-              active.getPotentialEnergy(),
-              active.getProperties(),
-              this,
-              ThermostatEnum.BUSSI,
-              IntegratorEnum.BEEMAN);
+      MolecularDynamics molecularDynamics = new MolecularDynamics(active,
+          active.getPotentialEnergy(), this, ThermostatEnum.BUSSI, IntegratorEnum.BEEMAN);
       terminatableAlgorithm = molecularDynamics;
-      molecularDynamics.dynamic(
-          nStep, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
+      molecularDynamics.dynamic(nStep, timeStep, printInterval, saveInterval, temperature,
+          initVelocities, dyn);
       terminatableAlgorithm = null;
     }
   }

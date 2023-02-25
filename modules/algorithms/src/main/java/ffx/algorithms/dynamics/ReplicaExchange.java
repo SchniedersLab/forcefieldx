@@ -312,7 +312,7 @@ public class ReplicaExchange implements Terminatable {
 
     // Update this ranks' parameter array to be consistent with the dynamics.
     myParameters[0] = temperatures[i];
-    myParameters[1] = replica.currentPotentialEnergy;
+    myParameters[1] = replica.state.getPotentialEnergy();
 
     // Gather all parameters from the other processes.
     try {

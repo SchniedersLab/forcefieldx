@@ -37,8 +37,7 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics.integrators;
 
-import static java.lang.System.arraycopy;
-
+import ffx.potential.SystemState;
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
@@ -63,67 +62,31 @@ public abstract class Integrator {
    * constraints.
    */
   protected final double constraintTolerance = ForceFieldEnergy.DEFAULT_CONSTRAINT_TOLERANCE;
-  /** Number of variables. */
-  protected int nVariables;
-  /** Mass of each degree of freedom. */
-  protected double[] mass;
-  /** Coordinates for each degree of freedom in (Ang.). */
-  protected double[] x;
-  /** Velocity of each degree of freedom (Ang. per psec). */
-  protected double[] v;
-  /** Acceleration of each degree of freedom in (Ang. per psec^2). */
-  protected double[] a;
+
+  /**
+   * The MDState class contains the current state of the Molecular Dynamics simulation.
+   */
+  protected final SystemState state;
   /** Time step (psec). */
   protected double dt;
   /** Any geometric constraints to apply during integration. */
   protected List<Constraint> constraints = new ArrayList<>();
   /** If there are constraints present. */
   protected boolean useConstraints = false;
-  /** Acceleration of each degree of freedom for the previous step. */
-  double[] aPrevious;
   /** Half the time step (psec). */
   double dt_2;
 
   /**
    * Constructor for Integrator.
    *
-   * @param nVariables number of Variables.
-   * @param x Cartesian coordinates (Angstroms).
-   * @param v Velocities.
-   * @param a Accelerations.
-   * @param aPrevious Previous Accelerations.
-   * @param mass Mass.
+   * @param state The MD state to operate on.
    */
-  public Integrator(int nVariables, double[] x, double[] v, double[] a, double[] aPrevious,
-      double[] mass) {
-    this.nVariables = nVariables;
-    this.x = x;
-    this.v = v;
-    this.a = a;
-    this.aPrevious = aPrevious;
-    this.mass = mass;
+  public Integrator(SystemState state) {
+    this.state = state;
     dt = 1.0e-3;
     dt_2 = dt / 2.0;
   }
 
-  /**
-   * Constructor for Integrator that do not use previous accelerations.
-   *
-   * @param nVariables number of Variables.
-   * @param x Cartesian coordinates (Angstroms).
-   * @param v Velocities.
-   * @param a Accelerations.
-   * @param mass Mass.
-   */
-  public Integrator(int nVariables, double[] x, double[] v, double[] a, double[] mass) {
-    this.nVariables = nVariables;
-    this.x = x;
-    this.v = v;
-    this.a = a;
-    this.mass = mass;
-    this.aPrevious = new double[nVariables];
-    dt = 1.0e-3;
-  }
 
   /**
    * Parse an integrator String into an instance of the IntegratorEnum enum.
@@ -154,10 +117,7 @@ public abstract class Integrator {
 
   /** Copy acceleration to previous acceleration. */
   public void copyAccelerationToPrevious() {
-    if (aPrevious == null || aPrevious.length < a.length) {
-      aPrevious = new double[a.length];
-    }
-    arraycopy(a, 0, aPrevious, 0, nVariables);
+    state.copyAccelerationsToPrevious();
   }
 
   /**
@@ -210,41 +170,4 @@ public abstract class Integrator {
     useConstraints = !constraints.isEmpty();
   }
 
-  /**
-   * Update the integrator to be consistent with chemical perturbations.
-   *
-   * @param nVariables the number of variables being integrated.
-   * @param x the current value of each variable.
-   * @param v the current velocity of each variable.
-   * @param a the current acceleration of each variable.
-   * @param aPrevious the previous acceleration of each variable.
-   * @param mass the mass for each variable.
-   */
-  public void setNumberOfVariables(int nVariables, double[] x, double[] v, double[] a,
-      double[] aPrevious, double[] mass) {
-    this.nVariables = nVariables;
-    this.x = x;
-    this.v = v;
-    this.a = a;
-    this.aPrevious = aPrevious;
-    this.mass = mass;
-  }
-
-  /**
-   * Update the integrator to be consistent with chemical perturbations.
-   *
-   * @param nVariables the number of variables being integrated.
-   * @param x the current value of each variable.
-   * @param v the current velocity of each variable.
-   * @param a the current acceleration of each variable.
-   * @param mass the mass for each variable.
-   */
-  public void setNumberOfVariables(int nVariables, double[] x, double[] v, double[] a,
-      double[] mass) {
-    this.nVariables = nVariables;
-    this.x = x;
-    this.v = v;
-    this.a = a;
-    this.mass = mass;
-  }
 }

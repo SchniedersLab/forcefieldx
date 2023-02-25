@@ -42,7 +42,6 @@ import ffx.algorithms.cli.AnnealOptions
 import ffx.algorithms.cli.DynamicsOptions
 import ffx.algorithms.optimize.anneal.SimulatedAnnealing
 import ffx.numerics.Potential
-import ffx.potential.MolecularAssembly
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.WriteoutOptions
 import org.apache.commons.io.FilenameUtils
@@ -136,8 +135,7 @@ class Anneal extends AlgorithmsScript {
     potential = activeAssembly.getPotentialEnergy()
 
     simulatedAnnealing = anneal.createAnnealer(dynamics, activeAssembly,
-        activeAssembly.getPotentialEnergy(), activeAssembly.getProperties(),
-        algorithmListener, dyn)
+        activeAssembly.getPotentialEnergy(), algorithmListener, dyn)
 
     simulatedAnnealing.setPrintInterval(dynamics.report)
     simulatedAnnealing.setSaveFrequency(dynamics.write)

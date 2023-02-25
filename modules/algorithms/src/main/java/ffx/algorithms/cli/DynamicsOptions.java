@@ -130,12 +130,11 @@ public class DynamicsOptions {
     MolecularDynamics molDyn;
 
     if (requestedEngine == null) {
-      molDyn = MolecularDynamics.dynamicsFactory(activeAssembly, potential,
-          activeAssembly.getProperties(), algorithmListener, thermostat, integrator);
+      molDyn = MolecularDynamics.dynamicsFactory(activeAssembly, potential, algorithmListener,
+          thermostat, integrator);
     } else {
-      molDyn = MolecularDynamics.dynamicsFactory(activeAssembly, potential,
-          activeAssembly.getProperties(), algorithmListener, thermostat, integrator,
-          requestedEngine);
+      molDyn = MolecularDynamics.dynamicsFactory(activeAssembly, potential, algorithmListener,
+          thermostat, integrator, requestedEngine);
     }
     molDyn.setFileType(writeoutOptions.getFileType());
     molDyn.setRestartFrequency(group.checkpoint);

@@ -41,7 +41,6 @@ import static ffx.utilities.Constants.FSEC_TO_PSEC;
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static ffx.utilities.Constants.NS2SEC;
 import static java.lang.String.format;
-import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
 
 import edu.rit.pj.Comm;
@@ -64,6 +63,8 @@ import ffx.numerics.Potential;
 import ffx.numerics.math.RunningStatistics;
 import ffx.potential.ForceFieldEnergyOpenMM;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.SystemState;
+import ffx.potential.UnmodifiableState;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.LambdaInterface;
 import ffx.potential.extended.ExtendedSystem;
@@ -129,64 +130,19 @@ public class MolecularDynamics implements Runnable, Terminatable {
    */
   Barostat barostat = null;
   /**
+   * Stores the current molecular dynamics state.
+   */
+  protected final SystemState state;
+  /**
+   * State of the system as of the last init call (and start of the last dynamics run).
+   */
+  protected UnmodifiableState initialState;
+  /**
    * A copy of the current MD State. This can be used to revert to a previous state after a rejected
    * MC Move.
    */
-  private MDState storedMDState;
+  private UnmodifiableState storedState;
 
-  /**
-   * Number of dynamics variables. The length of x, v, a, aPrevious, gradient, and mass.
-   */
-  int numberOfVariables;
-  /** Coordinates. */
-  protected double[] x;
-  /** Velocities. */
-  protected double[] v;
-  /** Accelerations. */
-  protected double[] a;
-  /** Previous accelerations. */
-  protected double[] aPrevious;
-  /** The gradient. */
-  protected double[] gradient;
-  /** Mass for each degree of freedom. */
-  protected double[] mass;
-  /** Current temperature. */
-  double currentTemperature;
-  /** Current kinetic energy. */
-  double currentKineticEnergy;
-  /** Current potential energy. */
-  double currentPotentialEnergy;
-  /** Current total energy. */
-  double currentTotalEnergy;
-
-  /** Time step (picoseconds). Always use the <code>setTimeStep</code> to set! */
-  protected double dt = 0.001;
-  /** Number of MD steps to take. */
-  private long nSteps = 1000;
-  /** Target temperature. ToDo: use the Thermostat instance. */
-  double targetTemperature = 298.15;
-  /** Flag to indicate velocities should be initialized. */
-  protected boolean initVelocities = true;
-  /**
-   * Whether MD handles writing restart/trajectory files itself (true), or will be commanded by
-   * another class (false) to do it. The latter is true for MC-OST, for example.
-   */
-  protected boolean automaticWriteouts = true;
-  /** Total simulation time. */
-  protected double totalSimTime = 0.0;
-
-  /** Time between writing out restart/checkpoint files in picoseconds. */
-  protected double restartInterval = DEFAULT_RESTART_INTERVAL;
-  /** Time steps between writing out restart/checkpoint files. Set by the init method. */
-  protected int restartFrequency;
-  /** Time between appending to the trajectory file in picoseconds. */
-  private double trajectoryInterval = DEFAULT_TRAJECTORY_INTERVAL;
-  /** Time steps between adding a frame to the trajectory file. Set by the init method. */
-  protected int trajectoryFrequency;
-  /** Time between logging information to the screen in picoseconds. */
-  private double logInterval = DEFAULT_LOG_INTERVAL;
-  /** TImesteps between logging information to the screen. Set by the init method. */
-  protected int logFrequency;
   /**
    * Temperature Stats for logging.
    */
@@ -204,16 +160,48 @@ public class MolecularDynamics implements Runnable, Terminatable {
    */
   private final RunningStatistics totalEnergyStats = new RunningStatistics();
 
-  /** Temperature of the system as of the last init call (and start of the last dynamics run). */
-  protected double initialTemp;
-  /** Kinetic energy of the system as of the last init call (and start of the last dynamics run). */
-  protected double initialKinetic;
   /**
-   * Potential energy of the system as of the last init call (and start of the last dynamics run).
+   * The time step (picoseconds).
+   * <p>
+   * The method <code>setTimeStep</code> should always be used to set this value.
    */
-  protected double initialPotential;
-  /** Total energy of the system as of the last init call (and start of the last dynamics run). */
-  protected double initialTotal;
+  protected double dt = 0.001;
+  /**
+   * The number of MD steps to take.
+   */
+  private long nSteps = 1000;
+  /**
+   * Target temperature. ToDo: use the Thermostat instance.
+   */
+  double targetTemperature = 298.15;
+  /**
+   * Flag to indicate velocities should be initialized.
+   */
+  protected boolean initVelocities = true;
+  /**
+   * Whether MD handles writing restart/trajectory files itself (true), or will be commanded by
+   * another class (false) to do it. The latter is true for MC-OST, for example.
+   */
+  protected boolean automaticWriteouts = true;
+  /**
+   * The total simulation time.
+   */
+  protected double totalSimTime = 0.0;
+
+  /** Time between writing out restart/checkpoint files in picoseconds. */
+  protected double restartInterval = DEFAULT_RESTART_INTERVAL;
+  /** Time steps between writing out restart/checkpoint files. Set by the init method. */
+  protected int restartFrequency;
+  /** Time between appending to the trajectory file in picoseconds. */
+  private double trajectoryInterval = DEFAULT_TRAJECTORY_INTERVAL;
+  /** Time steps between adding a frame to the trajectory file. Set by the init method. */
+  protected int trajectoryFrequency;
+  /** Time between logging information to the screen in picoseconds. */
+  private double logInterval = DEFAULT_LOG_INTERVAL;
+  /**
+   * Time steps between logging information to the screen. Set by the init method.
+   */
+  protected int logFrequency;
 
   /** File type to use when saving files. */
   protected String fileType = "XYZ";
@@ -256,16 +244,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
    *
    * @param assembly a {@link ffx.potential.MolecularAssembly} object.
    * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
-   *     object.
    * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
    * @param requestedThermostat a {@link ThermostatEnum} object.
    * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum}
    *     object.
    */
   public MolecularDynamics(MolecularAssembly assembly, Potential potentialEnergy,
-      CompositeConfiguration properties, AlgorithmListener listener,
-      ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
+      AlgorithmListener listener, ThermostatEnum requestedThermostat,
+      IntegratorEnum requestedIntegrator) {
     this.molecularAssembly = new MolecularAssembly[1];
     this.molecularAssembly[0] = assembly;
     this.algorithmListener = listener;
@@ -275,14 +261,11 @@ public class MolecularDynamics implements Runnable, Terminatable {
       barostat = (Barostat) potentialEnergy;
     }
 
-    mass = potentialEnergy.getMass();
-    numberOfVariables = potentialEnergy.getNumberOfVariables();
-    x = new double[numberOfVariables];
-    v = new double[numberOfVariables];
-    a = new double[numberOfVariables];
-    aPrevious = new double[numberOfVariables];
-    gradient = new double[numberOfVariables];
+    int numberOfVariables = potentialEnergy.getNumberOfVariables();
+    state = new SystemState(numberOfVariables);
+    state.setMass(potential.getMass());
 
+    CompositeConfiguration properties = molecularAssembly[0].getProperties();
     // If an Integrator wasn't passed to the MD constructor, check for one specified as a property.
     if (requestedIntegrator == null) {
       String integrate = properties.getString("integrate", "VERLET").trim();
@@ -300,7 +283,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
     // Set the integrator.
     integrator = switch (requestedIntegrator) {
       case RESPA, MTS -> {
-        Respa respa = new Respa(numberOfVariables, x, v, a, aPrevious, mass);
+        Respa respa = new Respa(state);
         int in = molecularAssembly[0].getProperties().getInt("respa-dt", 4);
         if (in < 2) {
           in = 2;
@@ -314,7 +297,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
       case STOCHASTIC, LANGEVIN -> {
         double friction = properties.getDouble("friction", 91.0);
         logger.log(Level.FINE, format(" Friction set at %.3f collisions/picosecond", friction));
-        Stochastic stochastic = new Stochastic(friction, numberOfVariables, x, v, a, mass);
+        Stochastic stochastic = new Stochastic(friction, state);
         if (properties.containsKey("randomseed")) {
           stochastic.setRandomSeed(properties.getInt("randomseed", 0));
         }
@@ -324,8 +307,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
         requestedThermostat = ThermostatEnum.ADIABATIC;
         yield stochastic;
       }
-      case BEEMAN -> new BetterBeeman(numberOfVariables, x, v, a, aPrevious, mass);
-      default -> new VelocityVerlet(numberOfVariables, x, v, a, mass);
+      case BEEMAN -> new BetterBeeman(state);
+      default -> new VelocityVerlet(state);
     };
 
     integrator.addConstraints(constraints);
@@ -345,20 +328,19 @@ public class MolecularDynamics implements Runnable, Terminatable {
     thermostat = switch (requestedThermostat) {
       case BERENDSEN -> {
         double tau = properties.getDouble("tau-temperature", 0.2);
-        yield new Berendsen(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(),
-            targetTemperature, tau, constraints);
+        yield new Berendsen(state, potentialEnergy.getVariableTypes(), targetTemperature, tau,
+            constraints);
       }
       case BUSSI -> {
         double tau = properties.getDouble("tau-temperature", 0.2);
-        Bussi bussi = new Bussi(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(),
-            targetTemperature, tau, constraints);
+        Bussi bussi = new Bussi(state, potentialEnergy.getVariableTypes(), targetTemperature, tau,
+            constraints);
         if (properties.containsKey("randomseed")) {
           bussi.setRandomSeed(properties.getInt("randomseed", 0));
         }
         yield bussi;
       }
-      default -> new Adiabatic(numberOfVariables, x, v, mass, potentialEnergy.getVariableTypes(),
-          constraints);
+      default -> new Adiabatic(state, potentialEnergy.getVariableTypes(), constraints);
     };
 
     if (properties.containsKey("randomseed")) {
@@ -380,8 +362,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
    *
    * @param assembly a {@link ffx.potential.MolecularAssembly} object.
    * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
-   *     object.
    * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
    * @param requestedThermostat a {@link ThermostatEnum} object.
    * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum}
@@ -389,10 +369,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @return a {@link MolecularDynamics} object.
    */
   public static MolecularDynamics dynamicsFactory(MolecularAssembly assembly,
-      Potential potentialEnergy, CompositeConfiguration properties, AlgorithmListener listener,
-      ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator) {
+      Potential potentialEnergy, AlgorithmListener listener, ThermostatEnum requestedThermostat,
+      IntegratorEnum requestedIntegrator) {
 
-    return dynamicsFactory(assembly, potentialEnergy, properties, listener, requestedThermostat,
+    return dynamicsFactory(assembly, potentialEnergy, listener, requestedThermostat,
         requestedIntegrator, defaultEngine(assembly, potentialEnergy));
   }
 
@@ -401,8 +381,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
    *
    * @param assembly a {@link ffx.potential.MolecularAssembly} object.
    * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
-   *     object.
    * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
    * @param requestedThermostat a {@link ThermostatEnum} object.
    * @param requestedIntegrator a {@link ffx.algorithms.dynamics.integrators.IntegratorEnum}
@@ -411,8 +389,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @return a {@link MolecularDynamics} object.
    */
   public static MolecularDynamics dynamicsFactory(MolecularAssembly assembly,
-      Potential potentialEnergy, CompositeConfiguration properties, AlgorithmListener listener,
-      ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator, MDEngine engine) {
+      Potential potentialEnergy, AlgorithmListener listener, ThermostatEnum requestedThermostat,
+      IntegratorEnum requestedIntegrator, MDEngine engine) {
 
     switch (engine) {
       case OPENMM, OMM -> {
@@ -424,7 +402,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
             .anyMatch((Potential p) -> p instanceof ForceFieldEnergyOpenMM);
         ommLeaves = ommLeaves || potentialEnergy instanceof ForceFieldEnergyOpenMM;
         if (ommLeaves) {
-          return new MolecularDynamicsOpenMM(assembly, potentialEnergy, properties, listener,
+          return new MolecularDynamicsOpenMM(assembly, potentialEnergy, listener,
               requestedThermostat, requestedIntegrator);
         } else {
           throw new IllegalArgumentException(format(
@@ -433,8 +411,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
       }
       default -> {
-        return new MolecularDynamics(assembly, potentialEnergy, properties, listener,
-            requestedThermostat, requestedIntegrator);
+        return new MolecularDynamics(assembly, potentialEnergy, listener, requestedThermostat,
+            requestedIntegrator);
       }
     }
   }
@@ -496,12 +474,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
       logger.warning("An ExtendedSystem is already attached to this MD!");
     }
     esvSystem = system;
-    this.esvIntegrator = new Stochastic(esvSystem.getThetaFriction(),
-        esvSystem.getNumberOfVariables(), esvSystem.getThetaPosition(), esvSystem.getThetaVelocity(),
-        esvSystem.getThetaAccel(), esvSystem.getThetaMassArray());
-    this.esvThermostat = new Adiabatic(esvSystem.getNumberOfVariables(),
-        esvSystem.getThetaPosition(), esvSystem.getThetaVelocity(), esvSystem.getThetaMassArray(),
-        potential.getVariableTypes());
+    SystemState esvState = esvSystem.getState();
+    this.esvIntegrator = new Stochastic(esvSystem.getThetaFriction(), esvState);
+    this.esvThermostat = new Adiabatic(esvState, potential.getVariableTypes());
     printEsvFrequency = intervalToFreq(reportFreq, "Reporting (logging) interval");
     logger.info(
         format("  Attached extended system (%s) to molecular dynamics.", esvSystem.toString()));
@@ -598,7 +573,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @return Kinetic energy at the start of the run.
    */
   public double getInitialKineticEnergy() {
-    return initialKinetic;
+    return initialState.kineticEnergy();
   }
 
   /**
@@ -607,7 +582,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @return potential energy at the start of the run.
    */
   public double getInitialPotentialEnergy() {
-    return initialPotential;
+    return initialState.potentialEnergy();
   }
 
   /**
@@ -616,7 +591,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @return temperature at the start of the run.
    */
   public double getInitialTemperature() {
-    return initialTemp;
+    return initialState.temperature();
   }
 
   /**
@@ -625,7 +600,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @return total energy at the start of the run.
    */
   public double getInitialTotalEnergy() {
-    return initialTotal;
+    return initialState.getTotalEnergy();
   }
 
   /**
@@ -652,7 +627,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @return kinetic energy.
    */
   public double getKineticEnergy() {
-    return currentKineticEnergy;
+    return state.getKineticEnergy();
   }
 
   /**
@@ -661,7 +636,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @return potential energy.
    */
   public double getPotentialEnergy() {
-    return currentPotentialEnergy;
+    return state.getPotentialEnergy();
   }
 
   /**
@@ -670,7 +645,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @return currentTemperature
    */
   public double getTemperature() {
-    return currentTemperature;
+    return state.getTemperature();
   }
 
   /**
@@ -719,7 +694,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @return total energy.
    */
   public double getTotalEnergy() {
-    return currentTotalEnergy;
+    return state.getTotalEnergy();
   }
 
   public MDVerbosity getVerbosityLevel() {
@@ -1057,6 +1032,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
   public void writeRestart() {
     potential.writeAdditionalRestartInfo(true);
     String dynName = FileUtils.relativePathTo(restartFile).toString();
+    double[] x = state.x();
+    double[] v = state.v();
+    double[] a = state.a();
+    double[] aPrevious = state.aPrevious();
     if (dynFilter.writeDYN(restartFile, molecularAssembly[0].getCrystal(), x, v, a, aPrevious)) {
       logger.log(basicLogging, " Wrote dynamics restart file to " + dynName);
     } else {
@@ -1099,9 +1078,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     if (interval >= dt) {
       return (int) (interval / dt);
     } else {
-      logger.warning(format(
-          " Specified %s of %.6f ps < time step %.6f ps; " + "interval is set to once per time step!",
-          describe, interval, dt));
+      logger.warning(format(" Specified %s of %.6f ps < time step %.6f ps; "
+          + "interval is set to once per time step!", describe, interval, dt));
       return 1;
     }
   }
@@ -1146,6 +1124,10 @@ public class MolecularDynamics implements Runnable, Terminatable {
       // Initialize from a restart file.
       if (loadRestart) {
         Crystal crystal = molecularAssembly[0].getCrystal();
+        double[] x = state.x();
+        double[] v = state.v();
+        double[] a = state.a();
+        double[] aPrevious = state.aPrevious();
         if (!dynFilter.readDYN(restartFile, crystal, x, v, a, aPrevious)) {
           String message = " Could not load the restart file - dynamics terminated.";
           logger.log(Level.WARNING, message);
@@ -1156,12 +1138,12 @@ public class MolecularDynamics implements Runnable, Terminatable {
         }
       } else {
         // Initialize using current atomic coordinates.
-        potential.getCoordinates(x);
+        potential.getCoordinates(state.x());
         // Initialize atomic velocities from a Maxwell-Boltzmann distribution or set to 0.
         if (initVelocities) {
           thermostat.maxwell(targetTemperature);
         } else {
-          fill(v, 0.0);
+          fill(state.v(), 0.0);
         }
       }
     } else {
@@ -1176,14 +1158,14 @@ public class MolecularDynamics implements Runnable, Terminatable {
   /** Initializes energy fields, esp. potential energy. */
   private void initializeEnergies() {
     // Compute the current potential energy.
+    double[] x = state.x();
+    double[] gradient = state.gradient();
     if (esvSystem != null && potential instanceof ForceFieldEnergyOpenMM) {
-      currentPotentialEnergy = ((ForceFieldEnergyOpenMM) potential).energyAndGradientFFX(x,
-          gradient);
+      state.setPotentialEnergy(
+          ((ForceFieldEnergyOpenMM) potential).energyAndGradientFFX(x, gradient));
     } else {
-      currentPotentialEnergy = potential.energyAndGradient(x, gradient);
+      state.setPotentialEnergy(potential.energyAndGradient(x, gradient));
     }
-
-    initialPotential = currentPotentialEnergy;
 
     // Initialize current and previous accelerations.
     if (!loadRestart || initialized || integrator instanceof Respa) {
@@ -1193,24 +1175,22 @@ public class MolecularDynamics implements Runnable, Terminatable {
         potential.energyAndGradient(x, gradient);
       }
 
+      int numberOfVariables = state.getNumberOfVariables();
+      double[] a = state.a();
+      double[] mass = state.mass();
       for (int i = 0; i < numberOfVariables; i++) {
         a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
       }
-
-      if (aPrevious != null) {
-        arraycopy(a, 0, aPrevious, 0, numberOfVariables);
-      }
+      state.copyAccelerationsToPrevious();
     }
 
     // Compute the current kinetic energy.
     thermostat.computeKineticEnergy();
-    currentKineticEnergy = thermostat.getKineticEnergy();
-    initialKinetic = currentKineticEnergy;
-    currentTemperature = thermostat.getCurrentTemperature();
-    initialTemp = currentTemperature;
-    currentTotalEnergy = currentKineticEnergy + currentPotentialEnergy;
-    initialTotal = currentTotalEnergy;
 
+    // Store the initial state.
+    initialState = new UnmodifiableState(state);
+
+    // Reset the statistics.
     temperatureStats.reset();
     potentialEnergyStats.reset();
     kineticEnergyStats.reset();
@@ -1227,9 +1207,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
     logger.log(basicLogging,
         format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K",
             "sec"));
-    logger.log(basicLogging,
-        format("  %8s %12.4f %12.4f %12.4f %8.2f", "", currentKineticEnergy, currentPotentialEnergy,
-            currentTotalEnergy, currentTemperature));
+    logger.log(basicLogging, format("  %8s %12.4f %12.4f %12.4f %8.2f", "", state.getKineticEnergy(),
+        state.getPotentialEnergy(), state.getTotalEnergy(), state.getTemperature()));
 
     // Store the initialized state.
     storeState();
@@ -1329,8 +1308,9 @@ public class MolecularDynamics implements Runnable, Terminatable {
   private long logThermodynamics(long time) {
     time = System.nanoTime() - time;
     logger.log(basicLogging,
-        format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.3f", totalSimTime, currentKineticEnergy,
-            currentPotentialEnergy, currentTotalEnergy, currentTemperature, time * NS2SEC));
+        format(" %7.3e %12.4f %12.4f %12.4f %8.2f %8.3f", totalSimTime, state.getKineticEnergy(),
+            state.getPotentialEnergy(), state.getTotalEnergy(), state.getTemperature(),
+            time * NS2SEC));
     return System.nanoTime();
   }
 
@@ -1344,7 +1324,8 @@ public class MolecularDynamics implements Runnable, Terminatable {
         List<Constraint> constraints = potential.getConstraints();
         // TODO: Replace magic numbers with named constants.
         long constraintFails = constraints.stream()
-            .filter((Constraint c) -> !c.constraintSatisfied(x, v, 1E-7, 1E-7)).count();
+            .filter((Constraint c) -> !c.constraintSatisfied(state.x(), state.v(), 1E-7, 1E-7))
+            .count();
         if (constraintFails > 0) {
           logger.info(format(" %d constraint failures in step %d", constraintFails, step));
         }
@@ -1364,19 +1345,20 @@ public class MolecularDynamics implements Runnable, Terminatable {
       // Compute the potential energy and gradients.
 
       if (esvSystem != null && potential instanceof ForceFieldEnergyOpenMM) {
-        currentPotentialEnergy = ((ForceFieldEnergyOpenMM) potential).energyAndGradientFFX(x,
-            gradient);
+        state.setPotentialEnergy(
+            ((ForceFieldEnergyOpenMM) potential).energyAndGradientFFX(state.x(), state.gradient()));
       } else {
-        currentPotentialEnergy = potential.energyAndGradient(x, gradient);
+        state.setPotentialEnergy(potential.energyAndGradient(state.x(), state.gradient()));
       }
 
       // Add the potential energy of the slow degrees of freedom.
       if (integrator instanceof Respa r) {
-        currentPotentialEnergy += r.getHalfStepEnergy();
+        double potentialEnergy = state.getPotentialEnergy();
+        state.setPotentialEnergy(potentialEnergy + r.getHalfStepEnergy());
       }
 
       // Do the full-step integration operation.
-      integrator.postForce(gradient);
+      integrator.postForce(state.gradient());
       if (esvSystem != null) {
         double[] dEdL = esvSystem.postForce();
         esvIntegrator.postForce(dEdL);
@@ -1402,23 +1384,22 @@ public class MolecularDynamics implements Runnable, Terminatable {
       }
 
       // Collect current kinetic energy, temperature, and total energy.
-      currentKineticEnergy = thermostat.getKineticEnergy();
       if (esvSystem != null) {
-        currentKineticEnergy += esvThermostat.getKineticEnergy();
+        double kineticEnergy = thermostat.getKineticEnergy();
+        double esvKineticEnergy = esvThermostat.getKineticEnergy();
+        state.setKineticEnergy(kineticEnergy + esvKineticEnergy);
       }
-      currentTemperature = thermostat.getCurrentTemperature();
-      currentTotalEnergy = currentKineticEnergy + currentPotentialEnergy;
 
       // Collect running statistics.
-      temperatureStats.addValue(currentTemperature);
-      potentialEnergyStats.addValue(currentPotentialEnergy);
-      kineticEnergyStats.addValue(currentKineticEnergy);
-      totalEnergyStats.addValue(currentTotalEnergy);
+      temperatureStats.addValue(state.getTemperature());
+      potentialEnergyStats.addValue(state.getPotentialEnergy());
+      kineticEnergyStats.addValue(state.getKineticEnergy());
+      totalEnergyStats.addValue(state.getTotalEnergy());
 
       // Update atomic velocity, acceleration and previous acceleration.
-      potential.setVelocity(v);
-      potential.setAcceleration(a);
-      potential.setPreviousAcceleration(aPrevious);
+      potential.setVelocity(state.v());
+      potential.setAcceleration(state.a());
+      potential.setPreviousAcceleration(state.aPrevious());
 
       // Log the current state every printFrequency steps.
       totalSimTime += dt;
@@ -1467,9 +1448,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @param coords The coordinates to copy into MD coordinates array.
    */
   public void setCoordinates(double[] coords) {
-    if (coords.length == x.length) {
-      System.arraycopy(coords, 0, x, 0, x.length);
-    }
+    state.setCoordinates(coords);
   }
 
   /**
@@ -1478,54 +1457,45 @@ public class MolecularDynamics implements Runnable, Terminatable {
    * @return A copy of the current coordinates are returned.
    */
   public double[] getCoordinates() {
-    return Arrays.copyOf(x, x.length);
+    return state.getCoordinatesCopy();
   }
 
   /**
-   * Store the current state of the molecular dynamics simulation in a DynamicsState record.
+   * Store the current state of the molecular dynamics simulation in a MDState record.
    */
   public void storeState() {
-    storedMDState = new MDState(x, v, a, aPrevious, mass, gradient, currentKineticEnergy,
-        currentPotentialEnergy, currentTotalEnergy, currentTemperature);
+    storedState = state.getUnmodifiableState();
   }
 
   /**
-   * revertState.
+   * Revert the state of the MolecularDynamics instance to the stored MDState.
    *
-   * @throws java.lang.Exception if any.
+   * @throws Exception is thrown if the stored state is null.
    */
   public void revertState() throws Exception {
-    if (storedMDState == null) {
+    if (storedState == null) {
       throw new Exception();
     }
-    revertState(storedMDState);
+    revertState(storedState);
   }
 
   /**
-   * Revert the state of the MolecularDynamics instance to the provided DynamicsState.
+   * Revert the state of the MolecularDynamics instance to the provided MDState.
    *
-   * @param state The DynamicsState to revert to.
+   * @param state The MDState to revert to.
    */
-  private void revertState(MDState state) {
-    currentPotentialEnergy = state.potentialEnergy();
-    currentKineticEnergy = state.kineticEnergy();
-    currentTotalEnergy = state.totalEnergy();
-    currentTemperature = state.temperature();
-    arraycopy(state.x(), 0, x, 0, x.length);
-    arraycopy(state.v(), 0, v, 0, v.length);
-    arraycopy(state.a(), 0, a, 0, a.length);
-    arraycopy(state.aPrevious(), 0, aPrevious, 0, aPrevious.length);
-    arraycopy(state.mass(), 0, mass, 0, mass.length);
-    arraycopy(state.gradient(), 0, gradient, 0, gradient.length);
-
-    potential.setVelocity(v);
-    potential.setAcceleration(a);
-    potential.setPreviousAcceleration(aPrevious);
-
-    // To Do -- move these methods into the Potential interface.
+  private void revertState(UnmodifiableState state) {
+    this.state.revertState(state);
+    potential.setVelocity(state.v());
+    potential.setAcceleration(state.a());
+    potential.setPreviousAcceleration(state.aPrevious());
+    // ToDo -- move these methods into the Potential interface.
+    int numberOfVariables = this.state.getNumberOfVariables();
     Atom[] atoms = molecularAssembly[0].getActiveAtomArray();
     if (atoms.length * 3 == numberOfVariables) {
       int index = 0;
+      double[] x = state.x();
+      double[] gradient = state.gradient();
       for (Atom atom : atoms) {
         atom.moveTo(x[index], x[index + 1], x[index + 2]);
         atom.setXYZGradient(gradient[index], gradient[index + 1], gradient[index + 2]);

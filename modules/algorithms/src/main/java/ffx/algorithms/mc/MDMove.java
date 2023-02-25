@@ -97,19 +97,16 @@ public class MDMove implements MCMove {
    *
    * @param assembly a {@link ffx.potential.MolecularAssembly} object.
    * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
-   *     object.
    * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
    * @param dynamics CLI object containing key MD information.
    * @param stepsPerCycle Number of MD steps per MC cycle.
    */
-  public MDMove(MolecularAssembly assembly, Potential potentialEnergy,
-      CompositeConfiguration properties, AlgorithmListener listener, DynamicsOptions dynamics,
-      long stepsPerCycle) {
+  public MDMove(MolecularAssembly assembly, Potential potentialEnergy, AlgorithmListener listener,
+      DynamicsOptions dynamics, long stepsPerCycle) {
     this.potential = potentialEnergy;
     logger.info(" Using potential " + potential);
-    molecularDynamics = MolecularDynamics.dynamicsFactory(assembly, potentialEnergy, properties,
-        listener, dynamics.thermostat, dynamics.integrator);
+    molecularDynamics = MolecularDynamics.dynamicsFactory(assembly, potentialEnergy, listener,
+        dynamics.thermostat, dynamics.integrator);
     molecularDynamics.setAutomaticWriteouts(false);
 
     timeStep = dynamics.getDt();

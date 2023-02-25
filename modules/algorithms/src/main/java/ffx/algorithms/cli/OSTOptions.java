@@ -125,8 +125,8 @@ public class OSTOptions {
   }
 
   /**
-   * Applies relevant options to an OST, and returns either the OST object or something that wraps the
-   * OST (such as a Barostat).
+   * Applies relevant options to an OST, and returns either the OST object or something that wraps
+   * the OST (such as a Barostat).
    *
    * @param orthogonalSpaceTempering Orthogonal Space Tempering.
    * @param firstAssembly Primary assembly in OST.
@@ -192,11 +192,10 @@ public class OSTOptions {
       AlgorithmListener algorithmListener) {
     // Create the MolecularDynamics instance.
     MolecularAssembly firstTop = molecularAssemblies[0];
-    CompositeConfiguration props = firstTop.getProperties();
 
     dynamicsOptions.init();
 
-    MolecularDynamics molDyn = MolecularDynamics.dynamicsFactory(firstTop, crystalPotential, props,
+    MolecularDynamics molDyn = MolecularDynamics.dynamicsFactory(firstTop, crystalPotential,
         algorithmListener, dynamicsOptions.thermostat, dynamicsOptions.integrator, MDEngine.FFX);
     for (int i = 1; i < molecularAssemblies.length; i++) {
       molDyn.addAssembly(molecularAssemblies[i]);

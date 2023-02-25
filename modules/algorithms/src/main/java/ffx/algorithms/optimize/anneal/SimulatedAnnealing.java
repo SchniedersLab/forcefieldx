@@ -48,7 +48,6 @@ import java.io.File;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * Run NVT molecular dynamics at a series of temperatures to optimize a structure.
@@ -88,7 +87,6 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
    *
    * @param molecularAssembly The Molecular Assembly to operate on.
    * @param potentialEnergy The potential to anneal against.
-   * @param compositeConfiguration The system properties to use.
    * @param algorithmListener The algorithm listener is a callback to UI.
    * @param requestedThermostat The requested thermostat.
    * @param requestedIntegrator The requested integrator.
@@ -99,13 +97,12 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
    * @param dynFile Dynamics restart file to begin from.
    */
   public SimulatedAnnealing(MolecularAssembly molecularAssembly, Potential potentialEnergy,
-      CompositeConfiguration compositeConfiguration, AlgorithmListener algorithmListener,
-      ThermostatEnum requestedThermostat, IntegratorEnum requestedIntegrator,
-      AnnealingSchedule annealingSchedule, long mdSteps, double timeStep, boolean reInitVelocity,
-      File dynFile) {
+      AlgorithmListener algorithmListener, ThermostatEnum requestedThermostat,
+      IntegratorEnum requestedIntegrator, AnnealingSchedule annealingSchedule, long mdSteps,
+      double timeStep, boolean reInitVelocity, File dynFile) {
 
     molecularDynamics = MolecularDynamics.dynamicsFactory(molecularAssembly, potentialEnergy,
-        compositeConfiguration, algorithmListener, requestedThermostat, requestedIntegrator);
+        algorithmListener, requestedThermostat, requestedIntegrator);
     this.schedule = annealingSchedule;
     this.mdSteps = mdSteps;
     this.timeStep = timeStep;

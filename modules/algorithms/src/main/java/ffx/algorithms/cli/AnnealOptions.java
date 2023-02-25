@@ -83,15 +83,13 @@ public class AnnealOptions {
    * @param dynamicsOptions Dynamics options to use.
    * @param molecularAssembly MolecularAssembly
    * @param potential Potential
-   * @param compositeConfiguration Properties
    * @param algorithmListener AlgorithmListener
    * @return SimulatedAnnealing
    */
   public SimulatedAnnealing createAnnealer(DynamicsOptions dynamicsOptions,
       MolecularAssembly molecularAssembly, Potential potential,
-      CompositeConfiguration compositeConfiguration, AlgorithmListener algorithmListener) {
-    return createAnnealer(dynamicsOptions, molecularAssembly, potential, compositeConfiguration,
-        algorithmListener, null);
+      AlgorithmListener algorithmListener) {
+    return createAnnealer(dynamicsOptions, molecularAssembly, potential, algorithmListener, null);
   }
 
   /**
@@ -100,14 +98,12 @@ public class AnnealOptions {
    * @param dynamicsOptions Dynamics options to use.
    * @param molecularAssembly MolecularAssembly
    * @param potential Potential
-   * @param compositeConfiguration Properties
    * @param algorithmListener AlgorithmListener
    * @param dynFile Dynamics restart file.
    * @return SimulatedAnnealing
    */
   public SimulatedAnnealing createAnnealer(DynamicsOptions dynamicsOptions,
-      MolecularAssembly molecularAssembly, Potential potential,
-      CompositeConfiguration compositeConfiguration, AlgorithmListener algorithmListener,
+      MolecularAssembly molecularAssembly, Potential potential, AlgorithmListener algorithmListener,
       File dynFile) {
     AnnealingSchedule schedule = getSchedule();
     double totNormLen = schedule.totalWindowLength();
@@ -152,9 +148,9 @@ public class AnnealOptions {
       logger.info(" Skipping printout of window lengths/temperatures (max printout at 200 windows)");
     }
 
-    return new SimulatedAnnealing(molecularAssembly, potential, compositeConfiguration,
-        algorithmListener, dynamicsOptions.thermostat, dynamicsOptions.integrator, schedule,
-        perWindowSteps, dynamicsOptions.getDt(), isReinitVelocities(), dynFile);
+    return new SimulatedAnnealing(molecularAssembly, potential, algorithmListener,
+        dynamicsOptions.thermostat, dynamicsOptions.integrator, schedule, perWindowSteps,
+        dynamicsOptions.getDt(), isReinitVelocities(), dynFile);
   }
 
   /**
