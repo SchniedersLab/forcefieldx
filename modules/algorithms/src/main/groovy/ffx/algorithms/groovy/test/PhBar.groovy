@@ -102,6 +102,10 @@ class PhBar extends AlgorithmsScript {
       description = 'Number of steps done on GPU before each evaluation')
   int coordSteps = 10000
 
+  @Option(names = ['--createBar'], paramLabel = 'false',
+          description = 'Only create the BAR file, do not run BAR. Ignore logging.')
+  Boolean createBar = false
+
   /**
    * One or more filenames.
    */
@@ -385,7 +389,7 @@ class PhBar extends AlgorithmsScript {
           }
         }
       }
-    } else if (current.size() == 0){
+    } else if (current.size() == 0 && !createBar){
       logger.severe(" MD is not an instance of MDOMM (try adding -Dplatform=OMM --mdE OpenMM)")
     }
 
