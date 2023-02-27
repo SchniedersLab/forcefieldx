@@ -104,7 +104,7 @@ class PhBar extends AlgorithmsScript {
 
   @Option(names = ['--createBar'], paramLabel = 'false',
           description = 'Only create the BAR file, do not run BAR. Ignore logging.')
-  Boolean createBar = false
+  boolean createBar = false
 
   /**
    * One or more filenames.
