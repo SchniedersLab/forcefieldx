@@ -102,8 +102,9 @@ class PhBar extends AlgorithmsScript {
       description = 'Number of steps done on GPU before each evaluation')
   int coordSteps = 10000
 
-  @Option(names = ['--createBar'], paramLabel = 'false',
-          description = 'Only create the BAR file, do not run BAR. Ignore logging.')
+  @Option(names = ['--createBar'], paramLabel = '0',
+          description = 'Only create the BAR file, do not run BAR. Ignore logging. 0 = false, 1 = true')
+  int temp = 0
   Boolean createBar = false
 
   /**
@@ -143,6 +144,10 @@ class PhBar extends AlgorithmsScript {
 
     if (!init()) {
       return this
+    }
+
+    if(temp == 1) {
+      createBar = true
     }
 
     Comm world = Comm.world()
