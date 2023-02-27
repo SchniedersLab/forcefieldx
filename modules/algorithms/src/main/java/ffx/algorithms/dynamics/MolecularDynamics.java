@@ -531,7 +531,6 @@ public class MolecularDynamics implements Runnable, Terminatable {
     logger.info(format("  Extended System Theta Friction: %f", esvSystem.getThetaFriction()));
     logger.info(format("  Extended System Theta Mass: %f", esvSystem.getThetaMass()));
     logger.info(format("  Extended System Lambda Print Frequency: %d (fsec)", printEsvFrequency));
-    reInit();
   }
 
   /**
