@@ -338,9 +338,8 @@ public class ExtendedSystem implements Potential {
         guessTitrState = properties.getBoolean("guess.titration.state", false);
         specialResidues = getPropertyList(properties, "esv.special.residues");
         int offset = mola.getResidueList().get(0).getResidueNumber();
-        specialResidues.replaceAll(aDouble -> aDouble - offset);
         for(double res : specialResidues){
-            if(!isTitratable(mola.getResidueList().get((int) res))){
+            if(!isTitratable(mola.getResidueList().get((int) res - offset))){
                 logger.severe("Given special residue: " + res + " is not titratable.");
             }
         }
@@ -1000,7 +999,6 @@ public class ExtendedSystem implements Potential {
         AminoAcid3 AA3 = residue.getAminoAcid3();
         double residueNumber = residue.getResidueNumber();
         double initialTitrationLambda = 0.0;
-        logger.info(" Residue Number: " + residueNumber);
          if (specialResidues.contains(residueNumber)) {
              initialTitrationLambda =
                      (constantSystemPh < specialResiduePKAs.get(specialResidues.indexOf(residueNumber))) ? 1.0 : 0.0;
