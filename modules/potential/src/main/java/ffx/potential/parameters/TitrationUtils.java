@@ -1631,11 +1631,11 @@ public class TitrationUtils {
   public enum Titration {
 
 
-    ASHtoASP(3.67, -71.10, 9.8356, -99.0850, 159.3600, AminoAcid3.ASH, AminoAcid3.ASP),
-    GLHtoGLU(4.25, -83.40, 24.7370, -124.8000, 184.8900, AminoAcid3.GLH, AminoAcid3.GLU),
+    ASHtoASP(3.67, -71.10, 13.817, -105.690, 162.780, AminoAcid3.ASH, AminoAcid3.ASP),
+    GLHtoGLU(4.25, -83.40, 26.619, -128.530, 187.210, AminoAcid3.GLH, AminoAcid3.GLU),
     LYStoLYD(10.40, 41.77, 0.0, -69.29, 24.17778, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
-    CYStoCYD(8.55, -66.2, 34.567, -151.95, 196.33, AminoAcid3.CYS, AminoAcid3.CYD),
+    CYStoCYD(8.55, -66.2, 39.039, -170.920, 216.620, AminoAcid3.CYS, AminoAcid3.CYD),
     //HE2 is the proton that is lost
     HIStoHID(7.00, 40.20, 0.0, -64.317, 30.35, AminoAcid3.HIS, AminoAcid3.HID),
     //HD1 is the proton that is lost

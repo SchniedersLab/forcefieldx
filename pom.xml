@@ -925,11 +925,11 @@
   <properties>
     <MRJToolkitStubs.version>1.0</MRJToolkitStubs.version>
     <!-- antlr4 4.11.1 requires jdk 11 -->
-    <antlr4.version>4.11.1</antlr4.version>
+    <antlr4.version>4.12.0</antlr4.version>
     <antrun.version>3.1.0</antrun.version>
     <appassembler.version>2.1.0</appassembler.version>
     <assembly.skipAssembly>false</assembly.skipAssembly>
-    <assembly.version>3.4.2</assembly.version>
+    <assembly.version>3.5.0</assembly.version>
     <biojava.version>7.0.0</biojava.version>
     <buildnumber.version>1.2.10</buildnumber.version>
     <cdk.version>2.8</cdk.version>
@@ -966,7 +966,7 @@
     <jar.version>3.3.0</jar.version>
     <jarsigner.version>3.0.0</jarsigner.version>
     <java3d.version>1.7.0-final</java3d.version>
-    <javadoc.version>3.4.1</javadoc.version>
+    <javadoc.version>3.5.0</javadoc.version>
     <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
     <jdepend.version>2.0</jdepend.version>
     <jna.version>5.6.0</jna.version>
@@ -976,7 +976,7 @@
     <jxr.version>3.3.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
-    <log4j.version>2.17.1</log4j.version>
+    <log4j.version>2.20.0</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
@@ -1006,14 +1006,14 @@
     <snapshot.repo>file:lib</snapshot.repo>
     <source.version>3.2.1</source.version>
     <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
-    <surefire.version>3.0.0-M8</surefire.version>
+    <surefire.version>3.0.0-M9</surefire.version>
     <!-- Control the target JRE version -->
     <targetVersion>17</targetVersion>
     <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
     <tensorflow.version>1.13.1</tensorflow.version>
     <timestamp>${maven.build.timestamp}</timestamp>
     <tornado.version>0.15</tornado.version>
-    <versions.version>2.14.2</versions.version>
+    <versions.version>2.15.0</versions.version>
     <!-- Default locations for deploying the website (can be over-ridden by settings.xml) -->
     <website.repo>file:website</website.repo>
   </properties>

@@ -60,13 +60,8 @@ public class SimulatedAnnealingTest extends AlgorithmsTest {
   private double endTotalEnergy;
   private double endTemperature;
 
-  public SimulatedAnnealingTest(
-      String info,
-      String filename,
-      double endKineticEnergy,
-      double endPotentialEnergy,
-      double endTotalEnergy,
-      double endTemperature) {
+  public SimulatedAnnealingTest(String info, String filename, double endKineticEnergy,
+      double endPotentialEnergy, double endTotalEnergy, double endTemperature) {
     this.info = info;
     this.filename = filename;
     this.endKineticEnergy = endKineticEnergy;
@@ -78,34 +73,21 @@ public class SimulatedAnnealingTest extends AlgorithmsTest {
   @Parameters
   public static Collection<Object[]> data() {
     return Arrays.asList(
-        new Object[][] {
-            {
-                "Acetamide with Stochastic integrator for Simulated Annealing Test", // info
-                "ffx/algorithms/structures/acetamide_annealing.xyz", // filename
-                2.7348819613719866, // endKineticEnergy
-                -30.162204159002336, // endPotentialEnergy
-                -27.427322197628616, // endTotalEnergy
-                101.94414998339263 // endTemperature
-            }
-        });
+        new Object[][] {{"Acetamide with Stochastic integrator for Simulated Annealing Test", // info
+            "ffx/algorithms/structures/acetamide_annealing.xyz", // filename
+            2.7348819613719866, // endKineticEnergy
+            -30.162204159002336, // endPotentialEnergy
+            -27.427322197628616, // endTotalEnergy
+            101.94414998339263 // endTemperature
+        }});
   }
 
   @Test
   public void testSimulatedAnnealing() {
 
     // Set-up the input arguments for the script.
-    String[] args = {
-        "-n", "200",
-        "-i", "STOCHASTIC",
-        "-r", "0.001",
-        "--tl", "100",
-        "--tu", "400",
-        "--tmS", "EXP",
-        "-W", "10",
-        "-w", "100",
-        "-k", "100",
-        "src/main/java/" + filename
-    };
+    String[] args = {"-n", "200", "-i", "STOCHASTIC", "-r", "0.001", "--tl", "100", "--tu", "400",
+        "--tmS", "EXP", "-W", "10", "-w", "100", "-k", "100", "src/main/java/" + filename};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -115,25 +97,9 @@ public class SimulatedAnnealingTest extends AlgorithmsTest {
     SimulatedAnnealing simulatedAnnealing = anneal.getAnnealing();
 
     // Assert that end energies are within the tolerance for the dynamics trajectory
-    assertEquals(
-        info + " Final kinetic energy",
-        endKineticEnergy,
-        simulatedAnnealing.getKineticEnergy(),
-        tolerance);
-    assertEquals(
-        info + " Final potential energy",
-        endPotentialEnergy,
-        simulatedAnnealing.getPotentialEnergy(),
-        tolerance);
-    assertEquals(
-        info + " Final total energy",
-        endTotalEnergy,
-        simulatedAnnealing.getTotalEnergy(),
-        tolerance);
-    assertEquals(
-        info + " Final temperature",
-        endTemperature,
-        simulatedAnnealing.getTemperature(),
-        tolerance);
+    assertEquals(info + " Final kinetic energy", endKineticEnergy, simulatedAnnealing.getKineticEnergy(), tolerance);
+    assertEquals(info + " Final potential energy", endPotentialEnergy, simulatedAnnealing.getPotentialEnergy(), tolerance);
+    assertEquals(info + " Final total energy", endTotalEnergy, simulatedAnnealing.getTotalEnergy(), tolerance);
+    assertEquals(info + " Final temperature", endTemperature, simulatedAnnealing.getTemperature(), tolerance);
   }
 }

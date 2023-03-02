@@ -82,7 +82,7 @@ public class ThermodynamicsOptions {
   /**
    * getEquilSteps.
    *
-   * @return a int.
+   * @return The number of equilibration steps.
    */
   public long getEquilSteps() {
     return group.equilibrationSteps;
@@ -131,13 +131,7 @@ public class ThermodynamicsOptions {
     } else {
       logger.info("\n Beginning Fixed-Lambda Alchemical Sampling Without Equilibration");
       if (!group.resetNumSteps) {
-        /*int nEnergyCount = ttOSRW.getEnergyCount();
-        if (nEnergyCount > 0) {
-            nSteps -= nEnergyCount;
-            logger.info(String.format(" Lambda file: %12d steps picked up, now sampling %12d steps", nEnergyCount, nSteps));
-            initVelocities = false;
-        }*/
-        // Temporary workaround for being unable to pick up preexisting steps.
+        // Workaround for being unable to pick up pre-existing steps.
         initVelocities = true;
       }
     }
@@ -187,7 +181,7 @@ public class ThermodynamicsOptions {
   /**
    * The algorithm to be used (e.g. OST, window-based methods, etc).
    *
-   * @return Returns the a String for requested algorithm.
+   * @return Returns a String for requested algorithm.
    */
   public String getThermoAlgoString() {
     return group.thermoAlgoString;

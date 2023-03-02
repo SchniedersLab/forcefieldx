@@ -48,7 +48,6 @@ import edu.rit.pj.WorkerRegion;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.RotamerLibrary;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.List;
@@ -71,8 +70,6 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
    * subsets of this list.
    */
   private final List<Residue> allResiduesList;
-  /** RotamerLibrary instance. */
-  private final RotamerLibrary library;
   /** Map of 3-body energy values to compute. */
   private final Map<Integer, Integer[]> threeBodyEnergyMap;
   /** Writes energies to restart file. */
@@ -102,30 +99,16 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
 
   private Set<Integer> keySet;
 
-  public ThreeBodyEnergyRegion(
-      RotamerOptimization rotamerOptimization,
-      DistanceMatrix dM,
-      EnergyExpansion eE,
-      EliminatedRotamers eR,
-      Residue[] residues,
-      List<Residue> allResiduesList,
-      RotamerLibrary library,
-      BufferedWriter energyWriter,
-      Comm world,
-      int numProc,
-      double superpositionThreshold,
-      boolean master,
-      int rank,
-      boolean verbose,
-      boolean writeEnergyRestart,
-      boolean printFiles) {
+  public ThreeBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM,
+      EnergyExpansion eE, EliminatedRotamers eR, Residue[] residues, List<Residue> allResiduesList,
+      BufferedWriter energyWriter, Comm world, int numProc, double superpositionThreshold,
+      boolean master, int rank, boolean verbose, boolean writeEnergyRestart, boolean printFiles) {
     this.rO = rotamerOptimization;
     this.dM = dM;
     this.eE = eE;
     this.eR = eR;
     this.residues = residues;
     this.allResiduesList = allResiduesList;
-    this.library = library;
     this.energyWriter = energyWriter;
     this.world = world;
     this.numProc = numProc;
@@ -242,12 +225,8 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
 
         // Initialize result.
         if (i >= 0 && ri >= 0 && j >= 0 && rj >= 0 && k >= 0 && rk >= 0) {
-          if ((!eR.check(i, ri)
-              || !eR.check(j, rj)
-              || !eR.check(k, rk)
-              || !eR.check(i, ri, j, rj)
-              || !eR.check(i, ri, k, rk)
-              || !eR.check(j, rj, k, rk))) {
+          if ((!eR.check(i, ri) || !eR.check(j, rj) || !eR.check(k, rk) || !eR.check(i, ri, j, rj)
+              || !eR.check(i, ri, k, rk) || !eR.check(j, rj, k, rk))) {
 
             Residue residueI = residues[i];
             Residue residueJ = residues[j];
@@ -282,10 +261,9 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
             if (minDist < superpositionThreshold) {
               threeBodyEnergy = Double.NaN;
               logger.info(format(
-                      " 3-Body %8s %-2d, %8s %-2d, %8s %-2d:\t    NaN      at %13.6f Ang (%s Ang by residue) < %5.3f Ang.",
-                      residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
-                      residueK.toString(rotK[rk]), rk,
-                      minDist, resDistString, superpositionThreshold));
+                  " 3-Body %8s %-2d, %8s %-2d, %8s %-2d:\t    NaN      at %13.6f Ang (%s Ang by residue) < %5.3f Ang.",
+                  residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
+                  residueK.toString(rotK[rk]), rk, minDist, resDistString, superpositionThreshold));
             } else if (dM.checkTriDistThreshold(indexI, ri, indexJ, rj, indexK, rk)) {
               // Set the two-body energy to 0.0 for separation distances larger than the two-body
               // cutoff.
@@ -293,9 +271,9 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
               time += System.nanoTime();
               logger.fine(format(
                   " 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
-                      residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
-                      residueK.toString(rotK[rk]), rk,
-                      rO.formatEnergy(threeBodyEnergy), distString, resDistString, time * 1.0e-9));
+                  residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
+                  residueK.toString(rotK[rk]), rk, rO.formatEnergy(threeBodyEnergy), distString,
+                  resDistString, time * 1.0e-9));
             } else {
               try {
                 threeBodyEnergy = eE.compute3BodyEnergy(residues, i, ri, j, rj, k, rk);
@@ -303,16 +281,15 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
                 logger.info(format(
                     " 3-Body %8s %-2d, %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue) in %6.4f (sec).",
                     residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
-                    residueK.toString(rotK[rk]), rk,
-                    rO.formatEnergy(threeBodyEnergy), distString, resDistString, time * 1.0e-9));
+                    residueK.toString(rotK[rk]), rk, rO.formatEnergy(threeBodyEnergy), distString,
+                    resDistString, time * 1.0e-9));
               } catch (ArithmeticException ex) {
                 threeBodyEnergy = Double.NaN;
                 time += System.nanoTime();
                 logger.info(format(
                     " 3-Body %8s %-2d, %8s %-2d, %8s %-2d:\t    NaN      at %s Ang (%s Ang by residue) in %6.4f (sec).",
                     residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
-                    residueK.toString(rotK[rk]), rk,
-                    distString, resDistString, time * 1.0e-9));
+                    residueK.toString(rotK[rk]), rk, distString, resDistString, time * 1.0e-9));
               }
             }
             myBuffer.put(6, threeBodyEnergy);
@@ -330,27 +307,26 @@ public class ThreeBodyEnergyRegion extends WorkerRegion {
 
         // Process the three-body energy received from each process.
         for (DoubleBuf doubleBuf : resultBuffer) {
-          int resi = (int) doubleBuf.get(0);
-          int roti = (int) doubleBuf.get(1);
-          int resj = (int) doubleBuf.get(2);
-          int rotj = (int) doubleBuf.get(3);
-          int resk = (int) doubleBuf.get(4);
-          int rotk = (int) doubleBuf.get(5);
+          int resI = (int) doubleBuf.get(0);
+          int rotI = (int) doubleBuf.get(1);
+          int resJ = (int) doubleBuf.get(2);
+          int rotJ = (int) doubleBuf.get(3);
+          int resK = (int) doubleBuf.get(4);
+          int rotK = (int) doubleBuf.get(5);
           double energy = doubleBuf.get(6);
           // Skip for padded result.
-          if (resi >= 0 && roti >= 0 && resj >= 0 && rotj >= 0 && resk >= 0 && rotk >= 0) {
+          if (resI >= 0 && rotI >= 0 && resJ >= 0 && rotJ >= 0 && resK >= 0 && rotK >= 0) {
             if (!Double.isFinite(energy)) {
               logger.info(
-                  " Rotamer pair eliminated: " + resi + ", " + roti + ", " + resj + ", " + rotj);
-              eR.eliminateRotamerPair(residues, resi, roti, resj, rotj, false);
+                  " Rotamer pair eliminated: " + resI + ", " + rotI + ", " + resJ + ", " + rotJ);
+              eR.eliminateRotamerPair(residues, resI, rotI, resJ, rotJ, false);
             }
-            eE.set3Body(residues, resi, roti, resj, rotj, resk, rotk, energy);
+            eE.set3Body(residues, resI, rotI, resJ, rotJ, resK, rotK, energy);
             if (rank == 0 && writeEnergyRestart && printFiles) {
               try {
                 energyWriter.append(
-                    format(
-                        "Triple %d %d, %d %d, %d %d: %16.8f",
-                        resi, roti, resj, rotj, resk, rotk, energy));
+                    format("Triple %d %d, %d %d, %d %d: %16.8f", resI, rotI, resJ, rotJ, resK, rotK,
+                        energy));
                 energyWriter.newLine();
                 energyWriter.flush();
               } catch (IOException ex) {

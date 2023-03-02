@@ -39,6 +39,7 @@ package ffx.algorithms.dynamics.thermostats;
 
 import static java.lang.String.format;
 
+import ffx.potential.SystemState;
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential.VARIABLE_TYPE;
 import ffx.utilities.Constants;
@@ -56,19 +57,15 @@ public class Adiabatic extends Thermostat {
   /**
    * Constructor for Adiabatic.
    *
-   * @param n Number of degrees of freedom.
-   * @param x Atomic coordinates.
-   * @param v Velocities.
-   * @param mass Mass of each degree of freedom.
+   * @param state the current state of the molecular dynamics simulation to operate on.
    * @param type the VARIABLE_TYPE of each variable.
    */
-  public Adiabatic(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type) {
-    this(n, x, v, mass, type, Collections.emptyList());
+  public Adiabatic(SystemState state, VARIABLE_TYPE[] type) {
+    this(state, type, Collections.emptyList());
   }
 
-  public Adiabatic(int n, double[] x, double[] v, double[] mass, VARIABLE_TYPE[] type,
-      List<Constraint> constraints) {
-    super(n, x, v, mass, type, 1.0, constraints);
+  public Adiabatic(SystemState state, VARIABLE_TYPE[] type, List<Constraint> constraints) {
+    super(state, type, 1.0, constraints);
     this.name = ThermostatEnum.ADIABATIC;
   }
 

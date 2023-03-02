@@ -42,6 +42,7 @@ import edu.rit.pj.reduction.SharedDouble;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
+import ffx.potential.SystemState;
 import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Atom;
@@ -229,6 +230,7 @@ public class ExtendedSystem implements Potential {
      * Array of ints that is initialized to match the number of atoms in the molecular assembly.
      * Elements correspond to residue index in the tautomerizingResidueList. Only set for tautomerizing residues, -1 otherwise.
      */
+    private final SystemState esvState;
     private final int[] tautomerIndexMap;
     /**
      * Array of doubles that is initialized to match the number of atoms in the molecular assembly.
@@ -240,10 +242,6 @@ public class ExtendedSystem implements Potential {
      */
     private final List<Residue> tautomerizingResidueList;
     /**
-     * Current theta acceleration for each ESV.
-     */
-    final private double[] thetaAccel;
-    /**
      * Friction for the ESV system
      */
     private final double thetaFriction;
@@ -251,18 +249,6 @@ public class ExtendedSystem implements Potential {
      * The system defined theta mass of the fictional particle. Used to fill theta mass array.
      */
     private final double thetaMass;
-    /**
-     * Mass of each theta particle. Different theta mass for each particle are not supported.
-     */
-    final private double[] thetaMassArray;
-    /**
-     * Current value of theta for each ESV.
-     */
-    final private double[] thetaPosition;
-    /**
-     * Current theta velocity for each ESV.
-     */
-    final private double[] thetaVelocity;
     /**
      * List of titrating residues.
      */
@@ -490,10 +476,11 @@ public class ExtendedSystem implements Potential {
         nESVs = extendedResidueList.size();
         nTitr = titratingResidueList.size();
         extendedLambdas = new double[nESVs];
-        thetaPosition = new double[nESVs];
-        thetaVelocity = new double[nESVs];
-        thetaAccel = new double[nESVs];
-        thetaMassArray = new double[nESVs];
+        esvState = new SystemState(nESVs);
+        //thetaPosition = new double[nESVs];
+        //thetaVelocity = new double[nESVs];
+        //thetaAccel = new double[nESVs];
+        //thetaMassArray = new double[nESVs];
         esvHistogram = new int[nTitr][10][10];
         esvVdwDerivs = new SharedDouble[nESVs];
         esvPermElecDerivs = new SharedDouble[nESVs];
@@ -505,7 +492,7 @@ public class ExtendedSystem implements Potential {
         }
 
         //Theta masses should always be the same for each ESV
-        Arrays.fill(thetaMassArray, thetaMass);
+        Arrays.fill(esvState.mass(), thetaMass);
 
         for (int i = 0; i < nESVs; i++) {
             if (i < nTitr) {
@@ -527,6 +514,9 @@ public class ExtendedSystem implements Potential {
             String firstFileName = FilenameUtils.removeExtension(mola.getFile().getAbsolutePath());
             restartFile = new File(firstFileName + ".esv");
         } else {
+            double[] thetaPosition = esvState.x();
+            double[] thetaVelocity = esvState.v();
+            double[] thetaAccel = esvState.a();
             if (!esvFilter.readESV(esvFile, thetaPosition, thetaVelocity, thetaAccel, esvHistogram)) {
                 String message = " Could not load the restart file - dynamics terminated.";
                 logger.log(Level.WARNING, message);
@@ -566,6 +556,9 @@ public class ExtendedSystem implements Potential {
      */
     private void initializeThetaArrays(int index, double lambda) {
         extendedLambdas[index] = lambda;
+        double[] thetaPosition = esvState.x();
+        double[] thetaVelocity = esvState.v();
+        double[] thetaAccel = esvState.a();
         thetaPosition[index] = Math.asin(Math.sqrt(lambda));
         //Perform unit analysis carefully
         //Random random = new Random();
@@ -901,6 +894,7 @@ public class ExtendedSystem implements Potential {
         if (lockStates) {
             return;
         }
+        double[] thetaPosition = esvState.x();
         //This will prevent recalculating multiple sinTheta*sinTheta that are the same number.
         for (int i = 0; i < nESVs; i++) {
             //Check to see if titration/tautomer lambdas are to be fixed
@@ -1071,6 +1065,7 @@ public class ExtendedSystem implements Potential {
      * @param changeThetas whether or not to change the theta positions ~comes with information loss~
      */
     public void setTautomerLambda(Residue residue, double lambda, boolean changeThetas) {
+        double[] thetaPosition = esvState.x();
         if (tautomerizingResidueList.contains(residue) && !lockStates) {
             // The correct index in the theta arrays for tautomer coordinates is after the titration list.
             // So titrationList.size() + tautomerIndex should match with appropriate spot in thetaPosition, etc.
@@ -1106,6 +1101,7 @@ public class ExtendedSystem implements Potential {
      * @param changeThetas whether or not to change the theta positions ~comes with information loss~
      */
     public void setTitrationLambda(Residue residue, double lambda, boolean changeThetas) {
+        double[] thetaPosition = esvState.x();
         if (titratingResidueList.contains(residue) && !lockStates) {
             int index = titratingResidueList.indexOf(residue);
             extendedLambdas[index] = lambda;
@@ -1502,6 +1498,9 @@ public class ExtendedSystem implements Potential {
      */
     public boolean writeESVInfoTo(File esvFile) {
         logger.info("Writing pH Dynamics out to: " + esvFile.getParentFile().getName() + File.separator + esvFile.getName());
+        double[] thetaPosition = esvState.x();
+        double[] thetaVelocity = esvState.v();
+        double[] thetaAccel = esvState.a();
         return esvFilter.writeESV(esvFile, thetaPosition, thetaVelocity, thetaAccel, titratingResidueList, esvHistogram, constantSystemPh);
     }
 
@@ -1514,6 +1513,9 @@ public class ExtendedSystem implements Potential {
      * @return whether the read was successful or not
      */
     public boolean readESVInfoFrom(File esvFile) {
+        double[] thetaPosition = esvState.x();
+        double[] thetaVelocity = esvState.v();
+        double[] thetaAccel = esvState.a();
         return esvFilter.readESV(esvFile, thetaPosition, thetaVelocity, thetaAccel, esvHistogram);
     }
 
@@ -1538,6 +1540,9 @@ public class ExtendedSystem implements Potential {
      */
     public void writeRestart() {
         String esvName = FileUtils.relativePathTo(restartFile).toString();
+        double[] thetaPosition = esvState.x();
+        double[] thetaVelocity = esvState.v();
+        double[] thetaAccel = esvState.a();
         if (esvFilter.writeESV(restartFile, thetaPosition, thetaVelocity, thetaAccel, titratingResidueList, esvHistogram, constantSystemPh)) {
             logger.info(" Wrote PhDynamics restart file to " + esvName);
         } else {
@@ -1578,6 +1583,7 @@ public class ExtendedSystem implements Potential {
 
     @Override
     public double energyAndGradient(double[] x, double[] g) {
+        double[] thetaPosition = esvState.x();
         System.arraycopy(x, 0, thetaPosition, 0, thetaPosition.length);
         updateLambdas();
         fillESVgradient(g);
@@ -1596,6 +1602,7 @@ public class ExtendedSystem implements Potential {
      * @return dE/dL a double[]
      */
     public double[] postForce() {
+        double[] thetaPosition = esvState.x();
         double[] dEdL = ExtendedSystem.this.getDerivatives();
         double[] dEdTheta = new double[dEdL.length];
         for (int i = 0; i < nESVs; i++) {
@@ -1618,7 +1625,7 @@ public class ExtendedSystem implements Potential {
     }
 
     public double[] getThetaAccel() {
-        return thetaAccel;
+        return esvState.a();
     }
 
     @Override
@@ -1627,7 +1634,7 @@ public class ExtendedSystem implements Potential {
     }
 
     public double[] getThetaPosition() {
-        return thetaPosition;
+        return esvState.x();
     }
 
     @Override
@@ -1646,7 +1653,7 @@ public class ExtendedSystem implements Potential {
     }
 
     public double[] getThetaMassArray() {
-        return thetaMassArray;
+        return esvState.mass();
     }
 
     @Override
@@ -1676,6 +1683,10 @@ public class ExtendedSystem implements Potential {
         return 0;
     }
 
+    public SystemState getState() {
+        return esvState;
+    }
+
     @Override
     public VARIABLE_TYPE[] getVariableTypes() {
         return new VARIABLE_TYPE[0];
@@ -1687,7 +1698,7 @@ public class ExtendedSystem implements Potential {
     }
 
     public double[] getThetaVelocity() {
-        return thetaVelocity;
+        return esvState.v();
     }
 
     @Override

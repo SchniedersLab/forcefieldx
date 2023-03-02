@@ -77,29 +77,15 @@ public class AlgorithmUtils extends PotentialsUtils implements AlgorithmFunction
    * <p>Performs molecular dynamics on a MolecularAssembly.
    */
   @Override
-  public void md(
-      MolecularAssembly assembly,
-      int nStep,
-      double timeStep,
-      double printInterval,
-      double saveInterval,
-      double temperature,
-      boolean initVelocities,
-      File dyn) {
+  public void md(MolecularAssembly assembly, int nStep, double timeStep, double printInterval,
+      double saveInterval, double temperature, boolean initVelocities, File dyn) {
     if (assembly == null) {
       logger.info(" No active system to minimize.");
     } else {
-      CompositeConfiguration properties = Keyword.loadProperties(assembly.getFile());
-      MolecularDynamics molecularDynamics =
-          new MolecularDynamics(
-              assembly,
-              assembly.getPotentialEnergy(),
-              properties,
-              null,
-              ThermostatEnum.BUSSI,
-              IntegratorEnum.BEEMAN);
-      molecularDynamics.dynamic(
-          nStep, timeStep, printInterval, saveInterval, temperature, initVelocities, dyn);
+      MolecularDynamics molecularDynamics = new MolecularDynamics(assembly,
+          assembly.getPotentialEnergy(), null, ThermostatEnum.BUSSI, IntegratorEnum.BEEMAN);
+      molecularDynamics.dynamic(nStep, timeStep, printInterval, saveInterval, temperature,
+          initVelocities, dyn);
     }
   }
 

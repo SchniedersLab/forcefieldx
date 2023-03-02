@@ -160,8 +160,7 @@ public class MonteCarloOST extends BoltzmannMC {
     // Create the MC MD and Lambda moves.
     boolean useOST = properties.getBoolean("mdmove-full", false);
     Potential mdmovePotential = useOST ? orthogonalSpaceTempering : potential;
-    mdMove = new MDMove(molecularAssembly, mdmovePotential, properties, listener, dynamics,
-        stepsPerMove);
+    mdMove = new MDMove(molecularAssembly, mdmovePotential, listener, dynamics, stepsPerMove);
     if (properties.containsKey("randomseed")) {
       int randomSeed = properties.getInt("randomseed", 0);
       logger.info(format(" Setting random seed for lambdaMove to %d ", randomSeed));

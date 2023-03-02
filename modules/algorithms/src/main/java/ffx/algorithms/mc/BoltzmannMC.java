@@ -61,10 +61,14 @@ public abstract class BoltzmannMC implements MetropolisMC {
   private static final Logger logger = Logger.getLogger(BoltzmannMC.class.getName());
 
   protected final Random random = new Random();
-  /** Room temperature (also STP). */
+  /**
+   * Room temperature in Kelvin.
+   */
   private double temperature = 298.15;
-  /** Constant factor for Monte Carlo moves (-1/kbT) */
-  private double kbTinv = -1.0 / (R * temperature);
+  /**
+   * Constant factor for Monte Carlo moves: 1.0 / (kB * T)
+   */
+  private double invKBT = 1.0 / (R * temperature);
 
   private boolean print = true;
   private double e1 = 0.0;
@@ -81,7 +85,8 @@ public abstract class BoltzmannMC implements MetropolisMC {
    * @return Chance of accepting this move
    */
   public static double acceptChance(double invKT, double e1, double e2) {
-    return min(exp(invKT * (e2 - e1)), 1.0);
+    double dE = e2 - e1;
+    return min(exp(-invKT * dE), 1.0);
   }
 
   /**
@@ -109,10 +114,10 @@ public abstract class BoltzmannMC implements MetropolisMC {
     if (e2 <= e1) {
       return true;
     } else {
-      // p(X) = exp(-U(X)/kb*T)
+      // p = exp(-dE / kB*T)
       double prob = acceptChance(invKT, e1, e2);
-      assert (prob >= 0.0 && prob <= 1.0)
-          : "Probability of a Monte Carlo move up in energy should be 0-1";
+      assert (prob >= 0.0
+          && prob <= 1.0) : "The probability of an MC move up in energy should be between [0 ..1].";
       double trial = random.nextDouble();
       return (trial <= prob);
     }
@@ -125,7 +130,7 @@ public abstract class BoltzmannMC implements MetropolisMC {
    */
   @Override
   public boolean evaluateMove(double e1, double e2) {
-    return evaluateMove(random, kbTinv, e1, e2);
+    return evaluateMove(random, invKBT, e1, e2);
   }
 
   /** {@inheritDoc} */
@@ -156,7 +161,7 @@ public abstract class BoltzmannMC implements MetropolisMC {
   @Override
   public void setTemperature(double temp) {
     temperature = temp;
-    kbTinv = -1.0 / (R * temperature);
+    invKBT = 1.0 / (R * temperature);
   }
 
   /** {@inheritDoc} */
@@ -232,10 +237,10 @@ public abstract class BoltzmannMC implements MetropolisMC {
   /**
    * Set the random seed.
    *
-   * @param randomseed The seed.
+   * @param randomSeed The seed.
    */
-  protected void setRandomSeed(int randomseed) {
-    random.setSeed(randomseed);
+  protected void setRandomSeed(int randomSeed) {
+    random.setSeed(randomSeed);
   }
 
   /**
