@@ -366,10 +366,10 @@ public class PhReplicaExchange implements Terminatable {
     done = false;
     terminate = false;
     replica.setRestartFrequency(cycles * (titrSteps + confSteps) * replica.dt + 100);
+    extendedSystem.reGuessLambdas();
 
     int startCycle = 0;
     if(initDynamics > 0 && !restart) {
-      extendedSystem.reGuessLambdas();
       extendedSystem.setFixedTitrationState(true);
       extendedSystem.setFixedTautomerState(true);
 
