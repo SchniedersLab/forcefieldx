@@ -329,10 +329,9 @@ public class ExtendedSystem implements Potential {
         }
         logger.info("Special residues: " + specialResidues);
         logger.info("Special residues pKa: " + specialResiduePKAs);
-        for(double res : specialResidues){
-            Residue residue = mola.getResidueList().get((int) res - 1);
-            if(!isTitratable(residue)){
-                logger.severe("Given special residue: " + residue + " is not titratable.");
+        for(Residue res : mola.getResidueList()){
+            if(!isTitratable(res) && specialResidues.contains((double)res.getResidueNumber())) {
+                logger.severe("Given special residue: " + res + " is not titratable.");
             }
         }
         fixTitrationState = properties.getBoolean("fix.titration.lambda", false);
