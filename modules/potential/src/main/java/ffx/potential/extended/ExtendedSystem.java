@@ -347,7 +347,13 @@ public class ExtendedSystem implements Potential {
         specialResiduePKAs = getPropertyList(properties, "esv.special.residues.pka");
         if(specialResidues.size() != specialResiduePKAs.size()) {
             logger.severe("The number of special residues and their associated values do not match.");
+        } else if(specialResidues.size() > 0) {
+            logger.info("Special residues and their associated values:");
+            for(int i = 0; i < specialResidues.size(); i++){
+                logger.info("Residue: " + specialResidues.get(i) + " Pka: " + specialResiduePKAs.get(i));
+            }
         }
+
         fixTitrationState = properties.getBoolean("fix.titration.lambda", false);
         fixTautomerState = properties.getBoolean("fix.tautomer.lambda", false);
 
@@ -994,6 +1000,7 @@ public class ExtendedSystem implements Potential {
         AminoAcid3 AA3 = residue.getAminoAcid3();
         double residueNumber = residue.getResidueNumber();
         double initialTitrationLambda = 0.0;
+        logger.info(" Residue Number: " + residueNumber);
          if (specialResidues.contains(residueNumber)) {
              initialTitrationLambda =
                      (constantSystemPh < specialResiduePKAs.get(specialResidues.indexOf(residueNumber))) ? 1.0 : 0.0;
