@@ -337,6 +337,8 @@ public class ExtendedSystem implements Potential {
         double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
         guessTitrState = properties.getBoolean("guess.titration.state", false);
         specialResidues = getPropertyList(properties, "esv.special.residues");
+        int offset = mola.getResidueList().get(0).getResidueNumber();
+        specialResidues.replaceAll(aDouble -> aDouble - offset);
         for(double res : specialResidues){
             if(!isTitratable(mola.getResidueList().get((int) res))){
                 logger.severe("Given special residue: " + res + " is not titratable.");
