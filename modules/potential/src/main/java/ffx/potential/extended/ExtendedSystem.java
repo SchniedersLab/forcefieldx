@@ -337,20 +337,24 @@ public class ExtendedSystem implements Potential {
         double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
         guessTitrState = properties.getBoolean("guess.titration.state", false);
         specialResidues = getPropertyList(properties, "esv.special.residues");
-        int offset = mola.getResidueList().get(0).getResidueNumber();
-        for(double res : specialResidues){
-            if(!isTitratable(mola.getResidueList().get((int) res - offset))){
+        for(Residue res : mola.getResidueList()){
+            if(!isTitratable(res) && specialResidues.contains((double) (res.getResidueNumber()))){
                 logger.severe("Given special residue: " + res + " is not titratable.");
             }
         }
+
         specialResiduePKAs = getPropertyList(properties, "esv.special.residues.pka");
         if(specialResidues.size() != specialResiduePKAs.size()) {
             logger.severe("The number of special residues and their associated values do not match.");
         } else if(specialResidues.size() > 0) {
-            logger.info("Special residues and their associated values:");
+            logger.info("\nSpecial residues and their associated values:");
             for(int i = 0; i < specialResidues.size(); i++){
-                logger.info("Residue: " + specialResidues.get(i) + " Pka: " + specialResiduePKAs.get(i));
+                int resNum = (int) (double) specialResidues.get(i) - mola.getResidueList().get(0).getResidueNumber();
+                logger.info("Residue: " + specialResidues.get(i) + "-" +
+                        mola.getResidueList().get(resNum).getName()
+                        + " Pka: " + specialResiduePKAs.get(i));
             }
+            logger.info(" ");
         }
 
         fixTitrationState = properties.getBoolean("fix.titration.lambda", false);
@@ -1002,10 +1006,7 @@ public class ExtendedSystem implements Potential {
          if (specialResidues.contains(residueNumber)) {
              initialTitrationLambda =
                      (constantSystemPh < specialResiduePKAs.get(specialResidues.indexOf(residueNumber))) ? 1.0 : 0.0;
-
-             logger.info("Resi " + residueNumber + " is a special residue with pKa " +
-                     specialResiduePKAs.get(specialResidues.indexOf(residueNumber)) + " and initial lambda " +
-                     initialTitrationLambda + ".");
+             logger.info("working on special residue: " + residueNumber + " with pKa: " + specialResiduePKAs.get(specialResidues.indexOf(residueNumber)) + " and initial lambda: " + initialTitrationLambda);
          }
         else {
             initialTitrationLambda = switch (AA3) {
