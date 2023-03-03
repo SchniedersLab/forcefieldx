@@ -1006,7 +1006,6 @@ public class ExtendedSystem implements Potential {
          if (specialResidues.contains(residueNumber)) {
              initialTitrationLambda =
                      (constantSystemPh < specialResiduePKAs.get(specialResidues.indexOf(residueNumber))) ? 1.0 : 0.0;
-             logger.info("working on special residue: " + residueNumber + " with pKa: " + specialResiduePKAs.get(specialResidues.indexOf(residueNumber)) + " and initial lambda: " + initialTitrationLambda);
          }
         else {
             initialTitrationLambda = switch (AA3) {
