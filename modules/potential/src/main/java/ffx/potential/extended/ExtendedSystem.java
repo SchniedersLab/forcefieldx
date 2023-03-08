@@ -145,6 +145,7 @@ public class ExtendedSystem implements Potential {
     private final double HIStitrBiasMag;
     private final double LYSlinear;
     private final double LYSquadratic;
+    private final double LYScubic;
     /**
      * Descritizer Bias Magnitude. Default is 1 kcal/mol.
      */
@@ -349,6 +350,7 @@ public class ExtendedSystem implements Potential {
         GLHtitrBiasMag = properties.getDouble("GLH.titration.bias.magnitude", DISCR_BIAS);
         GLHtautBiasMag = properties.getDouble("GLH.tautomer.bias.magnitude", DISCR_BIAS);
 
+        LYScubic = properties.getDouble("LYS.cubic", TitrationUtils.Titration.LYStoLYD.cubic);
         LYSquadratic = properties.getDouble("LYS.quadratic", TitrationUtils.Titration.LYStoLYD.quadratic);
         LYSlinear = properties.getDouble("LYS.linear", TitrationUtils.Titration.LYStoLYD.linear);
         LYStitrBiasMag = properties.getDouble("LYS.titration.bias.magnitude", DISCR_BIAS);
@@ -762,10 +764,11 @@ public class ExtendedSystem implements Potential {
                 dPh_dTaut = 0.0;
 
                 // Model Bias & Derivs
+                cubic = LYScubic;
                 quadratic = LYSquadratic;
                 linear = LYSlinear;
-                modelBias = quadratic * titrationLambdaSquared + linear * titrationLambda;
-                dMod_dTitr = 2 * quadratic * titrationLambda + linear;
+                modelBias = cubic * titrationLambdaCubed + quadratic * titrationLambdaSquared + linear * titrationLambda;
+                dMod_dTitr = 3 * cubic * titrationLambdaSquared + 2 * quadratic * titrationLambda + linear;
                 dMod_dTaut = 0.0;
                 break;
             case CYS:
