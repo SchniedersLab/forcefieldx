@@ -147,7 +147,7 @@ public final class PDBFilter extends SystemFilter {
   private final HashMap<Integer, Atom> atoms = new HashMap<>();
 
   private final Map<MolecularAssembly, BufferedReader> readers = new HashMap<>();
-  /** The current altLoc - ie. the one we are defining a chemical system for. */
+  /** The current altLoc - i.e., the one we are defining a chemical system for. */
   private Character currentAltLoc = 'A';
   /** Character for the current chain ID. */
   private Character currentChainID = null;
@@ -236,10 +236,7 @@ public final class PDBFilter extends SystemFilter {
    * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
    *     object.
    */
-  public PDBFilter(
-      List<File> files,
-      MolecularAssembly molecularAssembly,
-      ForceField forceField,
+  public PDBFilter(List<File> files, MolecularAssembly molecularAssembly, ForceField forceField,
       CompositeConfiguration properties) {
     super(files, molecularAssembly, forceField, properties);
     bondList = new ArrayList<>();
@@ -256,10 +253,7 @@ public final class PDBFilter extends SystemFilter {
    * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
    *     object.
    */
-  public PDBFilter(
-      File file,
-      MolecularAssembly molecularAssembly,
-      ForceField forceField,
+  public PDBFilter(File file, MolecularAssembly molecularAssembly, ForceField forceField,
       CompositeConfiguration properties) {
     super(file, molecularAssembly, forceField, properties);
     bondList = new ArrayList<>();
@@ -276,10 +270,7 @@ public final class PDBFilter extends SystemFilter {
    * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
    *     object.
    */
-  public PDBFilter(
-      File file,
-      List<MolecularAssembly> molecularAssemblies,
-      ForceField forceField,
+  public PDBFilter(File file, List<MolecularAssembly> molecularAssemblies, ForceField forceField,
       CompositeConfiguration properties) {
     super(file, molecularAssemblies, forceField, properties);
     bondList = new ArrayList<>();
@@ -298,12 +289,8 @@ public final class PDBFilter extends SystemFilter {
    * @param resNumberList a List of integer residue numbers for constant pH rotamer
    *     optimization.
    */
-  public PDBFilter(
-      File file,
-      MolecularAssembly molecularAssembly,
-      ForceField forceField,
-      CompositeConfiguration properties,
-      List<Integer> resNumberList) {
+  public PDBFilter(File file, MolecularAssembly molecularAssembly, ForceField forceField,
+      CompositeConfiguration properties, List<Integer> resNumberList) {
     super(file, molecularAssembly, forceField, properties);
     bondList = new ArrayList<>();
     this.fileType = FileType.PDB;
@@ -364,8 +351,7 @@ public final class PDBFilter extends SystemFilter {
       } catch (IllegalArgumentException ex) {
         String newValue = StringUtils.fwFpTrunc(xyz[i], 8, 3);
         logger.info(
-            format(
-                " XYZ coordinate %8.3f for atom %s overflowed PDB format and is truncated to %s.",
+            format(" XYZ coordinate %8.3f for atom %s overflowed PDB format and is truncated to %s.",
                 xyz[i], atom, newValue));
         decimals.append(newValue);
       }
@@ -374,17 +360,15 @@ public final class PDBFilter extends SystemFilter {
       decimals.append(StringUtils.fwFpDec(atom.getOccupancy(), 6, 2));
     } catch (IllegalArgumentException ex) {
       logger.severe(
-          format(
-              " Occupancy %6.2f for atom %s must be between 0 and 1.",
-              atom.getOccupancy(), atom));
+          format(" Occupancy %6.2f for atom %s must be between 0 and 1.", atom.getOccupancy(),
+              atom));
     }
     try {
       decimals.append(StringUtils.fwFpDec(atom.getTempFactor(), 6, 2));
     } catch (IllegalArgumentException ex) {
       String newValue = StringUtils.fwFpTrunc(atom.getTempFactor(), 6, 2);
       logger.info(
-          format(
-              " B-factor %6.2f for atom %s overflowed the PDB format and is truncated to %s.",
+          format(" B-factor %6.2f for atom %s overflowed the PDB format and is truncated to %s.",
               atom.getTempFactor(), atom, newValue));
       decimals.append(newValue);
     }
@@ -417,8 +401,7 @@ public final class PDBFilter extends SystemFilter {
         try {
           br.close();
         } catch (IOException ex) {
-          logger.warning(
-              format(" Exception in closing system %s: %s", system.toString(), ex));
+          logger.warning(format(" Exception in closing system %s: %s", system.toString(), ex));
         }
       }
     }
@@ -426,35 +409,26 @@ public final class PDBFilter extends SystemFilter {
 
   @Override
   public int countNumModels() {
-    Set<File> files =
-        systems.stream()
-            .map(MolecularAssembly::getFile)
-            .map(File::toString)
-            .distinct()
-            .map(File::new)
-            .collect(Collectors.toSet());
+    Set<File> files = systems.stream().map(MolecularAssembly::getFile).map(File::toString).distinct()
+        .map(File::new).collect(Collectors.toSet());
 
     // Dangers of parallelism are minimized by: unique files/filenames, read-only access.
-    return files
-        .parallelStream()
-        .mapToInt(
-            (File fi) -> {
-              int nModelsLocal = 0;
-              try (BufferedReader br = new BufferedReader(new FileReader(fi))) {
-                String line = br.readLine();
-                while (line != null) {
-                  if (line.startsWith("MODEL")) {
-                    ++nModelsLocal;
-                  }
-                  line = br.readLine();
-                }
-                nModelsLocal = Math.max(1, nModelsLocal);
-              } catch (IOException ex) {
-                logger.info(format(" Exception in parsing file %s: %s", fi, ex));
-              }
-              return nModelsLocal;
-            })
-        .sum();
+    return files.parallelStream().mapToInt((File fi) -> {
+      int nModelsLocal = 0;
+      try (BufferedReader br = new BufferedReader(new FileReader(fi))) {
+        String line = br.readLine();
+        while (line != null) {
+          if (line.startsWith("MODEL")) {
+            ++nModelsLocal;
+          }
+          line = br.readLine();
+        }
+        nModelsLocal = Math.max(1, nModelsLocal);
+      } catch (IOException ex) {
+        logger.info(format(" Exception in parsing file %s: %s", fi, ex));
+      }
+      return nModelsLocal;
+    }).sum();
   }
 
   /**
@@ -469,9 +443,7 @@ public final class PDBFilter extends SystemFilter {
   /** {@inheritDoc} */
   @Override
   public OptionalDouble getLastReadLambda() {
-    return Double.isNaN(lastReadLambda)
-        ? OptionalDouble.empty()
-        : OptionalDouble.of(lastReadLambda);
+    return Double.isNaN(lastReadLambda) ? OptionalDouble.empty() : OptionalDouble.of(lastReadLambda);
   }
 
   /**
@@ -555,9 +527,7 @@ public final class PDBFilter extends SystemFilter {
                 continue;
               }
               switch (record) {
-                case ANISOU:
-                case HETATM:
-                case ATOM:
+                case ANISOU, HETATM, ATOM -> {
                   char c22 = line.charAt(21);
                   boolean idFound = false;
                   for (Character chainID : chainIDs) {
@@ -569,7 +539,7 @@ public final class PDBFilter extends SystemFilter {
                   if (!idFound) {
                     chainIDs.add(c22);
                   }
-                  break;
+                }
               }
               line = br.readLine();
             }
@@ -577,20 +547,17 @@ public final class PDBFilter extends SystemFilter {
               if (!chainIDs.contains(mtn.chainChar)) {
                 if (chainIDs.size() == 1) {
                   logger.warning(
-                      format(
-                          " Chain ID %c for mutation not found: only one chain %c found.",
+                      format(" Chain ID %c for mutation not found: only one chain %c found.",
                           mtn.chainChar, chainIDs.get(0)));
                 } else {
                   logger.warning(
-                      format(
-                          " Chain ID %c for mutation not found: mutation will not proceed.",
+                      format(" Chain ID %c for mutation not found: mutation will not proceed.",
                           mtn.chainChar));
                 }
               }
             }
           } catch (IOException ioException) {
-            logger.fine(
-                format(" Exception %s in parsing file to find chain IDs", ioException.toString()));
+            logger.fine(format(" Exception %s in parsing file to find chain IDs", ioException));
           }
         }
 
@@ -605,9 +572,10 @@ public final class PDBFilter extends SystemFilter {
           if (currentAltLoc == 'A') {
             logger.info(format(" Reading %s", currentFile.getName()));
           } else {
-            logger.info(
-                format(" Reading %s alternate location %s", currentFile.getName(), currentAltLoc));
+            logger.info(format(" Reading %s alternate location %s", currentFile.getName(), currentAltLoc));
+
           }
+          activeMolecularAssembly.setAlternateLocation(currentAltLoc);
 
           // Reset the current chain and segID.
           currentChainID = null;
@@ -643,34 +611,30 @@ public final class PDBFilter extends SystemFilter {
                 line = null;
                 continue;
               case DBREF:
-                // =============================================================================
-                //  1 -  6       Record name   "DBREF "
-                //  8 - 11       IDcode        idCode             ID code of this entry.
-                // 13            Character     chainID            Chain  identifier.
-                // 15 - 18       Integer       seqBegin           Initial sequence number of the
-                //                                                PDB sequence segment.
-                // 19            AChar         insertBegin        Initial  insertion code of the
-                //                                                PDB  sequence segment.
-                // 21 - 24       Integer       seqEnd             Ending sequence number of the
-                //                                                PDB  sequence segment.
-                // 25            AChar         insertEnd          Ending insertion code of the
-                //                                                PDB  sequence segment.
-                // 27 - 32       LString       database           Sequence database name.
-                // 34 - 41       LString       dbAccession        Sequence database accession code.
-                // 43 - 54       LString       dbIdCode           Sequence  database identification
-                // code.
-                // 56 - 60       Integer       dbseqBegin         Initial sequence number of the
-                //                                                database seqment.
-                // 61            AChar         idbnsBeg           Insertion code of initial residue of
-                // the
-                //                                                segment, if PDB is the reference.
-                // 63 - 67       Integer       dbseqEnd           Ending sequence number of the
-                //                                                database segment.
-                // 68            AChar         dbinsEnd           Insertion code of the ending residue
-                // of
-                //                                                the segment, if PDB is the
-                // reference.
-                // =============================================================================
+// =============================================================================
+//  1 -  6       Record name   "DBREF "
+//  8 - 11       IDcode        idCode             ID code of this entry.
+// 13            Character     chainID            Chain identifier.
+// 15 - 18       Integer       seqBegin           Initial sequence number of the
+//                                                PDB sequence segment.
+// 19            AChar         insertBegin        Initial insertion code of the
+//                                                PDB sequence segment.
+// 21 - 24       Integer       seqEnd             Ending sequence number of the
+//                                                PDB sequence segment.
+// 25            AChar         insertEnd          Ending insertion code of the
+//                                                PDB sequence segment.
+// 27 - 32       LString       database           Sequence database name.
+// 34 - 41       LString       dbAccession        Sequence database accession code.
+// 43 - 54       LString       dbIdCode           Sequence  database identification code.
+// 56 - 60       Integer       dbseqBegin         Initial sequence number of the
+//                                                database seqment.
+// 61            AChar         idbnsBeg           Insertion code of initial residue of the
+//                                                segment, if PDB is the reference.
+// 63 - 67       Integer       dbseqEnd           Ending sequence number of the
+//                                                database segment.
+// 68            AChar         dbinsEnd           Insertion code of the ending residue of
+//                                                the segment, if PDB is the reference.
+// =============================================================================
                 Character chainID = line.substring(12, 13).toUpperCase().charAt(0);
                 int seqBegin = parseInt(line.substring(14, 18).trim());
                 int seqEnd = parseInt(line.substring(20, 24).trim());
@@ -679,34 +643,30 @@ public final class PDBFilter extends SystemFilter {
                 seqRange[1] = seqEnd;
                 break;
               case SEQRES:
-                // =============================================================================
-                //  1 -  6        Record name    "SEQRES"
-                //  8 - 10        Integer        serNum       Serial number of the SEQRES record for
-                // the
-                //                                            current  chain. Starts at 1 and
-                // increments
-                //                                            by one  each line. Reset to 1 for each
-                // chain.
-                // 12             Character      chainID      Chain identifier. This may be any single
-                //                                            legal  character, including a blank
-                // which is
-                //                                            is used if there is only one chain.
-                // 14 - 17        Integer        numRes       Number of residues in the chain.
-                //                                            This  value is repeated on every record.
-                // 20 - 22        Residue name   resName      Residue name.
-                // 24 - 26        Residue name   resName      Residue name.
-                // 28 - 30        Residue name   resName      Residue name.
-                // 32 - 34        Residue name   resName      Residue name.
-                // 36 - 38        Residue name   resName      Residue name.
-                // 40 - 42        Residue name   resName      Residue name.
-                // 44 - 46        Residue name   resName      Residue name.
-                // 48 - 50        Residue name   resName      Residue name.
-                // 52 - 54        Residue name   resName      Residue name.
-                // 56 - 58        Residue name   resName      Residue name.
-                // 60 - 62        Residue name   resName      Residue name.
-                // 64 - 66        Residue name   resName      Residue name.
-                // 68 - 70        Residue name   resName      Residue name.
-                // =============================================================================
+// =============================================================================
+//  1 -  6        Record name    "SEQRES"
+//  8 - 10        Integer        serNum       Serial number of the SEQRES record for the
+//                                            current  chain. Starts at 1 and increments
+//                                            by one  each line. Reset to 1 for each chain.
+// 12             Character      chainID      Chain identifier. This may be any single
+//                                            legal  character, including a blank which is
+//                                            is used if there is only one chain.
+// 14 - 17        Integer        numRes       Number of residues in the chain.
+//                                            This  value is repeated on every record.
+// 20 - 22        Residue name   resName      Residue name.
+// 24 - 26        Residue name   resName      Residue name.
+// 28 - 30        Residue name   resName      Residue name.
+// 32 - 34        Residue name   resName      Residue name.
+// 36 - 38        Residue name   resName      Residue name.
+// 40 - 42        Residue name   resName      Residue name.
+// 44 - 46        Residue name   resName      Residue name.
+// 48 - 50        Residue name   resName      Residue name.
+// 52 - 54        Residue name   resName      Residue name.
+// 56 - 58        Residue name   resName      Residue name.
+// 60 - 62        Residue name   resName      Residue name.
+// 64 - 66        Residue name   resName      Residue name.
+// 68 - 70        Residue name   resName      Residue name.
+// =============================================================================
                 activeMolecularAssembly.addHeaderLine(line);
                 chainID = line.substring(11, 12).toUpperCase().charAt(0);
                 int serNum = parseInt(line.substring(7, 10).trim());
@@ -731,37 +691,36 @@ public final class PDBFilter extends SystemFilter {
                 String stdName = line.substring(24, 27).trim();
                 modRes.put(modResName.toUpperCase(), stdName.toUpperCase());
                 activeMolecularAssembly.addHeaderLine(line);
-                // =============================================================================
-                //  1 -  6        Record name     "MODRES"
-                //  8 - 11        IDcode          idCode         ID code of this entry.
-                // 13 - 15        Residue name    resName        Residue name used in this entry.
-                // 17             Character       chainID        Chain identifier.
-                // 19 - 22        Integer         seqNum         Sequence number.
-                // 23             AChar           iCode          Insertion code.
-                // 25 - 27        Residue name    stdRes         Standard residue name.
-                // 30 - 70        String          comment        Description of the residue
-                // modification.
-                // =============================================================================
+// =============================================================================
+//  1 -  6        Record name     "MODRES"
+//  8 - 11        IDcode          idCode         ID code of this entry.
+// 13 - 15        Residue name    resName        Residue name used in this entry.
+// 17             Character       chainID        Chain identifier.
+// 19 - 22        Integer         seqNum         Sequence number.
+// 23             AChar           iCode          Insertion code.
+// 25 - 27        Residue name    stdRes         Standard residue name.
+// 30 - 70        String          comment        Description of the residue modification.
+// =============================================================================
                 break;
               case ANISOU:
-                // =============================================================================
-                //  1 - 6        Record name   "ANISOU"
-                //  7 - 11       Integer       serial         Atom serial number.
-                // 13 - 16       Atom          name           Atom name.
-                // 17            Character     altLoc         Alternate location indicator
-                // 18 - 20       Residue name  resName        Residue name.
-                // 22            Character     chainID        Chain identifier.
-                // 23 - 26       Integer       resSeq         Residue sequence number.
-                // 27            AChar         iCode          Insertion code.
-                // 29 - 35       Integer       u[0][0]        U(1,1)
-                // 36 - 42       Integer       u[1][1]        U(2,2)
-                // 43 - 49       Integer       u[2][2]        U(3,3)
-                // 50 - 56       Integer       u[0][1]        U(1,2)
-                // 57 - 63       Integer       u[0][2]        U(1,3)
-                // 64 - 70       Integer       u[1][2]        U(2,3)
-                // 77 - 78       LString(2)    element        Element symbol, right-justified.
-                // 79 - 80       LString(2)    charge         Charge on the atom.
-                // =============================================================================
+// =============================================================================
+//  1 - 6        Record name   "ANISOU"
+//  7 - 11       Integer       serial         Atom serial number.
+// 13 - 16       Atom          name           Atom name.
+// 17            Character     altLoc         Alternate location indicator
+// 18 - 20       Residue name  resName        Residue name.
+// 22            Character     chainID        Chain identifier.
+// 23 - 26       Integer       resSeq         Residue sequence number.
+// 27            AChar         iCode          Insertion code.
+// 29 - 35       Integer       u[0][0]        U(1,1)
+// 36 - 42       Integer       u[1][1]        U(2,2)
+// 43 - 49       Integer       u[2][2]        U(3,3)
+// 50 - 56       Integer       u[0][1]        U(1,2)
+// 57 - 63       Integer       u[0][2]        U(1,3)
+// 64 - 70       Integer       u[1][2]        U(2,3)
+// 77 - 78       LString(2)    element        Element symbol, right-justified.
+// 79 - 80       LString(2)    charge         Charge on the atom.
+// =============================================================================
                 boolean deleteAnisou = properties.getBoolean("delete-anisou", false);
                 if (deleteAnisou) {
                   break;
@@ -792,26 +751,23 @@ public final class PDBFilter extends SystemFilter {
                 }
                 break;
               case ATOM:
-                // =============================================================================
-                //  1 -  6        Record name   "ATOM  "
-                //  7 - 11        Integer       serial       Atom serial number.
-                // 13 - 16        Atom          name         Atom name.
-                // 17             Character     altLoc       Alternate location indicator.
-                // 18 - 20        Residue name  resName      Residue name.
-                // 22             Character     chainID      Chain identifier.
-                // 23 - 26        Integer       resSeq       Residue sequence number.
-                // 27             AChar         iCode        Code for insertion of residues.
-                // 31 - 38        Real(8.3)     x            Orthogonal coordinates for X in
-                // Angstroms.
-                // 39 - 46        Real(8.3)     y            Orthogonal coordinates for Y in
-                // Angstroms.
-                // 47 - 54        Real(8.3)     z            Orthogonal coordinates for Z in
-                // Angstroms.
-                // 55 - 60        Real(6.2)     occupancy    Occupancy.
-                // 61 - 66        Real(6.2)     tempFactor   Temperature factor.
-                // 77 - 78        LString(2)    element      Element symbol, right-justified.
-                // 79 - 80        LString(2)    charge       Charge  on the atom.
-                // =============================================================================
+// =============================================================================
+//  1 -  6        Record name   "ATOM  "
+//  7 - 11        Integer       serial       Atom serial number.
+// 13 - 16        Atom          name         Atom name.
+// 17             Character     altLoc       Alternate location indicator.
+// 18 - 20        Residue name  resName      Residue name.
+// 22             Character     chainID      Chain identifier.
+// 23 - 26        Integer       resSeq       Residue sequence number.
+// 27             AChar         iCode        Code for insertion of residues.
+// 31 - 38        Real(8.3)     x            Orthogonal coordinates for X in Angstroms.
+// 39 - 46        Real(8.3)     y            Orthogonal coordinates for Y in Angstroms.
+// 47 - 54        Real(8.3)     z            Orthogonal coordinates for Z in Angstroms.
+// 55 - 60        Real(6.2)     occupancy    Occupancy.
+// 61 - 66        Real(6.2)     tempFactor   Temperature factor.
+// 77 - 78        LString(2)    element      Element symbol, right-justified.
+// 79 - 80        LString(2)    charge       Charge  on the atom.
+// =============================================================================
                 String name;
                 String resName;
                 String segID;
@@ -826,8 +782,7 @@ public final class PDBFilter extends SystemFilter {
                 if (!line.substring(17, 20).trim().equals("HOH")) {
                   serial = Hybrid36.decode(5, line.substring(6, 11));
                   name = line.substring(12, 16).trim();
-                  if (name.toUpperCase().contains("1H")
-                      || name.toUpperCase().contains("2H")
+                  if (name.toUpperCase().contains("1H") || name.toUpperCase().contains("2H")
                       || name.toUpperCase().contains("3H")) {
                     // VERSION3_2 is presently just a placeholder for "anything non-standard".
                     fileStandard = VERSION3_2;
@@ -851,10 +806,8 @@ public final class PDBFilter extends SystemFilter {
                   if (insertionCode != ' ' && !containsInsCode) {
                     containsInsCode = true;
                     logger.warning(
-                        " FFX support for files with "
-                            + "insertion codes is experimental. "
-                            + "Residues will be renumbered to "
-                            + "eliminate insertion codes (52A "
+                        " FFX support for files with " + "insertion codes is experimental. "
+                            + "Residues will be renumbered to " + "eliminate insertion codes (52A "
                             + "becomes 53, 53 becomes 54, etc)");
                   }
 
@@ -867,9 +820,9 @@ public final class PDBFilter extends SystemFilter {
                     }
                     resSeq += offset;
                     if (offset != 0) {
-                      logger.info(format(" Chain %c " + "residue %s-%s renumbered to %c %s-%d",
-                          chainID, pdbResNum.substring(1).trim(), resName, chainID, resName,
-                          resSeq));
+                      logger.info(
+                          format(" Chain %c " + "residue %s-%s renumbered to %c %s-%d", chainID,
+                              pdbResNum.substring(1).trim(), resName, chainID, resName, resSeq));
                     }
                     String newNum = format("%c%d", chainID, resSeq);
                     pdbToNewResMap.put(pdbResNum, newNum);
@@ -939,10 +892,8 @@ public final class PDBFilter extends SystemFilter {
                       logger.fine(" Missing occupancy and b-factors set to 1.0.");
                     }
                   }
-                  newAtom =
-                      new Atom(
-                          0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor,
-                          segID);
+                  newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy,
+                      tempFactor, segID);
 
                   // Check if this is a modified residue.
                   if (modRes.containsKey(resName.toUpperCase())) {
@@ -969,23 +920,23 @@ public final class PDBFilter extends SystemFilter {
                   break;
                 }
               case HETATM:
-                // =============================================================================
-                //  1 - 6        Record name    "HETATM"
-                //  7 - 11       Integer        serial        Atom serial number.
-                // 13 - 16       Atom           name          Atom name.
-                // 17            Character      altLoc        Alternate location indicator.
-                // 18 - 20       Residue name   resName       Residue name.
-                // 22            Character      chainID       Chain identifier.
-                // 23 - 26       Integer        resSeq        Residue sequence number.
-                // 27            AChar          iCode         Code for insertion of residues.
-                // 31 - 38       Real(8.3)      x             Orthogonal coordinates for X.
-                // 39 - 46       Real(8.3)      y             Orthogonal coordinates for Y.
-                // 47 - 54       Real(8.3)      z             Orthogonal coordinates for Z.
-                // 55 - 60       Real(6.2)      occupancy     Occupancy.
-                // 61 - 66       Real(6.2)      tempFactor    Temperature factor.
-                // 77 - 78       LString(2)     element       Element symbol; right-justified.
-                // 79 - 80       LString(2)     charge        Charge on the atom.
-                // =============================================================================
+// =============================================================================
+//  1 - 6        Record name    "HETATM"
+//  7 - 11       Integer        serial        Atom serial number.
+// 13 - 16       Atom           name          Atom name.
+// 17            Character      altLoc        Alternate location indicator.
+// 18 - 20       Residue name   resName       Residue name.
+// 22            Character      chainID       Chain identifier.
+// 23 - 26       Integer        resSeq        Residue sequence number.
+// 27            AChar          iCode         Code for insertion of residues.
+// 31 - 38       Real(8.3)      x             Orthogonal coordinates for X.
+// 39 - 46       Real(8.3)      y             Orthogonal coordinates for Y.
+// 47 - 54       Real(8.3)      z             Orthogonal coordinates for Z.
+// 55 - 60       Real(6.2)      occupancy     Occupancy.
+// 61 - 66       Real(6.2)      tempFactor    Temperature factor.
+// 77 - 78       LString(2)     element       Element symbol; right-justified.
+// 79 - 80       LString(2)     charge        Charge on the atom.
+// =============================================================================
                 serial = Hybrid36.decode(5, line.substring(6, 11));
                 name = line.substring(12, 16).trim();
                 altLoc = line.substring(16, 17).toUpperCase().charAt(0);
@@ -1006,12 +957,9 @@ public final class PDBFilter extends SystemFilter {
                 char insertionCode = line.charAt(26);
                 if (insertionCode != ' ' && !containsInsCode) {
                   containsInsCode = true;
-                  logger.warning(
-                      " FFX support for files with "
-                          + "insertion codes is experimental. "
-                          + "Residues will be renumbered to "
-                          + "eliminate insertion codes (52A "
-                          + "becomes 53, 53 becomes 54, etc)");
+                  logger.warning(" FFX support for files with " + "insertion codes is experimental. "
+                      + "Residues will be renumbered to " + "eliminate insertion codes (52A "
+                      + "becomes 53, 53 becomes 54, etc)");
                 }
 
                 int offset = insertionCodeCount.getOrDefault(chainID, 0);
@@ -1024,14 +972,8 @@ public final class PDBFilter extends SystemFilter {
                   resSeq += offset;
                   if (offset != 0) {
                     logger.info(
-                        format(
-                            " Chain %c " + "molecule %s-%s renumbered to %c %s-%d",
-                            chainID,
-                            pdbResNum.substring(1).trim(),
-                            resName,
-                            chainID,
-                            resName,
-                            resSeq));
+                        format(" Chain %c " + "molecule %s-%s renumbered to %c %s-%d", chainID,
+                            pdbResNum.substring(1).trim(), resName, chainID, resName, resSeq));
                   }
                   String newNum = format("%c%d", chainID, resSeq);
                   pdbToNewResMap.put(pdbResNum, newNum);
@@ -1057,9 +999,8 @@ public final class PDBFilter extends SystemFilter {
                     logger.fine(" Missing occupancy and b-factors set to 1.0.");
                   }
                 }
-                newAtom =
-                    new Atom(
-                        0, name, altLoc, d, resName, resSeq, chainID, occupancy, tempFactor, segID);
+                newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy,
+                    tempFactor, segID);
                 newAtom.setHetero(true);
                 // Check if this is a modified residue.
                 if (modRes.containsKey(resName.toUpperCase())) {
@@ -1079,20 +1020,20 @@ public final class PDBFilter extends SystemFilter {
                 }
                 break;
               case CRYST1:
-                // =============================================================================
-                // The CRYST1 record presents the unit cell parameters, space group, and Z
-                // value. If the structure was not determined by crystallographic means, CRYST1
-                // simply provides the unitary values, with an appropriate REMARK.
-                //
-                //  7 - 15       Real(9.3)     a              a (Angstroms).
-                // 16 - 24       Real(9.3)     b              b (Angstroms).
-                // 25 - 33       Real(9.3)     c              c (Angstroms).
-                // 34 - 40       Real(7.2)     alpha          alpha (degrees).
-                // 41 - 47       Real(7.2)     beta           beta (degrees).
-                // 48 - 54       Real(7.2)     gamma          gamma (degrees).
-                // 56 - 66       LString       sGroup         Space  group.
-                // 67 - 70       Integer       z              Z value.
-                // =============================================================================
+// =============================================================================
+// The CRYST1 record presents the unit cell parameters, space group, and Z
+// value. If the structure was not determined by crystallographic means, CRYST1
+// simply provides the unitary values, with an appropriate REMARK.
+//
+//  7 - 15       Real(9.3)     a              a (Angstroms).
+// 16 - 24       Real(9.3)     b              b (Angstroms).
+// 25 - 33       Real(9.3)     c              c (Angstroms).
+// 34 - 40       Real(7.2)     alpha          alpha (degrees).
+// 41 - 47       Real(7.2)     beta           beta (degrees).
+// 48 - 54       Real(7.2)     gamma          gamma (degrees).
+// 56 - 66       LString       sGroup         Space  group.
+// 67 - 70       Integer       z              Z value.
+// =============================================================================
                 if (line.length() < 55) {
                   logger.severe(" CRYST1 record is improperly formatted.");
                 }
@@ -1113,42 +1054,42 @@ public final class PDBFilter extends SystemFilter {
                 properties.addProperty("spacegroup", SpaceGroupInfo.pdb2ShortName(sg));
                 break;
               case CONECT:
-                // =============================================================================
-                //  7 - 11        Integer        serial       Atom  serial number
-                // 12 - 16        Integer        serial       Serial number of bonded atom
-                // 17 - 21        Integer        serial       Serial number of bonded atom
-                // 22 - 26        Integer        serial       Serial number of bonded atom
-                // 27 - 31        Integer        serial       Serial number of bonded atom
-                //
-                // CONECT records involving atoms for which the coordinates are not present
-                // in the entry (e.g., symmetry-generated) are not given.
-                // CONECT records involving atoms for which the coordinates are missing due
-                // to disorder, are also not provided.
-                // =============================================================================
+// =============================================================================
+//  7 - 11        Integer        serial       Atom  serial number
+// 12 - 16        Integer        serial       Serial number of bonded atom
+// 17 - 21        Integer        serial       Serial number of bonded atom
+// 22 - 26        Integer        serial       Serial number of bonded atom
+// 27 - 31        Integer        serial       Serial number of bonded atom
+//
+// CONECT records involving atoms for which the coordinates are not present
+// in the entry (e.g., symmetry-generated) are not given.
+// CONECT records involving atoms for which the coordinates are missing due
+// to disorder, are also not provided.
+// =============================================================================
                 conects.add(line);
                 break;
               case LINK:
-                // =============================================================================
-                // The LINK records specify connectivity between residues that is not implied by
-                // the primary structure. Connectivity is expressed in terms of the atom names.
-                // They also include the distance associated with the each linkage following the
-                // symmetry operations at the end of each record.
-                // 13 - 16         Atom           name1           Atom name.
-                // 17              Character      altLoc1         Alternate location indicator.
-                // 18 - 20         Residue name   resName1        Residue  name.
-                // 22              Character      chainID1        Chain identifier.
-                // 23 - 26         Integer        resSeq1         Residue sequence number.
-                // 27              AChar          iCode1          Insertion code.
-                // 43 - 46         Atom           name2           Atom name.
-                // 47              Character      altLoc2         Alternate location indicator.
-                // 48 - 50         Residue name   resName2        Residue name.
-                // 52              Character      chainID2        Chain identifier.
-                // 53 - 56         Integer        resSeq2         Residue sequence number.
-                // 57              AChar          iCode2          Insertion code.
-                // 60 - 65         SymOP          sym1            Symmetry operator atom 1.
-                // 67 - 72         SymOP          sym2            Symmetry operator atom 2.
-                // 74 – 78         Real(5.2)      Length          Link distance
-                // =============================================================================
+// =============================================================================
+// The LINK records specify connectivity between residues that is not implied by
+// the primary structure. Connectivity is expressed in terms of the atom names.
+// They also include the distance associated with each linkage following the
+// symmetry operations at the end of each record.
+// 13 - 16         Atom           name1           Atom name.
+// 17              Character      altLoc1         Alternate location indicator.
+// 18 - 20         Residue name   resName1        Residue  name.
+// 22              Character      chainID1        Chain identifier.
+// 23 - 26         Integer        resSeq1         Residue sequence number.
+// 27              AChar          iCode1          Insertion code.
+// 43 - 46         Atom           name2           Atom name.
+// 47              Character      altLoc2         Alternate location indicator.
+// 48 - 50         Residue name   resName2        Residue name.
+// 52              Character      chainID2        Chain identifier.
+// 53 - 56         Integer        resSeq2         Residue sequence number.
+// 57              AChar          iCode2          Insertion code.
+// 60 - 65         SymOP          sym1            Symmetry operator atom 1.
+// 67 - 72         SymOP          sym2            Symmetry operator atom 2.
+// 74 – 78         Real(5.2)      Length          Link distance
+// =============================================================================
                 Character a1 = line.charAt(16);
                 Character a2 = line.charAt(46);
                 if (a1 != a2) {
@@ -1165,153 +1106,131 @@ public final class PDBFilter extends SystemFilter {
                 }
                 break;
               case SSBOND:
-                // =============================================================================
-                // The SSBOND record identifies each disulfide bond in protein and polypeptide
-                // structures by identifying the two residues involved in the bond.
-                // The disulfide bond distance is included after the symmetry operations at
-                // the end of the SSBOND record.
-                //
-                //  8 - 10        Integer         serNum       Serial number.
-                // 12 - 14        LString(3)      "CYS"        Residue name.
-                // 16             Character       chainID1     Chain identifier.
-                // 18 - 21        Integer         seqNum1      Residue sequence number.
-                // 22             AChar           icode1       Insertion code.
-                // 26 - 28        LString(3)      "CYS"        Residue name.
-                // 30             Character       chainID2     Chain identifier.
-                // 32 - 35        Integer         seqNum2      Residue sequence number.
-                // 36             AChar           icode2       Insertion code.
-                // 60 - 65        SymOP           sym1         Symmetry oper for 1st resid
-                // 67 - 72        SymOP           sym2         Symmetry oper for 2nd resid
-                // 74 – 78        Real(5.2)      Length        Disulfide bond distance
-                //
-                // If SG of cysteine is disordered then there are possible alternate linkages.
-                // wwPDB practice is to put together all possible SSBOND records. This is
-                // problematic because the alternate location identifier is not specified in
-                // the SSBOND record.
-                //
-                // Notes:
-                // SSBOND records may be invalid if chain IDs are reused.
-                // SSBOND records are applied by FFX to all conformers.
-                // =============================================================================
+// =============================================================================
+// The SSBOND record identifies each disulfide bond in protein and polypeptide
+// structures by identifying the two residues involved in the bond.
+// The disulfide bond distance is included after the symmetry operations at
+// the end of the SSBOND record.
+//
+//  8 - 10        Integer         serNum       Serial number.
+// 12 - 14        LString(3)      "CYS"        Residue name.
+// 16             Character       chainID1     Chain identifier.
+// 18 - 21        Integer         seqNum1      Residue sequence number.
+// 22             AChar           icode1       Insertion code.
+// 26 - 28        LString(3)      "CYS"        Residue name.
+// 30             Character       chainID2     Chain identifier.
+// 32 - 35        Integer         seqNum2      Residue sequence number.
+// 36             AChar           icode2       Insertion code.
+// 60 - 65        SymOP           sym1         Symmetry oper for 1st resid
+// 67 - 72        SymOP           sym2         Symmetry oper for 2nd resid
+// 74 – 78        Real(5.2)      Length        Disulfide bond distance
+//
+// If SG of cysteine is disordered then there are possible alternate linkages.
+// wwPDB practice is to put together all possible SSBOND records. This is
+// problematic because the alternate location identifier is not specified in
+// the SSBOND record.
+//
+// Notes:
+// SSBOND records may be invalid if chain IDs are reused.
+// SSBOND records are applied by FFX to all conformers.
+// =============================================================================
                 ssbonds.add(line);
                 break;
               case HELIX:
-                // =============================================================================
-                // HELIX records are used to identify the position of helices in the molecule.
-                // Helices are named, numbered, and classified by type. The residues where the
-                // helix begins and ends are noted, as well as the total length.
-                //
-                //  8 - 10        Integer        serNum        Serial number of the helix. This starts
-                //                                             at 1  and increases incrementally.
-                // 12 - 14        LString(3)     helixID       Helix  identifier. In addition to a
-                // serial
-                //                                             number, each helix is given an
-                //                                             alphanumeric character helix
-                // identifier.
-                // 16 - 18        Residue name   initResName   Name of the initial residue.
-                // 20             Character      initChainID   Chain identifier for the chain
-                // containing
-                //                                             this  helix.
-                // 22 - 25        Integer        initSeqNum    Sequence number of the initial residue.
-                // 26             AChar          initICode     Insertion code of the initial residue.
-                // 28 - 30        Residue  name  endResName    Name of the terminal residue of the
-                // helix.
-                // 32             Character      endChainID    Chain identifier for the chain
-                // containing
-                //                                             this  helix.
-                // 34 - 37        Integer        endSeqNum     Sequence number of the terminal
-                // residue.
-                // 38             AChar          endICode      Insertion code of the terminal residue.
-                // 39 - 40        Integer        helixClass    Helix class (see below).
-                // 41 - 70        String         comment       Comment about this helix.
-                // 72 - 76        Integer        length        Length of this helix.
-                //
-                //                                      CLASS NUMBER
-                // TYPE OF  HELIX                     (COLUMNS 39 - 40)
-                // --------------------------------------------------------------
-                // Right-handed alpha (default)                1
-                // Right-handed omega                          2
-                // Right-handed pi                             3
-                // Right-handed gamma                          4
-                // Right-handed 3 - 10                         5
-                // Left-handed alpha                           6
-                // Left-handed omega                           7
-                // Left-handed gamma                           8
-                // 2 - 7 ribbon/helix                          9
-                // Polyproline                                10
-                // =============================================================================
+// =============================================================================
+// HELIX records are used to identify the position of helices in the molecule.
+// Helices are named, numbered, and classified by type. The residues where the
+// helix begins and ends are noted, as well as the total length.
+//
+//  8 - 10        Integer        serNum        Serial number of the helix. This starts
+//                                             at 1  and increases incrementally.
+// 12 - 14        LString(3)     helixID       Helix  identifier. In addition to a serial
+//                                             number, each helix is given an
+//                                             alphanumeric character helix identifier.
+// 16 - 18        Residue name   initResName   Name of the initial residue.
+// 20             Character      initChainID   Chain identifier for the chain containing
+//                                             this  helix.
+// 22 - 25        Integer        initSeqNum    Sequence number of the initial residue.
+// 26             AChar          initICode     Insertion code of the initial residue.
+// 28 - 30        Residue  name  endResName    Name of the terminal residue of the helix.
+// 32             Character      endChainID    Chain identifier for the chain containing
+//                                             this  helix.
+// 34 - 37        Integer        endSeqNum     Sequence number of the terminal residue.
+// 38             AChar          endICode      Insertion code of the terminal residue.
+// 39 - 40        Integer        helixClass    Helix class (see below).
+// 41 - 70        String         comment       Comment about this helix.
+// 72 - 76        Integer        length        Length of this helix.
+//
+//                                      CLASS NUMBER
+// TYPE OF  HELIX                     (COLUMNS 39 - 40)
+// --------------------------------------------------------------
+// Right-handed alpha (default)                1
+// Right-handed omega                          2
+// Right-handed pi                             3
+// Right-handed gamma                          4
+// Right-handed 3 - 10                         5
+// Left-handed alpha                           6
+// Left-handed omega                           7
+// Left-handed gamma                           8
+// 2 - 7 ribbon/helix                          9
+// Polyproline                                10
+// =============================================================================
               case SHEET:
-                // =============================================================================
-                // SHEET records are used to identify the position of sheets in the molecule.
-                // Sheets are both named and numbered. The residues where the sheet begins and
-                // ends are noted.
-                //
-                //  8 - 10        Integer       strand         Strand  number which starts at 1 for
-                // each
-                //                                             strand within a sheet and increases by
-                // one.
-                // 12 - 14        LString(3)    sheetID        Sheet  identifier.
-                // 15 - 16        Integer       numStrands     Number  of strands in sheet.
-                // 18 - 20        Residue name  initResName    Residue  name of initial residue.
-                // 22             Character     initChainID    Chain identifier of initial residue
-                //                                             in strand.
-                // 23 - 26        Integer       initSeqNum     Sequence number of initial residue
-                //                                             in strand.
-                // 27             AChar         initICode      Insertion code of initial residue
-                //                                             in  strand.
-                // 29 - 31        Residue name  endResName     Residue name of terminal residue.
-                // 33             Character     endChainID     Chain identifier of terminal residue.
-                // 34 - 37        Integer       endSeqNum      Sequence number of terminal residue.
-                // 38             AChar         endICode       Insertion code of terminal residue.
-                // 39 - 40        Integer       sense          Sense of strand with respect to
-                // previous
-                //                                             strand in the sheet. 0 if first strand,
-                //                                             1 if  parallel,and -1 if anti-parallel.
-                // 42 - 45        Atom          curAtom        Registration.  Atom name in current
-                // strand.
-                // 46 - 48        Residue name  curResName     Registration.  Residue name in current
-                // strand
-                // 50             Character     curChainId     Registration. Chain identifier in
-                //                                             current strand.
-                // 51 - 54        Integer       curResSeq      Registration.  Residue sequence number
-                //                                             in current strand.
-                // 55             AChar         curICode       Registration. Insertion code in
-                //                                             current strand.
-                // 57 - 60        Atom          prevAtom       Registration.  Atom name in previous
-                // strand.
-                // 61 - 63        Residue name  prevResName    Registration.  Residue name in
-                //                                             previous strand.
-                // 65             Character     prevChainId    Registration.  Chain identifier in
-                //                                             previous  strand.
-                // 66 - 69        Integer       prevResSeq     Registration. Residue sequence number
-                //                                             in previous strand.
-                // 70             AChar         prevICode      Registration.  Insertion code in
-                //                                             previous strand.
-                // =============================================================================
+// =============================================================================
+// SHEET records are used to identify the position of sheets in the molecule.
+// Sheets are both named and numbered. The residues where the sheet begins and
+// ends are noted.
+//
+//  8 - 10        Integer       strand         Strand  number which starts at 1 for each
+//                                             strand within a sheet and increases by one.
+// 12 - 14        LString(3)    sheetID        Sheet  identifier.
+// 15 - 16        Integer       numStrands     Number  of strands in sheet.
+// 18 - 20        Residue name  initResName    Residue  name of initial residue.
+// 22             Character     initChainID    Chain identifier of initial residue in strand.
+// 23 - 26        Integer       initSeqNum     Sequence number of initial residue in strand.
+// 27             AChar         initICode      Insertion code of initial residue in  strand.
+// 29 - 31        Residue name  endResName     Residue name of terminal residue.
+// 33             Character     endChainID     Chain identifier of terminal residue.
+// 34 - 37        Integer       endSeqNum      Sequence number of terminal residue.
+// 38             AChar         endICode       Insertion code of terminal residue.
+// 39 - 40        Integer       sense          Sense of strand with respect to previous
+//                                             strand in the sheet. 0 if first strand,
+//                                             1 if  parallel,and -1 if anti-parallel.
+// 42 - 45        Atom          curAtom        Registration.  Atom name in current strand.
+// 46 - 48        Residue name  curResName     Registration.  Residue name in current strand
+// 50             Character     curChainId     Registration. Chain identifier in current strand.
+// 51 - 54        Integer       curResSeq      Registration.  Residue sequence number
+//                                             in current strand.
+// 55             AChar         curICode       Registration. Insertion code in current strand.
+// 57 - 60        Atom          prevAtom       Registration.  Atom name in previous strand.
+// 61 - 63        Residue name  prevResName    Registration.  Residue name in previous strand.
+// 65             Character     prevChainId    Registration.  Chain identifier in previous strand.
+// 66 - 69        Integer       prevResSeq     Registration. Residue sequence number
+//                                             in previous strand.
+// 70             AChar         prevICode      Registration.  Insertion code in
+//                                             previous strand.
+// =============================================================================
                 structs.add(line);
                 break;
               case MODEL: // Currently, no handling in initial read.
                 break;
               case MTRIX1:
-                // ================================================================================
-                // MTRIXn (n = 1, 2, or 3) records present transformations expressing
-                // non-crystallographic symmetry.
-                // MTRIXn will appear only when such transformations are required to generate an
-                // entire asymmetric unit,
-                // such as a large viral structure.
-                //
-                //  8 - 10        Integer       serial         Serial number.
-                // 11 - 20        Real(10.6)    m[n][1]        Mn1
-                // 21 - 30        Real(10.6)    m[n][2]        Mn2
-                // 31 - 40        Real(10.6)    m[n][3]        Mn3
-                // 21 - 30        Real(10.6)    v[n]           Vn
-                // 60             Integer       iGiven         1 if coordinates for the
-                // representations which are
-                //                                              approximately related by the
-                // transformations of the
-                //                                              molecule are contained in the entry.
-                // Otherwise, blank.
-                // =================================================================================
+// ================================================================================
+// MTRIXn (n = 1, 2, or 3) records present transformations expressing
+// non-crystallographic symmetry.
+// MTRIXn will appear only when such transformations are required to generate an
+// entire asymmetric unit,
+// such as a large viral structure.
+//
+//  8 - 10        Integer       serial         Serial number.
+// 11 - 20        Real(10.6)    m[n][1]        Mn1
+// 21 - 30        Real(10.6)    m[n][2]        Mn2
+// 31 - 40        Real(10.6)    m[n][3]        Mn3
+// 21 - 30        Real(10.6)    v[n]           Vn
+// 60             Integer       iGiven         1 if coordinates for the representations which are
+//                                              approximately related by the transformations of the
+//                                              molecule are contained in the entry. Otherwise, blank.
+// =================================================================================
                 StringBuilder MTRX1 = new StringBuilder(line.substring(11, 55));
                 properties.addProperty("MTRIX1", MTRX1);
                 break;
@@ -1331,28 +1250,24 @@ public final class PDBFilter extends SystemFilter {
                     lastReadLambda = Double.parseDouble(m.group(1));
                   }
                 }
-                // =================================================================================
-                // REMARK 350: presents all transformations, both crystallographic and
-                // non-crystallographic, needed to
-                // generate the biomolecule. These transformations operate on the coordinates in the
-                // entry. Both author
-                // and computational descriptions of assemblies are provided, if applicable. For
-                // strict ncs case where
-                // more than one assembly presents in asymmetric unit, only one chain with unit matrix
-                // will reported in
-                // REMARK 350, the other chain will be generated by rotation and translation.
-                //
-                // 20 - 23        Integer       serial         Serial number.
-                // 24 - 33        Real(10.6)    m[n][1]        Mn1
-                // 34 - 43        Real(10.6)    m[n][2]        Mn2
-                // 44 - 53        Real(10.6)    m[n][3]        Mn3
-                // 59 - 68        Real(10.6)    v[n]           Vn
-                // =================================================================================
+// =================================================================================
+// REMARK 350: presents all transformations, both crystallographic and non-crystallographic,
+// needed to generate the biomolecule. These transformations operate on the coordinates in the
+// entry. Both author and computational descriptions of assemblies are provided, if applicable.
+// For strict ncs case where more than one assembly presents in asymmetric unit, only one
+// chain with unit matrix will reported in REMARK 350, the other chain will be generated
+// by rotation and translation.
+//
+// 20 - 23        Integer       serial         Serial number.
+// 24 - 33        Real(10.6)    m[n][1]        Mn1
+// 34 - 43        Real(10.6)    m[n][2]        Mn2
+// 44 - 53        Real(10.6)    m[n][3]        Mn3
+// 59 - 68        Real(10.6)    v[n]           Vn
+// =================================================================================
                 if (line.length() >= 68) {
                   String remarkType = line.substring(7, 10).trim();
-                  if (remarkType.matches("\\d+")
-                      && parseInt(remarkType) == 350
-                      && line.substring(13, 18).equalsIgnoreCase("BIOMT")) {
+                  if (remarkType.matches("\\d+") && parseInt(remarkType) == 350 && line.substring(13,
+                      18).equalsIgnoreCase("BIOMT")) {
                     properties.addProperty("BIOMTn", new StringBuilder(line.substring(24, 68)));
                   }
                 }
@@ -1384,7 +1299,7 @@ public final class PDBFilter extends SystemFilter {
     // Build missing backbone atoms in loops.
     buildMissingResidues(xyzIndex, activeMolecularAssembly, seqRes, dbRef);
 
-    // Assign atom types. Missing side-chains atoms and missing hydrogens will be built in.
+    // Assign atom types. Missing side-chains atoms and missing hydrogen will be built in.
     bondList = assignAtomTypes(activeMolecularAssembly, fileStandard);
 
     // Assign disulfide bonds parameters and log their creation.
@@ -1525,8 +1440,7 @@ public final class PDBFilter extends SystemFilter {
                 hetatm = false;
               case HETATM:
                 String name = line.substring(12, 16).trim();
-                if (name.toUpperCase().contains("1H")
-                    || name.toUpperCase().contains("2H")
+                if (name.toUpperCase().contains("1H") || name.toUpperCase().contains("2H")
                     || name.toUpperCase().contains("3H")) {
                   // VERSION3_2 is presently just a placeholder for "anything non-standard".
                   fileStandard = VERSION3_2;
@@ -1548,8 +1462,8 @@ public final class PDBFilter extends SystemFilter {
                 d[2] = parseDouble(line.substring(46, 54).trim());
                 double occupancy = 1.0;
                 double tempFactor = 1.0;
-                Atom newAtom = new Atom(0, name, altLoc, d, resName, resSeq,
-                    chainID, occupancy, tempFactor, segID);
+                Atom newAtom = new Atom(0, name, altLoc, d, resName, resSeq, chainID, occupancy,
+                    tempFactor, segID);
                 newAtom.setHetero(hetatm);
                 // Check if this is a modified residue.
                 if (modRes.containsKey(resName.toUpperCase())) {
@@ -1651,9 +1565,8 @@ public final class PDBFilter extends SystemFilter {
         return true;
       } catch (IOException ex) {
         logger.info(
-            format(
-                " Exception in parsing frame %d of %s:" + " %s",
-                modelsRead, system.toString(), ex));
+            format(" Exception in parsing frame %d of %s:" + " %s", modelsRead, system.toString(),
+                ex));
       }
     }
     return false;
@@ -1700,7 +1613,7 @@ public final class PDBFilter extends SystemFilter {
   /**
    * Expand the current system to P1 during the save operation.
    *
-   * @param file
+   * @param file The file to write.
    * @return Return true on a successful write.
    */
   public boolean writeFileAsP1(File file) {
@@ -1803,14 +1716,10 @@ public final class PDBFilter extends SystemFilter {
    * @param extraLines Extra comment/header lines to write.
    * @return Success of writing.
    */
-  public boolean writeFile(
-      File saveFile,
-      boolean append,
-      Set<Atom> toExclude,
-      boolean writeEnd,
-      boolean versioning,
-      String[] extraLines) {
+  public boolean writeFile(File saveFile, boolean append, Set<Atom> toExclude, boolean writeEnd,
+      boolean versioning, String[] extraLines) {
     if (standardizeAtomNames) {
+      logger.info(" Setting atom names to PDB standard.");
       renameAtomsToPDBStandard(activeMolecularAssembly);
     }
     final Set<Atom> atomExclusions = toExclude == null ? Collections.emptySet() : toExclude;
@@ -1940,15 +1849,12 @@ public final class PDBFilter extends SystemFilter {
           List<Residue> residues = polymer.getResidues();
           for (Residue residue : residues) {
             if (residue.getName().equalsIgnoreCase("CYS")) {
-              List<Atom> cysAtoms =
-                  residue.getAtomList().stream()
-                      .filter(a -> !atomExclusions.contains(a))
-                      .collect(Collectors.toList());
+              List<Atom> cysAtoms = residue.getAtomList().stream()
+                  .filter(a -> !atomExclusions.contains(a)).toList();
               Atom SG1 = null;
               for (Atom atom : cysAtoms) {
                 String atName = atom.getName().toUpperCase();
-                if (atName.equals("SG")
-                    || atName.equals("SH")
+                if (atName.equals("SG") || atName.equals("SH")
                     || atom.getAtomType().atomicNumber == 16) {
                   SG1 = atom;
                   break;
@@ -1960,16 +1866,10 @@ public final class PDBFilter extends SystemFilter {
                 if (SG2.getAtomType().atomicNumber == 16 && !atomExclusions.contains(SG2)) {
                   if (SG1.getIndex() < SG2.getIndex()) {
                     bond.energy(false);
-                    bw.write(
-                        format(
-                            "SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n",
-                            serNum++,
-                            SG1.getChainID().toString(),
-                            Hybrid36.encode(4, SG1.getResidueNumber()),
-                            SG2.getChainID().toString(),
-                            Hybrid36.encode(4, SG2.getResidueNumber()),
-                            "",
-                            bond.getValue()));
+                    bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n", serNum++,
+                        SG1.getChainID().toString(), Hybrid36.encode(4, SG1.getResidueNumber()),
+                        SG2.getChainID().toString(), Hybrid36.encode(4, SG2.getResidueNumber()), "",
+                        bond.getValue()));
                   }
                 }
               }
@@ -1998,7 +1898,7 @@ public final class PDBFilter extends SystemFilter {
       // 123456789012345678901234567890123456789012345678901234567890123456789012345678
       // ATOM      1  N   ILE A  16      60.614  71.140 -10.592  1.00  7.38           N
       // ATOM      2  CA  ILE A  16      60.793  72.149  -9.511  1.00  6.91           C
-      MolecularAssembly[] molecularAssemblies = this.getMolecularAssemblys();
+      MolecularAssembly[] molecularAssemblies = this.getMolecularAssemblyArray();
       int serial = 1;
       if (nSymOp > 0) {
         serial = serialP1;
@@ -2021,16 +1921,10 @@ public final class PDBFilter extends SystemFilter {
             sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
             sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
             // Loop over atoms
-            /*List<Atom> residueAtoms = residue.getAtomList();
-            List<Atom> backboneAtoms = residue.getBackboneAtoms();*/
-            List<Atom> residueAtoms =
-                residue.getAtomList().stream()
-                    .filter(a -> !atomExclusions.contains(a))
-                    .collect(Collectors.toList());
-            List<Atom> backboneAtoms =
-                residue.getBackboneAtoms().stream()
-                    .filter(a -> !atomExclusions.contains(a))
-                    .collect(Collectors.toList());
+            List<Atom> residueAtoms = residue.getAtomList().stream()
+                .filter(a -> !atomExclusions.contains(a)).collect(Collectors.toList());
+            List<Atom> backboneAtoms = residue.getBackboneAtoms().stream()
+                .filter(a -> !atomExclusions.contains(a)).collect(Collectors.toList());
             boolean altLocFound = false;
             for (Atom atom : backboneAtoms) {
               writeAtom(atom, serial++, sb, anisouSB, bw);
@@ -2051,30 +1945,27 @@ public final class PDBFilter extends SystemFilter {
             if (altLocFound) {
               for (int ma = 1; ma < molecularAssemblies.length; ma++) {
                 MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
-                Polymer altPolymer =
-                    altMolecularAssembly.getPolymer(currentChainID, currentSegID, false);
+                Polymer altPolymer = altMolecularAssembly.getPolymer(currentChainID, currentSegID,
+                    false);
                 Residue altResidue = altPolymer.getResidue(resName, resID, false,
                     Residue.ResidueType.AA);
                 if (altResidue == null) {
                   resName = AminoAcid3.UNK.name();
-                  altResidue = altPolymer.getResidue(resName, resID, false,
-                      Residue.ResidueType.AA);
+                  altResidue = altPolymer.getResidue(resName, resID, false, Residue.ResidueType.AA);
                 }
                 backboneAtoms = altResidue.getBackboneAtoms();
                 residueAtoms = altResidue.getAtomList();
                 for (Atom atom : backboneAtoms) {
-                  if (atom.getAltLoc() != null
-                      && !atom.getAltLoc().equals(' ')
-                      && !atom.getAltLoc().equals('A')) {
+                  if (atom.getAltLoc() != null && !atom.getAltLoc().equals(' ') && !atom.getAltLoc()
+                      .equals('A')) {
                     sb.replace(17, 20, padLeft(atom.getResidueName().toUpperCase(), 3));
                     writeAtom(atom, serial++, sb, anisouSB, bw);
                   }
                   residueAtoms.remove(atom);
                 }
                 for (Atom atom : residueAtoms) {
-                  if (atom.getAltLoc() != null
-                      && !atom.getAltLoc().equals(' ')
-                      && !atom.getAltLoc().equals('A')) {
+                  if (atom.getAltLoc() != null && !atom.getAltLoc().equals(' ') && !atom.getAltLoc()
+                      .equals('A')) {
                     writeAtom(atom, serial++, sb, anisouSB, bw);
                   }
                 }
@@ -2099,7 +1990,8 @@ public final class PDBFilter extends SystemFilter {
 
       // Loop over molecules, ions and then water.
       List<MSNode> molecules = activeMolecularAssembly.getMolecules();
-      for (int i = 0; i < molecules.size(); i++) {
+      int numMolecules = molecules.size();
+      for (int i = 0; i < numMolecules; i++) {
         Molecule molecule = (Molecule) molecules.get(i);
         chainID = molecule.getChainID();
         sb.setCharAt(21, chainID);
@@ -2111,10 +2003,8 @@ public final class PDBFilter extends SystemFilter {
         sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
         sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
         // List<Atom> moleculeAtoms = molecule.getAtomList();
-        List<Atom> moleculeAtoms =
-            molecule.getAtomList().stream()
-                .filter(a -> !atomExclusions.contains(a))
-                .collect(Collectors.toList());
+        List<Atom> moleculeAtoms = molecule.getAtomList().stream()
+            .filter(a -> !atomExclusions.contains(a)).collect(Collectors.toList());
         boolean altLocFound = false;
         for (Atom atom : moleculeAtoms) {
           writeAtom(atom, serial++, sb, anisouSB, bw);
@@ -2130,9 +2020,8 @@ public final class PDBFilter extends SystemFilter {
             MSNode altmolecule = altMolecularAssembly.getMolecules().get(i);
             moleculeAtoms = altmolecule.getAtomList();
             for (Atom atom : moleculeAtoms) {
-              if (atom.getAltLoc() != null
-                  && !atom.getAltLoc().equals(' ')
-                  && !atom.getAltLoc().equals('A')) {
+              if (atom.getAltLoc() != null && !atom.getAltLoc().equals(' ') && !atom.getAltLoc()
+                  .equals('A')) {
                 writeAtom(atom, serial++, sb, anisouSB, bw);
               }
             }
@@ -2153,10 +2042,8 @@ public final class PDBFilter extends SystemFilter {
         sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
         sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
         // List<Atom> ionAtoms = ion.getAtomList();
-        List<Atom> ionAtoms =
-            ion.getAtomList().stream()
-                .filter(a -> !atomExclusions.contains(a))
-                .collect(Collectors.toList());
+        List<Atom> ionAtoms = ion.getAtomList().stream().filter(a -> !atomExclusions.contains(a))
+            .collect(Collectors.toList());
         boolean altLocFound = false;
         for (Atom atom : ionAtoms) {
           writeAtom(atom, serial++, sb, anisouSB, bw);
@@ -2172,9 +2059,8 @@ public final class PDBFilter extends SystemFilter {
             MSNode altion = altMolecularAssembly.getIons().get(i);
             ionAtoms = altion.getAtomList();
             for (Atom atom : ionAtoms) {
-              if (atom.getAltLoc() != null
-                  && !atom.getAltLoc().equals(' ')
-                  && !atom.getAltLoc().equals('A')) {
+              if (atom.getAltLoc() != null && !atom.getAltLoc().equals(' ') && !atom.getAltLoc()
+                  .equals('A')) {
                 writeAtom(atom, serial++, sb, anisouSB, bw);
               }
             }
@@ -2194,10 +2080,8 @@ public final class PDBFilter extends SystemFilter {
         }
         sb.replace(17, 20, padLeft(resName.toUpperCase(), 3));
         sb.replace(22, 26, format("%4s", Hybrid36.encode(4, resID)));
-        List<Atom> waterAtoms =
-            wat.getAtomList().stream()
-                .filter(a -> !atomExclusions.contains(a))
-                .collect(Collectors.toList());
+        List<Atom> waterAtoms = wat.getAtomList().stream().filter(a -> !atomExclusions.contains(a))
+            .collect(Collectors.toList());
         boolean altLocFound = false;
         for (Atom atom : waterAtoms) {
           writeAtom(atom, serial++, sb, anisouSB, bw);
@@ -2213,9 +2097,8 @@ public final class PDBFilter extends SystemFilter {
             MSNode altwater = altMolecularAssembly.getWater().get(i);
             waterAtoms = altwater.getAtomList();
             for (Atom atom : waterAtoms) {
-              if (atom.getAltLoc() != null
-                  && !atom.getAltLoc().equals(' ')
-                  && !atom.getAltLoc().equals('A')) {
+              if (atom.getAltLoc() != null && !atom.getAltLoc().equals(' ') && !atom.getAltLoc()
+                  .equals('A')) {
                 writeAtom(atom, serial++, sb, anisouSB, bw);
               }
             }
@@ -2283,13 +2166,14 @@ public final class PDBFilter extends SystemFilter {
    */
   public boolean writeFileWithHeader(File saveFile, String header, boolean append) {
     if (standardizeAtomNames) {
+      logger.info(" Setting atom names to PDB standard.");
       renameAtomsToPDBStandard(activeMolecularAssembly);
     }
     activeMolecularAssembly.setFile(saveFile);
     activeMolecularAssembly.setName(saveFile.getName());
 
-    try (FileWriter fw = new FileWriter(saveFile, append);
-        BufferedWriter bw = new BufferedWriter(fw)) {
+    try (FileWriter fw = new FileWriter(saveFile, append); BufferedWriter bw = new BufferedWriter(
+        fw)) {
       bw.write(header);
       bw.newLine();
     } catch (Exception e) {
@@ -2408,9 +2292,8 @@ public final class PDBFilter extends SystemFilter {
    * @param bw a {@link java.io.BufferedWriter} object.
    * @throws java.io.IOException if any.
    */
-  private void writeAtom(
-      Atom atom, int serial, StringBuilder sb, StringBuilder anisouSB, BufferedWriter bw)
-      throws IOException {
+  private void writeAtom(Atom atom, int serial, StringBuilder sb, StringBuilder anisouSB,
+      BufferedWriter bw) throws IOException {
     String name = atom.getName();
     if (name.length() > 4) {
       name = name.substring(0, 4);
@@ -2454,12 +2337,9 @@ public final class PDBFilter extends SystemFilter {
         decimals.append(StringUtils.fwFpDec(xyz[i], 8, 3));
       } catch (IllegalArgumentException ex) {
         String newValue = StringUtils.fwFpTrunc(xyz[i], 8, 3);
-        logger.info(
-            format(
-                " XYZ %d coordinate %8.3f for atom %s "
-                    + "overflowed bounds of 8.3f string specified by PDB "
-                    + "format; truncating value to %s",
-                i, xyz[i], atom, newValue));
+        logger.info(format(" XYZ %d coordinate %8.3f for atom %s "
+            + "overflowed bounds of 8.3f string specified by PDB "
+            + "format; truncating value to %s", i, xyz[i], atom, newValue));
         decimals.append(newValue);
       }
     }
@@ -2467,20 +2347,16 @@ public final class PDBFilter extends SystemFilter {
       decimals.append(StringUtils.fwFpDec(atom.getOccupancy(), 6, 2));
     } catch (IllegalArgumentException ex) {
       logger.severe(
-          format(
-              " Occupancy %f for atom %s is impossible; " + "value must be between 0 and 1",
+          format(" Occupancy %f for atom %s is impossible; " + "value must be between 0 and 1",
               atom.getOccupancy(), atom));
     }
     try {
       decimals.append(StringUtils.fwFpDec(atom.getTempFactor(), 6, 2));
     } catch (IllegalArgumentException ex) {
       String newValue = StringUtils.fwFpTrunc(atom.getTempFactor(), 6, 2);
-      logger.info(
-          format(
-              " Atom temp factor %6.2f for atom %s overflowed "
-                  + "bounds of 6.2f string specified by PDB format; truncating "
-                  + "value to %s",
-              atom.getTempFactor(), atom, newValue));
+      logger.info(format(" Atom temp factor %6.2f for atom %s overflowed "
+              + "bounds of 6.2f string specified by PDB format; truncating " + "value to %s",
+          atom.getTempFactor(), atom, newValue));
       decimals.append(newValue);
     }
     sb.replace(30, 66, decimals.toString());
@@ -2515,16 +2391,9 @@ public final class PDBFilter extends SystemFilter {
     double[] anisou = atom.getAnisou(null);
     if (anisou != null) {
       anisouSB.replace(6, 80, sb.substring(6, 80));
-      anisouSB.replace(
-          28,
-          70,
-          format(
-              "%7d%7d%7d%7d%7d%7d",
-              (int) (anisou[0] * 1e4),
-              (int) (anisou[1] * 1e4),
-              (int) (anisou[2] * 1e4),
-              (int) (anisou[3] * 1e4),
-              (int) (anisou[4] * 1e4),
+      anisouSB.replace(28, 70,
+          format("%7d%7d%7d%7d%7d%7d", (int) (anisou[0] * 1e4), (int) (anisou[1] * 1e4),
+              (int) (anisou[2] * 1e4), (int) (anisou[3] * 1e4), (int) (anisou[4] * 1e4),
               (int) (anisou[5] * 1e4)));
       bw.write(anisouSB.toString());
       bw.newLine();
@@ -2533,34 +2402,12 @@ public final class PDBFilter extends SystemFilter {
 
   /** PDB records that are recognized. */
   private enum Record {
-    ANISOU,
-    ATOM,
-    CONECT,
-    CRYST1,
-    DBREF,
-    END,
-    MODEL,
-    ENDMDL,
-    HELIX,
-    HETATM,
-    LINK,
-    MTRIX1,
-    MTRIX2,
-    MTRIX3,
-    MODRES,
-    SEQRES,
-    SHEET,
-    SSBOND,
-    REMARK
+    ANISOU, ATOM, CONECT, CRYST1, DBREF, END, MODEL, ENDMDL, HELIX, HETATM, LINK, MTRIX1, MTRIX2, MTRIX3, MODRES, SEQRES, SHEET, SSBOND, REMARK
   }
 
   /** Presently, VERSION3_3 is default, and VERSION3_2 is anything non-standard. */
   public enum PDBFileStandard {
-    VERSION2_3,
-    VERSION3_0,
-    VERSION3_1,
-    VERSION3_2,
-    VERSION3_3
+    VERSION2_3, VERSION3_0, VERSION3_1, VERSION3_2, VERSION3_3
   }
 
   public static class Mutation {
@@ -2585,10 +2432,6 @@ public final class PDBFilter extends SystemFilter {
       this.resID = resID;
       this.chainChar = chainChar;
       this.resName = newResName;
-    }
-
-    public Mutation(char chain, int res, String newName) {
-      this(res, chain, newName);
     }
   }
 }

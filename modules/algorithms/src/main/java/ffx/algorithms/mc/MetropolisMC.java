@@ -52,9 +52,8 @@ import java.util.List;
 public interface MetropolisMC {
 
   /**
-   * Returns true if the move from e1 to e2 is accepted. For molecular systems, this will mean
-   * accept if e2 is less than e1, or accept with probability of exp(-dU/kbT) if e2 is greater than
-   * e1.
+   * Returns true if the move from e1 to e2 is accepted. For molecular systems, this will mean accept
+   * if e2 is less than e1, or accept with probability of exp(-dU/kbT) if e2 is greater than e1.
    *
    * @param e1 Initial energy
    * @param e2 Trial energy
@@ -98,7 +97,7 @@ public interface MetropolisMC {
   void setTemperature(double temp);
 
   /**
-   * Returns the energy as of the last step taken (not including any extra- potential energy
+   * Returns the energy as of the last step taken (not including any extra potential energy
    * adjustments).
    *
    * @return Last step's energy

@@ -76,8 +76,8 @@ public class SinWave extends FunctionDataCurve {
    * @param n periodicity.
    */
   public SinWave(double[] x, boolean halfWidthEnds, double a, double n) {
-    int npoints = x.length;
-    points = new double[npoints];
+    int nPoints = x.length;
+    points = new double[nPoints];
     this.a = a;
     this.n = n;
     nInverse = 1.0 / n;
@@ -87,7 +87,7 @@ public class SinWave extends FunctionDataCurve {
       points[i] = sinAt(x[i]);
     }
     lb = x[0];
-    ub = x[npoints - 1];
+    ub = x[nPoints - 1];
     assertXIntegrity(x);
     this.x = new double[x.length];
     arraycopy(x, 0, this.x, 0, x.length);

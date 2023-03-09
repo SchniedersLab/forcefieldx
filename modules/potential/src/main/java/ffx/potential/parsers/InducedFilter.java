@@ -58,7 +58,7 @@ public class InducedFilter {
 
   private static final Logger logger = Logger.getLogger(InducedFilter.class.getName());
   File file;
-  private MolecularAssembly molecularAssembly;
+  private final MolecularAssembly molecularAssembly;
 
   /**
    * Constructor for InducedFilter.
@@ -86,13 +86,13 @@ public class InducedFilter {
       if (tokens.length == 0) {
         return false;
       }
-      int numatoms = parseInt(tokens[0]);
-      if (numatoms != molecularAssembly.getAtomList().size()) {
+      int numAtoms = parseInt(tokens[0]);
+      if (numAtoms != molecularAssembly.getAtomList().size()) {
         return false;
       }
       // Read the Induced Dipoles
-      double[][] x = new double[numatoms][3];
-      for (int i = 0; i < numatoms; i++) {
+      double[][] x = new double[numAtoms][3];
+      for (int i = 0; i < numAtoms; i++) {
         data = br.readLine().trim();
         tokens = data.split(" +");
         if (tokens.length != 5) {

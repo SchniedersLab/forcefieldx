@@ -114,8 +114,8 @@ public class RosenbluthChi0Move implements MCMove {
   /** {@inheritDoc} */
   @Override
   public String toString() {
-    return format(
-        "Rosenbluth Rotamer Move:\n   Res:   %s\n   Theta: %3.2f", target.toString(), theta);
+    return format("Rosenbluth Rotamer Move:\n   Res:   %s\n   Theta: %3.2f", target.toString(),
+        theta);
   }
 
   /** Update all torsions. */

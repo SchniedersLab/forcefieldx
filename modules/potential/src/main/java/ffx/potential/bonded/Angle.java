@@ -70,7 +70,7 @@ public class Angle extends BondedTerm {
    */
   public AngleType angleType;
   /**
-   * Number of hydrogens on the central atom that are not part of this Angle.
+   * Number of hydrogen on the central atom that are not part of this Angle.
    */
   public int nh = 0;
   /**
@@ -184,11 +184,9 @@ public class Angle extends BondedTerm {
     return newAngle;
   }
 
-  private static void inPlaneGrad(int threadID, AtomicDoubleArray3D grad,
-      int ia, int ib, int ic, int id,
-      Double3 vad, Double3 vbd, Double3 vcd, Double3 vp,
-      double rp2, Double3 vjp, double rjp2, Double3 vkp,
-      double rkp2, double delta, double deddt) {
+  private static void inPlaneGrad(int threadID, AtomicDoubleArray3D grad, int ia, int ib, int ic,
+      int id, Double3 vad, Double3 vbd, Double3 vcd, Double3 vp, double rp2, Double3 vjp,
+      double rjp2, Double3 vkp, double rkp2, double delta, double deddt) {
     // Chain rule terms for first derivative components.
     var lp = vkp.X(vjp);
     var lpr = max(lp.length(), 0.000001);
@@ -273,9 +271,9 @@ public class Angle extends BondedTerm {
     value = 0.0;
     var prefactor = angleType.angleUnit * rigidScale * angleType.forceConstant;
     switch (angleType.angleFunction) {
-      case SEXTIC:
+      case SEXTIC -> {
         switch (angleType.angleMode) {
-          case NORMAL:
+          case NORMAL -> {
             var vab = va.sub(vb);
             var vcb = vc.sub(vb);
             var rab2 = vab.length2();
@@ -310,8 +308,8 @@ public class Angle extends BondedTerm {
               }
               value = dv;
             }
-            break;
-          case IN_PLANE:
+          }
+          case IN_PLANE -> {
             var vd = getAtom4XYZ();
             int id = atom4.getIndex() - 1;
             var vad = va.sub(vd);
@@ -348,13 +346,12 @@ public class Angle extends BondedTerm {
               }
               value = dv;
             }
-            break;
+          }
         }
-        break;
-      case HARMONIC:
-      default:
+      }
+      case HARMONIC -> {
         switch (angleType.angleMode) {
-          case NORMAL:
+          case NORMAL -> {
             var vab = va.sub(vb);
             var vcb = vc.sub(vb);
             var rab2 = vab.length2();
@@ -379,8 +376,8 @@ public class Angle extends BondedTerm {
               }
               value = dv;
             }
-            break;
-          case IN_PLANE:
+          }
+          case IN_PLANE -> {
             var vd = getAtom4XYZ();
             var id = atom4.getIndex() - 1;
             var vad = va.sub(vd);
@@ -407,9 +404,9 @@ public class Angle extends BondedTerm {
               }
               value = dv;
             }
-            break;
+          }
         }
-        break;
+      }
     }
     return energy;
   }
@@ -457,7 +454,7 @@ public class Angle extends BondedTerm {
   public void setAngleType(AngleType a) {
     angleType = a;
 
-    // Count the number of hydrogens attached to the central atom, but that are not part of the
+    // Count the number of hydrogen attached to the central atom, but that are not part of the
     // angle.
     List<Bond> ba = atoms[1].getBonds();
     nh = 0;
@@ -470,7 +467,7 @@ public class Angle extends BondedTerm {
       }
     }
 
-    // Some angle bending parameters are generic for any number of hydrogens
+    // Some angle bending parameters are generic for any number of hydrogen
     while (angleType.angle.length <= nh) {
       nh--;
     }
@@ -499,36 +496,17 @@ public class Angle extends BondedTerm {
    */
   public void log() {
     switch (angleType.angleMode) {
-      case NORMAL:
-        logger.info(
-            format(
-                " %-8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f",
-                "Angle",
-                atoms[0].getIndex(),
-                atoms[0].getAtomType().name,
-                atoms[1].getIndex(),
-                atoms[1].getAtomType().name,
-                atoms[2].getIndex(),
-                atoms[2].getAtomType().name,
-                angleType.angle[nh],
-                value,
-                energy));
-        break;
-      case IN_PLANE:
-        logger.info(
-            format(
-                " %-8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f",
-                "Angle-IP",
-                atoms[0].getIndex(),
-                atoms[0].getAtomType().name,
-                atoms[1].getIndex(),
-                atoms[1].getAtomType().name,
-                atoms[2].getIndex(),
-                atoms[2].getAtomType().name,
-                angleType.angle[nh],
-                value,
-                energy));
-        break;
+      case NORMAL -> logger.info(format(" %-8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle",
+          atoms[0].getIndex(), atoms[0].getAtomType().name,
+          atoms[1].getIndex(), atoms[1].getAtomType().name,
+          atoms[2].getIndex(), atoms[2].getAtomType().name,
+          angleType.angle[nh], value, energy));
+      case IN_PLANE ->
+          logger.info(format(" %-8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle-IP",
+              atoms[0].getIndex(), atoms[0].getAtomType().name,
+              atoms[1].getIndex(), atoms[1].getAtomType().name,
+              atoms[2].getIndex(), atoms[2].getAtomType().name,
+              angleType.angle[nh], value, energy));
     }
   }
 
@@ -552,7 +530,7 @@ public class Angle extends BondedTerm {
   /**
    * {@inheritDoc}
    *
-   * <p>Overidden toString Method returns the Term's id.
+   * <p>Overridden toString Method returns the Term's id.
    */
   @Override
   public String toString() {
@@ -568,7 +546,7 @@ public class Angle extends BondedTerm {
     try {
       return atom4.getXYZ();
     } catch (Exception e) {
-      logger.info(" Atom 4 not found for angle: " + toString());
+      logger.info(" Atom 4 not found for angle: " + this);
       for (var atom : atoms) {
         logger.info(" Atom: " + atom.toString());
         logger.info(" Type: " + atom.getAtomType().toString());
@@ -593,8 +571,8 @@ public class Angle extends BondedTerm {
    * Finds the common bond between <b>this</b> angle and another
    *
    * @param a An Angle that may have a common bond with <b>this</b> angle
-   * @return The common Bond between this Angle and Angle a, or null if this == a or no common bond
-   *     exists
+   * @return The common Bond between this Angle and Angle <b>a</b>, or null if this == a or no common
+   *     bond exists.
    */
   Bond getCommonBond(Angle a) {
     // Comparing an angle to itself returns null

@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.potential.nonbonded;
 
-import static ffx.potential.MolecularAssembly.atomIndexing;
 import static ffx.potential.nonbonded.pme.EwaldParameters.DEFAULT_EWALD_COEFFICIENT;
 import static ffx.potential.parameters.ForceField.ELEC_FORM.PAM;
 import static ffx.potential.parameters.ForceField.toEnumForm;
@@ -1365,7 +1364,7 @@ public class ParticleMeshEwald implements LambdaInterface {
       alchemicalParameters.vaporCrystal.setAperiodic(true);
       NeighborList vacuumNeighborList = new NeighborList(null,
           alchemicalParameters.vaporCrystal, atoms, vacuumOff, 2.0, parallelTeam);
-      vacuumNeighborList.setIntermolecular(false, molecule);
+      vacuumNeighborList.setIntermolecular(false);
 
       alchemicalParameters.vaporLists = new int[1][nAtoms][];
       double[][] coords = new double[1][nAtoms * 3];
@@ -1421,7 +1420,7 @@ public class ParticleMeshEwald implements LambdaInterface {
       alchemicalParameters.vaporCrystal.setAperiodic(true);
       NeighborList vacuumNeighborList = new NeighborList(null,
           alchemicalParameters.vaporCrystal, atoms, Double.POSITIVE_INFINITY, 2.0, parallelTeam);
-      vacuumNeighborList.setIntermolecular(false, molecule);
+      vacuumNeighborList.setIntermolecular(false);
 
       alchemicalParameters.vaporLists = new int[1][nAtoms][];
       double[][] coords = new double[1][nAtoms * 3];
@@ -2516,8 +2515,8 @@ public class ParticleMeshEwald implements LambdaInterface {
     for (int i = 0; i < nAtoms; i++) {
       Atom a = atoms[i];
       if (a.getIndex() - 1 != i) {
-        logger.info(format(" PME Index i: %d, %s Index: %d\n Atom: %s",
-            i, atomIndexing, a.getIndex(), a));
+        logger.info(format(" PME Index: %d Atom Index: %d\n Atom: %s",
+            i, a.getIndex() - 1, a));
         logger.severe(" Atom indexing is not consistent in PME.");
       }
     }

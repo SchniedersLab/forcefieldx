@@ -46,7 +46,6 @@ import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
 import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Atom.Indexing;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.MSGroup;
 import ffx.potential.bonded.MSNode;
@@ -103,14 +102,9 @@ import org.jogamp.vecmath.Vector3d;
  */
 public class MolecularAssembly extends MSGroup {
 
-  /** Constant <code>atomIndexing</code> */
-  public static final Indexing atomIndexing = Indexing.XYZ;
-
   private static final Logger logger = Logger.getLogger(MolecularAssembly.class.getName());
   private static final double[] a = new double[3];
-  /** Persistent index parallel to xyzIndex. */
-  public static int persistentAtomIndexer = 1;
-
+  private Character alternateLocation = ' ';
   private final List<String> headerLines = new ArrayList<>();
   // Data Nodes
   private final MSNode ions = new MSNode("Ions");
@@ -120,9 +114,12 @@ public class MolecularAssembly extends MSGroup {
   private final MSNode molecules = new MSNode("Hetero Molecules");
   private final HashMap<String, Molecule> moleculeHashMap = new HashMap<>();
   private final List<BranchGroup> myNewShapes = new ArrayList<>();
-  protected ForceField forceField;
   // MolecularAssembly member variables
+  protected ForceField forceField;
+  // The File that was read to create this MolecularAssembly.
   private File file;
+  // The File to use for writing archives.
+  private File archiveFile;
   private ForceFieldEnergy potentialEnergy;
   private CompositeConfiguration properties;
   private Vector3d offset;
@@ -184,6 +181,22 @@ public class MolecularAssembly extends MSGroup {
   public MolecularAssembly(String name, MSNode Polymers, CompositeConfiguration properties) {
     this(name, Polymers);
     this.properties = properties;
+  }
+
+  /**
+   * Set the alternate location.
+   * @param alternateLocation The alternate location.
+   */
+  public void setAlternateLocation(Character alternateLocation) {
+    this.alternateLocation = alternateLocation;
+  }
+
+  /**
+   * Get the alternate location.
+   * @return The alternate location.
+   */
+  public Character getAlternateLocation() {
+    return alternateLocation;
   }
 
   /**
@@ -815,15 +828,6 @@ public class MolecularAssembly extends MSGroup {
   }
 
   /**
-   * getAltLocations
-   *
-   * @return an array of {@link java.lang.String} objects.
-   */
-  public String[] getAltLocations() {
-    return null;
-  }
-
-  /**
    * Return an Array of all atoms in the System.
    *
    * @return an array of {@link ffx.potential.bonded.Atom} objects.
@@ -1069,13 +1073,36 @@ public class MolecularAssembly extends MSGroup {
   /**
    * Setter for the field <code>file</code>.
    *
-   * @param f a {@link java.io.File} object.
+   * @param file a {@link java.io.File} object.
    */
-  public void setFile(File f) {
-    if (f == null) {
+  public void setFile(File file) {
+    if (file == null) {
+      // Keep the current file.
       return;
     }
-    file = f;
+    this.file = file;
+  }
+
+  /**
+   * Getter for the field <code>archiveFile</code>.
+   *
+   * @return a {@link java.io.File} object.
+   */
+  public File getArchiveFile() {
+    return archiveFile;
+  }
+
+  /**
+   * Set the File for writing out an archive.
+   *
+   * @param archiveFile The archive file.
+   */
+  public void setArchiveFile(File archiveFile) {
+    if (archiveFile == null) {
+      // Keep the current archive file.
+      return;
+    }
+    this.archiveFile = archiveFile;
   }
 
   /**
@@ -1173,11 +1200,12 @@ public class MolecularAssembly extends MSGroup {
     int current = 0;
     // Loop over polymers together
     Polymer[] polymers = getChains();
-    if (polymers != null && polymers.length > 0) {
+    if (polymers != null) {
       for (Polymer polymer : polymers) {
         List<Atom> atomList = polymer.getAtomList();
         for (Atom atom : atomList) {
           moleculeNumber[atom.getXyzIndex() - 1] = current;
+          atom.setMoleculeNumber(current);
         }
         current++;
       }
@@ -1198,6 +1226,7 @@ public class MolecularAssembly extends MSGroup {
       List<Atom> atomList = wat.getAtomList();
       for (Atom atom : atomList) {
         moleculeNumber[atom.getXyzIndex() - 1] = current;
+        atom.setMoleculeNumber(current);
       }
       current++;
     }
@@ -1207,6 +1236,7 @@ public class MolecularAssembly extends MSGroup {
       List<Atom> atomList = ion.getAtomList();
       for (Atom atom : atomList) {
         moleculeNumber[atom.getXyzIndex() - 1] = current;
+        atom.setMoleculeNumber(current);
       }
       current++;
     }
@@ -1992,7 +2022,9 @@ public class MolecularAssembly extends MSGroup {
       boolean isWater = false;
       boolean isIon = false;
       if (StringUtils.looksLikeWater(resName)) {
-        resName = StringUtils.STANDARD_WATER_NAME;
+        if (!resName.equalsIgnoreCase("DOD")) {
+          resName = StringUtils.STANDARD_WATER_NAME;
+        }
         isWater = true;
       } else if (StringUtils.looksLikeIon(resName)) {
         resName = StringUtils.tryParseIon(resName);
@@ -2002,9 +2034,7 @@ public class MolecularAssembly extends MSGroup {
       m = new Molecule(resName, resNum, chainID, segID);
       m.addMSNode(atom);
       if (resName == null) {
-        logger.warning(
-            format(
-                " Attempting to create a molecule %s with a null name on atom %s! Defaulting to creating a generic Molecule.",
+        logger.warning(format(" Attempting to create a molecule %s with a null name on atom %s! Defaulting to creating a generic Molecule.",
                 m, atom));
         molecules.add(m);
         moleculeHashMap.put(key, m);

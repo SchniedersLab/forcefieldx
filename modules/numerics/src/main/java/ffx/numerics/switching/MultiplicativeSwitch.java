@@ -38,15 +38,14 @@
 package ffx.numerics.switching;
 
 import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.pow;
 
 /**
  * The 6 coefficients of the multiplicative polynomial switch are unique given the distances "a" and
  * "b". They are found by solving a system of 6 equations, which define the boundary conditions of
- * the switch. <br>
- * f(a) = 1 <br>
- * f'(a) = f"(a) = 0 <br>
- * f(b) = f'(b) = f"(b) = 0
+ * the switch. <br> f(a) = 1 <br> f'(a) = f"(a) = 0 <br> f(b) = f'(b) = f"(b) = 0
  *
  * @author Michael J. Schnieders
  */
@@ -92,13 +91,13 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
     double a2 = a * a;
     double b2 = b * b;
 
-    double denom = pow(b - a, 5.0);
-    c0 = b * b2 * (b2 - 5.0 * a * b + 10.0 * a2) / denom;
-    c1 = -30.0 * a2 * b2 / denom;
-    c2 = 30.0 * b * a * (b + a) / denom;
-    c3 = -10.0 * (a2 + 4.0 * a * b + b2) / denom;
-    c4 = 15.0 * (a + b) / denom;
-    c5 = -6.0 / denom;
+    double denominator = pow(b - a, 5.0);
+    c0 = b * b2 * (b2 - 5.0 * a * b + 10.0 * a2) / denominator;
+    c1 = -30.0 * a2 * b2 / denominator;
+    c2 = 30.0 * b * a * (b + a) / denominator;
+    c3 = -10.0 * (a2 + 4.0 * a * b + b2) / denominator;
+    c4 = 15.0 * (a + b) / denominator;
+    c5 = -6.0 / denominator;
     twoC2 = 2.0 * c2;
     threeC3 = 3.0 * c3;
     fourC4 = 4.0 * c4;
@@ -151,7 +150,7 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
   /** {@inheritDoc} */
   @Override
   public double getOneBound() {
-    return a > b ? a : b;
+    return max(a, b);
   }
 
   /**
@@ -175,7 +174,7 @@ public class MultiplicativeSwitch implements UnivariateSwitchingFunction {
   /** {@inheritDoc} */
   @Override
   public double getZeroBound() {
-    return b < a ? b : a;
+    return min(b, a);
   }
 
   /** {@inheritDoc} */

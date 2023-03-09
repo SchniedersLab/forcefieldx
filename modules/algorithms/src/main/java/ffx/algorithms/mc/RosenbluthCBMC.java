@@ -98,13 +98,8 @@ public class RosenbluthCBMC implements MonteCarloListener {
    * @param thermostat a {@link ffx.algorithms.dynamics.thermostats.Thermostat} object.
    * @param writeSnapshots a boolean.
    */
-  public RosenbluthCBMC(
-      MolecularAssembly molecularAssembly,
-      ForceFieldEnergy ffe,
-      Thermostat thermostat,
-      List<Residue> targets,
-      int mcFrequency,
-      int trialSetSize,
+  public RosenbluthCBMC(MolecularAssembly molecularAssembly, ForceFieldEnergy ffe,
+      Thermostat thermostat, List<Residue> targets, int mcFrequency, int trialSetSize,
       boolean writeSnapshots) {
     this.targets = targets;
     this.mcFrequency = mcFrequency;
@@ -121,7 +116,8 @@ public class RosenbluthCBMC implements MonteCarloListener {
 
     for (int i = targets.size() - 1; i >= 0; i--) {
       AminoAcid3 name = AminoAcidUtils.AminoAcid3.valueOf(targets.get(i).getName());
-      if (name == AminoAcidUtils.AminoAcid3.GLY || name == AminoAcidUtils.AminoAcid3.PRO || name == AminoAcidUtils.AminoAcid3.ALA) {
+      if (name == AminoAcidUtils.AminoAcid3.GLY || name == AminoAcidUtils.AminoAcid3.PRO
+          || name == AminoAcidUtils.AminoAcid3.ALA) {
         targets.remove(i);
       }
     }
@@ -142,16 +138,8 @@ public class RosenbluthCBMC implements MonteCarloListener {
     // Select a target residue.
     int index = ThreadLocalRandom.current().nextInt(targets.size());
     Residue target = targets.get(index);
-    RosenbluthChiAllMove cbmcMove =
-        new RosenbluthChiAllMove(
-            molecularAssembly,
-            target,
-            trialSetSize,
-            forceFieldEnergy,
-            temperature,
-            writeSnapshots,
-            numMovesProposed,
-            true);
+    RosenbluthChiAllMove cbmcMove = new RosenbluthChiAllMove(molecularAssembly, target, trialSetSize,
+        forceFieldEnergy, temperature, writeSnapshots, numMovesProposed, true);
     if (cbmcMove.getMode() == RosenbluthChiAllMove.MODE.CHEAP) {
       return cbmcMove.wasAccepted();
     }
@@ -181,16 +169,8 @@ public class RosenbluthCBMC implements MonteCarloListener {
   public boolean controlStep() {
     int index = ThreadLocalRandom.current().nextInt(targets.size());
     Residue target = targets.get(index);
-    RosenbluthChiAllMove cbmcMove =
-        new RosenbluthChiAllMove(
-            molecularAssembly,
-            target,
-            -1,
-            forceFieldEnergy,
-            temperature,
-            false,
-            numMovesProposed,
-            true);
+    RosenbluthChiAllMove cbmcMove = new RosenbluthChiAllMove(molecularAssembly, target, -1,
+        forceFieldEnergy, temperature, false, numMovesProposed, true);
     return cbmcMove.wasAccepted();
   }
 

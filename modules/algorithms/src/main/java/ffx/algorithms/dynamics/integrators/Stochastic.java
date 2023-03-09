@@ -42,6 +42,7 @@ import static ffx.utilities.Constants.kB;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import ffx.potential.SystemState;
 import ffx.numerics.Potential;
 import java.util.Random;
 
@@ -64,9 +65,9 @@ public class Stochastic extends Integrator {
   /** Random number generator. */
   private final Random random;
   /** Per degree of freedom friction. */
-  private double[] vFriction;
+  private final double[] vFriction;
   /** Per degree of freedom random velocity change. */
-  private double[] vRandom;
+  private final double[] vRandom;
   /** Inverse friction coefficient. */
   private double inverseFriction;
   /** Friction coefficient multiplied by time step. */
@@ -80,21 +81,17 @@ public class Stochastic extends Integrator {
    * Constructor for Stochastic Dynamics.
    *
    * @param friction Friction coefficient.
-   * @param nVariables Number of variables.
-   * @param x Variables current value.
-   * @param v Current velocities.
-   * @param a Current accelerations.
-   * @param mass Mass of the variables.
+   * @param state The MDState to operate on.
    */
-  public Stochastic(
-      double friction, int nVariables, double[] x, double[] v, double[] a, double[] mass) {
-    super(nVariables, x, v, a, mass);
+  public Stochastic(double friction, SystemState state) {
+    super(state);
     this.friction = friction;
     if (friction >= 0) {
       inverseFriction = 1.0 / friction;
     } else {
       inverseFriction = Double.POSITIVE_INFINITY;
     }
+    int nVariables = state.getNumberOfVariables();
     vFriction = new double[nVariables];
     vRandom = new double[nVariables];
     fdt = friction * dt;
@@ -112,7 +109,10 @@ public class Stochastic extends Integrator {
   @Override
   public void postForce(double[] gradient) {
     copyAccelerationToPrevious();
-    for (int i = 0; i < nVariables; i++) {
+    double[] a = state.a();
+    double[] v = state.v();
+    double[] mass = state.mass();
+    for (int i = 0; i < state.getNumberOfVariables(); i++) {
       a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
       v[i] += (0.5 * a[i] * vFriction[i] + vRandom[i]);
     }
@@ -126,7 +126,11 @@ public class Stochastic extends Integrator {
    */
   @Override
   public void preForce(Potential potential) {
-    for (int i = 0; i < nVariables; i++) {
+    double[] mass = state.mass();
+    double[] x = state.x();
+    double[] v = state.v();
+    double[] a = state.a();
+    for (int i = 0; i < state.getNumberOfVariables(); i++) {
       double m = mass[i];
       double pfric;
       double afric;
@@ -161,45 +165,18 @@ public class Stochastic extends Integrator {
           double fdt8 = fdt * fdt7;
           double fdt9 = fdt * fdt8;
           afric =
-              (fdt2 / 2.0
-                      - fdt3 / 6.0
-                      + fdt4 / 24.0
-                      - fdt5 / 120.0
-                      + fdt6 / 720.0
-                      - fdt7 / 5040.0
-                      + fdt8 / 40320.0
-                      - fdt9 / 362880.0)
-                  / (friction * friction);
+              (fdt2 / 2.0 - fdt3 / 6.0 + fdt4 / 24.0 - fdt5 / 120.0 + fdt6 / 720.0 - fdt7 / 5040.0
+                  + fdt8 / 40320.0 - fdt9 / 362880.0) / (friction * friction);
           vFriction[i] = dt - friction * afric;
           pfric = 1.0 - friction * vFriction[i];
           pterm =
-              2.0 * fdt3 / 3.0
-                  - fdt4 / 2.0
-                  + 7.0 * fdt5 / 30.0
-                  - fdt6 / 12.0
-                  + 31.0 * fdt7 / 1260.0
-                  - fdt8 / 160.0
-                  + 127.0 * fdt9 / 90720.0;
-          vterm =
-              2.0 * fdt
-                  - 2.0 * fdt2
-                  + 4.0 * fdt3 / 3.0
-                  - 2.0 * fdt4 / 3.0
-                  + 4.0 * fdt5 / 15.0
-                  - 4.0 * fdt6 / 45.0
-                  + 8.0 * fdt7 / 315.0
-                  - 2.0 * fdt8 / 315.0
-                  + 4.0 * fdt9 / 2835.0;
-          rho =
-              sqrt(3.0)
-                  * (0.5
-                      - fdt / 16.0
-                      - 17.0 * fdt2 / 1280.0
-                      + 17.0 * fdt3 / 6144.0
-                      + 40967.0 * fdt4 / 34406400.0
-                      - 57203.0 * fdt5 / 275251200.0
-                      - 1429487.0 * fdt6 / 13212057600.0
-                      + 1877509.0 * fdt7 / 105696460800.0);
+              2.0 * fdt3 / 3.0 - fdt4 / 2.0 + 7.0 * fdt5 / 30.0 - fdt6 / 12.0 + 31.0 * fdt7 / 1260.0
+                  - fdt8 / 160.0 + 127.0 * fdt9 / 90720.0;
+          vterm = 2.0 * fdt - 2.0 * fdt2 + 4.0 * fdt3 / 3.0 - 2.0 * fdt4 / 3.0 + 4.0 * fdt5 / 15.0
+              - 4.0 * fdt6 / 45.0 + 8.0 * fdt7 / 315.0 - 2.0 * fdt8 / 315.0 + 4.0 * fdt9 / 2835.0;
+          rho = sqrt(3.0) * (0.5 - fdt / 16.0 - 17.0 * fdt2 / 1280.0 + 17.0 * fdt3 / 6144.0
+              + 40967.0 * fdt4 / 34406400.0 - 57203.0 * fdt5 / 275251200.0
+              - 1429487.0 * fdt6 / 13212057600.0 + 1877509.0 * fdt7 / 105696460800.0);
         }
         // Compute random terms to thermostat the nonzero friction case.
         double ktm = kB * temperature / m;
@@ -216,22 +193,6 @@ public class Stochastic extends Integrator {
       // then find new atom positions and half-step velocities via Verlet recursion.
       x[i] += (v[i] * vFriction[i] + a[i] * afric + prand);
       v[i] = v[i] * pfric + 0.5 * a[i] * vFriction[i];
-    }
-  }
-
-  /**
-   * {@inheritDoc}
-   *
-   * <p>Update the integrator to be consistent with chemical perturbations. This overrides the
-   * default implementation so that the vFriction and vRandom arrays can be resized.
-   */
-  @Override
-  public void setNumberOfVariables(
-      int nVariables, double[] x, double[] v, double[] a, double[] aPrevious, double[] mass) {
-    super.setNumberOfVariables(nVariables, x, v, a, aPrevious, mass);
-    if (nVariables > vFriction.length) {
-      vFriction = new double[nVariables];
-      vRandom = new double[nVariables];
     }
   }
 

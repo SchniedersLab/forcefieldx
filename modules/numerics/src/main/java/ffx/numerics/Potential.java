@@ -175,8 +175,8 @@ public interface Potential {
   double[] getScaling();
 
   /**
-   * Scale the problem. A good choice for optimization is the square root of the median eigenvalue
-   * of a typical Hessian.
+   * Scale the problem. A good choice for optimization is the square root of the median eigenvalue of
+   * a typical Hessian.
    *
    * @param scaling The scaling value to use for each variable.
    * @since 1.0
@@ -216,7 +216,7 @@ public interface Potential {
   double[] getVelocity(double[] velocity);
 
   /**
-   * Default method to unscale coordinates.
+   * Default method to scale coordinates.
    *
    * @param x Input parameters.
    */
@@ -284,8 +284,8 @@ public interface Potential {
   }
 
   /**
-   * Writes additional restart information, if any (e.g. OST histogram and lambda restart files).
-   * The recursive flag should generally only be true for the top-level Potential called.
+   * Writes additional restart information, if any (e.g. OST histogram and lambda restart files). The
+   * recursive flag should generally only be true for the top-level Potential called.
    *
    * @param recursive Whether to have all underlying Potentials write additional restart info.
    */

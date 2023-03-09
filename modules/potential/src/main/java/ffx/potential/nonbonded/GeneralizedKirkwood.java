@@ -841,7 +841,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
     gkEnergyRegion = new GKEnergyRegion(threadCount, polarization, nonPolarModel, surfaceTension,
         probe, electric, soluteDielectric, solventDielectric, gkc, gkQI);
 
-    logger.info("  Continuum Solvation ");
+    if (gkQI) {
+      logger.info("  Continuum Solvation (QI)");
+    } else {
+      logger.info("  Continuum Solvation");
+    }
     logger.info(format("   Radii:                              %8s", soluteRadiiType));
     if (cutoff != Double.POSITIVE_INFINITY) {
       logger.info(format("   Generalized Kirkwood Cut-Off:       %8.4f (A)", cutoff));

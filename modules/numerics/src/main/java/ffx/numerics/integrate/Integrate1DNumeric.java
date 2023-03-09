@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.numerics.integrate;
 
+import static java.lang.String.format;
+
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
@@ -97,35 +99,26 @@ public class Integrate1DNumeric {
     int increment = 4;
 
     int nBins = (ub - lb) / increment;
-    int lowerNeglected;
-    int upperNeglected;
+    int lowerNeglected = 0;
+    int upperNeglected = 0;
 
     switch (side) {
-      case RIGHT:
+      case RIGHT -> {
         for (int i = ub; i > (lb + increment - 1); i -= increment) {
-          area +=
-              (7 * points[i]
-                  + 32 * points[i - 1]
-                  + 12 * points[i - 2]
-                  + 32 * points[i - 3]
-                  + 7 * points[i - 4]);
+          area += (7 * points[i] + 32 * points[i - 1] + 12 * points[i - 2]
+              + 32 * points[i - 3] + 7 * points[i - 4]);
         }
         lowerNeglected = lb;
         upperNeglected = ub - (increment * nBins);
-        break;
-      case LEFT:
-      default:
+      }
+      case LEFT -> {
         for (int i = lb; i < (ub - increment + 1); i += increment) {
-          area +=
-              (7 * points[i]
-                  + 32 * points[i + 1]
-                  + 12 * points[i + 2]
-                  + 32 * points[i + 3]
-                  + 7 * points[i + 4]);
+          area += (7 * points[i] + 32 * points[i + 1] + 12 * points[i + 2]
+              + 32 * points[i + 3] + 7 * points[i + 4]);
         }
         lowerNeglected = lb + (increment * nBins);
         upperNeglected = ub;
-        break;
+      }
     }
     area *= BOOLE_FACTOR;
     area *= width;
@@ -135,8 +128,8 @@ public class Integrate1DNumeric {
   }
 
   /**
-   * Numerically integrates a data set using Boole's rule. The sequential version is preferred
-   * unless necessary.
+   * Numerically integrates a data set using Boole's rule. The sequential version is preferred unless
+   * necessary.
    *
    * @param data Data set to integrate
    * @param side Side to integrate from
@@ -156,8 +149,8 @@ public class Integrate1DNumeric {
   }
 
   /**
-   * Numerically integrates a data set, in bounds lb-ub inclusive, using Boole's rule. The
-   * sequential version is preferred unless necessary.
+   * Numerically integrates a data set, in bounds lb-ub inclusive, using Boole's rule. The sequential
+   * version is preferred unless necessary.
    *
    * @param data Data set to integrate
    * @param side Side to integrate from
@@ -166,51 +159,43 @@ public class Integrate1DNumeric {
    * @return Area of integral
    */
   public static double boolesParallel(DataSet data, IntegrationSide side, int lb, int ub) {
-    double area = 0;
+    double area = 0.0;
     double width = data.binWidth();
     double[] points = data.getAllFxPoints();
     int increment = 4;
 
     int nBins = (ub - lb) / increment;
-    int lowerNeglected;
-    int upperNeglected;
+    int lowerNeglected = 0;
+    int upperNeglected = 0;
 
     switch (side) {
-      case RIGHT:
+      case RIGHT -> {
         lowerNeglected = lb;
         upperNeglected = ub - (increment * nBins);
         area =
-            IntStream.range(0, nBins)
-                .parallel()
-                .mapToDouble(
-                    (int i) -> {
-                      int fromPoint = ub - (increment * i);
-                      return (7 * points[fromPoint - 4]
-                          + 32 * points[fromPoint - 3]
-                          + 12 * points[fromPoint - 2]
-                          + 32 * points[fromPoint - 1]
-                          + 7 * points[fromPoint]);
-                    })
-                .sum();
-        break;
-      case LEFT:
-      default:
+            IntStream.range(0, nBins).parallel().mapToDouble(
+                (int i) -> {
+                  int fromPoint = ub - (increment * i);
+                  return (7 * points[fromPoint - 4]
+                      + 32 * points[fromPoint - 3]
+                      + 12 * points[fromPoint - 2]
+                      + 32 * points[fromPoint - 1]
+                      + 7 * points[fromPoint]);
+                }).sum();
+      }
+      case LEFT -> {
         lowerNeglected = lb + (increment * nBins);
         upperNeglected = ub;
-        area =
-            IntStream.range(0, nBins)
-                .parallel()
-                .mapToDouble(
-                    (int i) -> {
-                      int fromPoint = lb + (increment * i);
-                      return (7 * points[fromPoint]
-                          + 32 * points[fromPoint + 1]
-                          + 12 * points[fromPoint + 2]
-                          + 32 * points[fromPoint + 3]
-                          + 7 * points[fromPoint + 4]);
-                    })
-                .sum();
-        break;
+        area = IntStream.range(0, nBins).parallel().mapToDouble(
+            (int i) -> {
+              int fromPoint = lb + (increment * i);
+              return (7 * points[fromPoint]
+                  + 32 * points[fromPoint + 1]
+                  + 12 * points[fromPoint + 2]
+                  + 32 * points[fromPoint + 3]
+                  + 7 * points[fromPoint + 4]);
+            }).sum();
+      }
     }
     area *= BOOLE_FACTOR;
     area *= width;
@@ -271,7 +256,7 @@ public class Integrate1DNumeric {
     double[] fX = data.getAllFxPoints();
     int numPoints = data.numPoints();
     double width = data.binWidth();
-    double[] vals = new double[numPoints];
+    double[] values = new double[numPoints];
 
     int lb = halfWide ? 1 : 0;
     int ub = halfWide ? numPoints - 2 : numPoints - 1;
@@ -280,81 +265,67 @@ public class Integrate1DNumeric {
     increment = Math.max(1, increment); // Deal w/ rectangle integration.
 
     switch (side) {
-      case RIGHT:
-        vals[ub] = width * fX[ub]; // Begin with rectangle.
-
-        /**
-         * For each bin, its contribution to this sub-window's value is the integral from (start to
-         * bin) minus the integral from (start to prior bin).
+      case RIGHT -> {
+        values[ub] = width * fX[ub]; // Begin with rectangle.
+        /*
+          For each bin, its contribution to this sub-window's value is the integral from (start to
+          bin) minus the integral from (start to prior bin).
          */
         for (int i = ub - 1; i >= lb; i--) {
           int fromUB = ub - i - 1;
           fromUB /= increment;
           fromUB *= increment;
           int lastBegin = ub - fromUB;
-
           double val = finishIntegration(data, side, i, lastBegin, maxType);
           val -= finishIntegration(data, side, i + 1, lastBegin, maxType);
-          vals[i] = val;
+          values[i] = val;
         }
-
-        vals[ub - 1] -= vals[ub]; // Remove double-counting at start.
-
+        values[ub - 1] -= values[ub]; // Remove double-counting at start.
         if (halfWide) {
-          switch (maxType) {
-            case RECTANGULAR:
-              vals[1] += 0.5 * width * fX[1];
-              vals[numPoints - 1] = (0.5 * width * fX[numPoints - 1]);
-              break;
-            default:
-              vals[0] = 0.25 * width * fX[0];
-              vals[1] += 0.25 * width * fX[1];
-              vals[numPoints - 2] += (0.25 * width * fX[numPoints - 2]);
-              vals[numPoints - 1] = (0.25 * width * fX[numPoints - 1]);
-              break;
+          if (maxType == IntegrationType.RECTANGULAR) {
+            values[1] += 0.5 * width * fX[1];
+            values[numPoints - 1] = (0.5 * width * fX[numPoints - 1]);
+          } else {
+            values[0] = 0.25 * width * fX[0];
+            values[1] += 0.25 * width * fX[1];
+            values[numPoints - 2] += (0.25 * width * fX[numPoints - 2]);
+            values[numPoints - 1] = (0.25 * width * fX[numPoints - 1]);
           }
         }
-        break;
-      case LEFT:
-      default:
+      } // LEFT
+      case LEFT -> {
         int shift = halfWide ? 1 : 0;
-        vals[lb] = width * fX[lb]; // Begin with rectangle.
+        values[lb] = width * fX[lb]; // Begin with rectangle.
 
-        /**
-         * For each bin, its contribution to this sub-window's value is the integral from (start to
-         * bin) minus the integral from (start to prior bin).
+        /*
+          For each bin, its contribution to this sub-window's value is the integral from (start to
+          bin) minus the integral from (start to prior bin).
          */
         for (int i = lb + 1; i <= ub; i++) {
           // Remove remainder via division-and-multiplication.
           int lastBegin = ((i - 1 - shift) / increment);
           lastBegin *= increment;
           lastBegin += shift;
-
           double val = finishIntegration(data, side, lastBegin, i, maxType);
           val -= finishIntegration(data, side, lastBegin, i - 1, maxType);
-          vals[i] = val;
+          values[i] = val;
         }
-
-        vals[lb + 1] -= vals[lb]; // Remove double-counting at start.
-
+        values[lb + 1] -= values[lb]; // Remove double-counting at start.
         if (halfWide) {
-          switch (maxType) {
-            case RECTANGULAR:
-              vals[0] = 0.5 * width * fX[0];
-              vals[numPoints - 2] += (0.5 * width * fX[numPoints - 2]);
-              break;
-            default:
-              vals[0] = 0.25 * width * fX[0];
-              vals[1] += 0.25 * width * fX[1];
-              vals[numPoints - 2] += (0.25 * width * fX[numPoints - 2]);
-              vals[numPoints - 1] = (0.25 * width * fX[numPoints - 1]);
-              break;
+          if (maxType == IntegrationType.RECTANGULAR) {
+            values[0] = 0.5 * width * fX[0];
+            values[numPoints - 2] += (0.5 * width * fX[numPoints - 2]);
+          } else {
+            values[0] = 0.25 * width * fX[0];
+            values[1] += 0.25 * width * fX[1];
+            values[numPoints - 2] += (0.25 * width * fX[numPoints - 2]);
+            values[numPoints - 1] = (0.25 * width * fX[numPoints - 1]);
           }
         }
-        break;
+      }
     }
 
-    return vals;
+    return values;
   }
 
   /**
@@ -367,25 +338,27 @@ public class Integrate1DNumeric {
    */
   public static double integrateData(DataSet data, IntegrationSide side, IntegrationType type) {
     switch (type) {
-      case RECTANGULAR:
+      case RECTANGULAR -> {
         return rectangular(data, side);
-      case TRAPEZOIDAL:
+      }
+      case TRAPEZOIDAL -> {
         return trapezoidal(data, side);
-      case SIMPSONS:
+      }
+      case SIMPSONS -> {
         return simpsons(data, side);
-      case BOOLE:
+      }
+      case BOOLE -> {
         return booles(data, side);
-      default:
-        logger.warning(
-            String.format(
-                " Integration type %s not recognized! Defaulting to Simpson's integration", type));
-        return simpsons(data, side);
+      }
     }
+    logger.warning(
+        format(" Integration type %s not recognized! Defaulting to Simpson's integration", type));
+    return simpsons(data, side);
   }
 
   /**
-   * Numerically integrates a data set using rectangular integration. Not recommended; preferably
-   * use at least trapezoidal integration.
+   * Numerically integrates a data set using rectangular integration. Not recommended; preferably use
+   * at least trapezoidal integration.
    *
    * @param data Data set to integrate
    * @param side Side to integrate from
@@ -405,8 +378,8 @@ public class Integrate1DNumeric {
   }
 
   /**
-   * Numerically integrates a data set, in bounds lb-ub inclusive, using rectangular integration.
-   * Not recommended; preferably use at least trapezoidal integration.
+   * Numerically integrates a data set, in bounds lb-ub inclusive, using rectangular integration. Not
+   * recommended; preferably use at least trapezoidal integration.
    *
    * @param data Data set to integrate
    * @param side Side to integrate from
@@ -422,18 +395,18 @@ public class Integrate1DNumeric {
     assert ub < points.length;
 
     switch (side) {
-      case RIGHT:
+      case RIGHT -> {
         for (int i = ub; i > lb; i--) {
           area += (width * points[i]);
         }
-        break;
-      case LEFT:
-      default:
+      }
+      case LEFT -> {
         for (int i = lb; i < ub; i++) {
           area += width * points[i];
         }
-        break;
+      }
     }
+
     return area;
   }
 
@@ -448,16 +421,16 @@ public class Integrate1DNumeric {
   public static double rectangularEnds(DataSet data, IntegrationSide side) {
     double width = 0.5 * data.binWidth();
     double area = 0;
-    int npts = data.numPoints();
+    int nPoints = data.numPoints();
     switch (side) {
-      case LEFT:
+      case LEFT -> {
         area = data.getFxPoint(0) * width;
-        area += (data.getFxPoint(npts - 2) * width);
-        break;
-      case RIGHT:
+        area += (data.getFxPoint(nPoints - 2) * width);
+      }
+      case RIGHT -> {
         area = data.getFxPoint(1) * width;
-        area += (data.getFxPoint(npts - 1) * width);
-        break;
+        area += (data.getFxPoint(nPoints - 1) * width);
+      }
     }
     return area;
   }
@@ -485,9 +458,9 @@ public class Integrate1DNumeric {
   }
 
   /**
-   * Numerically integrates a data set, in bounds lb-ub inclusive, using rectangular integration.
-   * Not recommended; preferably use at least trapezoidal integration. Also, prefer parallelized
-   * versions unless necessary.
+   * Numerically integrates a data set, in bounds lb-ub inclusive, using rectangular integration. Not
+   * recommended; preferably use at least trapezoidal integration. Also, prefer parallelized versions
+   * unless necessary.
    *
    * @param data Data set to integrate
    * @param side Side to integrate from
@@ -505,13 +478,8 @@ public class Integrate1DNumeric {
       ++ub;
       ++lb;
     }
-    return IntStream.range(lb, ub)
-        .parallel()
-        .mapToDouble(
-            (int i) -> {
-              return points[i] * width;
-            })
-        .sum();
+    return IntStream.range(lb, ub).parallel().mapToDouble(
+        (int i) -> points[i] * width).sum();
   }
 
   /**
@@ -550,26 +518,26 @@ public class Integrate1DNumeric {
     int increment = 2;
 
     int nBins = (ub - lb) / increment;
-    int lowerNeglected;
-    int upperNeglected;
+    int lowerNeglected = 0;
+    int upperNeglected = 0;
 
     switch (side) {
-      case RIGHT:
+      case RIGHT -> {
         for (int i = ub; i > (lb + increment - 1); i -= increment) {
           area += points[i] + (4 * points[i - 1]) + points[i - 2];
         }
         lowerNeglected = lb;
         upperNeglected = ub - (increment * nBins);
-        break;
-      case LEFT:
-      default:
+      }
+      case LEFT -> {
         for (int i = lb; i < (ub - increment + 1); i += increment) {
           area += points[i] + (4 * points[i + 1]) + points[i + 2];
         }
         lowerNeglected = lb + (increment * nBins);
         upperNeglected = ub;
-        break;
+      }
     }
+
     area *= ONE_THIRD;
     area *= width;
 
@@ -578,8 +546,8 @@ public class Integrate1DNumeric {
   }
 
   /**
-   * Numerically integrates a data set using Boole's rule. The sequential version is preferred
-   * unless necessary.
+   * Numerically integrates a data set using Boole's rule. The sequential version is preferred unless
+   * necessary.
    *
    * @param data Data set to integrate
    * @param side Side to integrate from
@@ -613,47 +581,33 @@ public class Integrate1DNumeric {
     double width = data.binWidth();
     double[] points = data.getAllFxPoints();
     int increment = 2;
-
     int nBins = (ub - lb) / increment;
-    int lowerNeglected;
-    int upperNeglected;
+    int lowerNeglected = 0;
+    int upperNeglected = 0;
 
     switch (side) {
-      case RIGHT:
+      case RIGHT -> {
         lowerNeglected = lb;
         upperNeglected = ub - (increment * nBins);
-        area =
-            IntStream.range(0, nBins)
-                .parallel()
-                .mapToDouble(
-                    (int i) -> {
-                      int fromPoint = ub - (increment * i);
-                      return (points[fromPoint - 2]
-                          + 4 * points[fromPoint - 1]
-                          + points[fromPoint]);
-                    })
-                .sum();
-        break;
-      case LEFT:
-      default:
-        area =
-            IntStream.range(0, nBins)
-                .parallel()
-                .mapToDouble(
-                    (int i) -> {
-                      int fromPoint = lb + (increment * i);
-                      return (points[fromPoint]
-                          + 4 * points[fromPoint + 1]
-                          + points[fromPoint + 2]);
-                    })
-                .sum();
+        area = IntStream.range(0, nBins).parallel().mapToDouble(
+            (int i) -> {
+              int fromPoint = ub - (increment * i);
+              return (points[fromPoint - 2] + 4 * points[fromPoint - 1] + points[fromPoint]);
+            }).sum();
+      }
+      case LEFT -> {
+        area = IntStream.range(0, nBins).parallel().mapToDouble(
+            (int i) -> {
+              int fromPoint = lb + (increment * i);
+              return (points[fromPoint] + 4 * points[fromPoint + 1] + points[fromPoint + 2]);
+            }).sum();
         lowerNeglected = lb + (increment * nBins);
         upperNeglected = ub;
-        break;
+      }
     }
+
     area *= ONE_THIRD;
     area *= width;
-
     area += finishIntegration(data, side, lowerNeglected, upperNeglected, IntegrationType.SIMPSONS);
     return area;
   }
@@ -680,8 +634,8 @@ public class Integrate1DNumeric {
   }
 
   /**
-   * Numerically integrates a data set, in bounds lb-ub inclusive, using trapezoidal integration.
-   * For most data sets, Simpson's rule or Boole's rule will out-perform trapezoidal integration.
+   * Numerically integrates a data set, in bounds lb-ub inclusive, using trapezoidal integration. For
+   * most data sets, Simpson's rule or Boole's rule will out-perform trapezoidal integration.
    *
    * @param data Data set to integrate
    * @param side Side to integrate from
@@ -712,11 +666,8 @@ public class Integrate1DNumeric {
   public static double trapezoidalEnds(DataSet data, IntegrationSide side) {
     double width = 0.5 * data.binWidth();
     int nPts = data.numPoints();
-    double area =
-        data.getFxPoint(0)
-            + data.getFxPoint(1)
-            + data.getFxPoint(nPts - 2)
-            + data.getFxPoint(nPts - 1);
+    double area = data.getFxPoint(0) + data.getFxPoint(1)
+        + data.getFxPoint(nPts - 2) + data.getFxPoint(nPts - 1);
     area *= (0.5 * width);
     return area;
   }
@@ -744,9 +695,9 @@ public class Integrate1DNumeric {
   }
 
   /**
-   * Numerically integrates a data set, in bounds lb-ub inclusive, using trapezoidal integration.
-   * For most data sets, Simpson's rule or Boole's rule will out-perform trapezoidal integration.
-   * Prefer use of the sequential version unless necessary.
+   * Numerically integrates a data set, in bounds lb-ub inclusive, using trapezoidal integration. For
+   * most data sets, Simpson's rule or Boole's rule will out-perform trapezoidal integration. Prefer
+   * use of the sequential version unless necessary.
    *
    * @param data Data set to integrate
    * @param side Side to integrate from
@@ -760,24 +711,18 @@ public class Integrate1DNumeric {
 
     double area = 0.5 * points[lb];
     area += 0.5 * points[ub];
-    area +=
-        IntStream.range(lb + 1, ub)
-            .parallel()
-            .mapToDouble(
-                (int i) -> {
-                  return points[i];
-                })
-            .sum();
+    area += IntStream.range(lb + 1, ub).parallel().mapToDouble(
+        (int i) -> points[i]).sum();
     area *= width;
     return area;
   }
 
   /**
    * Integrates the remaining points after higher-order integration rules cannot evenly fit over the
-   * remaining data. For example, Boole's rule requires 5 points; if a data set has 7 points, it
-   * will integrate the first 5, but not handle the remaining 2; this method will, apply the
-   * highest-order integration rule that the remaining points (including the last one used
-   * previously) permit. In that case, it would be Simpson's rule.
+   * remaining data. For example, Boole's rule requires 5 points; if a data set has 7 points, it will
+   * integrate the first 5, but not handle the remaining 2; this method will, apply the highest-order
+   * integration rule that the remaining points (including the last one used previously) permit. In
+   * that case, it would be Simpson's rule.
    *
    * @param data Finish numerical integration on
    * @param side Integration side
@@ -797,39 +742,28 @@ public class Integrate1DNumeric {
     int nBins = totPoints / increment;
     int remainder = totPoints % increment;
 
-    IntegrateWindow intMode;
-    switch (type) {
-      case BOOLE:
-        intMode = Integrate1DNumeric::booles;
-        break;
-      case SIMPSONS:
-        intMode = Integrate1DNumeric::simpsons;
-        break;
-      case RECTANGULAR:
-        intMode = Integrate1DNumeric::rectangular;
-        break;
-      case TRAPEZOIDAL:
-      default:
-        intMode = Integrate1DNumeric::trapezoidal;
-        break;
-    }
+    IntegrateWindow intMode = switch (type) {
+      case BOOLE -> Integrate1DNumeric::booles;
+      case SIMPSONS -> Integrate1DNumeric::simpsons;
+      case RECTANGULAR -> Integrate1DNumeric::rectangular;
+      case TRAPEZOIDAL -> Integrate1DNumeric::trapezoidal;
+    };
 
     double area = 0.0;
 
     switch (side) {
-      case RIGHT:
+      case RIGHT -> {
         for (int i = ub; i > (lb - 1 + increment); i -= increment) {
           area += intMode.toArea(data, side, (i - increment), i);
         }
         ub -= (nBins * increment);
-        break;
-      case LEFT:
-      default:
+      }
+      case LEFT -> {
         for (int i = lb; i < (ub + 1 - increment); i += increment) {
           area += intMode.toArea(data, side, i, (i + increment));
         }
         lb += (nBins * increment);
-        break;
+      }
     }
 
     assert remainder == (ub - lb);
@@ -840,15 +774,8 @@ public class Integrate1DNumeric {
         area += trapezoidal(data, side, lb, ub);
         break;
       case 2:
-        area += simpsons(data, side, lb, ub);
-        break;
       case 3:
-        // Alternately implement Simpson's 3/8 4-point rule.
-        area +=
-            simpsons(
-                data, side, lb,
-                ub); // Will recursively call finishIntegration, thus getting another round of
-        // trapezoidal.
+        area += simpsons(data, side, lb, ub);
         break;
       case 4:
       default:
@@ -858,10 +785,10 @@ public class Integrate1DNumeric {
   }
 
   /**
-   * Left vs right-hand integration; left-hand integration will start from the first available
-   * point, run right as far as possible, and then clean up any remaining points using
-   * finishIntegration, while right-hand integration will start from the last available point, run
-   * left as far as possible, and then clean up any remaining points using finishIntegration.
+   * Left vs right-hand integration; left-hand integration will start from the first available point,
+   * run right as far as possible, and then clean up any remaining points using finishIntegration,
+   * while right-hand integration will start from the last available point, run left as far as
+   * possible, and then clean up any remaining points using finishIntegration.
    *
    * <p>Values: LEFT, RIGHT.
    *
@@ -896,6 +823,7 @@ public class Integrate1DNumeric {
    */
   @FunctionalInterface
   private interface IntegrateWindow {
+
     /**
      * Numerically integrates a range of x given f(x).
      *

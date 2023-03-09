@@ -1137,7 +1137,9 @@ public class DiffractionData implements DataContainer {
     StringBuilder remark = new StringBuilder();
 
     File file = version(new File(filename));
-    PDBFilter pdbFilter = new PDBFilter(file, Arrays.asList(assembly), null, null);
+    CompositeConfiguration properties = assembly[0].getProperties();
+    ForceField forceField = assembly[0].getForceField();
+    PDBFilter pdbFilter = new PDBFilter(file, Arrays.asList(assembly), forceField, properties);
 
     Date now = new Date();
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss ");

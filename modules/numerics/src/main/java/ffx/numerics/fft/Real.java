@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.numerics.fft;
 
+import static java.lang.System.arraycopy;
 import static org.apache.commons.math3.util.FastMath.PI;
 import static org.apache.commons.math3.util.FastMath.cos;
 import static org.apache.commons.math3.util.FastMath.sin;
@@ -44,26 +45,20 @@ import static org.apache.commons.math3.util.FastMath.sin;
 /**
  * Compute the FFT of real, double precision data of arbitrary length n using a Complex transform.
  *
- * @author Michal J. Schnieders<br>
- *     Derived from: <br>
- *     Bruce R. Miller bruce.miller@nist.gov <br>
+ * @author Michal J. Schnieders<br> Derived from: <br> Bruce R. Miller bruce.miller@nist.gov <br>
  *     Contribution of the National Institute of Standards and Technology, not subject to copyright.
  *     <br>
- *     Derived from:<br>
- *     GSL (Gnu Scientific Library) FFT Code by Brian Gough bjg@vvv.lanl.gov
- * @see
- *     <ul>
- *       <li>Complex
- *       <li><a href="http://dx.doi.org/10.1109/TASSP.1987.1165220" target="_blank"> Henrik V.
- *           Sorenson, Douglas L. Jones, Michael T. Heideman, and C. Sidney Burrus. Real-valued fast
- *           fourier fft algorithms. IEEE Transactions on Acoustics, Speech, and Signal Processing,
- *           ASSP-35(6):849–863, 1987. </a>
- *       <li><a href="http://www.jstor.org/stable/2003354" target="_blank">J. W. Cooley and J. W.
- *           Tukey, Mathematics of Computation 19 (90), 297 (1965) </a>
- *       <li><a href="http://en.wikipedia.org/wiki/Fast_Fourier_transform" target="_blank">FFT at
- *           Wikipedia </a>
- *     </ul>
- *
+ *     Derived from:<br> GSL (Gnu Scientific Library) FFT Code by Brian Gough bjg@vvv.lanl.gov
+ * @see <ul>
+ *           <li><a href="http://dx.doi.org/10.1109/TASSP.1987.1165220" target="_blank"> Henrik V.
+ *               Sorenson, Douglas L. Jones, Michael T. Heideman, and C. Sidney Burrus. Real-valued fast
+ *               fourier fft algorithms. IEEE Transactions on Acoustics, Speech, and Signal Processing,
+ *               ASSP-35(6):849–863, 1987. </a>
+ *           <li><a href="http://www.jstor.org/stable/2003354" target="_blank">J. W. Cooley and J. W.
+ *               Tukey, Mathematics of Computation 19 (90), 297 (1965) </a>
+ *           <li><a href="http://en.wikipedia.org/wiki/Fast_Fourier_transform" target="_blank">FFT at
+ *               Wikipedia </a>
+ *         </ul>
  * @since 1.0
  */
 public class Real {
@@ -78,7 +73,7 @@ public class Real {
   /**
    * Constructs a Complex FFT of length (n / 2) for real data of length n.
    *
-   * @param n a int.
+   * @param n the length of the real data.
    */
   public Real(int n) {
     this.n = n;
@@ -151,9 +146,7 @@ public class Real {
    * @param offset Offset to the beginning of the data.
    */
   private void unpack(double[] data, int offset) {
-    for (int i = 0; i < n; i++) {
-      work[i] = data[i + offset];
-    }
+    arraycopy(data, offset, work, 0, n);
     double wrs = cosTheta;
     double wis = -sinTheta;
     final double d0 = work[0];
@@ -194,9 +187,7 @@ public class Real {
    * @param offset Offset to the beginning of the data.
    */
   private void pack(double[] data, int offset) {
-    for (int i = 0; i < n + 2; i++) {
-      work[i] = data[i + offset];
-    }
+    arraycopy(data, offset, work, 0, n + 2);
     double wrs = cosTheta;
     double wis = sinTheta;
     double wr = 1.0;

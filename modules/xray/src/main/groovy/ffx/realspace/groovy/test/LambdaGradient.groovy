@@ -137,10 +137,6 @@ class LambdaGradient extends AlgorithmsScript {
     potential = refinementEnergy
     LambdaInterface lambdaInterface = refinementEnergy
 
-    // Turn off checks for overlapping atoms, which is expected for lambda=0.
-    ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
-    forceFieldEnergy.getCrystal().setSpecialPositionCutoff((double) 0.0)
-
     // Reset the number of variables for the case of dual topology.
     int n = potential.getNumberOfVariables()
     double[] x = new double[n]

@@ -43,7 +43,5 @@ package ffx.algorithms.dynamics.thermostats;
  * @author Michael J. Schnieders
  */
 public enum ThermostatEnum {
-  ADIABATIC,
-  BERENDSEN,
-  BUSSI
+  ADIABATIC, BERENDSEN, BUSSI
 }

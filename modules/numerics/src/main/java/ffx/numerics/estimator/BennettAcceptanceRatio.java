@@ -131,7 +131,7 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
   /**
    * BAR Enthalpy estimates
    */
-  private double[] barEnthalpy;
+  private final double[] barEnthalpy;
   /**
    * Alpha for BAR Enthalpy calculations
    */
@@ -210,15 +210,16 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
 
   /**
    * Calculates forward alpha and fbsum for BAR Enthalpy calculations
+   *
    * @param e0 Perturbed energy (to be added; evaluated at L +/- dL).
    * @param e1 Unperturbed energy (to be subtracted; evaluated at L).
    * @param len Number of energies.
    * @param c Prior best estimate of the BAR offset/free energy.
    * @param invRT 1.0 / ideal gas constant * temperature.
    */
-  private void calcAlphaForward( double[] e0, double[] e1, int len, double c, double invRT) {
+  private void calcAlphaForward(double[] e0, double[] e1, int len, double c, double invRT) {
 
-    double fsum = 0 ;
+    double fsum = 0;
     double fvsum = 0;
     double fbvsum = 0;
     double vsum = 0;
@@ -227,23 +228,24 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
       double fore = fermiFunction(invRT * (e1[i] - e0[i] - c));
       double back = fermiFunction(invRT * (e0[i] - e1[i] + c));
       fsum += fore;
-      fvsum  += fore*e0[i];
-      fbvsum  += fore*back*(e1[i]-e0[i]);
-      vsum  += e0[i];
-      fbsum  += fore*back;
+      fvsum += fore * e0[i];
+      fbvsum += fore * back * (e1[i] - e0[i]);
+      vsum += e0[i];
+      fbsum += fore * back;
     }
-    alpha = fvsum - (fsum*(vsum/len)) + fbvsum;
+    alpha = fvsum - (fsum * (vsum / len)) + fbvsum;
   }
 
   /**
    * Calculates backward alpha and fbsum for  BAR Enthalpy calculations
+   *
    * @param e0 Perturbed energy (to be added; evaluated at L +/- dL).
    * @param e1 Unperturbed energy (to be subtracted; evaluated at L).
    * @param len Number of energies.
    * @param c Prior best estimate of the BAR offset/free energy.
    * @param invRT 1.0 / ideal gas constant * temperature.
    */
-  private void calcAlphaBackward( double[] e0, double[] e1, int len, double c, double invRT) {
+  private void calcAlphaBackward(double[] e0, double[] e1, int len, double c, double invRT) {
 
     double bsum = 0;
     double bvsum = 0;
@@ -254,12 +256,12 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
       double fore = fermiFunction(invRT * (e1[i] - e0[i] - c));
       double back = fermiFunction(invRT * (e0[i] - e1[i] + c));
       bsum += back;
-      bvsum  += back*e1[i];
-      fbvsum  += fore*back*(e1[i]-e0[i]);
-      vsum  += e1[i];
-      fbsum  += fore*back;
+      bvsum += back * e1[i];
+      fbvsum += fore * back * (e1[i] - e0[i]);
+      vsum += e1[i];
+      fbsum += fore * back;
     }
-    alpha = bvsum - (bsum*(vsum/len)) - fbvsum;
+    alpha = bvsum - (bsum * (vsum / len)) - fbvsum;
   }
 
 
@@ -283,7 +285,6 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
       fermiDiffs[indexI] = fermiFunction(invRT * (e0[i] - e1[i] + c));
     }
   }
-
 
 
   /**
@@ -329,7 +330,7 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
   /** {@inheritDoc} */
   @Override
   public BennettAcceptanceRatio copyEstimator() {
-    return new BennettAcceptanceRatio(lamVals, eLow, eAt, eHigh, temperatures, tolerance);
+    return new BennettAcceptanceRatio(lamValues, eLow, eAt, eHigh, temperatures, tolerance);
   }
 
   /**
@@ -343,7 +344,7 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
     double cumDG = 0;
     fill(barEstimates, 0);
     fill(barUncertainties, 0);
-    fill(barEnthalpy,0);
+    fill(barEnthalpy, 0);
 
     // Avoid duplicate warnings when bootstrapping.
     Level warningLevel = randomSamples ? Level.FINE : Level.WARNING;
@@ -434,23 +435,17 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
       barUncertainties[i] = sqrt(uncertaintyCalculation(s0.mean, sqFermiMean0, len0)
           + uncertaintyCalculation(s1.mean, sqFermiMean1, len1));
 
-
-      calcAlphaForward(eAt[i],eHigh[i],len0,c,invRTA);
+      calcAlphaForward(eAt[i], eHigh[i], len0, c, invRTA);
       double alpha0 = alpha;
       double fbsum0 = fbsum;
 
-      calcAlphaBackward(eLow[i+1],eAt[i+1],len1,c,invRTB);
+      calcAlphaBackward(eLow[i + 1], eAt[i + 1], len1, c, invRTB);
       double alpha1 = alpha;
       double fbsum1 = fbsum;
 
-      double hBar = 0;
-      hBar = (alpha0 - alpha1) / (fbsum0+fbsum1);
+      double hBar = (alpha0 - alpha1) / (fbsum0 + fbsum1);
       barEnthalpy[i] = hBar;
-
     }
-
-
-
 
     totalBAREstimate = cumDG;
     totalBARUncertainty = sqrt(stream(barUncertainties).map((double d) -> d * d).sum());
@@ -488,7 +483,7 @@ public class BennettAcceptanceRatio extends SequentialEstimator implements Boots
 
   /** {@inheritDoc} */
   @Override
-  public double[] getBinEthalpies() {
+  public double[] getBinEnthalpies() {
     return barEnthalpy;
   }
 }

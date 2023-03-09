@@ -67,7 +67,8 @@ public class ESVFilter {
     this.label = label;
   }
 
-  public String getLambdaHistogram(List<Residue> titratingResidueList, final int[][][] esvHistogram, double pH){
+  public String getLambdaHistogram(List<Residue> titratingResidueList, final int[][][] esvHistogram,
+      double pH) {
     int nTitr = titratingResidueList.size();
 
     StringBuilder tautomerHeader = new StringBuilder("        X");
@@ -107,13 +108,11 @@ public class ESVFilter {
    * @param a an array of double.
    * @return a boolean.
    */
-  public boolean readESV(
-      File esvFile, double[] x, double[] v, double[] a, final int[][][] esvHist) {
+  public boolean readESV(File esvFile, double[] x, double[] v, double[] a, final int[][][] esvHist) {
     if (!esvFile.exists() || !esvFile.canRead()) {
       return false;
     }
     try (BufferedReader br = new BufferedReader(new FileReader(esvFile))) {
-
       br.readLine();
       String data = br.readLine().trim();
       String[] tokens = data.split(" +");
@@ -156,18 +155,18 @@ public class ESVFilter {
       }
 
       // Histograms
-      for (int i = 0; i < esvHist.length; i++){
-        for (int j = 0; j < 4; j ++) {br.readLine();}
-        for (int j = 0; j < esvHist[i].length; j++){
+      for (int i = 0; i < esvHist.length; i++) {
+        for (int j = 0; j < 4; j++) {
+          br.readLine();
+        }
+        for (int j = 0; j < esvHist[i].length; j++) {
           data = br.readLine().trim();
           tokens = data.split(" +");
-          for (int k = 0; k < esvHist[i][j].length; k++)
-          {
-            esvHist[i][j][k] = Integer.parseInt(tokens[k+1]);
+          for (int k = 0; k < esvHist[i][j].length; k++) {
+            esvHist[i][j][k] = Integer.parseInt(tokens[k + 1]);
           }
         }
       }
-
     } catch (Exception e) {
       String message = "Exception reading ESV restart file: " + esvFile;
       logger.log(Level.WARNING, message, e);
@@ -176,59 +175,43 @@ public class ESVFilter {
   }
 
   /**
-   * writeDYN
+   * Write the extended system variables to a file.
    *
-   * @param dynFile a {@link File} object.
-   * @param x an array of double.
-   * @param v an array of double.
-   * @param a an array of double.
-   * @return a boolean.
+   * @param dynFile The file to write.
+   * @param x The extended system variables.
+   * @param v The extended system variable velocities.
+   * @param a The extended system variable accelerations.
+   * @param titrResList The List of titrating residues.
+   * @param esvHist The ESV histogram.
+   * @param pH The current pH.
+   * @return True if the file was written successfully.
    */
-  public boolean writeESV(
-      File dynFile, double[] x, double[] v, double[] a, List<Residue> titrResList, final int[][][] esvHist, double pH) {
-    FileWriter fw = null;
-    BufferedWriter bw = null;
-    try {
-      fw = new FileWriter(dynFile);
-      bw = new BufferedWriter(fw);
-
+  public boolean writeESV(File dynFile, double[] x, double[] v, double[] a,
+      List<Residue> titrResList, final int[][][] esvHist, double pH) {
+    try (FileWriter fw = new FileWriter(dynFile); BufferedWriter bw = new BufferedWriter(fw)) {
       bw.write(" Number of ESVs and Title :\n");
       int numberOfAtoms = x.length;
       String output = format("%7d  %s\n", numberOfAtoms, label);
       bw.write(output);
-
       bw.write(" Current Theta Positions :\n");
       for (int i = 0; i < numberOfAtoms; i++) {
         bw.write(format("%26.16E\n", x[i]));
       }
-
       bw.write(" Current Atomic Velocities :\n");
       for (int i = 0; i < numberOfAtoms; i++) {
         bw.write(format("%26.16E\n", v[i]));
       }
-
       bw.write(" Current Atomic Accelerations :\n");
       for (int i = 0; i < numberOfAtoms; i++) {
         bw.write(format("%26.16E\n", a[i]));
       }
-
       bw.write(" Current Lambda Histogram(s) :\n");
       bw.write(this.getLambdaHistogram(titrResList, esvHist, pH));
-
     } catch (IOException e) {
       String message = " Exception writing dynamic restart file " + dynFile;
       logger.log(Level.SEVERE, message, e);
       return false;
-    } finally {
-      try {
-        bw.close();
-        fw.close();
-        return true;
-      } catch (IOException e) {
-        String message = " Exception closing dynamic restart file " + dynFile;
-        logger.log(Level.WARNING, message, e);
-        return false;
-      }
     }
+    return true;
   }
 }

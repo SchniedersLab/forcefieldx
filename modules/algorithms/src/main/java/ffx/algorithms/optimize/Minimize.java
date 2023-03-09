@@ -43,6 +43,7 @@ import static java.util.Arrays.fill;
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
 import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.dynamics.MDEngine;
 import ffx.numerics.Potential;
 import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch;
@@ -95,10 +96,11 @@ public class Minimize implements OptimizationListener, Terminatable {
   double rmsGradient;
 
   /**
-   * The default number of correction vectors used by the limited-memory L-BFGS optimization routine.
+   * The default number of correction vectors used by the limited-memory L-BFGS optimization
+   * routine.
    * <p>
-   * Values of less than 3 are not recommended and large values will result in excessive computing time.
-   * The range from <code>3 &lt;= mSave &lt;= 7</code> is recommended.
+   * Values of less than 3 are not recommended and large values will result in excessive computing
+   * time. The range from <code>3 &lt;= mSave &lt;= 7</code> is recommended.
    */
   public static final int DEFAULT_LBFGS_VECTORS = 7;
 
@@ -109,9 +111,7 @@ public class Minimize implements OptimizationListener, Terminatable {
    * @param potential a {@link ffx.numerics.Potential} object.
    * @param algorithmListener a {@link ffx.algorithms.AlgorithmListener} object.
    */
-  public Minimize(
-      MolecularAssembly molecularAssembly,
-      Potential potential,
+  public Minimize(MolecularAssembly molecularAssembly, Potential potential,
       AlgorithmListener algorithmListener) {
     this.molecularAssembly = molecularAssembly;
     this.algorithmListener = algorithmListener;
@@ -143,8 +143,8 @@ public class Minimize implements OptimizationListener, Terminatable {
     fill(scaling, 12.0);
   }
 
-  public static MinimizationEngine defaultEngine(
-      MolecularAssembly molecularAssembly, Potential potentialEnergy) {
+  public static MinimizationEngine defaultEngine(MolecularAssembly molecularAssembly,
+      Potential potentialEnergy) {
     CompositeConfiguration properties = molecularAssembly.getProperties();
     String minimizeEngine = properties.getString("minimize-engine", null);
     if (minimizeEngine != null) {
@@ -168,21 +168,16 @@ public class Minimize implements OptimizationListener, Terminatable {
    * @param assembly a {@link ffx.potential.MolecularAssembly} object.
    * @param potentialEnergy a {@link ffx.numerics.Potential} object.
    * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
-   * @param engine a {@link MolecularDynamics.DynamicsEngine} object.
+   * @param engine a {@link MDEngine} object.
    * @return a {@link MolecularDynamics} object.
    */
-  public static Minimize minimizeFactory(
-      MolecularAssembly assembly,
-      Potential potentialEnergy,
-      AlgorithmListener listener,
-      MinimizationEngine engine) {
-    switch (engine) {
-      case OPENMM:
-        return new MinimizeOpenMM(assembly, (ForceFieldEnergyOpenMM) potentialEnergy, listener);
-      case FFX:
-      default:
-        return new Minimize(assembly, potentialEnergy, listener);
-    }
+  public static Minimize minimizeFactory(MolecularAssembly assembly, Potential potentialEnergy,
+      AlgorithmListener listener, MinimizationEngine engine) {
+    return switch (engine) {
+      case OPENMM ->
+          new MinimizeOpenMM(assembly, (ForceFieldEnergyOpenMM) potentialEnergy, listener);
+      default -> new Minimize(assembly, potentialEnergy, listener);
+    };
   }
 
   /**
@@ -206,7 +201,7 @@ public class Minimize implements OptimizationListener, Terminatable {
   /**
    * Getter for the field <code>status</code>.
    *
-   * @return a int.
+   * @return The status of the optimization.
    */
   public int getStatus() {
     return status;
@@ -271,14 +266,10 @@ public class Minimize implements OptimizationListener, Terminatable {
     done = true;
 
     switch (status) {
-      case 0:
-        logger.info(format("\n Optimization achieved convergence criteria: %8.5f", rmsGradient));
-        break;
-      case 1:
-        logger.info(format("\n Optimization terminated at step %d.", nSteps));
-        break;
-      default:
-        logger.warning("\n Optimization failed.");
+      case 0 ->
+          logger.info(format("\n Optimization achieved convergence criteria: %8.5f", rmsGradient));
+      case 1 -> logger.info(format("\n Optimization terminated at step %d.", nSteps));
+      default -> logger.warning("\n Optimization failed.");
     }
 
     potential.setScaling(null);
@@ -293,16 +284,9 @@ public class Minimize implements OptimizationListener, Terminatable {
    * @since 1.0
    */
   @Override
-  public boolean optimizationUpdate(
-      int iteration,
-      int nBFGS,
-      int functionEvaluations,
-      double rmsGradient,
-      double rmsCoordinateChange,
-      double energy,
-      double energyChange,
-      double angle,
-      LineSearch.LineSearchResult lineSearchResult) {
+  public boolean optimizationUpdate(int iteration, int nBFGS, int functionEvaluations,
+      double rmsGradient, double rmsCoordinateChange, double energy, double energyChange,
+      double angle, LineSearch.LineSearchResult lineSearchResult) {
     long currentTime = System.nanoTime();
     Double seconds = (currentTime - time) * 1.0e-9;
     time = currentTime;
@@ -323,31 +307,14 @@ public class Minimize implements OptimizationListener, Terminatable {
     } else {
       if (lineSearchResult == LineSearch.LineSearchResult.Success) {
         logger.info(
-            format(
-                "%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8.3f",
-                iteration,
-                energy,
-                rmsGradient,
-                energyChange,
-                rmsCoordinateChange,
-                angle,
-                functionEvaluations,
-                seconds));
+            format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8.3f", iteration, energy, rmsGradient,
+                energyChange, rmsCoordinateChange, angle, functionEvaluations, seconds));
       } else {
-        logger.info(
-            format(
-                "%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8s",
-                iteration,
-                energy,
-                rmsGradient,
-                energyChange,
-                rmsCoordinateChange,
-                angle,
-                functionEvaluations,
-                lineSearchResult.toString()));
+        logger.info(format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8s", iteration, energy, rmsGradient,
+            energyChange, rmsCoordinateChange, angle, functionEvaluations, lineSearchResult));
       }
     }
-    // Update the listener and check for an termination request.
+    // Update the listener and check for a termination request.
     if (algorithmListener != null) {
       algorithmListener.algorithmUpdate(molecularAssembly);
     }
@@ -383,13 +350,12 @@ public class Minimize implements OptimizationListener, Terminatable {
    * but not vice-versa.
    */
   public enum MinimizationEngine {
-    FFX(true, true),
-    OPENMM(false, true);
+    FFX(true, true), OPENMM(false, true);
 
     // Set of supported Platforms. The EnumSet paradigm is very efficient, as it
     // is internally stored as a bit field.
-    private final EnumSet<ForceFieldEnergy.Platform> platforms =
-        EnumSet.noneOf(ForceFieldEnergy.Platform.class);
+    private final EnumSet<ForceFieldEnergy.Platform> platforms = EnumSet.noneOf(
+        ForceFieldEnergy.Platform.class);
 
     /**
      * Constructs a DynamicsEngine using the two presently known types of Platform.

@@ -59,8 +59,8 @@ public class MultiDoubleArray implements AtomicDoubleArray {
 
   /**
    * Storage of the array.
-   *
-   * <p>First dimension is the thread. Second dimension is the value.
+   * <p>
+   * First dimension is the thread. Second dimension is the value.
    */
   private final double[][] array;
 
@@ -69,8 +69,8 @@ public class MultiDoubleArray implements AtomicDoubleArray {
   /**
    * Constructor for MultiDoubleArray.
    *
-   * @param nThreads a int.
-   * @param size a int.
+   * @param nThreads the number of threads.
+   * @param size the size of the array.
    */
   public MultiDoubleArray(int nThreads, int size) {
     this.size = size;
@@ -97,8 +97,6 @@ public class MultiDoubleArray implements AtomicDoubleArray {
 
   /**
    * {@inheritDoc}
-   *
-   * <p>Return a reduced value at the given index.
    */
   @Override
   public double get(int index) {
@@ -107,8 +105,8 @@ public class MultiDoubleArray implements AtomicDoubleArray {
 
   /**
    * {@inheritDoc}
-   *
-   * <p>Reduce the contributions from each thread into array[0];
+   * <p>
+   * Reduce the contributions from each thread into array[0];
    */
   @Override
   public void reduce(int lb, int ub) {
@@ -123,8 +121,8 @@ public class MultiDoubleArray implements AtomicDoubleArray {
 
   /**
    * {@inheritDoc}
-   *
-   * <p>Reduce the contributions from each thread into array[0];
+   * <p>
+   * Reduce the contributions from each thread into array[0];
    */
   @Override
   public void reduce(ParallelTeam parallelTeam, int lb, int ub) {
@@ -151,20 +149,16 @@ public class MultiDoubleArray implements AtomicDoubleArray {
 
   /**
    * {@inheritDoc}
-   *
-   * <p>Initialize the storage space for the specified thread.
    */
   @Override
   public void reset(int threadID, int lb, int ub) {
     // Note that fill is appears slightly faster than arraycopy for 10,000 to 100,000 elements.
-    Arrays.fill(array[threadID],0.0);
+    Arrays.fill(array[threadID], 0.0);
     // System.arraycopy(zeros, 0, array[threadID], 0, size);
   }
 
   /**
    * {@inheritDoc}
-   *
-   * <p>Initialize the storage space for all threads.
    */
   @Override
   public void reset(ParallelTeam parallelTeam, int lb, int ub) {

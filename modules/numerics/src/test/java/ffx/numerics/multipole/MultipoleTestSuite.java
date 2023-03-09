@@ -35,64 +35,19 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.utilities;
+package ffx.numerics.multipole;
 
-/**
- * This Error is sometimes thrown when logger.severe is called, giving the program one last chance
- * to try to catch the issue; the response to this catch should be to close down the current file or
- * algorithm and move on to the next. The intent is to create a distinct class for Groovy/Java to
- * catch, because the intent of an Error is that it is not caught unless you know exactly how to
- * deal with it.
- *
- * @author Jacob M. Litman
- * @since 1.0
- */
-public class LoggerSevereError extends Error {
-  /**
-   * Constructor for LoggerSevereError.
-   */
-  public LoggerSevereError() {
-    super();
-  }
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
 
-  /**
-   * Constructor for LoggerSevereError.
-   *
-   * @param message a {@link java.lang.String} object.
-   */
-  public LoggerSevereError(String message) {
-    super(message);
-  }
-
-  /**
-   * Constructor for LoggerSevereError.
-   *
-   * @param message a {@link java.lang.String} object.
-   * @param cause a {@link java.lang.Throwable} object.
-   */
-  public LoggerSevereError(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  /**
-   * Constructor for LoggerSevereError.
-   *
-   * @param message a {@link java.lang.String} object.
-   * @param cause a {@link java.lang.Throwable} object.
-   * @param enableSuppression a boolean.
-   * @param writableStackTrace a boolean.
-   */
-  public LoggerSevereError(
-      String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-    super(message, cause, enableSuppression, writableStackTrace);
-  }
-
-  /**
-   * Constructor for LoggerSevereError.
-   *
-   * @param cause a {@link java.lang.Throwable} object.
-   */
-  public LoggerSevereError(Throwable cause) {
-    super(cause);
-  }
-}
+/** MultipoleTestSuite collects all Unit tests from the ffx.numerics.multipole package. */
+@RunWith(Suite.class)
+@SuiteClasses({
+    GKTensorGlobalTest.class,
+    GKTensorQITest.class,
+    GlobalMultipoleTensorTest.class,
+    MultipoleTensorTest.class,
+    QIMultipoleTensorTest.class,
+})
+public class MultipoleTestSuite {}

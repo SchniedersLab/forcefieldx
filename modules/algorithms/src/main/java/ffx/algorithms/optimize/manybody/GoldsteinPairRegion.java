@@ -96,16 +96,8 @@ public class GoldsteinPairRegion extends ParallelRegion {
    * @param bidiResNeighbors All interaction partners of a Residue, including prior residues
    * @param rotamerOptimization RotamerOptimization instance.
    */
-  public void init(
-      Residue[] residues,
-      int i,
-      int riA,
-      int riB,
-      int j,
-      int rjC,
-      int rjD,
-      int[][] bidiResNeighbors,
-      RotamerOptimization rotamerOptimization) {
+  public void init(Residue[] residues, int i, int riA, int riB, int j, int rjC, int rjD,
+      int[][] bidiResNeighbors, RotamerOptimization rotamerOptimization) {
     this.residues = residues;
     this.i = i;
     this.riA = riA;
@@ -152,9 +144,8 @@ public class GoldsteinPairRegion extends ParallelRegion {
     @Override
     public void run(int lb, int ub) {
       if (blockedResidues.isEmpty()) {
-        double locSumOverK =
-            rotamerOptimization.goldsteinPairSumOverK(
-                residues, lb, ub, i, riA, riB, j, rjC, rjD, blockedResidues, possK);
+        double locSumOverK = rotamerOptimization.goldsteinPairSumOverK(residues, lb, ub, i, riA, riB,
+            j, rjC, rjD, blockedResidues, possK);
         // Should be redundant checks.
         if (isFinite(locSumOverK) && blockedResidues.isEmpty()) {
           sumOverK += locSumOverK;

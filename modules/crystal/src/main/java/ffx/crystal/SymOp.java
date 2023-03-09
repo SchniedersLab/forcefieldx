@@ -406,7 +406,7 @@ public class SymOp {
    * <code>X' = S_this(S_arg(X))</code>
    * <code>X' = S_combined(X)</code>
    *
-   * @param symOp The SymOp to prepend to <code>this</code> Symop.
+   * @param symOp The SymOp to prepend to <code>this</code> SymOp.
    * @return The combined SymOp.
    */
   public SymOp prepend(SymOp symOp) {
@@ -416,7 +416,7 @@ public class SymOp {
   /**
    * Return the combined SymOp that is equivalent to first applying symOp1 and then SymOp2. Note:
    * Applied as rotation then translation.
-   *
+   * <p>
    * <code>X' = S_2(S_1(X))</code>
    * <code>X' = S_combined(X)</code>
    *
@@ -431,7 +431,7 @@ public class SymOp {
   /**
    * Apply a Cartesian symmetry operator to an array of Cartesian coordinates. If the arrays x, y or
    * z are null or not of length n, the method returns immediately. If mateX, mateY or mateZ are null
-   * or not of length n, new arrays are allocated.
+   * or not of length n, the method returns immediately.
    *
    * @param n Number of atoms.
    * @param x Input cartesian x-coordinates.
@@ -442,29 +442,19 @@ public class SymOp {
    * @param mateZ Output cartesian z-coordinates.
    * @param symOp The cartesian symmetry operator.
    */
-  public static void applyCartSymOp(
-      int n,
-      double[] x,
-      double[] y,
-      double[] z,
-      double[] mateX,
-      double[] mateY,
-      double[] mateZ,
-      SymOp symOp) {
+  public static void applyCartSymOp(int n, double[] x, double[] y, double[] z,
+      double[] mateX, double[] mateY, double[] mateZ, SymOp symOp) {
     if (x == null || y == null || z == null) {
-      return;
+      throw new IllegalArgumentException("The input arrays x, y and z must not be null.");
     }
     if (x.length < n || y.length < n || z.length < n) {
-      return;
+      throw new IllegalArgumentException("The input arrays x, y and z must be of length n: " + n);
     }
-    if (mateX == null || mateX.length < n) {
-      mateX = new double[n];
+    if (mateX == null || mateY == null || mateZ == null) {
+      throw new IllegalArgumentException("The output arrays mateX, mateY and mateZ must not be null.");
     }
-    if (mateY == null || mateY.length < n) {
-      mateY = new double[n];
-    }
-    if (mateZ == null || mateZ.length < n) {
-      mateZ = new double[n];
+    if (mateX.length < n || mateY.length < n || mateZ.length < n) {
+      throw new IllegalArgumentException("The output arrays mateX, mateY and mateZ must be of length n: " + n);
     }
 
     final double[][] rot = symOp.rot;
@@ -863,11 +853,10 @@ public class SymOp {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder(" Rotation operator:\n");
-    sb.append(
-        format(
-            " [[%4.1f,%4.1f,%4.1f]\n  [%4.1f,%4.1f,%4.1f]\n  [%4.1f,%4.1f,%4.1f]]\n",
-            rot[0][0], rot[0][1], rot[0][2], rot[1][0], rot[1][1], rot[1][2], rot[2][0], rot[2][1],
-            rot[2][2]));
+    sb.append(format(" [[%4.1f,%4.1f,%4.1f]\n  [%4.1f,%4.1f,%4.1f]\n  [%4.1f,%4.1f,%4.1f]]\n",
+        rot[0][0], rot[0][1], rot[0][2],
+        rot[1][0], rot[1][1], rot[1][2],
+        rot[2][0], rot[2][1], rot[2][2]));
     sb.append(" Translation:\n");
     sb.append(format(" [%4.2f,%4.2f,%4.2f]", tr[0], tr[1], tr[2]));
     return sb.toString();
@@ -880,11 +869,11 @@ public class SymOp {
    */
   public String toStringPrecise() {
     StringBuilder sb = new StringBuilder(" Rotation operator:\n");
-    sb.append(
-        format(
-            " [[%18.16e,%18.16e,%18.16e]\n  [%18.16e,%18.16e,%18.16e]\n  [%18.16e,%18.16e,%18.16e]]\n",
-            rot[0][0], rot[0][1], rot[0][2], rot[1][0], rot[1][1], rot[1][2], rot[2][0], rot[2][1],
-            rot[2][2]));
+    sb.append(format(
+        " [[%18.16e,%18.16e,%18.16e]\n  [%18.16e,%18.16e,%18.16e]\n  [%18.16e,%18.16e,%18.16e]]\n",
+        rot[0][0], rot[0][1], rot[0][2],
+        rot[1][0], rot[1][1], rot[1][2],
+        rot[2][0], rot[2][1], rot[2][2]));
     sb.append(" Translation:\n");
     sb.append(format(" [%18.16e,%18.16e,%18.16e]", tr[0], tr[1], tr[2]));
     return sb.toString();

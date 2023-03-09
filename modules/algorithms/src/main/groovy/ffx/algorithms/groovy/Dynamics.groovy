@@ -47,13 +47,11 @@ import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.ReplicaExchange
 import ffx.crystal.CrystalPotential
 import ffx.numerics.Potential
-import ffx.potential.MolecularAssembly
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.WriteoutOptions
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
-import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 /**

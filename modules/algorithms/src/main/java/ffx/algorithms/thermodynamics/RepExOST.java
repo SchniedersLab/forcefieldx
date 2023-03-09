@@ -45,6 +45,7 @@ import edu.rit.pj.Comm;
 import ffx.algorithms.cli.DynamicsOptions;
 import ffx.algorithms.cli.OSTOptions;
 import ffx.algorithms.dynamics.MolecularDynamics;
+import ffx.algorithms.dynamics.MDWriteAction;
 import ffx.algorithms.mc.BoltzmannMC;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.cli.WriteoutOptions;
@@ -162,7 +163,7 @@ public class RepExOST {
     this.rank = world.rank();
     int size = world.size();
 
-    MolecularAssembly[] allAssemblies = this.molecularDynamics.getAssemblies();
+    MolecularAssembly[] allAssemblies = this.molecularDynamics.getAssemblyArray();
     allFilenames =
         Arrays.stream(allAssemblies)
             .map(MolecularAssembly::getFile)
@@ -351,9 +352,9 @@ public class RepExOST {
         currentLambda = orthogonalSpaceTempering.getLambda();
         boolean trySnapshot = currentLambda >= orthogonalSpaceTempering.getLambdaWriteOut();
         if (automaticWriteouts) {
-          EnumSet<MolecularDynamics.WriteActions> written =
+          EnumSet<MDWriteAction> written =
               molecularDynamics.writeFilesForStep(mdMoveNum, trySnapshot, true);
-          if (written.contains(MolecularDynamics.WriteActions.RESTART)) {
+          if (written.contains(MDWriteAction.RESTART)) {
             orthogonalSpaceTempering.writeAdditionalRestartInfo(false);
           }
         }
@@ -423,7 +424,7 @@ public class RepExOST {
                         "%s%d%s%s.%s", basePath, currentHistoIndex, File.separator, fn, extension))
             .map(File::new)
             .toArray(File[]::new);
-    molecularDynamics.setTrajectoryFiles(trajFiles);
+    molecularDynamics.setArchiveFiles(trajFiles);
   }
 
   /**

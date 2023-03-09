@@ -137,7 +137,7 @@ public class Real3DParallel {
    */
   public static void main(String[] args) {
     int dimNotFinal = 128;
-    int ncpu = ParallelTeam.getDefaultThreadCount();
+    int nCPU = ParallelTeam.getDefaultThreadCount();
     int reps = 5;
     if (args != null) {
       try {
@@ -145,9 +145,9 @@ public class Real3DParallel {
         if (dimNotFinal < 1) {
           dimNotFinal = 100;
         }
-        ncpu = Integer.parseInt(args[1]);
-        if (ncpu < 1) {
-          ncpu = ParallelTeam.getDefaultThreadCount();
+        nCPU = Integer.parseInt(args[1]);
+        if (nCPU < 1) {
+          nCPU = ParallelTeam.getDefaultThreadCount();
         }
         reps = Integer.parseInt(args[2]);
         if (reps < 1) {
@@ -161,14 +161,11 @@ public class Real3DParallel {
       dimNotFinal++;
     }
     final int dim = dimNotFinal;
-    System.out.println(
-        String.format(
-            "Initializing a %d cubed grid for %d CPUs.\n"
-                + "The best timing out of %d repititions will be used.",
-            dim, ncpu, reps));
+    System.out.printf("Initializing a %d cubed grid for %d CPUs.\n"
+        + "The best timing out of %d repetitions will be used.%n", dim, nCPU, reps);
 
     Real3D real3D = new Real3D(dim, dim, dim);
-    ParallelTeam parallelTeam = new ParallelTeam(ncpu);
+    ParallelTeam parallelTeam = new ParallelTeam(nCPU);
     Real3DParallel real3DParallel = new Real3DParallel(dim, dim, dim, parallelTeam);
 
     final int dimCubed = (dim + 2) * dim * dim;
@@ -202,13 +199,13 @@ public class Real3DParallel {
                       }
                     });
               } catch (Exception e) {
-                System.out.println(e.toString());
+                System.out.println(e.getMessage());
                 System.exit(-1);
               }
             }
           });
     } catch (Exception e) {
-      System.out.println(e.toString());
+      System.out.println(e.getMessage());
       System.exit(-1);
     }
 
@@ -218,19 +215,19 @@ public class Real3DParallel {
     real3D.setRecip(work);
     real3DParallel.setRecip(work);
     for (int i = 0; i < reps; i++) {
-      System.out.println(String.format("Iteration %d", i + 1));
+      System.out.printf("Iteration %d%n", i + 1);
       long time = System.nanoTime();
       real3D.fft(data);
       real3D.ifft(data);
       time = (System.nanoTime() - time);
-      System.out.println(String.format("Sequential: %8.3f", toSeconds * time));
+      System.out.printf("Sequential: %8.3f%n", toSeconds * time);
       if (time < seqTime) {
         seqTime = time;
       }
       time = System.nanoTime();
       real3D.convolution(data);
       time = (System.nanoTime() - time);
-      System.out.println(String.format("Sequential: %8.3f (Convolution)", toSeconds * time));
+      System.out.printf("Sequential: %8.3f (Convolution)%n", toSeconds * time);
       if (time < seqTime) {
         seqTime = time;
       }
@@ -238,21 +235,21 @@ public class Real3DParallel {
       real3DParallel.fft(data);
       real3DParallel.ifft(data);
       time = (System.nanoTime() - time);
-      System.out.println(String.format("Parallel:   %8.3f", toSeconds * time));
+      System.out.printf("Parallel:   %8.3f%n", toSeconds * time);
       if (time < parTime) {
         parTime = time;
       }
       time = System.nanoTime();
       real3DParallel.convolution(data);
       time = (System.nanoTime() - time);
-      System.out.println(String.format("Parallel:   %8.3f (Convolution)\n", toSeconds * time));
+      System.out.printf("Parallel:   %8.3f (Convolution)\n%n", toSeconds * time);
       if (time < parTime) {
         parTime = time;
       }
     }
-    System.out.println(String.format("Best Sequential Time:  %8.3f", toSeconds * seqTime));
-    System.out.println(String.format("Best Parallel Time:    %8.3f", toSeconds * parTime));
-    System.out.println(String.format("Speedup: %15.5f", (double) seqTime / parTime));
+    System.out.printf("Best Sequential Time:  %8.3f%n", toSeconds * seqTime);
+    System.out.printf("Best Parallel Time:    %8.3f%n", toSeconds * parTime);
+    System.out.printf("Speedup: %15.5f%n", (double) seqTime / parTime);
   }
 
   /**
@@ -290,7 +287,7 @@ public class Real3DParallel {
   }
 
   /**
-   * Compute the inverese 3D FFT.
+   * Compute the inverse 3D FFT.
    *
    * @param input The input array must be of size (nX + 2) * nY * nZ.
    * @since 1.0

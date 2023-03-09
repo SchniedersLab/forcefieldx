@@ -35,23 +35,49 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.potential.parsers;
+package ffx.potential;
 
 /**
- * The FileCloser interface returns a Runnable object which removes any higher-level references to a
- * MolecularAssembly object (highly implementation- specific). UIFileCloser removes it from the
- * Hierarchy, while PotentialsFileCloser does exactly nothing, because that does not depend on a
- * higher-level structure.
+ * A record class to hold the state of a system. This class is unmodifiable.
  *
- * <p>Also legacy code whose functions could probably be wrapped directly into implementations of
- * PotentialsFunctions.
- *
- * @author Jacob M. Litman
- * @author Michael J. Schnieders
+ * @param x The coordinates.
+ * @param v The velocities.
+ * @param a The accelerations.
+ * @param aPrevious The previous accelerations.
+ * @param mass The masses.
+ * @param gradient The gradient.
+ * @param kineticEnergy The kinetic energy.
+ * @param potentialEnergy The potential energy.
+ * @param temperature The temperature.
  */
-public interface FileCloser extends Runnable {
+public record UnmodifiableState(double[] x, double[] v, double[] a, double[] aPrevious,
+                                double[] mass, double[] gradient, double kineticEnergy,
+                                double potentialEnergy, double temperature) {
 
-  /** {@inheritDoc} */
-  @Override
-  void run();
+  /**
+   * This constructor does a defensive copy of all arrays.
+   */
+  public UnmodifiableState {
+    x = x.clone();
+    v = v.clone();
+    a = a.clone();
+    aPrevious = aPrevious.clone();
+    mass = mass.clone();
+    gradient = gradient.clone();
+  }
+
+  /**
+   * This constructor does a defensive copy of all arrays.
+   *
+   * @param state The state used to initialize this state.
+   */
+  public UnmodifiableState(SystemState state) {
+    this(state.x, state.v, state.a, state.aPrevious, state.mass, state.gradient, state.kineticEnergy,
+        state.potentialEnergy, state.temperature);
+  }
+
+  public double getTotalEnergy() {
+    return kineticEnergy + potentialEnergy;
+  }
+
 }

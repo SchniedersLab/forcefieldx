@@ -45,18 +45,16 @@ import ffx.crystal.Crystal;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.parameters.ForceField;
-import ffx.potential.parsers.INTFileFilter;
-import ffx.potential.parsers.PDBFileFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.parsers.PDBFilter.Mutation;
 import ffx.potential.parsers.SystemFilter;
-import ffx.potential.parsers.XYZFileFilter;
 import ffx.potential.parsers.XYZFilter;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * PotentialsUtils implements core functionality for many Force Field X algorithms and scripts, such
@@ -178,7 +176,7 @@ public class PotentialsUtils implements PotentialsFunctions {
   }
 
   /**
-   * One one file object.
+   * Return one MolecularAssembly.
    *
    * @param file a {@link java.io.File} object.
    * @return a {@link ffx.potential.MolecularAssembly} object.
@@ -188,8 +186,7 @@ public class PotentialsUtils implements PotentialsFunctions {
     opener.run();
     lastFilter = opener.getFilter();
     if (opener.getAllAssemblies().length > 1) {
-      logger.log(
-          Level.WARNING, "Found multiple assemblies in file {0}, opening first.", file.getName());
+      logger.log(Level.WARNING, "Found multiple assemblies in file {0}, opening first.", file.getName());
     }
     return opener.getAssembly();
   }
@@ -260,9 +257,9 @@ public class PotentialsUtils implements PotentialsFunctions {
    */
   public MolecularAssembly openQuietly(String filename) {
     setSilentPotential(true);
-    MolecularAssembly mola = open(filename);
+    MolecularAssembly molecularAssembly = open(filename);
     setSilentPotential(false);
-    return mola;
+    return molecularAssembly;
   }
 
   /**
@@ -421,7 +418,9 @@ public class PotentialsUtils implements PotentialsFunctions {
     } else if (file == null) {
       logger.info(" No valid file to write to.");
     } else {
-      PDBFilter pdbFilter = new PDBFilter(file, Arrays.asList(assemblies), null, null);
+      ForceField forceField = assemblies[0].getForceField();
+      CompositeConfiguration properties = forceField.getProperties();
+      PDBFilter pdbFilter = new PDBFilter(file, Arrays.asList(assemblies), forceField, properties);
       pdbFilter.writeFile(file, false);
       lastFilter = pdbFilter;
     }
@@ -439,7 +438,9 @@ public class PotentialsUtils implements PotentialsFunctions {
     } else if (file == null) {
       logger.info(" No valid file provided to save assembly to.");
     } else {
-      XYZFilter xyzFilter = new XYZFilter(file, assembly, null, null);
+      ForceField forceField = assembly.getForceField();
+      CompositeConfiguration properties = forceField.getProperties();
+      XYZFilter xyzFilter = new XYZFilter(file, assembly, forceField, properties);
       if (!xyzFilter.writeFile(file, false)) {
         logger.info(format(" Save failed for %s", assembly));
       }
@@ -455,7 +456,9 @@ public class PotentialsUtils implements PotentialsFunctions {
     } else if (file == null) {
       logger.info(" No valid file provided to save assembly to.");
     } else {
-      PDBFilter pdbFilter = new PDBFilter(file, assembly, null, null);
+      ForceField forceField = assembly.getForceField();
+      CompositeConfiguration properties = forceField.getProperties();
+      PDBFilter pdbFilter = new PDBFilter(file, assembly, forceField, properties);
       lastFilter = pdbFilter;
       pdbFilter.writeFileAsP1(file);
     }

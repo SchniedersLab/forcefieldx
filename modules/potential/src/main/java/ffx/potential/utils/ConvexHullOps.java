@@ -44,7 +44,6 @@ import static org.apache.commons.math3.util.FastMath.max;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import com.github.quickhull3d.QuickHull3D;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.utilities.Constants;
 import java.util.Arrays;
@@ -52,10 +51,10 @@ import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 /**
- * This ConvexHullOps class uses the QuickHull3D package by John E. Lloyd to construct and operate
- * on 3D convex hulls: the minimal convex polyhedron that contains all points in a set of points.
- * This is especially useful for max-dist operations, as the most distant points in a set are
- * guaranteed to be part of the convex polyhedron.
+ * This ConvexHullOps class uses the QuickHull3D package by John E. Lloyd to construct and operate on
+ * 3D convex hulls: the minimal convex polyhedron that contains all points in a set of points. This
+ * is especially useful for max-dist operations, as the most distant points in a set are guaranteed
+ * to be part of the convex polyhedron.
  *
  * <p>The QuickHull3D package website is at quickhull3d.github.io/quickhull3d/ The algorithm it uses
  * is described in Barber, Dobkin, and Huhdanpaa, "The Quickhull Algorithm for Convex Hulls" (ACM
@@ -67,18 +66,8 @@ import java.util.stream.IntStream;
  * @since 1.0.0
  */
 public class ConvexHullOps {
-  private static final Logger logger = Logger.getLogger(ConvexHullOps.class.getName());
 
-  /**
-   * Constructs a convex hull from a MolecularAssembly.
-   *
-   * @param molecularAssembly MolecularAssembly to build a convex hull for.
-   * @return A QuickHull3D implementation of convex hulls.
-   */
-  public static QuickHull3D constructHull(MolecularAssembly molecularAssembly) {
-    Atom[] atoms = molecularAssembly.getAtomArray();
-    return constructHull(atoms);
-  }
+  private static final Logger logger = Logger.getLogger(ConvexHullOps.class.getName());
 
   /**
    * Constructs a convex hull from a set of atoms.
@@ -129,39 +118,30 @@ public class ConvexHullOps {
     }
     double[] vertPoints = new double[3 * nVerts];
     quickHull3D.getVertices(vertPoints);
-    double maxDist =
-        IntStream.range(0, nVerts)
-            .parallel()
-            .mapToDouble(
-                (int i) -> {
-                  double[] xyz = new double[3];
-                  arraycopy(vertPoints, 3 * i, xyz, 0, 3);
-                  double mij = 0;
-                  for (int j = i + 1; j < nVerts; j++) {
-                    double[] xyzJ = new double[3];
-                    arraycopy(vertPoints, 3 * j, xyzJ, 0, 3);
-                    double distIJ = dist2(xyz, xyzJ);
-                    mij = max(mij, distIJ);
-                  }
-                  return mij;
-                })
-            .max()
-            .getAsDouble();
+    double maxDist = IntStream.range(0, nVerts).parallel().mapToDouble((int i) -> {
+      double[] xyz = new double[3];
+      arraycopy(vertPoints, 3 * i, xyz, 0, 3);
+      double mij = 0;
+      for (int j = i + 1; j < nVerts; j++) {
+        double[] xyzJ = new double[3];
+        arraycopy(vertPoints, 3 * j, xyzJ, 0, 3);
+        double distIJ = dist2(xyz, xyzJ);
+        mij = max(mij, distIJ);
+      }
+      return mij;
+    }).max().getAsDouble();
     maxDist = sqrt(maxDist);
     time += System.nanoTime();
     if (time > 1E9) {
-      logger.warning(
-          format(
-              " Required %12.6g sec to find max distance on a convex hull."
-                  + " It may be time to further optimize this!",
-              Constants.NS2SEC * time));
+      logger.warning(format(" Required %12.6g sec to find max distance on a convex hull."
+          + " It may be time to further optimize this!", Constants.NS2SEC * time));
     }
     return maxDist;
   }
 
   /**
    * Maximum pairwise distance between atoms in an array. Uses either the convex hull method (more
-   * than 10 atoms), or a brute-force loop (10 atoms or less).
+   * than 10 atoms), or a brute-force loop (10 atoms or fewer).
    *
    * @param atoms Atoms to check max pairwise distance for.
    * @return Max pairwise distance in Angstroms, or 0 (0 or 1 atoms given).

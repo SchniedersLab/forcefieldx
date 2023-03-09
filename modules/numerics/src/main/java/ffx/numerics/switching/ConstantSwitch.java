@@ -41,7 +41,7 @@ import static java.lang.String.format;
 
 /**
  * The ConstantSwitch returns a constant value for all input values x. This is useful for having a
- * single code path that accomodates both "real" switching behavior and no switching behavior. The
+ * single code path that accommodates both "real" switching behavior and no switching behavior. The
  * default value is 1.0.
  *
  * @author Jacob M. Litman

@@ -40,102 +40,107 @@ package ffx.numerics.atomic;
 import edu.rit.pj.ParallelTeam;
 
 /**
- * This interface abstracts away the implementation of maintaining a 1D double array that is
- * operated on by multiple threads.
+ * This interface abstracts away the implementation of maintaining a 1D double array that is operated
+ * on by multiple threads.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
 public interface AtomicDoubleArray {
 
+  /**
+   * Factory method to create an AtomicDoubleArray instance.
+   *
+   * @param atomicDoubleArrayImpl The implementation to use.
+   * @param threads The number of threads.
+   * @param size The size of the array.
+   * @return An AtomicDoubleArray instance.
+   */
   static AtomicDoubleArray atomicDoubleArrayFactory(
       AtomicDoubleArrayImpl atomicDoubleArrayImpl, int threads, int size) {
-    switch (atomicDoubleArrayImpl) {
-      case ADDER:
-        return new AdderDoubleArray(size);
-      case PJ:
-        return new PJDoubleArray(size);
-      case MULTI:
-      default:
-        return new MultiDoubleArray(threads, size);
-    }
+    return switch (atomicDoubleArrayImpl) {
+      case ADDER -> new AdderDoubleArray(size);
+      case PJ -> new PJDoubleArray(size);
+      // MULTI is the default.
+      default -> new MultiDoubleArray(threads, size);
+    };
   }
 
   /**
    * Add value to the double array at the specified index.
    *
-   * @param threadID a int.
-   * @param index a int.
-   * @param value a double.
+   * @param threadID the thread ID.
+   * @param index the index.
+   * @param value the value to add.
    */
   void add(int threadID, int index, double value);
 
   /**
    * Ensure the AtomicDoubleArray instance is greater than or equal to size.
    *
-   * @param size a int.
+   * @param size The size of the array.
    */
   void alloc(int size);
 
   /**
-   * Get the value of the array at the specified index (usually subsequent to calling the <code>
-   * reduce</code> method.
+   * Get the value of the array at the specified index. The <code>reduce</code> method should be
+   * called first when using the MULTI implementation.
    *
-   * @param index a int.
-   * @return a double.
+   * @param index the index.
+   * @return the value of the array at the specified index.
    */
   double get(int index);
 
   /**
    * Perform reduction between the given lower bound (lb) and upper bound (up) if necessary.
    *
-   * @param lb a int.
-   * @param ub a int.
+   * @param lb the lower bound.
+   * @param ub the upper bound.
    */
   void reduce(int lb, int ub);
 
   /**
-   * Perform reduction between the given lower bound (lb) and upper bound (up) usign a ParallelTeam.
+   * Perform reduction between the given lower bound (lb) and upper bound (up) using a ParallelTeam.
    *
    * @param parallelTeam ParallelTeam to use.
-   * @param lb a int.
-   * @param ub a int.
+   * @param lb the lower bound.
+   * @param ub the upper bound.
    */
   void reduce(ParallelTeam parallelTeam, int lb, int ub);
 
   /**
    * Reset the double array to Zero.
    *
-   * @param threadID a int.
-   * @param lb a int.
-   * @param ub a int.
+   * @param threadID the thread ID.
+   * @param lb the lower bound.
+   * @param ub the upper bound.
    */
   void reset(int threadID, int lb, int ub);
 
   /**
    * Reset the double array to Zero using a ParallelTeam.
    *
-   * @param parallelTeam ParallelTeam.
-   * @param lb a int.
-   * @param ub a int.
+   * @param parallelTeam ParallelTeam to use.
+   * @param lb the lower bound.
+   * @param ub the upper bound.
    */
   void reset(ParallelTeam parallelTeam, int lb, int ub);
 
   /**
    * Scale the double array at the specified index by the given value.
    *
-   * @param threadID a int.
-   * @param index a int.
-   * @param value a double.
+   * @param threadID the thread ID.
+   * @param index the index.
+   * @param value the value to scale by.
    */
   void scale(int threadID, int index, double value);
 
   /**
    * Set the double array at the specified index to the given value.
    *
-   * @param threadID a int.
-   * @param index a int.
-   * @param value a double.
+   * @param threadID the thread ID.
+   * @param index the index.
+   * @param value the value to set.
    */
   void set(int threadID, int index, double value);
 
@@ -149,13 +154,15 @@ public interface AtomicDoubleArray {
   /**
    * Subtract value to the double array at the specified index.
    *
-   * @param threadID a int.
-   * @param index a int.
-   * @param value a double.
+   * @param threadID the thread ID.
+   * @param index the index.
+   * @param value the value to subtract.
    */
   void sub(int threadID, int index, double value);
 
-  /** AtomicDoubleArray implementations (ADDER, MULTI, PJ). */
+  /**
+   * AtomicDoubleArray implementations (ADDER, MULTI, PJ).
+   */
   enum AtomicDoubleArrayImpl {
     ADDER,
     MULTI,

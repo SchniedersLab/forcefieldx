@@ -41,6 +41,7 @@ import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 
+import ffx.potential.SystemState;
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential;
 
@@ -57,14 +58,10 @@ public class VelocityVerlet extends Integrator {
   /**
    * Constructor for VelocityVerlet.
    *
-   * @param nVariables number of Variables.
-   * @param x Cartesian coordinates (Angstroms).
-   * @param v Velocities.
-   * @param a Accelerations.
-   * @param mass Mass.
+   * @param state The current state of the molecular dynamics simulation to operate on.
    */
-  public VelocityVerlet(int nVariables, double[] x, double[] v, double[] a, double[] mass) {
-    super(nVariables, x, v, a, null, mass);
+  public VelocityVerlet(SystemState state) {
+    super(state);
   }
 
   /**
@@ -75,7 +72,11 @@ public class VelocityVerlet extends Integrator {
   @Override
   public void postForce(double[] gradient) {
     copyAccelerationToPrevious();
-    for (int i = 0; i < nVariables; i++) {
+    double[] a = state.a();
+    double[] v = state.v();
+    double[] x = state.x();
+    double[] mass = state.mass();
+    for (int i = 0; i < state.getNumberOfVariables(); i++) {
       a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
       v[i] = v[i] + a[i] * dt_2;
     }
@@ -90,6 +91,11 @@ public class VelocityVerlet extends Integrator {
    */
   @Override
   public void preForce(Potential potential) {
+    double[] x = state.x();
+    double[] v = state.v();
+    double[] a = state.a();
+    double[] mass = state.mass();
+    int nVariables = state.getNumberOfVariables();
     if (useConstraints) {
       if (xPrior == null) {
         xPrior = copyOf(x, nVariables);

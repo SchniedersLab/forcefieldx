@@ -176,7 +176,6 @@ public abstract class FFXCommand {
    * @param logTestCommands List Test Scripts.
    */
   public static void listCommands(boolean logCommands, boolean logTestCommands) {
-
     ClassLoader classLoader = ClassLoader.getSystemClassLoader();
     String location = "ffx";
     URL scriptURL = classLoader.getResource(location);
@@ -186,38 +185,35 @@ public abstract class FFXCommand {
     }
     String scriptPath = scriptURL.getPath();
     String ffx = scriptPath.substring(5, scriptURL.getPath().indexOf("!"));
-    JarFile jar;
-    try {
-      jar = new JarFile(URLDecoder.decode(ffx, StandardCharsets.UTF_8));
+    List<String> commands = new ArrayList<>();
+    List<String> testCommands = new ArrayList<>();
+    try (JarFile jar = new JarFile(URLDecoder.decode(ffx, StandardCharsets.UTF_8))) {
+      // Iterates over Jar entries.
+      Enumeration<JarEntry> enumeration = jar.entries();
+      while (enumeration.hasMoreElements()) {
+        ZipEntry zipEntry = enumeration.nextElement();
+        String className = zipEntry.getName();
+        if (className.startsWith("ffx")
+            && className.contains("commands")
+            && className.endsWith(".class")
+            && !className.contains("$")) {
+          className = className.replace("/", ".");
+          className = className.replace(".class", "");
+          // Present the classes using "short-cut" names.
+          className = className.replace("ffx.potential.commands.", "");
+          className = className.replace("ffx.algorithms.commands.", "");
+          className = className.replace("ffx.realspace.commands", "realspace");
+          className = className.replace("ffx.xray.commands", "xray");
+          if (className.toUpperCase().contains("TEST")) {
+            testCommands.add(className);
+          } else {
+            commands.add(className);
+          }
+        }
+      }
     } catch (Exception e) {
       logger.info(format(" The %s resource could not be decoded.", location));
       return;
-    }
-
-    List<String> commands = new ArrayList<>();
-    List<String> testCommands = new ArrayList<>();
-    // Iterates over Jar entries.
-    Enumeration<JarEntry> enumeration = jar.entries();
-    while (enumeration.hasMoreElements()) {
-      ZipEntry zipEntry = enumeration.nextElement();
-      String className = zipEntry.getName();
-      if (className.startsWith("ffx")
-          && className.contains("commands")
-          && className.endsWith(".class")
-          && !className.contains("$")) {
-        className = className.replace("/", ".");
-        className = className.replace(".class", "");
-        // Present the classes using "short-cut" names.
-        className = className.replace("ffx.potential.commands.", "");
-        className = className.replace("ffx.algorithms.commands.", "");
-        className = className.replace("ffx.realspace.commands", "realspace");
-        className = className.replace("ffx.xray.commands", "xray");
-        if (className.toUpperCase().contains("TEST")) {
-          testCommands.add(className);
-        } else {
-          commands.add(className);
-        }
-      }
     }
 
     // Sort the scripts alphabetically.
@@ -268,8 +264,7 @@ public abstract class FFXCommand {
       logger.info(" Exception loading command line args:" + arguments);
     }
 
-    if (arguments instanceof List<?>) {
-      List<?> list = (List<?>) arguments;
+    if (arguments instanceof List<?> list) {
       int numArgs = list.size();
       args = new String[numArgs];
       for (int i = 0; i < numArgs; i++) {
@@ -295,13 +290,9 @@ public abstract class FFXCommand {
     }
 
     // Version info is printed by default.
-    if (version) {
-      // This should not be reached, due to the FFX Main class handling the "-V, --version" flag and
-      // exiting.
-      return false;
-    }
-
-    return true;
+    // This should not be reached, due to the FFX Main class handling the "-V, --version" flag and
+    // exiting.
+    return !version;
   }
 
   /**

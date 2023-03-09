@@ -37,13 +37,14 @@
 // ******************************************************************************
 package ffx.numerics;
 
+import ffx.numerics.fft.FFTTestSuite;
+import ffx.numerics.func1d.QuasiLinearSwitchTest;
+import ffx.numerics.integrate.Integrate1DTest;
+import ffx.numerics.integrate.IntegrationTest;
 import ffx.numerics.math.SquareRootTest;
-import ffx.numerics.multipole.GKTensorGlobalTest;
-import ffx.numerics.multipole.GKTensorQITest;
-import ffx.numerics.multipole.GlobalMultipoleTensorTest;
-import ffx.numerics.multipole.MultipoleTensorTest;
-import ffx.numerics.multipole.QIMultipoleTensorTest;
+import ffx.numerics.multipole.MultipoleTestSuite;
 import ffx.numerics.special.ErfTest;
+import ffx.numerics.special.ModifiedBesselTest;
 import ffx.numerics.spline.UniformBSplineTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -53,13 +54,14 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(Suite.class)
 @SuiteClasses({
     ErfTest.class,
+    FFTTestSuite.class,
+    Integrate1DTest.class,
+    IntegrationTest.class,
+    ModifiedBesselTest.class,
+    MultipoleTestSuite.class,
     SquareRootTest.class,
-    MultipoleTensorTest.class,
-    GlobalMultipoleTensorTest.class,
-    QIMultipoleTensorTest.class,
-    GKTensorGlobalTest.class,
-    GKTensorQITest.class,
-    UniformBSplineTest.class
+    UniformBSplineTest.class,
+    QuasiLinearSwitchTest.class
 })
 public class NumericsTestSuite {
 

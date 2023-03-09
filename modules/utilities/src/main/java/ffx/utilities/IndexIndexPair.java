@@ -38,27 +38,17 @@
 package ffx.utilities;
 
 /**
- * IndexIndexPair class.
+ * The IndexIndexPair record.
+ * <p>
+ * Pass in an int to be sorted on, then an int referring to some original list. Enables sorting based
+ * on one integer value while remembering where it was in the original list.
  *
+ * @param sortedIndex Value to be sorted upon.
+ * @param referenceIndex Original index.
  * @author Jacob M. Litman
  * @since 1.0
  */
-public class IndexIndexPair implements Comparable<Object> {
-
-  private final int sortedIndex;
-  private final int referenceIndex;
-
-  /**
-   * Pass in an int to be sorted on, then an int referring to some original list. Enables sorting
-   * based on one integer value while remembering where it was in the original list.
-   *
-   * @param sortedIndex Value to be sorted upon
-   * @param referenceIndex Original index
-   */
-  public IndexIndexPair(int sortedIndex, int referenceIndex) {
-    this.sortedIndex = sortedIndex;
-    this.referenceIndex = referenceIndex;
-  }
+public record IndexIndexPair(int sortedIndex, int referenceIndex) implements Comparable<Object> {
 
   /** {@inheritDoc} */
   @Override
@@ -74,21 +64,4 @@ public class IndexIndexPair implements Comparable<Object> {
     return Integer.compare(sortedIndex, other.sortedIndex);
   }
 
-  /**
-   * Getter for the field <code>referenceIndex</code>.
-   *
-   * @return a int.
-   */
-  public int getReferenceIndex() {
-    return referenceIndex;
-  }
-
-  /**
-   * Getter for the field <code>sortedIndex</code>.
-   *
-   * @return a int.
-   */
-  public int getSortedIndex() {
-    return sortedIndex;
-  }
 }

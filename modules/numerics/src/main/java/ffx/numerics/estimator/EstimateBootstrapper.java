@@ -98,32 +98,40 @@ public class EstimateBootstrapper {
   public static int[] getBootstrapIndices(int length, Random random, int minDistinct) {
     // Handle extremely short lengths with special-case handling.
     switch (length) {
-      case 0:
+      case 0 -> {
         return new int[0];
-      case 1:
+      }
+      case 1 -> {
         return new int[] {0};
-      case 2:
+      }
+      case 2 -> {
         int[] indices = new int[2];
         indices[0] = random.nextBoolean() ? 0 : 1;
         indices[1] = random.nextBoolean() ? 0 : 1;
         return indices;
+      }
       // Default: leave switch and handle general case.
     }
 
     // General case.
     int[] indices = random.ints(length, 0, length).toArray();
-    long distinctVals = stream(indices).distinct().count();
+    long distinctVal = stream(indices).distinct().count();
     int ctr = 0;
-    while (distinctVals <= minDistinct) {
+    while (distinctVal <= minDistinct) {
       logger.info(
           format(" Regenerating array (iteration %d): only %d distinct values found for length %d.",
-              ++ctr, distinctVals, length));
+              ++ctr, distinctVal, length));
       indices = random.ints(length, 0, length).toArray();
-      distinctVals = stream(indices).distinct().count();
+      distinctVal = stream(indices).distinct().count();
     }
     return indices;
   }
 
+  /**
+   * Get Bootstrap Free Energy results for each window.
+   *
+   * @return Bootstrap Enthalpy results for each window.
+   */
   public SummaryStatistics[] getBootstrapEnthalpyResults() {
     return bootstrapEnthalpyResults;
   }
@@ -159,7 +167,7 @@ public class EstimateBootstrapper {
       estimate.estimateDG(true);
 
       double[] fe = estimate.getBinEnergies();
-      double[] enthalpy = estimate.getBinEthalpies();
+      double[] enthalpy = estimate.getBinEnthalpies();
       for (int j = 0; j < nWindows; j++) {
         windows[j].addValue(fe[j]);
         enthalpyWindows[j].addValue(enthalpy[j]);
@@ -175,19 +183,21 @@ public class EstimateBootstrapper {
   /**
    * Get bootstrap free energy estimate for each window.
    *
-   * @return Return the bootstrap free energy difference estimate for each windows.
+   * @return Return the bootstrap free energy difference estimate for each window.
    */
   public double[] getFE() {
     return stream(bootstrapFEResults).mapToDouble(SummaryStatistics::getMean).toArray();
   }
+
   /**
    * Get bootstrap enthalpy estimate for each window.
    *
-   * @return Return the bootstrap enthalpy estimate for each windows.
+   * @return Return the bootstrap enthalpy estimate for each window.
    */
   public double[] getEnthalpy() {
     return stream(bootstrapEnthalpyResults).mapToDouble(SummaryStatistics::getMean).toArray();
   }
+
   /**
    * Get the total free energy difference estimate from bootstrap analysis.
    *
@@ -196,6 +206,7 @@ public class EstimateBootstrapper {
   public double getTotalFE() {
     return getTotalFE(getFE());
   }
+
   /**
    * Get the total enthalpy estimate from bootstrap analysis.
    *
@@ -216,6 +227,7 @@ public class EstimateBootstrapper {
   public double getTotalFE(double[] fe) {
     return estimate.sumBootstrapResults(fe);
   }
+
   /**
    * Get the total enthalpy estimate from per window bootstrap analysis.
    *
@@ -225,6 +237,7 @@ public class EstimateBootstrapper {
   public double getTotalEnthalpy(double[] enthalpy) {
     return estimate.sumBootstrapResults(enthalpy);
   }
+
   /**
    * Get the total free energy difference variance estimate from bootstrap analysis.
    *
@@ -243,6 +256,7 @@ public class EstimateBootstrapper {
   public double getTotalUncertainty(double[] var) {
     return estimate.sumBootstrapUncertainty(var);
   }
+
   /**
    * Get the total enthalpy variance estimate from bootstrap analysis.
    *
@@ -251,6 +265,7 @@ public class EstimateBootstrapper {
   public double getTotalEnthalpyUncertainty() {
     return getTotalEnthalpyUncertainty(getEnthalpyVariance());
   }
+
   /**
    * Get the total enthalpy estimate from per window bootstrap analysis.
    *
@@ -270,9 +285,9 @@ public class EstimateBootstrapper {
   public double[] getUncertainty() {
     return stream(bootstrapFEResults).mapToDouble(SummaryStatistics::getSd).toArray();
   }
+
   /**
-   * Get the enthalpy standard deviation estimate from bootstrap analysis for each
-   * window.
+   * Get the enthalpy standard deviation estimate from bootstrap analysis for each window.
    *
    * @return Returns enthalpy standard deviation estimate for each window.
    */
@@ -288,6 +303,7 @@ public class EstimateBootstrapper {
   public double[] getVariance() {
     return stream(bootstrapFEResults).mapToDouble(SummaryStatistics::getVar).toArray();
   }
+
   /**
    * Get the enthalpy variance estimate from bootstrap analysis for each window.
    *

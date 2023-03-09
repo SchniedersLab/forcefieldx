@@ -1723,6 +1723,7 @@ public class ReciprocalSpace {
       if (use != null && !use[iAtom]) {
         return;
       }
+
       final int lbZ = RowIndexZ(lb);
       final int ubZ = RowIndexZ(ub);
       final double[] ind = inducedDipoleFrac[iSymm][iAtom];
@@ -1961,6 +1962,7 @@ public class ReciprocalSpace {
       if (use != null && !use[iAtom]) {
         return;
       }
+
       // Convert Cartesian induced dipole to fractional induced dipole.
       double[] ind = inducedDipoleFrac[iSymm][iAtom];
       double ux = ind[0];

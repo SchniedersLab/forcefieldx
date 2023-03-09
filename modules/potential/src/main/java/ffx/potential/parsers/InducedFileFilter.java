@@ -50,7 +50,8 @@ import org.apache.commons.io.FilenameUtils;
 public final class InducedFileFilter extends FileFilter {
 
   /** Default Constructor. */
-  public InducedFileFilter() {}
+  public InducedFileFilter() {
+  }
 
   /**
    * {@inheritDoc}

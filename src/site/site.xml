@@ -191,7 +191,7 @@
           <item name="Biotype" href="/commands/Biotype.html"/>
           <item name="Cart2Frac" href="/commands/Cart2Frac.html"/>
           <item name="ChainBreaks" href="/commands/ChainBreaks.html"/>
-          <item name="CIFtoXYZ" href="/commands/CIFtoXYZ.html"/>
+          <item name="ImportCIF" href="/commands/ImportCIF.html"/>
           <item name="Fasta" href="/commands/Fasta.html"/>
           <item name="Frac2Cart" href="/commands/Frac2Cart.html"/>
           <item name="MoveIntoUnitCell" href="/commands/MoveIntoUnitCell.html"/>

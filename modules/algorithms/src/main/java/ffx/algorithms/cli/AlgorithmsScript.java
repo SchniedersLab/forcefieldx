@@ -155,11 +155,13 @@ public class AlgorithmsScript extends FFXScript {
   }
 
   /**
-   * Gets a File in the save directory with the same name as the input file. Can just be the original
-   * file if saveDir was never set, which is the case for production runs.'
+   * Return a File in the base directory with the same name as the input file.
+   * <p>
+   * This will just be the original file if baseDir was never set, which is the case for production
+   * runs.
    *
    * @param file File to find a save location for.
-   * @return File to save to
+   * @return Returns a File in the base directory with the same name as the input file.
    */
   protected File saveDirFile(File file) {
     if (baseDir == null || !baseDir.exists() || !baseDir.isDirectory() || !baseDir.canWrite()) {

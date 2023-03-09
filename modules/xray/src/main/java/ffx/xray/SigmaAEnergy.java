@@ -164,8 +164,7 @@ public class SigmaAEnergy implements Potential {
 
     // Initialize parameters.
     assert (refinementData.crystalReciprocalSpaceFc != null);
-    double nGrid2 =
-        2.0
+    double nGrid2 = 2.0
             * refinementData.crystalReciprocalSpaceFc.getXDim()
             * refinementData.crystalReciprocalSpaceFc.getYDim()
             * refinementData.crystalReciprocalSpaceFc.getZDim();
@@ -358,14 +357,8 @@ public class SigmaAEnergy implements Potential {
       int nSumr = sigmaARegion.nSumR.get();
       StringBuilder sb = new StringBuilder("\n");
       sb.append(" sigmaA (s and w) fit using only R free reflections\n");
-      sb.append(
-          format(
-              "      # HKL: %10d (free set) %10d (working set) %10d (total)\n",
-              nSum, nSumr, nSum + nSumr));
-      sb.append(
-          format(
-              "   residual: %10g (free set) %10g (working set) %10g (total)\n",
-              sum, sumR, sum + sumR));
+      sb.append(format("      # HKL: %10d (free set) %10d (working set) %10d (total)\n", nSum, nSumr, nSum + nSumr));
+      sb.append(format("   residual: %10g (free set) %10g (working set) %10g (total)\n", sum, sumR, sum + sumR));
       sb.append("    x: ");
       for (double x1 : x) {
         sb.append(format("%g ", x1));

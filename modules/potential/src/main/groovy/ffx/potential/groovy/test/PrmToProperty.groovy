@@ -38,7 +38,10 @@
 package ffx.potential.groovy.test
 
 import ffx.potential.cli.PotentialScript
+import ffx.potential.parameters.ChargeType
 import ffx.potential.parameters.ForceField
+import ffx.potential.parameters.MultipoleType
+import ffx.potential.parameters.VDWType
 import ffx.potential.parsers.ForceFieldFilter
 import ffx.utilities.Keyword
 import org.apache.commons.configuration2.CompositeConfiguration
@@ -63,6 +66,20 @@ class PrmToProperty extends PotentialScript {
   @Option(names = ['-t', '--tinker'], paramLabel = "false", defaultValue = "false",
       description = 'Remove line continuation characters from multi-line force field types (i.e. Tinker prm format).')
   private boolean tinker = false
+
+  /**
+   * -c or --useCharges Output charge keywords instead of multipoles.
+   */
+  @Option(names = ['-c', '--useCharges'], paramLabel = "false", defaultValue = "false",
+      description = 'Output charge keywords instead of multipole keywords.')
+  private boolean useCharges = false
+
+  /**
+   * -z or --zeroVDW Add a zero VDW class with zero parameters.
+   */
+  @Option(names = ['-z', '--zeroVDW'], paramLabel = "false", defaultValue = "false",
+      description = 'Add a zero VDW class with zero parameters.')
+  private boolean zeroVDW = false
 
   /**
    * The final argument(s) should be one or more filenames.
@@ -116,6 +133,24 @@ class PrmToProperty extends PotentialScript {
       forceFieldFilter = new ForceFieldFilter(properties)
       ForceField forceField2 = forceFieldFilter.parse()
       forceField.append(forceField2)
+    }
+
+    if (useCharges) {
+      // Convert multipole types to charge types.
+      Map<String, MultipoleType> multipoleTypes =
+          forceField.getTypes(ForceField.ForceFieldType.MULTIPOLE) as Map<String, MultipoleType>
+      for (String key : multipoleTypes.keySet()) {
+        MultipoleType multipoleType = multipoleTypes.get(key)
+        ChargeType chargeType = new ChargeType(multipoleType.frameAtomTypes[0], multipoleType.getCharge())
+        forceField.addForceFieldType(chargeType)
+      }
+      // Clear multipole types.
+      forceField.clearForceFieldType(ForceField.ForceFieldType.MULTIPOLE)
+    }
+
+    if (zeroVDW) {
+      // Add a zero VDW class with zero parameters.
+      forceField.addForceFieldType(new VDWType(0, 0.0, 0.0, -1.0))
     }
 
     if (forceField != null) {

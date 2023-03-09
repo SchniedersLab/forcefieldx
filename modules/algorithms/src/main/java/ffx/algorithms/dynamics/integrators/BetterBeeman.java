@@ -39,6 +39,7 @@ package ffx.algorithms.dynamics.integrators;
 
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 
+import ffx.potential.SystemState;
 import ffx.numerics.Potential;
 
 /**
@@ -56,16 +57,10 @@ public class BetterBeeman extends Integrator {
   /**
    * Constructor for BetterBeeman.
    *
-   * @param nVariables number of Variables.
-   * @param x Cartesian coordinates (Angstroms).
-   * @param v Velocities.
-   * @param a Accelerations.
-   * @param aPrevious Previous Accelerations.
-   * @param mass Mass.
+   * @param state The current state of the molecular dynamics simulation to operate on.
    */
-  public BetterBeeman(
-      int nVariables, double[] x, double[] v, double[] a, double[] aPrevious, double[] mass) {
-    super(nVariables, x, v, a, aPrevious, mass);
+  public BetterBeeman(SystemState state) {
+    super(state);
     dt_8 = 0.125 * dt;
     dt2_8 = dt * dt_8;
   }
@@ -74,12 +69,16 @@ public class BetterBeeman extends Integrator {
    * {@inheritDoc}
    *
    * <p>Use Newton's second law to get the next acceleration and find the full-step velocities using
-   * the Beeman recusion.
+   * the Beeman recursion.
    */
   @Override
   public void postForce(double[] gradient) {
     copyAccelerationToPrevious();
-    for (int i = 0; i < nVariables; i++) {
+    double[] a = state.a();
+    double[] v = state.v();
+    double[] mass = state.mass();
+    double[] aPrevious = state.aPrevious();
+    for (int i = 0; i < state.getNumberOfVariables(); i++) {
       a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
       v[i] += (3.0 * a[i] + aPrevious[i]) * dt_8;
     }
@@ -93,7 +92,11 @@ public class BetterBeeman extends Integrator {
    */
   @Override
   public void preForce(Potential potential) {
-    for (int i = 0; i < nVariables; i++) {
+    double[] x = state.x();
+    double[] a = state.a();
+    double[] v = state.v();
+    double[] aPrevious = state.aPrevious();
+    for (int i = 0; i < state.getNumberOfVariables(); i++) {
       double temp = 5.0 * a[i] - aPrevious[i];
       x[i] += v[i] * dt + temp * dt2_8;
       v[i] += temp * dt_8;

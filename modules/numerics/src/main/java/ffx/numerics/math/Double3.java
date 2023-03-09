@@ -175,7 +175,7 @@ public class Double3 {
   }
 
   /**
-   * Finds the square of the Euclidean distance between two postions.
+   * Finds the square of the Euclidean distance between two positions.
    *
    * @param b Second vector.
    * @return Returns the squared distance between this Double3 and b.
