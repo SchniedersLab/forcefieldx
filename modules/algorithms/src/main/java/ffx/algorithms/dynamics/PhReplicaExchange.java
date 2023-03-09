@@ -44,9 +44,7 @@ import edu.rit.pj.Comm;
 import ffx.algorithms.Terminatable;
 import ffx.numerics.Potential;
 import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.parsers.DYNFilter;
 import jline.internal.Nullable;
-import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.math3.util.FastMath;
 
@@ -317,7 +315,7 @@ public class PhReplicaExchange implements Terminatable {
           if(restartStep == 0){
             restartStep = sum;
           }
-          else if(restartStep != sum){
+          else if(restartStep <= sum){
             logger.warning(" Restart received uneven sums from esv file: " + file.getAbsolutePath());
             restartStep = 0;
             readPhScale.clear();
@@ -351,7 +349,8 @@ public class PhReplicaExchange implements Terminatable {
   }
 
   /**
-   * Sample.
+   * Sample. Restart file write-outs are entirely handled by this method based on how many steps are per cycle.
+   * User command input is ignored.
    *
    * @param cycles        a int.
    * @param nSteps        a int.
@@ -365,7 +364,7 @@ public class PhReplicaExchange implements Terminatable {
   public void sample(int cycles, long titrSteps, long confSteps, double timeStep, double printInterval, double trajInterval, int initDynamics) {
     done = false;
     terminate = false;
-    replica.setRestartFrequency(cycles * (titrSteps + confSteps) * replica.dt + 100);
+    replica.setRestartFrequency(cycles * (titrSteps + confSteps) * replica.dt + 100); // Full control over restarts handled by this class
     extendedSystem.reGuessLambdas();
 
     int startCycle = 0;
@@ -413,6 +412,11 @@ public class PhReplicaExchange implements Terminatable {
         break;
       }
 
+      // Set backups in case job is killed at bad time
+      if(i == 0 || backupNeeded){
+        replica.writeRestart();
+      }
+
       if(openMM != null){
         if(confSteps < 3)
         {
@@ -424,11 +428,7 @@ public class PhReplicaExchange implements Terminatable {
         dynamics(titrSteps, timeStep, printInterval, trajInterval);
       }
 
-      // Set backups in case job is killed at bad time
-      if(i == 0 || backupNeeded){
-        replica.writeRestart();
-      }
-      copyToBackups();
+      moveToBackups();
       replica.writeRestart();
 
       if(i % 100 == 0){
@@ -698,7 +698,7 @@ public class PhReplicaExchange implements Terminatable {
     }
   }
 
-  private void copyToBackups(){
+  private void moveToBackups(){
     try {
       Files.move(esv.toPath(),esv.toPath().resolveSibling(esvBackup.getName()), StandardCopyOption.REPLACE_EXISTING);
     } catch (IOException e) {
