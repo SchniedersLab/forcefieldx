@@ -324,15 +324,6 @@ public class ExtendedSystem implements Potential {
         double initialTautomerLambda = properties.getDouble("lambda.tautomer.initial", 0.5);
         guessTitrState = properties.getBoolean("guess.titration.state", false);
         specialResidues = getPropertyList(properties, "esv.special.residues");
-<<<<<<< HEAD
-        for(Residue res : mola.getResidueList()){
-            if(!isTitratable(res) && specialResidues.contains((double) (res.getResidueNumber()))){
-                logger.severe("Given special residue: " + res + " is not titratable.");
-            }
-        }
-
-=======
->>>>>>> 9e651e1cd680c41a3011775c451b897528b6e0ea
         specialResiduePKAs = getPropertyList(properties, "esv.special.residues.pka");
         if(specialResidues.size() != specialResiduePKAs.size()) {
             logger.severe("The number of special residues and their associated values do not match.");
@@ -346,9 +337,6 @@ public class ExtendedSystem implements Potential {
             }
             logger.info(" ");
         }
-<<<<<<< HEAD
-
-=======
         logger.info("Special residues: " + specialResidues);
         logger.info("Special residues pKa: " + specialResiduePKAs);
         for(Residue res : mola.getResidueList()){
@@ -356,7 +344,6 @@ public class ExtendedSystem implements Potential {
                 logger.severe("Given special residue: " + res + " is not titratable.");
             }
         }
->>>>>>> 9e651e1cd680c41a3011775c451b897528b6e0ea
         fixTitrationState = properties.getBoolean("fix.titration.lambda", false);
         fixTautomerState = properties.getBoolean("fix.tautomer.lambda", false);
 
@@ -1016,13 +1003,6 @@ public class ExtendedSystem implements Potential {
          if (specialResidues.contains(residueNumber)) {
              initialTitrationLambda =
                      (constantSystemPh < specialResiduePKAs.get(specialResidues.indexOf(residueNumber))) ? 1.0 : 0.0;
-<<<<<<< HEAD
-=======
-
-             /*logger.info("Resi " + residueNumber + " is a special residue with pKa " +
-                     specialResiduePKAs.get(specialResidues.indexOf(residueNumber)) + " and initial lambda " +
-                     initialTitrationLambda + ".");*/
->>>>>>> 9e651e1cd680c41a3011775c451b897528b6e0ea
          }
         else {
             initialTitrationLambda = switch (AA3) {
