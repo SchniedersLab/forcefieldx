@@ -210,6 +210,7 @@ public class RotamerOptimization implements Terminatable {
 
   private double totalBoltzmann = 0;
   private double refEnergy = 0;
+  private double[] fraction;
   /** List of residues to optimize; they may not be contiguous or all members of the same chain. */
   private List<Residue> residueList;
   /**
@@ -2063,9 +2064,10 @@ public class RotamerOptimization implements Terminatable {
    * @param residues Residue array.
    * @param i Current number of permutations.
    * @param currentRotamers Current rotamer list.
+   * @param titrateArray empty array for titration count
    * @return 0.
    */
-  public int partitionFunction(Residue[] residues, int i, int[] currentRotamers) throws Exception {
+  public int partitionFunction(Residue[] residues, int i, int[] currentRotamers, double[] titrateArray) throws Exception {
     // This is the initialization condition.
     int adjustPerm = 0;
     if (i == 0) {
@@ -2106,7 +2108,7 @@ public class RotamerOptimization implements Terminatable {
           continue;
         }
         currentRotamers[i] = ri;
-        partitionFunction(residues, i + 1, currentRotamers);
+        partitionFunction(residues, i + 1, currentRotamers, titrateArray);
       }
     } else {
       // At the end of the recursion, check each rotamer of the final residue.
@@ -2128,6 +2130,7 @@ public class RotamerOptimization implements Terminatable {
           if(evaluatedPermutations > 1e8){
             return adjustPerm;
           }
+
           energyRegion.init(eE, residues, currentRotamers, threeBodyTerm);
           parallelTeam.execute(energyRegion);
           double totalEnergy = eE.getBackboneEnergy() + energyRegion.getSelf() +
@@ -2137,10 +2140,41 @@ public class RotamerOptimization implements Terminatable {
           }
           double boltzmannWeight = exp((-1.0/0.6)*(totalEnergy-refEnergy));
           totalBoltzmann += boltzmannWeight;
+          if(titrateArray.length > 0){
+            int titrateRes = 0;
+            for (int currentRotamer : currentRotamers) {
+              if (residuei.getName().equals("HIS") | residuei.getName().equals("HIE") | residuei.getName().equals("HID") |
+                      residuei.getName().equals("GLU") | residuei.getName().equals("GLH") | residuei.getName().equals("ASP") |
+                      residuei.getName().equals("ASH") | residuei.getName().equals("LYS") | residuei.getName().equals("LYD")) {
+                if (residuei.getName().equals("HIS") | residuei.getName().equals("HIE") | residuei.getName().equals("HID")) {
+                  if (rotamersi[currentRotamer].getName().equals("HIS")) {
+                    titrateArray[titrateRes] += boltzmannWeight;
+                  }
+                } else if (residuei.getName().equals("GLU") | residuei.getName().equals("GLH")) {
+                  if (rotamersi[currentRotamer].getName().equals("GLH")) {
+                    titrateArray[titrateRes] += boltzmannWeight;
+                  }
+                } else if (residuei.getName().equals("ASP") | residuei.getName().equals("ASH")) {
+                  if (rotamersi[currentRotamer].getName().equals("ASH")) {
+                    titrateArray[titrateRes] += boltzmannWeight;
+                  }
+                } else if (residuei.getName().equals("LYS") | residuei.getName().equals("LYD")) {
+                  if (rotamersi[currentRotamer].getName().equals("LYS")) {
+                    titrateArray[titrateRes] += boltzmannWeight;
+                  }
+                }
+                titrateRes += 1;
+              }
+            }
+          }
         }
       }
     }
-
+    for(int m=0; m<titrateArray.length; m++){
+      titrateArray[m] = titrateArray[m]/totalBoltzmann;
+    }
+    logger.info("Total permutations evaluated: " + evaluatedPermutations);
+    fraction = titrateArray;
     return adjustPerm;
   }
 
@@ -2159,17 +2193,24 @@ public class RotamerOptimization implements Terminatable {
   public double getTotalBoltzmann() {return totalBoltzmann;}
 
   /**
+   * Get the ensemble everage of protonated rotamers for all titratable sites
+   * @return fraction of protonated residues
+   */
+  public double[] getFraction() {return fraction;}
+
+  /**
    * Re-compute permutations with new parameters if too many permutations present
    * @param residues residue array
    * @param i int
    * @param currentRotamers empty array
    * @param algorithm manybody algorithm
+   * @param titrateArray empty array for titration count
    * @return permutation check
    * @throws Exception too many permutations to continue
    */
-  public boolean checkPermutations(Residue[] residues, int i,  int[] currentRotamers, Algorithm algorithm) throws Exception {
+  public boolean checkPermutations(Residue[] residues, int i,  int[] currentRotamers, double[] titrateArray, Algorithm algorithm) throws Exception {
     boolean perm = false;
-    partitionFunction(residues, i, currentRotamers);
+    partitionFunction(residues, i, currentRotamers, titrateArray);
     try{
       if(evaluatedPermutations > 1e8){
         logger.info("Made it to the exception if statement");

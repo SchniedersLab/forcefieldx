@@ -135,6 +135,7 @@ class ReducedPartition extends  AlgorithmsScript{
         double[] boltzmannWeights = new double[2]
         int[] adjustPerm = new int[2]
         double[] offsets = new double[2]
+        double[] titrateArray
         List<Residue> residueList = activeAssembly.getResidueList()
 
         List<Integer> residueNumber = new ArrayList<>()
@@ -144,39 +145,52 @@ class ReducedPartition extends  AlgorithmsScript{
 
 
         String mutatedFileName = ""
-        //Call the MutatePDB script
-        if(filenames.size() == 1){
-            if(unfolded){
-                mutatorBinding = new Binding('-r', mutatingResidue.toString(), '-n', resName, unfoldedFileName)
-            } else {
-                mutatorBinding = new Binding('-r', mutatingResidue.toString(), '-n', resName, filenames.get(0), '--ch', mutatingChain)
-            }
-
-            MutatePDB mutatePDB = new MutatePDB(mutatorBinding)
-            mutatePDB.run()
-            mutatedFileName = mutatorBinding.getProperty('versionFileName')
-        }
-
-        double[] mutatingResCoor = new double[3]
-        int index = residueNumber.indexOf(mutatingResidue)
-        mutatingResCoor = residueList.get(index).getAtomByName("CA", true).getXYZ(mutatingResCoor)
         String listResidues = ""
         int count = 0
-        for(int k=0; k<residueList.size(); k++){
-            double[] currentResCoor = new double[3]
-            currentResCoor = residueList.get(k).getAtomByName("CA", true).getXYZ(currentResCoor)
-            double dist = DoubleMath.dist(mutatingResCoor,currentResCoor)
-            if(dist < distanceCutoff){
-                if(count == 0){
-                    listResidues += residueList.get(k).getChainID() + residueList.get(k).getResidueNumber()
+        if(!pKa){
+            //Call the MutatePDB script
+            if(filenames.size() == 1){
+                if(unfolded){
+                    mutatorBinding = new Binding('-r', mutatingResidue.toString(), '-n', resName, unfoldedFileName)
                 } else {
-                    listResidues += "," + residueList.get(k).getChainID() + residueList.get(k).getResidueNumber()
+                    mutatorBinding = new Binding('-r', mutatingResidue.toString(), '-n', resName, filenames.get(0), '--ch', mutatingChain)
                 }
-                count++
+
+                MutatePDB mutatePDB = new MutatePDB(mutatorBinding)
+                mutatePDB.run()
+                mutatedFileName = mutatorBinding.getProperty('versionFileName')
+            }
+
+            double[] mutatingResCoor = new double[3]
+            int index = residueNumber.indexOf(mutatingResidue)
+            mutatingResCoor = residueList.get(index).getAtomByName("CA", true).getXYZ(mutatingResCoor)
+            for(int k=0; k<residueList.size(); k++){
+                double[] currentResCoor = new double[3]
+                currentResCoor = residueList.get(k).getAtomByName("CA", true).getXYZ(currentResCoor)
+                double dist = DoubleMath.dist(mutatingResCoor,currentResCoor)
+                if(dist < distanceCutoff){
+                    if(count == 0){
+                        listResidues += residueList.get(k).getChainID() + residueList.get(k).getResidueNumber()
+                    } else {
+                        listResidues += "," + residueList.get(k).getChainID() + residueList.get(k).getResidueNumber()
+                    }
+                    count++
+                }
             }
         }
+
+
+
         String filename = filenames.get(0)
-        for(int j=0; j<2; j++){
+
+        int numLoop = 2
+        if(pKa){
+            numLoop = 1
+        }
+        int numTRes = 0
+        List<Residue> titrateResidues = new ArrayList<>()
+
+        for(int j=0; j<numLoop; j++){
 
             // Load the MolecularAssembly.
             if(j>0){
@@ -207,7 +221,10 @@ class ReducedPartition extends  AlgorithmsScript{
 
             activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
             potentialEnergy = activeAssembly.getPotentialEnergy()
-            manyBodyOptions.setListResidues(listResidues)
+            if(!pKa){
+                manyBodyOptions.setListResidues(listResidues)
+            }
+
 
 
             // Collect residues to optimize.
@@ -225,21 +242,18 @@ class ReducedPartition extends  AlgorithmsScript{
                 List<Integer> resNumberList = new ArrayList<>()
                 for (Residue residue : residues) {
                     resNumberList.add(residue.getResidueNumber())
+                    if(pKa){
+                        if(residue.getName() == "HIS" | residue.getName() == "HIE" | residue.getName() == "HID" |
+                                residue.getName() == "GLU" | residue.getName() == "GLH" | residue.getName() == "ASP" |
+                                residue.getName() == "ASH" | residue.getName() == "LYS" | residue.getName() == "LYD" ){
+                            titrateResidues.add(residue)
+                        }
+                    }
                 }
 
-                logger.info('pKa:' + pKa.toString())
                 // Create new MolecularAssembly with additional protons and update the ForceFieldEnergy
-                if(pKa){
-                    int removeResidue = resNumberList.indexOf(mutatingResidue)
-                    resNumberList.remove(removeResidue)
-                    logger.info(resNumberList.toString())
-                    titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
-                            resNumberList, titrationPH, mutatingResidue)
-                } else {
-                    titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
-                            resNumberList, titrationPH)
-                }
-
+                titrationManyBody = new TitrationManyBody(filename, activeAssembly.getForceField(),
+                        resNumberList, titrationPH)
                 MolecularAssembly protonatedAssembly = titrationManyBody.getProtonatedAssembly()
                 setActiveAssembly(protonatedAssembly)
                 potentialEnergy = protonatedAssembly.getPotentialEnergy()
@@ -265,14 +279,31 @@ class ReducedPartition extends  AlgorithmsScript{
             rotamerOptimization.optimize(manyBodyOptions.getAlgorithm(residues1.size()))
 
             int[] currentRotamers = new int[residues1.size()]
+            titrateArray = new double[titrateResidues.size()]
 
-            rotamerOptimization.checkPermutations(residues1.toArray() as Residue[], 0, currentRotamers, manyBodyOptions.getAlgorithm(residues1.size()))
+
+            rotamerOptimization.checkPermutations(residues1.toArray() as Residue[], 0, currentRotamers, titrateArray,
+                    manyBodyOptions.getAlgorithm(residues1.size()))
             boltzmannWeights[j] = rotamerOptimization.getTotalBoltzmann()
             offsets[j] = rotamerOptimization.getRefEnergy()
+            if(pKa){
+                titrateArray = rotamerOptimization.getFraction()
+            }
         }
 
-        double gibbs = -(0.6)*(Math.log(boltzmannWeights[1]/boltzmannWeights[0]))
-        logger.info("\n Gibbs Free Energy Change: " + gibbs)
+        if(pKa){
+            int titrateCount = 0
+            for(Residue residue : titrateResidues){
+                logger.info("Residue: " + residue.getName() + residue.getResidueNumber() + " Fraction of Protonated: " +
+                        titrateArray[titrateCount])
+                titrateCount += 1
+            }
+        } else {
+            double gibbs = -(0.6)*(Math.log(boltzmannWeights[1]/boltzmannWeights[0]))
+            logger.info("\n Gibbs Free Energy Change: " + gibbs)
+        }
+
+
 
 
         return this
