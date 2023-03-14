@@ -2075,7 +2075,7 @@ public class RotamerOptimization implements Terminatable {
       evaluatedPermutations = 0;
       evaluatedPermutationsPrint = 1000;
     }
-
+    int titrateRes = 0;
     if (evaluatedPermutations >= evaluatedPermutationsPrint) {
       if (evaluatedPermutations % evaluatedPermutationsPrint == 0) {
         logIfMaster(
@@ -2141,7 +2141,7 @@ public class RotamerOptimization implements Terminatable {
           double boltzmannWeight = exp((-1.0/0.6)*(totalEnergy-refEnergy));
           totalBoltzmann += boltzmannWeight;
           if(titrateArray.length > 0){
-            int titrateRes = 0;
+
             for (int currentRotamer : currentRotamers) {
               if (residuei.getName().equals("HIS") | residuei.getName().equals("HIE") | residuei.getName().equals("HID") |
                       residuei.getName().equals("GLU") | residuei.getName().equals("GLH") | residuei.getName().equals("ASP") |
