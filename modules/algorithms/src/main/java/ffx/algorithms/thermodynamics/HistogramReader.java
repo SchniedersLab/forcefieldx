@@ -70,7 +70,6 @@ public class HistogramReader extends BufferedReader {
   private int dUdLBins;
   private double mindUdL;
   private double dUdLBinWidth;
-  private int temperingFlag;
   private double[][] counts;
 
   public HistogramReader(Reader reader) {
@@ -133,10 +132,22 @@ public class HistogramReader extends BufferedReader {
       dUdLBins = parseInt(readLine().split(" +")[1]);
       mindUdL = parseDouble(readLine().split(" +")[1]);
       dUdLBinWidth = parseDouble(readLine().split(" +")[1]);
-      temperingFlag = parseInt(readLine().split(" +")[1]);
 
       counts = new double[lambdaBins][dUdLBins];
-      for (int i = 0; i < lambdaBins; i++) {
+      int i = 0;
+      String[] toks = readLine().split(" +");
+      if (toks.length == 2) {
+        // Read the flag for the tempering method.
+        int temperingFlag = parseInt(readLine().split(" +")[1]);
+      } else {
+        // Read the first line of the histogram.
+        for (int j = 0; j < dUdLBins; j++) {
+          counts[i][j] = parseDouble(toks[j]);
+        }
+        i++;
+      }
+
+      for (; i < lambdaBins; i++) {
         String[] countToks = readLine().split(" +");
         for (int j = 0; j < dUdLBins; j++) {
           counts[i][j] = parseDouble(countToks[j]);

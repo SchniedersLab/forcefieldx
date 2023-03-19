@@ -113,9 +113,8 @@ class SendAsynchronous extends Thread {
       try {
         histogram.world.receive(null, receiveCountBuf);
       } catch (InterruptedIOException ioe) {
-        String message =
-            " SendAsynchronous was interrupted at world.receive; "
-                + "future message passing may be in an error state.";
+        String message = " SendAsynchronous was interrupted at world.receive; "
+            + "future message passing may be in an error state.";
         logger.log(Level.WARNING, message, ioe);
         break;
       } catch (IOException e) {

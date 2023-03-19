@@ -76,8 +76,6 @@ import org.apache.commons.io.FilenameUtils;
 public class RepExOST {
 
   private static final Logger logger = Logger.getLogger(RepExOST.class.getName());
-  // Message tags to use.
-  private static final int lamTag = 42;
   private static final int mainLoopTag = 2020;
   private final OrthogonalSpaceTempering orthogonalSpaceTempering;
   private final OrthogonalSpaceTempering.Histogram[] allHistograms;
@@ -105,8 +103,6 @@ public class RepExOST {
   private boolean reinitVelocities = true;
   private int currentHistoIndex;
   private double currentLambda;
-  // False if the RepEx OST is not responsible for writing files out.
-  private final boolean automaticWriteouts = true;
 
   /**
    * Private constructor used here to centralize shared logic.
@@ -120,34 +116,26 @@ public class RepExOST {
    * @param fileType File type to save to.
    * @param repexInterval Interval in psec between RepEx attempts.
    */
-  private RepExOST(
-      OrthogonalSpaceTempering orthogonalSpaceTempering,
-      MonteCarloOST monteCarloOST,
-      MolecularDynamics molecularDynamics,
-      OstType ostType,
-      DynamicsOptions dynamicsOptions,
-      OSTOptions ostOptions,
-      CompositeConfiguration properties,
-      String fileType,
-      double repexInterval)
-      throws IOException {
+  private RepExOST(OrthogonalSpaceTempering orthogonalSpaceTempering, MonteCarloOST monteCarloOST,
+      MolecularDynamics molecularDynamics, OstType ostType, DynamicsOptions dynamicsOptions,
+      OSTOptions ostOptions, CompositeConfiguration properties, String fileType,
+      double repexInterval) throws IOException {
     this.orthogonalSpaceTempering = orthogonalSpaceTempering;
     switch (ostType) {
-      case MD:
+      case MD -> {
         algoRun = this::runMD;
         isMC = false;
-        break;
-      case MC_ONESTEP:
+      }
+      case MC_ONESTEP -> {
         algoRun = this::runMCOneStep;
         isMC = true;
-        break;
-      case MC_TWOSTEP:
+      }
+      case MC_TWOSTEP -> {
         algoRun = this::runMCTwoStep;
         isMC = true;
-        break;
-      default:
-        throw new IllegalArgumentException(
-            " Could not recognize whether this is supposed to be MD, MC 1-step, or MC 2-step!");
+      }
+      default -> throw new IllegalArgumentException(
+          " Could not recognize whether this is supposed to be MD, MC 1-step, or MC 2-step!");
     }
     this.molecularDynamics = molecularDynamics;
     this.molecularDynamics.setAutomaticWriteouts(false);
@@ -164,12 +152,8 @@ public class RepExOST {
     int size = world.size();
 
     MolecularAssembly[] allAssemblies = this.molecularDynamics.getAssemblyArray();
-    allFilenames =
-        Arrays.stream(allAssemblies)
-            .map(MolecularAssembly::getFile)
-            .map(File::getName)
-            .map(FilenameUtils::getBaseName)
-            .toArray(String[]::new);
+    allFilenames = Arrays.stream(allAssemblies).map(MolecularAssembly::getFile).map(File::getName)
+        .map(FilenameUtils::getBaseName).toArray(String[]::new);
 
     File firstFile = allAssemblies[0].getFile();
     basePath = FilenameUtils.getFullPath(firstFile.getAbsolutePath()) + File.separator;
@@ -177,8 +161,7 @@ public class RepExOST {
     dynFile = new File(format("%s%d%s%s.dyn", basePath, rank, File.separator, baseFileName));
     this.molecularDynamics.setFallbackDynFile(dynFile);
 
-    File lambdaFile =
-        new File(format("%s%d%s%s.lam", basePath, rank, File.separator, baseFileName));
+    File lambdaFile = new File(format("%s%d%s%s.lam", basePath, rank, File.separator, baseFileName));
     currentHistoIndex = rank;
     if (lambdaFile.exists()) {
       try (LambdaReader lr = new LambdaReader(new BufferedReader(new FileReader(lambdaFile)))) {
@@ -188,10 +171,6 @@ public class RepExOST {
     }
 
     allHistograms = orthogonalSpaceTempering.getAllHistograms();
-    // TODO: Possibly de-comment this... though HistogramSettings makes it obsolete.
-    // Arrays.stream(allHistograms).forEach((OrthogonalSpaceTempering.Histogram h) ->
-    // h.setIndependentWrites(true));
-
     this.numPairs = size - 1;
     this.invKT = -1.0 / (Constants.R * dynamicsOptions.getTemperature());
 
@@ -212,11 +191,9 @@ public class RepExOST {
     double timestep = dynamicsOptions.getDt() * Constants.FSEC_TO_PSEC;
     stepsBetweenExchanges = Math.max(1, (int) (repexInterval / timestep));
 
-    sendSynchronous =
-        Arrays.stream(allHistograms)
-            .map(OrthogonalSpaceTempering.Histogram::getSynchronousSend)
-            .map(Optional::get)
-            .toArray(SendSynchronous[]::new);
+    sendSynchronous = Arrays.stream(allHistograms)
+        .map(OrthogonalSpaceTempering.Histogram::getSynchronousSend).map(Optional::get)
+        .toArray(SendSynchronous[]::new);
     if (sendSynchronous.length < 1) {
       throw new IllegalArgumentException(" No SynchronousSend objects were found!");
     }
@@ -251,28 +228,14 @@ public class RepExOST {
    * @return A RepExOST.
    * @throws IOException if one occurs constructing RepExOST.
    */
-  public static RepExOST repexMC(
-      OrthogonalSpaceTempering orthogonalSpaceTempering,
-      MonteCarloOST monteCarloOST,
-      DynamicsOptions dynamicsOptions,
-      OSTOptions ostOptions,
-      CompositeConfiguration compositeConfiguration,
-      String fileType,
-      boolean twoStep,
-      double repexInterval)
-      throws IOException {
+  public static RepExOST repexMC(OrthogonalSpaceTempering orthogonalSpaceTempering,
+      MonteCarloOST monteCarloOST, DynamicsOptions dynamicsOptions, OSTOptions ostOptions,
+      CompositeConfiguration compositeConfiguration, String fileType, boolean twoStep,
+      double repexInterval) throws IOException {
     MolecularDynamics md = monteCarloOST.getMD();
     OstType type = twoStep ? OstType.MC_TWOSTEP : OstType.MC_ONESTEP;
-    return new RepExOST(
-        orthogonalSpaceTempering,
-        monteCarloOST,
-        md,
-        type,
-        dynamicsOptions,
-        ostOptions,
-        compositeConfiguration,
-        fileType,
-        repexInterval);
+    return new RepExOST(orthogonalSpaceTempering, monteCarloOST, md, type, dynamicsOptions,
+        ostOptions, compositeConfiguration, fileType, repexInterval);
   }
 
   /**
@@ -288,25 +251,12 @@ public class RepExOST {
    * @return A RepExOST.
    * @throws IOException if one occurs constructing RepExOST.
    */
-  public static RepExOST repexMD(
-      OrthogonalSpaceTempering orthogonalSpaceTempering,
-      MolecularDynamics molecularDynamics,
-      DynamicsOptions dynamicsOptions,
-      OSTOptions ostOptions,
-      CompositeConfiguration compositeConfiguration,
-      String fileType,
-      double repexInterval)
+  public static RepExOST repexMD(OrthogonalSpaceTempering orthogonalSpaceTempering,
+      MolecularDynamics molecularDynamics, DynamicsOptions dynamicsOptions, OSTOptions ostOptions,
+      CompositeConfiguration compositeConfiguration, String fileType, double repexInterval)
       throws IOException {
-    return new RepExOST(
-        orthogonalSpaceTempering,
-        null,
-        molecularDynamics,
-        OstType.MD,
-        dynamicsOptions,
-        ostOptions,
-        compositeConfiguration,
-        fileType,
-        repexInterval);
+    return new RepExOST(orthogonalSpaceTempering, null, molecularDynamics, OstType.MD,
+        dynamicsOptions, ostOptions, compositeConfiguration, fileType, repexInterval);
   }
 
   public OrthogonalSpaceTempering getOST() {
@@ -337,10 +287,8 @@ public class RepExOST {
     } else {
       long numExchanges = numTimesteps / stepsBetweenExchanges;
       for (int i = 0; i < numExchanges; i++) {
-        logger.info(
-            format(
-                " Beginning of RepEx loop %d of %d, operating on histogram %d",
-                (i + 1), numExchanges, currentHistoIndex));
+        logger.info(format(" Beginning of RepEx loop %d of %d, operating on histogram %d", (i + 1),
+            numExchanges, currentHistoIndex));
         world.barrier(mainLoopTag);
         algoRun.accept(stepsBetweenExchanges);
         orthogonalSpaceTempering.logOutputFiles(currentHistoIndex);
@@ -351,12 +299,11 @@ public class RepExOST {
         long mdMoveNum = i * stepsBetweenExchanges;
         currentLambda = orthogonalSpaceTempering.getLambda();
         boolean trySnapshot = currentLambda >= orthogonalSpaceTempering.getLambdaWriteOut();
-        if (automaticWriteouts) {
-          EnumSet<MDWriteAction> written =
-              molecularDynamics.writeFilesForStep(mdMoveNum, trySnapshot, true);
-          if (written.contains(MDWriteAction.RESTART)) {
-            orthogonalSpaceTempering.writeAdditionalRestartInfo(false);
-          }
+        // False if the RepEx OST is not responsible for writing files out.
+        EnumSet<MDWriteAction> written = molecularDynamics.writeFilesForStep(mdMoveNum, trySnapshot,
+            true);
+        if (written.contains(MDWriteAction.RESTART)) {
+          orthogonalSpaceTempering.writeAdditionalRestartInfo(false);
         }
 
         reinitVelocities = false;
@@ -416,14 +363,9 @@ public class RepExOST {
   }
 
   private void setFiles() {
-    File[] trajFiles =
-        Arrays.stream(allFilenames)
-            .map(
-                (String fn) ->
-                    format(
-                        "%s%d%s%s.%s", basePath, currentHistoIndex, File.separator, fn, extension))
-            .map(File::new)
-            .toArray(File[]::new);
+    File[] trajFiles = Arrays.stream(allFilenames).map(
+        (String fn) -> format("%s%d%s%s.%s", basePath, currentHistoIndex, File.separator, fn,
+            extension)).map(File::new).toArray(File[]::new);
     molecularDynamics.setArchiveFiles(trajFiles);
   }
 
@@ -452,11 +394,10 @@ public class RepExOST {
       double eji = histoHigh.computeBiasEnergy(lamLow, dUdLLow);
       double ejj = histoHigh.computeBiasEnergy(lamHigh, dUdLHigh);
 
-      logIfSwapping(
-          format(
-              "\n Proposing exchange between histograms %d (rank %d) and %d (rank %d).\n"
-                  + " Li: %.6f dU/dLi: %.6f Lj: %.6f dU/dLj: %.6f",
-              i, rankLow, i + 1, rankHigh, lamLow, dUdLLow, lamHigh, dUdLHigh));
+      logIfSwapping(format(
+          "\n Proposing exchange between histograms %d (rank %d) and %d (rank %d).\n"
+              + " Li: %.6f dU/dLi: %.6f Lj: %.6f dU/dLj: %.6f", i, rankLow, i + 1, rankHigh, lamLow,
+          dUdLLow, lamHigh, dUdLHigh));
 
       double e1 = eii + ejj;
       double e2 = eji + eij;
@@ -464,10 +405,9 @@ public class RepExOST {
       double acceptChance = BoltzmannMC.acceptChance(invKT, e1, e2);
 
       String desc = accept ? "Accepted" : "Rejected";
-      logIfSwapping(
-          format(
-              " %s exchange with probability %.5f based on Eii %.6f, Ejj %.6f, Eij %.6f, Eji %.6f kcal/mol",
-              desc, acceptChance, eii, ejj, eij, eji));
+      logIfSwapping(format(
+          " %s exchange with probability %.5f based on Eii %.6f, Ejj %.6f, Eij %.6f, Eji %.6f kcal/mol",
+          desc, acceptChance, eii, ejj, eij, eji));
 
       ++totalSwaps[i];
       if (accept) {
@@ -476,10 +416,8 @@ public class RepExOST {
       }
 
       double acceptRate = ((double) acceptedSwaps[i]) / ((double) totalSwaps[i]);
-      logIfSwapping(
-          format(
-              " Replica exchange acceptance rate for pair %d-%d is %.3f%%",
-              i, (i + 1), acceptRate * 100));
+      logIfSwapping(format(" Replica exchange acceptance rate for pair %d-%d is %.3f%%", i, (i + 1),
+          acceptRate * 100));
     }
   }
 
@@ -526,21 +464,12 @@ public class RepExOST {
    * @param numSteps MD steps to run.
    */
   private void runMD(long numSteps) {
-    molecularDynamics.dynamic(
-        numSteps,
-        dynamicsOptions.getDt(),
-        dynamicsOptions.getReport(),
-        dynamicsOptions.getSnapshotInterval(),
-        dynamicsOptions.getTemperature(),
-        reinitVelocities,
-        fileType,
-        dynamicsOptions.getCheckpoint(),
-        dynFile);
+    molecularDynamics.dynamic(numSteps, dynamicsOptions.getDt(), dynamicsOptions.getReport(),
+        dynamicsOptions.getSnapshotInterval(), dynamicsOptions.getTemperature(), reinitVelocities,
+        fileType, dynamicsOptions.getCheckpoint(), dynFile);
   }
 
   private enum OstType {
-    MD,
-    MC_ONESTEP,
-    MC_TWOSTEP
+    MD, MC_ONESTEP, MC_TWOSTEP
   }
 }
