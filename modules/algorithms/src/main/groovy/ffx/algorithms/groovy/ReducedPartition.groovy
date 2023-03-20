@@ -279,7 +279,7 @@ class ReducedPartition extends  AlgorithmsScript{
             rotamerOptimization.optimize(manyBodyOptions.getAlgorithm(residues1.size()))
 
             int[] currentRotamers = new int[residues1.size()]
-            titrateArray = new double[titrateResidues.size()]
+            titrateArray = new double[residues1.size()]
             logger.info("The length of the titration array is : " + titrateArray.length)
 
 
