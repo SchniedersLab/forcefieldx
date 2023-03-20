@@ -2167,6 +2167,9 @@ public class RotamerOptimization implements Terminatable {
                 }
                 titrateRes += 1;
                 logger.info("Titrate Res +1 = " + titrateRes);
+                if(titrateRes == titrateArray.length){
+                  titrateRes = 0;
+                }
               }
             }
           }
