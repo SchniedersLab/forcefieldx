@@ -2075,7 +2075,7 @@ public class RotamerOptimization implements Terminatable {
       evaluatedPermutations = 0;
       evaluatedPermutationsPrint = 1000;
     }
-    int titrateRes = 0;
+
     if (evaluatedPermutations >= evaluatedPermutationsPrint) {
       if (evaluatedPermutations % evaluatedPermutationsPrint == 0) {
         logIfMaster(
@@ -2108,10 +2108,10 @@ public class RotamerOptimization implements Terminatable {
           continue;
         }
         currentRotamers[i] = ri;
-        titrateRes=0;
         partitionFunction(residues, i + 1, currentRotamers, titrateArray);
       }
     } else {
+      int titrateRes = 0;
       // At the end of the recursion, check each rotamer of the final residue.
       for (int ri = 0; ri < lenri; ri++) {
         if (eR.check(i, ri)) {
@@ -2142,6 +2142,7 @@ public class RotamerOptimization implements Terminatable {
           double boltzmannWeight = exp((-1.0/0.6)*(totalEnergy-refEnergy));
           totalBoltzmann += boltzmannWeight;
           if(titrateArray.length > 0){
+            titrateRes = 0;
             logger.info("Titrate Res = " + titrateRes);
             for (int currentRotamer : currentRotamers) {
               if (residuei.getName().equals("HIS") | residuei.getName().equals("HIE") | residuei.getName().equals("HID") |
@@ -2165,6 +2166,7 @@ public class RotamerOptimization implements Terminatable {
                   }
                 }
                 titrateRes += 1;
+                logger.info("Titrate Res +1 = " + titrateRes);
               }
             }
           }
