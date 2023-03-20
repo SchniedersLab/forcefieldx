@@ -2142,7 +2142,7 @@ public class RotamerOptimization implements Terminatable {
           double boltzmannWeight = exp((-1.0/0.6)*(totalEnergy-refEnergy));
           totalBoltzmann += boltzmannWeight;
           if(titrateArray.length > 0){
-
+            logger.info("Titrate Res = " + titrateRes);
             for (int currentRotamer : currentRotamers) {
               if (residuei.getName().equals("HIS") | residuei.getName().equals("HIE") | residuei.getName().equals("HID") |
                       residuei.getName().equals("GLU") | residuei.getName().equals("GLH") | residuei.getName().equals("ASP") |
