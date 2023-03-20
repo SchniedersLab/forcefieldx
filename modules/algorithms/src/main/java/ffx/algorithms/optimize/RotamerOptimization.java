@@ -2108,6 +2108,7 @@ public class RotamerOptimization implements Terminatable {
           continue;
         }
         currentRotamers[i] = ri;
+        titrateRes=0;
         partitionFunction(residues, i + 1, currentRotamers, titrateArray);
       }
     } else {
