@@ -279,9 +279,9 @@ class ReducedPartition extends  AlgorithmsScript{
             rotamerOptimization.optimize(manyBodyOptions.getAlgorithm(residues1.size()))
 
             int[] currentRotamers = new int[residues1.size()]
-            titrateArray = new double[residues1.size()]
-            logger.info("The length of the titration array is : " + titrateArray.length)
-
+            if(pKa){
+                titrateArray = new double[residues1.size()]
+            }
 
             rotamerOptimization.checkPermutations(residues1.toArray() as Residue[], 0, currentRotamers, titrateArray,
                     manyBodyOptions.getAlgorithm(residues1.size()))
