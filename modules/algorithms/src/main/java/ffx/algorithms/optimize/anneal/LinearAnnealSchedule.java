@@ -45,6 +45,7 @@ package ffx.algorithms.optimize.anneal;
  * @since 1.0
  */
 public class LinearAnnealSchedule implements AnnealingSchedule {
+
   private final int nWindows;
   private final double tHigh;
   private final double tLow;
@@ -69,11 +70,9 @@ public class LinearAnnealSchedule implements AnnealingSchedule {
     this.tLow = tLow;
     dTemp = (tLow - tHigh) / (nWindows - 1);
 
-    description =
-        String.format(
-            "Linear annealing schedule with %d windows, "
-                + "initial temperature %12.7g K, final temperature %12.7g K, dT/window %12.7g K",
-            nWindows, tHigh, tLow, dTemp);
+    description = String.format("Linear annealing schedule with %d windows, "
+            + "initial temperature %12.7g K, final temperature %12.7g K, dT/window %12.7g K", nWindows,
+        tHigh, tLow, dTemp);
   }
 
   @Override

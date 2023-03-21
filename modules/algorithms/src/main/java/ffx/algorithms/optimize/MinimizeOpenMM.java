@@ -67,15 +67,13 @@ public class MinimizeOpenMM extends Minimize {
     super(molecularAssembly, molecularAssembly.getPotentialEnergy(), null);
   }
 
-  public MinimizeOpenMM(
-      MolecularAssembly molecularAssembly, ForceFieldEnergyOpenMM forceFieldEnergyOpenMM) {
+  public MinimizeOpenMM(MolecularAssembly molecularAssembly,
+      ForceFieldEnergyOpenMM forceFieldEnergyOpenMM) {
     super(molecularAssembly, forceFieldEnergyOpenMM, null);
   }
 
-  public MinimizeOpenMM(
-      MolecularAssembly molecularAssembly,
-      ForceFieldEnergyOpenMM forceFieldEnergyOpenMM,
-      AlgorithmListener algorithmListener) {
+  public MinimizeOpenMM(MolecularAssembly molecularAssembly,
+      ForceFieldEnergyOpenMM forceFieldEnergyOpenMM, AlgorithmListener algorithmListener) {
     super(molecularAssembly, forceFieldEnergyOpenMM, algorithmListener);
   }
 
@@ -105,9 +103,8 @@ public class MinimizeOpenMM extends Minimize {
 
     ForceFieldEnergy forceFieldEnergy = molecularAssembly.getPotentialEnergy();
 
-    if (forceFieldEnergy instanceof ForceFieldEnergyOpenMM) {
+    if (forceFieldEnergy instanceof ForceFieldEnergyOpenMM openMM) {
       time = -System.nanoTime();
-      ForceFieldEnergyOpenMM openMM = (ForceFieldEnergyOpenMM) forceFieldEnergy;
 
       // Respect the use flag, and lambda state.
       Atom[] atoms = molecularAssembly.getAtomArray();
@@ -163,13 +160,11 @@ public class MinimizeOpenMM extends Minimize {
 
       time += System.nanoTime();
       logger.info(
-          format(
-              " Final energy for OpenMM         %12.6f vs. FFX %12.6f in %8.3f (sec).",
-              energy, ffxEnergy, time * 1.0e-9));
+          format(" Final energy for OpenMM         %12.6f vs. FFX %12.6f in %8.3f (sec).", energy,
+              ffxEnergy, time * 1.0e-9));
       logger.info(
-          format(
-              " Convergence criteria for OpenMM %12.6f vs. FFX %12.6f (kcal/mol/A).",
-              rmsGradient, grmsFFX));
+          format(" Convergence criteria for OpenMM %12.6f vs. FFX %12.6f (kcal/mol/A).", rmsGradient,
+              grmsFFX));
     }
 
     if (algorithmListener != null) {
@@ -185,16 +180,9 @@ public class MinimizeOpenMM extends Minimize {
    * @since 1.0
    */
   @Override
-  public boolean optimizationUpdate(
-      int iteration,
-      int nBFGS,
-      int functionEvaluations,
-      double rmsGradient,
-      double rmsCoordinateChange,
-      double energy,
-      double energyChange,
-      double angle,
-      LineSearch.LineSearchResult lineSearchResult) {
+  public boolean optimizationUpdate(int iteration, int nBFGS, int functionEvaluations,
+      double rmsGradient, double rmsCoordinateChange, double energy, double energyChange,
+      double angle, LineSearch.LineSearchResult lineSearchResult) {
     logger.warning(" MinimizeOpenMM does not support updates at each optimization step.");
     return false;
   }

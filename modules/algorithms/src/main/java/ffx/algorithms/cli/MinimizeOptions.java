@@ -84,7 +84,7 @@ public class MinimizeOptions {
   /**
    * Number of minimization steps.
    *
-   * @return a int.
+   * @return The number of minimization steps.
    */
   public int getIterations() {
     return group.iterations;
@@ -100,28 +100,19 @@ public class MinimizeOptions {
   private static class MinimizeOptionGroup {
 
     /** -i or --iterations Number of minimization steps. */
-    @Option(
-        names = {"-I", "--iterations"},
-        paramLabel = "Unlimited",
+    @Option(names = {"-I", "--iterations"}, paramLabel = "Unlimited",
         // Integer.MAX_VALUE = 2^31 -1 = 2147483647.
-        defaultValue = "2147483647",
-        description = "Number of minimization steps.")
+        defaultValue = "2147483647", description = "Number of minimization steps.")
     private int iterations;
 
     /** -e or --eps Convergence criteria. */
-    @Option(
-        names = {"-e", "--eps"},
-        paramLabel = "1.0",
-        defaultValue = "1.0",
-        description = "Convergence criteria.")
+    @Option(names = {"-e",
+        "--eps"}, paramLabel = "1.0", defaultValue = "1.0", description = "Convergence criteria.")
     private double eps;
 
     /** --nbfgs The number of corrections used in the BFGS update (0 for steepest decent). */
-    @Option(
-        names = {"--nbfgs"},
-        paramLabel = "7",
-        defaultValue = "7",
-        description = "The number of correction vectors used by the L-BFGS optimization routine (0 for steepest-decent).")
+    @Option(names = {
+        "--nbfgs"}, paramLabel = "7", defaultValue = "7", description = "The number of correction vectors used by the L-BFGS optimization routine (0 for steepest-decent).")
     private int nbfgs;
 
   }

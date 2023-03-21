@@ -44,156 +44,175 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Tests CIFtoXYZ command to determine that files are being translated correctly.
+ * Tests ImportCIF command to determine that files are being translated correctly.
  *
  * @author Aaron J. Nessler
  */
 
-public class CIFtoXYZTest extends PotentialTest {
+public class ImportCIFTest extends PotentialTest {
 
   /**
    * Test a basic CIF to XYZ conversion.
    */
   @Test
-  public void testCIFtoXYZ() {
-    // Set up the input arguments for the CIFtoXYZ script.
+  public void testImportCIF() {
+    // Set up the input arguments for the ImportCIF script.
     String[] args = {"src/main/java/ffx/potential/structures/CBZ16.cif",
         "src/main/java/ffx/potential/structures/cbz.xyz"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    // Construct and evaluate the CIFtoXYZ script.
+    // Construct and evaluate the ImportCIF script.
 
-    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
-    potentialScript = cifToXYZ;
+    ImportCIF ImportCIF = new ImportCIF(binding).run();
+    potentialScript = ImportCIF;
 
-    assertEquals(1, cifToXYZ.createdFiles.length);
-    assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
+    assertEquals(1, ImportCIF.createdFiles.length);
+    assertTrue(ImportCIF.createdFiles[0].toUpperCase().contains(".XYZ"));
   }
 
   /**
    * Test writing out a CIF file (XYZ to CIF).
    */
   @Test
-  public void testCIFtoXYZWriteAsCIF() {
-    // Set up the input arguments for the CIFtoXYZ script.
+  public void testImportCIFWriteAsCIF() {
+    // Set up the input arguments for the ImportCIF script.
     String[] args = {"--sc", "src/main/java/ffx/potential/structures/paracetamol.xyz"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    // Construct and evaluate the CIFtoXYZ script.
-    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
-    potentialScript = cifToXYZ;
+    // Construct and evaluate the ImportCIF script.
+    ImportCIF ImportCIF = new ImportCIF(binding).run();
+    potentialScript = ImportCIF;
 
-    assertEquals(1, cifToXYZ.createdFiles.length);
-    assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".CIF"));
+    assertEquals(1, ImportCIF.createdFiles.length);
+    assertTrue(ImportCIF.createdFiles[0].toUpperCase().contains(".CIF"));
   }
 
   /**
-   * Test CIFtoXYZ when the CIF file is missing hydrogen atoms.
+   * Test ImportCIF when the CIF file is missing hydrogen atoms.
    */
   @Test
-  public void testCIFtoXYZNoHydrogen() {
-    // Set up the input arguments for the CIFtoXYZ script.
+  public void testImportCIFNoHydrogen() {
+    // Set up the input arguments for the ImportCIF script.
     String[] args = {"--fl","src/main/java/ffx/potential/structures/CBZ03.cif",
         "src/main/java/ffx/potential/structures/cbz.xyz"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    // Construct and evaluate the CIFtoXYZ script.
-    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
-    potentialScript = cifToXYZ;
+    // Construct and evaluate the ImportCIF script.
+    ImportCIF ImportCIF = new ImportCIF(binding).run();
+    potentialScript = ImportCIF;
 
-    assertEquals(1, cifToXYZ.createdFiles.length);
-    assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
+    assertEquals(1, ImportCIF.createdFiles.length);
+    assertTrue(ImportCIF.createdFiles[0].toUpperCase().contains(".XYZ"));
   }
 
   /**
-   * Test CIFtoXYZ when several molecules are included in asymmetric unit.
+   * Test ImportCIF when several molecules are included in asymmetric unit.
    */
   @Test
-  public void testCIFtoXYZMultipleMolecules() {
-    // Set up the input arguments for the CIFtoXYZ script.
+  public void testImportCIFMultipleMolecules() {
+    // Set up the input arguments for the ImportCIF script.
     String[] args = {"src/main/java/ffx/potential/structures/1183240.cif",
             "src/main/java/ffx/potential/structures/asplyswat.xyz"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    // Construct and evaluate the CIFtoXYZ script.
-    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
-    potentialScript = cifToXYZ;
+    // Construct and evaluate the ImportCIF script.
+    ImportCIF ImportCIF = new ImportCIF(binding).run();
+    potentialScript = ImportCIF;
 
-    assertEquals(1, cifToXYZ.createdFiles.length);
-    assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
+    assertEquals(1, ImportCIF.createdFiles.length);
+    assertTrue(ImportCIF.createdFiles[0].toUpperCase().contains(".XYZ"));
   }
 
   /**
-   * Test CIFtoXYZ when similar (but different) molecules are in asymmetric unit.
+   * Test ImportCIF when similar (but different) molecules are in asymmetric unit.
    */
   @Test
-  public void testCIFtoXYZzPrimeChallenge() {
-    // Set up the input arguments for the CIFtoXYZ script.
+  public void testImportCIFzPrimeChallenge() {
+    // Set up the input arguments for the ImportCIF script.
     String[] args = {"--fl","src/main/java/ffx/potential/structures/1183241.cif",
             "src/main/java/ffx/potential/structures/glulys.xyz"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    // Construct and evaluate the CIFtoXYZ script.
-    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
-    potentialScript = cifToXYZ;
+    // Construct and evaluate the ImportCIF script.
+    ImportCIF ImportCIF = new ImportCIF(binding).run();
+    potentialScript = ImportCIF;
 
-    assertEquals(1, cifToXYZ.createdFiles.length);
-    assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
+    assertEquals(1, ImportCIF.createdFiles.length);
+    assertTrue(ImportCIF.createdFiles[0].toUpperCase().contains(".XYZ"));
   }
 
   /**
-   * Test CIFtoXYZ on concatenated CIF files (produces multiple ARC files).
+   * Test ImportCIF on concatenated CIF files (produces multiple ARC files).
    */
   @Test
-  public void testCIFtoXYZarc() {
-    // Set up the input arguments for the CIFtoXYZ script.
+  public void testImportCIFarc() {
+    // Set up the input arguments for the ImportCIF script.
     String[] args = {"--fl","src/main/java/ffx/potential/structures/cbzs.cif",
             "src/main/java/ffx/potential/structures/cbz.xyz"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    // Construct and evaluate the CIFtoXYZ script.
-    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
-    potentialScript = cifToXYZ;
+    // Construct and evaluate the ImportCIF script.
+    ImportCIF ImportCIF = new ImportCIF(binding).run();
+    potentialScript = ImportCIF;
 
-    assertEquals(3, cifToXYZ.createdFiles.length);
-    assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".ARC"));
+    assertEquals(3, ImportCIF.createdFiles.length);
+    assertTrue(ImportCIF.createdFiles[0].toUpperCase().contains(".ARC"));
   }
 
   /**
-   * Test CIFtoXYZ across a molecular disulfide bond.
+   * Test ImportCIF across a molecular disulfide bond.
    */
   @Test
-  public void testCIFtoXYZdisulfide() {
-    // Set up the input arguments for the CIFtoXYZ script.
+  public void testImportCIFdisulfide() {
+    // Set up the input arguments for the ImportCIF script.
     String[] args = {"src/main/java/ffx/potential/structures/UFAGIS01.cif",
             "src/main/java/ffx/potential/structures/uf.xyz"};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
-    // Construct and evaluate the CIFtoXYZ script.
-    CIFtoXYZ cifToXYZ = new CIFtoXYZ(binding).run();
-    potentialScript = cifToXYZ;
+    // Construct and evaluate the ImportCIF script.
+    ImportCIF ImportCIF = new ImportCIF(binding).run();
+    potentialScript = ImportCIF;
 
-    assertEquals(1, cifToXYZ.createdFiles.length);
-    assertTrue(cifToXYZ.createdFiles[0].toUpperCase().contains(".XYZ"));
+    assertEquals(1, ImportCIF.createdFiles.length);
+    assertTrue(ImportCIF.createdFiles[0].toUpperCase().contains(".XYZ"));
+  }
+
+  /**
+   * Test ImportCIF conversion to PDB.
+   */
+  @Test
+  public void testImportCIFpdb() {
+    // Set up the input arguments for the ImportCIF script.
+    String[] args = {"src/main/java/ffx/potential/structures/288726.cif",
+        "src/main/java/ffx/potential/structures/ALA-HIE.pdb"};
+    binding.setVariable("args", args);
+    binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
+
+    // Construct and evaluate the ImportCIF script.
+    ImportCIF ImportCIF = new ImportCIF(binding).run();
+    potentialScript = ImportCIF;
+
+    assertEquals(1, ImportCIF.createdFiles.length);
+    assertTrue(ImportCIF.createdFiles[0].toUpperCase().contains(".PDB"));
   }
 
   /**
    * Print out help message.
    */
   @Test
-  public void testCIFtoXYZHelp() {
-    // Set up the input arguments for the CIFtoXYZ script.
+  public void testImportCIFHelp() {
+    // Set up the input arguments for the ImportCIF script.
     String[] args = {"-h"};
     binding.setVariable("args", args);
 
-    // Construct and evaluate the CIFtoXYZ script.
-    potentialScript = new CIFtoXYZ(binding).run();
+    // Construct and evaluate the ImportCIF script.
+    potentialScript = new ImportCIF(binding).run();
   }
 }

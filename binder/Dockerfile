@@ -15,9 +15,9 @@ COPY . .
 
 SHELL ["/usr/bin/bash", "-c"]
 
-RUN ([ -f requirements.txt ] \
-    && pip3 install --no-cache-dir -r requirements.txt) \
-        || pip3 install --no-cache-dir jupyter jupyterlab kotlin-jupyter-kernel
+RUN ([ -f binder/requirements.txt ] \
+    && pip3 install --no-cache-dir -r binder/requirements.txt) \
+        || pip3 install --no-cache-dir jupyter==1.0.0 jupyterlab==2.2.0 kotlin-jupyter-kernel==0.8.0.28 
 
 USER root
 

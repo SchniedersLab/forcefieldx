@@ -39,20 +39,15 @@ package ffx.algorithms.optimize;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.Terminatable;
-import ffx.algorithms.dynamics.MolecularDynamics;
 import ffx.numerics.Potential;
 import ffx.numerics.optimization.LBFGS;
 import ffx.numerics.optimization.LineSearch;
 import ffx.numerics.optimization.OptimizationListener;
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.ForceFieldEnergyOpenMM;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
-import org.apache.commons.configuration2.CompositeConfiguration;
 
-import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -113,11 +108,8 @@ public class PhMinimize implements OptimizationListener, Terminatable {
    * @param potential a {@link Potential} object.
    * @param algorithmListener a {@link AlgorithmListener} object.
    */
-  public PhMinimize(
-      MolecularAssembly molecularAssembly,
-      Potential potential,
-      AlgorithmListener algorithmListener,
-      ExtendedSystem esvSystem) {
+  public PhMinimize(MolecularAssembly molecularAssembly, Potential potential,
+      AlgorithmListener algorithmListener, ExtendedSystem esvSystem) {
     this.molecularAssembly = molecularAssembly;
     this.algorithmListener = algorithmListener;
     this.potential = potential;
@@ -178,7 +170,7 @@ public class PhMinimize implements OptimizationListener, Terminatable {
   /**
    * Getter for the field <code>status</code>.
    *
-   * @return a int.
+   * @return The status of the optimization.
    */
   public int getStatus() {
     return status;
@@ -243,14 +235,9 @@ public class PhMinimize implements OptimizationListener, Terminatable {
     done = true;
 
     switch (status) {
-      case 0:
-        logger.info(format("\n Optimization achieved convergence criteria: %8.5f", rmsGradient));
-        break;
-      case 1:
-        logger.info(format("\n Optimization terminated at step %d.", nSteps));
-        break;
-      default:
-        logger.warning("\n Optimization failed.");
+      case 0 -> logger.info(format("\n Optimization achieved convergence criteria: %8.5f", rmsGradient));
+      case 1 -> logger.info(format("\n Optimization terminated at step %d.", nSteps));
+      default -> logger.warning("\n Optimization failed.");
     }
 
     potential.setScaling(null);
@@ -293,19 +280,16 @@ public class PhMinimize implements OptimizationListener, Terminatable {
     done = true;
 
     switch (status) {
-      case 0:
+      case 0 -> {
         logger.info(format("\n Optimization achieved convergence criteria: %8.5f", rmsGradient));
         for (Atom atom : molecularAssembly.getAtomList()) {
           int atomIndex = atom.getIndex() - 1;
           atom.setOccupancy(esvSystem.getTitrationLambda(atomIndex));
           atom.setTempFactor(esvSystem.getTautomerLambda(atomIndex));
         }
-        break;
-      case 1:
-        logger.info(format("\n Optimization terminated at step %d.", nSteps));
-        break;
-      default:
-        logger.warning("\n Optimization failed.");
+      }
+      case 1 -> logger.info(format("\n Optimization terminated at step %d.", nSteps));
+      default -> logger.warning("\n Optimization failed.");
     }
 
     potential.setScaling(null);
@@ -320,16 +304,9 @@ public class PhMinimize implements OptimizationListener, Terminatable {
    * @since 1.0
    */
   @Override
-  public boolean optimizationUpdate(
-      int iteration,
-      int nBFGS,
-      int functionEvaluations,
-      double rmsGradient,
-      double rmsCoordinateChange,
-      double energy,
-      double energyChange,
-      double angle,
-      LineSearch.LineSearchResult lineSearchResult) {
+  public boolean optimizationUpdate(int iteration, int nBFGS, int functionEvaluations,
+      double rmsGradient, double rmsCoordinateChange, double energy, double energyChange,
+      double angle, LineSearch.LineSearchResult lineSearchResult) {
     long currentTime = System.nanoTime();
     Double seconds = (currentTime - time) * 1.0e-9;
     time = currentTime;
@@ -350,31 +327,14 @@ public class PhMinimize implements OptimizationListener, Terminatable {
     } else {
       if (lineSearchResult == LineSearch.LineSearchResult.Success) {
         logger.info(
-            format(
-                "%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8.3f",
-                iteration,
-                energy,
-                rmsGradient,
-                energyChange,
-                rmsCoordinateChange,
-                angle,
-                functionEvaluations,
-                seconds));
+            format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8.3f", iteration, energy, rmsGradient,
+                energyChange, rmsCoordinateChange, angle, functionEvaluations, seconds));
       } else {
-        logger.info(
-            format(
-                "%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8s",
-                iteration,
-                energy,
-                rmsGradient,
-                energyChange,
-                rmsCoordinateChange,
-                angle,
-                functionEvaluations,
-                lineSearchResult.toString()));
+        logger.info(format("%6d%13.4f%11.4f%11.4f%10.4f%9.2f%7d %8s", iteration, energy, rmsGradient,
+            energyChange, rmsCoordinateChange, angle, functionEvaluations, lineSearchResult));
       }
     }
-    // Update the listener and check for an termination request.
+    // Update the listener and check for a termination request.
     if (algorithmListener != null) {
       algorithmListener.algorithmUpdate(molecularAssembly);
     }

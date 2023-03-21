@@ -48,7 +48,6 @@ import java.io.File;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * Run NVT molecular dynamics at a series of temperatures to optimize a structure.
@@ -68,8 +67,8 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
   private final long mdSteps;
   /** Integration time step. */
   private final double timeStep;
-  /** Whether to reinitialize velocities at the start of each timestep. */
-  private final boolean reinitV;
+  /** Whether to reinitialize velocities at the start of each time step. */
+  private final boolean reInitVelocity;
   /** Number of MD steps per OpenMM cycle (assuming OpenMM is used!). */
   private final int trajSteps = 1;
   /** Interval to print updates to the screen. */
@@ -88,41 +87,26 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
    *
    * @param molecularAssembly The Molecular Assembly to operate on.
    * @param potentialEnergy The potential to anneal against.
-   * @param compositeConfiguration The system properties to use.
    * @param algorithmListener The algorithm listener is a callback to UI.
    * @param requestedThermostat The requested thermostat.
    * @param requestedIntegrator The requested integrator.
    * @param annealingSchedule Schedule of temperatures to simulate at.
    * @param mdSteps Steps per SA window.
-   * @param timeStep Timestep for MD in psec.
-   * @param reinitVelocities Request velocities to be reinitialized.
+   * @param timeStep Time step for MD in psec.
+   * @param reInitVelocity Request velocities to be reinitialized.
    * @param dynFile Dynamics restart file to begin from.
    */
-  public SimulatedAnnealing(
-      MolecularAssembly molecularAssembly,
-      Potential potentialEnergy,
-      CompositeConfiguration compositeConfiguration,
-      AlgorithmListener algorithmListener,
-      ThermostatEnum requestedThermostat,
-      IntegratorEnum requestedIntegrator,
-      AnnealingSchedule annealingSchedule,
-      long mdSteps,
-      double timeStep,
-      boolean reinitVelocities,
-      File dynFile) {
+  public SimulatedAnnealing(MolecularAssembly molecularAssembly, Potential potentialEnergy,
+      AlgorithmListener algorithmListener, ThermostatEnum requestedThermostat,
+      IntegratorEnum requestedIntegrator, AnnealingSchedule annealingSchedule, long mdSteps,
+      double timeStep, boolean reInitVelocity, File dynFile) {
 
-    molecularDynamics =
-        MolecularDynamics.dynamicsFactory(
-            molecularAssembly,
-            potentialEnergy,
-            compositeConfiguration,
-            algorithmListener,
-            requestedThermostat,
-            requestedIntegrator);
+    molecularDynamics = MolecularDynamics.dynamicsFactory(molecularAssembly, potentialEnergy,
+        algorithmListener, requestedThermostat, requestedIntegrator);
     this.schedule = annealingSchedule;
     this.mdSteps = mdSteps;
     this.timeStep = timeStep;
-    this.reinitV = reinitVelocities;
+    this.reInitVelocity = reInitVelocity;
     this.dynFile = dynFile;
   }
 
@@ -187,10 +171,9 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
 
     int minMdSteps = (int) (mdSteps * schedule.minWindowLength());
     if (minMdSteps < trajSteps) {
-      logger.warning(
-          String.format(
-              " Minimum number of MD steps per annealing cycle %d was less than steps per OpenMM MD cycle %d! Setting steps per MD cycle to %d",
-              minMdSteps, trajSteps, minMdSteps));
+      logger.warning(String.format(
+          " Minimum number of MD steps per annealing cycle %d was less than steps per OpenMM MD cycle %d! Setting steps per MD cycle to %d",
+          minMdSteps, trajSteps, minMdSteps));
       setTrajectorySteps(minMdSteps);
     }
 
@@ -202,14 +185,8 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
       int nSteps = (int) (schedule.windowLength(i) * mdSteps);
       logger.info(
           String.format(" Annealing window %d: %d steps at %9.4g K", (i + 1), nSteps, temperature));
-      molecularDynamics.dynamic(
-          nSteps,
-          timeStep,
-          printInterval,
-          saveFrequency,
-          temperature,
-          (reinitV || forceFirstReinit),
-          dynFile);
+      molecularDynamics.dynamic(nSteps, timeStep, printInterval, saveFrequency, temperature,
+          (reInitVelocity || forceFirstReinit), dynFile);
       if (dynFile == null) {
         dynFile = molecularDynamics.getDynFile();
       }
@@ -307,8 +284,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
 
   /** Represents non-composite AnnealingSchedules known (i.e. not FlatEndAnnealSchedule). */
   public enum Schedules {
-    EXP(ExpAnnealSchedule::new, "EXP", "EXPONENTIAL"),
-    LINEAR(LinearAnnealSchedule::new, "LINEAR");
+    EXP(ExpAnnealSchedule::new, "EXP", "EXPONENTIAL"), LINEAR(LinearAnnealSchedule::new, "LINEAR");
 
     private final ScheduleConstructor sc;
     private final Set<String> aliases;
@@ -349,6 +325,7 @@ public class SimulatedAnnealing implements Runnable, Terminatable {
 
   /** Functional interface corresponding to constructors of non-composite AnnealingSchedules. */
   private interface ScheduleConstructor {
+
     AnnealingSchedule asConstruct(int nWindows, double tLow, double tHigh);
   }
 }

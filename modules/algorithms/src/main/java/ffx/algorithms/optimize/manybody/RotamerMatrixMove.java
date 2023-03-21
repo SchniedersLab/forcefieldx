@@ -40,7 +40,6 @@ package ffx.algorithms.optimize.manybody;
 import ffx.algorithms.mc.MCMove;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.bonded.Residue;
-import ffx.potential.bonded.RotamerLibrary;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -72,18 +71,12 @@ public class RotamerMatrixMove implements MCMove {
    * @param useAllElims Use eliminated pair/triple info.
    * @param rotamers Initial rotamer set.
    * @param residues Array of residues.
-   * @param rotamerLibrary RotamerLibrary instance.
    * @param rotamerOptimization RotamerOptimization instance.
    * @param eliminatedRotamers Eliminated rotamers instance.
    * @param monteCarloTesting True for MC testing.
    */
-  public RotamerMatrixMove(
-      boolean useAllElims,
-      int[] rotamers,
-      Residue[] residues,
-      RotamerLibrary rotamerLibrary,
-      RotamerOptimization rotamerOptimization,
-      EliminatedRotamers eliminatedRotamers,
+  public RotamerMatrixMove(boolean useAllElims, int[] rotamers, Residue[] residues,
+      RotamerOptimization rotamerOptimization, EliminatedRotamers eliminatedRotamers,
       boolean monteCarloTesting) {
     this.useAllElims = useAllElims;
     this.rotamerOptimization = rotamerOptimization;
@@ -98,8 +91,8 @@ public class RotamerMatrixMove implements MCMove {
     for (int i = 0; i < nRes; i++) {
       ArrayList<Integer> resAllowed = new ArrayList<>();
 
-      int lenri = residues[i].getRotamers().length;
-      for (int ri = 0; ri < lenri; ri++) {
+      int lenRi = residues[i].getRotamers().length;
+      for (int ri = 0; ri < lenRi; ri++) {
         if (!eliminatedRotamers.check(i, ri)) {
           resAllowed.add(ri);
         }
@@ -122,7 +115,7 @@ public class RotamerMatrixMove implements MCMove {
     int indexI;
     int indexRI;
     do {
-      // resi and roti correspond to their positions in allowedRes and
+      // resI and rotI correspond to their positions in allowedRes and
       // allowedRots. indexI and indexRI correspond to their numbers
       // in the rotamer matrix.
 
@@ -130,13 +123,12 @@ public class RotamerMatrixMove implements MCMove {
       if (monteCarloTesting) {
         rand.setSeed(nAllowed);
       }
-      int resi = rand.nextInt(nAllowed);
-      indexI = allowedRes.get(resi);
-      List<Integer> rotsi = allowedRots.get(resi);
-      int lenri = rotsi.size();
-
-      int roti = rand.nextInt(lenri);
-      indexRI = rotsi.get(roti);
+      int resI = rand.nextInt(nAllowed);
+      indexI = allowedRes.get(resI);
+      List<Integer> allowedRotsI = allowedRots.get(resI);
+      int lenRi = allowedRotsI.size();
+      int rotI = rand.nextInt(lenRi);
+      indexRI = allowedRotsI.get(rotI);
       if (useAllElims) {
         validMove = rotamerOptimization.checkValidMove(indexI, indexRI, currentRots);
       }

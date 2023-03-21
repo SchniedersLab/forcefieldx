@@ -148,14 +148,8 @@ public class RosenbluthChiAllMove implements MCMove {
    * @param moveNumber a int.
    * @param verbose a boolean.
    */
-  RosenbluthChiAllMove(
-      MolecularAssembly molecularAssembly,
-      Residue target,
-      int testSetSize,
-      ForceFieldEnergy forceFieldEnergy,
-      double temperature,
-      boolean writeSnapshots,
-      int moveNumber,
+  RosenbluthChiAllMove(MolecularAssembly molecularAssembly, Residue target, int testSetSize,
+      ForceFieldEnergy forceFieldEnergy, double temperature, boolean writeSnapshots, int moveNumber,
       boolean verbose) {
 
     CompositeConfiguration properties = molecularAssembly.getProperties();
@@ -202,8 +196,8 @@ public class RosenbluthChiAllMove implements MCMove {
     torsionSampling = properties.getBoolean("cbmc-torsionSampler", false);
     if (torsionSampling) {
       logger.info(" Torsion Sampler engaged!");
-      HashMap<Integer, BackBondedList> map =
-          createBackBondedMap(AminoAcidUtils.AminoAcid3.valueOf(target.getName()));
+      HashMap<Integer, BackBondedList> map = createBackBondedMap(
+          AminoAcidUtils.AminoAcid3.valueOf(target.getName()));
       List<Torsion> allTors = new ArrayList<>();
       for (int i = 0; i < map.size(); i++) {
         Torsion tors = map.get(i).torsion;
@@ -214,18 +208,10 @@ public class RosenbluthChiAllMove implements MCMove {
     }
     try {
       switch (mode) {
-        case EXPENSIVE:
-          engageExpensive();
-          break;
-        case CHEAP:
-          engageCheap();
-          break;
-        case CTRL_ALL:
-          engageControlAll();
-          break;
-        default:
-          logger.severe("CBMC: Unknown biasing type requested.");
-          break;
+        case EXPENSIVE -> engageExpensive();
+        case CHEAP -> engageCheap();
+        case CTRL_ALL -> engageControlAll();
+        default -> logger.severe("CBMC: Unknown biasing type requested.");
       }
     } catch (ArithmeticException ex) {
       target.revertState(origState);
@@ -277,9 +263,8 @@ public class RosenbluthChiAllMove implements MCMove {
   /** {@inheritDoc} */
   @Override
   public String toString() {
-    return format(
-        "Rosenbluth Rotamer Move:\n   Res:   %s\n   Rota: %s",
-        target.toString(), proposedMove.toString());
+    return format("Rosenbluth Rotamer Move:\n   Res:   %s\n   Rota: %s", target.toString(),
+        proposedMove.toString());
   }
 
   private void write() {
@@ -357,9 +342,8 @@ public class RosenbluthChiAllMove implements MCMove {
         if (printTestSets) {
           if (i < 5 || i > setSize - 1) {
             report.append(
-                format(
-                    "       %3s %d:      %5.2f\t%5.2f\n",
-                    snapSuffix, i, trialSet.uDep[i - 1], trialSet.uExt[i - 1]));
+                format("       %3s %d:      %5.2f\t%5.2f\n", snapSuffix, i, trialSet.uDep[i - 1],
+                    trialSet.uExt[i - 1]));
           } else if (i == 5) {
             report.append("       ...\n");
           }
@@ -407,10 +391,8 @@ public class RosenbluthChiAllMove implements MCMove {
         i++;
         writeSnapshot(snapSuffix, true);
         if (i < 4 || i > setSize - 1) {
-          report.append(
-              format(
-                  "       %3s %d:      %5.2f\t%5.2f\t%5.2f\n",
-                  snapSuffix, i, theta, trialSet.uDep[i - 1], trialSet.uExt[i - 1]));
+          report.append(format("       %3s %d:      %5.2f\t%5.2f\t%5.2f\n", snapSuffix, i, theta,
+              trialSet.uDep[i - 1], trialSet.uExt[i - 1]));
         } else if (i == 4) {
           report.append("       ...\n");
         }
@@ -585,9 +567,8 @@ public class RosenbluthChiAllMove implements MCMove {
           finalChi[i] = trialSet.theta[j]; // Yes, I mean i then j.
           double prob = uExtBolt / wn[i] * 100;
           report.append(
-              format(
-                  "       Chose %d   %7.4f\t%7.4f\t  %4.1f%%\n",
-                  j, trialSet.uExt[j], uExtBolt, prob));
+              format("       Chose %d   %7.4f\t%7.4f\t  %4.1f%%\n", j, trialSet.uExt[j], uExtBolt,
+                  prob));
           break;
         }
       }
@@ -673,10 +654,8 @@ public class RosenbluthChiAllMove implements MCMove {
       report.append("\n");
       updateAll();
       if (!noSnaps) {
-        PDBFilter writer =
-            new PDBFilter(molecularAssembly.getFile(), molecularAssembly, null, null);
-        String filename = FilenameUtils.removeExtension(molecularAssembly.getFile().toString());
-        filename = molecularAssembly.getFile().getAbsolutePath();
+        PDBFilter writer = new PDBFilter(molecularAssembly.getFile(), molecularAssembly, null, null);
+        String filename = molecularAssembly.getFile().getAbsolutePath();
         if (!filename.contains("_mc")) {
           filename = FilenameUtils.removeExtension(filename) + "_mc.pdb";
         }
@@ -770,177 +749,135 @@ public class RosenbluthChiAllMove implements MCMove {
     Atom CB = (Atom) target.getAtomNode("CB");
     List<Atom> keyAtoms = new ArrayList<>();
     switch (name) {
-      case VAL:
-        {
-          Atom CG1 = (Atom) target.getAtomNode("CG1");
-          keyAtoms.add(CG1);
-          keyAtoms.add(CB);
-          break;
-        }
-      case LEU:
-        {
-          Atom CG = (Atom) target.getAtomNode("CG");
-          Atom CD1 = (Atom) target.getAtomNode("CD1");
-          keyAtoms.add(CG);
-          keyAtoms.add(CD1);
-          break;
-        }
-      case ILE:
-        {
-          Atom CD1 = (Atom) target.getAtomNode("CD1");
-          Atom CG1 = (Atom) target.getAtomNode("CG1");
-          keyAtoms.add(CD1);
-          keyAtoms.add(CG1);
-          break;
-        }
-      case SER:
-        {
-          Atom OG = (Atom) target.getAtomNode("OG");
-          Atom HG = (Atom) target.getAtomNode("HG");
-          keyAtoms.add(OG);
-          keyAtoms.add(HG);
-          break;
-        }
-      case THR:
-        {
-          Atom OG1 = (Atom) target.getAtomNode("OG1");
-          Atom HG1 = (Atom) target.getAtomNode("HG1");
-          keyAtoms.add(OG1);
-          keyAtoms.add(HG1);
-          break;
-        }
-      case CYX:
-      case CYD:
-        {
-          Atom SG = (Atom) target.getAtomNode("SG");
-          keyAtoms.add(SG);
-          break;
-        }
-      case PHE:
-        {
-          Atom CD1 = (Atom) target.getAtomNode("CD1");
-          Atom CG = (Atom) target.getAtomNode("CG");
-          keyAtoms.add(CG);
-          break;
-        }
-      case PRO:
-        {
-          // Not allowed yet.
-          Atom CD = (Atom) target.getAtomNode("CD");
-          Atom CG = (Atom) target.getAtomNode("CG");
-          keyAtoms.add(CG);
-          keyAtoms.add(CD);
-          break;
-        }
-      case TYR:
-        {
-          Atom CD1 = (Atom) target.getAtomNode("CD1");
-          Atom CE2 = (Atom) target.getAtomNode("CE2");
-          Atom CG = (Atom) target.getAtomNode("CG");
-          Atom CZ = (Atom) target.getAtomNode("CZ");
-          Atom OH = (Atom) target.getAtomNode("OH");
-          Atom HH = (Atom) target.getAtomNode("HH");
-          // SPECIAL CASE: have to create map manualy.
-          Bond b1 = CG.getBond(CB);
-          Angle a1 = CG.getAngle(CB, CA);
-          Torsion t1 = CG.getTorsion(CB, CA, N);
-          Bond b2 = CD1.getBond(CG);
-          Angle a2 = CD1.getAngle(CG, CB);
-          Torsion t2 = CD1.getTorsion(CG, CB, CA);
-          Bond b3 = HH.getBond(OH);
-          Angle a3 = HH.getAngle(OH, CZ);
-          Torsion t3 = HH.getTorsion(OH, CZ, CE2);
-          BackBondedList bbl1 = new BackBondedList(b1, a1, t1);
-          BackBondedList bbl2 = new BackBondedList(b2, a2, t2);
-          BackBondedList bbl3 = new BackBondedList(b3, a3, t3);
-          map.put(0, bbl1);
-          map.put(1, bbl2);
-          map.put(2, bbl3);
-          return map; // Note the return here.
-        }
-      case TYD:
-      case TRP:
-        {
-          Atom CD1 = (Atom) target.getAtomNode("CD1");
-          Atom CG = (Atom) target.getAtomNode("CG");
-          keyAtoms.add(CG);
-          keyAtoms.add(CD1);
-          break;
-        }
-      case HIS:
-      case HID:
-      case HIE:
-        {
-          Atom CG = (Atom) target.getAtomNode("CG");
-          Atom ND1 = (Atom) target.getAtomNode("ND1");
-          keyAtoms.add(CG);
-          keyAtoms.add(ND1);
-          break;
-        }
-      case ASP:
-        {
-          Atom CG = (Atom) target.getAtomNode("CG");
-          keyAtoms.add(CG);
-          break;
-        }
-      case ASH:
-      case ASN:
-        {
-          Atom CG = (Atom) target.getAtomNode("CG");
-          Atom OD1 = (Atom) target.getAtomNode("OD1");
-          keyAtoms.add(CG);
-          keyAtoms.add(OD1);
-          break;
-        }
-      case GLU:
-      case GLH:
-      case GLN:
-        {
-          Atom CG = (Atom) target.getAtomNode("CG");
-          Atom CD = (Atom) target.getAtomNode("CD");
-          Atom OE1 = (Atom) target.getAtomNode("OE1");
-          keyAtoms.add(CG);
-          keyAtoms.add(CD);
-          keyAtoms.add(OE1);
-          break;
-        }
-      case MET:
-        {
-          Atom CG = (Atom) target.getAtomNode("CG");
-          Atom CE = (Atom) target.getAtomNode("CE");
-          Atom SD = (Atom) target.getAtomNode("SD");
-          keyAtoms.add(CG);
-          keyAtoms.add(SD);
-          keyAtoms.add(CE);
-          break;
-        }
-      case LYS:
-      case LYD:
-        {
-          Atom CD = (Atom) target.getAtomNode("CD");
-          Atom CE = (Atom) target.getAtomNode("CE");
-          Atom CG = (Atom) target.getAtomNode("CG");
-          Atom NZ = (Atom) target.getAtomNode("NZ");
-          keyAtoms.add(CG);
-          keyAtoms.add(CD);
-          keyAtoms.add(CE);
-          keyAtoms.add(NZ);
-          break;
-        }
-      case ARG:
-        {
-          Atom CD = (Atom) target.getAtomNode("CD");
-          Atom CG = (Atom) target.getAtomNode("CG");
-          Atom CZ = (Atom) target.getAtomNode("CZ");
-          Atom NE = (Atom) target.getAtomNode("NE");
-          keyAtoms.add(CG);
-          keyAtoms.add(CD);
-          keyAtoms.add(NE);
-          keyAtoms.add(CZ);
-          break;
-        }
-      default:
-        logger.severe(format("CBMC called on unsupported residue: %s", name.toString()));
+      case VAL -> {
+        Atom CG1 = (Atom) target.getAtomNode("CG1");
+        keyAtoms.add(CG1);
+        keyAtoms.add(CB);
+      }
+      case LEU -> {
+        Atom CG = (Atom) target.getAtomNode("CG");
+        Atom CD1 = (Atom) target.getAtomNode("CD1");
+        keyAtoms.add(CG);
+        keyAtoms.add(CD1);
+      }
+      case ILE -> {
+        Atom CD1 = (Atom) target.getAtomNode("CD1");
+        Atom CG1 = (Atom) target.getAtomNode("CG1");
+        keyAtoms.add(CD1);
+        keyAtoms.add(CG1);
+      }
+      case SER -> {
+        Atom OG = (Atom) target.getAtomNode("OG");
+        Atom HG = (Atom) target.getAtomNode("HG");
+        keyAtoms.add(OG);
+        keyAtoms.add(HG);
+      }
+      case THR -> {
+        Atom OG1 = (Atom) target.getAtomNode("OG1");
+        Atom HG1 = (Atom) target.getAtomNode("HG1");
+        keyAtoms.add(OG1);
+        keyAtoms.add(HG1);
+      }
+      case CYX, CYD -> {
+        Atom SG = (Atom) target.getAtomNode("SG");
+        keyAtoms.add(SG);
+      }
+      case PHE -> {
+        Atom CD1 = (Atom) target.getAtomNode("CD1");
+        Atom CG = (Atom) target.getAtomNode("CG");
+        keyAtoms.add(CG);
+      }
+      case PRO -> {
+        // Not allowed yet.
+        Atom CD = (Atom) target.getAtomNode("CD");
+        Atom CG = (Atom) target.getAtomNode("CG");
+        keyAtoms.add(CG);
+        keyAtoms.add(CD);
+      }
+      case TYR -> {
+        Atom CD1 = (Atom) target.getAtomNode("CD1");
+        Atom CE2 = (Atom) target.getAtomNode("CE2");
+        Atom CG = (Atom) target.getAtomNode("CG");
+        Atom CZ = (Atom) target.getAtomNode("CZ");
+        Atom OH = (Atom) target.getAtomNode("OH");
+        Atom HH = (Atom) target.getAtomNode("HH");
+        // SPECIAL CASE: have to create map manualy.
+        Bond b1 = CG.getBond(CB);
+        Angle a1 = CG.getAngle(CB, CA);
+        Torsion t1 = CG.getTorsion(CB, CA, N);
+        Bond b2 = CD1.getBond(CG);
+        Angle a2 = CD1.getAngle(CG, CB);
+        Torsion t2 = CD1.getTorsion(CG, CB, CA);
+        Bond b3 = HH.getBond(OH);
+        Angle a3 = HH.getAngle(OH, CZ);
+        Torsion t3 = HH.getTorsion(OH, CZ, CE2);
+        BackBondedList bbl1 = new BackBondedList(b1, a1, t1);
+        BackBondedList bbl2 = new BackBondedList(b2, a2, t2);
+        BackBondedList bbl3 = new BackBondedList(b3, a3, t3);
+        map.put(0, bbl1);
+        map.put(1, bbl2);
+        map.put(2, bbl3);
+        return map; // Note the return here.
+      }
+      case TYD, TRP -> {
+        Atom CD1 = (Atom) target.getAtomNode("CD1");
+        Atom CG = (Atom) target.getAtomNode("CG");
+        keyAtoms.add(CG);
+        keyAtoms.add(CD1);
+      }
+      case HIS, HID, HIE -> {
+        Atom CG = (Atom) target.getAtomNode("CG");
+        Atom ND1 = (Atom) target.getAtomNode("ND1");
+        keyAtoms.add(CG);
+        keyAtoms.add(ND1);
+      }
+      case ASP -> {
+        Atom CG = (Atom) target.getAtomNode("CG");
+        keyAtoms.add(CG);
+      }
+      case ASH, ASN -> {
+        Atom CG = (Atom) target.getAtomNode("CG");
+        Atom OD1 = (Atom) target.getAtomNode("OD1");
+        keyAtoms.add(CG);
+        keyAtoms.add(OD1);
+      }
+      case GLU, GLH, GLN -> {
+        Atom CG = (Atom) target.getAtomNode("CG");
+        Atom CD = (Atom) target.getAtomNode("CD");
+        Atom OE1 = (Atom) target.getAtomNode("OE1");
+        keyAtoms.add(CG);
+        keyAtoms.add(CD);
+        keyAtoms.add(OE1);
+      }
+      case MET -> {
+        Atom CG = (Atom) target.getAtomNode("CG");
+        Atom CE = (Atom) target.getAtomNode("CE");
+        Atom SD = (Atom) target.getAtomNode("SD");
+        keyAtoms.add(CG);
+        keyAtoms.add(SD);
+        keyAtoms.add(CE);
+      }
+      case LYS, LYD -> {
+        Atom CD = (Atom) target.getAtomNode("CD");
+        Atom CE = (Atom) target.getAtomNode("CE");
+        Atom CG = (Atom) target.getAtomNode("CG");
+        Atom NZ = (Atom) target.getAtomNode("NZ");
+        keyAtoms.add(CG);
+        keyAtoms.add(CD);
+        keyAtoms.add(CE);
+        keyAtoms.add(NZ);
+      }
+      case ARG -> {
+        Atom CD = (Atom) target.getAtomNode("CD");
+        Atom CG = (Atom) target.getAtomNode("CG");
+        Atom CZ = (Atom) target.getAtomNode("CZ");
+        Atom NE = (Atom) target.getAtomNode("NE");
+        keyAtoms.add(CG);
+        keyAtoms.add(CD);
+        keyAtoms.add(NE);
+        keyAtoms.add(CZ);
+      }
+      default -> logger.severe(format("CBMC called on unsupported residue: %s", name));
     }
     // Build the chain and assign back-bonded terms.
     chain.add(N);
@@ -988,21 +925,9 @@ public class RosenbluthChiAllMove implements MCMove {
       AtomType type3 = tors.getAtomArray()[2].getAtomType();
       AtomType type4 = tors.getAtomArray()[3].getAtomType();
       sb.append(
-          format(
-              "   %d:    \"(%3d %3d %3s)  (%3d %3d %3s)  (%3d %3d %3s)  (%3d %3d %3s)\"\n",
-              k,
-              type1.type,
-              type1.atomClass,
-              type1.name,
-              type2.type,
-              type2.atomClass,
-              type2.name,
-              type3.type,
-              type3.atomClass,
-              type3.name,
-              type4.type,
-              type4.atomClass,
-              type4.name));
+          format("   %d:    \"(%3d %3d %3s)  (%3d %3d %3s)  (%3d %3d %3s)  (%3d %3d %3s)\"\n", k,
+              type1.type, type1.atomClass, type1.name, type2.type, type2.atomClass, type2.name,
+              type3.type, type3.atomClass, type3.name, type4.type, type4.atomClass, type4.name));
     }
     logger.info(sb.toString());
     sb = new StringBuilder();
@@ -1102,8 +1027,8 @@ public class RosenbluthChiAllMove implements MCMove {
    * @return an array of {@link double} objects.
    */
   private double[] measureLysine(Residue residue, boolean print) {
-    if (!residue.getName().contains("LY")
-        || (residue.getAminoAcid3() != AminoAcidUtils.AminoAcid3.LYS
+    if (!residue.getName().contains("LY") || (
+        residue.getAminoAcid3() != AminoAcidUtils.AminoAcid3.LYS
             && residue.getAminoAcid3() != AminoAcidUtils.AminoAcid3.LYD)) {
       logger.severe("Yeah that ain't a lysine.");
     }
@@ -1117,8 +1042,8 @@ public class RosenbluthChiAllMove implements MCMove {
     Atom CG = (Atom) residue.getAtomNode("CG");
     Atom NZ = (Atom) residue.getAtomNode("NZ");
     logger.info(
-        format(
-            " Here's the atoms I found: \n%s\n%s\n%s\n%s\n%s\n%s\n%s", N, CA, CB, CD, CE, CG, NZ));
+        format(" Here's the atoms I found: \n%s\n%s\n%s\n%s\n%s\n%s\n%s", N, CA, CB, CD, CE, CG,
+            NZ));
     logger.info(format(" Num torsions: %d", torsions.size()));
     int count = 0;
     for (Torsion torsion : torsions) {
@@ -1154,21 +1079,13 @@ public class RosenbluthChiAllMove implements MCMove {
 
   /** Mode of the RosenbluthChiAllMove instance. */
   public enum MODE {
-    EXPENSIVE,
-    CHEAP,
-    CTRL_ALL
+    EXPENSIVE, CHEAP, CTRL_ALL
   }
 
   /** Provides lookup values that make true the inequality: uTorsion + offset .ge. 0.0 */
   private enum TORSION_OFFSET_AMPRO13 {
-    LYS0(1.610000),
-    LYD0(1.610000),
-    LYS1(0.939033),
-    LYD1(0.939033),
-    LYS2(1.000000),
-    LYD2(1.000000),
-    LYS3(0.800000),
-    LYD3(0.800000);
+    LYS0(1.610000), LYD0(1.610000), LYS1(0.939033), LYD1(0.939033), LYS2(1.000000), LYD2(
+        1.000000), LYS3(0.800000), LYD3(0.800000);
 
     public final double offset;
 
@@ -1240,11 +1157,7 @@ public class RosenbluthChiAllMove implements MCMove {
 
     private void write(String suffix, boolean append) {
       String filename =
-          FilenameUtils.removeExtension(mola.getFile().toString())
-              + "."
-              + suffix
-              + "-"
-              + moveNumber;
+          FilenameUtils.removeExtension(mola.getFile().toString()) + "." + suffix + "-" + moveNumber;
       if (interleaving) {
         filename = mola.getFile().getAbsolutePath();
         if (!filename.contains("dyn")) {

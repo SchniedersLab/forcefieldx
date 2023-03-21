@@ -200,6 +200,14 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
   private SymOp[] inverse = null;
   /** Utilize a provided SymOp */
   private boolean useSymOp = false;
+  /**
+   * The molecule number of each atom in the first topology.
+   */
+  private final int[] molecule1;
+  /**
+   * The molecule number of each atom in the second topology.
+   */
+  private final int[] molecule2;
 
   /**
    * Constructor for DualTopologyEnergy.
@@ -224,14 +232,15 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     /* Atom array for topology 2. */
     Atom[] atoms2 = topology2.getAtomArray();
 
+    molecule1 = topology1.getMoleculeNumbers();
+    molecule2 = topology2.getMoleculeNumbers();
+
     ForceField forceField1 = topology1.getForceField();
     doValenceRestraint1 = forceField1.getBoolean("LAMBDA_VALENCE_RESTRAINTS", true);
     ForceField forceField2 = topology2.getForceField();
     doValenceRestraint2 = forceField2.getBoolean("LAMBDA_VALENCE_RESTRAINTS", true);
 
     useFirstSystemBondedEnergy = forceField2.getBoolean("USE_FIRST_SYSTEM_BONDED_ENERGY", false);
-
-    CompositeConfiguration properties = topology1.getProperties();
 
     // Check that all atoms that are not undergoing alchemy are common to both topologies.
     int shared1 = 0;

@@ -49,7 +49,6 @@ import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.Utilities;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.RotamerLibrary;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.Collection;
@@ -66,8 +65,6 @@ public class SelfEnergyRegion extends WorkerRegion {
   private final RotamerOptimization rO;
   private final EnergyExpansion eE;
   private final EliminatedRotamers eR;
-  /** RotamerLibrary instance. */
-  private final RotamerLibrary library;
   /** Map of self-energy values to compute. */
   private final Map<Integer, Integer[]> selfEnergyMap;
   /** Writes energies to restart file. */
@@ -94,26 +91,14 @@ public class SelfEnergyRegion extends WorkerRegion {
 
   private Set<Integer> keySet;
 
-  public SelfEnergyRegion(
-      RotamerOptimization rO,
-      EnergyExpansion eE,
-      EliminatedRotamers eR,
-      Residue[] residues,
-      RotamerLibrary library,
-      BufferedWriter energyWriter,
-      Comm world,
-      int numProc,
-      boolean pruneClashes,
-      boolean master,
-      int rank,
-      boolean verbose,
-      boolean writeEnergyRestart,
-      boolean printFiles) {
+  public SelfEnergyRegion(RotamerOptimization rO, EnergyExpansion eE, EliminatedRotamers eR,
+      Residue[] residues, BufferedWriter energyWriter, Comm world,
+      int numProc, boolean pruneClashes, boolean master, int rank, boolean verbose,
+      boolean writeEnergyRestart, boolean printFiles) {
     this.rO = rO;
     this.eE = eE;
     this.eR = eR;
     this.residues = residues;
-    this.library = library;
     this.energyWriter = energyWriter;
     this.world = world;
     this.numProc = numProc;
@@ -144,8 +129,8 @@ public class SelfEnergyRegion extends WorkerRegion {
         Residue residue = residues[i];
         Rotamer[] rotamers = residue.getRotamers();
         for (int ri = 0; ri < rotamers.length; ri++) {
-          logger.info(format(" Self energy %8s %-2d: %s", residues[i].toString(rotamers[ri]),
-                  ri, rO.formatEnergy(eE.getSelf(i, ri))));
+          logger.info(format(" Self energy %8s %-2d: %s", residues[i].toString(rotamers[ri]), ri,
+              rO.formatEnergy(eE.getSelf(i, ri))));
         }
       }
     }
@@ -158,15 +143,11 @@ public class SelfEnergyRegion extends WorkerRegion {
         execute(0, keySet.size() - 1, new SelfEnergyLoop());
       } catch (MultipleParallelException mpx) {
         Collection<Throwable> subErrors = mpx.getExceptionMap().values();
-        logger.info(
-            format(
-                " MultipleParallelException caught: %s\n Stack trace:\n%s",
-                mpx, Utilities.stackTraceToString(mpx)));
+        logger.info(format(" MultipleParallelException caught: %s\n Stack trace:\n%s", mpx,
+            Utilities.stackTraceToString(mpx)));
         for (Throwable subError : subErrors) {
-          logger.info(
-              format(
-                  " Exception %s\n Stack trace:\n%s",
-                  subError, Utilities.stackTraceToString(subError)));
+          logger.info(format(" Exception %s\n Stack trace:\n%s", subError,
+              Utilities.stackTraceToString(subError)));
         }
         throw mpx; // Or logger.severe.
       } catch (Throwable t) {
@@ -248,14 +229,14 @@ public class SelfEnergyRegion extends WorkerRegion {
             try {
               selfEnergy = eE.computeSelfEnergy(residues, i, ri);
               time += System.nanoTime();
-              logger.info(format(" Self %8s %-2d: %s in %6.4f (sec).",
-                      residues[i].toString(rotamers[ri]),
+              logger.info(
+                  format(" Self %8s %-2d: %s in %6.4f (sec).", residues[i].toString(rotamers[ri]),
                       ri, rO.formatEnergy(selfEnergy), time * 1.0e-9));
             } catch (ArithmeticException ex) {
               selfEnergy = Double.NaN;
               time += System.nanoTime();
               logger.info(format(" Self %8s %-2d:\t    pruned in %6.4f (sec).",
-                      residues[i].toString(rotamers[ri]), ri, time * 1.0e-9));
+                  residues[i].toString(rotamers[ri]), ri, time * 1.0e-9));
             }
             myBuffer.put(2, selfEnergy);
           }
@@ -277,19 +258,19 @@ public class SelfEnergyRegion extends WorkerRegion {
 
         // Process the self energy received from each process.
         for (DoubleBuf doubleBuf : resultBuffer) {
-          int resi = (int) doubleBuf.get(0);
-          int roti = (int) doubleBuf.get(1);
+          int resI = (int) doubleBuf.get(0);
+          int rotI = (int) doubleBuf.get(1);
           double energy = doubleBuf.get(2);
           // Skip for padded result.
-          if (resi >= 0 && roti >= 0) {
+          if (resI >= 0 && rotI >= 0) {
             if (Double.isNaN(energy)) {
-              logger.info(" Rotamer  eliminated: " + resi + ", " + roti);
-              eR.eliminateRotamer(residues, resi, roti, false);
+              logger.info(" Rotamer  eliminated: " + resI + ", " + rotI);
+              eR.eliminateRotamer(residues, resI, rotI, false);
             }
-            eE.setSelf(resi, roti, energy);
+            eE.setSelf(resI, rotI, energy);
             if (rank == 0 && writeEnergyRestart && printFiles) {
               try {
-                energyWriter.append(format("Self %d %d: %16.8f", resi, roti, energy));
+                energyWriter.append(format("Self %d %d: %16.8f", resI, rotI, energy));
                 energyWriter.newLine();
                 energyWriter.flush();
               } catch (IOException ex) {

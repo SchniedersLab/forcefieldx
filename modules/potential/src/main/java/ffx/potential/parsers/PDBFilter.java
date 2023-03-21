@@ -2000,7 +2000,8 @@ public final class PDBFilter extends SystemFilter {
 
       // Loop over molecules, ions and then water.
       List<MSNode> molecules = activeMolecularAssembly.getMolecules();
-      for (int i = 0; i < molecules.size(); i++) {
+      int numMolecules = molecules.size();
+      for (int i = 0; i < numMolecules; i++) {
         Molecule molecule = (Molecule) molecules.get(i);
         chainID = molecule.getChainID();
         sb.setCharAt(21, chainID);

@@ -39,7 +39,7 @@ package ffx.algorithms.cli;
 
 import ffx.algorithms.AlgorithmListener;
 import ffx.algorithms.dynamics.MolecularDynamics;
-import ffx.algorithms.dynamics.MolecularDynamics.DynamicsEngine;
+import ffx.algorithms.dynamics.MDEngine;
 import ffx.algorithms.dynamics.integrators.Integrator;
 import ffx.algorithms.dynamics.integrators.IntegratorEnum;
 import ffx.algorithms.dynamics.thermostats.Thermostat;
@@ -71,7 +71,7 @@ public class DynamicsOptions {
    */
   @ArgGroup(heading = "%n Dynamics Options%n", validate = false)
   public DynamicsOptionGroup group = new DynamicsOptionGroup();
-  private DynamicsEngine engine = null;
+  private MDEngine engine = null;
 
   /**
    * The restart save frequency in picoseconds (1.0 psec default).
@@ -87,10 +87,10 @@ public class DynamicsOptions {
   }
 
   /**
-   * The timestep in femtoseconds (default of 1.0). A value of 2.0 is possible for the RESPA
+   * The time step in femtoseconds (default of 1.0). A value of 2.0 is possible for the RESPA
    * integrator.
    *
-   * @return Timestep in femtoseconds.
+   * @return Time step in femtoseconds.
    */
   public double getDt() {
     return group.dt;
@@ -126,16 +126,15 @@ public class DynamicsOptions {
    */
   public MolecularDynamics getDynamics(WriteoutOptions writeoutOptions, Potential potential,
       MolecularAssembly activeAssembly, AlgorithmListener algorithmListener,
-      DynamicsEngine requestedEngine) {
+      MDEngine requestedEngine) {
     MolecularDynamics molDyn;
 
     if (requestedEngine == null) {
-      molDyn = MolecularDynamics.dynamicsFactory(activeAssembly, potential,
-          activeAssembly.getProperties(), algorithmListener, thermostat, integrator);
+      molDyn = MolecularDynamics.dynamicsFactory(activeAssembly, potential, algorithmListener,
+          thermostat, integrator);
     } else {
-      molDyn = MolecularDynamics.dynamicsFactory(activeAssembly, potential,
-          activeAssembly.getProperties(), algorithmListener, thermostat, integrator,
-          requestedEngine);
+      molDyn = MolecularDynamics.dynamicsFactory(activeAssembly, potential, algorithmListener,
+          thermostat, integrator, requestedEngine);
     }
     molDyn.setFileType(writeoutOptions.getFileType());
     molDyn.setRestartFrequency(group.checkpoint);
@@ -198,7 +197,7 @@ public class DynamicsOptions {
     integrator = Integrator.parseIntegrator(group.integratorString);
     if (group.engineString != null) {
       try {
-        engine = DynamicsEngine.valueOf(group.engineString.toUpperCase());
+        engine = MDEngine.valueOf(group.engineString.toUpperCase());
       } catch (Exception ex) {
         logger.warning(String.format(
             " Could not parse %s as a valid dynamics engine! Defaulting to the Platform-recommended engine.",
@@ -314,7 +313,7 @@ public class DynamicsOptions {
   private static class DynamicsOptionGroup {
 
     /**
-     * -d or --dt sets the timestep in femtoseconds (default of 1.0). A value of 2.0 is possible for
+     * -d or --dt sets the time step in femtoseconds (default of 1.0). A value of 2.0 is possible for
      * the RESPA integrator.
      */
     @Option(names = {"-d",

@@ -66,9 +66,8 @@ public class ReplicaExchange implements Terminatable {
   /** Rank of this process. */
   private final int rank;
   /**
-   * The parameters array stores communicated parameters for each process
-   * (i.e. each RepEx system).
-   * Currently the array is of size [number of Processes][2].
+   * The parameters array stores communicated parameters for each process (i.e. each RepEx system).
+   * Currently, the array is of size [number of Processes][2].
    */
   private final double[][] parameters;
   /**
@@ -76,13 +75,11 @@ public class ReplicaExchange implements Terminatable {
    * communication calls.
    */
   private final DoubleBuf[] parametersBuf;
-
   private final MolecularDynamics replica;
   private boolean done = false;
   private boolean terminate = false;
   private final double[] myParameters;
   private final DoubleBuf myParametersBuf;
-
   private final int[] temp2Rank;
   private final int[] rank2Temp;
   private double[] temperatures;
@@ -94,20 +91,20 @@ public class ReplicaExchange implements Terminatable {
   /**
    * ReplicaExchange constructor.
    *
-   * @param molecularDynamics a {@link MolecularDynamics} object.
-   * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
-   * @param temperature a double.
-   * @param exponent a double to set temperature ladder
+   * @param molecularDynamics The MolecularDynamics instance.
+   * @param listener A listener for algorithm events.
+   * @param temperature The temperature (K).
+   * @param exponent a double to set temperature ladder.
    */
-  public ReplicaExchange(
-      MolecularDynamics molecularDynamics, AlgorithmListener listener, double temperature, double exponent, boolean monteCarlo) {
+  public ReplicaExchange(MolecularDynamics molecularDynamics, AlgorithmListener listener,
+      double temperature, double exponent, boolean monteCarlo) {
 
     this.replica = molecularDynamics;
     this.monteCarlo = monteCarlo;
 
     // MolecularAssembly[] molecularAssemblies = molecularDynamics.getAssemblies();
     // CompositeConfiguration properties = molecularAssemblies[0].getProperties()
-    
+
     // Set up the Replica Exchange communication variables for Parallel Java communication between
     // nodes.
     world = Comm.world();
@@ -121,7 +118,7 @@ public class ReplicaExchange implements Terminatable {
     temp2Rank = new int[nReplicas];
     rank2Temp = new int[nReplicas];
     tempAcceptedCount = new int[nReplicas];
-    rankAcceptedCount = new int [nReplicas];
+    rankAcceptedCount = new int[nReplicas];
     tempTrialCount = new int[nReplicas];
 
     setExponentialTemperatureLadder(temperature, exponent);
@@ -145,14 +142,14 @@ public class ReplicaExchange implements Terminatable {
   /**
    * Sample.
    *
-   * @param cycles a int.
-   * @param nSteps a int.
-   * @param timeStep a double.
-   * @param printInterval a double.
-   * @param saveInterval a double.
+   * @param cycles The number of cycles to sample.
+   * @param nSteps The number of steps per cycle.
+   * @param timeStep The time step (fsec).
+   * @param printInterval The interval (in steps) to print current status.
+   * @param saveInterval The interval (in steps) to save a snapshot.
    */
-  public void sample(
-      int cycles, long nSteps, double timeStep, double printInterval, double saveInterval) {
+  public void sample(int cycles, long nSteps, double timeStep, double printInterval,
+      double saveInterval) {
     done = false;
     terminate = false;
     for (int i = 0; i < cycles; i++) {
@@ -212,7 +209,11 @@ public class ReplicaExchange implements Terminatable {
     }
   }
 
-  /** All processes complete the exchanges identically given the same Random number seed. */
+  /**
+   * All processes complete the exchanges identically given the same Random number seed.
+   *
+   * @param cycle The current cycle.
+   */
   private void exchange(int cycle) {
     int start;
     int increment;
@@ -248,10 +249,11 @@ public class ReplicaExchange implements Terminatable {
       tempTrialCount[temperature]++;
       if (deltaE < 0.0 || random.nextDouble() < exp(-deltaE)) {
         tempAcceptedCount[temperature]++;
-        double tempAcceptance = tempAcceptedCount[temperature] * 100.0 / (tempTrialCount[temperature]);
+        double tempAcceptance =
+            tempAcceptedCount[temperature] * 100.0 / (tempTrialCount[temperature]);
 
         double rankAcceptance;
-        if (tempA < tempB){
+        if (tempA < tempB) {
           rankAcceptedCount[rankA]++;
           rankAcceptance = rankAcceptedCount[rankA] * 100.0 / (tempTrialCount[temperature]);
         } else {
@@ -270,54 +272,47 @@ public class ReplicaExchange implements Terminatable {
         temp2Rank[temperature] = rankB;
         temp2Rank[temperature + 1] = rankA;
 
-
-
         // Map ranks to temperatures.
         rank2Temp[rankA] = temperature + 1;
         rank2Temp[rankB] = temperature;
 
-
-
-        logger.info(
-            String.format(
-                " RepEx accepted (%5.1f%%) (%5.1f%%) for %6.2f (%d) and %6.2f (%d) for dE=%10.4f.",
-                tempAcceptance, rankAcceptance, tempA, rankA, tempB, rankB, deltaE));
+        logger.info(String.format(
+            " RepEx accepted (%5.1f%%) (%5.1f%%) for %6.2f (%d) and %6.2f (%d) for dE=%10.4f.",
+            tempAcceptance, rankAcceptance, tempA, rankA, tempB, rankB, deltaE));
       } else {
-        double tempAcceptance = tempAcceptedCount[temperature] * 100.0 / (tempTrialCount[temperature]);
-        double rankAcceptance = rankAcceptedCount[temperature] * 100.0 / (tempTrialCount[temperature]);
-        logger.info(
-            String.format(
-                " RepEx rejected (%5.1f%%) (f%5.1f%%) for %6.2f (%d) and %6.2f (%d) for dE=%10.4f.",
-                tempAcceptance, rankAcceptance, tempA, rankA, tempB, rankB, deltaE));
+        double tempAcceptance =
+            tempAcceptedCount[temperature] * 100.0 / (tempTrialCount[temperature]);
+        double rankAcceptance =
+            rankAcceptedCount[temperature] * 100.0 / (tempTrialCount[temperature]);
+        logger.info(String.format(
+            " RepEx rejected (%5.1f%%) (f%5.1f%%) for %6.2f (%d) and %6.2f (%d) for dE=%10.4f.",
+            tempAcceptance, rankAcceptance, tempA, rankA, tempB, rankB, deltaE));
       }
     }
   }
 
   /**
-   * Blocking dynamic steps: when this method returns each replica has completed the requested
-   * number of steps.
+   * Blocking dynamic steps: when this method returns each replica has completed the requested number
+   * of steps.
    *
    * @param nSteps the number of time steps.
-   * @param timeStep the time step.
-   * @param printInterval the number of steps between loggging updates.
+   * @param timeStep the time step (fsec).
+   * @param printInterval the number of steps between logging updates.
    * @param saveInterval the number of steps between saving snapshots.
    */
-  private void dynamic(
-      final long nSteps,
-      final double timeStep,
-      final double printInterval,
+  private void dynamic(final long nSteps, final double timeStep, final double printInterval,
       final double saveInterval) {
 
     int i = rank2Temp[rank];
 
     // Start this processes MolecularDynamics instance sampling.
     boolean initVelocities = true;
-    replica.dynamic(
-        nSteps, timeStep, printInterval, saveInterval, temperatures[i], initVelocities, null);
+    replica.dynamic(nSteps, timeStep, printInterval, saveInterval, temperatures[i], initVelocities,
+        null);
 
     // Update this ranks' parameter array to be consistent with the dynamics.
     myParameters[0] = temperatures[i];
-    myParameters[1] = replica.currentPotentialEnergy;
+    myParameters[1] = replica.state.getPotentialEnergy();
 
     // Gather all parameters from the other processes.
     try {

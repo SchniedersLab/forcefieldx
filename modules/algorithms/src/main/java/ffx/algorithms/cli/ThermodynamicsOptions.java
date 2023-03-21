@@ -82,7 +82,7 @@ public class ThermodynamicsOptions {
   /**
    * getEquilSteps.
    *
-   * @return a int.
+   * @return The number of equilibration steps.
    */
   public long getEquilSteps() {
     return group.equilibrationSteps;
@@ -108,19 +108,15 @@ public class ThermodynamicsOptions {
    * @param algorithmListener AlgorithmListener
    * @return The MolecularDynamics object constructed.
    */
-  public MolecularDynamics runFixedAlchemy(
-      MolecularAssembly[] molecularAssemblies,
-      CrystalPotential crystalPotential,
-      DynamicsOptions dynamicsOptions,
-      WriteoutOptions writeoutOptions,
-      File dyn,
-      AlgorithmListener algorithmListener) {
+  public MolecularDynamics runFixedAlchemy(MolecularAssembly[] molecularAssemblies,
+      CrystalPotential crystalPotential, DynamicsOptions dynamicsOptions,
+      WriteoutOptions writeoutOptions, File dyn, AlgorithmListener algorithmListener) {
     dynamicsOptions.init();
 
-    MolecularDynamics molDyn = dynamicsOptions.getDynamics(
-        writeoutOptions, crystalPotential, molecularAssemblies[0], algorithmListener);
+    MolecularDynamics molDyn = dynamicsOptions.getDynamics(writeoutOptions, crystalPotential,
+        molecularAssemblies[0], algorithmListener);
     for (int i = 1; i < molecularAssemblies.length; i++) {
-      molDyn.addAssembly(molecularAssemblies[i], molecularAssemblies[i].getProperties());
+      molDyn.addAssembly(molecularAssemblies[i]);
     }
 
     boolean initVelocities = true;
@@ -135,13 +131,7 @@ public class ThermodynamicsOptions {
     } else {
       logger.info("\n Beginning Fixed-Lambda Alchemical Sampling Without Equilibration");
       if (!group.resetNumSteps) {
-        /*int nEnergyCount = ttOSRW.getEnergyCount();
-        if (nEnergyCount > 0) {
-            nSteps -= nEnergyCount;
-            logger.info(String.format(" Lambda file: %12d steps picked up, now sampling %12d steps", nEnergyCount, nSteps));
-            initVelocities = false;
-        }*/
-        // Temporary workaround for being unable to pick up preexisting steps.
+        // Workaround for being unable to pick up pre-existing steps.
         initVelocities = true;
       }
     }
@@ -163,23 +153,12 @@ public class ThermodynamicsOptions {
     return group.equilibrationSteps;
   }
 
-  private void runDynamics(
-      MolecularDynamics molecularDynamics,
-      long nSteps,
-      DynamicsOptions dynamicsOptions,
-      WriteoutOptions writeoutOptions,
-      boolean initVelocities,
+  private void runDynamics(MolecularDynamics molecularDynamics, long nSteps,
+      DynamicsOptions dynamicsOptions, WriteoutOptions writeoutOptions, boolean initVelocities,
       File dyn) {
-    molecularDynamics.dynamic(
-        nSteps,
-        dynamicsOptions.getDt(),
-        dynamicsOptions.getReport(),
-        dynamicsOptions.getWrite(),
-        dynamicsOptions.getTemperature(),
-        initVelocities,
-        writeoutOptions.getFileType(),
-        dynamicsOptions.getCheckpoint(),
-        dyn);
+    molecularDynamics.dynamic(nSteps, dynamicsOptions.getDt(), dynamicsOptions.getReport(),
+        dynamicsOptions.getWrite(), dynamicsOptions.getTemperature(), initVelocities,
+        writeoutOptions.getFileType(), dynamicsOptions.getCheckpoint(), dyn);
   }
 
   public void setEquilibrationSteps(long equilibrationSteps) {
@@ -202,7 +181,7 @@ public class ThermodynamicsOptions {
   /**
    * The algorithm to be used (e.g. OST, window-based methods, etc).
    *
-   * @return Returns the a String for requested algorithm.
+   * @return Returns a String for requested algorithm.
    */
   public String getThermoAlgoString() {
     return group.thermoAlgoString;
@@ -221,33 +200,24 @@ public class ThermodynamicsOptions {
      * -Q or --equilibrate sets the number of equilibration steps prior to production OST counts
      * begin.
      */
-    @Option(
-        names = {"-Q", "--equilibrate"},
-        paramLabel = "1000",
-        defaultValue = "1000",
-        description = "Number of equilibration steps before evaluation of thermodynamics.")
+    @Option(names = {"-Q",
+        "--equilibrate"}, paramLabel = "1000", defaultValue = "1000", description = "Number of equilibration steps before evaluation of thermodynamics.")
     private long equilibrationSteps;
 
     /**
      * -rn or --resetNumSteps, ignores steps detected in .lam lambda-restart files and thus resets
      * the histogram; use -rn false to continue from the end of any prior simulation.
      */
-    @Option(
-        names = {"--rn", "--resetNumSteps"},
-        defaultValue = "false",
-        description = "Ignore prior steps logged in .lam or similar files")
+    @Option(names = {"--rn",
+        "--resetNumSteps"}, defaultValue = "false", description = "Ignore prior steps logged in .lam or similar files")
     private boolean resetNumSteps;
 
     /**
      * --tA or --thermodynamicsAlgorithm specifies the algorithm to be used; currently serves as a
      * switch between OST and window-based methods.
      */
-    @Option(
-        names = {"--tA", "--thermodynamicsAlgorithm"},
-        paramLabel = "OST",
-        defaultValue = "OST",
-        description =
-            "Choice of thermodynamics algorithm. The default is OST, while FIXED runs MD at a fixed lambda value (e.g. BAR)")
+    @Option(names = {"--tA",
+        "--thermodynamicsAlgorithm"}, paramLabel = "OST", defaultValue = "OST", description = "Choice of thermodynamics algorithm. The default is OST, while FIXED runs MD at a fixed lambda value (e.g. BAR)")
     private String thermoAlgoString;
   }
 
@@ -259,8 +229,7 @@ public class ThermodynamicsOptions {
   public enum ThermodynamicsAlgorithm {
     // TODO: Separate MC-OST from MD-OST. Requires coupled changes elsewhere.
     // Fixed represents generation of snapshots for estimators like BAR, FEP, etc.
-    OST("OST", "MC-OST", "MD-OST", "DEFAULT"),
-    FIXED("BAR", "MBAR", "FEP", "WINDOWED");
+    OST("OST", "MC-OST", "MD-OST", "DEFAULT"), FIXED("BAR", "MBAR", "FEP", "WINDOWED");
 
     private final Set<String> aliases;
 

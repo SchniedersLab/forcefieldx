@@ -40,6 +40,7 @@ package ffx.algorithms.dynamics.integrators;
 import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
 import static java.lang.String.format;
 
+import ffx.potential.SystemState;
 import ffx.numerics.Potential;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -76,20 +77,16 @@ public class Respa extends Integrator {
 
   private double halfStepEnergy = 0;
 
+  private final double[] innerGradient;
+
   /**
    * Initialize Respa multiple time step molecular dynamics.
    *
-   * @param nVariables Number of variables.
-   * @param x Variables current value.
-   * @param v Current velocities.
-   * @param a Current accelerations.
-   * @param aPrevious Previous accelerations.
-   * @param mass Mass of the variables.
+   * @param state The molecular dynamics state to be operated on.
    */
-  public Respa(
-      int nVariables, double[] x, double[] v, double[] a, double[] aPrevious, double[] mass) {
-    super(nVariables, x, v, a, aPrevious, mass);
-
+  public Respa(SystemState state) {
+    super(state);
+    innerGradient = new double[state.getNumberOfVariables()];
     innerSteps = 4;
     innerTimeStep = dt / innerSteps;
     halfInnerTimeStep = 0.5 * innerTimeStep;
@@ -111,7 +108,10 @@ public class Respa extends Integrator {
    */
   @Override
   public void postForce(double[] gradient) {
-    for (int i = 0; i < nVariables; i++) {
+    double[] a = state.a();
+    double[] v = state.v();
+    double[] mass = state.mass();
+    for (int i = 0; i < state.getNumberOfVariables(); i++) {
       a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
       v[i] += a[i] * dt_2;
     }
@@ -124,7 +124,12 @@ public class Respa extends Integrator {
    */
   @Override
   public void preForce(Potential potential) {
-    double[] gradient = new double[nVariables];
+    int nVariables = state.getNumberOfVariables();
+    double[] x = state.x();
+    double[] v = state.v();
+    double[] a = state.a();
+    double[] aPrevious = state.aPrevious();
+    double[] mass = state.mass();
 
     // Find half-step velocities via velocity Verlet recursion
     for (int i = 0; i < nVariables; i++) {
@@ -133,9 +138,9 @@ public class Respa extends Integrator {
 
     // Initialize accelerations due to fast-evolving forces.
     potential.setEnergyTermState(Potential.STATE.FAST);
-    halfStepEnergy = potential.energyAndGradient(x, gradient);
+    halfStepEnergy = potential.energyAndGradient(x, innerGradient);
     for (int i = 0; i < nVariables; i++) {
-      aPrevious[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
+      aPrevious[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * innerGradient[i] / mass[i];
     }
 
     // Complete the inner RESPA loop.
@@ -148,14 +153,13 @@ public class Respa extends Integrator {
       }
 
       // Update accelerations from fast varying forces.
-      halfStepEnergy = potential.energyAndGradient(x, gradient);
+      halfStepEnergy = potential.energyAndGradient(x, innerGradient);
       for (int i = 0; i < nVariables; i++) {
-
         /*
          Use Newton's second law to get fast-evolving accelerations.
          Update fast-evolving velocities using the Verlet recursion.
         */
-        aPrevious[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
+        aPrevious[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * innerGradient[i] / mass[i];
         v[i] += aPrevious[i] * halfInnerTimeStep;
       }
     }
@@ -197,8 +201,9 @@ public class Respa extends Integrator {
     halfInnerTimeStep = 0.5 * innerTimeStep;
 
     if (logger.isLoggable(Level.FINE)) {
-      logger.fine(format(" Time step set at %f (psec) and inner time step set at %f (psec) \n",
-              this.dt, innerTimeStep));
+      logger.fine(
+          format(" Time step set at %f (psec) and inner time step set at %f (psec) \n", this.dt,
+              innerTimeStep));
     }
   }
 

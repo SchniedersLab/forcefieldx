@@ -140,24 +140,14 @@ public class LoopClosureTest {
 
   @Test
   public void loopTest() {
-    double[][] rA;
-    double[][] rC;
-    double[][] rN;
+    var rA = loop.getRA();
+    var rC = loop.getRC();
+    var rN = loop.getRN();
 
-    rA = loop.getRA();
-    rC = loop.getRC();
-    rN = loop.getRN();
-
-    for (int j = 0; j < 3; j++) {
-      assertArrayEquals(rA[j], xyzATest[j], 1e-8);
-    }
-
-    for (int j = 0; j < 3; j++) {
-      assertArrayEquals(rC[j], xyzCTest[j], 1e-8);
-    }
-
-    for (int j = 0; j < 3; j++) {
-      assertArrayEquals(rN[j], xyzNTest[j], 1e-8);
+    for (int j = 0; j < xyzATest.length; j++) {
+      assertArrayEquals(xyzATest[j], rA[j], 1e-8);
+      assertArrayEquals(xyzCTest[j], rC[j], 1e-8);
+      assertArrayEquals(xyzNTest[j], rN[j], 1e-8);
     }
   }
 }

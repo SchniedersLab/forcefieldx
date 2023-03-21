@@ -45,6 +45,7 @@ package ffx.algorithms.optimize.anneal;
  * @since 1.0
  */
 public interface AnnealingSchedule {
+
   /**
    * Gets the starting temperature.
    *

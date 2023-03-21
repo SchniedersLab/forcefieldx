@@ -51,13 +51,13 @@ import picocli.CommandLine.Option;
 public class RandomUnitCellOptions {
 
   /**
-   * The ArgGroup keeps the RandomSymopOptions together when printing help.
+   * The ArgGroup keeps the Random SymOp Options together when printing help.
    */
   @ArgGroup(heading = "%n Random Unit Cell Options%n", validate = false)
   public RandomUnitCellOptionGroup group = new RandomUnitCellOptionGroup();
 
   /**
-   * Randomize the unit cell for a Molcular Assembly.
+   * Randomize the unit cell for a MolecularAssembly.
    *
    * @param assembly a {@link ffx.potential.MolecularAssembly} object.
    */
@@ -107,23 +107,16 @@ public class RandomUnitCellOptions {
      * --rsym or --randomSymOp Apply a random SymOp with translation range -X/2 .. X/2 (0 for random
      * placement in the unit cell, negative for no SymOp).
      */
-    @Option(
-        names = {"--rsym", "--randomSymOp"},
-        paramLabel = "-1.0",
-        defaultValue = "-1.0",
-        description =
-            "Apply a random SymOp with translation range -X/2 .. X/2 (0 for random placement in the unit cell, negative for no SymOp)")
+    @Option(names = {"--rsym",
+        "--randomSymOp"}, paramLabel = "-1.0", defaultValue = "-1.0", description = "Apply a random SymOp with translation range -X/2 .. X/2 (0 for random placement in the unit cell, negative for no SymOp)")
     private double randomSymOp;
 
     /**
      * --ruc or --randomUnitCell Random unit cell parameters will be used achieve the specified
      * density (g/cc) (no default density).
      */
-    @Option(
-        names = {"--ruc", "--randomUnitCell"},
-        paramLabel = "-1.0",
-        defaultValue = "-1.0",
-        description = "Apply random unit cell parameters to achieve the specified density (g/cc).")
+    @Option(names = {"--ruc",
+        "--randomUnitCell"}, paramLabel = "-1.0", defaultValue = "-1.0", description = "Apply random unit cell parameters to achieve the specified density (g/cc).")
     private double randomUnitCell;
   }
 }

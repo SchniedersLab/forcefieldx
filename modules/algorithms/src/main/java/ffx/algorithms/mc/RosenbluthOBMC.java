@@ -60,7 +60,7 @@ import java.util.logging.Logger;
 import org.apache.commons.io.FilenameUtils;
 
 /**
- * Orientational Biased Monte Carlo (as applied to chi0 torsion of peptide side-chains.
+ * Orientational Biased Monte Carlo (as applied to chi0 torsion of peptide side-chains).
  *
  * <p>As described by Frenkel/Smit in "Understanding Molecular Simulation" Chapter 13.1.2. This uses
  * the "orientational biasing" method to select chi[0] moves that are frequently accepted.
@@ -106,13 +106,8 @@ public class RosenbluthOBMC implements MonteCarloListener {
    * @param forceFieldEnergy a {@link ffx.potential.ForceFieldEnergy} object.
    * @param thermostat a {@link ffx.algorithms.dynamics.thermostats.Thermostat} object.
    */
-  public RosenbluthOBMC(
-      MolecularAssembly molecularAssembly,
-      ForceFieldEnergy forceFieldEnergy,
-      Thermostat thermostat,
-      List<Residue> targets,
-      int mcFrequency,
-      int trialSetSize) {
+  public RosenbluthOBMC(MolecularAssembly molecularAssembly, ForceFieldEnergy forceFieldEnergy,
+      Thermostat thermostat, List<Residue> targets, int mcFrequency, int trialSetSize) {
     this.targets = targets;
     this.mcFrequency = mcFrequency;
     this.trialSetSize = trialSetSize;
@@ -125,22 +120,17 @@ public class RosenbluthOBMC implements MonteCarloListener {
    * Constructor for RosenbluthOBMC.
    *
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
-   * @param ffe a {@link ffx.potential.ForceFieldEnergy} object.
+   * @param forceFieldEnergy a {@link ffx.potential.ForceFieldEnergy} object.
    * @param thermostat a {@link ffx.algorithms.dynamics.thermostats.Thermostat} object.
    * @param targets a {@link java.util.List} object.
    * @param mcFrequency a int.
    * @param trialSetSize a int.
    * @param writeSnapshots a boolean.
    */
-  public RosenbluthOBMC(
-      MolecularAssembly molecularAssembly,
-      ForceFieldEnergy ffe,
-      Thermostat thermostat,
-      List<Residue> targets,
-      int mcFrequency,
-      int trialSetSize,
+  public RosenbluthOBMC(MolecularAssembly molecularAssembly, ForceFieldEnergy forceFieldEnergy,
+      Thermostat thermostat, List<Residue> targets, int mcFrequency, int trialSetSize,
       boolean writeSnapshots) {
-    this(molecularAssembly, ffe, thermostat, targets, mcFrequency, trialSetSize);
+    this(molecularAssembly, forceFieldEnergy, thermostat, targets, mcFrequency, trialSetSize);
     this.writeSnapshots = writeSnapshots;
   }
 
@@ -179,10 +169,10 @@ public class RosenbluthOBMC implements MonteCarloListener {
     List<MCMove> newTrialSet = createTrialSet(target, origState, trialSetSize);
     report = new StringBuilder();
     report.append(format(" Rosenbluth Rotamer MC Move: %4d\n", numMovesProposed));
-    report.append(format("    residue:   %s\n", target.toString()));
+    report.append(format("    residue:   %s\n", target));
     report.append(format("    chi0:      %s\n", chi0.toString()));
-    MCMove proposal =
-        calculateRosenbluthFactors(target, chi0, origState, oldTrialSet, origState, newTrialSet);
+    MCMove proposal = calculateRosenbluthFactors(target, chi0, origState, oldTrialSet, origState,
+        newTrialSet);
 
     /*
        Calculate the independent portion of the total old-conf energy.
@@ -242,27 +232,20 @@ public class RosenbluthOBMC implements MonteCarloListener {
 
   /**
    * Chooses a move, bn, from amongst the new trial set, {b}k, based on the Boltzmann-weighted
-   * orientational energy, U_or[n]. Also calculates Rosenbluth factors for both sets, Wn and Wo. Wn
-   * = sum(i=1:k, exp(-beta * uDep[i])) Wo = exp(-beta * uDep[current]) + sum(i=2:k, exp(-beta *
+   * orientational energy, U_or[n]. Also calculates Rosenbluth factors for both sets, Wn and Wo. Wn =
+   * sum(i=1:k, exp(-beta * uDep[i])) Wo = exp(-beta * uDep[current]) + sum(i=2:k, exp(-beta *
    * uDep[i]))
    */
-  private MCMove calculateRosenbluthFactors(
-      Residue target,
-      Torsion chi0,
-      ResidueState oldConf,
-      List<MCMove> oldTrialSet,
-      ResidueState newConf,
-      List<MCMove> newTrialSet) {
+  private MCMove calculateRosenbluthFactors(Residue target, Torsion chi0, ResidueState oldConf,
+      List<MCMove> oldTrialSet, ResidueState newConf, List<MCMove> newTrialSet) {
     double temperature = thermostat.getCurrentTemperature();
     double beta = 1.0 / (R * temperature);
 
     // Initialize and add up Wo.
     Wo = exp(-beta * getTorsionEnergy(chi0));
     report.append(format("    TestSet (Old): %5s\t%7s\t\t%7s\n", "uDepO", "uDepOe", "Sum(Wo)"));
-    report.append(
-        format(
-            "       Orig %d:   %7.4f\t%7.4f\t\t%7.4f\n",
-            0, getTorsionEnergy(chi0), exp(-beta * getTorsionEnergy(chi0)), Wo));
+    report.append(format("       Orig %d:   %7.4f\t%7.4f\t\t%7.4f\n", 0, getTorsionEnergy(chi0),
+        exp(-beta * getTorsionEnergy(chi0)), Wo));
     for (int i = 0; i < oldTrialSet.size(); i++) {
       setState(target, oldConf);
       MCMove move = oldTrialSet.get(i);
@@ -271,8 +254,7 @@ public class RosenbluthOBMC implements MonteCarloListener {
       double uDepOe = exp(-beta * uDepO);
       Wo += uDepOe;
       if (i < 5 || i >= oldTrialSet.size() - 5) {
-        report.append(
-            format("       Prop %d:   %7.4f\t%7.4f\t\t%7.4f\n", i + 1, uDepO, uDepOe, Wo));
+        report.append(format("       Prop %d:   %7.4f\t%7.4f\t\t%7.4f\n", i + 1, uDepO, uDepOe, Wo));
         writeSnapshot("ots");
       } else if (i == 5) {
         report.append("        ... \n");
@@ -335,106 +317,93 @@ public class RosenbluthOBMC implements MonteCarloListener {
     AminoAcid3 name = AminoAcidUtils.AminoAcid3.valueOf(residue.getName());
     List<Torsion> torsions = residue.getTorsionList();
     switch (name) {
-      case VAL:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom CG1 = (Atom) residue.getAtomNode("CG1");
-          for (Torsion torsion : torsions) {
-            if (torsion.compare(N, CA, CB, CG1)) {
-              return torsion;
-            }
+      case VAL -> {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom CG1 = (Atom) residue.getAtomNode("CG1");
+        for (Torsion torsion : torsions) {
+          if (torsion.compare(N, CA, CB, CG1)) {
+            return torsion;
           }
-          break;
         }
-      case ILE:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom CG1 = (Atom) residue.getAtomNode("CG1");
-          for (Torsion torsion : torsions) {
-            if (torsion.compare(N, CA, CB, CG1)) {
-              return torsion;
-            }
+      }
+      case ILE -> {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom CG1 = (Atom) residue.getAtomNode("CG1");
+        for (Torsion torsion : torsions) {
+          if (torsion.compare(N, CA, CB, CG1)) {
+            return torsion;
           }
-          break;
         }
-      case SER:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom OG = (Atom) residue.getAtomNode("OG");
-          for (Torsion torsion : torsions) {
-            if (torsion.compare(N, CA, CB, OG)) {
-              return torsion;
-            }
+      }
+      case SER -> {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom OG = (Atom) residue.getAtomNode("OG");
+        for (Torsion torsion : torsions) {
+          if (torsion.compare(N, CA, CB, OG)) {
+            return torsion;
           }
-          break;
         }
-      case THR:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom OG1 = (Atom) residue.getAtomNode("OG1");
-          for (Torsion torsion : torsions) {
-            if (torsion.compare(N, CA, CB, OG1)) {
-              return torsion;
-            }
+      }
+      case THR -> {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom OG1 = (Atom) residue.getAtomNode("OG1");
+        for (Torsion torsion : torsions) {
+          if (torsion.compare(N, CA, CB, OG1)) {
+            return torsion;
           }
-          break;
         }
-      case CYX:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom SG = (Atom) residue.getAtomNode("SG");
-          for (Torsion torsion : torsions) {
-            if (torsion.compare(N, CA, CB, SG)) {
-              return torsion;
-            }
+      }
+      case CYX -> {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom SG = (Atom) residue.getAtomNode("SG");
+        for (Torsion torsion : torsions) {
+          if (torsion.compare(N, CA, CB, SG)) {
+            return torsion;
           }
-          break;
         }
-      case CYD:
-        {
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom SG = (Atom) residue.getAtomNode("SG");
-          for (Torsion torsion : torsions) {
-            if (torsion.compare(N, CA, CB, SG)) {
-              return torsion;
-            }
+      }
+      case CYD -> {
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom SG = (Atom) residue.getAtomNode("SG");
+        for (Torsion torsion : torsions) {
+          if (torsion.compare(N, CA, CB, SG)) {
+            return torsion;
           }
-          break;
         }
-      default:
-        { // All other residues' chi[0] are defined by N,CA,CB,CG.
-          Atom N = (Atom) residue.getAtomNode("N");
-          Atom CA = (Atom) residue.getAtomNode("CA");
-          Atom CB = (Atom) residue.getAtomNode("CB");
-          Atom CG = (Atom) residue.getAtomNode("CG");
-          for (Torsion torsion : torsions) {
-            if (torsion.compare(N, CA, CB, CG)) {
-              return torsion;
-            }
+      }
+      default -> { // All other residues' chi[0] are defined by N,CA,CB,CG.
+        Atom N = (Atom) residue.getAtomNode("N");
+        Atom CA = (Atom) residue.getAtomNode("CA");
+        Atom CB = (Atom) residue.getAtomNode("CB");
+        Atom CG = (Atom) residue.getAtomNode("CG");
+        for (Torsion torsion : torsions) {
+          if (torsion.compare(N, CA, CB, CG)) {
+            return torsion;
           }
-          logger.info("Couldn't find chi[0] for residue " + residue.toString());
-          return null;
         }
+        logger.info("Couldn't find chi[0] for residue " + residue);
+        return null;
+      }
     }
-    logger.info("Couldn't find chi[0] for residue " + residue.toString());
+    logger.info("Couldn't find chi[0] for residue " + residue);
     return null;
   }
 
   /**
-   * Calls through to residue.revertState() but also updates the Torsion objects associated with
-   * that residue (so they contain appropriate chi values).
+   * Calls through to residue.revertState() but also updates the Torsion objects associated with that
+   * residue (so they contain appropriate chi values).
    */
   private void setState(Residue target, ResidueState state) {
     target.revertState(state);
@@ -448,10 +417,7 @@ public class RosenbluthOBMC implements MonteCarloListener {
       return;
     }
     String filename =
-        FilenameUtils.removeExtension(molecularAssembly.getFile().toString())
-            + "."
-            + suffix
-            + "-"
+        FilenameUtils.removeExtension(molecularAssembly.getFile().toString()) + "." + suffix + "-"
             + numMovesProposed;
     File file = new File(filename);
     PDBFilter writer = new PDBFilter(file, molecularAssembly, null, null);

@@ -41,6 +41,7 @@ import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.exp;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import ffx.potential.SystemState;
 import ffx.numerics.Constraint;
 import ffx.numerics.Potential.VARIABLE_TYPE;
 import java.util.Collections;
@@ -69,35 +70,18 @@ public class Bussi extends Thermostat {
   /**
    * Constructor for Bussi.
    *
-   * @param n Number of degrees of freedom.
-   * @param x Atomic coordinates.
-   * @param v Velocities.
-   * @param mass Mass of each degrees of freedom.
+   * @param state The MDState to operate on.
    * @param type the VARIABLE_TYPE of each variable.
    * @param targetTemperature The target temperature.
    * @param tau Bussi thermostat time constant (psec).
    */
-  public Bussi(
-      int n,
-      double[] x,
-      double[] v,
-      double[] mass,
-      VARIABLE_TYPE[] type,
-      double targetTemperature,
-      double tau) {
-    this(n, x, v, mass, type, targetTemperature, tau, Collections.emptyList());
+  public Bussi(SystemState state, VARIABLE_TYPE[] type, double targetTemperature, double tau) {
+    this(state, type, targetTemperature, tau, Collections.emptyList());
   }
 
-  public Bussi(
-      int n,
-      double[] x,
-      double[] v,
-      double[] mass,
-      VARIABLE_TYPE[] type,
-      double targetTemperature,
-      double tau,
+  public Bussi(SystemState state, VARIABLE_TYPE[] type, double targetTemperature, double tau,
       List<Constraint> constraints) {
-    super(n, x, v, mass, type, targetTemperature, constraints);
+    super(state, type, targetTemperature, constraints);
     this.name = ThermostatEnum.BUSSI;
     this.tau = tau;
     this.bussiRandom = new Random();
@@ -106,21 +90,12 @@ public class Bussi extends Thermostat {
   /**
    * Constructor for Bussi.
    *
-   * @param n Number of degrees of freedom.
-   * @param x Atomic coordinates.
-   * @param v Velocities.
-   * @param mass Mass of each degrees of freedom.
+   * @param state The MDState to operate on.
    * @param type the VARIABLE_TYPE of each variable.
    * @param targetTemperature a double.
    */
-  public Bussi(
-      int n,
-      double[] x,
-      double[] v,
-      double[] mass,
-      VARIABLE_TYPE[] type,
-      double targetTemperature) {
-    this(n, x, v, mass, type, targetTemperature, 0.2e0);
+  public Bussi(SystemState state, VARIABLE_TYPE[] type, double targetTemperature) {
+    this(state, type, targetTemperature, 0.2e0);
   }
 
   /**
@@ -131,7 +106,7 @@ public class Bussi extends Thermostat {
   @Override
   public void fullStep(double dt) {
     double expTau = exp(-dt / tau);
-    double tempRatio = targetTemperature / currentTemperature;
+    double tempRatio = targetTemperature / state.getTemperature();
     double rate = (1.0 - expTau) * tempRatio / degreesOfFreedom;
     double r = bussiRandom.nextGaussian();
     double s = 0.0;
@@ -144,7 +119,8 @@ public class Bussi extends Thermostat {
     if (r + sqrt(expTau / rate) < 0.0) {
       scale = -scale;
     }
-    for (int i = 0; i < nVariables; i++) {
+    double[] v = state.v();
+    for (int i = 0; i < state.getNumberOfVariables(); i++) {
       v[i] *= scale;
     }
   }
@@ -173,7 +149,8 @@ public class Bussi extends Thermostat {
    * <p>No velocity modifications are made by the Bussi method at the half-step.
    */
   @Override
-  public void halfStep(double dt) {}
+  public void halfStep(double dt) {
+  }
 
   /**
    * {@inheritDoc}
