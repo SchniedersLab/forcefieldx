@@ -2117,11 +2117,8 @@ public class RotamerOptimization implements Terminatable {
         }
       }
     }
-    for(int m=0; m<titrateArray.length; m++){
-      titrateArray[m] = titrateArray[m]/totalBoltzmann;
-    }
-    logger.info("Total permutations evaluated: " + evaluatedPermutations);
     fraction = titrateArray;
+    logger.info("titrate array is: " + Arrays.toString(titrateArray));
     return adjustPerm;
   }
 
@@ -2158,6 +2155,10 @@ public class RotamerOptimization implements Terminatable {
   public boolean checkPermutations(Residue[] residues, int i,  int[] currentRotamers, double[] titrateArray, Algorithm algorithm) throws Exception {
     boolean perm = false;
     partitionFunction(residues, i, currentRotamers, titrateArray);
+    for(int m=0; m<fraction.length; m++){
+      fraction[m] = fraction[m]/totalBoltzmann;
+    }
+    logger.info("Total permutations evaluated: " + evaluatedPermutations);
     try{
       if(evaluatedPermutations > 1e8){
         logger.info("Made it to the exception if statement");
