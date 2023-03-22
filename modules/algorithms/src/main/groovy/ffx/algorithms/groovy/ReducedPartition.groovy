@@ -1,10 +1,9 @@
 package ffx.algorithms.groovy
 
-import edu.rit.pj.Comm
-import ffx.algorithms.TitrationManyBody
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization
+import ffx.algorithms.optimize.TitrationManyBody
 import ffx.numerics.math.DoubleMath
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
@@ -79,6 +78,7 @@ class ReducedPartition extends  AlgorithmsScript{
     TitrationManyBody titrationManyBody
     MolecularAssembly mutatedAssembly
     Binding mutatorBinding
+    List<Residue> residues
 
     private String unfoldedFileName
 
@@ -228,7 +228,7 @@ class ReducedPartition extends  AlgorithmsScript{
 
 
             // Collect residues to optimize.
-            List<Residue> residues = manyBodyOptions.collectResidues(activeAssembly)
+            residues = manyBodyOptions.collectResidues(activeAssembly)
             if (residues == null || residues.isEmpty()) {
                 logger.info(" There are no residues in the active system to optimize.")
                 return this
@@ -294,7 +294,7 @@ class ReducedPartition extends  AlgorithmsScript{
 
         if(pKa){
             int titrateCount = 0
-            for(Residue residue : titrateResidues){
+            for(Residue residue : residues){
                 logger.info("Residue: " + residue.getName() + residue.getResidueNumber() + " Fraction of Protonated: " +
                         titrateArray[titrateCount])
                 titrateCount += 1
