@@ -983,7 +983,7 @@
     <picocli.version>4.7.1</picocli.version>
     <pj.version>1.0.1</pj.version>
     <!-- There is a bug in 3.15.0 and newer PMD that doesn't handle repository resolution correctly -->
-    <pmd.version>3.14.0</pmd.version>
+    <pmd.version>3.20.0</pmd.version>
     <pmd.skip>false</pmd.skip>
     <project-info-reports.version>3.4.2</project-info-reports.version>
     <!-- Setting the source encoding is required for builds that are platform independent. -->
@@ -1131,26 +1131,26 @@
           <linkXRef>true</linkXRef>
           <minimumPriority>2</minimumPriority>
           <minimumTokens>500</minimumTokens>
-          <targetJdk>11</targetJdk>
+          <targetJdk>17</targetJdk>
           <typeResolution>true</typeResolution>
           <aggregate>true</aggregate>
         </configuration>
         <reportSets>
-          <!-- reportSet>
+          <reportSet>
             <id>aggregate</id>
             <inherited>false</inherited>
             <reports>
               <report>aggregate-pmd</report>
               <report>aggregate-cpd</report>
             </reports>
-          </reportSet -->
-          <reportSet>
+          </reportSet>
+          <!-- reportSet>
             <id>default</id>
             <reports>
               <report>pmd</report>
               <report>cpd</report>
             </reports>
-          </reportSet>
+          </reportSet -->
         </reportSets>
         <version>${pmd.version}</version>
       </plugin>
