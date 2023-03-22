@@ -11,7 +11,6 @@ import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Residue
 import ffx.potential.bonded.RotamerLibrary
 import ffx.potential.cli.AlchemicalOptions
-import ffx.potential.parameters.ForceField
 import ffx.potential.parsers.PDBFilter
 import org.apache.commons.configuration2.CompositeConfiguration
 import picocli.CommandLine
@@ -243,9 +242,9 @@ class ReducedPartition extends  AlgorithmsScript{
                 for (Residue residue : residues) {
                     resNumberList.add(residue.getResidueNumber())
                     if(pKa){
-                        if(residue.getName() == "HIS" | residue.getName() == "HIE" | residue.getName() == "HID" |
-                                residue.getName() == "GLU" | residue.getName() == "GLH" | residue.getName() == "ASP" |
-                                residue.getName() == "ASH" | residue.getName() == "LYS" | residue.getName() == "LYD" ){
+                        if(residue.getName() == "HIS" || residue.getName() == "HIE" || residue.getName() == "HID" ||
+                                residue.getName() == "GLU" || residue.getName() == "GLH" || residue.getName() == "ASP" ||
+                                residue.getName() == "ASH" || residue.getName() == "LYS" || residue.getName() == "LYD" ){
                             titrateResidues.add(residue)
                         }
                     }

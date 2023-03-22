@@ -2011,10 +2011,9 @@ public class RotamerOptimization implements Terminatable {
    * @param residues Residue array.
    * @param i Current number of permutations.
    * @param currentRotamers Current rotamer list.
-   * @param titrateArray empty array for titration count
    * @return 0.
    */
-  public int partitionFunction(Residue[] residues, int i, int[] currentRotamers, double[] titrateArray) throws Exception {
+  public int partitionFunction(Residue[] residues, int i, int[] currentRotamers) throws Exception {
     // This is the initialization condition.
     int adjustPerm = 0;
     if (i == 0) {
@@ -2055,7 +2054,7 @@ public class RotamerOptimization implements Terminatable {
           continue;
         }
         currentRotamers[i] = ri;
-        partitionFunction(residues, i + 1, currentRotamers, titrateArray);
+        partitionFunction(residues, i + 1, currentRotamers);
       }
     } else {
       // At the end of the recursion, check each rotamer of the final residue.
@@ -2088,26 +2087,29 @@ public class RotamerOptimization implements Terminatable {
           }
           double boltzmannWeight = exp((-1.0/0.6)*(totalEnergy-refEnergy));
           totalBoltzmann += boltzmannWeight;
-          if(titrateArray.length > 0){
-            for (int currentRotamer : currentRotamers) {
-              if (residuei.getName().equals("HIS") | residuei.getName().equals("HIE") | residuei.getName().equals("HID") |
-                      residuei.getName().equals("GLU") | residuei.getName().equals("GLH") | residuei.getName().equals("ASP") |
-                      residuei.getName().equals("ASH") | residuei.getName().equals("LYS") | residuei.getName().equals("LYD")) {
-                if (residuei.getName().equals("HIS") | residuei.getName().equals("HIE") | residuei.getName().equals("HID")) {
-                  if (rotamersi[currentRotamer].getName().equals("HIS")) {
-                    titrateArray[titrateRes] += boltzmannWeight;
+          if(fraction.length > 0){
+            for (int j=0; j<residues.length; j++) {
+              Residue residue = residues[j];
+              Rotamer[] rotamers = residue.getRotamers();
+              int currentRotamer = currentRotamers[j];
+              if (residue.getName().equals("HIS") || residue.getName().equals("HIE") || residue.getName().equals("HID") ||
+                      residue.getName().equals("GLU") || residue.getName().equals("GLH") || residue.getName().equals("ASP") ||
+                      residue.getName().equals("ASH") || residue.getName().equals("LYS") || residue.getName().equals("LYD")) {
+                if (residue.getName().equals("HIS") || residue.getName().equals("HIE") || residue.getName().equals("HID")) {
+                  if (rotamers[currentRotamer].getName().equals("HIS")) {
+                    fraction[titrateRes] += boltzmannWeight;
                   }
-                } else if (residuei.getName().equals("GLU") | residuei.getName().equals("GLH")) {
-                  if (rotamersi[currentRotamer].getName().equals("GLH")) {
-                    titrateArray[titrateRes] += boltzmannWeight;
+                } else if (residue.getName().equals("GLU") || residue.getName().equals("GLH")) {
+                  if (rotamers[currentRotamer].getName().equals("GLH")) {
+                    fraction[titrateRes] += boltzmannWeight;
                   }
-                } else if (residuei.getName().equals("ASP") | residuei.getName().equals("ASH")) {
-                  if (rotamersi[currentRotamer].getName().equals("ASH")) {
-                    titrateArray[titrateRes] += boltzmannWeight;
+                } else if (residue.getName().equals("ASP") || residue.getName().equals("ASH")) {
+                  if (rotamers[currentRotamer].getName().equals("ASH")) {
+                    fraction[titrateRes] += boltzmannWeight;
                   }
-                } else if (residuei.getName().equals("LYS") | residuei.getName().equals("LYD")) {
-                  if (rotamersi[currentRotamer].getName().equals("LYS")) {
-                    titrateArray[titrateRes] += boltzmannWeight;
+                } else if (residue.getName().equals("LYS") || residue.getName().equals("LYD")) {
+                  if (rotamers[currentRotamer].getName().equals("LYS")) {
+                    fraction[titrateRes] += boltzmannWeight;
                   }
                 }
               }
@@ -2117,8 +2119,6 @@ public class RotamerOptimization implements Terminatable {
         }
       }
     }
-    fraction = titrateArray;
-    logger.info("titrate array is: " + Arrays.toString(titrateArray));
     return adjustPerm;
   }
 
@@ -2154,7 +2154,8 @@ public class RotamerOptimization implements Terminatable {
    */
   public boolean checkPermutations(Residue[] residues, int i,  int[] currentRotamers, double[] titrateArray, Algorithm algorithm) throws Exception {
     boolean perm = false;
-    partitionFunction(residues, i, currentRotamers, titrateArray);
+    fraction = new double[titrateArray.length];
+    partitionFunction(residues, i, currentRotamers);
     for(int m=0; m<fraction.length; m++){
       fraction[m] = fraction[m]/totalBoltzmann;
     }
