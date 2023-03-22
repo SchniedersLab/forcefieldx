@@ -607,7 +607,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     permanentFieldRegion = new PermanentFieldRegion(realSpaceTeam, forceField, lambdaTerm);
     inducedDipoleFieldRegion = new InducedDipoleFieldRegion(realSpaceTeam, forceField, lambdaTerm);
     inducedDipoleFieldReduceRegion = new InducedDipoleFieldReduceRegion(maxThreads);
-    realSpaceEnergyRegion = new RealSpaceEnergyRegion(maxThreads, forceField, lambdaTerm, electric);
+    realSpaceEnergyRegion = new RealSpaceEnergyRegion(elecForm, maxThreads, forceField, lambdaTerm, electric);
     reduceRegion = new ReduceRegion(maxThreads, forceField);
 
     pmeTimings = new PMETimings(maxThreads);

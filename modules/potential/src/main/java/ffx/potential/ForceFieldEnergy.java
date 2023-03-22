@@ -205,7 +205,10 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   private final double cutoffPlusBuffer;
   /** Particle-Mesh Ewald electrostatic energy. */
   private final ParticleMeshEwald particleMeshEwald;
-
+  /**
+   * The Electrostatic functional form.
+   */
+  private final ELEC_FORM elecForm;
   /** Original state of the neural network energy term flag. */
   private final boolean nnTermOrig;
   /** Original state of the Bond energy term flag. */
@@ -255,8 +258,6 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
   protected boolean lambdaTerm;
   /** Current value of the Lambda state variable. */
   private double lambda = 1.0;
-
-
   /** Optimization scaling value to use for each degree of freedom. */
   protected double[] optimizationScaling = null;
   /** Indicates only bonded energy terms effected by Lambda should be evaluated. */
@@ -1116,18 +1117,17 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
 
     if (multipoleTerm) {
-      ELEC_FORM form;
       if (name.contains("OPLS") || name.contains("AMBER") || name.contains("CHARMM")) {
-        form = ELEC_FORM.FIXED_CHARGE;
+        elecForm = ELEC_FORM.FIXED_CHARGE;
       } else {
-        form = ELEC_FORM.PAM;
+        elecForm = ELEC_FORM.PAM;
       }
-
       particleMeshEwald = new ParticleMeshEwald(atoms, molecule, forceField, crystal,
-          vanderWaals.getNeighborList(), form, ewaldCutoff, gkCutoff, parallelTeam);
+          vanderWaals.getNeighborList(), elecForm, ewaldCutoff, gkCutoff, parallelTeam);
       double charge = molecularAssembly.getCharge(checkAllNodeCharges);
       logger.info(format("\n  Overall system charge:             %10.3f", charge));
     } else {
+      elecForm = null;
       particleMeshEwald = null;
     }
 
@@ -3589,13 +3589,16 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
           nVanDerWaalInteractions, vanDerWaalsTime * toSeconds));
     }
     if (multipoleTerm && nPermanentInteractions > 0) {
-      String pmeTitle = "Atomic Multipoles ";
       if (polarizationTerm) {
-        sb.append(format("  %s %20.8f %12d\n", pmeTitle, permanentMultipoleEnergy,
+        sb.append(format("  %s %20.8f %12d\n", "Atomic Multipoles ", permanentMultipoleEnergy,
             nPermanentInteractions));
       } else {
-        sb.append(format("  %s %20.8f %12d %12.3f\n", pmeTitle, permanentMultipoleEnergy,
-            nPermanentInteractions, electrostaticTime * toSeconds));
+        if (elecForm == ELEC_FORM.FIXED_CHARGE) {
+          sb.append(format("  %s %20.8f %12d %12.3f\n", "Atomic Charges    ", permanentMultipoleEnergy,
+                  nPermanentInteractions, electrostaticTime * toSeconds));
+        } else
+          sb.append(format("  %s %20.8f %12d %12.3f\n", "Atomic Multipoles ", permanentMultipoleEnergy,
+                  nPermanentInteractions, electrostaticTime * toSeconds));
       }
     }
     if (polarizationTerm && nPermanentInteractions > 0) {
