@@ -259,7 +259,9 @@ class PhDynamics extends AlgorithmsScript {
         pHReplicaExchange.
                 sample(exchangeCycles, nSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initDynamics)
 
-        sortMyArc(structureFile, size, pHReplicaExchange.getpHScale()[world.rank()], world.rank())
+        if (sort) {
+          sortMyArc(structureFile, size, pHReplicaExchange.getpHScale()[world.rank()], world.rank())
+        }
 
       } else {
         // CPU Constant pH Dynamics
@@ -313,7 +315,9 @@ class PhDynamics extends AlgorithmsScript {
         pHReplicaExchange.
                 sample(cycles, titrSteps, coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initDynamics)
 
-        sortMyArc(structureFile, world.size(), pH, world.rank())
+        if (sort) {
+          sortMyArc(structureFile, world.size(), pH, world.rank())
+        }
 
       } else {
         for (int i = 0; i < cycles; i++) {
