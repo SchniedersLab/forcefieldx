@@ -627,6 +627,13 @@ public class ParticleMeshEwald implements LambdaInterface {
     }
   }
 
+  /**
+   * Returns the ELEC_FORM.
+   */
+  public ELEC_FORM getElecForm() {
+    return elecForm;
+  }
+
   public void computeInduceDipoleField() {
     expandInducedDipoles();
 
