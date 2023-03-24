@@ -48,6 +48,8 @@ import ffx.numerics.Potential
 import ffx.potential.bonded.Residue
 import ffx.potential.cli.WriteoutOptions
 import ffx.potential.extended.ExtendedSystem
+import ffx.potential.parsers.SystemFilter
+import ffx.potential.parsers.XPHFilter
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -63,10 +65,10 @@ import static java.lang.String.format
  * <br>
  * Usage: Umod calculation for model compounds
  * <br>
- * ffxc test.PhBar [options] &lt;filename&gt [file2...];
+ * ffxc test.RaoBlackwellEstimator [options] &lt;filename&gt [file2...];
  */
-@Command(description = " Use the BAR algorithm to estimate a free energy difference for a CpHMD system.", name = "test.PhBar")
-class PhBar extends AlgorithmsScript {
+@Command(description = " Use the Rao-Blackwell estimator to get a free energy difference for residues in a CpHMD system.", name = "test.RaoBlackwellEstimator")
+class RaoBlackwellEstimator extends AlgorithmsScript {
 
   @Mixin
   DynamicsOptions dynamicsOptions
@@ -75,60 +77,23 @@ class PhBar extends AlgorithmsScript {
   WriteoutOptions writeOutOptions
 
   /**
-   * --pH or --constantPH Constant pH value for molecular dynamics.
-   */
-  @Option(names = ['--pH', '--constantPH'], paramLabel = '7.4',
-      description = 'Constant pH value for molecular dynamics windows')
-  double pH = 7.4
-
-  /**
-   * --titrationFix Constant titration state for windows [0-10]
-   */
-  @Option(names = ['--titrationFix'], paramLabel = '0',
-      description = 'Constant titration value for molecular dynamics windows')
-  double fixedTitrationState = -1
-
-  /**
-   * --tautomerFix Constant tautomer state for windows [0-10]
-   */
-  @Option(names = ['--tautomerFix'], paramLabel = '0',
-      description = 'Constant tautomer value for molecular dynamics windows')
-  double fixedTautomerState = -1
-
-  @Option(names = ['--iterations'], paramLabel = '999',
-      description = 'Number of times to evaluate neighbor energies')
-  int cycles = 999
-
-  @Option(names = ['--coordinateSteps'], paramLabel = '10000',
-      description = 'Number of steps done on GPU before each evaluation')
-  int coordSteps = 10000
-
-  @Option(names = ['--createBar'], paramLabel = 'false',
-          description = 'Only create the BAR file, do not run BAR. Ignore logging.')
-  boolean createBar = false
-
-  /**
    * One or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files",
-      description = "XYZ or PDB input files.")
+      description = "PDB input file in the same directory as the ARC file.")
   private String filename
-
 
   private Potential forceFieldEnergy
   MolecularDynamics molecularDynamics = null
-  boolean lockTitration = false
-  boolean lockTautomer = false
   double energy
   ArrayList<Double> previous = new ArrayList<>()
   ArrayList<Double> current = new ArrayList<>()
   ArrayList<Double> next = new ArrayList<>()
 
-
   /**
    * Thermodynamics Constructor.
    */
-  PhBar() {
+  RaoBlackwellEstimator() {
     this(new Binding())
   }
 
@@ -136,55 +101,17 @@ class PhBar extends AlgorithmsScript {
    * Thermodynamics Constructor.
    * @param binding The Groovy Binding to use.
    */
-  PhBar(Binding binding) {
+  RaoBlackwellEstimator(Binding binding) {
     super(binding)
   }
 
-  PhBar run() {
+  RaoBlackwellEstimator run() {
 
     if (!init()) {
       return this
     }
 
-    Comm world = Comm.world()
-    int nRanks = world.size()
-    if (nRanks < 2) {
-      logger.severe(" Running BAR with less then the required amount of windows")
-    }
-    int myRank = (nRanks > 1) ? world.rank() : 0
-
-    // Init titration states and decide what is being locked
-    if (fixedTitrationState == -1 && fixedTautomerState == -1) {
-      logger.severe(
-          " Must select a tautomer or titration to fix windows at. The program will not continue")
-      return this
-    } else if (fixedTautomerState != -1) {
-      fixedTitrationState = (double) myRank / nRanks
-      lockTautomer = true
-      logger.info(
-          " Running BAR across titration states with tautomer state locked at " + fixedTautomerState)
-      logger.info(" Titration state for this rank(" + myRank + "): " + fixedTitrationState)
-    } else if (fixedTitrationState != -1) {
-      fixedTautomerState = (double) myRank / nRanks
-      lockTitration = true
-      logger.info(" Running BAR across tautomer states with titration state locked at " +
-          fixedTitrationState)
-      logger.info(" Tautomer state for this rank: " + fixedTautomerState)
-    }
-
-    // Illegal state checks
-    if (fixedTautomerState > 1 || fixedTitrationState > 1) {
-      logger.severe(" ERROR: Cannot assign lambda state to > 1")
-      return this
-    }
-
-    if (fixedTautomerState < 0 || fixedTitrationState < 0) {
-      logger.severe(" ERROR: Cannot assign lambda state to < 1")
-      return this
-    }
-
     dynamicsOptions.init()
-
     activeAssembly = getActiveAssembly(filename)
     if (activeAssembly == null) {
       logger.info(helpString())
@@ -196,17 +123,16 @@ class PhBar extends AlgorithmsScript {
     String filename = activeAssembly.getFile().getAbsolutePath()
 
     // Initialize and attach extended system first.
-    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, pH, null)
+    ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, 7.0, null)
 
-    //Setting the systems locked states
-    for (Residue res : esvSystem.getExtendedResidueList()) {
-      esvSystem.setTitrationLambda(res, fixedTitrationState)
-      if (esvSystem.isTautomer(res)) {
-        esvSystem.setTautomerLambda(res, fixedTautomerState)
-      }
-    }
+    // Set up the XPHFilter.
+    XPHFilter xphFilter = new XPHFilter(
+            activeAssembly.getArchiveFile(),
+            activeAssembly,
+            activeAssembly.getForceField(),
+            activeAssembly.getProperties(),
+            esvSystem)
 
-    esvSystem.setConstantPh(pH)
     esvSystem.setFixedTitrationState(true)
     esvSystem.setFixedTautomerState(true)
     forceFieldEnergy.attachExtendedSystem(esvSystem)
@@ -217,31 +143,6 @@ class PhBar extends AlgorithmsScript {
     double[] x = new double[forceFieldEnergy.getNumberOfVariables()]
     forceFieldEnergy.getCoordinates(x)
     forceFieldEnergy.energy(x, true)
-
-    logger.info("\n Running molecular dynamics on " + filename)
-
-    molecularDynamics =
-        dynamicsOptions
-            .getDynamics(writeOutOptions, forceFieldEnergy, activeAssembly, algorithmListener)
-
-    File structureFile = new File(filename)
-    File rankDirectory = new File(
-        structureFile.getParent() + File.separator + Integer.toString(myRank))
-    if (!rankDirectory.exists()) {
-      rankDirectory.mkdir()
-    }
-    final String newMolAssemblyFile =
-        rankDirectory.getPath() + File.separator + structureFile.getName()
-    File newDynFile = new File(rankDirectory.getPath() + File.separator +
-        FilenameUtils.removeExtension(structureFile.getName()) + ".dyn")
-    logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
-    activeAssembly.setFile(new File(newMolAssemblyFile))
-
-    File natNMinusOne = new File(
-        rankDirectory.getPath() + File.separator + myRank + "at" + (myRank - 1) + ".log")
-    File natN = new File(rankDirectory.getPath() + File.separator + myRank + "at" + myRank + ".log")
-    File natNPlusOne = new File(
-        rankDirectory.getPath() + File.separator + myRank + "at" + (myRank + 1) + ".log")
 
     File[] files = new File[] {natNMinusOne, natN, natNPlusOne}
     ArrayList<Double>[] lists = new ArrayList<Double>[] {previous, current, next}
