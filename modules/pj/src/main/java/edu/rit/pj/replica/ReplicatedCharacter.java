@@ -40,6 +40,7 @@
 package edu.rit.pj.replica;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import edu.rit.mp.CharacterBuf;
@@ -104,15 +105,19 @@ import edu.rit.pj.reduction.CharacterOp;
  * @author Alan Kaminsky
  * @version 13-Sep-2008
  */
+@SuppressWarnings("serial")
 public class ReplicatedCharacter
         extends Number {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
 // Hidden data members.
-    private CharacterOp myOp;
-    private AtomicInteger myValue;
-    private int myTag;
-    private Comm myComm;
-    private Receiver myReceiver;
+    private final CharacterOp myOp;
+    private final AtomicInteger myValue;
+    private final int myTag;
+    private final Comm myComm;
+    private final Receiver myReceiver;
 
 // Hidden helper classes.
     /**

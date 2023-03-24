@@ -1008,7 +1008,7 @@ public class Searching {
      * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
-    public static <T extends Comparable> int searchUnsorted(T[] x,
+    public static <T extends Comparable<T>> int searchUnsorted(T[] x,
             T a) {
         for (int i = 0; i < x.length; ++i) {
             if (x[i].compareTo(a) == 0) {
@@ -1032,8 +1032,7 @@ public class Searching {
      * @return If an element the same as <code>a</code> exists in <code>x</code>, then
      * the index of that element is returned. Otherwise, &minus;1 is returned.
      */
-    public static <T extends Comparable> int searchSorted(T[] x,
-            T a) {
+    public static <T extends Comparable<T>> int searchSorted(T[] x, T a) {
         // Establish loop invariant.
         if (x.length == 0) {
             return -1;

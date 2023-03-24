@@ -40,6 +40,7 @@
 package edu.rit.pj.cluster;
 
 import java.io.IOException;
+import java.io.Serial;
 
 /**
  * Class JobSchedulerException is thrown to indicate that a job frontend process
@@ -50,6 +51,9 @@ import java.io.IOException;
  */
 public class JobSchedulerException
         extends IOException {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
 // Exported constructors.
     /**

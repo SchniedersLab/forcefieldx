@@ -39,10 +39,7 @@
 //******************************************************************************
 package edu.rit.pj.cluster;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.Properties;
@@ -56,11 +53,13 @@ import edu.rit.util.ByteSequence;
  * @author Alan Kaminsky
  * @version 02-Jul-2007
  */
+@SuppressWarnings("serial")
 public abstract class JobBackendMessage
         extends Message
         implements Externalizable {
 
 // Hidden data members.
+    @Serial
     private static final long serialVersionUID = 3747140854797048519L;
 
 // Exported constructors.
@@ -342,6 +341,7 @@ public abstract class JobBackendMessage
     private static class CancelJobMessage
             extends JobBackendMessage {
 
+        @Serial
         private static final long serialVersionUID = -1706674774429384654L;
 
         private String errmsg;
@@ -382,6 +382,7 @@ public abstract class JobBackendMessage
     private static class CommenceJobMessage
             extends JobBackendMessage {
 
+        @Serial
         private static final long serialVersionUID = -8262872991140404870L;
 
         private InetSocketAddress[] middlewareAddress;
@@ -489,6 +490,7 @@ public abstract class JobBackendMessage
     private static class JobFinishedMessage
             extends JobBackendMessage {
 
+        @Serial
         private static final long serialVersionUID = 1363549433797859519L;
 
         public JobFinishedMessage() {
