@@ -70,25 +70,18 @@ import static java.lang.String.format
 @Command(description = " Use the Rao-Blackwell estimator to get a free energy difference for residues in a CpHMD system.", name = "test.RaoBlackwellEstimator")
 class RaoBlackwellEstimator extends AlgorithmsScript {
 
-  @Mixin
-  DynamicsOptions dynamicsOptions
-
-  @Mixin
-  WriteoutOptions writeOutOptions
-
   /**
    * One or more filenames.
    */
   @Parameters(arity = "1..*", paramLabel = "files",
-      description = "PDB input file in the same directory as the ARC file.")
+          description = "PDB input file in the same directory as the ARC file.")
   private String filename
 
   private Potential forceFieldEnergy
-  MolecularDynamics molecularDynamics = null
-  double energy
-  ArrayList<Double> previous = new ArrayList<>()
-  ArrayList<Double> current = new ArrayList<>()
-  ArrayList<Double> next = new ArrayList<>()
+  ArrayList<Double>[] zeroLists
+  ArrayList<Double>[] selfLists
+  ArrayList<Double>[] oneLists
+  ArrayList<Double>[] oneZeroDeltaLists
 
   /**
    * Thermodynamics Constructor.
@@ -111,7 +104,6 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
       return this
     }
 
-    dynamicsOptions.init()
     activeAssembly = getActiveAssembly(filename)
     if (activeAssembly == null) {
       logger.info(helpString())
@@ -124,6 +116,10 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
 
     // Initialize and attach extended system first.
     ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, 7.0, null)
+    int numESVs = esvSystem.extendedResidueList.size()
+    zeroLists = new ArrayList[numESVs]
+    selfLists = new ArrayList[numESVs]
+    oneLists = new ArrayList[numESVs]
 
     // Set up the XPHFilter.
     XPHFilter xphFilter = new XPHFilter(
@@ -133,239 +129,125 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
             activeAssembly.getProperties(),
             esvSystem)
 
+    xphFilter.readFile()
+    logger.info("Reading ESV lambdas from XPH file")
+
     esvSystem.setFixedTitrationState(true)
     esvSystem.setFixedTautomerState(true)
     forceFieldEnergy.attachExtendedSystem(esvSystem)
-
-    int numESVs = esvSystem.extendedResidueList.size()
     logger.info(format(" Attached extended system with %d residues.", numESVs))
 
     double[] x = new double[forceFieldEnergy.getNumberOfVariables()]
     forceFieldEnergy.getCoordinates(x)
     forceFieldEnergy.energy(x, true)
 
-    File[] files = new File[] {natNMinusOne, natN, natNPlusOne}
-    ArrayList<Double>[] lists = new ArrayList<Double>[] {previous, current, next}
-
-    if (natNMinusOne.exists() && natN.exists() && natNPlusOne.exists()) {
-      //MolA should be set to the previous arc file
-      logger.warning(
-          " Initializing to last run.")
-
-      // Read in previous log files into this program
-      for (int i = 0; i < 3; i++) {
-        try (FileReader fr = new FileReader(files[i])
-            BufferedReader br = new BufferedReader(fr)) {
-          String data = br.readLine()
-          while (data != null) {
-            if (myRank != 0 && myRank != world.size() - 1) {
-              lists[i].add(Double.parseDouble(data))
-              data = br.readLine()
-            } else if (myRank == 0) {
-              if (i != 0) {
-                lists[i].add(Double.parseDouble(data))
-                data = br.readLine()
-              }
-            } else {
-              if (i != 2) {
-                lists[i].add(Double.parseDouble(data))
-                data = br.readLine()
-              }
-            }
-          }
-        } catch (IOException e) {
-          e.printStackTrace()
+    // Get pH from ARC file.
+    File pHFind = activeAssembly.getArchiveFile()
+    double pH = 0.0
+    // Read the first line of pHFind.
+    try
+    {
+      BufferedReader br = new BufferedReader(new FileReader(pHFind))
+      String line = br.readLine()
+      String[] parts = line.split(" ")
+      for(int i = 0; i < parts.length; i++) {
+        if (parts[i].equals("pH")) {
+          pH = Double.parseDouble(parts[i+1])
         }
       }
-
-      // Check that the program did not end unevenly
-      if (myRank != 0 && myRank != world.size() - 1) {
-        if (current.size() != next.size() || current.size() != previous.size()) {
-          logger.severe(" Restart nAtN.log files are not of the same size")
-        } else {
-          logger.info(
-              " Rank " + myRank + " starting from cycle " + (current.size() + 1) + " of " + cycles)
-        }
-      } else if (myRank == 0) {
-        if (current.size() != next.size()) {
-          logger.severe(" Restart nAtN.log files are not of the same size")
-        } else {
-          logger.info(
-              " Rank " + myRank + " starting from cycle " + (current.size() + 1) + " of " + cycles)
-        }
-      } else {
-        if (current.size() != previous.size()) {
-          logger.severe(" Restart nAtN.log files are not of the same size")
-        } else {
-          logger.info(
-              " Rank " + myRank + " starting from cycle " + (current.size() + 1) + " of " + cycles)
-        }
-      }
+      br.close()
+    } catch (IOException e) {
+      e.printStackTrace()
     }
+    logger.info("Setting ESV pH to " + pH)
+    esvSystem.setConstantPh(pH)
 
-    if (molecularDynamics instanceof MolecularDynamicsOpenMM) {
-      MolecularDynamicsOpenMM molecularDynamicsOpenMM = molecularDynamics
-
-      molecularDynamics =
-          dynamicsOptions
-              .getDynamics(writeOutOptions, forceFieldEnergy, activeAssembly, algorithmListener,
-                  MDEngine.FFX)
-      molecularDynamics.attachExtendedSystem(esvSystem, dynamicsOptions.report)
-
-      // Cycle MD runs
-      for (int i = current.size(); i < cycles; i++) {
-        logger.info(" --------------------------- Cycle " + (i + 1) + " out of " + cycles +
-            " ---------------------------")
-
-        molecularDynamics.setCoordinates(x)
-        molecularDynamics.dynamic(1, dynamicsOptions.dt, 1, dynamicsOptions.write,
-            dynamicsOptions.temperature, true, newDynFile)
-
-        molecularDynamicsOpenMM.setCoordinates(x)
-        forceFieldEnergy.energy(x)
-
-        molecularDynamicsOpenMM
-            .dynamic(coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
-                dynamicsOptions.temperature, true, newDynFile)
-        x = molecularDynamicsOpenMM.getCoordinates()
-
-        double titrationNeighbor = lockTitration ? 0 : (double) 1 / nRanks
-        double tautomerNeighbor = lockTautomer ? 0 : (double) 1 / nRanks
-
-        // Evaluate different energies
-        if (myRank != nRanks - 1) {
-          for (Residue res : esvSystem.getExtendedResidueList()) {
-            esvSystem.setTitrationLambda(res, fixedTitrationState + titrationNeighbor, false)
-            if (esvSystem.isTautomer(res)) {
-              esvSystem.setTautomerLambda(res, fixedTautomerState + tautomerNeighbor, false)
-            }
-          }
-          forceFieldEnergy.getCoordinates(x)
-          energy = forceFieldEnergy.energy(x, false)
-          next.add(energy)
-        }
-
-        if (myRank != 0) {
-          for (Residue res : esvSystem.getExtendedResidueList()) {
-            esvSystem.setTitrationLambda(res, fixedTitrationState - titrationNeighbor, false)
-            if (esvSystem.isTautomer(res)) {
-              esvSystem.setTautomerLambda(res, fixedTautomerState - tautomerNeighbor, false)
-            }
-          }
-          forceFieldEnergy.getCoordinates(x)
-          energy = forceFieldEnergy.energy(x, false)
-          previous.add(energy)
-        }
-
-        for (Residue res : esvSystem.getExtendedResidueList()) {
-          esvSystem.setTitrationLambda(res, fixedTitrationState, false)
-          if (esvSystem.isTautomer(res)) {
-            esvSystem.setTautomerLambda(res, fixedTautomerState, false)
-          }
-        }
+    int index = 0
+    while(xphFilter.readNext()) {
+      logger.info("Reading frame " + index + 1)
+      for (int i = 0; i < numESVs; i++) {
+        Residue res = esvSystem.extendedResidueList.get(i)
+        double titrationState = esvSystem.getTitrationLambda(res)
+        esvSystem.setTitrationLambda(res, 0, false)
         forceFieldEnergy.getCoordinates(x)
-        energy = forceFieldEnergy.energy(x, false)
-        current.add(energy)
+        double zeroEnergy = forceFieldEnergy.energy(x, false)
+        zeroLists[i].add(zeroEnergy)
 
-        if(i == current.size()) {
-          logger.info(" Previous: " + previous + "\n Current: " + current + "\n Next: " + next)
-        }
+        esvSystem.setTitrationLambda(res, 1, false)
+        forceFieldEnergy.getCoordinates(x)
+        double oneEnergy = forceFieldEnergy.energy(x, false)
+        oneLists[i].add(oneEnergy)
 
-        // Write to restart logs
-        for (int j = 0; j < 3; j++) {
-          try (FileWriter fw = new FileWriter(files[j], true)
-              BufferedWriter bw = new BufferedWriter(fw)) {
-            if (myRank != 0 && myRank != world.size() - 1) {
-              bw.write(lists[j].get(i) as String + "\n")
-            } else if (myRank == 0) {
-              if (j != 0) {
-                bw.write(lists[j].get(i) as String + "\n")
-              }
-            } else {
-              if (j != 2) {
-                bw.write(lists[j].get(i) as String + "\n")
-              }
-            }
-          } catch (IOException e) {
-            e.printStackTrace()
-          }
-        }
+        esvSystem.setTitrationLambda(res, titrationState, false)
+        forceFieldEnergy.getCoordinates(x)
+        double selfEnergy = forceFieldEnergy.energy(x, false)
+        selfLists[i].add(selfEnergy)
+
+        oneZeroDeltaLists[i].add(oneEnergy - zeroEnergy)
       }
-    } else if (current.size() == 0 && !createBar){
-      logger.severe(" MD is not an instance of MDOMM (try adding -Dplatform=OMM --mdE OpenMM)")
+      index++
     }
 
-    double[][] parameters = new double[nRanks][cycles * 3]
-    DoubleBuf[] parametersBuf = new DoubleBuf[nRanks]
-    if (myRank != 0) {
-      if(previous.size() != cycles) {
-        logger.severe(" Size of the previous energies array is not equal to number of cycles")
-        return this
-      }
-      for (int i = 0; i < previous.size(); i++) {
-        parameters[myRank][i] = previous.get(i)
-      }
+    // Calculate the Rao-Blackwell estimator for each residue.
+
+    for(int i = 0; i < numESVs; i++) {
+      // Calculate the free energy differences.
+      ArrayList<Double> deltaU = selfLists[i]
+      double temperature = 298.0
+      double boltzmann = 0.001985875
+      double beta = 1.0 / (temperature * boltzmann)
+
+      ArrayList<Double> deltaExp = exp(mult(-beta,deltaU))
+      ArrayList<Double> numerator = mult(beta,mult(deltaU,deltaExp)) / subtract(1.0,deltaExp)
+      ArrayList<Double> denominator = mult(beta,deltaU) / subtract(1.0,deltaExp)
+      double deltaG = -(1.0 / beta) * Math.log(average(numerator) / average(denominator))
     }
-
-    if(current.size() != cycles) {
-      logger.severe(" Size of the current energies array is not equal to number of cycles")
-      return this
-    }
-    for (int i = 0; i < current.size(); i++) {
-      parameters[myRank][current.size() + i] = current.get(i)
-    }
-
-    if (myRank != nRanks - 1) {
-      if(next.size() != cycles) {
-        logger.severe(" Size of the next energies array is not equal to number of cycles")
-        return this
-      }
-      for (int i = 0; i < next.size(); i++) {
-        parameters[myRank][2 * current.size() + i] = next.get(i)
-      }
-    }
-
-    logger.info("Parameters: " + parameters[myRank] as String)
-
-    for (int i = 0; i < nRanks; i++) {
-      parametersBuf[i] = DoubleBuf.buffer(parameters[i])
-    }
-
-    DoubleBuf myParametersBuf = parametersBuf[myRank]
-
-    try {
-      world.allGather(myParametersBuf, parametersBuf)
-    } catch (IOException ex) {
-      String message = " CreateBAR allGather failed."
-      logger.log(Level.SEVERE, message, ex)
-    }
-
-    // File manipulation to create bars
-    if (myRank != nRanks - 1) {
-      File outputDir = new File(rankDirectory.getParent() + File.separator + "barFiles")
-      if (!outputDir.exists()) {
-        outputDir.mkdir()
-      }
-      File output = new File(outputDir.getPath() + File.separator + "energy_" + myRank + ".bar")
-
-      try (FileWriter fw = new FileWriter(output)
-          BufferedWriter bw = new BufferedWriter(fw)) {
-        bw.write(format("    %d  %f  this.xyz\n", current.size(), dynamicsOptions.temperature))
-        for (int i = 0; i < current.size(); i++) {
-          bw.write(format("%5d%17.9f%17.9f\n", i+1, parameters[myRank][current.size() + i],
-              parameters[myRank][current.size() * 2 + i]))
-        }
-
-        bw.write(format("    %d  %f  this.xyz\n", current.size(), dynamicsOptions.temperature))
-        for (int i = 0; i <= current.size(); i++) {
-          bw.write(format("%5d%17.9f%17.9f\n", i+1, parameters[myRank + 1][i],
-              parameters[myRank + 1][current.size() + i]))
-        }
-      } catch (IOException e) {
-        e.printStackTrace()
-      }
-    }
-
     return this
   }
+
+  private static double average(ArrayList<Double> list) {
+    double sum = 0.0
+    for (Double d : list) {
+      sum += d
+    }
+    return sum / list.size()
+  }
+
+    private static ArrayList<Double> mult(double a, ArrayList<Double> u) {
+        ArrayList<Double> result = new ArrayList<Double>()
+        for (Double d : u) {
+            result.add(a * d)
+        }
+      return result
+    }
+
+  private static ArrayList<Double> mult(ArrayList<Double> v, ArrayList<Double> u) {
+    if (v.size() != u.size()) {
+      throw new IllegalArgumentException("Vector sizes must be equal.")
+    }
+    ArrayList<Double> result = new ArrayList<Double>()
+    for (int i = 0; i < v.size(); i++) {
+      result.add(v.get(i) * u.get(i))
+    }
+    return result
+  }
+
+  private static ArrayList<Double> subtract(double a, ArrayList<Double> u) {
+    ArrayList<Double> result = new ArrayList<Double>()
+    for (Double d : u) {
+      result.add(a - d)
+    }
+    return result
+  }
+
+  private static ArrayList<Double> exp(ArrayList<Double> u) {
+    ArrayList<Double> result = new ArrayList<Double>()
+    for (Double d : u) {
+      result.add(Math.exp(d))
+    }
+    return result
+  }
+
+
+
 }
