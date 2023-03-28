@@ -164,6 +164,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
     {
       BufferedReader br = new BufferedReader(new FileReader(arcFile))
       String line = br.readLine()
+      logger.info(line)
       String[] parts = line.split(" ")
       for(int i = 0; i < parts.length; i++) {
         if (parts[i].equals("pH")) {
