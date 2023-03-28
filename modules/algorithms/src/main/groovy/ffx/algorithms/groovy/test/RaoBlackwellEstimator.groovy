@@ -184,20 +184,18 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
 
     int index = 0
     while(xphFilter.readNext()) {
+      forceFieldEnergy.getCoordinates(x)
       for (int i = 0; i < numESVs; i++) {
         Residue res = esvSystem.extendedResidueList.get(i)
         double titrationState = esvSystem.getTitrationLambda(res)
         esvSystem.setTitrationLambda(res, 0, false)
-        forceFieldEnergy.getCoordinates(x)
-        double zeroEnergy = forceFieldEnergy.energy(x, false)
+        double zeroEnergy = forceFieldEnergy.energy(x, true)
 
         esvSystem.setTitrationLambda(res, 1, false)
-        forceFieldEnergy.getCoordinates(x)
-        double oneEnergy = forceFieldEnergy.energy(x, false)
+        double oneEnergy = forceFieldEnergy.energy(x, true)
 
         esvSystem.setTitrationLambda(res, titrationState, false)
-        forceFieldEnergy.getCoordinates(x)
-        double selfEnergy = forceFieldEnergy.energy(x, false)
+        double selfEnergy = forceFieldEnergy.energy(x, true)
 
         oneZeroDeltaLists[i].add(oneEnergy - zeroEnergy)
       }
