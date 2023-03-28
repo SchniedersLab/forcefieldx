@@ -131,6 +131,9 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
     ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, 7.0, null)
     int numESVs = esvSystem.extendedResidueList.size()
     oneZeroDeltaLists = new ArrayList[numESVs]
+    for (int i = 0; i < numESVs; i++) {
+      oneZeroDeltaLists[i] = new ArrayList<Double>()
+    }
 
     // Set up the XPHFilter.
     File arcFile = new File(arcFileName)
@@ -181,7 +184,6 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
 
     int index = 0
     while(xphFilter.readNext()) {
-      logger.info("Reading frame " + index + 1)
       for (int i = 0; i < numESVs; i++) {
         Residue res = esvSystem.extendedResidueList.get(i)
         double titrationState = esvSystem.getTitrationLambda(res)
