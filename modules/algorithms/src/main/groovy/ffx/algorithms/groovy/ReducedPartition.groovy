@@ -54,7 +54,7 @@ class ReducedPartition extends  AlgorithmsScript{
 
     @CommandLine.Option(names = ["--rEE", "--ro-ensembleEnergy"], paramLabel = "0.0",
             description = "Keep permutations within ensemble Energy kcal/mol from the GMEC.")
-    private double ensembleEnergy = 0.0
+    private String ensembleEnergy = "0.0"
 
     @CommandLine.Option(names = ["--un", "--unfolded"], paramLabel = "false",
             description = "Run the unfolded state tripeptide.")
@@ -110,8 +110,8 @@ class ReducedPartition extends  AlgorithmsScript{
         if (titrationPH > 0) {
             System.setProperty("manybody-titration", "true")
         }
+        System.setProperty("ro-ensembleEnergy", ensembleEnergy)
         activeAssembly = getActiveAssembly(filenames.get(0))
-        System.setProperty("ro-ensembleEnergy", ensembleEnergy as String)
 
         if(unfolded){
             unfoldedFileName = "wt" + mutatingResidue + ".pdb"
