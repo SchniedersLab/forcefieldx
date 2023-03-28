@@ -146,6 +146,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
             activeAssembly.getForceField(),
             activeAssembly.getProperties(),
             esvSystem)
+    xphFilter.readFile()
     logger.info("Reading ESV lambdas from XPH file")
 
     esvSystem.setFixedTitrationState(true)
@@ -176,7 +177,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
     }
     logger.info("Setting ESV pH to " + pH)
     esvSystem.setConstantPh(pH)
-    xphFilter.readFile()
+
     int index = 0
     while(xphFilter.readNext()) {
       logger.info("Reading frame " + index + 1)
