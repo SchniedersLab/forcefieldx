@@ -133,6 +133,9 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
 
     // Set up the XPHFilter.
     File arcFile = new File(arcFileName)
+    if(!arcFile.exists()){
+        logger.severe(format(" ARC file %s does not exist.", arcFile))
+    }
     XPHFilter xphFilter = new XPHFilter(
             arcFile,
             activeAssembly,
