@@ -61,7 +61,7 @@ import java.util.logging.LogRecord
 import static java.lang.String.format
 
 /**
- * Use the BAR algorithm to estimate a free energy difference for a CpHMD system.
+ * Use the Rao-Blackwell Estimator to estimate a free energy difference for a CpHMD system.
  * <br>
  * Usage: Umod calculation for model compounds
  * <br>
@@ -81,7 +81,6 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
   @Option(names = ['--downState'], paramLabel = "0.0",
           description = 'State to perturb down to.')
   private double downState = 0.0
-
 
   /**
    * One or more filenames.
@@ -140,7 +139,6 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
             activeAssembly.getForceField(),
             activeAssembly.getProperties(),
             esvSystem)
-    xphFilter.readFile()
     logger.info("Reading ESV lambdas from XPH file")
 
     esvSystem.setFixedTitrationState(true)
@@ -171,7 +169,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
     }
     logger.info("Setting ESV pH to " + pH)
     esvSystem.setConstantPh(pH)
-
+    xphFilter.readFile()
     int index = 0
     while(xphFilter.readNext()) {
       logger.info("Reading frame " + index + 1)
@@ -196,10 +194,9 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
     }
 
     // Calculate the Rao-Blackwell estimator for each residue.
-
     for(int i = 0; i < numESVs; i++) {
       // Calculate the free energy differences.
-      ArrayList<Double> deltaU = selfLists[i]
+      ArrayList<Double> deltaU = oneZeroDeltaLists[i]
       double temperature = 298.0
       double boltzmann = 0.001985875
       double beta = 1.0 / (temperature * boltzmann)
