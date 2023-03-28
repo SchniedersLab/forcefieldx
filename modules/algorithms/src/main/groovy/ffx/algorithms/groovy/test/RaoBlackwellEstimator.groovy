@@ -70,6 +70,19 @@ import static java.lang.String.format
 @Command(description = " Use the Rao-Blackwell estimator to get a free energy difference for residues in a CpHMD system.", name = "test.RaoBlackwellEstimator")
 class RaoBlackwellEstimator extends AlgorithmsScript {
 
+  @Option(names = ['--aFi', '--arcFile'], paramLabel = "traj",
+          description = 'A file containing the the PDB from which to build the ExtendedSystem. There is currently no default.')
+  private String arcFileName = null
+
+  @Option(names = ['--upState'], paramLabel = "1.0",
+          description = 'State to perturb up to.')
+  private double upState = 1.0
+
+  @Option(names = ['--downState'], paramLabel = "0.0",
+          description = 'State to perturb down to.')
+  private double downState = 0.0
+
+
   /**
    * One or more filenames.
    */
@@ -78,9 +91,6 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
   private String filename
 
   private Potential forceFieldEnergy
-  ArrayList<Double>[] zeroLists
-  ArrayList<Double>[] selfLists
-  ArrayList<Double>[] oneLists
   ArrayList<Double>[] oneZeroDeltaLists
 
   /**
@@ -104,6 +114,10 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
       return this
     }
 
+    if(arcFileName == null) {
+      logger.severe("Archive file needs to be specified with --arcFile or --aFi.")
+    }
+
     activeAssembly = getActiveAssembly(filename)
     if (activeAssembly == null) {
       logger.info(helpString())
@@ -117,18 +131,15 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
     // Initialize and attach extended system first.
     ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, 7.0, null)
     int numESVs = esvSystem.extendedResidueList.size()
-    zeroLists = new ArrayList[numESVs]
-    selfLists = new ArrayList[numESVs]
-    oneLists = new ArrayList[numESVs]
 
     // Set up the XPHFilter.
+    File arcFile = new File(arcFileName)
     XPHFilter xphFilter = new XPHFilter(
-            activeAssembly.getArchiveFile(),
+            arcFile,
             activeAssembly,
             activeAssembly.getForceField(),
             activeAssembly.getProperties(),
             esvSystem)
-
     xphFilter.readFile()
     logger.info("Reading ESV lambdas from XPH file")
 
@@ -142,12 +153,11 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
     forceFieldEnergy.energy(x, true)
 
     // Get pH from ARC file.
-    File pHFind = activeAssembly.getArchiveFile()
     double pH = 0.0
     // Read the first line of pHFind.
     try
     {
-      BufferedReader br = new BufferedReader(new FileReader(pHFind))
+      BufferedReader br = new BufferedReader(new FileReader(arcFile))
       String line = br.readLine()
       String[] parts = line.split(" ")
       for(int i = 0; i < parts.length; i++) {
@@ -171,17 +181,14 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
         esvSystem.setTitrationLambda(res, 0, false)
         forceFieldEnergy.getCoordinates(x)
         double zeroEnergy = forceFieldEnergy.energy(x, false)
-        zeroLists[i].add(zeroEnergy)
 
         esvSystem.setTitrationLambda(res, 1, false)
         forceFieldEnergy.getCoordinates(x)
         double oneEnergy = forceFieldEnergy.energy(x, false)
-        oneLists[i].add(oneEnergy)
 
         esvSystem.setTitrationLambda(res, titrationState, false)
         forceFieldEnergy.getCoordinates(x)
         double selfEnergy = forceFieldEnergy.energy(x, false)
-        selfLists[i].add(selfEnergy)
 
         oneZeroDeltaLists[i].add(oneEnergy - zeroEnergy)
       }
