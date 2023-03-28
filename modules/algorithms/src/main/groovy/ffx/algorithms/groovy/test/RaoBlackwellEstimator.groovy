@@ -167,6 +167,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
       logger.info(line)
       String[] parts = line.split(" ")
       for(int i = 0; i < parts.length; i++) {
+        logger.info(parts[i])
         if (parts[i] == "pH") {
           pH = Double.parseDouble(parts[i+1])
         }
