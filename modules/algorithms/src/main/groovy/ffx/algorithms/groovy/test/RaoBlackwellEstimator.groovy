@@ -130,6 +130,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
     // Initialize and attach extended system first.
     ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, 7.0, null)
     int numESVs = esvSystem.extendedResidueList.size()
+    oneZeroDeltaLists = new ArrayList[numESVs]
 
     // Set up the XPHFilter.
     File arcFile = new File(arcFileName)
