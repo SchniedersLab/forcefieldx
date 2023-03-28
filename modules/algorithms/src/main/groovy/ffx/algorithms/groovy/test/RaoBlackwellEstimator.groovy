@@ -139,6 +139,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
     else{
         logger.info(format("Using ARC file %s.", arcFile))
     }
+    activeAssembly.setArchiveFile(arcFile)
     XPHFilter xphFilter = new XPHFilter(
             arcFile,
             activeAssembly,
