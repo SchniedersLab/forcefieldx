@@ -321,6 +321,8 @@ public class XPHFilter extends SystemFilter {
   public boolean readFile() {
     File xphFile = activeMolecularAssembly.getFile();
 
+    logger.info("XPH File: " + xphFile.toString());
+
     if (forceField == null) {
       logger.warning(format(" No force field is associated with %s.", xphFile.toString()));
       return false;
