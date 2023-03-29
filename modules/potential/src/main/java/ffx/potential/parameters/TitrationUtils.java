@@ -1626,7 +1626,7 @@ public class TitrationUtils {
    * side-chain pKa values in myoglobin and comparison with NMR data for histidines." Biochemistry
    * 32.31 (1993): 8045-8056.
    * <p>
-   * -(quadratic * lambda^2 + linear * lambda)
+   *
    */
   public enum Titration {
 

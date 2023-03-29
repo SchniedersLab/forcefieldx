@@ -327,6 +327,15 @@ public class ExtendedSystem implements Potential {
         specialResiduePKAs = getPropertyList(properties, "esv.special.residues.pka");
         if(specialResidues.size() != specialResiduePKAs.size()) {
             logger.severe("The number of special residues and their associated values do not match.");
+        } else if(specialResidues.size() > 0) {
+            logger.info("\nSpecial residues and their associated values:");
+            for(int i = 0; i < specialResidues.size(); i++){
+                int resNum = (int) (double) specialResidues.get(i) - mola.getResidueList().get(0).getResidueNumber();
+                logger.info("Residue: " + specialResidues.get(i) + "-" +
+                        mola.getResidueList().get(resNum).getName()
+                        + " Pka: " + specialResiduePKAs.get(i));
+            }
+            logger.info(" ");
         }
         logger.info("Special residues: " + specialResidues);
         logger.info("Special residues pKa: " + specialResiduePKAs);
@@ -994,10 +1003,6 @@ public class ExtendedSystem implements Potential {
          if (specialResidues.contains(residueNumber)) {
              initialTitrationLambda =
                      (constantSystemPh < specialResiduePKAs.get(specialResidues.indexOf(residueNumber))) ? 1.0 : 0.0;
-
-             /*logger.info("Resi " + residueNumber + " is a special residue with pKa " +
-                     specialResiduePKAs.get(specialResidues.indexOf(residueNumber)) + " and initial lambda " +
-                     initialTitrationLambda + ".");*/
          }
         else {
             initialTitrationLambda = switch (AA3) {

@@ -365,7 +365,8 @@ public class PhReplicaExchange implements Terminatable {
   }
 
   /**
-   * Sample.
+   * Sample. Restart file write-outs are entirely handled by this method based on how many steps are per cycle.
+   * User command input is ignored.
    *
    * @param cycles The number of cycles to run.
    * @param nSteps The number of steps per cycle.
@@ -381,7 +382,8 @@ public class PhReplicaExchange implements Terminatable {
       double printInterval, double trajInterval, int initDynamics) {
     done = false;
     terminate = false;
-    replica.setRestartFrequency(cycles * (titrSteps + confSteps) * replica.dt + 100);
+    replica.setRestartFrequency(cycles * (titrSteps + confSteps) * replica.dt + 100); // Full control over restarts handled by this class
+    extendedSystem.reGuessLambdas();
 
     int startCycle = 0;
     if (initDynamics > 0 && !restart) {
@@ -436,7 +438,6 @@ public class PhReplicaExchange implements Terminatable {
       } else {
         dynamics(titrSteps, timeStep, printInterval, trajInterval);
       }
-
       // Set backups in case job is killed at bad time
       if (i == 0 || backupNeeded) {
         replica.writeRestart();
