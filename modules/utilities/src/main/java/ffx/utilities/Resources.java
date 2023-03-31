@@ -64,7 +64,6 @@ public class Resources {
       StringBuilder sb = new StringBuilder("\n System Resources\n");
 
       Runtime runtime = getRuntime();
-      runtime.runFinalization();
       runtime.gc();
 
       long MB = 1024 * 1024;

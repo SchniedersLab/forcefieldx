@@ -83,12 +83,7 @@ import java.awt.GridLayout;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
@@ -138,6 +133,9 @@ import org.jogamp.vecmath.Vector3d;
  * @author Michael J. Schnieders
  */
 public final class MainPanel extends JPanel implements ActionListener, ChangeListener {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /** Constant <code>version="1.0.0-BETA"</code> */
   public static final String version = "1.0.0-BETA";
@@ -1326,7 +1324,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     int atomNum = 1;
     Vector3d zero = new Vector3d(0.0, 0.0, 0.0);
     for (MSNode m : activeNodes) {
-      parentSystem = (FFXSystem) m.getMSNode(FFXSystem.class);
+      parentSystem = m.getMSNode(FFXSystem.class);
       if (parentSystem == null) {
         return;
       }

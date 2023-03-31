@@ -326,7 +326,7 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Default PAC caches bonds to promote efficiency (otherwise use low memory flag).
    */
-  private ArrayList<Bond>[] bondCache;
+  private ArrayList<ArrayList<Bond>> bondCache;
   /**
    * Default PAC caches atoms to promote efficiency (otherwise use low memory flag).
    */
@@ -432,12 +432,12 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Constructor for the ProgressiveAlignmentOfCrystals class.
    *
-   * @param baseFilter SystemFilter containing a set of crystal structures to compare.
+   * @param baseFilter   SystemFilter containing a set of crystal structures to compare.
    * @param targetFilter SystemFilter containing the other set of crystals to compare.
-   * @param isSymmetric Whether the comparison can be limited to the upper triangle.
+   * @param isSymmetric  Whether the comparison can be limited to the upper triangle.
    */
   public ProgressiveAlignmentOfCrystals(SystemFilter baseFilter, SystemFilter targetFilter,
-      boolean isSymmetric) {
+                                        boolean isSymmetric) {
     this.baseFilter = baseFilter;
     this.targetFilter = targetFilter;
     this.isSymmetric = isSymmetric;
@@ -514,41 +514,41 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Perform single comparison between two crystals (staticAssembly and mobileAssembly).
    *
-   * @param file1 First file object containing crystals to compare
-   * @param name1 Crystal structure (1st or base) that will remain relatively static (only
-   *     translations).
-   * @param bondList1 List of bonds in crystal used to save XYZ files.
-   * @param atoms1 Atoms in first crystal used to save XYZ files.
-   * @param forceField1 Force field values used to save files/print symmetry operators
-   * @param file2 Second file object containing crystals to compare
-   * @param name2 Crystal structure (2nd or target) that will rotate to match static assembly.
-   * @param bondList2 List of bonds in crystal used to save XYZ files.
-   * @param atoms2 Atoms in first crystal used to save XYZ files.
-   * @param forceField2 Force field values used to save files/print symmetry operators
-   * @param z1 Number of molecules in asymmetric unit of first crystal.
-   * @param z2 Number of molecules in asymmetric unit of second crystal.
-   * @param compareAtomsSize Number of active atoms in asymmetric unit of first crystal.
-   * @param nAU Number of asymmetric units to compare.
-   * @param baseSearchValue Number of anticipated unique entities in 1st system.
-   * @param targetSearchValue Number of anticipated unique entities in 2nd system.
-   * @param matchTol Tolerance to determine whether two AUs are the same.
-   * @param compNum Comparison number based on all file submitted (logging).
-   * @param strict Compare all unique AUs between crystals.
-   * @param save Save out files of compared crystals.
-   * @param machineLearning Save out PDBs and CSVs of compared crystals.
-   * @param linkage Criteria to select nearest AUs (0=single, 1=average, 2=complete linkage).
-   * @param inertia Compute and display components of inertia tensor.
+   * @param file1              First file object containing crystals to compare
+   * @param name1              Crystal structure (1st or base) that will remain relatively static (only
+   *                           translations).
+   * @param bondList1          List of bonds in crystal used to save XYZ files.
+   * @param atoms1             Atoms in first crystal used to save XYZ files.
+   * @param forceField1        Force field values used to save files/print symmetry operators
+   * @param file2              Second file object containing crystals to compare
+   * @param name2              Crystal structure (2nd or target) that will rotate to match static assembly.
+   * @param bondList2          List of bonds in crystal used to save XYZ files.
+   * @param atoms2             Atoms in first crystal used to save XYZ files.
+   * @param forceField2        Force field values used to save files/print symmetry operators
+   * @param z1                 Number of molecules in asymmetric unit of first crystal.
+   * @param z2                 Number of molecules in asymmetric unit of second crystal.
+   * @param compareAtomsSize   Number of active atoms in asymmetric unit of first crystal.
+   * @param nAU                Number of asymmetric units to compare.
+   * @param baseSearchValue    Number of anticipated unique entities in 1st system.
+   * @param targetSearchValue  Number of anticipated unique entities in 2nd system.
+   * @param matchTol           Tolerance to determine whether two AUs are the same.
+   * @param compNum            Comparison number based on all file submitted (logging).
+   * @param strict             Compare all unique AUs between crystals.
+   * @param save               Save out files of compared crystals.
+   * @param machineLearning    Save out PDBs and CSVs of compared crystals.
+   * @param linkage            Criteria to select nearest AUs (0=single, 1=average, 2=complete linkage).
+   * @param inertia            Compute and display components of inertia tensor.
    * @param gyrationComponents Compute and display gyration components (asphericity,
-   *     acylindricity, anisotropy, etc.)
+   *                           acylindricity, anisotropy, etc.)
    * @return the computed RMSD.
    */
   private double compare(final File file1, final String name1, final List<Bond> bondList1,
-      final Atom[] atoms1, final ForceField forceField1, final File file2, final String name2,
-      final List<Bond> bondList2, final Atom[] atoms2, final ForceField forceField2, final int z1,
-      final int z2, final int compareAtomsSize, final int nAU, final int baseSearchValue,
-      final int targetSearchValue, final double matchTol, final int compNum, final boolean strict,
-      final int save, final boolean machineLearning, final int linkage, final boolean inertia,
-      final boolean gyrationComponents) {
+                         final Atom[] atoms1, final ForceField forceField1, final File file2, final String name2,
+                         final List<Bond> bondList2, final Atom[] atoms2, final ForceField forceField2, final int z1,
+                         final int z2, final int compareAtomsSize, final int nAU, final int baseSearchValue,
+                         final int targetSearchValue, final double matchTol, final int compNum, final boolean strict,
+                         final int save, final boolean machineLearning, final int linkage, final boolean inertia,
+                         final boolean gyrationComponents) {
     // TODO: Does PAC work for a combination of molecules and polymers?
     // It does not compare them on an individual basis, but can compare AUs as a whole (set zp/zp2 to 1).
     boolean useSave = save > 0;
@@ -880,9 +880,9 @@ public class ProgressiveAlignmentOfCrystals {
             for (int k = 0; k < compareAtomsSize; k++) {
               int index = k * 3;
               double value = rmsd(
-                  new double[] {bestBaseNAUs[i][j][index], bestBaseNAUs[i][j][index + 1],
+                  new double[]{bestBaseNAUs[i][j][index], bestBaseNAUs[i][j][index + 1],
                       bestBaseNAUs[i][j][index + 2]},
-                  new double[] {bestTargetNAUs[i][j][index], bestTargetNAUs[i][j][index + 1],
+                  new double[]{bestTargetNAUs[i][j][index], bestTargetNAUs[i][j][index + 1],
                       bestTargetNAUs[i][j][index + 2]}, massN);
               if (logger.isLoggable(Level.INFO)) {
                 if (printSym < value) {
@@ -1356,40 +1356,40 @@ public class ProgressiveAlignmentOfCrystals {
    * Compare the crystals within the SystemFilters that were inputted into the constructor of this
    * class.
    *
-   * @param nAU Number of asymmetric units to compare.
-   * @param inflationFactor Specify safety factor when generating replicates crystal.
-   * @param matchTol Tolerance to determine whether two AUs are the same (increases efficiency).
-   * @param zPrime Number of asymmetric units in first crystal (default attempts detection).
-   * @param zPrime2 Number of asymmetric units in second crystal (default attempts detection).
-   * @param excludeAtomsA List of atoms specific to first crystal.
-   * @param excludeAtomsB List of atoms specific to second crystal.
-   * @param alphaCarbons Perform comparisons on only alpha carbons.
-   * @param includeHydrogen Perform comparisons without hydrogen atoms.
-   * @param massWeighted Perform comparisons with mass weighted coordinates (center of mass
-   *     instead of geometric center).
-   * @param crystalPriority Prioritize most dense (0), least dense (1), or first inputted file
-   *     (2).
-   * @param strict More intensive, but less efficient version of PAC.
-   * @param save Save out files of the resulting superposition.
-   * @param restart Try to restart from a previous job.
-   * @param write Save out a PAC RMSD file.
-   * @param machineLearning Save out CSV files for machine learning input (saves PDBs as well).
-   * @param inertia Compute moments of inertia for final clusters.
+   * @param nAU                Number of asymmetric units to compare.
+   * @param inflationFactor    Specify safety factor when generating replicates crystal.
+   * @param matchTol           Tolerance to determine whether two AUs are the same (increases efficiency).
+   * @param zPrime             Number of asymmetric units in first crystal (default attempts detection).
+   * @param zPrime2            Number of asymmetric units in second crystal (default attempts detection).
+   * @param excludeAtomsA      List of atoms specific to first crystal.
+   * @param excludeAtomsB      List of atoms specific to second crystal.
+   * @param alphaCarbons       Perform comparisons on only alpha carbons.
+   * @param includeHydrogen    Perform comparisons without hydrogen atoms.
+   * @param massWeighted       Perform comparisons with mass weighted coordinates (center of mass
+   *                           instead of geometric center).
+   * @param crystalPriority    Prioritize most dense (0), least dense (1), or first inputted file
+   *                           (2).
+   * @param strict             More intensive, but less efficient version of PAC.
+   * @param save               Save out files of the resulting superposition.
+   * @param restart            Try to restart from a previous job.
+   * @param write              Save out a PAC RMSD file.
+   * @param machineLearning    Save out CSV files for machine learning input (saves PDBs as well).
+   * @param inertia            Compute moments of inertia for final clusters.
    * @param gyrationComponents Compute axial components for radius of gyration of final
-   *     clusters.
-   * @param linkage Prioritize entities based on single, average, or complete linkage.
-   * @param printSym Print final symmetry operator used to superimpose mobile assembly onto
-   *     static assembly.
-   * @param lowMemory Crystals will be read in as needed (slower performance, but less memory
-   *     intensive)
-   * @param pacFileName The filename to use.
+   *                           clusters.
+   * @param linkage            Prioritize entities based on single, average, or complete linkage.
+   * @param printSym           Print final symmetry operator used to superimpose mobile assembly onto
+   *                           static assembly.
+   * @param lowMemory          Crystals will be read in as needed (slower performance, but less memory
+   *                           intensive)
+   * @param pacFileName        The filename to use.
    * @return RunningStatistics Statistics for comparisons performed.
    */
   public RunningStatistics comparisons(int nAU, double inflationFactor, double matchTol, int zPrime,
-      int zPrime2, String excludeAtomsA, String excludeAtomsB, boolean alphaCarbons, boolean includeHydrogen,
-      boolean massWeighted, int crystalPriority, boolean strict, int save, boolean restart,
-      boolean write, boolean machineLearning, boolean inertia, boolean gyrationComponents,
-      int linkage, double printSym, boolean lowMemory, String pacFileName) {
+                                       int zPrime2, String excludeAtomsA, String excludeAtomsB, boolean alphaCarbons, boolean includeHydrogen,
+                                       boolean massWeighted, int crystalPriority, boolean strict, int save, boolean restart,
+                                       boolean write, boolean machineLearning, boolean inertia, boolean gyrationComponents,
+                                       int linkage, double printSym, boolean lowMemory, String pacFileName) {
     this.printSym = printSym;
     //TODO: Incorporate graphic user interface (gui: ffx)
     //TODO: Save systems out as original molecule regardless of selection
@@ -1431,15 +1431,15 @@ public class ProgressiveAlignmentOfCrystals {
 
     // Collect selected atoms.
     ArrayList<Integer> unique = new ArrayList<>(parseAtomRanges("Base Assembly", excludeAtomsA, nAtoms));
-    if(invalidAtomSelection(unique, atoms1, alphaCarbons, includeHydrogen)){
+    if (invalidAtomSelection(unique, atoms1, alphaCarbons, includeHydrogen)) {
       logger.warning("\n No atoms were selected for the PAC RMSD in first crystal.");
       return null;
     }
     int[] comparisonAtoms = unique.stream().mapToInt(i -> i).toArray();
 
     // Collect selected atoms.
-    unique = new ArrayList<>(parseAtomRanges( "target", excludeAtomsB, nAtoms2));
-    if(invalidAtomSelection(unique, atoms2, alphaCarbons, includeHydrogen)){
+    unique = new ArrayList<>(parseAtomRanges("target", excludeAtomsB, nAtoms2));
+    if (invalidAtomSelection(unique, atoms2, alphaCarbons, includeHydrogen)) {
       logger.warning("\n No atoms were selected for the PAC RMSD in second crystal.");
       return null;
     }
@@ -1577,9 +1577,9 @@ public class ProgressiveAlignmentOfCrystals {
       atomCache = new Atom[size][nAtoms2];
       fileCache = new File[size];
       nameCache = new String[size];
-      bondCache = new ArrayList[size];
+      bondCache = new ArrayList<>();
       for (int i = 0; i < size; i++) {
-        bondCache[i] = new ArrayList<>();
+        bondCache.add(new ArrayList<>());
       }
       forceFieldCache = new ForceField[size];
       crystalCache = new Crystal[size];
@@ -1599,8 +1599,9 @@ public class ProgressiveAlignmentOfCrystals {
                 arrayAtom[i].getAtomType(), xyz);
           }
           List<Bond> currentBonds = currentAssembly.getBondList();
+          List<Bond> currentBondCache = bondCache.get(assemblyNum);
           for (Bond b : currentBonds) {
-            bondCache[assemblyNum].add(new Bond(b.getAtom(0), b.getAtom(1)));
+            currentBondCache.add(new Bond(b.getAtom(0), b.getAtom(1)));
           }
           ForceField currentForcefield = currentAssembly.getForceField();
           fileCache[assemblyNum] = new File(currentAssembly.getFile().getName());
@@ -1804,7 +1805,7 @@ public class ProgressiveAlignmentOfCrystals {
                 atoms2 = atomCache[assemblyNum];
                 file2 = fileCache[assemblyNum];
                 name2 = nameCache[assemblyNum];
-                bondList2 = bondCache[assemblyNum];
+                bondList2 = bondCache.get(assemblyNum);
                 forceField2 = forceFieldCache[assemblyNum];
               } else {
                 MolecularAssembly mobileAssembly = targetFilter.getActiveMolecularSystem();
@@ -1872,7 +1873,7 @@ public class ProgressiveAlignmentOfCrystals {
                 atoms1 = atomCache[assemblyNum];
                 file1 = fileCache[assemblyNum];
                 name1 = nameCache[assemblyNum];
-                bondList1 = bondCache[assemblyNum];
+                bondList1 = bondCache.get(assemblyNum);
                 forceField1 = forceFieldCache[assemblyNum];
               } else {
                 MolecularAssembly staticAssembly = targetFilter.getActiveMolecularSystem();
@@ -2101,7 +2102,7 @@ public class ProgressiveAlignmentOfCrystals {
                         double[] symMol = new double[nCoords];
                         for (int k = 0; k < compareAtomsSize; k++) {
                           int l = k * 3;
-                          double[] xyz = new double[] {targetAUoriginal[j][l],
+                          double[] xyz = new double[]{targetAUoriginal[j][l],
                               targetAUoriginal[j][l + 1], targetAUoriginal[j][l + 2]};
                           applyCartesianSymOp(xyz, xyz, bestTargetTransformSymOp[i][j]);
                           symMol[l] = xyz[0];
@@ -2124,7 +2125,7 @@ public class ProgressiveAlignmentOfCrystals {
                         stringBuilder.append("\n\n Sym Op Inverse Application:");
                         for (int k = 0; k < compareAtomsSize; k++) {
                           int l = k * 3;
-                          double[] xyz = new double[] {symMol[l], symMol[l + 1], symMol[l + 2]};
+                          double[] xyz = new double[]{symMol[l], symMol[l + 1], symMol[l + 2]};
                           applyCartesianSymOp(xyz, xyz, inverted);
                           symMol2[l] = xyz[0];
                           symMol2[l + 1] = xyz[1];
@@ -2260,8 +2261,8 @@ public class ProgressiveAlignmentOfCrystals {
    * tolerance.
    *
    * @param values List of values already found.
-   * @param value Potential new value if it is not already in list.
-   * @param tol Tolerance that determine whether values are equal.
+   * @param value  Potential new value if it is not already in list.
+   * @param tol    Tolerance that determine whether values are equal.
    */
   private static boolean addLooseUnequal(List<Double> values, double value, double tol) {
     boolean found = false;
@@ -2281,12 +2282,12 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Accumulate rotations (matrix multiplication)
    *
-   * @param rot Rotation matrix to add.
+   * @param rot            Rotation matrix to add.
    * @param totalTransform Array to be updated with rotation (4x4).
-   * @param prepend If true prepend translation, false append to end.
+   * @param prepend        If true prepend translation, false append to end.
    */
   public void addRotation(double[][] rot, double[][] totalTransform, boolean prepend) {
-    double[][] transform = new double[][] {{rot[0][0], rot[0][1], rot[0][2], 0.0},
+    double[][] transform = new double[][]{{rot[0][0], rot[0][1], rot[0][2], 0.0},
         {rot[1][0], rot[1][1], rot[1][2], 0.0}, {rot[2][0], rot[2][1], rot[2][2], 0.0},
         {0.0, 0.0, 0.0, 1.0}};
     transform =
@@ -2300,13 +2301,13 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Accumulate translations (matrix multiplication)
    *
-   * @param translation Translation matrix to add.
+   * @param translation    Translation matrix to add.
    * @param totalTransform Array to be updated with translation (4x4).
-   * @param prepend If true prepend translation, false append to end.
+   * @param prepend        If true prepend translation, false append to end.
    */
   public static void addTranslation(double[] translation, double[][] totalTransform,
-      boolean prepend) {
-    double[][] transform = new double[][] {{1.0, 0.0, 0.0, translation[0]},
+                                    boolean prepend) {
+    double[][] transform = new double[][]{{1.0, 0.0, 0.0, translation[0]},
         {0.0, 1.0, 0.0, translation[1]}, {0.0, 0.0, 1.0, translation[2]}, {0.0, 0.0, 0.0, 1.0}};
     transform =
         (prepend) ? mat4Mat4(totalTransform, transform) : mat4Mat4(transform, totalTransform);
@@ -2321,13 +2322,13 @@ public class ProgressiveAlignmentOfCrystals {
    * (xyz)
    *
    * @param centersOfMass Returned center of mass for each asymmetric unit
-   * @param coords Coordinates of every atom in system.
-   * @param mass Masses of each atom in asymmetric unit.
-   * @param massSum Sum of masses within asymmetric unit.
-   * @param nAtoms Number of atoms in an entity.
+   * @param coords        Coordinates of every atom in system.
+   * @param mass          Masses of each atom in asymmetric unit.
+   * @param massSum       Sum of masses within asymmetric unit.
+   * @param nAtoms        Number of atoms in an entity.
    */
   private static void centerOfMass(double[][] centersOfMass, double[] coords, double[] mass,
-      double massSum, int nAtoms) {
+                                   double massSum, int nAtoms) {
     int nAU = coords.length / (nAtoms * 3);
     for (int i = 0; i < nAU; i++) {
       int auIndex = i * nAtoms * 3;
@@ -2350,18 +2351,18 @@ public class ProgressiveAlignmentOfCrystals {
    * Determine if replicates crystal is large enough for approximate cluster to be used in PAC
    * comparison.
    *
-   * @param xyz XYZ coordinates of structures.
-   * @param massN Masses per atom.
-   * @param massSum Sum of masses.
+   * @param xyz              XYZ coordinates of structures.
+   * @param massN            Masses per atom.
+   * @param massSum          Sum of masses.
    * @param compareAtomsSize Number of atoms being compared from each structure.
-   * @param nAU Number of structures to compare between crystals.
-   * @param linkage Linkage method to be used.
-   * @param startLMN Current values for L x M x N (overwritten with new values)
+   * @param nAU              Number of structures to compare between crystals.
+   * @param linkage          Linkage method to be used.
+   * @param startLMN         Current values for L x M x N (overwritten with new values)
    * @return Whether the LMN values have changed. If yes, recalculate replicates.
    */
   private static boolean checkInflatedSphere(double[] xyz, double[] massN, double massSum,
-      int compareAtomsSize, int nAU, int linkage, int[] startLMN, ArrayList<SymOp> symOps,
-      ArrayList<Integer> indexOrder) {
+                                             int compareAtomsSize, int nAU, int linkage, int[] startLMN, ArrayList<SymOp> symOps,
+                                             ArrayList<Integer> indexOrder) {
     // Recalculate center of mass based on XYZ order ([0] is the closest to center).
     double[][] centerOfMass = new double[xyz.length / 3][3];
     centerOfMass(centerOfMass, xyz, massN, massSum, compareAtomsSize);
@@ -2414,15 +2415,15 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Determine the indices of the atoms from the assembly that are active for this comparison.
    *
-   * @param atoms Atoms we potentially wish to use in comparison.
-   * @param indices Array list containing atom indices that will be used for this comparison.
-   * @param unique Indices that are unique to the system and should not be included in
-   *     comparison.
-   * @param alphaCarbons Boolean whether to include only alpha carbons/nitrogens.
+   * @param atoms           Atoms we potentially wish to use in comparison.
+   * @param indices         Array list containing atom indices that will be used for this comparison.
+   * @param unique          Indices that are unique to the system and should not be included in
+   *                        comparison.
+   * @param alphaCarbons    Boolean whether to include only alpha carbons/nitrogens.
    * @param includeHydrogen Boolean whether to include hydrogens.
    */
   private static void determineComparableAtoms(Atom[] atoms, ArrayList<Integer> indices,
-      ArrayList<Integer> unique, boolean alphaCarbons, boolean includeHydrogen) {
+                                               ArrayList<Integer> unique, boolean alphaCarbons, boolean includeHydrogen) {
     int nAtoms = atoms.length;
     for (int i = 0; i < nAtoms; i++) {
       if (!unique.contains(i)) {
@@ -2447,7 +2448,7 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * This method calls <code>world.gather</code> to collect numProc PAC RMSD values.
    *
-   * @param row Current row of the PAC RMSD matrix.
+   * @param row               Current row of the PAC RMSD matrix.
    * @param runningStatistics Stats for the RMSDs.
    */
   private void gatherRMSDs(int row, RunningStatistics runningStatistics) {
@@ -2515,25 +2516,25 @@ public class ProgressiveAlignmentOfCrystals {
    * Generate and expanded sphere of asymmetric unit with the intention of observing a crystals'
    * distribution of replicates to facilitate comparisons that go beyond lattice parameters.
    *
-   * @param unitCell Crystal to define expansion.
-   * @param reducedCoords Coordinates of asymmetric unit we wish to expand.
-   * @param zPrime Number of molecules in asymmetric unit.
-   * @param nAU Number of asymmetric units to compare in final shell (used to determine expansion
-   *     guess).
-   * @param linkage Type of linkage to be used in comparison (single, average, or complete).
-   * @param mass Masses for atoms within reduced asymmetric unit.
-   * @param lmn Replicates lattice vecor lengths (L x M x N).
-   * @param symOps List of symmetry operators used to expand to replicates crystal.
-   * @param indexOrder Sorted list of index values (e.g. index 0 is contained in input file but
-   *     may not be first).
+   * @param unitCell        Crystal to define expansion.
+   * @param reducedCoords   Coordinates of asymmetric unit we wish to expand.
+   * @param zPrime          Number of molecules in asymmetric unit.
+   * @param nAU             Number of asymmetric units to compare in final shell (used to determine expansion
+   *                        guess).
+   * @param linkage         Type of linkage to be used in comparison (single, average, or complete).
+   * @param mass            Masses for atoms within reduced asymmetric unit.
+   * @param lmn             Replicates lattice vecor lengths (L x M x N).
+   * @param symOps          List of symmetry operators used to expand to replicates crystal.
+   * @param indexOrder      Sorted list of index values (e.g. index 0 is contained in input file but
+   *                        may not be first).
    * @param inflationFactor Scalar to over expand replicates crystal to obtain all necessary
-   *     orientations.
+   *                        orientations.
    * @return double[] containing the coordinates for the expanded crystal.
    */
   private static double[] generateInflatedSphere(final Crystal unitCell,
-      final double[] reducedCoords, final int zPrime, final int nAU, final int linkage,
-      final double[] mass, int[] lmn, boolean strict, ArrayList<SymOp> symOps,
-      ArrayList<Integer> indexOrder, double inflationFactor) {
+                                                 final double[] reducedCoords, final int zPrime, final int nAU, final int linkage,
+                                                 final double[] mass, int[] lmn, boolean strict, ArrayList<SymOp> symOps,
+                                                 ArrayList<Integer> indexOrder, double inflationFactor) {
     symOps.clear();
     indexOrder.clear();
     // Num coords in asymmetric unit
@@ -2706,7 +2707,7 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Try to automatically determine number of species in asymmetric unit (only works for molecules).
    *
-   * @param zPrime User input overrides detection method.
+   * @param zPrime      User input overrides detection method.
    * @param numEntities Number of species detected.
    * @return Number of expected species in asymmetric unit.
    */
@@ -2720,18 +2721,19 @@ public class ProgressiveAlignmentOfCrystals {
 
   /**
    * Determine if the user selected atoms are invalid.
-   * @param indices Atom indices to be included in this comparison.
-   * @param atoms  All available atoms.
-   * @param alphaCarbons Only include alpha carbons.
+   *
+   * @param indices         Atom indices to be included in this comparison.
+   * @param atoms           All available atoms.
+   * @param alphaCarbons    Only include alpha carbons.
    * @param includeHydrogen Include hydrogen atoms.
    * @return Whether any atoms were selected.
    */
-  private static boolean invalidAtomSelection(ArrayList<Integer> indices, Atom[] atoms, boolean alphaCarbons, boolean includeHydrogen){
+  private static boolean invalidAtomSelection(ArrayList<Integer> indices, Atom[] atoms, boolean alphaCarbons, boolean includeHydrogen) {
     ArrayList<Integer> unique = new ArrayList<>();
-    for(Integer value : indices){
-        if (!unique.contains(value)) {
-          unique.add(value);
-        }
+    for (Integer value : indices) {
+      if (!unique.contains(value)) {
+        unique.add(value);
+      }
     }
     indices.clear();
     determineComparableAtoms(atoms, indices, unique, alphaCarbons, includeHydrogen);
@@ -2741,8 +2743,8 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Parse values of a matrix into a string.
    *
-   * @param matrix Values to present
-   * @param index Identifier
+   * @param matrix      Values to present
+   * @param index       Identifier
    * @param description Identifier
    * @return String of values.
    */
@@ -2760,7 +2762,7 @@ public class ProgressiveAlignmentOfCrystals {
    * into the provided crystal.
    *
    * @param crystal Replicates crystal within whom coordinates should be moved.
-   * @param com Center of mass (x, y, z) for the object of concern
+   * @param com     Center of mass (x, y, z) for the object of concern
    * @return double[] translation vector to move the object within the provided crystal.
    */
   private static double[] moveIntoCrystal(Crystal crystal, double[] com) {
@@ -2793,20 +2795,20 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Determine the number of unique AUs within the replicates crystal to a tolerance.
    *
-   * @param allCoords Coordinates for every atom in replicates crystal ([x1, y1, z1, x2, y2,
-   *     z2...].
-   * @param auDist Prioritization of molecules.
-   * @param auCoords Coordinates for single AU.
-   * @param nCoords Number of coordinates in an AU (number of atoms * 3).
-   * @param upperLimit The largest number of unique AUs (0 for no upper limit).
-   * @param strict Search entire replicates crystal if true, otherwise only the expected.
+   * @param allCoords       Coordinates for every atom in replicates crystal ([x1, y1, z1, x2, y2,
+   *                        z2...].
+   * @param auDist          Prioritization of molecules.
+   * @param auCoords        Coordinates for single AU.
+   * @param nCoords         Number of coordinates in an AU (number of atoms * 3).
+   * @param upperLimit      The largest number of unique AUs (0 for no upper limit).
+   * @param strict          Search entire replicates crystal if true, otherwise only the expected.
    * @param nAUinReplicates Number of AUs in replicates crystal.
-   * @param massN Array containing masses for each atom in AU.
-   * @param matchTol Tolerance to determine whether two AUs are the same.
+   * @param massN           Array containing masses for each atom in AU.
+   * @param matchTol        Tolerance to determine whether two AUs are the same.
    */
   private void numberUniqueAUs(double[] allCoords, DoubleIndexPair[] auDist, double[] auCoords,
-      int nCoords, int upperLimit, boolean strict, int nAUinReplicates, double[] massN,
-      double matchTol) {
+                               int nCoords, int upperLimit, boolean strict, int nAUinReplicates, double[] massN,
+                               double matchTol) {
     // uniqueDiffs is only recorded for logging... could remove later.
     // List of differences (RMSD_1) for AUs in replicates crystal.
     List<Double> uniqueDiffs = new ArrayList<>();
@@ -2857,7 +2859,7 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Pair species between two crystals based on distances between centers.
    *
-   * @param desiredAUs Number of pairs to determine.
+   * @param desiredAUs    Number of pairs to determine.
    * @param comparisonNum Determine which centers of mass to use for first crystal.
    */
   private void pairEntities(int desiredAUs, int comparisonNum) {
@@ -2919,16 +2921,16 @@ public class ProgressiveAlignmentOfCrystals {
    * Print values for the symmetry operations performed so far (useful for debugging printSym flag).
    *
    * @param compareAtomsSize Number of atoms being compared from each AU.
-   * @param file File to save current coordinates
-   * @param name Description for the current symmetry operator
-   * @param bondList List of bonds for saving in XYZ format
-   * @param atoms List of atoms for saving XYZ format
-   * @param forceField Force field for saving in XYZ format
-   * @param save Save integer switch to determine if/how to save file.
-   * @param currZ2 Documentation for which molecule from asymmetric unit is being used
+   * @param file             File to save current coordinates
+   * @param name             Description for the current symmetry operator
+   * @param bondList         List of bonds for saving in XYZ format
+   * @param atoms            List of atoms for saving XYZ format
+   * @param forceField       Force field for saving in XYZ format
+   * @param save             Save integer switch to determine if/how to save file.
+   * @param currZ2           Documentation for which molecule from asymmetric unit is being used
    */
   private void printSym(int compareAtomsSize, File file, String name, List<Bond> bondList,
-      Atom[] atoms, ForceField forceField, int save, int currZ2) {
+                        Atom[] atoms, ForceField forceField, int save, int currZ2) {
     // Apply inverse of base operations:
     // For orthogonal matrices the inverse matrix = the transpose. True iff det(A)== +/- 1.
     // No inverse if det(A)==0.
@@ -2936,7 +2938,7 @@ public class ProgressiveAlignmentOfCrystals {
     copyArrayValues(tempTransform, targetTransformSymOp.asMatrix());
     addTranslation(targetSymOp.tr, tempTransform, true);
     addRotation(targetSymOp.rot, tempTransform, true);
-    double[] bestTranslation = new double[] {tempTransform[0][3] / tempTransform[3][3],
+    double[] bestTranslation = new double[]{tempTransform[0][3] / tempTransform[3][3],
         tempTransform[1][3] / tempTransform[3][3], tempTransform[2][3] / tempTransform[3][3]};
     SymOp symOp = new SymOp(copyOf(tempTransform, 3), bestTranslation);
     double[] newMol = new double[compareAtomsSize * 3];
@@ -2946,7 +2948,7 @@ public class ProgressiveAlignmentOfCrystals {
     double[] originalAU = targetAUoriginal[currZ2];
     for (int i = 0; i < compareAtomsSize; i++) {
       int k = i * 3;
-      double[] xyz = new double[] {originalAU[k], originalAU[k + 1], originalAU[k + 2]};
+      double[] xyz = new double[]{originalAU[k], originalAU[k + 1], originalAU[k + 2]};
       applyCartesianSymOp(xyz, xyz, symOp);
       newMol[k] = xyz[0];
       newMol[k + 1] = xyz[1];
@@ -2966,19 +2968,19 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Prioritize asymmetric units within the system based on distance to specified index.
    *
-   * @param coordsXYZ Coordinates for expanded crystal (should contain 3 * nAtoms * nMols
-   *     entries).
-   * @param mass Mass of atoms within asymmetric unit (should contain one mass per atom in asym
-   *     unit).
-   * @param massSum Sum of atomic masses within asymmetric unit.
+   * @param coordsXYZ      Coordinates for expanded crystal (should contain 3 * nAtoms * nMols
+   *                       entries).
+   * @param mass           Mass of atoms within asymmetric unit (should contain one mass per atom in asym
+   *                       unit).
+   * @param massSum        Sum of atomic masses within asymmetric unit.
    * @param centerOfMasses Center of masses for each replicate within inflated crystal.
-   * @param nAtoms Number of coordinates in an entity.
-   * @param auDist Prioritization of AUs in expanded system based on linkage criteria
-   * @param index Index of AU to be center.
-   * @param linkage User specified criteria to determine prioritization.
+   * @param nAtoms         Number of coordinates in an entity.
+   * @param auDist         Prioritization of AUs in expanded system based on linkage criteria
+   * @param index          Index of AU to be center.
+   * @param linkage        User specified criteria to determine prioritization.
    */
   private static void prioritizeReplicates(double[] coordsXYZ, double[] mass, double massSum,
-      double[][] centerOfMasses, int nAtoms, DoubleIndexPair[] auDist, int index, int linkage) {
+                                           double[][] centerOfMasses, int nAtoms, DoubleIndexPair[] auDist, int index, int linkage) {
     // Find AU to be treated as the new center.
     // AUs added to system based on distance to center of all atoms. Index = 0 AU should be closest to all atom center.
     int nCoords = nAtoms * 3;
@@ -3214,7 +3216,7 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Reduce asymmetric unit to atoms that are going to be used in final RMSD.
    *
-   * @param atoms Atoms we wish to reduce.
+   * @param atoms           Atoms we wish to reduce.
    * @param comparisonAtoms Atoms of interest within asymmetric unit.
    * @return Linear coordinates for only atoms of interest.
    */
@@ -3234,20 +3236,20 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Save the provided coordinates as a PDB file.
    *
-   * @param file File to save coordinates
-   * @param name Desired name for file
-   * @param bondList List of bonds for saving in XYZ format
-   * @param forceField0 Force field for saving current assembly
-   * @param coords Coordinates to be saved within the PDB
+   * @param file            File to save coordinates
+   * @param name            Desired name for file
+   * @param bondList        List of bonds for saving in XYZ format
+   * @param forceField0     Force field for saving current assembly
+   * @param coords          Coordinates to be saved within the PDB
    * @param comparisonAtoms Atoms of interest within the initial asymmetric unit.
-   * @param nAU Number of desired asymmetric units in comparison
-   * @param description Unique identifier that will be added to PDB file name.
-   * @param compNum Unique number for the current comparison
-   * @param save Type of file to save (0=none, 1=PDB, 2=XYZ)
+   * @param nAU             Number of desired asymmetric units in comparison
+   * @param description     Unique identifier that will be added to PDB file name.
+   * @param compNum         Unique number for the current comparison
+   * @param save            Type of file to save (0=none, 1=PDB, 2=XYZ)
    */
   private void saveAssembly(File file, String name, List<Bond> bondList, Atom[] atoms,
-      ForceField forceField0, final double[] coords, final int[] comparisonAtoms, int nAU,
-      String description, int compNum, int save) {
+                            ForceField forceField0, final double[] coords, final int[] comparisonAtoms, int nAU,
+                            String description, int compNum, int save) {
     //TODO: Save systems out as original molecule regardless of selection
     String fileName = FilenameUtils.removeExtension(file.getName());
     File saveLocation;
@@ -3400,16 +3402,16 @@ public class ProgressiveAlignmentOfCrystals {
   /**
    * Save the provided coordinates as a PDB file with accompanying CSV containing RMSD.
    *
-   * @param coords Coordinates to be saved within the PDB.
+   * @param coords          Coordinates to be saved within the PDB.
    * @param comparisonAtoms Atoms of interest within the initial asymmetric unit.
-   * @param description Unique identifier that will be added to PDB file name.
-   * @param finalRMSD RMSD to be saved to CSV file.
-   * @param compNum Unique number for the current comparison
-   * @param save Type of file to save (0=none, 1=PDB, 2=XYZ)
+   * @param description     Unique identifier that will be added to PDB file name.
+   * @param finalRMSD       RMSD to be saved to CSV file.
+   * @param compNum         Unique number for the current comparison
+   * @param save            Type of file to save (0=none, 1=PDB, 2=XYZ)
    */
   private void saveAssembly(File file, String name, List<Bond> bondList, Atom[] atoms,
-      ForceField forceField, double[] coords, int[] comparisonAtoms, int nAU, String description,
-      double finalRMSD, int compNum, int save) {
+                            ForceField forceField, double[] coords, int[] comparisonAtoms, int nAU, String description,
+                            double finalRMSD, int compNum, int save) {
     saveAssembly(file, name, bondList, atoms, forceField, coords, comparisonAtoms, nAU, description,
         compNum, save);
     String fileName = FilenameUtils.removeExtension(file.getName());

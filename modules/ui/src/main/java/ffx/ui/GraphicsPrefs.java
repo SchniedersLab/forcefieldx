@@ -46,6 +46,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.Serial;
 import java.util.Hashtable;
 import java.util.logging.Logger;
 import javax.swing.BorderFactory;
@@ -64,9 +65,12 @@ import javax.swing.border.TitledBorder;
  */
 public class GraphicsPrefs extends JDialog implements ActionListener {
 
+  @Serial
+  private static final long serialVersionUID = 1L;
+
   private static final Logger logger = Logger.getLogger(GraphicsPrefs.class.getName());
-  private MSRoot root;
-  private GridBagConstraints constraints;
+  private final MSRoot root;
+  private final GridBagConstraints constraints;
   private boolean change = false;
 
   /**
@@ -180,7 +184,7 @@ public class GraphicsPrefs extends JDialog implements ActionListener {
           }
           int value = source.getValue();
           switch (sliderID) {
-            case 1:
+            case 1 -> {
               if (value < 1) {
                 return;
               }
@@ -189,21 +193,20 @@ public class GraphicsPrefs extends JDialog implements ActionListener {
                 change = true;
                 RendererCache.radius = temp;
               }
-              break;
-            case 2:
+            }
+            case 2 -> {
               if (RendererCache.detail != value) {
                 change = true;
                 RendererCache.detail = value;
               }
-              break;
-            case 3:
+            }
+            case 3 -> {
               if (RendererCache.bondwidth != value) {
                 change = true;
                 RendererCache.bondwidth = value;
               }
-              break;
-            default:
-              logger.info("Unknown Slider");
+            }
+            default -> logger.info("Unknown Slider");
           }
         });
     // add three components into the next row

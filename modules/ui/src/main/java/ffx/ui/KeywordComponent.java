@@ -82,8 +82,8 @@ public final class KeywordComponent
    */
   private static boolean isModified = false;
 
-  private static Dimension labelDimension;
-  private static Dimension entryDimension;
+  private static final Dimension labelDimension;
+  private static final Dimension entryDimension;
 
   static {
     JTextField textField = new JTextField(20);
@@ -94,19 +94,19 @@ public final class KeywordComponent
 
   private final FlowLayout flowLayout;
   /** TINKER Keyword String. */
-  private String keyword;
+  private final String keyword;
   /** TINKER Keyword Group. */
-  private String keywordGroup;
+  private final String keywordGroup;
   /** An ArrayList of Components used to represent this Keyword */
-  private ArrayList<Component> keywordValues;
+  private final ArrayList<Component> keywordValues;
 
   private JPanel keywordGUI = null;
   /** The type of Swing Conponent used in representing this Keyword */
-  private SwingRepresentation swingRepresentation;
+  private final SwingRepresentation swingRepresentation;
 
   private String[] options;
-  private String keywordDescription;
-  private JTextArea output;
+  private final String keywordDescription;
+  private final JTextArea output;
   private boolean active;
   private boolean init = false;
   /**

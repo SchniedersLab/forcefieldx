@@ -47,6 +47,8 @@ import static org.apache.commons.math3.util.FastMath.toDegrees;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionTorsionType;
+
+import java.io.Serial;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -57,6 +59,9 @@ import java.util.logging.Logger;
  * @since 1.0
  */
 public class TorsionTorsion extends BondedTerm implements LambdaInterface {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger logger = Logger.getLogger(TorsionTorsion.class.getName());
   private static final double[][] wt = {

@@ -492,6 +492,7 @@ public final class PDBFilter extends SystemFilter {
 
   /** Parse the PDB File */
   @Override
+  @SuppressWarnings("fallthrough")
   public boolean readFile() {
     remarkLines = new ArrayList<>();
     // First atom is #1, to match xyz file format
@@ -1331,6 +1332,7 @@ public final class PDBFilter extends SystemFilter {
   }
 
   /** {@inheritDoc} */
+  @SuppressWarnings("fallthrough")
   @Override
   public boolean readNext(boolean resetPosition, boolean print, boolean parse) {
     modelsRead = resetPosition ? 1 : modelsRead + 1;

@@ -61,6 +61,8 @@ import ffx.potential.parameters.BioType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.utilities.StringUtils;
+
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -959,6 +961,9 @@ public class BondedUtils {
   /** This exception is thrown when an atom type could not be assigned. */
   public static class MissingAtomTypeException extends Exception {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     public final Residue residue;
     public final Atom atom;
 
@@ -981,6 +986,9 @@ public class BondedUtils {
 
   /** This exception is thrown when a heavy atom is not found. */
   public static class MissingHeavyAtomException extends Exception {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     public final String atomName;
     public final AtomType atomType;

@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
+import java.io.Serial;
+
 /**
  * The MSRoot class is the root of the Force Field X data structure.
  *
@@ -44,6 +46,9 @@ package ffx.potential.bonded;
  * @since 1.0
  */
 public class MSRoot extends MSNode {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /** Default MSRoot Constructor */
   public MSRoot() {

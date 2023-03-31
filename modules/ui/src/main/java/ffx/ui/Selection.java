@@ -38,6 +38,8 @@
 package ffx.ui;
 
 import ffx.potential.bonded.MSNode;
+
+import javax.swing.tree.TreeNode;
 import java.util.ArrayList;
 import java.util.Enumeration;
 
@@ -50,11 +52,11 @@ import java.util.Enumeration;
 public class Selection {
 
   MSNode m;
-  private Class scale;
+  private Class<? extends Object> scale;
   private String criteria;
   private ArrayList<MSNode> selected;
 
-  private Selection(MSNode m, Class scale, String criteria) {
+  private Selection(MSNode m, Class<? extends Object> scale, String criteria) {
     this.scale = scale;
     this.criteria = criteria;
     this.m = m;
@@ -75,12 +77,12 @@ public class Selection {
   /**
    * select
    *
-   * @param m a {@link ffx.potential.bonded.MSNode} object.
-   * @param scale a {@link java.lang.Class} object.
+   * @param m        a {@link ffx.potential.bonded.MSNode} object.
+   * @param scale    a {@link java.lang.Class} object.
    * @param criteria a {@link java.lang.String} object.
    * @return a {@link ffx.ui.Selection} object.
    */
-  public static Selection select(MSNode m, Class scale, String criteria) {
+  public static Selection select(MSNode m, Class<? extends Object> scale, String criteria) {
     Selection s = new Selection(m, scale, criteria);
     s.evaluate();
     return s;
@@ -89,8 +91,8 @@ public class Selection {
   /**
    * select
    *
-   * @param m a {@link ffx.potential.bonded.MSNode} object.
-   * @param scale a {@link java.lang.String} object.
+   * @param m        a {@link ffx.potential.bonded.MSNode} object.
+   * @param scale    a {@link java.lang.String} object.
    * @param criteria a {@link java.lang.String} object.
    * @return a {@link ffx.ui.Selection} object.
    */
@@ -103,11 +105,11 @@ public class Selection {
   /**
    * and
    *
-   * @param scale a {@link java.lang.Class} object.
+   * @param scale    a {@link java.lang.Class} object.
    * @param criteria a {@link java.lang.String} object.
    * @return a {@link ffx.ui.Selection} object.
    */
-  public Selection and(Class scale, String criteria) {
+  public Selection and(Class<? extends Object> scale, String criteria) {
     this.scale = scale;
     this.criteria = criteria;
     evaluate();
@@ -117,11 +119,11 @@ public class Selection {
   /**
    * or
    *
-   * @param scale a {@link java.lang.Class} object.
+   * @param scale    a {@link java.lang.Class} object.
    * @param criteria a {@link java.lang.String} object.
    * @return a {@link ffx.ui.Selection} object.
    */
-  public Selection or(Class scale, String criteria) {
+  public Selection or(Class<? extends Object> scale, String criteria) {
     this.scale = scale;
     this.criteria = criteria;
     evaluate();
@@ -129,7 +131,7 @@ public class Selection {
   }
 
   private void evaluate() {
-    Enumeration e = m.depthFirstEnumeration();
+    Enumeration<TreeNode> e = m.depthFirstEnumeration();
     while (e.hasMoreElements()) {
       MSNode n = (MSNode) e.nextElement();
       if (scale.isInstance(n)) {

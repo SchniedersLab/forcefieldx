@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
+import java.io.Serial;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
@@ -55,6 +56,9 @@ import org.jogamp.java3d.BranchGroup;
  * @since 1.0
  */
 public class ROLSP extends MSNode implements ROLS, Runnable {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger logger = Logger.getLogger(ROLSP.class.getName());
   /** Constant <code>GO_PARALLEL=false</code> */
