@@ -170,26 +170,16 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
       }
       if(specialResidue != null){
         numberOfStates = !esvSystem.isTautomer(specialResidue) ? 3 : 4
-        // Specifies the different states that the special residue will be evaluated in
         switch (specialResidue.getName()) {
-          // How this array is used later in the code --> states[:][0] = titration   states[:][1] = tautomer
+        // How this array is used later in the code --> states[:][0] = titration   states[:][1] = tautomer
           case "ASD":
-            states = new int[3][2]
-            states[0][0] = 0
-            states[0][1] = 0
-            states[1][0] = 1
-            states[1][1] = 0
-            states[2][0] = 0
-            states[2][1] = 1
-            break
-
           case "GLD":
             states = new int[3][2]
             states[0][0] = 0
             states[0][1] = 0
             states[1][0] = 1
             states[1][1] = 0
-            states[2][0] = 0
+            states[2][0] = 1
             states[2][1] = 1
             break
 
@@ -203,7 +193,8 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
             states[2][1] = 0
             break
 
-          case "LYS" || "CYS":
+          case "LYS":
+          case "CYS":
             states = new int[2][2]
             states[0][0] = 0
             states[0][1] = 0 // Ignored
@@ -211,6 +202,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
             states[1][1] = 0 // Ignored
             break
         }
+        // Specifies the different states that the special residue will be evaluated in
       } else {
         logger.severe(" The special residue specified in the key file was not found in the titrating residue list.")
       }
