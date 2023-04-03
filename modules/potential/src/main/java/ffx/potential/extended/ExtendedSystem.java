@@ -555,6 +555,11 @@ public class ExtendedSystem implements Potential {
         return list;
     }
 
+    // Getter for specialResidues
+    public ArrayList<Double> getSpecialResidueList() {
+        return specialResidues;
+    }
+
     /**
      * During constructor, initialize arrays that will hold theta positions, velocities, and accelerations.
      * Positions determined from starting lambda.

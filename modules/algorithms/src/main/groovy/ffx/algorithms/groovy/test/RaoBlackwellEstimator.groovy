@@ -45,6 +45,8 @@ import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.dynamics.MDEngine
 import ffx.algorithms.dynamics.MolecularDynamicsOpenMM
 import ffx.numerics.Potential
+import ffx.numerics.math.BootStrapStatistics
+import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Residue
 import ffx.potential.cli.WriteoutOptions
 import ffx.potential.extended.ExtendedSystem
@@ -85,8 +87,16 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
   private double downState = 0.0
 
   @Option(names = ['--numSnaps'], paramLabel = "-1",
-          description = 'Number of snapshots to use (starting from snapshot 2 in the archive). -1 means use all snapshots.')
+          description = 'Number of snapshots to use from an archive file. -1 means use all snapshots.')
   private int numSnaps = -1
+
+  @Option(names = ['--specifyResidue'], paramLabel = "-1",
+          description = 'Run the Rao-Blackwell Estimator on only one residue.')
+  private int specifiedResidue = -1
+
+  @Option(names = ['--startSnap'], paramLabel = "-1",
+          description = 'Start energy evaluations at a snap other than 2.')
+  private int startSnap = -1
 
   /**
    * One or more filenames.
@@ -96,7 +106,10 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
   private String filename
 
   private Potential forceFieldEnergy
-  ArrayList<Double>[] oneZeroDeltaLists
+  ArrayList<Double>[][] oneZeroDeltaLists
+  ArrayList<Double>[][] tautomerOneZeroDeltaList
+  int numESVs
+  int numTautomerESVs
 
   /**
    * Thermodynamics Constructor.
@@ -119,6 +132,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
       return this
     }
 
+    // See if the ARC file exists
     File arcFile = new File(arcFileName)
     if(!arcFile.exists()){
       logger.severe(format(" ARC file %s does not exist.", arcFile))
@@ -139,19 +153,109 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
 
     // Initialize and attach extended system first.
     ExtendedSystem esvSystem = new ExtendedSystem(activeAssembly, 7.0, null)
-    int numESVs = esvSystem.getTautomerizingResidueList().size()
-    oneZeroDeltaLists = new ArrayList[numESVs]
+
+    // Set up a special residue if one is specified.
+    Residue specialResidue = null
+    int numberOfStates = 1 // Regular Rao-Blackwell Estimator if this does not change (special residue does not change until j != 0 in main loop)
+    int[][] states = null
+    if(esvSystem.getSpecialResidueList().size() > 1){
+      logger.severe(" Multiple special residues were identified in the key file. " +
+              "Only one can be specified with this algorithm.")
+    } else if (esvSystem.getSpecialResidueList().size() == 1) {
+      int specialResidueNumber = (int) esvSystem.getSpecialResidueList().get(0)
+      for (Residue residue : esvSystem.getTitratingResidueList()) {
+        if (residue.getResidueNumber() == specialResidueNumber) {
+          specialResidue = residue
+        }
+      }
+      if(specialResidue != null){
+        numberOfStates = !esvSystem.isTautomer(specialResidue) ? 3 : 4
+        // Specifies the different states that the special residue will be evaluated in
+        switch (specialResidue.getName()) {
+          // How this array is used later in the code --> states[:][0] = titration   states[:][1] = tautomer
+          case "ASD":
+            states = new int[3][2]
+            states[0][0] = 0
+            states[0][1] = 0
+            states[1][0] = 1
+            states[1][1] = 0
+            states[2][0] = 0
+            states[2][1] = 1
+            break
+
+          case "GLD":
+            states = new int[3][2]
+            states[0][0] = 0
+            states[0][1] = 0
+            states[1][0] = 1
+            states[1][1] = 0
+            states[2][0] = 0
+            states[2][1] = 1
+            break
+
+          case "HIS":
+            states = new int[3][2]
+            states[0][0] = 0
+            states[0][1] = 0
+            states[1][0] = 0
+            states[1][1] = 1
+            states[2][0] = 1
+            states[2][1] = 0
+            break
+
+          case "LYS" || "CYS":
+            states = new int[2][2]
+            states[0][0] = 0
+            states[0][1] = 0 // Ignored
+            states[1][0] = 1
+            states[1][1] = 0 // Ignored
+            break
+        }
+      } else {
+        logger.severe(" The special residue specified in the key file was not found in the titrating residue list.")
+      }
+    }
+
+    // Look for specified residue
+    Residue onlyResidue = null
+    int onlyResidueIndex = 0
+    if(specifiedResidue != -1){
+      for (int i = 0; i < esvSystem.getTitratingResidueList().size(); i++) {
+        Residue residue = esvSystem.getTitratingResidueList().get(i)
+        if (residue.getResidueNumber() == specifiedResidue) {
+          onlyResidue = residue
+          onlyResidueIndex = i
+        }
+      }
+      if(onlyResidue == null){
+        logger.severe(" The residue specified with the --specifyResidue option was not found in the titrating residue list.")
+      }
+    }
+
+    // Create the oneZeroDeltaLists and tautomerOneZeroDeltaList arrays
+    // Make a list for ESV's energy differences (energy evals are done at tautomer = 0 for these arrays)
+    numESVs = esvSystem.getTitratingResidueList().size()
+    oneZeroDeltaLists = new ArrayList[numESVs][numberOfStates + 1]
     for (int i = 0; i < numESVs; i++) {
-      oneZeroDeltaLists[i] = new ArrayList<Double>()
+      for (int j = 0; j < numberOfStates + 1; j++) {
+        oneZeroDeltaLists[i][j] = new ArrayList<Double>()
+      }
     }
-
-    int numTautomerESVs = esvSystem.getTautomerizingResidueList().size()
-    ArrayList<Double>[] tautomerOneZeroDeltaList = new ArrayList[numTautomerESVs]
+    // Make a list for tautomerizing ESV's energy differences (energy evals are done at tautomer = 1 for these arrays)
+    numTautomerESVs = esvSystem.getTautomerizingResidueList().size()
+    tautomerOneZeroDeltaList = new ArrayList[numTautomerESVs][numberOfStates + 1]
     for (int i = 0; i < numTautomerESVs; i++) {
-      tautomerOneZeroDeltaList[i] = new ArrayList<Double>()
+      for (int j = 0; j < numberOfStates + 1; j++) {
+        tautomerOneZeroDeltaList[i][j] = new ArrayList<Double>()
+      }
     }
 
-    // Set up the XPHFilter.
+
+    if(onlyResidue != null && specialResidue == onlyResidue) {
+        logger.severe(" The residue specified with the --specifyResidue option is the same as the special residue specified in the key file.")
+    }
+
+    // Set up the XPHFilter
     activeAssembly.setFile(arcFile)
     XPHFilter xphFilter = new XPHFilter(
             arcFile,
@@ -161,18 +265,19 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
             esvSystem)
     xphFilter.readFile()
 
+    // Set up the force field energy and extended system
     esvSystem.setFixedTitrationState(true)
     esvSystem.setFixedTautomerState(true)
     forceFieldEnergy.attachExtendedSystem(esvSystem)
     logger.info(format(" Attached extended system with %d residues.", numESVs))
 
+    // Read in first energy snapshot
     double[] x = new double[forceFieldEnergy.getNumberOfVariables()]
     forceFieldEnergy.getCoordinates(x)
     forceFieldEnergy.energy(x, true)
 
-    // Get pH from ARC file.
+    // Get pH from ARC file
     double pH = 0.0
-    // Read the first line of pHFind.
     String[] parts = xphFilter.getRemarkLines()[0].split(" ")
     for(int i = 0; i < parts.length; i++) {
       if (parts[i].contains("pH")) {
@@ -182,6 +287,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
     logger.info("Setting constant pH to " + pH + ".")
     esvSystem.setConstantPh(pH)
 
+    // Get and log the number of snapshots to use.
     int evals = 0
     if(numSnaps != -1) {
       logger.info(format(" Using %d snapshots.", numSnaps))
@@ -189,39 +295,59 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
     else {
       logger.info(format(" Using all %d snapshots.", xphFilter.countNumModels()))
     }
+
+    // Read through the ARC file.
     while(xphFilter.readNext()) {
+
+      // Read through snaps we aren't interested in
+      if(startSnap != -1 && startSnap > 2 && evals == 0){
+        for(int i = 0; i < startSnap - 2; i++){
+          xphFilter.readNext()
+        }
+      }
+
+      // Get coordinates with each new snap
       forceFieldEnergy.getCoordinates(x)
-      for (int i = 0; i < numESVs; i++) {
-        Residue res = esvSystem.extendedResidueList.get(i)
-        double titrationState = esvSystem.getTitrationLambda(res)
-        double tautomerState = esvSystem.getTautomerLambda(res)
-
-        if(esvSystem.getTautomerizingResidueList().contains(res)){
-          esvSystem.setTautomerLambda(res, 1, false)
-
-          esvSystem.setTitrationLambda(res, 0, false)
-          double zeroEnergy = forceFieldEnergy.energy(x, false)
-
-          esvSystem.setTitrationLambda(res, 1, false)
-          double oneEnergy = forceFieldEnergy.energy(x, false)
-
-          esvSystem.setTitrationLambda(res, titrationState, false)
-
-          tautomerOneZeroDeltaList[esvSystem.getTautomerizingResidueList().indexOf(res)].add(oneEnergy - zeroEnergy)
-          esvSystem.setTautomerLambda(res, 0, false)
+      for (int i = onlyResidueIndex; i < numESVs; i++) {
+        double titrationState = 0
+        double tautomerState = 0
+        if(specialResidue != null){
+          titrationState = esvSystem.getTitrationLambda(specialResidue)
+          tautomerState = esvSystem.getTautomerLambda(specialResidue)
         }
 
-        esvSystem.setTitrationLambda(res, 0, false)
-        double zeroEnergy = forceFieldEnergy.energy(x, false)
+        // Loop through the special residues different possible states (tautomers/titrations)
+        for (int j = 0; j < numberOfStates; j++) {
+          if (j != 0) {
+            esvSystem.setTitrationLambda(specialResidue, states[j-1][0], false)
+            if(numberOfStates != 3) {
+              esvSystem.setTautomerLambda(specialResidue, states[j-1][1], false)
+            }
+          }
 
-        esvSystem.setTitrationLambda(res, 1, false)
-        double oneEnergy = forceFieldEnergy.energy(x, false)
+          // Evaluate energy (regular Rao-Blackwell if no special residue is found)
+          ArrayList<Double> results = getZeroOneDeltas(i, esvSystem, forceFieldEnergy as ForceFieldEnergy, x)
 
-        esvSystem.setTitrationLambda(res, titrationState, false)
+          Residue res = esvSystem.getTitratingResidueList().get(i)
+          if(esvSystem.isTautomer(res)){
+            tautomerOneZeroDeltaList[esvSystem.getTautomerizingResidueList().indexOf(res)][j].add(results.get(0))
+            oneZeroDeltaLists[i][j].add(results.get(1))
+          } else{
+            oneZeroDeltaLists[i][j].add(results.get(0))
+          }
+        }
 
-        oneZeroDeltaLists[i].add(oneEnergy - zeroEnergy)
-        if(esvSystem.getTautomerizingResidueList().contains(res)){
-          esvSystem.setTautomerLambda(res, tautomerState, false)
+        if(specialResidue == esvSystem.extendedResidueList.get(i)) {
+          break
+        }
+
+        // Reset special residue for next residue
+        if(specialResidue != null) {
+          esvSystem.setTitrationLambda(specialResidue, titrationState, false)
+          esvSystem.setTautomerLambda(specialResidue, tautomerState, false)
+        }
+        if(onlyResidueIndex != 0) {
+          break
         }
       }
       evals++
@@ -232,36 +358,168 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
 
     // Calculate the Rao-Blackwell estimator for each residue.
     int tautomerCount = 0
-    logger.info("")
-    logger.info(" Rao-Blackwell Estimator Results: ")
-    for(int i = 0; i < numESVs; i++) {
-      // Calculate the free energy differences.
-      ArrayList<Double> deltaU = oneZeroDeltaLists[i]
-      double temperature = 298.0
-      double boltzmann = 0.001985875
-      double beta = 1.0 / (temperature * boltzmann)
+    double[][] energyLists = new double[numESVs][numberOfStates]
+    double[][] tautomerEnergyLists = new double[numTautomerESVs][numberOfStates]
+    for(int i = onlyResidueIndex; i < numESVs; i++) {
+      for(int j = 0; j < numberOfStates; j++) {
+        Residue res = esvSystem.extendedResidueList.get(i)
+        // Calculate the free energy differences.
+        ArrayList<Double> deltaU = oneZeroDeltaLists[i][j]
+        double temperature = 298.0
+        double boltzmann = 0.001985875
+        double beta = 1.0 / (temperature * boltzmann)
 
-      ArrayList<Double> deltaExp = exp(mult(-beta,deltaU))
-      ArrayList<Double> numerator = div(mult(beta,mult(deltaU,deltaExp)),subtract(1.0,deltaExp))
-      ArrayList<Double> denominator = div(mult(beta,deltaU),subtract(1.0,deltaExp))
-      double deltaG = -(1.0 / beta) * Math.log(average(numerator) / average(denominator))
+        ArrayList<Double> deltaExp = exp(mult(-beta, deltaU))
+        ArrayList<Double> numerator = div(mult(beta, mult(deltaU, deltaExp)), subtract(1.0, deltaExp))
+        ArrayList<Double> denominator = div(mult(beta, deltaU), subtract(1.0, deltaExp))
+        double deltaG = -(1.0 / beta) * Math.log(average(numerator) / average(denominator))
+        energyLists[i][j] = deltaG
 
-      // Log the delta g for this residue with the residue's name.
-      Residue res = esvSystem.extendedResidueList.get(i)
-      logger.info(format(" %s has a calculated dG of %8.3f at tautomer = 0", res, deltaG))
+        if (esvSystem.getTautomerizingResidueList().contains(res)) {
+          ArrayList<Double> deltaUTautomer = tautomerOneZeroDeltaList[tautomerCount][j]
+          ArrayList<Double> deltaExpTautomer = exp(mult(-beta, deltaUTautomer))
+          ArrayList<Double> numeratorTautomer = div(mult(beta, mult(deltaUTautomer, deltaExpTautomer)), subtract(1.0, deltaExpTautomer))
+          ArrayList<Double> denominatorTautomer = div(mult(beta, deltaUTautomer), subtract(1.0, deltaExpTautomer))
+          double deltaGTautomer = -(1.0 / beta) * Math.log(average(numeratorTautomer) / average(denominatorTautomer))
+          tautomerEnergyLists[tautomerCount][j] = deltaGTautomer
+          if(j == numberOfStates-1) {
+            tautomerCount++
+          }
+        }
+      }
 
-      if(esvSystem.getTautomerizingResidueList().contains(res)){
-        ArrayList<Double> deltaUTautomer = tautomerOneZeroDeltaList[tautomerCount]
-        tautomerCount++
-        ArrayList<Double> deltaExpTautomer = exp(mult(-beta,deltaUTautomer))
-        ArrayList<Double> numeratorTautomer = div(mult(beta,mult(deltaUTautomer,deltaExpTautomer)),subtract(1.0,deltaExpTautomer))
-        ArrayList<Double> denominatorTautomer = div(mult(beta,deltaUTautomer),subtract(1.0,deltaExpTautomer))
-        double deltaGTautomer = -(1.0 / beta) * Math.log(average(numeratorTautomer) / average(denominatorTautomer))
-        logger.info(format(" %s has a calculated dG of %8.3f tautomer = 1", res, deltaGTautomer))
+      if(onlyResidueIndex != 0) {
+        break
       }
     }
+
+    // Print the results.
+    printResults(specialResidue, esvSystem, energyLists, tautomerEnergyLists, states, numberOfStates, numESVs, onlyResidueIndex)
+
+    // Get bootstrap results from the Rao-Blackwell estimator.
     return this
   }
+
+  private static printResults(Residue specialResidue, ExtendedSystem esvSystem, double[][] energyLists, double[][] tautomerEnergyLists, int[][] states, int numberOfStates, int numESVs, int onlyResidueIndex)
+  {
+    logger.info("\n")
+    logger.info(" Rao-Blackwell Estimator Results: ")
+    ArrayList<String> line = new ArrayList<>()
+    if(specialResidue != null){
+      logger.info(" Special Residue: " + specialResidue.toString())
+      if(esvSystem.isTautomer(specialResidue)){
+        logger.info(format("  %-10s %-10s %-15s %-25s %-25s %-25s", "Residue", "Tautomer", "DeltaG", "DeltaG-SpecialRes=(" + states[0][0] + "," + states[0][1] + ")", "DeltaG-SpecialRes=(" + states[1][0] + "," + states[1][1] + ")", "DeltaG-SpecialRes=(" + states[2][0] + "," + states[2][1] + ")"))
+      } else{
+        logger.info(format("  %-10s %-10s %-15s %-25s %-25s", "Residue", "Tautomer", "DeltaG","DeltaG-SpecialRes=(" + states[0][0] + "," + states[0][1] + ")", "DeltaG-SpecialRes=(" + states[1][0] + "," + states[1][1] + ")"))
+      }
+    } else
+    {
+      logger.info(format("  %-10s %-10s %-15s", "Residue", "Tautomer", "DeltaG"))
+    }
+    for(int i = onlyResidueIndex; i < numESVs; i++){
+      Residue res = esvSystem.extendedResidueList.get(i)
+      line.add(res.toString())
+      line.add("0")
+      line.add(Double.toString(energyLists[i][0]))
+      for(int j = 1; j < numberOfStates; j++){
+        line.add(Double.toString(energyLists[i][j]))
+      }
+      if(specialResidue != null && esvSystem.isTautomer(specialResidue)) {
+        logger.info(format("  %-10s %-10s %-15.5f %-25.5f %-25.5f %-25.5f",
+                line.get(0),
+                line.get(1),
+                Double.parseDouble(line.get(2)),
+                Double.parseDouble(line.get(3)),
+                Double.parseDouble(line.get(4)),
+                Double.parseDouble(line.get(5))))
+      } else if (specialResidue != null) {
+        logger.info(format("  %-10s %-10s %-15.5f %-25.5f %-25.5f",
+                line.get(0),
+                line.get(1),
+                Double.parseDouble(line.get(2)),
+                Double.parseDouble(line.get(3)),
+                Double.parseDouble(line.get(4))))
+      } else {
+        logger.info(format("  %-10s %-10s %-15.5f",
+                line.get(0),
+                line.get(1),
+                Double.parseDouble(line.get(2))))
+      }
+      line.clear()
+
+      if(esvSystem.isTautomer(res))
+      {
+        line.add(res.toString())
+        line.add("1")
+        line.add(Double.toString(tautomerEnergyLists[i][0]))
+        for(int j = 1; j < numberOfStates; j++){
+          line.add(Double.toString(tautomerEnergyLists[i][j]))
+        }
+        if(specialResidue != null && esvSystem.isTautomer(specialResidue)) {
+          logger.info(format("  %-10s %-10s %-15.5f %-25.5f %-25.5f %-25.5f",
+                  line.get(0),
+                  line.get(1),
+                  Double.parseDouble(line.get(2)),
+                  Double.parseDouble(line.get(3)),
+                  Double.parseDouble(line.get(4)),
+                  Double.parseDouble(line.get(5))))
+        } else if (specialResidue != null) {
+          logger.info(format("  %-10s %-10s %-15.5f %-25.5f %-25.5f",
+                  line.get(0),
+                  line.get(1),
+                  Double.parseDouble(line.get(2)),
+                  Double.parseDouble(line.get(3)),
+                  Double.parseDouble(line.get(4))))
+        } else {
+          logger.info(format("  %-10s %-10s %-15.5f",
+                  line.get(0),
+                  line.get(1),
+                  Double.parseDouble(line.get(2))))
+        }
+        line.clear()
+      }
+      if (onlyResidueIndex != 0) {
+        break
+      }
+    }
+  }
+
+  private static ArrayList<Double> getZeroOneDeltas(int i, ExtendedSystem esv, ForceFieldEnergy forceFieldEnergy, double[] x) {
+      ArrayList<Double> deltaU = new ArrayList<Double>()
+      Residue res = esv.extendedResidueList.get(i)
+      double titrationState = esv.getTitrationLambda(res)
+      double tautomerState = esv.getTautomerLambda(res)
+
+      if (esv.getTautomerizingResidueList().contains(res)) {
+        esv.setTautomerLambda(res, 1, false)
+
+        esv.setTitrationLambda(res, 0, false)
+        double zeroEnergy = forceFieldEnergy.energy(x, false)
+
+        esv.setTitrationLambda(res, 1, false)
+        double oneEnergy = forceFieldEnergy.energy(x, false)
+
+        esv.setTitrationLambda(res, titrationState, false)
+
+        deltaU.add(oneEnergy - zeroEnergy)
+        esv.setTautomerLambda(res, 0, false)
+      }
+
+      esv.setTitrationLambda(res, 0, false)
+      double zeroEnergy = forceFieldEnergy.energy(x, false)
+
+      esv.setTitrationLambda(res, 1, false)
+      double oneEnergy = forceFieldEnergy.energy(x, false)
+
+      esv.setTitrationLambda(res, titrationState, false)
+
+      deltaU.add(oneEnergy - zeroEnergy)
+      if (esv.getTautomerizingResidueList().contains(res)) {
+        esv.setTautomerLambda(res, tautomerState, false)
+      }
+
+      return deltaU
+    }
 
   private static double average(ArrayList<Double> list) {
     double sum = 0.0
@@ -271,7 +529,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
     return sum / list.size()
   }
 
-    private static ArrayList<Double> mult(double a, ArrayList<Double> u) {
+  private static ArrayList<Double> mult(double a, ArrayList<Double> u) {
         ArrayList<Double> result = new ArrayList<Double>()
         for (Double d : u) {
             result.add(a * d)
