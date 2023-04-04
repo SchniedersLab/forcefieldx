@@ -249,7 +249,6 @@ public class ForceFieldFilter {
   private void parse(CompositeConfiguration properties) {
     try {
       int numConfigs = properties.getNumberOfConfigurations();
-
       /*
        Loop over the configurations starting with the lowest precedence.
        This way higher precedence entries will overwrite lower
@@ -261,6 +260,10 @@ public class ForceFieldFilter {
           if (propertiesConfiguration.getHeader() != null) {
             logger.info(" Parsing: " + propertiesConfiguration.getHeader());
           }
+        }else{
+          if(logger.isLoggable(Level.FINER)) {
+            logger.finer(" Configuration was not an instance of PropertiesConfiguration.");
+          }
         }
 
         Iterator<String> i = config.getKeys();
@@ -269,6 +272,9 @@ public class ForceFieldFilter {
 
           // If the key is not recognized as a force field keyword, continue to the next key.
           if (!ForceField.isForceFieldType(key)) {
+            if(logger.isLoggable(Level.FINER)){
+              logger.finer(" Key value (" + key + ") is not a valid force field type.");
+            }
             continue;
           }
 

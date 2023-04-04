@@ -174,7 +174,14 @@ public final class PDBFilter extends SystemFilter {
   private int modelsRead = 1;
   /** Tracks output MODEL numbers. Unused if below zero. */
   private int modelsWritten = -1;
-
+  /** Replicates vector dimensions if saving as expanded. */
+  private int[] lmn = new int[]{1,1,1};
+  /** Replicates vector along a-axis. */
+  private int l = 0;
+  /** Replicates vector along b-axis. */
+  private int m = 0;
+  /** Replicates vector along c-axis. */
+  private int n = 0;
   private final File readFile;
   private List<String> remarkLines = Collections.emptyList();
   private double lastReadLambda = Double.NaN;
@@ -1603,6 +1610,14 @@ public final class PDBFilter extends SystemFilter {
     this.modelsWritten = modelsWritten;
   }
 
+  public void setLMN(int[] lmn) {
+    if(lmn[0] >= 1 && lmn[1] >= 1 && lmn[2] >= 1){
+      this.lmn = lmn;
+    }else{
+      // Provided dimensions are not handled. Revert to P1.
+      this.lmn = new int[]{1,1,1};
+    }
+  }
   /**
    * setSymOp.
    *
@@ -1646,17 +1661,30 @@ public final class PDBFilter extends SystemFilter {
         logger.info(format(" Save failed for %s", activeMolecularAssembly));
         return false;
       } else {
-        for (int i = 1; i < nSymOps; i++) {
-          nSymOp = i;
-          for (Polymer polymer : polymers) {
-            Character chainID = Polymer.CHAIN_IDS.charAt(chainCount++);
-            polymer.setChainID(chainID);
-            polymer.setSegID(chainID.toString());
-          }
-          writeEnd = i == nSymOps - 1;
-          if (!writeFile(file, true, false, writeEnd)) {
-            logger.info(format(" Save failed for %s", activeMolecularAssembly));
-            return false;
+        for(int l = 0; l < lmn[0]; l++) {
+          for(int m = 0; m < lmn[1]; m++) {
+            for(int n = 0; n < lmn[2]; n++) {
+              for (int i = 0; i < nSymOps; i++) {
+                this.l = l;
+                this.m = m;
+                this.n = n;
+                if(l == 0 && m == 0 && n == 0 && i == 0){
+                  continue;
+                }else{
+                  nSymOp = i;
+                }
+                for (Polymer polymer : polymers) {
+                  Character chainID = Polymer.CHAIN_IDS.charAt(chainCount++);
+                  polymer.setChainID(chainID);
+                  polymer.setSegID(chainID.toString());
+                }
+                writeEnd = i == nSymOps - 1;
+                if (!writeFile(file, true, false, writeEnd)) {
+                  logger.info(format(" Save failed for %s", activeMolecularAssembly));
+                  return false;
+                }
+              }
+            }
           }
         }
       }
@@ -1809,6 +1837,11 @@ public final class PDBFilter extends SystemFilter {
         Crystal crystal = activeMolecularAssembly.getCrystal();
         if (crystal != null && !crystal.aperiodic()) {
           Crystal c = crystal.getUnitCell();
+          if(lmn[0] > 1 || lmn[1] > 1 || lmn[2] > 1){
+            c.a *= lmn[0];
+            c.b *= lmn[1];
+            c.c *= lmn[2];
+          }
           bw.write(c.toCRYST1());
         }
       } else if (nSymOp == 0) {
@@ -1816,7 +1849,7 @@ public final class PDBFilter extends SystemFilter {
         Crystal crystal = activeMolecularAssembly.getCrystal();
         if (crystal != null && !crystal.aperiodic()) {
           Crystal c = crystal.getUnitCell();
-          Crystal p1 = new Crystal(c.a, c.b, c.c, c.alpha, c.beta, c.gamma, "P1");
+          Crystal p1 = new Crystal(c.a * lmn[0], c.b * lmn[1], c.c * lmn[2], c.alpha, c.beta, c.gamma, "P1");
           bw.write(p1.toCRYST1());
         }
       }
@@ -2329,9 +2362,10 @@ public final class PDBFilter extends SystemFilter {
      * sb would continue to be > 80 characters long, resulting in broken PDB files
      *
      * #3: It may be wiser to have XYZ coordinates result in shutdown, not
-     * truncation of coordinates. #4: Excessive B-factors aren't much of an
-     * issue; if the B-factor is past 999.99, that's the difference between
-     * "density extends to Venus" and "density extends to Pluto".
+     * truncation of coordinates.
+     *
+     * #4: Excessive B-factors aren't much of an issue; if the B-factor is past 999.99,
+     * that's the difference between "density extends to Venus" and "density extends to Pluto".
      */
     StringBuilder decimals = new StringBuilder();
     for (int i = 0; i < 3; i++) {
