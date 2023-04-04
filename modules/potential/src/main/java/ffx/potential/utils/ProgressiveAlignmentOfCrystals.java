@@ -63,7 +63,13 @@ import static java.util.Arrays.copyOf;
 import static java.util.Arrays.fill;
 import static java.util.Arrays.sort;
 import static org.apache.commons.io.FilenameUtils.getName;
-import static org.apache.commons.math3.util.FastMath.*;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+import static org.apache.commons.math3.util.FastMath.max;
+import static org.apache.commons.math3.util.FastMath.ceil;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.cbrt;
+import static org.apache.commons.math3.util.FastMath.PI;
 
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
@@ -646,7 +652,7 @@ public class ProgressiveAlignmentOfCrystals {
       // Obtain coordinates contained in file (assumes MoveIntoUnitCell was performed before PAC).
       if (z1 > 1 || z2 > 1) {
         stringBuilder.append(
-            "\n Utilizing Sym Ops with Z'>1. Attempting to map all unique structures.\n");
+            "\n Utilizing Sym Ops with Z''>1. Attempting to map all unique structures.\n");
       }
     }
 
@@ -697,7 +703,7 @@ public class ProgressiveAlignmentOfCrystals {
 
         if (logger.isLoggable(Level.FINEST)) {
           stringBuilder.append(format(
-              "\n Comp %3d: Base %2d IND %3d (Z'=%2d) \t Target %2d IND %3d (Z'=%2d) Diff: %8.4f\n",
+              "\n Comp %3d: Base %2d IND %3d (Z''=%2d) \t Target %2d IND %3d (Z''=%2d) Diff: %8.4f\n",
               j + i * targetLength, bIndex, baseInd, currZ1, tIndex, targetInd, currZ2, value));
           if (useSym) {
             stringBuilder.append(" Base Temp Translation: ").append(Arrays.toString(tempTranB))
@@ -794,7 +800,7 @@ public class ProgressiveAlignmentOfCrystals {
           }
           if (logger.isLoggable(Level.FINER)) {
             stringBuilder.append(format(
-                " \n Saved %3d: Base %2d IND %3d (Z'=%2d) \t Target %2d IND %3d (Z'=%2d) Diff: %8.4f\n",
+                " \n Saved %3d: Base %2d IND %3d (Z''=%2d) \t Target %2d IND %3d (Z''=%2d) Diff: %8.4f\n",
                 j + i * targetLength, bIndex, baseInd, currZ1, tIndex, targetInd, currZ2, value));
             if (logger.isLoggable(Level.FINEST)) {
               stringBuilder.append(
@@ -827,7 +833,7 @@ public class ProgressiveAlignmentOfCrystals {
     int targetBestZ = targetDistMap.get(targetAUDist[minTIndex].index()) % z2;
     if (logger.isLoggable(Level.FINER)) {
       stringBuilder.append(
-          format("\n Base min index: %d (Z'=%d) Target min Index %d (Z'=%d)", minBIndex, baseBestZ,
+          format("\n Base min index: %d (Z''=%d) Target min Index %d (Z''=%d)", minBIndex, baseBestZ,
               minTIndex, targetBestZ));
     }
     // Identify which AUs are most similar between crystals.
@@ -873,7 +879,7 @@ public class ProgressiveAlignmentOfCrystals {
           for (int j = 0; j < z2; j++) {
             separation.append("\n Atom Separation (A)  Description");
             if (multisym) {
-              separation.append(format(" (z1=%2d z2=%2d)\n  Base: Target:  Distance:\n", i, j));
+              separation.append(format(" (Z1'' =%2d Z2'' =%2d)\n  Base: Target:  Distance:\n", i, j));
             } else {
               separation.append(" \n");
             }
@@ -1632,7 +1638,7 @@ public class ProgressiveAlignmentOfCrystals {
       double[] reducedBaseCoords = reduceSystem(atoms1, comparisonAtoms);
       double baseDensity = baseCrystal.getUnitCell().getDensity(baseAssembly.getMass());
       if (baseCrystal == null || baseCrystal.aperiodic()) {
-        logger.warning(" " + baseAssembly.getName() + " does not have a crystal.\n");
+        logger.warning(" " + baseAssembly.getName() + " does not have a crystal. Consider using Superpose command.\n");
         continue;
       }
 
@@ -1645,7 +1651,7 @@ public class ProgressiveAlignmentOfCrystals {
             targetCrystal.volume));
         logger.finer(format(" Unit Cell Symm Ops: (Base) %d (Target) %d", baseCrystal.getNumSymOps(),
             targetCrystal.getNumSymOps()));
-        logger.finer(format(" Z': (Base) %d (Target) %d", z1, z2));
+        logger.finer(format(" Z'': (Base) %d (Target) %d", z1, z2));
       }
 
       // When the system was read in, a replicates crystal may have been created to satisfy the cutoff.
@@ -1695,9 +1701,9 @@ public class ProgressiveAlignmentOfCrystals {
           }
           if (targetCrystal == null || targetCrystal.aperiodic()) {
             if (!lowMemory) {
-              logger.warning(" " + nameCache[assemblyNum] + " does not have a crystal.\n");
+              logger.warning(" " + nameCache[assemblyNum] + " does not have a crystal. Consider using Superpose command.\n");
             } else {
-              logger.warning(" " + targetAssembly.getName() + " does not have a crystal.\n");
+              logger.warning(" " + targetAssembly.getName() + " does not have a crystal. Consider using Superpose command.\n");
             }
             continue;
           }
@@ -1765,10 +1771,10 @@ public class ProgressiveAlignmentOfCrystals {
               if (z1 != z_1 || z2 != z_2) {
                 stringBuilder.append(format("""
 
-                     Different Z' value detected within file:\s
-                     WARNING: Z' assumed to be constant for all structures in input.
+                     Different Z'' value detected within file:\s
+                     WARNING: Z'' assumed to be constant for all structures in input.
                      \
-                    """ + "       z1: was %2d (now %2d) z2: was %2d (now %2d)\n", z1, z_1, z2, z_2));
+                    """ + "       Z1'': was %2d (now %2d) Z2'' : was %2d (now %2d)\n", z1, z_1, z2, z_2));
               }
             }
 

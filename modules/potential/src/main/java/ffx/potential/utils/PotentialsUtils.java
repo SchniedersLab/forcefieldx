@@ -451,6 +451,10 @@ public class PotentialsUtils implements PotentialsFunctions {
   /** {@inheritDoc} */
   @Override
   public void saveAsPDBinP1(MolecularAssembly assembly, File file) {
+    saveAsPDBinP1(assembly, file, null);
+  }
+
+  public void saveAsPDBinP1(MolecularAssembly assembly, File file, int[] lmn){
     if (assembly == null) {
       logger.info(" Assembly to save was null.");
     } else if (file == null) {
@@ -459,6 +463,7 @@ public class PotentialsUtils implements PotentialsFunctions {
       ForceField forceField = assembly.getForceField();
       CompositeConfiguration properties = forceField.getProperties();
       PDBFilter pdbFilter = new PDBFilter(file, assembly, forceField, properties);
+      pdbFilter.setLMN(lmn);
       lastFilter = pdbFilter;
       pdbFilter.writeFileAsP1(file);
     }

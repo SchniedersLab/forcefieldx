@@ -43,7 +43,6 @@ import static java.util.Arrays.copyOf;
 import static java.util.Objects.hash;
 
 import ffx.numerics.math.Double3;
-import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.RendererCache.ColorModel;
 import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.parameters.AtomType;
@@ -2098,6 +2097,84 @@ public class Atom extends MSNode implements Comparable<Atom> {
   }
 
   /**
+   * Determine if atom is in a ring with second atom
+   * WARNING: Does not work for 8+ membered rings...
+   *
+   * @param a2 a {@link ffx.potential.bonded.Atom} object.
+   * @return a boolean.
+   */
+  public boolean isRing(Atom a2) {
+    boolean two = this.isBonded(a2);
+    boolean three = this.is_1_3(a2);
+    if(two && three){
+      return true;
+    }
+    boolean four = this.is_1_4(a2);
+    if(two && four){
+      return true;
+    }
+    if(three && four){
+      return true;
+    }
+    boolean five = this.is_1_5(a2);
+    if(two && five){
+      return true;
+    }
+    if(three && five){
+      return true;
+    }
+    if(four && five){
+      return true;
+    }
+    boolean six = this.is_1_6(a2);
+    if(two && six){
+      return true;
+    }
+    if(three && six){
+      return true;
+    }
+    if(four && six){
+      return true;
+    }
+    if(five && six){
+      return true;
+    }
+    boolean seven = this.is_1_7(a2);
+    if(two && seven){
+      return true;
+    }
+    if(three && seven){
+      return true;
+    }
+    if(four && seven){
+      return true;
+    }
+    if(five && seven){
+      return true;
+    }
+    if(six && seven){
+      return true;
+    }
+    boolean eight = this.is_1_8(a2);
+    if(two && eight){
+      return true;
+    }
+    if(three && eight){
+      return true;
+    }
+    if(four && eight){
+      return true;
+    }
+    if(five && eight){
+      return true;
+    }
+    if(six && eight){
+      return true;
+    }
+    return seven && eight;
+  }
+
+  /**
    * isStale
    *
    * @return a boolean.
@@ -2147,6 +2224,231 @@ public class Atom extends MSNode implements Comparable<Atom> {
       if (a.get1_3(atom) == this) {
         return true;
       }
+    }
+    return false;
+  }
+
+  /**
+   * Are these atoms 1-4 bonded?
+   *
+   * @param atom a {@link ffx.potential.bonded.Atom} object.
+   * @return a boolean.
+   */
+  public boolean is_1_4(Atom atom) {
+    List<Atom> pathAtoms = new ArrayList<>();
+    for (Angle angle : angles) {
+      Atom[] angleAtoms = angle.getAtomArray();
+      if(angleAtoms[1] == this){
+        continue;
+      }
+      Atom a1_3 = angle.get1_3(this);
+      if(a1_3 == null){
+        continue;
+      }
+      pathAtoms.addAll(Arrays.asList(angleAtoms));
+      List<Bond> bonds = a1_3.getBonds();
+      for(Bond bond : bonds){
+        Atom a1_4 = bond.get1_2(a1_3);
+        if(a1_4 == null || pathAtoms.contains(a1_4)){
+          continue;
+        }
+        if(a1_4 == atom) {
+          return true;
+        }
+      }
+      pathAtoms.removeAll(Arrays.asList(angleAtoms));
+    }
+    return false;
+  }
+
+  /**
+   * Are these atoms 1-5 bonded?
+   *
+   * @param atom a {@link ffx.potential.bonded.Atom} object.
+   * @return a boolean.
+   */
+  public boolean is_1_5(Atom atom) {
+    List<Atom> pathAtoms = new ArrayList<>();
+    for (Angle angle : angles) {
+      Atom[] angleAtoms = angle.getAtomArray();
+      if(angleAtoms[1] == this){
+        continue;
+      }
+      Atom a1_3 = angle.get1_3(this);
+      if(a1_3 == null){
+        continue;
+      }
+      pathAtoms.addAll(Arrays.asList(angleAtoms));
+      List<Angle> angles2 = a1_3.getAngles();
+      for(Angle angle2 : angles2){
+        Atom[] angleAtoms2 = angle2.getAtomArray();
+        Atom a1_5 = angle2.get1_3(a1_3);
+        if(a1_5 == null || pathAtoms.contains(a1_5) || pathAtoms.contains(angleAtoms2[1])){
+          continue;
+        }
+        if(a1_5 == atom) {
+          return true;
+        }
+      }
+      pathAtoms.removeAll(Arrays.asList(angleAtoms));
+    }
+    return false;
+  }
+
+  /**
+   * Are these atoms 1-6 bonded?
+   *
+   * @param atom a {@link ffx.potential.bonded.Atom} object.
+   * @return a boolean.
+   */
+  public boolean is_1_6(Atom atom) {
+    List<Atom> pathAtoms = new ArrayList<>();
+    for (Angle angle : angles) {
+      Atom[] angleAtoms = angle.getAtomArray();
+      if(angleAtoms[1] == this){
+        continue;
+      }
+      Atom a1_3 = angle.get1_3(this);
+      if(a1_3 == null){
+        continue;
+      }
+      pathAtoms.addAll(Arrays.asList(angleAtoms));
+      List<Angle> angles2 = a1_3.getAngles();
+      for(Angle angle2 : angles2){
+        Atom[] angleAtoms2 = angle2.getAtomArray();
+        Atom a1_5 = angle2.get1_3(a1_3);
+        if(a1_5 == null || pathAtoms.contains(a1_5) || pathAtoms.contains(angleAtoms2[1])){
+          continue;
+        }
+        pathAtoms.add(angleAtoms2[1]);
+        pathAtoms.add(a1_5);
+        List<Bond> bonds = a1_5.getBonds();
+        for(Bond bond : bonds){
+          Atom a1_6 = bond.get1_2(a1_5);
+          if(a1_6 == null || pathAtoms.contains(a1_6)){
+            continue;
+          }
+          if(a1_6 == atom) {
+            return true;
+          }
+        }
+        pathAtoms.remove(angleAtoms2[1]);
+        pathAtoms.remove(a1_5);
+      }
+      pathAtoms.removeAll(Arrays.asList(angleAtoms));
+    }
+    return false;
+  }
+
+  /**
+   * Are these atoms 1-7 bonded?
+   *
+   * @param atom a {@link ffx.potential.bonded.Atom} object.
+   * @return a boolean.
+   */
+  public boolean is_1_7(Atom atom) {
+    List<Atom> pathAtoms = new ArrayList<>();
+    for (Angle angle : angles) {
+      Atom[] angleAtoms = angle.getAtomArray();
+      if(angleAtoms[1] == this){
+        continue;
+      }
+      Atom a1_3 = angle.get1_3(this);
+      if(a1_3 == null){
+        continue;
+      }
+      pathAtoms.addAll(Arrays.asList(angleAtoms));
+      List<Angle> angles2 = a1_3.getAngles();
+      for(Angle angle2 : angles2){
+        Atom[] angleAtoms2 = angle2.getAtomArray();
+        Atom a1_5 = angle2.get1_3(a1_3);
+        if(a1_5 == null || pathAtoms.contains(a1_5) || pathAtoms.contains(angleAtoms2[1])){
+          continue;
+        }
+        pathAtoms.add(a1_5);
+        pathAtoms.add(angleAtoms2[1]);
+        List<Angle> angles3 = a1_5.getAngles();
+        for(Angle angle3 : angles3){
+          Atom[] angleAtoms3 = angle3.getAtomArray();
+          Atom a1_7 = angle3.get1_3(a1_5);
+          if(a1_7 == null || pathAtoms.contains(a1_7) || pathAtoms.contains(angleAtoms3[1])){
+            continue;
+          }
+          if(a1_7 == atom) {
+            return true;
+          }
+        }
+        pathAtoms.remove(angleAtoms2[1]);
+        pathAtoms.remove(a1_5);
+      }
+      pathAtoms.removeAll(Arrays.asList(angleAtoms));
+    }
+    return false;
+  }
+
+  // EXPERIMENTAL METHOD... triggers for O-C in benzenol...
+  /**
+   * Are these atoms 1-8 bonded?
+   *
+   * @param atom a {@link ffx.potential.bonded.Atom} object.
+   * @return a boolean.
+   */
+  public boolean is_1_8(Atom atom) {
+    // Keep list of atoms along path to ensure atoms don't appear twice.
+    List<Atom> pathAtoms = new ArrayList<>();
+    for (Angle angle : angles) {
+      Atom[] angleAtoms = angle.getAtomArray();
+      // Trying to navigate 2 atoms at a time. Therefore, don't want atom in the center of angle.
+      if(angleAtoms[1] == this){
+        continue;
+      }
+      Atom a1_3 = angle.get1_3(this);
+      // If no 1-3 atom try next angle.
+      if(a1_3 == null){
+        continue;
+      }
+      // Moving forward with this angle, therefore, add its atoms to current path.
+      pathAtoms.addAll(Arrays.asList(angleAtoms));
+      // Navigate another 2 atoms...
+      List<Angle> angles2 = a1_3.getAngles();
+      for(Angle angle2 : angles2){
+        Atom[] angleAtoms2 = angle2.getAtomArray();
+        Atom a1_5 = angle2.get1_3(a1_3);
+        // Need to have a third atom, need to not back track over the path.
+        if(a1_5 == null || pathAtoms.contains(a1_5) || pathAtoms.contains(angleAtoms2[1])){
+          continue;
+        }
+        // Moving forward with this angle, therefore, add its atoms to current path.
+        pathAtoms.add(a1_5);
+        pathAtoms.add(angleAtoms2[1]);
+        List<Angle> angles3 = a1_5.getAngles();
+        for(Angle angle3 : angles3){
+          Atom[] angleAtoms3 = angle3.getAtomArray();
+          Atom a1_7 = angle3.get1_3(a1_5);
+          // Don't want to back track.
+          if(a1_7 == null || pathAtoms.contains(a1_7) || pathAtoms.contains(angleAtoms3[1])){
+            continue;
+          }
+          // Moving forward with this angle, therefore, add its atoms to current path.
+          pathAtoms.add(a1_7);
+          pathAtoms.add(angleAtoms3[1]);
+          List<Bond> bonds = a1_7.getBonds();
+          for(Bond bond : bonds){
+            Atom a1_8 = bond.get1_2(a1_7);
+            if(a1_8 == null || pathAtoms.contains(a1_8)){
+              continue;
+            }
+            if(a1_8 == atom) {
+              return true;
+            }
+          }
+          pathAtoms.remove(a1_7);
+          pathAtoms.remove(angleAtoms3[1]);
+        }
+        pathAtoms.remove(a1_5);
+        pathAtoms.remove(angleAtoms2[1]);
+      }
+      pathAtoms.removeAll(Arrays.asList(angleAtoms));
     }
     return false;
   }

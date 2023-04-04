@@ -40,6 +40,7 @@ package ffx.potential.groovy
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.SaveOptions
 import ffx.potential.parsers.SystemFilter
+import ffx.potential.utils.PotentialsUtils
 import picocli.CommandLine.Option
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -154,7 +155,13 @@ class SaveAsP1 extends PotentialScript {
     } else {
       File saveLocation = SystemFilter.version(new File(dirString + name + ".pdb"))
       logger.info(" Saving symmetry mates file to: " + saveLocation)
-      potentialFunctions.saveAsPDBinP1(activeAssembly, saveLocation)
+      if(noReplicate) {
+        potentialFunctions.saveAsPDBinP1(activeAssembly, saveLocation)
+      } else {
+        if(potentialFunctions instanceof PotentialsUtils){
+          potentialFunctions.saveAsPDBinP1(activeAssembly, saveLocation, replicatesVector) //Needs LMN support...
+        }
+      }
     }
     return this
   }
