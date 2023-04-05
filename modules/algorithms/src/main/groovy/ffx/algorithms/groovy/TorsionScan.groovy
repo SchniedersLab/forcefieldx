@@ -70,7 +70,7 @@ import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
 /**
- * Creates replicate molecules that vary due to torsions.
+ * The TorsionScan command enumerates conformations of a molecule using torsional scans around rotatable bonds.
  *
  * @author Aaron J. Nessler
  * @author Michael J. Schnieders
@@ -79,7 +79,7 @@ import static org.apache.commons.math3.util.FastMath.toRadians;
  * <br>
  * ffxc TorsionScan &lt;filename&gt;
  */
-@Command(description = " Determine conformations of a molecule related by bond rotations.",
+@Command(description = " The TorsionScan command enumerates conformations of a molecule using torsional scans around rotatable bonds.",
         name = "TorsionScan")
 class TorsionScan extends AlgorithmsScript {
 
