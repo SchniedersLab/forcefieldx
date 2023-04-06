@@ -378,6 +378,40 @@ public class ExtendedSystem implements Potential {
         HIStitrBiasMag = properties.getDouble("HIS.titration.bias.magnitude", DISCR_BIAS);
         HIStautBiasMag = properties.getDouble("HIS.tautomer.bias.magnitude", DISCR_BIAS);
 
+        // Log all of the titration bias magnitudes for each titratable residue.
+        logger.info("\n Titration bias magnitudes:");
+        logger.info(" Lysine titration bias magnitude: " + LYStitrBiasMag);
+        logger.info(" Cysteine titration bias magnitude: " + CYStitrBiasMag);
+        logger.info(" Histidine titration bias magnitude: " + HIStitrBiasMag);
+        logger.info(" Glutamic acid titration bias magnitude: " + GLHtitrBiasMag);
+        logger.info(" Aspartic acid titration bias magnitude: " + ASHtitrBiasMag);
+
+        // Log all of  the tautomer bias magnitudes for each tautomerizable residue.
+        logger.info("\n Tautomer bias magnitudes:");
+        logger.info(" Aspartic acid tautomer bias magnitude: " + ASHtautBiasMag);
+        logger.info(" Glutamic acid tautomer bias magnitude: " + GLHtautBiasMag);
+        logger.info(" Histidine tautomer bias magnitude: " + HIStautBiasMag);
+
+        // Log all of  th cubic, quadratic, and linear terms for all of the amino acid terms
+        logger.info("\n Titration bias terms:");
+        logger.info(" Lysine cubic term: " + LYScubic);
+        logger.info(" Lysine quadratic term: " + LYSquadratic);
+        logger.info(" Lysine linear term: " + LYSlinear);
+        logger.info(" Cysteine cubic term: " + CYScubic);
+        logger.info(" Cysteine quadratic term: " + CYSquadratic);
+        logger.info(" Cysteine linear term: " + CYSlinear);
+        logger.info(" HID quadratic term: " + HIDquadratic);
+        logger.info(" HID linear term: " + HIDlinear);
+        logger.info(" HIE quadratic term: " + HIEquadratic);
+        logger.info(" HIE linear term: " + HIElinear);
+        logger.info(" HID-HIE quadratic term: " + HIDtoHIEquadratic);
+        logger.info(" HID-HIE linear term: " + HIDtoHIElinear);
+        logger.info(" Glutamic acid cubic term: " + GLHcubic);
+        logger.info(" Glutamic acid quadratic term: " + GLHquadratic);
+        logger.info(" Glutamic acid linear term: " + GLHlinear);
+        logger.info(" Aspartic acid cubic term: " + ASHcubic);
+        logger.info(" Aspartic acid quadratic term: " + ASHquadratic);
+
         titratingResidueList = new ArrayList<>();
         tautomerizingResidueList = new ArrayList<>();
         extendedResidueList = new ArrayList<>();

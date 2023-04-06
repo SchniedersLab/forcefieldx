@@ -313,7 +313,7 @@ class PhDynamics extends AlgorithmsScript {
         PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHLadder, dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
 
         pHReplicaExchange.
-                sample(cycles, titrSteps, coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write, initDynamics)
+                sample(cycles, titrSteps, coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.dt * titrSteps - 1, initDynamics)
 
         if (sort) {
           sortMyArc(structureFile, world.size(), pH, world.rank())

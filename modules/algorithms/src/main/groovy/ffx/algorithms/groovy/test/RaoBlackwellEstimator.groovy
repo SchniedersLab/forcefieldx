@@ -355,7 +355,6 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
     for(int i = onlyResidueIndex; i < numESVs; i++) {
       for(int j = 0; j < numberOfStates; j++) {
         Residue res = esvSystem.extendedResidueList.get(i)
-        // Calculate the free energy differences.
         ArrayList<Double> deltaU = oneZeroDeltaLists[i][j]
         double temperature = 298.0
         double boltzmann = 0.001985875
@@ -364,6 +363,8 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
         ArrayList<Double> deltaExp = exp(mult(-beta, deltaU))
         ArrayList<Double> numerator = div(mult(beta, mult(deltaU, deltaExp)), subtract(1.0, deltaExp))
         ArrayList<Double> denominator = div(mult(beta, deltaU), subtract(1.0, deltaExp))
+        // Calculate averages, std devs., and uncertainties of the numerator and denominator distributions using bootstrap.
+
         double deltaG = -(1.0 / beta) * Math.log(average(numerator) / average(denominator))
         energyLists[i][j] = deltaG
 
