@@ -373,16 +373,15 @@ public class PhReplicaExchange implements Terminatable {
    * @param timeStep The time step.
    * @param printInterval The print interval.
    */
-  public void sample(int cycles, long nSteps, double timeStep, double printInterval,
-      double trajInterval, int initTitrDynamics) {
-    sample(cycles, nSteps, 0, timeStep, printInterval, trajInterval, initTitrDynamics);
+  public void sample(int cycles, long nSteps, double timeStep, double printInterval, int initTitrDynamics) {
+    sample(cycles, nSteps, 0, timeStep, printInterval, initTitrDynamics);
   }
 
-  public void sample(int cycles, long titrSteps, long confSteps, double timeStep,
-      double printInterval, double trajInterval, int initDynamics) {
+  public void sample(int cycles, long titrSteps, long confSteps, double timeStep, double printInterval,
+                     int initDynamics) {
     done = false;
     terminate = false;
-    replica.setRestartFrequency(cycles * (titrSteps + confSteps) * replica.dt + 100); // Full control over restarts handled by this class
+    replica.setRestartFrequency(titrSteps * timeStep / 1000); // Full control over restarts handled by this class
     extendedSystem.reGuessLambdas();
 
     int startCycle = 0;
@@ -396,13 +395,13 @@ public class PhReplicaExchange implements Terminatable {
       logger.info(" ");
 
       if (openMM == null) {
-        replica.dynamic(initDynamics, timeStep, printInterval, trajInterval, temp, true, dyn);
+        replica.dynamic(initDynamics, timeStep, printInterval, titrSteps * timeStep / 1000, temp, true, dyn);
       } else {
         x = replica.getCoordinates();
         potential.energy(x);
         openMM.setCoordinates(x);
 
-        openMM.dynamic(initDynamics, timeStep, printInterval, trajInterval, temp, true, dyn);
+        openMM.dynamic(initDynamics, timeStep, printInterval, titrSteps * timeStep / 1000, temp, true, dyn);
 
         x = openMM.getCoordinates();
         replica.setCoordinates(x);
@@ -430,20 +429,16 @@ public class PhReplicaExchange implements Terminatable {
         break;
       }
 
+      copyToBackups();
       if (openMM != null) {
         if (confSteps < 3) {
           logger.severe(" Increase number of steps per cycle.");
         }
-        dynamicsOpenMM(titrSteps, confSteps, timeStep, printInterval, trajInterval);
-      } else {
-        dynamics(titrSteps, timeStep, printInterval, trajInterval);
+        dynamicsOpenMM(titrSteps, confSteps, timeStep, printInterval, titrSteps * timeStep / 1000);
       }
-      // Set backups in case job is killed at bad time
-      if (i == 0 || backupNeeded) {
-        replica.writeRestart();
+      else {
+        dynamics(titrSteps, timeStep, printInterval, titrSteps * timeStep / 1000);
       }
-      copyToBackups();
-      replica.writeRestart();
 
       if (i % 100 == 0) {
         extendedSystem.writeLambdaHistogram(true);
@@ -722,8 +717,10 @@ public class PhReplicaExchange implements Terminatable {
 
   private void copyToBackups() {
     try {
-      Files.move(esv.toPath(), esv.toPath().resolveSibling(esvBackup.getName()),
-          StandardCopyOption.REPLACE_EXISTING);
+      if (esv.exists()) {
+        Files.copy(esv.toPath(), esv.toPath().resolveSibling(esvBackup.getName()),
+                StandardCopyOption.REPLACE_EXISTING);
+      }
     } catch (IOException e) {
       String message = " Could not copy ESV histogram to backup - dynamics terminated.";
       logger.log(Level.WARNING, message);
@@ -731,8 +728,10 @@ public class PhReplicaExchange implements Terminatable {
     }
 
     try {
-      Files.move(dyn.toPath(), dyn.toPath().resolveSibling(dynBackup.getName()),
-          StandardCopyOption.REPLACE_EXISTING);
+      if(dyn.exists()) {
+        Files.copy(dyn.toPath(), dyn.toPath().resolveSibling(dynBackup.getName()),
+                StandardCopyOption.REPLACE_EXISTING);
+      }
     } catch (IOException e) {
       String message = " Could not copy dyn restart to backup - dynamics terminated.";
       logger.log(Level.WARNING, message);
