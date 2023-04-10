@@ -310,6 +310,7 @@ public class PhReplicaExchange implements Terminatable {
           // Check pH list for duplicates
           if (readPhScale.stream().anyMatch(d -> (Math.abs(d / pHOfRankI - 1) < 0.00001))) {
             logger.warning(" Duplicate pH value found in file: " + file.getAbsolutePath());
+            restartStep = 0;
             readPhScale.clear();
             return false;
           } else {
@@ -440,7 +441,7 @@ public class PhReplicaExchange implements Terminatable {
         dynamics(titrSteps, timeStep, printInterval, titrSteps * timeStep / 1000);
       }
 
-      if (i % 100 == 0) {
+      if (i % 50 == 0) {
         extendedSystem.writeLambdaHistogram(true);
       }
 
