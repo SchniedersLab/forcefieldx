@@ -413,6 +413,7 @@ public class PhReplicaExchange implements Terminatable {
       logger.info(extendedSystem.getLambdaList());
       extendedSystem.writeLambdaHistogram(true);
       extendedSystem.copyESVHistogramTo(parametersHis[rank]); // Copy the ESV hist to be empty
+      extendedSystem.writeRestart();
 
       logger.info(" ");
       logger.info(" ------------------End of Equilibration Dynamics------------------\n");
@@ -430,18 +431,17 @@ public class PhReplicaExchange implements Terminatable {
         break;
       }
 
-      copyToBackups();
+      if (i != 0 || i != startCycle) {
+        copyToBackups(); // Don't copy potentially corrupted files
+      }
       if (openMM != null) {
-        if (confSteps < 3) {
-          logger.severe(" Increase number of steps per cycle.");
-        }
         dynamicsOpenMM(titrSteps, confSteps, timeStep, printInterval, titrSteps * timeStep / 1000);
       }
       else {
         dynamics(titrSteps, timeStep, printInterval, titrSteps * timeStep / 1000);
       }
 
-      if (i % 50 == 0) {
+      if (i % 25 == 0) {
         extendedSystem.writeLambdaHistogram(true);
       }
 
