@@ -37,32 +37,20 @@
 //******************************************************************************
 package ffx.algorithms.groovy.test
 
-import edu.rit.mp.DoubleBuf
-import edu.rit.pj.Comm
 import ffx.algorithms.cli.AlgorithmsScript
-import ffx.algorithms.cli.DynamicsOptions
-import ffx.algorithms.dynamics.MolecularDynamics
-import ffx.algorithms.dynamics.MDEngine
-import ffx.algorithms.dynamics.MolecularDynamicsOpenMM
 import ffx.numerics.Potential
-import ffx.numerics.math.BootStrapStatistics
+import ffx.numerics.math.RunningStatistics
+import ffx.numerics.math.SummaryStatistics
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Residue
-import ffx.potential.cli.WriteoutOptions
 import ffx.potential.extended.ExtendedSystem
-import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XPHFilter
-import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
-import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import java.lang.reflect.Array
-import java.util.logging.Level
-import java.util.logging.LogRecord
-
 import static java.lang.String.format
+import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices
 
 /**
  * Use the Rao-Blackwell Estimator to estimate a free energy difference for a CpHMD system.
@@ -78,14 +66,6 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
           description = 'A file containing the the PDB from which to build the ExtendedSystem. There is currently no default.')
   private String arcFileName = null
 
-  @Option(names = ['--upState'], paramLabel = "1.0",
-          description = 'State to perturb up to.')
-  private double upState = 1.0
-
-  @Option(names = ['--downState'], paramLabel = "0.0",
-          description = 'State to perturb down to.')
-  private double downState = 0.0
-
   @Option(names = ['--numSnaps'], paramLabel = "-1",
           description = 'Number of snapshots to use from an archive file. -1 means use all snapshots.')
   private int numSnaps = -1
@@ -98,9 +78,10 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
           description = 'Start energy evaluations at a snap other than 2.')
   private int startSnap = -1
 
-  /**
-   * One or more filenames.
-   */
+  @Option(names = ['--bootstrapIter'], paramLabel = "-1",
+          description = 'Number of bootstrap iterations. If not specified, program will not perform bootstrap. Recommended 100000 iterations.')
+  private int bootstrapIter = -1
+
   @Parameters(arity = "1..*", paramLabel = "files",
           description = "PDB input file in the same directory as the ARC file.")
   private String filename
@@ -139,6 +120,14 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
     }
     else{
       logger.info(format("Using ARC file %s.", arcFile))
+    }
+
+    boolean bootstrap = false
+    if(bootstrapIter >= 50)
+    {
+      bootstrap = true
+    } else if (bootstrapIter != -1){
+      logger.severe("Too few bootstrap iterations specified. Must be at least 50.")
     }
 
     activeAssembly = getActiveAssembly(filename)
@@ -276,7 +265,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
         pH = Double.parseDouble(parts[i+1])
       }
     }
-    logger.info("Setting constant pH to " + pH + ".")
+    logger.info("\n Setting constant pH to " + pH + ".")
     esvSystem.setConstantPh(pH)
 
     // Get and log the number of snapshots to use.
@@ -290,7 +279,6 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
 
     // Read through the ARC file.
     while(xphFilter.readNext()) {
-
       // Read through snaps we aren't interested in
       if(startSnap != -1 && startSnap > 2 && evals == 0){
         for(int i = 0; i < startSnap - 2; i++){
@@ -298,7 +286,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
         }
       }
 
-      // Get coordinates with each new snap
+      // Get coordinates/energies with each new snap and calculate energy differences
       forceFieldEnergy.getCoordinates(x)
       for (int i = onlyResidueIndex; i < numESVs; i++) {
         double titrationState = 0
@@ -342,6 +330,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
           break
         }
       }
+
       evals++
       if (numSnaps != -1 && evals >= numSnaps) {
         break
@@ -351,123 +340,201 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
     // Calculate the Rao-Blackwell estimator for each residue.
     int tautomerCount = 0
     double[][] energyLists = new double[numESVs][numberOfStates]
+    double[][] energyStdLists = new double[numESVs][numberOfStates]
     double[][] tautomerEnergyLists = new double[numTautomerESVs][numberOfStates]
+    double[][] tautomerEnergyStdLists = new double[numTautomerESVs][numberOfStates]
     for(int i = onlyResidueIndex; i < numESVs; i++) {
+      Residue res = esvSystem.extendedResidueList.get(i)
+      logger.info("\n Performing Rao-Blackwell Estimator on " + res.getAminoAcid3() + ".")
+      if(bootstrap){
+        logger.info("  Performing bootstrap with " + bootstrapIter + " iterations.")
+      } else
+      {
+        logger.info("  Performing RBE without bootstrap. Ignore standard deviation values.")
+      }
       for(int j = 0; j < numberOfStates; j++) {
-        Residue res = esvSystem.extendedResidueList.get(i)
-        ArrayList<Double> deltaU = oneZeroDeltaLists[i][j]
-        double temperature = 298.0
-        double boltzmann = 0.001985875
-        double beta = 1.0 / (temperature * boltzmann)
-
-        ArrayList<Double> deltaExp = exp(mult(-beta, deltaU))
-        ArrayList<Double> numerator = div(mult(beta, mult(deltaU, deltaExp)), subtract(1.0, deltaExp))
-        ArrayList<Double> denominator = div(mult(beta, deltaU), subtract(1.0, deltaExp))
-        // Calculate averages, std devs., and uncertainties of the numerator and denominator distributions using bootstrap.
-
-        double deltaG = -(1.0 / beta) * Math.log(average(numerator) / average(denominator))
-        energyLists[i][j] = deltaG
+        double[] bootstrapMeanStd = RBE(oneZeroDeltaLists[i][j], bootstrap, bootstrapIter)
+        energyLists[i][j] = bootstrapMeanStd[0]
+        if(bootstrap) {
+          energyStdLists[i][j] = bootstrapMeanStd[1]
+        }
 
         if (esvSystem.getTautomerizingResidueList().contains(res)) {
-          ArrayList<Double> deltaUTautomer = tautomerOneZeroDeltaList[tautomerCount][j]
-          ArrayList<Double> deltaExpTautomer = exp(mult(-beta, deltaUTautomer))
-          ArrayList<Double> numeratorTautomer = div(mult(beta, mult(deltaUTautomer, deltaExpTautomer)), subtract(1.0, deltaExpTautomer))
-          ArrayList<Double> denominatorTautomer = div(mult(beta, deltaUTautomer), subtract(1.0, deltaExpTautomer))
-          double deltaGTautomer = -(1.0 / beta) * Math.log(average(numeratorTautomer) / average(denominatorTautomer))
-          tautomerEnergyLists[tautomerCount][j] = deltaGTautomer
-          if(j == numberOfStates-1) {
-            tautomerCount++
+          bootstrapMeanStd = RBE(tautomerOneZeroDeltaList[esvSystem.getTautomerizingResidueList().indexOf(res)][j],
+                  bootstrap, bootstrapIter)
+          tautomerEnergyLists[tautomerCount][j] = bootstrapMeanStd[0]
+          if(bootstrap) {
+            tautomerEnergyStdLists[tautomerCount][j] = bootstrapMeanStd[1]
           }
         }
       }
-
+      if(esvSystem.isTautomer(res)) {
+        tautomerCount++
+      }
+      if(specialResidue == res) {
+        break
+      }
+      // Perform calc on only residue of interest
       if(onlyResidueIndex != 0) {
         break
       }
     }
 
     // Print the results.
-    printResults(specialResidue, esvSystem, energyLists, tautomerEnergyLists, states, numberOfStates, numESVs, onlyResidueIndex)
-
-    // Get bootstrap results from the Rao-Blackwell estimator.
+    printResults(specialResidue, esvSystem, energyLists, energyStdLists, tautomerEnergyLists, tautomerEnergyStdLists,
+            states, numberOfStates, numESVs, onlyResidueIndex)
     return this
   }
 
-  private static printResults(Residue specialResidue, ExtendedSystem esvSystem, double[][] energyLists, double[][] tautomerEnergyLists, int[][] states, int numberOfStates, int numESVs, int onlyResidueIndex)
+
+
+  // Calculations
+  // Calculate the RBE
+  static double[] RBE(ArrayList<Double> deltaUList, boolean bootstrap, int bootstrapIter){
+    ArrayList<Double> deltaU = deltaUList
+    double temperature = 298.0
+    double boltzmann = 0.001985875
+    double beta = 1.0 / (temperature * boltzmann)
+
+    ArrayList<Double> deltaExp = exp(mult(-beta, deltaU))
+    ArrayList<Double> numerator = div(mult(beta, mult(deltaU, deltaExp)), subtract(1.0, deltaExp))
+    ArrayList<Double> denominator = div(mult(beta, deltaU), subtract(1.0, deltaExp))
+    // Calculate averages, std devs., and uncertainties of the numerator and denominator distributions using bootstrap.
+    double[] deltaGRBE = bootstrap ?
+            bootStrap(numerator, denominator, bootstrapIter) :
+            new double[] {-(1.0 / beta) * Math.log(average(numerator) / average(denominator))}
+    return deltaGRBE
+  }
+
+  // Iterate calculating the RBE
+  static double[] bootStrap(ArrayList<Double> numerator, ArrayList<Double> denominator, int iter) {
+    RunningStatistics estimates = new RunningStatistics()
+    for (int k = 0; k < iter; k++) {
+      Random rng = new Random()
+      int[] trial = getBootstrapIndices(numerator.size(), rng)
+      double estimate = estimateDg(numerator, denominator, trial)
+      estimates.addValue(estimate)
+    }
+    SummaryStatistics stats = new SummaryStatistics(estimates)
+    return new double[] {stats.mean, stats.getSd()}
+  }
+
+  // Calculate the RBE based on given indicies
+  static double estimateDg(ArrayList<Double> num, ArrayList<Double> denom, int[] index) {
+    double temperature = 298.0
+    double boltzmann = 0.001985875
+    double beta = 1.0 / (temperature * boltzmann)
+    ArrayList<Double> numerator = new ArrayList<>()
+    numerator.ensureCapacity(index.length)
+    ArrayList<Double> denominator = new ArrayList<>()
+    denominator.ensureCapacity(index.length)
+
+    for(int i = 0; i < index.length; i++) {
+      numerator.add(num.get(index[i]))
+      denominator.add(denom.get(index[i]))
+    }
+
+    return -(1.0 / beta) * Math.log(average(numerator) / average(denominator))
+  }
+
+  // Helper/Printing Methods
+  private static printResults(Residue specialResidue, ExtendedSystem esvSystem, double[][] energyLists, double[][] energyStdLists,
+                              double[][] tautomerEnergyLists, double[][]tautomerStdLists, int[][] states,
+                              int numberOfStates, int numESVs, int onlyResidueIndex)
   {
-    logger.info("\n")
-    logger.info(" Rao-Blackwell Estimator Results: ")
+    logger.info("\n Rao-Blackwell Estimator Results: ")
     ArrayList<String> line = new ArrayList<>()
     if(specialResidue != null){
       logger.info(" Special Residue: " + specialResidue.toString())
       if(esvSystem.isTautomer(specialResidue)){
-        logger.info(format("  %-10s %-10s %-15s %-25s %-25s %-25s", "Residue", "Tautomer", "DeltaG", "DeltaG-SpecialRes=(" + states[0][0] + "," + states[0][1] + ")", "DeltaG-SpecialRes=(" + states[1][0] + "," + states[1][1] + ")", "DeltaG-SpecialRes=(" + states[2][0] + "," + states[2][1] + ")"))
+        logger.info(format("  %-10s %-10s %-23s %-28s %-28s %-28s", "Residue", "Tautomer", "DeltaG", "DeltaG-SpecialRes=(" + states[0][0] + "," + states[0][1] + ")", "DeltaG-SpecialRes=(" + states[1][0] + "," + states[1][1] + ")", "DeltaG-SpecialRes=(" + states[2][0] + "," + states[2][1] + ")"))
       } else{
-        logger.info(format("  %-10s %-10s %-15s %-25s %-25s", "Residue", "Tautomer", "DeltaG","DeltaG-SpecialRes=(" + states[0][0] + "," + states[0][1] + ")", "DeltaG-SpecialRes=(" + states[1][0] + "," + states[1][1] + ")"))
+        logger.info(format("  %-10s %-10s %-23s %-28s %-28s", "Residue", "Tautomer", "DeltaG","DeltaG-SpecialRes=(" + states[0][0] + "," + states[0][1] + ")", "DeltaG-SpecialRes=(" + states[1][0] + "," + states[1][1] + ")"))
       }
     } else
     {
-      logger.info(format("  %-10s %-10s %-15s", "Residue", "Tautomer", "DeltaG"))
+      logger.info(format("  %-10s %-10s %-23s", "Residue", "Tautomer", "DeltaG"))
     }
+    int tautomerCount = 0
     for(int i = onlyResidueIndex; i < numESVs; i++){
       Residue res = esvSystem.extendedResidueList.get(i)
       line.add(res.toString())
       line.add("0")
       line.add(Double.toString(energyLists[i][0]))
+      line.add(Double.toString(energyStdLists[i][0]))
       for(int j = 1; j < numberOfStates; j++){
         line.add(Double.toString(energyLists[i][j]))
+        line.add(Double.toString(energyStdLists[i][j]))
       }
       if(specialResidue != null && esvSystem.isTautomer(specialResidue)) {
-        logger.info(format("  %-10s %-10s %-15.5f %-25.5f %-25.5f %-25.5f",
+        logger.info(format("  %-10s %-10s %-10.5f +/- %-5.3f    %-10.5f +/- %-5.3f         %-10.5f +/- %-5.3f         %-10.5f +/- %-5.3f",
                 line.get(0),
                 line.get(1),
                 Double.parseDouble(line.get(2)),
                 Double.parseDouble(line.get(3)),
                 Double.parseDouble(line.get(4)),
-                Double.parseDouble(line.get(5))))
+                Double.parseDouble(line.get(5)),
+                Double.parseDouble(line.get(6)),
+                Double.parseDouble(line.get(7)),
+                Double.parseDouble(line.get(8)),
+                Double.parseDouble(line.get(9))))
       } else if (specialResidue != null) {
-        logger.info(format("  %-10s %-10s %-15.5f %-25.5f %-25.5f",
+        logger.info(format("  %-10s %-10s %-10.5f +/- %-5.3f    %-10.5f +/- %-5.3f         %-10.5f +/- %-5.3f",
                 line.get(0),
                 line.get(1),
                 Double.parseDouble(line.get(2)),
                 Double.parseDouble(line.get(3)),
-                Double.parseDouble(line.get(4))))
+                Double.parseDouble(line.get(4)),
+                Double.parseDouble(line.get(5)),
+                Double.parseDouble(line.get(6)),
+                Double.parseDouble(line.get(7))))
       } else {
-        logger.info(format("  %-10s %-10s %-15.5f",
+        logger.info(format("  %-10s %-10s %-10.5f +/- %-5.3f",
                 line.get(0),
                 line.get(1),
-                Double.parseDouble(line.get(2))))
+                Double.parseDouble(line.get(2)),
+                Double.parseDouble(line.get(3))))
       }
       line.clear()
 
-      if(esvSystem.isTautomer(res))
-      {
+      if(esvSystem.isTautomer(res)) {
         line.add(res.toString())
         line.add("1")
-        line.add(Double.toString(tautomerEnergyLists[i][0]))
+        line.add(Double.toString(tautomerEnergyLists[tautomerCount][0]))
+        line.add(Double.toString(tautomerStdLists[tautomerCount][0]))
         for(int j = 1; j < numberOfStates; j++){
-          line.add(Double.toString(tautomerEnergyLists[i][j]))
+          line.add(Double.toString(tautomerEnergyLists[tautomerCount][j]))
+            line.add(Double.toString(tautomerStdLists[tautomerCount][j]))
         }
+        tautomerCount++
         if(specialResidue != null && esvSystem.isTautomer(specialResidue)) {
-          logger.info(format("  %-10s %-10s %-15.5f %-25.5f %-25.5f %-25.5f",
+          logger.info(format("  %-10s %-10s %-10.5f +/- %-5.3f    %-10.5f +/- %-5.3f         %-10.5f +/- %-5.3f         %-10.5f +/- %-5.3f",
                   line.get(0),
                   line.get(1),
                   Double.parseDouble(line.get(2)),
                   Double.parseDouble(line.get(3)),
                   Double.parseDouble(line.get(4)),
-                  Double.parseDouble(line.get(5))))
+                  Double.parseDouble(line.get(5)),
+                  Double.parseDouble(line.get(6)),
+                  Double.parseDouble(line.get(7)),
+                  Double.parseDouble(line.get(8)),
+                  Double.parseDouble(line.get(9))))
         } else if (specialResidue != null) {
-          logger.info(format("  %-10s %-10s %-15.5f %-25.5f %-25.5f",
+          logger.info(format("  %-10s %-10s %-10.5f +/- %-5.3f    %-10.5f +/- %-5.3f         %-10.5f +/- %-5.3f",
                   line.get(0),
                   line.get(1),
                   Double.parseDouble(line.get(2)),
                   Double.parseDouble(line.get(3)),
-                  Double.parseDouble(line.get(4))))
+                  Double.parseDouble(line.get(4)),
+                  Double.parseDouble(line.get(5)),
+                  Double.parseDouble(line.get(6)),
+                  Double.parseDouble(line.get(7))))
         } else {
-          logger.info(format("  %-10s %-10s %-15.5f",
+          logger.info(format("  %-10s %-10s %-10.5f +/- %-5.3f",
                   line.get(0),
                   line.get(1),
-                  Double.parseDouble(line.get(2))))
+                  Double.parseDouble(line.get(2)),
+                  Double.parseDouble(line.get(3))))
         }
         line.clear()
       }
@@ -477,7 +544,9 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
     }
   }
 
-  private static ArrayList<Double> getZeroOneDeltas(int i, ExtendedSystem esv, ForceFieldEnergy forceFieldEnergy, double[] x) {
+  private static ArrayList<Double> getZeroOneDeltas(int i, ExtendedSystem esv,
+                                                    ForceFieldEnergy forceFieldEnergy, double[] x)
+  {
       ArrayList<Double> deltaU = new ArrayList<Double>()
       Residue res = esv.extendedResidueList.get(i)
       double titrationState = esv.getTitrationLambda(res)
