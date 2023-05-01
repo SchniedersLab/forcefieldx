@@ -304,7 +304,7 @@ public class ExtendedSystem implements Potential {
      * @param mola a {@link MolecularAssembly} object.
      */
     public ExtendedSystem(MolecularAssembly mola, double pH, final File esvFile) {
-        extendedAtoms = mola.getActiveAtomArray();
+        extendedAtoms = mola.getAtomArray();
         extendedMolecules = mola.getMoleculeNumbers();
         setConstantPh(pH);
         ForceField forceField = mola.getForceField();
