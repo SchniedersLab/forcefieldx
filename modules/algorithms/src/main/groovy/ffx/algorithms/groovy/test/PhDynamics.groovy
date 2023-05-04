@@ -46,6 +46,7 @@ import ffx.algorithms.dynamics.MDEngine
 import ffx.algorithms.dynamics.MolecularDynamicsOpenMM
 import ffx.algorithms.dynamics.PhReplicaExchange
 import ffx.numerics.Potential
+import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.WriteoutOptions
 import ffx.potential.extended.ExtendedSystem
 import ffx.potential.parsers.SystemFilter
@@ -68,6 +69,8 @@ import static java.lang.String.format
  */
 @Command(description = " Run constant pH dynamics on a system.", name = "test.PhDynamics")
 class PhDynamics extends AlgorithmsScript {
+  @Mixin
+  AtomSelectionOptions atomSelectionOptions
 
   @Mixin
   DynamicsOptions dynamicsOptions
@@ -175,10 +178,12 @@ class PhDynamics extends AlgorithmsScript {
       logger.info(helpString())
       return this
     }
-
-    potential = activeAssembly.getPotentialEnergy()
     // Set the filename.
     String filename = activeAssembly.getFile().getAbsolutePath()
+    // Set active atoms.
+    atomSelectionOptions.setActiveAtoms(activeAssembly)
+
+    potential = activeAssembly.getPotentialEnergy()
 
     // Restart File
     File esv = new File(FilenameUtils.removeExtension(filename) + ".esv")

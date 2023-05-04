@@ -140,7 +140,7 @@ class PhEnergy extends PotentialScript {
     double pH = 7.4
 
     @Option(names = ['--aFi', '--arcFile'], paramLabel = "traj",
-            description = 'A file containing the the PDB from which to build the ExtendedSystem. There is currently no default.')
+            description = 'A file containing snapshots to evaluate on when using a PDB as a reference to build from. There is currently no default.')
     private String arcFileName = null
 
     /**

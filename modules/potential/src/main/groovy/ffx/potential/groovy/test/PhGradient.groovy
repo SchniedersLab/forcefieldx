@@ -417,9 +417,10 @@ class PhGradient extends PotentialScript {
       }
       if(nESVFailures > 0){
         logger.info(format(" %d ESVs failed the gradient test.\n", nESVFailures))
-      } else {
-        logger.info(" All ESVs passed the gradient test.\n")
       }
+    }
+    if(nESVFailures == 0){
+      logger.info(" All ESVs passed the gradient test.\n")
     }
 
     if(scan){

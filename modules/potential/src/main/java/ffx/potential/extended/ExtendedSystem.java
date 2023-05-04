@@ -130,14 +130,17 @@ public class ExtendedSystem implements Potential {
     private final double GLHtitrBiasMag;
     private final double HIDlinear;
     private final double HIDquadratic;
+    private final double HIDcubic;
     private final double HIDtoHIElinear;
     /**
      * Coefficients that define the tautomer component of the bivariate Histidine Fmod
      * quadratic * tautomerLambda^2 + linear * tautomerLambda
      */
     private final double HIDtoHIEquadratic;
+    private final double HIDtoHIEcubic;
     private final double HIElinear;
     private final double HIEquadratic;
+    private final double HIEcubic;
     /**
      * Descritizer Bias Magnitude. Default is 1 kcal/mol.
      */
@@ -301,7 +304,7 @@ public class ExtendedSystem implements Potential {
      * @param mola a {@link MolecularAssembly} object.
      */
     public ExtendedSystem(MolecularAssembly mola, double pH, final File esvFile) {
-        extendedAtoms = mola.getActiveAtomArray();
+        extendedAtoms = mola.getAtomArray();
         extendedMolecules = mola.getMoleculeNumbers();
         setConstantPh(pH);
         ForceField forceField = mola.getForceField();
@@ -369,14 +372,55 @@ public class ExtendedSystem implements Potential {
         CYSlinear = properties.getDouble("CYS.linear", TitrationUtils.Titration.CYStoCYD.linear);
         CYStitrBiasMag = properties.getDouble("CYS.titration.bias.magnitude", DISCR_BIAS);
 
+        HIDcubic = properties.getDouble("HID.cubic", TitrationUtils.Titration.HIStoHID.cubic);
         HIDquadratic = properties.getDouble("HID.quadratic", TitrationUtils.Titration.HIStoHID.quadratic);
         HIDlinear = properties.getDouble("HID.linear", TitrationUtils.Titration.HIStoHID.linear);
+        HIEcubic = properties.getDouble("HIE.cubic", TitrationUtils.Titration.HIStoHIE.cubic);
         HIEquadratic = properties.getDouble("HIE.quadratic", TitrationUtils.Titration.HIStoHIE.quadratic);
         HIElinear = properties.getDouble("HIE.linear", TitrationUtils.Titration.HIStoHIE.linear);
+        HIDtoHIEcubic = properties.getDouble("HIDtoHIE.cubic", TitrationUtils.Titration.HIDtoHIE.cubic);
         HIDtoHIEquadratic = properties.getDouble("HIDtoHIE.quadratic", TitrationUtils.Titration.HIDtoHIE.quadratic);
         HIDtoHIElinear = properties.getDouble("HIDtoHIE.linear", TitrationUtils.Titration.HIDtoHIE.linear);
         HIStitrBiasMag = properties.getDouble("HIS.titration.bias.magnitude", DISCR_BIAS);
         HIStautBiasMag = properties.getDouble("HIS.tautomer.bias.magnitude", DISCR_BIAS);
+
+        // Log all of the titration bias magnitudes for each titratable residue.
+        logger.info("\n Titration bias magnitudes:");
+        logger.info(" Lysine titration bias magnitude: " + LYStitrBiasMag);
+        logger.info(" Cysteine titration bias magnitude: " + CYStitrBiasMag);
+        logger.info(" Histidine titration bias magnitude: " + HIStitrBiasMag);
+        logger.info(" Glutamic acid titration bias magnitude: " + GLHtitrBiasMag);
+        logger.info(" Aspartic acid titration bias magnitude: " + ASHtitrBiasMag);
+
+// Log all of  the tautomer bias magnitudes for each tautomerizable residue.
+        logger.info("\n Tautomer bias magnitudes:");
+        logger.info(" Aspartic acid tautomer bias magnitude: " + ASHtautBiasMag);
+        logger.info(" Glutamic acid tautomer bias magnitude: " + GLHtautBiasMag);
+        logger.info(" Histidine tautomer bias magnitude: " + HIStautBiasMag);
+
+// Log all of  th cubic, quadratic, and linear terms for all of the amino acid terms
+        logger.info("\n Titration bias terms:");
+        logger.info(" Lysine cubic term: " + LYScubic);
+        logger.info(" Lysine quadratic term: " + LYSquadratic);
+        logger.info(" Lysine linear term: " + LYSlinear);
+        logger.info(" Cysteine cubic term: " + CYScubic);
+        logger.info(" Cysteine quadratic term: " + CYSquadratic);
+        logger.info(" Cysteine linear term: " + CYSlinear);
+        logger.info(" Histidine cubic term: " + HIDcubic);
+        logger.info(" HID quadratic term: " + HIDquadratic);
+        logger.info(" HID linear term: " + HIDlinear);
+        logger.info(" HIE cubic term: " + HIEcubic);
+        logger.info(" HIE quadratic term: " + HIEquadratic);
+        logger.info(" HIE linear term: " + HIElinear);
+        logger.info(" HID-HIE cubic term: " + HIDtoHIEcubic);
+        logger.info(" HID-HIE quadratic term: " + HIDtoHIEquadratic);
+        logger.info(" HID-HIE linear term: " + HIDtoHIElinear);
+        logger.info(" Glutamic acid cubic term: " + GLHcubic);
+        logger.info(" Glutamic acid quadratic term: " + GLHquadratic);
+        logger.info(" Glutamic acid linear term: " + GLHlinear);
+        logger.info(" Aspartic acid cubic term: " + ASHcubic);
+        logger.info(" Aspartic acid quadratic term: " + ASHquadratic);
+        logger.info(" Aspartic acid linear term: " + ASHlinear);
 
         titratingResidueList = new ArrayList<>();
         tautomerizingResidueList = new ArrayList<>();
@@ -738,29 +782,33 @@ public class ExtendedSystem implements Potential {
 
                 // Model Bias & Derivs
 
-                double coeffA0 = HIDtoHIEquadratic;
-                double coeffA1 = HIDtoHIElinear;
-                double coeffB0 = HIEquadratic;
-                double coeffB1 = HIElinear;
-                double coeffC0 = HIDquadratic;
-                double coeffC1 = HIDlinear;
+                double coeffA0 = HIDtoHIEcubic;
+                double coeffA1 = HIDtoHIEquadratic;
+                double coeffA2 = HIDtoHIElinear;
+                double coeffB0 = HIEcubic;
+                double coeffB1 = HIEquadratic;
+                double coeffB2 = HIElinear;
+                double coeffC0 = HIDcubic;
+                double coeffC1 = HIDquadratic;
+                double coeffC2 = HIDlinear;
                 double tautomerLambdaSquared = tautomerLambda * tautomerLambda;
+                double tautomerLambdaCubed = tautomerLambdaSquared * tautomerLambda;
                 double oneMinusTitrationLambda = (1.0 - titrationLambda);
                 double oneMinusTautomerLambda = (1.0 - tautomerLambda);
-                double coeffBSum = coeffB0 + coeffB1;
-                double coeffCSum = coeffC0 + coeffC1;
-                modelBias = oneMinusTitrationLambda * (coeffA0 * tautomerLambdaSquared + coeffA1 * tautomerLambda) +
-                        tautomerLambda * (coeffB0 * titrationLambdaSquared + coeffB1 * titrationLambda) +
-                        oneMinusTautomerLambda * (coeffC0 * titrationLambdaSquared + coeffC1 * titrationLambda) +
+                double coeffBSum = coeffB0 + coeffB1 + coeffB2;
+                double coeffCSum = coeffC0 + coeffC1 + coeffC2;
+                modelBias = oneMinusTitrationLambda * (coeffA0 * tautomerLambdaCubed + coeffA1 * tautomerLambdaSquared + coeffA2 * tautomerLambda) +
+                        tautomerLambda * (coeffB0 * titrationLambdaCubed + coeffB1 * titrationLambdaSquared + coeffB2 * titrationLambda) +
+                        oneMinusTautomerLambda * (coeffC0 * titrationLambdaCubed + coeffC1 * titrationLambdaSquared + coeffC2 * titrationLambda) +
                         //Enforce that HIS(titration==1) state is equal energy no matter tautomer value
                         titrationLambda * (coeffCSum - coeffBSum) * tautomerLambda;
-                dMod_dTitr = -(coeffA0 * tautomerLambdaSquared + coeffA1 * tautomerLambda) +
-                        tautomerLambda * (2.0 * coeffB0 * titrationLambda + coeffB1) +
-                        oneMinusTautomerLambda * (2.0 * coeffC0 * titrationLambda + coeffC1) +
+                dMod_dTitr = -(coeffA0 * tautomerLambdaCubed + coeffA1 * tautomerLambdaSquared + coeffA2 * tautomerLambda) +
+                        tautomerLambda * (3.0 * coeffB0 * titrationLambdaSquared + 2.0 * coeffB1 * titrationLambda + coeffB2) +
+                        oneMinusTautomerLambda * (3.0 * coeffC0 * titrationLambdaSquared + 2.0 * coeffC1 * titrationLambda + coeffC2) +
                         tautomerLambda * (coeffCSum - coeffBSum);
-                dMod_dTaut = oneMinusTitrationLambda * (2.0 * coeffA0 * tautomerLambda + coeffA1) +
-                        (coeffB0 * titrationLambdaSquared + coeffB1 * titrationLambda) +
-                        -(coeffC0 * titrationLambdaSquared + coeffC1 * titrationLambda) +
+                dMod_dTaut = oneMinusTitrationLambda * (3.0 * coeffA0 * tautomerLambdaSquared + 2.0 * coeffA1 * tautomerLambda + coeffA2) +
+                        (coeffB0 * titrationLambdaCubed + coeffB1 * titrationLambdaSquared + coeffB2 * titrationLambda) +
+                        -1.0*(coeffC0 * titrationLambdaCubed + coeffC1 * titrationLambdaSquared + coeffC2 * titrationLambda) +
                         titrationLambda * (coeffCSum - coeffBSum);
 
                 break;
