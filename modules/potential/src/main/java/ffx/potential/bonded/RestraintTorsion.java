@@ -3,12 +3,16 @@ package ffx.potential.bonded;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.TorsionType;
 
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.function.DoubleUnaryOperator;
 
 import static org.apache.commons.math3.util.FastMath.*;
 
 public class RestraintTorsion extends BondedTerm implements LambdaInterface {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private final Atom[] atoms;
   public final TorsionType torsionType;

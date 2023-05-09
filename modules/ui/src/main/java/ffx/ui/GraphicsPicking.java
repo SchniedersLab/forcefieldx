@@ -52,11 +52,13 @@ import ffx.potential.bonded.Polymer;
 import ffx.potential.bonded.RendererCache;
 import ffx.potential.bonded.Residue;
 import ffx.ui.behaviors.PickMouseBehavior;
+
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 import javax.swing.tree.TreePath;
+
 import org.jogamp.java3d.Bounds;
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Node;
@@ -75,7 +77,9 @@ import org.jogamp.vecmath.Vector3d;
  */
 public class GraphicsPicking extends PickMouseBehavior {
 
-  /** Constant <code>pickLevelHash</code> */
+  /**
+   * Constant <code>pickLevelHash</code>
+   */
   static final Hashtable<String, PickLevel> pickLevelHash = new Hashtable<>();
 
   private static final Logger logger = Logger.getLogger(GraphicsPicking.class.getName());
@@ -87,7 +91,7 @@ public class GraphicsPicking extends PickMouseBehavior {
     }
   }
 
-  private MainPanel mainPanel;
+  private final MainPanel mainPanel;
   // Turn On/Off picking
   private boolean picking = false;
   // Picking Level
@@ -100,24 +104,24 @@ public class GraphicsPicking extends PickMouseBehavior {
   // Previously picked MSNode
   private MSNode previousPick = null;
   // Selected Atoms for Measuring
-  private Vector<Atom> atomCache = new Vector<>(4);
+  private final Vector<Atom> atomCache = new Vector<>(4);
   private int count = 0;
-  // A few static variables for reuse
-  private double[] a = new double[3];
-  private double[] b = new double[3];
-  private double[] c = new double[3];
-  private double[] d = new double[3];
-  private Transform3D systemTransform3D = new Transform3D();
-  private Vector3d syspos = new Vector3d();
-  private Vector3d atpos = new Vector3d();
+  // A few arrays for reuse
+  private final double[] a = new double[3];
+  private final double[] b = new double[3];
+  private final double[] c = new double[3];
+  private final double[] d = new double[3];
+  private final Transform3D systemTransform3D = new Transform3D();
+  private final Vector3d systemPosition = new Vector3d();
+  private final Vector3d atomPosition = new Vector3d();
 
   /**
    * Constructor
    *
-   * @param base Base of the Scenegraph
-   * @param bounds Behavior bounds
+   * @param base           Base of the Scenegraph
+   * @param bounds         Behavior bounds
    * @param graphicsCanvas Scene Canvas3D
-   * @param mainPanel MainPanel
+   * @param mainPanel      MainPanel
    */
   public GraphicsPicking(
       BranchGroup base, Bounds bounds, GraphicsCanvas graphicsCanvas, MainPanel mainPanel) {
@@ -127,7 +131,9 @@ public class GraphicsPicking extends PickMouseBehavior {
     pickCanvas.setTolerance(3.0f);
   }
 
-  /** Clear currently selected nodes */
+  /**
+   * Clear currently selected nodes
+   */
   public void clear() {
     if (previousPick != null) {
       mainPanel.getHierarchy().collapsePath(new TreePath(previousPick.getPath()));
@@ -179,10 +185,9 @@ public class GraphicsPicking extends PickMouseBehavior {
     if (result != null) {
       SceneGraphPath sceneGraphPath = result.getSceneGraphPath();
       Node node = sceneGraphPath.getObject();
-      if (!(node instanceof Shape3D)) {
+      if (!(node instanceof Shape3D pickedShape3D)) {
         return;
       }
-      Shape3D pickedShape3D = (Shape3D) node;
       Object userData = pickedShape3D.getUserData();
       if (userData instanceof MolecularAssembly) {
         FFXSystem sys = (FFXSystem) userData;
@@ -194,8 +199,7 @@ public class GraphicsPicking extends PickMouseBehavior {
           return;
         }
       }
-      if (userData instanceof Atom) {
-        Atom a = (Atom) userData;
+      if (userData instanceof Atom atom) {
         // Check to see if the pickLevel has changed
         if (!(pickLevel == newPickLevel)) {
           pickLevel = newPickLevel;
@@ -213,37 +217,37 @@ public class GraphicsPicking extends PickMouseBehavior {
           count = 0;
         }
         // If measuring, select the current atom and add it to the cache
-        if (measure && !atomCache.contains(a)) {
-          atomCache.add(0, a);
-          a.setSelected(true);
-          a.setColor(RendererCache.ColorModel.PICK, null, null);
+        if (measure && !atomCache.contains(atom)) {
+          atomCache.add(0, atom);
+          atom.setSelected(true);
+          atom.setColor(RendererCache.ColorModel.PICK, null, null);
           count++;
           measure();
         }
         if (!measure) {
           // Check to see if the same Atom has been selected twice in a row.
           // This allows iteration through the atom's terms.
-          if (a == previousAtom) {
+          if (atom == previousAtom) {
             pickNumber++;
           } else {
-            previousAtom = a;
+            previousAtom = atom;
             pickNumber = 0;
           }
           MSNode currentPick = null;
           switch (pickLevel) {
             case PICKATOM:
-              currentPick = a;
+              currentPick = atom;
               break;
             case PICKBOND:
             case PICKANGLE:
             case PICKDIHEDRAL:
-              List terms;
+              List<? extends BondedTerm> terms;
               if (pickLevel == PickLevel.PICKBOND) {
-                terms = a.getBonds();
+                terms = atom.getBonds();
               } else if (pickLevel == PickLevel.PICKANGLE) {
-                terms = a.getAngles();
+                terms = atom.getAngles();
               } else {
-                terms = a.getTorsions();
+                terms = atom.getTorsions();
               }
               if (terms == null) {
                 return;
@@ -252,7 +256,7 @@ public class GraphicsPicking extends PickMouseBehavior {
               if (pickNumber >= num) {
                 pickNumber = 0;
               }
-              currentPick = (BondedTerm) terms.get(pickNumber);
+              currentPick = terms.get(pickNumber);
               break;
             case PICKRESIDUE:
             case PICKPOLYMER:
@@ -260,15 +264,15 @@ public class GraphicsPicking extends PickMouseBehavior {
             case PICKSYSTEM:
               MSNode dataNode;
               if (pickLevel == PickLevel.PICKRESIDUE) {
-                dataNode = a.getMSNode(Residue.class);
+                dataNode = atom.getMSNode(Residue.class);
               } else if (pickLevel == PickLevel.PICKPOLYMER) {
-                dataNode = a.getMSNode(Polymer.class);
+                dataNode = atom.getMSNode(Polymer.class);
               } else if (pickLevel == PickLevel.PICKSYSTEM) {
-                dataNode = a.getMSNode(MolecularAssembly.class);
+                dataNode = atom.getMSNode(MolecularAssembly.class);
               } else {
-                dataNode = a.getMSNode(Molecule.class);
+                dataNode = atom.getMSNode(Molecule.class);
                 if (dataNode == null) {
-                  dataNode = a.getMSNode(Polymer.class);
+                  dataNode = atom.getMSNode(Polymer.class);
                 }
               }
               currentPick = dataNode;
@@ -303,13 +307,13 @@ public class GraphicsPicking extends PickMouseBehavior {
   private void distance(Atom atom, double[] pos) {
     MolecularAssembly m = atom.getMSNode(MolecularAssembly.class);
     m.getTransformGroup().getTransform(systemTransform3D);
-    systemTransform3D.get(syspos);
+    systemTransform3D.get(systemPosition);
     systemTransform3D.setScale(1.0d);
     systemTransform3D.setTranslation(new Vector3d(0, 0, 0));
-    atom.getV3D(atpos);
-    systemTransform3D.transform(atpos);
-    atpos.add(syspos);
-    atpos.get(pos);
+    atom.getV3D(atomPosition);
+    systemTransform3D.transform(atomPosition);
+    atomPosition.add(systemPosition);
+    atomPosition.get(pos);
   }
 
   /**
@@ -346,7 +350,7 @@ public class GraphicsPicking extends PickMouseBehavior {
     double value;
     Atom a1, a2, a3, a4;
     switch (pickLevel) {
-      case MEASUREDISTANCE:
+      case MEASUREDISTANCE -> {
         if (atomCache.size() < 2) {
           return;
         }
@@ -355,15 +359,9 @@ public class GraphicsPicking extends PickMouseBehavior {
         distance(a1, a);
         distance(a2, b);
         value = dist(a, b);
-        measurement =
-            "\nDistance\t"
-                + a1.getIndex()
-                + ", "
-                + a2.getIndex()
-                + ":   \t"
-                + format("%10.5f", value);
-        break;
-      case MEASUREANGLE:
+        measurement = "\nDistance\t" + a1.getIndex() + ", " + a2.getIndex() + ":   \t" + format("%10.5f", value);
+      }
+      case MEASUREANGLE -> {
         if (atomCache.size() < 3) {
           return;
         }
@@ -375,17 +373,9 @@ public class GraphicsPicking extends PickMouseBehavior {
         distance(a3, c);
         value = bondAngle(a, b, c);
         value = toDegrees(value);
-        measurement =
-            "\nAngle\t"
-                + a1.getIndex()
-                + ", "
-                + a2.getIndex()
-                + ", "
-                + a3.getIndex()
-                + ":   \t"
-                + format("%10.5f", value);
-        break;
-      case MEASUREDIHEDRAL:
+        measurement = "\nAngle\t" + a1.getIndex() + ", " + a2.getIndex() + ", " + a3.getIndex() + ":   \t" + format("%10.5f", value);
+      }
+      case MEASUREDIHEDRAL -> {
         if (atomCache.size() < 4) {
           return;
         }
@@ -399,20 +389,12 @@ public class GraphicsPicking extends PickMouseBehavior {
         distance(a4, d);
         value = dihedralAngle(a, b, c, d);
         value = toDegrees(value);
-        measurement =
-            "\nDihedral\t"
-                + a1.getIndex()
-                + ", "
-                + a2.getIndex()
-                + ", "
-                + a3.getIndex()
-                + ", "
-                + a4.getIndex()
-                + ":\t"
-                + format("%10.5f", value);
-        break;
-      default:
+        measurement = "\nDihedral\t" + a1.getIndex() + ", " + a2.getIndex() + ", " + a3.getIndex()
+            + ", " + a4.getIndex() + ":\t" + format("%10.5f", value);
+      }
+      default -> {
         return;
+      }
     }
     logger.info(measurement);
     ModelingShell modelingShell = mainPanel.getModelingShell();
@@ -420,7 +402,9 @@ public class GraphicsPicking extends PickMouseBehavior {
     count = 0;
   }
 
-  /** resetCount */
+  /**
+   * resetCount
+   */
   void resetCount() {
     count = 0;
   }

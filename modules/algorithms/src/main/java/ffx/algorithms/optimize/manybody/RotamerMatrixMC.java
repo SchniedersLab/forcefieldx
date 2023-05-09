@@ -63,10 +63,7 @@ public class RotamerMatrixMC extends BoltzmannMC {
    * @param useFullAMOEBAEnergy If true, re-evaluate AMOEBA energy for each conformation.
    * @param rotamerOptimization RotamerOptimization instance.
    */
-  public RotamerMatrixMC(
-      int[] rotamers,
-      Residue[] residues,
-      boolean useFullAMOEBAEnergy,
+  public RotamerMatrixMC(int[] rotamers, Residue[] residues, boolean useFullAMOEBAEnergy,
       RotamerOptimization rotamerOptimization) {
     currentRots = rotamers; // This is intentional.
     nRes = rotamers.length;
@@ -92,8 +89,8 @@ public class RotamerMatrixMC extends BoltzmannMC {
   protected double currentEnergy() {
     try {
       try {
-        return useFullAMOEBAEnergy
-            ? rotamerOptimization.currentEnergyWrapper(Arrays.asList(residues))
+        return useFullAMOEBAEnergy ? rotamerOptimization.currentEnergyWrapper(
+            Arrays.asList(residues))
             : rotamerOptimization.computeEnergy(residues, currentRots, false);
       } catch (ArithmeticException ex) {
         return 1E100;

@@ -38,7 +38,7 @@
 package ffx.algorithms.groovy
 
 import edu.rit.pj.Comm
-import ffx.algorithms.TitrationManyBody
+import ffx.algorithms.optimize.TitrationManyBody
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.cli.ManyBodyOptions
 import ffx.algorithms.optimize.RotamerOptimization

@@ -97,28 +97,16 @@ public class MDMove implements MCMove {
    *
    * @param assembly a {@link ffx.potential.MolecularAssembly} object.
    * @param potentialEnergy a {@link ffx.numerics.Potential} object.
-   * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration} object.
    * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
    * @param dynamics CLI object containing key MD information.
    * @param stepsPerCycle Number of MD steps per MC cycle.
    */
-  public MDMove(
-      MolecularAssembly assembly,
-      Potential potentialEnergy,
-      CompositeConfiguration properties,
-      AlgorithmListener listener,
-      DynamicsOptions dynamics,
-      long stepsPerCycle) {
+  public MDMove(MolecularAssembly assembly, Potential potentialEnergy, AlgorithmListener listener,
+      DynamicsOptions dynamics, long stepsPerCycle) {
     this.potential = potentialEnergy;
-    logger.info(" Using potential " + potential.toString());
-    molecularDynamics =
-        MolecularDynamics.dynamicsFactory(
-            assembly,
-            potentialEnergy,
-            properties,
-            listener,
-            dynamics.thermostat,
-            dynamics.integrator);
+    logger.info(" Using potential " + potential);
+    molecularDynamics = MolecularDynamics.dynamicsFactory(assembly, potentialEnergy, listener,
+        dynamics.thermostat, dynamics.integrator);
     molecularDynamics.setAutomaticWriteouts(false);
 
     timeStep = dynamics.getDt();
@@ -127,7 +115,6 @@ public class MDMove implements MCMove {
 
     molecularDynamics.setVerbosityLevel(MDVerbosity.QUIET);
     molecularDynamics.setObtainVelAcc(false);
-    collectEnergies();
     molecularDynamics.setRestartFrequency(dynamics.getCheckpoint());
     this.saveInterval = dynamics.getSnapshotInterval();
 
@@ -198,8 +185,8 @@ public class MDMove implements MCMove {
     molecularDynamics.setVerbosityLevel(verbosityLevel);
     mdMoveCounter++;
 
-    molecularDynamics.dynamic(
-        mdSteps, timeStep, printInterval, saveInterval, temperature, true, null);
+    molecularDynamics.dynamic(mdSteps, timeStep, printInterval, saveInterval, temperature, true,
+        null);
     // IMPORTANT: Initial energy as of the start of this run is not equal to initial energy at the
     // end of the last run!
     collectEnergies();
@@ -210,10 +197,8 @@ public class MDMove implements MCMove {
       energyDriftAbs += abs(energyChange);
       double energyDriftAverageNet = energyDriftNet / mdMoveCounter;
       double energyDriftAverageAbs = energyDriftAbs / mdMoveCounter;
-      logger.fine(
-          format(
-              " Mean signed/unsigned energy drift:                   %8.4f/%8.4f",
-              energyDriftAverageNet, energyDriftAverageAbs));
+      logger.fine(format(" Mean signed/unsigned energy drift:                   %8.4f/%8.4f",
+          energyDriftAverageNet, energyDriftAverageAbs));
 
       double dt = molecularDynamics.getTimeStep();
       int intervalSteps = molecularDynamics.getIntervalSteps();
@@ -224,10 +209,8 @@ public class MDMove implements MCMove {
           (energyDriftAverageNet / (dt * intervalSteps * nAtoms)) * 1000;
       double normalizedEnergyDriftAbs =
           (energyDriftAverageAbs / (dt * intervalSteps * nAtoms)) * 1000;
-      logger.fine(
-          format(
-              " Mean singed/unsigned energy drift per psec per atom: %8.4f/%8.4f\n",
-              normalizedEnergyDriftNet, normalizedEnergyDriftAbs));
+      logger.fine(format(" Mean singed/unsigned energy drift per psec per atom: %8.4f/%8.4f\n",
+          normalizedEnergyDriftNet, normalizedEnergyDriftAbs));
     }
     molecularDynamics.setVerbosityLevel(origLevel);
   }
@@ -250,12 +233,12 @@ public class MDMove implements MCMove {
    * Write restart and trajectory files if the provided step matches the frequency.
    *
    * @param mdStep MD step (not MC cycle number) to write files (if any) for.
-   * @param trySnapshot If false, do not write snapshot even if the timestep is correct.
-   * @param tryRestart If false, do not write a restart file even if the timestep is correct.
+   * @param trySnapshot If false, do not write snapshot even if the time step is correct.
+   * @param tryRestart If false, do not write a restart file even if the time step is correct.
    * @return Returns the write actions.
    */
-  public EnumSet<MDWriteAction> writeFilesForStep(
-      long mdStep, boolean trySnapshot, boolean tryRestart) {
+  public EnumSet<MDWriteAction> writeFilesForStep(long mdStep, boolean trySnapshot,
+      boolean tryRestart) {
     return molecularDynamics.writeFilesForStep(mdStep, trySnapshot, tryRestart);
   }
 

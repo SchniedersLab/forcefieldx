@@ -99,20 +99,14 @@ public class BoxOptCell {
    *     atoms.
    * @return If contained inside this BoxOptCell.
    */
-  public boolean anyRotamerInsideCell(
-      Residue residue,
-      Crystal crystal,
-      SymOp symOp,
+  public boolean anyRotamerInsideCell(Residue residue, Crystal crystal, SymOp symOp,
       boolean variableOnly) {
     ResidueState incomingState = residue.storeState();
     Rotamer[] rotamers = residue.getRotamers();
-    boolean inside =
-        Arrays.stream(rotamers)
-            .anyMatch(
-                (Rotamer r) -> {
-                  applyRotamer(residue, r);
-                  return residueInsideCell(residue, crystal, symOp, variableOnly);
-                });
+    boolean inside = Arrays.stream(rotamers).anyMatch((Rotamer r) -> {
+      applyRotamer(residue, r);
+      return residueInsideCell(residue, crystal, symOp, variableOnly);
+    });
     residue.revertState(incomingState);
     return inside;
   }
@@ -214,16 +208,16 @@ public class BoxOptCell {
    *     atoms.
    * @return If contained inside this BoxOptCell.
    */
-  public boolean residueInsideCell(
-      Residue residue, Crystal crystal, SymOp symOp, boolean variableOnly) {
+  public boolean residueInsideCell(Residue residue, Crystal crystal, SymOp symOp,
+      boolean variableOnly) {
     List<Atom> atoms = variableOnly ? residue.getVariableAtoms() : residue.getAtomList();
     return atoms.stream().anyMatch(a -> atomInsideCell(a, crystal, symOp));
   }
 
   /** Sorts residues in the box. */
   public void sortBoxResidues() {
-    Comparator<Residue> comparator =
-        Comparator.comparing(Residue::getChainID).thenComparingInt(Residue::getResidueNumber);
+    Comparator<Residue> comparator = Comparator.comparing(Residue::getChainID)
+        .thenComparingInt(Residue::getResidueNumber);
     residues.sort(comparator);
   }
 

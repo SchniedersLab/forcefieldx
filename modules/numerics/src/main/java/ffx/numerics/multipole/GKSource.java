@@ -501,10 +501,11 @@ public class GKSource {
    * @param n Multipole order.
    * @param Eh Homogeneous dielectric.
    * @param Es Solvent dielectric.
-   * @return Returns (n+1)*(Eh-Es)/((n+1)*Es + n*Eh))
+   * @return Returns (n+1)*(Eh-Es)/((n+1)*Es + n*Eh)) / Eh.
    */
   public static double cn(int n, double Eh, double Es) {
-    return (n + 1) * (Eh - Es) / ((n + 1) * Es + n * Eh);
+    var ret = (n + 1) * (Eh - Es) / ((n + 1) * Es + n * Eh);
+    return ret / Eh;
   }
 
 }

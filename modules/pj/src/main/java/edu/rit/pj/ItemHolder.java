@@ -53,6 +53,7 @@ import java.io.ObjectOutput;
  * @author Alan Kaminsky
  * @version 07-Oct-2010
  */
+@SuppressWarnings("serial")
 class ItemHolder<T>
         implements Externalizable {
 

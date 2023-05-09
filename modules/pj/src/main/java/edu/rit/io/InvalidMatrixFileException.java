@@ -40,6 +40,7 @@
 package edu.rit.io;
 
 import java.io.IOException;
+import java.io.Serial;
 
 /**
  * Class InvalidMatrixFileException provides an exception thrown when the
@@ -51,6 +52,9 @@ import java.io.IOException;
  */
 public class InvalidMatrixFileException
         extends IOException {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
 // Exported constructors.
     /**

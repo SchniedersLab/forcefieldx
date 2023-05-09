@@ -40,6 +40,7 @@
 package edu.rit.pj.replica;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import edu.rit.mp.ByteBuf;
@@ -104,8 +105,12 @@ import edu.rit.pj.reduction.ByteOp;
  * @author Alan Kaminsky
  * @version 13-Sep-2008
  */
+@SuppressWarnings("serial")
 public class ReplicatedByte
         extends Number {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
 // Hidden data members.
     private ByteOp myOp;

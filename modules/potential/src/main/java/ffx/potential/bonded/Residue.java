@@ -47,6 +47,8 @@ import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid1;
 import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TitrationUtils;
+
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -70,6 +72,9 @@ import org.jogamp.vecmath.Point3d;
  * @since 1.0
  */
 public class Residue extends MSGroup implements Comparable<Residue> {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger logger = Logger.getLogger(Residue.class.getName());
   /** Compare residues first on seg ID, then residue number, then residue type, then name. */

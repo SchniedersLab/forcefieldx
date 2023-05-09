@@ -139,6 +139,13 @@
               tempering or via windowed approaches.
             </td>
           </tr>
+          <tr>
+            <td>
+              <a href="commands/TorsionScan.html">TorsionScan</a>
+            </td>
+            <td>The TorsionScan command enumerates conformations of a molecule using torsional scans around rotatable bonds.
+            </td>
+          </tr>
         </tbody>
       </table>
     </section>

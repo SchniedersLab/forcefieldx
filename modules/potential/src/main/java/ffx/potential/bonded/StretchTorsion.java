@@ -51,6 +51,8 @@ import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.StretchTorsionType;
 import ffx.potential.parameters.TorsionType;
+
+import java.io.Serial;
 import java.util.logging.Logger;
 
 /**
@@ -61,6 +63,9 @@ import java.util.logging.Logger;
  * @since 1.0
  */
 public class StretchTorsion extends BondedTerm implements LambdaInterface {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger logger = Logger.getLogger(StretchTorsion.class.getName());
   /** Functional form for OpenMM. */

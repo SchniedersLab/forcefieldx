@@ -82,59 +82,111 @@ import java.util.logging.Logger;
 public class SurfaceAreaRegion extends ParallelRegion {
 
   private static final Logger logger = Logger.getLogger(SurfaceAreaRegion.class.getName());
-  /** Tolerance used in the tests for sphere overlaps and for colinearity. */
+  /**
+   * Tolerance used in the tests for sphere overlaps and for colinearity.
+   */
   private static final double delta = 1.0e-8;
 
   private static final double delta2 = delta * delta;
-  /** Array of atoms. */
+  /**
+   * Array of atoms.
+   */
   private final Atom[] atoms;
-  /** Number of atoms. */
+  /**
+   * Number of atoms.
+   */
   private final int nAtoms;
-  /** Atomic neighbor lists. */
+  /**
+   * Atomic neighbor lists.
+   */
   private final int[][][] neighborLists;
-  /** Atomic coordinates. */
+  /**
+   * Atomic coordinates.
+   */
   private final double[] x, y, z;
-  /** Per-atom flag to indicate the atom is used. */
+  /**
+   * Per-atom flag to indicate the atom is used.
+   */
   private final boolean[] use;
-  /** Initialization loops. */
+  /**
+   * Initialization loops.
+   */
   private final InitLoop[] initLoop;
-  /** Atom overlap loops. */
+  /**
+   * Atom overlap loops.
+   */
   private final AtomOverlapLoop[] atomOverlapLoop;
-  /** Surface area loops. */
+  /**
+   * Surface area loops.
+   */
   private final SurfaceAreaLoop[] surfaceAreaLoop;
-  /** Total surface area. */
+  /**
+   * Total surface area.
+   */
   private final SharedDouble sharedSurfaceArea;
-  /** Radius of the probe sphere. */
+  /**
+   * Radius of the probe sphere.
+   */
   private final double probe;
-  /** Maximum number of arcs. */
+  /**
+   * Maximum number of arcs.
+   */
   private final int MAXARC = 1000;
-  /** Atoms to skip in the area calculation. */
+  /**
+   * Atoms to skip in the area calculation.
+   */
   private SharedBooleanArray skip;
-  /** Atomic gradient array. */
+  /**
+   * Atomic gradient array.
+   */
   private AtomicDoubleArray3D grad;
-  /** Atom i overlaps. intag1[atom index][overlap index]. */
+  /**
+   * Atom i overlaps. intag1[atom index][overlap index].
+   */
   private int[][] overlaps;
-  /** Number of overlaps for each atom. */
+  /**
+   * Number of overlaps for each atom.
+   */
   private Integer[] overlapCounts;
-  /** X-separation for atom i with overlap k. */
+  /**
+   * X-separation for atom i with overlap k.
+   */
   private double[][] overlapDX;
-  /** Y-separation for atom i with overlap k. */
+  /**
+   * Y-separation for atom i with overlap k.
+   */
   private double[][] overlapDY;
-  /** Z-separation for atom i with overlap k. */
+  /**
+   * Z-separation for atom i with overlap k.
+   */
   private double[][] overlapDZ;
-  /** DX*DX + DY*DY for atom i with overlap k. */
+  /**
+   * DX*DX + DY*DY for atom i with overlap k.
+   */
   private double[][] overlapXY2;
-  /** R^2 for atom i with overlap k. */
+  /**
+   * R^2 for atom i with overlap k.
+   */
   private double[][] overlapR2;
-  /** R for atom i with overlap k. */
+  /**
+   * R for atom i with overlap k.
+   */
   private double[][] overlapR;
-  /** Degree of overlap for atom i with overlap k. */
+  /**
+   * Degree of overlap for atom i with overlap k.
+   */
   private IndexedDouble[][] gr;
-  /** Per atom flag to indicate if the atom is buried and has no surface area. */
+  /**
+   * Per atom flag to indicate if the atom is buried and has no surface area.
+   */
   private boolean[] buried;
-  /** Accessible surface area of each atom. */
+  /**
+   * Accessible surface area of each atom.
+   */
   private double[] area;
-  /** Atomic radii. */
+  /**
+   * Atomic radii.
+   */
   private double[] r;
   /**
    * Weight assigned to each atom's area; if set to 1.0, return is actual area in square Angstroms
@@ -147,15 +199,15 @@ public class SurfaceAreaRegion extends ParallelRegion {
    * <p>GK implicit solvents are moving to use Gaussian based definitions of surface area for
    * efficiency.
    *
-   * @param atoms Atom array.
-   * @param x X-coordinate array.
-   * @param y Y-coordinate array.
-   * @param z Z-coordinate array.
-   * @param use Specifies if the atom is used in the potential.
-   * @param neighborLists Neighbor-list array.
-   * @param grad Gradient array.
-   * @param nt Number of threads.
-   * @param probe Solvent probe radius.
+   * @param atoms          Atom array.
+   * @param x              X-coordinate array.
+   * @param y              Y-coordinate array.
+   * @param z              Z-coordinate array.
+   * @param use            Specifies if the atom is used in the potential.
+   * @param neighborLists  Neighbor-list array.
+   * @param grad           Gradient array.
+   * @param nt             Number of threads.
+   * @param probe          Solvent probe radius.
    * @param surfaceTension Surface tension.
    */
   public SurfaceAreaRegion(
@@ -215,7 +267,9 @@ public class SurfaceAreaRegion extends ParallelRegion {
     return sharedSurfaceArea.get();
   }
 
-  public double[] getArea() {return area;}
+  public double[] getArea() {
+    return area;
+  }
 
   public double getResidueSurfaceArea(Residue residue) {
     List<Atom> atoms = residue.getAtomList();
@@ -278,7 +332,7 @@ public class SurfaceAreaRegion extends ParallelRegion {
     sharedSurfaceArea.set(0.0);
   }
 
-  private static class IndexedDouble implements Comparable {
+  private static class IndexedDouble implements Comparable<IndexedDouble> {
 
     public double value;
     public int key;
@@ -289,16 +343,14 @@ public class SurfaceAreaRegion extends ParallelRegion {
     }
 
     @Override
-    public int compareTo(Object o) {
-      if (!(o instanceof IndexedDouble)) {
-        return 0;
-      }
-      IndexedDouble d = (IndexedDouble) o;
+    public int compareTo(IndexedDouble d) {
       return Double.compare(value, d.value);
     }
   }
 
-  /** Initialize arrays for Cavitation calculation. */
+  /**
+   * Initialize arrays for Cavitation calculation.
+   */
   private class InitLoop extends IntegerForLoop {
 
     public long time;
@@ -530,12 +582,12 @@ public class SurfaceAreaRegion extends ParallelRegion {
     /**
      * Calculate surface area.
      *
-     * @param rri Radius.
-     * @param rri2 Diameter.
+     * @param rri   Radius.
+     * @param rri2  Diameter.
      * @param rrisq Radius squared.
-     * @param wght Surface tension.
+     * @param wght  Surface tension.
      * @param moved Atom has been moved.
-     * @param ir Atom index.
+     * @param ir    Atom index.
      */
     public void surface(double rri, double rri2, double rrisq, double wght, boolean moved, int ir) {
 
@@ -924,10 +976,10 @@ public class SurfaceAreaRegion extends ParallelRegion {
     /**
      * Find number of independent boundaries and check connectivity.
      *
-     * @param k Atom index.
-     * @param exAngle Ex angle.
-     * @param jb Upper limit.
-     * @param ir Atom index.
+     * @param k         Atom index.
+     * @param exAngle   Ex angle.
+     * @param jb        Upper limit.
+     * @param ir        Atom index.
      * @param arcLength Arc length.
      */
     boolean independentBoundaries(int k, double exAngle, int jb, int ir, double arcLength) {

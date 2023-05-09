@@ -40,6 +40,7 @@ package ffx.ui;
 import java.awt.Container;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.Serial;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFrame;
@@ -55,8 +56,10 @@ import javax.swing.UnsupportedLookAndFeelException;
  */
 public final class KeyFileEditor extends JFrame {
 
+  @Serial
+  private static final long serialVersionUID = 1L;
   private static final Logger logger = Logger.getLogger(KeyFileEditor.class.getName());
-  private KeywordPanel keywordPanel;
+  private final KeywordPanel keywordPanel;
 
   /** Constructor for KeyFileEditor. */
   private KeyFileEditor() {

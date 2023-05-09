@@ -50,10 +50,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedOptions;
+import javax.annotation.processing.*;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.MirroredTypeException;
@@ -67,6 +65,7 @@ import javax.lang.model.type.TypeMirror;
  */
 @SupportedAnnotationTypes({"ffx.utilities.FFXKeyword", "ffx.utilities.FFXKeywords"})
 @SupportedOptions({"keywordDir"})
+@SupportedSourceVersion(SourceVersion.RELEASE_17)
 public class KeywordProcessor extends AbstractProcessor {
 
   /**
@@ -123,7 +122,7 @@ public class KeywordProcessor extends AbstractProcessor {
       sb.append("[%collapsible]\n====\n");
       // This causes a MirroredTypeException, which has a TypeMirror whose value is the class.
       try {
-        Class clazz = ffxKeyword.clazz();
+        Class<?> clazz = ffxKeyword.clazz();
       } catch (MirroredTypeException e) {
         TypeMirror typeMirror = e.getTypeMirror();
         String type = typeMirror.toString();

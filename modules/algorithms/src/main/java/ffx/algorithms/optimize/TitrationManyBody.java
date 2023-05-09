@@ -35,7 +35,7 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.algorithms;
+package ffx.algorithms.optimize;
 
 import static ffx.potential.bonded.RotamerLibrary.applyRotamer;
 
@@ -52,25 +52,21 @@ import ffx.potential.parsers.PDBFilter;
 import java.io.File;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.lang.String;
 
 public class TitrationManyBody {
 
-  //private MolecularAssembly protonatedAssembly;
-  private PDBFilter protonFilter;
-  private ForceField forceField;
-  private List<Integer> resNumberList;
-  private ForceFieldEnergy potentialEnergy;
-  private final double pH;
-  private final String filename;
   private static final Logger logger = Logger.getLogger(TitrationManyBody.class.getName());
 
-  public TitrationManyBody(
-      String filename,
-      ForceField forceField,
-      List<Integer> resNumberList,
+  private final ForceField forceField;
+  private final List<Integer> resNumberList;
+  private final double pH;
+  private final String filename;
+  private PDBFilter protonFilter;
+  private ForceFieldEnergy potentialEnergy;
+
+  public TitrationManyBody(String filename, ForceField forceField, List<Integer> resNumberList,
       double pH) {
     this.filename = filename;
     this.forceField = forceField;
@@ -97,18 +93,15 @@ public class TitrationManyBody {
     for (Residue residue : protonatedAssembly.getResidueList()) {
       String resName = residue.getName();
       if (resNumberList.contains(residue.getResidueNumber())) {
-        if (resName.equalsIgnoreCase("ASH") ||
-            resName.equalsIgnoreCase("GLH") ||
-            resName.equalsIgnoreCase("LYS") ||
-            resName.equalsIgnoreCase("HIS") ||
-                resName.equalsIgnoreCase("CYS")) {
+        if (resName.equalsIgnoreCase("ASH") || resName.equalsIgnoreCase("GLH")
+            || resName.equalsIgnoreCase("LYS") || resName.equalsIgnoreCase("HIS")
+            || resName.equalsIgnoreCase("CYS")) {
           residue.setTitrationUtils(titrationUtils);
         }
       }
     }
-    if (potentialEnergy instanceof ForceFieldEnergyOpenMM) {
+    if (potentialEnergy instanceof ForceFieldEnergyOpenMM forceFieldEnergyOpenMM) {
       boolean updateBondedTerms = forceField.getBoolean("TITRATION_UPDATE_BONDED_TERMS", true);
-      ForceFieldEnergyOpenMM forceFieldEnergyOpenMM = (ForceFieldEnergyOpenMM) potentialEnergy;
       forceFieldEnergyOpenMM.getSystem().setUpdateBondedTerms(updateBondedTerms);
     }
     potentialEnergy.energy();
@@ -119,8 +112,8 @@ public class TitrationManyBody {
     logger.info("Getting protonated assemblies");
     MolecularAssembly molecularAssembly = getProtonatedAssembly();
     List<Character> altLocs = protonFilter.getAltLocs();
-    for(int i=0; i<altLocs.size(); i++){
-      if(altLocs.get(i) >= 'A' && altLocs.get(i) <='Z'){
+    for (int i = 0; i < altLocs.size(); i++) {
+      if (altLocs.get(i) >= 'A' && altLocs.get(i) <= 'Z') {
         logger.info("");
       } else {
         altLocs.remove(altLocs.get(i));
@@ -128,14 +121,14 @@ public class TitrationManyBody {
     }
     MolecularAssembly[] molecularAssemblies = new MolecularAssembly[altLocs.size()];
     molecularAssemblies[0] = molecularAssembly;
-    for(int i=0; i < altLocs.size(); i++){
-      if(i!=0){
+    for (int i = 0; i < altLocs.size(); i++) {
+      if (i != 0) {
         logger.info(filename);
         MolecularAssembly newAssembly = new MolecularAssembly(filename);
         newAssembly.setForceField(forceField);
         File structureFile = new File(filename);
         protonFilter = new PDBFilter(structureFile, newAssembly, forceField,
-                forceField.getProperties(), resNumberList);
+            forceField.getProperties(), resNumberList);
         logger.info(newAssembly.getResidueList().toString());
         protonFilter.setRotamerTitration(true);
         protonFilter.setAltID(newAssembly, altLocs.get(i));
@@ -151,11 +144,9 @@ public class TitrationManyBody {
         for (Residue residue : molecularAssembly.getResidueList()) {
           String resName = residue.getName();
           if (resNumberList.contains(residue.getResidueNumber())) {
-            if (resName.equalsIgnoreCase("ASH") ||
-                    resName.equalsIgnoreCase("GLH") ||
-                    resName.equalsIgnoreCase("LYS") ||
-                    resName.equalsIgnoreCase("HIS") ||
-                    resName.equalsIgnoreCase("CYS")) {
+            if (resName.equalsIgnoreCase("ASH") || resName.equalsIgnoreCase("GLH")
+                || resName.equalsIgnoreCase("LYS") || resName.equalsIgnoreCase("HIS")
+                || resName.equalsIgnoreCase("CYS")) {
               residue.setTitrationUtils(titrationUtils);
             }
           }
@@ -180,39 +171,34 @@ public class TitrationManyBody {
         AminoAcidUtils.AminoAcid3 aa3 = rotamer.aminoAcid3;
         residue.setName(aa3.name());
         switch (aa3) {
-          case HID:
+          case HID, GLU -> {
             // No HE2
             Atom HE2 = residue.getAtomByName("HE2", true);
             excludeAtoms.add(HE2);
-            break;
-          case HIE:
+          }
+          case HIE -> {
             // No HD1
             Atom HD1 = residue.getAtomByName("HD1", true);
             excludeAtoms.add(HD1);
-            break;
-          case ASP:
+          }
+          case ASP -> {
             // No HD2
             Atom HD2 = residue.getAtomByName("HD2", true);
             excludeAtoms.add(HD2);
-            break;
-          case GLU:
-            // No HE2
-            Atom HE2_G = residue.getAtomByName("HE2", true);
-            excludeAtoms.add(HE2_G);
-            break;
-          case LYD:
+          }
+          case LYD -> {
             // No HZ3
             Atom HZ3 = residue.getAtomByName("HZ3", true);
             excludeAtoms.add(HZ3);
-            break;
-          case CYD:
+          }
+          case CYD -> {
             // No HG
             Atom HG = residue.getAtomByName("HG", true);
             excludeAtoms.add(HG);
-            break;
-          default:
-            // Do nothing.
-            break;
+          }
+          default -> {
+          }
+          // Do nothing.
         }
       }
     }

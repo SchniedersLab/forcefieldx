@@ -58,6 +58,7 @@ import ffx.potential.parameters.ForceField;
 import ffx.utilities.StringUtils;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -101,6 +102,9 @@ import org.jogamp.vecmath.Vector3d;
  * @since 1.0
  */
 public class MolecularAssembly extends MSGroup {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger logger = Logger.getLogger(MolecularAssembly.class.getName());
   private static final double[] a = new double[3];

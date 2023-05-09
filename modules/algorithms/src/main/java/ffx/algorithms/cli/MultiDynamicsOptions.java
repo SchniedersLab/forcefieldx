@@ -90,15 +90,11 @@ public class MultiDynamicsOptions {
    * @param potentials ForceFieldEnergy for each topology.
    * @param crystalPotential Overall CrystalPotential in use.
    * @param algorithmFunctions a {@link ffx.algorithms.AlgorithmFunctions} object.
-   * @param rank a int.
-   * @param worldSize a int.
+   * @param rank The MPI rank of this process.
+   * @param worldSize The number of MPI processes.
    */
-  public void distribute(
-      MolecularAssembly[] molecularAssemblies,
-      Potential[] potentials,
-      CrystalPotential crystalPotential,
-      AlgorithmFunctions algorithmFunctions,
-      int rank,
+  public void distribute(MolecularAssembly[] molecularAssemblies, Potential[] potentials,
+      CrystalPotential crystalPotential, AlgorithmFunctions algorithmFunctions, int rank,
       int worldSize) {
     if (!group.distributeWalkersString.equalsIgnoreCase("AUTO")
         && !group.distributeWalkersString.equalsIgnoreCase("OFF")) {
@@ -106,35 +102,29 @@ public class MultiDynamicsOptions {
       int nSys = molecularAssemblies.length;
       assert nSys == potentials.length;
       switch (nSys) {
-        case 1:
-          optStructure(
-              molecularAssemblies[0], crystalPotential, algorithmFunctions, rank, worldSize);
-          break;
-        case 2:
+        case 1 -> optStructure(molecularAssemblies[0], crystalPotential, algorithmFunctions, rank,
+            worldSize);
+        case 2 -> {
           DualTopologyEnergy dte = (DualTopologyEnergy) crystalPotential;
           if (dte.getNumSharedVariables() == dte.getNumberOfVariables()) {
             logger.info(" Generating starting structures based on dual-topology:");
             optStructure(molecularAssemblies[0], dte, algorithmFunctions, rank, worldSize);
           } else {
             logger.info(
-                " Generating separate starting structures for each topology of the dual toplogy:");
-            optStructure(
-                molecularAssemblies[0], potentials[0], algorithmFunctions, rank, worldSize);
-            optStructure(
-                molecularAssemblies[1], potentials[1], algorithmFunctions, rank, worldSize);
+                " Generating separate starting structures for each topology of the dual topology:");
+            optStructure(molecularAssemblies[0], potentials[0], algorithmFunctions, rank, worldSize);
+            optStructure(molecularAssemblies[1], potentials[1], algorithmFunctions, rank, worldSize);
           }
-          break;
-        case 4:
+        }
+        case 4 -> {
           QuadTopologyEnergy qte = (QuadTopologyEnergy) crystalPotential;
-          optStructure(
-              molecularAssemblies[0], qte.getDualTopA(), algorithmFunctions, rank, worldSize);
-          optStructure(
-              molecularAssemblies[3], qte.getDualTopB(), algorithmFunctions, rank, worldSize);
-          break;
+          optStructure(molecularAssemblies[0], qte.getDualTopA(), algorithmFunctions, rank,
+              worldSize);
+          optStructure(molecularAssemblies[3], qte.getDualTopB(), algorithmFunctions, rank,
+              worldSize);
+        }
         // Oct-topology is deprecated on account of not working as intended.
-        default:
-          logger.severe(" First: must have 1, 2, or 4 topologies.");
-          break;
+        default -> logger.severe(" First: must have 1, 2, or 4 topologies.");
       }
     } else {
       logger.finer(" Skipping RO-based distribution of initial configurations.");
@@ -148,22 +138,17 @@ public class MultiDynamicsOptions {
    * @param molecularAssemblies an array of {@link ffx.potential.MolecularAssembly} objects.
    * @param crystalPotential Overall CrystalPotential in use.
    * @param algorithmFunctions a {@link ffx.algorithms.AlgorithmFunctions} object.
-   * @param rank a int.
-   * @param worldSize a int.
+   * @param rank The MPI rank of this process.
+   * @param worldSize The number of MPI processes.
    */
-  public void distribute(
-      MolecularAssembly[] molecularAssemblies,
-      CrystalPotential crystalPotential,
-      AlgorithmFunctions algorithmFunctions,
-      int rank,
-      int worldSize) {
+  public void distribute(MolecularAssembly[] molecularAssemblies, CrystalPotential crystalPotential,
+      AlgorithmFunctions algorithmFunctions, int rank, int worldSize) {
     int ntops = molecularAssemblies.length;
     Potential[] energies = new Potential[ntops];
     for (int i = 0; i < ntops; i++) {
       energies[i] = molecularAssemblies[i].getPotentialEnergy();
     }
-    distribute(
-        molecularAssemblies, energies, crystalPotential, algorithmFunctions, rank, worldSize);
+    distribute(molecularAssemblies, energies, crystalPotential, algorithmFunctions, rank, worldSize);
   }
 
   /**
@@ -195,15 +180,9 @@ public class MultiDynamicsOptions {
    * @param structureFile a {@link java.io.File} object.
    * @return a {@link ffx.potential.MolecularAssembly} object.
    */
-  public MolecularAssembly openFile(
-      AlgorithmFunctions algorithmFunctions,
-      TopologyOptions topologyOptions,
-      int threadsPer,
-      String toOpen,
-      int topNum,
-      AlchemicalOptions alchemicalOptions,
-      File structureFile,
-      int rank) {
+  public MolecularAssembly openFile(AlgorithmFunctions algorithmFunctions,
+      TopologyOptions topologyOptions, int threadsPer, String toOpen, int topNum,
+      AlchemicalOptions alchemicalOptions, File structureFile, int rank) {
     boolean autoDist = group.distributeWalkersString.equalsIgnoreCase("AUTO");
 
     if (autoDist) {
@@ -215,8 +194,8 @@ public class MultiDynamicsOptions {
         logger.warning(format(" File %s does not exist; using default %s", openName, toOpen));
       }
     }
-    MolecularAssembly assembly =
-        alchemicalOptions.openFile(algorithmFunctions, topologyOptions, threadsPer, toOpen, topNum);
+    MolecularAssembly assembly = alchemicalOptions.openFile(algorithmFunctions, topologyOptions,
+        threadsPer, toOpen, topNum);
     assembly.setFile(structureFile);
     return assembly;
   }
@@ -229,8 +208,7 @@ public class MultiDynamicsOptions {
   private String[] parseDistributed() {
     String distributeWalkersString = group.distributeWalkersString;
     if (distributeWalkersString.equalsIgnoreCase("OFF")
-        || distributeWalkersString.equalsIgnoreCase("AUTO")
-        || distributeWalkersString.isEmpty()) {
+        || distributeWalkersString.equalsIgnoreCase("AUTO") || distributeWalkersString.isEmpty()) {
       return null;
     }
     return distributeWalkersString.split("\\.");
@@ -253,12 +231,8 @@ public class MultiDynamicsOptions {
    * @param molecularAssembly To distribute
    * @param potential Potential to use
    */
-  private void optStructure(
-      MolecularAssembly molecularAssembly,
-      Potential potential,
-      AlgorithmFunctions algorithmFunctions,
-      int rank,
-      int worldSize) {
+  private void optStructure(MolecularAssembly molecularAssembly, Potential potential,
+      AlgorithmFunctions algorithmFunctions, int rank, int worldSize) {
     RotamerLibrary rLib = new RotamerLibrary(false);
     String[] distribRes = parseDistributed();
 
@@ -319,8 +293,8 @@ public class MultiDynamicsOptions {
     ropt.setThreeBodyEnergy(false);
 
     CompositeConfiguration properties = molecularAssembly.getProperties();
-    if (!properties.containsKey("ro-ensembleNumber")
-        && !properties.containsKey("ro-ensembleEnergy")) {
+    if (!properties.containsKey("ro-ensembleNumber") && !properties.containsKey(
+        "ro-ensembleEnergy")) {
       logger.info(format(" Setting ensemble to default of number of walkers %d", worldSize));
       ropt.setEnsemble(worldSize);
     }
@@ -369,18 +343,13 @@ public class MultiDynamicsOptions {
   private static class MultiDynamicsOptionGroup {
 
     /** --firstDir The first directory to use for multiple walker jobs. */
-    @Option(
-        names = {"--firstDir"},
-        defaultValue = "0",
-        paramLabel = "0",
-        description = "The first directory to use for multiple walker jobs.")
+    @Option(names = {
+        "--firstDir"}, defaultValue = "0", paramLabel = "0", description = "The first directory to use for multiple walker jobs.")
     private int firstDir;
 
     /** -y or --synchronous sets synchronous walker communication (not recommended) */
-    @Option(
-        names = {"-y", "--synchronous"},
-        defaultValue = "false",
-        description = "Walker communication is synchronous")
+    @Option(names = {"-y",
+        "--synchronous"}, defaultValue = "false", description = "Walker communication is synchronous")
     private boolean synchronous;
 
     /**
@@ -388,12 +357,8 @@ public class MultiDynamicsOptions {
      * per-walker conformations as filename.pdb_(walker number), and specifying a residue starts a
      * rotamer optimization to generate side-chain configurations to start from.
      */
-    @Option(
-        names = {"--dw", "--distributeWalkers"},
-        paramLabel = "OFF",
-        defaultValue = "OFF",
-        description =
-            "AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.")
+    @Option(names = {"--dw",
+        "--distributeWalkers"}, paramLabel = "OFF", defaultValue = "OFF", description = "AUTO: Pick up per-walker configurations as [filename.pdb]_[num], or specify a residue to distribute on.")
     private String distributeWalkersString;
   }
 }

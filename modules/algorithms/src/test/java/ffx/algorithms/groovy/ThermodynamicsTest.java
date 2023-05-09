@@ -115,48 +115,21 @@ public class ThermodynamicsTest extends AlgorithmsTest {
   private static final double DEFAULT_D2UDXDL_TOL = 1.0E-2; // kcal/mol/A.
 
   static {
-    String[] opts = {
-        "--bM",
-        "0.05",
-        "--dw",
-        "OFF",
-        "--lf",
-        "1.0E-18",
-        "--lm",
-        "1.0E-18",
-        "--np",
-        "1",
-        "--sf",
-        "1.0",
-        "--tp",
-        "2.0", // Set low to encourage fast tempering for toy cases.
-        "-b",
-        "ADIABATIC", // Used for Langevin dynamics.
-        "-C",
-        "5000", // By default, evaluate 0 dynamics steps, and trigger adding counts manually.
-        "-d",
-        "0.5", // Most of the tests are in vacuum, thus short timestep.
-        "-F",
-        "XYZ",
-        "-i",
-        "STOCHASTIC", // Stochastic because most toy systems work best with Langevin dynamics.
-        "-k",
-        "5.0", // Infrequent because we should not need to restart.
-        "-l",
-        "1.0", // Set walker to start at the usually-physical topology. Likely commonly set by test.
-        "-n",
-        "0", // Do not run any steps by default, just evaluate energy.
-        "-p",
-        "0", // Use NVT, not NPT dynamics.
-        "-Q",
-        "0", // Do not run any steps by default, just evaluate energy.
-        "-r",
-        "2.0", // Very infrequent printouts, since it should work.
-        "-t",
-        "298.15",
-        "-w",
-        "10.0"
-    }; // Infrequent since we should not need the trajectory.
+    String[] opts = {"--bM", "0.05", "--dw", "OFF", "--lf", "1.0E-18", "--lm", "1.0E-18", "--np",
+        "1", "--sf", "1.0", "--tp", "2.0", // Set low to encourage fast tempering for toy cases.
+        "-b", "ADIABATIC", // Used for Langevin dynamics.
+        "-C", "5000", // By default, evaluate 0 dynamics steps, and trigger adding counts manually.
+        "-d", "0.5", // Most of the tests are in vacuum, thus short timestep.
+        "-F", "XYZ", "-i", "STOCHASTIC",
+        // Stochastic because most toy systems work best with Langevin dynamics.
+        "-k", "5.0", // Infrequent because we should not need to restart.
+        "-l", "1.0",
+        // Set walker to start at the usually-physical topology. Likely commonly set by test.
+        "-n", "0", // Do not run any steps by default, just evaluate energy.
+        "-p", "0", // Use NVT, not NPT dynamics.
+        "-Q", "0", // Do not run any steps by default, just evaluate energy.
+        "-r", "2.0", // Very infrequent printouts, since it should work.
+        "-t", "298.15", "-w", "10.0"}; // Infrequent since we should not need the trajectory.
 
     int nOpts = opts.length;
     Map<String, String> optMap = new HashMap<>(nOpts);
@@ -165,24 +138,10 @@ public class ThermodynamicsTest extends AlgorithmsTest {
     }
     DEFAULT_OPTIONS = Collections.unmodifiableMap(optMap);
 
-    String[] props = {
-        "ost-alwaystemper",
-        "true",
-        "ost-temperOffset",
-        "0.5", // Small to temper fast.
-        "print-on-failure",
-        "false",
-        "disable-neighbor-updates",
-        "false",
-        "vdw-lambda-alpha",
-        "0.25",
-        "vdw-lambda-exponent",
-        "3",
-        "permanent-lambda-alpha",
-        "1.0",
-        "permanent-lambda-exponent",
-        "3"
-    };
+    String[] props = {"ost-alwaystemper", "true", "ost-temperOffset", "0.5", // Small to temper fast.
+        "print-on-failure", "false", "disable-neighbor-updates", "false", "vdw-lambda-alpha", "0.25",
+        "vdw-lambda-exponent", "3", "permanent-lambda-alpha", "1.0", "permanent-lambda-exponent",
+        "3"};
 
     int nProps = props.length;
     Map<String, String> propMap = new HashMap<>(nProps);
@@ -226,23 +185,10 @@ public class ThermodynamicsTest extends AlgorithmsTest {
   /** Configuration containing the properties to be used by OST. */
   Configuration algorithmConfig;
 
-  public ThermodynamicsTest(
-      String info,
-      String[] filenames,
-      ThermoTestMode mode,
-      boolean ciOnly,
-      double freeEnergy,
-      double feTol,
-      int[] gradAtomIndices,
-      double[] pe,
-      double[] dudl,
-      double[] d2udl2,
-      double[][][] dudx,
-      double[][][] d2udxdl,
-      String[] options,
-      String[] properties,
-      String[] flags)
-      throws IOException {
+  public ThermodynamicsTest(String info, String[] filenames, ThermoTestMode mode, boolean ciOnly,
+      double freeEnergy, double feTol, int[] gradAtomIndices, double[] pe, double[] dudl,
+      double[] d2udl2, double[][][] dudx, double[][][] d2udxdl, String[] options,
+      String[] properties, String[] flags) throws IOException {
     this.info = info;
     this.mode = mode;
     doTest = (ffxCI || !ciOnly);
@@ -264,14 +210,11 @@ public class ThermodynamicsTest extends AlgorithmsTest {
         copiedFiles[i] = tempFile;
 
         for (String ext : copiedExtensions) {
-          srcFile =
-              new File(
-                  format("%s.%s", FilenameUtils.removeExtension(srcFile.getPath()), ext));
+          srcFile = new File(format("%s.%s", FilenameUtils.removeExtension(srcFile.getPath()), ext));
           if (srcFile.exists()) {
             logger.fine(" Copying extension " + ext);
-            tempFile =
-                new File(
-                    format("%s.%s", FilenameUtils.removeExtension(tempFile.getPath()), ext));
+            tempFile = new File(
+                format("%s.%s", FilenameUtils.removeExtension(tempFile.getPath()), ext));
             logger.fine(format(" Copied file %s to %s", srcFile, tempFile));
             copyFile(srcFile, tempFile);
           }
@@ -280,24 +223,18 @@ public class ThermodynamicsTest extends AlgorithmsTest {
 
       switch (mode) {
         case HELP:
-          assertTrue(
-              format(
-                  "Help tests must have no file arguments, found %d for %s", nFiles, info),
+          assertTrue(format("Help tests must have no file arguments, found %d for %s", nFiles, info),
               nFiles == 0);
           break;
         default:
           assertTrue(
-              format(
-                  "Must have 1, 2, or 4 distinct filenames, found %d for test %s", nFiles, info),
+              format("Must have 1, 2, or 4 distinct filenames, found %d for test %s", nFiles, info),
               nFiles == 1 || nFiles == 2 || nFiles == 4);
           for (int i = 0; i < nFiles; i++) {
             for (int j = i + 1; j < nFiles; j++) {
               assertNotEquals(
-                  format(
-                      " Filenames %d and %d matched in test %s: files %s and %s",
-                      i, j, info, filenames[i], filenames[j]),
-                  filenames[i],
-                  filenames[j]);
+                  format(" Filenames %d and %d matched in test %s: files %s and %s", i, j, info,
+                      filenames[i], filenames[j]), filenames[i], filenames[j]);
             }
           }
           break;
@@ -307,18 +244,15 @@ public class ThermodynamicsTest extends AlgorithmsTest {
       int nFlags = flags.length;
 
       if (nOpts > 0) {
-        assertTrue(
-            format("Unmatched option key %s for test %s", options[nOpts - 1], info),
+        assertTrue(format("Unmatched option key %s for test %s", options[nOpts - 1], info),
             options.length % 2 == 0);
       }
       if (nProps > 0) {
-        assertTrue(
-            format("Unmatched property key %s for test %s", properties[nProps - 1], info),
+        assertTrue(format("Unmatched property key %s for test %s", properties[nProps - 1], info),
             properties.length % 2 == 0);
       }
       if (nFlags > 0) {
-        assertTrue(
-            format("Unmatched flag key %s for test %s", flags[nFlags - 1], info),
+        assertTrue(format("Unmatched flag key %s for test %s", flags[nFlags - 1], info),
             flags.length % 2 == 0);
       }
 
@@ -328,8 +262,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
       Map<String, String> groovyOpts = new HashMap<>(DEFAULT_OPTIONS);
       for (int i = 0; i < nOpts; i += 2) {
         String opti = options[i];
-        assertTrue(
-            format(" Option %s for test %s does not look like a Groovy option!", opti, info),
+        assertTrue(format(" Option %s for test %s does not look like a Groovy option!", opti, info),
             validOption.matcher(opti).find());
         groovyOpts.put(opti, options[i + 1]);
       }
@@ -338,8 +271,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
       Map<String, String> addedProps = new HashMap<>(DEFAULT_PROPERTIES);
       for (int i = 0; i < nProps; i += 2) {
         String propi = properties[i];
-        assertTrue(
-            format(" Property %s for test %s does not look like a property!", propi, info),
+        assertTrue(format(" Property %s for test %s does not look like a property!", propi, info),
             validProperty.matcher(propi).find());
         addedProps.put(propi, properties[i + 1]);
       }
@@ -348,29 +280,23 @@ public class ThermodynamicsTest extends AlgorithmsTest {
       Map<String, Boolean> addedFlags = new HashMap<>(DEFAULT_FLAGS);
       for (int i = 0; i < nFlags; i += 2) {
         String flagi = flags[i];
-        assertTrue(
-            format(" Flag %s for test %s does not look like a flag!", flagi, info),
+        assertTrue(format(" Flag %s for test %s does not look like a flag!", flagi, info),
             validOption.matcher(flagi).find());
         String vali = flags[i + 1];
         assertTrue(
-            format(
-                " Value %s for flag %s in test %s is not a true/false value!", vali, flagi, info),
+            format(" Value %s for flag %s in test %s is not a true/false value!", vali, flagi, info),
             vali.equalsIgnoreCase("TRUE") || vali.equalsIgnoreCase("FALSE"));
         addedFlags.put(flagi, Boolean.parseBoolean(vali));
       }
-      this.flags =
-          Collections.unmodifiableList(
-              addedFlags.entrySet().stream()
-                  .filter(Map.Entry::getValue)
-                  .map(Map.Entry::getKey)
-                  .collect(Collectors.toList()));
+      this.flags = Collections.unmodifiableList(
+          addedFlags.entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey)
+              .collect(Collectors.toList()));
 
       // Only meaningful for free energy evaluations.
       this.freeEnergy = freeEnergy;
       this.feTol = feTol;
       if (mode == ThermoTestMode.FREE) {
-        assertTrue(
-            format(" Free energy tolerance for test %s was %10.4g <= 0!", info, feTol),
+        assertTrue(format(" Free energy tolerance for test %s was %10.4g <= 0!", info, feTol),
             feTol > 0);
       }
 
@@ -379,10 +305,8 @@ public class ThermodynamicsTest extends AlgorithmsTest {
       this.d2udxdl = new double[2][][];
       boolean isGradient = (mode == ThermoTestMode.GRAD);
       if (isGradient) {
-        numGradAtoms =
-            ffxCI
-                ? gradAtomIndices.length
-                : Math.min(DEFAULT_GRADIENT_EVALS, gradAtomIndices.length);
+        numGradAtoms = ffxCI ? gradAtomIndices.length
+            : Math.min(DEFAULT_GRADIENT_EVALS, gradAtomIndices.length);
 
         if (debugMode) {
           this.pe = this.dudl = this.d2udl2 = null;
@@ -443,45 +367,16 @@ public class ThermodynamicsTest extends AlgorithmsTest {
      Test info, filenames, mode, dG, tol(dG), grad atoms, PE, dU/dL, d2U/dL2,
      dU/dX, d2U/dXdL, Groovy options, properties, Groovy flags
     */
-    return Arrays.asList(
-        new Object[][] {
-            {
-                "Thermodynamics Help Message Test",
-                new String[] {},
-                ThermoTestMode.HELP,
-                false,
-                0,
-                0,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                new String[] {},
-                new String[] {},
-                new String[] {"-h", "true"}
-            },
-            {
-                "Acetamide Implicit Solvation Free Energy: -10.5 kcal/mol",
-                new String[] {"ffx/algorithms/structures/acetamide.gk.xyz"},
-                ThermoTestMode.FREE,
-                true,
-                -9.2,
-                1.0,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                new String[] {
-                    "-C", "10", "--ac", "1-9", "-d", "1.0", "-n", "20000", "-w", "5", "--bM", "0.25",
-                    "--tp", "2.0"
-                },
-                new String[] {"randomseed", "42", "lambda-bin-width", "0.02"},
-                new String[] {}
-            },
+    return Arrays.asList(new Object[][] {
+        {"Thermodynamics Help Message Test", new String[] {}, ThermoTestMode.HELP, false, 0, 0, null,
+            null, null, null, null, null, new String[] {}, new String[] {},
+            new String[] {"-h", "true"}},
+        {"Acetamide Implicit Solvation Free Energy: -10.5 kcal/mol",
+            new String[] {"ffx/algorithms/structures/acetamide.gk.xyz"}, ThermoTestMode.FREE, true,
+            -9.2, 1.0, null, null, null, null, null, null,
+            new String[] {"-C", "10", "--ac", "1-9", "-d", "1.0", "-n", "20000", "-w", "5", "--bM",
+                "0.25", "--tp", "2.0"},
+            new String[] {"randomseed", "42", "lambda-bin-width", "0.02"}, new String[] {}},
 //            {
 //                // Gradient atoms: a few random protein atoms, some of the coordinating carboxyls, the
 //                // ions, and some water.
@@ -618,1010 +513,458 @@ public class ThermodynamicsTest extends AlgorithmsTest {
 //                new String[] {"disable-neighbor-updates", "true"},
 //                new String[] {}
 //            },
-            {
-                // Gradient atoms: a few random protein atoms, some of the coordinating carboxyls, the
-                // ions, and some water.
-                "Calbindin D9k Ca/Mg Simultaneous Bookending: L = 1.0",
-                new String[] {
-                    "ffx/algorithms/structures/4icb_ca_a.xyz",
-                    "ffx/algorithms/structures/4icb_ca_b.xyz",
-                    "ffx/algorithms/structures/4icb_mg_a.xyz",
-                    "ffx/algorithms/structures/4icb_mg_b.xyz"
-                },
-                ThermoTestMode.GRAD,
-                true,
-                0,
-                0,
-                new int[] {1, 100, 421, 426, 919, 921, 1203, 1204, 1205, 1206, 1207, 1208},
-                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
-                new double[] {-8478.143922064253, 0},
-                new double[] {0, 0},
-                new double[] {205.8018333335931, Double.NaN},
-                new double[][][] {
-                    {
-                        {1.5229178263056111, -0.15677963159712682, 1.1816872925903983},
-                        {-1.224135286541821, 0.3201779704385803, -1.1483158020643944},
-                        {1.2969488018273694, -0.8376981151127962, 0.09660091060711373},
-                        {-1.0033472564565908, 0.7283612031936482, -0.5947650554794823},
-                        {-0.17802197322041113, -0.34399197898615985, -0.6113921282564965},
-                        {-0.25687293667935585, 0.07341668289540859, 0.15584681242862208},
-                        {-0.530878661936121, 0.7208093361614316, -0.6200446160740853},
-                        {0.29982215558798053, -0.40520052950990504, 0.4147977845799842},
-                        {0.05351938289450864, 0.3348510487959171, 0.9222262189021788},
-                        {-0.8823224520772985, 0.6039483343281296, -0.894180455908895},
-                        {-0.08825723194619872, 0.9833060568981935, -0.1570236438711472},
-                        {0.1637236555517756, -0.6228719840792594, 1.1789882530493676},
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[12][3]
-                },
-                new double[][][] {
-                    {
-                        {2.9163384624158903E-16, -3.231433591192038E-17, 2.290897273901192E-16},
-                        {-2.3636319462860973E-16, 6.381190126870034E-17, -2.248191366091609E-16},
-                        {2.560037826405337E-16, -1.6896029769367465E-16, 2.109040117467388E-17},
-                        {-1.9499561171519864E-16, 1.4182059587979724E-16, -1.147110775007824E-16},
-                        {-3.4271779930734056E-17, -6.783853481206671E-17, -1.1756746156916025E-16},
-                        {-4.9856018468543316E-17, 1.3508015854151776E-17, 3.0464333860802826E-17},
-                        {-1.0242265198852129E-16, 1.38262207830166E-16, -1.1896800686893987E-16},
-                        {5.759415657973307E-17, -7.51641112923199E-17, 7.963250894893407E-17},
-                        {1.0531891470506986E-17, 6.456878899573994E-17, 1.7727407986513553E-16},
-                        {-1.6972089767901735E-16, 1.1349386057403977E-16, -1.734213718396476E-16},
-                        {-1.8526781815166296E-17, 1.8642231778983455E-16, -3.858193767513045E-17},
-                        {3.214626465908195E-17, -1.2066294994525673E-16, 2.2612900090378923E-16}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[12][3]
-                },
-                new String[] {
-                    "-l",
-                    "1.0",
-                    "--sf",
-                    "TRIG",
-                    "--uaA",
-                    "329-345.857-972.1008-1022.1204.1208-1213",
-                    "--uaB",
-                    "329-345.857-972.1008-1022.1204.1208-1213"
-                },
-                new String[] {"disable-neighbor-updates", "true"},
-                new String[] {}
-            },
-            {
-                // Gradient atoms: a few random protein atoms, some of the coordinating carboxyls, the
-                // ions, and some water.
-                "Carp Parvalbumin Ca/Mg Simultaneous Bookending: L = 0.0",
-                new String[] {
-                    "ffx/algorithms/structures/5cpv_ca_a.xyz",
-                    "ffx/algorithms/structures/5cpv_ca_b.xyz",
-                    "ffx/algorithms/structures/5cpv_mg_a.xyz",
-                    "ffx/algorithms/structures/5cpv_mg_b.xyz"
-                },
-                ThermoTestMode.GRAD,
-                true,
-                0,
-                0,
-                new int[] {1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
-                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
-                new double[] {-10389.28471472707, 0},
-                new double[] {0, 0},
-                new double[] {-204.10881484981655, Double.NaN},
-                new double[][][] {
-                    {
-                        {-1.1609578854274971, 0.8877442339271191, -0.381997307744788},
-                        {0.17136471973564316, -0.6936945821429843, -0.26469263318865544},
-                        {1.7842973607219292, 0.06247987009760436, 0.6436711554923047},
-                        {-0.80901615978728, -0.03278744764172048, -0.6933431691420533},
-                        {-0.009221945771183293, -0.03024427307941413, -0.22321841071848292},
-                        {0.44453213441769357, -0.03618099829897137, -0.09130836864141911},
-                        {0.6143060586860591, -0.5593900343333869, 0.7793559372609127},
-                        {-0.4099919820212454, 0.2771241953804595, -0.3596606825033808},
-                        {0.2058491063283956, -1.6995564152580624, 0.3162941963413184},
-                        {0.17045731075675363, 1.3626300067862616, 0.1829234871604033},
-                        {-0.1369296520341554, 0.28864175741664555, -0.23181864232968774},
-                        {-0.3317934170646355, 0.1069795784815214, 0.07598972633102496},
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[12][3]
-                },
-                new double[][][] {
-                    {
-                        {2.2334257856503093E-16, -1.707804485712817E-16, 7.346589191878714E-17},
-                        {-3.2975061696419736E-17, 1.334426237792466E-16, 5.09166906746972E-17},
-                        {-3.4327908122000154E-16, -1.202864843760528E-17, -1.2390581692419626E-16},
-                        {1.5565048660891405E-16, 6.307561537504449E-18, 1.33392733415393E-16},
-                        {1.7707118825002895E-18, 5.832093621377665E-18, 4.292309196176272E-17},
-                        {-8.548440453491081E-17, 6.970235281623787E-18, 1.754463462531147E-17},
-                        {-1.181759625502523E-16, 1.0762112290669118E-16, -1.4995022305853868E-16},
-                        {7.888210075095321E-17, -5.330782752663655E-17, 6.918026206876034E-17},
-                        {-3.962976007169519E-17, 3.269309449444003E-16, -6.080614905213747E-17},
-                        {-3.278713882575124E-17, -2.62121095313077E-16, -3.519199394795007E-17},
-                        {2.6347728499845737E-17, -5.55185665906526E-17, 4.459517949566215E-17},
-                        {6.382453595443383E-17, -2.0571002605587047E-17, -1.4618517021800703E-17}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[12][3]
-                },
-                new String[] {
-                    "-l",
-                    "0.0",
-                    "--sf",
-                    "TRIG",
-                    "--uaA",
-                    "810-829.1339-1447.1476-1490.1603.1605-1610",
-                    "--uaB",
-                    "810-829.1339-1447.1476-1490.1603.1605-1610"
-                },
-                new String[] {"disable-neighbor-updates", "true"},
-                new String[] {}
-            },
-            {
-                "Carp Parvalbumin Ca/Mg Simultaneous Bookending: L = 0.5",
-                new String[] {
-                    "ffx/algorithms/structures/5cpv_ca_a.xyz",
-                    "ffx/algorithms/structures/5cpv_ca_b.xyz",
-                    "ffx/algorithms/structures/5cpv_mg_a.xyz",
-                    "ffx/algorithms/structures/5cpv_mg_b.xyz"
-                },
-                ThermoTestMode.GRAD,
-                true,
-                0,
-                0,
-                new int[] {1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
-                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
-                new double[] {-10409.965261439502, 0},
-                new double[] {-64.96985362393843, 0},
-                new double[] {0, Double.NaN},
-                new double[][][] {
-                    {
-                        {-1.1610220532282816, 0.8877825087765396, -0.38190561321870153},
-                        {0.17141666802985345, -0.6936868435232721, -0.26468548230330735},
-                        {1.7844987915596682, 0.0625323990316684, 0.6441061559020982},
-                        {-0.8091313886502285, -0.032792749245311725, -0.6934234392602314},
-                        {-0.009206939878777853, -0.030315101956861712, -0.2231346110988761},
-                        {0.4443810630713887, -0.036232529267353986, -0.09120578149088898},
-                        {0.6143248825840462, -0.5594553644984039, 0.7794994337695262},
-                        {-0.4100603484233871, 0.2771150828568485, -0.3596269108370689},
-                        {0.2060121473201555, -1.6995185434801163, 0.31609655101286327},
-                        {0.1704401628733358, 1.3626093888666202, 0.18294114185436605},
-                        {-0.13696614734124157, 0.2886080953858223, -0.23182359983306977},
-                        {-0.33178545555019134, 0.10693683664021286, 0.07599211616273438}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[12][3]
-                },
-                new double[][][] {
-                    {
-                        {2.755227653583603E-6, -5.374905775568095E-6, -2.803630881231811E-6},
-                        {-2.2802651855613476E-6, 1.9373526711774502E-6, -1.3042348507852353E-6},
-                        {-4.54644512082325E-6, 8.588679262899745E-6, -1.638592826225249E-5},
-                        {4.125879040195457E-6, -1.1162916089269004E-5, 1.46747768532407E-5},
-                        {-6.535106551908143E-6, 7.6152604604473595E-6, -1.0766383081950437E-5},
-                        {-1.988285510456933E-6, 4.732964988818367E-6, -5.78566637177147E-6},
-                        {-1.3921589704368742E-6, 5.4545292442753635E-6, -3.289226282676694E-6},
-                        {-1.1008869904571839E-7, -1.8223435560571488E-7, -1.842757221481861E-6},
-                        {3.151330700390531E-6, -7.456983421860741E-6, 6.8281705551953564E-6},
-                        {-1.0483102688141344E-6, 1.2986962580896488E-6, -2.329191170602485E-6},
-                        {-7.817337568383209E-7, 2.0726923768421557E-6, -7.678219411388909E-7},
-                        {-9.764459392158642E-7, 2.0130999769385483E-6, -2.226604200572524E-6}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[12][3]
-                },
-                new String[] {
-                    "-l",
-                    "0.5",
-                    "--sf",
-                    "TRIG",
-                    "--uaA",
-                    "810-829.1339-1447.1476-1490.1603.1605-1610",
-                    "--uaB",
-                    "810-829.1339-1447.1476-1490.1603.1605-1610"
-                },
-                new String[] {"disable-neighbor-updates", "true"},
-                new String[] {}
-            },
-            {
-                "Carp Parvalbumin Ca/Mg Simultaneous Bookending: L = 1.0",
-                new String[] {
-                    "ffx/algorithms/structures/5cpv_ca_a.xyz",
-                    "ffx/algorithms/structures/5cpv_ca_b.xyz",
-                    "ffx/algorithms/structures/5cpv_mg_a.xyz",
-                    "ffx/algorithms/structures/5cpv_mg_b.xyz"
-                },
-                ThermoTestMode.GRAD,
-                true,
-                0,
-                0,
-                new int[] {1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
-                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
-                new double[] {-10430.645808151916, 0},
-                new double[] {0, 0},
-                new double[] {204.1088148497838, Double.NaN},
-                new double[][][] {
-                    {
-                        {-1.1609561125944228, 0.8877407807597617, -0.3819990910861595},
-                        {0.17136321710200875, -0.6936932915411145, -0.2646933907193276},
-                        {1.78429435562491, 0.06248553884406727, 0.6436609576859738},
-                        {-0.8090134265871809, -0.032794734757721766, -0.693334070333059},
-                        {-0.009226164435848005, -0.03023937880286831, -0.22322518458123763},
-                        {0.4445308404726829, -0.03617792937772801, -0.09131197683309833},
-                        {0.6143051128396353, -0.5593864905811907, 0.7793539392457256},
-                        {-0.40999206546827605, 0.27712408910913533, -0.35966183105159466},
-                        {0.205851177042927, -1.6995612712832284, 0.31629838909722086},
-                        {0.17045662254298133, 1.3626308508037734, 0.1829220337727313},
-                        {-0.13693017608623448, 0.2886431027192988, -0.23181908891834802},
-                        {-0.3317940476955181, 0.10698088476669532, 0.07598834048574243},
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[12][3]
-                },
-                new double[][][] {
-                    {
-                        {-2.2334224114695824E-16, 1.7077979033516612E-16, -7.346623526454586E-17},
-                        {3.297478244447361E-17, -1.3344238652197185E-16, -5.091685039740076E-17},
-                        {3.4327852444105517E-16, 1.202970024746214E-17, 1.2390381022673677E-16},
-                        {-1.5564998133445806E-16, -6.308928600450258E-18, -1.3339093627354278E-16},
-                        {-1.7715122022323975E-18, -5.831161020942922E-18, -4.292441046342064E-17},
-                        {8.548416104016219E-17, -6.969655660581429E-18, -1.7545343165091794E-17},
-                        {1.181757920599496E-16, -1.0762045491951309E-16, 1.499498202444948E-16},
-                        {-7.888211423293022E-17, 5.3307805209364545E-17, -6.918048774143343E-17},
-                        {3.963014599840059E-17, -3.2693185816148815E-16, 6.080698526185848E-17},
-                        {3.2787010444769745E-17, 2.621212543574982E-16, 3.5191708704298895E-17},
-                        {-2.6347824234619856E-17, 5.551882042226125E-17, -4.459527352673071E-17},
-                        {-6.382465553457344E-17, 2.057124913923137E-17, 1.4618244341429974E-17}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[12][3]
-                },
-                new String[] {
-                    "-l",
-                    "1.0",
-                    "--sf",
-                    "TRIG",
-                    "--uaA",
-                    "810-829.1339-1447.1476-1490.1603.1605-1610",
-                    "--uaB",
-                    "810-829.1339-1447.1476-1490.1603.1605-1610"
-                },
-                new String[] {"disable-neighbor-updates", "true"},
-                new String[] {}
-            },
-            {
-                "Water-Sodium to Water Dimer Softcoring Test: L = 0.0",
-                new String[] {
-                    "ffx/algorithms/structures/water-dimer.xyz",
-                    "ffx/algorithms/structures/water-na.xyz"
-                },
-                ThermoTestMode.GRAD,
-                true,
-                0,
-                0,
-                intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
-                new double[] {2.61926128937, 0},
-                new double[] {17.7107919457, 0},
-                new double[] {-403.664911547, Double.NaN},
-                new double[][][] {
-                    {
-                        {-5.677212525948178, 1.424643968949981, -2.2981580317913504},
-                        {-16.262337326126076, -4.011524859855653, 2.8309493626240676},
-                        {20.234576106276727, -2.5759425460558103, 0.34157831359509483},
-                        {-4.107688957377534E-5, -3.0491094575808766E-4, 1.5088773834586063E-4},
-                        {3.855038213179264E-5, 3.0678248136167547E-4, -1.527835575474326E-4},
-                        {2.526507441982699E-6, -1.8715356035878577E-6, 1.8958192015719713E-6},
-                        {1.7049737457975327, 5.1628234369614825, -0.8743696444278124},
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new double[][][] {
-                    {
-                        {34.717862394027094, -6.918833553692483, 13.770559137316184},
-                        {44.6501751603733, 28.43111292615495, -17.0699023179925},
-                        {-125.31576661843137, 11.778366126287878, -3.1016651209654698},
-                        {0.0, 0.0, 0.0},
-                        {0.0, 0.0, 0.0},
-                        {0.0, 0.0, 0.0},
-                        {45.94772906403098, -33.29064549875034, 6.401008301641785}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new String[] {"-l", "0.0", "--ac", "1-3", "--ac2", "1"},
-                new String[] {},
-                new String[] {}
-            },
-            {
-                "Water-Sodium to Water Dimer Softcoring Test: L = 0.1",
-                new String[] {
-                    "ffx/algorithms/structures/water-dimer.xyz",
-                    "ffx/algorithms/structures/water-na.xyz"
-                },
-                ThermoTestMode.GRAD,
-                true,
-                0,
-                0,
-                intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
-                new double[] {2.850550906, 0},
-                new double[] {-8.71629068942, 0},
-                new double[] {-141.329823284, Double.NaN},
-                new double[][][] {
-                    {
-                        {-2.9145419263022183, 0.8087080881505835, -1.1826969161418945},
-                        {-10.75486342640376, -1.8502906018217953, 1.441002156956333},
-                        {10.24415407077068, -1.5066777027112754, 0.13037812748160396},
-                        {-3.940188541217106E-5, -3.046447158662098E-4, 1.504274409501606E-4},
-                        {4.348535004930246E-5, 3.0537557756647634E-4, -1.5274632518595476E-4},
-                        {5.712456879867664E-6, -9.857865557163607E-7, 1.145744081896436E-6},
-                        {3.425241486013779, 2.548260471307343, -0.38868219515588814}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new double[][][] {
-                    {
-                        {21.219764941164165, -5.301043079657732, 8.702685150224386},
-                        {59.404183336652935, 15.559560209446712, -10.86515770297192},
-                        {-76.64822167834306, 9.426371612748719, -1.3109489861942616},
-                        {8.074643396228061E-5, 1.2233389408248271E-5, -2.0734472804670857E-5},
-                        {2.2173087875276693E-4, -6.414406402810961E-5, 2.6740754942568507E-6},
-                        {1.7176239889004114E-4, 3.3106310006263015E-5, -3.056405648898283E-5},
-                        {-3.9762008391856365, -19.684869938173087, 3.4734701633955916}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new String[] {"-l", "0.1", "--ac", "1-3", "--ac2", "1"},
-                new String[] {},
-                new String[] {}
-            },
-            {
-                "Water-Sodium to Water Dimer Softcoring Test: L = 0.25",
-                new String[] {
-                    "ffx/algorithms/structures/water-dimer.xyz",
-                    "ffx/algorithms/structures/water-na.xyz"
-                },
-                ThermoTestMode.GRAD,
-                false,
-                0,
-                0,
-                intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
-                new double[] {0.974157909812, 0},
-                new double[] {-10.6503844408, 0},
-                new double[] {85.6111397243, Double.NaN},
-                new double[][][] {
-                    {
-                        {-0.8087917281519832, 0.230920162100479, -0.31677660566831417},
-                        {-3.2828492735876607, -0.4439185686570825, 0.3694313047851273},
-                        {2.7179567720851567, -0.4453048785572774, 0.02913967164983769},
-                        {1.1191654242300788E-4, -2.8436948793288743E-4, 1.1810143809370248E-4},
-                        {3.948395026959898E-4, 1.992169489195181E-4, -1.434611972003E-4},
-                        {4.178187790317917E-4, 1.7909105729778537E-5, -3.118731586794815E-5},
-                        {1.3727596548303362, 0.6583705285471645, -0.08173782369167623}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new double[][][] {
-                    {
-                        {8.203573000276744, -2.407260166945433, 3.3325694163231305},
-                        {34.07610421632959, 4.853369454929932, -4.037664708947347},
-                        {-28.691594190062066, 4.581997199828557, -0.30050567027187414},
-                        {0.0030722784633713677, 4.013278190369727E-4, -6.302447025815397E-4},
-                        {0.006927249436665227, -0.0021139142799777464, 2.0753922987915073E-4},
-                        {0.008777938573427544, 2.1069797116961348E-4, -5.578096868382651E-4},
-                        {-13.606860493017741, -7.026604599323282, 1.006581478055631}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new String[] {"-l", "0.25", "--ac", "1-3", "--ac2", "1"},
-                new String[] {},
-                new String[] {}
-            },
-            {
-                "Water-Sodium to Water Dimer Softcoring Test: L = 0.4",
-                new String[] {
-                    "ffx/algorithms/structures/water-dimer.xyz",
-                    "ffx/algorithms/structures/water-na.xyz"
-                },
-                ThermoTestMode.GRAD,
-                true,
-                0,
-                0,
-                intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
-                new double[] {0.110037916292, 0},
-                new double[] {-2.26607999096, 0},
-                new double[] {30.1632932351, Double.NaN},
-                new double[][][] {
-                    {
-                        {-0.1135918356399739, 0.031116766115897736, -0.041752199556192734},
-                        {-0.4844299250151845, -0.052731371080211295, 0.044681832632104526},
-                        {0.34363344315228866, -0.058702201304027674, 0.003020221799192616},
-                        {0.0015984934497727645, -9.5805104515793E-5, -1.7187445022315994E-4},
-                        {0.0036936320812564253, -8.190880189616524E-4, -2.9551973622635126E-5},
-                        {0.004965647007413021, 1.9626489810683822E-5, -2.4565648661058724E-4},
-                        {0.24413054496442746, 0.08121207290200799, -0.005502771964648001}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new double[][][] {
-                    {
-                        {1.9790078473632116, -0.5466360053457613, 0.7442354166761601},
-                        {7.5148029466680395, 1.0124425518627698, -0.8308708232627937},
-                        {-6.43514862353287, 1.0832749443479637, -0.07362559817071525},
-                        {0.020724339018201313, 0.002599652594099935, -0.003961656523433774},
-                        {0.04599278248257384, -0.014257367173055743, 0.0016722631878542601},
-                        {0.0653051230131746, -5.218785659658921E-4, -0.002695798950450919},
-                        {-3.1906844150123317, -1.5369018977200506, 0.16524619704337926}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new String[] {"-l", "0.4", "--ac", "1-3", "--ac2", "1"},
-                new String[] {},
-                new String[] {}
-            },
-            {
-                "Water-Sodium to Water Dimer Softcoring Test: L = 0.5",
-                new String[] {
-                    "ffx/algorithms/structures/water-dimer.xyz",
-                    "ffx/algorithms/structures/water-na.xyz"
-                },
-                ThermoTestMode.GRAD,
-                true,
-                0,
-                0,
-                intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
-                new double[] {-0.00563228503, 0},
-                new double[] {-0.384474276341, 0},
-                new double[] {9.92344157784, Double.NaN},
-                new double[][][] {
-                    {
-                        {-0.009836012990445158, 0.0029589899860514987, -0.0034155479511113907},
-                        {-0.10184729530732066, 5.327593924820649E-4, 0.0057353060076526016},
-                        {0.016303644915009106, -0.003689130235597261, -0.0025312483345677947},
-                        {0.0038107513266330815, 0.003205959229414844, -8.159303166222604E-4},
-                        {0.015696774651107862, -0.0037059448135031083, 2.7367574864321055E-4},
-                        {0.013110199299505135, -0.0030608519096883596, -6.447454233376755E-4},
-                        {0.06276193810551062, 0.00375821835084032, 0.0013984902693433081}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new double[][][] {
-                    {
-                        {0.34392939856659827, -0.09158200189901379, 0.12910527928175775},
-                        {1.1760470096366977, 0.23616310164517534, -0.05057458142688201},
-                        {-1.0121014533251116, 0.15248505767669873, -0.07620425570370314},
-                        {0.011511611202389766, 0.10091080897132744, -0.010683387778191795},
-                        {0.26561965255269504, -0.057037692991738595, 0.004170051640670491},
-                        {0.06748923520446536, -0.09680681673784088, -0.004103281313994225},
-                        {-0.8524954538377344, -0.24413245666460826, 0.008290175300342928}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new String[] {"-l", "0.5", "--ac", "1-3", "--ac2", "1"},
-                new String[] {},
-                new String[] {}
-            },
-            {
-                "Water-Sodium to Water Dimer Softcoring Test: L = 0.6",
-                new String[] {
-                    "ffx/algorithms/structures/water-dimer.xyz",
-                    "ffx/algorithms/structures/water-na.xyz"
-                },
-                ThermoTestMode.GRAD,
-                true,
-                0,
-                0,
-                intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
-                new double[] {-0.010482021204, 0},
-                new double[] {0.180367758296, 0},
-                new double[] {3.43489697899, Double.NaN},
-                new double[][][] {
-                    {
-                        {-0.008649580249889975, 0.0022485600112194097, -8.650726609048702E-4},
-                        {-0.11266057761820013, 0.024694362034725272, 0.0260361864833212},
-                        {0.015218945213069365, -0.00914553962283122, -0.02282021358689983},
-                        {2.5066123005239126E-4, 0.031224802161732783, -0.0034016265001422597},
-                        {0.08190367312390062, -0.018650512458739874, 3.4326425602877264E-4},
-                        {0.0064502702618650975, -0.028665281917196323, -2.4419049163833308E-5},
-                        {0.017486608039202628, -0.0017063902089100456, 7.31881057760824E-4}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new double[][][] {
-                    {
-                        {-0.2058541574059063, 0.04582469500939303, -0.032210244958406097},
-                        {-1.0401985420569162, 0.37454108615584125, 0.47159019722227746},
-                        {0.621062316619004, -0.20684943525738805, -0.39772097441817644},
-                        {-0.10747378808409644, 0.5344440256235907, -0.051334182756052026},
-                        {1.2489110819012346, -0.2984439482946815, -0.007849154127628813},
-                        {-0.2968358770072303, -0.4711447951314603, 0.027030911889720764},
-                        {-0.21961103396608955, 0.02162837189470477, -0.009506552851734766}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new String[] {"-l", "0.6", "--ac", "1-3", "--ac2", "1"},
-                new String[] {},
-                new String[] {}
-            },
-            {
-                "Water-Sodium to Water Dimer Softcoring Test: L = 0.75",
-                new String[] {
-                    "ffx/algorithms/structures/water-dimer.xyz",
-                    "ffx/algorithms/structures/water-na.xyz"
-                },
-                ThermoTestMode.GRAD,
-                false,
-                0,
-                0,
-                intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
-                new double[] {0.0829830017977, 0},
-                new double[] {1.27996801166, 0},
-                new double[] {11.9168667081, Double.NaN},
-                new double[][][] {
-                    {
-                        {-0.08520546853249629, 0.02002391005107648, -0.015337962582326878},
-                        {-0.5072588908421117, 0.17043258439271164, 0.2050240947794576},
-                        {0.25349423271871935, -0.0805529898238775, -0.17425804293531943},
-                        {-0.0506141349576535, 0.22437919802386463, -0.02673413275920512},
-                        {0.5612744057443229, -0.15045901450002216, -0.007975329992730817},
-                        {-0.17340305926115046, -0.1836639508243553, 0.019217340035074935},
-                        {0.0017129151303696705, -1.5973731939765025E-4, 6.403345504972649E-5}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new double[][][] {
-                    {
-                        {-0.9272841243095468, 0.22051093159987895, -0.19112897890018363},
-                        {-4.804523425931252, 1.8204016841668706, 2.205227241175209},
-                        {2.994591363051441, -0.8476847561428067, -1.8543652609150763},
-                        {-0.6630357716342526, 2.3143378077667545, -0.3143349864556007},
-                        {5.981286181791292, -1.7558797902974297, -0.1325990985326137},
-                        {-2.5478012735172113, -1.7548767300847088, 0.28852239893802845},
-                        {-0.033232949450470756, 0.003190852991440346, -0.0013213153097627725}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new String[] {"-l", "0.75", "--ac", "1-3", "--ac2", "1"},
-                new String[] {},
-                new String[] {}
-            },
-            {
-                "Water-Sodium to Water Dimer Softcoring Test: L = 0.9",
-                new String[] {
-                    "ffx/algorithms/structures/water-dimer.xyz",
-                    "ffx/algorithms/structures/water-na.xyz"
-                },
-                ThermoTestMode.GRAD,
-                true,
-                0,
-                0,
-                intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
-                new double[] {0.397347160918, 0},
-                new double[] {2.75351951766, 0},
-                new double[] {5.37105253479, Double.NaN},
-                new double[][][] {
-                    {
-                        {-0.31777515190383454, 0.06654081254942476, -0.061155191586619},
-                        {-1.6398611619313017, 0.5966978877811928, 0.7834547554508479},
-                        {1.0488049692859205, -0.2533323908962118, -0.6671198866431937},
-                        {-0.2740673658300599, 0.8081103620907575, -0.10766129298323851},
-                        {2.047913761610311, -0.6075094312234967, -0.06048821698815812},
-                        {-0.8650389649167101, -0.6105053956998422, 0.11296922972554538},
-                        {2.3913685674263586E-5, -1.84460182457579E-6, 6.030248161425271E-7}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new double[][][] {
-                    {
-                        {-2.2518864370570797, 0.34060365423349903, -0.39403631649939214},
-                        {-10.009715065439687, 3.6614921088174124, 5.8097209404351},
-                        {7.999725481943763, -1.2317995270963276, -5.0518709728060704},
-                        {-2.770170337863771, 5.712033354860753, -0.7489455032193499},
-                        {13.829283560251287, -4.313426777210048, -0.6802886194434065},
-                        {-6.796164346239962, -4.168990151630222, 1.065450769329658},
-                        {-0.001072855594543585, 8.733802493437212E-5, -3.0297796539917875E-5}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new String[] {"-l", "0.9", "--ac", "1-3", "--ac2", "1"},
-                new String[] {},
-                new String[] {}
-            },
-            {
-                "Water-Sodium to Water Dimer Softcoring Test: L = 1.0",
-                new String[] {
-                    "ffx/algorithms/structures/water-dimer.xyz",
-                    "ffx/algorithms/structures/water-na.xyz"
-                },
-                ThermoTestMode.GRAD,
-                true,
-                0,
-                0,
-                intRange(1, 8),
-                // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
-                new double[] {0.678991455919, 0},
-                new double[] {2.62955540214, 0},
-                new double[] {-9.66072732215, Double.NaN},
-                new double[][][] {
-                    {
-                        {-0.5967303838923714, 0.09294823835932634, -0.10065639850802355},
-                        {-2.7182918130174105, 0.9717379671351778, 1.5205922317233873},
-                        {2.059991765566265, -0.34808314525235373, -1.325262659176951},
-                        {-0.6963970726796157, 1.5240570186788684, -0.18878016013974244},
-                        {3.628422351985993, -1.0902413269297175, -0.16292088956721837},
-                        {-1.6769948479628611, -1.150418751991301, 0.2570278756685478},
-                        {0.0, 0.0, 0.0}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new double[][][] {
-                    {
-                        {-3.3452690489458763, 0.1345828814666643, -0.35806274829197704},
-                        {-10.93663217405725, 3.541368037656955, 8.988383737482236},
-                        {12.27657065565445, -0.4907488150661682, -8.232590002516137},
-                        {-5.952373992671734, 8.67661156047595, -0.8110392583955152},
-                        {17.201456551782357, -5.049385958157128, -1.4130599622896023},
-                        {-9.243751991761942, -6.81242770637627, 1.826368234010993},
-                        {0.0, 0.0, 0.0}
-                    },
-                    // Fill in once the test harness supports bias-deposition.
-                    new double[7][3]
-                },
-                new String[] {"-l", "1.0", "--ac", "1-3", "--ac2", "1"},
-                new String[] {},
-                new String[] {}
-            },
-            {
-                "Water-Sodium to Water Dimer Free Energy Test",
-                new String[] {
-                    "ffx/algorithms/structures/water-dimer.xyz",
-                    "ffx/algorithms/structures/water-na.xyz"
-                },
-                ThermoTestMode.FREE,
-                true,
-                16.0,
-                16.0,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                new String[] {
-                    "-d", "1.0", "-l", "0.5", "--ac", "1-3", "--ac2", "1", "-n", "20000", "-Q",
-                    "5000",
-                    "-k", "20.0", "-w", "20.0", "-r", "5.0", "-C", "10"
-                },
-                new String[] {
-                    "disable-neighbor-updates",
-                    "true",
-                    "lambda-bin-width",
-                    "0.025",
-                    "flambda-bin-width",
-                    "5.0",
-                    "randomseed",
-                    "2019"
-                },
-                new String[] {}
-            },
-            {
-                "Dual Well Gradient Test: L = 0.5",
-                new String[] {
-                    "ffx/algorithms/structures/dualWell-cis.xyz",
-                    "ffx/algorithms/structures/dualWell-trans.xyz"
-                },
-                ThermoTestMode.GRAD,
-                false,
-                0,
-                0,
-                new int[] {0, 1, 2, 3},
-                new double[] {1.0, 1.0},
-                new double[] {2.0, 2.0},
-                new double[] {0, Double.NaN},
-                new double[][][] {
-                    {
-                        {8.561159028211611E-6, 5.743324479222663E-6, -1.4984967045837012E-10},
-                        {-7.001815021252073E-6, -4.427074139684514E-6, 1.2219984010349385E-10},
-                        {-2.1489889641599235E-6, 7.92540413855834E-9, 8.443778889936074E-12},
-                        {5.896449572003855E-7, -1.3241757436767075E-6, 1.9206051464940198E-11}
-                    },
-                    new double[4][3]
-                },
-                new double[][][] {
-                    {
-                        {-4.504521213498369E-18, -1.6250327093073752E-17, -8.651645616845026E-13},
-                        {-4.504521213498369E-18, -1.6250327093073752E-17, -8.651646266038085E-13},
-                        {4.504097697024742E-18, 1.6249944935630753E-17, 8.651645891779005E-13},
-                        {4.504203576143149E-18, 1.6249903576600125E-17, 8.651645991104025E-13}
-                    },
-                    new double[4][3]
-                },
-                new String[] {"-l", "0.5"},
-                new String[] {
-                    "pj.nt",
-                    "1",
-                    "lambda-bin-width",
-                    "0.02",
-                    "flambda-bin-width",
-                    "0.20",
-                    "disable-neighbor-updates",
-                    "true",
-                    "ost-temperOffset",
-                    "6.0",
-                    "randomseed",
-                    "2020"
-                },
-                new String[0]
-            },
-            {
-                "Dual Well 1-Step MC-OST Test",
-                new String[] {
-                    "ffx/algorithms/structures/dualWell-cis.xyz",
-                    "ffx/algorithms/structures/dualWell-trans.xyz"
-                },
-                ThermoTestMode.FREE,
-                true,
-                0,
-                1.0,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                new String[] {
-                    "-l",
-                    "0.5",
-                    "--bM",
-                    "0.1",
-                    "-b",
-                    "ADIABATIC",
-                    "-i",
-                    "VERLET",
-                    "-d",
-                    "2.0",
-                    "-k",
-                    "1000.0",
-                    "-w",
-                    "1000.0",
-                    "-r",
-                    "1.0",
-                    "-Q",
-                    "1000",
-                    "-n",
-                    "250000",
-                    "-t",
-                    "298.15",
-                    "--tp",
-                    "6.0",
-                    "--mcMD",
-                    "10",
-                    "--mcL",
-                    "0.10"
-                },
-                new String[] {
-                    "pj.nt",
-                    "1",
-                    "lambda-bin-width",
-                    "0.02",
-                    "flambda-bin-width",
-                    "0.20",
-                    "disable-neighbor-updates",
-                    "true",
-                    "ost-temperOffset",
-                    "6.0",
-                    "randomseed",
-                    "445"
-                },
-                new String[] {"--mc", "true"}
-            },
-            {
-                "Dual Well 2-Step MC-OST Test",
-                new String[] {
-                    "ffx/algorithms/structures/dualWell-cis.xyz",
-                    "ffx/algorithms/structures/dualWell-trans.xyz"
-                },
-                ThermoTestMode.FREE,
-                true,
-                0,
-                1.0,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                new String[] {
-                    "-l",
-                    "0.5",
-                    "--bM",
-                    "0.1",
-                    "-b",
-                    "ADIABATIC",
-                    "-i",
-                    "VERLET",
-                    "-d",
-                    "2.0",
-                    "-k",
-                    "1000.0",
-                    "-w",
-                    "1000.0",
-                    "-r",
-                    "1.0",
-                    "-Q",
-                    "1000",
-                    "-n",
-                    "250000",
-                    "-t",
-                    "298.15",
-                    "--tp",
-                    "6.0",
-                    "--mcMD",
-                    "10",
-                    "--mcL",
-                    "0.10"
-                },
-                new String[] {
-                    "pj.nt",
-                    "1",
-                    "lambda-bin-width",
-                    "0.02",
-                    "flambda-bin-width",
-                    "0.20",
-                    "disable-neighbor-updates",
-                    "true",
-                    "ost-temperOffset",
-                    "6.0",
-                    "randomseed",
-                    "445"
-                },
-                new String[] {"--mc", "true", "--ts", "true"}
-            },
-            {
-                "Short 1-Step MC-OST Test",
-                new String[] {
-                    "ffx/algorithms/structures/dualWell-cis.xyz",
-                    "ffx/algorithms/structures/dualWell-trans.xyz"
-                },
-                ThermoTestMode.FREE,
-                true,
-                0,
-                2.0,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                new String[] {
-                    "-l",
-                    "0.5",
-                    "--bM",
-                    "0.1",
-                    "-b",
-                    "ADIABATIC",
-                    "-i",
-                    "VERLET",
-                    "-d",
-                    "2.0",
-                    "-k",
-                    "1000.0",
-                    "-w",
-                    "1000.0",
-                    "-r",
-                    "0.01",
-                    "-Q",
-                    "100",
-                    "-n",
-                    "200",
-                    "-t",
-                    "100.0",
-                    "--tp",
-                    "6.0",
-                    "--mcMD",
-                    "10",
-                    "--mcL",
-                    "0.10"
-                },
-                new String[] {
-                    "pj.nt",
-                    "1",
-                    "lambda-bin-width",
-                    "0.02",
-                    "flambda-bin-width",
-                    "0.20",
-                    "disable-neighbor-updates",
-                    "true",
-                    "ost-temperOffset",
-                    "6.0",
-                    "randomseed",
-                    "445"
-                },
-                new String[] {"--mc", "true"}
-            },
-            {
-                "Short 2-Step MC-OST Test",
-                new String[] {
-                    "ffx/algorithms/structures/dualWell-cis.xyz",
-                    "ffx/algorithms/structures/dualWell-trans.xyz"
-                },
-                ThermoTestMode.FREE,
-                true,
-                0,
-                2.0,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                new String[] {
-                    "-l",
-                    "0.5",
-                    "--bM",
-                    "0.1",
-                    "-b",
-                    "ADIABATIC",
-                    "-i",
-                    "VERLET",
-                    "-d",
-                    "2.0",
-                    "-k",
-                    "1000.0",
-                    "-w",
-                    "1000.0",
-                    "-r",
-                    "0.01",
-                    "-Q",
-                    "100",
-                    "-n",
-                    "200",
-                    "-t",
-                    "100.0",
-                    "--tp",
-                    "6.0",
-                    "--mcMD",
-                    "10",
-                    "--mcL",
-                    "0.10"
-                },
-                new String[] {
-                    "pj.nt",
-                    "1",
-                    "lambda-bin-width",
-                    "0.02",
-                    "flambda-bin-width",
-                    "0.20",
-                    "disable-neighbor-updates",
-                    "true",
-                    "ost-temperOffset",
-                    "6.0",
-                    "randomseed",
-                    "445"
-                },
-                new String[] {"--mc", "true", "--ts", "true"}
-            }
-        });
+        {
+            // Gradient atoms: a few random protein atoms, some of the coordinating carboxyls, the
+            // ions, and some water.
+            "Calbindin D9k Ca/Mg Simultaneous Bookending: L = 1.0",
+            new String[] {"ffx/algorithms/structures/4icb_ca_a.xyz",
+                "ffx/algorithms/structures/4icb_ca_b.xyz", "ffx/algorithms/structures/4icb_mg_a.xyz",
+                "ffx/algorithms/structures/4icb_mg_b.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            new int[] {1, 100, 421, 426, 919, 921, 1203, 1204, 1205, 1206, 1207, 1208},
+            // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
+            new double[] {-8478.143922064253, 0}, new double[] {0, 0},
+            new double[] {205.8018333335931, Double.NaN}, new double[][][] {
+            {{1.5229178263056111, -0.15677963159712682, 1.1816872925903983},
+                {-1.224135286541821, 0.3201779704385803, -1.1483158020643944},
+                {1.2969488018273694, -0.8376981151127962, 0.09660091060711373},
+                {-1.0033472564565908, 0.7283612031936482, -0.5947650554794823},
+                {-0.17802197322041113, -0.34399197898615985, -0.6113921282564965},
+                {-0.25687293667935585, 0.07341668289540859, 0.15584681242862208},
+                {-0.530878661936121, 0.7208093361614316, -0.6200446160740853},
+                {0.29982215558798053, -0.40520052950990504, 0.4147977845799842},
+                {0.05351938289450864, 0.3348510487959171, 0.9222262189021788},
+                {-0.8823224520772985, 0.6039483343281296, -0.894180455908895},
+                {-0.08825723194619872, 0.9833060568981935, -0.1570236438711472},
+                {0.1637236555517756, -0.6228719840792594, 1.1789882530493676},},
+            // Fill in once the test harness supports bias-deposition.
+            new double[12][3]}, new double[][][] {
+            {{2.9163384624158903E-16, -3.231433591192038E-17, 2.290897273901192E-16},
+                {-2.3636319462860973E-16, 6.381190126870034E-17, -2.248191366091609E-16},
+                {2.560037826405337E-16, -1.6896029769367465E-16, 2.109040117467388E-17},
+                {-1.9499561171519864E-16, 1.4182059587979724E-16, -1.147110775007824E-16},
+                {-3.4271779930734056E-17, -6.783853481206671E-17, -1.1756746156916025E-16},
+                {-4.9856018468543316E-17, 1.3508015854151776E-17, 3.0464333860802826E-17},
+                {-1.0242265198852129E-16, 1.38262207830166E-16, -1.1896800686893987E-16},
+                {5.759415657973307E-17, -7.51641112923199E-17, 7.963250894893407E-17},
+                {1.0531891470506986E-17, 6.456878899573994E-17, 1.7727407986513553E-16},
+                {-1.6972089767901735E-16, 1.1349386057403977E-16, -1.734213718396476E-16},
+                {-1.8526781815166296E-17, 1.8642231778983455E-16, -3.858193767513045E-17},
+                {3.214626465908195E-17, -1.2066294994525673E-16, 2.2612900090378923E-16}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[12][3]}, new String[] {"-l", "1.0", "--sf", "TRIG", "--uaA",
+            "329-345.857-972.1008-1022.1204.1208-1213", "--uaB",
+            "329-345.857-972.1008-1022.1204.1208-1213"},
+            new String[] {"disable-neighbor-updates", "true"}, new String[] {}}, {
+        // Gradient atoms: a few random protein atoms, some of the coordinating carboxyls, the
+        // ions, and some water.
+        "Carp Parvalbumin Ca/Mg Simultaneous Bookending: L = 0.0",
+        new String[] {"ffx/algorithms/structures/5cpv_ca_a.xyz",
+            "ffx/algorithms/structures/5cpv_ca_b.xyz", "ffx/algorithms/structures/5cpv_mg_a.xyz",
+            "ffx/algorithms/structures/5cpv_mg_b.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+        new int[] {1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
+        // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
+        new double[] {-10389.28471472707, 0}, new double[] {0, 0},
+        new double[] {-204.10881484981655, Double.NaN}, new double[][][] {
+        {{-1.1609578854274971, 0.8877442339271191, -0.381997307744788},
+            {0.17136471973564316, -0.6936945821429843, -0.26469263318865544},
+            {1.7842973607219292, 0.06247987009760436, 0.6436711554923047},
+            {-0.80901615978728, -0.03278744764172048, -0.6933431691420533},
+            {-0.009221945771183293, -0.03024427307941413, -0.22321841071848292},
+            {0.44453213441769357, -0.03618099829897137, -0.09130836864141911},
+            {0.6143060586860591, -0.5593900343333869, 0.7793559372609127},
+            {-0.4099919820212454, 0.2771241953804595, -0.3596606825033808},
+            {0.2058491063283956, -1.6995564152580624, 0.3162941963413184},
+            {0.17045731075675363, 1.3626300067862616, 0.1829234871604033},
+            {-0.1369296520341554, 0.28864175741664555, -0.23181864232968774},
+            {-0.3317934170646355, 0.1069795784815214, 0.07598972633102496},},
+        // Fill in once the test harness supports bias-deposition.
+        new double[12][3]}, new double[][][] {
+        {{2.2334257856503093E-16, -1.707804485712817E-16, 7.346589191878714E-17},
+            {-3.2975061696419736E-17, 1.334426237792466E-16, 5.09166906746972E-17},
+            {-3.4327908122000154E-16, -1.202864843760528E-17, -1.2390581692419626E-16},
+            {1.5565048660891405E-16, 6.307561537504449E-18, 1.33392733415393E-16},
+            {1.7707118825002895E-18, 5.832093621377665E-18, 4.292309196176272E-17},
+            {-8.548440453491081E-17, 6.970235281623787E-18, 1.754463462531147E-17},
+            {-1.181759625502523E-16, 1.0762112290669118E-16, -1.4995022305853868E-16},
+            {7.888210075095321E-17, -5.330782752663655E-17, 6.918026206876034E-17},
+            {-3.962976007169519E-17, 3.269309449444003E-16, -6.080614905213747E-17},
+            {-3.278713882575124E-17, -2.62121095313077E-16, -3.519199394795007E-17},
+            {2.6347728499845737E-17, -5.55185665906526E-17, 4.459517949566215E-17},
+            {6.382453595443383E-17, -2.0571002605587047E-17, -1.4618517021800703E-17}},
+        // Fill in once the test harness supports bias-deposition.
+        new double[12][3]}, new String[] {"-l", "0.0", "--sf", "TRIG", "--uaA",
+        "810-829.1339-1447.1476-1490.1603.1605-1610", "--uaB",
+        "810-829.1339-1447.1476-1490.1603.1605-1610"},
+        new String[] {"disable-neighbor-updates", "true"}, new String[] {}},
+        {"Carp Parvalbumin Ca/Mg Simultaneous Bookending: L = 0.5",
+            new String[] {"ffx/algorithms/structures/5cpv_ca_a.xyz",
+                "ffx/algorithms/structures/5cpv_ca_b.xyz", "ffx/algorithms/structures/5cpv_mg_a.xyz",
+                "ffx/algorithms/structures/5cpv_mg_b.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            new int[] {1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
+            // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
+            new double[] {-10409.965261439502, 0}, new double[] {-64.96985362393843, 0},
+            new double[] {0, Double.NaN}, new double[][][] {
+            {{-1.1610220532282816, 0.8877825087765396, -0.38190561321870153},
+                {0.17141666802985345, -0.6936868435232721, -0.26468548230330735},
+                {1.7844987915596682, 0.0625323990316684, 0.6441061559020982},
+                {-0.8091313886502285, -0.032792749245311725, -0.6934234392602314},
+                {-0.009206939878777853, -0.030315101956861712, -0.2231346110988761},
+                {0.4443810630713887, -0.036232529267353986, -0.09120578149088898},
+                {0.6143248825840462, -0.5594553644984039, 0.7794994337695262},
+                {-0.4100603484233871, 0.2771150828568485, -0.3596269108370689},
+                {0.2060121473201555, -1.6995185434801163, 0.31609655101286327},
+                {0.1704401628733358, 1.3626093888666202, 0.18294114185436605},
+                {-0.13696614734124157, 0.2886080953858223, -0.23182359983306977},
+                {-0.33178545555019134, 0.10693683664021286, 0.07599211616273438}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[12][3]}, new double[][][] {
+            {{2.755227653583603E-6, -5.374905775568095E-6, -2.803630881231811E-6},
+                {-2.2802651855613476E-6, 1.9373526711774502E-6, -1.3042348507852353E-6},
+                {-4.54644512082325E-6, 8.588679262899745E-6, -1.638592826225249E-5},
+                {4.125879040195457E-6, -1.1162916089269004E-5, 1.46747768532407E-5},
+                {-6.535106551908143E-6, 7.6152604604473595E-6, -1.0766383081950437E-5},
+                {-1.988285510456933E-6, 4.732964988818367E-6, -5.78566637177147E-6},
+                {-1.3921589704368742E-6, 5.4545292442753635E-6, -3.289226282676694E-6},
+                {-1.1008869904571839E-7, -1.8223435560571488E-7, -1.842757221481861E-6},
+                {3.151330700390531E-6, -7.456983421860741E-6, 6.8281705551953564E-6},
+                {-1.0483102688141344E-6, 1.2986962580896488E-6, -2.329191170602485E-6},
+                {-7.817337568383209E-7, 2.0726923768421557E-6, -7.678219411388909E-7},
+                {-9.764459392158642E-7, 2.0130999769385483E-6, -2.226604200572524E-6}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[12][3]}, new String[] {"-l", "0.5", "--sf", "TRIG", "--uaA",
+            "810-829.1339-1447.1476-1490.1603.1605-1610", "--uaB",
+            "810-829.1339-1447.1476-1490.1603.1605-1610"},
+            new String[] {"disable-neighbor-updates", "true"}, new String[] {}},
+        {"Carp Parvalbumin Ca/Mg Simultaneous Bookending: L = 1.0",
+            new String[] {"ffx/algorithms/structures/5cpv_ca_a.xyz",
+                "ffx/algorithms/structures/5cpv_ca_b.xyz", "ffx/algorithms/structures/5cpv_mg_a.xyz",
+                "ffx/algorithms/structures/5cpv_mg_b.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            new int[] {1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
+            // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
+            new double[] {-10430.645808151916, 0}, new double[] {0, 0},
+            new double[] {204.1088148497838, Double.NaN}, new double[][][] {
+            {{-1.1609561125944228, 0.8877407807597617, -0.3819990910861595},
+                {0.17136321710200875, -0.6936932915411145, -0.2646933907193276},
+                {1.78429435562491, 0.06248553884406727, 0.6436609576859738},
+                {-0.8090134265871809, -0.032794734757721766, -0.693334070333059},
+                {-0.009226164435848005, -0.03023937880286831, -0.22322518458123763},
+                {0.4445308404726829, -0.03617792937772801, -0.09131197683309833},
+                {0.6143051128396353, -0.5593864905811907, 0.7793539392457256},
+                {-0.40999206546827605, 0.27712408910913533, -0.35966183105159466},
+                {0.205851177042927, -1.6995612712832284, 0.31629838909722086},
+                {0.17045662254298133, 1.3626308508037734, 0.1829220337727313},
+                {-0.13693017608623448, 0.2886431027192988, -0.23181908891834802},
+                {-0.3317940476955181, 0.10698088476669532, 0.07598834048574243},},
+            // Fill in once the test harness supports bias-deposition.
+            new double[12][3]}, new double[][][] {
+            {{-2.2334224114695824E-16, 1.7077979033516612E-16, -7.346623526454586E-17},
+                {3.297478244447361E-17, -1.3344238652197185E-16, -5.091685039740076E-17},
+                {3.4327852444105517E-16, 1.202970024746214E-17, 1.2390381022673677E-16},
+                {-1.5564998133445806E-16, -6.308928600450258E-18, -1.3339093627354278E-16},
+                {-1.7715122022323975E-18, -5.831161020942922E-18, -4.292441046342064E-17},
+                {8.548416104016219E-17, -6.969655660581429E-18, -1.7545343165091794E-17},
+                {1.181757920599496E-16, -1.0762045491951309E-16, 1.499498202444948E-16},
+                {-7.888211423293022E-17, 5.3307805209364545E-17, -6.918048774143343E-17},
+                {3.963014599840059E-17, -3.2693185816148815E-16, 6.080698526185848E-17},
+                {3.2787010444769745E-17, 2.621212543574982E-16, 3.5191708704298895E-17},
+                {-2.6347824234619856E-17, 5.551882042226125E-17, -4.459527352673071E-17},
+                {-6.382465553457344E-17, 2.057124913923137E-17, 1.4618244341429974E-17}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[12][3]}, new String[] {"-l", "1.0", "--sf", "TRIG", "--uaA",
+            "810-829.1339-1447.1476-1490.1603.1605-1610", "--uaB",
+            "810-829.1339-1447.1476-1490.1603.1605-1610"},
+            new String[] {"disable-neighbor-updates", "true"}, new String[] {}},
+        {"Water-Sodium to Water Dimer Softcoring Test: L = 0.0",
+            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
+                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            intRange(1, 8),
+            // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
+            new double[] {2.61926128937, 0}, new double[] {17.7107919457, 0},
+            new double[] {-403.664911547, Double.NaN}, new double[][][] {
+            {{-5.677212525948178, 1.424643968949981, -2.2981580317913504},
+                {-16.262337326126076, -4.011524859855653, 2.8309493626240676},
+                {20.234576106276727, -2.5759425460558103, 0.34157831359509483},
+                {-4.107688957377534E-5, -3.0491094575808766E-4, 1.5088773834586063E-4},
+                {3.855038213179264E-5, 3.0678248136167547E-4, -1.527835575474326E-4},
+                {2.526507441982699E-6, -1.8715356035878577E-6, 1.8958192015719713E-6},
+                {1.7049737457975327, 5.1628234369614825, -0.8743696444278124},},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new double[][][] {
+            {{34.717862394027094, -6.918833553692483, 13.770559137316184},
+                {44.6501751603733, 28.43111292615495, -17.0699023179925},
+                {-125.31576661843137, 11.778366126287878, -3.1016651209654698}, {0.0, 0.0, 0.0},
+                {0.0, 0.0, 0.0}, {0.0, 0.0, 0.0},
+                {45.94772906403098, -33.29064549875034, 6.401008301641785}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new String[] {"-l", "0.0", "--ac", "1-3", "--ac2", "1"},
+            new String[] {}, new String[] {}},
+        {"Water-Sodium to Water Dimer Softcoring Test: L = 0.1",
+            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
+                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            intRange(1, 8),
+            // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
+            new double[] {2.850550906, 0}, new double[] {-8.71629068942, 0},
+            new double[] {-141.329823284, Double.NaN}, new double[][][] {
+            {{-2.9145419263022183, 0.8087080881505835, -1.1826969161418945},
+                {-10.75486342640376, -1.8502906018217953, 1.441002156956333},
+                {10.24415407077068, -1.5066777027112754, 0.13037812748160396},
+                {-3.940188541217106E-5, -3.046447158662098E-4, 1.504274409501606E-4},
+                {4.348535004930246E-5, 3.0537557756647634E-4, -1.5274632518595476E-4},
+                {5.712456879867664E-6, -9.857865557163607E-7, 1.145744081896436E-6},
+                {3.425241486013779, 2.548260471307343, -0.38868219515588814}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new double[][][] {
+            {{21.219764941164165, -5.301043079657732, 8.702685150224386},
+                {59.404183336652935, 15.559560209446712, -10.86515770297192},
+                {-76.64822167834306, 9.426371612748719, -1.3109489861942616},
+                {8.074643396228061E-5, 1.2233389408248271E-5, -2.0734472804670857E-5},
+                {2.2173087875276693E-4, -6.414406402810961E-5, 2.6740754942568507E-6},
+                {1.7176239889004114E-4, 3.3106310006263015E-5, -3.056405648898283E-5},
+                {-3.9762008391856365, -19.684869938173087, 3.4734701633955916}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new String[] {"-l", "0.1", "--ac", "1-3", "--ac2", "1"},
+            new String[] {}, new String[] {}},
+        {"Water-Sodium to Water Dimer Softcoring Test: L = 0.25",
+            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
+                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, false, 0, 0,
+            intRange(1, 8),
+            // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
+            new double[] {0.974157909812, 0}, new double[] {-10.6503844408, 0},
+            new double[] {85.6111397243, Double.NaN}, new double[][][] {
+            {{-0.8087917281519832, 0.230920162100479, -0.31677660566831417},
+                {-3.2828492735876607, -0.4439185686570825, 0.3694313047851273},
+                {2.7179567720851567, -0.4453048785572774, 0.02913967164983769},
+                {1.1191654242300788E-4, -2.8436948793288743E-4, 1.1810143809370248E-4},
+                {3.948395026959898E-4, 1.992169489195181E-4, -1.434611972003E-4},
+                {4.178187790317917E-4, 1.7909105729778537E-5, -3.118731586794815E-5},
+                {1.3727596548303362, 0.6583705285471645, -0.08173782369167623}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new double[][][] {
+            {{8.203573000276744, -2.407260166945433, 3.3325694163231305},
+                {34.07610421632959, 4.853369454929932, -4.037664708947347},
+                {-28.691594190062066, 4.581997199828557, -0.30050567027187414},
+                {0.0030722784633713677, 4.013278190369727E-4, -6.302447025815397E-4},
+                {0.006927249436665227, -0.0021139142799777464, 2.0753922987915073E-4},
+                {0.008777938573427544, 2.1069797116961348E-4, -5.578096868382651E-4},
+                {-13.606860493017741, -7.026604599323282, 1.006581478055631}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new String[] {"-l", "0.25", "--ac", "1-3", "--ac2", "1"},
+            new String[] {}, new String[] {}},
+        {"Water-Sodium to Water Dimer Softcoring Test: L = 0.4",
+            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
+                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            intRange(1, 8),
+            // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
+            new double[] {0.110037916292, 0}, new double[] {-2.26607999096, 0},
+            new double[] {30.1632932351, Double.NaN}, new double[][][] {
+            {{-0.1135918356399739, 0.031116766115897736, -0.041752199556192734},
+                {-0.4844299250151845, -0.052731371080211295, 0.044681832632104526},
+                {0.34363344315228866, -0.058702201304027674, 0.003020221799192616},
+                {0.0015984934497727645, -9.5805104515793E-5, -1.7187445022315994E-4},
+                {0.0036936320812564253, -8.190880189616524E-4, -2.9551973622635126E-5},
+                {0.004965647007413021, 1.9626489810683822E-5, -2.4565648661058724E-4},
+                {0.24413054496442746, 0.08121207290200799, -0.005502771964648001}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new double[][][] {
+            {{1.9790078473632116, -0.5466360053457613, 0.7442354166761601},
+                {7.5148029466680395, 1.0124425518627698, -0.8308708232627937},
+                {-6.43514862353287, 1.0832749443479637, -0.07362559817071525},
+                {0.020724339018201313, 0.002599652594099935, -0.003961656523433774},
+                {0.04599278248257384, -0.014257367173055743, 0.0016722631878542601},
+                {0.0653051230131746, -5.218785659658921E-4, -0.002695798950450919},
+                {-3.1906844150123317, -1.5369018977200506, 0.16524619704337926}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new String[] {"-l", "0.4", "--ac", "1-3", "--ac2", "1"},
+            new String[] {}, new String[] {}},
+        {"Water-Sodium to Water Dimer Softcoring Test: L = 0.5",
+            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
+                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            intRange(1, 8),
+            // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
+            new double[] {-0.00563228503, 0}, new double[] {-0.384474276341, 0},
+            new double[] {9.92344157784, Double.NaN}, new double[][][] {
+            {{-0.009836012990445158, 0.0029589899860514987, -0.0034155479511113907},
+                {-0.10184729530732066, 5.327593924820649E-4, 0.0057353060076526016},
+                {0.016303644915009106, -0.003689130235597261, -0.0025312483345677947},
+                {0.0038107513266330815, 0.003205959229414844, -8.159303166222604E-4},
+                {0.015696774651107862, -0.0037059448135031083, 2.7367574864321055E-4},
+                {0.013110199299505135, -0.0030608519096883596, -6.447454233376755E-4},
+                {0.06276193810551062, 0.00375821835084032, 0.0013984902693433081}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new double[][][] {
+            {{0.34392939856659827, -0.09158200189901379, 0.12910527928175775},
+                {1.1760470096366977, 0.23616310164517534, -0.05057458142688201},
+                {-1.0121014533251116, 0.15248505767669873, -0.07620425570370314},
+                {0.011511611202389766, 0.10091080897132744, -0.010683387778191795},
+                {0.26561965255269504, -0.057037692991738595, 0.004170051640670491},
+                {0.06748923520446536, -0.09680681673784088, -0.004103281313994225},
+                {-0.8524954538377344, -0.24413245666460826, 0.008290175300342928}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new String[] {"-l", "0.5", "--ac", "1-3", "--ac2", "1"},
+            new String[] {}, new String[] {}},
+        {"Water-Sodium to Water Dimer Softcoring Test: L = 0.6",
+            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
+                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            intRange(1, 8),
+            // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
+            new double[] {-0.010482021204, 0}, new double[] {0.180367758296, 0},
+            new double[] {3.43489697899, Double.NaN}, new double[][][] {
+            {{-0.008649580249889975, 0.0022485600112194097, -8.650726609048702E-4},
+                {-0.11266057761820013, 0.024694362034725272, 0.0260361864833212},
+                {0.015218945213069365, -0.00914553962283122, -0.02282021358689983},
+                {2.5066123005239126E-4, 0.031224802161732783, -0.0034016265001422597},
+                {0.08190367312390062, -0.018650512458739874, 3.4326425602877264E-4},
+                {0.0064502702618650975, -0.028665281917196323, -2.4419049163833308E-5},
+                {0.017486608039202628, -0.0017063902089100456, 7.31881057760824E-4}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new double[][][] {
+            {{-0.2058541574059063, 0.04582469500939303, -0.032210244958406097},
+                {-1.0401985420569162, 0.37454108615584125, 0.47159019722227746},
+                {0.621062316619004, -0.20684943525738805, -0.39772097441817644},
+                {-0.10747378808409644, 0.5344440256235907, -0.051334182756052026},
+                {1.2489110819012346, -0.2984439482946815, -0.007849154127628813},
+                {-0.2968358770072303, -0.4711447951314603, 0.027030911889720764},
+                {-0.21961103396608955, 0.02162837189470477, -0.009506552851734766}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new String[] {"-l", "0.6", "--ac", "1-3", "--ac2", "1"},
+            new String[] {}, new String[] {}},
+        {"Water-Sodium to Water Dimer Softcoring Test: L = 0.75",
+            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
+                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, false, 0, 0,
+            intRange(1, 8),
+            // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
+            new double[] {0.0829830017977, 0}, new double[] {1.27996801166, 0},
+            new double[] {11.9168667081, Double.NaN}, new double[][][] {
+            {{-0.08520546853249629, 0.02002391005107648, -0.015337962582326878},
+                {-0.5072588908421117, 0.17043258439271164, 0.2050240947794576},
+                {0.25349423271871935, -0.0805529898238775, -0.17425804293531943},
+                {-0.0506141349576535, 0.22437919802386463, -0.02673413275920512},
+                {0.5612744057443229, -0.15045901450002216, -0.007975329992730817},
+                {-0.17340305926115046, -0.1836639508243553, 0.019217340035074935},
+                {0.0017129151303696705, -1.5973731939765025E-4, 6.403345504972649E-5}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new double[][][] {
+            {{-0.9272841243095468, 0.22051093159987895, -0.19112897890018363},
+                {-4.804523425931252, 1.8204016841668706, 2.205227241175209},
+                {2.994591363051441, -0.8476847561428067, -1.8543652609150763},
+                {-0.6630357716342526, 2.3143378077667545, -0.3143349864556007},
+                {5.981286181791292, -1.7558797902974297, -0.1325990985326137},
+                {-2.5478012735172113, -1.7548767300847088, 0.28852239893802845},
+                {-0.033232949450470756, 0.003190852991440346, -0.0013213153097627725}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new String[] {"-l", "0.75", "--ac", "1-3", "--ac2", "1"},
+            new String[] {}, new String[] {}},
+        {"Water-Sodium to Water Dimer Softcoring Test: L = 0.9",
+            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
+                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            intRange(1, 8),
+            // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
+            new double[] {0.397347160918, 0}, new double[] {2.75351951766, 0},
+            new double[] {5.37105253479, Double.NaN}, new double[][][] {
+            {{-0.31777515190383454, 0.06654081254942476, -0.061155191586619},
+                {-1.6398611619313017, 0.5966978877811928, 0.7834547554508479},
+                {1.0488049692859205, -0.2533323908962118, -0.6671198866431937},
+                {-0.2740673658300599, 0.8081103620907575, -0.10766129298323851},
+                {2.047913761610311, -0.6075094312234967, -0.06048821698815812},
+                {-0.8650389649167101, -0.6105053956998422, 0.11296922972554538},
+                {2.3913685674263586E-5, -1.84460182457579E-6, 6.030248161425271E-7}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new double[][][] {
+            {{-2.2518864370570797, 0.34060365423349903, -0.39403631649939214},
+                {-10.009715065439687, 3.6614921088174124, 5.8097209404351},
+                {7.999725481943763, -1.2317995270963276, -5.0518709728060704},
+                {-2.770170337863771, 5.712033354860753, -0.7489455032193499},
+                {13.829283560251287, -4.313426777210048, -0.6802886194434065},
+                {-6.796164346239962, -4.168990151630222, 1.065450769329658},
+                {-0.001072855594543585, 8.733802493437212E-5, -3.0297796539917875E-5}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new String[] {"-l", "0.9", "--ac", "1-3", "--ac2", "1"},
+            new String[] {}, new String[] {}},
+        {"Water-Sodium to Water Dimer Softcoring Test: L = 1.0",
+            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
+                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            intRange(1, 8),
+            // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
+            new double[] {0.678991455919, 0}, new double[] {2.62955540214, 0},
+            new double[] {-9.66072732215, Double.NaN}, new double[][][] {
+            {{-0.5967303838923714, 0.09294823835932634, -0.10065639850802355},
+                {-2.7182918130174105, 0.9717379671351778, 1.5205922317233873},
+                {2.059991765566265, -0.34808314525235373, -1.325262659176951},
+                {-0.6963970726796157, 1.5240570186788684, -0.18878016013974244},
+                {3.628422351985993, -1.0902413269297175, -0.16292088956721837},
+                {-1.6769948479628611, -1.150418751991301, 0.2570278756685478}, {0.0, 0.0, 0.0}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new double[][][] {
+            {{-3.3452690489458763, 0.1345828814666643, -0.35806274829197704},
+                {-10.93663217405725, 3.541368037656955, 8.988383737482236},
+                {12.27657065565445, -0.4907488150661682, -8.232590002516137},
+                {-5.952373992671734, 8.67661156047595, -0.8110392583955152},
+                {17.201456551782357, -5.049385958157128, -1.4130599622896023},
+                {-9.243751991761942, -6.81242770637627, 1.826368234010993}, {0.0, 0.0, 0.0}},
+            // Fill in once the test harness supports bias-deposition.
+            new double[7][3]}, new String[] {"-l", "1.0", "--ac", "1-3", "--ac2", "1"},
+            new String[] {}, new String[] {}}, {"Water-Sodium to Water Dimer Free Energy Test",
+        new String[] {"ffx/algorithms/structures/water-dimer.xyz",
+            "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.FREE, true, 16.0, 16.0, null,
+        null, null, null, null, null,
+        new String[] {"-d", "1.0", "-l", "0.5", "--ac", "1-3", "--ac2", "1", "-n", "20000", "-Q",
+            "5000", "-k", "20.0", "-w", "20.0", "-r", "5.0", "-C", "10"},
+        new String[] {"disable-neighbor-updates", "true", "lambda-bin-width", "0.025",
+            "flambda-bin-width", "5.0", "randomseed", "2019"}, new String[] {}},
+        {"Dual Well Gradient Test: L = 0.5",
+            new String[] {"ffx/algorithms/structures/dualWell-cis.xyz",
+                "ffx/algorithms/structures/dualWell-trans.xyz"}, ThermoTestMode.GRAD, false, 0, 0,
+            new int[] {0, 1, 2, 3}, new double[] {1.0, 1.0}, new double[] {2.0, 2.0},
+            new double[] {0, Double.NaN}, new double[][][] {
+            {{8.561159028211611E-6, 5.743324479222663E-6, -1.4984967045837012E-10},
+                {-7.001815021252073E-6, -4.427074139684514E-6, 1.2219984010349385E-10},
+                {-2.1489889641599235E-6, 7.92540413855834E-9, 8.443778889936074E-12},
+                {5.896449572003855E-7, -1.3241757436767075E-6, 1.9206051464940198E-11}},
+            new double[4][3]}, new double[][][] {
+            {{-4.504521213498369E-18, -1.6250327093073752E-17, -8.651645616845026E-13},
+                {-4.504521213498369E-18, -1.6250327093073752E-17, -8.651646266038085E-13},
+                {4.504097697024742E-18, 1.6249944935630753E-17, 8.651645891779005E-13},
+                {4.504203576143149E-18, 1.6249903576600125E-17, 8.651645991104025E-13}},
+            new double[4][3]}, new String[] {"-l", "0.5"},
+            new String[] {"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20",
+                "disable-neighbor-updates", "true", "ost-temperOffset", "6.0", "randomseed", "2020"},
+            new String[0]}, {"Dual Well 1-Step MC-OST Test",
+        new String[] {"ffx/algorithms/structures/dualWell-cis.xyz",
+            "ffx/algorithms/structures/dualWell-trans.xyz"}, ThermoTestMode.FREE, true, 0, 1.0, null,
+        null, null, null, null, null,
+        new String[] {"-l", "0.5", "--bM", "0.1", "-b", "ADIABATIC", "-i", "VERLET", "-d", "2.0",
+            "-k", "1000.0", "-w", "1000.0", "-r", "1.0", "-Q", "1000", "-n", "250000", "-t",
+            "298.15", "--tp", "6.0", "--mcMD", "10", "--mcL", "0.10"},
+        new String[] {"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20",
+            "disable-neighbor-updates", "true", "ost-temperOffset", "6.0", "randomseed", "445"},
+        new String[] {"--mc", "true"}}, {"Dual Well 2-Step MC-OST Test",
+        new String[] {"ffx/algorithms/structures/dualWell-cis.xyz",
+            "ffx/algorithms/structures/dualWell-trans.xyz"}, ThermoTestMode.FREE, true, 0, 1.0, null,
+        null, null, null, null, null,
+        new String[] {"-l", "0.5", "--bM", "0.1", "-b", "ADIABATIC", "-i", "VERLET", "-d", "2.0",
+            "-k", "1000.0", "-w", "1000.0", "-r", "1.0", "-Q", "1000", "-n", "250000", "-t",
+            "298.15", "--tp", "6.0", "--mcMD", "10", "--mcL", "0.10"},
+        new String[] {"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20",
+            "disable-neighbor-updates", "true", "ost-temperOffset", "6.0", "randomseed", "445"},
+        new String[] {"--mc", "true", "--ts", "true"}}, {"Short 1-Step MC-OST Test",
+        new String[] {"ffx/algorithms/structures/dualWell-cis.xyz",
+            "ffx/algorithms/structures/dualWell-trans.xyz"}, ThermoTestMode.FREE, true, 0, 2.0, null,
+        null, null, null, null, null,
+        new String[] {"-l", "0.5", "--bM", "0.1", "-b", "ADIABATIC", "-i", "VERLET", "-d", "2.0",
+            "-k", "1000.0", "-w", "1000.0", "-r", "0.01", "-Q", "100", "-n", "200", "-t", "100.0",
+            "--tp", "6.0", "--mcMD", "10", "--mcL", "0.10"},
+        new String[] {"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20",
+            "disable-neighbor-updates", "true", "ost-temperOffset", "6.0", "randomseed", "445"},
+        new String[] {"--mc", "true"}}, {"Short 2-Step MC-OST Test",
+        new String[] {"ffx/algorithms/structures/dualWell-cis.xyz",
+            "ffx/algorithms/structures/dualWell-trans.xyz"}, ThermoTestMode.FREE, true, 0, 2.0, null,
+        null, null, null, null, null,
+        new String[] {"-l", "0.5", "--bM", "0.1", "-b", "ADIABATIC", "-i", "VERLET", "-d", "2.0",
+            "-k", "1000.0", "-w", "1000.0", "-r", "0.01", "-Q", "100", "-n", "200", "-t", "100.0",
+            "--tp", "6.0", "--mcMD", "10", "--mcL", "0.10"},
+        new String[] {"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20",
+            "disable-neighbor-updates", "true", "ost-temperOffset", "6.0", "randomseed", "445"},
+        new String[] {"--mc", "true", "--ts", "true"}}});
   }
 
   /**
@@ -1675,11 +1018,10 @@ public class ThermodynamicsTest extends AlgorithmsTest {
 
   private String[] assembleArgs() {
     List<String> argList = new ArrayList<>(flags);
-    opts.forEach(
-        (String k, String v) -> {
-          argList.add(k);
-          argList.add(v);
-        });
+    opts.forEach((String k, String v) -> {
+      argList.add(k);
+      argList.add(v);
+    });
     argList.addAll(Arrays.stream(copiedFiles).map(File::getPath).collect(Collectors.toList()));
     return argList.toArray(new String[0]);
   }
@@ -1700,11 +1042,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
     OrthogonalSpaceTempering orthogonalSpaceTempering = thermodynamics.getOST();
     Histogram histogram = orthogonalSpaceTempering.getHistogram();
     double delG = histogram.updateFreeEnergyEstimate(true, false);
-    assertEquals(
-        format(" Test %s: not within tolerance %12.5g", info, feTol),
-        freeEnergy,
-        delG,
-        feTol);
+    assertEquals(format(" Test %s: not within tolerance %12.5g", info, feTol), freeEnergy, delG, feTol);
   }
 
   /** Tests gradients & energies for a static structure, before and after dropping a bias. */
@@ -1747,10 +1085,9 @@ public class ThermodynamicsTest extends AlgorithmsTest {
    * @param tableIndex 0 for unbiased potential, 1 for a biased potential.
    * @return The generated EnergyResult.
    */
-  private EnergyResult testGradientSet(
-      String description, CrystalPotential potential, double[] x, double[] g, int tableIndex) {
-    assertTrue(
-        format(" Potential %s is not a lambda interface!", potential),
+  private EnergyResult testGradientSet(String description, CrystalPotential potential, double[] x,
+      double[] g, int tableIndex) {
+    assertTrue(format(" Potential %s is not a lambda interface!", potential),
         potential instanceof LambdaInterface);
 
     EnergyResult er = new EnergyResult(description, potential, x, g);
@@ -1775,18 +1112,13 @@ public class ThermodynamicsTest extends AlgorithmsTest {
    * @param tol Tolerance for this test.
    * @param description Scalar to be tested.
    */
-  private void checkThGradScalar(
-      double actual, double[] expected, int tableIndex, double tol, String description) {
+  private void checkThGradScalar(double actual, double[] expected, int tableIndex, double tol,
+      String description) {
     if (debugMode) {
       logger.info(format(" %s is %20.12g", description, actual));
     } else {
-      assertEquals(
-          format(
-              " Expected %s %12.6g, received %12.6g from test %s",
-              description, expected[tableIndex], actual, info),
-          expected[tableIndex],
-          actual,
-          tol);
+      assertEquals(format(" Expected %s %12.6g, received %12.6g from test %s", description,
+          expected[tableIndex], actual, info), expected[tableIndex], actual, tol);
     }
   }
 
@@ -1800,8 +1132,8 @@ public class ThermodynamicsTest extends AlgorithmsTest {
    * @param tol Tolerance for this test.
    * @param description Array to be tested.
    */
-  private void checkThGradArray(
-      double[] actual, double[][][] expected, int tableIndex, double tol, String description) {
+  private void checkThGradArray(double[] actual, double[][][] expected, int tableIndex, double tol,
+      String description) {
     double[] actualSlice = new double[3];
     StringBuilder sb = null;
     for (int i = 0; i < numGradAtoms; i++) {
@@ -1817,8 +1149,8 @@ public class ThermodynamicsTest extends AlgorithmsTest {
       } else {
         double[] exp = expected[tableIndex][i];
         assertArrayEquals(format(" Discrepancy found on array of %s for test %s on atom %d."
-                + "\n Expected: %s\n Found: %s", description, info, i,
-            Arrays.toString(exp), Arrays.toString(actualSlice)), exp, actualSlice, tol);
+                + "\n Expected: %s\n Found: %s", description, info, i, Arrays.toString(exp),
+            Arrays.toString(actualSlice)), exp, actualSlice, tol);
       }
     }
     if (debugMode) {
@@ -1827,9 +1159,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
   }
 
   private enum ThermoTestMode {
-    HELP,
-    FREE,
-    GRAD
+    HELP, FREE, GRAD
   }
 
   /** Contains the result of an energy evaluation: potential energy and several derivatives. */
@@ -1875,41 +1205,23 @@ public class ThermodynamicsTest extends AlgorithmsTest {
      */
     public void assertResultsEqual(EnergyResult other) {
       assertEquals(
-          format(
-              " Test %s: potential energy for %s did not " + "match %s, %12.6g != %12.6g.",
-              info, this.toString(), other.toString(), this.energy, other.energy),
-          this.energy,
-          other.energy,
-          peTol);
-      assertEquals(
-          format(
-              " Test %s: dU/dL for %s did not " + "match %s, %12.6g != %12.6g.",
-              info, this.toString(), other.toString(), this.firstLam, other.firstLam),
-          this.firstLam,
-          other.firstLam,
-          dudlTol);
-      assertArrayEquals(
-          format(
-              " Test %s: dU/dX for %s did not match %s.", info, this.toString(), other.toString()),
-          this.gradient,
-          other.gradient,
-          dudxTol);
+          format(" Test %s: potential energy for %s did not " + "match %s, %12.6g != %12.6g.", info,
+              this.toString(), other.toString(), this.energy, other.energy), this.energy,
+          other.energy, peTol);
+      assertEquals(format(" Test %s: dU/dL for %s did not " + "match %s, %12.6g != %12.6g.", info,
+              this.toString(), other.toString(), this.firstLam, other.firstLam), this.firstLam,
+          other.firstLam, dudlTol);
+      assertArrayEquals(format(" Test %s: dU/dX for %s did not match %s.", info, this.toString(),
+          other.toString()), this.gradient, other.gradient, dudxTol);
 
       if (hasSecondDerivatives && other.hasSecondDerivatives) {
         assertEquals(
-            format(
-                " Test %s: d2U/dL2 for %s did not " + "match %s, %12.6g != %12.6g.",
-                info, toString(), other.toString(), this.secondLam, other.secondLam),
-            this.secondLam,
-            other.secondLam,
-            d2udl2Tol);
+            format(" Test %s: d2U/dL2 for %s did not " + "match %s, %12.6g != %12.6g.", info,
+                toString(), other.toString(), this.secondLam, other.secondLam), this.secondLam,
+            other.secondLam, d2udl2Tol);
         assertArrayEquals(
-            format(
-                " Test %s: d2U/dXdL for %s did not match %s.",
-                info, this.toString(), other.toString()),
-            this.lamGradient,
-            other.lamGradient,
-            d2udxdlTol);
+            format(" Test %s: d2U/dXdL for %s did not match %s.", info, this.toString(),
+                other.toString()), this.lamGradient, other.lamGradient, d2udxdlTol);
       }
     }
 
@@ -1931,20 +1243,16 @@ public class ThermodynamicsTest extends AlgorithmsTest {
 
       if (approxEquals(energy, other.energy, peTol)) {
         equalFound = true;
-        sb.append(
-            format(
-                "\n Potential energy %12.6g == other potential energy %12.6g",
-                energy, other.energy));
+        sb.append(format("\n Potential energy %12.6g == other potential energy %12.6g", energy,
+            other.energy));
       } else {
         ++diffsFound;
       }
 
       if (approxEquals(firstLam, other.firstLam, dudlTol)) {
         equalFound = true;
-        sb.append(
-            format(
-                "\n Lambda derivative %12.6g == other lambda derivative %12.6g",
-                firstLam, other.firstLam));
+        sb.append(format("\n Lambda derivative %12.6g == other lambda derivative %12.6g", firstLam,
+            other.firstLam));
       } else {
         ++diffsFound;
       }
@@ -1952,10 +1260,8 @@ public class ThermodynamicsTest extends AlgorithmsTest {
       for (int i = 0; i < nVars; i++) {
         if (approxEquals(gradient[i], other.gradient[i], dudxTol)) {
           equalFound = true;
-          sb.append(
-              format(
-                  "\n Gradient %d %12.6g == other gradient %12.6g",
-                  i, gradient[i], other.gradient[i]));
+          sb.append(format("\n Gradient %d %12.6g == other gradient %12.6g", i, gradient[i],
+              other.gradient[i]));
         } else {
           ++diffsFound;
         }
@@ -1965,9 +1271,8 @@ public class ThermodynamicsTest extends AlgorithmsTest {
         if (approxEquals(secondLam, other.secondLam, d2udl2Tol)) {
           equalFound = true;
           sb.append(
-              format(
-                  "\n Lambda derivative %12.6g == other lambda derivative %12.6g",
-                  secondLam, other.secondLam));
+              format("\n Lambda derivative %12.6g == other lambda derivative %12.6g", secondLam,
+                  other.secondLam));
         } else {
           ++diffsFound;
         }
@@ -1975,10 +1280,8 @@ public class ThermodynamicsTest extends AlgorithmsTest {
         for (int i = 0; i < nVars; i++) {
           if (approxEquals(lamGradient[i], other.lamGradient[i], d2udxdlTol)) {
             equalFound = true;
-            sb.append(
-                format(
-                    "\n Lambda gradient %d %12.6g == other lambda gradient %12.6g",
-                    i, lamGradient[i], other.lamGradient[i]));
+            sb.append(format("\n Lambda gradient %d %12.6g == other lambda gradient %12.6g", i,
+                lamGradient[i], other.lamGradient[i]));
           } else {
             ++diffsFound;
           }
@@ -1988,11 +1291,8 @@ public class ThermodynamicsTest extends AlgorithmsTest {
       if (equalFound) {
         logger.info(sb.toString());
       }
-      assertTrue(
-          format(
-              " No inequalities found between %s and %s for test %s!",
-              this.toString(), other.toString(), info),
-          diffsFound > 0);
+      assertTrue(format(" No inequalities found between %s and %s for test %s!", this.toString(),
+          other.toString(), info), diffsFound > 0);
     }
 
     @Override

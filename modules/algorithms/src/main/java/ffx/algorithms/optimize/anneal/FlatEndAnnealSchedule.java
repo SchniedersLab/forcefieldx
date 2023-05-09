@@ -46,6 +46,7 @@ package ffx.algorithms.optimize.anneal;
  * @since 1.0
  */
 public class FlatEndAnnealSchedule implements AnnealingSchedule {
+
   private final AnnealingSchedule middle;
   private final double tLow;
   private final double tHigh;
@@ -68,12 +69,8 @@ public class FlatEndAnnealSchedule implements AnnealingSchedule {
    * @param lengthAfter Relative length of the last ("flat") tempering window at the low
    *     temperature. 0 disables this end.
    */
-  public FlatEndAnnealSchedule(
-      AnnealingSchedule middle,
-      double tLow,
-      double tHigh,
-      double lengthBefore,
-      double lengthAfter) {
+  public FlatEndAnnealSchedule(AnnealingSchedule middle, double tLow, double tHigh,
+      double lengthBefore, double lengthAfter) {
     assert tLow < tHigh;
     assert tLow >= 0;
     assert Double.isFinite(tHigh);
@@ -97,20 +94,18 @@ public class FlatEndAnnealSchedule implements AnnealingSchedule {
     }
     totWindows = nWin;
 
-    StringBuilder sb =
-        new StringBuilder(
-            String.format(
-                "Flat-ended annealing schedule: starts at %10.4g K, ends at %10.4g K.",
-                tHigh, tLow));
+    StringBuilder sb = new StringBuilder(
+        String.format("Flat-ended annealing schedule: starts at %10.4g K, ends at %10.4g K.", tHigh,
+            tLow));
     if (useBefore) {
       sb.append(
-          String.format(
-              "\nMain annealing is preceded by a %9.3f-long window at %10.4g K", lenBefore, tHigh));
+          String.format("\nMain annealing is preceded by a %9.3f-long window at %10.4g K", lenBefore,
+              tHigh));
     }
     if (useAfter) {
       sb.append(
-          String.format(
-              "\nMain annealing is followed by a %9.3f-long window at %10.4g K", lenAfter, tLow));
+          String.format("\nMain annealing is followed by a %9.3f-long window at %10.4g K", lenAfter,
+              tLow));
     }
     sb.append("\nMain annealing schedule: ").append(middle.toString());
     this.description = sb.toString();

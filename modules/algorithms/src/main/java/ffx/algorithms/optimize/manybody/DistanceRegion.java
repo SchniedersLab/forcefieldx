@@ -148,26 +148,26 @@ public class DistanceRegion extends ParallelRegion {
         SymOp symOp = crystal.spaceGroup.getSymOp(iSymOp);
         // Loop over residues.
         for (int i = lb; i <= ub; i++) {
-          Residue residuei = allResiduesArray[i];
-          Rotamer[] rotamersi = residuei.getRotamers();
-          int lengthRi = rotamersi.length;
+          Residue residueI = allResiduesArray[i];
+          Rotamer[] rotamersI = residueI.getRotamers();
+          int lengthRi = rotamersI.length;
           int[] list = lists[iSymOp][i];
           // Loop over Residue i's rotamers
           for (int ri = 0; ri < lengthRi; ri++) {
-            double[][] xi = getCoordinates(i, allResiduesArray, rotamersi[ri]);
+            double[][] xi = getCoordinates(i, allResiduesArray, rotamersI[ri]);
             // Loop over Residue i's neighbors.
             for (int j : list) {
               if (i == j) {
                 continue;
               }
 
-              Residue residuej = allResiduesArray[j];
-              Rotamer[] rotamersj = residuej.getRotamers();
-              int lengthRj = rotamersj.length;
+              Residue residueJ = allResiduesArray[j];
+              Rotamer[] rotamersJ = residueJ.getRotamers();
+              int lengthRj = rotamersJ.length;
 
               // Loop over the neighbor's rotamers
               for (int rj = 0; rj < lengthRj; rj++) {
-                double[][] xj = getCoordinates(j, allResiduesArray, rotamersj[rj]);
+                double[][] xj = getCoordinates(j, allResiduesArray, rotamersJ[rj]);
                 if (getThreadIndex() == 0 && algorithmListener != null) {
                   algorithmListener.algorithmUpdate(molecularAssembly);
                 }

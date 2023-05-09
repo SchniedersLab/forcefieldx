@@ -47,6 +47,7 @@ import org.apache.commons.math3.util.FastMath;
  * @since 1.0
  */
 public class ExpAnnealSchedule implements AnnealingSchedule {
+
   private final int nWindows;
   private final double tHigh;
   private final double tLow;
@@ -73,11 +74,9 @@ public class ExpAnnealSchedule implements AnnealingSchedule {
     this.tLow = tLow;
     this.gamma = StrictMath.pow((tLow / tHigh), (1.0 / (nWindows - 1)));
 
-    description =
-        String.format(
-            "Exponential annealing schedule with %d windows, "
-                + "initial temperature %12.7g K, final temperature %12.7g K, gamma %12.7g",
-            nWindows, tHigh, tLow, gamma);
+    description = String.format("Exponential annealing schedule with %d windows, "
+            + "initial temperature %12.7g K, final temperature %12.7g K, gamma %12.7g", nWindows, tHigh,
+        tLow, gamma);
   }
 
   @Override

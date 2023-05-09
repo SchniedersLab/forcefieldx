@@ -48,7 +48,6 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.utils.EnergyException;
 import java.io.File;
 import java.io.IOException;
@@ -101,8 +100,6 @@ public class EnergyExpansion {
   private final EliminatedRotamers eR;
   /** MolecularAssembly to perform rotamer optimization on. */
   private final MolecularAssembly molecularAssembly;
-  /** RotamerLibrary instance. */
-  private final RotamerLibrary library;
   /** AlgorithmListener who should receive updates as the optimization runs. */
   private final AlgorithmListener algorithmListener;
   /**
@@ -131,37 +128,25 @@ public class EnergyExpansion {
   /** Self-energy of each residue for each rotamer. [residue][rotamer] */
   private double[][] selfEnergy;
   /**
-   * Two-body energies for each pair of residues and pair of rotamers.
+   * Two-body energies for each pair of residues and each pair of rotamers.
    * [residue1][rotamer1][residue2][rotamer2]
    */
   private double[][][][] twoBodyEnergy;
   /**
-   * Trimer-energies for each trimer of rotamers. [residue1][rotamer1][residue2][rotamer2][residue3][rotamer3]
+   * Trimer-energies for each trimer of rotamers.
+   * [residue1][rotamer1][residue2][rotamer2][residue3][rotamer3]
    */
   private double[][][][][][] threeBodyEnergy;
 
-  public EnergyExpansion(
-      RotamerOptimization rO,
-      DistanceMatrix dM,
-      EliminatedRotamers eR,
-      MolecularAssembly molecularAssembly,
-      Potential potential,
-      RotamerLibrary library,
-      AlgorithmListener algorithmListener,
-      List<Residue> allResiduesList,
-      int[][] resNeighbors,
-      boolean threeBodyTerm,
-      boolean decomposeOriginal,
-      boolean usingBoxOptimization,
-      boolean verbose,
-      boolean pruneClashes,
-      boolean prunePairClashes,
-      boolean master) {
+  public EnergyExpansion(RotamerOptimization rO, DistanceMatrix dM, EliminatedRotamers eR,
+      MolecularAssembly molecularAssembly, Potential potential, AlgorithmListener algorithmListener,
+      List<Residue> allResiduesList, int[][] resNeighbors, boolean threeBodyTerm,
+      boolean decomposeOriginal, boolean usingBoxOptimization, boolean verbose,
+      boolean pruneClashes, boolean prunePairClashes, boolean master) {
     this.rO = rO;
     this.dM = dM;
     this.eR = eR;
     this.molecularAssembly = molecularAssembly;
-    this.library = library;
     this.algorithmListener = algorithmListener;
     this.allResiduesList = allResiduesList;
     this.resNeighbors = resNeighbors;
@@ -178,12 +163,12 @@ public class EnergyExpansion {
     if (max4BodyCount != Integer.MAX_VALUE) {
       logger.info(format(" Max 4Body Count: %d", max4BodyCount));
     }
-    singularityThreshold =
-        properties.getDouble("ro-singularityThreshold", DEFAULT_SINGULARITY_THRESHOLD);
+    singularityThreshold = properties.getDouble("ro-singularityThreshold",
+        DEFAULT_SINGULARITY_THRESHOLD);
     potentialIsOpenMM = potential instanceof ForceFieldEnergyOpenMM;
     if (potentialIsOpenMM) {
-      ommRecalculateThreshold =
-          properties.getDouble("ro-ommRecalculateThreshold", DEFAULT_OMM_RECALCULATE_THRESHOLD);
+      ommRecalculateThreshold = properties.getDouble("ro-ommRecalculateThreshold",
+          DEFAULT_OMM_RECALCULATE_THRESHOLD);
     } else {
       ommRecalculateThreshold = -1E200;
     }
@@ -235,8 +220,8 @@ public class EnergyExpansion {
     }
   }
 
-  public HashMap<String, Integer> allocate2BodyJobMap(
-      Residue[] residues, int nResidues, boolean reverseMap) {
+  public HashMap<String, Integer> allocate2BodyJobMap(Residue[] residues, int nResidues,
+      boolean reverseMap) {
     twoBodyEnergyMap.clear();
     // allocated twoBodyEnergy array and create pair jobs
     HashMap<String, Integer> reverseJobMapPairs = new HashMap<>();
@@ -290,8 +275,8 @@ public class EnergyExpansion {
     return reverseJobMapPairs;
   }
 
-  public HashMap<String, Integer> allocate3BodyJobMap(
-      Residue[] residues, int nResidues, boolean reverseMap) {
+  public HashMap<String, Integer> allocate3BodyJobMap(Residue[] residues, int nResidues,
+      boolean reverseMap) {
     HashMap<String, Integer> reverseJobMapTrimers = new HashMap<>();
     threeBodyEnergyMap.clear();
     // fill in 3-Body energies from the restart file.
@@ -440,8 +425,8 @@ public class EnergyExpansion {
     }
   }
 
-  public HashMap<String, Integer> allocateSelfJobMap(
-      Residue[] residues, int nResidues, boolean reverseMap) {
+  public HashMap<String, Integer> allocateSelfJobMap(Residue[] residues, int nResidues,
+      boolean reverseMap) {
     selfEnergyMap.clear();
     // allocate selfEnergy array and create self jobs
     HashMap<String, Integer> reverseJobMapSingles = new HashMap<>();
@@ -470,7 +455,7 @@ public class EnergyExpansion {
   }
 
   /**
-   * Computes a pair energy, defined as energy with all sidechains but two turned off, minus the sum
+   * Computes a pair energy, defined as energy with all side-chains but two turned off, minus the sum
    * of backbone and component self energies.
    *
    * @param residues Residues under optimization.
@@ -498,16 +483,14 @@ public class EnergyExpansion {
       energy = rO.currentEnergy(residues) + subtract;
       if (potentialIsOpenMM && energy < ommRecalculateThreshold) {
         logger.warning(
-            format(
-                " Experimental: re-computing pair energy %s-%d %s-%d using Force Field X",
+            format(" Experimental: re-computing pair energy %s-%d %s-%d using Force Field X",
                 residues[i], ri, residues[j], rj));
         energy = rO.currentFFXPE() + subtract;
       }
       if (energy < singularityThreshold) {
-        String message =
-            format(
-                " Rejecting pair energy for %s-%d %s-%d is %10.5g << %10f, " + "likely in error.",
-                residues[i], ri, residues[j], rj, energy, singularityThreshold);
+        String message = format(
+            " Rejecting pair energy for %s-%d %s-%d is %10.5g << %10f, " + "likely in error.",
+            residues[i], ri, residues[j], rj, energy, singularityThreshold);
         logger.warning(message);
         throw new EnergyException(message, false, energy);
       }
@@ -530,10 +513,10 @@ public class EnergyExpansion {
    * @param rj A rotamer index for residue j.
    * @param k A residue index k!=j k!=i.
    * @param rk A rotamer index for residue k.
-   * @return Etri(ri, rj)=E3(ri,rj,rk)-Epair(ri,rj)-Epair(ri,rk)-Epair(rj,rk)-Eself(ri)-Eself(rj)-Eself(rk)-Eenv/bb.
+   * @return Etri(ri,
+   *rj)=E3(ri,rj,rk)-Epair(ri,rj)-Epair(ri,rk)-Epair(rj,rk)-Eself(ri)-Eself(rj)-Eself(rk)-Eenv/bb.
    */
-  public double compute3BodyEnergy(
-      Residue[] residues, int i, int ri, int j, int rj, int k, int rk) {
+  public double compute3BodyEnergy(Residue[] residues, int i, int ri, int j, int rj, int k, int rk) {
     turnOffAllResidues(residues);
     turnOnResidue(residues[i], ri);
     turnOnResidue(residues[j], rj);
@@ -547,27 +530,20 @@ public class EnergyExpansion {
         algorithmListener.algorithmUpdate(molecularAssembly);
       }
       double subtract =
-          -backboneEnergy
-              - getSelf(i, ri, rot_i[ri], true)
-              - getSelf(j, rj, rot_j[rj], true)
-              - getSelf(k, rk, rot_k[rk], true)
-              - get2Body(i, ri, j, rj)
-              - get2Body(i, ri, k, rk)
+          -backboneEnergy - getSelf(i, ri, rot_i[ri], true) - getSelf(j, rj, rot_j[rj], true)
+              - getSelf(k, rk, rot_k[rk], true) - get2Body(i, ri, j, rj) - get2Body(i, ri, k, rk)
               - get2Body(j, rj, k, rk);
       energy = rO.currentEnergy(residues) + subtract;
       if (potentialIsOpenMM && energy < ommRecalculateThreshold) {
         logger.warning(
-            format(
-                " Experimental: re-computing triple energy %s-%d %s-%d %s-%d using Force Field X",
+            format(" Experimental: re-computing triple energy %s-%d %s-%d %s-%d using Force Field X",
                 residues[i], ri, residues[j], rj, residues[k], rk));
         energy = rO.currentFFXPE() + subtract;
       }
       if (energy < singularityThreshold) {
-        String message =
-            format(
-                " Rejecting triple energy for %s-%d %s-%d %s-%d is %10.5g << %10f, "
-                    + "likely in error.",
-                residues[i], ri, residues[j], rj, residues[k], rk, energy, singularityThreshold);
+        String message = format(" Rejecting triple energy for %s-%d %s-%d %s-%d is %10.5g << %10f, "
+                + "likely in error.", residues[i], ri, residues[j], rj, residues[k], rk, energy,
+            singularityThreshold);
         logger.warning(message);
         throw new EnergyException(message);
       }
@@ -595,8 +571,8 @@ public class EnergyExpansion {
    * @param rl A rotamer index for residue l.
    * @return The 4-body energy.
    */
-  public double compute4BodyEnergy(
-      Residue[] residues, int i, int ri, int j, int rj, int k, int rk, int l, int rl) {
+  public double compute4BodyEnergy(Residue[] residues, int i, int ri, int j, int rj, int k, int rk,
+      int l, int rl) {
     turnOffAllResidues(residues);
     turnOnResidue(residues[i], ri);
     turnOnResidue(residues[j], rj);
@@ -608,45 +584,24 @@ public class EnergyExpansion {
         algorithmListener.algorithmUpdate(molecularAssembly);
       }
       double subtract =
-          -backboneEnergy
-              - getSelf(i, ri)
-              - getSelf(j, rj)
-              - getSelf(k, rk)
-              - getSelf(l, rl)
-              - get2Body(i, ri, j, rj)
-              - get2Body(i, ri, k, rk)
-              - get2Body(i, ri, l, rl)
-              - get2Body(j, rj, k, rk)
-              - get2Body(j, rj, l, rl)
-              - get2Body(k, rk, l, rl)
-              - get3Body(residues, i, ri, j, rj, k, rk)
-              - get3Body(residues, i, ri, j, rj, l, rl)
-              - get3Body(residues, i, ri, k, rk, l, rl)
-              - get3Body(residues, j, rj, k, rk, l, rl);
+          -backboneEnergy - getSelf(i, ri) - getSelf(j, rj) - getSelf(k, rk) - getSelf(l, rl)
+              - get2Body(i, ri, j, rj) - get2Body(i, ri, k, rk) - get2Body(i, ri, l, rl)
+              - get2Body(j, rj, k, rk) - get2Body(j, rj, l, rl) - get2Body(k, rk, l, rl)
+              - get3Body(residues, i, ri, j, rj, k, rk) - get3Body(residues, i, ri, j, rj, l, rl)
+              - get3Body(residues, i, ri, k, rk, l, rl) - get3Body(residues, j, rj, k, rk, l, rl);
       energy = rO.currentEnergy(residues) + subtract;
 
       if (potentialIsOpenMM && energy < ommRecalculateThreshold) {
-        logger.warning(
-            format(
-                " Experimental: re-computing quad energy %s-%d %s-%d %s-%d %s-%d using Force Field X",
-                residues[i], ri, residues[j], rj, residues[k], rk, residues[l], rl));
+        logger.warning(format(
+            " Experimental: re-computing quad energy %s-%d %s-%d %s-%d %s-%d using Force Field X",
+            residues[i], ri, residues[j], rj, residues[k], rk, residues[l], rl));
         energy = rO.currentFFXPE() + subtract;
       }
       if (energy < singularityThreshold) {
-        String message =
-            format(
-                " Rejecting quad energy for %s-%d %s-%d %s-%d %s-%d is %10.5g << %10f, "
-                    + "likely in error.",
-                residues[i],
-                ri,
-                residues[j],
-                rj,
-                residues[k],
-                rk,
-                residues[l],
-                rl,
-                energy,
-                singularityThreshold);
+        String message = format(
+            " Rejecting quad energy for %s-%d %s-%d %s-%d %s-%d is %10.5g << %10f, "
+                + "likely in error.", residues[i], ri, residues[j], rj, residues[k], rk, residues[l],
+            rl, energy, singularityThreshold);
         logger.warning(message);
         throw new EnergyException(message);
       }
@@ -684,16 +639,14 @@ public class EnergyExpansion {
       energy = rO.currentEnergy(residues) - backboneEnergy;
       if (potentialIsOpenMM && energy < ommRecalculateThreshold) {
         logger.warning(
-            format(
-                " Experimental: re-computing self energy %s-%d using Force Field X",
-                residues[i], ri));
+            format(" Experimental: re-computing self energy %s-%d using Force Field X", residues[i],
+                ri));
         energy = rO.currentFFXPE() - backboneEnergy;
       }
       if (energy < singularityThreshold) {
-        String message =
-            format(
-                " Rejecting self energy for %s-%d is %10.5g << %10f, " + "likely in error.",
-                residues[i], ri, energy, singularityThreshold);
+        String message = format(
+            " Rejecting self energy for %s-%d is %10.5g << %10f, " + "likely in error.", residues[i],
+            ri, energy, singularityThreshold);
         logger.warning(message);
         throw new EnergyException(message);
       }
@@ -851,10 +804,9 @@ public class EnergyExpansion {
       try {
         return threeBodyEnergy[i][ri][indJ][rj][indK][rk];
       } catch (NullPointerException | ArrayIndexOutOfBoundsException ex) {
-        String message =
-            format(
-                " Could not find an energy for 3-body energy (%3d,%2d) (%3d,%2d) (%3d,%2d)",
-                i, ri, j, rj, k, rk);
+        String message = format(
+            " Could not find an energy for 3-body energy (%3d,%2d) (%3d,%2d) (%3d,%2d)", i, ri, j,
+            rj, k, rk);
         logger.warning(message);
         throw ex;
       }
@@ -939,8 +891,8 @@ public class EnergyExpansion {
       try {
         backboneEnergy = rO.computeBackboneEnergy(residues);
       } catch (ArithmeticException ex) {
-        logger.severe(format(
-            " Exception %s in calculating backbone energy; FFX shutting down.", ex));
+        logger.severe(
+            format(" Exception %s in calculating backbone energy; FFX shutting down.", ex));
       }
       rO.logIfMaster(format("\n Backbone energy:  %s\n", rO.formatEnergy(backboneEnergy)));
 
@@ -949,16 +901,14 @@ public class EnergyExpansion {
         for (int i = 0; i < lines.size(); i++) {
           String line = lines.get(i);
           if (line.startsWith("Box")) {
-            String[] tok =
-                line.replaceAll("Box", "").replaceAll(":", ",").replaceAll(" ", "").split(",");
+            String[] tok = line.replaceAll("Box", "").replaceAll(":", ",").replaceAll(" ", "")
+                .split(",");
             int readIteration = Integer.parseInt(tok[0]);
             int readCellIndexX = Integer.parseInt(tok[1]);
             int readCellIndexY = Integer.parseInt(tok[2]);
             int readCellIndexZ = Integer.parseInt(tok[3]);
-            if (readIteration == boxIteration
-                && readCellIndexX == cellIndices[0]
-                && readCellIndexY == cellIndices[1]
-                && readCellIndexZ == cellIndices[2]) {
+            if (readIteration == boxIteration && readCellIndexX == cellIndices[0]
+                && readCellIndexY == cellIndices[1] && readCellIndexZ == cellIndices[2]) {
               foundBox = true;
               for (int j = i + 1; j < lines.size(); j++) {
                 String l = lines.get(j);
@@ -972,9 +922,8 @@ public class EnergyExpansion {
           }
         }
         if (!foundBox) {
-          rO.logIfMaster(
-              format(" Didn't find restart energies for Box %d: %d,%d,%d",
-                  boxIteration, cellIndices[0], cellIndices[1], cellIndices[2]));
+          rO.logIfMaster(format(" Didn't find restart energies for Box %d: %d,%d,%d", boxIteration,
+              cellIndices[0], cellIndices[1], cellIndices[2]));
           return 0;
         } else if (linesThisBox.size() == 0) {
           return 0;
@@ -1009,8 +958,8 @@ public class EnergyExpansion {
       }
       if (loaded >= 1) {
         boolean reverseMap = true;
-        HashMap<String, Integer> reverseJobMapSingles =
-            allocateSelfJobMap(residues, nResidues, reverseMap);
+        HashMap<String, Integer> reverseJobMapSingles = allocateSelfJobMap(residues, nResidues,
+            reverseMap);
         // fill in self-energies from file while removing the corresponding jobs from selfEnergyMap
         for (String line : singleLines) {
           try {
@@ -1026,10 +975,8 @@ public class EnergyExpansion {
             try {
               setSelf(i, ri, energy);
               if (verbose) {
-                rO.logIfMaster(
-                    format(" From restart file: Self energy %3d (%8s,%2d): %s",
-                        i, residues[i].toFormattedString(false, true),
-                        ri, rO.formatEnergy(energy)));
+                rO.logIfMaster(format(" From restart file: Self energy %3d (%8s,%2d): %s", i,
+                    residues[i].toFormattedString(false, true), ri, rO.formatEnergy(energy)));
               }
             } catch (Exception e) {
               if (verbose) {
@@ -1040,8 +987,8 @@ public class EnergyExpansion {
             String revKey = format("%d %d", i, ri);
             selfEnergyMap.remove(reverseJobMapSingles.get(revKey));
           } catch (NumberFormatException ex) {
-            logger.log(
-                Level.WARNING, format(" Unparsable line in energy restart file: \n%s", line), ex);
+            logger.log(Level.WARNING, format(" Unparsable line in energy restart file: \n%s", line),
+                ex);
           }
         }
         rO.logIfMaster(" Loaded self energies from restart file.");
@@ -1064,8 +1011,8 @@ public class EnergyExpansion {
               " Double-check that parameters match original run due to missing self-energies.");
         }
         boolean reverseMap = true;
-        HashMap<String, Integer> reverseJobMapPairs =
-            allocate2BodyJobMap(residues, nResidues, reverseMap);
+        HashMap<String, Integer> reverseJobMapPairs = allocate2BodyJobMap(residues, nResidues,
+            reverseMap);
         // fill in pair-energies from file while removing the corresponding jobs from
         // twoBodyEnergyMap
         for (String line : pairLines) {
@@ -1116,25 +1063,20 @@ public class EnergyExpansion {
                   logger.fine(format(" Pair %8s %-2d, %8s %-2d: %s at %s Ang (%s Ang by residue).",
                       residueI.toFormattedString(false, true), ri,
                       residueJ.toFormattedString(false, true), rj,
-                      rO.formatEnergy(get2Body(i, ri, j, rj)),
-                      distString,
-                      resDistString));
+                      rO.formatEnergy(get2Body(i, ri, j, rj)), distString, resDistString));
                 }
               } else {
-                logger.fine(
-                    format(
-                        "Ignoring a pair-energy from outside the cutoff: 2-energy [(%8s,%2d),(%8s,%2d)]: %12.4f",
-                        residues[i].toFormattedString(false, true), ri,
-                        residues[j].toFormattedString(false, true), rj,
-                        energy));
+                logger.fine(format(
+                    "Ignoring a pair-energy from outside the cutoff: 2-energy [(%8s,%2d),(%8s,%2d)]: %12.4f",
+                    residues[i].toFormattedString(false, true), ri,
+                    residues[j].toFormattedString(false, true), rj, energy));
               }
 
               if (verbose) {
-                rO.logIfMaster(format(
-                        " From restart file: Pair energy [(%8s,%2d),(%8s,%2d)]: %12.4f",
+                rO.logIfMaster(
+                    format(" From restart file: Pair energy [(%8s,%2d),(%8s,%2d)]: %12.4f",
                         residues[i].toFormattedString(false, true), ri,
-                        residues[j].toFormattedString(false, true), rj,
-                        energy));
+                        residues[j].toFormattedString(false, true), rj, energy));
               }
             } catch (Exception e) {
               if (verbose) {
@@ -1145,8 +1087,8 @@ public class EnergyExpansion {
             String revKey = format("%d %d %d %d", i, ri, j, rj);
             twoBodyEnergyMap.remove(reverseJobMapPairs.get(revKey));
           } catch (NumberFormatException ex) {
-            logger.log(
-                Level.WARNING, format("Unparsable line in energy restart file: \n%s", line), ex);
+            logger.log(Level.WARNING, format("Unparsable line in energy restart file: \n%s", line),
+                ex);
           }
         }
         rO.logIfMaster(" Loaded 2-body energies from restart file.");
@@ -1171,8 +1113,8 @@ public class EnergyExpansion {
           }
         }
         boolean reverseMap = true;
-        HashMap<String, Integer> reverseJobMapTrimers =
-            allocate3BodyJobMap(residues, nResidues, reverseMap);
+        HashMap<String, Integer> reverseJobMapTrimers = allocate3BodyJobMap(residues, nResidues,
+            reverseMap);
 
         // fill in 3-Body energies from file while removing the corresponding jobs from
         // threeBodyEnergyMap
@@ -1238,8 +1180,8 @@ public class EnergyExpansion {
                       residueI.toFormattedString(false, true), ri,
                       residueJ.toFormattedString(false, true), rj,
                       residueK.toFormattedString(false, true), rk,
-                      rO.formatEnergy(get3Body(residues, i, ri, j, rj, k, rk)),
-                      distString, resDistString));
+                      rO.formatEnergy(get3Body(residues, i, ri, j, rj, k, rk)), distString,
+                      resDistString));
                 }
               } else {
                 logger.fine(format(
@@ -1257,21 +1199,21 @@ public class EnergyExpansion {
               if (verbose) {
                 rO.logIfMaster(format(" NPE in loading 3-body energies: pruning "
                         + "likely changed! 3-body %s-%d %s-%d %s-%d",
-                    residues[i].toFormattedString(false, true), ri,
-                    residues[j], rj, residues[k], rk));
+                    residues[i].toFormattedString(false, true), ri, residues[j], rj, residues[k],
+                    rk));
               }
             }
             if (verbose) {
-              rO.logIfMaster(format(
-                  " From restart file: Trimer energy %3d %-2d, %3d %-2d, %3d %-2d: %s",
-                  i, ri, j, rj, k, rk, rO.formatEnergy(energy)));
+              rO.logIfMaster(
+                  format(" From restart file: Trimer energy %3d %-2d, %3d %-2d, %3d %-2d: %s", i, ri,
+                      j, rj, k, rk, rO.formatEnergy(energy)));
             }
             // Remove that job from the pool.
             String revKey = format("%d %d %d %d %d %d", i, ri, j, rj, k, rk);
             threeBodyEnergyMap.remove(reverseJobMapTrimers.get(revKey));
           } catch (NumberFormatException ex) {
-            logger.log(
-                Level.WARNING, format("Unparsable line in energy restart file: \n%s", line), ex);
+            logger.log(Level.WARNING, format("Unparsable line in energy restart file: \n%s", line),
+                ex);
           }
         }
         rO.logIfMaster(" Loaded trimer energies from restart file.");
@@ -1374,8 +1316,7 @@ public class EnergyExpansion {
     Residue resj = residues[j];
     if (eR.check(i, ri) || eR.check(j, rj) || eR.check(i, ri, j, rj)) {
       throw new IllegalArgumentException(
-          format(
-              " Called for minMaxE2 on an eliminated pair %s-%d %s-%d",
+          format(" Called for minMaxE2 on an eliminated pair %s-%d %s-%d",
               resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj));
     }
 
@@ -1516,14 +1457,9 @@ public class EnergyExpansion {
         if (!validPair) {
           // Eliminate Rotamer Pair
           Residue residuei = residues[i];
-          rO.logIfMaster(
-              format(
-                  " Inconsistent Pair: %8s %2d, %8s %2d.",
-                  residuei.toFormattedString(false, true),
-                  ri,
-                  residuej.toFormattedString(false, true),
-                  rj),
-              Level.INFO);
+          rO.logIfMaster(format(" Inconsistent Pair: %8s %2d, %8s %2d.",
+              residuei.toFormattedString(false, true), ri, residuej.toFormattedString(false, true),
+              rj), Level.INFO);
           continue;
         }
 
@@ -1568,7 +1504,7 @@ public class EnergyExpansion {
   }
 
   /**
-   * Stores a pair energy in the pairs energy matrix.
+   * Store a pair energy in the pairs energy matrix.
    *
    * @param i A residue index.
    * @param ri A rotamer for residue i.
@@ -1641,9 +1577,8 @@ public class EnergyExpansion {
    * @param residues an array of {@link ffx.potential.bonded.Residue} objects.
    * @throws java.lang.IllegalStateException If threeBodyTerm is false.
    */
-  public void set3Body(
-      Residue[] residues, int i, int ri, int j, int rj, int k, int rk, double e, boolean quiet)
-      throws IllegalStateException {
+  public void set3Body(Residue[] residues, int i, int ri, int j, int rj, int k, int rk, double e,
+      boolean quiet) throws IllegalStateException {
     if (!threeBodyTerm) {
       throw new IllegalStateException(
           " Attempting to set a 3-body energy when threeBodyTerm is false!");
@@ -1707,10 +1642,9 @@ public class EnergyExpansion {
         threeBodyEnergy[i][ri][indJ][rj][indK][rk] = e;
       } catch (NullPointerException | ArrayIndexOutOfBoundsException ex) {
         if (!quiet) {
-          String message =
-              format(
-                  " Could not access threeBodyEnergy array for 3-body energy (%3d,%2d) (%3d,%2d) (%3d,%2d)",
-                  i, ri, j, rj, k, rk);
+          String message = format(
+              " Could not access threeBodyEnergy array for 3-body energy (%3d,%2d) (%3d,%2d) (%3d,%2d)",
+              i, ri, j, rj, k, rk);
           logger.warning(message);
         }
         throw ex;
@@ -1781,8 +1715,7 @@ public class EnergyExpansion {
    * @param rj Rotamer rj of Residue j
    * @return true if this term is valid.
    */
-  private boolean minMax2BodySum(
-      Residue[] residues, double[] minMax, int i, int ri, int j, int rj) {
+  private boolean minMax2BodySum(Residue[] residues, double[] minMax, int i, int ri, int j, int rj) {
     int nres = residues.length;
     double minSum = 0.0;
     double maxSum = 0.0;
@@ -1855,28 +1788,18 @@ public class EnergyExpansion {
    * @return False if ri-rj-rk always clashes with other residues.
    * @throws IllegalArgumentException if there are pre-existing eliminations in ri-rj-rk.
    */
-  private boolean minMaxE3(
-      Residue[] residues, double[] minMax, int i, int ri, int j, int rj, int k, int rk)
-      throws IllegalArgumentException {
+  private boolean minMaxE3(Residue[] residues, double[] minMax, int i, int ri, int j, int rj, int k,
+      int rk) throws IllegalArgumentException {
     Residue resi = residues[i];
     Residue resj = residues[j];
     Residue resk = residues[k];
-    if (eR.check(i, ri)
-        || eR.check(j, rj)
-        || eR.check(k, rk)
-        || eR.check(i, ri, j, rj)
-        || eR.check(i, ri, k, rk)
-        || eR.check(j, rj, k, rk)) {
+    if (eR.check(i, ri) || eR.check(j, rj) || eR.check(k, rk) || eR.check(i, ri, j, rj)
+        || eR.check(i, ri, k, rk) || eR.check(j, rj, k, rk)) {
       // Not implemented: check(i, ri, j, rj, k, rk).
       throw new IllegalArgumentException(
-          format(
-              " Called for minMaxE2 on an eliminated triple %s-%d %s-%d %s-%d",
-              resi.toFormattedString(false, true),
-              ri,
-              resj.toFormattedString(false, true),
-              rj,
-              resk.toFormattedString(false, true),
-              rk));
+          format(" Called for minMaxE2 on an eliminated triple %s-%d %s-%d %s-%d",
+              resi.toFormattedString(false, true), ri, resj.toFormattedString(false, true), rj,
+              resk.toFormattedString(false, true), rk));
     }
 
     // These two are a summation of mins/maxes over all fourth residues l.

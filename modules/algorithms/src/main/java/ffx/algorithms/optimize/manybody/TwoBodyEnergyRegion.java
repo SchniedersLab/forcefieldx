@@ -47,7 +47,6 @@ import edu.rit.pj.WorkerRegion;
 import ffx.algorithms.optimize.RotamerOptimization;
 import ffx.potential.bonded.Residue;
 import ffx.potential.bonded.Rotamer;
-import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.utils.EnergyException;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -71,8 +70,6 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
    * subsets of this list.
    */
   private final List<Residue> allResiduesList;
-  /** RotamerLibrary instance. */
-  private final RotamerLibrary library;
   /** Map of self-energy values to compute. */
   private final Map<Integer, Integer[]> twoBodyEnergyMap;
   /** Writes energies to restart file. */
@@ -104,31 +101,17 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
 
   private Set<Integer> keySet;
 
-  public TwoBodyEnergyRegion(
-      RotamerOptimization rotamerOptimization,
-      DistanceMatrix dM,
-      EnergyExpansion eE,
-      EliminatedRotamers eR,
-      Residue[] residues,
-      List<Residue> allResiduesList,
-      RotamerLibrary library,
-      BufferedWriter energyWriter,
-      Comm world,
-      int numProc,
-      boolean prunePairClashes,
-      double superpositionThreshold,
-      boolean master,
-      int rank,
-      boolean verbose,
-      boolean writeEnergyRestart,
-      boolean printFiles) {
+  public TwoBodyEnergyRegion(RotamerOptimization rotamerOptimization, DistanceMatrix dM,
+      EnergyExpansion eE, EliminatedRotamers eR, Residue[] residues, List<Residue> allResiduesList,
+      BufferedWriter energyWriter, Comm world, int numProc, boolean prunePairClashes,
+      double superpositionThreshold, boolean master, int rank, boolean verbose,
+      boolean writeEnergyRestart, boolean printFiles) {
     this.rO = rotamerOptimization;
     this.dM = dM;
     this.eE = eE;
     this.eR = eR;
     this.residues = residues;
     this.allResiduesList = allResiduesList;
-    this.library = library;
     this.energyWriter = energyWriter;
     this.world = world;
     this.numProc = numProc;
@@ -157,23 +140,23 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
     // Print what we've got so far.
     if (master && verbose) {
       for (int i = 0; i < residues.length; i++) {
-        Residue resi = residues[i];
-        Rotamer[] roti = resi.getRotamers();
-        for (int ri = 0; ri < roti.length; ri++) {
+        Residue resI = residues[i];
+        Rotamer[] rotI = resI.getRotamers();
+        for (int ri = 0; ri < rotI.length; ri++) {
           if (eR.check(i, ri)) {
             continue;
           }
           for (int j = i + 1; j < residues.length; j++) {
-            Residue resj = residues[j];
-            Rotamer[] rotj = resj.getRotamers();
-            for (int rj = 0; rj < rotj.length; rj++) {
+            Residue resJ = residues[j];
+            Rotamer[] rotJ = resJ.getRotamers();
+            for (int rj = 0; rj < rotJ.length; rj++) {
               if (eR.check(j, rj) || eR.check(i, ri, j, rj)) {
                 continue;
               }
-              logger.info(format(" Pair energy %8s %-2d, %8s %-2d: %s",
-                  residues[i].toString(roti[ri]), ri,
-                  residues[j].toString(rotj[rj]), rj,
-                  rO.formatEnergy(eE.get2Body(i, ri, j, rj))));
+              logger.info(
+                  format(" Pair energy %8s %-2d, %8s %-2d: %s", residues[i].toString(rotI[ri]), ri,
+                      residues[j].toString(rotJ[rj]), rj,
+                      rO.formatEnergy(eE.get2Body(i, ri, j, rj))));
             }
           }
         }
@@ -265,33 +248,33 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
             if (dist < superpositionThreshold) {
               // Set the energy to NaN for superposed atoms.
               twoBodyEnergy = Double.NaN;
-              logger.info(format(
-                  " Pair %8s %-2d, %8s %-2d:\t    NaN at %10.3f A (%s A by res) < %5.3f Ang",
-                  residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
-                  dist, resDist, superpositionThreshold));
+              logger.info(
+                  format(" Pair %8s %-2d, %8s %-2d:\t    NaN at %10.3f A (%s A by res) < %5.3f Ang",
+                      residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj, dist,
+                      resDist, superpositionThreshold));
             } else if (dM.checkPairDistThreshold(indexI, ri, indexJ, rj)) {
               // Set the two-body energy to 0.0 for separation distances larger than the two-body cutoff.
               twoBodyEnergy = 0.0;
               time += System.nanoTime();
-              logger.info(format(
-                  " Pair %8s %-2d, %8s %-2d: %s at %s A (%s A by res) in %6.4f (sec).",
-                  residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
-                  rO.formatEnergy(twoBodyEnergy), distString, resDistString, time * 1.0e-9));
+              logger.info(
+                  format(" Pair %8s %-2d, %8s %-2d: %s at %s A (%s A by res) in %6.4f (sec).",
+                      residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
+                      rO.formatEnergy(twoBodyEnergy), distString, resDistString, time * 1.0e-9));
             } else {
               try {
                 twoBodyEnergy = eE.compute2BodyEnergy(residues, i, ri, j, rj);
                 time += System.nanoTime();
-                logger.info(format(
-                    " Pair %8s %-2d, %8s %-2d: %s at %s A (%s A by res) in %6.4f (sec).",
-                    residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
-                    rO.formatEnergy(twoBodyEnergy), distString, resDistString, time * 1.0e-9));
+                logger.info(
+                    format(" Pair %8s %-2d, %8s %-2d: %s at %s A (%s A by res) in %6.4f (sec).",
+                        residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
+                        rO.formatEnergy(twoBodyEnergy), distString, resDistString, time * 1.0e-9));
               } catch (EnergyException ex) {
                 twoBodyEnergy = ex.getEnergy();
                 time += System.nanoTime();
-                logger.info(format(
-                    " Pair %8s %-2d, %8s %-2d: %s at %s A (%s A by res) in %6.4f (sec).",
-                    residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
-                    rO.formatEnergy(twoBodyEnergy), distString, resDistString, time * 1.0e-9));
+                logger.info(
+                    format(" Pair %8s %-2d, %8s %-2d: %s at %s A (%s A by res) in %6.4f (sec).",
+                        residueI.toString(rotI[ri]), ri, residueJ.toString(rotJ[rj]), rj,
+                        rO.formatEnergy(twoBodyEnergy), distString, resDistString, time * 1.0e-9));
               }
             }
             myBuffer.put(4, twoBodyEnergy);
@@ -309,23 +292,23 @@ public class TwoBodyEnergyRegion extends WorkerRegion {
 
         // Process the two-body energy received from each process.
         for (DoubleBuf doubleBuf : resultBuffer) {
-          int resi = (int) doubleBuf.get(0);
-          int roti = (int) doubleBuf.get(1);
-          int resj = (int) doubleBuf.get(2);
-          int rotj = (int) doubleBuf.get(3);
+          int resI = (int) doubleBuf.get(0);
+          int rotI = (int) doubleBuf.get(1);
+          int resJ = (int) doubleBuf.get(2);
+          int rotJ = (int) doubleBuf.get(3);
           double energy = doubleBuf.get(4);
           // Skip for padded result.
-          if (resi >= 0 && roti >= 0 && resj >= 0 && rotj >= 0) {
+          if (resI >= 0 && rotI >= 0 && resJ >= 0 && rotJ >= 0) {
             if (!Double.isFinite(energy)) {
               logger.info(
-                  " Rotamer pair eliminated: " + resi + ", " + roti + ", " + resj + ", " + rotj);
-              eR.eliminateRotamerPair(residues, resi, roti, resj, rotj, false);
+                  " Rotamer pair eliminated: " + resI + ", " + rotI + ", " + resJ + ", " + rotJ);
+              eR.eliminateRotamerPair(residues, resI, rotI, resJ, rotJ, false);
             }
-            eE.set2Body(resi, roti, resj, rotj, energy);
+            eE.set2Body(resI, rotI, resJ, rotJ, energy);
             if (rank == 0 && writeEnergyRestart && printFiles) {
               try {
                 energyWriter.append(
-                    format("Pair %d %d, %d %d: %16.8f", resi, roti, resj, rotj, energy));
+                    format("Pair %d %d, %d %d: %16.8f", resI, rotI, resJ, rotJ, energy));
                 energyWriter.newLine();
                 energyWriter.flush();
               } catch (IOException ex) {

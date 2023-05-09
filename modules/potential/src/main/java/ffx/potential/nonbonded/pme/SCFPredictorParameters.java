@@ -48,6 +48,7 @@ import org.apache.commons.math3.analysis.DifferentiableMultivariateVectorFunctio
 import org.apache.commons.math3.analysis.MultivariateMatrixFunction;
 import org.apache.commons.math3.optimization.general.LevenbergMarquardtOptimizer;
 
+@SuppressWarnings("deprecation")
 public class SCFPredictorParameters {
 
   private static final Logger logger = Logger.getLogger(SCFPredictorParameters.class.getName());

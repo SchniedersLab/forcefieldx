@@ -49,12 +49,11 @@ import ffx.potential.ForceFieldEnergyOpenMM.Context;
 import ffx.potential.ForceFieldEnergyOpenMM.State;
 import ffx.potential.MolecularAssembly;
 
+import ffx.potential.UnmodifiableState;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-
-import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
  * Runs Molecular Dynamics using OpenMM implementation
@@ -93,15 +92,13 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    *
    * @param assembly MolecularAssembly to operate on
    * @param potential Either a ForceFieldEnergyOpenMM, or a Barostat.
-   * @param properties Associated properties
    * @param listener a {@link ffx.algorithms.AlgorithmListener} object.
    * @param thermostat May have to be slightly modified for native OpenMM routines
    * @param integrator May have to be slightly modified for native OpenMM routines
    */
   public MolecularDynamicsOpenMM(MolecularAssembly assembly, Potential potential,
-      CompositeConfiguration properties, AlgorithmListener listener, ThermostatEnum thermostat,
-      IntegratorEnum integrator) {
-    super(assembly, potential, properties, listener, thermostat, integrator);
+      AlgorithmListener listener, ThermostatEnum thermostat, IntegratorEnum integrator) {
+    super(assembly, potential, listener, thermostat, integrator);
 
     logger.info("\n Initializing OpenMM molecular dynamics.");
 
@@ -177,10 +174,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
     // Retrieve starting energy values.
     getOpenMMEnergies();
-    initialKinetic = currentKineticEnergy;
-    initialPotential = currentPotentialEnergy;
-    initialTotal = currentTotalEnergy;
-    initialTemp = currentTemperature;
+
+    // Store the initial state.
+    initialState = new UnmodifiableState(state);
 
     // Check that our context is using correct Integrator, time step, and target temperature.
     forceFieldEnergyOpenMM.createContext(integratorString, dt, targetTemperature, false);
@@ -308,19 +304,18 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
   /** Load coordinates, box vectors and velocities. */
   private void setOpenMMState() {
     Context context = forceFieldEnergyOpenMM.getContext();
-    context.setOpenMMPositions(x);
+    context.setOpenMMPositions(state.x());
     context.setPeriodicBoxVectors();
-    context.setOpenMMVelocities(v);
+    context.setOpenMMVelocities(state.v());
   }
 
   /** Get OpenMM Energies. */
   private void getOpenMMEnergies() {
-    State state = forceFieldEnergyOpenMM.createState(false, true, false, false);
-    currentPotentialEnergy = state.potentialEnergy;
-    currentKineticEnergy = state.kineticEnergy;
-    currentTotalEnergy = state.totalEnergy;
-    currentTemperature = state.temperature;
-    state.free();
+    State ommState = forceFieldEnergyOpenMM.createState(false, true, false, false);
+    state.setKineticEnergy(ommState.kineticEnergy);
+    state.setPotentialEnergy(ommState.potentialEnergy);
+    state.setTemperature(ommState.temperature);
+    ommState.free();
   }
 
   /** Do some logging of the beginning energy values. */
@@ -355,28 +350,26 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
 
   /** Get OpenMM Energies and Positions. */
   private void getOpenMMEnergiesAndPositions() {
-    State state = forceFieldEnergyOpenMM.createState(true, true, false, false);
-    currentPotentialEnergy = state.potentialEnergy;
-    currentKineticEnergy = state.kineticEnergy;
-    currentTotalEnergy = state.totalEnergy;
-    currentTemperature = state.temperature;
-    state.getPositions(x);
-    state.getPeriodicBoxVectors();
-    state.free();
+    State ommState = forceFieldEnergyOpenMM.createState(true, true, false, false);
+    state.setPotentialEnergy(ommState.potentialEnergy);
+    state.setKineticEnergy(ommState.kineticEnergy);
+    state.setTemperature(ommState.temperature);
+    ommState.getPositions(state.x());
+    ommState.getPeriodicBoxVectors();
+    ommState.free();
   }
 
   /** Get OpenMM energies, positions, velocities, and accelerations. */
   private void getAllOpenMMVariables() {
-    State state = forceFieldEnergyOpenMM.createState(true, true, true, true);
-    currentPotentialEnergy = state.potentialEnergy;
-    currentKineticEnergy = state.kineticEnergy;
-    currentTotalEnergy = state.totalEnergy;
-    currentTemperature = state.temperature;
-    x = state.getPositions(x);
-    state.getPeriodicBoxVectors();
-    v = state.getVelocities(v);
-    a = state.getAccelerations(a);
-    state.free();
+    State ommState = forceFieldEnergyOpenMM.createState(true, true, true, true);
+    state.setPotentialEnergy(ommState.potentialEnergy);
+    state.setKineticEnergy(ommState.kineticEnergy);
+    state.setTemperature(ommState.temperature);
+    ommState.getPositions(state.x());
+    ommState.getPeriodicBoxVectors();
+    ommState.getVelocities(state.v());
+    ommState.getAccelerations(state.a());
+    ommState.free();
   }
 
   /**
@@ -388,7 +381,7 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
    */
   private void updateFromOpenMM(long i, boolean running) {
 
-    double priorPE = currentPotentialEnergy;
+    double priorPE = state.getPotentialEnergy();
 
     obtainVariables.run();
 
@@ -400,8 +393,9 @@ public class MolecularDynamicsOpenMM extends MolecularDynamics {
         logger.log(basicLogging,
             format("  %8s %12s %12s %12s %8s %8s", "psec", "kcal/mol", "kcal/mol", "kcal/mol", "K",
                 "sec"));
-        logger.log(basicLogging, format("  %8s %12.4f %12.4f %12.4f %8.2f", "", currentKineticEnergy,
-            currentPotentialEnergy, currentTotalEnergy, currentTemperature));
+        logger.log(basicLogging,
+            format("  %8s %12.4f %12.4f %12.4f %8.2f", "", state.getKineticEnergy(),
+                state.getPotentialEnergy(), state.getTotalEnergy(), state.getTemperature()));
       }
       time = logThermoForTime(i, time);
 
