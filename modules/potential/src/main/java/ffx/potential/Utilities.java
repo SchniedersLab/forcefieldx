@@ -95,11 +95,11 @@ public final class Utilities {
     double[] da = new double[3];
     double[] db = new double[3];
     double rms = 0;
-    ListIterator li, lj;
+    ListIterator<Atom> li, lj;
     for (li = m1.getAtomList().listIterator(), lj = m2.getAtomList().listIterator();
         li.hasNext(); ) {
-      a1 = (Atom) li.next();
-      a2 = (Atom) lj.next();
+      a1 = li.next();
+      a2 = lj.next();
       a1.getXYZ(da);
       a2.getXYZ(db);
       sub(da, db, d);

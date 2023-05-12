@@ -83,11 +83,18 @@ class SuperposeCrystals extends AlgorithmsScript {
   private double inflationFactor
 
   /**
+   * --zp or --zPrime Z' for both crystals (same).
+   */
+  @Option(names = ['--zp', '--zPrime'], paramLabel = '-1', defaultValue = '-1',
+          description = "Z'' for both crystals (assumes same value).")
+  private int zPrime
+
+  /**
    * --zp1 or --zPrime1 Z' for crystal 1 (default to autodetect).
    */
   @Option(names = ['--zp1', '--zPrime1'], paramLabel = '-1', defaultValue = '-1',
       description = "Z'' for crystal 1 (default will try to autodetect).")
-  private int zPrime
+  private int zPrime1
 
   /**
    * --zp2 or --zPrime2 Z' for crystal 2 (default to autodetect).
@@ -312,8 +319,13 @@ class SuperposeCrystals extends AlgorithmsScript {
     String filename = filenames.get(0)
     String pacFilename = concat(getFullPath(filename), getBaseName(filename) + ".txt")
 
+    if(zPrime > 0 && zPrime % 1 == 0){
+      zPrime1 = zPrime;
+      zPrime2 = zPrime;
+    }
+
     runningStatistics =
-        pac.comparisons(numAU, inflationFactor, matchTol, zPrime, zPrime2, excludeAtomsA, excludeAtomsB,
+        pac.comparisons(numAU, inflationFactor, matchTol, zPrime1, zPrime2, excludeAtomsA, excludeAtomsB,
             alphaCarbons, includeHydrogen, massWeighted, crystalPriority, strict, save,
             restart, write, machineLearning, inertia, gyrationComponents, linkage, printSym,
             lowMemory, pacFilename)

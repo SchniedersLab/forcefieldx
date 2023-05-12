@@ -174,6 +174,14 @@ public final class PDBFilter extends SystemFilter {
   private int modelsRead = 1;
   /** Tracks output MODEL numbers. Unused if below zero. */
   private int modelsWritten = -1;
+  /** Replicates vector dimensions if saving as expanded. */
+  private int[] lmn = new int[]{1,1,1};
+  /** Replicates vector along a-axis. */
+  private int l = 0;
+  /** Replicates vector along b-axis. */
+  private int m = 0;
+  /** Replicates vector along c-axis. */
+  private int n = 0;
   private String versionFileName;
 
   private final File readFile;
@@ -1707,9 +1715,9 @@ public final class PDBFilter extends SystemFilter {
   /**
    * writeFile
    *
-   * @param saveFile a {@link File} object to save to.
+   * @param saveFile a {@link java.io.File} object to save to.
    * @param append Whether to append to saveFile (vs over-write).
-   * @param toExclude A {@link Set} of {@link Atom}s to exclude
+   * @param toExclude A {@link java.util.Set} of {@link ffx.potential.bonded.Atom}s to exclude
    *     from writing.
    * @param writeEnd True if this is the final model.
    * @param versioning True if the file being saved to should be versioned. False if the file
@@ -1751,7 +1759,6 @@ public final class PDBFilter extends SystemFilter {
     if (!append) {
       if (versioning) {
         newFile = version(saveFile);
-        versionFileName = newFile.getName();
       }
     } else if (modelsWritten >= 0) {
       model = new StringBuilder(format("MODEL     %-4d", ++modelsWritten));
@@ -1846,7 +1853,6 @@ public final class PDBFilter extends SystemFilter {
       // =============================================================================
       int serNum = 1;
       Polymer[] polymers = activeMolecularAssembly.getChains();
-      boolean noCys = false;
       if (polymers != null) {
         for (Polymer polymer : polymers) {
           List<Residue> residues = polymer.getResidues();
@@ -1855,31 +1861,24 @@ public final class PDBFilter extends SystemFilter {
               List<Atom> cysAtoms = residue.getAtomList().stream()
                   .filter(a -> !atomExclusions.contains(a)).toList();
               Atom SG1 = null;
-              if(cysAtoms.size() == 0){
-                noCys = true;
-              }
               for (Atom atom : cysAtoms) {
-
                 String atName = atom.getName().toUpperCase();
                 if (atName.equals("SG") || atName.equals("SH")
                     || atom.getAtomType().atomicNumber == 16) {
                   SG1 = atom;
                   break;
                 }
-
               }
-              if(!noCys){
-                List<Bond> bonds = SG1.getBonds();
-                for (Bond bond : bonds) {
-                  Atom SG2 = bond.get1_2(SG1);
-                  if (SG2.getAtomType().atomicNumber == 16 && !atomExclusions.contains(SG2)) {
-                    if (SG1.getIndex() < SG2.getIndex()) {
-                      bond.energy(false);
-                      bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n", serNum++,
-                              SG1.getChainID().toString(), Hybrid36.encode(4, SG1.getResidueNumber()),
-                              SG2.getChainID().toString(), Hybrid36.encode(4, SG2.getResidueNumber()), "",
-                              bond.getValue()));
-                    }
+              List<Bond> bonds = SG1.getBonds();
+              for (Bond bond : bonds) {
+                Atom SG2 = bond.get1_2(SG1);
+                if (SG2.getAtomType().atomicNumber == 16 && !atomExclusions.contains(SG2)) {
+                  if (SG1.getIndex() < SG2.getIndex()) {
+                    bond.energy(false);
+                    bw.write(format("SSBOND %3d CYS %1s %4s    CYS %1s %4s %36s %5.2f\n", serNum++,
+                        SG1.getChainID().toString(), Hybrid36.encode(4, SG1.getResidueNumber()),
+                        SG2.getChainID().toString(), Hybrid36.encode(4, SG2.getResidueNumber()), "",
+                        bond.getValue()));
                   }
                 }
               }
@@ -2408,10 +2407,6 @@ public final class PDBFilter extends SystemFilter {
       bw.write(anisouSB.toString());
       bw.newLine();
     }
-  }
-
-  public String getVersionFileName() {
-    return versionFileName;
   }
 
   /** PDB records that are recognized. */

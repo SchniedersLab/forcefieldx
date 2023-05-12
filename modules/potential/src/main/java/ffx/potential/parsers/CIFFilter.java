@@ -490,70 +490,71 @@ public class CIFFilter extends SystemFilter {
         sg = SpaceGroupDefinitions.spaceGroupFactory(1);
       }
 
-      Cell cell = block.getCell();
-      double a = cell.getLengthA().get(0);
-      double b = cell.getLengthB().get(0);
-      double c = cell.getLengthC().get(0);
-      double alpha = cell.getAngleAlpha().get(0);
-      double beta = cell.getAngleBeta().get(0);
-      double gamma = cell.getAngleGamma().get(0);
-      assert sg != null;
-      LatticeSystem latticeSystem = sg.latticeSystem;
-      double[] latticeParameters = {a, b, c, alpha, beta, gamma};
       Crystal crystal = null;
-      if (latticeSystem.validParameters(a, b, c, alpha, beta, gamma)) {
-        crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName);
-      } else {
-        if (fixLattice) {
-          logger.info(
-              " Attempting to patch disagreement between lattice system and lattice parameters.");
-          boolean fixed = false;
-          // Check if Rhombohedral lattice has been named Hexagonal
-          if (latticeSystem == LatticeSystem.HEXAGONAL_LATTICE
-              && LatticeSystem.RHOMBOHEDRAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)) {
-            crystal = hrConversion(a, b, c, alpha, beta, gamma, sg);
-            latticeSystem = crystal.spaceGroup.latticeSystem;
-            if (latticeSystem.validParameters(crystal.a, crystal.b, crystal.c, crystal.alpha,
-                crystal.beta, crystal.gamma)) {
-              fixed = true;
-            }
-            // Check if Hexagonal lattice has been named Rhombohedral
-          } else if (latticeSystem == LatticeSystem.RHOMBOHEDRAL_LATTICE
-              && LatticeSystem.HEXAGONAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)) {
-            crystal = hrConversion(a, b, c, alpha, beta, gamma, sg);
-            latticeSystem = crystal.spaceGroup.latticeSystem;
-            if (latticeSystem.validParameters(crystal.a, crystal.b, crystal.c, crystal.alpha,
-                crystal.beta, crystal.gamma)) {
-              fixed = true;
-            }
-          }
-          if (!fixed) {
-            double[] newLatticeParameters = latticeSystem.fixParameters(a, b, c, alpha, beta, gamma);
-            if (newLatticeParameters == latticeParameters) {
-              logger.warning(" Conversion Failed: The proposed lattice parameters for " + sg.pdbName
-                  + " do not satisfy the " + latticeSystem + ".");
-              return false;
-            } else {
-              a = newLatticeParameters[0];
-              b = newLatticeParameters[1];
-              c = newLatticeParameters[2];
-              alpha = newLatticeParameters[3];
-              beta = newLatticeParameters[4];
-              gamma = newLatticeParameters[5];
-              crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName);
-            }
-          }
+      Cell cell = block.getCell();
+      if(cell.isDefined()) {
+        double a = cell.getLengthA().get(0);
+        double b = cell.getLengthB().get(0);
+        double c = cell.getLengthC().get(0);
+        double alpha = cell.getAngleAlpha().get(0);
+        double beta = cell.getAngleBeta().get(0);
+        double gamma = cell.getAngleGamma().get(0);
+        assert sg != null;
+        LatticeSystem latticeSystem = sg.latticeSystem;
+        double[] latticeParameters = {a, b, c, alpha, beta, gamma};
+        if (latticeSystem.validParameters(a, b, c, alpha, beta, gamma)) {
+          crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName);
         } else {
-          logger.warning(" Conversion Failed: The proposed lattice parameters for " + sg.pdbName
-              + " do not satisfy the " + latticeSystem + ".");
-          logger.info(" Use \"--fixLattice\" or \"--fl\" flag to attempt to fix automatically.");
-          return false;
+          if (fixLattice) {
+            logger.info(
+                    " Attempting to patch disagreement between lattice system and lattice parameters.");
+            boolean fixed = false;
+            // Check if Rhombohedral lattice has been named Hexagonal
+            if (latticeSystem == LatticeSystem.HEXAGONAL_LATTICE
+                    && LatticeSystem.RHOMBOHEDRAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)) {
+              crystal = hrConversion(a, b, c, alpha, beta, gamma, sg);
+              latticeSystem = crystal.spaceGroup.latticeSystem;
+              if (latticeSystem.validParameters(crystal.a, crystal.b, crystal.c, crystal.alpha,
+                      crystal.beta, crystal.gamma)) {
+                fixed = true;
+              }
+              // Check if Hexagonal lattice has been named Rhombohedral
+            } else if (latticeSystem == LatticeSystem.RHOMBOHEDRAL_LATTICE
+                    && LatticeSystem.HEXAGONAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)) {
+              crystal = hrConversion(a, b, c, alpha, beta, gamma, sg);
+              latticeSystem = crystal.spaceGroup.latticeSystem;
+              if (latticeSystem.validParameters(crystal.a, crystal.b, crystal.c, crystal.alpha,
+                      crystal.beta, crystal.gamma)) {
+                fixed = true;
+              }
+            }
+            if (!fixed) {
+              double[] newLatticeParameters = latticeSystem.fixParameters(a, b, c, alpha, beta, gamma);
+              if (newLatticeParameters == latticeParameters) {
+                logger.warning(" Conversion Failed: The proposed lattice parameters for " + sg.pdbName
+                        + " do not satisfy the " + latticeSystem + ".");
+                return false;
+              } else {
+                a = newLatticeParameters[0];
+                b = newLatticeParameters[1];
+                c = newLatticeParameters[2];
+                alpha = newLatticeParameters[3];
+                beta = newLatticeParameters[4];
+                gamma = newLatticeParameters[5];
+                crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName);
+              }
+            }
+          } else {
+            logger.warning(" Conversion Failed: The proposed lattice parameters for " + sg.pdbName
+                    + " do not satisfy the " + latticeSystem + ".");
+            logger.info(" Use \"--fixLattice\" or \"--fl\" flag to attempt to fix automatically.");
+            return false;
+          }
         }
+        activeMolecularAssembly.setName(block.getBlockHeader());
+        logger.info(" New Crystal: " + crystal);
+        activeMolecularAssembly.setCrystal(crystal);
       }
-      activeMolecularAssembly.setName(block.getBlockHeader());
-      logger.info(" New Crystal: " + crystal);
-      activeMolecularAssembly.setCrystal(crystal);
-
       AtomSite atomSite = block.getAtomSite();
       Column<String[]> label = atomSite.getLabel();
       Column<String[]> typeSymbol = atomSite.getTypeSymbol();
@@ -596,7 +597,7 @@ public class CIFFilter extends SystemFilter {
         double y = (fractY.isDefined()) ? fractY.get(i) : cartY.get(i);
         double z = (fractZ.isDefined()) ? fractZ.get(i) : cartZ.get(i);
         double[] xyz = {x, y, z};
-        if (fractX.isDefined()) {
+        if (fractX.isDefined() && crystal != null) {
           crystal.toCartesianCoordinates(xyz, xyz);
         }
         atoms[i] = new Atom(i + 1, label.getStringData(i), altLoc, xyz, resName, i, chain, occupancy,
@@ -1281,7 +1282,12 @@ public class CIFFilter extends SystemFilter {
   private boolean writeOutputFile() {
     String dir = getFullPath(files.get(0).getAbsolutePath()) + File.separator;
     String fileName = removeExtension(getName(files.get(0).getAbsolutePath()));
-    String spacegroup = activeMolecularAssembly.getCrystal().getUnitCell().spaceGroup.shortName;
+    String spacegroup;
+    if(activeMolecularAssembly.getCrystal() != null) {
+      spacegroup = activeMolecularAssembly.getCrystal().getUnitCell().spaceGroup.shortName;
+    }else{
+      spacegroup = null;
+    }
     List<MSNode> entities = activeMolecularAssembly.getAllBondedEntities();
 
     File saveFile;

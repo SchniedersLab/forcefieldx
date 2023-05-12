@@ -51,6 +51,8 @@ import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.AngleType.AngleMode;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
+
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -62,6 +64,9 @@ import java.util.logging.Logger;
  * @since 1.0
  */
 public class Angle extends BondedTerm {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger logger = Logger.getLogger(Angle.class.getName());
 

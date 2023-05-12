@@ -40,6 +40,7 @@
 package edu.rit.pj.replica;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.concurrent.atomic.AtomicLong;
 
 import edu.rit.mp.DoubleBuf;
@@ -104,8 +105,12 @@ import edu.rit.pj.reduction.DoubleOp;
  * @author Alan Kaminsky
  * @version 13-Sep-2008
  */
+@SuppressWarnings("serial")
 public class ReplicatedDouble
         extends Number {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
 // Hidden data members.
     private DoubleOp myOp;
@@ -316,7 +321,7 @@ public class ReplicatedDouble
      * @return Current value.
      */
     public double doubleValue() {
-        return (double) get();
+        return get();
     }
 
 }

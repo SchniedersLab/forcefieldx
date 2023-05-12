@@ -41,6 +41,7 @@ import java.awt.Frame;
 import java.awt.Window;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.Serial;
 
 /**
  * The FullScreenWindow class controls full screen graphics.
@@ -48,6 +49,9 @@ import java.awt.event.KeyListener;
  * @author Michael J. Schnieders
  */
 public class GraphicsFullScreen extends Window implements KeyListener {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private boolean fullScreen = false;
 

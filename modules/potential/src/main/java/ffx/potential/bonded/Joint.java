@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
+import java.io.Serial;
 import java.util.Enumeration;
 import java.util.List;
 import javax.swing.tree.TreeNode;
@@ -49,6 +50,9 @@ import org.jogamp.java3d.BranchGroup;
  * @since 1.0
  */
 public class Joint extends MSNode {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /** First group forming this Joint */
   private final MSGroup group1;

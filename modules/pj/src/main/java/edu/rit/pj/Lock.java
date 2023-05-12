@@ -39,6 +39,7 @@
 //******************************************************************************
 package edu.rit.pj;
 
+import java.io.Serial;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 /**
@@ -65,6 +66,9 @@ public class Lock {
      */
     private static class Synchronizer
             extends AbstractQueuedSynchronizer {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         /**
          * Construct a new lock synchronizer.

@@ -771,6 +771,7 @@ public class ForceFieldEnergyOpenMM extends ForceFieldEnergy {
   }
 
   /** {@inheritDoc} */
+  @SuppressWarnings("deprecation")
   @Override
   protected void finalize() throws Throwable {
     // Safer to leave super.finalize() in, even though right now that calls Object.finalize().

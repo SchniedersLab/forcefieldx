@@ -739,6 +739,15 @@ public class XYZFilter extends SystemFilter {
     return writeFileAsP1(saveFile, append, crystal, new int[] {1, 1, 1}, extraLines);
   }
 
+  /**
+   * Write file as a P1 system in XYZ format.
+   * @param saveFile a {@link java.io.File} object.
+   * @param append a boolean.
+   * @param crystal a {@link ffx.crystal.Crystal} object.
+   * @param lmn Replicate vector dimensions.
+   * @param extraLines Additional lines to print in the header.
+   * @return a boolean.
+   */
   public boolean writeFileAsP1(File saveFile, boolean append, Crystal crystal, int[] lmn,
       String[] extraLines) {
     if (saveFile == null) {

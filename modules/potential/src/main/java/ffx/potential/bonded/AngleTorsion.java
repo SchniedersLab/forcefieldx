@@ -52,6 +52,8 @@ import ffx.potential.parameters.AngleTorsionType;
 import ffx.potential.parameters.AngleType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.TorsionType;
+
+import java.io.Serial;
 import java.util.logging.Logger;
 
 /**
@@ -61,6 +63,9 @@ import java.util.logging.Logger;
  * @since 1.0
  */
 public class AngleTorsion extends BondedTerm implements LambdaInterface {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger logger = Logger.getLogger(AngleTorsion.class.getName());
   /** Functional form for OpenMM. */

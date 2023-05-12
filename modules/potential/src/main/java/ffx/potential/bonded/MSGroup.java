@@ -41,6 +41,8 @@ import static java.lang.String.format;
 
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.parameters.ForceField;
+
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -58,6 +60,9 @@ import org.jogamp.vecmath.Color3f;
  */
 @SuppressWarnings({"CloneableImplementsClone"})
 public abstract class MSGroup extends MSNode {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger logger = Logger.getLogger(MSGroup.class.getName());
   /** Constant <code>bondTime=0</code> */

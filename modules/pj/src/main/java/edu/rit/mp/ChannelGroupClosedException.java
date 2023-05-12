@@ -40,6 +40,7 @@
 package edu.rit.mp;
 
 import java.io.IOException;
+import java.io.Serial;
 
 /**
  * Class ChannelGroupClosedException is thrown to indicate that an I/O operation
@@ -50,6 +51,9 @@ import java.io.IOException;
  */
 public class ChannelGroupClosedException
         extends IOException {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
 // Exported constructors.
     /**

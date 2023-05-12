@@ -40,6 +40,8 @@ package ffx.potential.bonded;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.UreyBradleyType;
+
+import java.io.Serial;
 import java.util.logging.Logger;
 
 /**
@@ -50,19 +52,28 @@ import java.util.logging.Logger;
  */
 public class UreyBradley extends BondedTerm {
 
+  @Serial
+  private static final long serialVersionUID = 1L;
+
   private static final Logger logger = Logger.getLogger(UreyBradley.class.getName());
 
-  /** Force field parameters to compute the Stretch-Bend energy. */
+  /**
+   * Force field parameters to compute the Stretch-Bend energy.
+   */
   public final UreyBradleyType ureyBradleyType;
-  /** The Angle this UreyBradley term is based on. */
+  /**
+   * The Angle this UreyBradley term is based on.
+   */
   protected final Angle angle;
-  /** Scale factor to apply to Urey-Bradley term. */
+  /**
+   * Scale factor to apply to Urey-Bradley term.
+   */
   private double rigidScale = 1.0;
 
   /**
    * Constructor for the UreyBradley class.
    *
-   * @param a a {@link ffx.potential.bonded.Angle} object.
+   * @param a               a {@link ffx.potential.bonded.Angle} object.
    * @param ureyBradleyType The Urey-Bradley type to apply.
    */
   public UreyBradley(Angle a, UreyBradleyType ureyBradleyType) {
@@ -77,7 +88,7 @@ public class UreyBradley extends BondedTerm {
   /**
    * Attempt to create a new UreyBradley for the specified Angle.
    *
-   * @param angle the Angle to create the UreyBradley from.
+   * @param angle      the Angle to create the UreyBradley from.
    * @param forceField the ForceField parameters to apply.
    * @return a new UreyBradley, or null.
    */
@@ -92,7 +103,9 @@ public class UreyBradley extends BondedTerm {
     return new UreyBradley(angle, ureyBradleyType);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int compareTo(BondedTerm ub) {
     if (!ub.getClass().isInstance(this)) {
@@ -108,7 +121,7 @@ public class UreyBradley extends BondedTerm {
    */
   @Override
   public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad,
-      AtomicDoubleArray3D lambdaGrad) {
+                       AtomicDoubleArray3D lambdaGrad) {
     var atomA = atoms[0];
     var atomC = atoms[2];
     var va = atomA.getXYZ();
@@ -135,7 +148,9 @@ public class UreyBradley extends BondedTerm {
     return energy;
   }
 
-  /** log */
+  /**
+   * log
+   */
   public void log() {
     logger.info(
         String.format(" %s %6d-%s %6d-%s %6.4f  %6.4f  %10.4f", "Urey-Bradley", atoms[0].getIndex(),

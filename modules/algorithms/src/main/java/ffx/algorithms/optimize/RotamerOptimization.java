@@ -2972,6 +2972,7 @@ public class RotamerOptimization implements Terminatable {
     return e;
   }
 
+  @SuppressWarnings("fallthrough")
   private double slidingWindowOptimization(List<Residue> residueList, int windowSize, int increment,
       boolean revert, double distance, Direction direction) {
 
@@ -4758,6 +4759,7 @@ public class RotamerOptimization implements Terminatable {
      * @param residues All residues to be optimized
      * @return Filled cells.
      */
+    @SuppressWarnings("fallthrough")
     private BoxOptCell[] loadCells(Crystal crystal, Residue[] residues) {
       double xCellBorderFracSize = (boxBorderSize / crystal.a);
       double yCellBorderFracSize = (boxBorderSize / crystal.b);

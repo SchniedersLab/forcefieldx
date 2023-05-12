@@ -43,6 +43,7 @@ import ffx.potential.bonded.ROLSP;
 import ffx.potential.bonded.RendererCache;
 import java.awt.Color;
 import java.awt.GraphicsEnvironment;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.logging.Logger;
@@ -67,6 +68,9 @@ import javax.swing.tree.TreePath;
  * @author Michael J. Schnieders
  */
 public final class Hierarchy extends JTree implements TreeSelectionListener, TreeModelListener {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger logger = Logger.getLogger(Hierarchy.class.getName());
   private final MSRoot root;
@@ -612,7 +616,7 @@ public final class Hierarchy extends JTree implements TreeSelectionListener, Tre
         return;
       }
       TreePath path = new TreePath(f.getPath());
-      for (Enumeration e = getExpandedDescendants(path); e.hasMoreElements(); ) {
+      for (Enumeration<TreePath> e = getExpandedDescendants(path); e.hasMoreElements(); ) {
         TreePath treePath = new TreePath(e.nextElement());
         collapsePath(treePath);
       }

@@ -41,6 +41,7 @@ import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.utilities.Keyword;
 import java.io.File;
+import java.io.Serial;
 import java.util.Hashtable;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
@@ -51,6 +52,9 @@ import org.apache.commons.io.FilenameUtils;
  * @author Michael J. Schnieders
  */
 public class FFXSystem extends MolecularAssembly {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /** Constant <code>MultiScaleLevel=4</code> */
   public static final int MultiScaleLevel = 4;
