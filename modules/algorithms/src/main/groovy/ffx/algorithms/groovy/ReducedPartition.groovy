@@ -61,9 +61,12 @@ class ReducedPartition extends  AlgorithmsScript{
     private boolean unfolded = false
 
     @CommandLine.Option(names = ["--pKa"], paramLabel = "false",
-            description = "Calculating free energy change for pKa shift. Do not titrate mutating residue.")
+            description = "Calculating free energy change for pKa shift.")
     private boolean pKa = false
 
+    @CommandLine.Option(names = ["--pB"], paramLabel = "false",
+            description = "Save the Boltzmann Weights of the protonated residue.")
+    private boolean pB = false
 
 
     /**
@@ -135,6 +138,8 @@ class ReducedPartition extends  AlgorithmsScript{
         int[] adjustPerm = new int[2]
         double[] offsets = new double[2]
         double[] titrateArray
+        double[] titrateBoltzmann
+        double totalBoltzmann = 0
         List<Residue> residueList = activeAssembly.getResidueList()
 
         List<Integer> residueNumber = new ArrayList<>()
@@ -288,14 +293,25 @@ class ReducedPartition extends  AlgorithmsScript{
             offsets[j] = rotamerOptimization.getRefEnergy()
             if(pKa){
                 titrateArray = rotamerOptimization.getFraction()
+                if(pB){
+                    titrateBoltzmann= rotamerOptimization.getTitrateBoltzmann()
+                    totalBoltzmann = rotamerOptimization.getTotalBoltzmann()
+                }
+
             }
         }
 
         if(pKa){
             int titrateCount = 0
+
             for(Residue residue : residues){
-                logger.info("Residue: " + residue.getName() + residue.getResidueNumber() + " Fraction of Protonated: " +
+                logger.info("Residue " + residue.getName() + residue.getResidueNumber() + " Fraction of Protonated: " +
                         titrateArray[titrateCount])
+                if(pB){
+                    logger.info("Residue " + residue.getName() + residue.getResidueNumber() + " Protonated Boltzmann: " +
+                            titrateBoltzmann[titrateCount])
+                    logger.info("Total Boltzmann: " + totalBoltzmann)
+                }
                 titrateCount += 1
             }
         } else {
