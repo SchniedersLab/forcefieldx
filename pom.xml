@@ -238,7 +238,7 @@
                 <!-- dependencyConvergence/ -->
                 <!-- reactorModuleConvergence/ -->
                 <requireJavaVersion>
-                  <version>[17,20.1]</version>
+                  <version>[17,21.1]</version>
                 </requireJavaVersion>
                 <requireMavenVersion>
                   <version>3.8</version>
@@ -960,7 +960,7 @@
     <!-- Version of FFX  -->
     <ffx.version>1.0.0-BETA</ffx.version>
     <findbugs.version>3.0.2</findbugs.version>
-    <groovy-all.version>4.0.11</groovy-all.version>
+    <groovy-all.version>4.0.12</groovy-all.version>
     <guava.version>31.1-jre</guava.version>
     <install.version>3.1.1</install.version>
     <jar.version>3.3.0</jar.version>
@@ -976,7 +976,7 @@
     <jxr.version>3.3.0</jxr.version>
     <linkcheck.skip>true</linkcheck.skip>
     <linkcheck.version>1.2</linkcheck.version>
-    <log4j.version>2.17.1</log4j.version>
+    <log4j.version>2.20.0</log4j.version>
     <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
     <maven.javadoc.skip>false</maven.javadoc.skip>
     <maven.jxr.skip>false</maven.jxr.skip>
