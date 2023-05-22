@@ -40,6 +40,7 @@
 package edu.rit.pj.replica;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import edu.rit.mp.IntegerBuf;
@@ -104,15 +105,19 @@ import edu.rit.pj.reduction.IntegerOp;
  * @author Alan Kaminsky
  * @version 12-Sep-2008
  */
+@SuppressWarnings("serial")
 public class ReplicatedInteger
         extends Number {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
 // Hidden data members.
-    private IntegerOp myOp;
-    private AtomicInteger myValue;
-    private int myTag;
-    private Comm myComm;
-    private Receiver myReceiver;
+    private final IntegerOp myOp;
+    private final AtomicInteger myValue;
+    private final int myTag;
+    private final Comm myComm;
+    private final Receiver myReceiver;
 
 // Hidden helper classes.
     /**
@@ -280,7 +285,7 @@ public class ReplicatedInteger
      * @return Current value.
      */
     public int intValue() {
-        return (int) get();
+        return get();
     }
 
     /**
@@ -290,7 +295,7 @@ public class ReplicatedInteger
      * @return Current value.
      */
     public long longValue() {
-        return (long) get();
+        return get();
     }
 
     /**
@@ -310,7 +315,7 @@ public class ReplicatedInteger
      * @return Current value.
      */
     public double doubleValue() {
-        return (double) get();
+        return get();
     }
 
 }

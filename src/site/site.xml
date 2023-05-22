@@ -152,6 +152,7 @@
           <item name="Superpose" href="/commands/Superpose.html"/>
           <item name="SuperposeCrystals" href="/commands/SuperposeCrystals.html"/>
           <item name="Thermodynamics" href="/commands/Thermodynamics.html"/>
+          <item name="TorsionScan" href="/commands/TorsionScan.html"/>
           <item name="Testing" href="/commands-opt-test.html" collapse="true">
             <item name="ApplyTorsions" href="/commands/test.ApplyTorsions.html"/>
             <item name="CreateRotamers" href="/commands/test.CreateRotamers.html"/>

@@ -115,7 +115,6 @@ public class MDMove implements MCMove {
 
     molecularDynamics.setVerbosityLevel(MDVerbosity.QUIET);
     molecularDynamics.setObtainVelAcc(false);
-    collectEnergies();
     molecularDynamics.setRestartFrequency(dynamics.getCheckpoint());
     this.saveInterval = dynamics.getSnapshotInterval();
 

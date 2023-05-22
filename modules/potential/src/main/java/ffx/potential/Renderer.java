@@ -41,15 +41,15 @@ import ffx.potential.bonded.MSNode;
 import ffx.potential.bonded.MSRoot;
 import ffx.potential.bonded.ROLSP;
 import ffx.potential.bonded.RendererCache;
+
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.logging.Logger;
 import javax.swing.JLabel;
-import org.jogamp.java3d.Behavior;
-import org.jogamp.java3d.Bounds;
-import org.jogamp.java3d.BranchGroup;
-import org.jogamp.java3d.WakeupOnBehaviorPost;
+import javax.swing.tree.TreeNode;
+
+import org.jogamp.java3d.*;
 
 /**
  * The Renderer class attempts to maximize throughput of graphics operations on MolecularAssembly
@@ -67,7 +67,7 @@ public class Renderer extends Behavior {
   private ArrayList<MSNode> nodesCache = null;
   private boolean doTransform, doView, doColor;
   private boolean doTransformCache, doViewCache, doColorCache;
-  private JLabel statusBar;
+  private final JLabel statusBar;
   private RendererCache.ViewModel viewModel, viewModelCache;
   private RendererCache.ColorModel colorModel, colorModelCache;
   private WakeupOnBehaviorPost postid;
@@ -89,10 +89,10 @@ public class Renderer extends Behavior {
    * This node arms UpdateBehavior with a graphics operation to carry out
    *
    * @param nodes Nodes where the operation will be performed
-   * @param t True for a change in atomic position
-   * @param v True for a change in rendering method
+   * @param t     True for a change in atomic position
+   * @param v     True for a change in rendering method
    * @param vtype The rendering method to use
-   * @param c True for a change in rendering color
+   * @param c     True for a change in rendering color
    * @param ctype The coloring method to use
    */
   public void arm(
@@ -125,11 +125,11 @@ public class Renderer extends Behavior {
   /**
    * arm
    *
-   * @param node a {@link ffx.potential.bonded.MSNode} object.
-   * @param t a boolean.
-   * @param v a boolean.
+   * @param node  a {@link ffx.potential.bonded.MSNode} object.
+   * @param t     a boolean.
+   * @param v     a boolean.
    * @param vtype a {@link ffx.potential.bonded.RendererCache.ViewModel} object.
-   * @param c a boolean.
+   * @param c     a boolean.
    * @param ctype a {@link ffx.potential.bonded.RendererCache.ColorModel} object.
    */
   public void arm(
@@ -181,7 +181,7 @@ public class Renderer extends Behavior {
    * the Java3D Behavior Thread.
    */
   @Override
-  public void processStimulus(Iterator parm1) {
+  public void processStimulus(Iterator<WakeupCriterion> parm1) {
     // Do not perform two operations before the frame has be refreshed.
     if (getView().getFrameNumber() == frameNumber) {
       System.out.print(".");
@@ -229,8 +229,7 @@ public class Renderer extends Behavior {
       if (doColor) {
         nodeToUpdate.setColor(colorModel, null, null);
         if (statusBar != null) {
-          statusBar.setText(
-              "  Color by \"" + colorString + "\" applied to " + nodeToUpdate.toString());
+          statusBar.setText("  Color by \"" + colorString + "\" applied to " + nodeToUpdate);
         }
       }
       if (doView) {
@@ -238,7 +237,7 @@ public class Renderer extends Behavior {
         newChildren.add(newShapes);
         nodeToUpdate.setView(viewModel, newShapes);
         if (statusBar != null) {
-          statusBar.setText("  Style \"" + viewString + "\" applied to " + nodeToUpdate.toString());
+          statusBar.setText("  Style \"" + viewString + "\" applied to " + nodeToUpdate);
         }
       }
     }
@@ -272,22 +271,21 @@ public class Renderer extends Behavior {
         if (nodeToUpdate == null) {
           continue;
         }
-        if (nodeToUpdate instanceof MolecularAssembly) {
-          MolecularAssembly ma = (MolecularAssembly) nodeToUpdate;
+        if (nodeToUpdate instanceof MolecularAssembly ma) {
           ma.sceneGraphChange(null);
         } else if (nodeToUpdate instanceof ROLSP) {
           MolecularAssembly ma = (MolecularAssembly) nodeToUpdate.getChildAt(0);
           ma.sceneGraphChange(null);
         } else if (nodeToUpdate instanceof MSRoot) {
-          for (Enumeration e = nodeToUpdate.children(); e.hasMoreElements(); ) {
+          for (Enumeration<TreeNode> e = nodeToUpdate.children(); e.hasMoreElements(); ) {
             MSNode updatedNode = (MSNode) e.nextElement();
+            MolecularAssembly ma;
             if (updatedNode instanceof ROLSP) {
-              MolecularAssembly ma = (MolecularAssembly) updatedNode.getChildAt(0);
-              ma.sceneGraphChange(null);
+              ma = (MolecularAssembly) updatedNode.getChildAt(0);
             } else {
-              MolecularAssembly ma = (MolecularAssembly) updatedNode;
-              ma.sceneGraphChange(null);
+              ma = (MolecularAssembly) updatedNode;
             }
+            ma.sceneGraphChange(null);
           }
         } else {
           ArrayList<BranchGroup> newShapes = newChildren.get(i);
@@ -319,8 +317,7 @@ public class Renderer extends Behavior {
     Runtime runtime = Runtime.getRuntime();
     frameDuration = getView().getLastFrameDuration();
     if (gc) {
-      logger.info(" Running Finalization and GC for accurate memory usage.");
-      runtime.runFinalization();
+      logger.info(" Running GC for accurate memory usage.");
       runtime.gc();
       logger.info(" Done\n Proceeding with graphics operation...");
     }
@@ -332,7 +329,6 @@ public class Renderer extends Behavior {
     frameDuration = getView().getLastFrameDuration();
     logger.info(" Frame Duration After Op: " + frameDuration / 1000);
     if (gc) {
-      runtime.runFinalization();
       runtime.gc();
       logger.info(" Done");
     }

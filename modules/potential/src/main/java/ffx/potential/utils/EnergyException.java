@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.potential.utils;
 
+import java.io.Serial;
+
 /**
  * This Exception class indicates an error in calculating energy or gradients. Expected behavior is
  * that it will be caught by Potential.energy(), resulting in any necessary cleanup. Then, if the
@@ -49,6 +51,9 @@ package ffx.potential.utils;
  * @since 1.0
  */
 public class EnergyException extends ArithmeticException {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private final double energy;
   private final boolean causeSevere;

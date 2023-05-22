@@ -684,7 +684,7 @@ public class NamingUtils {
           for (Atom oxygen : cTerminalOxygen) {
             if (oxygen.getBonds().size() == 2) {
               O = oxygen;
-              O.setName("O");
+              O.setName("OH");
               findBondedAtoms(O, 1).get(0).setName("HO");
             }
           }

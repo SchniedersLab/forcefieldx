@@ -46,6 +46,8 @@ import ffx.potential.bonded.BondedUtils.MissingAtomTypeException;
 import ffx.potential.bonded.BondedUtils.MissingHeavyAtomException;
 import ffx.potential.bonded.NucleicAcidUtils.NucleicAcid3;
 import ffx.potential.parameters.ForceField;
+
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -62,6 +64,9 @@ import org.jogamp.vecmath.Color3f;
  * @since 1.0
  */
 public class MultiResidue extends Residue {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger logger = Logger.getLogger(MultiResidue.class.getName());
 

@@ -122,7 +122,7 @@ public class EmptyObjectBuf
      * type are not the same.
      */
     public Buf getReductionBuf(Op op) {
-        ObjectOp objectop = (ObjectOp) op;
+        ObjectOp<?> objectop = (ObjectOp<?>) op;
         return this;
     }
 

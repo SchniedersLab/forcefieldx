@@ -203,7 +203,7 @@ public class TimerThread
         try {
             while (iamRunning) {
                 long now = System.currentTimeMillis();
-                Vector theTriggeredTimeouts = null;
+                Vector<TimeoutInfo> theTriggeredTimeouts;
 
                 synchronized (this) {
                     // If timeout queue is empty, wait until notified.
@@ -222,7 +222,7 @@ public class TimerThread
 
                     // Pull all timeouts that have occurred out of the timeout
                     // queue into a separate list.
-                    theTriggeredTimeouts = new Vector();
+                    theTriggeredTimeouts = new Vector<>();
                     while (mySize > 0 && myQueue[1].myTimeout <= now) {
                         theTriggeredTimeouts.add(myQueue[1]);
                         myQueue[1] = myQueue[mySize];
@@ -235,9 +235,9 @@ public class TimerThread
                 // Perform the action of each triggered timeout. Do this outside
                 // the synchronized block, or a deadlock may happen if a timer
                 // is restarted.
-                Iterator iter = theTriggeredTimeouts.iterator();
+                Iterator<TimeoutInfo> iter = theTriggeredTimeouts.iterator();
                 while (iter.hasNext()) {
-                    ((TimeoutInfo) iter.next()).myTimer.trigger(now);
+                    iter.next().myTimer.trigger(now);
                 }
             }
         } catch (InterruptedException exc) {

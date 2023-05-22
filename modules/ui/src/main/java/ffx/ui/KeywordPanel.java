@@ -49,10 +49,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -95,6 +92,9 @@ import org.xml.sax.SAXException;
  * @author Michael J. Schnieders
  */
 public final class KeywordPanel extends JPanel implements ActionListener {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger logger = Logger.getLogger(KeywordPanel.class.getName());
   private static final Preferences preferences = Preferences.userNodeForPackage(KeywordPanel.class);

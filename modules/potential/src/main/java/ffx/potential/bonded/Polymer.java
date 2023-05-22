@@ -40,6 +40,8 @@ package ffx.potential.bonded;
 import ffx.numerics.math.DoubleMath;
 import ffx.potential.bonded.Residue.ResidueType;
 import ffx.potential.parameters.ForceField;
+
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -58,6 +60,9 @@ import org.jogamp.vecmath.Color3f;
  * @since 1.0
  */
 public class Polymer extends MSGroup {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /** Constant <code>polymerColor</code> */
   private static final Map<Integer, Color3f> polymerColor = new HashMap<>();

@@ -1357,9 +1357,9 @@ public class JobScheduler
             out.println("<P>");
             out.print("Name: ");
             out.print(thread.getName());
-            out.println("&nbsp;&nbsp;&nbsp;&nbsp;");
-            out.print(" ID: ");
-            out.print(thread.getId());
+            /// out.println("&nbsp;&nbsp;&nbsp;&nbsp;");
+            /// out.print(" ID: ");
+            /// out.print(thread.getId());
             out.println("&nbsp;&nbsp;&nbsp;&nbsp;");
             out.print(" Daemon: ");
             out.print(thread.isDaemon() ? "yes" : "no");

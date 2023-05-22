@@ -39,6 +39,7 @@
 //******************************************************************************
 package edu.rit.pj.reduction;
 
+import java.io.Serial;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -56,6 +57,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class SharedInteger
         extends Number {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
 // Hidden data members.
     private AtomicInteger myValue;
@@ -227,7 +231,7 @@ public class SharedInteger
      * @return Current value.
      */
     public int intValue() {
-        return (int) get();
+        return get();
     }
 
     /**
@@ -257,7 +261,7 @@ public class SharedInteger
      * @return Current value.
      */
     public double doubleValue() {
-        return (double) get();
+        return get();
     }
 
 }

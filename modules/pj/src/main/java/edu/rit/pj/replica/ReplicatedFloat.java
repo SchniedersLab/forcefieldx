@@ -104,15 +104,16 @@ import edu.rit.pj.reduction.FloatOp;
  * @author Alan Kaminsky
  * @version 13-Sep-2008
  */
+@SuppressWarnings("serial")
 public class ReplicatedFloat
         extends Number {
 
 // Hidden data members.
-    private FloatOp myOp;
-    private AtomicInteger myValue;
-    private int myTag;
-    private Comm myComm;
-    private Receiver myReceiver;
+    private final FloatOp myOp;
+    private final AtomicInteger myValue;
+    private final int myTag;
+    private final Comm myComm;
+    private final Receiver myReceiver;
 
 // Hidden helper classes.
     /**
@@ -306,7 +307,7 @@ public class ReplicatedFloat
      * @return Current value.
      */
     public float floatValue() {
-        return (float) get();
+        return get();
     }
 
     /**
@@ -316,7 +317,7 @@ public class ReplicatedFloat
      * @return Current value.
      */
     public double doubleValue() {
-        return (double) get();
+        return get();
     }
 
 }

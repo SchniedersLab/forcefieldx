@@ -27,8 +27,8 @@ public class SendSynchronous {
   /** Number of processes. */
   private final int numProc = world.size();
   /**
-   * The counts array stores [Lambda, dU/dL, temper] for each process. Therefore the array is of size
-   * [numProc][3].
+   * The counts array stores [Lambda, dU/dL, temper] for each process. Therefore, the array is of
+   * size [numProc][3].
    *
    * <p>Each 3 entry array must be wrapped inside a Parallel Java DoubleBuf for the All-Gather
    * communication calls.

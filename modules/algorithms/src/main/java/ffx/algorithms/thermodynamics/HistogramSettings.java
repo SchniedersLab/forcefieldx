@@ -37,7 +37,6 @@
 // ******************************************************************************
 package ffx.algorithms.thermodynamics;
 
-import ffx.numerics.integrate.Integrate1DNumeric;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -45,17 +44,18 @@ import java.io.IOException;
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
- * HistogramSettings is a mutable settings class for OST histograms. Many fields in Histogram are
- * (or should be) final at construction, but there are too many to reasonably put in a constructor.
- * As such, HistogramSettings stores these values and their defaults, so a Histogram can have many
- * final fields with a small-signature constructor.
+ * HistogramSettings is a mutable settings class for OST histograms. Many fields in Histogram are (or
+ * should be) final at construction, but there are too many to reasonably put in a constructor. As
+ * such, HistogramSettings stores these values and their defaults, so a Histogram can have many final
+ * fields with a small-signature constructor.
  *
  * <p>While most fields are package-private and can be set easily (technically breaking
- * encapsulation), some fields are fully private because they are involved in side-effects. For
- * example, dL may be adjusted slightly downwards if continuous lambda bins are in use and we need
+ * encapsulation), some fields are fully private because they are involved in side effects. For
+ * example, dL may be adjusted slightly downwards if continuous lambda bins are in use, and we need
  * to arrive at an odd number of lambda bins.
  */
 public class HistogramSettings {
+
   private static final boolean DEFAULT_DISCRETE_LAMBDA = false;
   private static final double DEFAULT_DL = 0.005;
   private static final double DEFAULT_DFL = 2.0;
@@ -64,8 +64,6 @@ public class HistogramSettings {
   private static final double DEFAULT_TEMPERATURE = 298.15; // TODO: Consider setting this in Constants.
   private static final double DEFAULT_TEMPERING_FACTOR = 2.0;
   private static final int DEFAULT_FLAMDA_PRINT_INTERVAL = 25;
-  private static final Integrate1DNumeric.IntegrationType DEFAULT_INTEGRATION =
-      Integrate1DNumeric.IntegrationType.SIMPSONS;
   private static final double DEFAULT_TIMESTEP = 1.0;
   private static final double DEFAULT_THETA_FRICTION = 1.0e-19;
   private static final double DEFAULT_THETA_MASS = 1.0e-18;
@@ -100,8 +98,8 @@ public class HistogramSettings {
    */
   public double temperature = DEFAULT_TEMPERATURE;
   /**
-   * The Dama et al. transition-tempering rate parameter. A reasonable value is about 2 to 8 kT,
-   * with larger values being resulting in slower decay.
+   * The Dama et al. transition-tempering rate parameter. A reasonable value is about 2 to 8 kT, with
+   * larger values being resulting in slower decay.
    *
    * <p>The default temperingFactor = 2.0.
    */
@@ -127,14 +125,14 @@ public class HistogramSettings {
 
   double dFL;
   /**
-   * When evaluating the biasing potential, contributions from Gaussians centered on bins more the
+   * When evaluating the biasing potential, contributions from a Gaussian centered on bins more the
    * "biasCutoff" away will be neglected.
    *
    * <p>The default biasCutoff = 5.
    */
   int biasCutoff;
   /**
-   * When evaluating the biasing potential, contributions from Gaussians centered on bins more than
+   * When evaluating the biasing potential, contributions from a Gaussian centered on bins more than
    * "lambdaBiasCutoff" in the lambda dimension away will be neglected.
    *
    * <p>The default biasCutoff = 5 (continuous) or 0 (discrete).
@@ -147,10 +145,9 @@ public class HistogramSettings {
    * <p>The fLambdaPrintInterval is 25.
    */
   final int fLambdaPrintInterval = DEFAULT_FLAMDA_PRINT_INTERVAL;
-  /** The integration algorithm used for thermodynamic integration. */
-  Integrate1DNumeric.IntegrationType integrationType = DEFAULT_INTEGRATION;
 
-  boolean tempering = DEFAULT_TEMPERING;
+
+  boolean tempering;
   /**
    * Width of standard lambda bins. Must be accessed by method because of an interaction with
    * discreteLambda; if that field is false, the Histogram needs an odd number of bins, which may
@@ -163,7 +160,7 @@ public class HistogramSettings {
    *
    * <p>The default biasMag = 0.05 (kcal/mol).
    */
-  private double biasMag = DEFAULT_BIAS_MAG;
+  private double biasMag;
 
   private final double DEFAULT_BIAS_TO_OFFSET = 20.0;
   /**
@@ -202,16 +199,12 @@ public class HistogramSettings {
 
   public HistogramSettings(File hisFile, String lamFileName, CompositeConfiguration properties)
       throws IOException {
-    this(
-        hisFile,
-        lamFileName,
-        properties,
+    this(hisFile, lamFileName, properties,
         properties.getBoolean("discrete-lambda", DEFAULT_DISCRETE_LAMBDA));
   }
 
-  public HistogramSettings(
-      File hisFile, String lamFileName, CompositeConfiguration properties, boolean discreteLambda)
-      throws IOException {
+  public HistogramSettings(File hisFile, String lamFileName, CompositeConfiguration properties,
+      boolean discreteLambda) throws IOException {
     histogramFile = hisFile;
     hisFileName = hisFile.toString();
     this.lambdaFileName = lamFileName;
@@ -221,7 +214,7 @@ public class HistogramSettings {
     setDL(properties.getDouble("lambda-bin-width", DEFAULT_DL));
     dFL = properties.getDouble("flambda-bin-width", DEFAULT_DFL);
     this.discreteLambda = discreteLambda;
-    // TODO: Strongly consider just eliminating the tempering flag, a relic of our earlier tempering scheme.
+    // TODO: Eliminate the tempering flag.
     tempering = properties.getBoolean("ost-alwaysTemper", DEFAULT_TEMPERING);
     if (properties.containsKey("ost-temperOffset")) {
       temperOffsetSet = true;
@@ -229,8 +222,8 @@ public class HistogramSettings {
     }
 
     if (histogramFile.exists()) {
-      try (HistogramReader hr =
-          new HistogramReader(null, new BufferedReader(new FileReader(histogramFile)))) {
+      try (HistogramReader hr = new HistogramReader(null,
+          new BufferedReader(new FileReader(histogramFile)))) {
         hr.readHistogramFile();
         temperature = hr.getTemperature();
         thetaMass = hr.getThetaMass();
@@ -324,10 +317,10 @@ public class HistogramSettings {
     return lambdaResetValue;
   }
 
-  public void setLambdaResetValue(double rsVal) {
-    lambdaResetValue = rsVal;
+  public void setLambdaResetValue(double lambdaResetValue) {
+    this.lambdaResetValue = lambdaResetValue;
     // TODO: Should this be a (0-1] check instead of [0-1]?
-    resetStatistics = rsVal >= 0.0 && rsVal <= 1.0;
+    resetStatistics = lambdaResetValue >= 0.0 && lambdaResetValue <= 1.0;
   }
 
   /**

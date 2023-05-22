@@ -59,8 +59,8 @@ import java.util.LinkedList;
 public class ByteSequence {
 
 // Hidden data members.
-    private LinkedList<byte[]> myChunkList = new LinkedList<byte[]>();
-    private LinkedList<Integer> myLengthList = new LinkedList<Integer>();
+    private final LinkedList<byte[]> myChunkList = new LinkedList<>();
+    private final LinkedList<Integer> myLengthList = new LinkedList<>();
     private int myTotalLength;
 
 // Exported constructors.

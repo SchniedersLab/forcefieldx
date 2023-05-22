@@ -39,6 +39,8 @@ package ffx.potential.bonded;
 
 import ffx.numerics.Constraint;
 import ffx.potential.bonded.Atom.Resolution;
+
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -56,6 +58,9 @@ import org.jogamp.vecmath.Color3f;
  * @since 1.0
  */
 public abstract class BondedTerm extends MSNode implements BondedEnergy, Comparable<BondedTerm> {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger logger = Logger.getLogger(BondedTerm.class.getName());
   /**

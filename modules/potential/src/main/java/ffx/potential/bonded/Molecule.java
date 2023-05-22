@@ -38,6 +38,8 @@
 package ffx.potential.bonded;
 
 import ffx.potential.parameters.ForceField;
+
+import java.io.Serial;
 import java.util.Objects;
 import java.util.logging.Logger;
 
@@ -50,6 +52,9 @@ import java.util.logging.Logger;
  */
 @SuppressWarnings("CloneableImplementsClone")
 public class Molecule extends MSGroup {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger logger = Logger.getLogger(Molecule.class.getName());
 
