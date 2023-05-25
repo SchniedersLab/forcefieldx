@@ -7,7 +7,7 @@ Use the following command:
   
     bash <(curl -sL https://get.graalvm.org/jdk) -c python graalvm-ce-java17-22.3.1
 
-Or see the following [website] (https://www.graalvm.org/downloads) for other versions.
+Or see the following [website](https://www.graalvm.org/downloads) for other versions.
 
 ## Set the JAVA_HOME and PATH environment variables 
 See the logging from the curl command or the following example:
