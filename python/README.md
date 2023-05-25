@@ -16,7 +16,7 @@ See the logging from the curl command or the following example:
     export PATH="$JAVA_HOME/bin:$PATH"
 
 ## Install Python for the GraalVM
-This step can be skipped if the curl command above was used with the "-c pythom" flag.
+This step can be skipped if the curl command above was used with the "-c python" flag.
   
     gu install python
 
