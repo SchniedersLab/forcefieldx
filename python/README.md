@@ -1,14 +1,15 @@
 
-Installing GraalV
-==================
+Installing GraalVM, Python and Torch
+====================================
 
-* Download [GraalVM] (https://www.graalvm.org/downloads)
+* Download [GraalVM] (https://www.graalvm.org/downloads) using the following command:
+  bash <(curl -sL https://get.graalvm.org/jdk) -c python graalvm-ce-java17-22.3.1
 
-* Set environment variables.
-  export JAVA_HOME="/iahome/m/mj/mjschnie/software/graalvm-community-openjdk-17.0.7+4.1"
+* Set the JAvA_HOME and PATH environment variables (see the logging from the curl command).
+  export JAVA_HOME="/iahome/m/mj/mjschnie/software/graalvm-ce-java17-22.3.1"
   export PATH="$JAVA_HOME/bin:$PATH"
 
-* Install Python for the GraalVM.
+* Install Python for the GraalVM. This step can be skipped if the curl command above was used with the "-c pythom" flag.
   gu install python
 
 * Create a virtual environment and activate it.
