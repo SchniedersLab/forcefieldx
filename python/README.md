@@ -15,26 +15,26 @@ See the logging from the curl command or the following example:
     export JAVA_HOME="/iahome/m/mj/mjschnie/software/graalvm-ce-java17-22.3.1"
     export PATH="$JAVA_HOME/bin:$PATH"
 
-## Install Python for the GraalVM.
+## Install Python for the GraalVM
 This step can be skipped if the curl command above was used with the "-c pythom" flag.
   
     gu install python
 
-## Create a virtual environment and activate it.
+## Create a virtual environment and activate it
 
     graalpy -m venv ffx_venv
     source ffx_venv/bin/activate
 
-## Install Torch.
+## Install Torch
   
     graalpy -m ginstall install torch
 
-## Download the ANI-2x Torch script.
+## Download the ANI-2x Torch script
 
     wget https://ffx.biochem.uiowa.edu/ANI2x.pt.gz
     gunzip ANI2x.pt.gz
 
-## Evalute the ANI-2x energy & gradient.
+## Evalute the ANI-2x energy & gradient
   
     ffxc ANI.groovy ../examples/water-dimer.xyz  
 
