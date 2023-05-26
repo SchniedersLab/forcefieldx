@@ -116,33 +116,43 @@ class ANI extends PotentialScript {
     String torchScript = "ANI2x.pt"
     torchScript = System.getProperty("torchscript", torchScript);
     logger.info(" torchscript (-Dtorchscript=path.to.torchscript): " + torchScript);
+    // Collect atomic number and coordinates for each atom.
     Atom[] atoms = activeAssembly.getAtomArray();
     int nAtoms = atoms.length;
-    StringBuilder coords = new StringBuilder();
-    StringBuilder species = new StringBuilder();
+    int[] jspecies = new int[nAtoms];
+    double[][] jcoords = new double[nAtoms][3];
     for (int i=0; i < nAtoms; i++) {
-       Atom atom = atoms[i]
-       coords.append(format("[%17.15f, %17.15f, %17.15f]", atom.getX(), atom.getY(), atom.getZ())) 
-       species.append(format("%d", atom.getAtomicNumber()))
-       if (i < nAtoms - 1) {
-          coords.append(",\n")
-          species.append(",");
-       }
+       Atom a = atoms[i]
+       jspecies[i] = a.getAtomicNumber();
+       jcoords[i][0] = a.getX()
+       jcoords[i][1] = a.getY()
+       jcoords[i][2] = a.getZ()
     }
-    String coordTensor = format("coordinates = torch.tensor([[\n%s]], dtype=torch.double)\n", coords.toString());
-    String speciesTensor = format("species = torch.tensor([[%s]], dtype=torch.int64)\n", species.toString());
     double energy = 0.0;
     double[] grad = new double[nAtoms * 3]; 
+    // Construct a Polyglot Python environment.
     try (Context context = Context.newBuilder("python").allowAllAccess(true).
                             option("python.Executable", graalpy.toString()).build()) {
+       // Place the coords and species arrays into the context.
+       Value polyglotBindings = context.getPolyglotBindings();
+       polyglotBindings.putMember("jcoords", jcoords);
+       polyglotBindings.putMember("jspecies", jspecies);
+       
+       // Construct the Python code to run ANI-2x using TorchScript.
        String torch = "import site\n"
+       torch += "import polyglot\n"
        torch += "import torch\n"
+       // Load the Java arrays into the Torch tensors.
+       torch += "jspecies = polyglot.import_value('jspecies')\n"
+       torch += "jcoords = polyglot.import_value('jcoords')\n"
+       torch += "species = torch.tensor([jspecies], dtype=torch.int64)\n" 
+       torch += "coordinates = torch.tensor([jcoords], dtype=torch.double)\n" 
+       // Load and evaluate the ANI-2x forward method.
        torch += "ani = torch.jit.load('" + torchScript + "')\n"
-       torch += coordTensor
-       torch += speciesTensor
        torch += "gradient = ani(species, coordinates)\n"
-       logger.fine(torch)
+       // logger.info(torch)
 
+       // Evaluate ANI-2x and collect the energy and gradient. 
        Value result = context.eval("python", torch);
        Value bindings = context.getBindings("python");
        Value ret = bindings.getMember("gradient")
@@ -154,8 +164,7 @@ class ANI extends PotentialScript {
        logger.info(" Exception:\n" + e.toString()) 
     }
 
-    logger.info(" Energy: " + energy)
-    logger.info(" Gradient:\n" + Arrays.toString(grad))
+    logger.info(" ANI-2x Energy (Hartree): " + energy)
 
     return this
   }
