@@ -50,6 +50,8 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
+
+import ffx.potential.extended.ExtendedSystem;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 
@@ -118,6 +120,56 @@ public class ThermodynamicsOptions {
     for (int i = 1; i < molecularAssemblies.length; i++) {
       molDyn.addAssembly(molecularAssemblies[i]);
     }
+
+    boolean initVelocities = true;
+    long nSteps = dynamicsOptions.getSteps();
+    molDyn.setRestartFrequency(dynamicsOptions.getCheckpoint());
+    // Start sampling.
+    if (group.equilibrationSteps > 0) {
+      logger.info("\n Beginning Equilibration");
+      runDynamics(molDyn, group.equilibrationSteps, dynamicsOptions, writeoutOptions, true, dyn);
+      logger.info(" Beginning Fixed-Lambda Alchemical Sampling");
+      initVelocities = false;
+    } else {
+      logger.info("\n Beginning Fixed-Lambda Alchemical Sampling Without Equilibration");
+      if (!group.resetNumSteps) {
+        // Workaround for being unable to pick up pre-existing steps.
+        initVelocities = true;
+      }
+    }
+
+    if (nSteps > 0) {
+      runDynamics(molDyn, nSteps, dynamicsOptions, writeoutOptions, initVelocities, dyn);
+    } else {
+      logger.info(" No steps remaining for this process!");
+    }
+    return molDyn;
+  }
+
+  /**
+   * Run an alchemical free energy window.
+   *
+   * @param molecularAssemblies All involved MolecularAssemblies.
+   * @param crystalPotential The Potential to be sampled.
+   * @param dynamicsOptions DynamicsOptions.
+   * @param writeoutOptions WriteoutOptions
+   * @param dyn MD restart file
+   * @param algorithmListener AlgorithmListener
+   * @return The MolecularDynamics object constructed.
+   */
+  public MolecularDynamics runFixedCpHMDAlchemy(MolecularAssembly[] molecularAssemblies,
+                                                CrystalPotential crystalPotential, DynamicsOptions dynamicsOptions,
+                                                WriteoutOptions writeoutOptions, File dyn, AlgorithmListener algorithmListener,
+                                                ExtendedSystem esv) {
+    dynamicsOptions.init();
+
+    MolecularDynamics molDyn = dynamicsOptions.getDynamics(writeoutOptions, crystalPotential,
+            molecularAssemblies[0], algorithmListener);
+    for (int i = 1; i < molecularAssemblies.length; i++) {
+      molDyn.addAssembly(molecularAssemblies[i]);
+    }
+
+    molDyn.attachExtendedSystem(esv, 1); //TODO: Fix report frequency
 
     boolean initVelocities = true;
     long nSteps = dynamicsOptions.getSteps();

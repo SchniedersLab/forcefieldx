@@ -59,10 +59,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+
+import ffx.potential.parameters.TitrationUtils;
 import jline.internal.Nullable;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.math3.fitting.leastsquares.*;
+import org.apache.commons.math3.linear.*;
 import org.apache.commons.math3.util.FastMath;
+import org.apache.commons.math3.util.Pair;
 
 /**
  * The PhReplicaExchange implements pH replica exchange. Adapted from "ReplicaExchange.java" by
@@ -451,6 +457,14 @@ public class PhReplicaExchange implements Terminatable {
         extendedSystem.writeLambdaHistogram(true);
       }
 
+      try {
+        logger.info("\n Predicting pKa...");
+        logger.info(pkaPred(parametersHis));
+      } catch (Exception e) {
+        logger.info(e.getMessage());
+        logger.warning("Failed to predict pKa. Simulation may be too early on.");
+      }
+
       logger.info(" ");
       logger.info(String.format(" ------------------Exchange Cycle %d------------------\n", i + 1));
 
@@ -463,8 +477,60 @@ public class PhReplicaExchange implements Terminatable {
     }
   }
 
-  public double[] getpHScale() {
-    return pHScale;
+  private String pkaPred(int[][][] parametersHis) {// parametersHis shape explanation - [rank (w/ some pH)][residue][histogram --> len = 100]
+
+    // Calculate collapsed fractions of 10x10 histograms
+    double[][][] collapsedSum = new double[parametersHis.length][parametersHis[0].length][10];
+    double[][] collapsedRatio = new double[parametersHis.length][parametersHis[0].length];
+    for(int i = 0; i < parametersHis.length; i++) // pH's
+    {
+      for(int j = 0; j < parametersHis[0].length; j++) // residues
+      {
+        for(int k = 0; k < 10; k++) // 10 titration states
+        {
+          double sum = 0;
+          for(int l = 0; l < 10; l++) // 10 tautomer states
+          {
+            sum += parametersHis[i][j][k*10 + l];
+          }
+          collapsedSum[i][j][k] = sum;
+        }
+        // Calculate ratio over 0 and 9
+        double ratio = collapsedSum[i][j][0] / (collapsedSum[i][j][0] + collapsedSum[i][j][9]);
+        collapsedRatio[i][j] = ratio;
+      }
+    }
+
+    // Calculate hill coeff and pKa's of each residue and print
+    StringBuilder output = new StringBuilder();
+    double[] n = new double[parametersHis[0].length];
+    double[] pka = new double[parametersHis[0].length];
+    double[][] residueRatios = new double[parametersHis[0].length][parametersHis.length];
+    for(int i = 0; i < parametersHis[0].length; i++) // residues
+    {
+      // Create array of fractions for this residue
+      for(int j = 0; j < parametersHis.length; j++) // pH's
+      {
+        residueRatios[i][j] = collapsedRatio[j][i];
+      }
+      Arrays.sort(residueRatios[i]);
+
+      // L-BFGS minimization of the Henderson-Hasselbalch equation to find the best fit hill coeff and pKa
+      double[] temp = TitrationUtils.predictHillCoeffandPka(pHScale, residueRatios[i]);
+      n[i] = temp[0];
+      pka[i] = temp[1];
+
+      // Print results for this residue
+      String residueName = extendedSystem.getTitratingResidueList().get(i).getName();
+      output.append(" Residue: ").append(residueName).append("\n");
+      output.append(" Fractions (Dep / (Dep + Pro)): ").append(Arrays.toString(residueRatios[i])).append("\n");
+      output.append(" pH window: ").append(Arrays.toString(pHScale)).append("\n");
+      output.append(" n: ").append(n[i]).append("\n");
+      output.append(" pKa: ").append(pka[i]).append("\n");
+      output.append("\n");
+    }
+
+    return output.toString();
   }
 
   /**
