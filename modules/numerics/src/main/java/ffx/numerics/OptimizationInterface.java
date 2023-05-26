@@ -41,12 +41,12 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * The Potential interface defines methods required by an optimizer.
+ * The OptimizationInterface defines methods required by an optimizer.
  *
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public interface Potential {
+public interface OptimizationInterface {
 
   /**
    * Destroys this Potential and frees up any associated resources, particularly worker Threads.

@@ -53,7 +53,7 @@ import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 import static org.apache.commons.math3.util.FastMath.toDegrees;
 
-import ffx.numerics.Potential;
+import ffx.numerics.OptimizationInterface;
 
 /**
  * This class implements an algorithm for uni-dimensional line search. This file is a translation of
@@ -64,31 +64,57 @@ import ffx.numerics.Potential;
  */
 public class LineSearch {
 
-  /** Number of parameters to optimize. */
+  /**
+   * Number of parameters to optimize.
+   */
   private final int n;
-  /** Step direction. */
+  /**
+   * Step direction.
+   */
   private final double[] s;
-  /** Storage for a copy of the parameters. */
+  /**
+   * Storage for a copy of the parameters.
+   */
   private final double[] x0;
-  /** Implementation of the energy and gradient for the system. */
-  private Potential optimizationSystem;
-  /** Number of function evaluations (pass by reference). */
+  /**
+   * Implementation of the energy and gradient for the system.
+   */
+  private OptimizationInterface optimizationSystem;
+  /**
+   * Number of function evaluations (pass by reference).
+   */
   private int[] functionEvaluations;
-  /** Line search result (pass by reference). */
+  /**
+   * Line search result (pass by reference).
+   */
   private LineSearchResult[] info;
-  /** Array of current coordinates. */
+  /**
+   * Array of current coordinates.
+   */
   private double[] x;
-  /** The gradient array. */
+  /**
+   * The gradient array.
+   */
   private double[] g;
-  /** Double step size. */
+  /**
+   * Double step size.
+   */
   private double step;
-  /** Interpolation. */
+  /**
+   * Interpolation.
+   */
   private int interpolation;
-  /** Function values. */
+  /**
+   * Function values.
+   */
   private double f0, fA, fB, fC;
-  /** Dot products. */
+  /**
+   * Dot products.
+   */
   private double sg0, sgA, sgB, sgC;
-  /** True if a restart is allowed (set to true at the beginning of the algorithm). */
+  /**
+   * True if a restart is allowed (set to true at the beginning of the algorithm).
+   */
   private boolean restart;
 
   /**
@@ -110,22 +136,22 @@ public class LineSearch {
    * interpolation using both function and gradient values; if forced to search in an uphill
    * direction, return is after the initial step.
    *
-   * @param n Number of variables.
-   * @param x Current variable values.
-   * @param f Current function value.
-   * @param g Current gradient values.
-   * @param p Search direction.
-   * @param angle Angle between the gradient and search direction.
-   * @param fMove Change in function value due to previous step.
-   * @param info Line search result.
+   * @param n                   Number of variables.
+   * @param x                   Current variable values.
+   * @param f                   Current function value.
+   * @param g                   Current gradient values.
+   * @param p                   Search direction.
+   * @param angle               Angle between the gradient and search direction.
+   * @param fMove               Change in function value due to previous step.
+   * @param info                Line search result.
    * @param functionEvaluations Number of function evaluations.
-   * @param optimizationSystem Instance of the {@link ffx.numerics.Potential} interface.
+   * @param optimizationSystem  Instance of the {@link ffx.numerics.Potential} interface.
    * @return The final function value.
    * @since 1.0
    */
   public double search(int n, double[] x, double f, double[] g, double[] p, double[] angle,
-      double fMove, LineSearchResult[] info, int[] functionEvaluations,
-      Potential optimizationSystem) {
+                       double fMove, LineSearchResult[] info, int[] functionEvaluations,
+                       OptimizationInterface optimizationSystem) {
 
     assert (n > 0);
 
@@ -191,7 +217,9 @@ public class LineSearch {
     return begin();
   }
 
-  /** Begin the parabolic extrapolation procedure. */
+  /**
+   * Begin the parabolic extrapolation procedure.
+   */
   private double begin() {
     restart = true;
     interpolation = 0;
@@ -200,7 +228,9 @@ public class LineSearch {
     return step();
   }
 
-  /** Replace last point by latest and take another step. */
+  /**
+   * Replace last point by latest and take another step.
+   */
   private double step() {
     fA = fB;
     sgA = sgB;
@@ -260,7 +290,9 @@ public class LineSearch {
     return step();
   }
 
-  /** Beginning of the cubic interpolation procedure. */
+  /**
+   * Beginning of the cubic interpolation procedure.
+   */
   private double cubic() {
     interpolation++;
     double sss = 3.0 * (fB - fA) / step - sgA - sgB;
