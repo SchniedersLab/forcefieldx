@@ -41,7 +41,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * The Potential interface defines methods required by an optimizer or molecular dynamics.
+ * The Potential interface defines methods required by an optimizer.
  *
  * @author Michael J. Schnieders
  * @since 1.0
@@ -71,7 +71,7 @@ public interface Potential {
    * This method is called repeatedly to compute the function energy. The verbose flag may not be
    * used by all implementations.
    *
-   * @param x Input parameters.
+   * @param x       Input parameters.
    * @param verbose Display extra information.
    * @return Function value at <code>x</code>
    */
@@ -93,32 +93,14 @@ public interface Potential {
    * This method is called repeatedly to compute the function energy and gradient. The verbose flag
    * may not be used by all implementations.
    *
-   * @param x Input parameters.
-   * @param g Output gradients with respect to each parameter.
+   * @param x       Input parameters.
+   * @param g       Output gradients with respect to each parameter.
    * @param verbose Display extra information.
    * @return Function value at <code>x</code>.
    * @since 1.0
    */
   default double energyAndGradient(double[] x, double[] g, boolean verbose) {
     return energyAndGradient(x, g);
-  }
-
-  /**
-   * getAcceleration.
-   *
-   * @param acceleration an array of {@link double} objects.
-   * @return an array of {@link double} objects.
-   */
-  double[] getAcceleration(double[] acceleration);
-
-  /**
-   * Returns the list of Constraints associated with this Potential. The default implementation
-   * returns an empty list. TODO: Implement for all Potentials.
-   *
-   * @return All Constraints.
-   */
-  default List<Constraint> getConstraints() {
-    return Collections.emptyList();
   }
 
   /**
@@ -131,40 +113,11 @@ public interface Potential {
   double[] getCoordinates(double[] parameters);
 
   /**
-   * Get the Potential Energy terms that is active.
-   *
-   * @return the STATE
-   */
-  STATE getEnergyTermState();
-
-  /**
-   * Set the Potential Energy terms that should be active.
-   *
-   * @param state include FAST varying energy terms, SLOW varying energy terms or BOTH.
-   */
-  void setEnergyTermState(STATE state);
-
-  /**
-   * Get the mass of each degree of freedom. This is required for molecular dynamics.
-   *
-   * @return The mass of each degree of freedom.
-   */
-  double[] getMass();
-
-  /**
    * Get the number of variables being operated on.
    *
    * @return Number of variables.
    */
   int getNumberOfVariables();
-
-  /**
-   * getPreviousAcceleration.
-   *
-   * @param previousAcceleration an array of {@link double} objects.
-   * @return an array of {@link double} objects.
-   */
-  double[] getPreviousAcceleration(double[] previousAcceleration);
 
   /**
    * Get the problem scaling.
@@ -201,21 +154,6 @@ public interface Potential {
   }
 
   /**
-   * Get the type of all variables.
-   *
-   * @return The VARIABLE_TYPE of each variable.
-   */
-  VARIABLE_TYPE[] getVariableTypes();
-
-  /**
-   * getVelocity.
-   *
-   * @param velocity an array of {@link double} objects.
-   * @return an array of {@link double} objects.
-   */
-  double[] getVelocity(double[] velocity);
-
-  /**
    * Default method to scale coordinates.
    *
    * @param x Input parameters.
@@ -248,27 +186,6 @@ public interface Potential {
   }
 
   /**
-   * setAcceleration.
-   *
-   * @param acceleration an array of {@link double} objects.
-   */
-  void setAcceleration(double[] acceleration);
-
-  /**
-   * setPreviousAcceleration.
-   *
-   * @param previousAcceleration an array of {@link double} objects.
-   */
-  void setPreviousAcceleration(double[] previousAcceleration);
-
-  /**
-   * setVelocity.
-   *
-   * @param velocity an array of {@link double} objects.
-   */
-  void setVelocity(double[] velocity);
-
-  /**
    * Default method to unscale coordinates.
    *
    * @param x Input parameters.
@@ -281,35 +198,5 @@ public interface Potential {
         x[i] /= scaling[i];
       }
     }
-  }
-
-  /**
-   * Writes additional restart information, if any (e.g. OST histogram and lambda restart files). The
-   * recursive flag should generally only be true for the top-level Potential called.
-   *
-   * @param recursive Whether to have all underlying Potentials write additional restart info.
-   */
-  default void writeAdditionalRestartInfo(boolean recursive) {
-    if (recursive) {
-      getUnderlyingPotentials().forEach((Potential p) -> p.writeAdditionalRestartInfo(false));
-    } // Else, no-op.
-  }
-
-  /** Recognized variables currently include Cartesian coordinates and OTHER. */
-  enum VARIABLE_TYPE {
-    X,
-    Y,
-    Z,
-    OTHER
-  }
-
-  /**
-   * Set the state of the Potential to include FAST varying energy terms, SLOW varying energy terms
-   * or BOTH.
-   */
-  enum STATE {
-    FAST,
-    SLOW,
-    BOTH
   }
 }
