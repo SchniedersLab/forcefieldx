@@ -39,6 +39,7 @@
 //******************************************************************************
 package edu.rit.util;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 
@@ -114,6 +115,9 @@ import java.lang.reflect.Constructor;
  */
 public abstract class Random
         implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
 // Hidden constants.
     // 1/2^64, as a float and as a double.

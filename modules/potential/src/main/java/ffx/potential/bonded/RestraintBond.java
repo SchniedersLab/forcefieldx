@@ -46,6 +46,8 @@ import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.numerics.switching.ConstantSwitch;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.parameters.BondType;
+
+import java.io.Serial;
 import java.util.logging.Logger;
 
 /**
@@ -55,6 +57,9 @@ import java.util.logging.Logger;
  * @since 1.0
  */
 public class RestraintBond extends BondedTerm implements LambdaInterface {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   public static final double DEFAULT_RB_LAM_START = 0.75;
   public static final double DEFAULT_RB_LAM_END = 1.0;

@@ -42,9 +42,12 @@ import static org.apache.commons.math3.util.FastMath.PI;
 
 import ffx.numerics.math.Double3;
 import ffx.potential.bonded.Atom;
+
 import java.util.Arrays;
 import java.util.logging.Logger;
+
 import org.apache.commons.math3.geometry.euclidean.threed.Rotation;
+import org.apache.commons.math3.geometry.euclidean.threed.RotationConvention;
 import org.apache.commons.math3.geometry.euclidean.threed.RotationOrder;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
@@ -158,14 +161,14 @@ public class StructureMetrics {
   /**
    * Compute the components that make up the radius of gyration tensor about yz-, xz-, xy-planes.
    *
-   * @param x Coordinates for calculation
-   * @param y Coordinates for calculation
-   * @param z Coordinates for calculation
+   * @param x   Coordinates for calculation
+   * @param y   Coordinates for calculation
+   * @param z   Coordinates for calculation
    * @param pmp Principal moment plane
    * @return radius of gyration about planes (yz, xz, xy).
    */
   public static double[] radiusOfGyrationComponents(double[] x, double[] y, double[] z,
-      double[] mass, boolean pmp) {
+                                                    double[] mass, boolean pmp) {
     assert (x.length == y.length);
     assert (y.length == z.length);
     assert (x.length <= mass.length);
@@ -264,11 +267,11 @@ public class StructureMetrics {
    * @param atoms Atom array.
    * @param moved Move coordinates
    * @param print Display values to user
-   * @param pma Use principal moment axes.
+   * @param pma   Use principal moment axes.
    * @return The moments of inertia.
    */
   public static double[][] momentsOfInertia(Atom[] atoms, boolean moved, boolean print,
-      boolean pma) {
+                                            boolean pma) {
     double[] mass = new double[atoms.length];
     int nAtoms = atoms.length;
     double[] x = new double[nAtoms];
@@ -290,15 +293,15 @@ public class StructureMetrics {
   /**
    * Compute the moments of inertia.
    *
-   * @param xyz Array of atomic coordinates (xyz = [X0, Y0, Z0, X1, Y1, Z1, ...].
-   * @param mass Mass of atoms
+   * @param xyz   Array of atomic coordinates (xyz = [X0, Y0, Z0, X1, Y1, Z1, ...].
+   * @param mass  Mass of atoms
    * @param moved Move from original coordinates to selection
    * @param print Display values to user
-   * @param pma Use principal moment axes.
+   * @param pma   Use principal moment axes.
    * @return The radius of gyration.
    */
   public static double[][] momentsOfInertia(double[] xyz, double[] mass, boolean moved,
-      boolean print, boolean pma) {
+                                            boolean print, boolean pma) {
     assert (xyz.length % 3 == 0);
     int nAtoms = xyz.length / 3;
     // Find the centroid of the atomic coordinates.
@@ -319,17 +322,17 @@ public class StructureMetrics {
   /**
    * Compute the moments of inertia
    *
-   * @param x Array of atomic X-coordinates.
-   * @param y Array of atomic X-coordinates.
-   * @param z Array of atomic X-coordinates.
-   * @param mass mass of atoms
+   * @param x     Array of atomic X-coordinates.
+   * @param y     Array of atomic X-coordinates.
+   * @param z     Array of atomic X-coordinates.
+   * @param mass  mass of atoms
    * @param moved Move coordinates to principal axes
    * @param print Print out values to screen
-   * @param pma Report moments of inertia to principal axes.
+   * @param pma   Report moments of inertia to principal axes.
    * @return The moment of inertia.
    */
   public static double[][] momentsOfInertia(double[] x, double[] y, double[] z, double[] mass,
-      boolean moved, boolean print, boolean pma) {
+                                            boolean moved, boolean print, boolean pma) {
     assert (x.length == y.length);
     assert (y.length == z.length);
 
@@ -447,27 +450,26 @@ public class StructureMetrics {
         }
       }
     } else {
-      vec = new double[][] {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
-      moment = new double[] {tensor[0][0], tensor[1][1], tensor[2][2]};
+      vec = new double[][]{{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
+      moment = new double[]{tensor[0][0], tensor[1][1], tensor[2][2]};
     }
 
     // print the center of mass and Euler angle values
     if (print) {
       logger.info(format("\n Center of Mass Coordinates: %8.4f %8.4f %8.4f", xcm, ycm, zcm));
       // invert vec
-      double[] angles = new Rotation(vec, 1.0E-7).getAngles(RotationOrder.XYZ);
+      double[] angles = new Rotation(vec, 1.0E-7).getAngles(
+          RotationOrder.XYZ, RotationConvention.VECTOR_OPERATOR);
       double radian = 180 / PI;
       // Convert to degrees
       for (int i = 0; i < 3; i++) {
-        angles[i] += radian;
+        angles[i] *= radian;
       }
-      logger.info(format(" Euler Angles (Phi/Theta/Psi): %8.3f %8.3f %8.3f", angles[0], angles[1],
-          angles[2]));
+      logger.info(format(" Euler Angles (Phi/Theta/Psi): %8.3f %8.3f %8.3f", angles[0], angles[1], angles[2]));
       logger.info(
           " Moments of Inertia and Principle Axes:\n  Moments (amu Ang^2): \t X-, Y-, and Z-Components of Axes:");
       for (int i = 0; i < 3; i++) {
-        logger.info(
-            format("  %16.3f %12.6f %12.6f %12.6f", moment[i], vec[i][0], vec[i][1], vec[i][2]));
+        logger.info(format("  %16.3f %12.6f %12.6f %12.6f", moment[i], vec[i][0], vec[i][1], vec[i][2]));
       }
     }
 

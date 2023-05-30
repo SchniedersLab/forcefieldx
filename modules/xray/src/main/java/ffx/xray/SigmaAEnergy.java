@@ -69,9 +69,10 @@ import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.ReflectionSpline;
-import ffx.numerics.Potential;
+import ffx.numerics.OptimizationInterface;
 import ffx.numerics.math.ComplexNumber;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
+
 import java.util.logging.Logger;
 
 /**
@@ -82,20 +83,20 @@ import java.util.logging.Logger;
  *
  * @author Timothy D. Fenn<br>
  * @see <a href="http://dx.doi.org/10.1107/S0021889804031474" target="_blank"> K. Cowtan, J. Appl.
- *     Cryst. (2005). 38, 193-198</a>
+ * Cryst. (2005). 38, 193-198</a>
  * @see <a href="http://dx.doi.org/10.1107/S0907444992007352" target="_blank"> A. T. Brunger, Acta
- *     Cryst. (1993). D49, 24-36</a>
+ * Cryst. (1993). D49, 24-36</a>
  * @see <a href="http://dx.doi.org/10.1107/S0907444996012255" target="_blank"> G. N. Murshudov, A.
- *     A. Vagin and E. J. Dodson, Acta Cryst. (1997). D53, 240-255</a>
+ * A. Vagin and E. J. Dodson, Acta Cryst. (1997). D53, 240-255</a>
  * @see <a href="http://dx.doi.org/10.1107/S0108767388009183" target="_blank"> A. T. Brunger, Acta
- *     Cryst. (1989). A45, 42-50.</a>
+ * Cryst. (1989). A45, 42-50.</a>
  * @see <a href="http://dx.doi.org/10.1107/S0108767386099622" target="_blank"> R. J. Read, Acta
- *     Cryst. (1986). A42, 140-149.</a>
+ * Cryst. (1986). A42, 140-149.</a>
  * @see <a href="http://dx.doi.org/10.1107/S0108767396004370" target="_blank"> N. S. Pannu and R. J.
- *     Read, Acta Cryst. (1996). A52, 659-668.</a>
+ * Read, Acta Cryst. (1996). A52, 659-668.</a>
  * @since 1.0
  */
-public class SigmaAEnergy implements Potential {
+public class SigmaAEnergy implements OptimizationInterface {
 
   private static final Logger logger = Logger.getLogger(SigmaAEnergy.class.getName());
   private static final double twoPI2 = 2.0 * PI * PI;
@@ -124,9 +125,13 @@ public class SigmaAEnergy implements Potential {
   private final double[][] dFs;
   private final int nBins;
 
-  /** Crystal Volume^2 / (2 * number of grid points) */
+  /**
+   * Crystal Volume^2 / (2 * number of grid points)
+   */
   private final double dfScale;
-  /** Transpose of the matrix 'A' that converts from Cartesian to fractional coordinates. */
+  /**
+   * Transpose of the matrix 'A' that converts from Cartesian to fractional coordinates.
+   */
   private final double[][] transposeA;
 
   private final double[] sa;
@@ -136,14 +141,13 @@ public class SigmaAEnergy implements Potential {
   private final boolean useCernBessel;
   private double[] optimizationScaling = null;
   private double totalEnergy;
-  private STATE state = STATE.BOTH;
 
   /**
    * Constructor for SigmaAEnergy.
    *
    * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
    * @param refinementData a {@link ffx.xray.DiffractionRefinementData} object.
-   * @param parallelTeam the ParallelTeam to execute the SigmaAEnergy.
+   * @param parallelTeam   the ParallelTeam to execute the SigmaAEnergy.
    */
   SigmaAEnergy(
       ReflectionList reflectionList,
@@ -165,9 +169,9 @@ public class SigmaAEnergy implements Potential {
     // Initialize parameters.
     assert (refinementData.crystalReciprocalSpaceFc != null);
     double nGrid2 = 2.0
-            * refinementData.crystalReciprocalSpaceFc.getXDim()
-            * refinementData.crystalReciprocalSpaceFc.getYDim()
-            * refinementData.crystalReciprocalSpaceFc.getZDim();
+        * refinementData.crystalReciprocalSpaceFc.getXDim()
+        * refinementData.crystalReciprocalSpaceFc.getYDim()
+        * refinementData.crystalReciprocalSpaceFc.getZDim();
     dfScale = (crystal.volume * crystal.volume) / nGrid2;
     transposeA = transpose3(crystal.A);
     sa = new double[nBins];
@@ -178,7 +182,8 @@ public class SigmaAEnergy implements Potential {
   }
 
   /**
-   * From sim and sim_integ functions in clipper utils: http://www.ysbl.york.ac.uk/~cowtan/clipper/clipper.html
+   * From sim and sim_integ functions in clipper utils:
+   * http://www.ysbl.york.ac.uk/~cowtan/clipper/clipper.html
    * and from lnI0 and i1OverI0 functions in bessel.h in scitbx module of cctbx:
    * http://cci.lbl.gov/cctbx_sources/scitbx/math/bessel.h
    *
@@ -205,14 +210,18 @@ public class SigmaAEnergy implements Potential {
     return sim_A * log(x + sim_g) + 0.5 * sim_B * log(z * z + 1.0) + sim_r * atan(z) + x + 1.0;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean destroy() {
     // Should be destroyed upstream in DiffractionData.
     return true;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double energy(double[] x) {
     unscaleCoordinates(x);
@@ -221,7 +230,9 @@ public class SigmaAEnergy implements Potential {
     return sum;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double energyAndGradient(double[] x, double[] g) {
     unscaleCoordinates(x);
@@ -230,55 +241,33 @@ public class SigmaAEnergy implements Potential {
     return sum;
   }
 
-  /** {@inheritDoc} */
-  @Override
-  public double[] getAcceleration(double[] acceleration) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getCoordinates(double[] parameters) {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 
-  /** {@inheritDoc} */
-  @Override
-  public STATE getEnergyTermState() {
-    return state;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void setEnergyTermState(STATE state) {
-    this.state = state;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public double[] getMass() {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int getNumberOfVariables() {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 
-  /** {@inheritDoc} */
-  @Override
-  public double[] getPreviousAcceleration(double[] previousAcceleration) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getScaling() {
     return optimizationScaling;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setScaling(double[] scaling) {
     if (scaling != null && scaling.length == nBins * 2) {
@@ -288,54 +277,21 @@ public class SigmaAEnergy implements Potential {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getTotalEnergy() {
     return totalEnergy;
   }
 
   /**
-   * {@inheritDoc}
-   *
-   * <p>Return a reference to each variables type.
-   */
-  @Override
-  public VARIABLE_TYPE[] getVariableTypes() {
-    return null;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public double[] getVelocity(double[] velocity) {
-
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void setAcceleration(double[] acceleration) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void setPreviousAcceleration(double[] previousAcceleration) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void setVelocity(double[] velocity) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /**
    * target
    *
-   * @param x an array of double.
-   * @param g an array of double.
+   * @param x        an array of double.
+   * @param g        an array of double.
    * @param gradient a boolean.
-   * @param print a boolean.
+   * @param print    a boolean.
    * @return a double.
    */
   public double target(double[] x, double[] g, boolean gradient, boolean print) {
@@ -417,7 +373,7 @@ public class SigmaAEnergy implements Potential {
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
       int ti = getThreadIndex();
 
       if (sigmaALoop[ti] == null) {
@@ -509,7 +465,7 @@ public class SigmaAEnergy implements Potential {
       }
 
       @Override
-      public void run(int lb, int ub) throws Exception {
+      public void run(int lb, int ub) {
         for (int j = lb; j <= ub; j++) {
           HKL ih = reflectionList.hkllist.get(j);
           int i = ih.getIndex();

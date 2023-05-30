@@ -40,6 +40,7 @@ package ffx.ui;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.GridLayout;
+import java.io.Serial;
 import javax.swing.JPanel;
 
 /**
@@ -49,7 +50,10 @@ import javax.swing.JPanel;
  */
 public class GraphicsPanel extends JPanel {
 
-  private GraphicsCanvas graphicsCanvas;
+  @Serial
+  private static final long serialVersionUID = 1L;
+
+  private final GraphicsCanvas graphicsCanvas;
 
   /**
    * Constructor for GraphicsPanel.

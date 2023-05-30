@@ -626,6 +626,7 @@ public class CoulombTensorGlobal extends MultipoleTensor {
   }
 
   /** {@inheritDoc} */
+  @SuppressWarnings("fallthrough")
   @Override
   protected void multipoleIPotentialAtK(PolarizableMultipole mI, int order) {
     switch (order) {
@@ -887,6 +888,7 @@ public class CoulombTensorGlobal extends MultipoleTensor {
   }
 
   /** {@inheritDoc} */
+  @SuppressWarnings("fallthrough")
   @Override
   protected void chargeIPotentialAtK(PolarizableMultipole mI, int order) {
     switch (order) {
@@ -925,6 +927,7 @@ public class CoulombTensorGlobal extends MultipoleTensor {
   }
 
   /** {@inheritDoc} */
+  @SuppressWarnings("fallthrough")
   @Override
   protected void dipoleIPotentialAtK(double uxi, double uyi, double uzi, int order) {
     switch (order) {
@@ -1032,6 +1035,7 @@ public class CoulombTensorGlobal extends MultipoleTensor {
   }
 
   /** {@inheritDoc} */
+  @SuppressWarnings("fallthrough")
   @Override
   protected void quadrupoleIPotentialAtK(PolarizableMultipole mI, int order) {
     switch (order) {
@@ -1213,6 +1217,7 @@ public class CoulombTensorGlobal extends MultipoleTensor {
   }
 
   /** {@inheritDoc} */
+  @SuppressWarnings("fallthrough")
   @Override
   protected void multipoleKPotentialAtI(PolarizableMultipole mK, int order) {
     switch (order) {
@@ -1476,6 +1481,7 @@ public class CoulombTensorGlobal extends MultipoleTensor {
   }
 
   /** {@inheritDoc} */
+  @SuppressWarnings("fallthrough")
   @Override
   protected void chargeKPotentialAtI(PolarizableMultipole mK, int order) {
     switch (order) {
@@ -1519,6 +1525,7 @@ public class CoulombTensorGlobal extends MultipoleTensor {
   }
 
   /** {@inheritDoc} */
+  @SuppressWarnings("fallthrough")
   @Override
   protected void dipoleKPotentialAtI(double uxk, double uyk, double uzk, int order) {
     switch (order) {
@@ -1626,6 +1633,7 @@ public class CoulombTensorGlobal extends MultipoleTensor {
   }
 
   /** {@inheritDoc} */
+  @SuppressWarnings("fallthrough")
   @Override
   protected void quadrupoleKPotentialAtI(PolarizableMultipole mK, int order) {
     switch (order) {

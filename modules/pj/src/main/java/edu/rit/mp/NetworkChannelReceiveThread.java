@@ -42,6 +42,7 @@ package edu.rit.mp;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.io.Serial;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
@@ -113,7 +114,7 @@ class NetworkChannelReceiveThread
                 // Extract message header fields.
                 int magic = myByteBuffer.getInt();
                 int messagetag = myByteBuffer.getInt();
-                byte messagetype = (byte) myByteBuffer.get();
+                byte messagetype = myByteBuffer.get();
                 int messagelength = myByteBuffer.getInt();
 
                 // If the magic number is incorrect, bad error. Close the

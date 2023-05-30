@@ -138,6 +138,7 @@ public class RefinementEnergy implements LambdaInterface, CrystalPotential, Algo
    * @param refinementMode {@link ffx.xray.RefinementMinimize.RefinementMode} for refinement
    * @param optimizationScaling scaling of refinement parameters
    */
+  @SuppressWarnings("fallthrough")
   public RefinementEnergy(
       DataContainer data, RefinementMode refinementMode, double[] optimizationScaling) {
 

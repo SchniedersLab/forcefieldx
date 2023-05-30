@@ -55,7 +55,7 @@ public class LambdaReader extends BufferedReader {
   private double lambda;
   private double halfThetaVel;
   private int nSteps = 0;
-  private int histoIndex = 0;
+  private int histogramIndex = 0;
   private boolean resetEnergyCount = false;
 
   /**
@@ -73,7 +73,7 @@ public class LambdaReader extends BufferedReader {
    * @return Associated histogram index.
    */
   public int getHistogramIndex() {
-    return histoIndex;
+    return histogramIndex;
   }
 
   /**
@@ -94,7 +94,7 @@ public class LambdaReader extends BufferedReader {
         if (line.startsWith("Steps-Taken")) {
           nSteps = Integer.parseInt(line.split(" +")[1]);
         } else if (line.startsWith("Histogram")) {
-          histoIndex = Integer.parseInt(line.split(" +")[1]);
+          histogramIndex = Integer.parseInt(line.split(" +")[1]);
         }
       }
     } catch (Exception e) {
@@ -105,8 +105,8 @@ public class LambdaReader extends BufferedReader {
 
   void setVariables(OrthogonalSpaceTempering ost) {
     ost.setLambda(lambda);
-    Histogram histo = ost.getHistogram();
-    histo.setHalfThetaVelocity(halfThetaVel);
+    Histogram histogram = ost.getHistogram();
+    histogram.setHalfThetaVelocity(halfThetaVel);
     if (!resetEnergyCount && nSteps > 0) {
       ost.setEnergyCount(nSteps);
     }

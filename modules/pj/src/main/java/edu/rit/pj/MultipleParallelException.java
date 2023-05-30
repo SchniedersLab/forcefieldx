@@ -39,9 +39,9 @@
 //******************************************************************************
 package edu.rit.pj;
 
-import java.io.PrintStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Class MultipleParallelException is thrown to indicate that multiple threads
@@ -56,8 +56,11 @@ import java.util.Map;
 public class MultipleParallelException
         extends Exception {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
 // Hidden data members.
-    private Map<Integer, Throwable> myMap;
+    private ConcurrentHashMap<Integer, Throwable> myMap;
 
 // Exported constructors.
     /**
@@ -84,7 +87,7 @@ public class MultipleParallelException
      *
      * @param theMap Exception map.
      */
-    public MultipleParallelException(Map<Integer, Throwable> theMap) {
+    public MultipleParallelException(ConcurrentHashMap<Integer, Throwable> theMap) {
         super();
         myMap = theMap;
     }
@@ -96,8 +99,7 @@ public class MultipleParallelException
      * @param theMessage Detail message.
      * @param theMap Exception map.
      */
-    public MultipleParallelException(String theMessage,
-            Map<Integer, Throwable> theMap) {
+    public MultipleParallelException(String theMessage, ConcurrentHashMap<Integer, Throwable> theMap) {
         super(theMessage);
         myMap = theMap;
     }

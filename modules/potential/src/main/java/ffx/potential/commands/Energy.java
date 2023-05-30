@@ -19,7 +19,6 @@ import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import org.apache.commons.io.FilenameUtils;
-//import org.codehaus.groovy.runtime.ResourceGroovyMethods;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;

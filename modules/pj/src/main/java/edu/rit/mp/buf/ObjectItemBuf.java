@@ -105,8 +105,7 @@ public class ObjectItemBuf<T>
      * @param i Item index in the range 0 .. <code>length()</code>-1.
      * @param item Item to be stored at index <code>i</code>.
      */
-    public void put(int i,
-            T item) {
+    public void put(int i, T item) {
         this.item = item;
         reset();
     }
@@ -121,7 +120,7 @@ public class ObjectItemBuf<T>
      * type are not the same.
      */
     public Buf getReductionBuf(Op op) {
-        return new ObjectItemReductionBuf(this, (ObjectOp) op);
+        return new ObjectItemReductionBuf<T>(this, (ObjectOp) op);
     }
 
 }

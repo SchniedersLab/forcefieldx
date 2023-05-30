@@ -41,6 +41,7 @@ import java.awt.Component;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.io.Serial;
 import javax.swing.JSplitPane;
 
 /**
@@ -51,6 +52,9 @@ import javax.swing.JSplitPane;
  * @author Michael J. Schnieders
  */
 public class GraphicsSplitPane extends JSplitPane implements MouseListener, MouseMotionListener {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private boolean mouseClicked = false;
   private int currentPos = 0;

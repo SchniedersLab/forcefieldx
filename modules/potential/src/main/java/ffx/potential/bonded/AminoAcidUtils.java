@@ -267,10 +267,13 @@ public class AminoAcidUtils {
         buildBond(pC, N, forceField, bondList);
       } else {
         // Check for neutral N-terminal.
+        // biotype    762  N     "Deprotonated N-Terminus"     -1
+        // biotype    763  H     "Deprotonated N-Terminus"     -1
         neutralNTerminus = forceField.getBoolean("neutral-nterminus", false);
         if (neutralNTerminus) {
           // Biotype is 762
           N.setAtomType(findAtomType(762, forceField));
+
         }
       }
     }
@@ -451,9 +454,10 @@ public class AminoAcidUtils {
     assignAminoAcidSideChain(position, aminoAcid, residue, CA, N, C, forceField, bondList);
 
     // Build the terminal oxygen if the residue is not NH2 or NME.
-    if ((position == LAST_RESIDUE || position == SINGLE_RESIDUE) && !(aminoAcid == AminoAcid3.NH2
-        || aminoAcid == AminoAcid3.NME)) {
+    if ((position == LAST_RESIDUE || position == SINGLE_RESIDUE) &&
+        !(aminoAcid == AminoAcid3.NH2 || aminoAcid == AminoAcid3.NME)) {
       atomType = findAtomType(AA_O[2][aminoAcidNumber], forceField);
+
       Atom OXT = (Atom) residue.getAtomNode("OXT");
       if (OXT == null) {
         OXT = (Atom) residue.getAtomNode("OT2");
@@ -461,6 +465,15 @@ public class AminoAcidUtils {
           OXT.setName("OXT");
         }
       }
+      // Check for a neutral C-terminus.
+      boolean neutralCTerminus = false;
+      if (OXT == null) {
+        OXT = (Atom) residue.getAtomNode("OH");
+        if (OXT != null) {
+          neutralCTerminus = true;
+        }
+      }
+
       if (OXT == null) {
         String resName = C.getResidueName();
         int resSeq = C.getResidueNumber();
@@ -475,7 +488,26 @@ public class AminoAcidUtils {
         residue.addMSNode(OXT);
         intxyz(OXT, C, 1.25, CA, 117.0, O, 126.0, 1);
       } else {
-        OXT.setAtomType(atomType);
+        if (neutralCTerminus) {
+          // Biotype records for the AMOEBA 2018 force field.
+          // biotype    771  C     "Protonated C-Terminus  "    235
+          // biotype    772  O     "Protonated C-Terminus  "    236
+          // biotype    773  OH    "Protonated C-Terminus  "    237
+          // biotype    774  HO    "Protonated C-Terminus  "    238
+          C.setAtomType(findAtomType(771, forceField));
+          O.setAtomType(findAtomType(772, forceField));
+          OXT.setAtomType(findAtomType(773, forceField));
+          Atom HO = (Atom) residue.getAtomNode("HO");
+          atomType = findAtomType(774, forceField);
+          if (HO == null) {
+            buildHydrogenAtom(residue, "HO", OXT, 1.02, C, 120.0, O, 180.0, 0, atomType, forceField, bondList);
+          } else {
+            HO.setAtomType(findAtomType(774, forceField));
+            buildBond(OXT, HO, forceField, bondList);
+          }
+        } else {
+          OXT.setAtomType(atomType);
+        }
       }
       buildBond(C, OXT, forceField, bondList);
     }
@@ -493,8 +525,7 @@ public class AminoAcidUtils {
         String protonEq = atom.getName().replaceFirst("D", "H");
         Atom correspH = (Atom) residue.getAtomNode(protonEq);
         if (correspH == null || correspH.getAtomType() == null) {
-          MissingAtomTypeException missingAtomTypeException = new MissingAtomTypeException(residue,
-              atom);
+          MissingAtomTypeException missingAtomTypeException = new MissingAtomTypeException(residue, atom);
           throw missingAtomTypeException;
         } else {
           correspH.setName(atom.getName());

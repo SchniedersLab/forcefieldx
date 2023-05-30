@@ -51,6 +51,7 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.io.Serial;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ButtonGroup;
@@ -72,6 +73,9 @@ import org.apache.commons.lang3.SystemUtils;
  */
 public class MainMenu extends JMenuBar {
 
+  @Serial
+  private static final long serialVersionUID = 1L;
+
   /**
    * Note that the getMenuShortcutKeyMask() is deprecated in JDK 10 and replaced with
    * getMenuShortcutKeyMaskEx(). However, this later method is not present in JDK 8/9.
@@ -80,40 +84,40 @@ public class MainMenu extends JMenuBar {
   private static final int keyMask = java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
 
   // Locale and ClassLoader
-  private FFXLocale locale;
-  private ClassLoader loader;
+  private final FFXLocale locale;
+  private final ClassLoader loader;
   // Toolbar
-  private JToolBar toolBar;
-  private ImageIcon blankIcon;
+  private final JToolBar toolBar;
+  private final ImageIcon blankIcon;
 
   // Selection Menu
-  private JCheckBoxMenuItem highlightCBMI;
-  private JCheckBoxMenuItem labelResiduesMI;
-  private JCheckBoxMenuItem labelAtomsMI;
+  private final JCheckBoxMenuItem highlightCBMI;
+  private final JCheckBoxMenuItem labelResiduesMI;
+  private final JCheckBoxMenuItem labelAtomsMI;
   // Options Menu
-  private JRadioButtonMenuItem activeRBMI;
-  private JRadioButtonMenuItem mouseRBMI;
+  private final JRadioButtonMenuItem activeRBMI;
+  private final JRadioButtonMenuItem mouseRBMI;
   // Picking Menu
-  private JCheckBoxMenuItem pickingCBMI;
-  private JRadioButtonMenuItem atomRBMI;
-  private JRadioButtonMenuItem bondRBMI;
-  private JRadioButtonMenuItem angleRBMI;
-  private JRadioButtonMenuItem dihedralRBMI;
-  private JRadioButtonMenuItem residueRBMI;
-  private JRadioButtonMenuItem polymerRBMI;
-  private JRadioButtonMenuItem moleculeRBMI;
-  private JRadioButtonMenuItem systemRBMI;
-  private JRadioButtonMenuItem measureDistanceRBMI;
-  private JRadioButtonMenuItem measureAngleRBMI;
-  private JRadioButtonMenuItem measureDihedralRBMI;
+  private final JCheckBoxMenuItem pickingCBMI;
+  private final JRadioButtonMenuItem atomRBMI;
+  private final JRadioButtonMenuItem bondRBMI;
+  private final JRadioButtonMenuItem angleRBMI;
+  private final JRadioButtonMenuItem dihedralRBMI;
+  private final JRadioButtonMenuItem residueRBMI;
+  private final JRadioButtonMenuItem polymerRBMI;
+  private final JRadioButtonMenuItem moleculeRBMI;
+  private final JRadioButtonMenuItem systemRBMI;
+  private final JRadioButtonMenuItem measureDistanceRBMI;
+  private final JRadioButtonMenuItem measureAngleRBMI;
+  private final JRadioButtonMenuItem measureDihedralRBMI;
   // Simulation Menu
   private JMenuItem localMI;
   private JMenuItem remoteMI;
   private JMenuItem releaseMI;
   // Window Menu
-  private JCheckBoxMenuItem systemsCBMI;
-  private JCheckBoxMenuItem toolBarCBMI;
-  private JCheckBoxMenuItem globalAxisCBMI;
+  private final JCheckBoxMenuItem systemsCBMI;
+  private final JCheckBoxMenuItem toolBarCBMI;
+  private final JCheckBoxMenuItem globalAxisCBMI;
 
   /*
    * Constructor

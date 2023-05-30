@@ -40,6 +40,7 @@
 package edu.rit.pj.replica;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.concurrent.atomic.AtomicLong;
 
 import edu.rit.mp.LongBuf;
@@ -104,8 +105,12 @@ import edu.rit.pj.reduction.LongOp;
  * @author Alan Kaminsky
  * @version 13-Sep-2008
  */
+@SuppressWarnings("serial")
 public class ReplicatedLong
         extends Number {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
 // Hidden data members.
     private LongOp myOp;
@@ -290,7 +295,7 @@ public class ReplicatedLong
      * @return Current value.
      */
     public long longValue() {
-        return (long) get();
+        return get();
     }
 
     /**

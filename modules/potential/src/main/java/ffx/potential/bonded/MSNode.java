@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.potential.bonded;
 
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -59,6 +60,9 @@ import org.jogamp.vecmath.Color3f;
  */
 @SuppressWarnings("CloneableImplementsClone")
 public class MSNode extends DefaultMutableTreeNode implements ROLS {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /** The multiscale level of this node. */
   private final int MultiScaleLevel;

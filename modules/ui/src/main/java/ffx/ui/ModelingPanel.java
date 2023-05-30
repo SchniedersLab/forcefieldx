@@ -65,6 +65,7 @@ import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Serial;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -111,6 +112,9 @@ import org.xml.sax.SAXException;
  * @author Michael J. Schnieders
  */
 public class ModelingPanel extends JPanel implements ActionListener, MouseListener {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   private static final Logger logger = Logger.getLogger(ModelingPanel.class.getName());
   private static final Preferences prefs = Preferences.userNodeForPackage(ModelingPanel.class);
@@ -195,48 +199,40 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
       String actionCommand = evt.getActionCommand();
       // A change to the selected TINKER Command
       switch (actionCommand) {
-        case "FFXCommand":
+        case "FFXCommand" -> {
           JComboBox jcb = (JComboBox) toolBar.getComponentAtIndex(2);
           String com = jcb.getSelectedItem().toString();
           if (!com.equals(activeCommand)) {
             activeCommand = com.toLowerCase();
             loadCommand();
           }
-          break;
-        case "LogSettings":
+        }
+        case "LogSettings" -> {
           // A change to the Log Settings.
           loadLogSettings();
           statusLabel.setText("  " + createCommandInput());
-          break;
-        case "Launch":
+        }
+        case "Launch" ->
           // Launch the selected Force Field X command.
-          runScript();
-          break;
-        case "NUCLEIC":
-        case "PROTEIN":
+            runScript();
+        case "NUCLEIC", "PROTEIN" ->
           // Editor functions for the Protein and Nucleic Acid Builders
-          builderCommandEvent(evt);
-          break;
-        case "Conditional":
+            builderCommandEvent(evt);
+        case "Conditional" ->
           // Some command options are conditional on other input.
-          conditionalCommandEvent(evt);
-          break;
-        case "End":
+            conditionalCommandEvent(evt);
+        case "End" ->
           // End the currently executing command.
-          setEnd();
-          break;
-        case "Delete":
+            setEnd();
+        case "Delete" ->
           // Delete log files.
-          deleteLogs();
-          break;
-        case "Description":
+            deleteLogs();
+        case "Description" -> {
           // Allow command descriptions to be hidden.
           JCheckBoxMenuItem box = (JCheckBoxMenuItem) evt.getSource();
           setDivider(box.isSelected());
-          break;
-        default:
-          logger.log(Level.WARNING, "ModelingPanel ActionCommand not recognized: {0}", evt);
-          break;
+        }
+        default -> logger.log(Level.WARNING, "ModelingPanel ActionCommand not recognized: {0}", evt);
       }
     }
   }
@@ -351,7 +347,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
   public void setLogMode(String mode) {
     mode = mode.toUpperCase();
     for (int i = 0; i < logSettings.getItemCount(); i++) {
-      String logType = (String) logSettings.getItemAt(i);
+      String logType = logSettings.getItemAt(i);
       if (logType.toUpperCase().startsWith(mode)) {
         logSettings.setSelectedIndex(i);
         break;
@@ -377,7 +373,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
     JButton button = (JButton) evt.getSource();
     String arg = evt.getActionCommand();
     int index = acidComboBox.getSelectedIndex();
-    String selected = (String) acidComboBox.getItemAt(index);
+    String selected = acidComboBox.getItemAt(index);
     if ("Remove".equals(button.getText())) {
       // Remove one entry
       if (acidComboBox.getItemCount() > 0) {
@@ -449,7 +445,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
     // Renumber the sequence.
     acidTextArea.setText(sequence.toString());
     for (int i = 0; i < acidComboBox.getItemCount(); i++) {
-      String s = (String) acidComboBox.getItemAt(i);
+      String s = acidComboBox.getItemAt(i);
       s = s.substring(s.indexOf(" ")).trim();
       acidComboBox.removeItemAt(i);
       acidComboBox.insertItemAt("" + (i + 1) + " " + s, i);
@@ -462,7 +458,7 @@ public class ModelingPanel extends JPanel implements ActionListener, MouseListen
       index = acidComboBox.getItemCount() - 1;
     }
     acidComboBox.setSelectedIndex(index);
-    String s = (String) acidComboBox.getItemAt(index);
+    String s = acidComboBox.getItemAt(index);
     if (s != null) {
       acidTextField.setText(s.substring(s.indexOf(" ")).trim());
     } else {

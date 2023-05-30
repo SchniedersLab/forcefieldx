@@ -299,7 +299,7 @@ public abstract class ObjectBuf<T>
     public static <T> ObjectBuf<T>[] sliceBuffers(T[] theArray,
             Range[] theRanges) {
         int n = theRanges.length;
-        ObjectBuf<T>[] result = (ObjectBuf<T>[]) new ObjectBuf[n];
+        ObjectBuf<T>[] result = (ObjectBuf<T>[]) new ObjectBuf<?>[n];
         for (int i = 0; i < n; ++i) {
             result[i] = sliceBuffer(theArray, theRanges[i]);
         }
@@ -398,7 +398,7 @@ public abstract class ObjectBuf<T>
     public static <T> ObjectBuf<T>[] rowSliceBuffers(T[][] theMatrix,
             Range[] theRowRanges) {
         int n = theRowRanges.length;
-        ObjectBuf<T>[] result = (ObjectBuf<T>[]) new ObjectBuf[n];
+        ObjectBuf<T>[] result = (ObjectBuf<T>[]) new ObjectBuf<?>[n];
         for (int i = 0; i < n; ++i) {
             result[i] = rowSliceBuffer(theMatrix, theRowRanges[i]);
         }
@@ -463,7 +463,7 @@ public abstract class ObjectBuf<T>
     public static <T> ObjectBuf<T>[] colSliceBuffers(T[][] theMatrix,
             Range[] theColRanges) {
         int n = theColRanges.length;
-        ObjectBuf<T>[] result = (ObjectBuf<T>[]) new ObjectBuf[n];
+        ObjectBuf<T>[] result = (ObjectBuf<T>[]) new ObjectBuf<?>[n];
         for (int i = 0; i < n; ++i) {
             result[i] = colSliceBuffer(theMatrix, theColRanges[i]);
         }
@@ -542,7 +542,7 @@ public abstract class ObjectBuf<T>
             Range[] theColRanges) {
         int m = theRowRanges.length;
         int n = theColRanges.length;
-        ObjectBuf<T>[] result = (ObjectBuf<T>[]) new ObjectBuf[m * n];
+        ObjectBuf<T>[] result = (ObjectBuf<T>[]) new ObjectBuf<?>[m * n];
         int k = 0;
         for (int i = 0; i < m; ++i) {
             Range rowrange = theRowRanges[i];
@@ -657,7 +657,7 @@ public abstract class ObjectBuf<T>
     public static <T> ObjectBuf<T>[] sliceBuffers(SharedObjectArray<T> theArray,
             Range[] theRanges) {
         int n = theRanges.length;
-        ObjectBuf<T>[] result = (ObjectBuf<T>[]) new ObjectBuf[n];
+        ObjectBuf<T>[] result = (ObjectBuf<T>[]) new ObjectBuf<?>[n];
         for (int i = 0; i < n; ++i) {
             result[i] = sliceBuffer(theArray, theRanges[i]);
         }

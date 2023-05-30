@@ -83,6 +83,7 @@
             <argument>ffx.algorithms.groovy.Superpose</argument>
             <argument>ffx.algorithms.groovy.SuperposeCrystals</argument>
             <argument>ffx.algorithms.groovy.Thermodynamics</argument>
+            <argument>ffx.algorithms.groovy.TorsionScan</argument>
             <argument>ffx.algorithms.groovy.test.ApplyTorsions</argument>
             <argument>ffx.algorithms.groovy.test.CreateRotamers</argument>
             <argument>ffx.algorithms.groovy.test.CrystalSearch</argument>

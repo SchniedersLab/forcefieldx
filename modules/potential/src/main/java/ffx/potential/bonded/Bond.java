@@ -54,6 +54,8 @@ import ffx.potential.bonded.RendererCache.ViewModel;
 import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
+
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -74,6 +76,9 @@ import org.jogamp.vecmath.Vector3d;
  */
 @SuppressWarnings("CloneableImplementsClone")
 public class Bond extends BondedTerm {
+
+  @Serial
+  private static final long serialVersionUID = 1L;
 
   /**
    * Length in Angstroms that is added to Atomic Radii when determining if two Atoms are within

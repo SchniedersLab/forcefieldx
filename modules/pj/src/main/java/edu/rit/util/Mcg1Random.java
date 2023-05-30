@@ -39,6 +39,8 @@
 //******************************************************************************
 package edu.rit.util;
 
+import java.io.Serial;
+
 /**
  * Class Mcg1Random provides a default pseudorandom number generator (PRNG)
  * designed for use in parallel scientific programming. To create an instance of
@@ -60,6 +62,9 @@ package edu.rit.util;
  */
 public class Mcg1Random
         extends Random {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
 // Hidden data members.
     // Multiplicative congruential generator parameters.
