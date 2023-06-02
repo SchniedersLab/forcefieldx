@@ -1610,6 +1610,15 @@ public final class PDBFilter extends SystemFilter {
     this.modelsWritten = modelsWritten;
   }
 
+  public void setLMN(int[] lmn) {
+    if(lmn[0] >= 1 && lmn[1] >= 1 && lmn[2] >= 1){
+      this.lmn = lmn;
+    }else{
+      // Provided dimensions are not handled. Revert to P1.
+      this.lmn = new int[]{1,1,1};
+    }
+  }
+
   /**
    * setSymOp.
    *

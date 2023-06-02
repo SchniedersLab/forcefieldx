@@ -64,6 +64,14 @@ class ReducedPartition extends  AlgorithmsScript{
             description = "Calculating free energy change for pKa shift.")
     private boolean pKa = false
 
+    @CommandLine.Option(names = ["--oT"], paramLabel = "false",
+            description = "Only include titratable residues in the residue selection.")
+    private boolean onlyTitration= false
+
+    @CommandLine.Option(names = ["--oP"], paramLabel = "false",
+            description = "Only allow proton movement of titratable reidues.")
+    private boolean onlyProtons = false
+
     @CommandLine.Option(names = ["--pB"], paramLabel = "false",
             description = "Save the Boltzmann Weights of the protonated residue.")
     private boolean pB = false
@@ -179,6 +187,22 @@ class ReducedPartition extends  AlgorithmsScript{
                         listResidues += "," + residueList.get(k).getChainID() + residueList.get(k).getResidueNumber()
                     }
                     count++
+                }
+            }
+        }
+
+        if(onlyTitration || onlyProtons){
+            int titrtaionCount = 0
+            for(Residue residue: residueList){
+                if(residue.getName().equals("HIS") || residue.getName().equals("HIE") || residue.getName().equals("HID") ||
+                        residue.getName().equals("GLU") || residue.getName().equals("GLH") || residue.getName().equals("ASP") ||
+                        residue.getName().equals("ASH") || residue.getName().equals("LYS") || residue.getName().equals("LYD")) {
+                    if(titrtaionCount == 0){
+                        listResidues += residue.getChainID() + residue.getResidueNumber()
+                    } else {
+                        listResidues += "," + residue.getChainID() + residue.getResidueNumber()
+                    }
+                    titrtaionCount++
                 }
             }
         }
