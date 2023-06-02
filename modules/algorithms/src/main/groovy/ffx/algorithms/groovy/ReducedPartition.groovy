@@ -249,9 +249,9 @@ class ReducedPartition extends  AlgorithmsScript{
 
             activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
             potentialEnergy = activeAssembly.getPotentialEnergy()
-            if(!pKa){
+            if(!pKa || onlyTitration){
                 manyBodyOptions.setListResidues(listResidues)
-            }
+            } 
 
 
 
