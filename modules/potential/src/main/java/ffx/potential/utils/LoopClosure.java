@@ -1087,7 +1087,8 @@ public class LoopClosure {
     }
 
     /**
-     * solve3PepPoly.
+     * Close a 3-residue loop by filling in the backbone atom coordinates and return the possible solution
+     * set. This can include up to {@value MAX_SOLUTIONS} solutions.
      *
      * @param r_n1     an array of {@link double} objects.
      * @param r_a1     an array of {@link double} objects.
@@ -1099,8 +1100,8 @@ public class LoopClosure {
      */
     public int solve3PepPoly(double[] r_n1, double[] r_a1, double[] r_a3, double[] r_c3,
                              double[][][] r_soln_n, double[][][] r_soln_a, double[][][] r_soln_c) {
-        double[] polyCoeff = new double[MAX_SOLUTIONS + 1];
-        double[] roots = new double[MAX_SOLUTIONS];
+        var polyCoeff = new double[MAX_SOLUTIONS + 1];
+        var roots = new double[MAX_SOLUTIONS];
 
         if (!getInputAngles(r_n1, r_a1, r_a3, r_c3)) {
             // No solutions are available in this case.
