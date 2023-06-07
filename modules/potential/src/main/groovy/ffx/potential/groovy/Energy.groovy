@@ -196,7 +196,7 @@ class Energy extends PotentialScript {
       logger.info(format("    Atom       X, Y and Z Gradient Components (kcal/mol/A)"))
       for (int i = 0; i < nAts; i++) {
         int i3 = 3 * i
-        logger.info(format(" %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
+        logger.info(format("GRADIENT  %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
       }
     } else {
       energy = forceFieldEnergy.energy(x, true)
@@ -257,7 +257,7 @@ class Energy extends PotentialScript {
             logger.info(format("    Atom       X, Y and Z Gradient Components (kcal/mol/A)"))
             for (int i = 0; i < nAts; i++) {
               int i3 = 3 * i
-              logger.info(format(" %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
+              logger.info(format("GRADIENT  %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
             }
           } else {
             energy = forceFieldEnergy.energy(x, true)
