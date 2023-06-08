@@ -212,7 +212,7 @@ class ReducedPartition extends  AlgorithmsScript{
         String filename = filenames.get(0)
 
         int numLoop = 2
-        if(pKa){
+        if(pKa || onlyProtons || onlyTitration){
             numLoop = 1
         }
         int numTRes = 0
@@ -249,9 +249,9 @@ class ReducedPartition extends  AlgorithmsScript{
 
             activeAssembly.getPotentialEnergy().setPrintOnFailure(false, false)
             potentialEnergy = activeAssembly.getPotentialEnergy()
-            if(!pKa || onlyTitration){
+            if(!pKa || onlyTitration || onlyProtons){
                 manyBodyOptions.setListResidues(listResidues)
-            } 
+            }
 
 
 
@@ -290,6 +290,7 @@ class ReducedPartition extends  AlgorithmsScript{
             RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,
                     potentialEnergy, algorithmListener)
             rotamerOptimization.setWriteEnergyRestart(false)
+            rotamerOptimization.setOnlyProtons(onlyProtons)
 
             manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
 

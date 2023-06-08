@@ -736,6 +736,22 @@ public class Residue extends MSGroup implements Comparable<Residue> {
   }
 
   /**
+   * Sets the original coordinate rotamers for titratable residues
+   * RotamerLibrary's original coordinates rotamer flag has been set.
+   * <p>
+   * Any rotamers that were set previously are deleted.
+   *
+   * @return An array of Rotamer.
+   */
+  public Rotamer[] setRotamers(){
+    Rotamer[] originalRotamers = Rotamer.defaultRotamerFactory(this, titrationUtils);
+    int nOrig = originalRotamers.length;
+    rotamers = new Rotamer[nOrig];
+    arraycopy(originalRotamers, 0, rotamers, 0, nOrig);
+    return rotamers;
+  }
+
+  /**
    * Getter for the field <code>segID</code>.
    *
    * @return a {@link java.lang.String} object.

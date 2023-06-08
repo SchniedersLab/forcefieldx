@@ -212,6 +212,7 @@ public class RotamerOptimization implements Terminatable {
   private double refEnergy = 0;
   private double[] fraction;
   private double[] titrateBoltzmann;
+  private boolean onlyProtons = false;
   /** List of residues to optimize; they may not be contiguous or all members of the same chain. */
   private List<Residue> residueList;
   /**
@@ -1011,7 +1012,11 @@ public class RotamerOptimization implements Terminatable {
       for (Polymer polymer : polymers) {
         List<Residue> current = polymer.getResidues();
         for (Residue residuej : current) {
-          residuej.setRotamers(library);
+          if(onlyProtons){
+            residuej.setRotamers();
+          } else {
+            residuej.setRotamers(library);
+          }
           if (residuej.getRotamers() != null) {
             if (!(ignoreNA && residuej.getResidueType() == Residue.ResidueType.NA)) {
               allResiduesList.add(residuej);
@@ -2087,31 +2092,29 @@ public class RotamerOptimization implements Terminatable {
             refEnergy = totalEnergy;
           }
           double boltzmannWeight = exp((-1.0/(1.9872042599E-3 * 298.15))*(totalEnergy-refEnergy));
-          int weight = 1;
           if(fraction.length > 0){
             for (int j=0; j<residues.length; j++) {
               Residue residue = residues[j];
               Rotamer[] rotamers = residue.getRotamers();
               int currentRotamer = currentRotamers[j];
-              weight = rotamers[currentRotamer].getWeight();
               if (residue.getName().equals("HIS") || residue.getName().equals("HIE") || residue.getName().equals("HID") ||
                       residue.getName().equals("GLU") || residue.getName().equals("GLH") || residue.getName().equals("ASP") ||
                       residue.getName().equals("ASH") || residue.getName().equals("LYS") || residue.getName().equals("LYD")) {
                 if (residue.getName().equals("HIS") || residue.getName().equals("HIE") || residue.getName().equals("HID")) {
                   if (rotamers[currentRotamer].getName().equals("HIS")) {
-                    titrateBoltzmann[titrateRes] += weight*boltzmannWeight;
+                    titrateBoltzmann[titrateRes] += boltzmannWeight;
                   }
                 } else if (residue.getName().equals("GLU") || residue.getName().equals("GLH")) {
                   if (rotamers[currentRotamer].getName().equals("GLH")) {
-                    titrateBoltzmann[titrateRes] += weight*boltzmannWeight;
+                    titrateBoltzmann[titrateRes] += boltzmannWeight;
                   }
                 } else if (residue.getName().equals("ASP") || residue.getName().equals("ASH")) {
                   if (rotamers[currentRotamer].getName().equals("ASH")) {
-                    titrateBoltzmann[titrateRes] += weight*boltzmannWeight;
+                    titrateBoltzmann[titrateRes] += boltzmannWeight;
                   }
                 } else if (residue.getName().equals("LYS") || residue.getName().equals("LYD")) {
                   if (rotamers[currentRotamer].getName().equals("LYS")) {
-                    titrateBoltzmann[titrateRes] += weight*boltzmannWeight;
+                    titrateBoltzmann[titrateRes] += boltzmannWeight;
 
                   }
                 }
@@ -2119,13 +2122,18 @@ public class RotamerOptimization implements Terminatable {
               titrateRes += 1;
             }
           }
-          totalBoltzmann += weight*boltzmannWeight;
+          totalBoltzmann += boltzmannWeight;
         }
       }
     }
     return adjustPerm;
+
+
   }
 
+  public void setOnlyProtons(boolean onlyProtons) {
+    this.onlyProtons = onlyProtons;
+  }
   /**
    * Get reference energy for partition function boltzmann weights
    * @return ref energy
