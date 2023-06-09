@@ -333,7 +333,7 @@ public class ExtendedSystem implements Potential {
         } else if(specialResidues.size() > 0) {
             logger.info("\nSpecial residues and their associated values:");
             for(int i = 0; i < specialResidues.size(); i++){
-                int resNum = (int) (double) specialResidues.get(i) - mola.getResidueList().get(0).getResidueNumber();
+                int resNum = (int) (double) specialResidues.get(i) - mola.getResidueList().get(0).getResidueNumber(); // Shift pdb index by first residue number
                 logger.info("Residue: " + specialResidues.get(i) + "-" +
                         mola.getResidueList().get(resNum).getName()
                         + " Pka: " + specialResiduePKAs.get(i));
