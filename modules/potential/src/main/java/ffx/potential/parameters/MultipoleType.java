@@ -518,7 +518,6 @@ public final class MultipoleType extends BaseType implements Comparator<String> 
     // No bonds.
     if (n12 == null || n12.size() < 1) {
       String message = "Multipoles can only be assigned after bonded relationships are defined.\n";
-      message += "No bonds were found for " + atom;
       logger.severe(message);
       return null;
     }
