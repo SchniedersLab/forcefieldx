@@ -232,8 +232,13 @@ public class Bond extends BondedTerm {
    * <p>Evaluate this Bond energy.
    */
   @Override
-  public double energy(
-      boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+    value = 0.0;
+    energy = 0.0;
+    // Only compute this term if at least one atom is being used.
+    if (!getUse()) {
+      return energy;
+    }
     var atomA = atoms[0];
     var atomB = atoms[1];
     var va = atomA.getXYZ();
@@ -253,6 +258,7 @@ public class Bond extends BondedTerm {
     var dv2 = dv * dv;
     switch (bondType.bondFunction) {
       case QUARTIC, FLAT_BOTTOM_QUARTIC -> {
+        // Taylor expansion of Morse potential through the fourth power of the bond length deviation.
         energy = prefactor * dv2 * (1.0 + bondType.cubic * dv + bondType.quartic * dv2);
         if (gradient) {
           // Compute the magnitude of the gradient.

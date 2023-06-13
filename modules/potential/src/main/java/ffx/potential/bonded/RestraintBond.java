@@ -124,9 +124,15 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
    * <p>Evaluate this Bond energy.
    */
   @Override
-  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad,
-      AtomicDoubleArray3D lambdaGrad) {
-
+  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+    value = 0.0;
+    energy = 0.0;
+    // Only compute this term if at least one atom is being used.
+    if (!getUse()) {
+      return energy;
+    }
+    Atom atomA = atoms[0];
+    Atom atomB = atoms[1];
     double[] a0 = new double[3];
     double[] a1 = new double[3];
     // The vector from Atom 1 to Atom 0.
@@ -134,16 +140,12 @@ public class RestraintBond extends BondedTerm implements LambdaInterface {
     // Gradient on Atoms 0 & 1.
     double[] g0 = new double[3];
     double[] g1 = new double[3];
-
-    atoms[0].getXYZ(a0);
-    atoms[1].getXYZ(a1);
-
+    atomA.getXYZ(a0);
+    atomB.getXYZ(a1);
     sub(a0, a1, v10);
-
     if (crystal != null) {
       crystal.image(v10);
     }
-
     // value is the magnitude of the separation vector
     value = length(v10);
     double dv = value - bondType.distance; // bondType.distance = ideal bond length

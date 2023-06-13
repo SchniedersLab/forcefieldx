@@ -218,7 +218,7 @@ public class ManyBodyTest extends AlgorithmsTest {
     double actualTotalPotential = manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
 
-    double expectedApproximateEnergy = -261.3576520811798;
+    double expectedApproximateEnergy = -290.57260490705966;
     double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-5);
   }
@@ -241,7 +241,7 @@ public class ManyBodyTest extends AlgorithmsTest {
     double actualTotalPotential = manyBody.getPotential().getTotalEnergy();
     assertEquals(expectedTotalPotential, actualTotalPotential, 1E-5);
 
-    double expectedApproximateEnergy = -168.30101072;
+    double expectedApproximateEnergy = -179.5339377645139;
     double actualApproximateEnergy = manyBody.getManyBodyOptions().getApproximate();
     //TODO: Adjust delta back to norm and determine why getApproximate() is returning funky values
     assertEquals(expectedApproximateEnergy, actualApproximateEnergy, 1E-0);

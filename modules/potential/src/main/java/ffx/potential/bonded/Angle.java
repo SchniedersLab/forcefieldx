@@ -261,8 +261,13 @@ public class Angle extends BondedTerm {
    * <p>Evaluate this Angle energy.
    */
   @Override
-  public double energy(
-      boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+    value = 0.0;
+    energy = 0.0;
+    // Only compute this term if at least one atom is being used.
+    if (!getUse()) {
+      return energy;
+    }
     var atomA = atoms[0];
     var atomB = atoms[1];
     var atomC = atoms[2];
@@ -272,12 +277,11 @@ public class Angle extends BondedTerm {
     var va = atomA.getXYZ();
     var vb = atomB.getXYZ();
     var vc = atomC.getXYZ();
-    energy = 0.0;
-    value = 0.0;
     var prefactor = angleType.angleUnit * rigidScale * angleType.forceConstant;
     switch (angleType.angleFunction) {
       case SEXTIC -> {
         switch (angleType.angleMode) {
+          // Compute the bond angle bending energy.
           case NORMAL -> {
             var vab = va.sub(vb);
             var vcb = vc.sub(vb);
@@ -292,16 +296,13 @@ public class Angle extends BondedTerm {
               var dv3 = dv2 * dv;
               var dv4 = dv2 * dv2;
               energy = prefactor * dv2 * (1.0
-                  + angleType.cubic * dv
-                  + angleType.quartic * dv2
-                  + angleType.pentic * dv3
-                  + angleType.sextic * dv4);
+                  + angleType.cubic * dv + angleType.quartic * dv2
+                  + angleType.pentic * dv3 + angleType.sextic * dv4);
               if (gradient) {
+                // Compute the bond angle bending gradient.
                 var deddt = prefactor * dv * toDegrees(2.0
-                    + 3.0 * angleType.cubic * dv
-                    + 4.0 * angleType.quartic * dv2
-                    + 5.0 * angleType.pentic * dv3
-                    + 6.0 * angleType.sextic * dv4);
+                    + 3.0 * angleType.cubic * dv + 4.0 * angleType.quartic * dv2
+                    + 5.0 * angleType.pentic * dv3 + 6.0 * angleType.sextic * dv4);
                 var rp = max(p.length(), 0.000001);
                 var terma = -deddt / (rab2 * rp);
                 var termc = deddt / (rcb2 * rp);
@@ -315,6 +316,7 @@ public class Angle extends BondedTerm {
             }
           }
           case IN_PLANE -> {
+            // Compute the projected in-plane angle energy.
             var vd = getAtom4XYZ();
             int id = atom4.getIndex() - 1;
             var vad = va.sub(vd);
@@ -336,16 +338,13 @@ public class Angle extends BondedTerm {
               var dv3 = dv2 * dv;
               var dv4 = dv2 * dv2;
               energy = prefactor * dv2 * (1.0
-                  + angleType.cubic * dv
-                  + angleType.quartic * dv2
-                  + angleType.pentic * dv3
-                  + angleType.sextic * dv4);
+                  + angleType.cubic * dv + angleType.quartic * dv2
+                  + angleType.pentic * dv3 + angleType.sextic * dv4);
               if (gradient) {
+                // Compute the projected in-plane angle gradient.
                 var deddt = prefactor * dv * toDegrees(2.0
-                    + 3.0 * angleType.cubic * dv
-                    + 4.0 * angleType.quartic * dv2
-                    + 5.0 * angleType.pentic * dv3
-                    + 6.0 * angleType.sextic * dv4);
+                    + 3.0 * angleType.cubic * dv + 4.0 * angleType.quartic * dv2
+                    + 5.0 * angleType.pentic * dv3 + 6.0 * angleType.sextic * dv4);
                 inPlaneGrad(threadID, grad, ia, ib, ic, id, vad, vbd, vcd,
                     vp, rp2, vjp, jp2, vkp, kp2, delta, deddt);
               }
@@ -356,6 +355,7 @@ public class Angle extends BondedTerm {
       }
       case HARMONIC -> {
         switch (angleType.angleMode) {
+          // Compute the bond angle bending energy.
           case NORMAL -> {
             var vab = va.sub(vb);
             var vcb = vc.sub(vb);
@@ -369,6 +369,7 @@ public class Angle extends BondedTerm {
               var dv2 = dv * dv;
               energy = prefactor * dv2;
               if (gradient) {
+                // Compute the bond angle bending gradient.
                 var deddt = prefactor * dv * toDegrees(2.0);
                 var rp = max(p.length(), 0.000001);
                 var terma = -deddt / (rab2 * rp);
@@ -383,6 +384,7 @@ public class Angle extends BondedTerm {
             }
           }
           case IN_PLANE -> {
+            // Compute the projected in-plane angle energy.
             var vd = getAtom4XYZ();
             var id = atom4.getIndex() - 1;
             var vad = va.sub(vd);
@@ -403,6 +405,7 @@ public class Angle extends BondedTerm {
               var dv2 = dv * dv;
               energy = prefactor * dv2;
               if (gradient) {
+                // Compute the projected in-plane angle gradient.
                 var deddt = prefactor * dv * toDegrees(2.0);
                 inPlaneGrad(threadID, grad, ia, ib, ic, id,
                     vad, vbd, vcd, vp, rp2, vjp, rjp2, vkp, rkp2, delta, deddt);
