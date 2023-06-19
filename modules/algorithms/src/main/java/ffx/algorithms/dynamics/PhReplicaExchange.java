@@ -392,6 +392,7 @@ public class PhReplicaExchange implements Terminatable {
     terminate = false;
     replica.setRestartFrequency(cycles * (titrSteps + confSteps) * replica.dt + 100); // Full control over restarts handled by this class
     extendedSystem.reGuessLambdas();
+    replica.setCoordinates(potential.getCoordinates(x));
 
     int startCycle = 0;
     if (initDynamics > 0 && !restart) {
@@ -681,11 +682,6 @@ public class PhReplicaExchange implements Terminatable {
     // Start this processes MolecularDynamics instance sampling.
     boolean initVelocities = true;
 
-    int titrStepsOne = (int) titrSteps / 2;
-    int titrStepsTwo = (int) FastMath.ceil(titrSteps / 2.0);
-
-    replica.dynamic(titrStepsOne, timeStep, printInterval, saveInterval, temp, initVelocities, dyn);
-
     x = replica.getCoordinates();
     potential.energy(x);
     openMM.setCoordinates(x);
@@ -695,7 +691,8 @@ public class PhReplicaExchange implements Terminatable {
     x = openMM.getCoordinates();
     replica.setCoordinates(x);
 
-    replica.dynamic(titrStepsTwo, timeStep, printInterval, saveInterval, temp, initVelocities, dyn);
+    double forceWriteInterval = titrSteps * 0.001;
+    replica.dynamic(titrSteps, timeStep, printInterval, forceWriteInterval, temp, initVelocities, dyn);
 
     // Update this ranks' parameter array to be consistent with the dynamics.
 

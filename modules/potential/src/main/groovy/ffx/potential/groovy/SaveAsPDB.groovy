@@ -191,7 +191,7 @@ class SaveAsPDB extends PotentialScript {
     PDBFilter saveFilter = (PDBFilter) potentialFunctions.getFilter()
     saveFilter.setModelNumbering(1)
 
-    // Iterate through the rest of the models in am arc or pdb.
+    // Iterate through the rest of the models in an arc or pdb.
     if (openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter || openFilter instanceof XPHFilter)) {
       try {
         while (openFilter.readNext(false)) {
