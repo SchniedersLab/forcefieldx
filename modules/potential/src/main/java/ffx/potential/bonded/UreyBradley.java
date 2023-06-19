@@ -120,8 +120,13 @@ public class UreyBradley extends BondedTerm {
    * <p>Evaluate the Urey-Bradley energy.
    */
   @Override
-  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad,
-                       AtomicDoubleArray3D lambdaGrad) {
+  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+    value = 0.0;
+    energy = 0.0;
+    // Only compute this term if at least one atom is being used.
+    if (!getUse()) {
+      return energy;
+    }
     var atomA = atoms[0];
     var atomC = atoms[2];
     var va = atomA.getXYZ();
@@ -130,12 +135,11 @@ public class UreyBradley extends BondedTerm {
     value = vac.length();
     var dv = value - ureyBradleyType.distance;
     var dv2 = dv * dv;
-    energy = ureyBradleyType.ureyUnit * rigidScale * ureyBradleyType.forceConstant * dv2 * (1.0
-        + ureyBradleyType.cubic * dv + ureyBradleyType.quartic * dv2);
+    energy = ureyBradleyType.ureyUnit * rigidScale * ureyBradleyType.forceConstant * dv2
+        * (1.0 + ureyBradleyType.cubic * dv + ureyBradleyType.quartic * dv2);
     if (gradient) {
-      var deddt =
-          2.0 * ureyBradleyType.ureyUnit * rigidScale * ureyBradleyType.forceConstant * dv * (1.0
-              + 1.5 * ureyBradleyType.cubic * dv + 2.0 * ureyBradleyType.quartic * dv2);
+      var deddt = 2.0 * ureyBradleyType.ureyUnit * rigidScale * ureyBradleyType.forceConstant * dv
+          * (1.0 + 1.5 * ureyBradleyType.cubic * dv + 2.0 * ureyBradleyType.quartic * dv2);
       var de = 0.0;
       if (value > 0.0) {
         de = deddt / value;
