@@ -69,13 +69,13 @@ import ffx.crystal.SymOp;
 import ffx.numerics.Constraint;
 import ffx.numerics.atomic.AtomicDoubleArray.AtomicDoubleArrayImpl;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
+import ffx.numerics.math.Double3;
 import ffx.numerics.switching.ConstantSwitch;
 import ffx.numerics.switching.UnivariateFunctionFactory;
 import ffx.numerics.switching.UnivariateSwitchingFunction;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.AngleTorsion;
 import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Atom.Resolution;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.BondedTerm;
 import ffx.potential.bonded.ImproperTorsion;
@@ -1004,48 +1004,33 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
         throw new Exception(message);
       }
     } catch (Exception e) {
-      logger.info(" The system will be treated as aperiodic.");
       aperiodic = true;
 
-      long convTime = -System.nanoTime();
-      double maxr = 10.0;
-      for (int i = 0; i < nAtoms - 1; i++) {
-        Atom ai = atoms[i];
-        for (int j = 1; j < nAtoms; j++) {
-          Atom aj = atoms[j];
-          double dx = ai.getX() - aj.getX();
-          double dy = ai.getY() - aj.getY();
-          double dz = ai.getZ() - aj.getZ();
-          double r = sqrt(dx * dx + dy * dy + dz * dz);
-          maxr = max(r, maxr);
+      // Determine the maximum separation between atoms.
+      double maxR = 0.0;
+      if (nAtoms < 10) {
+        for (int i = 0; i < nAtoms - 1; i++) {
+          Double3 xi = atoms[i].getXYZ();
+          for (int j = 1; j < nAtoms; j++) {
+            double r = atoms[j].getXYZ().dist(xi);
+            maxR = max(r, maxR);
+          }
         }
+      } else {
+        maxR = ConvexHullOps.maxDist(ConvexHullOps.constructHull(atoms));
       }
-      convTime += System.nanoTime();
-      if (nAtoms > 10) {
-        long hullTime = -System.nanoTime();
-        double maxC = ConvexHullOps.maxDist(ConvexHullOps.constructHull(atoms));
-        maxC = Math.max(10.0, maxC);
-        hullTime += System.nanoTime();
-        double diff = maxr - maxC;
-        if (Math.abs(diff) > 1.0E-5) {
-          logger.warning(format(" Max particle-particle distance by convex hull %12.6g "
-                  + "disagrees with max distance by brute-force loop %12.6g: difference %12.6g!", maxC,
-              maxr, diff));
-        }
-        logger.fine(format(
-            " Time for convex hull calculation: %12.6g sec. By O(n^2) loop: %12.6g sec.",
-            hullTime * Constants.NS2SEC, convTime * Constants.NS2SEC));
-      } // At N < 4, the 3D convex hull may not even be defined properly, nevermind be more
-      // efficient.
+      maxR = max(10.0, maxR);
+
+      logger.info(format(" The system will be treated as aperiodic (max separation = %6.1f A).", maxR));
 
       // Turn off reciprocal space calculations.
       forceField.addProperty("EWALD_ALPHA", "0.0");
 
       // Specify some dummy values for the crystal.
       spacegroup = "P1";
-      a = 2.0 * maxr;
-      b = 2.0 * maxr;
-      c = 2.0 * maxr;
+      a = 2.0 * maxR;
+      b = 2.0 * maxR;
+      c = 2.0 * maxR;
       alpha = 90.0;
       beta = 90.0;
       gamma = 90.0;
