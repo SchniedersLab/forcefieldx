@@ -97,6 +97,7 @@ public class NeighborList extends ParallelRegion {
   private static final Logger logger = Logger.getLogger(NeighborList.class.getName());
 
   private final DomainDecomposition domainDecomposition;
+  private final DomainDecompositionOctree domainDecompositionOctree;
   /** The masking rules to apply when building the neighbor list. */
   private final MaskingInterface maskingRules;
   /** The cutoff beyond which the pairwise energy is zero. */
@@ -252,6 +253,7 @@ public class NeighborList extends ParallelRegion {
     // Initialize the neighbor list builder subcells.
     boolean print = logger.isLoggable(Level.FINE);
     domainDecomposition = new DomainDecomposition(nAtoms, crystal, cutoffPlusBuffer);
+    domainDecompositionOctree = new DomainDecompositionOctree(nAtoms, crystal, cutoffPlusBuffer, 2);
     initNeighborList(print);
   }
 
@@ -332,6 +334,8 @@ public class NeighborList extends ParallelRegion {
     if (print) {
       print();
     }
+    logger.info("NL dDO log in finish method");
+    domainDecompositionOctree.log();
 
     // Update the pair-wise schedule.
     long scheduleTime = -System.nanoTime();
@@ -351,6 +355,10 @@ public class NeighborList extends ParallelRegion {
     }
   }
 
+  public Cell[][][] getCells() {
+    return domainDecompositionOctree.getCells();
+  }
+
   /**
    * Returns the cutoff distance used internally by NeighborList.
    *
@@ -358,6 +366,10 @@ public class NeighborList extends ParallelRegion {
    */
   public double getCutoff() {
     return cutoff;
+  }
+
+  public int[] getNumDivisions() {
+    return domainDecompositionOctree.getNumDivisions();
   }
 
   /**
@@ -524,6 +536,11 @@ public class NeighborList extends ParallelRegion {
     if (print) {
       domainDecomposition.log();
     }
+
+    // Initialize DomainDecompositionOctree
+    domainDecompositionOctree.initDomainDecomposition(nAtoms, crystal);
+//    logger.info("NL dDO log in initNeighborList method");
+//    domainDecompositionOctree.log();
   }
 
   private void print() {
@@ -667,6 +684,7 @@ public class NeighborList extends ParallelRegion {
           // Convert to fractional coordinates.
           crystal.toFractionalCoordinates(cart, frac);
           domainDecomposition.addAtomToCell(i, iSymm, frac);
+          domainDecompositionOctree.addAtomToCell(i, iSymm, frac);
         }
       }
     }
@@ -1025,7 +1043,7 @@ public class NeighborList extends ParallelRegion {
         for (int i = 0; i < nA; i++) {
           for (int j = 0; j < nB; j++) {
             for (int k = 0; k < nC; k++) {
-              cells[i][j][k] = new Cell(i, j, k);
+              cells[i][j][k] = new Cell(i, j, k, targetInterfacialRadius);
             }
           }
         }
@@ -1225,6 +1243,349 @@ public class NeighborList extends ParallelRegion {
   }
 
   /**
+   * Break down the simulation domain into a 3D grid of cells.
+   */
+  private static class DomainDecompositionOctree {
+
+    /**
+     * The crystal that defines the simulation domain.
+     */
+    private Crystal crystal;
+    /**
+     * The targetInterfacialRadius is the smallest interfacial radius for a subcell, given a search
+     * of nEdge subcells along an axis, that assures all neighbors will be found.
+     */
+    private final double targetInterfacialRadius;
+    /**
+     * The number of subcells that must be searched along an axis to find all neighbors within
+     * the cutoff + buffer distance.
+     *
+     * <p>If the nEdge == 1 for {X=A,B,C} then all neighbors will be found in 3x3x3 = 27 cells.
+     * If each nEdge == 2, then all neighbors will be found in 5x5x5 = 125 cells (in this case the
+     * cells are smaller).
+     */
+    private final int nEdge;
+    /**
+     * The number of subcells that must be searched along an axis to find all neighbors within the
+     * cutoff + buffer distance. nSearch = 2 * nEdge + 1
+     */
+    private final int nSearch;
+    /** The number of divisions along the A-axis. */
+    private int nA;
+    /** The number of divisions along the B-axis. */
+    private int nB;
+    /**
+     * The number of divisions along the C-Axis.
+     */
+    private int nC;
+    /**
+     * The number of atoms.
+     */
+    private int nAtoms;
+    /** The cell indices of each atom along a A-axis. */
+    private int[] cellA;
+    /** The cell indices of each atom along a B-axis. */
+    private int[] cellB;
+    /** The cell indices of each atom along a C-axis. */
+    private int[] cellC;
+    /**
+     * The fractional sub-volumes of the unit cell.
+     */
+    private Cell[][][] cells;
+    /**
+     * Special position exclusions. Map<Molecule, List<SymOpIndex>>
+     */
+    private Map<Integer, List<Integer>> specialPositionExclusionMap;
+
+
+    /**
+     * DomainDecomposition Constructor.
+     *
+     * @param nAtoms Number of atoms.
+     * @param crystal The crystal.
+     * @param cutoffPlusBuffer The cutoff plus buffer distance.
+     */
+    public DomainDecompositionOctree(int nAtoms, Crystal crystal, double cutoffPlusBuffer, int dimension) {
+//      this.nEdge = 2;
+      this.nEdge = dimension;
+//      this.nSearch = 2 * nEdge + 1;
+      this.nSearch = dimension;
+      targetInterfacialRadius = cutoffPlusBuffer / (double) nEdge;
+      logger.info(format("** nEdge %d and nSearch %d", nEdge, nSearch));
+      initDomainDecomposition(nAtoms, crystal);
+    }
+
+    /**
+     * Initialize the domain decomposition.
+     */
+    public void initDomainDecomposition(int nAtoms, Crystal crystal) {
+      this.nAtoms = nAtoms;
+      this.crystal = crystal;
+
+      // Allocate memory for fractional coordinates and subcell pointers for each atom.
+      if (cellA == null || cellA.length < nAtoms) {
+        cellA = new int[nAtoms];
+        cellB = new int[nAtoms];
+        cellC = new int[nAtoms];
+      }
+
+      // Determine the number of subcells along each axis.
+      int maxA = nSearch;
+      int maxB = nSearch;
+      int maxC = nSearch;
+      logger.info(format("** Max A %d Max B %d Max C %d\n",maxA, maxB, maxC));
+      logger.info(format("** Target interfacial radius %4.4f\n",targetInterfacialRadius));
+      logger.info(format("** Crystal interfacial radii %4.4f %4.4f %4.4f\n",crystal.interfacialRadiusA, crystal.interfacialRadiusB, crystal.interfacialRadiusC));
+
+      /*
+        To satisfy the cutoff + buffer distance, the number of subcells (maxA, maxB, maxC)
+        is guaranteed to be at least nSearch - 1 for periodic crystals.
+        */
+//      if (!crystal.aperiodic()) {
+//        assert (maxA >= nSearch - 1);
+//        assert (maxB >= nSearch - 1);
+//        assert (maxC >= nSearch - 1);
+//      }
+
+      /*
+        If the number of subcells less than nSearch, then turn off the overhead of the
+        subcell search by setting the number of cells along that axis to 1.
+       */
+      if (maxA < nSearch) nA = 1;
+      else nA = maxA;
+      nB = maxB < nSearch ? 1 : maxB;
+      nC = maxC < nSearch ? 1 : maxC;
+
+//      logger.info(format("** number of subcells %d %d %d",nA,nB,nC));
+
+      // Allocate memory for the subcells.
+      if (cells == null || cells.length != nA || cells[0].length != nB || cells[0][0].length != nC) {
+        cells = new Cell[nA][nB][nC];
+        for (int i = 0; i < nA; i++) {
+          for (int j = 0; j < nB; j++) {
+            for (int k = 0; k < nC; k++) {
+              cells[i][j][k] = new Cell(i, j, k, targetInterfacialRadius);
+            }
+          }
+        }
+      } else {
+        clear();
+      }
+
+    }
+
+    /**
+     * Clear the sub-cells of the atom list.
+     */
+    public void clear() {
+      // Clear cell contents.
+      for (int i = 0; i < nA; i++) {
+        for (int j = 0; j < nB; j++) {
+          for (int k = 0; k < nC; k++) {
+            cells[i][j][k].clear();
+          }
+        }
+      }
+
+      // Clear special position exclusions.
+      // if (specialPositionExclusionMap != null) {
+      // Clear the lists, but don't remove the keys.
+      //   for (List<Integer> list : specialPositionExclusionMap.values()) {
+      //     list.clear();
+      //   }
+      //   specialPositionExclusionMap.clear();
+      // }
+    }
+
+    /**
+     * Add a special position exclusion.
+     *
+     * @param molecule The molecule.
+     * @param symOpIndex The symmetry operation index.
+     */
+    public void addSpecialPositionExclusion(int molecule, int symOpIndex) {
+      // Initialize the map.
+      if (specialPositionExclusionMap == null) {
+        specialPositionExclusionMap = new HashMap<>();
+      }
+      // Initialize the list for the molecule.
+      List<Integer> list = specialPositionExclusionMap.get(molecule);
+      if (list == null) {
+        list = new ArrayList<>();
+        specialPositionExclusionMap.put(molecule, list);
+      }
+      // Add the symOpIndex to the list.
+      if (!list.contains(symOpIndex)) {
+        list.add(symOpIndex);
+      }
+    }
+
+    /**
+     * Check if a special position exclusion exists.
+     *
+     * @param molecule The molecule.
+     * @param symOpIndex The symmetry operation index.
+     * @return True if the special position exclusion exists.
+     */
+    public boolean isSpecialPositionExclusion(int molecule, int symOpIndex) {
+      if (specialPositionExclusionMap == null) {
+        return false;
+      }
+      List<Integer> list = specialPositionExclusionMap.get(molecule);
+      if (list == null) {
+        return false;
+      }
+      return list.contains(symOpIndex);
+    }
+
+    public Cell[][][] getCells() {
+      return cells;
+    }
+
+    public int[] getNumDivisions() {
+      return new int[]{nA, nB, nC};
+    }
+
+    /**
+     * Get the special position SymOps for a molecule.
+     *
+     * @param molecule The molecule.
+     * @return The special position SymOps.
+     */
+    public List<Integer> getSpecialPositionSymOps(int molecule) {
+      if (specialPositionExclusionMap == null) {
+        return null;
+      }
+      if (specialPositionExclusionMap.containsKey(molecule)) {
+        List<Integer> list = specialPositionExclusionMap.get(molecule);
+        if (list.isEmpty()) {
+          return null;
+        } else {
+          return list;
+        }
+      }
+      return null;
+    }
+
+    /**
+     * Log information about the domain decomposition.
+     */
+    public void log() {
+      int nCells = nA * nB * nC;
+      int nSymm = crystal.spaceGroup.getNumberOfSymOps();
+      StringBuilder sb = new StringBuilder("  Neighbor List Builder\n");
+      sb.append(format("   Total Cells:          %8d\n", nCells));
+      if (nCells > 1) {
+        sb.append(format("   Interfacial radius    %8.3f A\n", targetInterfacialRadius));
+        int searchA;
+        if (nA == 1) searchA = 1;
+        else searchA = nSearch;
+        int searchB = nB == 1 ? 1 : nSearch;
+        int searchC = nC == 1 ? 1 : nSearch;
+        sb.append(format("   Domain Decomposition: %8d %4d %4d\n", nA, nB, nC));
+        sb.append(format("   Neighbor Search:      %8d x%3d x%3d\n", searchA, searchB, searchC));
+        sb.append(format("   Total Atoms in System %8d\n", nAtoms));
+        sb.append(format("   Mean Atoms per Cell:  %8d\n", nAtoms * nSymm / nCells));
+      }
+      int sum = 0;
+      for (int i = 0; i < nA; i++){
+        for (int j = 0; j < nB; j++){
+          for (int k = 0; k < nC; k++){
+            Cell cell = cells[i][j][k];
+            sb.append(format("nLL Number of atoms in cell %d %d %d : %d\n",i,j,k,cell.getCount()));
+            sum += cell.getCount();
+          }
+        }
+      }
+      sb.append(format("Total number of atoms in cells %d\n", sum));
+      logger.info(sb.toString());
+    }
+
+    /**
+     * If the index is >= to nX, it is mapped back into the periodic unit cell by subtracting nX. If
+     * the index is less than 0, it is mapped into the periodic unit cell by adding nX. The Neighbor
+     * list algorithm never requires multiple additions or subtractions of nX.
+     *
+     * @param i The index along the a-axis.
+     * @param j The index along the b-axis.
+     * @param k The index along the c-axis.
+     * @return The requested Cell.
+     */
+    public Cell image(int i, int j, int k) {
+      if (i >= nA) {
+        i -= nA;
+      } else if (i < 0) {
+        i += nA;
+      }
+      if (j >= nB) {
+        j -= nB;
+      } else if (j < 0) {
+        j += nB;
+      }
+      if (k >= nC) {
+        k -= nC;
+      } else if (k < 0) {
+        k += nC;
+      }
+      return cells[i][j][k];
+    }
+
+    /**
+     * Add an atom to a sub-cell.
+     *
+     * @param i The index of the atom.
+     * @param iSymm The index of the symmetry operator.
+     * @param frac The fractional coordinates of the atom.
+     */
+    public void addAtomToCell(int i, int iSymm, double[] frac) {
+      double xu = frac[0];
+      double yu = frac[1];
+      double zu = frac[2];
+      // Move the atom into the range 0.0 <= x < 1.0
+      while (xu < 0.0) {
+        xu += 1.0;
+      }
+      while (xu >= 1.0) {
+        xu -= 1.0;
+      }
+      while (yu < 0.0) {
+        yu += 1.0;
+      }
+      while (yu >= 1.0) {
+        yu -= 1.0;
+      }
+      while (zu < 0.0) {
+        zu += 1.0;
+      }
+      while (zu >= 1.0) {
+        zu -= 1.0;
+      }
+      // The cell indices of this atom.
+      final int a = (int) floor(xu * nA);
+      final int b = (int) floor(yu * nB);
+      final int c = (int) floor(zu * nC);
+
+      if (iSymm == 0) {
+        // Set the sub-cell indices for an asymmetric unit atom.
+        cellA[i] = a;
+        cellB[i] = b;
+        cellC[i] = c;
+      }
+      cells[a][b][c].add(i, iSymm);
+    }
+
+    /**
+     * Get the sub-cell for an asymmetric unit atom.
+     *
+     * @param i The index of the atom.
+     * @return The sub-cell for the atom.
+     */
+    public Cell getCellForAtom(int i) {
+      return cells[cellA[i]][cellB[i]][cellC[i]];
+    }
+  }
+
+  /**
    * Hold the atom index and its symmetry operator.
    */
   public static class AtomIndex {
@@ -1256,15 +1617,18 @@ public class NeighborList extends ParallelRegion {
      */
     final int c;
 
+    final double sideLength;
+
     /**
      * The list of atoms in the cell, together with their symmetry operator.
      */
     final List<AtomIndex> list;
 
-    public Cell(int a, int b, int c) {
+    public Cell(int a, int b, int c, double sideLength) {
       this.a = a;
       this.b = b;
       this.c = c;
+      this.sideLength = sideLength;
       list = Collections.synchronizedList(new ArrayList<>());
     }
 
@@ -1285,9 +1649,41 @@ public class NeighborList extends ParallelRegion {
       return list.get(index);
     }
 
+    /**
+     * Returns the AtomIndex list of atoms in the cell
+     *
+     * @return AtomIndex list
+     */
+    public List<AtomIndex> getAtomIndexList() {
+      return list;
+    }
+
+    /**
+     * Return integer array of atom indices
+     * @return int indices
+     */
+    public int[] getAtomIndices(){
+      int[] indices = new int[list.size()];
+      for (int i = 0; i < list.size(); i++){
+        indices[i] = list.get(i).i;
+      }
+      return indices;
+    }
+
     public int getCount() {
       return list.size();
     }
+
+    /**
+     * Returns the cell indices along the a, b, and c axes
+     *
+     * @return a, b, and c indices
+     */
+    public int[] getIndices() {
+      return new int[]{a, b, c};
+    }
+
+    public double getSideLength() {return sideLength;}
 
     /**
      * Return the number of atoms in the cell for a given symmetry operator.

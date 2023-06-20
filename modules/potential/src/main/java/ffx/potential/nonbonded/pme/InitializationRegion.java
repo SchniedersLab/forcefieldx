@@ -60,6 +60,7 @@ import ffx.crystal.SymOp;
 import ffx.numerics.atomic.AtomicDoubleArray3D;
 import ffx.potential.bonded.Atom;
 import ffx.potential.extended.ExtendedSystem;
+import ffx.potential.nonbonded.NeighborList;
 import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.MultipoleType;
@@ -144,6 +145,10 @@ public class InitializationRegion extends ParallelRegion {
    */
   private int[][][] neighborLists;
   /**
+   * Neighbor list cells
+   */
+  private NeighborList.Cell[][][] cells;
+  /**
    * Neighbor lists, without atoms beyond the real space cutoff. [nSymm][nAtoms][nIncludedNeighbors]
    */
   private int[][][] realSpaceLists;
@@ -205,6 +210,7 @@ public class InitializationRegion extends ParallelRegion {
       double[] ipdamp,
       boolean[] use,
       int[][][] neighborLists,
+      NeighborList.Cell[][][] cells,
       int[][][] realSpaceLists,
       int[][][] vaporLists,
       AtomicDoubleArray3D grad,
@@ -231,6 +237,7 @@ public class InitializationRegion extends ParallelRegion {
     this.ipdamp = ipdamp;
     this.use = use;
     this.neighborLists = neighborLists;
+    this.cells = cells;
     this.realSpaceLists = realSpaceLists;
     this.vaporLists = vaporLists;
     this.grad = grad;
