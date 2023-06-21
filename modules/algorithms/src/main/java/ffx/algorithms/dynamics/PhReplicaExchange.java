@@ -115,8 +115,8 @@ public class PhReplicaExchange implements Terminatable {
    * @param temp temperature of replica
    */
   public PhReplicaExchange(MolecularDynamics molecularDynamics, File structureFile, double pH,
-      double[] pHLadder, double temp, ExtendedSystem extendedSystem) {
-    this(molecularDynamics, structureFile, pH, pHLadder, temp, extendedSystem, null, null, null);
+      double[] pHLadder, double temp, ExtendedSystem extendedSystem, double[] x) {
+    this(molecularDynamics, structureFile, pH, pHLadder, temp, extendedSystem, x, null, null);
   }
 
   /**
@@ -384,7 +384,7 @@ public class PhReplicaExchange implements Terminatable {
     terminate = false;
     replica.setRestartFrequency(cycles * (titrSteps + confSteps) * replica.dt + 100); // Full control over restarts handled by this class
     extendedSystem.reGuessLambdas();
-    replica.setCoordinates(potential.getCoordinates(x));
+    replica.setCoordinates(x);
 
     int startCycle = 0;
     if (initDynamics > 0 && !restart) {

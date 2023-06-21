@@ -392,13 +392,13 @@ public class ExtendedSystem implements Potential {
         logger.info(" Glutamic acid titration bias magnitude: " + GLHtitrBiasMag);
         logger.info(" Aspartic acid titration bias magnitude: " + ASHtitrBiasMag);
 
-// Log all of  the tautomer bias magnitudes for each tautomerizable residue.
+        // Log all of  the tautomer bias magnitudes for each tautomerizable residue.
         logger.info("\n Tautomer bias magnitudes:");
         logger.info(" Aspartic acid tautomer bias magnitude: " + ASHtautBiasMag);
         logger.info(" Glutamic acid tautomer bias magnitude: " + GLHtautBiasMag);
         logger.info(" Histidine tautomer bias magnitude: " + HIStautBiasMag);
 
-// Log all of  th cubic, quadratic, and linear terms for all of the amino acid terms
+        // Log all of  th cubic, quadratic, and linear terms for all of the amino acid terms
         logger.info("\n Titration bias terms:");
         logger.info(" Lysine cubic term: " + LYScubic);
         logger.info(" Lysine quadratic term: " + LYSquadratic);
