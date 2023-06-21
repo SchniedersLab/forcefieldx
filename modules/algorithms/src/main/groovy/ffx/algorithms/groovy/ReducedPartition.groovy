@@ -142,6 +142,8 @@ class ReducedPartition extends  AlgorithmsScript{
             setActiveAssembly(getActiveAssembly(unfoldedFileName))
         }
 
+        String[] titratableResidues = ["HIS" , "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD"];
+        List<String> titratableResiudesList = Arrays.asList(titratableResidues);
         double[] boltzmannWeights = new double[2]
         int[] adjustPerm = new int[2]
         double[] offsets = new double[2]
@@ -194,9 +196,7 @@ class ReducedPartition extends  AlgorithmsScript{
         if(onlyTitration || onlyProtons){
             int titrtaionCount = 0
             for(Residue residue: residueList){
-                if(residue.getName().equals("HIS") || residue.getName().equals("HIE") || residue.getName().equals("HID") ||
-                        residue.getName().equals("GLU") || residue.getName().equals("GLH") || residue.getName().equals("ASP") ||
-                        residue.getName().equals("ASH") || residue.getName().equals("LYS") || residue.getName().equals("LYD")) {
+                if(titratableResiudesList.contains(residue.getName())) {
                     if(titrtaionCount == 0){
                         listResidues += residue.getChainID() + residue.getResidueNumber()
                     } else {
@@ -271,9 +271,7 @@ class ReducedPartition extends  AlgorithmsScript{
                 for (Residue residue : residues) {
                     resNumberList.add(residue.getResidueNumber())
                     if(pKa){
-                        if(residue.getName() == "HIS" || residue.getName() == "HIE" || residue.getName() == "HID" ||
-                                residue.getName() == "GLU" || residue.getName() == "GLH" || residue.getName() == "ASP" ||
-                                residue.getName() == "ASH" || residue.getName() == "LYS" || residue.getName() == "LYD" ){
+                        if(titratableResiudesList.contains(residue.getName())){
                             titrateResidues.add(residue)
                         }
                     }

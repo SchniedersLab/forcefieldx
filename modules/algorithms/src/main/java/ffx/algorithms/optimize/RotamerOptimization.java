@@ -2093,29 +2093,15 @@ public class RotamerOptimization implements Terminatable {
           }
           double boltzmannWeight = exp((-1.0/(1.9872042599E-3 * 298.15))*(totalEnergy-refEnergy));
           if(fraction.length > 0){
-            for (int j=0; j<residues.length; j++) {
-              Residue residue = residues[j];
+            String[] titratableResidues = {"HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD"};
+            List<String> titratableResiudesList = Arrays.asList(titratableResidues);
+            for (Residue residue: residues) {
               Rotamer[] rotamers = residue.getRotamers();
-              int currentRotamer = currentRotamers[j];
-              if (residue.getName().equals("HIS") || residue.getName().equals("HIE") || residue.getName().equals("HID") ||
-                      residue.getName().equals("GLU") || residue.getName().equals("GLH") || residue.getName().equals("ASP") ||
-                      residue.getName().equals("ASH") || residue.getName().equals("LYS") || residue.getName().equals("LYD")) {
-                if (residue.getName().equals("HIS") || residue.getName().equals("HIE") || residue.getName().equals("HID")) {
-                  if (rotamers[currentRotamer].getName().equals("HIS")) {
-                    titrateBoltzmann[titrateRes] += boltzmannWeight;
-                  }
-                } else if (residue.getName().equals("GLU") || residue.getName().equals("GLH")) {
-                  if (rotamers[currentRotamer].getName().equals("GLH")) {
-                    titrateBoltzmann[titrateRes] += boltzmannWeight;
-                  }
-                } else if (residue.getName().equals("ASP") || residue.getName().equals("ASH")) {
-                  if (rotamers[currentRotamer].getName().equals("ASH")) {
-                    titrateBoltzmann[titrateRes] += boltzmannWeight;
-                  }
-                } else if (residue.getName().equals("LYS") || residue.getName().equals("LYD")) {
-                  if (rotamers[currentRotamer].getName().equals("LYS")) {
-                    titrateBoltzmann[titrateRes] += boltzmannWeight;
-
+              int currentRotamer = currentRotamers[titrateRes];
+              if (titratableResiudesList.contains(residue.getName())) {
+                switch (rotamers[currentRotamer].getName()) {
+                  case "HIS", "GLH", "ASH", "LYS" -> titrateBoltzmann[titrateRes] += boltzmannWeight;
+                  default -> {
                   }
                 }
               }
