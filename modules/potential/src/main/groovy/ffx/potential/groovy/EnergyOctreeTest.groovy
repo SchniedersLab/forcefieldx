@@ -38,9 +38,11 @@
 package ffx.potential.groovy
 
 import com.google.common.collect.MinMaxPriorityQueue
+import com.github.quickhull3d.QuickHull3D
 import edu.rit.pj.ParallelTeam
 import ffx.crystal.Crystal
 import ffx.numerics.Potential
+import ffx.potential.nonbonded.octree.*
 import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
@@ -51,6 +53,7 @@ import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
+import ffx.potential.utils.ConvexHullOps
 import ffx.potential.utils.StructureMetrics
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
@@ -194,32 +197,28 @@ class EnergyOctreeTest extends PotentialScript {
         }
 
         // Get Radius of Gyration
-        double radgy = radiusOfGyration(activeAssembly.getAtomArray())
+//        double radgy = radiusOfGyration(activeAssembly.getAtomArray())
         // Define Crystal
-        Crystal octreeCrystal = new Crystal(3 * radgy, 3 * radgy, 3 * radgy, 90.0, 90.0, 90.0, "P1")
-        octreeCrystal.setAperiodic(true)
-        activeAssembly.setCrystal(octreeCrystal)
+//        Crystal octreeCrystal = new Crystal(3 * radgy, 3 * radgy, 3 * radgy, 90.0, 90.0, 90.0, "P1")
+//        octreeCrystal.setAperiodic(true)
+//        activeAssembly.setCrystal(octreeCrystal)
 
         // Set up Neighbor List
-        Atom[] nlAtoms = activeAssembly.getAtomArray()
-        NeighborList neighborList = new NeighborList(null, octreeCrystal,nlAtoms,2.0*radgy,2.0,parallelTeam)
-        int nAtoms = nlAtoms.length
-        int[][][] newLists = new int[1][nAtoms][]
-        double[][] coords = new double[1][nAtoms * 3]
-        for (int i = 0; i < nAtoms; i++) {
-            coords[0][i * 3] = nlAtoms[i].getX()
-            coords[0][i * 3 + 1] = nlAtoms[i].getY()
-            coords[0][i * 3 + 2] = nlAtoms[i].getZ()
-        }
-        boolean[] use = new boolean[nAtoms]
-        for (int i = 0; i < nAtoms; i++){
-            use[i] = true
-        }
-        neighborList.buildList(coords, newLists, use, true, true)
-//        int nAtoms = activeAssembly.getAtomArray().length
-//        domainDecomposition = new NeighborList.DomainDecomposition(nAtoms, octreeCrystal, (2.0 * radgy) + 2.0)
-//        domainDecomposition.initDomainDecomposition(nAtoms, octreeCrystal)
-//        domainDecomposition.log()
+//        Atom[] nlAtoms = activeAssembly.getAtomArray()
+//        NeighborList neighborList = new NeighborList(null, octreeCrystal,nlAtoms,2.0*radgy,2.0,parallelTeam)
+//        int nAtoms = nlAtoms.length
+//        int[][][] newLists = new int[1][nAtoms][]
+//        double[][] coords = new double[1][nAtoms * 3]
+//        for (int i = 0; i < nAtoms; i++) {
+//            coords[0][i * 3] = nlAtoms[i].getX()
+//            coords[0][i * 3 + 1] = nlAtoms[i].getY()
+//            coords[0][i * 3 + 2] = nlAtoms[i].getZ()
+//        }
+//        boolean[] use = new boolean[nAtoms]
+//        for (int i = 0; i < nAtoms; i++){
+//            use[i] = true
+//        }
+//        neighborList.buildList(coords, newLists, use, true, true)
 
         forceFieldEnergy = activeAssembly.getPotentialEnergy()
         int nVars = forceFieldEnergy.getNumberOfVariables()
@@ -244,6 +243,49 @@ class EnergyOctreeTest extends PotentialScript {
             energy = forceFieldEnergy.energy(x, true)
         }
 
+        // Add Octree building
+        // Use Convex Hull method to determine the maximum pairwise distance between any atoms
+//        QuickHull3D quickHull3D = ConvexHullOps.constructHull(activeAssembly.getAtomArray())
+//        double maxDist = ConvexHullOps.maxDist(quickHull3D)
+//        NeighborList neighborList = forceFieldEnergy.getNeighborList()
+//        int nAtoms = activeAssembly.getAtomArray().size()
+//        logger.info(format("** maxDist %4.8f nAtoms %d",maxDist,nAtoms))
+//        neighborList.buildOctree(nAtoms, forceFieldEnergy.getCrystal(), maxDist+2.0,8)
+
+        // Testing other Octree Method
+        // Create Octree particles from Atoms
+        Atom[] atoms = activeAssembly.getAtomArray()
+        ArrayList<OctreeParticle> particles = new ArrayList<>()
+        for (Atom atom : atoms){
+            double[] coords = new double[]{atom.getX(),atom.getY(),atom.getZ()}
+            OctreeParticle particle = new OctreeParticle(coords,1.0,atom.getCharge())
+            particles.add(particle)
+        }
+
+        // Use Particles to build a tree
+        int nCritical = 10
+        double theta = 0.5
+        Octree octree = new Octree(nCritical, atoms, theta, forceFieldEnergy.getPmeNode().globalMultipole)
+
+        // Determine maximum separation distance between any two atoms
+        QuickHull3D quickHull3D = ConvexHullOps.constructHull(atoms)
+        double maxDist = ConvexHullOps.maxDist(quickHull3D)
+
+        // Compute geometric center of atoms
+        double[] center = activeAssembly.computeGeometricCenter(atoms)
+
+        // Define root OctreeCell
+        OctreeCell root = new OctreeCell(nCritical)
+        root.setX(center[0])
+        root.setY(center[1])
+        root.setZ(center[2])
+        root.setR(maxDist*0.5)
+
+        // Build tree from root OctreeCell
+        octree.buildTree(root)
+        logger.info(format("Printing Cells from Octree"))
+        octree.printCells()
+
         if (moments) {
             logger.info("** Moments being calculated")
             NeighborList.Cell[][][] cells = neighborList.getCells()
@@ -252,7 +294,7 @@ class EnergyOctreeTest extends PotentialScript {
             for (int i = 0; i < numDivisions[0]; i++) {
                 for (int j = 0; j < numDivisions[1]; j++) {
                     for (int k = 0; k < numDivisions[2]; k++) {
-                        double sideLength = (2.0*radgy)+2.0
+                        double sideLength = maxDist+2.0
                         logger.info(format("** Side length passed to computeMomentsGeometric %2.4f",sideLength))
                         forceFieldEnergy.getPmeNode().computeMomentsGeometric(activeAssembly.getAtomArray(), false, cells[i][j][k], sideLength)
                     }

@@ -38,6 +38,8 @@
 package ffx.potential.nonbonded.octree;
 
 import java.util.ArrayList;
+import java.util.logging.Logger;
+import static java.lang.String.format;
 
 /**
  * OctreeCell: Object class for Octree method presented in the Fast Multipole Method (FMM) tutorial
@@ -45,6 +47,7 @@ import java.util.ArrayList;
  */
 public class OctreeCell {
 
+  private static final Logger logger = Logger.getLogger(Octree.class.getName());
   /**
    * Critical (maximum allowed) number of points allowed in any one cell: If a cell already contains
    * nCritical points, it needs to be split
@@ -54,6 +57,7 @@ public class OctreeCell {
   private int numLeaves = 0;
   /** Array of leaf indices */
   private ArrayList<Integer> leaves = new ArrayList<>();
+  private int[] leaf;
   /** Integer whose last 8 bits keep track of the empty child cells */
   private int nChild = 0;
   /** Array of child indices, length 8 */
@@ -74,7 +78,13 @@ public class OctreeCell {
   private double[] multipole = new double[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
   public OctreeCell(int nCritical) {
+
     setnCritical(nCritical);
+    // Fill leaf array with zeros
+    leaf = new int[nCritical];
+    for(int i = 0; i < nCritical; i++){
+      leaf[i] = 0;
+    }
   }
 
   public void addToMultipole(double[] calculatedMultipole) {
@@ -196,7 +206,8 @@ public class OctreeCell {
   }
 
   public void setLeaf(int index, int leaf) {
-    this.leaves.set(index, leaf);
+    this.leaf[index] =  leaf;
+    logger.info(format("leaf %d at index %d",leaf,index));
   }
 
   public void setnCritical(int nCrit) {

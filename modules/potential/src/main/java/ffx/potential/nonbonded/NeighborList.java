@@ -46,6 +46,7 @@ import static org.apache.commons.math3.util.FastMath.log;
 import static org.apache.commons.math3.util.FastMath.min;
 import static org.apache.commons.math3.util.FastMath.sqrt;
 
+import com.github.quickhull3d.QuickHull3D;
 import edu.rit.pj.BarrierAction;
 import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
@@ -56,6 +57,8 @@ import edu.rit.pj.reduction.SharedInteger;
 import edu.rit.util.Range;
 import ffx.crystal.Crystal;
 import ffx.potential.bonded.Atom;
+import ffx.potential.utils.ConvexHullOps;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -97,7 +100,8 @@ public class NeighborList extends ParallelRegion {
   private static final Logger logger = Logger.getLogger(NeighborList.class.getName());
 
   private final DomainDecomposition domainDecomposition;
-  private final DomainDecompositionOctree domainDecompositionOctree;
+  private DomainDecompositionOctree domainDecompositionOctree;
+  private boolean useOctree = true;
   /** The masking rules to apply when building the neighbor list. */
   private final MaskingInterface maskingRules;
   /** The cutoff beyond which the pairwise energy is zero. */
@@ -253,7 +257,12 @@ public class NeighborList extends ParallelRegion {
     // Initialize the neighbor list builder subcells.
     boolean print = logger.isLoggable(Level.FINE);
     domainDecomposition = new DomainDecomposition(nAtoms, crystal, cutoffPlusBuffer);
-    domainDecompositionOctree = new DomainDecompositionOctree(nAtoms, crystal, cutoffPlusBuffer, 2);
+
+    if(useOctree) {
+      QuickHull3D quickHull3D = ConvexHullOps.constructHull(atoms);
+      double maxDist = ConvexHullOps.maxDist(quickHull3D);
+      domainDecompositionOctree = new DomainDecompositionOctree(nAtoms, crystal, maxDist, 8);
+    }
     initNeighborList(print);
   }
 
@@ -285,6 +294,11 @@ public class NeighborList extends ParallelRegion {
       String message = "Fatal exception building neighbor list.\n";
       logger.log(Level.SEVERE, message, e);
     }
+  }
+
+  public void buildOctree(int nAtoms, Crystal crystal, double cutoffPlusBuffer, int dimension){
+
+//    domainDecompositionOctree.initDomainDecomposition(nAtoms, crystal);
   }
 
   /**
@@ -334,8 +348,8 @@ public class NeighborList extends ParallelRegion {
     if (print) {
       print();
     }
-    logger.info("NL dDO log in finish method");
-    domainDecompositionOctree.log();
+//    logger.info("NL dDO log in finish method");
+//    domainDecompositionOctree.log();
 
     // Update the pair-wise schedule.
     long scheduleTime = -System.nanoTime();
@@ -538,9 +552,11 @@ public class NeighborList extends ParallelRegion {
     }
 
     // Initialize DomainDecompositionOctree
+    if(useOctree) {
     domainDecompositionOctree.initDomainDecomposition(nAtoms, crystal);
 //    logger.info("NL dDO log in initNeighborList method");
-//    domainDecompositionOctree.log();
+    domainDecompositionOctree.log();
+    }
   }
 
   private void print() {
