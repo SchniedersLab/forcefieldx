@@ -328,7 +328,8 @@ class PhDynamics extends AlgorithmsScript {
         for (int i = 0; i < cycles; i++) {
           // Try running on the CPU
           molecularDynamics.setCoordinates(x)
-          molecularDynamics.dynamic(titrSteps, dynamicsOptions.dt, titrReport, dynamicsOptions.write,
+          double forceWriteInterval = titrSteps * 0.001;
+          molecularDynamics.dynamic(titrSteps, dynamicsOptions.dt, titrReport, forceWriteInterval,
                   dynamicsOptions.temperature, true, dyn)
           x = molecularDynamics.getCoordinates()
           esvSystem.writeLambdaHistogram(true)
