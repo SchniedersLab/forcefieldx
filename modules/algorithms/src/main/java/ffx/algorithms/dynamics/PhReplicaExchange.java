@@ -522,7 +522,7 @@ public class PhReplicaExchange implements Terminatable {
       pka[i] = temp[1];
 
       // Print results for this residue
-      String residueName = extendedSystem.getTitratingResidueList().get(i).getName();
+      String residueName = extendedSystem.getTitratingResidueList().get(i).toString();
       output.append(" Residue: ").append(residueName).append("\n");
       output.append(" Fractions (Dep / (Dep + Pro)): ").append(Arrays.toString(residueRatios[i])).append("\n");
       output.append(" pH window: ").append(Arrays.toString(pHScale)).append("\n");
