@@ -97,14 +97,7 @@ import ffx.potential.bonded.UreyBradley;
 import ffx.potential.constraint.CcmaConstraint;
 import ffx.potential.constraint.SettleConstraint;
 import ffx.potential.extended.ExtendedSystem;
-import ffx.potential.nonbonded.COMRestraint;
-import ffx.potential.nonbonded.CoordRestraint;
-import ffx.potential.nonbonded.GeneralizedKirkwood;
-import ffx.potential.nonbonded.NCSRestraint;
-import ffx.potential.nonbonded.ParticleMeshEwald;
-import ffx.potential.nonbonded.RestrainGroups;
-import ffx.potential.nonbonded.VanDerWaals;
-import ffx.potential.nonbonded.VanDerWaalsTornado;
+import ffx.potential.nonbonded.*;
 import ffx.potential.parameters.AngleType.AngleMode;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parameters.ForceField;
@@ -2692,6 +2685,8 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     }
     return mass;
   }
+
+  public NeighborList getNeighborList() {return vanderWaals.getNeighborList();}
 
   /**
    * {@inheritDoc}

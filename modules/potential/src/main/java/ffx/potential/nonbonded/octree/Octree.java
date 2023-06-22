@@ -38,8 +38,27 @@
 package ffx.potential.nonbonded.octree;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
+import static java.lang.String.format;
+import static ffx.potential.parameters.MultipoleType.t000;
+import static ffx.potential.parameters.MultipoleType.t001;
+import static ffx.potential.parameters.MultipoleType.t002;
+import static ffx.potential.parameters.MultipoleType.t010;
+import static ffx.potential.parameters.MultipoleType.t011;
+import static ffx.potential.parameters.MultipoleType.t020;
+import static ffx.potential.parameters.MultipoleType.t100;
+import static ffx.potential.parameters.MultipoleType.t101;
+import static ffx.potential.parameters.MultipoleType.t110;
+import static ffx.potential.parameters.MultipoleType.t200;
+import static ffx.utilities.Constants.ELEC_ANG_TO_DEBYE;
+import static org.apache.commons.math3.util.FastMath.sqrt;
+
+import ffx.potential.bonded.Atom;
+import ffx.potential.nonbonded.NeighborList;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.EigenDecomposition;
 
 /**
  * Octree method presented in the Fast Multipole Method (FMM) tutorial from the Barba Group:
@@ -55,10 +74,12 @@ public class Octree {
    * nCritical points, it needs to be split
    */
   private final int nCritical;
-  /** List of particles */
-  private final ArrayList<OctreeParticle> particles;
+  /** List of particles (atoms) */
+  private final Atom[] particles;
   /** Tolerance parameter */
   private final double theta;
+
+  private final double[][][] globalMultipole;
   /** List of cells */
   private ArrayList<OctreeCell> cells = new ArrayList<>();
 
@@ -68,11 +89,11 @@ public class Octree {
    *
    * @param particles ArrayList of type OctreeParticles of all particles to be used in tree
    */
-  public Octree(ArrayList<OctreeParticle> particles) {
-    this.particles = particles;
-    this.nCritical = 10;
-    this.theta = 0.5;
-  }
+//  public Octree(Atom[] particles) {
+//    this.particles = particles;
+//    this.nCritical = 10;
+//    this.theta = 0.5;
+//  }
 
   /**
    * Constructor allowing the specification of nCritical, default theta value
@@ -80,11 +101,11 @@ public class Octree {
    * @param nCritical Critical number of particles; cells must split when they reach nCritical
    * @param particles ArrayList of type OctreeParticles of all particles to be used in tree
    */
-  public Octree(int nCritical, ArrayList<OctreeParticle> particles) {
-    this.nCritical = nCritical;
-    this.particles = particles;
-    this.theta = 0.5;
-  }
+//  public Octree(int nCritical, Atom[] particles) {
+//    this.nCritical = nCritical;
+//    this.particles = particles;
+//    this.theta = 0.5;
+//  }
 
   /**
    * Constructor allowing the specification of nCritical and theta
@@ -93,10 +114,11 @@ public class Octree {
    * @param particles ArrayList of type OctreeParticles of all particles to be used in tree
    * @param theta Specifies near field vs far field
    */
-  public Octree(int nCritical, ArrayList<OctreeParticle> particles, double theta) {
+  public Octree(int nCritical, Atom[] particles, double theta, double[][][] globalMultipole) {
     this.nCritical = nCritical;
     this.particles = particles;
     this.theta = theta;
+    this.globalMultipole = globalMultipole;
   }
 
   /**
@@ -117,14 +139,21 @@ public class Octree {
 
     // Geometric reference between parent and child
     cells.get(c).setR((cells.get(p).getR()) * 0.5);
+    logger.info(format("oct & 1 %d",(octant & 1)));
+    logger.info(format("oct & 2 %d",(octant & 2)));
+    logger.info(format("oct & 4 %d",(octant & 4)));
     cells.get(c).setX((cells.get(p).getX()) * ((octant & 1) * 2 - 1));
     cells.get(c).setY((cells.get(p).getY()) * ((octant & 2) - 1));
     cells.get(c).setZ((cells.get(p).getZ()) * ((octant & 4) * 0.5 - 1));
 
     // Establish mutual reference in cells list
     cells.get(c).setParentIndex(p);
-    cells.get(c).setChildren(octant, c);
-    cells.get(c).setnChild(cells.get(p).getnChild() | (1 << octant));
+    cells.get(p).setChildren(octant, c);
+    // Bitwise operation to determine empty/non-empty child cells
+    logger.info(format("nChild before bitwise operation %d",cells.get(p).getnChild()));
+    cells.get(p).setnChild(cells.get(p).getnChild() | (1 << octant));
+    logger.info(format("+++cell %d is created as a child of cell %d",c,p));
+    logger.info(format("nChild after  bitwise operation %d",cells.get(p).getnChild()));
   }
 
   /**
@@ -140,10 +169,12 @@ public class Octree {
     cells.add(root);
 
     // Build tree
-    int n = particles.size();
+    int n = particles.length;
 
     for (int i = 0; i < n; i++) {
       int current = 0;
+
+//      logger.info(format("nLeaf at i %d : %d",i,cells.get(current).getNumLeaves()));
 
       while (cells.get(current).getNumLeaves() >= nCritical) {
         cells.get(current).setNumLeaves(cells.get(current).getNumLeaves() + 1);
@@ -151,13 +182,13 @@ public class Octree {
         int octY = 0;
         int octZ = 0;
 
-        if (particles.get(i).getX() > cells.get(current).getX()) {
+        if (particles[i].getX() > cells.get(current).getX()) {
           octX = 1;
         }
-        if (particles.get(i).getY() > cells.get(current).getY()) {
+        if (particles[i].getY() > cells.get(current).getY()) {
           octY = 1;
         }
-        if (particles.get(i).getZ() > cells.get(current).getZ()) {
+        if (particles[i].getZ() > cells.get(current).getZ()) {
           octZ = 1;
         }
 
@@ -167,7 +198,7 @@ public class Octree {
         // If there's not a child cell in the particle's octant, create one
         boolean noChildInOctant =
             BooleanUtils.toBoolean(cells.get(current).getnChild() & (1 << octant));
-        if (noChildInOctant) {
+        if (!noChildInOctant) {
           addChild(octant, current);
         }
 
@@ -177,9 +208,13 @@ public class Octree {
       // Allocate the particle in the leaf cell
       cells.get(current).setLeaf(cells.get(current).getNumLeaves(), i);
       cells.get(current).setNumLeaves(cells.get(current).getNumLeaves() + 1);
+      logger.info(format(">>>>particle %d stored in cell %d",i,current));
+
+//      logger.info(format("nLeaf at i %d after allocating particle: %d",i,cells.get(current).getNumLeaves()));
 
       // Check whether to split cell
       if (cells.get(current).getNumLeaves() >= nCritical) {
+        logger.info("Splitting cells in buildTree");
         splitCell(current);
       }
     }
@@ -187,21 +222,191 @@ public class Octree {
     // return cells;
   }
 
-  /** Direct summation. */
-  public void directSum() {
-    for (int i = 0; i < particles.size(); i++) {
-      for (int j = 0; j < particles.size(); j++) {
-        if (j != i) {
-          double r = particles.get(i).distance(particles.get(j));
-          particles.get(j).addToPhi(particles.get(j).getCharge() / r);
-        }
-      }
+  /**
+   * Compute multipole moments for an array of atoms using the geometric center of a domain decomposition box.
+   * Atoms passed in should be from the associated domain decomposition Cell
+   *
+   * @param cellAtoms Atom array to consider.
+   * @param cell NeighborList Cell containing cell index information and atom index information
+   */
+  public double[] computeMomentsGeometric(Atom[] cellAtoms, OctreeCell cell) {
+    logger.info("** Enters computeMomentsGeometric");
+    // Zero out total charge, dipole and quadrupole components.
+    var netchg = 0.0;
+    var netdpl = 0.0;
+    var xdpl = 0.0;
+    var ydpl = 0.0;
+    var zdpl = 0.0;
+    var xxqdp = 0.0;
+    var xyqdp = 0.0;
+    var xzqdp = 0.0;
+    var yxqdp = 0.0;
+    var yyqdp = 0.0;
+    var yzqdp = 0.0;
+    var zxqdp = 0.0;
+    var zyqdp = 0.0;
+    var zzqdp = 0.0;
+
+    // Find the geometric center of the cell.
+    double xmid = cell.getX();
+    double ymid = cell.getY();
+    double zmid = cell.getZ();
+
+    logger.info(format("Geometric Center of Cell : %4.4f , %4.4f , %4.4f",xmid,ymid,zmid));
+
+    // Get atoms within OctreeCell
+    int n = cellAtoms.length;
+
+    double[] xcm = new double[n];
+    double[] ycm = new double[n];
+    double[] zcm = new double[n];
+    int k = 0;
+    for (Atom atom : cellAtoms) {
+      xcm[k] = atom.getX() - xmid;
+      ycm[k] = atom.getY() - ymid;
+      zcm[k] = atom.getZ() - zmid;
+      k++;
     }
-    // Reset potential for all particles
-    for (OctreeParticle particle : particles) {
-      particle.addToPhi(0);
+
+    // Account for charge, dipoles and induced dipoles.
+    k = 0;
+    for (Atom atom : cellAtoms) {
+      int i = atom.getIndex() - 1;
+      double[] globalMultipolei = globalMultipole[0][i];
+//      double[] inducedDipolei = inducedDipole[0][i];
+
+      var ci = globalMultipolei[t000];
+      var dix = globalMultipolei[t100];
+      var diy = globalMultipolei[t010];
+      var diz = globalMultipolei[t001];
+//      var uix = inducedDipolei[0];
+//      var uiy = inducedDipolei[1];
+//      var uiz = inducedDipolei[2];
+
+      netchg += ci;
+      xdpl += xcm[k] * ci + dix;
+      ydpl += ycm[k] * ci + diy;
+      zdpl += zcm[k] * ci + diz;
+      xxqdp += xcm[k] * xcm[k] * ci + 2.0 * xcm[k] * (dix);
+      xyqdp += xcm[k] * ycm[k] * ci + xcm[k] * (diy) + ycm[k] * (dix);
+      xzqdp += xcm[k] * zcm[k] * ci + xcm[k] * (diz) + zcm[k] * (dix);
+      yxqdp += ycm[k] * xcm[k] * ci + ycm[k] * (dix) + xcm[k] * (diy);
+      yyqdp += ycm[k] * ycm[k] * ci + 2.0 * ycm[k] * (diy);
+      yzqdp += ycm[k] * zcm[k] * ci + ycm[k] * (diz) + zcm[k] * (diy);
+      zxqdp += zcm[k] * xcm[k] * ci + zcm[k] * (dix) + xcm[k] * (diz);
+      zyqdp += zcm[k] * ycm[k] * ci + zcm[k] * (diy) + ycm[k] * (diz);
+      zzqdp += zcm[k] * zcm[k] * ci + 2.0 * zcm[k] * (diz);
+
+      logger.info(format("Cell %d   Charge %4.4f    Dipole %4.4f %4.4f %4.4f",cell.getParentIndex(),netchg,xdpl,ydpl,zdpl));
+
+//      xdpl += xcm[k] * ci + dix + uix;
+//      ydpl += ycm[k] * ci + diy + uiy;
+//      zdpl += zcm[k] * ci + diz + uiz;
+//      xxqdp += xcm[k] * xcm[k] * ci + 2.0 * xcm[k] * (dix + uix);
+//      xyqdp += xcm[k] * ycm[k] * ci + xcm[k] * (diy + uiy) + ycm[k] * (dix + uix);
+//      xzqdp += xcm[k] * zcm[k] * ci + xcm[k] * (diz + uiz) + zcm[k] * (dix + uix);
+//      yxqdp += ycm[k] * xcm[k] * ci + ycm[k] * (dix + uix) + xcm[k] * (diy + uiy);
+//      yyqdp += ycm[k] * ycm[k] * ci + 2.0 * ycm[k] * (diy + uiy);
+//      yzqdp += ycm[k] * zcm[k] * ci + ycm[k] * (diz + uiz) + zcm[k] * (diy + uiy);
+//      zxqdp += zcm[k] * xcm[k] * ci + zcm[k] * (dix + uix) + xcm[k] * (diz + uiz);
+//      zyqdp += zcm[k] * ycm[k] * ci + zcm[k] * (diy + uiy) + ycm[k] * (diz + uiz);
+//      zzqdp += zcm[k] * zcm[k] * ci + 2.0 * zcm[k] * (diz + uiz);
+
+      k++;
     }
+
+    // Convert the quadrupole from traced to traceless form.
+    var qave = (xxqdp + yyqdp + zzqdp) / 3.0;
+    xxqdp = 1.5 * (xxqdp - qave);
+    xyqdp = 1.5 * xyqdp;
+    xzqdp = 1.5 * xzqdp;
+    yxqdp = 1.5 * yxqdp;
+    yyqdp = 1.5 * (yyqdp - qave);
+    yzqdp = 1.5 * yzqdp;
+    zxqdp = 1.5 * zxqdp;
+    zyqdp = 1.5 * zyqdp;
+    zzqdp = 1.5 * (zzqdp - qave);
+
+    // Add the traceless atomic quadrupoles to total quadrupole.
+    for (Atom atom : cellAtoms) {
+      int i = atom.getIndex() - 1;
+      double[] globalMultipolei = globalMultipole[0][i];
+      var qixx = globalMultipolei[t200];
+      var qiyy = globalMultipolei[t020];
+      var qizz = globalMultipolei[t002];
+      var qixy = globalMultipolei[t110];
+      var qixz = globalMultipolei[t101];
+      var qiyz = globalMultipolei[t011];
+      xxqdp += qixx;
+      xyqdp += qixy;
+      xzqdp += qixz;
+      yxqdp += qixy;
+      yyqdp += qiyy;
+      yzqdp += qiyz;
+      zxqdp += qixz;
+      zyqdp += qiyz;
+      zzqdp += qizz;
+    }
+
+    // Convert dipole to Debye and quadrupole to Buckingham.
+    xdpl = xdpl * ELEC_ANG_TO_DEBYE;
+    ydpl = ydpl * ELEC_ANG_TO_DEBYE;
+    zdpl = zdpl * ELEC_ANG_TO_DEBYE;
+    xxqdp = xxqdp * ELEC_ANG_TO_DEBYE;
+    xyqdp = xyqdp * ELEC_ANG_TO_DEBYE;
+    xzqdp = xzqdp * ELEC_ANG_TO_DEBYE;
+    yxqdp = yxqdp * ELEC_ANG_TO_DEBYE;
+    yyqdp = yyqdp * ELEC_ANG_TO_DEBYE;
+    yzqdp = yzqdp * ELEC_ANG_TO_DEBYE;
+    zxqdp = zxqdp * ELEC_ANG_TO_DEBYE;
+    zyqdp = zyqdp * ELEC_ANG_TO_DEBYE;
+    zzqdp = zzqdp * ELEC_ANG_TO_DEBYE;
+
+    // Get dipole magnitude and diagonalize quadrupole tensor.
+    netdpl = sqrt(xdpl * xdpl + ydpl * ydpl + zdpl * zdpl);
+    double[][] a = new double[3][3];
+    a[0][0] = xxqdp;
+    a[0][1] = xyqdp;
+    a[0][2] = xzqdp;
+    a[1][0] = yxqdp;
+    a[1][1] = yyqdp;
+    a[1][2] = yzqdp;
+    a[2][0] = zxqdp;
+    a[2][1] = zyqdp;
+    a[2][2] = zzqdp;
+    EigenDecomposition e = new EigenDecomposition(new Array2DRowRealMatrix(a));
+    // Eigenvalues are returned in descending order, but logged below in ascending order.
+    var netqdp = e.getRealEigenvalues();
+
+    logger.info(format("\n Electric Moments for Cell %d\n",cell.getParentIndex()));
+    logger.info(format("  Total Electric Charge:    %13.5f Electrons\n", netchg));
+    logger.info(format("  Dipole Moment Magnitude:  %13.5f Debye\n", netdpl));
+    logger.info(format("  Dipole X,Y,Z-Components:  %13.5f %13.5f %13.5f\n", xdpl, ydpl, zdpl));
+    logger.info(format("  Quadrupole Moment Tensor: %13.5f %13.5f %13.5f", xxqdp, xyqdp, xzqdp));
+    logger.info(format("       (Buckinghams)        %13.5f %13.5f %13.5f", yxqdp, yyqdp, yzqdp));
+    logger.info(format("                            %13.5f %13.5f %13.5f\n", zxqdp, zyqdp, zzqdp));
+    logger.info(
+            format(
+                    "  Principal Axes Quadrupole %13.5f %13.5f %13.5f\n", netqdp[2], netqdp[1], netqdp[0]));
+
+    return new double[]{netchg,xdpl,ydpl,zdpl,xxqdp,yyqdp,zzqdp,xyqdp,xzqdp,yzqdp};
   }
+
+  /** Direct summation. */
+//  public void directSum() {
+//    for (int i = 0; i < particles.length; i++) {
+//      for (int j = 0; j < particles.length; j++) {
+//        if (j != i) {
+//          double r = particles[i].distance(particles[j]);
+//          particles[j].addToPhi(particles[j].getCharge() / r);
+//        }
+//      }
+//    }
+//    // Reset potential for all particles
+//    for (Atom particle : particles) {
+//      particle.addToPhi(0);
+//    }
+//  }
 
   /**
    * Compute a distance between a position and the OctreePoint.
@@ -218,11 +423,11 @@ public class Octree {
   }
 
   /** Evaluate potential at all target points */
-  public void evalPotnetial() {
-    for (int i = 0; i < particles.size(); i++) {
-      evalAtTarget(0, i);
-    }
-  }
+//  public void evalPotnetial() {
+//    for (int i = 0; i < particles.length; i++) {
+//      evalAtTarget(0, i);
+//    }
+//  }
 
   /**
    * Compute the L2 error.
@@ -255,40 +460,47 @@ public class Octree {
    * @param p Cell index.
    */
   private void splitCell(int p) {
+    logger.info(format("================= start of split cell %d =====================",p));
     for (int i = 0; i < nCritical; i++) {
+//      logger.info(format("parent index %d nCrit %d",p,nCritical));
       int octX = 0;
       int octY = 0;
       int octZ = 0;
 
-      if (particles.get(i).getX() > cells.get(p).getX()) {
+      if (particles[i].getX() > cells.get(p).getX()) {
         octX = 1;
       }
-      if (particles.get(i).getY() > cells.get(p).getY()) {
+      if (particles[i].getY() > cells.get(p).getY()) {
         octY = 1;
       }
-      if (particles.get(i).getZ() > cells.get(p).getZ()) {
+      if (particles[i].getZ() > cells.get(p).getZ()) {
         octZ = 1;
       }
 
       // Find particle's octant - should be an integer from 0 to 7
       int octant = octX + (octY << 1) + (octZ << 2);
+//      logger.info(format("Child octant %d",octant));
 
       // If there's not a child cell in the particle's octant, create one
       boolean noChildInOctant = BooleanUtils.toBoolean(cells.get(p).getnChild() & (1 << octant));
-      if (noChildInOctant) {
+      if (!noChildInOctant) {
+//        logger.info(format("No child at octant %d for parent %d",octant,p));
         addChild(octant, p);
       }
 
       // Reallocate the particle in the child cell
       int c = cells.get(p).getChildAtIndex(octant);
-      cells.get(c).setLeaf(cells.get(c).getNumLeaves(), 1);
+//      logger.info(format("c %d c leaves %d",c, cells.get(c).getNumLeaves()));
+      cells.get(c).setLeaf(cells.get(c).getNumLeaves(), i);
       cells.get(c).setNumLeaves(cells.get(c).getNumLeaves() + 1);
+      logger.info(format(">>>> particle %d is reallocated to cell %d",i,c));
 
       // Check if child cell reaches nCritical - split recursively if so
       if (cells.get(c).getNumLeaves() >= nCritical) {
         splitCell(c);
       }
     }
+    logger.info(format("================= end of split cell %d =====================",p));
   }
 
   /**
@@ -309,32 +521,17 @@ public class Octree {
       // Loop in leaf particles, do P2M
       for (int i = 0; i < cells.get(p).getNumLeaves(); i++) {
         int l = cells.get(p).getLeavesValueAtIndex(i);
-        double dx = cells.get(p).getX() - particles.get(l).getX();
-        double dy = cells.get(p).getY() - particles.get(l).getY();
-        double dz = cells.get(p).getZ() - particles.get(l).getZ();
+        Atom[] atom = new Atom[]{particles[l]};
 
         // Calculate Multipole and fill array
-        double charge = particles.get(l).getCharge();
-        double[] calculatedMultipole = new double[10];
-        // Monopole (charge)
-        calculatedMultipole[0] = charge;
-        // Dipole
-        calculatedMultipole[1] = dx * charge;
-        calculatedMultipole[2] = dy * charge;
-        calculatedMultipole[3] = dz * charge;
-        // Quadropole
-        calculatedMultipole[4] = (Math.pow(dx, 2) * 0.5) * charge;
-        calculatedMultipole[5] = (Math.pow(dy, 2) * 0.5) * charge;
-        calculatedMultipole[6] = (Math.pow(dz, 2) * 0.5) * charge;
-        calculatedMultipole[7] = ((dx * dy) * 0.5) * charge;
-        calculatedMultipole[8] = ((dy * dz) * 0.5) * charge;
-        calculatedMultipole[9] = ((dz * dx) * 0.5) * charge;
+        double[] calculatedMultipole = computeMomentsGeometric(atom,cells.get(p));
+        logger.info(format("Multipole for cell %d : ch %4.4f ",calculatedMultipole[0]));
+        logger.info(format("                        dx %4.4f dy %4.4f dz %4.4f",calculatedMultipole[1],calculatedMultipole[2],calculatedMultipole[3]));
+        logger.info(format("                        dxx %4.4f dyy %4.4f dzz %4.4f",calculatedMultipole[4],calculatedMultipole[5],calculatedMultipole[6]));
+        logger.info(format("                        dxy %4.4f dxz %4.4f dyz %4.4f",calculatedMultipole[7],calculatedMultipole[8],calculatedMultipole[9]));
 
         // Set Multipole
         cells.get(p).addToMultipole(calculatedMultipole);
-
-        // TODO: decide if leaves should be an array or ArrayList and adjust accordingly
-        leaves.add(p);
       }
     }
   }
@@ -389,66 +586,75 @@ public class Octree {
     cells.get(p).addToMultipole(additionalMultipoleTerms);
   }
 
-  /**
-   * Evaluate potential at one target
-   *
-   * @param p Index of parent cell
-   * @param i Index of target particle
-   */
-  private void evalAtTarget(int p, int i) {
+//  /**
+//   * Evaluate potential at one target
+//   *
+//   * @param p Index of parent cell
+//   * @param i Index of target particle
+//   */
+//  private void evalAtTarget(int p, int i) {
+//
+//    // Non-leaf cell
+//    if (cells.get(p).getNumLeaves() >= nCritical) {
+//
+//      // Loop through p's child cells (8 octants)
+//      for (int oct = 0; oct < 8; oct++) {
+//        if (BooleanUtils.toBoolean(cells.get(p).getnChild() & (1 << oct))) {
+//          int c = cells.get(p).getChildAtIndex(oct);
+//          double r = particles.get(i).distance(cells.get(c));
+//
+//          // Near field child cell
+//          if (cells.get(c).getR() > theta * r) {
+//            evalAtTarget(c, i);
+//          } else { // Far field child cell
+//            double dx = particles.get(i).getX() - cells.get(c).getX();
+//            double dy = particles.get(i).getY() - cells.get(c).getY();
+//            double dz = particles.get(i).getZ() - cells.get(c).getZ();
+//            double r3 = Math.pow(r, 3);
+//            double r5 = r3 * Math.pow(r, 2);
+//
+//            // Calculate the weight from each multipole
+//            double[] weight = new double[10];
+//            weight[0] = 1 / r;
+//            weight[1] = -dx / r3;
+//            weight[2] = -dy / r3;
+//            weight[3] = -dz / r3;
+//            weight[4] = (3 * Math.pow(dx, 2)) / r5 - (1 / r3);
+//            weight[5] = (3 * Math.pow(dy, 2)) / r5 - (1 / r3);
+//            weight[6] = (3 * Math.pow(dz, 2)) / r5 - (1 / r3);
+//            weight[7] = 3 * dx * dy / r5;
+//            weight[8] = 3 * dy * dz / r5;
+//            weight[9] = 3 * dz * dx / r5;
+//
+//            // Calculate dot product of multipole array and weight array
+//            double dotProduct = 0.0;
+//            for (int d = 0; d < weight.length; d++) {
+//              double[] multipoleArray = cells.get(c).getMultipole();
+//              dotProduct = dotProduct + multipoleArray[d] * weight[d];
+//            }
+//
+//            particles.get(i).addToPhi(dotProduct);
+//          }
+//        } else { // Leaf Cell
+//          // Loop in twig cell's particles
+//          for (int j = 0; j < cells.get(p).getNumLeaves(); j++) {
+//            OctreeParticle source = particles.get(cells.get(p).getLeavesValueAtIndex(j));
+//            double r = particles.get(i).distance(source);
+//            if (r != 0) {
+//              particles.get(i).addToPhi(source.getCharge() / r);
+//            }
+//          }
+//        }
+//      }
+//    }
+//  }
 
-    // Non-leaf cell
-    if (cells.get(p).getNumLeaves() >= nCritical) {
-
-      // Loop through p's child cells (8 octants)
-      for (int oct = 0; oct < 8; oct++) {
-        if (BooleanUtils.toBoolean(cells.get(p).getnChild() & (1 << oct))) {
-          int c = cells.get(p).getChildAtIndex(oct);
-          double r = particles.get(i).distance(cells.get(c));
-
-          // Near field child cell
-          if (cells.get(c).getR() > theta * r) {
-            evalAtTarget(c, i);
-          } else { // Far field child cell
-            double dx = particles.get(i).getX() - cells.get(c).getX();
-            double dy = particles.get(i).getY() - cells.get(c).getY();
-            double dz = particles.get(i).getZ() - cells.get(c).getZ();
-            double r3 = Math.pow(r, 3);
-            double r5 = r3 * Math.pow(r, 2);
-
-            // Calculate the weight from each multipole
-            double[] weight = new double[10];
-            weight[0] = 1 / r;
-            weight[1] = -dx / r3;
-            weight[2] = -dy / r3;
-            weight[3] = -dz / r3;
-            weight[4] = (3 * Math.pow(dx, 2)) / r5 - (1 / r3);
-            weight[5] = (3 * Math.pow(dy, 2)) / r5 - (1 / r3);
-            weight[6] = (3 * Math.pow(dz, 2)) / r5 - (1 / r3);
-            weight[7] = 3 * dx * dy / r5;
-            weight[8] = 3 * dy * dz / r5;
-            weight[9] = 3 * dz * dx / r5;
-
-            // Calculate dot product of multipole array and weight array
-            double dotProduct = 0.0;
-            for (int d = 0; d < weight.length; d++) {
-              double[] multipoleArray = cells.get(c).getMultipole();
-              dotProduct = dotProduct + multipoleArray[d] * weight[d];
-            }
-
-            particles.get(i).addToPhi(dotProduct);
-          }
-        } else { // Leaf Cell
-          // Loop in twig cell's particles
-          for (int j = 0; j < cells.get(p).getNumLeaves(); j++) {
-            OctreeParticle source = particles.get(cells.get(p).getLeavesValueAtIndex(j));
-            double r = particles.get(i).distance(source);
-            if (r != 0) {
-              particles.get(i).addToPhi(source.getCharge() / r);
-            }
-          }
-        }
-      }
+  public void printCells(){
+    for(OctreeCell cell : cells){
+      logger.info(format("Cell parent index %d nLeaves %d children %d %d %d %d %d %d %d %d \n",
+              cell.getParentIndex(), cell.getNumLeaves(), cell.getChildAtIndex(0), cell.getChildAtIndex(1),
+              cell.getChildAtIndex(2), cell.getChildAtIndex(3), cell.getChildAtIndex(4),
+              cell.getChildAtIndex(5), cell.getChildAtIndex(6), cell.getChildAtIndex(7)));
     }
   }
 }

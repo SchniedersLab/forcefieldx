@@ -235,6 +235,10 @@ public class ParticleMeshEwald implements LambdaInterface {
    * Neighbor lists, including atoms beyond the real space cutoff. [nsymm][nAtoms][nAllNeighbors]
    */
   public int[][][] neighborLists;
+  /**
+   * Neighbor list cells
+   */
+  public NeighborList.Cell[][][] cells;
   /** Cartesian multipoles in the global frame with dimensions of [nsymm][nAtoms][10] */
   public double[][][] globalMultipole;
   /** Fractional multipoles in the global frame with dimensions of [nsymm][nAtoms][10] */
@@ -403,6 +407,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     this.neighborList = neighborList;
     this.elecForm = elecForm;
     neighborLists = neighborList.getNeighborList();
+    cells = neighborList.getCells();
     permanentSchedule = neighborList.getPairwiseSchedule();
     nAtoms = atoms.length;
     nSymm = crystal.spaceGroup.getNumberOfSymOps();
@@ -755,7 +760,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         atoms, coordinates, crystal, frame, axisAtom, globalMultipole,
         dMultipoledTirationESV, dMultipoledTautomerESV,
         polarizability, dPolardTitrationESV, dPolardTautomerESV,
-        thole, ipdamp, use, neighborLists,
+        thole, ipdamp, use, neighborLists, cells,
         realSpaceNeighborParameters.realSpaceLists,
         alchemicalParameters.vaporLists,
         grad, torque, lambdaGrad, lambdaTorque);
@@ -2040,7 +2045,7 @@ public class ParticleMeshEwald implements LambdaInterface {
       field.reset(parallelTeam);
       fieldCR.reset(parallelTeam);
       permanentFieldRegion.init(atoms, crystal, coordinates,
-          globalMultipole, inducedDipole, inducedDipoleCR, neighborLists,
+          globalMultipole, inducedDipole, inducedDipoleCR, neighborLists, cells,
           scaleParameters, use, molecule, ipdamp, thole, ip11,
           mask12, mask13, mask14, lambdaMode, reciprocalSpaceTerm, reciprocalSpace,
           ewaldParameters, pcgSolver, permanentSchedule, realSpaceNeighborParameters,
@@ -2784,6 +2789,383 @@ public class ParticleMeshEwald implements LambdaInterface {
     logger.info(
         format(
             "  Principal Axes Quadrupole %13.5f %13.5f %13.5f\n", netqdp[2], netqdp[1], netqdp[0]));
+  }
+
+  /**
+   * Compute multipole moments for an array of atoms using the geometric center of a domain decomposition box.
+   * Atoms passed in should be from the associated domain decomposition Cell
+   *
+   * @param activeAtoms Atom array to consider.
+   * @param forceEnergy Force calculation of the electrostatic energy (rotate multipoles, perform
+   *     SCF).
+   * @param cell NeighborList Cell containing cell index information and atom index information
+   * @param sideLength Length (Angstroms) of the side of a single cell in the domain decomposition
+   */
+  public void computeMomentsGeometric(Atom[] activeAtoms, boolean forceEnergy, NeighborList.Cell cell, double sideLength) {
+    logger.info("** Enters computeMomentsGeometric");
+    // Zero out total charge, dipole and quadrupole components.
+    var netchg = 0.0;
+    var netdpl = 0.0;
+    var xdpl = 0.0;
+    var ydpl = 0.0;
+    var zdpl = 0.0;
+    var xxqdp = 0.0;
+    var xyqdp = 0.0;
+    var xzqdp = 0.0;
+    var yxqdp = 0.0;
+    var yyqdp = 0.0;
+    var yzqdp = 0.0;
+    var zxqdp = 0.0;
+    var zyqdp = 0.0;
+    var zzqdp = 0.0;
+
+    // Find the geometric center of the cell.
+    int aind = cell.getIndices()[0];
+    int bind = cell.getIndices()[1];
+    int cind = cell.getIndices()[2];
+    double xmid = sideLength * (aind) + sideLength * 0.5;
+    double ymid = sideLength * (bind) + sideLength * 0.5;
+    double zmid = sideLength * (cind) + sideLength * 0.5;
+
+    logger.info(format("Geometric Center of Cell %d %d %d : %4.4f , %4.4f , %4.4f",aind,bind,cind,xmid,ymid,zmid));
+
+    // Get atom indices within Cell
+    List<NeighborList.AtomIndex> atomIndexList = cell.getAtomIndexList();
+    int n = atomIndexList.size();
+    Atom[] cellAtoms = new Atom[n];
+    logger.info(format("cMG Number of atoms in cell %d %d %d : %d",aind,bind,cind,cellAtoms.length));
+
+    // Get array of atoms contained in current cell
+    int j = 0;
+    for (NeighborList.AtomIndex index : atomIndexList){
+      cellAtoms[j] = activeAtoms[index.i];
+      j++;
+    }
+
+    double[] xcm = new double[n];
+    double[] ycm = new double[n];
+    double[] zcm = new double[n];
+    int k = 0;
+    for (Atom atom : cellAtoms) {
+      xcm[k] = atom.getX() - xmid;
+      ycm[k] = atom.getY() - ymid;
+      zcm[k] = atom.getZ() - zmid;
+      k++;
+    }
+
+    if (forceEnergy) {
+      energy(false, false);
+    }
+
+    // Account for charge, dipoles and induced dipoles.
+    k = 0;
+    for (Atom atom : cellAtoms) {
+      int i = atom.getIndex() - 1;
+      double[] globalMultipolei = globalMultipole[0][i];
+//      double[] inducedDipolei = inducedDipole[0][i];
+
+      var ci = globalMultipolei[t000];
+      var dix = globalMultipolei[t100];
+      var diy = globalMultipolei[t010];
+      var diz = globalMultipolei[t001];
+//      var uix = inducedDipolei[0];
+//      var uiy = inducedDipolei[1];
+//      var uiz = inducedDipolei[2];
+
+      netchg += ci;
+      xdpl += xcm[k] * ci + dix;
+      ydpl += ycm[k] * ci + diy;
+      zdpl += zcm[k] * ci + diz;
+      xxqdp += xcm[k] * xcm[k] * ci + 2.0 * xcm[k] * (dix);
+      xyqdp += xcm[k] * ycm[k] * ci + xcm[k] * (diy) + ycm[k] * (dix);
+      xzqdp += xcm[k] * zcm[k] * ci + xcm[k] * (diz) + zcm[k] * (dix);
+      yxqdp += ycm[k] * xcm[k] * ci + ycm[k] * (dix) + xcm[k] * (diy);
+      yyqdp += ycm[k] * ycm[k] * ci + 2.0 * ycm[k] * (diy);
+      yzqdp += ycm[k] * zcm[k] * ci + ycm[k] * (diz) + zcm[k] * (diy);
+      zxqdp += zcm[k] * xcm[k] * ci + zcm[k] * (dix) + xcm[k] * (diz);
+      zyqdp += zcm[k] * ycm[k] * ci + zcm[k] * (diy) + ycm[k] * (diz);
+      zzqdp += zcm[k] * zcm[k] * ci + 2.0 * zcm[k] * (diz);
+
+      logger.info(format("Cell %d %d %d    Charge %4.4f    Dipole %4.4f %4.4f %4.4f",aind,bind,cind,netchg,xdpl,ydpl,zdpl));
+
+//      xdpl += xcm[k] * ci + dix + uix;
+//      ydpl += ycm[k] * ci + diy + uiy;
+//      zdpl += zcm[k] * ci + diz + uiz;
+//      xxqdp += xcm[k] * xcm[k] * ci + 2.0 * xcm[k] * (dix + uix);
+//      xyqdp += xcm[k] * ycm[k] * ci + xcm[k] * (diy + uiy) + ycm[k] * (dix + uix);
+//      xzqdp += xcm[k] * zcm[k] * ci + xcm[k] * (diz + uiz) + zcm[k] * (dix + uix);
+//      yxqdp += ycm[k] * xcm[k] * ci + ycm[k] * (dix + uix) + xcm[k] * (diy + uiy);
+//      yyqdp += ycm[k] * ycm[k] * ci + 2.0 * ycm[k] * (diy + uiy);
+//      yzqdp += ycm[k] * zcm[k] * ci + ycm[k] * (diz + uiz) + zcm[k] * (diy + uiy);
+//      zxqdp += zcm[k] * xcm[k] * ci + zcm[k] * (dix + uix) + xcm[k] * (diz + uiz);
+//      zyqdp += zcm[k] * ycm[k] * ci + zcm[k] * (diy + uiy) + ycm[k] * (diz + uiz);
+//      zzqdp += zcm[k] * zcm[k] * ci + 2.0 * zcm[k] * (diz + uiz);
+
+      k++;
+    }
+
+    // Convert the quadrupole from traced to traceless form.
+    var qave = (xxqdp + yyqdp + zzqdp) / 3.0;
+    xxqdp = 1.5 * (xxqdp - qave);
+    xyqdp = 1.5 * xyqdp;
+    xzqdp = 1.5 * xzqdp;
+    yxqdp = 1.5 * yxqdp;
+    yyqdp = 1.5 * (yyqdp - qave);
+    yzqdp = 1.5 * yzqdp;
+    zxqdp = 1.5 * zxqdp;
+    zyqdp = 1.5 * zyqdp;
+    zzqdp = 1.5 * (zzqdp - qave);
+
+    // Add the traceless atomic quadrupoles to total quadrupole.
+    for (Atom atom : cellAtoms) {
+      int i = atom.getIndex() - 1;
+      double[] globalMultipolei = globalMultipole[0][i];
+      var qixx = globalMultipolei[t200];
+      var qiyy = globalMultipolei[t020];
+      var qizz = globalMultipolei[t002];
+      var qixy = globalMultipolei[t110];
+      var qixz = globalMultipolei[t101];
+      var qiyz = globalMultipolei[t011];
+      xxqdp += qixx;
+      xyqdp += qixy;
+      xzqdp += qixz;
+      yxqdp += qixy;
+      yyqdp += qiyy;
+      yzqdp += qiyz;
+      zxqdp += qixz;
+      zyqdp += qiyz;
+      zzqdp += qizz;
+    }
+
+    // Convert dipole to Debye and quadrupole to Buckingham.
+    xdpl = xdpl * ELEC_ANG_TO_DEBYE;
+    ydpl = ydpl * ELEC_ANG_TO_DEBYE;
+    zdpl = zdpl * ELEC_ANG_TO_DEBYE;
+    xxqdp = xxqdp * ELEC_ANG_TO_DEBYE;
+    xyqdp = xyqdp * ELEC_ANG_TO_DEBYE;
+    xzqdp = xzqdp * ELEC_ANG_TO_DEBYE;
+    yxqdp = yxqdp * ELEC_ANG_TO_DEBYE;
+    yyqdp = yyqdp * ELEC_ANG_TO_DEBYE;
+    yzqdp = yzqdp * ELEC_ANG_TO_DEBYE;
+    zxqdp = zxqdp * ELEC_ANG_TO_DEBYE;
+    zyqdp = zyqdp * ELEC_ANG_TO_DEBYE;
+    zzqdp = zzqdp * ELEC_ANG_TO_DEBYE;
+
+    // Get dipole magnitude and diagonalize quadrupole tensor.
+    netdpl = sqrt(xdpl * xdpl + ydpl * ydpl + zdpl * zdpl);
+    double[][] a = new double[3][3];
+    a[0][0] = xxqdp;
+    a[0][1] = xyqdp;
+    a[0][2] = xzqdp;
+    a[1][0] = yxqdp;
+    a[1][1] = yyqdp;
+    a[1][2] = yzqdp;
+    a[2][0] = zxqdp;
+    a[2][1] = zyqdp;
+    a[2][2] = zzqdp;
+    EigenDecomposition e = new EigenDecomposition(new Array2DRowRealMatrix(a));
+    // Eigenvalues are returned in descending order, but logged below in ascending order.
+    var netqdp = e.getRealEigenvalues();
+
+    logger.info(format("\n Electric Moments for Cell A%d B%d C%d\n",cell.getIndices()[0], cell.getIndices()[1], cell.getIndices()[2]));
+    logger.info(format("  Total Electric Charge:    %13.5f Electrons\n", netchg));
+    logger.info(format("  Dipole Moment Magnitude:  %13.5f Debye\n", netdpl));
+    logger.info(format("  Dipole X,Y,Z-Components:  %13.5f %13.5f %13.5f\n", xdpl, ydpl, zdpl));
+    logger.info(format("  Quadrupole Moment Tensor: %13.5f %13.5f %13.5f", xxqdp, xyqdp, xzqdp));
+    logger.info(format("       (Buckinghams)        %13.5f %13.5f %13.5f", yxqdp, yyqdp, yzqdp));
+    logger.info(format("                            %13.5f %13.5f %13.5f\n", zxqdp, zyqdp, zzqdp));
+    logger.info(
+            format(
+                    "  Principal Axes Quadrupole %13.5f %13.5f %13.5f\n", netqdp[2], netqdp[1], netqdp[0]));
+  }
+
+  /**
+   * Compute multipole moments for an array of atoms using the geometric center of a domain decomposition box.
+   * Atoms passed in should be from the associated domain decomposition Cell
+   *
+   * @param activeAtoms Atom array to consider.
+   * @param forceEnergy Force calculation of the electrostatic energy (rotate multipoles, perform
+   *     SCF).
+   * @param cell NeighborList Cell containing cell index information and atom index information
+   */
+  public double[] getMomentsGeometric(Atom[] activeAtoms, boolean forceEnergy, NeighborList.Cell cell) {
+    logger.info("** Enters getMomentsGeometric");
+    // Zero out total charge, dipole and quadrupole components.
+    var netchg = 0.0;
+    var netdpl = 0.0;
+    var xdpl = 0.0;
+    var ydpl = 0.0;
+    var zdpl = 0.0;
+    var xxqdp = 0.0;
+    var xyqdp = 0.0;
+    var xzqdp = 0.0;
+    var yxqdp = 0.0;
+    var yyqdp = 0.0;
+    var yzqdp = 0.0;
+    var zxqdp = 0.0;
+    var zyqdp = 0.0;
+    var zzqdp = 0.0;
+
+    // Find the geometric center of the cell.
+    int aind = cell.getIndices()[0];
+    int bind = cell.getIndices()[1];
+    int cind = cell.getIndices()[2];
+    double xmid = cell.sideLength * (aind) + cell.sideLength * 0.5;
+    double ymid = cell.sideLength * (bind) + cell.sideLength * 0.5;
+    double zmid = cell.sideLength * (cind) + cell.sideLength * 0.5;
+
+//    logger.info(format("Geometric Center of Cell %d %d %d : %4.4f , %4.4f , %4.4f",aind,bind,cind,xmid,ymid,zmid));
+
+    // Get atom indices within Cell
+    List<NeighborList.AtomIndex> atomIndexList = cell.getAtomIndexList();
+    int n = atomIndexList.size();
+    Atom[] cellAtoms = new Atom[n];
+//    logger.info(format("cMG Number of atoms in cell %d %d %d : %d",aind,bind,cind,cellAtoms.length));
+
+    // Get array of atoms contained in current cell
+    int j = 0;
+    for (NeighborList.AtomIndex index : atomIndexList){
+      cellAtoms[j] = activeAtoms[index.i];
+      j++;
+    }
+
+    double[] xcm = new double[n];
+    double[] ycm = new double[n];
+    double[] zcm = new double[n];
+    int k = 0;
+    for (Atom atom : cellAtoms) {
+      xcm[k] = atom.getX() - xmid;
+      ycm[k] = atom.getY() - ymid;
+      zcm[k] = atom.getZ() - zmid;
+      k++;
+    }
+
+    if (forceEnergy) {
+      energy(false, false);
+    }
+
+    // Account for charge and dipoles.
+    k = 0;
+    for (Atom atom : cellAtoms) {
+      int i = atom.getIndex() - 1;
+      double[] globalMultipolei = globalMultipole[0][i];
+//      double[] inducedDipolei = inducedDipole[0][i];
+
+      var ci = globalMultipolei[t000];
+      var dix = globalMultipolei[t100];
+      var diy = globalMultipolei[t010];
+      var diz = globalMultipolei[t001];
+//      var uix = inducedDipolei[0];
+//      var uiy = inducedDipolei[1];
+//      var uiz = inducedDipolei[2];
+
+      netchg += ci;
+      xdpl += xcm[k] * ci + dix;
+      ydpl += ycm[k] * ci + diy;
+      zdpl += zcm[k] * ci + diz;
+      xxqdp += xcm[k] * xcm[k] * ci + 2.0 * xcm[k] * (dix);
+      xyqdp += xcm[k] * ycm[k] * ci + xcm[k] * (diy) + ycm[k] * (dix);
+      xzqdp += xcm[k] * zcm[k] * ci + xcm[k] * (diz) + zcm[k] * (dix);
+      yxqdp += ycm[k] * xcm[k] * ci + ycm[k] * (dix) + xcm[k] * (diy);
+      yyqdp += ycm[k] * ycm[k] * ci + 2.0 * ycm[k] * (diy);
+      yzqdp += ycm[k] * zcm[k] * ci + ycm[k] * (diz) + zcm[k] * (diy);
+      zxqdp += zcm[k] * xcm[k] * ci + zcm[k] * (dix) + xcm[k] * (diz);
+      zyqdp += zcm[k] * ycm[k] * ci + zcm[k] * (diy) + ycm[k] * (diz);
+      zzqdp += zcm[k] * zcm[k] * ci + 2.0 * zcm[k] * (diz);
+
+//      logger.info(format("Cell %d %d %d    Charge %4.4f    Dipole %4.4f %4.4f %4.4f",aind,bind,cind,netchg,xdpl,ydpl,zdpl));
+
+//      xdpl += xcm[k] * ci + dix + uix;
+//      ydpl += ycm[k] * ci + diy + uiy;
+//      zdpl += zcm[k] * ci + diz + uiz;
+//      xxqdp += xcm[k] * xcm[k] * ci + 2.0 * xcm[k] * (dix + uix);
+//      xyqdp += xcm[k] * ycm[k] * ci + xcm[k] * (diy + uiy) + ycm[k] * (dix + uix);
+//      xzqdp += xcm[k] * zcm[k] * ci + xcm[k] * (diz + uiz) + zcm[k] * (dix + uix);
+//      yxqdp += ycm[k] * xcm[k] * ci + ycm[k] * (dix + uix) + xcm[k] * (diy + uiy);
+//      yyqdp += ycm[k] * ycm[k] * ci + 2.0 * ycm[k] * (diy + uiy);
+//      yzqdp += ycm[k] * zcm[k] * ci + ycm[k] * (diz + uiz) + zcm[k] * (diy + uiy);
+//      zxqdp += zcm[k] * xcm[k] * ci + zcm[k] * (dix + uix) + xcm[k] * (diz + uiz);
+//      zyqdp += zcm[k] * ycm[k] * ci + zcm[k] * (diy + uiy) + ycm[k] * (diz + uiz);
+//      zzqdp += zcm[k] * zcm[k] * ci + 2.0 * zcm[k] * (diz + uiz);
+
+      k++;
+    }
+
+    // Convert the quadrupole from traced to traceless form.
+    var qave = (xxqdp + yyqdp + zzqdp) / 3.0;
+    xxqdp = 1.5 * (xxqdp - qave);
+    xyqdp = 1.5 * xyqdp;
+    xzqdp = 1.5 * xzqdp;
+    yxqdp = 1.5 * yxqdp;
+    yyqdp = 1.5 * (yyqdp - qave);
+    yzqdp = 1.5 * yzqdp;
+    zxqdp = 1.5 * zxqdp;
+    zyqdp = 1.5 * zyqdp;
+    zzqdp = 1.5 * (zzqdp - qave);
+
+    // Add the traceless atomic quadrupoles to total quadrupole.
+    for (Atom atom : cellAtoms) {
+      int i = atom.getIndex() - 1;
+      double[] globalMultipolei = globalMultipole[0][i];
+      var qixx = globalMultipolei[t200];
+      var qiyy = globalMultipolei[t020];
+      var qizz = globalMultipolei[t002];
+      var qixy = globalMultipolei[t110];
+      var qixz = globalMultipolei[t101];
+      var qiyz = globalMultipolei[t011];
+      xxqdp += qixx;
+      xyqdp += qixy;
+      xzqdp += qixz;
+      yxqdp += qixy;
+      yyqdp += qiyy;
+      yzqdp += qiyz;
+      zxqdp += qixz;
+      zyqdp += qiyz;
+      zzqdp += qizz;
+    }
+
+    // Convert dipole to Debye and quadrupole to Buckingham.
+    xdpl = xdpl * ELEC_ANG_TO_DEBYE;
+    ydpl = ydpl * ELEC_ANG_TO_DEBYE;
+    zdpl = zdpl * ELEC_ANG_TO_DEBYE;
+    xxqdp = xxqdp * ELEC_ANG_TO_DEBYE;
+    xyqdp = xyqdp * ELEC_ANG_TO_DEBYE;
+    xzqdp = xzqdp * ELEC_ANG_TO_DEBYE;
+    yxqdp = yxqdp * ELEC_ANG_TO_DEBYE;
+    yyqdp = yyqdp * ELEC_ANG_TO_DEBYE;
+    yzqdp = yzqdp * ELEC_ANG_TO_DEBYE;
+    zxqdp = zxqdp * ELEC_ANG_TO_DEBYE;
+    zyqdp = zyqdp * ELEC_ANG_TO_DEBYE;
+    zzqdp = zzqdp * ELEC_ANG_TO_DEBYE;
+
+    // Get dipole magnitude and diagonalize quadrupole tensor.
+    netdpl = sqrt(xdpl * xdpl + ydpl * ydpl + zdpl * zdpl);
+    double[][] a = new double[3][3];
+    a[0][0] = xxqdp;
+    a[0][1] = xyqdp;
+    a[0][2] = xzqdp;
+    a[1][0] = yxqdp;
+    a[1][1] = yyqdp;
+    a[1][2] = yzqdp;
+    a[2][0] = zxqdp;
+    a[2][1] = zyqdp;
+    a[2][2] = zzqdp;
+    EigenDecomposition e = new EigenDecomposition(new Array2DRowRealMatrix(a));
+    // Eigenvalues are returned in descending order, but logged below in ascending order.
+    var netqdp = e.getRealEigenvalues();
+
+//    logger.info(format("\n Electric Moments for Cell A%d B%d C%d\n",cell.getIndices()[0], cell.getIndices()[1], cell.getIndices()[2]));
+//    logger.info(format("  Total Electric Charge:    %13.5f Electrons\n", netchg));
+//    logger.info(format("  Dipole Moment Magnitude:  %13.5f Debye\n", netdpl));
+//    logger.info(format("  Dipole X,Y,Z-Components:  %13.5f %13.5f %13.5f\n", xdpl, ydpl, zdpl));
+//    logger.info(format("  Quadrupole Moment Tensor: %13.5f %13.5f %13.5f", xxqdp, xyqdp, xzqdp));
+//    logger.info(format("       (Buckinghams)        %13.5f %13.5f %13.5f", yxqdp, yyqdp, yzqdp));
+//    logger.info(format("                            %13.5f %13.5f %13.5f\n", zxqdp, zyqdp, zzqdp));
+//    logger.info(
+//            format(
+//                    "  Principal Axes Quadrupole %13.5f %13.5f %13.5f\n", netqdp[2], netqdp[1], netqdp[0]));
+
+    return new double[]{xmid,ymid,zmid,netchg,xdpl,ydpl,zdpl,xxqdp,yyqdp,zzqdp,xyqdp,xzqdp,yzqdp};
   }
 
   /**

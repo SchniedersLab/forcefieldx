@@ -411,6 +411,31 @@ public class MolecularAssembly extends MSGroup {
     // rotToCOM.setTransform(rotToCOMT3D);
   }
 
+  public double[] computeGeometricCenter(Atom[] atoms){
+    double[] center = new double[]{0.0, 0.0, 0.0};
+    Atom atom = atoms[0];
+
+    double[] max = new double[]{atom.getX(), atom.getY(), atom.getZ()};
+    double[] min = new double[]{atom.getX(), atom.getY(), atom.getZ()};
+
+    for(Atom atom1 : atoms){
+      double [] current = new double[]{atom1.getX(), atom1.getY(), atom1.getZ()};
+
+      for(int i = 0; i < current.length; i++){
+        if(current[i] > max[i]){
+          max[i] = current[i];
+        } else if (current[i] < min[i]){
+          min[i] = current[i];
+        }
+      }
+    }
+    for (int j = 0; j < center.length; j++) {
+      center[j] = (max[j] + min[j]) * 0.5;
+    }
+
+    return center;
+  }
+
   /** Compute fractional coordinates. */
   public void computeFractionalCoordinates() {
 

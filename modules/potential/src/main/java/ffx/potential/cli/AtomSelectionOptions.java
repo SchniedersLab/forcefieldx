@@ -138,6 +138,13 @@ public class AtomSelectionOptions {
   }
 
   /**
+   * --usedAtoms Range(s) of used atoms [Range(s): 1-3,6-N].
+   *
+   * @return Returns used atoms
+   */
+  public String getUsedAtoms(){ return group.usedAtoms; }
+
+  /**
    * Check if either the active or inactive atom selection is set.
    *
    * @return True if one of the fields is not empty.
@@ -149,12 +156,36 @@ public class AtomSelectionOptions {
     return group.inactiveAtoms != null && !(group.inactiveAtoms.length() > 0);
   }
 
+  /**
+   * Check if used atom selection is set
+   * @return True if used atoms are specified
+   */
+  public boolean isUsedAtomSelectionSet(){
+    return group.usedAtoms != null && (group.usedAtoms.length() > 0);
+  }
+
   private void setInactive(MolecularAssembly assembly) {
     actOnAtoms(assembly, getInactiveAtoms(), (Atom a, Boolean b) -> a.setActive(!b), "Inactive");
   }
 
   private void setActive(MolecularAssembly assembly) {
     actOnAtoms(assembly, getActiveAtoms(), Atom::setActive, "Active");
+  }
+
+  public void setUsed(MolecularAssembly assembly) {
+    Atom[] atoms = assembly.getAtomArray();
+    int nAtoms = atoms.length;
+    // Set all atoms to be not used
+    for (Atom atom : atoms){
+      atom.setUse(false);
+    }
+    // Parse atom ranges to use
+    List<Integer> atomRanges = parseAtomRanges("Used", getUsedAtoms(), nAtoms);
+    // Set selected atoms to be used
+    for (int i : atomRanges) {
+      atoms[i].setUse(true);
+    }
+    logger.info("\n " + "Used atoms set to: " + getUsedAtoms());
   }
 
   /**
@@ -173,5 +204,11 @@ public class AtomSelectionOptions {
         "--inactive"}, paramLabel = "<selection>", defaultValue = "",
         description = "Ranges of inactive atoms [NONE, ALL, Range(s): 1-3,6-N].")
     public String inactiveAtoms;
+
+    /** --usedAtoms Ranges of atoms to use [Range(s): 1-3,6-N]. */
+    @Option(names = {"--usedAtoms"}, paramLabel = "<selection>", defaultValue = "",
+    description = "Ranges of used atoms [Range(s): 1-3,6-N].")
+    public String usedAtoms;
+
   }
 }

@@ -178,19 +178,30 @@ class Energy extends PotentialScript {
     // Apply atom selections
     atomSelectionOptions.setActiveAtoms(activeAssembly)
 
+    // Selections for used atoms
+    if(atomSelectionOptions.isUsedAtomSelectionSet()){
+//      logger.info("Used atom flag set")
+      atomSelectionOptions.setUsed(activeAssembly)
+    }
+
     forceFieldEnergy = activeAssembly.getPotentialEnergy()
     int nVars = forceFieldEnergy.getNumberOfVariables()
     double[] x = new double[nVars]
     forceFieldEnergy.getCoordinates(x)
 
+    double[] collectGradient = new double[nVars]
+
     if (gradient) {
       double[] g = new double[nVars]
       int nAts = (int) (nVars / 3)
       energy = forceFieldEnergy.energyAndGradient(x, g, true)
-      logger.info(format("    Atom       X, Y and Z Gradient Components (kcal/mol/A)"))
+//      logger.info(format("    Atom       X, Y and Z Gradient Components (kcal/mol/A)"))
       for (int i = 0; i < nAts; i++) {
         int i3 = 3 * i
-        logger.info(format(" %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
+        collectGradient[i3] += g[i3]
+        collectGradient[i3 + 1] += g[i3 + 1]
+        collectGradient[i3 + 2] += g[i3 + 2]
+//        logger.info(format("GRADIENT  %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
       }
     } else {
       energy = forceFieldEnergy.energy(x, true)
@@ -244,7 +255,21 @@ class Energy extends PotentialScript {
             logger.info(format("\n Density:                                %6.3f (g/cc)",
                 crystal.getDensity(activeAssembly.getMass())))
           }
-          energy = forceFieldEnergy.energy(x, true)
+          if (gradient){
+            double[] g = new double[nVars]
+            int nAts = (int) (nVars / 3)
+            energy = forceFieldEnergy.energyAndGradient(x, g, true)
+//            logger.info(format("    Atom       X, Y and Z Gradient Components (kcal/mol/A)"))
+            for (int i = 0; i < nAts; i++) {
+              int i3 = 3 * i
+              collectGradient[i3] += g[i3]
+              collectGradient[i3 + 1] += g[i3 + 1]
+              collectGradient[i3 + 2] += g[i3 + 2]
+//              logger.info(format("GRADIENT  %7d %16.8f %16.8f %16.8f", i + 1, g[i3], g[i3 + 1], g[i3 + 2]))
+            }
+          } else {
+            energy = forceFieldEnergy.energy(x, true)
+          }
         } else {
           energy = forceFieldEnergy.energy(x, false)
           logger.info(format(" Snapshot %4d: %16.8f (kcal/mol)", index, energy))
@@ -275,6 +300,18 @@ class Energy extends PotentialScript {
               momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true, true)
         }
       }
+
+      if (gradient) {
+        double inverseIndex = 1.0 / (double) index
+        int nAts = (int) (nVars / 3)
+        logger.info(format("    Atom       X, Y and Z Mean Gradient Components (kcal/mol/A)"))
+        for (int i = 0; i < nAts; i++) {
+          int i3 = 3 * i
+          logger.info(format("GRADIENT  %7d %16.8f %16.8f %16.8f", i + 1, collectGradient[i3]*inverseIndex,
+                  collectGradient[i3 + 1]*inverseIndex, collectGradient[i3 + 2]*inverseIndex))
+        }
+      }
+
 
       // Use the current base directory, or update if necessary based on the given filename.
       String dirString = getBaseDirString(filename)
