@@ -340,7 +340,7 @@ class PhDynamics extends AlgorithmsScript {
         for (int i = 0; i < cycles; i++) {
           // Try running on the CPU
           molecularDynamics.setCoordinates(x)
-          double forceWriteInterval = titrSteps - 1
+          double forceWriteInterval = titrSteps * 0.001 - 1
           molecularDynamics.dynamic(titrSteps, dynamicsOptions.dt, titrReport, forceWriteInterval,
                   dynamicsOptions.temperature, true, dyn)
           x = molecularDynamics.getCoordinates()
