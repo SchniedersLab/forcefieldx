@@ -691,11 +691,10 @@ public class PhReplicaExchange implements Terminatable {
     x = openMM.getCoordinates();
     replica.setCoordinates(x);
 
-    double forceWriteInterval = titrSteps * 0.001;
+    double forceWriteInterval = titrSteps - 1;
     replica.dynamic(titrSteps, timeStep, printInterval, forceWriteInterval, temp, initVelocities, dyn);
 
-    // Update this ranks' parameter array to be consistent with the dynamics.
-
+    // Update this ranks' parameter array to be consistent with the dynamics.lea
     myParameters[0] = pHScale[i];
     myParameters[2] = extendedSystem.getBiasEnergy();
 
