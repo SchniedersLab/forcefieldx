@@ -2669,6 +2669,7 @@ public class ParticleMeshEwald implements LambdaInterface {
       ymid /= totalMass;
       zmid /= totalMass;
     }
+    logger.info(format("Center of mass: %4.3f %4.3f %4.3f",xmid,ymid,zmid));
     int n = activeAtoms.length;
     double[] xcm = new double[n];
     double[] ycm = new double[n];
@@ -2696,6 +2697,7 @@ public class ParticleMeshEwald implements LambdaInterface {
       var dix = globalMultipolei[t100];
       var diy = globalMultipolei[t010];
       var diz = globalMultipolei[t001];
+//      logger.info(format("Global Multipole for atom %d: %4.3f %4.3f %4.3f %4.3f",i,ci,dix,diy,diz));
       var uix = inducedDipolei[0];
       var uiy = inducedDipolei[1];
       var uiz = inducedDipolei[2];
@@ -2713,6 +2715,10 @@ public class ParticleMeshEwald implements LambdaInterface {
       zxqdp += zcm[k] * xcm[k] * ci + zcm[k] * (dix + uix) + xcm[k] * (diz + uiz);
       zyqdp += zcm[k] * ycm[k] * ci + zcm[k] * (diy + uiy) + ycm[k] * (diz + uiz);
       zzqdp += zcm[k] * zcm[k] * ci + 2.0 * zcm[k] * (diz + uiz);
+//      logger.info(format("Multipole for atom %d: %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f",
+//              i,netchg,xdpl,ydpl,zdpl,xxqdp,xyqdp,xzqdp,yxqdp,yyqdp,yzqdp,zxqdp,zyqdp,zzqdp));
+      logger.info(format("Multipole for atom %d: %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f",
+              i,netchg,xdpl,ydpl,zdpl,xxqdp,yyqdp,zzqdp,xyqdp,xzqdp,yzqdp));
       k++;
     }
 

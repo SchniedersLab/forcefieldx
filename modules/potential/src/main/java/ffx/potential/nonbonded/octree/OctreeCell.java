@@ -97,8 +97,11 @@ public class OctreeCell {
     return children[octant];
   }
 
+//  public int getLeavesValueAtIndex(int index) {
+//    return this.leaves.get(index);
+//  }
   public int getLeavesValueAtIndex(int index) {
-    return this.leaves.get(index);
+  return this.leaf[index];
   }
 
   public double[] getMultipole() {

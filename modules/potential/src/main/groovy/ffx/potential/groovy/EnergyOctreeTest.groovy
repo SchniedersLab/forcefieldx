@@ -254,7 +254,7 @@ class EnergyOctreeTest extends PotentialScript {
 
         // Testing other Octree Method
         // Create Octree particles from Atoms
-        Atom[] atoms = activeAssembly.getAtomArray()
+        Atom[] atoms = activeAssembly.getActiveAtomArray()
         ArrayList<OctreeParticle> particles = new ArrayList<>()
         for (Atom atom : atoms){
             double[] coords = new double[]{atom.getX(),atom.getY(),atom.getZ()}
@@ -263,16 +263,18 @@ class EnergyOctreeTest extends PotentialScript {
         }
 
         // Use Particles to build a tree
-        int nCritical = 10
+        int nCritical = 20
+        // nCritical = 8 and below will cause StackOverflowError for 1l2y
         double theta = 0.5
         Octree octree = new Octree(nCritical, atoms, theta, forceFieldEnergy.getPmeNode().globalMultipole)
 
-        // Determine maximum separation distance between any two atoms
+        // Determine maximum separation dis0tance between any two atoms
         QuickHull3D quickHull3D = ConvexHullOps.constructHull(atoms)
         double maxDist = ConvexHullOps.maxDist(quickHull3D)
 
         // Compute geometric center of atoms
-        double[] center = activeAssembly.computeGeometricCenter(atoms)
+//        double[] center = activeAssembly.computeGeometricCenter(atoms)
+        double[] center = activeAssembly.computeCenterOfMass(atoms)
 
         // Define root OctreeCell
         OctreeCell root = new OctreeCell(nCritical)
@@ -280,12 +282,19 @@ class EnergyOctreeTest extends PotentialScript {
         root.setY(center[1])
         root.setZ(center[2])
         root.setR(maxDist*0.5)
+        logger.info(format("Center of octree root: %4.3f %4.3f %4.3f",root.getX(),root.getY(),root.getZ()))
 
         // Build tree from root OctreeCell
         octree.buildTree(root)
-        logger.info(format("Printing Cells from Octree"))
-        octree.printCells()
+//        logger.info(format("Printing Cells from Octree"))
+//        octree.printCells()
 
+        // Compute Multipoles for all leaf cells
+        octree.getMultipole(0)
+
+        // Perform the upward sweep to calculate parent cells' multipoles based on child cells' multipoles
+        octree.upwardSweep()
+/*
         if (moments) {
             logger.info("** Moments being calculated")
             NeighborList.Cell[][][] cells = neighborList.getCells()
@@ -301,7 +310,7 @@ class EnergyOctreeTest extends PotentialScript {
                 }
             }
         }
-
+*/
         if (gyrate) {
             double rg = radiusOfGyration(activeAssembly.getActiveAtomArray())
             logger.info(format(" Radius of gyration:           %10.5f A", rg))

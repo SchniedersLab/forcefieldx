@@ -555,7 +555,7 @@ public class NeighborList extends ParallelRegion {
     if(useOctree) {
     domainDecompositionOctree.initDomainDecomposition(nAtoms, crystal);
 //    logger.info("NL dDO log in initNeighborList method");
-    domainDecompositionOctree.log();
+//    domainDecompositionOctree.log();
     }
   }
 

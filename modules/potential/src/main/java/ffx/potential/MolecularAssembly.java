@@ -411,6 +411,28 @@ public class MolecularAssembly extends MSGroup {
     // rotToCOM.setTransform(rotToCOMT3D);
   }
 
+  public double[] computeCenterOfMass(Atom[] atoms){
+    // Find the center of mass of the set of active atoms.
+    double xmid = 0.0;
+    double ymid = 0.0;
+    double zmid = 0.0;
+    double totalMass = 0;
+    for (Atom atom : atoms) {
+      var m = atom.getMass();
+      totalMass += m;
+      xmid = xmid + atom.getX() * m;
+      ymid = ymid + atom.getY() * m;
+      zmid = zmid + atom.getZ() * m;
+    }
+    if (totalMass > 0) {
+      xmid /= totalMass;
+      ymid /= totalMass;
+      zmid /= totalMass;
+    }
+
+    return new double[]{xmid,ymid,zmid};
+  }
+
   public double[] computeGeometricCenter(Atom[] atoms){
     double[] center = new double[]{0.0, 0.0, 0.0};
     Atom atom = atoms[0];
