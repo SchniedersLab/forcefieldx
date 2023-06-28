@@ -3,8 +3,6 @@
 os: linux
 language: java
 sudo: false
-script:
-  - jdk_switcher use openjdk17
 
 cache:
   directories:
@@ -17,5 +15,7 @@ notifications:
     on_success: change
     on_failure: always
 
-script: travis_wait 30 mvn test -B -DskipTests=false -Dpj.nt=2 -Dffx.log=WARNING -Dffx.test.log=WARNING
+script: 
+  - jdk_switcher use openjdk17
+  - travis_wait 30 mvn test -B -DskipTests=false -Dpj.nt=2 -Dffx.log=WARNING -Dffx.test.log=WARNING
 
