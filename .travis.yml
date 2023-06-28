@@ -3,6 +3,8 @@
 os: linux
 language: java
 sudo: false
+script:
+  - jdk_switcher use openjdk17
 
 cache:
   directories:
