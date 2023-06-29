@@ -15,12 +15,16 @@ notifications:
     on_success: change
     on_failure: always
 
-before_script:
-  - curl -s "https://get.sdkman.io" | bash
-  - source "$HOME/.sdkman/bin/sdkman-init.sh"
-  - sdk install java 17.0.7-open
-  - sdk use java 17.0.7-open
+# before_script:
+#  - curl -s "https://get.sdkman.io" | bash
+#  - source "$HOME/.sdkman/bin/sdkman-init.sh"
+#  - sdk install java 17.0.7-open
+#  - sdk use java 17.0.7-open
 
 script: 
+  - wget https://github.com/sormuras/bach/raw/releases/11/install-jdk.sh
+  - chmod +x $TRAVIS_BUILD_DIR/install-jdk.sh
+  - export JAVA_HOME=$HOME/openjdk17
+  - $TRAVIS_BUILD_DIR/install-jdk.sh -F 17 --target $JAVA_HOME 
   - travis_wait 30 mvn test -B -DskipTests=false -Dpj.nt=2 -Dffx.log=WARNING -Dffx.test.log=WARNING
 
