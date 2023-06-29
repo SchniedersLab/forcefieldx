@@ -1,7 +1,10 @@
 # Force Field X configuration for Travis-CI
 
 os: linux
+language: java
 sudo: false
+
+install: skip
 
 cache:
   directories:
@@ -25,5 +28,5 @@ script:
   - chmod +x $TRAVIS_BUILD_DIR/install-jdk.sh
   - export JAVA_HOME=$HOME/openjdk17
   - $TRAVIS_BUILD_DIR/install-jdk.sh -F 17 --target $JAVA_HOME 
-  - travis_wait 30 mvn test -B -DskipTests=false -Dpj.nt=2 -Dffx.log=WARNING -Dffx.test.log=WARNING
+  - mvn test -B -DskipTests=false -Dpj.nt=2 -Dffx.log=WARNING -Dffx.test.log=WARNING
 
