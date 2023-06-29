@@ -109,7 +109,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
      */
     @CommandLine.Option(names = ['--saveEnergyCutoff'], paramLabel = '1.5',
             description = 'Cutoff conformations that have an energy (kcal/mol) less then this cutoff. Default mode.')
-    double saveEnergyCutoff = 2.0
+    double saveEnergyCutoff = 1.5
 
     /**
      * --saveNumStates
