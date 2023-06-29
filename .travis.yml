@@ -1,7 +1,6 @@
 # Force Field X configuration for Travis-CI
 
 os: linux
-language: java
 sudo: false
 
 cache:
