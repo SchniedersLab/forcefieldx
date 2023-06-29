@@ -48,6 +48,7 @@ import ffx.potential.bonded.RestraintBond
 import ffx.potential.parameters.BondType
 import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
+import org.checkerframework.checker.units.qual.Force
 import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
@@ -56,6 +57,7 @@ import ffx.potential.bonded.Molecule
 
 import static ffx.potential.utils.Superpose.applyRotation
 import static org.apache.commons.math3.util.FastMath.cos
+import static org.apache.commons.math3.util.FastMath.log
 import static org.apache.commons.math3.util.FastMath.sin
 
 /**
@@ -112,11 +114,32 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
     double saveEnergyCutoff = 1.5
 
     /**
+     * --flatBottomRadius
+     */
+    @CommandLine.Option(names = ['--flatBottomRadius'], paramLabel = '0.5',
+            description = 'Radius of flat bottom potential.')
+    double flatBottomRadius = 0.5
+
+    /**
      * --saveNumStates
      */
     @CommandLine.Option(names = ['--saveNumStates'], paramLabel = '-1',
             description = 'Save this many of the lowest energy states. This is not the default mode.')
     int saveNumStates = -1
+
+    /**
+     * --saveAllStates
+     */
+    @CommandLine.Option(names = ['--saveAllStates'], paramLabel = 'false',
+            description = '')
+    boolean saveAllStates = false
+
+    /**
+     * --saveNumStates
+     */
+    @CommandLine.Option(names = ['--excludeH'], paramLabel = 'false',
+            description = 'Include hydrogens into conformations.')
+    boolean excludeH = false
 
     /**
     * Constructor.
@@ -138,10 +161,41 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
     */
   @Override
   GenerateCrystalSeeds run() {
+      System.setProperty("direct-scf-fallback",  "true")
+      if(!induced) {
+          System.setProperty("polarization", "direct")
+          logger.info(" Using direct polarization.")
+      } else{
+          logger.info(" Using induced.")
+      }
+
       // Init the context and bind variables.
       if (!init()) {
           return this
       }
+
+      // Have to do monomer energy before first definition of activeAssembly
+      MolecularAssembly moleculeOne = getActiveAssembly(filename)
+      Molecule[] tempOne = moleculeOne.getMoleculeArray()
+      moleculeOne.deleteMolecule(tempOne[1])
+      moleculeOne.finalize(true, moleculeOne.forceField)
+      ForceFieldEnergy eFactoryOne = ForceFieldEnergy.energyFactory(moleculeOne)
+
+      MolecularAssembly moleculeTwo = getActiveAssembly(filename)
+      Molecule[] tempTwo = moleculeOne.getMoleculeArray()
+      moleculeTwo.deleteMolecule(tempTwo[0])
+      moleculeTwo.finalize(true, moleculeTwo.forceField)
+      ForceFieldEnergy eFactoryTwo = ForceFieldEnergy.energyFactory(moleculeTwo)
+
+      // Get coordinates of both molecules
+      double[] moleculeOneCoords = new double[eFactoryOne.getNumberOfVariables()]
+      eFactoryOne.getCoordinates(moleculeOneCoords)
+      double[] moleculeTwoCoords = new double[eFactoryTwo.getNumberOfVariables()]
+      eFactoryTwo.getCoordinates(moleculeTwoCoords)
+
+      double monomerEnergy = eFactoryOne.energy(moleculeOneCoords, false)
+      monomerEnergy += eFactoryTwo.energy(moleculeTwoCoords, false)
+      logger.info(" Monomer energy: " + monomerEnergy + " kcal/mol")
 
       // Load the MolecularAssembly of the input file.
       activeAssembly = getActiveAssembly(filename)
@@ -158,13 +212,6 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
       logger.info("\n Found " + numMolecules + " molecules.")
       if (numMolecules != 2){
           logger.severe(" XYZ file must contain 2 molecules")
-      }
-
-      if(!induced) {
-          System.setProperty("polarization", "direct")
-          logger.info(" Using direct polarization.")
-      } else{
-          logger.info(" Using induced.")
       }
 
       // Get Global Rotations going
@@ -197,7 +244,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
                */
           }
           // Add all H's
-          if(a.getAtomType().atomicNumber == 1){
+          if(a.getAtomType().atomicNumber == 1 && !excludeH){
               filteredAtoms.add(a)
           }
       }
@@ -217,10 +264,12 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
       // Making the MinMax priority queue that will expel the largest entry when it reaches its maximum size
       MinMaxPriorityQueue<StateContainer> lowestEnergyQueue = MinMaxPriorityQueue.
               maximumSize(moleculeOneFiltered.size() * moleculeTwoFiltered.size()).create()
-      if (saveNumStates != -1 && saveNumStates > 0) {
+      if(saveAllStates){
+          logger.info("\n Saving all conformations.")
+      } else if (saveNumStates != -1 && saveNumStates > 0) {
           lowestEnergyQueue = MinMaxPriorityQueue.maximumSize(saveNumStates).create()
           logger.info("\n Saving the " + saveNumStates + " lowest energy conformations.")
-      } else{
+      } else {
           saveEnergyCutoff = Math.abs(saveEnergyCutoff)
           logger.info("\n Saving conformations within " + saveEnergyCutoff + " kcal/mol of lowest energy conformation")
       }
@@ -230,9 +279,14 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
       Atom[] moleculeOneAtoms = molecules[0].getAtomList()
       Atom[] moleculeTwoAtoms = molecules[1].getAtomList()
 
+      // Calculate dimer potential
+      activeAssembly.updateAtoms()
+      forceFieldEnergy.getCoordinates(x)
+      double dimerEnergy = forceFieldEnergy.energy(x, false)
+      logger.info(" Dimer energy: " + dimerEnergy + " kcal/mol")
+
       //Energy Container to store minimized energies
       ArrayList<Double> energies = new ArrayList<>()
-
       double[] zAxis = new double[]{0,0,1}
 
       // Loop through interactions between the two molecules
@@ -316,7 +370,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
                           1000.0,
                           hBondDist,
                           BondType.BondFunction.FLAT_BOTTOM_QUARTIC,
-                          0.5)
+                          flatBottomRadius)
                   RestraintBond restraintBond = new RestraintBond(a, b,
                           null,
                           false,
@@ -338,12 +392,18 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
 
                   // Store and log the minimized energy
                   forceFieldEnergy.getCoordinates(x)
-                  e = forceFieldEnergy.energy(x, false)
+                  e = forceFieldEnergy.energy(x, false) - monomerEnergy
                   energies.add(e)
                   logger.info(" Energy of trial " + energies.size() + ": " + e)
                   lowestEnergyQueue.add(new StateContainer(new AssemblyState(activeAssembly), e))
               } catch (Exception e) {
-                  logger.warning(" Minimization failed. No state will be saved for this conformation.")
+                  logger.warning(" Minimization failed.")
+                  if(saveAllStates){
+                      logger.warning(" Saving current state anyway.")
+                      lowestEnergyQueue.add(new StateContainer(new AssemblyState(activeAssembly), 1000000.0))
+                  } else{
+                      logger.warning(" Not saving current state.")
+                  }
                   e.printStackTrace()
               }
           }
@@ -357,7 +417,21 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
               activeAssembly,
               activeAssembly.getForceField(),
               activeAssembly.properties)
-      if (saveNumStates != -1 && saveNumStates > 0) {
+
+      if(saveAllStates){
+          logger.info(" Saving all " + lowestEnergyQueue.size() + " conformations.")
+          int count = 0
+          while(!lowestEnergyQueue.empty){
+              StateContainer stateContainer = lowestEnergyQueue.removeFirst()
+              AssemblyState state = stateContainer.getState()
+              double e = stateContainer.energy
+              logger.info(" Writing to file. Configuration #" + (count+1) + " energy: " + e)
+              count++
+              state.revertState()
+              xyzFilter.writeFile(saveLocation, true)
+          }
+      }
+      else if (saveNumStates != -1 && saveNumStates > 0) {
           int temp = saveNumStates
           saveNumStates = Math.min(saveNumStates, lowestEnergyQueue.size())
           if(temp != saveNumStates) {
