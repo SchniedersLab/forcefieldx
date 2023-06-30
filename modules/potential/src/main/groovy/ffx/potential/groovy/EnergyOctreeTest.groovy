@@ -263,8 +263,8 @@ class EnergyOctreeTest extends PotentialScript {
         }
 
         // Use Particles to build a tree
-        int nCritical = 20
-        // nCritical = 8 and below will cause StackOverflowError for 1l2y
+        int nCritical = atoms.size() * 0.1
+        logger.info(format("nCritical = %d",nCritical))
         double theta = 0.5
         Octree octree = new Octree(nCritical, atoms, theta, forceFieldEnergy.getPmeNode().globalMultipole)
 
@@ -283,17 +283,24 @@ class EnergyOctreeTest extends PotentialScript {
         root.setZ(center[2])
         root.setR(maxDist*0.5)
         logger.info(format("Center of octree root: %4.3f %4.3f %4.3f",root.getX(),root.getY(),root.getZ()))
+        logger.info(format("Sidelength of root cell = %4.3f",maxDist));
 
         // Build tree from root OctreeCell
         octree.buildTree(root)
 //        logger.info(format("Printing Cells from Octree"))
 //        octree.printCells()
 
+        // Generate NF and FF lists
+        octree.neighborCount(1)
+
         // Compute Multipoles for all leaf cells
         octree.getMultipole(0)
 
         // Perform the upward sweep to calculate parent cells' multipoles based on child cells' multipoles
         octree.upwardSweep()
+
+        // Calculate the Potential at each atom
+//        octree.evalPotential()
 /*
         if (moments) {
             logger.info("** Moments being calculated")

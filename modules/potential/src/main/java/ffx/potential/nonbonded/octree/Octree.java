@@ -83,6 +83,10 @@ public class Octree {
   /** List of cells */
   private ArrayList<OctreeCell> cells = new ArrayList<>();
 
+  private double[] phi = new double[304];
+
+  private double[] smallestSide = new double[2];
+
   /**
    * Default constructor: only need to pass in a list of particles nCritical and theta set to
    * defaults
@@ -150,10 +154,15 @@ public class Octree {
     cells.get(c).setParentIndex(p);
     cells.get(p).setChildren(octant, c);
     // Bitwise operation to determine empty/non-empty child cells
-    logger.info(format("nChild before bitwise operation %d",cells.get(p).getnChild()));
+//    logger.info(format("nChild before bitwise operation %d",cells.get(p).getnChild()));
     cells.get(p).setnChild(cells.get(p).getnChild() | (1 << octant));
     logger.info(format("+++cell %d is created as a child of cell %d",c,p));
-    logger.info(format("nChild after  bitwise operation %d",cells.get(p).getnChild()));
+    logger.info(format("** Cell %d sidelength = %4.3f",c,cells.get(c).getR()*2));
+    if (smallestSide[1] > cells.get(c).getR()*2) {
+      smallestSide[0] = c;
+      smallestSide[1] = cells.get(c).getR()*2;
+    }
+//    logger.info(format("nChild after  bitwise operation %d",cells.get(p).getnChild()));
   }
 
   /**
@@ -167,6 +176,8 @@ public class Octree {
 
     // Set root cell - add it to the cells array list
     cells.add(root);
+    smallestSide[0] = 0.0;
+    smallestSide[1] = cells.get(0).getR()*2;
 
     // Build tree
     int n = particles.length;
@@ -208,13 +219,13 @@ public class Octree {
       // Allocate the particle in the leaf cell
       cells.get(current).setLeaf(cells.get(current).getNumLeaves(), i);
       cells.get(current).setNumLeaves(cells.get(current).getNumLeaves() + 1);
-      logger.info(format(">>>>particle %d stored in cell %d",i,current));
+      logger.info(format("particle %d stored in cell %d",i,current));
 
 //      logger.info(format("nLeaf at i %d after allocating particle: %d",i,cells.get(current).getNumLeaves()));
 
       // Check whether to split cell
       if (cells.get(current).getNumLeaves() >= nCritical) {
-        logger.info("Splitting cells in buildTree");
+//        logger.info("Splitting cells in buildTree");
         splitCell(current);
       }
     }
@@ -396,42 +407,50 @@ public class Octree {
     return new double[]{netchg,xdpl,ydpl,zdpl,xxqdp,yyqdp,zzqdp,xyqdp,xzqdp,yzqdp};
   }
 
-  /** Direct summation. */
+//  /** Direct summation. */
 //  public void directSum() {
 //    for (int i = 0; i < particles.length; i++) {
 //      for (int j = 0; j < particles.length; j++) {
 //        if (j != i) {
-//          double r = particles[i].distance(particles[j]);
-//          particles[j].addToPhi(particles[j].getCharge() / r);
+////          double r = particles[i].distance(particles[j]);
+//          double r = distance(particles[i].getXYZ(null),particles[j].getXYZ(null));
+////          particles[j].addToPhi(particles[j].getCharge() / r);
 //        }
 //      }
 //    }
-//    // Reset potential for all particles
+    // Reset potential for all particles
 //    for (Atom particle : particles) {
 //      particle.addToPhi(0);
 //    }
 //  }
 
   /**
-   * Compute a distance between a position and the OctreePoint.
+   * Compute a distance between a position and the coordinates of another atom or Octree Cell.
    *
    * @param array Position.
-   * @param point OctreePoint.
+   * @param other Position of another cell/atom.
    * @return Returns the distance.
    */
-  public double distance(double[] array, OctreePoint point) {
+  public double distance(double[] array, double[] other) {
     return Math.sqrt(
-        Math.pow((array[0] - point.getX()), 2)
-            + Math.pow((array[1] - point.getY()), 2)
-            + Math.pow((array[2] - point.getZ()), 2));
+            Math.pow((array[0] - other[0]), 2)
+                    + Math.pow((array[1] - other[1]), 2)
+                    + Math.pow((array[2] - other[2]), 2));
   }
+  //  public double distance(double[] array, OctreeCell other) {
+//    return Math.sqrt(
+//        Math.pow((array[0] - other.getX()), 2)
+//            + Math.pow((array[1] - other.getY()), 2)
+//            + Math.pow((array[2] - other.getZ()), 2));
+//  }
 
   /** Evaluate potential at all target points */
-//  public void evalPotnetial() {
-//    for (int i = 0; i < particles.length; i++) {
-//      evalAtTarget(0, i);
-//    }
-//  }
+  public void evalPotential() {
+    for (int i = 0; i < particles.length; i++) {
+      evalAtTarget(0, i);
+//      logger.info(format("Atom %d potential = %4.3f",i,phi[i]));
+    }
+  }
 
   /**
    * Compute the L2 error.
@@ -609,68 +628,129 @@ public class Octree {
     cells.get(p).addToMultipole(additionalMultipoleTerms);
   }
 
-//  /**
-//   * Evaluate potential at one target
-//   *
-//   * @param p Index of parent cell
-//   * @param i Index of target particle
-//   */
-//  private void evalAtTarget(int p, int i) {
-//
-//    // Non-leaf cell
-//    if (cells.get(p).getNumLeaves() >= nCritical) {
-//
-//      // Loop through p's child cells (8 octants)
-//      for (int oct = 0; oct < 8; oct++) {
-//        if (BooleanUtils.toBoolean(cells.get(p).getnChild() & (1 << oct))) {
-//          int c = cells.get(p).getChildAtIndex(oct);
-//          double r = particles[i].distance(cells.get(c));
-//
-//          // Near field child cell
-//          if (cells.get(c).getR() > theta * r) {
-//            evalAtTarget(c, i);
-//          } else { // Far field child cell
-//            double dx = particles[i].getX() - cells.get(c).getX();
-//            double dy = particles[i].getY() - cells.get(c).getY();
-//            double dz = particles[i].getZ() - cells.get(c).getZ();
-//            double r3 = Math.pow(r, 3);
-//            double r5 = r3 * Math.pow(r, 2);
-//
-//            // Calculate the weight from each multipole
-//            double[] weight = new double[10];
-//            weight[0] = 1 / r;
-//            weight[1] = -dx / r3;
-//            weight[2] = -dy / r3;
-//            weight[3] = -dz / r3;
-//            weight[4] = (3 * Math.pow(dx, 2)) / r5 - (1 / r3);
-//            weight[5] = (3 * Math.pow(dy, 2)) / r5 - (1 / r3);
-//            weight[6] = (3 * Math.pow(dz, 2)) / r5 - (1 / r3);
-//            weight[7] = 3 * dx * dy / r5;
-//            weight[8] = 3 * dy * dz / r5;
-//            weight[9] = 3 * dz * dx / r5;
-//
-//            // Calculate dot product of multipole array and weight array
-//            double dotProduct = 0.0;
-//            for (int d = 0; d < weight.length; d++) {
-//              double[] multipoleArray = cells.get(c).getMultipole();
-//              dotProduct = dotProduct + multipoleArray[d] * weight[d];
-//            }
-//
+  /**
+   * Evaluate potential at one target
+   *
+   * @param p Index of parent cell
+   * @param i Index of target particle
+   */
+  private void evalAtTarget(int p, int i) {
+
+    // Non-leaf cell
+    if (cells.get(p).getNumLeaves() >= nCritical) {
+
+      // Loop through p's child cells (8 octants)
+      for (int oct = 0; oct < 8; oct++) {
+        if (BooleanUtils.toBoolean(cells.get(p).getnChild() & (1 << oct))) {
+          int c = cells.get(p).getChildAtIndex(oct);
+//          double r = distance(particles[i].getXYZ(null),cells.get(c));
+          double r = distance(particles[i].getXYZ(null), new double[]{cells.get(c).getX(), cells.get(c).getY(), cells.get(c).getZ()});
+
+          // Near field child cell
+          if (cells.get(c).getR() > theta * r) {
+            evalAtTarget(c, i);
+          } else { // Far field child cell
+            double dx = particles[i].getX() - cells.get(c).getX();
+            double dy = particles[i].getY() - cells.get(c).getY();
+            double dz = particles[i].getZ() - cells.get(c).getZ();
+            double r3 = Math.pow(r, 3);
+            double r5 = r3 * Math.pow(r, 2);
+
+            // Calculate the weight from each multipole
+            double[] weight = new double[10];
+            weight[0] = 1 / r;
+            weight[1] = -dx / r3;
+            weight[2] = -dy / r3;
+            weight[3] = -dz / r3;
+            weight[4] = (3 * Math.pow(dx, 2)) / r5 - (1 / r3);
+            weight[5] = (3 * Math.pow(dy, 2)) / r5 - (1 / r3);
+            weight[6] = (3 * Math.pow(dz, 2)) / r5 - (1 / r3);
+            weight[7] = 3 * dx * dy / r5;
+            weight[8] = 3 * dx * dz / r5;
+            weight[9] = 3 * dy * dz / r5;
+
+            // Calculate dot product of multipole array and weight array
+            double dotProduct = 0.0;
+            double[] multipoleArray = cells.get(c).getMultipole();
+            for (int d = 0; d < weight.length; d++) {
+              dotProduct = dotProduct + multipoleArray[d] * weight[d];
+            }
+            phi[particles[i].getIndex()-1] += dotProduct;
+//            logger.info(format("Atom %d far field dot product = %4.3f. phi = %4.3f",i,dotProduct,phi[i]));
 //            particles[i].addToPhi(dotProduct);
-//          }
-//        } else { // Leaf Cell
-//          // Loop in twig cell's particles
-//          for (int j = 0; j < cells.get(p).getNumLeaves(); j++) {
+          }
+        }
+      }
+    } else { // Leaf Cell
+          // Loop in twig cell's particles
+      for (int j = 0; j < cells.get(p).getNumLeaves(); j++) {
 //            OctreeParticle source = particles.get(cells.get(p).getLeavesValueAtIndex(j));
-//            double r = particles.get(i).distance(source);
-//            if (r != 0) {
+        Atom source = particles[cells.get(p).getLeavesValueAtIndex(j)];
+        double r = distance(particles[i].getXYZ(null),source.getXYZ(null));
+        if (r != 0) {
+//          logger.info(format("Atom %d to atom %d r = %4.3f",i,cells.get(p).getLeavesValueAtIndex(j),r));
 //              particles.get(i).addToPhi(source.getCharge() / r);
-//            }
-//          }
-//        }
-//      }
-//    }
-//  }
+          phi[particles[i].getIndex()-1] += source.getCharge() / r;
+//          logger.info(format("Atom %d twig particle %d contribution = %4.3f. phi = %4.3f",i,source.getIndex()-1,source.getCharge() / r,phi[i]));
+        }
+      }
+    }
+  }
+
+  /**
+   * Calculation of Near-Field and Far-Field boxes in each hierarchy level
+   *
+   * @param ws Index of parent cell
+   * @param nLevels Index of target particle
+   */
+
+  public void neighborCount(int ws){
+    // TODO: Add H
+    double H = Math.ceil((Math.log(Math.ceil(cells.get(0).getR()*2/smallestSide[1])))/Math.log(2.0));
+    logger.info(format("Cell count %4.1f Smallest sidelength %4.3f",smallestSide[0],smallestSide[1]));
+
+    int nLevels = 2;
+
+    // Initialize counters
+    double nNFtotal = 0;
+    double nFFtotal = 0;
+
+    logger.info(format("ws = %d",ws));
+    logger.info("hLevel    nNFlevel    nNFtotal    nFFlevel    nFFtotal");
+
+    // Loop over hierarchy levels
+    for (int hLevel = 1; hLevel <= nLevels; hLevel++) {
+      double nBoxes = Math.pow(2,hLevel);
+      double nScan = nBoxes / 2;
+
+      // Loop over each cube x,y,z in the hierarchy
+      // work on a single octant and then multiply the total count by 8
+      double nNFlevel = 0;
+      double nFFlevel = 0;
+      for (int x = 0; x < nScan; x++) {
+        for (int y = 0; y < nScan; y++) {
+          for (int z = 0; z < nScan; z++) {
+            // NF count
+            double superBoxNF = (Math.min(x+ws,nBoxes) - Math.max(x-ws,1) + 1)
+                    * (Math.min(y+ws,nBoxes) - Math.max(y-ws,1) + 1)
+                    * (Math.min(z+ws,nBoxes) - Math.max(z-ws,1) + 1);
+            nNFlevel = nNFlevel + superBoxNF - 1;
+
+            // FF count
+            double superBoxFF = (Math.min((Math.floor((x+1)/2)+ws)*2, nBoxes) - Math.max((Math.floor((x-1)/2)-ws)*2, 0))
+                    * (Math.min((Math.floor((y+1)/2)+ws)*2, nBoxes) - Math.max((Math.floor((y-1)/2)-ws)*2, 0))
+                    * (Math.min((Math.floor((z+1)/2)+ws)*2, nBoxes) - Math.max((Math.floor((z-1)/2)-ws)*2, 0));
+            nFFlevel = nFFlevel + superBoxFF - superBoxNF;
+          }
+        }
+      }
+      nNFtotal = nNFtotal + nNFlevel;
+      nFFtotal = nFFtotal + nFFlevel;
+
+      // Print NF and FF counts for each hierarchy level
+      logger.info(format("%d    %4.1f    %4.1f    %4.1f    %4.1f",hLevel, nNFlevel*8, nNFtotal*8, nFFlevel*8, nFFtotal*8));
+    }
+  }
 
   public void printCells(){
     for(OctreeCell cell : cells){
