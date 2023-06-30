@@ -48,7 +48,6 @@ import ffx.potential.bonded.RestraintBond
 import ffx.potential.parameters.BondType
 import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
-import org.checkerframework.checker.units.qual.Force
 import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Parameters
@@ -57,7 +56,6 @@ import ffx.potential.bonded.Molecule
 
 import static ffx.potential.utils.Superpose.applyRotation
 import static org.apache.commons.math3.util.FastMath.cos
-import static org.apache.commons.math3.util.FastMath.log
 import static org.apache.commons.math3.util.FastMath.sin
 
 /**
@@ -193,8 +191,8 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
       double[] moleculeTwoCoords = new double[eFactoryTwo.getNumberOfVariables()]
       eFactoryTwo.getCoordinates(moleculeTwoCoords)
 
-      double monomerEnergy = eFactoryOne.energy(moleculeOneCoords, false)
-      monomerEnergy += eFactoryTwo.energy(moleculeTwoCoords, false)
+      double monomerEnergy = eFactoryOne.energy(moleculeOneCoords, true)
+      monomerEnergy += eFactoryTwo.energy(moleculeTwoCoords, true)
       logger.info(" Monomer energy: " + monomerEnergy + " kcal/mol")
 
       // Load the MolecularAssembly of the input file.
