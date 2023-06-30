@@ -49,8 +49,8 @@ import ffx.potential.parameters.BondType
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine
 import picocli.CommandLine.Command
+import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Molecule
@@ -67,8 +67,80 @@ import static org.apache.commons.math3.util.FastMath.sin
  * <br>
  * ffxc test.GenerateCrystalSeeds [options] &lt;filename&gt;
  */
-@Command(description = " Calculates interaction energies of different molecular orientations and saves low energy orientations.", name = "test.GenerateCrystalSeeds")
+@Command(description = " Calculates interaction energies of different molecular orientations and saves low energy orientations.",
+        name = "test.GenerateCrystalSeeds")
 class GenerateCrystalSeeds extends AlgorithmsScript {
+
+    /**
+     * --eps
+     */
+    @Option(names = ['--eps'], paramLabel = '.1',
+            description = 'Cutoff for minimization.')
+    double eps = 0.1
+
+    /**
+     * --induced
+     */
+    @Option(names = ['--direct'], paramLabel = 'false',
+            description = 'Whether to use direct polarization. Using induced requires a larger eps.')
+    boolean direct = false
+
+    /**
+     * --maxIter
+     */
+    @Option(names = ['--maxIter'], paramLabel = '100',
+            description = 'Max iterations for minimization.')
+    int maxIter =  1000
+
+    /**
+     * --hBondDist
+     */
+    @Option(names = ['--hBondDist', '--hbd'], paramLabel = '2.0',
+            description = 'Initial h-bond distance.')
+    double hBondDist = 2.0
+
+    /**
+     * --saveEnergyCutoff
+     */
+    @Option(names = ['--saveEnergyCutoff', "--sec"], paramLabel = '1.5',
+            description = 'Cutoff conformations that have an energy (kcal/mol) less then this cutoff. Default mode.')
+    double saveEnergyCutoff = 1.5
+
+    /**
+     * --flatBottomRadius
+     */
+    @Option(names = ['--flatBottomRadius', "--fbr"], paramLabel = '0.5',
+            description = 'Radius of flat bottom potential.')
+    double flatBottomRadius = 0.5
+
+    /**
+     * --saveNumStates
+     */
+    @Option(names = ['--saveNumStates', "--sns"], paramLabel = '-1',
+            description = 'Save this many of the lowest energy states. This is not the default mode.')
+    int saveNumStates = -1
+
+    /**
+     * --saveAll
+     */
+    @Option(names = ['--saveAll', "--sa"], paramLabel = 'false',
+            description = '')
+    boolean saveAll = false
+
+    /**
+     * --excludeH
+     */
+    @Option(names = ['--excludeH', "--eh"], paramLabel = 'false', defaultValue = 'false',
+            description = 'Exclude hydrogens from conformations.')
+    private boolean excludeH = false
+
+
+    /**
+     * --monomerMinimization
+     */
+    @Option(names = ['--noMonomerMinimization', "--noMonMin"], paramLabel = 'true',
+            description = 'Minimize monomers individually at the beginning.')
+    boolean monomerMinimization = true
 
     /**
      * One filename.
@@ -76,76 +148,6 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
     @Parameters(arity = "1..*", paramLabel = "files",
             description = "XYZ input file.")
     private String filename
-
-    /**
-     * --eps
-     */
-    @CommandLine.Option(names = ['--eps'], paramLabel = '.1',
-            description = 'Cutoff for minimization.')
-    double eps = 0.1
-
-    /**
-     * --induced
-     */
-    @CommandLine.Option(names = ['--induced'], paramLabel = 'false',
-            description = 'Whether to use direct polarization. Using induced requires a larger eps.')
-    boolean induced = false
-
-    /**
-     * --maxIter
-     */
-    @CommandLine.Option(names = ['--maxIter'], paramLabel = '100',
-            description = 'Max iterations for minimization.')
-    int maxIter =  1000
-
-    /**
-     * --hBondDist
-     */
-    @CommandLine.Option(names = ['--hBondDist', '--hbd'], paramLabel = '2.0',
-            description = 'Initial h-bond distance.')
-    double hBondDist = 2.0
-
-    /**
-     * --saveEnergyCutoff
-     */
-    @CommandLine.Option(names = ['--saveEnergyCutoff', "--sec"], paramLabel = '1.5',
-            description = 'Cutoff conformations that have an energy (kcal/mol) less then this cutoff. Default mode.')
-    double saveEnergyCutoff = 1.5
-
-    /**
-     * --flatBottomRadius
-     */
-    @CommandLine.Option(names = ['--flatBottomRadius', "--fbr"], paramLabel = '0.5',
-            description = 'Radius of flat bottom potential.')
-    double flatBottomRadius = 0.5
-
-    /**
-     * --saveNumStates
-     */
-    @CommandLine.Option(names = ['--saveNumStates', "--sns"], paramLabel = '-1',
-            description = 'Save this many of the lowest energy states. This is not the default mode.')
-    int saveNumStates = -1
-
-    /**
-     * --saveAll
-     */
-    @CommandLine.Option(names = ['--saveAll', "--sa"], paramLabel = 'false',
-            description = '')
-    boolean saveAll = false
-
-    /**
-     * --saveNumStates
-     */
-    @CommandLine.Option(names = ['--excludeH', "--eh"], paramLabel = 'false',
-            description = 'Include hydrogens into conformations.')
-    boolean excludeH = false
-
-    /**
-     * --monomerMinimization
-     */
-    @CommandLine.Option(names = ['--noMonomerMinimization', "--noMonMin"], paramLabel = 'true',
-            description = 'Minimize monomers individually at the beginning.')
-    boolean monomerMinimization = true
 
     /**
     * Constructor.
@@ -168,18 +170,19 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
   @Override
   GenerateCrystalSeeds run() {
       // Set system properties as soon as script starts
+      // Init the context and bind variables.
+      if (!init()) {
+          return this
+      }
+
       System.setProperty("direct-scf-fallback",  "true")
-      if(!induced) {
+      if(direct) {
           System.setProperty("polarization", "direct")
           logger.info(" Using direct polarization.")
       } else {
           logger.info(" Using induced.")
       }
 
-      // Init the context and bind variables.
-      if (!init()) {
-          return this
-      }
 
       // Load the MolecularAssembly of the input file.
       activeAssembly = getActiveAssembly(filename)
