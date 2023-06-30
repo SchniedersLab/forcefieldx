@@ -37,6 +37,7 @@
 //******************************************************************************
 package ffx.potential.groovy.test
 
+import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.RotamerLibrary
 import ffx.potential.cli.AtomSelectionOptions
