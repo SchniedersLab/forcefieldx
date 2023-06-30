@@ -213,7 +213,8 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
       Atom[] atoms = activeAssembly.getAtomList()
       for(Atom a: atoms){
           if(a.getAtomType().atomicNumber == 7|| a.getAtomType().atomicNumber == 8
-                  || a.getAtomType().atomicNumber == 9){ // Add NOF
+                  || a.getAtomType().atomicNumber == 9 || a.getAtomType().atomicNumber == 15
+          || a.getAtomType().atomicNumber == 16 || a.getAtomType().atomicNumber == 17){ // NOFPSCl
               if(a.getMoleculeNumber() == activeAssembly.getMoleculeNumbers()[0]) {
                   moleculeOneFiltered.add(a)
               } else{
@@ -400,6 +401,8 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
                   e = forceFieldEnergy.energy(x, false) - monomerEnergy
                   energies.add(e)
                   logger.info(" Energy of trial " + (loopCounter-1) + ": " + e)
+                  // Superpose should be run after this to get N^2 rmsds and
+                  // then similar structures can be pruned
                   lowestEnergyQueue.add(new StateContainer(new AssemblyState(activeAssembly), e))
               } catch (Exception e) {
                   logger.warning(" Minimization failed. No state will be saved.")
