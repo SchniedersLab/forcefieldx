@@ -251,9 +251,6 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
           monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
           monomerMinEngine.minimize(eps, maxIter)
       }
-      logger.info("\n --------- Monomer 1 Energy Breakdown --------- ")
-      forceFieldEnergy.getCoordinates(x)
-      double monomerEnergy = forceFieldEnergy.energy(x, true)
       for(Atom a: moleculeTwoAtoms){ a.setUse(true) }
 
       // Monomer two energy
@@ -264,10 +261,19 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
           monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
           monomerMinEngine.minimize(eps, maxIter)
       }
+      for(Atom a: moleculeOneAtoms){ a.setUse(true) }
+
+      logger.info("\n --------- Monomer 1 Energy Breakdown --------- ")
+      for(Atom a: moleculeTwoAtoms){ a.setUse(false) }
+      forceFieldEnergy.getCoordinates(x)
+      double monomerEnergy = forceFieldEnergy.energy(x, true)
+      for(Atom a: moleculeTwoAtoms){ a.setUse(true) }
+
+
       logger.info("\n --------- Monomer 2 Energy Breakdown --------- ")
+      for(Atom a: moleculeOneAtoms){ a.setUse(false) }
       forceFieldEnergy.getCoordinates(x)
       double monomerEnergy2 = forceFieldEnergy.energy(x, true)
-      for(Atom a: moleculeOneAtoms){ a.setUse(true) }
 
       // Enforce all atoms used
       for(Atom a: atoms){ a.setUse(true) }
