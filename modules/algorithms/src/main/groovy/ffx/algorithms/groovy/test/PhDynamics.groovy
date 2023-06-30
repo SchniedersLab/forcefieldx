@@ -203,7 +203,8 @@ class PhDynamics extends AlgorithmsScript {
     potential.energy(x, true)
     SystemFilter systemFilter = algorithmFunctions.getFilter()
     if(systemFilter instanceof XYZFilter){
-      XPHFilter xphFilter = new XPHFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(), activeAssembly.getProperties(), esvSystem)
+      XPHFilter xphFilter = new XPHFilter(activeAssembly.getFile(), activeAssembly, activeAssembly.getForceField(),
+              activeAssembly.getProperties(), esvSystem)
       xphFilter.readFile()
       logger.info("Reading ESV lambdas from XPH file")
       potential.getCoordinates(x)
@@ -232,12 +233,15 @@ class PhDynamics extends AlgorithmsScript {
         }
 
         String pHWindows = Arrays.toString(PhReplicaExchange.setEvenSpacePhLadder(pHGap, pH, size))
-        pHWindows = pHWindows.replace("[", "").replace("]","").replace(","," ")
+        pHWindows = pHWindows.replace("[", "")
+                .replace("]","")
+                .replace(","," ")
         CompositeConfiguration properties = activeAssembly.getProperties()
         pHWindows = properties.getString("pH.Windows", pHWindows)
         String[] temp = pHWindows.split(" +")
         if(temp.length != size){
-          logger.severe("pHLadder specified in properties/key file has incorrect number of windows given world.size()")
+          logger.severe("pHLadder specified in properties/key file has " +
+                  "incorrect number of windows given world.size()")
         }
         double[] pHLadder = new double[size]
         for(int i = 0; i< temp.length; i++){
@@ -248,10 +252,12 @@ class PhDynamics extends AlgorithmsScript {
         int rank = world.rank()
 
         File structureFile = new File(filename)
-        final String newMolAssemblyFile = structureFile.getParent() + File.separator + rank + File.separator + structureFile.getName()
+        final String newMolAssemblyFile = structureFile.getParent() + File.separator + rank +
+                File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
-        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHLadder, dynamicsOptions.temperature, esvSystem)
+        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHLadder,
+                dynamicsOptions.temperature, esvSystem, x)
 
         long totalSteps = dynamicsOptions.numSteps
         int nSteps = repEx.replicaSteps
@@ -262,10 +268,11 @@ class PhDynamics extends AlgorithmsScript {
         }
 
         pHReplicaExchange.
-                sample(exchangeCycles, nSteps, dynamicsOptions.dt as long, dynamicsOptions.report, dynamicsOptions.dt * titrSteps-1 , initDynamics)
+                sample(exchangeCycles, nSteps, dynamicsOptions.dt as long, dynamicsOptions.report,
+                        dynamicsOptions.dt * titrSteps-1 , initDynamics)
 
         if (sort) {
-          sortMyArc(structureFile, size, pHReplicaExchange.getpHScale()[world.rank()], world.rank())
+          sortMyArc(structureFile, size, pHReplicaExchange.getpHScale()[world.rank()] as double, world.rank())
         }
 
       } else {
@@ -297,12 +304,15 @@ class PhDynamics extends AlgorithmsScript {
 
 
         String pHWindows = Arrays.toString(PhReplicaExchange.setEvenSpacePhLadder(pHGap, pH, size))
-        pHWindows = pHWindows.replace("[", "").replace("]","").replace(","," ")
+        pHWindows = pHWindows.replace("[", "")
+                .replace("]","")
+                .replace(","," ")
         CompositeConfiguration properties = activeAssembly.getProperties()
         pHWindows = properties.getString("pH.Windows", pHWindows)
         String[] temp = pHWindows.split(" +")
         if(temp.length != size){
-          logger.severe("pHLadder specified in properties/key file has incorrect number of windows given world.size()")
+          logger.severe("pHLadder specified in properties/key file has " +
+                  "incorrect number of windows given world.size()")
         }
         double[] pHLadder = new double[size]
         for(int i = 0; i< temp.length; i++){
@@ -315,20 +325,23 @@ class PhDynamics extends AlgorithmsScript {
         final String newMolAssemblyFile = rankDirectory.getPath() + File.separator + structureFile.getName()
         logger.info(" Set activeAssembly filename: " + newMolAssemblyFile)
         activeAssembly.setFile(new File(newMolAssemblyFile))
-        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHLadder, dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
+        PhReplicaExchange pHReplicaExchange = new PhReplicaExchange(molecularDynamics, structureFile, pH, pHLadder,
+                dynamicsOptions.temperature, esvSystem, x, molecularDynamicsOpenMM, potential)
 
         pHReplicaExchange.
-                sample(cycles, titrSteps, coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.dt * titrSteps, initDynamics)
+                sample(cycles, titrSteps, coordSteps, dynamicsOptions.dt, dynamicsOptions.report,
+                        dynamicsOptions.dt * titrSteps, initDynamics)
 
         if (sort) {
-          sortMyArc(structureFile, world.size(), pH, world.rank())
+          sortMyArc(structureFile, world.size(), pHReplicaExchange.getpHScale()[world.rank()] as double, world.rank())
         }
 
       } else {
         for (int i = 0; i < cycles; i++) {
           // Try running on the CPU
           molecularDynamics.setCoordinates(x)
-          molecularDynamics.dynamic(titrSteps, dynamicsOptions.dt, titrReport, dynamicsOptions.write,
+          double forceWriteInterval = titrSteps * 0.001
+          molecularDynamics.dynamic(titrSteps, dynamicsOptions.dt, titrReport, forceWriteInterval,
                   dynamicsOptions.temperature, true, dyn)
           x = molecularDynamics.getCoordinates()
           esvSystem.writeLambdaHistogram(true)
@@ -337,8 +350,8 @@ class PhDynamics extends AlgorithmsScript {
           potential.energy(x)
           molecularDynamicsOpenMM.setCoordinates(x)
           if (coordSteps != 0) {
-            molecularDynamicsOpenMM.dynamic(coordSteps, dynamicsOptions.dt, dynamicsOptions.report, dynamicsOptions.write,
-                    dynamicsOptions.temperature, true, dyn)
+            molecularDynamicsOpenMM.dynamic(coordSteps, dynamicsOptions.dt, dynamicsOptions.report,
+                    dynamicsOptions.write, dynamicsOptions.temperature, true, dyn)
             x = molecularDynamicsOpenMM.getCoordinates()
           }
         }

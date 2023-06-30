@@ -50,7 +50,6 @@ import ffx.potential.bonded.LambdaInterface
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.TopologyOptions
 import ffx.potential.cli.WriteoutOptions
-import ffx.potential.extended.ExtendedSystem
 import org.apache.commons.configuration2.Configuration
 import org.apache.commons.io.FilenameUtils
 import picocli.CommandLine.Command
@@ -110,20 +109,6 @@ class Thermodynamics extends AlgorithmsScript {
   @Option(names = ['-v', '--verbose'],
       description = "Log additional information (primarily for MC-OST).")
   boolean verbose = false
-
-  /**
-   * -v or --verbose  Log additional information (primarily for MC-OST).
-   */
-  @Option(names = ['--cphmd'],
-          description = "Run using CpHMD.")
-  boolean cphmd = false
-
-  /**
-   * -v or --verbose  Log additional information (primarily for MC-OST).
-   */
-  @Option(names = ['--pH'],
-          description = "pH for CpHMD.")
-  double pH = 7.2
 
   /**
    * The final argument(s) should be one or more filenames.
@@ -320,23 +305,6 @@ class Thermodynamics extends AlgorithmsScript {
       }
 
       logger.info(" Done running OST")
-    } else if(cphmd){
-      // Restart File
-      File esv = new File(FilenameUtils.removeExtension(withRankName) + ".esv")
-      if (!esv.exists()) {
-        esv = null
-      }
-
-      // Initialize and attach extended system first.
-      ExtendedSystem esvSystem = new ExtendedSystem(topologies[0], pH, esv)
-      potential.attachExtendedSystem(esvSystem)
-
-      orthogonalSpaceTempering = null
-      potential = barostatOptions.checkNPT(topologies[0], potential)
-      thermodynamicsOptions.
-          runFixedCpHMDAlchemy(topologies, potential, dynamicsOptions, writeoutOptions, dyn,
-              algorithmListener, esvSystem)
-      logger.info(" Done running Fixed")
     } else {
       orthogonalSpaceTempering = null
       potential = barostatOptions.checkNPT(topologies[0], potential)

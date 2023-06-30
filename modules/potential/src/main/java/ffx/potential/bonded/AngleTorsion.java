@@ -240,11 +240,14 @@ public class AngleTorsion extends BondedTerm implements LambdaInterface {
    * <p>Evaluate the Angle-Torsion energy.
    */
   @Override
-  public double energy(boolean gradient, int threadID,
-      AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
     energy = 0.0;
     value = 0.0;
     dEdL = 0.0;
+    // Only compute this term if at least one atom is being used.
+    if (!getUse()) {
+      return energy;
+    }
     var atomA = atoms[0];
     var atomB = atoms[1];
     var atomC = atoms[2];
