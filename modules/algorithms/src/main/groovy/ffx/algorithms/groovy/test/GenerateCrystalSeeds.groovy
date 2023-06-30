@@ -46,6 +46,7 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.RestraintBond
 import ffx.potential.parameters.BondType
+import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
 import org.checkerframework.checker.units.qual.Force
@@ -182,46 +183,6 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
           return this
       }
 
-      // Have to do monomer energies before first definition of activeAssembly
-      MolecularAssembly moleculeOne = getActiveAssembly(filename)
-      Molecule[] tempOne = moleculeOne.getMoleculeArray()
-      moleculeOne.deleteMolecule(tempOne[1])
-      moleculeOne.update()
-      moleculeOne.finalize(true, moleculeOne.forceField)
-      ForceFieldEnergy eFactoryOne = ForceFieldEnergy.energyFactory(moleculeOne)
-      double[] moleculeOneCoords = new double[eFactoryOne.getNumberOfVariables()]
-
-      MolecularAssembly moleculeTwo = getActiveAssembly(filename)
-      Molecule[] tempTwo = moleculeTwo.getMoleculeArray()
-      moleculeTwo.deleteMolecule(tempTwo[0])
-      moleculeTwo.update()
-      moleculeTwo.finalize(true, moleculeTwo.forceField)
-      ForceFieldEnergy eFactoryTwo = ForceFieldEnergy.energyFactory(moleculeTwo)
-      double[] moleculeTwoCoords = new double[eFactoryTwo.getNumberOfVariables()]
-
-      if (monomerMinimization) {
-          // Don't trust pre-made algorithmListener? Unsure of contextual impact on activeMola
-          AlgorithmListener monomerAlgorithmListener = new AlgorithmListener() {
-              @Override
-              boolean algorithmUpdate(MolecularAssembly active) {
-                  return true
-              }
-          }
-          logger.info("\n --------- Minimize Monomer 1 --------- ")
-          Minimize monomerMinEngine = new Minimize(moleculeOne, eFactoryOne, monomerAlgorithmListener)
-          monomerMinEngine.minimize(eps, maxIter)
-          logger.info("\n --------- Minimize Monomer 2 --------- ")
-          monomerMinEngine = new Minimize(moleculeTwo, eFactoryTwo, monomerAlgorithmListener)
-          monomerMinEngine.minimize(eps, maxIter)
-      }
-      eFactoryOne.getCoordinates(moleculeOneCoords) // Not required after min since
-      eFactoryTwo.getCoordinates(moleculeTwoCoords)
-
-      logger.info("\n --------- Monomer 1 Energy Breakdown --------- ")
-      double monomerEnergy = eFactoryOne.energy(moleculeOneCoords, true)
-      logger.info("\n --------- Monomer 2 Energy Breakdown --------- ")
-      double monomerEnergy2 = eFactoryTwo.energy(moleculeTwoCoords, true)
-
       // Load the MolecularAssembly of the input file.
       activeAssembly = getActiveAssembly(filename)
       if (activeAssembly == null) {
@@ -239,21 +200,6 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
       if (numMolecules != 2){
           logger.severe(" XYZ file must contain 2 molecules")
       }
-
-      // Get energies logged for init structure
-      logger.info("\n --------- Complex Structure Energy Breakdown --------- ")
-      ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
-      double[] x = new double[forceFieldEnergy.getNumberOfVariables()]
-      forceFieldEnergy.getCoordinates(x)
-      forceFieldEnergy.energy(x, true)
-
-      // Log potentials
-      double dimerEnergy = forceFieldEnergy.energy(x, false)
-      logger.info("\n Monomer energy 1: " + monomerEnergy + " kcal/mol")
-      monomerEnergy += monomerEnergy2
-      logger.info(" Monomer energy 2: " + monomerEnergy2 + " kcal/mol")
-      logger.info(" Total of monomer energies: " + monomerEnergy + " kcal/mol")
-      logger.info(" Complex energy: " + dimerEnergy + " kcal/mol")
 
       // Get full atom lists of both molecules to act (rotation/translation) on
       Molecule[] molecules = activeAssembly.getMoleculeArray()
@@ -291,6 +237,52 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
               }
           }
       }
+
+      ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
+      double[] x = new double[forceFieldEnergy.getNumberOfVariables()]
+      forceFieldEnergy.getCoordinates(x)
+      forceFieldEnergy.energy(x, false)
+
+      // Monomer one energy
+      for(Atom a: moleculeTwoAtoms){ a.setUse(false) }
+      Minimize monomerMinEngine
+      if(monomerMinimization){
+          logger.info("\n --------- Minimize Monomer 1 --------- ")
+          monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+          monomerMinEngine.minimize(eps, maxIter)
+      }
+      logger.info("\n --------- Monomer 1 Energy Breakdown --------- ")
+      forceFieldEnergy.getCoordinates(x)
+      double monomerEnergy = forceFieldEnergy.energy(x, true)
+      for(Atom a: moleculeTwoAtoms){ a.setUse(true) }
+
+      // Monomer two energy
+      for(Atom a: moleculeOneAtoms){ a.setUse(false) }
+      if (monomerMinimization) {
+          // Don't trust pre-made algorithmListener? Unsure of contextual impact on activeMola
+          logger.info("\n --------- Minimize Monomer 2 --------- ")
+          monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+          monomerMinEngine.minimize(eps, maxIter)
+      }
+      logger.info("\n --------- Monomer 2 Energy Breakdown --------- ")
+      forceFieldEnergy.getCoordinates(x)
+      double monomerEnergy2 = forceFieldEnergy.energy(x, true)
+      for(Atom a: moleculeOneAtoms){ a.setUse(true) }
+
+      // Enforce all atoms used
+      for(Atom a: atoms){ a.setUse(true) }
+
+      // Get energies logged for init structure (likely minimized prior)
+      logger.info("\n --------- Complex Structure Energy Breakdown --------- ")
+      forceFieldEnergy.getCoordinates(x)
+      double dimerEnergy = forceFieldEnergy.energy(x, true)
+
+      // Log potentials
+      logger.info("\n Monomer energy 1: " + monomerEnergy + " kcal/mol")
+      monomerEnergy += monomerEnergy2
+      logger.info(" Monomer energy 2: " + monomerEnergy2 + " kcal/mol")
+      logger.info(" Total of monomer energies: " + monomerEnergy + " kcal/mol")
+      logger.info(" Complex energy: " + dimerEnergy + " kcal/mol")
 
       // Making the MinMax priority queue that will expel the largest entry when it reaches its maximum size
       MinMaxPriorityQueue<StateContainer> lowestEnergyQueue = MinMaxPriorityQueue.
@@ -369,12 +361,6 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
                   moleculeTwoAtoms[i].move(hBondVector)
               }
               // Minimize the energy of the system subject to a harmonic restraint on the distance between the two atoms
-              AlgorithmListener algorithmListener = new AlgorithmListener() {
-                  @Override
-                  boolean algorithmUpdate(MolecularAssembly active) {
-                      return true
-                  }
-              }
               try {
                   forceFieldEnergy.getCoordinates(x)
                   double e = forceFieldEnergy.energy(x, false)
