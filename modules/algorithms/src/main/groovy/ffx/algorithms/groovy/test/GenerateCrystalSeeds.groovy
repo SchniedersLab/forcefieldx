@@ -173,7 +173,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
       if(!induced) {
           System.setProperty("polarization", "direct")
           logger.info(" Using direct polarization.")
-      } else{
+      } else {
           logger.info(" Using induced.")
       }
 
@@ -186,6 +186,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
       MolecularAssembly moleculeOne = getActiveAssembly(filename)
       Molecule[] tempOne = moleculeOne.getMoleculeArray()
       moleculeOne.deleteMolecule(tempOne[1])
+      moleculeOne.update()
       moleculeOne.finalize(true, moleculeOne.forceField)
       ForceFieldEnergy eFactoryOne = ForceFieldEnergy.energyFactory(moleculeOne)
       double[] moleculeOneCoords = new double[eFactoryOne.getNumberOfVariables()]
@@ -193,6 +194,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
       MolecularAssembly moleculeTwo = getActiveAssembly(filename)
       Molecule[] tempTwo = moleculeTwo.getMoleculeArray()
       moleculeTwo.deleteMolecule(tempTwo[0])
+      moleculeTwo.update()
       moleculeTwo.finalize(true, moleculeTwo.forceField)
       ForceFieldEnergy eFactoryTwo = ForceFieldEnergy.energyFactory(moleculeTwo)
       double[] moleculeTwoCoords = new double[eFactoryTwo.getNumberOfVariables()]
@@ -229,6 +231,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
 
       // Set the filename.
       filename = activeAssembly.getFile().getAbsolutePath()
+      activeAssembly.update()
 
       // Get number of molecules in file
       int numMolecules = activeAssembly.getMoleculeArray().length
@@ -398,8 +401,6 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
                   a.update()
                   b.update()
                   activeAssembly.bondList.remove(restraintBond)
-                  activeAssembly.updateAtoms()
-                  activeAssembly.updateBonds()
                   activeAssembly.update()
                   // Store and log the minimized energy
                   forceFieldEnergy.getCoordinates(x)
