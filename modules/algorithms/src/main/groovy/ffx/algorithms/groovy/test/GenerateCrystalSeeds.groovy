@@ -402,14 +402,8 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
                   logger.info(" Energy of trial " + (loopCounter-1) + ": " + e)
                   lowestEnergyQueue.add(new StateContainer(new AssemblyState(activeAssembly), e))
               } catch (Exception e) {
-                  logger.warning(" Minimization failed.")
-                  if(saveAll){
-                      logger.warning(" Saving current state anyway.")
-                      lowestEnergyQueue.add(new StateContainer(new AssemblyState(activeAssembly), 1000000.0))
-                  } else {
-                      logger.warning(" Not saving current state.")
-                  }
-                  e.printStackTrace()
+                  logger.warning(" Minimization failed. No state will be saved.")
+                  //e.printStackTrace()
               }
           }
           zAxis[2] = 1 // Reset z-axis for mol 1 alignment
