@@ -45,6 +45,7 @@ import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.RestraintBond
+import ffx.potential.nonbonded.pme.Polarization
 import ffx.potential.parameters.BondType
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.XYZFilter
@@ -54,6 +55,7 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Molecule
+import ffx.potential.bonded.Bond
 
 import static ffx.potential.utils.Superpose.applyRotation
 import static org.apache.commons.math3.util.FastMath.cos
@@ -79,13 +81,6 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
     double eps = 0.1
 
     /**
-     * --induced
-     */
-    @Option(names = ['--direct'], paramLabel = 'false',
-            description = 'Whether to use direct polarization. Using induced requires a larger eps.')
-    boolean direct = false
-
-    /**
      * --maxIter
      */
     @Option(names = ['--maxIter'], paramLabel = '100',
@@ -103,7 +98,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
      * --saveEnergyCutoff
      */
     @Option(names = ['--saveEnergyCutoff', "--sec"], paramLabel = '1.5',
-            description = 'Cutoff conformations that have an energy (kcal/mol) less then this cutoff. Default mode.')
+            description = 'Cutoff conformations that have an energy (kcal/mol) less then this cutoff.')
     double saveEnergyCutoff = 1.5
 
     /**
@@ -123,24 +118,16 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
     /**
      * --saveAll
      */
-    @Option(names = ['--saveAll', "--sa"], paramLabel = 'false',
-            description = '')
-    boolean saveAll = false
+    @Option(names = ['--saveAll', "--sa"], paramLabel = 'true',
+            description = 'Default mode.')
+    boolean saveAll = true
 
     /**
      * --excludeH
      */
     @Option(names = ['--excludeH', "--eh"], paramLabel = 'false', defaultValue = 'false',
-            description = 'Exclude hydrogens from conformations.')
+            description = 'Only include H bonded to electronegative atoms in conformations.')
     private boolean excludeH = false
-
-
-    /**
-     * --monomerMinimization
-     */
-    @Option(names = ['--noMonomerMinimization', "--noMonMin"], paramLabel = 'true',
-            description = 'Minimize monomers individually at the beginning.')
-    boolean monomerMinimization = true
 
     /**
      * One filename.
@@ -173,14 +160,6 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
       // Init the context and bind variables.
       if (!init()) {
           return this
-      }
-
-      System.setProperty("direct-scf-fallback",  "true")
-      if(direct) {
-          System.setProperty("polarization", "direct")
-          logger.info(" Using direct polarization.")
-      } else {
-          logger.info(" Using induced.")
       }
 
 
@@ -222,14 +201,18 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
               }
 
               // Searching for bonded h's --> program runs fast enough that we can afford to do all
-              /*
-              for(Bond b: a.getBonds()){
-                  int num = b.get1_2(a).getAtomType().atomicNumber
-                  if(num == 1){
-                      filteredAtoms.add(a)
+              if(excludeH) {
+                  for (Bond b : a.getBonds()) {
+                      int num = b.get1_2(a).getAtomType().atomicNumber
+                      if (num == 1) {
+                          if (a.getMoleculeNumber() == activeAssembly.getMoleculeNumbers()[0]) {
+                              moleculeOneFiltered.add(a)
+                          } else {
+                              moleculeTwoFiltered.add(a)
+                          }
+                      }
                   }
               }
-               */
           }
           else if(a.getAtomType().atomicNumber == 1 && !excludeH){ // Add all H's --> the increased sampling is worth it?
               if(a.getMoleculeNumber() == activeAssembly.getMoleculeNumbers()[0]) {
@@ -245,25 +228,47 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
       forceFieldEnergy.getCoordinates(x)
       forceFieldEnergy.energy(x, false)
 
+      // Minimize Monomers, this step is very important since it affects all energies
       // Monomer one energy
       for(Atom a: moleculeTwoAtoms){ a.setUse(false) }
       Minimize monomerMinEngine
-      if(monomerMinimization){
-          logger.info("\n --------- Minimize Monomer 1 --------- ")
-          monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
-          monomerMinEngine.minimize(eps, maxIter)
-      }
+      logger.info("\n --------- Minimize Monomer 1 --------- ")
+      forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE)
+      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+      monomerMinEngine.minimize(eps, maxIter)
+      forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT)
+      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+      monomerMinEngine.minimize(eps, maxIter)
+      forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL)
+      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+      monomerMinEngine.minimize(eps, maxIter)
       for(Atom a: moleculeTwoAtoms){ a.setUse(true) }
 
       // Monomer two energy
       for(Atom a: moleculeOneAtoms){ a.setUse(false) }
-      if (monomerMinimization) {
-          // Don't trust pre-made algorithmListener? Unsure of contextual impact on activeMola
-          logger.info("\n --------- Minimize Monomer 2 --------- ")
-          monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
-          monomerMinEngine.minimize(eps, maxIter)
-      }
+      logger.info("\n --------- Minimize Monomer 2 --------- ")
+      forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE)
+      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+      monomerMinEngine.minimize(eps, maxIter)
+      forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT)
+      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+      monomerMinEngine.minimize(eps, maxIter)
+      forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL)
+      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+      monomerMinEngine.minimize(eps, maxIter)
       for(Atom a: moleculeOneAtoms){ a.setUse(true) }
+
+      // Minimize Dimer Structure so energy runs on it
+      logger.info("\n --------- Minimize Dimer --------- ")
+      forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE)
+      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+      monomerMinEngine.minimize(1.0, maxIter)
+      forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT)
+      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+      monomerMinEngine.minimize(1.0, maxIter)
+      forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL)
+      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+      monomerMinEngine.minimize(1.0, maxIter)
 
       logger.info("\n --------- Monomer 1 Energy Breakdown --------- ")
       for(Atom a: moleculeTwoAtoms){ a.setUse(false) }
@@ -277,10 +282,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
       forceFieldEnergy.getCoordinates(x)
       double monomerEnergy2 = forceFieldEnergy.energy(x, true)
 
-      // Enforce all atoms used
-      for(Atom a: atoms){ a.setUse(true) }
-
-      // Get energies logged for init structure (likely minimized prior)
+      // Get energies logged for init structure
       logger.info("\n --------- Complex Structure Energy Breakdown --------- ")
       forceFieldEnergy.getCoordinates(x)
       double dimerEnergy = forceFieldEnergy.energy(x, true)
@@ -386,9 +388,15 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
                           false,
                           0.0, 0.0,
                           null).setBondType(restraint)
-                  // Minimize
+
+                  //Minimize DIRECT and MUTUAL
+                  forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT)
                   Minimize minEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+                  minEngine.minimize(1.0, maxIter)
+                  forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL)
+                  minEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
                   minEngine.minimize(eps, maxIter)
+
                   // Delete restraintBond
                   a.getBonds().remove(restraintBond)
                   b.getBonds().remove(restraintBond)
