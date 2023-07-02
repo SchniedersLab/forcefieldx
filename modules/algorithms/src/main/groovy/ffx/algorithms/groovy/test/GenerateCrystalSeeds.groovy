@@ -38,6 +38,7 @@
 package ffx.algorithms.groovy.test
 
 import com.google.common.collect.MinMaxPriorityQueue
+import edu.rit.pj.Comm
 import ffx.algorithms.AlgorithmListener
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.optimize.Minimize
@@ -50,6 +51,7 @@ import ffx.potential.parameters.BondType
 import ffx.potential.parsers.PDBFilter
 import ffx.potential.parsers.XYZFilter
 import org.apache.commons.io.FilenameUtils
+import org.openscience.cdk.interfaces.IMonomer
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -57,8 +59,11 @@ import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Molecule
 import ffx.potential.bonded.Bond
 
+import java.lang.reflect.Array
+
 import static ffx.potential.utils.Superpose.applyRotation
 import static org.apache.commons.math3.util.FastMath.cos
+import static org.apache.commons.math3.util.FastMath.min
 import static org.apache.commons.math3.util.FastMath.sin
 
 /**
@@ -162,6 +167,8 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
           return this
       }
 
+      // Parallelism
+      Comm world = Comm.world()
 
       // Load the MolecularAssembly of the input file.
       activeAssembly = getActiveAssembly(filename)
@@ -223,69 +230,35 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
           }
       }
 
+      // Make worker assignment adjustments
+      if(world.size() > 1){
+          double[] myStates = new double[moleculeOneFiltered.size()]
+          for(int i = 0; i < moleculeOneFiltered.size(); i++)
+          {
+              int assignedWorker = moleculeOneFiltered.size() % world.size()
+              if(world.rank() == assignedWorker){
+                  myStates[i] = 1 // one-hot encoding assignments
+              }
+          }
+          for(int i = 0; i < myStates.length; i++){
+              if(myStates[i] == 0) {
+                  moleculeOneFiltered.set(i, null)
+              }
+          }
+          moleculeOneFiltered.removeIf {a -> (a == null)}
+      }
+
+      // Set up forceFieldEnergy
       ForceFieldEnergy forceFieldEnergy = activeAssembly.getPotentialEnergy()
       double[] x = new double[forceFieldEnergy.getNumberOfVariables()]
       forceFieldEnergy.getCoordinates(x)
-      forceFieldEnergy.energy(x, false)
 
       // Minimize Monomers, this step is very important since it affects all energies
-      // Monomer one energy
-      for(Atom a: moleculeTwoAtoms){ a.setUse(false) }
-      Minimize monomerMinEngine
-      logger.info("\n --------- Minimize Monomer 1 --------- ")
-      forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE)
-      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
-      monomerMinEngine.minimize(eps, maxIter)
-      forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT)
-      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
-      monomerMinEngine.minimize(eps, maxIter)
-      forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL)
-      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
-      monomerMinEngine.minimize(eps, maxIter)
-      for(Atom a: moleculeTwoAtoms){ a.setUse(true) }
-
-      // Monomer two energy
-      for(Atom a: moleculeOneAtoms){ a.setUse(false) }
-      logger.info("\n --------- Minimize Monomer 2 --------- ")
-      forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE)
-      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
-      monomerMinEngine.minimize(eps, maxIter)
-      forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT)
-      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
-      monomerMinEngine.minimize(eps, maxIter)
-      forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL)
-      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
-      monomerMinEngine.minimize(eps, maxIter)
-      for(Atom a: moleculeOneAtoms){ a.setUse(true) }
-
-      // Minimize Dimer Structure so energy runs on it
-      logger.info("\n --------- Minimize Dimer --------- ")
-      forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE)
-      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
-      monomerMinEngine.minimize(1.0, maxIter)
-      forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT)
-      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
-      monomerMinEngine.minimize(1.0, maxIter)
-      forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL)
-      monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
-      monomerMinEngine.minimize(1.0, maxIter)
-
-      logger.info("\n --------- Monomer 1 Energy Breakdown --------- ")
-      for(Atom a: moleculeTwoAtoms){ a.setUse(false) }
-      forceFieldEnergy.getCoordinates(x)
-      double monomerEnergy = forceFieldEnergy.energy(x, true)
-      for(Atom a: moleculeTwoAtoms){ a.setUse(true) }
-
-
-      logger.info("\n --------- Monomer 2 Energy Breakdown --------- ")
-      for(Atom a: moleculeOneAtoms){ a.setUse(false) }
-      forceFieldEnergy.getCoordinates(x)
-      double monomerEnergy2 = forceFieldEnergy.energy(x, true)
-
-      // Get energies logged for init structure
-      logger.info("\n --------- Complex Structure Energy Breakdown --------- ")
-      forceFieldEnergy.getCoordinates(x)
-      double dimerEnergy = forceFieldEnergy.energy(x, true)
+      double[] minE = minimizeEachSetOfMolecules(activeAssembly, forceFieldEnergy, x, algorithmListener,
+              moleculeOneAtoms as ArrayList<Atom>, moleculeTwoAtoms as ArrayList<Atom>, eps, maxIter)
+      double monomerEnergy = minE[0]
+      double monomerEnergy2 = minE[1]
+      double dimerEnergy = minE[2]
 
       // Log potentials
       logger.info("\n Monomer energy 1: " + monomerEnergy + " kcal/mol")
@@ -307,124 +280,19 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
           logger.info("\n Saving conformations within " + saveEnergyCutoff + " kcal/mol of lowest energy conformation")
       }
 
-      //Energy Container to store minimized energies
-      ArrayList<Double> energies = new ArrayList<>()
-      double[] zAxis = new double[]{0,0,1}
-
-      // Loop through interactions between the two molecules --> Not necessarily symmetric but close?
-      int loopCounter = 1
-      for(Atom a: moleculeOneFiltered){
-          // Get center of mass of moleculeOneAtoms
-          double[] moleculeOneCOM = getCOM(molecules[0])
-          for(int i = 0; i < moleculeOneAtoms.length; i++){
-              moleculeOneAtoms[i].move(-moleculeOneCOM[0], -moleculeOneCOM[1], -moleculeOneCOM[2])
-          }
-          // Get coordinates of a
-          double[] aCoords = a.getXYZ().copy().get()
-          // Get rotation matrix to align dipole moment with z-axis
-          double[][] rotation = getRotationBetween(aCoords, zAxis)
-          // Get a reference to the moleculeOneAtoms
-          double[] moleculeOneAtomPositions = new double[moleculeOneAtoms.length * 3]
-          for(int i = 0; i < moleculeOneAtoms.length; i++){
-              moleculeOneAtomPositions[i*3] = moleculeOneAtoms[i].getX()
-              moleculeOneAtomPositions[i*3 + 1] = moleculeOneAtoms[i].getY()
-              moleculeOneAtomPositions[i*3 + 2] = moleculeOneAtoms[i].getZ()
-          }
-          applyRotation(moleculeOneAtomPositions, rotation)
-          // Move atoms into rotated positions
-          for(int i = 0; i < moleculeOneAtoms.length; i++){
-              moleculeOneAtoms[i].setXYZ(moleculeOneAtomPositions[i*3],
-                      moleculeOneAtomPositions[i*3 + 1],
-                      moleculeOneAtomPositions[i*3 + 2])
-          }
-          // Move moleculeTwoHeavyAtoms atom to origin and rotate it to align with z-axis
-          zAxis[2] = -1 // Align with opposite side of axis --> Reset after loop
-          for(Atom b: moleculeTwoFiltered){
-              logger.info(" Trial " + loopCounter + " out of " +
-                      (moleculeTwoFiltered.size() * moleculeOneFiltered.size()))
-              loopCounter++
-              // Get center of mass of moleculeTwoAtoms and set to zero
-              double[] moleculeTwoCOM = getCOM(molecules[1])
-              for(int i = 0; i < moleculeTwoAtoms.length; i++) {
-                  moleculeTwoAtoms[i].move(-moleculeTwoCOM[0], -moleculeTwoCOM[1], -moleculeTwoCOM[2])
-              }
-              // Get coordinates of b
-              double[] bCoords = b.getXYZ().copy().get()
-              // Get rotation matrix to align z-axis with dipole moment (same as above so that the dipoles interact)
-              rotation = getRotationBetween(bCoords, zAxis)
-              // Get a reference to the positions of all moleculeTwoAtoms
-              double[] moleculeTwoAtomPositions = new double[moleculeTwoAtoms.length * 3]
-              for(int i = 0; i < moleculeTwoAtoms.length; i++){
-                  moleculeTwoAtomPositions[i*3] = moleculeTwoAtoms[i].getX()
-                  moleculeTwoAtomPositions[i*3 + 1] = moleculeTwoAtoms[i].getY()
-                  moleculeTwoAtomPositions[i*3 + 2] = moleculeTwoAtoms[i].getZ()
-              }
-              applyRotation(moleculeTwoAtomPositions, rotation)
-              // Move atoms into rotated positions
-              for(int i = 0; i < moleculeTwoAtoms.length; i++){
-                  moleculeTwoAtoms[i].setXYZ(moleculeTwoAtomPositions[i*3],
-                          moleculeTwoAtomPositions[i*3 + 1],
-                          moleculeTwoAtomPositions[i*3 + 2])
-              }
-              double[] hBondVector = new double[]{0, 0, a.getZ() - b.getZ() + hBondDist}
-              for(int i = 0; i < moleculeTwoAtoms.length; i++){
-                  moleculeTwoAtoms[i].move(hBondVector)
-              }
-              // Minimize the energy of the system subject to a harmonic restraint on the distance between the two atoms
-              try {
-                  forceFieldEnergy.getCoordinates(x)
-                  double e = forceFieldEnergy.energy(x, false)
-                  if (e > 100000){
-                      throw Exception as Throwable
-                  }
-                  // Set up restraintBond
-                  BondType restraint = new BondType(new int[]{a.getAtomicNumber(), b.getAtomicNumber()},
-                          1000.0,
-                          hBondDist,
-                          BondType.BondFunction.FLAT_BOTTOM_QUARTIC,
-                          flatBottomRadius)
-                  RestraintBond restraintBond = new RestraintBond(a, b,
-                          null,
-                          false,
-                          0.0, 0.0,
-                          null).setBondType(restraint)
-
-                  //Minimize DIRECT and MUTUAL
-                  forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT)
-                  Minimize minEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
-                  minEngine.minimize(1.0, maxIter)
-                  forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL)
-                  minEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
-                  minEngine.minimize(eps, maxIter)
-
-                  // Delete restraintBond
-                  a.getBonds().remove(restraintBond)
-                  b.getBonds().remove(restraintBond)
-                  a.update()
-                  b.update()
-                  activeAssembly.bondList.remove(restraintBond)
-                  activeAssembly.update()
-                  // Store and log the minimized energy
-                  forceFieldEnergy.getCoordinates(x)
-                  e = forceFieldEnergy.energy(x, false) - monomerEnergy
-                  energies.add(e)
-                  logger.info(" Energy of trial " + (loopCounter-1) + ": " + e)
-                  // Superpose should be run after this to get N^2 rmsds and
-                  // then similar structures can be pruned
-                  lowestEnergyQueue.add(new StateContainer(new AssemblyState(activeAssembly), e))
-              } catch (Exception e) {
-                  logger.warning(" Minimization failed. No state will be saved.")
-                  //e.printStackTrace()
-              }
-          }
-          zAxis[2] = 1 // Reset z-axis for mol 1 alignment
-      }
+      cycleConfigurations(activeAssembly, x, forceFieldEnergy, algorithmListener, molecules,
+              moleculeOneFiltered, moleculeOneAtoms, // Parallel workers depend on the ordering of this
+              moleculeTwoFiltered, moleculeTwoAtoms, // And this because of loop order
+              lowestEnergyQueue, monomerEnergy)
 
       logger.info("\n ------------------------- End of Trials -------------------------")
-      logger.info(" Lowest energy configuration: " + energies.min())
 
       // Set up a system XYZ file filter
-      File saveLocation = new File(FilenameUtils.removeExtension(filename) + ".arc")
+      String extension = ".arc"
+      if(world.size() > 1){
+          extension = "_rank" + world.rank() + extension
+      }
+      File saveLocation = new File(FilenameUtils.removeExtension(filename) + extension)
       logger.info(" Logging structures into: " + saveLocation)
       XYZFilter xyzFilter = new XYZFilter(saveLocation,
               activeAssembly,
@@ -444,7 +312,8 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
               state.revertState()
               xyzFilter.writeFile(saveLocation, true)
           }
-      } else if (saveNumStates != -1 && saveNumStates > 0) {
+      }
+      else if (saveNumStates != -1 && saveNumStates > 0) {
           int temp = saveNumStates
           saveNumStates = Math.min(saveNumStates, lowestEnergyQueue.size())
           if(temp != saveNumStates) {
@@ -463,7 +332,8 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
               state.revertState()
               xyzFilter.writeFile(saveLocation, true)
           }
-      } else {
+      }
+      else {
           logger.info(" Saving conformations within " + saveEnergyCutoff + " kcal/mol of lowest energy conformation")
           int counter = 1
           double eInit = 10000000
@@ -538,6 +408,197 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
         rotation[2][1] = u[2]*u[1] * (1-cos(theta)) + u[0]*sin(theta);
         rotation[2][2] = cos(theta) + (u[2] * u[2]) * (1-cos(theta));
         return rotation
+    }
+
+    static double[] minimizeEachSetOfMolecules(MolecularAssembly activeAssembly,
+                                                        ForceFieldEnergy forceFieldEnergy,
+                                                        double[] x,
+                                                        AlgorithmListener algorithmListener,
+                                                        ArrayList<Atom> moleculeOneAtoms,
+                                                        ArrayList<Atom> moleculeTwoAtoms,
+                                                        double eps, int maxIter) {
+        // Monomer one energy
+        for(Atom a: moleculeTwoAtoms){ a.setUse(false) }
+        Minimize monomerMinEngine
+        logger.info("\n --------- Minimize Monomer 1 --------- ")
+        forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE)
+        monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+        monomerMinEngine.minimize(eps, maxIter)
+        forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT)
+        monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+        monomerMinEngine.minimize(eps, maxIter)
+        forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL)
+        monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+        monomerMinEngine.minimize(eps, maxIter)
+        for(Atom a: moleculeTwoAtoms){ a.setUse(true) }
+
+        // Monomer two energy
+        for(Atom a: moleculeOneAtoms){ a.setUse(false) }
+        logger.info("\n --------- Minimize Monomer 2 --------- ")
+        forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE)
+        monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+        monomerMinEngine.minimize(eps, maxIter)
+        forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT)
+        monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+        monomerMinEngine.minimize(eps, maxIter)
+        forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL)
+        monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+        monomerMinEngine.minimize(eps, maxIter)
+        for(Atom a: moleculeOneAtoms){ a.setUse(true) }
+
+        logger.info("\n --------- Monomer 1 Energy Breakdown --------- ")
+        for(Atom a: moleculeTwoAtoms){ a.setUse(false) }
+        forceFieldEnergy.getCoordinates(x)
+        double monomerEnergy = forceFieldEnergy.energy(x, true)
+        for(Atom a: moleculeTwoAtoms){ a.setUse(true) }
+
+
+        logger.info("\n --------- Monomer 2 Energy Breakdown --------- ")
+        for(Atom a: moleculeOneAtoms){ a.setUse(false) }
+        forceFieldEnergy.getCoordinates(x)
+        double monomerEnergy2 = forceFieldEnergy.energy(x, true)
+
+        // Minimize Dimer Structure so energy runs on it
+        logger.info("\n --------- Minimize Dimer --------- ")
+        forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE)
+        monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+        monomerMinEngine.minimize(1.0, maxIter)
+        forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT)
+        monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+        monomerMinEngine.minimize(1.0, maxIter)
+        forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL)
+        monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+        monomerMinEngine.minimize(1.0, maxIter)
+
+        // Get energies logged for init structure
+        logger.info("\n --------- Complex Structure Energy Breakdown --------- ")
+        forceFieldEnergy.getCoordinates(x)
+        double dimerEnergy = forceFieldEnergy.energy(x, true)
+        double[] energies = new double[]{monomerEnergy, monomerEnergy2, dimerEnergy}
+        return energies
+    }
+
+
+    private void cycleConfigurations(MolecularAssembly activeAssembly,
+                                    double[] x,
+                                    ForceFieldEnergy forceFieldEnergy,
+                                    AlgorithmListener algorithmListener,
+                                    Molecule[] molecules,
+                                    ArrayList<Atom> moleculeOneFiltered,
+                                    Atom[] moleculeOneAtoms,
+                                    ArrayList<Atom> moleculeTwoFiltered,
+                                    Atom[] moleculeTwoAtoms,
+                                    MinMaxPriorityQueue<StateContainer> lowestEnergyQueue,
+                                    double monomerEnergy)
+    {
+        double[] zAxis = new double[]{0,0,1}
+        // Loop through interactions between the two molecules --> Not necessarily symmetric but close?
+        int loopCounter = 1
+        for(Atom a: moleculeOneFiltered){
+            // Get center of mass of moleculeOneAtoms
+            double[] moleculeOneCOM = getCOM(molecules[0])
+            for(int i = 0; i < moleculeOneAtoms.length; i++){
+                moleculeOneAtoms[i].move(-moleculeOneCOM[0], -moleculeOneCOM[1], -moleculeOneCOM[2])
+            }
+            // Get coordinates of a
+            double[] aCoords = a.getXYZ().copy().get()
+            // Get rotation matrix to align dipole moment with z-axis
+            double[][] rotation = getRotationBetween(aCoords, zAxis)
+            // Get a reference to the moleculeOneAtoms
+            double[] moleculeOneAtomPositions = new double[moleculeOneAtoms.length * 3]
+            for(int i = 0; i < moleculeOneAtoms.length; i++){
+                moleculeOneAtomPositions[i*3] = moleculeOneAtoms[i].getX()
+                moleculeOneAtomPositions[i*3 + 1] = moleculeOneAtoms[i].getY()
+                moleculeOneAtomPositions[i*3 + 2] = moleculeOneAtoms[i].getZ()
+            }
+            applyRotation(moleculeOneAtomPositions, rotation)
+            // Move atoms into rotated positions
+            for(int i = 0; i < moleculeOneAtoms.length; i++){
+                moleculeOneAtoms[i].setXYZ(moleculeOneAtomPositions[i*3],
+                        moleculeOneAtomPositions[i*3 + 1],
+                        moleculeOneAtomPositions[i*3 + 2])
+            }
+            // Move moleculeTwoHeavyAtoms atom to origin and rotate it to align with z-axis
+            zAxis[2] = -1 // Align with opposite side of axis --> Reset after loop
+            for(Atom b: moleculeTwoFiltered){
+                logger.info(" Trial " + loopCounter + " out of " +
+                        (moleculeTwoFiltered.size() * moleculeOneFiltered.size()))
+                loopCounter++
+                // Get center of mass of moleculeTwoAtoms and set to zero
+                double[] moleculeTwoCOM = getCOM(molecules[1])
+                for(int i = 0; i < moleculeTwoAtoms.length; i++) {
+                    moleculeTwoAtoms[i].move(-moleculeTwoCOM[0], -moleculeTwoCOM[1], -moleculeTwoCOM[2])
+                }
+                // Get coordinates of b
+                double[] bCoords = b.getXYZ().copy().get()
+                // Get rotation matrix to align z-axis with dipole moment (same as above so that the dipoles interact)
+                rotation = getRotationBetween(bCoords, zAxis)
+                // Get a reference to the positions of all moleculeTwoAtoms
+                double[] moleculeTwoAtomPositions = new double[moleculeTwoAtoms.length * 3]
+                for(int i = 0; i < moleculeTwoAtoms.length; i++){
+                    moleculeTwoAtomPositions[i*3] = moleculeTwoAtoms[i].getX()
+                    moleculeTwoAtomPositions[i*3 + 1] = moleculeTwoAtoms[i].getY()
+                    moleculeTwoAtomPositions[i*3 + 2] = moleculeTwoAtoms[i].getZ()
+                }
+                applyRotation(moleculeTwoAtomPositions, rotation)
+                // Move atoms into rotated positions
+                for(int i = 0; i < moleculeTwoAtoms.length; i++){
+                    moleculeTwoAtoms[i].setXYZ(moleculeTwoAtomPositions[i*3],
+                            moleculeTwoAtomPositions[i*3 + 1],
+                            moleculeTwoAtomPositions[i*3 + 2])
+                }
+                double[] hBondVector = new double[]{0, 0, a.getZ() - b.getZ() + hBondDist}
+                for(int i = 0; i < moleculeTwoAtoms.length; i++){
+                    moleculeTwoAtoms[i].move(hBondVector)
+                }
+                // Minimize the energy of the system subject to a harmonic restraint on the distance between the two atoms
+                try {
+                    forceFieldEnergy.getCoordinates(x)
+                    double e = forceFieldEnergy.energy(x, false)
+                    if (e > 100000){
+                        throw Exception as Throwable
+                    }
+                    // Set up restraintBond
+                    BondType restraint = new BondType(new int[]{a.getAtomicNumber(), b.getAtomicNumber()},
+                            1000.0,
+                            this.hBondDist,
+                            BondType.BondFunction.FLAT_BOTTOM_QUARTIC,
+                            this.flatBottomRadius)
+                    RestraintBond restraintBond = new RestraintBond(a, b,
+                            null,
+                            false,
+                            0.0, 0.0,
+                            null).setBondType(restraint)
+
+                    //Minimize DIRECT and MUTUAL
+                    forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT)
+                    Minimize minEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+                    minEngine.minimize(1.0, this.maxIter)
+                    forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL)
+                    minEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
+                    minEngine.minimize(this.eps, this.maxIter)
+
+                    // Delete restraintBond
+                    a.getBonds().remove(restraintBond)
+                    b.getBonds().remove(restraintBond)
+                    a.update()
+                    b.update()
+                    activeAssembly.bondList.remove(restraintBond)
+                    activeAssembly.update()
+                    // Store and log the minimized energy
+                    forceFieldEnergy.getCoordinates(x)
+                    e = forceFieldEnergy.energy(x, false) - monomerEnergy
+                    logger.info(" Energy of trial " + (loopCounter-1) + ": " + e)
+                    // Superpose should be run after this to get N^2 rmsds and
+                    // then similar structures can be pruned
+                    lowestEnergyQueue.add(new StateContainer(new AssemblyState(activeAssembly), e))
+                } catch (Exception ignored) {
+                    logger.warning(" Minimization failed. No state will be saved.")
+                    //e.printStackTrace()
+                }
+            }
+            zAxis[2] = 1 // Reset z-axis for mol 1 alignment
+        }
     }
 
     private class StateContainer implements Comparable<StateContainer> {
