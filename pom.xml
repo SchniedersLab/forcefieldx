@@ -955,7 +955,7 @@
         <checkstyle.skip>true</checkstyle.skip>
         <checkstyle.version>3.3.0</checkstyle.version>
         <ciftools-java.version>5.0.1</ciftools-java.version>
-        <clean.version>3.2.0</clean.version>
+        <clean.version>3.3.1</clean.version>
         <clover.version>4.4.1</clover.version>
         <clustering.version>1.2.0</clustering.version>
         <commons-beanutils.version>1.9.4</commons-beanutils.version>
@@ -1015,7 +1015,7 @@
         <resources.version>3.3.1</resources.version>
         <scm.version>2.0.1</scm.version>
         <slf4j-nop.version>2.0.7</slf4j-nop.version>
-        <shade.version>3.4.1</shade.version>
+        <shade.version>3.5.0</shade.version>
         <!-- The Shade plugin use of localRepository causes a validation message -->
         <maven.plugin.validation>brief</maven.plugin.validation>
         <!-- AsciiDoc is not compatible with site version 4.0.0-M3 yet -->

@@ -59,6 +59,7 @@ import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Geometry;
 import org.jogamp.java3d.LineArray;
@@ -107,11 +108,17 @@ public class Bond extends BondedTerm {
   private static final double[] bcross = new double[4];
   private static final double[] cstart = new double[3];
   private static final Vector3d pos3d = new Vector3d();
-  /** List of Bonds that this Bond forms angles with */
+  /**
+   * List of Bonds that this Bond forms angles with
+   */
   private final ArrayList<Bond> formsAngleWith = new ArrayList<>();
-  /** The force field BondType for this bond. */
+  /**
+   * The force field BondType for this bond.
+   */
   public BondType bondType = null;
-  /** Rigid Scale factor. */
+  /**
+   * Rigid Scale factor.
+   */
   private double rigidScale = 1.0;
   // Java3D methods and variables for visualization of this Bond.
   private RendererCache.ViewModel viewModel = RendererCache.ViewModel.INVISIBLE;
@@ -160,8 +167,8 @@ public class Bond extends BondedTerm {
   /**
    * Log that no BondType exists.
    *
-   * @param a1 Atom 1.
-   * @param a2 Atom 2.
+   * @param a1         Atom 1.
+   * @param a2         Atom 2.
    * @param forceField The force field in use.
    */
   public static void logNoBondType(Atom a1, Atom a2, ForceField forceField) {
@@ -200,7 +207,9 @@ public class Bond extends BondedTerm {
     logger.severe(sb.toString());
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int compareTo(BondedTerm b) {
     if (b == null) {
@@ -256,25 +265,20 @@ public class Bond extends BondedTerm {
       } // Else, no adjustments needed.
     }
     var dv2 = dv * dv;
-    switch (bondType.bondFunction) {
-      case QUARTIC, FLAT_BOTTOM_QUARTIC -> {
-        // Taylor expansion of Morse potential through the fourth power of the bond length deviation.
-        energy = prefactor * dv2 * (1.0 + bondType.cubic * dv + bondType.quartic * dv2);
-        if (gradient) {
-          // Compute the magnitude of the gradient.
-          var dedr = 2.0 * prefactor * dv * (1.0 + 1.5 * bondType.cubic * dv
-              + 2.0 * bondType.quartic * dv2);
-          computeGradient(threadID, grad, atomA, atomB, vab, dedr);
-        }
+    // A Taylor expansion of the Morse potential through the fourth power of the bond length deviation.
+    energy = prefactor * dv2 * (1.0 + bondType.cubic * dv + bondType.quartic * dv2);
+    if (gradient) {
+      // Compute the magnitude of the gradient.
+      var dedr = 2.0 * prefactor * dv * (1.0 + 1.5 * bondType.cubic * dv + 2.0 * bondType.quartic * dv2);
+      var de = 0.0;
+      if (value > 0.0) {
+        de = dedr / value;
       }
-      case HARMONIC, FLAT_BOTTOM_HARMONIC -> {
-        energy = prefactor * dv2;
-        if (gradient) {
-          // Compute the magnitude of the gradient.
-          var dedr = 2.0 * prefactor * dv;
-          computeGradient(threadID, grad, atomA, atomB, vab, dedr);
-        }
-      }
+      var ga = vab.scale(de);
+      var ia = atomA.getIndex() - 1;
+      var ib = atomB.getIndex() - 1;
+      grad.add(threadID, ia, ga);
+      grad.sub(threadID, ib, ga);
     }
     value = dv;
     return energy;
@@ -285,8 +289,8 @@ public class Bond extends BondedTerm {
    *
    * @param a The known Atom.
    * @return The other Atom that makes up <b>this</b> Bond, or Null if Atom <code>a</code> is not
-   *     part of
-   *     <b>this</b> Bond.
+   * part of
+   * <b>this</b> Bond.
    */
   public Atom get1_2(Atom a) {
     if (a == atoms[0]) {
@@ -311,7 +315,9 @@ public class Bond extends BondedTerm {
     return DoubleMath.dist(x1, x2);
   }
 
-  /** Log details for this Bond energy term. */
+  /**
+   * Log details for this Bond energy term.
+   */
   public void log() {
     logger.info(
         format(
@@ -326,7 +332,9 @@ public class Bond extends BondedTerm {
             energy));
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void removeFromParent() {
     super.removeFromParent();
@@ -541,19 +549,6 @@ public class Bond extends BondedTerm {
     }
   }
 
-  private void computeGradient(
-      int threadID, AtomicDoubleArray3D grad, Atom atomA, Atom atomB, Double3 vab, double dedr) {
-    var de = 0.0;
-    if (value > 0.0) {
-      de = dedr / value;
-    }
-    var ga = vab.scale(de);
-    var ia = atomA.getIndex() - 1;
-    var ib = atomB.getIndex() - 1;
-    grad.add(threadID, ia, ga);
-    grad.sub(threadID, ib, ga);
-  }
-
   /**
    * Check to see if <b>this</b> Bond and another combine to form an angle
    *
@@ -574,7 +569,7 @@ public class Bond extends BondedTerm {
    *
    * @param b Bond to compare with.
    * @return The Atom the Bonds have in common or Null if they are the same Bond or have no atom in
-   *     common
+   * common
    */
   Atom getCommonAtom(Bond b) {
     if (b == this || b == null) {
@@ -600,7 +595,7 @@ public class Bond extends BondedTerm {
    *
    * @param b Bond to compare with
    * @return The Atom that Bond b and <b>this</b> Bond do not have in common, or Null if they have no
-   *     Atom in common
+   * Atom in common
    */
   Atom getOtherAtom(Bond b) {
     if (b == this || b == null) {
@@ -660,10 +655,10 @@ public class Bond extends BondedTerm {
   /**
    * setBondTransform3d
    *
-   * @param t3d a {@link org.jogamp.java3d.Transform3D} object.
-   * @param pos an array of double.
+   * @param t3d    a {@link org.jogamp.java3d.Transform3D} object.
+   * @param pos    an array of double.
    * @param orient an array of double.
-   * @param len a double.
+   * @param len    a double.
    * @param newRot a boolean.
    */
   private void setBondTransform3d(
@@ -688,7 +683,7 @@ public class Bond extends BondedTerm {
   /**
    * Manage cylinder visibility.
    *
-   * @param visible boolean
+   * @param visible   boolean
    * @param newShapes List
    */
   private void setCylinderVisible(boolean visible, List<BranchGroup> newShapes) {
