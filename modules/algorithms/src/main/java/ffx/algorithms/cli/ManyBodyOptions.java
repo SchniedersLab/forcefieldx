@@ -700,6 +700,10 @@ public class ManyBodyOptions {
     return group.titrationPH;
   }
 
+  public boolean getTitration() {
+    return group.titration;
+  }
+
   public boolean isTitrating() {
     return group.titrationPH == 0;
   }
@@ -764,6 +768,13 @@ public class ManyBodyOptions {
     @Option(names = {"--pH",
         "--titrationPH"}, paramLabel = "0", defaultValue = "0", description = " Optimize the titration state of ASP, GLU, HIS and LYS residues at the given pH (pH = 0 turns off titration")
     private double titrationPH;
+
+    /**
+     * --pH or --titrationPH Optimize the titration state of ASP, GLU, HIS and LYS residues.
+     */
+    @Option(names = {"--tR",
+            "--titration"}, paramLabel = "false", defaultValue = "false", description = " Turn on titration state optimization")
+    private boolean titration;
 
     /**
      * --mC or --monteCarlo Follow elimination criteria with 'n' Monte Carlo steps, or enumerate all

@@ -118,7 +118,7 @@ class ReducedPartition extends AlgorithmsScript {
 
 
         double titrationPH = manyBodyOptions.getTitrationPH()
-        if (titrationPH > 0) {
+        if (manyBodyOptions.getTitration()) {
             System.setProperty("manybody-titration", "true")
         }
         System.setProperty("ro-ensembleEnergy", ensembleEnergy)
@@ -255,7 +255,7 @@ class ReducedPartition extends AlgorithmsScript {
             }
 
             // Handle rotamer optimization with titration.
-            if (titrationPH > 0) {
+            if (manyBodyOptions.getTitration()) {
                 logger.info("\n Adding titration hydrogen to : " + filenames.get(0) + "\n")
 
                 // Collect residue numbers.

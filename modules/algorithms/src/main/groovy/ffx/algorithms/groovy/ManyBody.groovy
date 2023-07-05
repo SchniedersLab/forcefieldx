@@ -115,7 +115,7 @@ class ManyBody extends AlgorithmsScript {
     // Otherwise, during titration the number of terms for each torsion can change and
     // cause updateParametersInContext to throw an exception.
     double titrationPH = manyBodyOptions.getTitrationPH()
-    if (titrationPH > 0) {
+    if (manyBodyOptions.getTitration()) {
       System.setProperty("manybody-titration", "true")
     }
 
@@ -156,7 +156,7 @@ class ManyBody extends AlgorithmsScript {
     }
 
     // Handle rotamer optimization with titration.
-    if (titrationPH > 0) {
+    if (manyBodyOptions.getTitration()) {
       logger.info("\n Adding titration hydrogen to : " + filename + "\n")
 
       // Collect residue numbers.
@@ -201,7 +201,7 @@ class ManyBody extends AlgorithmsScript {
     boolean isTitrating = false
     Set<Atom> excludeAtoms = new HashSet<>()
     int[] optimalRotamers = rotamerOptimization.getOptimumRotamers()
-    if (titrationPH > 0) {
+    if (manyBodyOptions.getTitration()) {
       isTitrating = titrationManyBody.excludeExcessAtoms(excludeAtoms, optimalRotamers, residueList)
     }
 
@@ -223,7 +223,7 @@ class ManyBody extends AlgorithmsScript {
       File modelFile = saveDirFile(activeAssembly.getFile())
       PDBFilter pdbFilter = new PDBFilter(modelFile, activeAssembly, activeAssembly.getForceField(),
           properties)
-      if (titrationPH > 0) {
+      if (manyBodyOptions.getTitration()) {
         String remark = format("Titration pH: %6.3f", titrationPH)
         if (!pdbFilter.writeFile(modelFile, false, excludeAtoms, true, true, remark)) {
           logger.info(format(" Save failed for %s", activeAssembly))
@@ -235,7 +235,7 @@ class ManyBody extends AlgorithmsScript {
       }
     }
 
-    if (titrationPH > 0) {
+    if (manyBodyOptions.getTitration()) {
       System.clearProperty("manybody-titration")
     }
 
