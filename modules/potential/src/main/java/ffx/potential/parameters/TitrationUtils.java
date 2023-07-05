@@ -1626,12 +1626,15 @@ public class TitrationUtils {
    * side-chain pKa values in myoglobin and comparison with NMR data for histidines." Biochemistry
    * 32.31 (1993): 8045-8056.
    * <p>
+   * ASP value from Grimsley, Gerald R., J. Martin Scholtz, and C. Nick Pace.
+   * "A summary of the measured pK values of the ionizable groups in folded proteins."
+   * Protein Science 18.1 (2009): 247-251.
    *
    */
   public enum Titration {
 
 
-    ASHtoASP(3.67, -71.10, 13.817, -105.690, 162.780, AminoAcid3.ASH, AminoAcid3.ASP),
+    ASHtoASP(3.94, -71.10, 13.817, -105.690, 162.780, AminoAcid3.ASH, AminoAcid3.ASP),
     GLHtoGLU(4.25, -83.40, 26.619, -128.530, 187.210, AminoAcid3.GLH, AminoAcid3.GLU),
     LYStoLYD(10.40, 41.77, 6.875, -78.868, 27.12, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
