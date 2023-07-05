@@ -226,7 +226,7 @@ public class ManyBodyTest extends AlgorithmsTest {
   @Test
   public void testManyBodyTitration() {
     // Set-up the input arguments for the script.
-    String[] args = {"--pH","7.0","--eR",
+    String[] args = {"--pH","7.0","--eR", "--tR",
             "src/main/java/ffx/algorithms/structures/DEHK.rot.restart",
             "src/main/java/ffx/algorithms/structures/DEHK.rot.pdb"
     };
