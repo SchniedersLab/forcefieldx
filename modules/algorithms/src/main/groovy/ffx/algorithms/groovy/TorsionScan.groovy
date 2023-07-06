@@ -188,7 +188,8 @@ class TorsionScan extends AlgorithmsScript {
 
         List<Bond> bonds = ma.getBondList();
         int end = bonds.size();
-        double turns = (increment < 360.0) ? Math.floor(360.0/increment) : 1.0;
+        int turns = (increment < 360.0) ? (int) (360.0/increment) : 1.0
+        logger.info(" Performing " + turns + " turns about each bond.");
         if(staticCompare || logger.isLoggable(Level.INFO)){
             totalTorsions = (int) turns * end;
         }else {
