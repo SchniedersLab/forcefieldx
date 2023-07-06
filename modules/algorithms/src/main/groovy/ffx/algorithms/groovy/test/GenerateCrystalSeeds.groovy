@@ -408,6 +408,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
         // Angle between v1 and z-axis
         double theta = Math.acos(dotProduct)
         double[] u = crossProduct
+        // Axis-angle rotation matrix
         double[][] rotation = new double[3][3];
         rotation[0][0] = cos(theta) + (u[0] * u[0]) * (1-cos(theta));
         rotation[0][1] = u[0]*u[1] * (1-cos(theta)) - u[2]*sin(theta);
@@ -418,11 +419,50 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
         rotation[2][0] = u[2]*u[0] * (1-cos(theta)) - u[1]*sin(theta);
         rotation[2][1] = u[2]*u[1] * (1-cos(theta)) + u[0]*sin(theta);
         rotation[2][2] = cos(theta) + (u[2] * u[2]) * (1-cos(theta));
+
+        // TODO: Check and implement this as new rotation method --> less to worry about if it is working
+        // Define quaternion from axis-angle
+        //double[] quaternion = new double[4]
+        //quaternion[0] = cos(theta/2)
+        //quaternion[1] = u[0] * sin(theta/2)
+        //quaternion[2] = u[1] * sin(theta/2)
+        //quaternion[3] = u[2] * sin(theta/2)
+        // Normalize quaternion
+        //double quaternionNorm = 1 / Math.sqrt(quaternion[0] * quaternion[0] + quaternion[1] * quaternion[1]
+        //+ quaternion[2] * quaternion[2] + quaternion[3] * quaternion[3])
+        //for(int i = 0; i < 4; i++){ quaternion[i] *= quaternionNorm }
+        // Useful storage
+        //double q0q0 = quaternion[0] * quaternion[0]
+        //double q1q1 = quaternion[1] * quaternion[1]
+        //double q2q2 = quaternion[2] * quaternion[2]
+        //double q3q3 = quaternion[3] * quaternion[3]
+        //double q0q1 = quaternion[0] * quaternion[1]
+        //double q0q2 = quaternion[0] * quaternion[2]
+        //double q0q3 = quaternion[0] * quaternion[3]
+        //double q1q2 = quaternion[1] * quaternion[2]
+        //double q1q3 = quaternion[1] * quaternion[3]
+        //double q2q3 = quaternion[2] * quaternion[3]
+        // Quaternion rotation matrix
+        //double[][] rotation = new double[3][3]
+        // TODO: Check if this is correct against superpose
+        //rotation[0][0] = 1 - 2 * (q2q2 + q3q3)
+        //rotation[0][1] = 2 * (q1q2 - q0q3)
+        //rotation[0][2] = 2 * (q1q3 + q0q2)
+        //rotation[1][0] = 2 * (q1q2 + q0q3)
+        //rotation[1][1] = 1 - 2 * (q1q1 + q3q3)
+        //rotation[1][2] = 2 * (q2q3 - q0q1)
+        //rotation[2][0] = 2 * (q1q3 - q0q2)
+        //rotation[2][1] = 2 * (q2q3 + q0q1)
+        //rotation[2][2] = 1 - 2 * (q1q1 + q2q2)
+
         return rotation
     }
 
+    //TODO: Figure out a good way of dealing with the fact that the GPU does not recognize the switch
+    // between polarization types in the CPU code does in the next two methods
+
     /**
-     * Does multiple minimizations of the active assebly with each molecule using different
+     * Does multiple minimization of the active assembly with each molecule using different
      * force field parameters (NONE,DIRECT,MUTUAL)
      * @param activeAssembly
      * @param forceFieldEnergy
