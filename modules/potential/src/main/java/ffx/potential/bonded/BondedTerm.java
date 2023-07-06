@@ -46,6 +46,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
+
 import org.jogamp.java3d.BranchGroup;
 import org.jogamp.java3d.Material;
 import org.jogamp.vecmath.Color3f;
@@ -69,22 +70,38 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
    * parameters for the Term.
    */
   private static final StringBuilder idTemp = new StringBuilder();
-  /** Constant <code>bondedComparator</code> */
+  /**
+   * Constant <code>bondedComparator</code>
+   */
   private static final BondedComparator bondedComparator = new BondedComparator();
-  /** ID of this BondedTerm. */
+  /**
+   * ID of this BondedTerm.
+   */
   protected String id;
-  /** Atoms that are used to form this term. */
+  /**
+   * Atoms that are used to form this term.
+   */
   protected Atom[] atoms;
-  /** Bonds that are used to form this term. */
+  /**
+   * Bonds that are used to form this term.
+   */
   protected Bond[] bonds;
-  /** Value of the term (e.g. bond length, angle, dihedral angle, etc). */
+  /**
+   * Value of the term (e.g. bond length, angle, dihedral angle, etc).
+   */
   protected double value;
-  /** Energy of the term (kcal/mol). */
+  /**
+   * Energy of the term (kcal/mol).
+   */
   protected double energy;
-  /** Flag indicating if this term is constrained. */
+  /**
+   * Flag indicating if this term is constrained.
+   */
   private boolean isConstrained = false;
 
-  /** Default Constructor */
+  /**
+   * Default Constructor
+   */
   public BondedTerm() {
     super("", 1);
     setAllowsChildren(false);
@@ -114,7 +131,9 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     return false;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int compareTo(BondedTerm t) {
     return Objects.compare(this, t, bondedComparator);
@@ -152,7 +171,7 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
    * This method removes terms from a list that are marked as being part of a neural network.
    *
    * @param list The list to check.
-   * @param <T> The Bonded term class.
+   * @param <T>  The Bonded term class.
    */
   public static <T extends BondedTerm> void removeNeuralNetworkTerms(List<T> list) {
     // Remove terms handled by a neutral network.
@@ -180,7 +199,9 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     return false;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean destroy() {
     super.destroy();
@@ -270,6 +291,20 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
   }
 
   /**
+   * This method returns true if any atom is being used.
+   *
+   * @return True if any atom is being used.
+   */
+  public boolean getUse() {
+    for (Atom atom : atoms) {
+      if (atom.getUse()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Sets the Term's id.
    *
    * @param i a {@link java.lang.String} object.
@@ -296,7 +331,9 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     value = v;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Objects.hash(getID());
@@ -348,7 +385,9 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     bonds = b;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setColor(RendererCache.ColorModel newColorModel, Color3f color, Material mat) {
     if (atoms == null) {
@@ -390,7 +429,9 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     id = idTemp.toString().intern();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setSelected(boolean b) {
     super.setSelected(b);
@@ -410,7 +451,9 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setView(RendererCache.ViewModel newViewModel, List<BranchGroup> newShapes) {
     if (atoms == null) {
@@ -488,7 +531,9 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
     private BondedComparator() {
     } // singleton
 
-    /** Sort using position in the naturalOrder list; fallback to alphabetical. */
+    /**
+     * Sort using position in the naturalOrder list; fallback to alphabetical.
+     */
     @Override
     public int compare(BondedTerm bondedTerm1, BondedTerm bondedTerm2) {
       final Class<? extends BondedTerm> class1 = bondedTerm2.getClass();

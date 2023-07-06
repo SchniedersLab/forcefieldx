@@ -184,10 +184,13 @@ public class OutOfPlaneBend extends BondedTerm {
    * <p>Evaluate this Out-of-Plane Bend energy.
    */
   @Override
-  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad,
-      AtomicDoubleArray3D lambdaGrad) {
+  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
     energy = 0.0;
     value = 0.0;
+    // Only compute this term if at least one atom is being used.
+    if (!getUse()) {
+      return energy;
+    }
     var atomA = atoms[0];
     var atomB = atoms[1];
     var atomC = atoms[2];
@@ -220,8 +223,7 @@ public class OutOfPlaneBend extends BondedTerm {
           + outOfPlaneBendType.cubic * dv + outOfPlaneBendType.quartic * dv2
           + outOfPlaneBendType.pentic * dv3 + outOfPlaneBendType.sextic * dv4);
       if (gradient) {
-        var deddt =
-            outOfPlaneBendType.opBendUnit * outOfPlaneBendType.forceConstant * dv * toDegrees(
+        var deddt = outOfPlaneBendType.opBendUnit * outOfPlaneBendType.forceConstant * dv * toDegrees(
                 2.0 + 3.0 * outOfPlaneBendType.cubic * dv + 4.0 * outOfPlaneBendType.quartic * dv2
                     + 5.0 * outOfPlaneBendType.pentic * dv3 + 6.0 * outOfPlaneBendType.sextic * dv4);
         var dedcos = 0.0;

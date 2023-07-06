@@ -1315,7 +1315,9 @@ public final class PDBFilter extends SystemFilter {
     buildDisulfideBonds(ssBondList, activeMolecularAssembly, bondList);
 
     // Finally, re-number the atoms if missing atoms were created.
-    if (pdbAtoms != activeMolecularAssembly.getAtomArray().length) {
+    int currentN = activeMolecularAssembly.getAtomArray().length;
+    if (pdbAtoms != currentN) {
+      logger.info(format(" Renumbering PDB file due to built atoms (%d vs %d)", currentN, pdbAtoms));
       numberAtoms(activeMolecularAssembly);
     }
     return true;
@@ -1690,7 +1692,6 @@ public final class PDBFilter extends SystemFilter {
     return true;
   }
 
-
   /**
    * writeFile
    *
@@ -1941,17 +1942,7 @@ public final class PDBFilter extends SystemFilter {
             // Loop over atoms
             List<Atom> residueAtoms = residue.getAtomList().stream()
                 .filter(a -> !atomExclusions.contains(a)).collect(Collectors.toList());
-            List<Atom> backboneAtoms = residue.getBackboneAtoms().stream()
-                .filter(a -> !atomExclusions.contains(a)).collect(Collectors.toList());
             boolean altLocFound = false;
-            for (Atom atom : backboneAtoms) {
-              writeAtom(atom, serial++, sb, anisouSB, bw);
-              Character altLoc = atom.getAltLoc();
-              if (altLoc != null && !altLoc.equals(' ')) {
-                altLocFound = true;
-              }
-              residueAtoms.remove(atom);
-            }
             for (Atom atom : residueAtoms) {
               writeAtom(atom, serial++, sb, anisouSB, bw);
               Character altLoc = atom.getAltLoc();
@@ -1963,27 +1954,18 @@ public final class PDBFilter extends SystemFilter {
             if (altLocFound) {
               for (int ma = 1; ma < molecularAssemblies.length; ma++) {
                 MolecularAssembly altMolecularAssembly = molecularAssemblies[ma];
-                Polymer altPolymer = altMolecularAssembly.getPolymer(currentChainID, currentSegID,
-                    false);
-                Residue altResidue = altPolymer.getResidue(resName, resID, false,
-                    Residue.ResidueType.AA);
+                Polymer altPolymer = altMolecularAssembly.getPolymer(currentChainID, currentSegID, false);
+                Residue altResidue = altPolymer.getResidue(resName, resID, false, Residue.ResidueType.AA);
                 if (altResidue == null) {
                   resName = AminoAcid3.UNK.name();
                   altResidue = altPolymer.getResidue(resName, resID, false, Residue.ResidueType.AA);
                 }
-                backboneAtoms = altResidue.getBackboneAtoms();
-                residueAtoms = altResidue.getAtomList();
-                for (Atom atom : backboneAtoms) {
-                  if (atom.getAltLoc() != null && !atom.getAltLoc().equals(' ') && !atom.getAltLoc()
-                      .equals('A')) {
-                    sb.replace(17, 20, padLeft(atom.getResidueName().toUpperCase(), 3));
-                    writeAtom(atom, serial++, sb, anisouSB, bw);
-                  }
-                  residueAtoms.remove(atom);
-                }
+                residueAtoms = altResidue.getAtomList().stream()
+                    .filter(a -> !atomExclusions.contains(a)).collect(Collectors.toList());
                 for (Atom atom : residueAtoms) {
                   if (atom.getAltLoc() != null && !atom.getAltLoc().equals(' ') && !atom.getAltLoc()
                       .equals('A')) {
+                    sb.replace(17, 20, padLeft(atom.getResidueName().toUpperCase(), 3));
                     writeAtom(atom, serial++, sb, anisouSB, bw);
                   }
                 }

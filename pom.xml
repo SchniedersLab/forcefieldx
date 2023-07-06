@@ -9,6 +9,10 @@
             <!-- Explicitly define plugins for FFX module pom.xml files. -->
             <plugins>
                 <plugin>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>${antrun.version}</version>
+                </plugin>
+                <plugin>
                     <artifactId>maven-assembly-plugin</artifactId>
                     <version>${assembly.version}</version>
                 </plugin>
@@ -64,6 +68,7 @@
                     <version>${deploy.version}</version>
                 </plugin>
                 <plugin>
+                    <groupId>io.github.git-commit-id</groupId>
                     <artifactId>git-commit-id-maven-plugin</artifactId>
                     <version>${git-commit-id.version}</version>
                 </plugin>
@@ -943,20 +948,20 @@
         <appassembler.version>2.1.0</appassembler.version>
         <assembly.skipAssembly>false</assembly.skipAssembly>
         <assembly.version>3.6.0</assembly.version>
-        <biojava.version>7.0.1</biojava.version>
+        <biojava.version>7.0.2</biojava.version>
         <cdk.version>2.8</cdk.version>
         <changes.jira.skip>true</changes.jira.skip>
         <changes.version>2.12.1</changes.version>
         <checkstyle.skip>true</checkstyle.skip>
         <checkstyle.version>3.3.0</checkstyle.version>
         <ciftools-java.version>5.0.1</ciftools-java.version>
-        <clean.version>3.2.0</clean.version>
+        <clean.version>3.3.1</clean.version>
         <clover.version>4.4.1</clover.version>
         <clustering.version>1.2.0</clustering.version>
         <commons-beanutils.version>1.9.4</commons-beanutils.version>
         <commons-collections4.version>4.4</commons-collections4.version>
         <commons-configuration2.version>2.9.0</commons-configuration2.version>
-        <commons-io.version>2.12.0</commons-io.version>
+        <commons-io.version>2.13.0</commons-io.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
         <!-- Control the source version version -->
@@ -974,8 +979,8 @@
         <findbugs.version>3.0.2</findbugs.version>
         <git-commit-id.version>6.0.0</git-commit-id.version>
         <version>6.0.0</version>
-        <groovy-all.version>4.0.12</groovy-all.version>
-        <guava.version>31.1-jre</guava.version>
+        <groovy-all.version>4.0.13</groovy-all.version>
+        <guava.version>32.1.0-jre</guava.version>
         <install.version>3.1.1</install.version>
         <jar.version>3.3.0</jar.version>
         <jarsigner.version>3.0.0</jarsigner.version>
@@ -994,42 +999,42 @@
         <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
         <maven.javadoc.skip>false</maven.javadoc.skip>
         <maven.jxr.skip>false</maven.jxr.skip>
-        <picocli.version>4.7.3</picocli.version>
+        <picocli.version>4.7.4</picocli.version>
         <pj.version>1.0.1</pj.version>
         <!-- There is a bug in 3.15.0 and newer PMD that doesn't handle repository resolution correctly -->
         <pmd.version>3.21.0</pmd.version>
         <pmd.skip>false</pmd.skip>
-        <project-info-reports.version>3.4.3</project-info-reports.version>
+        <project-info-reports.version>3.4.5</project-info-reports.version>
         <!-- Setting the source encoding is required for builds that are platform independent. -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <properties.version>1.1.0</properties.version>
         <quickhull3D.version>1.0.0</quickhull3D.version>
         <!-- Default locations for deploying a release (can be over-ridden by settings.xml) -->
         <release.repo>file:release</release.repo>
-        <release.version>3.0.0</release.version>
+        <release.version>3.0.1</release.version>
         <resources.version>3.3.1</resources.version>
         <scm.version>2.0.1</scm.version>
         <slf4j-nop.version>2.0.7</slf4j-nop.version>
-        <shade.version>3.4.1</shade.version>
+        <shade.version>3.5.0</shade.version>
         <!-- The Shade plugin use of localRepository causes a validation message -->
         <maven.plugin.validation>brief</maven.plugin.validation>
         <!-- AsciiDoc is not compatible with site version 4.0.0-M3 yet -->
         <site.version>3.12.1</site.version>
-        <asciidoc.version>2.2.3</asciidoc.version>
+        <asciidoc.version>2.2.4</asciidoc.version>
         <skipSurefireReport>false</skipSurefireReport>
         <skipTests>true</skipTests>
         <!-- Default locations for deploying snapshots (can be over-ridden by settings.xml) -->
         <snapshot.repo>file:lib</snapshot.repo>
         <source.version>3.3.0</source.version>
         <!-- There is a bug in Surefire version 3.0.0-M4 that effects running tests on Argon -->
-        <surefire.version>3.1.0</surefire.version>
+        <surefire.version>3.1.2</surefire.version>
         <!-- Control the target JRE version -->
         <targetVersion>17</targetVersion>
         <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
         <tensorflow.version>1.13.1</tensorflow.version>
         <timestamp>${maven.build.timestamp}</timestamp>
         <tornado.version>0.15</tornado.version>
-        <versions.version>2.15.0</versions.version>
+        <versions.version>2.16.0</versions.version>
         <!-- Default locations for deploying the website (can be over-ridden by settings.xml) -->
         <website.repo>file:website</website.repo>
     </properties>
