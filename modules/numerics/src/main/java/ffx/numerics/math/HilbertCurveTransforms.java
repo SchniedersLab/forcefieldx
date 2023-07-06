@@ -37,12 +37,15 @@
 // ******************************************************************************
 package ffx.numerics.math;
 
+import java.math.BigInteger;
+
 /**
  * HilbertCurveTransforms is a class that provides static methods for converting
  * between Hilbert indices and coordinates. This is used in the torsion scan of
  * crystals. This implementation is based on the one in OpenMM, which in turn
- * is based on Rice Universities implementation. The copyright is in the ForceFieldX
- * code base under Licenses/openmm-license/hilbert-curve-license.txt.
+ * is based on Rice Universities implementation. GPT4.0 was used to convert
+ * the c++ code to Java. The copyright is in the ForceFieldX code base under
+ * Licenses/openmm-license/hilbert-curve-license.txt.
  */
 
 public class HilbertCurveTransforms {
@@ -156,18 +159,21 @@ public class HilbertCurveTransforms {
     }
 
     public static void main(String[] args) {
-        int nBonds = 10; // Dimensions of the space
-        int nTorsions = 3; // Bits per dimension
+        int nBonds = 20; // Dimensions of the space
+        int nTorsions = 2; // Bits per dimension
 
-        // Calculate the maximum index
-        long maxIndex = (long)Math.pow(nTorsions, nBonds) - 1;
+        // Calculate the maximum index of number of configurations using BigInteger
+        BigInteger maxIndex = BigInteger.valueOf(nTorsions).pow(nBonds).subtract(BigInteger.ONE);
+
+        // Max index allowing nTorsions > nBonds
+        // BigInteger maxIndex = BigInteger.valueOf(2).pow(nBonds * nTorsions).subtract(BigInteger.ONE);
 
         System.out.println("Maximum index: " + maxIndex);
 
         // Iterate over all indices
-        // Iterate over all indices
-        for (long index = 0; index <= maxIndex; index++) {
-            long[] coordinates = hilbertIndexToCoordinates(nBonds, nTorsions, index);
+        BigInteger index = BigInteger.ZERO;
+        while (index.longValue() <= maxIndex.longValue()) {
+            long[] coordinates = hilbertIndexToCoordinates(nBonds, nTorsions, index.longValue());
             boolean valid = true;
 
             for (long coord : coordinates) {
@@ -188,6 +194,8 @@ public class HilbertCurveTransforms {
                 }
                 System.out.println(")");
             }
+            // Increment the index
+            index = index.add(BigInteger.ONE);
         }
     }
 }
