@@ -57,6 +57,7 @@ import ffx.potential.nonbonded.ParticleMeshEwald;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.utils.EnergyException;
 import ffx.utilities.Constants;
+
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -133,13 +134,15 @@ public class PCGSolver {
    * Apply the preconditioner.
    */
   private final PreconditionerRegion preconditionerRegion;
+
   /**
    * The default Beta step size used to update the conjugate direction is based on the Fletcher-Reeves formula.
    * An alternative Beta step size uses the Polak-Ribiere formula for the flexible preconditioned conjugate gradient method.
    * For a symmetric positive definite preconditioner, the FR and PR steps sizes are equivalent.
    * The steepest decent method sets beta to zero.
    */
-  private enum PRECONDITION_MODE { FLETCHER_REEVES, FLEXIBLE, STEEPEST_DECENT }
+  private enum PRECONDITION_MODE {FLETCHER_REEVES, FLEXIBLE, STEEPEST_DECENT}
+
   /**
    * The SCF convergence criteria in Debye.
    */
@@ -169,7 +172,9 @@ public class PCGSolver {
    * [nSymm][nAtoms][nIncludedNeighbors]
    */
   private int[][][] preconditionerLists;
-  /** Number of neighboring atoms within the preconditioner cutoff. [nSymm][nAtoms] */
+  /**
+   * Number of neighboring atoms within the preconditioner cutoff. [nSymm][nAtoms]
+   */
   private int[][] preconditionerCounts;
   /**
    * Residual vector (an electric field).
@@ -195,13 +200,21 @@ public class PCGSolver {
    * Conjugate search direction for the chain-rule dipoles (induced dipoles).
    */
   private double[][] pCR;
-  /** Work vector. */
+  /**
+   * Work vector.
+   */
   private double[][] vec;
-  /** Work vector for the chain-rule dipoles. */
+  /**
+   * Work vector for the chain-rule dipoles.
+   */
   private double[][] vecCR;
-  /** An ordered array of atoms in the system. */
+  /**
+   * An ordered array of atoms in the system.
+   */
   private Atom[] atoms;
-  /** Dimensions of [nsymm][xyz][nAtoms]. */
+  /**
+   * Dimensions of [nsymm][xyz][nAtoms].
+   */
   private double[][][] coordinates;
   /**
    * Polarizability of each atom.
@@ -234,19 +247,27 @@ public class PCGSolver {
    * energy of sub-structures.
    */
   private boolean[] use;
-  /** Unit cell and spacegroup information. */
+  /**
+   * Unit cell and spacegroup information.
+   */
   private Crystal crystal;
   /**
    * Induced dipoles with dimensions of [nsymm][nAtoms][3].
    */
   private double[][][] inducedDipole;
   private double[][][] inducedDipoleCR;
-  /** Direct induced dipoles with dimensions of [nAtoms][3]. */
+  /**
+   * Direct induced dipoles with dimensions of [nAtoms][3].
+   */
   private double[][] directDipole;
   private double[][] directDipoleCR;
-  /** Field array. */
+  /**
+   * Field array.
+   */
   private AtomicDoubleArray3D field;
-  /** Chain rule field array. */
+  /**
+   * Chain rule field array.
+   */
   private AtomicDoubleArray3D fieldCR;
   private EwaldParameters ewaldParameters;
   /**
@@ -254,7 +275,9 @@ public class PCGSolver {
    * electrostatics calculation.
    */
   private ParallelTeam parallelTeam;
-  /** Pairwise schedule for load balancing. */
+  /**
+   * Pairwise schedule for load balancing.
+   */
   private IntegerSchedule realSpaceSchedule;
   private long[] realSpaceSCFTime;
 
@@ -289,9 +312,9 @@ public class PCGSolver {
    * Constructor the PCG solver.
    *
    * @param maxThreads Number of threads.
-   * @param poleps Convergence criteria (RMS Debye).
+   * @param poleps     Convergence criteria (RMS Debye).
    * @param forceField Force field in use.
-   * @param nAtoms Initial number of atoms.
+   * @param nAtoms     Initial number of atoms.
    */
   public PCGSolver(int maxThreads, double poleps, ForceField forceField, int nAtoms) {
     this.poleps = poleps;
@@ -330,7 +353,7 @@ public class PCGSolver {
   /**
    * Allocate storage for pre-conditioner neighbor list.
    *
-   * @param nSymm Number of symmetry operators.
+   * @param nSymm  Number of symmetry operators.
    * @param nAtoms Number of atoms.
    */
   public void allocateLists(int nSymm, int nAtoms) {
@@ -386,6 +409,7 @@ public class PCGSolver {
 
   /**
    * Get the preconditioner mode.
+   *
    * @return The mode.
    */
   public String getPreconditionerMode() {
@@ -469,7 +493,7 @@ public class PCGSolver {
       // Set initial conjugate vector.
       parallelTeam.execute(initConjugateRegion);
     } catch (Exception e) {
-      String message = "Exception initializing preconditioned CG.";
+      String message = "Exception initializing preconditioned conjugate-gradient SCF solver.";
       logger.log(Level.SEVERE, message, e);
     }
 
@@ -497,45 +521,47 @@ public class PCGSolver {
          * 3) Update the residual and induced dipole solution.
          */
         parallelTeam.execute(updateResidualRegion);
+      } catch (Exception e) {
+        String message = "Exception updating residual during CG iteration.";
+        logger.log(Level.SEVERE, message, e);
+      }
 
-        // Check for convergence.
-        previousEps = eps;
-        eps = max(updateResidualRegion.getEps(), updateResidualRegion.getEpsCR());
-        completedSCFCycles++;
-        int nAtoms = atoms.length;
-        eps = Constants.ELEC_ANG_TO_DEBYE * sqrt(eps / (double) nAtoms);
-        cycleTime += System.nanoTime();
-        if (print) {
-          sb.append(format(" %4d     %15.10f %7.4f\n",
-              completedSCFCycles, eps, cycleTime * Constants.NS2SEC));
+      // Check for convergence.
+      previousEps = eps;
+      eps = max(updateResidualRegion.getEps(), updateResidualRegion.getEpsCR());
+      completedSCFCycles++;
+      int nAtoms = atoms.length;
+      eps = Constants.ELEC_ANG_TO_DEBYE * sqrt(eps / (double) nAtoms);
+      cycleTime += System.nanoTime();
+      if (print) {
+        sb.append(format(" %4d     %15.10f %7.4f\n", completedSCFCycles, eps, cycleTime * Constants.NS2SEC));
+      }
+
+      // If the RMS Debye change increases, fail the SCF process.
+      if (eps > previousEps) {
+        if (sb != null) {
+          logger.warning(sb.toString());
         }
+        String message = format("SCF convergence failure: (%10.5f > %10.5f)\n", eps, previousEps);
+        throw new EnergyException(message);
+      }
 
-        // If the RMS Debye change increases, fail the SCF process.
-        if (eps > previousEps) {
-          if (sb != null) {
-            logger.warning(sb.toString());
-          }
-          String message = format("Fatal SCF convergence failure: (%10.5f > %10.5f)\n", eps,
-              previousEps);
-          throw new EnergyException(message);
+      // The SCF should converge before the max iteration check.
+      if (completedSCFCycles >= maxSCFCycles) {
+        if (sb != null) {
+          logger.warning(sb.toString());
         }
+        String message = format("Maximum SCF iterations reached: (%d)\n", completedSCFCycles);
+        throw new EnergyException(message);
+      }
 
-        // The SCF should converge before the max iteration check.
-        if (completedSCFCycles >= maxSCFCycles) {
-          if (sb != null) {
-            logger.warning(sb.toString());
-          }
-          String message = format("Maximum SCF iterations reached: (%d)\n", completedSCFCycles);
-          throw new EnergyException(message);
-        }
-
-        // Check if the convergence criteria has been achieved.
-        if (eps < poleps) {
-          done = true;
-        } else {
-          // Compute the induced field due to the residual using short cut-offs.
-          computePreconditioner();
-
+      // Check if the convergence criteria has been achieved.
+      if (eps < poleps) {
+        done = true;
+      } else {
+        // Compute the induced field due to the residual using short cut-offs.
+        computePreconditioner();
+        try {
           /*
            * 1) Compute the dot product of the residual (r) and preconditioner field (z).
            * 2) Compute the step size beta.
@@ -544,10 +570,10 @@ public class PCGSolver {
           updateConjugateRegion.previousRDotZ = updateResidualRegion.getRDotZ();
           updateConjugateRegion.previousRDotZCR = updateResidualRegion.getRDotZCR();
           parallelTeam.execute(updateConjugateRegion);
+        } catch (Exception e) {
+          String message = "Exception updating conjugate search direction during CG iteration.";
+          logger.log(Level.SEVERE, message, e);
         }
-      } catch (Exception e) {
-        String message = "Exception during CG iteration.";
-        logger.log(Level.SEVERE, message, e);
       }
     }
 
@@ -1160,7 +1186,9 @@ public class PCGSolver {
     }
   }
 
-  /** Evaluate the real space field due to induced dipoles using a short cutoff (~3-4 A). */
+  /**
+   * Evaluate the real space field due to induced dipoles using a short cutoff (~3-4 A).
+   */
   private class PreconditionerRegion extends ParallelRegion {
 
     private final InducedPreconditionerFieldLoop[] inducedPreconditionerFieldLoop;
