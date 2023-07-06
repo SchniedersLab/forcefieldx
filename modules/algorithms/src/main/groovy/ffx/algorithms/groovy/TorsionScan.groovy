@@ -65,7 +65,8 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace;
 import static org.apache.commons.lang.ArrayUtils.toPrimitive;
 import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.cos
+import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sin;
 import static org.apache.commons.math3.util.FastMath.toRadians;
 
@@ -124,6 +125,15 @@ class TorsionScan extends AlgorithmsScript {
     /** List to store conformations determined unique. */
     List<double[]> uniqueConformations = new ArrayList<>();
 
+    /** Counter to determine how many rotations have been performed so far.*/
+    public int progress = 1;
+
+    /** Number of bonds in the system. */
+    public int numBonds = -1;
+    /** Number of torsions that need to be "scanned". */
+    public int totalTorsions = -1;
+    /** Turns to be made about each bond. */
+    public double turns = -1;
     /**
      * CrystalSuperpose Constructor.
      */
@@ -178,10 +188,17 @@ class TorsionScan extends AlgorithmsScript {
 
         List<Bond> bonds = ma.getBondList();
         int end = bonds.size();
-        scanTorsions(ma, bonds, filename, 0, end);
+        double turns = (increment < 360.0) ? Math.floor(360.0/increment) : 1.0;
+        if(staticCompare || logger.isLoggable(Level.INFO)){
+            totalTorsions = (int) turns * end;
+        }else {
+            totalTorsions = (int) pow(turns, end);
+        }
+        scanTorsions(ma, bonds, filename, turns, 0, end);
 
         if(saveCutoff >= 0.0){
             for(double[] coords : uniqueConformations) {
+                logger.info(" Saving to " + filename + ".");
                 saveCoordinatesAsAssembly(ma, coords, filename)
             }
         }
@@ -193,11 +210,15 @@ class TorsionScan extends AlgorithmsScript {
      * @param ma Molecular assembly of interest
      * @param bonds Bonds in the molecule
      * @param filename Name of original file (altered before saving)
+     * @param turns Number of turns to be performed.
      * @param start Starting bond index
      * @param end Ending bond index
      */
-    void scanTorsions(MolecularAssembly ma, List<Bond> bonds, String filename, int start, int end) {
+    void scanTorsions(MolecularAssembly ma, List<Bond> bonds, String filename, double turns, int start, int end) {
+        numBonds = end-start;
+        logger.info(format(" Scan Bond start: %2d End: %2d Num: %2d", start, end, numBonds));
         for(int i = start; i < end; i++) {
+            logger.info(format(" Starting torsion %d of %d.", progress, totalTorsions));
             Bond bond = bonds.get(i);
             Atom a1 = bond.getAtom(0);
             Atom a2 = bond.getAtom(1);
@@ -206,9 +227,21 @@ class TorsionScan extends AlgorithmsScript {
             List<Bond> bond2 = a2.getBonds();
             int b2 = bond2.size();
             if (a1.isHydrogen() || a2.isHydrogen()) {
+                if(staticCompare || logger.isLoggable(Level.INFO)){
+                    logger.info(format(" Skipping to torsion %d because of hydrogen.", progress += (int) turns));
+                    numBonds--;
+                }else{
+                    logger.info(format(" Skipping to torsion %d because of hydrogen.", progress += (int) pow(turns, --numBonds)));
+                }
                 continue;
             }
             if(a1.getAtomicNumber() == 6 && a1.getNumberOfBondedHydrogen() == 3 || a2.getAtomicNumber() == 6 && a2.getNumberOfBondedHydrogen() == 3){
+                if(staticCompare || logger.isLoggable(Level.INFO)){
+                    logger.info(format(" Skipping to torsion %d because of methyl.", progress += (int) turns));
+                    numBonds--;
+                }else{
+                    logger.info(format(" Skipping to torsion %d because of methyl.", progress += (int) pow(turns, --numBonds)));
+                }
                 continue;
             }
             // No need to spin torsion if only bond...
@@ -218,13 +251,17 @@ class TorsionScan extends AlgorithmsScript {
                     if(logger.is(Level.FINER)){
                         logger.finer("Ring detected");
                     }
-
+                    if(staticCompare || logger.isLoggable(Level.INFO)){
+                        logger.info(format(" Skipping to torsion %d because of ring.", progress += (int) turns));
+                        numBonds--;
+                    }else{
+                        logger.info(format(" Skipping to torsion %d because of ring.", progress += (int) pow(turns, --numBonds)));
+                    }
                     continue;
                 }else{
                     if(logger.is(Level.FINER)){
                         logger.finer(" No rings detected.");
                     }
-
                 }
                 // We should have two atoms with a spinnable bond
                 List<Atom> a1List = new ArrayList<>();
@@ -242,30 +279,32 @@ class TorsionScan extends AlgorithmsScript {
                     aArray = a1List.toArray() as Atom[];
                     otherAtoms = a2List.toArray() as Atom[];
                 }
-                Double3 a1XYZ = a1.getXYZ()
-                Double3 a2XYZ = a2.getXYZ()
-                double[] x = new double[]{a1XYZ.get(0), a1XYZ.get(1), a1XYZ.get(2), a2XYZ.get(0), a2XYZ.get(1), a2XYZ.get(2)}
-                double[] mass = new double[]{1.0,1.0}
+                Double3 a1XYZ = a1.getXYZ();
+                Double3 a2XYZ = a2.getXYZ();
+                double[] x = new double[]{a1XYZ.get(0), a1XYZ.get(1), a1XYZ.get(2), a2XYZ.get(0), a2XYZ.get(1), a2XYZ.get(2)};
+                double[] mass = new double[]{1.0,1.0};
                 double[] translation = calculateTranslation(x, mass);
                 applyTranslation(x, translation);
                 // Unit vector to rotate about.
                 double[] u = a2XYZ.sub(a1XYZ).normalize().get();
-                double turns = (increment < 360.0) ? 360.0/increment : 1.0;
                 for (int j = 0; j < turns; j++) {
                     for (Atom a : aArray) {
                         if (a == aArray[0]) {
                             //First atom is what we are rotating about...
                             continue;
                         }
+                        // Move to origin (rotation must occur about origin
                         a.move(translation);
+                        // Rotate about bond
                         rotateAbout(u, a, increment);
+                        // Put it back where we found it...
                         a.move(new double[]{-translation[0], -translation[1], -translation[2]});
                     }
-                    // TODO Apply rotations above to molecule and add to MolecularAssembly to save out...
                     // All atoms should be rotated... Save structure.
-                    Atom[] atoms = new Atom[listSize1 + listSize2];
+                    int listSizes = listSize1 + listSize2;
+                    Atom[] atoms = new Atom[listSizes];
                     int targetIndex = 1;
-                    while(targetIndex <= (listSize1 + listSize2)){
+                    while(targetIndex <= listSizes){
                         boolean found = false;
                         for(Atom a: aArray){
                             if(a.getIndex() == targetIndex){
@@ -284,29 +323,35 @@ class TorsionScan extends AlgorithmsScript {
                         }
                     }
                     if(saveCutoff >= 0.0){
-                        addUnique(atoms, listSize1+listSize2);
+                        // Add coordinates to list if unique.
+                        addUnique(atoms, listSizes);
                     }else{
                         // Save all torsions.
+                        logger.info(" Saving to " + filename + ".");
                         saveCoordinatesAsAssembly(ma, atoms, filename);
                     }
-
+                    progress++;
                     if (!staticCompare) {
-                        scanTorsions(ma, bonds, filename, i+1, end);
-                        if(i == end){
+                        // Recursively check each rotation of each bond with each other.
+                        if(i+1 == end){
                             return;
                         }
+                        scanTorsions(ma, bonds, filename, turns, i+1, end);
                     }
                 }
             }else{
                 if(logger.is(Level.FINER)){
-                    logger.finer(" One bond.");
+                    logger.finer(" Only bonded entity (e.g., C-Cl.");
                 }
+                progress++;
             }
         }
+        // Subtract one from progress as previous round was completed.
+        logger.info(format(" Completed torsion %d of %d.", progress, totalTorsions));
     }
 
     /**
-     * Add new torsinal conformations to list of acquired structures.
+     * Add new torsional conformations to list of acquired structures.
      * @param atoms Atoms of the structure to be added.
      * @param size Number of atoms.
      * @return
@@ -318,7 +363,7 @@ class TorsionScan extends AlgorithmsScript {
         int index = 0;
         for(int i = 0; i < size; i++){
             Atom atom = atoms[i];
-            mass[i] = 1.0
+            mass[i] = 1.0;
             test[index++] = atom.getX();
             test[index++] = atom.getY();
             test[index++] = atom.getZ();
@@ -328,7 +373,7 @@ class TorsionScan extends AlgorithmsScript {
         // Minimum difference between new structure and old list.
         double minDiff = Double.MAX_VALUE;
         for(Double[] reference0 : uniqueConformations){
-            double[] reference = toPrimitive(reference0)
+            double[] reference = toPrimitive(reference0);
             translate(reference, mass);
             // Reference is rotated to match test
             rotate(test, reference, mass);
@@ -339,6 +384,10 @@ class TorsionScan extends AlgorithmsScript {
             }
         }
         if(minDiff > saveCutoff){
+            if(logger.isLoggable(Level.FINE)){
+                logger.fine(format(" Saving structure as %9.4f Å is greater than %9.4f Å.", minDiff, saveCutoff));
+            }
+            // Put it back where we found it... (Not necessary)
             applyTranslation(test, new double[]{-translation[0], -translation[1], -translation[2]});
             uniqueConformations.add(test);
         }
@@ -348,9 +397,9 @@ class TorsionScan extends AlgorithmsScript {
     /**
      * Rotate an atom about another.
      *
-     * @param a0 a {@link ffx.potential.bonded.Atom} object to rotate about.
-     * @param a1 a {@link ffx.potential.bonded.Atom} object to create axis of rotation.
-     * @param theta Amount to rotate by (degrees).
+     * @param u a unit vector to rotate {@link ffx.potential.bonded.Atom} object about.
+     * @param a2 a {@link ffx.potential.bonded.Atom} object to create axis of rotation.
+     * @param theta Amount to rotate by in degrees.
      */
     static void rotateAbout(double[] u, Atom a2, double theta) {
 
@@ -376,9 +425,8 @@ class TorsionScan extends AlgorithmsScript {
     /**
      * Identify atoms that should be rotated.
      *
-     * @param seed a {@link ffx.potential.bonded.Atom} object to rotate about.
+     * @param seed an {@link ffx.potential.bonded.Atom} object to rotate about.
      * @param atoms a list of {@link ffx.potential.bonded.Atom} objects to rotate.
-     * @param searchDisulfide Whether to cross disulfides
      * @param notAtom Avoid this atom (wrong side of bond).
      */
     void searchTorsions(Atom seed, List<Atom> atoms, Atom notAtom){
@@ -503,7 +551,7 @@ class TorsionScan extends AlgorithmsScript {
                 minEnergy = energy;
             }
             double relativeEnergy = abs(energy - minEnergy)
-            if( relativeEnergy > energyCutoff){
+            if(relativeEnergy > energyCutoff){
                 logger.info(format(" Conformation energy (%9.4f) is greater than cutoff (%9.4f > %9.4f).", energy, relativeEnergy, energyCutoff));
                 saveAssembly.destroy();
                 return false;
@@ -518,7 +566,7 @@ class TorsionScan extends AlgorithmsScript {
                 saveAssembly.destroy();
                 return success;
             }
-        }catch(EnergyException eex){
+        }catch(EnergyException ignored){
             logger.info(format(" Unstable conformation skipped."));
             saveAssembly.destroy();
             return false
