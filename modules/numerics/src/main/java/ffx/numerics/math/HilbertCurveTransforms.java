@@ -159,8 +159,8 @@ public class HilbertCurveTransforms {
     }
 
     public static void main(String[] args) {
-        int nBonds = 20; // Dimensions of the space
-        int nTorsions = 2; // Bits per dimension
+        int nBonds = 5; // Dimensions of the space
+        int nTorsions = 3; // Bits per dimension
 
         // Calculate the maximum index of number of configurations using BigInteger
         BigInteger maxIndex = BigInteger.valueOf(nTorsions).pow(nBonds).subtract(BigInteger.ONE);
