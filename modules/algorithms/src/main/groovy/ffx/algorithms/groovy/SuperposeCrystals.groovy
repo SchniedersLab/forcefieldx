@@ -233,7 +233,7 @@ class SuperposeCrystals extends AlgorithmsScript {
   private int crystalPriority
 
   /**
-   * The final argument(s) should be two or more filenames (same file twice if comparing same structures).
+   * The final argument(s) should be two or more filename (same file twice if comparing same structures).
    */
   @Parameters(arity = "1..2", paramLabel = "files",
       description = 'Atomic coordinate file(s) to compare in XYZ format.')

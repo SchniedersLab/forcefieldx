@@ -35,7 +35,6 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.groovy
 
 import com.google.common.collect.MinMaxPriorityQueue
 import edu.rit.pj.Comm;
@@ -107,7 +106,7 @@ class TorsionScan extends AlgorithmsScript {
      */
     @Option(names = ['--st', '--saveTolerance'], paramLabel = '-1.0', defaultValue = '-1.0',
             description = "Save out conformations with an RMSD larger than this value.")
-    private double saveCutoff
+    private double saveCutoff = -1.0
 
     /**
      * --saveNumStates
@@ -115,6 +114,20 @@ class TorsionScan extends AlgorithmsScript {
     @Option(names = ['--saveNumStates', "--sns"], paramLabel = '10', defaultValue = '10',
             description = 'Save this many of the lowest energy states per worker. This is the default')
     private int saveNumStates = 10
+
+    /**
+     * --saveAll
+     */
+    @Option(names = ['--saveAll'], paramLabel = 'false', defaultValue = 'false',
+            description = 'Save out all states.')
+    private boolean saveAll = false
+
+    /**
+     * --printEnergies
+     */
+    @Option(names = ['--printEnergies'], paramLabel = 'false', defaultValue = 'false',
+            description = 'Save out all states.')
+    private boolean printEnergies = false
 
     //TODO: Make Static comparision work
     /**
@@ -129,7 +142,7 @@ class TorsionScan extends AlgorithmsScript {
      */
     @Parameters(arity = "1", paramLabel = "files",
             description = 'Atomic coordinate file(s) to permute in XYZ format.')
-    List<String> filenames = null
+    String filename = null
 
     /** List to store conformations determined unique. */
     List<double[]> uniqueConformations = new ArrayList<>();
@@ -139,6 +152,7 @@ class TorsionScan extends AlgorithmsScript {
     public int numBonds = -1;
     /** Number of torsions that need to be "scanned". */
     public int totalTorsions = -1;
+    private double[] energies
     /** Minimum permutaiton energy encountered. */
     private double minEnergy = Double.MAX_VALUE;
 
@@ -171,26 +185,14 @@ class TorsionScan extends AlgorithmsScript {
         }
 
         // Ensure file exists.
-        if (filenames == null) {
+        if (filename == null) {
             logger.info(helpString())
             return this
         }
-        algorithmFunctions.openAll(filenames.get(0))
+        activeAssembly = getActiveAssembly(filename)
         SystemFilter systemFilter = algorithmFunctions.getFilter()
-
-        // Define the filename to use for the RMSD values.
-        String filename = filenames.get(0)
         MolecularAssembly ma = systemFilter.getActiveMolecularSystem();
-
-        // Making the MinMax priority queue that will expel the largest entry when it reaches its maximum size
-        MinMaxPriorityQueue<StateContainer> lowestEnergyQueue = MinMaxPriorityQueue.
-                maximumSize(saveNumStates).create()
-
-        // Add the initial state to the queue
-        ForceFieldEnergy forceFieldEnergy = activeAssembly.potentialEnergy
-        double[] x = forceFieldEnergy.getCoordinates()
-        double energy = forceFieldEnergy.energy(x, false)
-        lowestEnergyQueue.add(new StateContainer(new AssemblyState(activeAssembly), energy))
+        logger.info("")
 
         // Get the bonds and rotation groups
         List<Bond> bonds = getTorsionalBonds(ma)
@@ -199,10 +201,12 @@ class TorsionScan extends AlgorithmsScript {
         logger.info(" Performing " + turns + " turns about each bond.")
 
         // Calculate the maximum index of number of configurations using BigInteger
-        BigInteger maxIndex = BigInteger.valueOf(turns).pow(bonds.size()).subtract(BigInteger.ONE)
-        logger.info(" Maximum number of configurations: " + maxIndex)
+        BigInteger maxIndex = BigInteger.valueOf(2).pow(turns*bonds.size()).subtract(BigInteger.ONE)
+        BigInteger numConfigs = BigInteger.valueOf(turns).pow(bonds.size()).subtract(BigInteger.ONE)
+        logger.info(" Maximum number of configurations: " + numConfigs)
+        logger.info(" Maximum index: " + maxIndex)
         long start = 0
-        long end = maxIndex.longValue()
+        long end = numConfigs.longValue()
 
         // Parallel workers
         Comm world = Comm.world()
@@ -217,11 +221,52 @@ class TorsionScan extends AlgorithmsScript {
                 end += maxIndex.longValue() - end
             }
         }
+        energies = new double[end-start+1]
+
+        MinMaxPriorityQueue<StateContainer> queue
+        if(saveAll || saveCutoff != Double.valueOf(-1.0)){
+            queue = MinMaxPriorityQueue.maximumSize(end-start as int).create()
+        }
+        else{
+            queue = MinMaxPriorityQueue.maximumSize(saveNumStates).create()
+        }
+
+        // Add the initial state to the queue
+        ForceFieldEnergy forceFieldEnergy = activeAssembly.potentialEnergy
+        double[] x = new double[forceFieldEnergy.getNumberOfVariables()]
+        forceFieldEnergy.getCoordinates(x)
+        double energy = forceFieldEnergy.energy(x, false)
+        minEnergy = energy
+        logger.info(" Initial energy: " + energy)
+        energies[progress] = energy
+        progress++
+        queue.add(new StateContainer(new AssemblyState(activeAssembly), energy))
 
         spinTorsions(bonds.size(), turns, bonds, rotationGroups, start, end,
-                lowestEnergyQueue,
+                queue,
                 activeAssembly,
-                forceFieldEnergy)
+                forceFieldEnergy,
+                x,)
+
+        if(printEnergies){
+            logger.info(" In order energies:")
+            logger.info(" " + energies.toString())
+        }
+        int count = 0
+        logger.info(" Saving " + queue.size() + " states.")
+        while(!queue.empty){
+            StateContainer toBeSaved = queue.removeFirst()
+            AssemblyState assembly = toBeSaved.getState()
+            assembly.revertState()
+            forceFieldEnergy.getCoordinates(x)
+            energy = toBeSaved.energy
+            if(Math.abs(energy - minEnergy) < Math.abs(saveCutoff) && !saveAll){
+                continue
+            }
+            logger.info(" Writing to file. Configuration #" + (count+1) + " energy: " + energy)
+            //saveCoordinatesAsAssembly(activeAssembly, x, filename)
+            count++
+        }
 
         return this
     }
@@ -392,7 +437,7 @@ class TorsionScan extends AlgorithmsScript {
                     continue
                 }
                 torsionalBonds.add(bond)
-                logger.info("Bond " + bond + " is a torsional bond between " + a1 + " and " + a2 + ".")
+                logger.info(" Bond " + bond + " is a torsional bond.")
             }
         }
         return torsionalBonds;
@@ -412,8 +457,9 @@ class TorsionScan extends AlgorithmsScript {
             // Add smaller list to rotation groups
             if(a1List.size() > a2List.size()){
                 rotationGroups.add(a2List.toArray() as Atom[])
-            }else{
-                rotationGroups(a1List.toArray() as Atom[])
+            }
+            else{
+                rotationGroups.add(a1List.toArray() as Atom[])
             }
         }
         return rotationGroups
@@ -441,8 +487,10 @@ class TorsionScan extends AlgorithmsScript {
         boolean initial = true
         while(start <= end){
             int[] newState = HilbertCurveTransforms.hilbertIndexToCoordinates(nTorsionalBonds, nTorsions, start)
+            logger.info(" Hilbert index: " + start + "; Coordinates: " + Arrays.toString(newState))
             // Permute from currentState to newState
             if(!changeState(currentState, newState, nTorsions, bonds, atomGroups, initial)){
+                logger.info(" Skipping state with Hilbert Index: " + start)
                 start++
                 continue
             }
@@ -454,9 +502,9 @@ class TorsionScan extends AlgorithmsScript {
             // Log minimum energy
             if(energy < minEnergy){
                 minEnergy = energy
-                logger.info(format(" New minimum energy: %12.5f", minEnergy))
+                logger.info(format("\n New minimum energy: %12.5f", minEnergy))
                 // Print out the coordinates
-                StringBuilder sb = format("Hilbert index: %d; Coordinates: (", start) as StringBuilder
+                StringBuilder sb = new StringBuilder(format(" Hilbert index: %d; Coordinates: (", start))
                 for (int i = 0; i < nTorsionalBonds; i++) {
                     sb.append(format("%d", newState[i]))
                     if (i < nTorsionalBonds - 1) {
@@ -469,11 +517,9 @@ class TorsionScan extends AlgorithmsScript {
             // Add to queue
             stateContainers.add(new StateContainer(new AssemblyState(molecularAssembly), energy))
             currentState = newState
+            energies[progress] = energy
             start++
             progress++
-            if(progress % 1000 == 0){
-                logger.info(format(" %d states to go.", end-start))
-            }
         }
     }
 
@@ -489,7 +535,7 @@ class TorsionScan extends AlgorithmsScript {
             if(oldState[i] != newState[i]){
                 // Add change required to go from oldState to newState to change array (1 or -1)
                 int change = newState[i] - oldState[i]
-                if(change != 1 && change != -1){
+                if(change != 1 && change != -1 && !initialState){
                     logger.severe("Error: change should be 1 or -1. Something wrong with Hilbert curve.")
                 }
                 // Apply change at this index to atoms
@@ -637,7 +683,7 @@ class TorsionScan extends AlgorithmsScript {
             Atom newAtom = new Atom(a.getIndex(), a.getName(), a.getAtomType(), a.getXYZ(null));
             atomList.add(newAtom);
         }
-        saveAssemblyandFiles(ma, atomList, filename);
+        saveAssemblyAndFiles(ma, atomList, filename);
     }
 
     /**
@@ -657,9 +703,9 @@ class TorsionScan extends AlgorithmsScript {
             Atom newAtom = new Atom(a.getIndex(), a.getName(), a.getAtomType(), new double[]{newXYZ[i * 3], newXYZ[i * 3 + 1], newXYZ[i * 3 + 2]});
             atomList.add(newAtom);
         }
-        saveAssemblyandFiles(ma, atomList, filename);
+        saveAssemblyAndFiles(ma, atomList, filename);
     }
-    boolean saveAssemblyandFiles(MolecularAssembly ma, ArrayList<Atom> atomList, String filename){
+    boolean saveAssemblyAndFiles(MolecularAssembly ma, ArrayList<Atom> atomList, String filename){
         String fileName = FilenameUtils.removeExtension(filename);
         String description = "_rot";
         ArrayList<Bond> bondList = ma.getBondList();

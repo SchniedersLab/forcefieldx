@@ -104,7 +104,7 @@ class RepexThermo extends Thermodynamics {
       arguments = filenames
       fromActive = false
     } else {
-      logger.warning(" Untested: use of active assembly instead of provided filenames!")
+      logger.warning(" Untested: use of active assembly instead of provided filename!")
       MolecularAssembly mola = algorithmFunctions.getActiveAssembly()
       if (mola == null) {
         logger.info(helpString())

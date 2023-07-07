@@ -99,7 +99,7 @@ class ForEachFile extends AlgorithmsScript {
   String schedule
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument(s) should be one or more filename.
    */
   @Unmatched
   List<String> unmatched = null
