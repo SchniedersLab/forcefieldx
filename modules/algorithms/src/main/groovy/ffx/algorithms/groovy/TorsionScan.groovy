@@ -122,7 +122,7 @@ class TorsionScan extends AlgorithmsScript {
      * --printEnergies
      */
     @Option(names = ['--noPrint'], paramLabel = 'true', defaultValue = 'true',
-            description = 'Print out all energy states and indices in order at the end.')
+            description = 'Do not store or print energies and hilbert indicies at the end.')
     private boolean printOut = true
 
     /**
@@ -131,6 +131,13 @@ class TorsionScan extends AlgorithmsScript {
     @Option(names = ['--sc', '--staticComparison'], paramLabel = "false", defaultValue = "false",
             description = 'If set, each bond is rotated independently (faster, but fewer permutations).')
     private static boolean staticCompare
+
+    /**
+     * --eliminationThreshold
+     */
+    @Option(names = ['--eliminationThreshold', '--et'], paramLabel = '50.0', defaultValue = '50.0',
+            description = "Remove bonds that cause > this energy change during static analysis (kcal/mol).")
+    private double eliminationThreshold = 50.0
 
     /**
      * The final argument should be the structure filename.
@@ -190,6 +197,7 @@ class TorsionScan extends AlgorithmsScript {
 
         // Get the bonds and rotation groups
         List<Bond> bonds = getTorsionalBonds(ma)
+        logger.info(" " + bonds.size() + " torsional bonds found.")
         List<Atom[]> rotationGroups = getRotationGroups(bonds)
         int turns = (increment < 360.0) ? (int) (360.0/increment) : 1.0
         int bits = (int) FastMath.ceil(FastMath.log(2, turns))
@@ -236,8 +244,10 @@ class TorsionScan extends AlgorithmsScript {
                 startIndices[i] = i * jobsPerWorker + world.rank() * jobsPerWorkerSplit
             }
             logger.info(" Worker " + world.rank() + " assigned indices: " + startIndices)
-            energies = new double[jobsPerWorker]
-            hilbertIndices = new double[jobsPerWorker]
+            if(printOut) {
+                energies = new double[jobsPerWorker]
+                hilbertIndices = new double[jobsPerWorker]
+            }
             if(saveAll){
                 MinMaxPriorityQueue<StateContainer> newQ = MinMaxPriorityQueue.maximumSize(jobsPerWorker as int).create()
                 while(!queue.isEmpty()){
@@ -246,7 +256,7 @@ class TorsionScan extends AlgorithmsScript {
                 queue = newQ
             }
         }
-        else if (!staticCompare){
+        else if (!staticCompare && printOut){
             energies = new double[samples]
             hilbertIndices = new double[samples]
         }
@@ -441,8 +451,10 @@ class TorsionScan extends AlgorithmsScript {
             // Add to queue
             stateContainers.add(new StateContainer(new AssemblyState(molecularAssembly), energy, start))
             currentState = newState
-            energies[progress] = energy
-            hilbertIndices[progress] = start
+            if(printOut) {
+                energies[progress] = energy
+                hilbertIndices[progress] = start
+            }
             start++
             progress++
         }
@@ -569,7 +581,7 @@ class TorsionScan extends AlgorithmsScript {
                 forceFieldEnergy.getCoordinates(x)
                 // Calculate energy
                 double newEnergy = forceFieldEnergy.energy(x)
-                if(newEnergy - initialE > 20){
+                if(newEnergy - initialE > eliminationThreshold){
                     remove.add(i)
                     break
                 } else {
