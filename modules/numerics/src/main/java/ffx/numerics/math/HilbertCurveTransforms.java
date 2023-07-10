@@ -37,7 +37,10 @@
 // ******************************************************************************
 package ffx.numerics.math;
 
+import org.apache.commons.math3.util.FastMath;
+
 import java.math.BigInteger;
+import java.util.Arrays;
 
 /**
  * HilbertCurveTransforms is a class that provides static methods for converting
@@ -49,6 +52,91 @@ import java.math.BigInteger;
  */
 
 public class HilbertCurveTransforms {
+
+    /**
+     * Convert the Hilbert index into an N-dimensional point expressed as a vector of uints.
+     *
+     * Note: In Skilling's paper, this function is named TransposetoAxes.
+     * @param transposedIndex The Hilbert index stored in transposed form.
+     * @param bits Number of bits per coordinate.
+     * @return Point in N-space.
+     */
+    static long[] HilbertAxes(final long[] transposedIndex, final int bits) {
+        final long[] result = transposedIndex.clone();
+        final int dims = result.length;
+        grayDecode(result, dims);
+        undoExcessWork(result, dims, bits);
+        return result;
+    }
+
+    static void grayDecode(final long[] result, final int dims) {
+        final long swap = result[dims - 1] >>> 1;
+        // Corrected error in Skilling's paper on the following line. The appendix had i >= 0 leading to negative array index.
+        for (int i = dims - 1; i > 0; i--)
+            result[i] ^= result[i - 1];
+        result[0] ^= swap;
+    }
+
+    static void undoExcessWork(final long[] result, final int dims, final int bits) {
+        for (long bit = 2, n = 1; n != bits; bit <<= 1, ++n) {
+            final long mask = bit - 1;
+            for (int i = dims - 1; i >= 0; i--)
+                if ((result[i] & bit) != 0)
+                    result[0] ^= mask; // invert
+                else
+                    swapBits(result, mask, i);
+        }
+    }
+
+    /**
+     * Given the axes (coordinates) of a point in N-Dimensional space, find the distance to that point along the Hilbert curve.
+     * That distance will be transposed; broken into pieces and distributed into an array.
+     *
+     * The number of dimensions is the length of the hilbertAxes array.
+     *
+     * Note: In Skilling's paper, this function is called AxestoTranspose.
+     * @param hilbertAxes Point in N-space.
+     * @param bits Depth of the Hilbert curve. If bits is one, this is the top-level Hilbert curve.
+     * @return The Hilbert distance (or index) as a transposed Hilbert index.
+     */
+    static long[] HilbertIndexTransposed(final long[] hilbertAxes, final int bits) {
+        final long[] result = hilbertAxes.clone();
+        final int dims = hilbertAxes.length;
+        final long maxBit = 1L << (bits - 1);
+        inverseUndo(result, dims, maxBit);
+        grayEncode(result, dims, maxBit);
+        return result;
+    }
+
+    static void inverseUndo(final long[] result, final int dims, final long maxBit) {
+        for (long bit = maxBit; bit != 0; bit >>>= 1) {
+            final long mask = bit - 1;
+            for (int i = 0; i < dims; i++)
+                if ((result[i] & bit) != 0)
+                    result[0] ^= mask; // invert
+                else
+                    swapBits(result, mask, i);
+        } // exchange
+    }
+
+    static void grayEncode(final long[] result, final int dims, final long maxBit) {
+        for (int i = 1; i < dims; i++)
+            result[i] ^= result[i - 1];
+        long mask = 0;
+        for (long bit = maxBit; bit != 0; bit >>>= 1)
+            if ((result[dims - 1] & bit) != 0)
+                mask ^= bit - 1;
+        for (int i = 0; i < dims; i++)
+            result[i] ^= mask;
+    }
+
+    static void swapBits(final long[] array, final long mask, final int index) {
+        final long swap = (array[0] ^ array[index]) & mask;
+        array[0] ^= swap;
+        array[index] ^= swap;
+    }
+
+
     private static int adjust_rotation(int rotation, int nDims, int bits) {
         long nd1Ones = (ones(nDims) >> 1);
         bits &= -bits & nd1Ones;
@@ -112,16 +200,16 @@ public class HilbertCurveTransforms {
         return coords;
     }
 
-    public static long[] hilbertIndexToCoordinates(int nBonds, int nTorsions, long index) {
+    public static long[] hilbertIndexToCoordinates(int nBonds, int nBitsPerDim, long index) {
         long[] coord = new long[nBonds];
 
         if (nBonds > 1) {
             long coords;
-            int nbOnes = (int) ones(nTorsions);
+            int nbOnes = (int) ones(nBitsPerDim);
             int d;
 
-            if (nTorsions > 1) {
-                int nDimsBits = nBonds * nTorsions;
+            if (nBitsPerDim > 1) {
+                int nDimsBits = nBonds * nBitsPerDim;
                 int ndOnes = (int) ones(nBonds);
                 int nd1Ones = ndOnes >> 1;
                 int b = nDimsBits;
@@ -142,14 +230,14 @@ public class HilbertCurveTransforms {
                 for (b = nBonds; b < nDimsBits; b *= 2) {
                     coords ^= coords >> b;
                 }
-                coords = bitTranspose(nTorsions, nBonds, coords);
+                coords = bitTranspose(nBitsPerDim, nBonds, coords);
             } else {
                 coords = index ^ (index >> 1);
             }
 
             for (d = 0; d < nBonds; ++d) {
                 coord[d] = coords & nbOnes;
-                coords >>= nTorsions;
+                coords >>= nBitsPerDim;
             }
         } else {
             coord[0] = index;
@@ -159,21 +247,26 @@ public class HilbertCurveTransforms {
     }
 
     public static void main(String[] args) {
-        int nBonds = 3; // Dimensions of the space
-        int nTorsions = 3; // Bits per dimension
-
+        int nBonds = 14; // Dimensions of the space
+        int nTorsions = 4; // Bits per dimension
+        int nBits = (int) Math.ceil(FastMath.log(2, nTorsions));
         // Calculate the maximum index of number of configurations using BigInteger
         //BigInteger maxIndex = BigInteger.valueOf(nTorsions).pow(nBonds).subtract(BigInteger.ONE);
 
+
         // Max index allowing nTorsions >= nBonds
-        BigInteger maxIndex = BigInteger.valueOf(2).pow(nBonds * nTorsions).subtract(BigInteger.ONE);
+        BigInteger maxIndex = BigInteger.valueOf(2).pow(nBonds * nBits).subtract(BigInteger.ONE);
+        BigInteger numConfigs = BigInteger.valueOf(nTorsions).pow(nBonds);
 
         System.out.println("Maximum index: " + maxIndex);
-
+        System.out.println("Number of configurations: " + numConfigs);
+        /*
         // Iterate over all indices
         BigInteger index = BigInteger.ZERO;
+        int counter = 0;
         while (index.longValue() <= maxIndex.longValue()) {
-            long[] coordinates = hilbertIndexToCoordinates(nBonds, nTorsions, index.longValue());
+            long[] coordinates = hilbertIndexToCoordinates(nBonds, nBits, index.longValue());
+            //long[] coordinates2 = HilbertAxes(, nTorsions);
             boolean valid = true;
 
             for (long coord : coordinates) {
@@ -183,19 +276,21 @@ public class HilbertCurveTransforms {
                 }
             }
 
-            if (valid) {
+            if (!valid) {
+                counter++;
                 // Print out the coordinates
-                System.out.printf("Hilbert index: %d; Coordinates: (", index);
-                for (int i = 0; i < nBonds; i++) {
-                    System.out.printf("%d", coordinates[i]);
-                    if (i < nBonds - 1) {
-                        System.out.print(", ");
-                    }
-                }
-                System.out.println(")");
+                System.out.println("Hilbert index: " + counter +  "; Coordinates: " + Arrays.toString(coordinates));
+                //System.out.println("Hilbert index: " + counter +  "; Coordinates2: " + Arrays.toString(coordinates2));
             }
             // Increment the index
             index = index.add(BigInteger.ONE);
+            if(index.compareTo(BigInteger.valueOf(100000)) == 0)
+            {
+                break;
+            }
         }
+        System.out.println("Number of valid configurations: " + counter);
+
+         */
     }
 }
