@@ -536,10 +536,12 @@ class TorsionScan extends AlgorithmsScript {
                 // Add change required to go from oldState to newState to change array (1 or -1)
                 int change = newState[i] - oldState[i]
                 if(change != 1 && change != -1 && !initialState){
-                    logger.severe("Error: change should be 1 or -1. Something wrong with Hilbert curve.")
+                    logger.warning(" Change should be 1 or -1.")
+                    logger.info(" Old state: " + Arrays.toString(oldState))
+                    logger.info(" New state: " + Arrays.toString(newState))
                 }
                 // Apply change at this index to atoms
-                int turnDegrees = (int) (change * 360 / nTorsions)
+                int turnDegrees = (int) (((change%nTorsions) * 360 / nTorsions))
                 Atom[] atomGroup = atoms[i]
                 // Get vector from atom to atom of bond i
                 double[] u = new double[3]
