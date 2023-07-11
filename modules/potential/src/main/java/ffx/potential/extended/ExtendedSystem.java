@@ -546,7 +546,7 @@ public class ExtendedSystem implements Potential {
         }
 
         //Theta masses should always be the same for each ESV
-        Arrays.fill(esvState.mass(), thetaMass);
+        Arrays.fill(esvState.getMass(), thetaMass);
 
         for (int i = 0; i < nESVs; i++) {
             if (i < nTitr) {
@@ -1708,7 +1708,7 @@ public class ExtendedSystem implements Potential {
     }
 
     public double[] getThetaMassArray() {
-        return esvState.mass();
+        return esvState.getMass();
     }
 
     @Override
