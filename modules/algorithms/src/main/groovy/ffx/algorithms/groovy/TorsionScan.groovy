@@ -198,6 +198,10 @@ class TorsionScan extends AlgorithmsScript {
         // Get the bonds and rotation groups
         List<Bond> bonds = getTorsionalBonds(ma)
         logger.info(" " + bonds.size() + " torsional bonds found.")
+        if(bonds.size() == 0){
+            logger.info(" No torsional bonds found.")
+            return this
+        }
         List<Atom[]> rotationGroups = getRotationGroups(bonds)
         int turns = (increment < 360.0) ? (int) (360.0/increment) : 1.0
         int bits = (int) FastMath.ceil(FastMath.log(2, turns))
@@ -216,6 +220,11 @@ class TorsionScan extends AlgorithmsScript {
                 activeAssembly,
                 forceFieldEnergy,
                 x)
+
+        if(bonds.size() == 0){
+            logger.info(" No torsional bonds found.")
+            return this
+        }
 
         // Calculate the maximum index of number of configurations using BigInteger
         BigInteger maxIndex = BigInteger.valueOf(2).pow(bits*bonds.size())
