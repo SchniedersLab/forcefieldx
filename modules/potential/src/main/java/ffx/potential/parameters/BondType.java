@@ -46,6 +46,7 @@ import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 
 import ffx.utilities.FFXKeyword;
+
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -67,18 +68,26 @@ public final class BondType extends BaseType implements Comparator<String> {
 
   public static final double DEFAULT_BOND_UNIT = 1.0;
 
-  /** Default cubic coefficient in bond stretch potential. */
+  /**
+   * Default cubic coefficient in bond stretch potential.
+   */
   public static final double DEFAULT_BOND_CUBIC = 0.0;
-  /** Default quartic coefficient in bond stretch potential. */
+  /**
+   * Default quartic coefficient in bond stretch potential.
+   */
   public static final double DEFAULT_BOND_QUARTIC = 0.0;
 
-  /** Convert bond stretch energy to kcal/mole. */
+  /**
+   * Convert bond stretch energy to kcal/mole.
+   */
   @FFXKeyword(name = "bondunit", keywordGroup = EnergyUnitConversion, defaultValue = "1.0", description =
       "Sets the scale factor needed to convert the energy value computed by the bond stretching potential into units of kcal/mole. "
           + "The correct value is force field dependent and typically provided in the header of the master force field parameter file.")
   public double bondUnit = DEFAULT_BOND_UNIT;
 
-  /** Cubic coefficient in bond stretch potential. */
+  /**
+   * Cubic coefficient in bond stretch potential.
+   */
   @FFXKeyword(name = "bond-cubic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description =
       "Sets the value of the cubic term in the Taylor series expansion form of the bond stretching potential energy. "
           + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
@@ -87,7 +96,9 @@ public final class BondType extends BaseType implements Comparator<String> {
           + "The default value in the absence of the bond-cubic keyword is zero; i.e., the cubic bond stretching term is omitted.")
   public double cubic = DEFAULT_BOND_CUBIC;
 
-  /** Quartic coefficient in bond stretch potential. */
+  /**
+   * Quartic coefficient in bond stretch potential.
+   */
   @FFXKeyword(name = "bond-quartic", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "0.0", description =
       "Sets the value of the quartic term in the Taylor series expansion form of the bond stretching potential energy. "
           + "The real number modifier gives the value of the coefficient as a multiple of the quadratic coefficient. "
@@ -96,28 +107,38 @@ public final class BondType extends BaseType implements Comparator<String> {
           + "The default value in the absence of the bond-quartic keyword is zero; i.e., the quartic bond stretching term is omitted.")
   public double quartic = DEFAULT_BOND_QUARTIC;
 
-  /** A Logger for the BondType class. */
+  /**
+   * A Logger for the BondType class.
+   */
   private static final Logger logger = Logger.getLogger(BondType.class.getName());
-  /** Atom classes that form this bond stretch. */
+  /**
+   * Atom classes that form this bond stretch.
+   */
   public final int[] atomClasses;
-  /** Force constant (Kcal/mol). */
+  /**
+   * Force constant (Kcal/mol).
+   */
   public final double forceConstant;
-  /** Equilibrium separation (Angstroms). */
+  /**
+   * Equilibrium separation (Angstroms).
+   */
   public final double distance;
   /**
    * Radius of a flat bottom where energy and force is 0; typically used for restraints. Will almost
    * always be 0.
    */
   public final double flatBottomRadius;
-  /** The function used by the bond: harmonic or quartic with flat-bottom variants. */
+  /**
+   * The function used by the bond: harmonic or quartic with flat-bottom variants.
+   */
   public BondFunction bondFunction;
 
   /**
    * The default BondType constructor defines use of the Quartic BondFunction.
    *
-   * @param atomClasses int[]
+   * @param atomClasses   int[]
    * @param forceConstant double
-   * @param distance double
+   * @param distance      double
    */
   public BondType(int[] atomClasses, double forceConstant, double distance) {
     this(atomClasses, forceConstant, distance, BondFunction.QUARTIC, 0.0);
@@ -126,27 +147,27 @@ public final class BondType extends BaseType implements Comparator<String> {
   /**
    * BondType constructor.
    *
-   * @param atomClasses int[]
+   * @param atomClasses   int[]
    * @param forceConstant double
-   * @param distance double
-   * @param bondFunction the BondFunction type to apply.
+   * @param distance      double
+   * @param bondFunction  the BondFunction type to apply.
    */
   public BondType(int[] atomClasses, double forceConstant, double distance,
-      BondFunction bondFunction) {
+                  BondFunction bondFunction) {
     this(atomClasses, forceConstant, distance, bondFunction, 0.0);
   }
 
   /**
    * BondType constructor.
    *
-   * @param atomClasses int[]
-   * @param forceConstant double
-   * @param distance double
-   * @param bondFunction the BondFunction type to apply.
+   * @param atomClasses      int[]
+   * @param forceConstant    double
+   * @param distance         double
+   * @param bondFunction     the BondFunction type to apply.
    * @param flatBottomRadius a double.
    */
-  public BondType(int[] atomClasses, double forceConstant, double distance,
-      BondFunction bondFunction, double flatBottomRadius) {
+  public BondType(int[] atomClasses, double forceConstant, double distance, BondFunction bondFunction,
+                  double flatBottomRadius) {
     super(BOND, sortKey(atomClasses));
     this.atomClasses = atomClasses;
     this.forceConstant = forceConstant;
@@ -159,8 +180,8 @@ public final class BondType extends BaseType implements Comparator<String> {
   /**
    * Average two BondType instances. The atom classes that define the new type must be supplied.
    *
-   * @param bondType1 a {@link ffx.potential.parameters.BondType} object.
-   * @param bondType2 a {@link ffx.potential.parameters.BondType} object.
+   * @param bondType1   a {@link ffx.potential.parameters.BondType} object.
+   * @param bondType2   a {@link ffx.potential.parameters.BondType} object.
    * @param atomClasses an array of {@link int} objects.
    * @return a {@link ffx.potential.parameters.BondType} object.
    */
@@ -182,7 +203,7 @@ public final class BondType extends BaseType implements Comparator<String> {
   /**
    * Construct a BondType from an input string.
    *
-   * @param input The overall input String.
+   * @param input  The overall input String.
    * @param tokens The input String tokenized.
    * @return a BondType instance.
    */
@@ -226,7 +247,9 @@ public final class BondType extends BaseType implements Comparator<String> {
     return c[0] + " " + c[1];
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int compare(String key1, String key2) {
     String[] keys1 = key1.split(" ");
@@ -234,8 +257,8 @@ public final class BondType extends BaseType implements Comparator<String> {
     int[] c1 = new int[2];
     int[] c2 = new int[2];
     for (int i = 0; i < 2; i++) {
-      c1[i] = Integer.parseInt(keys1[i]);
-      c2[i] = Integer.parseInt(keys2[i]);
+      c1[i] = parseInt(keys1[i]);
+      c2[i] = parseInt(keys2[i]);
     }
 
     if (c1[0] < c2[0]) {
@@ -251,7 +274,9 @@ public final class BondType extends BaseType implements Comparator<String> {
     return 0;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -264,7 +289,9 @@ public final class BondType extends BaseType implements Comparator<String> {
     return Arrays.equals(atomClasses, bondType.atomClasses);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Arrays.hashCode(atomClasses);
@@ -356,25 +383,20 @@ public final class BondType extends BaseType implements Comparator<String> {
     FLAT_BOTTOM_QUARTIC("0.5*k*dv^2*((1+cubic)*dv+(1+quartic)*dv^2);"
         + "dv=step(dv)*step(dv-fb)*(dv-fb)+step(-dv)*step(-dv-fb)*(-dv-fb);dv=r-r0", true);
 
-    /** String representation of the mathematical form. */
+    /**
+     * String representation of the mathematical form.
+     */
     private final String mathematicalForm;
 
-    /** Flag to indicate if the bond function has a flat bottom. */
+    /**
+     * Flag to indicate if the bond function has a flat bottom.
+     */
     private final boolean hasFlatBottom;
 
     /**
      * BondFunction constructor.
      *
-     * @param mathForm String representation of the mathematical form.
-     */
-    BondFunction(String mathForm) {
-      this(mathForm, false);
-    }
-
-    /**
-     * BondFunction constructor.
-     *
-     * @param mathForm String representation of the mathematical form.
+     * @param mathForm   String representation of the mathematical form.
      * @param flatBottom Flag to indicate if the bond function has a flat bottom.
      */
     BondFunction(String mathForm, boolean flatBottom) {
