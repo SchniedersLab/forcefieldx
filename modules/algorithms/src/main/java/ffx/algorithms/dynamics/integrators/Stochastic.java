@@ -111,7 +111,7 @@ public class Stochastic extends Integrator {
     copyAccelerationToPrevious();
     double[] a = state.a();
     double[] v = state.v();
-    double[] mass = state.mass();
+    double[] mass = state.getMass();
     for (int i = 0; i < state.getNumberOfVariables(); i++) {
       a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
       v[i] += (0.5 * a[i] * vFriction[i] + vRandom[i]);
@@ -126,7 +126,7 @@ public class Stochastic extends Integrator {
    */
   @Override
   public void preForce(Potential potential) {
-    double[] mass = state.mass();
+    double[] mass = state.getMass();
     double[] x = state.x();
     double[] v = state.v();
     double[] a = state.a();

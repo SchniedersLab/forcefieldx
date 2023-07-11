@@ -162,7 +162,7 @@ public abstract class Thermostat {
     int nVariables = state.getNumberOfVariables();
     double[] x = state.x();
     double[] v = state.v();
-    double[] mass = state.mass();
+    double[] mass = state.getMass();
 
     int index = 0;
     while (index < nVariables) {
@@ -223,7 +223,7 @@ public abstract class Thermostat {
   public final void computeKineticEnergy() {
     double e = 0.0;
     double[] v = state.v();
-    double[] mass = state.mass();
+    double[] mass = state.getMass();
     for (int i = 0; i < state.getNumberOfVariables(); i++) {
       double velocity = v[i];
       double v2 = velocity * velocity;
@@ -338,7 +338,7 @@ public abstract class Thermostat {
     setTargetTemperature(targetTemperature);
 
     double[] v = state.v();
-    double[] mass = state.mass();
+    double[] mass = state.getMass();
     for (int i = 0; i < state.getNumberOfVariables(); i++) {
       double m = mass[i];
       v[i] = random.nextGaussian() * sqrt(kB * targetTemperature / m);
@@ -457,7 +457,7 @@ public abstract class Thermostat {
     double yz = 0.0;
     int index = 0;
     double[] x = state.x();
-    double[] mass = state.mass();
+    double[] mass = state.getMass();
     while (index < state.getNumberOfVariables()) {
       if (type[index] == VARIABLE_TYPE.OTHER) {
         index++;

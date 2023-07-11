@@ -37,16 +37,6 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics;
 
-import static ffx.crystal.LatticeSystem.check;
-import static ffx.numerics.math.ScalarMath.mirrorDegrees;
-import static ffx.utilities.Constants.AVOGADRO;
-import static ffx.utilities.Constants.PRESCON;
-import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.floor;
-import static org.apache.commons.math3.util.FastMath.log;
-import static org.apache.commons.math3.util.FastMath.random;
-
 import ffx.crystal.Crystal;
 import ffx.crystal.CrystalPotential;
 import ffx.crystal.SpaceGroup;
@@ -54,10 +44,17 @@ import ffx.numerics.Potential;
 import ffx.numerics.math.RunningStatistics;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static ffx.crystal.LatticeSystem.check;
+import static ffx.numerics.math.ScalarMath.mirrorDegrees;
+import static ffx.utilities.Constants.*;
+import static java.lang.String.format;
+import static org.apache.commons.math3.util.FastMath.*;
 
 /**
  * The Barostat class maintains constant pressure using random trial moves in lattice parameters,
@@ -71,38 +68,65 @@ import java.util.logging.Logger;
 public class Barostat implements CrystalPotential {
 
   private static final Logger logger = Logger.getLogger(Barostat.class.getName());
-  /** Ideal gas constant in kcal/mol/K */
-  private static final double kB = 1.98720415e-3;
-  /** MolecularAssembly being simulated. */
+
+  /**
+   * MolecularAssembly being simulated.
+   */
   private final MolecularAssembly molecularAssembly;
-  /** Boundary conditions and symmetry operators (could be a ReplicatedCrystal). */
+  /**
+   * Boundary conditions and symmetry operators (could be a ReplicatedCrystal).
+   */
   private Crystal crystal;
-  /** The unit cell. */
+  /**
+   * The unit cell.
+   */
   private Crystal unitCell;
-  /** Mass of the system. */
+  /**
+   * Mass of the system.
+   */
   private final double mass;
-  /** ForceFieldEnergy that describes the system. */
+  /**
+   * ForceFieldEnergy that describes the system.
+   */
   private final CrystalPotential potential;
-  /** Atomic coordinates. */
+  /**
+   * Atomic coordinates.
+   */
   private final double[] x;
-  /** The number of space group symmetry operators. */
+  /**
+   * The number of space group symmetry operators.
+   */
   private final int nSymm;
-  /** Number of independent molecules in the simulation cell. */
+  /**
+   * Number of independent molecules in the simulation cell.
+   */
   private final SpaceGroup spaceGroup;
-  /** Number of molecules in the systems. */
+  /**
+   * Number of molecules in the systems.
+   */
   private final int nMolecules;
-  /** Ideal gas constant * temperature (kcal/mol). */
+  /**
+   * Ideal gas constant * temperature (kcal/mol).
+   */
   private double kT;
-  /** Sampling pressure (atm) */
+  /**
+   * Sampling pressure (atm)
+   */
   private double pressure = 1.0;
-  /** Only isotropic MC moves. */
+  /**
+   * Only isotropic MC moves.
+   */
   private boolean isotropic = false;
-  /** Flag to turn the Barostat on or off. If false, MC moves will not be tried. */
+  /**
+   * Flag to turn the Barostat on or off. If false, MC moves will not be tried.
+   */
   private boolean active = true;
-  /** Default angle move (degrees). */
+  /**
+   * Default angle move (degrees).
+   */
   private double maxAngleMove = 0.5;
   /**
-   * Maximum volume move.
+   * Maximum volume move (Angstroms^3).
    */
   private double maxVolumeMove = 1.0;
   /**
@@ -113,33 +137,57 @@ public class Barostat implements CrystalPotential {
    * Maximum density constraint.
    */
   private double maxDensity = 1.60;
-  /** Number of energy evaluations between application of MC moves. */
+  /**
+   * Number of energy evaluations between application of MC moves.
+   */
   private int meanBarostatInterval = 1;
-  /** A counter for the number of barostat calls. */
+  /**
+   * A counter for the number of barostat calls.
+   */
   private int barostatCount = 0;
-  /** Number of unit cell Monte Carlo moves attempted. */
+  /**
+   * Number of unit cell Monte Carlo moves attempted.
+   */
   private int unitCellMovesAttempted = 0;
-  /** Number of unit cell Monte Carlo moves accepted. */
+  /**
+   * Number of unit cell Monte Carlo moves accepted.
+   */
   private int unitCellMovesAccepted = 0;
-  /** Number of Monte Carlo moves attempted. */
+  /**
+   * Number of Monte Carlo moves attempted.
+   */
   private int sideMovesAttempted = 0;
-  /** Number of Monte Carlo moves accepted. */
+  /**
+   * Number of Monte Carlo moves accepted.
+   */
   private int sideMovesAccepted = 0;
-  /** Number of Monte Carlo moves attempted. */
+  /**
+   * Number of Monte Carlo moves attempted.
+   */
   private int angleMovesAttempted = 0;
-  /** Number of Monte Carlo moves accepted. */
+  /**
+   * Number of Monte Carlo moves accepted.
+   */
   private int angleMovesAccepted = 0;
-  /** Energy STATE. */
+  /**
+   * Energy STATE.
+   */
   private STATE state = STATE.BOTH;
   /**
    * Barostat move type.
    */
   private MoveType moveType = MoveType.SIDE;
-  /** True when a Monte Carlo move is accepted. */
+  /**
+   * True when a Monte Carlo move is accepted.
+   */
   private boolean moveAccepted = false;
-  /** Current density value. */
+  /**
+   * Current density value.
+   */
   private double currentDensity = 0;
-  /** Current A-axis value. */
+  /**
+   * Current A-axis value.
+   */
   private double a = 0;
   /**
    * Current B-axis value.
@@ -198,7 +246,7 @@ public class Barostat implements CrystalPotential {
    * Initialize the Barostat.
    *
    * @param molecularAssembly The molecular assembly to apply the MC barostat to.
-   * @param potential a {@link ffx.crystal.CrystalPotential} object.
+   * @param potential         a {@link ffx.crystal.CrystalPotential} object.
    */
   public Barostat(MolecularAssembly molecularAssembly, CrystalPotential potential) {
     this(molecularAssembly, potential, 298.15);
@@ -208,15 +256,15 @@ public class Barostat implements CrystalPotential {
    * Initialize the Barostat.
    *
    * @param molecularAssembly The molecular assembly to apply the MC barostat to.
-   * @param potential a {@link ffx.crystal.CrystalPotential} object.
-   * @param temperature The Metropolis Monte Carlo temperature (Kelvin).
+   * @param potential         a {@link ffx.crystal.CrystalPotential} object.
+   * @param temperature       The Metropolis Monte Carlo temperature (Kelvin).
    */
   public Barostat(MolecularAssembly molecularAssembly, CrystalPotential potential,
-      double temperature) {
+                  double temperature) {
 
     this.molecularAssembly = molecularAssembly;
     this.potential = potential;
-    this.kT = temperature * kB;
+    this.kT = temperature * R;
 
     crystal = potential.getCrystal();
     unitCell = crystal.getUnitCell();
@@ -240,21 +288,27 @@ public class Barostat implements CrystalPotential {
     return (mass * nSymm / AVOGADRO) * (1.0e24 / unitCell.volume);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean destroy() {
     // Nothing at this level to destroy.
     return potential.destroy();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double energy(double[] x) {
     // Do not apply the Barostat for energy only evaluations.
     return potential.energy(x);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double energyAndGradient(double[] x, double[] g) {
 
@@ -303,44 +357,58 @@ public class Barostat implements CrystalPotential {
     this.isotropic = isotropic;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getAcceleration(double[] acceleration) {
     return potential.getAcceleration(acceleration);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getCoordinates(double[] parameters) {
     return potential.getCoordinates(parameters);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Crystal getCrystal() {
     return potential.getCrystal();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setCrystal(Crystal crystal) {
     potential.setCrystal(crystal);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public STATE getEnergyTermState() {
     return state;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setEnergyTermState(STATE state) {
     this.state = state;
     potential.setEnergyTermState(state);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getMass() {
     return potential.getMass();
@@ -364,7 +432,9 @@ public class Barostat implements CrystalPotential {
     this.meanBarostatInterval = meanBarostatInterval;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int getNumberOfVariables() {
     return potential.getNumberOfVariables();
@@ -388,25 +458,33 @@ public class Barostat implements CrystalPotential {
     this.pressure = pressure;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getPreviousAcceleration(double[] previousAcceleration) {
     return potential.getPreviousAcceleration(previousAcceleration);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getScaling() {
     return potential.getScaling();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setScaling(double[] scaling) {
     potential.setScaling(scaling);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getTotalEnergy() {
     return potential.getTotalEnergy();
@@ -420,13 +498,17 @@ public class Barostat implements CrystalPotential {
     return underlying;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public VARIABLE_TYPE[] getVariableTypes() {
     return potential.getVariableTypes();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getVelocity(double[] velocity) {
     return potential.getVelocity(velocity);
@@ -445,7 +527,9 @@ public class Barostat implements CrystalPotential {
     this.active = active;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setAcceleration(double[] acceleration) {
     potential.setAcceleration(acceleration);
@@ -508,7 +592,9 @@ public class Barostat implements CrystalPotential {
     this.printFrequency = frequency;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setPreviousAcceleration(double[] previousAcceleration) {
     potential.setPreviousAcceleration(previousAcceleration);
@@ -520,10 +606,12 @@ public class Barostat implements CrystalPotential {
    * @param temperature Temperature (Kelvin).
    */
   public void setTemperature(double temperature) {
-    this.kT = temperature * kB;
+    this.kT = temperature * R;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setVelocity(double[] velocity) {
     potential.setVelocity(velocity);
@@ -545,7 +633,7 @@ public class Barostat implements CrystalPotential {
             format(" MC Density %10.6f is outside the range %10.6f - %10.6f.", den, minDensity,
                 maxDensity));
       }
-      // Fail moves outside the specified density range.
+      // Reject moves outside the specified density range.
       crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
       return currentE;
     }
@@ -553,17 +641,16 @@ public class Barostat implements CrystalPotential {
     // A carbon atom cannot fit into a unit cell without interfacial radii greater than ~1.2
     // Angstroms.
     double minInterfacialRadius = 1.2;
+    double currentMinInterfacialRadius = min(min(unitCell.interfacialRadiusA, unitCell.interfacialRadiusB),
+        unitCell.interfacialRadiusC);
     // Enforce minimum interfacial radii of 1.2 Angstroms.
-    if (unitCell.interfacialRadiusA < minInterfacialRadius
-        || unitCell.interfacialRadiusB < minInterfacialRadius
-        || unitCell.interfacialRadiusC < minInterfacialRadius) {
+    if (currentMinInterfacialRadius < minInterfacialRadius) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(
-            format(" MC An interfacial radius (%10.6f,%10.6f,%10.6f) is below the minimum %10.6f",
+        logger.fine(format(" MC An interfacial radius (%10.6f,%10.6f,%10.6f) is below the minimum %10.6f",
                 unitCell.interfacialRadiusA, unitCell.interfacialRadiusB,
                 unitCell.interfacialRadiusC, minInterfacialRadius));
       }
-      // Fail small axis length trial moves.
+      // Reject due to small interfacial radius.
       crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
       return currentE;
     }
@@ -584,23 +671,22 @@ public class Barostat implements CrystalPotential {
     double newE = potential.energy(x);
 
     // Compute the change in potential energy
-    double dE = newE - currentE;
+    double dPE = newE - currentE;
 
     // Compute the pressure-volume work for the asymmetric unit.
-    double dV = pressure * (newV - currentV) / PRESCON;
+    double dEV = pressure * (newV - currentV) / PRESCON;
 
     // Compute the volume entropy
-    double dS = -nMolecules * kT * log(newV / currentV);
+    double dES = -nMolecules * kT * log(newV / currentV);
 
     // Add up the contributions
-    double dT = dE + dV + dS;
+    double dE = dPE + dEV + dES;
 
-    if (dT < 0.0) {
-      // Energy decreased; accept the move.
+    // Energy decreased so the move is accepted.
+    if (dE < 0.0) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format(
-            " MC Energy: %12.6f (dE) + %12.6f (dV) + %12.6f (dS) = %12.6f with (V=%12.6f, E=%12.6f)",
-            dE, dV, dS, dT, newV, newE));
+        logger.fine(format(" MC Accept: %12.6f (dPE) + %12.6f (dEV) + %12.6f (dES) = %12.6f with (V=%12.6f, E=%12.6f)",
+            dPE, dEV, dES, dE, newV, newE));
       }
       moveAccepted = true;
       switch (moveType) {
@@ -612,27 +698,26 @@ public class Barostat implements CrystalPotential {
     }
 
     // Apply the Metropolis criteria.
-    double boltzmann = exp(-dT / kT);
+    double acceptanceProbability = exp(-dE / kT);
+
+    // Draw a pseudorandom double greater than or equal to 0.0 and less than 1.0
+    // from an (approximately) uniform distribution from that range.
     double metropolis = random();
 
-    // Energy increase without Metropolis criteria satisfied.
-    if (metropolis > boltzmann) {
-
+    // Energy increase without the Metropolis criteria satisfied.
+    if (metropolis > acceptanceProbability) {
       rejectMove();
-
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format(
-            " MC Reject: %12.6f (dE) + %12.6f (dV) + %12.6f (dS) = %12.6f with (V=%12.6f, E=%12.6f)",
-            dE, dV, dS, dT, currentV, currentE));
+        logger.fine(format(" MC Reject: %12.6f (dPE) + %12.6f (dEV) + %12.6f (dES) = %12.6f with (V=%12.6f, E=%12.6f)",
+            dPE, dEV, dES, dE, currentV, currentE));
       }
       return currentE;
     }
 
     // Energy increase with Metropolis criteria satisfied.
     if (logger.isLoggable(Level.FINE)) {
-      logger.fine(format(
-          " MC Accept: %12.6f (dE) + %12.6f (dV) + %12.6f (dS) = %12.6f with (V=%12.6f, E=%12.6f)",
-          dE, dV, dS, dT, newV, newE));
+      logger.fine(format(" MC Accept: %12.6f (dPE) + %12.6f (dEV) + %12.6f (dES) = %12.6f with (V=%12.6f, E=%12.6f)",
+          dPE, dEV, dES, dE, newV, newE));
     }
 
     moveAccepted = true;
@@ -645,7 +730,9 @@ public class Barostat implements CrystalPotential {
     return newE;
   }
 
-  /** Reset the to state prior to trial move. */
+  /**
+   * Reset the to state prior to trial move.
+   */
   private void rejectMove() {
     // Reset the unit cell parameters
     crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);
@@ -672,8 +759,7 @@ public class Barostat implements CrystalPotential {
     boolean succeed = crystal.changeUnitCellParameters(a + dA, b, c, alpha, beta, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(
-            format(" Proposing MC change of the a-axis to (%6.3f) with volume change %6.3f (A^3)", a,
+        logger.fine(format(" Proposing MC change of the a-axis to (%6.3f) with volume change %6.3f (A^3)", a,
                 dAUVolume));
       }
       return mcStep(currentE, currentAUV);
@@ -720,8 +806,7 @@ public class Barostat implements CrystalPotential {
     boolean succeed = crystal.changeUnitCellParameters(a, b, c + dC, alpha, beta, gamma);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(
-            format(" Proposing MC change to the c-axis to (%6.3f) with volume change %6.3f (A^3)", c,
+        logger.fine(format(" Proposing MC change to the c-axis to (%6.3f) with volume change %6.3f (A^3)", c,
                 dAUVolume));
       }
       return mcStep(currentE, currentAUV);
@@ -745,8 +830,7 @@ public class Barostat implements CrystalPotential {
         gamma, currentAUV + dAUVolume);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(
-            format(" Proposing MC change to the a,b-axes to (%6.3f) with volume change %6.3f (A^3)",
+        logger.fine(format(" Proposing MC change to the a,b-axes to (%6.3f) with volume change %6.3f (A^3)",
                 a, dAUVolume));
       }
       return mcStep(currentE, currentAUV);
@@ -764,8 +848,7 @@ public class Barostat implements CrystalPotential {
         beta, gamma, currentAUV + dAUVolume);
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format(
-            " Proposing MC change to the a,b,c-axes to (%6.3f) with volume change %6.3f (A^3)", a,
+        logger.fine(format(" Proposing MC change to the a,b,c-axes to (%6.3f) with volume change %6.3f (A^3)", a,
             dAUVolume));
       }
       return mcStep(currentE, currentAUV);
@@ -787,7 +870,6 @@ public class Barostat implements CrystalPotential {
     double newAlpha = mirrorDegrees(alpha + move);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(a, b, c, newAlpha, beta, gamma,
         currentAUV + dAUVolume);
-
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(format(" Proposing MC change of alpha to %6.3f with a volume change %6.3f (A^3)",
@@ -836,7 +918,6 @@ public class Barostat implements CrystalPotential {
     double newGamma = mirrorDegrees(gamma + move);
     boolean succeed = crystal.changeUnitCellParametersAndVolume(a, b, c, alpha, beta, newGamma,
         currentAUV + dAUVolume);
-
     if (succeed) {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine(format(" Proposing MC change of gamma to %6.3f with a volume change %6.3f (A^3)",
@@ -975,16 +1056,13 @@ public class Barostat implements CrystalPotential {
       if (logger.isLoggable(Level.FINE)) {
         StringBuilder sb = new StringBuilder(" MC Barostat Acceptance:");
         if (sideMovesAttempted > 0) {
-          sb.append(
-              format(" Side %5.1f%%", (double) sideMovesAccepted / sideMovesAttempted * 100.0));
+          sb.append(format(" Side %5.1f%%", (double) sideMovesAccepted / sideMovesAttempted * 100.0));
         }
         if (angleMovesAttempted > 0) {
-          sb.append(
-              format(" Angle %5.1f%%", (double) angleMovesAccepted / angleMovesAttempted * 100.0));
+          sb.append(format(" Angle %5.1f%%", (double) angleMovesAccepted / angleMovesAttempted * 100.0));
         }
         if (unitCellMovesAttempted > 0) {
-          sb.append(format(" UC %5.1f%%",
-              (double) unitCellMovesAccepted / unitCellMovesAttempted * 100.0));
+          sb.append(format(" UC %5.1f%%", (double) unitCellMovesAccepted / unitCellMovesAttempted * 100.0));
         }
         sb.append(format("\n Density: %5.3f  UC: %s", currentDensity, unitCell.toShortString()));
         logger.fine(sb.toString());
@@ -1037,7 +1115,9 @@ public class Barostat implements CrystalPotential {
     }
   }
 
-  /** The type of Barostat move. */
+  /**
+   * The type of Barostat move.
+   */
   private enum MoveType {
     SIDE, ANGLE, UNIT
   }

@@ -39,6 +39,8 @@ package ffx.potential;
 
 import java.util.Arrays;
 
+import static java.lang.System.arraycopy;
+
 /**
  * The current state of the molecular dynamics simulation.
  */
@@ -106,12 +108,12 @@ public class SystemState {
    */
   public void revertState(UnmodifiableState state) {
     assert (state.x().length == numberOfVariables);
-    System.arraycopy(state.x(), 0, x, 0, numberOfVariables);
-    System.arraycopy(state.v(), 0, v, 0, numberOfVariables);
-    System.arraycopy(state.a(), 0, a, 0, numberOfVariables);
-    System.arraycopy(state.aPrevious(), 0, aPrevious, 0, numberOfVariables);
-    System.arraycopy(state.mass(), 0, mass, 0, numberOfVariables);
-    System.arraycopy(state.gradient(), 0, gradient, 0, numberOfVariables);
+    arraycopy(state.x(), 0, x, 0, numberOfVariables);
+    arraycopy(state.v(), 0, v, 0, numberOfVariables);
+    arraycopy(state.a(), 0, a, 0, numberOfVariables);
+    arraycopy(state.aPrevious(), 0, aPrevious, 0, numberOfVariables);
+    arraycopy(state.mass(), 0, mass, 0, numberOfVariables);
+    arraycopy(state.gradient(), 0, gradient, 0, numberOfVariables);
     kineticEnergy = state.kineticEnergy();
     potentialEnergy = state.potentialEnergy();
     temperature = state.temperature();
@@ -124,7 +126,7 @@ public class SystemState {
    */
   public void setMass(double[] mass) {
     assert (mass.length == numberOfVariables);
-    System.arraycopy(mass, 0, this.mass, 0, numberOfVariables);
+    arraycopy(mass, 0, this.mass, 0, numberOfVariables);
   }
 
   /**
@@ -134,7 +136,7 @@ public class SystemState {
    */
   public void setCoordinates(double[] x) {
     assert (x.length == numberOfVariables);
-    System.arraycopy(x, 0, this.x, 0, numberOfVariables);
+    arraycopy(x, 0, this.x, 0, numberOfVariables);
   }
 
   /**
@@ -144,7 +146,7 @@ public class SystemState {
    */
   public void setVelocities(double[] v) {
     assert (v.length == numberOfVariables);
-    System.arraycopy(v, 0, this.v, 0, numberOfVariables);
+    arraycopy(v, 0, this.v, 0, numberOfVariables);
   }
 
   /**
@@ -154,7 +156,7 @@ public class SystemState {
    */
   public void setAccelerations(double[] a) {
     assert (a.length == numberOfVariables);
-    System.arraycopy(a, 0, this.a, 0, numberOfVariables);
+    arraycopy(a, 0, this.a, 0, numberOfVariables);
   }
 
   /**
@@ -164,7 +166,7 @@ public class SystemState {
    */
   public void setPreviousAccelerations(double[] aPrevious) {
     assert (aPrevious.length == numberOfVariables);
-    System.arraycopy(aPrevious, 0, this.aPrevious, 0, numberOfVariables);
+    arraycopy(aPrevious, 0, this.aPrevious, 0, numberOfVariables);
   }
 
   /**
@@ -208,7 +210,7 @@ public class SystemState {
    *
    * @return The mass.
    */
-  public double[] mass() {
+  public double[] getMass() {
     return mass;
   }
 
@@ -234,7 +236,7 @@ public class SystemState {
    * Copy the current accelerations to the previous accelerations.
    */
   public void copyAccelerationsToPrevious() {
-    System.arraycopy(a, 0, aPrevious, 0, numberOfVariables);
+    arraycopy(a, 0, aPrevious, 0, numberOfVariables);
   }
 
   /**

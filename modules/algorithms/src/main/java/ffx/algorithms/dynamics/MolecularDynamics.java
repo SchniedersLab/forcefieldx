@@ -1177,7 +1177,7 @@ public class MolecularDynamics implements Runnable, Terminatable {
 
       int numberOfVariables = state.getNumberOfVariables();
       double[] a = state.a();
-      double[] mass = state.mass();
+      double[] mass = state.getMass();
       for (int i = 0; i < numberOfVariables; i++) {
         a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
       }
