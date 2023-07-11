@@ -75,7 +75,7 @@ public class VelocityVerlet extends Integrator {
     double[] a = state.a();
     double[] v = state.v();
     double[] x = state.x();
-    double[] mass = state.mass();
+    double[] mass = state.getMass();
     for (int i = 0; i < state.getNumberOfVariables(); i++) {
       a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
       v[i] = v[i] + a[i] * dt_2;
@@ -94,7 +94,7 @@ public class VelocityVerlet extends Integrator {
     double[] x = state.x();
     double[] v = state.v();
     double[] a = state.a();
-    double[] mass = state.mass();
+    double[] mass = state.getMass();
     int nVariables = state.getNumberOfVariables();
     if (useConstraints) {
       if (xPrior == null) {

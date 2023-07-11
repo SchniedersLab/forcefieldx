@@ -241,6 +241,17 @@ public abstract class BondedTerm extends MSNode implements BondedEnergy, Compara
   }
 
   /**
+   * Returns a reference to the Atoms contained in this BondedTerm, regardless of whether they are child nodes in
+   * the tree structure.
+   *
+   * @return Atoms in this BondedTerm
+   */
+  public Atom[] getAtoms() {
+    return atoms;
+  }
+
+
+  /**
    * Returns all Atoms contained in this BondedTerm, regardless of whether they are child nodes in
    * the tree structure. Returns a new array, not a reference to the original array.
    *

@@ -308,6 +308,8 @@ public class PCGSolver {
    */
   public static final double DEFAULT_CG_PRECONDITIONER_SCALE = 2.0;
 
+  private double dieletric;
+
   /**
    * Constructor the PCG solver.
    *
@@ -449,6 +451,7 @@ public class PCGSolver {
       AtomicDoubleArray3D field,
       AtomicDoubleArray3D fieldCR,
       EwaldParameters ewaldParameters,
+      double dieletric,
       ParallelTeam parallelTeam,
       IntegerSchedule realSpaceSchedule,
       long[] realSpaceSCFTime) {
@@ -466,6 +469,7 @@ public class PCGSolver {
     this.field = field;
     this.fieldCR = fieldCR;
     this.ewaldParameters = ewaldParameters;
+    this.dieletric = dieletric;
     this.parallelTeam = parallelTeam;
     this.realSpaceSchedule = realSpaceSchedule;
     this.realSpaceSCFTime = realSpaceSCFTime;
@@ -1171,15 +1175,30 @@ public class PCGSolver {
    */
   private void computePreconditioner() {
     try {
+      // Reset the preconditioner field.
+      field.reset(parallelTeam);
+      fieldCR.reset(parallelTeam);
+
       // Use a special Ewald coefficient for the pre-conditioner.
       double aewaldTemp = ewaldParameters.aewald;
       ewaldParameters.setEwaldParameters(ewaldParameters.off, preconditionerEwald);
-      field.reset(parallelTeam);
-      fieldCR.reset(parallelTeam);
       parallelTeam.execute(preconditionerRegion);
+      ewaldParameters.setEwaldParameters(ewaldParameters.off, aewaldTemp);
+
+      // Reduce the preconditioner field.
       field.reduce(parallelTeam);
       fieldCR.reduce(parallelTeam);
-      ewaldParameters.setEwaldParameters(ewaldParameters.off, aewaldTemp);
+
+      // Scale the pre-conditioner field by the inverse of the dielectric.
+      if (dieletric > 1.0) {
+        int nAtoms = atoms.length;
+        double invDielectric = 1.0 / dieletric;
+        for (int i = 0; i < nAtoms; i++) {
+          field.scale(0, i, invDielectric);
+          fieldCR.scale(0, i, invDielectric);
+        }
+      }
+
     } catch (Exception e) {
       String message = "Exception computing the induced field for the preconditioner.";
       logger.log(Level.SEVERE, message, e);
