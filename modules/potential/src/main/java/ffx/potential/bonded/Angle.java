@@ -168,8 +168,8 @@ public class Angle extends BondedTerm {
   /**
    * angleFactory.
    *
-   * @param b1 a {@link ffx.potential.bonded.Bond} object.
-   * @param b2 a {@link ffx.potential.bonded.Bond} object.
+   * @param b1         a {@link ffx.potential.bonded.Bond} object.
+   * @param b2         a {@link ffx.potential.bonded.Bond} object.
    * @param forceField a {@link ffx.potential.parameters.ForceField} object.
    * @return a {@link ffx.potential.bonded.Angle} object.
    */
@@ -187,35 +187,6 @@ public class Angle extends BondedTerm {
     newAngle.setAngleType(angleType);
 
     return newAngle;
-  }
-
-  private static void inPlaneGrad(int threadID, AtomicDoubleArray3D grad, int ia, int ib, int ic,
-      int id, Double3 vad, Double3 vbd, Double3 vcd, Double3 vp, double rp2, Double3 vjp,
-      double rjp2, Double3 vkp, double rkp2, double delta, double deddt) {
-    // Chain rule terms for first derivative components.
-    var lp = vkp.X(vjp);
-    var lpr = max(lp.length(), 0.000001);
-    var ded0 = vjp.X(lp).scaleI(-deddt / (rjp2 * lpr));
-    var ded2 = vkp.X(lp).scaleI(deddt / (rkp2 * lpr));
-    var dedp = ded0.add(ded2);
-    var gb = dedp.scale(-1.0);
-    var delta2 = 2.0 * delta;
-    var pt2 = dedp.dot(vp) / rp2;
-    var xd2 = vcd.X(gb).scaleI(delta);
-    var xp2 = vp.X(vcd).scaleI(delta2);
-    var x21 = vbd.X(vcd).addI(xp2).scaleI(pt2);
-    var dpd0 = xd2.add(x21);
-    xd2 = gb.X(vad).scaleI(delta);
-    xp2 = vp.X(vad).scaleI(delta2);
-    x21.addI(xp2).scaleI(pt2);
-    var dpd2 = xd2.addI(x21);
-    var ga = ded0.addI(dpd0);
-    var gc = ded2.addI(dpd2);
-    // Accumulate derivatives.
-    grad.add(threadID, ia, ga);
-    grad.add(threadID, ib, gb);
-    grad.add(threadID, ic, gc);
-    grad.sub(threadID, id, ga.addI(gb).addI(gc));
   }
 
   /**
@@ -261,8 +232,13 @@ public class Angle extends BondedTerm {
    * <p>Evaluate this Angle energy.
    */
   @Override
-  public double energy(
-      boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
+    value = 0.0;
+    energy = 0.0;
+    // Only compute this term if at least one atom is being used.
+    if (!getUse()) {
+      return energy;
+    }
     var atomA = atoms[0];
     var atomB = atoms[1];
     var atomC = atoms[2];
@@ -272,147 +248,102 @@ public class Angle extends BondedTerm {
     var va = atomA.getXYZ();
     var vb = atomB.getXYZ();
     var vc = atomC.getXYZ();
-    energy = 0.0;
-    value = 0.0;
     var prefactor = angleType.angleUnit * rigidScale * angleType.forceConstant;
-    switch (angleType.angleFunction) {
-      case SEXTIC -> {
-        switch (angleType.angleMode) {
-          case NORMAL -> {
-            var vab = va.sub(vb);
-            var vcb = vc.sub(vb);
-            var rab2 = vab.length2();
-            var rcb2 = vcb.length2();
-            if (rab2 != 0.0 && rcb2 != 0.0) {
-              var p = vcb.X(vab);
-              var cosine = min(1.0, max(-1.0, vab.dot(vcb) / sqrt(rab2 * rcb2)));
-              value = toDegrees(acos(cosine));
-              var dv = value - angleType.angle[nh];
-              var dv2 = dv * dv;
-              var dv3 = dv2 * dv;
-              var dv4 = dv2 * dv2;
-              energy = prefactor * dv2 * (1.0
-                  + angleType.cubic * dv
-                  + angleType.quartic * dv2
-                  + angleType.pentic * dv3
-                  + angleType.sextic * dv4);
-              if (gradient) {
-                var deddt = prefactor * dv * toDegrees(2.0
-                    + 3.0 * angleType.cubic * dv
-                    + 4.0 * angleType.quartic * dv2
-                    + 5.0 * angleType.pentic * dv3
-                    + 6.0 * angleType.sextic * dv4);
-                var rp = max(p.length(), 0.000001);
-                var terma = -deddt / (rab2 * rp);
-                var termc = deddt / (rcb2 * rp);
-                var ga = vab.X(p).scale(terma);
-                var gc = vcb.X(p).scale(termc);
-                grad.add(threadID, ia, ga);
-                grad.sub(threadID, ib, ga.add(gc));
-                grad.add(threadID, ic, gc);
-              }
-              value = dv;
-            }
+    switch (angleType.angleMode) {
+      // Compute the bond angle bending energy.
+      case NORMAL -> {
+        var vab = va.sub(vb);
+        var vcb = vc.sub(vb);
+        var rab2 = vab.length2();
+        var rcb2 = vcb.length2();
+        if (rab2 != 0.0 && rcb2 != 0.0) {
+          var p = vcb.X(vab);
+          var cosine = min(1.0, max(-1.0, vab.dot(vcb) / sqrt(rab2 * rcb2)));
+          value = toDegrees(acos(cosine));
+          var dv = value - angleType.angle[nh];
+          var dv2 = dv * dv;
+          var dv3 = dv2 * dv;
+          var dv4 = dv2 * dv2;
+          energy = prefactor * dv2 * (1.0
+              + angleType.cubic * dv + angleType.quartic * dv2
+              + angleType.pentic * dv3 + angleType.sextic * dv4);
+          if (gradient) {
+            // Compute the bond angle bending gradient.
+            var deddt = prefactor * dv * toDegrees(2.0
+                + 3.0 * angleType.cubic * dv + 4.0 * angleType.quartic * dv2
+                + 5.0 * angleType.pentic * dv3 + 6.0 * angleType.sextic * dv4);
+            var rp = max(p.length(), 0.000001);
+            var terma = -deddt / (rab2 * rp);
+            var termc = deddt / (rcb2 * rp);
+            var ga = vab.X(p).scale(terma);
+            var gc = vcb.X(p).scale(termc);
+            grad.add(threadID, ia, ga);
+            grad.sub(threadID, ib, ga.add(gc));
+            grad.add(threadID, ic, gc);
           }
-          case IN_PLANE -> {
-            var vd = getAtom4XYZ();
-            int id = atom4.getIndex() - 1;
-            var vad = va.sub(vd);
-            var vbd = vb.sub(vd);
-            var vcd = vc.sub(vd);
-            var vp = vad.X(vcd);
-            var rp2 = vp.length2();
-            var delta = -vp.dot(vbd) / rp2;
-            var vip = vp.scale(delta).addI(vbd);
-            var vjp = vad.sub(vip);
-            var vkp = vcd.sub(vip);
-            var jp2 = vjp.length2();
-            var kp2 = vkp.length2();
-            if (jp2 != 0.0 && kp2 != 0.0) {
-              var cosine = min(1.0, max(-1.0, vjp.dot(vkp) / sqrt(jp2 * kp2)));
-              value = toDegrees(acos(cosine));
-              var dv = value - angleType.angle[nh];
-              var dv2 = dv * dv;
-              var dv3 = dv2 * dv;
-              var dv4 = dv2 * dv2;
-              energy = prefactor * dv2 * (1.0
-                  + angleType.cubic * dv
-                  + angleType.quartic * dv2
-                  + angleType.pentic * dv3
-                  + angleType.sextic * dv4);
-              if (gradient) {
-                var deddt = prefactor * dv * toDegrees(2.0
-                    + 3.0 * angleType.cubic * dv
-                    + 4.0 * angleType.quartic * dv2
-                    + 5.0 * angleType.pentic * dv3
-                    + 6.0 * angleType.sextic * dv4);
-                inPlaneGrad(threadID, grad, ia, ib, ic, id, vad, vbd, vcd,
-                    vp, rp2, vjp, jp2, vkp, kp2, delta, deddt);
-              }
-              value = dv;
-            }
-          }
+          value = dv;
         }
       }
-      case HARMONIC -> {
-        switch (angleType.angleMode) {
-          case NORMAL -> {
-            var vab = va.sub(vb);
-            var vcb = vc.sub(vb);
-            var rab2 = vab.length2();
-            var rcb2 = vcb.length2();
-            if (rab2 != 0.0 && rcb2 != 0.0) {
-              var p = vcb.X(vab);
-              var cosine = min(1.0, max(-1.0, vab.dot(vcb) / sqrt(rab2 * rcb2)));
-              value = toDegrees(acos(cosine));
-              var dv = value - angleType.angle[nh];
-              var dv2 = dv * dv;
-              energy = prefactor * dv2;
-              if (gradient) {
-                var deddt = prefactor * dv * toDegrees(2.0);
-                var rp = max(p.length(), 0.000001);
-                var terma = -deddt / (rab2 * rp);
-                var termc = deddt / (rcb2 * rp);
-                var ga = vab.X(p).scaleI(terma);
-                var gc = vcb.X(p).scaleI(termc);
-                grad.add(threadID, ia, ga);
-                grad.sub(threadID, ib, ga.add(gc));
-                grad.add(threadID, ic, gc);
-              }
-              value = dv;
-            }
+      case IN_PLANE -> {
+        // Compute the projected in-plane angle energy.
+        var vd = getAtom4XYZ();
+        int id = atom4.getIndex() - 1;
+        var vad = va.sub(vd);
+        var vbd = vb.sub(vd);
+        var vcd = vc.sub(vd);
+        var vp = vad.X(vcd);
+        var rp2 = vp.length2();
+        var delta = -vp.dot(vbd) / rp2;
+        var vip = vp.scale(delta).addI(vbd);
+        var vjp = vad.sub(vip);
+        var vkp = vcd.sub(vip);
+        var jp2 = vjp.length2();
+        var kp2 = vkp.length2();
+        if (jp2 != 0.0 && kp2 != 0.0) {
+          var cosine = min(1.0, max(-1.0, vjp.dot(vkp) / sqrt(jp2 * kp2)));
+          value = toDegrees(acos(cosine));
+          var dv = value - angleType.angle[nh];
+          var dv2 = dv * dv;
+          var dv3 = dv2 * dv;
+          var dv4 = dv2 * dv2;
+          energy = prefactor * dv2 * (1.0
+              + angleType.cubic * dv + angleType.quartic * dv2
+              + angleType.pentic * dv3 + angleType.sextic * dv4);
+          if (gradient) {
+            // Compute the projected in-plane angle gradient.
+            var deddt = prefactor * dv * toDegrees(2.0
+                + 3.0 * angleType.cubic * dv + 4.0 * angleType.quartic * dv2
+                + 5.0 * angleType.pentic * dv3 + 6.0 * angleType.sextic * dv4);
+            // Chain rule terms for first derivative components.
+            var lp = vkp.X(vjp);
+            var lpr = max(lp.length(), 0.000001);
+            var ded0 = vjp.X(lp).scaleI(-deddt / (jp2 * lpr));
+            var ded2 = vkp.X(lp).scaleI(deddt / (kp2 * lpr));
+            var dedp = ded0.add(ded2);
+            var gb = dedp.scale(-1.0);
+            var delta2 = 2.0 * delta;
+            var pt2 = dedp.dot(vp) / rp2;
+            var xd2 = vcd.X(gb).scaleI(delta);
+            var xp2 = vp.X(vcd).scaleI(delta2);
+            var x21 = vbd.X(vcd).addI(xp2).scaleI(pt2);
+            var dpd0 = xd2.add(x21);
+            xd2 = gb.X(vad).scaleI(delta);
+            xp2 = vp.X(vad).scaleI(delta2);
+            x21.addI(xp2).scaleI(pt2);
+            var dpd2 = xd2.addI(x21);
+            var ga = ded0.addI(dpd0);
+            var gc = ded2.addI(dpd2);
+            // Accumulate derivatives.
+            grad.add(threadID, ia, ga);
+            grad.add(threadID, ib, gb);
+            grad.add(threadID, ic, gc);
+            grad.sub(threadID, id, ga.addI(gb).addI(gc));
           }
-          case IN_PLANE -> {
-            var vd = getAtom4XYZ();
-            var id = atom4.getIndex() - 1;
-            var vad = va.sub(vd);
-            var vbd = vb.sub(vd);
-            var vcd = vc.sub(vd);
-            var vp = vad.X(vcd);
-            var rp2 = vp.length2();
-            var delta = -vp.dot(vbd) / rp2;
-            var vip = vp.scale(delta).addI(vbd);
-            var vjp = vad.sub(vip);
-            var vkp = vcd.sub(vip);
-            var rjp2 = vjp.length2();
-            var rkp2 = vkp.length2();
-            if (rjp2 != 0.0 && rkp2 != 0.0) {
-              var cosine = min(1.0, max(-1.0, vjp.dot(vkp) / sqrt(rjp2 * rkp2)));
-              value = toDegrees(acos(cosine));
-              var dv = value - angleType.angle[nh];
-              var dv2 = dv * dv;
-              energy = prefactor * dv2;
-              if (gradient) {
-                var deddt = prefactor * dv * toDegrees(2.0);
-                inPlaneGrad(threadID, grad, ia, ib, ic, id,
-                    vad, vbd, vcd, vp, rp2, vjp, rjp2, vkp, rkp2, delta, deddt);
-              }
-              value = dv;
-            }
-          }
+          value = dv;
         }
       }
     }
+
     return energy;
   }
 
@@ -506,12 +437,11 @@ public class Angle extends BondedTerm {
           atoms[1].getIndex(), atoms[1].getAtomType().name,
           atoms[2].getIndex(), atoms[2].getAtomType().name,
           angleType.angle[nh], value, energy));
-      case IN_PLANE ->
-          logger.info(format(" %-8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle-IP",
-              atoms[0].getIndex(), atoms[0].getAtomType().name,
-              atoms[1].getIndex(), atoms[1].getAtomType().name,
-              atoms[2].getIndex(), atoms[2].getAtomType().name,
-              angleType.angle[nh], value, energy));
+      case IN_PLANE -> logger.info(format(" %-8s %6d-%s %6d-%s %6d-%s %7.4f  %7.4f  %10.4f", "Angle-IP",
+          atoms[0].getIndex(), atoms[0].getAtomType().name,
+          atoms[1].getIndex(), atoms[1].getAtomType().name,
+          atoms[2].getIndex(), atoms[2].getAtomType().name,
+          angleType.angle[nh], value, energy));
     }
   }
 
@@ -577,7 +507,7 @@ public class Angle extends BondedTerm {
    *
    * @param a An Angle that may have a common bond with <b>this</b> angle
    * @return The common Bond between this Angle and Angle <b>a</b>, or null if this == a or no common
-   *     bond exists.
+   * bond exists.
    */
   Bond getCommonBond(Angle a) {
     // Comparing an angle to itself returns null

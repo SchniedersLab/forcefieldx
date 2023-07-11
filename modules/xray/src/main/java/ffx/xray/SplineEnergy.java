@@ -38,6 +38,7 @@
 package ffx.xray;
 
 import static java.lang.Double.isNaN;
+import static java.lang.String.format;
 import static java.util.Arrays.fill;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.pow;
@@ -47,8 +48,9 @@ import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.ReflectionSpline;
-import ffx.numerics.Potential;
+import ffx.numerics.OptimizationInterface;
 import ffx.numerics.math.ComplexNumber;
+
 import java.util.logging.Logger;
 
 /**
@@ -56,10 +58,10 @@ import java.util.logging.Logger;
  *
  * @author Timothy D. Fenn<br>
  * @see <a href="http://dx.doi.org/10.1107/S0021889802013420" target="_blank"> K. Cowtan, J. Appl.
- *     Cryst. (2002). 35, 655-663</a>
+ * Cryst. (2002). 35, 655-663</a>
  * @since 1.0
  */
-public class SplineEnergy implements Potential {
+public class SplineEnergy implements OptimizationInterface {
 
   private static final Logger logger = Logger.getLogger(SplineEnergy.class.getName());
   private final ReflectionList reflectionList;
@@ -73,15 +75,14 @@ public class SplineEnergy implements Potential {
   private final ComplexNumber fct = new ComplexNumber();
   private double[] optimizationScaling = null;
   private double totalEnergy;
-  private STATE state = STATE.BOTH;
 
   /**
    * Constructor for SplineEnergy.
    *
    * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
    * @param refinementData a {@link ffx.xray.DiffractionRefinementData} object.
-   * @param nParams a int.
-   * @param type a int.
+   * @param nParams        an int.
+   * @param type           an int.
    */
   SplineEnergy(
       ReflectionList reflectionList,
@@ -100,14 +101,18 @@ public class SplineEnergy implements Potential {
     this.nParams = nParams;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean destroy() {
     // Should be handled upstream.
     return true;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double energy(double[] x) {
     unscaleCoordinates(x);
@@ -116,7 +121,9 @@ public class SplineEnergy implements Potential {
     return sum;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double energyAndGradient(double[] x, double[] g) {
     unscaleCoordinates(x);
@@ -125,55 +132,33 @@ public class SplineEnergy implements Potential {
     return sum;
   }
 
-  /** {@inheritDoc} */
-  @Override
-  public double[] getAcceleration(double[] acceleration) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getCoordinates(double[] parameters) {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 
-  /** {@inheritDoc} */
-  @Override
-  public STATE getEnergyTermState() {
-    return state;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void setEnergyTermState(STATE state) {
-    this.state = state;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public double[] getMass() {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int getNumberOfVariables() {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 
-  /** {@inheritDoc} */
-  @Override
-  public double[] getPreviousAcceleration(double[] previousAcceleration) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getScaling() {
     return optimizationScaling;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setScaling(double[] scaling) {
     if (scaling != null && scaling.length == nParams) {
@@ -183,53 +168,21 @@ public class SplineEnergy implements Potential {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getTotalEnergy() {
     return totalEnergy;
   }
 
   /**
-   * {@inheritDoc}
-   *
-   * <p>Return a reference to each variables type.
-   */
-  @Override
-  public VARIABLE_TYPE[] getVariableTypes() {
-    return null;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public double[] getVelocity(double[] velocity) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void setAcceleration(double[] acceleration) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void setPreviousAcceleration(double[] previousAcceleration) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void setVelocity(double[] velocity) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /**
    * target
    *
-   * @param x an array of double.
-   * @param g an array of double.
+   * @param x        an array of double.
+   * @param g        an array of double.
    * @param gradient a boolean.
-   * @param print a boolean.
+   * @param print    a boolean.
    * @return a double.
    */
   public double target(double[] x, double[] g, boolean gradient, boolean print) {
@@ -336,19 +289,19 @@ public class SplineEnergy implements Potential {
     if (print) {
       StringBuilder sb = new StringBuilder("\n");
       sb.append(" Computed Potential Energy\n");
-      sb.append(String.format("   residual:  %8.3f\n", sum / sumfo));
+      sb.append(format("   residual:  %8.3f\n", sum / sumfo));
       if (type == Type.FOFC || type == Type.F1F2) {
         sb.append(
-            String.format(
+            format(
                 "   R:  %8.3f  Rfree:  %8.3f\n", (r / rf) * 100.0, (rfree / rfreef) * 100.0));
       }
       sb.append("x: ");
       for (double x1 : x) {
-        sb.append(String.format("%8g ", x1));
+        sb.append(format("%8g ", x1));
       }
       sb.append("\ng: ");
       for (double v : g) {
-        sb.append(String.format("%8g ", v));
+        sb.append(format("%8g ", v));
       }
       sb.append("\n");
       logger.info(sb.toString());

@@ -63,13 +63,21 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
 
   private static final Logger logger = Logger.getLogger(PiOrbitalTorsion.class.getName());
 
-  /** A reference to the Pi-Torsion type in use. */
+  /**
+   * A reference to the Pi-Torsion type in use.
+   */
   public PiOrbitalTorsionType piOrbitalTorsionType = null;
-  /** Current value of lambda. */
+  /**
+   * Current value of lambda.
+   */
   private double lambda = 1.0;
-  /** Current value of dE/dL. */
+  /**
+   * Current value of dE/dL.
+   */
   private double dEdL = 0.0;
-  /** Flag to indicate use of lambda dependence. */
+  /**
+   * Flag to indicate use of lambda dependence.
+   */
   private boolean lambdaTerm = false;
 
   /**
@@ -124,7 +132,7 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
   /**
    * Attempt to create a new PiOrbitalTorsion based on the supplied bond and forceField.
    *
-   * @param bond the Bond to create a PiOrbitalTorsion around.
+   * @param bond       the Bond to create a PiOrbitalTorsion around.
    * @param forceField the ForceField parameters to use.
    * @return a new PiOrbitalTorsion, or null.
    */
@@ -152,11 +160,14 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
    * <p>Evaluate the Pi-Orbital Torsion energy.
    */
   @Override
-  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad,
-      AtomicDoubleArray3D lambdaGrad) {
+  public double energy(boolean gradient, int threadID, AtomicDoubleArray3D grad, AtomicDoubleArray3D lambdaGrad) {
     energy = 0.0;
     value = 0.0;
     dEdL = 0.0;
+    // Only compute this term if at least one atom is being used.
+    if (!getUse()) {
+      return energy;
+    }
     var atomA = atoms[0];
     var atomB = atoms[1];
     var atomC = atoms[2];
@@ -252,13 +263,17 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
     return energy;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getLambda() {
     return lambda;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setLambda(double lambda) {
     if (applyAllLambda()) {
@@ -269,13 +284,17 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getd2EdL2() {
     return 0.0;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getdEdL() {
     if (lambdaTerm) {
@@ -285,13 +304,17 @@ public class PiOrbitalTorsion extends BondedTerm implements LambdaInterface {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void getdEdXdL(double[] gradient) {
     // The dEdXdL contributions are zero.
   }
 
-  /** Log details for this Pi-Orbital Torsion energy term. */
+  /**
+   * Log details for this Pi-Orbital Torsion energy term.
+   */
   public void log() {
     logger.info(
         String.format(" %s %6d-%s %6d-%s %10.4f %10.4f", "Pi-Orbital Torsion", atoms[2].getIndex(),

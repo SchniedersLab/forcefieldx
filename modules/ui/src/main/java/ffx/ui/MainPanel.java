@@ -194,9 +194,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
         var ffxVersion = "1.0.0-BETA";
         var ffxVersionProp = "ffx.version=";
         var gitCommitsCount = "";
-        var gitCommitsCountProp = "git.commitsCount=";
+        var gitCommitsCountProp = "git.total.commit.count=";
         var timestampProp = "timestamp=";
-        var gitRevisionProp = "git.revision=";
+        var gitRevisionProp = "git.commit.id.full=";
         var line = br.readLine();
         while (line != null) {
           line = line.trim();
@@ -219,7 +219,7 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
             }
           } else if (line.startsWith(gitRevisionProp) && !line.contains("UNKNOWN_REVISION")) {
             var scm = line.replaceFirst(gitRevisionProp, "");
-            commitSCM = format("        %s %s \n", "SCM version ", scm);
+            commitSCM = format("        %s %s \n", "Git Revision ", scm);
           }
           line = br.readLine();
         }

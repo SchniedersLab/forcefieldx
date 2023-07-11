@@ -56,9 +56,10 @@ import edu.rit.pj.reduction.SharedDoubleArray;
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
-import ffx.numerics.Potential;
+import ffx.numerics.OptimizationInterface;
 import ffx.numerics.math.ComplexNumber;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
+
 import java.util.logging.Logger;
 
 /**
@@ -66,16 +67,16 @@ import java.util.logging.Logger;
  *
  * @author Timothy D. Fenn
  * @see <a href="http://dx.doi.org/10.1107/S0907444905007894" target="_blank"> P. V. Afonine, R. W.
- *     Grosse-Kunstleve and P. D. Adams, Acta Cryst. (2005). D61, 850-855</a>
+ * Grosse-Kunstleve and P. D. Adams, Acta Cryst. (2005). D61, 850-855</a>
  * @see <a href="http://dx.doi.org/10.1107/S0021889802008580" target="_blank"> R. W.
- *     Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35, 477-480.</a>
+ * Grosse-Kunstleve and P. D. Adams, J. Appl. Cryst. (2002). 35, 477-480.</a>
  * @see <a href="http://dx.doi.org/10.1002/jcc.1032" target="_blank"> J. A. Grant, B. T. Pickup, A.
- *     Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
+ * Nicholls, J. Comp. Chem. (2001). 22, 608-640</a>
  * @see <a href="http://dx.doi.org/10.1006/jmbi.1994.1633" target="_blank"> J. S. Jiang, A. T.
- *     Brunger, JMB (1994) 243, 100-115.</a>
+ * Brunger, JMB (1994) 243, 100-115.</a>
  * @since 1.0
  */
-public class ScaleBulkEnergy implements Potential {
+public class ScaleBulkEnergy implements OptimizationInterface {
 
   private static final Logger logger = Logger.getLogger(ScaleBulkEnergy.class.getName());
   private static final double twopi2 = 2.0 * PI * PI;
@@ -105,15 +106,15 @@ public class ScaleBulkEnergy implements Potential {
   private final ScaleBulkEnergyRegion scaleBulkEnergyRegion;
   private double[] optimizationScaling = null;
   private double totalEnergy;
-  private STATE state = STATE.BOTH;
+
 
   /**
    * Constructor for ScaleBulkEnergy.
    *
    * @param reflectionList a {@link ffx.crystal.ReflectionList} object.
    * @param refinementData a {@link ffx.xray.DiffractionRefinementData} object.
-   * @param n a int.
-   * @param parallelTeam the ParallelTeam to execute the ScaleBulkEnergy.
+   * @param n              an int.
+   * @param parallelTeam   the ParallelTeam to execute the ScaleBulkEnergy.
    */
   ScaleBulkEnergy(
       ReflectionList reflectionList,
@@ -142,14 +143,18 @@ public class ScaleBulkEnergy implements Potential {
     scaleBulkEnergyRegion = new ScaleBulkEnergyRegion(threadCount);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean destroy() {
     // The parallelTeam should have been passed in by DiffractionData, which handles destroying it.
     return true;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double energy(double[] x) {
     unscaleCoordinates(x);
@@ -158,7 +163,9 @@ public class ScaleBulkEnergy implements Potential {
     return sum;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double energyAndGradient(double[] x, double[] g) {
     unscaleCoordinates(x);
@@ -167,55 +174,33 @@ public class ScaleBulkEnergy implements Potential {
     return sum;
   }
 
-  /** {@inheritDoc} */
-  @Override
-  public double[] getAcceleration(double[] acceleration) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getCoordinates(double[] parameters) {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 
-  /** {@inheritDoc} */
-  @Override
-  public STATE getEnergyTermState() {
-    return state;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void setEnergyTermState(Potential.STATE state) {
-    this.state = state;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public double[] getMass() {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int getNumberOfVariables() {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 
-  /** {@inheritDoc} */
-  @Override
-  public double[] getPreviousAcceleration(double[] previousAcceleration) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getScaling() {
     return optimizationScaling;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setScaling(double[] scaling) {
     if (scaling != null && scaling.length == n) {
@@ -225,53 +210,21 @@ public class ScaleBulkEnergy implements Potential {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getTotalEnergy() {
     return totalEnergy;
   }
 
   /**
-   * {@inheritDoc}
-   *
-   * <p>Return a reference to each variables type.
-   */
-  @Override
-  public Potential.VARIABLE_TYPE[] getVariableTypes() {
-    return null;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public double[] getVelocity(double[] velocity) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void setAcceleration(double[] acceleration) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void setPreviousAcceleration(double[] previousAcceleration) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public void setVelocity(double[] velocity) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
-
-  /**
    * target
    *
-   * @param x an array of double.
-   * @param g an array of double.
+   * @param x        an array of double.
+   * @param g        an array of double.
    * @param gradient a boolean.
-   * @param print a boolean.
+   * @param print    a boolean.
    * @return a double.
    */
   public double target(double[] x, double[] g, boolean gradient, boolean print) {
@@ -365,7 +318,7 @@ public class ScaleBulkEnergy implements Potential {
     }
 
     @Override
-    public void run() throws Exception {
+    public void run() {
       int ti = getThreadIndex();
       if (scaleBulkEnergyLoop[ti] == null) {
         scaleBulkEnergyLoop[ti] = new ScaleBulkEnergyLoop();
@@ -450,7 +403,7 @@ public class ScaleBulkEnergy implements Potential {
       }
 
       @Override
-      public void run(int lb, int ub) throws Exception {
+      public void run(int lb, int ub) {
 
         for (int j = lb; j <= ub; j++) {
           HKL ih = reflectionList.hkllist.get(j);
@@ -526,36 +479,36 @@ public class ScaleBulkEnergy implements Potential {
             for (int jj = 0; jj < 6; jj++) {
               if (crystal.scaleB[jj] >= 0) {
                 switch (jj) {
-                  case (0):
+                  case (0) -> {
                     // B11
                     vec3Mat3(ihc, j11, resv);
                     lgrad[solventN + crystal.scaleB[jj]] += -dfm * dot(resv, ihc);
-                    break;
-                  case (1):
+                  }
+                  case (1) -> {
                     // B22
                     vec3Mat3(ihc, j22, resv);
                     lgrad[solventN + crystal.scaleB[jj]] += -dfm * dot(resv, ihc);
-                    break;
-                  case (2):
+                  }
+                  case (2) -> {
                     // B33
                     vec3Mat3(ihc, j33, resv);
                     lgrad[solventN + crystal.scaleB[jj]] += -dfm * dot(resv, ihc);
-                    break;
-                  case (3):
+                  }
+                  case (3) -> {
                     // B12
                     vec3Mat3(ihc, j12, resv);
                     lgrad[solventN + crystal.scaleB[jj]] += -dfm * dot(resv, ihc);
-                    break;
-                  case (4):
+                  }
+                  case (4) -> {
                     // B13
                     vec3Mat3(ihc, j13, resv);
                     lgrad[solventN + crystal.scaleB[jj]] += -dfm * dot(resv, ihc);
-                    break;
-                  case (5):
+                  }
+                  case (5) -> {
                     // B23
                     vec3Mat3(ihc, j23, resv);
                     lgrad[solventN + crystal.scaleB[jj]] += -dfm * dot(resv, ihc);
-                    break;
+                  }
                 }
               }
             }

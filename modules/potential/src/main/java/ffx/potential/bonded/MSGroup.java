@@ -870,11 +870,8 @@ public abstract class MSGroup extends MSNode {
 
   /** reOrderAtoms */
   public void reOrderAtoms() {
-    List<Atom> atomList = getAtomList();
-    int nAtoms = atomList.size();
-    Atom[] atoms = new Atom[nAtoms];
-    atoms = atomList.toArray(atoms);
-
+    Atom[] atoms = getAtomList().toArray(new Atom[0]);
+    int nAtoms = atoms.length;
     boolean sorted;
     do {
       sorted = true;

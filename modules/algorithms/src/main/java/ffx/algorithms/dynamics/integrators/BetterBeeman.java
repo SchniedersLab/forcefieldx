@@ -76,7 +76,7 @@ public class BetterBeeman extends Integrator {
     copyAccelerationToPrevious();
     double[] a = state.a();
     double[] v = state.v();
-    double[] mass = state.mass();
+    double[] mass = state.getMass();
     double[] aPrevious = state.aPrevious();
     for (int i = 0; i < state.getNumberOfVariables(); i++) {
       a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];

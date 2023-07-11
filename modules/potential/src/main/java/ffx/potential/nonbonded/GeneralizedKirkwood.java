@@ -71,6 +71,7 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.SoluteType;
 import ffx.potential.parameters.SoluteType.SOLUTE_RADII_TYPE;
+import ffx.utilities.Constants;
 import ffx.utilities.FFXKeyword;
 
 import java.util.Arrays;
@@ -247,7 +248,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * If true, HCT overlap scale factors are element-specific
    */
-  @FFXKeyword(name = "element-hct-scale", clazz = Boolean.class, keywordGroup = ImplicitSolvent, defaultValue = "false",
+  @FFXKeyword(name = "element-hct-scale", clazz = Boolean.class, keywordGroup = ImplicitSolvent, defaultValue = "true",
       description = "Flag to turn on element specific overlap scale factors for Hawkins-Cramer-Truhlar pairwise descreening.")
   private final boolean elementHCTScale;
 
@@ -281,18 +282,18 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * Apply a neck correction during descreening.
    */
-  @FFXKeyword(name = "neck-correction", keywordGroup = ImplicitSolvent, defaultValue = "false",
+  @FFXKeyword(name = "neck-correction", keywordGroup = ImplicitSolvent, defaultValue = "true",
       description = "Apply a neck correction during descreening.")
   private final boolean neckCorrection;
 
   /**
-   * Default Sneck scaling factor from Aguilar/Onufriev 2010
+   * Default Sneck scaling factor (for proteins)
    */
-  private static final double DEFAULT_NECK_SCALE = 0.6784;
+  private static final double DEFAULT_NECK_SCALE = 0.1350;
   /**
    * Maximum Sneck scaling parameter value
    */
-  @FFXKeyword(name = "neck-scale", keywordGroup = ImplicitSolvent, defaultValue = "",
+  @FFXKeyword(name = "neck-scale", keywordGroup = ImplicitSolvent, defaultValue = "0.1350",
       description = "The overlap scale factor to use during the descreening neck correction.")
   private double sneck;
 
@@ -309,7 +310,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * If true, the descreening integral includes the tanh correction to better approximate molecular
    * surface
    */
-  @FFXKeyword(name = "tanh-correction", keywordGroup = ImplicitSolvent, defaultValue = "false",
+  @FFXKeyword(name = "tanh-correction", keywordGroup = ImplicitSolvent, defaultValue = "true",
       description = "If the neck descreening correction is being used, apply a smaller overlap scale"
           + "factors as the number of bonded heavy atoms increases.")
   private final boolean tanhCorrection;
@@ -585,9 +586,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * @param crystal a {@link ffx.crystal.Crystal} object.
    * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
    */
-  public GeneralizedKirkwood(ForceField forceField, Atom[] atoms,
-      ParticleMeshEwald particleMeshEwald, Crystal crystal, ParallelTeam parallelTeam,
-      double electric, double gkCutoff) {
+  public GeneralizedKirkwood(ForceField forceField, Atom[] atoms, ParticleMeshEwald particleMeshEwald,
+                             Crystal crystal, ParallelTeam parallelTeam, double gkCutoff) {
     this.forceField = forceField;
     this.atoms = atoms;
     this.particleMeshEwald = particleMeshEwald;
@@ -599,6 +599,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
     maxNumAtoms = nAtoms;
     polarization = particleMeshEwald.polarization;
 
+    // Read in the value of electric conversion factor.
+    electric = forceField.getDouble("ELECTRIC", Constants.DEFAULT_ELECTRIC);
     // Set the Kirkwood multipolar reaction field constants for solvent.
     solventDielectric = forceField.getDouble("SOLVENT_DIELECTRIC", dWater);
     // Set the Kirkwood multipolar reaction field constants for solute.
@@ -898,7 +900,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
               forceField.getDouble("GAUSSVOL_RADII_OFFSET", 0.0)));
       logger.info(
           format("    GaussVol Radii Scale:                %2.4f",
-              forceField.getDouble("GAUSSVOL_RADII_SCALE", 1.0)));
+              forceField.getDouble("GAUSSVOL_RADII_SCALE", 1.15)));
     }
 
     if (dispersionRegion != null) {
