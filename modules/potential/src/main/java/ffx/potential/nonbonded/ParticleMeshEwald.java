@@ -253,13 +253,19 @@ public class ParticleMeshEwald implements LambdaInterface {
   /** Vacuum induced dipoles */
   public double[][] vacuumDirectDipole;
   public double[][] vacuumDirectDipoleCR;
-  /** Coulomb constant in units of kcal*Ang/(mol*electron^2) */
+  /**
+   * Coulomb constant in units of kcal*Ang/(mol*electron^2)
+   */
   @FFXKeyword(name = "electric", keywordGroup = LocalGeometryFunctionalForm, defaultValue = "332.063713",
       description =
           "Specifies a value for the so-called \"electric constant\" allowing conversion unit of electrostatic potential energy values from electrons^2/Angstrom to kcal/mol. "
               + "Internally, FFX stores a default value for this constant as 332.063713 based on CODATA reference values. "
               + "Since different force fields are intended for use with slightly different values, this keyword allows overriding the default value.")
   public double electric;
+  /**
+   * The requested permittivity for the solute.
+   */
+  public double soluteDielectric;
   /** An ordered array of atoms in the system. */
   protected Atom[] atoms;
   /** The number of atoms in the system. */
@@ -409,6 +415,15 @@ public class ParticleMeshEwald implements LambdaInterface {
     maxThreads = parallelTeam.getThreadCount();
 
     electric = forceField.getDouble("ELECTRIC", Constants.DEFAULT_ELECTRIC);
+
+    // Solute dielectric is ignored if it's less than 1.0.
+    soluteDielectric = forceField.getDouble("SOLUTE_DIELECTRIC", 1.0);
+    if (soluteDielectric > 1.0) {
+      electric = electric / soluteDielectric;
+    } else {
+      soluteDielectric = 1.0;
+    }
+
     poleps = forceField.getDouble("POLAR_EPS", DEFAULT_POLAR_EPS);
 
     // If PME-specific lambda term not set, default to force field-wide lambda term.
@@ -598,8 +613,7 @@ public class ParticleMeshEwald implements LambdaInterface {
       reciprocalSpace = new ReciprocalSpace(this,
           crystal.getUnitCell(), forceField, atoms,
           ewaldParameters.aewald, fftTeam, parallelTeam);
-      reciprocalEnergyRegion = new ReciprocalEnergyRegion(maxThreads,
-          ewaldParameters.aewald, electric);
+      reciprocalEnergyRegion = new ReciprocalEnergyRegion(maxThreads, ewaldParameters.aewald, electric);
     } else {
       reciprocalSpace = null;
       reciprocalEnergyRegion = null;
@@ -620,8 +634,7 @@ public class ParticleMeshEwald implements LambdaInterface {
     // reaction field.
     generalizedKirkwoodTerm = forceField.getBoolean("GKTERM", false);
     if (generalizedKirkwoodTerm || alchemicalParameters.doLigandGKElec) {
-      generalizedKirkwood = new GeneralizedKirkwood(forceField, atoms,
-          this, crystal, parallelTeam, electric, gkCutoff);
+      generalizedKirkwood = new GeneralizedKirkwood(forceField, atoms, this, crystal, parallelTeam, gkCutoff);
     } else {
       generalizedKirkwood = null;
     }
@@ -670,6 +683,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         generalizedKirkwoodTerm,
         generalizedKirkwood,
         ewaldParameters,
+        soluteDielectric,
         cartesianInducedDipolePhi,
         cartesianInducedDipolePhiCR,
         field,
@@ -1774,8 +1788,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             }
             //logger.info(format("Index i: %d Polarizability: %6.8f TitrDeriv: %6.8f TautDeriv: %6.8f",
             // i, polarizability[i], dPolardTitrationESV[i], dPolardTautomerESV[i]));
-            extendedSystem.addIndElecDeriv(i, titrdUdL * electric * -0.5,
-                tautdUdL * electric * -0.5);
+            extendedSystem.addIndElecDeriv(i, titrdUdL * electric * -0.5, tautdUdL * electric * -0.5);
           }
         }
       }
@@ -2112,6 +2125,7 @@ public class ParticleMeshEwald implements LambdaInterface {
         generalizedKirkwoodTerm,
         generalizedKirkwood,
         ewaldParameters,
+        soluteDielectric,
         inducedDipole,
         inducedDipoleCR,
         directDipole,
@@ -2174,6 +2188,7 @@ public class ParticleMeshEwald implements LambdaInterface {
               field,
               fieldCR,
               ewaldParameters,
+              soluteDielectric,
               parallelTeam,
               realSpaceNeighborParameters.realSpaceSchedule,
               pmeTimings.realSpaceSCFTime);
@@ -2204,6 +2219,7 @@ public class ParticleMeshEwald implements LambdaInterface {
             generalizedKirkwoodTerm,
             generalizedKirkwood,
             ewaldParameters,
+            soluteDielectric,
             inducedDipole,
             inducedDipoleCR,
             directDipole,
@@ -2382,7 +2398,8 @@ public class ParticleMeshEwald implements LambdaInterface {
             fieldCR,
             generalizedKirkwoodTerm,
             generalizedKirkwood,
-            ewaldParameters);
+            ewaldParameters,
+            soluteDielectric);
         parallelTeam.execute(optRegion);
 
         expandInducedDipoles();

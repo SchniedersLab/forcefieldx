@@ -40,7 +40,6 @@ package ffx.potential.cli;
 import static ffx.potential.cli.AtomSelectionOptions.actOnAtoms;
 import static java.lang.String.format;
 
-import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsFunctions;

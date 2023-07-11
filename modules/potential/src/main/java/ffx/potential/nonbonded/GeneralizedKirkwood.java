@@ -71,6 +71,7 @@ import ffx.potential.parameters.AtomType;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.SoluteType;
 import ffx.potential.parameters.SoluteType.SOLUTE_RADII_TYPE;
+import ffx.utilities.Constants;
 import ffx.utilities.FFXKeyword;
 
 import java.util.Arrays;
@@ -585,9 +586,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * @param crystal a {@link ffx.crystal.Crystal} object.
    * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
    */
-  public GeneralizedKirkwood(ForceField forceField, Atom[] atoms,
-      ParticleMeshEwald particleMeshEwald, Crystal crystal, ParallelTeam parallelTeam,
-      double electric, double gkCutoff) {
+  public GeneralizedKirkwood(ForceField forceField, Atom[] atoms, ParticleMeshEwald particleMeshEwald,
+                             Crystal crystal, ParallelTeam parallelTeam, double gkCutoff) {
     this.forceField = forceField;
     this.atoms = atoms;
     this.particleMeshEwald = particleMeshEwald;
@@ -599,6 +599,8 @@ public class GeneralizedKirkwood implements LambdaInterface {
     maxNumAtoms = nAtoms;
     polarization = particleMeshEwald.polarization;
 
+    // Read in the value of electric conversion factor.
+    electric = forceField.getDouble("ELECTRIC", Constants.DEFAULT_ELECTRIC);
     // Set the Kirkwood multipolar reaction field constants for solvent.
     solventDielectric = forceField.getDouble("SOLVENT_DIELECTRIC", dWater);
     // Set the Kirkwood multipolar reaction field constants for solute.

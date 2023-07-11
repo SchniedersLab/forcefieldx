@@ -1466,9 +1466,8 @@ public class VanDerWaals implements MaskingInterface, LambdaInterface {
             double dy = in[1] - out[1];
             double dz = in[2] - out[2];
             double r2 = dx * dx + dy * dy + dz * dz;
-            if (r2 < sp2) {
-              logger.log(Level.WARNING, " Atom may be at a special position: {0}",
-                  atoms[i].toString());
+            if (r2 < sp2 && logger.isLoggable(Level.FINEST)) {
+              logger.log(Level.FINEST, " Atom may be at a special position: {0}", atoms[i].toString());
             }
           }
         }

@@ -110,7 +110,7 @@ public class Respa extends Integrator {
   public void postForce(double[] gradient) {
     double[] a = state.a();
     double[] v = state.v();
-    double[] mass = state.mass();
+    double[] mass = state.getMass();
     for (int i = 0; i < state.getNumberOfVariables(); i++) {
       a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * gradient[i] / mass[i];
       v[i] += a[i] * dt_2;
@@ -129,7 +129,7 @@ public class Respa extends Integrator {
     double[] v = state.v();
     double[] a = state.a();
     double[] aPrevious = state.aPrevious();
-    double[] mass = state.mass();
+    double[] mass = state.getMass();
 
     // Find half-step velocities via velocity Verlet recursion
     for (int i = 0; i < nVariables; i++) {

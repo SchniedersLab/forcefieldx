@@ -81,6 +81,8 @@ public class InducedDipoleFieldReduceRegion extends ParallelRegion {
   private double aewald;
   private double aewald3;
 
+  private double dielectric;
+
   public InducedDipoleFieldReduceRegion(int nt) {
     inducedDipoleFieldReduceLoop = new InducedDipoleFieldReduceLoop[nt];
   }
@@ -106,6 +108,7 @@ public class InducedDipoleFieldReduceRegion extends ParallelRegion {
       boolean generalizedKirkwoodTerm,
       GeneralizedKirkwood generalizedKirkwood,
       EwaldParameters ewaldParameters,
+      double dielectric,
       double[][] cartesianDipolePhi,
       double[][] cartesianDipolePhiCR,
       AtomicDoubleArray3D field,
@@ -118,6 +121,7 @@ public class InducedDipoleFieldReduceRegion extends ParallelRegion {
     this.generalizedKirkwood = generalizedKirkwood;
     this.aewald = ewaldParameters.aewald;
     this.aewald3 = ewaldParameters.aewald3;
+    this.dielectric = dielectric;
     this.cartesianDipolePhi = cartesianDipolePhi;
     this.cartesianDipolePhiCR = cartesianDipolePhiCR;
     // Output
@@ -148,6 +152,7 @@ public class InducedDipoleFieldReduceRegion extends ParallelRegion {
     @Override
     public void run(int lb, int ub) throws Exception {
       int threadID = getThreadIndex();
+
       final double[][] induced0 = inducedDipole[0];
       final double[][] inducedCR0 = inducedDipoleCR[0];
       // Add the PME self and reciprocal space fields to the real space field.
@@ -167,18 +172,29 @@ public class InducedDipoleFieldReduceRegion extends ParallelRegion {
           fieldCR.add(threadID, i, fxCR, fyCR, fzCR);
         }
       }
+
+      // Reduce the total direct field.
+      field.reduce(lb, ub);
+      fieldCR.reduce(lb, ub);
+
+      // Scale the total direct field by the inverse dielectric.
+      if (dielectric > 1.0) {
+        double inverseDielectric = 1.0 / dielectric;
+        for (int i = lb; i <= ub; i++) {
+          field.scale(0, i, inverseDielectric);
+          fieldCR.scale(0, i, inverseDielectric);
+        }
+      }
+
       // Add the GK reaction field.
       if (generalizedKirkwoodTerm) {
         AtomicDoubleArray3D fieldGK = generalizedKirkwood.getFieldGK();
         AtomicDoubleArray3D fieldGKCR = generalizedKirkwood.getFieldGKCR();
         for (int i = lb; i <= ub; i++) {
-          field.add(threadID, i, fieldGK.getX(i), fieldGK.getY(i), fieldGK.getZ(i));
-          fieldCR.add(threadID, i, fieldGKCR.getX(i), fieldGKCR.getY(i), fieldGKCR.getZ(i));
+          field.add(0, i, fieldGK.getX(i), fieldGK.getY(i), fieldGK.getZ(i));
+          fieldCR.add(0, i, fieldGKCR.getX(i), fieldGKCR.getY(i), fieldGKCR.getZ(i));
         }
       }
-      // Reduce the PME and GK contributions.
-      field.reduce(lb, ub);
-      fieldCR.reduce(lb, ub);
     }
 
     @Override

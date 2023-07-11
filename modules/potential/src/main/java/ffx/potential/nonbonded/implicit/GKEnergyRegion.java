@@ -113,46 +113,46 @@ public class GKEnergyRegion extends ParallelRegion {
   /** Kirkwood quadrupole reaction field constant. */
   private final double fq;
   /** Water probe radius. */
-  protected final double probe;
-  protected final SharedDouble sharedPermanentGKEnergy;
-  protected final SharedDouble sharedPolarizationGKEnergy;
-  protected final SharedDouble sharedGKEnergy;
-  protected final SharedInteger sharedInteractions;
-  protected final IntegerForLoop[] gkEnergyLoop;
+  private final double probe;
+  private final SharedDouble sharedPermanentGKEnergy;
+  private final SharedDouble sharedPolarizationGKEnergy;
+  private final SharedDouble sharedGKEnergy;
+  private final SharedInteger sharedInteractions;
+  private final IntegerForLoop[] gkEnergyLoop;
   /** An ordered array of atoms in the system. */
-  protected Atom[] atoms;
+  private Atom[] atoms;
   /** Induced dipoles for each symmetry operator. */
-  protected double[][][] inducedDipole;
+  private double[][][] inducedDipole;
   /** Induced dipole chain rule terms for each symmetry operator. */
-  protected double[][][] inducedDipoleCR;
+  private double[][][] inducedDipoleCR;
   /** Multipole moments for each symmetry operator. */
-  protected double[][][] globalMultipole;
+  private double[][][] globalMultipole;
   /** Periodic boundary conditions and symmetry. */
-  protected Crystal crystal;
+  private Crystal crystal;
   /** Atomic coordinates for each symmetry operator. */
-  protected double[][][] sXYZ;
+  private double[][][] sXYZ;
   /** Neighbor lists for each atom and symmetry operator. */
-  protected int[][][] neighborLists;
+  private int[][][] neighborLists;
   /** Flag to indicate if an atom should be included. */
-  protected boolean[] use = null;
+  private boolean[] use = null;
   /** GK cut-off distance squared. */
-  protected double cut2;
+  private double cut2;
   /** Base radius of each atom (for Born radii based nonpolar energy). */
-  protected double[] baseRadius;
+  private double[] baseRadius;
   /** Born radius of each atom. */
-  protected double[] born;
+  private double[] born;
 
-  protected boolean gradient = false;
+  private boolean gradient = false;
   /** Atomic 3D Gradient array. */
-  protected AtomicDoubleArray3D grad;
+  private AtomicDoubleArray3D grad;
   /** Atomic 3D Torque array. */
-  protected AtomicDoubleArray3D torque;
+  private AtomicDoubleArray3D torque;
   /** Shared array for computation of Born radii gradient. */
-  protected AtomicDoubleArray sharedBornGrad;
+  private AtomicDoubleArray sharedBornGrad;
   /** Self-energy for each atom */
-  protected AtomicDoubleArray selfEnergy;
+  private AtomicDoubleArray selfEnergy;
   /** Cross-term energy for each atom */
-  protected AtomicDoubleArray crossEnergy;
+  private AtomicDoubleArray crossEnergy;
 
 
   public GKEnergyRegion(

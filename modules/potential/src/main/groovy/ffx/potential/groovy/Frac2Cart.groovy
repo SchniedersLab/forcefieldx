@@ -128,7 +128,12 @@ class Frac2Cart extends PotentialScript {
         Atom atom = atoms[index]
         atom.getXYZ(frac)
         crystal.toCartesianCoordinates(frac, cart)
+
+        // If the atom is at a special position, make sure it's active so the coordinates are updated.
+        boolean active = atom.isActive()
+        atom.setActive(true)
         atom.moveTo(cart)
+        atom.setActive(active)
 
         cartCoordinates[index][0] = cart[0]
         cartCoordinates[index][1] = cart[1]
