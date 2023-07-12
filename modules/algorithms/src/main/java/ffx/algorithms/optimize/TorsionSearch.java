@@ -220,7 +220,7 @@ public class TorsionSearch {
      * @param numRemove Number of bonds to remove if they exceed the threshold.
      * @param eliminationThreshold Threshold for removing bonds and logging as high energy.
      */
-    public void eliminateBonds(int numRemove, double eliminationThreshold) {
+    public void staticAnalysis(int numRemove, double eliminationThreshold) {
         if(!run){
             logger.warning("Static analysis returning early since molecule not part of molecular assembly.");
             return;
@@ -240,24 +240,23 @@ public class TorsionSearch {
         long[] oldState = new long[nTorsionalBonds];
         // Loop through all torsional bonds up to the number of torsions per bond finding energies and resetting
         for(int i = 0; i < nTorsionalBonds; i++){
-            for(int j = 1; j < nTorsionsPerBond-1; j++){
+            for(int j = i == 0 ? 0 : 1; j < nTorsionsPerBond; j++){
                 state[i] = j;
                 changeState(oldState, state, nTorsionsPerBond, torsionalBonds, atomGroups);
                 // Update coordinates
                 forceFieldEnergy.getCoordinates(x);
                 // Calculate energy
                 double newEnergy = forceFieldEnergy.energy(x);
-                if(newEnergy - initialE > eliminationThreshold){
+                if(newEnergy - initialE > eliminationThreshold && !remove.contains(i)){
                     remove.add(i);
-                    break;
                 } else {
-                    queue.add(new StateContainer(new AssemblyState(molecularAssembly), newEnergy, -1));
+                    long index = HilbertCurveTransforms.coordinatesToHilbertIndex(nTorsionalBonds, nBits, state);
+                    queue.add(new StateContainer(new AssemblyState(molecularAssembly), newEnergy, index));
                 }
-                state[i] = 0;
+                changeState(state, oldState, nTorsionsPerBond, torsionalBonds, atomGroups);
             }
+            state[i] = 0;
         }
-        // Revert back to original state
-        changeState(oldState, state, nTorsionsPerBond, torsionalBonds, atomGroups);
         remove.sort(Collections.reverseOrder());
         logger.info("\n " + remove.size() + " bonds that cause large energy increase: " + remove);
         if(remove.size() > numRemove){

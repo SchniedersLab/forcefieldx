@@ -184,10 +184,10 @@ class TorsionScan extends AlgorithmsScript {
         TorsionSearch torsionSearch = new TorsionSearch(ma, ma.getMoleculeArray()[0], numTorsions, saveNumStates)
         // Don't repeat static analysis if we're running multiple workers.
         if(size > 1 && rank == 0){
-            torsionSearch.eliminateBonds(elimMax, eliminationThreshold)
+            torsionSearch.staticAnalysis(elimMax, eliminationThreshold)
         }
         else if(size == 1){
-            torsionSearch.eliminateBonds(elimMax, eliminationThreshold)
+            torsionSearch.staticAnalysis(elimMax, eliminationThreshold)
         }
 
         if(world.size() > 1 && !staticCompare){
@@ -212,7 +212,6 @@ class TorsionScan extends AlgorithmsScript {
         }
         File saveLocation = new File(FilenameUtils.removeExtension(filename) + extension)
         logger.info(" Logging structures into: " + saveLocation)
-        logger.info(" Negative hilbert indices values are from static analysis.")
         XYZFilter xyzFilter = new XYZFilter(saveLocation,
                 activeAssembly,
                 activeAssembly.getForceField(),

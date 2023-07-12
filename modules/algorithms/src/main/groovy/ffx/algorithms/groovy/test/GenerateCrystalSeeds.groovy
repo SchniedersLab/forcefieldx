@@ -42,6 +42,7 @@ import edu.rit.pj.Comm
 import ffx.algorithms.AlgorithmListener
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.optimize.Minimize
+import ffx.numerics.math.HilbertCurveTransforms
 import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
@@ -56,6 +57,7 @@ import picocli.CommandLine.Parameters
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Molecule
 import ffx.potential.bonded.Bond
+import ffx.algorithms.optimize.TorsionSearch
 
 import static ffx.potential.utils.Superpose.applyRotation
 import static org.apache.commons.math3.util.FastMath.cos
@@ -116,6 +118,20 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
     double saveEnergyCutoff = 0.0
 
     /**
+     * --priorTorsionScan
+     */
+    @Option(names = ['--priorTorsionScan', "--pts"], paramLabel = 'false', defaultValue = 'false',
+            description = 'After minimization, statically scan torsions after minimization to find the lowest energy conformation.')
+    private boolean priorTorsionScan = false
+
+    /**
+     * --intermediateTorsionScan
+     */
+    @Option(names = ['--intermediateTorsionScan', "--its"], paramLabel = 'false', defaultValue = 'false',
+            description = 'During sampling, statically scan torsions after direct minimization to find the lowest energy conformation.')
+    private boolean intermediateTorsionScan = false
+
+    /**
      * --excludeH
      */
     @Option(names = ['--excludeH', "--eh"], paramLabel = 'false', defaultValue = 'false',
@@ -136,7 +152,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
     this(new Binding())
   }
 
-  /**
+    /**
     * Constructor.
     * @param binding The Groovy Binding to use.
     */
@@ -144,11 +160,11 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
     super(binding)
   }
 
-  /**
+    /**
     * {@inheritDoc}
     */
-  @Override
-  GenerateCrystalSeeds run() {
+    @Override
+    GenerateCrystalSeeds run() {
       // Set system properties as soon as script starts
       // Init the context and bind variables.
       if (!init()) {
@@ -255,7 +271,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
 
       // Minimize Monomers, this step is very important since it affects all energies
       double[] minE = minimizeEachSetOfMolecules(activeAssembly, forceFieldEnergy, x, algorithmListener,
-              moleculeOneAtoms as ArrayList<Atom>, moleculeTwoAtoms as ArrayList<Atom>, eps, maxIter)
+              moleculeOneAtoms as ArrayList<Atom>, moleculeTwoAtoms as ArrayList<Atom>, eps, maxIter, priorTorsionScan)
       double monomerEnergy = minE[0]
       double monomerEnergy2 = minE[1]
       double dimerEnergy = minE[2]
@@ -465,7 +481,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
                                                         AlgorithmListener algorithmListener,
                                                         ArrayList<Atom> moleculeOneAtoms,
                                                         ArrayList<Atom> moleculeTwoAtoms,
-                                                        double eps, int maxIter) {
+                                                        double eps, int maxIter, boolean priorTScan) {
         // Monomer one energy
         for(Atom a: moleculeTwoAtoms){ a.setUse(false) }
         Minimize monomerMinEngine
@@ -479,6 +495,13 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
         forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL)
         monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
         monomerMinEngine.minimize(eps, maxIter).getCoordinates(x)
+        if(priorTScan) { // Don't want to feel other molecule's effects
+            logger.info("\n --------- Monomer 1 Static Torsion Scan --------- ")
+            TorsionSearch m1TorsionSearch = new TorsionSearch(activeAssembly, activeAssembly.getMoleculeArray()[0], 16, 1)
+            m1TorsionSearch.staticAnalysis(0, 100)
+            AssemblyState minState = m1TorsionSearch.getStates().get(0)
+            minState.revertState();
+        }
         for(Atom a: moleculeTwoAtoms){ a.setUse(true) }
 
         logger.info("\n --------- Monomer 1 Energy Breakdown --------- ")
@@ -498,6 +521,13 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
         forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL)
         monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
         monomerMinEngine.minimize(eps, maxIter).getCoordinates(x)
+        if(priorTScan) {
+            logger.info("\n --------- Monomer 2 Static Torsion Scan --------- ")
+            TorsionSearch m2TorsionSearch = new TorsionSearch(activeAssembly, activeAssembly.getMoleculeArray()[1], 16, 1)
+            m2TorsionSearch.staticAnalysis(0, 100)
+            AssemblyState minState = m2TorsionSearch.getStates().get(0)
+            minState.revertState();
+        }
         for(Atom a: moleculeOneAtoms){ a.setUse(true) }
 
         logger.info("\n --------- Monomer 2 Energy Breakdown --------- ")
@@ -616,6 +646,23 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
                 // Minimize the energy of the system subject to a harmonic restraint on the distance between the two atoms
                 try {
                     forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE)
+                    if(intermediateTorsionScan){ // Molecules feel each other
+                        forceFieldEnergy.getCoordinates(x)
+                        double energyBefore = forceFieldEnergy.energy(x, false)
+                        logger.info(" Energy before Tscan: " + energyBefore)
+
+                        logger.info("\n --------- Monomer 1 Static Torsion Scan --------- ")
+                        TorsionSearch m1TorsionSearch = new TorsionSearch(activeAssembly, activeAssembly.getMoleculeArray()[0], 16, 1)
+                        m1TorsionSearch.staticAnalysis(0, 100)
+                        AssemblyState minState = m1TorsionSearch.getStates().get(0)
+                        minState.revertState();
+
+                        logger.info("\n --------- Monomer 2 Static Torsion Scan --------- ")
+                        TorsionSearch m2TorsionSearch = new TorsionSearch(activeAssembly, activeAssembly.getMoleculeArray()[1], 16, 1)
+                        m2TorsionSearch.staticAnalysis(0, 100)
+                        minState = m2TorsionSearch.getStates().get(0)
+                        minState.revertState();
+                    }
                     forceFieldEnergy.getCoordinates(x)
                     double e = forceFieldEnergy.energy(x, false)
                     if (e > 100000){
@@ -652,7 +699,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
                     // Store and log the minimized energy
                     forceFieldEnergy.getCoordinates(x)
                     e = forceFieldEnergy.energy(x, false) - monomerEnergy
-                    logger.info(" Energy of trial " + (loopCounter-1) + ": " + e)
+                    logger.info(" Binding energy of trial " + (loopCounter-1) + ": " + e)
                     // Superpose should be run after this to get N^2 rmsds and
                     // then similar structures can be pruned
                     lowestEnergyQueue.add(new StateContainer(new AssemblyState(activeAssembly), e))

@@ -73,6 +73,10 @@ public class HilbertCurveTransforms {
         return (((arg << nRots) | (arg >> (nDims - nRots))) & ones(nDims));
     }
 
+    private static long rotateRight(long arg, int nRots, int nDims) {
+        return ((arg >> nRots) | (arg << (nDims - nRots))) & ones(nDims);
+    }
+
     private static long bitTranspose(int nDims, int nBits, long inCoords) {
         int nDims1 = nDims - 1;
         int inB = nBits;
@@ -161,9 +165,56 @@ public class HilbertCurveTransforms {
         return coord;
     }
 
+    public static long coordinatesToHilbertIndex(int nDims, int nBits, long[] coord) {
+        long index;
+        if (nDims > 1) {
+            int nDimsBits = nDims * nBits;
+            long coords = 0;
+            for (int d = nDims; d-- > 0; ) {
+                coords <<= nBits;
+                coords |= coord[d];
+            }
+
+            if (nBits > 1) {
+                long ndOnes = ones(nDims);
+                long nd1Ones = ndOnes >> 1;
+                int b = nDimsBits;
+                int rotation = 0;
+                long flipBit = 0;
+                long nthbits = ones(nDimsBits) / ndOnes;
+                coords = bitTranspose(nDims, nBits, coords);
+                coords ^= coords >> nDims;
+                index = 0;
+
+                do {
+                    long bits = (coords >> (b -= nDims)) & ndOnes;
+                    bits = rotateRight(flipBit ^ bits, rotation, nDims);
+                    index <<= nDims;
+                    index |= bits;
+                    flipBit = 1L << rotation;
+                    rotation = adjust_rotation(rotation, nDims, (int) bits);
+                } while (b > 0);
+
+                index ^= nthbits >> 1;
+            } else {
+                index = coords;
+            }
+
+            for (int d = 1; d < nDimsBits; d *= 2) {
+                index ^= index >> d;
+            }
+
+        } else {
+            index = coord[0];
+        }
+
+        return index;
+    }
+
+
     public static void main(String[] args) {
-        int nBonds = 4; // Dimensions of the space
-        int nTorsions = 3; // Bits per dimension
+        int nBonds = 2; // Dimensions of the space
+        int nTorsions = 4; // Bits per dimension
         int nBits = (int) Math.ceil(FastMath.log(2, nTorsions));
         // Calculate the maximum index of number of configurations using BigInteger
         //BigInteger maxIndex = BigInteger.valueOf(nTorsions).pow(nBonds).subtract(BigInteger.ONE);
@@ -180,6 +231,7 @@ public class HilbertCurveTransforms {
         int counter = 0;
         while (index.longValue() <= maxIndex.longValue()) {
             long[] coordinates = hilbertIndexToCoordinates(nBonds, nBits, index.longValue());
+            long convertedIndex = coordinatesToHilbertIndex(nBonds, nBits, coordinates);
             boolean valid = true;
 
             for (long coord : coordinates) {
@@ -189,9 +241,10 @@ public class HilbertCurveTransforms {
                 }
             }
 
-            counter++;
             // Print out the coordinates
             System.out.println("Hilbert index: " + counter +  "; Coordinates: " + Arrays.toString(coordinates));
+            System.out.println("Converted index: " + convertedIndex);
+            counter++;
             index = index.add(BigInteger.ONE);
         }
         System.out.println("Number of valid configurations: " + counter);
