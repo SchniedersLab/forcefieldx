@@ -118,13 +118,6 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
     double saveEnergyCutoff = 0.0
 
     /**
-     * --priorTorsionScan
-     */
-    @Option(names = ['--priorTorsionScan', "--pts"], paramLabel = 'false', defaultValue = 'false',
-            description = 'After minimization, statically scan torsions after minimization to find the lowest energy conformation.')
-    private boolean priorTorsionScan = false
-
-    /**
      * --intermediateTorsionScan
      */
     @Option(names = ['--intermediateTorsionScan', "--its"], paramLabel = 'false', defaultValue = 'false',
@@ -271,7 +264,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
 
       // Minimize Monomers, this step is very important since it affects all energies
       double[] minE = minimizeEachSetOfMolecules(activeAssembly, forceFieldEnergy, x, algorithmListener,
-              moleculeOneAtoms as ArrayList<Atom>, moleculeTwoAtoms as ArrayList<Atom>, eps, maxIter, priorTorsionScan)
+              moleculeOneAtoms as ArrayList<Atom>, moleculeTwoAtoms as ArrayList<Atom>, eps, maxIter)
       double monomerEnergy = minE[0]
       double monomerEnergy2 = minE[1]
       double dimerEnergy = minE[2]
@@ -481,7 +474,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
                                                         AlgorithmListener algorithmListener,
                                                         ArrayList<Atom> moleculeOneAtoms,
                                                         ArrayList<Atom> moleculeTwoAtoms,
-                                                        double eps, int maxIter, boolean priorTScan) {
+                                                        double eps, int maxIter) {
         // Monomer one energy
         for(Atom a: moleculeTwoAtoms){ a.setUse(false) }
         Minimize monomerMinEngine
@@ -495,13 +488,11 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
         forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL)
         monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
         monomerMinEngine.minimize(eps, maxIter).getCoordinates(x)
-        if(priorTScan) { // Don't want to feel other molecule's effects
-            logger.info("\n --------- Monomer 1 Static Torsion Scan --------- ")
-            TorsionSearch m1TorsionSearch = new TorsionSearch(activeAssembly, activeAssembly.getMoleculeArray()[0], 16, 1)
-            m1TorsionSearch.staticAnalysis(0, 100)
-            AssemblyState minState = m1TorsionSearch.getStates().get(0)
-            minState.revertState();
-        }
+        logger.info("\n --------- Monomer 1 Static Torsion Scan --------- ")
+        TorsionSearch m1TorsionSearch = new TorsionSearch(activeAssembly, activeAssembly.getMoleculeArray()[0], 16, 1)
+        m1TorsionSearch.staticAnalysis(0, 100)
+        AssemblyState minState = m1TorsionSearch.getStates().get(0)
+        minState.revertState();
         for(Atom a: moleculeTwoAtoms){ a.setUse(true) }
 
         logger.info("\n --------- Monomer 1 Energy Breakdown --------- ")
@@ -521,13 +512,11 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
         forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL)
         monomerMinEngine = new Minimize(activeAssembly, forceFieldEnergy, algorithmListener)
         monomerMinEngine.minimize(eps, maxIter).getCoordinates(x)
-        if(priorTScan) {
-            logger.info("\n --------- Monomer 2 Static Torsion Scan --------- ")
-            TorsionSearch m2TorsionSearch = new TorsionSearch(activeAssembly, activeAssembly.getMoleculeArray()[1], 16, 1)
-            m2TorsionSearch.staticAnalysis(0, 100)
-            AssemblyState minState = m2TorsionSearch.getStates().get(0)
-            minState.revertState();
-        }
+        logger.info("\n --------- Monomer 2 Static Torsion Scan --------- ")
+        TorsionSearch m2TorsionSearch = new TorsionSearch(activeAssembly, activeAssembly.getMoleculeArray()[1], 16, 1)
+        m2TorsionSearch.staticAnalysis(0, 100)
+        minState = m2TorsionSearch.getStates().get(0)
+        minState.revertState();
         for(Atom a: moleculeOneAtoms){ a.setUse(true) }
 
         logger.info("\n --------- Monomer 2 Energy Breakdown --------- ")
