@@ -265,8 +265,10 @@ class EnergyOctreeTest extends PotentialScript {
         // Use Particles to build a tree
         int nCritical = atoms.size() * 0.1
         logger.info(format("nCritical = %d",nCritical))
+//        double theta = 0.5
         double theta = 0.5
-        Octree octree = new Octree(nCritical, atoms, theta, forceFieldEnergy.getPmeNode().globalMultipole)
+        double[] iPhi = new double[particles.size()]
+        Octree octree = new Octree(nCritical, atoms, theta, forceFieldEnergy.getPmeNode().globalMultipole,iPhi)
 
         // Determine maximum separation dis0tance between any two atoms
         QuickHull3D quickHull3D = ConvexHullOps.constructHull(atoms)
@@ -300,7 +302,8 @@ class EnergyOctreeTest extends PotentialScript {
         octree.upwardSweep()
 
         // Calculate the Potential at each atom
-//        octree.evalPotential()
+        octree.evalPotential()
+        octree.printPhi()
 /*
         if (moments) {
             logger.info("** Moments being calculated")
