@@ -491,8 +491,10 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
         logger.info("\n --------- Monomer 1 Static Torsion Scan --------- ")
         TorsionSearch m1TorsionSearch = new TorsionSearch(activeAssembly, activeAssembly.getMoleculeArray()[0], 16, 1)
         m1TorsionSearch.staticAnalysis(0, 100)
-        AssemblyState minState = m1TorsionSearch.getStates().get(0)
-        minState.revertState();
+        if(!m1TorsionSearch.getStates().empty) {
+            AssemblyState minState = m1TorsionSearch.getStates().get(0)
+            minState.revertState();
+        }
         for(Atom a: moleculeTwoAtoms){ a.setUse(true) }
 
         logger.info("\n --------- Monomer 1 Energy Breakdown --------- ")
@@ -515,8 +517,10 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
         logger.info("\n --------- Monomer 2 Static Torsion Scan --------- ")
         TorsionSearch m2TorsionSearch = new TorsionSearch(activeAssembly, activeAssembly.getMoleculeArray()[1], 16, 1)
         m2TorsionSearch.staticAnalysis(0, 100)
-        minState = m2TorsionSearch.getStates().get(0)
-        minState.revertState();
+        if(!m2TorsionSearch.getStates().empty) {
+            AssemblyState minState = m2TorsionSearch.getStates().get(0)
+            minState.revertState();
+        }
         for(Atom a: moleculeOneAtoms){ a.setUse(true) }
 
         logger.info("\n --------- Monomer 2 Energy Breakdown --------- ")
@@ -643,14 +647,18 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
                         logger.info("\n --------- Monomer 1 Static Torsion Scan --------- ")
                         TorsionSearch m1TorsionSearch = new TorsionSearch(activeAssembly, activeAssembly.getMoleculeArray()[0], 16, 1)
                         m1TorsionSearch.staticAnalysis(0, 100)
-                        AssemblyState minState = m1TorsionSearch.getStates().get(0)
-                        minState.revertState();
+                        if(!m1TorsionSearch.getStates().empty) {
+                            AssemblyState minState = m1TorsionSearch.getStates().get(0)
+                            minState.revertState();
+                        }
 
                         logger.info("\n --------- Monomer 2 Static Torsion Scan --------- ")
                         TorsionSearch m2TorsionSearch = new TorsionSearch(activeAssembly, activeAssembly.getMoleculeArray()[1], 16, 1)
                         m2TorsionSearch.staticAnalysis(0, 100)
-                        minState = m2TorsionSearch.getStates().get(0)
-                        minState.revertState();
+                        if(!m2TorsionSearch.getStates().empty) {
+                            AssemblyState minState = m2TorsionSearch.getStates().get(0)
+                            minState.revertState();
+                        }
                     }
                     forceFieldEnergy.getCoordinates(x)
                     double e = forceFieldEnergy.energy(x, false)

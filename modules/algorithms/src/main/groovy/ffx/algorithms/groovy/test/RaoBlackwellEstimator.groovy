@@ -70,9 +70,9 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
           description = 'Number of snapshots to use from an archive file. -1 means use all snapshots.')
   private int numSnaps = -1
 
-  @Option(names = ['--specifyResidue'], paramLabel = "-1",
-          description = 'Run the Rao-Blackwell Estimator on only one residue.')
-  private int specifiedResidue = -1
+  @Option(names = ["--specifiedResidues", "--sR"], paramLabel = "<selection>", defaultValue = "",
+          description = "Specified.")
+  private String specified = ""
 
   @Option(names = ['--startSnap'], paramLabel = "-1",
           description = 'Start energy evaluations at a snap other than 2.')
@@ -197,10 +197,19 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
       }
     }
 
-    // Look for specified residue
+    // Look for specified residues
+    // Convert string to int array
+    int[] specifiedResidues = null
+    if(specified != ""){
+      String[] specifiedResiduesString = specified.split(",")
+      specifiedResidues = new int[specifiedResiduesString.length]
+      for (int i = 0; i < specifiedResiduesString.length; i++) {
+        specifiedResidues[i] = Integer.parseInt(specifiedResiduesString[i].trim())
+      }
+    }
     Residue onlyResidue = null
     int onlyResidueIndex = 0
-    if(specifiedResidue != -1){
+    if(specifiedResidues != null){
       for (int i = 0; i < esvSystem.getTitratingResidueList().size(); i++) {
         Residue residue = esvSystem.getTitratingResidueList().get(i)
         if (residue.getResidueNumber() == specifiedResidue) {
