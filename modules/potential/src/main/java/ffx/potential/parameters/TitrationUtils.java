@@ -69,6 +69,7 @@ import ffx.potential.bonded.StretchTorsion;
 import ffx.potential.bonded.Torsion;
 import ffx.potential.bonded.TorsionTorsion;
 import ffx.potential.bonded.UreyBradley;
+import ffx.potential.nonbonded.GeneralizedKirkwood;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.SoluteType.SOLUTE_RADII_TYPE;
 import ffx.utilities.Constants;
@@ -131,7 +132,7 @@ public class TitrationUtils {
       new double[] {0.0}, new double[] {0.0}, new int[] {0});
   private static final PiOrbitalTorsionType zeroPiOrbitalTorsionType = new PiOrbitalTorsionType(
       new int[] {0, 0}, 0.0);
-
+  private double proteinDielectric;
   enum AspStates {
     ASP, ASH1, ASH2
   }
@@ -486,6 +487,11 @@ public class TitrationUtils {
     constructCYSState(AA_CB[CYS.ordinal()], CysStates.CYS);
     constructCYSState(AA_CB[CYD.ordinal()], CysStates.CYD);
     checkParameterTypes("CYS", cysAtomTypes, cysPolarizeTypes, cysMultipoleTypes, cysVDWTypes);
+  }
+
+  public TitrationUtils(ForceField forceField, double proteinDielectric){
+    this(forceField);
+    this.proteinDielectric = proteinDielectric;
   }
 
   public boolean testResidueTypes(Residue residue) {
@@ -1544,6 +1550,9 @@ public class TitrationUtils {
      */
     double acidostat = LOG10 * Constants.R * temperature * (Titration.ASHtoASP.pKa - pH);
     double fMod = Titration.ASHtoASP.freeEnergyDiff;
+    if(proteinDielectric == 2.0){
+      fMod = Titration.ASHtoASP.freeEnergyDiff2;
+    }
     rotamerPhBiasMap.put(ASP, acidostat - fMod);
 
     /*
@@ -1556,6 +1565,9 @@ public class TitrationUtils {
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.GLHtoGLU.pKa - pH);
     fMod = Titration.GLHtoGLU.freeEnergyDiff;
+    if(proteinDielectric == 2.0){
+      fMod = Titration.GLHtoGLU.freeEnergyDiff2;
+    }
     rotamerPhBiasMap.put(GLU, acidostat - fMod);
 
 
@@ -1569,6 +1581,9 @@ public class TitrationUtils {
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.LYStoLYD.pKa - pH);
     fMod = Titration.LYStoLYD.freeEnergyDiff;
+    if(proteinDielectric == 2.0){
+      fMod = Titration.LYStoLYD.freeEnergyDiff2;
+    }
     rotamerPhBiasMap.put(LYD, acidostat - fMod);
 
     /*
@@ -1581,6 +1596,9 @@ public class TitrationUtils {
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.CYStoCYD.pKa - pH);
     fMod = Titration.CYStoCYD.freeEnergyDiff;
+    if(proteinDielectric == 2.0){
+      fMod = Titration.CYStoCYD.freeEnergyDiff2;
+    }
     rotamerPhBiasMap.put(CYD, acidostat - fMod);
 
     /*
@@ -1593,6 +1611,9 @@ public class TitrationUtils {
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.HIStoHID.pKa - pH);
     fMod = Titration.HIStoHID.freeEnergyDiff;
+    if(proteinDielectric == 2.0){
+      fMod = Titration.HIStoHID.freeEnergyDiff2;
+    }
     rotamerPhBiasMap.put(HID, acidostat - fMod);
 
     /*
@@ -1600,6 +1621,9 @@ public class TitrationUtils {
      */
     acidostat = LOG10 * Constants.R * temperature * (Titration.HIStoHIE.pKa - pH);
     fMod = Titration.HIStoHIE.freeEnergyDiff;
+    if(proteinDielectric == 2.0){
+      fMod = Titration.HIStoHIE.freeEnergyDiff2;
+    }
     rotamerPhBiasMap.put(HIE, acidostat - fMod);
   }
 
@@ -1631,14 +1655,14 @@ public class TitrationUtils {
    */
   public enum Titration {
 
-    ASHtoASP(3.94, -70.35, 0.0, -72.113, 145.959, AminoAcid3.ASH, AminoAcid3.ASP),
-    GLHtoGLU(4.25, -81.90, 0.0, -101.22, 179.8441, AminoAcid3.GLH, AminoAcid3.GLU),
-    LYStoLYD(10.40, 41.45, 0.0, -69.29, 24.17778, AminoAcid3.LYS, AminoAcid3.LYD),
+    ASHtoASP(3.94, -70.35, -35.35, 0.0, -72.113, 145.959, AminoAcid3.ASH, AminoAcid3.ASP),
+    GLHtoGLU(4.25, -81.90, -39.71, 0.0, -101.22, 179.8441, AminoAcid3.GLH, AminoAcid3.GLU),
+    LYStoLYD(10.40, 41.45, 20.0, 0.0, -69.29, 24.17778, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
-    CYStoCYD(8.55, -66.2, 34.567, -151.95, 196.33, AminoAcid3.CYS, AminoAcid3.CYD), //HE2 is the proton that is lost
-    HIStoHID(7.00, 40.20, 0.0, -64.317, 30.35, AminoAcid3.HIS, AminoAcid3.HID), //HD1 is the proton that is lost
-    HIStoHIE(6.60, 37.44, 0.0, -62.931, 32.00, AminoAcid3.HIS, AminoAcid3.HIE),
-    HIDtoHIE(Double.NaN, 0.00, 0.0, -36.83, 34.325, AminoAcid3.HID, AminoAcid3.HIE);
+    CYStoCYD(8.55, -66.2, 0.0, 34.567, -151.95, 196.33, AminoAcid3.CYS, AminoAcid3.CYD), //HE2 is the proton that is lost
+    HIStoHID(7.00, 40.20, 20.94, 0.0, -64.317, 30.35, AminoAcid3.HIS, AminoAcid3.HID), //HD1 is the proton that is lost
+    HIStoHIE(6.60, 37.44, 18.14, 0.0, -62.931, 32.00, AminoAcid3.HIS, AminoAcid3.HIE),
+    HIDtoHIE(Double.NaN, 0.00, 0.0, 0.0, -36.83, 34.325, AminoAcid3.HID, AminoAcid3.HIE);
     //TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     //TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
 
@@ -1646,6 +1670,7 @@ public class TitrationUtils {
     public final double pKa;
     // Free energy differences used in rotamer optimization
     public final double freeEnergyDiff;
+    public final double freeEnergyDiff2;
     public final double cubic;
     public final double quadratic;
     public final double linear;
@@ -1654,10 +1679,11 @@ public class TitrationUtils {
 
     /** Invoked by Enum; use the factory method to obtain instances. */
 
-    Titration(double pKa, double freeEnergyDiff, double cubic, double quadratic, double linear,
+    Titration(double pKa, double freeEnergyDiff,double freeEnergyDiff2, double cubic, double quadratic, double linear,
         AminoAcid3 protForm, AminoAcid3 deprotForm) {
       this.pKa = pKa;
       this.freeEnergyDiff = freeEnergyDiff;
+      this.freeEnergyDiff2 = freeEnergyDiff2;
       this.cubic = cubic;
       this.quadratic = quadratic;
       this.linear = linear;
