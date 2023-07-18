@@ -81,11 +81,15 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
 
   @Option(names = ['--bootstrapIter'], paramLabel = "100000",
           description = 'Number of bootstrap iterations. If not specified, program will not perform bootstrap. Set -1 for no bootstrapping.')
-  private int bootstrapIter = -1
+  private int bootstrapIter = 100000
 
   @Option(names = ['--skip'], paramLabel = "-1",
           description = 'Calculate energies on snaps with this interval.')
   private int skip = -1
+
+  @Option(names = ['--writeFrequency'], paramLabel = "100",
+          description = 'Calculate the RBE and print at this snapshot read frequency.')
+  private int writeFrequency = 100
 
   @Parameters(arity = "1..*", paramLabel = "files",
           description = "PDB input file in the same directory as the ARC file.")
@@ -343,6 +347,49 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
       }
 
       evals++
+      if(evals % writeFrequency == 0 || evals == numSnaps) {
+        // Calculate the Rao-Blackwell estimator for each residue.
+        int tautomerCount = 0
+        double[][] energyLists = new double[numESVs][numberOfStates]
+        double[][] energyStdLists = new double[numESVs][numberOfStates]
+        double[][] tautomerEnergyLists = new double[numTautomerESVs][numberOfStates]
+        double[][] tautomerEnergyStdLists = new double[numTautomerESVs][numberOfStates]
+        for (int i : onlyResidueIndices) {
+          Residue res = esvSystem.extendedResidueList.get(i)
+          logger.info("\n Performing Rao-Blackwell Estimator on " + res.getAminoAcid3() + ".")
+          if (bootstrap) {
+            logger.info("  Performing bootstrap with " + bootstrapIter + " iterations.")
+          } else {
+            logger.info("  Performing RBE without bootstrap. Ignore standard deviation values.")
+          }
+          for (int j = 0; j < numberOfStates; j++) {
+            double[] bootstrapMeanStd = RBE(oneZeroDeltaLists[i][j], bootstrap, bootstrapIter)
+            energyLists[i][j] = bootstrapMeanStd[0]
+            if (bootstrap) {
+              energyStdLists[i][j] = bootstrapMeanStd[1]
+            }
+
+            if (esvSystem.getTautomerizingResidueList().contains(res)) {
+              bootstrapMeanStd = RBE(tautomerOneZeroDeltaList[esvSystem.getTautomerizingResidueList().indexOf(res)][j],
+                      bootstrap, bootstrapIter)
+              tautomerEnergyLists[tautomerCount][j] = bootstrapMeanStd[0]
+              if (bootstrap) {
+                tautomerEnergyStdLists[tautomerCount][j] = bootstrapMeanStd[1]
+              }
+            }
+          }
+          if (esvSystem.isTautomer(res)) {
+            tautomerCount++
+          }
+          if (specialResidue == res) {
+            break
+          }
+        }
+
+        // Print the results.
+        printResults(specialResidue, esvSystem, energyLists, energyStdLists, tautomerEnergyLists, tautomerEnergyStdLists,
+                states, numberOfStates, numESVs, onlyResidueIndices)
+      }
       if (numSnaps != -1 && evals >= numSnaps) {
         break
       }
@@ -353,49 +400,6 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
         }
       }
     }
-
-    // Calculate the Rao-Blackwell estimator for each residue.
-    int tautomerCount = 0
-    double[][] energyLists = new double[numESVs][numberOfStates]
-    double[][] energyStdLists = new double[numESVs][numberOfStates]
-    double[][] tautomerEnergyLists = new double[numTautomerESVs][numberOfStates]
-    double[][] tautomerEnergyStdLists = new double[numTautomerESVs][numberOfStates]
-    for(int i : onlyResidueIndices) {
-      Residue res = esvSystem.extendedResidueList.get(i)
-      logger.info("\n Performing Rao-Blackwell Estimator on " + res.getAminoAcid3() + ".")
-      if(bootstrap){
-        logger.info("  Performing bootstrap with " + bootstrapIter + " iterations.")
-      } else
-      {
-        logger.info("  Performing RBE without bootstrap. Ignore standard deviation values.")
-      }
-      for(int j = 0; j < numberOfStates; j++) {
-        double[] bootstrapMeanStd = RBE(oneZeroDeltaLists[i][j], bootstrap, bootstrapIter)
-        energyLists[i][j] = bootstrapMeanStd[0]
-        if(bootstrap) {
-          energyStdLists[i][j] = bootstrapMeanStd[1]
-        }
-
-        if (esvSystem.getTautomerizingResidueList().contains(res)) {
-          bootstrapMeanStd = RBE(tautomerOneZeroDeltaList[esvSystem.getTautomerizingResidueList().indexOf(res)][j],
-                  bootstrap, bootstrapIter)
-          tautomerEnergyLists[tautomerCount][j] = bootstrapMeanStd[0]
-          if(bootstrap) {
-            tautomerEnergyStdLists[tautomerCount][j] = bootstrapMeanStd[1]
-          }
-        }
-      }
-      if(esvSystem.isTautomer(res)) {
-        tautomerCount++
-      }
-      if(specialResidue == res) {
-        break
-      }
-    }
-
-    // Print the results.
-    printResults(specialResidue, esvSystem, energyLists, energyStdLists, tautomerEnergyLists, tautomerEnergyStdLists,
-            states, numberOfStates, numESVs, onlyResidueIndices)
     return this
   }
 
