@@ -45,6 +45,7 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.bonded.Residue
 import ffx.potential.extended.ExtendedSystem
 import ffx.potential.parsers.XPHFilter
+import org.apache.commons.lang.ArrayUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
@@ -67,20 +68,24 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
   private String arcFileName = null
 
   @Option(names = ['--numSnaps'], paramLabel = "-1",
-          description = 'Number of snapshots to use from an archive file. -1 means use all snapshots.')
+          description = 'Number of snapshots to use from an archive file. Default is all.')
   private int numSnaps = -1
 
   @Option(names = ["--specifiedResidues", "--sR"], paramLabel = "<selection>", defaultValue = "",
-          description = "Specified.")
+          description = "Specified residues to do analysis.")
   private String specified = ""
 
   @Option(names = ['--startSnap'], paramLabel = "-1",
           description = 'Start energy evaluations at a snap other than 2.')
   private int startSnap = -1
 
-  @Option(names = ['--bootstrapIter'], paramLabel = "-1",
-          description = 'Number of bootstrap iterations. If not specified, program will not perform bootstrap. Recommended 100000 iterations.')
+  @Option(names = ['--bootstrapIter'], paramLabel = "100000",
+          description = 'Number of bootstrap iterations. If not specified, program will not perform bootstrap. Set -1 for no bootstrapping.')
   private int bootstrapIter = -1
+
+  @Option(names = ['--skip'], paramLabel = "-1",
+          description = 'Calculate energies on snaps with this interval.')
+  private int skip = -1
 
   @Parameters(arity = "1..*", paramLabel = "files",
           description = "PDB input file in the same directory as the ARC file.")
@@ -207,18 +212,23 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
         specifiedResidues[i] = Integer.parseInt(specifiedResiduesString[i].trim())
       }
     }
-    Residue onlyResidue = null
-    int onlyResidueIndex = 0
+    ArrayList<Residue> onlyResidues = new ArrayList<>()
+    ArrayList<Integer> onlyResidueIndices = new ArrayList<>()
     if(specifiedResidues != null){
       for (int i = 0; i < esvSystem.getTitratingResidueList().size(); i++) {
         Residue residue = esvSystem.getTitratingResidueList().get(i)
-        if (residue.getResidueNumber() == specifiedResidue) {
-          onlyResidue = residue
-          onlyResidueIndex = i
+        if (ArrayUtils.contains(specifiedResidues, residue.getResidueNumber())) {
+          onlyResidues.add(residue)
+          onlyResidueIndices.add(i)
         }
       }
-      if(onlyResidue == null){
-        logger.severe(" The residue specified with the --specifyResidue option was not found in the titrating residue list.")
+      if(onlyResidues.size() != specifiedResidues.length){
+        logger.severe("Could not find all residues from --specifiedResidues input.")
+      }
+    }
+    else{
+      for (int i = 0; i < esvSystem.getTitratingResidueList().size(); i++) {
+        onlyResidueIndices.add(i)
       }
     }
 
@@ -238,11 +248,6 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
       for (int j = 0; j < numberOfStates + 1; j++) {
         tautomerOneZeroDeltaList[i][j] = new ArrayList<Double>()
       }
-    }
-
-
-    if(onlyResidue != null && specialResidue == onlyResidue) {
-        logger.severe(" The residue specified with the --specifyResidue option is the same as the special residue specified in the key file.")
     }
 
     // Set up the XPHFilter
@@ -297,7 +302,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
 
       // Get coordinates/energies with each new snap and calculate energy differences
       forceFieldEnergy.getCoordinates(x)
-      for (int i = onlyResidueIndex; i < numESVs; i++) {
+      for (int i: onlyResidueIndices) {
         double titrationState = 0
         double tautomerState = 0
         if(specialResidue != null){
@@ -335,14 +340,17 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
           esvSystem.setTitrationLambda(specialResidue, titrationState, false)
           esvSystem.setTautomerLambda(specialResidue, tautomerState, false)
         }
-        if(onlyResidueIndex != 0) {
-          break
-        }
       }
 
       evals++
       if (numSnaps != -1 && evals >= numSnaps) {
         break
+      }
+
+      if(skip != -1){
+        for(int i = 0; i < skip; i++){
+          xphFilter.readNext()
+        }
       }
     }
 
@@ -352,7 +360,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
     double[][] energyStdLists = new double[numESVs][numberOfStates]
     double[][] tautomerEnergyLists = new double[numTautomerESVs][numberOfStates]
     double[][] tautomerEnergyStdLists = new double[numTautomerESVs][numberOfStates]
-    for(int i = onlyResidueIndex; i < numESVs; i++) {
+    for(int i : onlyResidueIndices) {
       Residue res = esvSystem.extendedResidueList.get(i)
       logger.info("\n Performing Rao-Blackwell Estimator on " + res.getAminoAcid3() + ".")
       if(bootstrap){
@@ -383,21 +391,15 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
       if(specialResidue == res) {
         break
       }
-      // Perform calc on only residue of interest
-      if(onlyResidueIndex != 0) {
-        break
-      }
     }
 
     // Print the results.
     printResults(specialResidue, esvSystem, energyLists, energyStdLists, tautomerEnergyLists, tautomerEnergyStdLists,
-            states, numberOfStates, numESVs, onlyResidueIndex)
+            states, numberOfStates, numESVs, onlyResidueIndices)
     return this
   }
 
 
-
-  // Calculations
   // Calculate the RBE
   static double[] RBE(ArrayList<Double> deltaUList, boolean bootstrap, int bootstrapIter){
     ArrayList<Double> deltaU = deltaUList
@@ -449,23 +451,23 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
   // Helper/Printing Methods
   private static printResults(Residue specialResidue, ExtendedSystem esvSystem, double[][] energyLists, double[][] energyStdLists,
                               double[][] tautomerEnergyLists, double[][]tautomerStdLists, int[][] states,
-                              int numberOfStates, int numESVs, int onlyResidueIndex)
+                              int numberOfStates, int numESVs, ArrayList<Integer> onlyResidueIndex)
   {
     logger.info("\n Rao-Blackwell Estimator Results: ")
     ArrayList<String> line = new ArrayList<>()
     if(specialResidue != null){
       logger.info(" Special Residue: " + specialResidue.toString())
       if(esvSystem.isTautomer(specialResidue)){
-        logger.info(format("  %-10s %-10s %-23s %-28s %-28s %-28s", "Residue", "Tautomer", "DeltaG", "DeltaG-SpecialRes=(" + states[0][0] + "," + states[0][1] + ")", "DeltaG-SpecialRes=(" + states[1][0] + "," + states[1][1] + ")", "DeltaG-SpecialRes=(" + states[2][0] + "," + states[2][1] + ")"))
+        logger.info(format("  %-10s %-10s %-23s %-28s %-28s %-28s", "Residue", "Tautomer", "DeltaGTitr", "DeltaG-SpecialRes=(" + states[0][0] + "," + states[0][1] + ")", "DeltaG-SpecialRes=(" + states[1][0] + "," + states[1][1] + ")", "DeltaG-SpecialRes=(" + states[2][0] + "," + states[2][1] + ")"))
       } else{
-        logger.info(format("  %-10s %-10s %-23s %-28s %-28s", "Residue", "Tautomer", "DeltaG","DeltaG-SpecialRes=(" + states[0][0] + "," + states[0][1] + ")", "DeltaG-SpecialRes=(" + states[1][0] + "," + states[1][1] + ")"))
+        logger.info(format("  %-10s %-10s %-23s %-28s %-28s", "Residue", "Tautomer", "DeltaGTitr","DeltaG-SpecialRes=(" + states[0][0] + "," + states[0][1] + ")", "DeltaG-SpecialRes=(" + states[1][0] + "," + states[1][1] + ")"))
       }
     } else
     {
-      logger.info(format("  %-10s %-10s %-23s", "Residue", "Tautomer", "DeltaG"))
+      logger.info(format("  %-10s %-10s %-23s", "Residue", "Tautomer", "DeltaGTitr"))
     }
     int tautomerCount = 0
-    for(int i = onlyResidueIndex; i < numESVs; i++){
+    for(int i : onlyResidueIndex){
       Residue res = esvSystem.extendedResidueList.get(i)
       line.add(res.toString())
       line.add("0")
@@ -546,9 +548,6 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
                   Double.parseDouble(line.get(3))))
         }
         line.clear()
-      }
-      if (onlyResidueIndex != 0) {
-        break
       }
     }
   }

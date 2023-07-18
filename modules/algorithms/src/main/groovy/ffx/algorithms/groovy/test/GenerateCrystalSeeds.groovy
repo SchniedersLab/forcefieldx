@@ -452,9 +452,6 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
         return rotation
     }
 
-    //TODO: Figure out a good way of dealing with the fact that the GPU does not recognize the switch
-    // between polarization types in the CPU code does in the next two methods
-
     /**
      * Does multiple minimization of the active assembly with each molecule using different
      * force field parameters (NONE,DIRECT,MUTUAL)
