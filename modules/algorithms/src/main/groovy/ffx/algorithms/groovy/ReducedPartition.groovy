@@ -73,8 +73,12 @@ class ReducedPartition extends AlgorithmsScript {
     private boolean onlyProtons = false
 
     @CommandLine.Option(names = ["--pB"], paramLabel = "false",
-            description = "Save the Boltzmann Weights of the protonated residue.")
-    private boolean pB = false
+            description = "Save the Boltzmann weights of protonated residue and total Boltzmann weights.")
+    private boolean printBoltzmann = false
+
+    @CommandLine.Option(names = ["--pF"], paramLabel = "false",
+            description = "Write to an energy restart file and ensemble file.")
+    private boolean printFiles = false
 
 
     /**
@@ -279,8 +283,8 @@ class ReducedPartition extends AlgorithmsScript {
 
             RotamerOptimization rotamerOptimization = new RotamerOptimization(activeAssembly,
                     potentialEnergy, algorithmListener)
-            rotamerOptimization.setPrintFiles(false)
-            rotamerOptimization.setWriteEnergyRestart(true)
+            rotamerOptimization.setPrintFiles(printFiles)
+            rotamerOptimization.setWriteEnergyRestart(printFiles)
             rotamerOptimization.setOnlyProtons(onlyProtons)
 
             manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
@@ -309,7 +313,7 @@ class ReducedPartition extends AlgorithmsScript {
             offsets[j] = rotamerOptimization.getRefEnergy()
             if (pKa) {
                 titrateArray = rotamerOptimization.getFraction()
-                if (pB) {
+                if (printBoltzmann) {
                     titrateBoltzmann = rotamerOptimization.getTitrateBoltzmann()
                     totalBoltzmann = rotamerOptimization.getTotalBoltzmann()
                 }
@@ -323,7 +327,7 @@ class ReducedPartition extends AlgorithmsScript {
             for (Residue residue : residues) {
                 logger.info("Residue " + residue.getName() + residue.getResidueNumber() + " Fraction of Protonated: " +
                         titrateArray[titrateCount])
-                if (pB) {
+                if (printBoltzmann) {
                     logger.info("Residue " + residue.getName() + residue.getResidueNumber() + " Protonated Boltzmann: " +
                             titrateBoltzmann[titrateCount])
                     logger.info("Total Boltzmann: " + totalBoltzmann)
