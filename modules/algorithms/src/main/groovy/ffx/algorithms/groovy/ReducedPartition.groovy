@@ -205,15 +205,19 @@ class ReducedPartition extends AlgorithmsScript {
                             currentResCoor = residue2.getAtomByName("CA", true).getXYZ(currentResCoor)
                             double dist = DoubleMath.dist(titrationResCoor, currentResCoor)
                             if (dist < distanceCutoff) {
-                                int addedResidue = residue2.getResidueNumber()
-                                if(!listResidues.contains(Integer.toString(addedResidue))){
+                                String addedResidue = residue2.getChainID() + residue2.getResidueNumber()
+                                if(!listResidues.contains(addedResidue)){
                                     listResidues += "," + residue2.getChainID() + addedResidue
                                 }
                             }
                         }
                     }
+
                 }
+
             }
+
+
             listResidues = listResidues.substring(1)
         }
 
