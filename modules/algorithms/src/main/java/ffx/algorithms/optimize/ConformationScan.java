@@ -348,7 +348,6 @@ public class ConformationScan {
             logger.info("\n --------- Monomer 1 Static Torsion Scan --------- ");
             forceFieldEnergy.getCoordinates(x);
             double tscanE = forceFieldEnergy.energy(x, false);
-            logger.info(" Energy before static torsion scan of monomer 1: " + tscanE);
             TorsionSearch m1TorsionSearch = new TorsionSearch(mola, mola.getMoleculeArray()[0], 32, 1);
             m1TorsionSearch.staticAnalysis(0, 100);
             if(!m1TorsionSearch.getStates().isEmpty()) {
@@ -356,13 +355,13 @@ public class ConformationScan {
                 minState.revertState();
             }
             forceFieldEnergy.getCoordinates(x);
-            tscanE = forceFieldEnergy.energy(x, false);
-            logger.info(" Energy after static torsion scan of monomer 1: " + tscanE);
+            double tscanEAfter = forceFieldEnergy.energy(x, false);
+            logger.info("\n Energy before static torsion scan of monomer 1: " + tscanE);
+            logger.info(" Energy after static torsion scan of monomer 1: " + tscanEAfter);
 
             logger.info("\n --------- Monomer 2 Static Torsion Scan --------- ");
             forceFieldEnergy.getCoordinates(x);
             tscanE = forceFieldEnergy.energy(x, false);
-            logger.info(" Energy before static torsion scan of monomer 2: " + tscanE);
             TorsionSearch m2TorsionSearch = new TorsionSearch(mola, mola.getMoleculeArray()[1], 32, 1);
             m2TorsionSearch.staticAnalysis(0, 100);
             if(!m2TorsionSearch.getStates().isEmpty()) {
@@ -370,8 +369,9 @@ public class ConformationScan {
                 minState.revertState();
             }
             forceFieldEnergy.getCoordinates(x);
-            tscanE = forceFieldEnergy.energy(x, false);
-            logger.info(" Energy after static torsion scan of monomer 2: " + tscanE);
+            tscanEAfter = forceFieldEnergy.energy(x, false);
+            logger.info("\n Energy before static torsion scan of monomer 2: " + tscanE);
+            logger.info(" Energy after static torsion scan of monomer 2: " + tscanEAfter);
         }
         forceFieldEnergy.getCoordinates(x);
         double e = forceFieldEnergy.energy(x, false);
