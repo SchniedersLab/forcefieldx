@@ -146,7 +146,7 @@ class ReducedPartition extends AlgorithmsScript {
             setActiveAssembly(getActiveAssembly(unfoldedFileName))
         }
 
-        String[] titratableResidues = ["HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD"];
+        String[] titratableResidues = ["HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD"]
         List<String> titratableResiudesList = Arrays.asList(titratableResidues);
         double[] boltzmannWeights = new double[2]
         double[] offsets = new double[2]
@@ -196,13 +196,18 @@ class ReducedPartition extends AlgorithmsScript {
         if (onlyTitration || onlyProtons) {
             for (Residue residue : residueList) {
                 if (titratableResiudesList.contains(residue.getName())) {
-                    listResidues += "," + residue.getChainID() + residue.getResidueNumber()
+                    String titrateResNum = residue.getResidueNumber()
+                    if(!listResidues.contains(titrateResNum)){
+                       listResidues += "," + residue.getChainID() + titrateResNum
+                    }
+
                     if (distanceCutoff != -1){
                         double[] titrationResCoor = new double[3]
-                        titrationResCoor = residue.getAtomByName("CA", true).getXYZ(titrationResCoor)
+                        //titrationResCoor = residue.getAtomByName("CA", true).getXYZ(titrationResCoor)
+                        titrationResCoor = residue.getAtomList(true).last().getXYZ(titrationResCoor)
                         for (Residue residue2: residueList) {
                             double[] currentResCoor = new double[3]
-                            currentResCoor = residue2.getAtomByName("CA", true).getXYZ(currentResCoor)
+                            currentResCoor = residue2.getAtomList(true).last().getXYZ(currentResCoor)
                             double dist = DoubleMath.dist(titrationResCoor, currentResCoor)
                             if (dist < distanceCutoff) {
                                 String addedResidue = residue2.getChainID() + residue2.getResidueNumber()
