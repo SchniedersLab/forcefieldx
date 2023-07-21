@@ -42,6 +42,8 @@ import com.github.quickhull3d.QuickHull3D
 import edu.rit.pj.ParallelTeam
 import ffx.crystal.Crystal
 import ffx.numerics.Potential
+import ffx.numerics.atomic.AtomicDoubleArray
+import ffx.potential.nonbonded.GeneralizedKirkwood
 import ffx.potential.nonbonded.octree.*
 import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
@@ -84,6 +86,13 @@ class EnergyOctreeTest extends PotentialScript {
     @Option(names = ['-m', '--moments'], paramLabel = "false", defaultValue = "false",
             description = 'Print out electrostatic moments.')
     private boolean moments = false
+
+    /**
+     * -t or --theta set theta for Octree.
+     */
+    @Option(names = ['-t', '--theta'], paramLabel = "0.5", defaultValue = "0.5",
+            description = 'Set theta for Octree.')
+    private double theta = 0.5
 
     /**
      * --rg or --gyrate Print out the radius of gyration.
@@ -255,6 +264,14 @@ class EnergyOctreeTest extends PotentialScript {
         // Testing other Octree Method
         // Create Octree particles from Atoms
         Atom[] atoms = activeAssembly.getActiveAtomArray()
+        GeneralizedKirkwood generalizedKirkwood = forceFieldEnergy.getGK()
+        AtomicDoubleArray selfEnergies = generalizedKirkwood.getSelfEnergy()
+        double[] selfEnergiesArray = new double[selfEnergies.size()]
+
+        for (int i = 0; i < selfEnergies.size(); i++) {
+            selfEnergiesArray[i] = selfEnergies.get(i)
+        }
+
         ArrayList<OctreeParticle> particles = new ArrayList<>()
         for (Atom atom : atoms){
             double[] coords = new double[]{atom.getX(),atom.getY(),atom.getZ()}
@@ -265,10 +282,9 @@ class EnergyOctreeTest extends PotentialScript {
         // Use Particles to build a tree
         int nCritical = atoms.size() * 0.1
         logger.info(format("nCritical = %d",nCritical))
-//        double theta = 0.5
-        double theta = 0.5
-        double[] iPhi = new double[particles.size()]
-        Octree octree = new Octree(nCritical, atoms, theta, forceFieldEnergy.getPmeNode().globalMultipole,iPhi)
+        logger.info(format("theta = %4.4f",theta))
+//        double theta = 0.0001
+        Octree octree = new Octree(nCritical, atoms, theta, forceFieldEnergy.getPmeNode().globalMultipole,activeAssembly,gradient,selfEnergiesArray)
 
         // Determine maximum separation dis0tance between any two atoms
         QuickHull3D quickHull3D = ConvexHullOps.constructHull(atoms)

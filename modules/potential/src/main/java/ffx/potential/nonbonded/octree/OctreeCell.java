@@ -48,6 +48,14 @@ import static java.lang.String.format;
 public class OctreeCell {
 
   private static final Logger logger = Logger.getLogger(Octree.class.getName());
+
+  /** Average Born Radius of atoms in cell. */
+  private double avgBornRadius = 0.0;
+  private double maxBornRadius = 0.0;
+  private double cellBornRadius = 0.0;
+  private double totalSelfEnergy = 0.0;
+  private double totalHeavyBornRadii = 0.0;
+  private int totalHeavyAtoms = 1;
   /**
    * Critical (maximum allowed) number of points allowed in any one cell: If a cell already contains
    * nCritical points, it needs to be split
@@ -91,6 +99,52 @@ public class OctreeCell {
     for (int i = 0; i < 10; i++) {
       this.multipole[i] += calculatedMultipole[i];
     }
+  }
+
+  public void addToTotalSelfEnergy(double currentSelfEnergy) {
+    this.totalSelfEnergy += currentSelfEnergy;
+  }
+
+  public double getCellBornRadius() {
+    return this.cellBornRadius;
+  }
+
+  public void setCellBornRadius() {
+    double monopoleTerm = -0.5 * (1.0 - 1.0 / 78.3) * totalSelfEnergy; //Math.pow(multipole[0], 2) / totalSelfEnergy;332.063709
+    double three_fourpi = 3.0/(4.0*Math.PI);
+//    this.cellBornRadius = monopoleTerm;
+//    this.cellBornRadius = -0.5 * 322 * (1.0 - 1.0 / 78.3) * Math.pow(multipole[0], 2) / totalSelfEnergy;
+//    double monopoleTerm = -0.5 * 322 * (1.0 - 1.0 / 78.3) * Math.pow(multipole[0], 2) / totalSelfEnergy;
+    this.cellBornRadius = Math.pow(three_fourpi*monopoleTerm,(-1.0/3.0));
+  }
+
+  public void addToHeavyBornRadii(double currentBorn) {
+    this.totalHeavyBornRadii += currentBorn;
+    this.totalHeavyAtoms += 1;
+  }
+//
+//  public double getAverageBornRadius() {
+////    return (totalBornRadii / (double) numLeaves);
+//    if (totalHeavyAtoms == 0) {
+//      return (totalBornRadii / (double) numLeaves);
+//    } else {
+//      return (totalHeavyBornRadii / (double) totalHeavyAtoms);
+//    }
+//  }
+
+  public double getMaxBornRadius() {
+    return this.maxBornRadius;
+  }
+
+  public void setMaxBornRadius(double maxBornRadius) {
+    this.maxBornRadius = maxBornRadius;
+  }
+
+  public void setTotalBornToZero() {
+    this.totalSelfEnergy = 0.0;
+    this.totalHeavyBornRadii = 0.0;
+    this.totalHeavyAtoms = 0;
+    this.maxBornRadius  = 0.0;
   }
 
   public int getChildAtIndex(int octant) {
