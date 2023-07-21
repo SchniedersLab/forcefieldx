@@ -59,7 +59,7 @@ import picocli.CommandLine.Parameters
  */
 @Command(description = " Calculates interaction energies of different molecular orientations and saves low energy orientations.",
         name = "test.GenerateCrystalSeeds")
-class GenerateCrystalSeeds extends AlgorithmsScript {
+class CoformerBindingSearch extends AlgorithmsScript {
 
     /**
      * --eps
@@ -71,7 +71,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
     /**
      * --maxIter
      */
-    @Option(names = ['--maxIter'], paramLabel = '100',
+    @Option(names = ['--maxIter'], paramLabel = '1000',
             description = 'Max iterations for minimization.')
     int maxIter = 1000
 
@@ -148,7 +148,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
     /**
      * Constructor.
      */
-    GenerateCrystalSeeds() {
+    CoformerBindingSearch() {
         this(new Binding())
     }
 
@@ -156,7 +156,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
      * Constructor.
      * @param binding The Groovy Binding to use.
      */
-    GenerateCrystalSeeds(Binding binding) {
+    CoformerBindingSearch(Binding binding) {
         super(binding)
     }
 
@@ -164,7 +164,7 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
      * {@inheritDoc}
      */
     @Override
-    GenerateCrystalSeeds run() {
+    CoformerBindingSearch run() {
         // Init the context and bind variables.
         if (!init()) {
             return this
