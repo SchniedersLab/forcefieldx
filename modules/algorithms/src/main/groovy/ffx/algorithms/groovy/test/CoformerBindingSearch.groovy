@@ -41,21 +41,13 @@ import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.optimize.ConformationScan
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
-import ffx.potential.Utilities
 import ffx.potential.bonded.Atom
-import ffx.potential.bonded.Bond
 import ffx.potential.bonded.Molecule
-import ffx.potential.parsers.MergeFilter
-import ffx.potential.parsers.XYZFilter
 import ffx.potential.utils.PotentialsUtils
 import org.apache.commons.io.FilenameUtils
-import org.checkerframework.checker.units.qual.Force
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
-
-import java.nio.file.Files
-import java.nio.file.Path
 
 /**
  * GenerateCrystalSeeds is a Groovy script that generates a set of molecular orientations in vacuum and
@@ -98,11 +90,32 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
     double flatBottomRadius = 0.5
 
     /**
+     * --gkSoluteDielectric
+     */
+    @Option(names = ['--gkSolventDielectric'], paramLabel = '78.4',
+            description = 'Sets the gk solvent dielectric constant.')
+    double gkSolventDielec = 78.4
+
+    /**
+     * --skipHomodimerNumber
+     */
+    @Option(names = ['--skipHomodimerNumber'], paramLabel = '-1',
+            description = 'Skip conformation search on input dimer one or two.')
+    int skipHomodimerNumber = -1
+
+    /**
      * --intermediateTorsionScan
      */
     @Option(names = ['--intermediateTorsionScan', "--its"], paramLabel = 'false', defaultValue = 'false',
             description = 'During sampling, statically scan torsions after direct minimization to find the lowest energy conformation.')
     private boolean intermediateTorsionScan = false
+
+    /**
+     * --noMinimize
+     */
+    @Option(names = ['--noMinimize'], paramLabel = 'false', defaultValue = 'false',
+            description = 'Don\'t minimize or torsion scan after conformations are generated. Useful for testing.')
+    private boolean noMinimize = false
 
     /**
      * --excludeH
@@ -119,11 +132,11 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
     private boolean coformerOnly = false
 
     /**
-     * --skipHomodimerNumber
+     * --gk
      */
-    @Option(names = ['--skipHomodimerNumber'], paramLabel = '-1',
-            description = 'Skip conformation search on input dimer one or two.')
-    int skipHomodimerNumber = -1
+    @Option(names = ['--gk'], paramLabel = 'false', defaultValue = 'false',
+            description = 'Use generalized kirkwood solvent.')
+    private boolean gk = false
 
     /**
      * Filename.
@@ -157,11 +170,18 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
             return this
         }
 
+        // Cat the key files together and set the -Dkey property to be the new file we created
+        // Write default gk options to the key file
+        // Only does a simple search for the patch file so it needs to be named accordingly with the .xyz
+        setKeyAndPatchFilesProperly(gk, gkSolventDielec, filenames)
+
         // Check the size of the filenames list
         if (!(filenames.size() == 1 || filenames.size() == 2)) {
             logger.severe("Must provide one or two filenames.")
             return this
         }
+
+        boolean minimize = !noMinimize
 
         // Load the MolecularAssembly of the input file.
         PotentialsUtils potentialsUtils = new PotentialsUtils()
@@ -185,11 +205,14 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
                         hBondDist,
                         flatBottomRadius,
                         intermediateTorsionScan,
-                        excludeH)
+                        excludeH,
+                        minimize
+                )
                 monomerOneScan.scan()
-                logger.info("\n Molecule one dimer scan energy information:")
+                logger.info("\n Molecule one (" + FilenameUtils.removeExtension(filenames.get(0)) + ") dimer scan energy information:")
                 monomerOneScan.logAllEnergyInformation()
-                File molOneDimerScanFile = new File("molOneDimerScan.arc")
+                String molOneDimerScanFilename = FilenameUtils.removeExtension(filenames.get(0)) + ".arc"
+                File molOneDimerScanFile = new File(molOneDimerScanFilename)
                 monomerOneScan.writeStructuresToXYZ(molOneDimerScanFile)
             } else{
                 logger.info(" Skipping monomer one scan.")
@@ -201,18 +224,21 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
                 Molecule[] molecules = combined.getMolecules()
                 monomerTwoScan = new ConformationScan(
                         combined,
-                        molecules[1],
+                        molecules[0],
                         molecules[1],
                         eps,
                         maxIter,
                         hBondDist,
                         flatBottomRadius,
                         intermediateTorsionScan,
-                        excludeH)
+                        excludeH,
+                        minimize
+                )
                 monomerTwoScan.scan()
-                logger.info("\n Molecule two dimer scan energy information:")
+                logger.info("\n Molecule two (" + FilenameUtils.removeExtension(filenames.get(1)) + ") dimer scan energy information:")
                 monomerTwoScan.logAllEnergyInformation()
-                File molTwoDimerScanFile = new File("molTwoDimerScan.arc")
+                String molTwoDimerScanFilename = FilenameUtils.removeExtension(filenames.get(1)) + ".arc"
+                File molTwoDimerScanFile = new File(molTwoDimerScanFilename)
                 monomerTwoScan.writeStructuresToXYZ(molTwoDimerScanFile)
             } else if (!skipMoleculeTwo && filenames.size() == 1) {
                 logger.info(" Only one file provided, skipping second homodimer scan.")
@@ -234,9 +260,12 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
                     hBondDist,
                     flatBottomRadius,
                     intermediateTorsionScan,
-                    excludeH)
+                    excludeH,
+                    minimize
+            )
             dimerScan.scan()
-            logger.info("\n Molecule one and two dimer scan energy information:")
+            logger.info("\n Molecule one (" + FilenameUtils.removeExtension(filenames.get(0)) +
+                    ") and two (" + FilenameUtils.removeExtension(filenames.get(1)) + ") dimer scan energy information:")
             dimerScan.logAllEnergyInformation()
             File coformerScanFile = new File("coformerScan.arc")
             dimerScan.writeStructuresToXYZ(coformerScanFile)
@@ -272,6 +301,47 @@ class GenerateCrystalSeeds extends AlgorithmsScript {
         mainMonomerAssembly.setPotential(null) // energyFactory doesn't do anything if it isn't null
         ForceFieldEnergy forceFieldEnergy = ForceFieldEnergy.energyFactory(mainMonomerAssembly)
         return mainMonomerAssembly
+    }
+
+    static void setKeyAndPatchFilesProperly(boolean gk, double gkSolventDielec, List<String> filenames) {
+        String key = "coformerScan.key"
+        String patch = "coformerScan.patch"
+        // Create the key file
+        File keyFile = new File(key)
+        File patchFile = new File(patch)
+        logger.info(" Creating key file: " + key)
+        keyFile.createNewFile()
+        // concatenate the two files together with bufferedReader and bufferedWriter
+        try {
+            BufferedWriter bw = new BufferedWriter(new FileWriter(keyFile))
+            bw.write("patch " + FilenameUtils.removeExtension(key) + ".patch\n\n")
+            if(gk){
+                bw.write("gkterm true\n")
+                bw.write("solvent-dielectric " + gkSolventDielec + "\n")
+                bw.write("gk-radius solute\n")
+                bw.write("cavmodel gauss-disp\n")
+            }
+            bw.close()
+        } catch (IOException e) {
+            e.printStackTrace()
+        }
+        logger.info(" Creating patch file: " + patch)
+        patchFile.createNewFile()
+        String patchOne = FilenameUtils.removeExtension(filenames.get(0)) + ".patch"
+        String patchTwo = FilenameUtils.removeExtension(filenames.get(1)) + ".patch"
+        String[] files = new String[]{patchOne, patchTwo}
+        BufferedWriter bw = new BufferedWriter(new FileWriter(patchFile))
+        for (String file : files) {
+            BufferedReader br = new BufferedReader(new FileReader(file))
+            String line = br.readLine()
+            while (line != null) {
+                bw.write(line + "\n")
+                line = br.readLine()
+            }
+            br.close()
+        }
+        bw.close()
+        System.setProperty("key", key)
     }
 }
 

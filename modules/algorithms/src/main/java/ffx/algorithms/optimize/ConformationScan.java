@@ -14,7 +14,9 @@ import ffx.potential.parameters.BondType;
 import ffx.potential.parsers.XYZFilter;
 
 import java.io.File;
+import java.util.AbstractQueue;
 import java.util.ArrayList;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.logging.Logger;
 
 import static ffx.potential.utils.Superpose.applyRotation;
@@ -49,7 +51,7 @@ public class ConformationScan {
     private final ArrayList<Atom> m1TargetAtoms;
     private final ArrayList<Atom> m2TargetAtoms;
 
-    private final MinMaxPriorityQueue<StateContainer> statesQueue;
+    private AbstractQueue<StateContainer> statesQueue;
 
     private final double eps;
     private final int maxIter;
@@ -57,6 +59,7 @@ public class ConformationScan {
     private final double flatBottomRadius;
     private final boolean tScan;
     private final boolean excludeH;
+    private final boolean minimize;
 
     private double m1MinEnergy;
     private double m2MinEnergy;
@@ -77,7 +80,8 @@ public class ConformationScan {
             double hydrogenBondDistance,
             double flatBottomRadius,
             boolean staticTorsionScan,
-            boolean excludeExtraHydrogen
+            boolean excludeExtraHydrogen,
+            boolean minimize
     )
     {
         mola = molecularAssembly;
@@ -90,16 +94,20 @@ public class ConformationScan {
         this.flatBottomRadius = flatBottomRadius;
         tScan = staticTorsionScan;
         excludeH = excludeExtraHydrogen;
+        this.minimize = minimize;
         m1Atoms = m1.getAtomList().toArray(new Atom[0]);
         m2Atoms = m2.getAtomList().toArray(new Atom[0]);
         m1TargetAtoms = new ArrayList<>();
         m2TargetAtoms = new ArrayList<>();
         setTargetAtoms(mola.getAtomArray());
         statesQueue = MinMaxPriorityQueue.maximumSize(m1TargetAtoms.size() * m2TargetAtoms.size()).create();
+        if(!minimize) { // If minimization is not performed, then the queue will be in order of the loop
+            statesQueue = new ArrayBlockingQueue<>(m1TargetAtoms.size() * m2TargetAtoms.size() + 1);
+        }
     }
 
     public void scan(){
-        minimizeEachMolecule();
+        minimizeEachMolecule(minimize);
         double[] zAxis = new double[]{0,0,1};
         // Loop through interactions between the two molecules --> Not necessarily symmetric but close?
         int loopCounter = 1;
@@ -120,7 +128,9 @@ public class ConformationScan {
                 // Minimize the energy of the system subject to a harmonic restraint on the distance
                 // between the two atoms. Keep the state if minimization works.
                 try {
-                    minimizeSystem(a, b);
+                    if(minimize) {
+                        minimizeSystem(a, b);
+                    }
                     forceFieldEnergy.getCoordinates(x);
                     double e = forceFieldEnergy.energy(x, false) - totalMonomerMinimizedEnergy;
                     logger.info(" Binding energy of trial " + (loopCounter-1) + ": " + e);
@@ -144,20 +154,19 @@ public class ConformationScan {
         calculateMeanStd();
     }
     public void logAllEnergyInformation(){
-        logger.info(format(" Minimum energy of monomer 1: %12.5f", m1MinEnergy));
-        logger.info(format(" Minimum energy of monomer 2: %12.5f", m2MinEnergy));
-        logger.info(format(" Sum of minimum monomers:     %12.5f", totalMonomerMinimizedEnergy));
-        logger.info(format(" Minimum energy of system:    %12.5f", minimumEnergy));
-        logger.info(format(" Average energy:              %12.5f +- %6.3f", averageEnergy, stdOfEnergies));
-        logger.info(format(" Average energy (no outlier): %12.5f +- %6.3f", averageEnergyNoOutlier, stdOfEnergiesNoOutlier));
+        logger.info(format(" Minimum energy of monomer 1:                 %12.5f", m1MinEnergy));
+        logger.info(format(" Minimum energy of monomer 2:                 %12.5f", m2MinEnergy));
+        logger.info(format(" Sum of minimum monomers:                     %12.5f", totalMonomerMinimizedEnergy));
+        logger.info(format(" Minimum binding energy of system:            %12.5f", minimumEnergy));
+        logger.info(format(" Average binding energy:                      %12.5f +- %6.3f", averageEnergy, stdOfEnergies));
+        logger.info(format(" Average binding energy (no outlier):         %12.5f +- %6.3f", averageEnergyNoOutlier, stdOfEnergiesNoOutlier));
     }
     public void writeStructuresToXYZ(File outputFile){
         XYZFilter xyzFilter = new XYZFilter(outputFile, mola, mola.getForceField(), mola.getForceField().getProperties());
         logger.info("\n Writing structures to " + outputFile.getAbsolutePath());
         int count = 1;
-        while(!statesQueue.isEmpty()){
-            StateContainer s = statesQueue.poll();
-            assert s != null;
+        StateContainer[] states = statesQueue.toArray(new StateContainer[0]);
+        for(StateContainer s: states){
             AssemblyState state = s.getState();
             double energy = s.getEnergy();
             logger.info(" Writing configuration #" + count + " with energy: " + energy);
@@ -280,57 +289,55 @@ public class ConformationScan {
         }
 
     }
-    private void minimizeEachMolecule(){
+    private void minimizeEachMolecule(boolean minimize){
         // Monomer one energy
-        for(Atom a: m2Atoms){ a.setUse(false); }
         Minimize monomerMinEngine;
-        logger.info("\n --------- Minimize Monomer 1 --------- ");
-        forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE);
-        logger.info("\n --------- Monomer 1 Static Torsion Scan --------- ");
-        TorsionSearch m1TorsionSearch = new TorsionSearch(mola, mola.getMoleculeArray()[0], 32, 1);
-        m1TorsionSearch.staticAnalysis(0, 100);
-        if(!m1TorsionSearch.getStates().isEmpty()) {
-            AssemblyState minState = m1TorsionSearch.getStates().get(0);
-            minState.revertState();
-        }
-        monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
-        monomerMinEngine.minimize(1.0, maxIter).getCoordinates(x);
-        forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT);
-        monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
-        monomerMinEngine.minimize(1.0, maxIter).getCoordinates(x);
-        forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL);
-        monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
-        monomerMinEngine.minimize(eps, maxIter).getCoordinates(x);
-        for(Atom a: m2Atoms){ a.setUse(true); }
-
-        logger.info("\n --------- Monomer 1 Energy Breakdown --------- ");
         for(Atom a: m2Atoms){ a.setUse(false); }
+        if(minimize) {
+            logger.info("\n --------- Minimize Monomer 1 --------- ");
+            forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE);
+            logger.info("\n --------- Monomer 1 Static Torsion Scan --------- ");
+            TorsionSearch m1TorsionSearch = new TorsionSearch(mola, mola.getMoleculeArray()[0], 32, 1);
+            m1TorsionSearch.staticAnalysis(0, 100);
+            if (!m1TorsionSearch.getStates().isEmpty()) {
+                AssemblyState minState = m1TorsionSearch.getStates().get(0);
+                minState.revertState();
+            }
+            monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
+            monomerMinEngine.minimize(1.0, maxIter).getCoordinates(x);
+            forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT);
+            monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
+            monomerMinEngine.minimize(1.0, maxIter).getCoordinates(x);
+            forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL);
+            monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
+            monomerMinEngine.minimize(eps, maxIter).getCoordinates(x);
+        }
+        logger.info("\n --------- Monomer 1 Energy Breakdown --------- ");
         double monomerEnergy = forceFieldEnergy.energy(x, true);
         for(Atom a: m2Atoms){ a.setUse(true); }
 
         // Monomer two energy
         for(Atom a: m1Atoms){ a.setUse(false); }
-        logger.info("\n --------- Minimize Monomer 2 --------- ");
-        logger.info("\n --------- Monomer 2 Static Torsion Scan --------- ");
-        TorsionSearch m2TorsionSearch = new TorsionSearch(mola, mola.getMoleculeArray()[1], 32, 1);
-        m2TorsionSearch.staticAnalysis(0, 100);
-        if(!m2TorsionSearch.getStates().isEmpty()) {
-            AssemblyState minState = m2TorsionSearch.getStates().get(0);
-            minState.revertState();
+        if(minimize) {
+            logger.info("\n --------- Minimize Monomer 2 --------- ");
+            logger.info("\n --------- Monomer 2 Static Torsion Scan --------- ");
+            TorsionSearch m2TorsionSearch = new TorsionSearch(mola, mola.getMoleculeArray()[1], 32, 1);
+            m2TorsionSearch.staticAnalysis(0, 100);
+            if (!m2TorsionSearch.getStates().isEmpty()) {
+                AssemblyState minState = m2TorsionSearch.getStates().get(0);
+                minState.revertState();
+            }
+            forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE);
+            monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
+            monomerMinEngine.minimize(1.0, maxIter).getCoordinates(x);
+            forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT);
+            monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
+            monomerMinEngine.minimize(1.0, maxIter).getCoordinates(x);
+            forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL);
+            monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
+            monomerMinEngine.minimize(eps, maxIter).getCoordinates(x);
         }
-        forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE);
-        monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
-        monomerMinEngine.minimize(1.0, maxIter).getCoordinates(x);
-        forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT);
-        monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
-        monomerMinEngine.minimize(1.0, maxIter).getCoordinates(x);
-        forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL);
-        monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
-        monomerMinEngine.minimize(eps, maxIter).getCoordinates(x);
-        for(Atom a: m1Atoms){ a.setUse(true); }
-
         logger.info("\n --------- Monomer 2 Energy Breakdown --------- ");
-        for(Atom a: m1Atoms){ a.setUse(false); }
         double monomerEnergy2 = forceFieldEnergy.energy(x, true);
         for(Atom a: m1Atoms){ a.setUse(true); }
 
@@ -411,7 +418,7 @@ public class ConformationScan {
     private void calculateMeanStd(){
         ArrayList<Double> energies = this.getEnergies();
         double highOutlierCutoff = Double.MAX_VALUE;
-        double lowOutlierCutoff = Double.MAX_VALUE;
+        double lowOutlierCutoff = Double.MIN_VALUE;
         // Calculate the interquartile range
         if(energies.size() > 4) {
             double iqr = energies.get(energies.size() / 4) - energies.get(3 * energies.size() / 4);
