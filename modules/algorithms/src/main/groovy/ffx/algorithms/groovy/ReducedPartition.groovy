@@ -93,6 +93,7 @@ class ReducedPartition extends AlgorithmsScript {
     MolecularAssembly mutatedAssembly
     Binding mutatorBinding
     List<Residue> residues
+    List<Residue> selectedResidues
 
     private String unfoldedFileName
 
@@ -312,27 +313,27 @@ class ReducedPartition extends AlgorithmsScript {
 
             manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
-            List<Residue> residues1 = rotamerOptimization.getResidues()
+            selectedResidues = rotamerOptimization.getResidues()
 
             logger.info("\n Initial Potential Energy:")
             potentialEnergy.energy(false, true)
 
             logger.info("\n Initial Rotamer Torsion Angles:")
-            RotamerLibrary.measureRotamers(residues1, false)
+            RotamerLibrary.measureRotamers(selectedResidues, false)
 
             // Run the optimization.
-            rotamerOptimization.optimize(manyBodyOptions.getAlgorithm(residues1.size()))
+            rotamerOptimization.optimize(manyBodyOptions.getAlgorithm(selectedResidues.size()))
 
-            int[] currentRotamers = new int[residues1.size()]
+            int[] currentRotamers = new int[selectedResidues.size()]
 
             //Keep track of the number of titrating residues
             if (pKa) {
-                titrateArray = new double[residues1.size()]
+                titrateArray = new double[selectedResidues.size()]
             }
 
             //Calculate possible permutations for assembly
-            rotamerOptimization.checkPermutations(residues1.toArray() as Residue[], 0, currentRotamers, titrateArray,
-                    manyBodyOptions.getAlgorithm(residues1.size()))
+            rotamerOptimization.checkPermutations(selectedResidues.toArray() as Residue[], 0, currentRotamers, titrateArray,
+                    manyBodyOptions.getAlgorithm(selectedResidues.size()))
 
             //Collect the Bolztmann weights and calculated offset of each assembly
             boltzmannWeights[j] = rotamerOptimization.getTotalBoltzmann()
@@ -353,7 +354,7 @@ class ReducedPartition extends AlgorithmsScript {
         if (pKa) {
             int titrateCount = 0
 
-            for (Residue residue : residues) {
+            for (Residue residue : selectedResidues) {
                 logger.info("Residue " + residue.getName() + residue.getResidueNumber() + " Fraction of Protonated: " +
                         titrateArray[titrateCount])
                 if (printBoltzmann) {
