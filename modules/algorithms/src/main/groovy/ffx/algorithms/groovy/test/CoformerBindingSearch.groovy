@@ -271,11 +271,12 @@ class CoformerBindingSearch extends AlgorithmsScript {
             dimerScan.writeStructuresToXYZ(coformerScanFile)
 
             if(monomerOneScan != null && monomerTwoScan != null){
-                logger.info("\n Molecule one dimer scan energy information:")
+                logger.info("\n Molecule one (" + FilenameUtils.removeExtension(filenames.get(0)) + ") dimer scan energy information:")
                 monomerOneScan.logAllEnergyInformation()
-                logger.info("\n Molecule two dimer scan energy information:")
+                logger.info("\n Molecule two (" + FilenameUtils.removeExtension(filenames.get(1)) + ") dimer scan energy information:")
                 monomerTwoScan.logAllEnergyInformation()
-                logger.info("\n Molecule one and two dimer scan energy information:")
+                logger.info("\n Molecule one (" + FilenameUtils.removeExtension(filenames.get(0)) +
+                        ") and two (" + FilenameUtils.removeExtension(filenames.get(1)) + ") dimer scan energy information:")
                 dimerScan.logAllEnergyInformation()
                 ConformationScan.logBindingEnergyCalculation(monomerOneScan, monomerTwoScan, dimerScan)
             }
