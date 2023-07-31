@@ -251,10 +251,13 @@ class CoformerBindingSearch extends AlgorithmsScript {
             MolecularAssembly[] molecularAssemblies = potentialsUtils.openAll(new String[]{filenames.get(0), filenames.get(1)})
             MolecularAssembly combined = combineTwoMolecularAssembliesWOneMolEach(molecularAssemblies[0], molecularAssemblies[1])
             Molecule[] molecules = combined.getMolecules()
+            // Smaller molecule is molecule one
+            Molecule mol1 = molecules[0].atomList.size() < molecules[1].atomList.size() ? molecules[0] : molecules[1]
+            Molecule mol2 = molecules[0].atomList.size() < molecules[1].atomList.size() ? molecules[1] : molecules[0]
             ConformationScan dimerScan = new ConformationScan(
                     combined,
-                    molecules[0],
-                    molecules[1],
+                    mol1,
+                    mol2,
                     eps,
                     maxIter,
                     hBondDist,

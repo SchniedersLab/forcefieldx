@@ -128,15 +128,18 @@ public class ConformationScan {
                 // Minimize the energy of the system subject to a harmonic restraint on the distance
                 // between the two atoms. Keep the state if minimization works.
                 try {
+                    mola.update();
+                    forceFieldEnergy.getCoordinates(x);
                     if(minimize) {
                         minimizeSystem(a, b);
                     }
                     forceFieldEnergy.getCoordinates(x);
-                    double e = forceFieldEnergy.energy(x, false) - totalMonomerMinimizedEnergy;
-                    logger.info(" Binding energy of trial " + (loopCounter-1) + ": " + e);
+                    double e = forceFieldEnergy.energy(x, true) - totalMonomerMinimizedEnergy;
+                    logger.info("\n Binding energy of trial " + (loopCounter-1) + ": " + e);
                     statesQueue.add(new StateContainer(new AssemblyState(mola), e));
                 } catch (Exception ignored) {
                     logger.warning(" Minimization failed. No state will be saved.");
+                    //statesQueue.add(new StateContainer(new AssemblyState(mola), -1));
                     //e.printStackTrace()
                 }
             }
@@ -381,8 +384,8 @@ public class ConformationScan {
             logger.info(" Energy after static torsion scan of monomer 2: " + tscanEAfter);
         }
         forceFieldEnergy.getCoordinates(x);
-        double e = forceFieldEnergy.energy(x, false);
-        if (e > 100000){
+        double e = forceFieldEnergy.energy(x, true);
+        if (e > 1000000){
             throw new Exception("Energy too high to minimize.");
         }
         // Set up restraintBond
@@ -398,7 +401,6 @@ public class ConformationScan {
                 null);
         restraintBond.setBondType(restraint);
         //Minimize NONE and DIRECT and MUTUAL
-        forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE);
         Minimize minEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
         minEngine.minimize(1.0, this.maxIter);
         forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT);
