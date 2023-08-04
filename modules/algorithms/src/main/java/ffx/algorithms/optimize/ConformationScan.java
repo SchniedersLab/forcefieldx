@@ -16,6 +16,7 @@ import ffx.potential.parsers.XYZFilter;
 import java.io.File;
 import java.util.AbstractQueue;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.logging.Logger;
 
@@ -100,14 +101,22 @@ public class ConformationScan {
         m1TargetAtoms = new ArrayList<>();
         m2TargetAtoms = new ArrayList<>();
         setTargetAtoms(mola.getAtomArray());
-        statesQueue = MinMaxPriorityQueue.maximumSize(m1TargetAtoms.size() * m2TargetAtoms.size()).create();
+        statesQueue = MinMaxPriorityQueue.maximumSize(m1TargetAtoms.size() * m2TargetAtoms.size())
+                .create();
         if(!minimize) { // If minimization is not performed, then the queue will be in order of the loop
             statesQueue = new ArrayBlockingQueue<>(m1TargetAtoms.size() * m2TargetAtoms.size() + 1);
         }
     }
 
     public void scan(){
-        minimizeEachMolecule(minimize);
+        int status = minimizeEachMolecule(minimize);
+        if(status == -1){
+            logger.info("Minimization of monomers failed. Attempting again.");
+            if(minimizeEachMolecule(minimize) == -1){
+                logger.info("Minimization of monomers failed again. Exiting.");
+                return;
+            }
+        }
         double[] zAxis = new double[]{0,0,1};
         // Loop through interactions between the two molecules --> Not necessarily symmetric but close?
         int loopCounter = 1;
@@ -122,21 +131,25 @@ public class ConformationScan {
                 alignMoleculeCOMtoAtomVecWithAxis(m2, b, zAxis, m2Atoms);
                 // Move the second molecule to the perfect h-bond distance
                 double[] hBondVector = new double[]{0, 0, a.getZ() - b.getZ() + hBondDist};
-                for (Atom m2Atom : m2Atoms) {
-                    m2Atom.move(hBondVector);
-                }
+                // Finds and moves to minimial vector
+                hBondVector = minimizeVector(hBondVector, -10, 10);
                 // Minimize the energy of the system subject to a harmonic restraint on the distance
                 // between the two atoms. Keep the state if minimization works.
                 try {
                     mola.update();
                     forceFieldEnergy.getCoordinates(x);
+                    status = 0;
                     if(minimize) {
-                        minimizeSystem(a, b);
+                        status = minimizeSystem(a, b);
                     }
-                    forceFieldEnergy.getCoordinates(x);
-                    double e = forceFieldEnergy.energy(x, true) - totalMonomerMinimizedEnergy;
-                    logger.info("\n Binding energy of trial " + (loopCounter-1) + ": " + e);
-                    statesQueue.add(new StateContainer(new AssemblyState(mola), e));
+                    if(status != -1) {
+                        forceFieldEnergy.getCoordinates(x);
+                        double e = forceFieldEnergy.energy(x, true) - totalMonomerMinimizedEnergy;
+                        logger.info("\n Binding energy of trial " + (loopCounter - 1) + ": " + e);
+                        statesQueue.add(new StateContainer(new AssemblyState(mola), e));
+                    } else {
+                        logger.warning(" Minimization failed. No state will be saved.");
+                    }
                 } catch (Exception ignored) {
                     logger.warning(" Minimization failed. No state will be saved.");
                     //statesQueue.add(new StateContainer(new AssemblyState(mola), -1));
@@ -156,6 +169,7 @@ public class ConformationScan {
         }
         calculateMeanStd();
     }
+
     public void logAllEnergyInformation(){
         logger.info(format(" Minimum energy of monomer 1:                 %12.5f", m1MinEnergy));
         logger.info(format(" Minimum energy of monomer 2:                 %12.5f", m2MinEnergy));
@@ -164,11 +178,15 @@ public class ConformationScan {
         logger.info(format(" Average binding energy:                      %12.5f +- %6.3f", averageEnergy, stdOfEnergies));
         logger.info(format(" Average binding energy (no outlier):         %12.5f +- %6.3f", averageEnergyNoOutlier, stdOfEnergiesNoOutlier));
     }
-    public void writeStructuresToXYZ(File outputFile){
+    public boolean writeStructuresToXYZ(File outputFile){
         XYZFilter xyzFilter = new XYZFilter(outputFile, mola, mola.getForceField(), mola.getForceField().getProperties());
         logger.info("\n Writing structures to " + outputFile.getAbsolutePath());
         int count = 1;
         StateContainer[] states = statesQueue.toArray(new StateContainer[0]);
+        if(states.length == 0){
+            logger.warning(" No states were saved. No structures will be written.");
+            return false;
+        }
         for(StateContainer s: states){
             AssemblyState state = s.getState();
             double energy = s.getEnergy();
@@ -177,6 +195,7 @@ public class ConformationScan {
             xyzFilter.writeFile(outputFile, count != 1);
             count++;
         }
+        return true;
     }
 
     public static ArrayList<Double> logBindingEnergyCalculation(ConformationScan m1, ConformationScan m2, ConformationScan dimer){
@@ -256,89 +275,120 @@ public class ConformationScan {
     public double getAverageEnergyNoOutlier() {return averageEnergyNoOutlier;}
     public double getStdOfEnergies() {return stdOfEnergies;}
     public double getStdOfEnergiesNoOutlier() {return stdOfEnergiesNoOutlier;}
-
-    private void setTargetAtoms(Atom[] atoms){
-        for(Atom a: atoms){
-            if(a.getAtomType().atomicNumber == 7|| a.getAtomType().atomicNumber == 8
-                    || a.getAtomType().atomicNumber == 9 || a.getAtomType().atomicNumber == 15
-                    || a.getAtomType().atomicNumber == 16 || a.getAtomType().atomicNumber == 17){ // N,O,F,P,S,Cl
-                if(a.getMoleculeNumber() == mola.getMoleculeNumbers()[0]) {
-                    m1TargetAtoms.add(a);
-                } else{
-                    m2TargetAtoms.add(a);
-                }
-
-                // Searching for bonded h's only if we are excluding H's that aren't bonded to electronegative atoms
-                if(excludeH) {
-                    for (Bond b : a.getBonds()) {
-                        int num = b.get1_2(a).getAtomType().atomicNumber;
-                        if (num == 1) {
-                            if (a.getMoleculeNumber() == mola.getMoleculeNumbers()[0]) {
-                                m1TargetAtoms.add(a);
-                            } else {
-                                m2TargetAtoms.add(a);
-                            }
-                        }
-                    }
-                }
+    private double[] minimizeVector(double[] hBondVector, int lowBound, int highBound) {
+        // Grid search from lowBound to highBound w/ 1 ang steps
+        double[] coarsePotentialSurface = new double[(int) Math.abs(highBound - lowBound)];
+        double[] zSearched = new double[(int) Math.abs(highBound - lowBound)]; // Relative to hBondVector[2]
+        double[] coarseVector = new double[3];
+        int minIndex = -1;
+        double minE = Double.MAX_VALUE;
+        coarseVector[2] = hBondVector[2] + lowBound; // Bounds depend on the hBondVector[2] value
+        for(int i = 0; i < Math.abs(highBound - lowBound); i++){
+            zSearched[i] = i == 0 ? lowBound : zSearched[i - 1] + 1;
+            // Move mol2 to new position
+            for(Atom a: m2Atoms){
+                a.move(coarseVector);
             }
-            else if(a.getAtomType().atomicNumber == 1 && !excludeH){ // Add all H's
-                if(a.getMoleculeNumber() == mola.getMoleculeNumbers()[0]) {
-                    m1TargetAtoms.add(a);
-                } else{
-                    m2TargetAtoms.add(a);
-                }
+            // Calculate the energy of the system
+            forceFieldEnergy.getCoordinates(x);
+            coarsePotentialSurface[i] = forceFieldEnergy.energy(x, false);
+            if(coarsePotentialSurface[i] < minE){
+                minE = coarsePotentialSurface[i];
+                minIndex = i;
             }
+            coarseVector[2] = 1;
+        }
+        // Return to hBond position using difference between hBondVector[2] and zSearched[zSearched.length - 1] to start
+        // relative search
+        for(int i = 0; i < m2Atoms.length; i++){
+            m2Atoms[i].move(new double[]{0, 0, hBondVector[2] - zSearched[zSearched.length - 1]});
         }
 
+        // Refine the minimum with binary search
+        double[] refinedVector = new double[3]; // new c position relative to previous c
+        double a = coarsePotentialSurface[minIndex - 1] < coarsePotentialSurface[minIndex + 1] ?
+                zSearched[minIndex - 1] : zSearched[minIndex + 1];
+        double aPotential = Math.min(coarsePotentialSurface[minIndex - 1], coarsePotentialSurface[minIndex + 1]);
+        double b = zSearched[minIndex];
+        double bPotential = coarsePotentialSurface[minIndex];
+        double c = 0; // Store position of previous c
+        double convergence = 1e-5;
+        while(Math.abs(aPotential - bPotential) > convergence){
+            refinedVector[2] = (a + b) / 2 - c;
+            // Move mol2 to new position between a and b
+            for(Atom a1: m2Atoms){
+                a1.move(refinedVector);
+            }
+            // Calculate the energy of the system
+            forceFieldEnergy.getCoordinates(x);
+            double e = forceFieldEnergy.energy(x, false);
+            // Set up next step
+            minE = Math.min(e, minE);
+            if(aPotential > bPotential && e < aPotential){
+                a = (a+b)/2;
+                aPotential = e;
+                c = a;
+            } else if(e < bPotential){
+                b = (a+b)/2;
+                bPotential = e;
+                c = b;
+            } else{
+                // Move to a or b
+                c = (a + b) / 2;
+                if(aPotential < bPotential){
+                    refinedVector[2] = a - c;
+                    for(Atom a1: m2Atoms){
+                        a1.move(refinedVector);
+                    }
+                } else{
+                    refinedVector[2] = b - c;
+                    for(Atom a1: m2Atoms){
+                        a1.move(refinedVector);
+                    }
+                }
+                break; // e > bPotential and e > aPotential --> numerical stability err or P.E.S. is not parabolic
+            }
+        }
+        refinedVector[2] = aPotential < bPotential ? a : b;
+        return refinedVector;
     }
-    private void minimizeEachMolecule(boolean minimize){
+    private int minimizeEachMolecule(boolean minimize){
         // Monomer one energy
+        int statOne = 0;
         Minimize monomerMinEngine;
         for(Atom a: m2Atoms){ a.setUse(false); }
         if(minimize) {
             logger.info("\n --------- Minimize Monomer 1 --------- ");
-            forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE);
             logger.info("\n --------- Monomer 1 Static Torsion Scan --------- ");
-            TorsionSearch m1TorsionSearch = new TorsionSearch(mola, mola.getMoleculeArray()[0], 32, 1);
+            TorsionSearch m1TorsionSearch = new TorsionSearch(mola, m1, 32, 1);
             m1TorsionSearch.staticAnalysis(0, 100);
             if (!m1TorsionSearch.getStates().isEmpty()) {
                 AssemblyState minState = m1TorsionSearch.getStates().get(0);
                 minState.revertState();
             }
             monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
-            monomerMinEngine.minimize(1.0, maxIter).getCoordinates(x);
-            forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT);
-            monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
-            monomerMinEngine.minimize(1.0, maxIter).getCoordinates(x);
-            forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL);
-            monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
             monomerMinEngine.minimize(eps, maxIter).getCoordinates(x);
+            statOne = monomerMinEngine.getStatus();
         }
         logger.info("\n --------- Monomer 1 Energy Breakdown --------- ");
         double monomerEnergy = forceFieldEnergy.energy(x, true);
         for(Atom a: m2Atoms){ a.setUse(true); }
 
         // Monomer two energy
+        int statTwo = 0;
         for(Atom a: m1Atoms){ a.setUse(false); }
         if(minimize) {
             logger.info("\n --------- Minimize Monomer 2 --------- ");
             logger.info("\n --------- Monomer 2 Static Torsion Scan --------- ");
-            TorsionSearch m2TorsionSearch = new TorsionSearch(mola, mola.getMoleculeArray()[1], 32, 1);
+            TorsionSearch m2TorsionSearch = new TorsionSearch(mola, m2, 32, 1);
             m2TorsionSearch.staticAnalysis(0, 100);
             if (!m2TorsionSearch.getStates().isEmpty()) {
                 AssemblyState minState = m2TorsionSearch.getStates().get(0);
                 minState.revertState();
             }
-            forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE);
-            monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
-            monomerMinEngine.minimize(1.0, maxIter).getCoordinates(x);
-            forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT);
-            monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
-            monomerMinEngine.minimize(1.0, maxIter).getCoordinates(x);
-            forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL);
             monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
             monomerMinEngine.minimize(eps, maxIter).getCoordinates(x);
+            statTwo = monomerMinEngine.getStatus();
         }
         logger.info("\n --------- Monomer 2 Energy Breakdown --------- ");
         double monomerEnergy2 = forceFieldEnergy.energy(x, true);
@@ -351,9 +401,15 @@ public class ConformationScan {
         m1MinEnergy = monomerEnergy;
         m2MinEnergy = monomerEnergy2;
         totalMonomerMinimizedEnergy = monomerEnergy + monomerEnergy2;
+        if(statOne != -1 && statTwo != -1){
+            logger.info("\n --------- Monomer Minimization Converged --------- ");
+            return 0;
+        } else{
+            logger.warning("\n --------- Monomer Minimization Did Not Converge --------- ");
+            return -1;
+        }
     }
-    private void minimizeSystem(Atom a, Atom b) throws Exception{
-        forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE);
+    private int minimizeSystem(Atom a, Atom b) throws Exception{
         if(tScan){ // Molecules feel each other
             logger.info("\n --------- Monomer 1 Static Torsion Scan --------- ");
             forceFieldEnergy.getCoordinates(x);
@@ -400,14 +456,7 @@ public class ConformationScan {
                 0.0, 0.0,
                 null);
         restraintBond.setBondType(restraint);
-        //Minimize NONE and DIRECT and MUTUAL
         Minimize minEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
-        minEngine.minimize(1.0, this.maxIter);
-        forceFieldEnergy.getPmeNode().setPolarization(Polarization.DIRECT);
-        minEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
-        minEngine.minimize(1.0, this.maxIter);
-        forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL);
-        minEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
         minEngine.minimize(this.eps, this.maxIter);
         // Delete restraintBond
         a.getBonds().remove(restraintBond);
@@ -416,6 +465,43 @@ public class ConformationScan {
         b.update();
         mola.getBondList().remove(restraintBond);
         mola.update();
+        return minEngine.getStatus();
+    }
+
+    private void setTargetAtoms(Atom[] atoms){
+        for(Atom a: atoms){
+            if(a.getAtomType().atomicNumber == 7|| a.getAtomType().atomicNumber == 8
+                    || a.getAtomType().atomicNumber == 9 || a.getAtomType().atomicNumber == 15
+                    || a.getAtomType().atomicNumber == 16 || a.getAtomType().atomicNumber == 17){ // N,O,F,P,S,Cl
+                if(a.getMoleculeNumber() == mola.getMoleculeNumbers()[0]) {
+                    m1TargetAtoms.add(a);
+                } else{
+                    m2TargetAtoms.add(a);
+                }
+
+                // Searching for bonded h's only if we are excluding H's that aren't bonded to electronegative atoms
+                if(excludeH) {
+                    for (Bond b : a.getBonds()) {
+                        int num = b.get1_2(a).getAtomType().atomicNumber;
+                        if (num == 1) {
+                            if (a.getMoleculeNumber() == mola.getMoleculeNumbers()[0]) {
+                                m1TargetAtoms.add(a);
+                            } else {
+                                m2TargetAtoms.add(a);
+                            }
+                        }
+                    }
+                }
+            }
+            else if(a.getAtomType().atomicNumber == 1 && !excludeH){ // Add all H's
+                if(a.getMoleculeNumber() == mola.getMoleculeNumbers()[0]) {
+                    m1TargetAtoms.add(a);
+                } else{
+                    m2TargetAtoms.add(a);
+                }
+            }
+        }
+
     }
     private void calculateMeanStd(){
         ArrayList<Double> energies = this.getEnergies();

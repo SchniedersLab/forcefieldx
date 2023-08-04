@@ -165,6 +165,8 @@ class CoformerBindingSearch extends AlgorithmsScript {
      */
     @Override
     CoformerBindingSearch run() {
+        System.setProperty("direct-scf-fallback", "true")
+
         // Init the context and bind variables.
         if (!init()) {
             return this
@@ -173,7 +175,7 @@ class CoformerBindingSearch extends AlgorithmsScript {
         // Cat the key files together and set the -Dkey property to be the new file we created
         // Write default gk options to the key file
         // Only does a simple search for the patch file so it needs to be named accordingly with the .xyz
-        setKeyAndPatchFilesProperly(gk, gkSolventDielec, filenames)
+        setKeyAndPatchFiles(gk, gkSolventDielec, filenames)
 
         // Check the size of the filenames list
         if (!(filenames.size() == 1 || filenames.size() == 2)) {
@@ -210,10 +212,14 @@ class CoformerBindingSearch extends AlgorithmsScript {
                 )
                 monomerOneScan.scan()
                 logger.info("\n Molecule one (" + FilenameUtils.removeExtension(filenames.get(0)) + ") dimer scan energy information:")
-                monomerOneScan.logAllEnergyInformation()
                 String molOneDimerScanFilename = FilenameUtils.removeExtension(filenames.get(0)) + ".arc"
                 File molOneDimerScanFile = new File(molOneDimerScanFilename)
-                monomerOneScan.writeStructuresToXYZ(molOneDimerScanFile)
+                if(!monomerOneScan.writeStructuresToXYZ(molOneDimerScanFile)){
+                    logger.warning(" No structures saved from scan.")
+                    monomerOneScan = null;
+                } else{
+                    monomerOneScan.logAllEnergyInformation()
+                }
             } else{
                 logger.info(" Skipping monomer one scan.")
             }
@@ -236,10 +242,14 @@ class CoformerBindingSearch extends AlgorithmsScript {
                 )
                 monomerTwoScan.scan()
                 logger.info("\n Molecule two (" + FilenameUtils.removeExtension(filenames.get(1)) + ") dimer scan energy information:")
-                monomerTwoScan.logAllEnergyInformation()
                 String molTwoDimerScanFilename = FilenameUtils.removeExtension(filenames.get(1)) + ".arc"
                 File molTwoDimerScanFile = new File(molTwoDimerScanFilename)
-                monomerTwoScan.writeStructuresToXYZ(molTwoDimerScanFile)
+                if(!monomerTwoScan.writeStructuresToXYZ(molTwoDimerScanFile)){
+                    logger.warning(" No structures saved from scan.")
+                    monomerTwoScan = null;
+                } else {
+                    monomerTwoScan.logAllEnergyInformation()
+                }
             } else if (!skipMoleculeTwo && filenames.size() == 1) {
                 logger.info(" Only one file provided, skipping second homodimer scan.")
             }
@@ -269,9 +279,12 @@ class CoformerBindingSearch extends AlgorithmsScript {
             dimerScan.scan()
             logger.info("\n Molecule one (" + FilenameUtils.removeExtension(filenames.get(0)) +
                     ") and two (" + FilenameUtils.removeExtension(filenames.get(1)) + ") dimer scan energy information:")
-            dimerScan.logAllEnergyInformation()
             File coformerScanFile = new File("coformerScan.arc")
-            dimerScan.writeStructuresToXYZ(coformerScanFile)
+            if(!dimerScan.writeStructuresToXYZ(coformerScanFile)){
+                logger.warning(" No structures saved from scan.")
+            } else{
+                dimerScan.logAllEnergyInformation()
+            }
 
             if(monomerOneScan != null && monomerTwoScan != null){
                 logger.info("\n Molecule one (" + FilenameUtils.removeExtension(filenames.get(0)) + ") dimer scan energy information:")
@@ -284,7 +297,7 @@ class CoformerBindingSearch extends AlgorithmsScript {
                 ConformationScan.logBindingEnergyCalculation(monomerOneScan, monomerTwoScan, dimerScan)
             }
         }
-        else{
+        else {
             logger.info(" Only one file provided, skipping coformer scan.")
         }
 
@@ -307,7 +320,7 @@ class CoformerBindingSearch extends AlgorithmsScript {
         return mainMonomerAssembly
     }
 
-    static void setKeyAndPatchFilesProperly(boolean gk, double gkSolventDielec, List<String> filenames) {
+    static void setKeyAndPatchFiles(boolean gk, double gkSolventDielec, List<String> filenames) {
         String key = "coformerScan.key"
         String patch = "coformerScan.patch"
         // Create the key file
