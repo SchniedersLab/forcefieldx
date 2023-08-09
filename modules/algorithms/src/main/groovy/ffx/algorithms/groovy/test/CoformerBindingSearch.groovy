@@ -50,15 +50,15 @@ import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
 /**
- * GenerateCrystalSeeds is a Groovy script that generates a set of molecular orientations in vacuum and
+ * CoformerBindingSearch is a Groovy script that generates a set of molecular orientations in vacuum and
  * calculates the energy of each conformation.
  * <br>
  * Usage:
  * <br>
- * ffxc test.GenerateCrystalSeeds [options] &lt;filename&gt;
+ * ffxc test.CoformerBindingSearch [options] &lt;filename&gt;
  */
 @Command(description = " Calculates interaction energies of different molecular orientations and saves low energy orientations.",
-        name = "test.GenerateCrystalSeeds")
+        name = "test.CoformerBindingSearch")
 class CoformerBindingSearch extends AlgorithmsScript {
 
     /**
@@ -76,23 +76,9 @@ class CoformerBindingSearch extends AlgorithmsScript {
     int maxIter = 1000
 
     /**
-     * --hBondDist
-     */
-    @Option(names = ['--hBondDist', '--hbd'], paramLabel = '2.0',
-            description = 'Initial h-bond distance in angstroms.')
-    double hBondDist = 2.0
-
-    /**
-     * --flatBottomRadius
-     */
-    @Option(names = ['--flatBottomRadius', "--fbr"], paramLabel = '0.5',
-            description = 'Radius of flat bottom bond restraint potential in angstroms.')
-    double flatBottomRadius = 0.5
-
-    /**
      * --gkSoluteDielectric
      */
-    @Option(names = ['--gkSolventDielectric'], paramLabel = '78.4',
+    @Option(names = ['--solventDielectric'], paramLabel = '78.4',
             description = 'Sets the gk solvent dielectric constant.')
     double gkSolventDielec = 78.4
 
@@ -104,16 +90,16 @@ class CoformerBindingSearch extends AlgorithmsScript {
     int skipHomodimerNumber = -1
 
     /**
-     * --intermediateTorsionScan
+     * --torsionScan
      */
-    @Option(names = ['--intermediateTorsionScan', "--its"], paramLabel = 'false', defaultValue = 'false',
+    @Option(names = ['--torsionScan', "--tscan"], paramLabel = 'false', defaultValue = 'false',
             description = 'During sampling, statically scan torsions after direct minimization to find the lowest energy conformation.')
     private boolean intermediateTorsionScan = false
 
     /**
      * --noMinimize
      */
-    @Option(names = ['--noMinimize'], paramLabel = 'false', defaultValue = 'false',
+    @Option(names = ['--noMinimize', '--noMin'], paramLabel = 'false', defaultValue = 'false',
             description = 'Don\'t minimize or torsion scan after conformations are generated. Useful for testing.')
     private boolean noMinimize = false
 
@@ -204,20 +190,18 @@ class CoformerBindingSearch extends AlgorithmsScript {
                         molecules[1],
                         eps,
                         maxIter,
-                        hBondDist,
-                        flatBottomRadius,
                         intermediateTorsionScan,
                         excludeH,
                         minimize
                 )
                 monomerOneScan.scan()
-                logger.info("\n Molecule one (" + FilenameUtils.removeExtension(filenames.get(0)) + ") dimer scan energy information:")
                 String molOneDimerScanFilename = FilenameUtils.removeExtension(filenames.get(0)) + ".arc"
                 File molOneDimerScanFile = new File(molOneDimerScanFilename)
                 if(!monomerOneScan.writeStructuresToXYZ(molOneDimerScanFile)){
                     logger.warning(" No structures saved from scan.")
                     monomerOneScan = null;
                 } else{
+                    logger.info("\n Molecule one (" + FilenameUtils.removeExtension(filenames.get(0)) + ") dimer scan energy information:")
                     monomerOneScan.logAllEnergyInformation()
                 }
             } else{
@@ -234,20 +218,18 @@ class CoformerBindingSearch extends AlgorithmsScript {
                         molecules[1],
                         eps,
                         maxIter,
-                        hBondDist,
-                        flatBottomRadius,
                         intermediateTorsionScan,
                         excludeH,
                         minimize
                 )
                 monomerTwoScan.scan()
-                logger.info("\n Molecule two (" + FilenameUtils.removeExtension(filenames.get(1)) + ") dimer scan energy information:")
                 String molTwoDimerScanFilename = FilenameUtils.removeExtension(filenames.get(1)) + ".arc"
                 File molTwoDimerScanFile = new File(molTwoDimerScanFilename)
                 if(!monomerTwoScan.writeStructuresToXYZ(molTwoDimerScanFile)){
                     logger.warning(" No structures saved from scan.")
                     monomerTwoScan = null;
                 } else {
+                    logger.info("\n Molecule two (" + FilenameUtils.removeExtension(filenames.get(1)) + ") dimer scan energy information:")
                     monomerTwoScan.logAllEnergyInformation()
                 }
             } else if (!skipMoleculeTwo && filenames.size() == 1) {
@@ -270,19 +252,17 @@ class CoformerBindingSearch extends AlgorithmsScript {
                     mol2,
                     eps,
                     maxIter,
-                    hBondDist,
-                    flatBottomRadius,
                     intermediateTorsionScan,
                     excludeH,
                     minimize
             )
             dimerScan.scan()
-            logger.info("\n Molecule one (" + FilenameUtils.removeExtension(filenames.get(0)) +
-                    ") and two (" + FilenameUtils.removeExtension(filenames.get(1)) + ") dimer scan energy information:")
             File coformerScanFile = new File("coformerScan.arc")
             if(!dimerScan.writeStructuresToXYZ(coformerScanFile)){
                 logger.warning(" No structures saved from scan.")
             } else{
+                logger.info("\n Molecule one (" + FilenameUtils.removeExtension(filenames.get(0)) +
+                        ") and two (" + FilenameUtils.removeExtension(filenames.get(1)) + ") dimer scan energy information:")
                 dimerScan.logAllEnergyInformation()
             }
 
