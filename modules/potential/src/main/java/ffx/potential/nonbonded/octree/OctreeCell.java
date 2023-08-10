@@ -84,6 +84,7 @@ public class OctreeCell {
 
   /** Multipole array, length 10 */
   private double[] multipole = new double[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  private double[] tracelessQDP = new double[] {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
   public OctreeCell(int nCritical) {
 
@@ -98,6 +99,12 @@ public class OctreeCell {
   public void addToMultipole(double[] calculatedMultipole) {
     for (int i = 0; i < 10; i++) {
       this.multipole[i] += calculatedMultipole[i];
+    }
+  }
+
+  public void addToTracelessQuadrapole(double[] calculatedTracelessQDP) {
+    for (int i = 0; i < 9; i++) {
+      this.tracelessQDP[i] += calculatedTracelessQDP[i];
     }
   }
 
@@ -160,6 +167,10 @@ public class OctreeCell {
 
   public double[] getMultipole() {
     return this.multipole;
+  }
+
+  public double[] getTracelessQDP() {
+    return this.tracelessQDP;
   }
 
   public int getNumLeaves() {

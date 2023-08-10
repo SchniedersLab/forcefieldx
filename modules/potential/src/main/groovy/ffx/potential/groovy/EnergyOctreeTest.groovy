@@ -319,7 +319,7 @@ class EnergyOctreeTest extends PotentialScript {
 
         // Calculate the Potential at each atom
         octree.evalPotential()
-        octree.printPhi()
+//        octree.printPhi()
 /*
         if (moments) {
             logger.info("** Moments being calculated")

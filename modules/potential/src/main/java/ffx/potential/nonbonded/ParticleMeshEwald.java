@@ -2716,12 +2716,11 @@ public class ParticleMeshEwald implements LambdaInterface {
       zyqdp += zcm[k] * ycm[k] * ci + zcm[k] * (diy + uiy) + ycm[k] * (diz + uiz);
       zzqdp += zcm[k] * zcm[k] * ci + 2.0 * zcm[k] * (diz + uiz);
 //      logger.info(format("Multipole for atom %d: %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f",
-//              i,netchg,xdpl,ydpl,zdpl,xxqdp,xyqdp,xzqdp,yxqdp,yyqdp,yzqdp,zxqdp,zyqdp,zzqdp));
-      logger.info(format("Multipole for atom %d: %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f",
-              i,netchg,xdpl,ydpl,zdpl,xxqdp,yyqdp,zzqdp,xyqdp,xzqdp,yzqdp));
+//              i,netchg,xdpl,ydpl,zdpl,xxqdp,yyqdp,zzqdp,xyqdp,xzqdp,yzqdp));
       k++;
     }
-
+    logger.info(format("Total multipole: %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f",
+            netchg,xdpl,ydpl,zdpl,xxqdp,yyqdp,zzqdp,xyqdp,xzqdp,yzqdp));
     // Convert the quadrupole from traced to traceless form.
     var qave = (xxqdp + yyqdp + zzqdp) / 3.0;
     xxqdp = 1.5 * (xxqdp - qave);
@@ -2754,6 +2753,8 @@ public class ParticleMeshEwald implements LambdaInterface {
       zyqdp += qiyz;
       zzqdp += qizz;
     }
+    logger.info(format("Total traceless quadrapole multipole: %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f %4.3f",
+            netchg,xdpl,ydpl,zdpl,xxqdp,yyqdp,zzqdp,xyqdp,xzqdp,yzqdp));
 
     // Convert dipole to Debye and quadrupole to Buckingham.
     xdpl = xdpl * ELEC_ANG_TO_DEBYE;
