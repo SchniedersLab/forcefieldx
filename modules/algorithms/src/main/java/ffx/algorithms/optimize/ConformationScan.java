@@ -105,14 +105,7 @@ public class ConformationScan {
     }
 
     public void scan(){
-        int status = minimizeEachMolecule(minimize);
-        if(status == -1){
-            logger.info("Minimization of monomers failed. Attempting again.");
-            if(minimizeEachMolecule(minimize) == -1){
-                logger.info("Minimization of monomers failed again. Exiting.");
-                return;
-            }
-        }
+        printMonomerEnergies();
         double[] zAxis = new double[]{0,0,1};
         // Loop through interactions between the two molecules --> Not necessarily symmetric but close?
         int loopCounter = 1;
@@ -141,7 +134,7 @@ public class ConformationScan {
                 try {
                     mola.update();
                     forceFieldEnergy.getCoordinates(x);
-                    status = 0;
+                    int status = 0;
                     if(minimize) {
                         status = minimizeSystem(a, b);
                     }
@@ -152,11 +145,11 @@ public class ConformationScan {
                         statesQueue.add(new StateContainer(new AssemblyState(mola), e));
                     } else {
                         logger.warning(" Minimization failed. No state will be saved.");
-                        statesQueue.add(new StateContainer(new AssemblyState(mola), -1));
+                        //statesQueue.add(new StateContainer(new AssemblyState(mola), -1)); Use for debugging
                     }
                 } catch (Exception ignored) {
                     logger.warning(" Minimization failed. No state will be saved.");
-                    statesQueue.add(new StateContainer(new AssemblyState(mola), -1));
+                    //statesQueue.add(new StateContainer(new AssemblyState(mola), -1)); Use for debugging
                     //e.printStackTrace()
                 }
             }
@@ -384,48 +377,14 @@ public class ConformationScan {
         //logger.info("Refined vector (relative to hbond): " + Arrays.toString(refinedVector));
         return refinedVector; // relative to hbond
     }
-    private int minimizeEachMolecule(boolean minimize){
-        // Monomer one energy
-        int statOne = 0;
-        Minimize monomerMinEngine;
+    private void printMonomerEnergies(){
         for(Atom a: m2Atoms){ a.setUse(false); }
-        if(minimize) {
-            logger.info("\n --------- Minimize Monomer 1 --------- ");
-            if(tScan) {
-                logger.info("\n --------- Monomer 1 Static Torsion Scan --------- ");
-                TorsionSearch m1TorsionSearch = new TorsionSearch(mola, m1, 32, 1);
-                m1TorsionSearch.staticAnalysis(0, 100);
-                if (!m1TorsionSearch.getStates().isEmpty()) {
-                    AssemblyState minState = m1TorsionSearch.getStates().get(0);
-                    minState.revertState();
-                }
-            }
-            monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
-            monomerMinEngine.minimize(eps, maxIter).getCoordinates(x);
-            statOne = monomerMinEngine.getStatus();
-        }
         logger.info("\n --------- Monomer 1 Energy Breakdown --------- ");
         double monomerEnergy = forceFieldEnergy.energy(x, true);
         for(Atom a: m2Atoms){ a.setUse(true); }
 
         // Monomer two energy
-        int statTwo = 0;
         for(Atom a: m1Atoms){ a.setUse(false); }
-        if(minimize) {
-            logger.info("\n --------- Minimize Monomer 2 --------- ");
-            if(tScan) {
-                logger.info("\n --------- Monomer 2 Static Torsion Scan --------- ");
-                TorsionSearch m2TorsionSearch = new TorsionSearch(mola, m2, 32, 1);
-                m2TorsionSearch.staticAnalysis(0, 100);
-                if (!m2TorsionSearch.getStates().isEmpty()) {
-                    AssemblyState minState = m2TorsionSearch.getStates().get(0);
-                    minState.revertState();
-                }
-            }
-            monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
-            monomerMinEngine.minimize(eps, maxIter).getCoordinates(x);
-            statTwo = monomerMinEngine.getStatus();
-        }
         logger.info("\n --------- Monomer 2 Energy Breakdown --------- ");
         double monomerEnergy2 = forceFieldEnergy.energy(x, true);
         for(Atom a: m1Atoms){ a.setUse(true); }
@@ -437,15 +396,6 @@ public class ConformationScan {
         m1MinEnergy = monomerEnergy;
         m2MinEnergy = monomerEnergy2;
         totalMonomerMinimizedEnergy = monomerEnergy + monomerEnergy2;
-        if(statOne != -1 && statTwo != -1){
-            logger.info("\n --------- Monomer Minimization Converged --------- ");
-            return 0;
-        } else{
-            logger.warning("\n --------- Monomer Minimization Did Not Converge --------- ");
-            // Add state to statesQueue
-            statesQueue.add(new StateContainer(new AssemblyState(mola), totalMonomerMinimizedEnergy));
-            return -1;
-        }
     }
     private int minimizeSystem(Atom a, Atom b) throws Exception{
         if(tScan){ // Molecules feel each other
