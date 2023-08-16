@@ -37,12 +37,12 @@
 // ******************************************************************************
 package ffx.crystal;
 
-import static java.lang.String.format;
-
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 /**
  * The ReplicatesCrystal class extends Crystal to generate additional symmetry operators needed to
@@ -55,44 +55,50 @@ import java.util.logging.Logger;
  * consistent application of the minimum image convention. This is ensured by increasing l, m and/or
  * n until a sphere of necessary radius fits entirely inside the ReplicatedCrystal.
  * <br>
+ *
  * @author Michael J. Schnieders
  * @see Crystal
  * @since 1.0
  */
 public class ReplicatesCrystal extends Crystal {
 
-  /** The logger. */
+  /**
+   * The logger.
+   */
   private static final Logger logger = Logger.getLogger(ReplicatesCrystal.class.getName());
-  /** The base unit cell for the system being simulated. */
+  /**
+   * The base unit cell for the system being simulated.
+   */
   private final Crystal unitCell;
-  /** The cut-off distance in Angstroms. */
+  /**
+   * The cut-off distance in Angstroms.
+   */
   private final double cutOff;
-  /** The number of replicates along the a-axis. */
+  /**
+   * The number of replicates along the a-axis.
+   */
   private int l;
-  /** The number of replicates along the b-axis. */
+  /**
+   * The number of replicates along the b-axis.
+   */
   private int m;
-  /** The number of replicates along the c-axis. */
+  /**
+   * The number of replicates along the c-axis.
+   */
   private int n;
 
   /**
    * Constructor for a ReplicatesCrystal.
    *
    * @param unitCell The base unit cell.
-   * @param l Number of replicates along the a-axis.
-   * @param m Number of replicates along the b-axis.
-   * @param n Number of replicates along the c-axis.
-   * @param cutOff2 Twice the cut-off distance.
+   * @param l        Number of replicates along the a-axis.
+   * @param m        Number of replicates along the b-axis.
+   * @param n        Number of replicates along the c-axis.
+   * @param cutOff2  Twice the cut-off distance.
    * @since 1.0
    */
   public ReplicatesCrystal(Crystal unitCell, int l, int m, int n, double cutOff2) {
-    super(
-        unitCell.a * l,
-        unitCell.b * m,
-        unitCell.c * n,
-        unitCell.alpha,
-        unitCell.beta,
-        unitCell.gamma,
-        unitCell.spaceGroup.shortName);
+    super(unitCell.a * l, unitCell.b * m, unitCell.c * n, unitCell.alpha, unitCell.beta, unitCell.gamma, unitCell.spaceGroup.shortName);
     this.unitCell = unitCell;
 
     assert (l >= 1);
@@ -112,17 +118,23 @@ public class ReplicatesCrystal extends Crystal {
     updateReplicateOperators();
   }
 
-  /** The number of replicates along the a-axis. */
+  /**
+   * The number of replicates along the a-axis.
+   */
   public int getL() {
     return l;
   }
 
-  /** The number of replicates along the b-axis. */
+  /**
+   * The number of replicates along the b-axis.
+   */
   public int getM() {
     return m;
   }
 
-  /** The number of replicates along the c-axis. */
+  /**
+   * The number of replicates along the c-axis.
+   */
   public int getN() {
     return n;
   }
@@ -133,7 +145,7 @@ public class ReplicatesCrystal extends Crystal {
    * is returned.
    *
    * @param unitCell The unit cell of the crystal.
-   * @param cutOff2 Two times the cutoff distance.
+   * @param cutOff2  Two times the cutoff distance.
    * @return A Crystal or ReplicatesCrystal large enough to satisfy the minimum image convention.
    */
   public static Crystal replicatesCrystalFactory(Crystal unitCell, double cutOff2) {
@@ -147,11 +159,10 @@ public class ReplicatesCrystal extends Crystal {
    * is returned.
    *
    * @param unitCell The unit cell of the crystal.
-   * @param cutOff2 Two times the cutoff distance.
+   * @param cutOff2  Two times the cutoff distance.
    * @return A Crystal or ReplicatesCrystal large enough to satisfy the minimum image convention.
    */
-  public static Crystal replicatesCrystalFactory(Crystal unitCell, double cutOff2,
-      int[] replicatesVector) {
+  public static Crystal replicatesCrystalFactory(Crystal unitCell, double cutOff2, int[] replicatesVector) {
 
     if (unitCell == null || unitCell.aperiodic()) {
       replicatesVector[0] = 0;
@@ -176,17 +187,11 @@ public class ReplicatesCrystal extends Crystal {
       n++;
     }
 
-    if (l * m * n > 1) {
-      replicatesVector[0] = l;
-      replicatesVector[1] = m;
-      replicatesVector[2] = n;
-      return new ReplicatesCrystal(unitCell, l, m, n, cutOff2);
-    } else {
-      replicatesVector[0] = 0;
-      replicatesVector[1] = 0;
-      replicatesVector[2] = 0;
-      return unitCell;
-    }
+    replicatesVector[0] = l;
+    replicatesVector[1] = m;
+    replicatesVector[2] = n;
+    return new ReplicatesCrystal(unitCell, l, m, n, cutOff2);
+
   }
 
   /**
@@ -211,7 +216,7 @@ public class ReplicatesCrystal extends Crystal {
    * Change the cell vectors and volume for the base unit cell, which is followed by an update of the
    * ReplicateCrystal parameters and possibly the number of replicated cells.
    *
-   * @param cellVectors 3x3 matrix of cell vectors.
+   * @param cellVectors    3x3 matrix of cell vectors.
    * @param targetAUVolume the target volume for the new cell Vectors.
    * @return True if the perturbation of cell vectors succeeds.
    */
@@ -229,17 +234,16 @@ public class ReplicatesCrystal extends Crystal {
    * Change the cell parameters for the base unit cell, which is followed by an update of the
    * ReplicateCrystal parameters and possibly the number of replicated cells.
    *
-   * @param a The length of the a-axis for the base unit cell (in Angstroms).
-   * @param b The length of the b-axis for the base unit cell (in Angstroms).
-   * @param c The length of the c-axis for the base unit cell (in Angstroms).
+   * @param a     The length of the a-axis for the base unit cell (in Angstroms).
+   * @param b     The length of the b-axis for the base unit cell (in Angstroms).
+   * @param c     The length of the c-axis for the base unit cell (in Angstroms).
    * @param alpha The angle between the b-axis and c-axis (in Degrees).
-   * @param beta The angle between the a-axis and c-axis (in Degrees).
+   * @param beta  The angle between the a-axis and c-axis (in Degrees).
    * @param gamma The angle between the a-axis and b-axis (in Degrees).
    * @return True is returned if the unit cell and replicates cell are updated successfully.
    */
   @Override
-  public boolean changeUnitCellParameters(
-      double a, double b, double c, double alpha, double beta, double gamma) {
+  public boolean changeUnitCellParameters(double a, double b, double c, double alpha, double beta, double gamma) {
 
     // First, update the parameters of the unit cell.
     if (unitCell.changeUnitCellParameters(a, b, c, alpha, beta, gamma)) {
@@ -254,18 +258,17 @@ public class ReplicatesCrystal extends Crystal {
    * Change the cell parameters for the base unit cell, which is followed by an update of the
    * ReplicateCrystal parameters and possibly the number of replicated cells.
    *
-   * @param a The length of the a-axis for the base unit cell (in Angstroms).
-   * @param b The length of the b-axis for the base unit cell (in Angstroms).
-   * @param c The length of the c-axis for the base unit cell (in Angstroms).
-   * @param alpha The angle between the b-axis and c-axis (in Degrees).
-   * @param beta The angle between the a-axis and c-axis (in Degrees).
-   * @param gamma The angle between the a-axis and b-axis (in Degrees).
+   * @param a              The length of the a-axis for the base unit cell (in Angstroms).
+   * @param b              The length of the b-axis for the base unit cell (in Angstroms).
+   * @param c              The length of the c-axis for the base unit cell (in Angstroms).
+   * @param alpha          The angle between the b-axis and c-axis (in Degrees).
+   * @param beta           The angle between the a-axis and c-axis (in Degrees).
+   * @param gamma          The angle between the a-axis and b-axis (in Degrees).
    * @param targetAUVolume the target volume for the new cell Vectors.
    * @return True is returned if the unit cell and replicates cell are updated successfully.
    */
   @Override
-  public boolean changeUnitCellParametersAndVolume(
-      double a, double b, double c, double alpha, double beta, double gamma, double targetAUVolume) {
+  public boolean changeUnitCellParametersAndVolume(double a, double b, double c, double alpha, double beta, double gamma, double targetAUVolume) {
 
     // First, update the parameters of the unit cell.
     if (unitCell.changeUnitCellParametersAndVolume(a, b, c, alpha, beta, gamma, targetAUVolume)) {
@@ -277,7 +280,9 @@ public class ReplicatesCrystal extends Crystal {
   }
 
 
-  /** Two crystals are equal only if all unit cell parameters are exactly the same. */
+  /**
+   * Two crystals are equal only if all unit cell parameters are exactly the same.
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -287,24 +292,20 @@ public class ReplicatesCrystal extends Crystal {
       return false;
     }
     ReplicatesCrystal replicatesCrystal = (ReplicatesCrystal) o;
-    return (Objects.equals(unitCell, replicatesCrystal.unitCell)
-        && a == replicatesCrystal.a
-        && b == replicatesCrystal.b
-        && c == replicatesCrystal.c
-        && alpha == replicatesCrystal.alpha
-        && beta == replicatesCrystal.beta
-        && gamma == replicatesCrystal.gamma
-        && spaceGroup.number == replicatesCrystal.spaceGroup.number
-        && spaceGroup.symOps.size() == replicatesCrystal.spaceGroup.symOps.size());
+    return (Objects.equals(unitCell, replicatesCrystal.unitCell) && a == replicatesCrystal.a && b == replicatesCrystal.b && c == replicatesCrystal.c && alpha == replicatesCrystal.alpha && beta == replicatesCrystal.beta && gamma == replicatesCrystal.gamma && spaceGroup.number == replicatesCrystal.spaceGroup.number && spaceGroup.symOps.size() == replicatesCrystal.spaceGroup.symOps.size());
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean getCheckRestrictions() {
     return unitCell.getCheckRestrictions();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setCheckRestrictions(boolean checkRestrictions) {
     this.checkRestrictions = checkRestrictions;
@@ -337,7 +338,7 @@ public class ReplicatesCrystal extends Crystal {
    * Update the ReplicatesCrystal using random parameters with the target density.
    *
    * @param density Target density.
-   * @param mass Mass of the ReplicatesCrystal.
+   * @param mass    Mass of the ReplicatesCrystal.
    */
   public boolean randomParameters(double density, double mass) {
     boolean succeed = unitCell.randomParameters(density, mass);
@@ -351,7 +352,7 @@ public class ReplicatesCrystal extends Crystal {
    * Update the ReplicatesCrystal dimensions to the target density.
    *
    * @param density Target density.
-   * @param mass Mass of the ReplicatesCrystal.
+   * @param mass    Mass of the ReplicatesCrystal.
    */
   public void setDensity(double density, double mass) {
     unitCell.setDensity(density, mass);
@@ -366,17 +367,28 @@ public class ReplicatesCrystal extends Crystal {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder(unitCell.toString());
-
-    sb.append("\n\n Replicates Cell\n");
-    sb.append(format("  Dimension:                    (%3d x%3d x%3d)\n", l, m, n));
-    sb.append(format("  A-axis:                              %8.3f\n", a));
-    sb.append(format("  B-axis:                              %8.3f\n", b));
-    sb.append(format("  C-axis:                              %8.3f\n", c));
-    sb.append(format("  Alpha:                               %8.3f\n", alpha));
-    sb.append(format("  Beta:                                %8.3f\n", beta));
-    sb.append(format("  Gamma:                               %8.3f\n", gamma));
-    sb.append(format("  Total Symmetry Operators:            %8d", spaceGroup.getNumberOfSymOps()));
+    // Only log the replicates cell if there is more than one replicate.
+    if (l * m * n > 1) {
+      sb.append("\n\n Replicates Cell\n");
+      sb.append(format("  Dimension:                    (%3d x%3d x%3d)\n", l, m, n));
+      sb.append(format("  A-axis:                              %8.3f\n", a));
+      sb.append(format("  B-axis:                              %8.3f\n", b));
+      sb.append(format("  C-axis:                              %8.3f\n", c));
+      sb.append(format("  Alpha:                               %8.3f\n", alpha));
+      sb.append(format("  Beta:                                %8.3f\n", beta));
+      sb.append(format("  Gamma:                               %8.3f\n", gamma));
+      sb.append(format("  Total Symmetry Operators:            %8d", spaceGroup.getNumberOfSymOps()));
+    }
     return sb.toString();
+  }
+
+  /**
+   * A String containing the replicated unit cell parameters.
+   *
+   * @return A string with the unit cell parameters.
+   */
+  public String toShortString() {
+    return format("%6.2f %6.2f %6.2f %6.2f %6.2f %6.2f (%3d x%3d x%3d) ", a, b, c, alpha, beta, gamma, l, m, n);
   }
 
   private boolean updateReplicatesDimensions() {
@@ -394,13 +406,7 @@ public class ReplicatesCrystal extends Crystal {
     while (unitCell.interfacialRadiusC * nn < cutOff) {
       nn++;
     }
-    if (super.changeUnitCellParameters(
-        unitCell.a * ll,
-        unitCell.b * mm,
-        unitCell.c * nn,
-        unitCell.alpha,
-        unitCell.beta,
-        unitCell.gamma)) {
+    if (super.changeUnitCellParameters(unitCell.a * ll, unitCell.b * mm, unitCell.c * nn, unitCell.alpha, unitCell.beta, unitCell.gamma)) {
       l = ll;
       m = mm;
       n = nn;
@@ -440,7 +446,7 @@ public class ReplicatesCrystal extends Crystal {
             repTrans[0] = (symOp.tr[0] + i) * dX;
             repTrans[1] = (symOp.tr[1] + j) * dY;
             repTrans[2] = (symOp.tr[2] + k) * dZ;
-            SymOp repSymOp = new SymOp(symOp.rot, repTrans, new int[] {i, j, k});
+            SymOp repSymOp = new SymOp(symOp.rot, repTrans, new int[]{i, j, k});
             symOps.add(repSymOp);
             if (logger.isLoggable(Level.FINEST)) {
               logger.finest(format("\n SymOp %d (%2d,%2d,%2d): %d", symOpCount, i, j, k, ii));

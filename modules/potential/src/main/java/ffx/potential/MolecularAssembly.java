@@ -37,6 +37,7 @@
 // ******************************************************************************
 package ffx.potential;
 
+import static ffx.crystal.ReplicatesCrystal.replicatesCrystalFactory;
 import static ffx.crystal.SymOp.applyCartesianSymOp;
 import static ffx.numerics.math.DoubleMath.length;
 import static ffx.numerics.math.DoubleMath.sub;
@@ -44,6 +45,7 @@ import static java.lang.String.format;
 
 import edu.rit.pj.ParallelTeam;
 import ffx.crystal.Crystal;
+import ffx.crystal.ReplicatesCrystal;
 import ffx.crystal.SymOp;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
@@ -293,13 +295,12 @@ public class MolecularAssembly extends MSGroup {
    */
   public void applyRandomDensity(double ucDensity) {
     if (ucDensity > 0) {
-      logger.info(
-          format("\n Applying random unit cell axes with target density of %6.3f\n", ucDensity));
-      // The replicates crystal is needed here (not the unit cell).
+      logger.info(format("\n Applying random unit cell axes with target density %6.3f (g/cc).", ucDensity));
       Crystal crystal = getCrystal();
       if (!crystal.aperiodic()) {
         double mass = getMass();
         crystal.randomParameters(ucDensity, mass);
+        logger.info(crystal.toString());
         potentialEnergy.setCrystal(crystal);
       } else {
         logger.fine(String.format(" Potential %s is an aperiodic system!", potentialEnergy));
