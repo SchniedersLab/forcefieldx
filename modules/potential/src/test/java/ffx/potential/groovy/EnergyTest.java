@@ -830,7 +830,7 @@ public class EnergyTest extends PotentialTest {
                 134421,
                 -238.72700000, // Polarization
                 134421,
-		-3552.5853554, // Solvation with cavnone, implicit solv radii. Solv with small molecule radii: -3308.29464032
+		-3308.29464032,
                 136503,
                 false
             },
@@ -878,7 +878,7 @@ public class EnergyTest extends PotentialTest {
                 394854,
                 -242.15918841434635, // -241.77223440 Polarization
                 394854,
-		-999.3073158013451, // -1166.1124974225615 with small molecule solute radii, -1167.34034977 Solvation
+		-1166.1124974225615, // Solvation (total)
                 398278,
                 false
             }
