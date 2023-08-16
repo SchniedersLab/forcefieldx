@@ -131,10 +131,11 @@ public class GaussVol {
    * Default scaling applied to radii for use with Gaussian Volumes to correct for not including
    * hydrogen atoms and general underestimation of molecular volume
    *
-   * Default set to 1.0 - can be set to greater than 1.0 to increase the radii by a uniform percentage
+   * Default set to 1.15 to match Corrigan et. al. 2023 protein model
+   * Can be set to greater than 1.0 to increase the radii by a uniform percentage
    * (ex: a radii scale of 1.25 increases all radii by 25%)
    */
-  public static final double DEFAULT_GAUSSVOL_RADII_SCALE = 1.0;
+  public static final double DEFAULT_GAUSSVOL_RADII_SCALE = 1.15;
 
   private static final double RMIN_TO_SIGMA = 1.0 / pow(2.0, 1.0 / 6.0);
 
