@@ -271,11 +271,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
       description = "If true, hydrogen atoms are contribute to the pairwise descreening integrals.")
   private final boolean descreenHydrogen;
 
-  private static final double DEFAULT_DESCREEN_OFFSET = 0.0;
+  private static final double DEFAULT_DESCREEN_OFFSET = 0.3;
   /**
    * Offset applied to the pairwise descreening integral to improve stability at small separation.
    */
-  @FFXKeyword(name = "descreen-offset", keywordGroup = ImplicitSolvent, defaultValue = "0.0",
+  @FFXKeyword(name = "descreen-offset", keywordGroup = ImplicitSolvent, defaultValue = "0.3",
       description = "Offset applied to the pairwise descreening integral to improve stability at small separation.")
   private final double descreenOffset;
 
@@ -360,13 +360,13 @@ public class GeneralizedKirkwood implements LambdaInterface {
       description = "The Generalized Kirkwood cross-term parameter.")
   public final double gkc;
 
-  private static final NonPolarModel DEFAULT_NONPOLAR_MODEL = NonPolarModel.CAV_DISP;
+  private static final NonPolarModel DEFAULT_NONPOLAR_MODEL = NonPolarModel.GAUSS_DISP;
 
   /**
    * Treatment of non-polar interactions.
    */
   @FFXKeyword(name = "nonpolar-model", clazz = String.class,
-      keywordGroup = ImplicitSolvent, defaultValue = "cav-disp",
+      keywordGroup = ImplicitSolvent, defaultValue = "gauss-disp",
       description = "[CAV / CAV-DISP / GAUSS-DISP / SEV-DISP / NONE ] "
           + "The non-polar contribution to the implicit solvent.")
   private final NonPolarModel nonPolarModel;
@@ -402,8 +402,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
    * Default surface tension for apolar models with an explicit dispersion term.
    *
    * <p>Experimental value: 0.103 kcal/mol/Ang^2
+   * <p>More physical value, used for simulations: 0.080 kcal/mol/Ang^2
    */
-  public static final double DEFAULT_CAVDISP_SURFACE_TENSION = 0.103;
+  public static final double DEFAULT_CAVDISP_SURFACE_TENSION = 0.080;
 
   /**
    * Using a S.P. of 0.0334 kcal/mol/A^3, and a limiting surface tension of 0.103 kcal/mol/A^2, the
@@ -420,7 +421,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
   /**
    * Cavitation surface tension coefficient (kcal/mol/A^2).
    */
-  @FFXKeyword(name = "surface-tension", keywordGroup = ImplicitSolvent, defaultValue = "0.103",
+  @FFXKeyword(name = "surface-tension", keywordGroup = ImplicitSolvent, defaultValue = "0.080",
       description = "The cavitation surface tension coefficient (kcal/mol/A^2).")
   private final double surfaceTension;
 
@@ -633,7 +634,7 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
 
     hctScale = forceField.getDouble("HCT_SCALE", DEFAULT_HCT_SCALE);
-    elementHCTScale = forceField.getBoolean("ELEMENT_HCT_SCALE", false);
+    elementHCTScale = forceField.getBoolean("ELEMENT_HCT_SCALE", true);
     descreenVDW = forceField.getBoolean("DESCREEN_VDW", true);
     descreenHydrogen = forceField.getBoolean("DESCREEN_HYDROGEN", false);
     if (descreenVDW && !descreenHydrogen) {
@@ -643,11 +644,11 @@ public class GeneralizedKirkwood implements LambdaInterface {
     }
     descreenOffset = forceField.getDouble("DESCREEN_OFFSET", DEFAULT_DESCREEN_OFFSET);
     // If true, the descreening integral includes the neck correction to better approximate molecular surface.
-    neckCorrection = forceField.getBoolean("NECK_CORRECTION", false);
+    neckCorrection = forceField.getBoolean("NECK_CORRECTION", true);
     double sn = forceField.getDouble("SNECK", DEFAULT_NECK_SCALE);
     sneck = forceField.getDouble("NECK_SCALE", sn);
     chemicallyAwareSneck = forceField.getBoolean("CHEMICALLY_AWARE_SNECK", true);
-    tanhCorrection = forceField.getBoolean("TANH_CORRECTION", false);
+    tanhCorrection = forceField.getBoolean("TANH_CORRECTION", true);
     double b0 = forceField.getDouble("BETA0", DEFAULT_TANH_BETA0);
     double b1 = forceField.getDouble("BETA1", DEFAULT_TANH_BETA1);
     double b2 = forceField.getDouble("BETA2", DEFAULT_TANH_BETA2);
