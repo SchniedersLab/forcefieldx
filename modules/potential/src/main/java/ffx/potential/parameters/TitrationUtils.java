@@ -501,6 +501,7 @@ public class TitrationUtils {
     this.proteinDielectric = proteinDielectric;
     String fModA = forceField.getProperties().getString("fModA");
     this.fModA = Double.parseDouble(fModA);
+    logger.info("ASP fMOD = " + fModA);
     String fModG = forceField.getProperties().getString("fModG");
     this.fModG = Double.parseDouble(fModG);
     String fModL = forceField.getProperties().getString("fModL");
