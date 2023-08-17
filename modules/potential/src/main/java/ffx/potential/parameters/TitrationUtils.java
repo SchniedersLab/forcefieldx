@@ -92,6 +92,13 @@ public class TitrationUtils {
 
   private static final double LOG10 = log(10.0);
 
+  private Double fModA;
+  private Double fModG;
+  private Double fModL;
+  private Double fModHE;
+  private Double fModHD;
+
+
   private static final MultipoleType aspZeroMultipoleType = new MultipoleType(MultipoleType.zeroM,
       new int[] {0, 140, 139}, MultipoleFrameDefinition.ZTHENX, false);
   private static final MultipoleType ashZeroMultipoleType = new MultipoleType(MultipoleType.zeroM,
@@ -492,6 +499,16 @@ public class TitrationUtils {
   public TitrationUtils(ForceField forceField, double proteinDielectric){
     this(forceField);
     this.proteinDielectric = proteinDielectric;
+    String fModA = forceField.getProperties().getString("fModA");
+    this.fModA = Double.parseDouble(fModA);
+    String fModG = forceField.getProperties().getString("fModG");
+    this.fModG = Double.parseDouble(fModG);
+    String fModL = forceField.getProperties().getString("fModL");
+    this.fModL = Double.parseDouble(fModA);
+    String fModHE = forceField.getProperties().getString("fModHE");
+    this.fModHE = Double.parseDouble(fModHE);
+    String fModHD = forceField.getProperties().getString("fModHD");
+    this.fModHD = Double.parseDouble(fModHD);
   }
 
   public boolean testResidueTypes(Residue residue) {
@@ -1553,7 +1570,7 @@ public class TitrationUtils {
     if(proteinDielectric == 2.0){
       fMod = Titration.ASHtoASP.freeEnergyDiff2;
     }
-    rotamerPhBiasMap.put(ASP, acidostat - fMod);
+    rotamerPhBiasMap.put(ASP, acidostat - fModA);
 
     /*
      * Set ASH pH bias as sum of Fmod and acidostat energy
@@ -1568,7 +1585,7 @@ public class TitrationUtils {
     if(proteinDielectric == 2.0){
       fMod = Titration.GLHtoGLU.freeEnergyDiff2;
     }
-    rotamerPhBiasMap.put(GLU, acidostat - fMod);
+    rotamerPhBiasMap.put(GLU, acidostat - fModG);
 
 
     /*
@@ -1584,7 +1601,7 @@ public class TitrationUtils {
     if(proteinDielectric == 2.0){
       fMod = Titration.LYStoLYD.freeEnergyDiff2;
     }
-    rotamerPhBiasMap.put(LYD, acidostat - fMod);
+    rotamerPhBiasMap.put(LYD, acidostat - fModL);
 
     /*
      * Set LYS pH bias as sum of Fmod and acidostat energy
@@ -1614,7 +1631,7 @@ public class TitrationUtils {
     if(proteinDielectric == 2.0){
       fMod = Titration.HIStoHID.freeEnergyDiff2;
     }
-    rotamerPhBiasMap.put(HID, acidostat - fMod);
+    rotamerPhBiasMap.put(HID, acidostat - fModHD);
 
     /*
      * Set HIE pH bias as sum of Fmod and acidostat energy
@@ -1624,7 +1641,7 @@ public class TitrationUtils {
     if(proteinDielectric == 2.0){
       fMod = Titration.HIStoHIE.freeEnergyDiff2;
     }
-    rotamerPhBiasMap.put(HIE, acidostat - fMod);
+    rotamerPhBiasMap.put(HIE, acidostat - fModHE);
   }
 
   public double getRotamerPhBias(AminoAcid3 AA3) {
