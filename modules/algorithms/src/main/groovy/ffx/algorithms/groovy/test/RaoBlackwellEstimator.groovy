@@ -54,7 +54,7 @@ import static java.lang.String.format
 import static ffx.numerics.estimator.EstimateBootstrapper.getBootstrapIndices
 
 /**
- * Use the Rao-Blackwell Estimator to estimate a free energy difference for a CpHMD system.
+ * Use the Rao-Blackwell Estimator to estimate a free energy difference of protonation for a CpHMD system.
  * <br>
  * Usage: Umod calculation for model compounds
  * <br>
@@ -80,7 +80,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
   private int startSnap = -1
 
   @Option(names = ['--bootstrapIter'], paramLabel = "100000",
-          description = 'Number of bootstrap iterations. If not specified, program will not perform bootstrap. Set -1 for no bootstrapping.')
+          description = 'Number of bootstrap iterations. Set -1 for no bootstrapping.')
   private int bootstrapIter = 100000
 
   @Option(names = ['--skip'], paramLabel = "-1",
@@ -395,7 +395,7 @@ class RaoBlackwellEstimator extends AlgorithmsScript {
       }
 
       if(skip != -1){
-        for(int i = 0; i < skip; i++){
+        for(int i = 0; i < skip-1; i++){
           xphFilter.readNext()
         }
       }

@@ -79,7 +79,7 @@ class CoformerBindingSearch extends AlgorithmsScript {
     int maxIter = 10000
 
     /**
-     * --gkSoluteDielectric
+     * --solventDielectric
      */
     @Option(names = ['--solventDielectric'], paramLabel = '78.4',
             description = 'Sets the gk solvent dielectric constant.')
