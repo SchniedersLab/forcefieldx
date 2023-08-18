@@ -962,7 +962,7 @@
         <commons-collections4.version>4.4</commons-collections4.version>
         <commons-configuration2.version>2.9.0</commons-configuration2.version>
         <commons-io.version>2.13.0</commons-io.version>
-        <commons-lang3.version>3.12.0</commons-lang3.version>
+        <commons-lang3.version>3.13.0</commons-lang3.version>
         <commons-math3.version>3.6.1</commons-math3.version>
         <!-- Control the source version version -->
         <compileVersion>17</compileVersion>
@@ -980,7 +980,7 @@
         <git-commit-id.version>6.0.0</git-commit-id.version>
         <version>6.0.0</version>
         <groovy-all.version>4.0.13</groovy-all.version>
-        <guava.version>32.1.0-jre</guava.version>
+        <guava.version>32.1.2-jre</guava.version>
         <install.version>3.1.1</install.version>
         <jar.version>3.3.0</jar.version>
         <jarsigner.version>3.0.0</jarsigner.version>
@@ -1007,7 +1007,7 @@
         <project-info-reports.version>3.4.5</project-info-reports.version>
         <!-- Setting the source encoding is required for builds that are platform independent. -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <properties.version>1.1.0</properties.version>
+        <properties.version>1.2.0</properties.version>
         <quickhull3D.version>1.0.0</quickhull3D.version>
         <!-- Default locations for deploying a release (can be over-ridden by settings.xml) -->
         <release.repo>file:release</release.repo>
@@ -1033,7 +1033,7 @@
         <!-- Tensor Flow 1.12 depends on Cuda 9.2; version 1.13.1 depends on Cuda 10.0 -->
         <tensorflow.version>1.13.1</tensorflow.version>
         <timestamp>${maven.build.timestamp}</timestamp>
-        <tornado.version>0.15</tornado.version>
+        <tornado.version>0.15.2</tornado.version>
         <versions.version>2.16.0</versions.version>
         <!-- Default locations for deploying the website (can be over-ridden by settings.xml) -->
         <website.repo>file:website</website.repo>
