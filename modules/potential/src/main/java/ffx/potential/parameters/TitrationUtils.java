@@ -505,7 +505,7 @@ public class TitrationUtils {
     String fModG = forceField.getProperties().getString("fModG");
     this.fModG = Double.parseDouble(fModG);
     String fModL = forceField.getProperties().getString("fModL");
-    this.fModL = Double.parseDouble(fModA);
+    this.fModL = Double.parseDouble(fModL);
     String fModHE = forceField.getProperties().getString("fModHE");
     this.fModHE = Double.parseDouble(fModHE);
     String fModHD = forceField.getProperties().getString("fModHD");
@@ -1673,7 +1673,7 @@ public class TitrationUtils {
    */
   public enum Titration {
 
-    ASHtoASP(3.94, -70.35, -35.35, 0.0, -72.113, 145.959, AminoAcid3.ASH, AminoAcid3.ASP),
+    ASHtoASP(3.94, -45.39, -35.35, 0.0, -72.113, 145.959, AminoAcid3.ASH, AminoAcid3.ASP),
     GLHtoGLU(4.25, -81.90, -39.71, 0.0, -101.22, 179.8441, AminoAcid3.GLH, AminoAcid3.GLU),
     LYStoLYD(10.40, 41.45, 20.0, 0.0, -69.29, 24.17778, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
