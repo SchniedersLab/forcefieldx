@@ -211,25 +211,25 @@ public class ConformationScan {
     public static ArrayList<Double> logBindingEnergyCalculation(ConformationScan m1, ConformationScan m2, ConformationScan dimer){
         ArrayList<Double> bindingEnergies = new ArrayList<>();
         logger.info("\n ------------------------- Binding Energy -------------------------");
-        logger.info(" ddE (of binding) = dE (of coformer dimer binding) - dE (of both monomer dimer bindings summed)");
+        logger.info(" ddE (of binding) = dE (of coformer dimer binding) - dE (average of both monomer dimer bindings summed)");
         logger.info("\n Calculation using minimized energies: ");
         logger.info(format(" Minimal Structure    ddE = %8.3f - %8.3f = %12.5f",
                 dimer.getMinimumEnergy(),
-                m1.getMinimumEnergy() + m2.getMinimumEnergy(),
-                dimer.getMinimumEnergy() - m1.getMinimumEnergy() - m2.getMinimumEnergy()));
-        bindingEnergies.add(dimer.getMinimumEnergy() - m1.getMinimumEnergy() - m2.getMinimumEnergy());
+                1/2 * (m1.getMinimumEnergy() + m2.getMinimumEnergy()),
+                dimer.getMinimumEnergy() - 1/2 * (m1.getMinimumEnergy() + m2.getMinimumEnergy())));
+        bindingEnergies.add(dimer.getMinimumEnergy() - 1/2 * (m1.getMinimumEnergy() + m2.getMinimumEnergy()));
         logger.info("\n Calculation using average energies: ");
         logger.info(format(" Average              ddE = %8.3f - %8.3f = %12.5f",
                 dimer.getAverageEnergy(),
-                m1.getAverageEnergy() + m2.getAverageEnergy(),
-                dimer.getAverageEnergy() - m1.getAverageEnergy() - m2.getAverageEnergy()));
-        bindingEnergies.add(dimer.getAverageEnergy() - m1.getAverageEnergy() - m2.getAverageEnergy());
+                1/2*(m1.getAverageEnergy() + m2.getAverageEnergy()),
+                dimer.getAverageEnergy() - 1/2 * (m1.getAverageEnergy() + m2.getAverageEnergy())));
+        bindingEnergies.add(dimer.getAverageEnergy() - 1/2 * (m1.getAverageEnergy() + m2.getAverageEnergy()));
         logger.info("\n Calculation using average energies (no outliers): ");
         logger.info(format(" Average (no outlier) ddE = %8.3f - %8.3f = %12.5f",
                 dimer.getAverageEnergyNoOutlier(),
-                m1.getAverageEnergyNoOutlier() + m2.getAverageEnergyNoOutlier(),
-                dimer.getAverageEnergyNoOutlier() - m1.getAverageEnergyNoOutlier() - m2.getAverageEnergyNoOutlier()));
-        bindingEnergies.add(dimer.getAverageEnergyNoOutlier() - m1.getAverageEnergyNoOutlier() - m2.getAverageEnergyNoOutlier());
+                1/2 * (m1.getAverageEnergyNoOutlier() + m2.getAverageEnergyNoOutlier()),
+                dimer.getAverageEnergyNoOutlier() - 1/2 * (m1.getAverageEnergyNoOutlier() + m2.getAverageEnergyNoOutlier())));
+        bindingEnergies.add(dimer.getAverageEnergyNoOutlier() - 1/2 * (m1.getAverageEnergyNoOutlier() + m2.getAverageEnergyNoOutlier()));
         logger.info("\n N.B. -- Monomer energies are calculated using the minimized structures in all cases.");
         logger.info(" ------------------------- End of Binding Energy -------------------------\n");
         return bindingEnergies;
