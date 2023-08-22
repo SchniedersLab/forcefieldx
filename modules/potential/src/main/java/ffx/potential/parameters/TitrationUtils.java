@@ -499,7 +499,7 @@ public class TitrationUtils {
   public TitrationUtils(ForceField forceField, double proteinDielectric){
     this(forceField);
     this.proteinDielectric = proteinDielectric;
-    String fModA = forceField.getProperties().getString("fModA");
+    /*String fModA = forceField.getProperties().getString("fModA");
     this.fModA = Double.parseDouble(fModA);
     logger.info("ASP fMOD = " + fModA);
     String fModG = forceField.getProperties().getString("fModG");
@@ -509,7 +509,7 @@ public class TitrationUtils {
     String fModHE = forceField.getProperties().getString("fModHE");
     this.fModHE = Double.parseDouble(fModHE);
     String fModHD = forceField.getProperties().getString("fModHD");
-    this.fModHD = Double.parseDouble(fModHD);
+    this.fModHD = Double.parseDouble(fModHD);*/
   }
 
   public boolean testResidueTypes(Residue residue) {
@@ -1571,7 +1571,7 @@ public class TitrationUtils {
     if(proteinDielectric == 2.0){
       fMod = Titration.ASHtoASP.freeEnergyDiff2;
     }
-    rotamerPhBiasMap.put(ASP, acidostat - fModA);
+    rotamerPhBiasMap.put(ASP, acidostat - fMod);
 
     /*
      * Set ASH pH bias as sum of Fmod and acidostat energy
@@ -1586,7 +1586,7 @@ public class TitrationUtils {
     if(proteinDielectric == 2.0){
       fMod = Titration.GLHtoGLU.freeEnergyDiff2;
     }
-    rotamerPhBiasMap.put(GLU, acidostat - fModG);
+    rotamerPhBiasMap.put(GLU, acidostat - fMod);
 
 
     /*
@@ -1602,7 +1602,7 @@ public class TitrationUtils {
     if(proteinDielectric == 2.0){
       fMod = Titration.LYStoLYD.freeEnergyDiff2;
     }
-    rotamerPhBiasMap.put(LYD, acidostat - fModL);
+    rotamerPhBiasMap.put(LYD, acidostat - fMod);
 
     /*
      * Set LYS pH bias as sum of Fmod and acidostat energy
@@ -1632,7 +1632,7 @@ public class TitrationUtils {
     if(proteinDielectric == 2.0){
       fMod = Titration.HIStoHID.freeEnergyDiff2;
     }
-    rotamerPhBiasMap.put(HID, acidostat - fModHD);
+    rotamerPhBiasMap.put(HID, acidostat - fMod);
 
     /*
      * Set HIE pH bias as sum of Fmod and acidostat energy
@@ -1642,7 +1642,7 @@ public class TitrationUtils {
     if(proteinDielectric == 2.0){
       fMod = Titration.HIStoHIE.freeEnergyDiff2;
     }
-    rotamerPhBiasMap.put(HIE, acidostat - fModHE);
+    rotamerPhBiasMap.put(HIE, acidostat - fMod);
   }
 
   public double getRotamerPhBias(AminoAcid3 AA3) {
@@ -1674,12 +1674,12 @@ public class TitrationUtils {
   public enum Titration {
 
     ASHtoASP(3.94, -45.39, -35.35, 0.0, -72.113, 145.959, AminoAcid3.ASH, AminoAcid3.ASP),
-    GLHtoGLU(4.25, -81.90, -39.71, 0.0, -101.22, 179.8441, AminoAcid3.GLH, AminoAcid3.GLU),
-    LYStoLYD(10.40, 41.45, 20.0, 0.0, -69.29, 24.17778, AminoAcid3.LYS, AminoAcid3.LYD),
+    GLHtoGLU(4.25, -55.74, -39.71, 0.0, -101.22, 179.8441, AminoAcid3.GLH, AminoAcid3.GLU),
+    LYStoLYD(10.40, 41.31, 20.0, 0.0, -69.29, 24.17778, AminoAcid3.LYS, AminoAcid3.LYD),
     //TYRtoTYD(10.07, 34.961, 0.0, AminoAcidUtils.AminoAcid3.TYR, AminoAcidUtils.AminoAcid3.TYD),
     CYStoCYD(8.55, -66.2, 0.0, 34.567, -151.95, 196.33, AminoAcid3.CYS, AminoAcid3.CYD), //HE2 is the proton that is lost
-    HIStoHID(7.00, 40.20, 20.92, 0.0, -64.317, 30.35, AminoAcid3.HIS, AminoAcid3.HID), //HD1 is the proton that is lost
-    HIStoHIE(6.60, 37.44, 18.14, 0.0, -62.931, 32.00, AminoAcid3.HIS, AminoAcid3.HIE),
+    HIStoHID(7.00, 36.65, 20.92, 0.0, -64.317, 30.35, AminoAcid3.HIS, AminoAcid3.HID), //HD1 is the proton that is lost
+    HIStoHIE(6.60, 34.65, 18.14, 0.0, -62.931, 32.00, AminoAcid3.HIS, AminoAcid3.HIE),
     HIDtoHIE(Double.NaN, 0.00, 0.0, 0.0, -36.83, 34.325, AminoAcid3.HID, AminoAcid3.HIE);
     //TerminalNH3toNH2(8.23, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK),
     //TerminalCOOHtoCOO(3.55, 0.0, 00.00, AminoAcidUtils.AminoAcid3.UNK, AminoAcidUtils.AminoAcid3.UNK);
