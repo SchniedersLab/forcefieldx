@@ -302,6 +302,12 @@
       <groupId>org.apache.logging.log4j</groupId>
       <version>${log4j.version}</version>
     </dependency>
+    <!-- The slf4j-api is included to control its version; otherwise version 1.7.36 is pulled in -->
+    <dependency>
+      <artifactId>slf4j-api</artifactId>
+      <groupId>org.slf4j</groupId>
+      <version>${slf4j-nop.version}</version>
+    </dependency>
     <dependency>
       <artifactId>slf4j-nop</artifactId>
       <groupId>org.slf4j</groupId>

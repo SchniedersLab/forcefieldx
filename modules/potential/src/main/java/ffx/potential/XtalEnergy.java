@@ -89,7 +89,7 @@ public class XtalEnergy implements Potential {
   /**
    * Constructor for XtalEnergy.
    *
-   * @param forceFieldEnergy a {@link ffx.potential.ForceFieldEnergy} object.
+   * @param forceFieldEnergy  a {@link ffx.potential.ForceFieldEnergy} object.
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
    */
   public XtalEnergy(ForceFieldEnergy forceFieldEnergy, MolecularAssembly molecularAssembly) {
@@ -138,13 +138,17 @@ public class XtalEnergy implements Potential {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean destroy() {
     return forceFieldEnergy.destroy();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double energy(double[] x) {
 
@@ -162,7 +166,9 @@ public class XtalEnergy implements Potential {
     return totalEnergy;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double energyAndGradient(double[] x, double[] g) {
     // Un-scale coordinates if applicable.
@@ -177,7 +183,7 @@ public class XtalEnergy implements Potential {
     // Both coordinates and gradient are scaled if applicable.
     packGradient(x, g);
 
-    // Calculate finite-difference partial derivatives of lattice  parameters.
+    // Calculate finite-difference partial derivatives of lattice parameters.
     unitCellParameterDerivatives(x, g);
 
     totalEnergy = e;
@@ -185,13 +191,17 @@ public class XtalEnergy implements Potential {
     return totalEnergy;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getAcceleration(double[] acceleration) {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getCoordinates(double[] x) {
     int n = getNumberOfVariables();
@@ -222,67 +232,89 @@ public class XtalEnergy implements Potential {
     return x;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public STATE getEnergyTermState() {
     return forceFieldEnergy.getEnergyTermState();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setEnergyTermState(STATE state) {
     forceFieldEnergy.setEnergyTermState(state);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getMass() {
     return mass;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int getNumberOfVariables() {
     return nParams;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getPreviousAcceleration(double[] previousAcceleration) {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getScaling() {
     return scaling;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setScaling(double[] scaling) {
     this.scaling = scaling;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double getTotalEnergy() {
     return totalEnergy;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public VARIABLE_TYPE[] getVariableTypes() {
     return type;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public double[] getVelocity(double[] velocity) {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setAcceleration(double[] acceleration) {
     throw new UnsupportedOperationException("Not supported yet.");
@@ -298,13 +330,17 @@ public class XtalEnergy implements Potential {
     molecularAssembly.setFractionalMode(fractionalMode);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setPreviousAcceleration(double[] previousAcceleration) {
     throw new UnsupportedOperationException("Not supported yet.");
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setVelocity(double[] velocity) {
     throw new UnsupportedOperationException("Not supported yet.");
@@ -324,7 +360,7 @@ public class XtalEnergy implements Potential {
 
     int index = 3 * nActive;
     switch (spaceGroup.latticeSystem) {
-      case TRICLINIC_LATTICE:
+      case TRICLINIC_LATTICE -> {
         g[index] = finiteDifference(x, index, eps);
         index++;
         g[index] = finiteDifference(x, index, eps);
@@ -336,8 +372,8 @@ public class XtalEnergy implements Potential {
         g[index] = finiteDifference(x, index, deps);
         index++;
         g[index] = finiteDifference(x, index, deps);
-        break;
-      case MONOCLINIC_LATTICE:
+      }
+      case MONOCLINIC_LATTICE -> {
         // alpha = gamma = 90
         g[index] = finiteDifference(x, index, eps);
         index++;
@@ -350,8 +386,8 @@ public class XtalEnergy implements Potential {
         g[index] = finiteDifference(x, index, deps);
         index++;
         g[index] = 0.0;
-        break;
-      case ORTHORHOMBIC_LATTICE:
+      }
+      case ORTHORHOMBIC_LATTICE -> {
         // alpha = beta = gamma = 90
         g[index] = finiteDifference(x, index, eps);
         index++;
@@ -364,9 +400,10 @@ public class XtalEnergy implements Potential {
         g[index] = 0.0;
         index++;
         g[index] = 0.0;
-        break;
-      case TETRAGONAL_LATTICE:
-        // a = b && alpha = beta = gamma = 90
+      }
+      case TETRAGONAL_LATTICE, // a = b, alpha = beta = gamma = 90
+          HEXAGONAL_LATTICE // a = b, alpha = beta = 90, gamma = 120
+          -> {
         g[index] = finiteDifference2(x, index, index + 1, eps);
         index++;
         g[index] = g[index - 1];
@@ -378,8 +415,8 @@ public class XtalEnergy implements Potential {
         g[index] = 0.0;
         index++;
         g[index] = 0.0;
-        break;
-      case RHOMBOHEDRAL_LATTICE:
+      }
+      case RHOMBOHEDRAL_LATTICE -> {
         // a = b = c, alpha = beta = gamma
         g[index] = finiteDifference3(x, index, index + 1, index + 2, eps);
         index++;
@@ -392,22 +429,9 @@ public class XtalEnergy implements Potential {
         g[index] = g[index - 1];
         index++;
         g[index] = g[index - 2];
-        break;
-      case HEXAGONAL_LATTICE:
-        // a = b, alpha = beta = 90, gamma = 120
-        g[index] = finiteDifference2(x, index, index + 1, eps);
-        index++;
-        g[index] = g[index - 1];
-        index++;
-        g[index] = finiteDifference(x, index, eps);
-        index++;
-        g[index] = 0.0;
-        index++;
-        g[index] = 0.0;
-        index++;
-        g[index] = 0.0;
-        break;
-      case CUBIC_LATTICE:
+      }
+      // a = b, alpha = beta = 90, gamma = 120
+      case CUBIC_LATTICE -> {
         // a = b = c, alpha = beta = gamma = 90
         g[index] = finiteDifference3(x, index, index + 1, index + 2, eps);
         index++;
@@ -420,7 +444,7 @@ public class XtalEnergy implements Potential {
         g[index] = 0.0;
         index++;
         g[index] = 0.0;
-        break;
+      }
     }
 
     // Scale finite-difference partial derivatives of lattice parameters.
@@ -443,9 +467,9 @@ public class XtalEnergy implements Potential {
   /**
    * Calculate finite-difference derivative for any parameter.
    *
-   * @param x Coordinates and unit cell parameters.
+   * @param x     Coordinates and unit cell parameters.
    * @param index Parameter index.
-   * @param eps Step size.
+   * @param eps   Step size.
    * @return Finite-difference derivative.
    */
   private double finiteDifference(double[] x, int index, double eps) {
@@ -453,24 +477,24 @@ public class XtalEnergy implements Potential {
     if (scaling != null) {
       scale = scaling[index];
     }
-    double xoriginal = x[index];
-    double param = x[index] / scale;
+    double x1 = x[index];
+    final double param = x1 / scale;
 
     x[index] = (param + eps / 2.0) * scale;
     double ePlus = energy(x);
     x[index] = (param - eps / 2.0) * scale;
     double eMinus = energy(x);
 
-    x[index] = xoriginal;
+    x[index] = x1;
 
     return (ePlus - eMinus) / eps;
   }
 
   /**
-   * @param x Coordinates and unit cell parameters.
+   * @param x      Coordinates and unit cell parameters.
    * @param index1 Parameter index 1.
    * @param index2 Parameter index 2.
-   * @param eps Step size.
+   * @param eps    Step size.
    * @return Finite-difference derivative.
    */
   private double finiteDifference2(double[] x, int index1, int index2, double eps) {
@@ -482,8 +506,10 @@ public class XtalEnergy implements Potential {
       scale2 = scaling[index2];
     }
 
-    double param1 = x[index1] / scale1;
-    double param2 = x[index2] / scale2;
+    final double x1 = x[index1];
+    final double x2 = x[index2];
+    final double param1 = x1 / scale1;
+    final double param2 = x2 / scale2;
 
     x[index1] = (param1 + eps / 2.0) * scale1;
     x[index2] = (param2 + eps / 2.0) * scale2;
@@ -492,47 +518,49 @@ public class XtalEnergy implements Potential {
     x[index2] = (param2 - eps / 2.0) * scale2;
     double eMinus = energy(x);
 
-    x[index1] = param1 * scale1;
-    x[index2] = param2 * scale2;
+    x[index1] = x1;
+    x[index2] = x2;
 
     return (ePlus - eMinus) / eps;
   }
 
   /**
-   * @param x Coordinates and unit cell parameters.
+   * @param x      Coordinates and unit cell parameters.
    * @param index1 Parameter index 1.
    * @param index2 Parameter index 2.
    * @param index3 Parameter index 3.
-   * @param eps Step size.
+   * @param eps    Step size.
    * @return finite-difference derivative.
    */
   private double finiteDifference3(double[] x, int index1, int index2, int index3, double eps) {
     double scale1 = 1.0;
     double scale2 = 1.0;
     double scale3 = 1.0;
-
     if (scaling != null) {
       scale1 = scaling[index1];
       scale2 = scaling[index2];
       scale3 = scaling[index3];
     }
 
-    double param1 = x[index1] / scale1;
-    double param2 = x[index2] / scale2;
-    double param3 = x[index3] / scale3;
+    final double x1 = x[index1];
+    final double x2 = x[index2];
+    final double x3 = x[index3];
 
+    final double param1 = x1 / scale1;
+    final double param2 = x2 / scale2;
+    final double param3 = x3 / scale3;
     x[index1] = (param1 + eps / 2.0) * scale1;
     x[index2] = (param2 + eps / 2.0) * scale2;
     x[index3] = (param3 + eps / 2.0) * scale3;
-    double ePlus = energy(x);
+    final double ePlus = energy(x);
     x[index1] = (param1 - eps / 2.0) * scale1;
     x[index2] = (param2 - eps / 2.0) * scale2;
     x[index3] = (param3 - eps / 2.0) * scale3;
-    double eMinus = energy(x);
+    final double eMinus = energy(x);
 
-    x[index1] = param1 * scale1;
-    x[index2] = param2 * scale2;
-    x[index2] = param2 * scale2;
+    x[index1] = x1;
+    x[index2] = x2;
+    x[index3] = x3;
 
     return (ePlus - eMinus) / eps;
   }
@@ -585,20 +613,20 @@ public class XtalEnergy implements Potential {
 
     // Enforce the lattice system.
     switch (spaceGroup.latticeSystem) {
-      case TRICLINIC_LATTICE:
-        break;
-      case MONOCLINIC_LATTICE:
+      case TRICLINIC_LATTICE -> {
+      }
+      case MONOCLINIC_LATTICE -> {
         // alpha = gamma = 90
         alpha = 90.0;
         gamma = 90.0;
-        break;
-      case ORTHORHOMBIC_LATTICE:
+      }
+      case ORTHORHOMBIC_LATTICE -> {
         // alpha = beta = gamma = 90
         alpha = 90.0;
         beta = 90.0;
         gamma = 90.0;
-        break;
-      case TETRAGONAL_LATTICE:
+      }
+      case TETRAGONAL_LATTICE -> {
         // a = b, alpha = beta = gamma = 90
         double ab = 0.5 * (a + b);
         a = ab;
@@ -606,8 +634,8 @@ public class XtalEnergy implements Potential {
         alpha = 90.0;
         beta = 90.0;
         gamma = 90.0;
-        break;
-      case RHOMBOHEDRAL_LATTICE:
+      }
+      case RHOMBOHEDRAL_LATTICE -> {
         // a = b = c, alpha = beta = gamma.
         double abc = (a + b + c) / 3.0;
         a = abc;
@@ -617,26 +645,26 @@ public class XtalEnergy implements Potential {
         alpha = angles;
         beta = angles;
         gamma = angles;
-        break;
-      case HEXAGONAL_LATTICE:
+      }
+      case HEXAGONAL_LATTICE -> {
         // a = b, alpha = beta = 90 && gamma = 120
-        ab = 0.5 * (a + b);
+        double ab = 0.5 * (a + b);
         a = ab;
         b = ab;
         alpha = 90.0;
         beta = 90.0;
         gamma = 120.0;
-        break;
-      case CUBIC_LATTICE:
+      }
+      case CUBIC_LATTICE -> {
         // a = b = c, alpha = beta = gamma = 90
-        abc = (a + b + c) / 3.0;
+        double abc = (a + b + c) / 3.0;
         a = abc;
         b = abc;
         c = abc;
         alpha = 90.0;
         beta = 90.0;
         gamma = 90.0;
-        break;
+      }
     }
 
     crystal.changeUnitCellParameters(a, b, c, alpha, beta, gamma);

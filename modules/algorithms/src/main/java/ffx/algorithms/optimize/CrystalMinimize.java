@@ -68,7 +68,7 @@ public class CrystalMinimize extends Minimize implements OptimizationListener, T
   private final Crystal unitCell;
 
   /**
-   * Constructor for Minimize.
+   * Constructor for CrystalMinimize.
    *
    * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
    * @param xtalEnergy a {@link ffx.potential.XtalEnergy} object.

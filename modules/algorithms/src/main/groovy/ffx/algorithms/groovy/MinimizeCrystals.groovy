@@ -154,7 +154,7 @@ class MinimizeCrystals extends AlgorithmsScript {
       try {
         FractionalMode mode = FractionalMode.valueOf(fractional.toUpperCase())
         xtalEnergy.setFractionalCoordinateMode(mode)
-      } catch (Exception e) {
+      } catch (Exception ignored) {
         logger.info(" Unrecognized fractional coordinate mode: " + fractional)
         logger.info(" Fractional coordinate mode is set to MOLECULE.")
       }
@@ -247,8 +247,7 @@ class MinimizeCrystals extends AlgorithmsScript {
         energy = newEnergy
 
         // Complete a round of lattice optimization.
-        crystalMinimize
-            .minimize(minimizeOptions.NBFGS, minimizeOptions.eps, minimizeOptions.iterations)
+        crystalMinimize.minimize(minimizeOptions.NBFGS, minimizeOptions.eps, minimizeOptions.iterations)
         newEnergy = crystalMinimize.getEnergy()
         status = crystalMinimize.getStatus()
         if (status != 0) {
