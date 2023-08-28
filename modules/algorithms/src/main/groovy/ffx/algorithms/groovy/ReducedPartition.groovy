@@ -80,6 +80,9 @@ class ReducedPartition extends AlgorithmsScript {
             description = "Write to an energy restart file and ensemble file.")
     private boolean printFiles = false
 
+    @CommandLine.Option(names = ["--rCS", "--recomputeSelf"], paramLabel = "false",
+            description = "Recompute the self energies after loading a restart file.")
+    private boolean recomputeSelf = false
 
     /**
      * An XYZ or PDB input file.
@@ -310,6 +313,7 @@ class ReducedPartition extends AlgorithmsScript {
             rotamerOptimization.setPrintFiles(printFiles)
             rotamerOptimization.setWriteEnergyRestart(printFiles)
             rotamerOptimization.setOnlyProtons(onlyProtons)
+            rotamerOptimization.setRecomputeSelf(recomputeSelf)
 
             manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
 

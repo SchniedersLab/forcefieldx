@@ -45,8 +45,7 @@ import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
-import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.*;
 
 import edu.rit.pj.Comm;
 import edu.rit.pj.ParallelTeam;
@@ -82,7 +81,9 @@ import ffx.potential.bonded.Rotamer;
 import ffx.potential.bonded.RotamerLibrary;
 import ffx.potential.nonbonded.NonbondedCutoff;
 import ffx.potential.nonbonded.VanDerWaals;
+import ffx.potential.parameters.TitrationUtils;
 import ffx.potential.parsers.PDBFilter;
+import ffx.utilities.Constants;
 import ffx.utilities.ObjectPair;
 import ffx.utilities.Resources;
 import java.io.BufferedWriter;
@@ -213,6 +214,7 @@ public class RotamerOptimization implements Terminatable {
   private double[] fraction;
   private double[] titrateBoltzmann;
   private boolean onlyProtons = false;
+  private boolean recomputeSelf = false;
   /** List of residues to optimize; they may not be contiguous or all members of the same chain. */
   private List<Residue> residueList;
   /**
@@ -1461,6 +1463,10 @@ public class RotamerOptimization implements Terminatable {
     this.superpositionThreshold = superpositionThreshold;
   }
 
+  public void setRecomputeSelf(boolean recomputeSelf) {
+    this.recomputeSelf = recomputeSelf;
+  }
+
   /**
    * Sets the threeBodyCutoffDist. All three-body energies where the rotamers have a separation
    * distance larger than the cutoff are set to 0.
@@ -2021,6 +2027,8 @@ public class RotamerOptimization implements Terminatable {
    */
   public int partitionFunction(Residue[] residues, int i, int[] currentRotamers) throws Exception {
     // This is the initialization condition.
+    double LOG10 = log(10.0);
+    double temperature = 298.15;
     int adjustPerm = 0;
     if (i == 0) {
       totalBoltzmann = 0;
@@ -2086,15 +2094,51 @@ public class RotamerOptimization implements Terminatable {
 
           energyRegion.init(eE, residues, currentRotamers, threeBodyTerm);
           parallelTeam.execute(energyRegion);
-          double totalEnergy = eE.getBackboneEnergy() + energyRegion.getSelf() +
+          String[] titratableResidues = {"HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD"};
+          List<String> titratableResiudesList = Arrays.asList(titratableResidues);
+          double selfEnergy = energyRegion.getSelf();
+          logger.info("Self energy before adjustment: " + selfEnergy);
+          double bias7;
+          if(recomputeSelf){
+            int count = 0;
+            logger.info("Recompute self true");
+            for(Residue residue: residues){
+              Rotamer[] rotamers = residue.getRotamers();
+              int currentRotamer = currentRotamers[count];
+              switch (rotamers[currentRotamer].getName()) {
+                case "HIE":
+                  bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHIE.pKa - 7)) -
+                          TitrationUtils.Titration.HIStoHIE.freeEnergyDiff;
+                  selfEnergy = energyRegion.getSelf() - bias7 + rotamers[currentRotamer].getRotamerPhBias();
+                case "HID":
+                  bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHID.pKa - 7)) -
+                          TitrationUtils.Titration.HIStoHID.freeEnergyDiff;
+                  selfEnergy = energyRegion.getSelf() - bias7 + rotamers[currentRotamer].getRotamerPhBias();
+                case "ASP":
+                  bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.ASHtoASP.pKa - 7)) -
+                          TitrationUtils.Titration.ASHtoASP.freeEnergyDiff;
+                  selfEnergy = energyRegion.getSelf() - bias7 + rotamers[currentRotamer].getRotamerPhBias();
+                case "GLU":
+                  bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.GLHtoGLU.pKa - 7)) -
+                          TitrationUtils.Titration.GLHtoGLU.freeEnergyDiff;
+                  selfEnergy = energyRegion.getSelf() - bias7 + rotamers[currentRotamer].getRotamerPhBias();
+                case "LYD":
+                  bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.LYStoLYD.pKa - 7)) -
+                          TitrationUtils.Titration.LYStoLYD.freeEnergyDiff;
+                  selfEnergy = energyRegion.getSelf() - bias7 + rotamers[currentRotamer].getRotamerPhBias();
+                default:
+                  selfEnergy = energyRegion.getSelf();
+              }
+              count += 1;
+            }
+          }
+          double totalEnergy = eE.getBackboneEnergy() + selfEnergy +
                   energyRegion.getTwoBody() + energyRegion.getThreeBody();
           if(evaluatedPermutations == 1){
             refEnergy = totalEnergy;
           }
           double boltzmannWeight = exp((-1.0/(1.9872042599E-3 * 298.15))*(totalEnergy-refEnergy));
           if(fraction.length > 0){
-            String[] titratableResidues = {"HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD"};
-            List<String> titratableResiudesList = Arrays.asList(titratableResidues);
             for (Residue residue: residues) {
               Rotamer[] rotamers = residue.getRotamers();
               int currentRotamer = currentRotamers[titrateRes];
