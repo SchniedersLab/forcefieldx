@@ -87,12 +87,12 @@ public class GKSource {
   private double f;
 
   /**
-   * The GK effective separation distance.
+   * f1 = 1.0 - expTerm * igc;
    */
   private double f1;
 
   /**
-   * The GK effective separation distance.
+   * f2 = 2.0 * expTerm / (gc * gcAiAj);
    */
   private double f2;
 
@@ -148,7 +148,7 @@ public class GKSource {
   private final double[] fn;
 
   /**
-   * Chain rule terms from differentiating zeroth order auxiliary functions (an0) with respect to Ai
+   * Chain rule terms from differentiating zeroth order born radii auxiliary functions (bn0) with respect to Ai
    * or Aj.
    */
   protected final double[] bn;
@@ -459,8 +459,21 @@ public class GKSource {
     }
   }
 
+  /**
+   * Compute the Kirkwood dielectric function for a multipole of order n.
+   *
+   * @param n Multipole order.
+   * @param Eh Homogeneous dielectric.
+   * @param Es Solvent dielectric.
+   * @return Returns (n+1)*(Eh-Es)/((n+1)*Es + n*Eh)) / Eh.
+   */
+  public static double cn(int n, double Eh, double Es) {
+    var ret = (n + 1) * (Eh - Es) / ((n + 1) * Es + n * Eh);
+    return ret / Eh;
+  }
+
   public static double selfEnergy(PolarizableMultipole polarizableMultipole,
-      double ai, double Eh, double Es) {
+                                  double ai, double Eh, double Es) {
     double q2 = polarizableMultipole.q * polarizableMultipole.q;
     double dx = polarizableMultipole.dx;
     double dy = polarizableMultipole.dy;
@@ -493,19 +506,6 @@ public class GKSource {
     double ei = cn(1, Eh, Es) * (dx * ux + dy * uy + dz * uz) / a3;
 
     return 0.5 * (e0 + e1 + e2 + ei);
-  }
-
-  /**
-   * Compute the Kirkwood dielectric function for a multipole of order n.
-   *
-   * @param n Multipole order.
-   * @param Eh Homogeneous dielectric.
-   * @param Es Solvent dielectric.
-   * @return Returns (n+1)*(Eh-Es)/((n+1)*Es + n*Eh)) / Eh.
-   */
-  public static double cn(int n, double Eh, double Es) {
-    var ret = (n + 1) * (Eh - Es) / ((n + 1) * Es + n * Eh);
-    return ret / Eh;
   }
 
 }
