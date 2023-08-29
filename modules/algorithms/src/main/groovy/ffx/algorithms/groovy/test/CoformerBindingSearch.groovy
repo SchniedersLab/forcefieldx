@@ -131,6 +131,9 @@ class CoformerBindingSearch extends AlgorithmsScript {
             description = "XYZ input file.")
     private List<String> filenames
 
+    boolean minimize = null
+
+
     /**
      * Constructor.
      */
@@ -169,69 +172,22 @@ class CoformerBindingSearch extends AlgorithmsScript {
             return this
         }
 
-        boolean minimize = !noMinimize
-
-        // Load the MolecularAssembly of the input file.
-        PotentialsUtils potentialsUtils = new PotentialsUtils()
+        minimize = !noMinimize
         boolean skipMoleculeOne = skipHomodimerNumber == 1
         boolean skipMoleculeTwo = skipHomodimerNumber == 2
 
         // Perform scan on monomer one w/ itself
-        ConformationScan monomerOneScan = null
-        ConformationScan monomerTwoScan = null
+        ConformationScan systemOneScan = null
+        ConformationScan systemTwoScan = null
         if(!coformerOnly) {
             if (!skipMoleculeOne) {
-                MolecularAssembly[] molecularAssemblies = potentialsUtils.openAll(new String[]{filenames.get(0), filenames.get(0)})
-                MolecularAssembly combined = combineTwoMolecularAssembliesWOneMolEach(molecularAssemblies[0], molecularAssemblies[1])
-                Molecule[] molecules = combined.getMolecules()
-                monomerOneScan = new ConformationScan(
-                        combined,
-                        molecules[0],
-                        molecules[1],
-                        eps,
-                        maxIter,
-                        intermediateTorsionScan,
-                        excludeH,
-                        minimize
-                )
-                monomerOneScan.scan()
-                String molOneDimerScanFilename = FilenameUtils.removeExtension(filenames.get(0)) + ".arc"
-                File molOneDimerScanFile = new File(molOneDimerScanFilename)
-                if(!monomerOneScan.writeStructuresToXYZ(molOneDimerScanFile)){
-                    logger.warning(" No structures saved from scan.")
-                    monomerOneScan = null;
-                } else{
-                    logger.info("\n Molecule one (" + FilenameUtils.removeExtension(filenames.get(0)) + ") dimer scan energy information:")
-                    monomerOneScan.logAllEnergyInformation()
-                }
+                systemOneScan = runScan(filenames.get(0), filenames.get(0))
             } else{
                 logger.info(" Skipping monomer one scan.")
             }
 
             if (!skipMoleculeTwo && filenames.size() == 2) {
-                MolecularAssembly[] molecularAssemblies = potentialsUtils.openAll(new String[]{filenames.get(1), filenames.get(1)})
-                MolecularAssembly combined = combineTwoMolecularAssembliesWOneMolEach(molecularAssemblies[0], molecularAssemblies[1])
-                Molecule[] molecules = combined.getMolecules()
-                monomerTwoScan = new ConformationScan(
-                        combined,
-                        molecules[0],
-                        molecules[1],
-                        eps,
-                        maxIter,
-                        intermediateTorsionScan,
-                        excludeH,
-                        minimize
-                )
-                monomerTwoScan.scan()
-                String molTwoDimerScanFilename = FilenameUtils.removeExtension(filenames.get(1)) + ".arc"
-                File molTwoDimerScanFile = new File(molTwoDimerScanFilename)
-                if(!monomerTwoScan.writeStructuresToXYZ(molTwoDimerScanFile)){
-                    logger.warning(" No structures saved from scan.")
-                    monomerTwoScan = null;
-                } else {
-                    logger.info("\n Molecule two (" + FilenameUtils.removeExtension(filenames.get(1)) + ") dimer scan energy information:")
-                    monomerTwoScan.logAllEnergyInformation()
-                }
+                systemTwoScan = runScan(filenames.get(1), filenames.get(1))
             } else if (!skipMoleculeTwo && filenames.size() == 1) {
                 logger.info(" Only one file provided, skipping second homodimer scan.")
             }
@@ -240,41 +196,13 @@ class CoformerBindingSearch extends AlgorithmsScript {
         }
 
         if(filenames.size() == 2){
-            MolecularAssembly[] molecularAssemblies = potentialsUtils.openAll(new String[]{filenames.get(0), filenames.get(1)})
-            MolecularAssembly combined = combineTwoMolecularAssembliesWOneMolEach(molecularAssemblies[0], molecularAssemblies[1])
-            Molecule[] molecules = combined.getMolecules()
-            // Smaller molecule is molecule one
-            Molecule mol1 = molecules[0].atomList.size() < molecules[1].atomList.size() ? molecules[0] : molecules[1]
-            Molecule mol2 = molecules[0].atomList.size() < molecules[1].atomList.size() ? molecules[1] : molecules[0]
-            ConformationScan dimerScan = new ConformationScan(
-                    combined,
-                    mol1,
-                    mol2,
-                    eps,
-                    maxIter,
-                    intermediateTorsionScan,
-                    excludeH,
-                    minimize
-            )
-            dimerScan.scan()
-            File coformerScanFile = new File("coformerScan.arc")
-            if(!dimerScan.writeStructuresToXYZ(coformerScanFile)){
-                logger.warning(" No structures saved from scan.")
-            } else{
-                logger.info("\n Molecule one (" + FilenameUtils.removeExtension(filenames.get(0)) +
-                        ") and two (" + FilenameUtils.removeExtension(filenames.get(1)) + ") dimer scan energy information:")
-                dimerScan.logAllEnergyInformation()
-            }
-
-            if(monomerOneScan != null && monomerTwoScan != null){
-                logger.info("\n Molecule one (" + FilenameUtils.removeExtension(filenames.get(0)) + ") dimer scan energy information:")
-                monomerOneScan.logAllEnergyInformation()
-                logger.info("\n Molecule two (" + FilenameUtils.removeExtension(filenames.get(1)) + ") dimer scan energy information:")
-                monomerTwoScan.logAllEnergyInformation()
-                logger.info("\n Molecule one (" + FilenameUtils.removeExtension(filenames.get(0)) +
-                        ") and two (" + FilenameUtils.removeExtension(filenames.get(1)) + ") dimer scan energy information:")
-                dimerScan.logAllEnergyInformation()
-                ConformationScan.logBindingEnergyCalculation(monomerOneScan, monomerTwoScan, dimerScan)
+            ConformationScan bothSystems = runScan(filenames.get(0), filenames.get(1))
+            if(systemOneScan != null && systemTwoScan != null){
+                logger.info("\n System one (" + FilenameUtils.removeExtension(filenames.get(0)) + ") self scan energy information:")
+                systemOneScan.logAllEnergyInformation()
+                logger.info("\n System two (" + FilenameUtils.removeExtension(filenames.get(1)) + ") self scan energy information:")
+                systemTwoScan.logAllEnergyInformation()
+                ConformationScan.logBindingEnergyCalculation(systemOneScan, systemTwoScan, bothSystems)
             }
         }
         else {
@@ -284,16 +212,64 @@ class CoformerBindingSearch extends AlgorithmsScript {
         return this
     }
 
-    static MolecularAssembly combineTwoMolecularAssembliesWOneMolEach(MolecularAssembly mola1, MolecularAssembly mola2){
+    ConformationScan runScan(String fileOne, String fileTwo){
+        boolean coformer = fileOne != fileTwo
+        PotentialsUtils potentialsUtils = new PotentialsUtils()
+        MolecularAssembly[] molecularAssemblies = potentialsUtils.openAll(new String[]{fileOne, fileTwo})
+        int secondSystemStartIndex = molecularAssemblies[0].getMoleculeArray().length
+        MolecularAssembly combined = combineTwoMolecularAssemblies(molecularAssemblies[0], molecularAssemblies[1])
+        // Split combined mola into two lists based on molecules in files
+        ArrayList<Molecule> setOne = new ArrayList<>()
+        ArrayList<Molecule> setTwo = new ArrayList<>()
+        for(int i = 0; i < combined.getMoleculeArray().length; i++){
+            if(i < secondSystemStartIndex){
+                setOne.add(combined.getMoleculeArray()[i])
+            } else{
+                setTwo.add(combined.getMoleculeArray()[i])
+            }
+        }
+        Molecule[] systemOne = setOne.toArray(new Molecule[0])
+        Molecule[] systemTwo = setTwo.toArray(new Molecule[0])
+        ConformationScan scan = new ConformationScan(
+                combined,
+                systemOne,
+                systemTwo,
+                eps,
+                maxIter,
+                intermediateTorsionScan,
+                excludeH,
+                minimize
+        )
+        scan.scan()
+        String fileName = coformer ? "coformerScan.arc" : FilenameUtils.removeExtension(fileOne) + ".arc"
+        File file = new File(fileName)
+        if(!scan.writeStructuresToXYZ(file)){
+            logger.warning(" No structures saved from scan.")
+            scan = null
+        } else if (!coformer){
+            logger.info("\n System (" + FilenameUtils.removeExtension(fileOne) + ") self scan energy information:")
+            scan.logAllEnergyInformation()
+        } else{
+            logger.info("\n System (" + FilenameUtils.removeExtension(fileOne) +
+                    ") and system (" + FilenameUtils.removeExtension(fileTwo) + ") scan energy information:")
+            scan.logAllEnergyInformation()
+        }
+        return scan
+    }
+
+    static MolecularAssembly combineTwoMolecularAssemblies(MolecularAssembly mola1, MolecularAssembly mola2){
         MolecularAssembly mainMonomerAssembly = mola1
         MolecularAssembly feederAssembly = mola2
         Molecule[] assemblyTwoMolecules = feederAssembly.getMoleculeArray()
-        for(Atom a: assemblyTwoMolecules[0].getAtomList()) {
-            a.setMoleculeNumber(1)
-            a.move(new double[]{10,-10,10})
+        int molNum = mainMonomerAssembly.getMoleculeArray().length
+        for(Molecule m: assemblyTwoMolecules) {
+            for (Atom a : m.getAtomList()) {
+                a.setMoleculeNumber(molNum)
+            }
+            assemblyTwoMolecules[0].setName("Molecule-"+molNum)
+            mainMonomerAssembly.addMSNode(m)
+            molNum++
         }
-        assemblyTwoMolecules[0].setName("Molecule-2")
-        mainMonomerAssembly.addMSNode(assemblyTwoMolecules[0])
         mainMonomerAssembly.update()
         mainMonomerAssembly.setPotential(null) // energyFactory doesn't do anything if it isn't null
         ForceFieldEnergy forceFieldEnergy = ForceFieldEnergy.energyFactory(mainMonomerAssembly)

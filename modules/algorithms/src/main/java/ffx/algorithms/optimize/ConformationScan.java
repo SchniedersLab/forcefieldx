@@ -16,6 +16,7 @@ import java.io.File;
 import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ffx.potential.utils.Superpose.applyRotation;
@@ -23,16 +24,16 @@ import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.*;
 
 /**
- * This class is for a configuration optimization of two small monomers. The search
+ * This class is for a configuration optimization of two small systems. The search
  * consists of aligning heavy (except carbon) and hydrogen atoms at a h-bond distance
  * with their center of masses behind them all on the z-axis in hopes that a global
  * conformational minima will be found by allowing for strong h-bonds to occur. After
  * aligning, an optional static torsion scan and NONE,DIRECT,MUTUAL minimizations are
  * performed. A binding energy can be calculated with this by:
  *
- * ddEbind = dEbind (of a dimer)
- *         - dEbind (of one monomer w/ itself)
- *         - dEbind (of the other monomer w/ itself)
+ * ddEbind = dEbind (of two systems)
+ *         - dEbind (of one system w/ itself)
+ *         - dEbind (of the other system w/ itself)
  */
 public class ConformationScan {
 
@@ -44,12 +45,12 @@ public class ConformationScan {
     private double[] x;
     private AlgorithmListener algorithmListener;
 
-    private final Molecule m1;
-    private final Molecule m2;
-    private final Atom[] m1Atoms;
-    private final Atom[] m2Atoms;
-    private final ArrayList<Atom> m1TargetAtoms;
-    private final ArrayList<Atom> m2TargetAtoms;
+    private final Molecule[] s1;
+    private final Molecule[] s2;
+    private final Atom[] s1Atoms;
+    private final Atom[] s2Atoms;
+    private final ArrayList<Atom> s1TargetAtoms;
+    private final ArrayList<Atom> s2TargetAtoms;
 
     private AbstractQueue<StateContainer> statesQueue;
 
@@ -73,8 +74,8 @@ public class ConformationScan {
 
     public ConformationScan(
             MolecularAssembly molecularAssembly,
-            Molecule monomerOne,
-            Molecule monomerTwo,
+            Molecule[] systemOne,
+            Molecule[] systemTwo,
             double minimizeEps,
             int minimizeMaxIterations,
             boolean staticTorsionScan,
@@ -85,22 +86,22 @@ public class ConformationScan {
         mola = molecularAssembly;
         forceFieldEnergy = molecularAssembly.getPotentialEnergy();
         initState = new AssemblyState(mola);
-        m1 = monomerOne;
-        m2 = monomerTwo;
+        s1 = systemOne;
+        s2 = systemTwo;
         eps = minimizeEps;
         maxIter = minimizeMaxIterations;
         tScan = staticTorsionScan;
         excludeH = excludeExtraHydrogen;
         this.minimize = minimize;
-        m1Atoms = m1.getAtomList().toArray(new Atom[0]);
-        m2Atoms = m2.getAtomList().toArray(new Atom[0]);
-        m1TargetAtoms = new ArrayList<>();
-        m2TargetAtoms = new ArrayList<>();
-        setTargetAtoms(mola.getAtomArray());
-        statesQueue = MinMaxPriorityQueue.maximumSize(m1TargetAtoms.size() * m2TargetAtoms.size())
+        s1Atoms = getAtomsFromMoleculeArray(s1);
+        s2Atoms = getAtomsFromMoleculeArray(s2);
+        s1TargetAtoms = new ArrayList<>();
+        s2TargetAtoms = new ArrayList<>();
+        setTargetAtoms(mola.getAtomArray()); // TODO: Adjust this to handle systems not just molecules
+        statesQueue = MinMaxPriorityQueue.maximumSize(s1TargetAtoms.size() * s2TargetAtoms.size())
                 .create();
         if(!minimize) { // If minimization is not performed, then the queue will be in order of the loop
-            statesQueue = new ArrayBlockingQueue<>(m1TargetAtoms.size() * m2TargetAtoms.size() + 1);
+            statesQueue = new ArrayBlockingQueue<>(s1TargetAtoms.size() * s2TargetAtoms.size() + 1);
         }
     }
 
@@ -116,16 +117,16 @@ public class ConformationScan {
         double[] zAxis = new double[]{0,0,1};
         // Loop through interactions between the two molecules --> Not necessarily symmetric but close?
         int loopCounter = 1;
-        for(Atom a: m1TargetAtoms){
-            for(Atom b: m2TargetAtoms){
+        for(Atom a: s1TargetAtoms){
+            for(Atom b: s2TargetAtoms){
                 zAxis[2] = 1;
                 initState.revertState(); // all trials need to be initialized from the monomer states
-                alignMoleculeCOMtoAtomVecWithAxis(m1, a, zAxis, m1Atoms);
+                alignSystemCOMtoAtomVecWithAxis(a, zAxis, s1Atoms);
                 zAxis[2] = -1;
                 logger.info("\n ----- Trial " + loopCounter + " out of " +
-                        (m2TargetAtoms.size() * m1TargetAtoms.size()) + " -----");
+                        (s2TargetAtoms.size() * s1TargetAtoms.size()) + " -----");
                 loopCounter++;
-                alignMoleculeCOMtoAtomVecWithAxis(m2, b, zAxis, m2Atoms);
+                alignSystemCOMtoAtomVecWithAxis(b, zAxis, s2Atoms);
                 // Move the second molecule to the perfect h-bond distance
                 hBondDist = 2.0;
                 double[] hBondVector = new double[]{0, 0, a.getZ() - b.getZ() + hBondDist};
@@ -304,7 +305,7 @@ public class ConformationScan {
         for(int i = 0; i < Math.abs(highBound - lowBound); i++){
             zSearched[i] = i == 0 ? lowBound : zSearched[i - 1] + 1;
             // Move mol2 to new position
-            for(Atom a: m2Atoms){
+            for(Atom a: s2Atoms){
                 a.move(coarseVector);
             }
             // Calculate the energy of the system
@@ -318,8 +319,8 @@ public class ConformationScan {
         }
         // Return to hBond position using difference between hBondVector[2] and zSearched[zSearched.length - 1] to start
         // relative search
-        for(int i = 0; i < m2Atoms.length; i++){
-            m2Atoms[i].move(new double[]{0, 0, hBondVector[2] - zSearched[zSearched.length - 1]});
+        for(int i = 0; i < s2Atoms.length; i++){
+            s2Atoms[i].move(new double[]{0, 0, hBondVector[2] - zSearched[zSearched.length - 1]});
         }
         //logger.info("Z space: " + Arrays.toString(zSearched));
         //logger.info("Coarse potential surface: " + Arrays.toString(coarsePotentialSurface));
@@ -346,7 +347,7 @@ public class ConformationScan {
         while(Math.abs(aPotential - bPotential) > convergence){
             refinedVector[2] = (a + b) / 2 - c;
             // Move mol2 to new position between a and b
-            for(Atom a1: m2Atoms){
+            for(Atom a1: s2Atoms){
                 a1.move(refinedVector);
             }
             // Calculate the energy of the system
@@ -367,12 +368,12 @@ public class ConformationScan {
                 c = (a + b) / 2;
                 if(aPotential < bPotential){
                     refinedVector[2] = a - c;
-                    for(Atom a1: m2Atoms){
+                    for(Atom a1: s2Atoms){
                         a1.move(refinedVector);
                     }
                 } else{
                     refinedVector[2] = b - c;
-                    for(Atom a1: m2Atoms){
+                    for(Atom a1: s2Atoms){
                         a1.move(refinedVector);
                     }
                 }
@@ -388,38 +389,44 @@ public class ConformationScan {
         // Monomer one energy
         int statOne = 0;
         Minimize monomerMinEngine;
-        for(Atom a: m2Atoms){ a.setUse(false); }
+        for(Atom a: s2Atoms){ a.setUse(false); }
         if(minimize) {
-            logger.info("\n --------- Minimize Monomer 1 --------- ");
+            logger.info("\n --------- Minimize System 1 --------- ");
             if(tScan) {
-                logger.info("\n --------- Monomer 1 Static Torsion Scan --------- ");
-                TorsionSearch m1TorsionSearch = new TorsionSearch(mola, m1, 32, 1);
-                m1TorsionSearch.staticAnalysis(0, 100);
-                if (!m1TorsionSearch.getStates().isEmpty()) {
-                    AssemblyState minState = m1TorsionSearch.getStates().get(0);
-                    minState.revertState();
+                logger.info("\n --------- System 1 Static Torsion Scan --------- ");
+                for(Molecule m: s1) {
+                    // Molecules within same system feel each other
+                    TorsionSearch m1TorsionSearch = new TorsionSearch(mola, m, 32, 1);
+                    m1TorsionSearch.staticAnalysis(0, 100);
+                    if (!m1TorsionSearch.getStates().isEmpty()) {
+                        AssemblyState minState = m1TorsionSearch.getStates().get(0);
+                        minState.revertState();
+                    }
                 }
             }
             monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
             monomerMinEngine.minimize(eps, maxIter).getCoordinates(x);
             statOne = monomerMinEngine.getStatus();
         }
-        logger.info("\n --------- Monomer 1 Energy Breakdown --------- ");
+        logger.info("\n --------- System 1 Energy Breakdown --------- ");
         double monomerEnergy = forceFieldEnergy.energy(x, true);
-        for(Atom a: m2Atoms){ a.setUse(true); }
+        for(Atom a: s2Atoms){ a.setUse(true); }
 
         // Monomer two energy
         int statTwo = 0;
-        for(Atom a: m1Atoms){ a.setUse(false); }
+        for(Atom a: s1Atoms){ a.setUse(false); }
         if(minimize) {
-            logger.info("\n --------- Minimize Monomer 2 --------- ");
+            logger.info("\n --------- Minimize System 2 --------- ");
             if(tScan) {
-                logger.info("\n --------- Monomer 2 Static Torsion Scan --------- ");
-                TorsionSearch m2TorsionSearch = new TorsionSearch(mola, m2, 32, 1);
-                m2TorsionSearch.staticAnalysis(0, 100);
-                if (!m2TorsionSearch.getStates().isEmpty()) {
-                    AssemblyState minState = m2TorsionSearch.getStates().get(0);
-                    minState.revertState();
+                logger.info("\n --------- System 2 Static Torsion Scan --------- ");
+                for(Molecule m: s2) {
+                    // Molecules within same system feel each other
+                    TorsionSearch m2TorsionSearch = new TorsionSearch(mola, m, 32, 1);
+                    m2TorsionSearch.staticAnalysis(0, 100);
+                    if (!m2TorsionSearch.getStates().isEmpty()) {
+                        AssemblyState minState = m2TorsionSearch.getStates().get(0);
+                        minState.revertState();
+                    }
                 }
             }
             monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
@@ -428,7 +435,7 @@ public class ConformationScan {
         }
         logger.info("\n --------- Monomer 2 Energy Breakdown --------- ");
         double monomerEnergy2 = forceFieldEnergy.energy(x, true);
-        for(Atom a: m1Atoms){ a.setUse(true); }
+        for(Atom a: s1Atoms){ a.setUse(true); }
 
         // Log potentials
         logger.info(format("\n %-29s%12.7f kcal/mol", "Monomer energy 1:", monomerEnergy));
@@ -443,39 +450,45 @@ public class ConformationScan {
         } else{
             logger.warning("\n --------- Monomer Minimization Did Not Converge --------- ");
             // Add state to statesQueue
+            logger.info(" Saving state for reference. ");
             statesQueue.add(new StateContainer(new AssemblyState(mola), totalMonomerMinimizedEnergy));
             return -1;
         }
     }
     private int minimizeSystem(Atom a, Atom b) throws Exception{
-        if(tScan){ // Molecules feel each other
-            logger.info("\n --------- Monomer 1 Static Torsion Scan --------- ");
+        if(tScan){
+            // Molecules feel each other
+            logger.info("\n --------- System 1 Static Torsion Scan --------- ");
             forceFieldEnergy.getCoordinates(x);
             double tscanE = forceFieldEnergy.energy(x, false);
-            TorsionSearch m1TorsionSearch = new TorsionSearch(mola, mola.getMoleculeArray()[0], 32, 1);
-            m1TorsionSearch.staticAnalysis(0, 100);
-            if(!m1TorsionSearch.getStates().isEmpty()) {
-                AssemblyState minState = m1TorsionSearch.getStates().get(0);
-                minState.revertState();
+            for(Molecule m: s1) {
+                TorsionSearch m1TorsionSearch = new TorsionSearch(mola, m, 32, 1);
+                m1TorsionSearch.staticAnalysis(0, 100);
+                if (!m1TorsionSearch.getStates().isEmpty()) {
+                    AssemblyState minState = m1TorsionSearch.getStates().get(0);
+                    minState.revertState();
+                }
             }
             forceFieldEnergy.getCoordinates(x);
             double tscanEAfter = forceFieldEnergy.energy(x, false);
-            logger.info("\n Energy before static torsion scan of monomer 1: " + tscanE);
-            logger.info(" Energy after static torsion scan of monomer 1: " + tscanEAfter);
+            logger.info("\n Energy before static torsion scan of system 1: " + tscanE);
+            logger.info(" Energy after static torsion scan of system 1: " + tscanEAfter);
 
-            logger.info("\n --------- Monomer 2 Static Torsion Scan --------- ");
+            logger.info("\n --------- System 2 Static Torsion Scan --------- ");
             forceFieldEnergy.getCoordinates(x);
             tscanE = forceFieldEnergy.energy(x, false);
-            TorsionSearch m2TorsionSearch = new TorsionSearch(mola, mola.getMoleculeArray()[1], 32, 1);
-            m2TorsionSearch.staticAnalysis(0, 100);
-            if(!m2TorsionSearch.getStates().isEmpty()) {
-                AssemblyState minState = m2TorsionSearch.getStates().get(0);
-                minState.revertState();
+            for(Molecule m: s2) {
+                TorsionSearch m2TorsionSearch = new TorsionSearch(mola, m, 32, 1);
+                m2TorsionSearch.staticAnalysis(0, 100);
+                if (!m2TorsionSearch.getStates().isEmpty()) {
+                    AssemblyState minState = m2TorsionSearch.getStates().get(0);
+                    minState.revertState();
+                }
             }
             forceFieldEnergy.getCoordinates(x);
             tscanEAfter = forceFieldEnergy.energy(x, false);
-            logger.info("\n Energy before static torsion scan of monomer 2: " + tscanE);
-            logger.info(" Energy after static torsion scan of monomer 2: " + tscanEAfter);
+            logger.info("\n Energy before static torsion scan of system 2: " + tscanE);
+            logger.info(" Energy after static torsion scan of system 2: " + tscanEAfter);
         }
         forceFieldEnergy.getCoordinates(x);
         double e = forceFieldEnergy.energy(x, true);
@@ -523,9 +536,9 @@ public class ConformationScan {
                     || a.getAtomType().atomicNumber == 9 || a.getAtomType().atomicNumber == 15
                     || a.getAtomType().atomicNumber == 16 || a.getAtomType().atomicNumber == 17){ // N,O,F,P,S,Cl
                 if(a.getMoleculeNumber() == mola.getMoleculeNumbers()[0]) {
-                    m1TargetAtoms.add(a);
+                    s1TargetAtoms.add(a);
                 } else{
-                    m2TargetAtoms.add(a);
+                    s2TargetAtoms.add(a);
                 }
 
                 // Searching for bonded h's only if we are excluding H's that aren't bonded to electronegative atoms
@@ -534,9 +547,9 @@ public class ConformationScan {
                         int num = b.get1_2(a).getAtomType().atomicNumber;
                         if (num == 1) {
                             if (a.getMoleculeNumber() == mola.getMoleculeNumbers()[0]) {
-                                m1TargetAtoms.add(a);
+                                s1TargetAtoms.add(a);
                             } else {
-                                m2TargetAtoms.add(a);
+                                s2TargetAtoms.add(a);
                             }
                         }
                     }
@@ -544,9 +557,9 @@ public class ConformationScan {
             }
             else if(a.getAtomType().atomicNumber == 1 && !excludeH){ // Add all H's
                 if(a.getMoleculeNumber() == mola.getMoleculeNumbers()[0]) {
-                    m1TargetAtoms.add(a);
+                    s1TargetAtoms.add(a);
                 } else{
-                    m2TargetAtoms.add(a);
+                    s2TargetAtoms.add(a);
                 }
             }
         }
@@ -592,9 +605,9 @@ public class ConformationScan {
         stdOfEnergiesNoOutlier = Math.sqrt(sumOfSquaresNoOutlier / count);
     }
 
-    private static void alignMoleculeCOMtoAtomVecWithAxis(Molecule m, Atom a, double[] axis, Atom[] mAtoms){
+    private static void alignSystemCOMtoAtomVecWithAxis(Atom a, double[] axis, Atom[] mAtoms){
         // Get center of mass of moleculeOneAtoms
-        double[] moleculeOneCOM = getCOM(m);
+        double[] moleculeOneCOM = getCOM(mAtoms);
         for(int i = 0; i < mAtoms.length; i++){
             mAtoms[i].move(new double[] {-moleculeOneCOM[0], -moleculeOneCOM[1], -moleculeOneCOM[2]});
         }
@@ -619,27 +632,27 @@ public class ConformationScan {
     }
 
     /**
-     * Gets the center of mass of a molecule
-     * @param m
+     * Gets the center of mass of a set of atoms
+     * @param atoms
      * @return x,y,z coordinates of center of mass
      */
-    private static double[] getCOM(Molecule m){
+    private static double[] getCOM(Atom[] atoms){
         // Get center of mass of moleculeOneAtoms
-        double[] moleculeOneCOM = new double[3];
+        double[] COM = new double[3];
         double totalMass = 0.0;
-        for(Atom s: m.getAtomList()){
+        for(Atom s: atoms){
             double[] pos = s.getXYZ().get();
-            moleculeOneCOM[0] += pos[0] * s.getMass();
-            moleculeOneCOM[1] += pos[1] * s.getMass();
-            moleculeOneCOM[2] += pos[2] * s.getMass();
+            COM[0] += pos[0] * s.getMass();
+            COM[1] += pos[1] * s.getMass();
+            COM[2] += pos[2] * s.getMass();
             totalMass += s.getMass();
         }
         totalMass = 1 / totalMass;
-        moleculeOneCOM[0] *= totalMass;
-        moleculeOneCOM[1] *= totalMass;
-        moleculeOneCOM[2] *= totalMass;
+        COM[0] *= totalMass;
+        COM[1] *= totalMass;
+        COM[2] *= totalMass;
 
-        return moleculeOneCOM;
+        return COM;
     }
 
     /**
@@ -704,6 +717,14 @@ public class ConformationScan {
         rotation[2][2] = 1 - 2 * (q1q1 + q2q2);
 
         return rotation;
+    }
+
+    private static Atom[] getAtomsFromMoleculeArray(Molecule[] system){
+        ArrayList<Atom> atoms = new ArrayList<>();
+        for(Molecule m: system){
+            atoms.addAll(m.getAtomList());
+        }
+        return atoms.toArray(new Atom[0]);
     }
 
 
