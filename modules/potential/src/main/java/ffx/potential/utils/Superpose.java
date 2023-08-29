@@ -37,7 +37,9 @@
 // ******************************************************************************
 package ffx.potential.utils;
 
+import static ffx.crystal.SymOp.asMatrixString;
 import static ffx.potential.parsers.DistanceMatrixFilter.writeDistanceMatrixRow;
+import static ffx.utilities.StringUtils.writeAtomRanges;
 import static java.lang.String.format;
 import static java.lang.System.arraycopy;
 import static java.util.Arrays.fill;
@@ -48,6 +50,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
+import ffx.crystal.SymOp;
 import ffx.numerics.math.Double3;
 import ffx.numerics.math.RunningStatistics;
 import ffx.potential.AssemblyState;
@@ -58,6 +61,7 @@ import ffx.potential.parsers.DistanceMatrixFilter;
 import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.EigenDecomposition;
@@ -163,18 +167,28 @@ public class Superpose {
    * @param saveSnapshots Save superposed snapshots.
    */
   public void calculateRMSDs(int[] usedIndices, boolean dRMSD, boolean verbose, boolean restart,
-      boolean write, boolean saveSnapshots) {
+      boolean write, boolean saveSnapshots, boolean printSym) {
 
     String filename = baseFilter.getFile().getAbsolutePath();
+    String targetFilename = targetFilter.getFile().getAbsolutePath();
 
     // Prepare to write out superposed snapshots.
+    File baseOutputFile = null;
     File targetOutputFile = null;
+    SystemFilter baseOutputFilter = null;
     SystemFilter targetOutputFilter = null;
     if (saveSnapshots) {
-      String targetOutputName = concat(getFullPath(filename),
+      String baseOutputName = concat(getFullPath(filename),
           getBaseName(filename) + "_superposed.arc");
+      String targetOutputName = concat(getFullPath(filename),
+              getBaseName(targetFilename) + "_superposed.arc");
+      baseOutputFile = SystemFilter.version(new File(baseOutputName));
       targetOutputFile = SystemFilter.version(new File(targetOutputName));
+      MolecularAssembly baseAssembly = baseFilter.getActiveMolecularSystem();
       MolecularAssembly targetAssembly = targetFilter.getActiveMolecularSystem();
+      baseOutputFilter = new XYZFilter(baseOutputFile, baseAssembly,
+              baseAssembly.getForceField(),
+              baseAssembly.getProperties());
       targetOutputFilter = new XYZFilter(targetOutputFile, targetAssembly,
           targetAssembly.getForceField(),
           targetAssembly.getProperties());
@@ -288,15 +302,18 @@ public class Superpose {
               double origRMSD = rmsd(baseUsedCoords, targetUsedCoords, mass);
 
               // Calculate the translation on only the used subset, but apply it to the entire structure.
-              applyTranslation(baseCoords, calculateTranslation(baseUsedCoords, mass));
-              applyTranslation(targetCoords, calculateTranslation(targetUsedCoords, mass));
+              double[] baseTranslation = calculateTranslation(baseUsedCoords, mass);
+              applyTranslation(baseCoords, baseTranslation);
+              double[] targetTranslation = calculateTranslation(targetUsedCoords, mass);
+              applyTranslation(targetCoords, targetTranslation);
               // Copy the applied translation to baseUsedCoords and targetUsedCoords.
               extractCoordinates(usedIndices, baseCoords, baseUsedCoords);
               extractCoordinates(usedIndices, targetCoords, targetUsedCoords);
               double translatedRMSD = rmsd(baseUsedCoords, targetUsedCoords, mass);
 
               // Calculate the rotation on only the used subset, but apply it to the entire structure.
-              applyRotation(targetCoords, calculateRotation(baseUsedCoords, targetUsedCoords, mass));
+              double[][] rotation = calculateRotation(baseUsedCoords, targetUsedCoords, mass);
+              applyRotation(targetCoords, rotation);
               // Copy the applied rotation to targetUsedCoords.
               extractCoordinates(usedIndices, targetCoords, targetUsedCoords);
               double rotatedRMSD = rmsd(baseUsedCoords, targetUsedCoords, mass);
@@ -313,11 +330,46 @@ public class Superpose {
               // Store the RMSD result.
               myDistance[0] = rotatedRMSD;
 
+              if(printSym){
+                StringBuilder sbSO = new StringBuilder(
+                        format("\n Sym Op to move %s onto %s:\nsymop ", targetFilename, filename));
+                StringBuilder sbInv = new StringBuilder(
+                        format("\n Inverted Sym Op to move %s onto %s:\nsymop ", filename, targetFilename));
+                SymOp bestBaseSymOp = new SymOp(SymOp.ZERO_ROTATION, SymOp.Tr_0_0_0).append(new SymOp(SymOp.ZERO_ROTATION, baseTranslation).append(SymOp.invertSymOp(new SymOp(rotation, targetTranslation))));
+                double[] inverseBaseTranslation = new double[]{-baseTranslation[0], -baseTranslation[1], -baseTranslation[2]};
+                SymOp bestTargetSymOp = new SymOp(SymOp.ZERO_ROTATION, SymOp.Tr_0_0_0).append(new SymOp(SymOp.ZERO_ROTATION, targetTranslation).append(new SymOp(rotation, inverseBaseTranslation)));
+                ArrayList<Integer> mol1List = new ArrayList<>();
+                ArrayList<Integer> mol2List = new ArrayList<>();
+                Atom[] atomArr1 = baseMolecularAssembly.getAtomArray();
+                Atom[] atomArr2 = targetMolecularAssembly.getAtomArray();
+                int nAtoms = atomArr1.length;
+                for(int i = 0; i < nAtoms; i++){
+                  if(atomArr1[i].isActive()){
+                    mol1List.add(i);
+                  }
+                }
+                nAtoms = atomArr2.length;
+                for(int i = 0; i < nAtoms; i++){
+                  if(atomArr2[i].isActive()){
+                    mol2List.add(i);
+                  }
+                }
+                int[] mol1arr = mol1List.stream().mapToInt(Integer::intValue).toArray();
+                int[] mol2arr = mol2List.stream().mapToInt(Integer::intValue).toArray();
+                sbSO.append(format("    %s     %s", writeAtomRanges(mol2arr), writeAtomRanges(mol1arr)))
+                        .append(asMatrixString(bestBaseSymOp));
+                sbInv.append(format("    %s     %s", writeAtomRanges(mol2arr), writeAtomRanges(mol1arr))).append(asMatrixString(bestTargetSymOp));
+                logger.info(format(" %s\n %s", sbSO.toString(),sbInv.toString()));
+              }
+
               // Save a PDB snapshot.
               if (saveSnapshots && numProc == 1) {
                 MolecularAssembly molecularAssembly = targetOutputFilter.getActiveMolecularSystem();
                 molecularAssembly.getPotentialEnergy().setCoordinates(targetCoords);
                 targetOutputFilter.writeFile(targetOutputFile, true);
+                molecularAssembly = baseOutputFilter.getActiveMolecularSystem();
+                molecularAssembly.getPotentialEnergy().setCoordinates(baseCoords);
+                baseOutputFilter.writeFile(baseOutputFile, true);
                 origStateB.revertState();
               }
             }

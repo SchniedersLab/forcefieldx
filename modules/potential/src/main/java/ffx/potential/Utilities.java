@@ -680,7 +680,9 @@ public final class Utilities {
       int index = 1;
       for (Residue r : aaArray) {
         r.setNumber(index++);
-        renameAminoAcidToPDBStandard(r);
+        if(!renameAminoAcidToPDBStandard(r)){
+          return false;
+        }
         c.addMSNode(r);
       }
       // Potential DNA/RNA
@@ -709,7 +711,7 @@ public final class Utilities {
         }
         start += 6;
       }
-      // Make sure the fisrt base is found
+      // Make sure the first base is found
       Atom o2, o3;
       Atom c1, c2, c3;
       if (phosphate1 != null && oxygen1 != null) {

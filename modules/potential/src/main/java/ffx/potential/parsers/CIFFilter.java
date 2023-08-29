@@ -80,6 +80,7 @@ import org.openscience.cdk.interfaces.IAtomType;
 import org.openscience.cdk.isomorphism.AtomMatcher;
 import org.openscience.cdk.isomorphism.BondMatcher;
 import org.openscience.cdk.isomorphism.VentoFoggia;
+import org.openscience.cdk.isomorphism.Pattern;
 
 import org.rcsb.cif.CifIO;
 import org.rcsb.cif.model.Column;
@@ -147,6 +148,10 @@ public class CIFFilter extends SystemFilter {
    */
   private int sgNum = -1;
   /**
+   * The crystallographic information for this system.
+   */
+  private Crystal crystal;
+  /**
    * Whether to fix lattice parameters.
    */
   private boolean fixLattice = false;
@@ -161,12 +166,12 @@ public class CIFFilter extends SystemFilter {
   /**
    * Maximum atomic covalent radius for CDK Rebonder Tool
    */
-  private static final double MAX_COVALENT_RADIUS = 2.0;
+  public static final double MAX_COVALENT_RADIUS = 2.0;
 
   /**
    * Minimum bond distance for CDK Rebonder Tool
    */
-  private static final double MIN_BOND_DISTANCE = 0.5;
+  public static final double MIN_BOND_DISTANCE = 0.5;
 
   /**
    * Constructor for CIFFilter on a single file and a single assembly.
@@ -259,7 +264,7 @@ public class CIFFilter extends SystemFilter {
    *
    * @param atoms To potentially be bonded together.
    */
-  private static int bondAtoms(Atom[] atoms, double bondTolerance) {
+  public static int bondAtoms(Atom[] atoms, double bondTolerance) {
     int bondCount = 0;
     int nAtoms = atoms.length;
     for (int i = 0; i < nAtoms; i++) {
@@ -318,7 +323,7 @@ public class CIFFilter extends SystemFilter {
    * @param seed Starting atom.
    * @param atoms that are bonded.
    */
-  private static void collectAtoms(Atom seed, ArrayList<Atom> atoms) {
+  public static void collectAtoms(Atom seed, ArrayList<Atom> atoms) {
     logger.finest(format(" Atom: %s", seed.getName()));
     atoms.add(seed);
     for (Bond b : seed.getBonds()) {
@@ -336,7 +341,7 @@ public class CIFFilter extends SystemFilter {
    * @param currentList Entity of currently being used.
    * @return Maximum index that is less than indices in current entity.
    */
-  private int findMaxLessIndex(ArrayList<ArrayList<Atom>> xyzAtomLists, int currentList) {
+  public int findMaxLessIndex(ArrayList<ArrayList<Atom>> xyzAtomLists, int currentList) {
     // If no less indices are found, want to return 0.
     int lessIndex = 0;
     int minIndex = Integer.MAX_VALUE;
@@ -366,7 +371,7 @@ public class CIFFilter extends SystemFilter {
    * @param atom Atom whose element we desire
    * @return String specifying atom element.
    */
-  private static String getAtomElement(Atom atom) {
+  public static String getAtomElement(Atom atom) {
     return getAtomElement(atom.getName());
   }
 
@@ -399,6 +404,196 @@ public class CIFFilter extends SystemFilter {
   }
 
   /**
+   * Parse CIF block to determine crystal and atom information.
+   * @param block CifCoreBlock object to be interpreted.
+   * @return Atoms from CIF. (Crystal updated as global variable)
+   */
+  private Atom[] parseBlock(CifCoreBlock block){
+    // Parse CIF file "blocks"
+    logger.info("\n Block ID: " + block.getBlockHeader());
+    Chemical chemical = block.getChemical();
+    Column<String[]> nameCommon = chemical.getNameCommon();
+    Column<String[]> nameSystematic = chemical.getNameSystematic();
+    int rowCount = nameCommon.getRowCount();
+    if (rowCount > 1) {
+      logger.info(" Chemical components");
+      for (int i = 0; i < rowCount; i++) {
+        logger.info(format("  %s", nameCommon.getColumnName()));
+      }
+    } else if (rowCount > 0) {
+      logger.info(format(" Chemical component: %s", nameCommon.getColumnName()));
+    }
+
+    // Determine the space group from CIF.
+    Symmetry symmetry = block.getSymmetry();
+    if (sgNum == -1 && sgName == null || sgName.equals("")) {
+      if (symmetry.getIntTablesNumber().getRowCount() > 0) {
+        sgNum = symmetry.getIntTablesNumber().get(0);
+        logger.info(format(" CIF International Tables Number: %d", sgNum));
+      }
+      if (symmetry.getSpaceGroupNameH_M().getRowCount() > 0) {
+        sgName = symmetry.getSpaceGroupNameH_M().get(0);
+        logger.info(format(" CIF Hermann–Mauguin Space Group: %s", sgName));
+      } else if (block.getSpaceGroup().getNameH_mFull().getRowCount() > 0) {
+        sgName = block.getSpaceGroup().getNameH_mFull().get(0);
+        logger.info(format(" CIF Hermann–Mauguin Space Group: %s", sgName));
+      } else if (block.getSpaceGroup().getNameH_mAlt().getRowCount() > 0) {
+        sgName = block.getSpaceGroup().getNameH_mAlt().get(0);
+        logger.info(format(" CIF Hermann–Mauguin Space Group: %s", sgName));
+      }
+    } else {
+      // Parse user defined space group.
+      if (sgNum != -1) {
+        logger.info(format(" Command line International Tables Number: %d", sgNum));
+      } else {
+        logger.info(format(" Command line space group name: %s", sgName));
+      }
+    }
+
+    // Set space group.
+    SpaceGroup sg = null;
+    if (sgName != null) {
+      sg = SpaceGroupDefinitions.spaceGroupFactory(sgName);
+    }
+    if (sg == null) {
+      logger.finer(" Space group name not found. Attempting to use space group number.");
+      sg = SpaceGroupDefinitions.spaceGroupFactory(sgNum);
+    }
+
+    // Fall back to P1.
+    if (sg == null) {
+      logger.warning(" The space group could not be determined from the CIF file (using P1).");
+      sg = SpaceGroupDefinitions.spaceGroupFactory(1);
+    }
+
+    // Generate FFX Crystal for CIF file.
+    Cell cell = block.getCell();
+    if(cell.isDefined()) {
+      double a = cell.getLengthA().get(0);
+      double b = cell.getLengthB().get(0);
+      double c = cell.getLengthC().get(0);
+      double alpha = cell.getAngleAlpha().get(0);
+      double beta = cell.getAngleBeta().get(0);
+      double gamma = cell.getAngleGamma().get(0);
+      assert sg != null;
+      LatticeSystem latticeSystem = sg.latticeSystem;
+      double[] latticeParameters = {a, b, c, alpha, beta, gamma};
+      if (latticeSystem.validParameters(a, b, c, alpha, beta, gamma)) {
+        crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName);
+      } else {
+        // Fix lattice parameters if they disobey space group.
+        if (fixLattice) {
+          logger.info(
+                  " Attempting to patch disagreement between lattice system and lattice parameters.");
+          boolean fixed = false;
+          // Check if Rhombohedral lattice has been named Hexagonal
+          if (latticeSystem == LatticeSystem.HEXAGONAL_LATTICE
+                  && LatticeSystem.RHOMBOHEDRAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)) {
+            crystal = hrConversion(a, b, c, alpha, beta, gamma, sg);
+            latticeSystem = crystal.spaceGroup.latticeSystem;
+            if (latticeSystem.validParameters(crystal.a, crystal.b, crystal.c, crystal.alpha,
+                    crystal.beta, crystal.gamma)) {
+              fixed = true;
+            }
+            // Check if Hexagonal lattice has been named Rhombohedral
+          } else if (latticeSystem == LatticeSystem.RHOMBOHEDRAL_LATTICE
+                  && LatticeSystem.HEXAGONAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)) {
+            crystal = hrConversion(a, b, c, alpha, beta, gamma, sg);
+            latticeSystem = crystal.spaceGroup.latticeSystem;
+            if (latticeSystem.validParameters(crystal.a, crystal.b, crystal.c, crystal.alpha,
+                    crystal.beta, crystal.gamma)) {
+              fixed = true;
+            }
+          }
+          if (!fixed) {
+            double[] newLatticeParameters = latticeSystem.fixParameters(a, b, c, alpha, beta, gamma);
+            if (newLatticeParameters == latticeParameters) {
+              logger.warning(" Conversion Failed: The proposed lattice parameters for " + sg.pdbName
+                      + " do not satisfy the " + latticeSystem + ".");
+              return null;
+            } else {
+              a = newLatticeParameters[0];
+              b = newLatticeParameters[1];
+              c = newLatticeParameters[2];
+              alpha = newLatticeParameters[3];
+              beta = newLatticeParameters[4];
+              gamma = newLatticeParameters[5];
+              crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName);
+            }
+          }
+        } else {
+          logger.warning(" Conversion Failed: The proposed lattice parameters for " + sg.pdbName
+                  + " do not satisfy the " + latticeSystem + ".");
+          logger.info(" Use \"--fixLattice\" or \"--fl\" flag to attempt to fix automatically.");
+          return null;
+        }
+      }
+      activeMolecularAssembly.setName(block.getBlockHeader());
+      logger.info(" New Crystal: " + crystal);
+      activeMolecularAssembly.setCrystal(crystal);
+    }
+    // Parse CIF Atoms
+    AtomSite atomSite = block.getAtomSite();
+    Column<String[]> label = atomSite.getLabel();
+    Column<String[]> typeSymbol = atomSite.getTypeSymbol();
+    FloatColumn fractX = atomSite.getFractX();
+    FloatColumn fractY = atomSite.getFractY();
+    FloatColumn fractZ = atomSite.getFractZ();
+
+    FloatColumn cartX = atomSite.getCartnX();
+    FloatColumn cartY = atomSite.getCartnY();
+    FloatColumn cartZ = atomSite.getCartnZ();
+
+    int nAtoms = label.getRowCount();
+    if (nAtoms < 1) {
+      logger.warning(" CIF file did not contain coordinates.");
+      return null;
+    }
+    if (logger.isLoggable(Level.FINE)) {
+      logger.fine(format("\n Number of Atoms in CIF: %d", nAtoms));
+    }
+    Atom[] atoms = new Atom[nAtoms];
+
+    // Define per atom information from the CIF.
+    String resName = "CIF";
+    double bfactor = 1.0;
+    char altLoc = ' ';
+    char chain = 'A';
+//    String segID = "A";
+    String[] symbols = new String[nAtoms];
+
+    // Loop over atoms in CIF and generate FFX Atom(s).
+    for (int i = 0; i < nAtoms; i++) {
+      double occupancy = 1.0;
+      if(atomSite.getOccupancy().isDefined()){
+        occupancy = atomSite.getOccupancy().get(i);
+      }
+      // Assigning each atom their own resID prevents comparator from treating them as the same atom.
+      if (typeSymbol.getRowCount() > 0) {
+        symbols[i] = typeSymbol.getStringData(i);
+      } else {
+        symbols[i] = getAtomElement(label.getStringData(i));
+      }
+      double x = (fractX.isDefined()) ? fractX.get(i) : cartX.get(i);
+      double y = (fractY.isDefined()) ? fractY.get(i) : cartY.get(i);
+      double z = (fractZ.isDefined()) ? fractZ.get(i) : cartZ.get(i);
+      double[] xyz = {x, y, z};
+      if (fractX.isDefined() && crystal != null) {
+        crystal.toCartesianCoordinates(xyz, xyz);
+      }
+      atoms[i] = new Atom(i + 1, label.getStringData(i), altLoc, xyz, resName, i, chain, occupancy,
+              bfactor, symbols[i]);
+      atoms[i].setHetero(true);
+      if (logger.isLoggable(Level.FINE)) {
+        logger.fine(format(
+                " Atom (%2d) Name: " + atoms[i].getName() + " Label: " + label.getStringData(i)
+                        + " Symbol: " + symbols[i], i));
+      }
+    }
+    return atoms;
+  }
+
+  /**
    * {@inheritDoc}
    *
    * <p>Parse the CIF File
@@ -407,9 +602,7 @@ public class CIFFilter extends SystemFilter {
   public boolean readFile() {
     // Open the input file (with electrostatics turned off).
     System.setProperty("mpoleterm", "false");
-    System.clearProperty("mpoleterm");
     Atom[] inputAtoms = activeMolecularAssembly.getAtomArray();
-    ArrayList<ArrayList<Atom>> xyzatoms = new ArrayList<>();
     int nInputAtoms = inputAtoms.length;
 
     int numHydrogen = 0;
@@ -419,7 +612,7 @@ public class CIFFilter extends SystemFilter {
       }
     }
 
-    List<MSNode> entitiesInput = activeMolecularAssembly.getAllBondedEntities();
+    List<MSNode> entitiesInput = activeMolecularAssembly.getNodeList();
     int numEntitiesInput = entitiesInput.size();
     if (logger.isLoggable(Level.FINE)) {
       logger.fine(format(" Number of entities in input: %d", numEntitiesInput));
@@ -436,180 +629,18 @@ public class CIFFilter extends SystemFilter {
     }
 
     for (CifCoreBlock block : cifFile.getBlocks()) {
-      logger.info("\n Block ID: " + block.getBlockHeader());
-      Chemical chemical = block.getChemical();
-      Column<String[]> nameCommon = chemical.getNameCommon();
-      Column<String[]> nameSystematic = chemical.getNameSystematic();
-      int rowCount = nameCommon.getRowCount();
-      if (rowCount > 1) {
-        logger.info(" Chemical components");
-        for (int i = 0; i < rowCount; i++) {
-          logger.info(format("  %s", nameCommon.getColumnName()));
-        }
-      } else if (rowCount > 0) {
-        logger.info(format(" Chemical component: %s", nameCommon.getColumnName()));
-      }
-
-      // Determine the space group.
-      Symmetry symmetry = block.getSymmetry();
-      if (sgNum == -1 && sgName == null || sgName.equals("")) {
-        if (symmetry.getIntTablesNumber().getRowCount() > 0) {
-          sgNum = symmetry.getIntTablesNumber().get(0);
-          logger.info(format(" CIF International Tables Number: %d", sgNum));
-        }
-        if (symmetry.getSpaceGroupNameH_M().getRowCount() > 0) {
-          sgName = symmetry.getSpaceGroupNameH_M().get(0);
-          logger.info(format(" CIF Hermann–Mauguin Space Group: %s", sgName));
-        } else if (block.getSpaceGroup().getNameH_mFull().getRowCount() > 0) {
-          sgName = block.getSpaceGroup().getNameH_mFull().get(0);
-          logger.info(format(" CIF Hermann–Mauguin Space Group: %s", sgName));
-        } else if (block.getSpaceGroup().getNameH_mAlt().getRowCount() > 0) {
-          sgName = block.getSpaceGroup().getNameH_mAlt().get(0);
-          logger.info(format(" CIF Hermann–Mauguin Space Group: %s", sgName));
-        }
-      } else {
-        if (sgNum != -1) {
-          logger.info(format(" Command line International Tables Number: %d", sgNum));
-        } else {
-          logger.info(format(" Command line space group name: %s", sgName));
-        }
-      }
-
-      SpaceGroup sg = null;
-      if (sgName != null) {
-        sg = SpaceGroupDefinitions.spaceGroupFactory(sgName);
-      }
-      if (sg == null) {
-        logger.finer(" Space group name not found. Attempting to use space group number.");
-        sg = SpaceGroupDefinitions.spaceGroupFactory(sgNum);
-      }
-
-      // Fall back to P1.
-      if (sg == null) {
-        logger.warning(" The space group could not be determined from the CIF file (using P1).");
-        sg = SpaceGroupDefinitions.spaceGroupFactory(1);
-      }
-
-      Crystal crystal = null;
-      Cell cell = block.getCell();
-      if(cell.isDefined()) {
-        double a = cell.getLengthA().get(0);
-        double b = cell.getLengthB().get(0);
-        double c = cell.getLengthC().get(0);
-        double alpha = cell.getAngleAlpha().get(0);
-        double beta = cell.getAngleBeta().get(0);
-        double gamma = cell.getAngleGamma().get(0);
-        assert sg != null;
-        LatticeSystem latticeSystem = sg.latticeSystem;
-        double[] latticeParameters = {a, b, c, alpha, beta, gamma};
-        if (latticeSystem.validParameters(a, b, c, alpha, beta, gamma)) {
-          crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName);
-        } else {
-          if (fixLattice) {
-            logger.info(
-                    " Attempting to patch disagreement between lattice system and lattice parameters.");
-            boolean fixed = false;
-            // Check if Rhombohedral lattice has been named Hexagonal
-            if (latticeSystem == LatticeSystem.HEXAGONAL_LATTICE
-                    && LatticeSystem.RHOMBOHEDRAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)) {
-              crystal = hrConversion(a, b, c, alpha, beta, gamma, sg);
-              latticeSystem = crystal.spaceGroup.latticeSystem;
-              if (latticeSystem.validParameters(crystal.a, crystal.b, crystal.c, crystal.alpha,
-                      crystal.beta, crystal.gamma)) {
-                fixed = true;
-              }
-              // Check if Hexagonal lattice has been named Rhombohedral
-            } else if (latticeSystem == LatticeSystem.RHOMBOHEDRAL_LATTICE
-                    && LatticeSystem.HEXAGONAL_LATTICE.validParameters(a, b, c, alpha, beta, gamma)) {
-              crystal = hrConversion(a, b, c, alpha, beta, gamma, sg);
-              latticeSystem = crystal.spaceGroup.latticeSystem;
-              if (latticeSystem.validParameters(crystal.a, crystal.b, crystal.c, crystal.alpha,
-                      crystal.beta, crystal.gamma)) {
-                fixed = true;
-              }
-            }
-            if (!fixed) {
-              double[] newLatticeParameters = latticeSystem.fixParameters(a, b, c, alpha, beta, gamma);
-              if (newLatticeParameters == latticeParameters) {
-                logger.warning(" Conversion Failed: The proposed lattice parameters for " + sg.pdbName
-                        + " do not satisfy the " + latticeSystem + ".");
-                return false;
-              } else {
-                a = newLatticeParameters[0];
-                b = newLatticeParameters[1];
-                c = newLatticeParameters[2];
-                alpha = newLatticeParameters[3];
-                beta = newLatticeParameters[4];
-                gamma = newLatticeParameters[5];
-                crystal = new Crystal(a, b, c, alpha, beta, gamma, sg.pdbName);
-              }
-            }
-          } else {
-            logger.warning(" Conversion Failed: The proposed lattice parameters for " + sg.pdbName
-                    + " do not satisfy the " + latticeSystem + ".");
-            logger.info(" Use \"--fixLattice\" or \"--fl\" flag to attempt to fix automatically.");
-            return false;
-          }
-        }
-        activeMolecularAssembly.setName(block.getBlockHeader());
-        logger.info(" New Crystal: " + crystal);
-        activeMolecularAssembly.setCrystal(crystal);
-      }
-      AtomSite atomSite = block.getAtomSite();
-      Column<String[]> label = atomSite.getLabel();
-      Column<String[]> typeSymbol = atomSite.getTypeSymbol();
-      FloatColumn fractX = atomSite.getFractX();
-      FloatColumn fractY = atomSite.getFractY();
-      FloatColumn fractZ = atomSite.getFractZ();
-
-      FloatColumn cartX = atomSite.getCartnX();
-      FloatColumn cartY = atomSite.getCartnY();
-      FloatColumn cartZ = atomSite.getCartnZ();
-
-      int nAtoms = label.getRowCount();
-      if (nAtoms < 1) {
-        logger.warning(" CIF file did not contain coordinates.");
+      Atom[] atoms = parseBlock(block);
+      logger.info(crystal.toString());
+      if(atoms == null){
         return false;
       }
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine(format("\n Number of Atoms in CIF: %d", nAtoms));
+      if(atoms.length == 0){
+        logger.warning(" Atoms could not be obtained from CIF.");
+        return false;
       }
-      Atom[] atoms = new Atom[nAtoms];
+      int nAtoms = atoms.length;
 
-      // Define per atom information for the PDB file.
-      String resName = "CIF";
-      double occupancy = 1.0;
-      double bfactor = 1.0;
-      char altLoc = ' ';
-      char chain = 'A';
-      String segID = "A";
-      String[] symbols = new String[nAtoms];
-
-      // Loop over atoms.
-      for (int i = 0; i < nAtoms; i++) {
-        // Assigning each atom their own resID prevents comparator from treating them as the same atom.
-        if (typeSymbol.getRowCount() > 0) {
-          symbols[i] = typeSymbol.getStringData(i);
-        } else {
-          symbols[i] = getAtomElement(label.getStringData(i));
-        }
-        double x = (fractX.isDefined()) ? fractX.get(i) : cartX.get(i);
-        double y = (fractY.isDefined()) ? fractY.get(i) : cartY.get(i);
-        double z = (fractZ.isDefined()) ? fractZ.get(i) : cartZ.get(i);
-        double[] xyz = {x, y, z};
-        if (fractX.isDefined() && crystal != null) {
-          crystal.toCartesianCoordinates(xyz, xyz);
-        }
-        atoms[i] = new Atom(i + 1, label.getStringData(i), altLoc, xyz, resName, i, chain, occupancy,
-            bfactor, segID);
-        atoms[i].setHetero(true);
-        if (logger.isLoggable(Level.FINE)) {
-          logger.fine(format(
-              " Atom (%2d) Name: " + atoms[i].getName() + " Label: " + label.getStringData(i)
-                  + " Symbol: " + symbols[i], i));
-        }
-      }
-
+      // Define assembly object to contain CIF info.
       MolecularAssembly outputAssembly = new MolecularAssembly(block.getBlockHeader());
       int zPrime;
       if (this.zPrime > 0) {
@@ -626,36 +657,41 @@ public class CIFFilter extends SystemFilter {
         logger.info(format(" Detected more than one copy in asymmetric unit of CIF file (Z'=%d)."
             + " -- attempting to separate.", zPrime));
       }
-      for (MSNode mol : entitiesInput) {
-        xyzatoms.add((ArrayList<Atom>) mol.getAtomList());
-      }
+      ArrayList<ArrayList<Atom>> xyzatoms = new ArrayList<>();
       int atomIndex = 1;
+      int shiftIndex = 0;
+      int[] moleculeNumbers = activeMolecularAssembly.getMoleculeNumbers();
+      if(logger.isLoggable(Level.FINER)) {
+        for (int i = 0; i < moleculeNumbers.length; i++) {
+          logger.finer(format(" Molecule Number (atom %2d): %2d", i, moleculeNumbers[i]));
+        }
+      }
+      // For each entity (protein, molecule, ion, etc) in the XYZ
       for (int i = 0; i < numEntitiesInput; i++) {
         MSNode mol = entitiesInput.get(i);
-        int numInputMolAtoms = xyzatoms.get(i).size();
+        logger.info(format(" Size of Entity: %2d", mol.getAtomList().size()));
+        xyzatoms.add((ArrayList<Atom>) mol.getAtomList());
+        // Set up input (XYZ) file contents as CDK variable
+        AtomContainer xyzCDKAtoms = new AtomContainer();
+        // Number of hydrogen in an entity from the XYZ.
         int numMolHydrogen = 0;
+        int atomCount = 0;
         for (Atom atom : xyzatoms.get(i)) {
           if (atom.isHydrogen()) {
             numMolHydrogen++;
           }
-        }
-        if (logger.isLoggable(Level.FINE)) {
-          logger.fine(format(" Current entity number of atoms: %d (%d + %dH)", numInputMolAtoms,
-              numInputMolAtoms - numMolHydrogen, numMolHydrogen));
-        }
-
-        // Set up input file contents as CDK variable
-        AtomContainer xyzCDKAtoms = new AtomContainer();
-        for (Atom atom : xyzatoms.get(i)) {
           String atomName = getSymbol(atom.getAtomType().atomicNumber);
           xyzCDKAtoms.addAtom(
               new org.openscience.cdk.Atom(atomName, new Point3d(atom.getXYZ(null))));
+          atomCount++;
+        }
+        logger.info(format(" Number of atoms in XYZ CDK: %2d", atomCount));
+        int numInputMolAtoms = xyzatoms.get(i).size();
+        if (logger.isLoggable(Level.FINE)) {
+          logger.fine(format(" Current entity number of atoms: %d (%d + %dH)", numInputMolAtoms,
+                  numInputMolAtoms - numMolHydrogen, numMolHydrogen));
         }
 
-        int lessIndex = (this.zPrime == 1) ? 0 : findMaxLessIndex(xyzatoms, i);
-        if (logger.isLoggable(Level.FINE)) {
-          logger.fine(format(" Molecule Index: %d", lessIndex));
-        }
         // Add known input bonds; a limitation is that bonds all are given a Bond order of 1.
         List<Bond> bonds = mol.getBondList();
         IBond.Order order = IBond.Order.SINGLE;
@@ -672,14 +708,17 @@ public class CIFFilter extends SystemFilter {
                 format(" Bonded atom 1: %d, Bonded atom 2: %d", atom0Index,
                     atom1Index));
           }
-          xyzCDKAtoms.addBond(atom0Index - lessIndex - 1,
-              atom1Index - lessIndex - 1, order);
+          logger.fine(format(" Atom 0 index: %2d Atom 1 Index: %2d lessIndex: %2d Value 0: %2d Value 1: %2d",
+                  atom0Index, atom1Index, shiftIndex, atom0Index - shiftIndex - 1, atom1Index - shiftIndex - 1));
+          xyzCDKAtoms.addBond(atom0Index - shiftIndex - 1,
+              atom1Index - shiftIndex - 1, order);
         }
 
         // Assign CDK atom types for the input molecule.
         AtomTypeFactory factory = AtomTypeFactory.getInstance(
             "org/openscience/cdk/config/data/jmol_atomtypes.txt", xyzCDKAtoms.getBuilder());
 
+        // Assign atom types to CDK object.
         for (IAtom atom : xyzCDKAtoms.atoms()) {
           setAtomTypes(factory, atom);
           try {
@@ -692,7 +731,7 @@ public class CIFFilter extends SystemFilter {
 
         ArrayList<ArrayList<Integer>> zindices = new ArrayList<>();
         int counter = 0;
-        // Bond atoms in CIF file.
+        // Bond atoms from CIF.
         int cifBonds = bondAtoms(atoms, bondTolerance);
         if (logger.isLoggable(Level.FINE)) {
           logger.fine(
@@ -728,7 +767,7 @@ public class CIFFilter extends SystemFilter {
           return false;
         }
         zPrime = zindices.size();
-        // Set up CIF file contents as CDK variable
+        // Set up CIF contents as CDK variable
         AtomContainer[] cifCDKAtomsArr = new AtomContainer[zPrime];
         AtomContainer cifCDKAtoms = new AtomContainer();
         for (int j = 0; j < zPrime; j++) {
@@ -740,11 +779,12 @@ public class CIFFilter extends SystemFilter {
           if (logger.isLoggable(Level.FINE)) {
             logger.fine(format(" CIF atoms in current: %d", cifMolAtoms));
           }
+          // Detect if CIF contains multiple copies (Z'>1)
           if (cifMolAtoms % numInputMolAtoms == 0
               || cifMolAtoms % (numInputMolAtoms - numMolHydrogen) == 0) {
             cifCDKAtomsArr[j] = new AtomContainer();
             for (Integer integer : currentList) {
-              cifCDKAtomsArr[j].addAtom(new org.openscience.cdk.Atom(symbols[integer - 1],
+              cifCDKAtomsArr[j].addAtom(new org.openscience.cdk.Atom(atoms[integer-1].getSegID(),
                   new Point3d(atoms[integer - 1].getXYZ(null))));
             }
             AtomContainer nullCDKAtoms = new AtomContainer();
@@ -786,7 +826,7 @@ public class CIFFilter extends SystemFilter {
             // Number of bonds matches.
             // If cifMolBonds == 0 then ion or atom with implicit hydrogens (e.g. water, methane, etc.)
             if (cifMolBonds != 0 && cifMolBonds % xyzBonds == 0) {
-              org.openscience.cdk.isomorphism.Pattern pattern = VentoFoggia.findIdentical(
+              Pattern pattern = VentoFoggia.findIdentical(
                   xyzCDKAtoms, AtomMatcher.forElement(), BondMatcher.forAny());
               int[] p = pattern.match(cifCDKAtomsArr[j]);
               int pLength = p.length;
@@ -816,7 +856,7 @@ public class CIFFilter extends SystemFilter {
                 logger.info(" CIF may contain implicit hydrogen -- attempting to patch.");
               }
               // Match heavy atoms between CIF and input
-              org.openscience.cdk.isomorphism.Pattern pattern = VentoFoggia.findSubstructure(
+              Pattern pattern = VentoFoggia.findSubstructure(
                   cifCDKAtomsArr[j], AtomMatcher.forElement(), BondMatcher.forAny());
               int[] p = pattern.match(xyzCDKAtoms);
               int pLength = p.length;
@@ -985,8 +1025,8 @@ public class CIFFilter extends SystemFilter {
                 logger.fine(format(" Bonded atom 1: %d, Bonded atom 2: %d", a1.getXyzIndex(),
                     a2.getXyzIndex()));
               }
-              Atom newA1 = atomList.get(a1.getIndex() - lessIndex - 1);
-              Atom newA2 = atomList.get(a2.getIndex() - lessIndex - 1);
+              Atom newA1 = atomList.get(a1.getIndex() - shiftIndex - 1);
+              Atom newA2 = atomList.get(a2.getIndex() - shiftIndex - 1);
               Bond bond2 = new Bond(newA1, newA2);
               bond2.setBondType(bond.getBondType());
             }
@@ -1022,6 +1062,7 @@ public class CIFFilter extends SystemFilter {
             }
           }
         }
+        shiftIndex += mol.getAtomList().size();
       }
       // If no atoms, then conversion has failed... use active assembly
       if (logger.isLoggable(Level.FINE)) {
@@ -1111,7 +1152,7 @@ public class CIFFilter extends SystemFilter {
    * @param factory Atom generator
    * @param atom Atom of interest
    */
-  private void setAtomTypes(AtomTypeFactory factory, IAtom atom) {
+  public static void setAtomTypes(AtomTypeFactory factory, IAtom atom) {
     String atomTypeName = atom.getAtomTypeName();
     if (atomTypeName == null || atomTypeName.length() == 0) {
       IAtomType[] types = factory.getAtomTypes(atom.getSymbol());
@@ -1326,6 +1367,16 @@ public class CIFFilter extends SystemFilter {
   }
 
   /**
+   * Write an output file.
+   *
+   * @return Whether file was written successfully.
+   */
+  public boolean writeOutputFile(MolecularAssembly ma) {
+    setMolecularSystem(ma);
+    return writeOutputFile();
+  }
+
+  /**
    * Write a properties file.
    * @param dir String for directory location.
    * @param fileName String for file name.
@@ -1352,7 +1403,9 @@ public class CIFFilter extends SystemFilter {
         if (patch != null && !patch.equalsIgnoreCase("none")) {
           bw.write(format("patch %s\n", patch));
         }
-        bw.write(format("spacegroup %s\n", spacegroup));
+        if(spacegroup != null) {
+          bw.write(format("spacegroup %s\n", spacegroup));
+        }
         if (entities.size() > 1) {
           bw.write("intermolecular-softcore true\n");
         }

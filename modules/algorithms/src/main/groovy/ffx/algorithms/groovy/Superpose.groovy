@@ -94,6 +94,13 @@ class Superpose extends AlgorithmsScript {
   private boolean dRMSD
 
   /**
+   * --ps or --printSymOp Print optimal SymOp to align structure 2 to structure 1.
+   */
+  @Option(names = ['--ps', '--printSymOp'], paramLabel = "false", defaultValue = "false",
+          description = 'Print optimal SymOp to align input structures.')
+  private static boolean printSym
+
+  /**
    * -w or --write Write out the RMSD matrix.
    */
   @Option(names = ['-w', '--write'], paramLabel = "false", defaultValue = "false",
@@ -261,7 +268,7 @@ class Superpose extends AlgorithmsScript {
         new ffx.potential.utils.Superpose(baseFilter, targetFilter, isSymmetric)
 
     // Do the superpositions.
-    superpose.calculateRMSDs(usedIndices, dRMSD, verbose, restart, write, saveSnapshots)
+    superpose.calculateRMSDs(usedIndices, dRMSD, verbose, restart, write, saveSnapshots, printSym)
 
     return this
   }

@@ -145,15 +145,17 @@ public class Clustering {
 
   /**
    * Perform an iterative clustering for a specified number of clusters. Designed and tested by
-   * researchers at Takeda:
+   * researchers at Takeda (see method authors).
    *
    * @param distMatrix Coordinate input serves as the data points.
    * @param trials Number of iterations to perform clustering.
    * @param tolerance RMSD cutoff to divide same values from different.
    * @return The clusters.
+   * Created by:
    * @author Yuya, Kinoshita
    * @author Koki, Nishimura
-   * @author Masatoshi, Karashima Implemented by:
+   * @author Masatoshi, Karashima
+   * Implemented by:
    * @author Aaron J. Nessler
    */
   public static List<CentroidCluster<Conformation>> iterativeClustering(List<double[]> distMatrix,

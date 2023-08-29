@@ -41,6 +41,7 @@ import static ffx.crystal.SymOp.applyCartesianSymOp;
 import static ffx.crystal.SymOp.applyCartesianSymRot;
 import static ffx.crystal.SymOp.invertSymOp;
 import static ffx.potential.utils.Superpose.rmsd;
+import static ffx.utilities.StringUtils.parseAtomRanges;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
@@ -194,15 +195,11 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
   /** State for calculating energies. */
   private STATE state = STATE.BOTH;
   /** Symmetry operator to superimpose system 2 onto system 1 */
-  private final SymOp[] symOp;
+  private SymOp[] symOp;
   /** Symmetry operator to move system 2 back to original frame */
-  private final SymOp[] inverse;
-  /** Number of entities in the asymmetric unit for the first system. */
-  private final int z1;
-  /** Number of entities in the asymmetric unit for the second system. */
-  private final int z2;
-  /** The molecule number of each atom in the first topology. */
-  private final int[] molecule1;
+  private SymOp[] inverse;
+  /** Atom selection for each symmetry operator. */
+  private final ArrayList<List<Integer>> symOpAtoms = new ArrayList<>();
   /** The molecule number of each atom in the second topology. */
   private final int[] molecule2;
   /** Utilize a provided SymOp */
@@ -226,18 +223,12 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
     lambdaInterface1 = forceFieldEnergy1;
     lambdaInterface2 = forceFieldEnergy2;
 
-    /* Atom array for topology 1. */
+    /* Apom array for topology 1. */
     Atom[] atoms1 = topology1.getAtomArray();
     /* Atom array for topology 2. */
     Atom[] atoms2 = topology2.getAtomArray();
 
-    molecule1 = topology1.getMoleculeNumbers();
     molecule2 = topology2.getMoleculeNumbers();
-
-    z1 = molecule1[molecule1.length - 1] + 1;
-    z2 = molecule2[molecule2.length - 1] + 1;
-    logger.info(" Mol1: " + molecule1.length + " Mol2: " + molecule2.length);
-    logger.info(format(" Number of entities in first crystal (Z): %d", z1));
 
     ForceField forceField1 = topology1.getForceField();
     doValenceRestraint1 = forceField1.getBoolean("LAMBDA_VALENCE_RESTRAINTS", true);
@@ -389,9 +380,6 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
 
     if (symOpString != null) {
       // TODO make work for co-crystals (currently assumes same length).
-      // Zero indexing.. add 1.
-      symOp = new SymOp[z1];
-      inverse = new SymOp[z1];
       readSymOp(symOpString);
     } else {
       // Both end-states will use the same crystal object.
@@ -418,11 +406,17 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
    * @param symOpString String containing sym op.
    */
   private void readSymOp(String symOpString) {
+    int numSymOps = 0;
     try {
       String[] tokens = symOpString.split(" +");
       int numTokens = tokens.length;
       // Only need to move one system onto the other.
       if(numTokens == 12){
+        numSymOps = 1;
+        symOp = new SymOp[numSymOps];
+        inverse = new SymOp[numSymOps];
+        // Assume applies to all atoms...
+        symOpAtoms.add(parseAtomRanges("symmetryAtoms", "1-N", nActive2));
         // Twelve values makes 1 sym op. so assign to [0][0].
         symOp[0] = new SymOp(new double[][] {
             {parseDouble(tokens[0]), parseDouble(tokens[1]), parseDouble(tokens[2])},
@@ -430,14 +424,17 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
             {parseDouble(tokens[6]), parseDouble(tokens[7]), parseDouble(tokens[8])}},
             new double[] {parseDouble(tokens[9]), parseDouble(tokens[10]), parseDouble(tokens[11])});
       }else if(numTokens % 14 == 0){
-        int numSymOps = numTokens/14;
-        assert(numSymOps == z1);
+        numSymOps = numTokens/14;
+        symOp = new SymOp[numSymOps];
+        inverse = new SymOp[numSymOps];
         if(logger.isLoggable(Level.FINER)) {
           logger.finer(format(" Number of Tokens: %3d Number of Sym Ops: %2d", numTokens, numSymOps));
         }
         for(int i = 0; i < numSymOps; i++) {
           int j = i * 14;
-          symOp[parseInt(tokens[j])] = new SymOp(new double[][]{
+          // Should be tokens[j] or tokens[j+1]?? Switches forward vs backward...
+          symOpAtoms.add(parseAtomRanges("symmetryAtoms", tokens[j], nActive2));
+          symOp[i] = new SymOp(new double[][]{
               {parseDouble(tokens[j + 2]), parseDouble(tokens[j + 3]), parseDouble(tokens[j + 4])},
               {parseDouble(tokens[j + 5]), parseDouble(tokens[j + 6]), parseDouble(tokens[j + 7])},
               {parseDouble(tokens[j + 8]), parseDouble(tokens[j + 9]), parseDouble(tokens[j + 10])}},
@@ -449,7 +446,6 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       }
       useSymOp = true;
 
-
       // Get the coordinates for active atoms.
       potential1.getCoordinates(x1);
       potential2.getCoordinates(x2);
@@ -457,12 +453,9 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       // Collect coordinates for shared atoms (remove alchemical atoms from the superposition).
       double[] x1Shared = new double[nShared * 3];
       double[] x2Shared = new double[nShared * 3];
-      int[] mol1 = new int[nShared];
-      int[] mol2 = new int[nShared];
       int sharedIndex = 0;
       for (int i = 0; i < nActive1; i++) {
         if (sharedAtoms1[i]) {
-          mol1[sharedIndex/3] = molecule1[i];
           int index = i * 3;
           x1Shared[sharedIndex++] = x1[index];
           x1Shared[sharedIndex++] = x1[index + 1];
@@ -472,7 +465,6 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       sharedIndex = 0;
       for (int i = 0; i < nActive2; i++) {
         if (sharedAtoms2[i]) {
-          mol2[sharedIndex/3] = molecule2[i];
           int index = i * 3;
           x2Shared[sharedIndex++] = x2[index];
           x2Shared[sharedIndex++] = x2[index + 1];
@@ -490,12 +482,20 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
       double[] origX1 = Arrays.copyOf(x1Shared, nShared * 3);
       double[] origX2 = Arrays.copyOf(x2Shared, nShared * 3);
       // Determine if first topology or second?
-      // Explicitly written (as opposed to applySymOp()) since only applied to shared.
-      for(int i = 0; i < z1; i++) {
+      // Explicitly written (as opposed to applySymOp()) since only applied to shared atoms.
+
+      logger.info(" Number Sym Ops: " + numSymOps);
+      for(int i = 0; i < numSymOps; i++) {
+        List<Integer> symAtoms = symOpAtoms.get(i);
         boolean[] mask = new boolean[nShared];
-        for (int j = 0; j < nShared; j++) {
-          if (mol1[j] == i) {
-            mask[j] = true;
+        int index = 0;
+        for (int j = 0; j < nActive2; j++) {
+          if(sharedAtoms2[j]){
+            if (symAtoms.contains(j)) {
+              mask[index++] = true;
+            }else{
+              index++;
+            }
           }
         }
         // Transpose == inverse for orthogonal matrices (value needed later).
@@ -505,11 +505,21 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
 
         logger.info("\n SymOp between topologies:\n" + symOp[i]);
         logger.info("\n Inverse SymOp:\n" + inverse[i]);
-      }
 
-      double loadedRMSD = rmsd(origX1, origX2, m);
+//        int numShared1 = sharedAtoms1.length;
+//        int numShared2 = sharedAtoms2.length;
+//        logger.info(format(" ShareSize1: %2d ShareSize2: %2d Active1: %2d Active2: %2d", numShared1, numShared2, nActive1, nActive2));
+//        index = 0;
+//        for(int j = 0; j < sharedAtoms1.length; j++){
+//          logger.info(format(" Atom Index: %2d S1: %b S2: %b", j, sharedAtoms1[j], sharedAtoms2[j]));
+//          if(sharedAtoms1[j]){
+//            logger.info(format(" Mask: %b", mask[index++]));
+//          }
+//        }
+      }
+      double symOpRMSD = rmsd(origX1, origX2, m);
       logger.info("\n Topology 2 Coordinates from Loaded SymOp");
-      logger.info(format(" RMSD: %12.3f", loadedRMSD));
+      logger.info(format(" RMSD: %12.3f", symOpRMSD));
     } catch (Exception ex) {
       logger.warning(ex.toString());
       ex.printStackTrace();
@@ -1434,17 +1444,23 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
 
     @Override
     public void run() throws Exception {
+      int numSymOps = 0;
       if (useSymOp) {
-        for(int i = 0; i < z2; i++) {
+        numSymOps = symOpAtoms.size();
+        for(int i = 0; i < numSymOps; i++) {
+          List<Integer> symAtoms = symOpAtoms.get(i);
           boolean[] mask = new boolean[nActive2];
           for (int j = 0; j < nActive2; j++) {
-            if (sharedAtoms2[j] && molecule2[j] == i) {
-              mask[j] = true;
+            if (sharedAtoms2[j]) {
+              if (symAtoms.contains(j)) {
+                mask[j] = true;
+              }
             }
           }
             applyCartesianSymOp(x2, x2, symOp[i], mask);
         }
       }
+
       if (gradient) {
         fill(gl2, 0.0);
         fill(rgl2, 0.0);
@@ -1454,13 +1470,17 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
         dEdL_2 = -lambdaInterface2.getdEdL();
         d2EdL2_2 = lambdaInterface2.getd2EdL2();
         lambdaInterface2.getdEdXdL(gl2);
+
         if (useSymOp) {
           // Rotate the gradient back for shared atoms.
-          for(int i = 0; i < z2; i++) {
+          for(int i = 0; i < numSymOps; i++) {
+            List<Integer> symAtoms = symOpAtoms.get(i);
             boolean[] mask = new boolean[nActive2];
             for (int j = 0; j < nActive2; j++) {
-              if (sharedAtoms2[j] && molecule2[j] == i) {
-                mask[j] = true;
+              if (sharedAtoms2[j]) {
+                if (symAtoms.contains(j)) {
+                  mask[j] = true;
+                }
               }
             }
             applyCartesianSymRot(g2, g2, inverse[i], mask);
@@ -1478,17 +1498,21 @@ public class DualTopologyEnergy implements CrystalPotential, LambdaInterface {
           forceFieldEnergy2.getdEdXdL(rgl2);
           if (useSymOp) {
             // Rotate the gradient back for shared atoms.
-            for(int i = 0; i < z2; i++) {
+            for(int i = 0; i < numSymOps; i++) {
+              List<Integer> symAtoms = symOpAtoms.get(i);
               boolean[] mask = new boolean[nActive2];
               for (int j = 0; j < nActive2; j++) {
-                if (sharedAtoms2[j] && molecule2[j] == i) {
-                  mask[j] = true;
+                if (sharedAtoms2[j]) {
+                  if (symAtoms.contains(j)) {
+                    mask[j] = true;
+                  }
                 }
               }
               applyCartesianSymRot(rg2, rg2, inverse[i], mask);
               applyCartesianSymRot(rgl2, rgl2, inverse[i], mask);
             }
           }
+
           forceFieldEnergy2.setLambdaBondedTerms(false, false);
         } else {
           restraintEnergy2 = 0.0;
