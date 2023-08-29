@@ -39,6 +39,9 @@ package ffx.algorithms.groovy.test
 
 import ffx.algorithms.cli.AlgorithmsScript
 import ffx.algorithms.optimize.ConformationScan
+import ffx.algorithms.optimize.Minimize
+import ffx.algorithms.optimize.TorsionSearch
+import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
@@ -64,19 +67,19 @@ class CoformerBindingSearch extends AlgorithmsScript {
     /**
      * --eps
      */
-    @Option(names = ['--eps'], paramLabel = '.1',
+    @Option(names = ['--eps'], paramLabel = '.01',
             description = 'Gradient cutoff for minimization.')
-    double eps = 0.1
+    double eps = 0.01
 
     /**
      * --maxIter
      */
-    @Option(names = ['--maxIter'], paramLabel = '1000',
+    @Option(names = ['--maxIter'], paramLabel = '10000',
             description = 'Max iterations for minimization.')
-    int maxIter = 1000
+    int maxIter = 10000
 
     /**
-     * --gkSoluteDielectric
+     * --solventDielectric
      */
     @Option(names = ['--solventDielectric'], paramLabel = '78.4',
             description = 'Sets the gk solvent dielectric constant.')
@@ -94,7 +97,7 @@ class CoformerBindingSearch extends AlgorithmsScript {
      */
     @Option(names = ['--torsionScan', "--tscan"], paramLabel = 'false', defaultValue = 'false',
             description = 'During sampling, statically scan torsions after direct minimization to find the lowest energy conformation.')
-    private boolean intermediateTorsionScan = false
+    private boolean tscan = false
 
     /**
      * --noMinimize
@@ -315,6 +318,25 @@ class CoformerBindingSearch extends AlgorithmsScript {
         }
         bw.close()
         System.setProperty("key", key)
+    }
+
+    void minimizeMolecularAssemblies(MolecularAssembly[] molecularAssemblies) {
+        if (!noMinimize) {
+            logger.info(" Minimizing molecular assemblies.")
+            for (MolecularAssembly molecularAssembly : molecularAssemblies) {
+                if (tscan) {
+                    TorsionSearch ts = new TorsionSearch(molecularAssembly, molecularAssembly.getMoleculeArray()[0], 32, 1)
+                    ts.staticAnalysis(0, 100)
+                    if (!ts.getStates().isEmpty()) {
+                        AssemblyState minState = ts.getStates().get(0)
+                        minState.revertState()
+                    }
+                }
+                Minimize minimizer = new Minimize(molecularAssembly, molecularAssembly.getPotentialEnergy(), algorithmListener)
+                minimizer.minimize(eps, maxIter)
+            }
+            logger.info(" Done minimizing molecular assemblies.")
+        }
     }
 }
 

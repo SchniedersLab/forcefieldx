@@ -106,14 +106,7 @@ public class ConformationScan {
     }
 
     public void scan(){
-        int status = minimizeEachMolecule(minimize);
-        if(status == -1){
-            logger.info("Minimization of monomers failed. Attempting again.");
-            if(minimizeEachMolecule(minimize) == -1){
-                logger.info("Minimization of monomers failed again. Exiting.");
-                return;
-            }
-        }
+        minimizeEachMolecule(minimize);
         double[] zAxis = new double[]{0,0,1};
         // Loop through interactions between the two molecules --> Not necessarily symmetric but close?
         int loopCounter = 1;
@@ -142,7 +135,7 @@ public class ConformationScan {
                 try {
                     mola.update();
                     forceFieldEnergy.getCoordinates(x);
-                    status = 0;
+                    int status = 0;
                     if(minimize) {
                         status = minimizeSystem(a, b);
                     }
@@ -153,11 +146,11 @@ public class ConformationScan {
                         statesQueue.add(new StateContainer(new AssemblyState(mola), e));
                     } else {
                         logger.warning(" Minimization failed. No state will be saved.");
-                        statesQueue.add(new StateContainer(new AssemblyState(mola), -1));
+                        //statesQueue.add(new StateContainer(new AssemblyState(mola), -1)); Use for debugging
                     }
                 } catch (Exception ignored) {
                     logger.warning(" Minimization failed. No state will be saved.");
-                    statesQueue.add(new StateContainer(new AssemblyState(mola), -1));
+                    //statesQueue.add(new StateContainer(new AssemblyState(mola), -1)); Use for debugging
                     //e.printStackTrace()
                 }
             }
@@ -219,25 +212,31 @@ public class ConformationScan {
     public static ArrayList<Double> logBindingEnergyCalculation(ConformationScan m1, ConformationScan m2, ConformationScan dimer){
         ArrayList<Double> bindingEnergies = new ArrayList<>();
         logger.info("\n ------------------------- Binding Energy -------------------------");
-        logger.info(" ddE (of binding) = dE (of coformer dimer binding) - dE (of both monomer dimer bindings summed)");
+        logger.info(" ddE (of binding) = dE (of coformer dimer binding) - dE (average of both monomer dimer bindings summed)");
         logger.info("\n Calculation using minimized energies: ");
+        double averageMonomerEnergy = (m1.getMinimumEnergy() + m2.getMinimumEnergy()) / 2;
+        double bindingE = dimer.getMinimumEnergy() - averageMonomerEnergy;
         logger.info(format(" Minimal Structure    ddE = %8.3f - %8.3f = %12.5f",
                 dimer.getMinimumEnergy(),
-                m1.getMinimumEnergy() + m2.getMinimumEnergy(),
-                dimer.getMinimumEnergy() - m1.getMinimumEnergy() - m2.getMinimumEnergy()));
-        bindingEnergies.add(dimer.getMinimumEnergy() - m1.getMinimumEnergy() - m2.getMinimumEnergy());
+                averageMonomerEnergy,
+                bindingE));
+        bindingEnergies.add(bindingE);
         logger.info("\n Calculation using average energies: ");
+        averageMonomerEnergy = (m1.getAverageEnergy() + m2.getAverageEnergy()) / 2;
+        bindingE = dimer.getAverageEnergy() - averageMonomerEnergy;
         logger.info(format(" Average              ddE = %8.3f - %8.3f = %12.5f",
                 dimer.getAverageEnergy(),
-                m1.getAverageEnergy() + m2.getAverageEnergy(),
-                dimer.getAverageEnergy() - m1.getAverageEnergy() - m2.getAverageEnergy()));
-        bindingEnergies.add(dimer.getAverageEnergy() - m1.getAverageEnergy() - m2.getAverageEnergy());
+                averageMonomerEnergy,
+                bindingE));
+        bindingEnergies.add(bindingE);
         logger.info("\n Calculation using average energies (no outliers): ");
+        averageMonomerEnergy = (m1.getAverageEnergyNoOutlier() + m2.getAverageEnergyNoOutlier()) / 2;
+        bindingE = dimer.getAverageEnergyNoOutlier() - averageMonomerEnergy;
         logger.info(format(" Average (no outlier) ddE = %8.3f - %8.3f = %12.5f",
                 dimer.getAverageEnergyNoOutlier(),
-                m1.getAverageEnergyNoOutlier() + m2.getAverageEnergyNoOutlier(),
-                dimer.getAverageEnergyNoOutlier() - m1.getAverageEnergyNoOutlier() - m2.getAverageEnergyNoOutlier()));
-        bindingEnergies.add(dimer.getAverageEnergyNoOutlier() - m1.getAverageEnergyNoOutlier() - m2.getAverageEnergyNoOutlier());
+                averageMonomerEnergy,
+                bindingE));
+        bindingEnergies.add(bindingE);
         logger.info("\n N.B. -- Monomer energies are calculated using the minimized structures in all cases.");
         logger.info(" ------------------------- End of Binding Energy -------------------------\n");
         return bindingEnergies;
@@ -433,7 +432,8 @@ public class ConformationScan {
             monomerMinEngine.minimize(eps, maxIter).getCoordinates(x);
             statTwo = monomerMinEngine.getStatus();
         }
-        logger.info("\n --------- Monomer 2 Energy Breakdown --------- ");
+        for(Atom a: s1Atoms){ a.setUse(false); }
+        logger.info("\n --------- System 2 Energy Breakdown --------- ");
         double monomerEnergy2 = forceFieldEnergy.energy(x, true);
         for(Atom a: s1Atoms){ a.setUse(true); }
 
@@ -444,6 +444,7 @@ public class ConformationScan {
         m1MinEnergy = monomerEnergy;
         m2MinEnergy = monomerEnergy2;
         totalMonomerMinimizedEnergy = monomerEnergy + monomerEnergy2;
+
         if(statOne != -1 && statTwo != -1){
             logger.info("\n --------- Monomer Minimization Converged --------- ");
             return 0;
