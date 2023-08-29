@@ -716,6 +716,24 @@ public class SymOp {
   }
 
   /**
+   * Print a Sym Op matrix as a continued line string.
+   *
+   * @param symOp Symmetry operation to print.
+   * @return Continued line string.
+   */
+  public static String asMatrixString(SymOp symOp) {
+    double[][] values = symOp.asMatrix();
+    return format("""
+                     %14.8f %14.8f %14.8f \\
+                               %14.8f %14.8f %14.8f \\
+                               %14.8f %14.8f %14.8f \\
+                               %14.8f %14.8f %14.8f \
+                    """, values[0][0],
+            values[0][1], values[0][2], values[1][0], values[1][1], values[1][2], values[2][0],
+            values[2][1], values[2][2], values[0][3], values[1][3], values[2][3]);
+  }
+
+  /**
    * Invert a symmetry operator.
    *
    * @param symOp Original symmetry operator of which the inverse is desired.

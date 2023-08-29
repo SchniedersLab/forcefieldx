@@ -239,12 +239,17 @@ class PrepareSpaceGroups extends PotentialScript {
           spacegroup2.shortName)
       crystal.setDensity(density, mass)
       double cutoff2 = energy.getCutoffPlusBuffer() * 2.0
+      // Cut off of aperiodic systems are infinity... replicates crystal factory stalls...
+      if(cutoff2 == Double.POSITIVE_INFINITY){
+        cutoff2 = 0.1;
+      }
       crystal = replicatesCrystalFactory(crystal, cutoff2)
-
       // Turn off special position checks.
       crystal.setSpecialPositionCutoff(0.0)
       crystal.getUnitCell().setSpecialPositionCutoff(0.0)
       energy.setCrystal(crystal)
+
+      activeAssembly.moveAllIntoUnitCell();
 
       if (symScalar > 0.0) {
         SymOp symOp = randomSymOpFactory(symScalar)
