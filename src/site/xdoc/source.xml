@@ -12,10 +12,10 @@
         <section name="Source Code">
             <subsection name="Clone the Code from GitHub">
                 <p>The Force Field X project is hosted at
-                    <a target="_blank" href="http://github.com/mjschnie/ffx">Github</a>.
+                    <a target="_blank" href="https://github.com/SchniedersLab/forcefieldx">Github</a>.
                 </p>
                 <p>To clone the Force Field X source using GIT:</p>
-                <source>git clone git@github.com:mjschnie/ffx.git ffx</source>
+                <source>git clone https://github.com/SchniedersLab/forcefieldx.git ffx</source>
                 <p>In the future, your clone of Force Field X can be updated to the latest version using the command:</p>
                 <source>git pull origin master</source>
             </subsection>
@@ -85,7 +85,7 @@
                                 portability, and security that today’s applications require.
                             </td>
                             <td>
-                                17 to 20.
+                                17 to 21.
                             </td>
                         </tr>
                         <tr>
