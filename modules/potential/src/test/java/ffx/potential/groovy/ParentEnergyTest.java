@@ -207,11 +207,14 @@ public class ParentEnergyTest extends PotentialTest {
     }
     logger.info(" Testing Cartesian gradient(s) for " + info);
 
-    // Set-up the input arguments for the Gradient script.
+    // Set up the input arguments for the Gradient script.
     // Choose a random atom to test.
     int atomID = (int) floor(random() * nAtoms) + 1;
     double stepSize = 1.0e-5;
-    String[] args = {"--ga", Integer.toString(atomID), "--dx", Double.toString(stepSize), "--tol", Double.toString(tolerance), "src/main/java/" + filename};
+    String[] args = {"--ga", Integer.toString(atomID),
+        "--dx", Double.toString(stepSize),
+        "--tol", Double.toString(tolerance),
+        "src/main/java/" + filename};
     binding.setVariable("args", args);
 
     // Create and evaluate the script.
@@ -227,11 +230,15 @@ public class ParentEnergyTest extends PotentialTest {
     }
     logger.info(" Testing lambda gradient(s) for " + info);
 
-    // Set-up the input arguments for the Lambda Gradient script.
+    // Set up the input arguments for the Lambda Gradient script.
     // Choose a random atom to test dEdX gradient.
     int atomID = (int) floor(random() * nAtoms) + 1;
     double stepSize = 1.0e-5;
-    String[] args = {"--ga", Integer.toString(atomID), "--dx", Double.toString(stepSize), "--tol", Double.toString(tolerance), "--ac", "1" + "-" + nAtoms, "-l", "0.9", "src/main/java/" + filename};
+    String[] args = {"--ga", Integer.toString(atomID),
+        "--dx", Double.toString(stepSize),
+        "--tol", Double.toString(tolerance),
+        "--ac", "1" + "-" + nAtoms,
+        "-l", "0.9", "src/main/java/" + filename};
     binding.setVariable("args", args);
 
     // Create and evaluate the script.
@@ -250,7 +257,7 @@ public class ParentEnergyTest extends PotentialTest {
     }
     logger.info(" Testing OpenMM energy for " + info);
 
-    // Set-up the input arguments for the Energy script.
+    // Set up the input arguments for the Energy script.
     String[] args = {"src/main/java/" + filename};
     binding.setVariable("args", args);
     System.setProperty("platform", "OMM");
