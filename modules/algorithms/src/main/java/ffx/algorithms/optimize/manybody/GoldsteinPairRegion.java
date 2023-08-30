@@ -153,7 +153,7 @@ public class GoldsteinPairRegion extends ParallelRegion {
           sumOverK = 0;
         }
       } else {
-        rotamerOptimization.logIfMaster(
+        rotamerOptimization.logIfRank0(
             format(" Skipping %d to %d because we cannot eliminate", lb, ub), Level.FINE);
       }
     }

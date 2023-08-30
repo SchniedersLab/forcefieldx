@@ -894,7 +894,7 @@ public class EnergyExpansion {
         logger.severe(
             format(" Exception %s in calculating backbone energy; FFX shutting down.", ex));
       }
-      rO.logIfMaster(format("\n Backbone energy:  %s\n", rO.formatEnergy(backboneEnergy)));
+      rO.logIfRank0(format("\n Backbone energy:  %s\n", rO.formatEnergy(backboneEnergy)));
 
       if (usingBoxOptimization && boxIteration >= 0) {
         boolean foundBox = false;
@@ -922,7 +922,7 @@ public class EnergyExpansion {
           }
         }
         if (!foundBox) {
-          rO.logIfMaster(format(" Didn't find restart energies for Box %d: %d,%d,%d", boxIteration,
+          rO.logIfRank0(format(" Didn't find restart energies for Box %d: %d,%d,%d", boxIteration,
               cellIndices[0], cellIndices[1], cellIndices[2]));
           return 0;
         } else if (linesThisBox.size() == 0) {
@@ -975,12 +975,12 @@ public class EnergyExpansion {
             try {
               setSelf(i, ri, energy);
               if (verbose) {
-                rO.logIfMaster(format(" From restart file: Self energy %3d (%8s,%2d): %s", i,
+                rO.logIfRank0(format(" From restart file: Self energy %3d (%8s,%2d): %s", i,
                     residues[i].toFormattedString(false, true), ri, rO.formatEnergy(energy)));
               }
             } catch (Exception e) {
               if (verbose) {
-                rO.logIfMaster(format(" Restart file out-of-bounds index: %s", line));
+                rO.logIfRank0(format(" Restart file out-of-bounds index: %s", line));
               }
             }
             // remove that job from the pool
@@ -991,7 +991,7 @@ public class EnergyExpansion {
                 ex);
           }
         }
-        rO.logIfMaster(" Loaded self energies from restart file.");
+        rO.logIfRank0(" Loaded self energies from restart file.");
 
         // Pre-Prune if self-energy is Double.NaN.
         eR.prePruneSelves(residues);
@@ -1007,7 +1007,7 @@ public class EnergyExpansion {
 
       if (loaded >= 2) {
         if (selfEnergyMap.size() > 0) {
-          rO.logIfMaster(
+          rO.logIfRank0(
               " Double-check that parameters match original run due to missing self-energies.");
         }
         boolean reverseMap = true;
@@ -1073,14 +1073,14 @@ public class EnergyExpansion {
               }
 
               if (verbose) {
-                rO.logIfMaster(
+                rO.logIfRank0(
                     format(" From restart file: Pair energy [(%8s,%2d),(%8s,%2d)]: %12.4f",
                         residues[i].toFormattedString(false, true), ri,
                         residues[j].toFormattedString(false, true), rj, energy));
               }
             } catch (Exception e) {
               if (verbose) {
-                rO.logIfMaster(format(" Restart file out-of-bounds index: %s", line));
+                rO.logIfRank0(format(" Restart file out-of-bounds index: %s", line));
               }
             }
             // remove that job from the pool
@@ -1091,7 +1091,7 @@ public class EnergyExpansion {
                 ex);
           }
         }
-        rO.logIfMaster(" Loaded 2-body energies from restart file.");
+        rO.logIfRank0(" Loaded 2-body energies from restart file.");
 
         // Pre-Prune if pair-energy is Double.NaN.
         eR.prePrunePairs(residues);
@@ -1193,18 +1193,18 @@ public class EnergyExpansion {
               }
             } catch (ArrayIndexOutOfBoundsException ex) {
               if (verbose) {
-                rO.logIfMaster(format(" Restart file out-of-bounds index: %s", line));
+                rO.logIfRank0(format(" Restart file out-of-bounds index: %s", line));
               }
             } catch (NullPointerException npe) {
               if (verbose) {
-                rO.logIfMaster(format(" NPE in loading 3-body energies: pruning "
+                rO.logIfRank0(format(" NPE in loading 3-body energies: pruning "
                         + "likely changed! 3-body %s-%d %s-%d %s-%d",
                     residues[i].toFormattedString(false, true), ri, residues[j], rj, residues[k],
                     rk));
               }
             }
             if (verbose) {
-              rO.logIfMaster(
+              rO.logIfRank0(
                   format(" From restart file: Trimer energy %3d %-2d, %3d %-2d, %3d %-2d: %s", i, ri,
                       j, rj, k, rk, rO.formatEnergy(energy)));
             }
@@ -1216,7 +1216,7 @@ public class EnergyExpansion {
                 ex);
           }
         }
-        rO.logIfMaster(" Loaded trimer energies from restart file.");
+        rO.logIfRank0(" Loaded trimer energies from restart file.");
       }
 
       // Remap to sequential integer keys.
@@ -1457,7 +1457,7 @@ public class EnergyExpansion {
         if (!validPair) {
           // Eliminate Rotamer Pair
           Residue residuei = residues[i];
-          rO.logIfMaster(format(" Inconsistent Pair: %8s %2d, %8s %2d.",
+          rO.logIfRank0(format(" Inconsistent Pair: %8s %2d, %8s %2d.",
               residuei.toFormattedString(false, true), ri, residuej.toFormattedString(false, true),
               rj), Level.INFO);
           continue;
