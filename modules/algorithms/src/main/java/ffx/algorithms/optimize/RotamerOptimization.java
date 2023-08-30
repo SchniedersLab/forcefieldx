@@ -213,6 +213,7 @@ public class RotamerOptimization implements Terminatable {
   private double refEnergy = 0;
   private double[] fraction;
   private double[] titrateBoltzmann;
+  private double pH;
   private boolean onlyProtons = false;
   private boolean recomputeSelf = false;
   /** List of residues to optimize; they may not be contiguous or all members of the same chain. */
@@ -1506,6 +1507,16 @@ public class RotamerOptimization implements Terminatable {
   }
 
   /**
+   * Sets the twoBodyCutoffDist. All two-body energies where the rotamers have a separation distance
+   * larger than the cutoff are set to 0.
+   *
+   * @param pH current pH of the simulation
+   */
+  public void setpH(double pH) {
+    this.pH = pH;
+  }
+
+  /**
    * Specify use of Goldstein optimization.
    *
    * @param useGoldstein a boolean.
@@ -2097,38 +2108,48 @@ public class RotamerOptimization implements Terminatable {
           String[] titratableResidues = {"HIS", "HIE", "HID", "GLU", "GLH", "ASP", "ASH", "LYS", "LYD"};
           List<String> titratableResiudesList = Arrays.asList(titratableResidues);
           double selfEnergy = energyRegion.getSelf();
-          logger.info("Self energy before adjustment: " + selfEnergy);
-          double bias7;
           if(recomputeSelf){
             int count = 0;
-            logger.info("Recompute self true");
             for(Residue residue: residues){
+              double bias7 = 0;
+              double biasCurrent = 0;
               Rotamer[] rotamers = residue.getRotamers();
               int currentRotamer = currentRotamers[count];
               switch (rotamers[currentRotamer].getName()) {
-                case "HIE":
+                case "HIE" -> {
                   bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHIE.pKa - 7)) -
                           TitrationUtils.Titration.HIStoHIE.freeEnergyDiff;
-                  selfEnergy = energyRegion.getSelf() - bias7 + rotamers[currentRotamer].getRotamerPhBias();
-                case "HID":
+                  biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHIE.pKa - pH)) -
+                          TitrationUtils.Titration.HIStoHIE.freeEnergyDiff;
+                }
+                case "HID" -> {
                   bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHID.pKa - 7)) -
                           TitrationUtils.Titration.HIStoHID.freeEnergyDiff;
-                  selfEnergy = energyRegion.getSelf() - bias7 + rotamers[currentRotamer].getRotamerPhBias();
-                case "ASP":
+                  biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.HIStoHID.pKa - pH)) -
+                          TitrationUtils.Titration.HIStoHID.freeEnergyDiff;
+                }
+                case "ASP" -> {
                   bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.ASHtoASP.pKa - 7)) -
                           TitrationUtils.Titration.ASHtoASP.freeEnergyDiff;
-                  selfEnergy = energyRegion.getSelf() - bias7 + rotamers[currentRotamer].getRotamerPhBias();
-                case "GLU":
+                  biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.ASHtoASP.pKa - pH)) -
+                          TitrationUtils.Titration.ASHtoASP.freeEnergyDiff;
+                }
+                case "GLU" -> {
                   bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.GLHtoGLU.pKa - 7)) -
                           TitrationUtils.Titration.GLHtoGLU.freeEnergyDiff;
-                  selfEnergy = energyRegion.getSelf() - bias7 + rotamers[currentRotamer].getRotamerPhBias();
-                case "LYD":
+                  biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.GLHtoGLU.pKa - pH)) -
+                          TitrationUtils.Titration.GLHtoGLU.freeEnergyDiff;
+                }
+                case "LYD" -> {
                   bias7 = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.LYStoLYD.pKa - 7)) -
                           TitrationUtils.Titration.LYStoLYD.freeEnergyDiff;
-                  selfEnergy = energyRegion.getSelf() - bias7 + rotamers[currentRotamer].getRotamerPhBias();
-                default:
-                  selfEnergy = energyRegion.getSelf();
+                  biasCurrent = (LOG10 * Constants.R * temperature * (TitrationUtils.Titration.LYStoLYD.pKa - pH)) -
+                          TitrationUtils.Titration.LYStoLYD.freeEnergyDiff;
+                }
+                default -> {
+                }
               }
+              selfEnergy = selfEnergy - bias7 + biasCurrent;
               count += 1;
             }
           }

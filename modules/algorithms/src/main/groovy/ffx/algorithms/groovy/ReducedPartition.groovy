@@ -314,6 +314,7 @@ class ReducedPartition extends AlgorithmsScript {
             rotamerOptimization.setWriteEnergyRestart(printFiles)
             rotamerOptimization.setOnlyProtons(onlyProtons)
             rotamerOptimization.setRecomputeSelf(recomputeSelf)
+            rotamerOptimization.setpH(titrationPH)
 
             manyBodyOptions.initRotamerOptimization(rotamerOptimization, activeAssembly)
 
