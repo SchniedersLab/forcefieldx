@@ -85,6 +85,7 @@
             <argument>ffx.algorithms.groovy.Thermodynamics</argument>
             <argument>ffx.algorithms.groovy.TorsionScan</argument>
             <argument>ffx.algorithms.groovy.test.ApplyTorsions</argument>
+            <argument>ffx.algorithms.groovy.test.CoformerBindingSearch</argument>
             <argument>ffx.algorithms.groovy.test.CreateRotamers</argument>
             <argument>ffx.algorithms.groovy.test.CrystalSearch</argument>
             <argument>ffx.algorithms.groovy.test.IdentifyRotamers</argument>
