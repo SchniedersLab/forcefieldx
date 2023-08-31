@@ -49,6 +49,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import ffx.utilities.FFXTest;
 import org.junit.Test;
 
 /**
@@ -58,7 +60,7 @@ import org.junit.Test;
  *
  * @author Claire O'Connell
  */
-public class Integrate1DTest {
+public class Integrate1DTest extends FFXTest {
 
   private static final int NUM_INTEGRATION_TYPES = 8; // Left/right, rect/trap/simp/boole.
   private static final Logger logger = Logger.getLogger(Integrate1DTest.class.getName());

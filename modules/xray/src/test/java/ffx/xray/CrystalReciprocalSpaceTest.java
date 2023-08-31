@@ -52,16 +52,23 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.utils.PotentialsUtils;
+import ffx.utilities.FFXTest;
 import ffx.utilities.Keyword;
+
 import java.io.File;
 import java.util.List;
+
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.junit.Test;
 
-/** @author Timothy D. Fenn */
-public class CrystalReciprocalSpaceTest {
+/**
+ * @author Timothy D. Fenn
+ */
+public class CrystalReciprocalSpaceTest extends FFXTest {
 
-  /** Test of permanent method, of class CrystalReciprocalSpace. */
+  /**
+   * Test of permanent method, of class CrystalReciprocalSpace.
+   */
   @Test
   public void test1N7SPermanent() {
     String filename = "ffx/xray/structures/1N7S.pdb";
@@ -94,7 +101,7 @@ public class CrystalReciprocalSpaceTest {
     ComplexNumber b = new ComplexNumber(-828.584, -922.704);
     HKL hkl = reflectionList.getHKL(1, 1, 4);
     ComplexNumber a = refinementData.getFc(hkl.getIndex());
-    System.out.println("1 1 4: " + a + " | " + b + " | " + a.divides(b));
+    // System.out.println("1 1 4: " + a + " | " + b + " | " + a.divides(b));
 
     // This uses FFT Factors 2, 3, 4, 5
     // assertEquals("1 1 4 reflection should be correct", -753.4722104328415, a.re(), 0.0001);
@@ -107,7 +114,7 @@ public class CrystalReciprocalSpaceTest {
     b.im(-486.142);
     hkl = reflectionList.getHKL(2, 1, 10);
     a = refinementData.getFc(hkl.getIndex());
-    System.out.println("2 1 10: " + a + " | " + b + " | " + a.divides(b));
+    // System.out.println("2 1 10: " + a + " | " + b + " | " + a.divides(b));
 
     // This uses FFT Factors 2, 3, 4, 5
     // assertEquals("2 1 10 reflection should be correct", -69.3966088405437, a.re(), 0.0001);
@@ -162,7 +169,7 @@ public class CrystalReciprocalSpaceTest {
     ComplexNumber b = new ComplexNumber(-496.999, 431.817);
     HKL hkl = reflectionList.getHKL(1, 9, 4);
     ComplexNumber a = refinementData.getFc(hkl.getIndex());
-    System.out.println("1 9 4: " + a + " | " + b + " | " + a.divides(b));
+    // System.out.println("1 9 4: " + a + " | " + b + " | " + a.divides(b));
 
     // This uses FFT Factors 2, 3, 4, 5
     // assertEquals("1 9 4 reflection should be correct", -493.7799429881329, a.re(), 0.0001);
@@ -175,7 +182,7 @@ public class CrystalReciprocalSpaceTest {
     b.im(-76.9812);
     hkl = reflectionList.getHKL(5, 26, 8);
     a = refinementData.getFc(hkl.getIndex());
-    System.out.println("5 26 8: " + a + " | " + b + " | " + a.divides(b));
+    // System.out.println("5 26 8: " + a + " | " + b + " | " + a.divides(b));
 
     // This uses FFT Factors 2, 3, 4, 5
     // assertEquals("5 26 8 reflection should be correct", -123.05535567943379, a.re(), 0.0001);

@@ -42,7 +42,6 @@ import static org.apache.commons.math3.util.FastMath.random;
 import static org.junit.Assert.assertEquals;
 
 import ffx.potential.ForceFieldEnergy;
-import ffx.potential.groovy.Energy;
 import ffx.potential.groovy.test.Gradient;
 import ffx.potential.groovy.test.LambdaGradient;
 import ffx.potential.utils.PotentialTest;
@@ -55,7 +54,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** Test OPLS-AA energy and gradient. */
 @RunWith(Parameterized.class)
-public class OPLSEnergyTest extends PotentialTest {
+public class OPLSAAEnergyTest extends PotentialTest {
 
   private final String info;
   private final String filename;
@@ -65,16 +64,16 @@ public class OPLSEnergyTest extends PotentialTest {
   private final int nTorsions;
   private final int nImproperTorsions;
   private final int nVanDerWaals;
-  private final int nPermanent;
+  private final int nFixedCharge;
   private final double bondEnergy;
   private final double angleEnergy;
   private final double torsionEnergy;
   private final double improperTorsionEnergy;
   private final double vanDerWaalsEnergy;
-  private final double permanentEnergy;
+  private final double fixedChargeEnergy;
   private final double tolerance = 1.0e-2;
 
-  public OPLSEnergyTest(
+  public OPLSAAEnergyTest(
       String info,
       String filename,
       int nAtoms,
@@ -88,8 +87,8 @@ public class OPLSEnergyTest extends PotentialTest {
       int nImproperTorsions,
       double vanDerWaalsEnergy,
       int nVanDerWaals,
-      double permanentEnergy,
-      int nPermanent) {
+      double fixedChargeEnergy,
+      int nFixedCharge) {
 
     this.info = info;
     this.filename = filename;
@@ -104,8 +103,8 @@ public class OPLSEnergyTest extends PotentialTest {
     this.nImproperTorsions = nImproperTorsions;
     this.vanDerWaalsEnergy = vanDerWaalsEnergy;
     this.nVanDerWaals = nVanDerWaals;
-    this.permanentEnergy = permanentEnergy;
-    this.nPermanent = nPermanent;
+    this.fixedChargeEnergy = fixedChargeEnergy;
+    this.nFixedCharge = nFixedCharge;
   }
 
   @Parameters
@@ -128,6 +127,40 @@ public class OPLSEnergyTest extends PotentialTest {
                 7293,
                 -24.11087720,
                 2229
+            },
+            {
+                "OPLS-AA Peptide",
+                "ffx/potential/structures/peptide-oplsaa.xyz",
+                328,
+                72.08575480,
+                333,
+                32.38121260,
+                596,
+                65.56283245,
+                875,
+                0.85331537,
+                186,
+                91224.14951970,
+                40511,
+                -665.41688158,
+                52699
+            },
+            {
+                "OPLS-AA/L Peptide",
+                "ffx/potential/structures/peptide-oplsaal.xyz",
+                328,
+                39.69175722,
+                333,
+                41.54908436,
+                596,
+                41.53603210,
+                875,
+                0.92410847,
+                97,
+                112122.04255274,
+                40511,
+                -671.66812023,
+                52699,
             },
             {
                 "OPLS Ethylparaben Benchmark",
@@ -221,37 +254,17 @@ public class OPLSEnergyTest extends PotentialTest {
     assertEquals(info + " Angle Energy", angleEnergy, forceFieldEnergy.getAngleEnergy(), tolerance);
     assertEquals(info + " Angle Count", nAngles, forceFieldEnergy.getNumberofAngles());
     // Torsional Angle
-    assertEquals(
-        info + " Torsion Energy", torsionEnergy, forceFieldEnergy.getTorsionEnergy(), tolerance);
+    assertEquals(info + " Torsion Energy", torsionEnergy, forceFieldEnergy.getTorsionEnergy(), tolerance);
     assertEquals(info + " Torsion Count", nTorsions, forceFieldEnergy.getNumberofTorsions());
     // Improper Torsional Angle
-    assertEquals(
-        info + " Improper Torsion Energy",
-        improperTorsionEnergy,
-        forceFieldEnergy.getImproperTorsionEnergy(),
-        tolerance);
-    assertEquals(
-        info + " Improper Torsion Count",
-        nImproperTorsions,
-        forceFieldEnergy.getNumberofImproperTorsions());
+    assertEquals(info + " Improper Torsion Energy", improperTorsionEnergy, forceFieldEnergy.getImproperTorsionEnergy(), tolerance);
+    assertEquals(info + " Improper Torsion Count", nImproperTorsions, forceFieldEnergy.getNumberofImproperTorsions());
     // van Der Waals
-    assertEquals(
-        info + " van Der Waals Energy",
-        vanDerWaalsEnergy,
-        forceFieldEnergy.getVanDerWaalsEnergy(),
-        tolerance);
-    assertEquals(
-        info + " van Der Waals Count", nVanDerWaals, forceFieldEnergy.getVanDerWaalsInteractions());
+    assertEquals(info + " van Der Waals Energy", vanDerWaalsEnergy, forceFieldEnergy.getVanDerWaalsEnergy(), tolerance);
+    assertEquals(info + " van Der Waals Count", nVanDerWaals, forceFieldEnergy.getVanDerWaalsInteractions());
     // Permanent Multipoles
-    assertEquals(
-        info + " Permanent Multipole Energy",
-        permanentEnergy,
-        forceFieldEnergy.getPermanentMultipoleEnergy(),
-        tolerance);
-    assertEquals(
-        info + " Permanent Multipole Count",
-        nPermanent,
-        forceFieldEnergy.getPermanentInteractions());
+    assertEquals(info + " Fixed Charge Energy", fixedChargeEnergy, forceFieldEnergy.getPermanentMultipoleEnergy(), tolerance);
+    assertEquals(info + " Fixed Charge Count", nFixedCharge, forceFieldEnergy.getPermanentInteractions());
   }
 
   @Test
@@ -287,7 +300,7 @@ public class OPLSEnergyTest extends PotentialTest {
         "--ga", Integer.toString(atomID),
         "--dx", Double.toString(stepSize),
         "--tol", Double.toString(tolerance),
-        "--ac", "1" + "-" + nAtoms,
+        "--ac", "ALL",
         "-l", "0.5",
         "src/main/java/" + filename
     };

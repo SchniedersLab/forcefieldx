@@ -46,9 +46,12 @@ import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
+import ffx.utilities.FFXTest;
 import ffx.utilities.Keyword;
 import ffx.xray.DiffractionRefinementData;
+
 import java.io.File;
+
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.junit.Test;
 
@@ -57,7 +60,7 @@ import org.junit.Test;
  *
  * @author Timoth D. Fenn
  */
-public class CIFFilterTest {
+public class CIFFilterTest extends FFXTest {
 
   @Test
   public void testCIFFilter2DRM() {

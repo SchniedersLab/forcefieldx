@@ -43,11 +43,14 @@ import static org.junit.Assert.assertNotNull;
 import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.AtomType;
+import ffx.utilities.FFXTest;
 import org.junit.Before;
 import org.junit.Test;
 
-/** @author Timothy D. Fenn */
-public class FormFactorTest {
+/**
+ * @author Timothy D. Fenn
+ */
+public class FormFactorTest extends FFXTest {
 
   private XRayFormFactor carbonFormFactor;
 

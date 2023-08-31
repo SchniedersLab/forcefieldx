@@ -72,6 +72,8 @@ import ffx.numerics.multipole.MultipoleTensor.OPERATOR;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.logging.Logger;
+
+import ffx.utilities.FFXTest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -84,7 +86,7 @@ import org.junit.runners.Parameterized.Parameters;
  * @since 1.0
  */
 @RunWith(Parameterized.class)
-public class QIMultipoleTensorTest {
+public class QIMultipoleTensorTest extends FFXTest {
 
   /** Logger for the MultipoleTensor class. */
   private static final Logger logger = Logger.getLogger(QIMultipoleTensorTest.class.getName());

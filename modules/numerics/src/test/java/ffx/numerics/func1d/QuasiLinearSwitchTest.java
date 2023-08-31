@@ -45,12 +45,14 @@ import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.OptionalDouble;
+
+import ffx.utilities.FFXTest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
-public class QuasiLinearSwitchTest {
+public class QuasiLinearSwitchTest extends FFXTest {
   private static final double TOL = 1E-11;
   private final String info;
   private final QuasiLinearThetaMap mapF;

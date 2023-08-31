@@ -42,6 +42,8 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.Collection;
+
+import ffx.utilities.FFXTest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -49,7 +51,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** @author Michael J. Schnieders */
 @RunWith(Parameterized.class)
-public class SquareRootTest {
+public class SquareRootTest extends FFXTest {
 
   private static final double tolerance = 1.0e-13;
   private final String info;

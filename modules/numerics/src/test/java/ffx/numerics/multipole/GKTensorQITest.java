@@ -71,6 +71,7 @@ import static ffx.numerics.multipole.GKTensorGlobalTest.watPolEnergy;
 import static org.junit.Assert.assertEquals;
 
 import ffx.numerics.math.DoubleMath;
+import ffx.utilities.FFXTest;
 import org.junit.Test;
 
 /**
@@ -80,7 +81,7 @@ import org.junit.Test;
  * neglected; thus the derivatives of the quadrupole potential are correct when summed over the
  * trace, but not on a per-element basis.
  */
-public class GKTensorQITest {
+public class GKTensorQITest extends FFXTest {
 
   private final double tolerance = 1.0e-9;
   private final double fdTolerance = 1.0e-6;
