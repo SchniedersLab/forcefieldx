@@ -48,6 +48,7 @@ import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
 import ffx.potential.parameters.ForceField;
+import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.TitrationUtils;
 import ffx.potential.parsers.ESVFilter;
 import ffx.utilities.Constants;
@@ -498,8 +499,9 @@ public class ExtendedSystem implements Potential {
                             double deprotPolar = titrationUtils.getPolarizability(atom, 0.0, 0.0, atom.getPolarizeType().polarizability);
                             double protPolar = titrationUtils.getPolarizability(atom, 1.0, 1.0, atom.getPolarizeType().polarizability);
                             double avgPolar = 0.5 * deprotPolar + 0.5 * protPolar;
-                            double sixth = 1.0 / 6.0;
-                            atom.getPolarizeType().pdamp = pow(avgPolar, sixth);
+                            PolarizeType esvPolarizingHeavyAtom = new PolarizeType(atom.getType(), avgPolar, atom.getPolarizeType().thole,
+                                    atom.getPolarizeType().ddp, atom.getPolarizeType().polarizationGroup);
+                            atom.setPolarizeType(esvPolarizingHeavyAtom);
                         }
                     }
                 }
