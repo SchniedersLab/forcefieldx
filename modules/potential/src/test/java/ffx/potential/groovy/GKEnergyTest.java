@@ -71,6 +71,13 @@ public class GKEnergyTest extends ParentEnergyTest {
     public static Collection<Object[]> data() {
         return Arrays.asList(
                 new Object[][]{
+                        /*
+                         * Test values for Solvation/GK/Atomic Multipoles/Polarization don't exactly match
+                         * published values (Corrigan et. al. 2023) due to small multipole updates to the
+                         * AMOEBA-BIO-2018 force field made in early 2023 to accommodate CpHMD work
+                         *
+                         * The error magnitude is <2 kcal for each term
+                        */
                         {
                                 "RNA (1mis) with GK from Corrigan et al (2023)",
                                 "ffx/potential/structures/1mis.xyz",
@@ -145,6 +152,13 @@ public class GKEnergyTest extends ParentEnergyTest {
                                 136503,
                                 false
                         },
+                        /*
+                         * Test values for Solvation/GK/Atomic Multipoles/Polarization don't exactly match
+                         * published values (Corrigan et. al. 2023) due to small multipole updates to the
+                         * AMOEBA-BIO-2018 force field made in early 2023 to accommodate CpHMD work
+                         *
+                         * The error magnitude is <2 kcal for each term
+                        */
                         {
                                 "Protein (1bpi) with GK from Corrigan et al (2023)",
                                 "ffx/potential/structures/1bpi.xyz",
@@ -183,6 +197,13 @@ public class GKEnergyTest extends ParentEnergyTest {
                                 398278,
                                 false
                         },
+                        /*
+                         * Test values for Solvation/GK/Atomic Multipoles/Polarization don't exactly match
+                         * published values (Corrigan et. al. 2023) due to small multipole updates to the
+                         * AMOEBA-BIO-2018 force field made in early 2023 to accommodate CpHMD work
+                         *
+                         * The error magnitude is <2 kcal for each term
+                        */
                         {
                                 "Protein (1bpi) with GK from Corrigan et al (2023) - No Neck",
                                 "ffx/potential/structures/1bpi.noneck.xyz",
@@ -221,6 +242,13 @@ public class GKEnergyTest extends ParentEnergyTest {
                                 398278,
                                 false
                         },
+                        /*
+                         * Test values for Solvation/GK/Atomic Multipoles/Polarization don't exactly match
+                         * published values (Corrigan et. al. 2023) due to small multipole updates to the
+                         * AMOEBA-BIO-2018 force field made in early 2023 to accommodate CpHMD work
+                         *
+                         * The error magnitude is <2 kcal for each term
+                        */
                         {
                                 "Protein (1bpi) with GK from Corrigan et al (2023) - No Tanh",
                                 "ffx/potential/structures/1bpi.notanh.xyz",
@@ -259,6 +287,13 @@ public class GKEnergyTest extends ParentEnergyTest {
                                 398278,
                                 false
                         },
+                        /*
+                         * Test values for Solvation/GK/Atomic Multipoles/Polarization don't exactly match
+                         * published values (Corrigan et. al. 2023) due to small multipole updates to the
+                         * AMOEBA-BIO-2018 force field made in early 2023 to accommodate CpHMD work
+                         *
+                         * The error magnitude is <2 kcal for each term
+                        */
                         {
                                 "Protein (1bpi) with GK from Corrigan et al (2023) - No Neck, No Tanh",
                                 "ffx/potential/structures/1bpi.noneck.notanh.xyz",
@@ -297,6 +332,13 @@ public class GKEnergyTest extends ParentEnergyTest {
                                 398278,
                                 false
                         },
+                        /*
+                         * Test values for Solvation/GK/Atomic Multipoles/Polarization don't exactly match
+                         * published values (Corrigan et. al. 2023) due to small multipole updates to the
+                         * AMOEBA-BIO-2018 force field made in early 2023 to accommodate CpHMD work
+                         *
+                         * The error magnitude is <2 kcal for each term
+                        */
                         {
                                 "Protein (1bpi) with GK from Corrigan et al (2023) - No Element HCT or Interstitial Space Corrections",
                                 "ffx/potential/structures/1bpi.noelemhct.xyz",
