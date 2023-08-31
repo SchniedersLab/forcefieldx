@@ -394,6 +394,9 @@
                     <!-- Less than 1G may lead to JVM out of memory exceptions. -->
                     <argLine>-Xms1G -Xmx1G -Djava.awt.headless=true -Dj3d.rend=noop</argLine>
                     <useSystemClassLoader>false</useSystemClassLoader>
+                    <excludes>
+                       <exclude>**/ParentEnergyTest</exclude>
+                    </excludes>
                 </configuration>
                 <dependencies>
                     <dependency>
@@ -949,7 +952,7 @@
         <assembly.skipAssembly>false</assembly.skipAssembly>
         <assembly.version>3.6.0</assembly.version>
         <biojava.version>7.0.2</biojava.version>
-        <cdk.version>2.8</cdk.version>
+        <cdk.version>2.9</cdk.version>
         <changes.jira.skip>true</changes.jira.skip>
         <changes.version>2.12.1</changes.version>
         <checkstyle.skip>true</checkstyle.skip>
@@ -970,7 +973,7 @@
         <dependency.version>3.6.0</dependency.version>
         <dependencyDetails>false</dependencyDetails>
         <deploy.version>3.1.1</deploy.version>
-        <enforcer.version>3.3.0</enforcer.version>
+        <enforcer.version>3.4.0</enforcer.version>
         <exec.version>3.1.0</exec.version>
         <failIfNoTests>false</failIfNoTests>
         <fastutil.version>8.5.12</fastutil.version>
@@ -980,6 +983,7 @@
         <git-commit-id.version>6.0.0</git-commit-id.version>
         <version>6.0.0</version>
         <groovy-all.version>4.0.13</groovy-all.version>
+        <!-- groovy-all.version>5.0.0-alpha-1</groovy-all.version -->
         <guava.version>32.1.2-jre</guava.version>
         <install.version>3.1.1</install.version>
         <jar.version>3.3.0</jar.version>

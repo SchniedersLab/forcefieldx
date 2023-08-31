@@ -161,17 +161,13 @@ if [ $hasAwkSed ]; then
         CVERS="`echo "$CVERS" | awk '/release/ {print $5;}' | sed -e 's/,//'`"
         NVFIRST="`echo "$CVERS" | awk 'BEGIN { FS = ".";} { print $1; }'`"
         NVSEC="`echo "$CVERS" | awk 'BEGIN { FS = ".";} { print $2; }'`"
-        if [ $NVFIRST -gt 10 ]; then
-          echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 if you wish to use CUDA-accelerated OpenMM calculations"
-        elif [ $NVFIRST -lt 10 ]; then
-          echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 if you wish to use CUDA-accelerated OpenMM calculations"
-        elif [ $NVSEC -ne 1 ]; then
-          echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 if you wish to use CUDA-accelerated OpenMM calculations"
+        if [ $NVFIRST -lt 10 ]; then
+          echo " Illegal CUDA toolkit version detected (${CVERS}). Please use CUDA toolkit 10.1 or later if you wish to use CUDA-accelerated OpenMM calculations"
         fi
       fi
     fi
 else
-    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 17 through JDK 21 and (optionally) CUDA toolkit 10.1."
+    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 17 through JDK 21 and (optionally) CUDA toolkit 10.1 or later."
 fi
 
 # For Cygwin, switch paths to Windows format before running java

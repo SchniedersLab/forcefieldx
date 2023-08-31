@@ -192,7 +192,7 @@ public class SelfEnergyRegion extends WorkerRegion {
     } catch (ArithmeticException ex) {
       logger.severe(format(" Error in calculation of backbone energy %s", ex.getMessage()));
     }
-    rO.logIfMaster(format("\n Backbone energy:  %s\n", rO.formatEnergy(backboneEnergy)));
+    rO.logIfRank0(format("\n Backbone energy:  %s\n", rO.formatEnergy(backboneEnergy)));
 
     eE.setBackboneEnergy(backboneEnergy);
   }

@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.numerics.multipole;
 
+import static java.lang.Math.fma;
+
 /**
  * The PolarizableMultipole class defines a polarizable multipole.
  *
@@ -88,6 +90,12 @@ public class PolarizableMultipole {
    * Quadrupole xz-component multiplied by 2/3.
    */
   protected double qyz;
+
+  /**
+   * Array of permanent multipole moments.
+   */
+  private final double[] M = new double[10];
+
   /**
    * Induced dipole x-component.
    */
@@ -146,6 +154,9 @@ public class PolarizableMultipole {
   /**
    * Set the permanent multipole.
    *
+   * Note that the quadrupole trace components are multiplied by 1/3 and the
+   * off-diagonal components are multiplied by 2/3.
+   *
    * @param Q Multipole Q[q, dx, dy, dz, qxx, qyy, qzz, qxy, qxz, qyz]
    * @param u Induced dipole u[ux, uy, uz]
    * @param uCR Induced dipole chain-rule uCR[ux, uy, uz]
@@ -157,6 +168,9 @@ public class PolarizableMultipole {
 
   /**
    * Set the permanent multipole.
+   *
+   * Note that the quadrupole trace components are multiplied by 1/3 and the
+   * off-diagonal components are multiplied by 2/3.
    *
    * @param Q Multipole Q[q, dx, dy, dz, qxx, qyy, qzz, qxy, qxz, qyz]
    */
@@ -171,6 +185,17 @@ public class PolarizableMultipole {
     qxy = Q[7] * twoThirds;
     qxz = Q[8] * twoThirds;
     qyz = Q[9] * twoThirds;
+
+    M[0] = q;
+    M[1] = dx;
+    M[2] = dy;
+    M[3] = dz;
+    M[4] = qxx;
+    M[5] = qyy;
+    M[6] = qzz;
+    M[7] = qxy;
+    M[8] = qxz;
+    M[9] = qyz;
   }
 
   /**
@@ -220,4 +245,16 @@ public class PolarizableMultipole {
     sz = 0.5 * (uz * scaleEnergy + pz * scaleInduction);
   }
 
+  /**
+   * Contract this multipole with the potential and its derivatives.
+   *
+   * @return The permanent multipole energy.
+   */
+  protected final double multipoleEnergy(double[] field) {
+    double total = 0.0;
+    for (int i = 0; i < 10; i++) {
+      total = fma(M[i], field[i], total);
+    }
+    return total;
+  }
 }

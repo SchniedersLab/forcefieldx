@@ -43,6 +43,8 @@ import ffx.numerics.Potential
 import ffx.potential.AssemblyState
 import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
+import ffx.potential.bonded.Atom
+import ffx.potential.bonded.Torsion
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.PotentialScript
 import ffx.potential.parsers.PDBFilter
@@ -53,8 +55,11 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import java.util.logging.Level
+
 import static ffx.potential.utils.StructureMetrics.momentsOfInertia
 import static ffx.potential.utils.StructureMetrics.radiusOfGyration
+import static ffx.utilities.StringUtils.parseAtomRanges
 import static java.lang.String.format
 import static org.apache.commons.io.FilenameUtils.*
 
@@ -127,6 +132,13 @@ class Energy extends PotentialScript {
   @Option(names = ['--ec', '--energyCutoff'], paramLabel = "0.0", defaultValue = "0.0",
       description = "Create ARC file of structures within a specified energy of the lowest energy structure.")
   private double eCutoff = 0.0
+
+  /**
+   * --pd or --printDihedral sets atoms to print dihedral values.
+   */
+  @Option(names = ["--pd", "--printDihedral"], paramLabel = "", defaultValue = "",
+          description = "Atom indices to print dihedral angle values.")
+  private String dihedralAtoms = ""
 
   /**
    * The final argument is a PDB or XYZ coordinate file.
@@ -210,6 +222,23 @@ class Energy extends PotentialScript {
           momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true, true)
     }
 
+    ArrayList<Integer> unique
+    if (dihedralAtoms != null && !dihedralAtoms.isEmpty()) {
+      if (dihedralAtoms.equalsIgnoreCase("ALL")) {
+        unique = null;
+      } else {
+        unique = new ArrayList<>(parseAtomRanges("Dihedral Atoms", dihedralAtoms, activeAssembly.getAtomList().size()));
+      }
+      if(!printDihedral(activeAssembly, unique)){
+        if(unique != null && unique.size() > 3){
+          logger.info(format("\n Dihedral for atoms %4d %4d %4d %4d was not found.",
+                  unique[0] + 1, unique[1] + 1, unique[2] + 1, unique[3] + 1));
+        }else{
+          logger.info("\n Dihedral for specified atoms was not found.");
+        }
+      }
+    }
+
     SystemFilter systemFilter = potentialFunctions.getFilter()
     if (systemFilter instanceof XYZFilter || systemFilter instanceof PDBFilter) {
 
@@ -273,6 +302,10 @@ class Energy extends PotentialScript {
         if (inertia) {
           double[][] inertiaValue =
               momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true, true)
+        }
+
+        if (dihedralAtoms != null && !dihedralAtoms.isEmpty()) {
+          printDihedral(activeAssembly, unique);
         }
       }
 
@@ -399,6 +432,52 @@ class Energy extends PotentialScript {
     }
 
     return this
+  }
+
+  /**
+   * Print dihedral angles for a specified set of atoms.
+   * @param ma Molecular assembly containing atoms of interest.
+   * @param indices Atom indices of desired dihedral angle.
+   * @return
+   */
+  static boolean printDihedral(MolecularAssembly ma, ArrayList<Integer> indices){
+    Atom[] atoms = ma.getAtomArray();
+    // Print all torsions... probably too much logging.
+    if(indices == null){
+      try {
+        for(Atom a: atoms) {
+          for (Torsion torsion : a.getTorsions()) {
+            logger.info(" Torsion: " + torsion.toString());
+          }
+        }
+        return true;
+      }catch(Exception e){
+        logger.info(" Exception during dihedral print " + e.toString());
+        e.printStackTrace();
+      }
+      return false;
+    }else{
+      try {
+        boolean found = false;
+        for(Torsion torsion: atoms[indices.get(0)].getTorsions()){
+          if(logger.isLoggable(Level.FINE)) {
+            logger.info(" TORSION: " + torsion.toString());
+          }
+          // Indices stored as human readable... subtract 1.
+          if(indices.contains(torsion.getAtom(0).getIndex() - 1) && indices.contains(torsion.getAtom(1).getIndex() - 1) && indices.contains(torsion.getAtom(2).getIndex() - 1) && indices.contains(torsion.getAtom(3).getIndex() - 1)){
+            logger.info(" Torsion: " + torsion.toString());
+            found=true;
+            if(!logger.isLoggable(Level.FINE)) {
+              return true;
+            }
+          }
+        }
+        return found;
+      }catch(Exception e){
+        logger.info(" Exception during dihedral print " + e.toString());
+        e.printStackTrace();
+      }
+    }
   }
 
   @Override

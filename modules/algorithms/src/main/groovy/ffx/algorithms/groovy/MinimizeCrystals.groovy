@@ -55,6 +55,7 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
+import static java.lang.String.format
 import static org.apache.commons.math3.util.FastMath.abs
 
 /**
@@ -92,6 +93,11 @@ class MinimizeCrystals extends AlgorithmsScript {
   @Option(names = ["-t", "--tensor"], paramLabel = 'false', defaultValue = "false",
       description = 'Compute partial derivatives of the energy with respect to unit cell parameters.')
   boolean tensor
+
+  /** --et or --energyTolerance End minimization if new energy deviates less than this tolerance. */
+  @Option(names = ["--et", "--energyTolerance"], paramLabel = "1.0e-10", defaultValue = "1.0e-10",
+          description = "End minimization if new energy deviates less than this tolerance.")
+  private double tolerance;
 
   /**
    * The final argument(s) should be an XYZ or PDB filename.
@@ -223,11 +229,10 @@ class MinimizeCrystals extends AlgorithmsScript {
   }
 
   void runMinimize() {
+    int MIN_ITERATIONS = 4;
     crystalMinimize = new CrystalMinimize(activeAssembly, xtalEnergy, algorithmListener)
     crystalMinimize.minimize(minimizeOptions.NBFGS, minimizeOptions.eps, minimizeOptions.iterations)
     double energy = crystalMinimize.getEnergy()
-
-    double tolerance = 1.0e-10
 
     // Complete rounds of coordinate and lattice optimization.
     if (coords) {
@@ -245,6 +250,7 @@ class MinimizeCrystals extends AlgorithmsScript {
           break
         }
         energy = newEnergy
+        minimizeOptions.getIterations();
 
         // Complete a round of lattice optimization.
         crystalMinimize.minimize(minimizeOptions.NBFGS, minimizeOptions.eps, minimizeOptions.iterations)
@@ -257,7 +263,39 @@ class MinimizeCrystals extends AlgorithmsScript {
           break
         }
         energy = newEnergy
+        if(minimize.getIterations() < MIN_ITERATIONS && crystalMinimize.getIterations() < MIN_ITERATIONS){
+          //Prevent looping between similar structures (i.e., A-min to->B, B-min to->A)
+          break;
+        }
       }
+    }
+    // Replace existing energy and density label if present
+    String oldName = activeAssembly.getName();
+    double density = activeAssembly.getCrystal().getDensity(activeAssembly.getMass());
+    if (oldName.containsIgnoreCase("Energy:")) {
+      String[] tokens = oldName.trim().split(" +");
+      int numTokens = tokens.length;
+      // First element should always be number of atoms in XYZ.
+      StringBuilder sb = new StringBuilder();
+      for (int i = 1; i < numTokens; i++) {
+        if (tokens[i].containsIgnoreCase("Energy:")){
+          // i++ skips current entry (value associated with "Energy")
+          tokens[i++] = energy;
+        }else if (tokens[i].containsIgnoreCase("Density:")){
+          // i++ skips current entry (value associated with "Density")
+          tokens[i++] = density;
+        }else{
+          // Accrue previous name.
+          sb.append(tokens[i] + " ");
+        }
+      }
+      // Opted to add energy/density after to preserve formatting.
+      activeAssembly.setName(format("%s Energy: %9.4f Density: %9.4f",
+              sb.toString(), energy, density));
+    } else {
+      // Append energy and density to structure name (line 1 of XYZ).
+      activeAssembly.setName(format("%s Energy: %9.4f Density: %9.4f",
+              oldName, energy, density));
     }
   }
 

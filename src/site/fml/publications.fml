@@ -6,36 +6,73 @@
       toplink="false">
     <part id="2023">
         <title>2023</title>
+        <faq id="28">
+            <question>
+                Corrigan, R. A., Thiel, A. C., Lynn, J. R., Casavant, T. L., Ren, P., Ponder, J. W., and Schnieders, M.
+                J.,
+                A Generalized Kirkwood Implicit Solvent for the Polarizable AMOEBA Protein Model.
+                <i>Journal of Chemical Physics</i>
+                <b>2023</b>, 159, 054102.
+                <a href="http://doi.org/10.1063/5.0158914">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>
+                    Computational simulation of biomolecules can provide important insights into protein design,
+                    protein-ligand binding interactions, and ab initio biomolecular folding, among other applications.
+                    Accurate treatment of the solvent environment is essential in such applications, but the use of
+                    explicit solvents can add considerable cost. Implicit treatment of solvent effects using a
+                    dielectric continuum model is an attractive alternative to explicit solvation since it is
+                    able to describe solvation effects without the inclusion of solvent degrees of freedom.
+                    Previously, we described the development and parameterization of implicit solvent models for
+                    small molecules. Here, we extend the parameterization of the generalized Kirkwood (GK) implicit
+                    solvent model for use with biomolecules described by the AMOEBA force field via the addition of
+                    corrections to the calculation of effective radii that account for interstitial spaces that arise
+                    within biomolecules. These include element-specific pairwise descreening scale factors,
+                    a short-range neck contribution to describe the solvent-excluded space between pairs of
+                    nearby atoms, and finally tanh-based rescaling of the overall descreening integral. We then
+                    apply the AMOEBA/GK implicit solvent to a set of ten proteins and achieve an average coordinate
+                    root mean square deviation for the experimental structures of 2.0 Å across 500 ns simulations.
+                    Overall, the continued development of implicit solvent models will help facilitate the simulation
+                    of biomolecules on mechanistically relevant timescales.
+                </p>
+            </answer>
+        </faq>
         <faq id="27">
-          <question>
-              Tollefson, M. R., Gogal, R. A., Weaver, A. M., Schaefer, A. M., Marini, R. J.,
-              Azaiez, H., Kolbe, D. L., Wang, D., Weaver, A. E., Casavant, T. L., Braun, T. A.,
-              Smith, R. J. H., and Schnieders, M. J.,
-              Assessing Variants of Uncertain Significance Implicated in Hearing Loss
-              Using a Comprehensive Deafness Proteome
-              <i>Submitted</i>
-          </question>
-          <answer>
-            <p>
-                Hearing loss is the leading sensory deficit, affecting ~5% of the population.
-                It exhibits remarkable heterogeneity across 223 genes with 6,328 pathogenic missense
-                variants, making deafness-specific expertise a prerequisite for ascribing phenotypic
-                consequences to genetic variants. Deafness-implicated variants are curated in the
-                Deafness Variation Database (DVD) after classification by a genetic hearing loss
-                expert panel and thorough informatics pipeline. However, seventy percent of the
-                128,167 missense variants in the DVD are “variants of uncertain significance” (VUS)
-                due to insufficient evidence for classification. Here, we use the deep learning protein
-                prediction algorithm, AlphaFold2, to curate structures for all DVD genes. We refine these
-                structures with global optimization and the AMOEBA force field and use DDGun3D to
-                predict folding free energy differences (∆∆GFold) for all DVD missense variants.
-                We find that 5,772 VUSs have a large, destabilizing ∆∆GFold that is consistent
-                with pathogenic variants. When also filtered for CADD scores (>25.7), we determine
-                3,456 VUSs are likely pathogenic at a probability of 99.0%. These VUSs affect
-                119 patients (~3% of cases) sequenced by the OtoSCOPE targeted panel. Approximately
-                half of these patients previously received an inconclusive report, and reclassification
-                of these VUSs as pathogenic provides a new genetic diagnosis for six patients.
-            </p>
-          </answer>
+            <question>
+                Tollefson, M. R., Gogal, R. A., Weaver, A. M., Schaefer, A. M., Marini, R. J.,
+                Azaiez, H., Kolbe, D. L., Wang, D., Weaver, A. E., Casavant, T. L., Braun, T. A.,
+                Smith, R. J. H., and Schnieders, M. J.,
+                Assessing Variants of Uncertain Significance Implicated in Hearing Loss Using a Comprehensive
+                Deafness Proteome.
+                <i>Human Genetics</i>
+                <b>2023</b>, 142, 819–834.
+                <a href="http://doi.org/10.1007/s00439-023-02559-9">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>
+                    Hearing loss is the leading sensory deficit, affecting ~5% of the population.
+                    It exhibits remarkable heterogeneity across 223 genes with 6328 pathogenic missense variants,
+                    making deafness-specific expertise a prerequisite for ascribing phenotypic consequences to genetic
+                    variants. Deafness-implicated variants are curated in the Deafness Variation Database (DVD) after
+                    classification by a genetic hearing loss expert panel and thorough informatics pipeline. However,
+                    seventy percent of the 128,167 missense variants in the DVD are “variants of uncertain significance”
+                    (VUS) due to insufficient evidence for classification. Here, we use the deep learning protein
+                    prediction algorithm, AlphaFold2, to curate structures for all DVD genes. We refine these structures
+                    with global optimization and the AMOEBA force field and use DDGun3D to predict folding free energy
+                    differences (∆∆GFold) for all DVD missense variants. We find that 5772 VUSs have a large,
+                    destabilizing ∆∆GFold that is consistent with pathogenic variants. When also filtered for CADD
+                    scores (>25.7), we determine 3456 VUSs are likely pathogenic at a probability of 99.0%. Of the 224
+                    genes in the DVD, 166 genes (74%) exhibit one or more missense variants predicted to cause a
+                    pathogenic change in protein folding stability. The VUSs prioritized here affect 119 patients
+                    (~3% of cases) sequenced by the OtoSCOPE targeted panel. Approximately half of these patients
+                    previously received an inconclusive report, and reclassification of these VUSs as pathogenic
+                    provides a new genetic diagnosis for six patients.
+                </p>
+            </answer>
         </faq>
     </part>
     <part id="2022">
@@ -43,7 +80,8 @@
         <faq id="26">
             <question>
                 Nessler, A. J., Okada, O., Hermon, M. J., Nagata, H., and Schnieders, M. J.,
-                Progressive alignment of crystals: reproducible and efficient assessment of crystal structure similarity.
+                Progressive alignment of crystals: reproducible and efficient assessment of crystal structure
+                similarity.
                 <i>Journal of Applied Crystallography</i>
                 <b>2022</b>, 55, 1528-1537.
                 <a href="http://dx.doi.org/10.1107/S1600576722009670">
@@ -129,40 +167,41 @@
         </faq>
     </part>
     <part id="2021">
-      <title>2021</title>
-      <faq id="24">
-        <question>
-          Corrigan, R. A., Qi, G., Thiel, A. C., Lynn, J. R., Walker, B. D., Casavant, T. L.,
-          Lagardere, L., Piquemal, J.-P., Ponder, J. W., Ren, P., and Schnieders, M. J.,
-          Implicit Solvents for the Polarizable Atomic Multipole AMOEBA Force Field.
-          <i>Journal of Chemical Theory and Computation</i>
-          <b>2021</b>,  17 (4), 2323-2341.
-          <a href="http://dx.doi.org/10.1021/acs.jctc.0c01286">
-             <img src="images/pdf.png" alt="PDF"/>
-          </a>
-        </question>
-        <answer>
-          <p>
-            Computational protein design, ab initio protein/RNA folding, and protein–ligand screening
-            can be too computationally demanding for explicit treatment of solvent. For these applications,
-            implicit solvent offers a compelling alternative, which we describe here for the polarizable
-            atomic multipole AMOEBA force field based on three treatments of continuum electrostatics:
-            numerical solutions to the nonlinear and linearized versions of the Poisson–Boltzmann equation (PBE),
-            the domain-decomposition conductor-like screening model (ddCOSMO) approximation to the PBE,
-            and the analytic generalized Kirkwood (GK) approximation. The continuum electrostatics models are
-            combined with a nonpolar estimator based on novel cavitation and dispersion terms. Electrostatic
-            model parameters are numerically optimized using a least-squares style target function based on a
-            library of 103 small-molecule solvation free energy differences. Mean signed errors for the adaptive
-            Poisson–Boltzmann solver (APBS), ddCOSMO, and GK models are 0.05, 0.00, and 0.00 kcal/mol,
-            respectively, while the mean unsigned errors are 0.70, 0.63, and 0.58 kcal/mol, respectively.
-            Validation of the electrostatic response of the resulting implicit solvents, which are available
-            in the Tinker (or Tinker-HP), OpenMM, and Force Field X software packages, is based on
-            comparisons to explicit solvent simulations for a series of proteins and nucleic acids.
-            Overall, the emergence of performative implicit solvent models for polarizable force fields
-            opens the door to their use for folding and design applications.
-          </p>
-         </answer>
-      </faq>
+        <title>2021</title>
+        <faq id="24">
+            <question>
+                Corrigan, R. A., Qi, G., Thiel, A. C., Lynn, J. R., Walker, B. D., Casavant, T. L.,
+                Lagardere, L., Piquemal, J.-P., Ponder, J. W., Ren, P., and Schnieders, M. J.,
+                Implicit Solvents for the Polarizable Atomic Multipole AMOEBA Force Field.
+                <i>Journal of Chemical Theory and Computation</i>
+                <b>2021</b>, 17 (4), 2323-2341.
+                <a href="http://dx.doi.org/10.1021/acs.jctc.0c01286">
+                    <img src="images/pdf.png" alt="PDF"/>
+                </a>
+            </question>
+            <answer>
+                <p>
+                    Computational protein design, ab initio protein/RNA folding, and protein–ligand screening
+                    can be too computationally demanding for explicit treatment of solvent. For these applications,
+                    implicit solvent offers a compelling alternative, which we describe here for the polarizable
+                    atomic multipole AMOEBA force field based on three treatments of continuum electrostatics:
+                    numerical solutions to the nonlinear and linearized versions of the Poisson–Boltzmann equation
+                    (PBE),
+                    the domain-decomposition conductor-like screening model (ddCOSMO) approximation to the PBE,
+                    and the analytic generalized Kirkwood (GK) approximation. The continuum electrostatics models are
+                    combined with a nonpolar estimator based on novel cavitation and dispersion terms. Electrostatic
+                    model parameters are numerically optimized using a least-squares style target function based on a
+                    library of 103 small-molecule solvation free energy differences. Mean signed errors for the adaptive
+                    Poisson–Boltzmann solver (APBS), ddCOSMO, and GK models are 0.05, 0.00, and 0.00 kcal/mol,
+                    respectively, while the mean unsigned errors are 0.70, 0.63, and 0.58 kcal/mol, respectively.
+                    Validation of the electrostatic response of the resulting implicit solvents, which are available
+                    in the Tinker (or Tinker-HP), OpenMM, and Force Field X software packages, is based on
+                    comparisons to explicit solvent simulations for a series of proteins and nucleic acids.
+                    Overall, the emergence of performative implicit solvent models for polarizable force fields
+                    opens the door to their use for folding and design applications.
+                </p>
+            </answer>
+        </faq>
     </part>
     <part id="2019">
         <title>2019</title>
@@ -184,21 +223,27 @@
                     these genes are over 60,000 missense variants. The majority of these variants are classified as
                     <i>variants of uncertain significance</i>
                     to reflect our inability to ascribe a phenotypic effect to the observed amino acid change.
-                    A promising source of pathogenicity information is biophysical simulation, although input protein structures
-                    often contain defects because of limitations in experimental data and/or only distant homology to a template.
-                    Here, we combine the polarizable atomic multipole optimized energetics for biomolecular applications force field,
+                    A promising source of pathogenicity information is biophysical simulation, although input protein
+                    structures
+                    often contain defects because of limitations in experimental data and/or only distant homology to a
+                    template.
+                    Here, we combine the polarizable atomic multipole optimized energetics for biomolecular applications
+                    force field,
                     many-body optimization theory, and graphical processing unit acceleration to repack all
                     deafness-associated proteins and thereby improve average structure MolProbity score from 2.2 to 1.0.
-                    We then used these optimized wild-type models to create over 60,000 structures for missense variants in the
-                    Deafness Variation Database, which are being incorporated into the Deafness Variation Database to inform
-                    deafness pathogenicity prediction. Finally, this work demonstrates that advanced polarizable atomic multipole
+                    We then used these optimized wild-type models to create over 60,000 structures for missense variants
+                    in the
+                    Deafness Variation Database, which are being incorporated into the Deafness Variation Database to
+                    inform
+                    deafness pathogenicity prediction. Finally, this work demonstrates that advanced polarizable atomic
+                    multipole
                     force fields are efficient enough to repack the entire human proteome.
                 </p>
             </answer>
         </faq>
         <faq id="22">
             <question>
-                Litman, J. M.,  Thiel, A. C., and M. J. Schnieders,
+                Litman, J. M., Thiel, A. C., and M. J. Schnieders,
                 Scalable Indirect Free Energy Method Applied to Divalent Cation-Metalloprotein Binding.
                 <i>Journal of Chemical Theory and Computation</i>
                 <b>2019</b>, 15 (8), 4602-4614.
@@ -208,21 +253,36 @@
             </question>
             <answer>
                 <p>
-                    Many biological processes are based on molecular recognition between highly charged molecules such as nucleic acids,
-                    inorganic ions, charged amino acids, etc. For such cases, it has been demonstrated that molecular simulations with
-                    fixed partial charges often fail to achieve experimental accuracy. Although incorporation of more advanced
-                    electrostatic models (such as multipoles, mutual polarization, etc.) can significantly improve simulation accuracy,
-                    it increases computational expense by a factor of 5–20×. Indirect free energy (IFE) methods can mitigate this cost
-                    by modeling intermediate states at fixed-charge resolution. For example, an efficient “reference” model such as a
-                    pairwise Amber, CHARMM, or OPLS-AA force field can be used to derive an initial estimate, followed by thermodynamic
-                    corrections to a more advanced “target” potential such as the polarizable AMOEBA model. Unfortunately, all currently
-                    described IFE methods encounter difficulties reweighting more than ∼50 atoms between resolutions due to extensive
-                    scaling of both the magnitude of the thermodynamic corrections and their statistical uncertainty. We present an
-                    approach called “simultaneous bookending” (SB) that is fundamentally different from existing IFE methods based on a
-                    tunable sampling approximation, which permits scaling to thousands of atoms. SB is demonstrated on the
-                    relative binding affinity of Mg<sup>2+</sup>/Ca<sup>2+</sup> to a set of metalloproteins with up to 2972 atoms, finding no statistically
-                    significant difference between direct AMOEBA results and those from correcting Amber to AMOEBA. The ability to
-                    change the resolution of thousands of atoms during reweighting suggests the approach may be applicable in the
+                    Many biological processes are based on molecular recognition between highly charged molecules such
+                    as nucleic acids,
+                    inorganic ions, charged amino acids, etc. For such cases, it has been demonstrated that molecular
+                    simulations with
+                    fixed partial charges often fail to achieve experimental accuracy. Although incorporation of more
+                    advanced
+                    electrostatic models (such as multipoles, mutual polarization, etc.) can significantly improve
+                    simulation accuracy,
+                    it increases computational expense by a factor of 5–20×. Indirect free energy (IFE) methods can
+                    mitigate this cost
+                    by modeling intermediate states at fixed-charge resolution. For example, an efficient “reference”
+                    model such as a
+                    pairwise Amber, CHARMM, or OPLS-AA force field can be used to derive an initial estimate, followed
+                    by thermodynamic
+                    corrections to a more advanced “target” potential such as the polarizable AMOEBA model.
+                    Unfortunately, all currently
+                    described IFE methods encounter difficulties reweighting more than ∼50 atoms between resolutions due
+                    to extensive
+                    scaling of both the magnitude of the thermodynamic corrections and their statistical uncertainty. We
+                    present an
+                    approach called “simultaneous bookending” (SB) that is fundamentally different from existing IFE
+                    methods based on a
+                    tunable sampling approximation, which permits scaling to thousands of atoms. SB is demonstrated on
+                    the
+                    relative binding affinity of Mg<sup>2+</sup>/Ca<sup>2+</sup> to a set of metalloproteins with up to
+                    2972 atoms, finding no statistically
+                    significant difference between direct AMOEBA results and those from correcting Amber to AMOEBA. The
+                    ability to
+                    change the resolution of thousands of atoms during reweighting suggests the approach may be
+                    applicable in the
                     future to protein–protein binding affinities or nucleic acid thermodynamics.
                 </p>
             </answer>
@@ -241,7 +301,25 @@
                 </a>
             </question>
             <answer>
-                <p>First principles prediction of the structure, thermodynamics and solubility of organic molecular crystals, which play a central role in chemical, material, pharmaceutical and engineering sciences, challenges both potential energy functions and sampling methodologies. Here we calculate absolute crystal deposition thermodynamics using a novel dual force field approach whose goal is to maintain the accuracy of advanced multipole force fields (e.g. the polarizable AMOEBA model) while performing more than 95% of the sampling in an inexpensive fixed charge (FC) force field (e.g. OPLS-AA). Absolute crystal sublimation/deposition phase transition free energies were determined using an alchemical path that grows the crystalline state from a vapor reference state based on sampling with the OPLS-AA force field, followed by dual force field thermodynamic corrections to change between FC and AMOEBA resolutions at both end states (we denote the three step path as AMOEBA/FC). Importantly, whereas the phase transition requires on the order of 200 ns of sampling per compound, only 5 ns of sampling was needed for the dual force field thermodynamic corrections to reach a mean statistical uncertainty of 0.05 kcal mol<sup>−1</sup>. For five organic compounds, the mean unsigned error between direct use of AMOEBA and the AMOEBA/FC dual force field path was only 0.2 kcal mol<sup>−1</sup> and not statistically significant. Compared to experimental deposition thermodynamics, the mean unsigned error for AMOEBA/FC (1.4 kcal mol<sup>−1</sup>) was more than a factor of two smaller than uncorrected OPLS-AA (3.2 kcal mol<sup>−1</sup>). Overall, the dual force field thermodynamic corrections reduced condensed phase sampling in the expensive force field by a factor of 40, and may prove useful for protein stability or binding thermodynamics in the future.
+                <p>First principles prediction of the structure, thermodynamics and solubility of organic molecular
+                    crystals, which play a central role in chemical, material, pharmaceutical and engineering sciences,
+                    challenges both potential energy functions and sampling methodologies. Here we calculate absolute
+                    crystal deposition thermodynamics using a novel dual force field approach whose goal is to maintain
+                    the accuracy of advanced multipole force fields (e.g. the polarizable AMOEBA model) while performing
+                    more than 95% of the sampling in an inexpensive fixed charge (FC) force field (e.g. OPLS-AA).
+                    Absolute crystal sublimation/deposition phase transition free energies were determined using an
+                    alchemical path that grows the crystalline state from a vapor reference state based on sampling with
+                    the OPLS-AA force field, followed by dual force field thermodynamic corrections to change between FC
+                    and AMOEBA resolutions at both end states (we denote the three step path as AMOEBA/FC). Importantly,
+                    whereas the phase transition requires on the order of 200 ns of sampling per compound, only 5 ns of
+                    sampling was needed for the dual force field thermodynamic corrections to reach a mean statistical
+                    uncertainty of 0.05 kcal mol<sup>−1</sup>. For five organic compounds, the mean unsigned error
+                    between direct use of AMOEBA and the AMOEBA/FC dual force field path was only 0.2 kcal mol<sup>−1
+                    </sup> and not statistically significant. Compared to experimental deposition thermodynamics, the
+                    mean unsigned error for AMOEBA/FC (1.4 kcal mol<sup>−1</sup>) was more than a factor of two smaller
+                    than uncorrected OPLS-AA (3.2 kcal mol<sup>−1</sup>). Overall, the dual force field thermodynamic
+                    corrections reduced condensed phase sampling in the expensive force field by a factor of 40, and may
+                    prove useful for protein stability or binding thermodynamics in the future.
                 </p>
             </answer>
         </faq>
@@ -256,7 +334,19 @@
                 </a>
             </question>
             <answer>
-                <p>Molecular recognition is of paramount interest in many applications. Here we investigate a series of host–guest systems previously used in the SAMPL4 blind challenge by using molecular simulations and the AMOEBA polarizable force field. The free energy results computed by Bennett's acceptance ratio (BAR) method using the AMOEBA polarizable force field ranked favorably among the entries submitted to the SAMPL4 host–guest competition. In this work we conduct an in-depth analysis of the AMOEBA force field host–guest binding thermodynamics by using both BAR and the orthogonal space random walk (OSRW) methods. The binding entropy–enthalpy contributions are analyzed for each host–guest system. For systems of inordinate binding entropy–enthalpy values, we further examine the hydrogen bonding patterns and configurational entropy contribution. The binding mechanism of this series of host–guest systems varies from ligand to ligand, driven by enthalpy and/or entropy changes. Convergence of BAR and OSRW binding free energy methods is discussed. Ultimately, this work illustrates the value of molecular modelling and advanced force fields for the exploration and interpretation of binding thermodynamics.
+                <p>Molecular recognition is of paramount interest in many applications. Here we investigate a series of
+                    host–guest systems previously used in the SAMPL4 blind challenge by using molecular simulations and
+                    the AMOEBA polarizable force field. The free energy results computed by Bennett's acceptance ratio
+                    (BAR) method using the AMOEBA polarizable force field ranked favorably among the entries submitted
+                    to the SAMPL4 host–guest competition. In this work we conduct an in-depth analysis of the AMOEBA
+                    force field host–guest binding thermodynamics by using both BAR and the orthogonal space random walk
+                    (OSRW) methods. The binding entropy–enthalpy contributions are analyzed for each host–guest system.
+                    For systems of inordinate binding entropy–enthalpy values, we further examine the hydrogen bonding
+                    patterns and configurational entropy contribution. The binding mechanism of this series of
+                    host–guest systems varies from ligand to ligand, driven by enthalpy and/or entropy changes.
+                    Convergence of BAR and OSRW binding free energy methods is discussed. Ultimately, this work
+                    illustrates the value of molecular modelling and advanced force fields for the exploration and
+                    interpretation of binding thermodynamics.
                 </p>
             </answer>
         </faq>
@@ -277,15 +367,19 @@
             <answer>
                 <p>
                     A balance of van der Waals, electrostatic, and hydrophobic forces drive the folding and packing of
-                    protein side-chains. Although residue interactions are often approximated as being pairwise additive,
-                    in reality higher order ‘many-body’ contributions that depend on environment drive hydrophobic collapse
-                    and cooperative electrostatics. Beginning from dead-end elimination (DEE), we derive the first algorithm
+                    protein side-chains. Although residue interactions are often approximated as being pairwise
+                    additive,
+                    in reality higher order ‘many-body’ contributions that depend on environment drive hydrophobic
+                    collapse
+                    and cooperative electrostatics. Beginning from dead-end elimination (DEE), we derive the first
+                    algorithm
                     capable of deterministic repacking of side-chains compatible with ‘many-body’ energy functions. The
                     approach is applied to seven PCNA X-ray crystallographic data sets with resolutions 2.5-3.8 Å
                     (mean 3.0 Å). While PDB_Redo models average an R<sub>free</sub> value of 29.5% and MolProbity score
                     of 2.71 Å (77<sup>th</sup> percentile), DEE with the polarizable AMOEBA force field lowered
                     R<sub>free</sub> by 2.8% to 26.7% and improved mean MolProbity score to atomic resolution at 1.25 Å
-                    (100<sup>th</sup> percentile). For applications that depend on side-chain repacking, including structure
+                    (100<sup>th</sup> percentile). For applications that depend on side-chain repacking, including
+                    structure
                     refinement and protein design, the accuracy limitations of pairwise additivity can now be eliminated
                     via polarizable or quantum mechanical potentials.
                 </p>
@@ -296,7 +390,8 @@
                 Shi, Y., Schnieders, M. J., Piquemal, J.-P., and P. Ren,
                 Polarizable Force Fields for Biomolecular Modeling.
                 <i>Reviews in Computational Chemistry</i>
-                <b>2015</b> Edition: 28, Publisher: Springer, Editors: Kenny B. Lipkowitz
+                <b>2015</b>
+                Edition: 28, Publisher: Springer, Editors: Kenny B. Lipkowitz
                 <a href="http://dx.doi.org/10.1002/9781118889886.ch2">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
@@ -320,10 +415,12 @@
         </faq>
         <faq id="17">
             <question>
-                Lipparini, F., Lagardère, L., Raynaud, C., Stamm, B., Cancès, E., Mennucci, B., Schnieders, M. J., Ren P.,
+                Lipparini, F., Lagardère, L., Raynaud, C., Stamm, B., Cancès, E., Mennucci, B., Schnieders, M. J., Ren
+                P.,
                 Maday, Y. and J.-P. Piquemal, Polarizable Molecular Dynamics in a Polarizable Continuum Solvent.
                 <i>Journal of Chemical Theory and Computation</i>
-                <b>2015</b> 11 (2), 623-634.
+                <b>2015</b>
+                11 (2), 623-634.
                 <a href="http://dx.doi.org/10.1021/ct500998q">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
@@ -333,7 +430,8 @@
                     We present for the first time polarizable molecular dynamics (MD) simulations within a polarizable
                     continuum solvent with molecular shape cavities and exact solution of the mutual polarization.
                     The key ingredients are a very efficient algorithm for solving the equations associated with the
-                    polarizable continuum, in particular, the domain decomposition Conductor-like Screening Model (ddCOSMO),
+                    polarizable continuum, in particular, the domain decomposition Conductor-like Screening Model
+                    (ddCOSMO),
                     a rigorous coupling of the continuum with the polarizable force field achieved through a robust
                     variational formulation and an effective strategy to solve the coupled equations. The coupling of
                     ddCOSMO with non variational force fields, including AMOEBA, is also addressed. The MD simulations
@@ -354,7 +452,8 @@
                 Park, J., Nessler, I., McClain, B., Macikenas D., Baltrusaitis, J. and M. J. Schnieders,
                 Absolute Organic Crystal Thermodynamics: Growth of the Asymmetric Unit into a Crystal via Alchemy.
                 <i>Journal of Chemical Theory and Computation</i>
-                <b>2014</b> 10, (7), 2781-2791.
+                <b>2014</b>
+                10, (7), 2781-2791.
                 <a href="http://dx.doi.org/10.1021/ct500180m">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
@@ -363,10 +462,13 @@
                 <p>
                     The solubility of organic molecules is of critical importance to the pharmaceutical industry,
                     however, robust computational methods to predict this quantity from first principles are lacking.
-                    Solubility can be computed from a thermodynamic cycle that decomposes standard state solubility into the
+                    Solubility can be computed from a thermodynamic cycle that decomposes standard state solubility into
+                    the
                     sum of solid-vapor sublimation and vapor-liquid solvation free energies ΔG°
-                    <sub>solubility</sub> = ΔG°
-                    <sub>sub</sub> + ΔG°
+                    <sub>solubility</sub>
+                    = ΔG°
+                    <sub>sub</sub>
+                    + ΔG°
                     <sub>solv</sub>.
                     Over the past few decades, alchemical simulation methods to compute solvation free energy using
                     classical force fields have become widely used. However, analogous methods for determining the free
@@ -374,30 +476,47 @@
                     priori knowledge of the atomic coordinates of the crystal. Here we describe progress toward an
                     alternative scheme based on growth of the asymmetric unit into a crystal via alchemy (GAUCHE).
                     GAUCHE computes deposition free energy ΔG°<sub>dep</sub>=-ΔG°<sub>sub</sub>=
-                    k<sub>B</sub>Tln(V<sub>AU</sub>⁄1  M) + ΔG°<sub>AU</sub> + ΔG°<sub>(AU→UC)</sub>
-                    as the sum of an entropic term to account for compressing a 1 M vapor into the molar volume of the crystal
-                    asymmetric unit (VAU), where kB is Boltzmann’s constant and T is temperature in degrees Kelvin, plus two
-                    simulation steps. In the first simulation step, the deposition free energy ΔG°<sub>AU</sub> for a system
-                    composed of only NAU asymmetric unit (AU) molecule(s) is computed beginning from an arbitrary conformation
-                    in vacuum. In the second simulation step, the change in free energy ΔG°<sub>(AU→UC)</sub> to expand the
-                    asymmetric unit degrees of freedom into a unit cell (UC) composed of NUC independent molecules is computed.
-                    This latter step accounts for the favorable free energy of removing the constraint that every symmetry mate
-                    of the asymmetric unit has an identical conformation and intermolecular interactions. The current work is
-                    based on NVT simulations, which requires knowledge of the crystal space group and unit cell parameters
-                    from experiment, but not a priori knowledge of crystalline atomic coordinates. GAUCHE was applied to 5
-                    organic molecules whose sublimation free energy has been measured experimentally, based on the polarizable
-                    atomic multipole AMOEBA force field and more than a microsecond of sampling per compound. The mean signed
-                    and unsigned errors were only -0.4 and 1.2 kcal/mol, respectively, which indicates that GAUCHE is capable
+                    k<sub>B</sub>Tln(V<sub>AU</sub>⁄1 M) + ΔG°<sub>AU</sub> + ΔG°
+                    <sub>(AU→UC)</sub>
+                    as the sum of an entropic term to account for compressing a 1 M vapor into the molar volume of the
+                    crystal
+                    asymmetric unit (VAU), where kB is Boltzmann’s constant and T is temperature in degrees Kelvin, plus
+                    two
+                    simulation steps. In the first simulation step, the deposition free energy ΔG°<sub>AU</sub> for a
+                    system
+                    composed of only NAU asymmetric unit (AU) molecule(s) is computed beginning from an arbitrary
+                    conformation
+                    in vacuum. In the second simulation step, the change in free energy ΔG°<sub>(AU→UC)</sub> to expand
+                    the
+                    asymmetric unit degrees of freedom into a unit cell (UC) composed of NUC independent molecules is
+                    computed.
+                    This latter step accounts for the favorable free energy of removing the constraint that every
+                    symmetry mate
+                    of the asymmetric unit has an identical conformation and intermolecular interactions. The current
+                    work is
+                    based on NVT simulations, which requires knowledge of the crystal space group and unit cell
+                    parameters
+                    from experiment, but not a priori knowledge of crystalline atomic coordinates. GAUCHE was applied to
+                    5
+                    organic molecules whose sublimation free energy has been measured experimentally, based on the
+                    polarizable
+                    atomic multipole AMOEBA force field and more than a microsecond of sampling per compound. The mean
+                    signed
+                    and unsigned errors were only -0.4 and 1.2 kcal/mol, respectively, which indicates that GAUCHE is
+                    capable
                     of accurately predicts sublimation thermodynamics.
                 </p>
             </answer>
         </faq>
         <faq id="15">
             <question>
-                Lipparini, F., Lagardère, L., Stamm, B., Cancès, E., Schnieders, M. J., Ren P., Maday, Y. and J.-P. Piquemal,
-                Scalable Evaluation of Polarization Energy and Associated Forces in Polarizable Molecular Dynamics: I. Toward Massively Parallel Direct Space Computations.
+                Lipparini, F., Lagardère, L., Stamm, B., Cancès, E., Schnieders, M. J., Ren P., Maday, Y. and J.-P.
+                Piquemal,
+                Scalable Evaluation of Polarization Energy and Associated Forces in Polarizable Molecular Dynamics: I.
+                Toward Massively Parallel Direct Space Computations.
                 <i>Journal of Chemical Theory and Computation</i>
-                <b>2014</b> 10 (4), 1638-1651.
+                <b>2014</b>
+                10 (4), 1638-1651.
                 <a href="http://dx.doi.org/10.1021/ct401096t">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
@@ -408,18 +527,22 @@
                     energy and associated forces in the context of the point dipole approximation (including damping)
                     used in polarizable molecular dynamics. We present a careful mathematical analysis of the algorithms
                     that have been implemented in popular production packages and applied to large test systems. We show
-                    that the classical Jacobi Over-Relaxation method (JOR) should not be used as its convergence requires
-                    a proper value of the relaxation parameter, whereas other strategies should be preferred. On a single
+                    that the classical Jacobi Over-Relaxation method (JOR) should not be used as its convergence
+                    requires
+                    a proper value of the relaxation parameter, whereas other strategies should be preferred. On a
+                    single
                     node, Preconditioned Conjugate Gradient methods (PCG) and Jacobi algorithm coupled with the Direct
                     Inversion in the Iterative Subspace (JI/DIIS) provide reliable stability/convergence and are roughly
                     twice as fast as JOR. Moreover, both algorithms are suitable for massively parallel implementations.
-                    The lower requirements in terms of processes communications make JI/DIIS the method of choice for MPI
+                    The lower requirements in terms of processes communications make JI/DIIS the method of choice for
+                    MPI
                     and hybrid OpenMP/MPI paradigms for real life tests. Furthermore, using a predictor step as a guess
                     along a molecular dynamics simulation provides another inexpensive, yet very effective, form of
                     convergence acceleration. Overall, two to three orders of magnitude in time can be gained compared
                     to the initial JOR single node approach to the final PGC or JI/DIIS parallel one combined with the
                     predictors MD refinements. Such a speedup traces a new route for the high performance implementation
-                    of polarizable molecular dynamics and therefore extends the applicability of the technique as it will
+                    of polarizable molecular dynamics and therefore extends the applicability of the technique as it
+                    will
                     facilitate future multiscale QM/MM/continuum computations.
                 </p>
             </answer>
@@ -432,7 +555,8 @@
                 Ren, P., Chun, J., Thomas, D. G., Schnieders, M. J., Marucho, M., Zhang, J., and N. A. Baker,
                 Biomolecular electrostatics and solvation: a computational perspective.
                 <i>Quarterly Reviews of Biophysics</i>
-                <b>2012</b> 45, (4), 427-91.
+                <b>2012</b>
+                45, (4), 427-91.
                 <a href="http://dx.doi.org/10.1017/S003358351200011X">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
@@ -440,17 +564,21 @@
             <answer>
                 <p>
                     An understanding of molecular interactions is essential for insight into biological systems at the
-                    molecular scale. Among the various components of molecular interactions, electrostatics are of special
+                    molecular scale. Among the various components of molecular interactions, electrostatics are of
+                    special
                     importance because of their long-range nature and their influence on polar or charged molecules,
                     including water, aqueous ions, proteins, nucleic acids, carbohydrates, and membrane lipids. In
-                    particular, robust models of electrostatic interactions are essential for understanding the solvation
+                    particular, robust models of electrostatic interactions are essential for understanding the
+                    solvation
                     properties of biomolecules and the effects of solvation upon biomolecular folding, binding, enzyme
                     catalysis, and dynamics. Electrostatics, therefore, are of central importance to understanding
                     biomolecular structure and modeling interactions within and among biological molecules. This review
                     discusses the solvation of biomolecules with a computational biophysics view toward describing the
-                    phenomenon. While our main focus lies on the computational aspect of the models, we provide an overview
+                    phenomenon. While our main focus lies on the computational aspect of the models, we provide an
+                    overview
                     of the basic elements of biomolecular solvation (e.g. solvent structure, polarization, ion binding,
-                    and non-polar behavior) in order to provide a background to understand the different types of solvation
+                    and non-polar behavior) in order to provide a background to understand the different types of
+                    solvation
                     models.
                 </p>
             </answer>
@@ -458,9 +586,11 @@
         <faq id="13">
             <question>
                 Schnieders, M. J., J. Baltrusaitis, Y. Shi, G. Chattree, L. Zheng, W. Yang and P. Ren
-                The Structure, Thermodynamics, and Solubility of Organic Crystals from Simulation with a Polarizable Force Field.
+                The Structure, Thermodynamics, and Solubility of Organic Crystals from Simulation with a Polarizable
+                Force Field.
                 <i>Journal of Chemical Theory and Computation</i>
-                <b>2012</b> 8, (5), 1721–36.
+                <b>2012</b>
+                8, (5), 1721–36.
                 <a href="http://dx.doi.org/10.1021/ct300035u">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
@@ -479,8 +609,10 @@
                     force field. Our approach is based on a thermodynamic cycle that decomposes standard state
                     solubility into the sum of solid–vapor sublimation and vapor–liquid solvation free energies
                     ΔG°
-                    <sub>solubility</sub> = ΔG°
-                    <sub>sub</sub> + ΔG°
+                    <sub>solubility</sub>
+                    = ΔG°
+                    <sub>sub</sub>
+                    + ΔG°
                     <sub>solv</sub>, which are computed via the
                     orthogonal space random walk (OSRW) sampling strategy. Application to the n-alkylamides series
                     from acetamide through octanamide was selected due to the dependence of their solubility on both
@@ -493,7 +625,8 @@
                     based free energy algorithm, as implemented in the program
                     <b>
                         <i>Force Field X</i>
-                    </b>, is a consistent procedure
+                    </b>
+                    , is a consistent procedure
                     for predicting the structure, thermodynamic stability, and solubility of organic crystals.
                 </p>
             </answer>
@@ -503,7 +636,8 @@
                 Schnieders, M. J., T. S. Kaoud, C. Yan; K. N. Dalby and P. Ren
                 Computational Insights for the Discovery of Non-ATP Competitive Inhibitors of MAP Kinases.
                 <i>Current Pharmaceutical Design</i>
-                <b>2012</b> 18, (9), 1173-85.
+                <b>2012</b>
+                18, (9), 1173-85.
                 <a href="http://dx.doi.org/10.2174/138920012799362873">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
@@ -536,7 +670,8 @@
                 Fenn, T. D. and M. J. Schnieders,
                 Polarizable atomic multipole X-ray refinement: Weighting schemes for macromolecular diffraction.
                 <i>Acta Crystallographica Section D</i>
-                <b>2011</b> 67, (11), 957-65.
+                <b>2011</b>
+                67, (11), 957-65.
                 <a href="http://dx.doi.org/10.1107/S0907444911039060">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
@@ -555,7 +690,8 @@
                     of our recent implementation of X-ray crystallographic refinement using the polarizable
                     AMOEBA force field and show the resulting models are balanced with respect
                     to optimizing both R
-                    <sub>free</sub> and Molprobity scores. Conversely, the classical automatic
+                    <sub>free</sub>
+                    and Molprobity scores. Conversely, the classical automatic
                     weighting scheme is shown to lead to under or overfitting of the data and poor model geometry.
                     We also highlight the benefits of this approach for low resolution diffraction
                     data, where the need for prior chemical information is of particular importance. We
@@ -572,7 +708,8 @@
                 Reintroducing electrostatics into macromolecular crystallographic refinement:
                 Application to neutron crystallography and DNA hydration.
                 <i>Structure</i>
-                <b>2011</b> 19, (4), 523-33.
+                <b>2011</b>
+                19, (4), 523-33.
                 <a href="http://dx.doi.org/10.1016/j.str.2011.01.015">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
@@ -602,7 +739,8 @@
                 Polarizable atomic multipole X-ray refinement:
                 Particle-mesh Ewald electrostatics for macromolecular crystals.
                 <i>Journal of Chemical Theory and Computation</i>
-                <b>2011</b> 7, (4), 1141-56.
+                <b>2011</b>
+                7, (4), 1141-56.
                 <a href="http://dx.doi.org/10.1021/ct100506d">
                     <img src="images/pdf.png" alt="PDF"/>
                 </a>
@@ -627,11 +765,9 @@
                     An implementation of symmetry accelerated PME for the polarizable atomic
                     multipole optimized energetics for biomolecular applications (AMOEBA) force
                     field is presented. Relative to a single CPU core performing calculations on a
-                    P1 unit cell, our AMOEBA engine called
-                    <b>
-                        <i>Force Field X</i>
-                    </b> (FFX) accelerates energy
-                    evaluations by more than a factor of 24 on an 8-core workstation with a Tesla
+                    P1 unit cell, our AMOEBA engine called <i>Force Field X</i>
+                    (FFX) accelerates energy  evaluations by more than a factor of 24 on an
+                    8-core workstation with a Tesla
                     GPU coprocessor for 30 structures that contain 240000 atoms on average in the
                     unit cell. The benefit of AMOEBA electrostatics evaluated with PME for
                     macromolecular X-ray crystallography refinement is demonstrated via rerefinement
@@ -639,7 +775,8 @@
                     Beginning from structures obtained by local optimization without electrostatics,
                     further optimization using AMOEBA with PME electrostatics improved agreement of
                     the model with the data (R
-                    <sub>free</sub> was lowered by 0.5%), improved geometric features
+                    <sub>free</sub>
+                    was lowered by 0.5%), improved geometric features
                     such as favorable (φ,ψ) backbone conformations, and lowered the average potential
                     energy per residue by over 10 kcal/mol. Furthermore, the MolProbity structure validation
                     tool indicates that the geometry of these rerefined structures is consistent with X-ray
@@ -676,13 +813,13 @@
                     atomic coordinates. These alternative bulk-solvent models offer algorithmic
                     improvements, while showing similar agreement of the model with the observed
                     amplitudes relative to the binary model as monitored using R, R
-                    <sub>free</sub> and
+                    <sub>free</sub>
+                    and
                     differences between experimental and model phases. As with the standard solvent
                     models, the alternative models improve the agreement primarily with lower
-                    resolution (>6 Å) data versus no bulk solvent. The models are easily implemented
+                    resolution (>6 Å) data versus no bulk solvent. The models are easily implemented
                     into crystallographic software packages and can be used as a general method for
                     bulk-solvent correction in macromolecular crystallography.
-                    \[\textbf{F}_{{t}}=\textbf{F}_{{c}}-k_{{s}}\textbf{F}_{{m}}{{\rm e}^{-1/4\,B_{{s}}\left|\textbf{s}\right|^{2}}}\]
                 </p>
             </answer>
         </faq>
@@ -785,7 +922,8 @@
                     bond electron density. Alternatively, the addition of interatomic scattering (IAS) sites to
                     the AMOEBA-based density captured bonding effects with fewer parameters. For a series of
                     four peptide crystals, the AMOEBA-IAS model lowered R
-                    <sub>free</sub> by 20-40% relative to the original
+                    <sub>free</sub>
+                    by 20-40% relative to the original
                     spherically symmetric scattering model.
                 </p>
             </answer>

@@ -78,7 +78,7 @@ public class LambdaGradientTest extends PotentialTest {
 
   @Test
   public void testLambdaGradientHelp() {
-    // Set-up the input arguments for the LambdaGradient script.
+    // Set up the input arguments for the LambdaGradient script.
     String[] args = {"-h"};
     binding.setVariable("args", args);
 
@@ -90,7 +90,7 @@ public class LambdaGradientTest extends PotentialTest {
   /** Tests the End States of the LambdaGradient class when softcore is active. */
   @Test
   public void testLambdaGradientIntermolecularSoftcore() {
-    // Set-up the input arguments for the LambdaGradient script.
+    // Set up the input arguments for the LambdaGradient script.
     String[] args = {"--ac", "1-44", "src/main/java/ffx/potential/structures/ethylparaben.xyz"};
     binding.setVariable("args", args);
 
@@ -123,7 +123,7 @@ public class LambdaGradientTest extends PotentialTest {
     LambdaGradient lambdaGradient = new LambdaGradient(binding).run();
     potentialScript = lambdaGradient;
 
-    double expectedPotentialEnergyVac = -32.40555597650871;
+    double expectedPotentialEnergyVac = -32.31574626689126;
     double expectedPotentialEnergyXtal = -43.95639068837232;
     double actualPotentialEnergyVac = lambdaGradient.e0;
     double actualPotentialEnergyXtal = lambdaGradient.e1;

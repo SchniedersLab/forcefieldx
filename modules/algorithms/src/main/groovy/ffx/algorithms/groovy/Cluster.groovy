@@ -197,7 +197,7 @@ class Cluster extends AlgorithmsScript {
       return this
     }
 
-    // Either use Multi-K-Means++ or Hierarchical agglomerative clustering.
+    // Either use Multi-K-Means++, iterative, or Hierarchical agglomerative clustering.
     switch (algorithm) {
       case 1:
         // Hierarchical clustering.
@@ -206,7 +206,7 @@ class Cluster extends AlgorithmsScript {
         clusterList = hierarchicalClustering(distMatrix, threshold)
         break
       case 2:
-        // Iterative Clustering
+        // Iterative Clustering (produced by researchers at Takeda)
         logger.info(" Performing Iterative Clustering")
         clusterList = iterativeClustering(distMatrix, trials, tolerance)
         break
