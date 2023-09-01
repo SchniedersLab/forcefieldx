@@ -138,7 +138,7 @@ class ManyBody extends AlgorithmsScript {
       logger.info(helpString())
       return this
     }
-    
+
     String listResidues = "";
     if(manyBodyOptions.getOnlyTitration() || manyBodyOptions.getOnlyProtons() ||
             manyBodyOptions.getInterestedResidue() != -1 && manyBodyOptions.getDistanceCutoff() != -1){

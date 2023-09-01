@@ -1063,9 +1063,9 @@ public class ManyBodyOptions {
             "--onlyProtons"}, paramLabel = "", defaultValue = "false", description = "Rotamer optimize only proton movement.")
     private boolean onlyProtons;
 
-    /** --iR or --interestedResidue Optimize rotamers within some distance of specific residue. */
+    /** --iR or --interestedResidue Optimize rotamers within some distance of a specific residue. */
     @Option(names = {"--iR",
-            "--interestedResidue"}, paramLabel = "", defaultValue = "-1", description = "Optimize rotamers within some distance of specific residue.")
+            "--interestedResidue"}, paramLabel = "", defaultValue = "-1", description = "Optimize rotamers within some distance of a specific residue.")
     private int interestedResidue = -1;
 
     /** --dC or --distanceCutoff Distance which rotamers will be included when using only protons, titratable residues, or interested residue. */
