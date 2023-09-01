@@ -9,6 +9,7 @@ import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
 import ffx.potential.bonded.Atom
 import ffx.potential.bonded.Residue
+import ffx.potential.bonded.Rotamer
 import ffx.potential.bonded.RotamerLibrary
 import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.parsers.PDBFilter
@@ -206,17 +207,12 @@ class ReducedPartition extends AlgorithmsScript {
                     }
 
                     if (distanceCutoff != -1){
-                        double[] titrationResCoor = new double[3]
-                        //titrationResCoor = residue.getAtomByName("CA", true).getXYZ(titrationResCoor)
-                        titrationResCoor = residue.getAtomList(true).last().getXYZ(titrationResCoor)
                         for (Residue residue2: residueList) {
-                            double[] currentResCoor = new double[3]
-                            currentResCoor = residue2.getAtomList(true).last().getXYZ(currentResCoor)
-                            double dist = DoubleMath.dist(titrationResCoor, currentResCoor)
-                            if (dist < distanceCutoff) {
-                                String addedResidue = residue2.getChainID() + residue2.getResidueNumber()
-                                if(!listResidues.contains(addedResidue)){
-                                    listResidues += "," + residue2.getChainID() + addedResidue
+                            boolean includeResidue = evaluateAllRotDist(residue, residue2, distanceCutoff)
+                            if(includeResidue){
+                                String residue2Number = residue2.getResidueNumber().toString()
+                                if(!listResidues.contains(residue2Number)){
+                                    listResidues += "," + residue2.getChainID() + residue2Number
                                 }
                             }
                         }
@@ -387,5 +383,27 @@ class ReducedPartition extends AlgorithmsScript {
         return potentialEnergy
     }
 
-
+    private static boolean evaluateAllRotDist(Residue residueA, Residue residueB, double distanceCutoff){
+        residueA.setRotamers(RotamerLibrary.getDefaultLibrary())
+        residueB.setRotamers(RotamerLibrary.getDefaultLibrary())
+        Rotamer[] rotamersA = residueA.getRotamers()
+        Rotamer[] rotamersB = residueB.getRotamers()
+        double[] aCoor = new double[3]
+        double[] bCoor = new double[3]
+        for(Rotamer rotamerA: rotamersA){
+            residueA.setRotamer(rotamerA)
+            for(Rotamer rotamerB: rotamersB){
+                residueB.setRotamer(rotamerB)
+                for(Atom atomA: residueA.getAtomList()){
+                    for(Atom atomB: residueB.getAtomList()){
+                        double dist = DoubleMath.dist(atomA.getXYZ(aCoor), atomB.getXYZ(bCoor))
+                        if(dist <= distanceCutoff){
+                            return true
+                        }
+                    }
+                }
+            }
+        }
+        return false
+    }
 }
