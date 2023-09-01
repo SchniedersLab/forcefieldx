@@ -133,9 +133,19 @@ class ManyBody extends AlgorithmsScript {
     // Load the MolecularAssembly.
     activeAssembly = getActiveAssembly(filename)
 
+
     if (activeAssembly == null) {
       logger.info(helpString())
       return this
+    }
+    
+    String listResidues = "";
+    if(manyBodyOptions.getOnlyTitration() || manyBodyOptions.getOnlyProtons() ||
+            manyBodyOptions.getInterestedResidue() != -1 && manyBodyOptions.getDistanceCutoff() != -1){
+      listResidues = manyBodyOptions.selectDistanceResidues(activeAssembly.getResidueList(),
+              manyBodyOptions.getInterestedResidue(),manyBodyOptions.getOnlyTitration(),
+              manyBodyOptions.getOnlyProtons(),manyBodyOptions.getDistanceCutoff())
+      manyBodyOptions.setListResidues(listResidues)
     }
 
     CompositeConfiguration properties = activeAssembly.getProperties()

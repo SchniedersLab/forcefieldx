@@ -37,17 +37,9 @@ class ReducedPartition extends AlgorithmsScript {
     @Mixin
     AlchemicalOptions alchemicalOptions
 
-    @CommandLine.Option(names = ["--mR", "--mutatingResidue"], paramLabel = "-1",
-            description = "The residue that is mutating.")
-    private int mutatingResidue = -1
-
     @CommandLine.Option(names = ["--resC", "--residueChain"], paramLabel = "A",
             description = "The chain that is mutating.")
     private String mutatingChain = 'A'
-
-    @CommandLine.Option(names = ["--dC", "--distanceCutoff"], paramLabel = "-1",
-            description = "Residues within the distance cutoff from the mutating residue will be optimized.")
-    private double distanceCutoff = -1
 
     @CommandLine.Option(names = ["-n", "--residueName"], paramLabel = "ALA",
             description = "Mutant residue.")
@@ -64,14 +56,6 @@ class ReducedPartition extends AlgorithmsScript {
     @CommandLine.Option(names = ["--pKa"], paramLabel = "false",
             description = "Calculating free energy change for pKa shift.")
     private boolean pKa = false
-
-    @CommandLine.Option(names = ["--oT", "--onlyTitration"], paramLabel = "false",
-            description = "Only include titratable residues in the residue selection.")
-    private boolean onlyTitration = false
-
-    @CommandLine.Option(names = ["--oP", "--onlyProtons"], paramLabel = "false",
-            description = "Only allow proton movement of titratable reidues.")
-    private boolean onlyProtons = false
 
     @CommandLine.Option(names = ["--pB", "--printBoltzmann"], paramLabel = "false",
             description = "Save the Boltzmann weights of protonated residue and total Boltzmann weights.")
@@ -98,7 +82,10 @@ class ReducedPartition extends AlgorithmsScript {
     Binding mutatorBinding
     List<Residue> residues
     List<Residue> selectedResidues
-
+    private double distanceCutoff = manyBodyOptions.getDistanceCutoff()
+    private int mutatingResidue = manyBodyOptions.getInterestedResidue()
+    private boolean onlyProtons = manyBodyOptions.getOnlyProtons()
+    private boolean onlyTitration = manyBodyOptions.getOnlyTitration()
     private String unfoldedFileName
 
     /**
@@ -183,47 +170,12 @@ class ReducedPartition extends AlgorithmsScript {
         String listResidues = ""
         //Select residues with alpha carbons within the distance cutoff
         if (mutatingResidue != -1 && distanceCutoff != -1) {
-            double[] mutatingResCoor = new double[3]
-            int index = residueNumber.indexOf(mutatingResidue)
-            mutatingResCoor = residueList.get(index).getAtomByName("CA", true).getXYZ(mutatingResCoor)
-            for (Residue residue: residueList) {
-                double[] currentResCoor = new double[3]
-                currentResCoor = residue.getAtomByName("CA", true).getXYZ(currentResCoor)
-                double dist = DoubleMath.dist(mutatingResCoor, currentResCoor)
-                if (dist < distanceCutoff) {
-                    listResidues += "," + residue.getChainID() + residue.getResidueNumber()
-                }
-            }
-            listResidues = listResidues.substring(1)
+            listResidues = manyBodyOptions.selectDistanceResidues(residueList,mutatingResidue,onlyTitration,onlyProtons,distanceCutoff)
         }
 
         //Select only the titrating residues or the titrating residues and those within the distance cutoff
         if (onlyTitration || onlyProtons) {
-            for (Residue residue : residueList) {
-                if (titratableResiudesList.contains(residue.getName())) {
-                    String titrateResNum = residue.getResidueNumber()
-                    if(!listResidues.contains(titrateResNum)){
-                       listResidues += "," + residue.getChainID() + titrateResNum
-                    }
-
-                    if (distanceCutoff != -1){
-                        for (Residue residue2: residueList) {
-                            boolean includeResidue = evaluateAllRotDist(residue, residue2, distanceCutoff)
-                            if(includeResidue){
-                                String residue2Number = residue2.getResidueNumber().toString()
-                                if(!listResidues.contains(residue2Number)){
-                                    listResidues += "," + residue2.getChainID() + residue2Number
-                                }
-                            }
-                        }
-                    }
-
-                }
-
-            }
-
-
-            listResidues = listResidues.substring(1)
+           listResidues = manyBodyOptions.selectDistanceResidues(residueList,mutatingResidue,onlyTitration,onlyProtons,distanceCutoff)
         }
 
         String filename = filenames.get(0)
