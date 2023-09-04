@@ -91,8 +91,8 @@
                                 <li>
                                     <p>Type "<code>echo $JAVA_HOME</code>" in a shell. The result should resemble this:
                                         <source>
-                                            echo $JAVA_HOME
-                                          /Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home/bin/java
+echo $JAVA_HOME
+/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home/bin/java
                                         </source>
                                         If the version is less than ${targetVersion}, then please follow the instructions above
                                         to install Java and/or set the <code>JAVA_HOME</code> environment variable.
@@ -101,9 +101,9 @@
                                 <li>
                                     <p>Commands to unpack the distributions are:</p>
                                     <source>
-                                        tar -xzf ffx-${project.version}-bin.tar.gz
-                                        tar -xjf ffx-${project.version}-bin.tar.bz2
-                                        unzip ffx-${project.version}-bin.zip
+tar -xzf ffx-${project.version}-bin.tar.gz
+tar -xjf ffx-${project.version}-bin.tar.bz2
+unzip ffx-${project.version}-bin.zip
                                     </source>
                                 </li>
                                 <li>
@@ -122,8 +122,8 @@
                                     </ul>
                                     <p>To check please execute:</p>
                                     <source>
-                                        echo $PATH
-                                        which ffxc
+echo $PATH
+which ffxc
                                     </source>
                                     <!--
                                     Both the graphical
