@@ -1003,7 +1003,7 @@
         <maven.build.timestamp.format>MM-dd-yyyy</maven.build.timestamp.format>
         <maven.javadoc.skip>false</maven.javadoc.skip>
         <maven.jxr.skip>false</maven.jxr.skip>
-        <picocli.version>4.7.4</picocli.version>
+        <picocli.version>4.7.5</picocli.version>
         <pj.version>1.0.1</pj.version>
         <!-- There is a bug in 3.15.0 and newer PMD that doesn't handle repository resolution correctly -->
         <pmd.version>3.21.0</pmd.version>
@@ -1018,7 +1018,7 @@
         <release.version>3.0.1</release.version>
         <resources.version>3.3.1</resources.version>
         <scm.version>2.0.1</scm.version>
-        <slf4j-nop.version>2.0.7</slf4j-nop.version>
+        <slf4j-nop.version>2.0.9</slf4j-nop.version>
         <shade.version>3.5.0</shade.version>
         <!-- The Shade plugin use of localRepository causes a validation message -->
         <maven.plugin.validation>brief</maven.plugin.validation>
