@@ -82,10 +82,7 @@ class ReducedPartition extends AlgorithmsScript {
     Binding mutatorBinding
     List<Residue> residues
     List<Residue> selectedResidues
-    private double distanceCutoff = manyBodyOptions.getDistanceCutoff()
-    private int mutatingResidue = manyBodyOptions.getInterestedResidue()
-    private boolean onlyProtons = manyBodyOptions.getOnlyProtons()
-    private boolean onlyTitration = manyBodyOptions.getOnlyTitration()
+
     private String unfoldedFileName
 
     /**
@@ -113,6 +110,10 @@ class ReducedPartition extends AlgorithmsScript {
         }
 
         double titrationPH = manyBodyOptions.getTitrationPH()
+        double distanceCutoff = manyBodyOptions.getDistanceCutoff()
+        int mutatingResidue = manyBodyOptions.getInterestedResidue()
+        boolean onlyProtons = manyBodyOptions.getOnlyProtons()
+        boolean onlyTitration = manyBodyOptions.getOnlyTitration()
         if (manyBodyOptions.getTitration()) {
             System.setProperty("manybody-titration", "true")
         }
