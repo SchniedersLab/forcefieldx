@@ -55,8 +55,6 @@ import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
 
-import java.util.logging.Level
-
 import static ffx.potential.utils.StructureMetrics.momentsOfInertia
 import static ffx.potential.utils.StructureMetrics.radiusOfGyration
 import static ffx.utilities.StringUtils.parseAtomRanges
@@ -137,8 +135,15 @@ class Energy extends PotentialScript {
    * --pd or --printDihedral sets atoms to print dihedral values.
    */
   @Option(names = ["--pd", "--printDihedral"], paramLabel = "", defaultValue = "",
-          description = "Atom indices to print dihedral angle values.")
+      description = "Atom indices to print dihedral angle values.")
   private String dihedralAtoms = ""
+
+  /**
+   * --pb or --printBondedTerms Print all bonded energy terms.
+   */
+  @Option(names = ["--pb", "--printBondedTerms"], paramLabel = "", defaultValue = "false",
+      description = "Print all bonded energy terms.")
+  private boolean printBondedTerms = false
 
   /**
    * The final argument is a PDB or XYZ coordinate file.
@@ -218,25 +223,17 @@ class Energy extends PotentialScript {
     }
 
     if (inertia) {
-      double[][] inertiaValue =
-          momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true, true)
+      momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true, true)
     }
 
-    ArrayList<Integer> unique
+    List<Integer> unique
     if (dihedralAtoms != null && !dihedralAtoms.isEmpty()) {
-      if (dihedralAtoms.equalsIgnoreCase("ALL")) {
-        unique = null;
-      } else {
-        unique = new ArrayList<>(parseAtomRanges("Dihedral Atoms", dihedralAtoms, activeAssembly.getAtomList().size()));
-      }
-      if(!printDihedral(activeAssembly, unique)){
-        if(unique != null && unique.size() > 3){
-          logger.info(format("\n Dihedral for atoms %4d %4d %4d %4d was not found.",
-                  unique[0] + 1, unique[1] + 1, unique[2] + 1, unique[3] + 1));
-        }else{
-          logger.info("\n Dihedral for specified atoms was not found.");
-        }
-      }
+      unique = new ArrayList<>(parseAtomRanges("Dihedral Atoms", dihedralAtoms, activeAssembly.getAtomList().size()))
+      printDihedral(activeAssembly, unique)
+    }
+
+    if (printBondedTerms) {
+      forceFieldEnergy.logBondedTerms()
     }
 
     SystemFilter systemFilter = potentialFunctions.getFilter()
@@ -300,12 +297,15 @@ class Energy extends PotentialScript {
         }
 
         if (inertia) {
-          double[][] inertiaValue =
-              momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true, true)
+          momentsOfInertia(activeAssembly.getActiveAtomArray(), false, true, true)
         }
 
         if (dihedralAtoms != null && !dihedralAtoms.isEmpty()) {
-          printDihedral(activeAssembly, unique);
+          printDihedral(activeAssembly, unique)
+        }
+
+        if (printBondedTerms) {
+          forceFieldEnergy.logBondedTerms()
         }
       }
 
@@ -436,47 +436,33 @@ class Energy extends PotentialScript {
 
   /**
    * Print dihedral angles for a specified set of atoms.
-   * @param ma Molecular assembly containing atoms of interest.
+   * @param molecularAssembly Molecular assembly containing atoms of interest.
    * @param indices Atom indices of desired dihedral angle.
    * @return
    */
-  static boolean printDihedral(MolecularAssembly ma, ArrayList<Integer> indices){
-    Atom[] atoms = ma.getAtomArray();
-    // Print all torsions... probably too much logging.
-    if(indices == null){
+  private static void printDihedral(MolecularAssembly molecularAssembly, ArrayList<Integer> indices) {
+    if (indices != null && indices.size() == 4) {
+      Atom[] atoms = molecularAssembly.getAtomArray()
+      Atom atom0 = atoms[indices.get(0)]
+      Atom atom1 = atoms[indices.get(1)]
+      Atom atom2 = atoms[indices.get(2)]
+      Atom atom3 = atoms[indices.get(3)]
       try {
-        for(Atom a: atoms) {
-          for (Torsion torsion : a.getTorsions()) {
-            logger.info(" Torsion: " + torsion.toString());
+        for (Torsion torsion : atom0.getTorsions()) {
+          if (torsion.compare(atom0, atom1, atom2, atom3)) {
+            logger.info("\n Torsion: " + torsion.toString())
+            return
           }
         }
-        return true;
-      }catch(Exception e){
-        logger.info(" Exception during dihedral print " + e.toString());
-        e.printStackTrace();
+      } catch (Exception e) {
+        logger.info(" Exception during dihedral print " + e.toString())
+        e.printStackTrace()
       }
-      return false;
-    }else{
-      try {
-        boolean found = false;
-        for(Torsion torsion: atoms[indices.get(0)].getTorsions()){
-          if(logger.isLoggable(Level.FINE)) {
-            logger.info(" TORSION: " + torsion.toString());
-          }
-          // Indices stored as human readable... subtract 1.
-          if(indices.contains(torsion.getAtom(0).getIndex() - 1) && indices.contains(torsion.getAtom(1).getIndex() - 1) && indices.contains(torsion.getAtom(2).getIndex() - 1) && indices.contains(torsion.getAtom(3).getIndex() - 1)){
-            logger.info(" Torsion: " + torsion.toString());
-            found=true;
-            if(!logger.isLoggable(Level.FINE)) {
-              return true;
-            }
-          }
-        }
-        return found;
-      }catch(Exception e){
-        logger.info(" Exception during dihedral print " + e.toString());
-        e.printStackTrace();
-      }
+      logger.info("\n No torsion between atoms:\n  "
+          + atom0.toString() + "\n  "
+          + atom1.toString() + "\n  "
+          + atom2.toString() + "\n  "
+          + atom3.toString())
     }
   }
 

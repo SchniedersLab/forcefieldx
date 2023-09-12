@@ -3943,6 +3943,105 @@ public class ForceFieldEnergy implements CrystalPotential, LambdaInterface {
     return sb.toString();
   }
 
+
+  /**
+   * Log out all bonded energy terms.
+   */
+  public void logBondedTerms() {
+    if (bondTerm && nBonds > 0) {
+      logger.info("\n Bond Stretching Interactions:");
+      Bond[] bonds = getBonds();
+      for (Bond bond : bonds) {
+        logger.info(" Bond \t" + bond.toString());
+      }
+    }
+
+    if (angleTerm && nAngles > 0) {
+      logger.info("\n Angle Bending Interactions:");
+      Angle[] angles = getAngles();
+      for (Angle angle : angles) {
+        logger.info(" Angle \t" + angle.toString());
+      }
+    }
+
+    if (stretchBendTerm && nStretchBends > 0) {
+      logger.info("\n Stretch-Bend Interactions:");
+      StretchBend[] stretchBends = getStretchBends();
+      for (StretchBend stretchBend : stretchBends) {
+        logger.info(" Stretch-Bend \t" + stretchBend.toString());
+      }
+    }
+    if (ureyBradleyTerm && nUreyBradleys > 0) {
+      logger.info("\n Urey-Bradley Interactions:");
+      UreyBradley[] ureyBradleys = getUreyBradleys();
+      for (UreyBradley ureyBradley : ureyBradleys) {
+        logger.info("Urey-Bradley \t" + ureyBradley.toString());
+      }
+    }
+    if (outOfPlaneBendTerm && nOutOfPlaneBends > 0) {
+      logger.info("\n Out-of-Plane Bend Interactions:");
+      OutOfPlaneBend[] outOfPlaneBends = getOutOfPlaneBends();
+      for (OutOfPlaneBend outOfPlaneBend : outOfPlaneBends) {
+        logger.info(" Out-of-Plane Bend \t" + outOfPlaneBend.toString());
+      }
+    }
+    if (torsionTerm && nTorsions > 0) {
+      logger.info("\n Torsion Angle Interactions:");
+      Torsion[] torsions = getTorsions();
+      for (Torsion torsion : torsions) {
+        logger.info(" Torsion \t" + torsion.toString());
+      }
+    }
+    if (piOrbitalTorsionTerm && nPiOrbitalTorsions > 0) {
+      logger.info("\n Pi-Orbital Torsion Interactions:");
+      PiOrbitalTorsion[] piOrbitalTorsions = getPiOrbitalTorsions();
+      for (PiOrbitalTorsion piOrbitalTorsion : piOrbitalTorsions) {
+        logger.info(" Pi-Torsion \t" + piOrbitalTorsion.toString());
+      }
+    }
+    if (stretchTorsionTerm && nStretchTorsions > 0) {
+      logger.info("\n Stretch-Torsion Interactions:");
+      StretchTorsion[] stretchTorsions = getStretchTorsions();
+      for (StretchTorsion stretchTorsion : stretchTorsions) {
+        logger.info(" Stretch-Torsion \t" + stretchTorsion.toString());
+      }
+    }
+    if (angleTorsionTerm && nAngleTorsions > 0) {
+      logger.info("\n Angle-Torsion Interactions:");
+      AngleTorsion[] angleTorsions = getAngleTorsions();
+      for (AngleTorsion angleTorsion : angleTorsions) {
+        logger.info(" Angle-Torsion \t" + angleTorsion.toString());
+      }
+    }
+    if (torsionTorsionTerm && nTorsionTorsions > 0) {
+      logger.info("\n Torsion-Torsion Interactions:");
+      TorsionTorsion[] torsionTorsions = getTorsionTorsions();
+      for (TorsionTorsion torsionTorsion : torsionTorsions) {
+        logger.info(" Torsion-Torsion \t" + torsionTorsion.toString());
+      }
+    }
+    if (improperTorsionTerm && nImproperTorsions > 0) {
+      logger.info("\n Improper Interactions:");
+      ImproperTorsion[] improperTorsions = getImproperTorsions();
+      for (ImproperTorsion improperTorsion : improperTorsions) {
+        logger.info(" Improper \t" + improperTorsion.toString());
+      }
+    }
+    if (restraintBondTerm && nRestraintBonds > 0) {
+      logger.info("\n Restraint Bond Interactions:");
+      List<RestraintBond> restraintBonds = getRestraintBonds();
+      for (RestraintBond restraintBond : restraintBonds) {
+        logger.info(" Restraint Bond \t" + restraintBond.toString());
+      }
+    }
+    if (restrainTerm && !coordRestraints.isEmpty()) {
+      logger.info("\n Coordinate Restraint Interactions:");
+      for (CoordRestraint restraint : coordRestraints) {
+        logger.info(" Coordinate Restraint \t" + restraint.toString());
+      }
+    }
+  }
+
   /**
    * Setter for the field <code>lambdaBondedTerms</code>.
    *
