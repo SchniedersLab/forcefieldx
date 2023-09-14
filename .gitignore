@@ -6,6 +6,7 @@
 #   The '*' does not match '/' (use '**' to match >1 nested directories).
 
 bin/ffx-all*.jar
+bin/forcefieldx*.jar
 bin/scheduler.log
 conf/*.jar
 

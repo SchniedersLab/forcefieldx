@@ -6,15 +6,15 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>edu.uiowa.eng.ffx</groupId>
-    <artifactId>ffx</artifactId>
+    <artifactId>ffx-pom</artifactId>
     <version>1.0.0-beta</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <artifactId>algorithms</artifactId>
   <packaging>jar</packaging>
   <name>Algorithms</name>
-  <description>The Algorithms module includes support for local optimization, molecular dynamics
-    and global optimization via simulated annealing.
+  <description>The Algorithms module includes support for local and global optimization, molecular dynamics and
+    calculation of free energy differences.
   </description>
   <build>
     <plugins>

@@ -101,9 +101,9 @@ then
 fi
 
 if [ "$CLASSPATH_PREFIX" != "" ]; then
-    CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR/bin/ffx-all-$VERSION.jar"
+    CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR/bin/forcefieldx-$VERSION.jar"
 else
-    CLASSPATH="$BASEDIR/bin/ffx-all-$VERSION.jar"
+    CLASSPATH="$BASEDIR/bin/forcefieldx-$VERSION.jar"
 fi
 JLP=modules/numerics/src/main/java/ffx/numerics/fft
 

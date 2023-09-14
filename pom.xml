@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <artifactId>ffx</artifactId>
+    <artifactId>ffx-pom</artifactId>
     <build>
         <defaultGoal>install</defaultGoal>
         <pluginManagement>
@@ -891,14 +891,14 @@
     <modules>
         <module>modules/algorithms</module>
         <module>modules/crystal</module>
+        <module>modules/experiment</module>
         <module>modules/numerics</module>
         <module>modules/jopenmm</module>
         <module>modules/pj</module>
         <module>modules/potential</module>
         <module>modules/ui</module>
         <module>modules/utilities</module>
-        <module>modules/xray</module>
-        <module>modules/ffx-all</module>
+        <module>modules/forcefieldx</module>
     </modules>
     <name>Force Field X</name>
     <organization>

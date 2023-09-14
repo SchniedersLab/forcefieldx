@@ -6,17 +6,16 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>edu.uiowa.eng.ffx</groupId>
-        <artifactId>ffx</artifactId>
+        <artifactId>ffx-pom</artifactId>
         <version>1.0.0-beta</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <groupId>edu.uiowa.eng.ffx</groupId>
     <artifactId>crystal</artifactId>
     <packaging>jar</packaging>
     <name>Crystal</name>
-    <description>The Crystal module includes support for the minimum image convention,
-        symmetry operators, all 230 space groups and transformations between Cartesian
-        and fractional coordinates.
+    <description>The Crystal module includes support for the periodic boundary conditions,
+        the minimum image convention, symmetry operators, all 230 space groups,
+        and transformations between Cartesian and fractional coordinates.
     </description>
     <developers>
         <developer>

@@ -355,7 +355,7 @@
   </organization>
   <packaging>jar</packaging>
   <parent>
-    <artifactId>ffx</artifactId>
+    <artifactId>ffx-pom</artifactId>
     <groupId>edu.uiowa.eng.ffx</groupId>
     <relativePath>../../pom.xml</relativePath>
     <version>1.0.0-beta</version>

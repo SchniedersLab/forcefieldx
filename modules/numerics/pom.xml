@@ -6,18 +6,16 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>edu.uiowa.eng.ffx</groupId>
-    <artifactId>ffx</artifactId>
+    <artifactId>ffx-pom</artifactId>
     <version>1.0.0-beta</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <groupId>edu.uiowa.eng.ffx</groupId>
   <artifactId>numerics</artifactId>
   <packaging>jar</packaging>
   <name>Numerics</name>
   <description>
-    The Numerics module includes support for FFTs,
-    limited memory BFGS optimization, b-Splines, Erf/Erfc
-    and tensor recursions.
+    The Numerics module includes support for FFTs, limited memory BFGS optimization, b-Splines, special functions,
+    and multipole tensor recursions.
   </description>
   <build>
     <resources>

@@ -124,7 +124,7 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <artifactId>xray</artifactId>
+      <artifactId>experiment</artifactId>
       <groupId>edu.uiowa.eng.ffx</groupId>
       <type>jar</type>
       <version>${project.version}</version>
@@ -204,7 +204,7 @@
   <name>User Interfaces</name>
   <packaging>jar</packaging>
   <parent>
-    <artifactId>ffx</artifactId>
+    <artifactId>ffx-pom</artifactId>
     <groupId>edu.uiowa.eng.ffx</groupId>
     <relativePath>../../pom.xml</relativePath>
     <version>1.0.0-beta</version>

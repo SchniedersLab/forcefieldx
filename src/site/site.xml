@@ -245,13 +245,13 @@
       <item name="Modules" href="/modules.html"/>
       <item name="Algorithms" href="modules/algorithms/index.html"/>
       <item name="Crystal" href="modules/crystal/index.html"/>
+      <item name="Experiment" href="modules/experiment/index.html"/>
       <item name="Numerics" href="modules/numerics/index.html"/>
       <item name="OpenMM Wrappers" href="modules/openmm/index.html"/>
       <item name="Parallel Java" href="modules/pj/index.html"/>
       <item name="Potential" href="modules/potential/index.html"/>
       <item name="User Interfaces" href="modules/ui/index.html"/>
       <item name="Utilities" href="modules/utilities/index.html"/>
-      <item name="X-Ray Refinement" href="modules/xray/index.html"/>
     </menu>
     <menu name="Project Info" ref="reports"/>
   </body>

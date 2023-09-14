@@ -92,7 +92,7 @@ if "%JAVACMD%"=="" set JAVACMD=java
 
 if "%REPO%"=="" set REPO=%BASEDIR%
 
-set CLASSPATH="%BASEDIR%"\etc;"%BASEDIR%"\bin\ffx-all-"%VERSION%".jar
+set CLASSPATH="%BASEDIR%"\etc;"%BASEDIR%"\bin\forcefieldx-"%VERSION%".jar
 
 @REM TODO: Set this by the FFX_MEMORY environment variable.
 set EXTRA_JVM_ARGUMENTS=-Xms4G -Xmx4G -Xss1M 

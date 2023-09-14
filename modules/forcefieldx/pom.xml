@@ -3,16 +3,16 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
-    <artifactId>ffx</artifactId>
+    <artifactId>ffx-pom</artifactId>
     <groupId>edu.uiowa.eng.ffx</groupId>
     <version>1.0.0-beta</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>ffx-all</artifactId>
+  <artifactId>forcefieldx</artifactId>
   <packaging>jar</packaging>
-  <name>Force Field X Shaded Jar</name>
-  <description>This is a shaded jar with all FFX dependencies.</description>
+  <name>Force Field X</name>
+  <description>The Force Field X module creates a shaded jar with all dependencies.</description>
   <build>
     <plugins>
       <plugin>
@@ -155,7 +155,7 @@
                 <resource>
                   <directory>target</directory>
                   <includes>
-                    <include>ffx-all-${project.version}.jar</include>
+                    <include>forcefieldx-${project.version}.jar</include>
                   </includes>
                 </resource>
               </resources>
@@ -175,7 +175,7 @@
                 <resource>
                   <directory>target</directory>
                   <includes>
-                    <include>ffx-all-${project.version}.jar</include>
+                    <include>forcefieldx-${project.version}.jar</include>
                   </includes>
                 </resource>
               </resources>
@@ -235,7 +235,7 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <artifactId>xray</artifactId>
+      <artifactId>experiment</artifactId>
       <groupId>edu.uiowa.eng.ffx</groupId>
       <type>jar</type>
       <version>${project.version}</version>
