@@ -36,6 +36,7 @@ velocity.log
 
 bin/build.properties
 modules/ffx-all/dependency-reduced-pom.xml
+modules/forcefieldx/dependency-reduced-pom.xml
 /archiveTesting/
 /amoebabio18_cphmd.prm
 
