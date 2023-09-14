@@ -35,7 +35,7 @@ RUN mv ffx-$FFX_VERSION ffx
 # Set FFX_HOME and the CLASSPATH
 ENV FFX_HOME /ffx
 ENV FFX_BIN $FFX_HOME/bin
-ENV CLASSPATH $FFX_BIN/ffx-all-$FFX_VERSION.jar
+ENV CLASSPATH $FFX_BIN/forcefieldx-$FFX_VERSION.jar
 
 # Download the IJava kernel
 RUN wget https://github.com/SpencerPark/IJava/releases/download/v1.3.0/ijava-1.3.0.zip
