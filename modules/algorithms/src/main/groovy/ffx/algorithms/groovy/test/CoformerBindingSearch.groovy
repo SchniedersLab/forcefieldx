@@ -239,7 +239,7 @@ class CoformerBindingSearch extends AlgorithmsScript {
                 systemTwo,
                 eps,
                 maxIter,
-                intermediateTorsionScan,
+                tscan,
                 excludeH,
                 minimize
         )
