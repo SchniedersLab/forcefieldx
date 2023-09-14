@@ -18,11 +18,8 @@
     <url>http://ffx.biochem.uiowa.edu</url>
   </organization>
   <description>
-    The Experiment module includes support for reading/writing of MTZ files,
-    writing of CNS/CCP4 map files, anisotropic scaling of the model to the data,
-    a bulk solvent correction of models using a continuous function, SigmaA computation,
-    a likelihood target function, crystallography statistics (R, Rfree, etc),
-    and X-ray and neutron target functions with gradient.
+    The Experiment module includes support for refinement of atomic resolution models against X-ray differaction data, 
+    neutron diffraction data and/or real space maps such as those from CryoEM.
   </description>
   <developers>
     <developer>

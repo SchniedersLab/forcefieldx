@@ -13,7 +13,7 @@
   <artifactId>algorithms</artifactId>
   <packaging>jar</packaging>
   <name>Algorithms</name>
-  <description>The Algorithms module includes support for local and global optimization, molecular dynamics and
+  <description>The Algorithms module includes support for local and global optimization, molecular dynamics simulations, and
     calculation of free energy differences.
   </description>
   <build>

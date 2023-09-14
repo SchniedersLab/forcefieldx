@@ -13,7 +13,7 @@
     <artifactId>pj</artifactId>
     <packaging>jar</packaging>
     <name>Parallel Java</name>
-    <description>Continuation of Parallel Java</description>
+    <description>Parallel Java supports both shared memory and message passing parallelization.</description>
     <version>1.0.1</version>
     <build>
         <pluginManagement>

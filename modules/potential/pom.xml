@@ -331,7 +331,7 @@
   </dependencies>
   <description>
     The Potential module computes the potential energy of a
-    molecular system via a classical force field.
+    molecular system via a classical force field such as AMOEBA, Amber, OPLS-AA or CHARMM.
   </description>
   <developers>
     <developer>

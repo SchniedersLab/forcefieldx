@@ -13,7 +13,7 @@
     <artifactId>crystal</artifactId>
     <packaging>jar</packaging>
     <name>Crystal</name>
-    <description>The Crystal module includes support for the periodic boundary conditions,
+    <description>The Crystal module includes support for periodic boundary conditions,
         the minimum image convention, symmetry operators, all 230 space groups,
         and transformations between Cartesian and fractional coordinates.
     </description>

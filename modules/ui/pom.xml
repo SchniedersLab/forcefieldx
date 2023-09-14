@@ -196,9 +196,9 @@
     </dependency -->
   </dependencies>
   <description>
-    The User Interface modules implements two user interfaces for Force Field X including
-    1) a graphical user interface (GUI) with a script development environment and
-    2) a command line interface (CLI) that executes scripts and simple commands.
+    The User Interface modules implements two user interfaces for Force Field X. 
+    The first is a command line interface that executes scripts.
+    The second is a graphical user interface that also executes scripts while providing interactive 3D visualization.
   </description>
   <modelVersion>4.0.0</modelVersion>
   <name>User Interfaces</name>
