@@ -9,6 +9,7 @@ import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Bond;
 import ffx.potential.bonded.Molecule;
 import ffx.potential.bonded.RestraintBond;
+import ffx.potential.nonbonded.pme.Polarization;
 import ffx.potential.parameters.BondType;
 import ffx.potential.parsers.XYZFilter;
 
@@ -124,8 +125,10 @@ public class ConformationScan {
                 hBondDist = 2.0;
                 double[] hBondVector = new double[]{0, 0, a.getZ() - b.getZ() + hBondDist};
                 logger.info(" Initial H-bond distance: " + hBondVector[2]);
-                // Finds and moves to minimial vector
+                // Finds and moves to minimial vector (no polarization to avoid failures)
+                forceFieldEnergy.getPmeNode().setPolarization(Polarization.NONE);
                 hBondVector[2] += minimizeVector(hBondVector, -15, 15)[2];
+                forceFieldEnergy.getPmeNode().setPolarization(Polarization.MUTUAL);
                 logger.info(" Best H-bond distance: " + hBondVector[2]);
                 hBondDist = hBondVector[2] - (a.getZ() - b.getZ());
                 flatBottomRadius = Math.abs(hBondDist / 2.0);
