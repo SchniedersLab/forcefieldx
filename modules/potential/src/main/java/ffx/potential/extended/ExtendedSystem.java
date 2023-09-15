@@ -39,6 +39,7 @@
 package ffx.potential.extended;
 
 import edu.rit.pj.reduction.SharedDouble;
+import ffx.numerics.Constraint;
 import ffx.numerics.Potential;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -47,6 +48,7 @@ import ffx.potential.bonded.AminoAcidUtils;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Atom;
 import ffx.potential.bonded.Residue;
+import ffx.potential.constraint.ShakeChargeConstraint;
 import ffx.potential.parameters.ForceField;
 import ffx.potential.parameters.PolarizeType;
 import ffx.potential.parameters.TitrationUtils;
@@ -57,13 +59,12 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ffx.potential.bonded.BondedUtils.hasAttachedAtom;
+import static ffx.utilities.Constants.kB;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.*;
 
@@ -285,6 +286,8 @@ public class ExtendedSystem implements Potential {
     private boolean fixTitrationState;
     private final ArrayList<Double> specialResidues;
     private final ArrayList<Double> specialResiduePKAs;
+    private final boolean useChargeConstraint;
+    private final List<Constraint> constraints;
 
     /**
      * Filter to parse the dynamics restart file.
@@ -350,6 +353,8 @@ public class ExtendedSystem implements Potential {
         }
         fixTitrationState = properties.getBoolean("fix.titration.lambda", false);
         fixTautomerState = properties.getBoolean("fix.tautomer.lambda", false);
+        useChargeConstraint = properties.getBoolean("esv.charge.constraint",false);
+
 
         ASHcubic = properties.getDouble("ASH.cubic", TitrationUtils.Titration.ASHtoASP.cubic);
         ASHquadratic = properties.getDouble("ASH.quadratic", TitrationUtils.Titration.ASHtoASP.quadratic);
@@ -546,6 +551,13 @@ public class ExtendedSystem implements Potential {
             esvPermElecDerivs[i] = new SharedDouble(0.0);
             esvIndElecDerivs[i] = new SharedDouble(0.0);
         }
+        if(useChargeConstraint){
+            constraints = new ArrayList<>();
+            ShakeChargeConstraint chargeConstraint = new ShakeChargeConstraint(nTitr,0,0.000001);
+            constraints.add(chargeConstraint);
+        } else{
+            constraints = Collections.emptyList();
+        }
 
         //Theta masses should always be the same for each ESV
         Arrays.fill(esvState.getMass(), thetaMass);
@@ -617,8 +629,8 @@ public class ExtendedSystem implements Potential {
         double[] thetaAccel = esvState.a();
         thetaPosition[index] = Math.asin(Math.sqrt(lambda));
         //Perform unit analysis carefully
-        //Random random = new Random();
-        thetaVelocity[index] = 0.0; //random.nextGaussian() * sqrt(kB * 298.15 / thetaMass);
+        Random random = new Random();
+        thetaVelocity[index] = random.nextGaussian() * sqrt(kB * 298.15 / thetaMass);
         double dUdL = getDerivatives()[index];
         double dUdTheta = dUdL * sin(2 * thetaPosition[index]);
         thetaAccel[index] = -Constants.KCAL_TO_GRAM_ANG2_PER_PS2 * dUdTheta / thetaMass;
@@ -1688,6 +1700,11 @@ public class ExtendedSystem implements Potential {
     @Override
     public double[] getCoordinates(double[] parameters) {
         return getThetaPosition();
+    }
+
+    @Override
+    public List<Constraint> getConstraints() {
+        return constraints.isEmpty() ? Collections.emptyList() : new ArrayList<>(constraints);
     }
 
     public double[] getThetaPosition() {
