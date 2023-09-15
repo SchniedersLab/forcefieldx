@@ -114,7 +114,7 @@ public class ConformationScan {
         for(Atom a: s1TargetAtoms){
             for(Atom b: s2TargetAtoms){
                 zAxis[2] = 1;
-                initState.revertState(); // all trials need to be initialized from the monomer states
+                initState.revertState(); // all trials need to be initialized from the monomer states (not minimized)
                 alignSystemCOMtoAtomVecWithAxis(a, zAxis, s1Atoms);
                 zAxis[2] = -1;
                 logger.info("\n ----- Trial " + loopCounter + " out of " +
@@ -435,7 +435,6 @@ public class ConformationScan {
             monomerMinEngine.minimize(eps, maxIter).getCoordinates(x);
             statTwo = monomerMinEngine.getStatus();
         }
-        for(Atom a: s1Atoms){ a.setUse(false); }
         logger.info("\n --------- System 2 Energy Breakdown --------- ");
         double monomerEnergy2 = forceFieldEnergy.energy(x, true);
         for(Atom a: s1Atoms){ a.setUse(true); }

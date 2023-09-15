@@ -269,7 +269,7 @@ class CoformerBindingSearch extends AlgorithmsScript {
             for (Atom a : m.getAtomList()) {
                 a.setMoleculeNumber(molNum)
             }
-            assemblyTwoMolecules[0].setName("Molecule-"+molNum)
+            m.setName("AddedMol" + molNum)
             mainMonomerAssembly.addMSNode(m)
             molNum++
         }
