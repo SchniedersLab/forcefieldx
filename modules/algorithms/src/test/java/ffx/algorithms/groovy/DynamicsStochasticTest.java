@@ -88,7 +88,7 @@ public class DynamicsStochasticTest extends AlgorithmsTest {
         new Object[][] {
             {
                 "Acetamide Peptide Restart and Stochastic Random Seed", // info
-                "ffx/algorithms/structures/acetamide_res_stoch.xyz", // filename
+                "acetamide_res_stoch.xyz", // filename
                 6.8546, // endKineticEnergy
                 -26.9921, // endPotentialEnergy
                 -20.1375, // endTotalEnergy
@@ -98,7 +98,7 @@ public class DynamicsStochasticTest extends AlgorithmsTest {
             },
             {
                 "Acetamide Peptide Restart, Stochastic Random Seed and Friction 0.0", // info
-                "ffx/algorithms/structures/acetamide_res_stoch.xyz", // filename
+                "acetamide_res_stoch.xyz", // filename
                 4.5625, // endKineticEnergy
                 -29.8043, // endPotentialEnergy
                 -25.2418, // endTotalEnergy
@@ -108,7 +108,7 @@ public class DynamicsStochasticTest extends AlgorithmsTest {
             },
             {
                 "Acetamide Peptide Restart, Stochastic Random Seed and Friction 0.1", // info
-                "ffx/algorithms/structures/acetamide_res_stoch.xyz", // filename
+                "acetamide_res_stoch.xyz", // filename
                 4.5743, // endKineticEnergy
                 -29.7373, // endPotentialEnergy
                 -25.1630, // endTotalEnergy
@@ -132,7 +132,7 @@ public class DynamicsStochasticTest extends AlgorithmsTest {
         "-i", "Stochastic",
         "-b", "Adiabatic",
         "-r", "0.001",
-        "src/main/java/" + filename
+        getResourcePath(filename)
     };
     binding.setVariable("args", args);
 
@@ -169,7 +169,7 @@ public class DynamicsStochasticTest extends AlgorithmsTest {
         "-i", "Stochastic",
         "-b", "Adiabatic",
         "-r", "0.001",
-        "src/main/java/" + filename
+        getResourcePath(filename)
     };
     binding.setVariable("args", args);
 
@@ -207,7 +207,7 @@ public class DynamicsStochasticTest extends AlgorithmsTest {
         "-i", "Stochastic",
         "-b", "Adiabatic",
         "-r", "0.001",
-        "src/main/java/" + filename
+        getResourcePath(filename)
     };
     binding.setVariable("args", args);
 

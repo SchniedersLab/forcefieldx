@@ -41,6 +41,9 @@ import edu.rit.pj.Comm;
 import ffx.algorithms.cli.AlgorithmsScript;
 import ffx.utilities.FFXTest;
 import groovy.lang.Binding;
+
+import java.io.File;
+import java.net.URL;
 import java.util.logging.Level;
 import org.junit.After;
 import org.junit.Before;
@@ -88,6 +91,38 @@ public class AlgorithmsTest extends FFXTest {
     if (algorithmsScript != null) {
       algorithmsScript.destroyPotentials();
     }
+  }
+
+  /**
+   * Get a resource file from the classpath.
+   *
+   * @param filename
+   * @return the resource file.
+   */
+  public String getResourcePath(String filename) {
+    if (filename == null) {
+      return null;
+    }
+    ClassLoader classLoader = getClass().getClassLoader();
+    URL url = classLoader.getResource(filename);
+    if (url == null) {
+      return null;
+    }
+    return url.getPath();
+  }
+
+  /**
+   * Get a resource file from the classpath.
+   *
+   * @param filename
+   * @return the resource file.
+   */
+  public File getResourceFile(String filename) {
+    String path = getResourcePath(filename);
+    if (path == null) {
+      return null;
+    }
+    return new File(path);
   }
 
 }

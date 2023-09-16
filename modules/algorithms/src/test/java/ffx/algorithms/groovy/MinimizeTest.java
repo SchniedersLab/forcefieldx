@@ -54,7 +54,7 @@ public class MinimizeTest extends AlgorithmsTest {
   @Test
   public void testMinimizeConvergenceCriteria() {
     // Set-up the input arguments for the script.
-    String[] args = {"-e", "2", "src/main/java/ffx/algorithms/structures/5awl.pdb"};
+    String[] args = {"-e", "2", getResourcePath("5awl.pdb")};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
@@ -83,7 +83,7 @@ public class MinimizeTest extends AlgorithmsTest {
   @Test
   public void testMinimizeIterations() {
     // Set-up the input arguments for the script.
-    String[] args = {"-I", "5", "src/main/java/ffx/algorithms/structures/5awl.pdb"};
+    String[] args = {"-I", "5", getResourcePath("5awl.pdb")};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 
