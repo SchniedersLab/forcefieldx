@@ -46,7 +46,8 @@ public class SaveAsP1Test extends PotentialTest {
   @Test
   public void testSaveAsP1() {
     // Set-up the input arguments for the SaveAsP1 script.
-    String[] args = {"src/main/java/ffx/potential/structures/1n7s.P212121.xyz"};
+    String filepath = getResourcePath("1n7s.P212121.xyz");
+    String[] args = {filepath};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 

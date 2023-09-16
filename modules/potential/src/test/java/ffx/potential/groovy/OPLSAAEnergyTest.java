@@ -58,6 +58,7 @@ public class OPLSAAEnergyTest extends PotentialTest {
 
   private final String info;
   private final String filename;
+  private final String filepath;
   private final int nAtoms;
   private final int nBonds;
   private final int nAngles;
@@ -105,6 +106,7 @@ public class OPLSAAEnergyTest extends PotentialTest {
     this.nVanDerWaals = nVanDerWaals;
     this.fixedChargeEnergy = fixedChargeEnergy;
     this.nFixedCharge = nFixedCharge;
+    this.filepath = getResourcePath(filename);
   }
 
   @Parameters
@@ -113,7 +115,7 @@ public class OPLSAAEnergyTest extends PotentialTest {
         new Object[][] {
             {
                 "OPLS Acetanilide Benchmark",
-                "ffx/potential/structures/acetanilide-oplsaa.xyz",
+                "acetanilide-oplsaa.xyz",
                 19,
                 0.45009773,
                 19,
@@ -130,7 +132,7 @@ public class OPLSAAEnergyTest extends PotentialTest {
             },
             {
                 "OPLS-AA Peptide",
-                "ffx/potential/structures/peptide-oplsaa.xyz",
+                "peptide-oplsaa.xyz",
                 328,
                 72.08575480,
                 333,
@@ -147,7 +149,7 @@ public class OPLSAAEnergyTest extends PotentialTest {
             },
             {
                 "OPLS-AA/L Peptide",
-                "ffx/potential/structures/peptide-oplsaal.xyz",
+                "peptide-oplsaal.xyz",
                 328,
                 39.69175722,
                 333,
@@ -164,7 +166,7 @@ public class OPLSAAEnergyTest extends PotentialTest {
             },
             {
                 "OPLS Ethylparaben Benchmark",
-                "ffx/potential/structures/ethylparaben-oplsaa.xyz",
+                "ethylparaben-oplsaa.xyz",
                 44,
                 1.23483793,
                 44,
@@ -181,7 +183,7 @@ public class OPLSAAEnergyTest extends PotentialTest {
             },
             {
                 "OPLS Methylparaben Benchmark",
-                "ffx/potential/structures/methylparaben-oplsaa.xyz",
+                "methylparaben-oplsaa.xyz",
                 19,
                 0.48582171,
                 19,
@@ -198,7 +200,7 @@ public class OPLSAAEnergyTest extends PotentialTest {
             },
             {
                 "OPLS Paracetamol Benchmark",
-                "ffx/potential/structures/paracetamol-oplsaa.xyz",
+                "paracetamol-oplsaa.xyz",
                 20,
                 0.63722563,
                 20,
@@ -215,7 +217,7 @@ public class OPLSAAEnergyTest extends PotentialTest {
             },
             {
                 "OPLS Phenacetin Benchmark",
-                "ffx/potential/structures/phenacetin-oplsaa.xyz",
+                "phenacetin-oplsaa.xyz",
                 26,
                 0.53495810,
                 26,
@@ -238,7 +240,7 @@ public class OPLSAAEnergyTest extends PotentialTest {
     logger.info(" Testing energy for " + info);
 
     // Set-up the input arguments for the Energy script.
-    String[] args = {"src/main/java/" + filename};
+    String[] args = {filepath};
     binding.setVariable("args", args);
 
     // Evaluate the script.
@@ -277,7 +279,7 @@ public class OPLSAAEnergyTest extends PotentialTest {
     double stepSize = 1.0e-5;
     String[] args = {"--ga", Integer.toString(atomID),
         "--dx", Double.toString(stepSize),
-        "src/main/java/" + filename
+        filepath
     };
     binding.setVariable("args", args);
 
@@ -302,7 +304,7 @@ public class OPLSAAEnergyTest extends PotentialTest {
         "--tol", Double.toString(tolerance),
         "--ac", "ALL",
         "-l", "0.5",
-        "src/main/java/" + filename
+        filepath
     };
     binding.setVariable("args", args);
 

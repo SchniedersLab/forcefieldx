@@ -46,7 +46,8 @@ public class SaveAsXYZTest extends PotentialTest {
   @Test
   public void testSaveAsXYZ() {
     // Set-up the input arguments for the SaveAsXYZ script.
-    String[] args = {"src/main/java/ffx/potential/structures/peptide.pdb"};
+    String filepath = getResourcePath("peptide.pdb");
+    String[] args = {filepath};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 

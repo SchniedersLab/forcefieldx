@@ -43,6 +43,8 @@ import ffx.potential.groovy.test.LambdaGradient;
 import ffx.potential.utils.PotentialTest;
 import org.junit.Test;
 
+import java.io.File;
+
 import static org.apache.commons.math3.util.FastMath.floor;
 import static org.apache.commons.math3.util.FastMath.random;
 import static org.junit.Assert.assertEquals;
@@ -54,6 +56,7 @@ public class ParentEnergyTest extends PotentialTest {
 
   private final String info;
   private final String filename;
+  private final String filepath;
   private final int nAtoms;
   private final int nBonds;
   private final int nAngles;
@@ -133,6 +136,7 @@ public class ParentEnergyTest extends PotentialTest {
     this.nGK = nGK;
     this.testOpenMM = testOpenMM;
 
+    filepath = getResourcePath(filename);
     totalEnergy = bondEnergy + angleEnergy + stretchBendEnergy + ureyBradleyEnergy + outOfPlaneBendEnergy
         + torsionEnergy + improperTorsionEnergy + piOrbitalTorsionEnergy + torsionTorsionEnergy + stretchTorsionEnergy
         + angleTorsionEnergy + vanDerWaalsEnergy + permanentEnergy + polarizationEnergy + gkEnergy;
@@ -144,8 +148,7 @@ public class ParentEnergyTest extends PotentialTest {
       return;
     }
     logger.info(" Testing energy for " + info);
-
-    String[] args = {"src/main/java/" + filename};
+    String[] args = {filepath};
     binding.setVariable("args", args);
 
     // Create and evaluate the script.
@@ -220,7 +223,7 @@ public class ParentEnergyTest extends PotentialTest {
     String[] args = {"--ga", Integer.toString(atomID),
         "--dx", Double.toString(stepSize),
         "--tol", Double.toString(tolerance),
-        "src/main/java/" + filename};
+        filepath};
     binding.setVariable("args", args);
 
     // Create and evaluate the script.
@@ -249,7 +252,8 @@ public class ParentEnergyTest extends PotentialTest {
         "--dx", Double.toString(stepSize),
         "--tol", Double.toString(tolerance),
         "--ac", "ALL",
-        "-l", "0.9", "src/main/java/" + filename};
+        "-l", "0.9",
+        filepath};
     binding.setVariable("args", args);
 
     // Create and evaluate the script.
@@ -269,7 +273,7 @@ public class ParentEnergyTest extends PotentialTest {
     logger.info(" Testing OpenMM energy for " + info);
 
     // Set up the input arguments for the Energy script.
-    String[] args = {"src/main/java/" + filename};
+    String[] args = {filepath};
     binding.setVariable("args", args);
     System.setProperty("platform", "OMM");
 

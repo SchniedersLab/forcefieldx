@@ -97,7 +97,9 @@ public class SolvatorTest extends PotentialTest {
   private final SolvatorTestMode mode;
   private final File solvatedTestFile;
   private final Map<String, String> opts;
-  /** Configuration containing the properties to be used by the solvator. */
+  /**
+   * Configuration containing the properties to be used by the solvator.
+   */
   private final Configuration algorithmConfig;
 
   private final List<String> flags;
@@ -118,8 +120,7 @@ public class SolvatorTest extends PotentialTest {
       throws IOException {
     this.info = info;
     this.mode = mode;
-    this.solvatedTestFile = new File("src/main/java/" + solvatedTestFileName);
-
+    this.solvatedTestFile = getResourceFile(solvatedTestFileName);
     if (mode == SolvatorTestMode.HELP) {
       opts = Collections.emptyMap();
       algorithmConfig = null;
@@ -142,7 +143,7 @@ public class SolvatorTest extends PotentialTest {
         filesUsed = new String[] {soluteFile, solventFileName, ionFileName};
       }
       for (String fname : filesUsed) {
-        File srcFile = new File("src/main/java/" + fname);
+        File srcFile = getResourceFile(fname);
         File tempFile = new File(tempDir.getAbsolutePath() + "/" + FilenameUtils.getName(fname));
 
         copyFile(srcFile, tempFile);
@@ -150,12 +151,10 @@ public class SolvatorTest extends PotentialTest {
         logger.info(format(" Copied file %s to %s", srcFile, tempFile));
 
         for (String ext : copiedExtensions) {
-          srcFile = new File(
-                  format("%s.%s", FilenameUtils.removeExtension(srcFile.getPath()), ext));
+          srcFile = new File(format("%s.%s", FilenameUtils.removeExtension(srcFile.getPath()), ext));
           if (srcFile.exists()) {
             logger.fine(" Copying extension " + ext);
-            tempFile = new File(
-                    format("%s.%s", FilenameUtils.removeExtension(tempFile.getPath()), ext));
+            tempFile = new File(format("%s.%s", FilenameUtils.removeExtension(tempFile.getPath()), ext));
             logger.fine(format(" Copied file %s to %s", srcFile, tempFile));
             copyFile(srcFile, tempFile);
           }
@@ -242,9 +241,9 @@ public class SolvatorTest extends PotentialTest {
             {
                 "Aspartate Pure Water Solvation",
                 SolvatorTestMode.SOLVATE,
-                "ffx/potential/structures/capAsp.xyz",
-                "ffx/potential/structures/capAsp.pureWater.pdb",
-                "ffx/potential/structures/watertiny.xyz",
+                "capAsp.xyz",
+                "capAsp.pureWater.pdb",
+                "watertiny.xyz",
                 null,
                 new String[] {"-b", "2.5", "-p", "8.0", "-s", "42"},
                 new String[] {},
@@ -253,10 +252,10 @@ public class SolvatorTest extends PotentialTest {
             {
                 "Aspartate Neutralizing NaCl (+200 mM) Solvation",
                 SolvatorTestMode.SOLVATE,
-                "ffx/potential/structures/capAsp.xyz",
-                "ffx/potential/structures/capAsp.neutNaCl.pdb",
-                "ffx/potential/structures/watertiny.xyz",
-                "ffx/potential/structures/nacl.pdb",
+                "capAsp.xyz",
+                "capAsp.neutNaCl.pdb",
+                "watertiny.xyz",
+                "nacl.pdb",
                 new String[] {"-b", "2.5", "-p", "8.0", "-s", "42"},
                 new String[] {},
                 new String[] {}
@@ -264,10 +263,10 @@ public class SolvatorTest extends PotentialTest {
             {
                 "Aspartate Charged NaCl (200 mM) Solvation",
                 SolvatorTestMode.SOLVATE,
-                "ffx/potential/structures/capAsp.xyz",
-                "ffx/potential/structures/capAsp.chargedNaCl.pdb",
-                "ffx/potential/structures/watertiny.xyz",
-                "ffx/potential/structures/naclCharged.pdb",
+                "capAsp.xyz",
+                "capAsp.chargedNaCl.pdb",
+                "watertiny.xyz",
+                "naclCharged.pdb",
                 new String[] {"-b", "2.5", "-p", "8.0", "-s", "42"},
                 new String[] {},
                 new String[] {}
@@ -347,6 +346,6 @@ public class SolvatorTest extends PotentialTest {
 
   private enum SolvatorTestMode {
     HELP,
-    SOLVATE;
+    SOLVATE
   }
 }

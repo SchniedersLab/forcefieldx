@@ -69,8 +69,7 @@ public class LoopClosureTest extends FFXTest {
     int startResidue = 2;
     int endResidue = 4;
     ClassLoader classLoader = getClass().getClassLoader();
-    File structure =
-        new File(classLoader.getResource("ffx/potential/structures/LoopClosureTest.pdb").getPath());
+    File structure = new File(classLoader.getResource("LoopClosureTest.pdb").getPath());
     PotentialsUtils potentialsUtils = new PotentialsUtils();
     molecularAssembly = potentialsUtils.open(structure);
     loop = new Loop(molecularAssembly, startResidue, endResidue);

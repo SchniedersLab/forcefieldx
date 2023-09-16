@@ -68,7 +68,8 @@ public class PrepareSpaceGroupsTest extends PotentialTest {
   @Test
   public void testPrepareSpaceGroups() {
     // Set-up the input arguments for the PrepareSpaceGroups script.
-    String[] args = {"src/main/java/ffx/potential/structures/paracetamol.xyz"};
+    String filepath = getResourcePath("paracetamol.xyz");
+    String[] args = {filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the script.
@@ -83,7 +84,8 @@ public class PrepareSpaceGroupsTest extends PotentialTest {
   @Test
   public void testPrepareSpaceGroupsAChiral() {
     // Set-up the input arguments for the PrepareSpaceGroups script.
-    String[] args = {"-a", "src/main/java/ffx/potential/structures/paracetamol.xyz"};
+    String filepath = getResourcePath("paracetamol.xyz");
+    String[] args = {"-a", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the script.
@@ -97,7 +99,8 @@ public class PrepareSpaceGroupsTest extends PotentialTest {
   @Test
   public void testPrepareSpaceGroupsChiral() {
     // Set-up the input arguments for the PrepareSpaceGroups script.
-    String[] args = {"-c", "src/main/java/ffx/potential/structures/paracetamol.xyz"};
+    String filepath = getResourcePath("paracetamol.xyz");
+    String[] args = {"-c", filepath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the script.
