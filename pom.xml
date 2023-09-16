@@ -39,7 +39,7 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <configuration>
                         <compilerArgs>
-                            <arg>-Xlint:all</arg>
+                            <arg>-Xlint:all,-serial,-processing</arg>
                             <arg>-Aproject=${project.groupId}/${project.artifactId}</arg>
                         </compilerArgs>
                         <debug>true</debug>
@@ -294,19 +294,13 @@
                 <artifactId>maven-site-plugin</artifactId>
                 <configuration>
                     <generateSitemap>true</generateSitemap>
-                    <asciidoc>
-                        <!-- templateDirs>
-                          <dir>src/site/asciidoc/templates</dir>
-                        </templateDirs>
-                        <requires>
-                          <require>asciidoctor-diagram</require>
-                        </requires -->
+                    <!-- asciidoc>
                         <attributes>
                             <source-highlighter>coderay</source-highlighter>
                             <coderay-css>style</coderay-css>
                             <icons>font</icons>
                         </attributes>
-                    </asciidoc>
+                    </asciidoc -->
                 </configuration>
                 <inherited>true</inherited>
                 <version>${site.version}</version>
@@ -596,10 +590,22 @@
             <timezone>-5</timezone>
         </contributor>
         <contributor>
-            <email>william.t.tollefson@rockwellcollins.com</email>
+            <email>jhauer@health.ucsd.edu</email>
+            <name>Jill J. Hauer</name>
+            <organization>Post-Doctoral Fellow, UCSD</organization>
+            <organizationUrl>https://ucsd.edu</organizationUrl>
+            <roles>
+                <role>
+                    Pathogenicity Prediction and Thermodynamics of Missense Mutations for Rare Renal Diseases
+                </role>
+            </roles>
+            <timezone>-5</timezone>
+        </contributor>
+        <contributor>
+            <email>tollefson.will@gmail.com</email>
             <name>William T. A. Tollefson</name>
-            <organization>Software Engineer, Rockwell Collins</organization>
-            <organizationUrl>http://rockwellcollins.com</organizationUrl>
+            <organization>Software Engineer, Collins Aerospace</organization>
+            <organizationUrl>https://www.collinsaerospace.com</organizationUrl>
             <roles>
                 <role>
                     Contributions to many-body side-chain repacking and modeling of missense mutations.
@@ -608,32 +614,19 @@
             <timezone>-5</timezone>
         </contributor>
         <contributor>
-            <email>gaosh01@luther.edu</email>
-            <name>Shibo "Hylia" Gao</name>
-            <organization>2013 BSURF Student, Biochemistry, The U. of Iowa</organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
-            <roles>
-                <role>
-                    Contributions to many-body side-chain repacking.
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </contributor>
-        <contributor>
             <email>ava-lynn@uiowa.edu</email>
             <name>Ava M. Lynn</name>
-            <organization>Medical Student, Uniformed Services University of the Health Sciences
-            </organization>
+            <organization>Physician, Uniformed Services University of the Health Sciences</organization>
             <organizationUrl>https://www.usuhs.edu</organizationUrl>
             <roles>
                 <role>
                     Contributions to implementation of rotamer libraries.
                 </role>
             </roles>
-            <timezone>-5</timezone>
+            <timezone>-4</timezone>
         </contributor>
         <contributor>
-            <email>iannessler@gmail.com</email>
+            <email>ian.nessler@abbvie.com</email>
             <name>Ian J. Nessler</name>
             <organization>Senior Scientist, AbbVie</organization>
             <organizationUrl>https://www.abbvie.com</organizationUrl>
@@ -647,20 +640,20 @@
         <contributor>
             <email>julia-park@gmail.com</email>
             <name>Jooyeon "Julia" Park</name>
-            <organization>Dental Student, The U. of Pennsylvania</organization>
-            <organizationUrl>http://www.upenn.edu</organizationUrl>
+            <organization>Dentist, The U. of Pennsylvania</organization>
+            <organizationUrl>https://www.upenn.edu</organizationUrl>
             <roles>
                 <role>
                     Drug Crystal Structure, Thermodynamics and Solubility
                 </role>
             </roles>
-            <timezone>-5</timezone>
+            <timezone>-4</timezone>
         </contributor>
         <contributor>
             <email>pren@mail.utexas.edu</email>
             <name>Pengyu Ren</name>
             <organization>Associate Professor, The U. of Texas at Austin</organization>
-            <organizationUrl>http://www.utexas.edu</organizationUrl>
+            <organizationUrl>https://www.utexas.edu</organizationUrl>
             <roles>
                 <role>AMOEBA Force Field</role>
             </roles>
@@ -670,7 +663,7 @@
             <email>oversnow@gmail.com</email>
             <name>Zhen Xia</name>
             <organization>Postdoc, Ren Lab, The U. of Texas at Austin</organization>
-            <organizationUrl>http://biomol.bme.utexas.edu/lab/</organizationUrl>
+            <organizationUrl>https://biomol.bme.utexas.edu/lab/</organizationUrl>
             <roles>
                 <role>AMOEBA force field</role>
             </roles>
@@ -680,7 +673,7 @@
             <email>jwu@mail.utexas.edu</email>
             <name>Johnny Wu</name>
             <organization>Scientist at Genentech</organization>
-            <organizationUrl>http://www.gene.com</organizationUrl>
+            <organizationUrl>https://www.gene.com</organizationUrl>
             <roles>
                 <role>Automatic AMOEBA Parameterization</role>
             </roles>
@@ -723,7 +716,7 @@
             <id>michael.schnieders</id>
             <name>Michael J. Schnieders</name>
             <organization>Associate Professor, The U. of Iowa</organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <organizationUrl>https://www.uiowa.edu</organizationUrl>
             <roles>
                 <role>Director of Force Field X</role>
             </roles>
@@ -734,55 +727,24 @@
             <id>fenn</id>
             <name>Timothy D. Fenn</name>
             <organization>Associate Director at Prevail Therapeutics</organization>
-            <organizationUrl>http://www.prevailtherapeutics.com</organizationUrl>
+            <organizationUrl>https://www.prevailtherapeutics.com</organizationUrl>
             <roles>
                 <role>Chief Crystallograper</role>
             </roles>
             <timezone>-7</timezone>
         </developer>
         <developer>
-            <email>jacob-litman@uiowa.edu</email>
-            <id>jmlitman</id>
-            <name>Jacob M. Litman</name>
-            <organization>Post-Doctoral Fellow, Ren and Schnieders Labs, The U. of Texas at Austin
-            </organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
-            <roles>
-                <role>
-                    Many-Body Dead-End Elimination for Nucleic Acid Structure Prediction and Optimization
-                </role>
-                <role>
-                    Protein Design via Many-Body Dead-End Elimination and Alchemical Free Energy Methods
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </developer>
-        <developer>
             <email>mallory-tollefson@uiowa.edu</email>
             <id>mrtollefson</id>
             <name>Mallory R. Tollefson</name>
-            <organization>Biomedical Engineering Graduate Student, Schnieders Lab, The U. of Iowa
-            </organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <organization>Instructor, Biochemistry and Molecular Biology, The U. of Iowa</organization>
+            <organizationUrl>https://www.uiowa.edu</organizationUrl>
             <roles>
                 <role>
                     Pathogenicity Prediction of Missense Mutations Implicated in Hearing Loss
                 </role>
                 <role>
-                    Structure Optimization
-                </role>
-            </roles>
-            <timezone>-5</timezone>
-        </developer>
-        <developer>
-            <email>jill-hauer@uiowa.edu</email>
-            <id>jhauer</id>
-            <name>Jill J. Hauer</name>
-            <organization>Genetics Graduate Student, Richard Smith Lab, The U. of Iowa</organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
-            <roles>
-                <role>
-                    Pathogenicity Prediction and Thermodynamics of Missense Mutations for Rare Renal Diseases
+                    Global Optimization Side-Chain Conformations using a Many-Body Expansion
                 </role>
             </roles>
             <timezone>-5</timezone>
@@ -793,7 +755,7 @@
             <name>Aaron Nessler</name>
             <organization>Biomedical Engineering Graduate Student, Schnieders Lab, The U. of Iowa
             </organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <organizationUrl>https://www.uiowa.edu</organizationUrl>
             <roles>
                 <role>
                     Thermodynamics of Crystals
@@ -807,7 +769,7 @@
             <name>Andrew Thiel</name>
             <organization>Biomedical Engineering Graduate Student, Schnieders Labs, The U. of Iowa
             </organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <organizationUrl>https://www.uiowa.edu</organizationUrl>
             <roles>
                 <role>
                     Constant pH Simulation methods.
@@ -819,20 +781,99 @@
             <email>rae-corrigan@uiowa.edu</email>
             <id>rcorrigan</id>
             <name>Rae Corrigan</name>
-            <organization>Biomedical Engineering Graduate Student, Casavant and Schnieders Labs, The U. of
-                Iowa
-            </organization>
-            <organizationUrl>http://www.uiowa.edu</organizationUrl>
+            <organization>Postdoctoral Fellow, Schnieders Lab, The U. of Iowa</organization>
+            <organizationUrl>https://www.uiowa.edu</organizationUrl>
             <roles>
                 <role>
-                    Continuum Solvation and Nucleic Acid Design
+                    Generalized Kirkwood Continuum Solvation for the AMOEBA Force Field
                 </role>
             </roles>
             <timezone>-5</timezone>
         </developer>
+        <developer>
+            <email>rose-gogal@uiowa.edu</email>
+            <id>rgogal</id>
+            <name>Rose Gogal</name>
+            <organization>Biomedical Engineering PhD student, Schnieders Lab, The U. of Iowa</organization>
+            <organizationUrl>https://www.uiowa.edu</organizationUrl>
+            <roles>
+                <role>
+                    Pathogenicity Prediction of Missense Mutations Implicated in Hearing Loss
+                </role>
+                <role>
+                    Global Optimization Side-Chain Protonation States using a Many-Body Expansion
+                </role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
+            <email>jacob-m-miller@uiowa.edu</email>
+            <id>jmiller99</id>
+            <name>Jacob Miller</name>
+            <organization>Biomedical Engineering Graduate Student, Schnieders Lab, The U. of Iowa</organization>
+            <organizationUrl>https://www.uiowa.edu</organizationUrl>
+            <roles>
+                <role>
+                    Pathogenicity Prediction of Missense Mutations Implicated in Autism Spectrum Disorder
+                </role>
+                <role>
+                    Generalized Kirkwood Continuum Solvation for the Nucleic Acids
+                </role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
+            <email>matthew-speranza@uiowa.edu</email>
+            <id>msperanza</id>
+            <name>Matthew Speranza</name>
+            <organization>Biomedical Engineering Student, Schnieders Labs, The U. of Iowa
+            </organization>
+            <organizationUrl>https://www.uiowa.edu</organizationUrl>
+            <roles>
+                <role>
+                    Constant pH Simulation methods.
+                </role>
+                <role>
+                    Crystal Structure Prediction.
+                </role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
+            <email>leah-cousineau@uiowa.edu</email>
+            <id>lmcousineau</id>
+            <name>Leah Cousineau</name>
+            <organization>Biochemistry and Molecular Biology Student, Schnieders Labs, The U. of Iowa
+            </organization>
+            <organizationUrl>https://www.uiowa.edu</organizationUrl>
+            <roles>
+                <role>
+                    Pathogenicity Prediction of Missense Mutations Implicated in Deafness.
+                </role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+        <developer>
+            <email>jacob.m.litman@gmail.com</email>
+            <id>jmlitman</id>
+            <name>Jacob M. Litman</name>
+            <organization>Post-Doctoral Fellow, Ren Lab, The U. of Texas at Austin
+            </organization>
+            <organizationUrl>https://www.uiowa.edu</organizationUrl>
+            <roles>
+                <role>
+                    Global Optimization using Many-Body Expansions
+                </role>
+                <role>
+                    Indirect Free Energy Methods
+                </role>
+            </roles>
+            <timezone>-5</timezone>
+        </developer>
+
     </developers>
     <distributionManagement>
-        <downloadUrl>http://ffx.biochem.uiowa.edu/download.html</downloadUrl>
+        <downloadUrl>https://ffx.biochem.uiowa.edu/download.html</downloadUrl>
         <repository>
             <id>bintray-mjschnie-maven</id>
             <name>mjschnie-maven</name>
@@ -854,7 +895,7 @@
     <inceptionYear>2001</inceptionYear>
     <issueManagement>
         <system>GitHub Issues</system>
-        <url>http://github.com/SchniedersLab/forcefieldx/issues</url>
+        <url>https://github.com/SchniedersLab/forcefieldx/issues</url>
     </issueManagement>
     <licenses>
         <license>
@@ -884,7 +925,7 @@
             </comments>
             <distribution>manual</distribution>
             <name>GPL version 3 with Linking Exception</name>
-            <url>http://www.gnu.org/licenses/gpl-3.0-standalone.html</url>
+            <url>https://www.gnu.org/licenses/gpl-3.0-standalone.html</url>
         </license>
     </licenses>
     <modelVersion>4.0.0</modelVersion>
@@ -905,7 +946,7 @@
         <!-- This is used to generate the Copyright on the website.
         Module authors can use their name. -->
         <name>Michael J. Schnieders</name>
-        <url>http://ffx.biochem.uiowa.edu</url>
+        <url>https://ffx.biochem.uiowa.edu</url>
     </organization>
     <packaging>pom</packaging>
     <profiles>
@@ -989,7 +1030,7 @@
         <jar.version>3.3.0</jar.version>
         <jarsigner.version>3.0.0</jarsigner.version>
         <java3d.version>1.7.1</java3d.version>
-        <javadoc.version>3.5.0</javadoc.version>
+        <javadoc.version>3.6.0</javadoc.version>
         <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
         <jdepend.version>2.0</jdepend.version>
         <jna.version>5.6.0</jna.version>
@@ -1050,7 +1091,8 @@
                 <reportSets>
                     <reportSet>
                         <reports>
-                            <report>plugin-updates-report</report>
+                            <report>plugin-updates-aggregate-report</report>
+                            <report>dependency-updates-aggregate-report</report>
                         </reports>
                     </reportSet>
                 </reportSets>
@@ -1289,10 +1331,10 @@
         </repository -->
     </repositories>
     <scm>
-        <connection>scm:git:http://github.com/SchniedersLab/forcefieldx.git</connection>
+        <connection>scm:git:https://github.com/SchniedersLab/forcefieldx.git</connection>
         <developerConnection>scm:git:git@github.com:SchniedersLab/forcefieldx.git</developerConnection>
-        <url>http://github.com/SchniedersLab/forcefieldx</url>
+        <url>https://github.com/SchniedersLab/forcefieldx</url>
     </scm>
-    <url>http://ffx.biochem.uiowa.edu</url>
+    <url>https://ffx.biochem.uiowa.edu</url>
     <version>1.0.0-beta</version>
 </project>
