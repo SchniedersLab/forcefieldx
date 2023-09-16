@@ -185,7 +185,7 @@ public class ManyBodyOptions {
             for (Residue residue : residues) {
               if (residue.getResidueNumber() == i) {
                 Rotamer[] rotamers = residue.setRotamers(rotamerLibrary);
-                if (rotamers != null || rotamers.length > 0) {
+                if (rotamers != null && rotamers.length > 0) {
                   residueList.add(residue);
                 }
               }
