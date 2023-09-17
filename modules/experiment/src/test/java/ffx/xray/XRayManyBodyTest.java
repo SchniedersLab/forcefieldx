@@ -61,8 +61,8 @@ public class XRayManyBodyTest extends AlgorithmsTest {
         "-L", "2",
         "--sR", "1",
         "--fR", "5",
-        "src/main/java/ffx/xray/structures/5awl.pdb",
-        "src/main/java/ffx/xray/structures/5awl.mtz"
+        getResourcePath("5awl.pdb"),
+        getResourcePath("5awl.mtz")
     };
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());

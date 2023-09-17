@@ -39,10 +39,12 @@ package ffx.xray;
 
 import static ffx.numerics.math.ScalarMath.b2u;
 import static ffx.xray.CrystalReciprocalSpace.SolventModel.NONE;
+import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import edu.rit.pj.ParallelTeam;
+import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
@@ -50,23 +52,26 @@ import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.FFXTest;
 import ffx.xray.CrystalReciprocalSpace.SolventModel;
 import ffx.xray.RefinementMinimize.RefinementMode;
 import ffx.xray.parsers.MTZFilter;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-/** @author Timothy D. Fenn */
+/**
+ * @author Timothy D. Fenn
+ */
 @RunWith(Parameterized.class)
-public class FiniteDifferenceTest extends FFXTest {
+public class FiniteDifferenceTest extends AlgorithmsTest {
 
   private final boolean ciOnly;
   private final Atom[] atomArray;
@@ -74,13 +79,8 @@ public class FiniteDifferenceTest extends FFXTest {
   private final DiffractionRefinementData refinementData;
   private final SigmaAMinimize sigmaAMinimize;
 
-  public FiniteDifferenceTest(
-      boolean ciOnly,
-      String info,
-      SolventModel solventModel,
-      int[] atoms,
-      String pdbName,
-      String mtzName) {
+  public FiniteDifferenceTest(boolean ciOnly, String info, SolventModel solventModel,
+      int[] atoms, String pdbName, String mtzName) {
     this.ciOnly = ciOnly;
     this.atoms = atoms;
 
@@ -92,20 +92,19 @@ public class FiniteDifferenceTest extends FFXTest {
     }
 
     // load the structure
-    ClassLoader cl = this.getClass().getClassLoader();
-    File structure = new File(cl.getResource(pdbName).getPath());
-    File mtzFile = new File(cl.getResource(mtzName).getPath());
-    PotentialsUtils potutil = new PotentialsUtils();
-    MolecularAssembly mola = null;
+    File structure = getResourceFile(pdbName);
+    File mtzFile = getResourceFile(mtzName);
+    PotentialsUtils potentialsUtils = new PotentialsUtils();
+    MolecularAssembly molecularAssembly = null;
     try {
-      mola = potutil.open(structure);
+      molecularAssembly = potentialsUtils.open(structure);
     } catch (Exception ex) {
-      System.err.println(String.format(" Exception ex: %s", ex.toString()));
+      System.err.println(format(" Exception ex: %s", ex));
       ex.printStackTrace();
     }
 
     // load any properties associated with it
-    CompositeConfiguration properties = mola.getProperties();
+    CompositeConfiguration properties = molecularAssembly.getProperties();
 
     // read in Fo/sigFo/FreeR
     MTZFilter mtzFilter = new MTZFilter();
@@ -119,15 +118,14 @@ public class FiniteDifferenceTest extends FFXTest {
     }
 
     refinementData = new DiffractionRefinementData(properties, reflectionList);
-    assertTrue(
-        info + " mtz file should be read in without errors",
+    assertTrue(info + " mtz file should be read in without errors",
         mtzFilter.readFile(mtzFile, reflectionList, refinementData, properties));
 
     // associate molecular assembly with the structure, set up forcefield
-    mola.finalize(true, mola.getForceField());
-    ForceFieldEnergy energy = mola.getPotentialEnergy();
+    molecularAssembly.finalize(true, molecularAssembly.getForceField());
+    ForceFieldEnergy energy = molecularAssembly.getPotentialEnergy();
 
-    List<Atom> atomList = mola.getAtomList();
+    List<Atom> atomList = molecularAssembly.getAtomList();
     atomArray = atomList.toArray(new Atom[0]);
     boolean use_3g = properties.getBoolean("use_3g", true);
 
@@ -169,34 +167,22 @@ public class FiniteDifferenceTest extends FFXTest {
 
     // set up FFT and run it
     ParallelTeam parallelTeam = new ParallelTeam();
-    CrystalReciprocalSpace crs =
-        new CrystalReciprocalSpace(
-            reflectionList, atomArray, parallelTeam, parallelTeam, false, false, NONE, gridMethod);
+    CrystalReciprocalSpace crs = new CrystalReciprocalSpace(
+        reflectionList, atomArray, parallelTeam, parallelTeam, false, false, NONE, gridMethod);
     crs.computeDensity(refinementData.fc);
     refinementData.setCrystalReciprocalSpaceFc(crs);
-    crs =
-        new CrystalReciprocalSpace(
-            reflectionList,
-            atomArray,
-            parallelTeam,
-            parallelTeam,
-            true,
-            false,
-            solventModel,
-            gridMethod);
+    crs = new CrystalReciprocalSpace(reflectionList, atomArray, parallelTeam, parallelTeam, true,
+        false, solventModel, gridMethod);
     crs.computeDensity(refinementData.fs);
     refinementData.setCrystalReciprocalSpaceFs(crs);
 
-    ScaleBulkMinimize scaleBulkMinimize =
-        new ScaleBulkMinimize(reflectionList, refinementData, crs, parallelTeam);
+    ScaleBulkMinimize scaleBulkMinimize = new ScaleBulkMinimize(reflectionList, refinementData, crs, parallelTeam);
     scaleBulkMinimize.minimize(6, 1.0e-4);
 
     sigmaAMinimize = new SigmaAMinimize(reflectionList, refinementData, parallelTeam);
     sigmaAMinimize.minimize(7, 2.0e-2);
 
-    SplineMinimize splineMinimize =
-        new SplineMinimize(
-            reflectionList, refinementData, refinementData.spline, SplineEnergy.Type.FOFC);
+    SplineMinimize splineMinimize = new SplineMinimize(reflectionList, refinementData, refinementData.spline, SplineEnergy.Type.FOFC);
     splineMinimize.minimize(7, 1e-5);
 
     CrystalStats crystalstats = new CrystalStats(reflectionList, refinementData);
@@ -209,14 +195,14 @@ public class FiniteDifferenceTest extends FFXTest {
   @Parameters
   public static Collection<Object[]> data() {
     return Arrays.asList(
-        new Object[][] {
+        new Object[][]{
             {
                 true,
                 "ala met anisou",
                 NONE,
-                new int[] {91, 105, 119},
-                "ffx/xray/structures/alamet.pdb",
-                "ffx/xray/structures/alamet.mtz"
+                new int[]{91, 105, 119},
+                "alamet.pdb",
+                "alamet.mtz"
             }
         });
   }
@@ -231,11 +217,8 @@ public class FiniteDifferenceTest extends FFXTest {
     double delta = 1e-4;
 
     // compute gradients
-    refinementData.crystalReciprocalSpaceFc.computeAtomicGradients(
-        refinementData.dFc,
-        refinementData.freeR,
-        refinementData.rFreeFlag,
-        RefinementMode.COORDINATES_AND_BFACTORS);
+    refinementData.crystalReciprocalSpaceFc.computeAtomicGradients(refinementData.dFc, refinementData.freeR,
+        refinementData.rFreeFlag, RefinementMode.COORDINATES_AND_BFACTORS);
 
     double mean = 0.0;
     double nmean = 0.0;
@@ -247,7 +230,7 @@ public class FiniteDifferenceTest extends FFXTest {
         continue;
       }
 
-      System.out.println(" " + i + ": " + atom.toString());
+      System.out.println(" " + i + ": " + atom);
       atom.getXYZGradient(gxyz);
       double bg = atom.getTempFactorGradient();
 
@@ -258,8 +241,7 @@ public class FiniteDifferenceTest extends FFXTest {
       refinementData.crystalReciprocalSpaceFc.computeDensity(refinementData.fc);
       double llk2 = sigmaAMinimize.calculateLikelihood();
       double fd = (llk1 - llk2) / (2.0 * delta);
-      System.out.print(
-          String.format(" X A: %16.8f FD: %16.8f Error: %16.8f\n", gxyz[0], fd, gxyz[0] - fd));
+      System.out.print(format(" X A: %16.8f FD: %16.8f Error: %16.8f\n", gxyz[0], fd, gxyz[0] - fd));
       refinementData.crystalReciprocalSpaceFc.deltaX(index, 0.0);
 
       nmean++;
@@ -272,8 +254,7 @@ public class FiniteDifferenceTest extends FFXTest {
       refinementData.crystalReciprocalSpaceFc.computeDensity(refinementData.fc);
       llk2 = sigmaAMinimize.calculateLikelihood();
       fd = (llk1 - llk2) / (2.0 * delta);
-      System.out.print(
-          String.format(" Y A: %16.8f FD: %16.8f Error: %16.8f\n", gxyz[1], fd, gxyz[1] - fd));
+      System.out.print(format(" Y A: %16.8f FD: %16.8f Error: %16.8f\n", gxyz[1], fd, gxyz[1] - fd));
       refinementData.crystalReciprocalSpaceFc.deltaY(index, 0.0);
 
       nmean++;
@@ -286,8 +267,7 @@ public class FiniteDifferenceTest extends FFXTest {
       refinementData.crystalReciprocalSpaceFc.computeDensity(refinementData.fc);
       llk2 = sigmaAMinimize.calculateLikelihood();
       fd = (llk1 - llk2) / (2.0 * delta);
-      System.out.print(
-          String.format(" Z A: %16.8f FD: %16.8f Error: %16.8f\n", gxyz[2], fd, gxyz[2] - fd));
+      System.out.print(format(" Z A: %16.8f FD: %16.8f Error: %16.8f\n", gxyz[2], fd, gxyz[2] - fd));
       refinementData.crystalReciprocalSpaceFc.deltaZ(index, 0.0);
 
       nmean++;
@@ -302,7 +282,7 @@ public class FiniteDifferenceTest extends FFXTest {
         refinementData.crystalReciprocalSpaceFc.computeDensity(refinementData.fc);
         llk2 = sigmaAMinimize.calculateLikelihood();
         fd = (llk1 - llk2) / (2.0 * delta);
-        System.out.print(String.format(" B A: %16.8f FD: %16.8f Error: %16.8f\n", bg, fd, bg - fd));
+        System.out.print(format(" B A: %16.8f FD: %16.8f Error: %16.8f\n", bg, fd, bg - fd));
         atom.setTempFactor(b);
         nmean++;
         mean += (bg / fd - mean) / nmean;
@@ -321,9 +301,7 @@ public class FiniteDifferenceTest extends FFXTest {
           llk2 = sigmaAMinimize.calculateLikelihood();
           fd = (llk1 - llk2) / (2.0 * b2u(delta));
           atom.getAnisouGradient(anisouG);
-          System.out.print(
-              String.format(
-                  " %d A: %16.8f FD: %16.8f Error: %16.8f\n", j, anisouG[j], fd, anisouG[j] - fd));
+          System.out.print(format(" %d A: %16.8f FD: %16.8f Error: %16.8f\n", j, anisouG[j], fd, anisouG[j] - fd));
           anisou[j] = tmpu;
           atom.setAnisou(anisou);
           nmean++;

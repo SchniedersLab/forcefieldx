@@ -40,6 +40,7 @@ package ffx.xray;
 import static org.junit.Assert.assertEquals;
 
 import edu.rit.pj.ParallelTeam;
+import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
@@ -52,7 +53,6 @@ import ffx.potential.parameters.ForceField;
 import ffx.potential.parsers.ForceFieldFilter;
 import ffx.potential.parsers.PDBFilter;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.FFXTest;
 import ffx.utilities.Keyword;
 
 import java.io.File;
@@ -64,18 +64,15 @@ import org.junit.Test;
 /**
  * @author Timothy D. Fenn
  */
-public class CrystalReciprocalSpaceTest extends FFXTest {
+public class CrystalReciprocalSpaceTest extends AlgorithmsTest {
 
   /**
    * Test of permanent method, of class CrystalReciprocalSpace.
    */
   @Test
   public void test1N7SPermanent() {
-    String filename = "ffx/xray/structures/1N7S.pdb";
-
     // load the structure
-    ClassLoader cl = this.getClass().getClassLoader();
-    File structure = new File(cl.getResource(filename).getPath());
+    File structure = getResourceFile("1N7S.pdb");
     PotentialsUtils potutil = new PotentialsUtils();
     MolecularAssembly mola = potutil.open(structure);
     CompositeConfiguration properties = mola.getProperties();
@@ -126,13 +123,9 @@ public class CrystalReciprocalSpaceTest extends FFXTest {
 
   @Test
   public void test1NSFPermanent() {
-    String filename = "ffx/xray/structures/1NSF.pdb";
-    int index = filename.lastIndexOf(".");
-    String name = filename.substring(0, index);
-
     // load the structure
-    ClassLoader cl = this.getClass().getClassLoader();
-    File structure = new File(cl.getResource(filename).getPath());
+    String filename = "1NSF.pdb";
+    File structure = getResourceFile(filename);
 
     // load any properties associated with it
     CompositeConfiguration properties = Keyword.loadProperties(structure);
@@ -147,7 +140,7 @@ public class CrystalReciprocalSpaceTest extends FFXTest {
     ForceField forceField = forceFieldFilter.parse();
 
     // associate molecular assembly with the structure, set up forcefield
-    MolecularAssembly molecularAssembly = new MolecularAssembly(name);
+    MolecularAssembly molecularAssembly = new MolecularAssembly(filename);
     molecularAssembly.setFile(structure);
     molecularAssembly.setForceField(forceField);
     PDBFilter pdbFile = new PDBFilter(structure, molecularAssembly, forceField, properties);

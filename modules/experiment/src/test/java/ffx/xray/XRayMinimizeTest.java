@@ -42,29 +42,33 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import edu.rit.pj.ParallelTeam;
+import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.crystal.Crystal;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
 import ffx.potential.MolecularAssembly;
 import ffx.potential.bonded.Atom;
 import ffx.potential.utils.PotentialsUtils;
-import ffx.utilities.FFXTest;
 import ffx.xray.parsers.CIFFilter;
 import ffx.xray.parsers.MTZFilter;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Logger;
+
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-/** @author Timothy D. Fenn and Michael J. Schnieders */
+/**
+ * @author Timothy D. Fenn and Michael J. Schnieders
+ */
 @RunWith(Parameterized.class)
-public class XRayMinimizeTest extends FFXTest {
+public class XRayMinimizeTest extends AlgorithmsTest {
 
   private static final Logger logger = Logger.getLogger(XRayMinimizeTest.class.getName());
   private final String info;
@@ -77,16 +81,8 @@ public class XRayMinimizeTest extends FFXTest {
   private ReflectionList reflectionList;
   private ParallelTeam parallelTeam;
 
-  public XRayMinimizeTest(
-      boolean ciOnly,
-      String info,
-      String pdbname,
-      String mtzname,
-      String cifname,
-      double r,
-      double rFree,
-      double sigmaA,
-      double sigmaW) {
+  public XRayMinimizeTest(boolean ciOnly, String info, String pdbname, String mtzname, String cifname,
+                          double r, double rFree, double sigmaA, double sigmaW) {
     this.ciOnly = ciOnly;
     this.info = info;
     this.r = r;
@@ -98,15 +94,10 @@ public class XRayMinimizeTest extends FFXTest {
       return;
     }
 
-    // load the structure
-    ClassLoader cl = this.getClass().getClassLoader();
-    File structure = new File(cl.getResource(pdbname).getPath());
-    File mtzFile = null, cifFile = null;
-    if (mtzname != null) {
-      mtzFile = new File(cl.getResource(mtzname).getPath());
-    } else {
-      cifFile = new File(cl.getResource(cifname).getPath());
-    }
+    // Load the structure
+    File structure = getResourceFile(pdbname);
+    File mtzFile = getResourceFile(mtzname);
+    File cifFile = getResourceFile(cifname);
     PotentialsUtils potutil = new PotentialsUtils();
     MolecularAssembly mola = potutil.open(structure);
     CompositeConfiguration properties = mola.getProperties();
@@ -128,12 +119,10 @@ public class XRayMinimizeTest extends FFXTest {
 
     refinementData = new DiffractionRefinementData(properties, reflectionList);
     if (mtzname != null) {
-      assertTrue(
-          info + " mtz file should be read in without errors",
+      assertTrue(info + " mtz file should be read in without errors",
           mtzFilter.readFile(mtzFile, reflectionList, refinementData, properties));
     } else {
-      assertTrue(
-          info + " cif file should be read in without errors",
+      assertTrue(info + " cif file should be read in without errors",
           cifFilter.readFile(cifFile, reflectionList, refinementData, properties));
     }
 
@@ -167,12 +156,12 @@ public class XRayMinimizeTest extends FFXTest {
   @Parameters
   public static Collection<Object[]> data() {
     return Arrays.asList(
-        new Object[][] {
+        new Object[][]{
             {
                 false,
                 "NSF D2 domain test",
-                "ffx/xray/structures/1NSF.pdb",
-                "ffx/xray/structures/1NSF.mtz",
+                "1NSF.pdb",
+                "1NSF.mtz",
                 null,
                 25.17866326312945,
                 25.448305511010272,
@@ -182,8 +171,8 @@ public class XRayMinimizeTest extends FFXTest {
             {
                 true,
                 "SNARE complex",
-                "ffx/xray/structures/1N7S.pdb",
-                "ffx/xray/structures/1N7S.mtz",
+                "1N7S.pdb",
+                "1N7S.mtz",
                 null,
                 19.41267149593652,
                 21.555930987392596,
@@ -217,7 +206,7 @@ public class XRayMinimizeTest extends FFXTest {
       return;
     }
     ScaleBulkMinimize scaleBulkMinimize = new ScaleBulkMinimize(
-            reflectionList, refinementData, refinementData.crystalReciprocalSpaceFs, parallelTeam);
+        reflectionList, refinementData, refinementData.crystalReciprocalSpaceFs, parallelTeam);
     ScaleBulkEnergy scaleBulkEnergy = scaleBulkMinimize.getScaleBulkEnergy();
     int n = scaleBulkMinimize.getNumberOfVariables();
     double[] x = new double[n];
@@ -273,8 +262,8 @@ public class XRayMinimizeTest extends FFXTest {
     if (!ffxCI && ciOnly) {
       return;
     }
-    SplineMinimize splineMinimize = new SplineMinimize(
-        reflectionList, refinementData, refinementData.spline, SplineEnergy.Type.FOFC);
+    SplineMinimize splineMinimize = new SplineMinimize(reflectionList, refinementData,
+        refinementData.spline, SplineEnergy.Type.FOFC);
     SplineEnergy splineEnergy = splineMinimize.getSplineEnergy();
     int n = splineMinimize.getNumberOfVariables();
     double[] x = new double[n];

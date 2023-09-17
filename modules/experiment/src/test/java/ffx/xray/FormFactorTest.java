@@ -40,17 +40,17 @@ package ffx.xray;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.crystal.HKL;
 import ffx.potential.bonded.Atom;
 import ffx.potential.parameters.AtomType;
-import ffx.utilities.FFXTest;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
  * @author Timothy D. Fenn
  */
-public class FormFactorTest extends FFXTest {
+public class FormFactorTest extends AlgorithmsTest {
 
   private XRayFormFactor carbonFormFactor;
 
@@ -81,17 +81,11 @@ public class FormFactorTest extends FFXTest {
   @Test
   public void testCarbonfrho() {
     HKL hkl = new HKL(1, 1, 1);
-    assertEquals(
-        "carbon (1 1 1) structure factor should be correct",
-        2.3986e-26,
-        carbonFormFactor.f(hkl),
-        1e-30);
+    assertEquals("carbon (1 1 1) structure factor should be correct", 2.3986e-26,
+        carbonFormFactor.f(hkl), 1e-30);
 
     double[] xyz = {1.0, 1.0, 1.0};
-    assertEquals(
-        "carbon (1 1 1) electron density should be correct",
-        0.081937,
-        carbonFormFactor.rho(0.0, 1.0, xyz),
-        0.000001);
+    assertEquals("carbon (1 1 1) electron density should be correct", 0.081937,
+        carbonFormFactor.rho(0.0, 1.0, xyz), 0.000001);
   }
 }

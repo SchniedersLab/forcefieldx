@@ -41,11 +41,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
-import ffx.utilities.FFXTest;
 import ffx.utilities.Keyword;
 import ffx.xray.DiffractionRefinementData;
 
@@ -59,11 +59,9 @@ import org.junit.Test;
  *
  * @author Timothy D. Fenn
  */
-public class MTZFilterTest extends FFXTest {
+public class MTZFilterTest extends AlgorithmsTest {
 
-  private final String filename = "ffx/xray/structures/2DRM.mtz";
-  private final ClassLoader cl = this.getClass().getClassLoader();
-  private final File mtzFile = new File(cl.getResource(filename).getPath());
+  private final File mtzFile = getResourceFile("2DRM.mtz");
   // Load any properties associated with it
   private final CompositeConfiguration properties = Keyword.loadProperties(mtzFile);
   // set up the crystal data

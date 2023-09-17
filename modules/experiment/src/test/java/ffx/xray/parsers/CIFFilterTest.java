@@ -42,11 +42,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import ffx.algorithms.misc.AlgorithmsTest;
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;
 import ffx.crystal.Resolution;
-import ffx.utilities.FFXTest;
 import ffx.utilities.Keyword;
 import ffx.xray.DiffractionRefinementData;
 
@@ -60,13 +60,11 @@ import org.junit.Test;
  *
  * @author Timoth D. Fenn
  */
-public class CIFFilterTest extends FFXTest {
+public class CIFFilterTest extends AlgorithmsTest {
 
   @Test
   public void testCIFFilter2DRM() {
-    String filename = "ffx/xray/structures/2DRM.cif";
-    ClassLoader cl = this.getClass().getClassLoader();
-    File cifFile = new File(cl.getResource(filename).getPath());
+    File cifFile = getResourceFile("2DRM.cif");
     // load any properties associated with it
     CompositeConfiguration properties = Keyword.loadProperties(cifFile);
 
@@ -97,9 +95,7 @@ public class CIFFilterTest extends FFXTest {
 
   @Test
   public void testCIFFilter3DYC() {
-    String filename = "ffx/xray/structures/3DYC.ent";
-    ClassLoader cl = this.getClass().getClassLoader();
-    File cifFile = new File(cl.getResource(filename).getPath());
+    File cifFile = getResourceFile("3DYC.ent");
     // load any properties associated with it
     CompositeConfiguration properties = Keyword.loadProperties(cifFile);
 

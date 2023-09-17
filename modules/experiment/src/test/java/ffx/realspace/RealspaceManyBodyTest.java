@@ -46,8 +46,7 @@ import java.util.List;
 import org.junit.Test;
 
 /**
- * Tests realspace many body optimization and the realspace many body groovy script under varying
- * parameters.
+ * Tests Real-space many-body optimization.
  *
  * @author Mallory R. Tollefson
  */
@@ -61,8 +60,8 @@ public class RealspaceManyBodyTest extends AlgorithmsTest {
         "-L", "2",
         "--sR", "1",
         "--fR", "5",
-        "src/main/java/ffx/realspace/structures/file.pdb",
-        "src/main/java/ffx/realspace/structures/file.mtz"
+        getResourcePath("file.pdb"),
+        getResourcePath("file.mtz")
     };
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
