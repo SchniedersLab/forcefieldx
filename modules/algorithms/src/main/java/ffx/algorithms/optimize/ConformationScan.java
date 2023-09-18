@@ -107,6 +107,7 @@ public class ConformationScan {
     }
 
     public void scan(){
+        initState.revertState();
         minimizeEachMolecule(minimize);
         double[] zAxis = new double[]{0,0,1};
         // Loop through interactions between the two molecules --> Not necessarily symmetric but close?
