@@ -17,7 +17,6 @@ public class ShakeChargeConstraint implements Constraint {
     }
 
     public boolean applyChargeConstraintToStep( final double[] xNew, final double[] accel, final double[] masses, final double dt){
-        double c = 0.0;
         boolean done = true;
 
         double totalLambda = 0.0;
