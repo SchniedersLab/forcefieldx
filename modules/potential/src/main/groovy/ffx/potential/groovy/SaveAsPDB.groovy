@@ -190,7 +190,6 @@ class SaveAsPDB extends PotentialScript {
     if (openFilter != null && (openFilter instanceof XYZFilter || openFilter instanceof PDBFilter || openFilter instanceof XPHFilter)) {
       try {
         while (openFilter.readNext(false)) {
-          logger.info(" Occupancy of atom 12 before set one: " + activeAssembly.getAtomList().get(12).getOccupancy())
           if(extended) {
             for (Atom atom : activeAssembly.getAtomList()) {
               int atomIndex = atom.getIndex() - 1
@@ -198,7 +197,6 @@ class SaveAsPDB extends PotentialScript {
               atom.setTempFactor(esvSystem.getTautomerLambda(atomIndex))
             }
           }
-          logger.info(" Occupancy of atom 12 after set one: " + activeAssembly.getAtomList().get(12).getOccupancy())
 
           saveOptions.preSaveOperations(activeAssembly)
           saveFilter.writeFile(saveFile, true, true, false)

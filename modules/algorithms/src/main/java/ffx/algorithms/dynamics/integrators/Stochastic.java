@@ -135,7 +135,6 @@ public class Stochastic extends Integrator {
     boolean useChargeConstraint = false;
     if(!constraints.isEmpty()){
       useChargeConstraint = constraints.get(0) instanceof ShakeChargeConstraint;
-      System.out.println(useChargeConstraint);
     }
     ShakeChargeConstraint chargeConstraint = null;
     boolean done = false;
@@ -230,8 +229,6 @@ public class Stochastic extends Integrator {
     }
     if (iter == maxIter) {
       throw new RuntimeException("SHAKE  --  Warning, Distance Constraints not Satisfied");
-    } else if (useChargeConstraint) {
-      System.out.println("SHAKE   --  Distance Constraints met at " + iter + " Iterations");
     }
   }
 

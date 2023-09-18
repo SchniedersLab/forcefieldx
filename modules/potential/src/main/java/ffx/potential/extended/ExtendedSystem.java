@@ -354,6 +354,7 @@ public class ExtendedSystem implements Potential {
         fixTitrationState = properties.getBoolean("fix.titration.lambda", false);
         fixTautomerState = properties.getBoolean("fix.tautomer.lambda", false);
         useChargeConstraint = properties.getBoolean("esv.charge.constraint",false);
+        int totalCharge = properties.getInt("esv.charge.constraint.value", 0);
 
 
         ASHcubic = properties.getDouble("ASH.cubic", TitrationUtils.Titration.ASHtoASP.cubic);
@@ -553,7 +554,7 @@ public class ExtendedSystem implements Potential {
         }
         if(useChargeConstraint){
             constraints = new ArrayList<>();
-            ShakeChargeConstraint chargeConstraint = new ShakeChargeConstraint(nTitr,0,0.000001);
+            ShakeChargeConstraint chargeConstraint = new ShakeChargeConstraint(nTitr,totalCharge,0.000001);
             constraints.add(chargeConstraint);
         } else{
             constraints = Collections.emptyList();
