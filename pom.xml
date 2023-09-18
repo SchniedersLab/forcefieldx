@@ -1063,8 +1063,9 @@
         <shade.version>3.5.0</shade.version>
         <!-- The Shade plugin use of localRepository causes a validation message -->
         <maven.plugin.validation>brief</maven.plugin.validation>
-        <!-- AsciiDoc is not compatible with site version 4.0.0-M3 yet -->
+        <!-- AsciiDoc is not compatible with site version 4.0.0-M9 yet -->
         <site.version>3.12.1</site.version>
+        <!-- site.version>4.0.0-M9</site.version -->
         <asciidoc.version>2.2.4</asciidoc.version>
         <skipSurefireReport>false</skipSurefireReport>
         <skipTests>true</skipTests>
