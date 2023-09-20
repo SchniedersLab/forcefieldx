@@ -219,6 +219,7 @@ class CoformerBindingSearch extends AlgorithmsScript {
         boolean coformer = fileOne != fileTwo
         PotentialsUtils potentialsUtils = new PotentialsUtils()
         MolecularAssembly[] molecularAssemblies = potentialsUtils.openAll(new String[]{fileOne, fileTwo})
+        minimizeMolecularAssemblies(molecularAssemblies) // Only if noMinimize is false
         int secondSystemStartIndex = molecularAssemblies[0].getMoleculeArray().length
         MolecularAssembly combined = combineTwoMolecularAssemblies(molecularAssemblies[0], molecularAssemblies[1])
         // Split combined mola into two lists based on molecules in files
@@ -324,12 +325,14 @@ class CoformerBindingSearch extends AlgorithmsScript {
         if (!noMinimize) {
             logger.info(" Minimizing molecular assemblies.")
             for (MolecularAssembly molecularAssembly : molecularAssemblies) {
-                if (tscan) {
-                    TorsionSearch ts = new TorsionSearch(molecularAssembly, molecularAssembly.getMoleculeArray()[0], 32, 1)
-                    ts.staticAnalysis(0, 100)
-                    if (!ts.getStates().isEmpty()) {
-                        AssemblyState minState = ts.getStates().get(0)
-                        minState.revertState()
+                for(Molecule m: molecularAssembly.getMoleculeArray()) {
+                    if (tscan) {
+                        TorsionSearch ts = new TorsionSearch(molecularAssembly, m, 32, 1)
+                        ts.staticAnalysis(0, 100)
+                        if (!ts.getStates().isEmpty()) {
+                            AssemblyState minState = ts.getStates().get(0)
+                            minState.revertState()
+                        }
                     }
                 }
                 Minimize minimizer = new Minimize(molecularAssembly, molecularAssembly.getPotentialEnergy(), algorithmListener)
