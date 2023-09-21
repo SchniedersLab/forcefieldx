@@ -122,8 +122,7 @@ class Gradient extends PotentialScript {
     atomSelectionOptions.setActiveAtoms(activeAssembly)
 
     energy = activeAssembly.getPotentialEnergy()
-    GradientUtils gradientUtils = new GradientUtils(energy, activeAssembly.getAtomArray())
-
+    GradientUtils gradientUtils = new GradientUtils(energy)
     nFailures = gradientUtils.testGradient(gradientOptions)
     return this
   }

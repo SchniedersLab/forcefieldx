@@ -38,7 +38,6 @@
 package ffx.potential.utils;
 
 import ffx.numerics.Potential;
-import ffx.potential.bonded.Atom;
 import ffx.potential.cli.GradientOptions;
 
 import java.util.ArrayList;
@@ -59,18 +58,15 @@ public class GradientUtils {
 
   private static final Logger logger = Logger.getLogger(GradientUtils.class.getName());
 
-  private final Potential energy;
-  private final Atom[] atoms;
+  private final Potential potential;
 
   /**
    * Constructor.
    *
-   * @param energy The Potential to test.
-   * @param atoms  The array of all Atoms in the MolecularAssembly.
+   * @param potential The Potential to test.
    */
-  public GradientUtils(Potential energy, Atom[] atoms) {
-    this.energy = energy;
-    this.atoms = atoms;
+  public GradientUtils(Potential potential) {
+    this.potential = potential;
   }
 
   /**
@@ -90,30 +86,30 @@ public class GradientUtils {
     boolean print = gradientOptions.getVerbose();
     logger.info(" Verbose printing:\t\t" + print);
 
-    // Collect atoms to test.
-    List<Integer> atomsToTest;
-    int nAtoms = atoms.length;
+    // Collect degrees of freedom to test.
+    List<Integer> degreesOfFreedomToTest;
+    int nAtoms = potential.getNumberOfVariables() / 3;
     String gradientAtoms = gradientOptions.getGradientAtoms();
     if (gradientAtoms.equalsIgnoreCase("NONE")) {
-      logger.info(" The gradient of no atoms will be evaluated.");
+      logger.info(" The gradient of no atoms was evaluated.");
       return nFailures;
     } else if (gradientAtoms.equalsIgnoreCase("ALL")) {
-      logger.info(" Checking gradient for all active atoms.\n");
-      atomsToTest = new ArrayList<>();
+      logger.info(" Checking gradient for all degrees of freedom.\n");
+      degreesOfFreedomToTest = new ArrayList<>();
       for (int i = 0; i < nAtoms; i++) {
-        atomsToTest.add(i);
+        degreesOfFreedomToTest.add(i);
       }
     } else {
-      atomsToTest = parseAtomRanges(" Gradient atoms", gradientAtoms, nAtoms);
-      logger.info(" Checking gradient for active atoms in the range: " + gradientAtoms + "\n");
+      degreesOfFreedomToTest = parseAtomRanges(" Gradient atoms", gradientAtoms, nAtoms);
+      logger.info(" Checking gradient for degrees of freedom in the range: " + gradientAtoms + "\n");
     }
 
     // Collect analytic gradient.
-    int n = energy.getNumberOfVariables();
+    int n = potential.getNumberOfVariables();
     double[] x = new double[n];
     double[] g = new double[n];
-    energy.getCoordinates(x);
-    energy.energyAndGradient(x, g);
+    potential.getCoordinates(x);
+    potential.energyAndGradient(x, g);
 
     // Upper bound for a typical atomic gradient.
     double expGrad = 1000.0;
@@ -127,13 +123,10 @@ public class GradientUtils {
     int index = 0;
     double[] numeric = new double[3];
     for (int k = 0; k < nAtoms; k++) {
-      if (!atoms[k].isActive()) {
-        continue;
-      }
       int i0 = index++;
       int i1 = index++;
       int i2 = index++;
-      if (!atomsToTest.contains(k)) {
+      if (!degreesOfFreedomToTest.contains(k)) {
         continue;
       }
       nTested++;
@@ -141,27 +134,27 @@ public class GradientUtils {
       // Find numeric dX
       double orig = x[i0];
       x[i0] = x[i0] + step;
-      double e = energy.energy(x);
+      double e = potential.energy(x);
       x[i0] = orig - step;
-      e -= energy.energy(x);
+      e -= potential.energy(x);
       x[i0] = orig;
       numeric[0] = e / width;
 
       // Find numeric dY
       orig = x[i1];
       x[i1] = x[i1] + step;
-      e = energy.energy(x);
+      e = potential.energy(x);
       x[i1] = orig - step;
-      e -= energy.energy(x);
+      e -= potential.energy(x);
       x[i1] = orig;
       numeric[1] = e / width;
 
       // Find numeric dZ
       orig = x[i2];
       x[i2] = x[i2] + step;
-      e = energy.energy(x);
+      e = potential.energy(x);
       x[i2] = orig - step;
-      e -= energy.energy(x);
+      e -= potential.energy(x);
       x[i2] = orig;
       numeric[2] = e / width;
 
@@ -175,20 +168,19 @@ public class GradientUtils {
       double grad2 = g[i0] * g[i0] + g[i1] * g[i1] + g[i2] * g[i2];
       avGrad += grad2;
 
-      Atom a0 = atoms[k];
       if (len > gradientTolerance) {
-        logger.info(format(" %s\n Failed: %10.6f\n", a0, len) +
+        logger.info(format(" Degree of Freedom %d\n Failed: %10.6f\n", k + 1, len) +
             format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", g[i0], g[i1], g[i2]) +
             format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]));
         ++nFailures;
       } else {
-        logger.info(format(" %s\n Passed: %10.6f\n", a0, len) +
+        logger.info(format(" Degree of Freedom %d\n Passed: %10.6f\n", k + 1, len) +
             format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", g[i0], g[i1], g[i2]) +
             format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]));
       }
 
       if (grad2 > expGrad2) {
-        logger.info(format(" Atom %d has an unusually large gradient: %10.6f", k + 1, Math.sqrt(grad2)));
+        logger.info(format(" Degree of Freedom %d has an unusually large gradient: %10.6f", k + 1, Math.sqrt(grad2)));
       }
       logger.info("\n");
     }

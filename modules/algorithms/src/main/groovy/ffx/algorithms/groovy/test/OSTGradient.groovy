@@ -191,7 +191,7 @@ class OSTGradient extends AlgorithmsScript {
 
     // Check the gradient.
     orthogonalSpaceTempering.setLambda(lambda)
-    GradientUtils gradientUtils = new GradientUtils(orthogonalSpaceTempering, activeAssembly.getAtomArray());
+    GradientUtils gradientUtils = new GradientUtils(orthogonalSpaceTempering)
     nFailures = gradientUtils.testGradient(gradientOptions)
 
     return this
