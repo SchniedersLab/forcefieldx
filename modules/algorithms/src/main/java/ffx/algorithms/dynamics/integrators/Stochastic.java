@@ -137,7 +137,7 @@ public class Stochastic extends Integrator {
     }
     ShakeChargeConstraint chargeConstraint = null;
     boolean done = false;
-    int maxIter = 500;
+    int maxIter = 5000;
     int iter = 0;
     double[] mass = state.getMass();
     double[] x = state.x();

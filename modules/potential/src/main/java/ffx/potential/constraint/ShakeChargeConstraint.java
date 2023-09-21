@@ -2,6 +2,8 @@ package ffx.potential.constraint;
 
 import ffx.numerics.Constraint;
 
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
+
 public class ShakeChargeConstraint implements Constraint {
     final int nConstraints;
     final double tol;
@@ -33,7 +35,7 @@ public class ShakeChargeConstraint implements Constraint {
             double term = delta / (dt * dt * totalInverseMass);
             for (int i = 0; i < nConstraints; i++) {
                 //accel[i] += -term * Math.sin(2 * x[i]);
-                a[i] = -term * Math.sin(2 * x[i]) / masses[i];
+                a[i] = -KCAL_TO_GRAM_ANG2_PER_PS2 * term * Math.sin(2 * x[i]) / masses[i];
             }
         }
         return done;
