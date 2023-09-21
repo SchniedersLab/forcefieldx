@@ -63,7 +63,7 @@
                     <executions>
                         <execution>
                             <id>ffx-lib</id>
-                            <phase>process-sources</phase>
+                            <phase>package</phase>
                             <goals>
                                 <goal>copy-dependencies</goal>
                             </goals>
