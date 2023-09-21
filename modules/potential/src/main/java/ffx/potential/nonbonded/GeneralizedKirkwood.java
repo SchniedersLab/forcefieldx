@@ -1069,9 +1069,9 @@ public class GeneralizedKirkwood implements LambdaInterface {
   }
 
   /**
-   * Return the GaussVol instance.
+   * Return the Chandler Cavitation instance.
    *
-   * @return GaussVol.
+   * @return ChandlerCavitation instance.
    */
   public ChandlerCavitation getChandlerCavitation() {
     return chandlerCavitation;

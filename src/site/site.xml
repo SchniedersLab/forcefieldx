@@ -162,10 +162,10 @@
             <item name="ManyBodyPhScan" href="/commands/test.ManyBodyPhScan.html"/>
             <item name="MinimizePh" href="/commands/test.MinimizePh.html"/>
             <!-- item name="MostBar" href="/commands/test.CoordShakeEnergy.html"/ -->
-            <item name="OSTBias" href="/commands/test.OSTBias.html"/>
+            <item name="OSTGradient" href="/commands/test.OSTGradient.html"/>
             <item name="PhBar" href="/commands/test.PhBar.html"/>
             <item name="PhDynamics" href="/commands/test.PhDynamics.html"/>
-            <!-- item name="RepexThermo" href="/commands/test.CoordShakeEnergy.html"/ -->
+            <!-- item name="RepexThermo" href="/commands/test.RepexThermo.html"/ -->
             <item name="SortXPH" href="/commands/test.SortXPH.html"/>
           </item>
         </item>

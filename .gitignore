@@ -48,3 +48,5 @@ bin/META-INF
 
 src/site/asciidoc/commands
 src/site/asciidoc/keywords
+
+ffx_venv/
