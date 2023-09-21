@@ -81,7 +81,6 @@ public class Stochastic extends Integrator {
   private double efdt;
   /** Simulation temperature. */
   private double temperature;
-  private double[] xPrior;
 
   /**
    * Constructor for Stochastic Dynamics.
@@ -138,20 +137,16 @@ public class Stochastic extends Integrator {
     }
     ShakeChargeConstraint chargeConstraint = null;
     boolean done = false;
-    int maxIter = 5000;
+    int maxIter = 500;
     int iter = 0;
     double[] mass = state.getMass();
     double[] x = state.x();
     double[] v = state.v();
     double[] a = state.a();
-    int nVariables = state.getNumberOfVariables();
+    double[] aConstrained = new double[a.length];
+    Arrays.fill(aConstrained, 0.0);
     if (useChargeConstraint) {
       chargeConstraint = (ShakeChargeConstraint) constraints.get(0);
-      if (xPrior == null) {
-        xPrior = copyOf(x, nVariables);
-      } else {
-        arraycopy(x, 0, xPrior, 0, nVariables);
-      }
     }
     while (!done && iter < maxIter) {
       iter++;
@@ -216,15 +211,17 @@ public class Stochastic extends Integrator {
 
         // Store the current atom positions,
         // then find new atom positions and half-step velocities via Verlet recursion.
-        x[i] += (v[i] * vFriction[i] + a[i] * afric + prand);
-        v[i] = v[i] * pfric + 0.5 * a[i] * vFriction[i];
+
+        if(iter==1){
+          x[i] += (v[i] * vFriction[i] + a[i] * afric + prand);
+          v[i] = v[i] * pfric + 0.5 * a[i] * vFriction[i];
+        } else{
+          x[i] += (aConstrained[i] * afric);
+        }
       }
       done = true;
       if (useChargeConstraint) {
-        done = chargeConstraint.applyChargeConstraintToStep(x,a,mass,dt);
-        if(!done){
-          arraycopy(xPrior, 0, x, 0, nVariables);
-        }
+        done = chargeConstraint.applyChargeConstraintToStep(x,aConstrained,mass,dt);
       }
     }
     if (iter == maxIter) {
