@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <artifactId>ffx-pom</artifactId>
+    <artifactId>forcefieldx</artifactId>
     <build>
         <defaultGoal>install</defaultGoal>
         <pluginManagement>
@@ -59,6 +59,23 @@
                 <plugin>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>${dependency.version}</version>
+                    <inherited>true</inherited>
+                    <executions>
+                        <execution>
+                            <id>ffx-lib</id>
+                            <phase>process-sources</phase>
+                            <goals>
+                                <goal>copy-dependencies</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${basedir}/../../lib</outputDirectory>
+                                <overWriteReleases>false</overWriteReleases>
+                                <overWriteSnapshots>false</overWriteSnapshots>
+                                <overWriteIfNewer>true</overWriteIfNewer>
+                                <silent>true</silent>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <artifactId>maven-deploy-plugin</artifactId>
@@ -198,8 +215,7 @@
                                 <overwrite>true</overwrite>
                                 <resources>
                                     <resource>
-                                        <directory>${basedir}/src/main/groovy/ffx/${project.artifactId}/groovy
-                                        </directory>
+                                        <directory>${basedir}/src/main/groovy/ffx/${project.artifactId}/groovy</directory>
                                     </resource>
                                 </resources>
                             </configuration>
@@ -235,6 +251,21 @@
             </plugins>
         </pluginManagement>
         <plugins>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${dependency.version}</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>ffx-lib</id>
+                        <!-- Prevent this plugin from running in the parent pom.xml. -->
+                        <phase>none</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <executions>
@@ -316,6 +347,9 @@
                 <artifactId>maven-clean-plugin</artifactId>
                 <configuration>
                     <filesets>
+                        <fileset>
+                            <directory>lib</directory>
+                        </fileset>
                         <fileset>
                             <directory>scripts</directory>
                         </fileset>
@@ -939,7 +973,6 @@
         <module>modules/potential</module>
         <module>modules/ui</module>
         <module>modules/utilities</module>
-        <module>modules/forcefieldx</module>
     </modules>
     <name>Force Field X</name>
     <organization>

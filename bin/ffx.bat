@@ -93,7 +93,8 @@ if "%JAVACMD%"=="" set JAVACMD=java
 
 if "%REPO%"=="" set REPO=%BASEDIR%
 
-set CLASSPATH="%BASEDIR%"\etc;"%BASEDIR%"\bin\forcefieldx-"%VERSION%".jar
+@REM set CLASSPATH="%BASEDIR%"\bin\forcefieldx-"%VERSION%".jar
+set CLASSPATH="%BASEDIR%"\lib\*
 
 set EXTRA_JVM_ARGUMENTS=-Xms4G -Xmx4G -Xss1M 
 

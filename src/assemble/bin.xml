@@ -26,7 +26,7 @@
                 <include>ffx.bat</include>
                 <include>ffxc.bat</include>
                 <include>icon.icns</include>
-                <include>forcefieldx-${project.version}.jar</include>
+                <!-- include>forcefieldx-${project.version}.jar</include -->
                 <include>scheduler</include>
                 <include>scheduler.bat</include>
                 <include>splash.png</include>
@@ -39,6 +39,12 @@
         </fileSet>
         <fileSet>
             <directory>examples</directory>
+        </fileSet>
+        <fileSet>
+            <directory>lib</directory>
+        </fileSet>
+        <fileSet>
+            <directory>matlab</directory>
         </fileSet>
         <fileSet>
             <directory>scripts</directory>

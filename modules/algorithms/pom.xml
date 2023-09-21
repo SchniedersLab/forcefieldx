@@ -6,11 +6,11 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>edu.uiowa.eng.ffx</groupId>
-    <artifactId>ffx-pom</artifactId>
+    <artifactId>forcefieldx</artifactId>
     <version>1.0.0-beta</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <artifactId>algorithms</artifactId>
+  <artifactId>ffx-algorithms</artifactId>
   <packaging>jar</packaging>
   <name>Algorithms</name>
   <description>The Algorithms module includes support for local and global optimization, molecular dynamics simulations, and
@@ -109,80 +109,71 @@
         </dependencies>
       </plugin>
     </plugins>
-    <resources>
-      <resource>
-        <directory>${basedir}/src/main/java/ffx/algorithms/structures</directory>
-        <targetPath>ffx/algorithms/structures</targetPath>
-        <includes>
-          <include>*</include>
-        </includes>
-      </resource>
-    </resources>
   </build>
   <dependencies>
     <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>crystal</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-crystal</artifactId>
       <version>${project.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>numerics</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-numerics</artifactId>
       <version>${project.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>pj</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-pj</artifactId>
       <version>${pj.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>potential</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-potential</artifactId>
       <version>${project.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>utilities</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-utilities</artifactId>
       <version>${project.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
-      <type>jar</type>
       <version>${commons-io.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-collections4</artifactId>
-      <type>jar</type>
       <version>${commons-collections4.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-configuration2</artifactId>
-      <type>jar</type>
       <version>${commons-configuration2.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-math3</artifactId>
-      <type>jar</type>
       <version>${commons-math3.version}</version>
     </dependency>
     <dependency>
       <groupId>org.biojava</groupId>
       <artifactId>biojava-structure</artifactId>
       <version>${biojava.version}</version>
-      <type>jar</type>
       <exclusions>
         <exclusion>
           <artifactId>vecmath</artifactId>
           <groupId>java3d</groupId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -195,7 +186,6 @@
       <groupId>info.picocli</groupId>
       <artifactId>picocli</artifactId>
       <version>${picocli.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>com.apporiented</groupId>
@@ -205,14 +195,12 @@
     <dependency>
       <groupId>it.unimi.dsi</groupId>
       <artifactId>fastutil</artifactId>
-      <type>jar</type>
       <version>${fastutil.version}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>${junit.version}</version>
-      <type>jar</type>
     </dependency>
   </dependencies>
 </project>

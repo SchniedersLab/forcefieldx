@@ -236,7 +236,7 @@
       <item name="License" href="/licenses.html"/>
       <item name="FFX Team" href="/team.html"/>
     </menu>
-    <menu name="Integrations">
+    <menu name="Integrations" inherit="top">
       <item name="Binder" href="/binder.html"/>
       <item name="Google Colab" href="/colab.html"/>
       <item name="Mathematica" href="/mathematica.html"/>
@@ -248,7 +248,7 @@
       <item name="Crystal" href="modules/crystal/index.html"/>
       <item name="Experiment" href="modules/experiment/index.html"/>
       <item name="Numerics" href="modules/numerics/index.html"/>
-      <item name="OpenMM Wrappers" href="modules/openmm/index.html"/>
+      <item name="OpenMM Wrappers" href="modules/jopenmm/index.html"/>
       <item name="Parallel Java" href="modules/pj/index.html"/>
       <item name="Potential" href="modules/potential/index.html"/>
       <item name="User Interfaces" href="modules/ui/index.html"/>

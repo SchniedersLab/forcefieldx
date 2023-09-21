@@ -6,11 +6,11 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>edu.uiowa.eng.ffx</groupId>
-    <artifactId>ffx-pom</artifactId>
+    <artifactId>forcefieldx</artifactId>
     <version>1.0.0-beta</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <artifactId>experiment</artifactId>
+  <artifactId>ffx-experiment</artifactId>
   <packaging>jar</packaging>
   <name>Experiment</name>
   <organization>
@@ -166,75 +166,62 @@
         </executions>
       </plugin>
     </plugins>
-    <resources>
-      <resource>
-        <directory>${basedir}/src/main/java/ffx/xray/structures</directory>
-        <targetPath>ffx/xray/structures</targetPath>
-        <includes>
-          <include>*</include>
-        </includes>
-      </resource>
-    </resources>
   </build>
   <dependencies>
     <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>pj</artifactId>
-      <type>jar</type>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-pj</artifactId>
       <version>${pj.version}</version>
     </dependency>
     <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>algorithms</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-algorithms</artifactId>
       <version>${project.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>crystal</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-crystal</artifactId>
       <version>${project.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>numerics</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-numerics</artifactId>
       <version>${project.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>potential</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-potential</artifactId>
       <version>${project.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>utilities</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-utilities</artifactId>
       <version>${project.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-configuration2</artifactId>
-      <type>jar</type>
       <version>${commons-configuration2.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
-      <type>jar</type>
       <version>${commons-io.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
-      <type>jar</type>
       <version>${commons-lang3.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-math3</artifactId>
-      <type>jar</type>
       <version>${commons-math3.version}</version>
     </dependency>
     <dependency>
@@ -246,19 +233,16 @@
       <groupId>info.picocli</groupId>
       <artifactId>picocli</artifactId>
       <version>${picocli.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>org.jogamp.java3d</groupId>
       <artifactId>j3dcore</artifactId>
-      <type>jar</type>
       <version>${java3d.version}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>${junit.version}</version>
-      <type>jar</type>
       <scope>test</scope>
     </dependency>
   </dependencies>
