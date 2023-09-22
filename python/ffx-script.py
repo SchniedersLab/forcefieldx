@@ -36,6 +36,12 @@
 # ******************************************************************************
 
 import java
+from java.lang import System
+
+# This example only works with GraalPy when its been loaded into the GraalVM 
+# using the "gu" tool.
+classpath = System.getProperty("java.class.path")
+print(classpath)
 
 args = ["Energy", "-m", "../examples/peptide.pdb"]
 main = java.type("ffx.Main")

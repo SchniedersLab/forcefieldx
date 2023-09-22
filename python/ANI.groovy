@@ -100,8 +100,8 @@ class ANI extends PotentialScript {
 
         logger.info("\n Running Energy on " + filename)
 
-        String JAVA_HOME = System.getProperty("java.home")
-        Path graalpy = Paths.get(JAVA_HOME, "ffx_venv", "bin", "graalpy")
+        String FFX_HOME = System.getProperty("basedir")
+        Path graalpy = Paths.get(FFX_HOME, "ffx_venv", "bin", "graalpy")
         graalpyString = System.getProperty("graalpy", graalpy.toString());
         graalpy = Paths.get(graalpyString)
         logger.info(" graalpy (-Dgraalpy=path.to.graalpy):             " + graalpy)
@@ -124,7 +124,7 @@ class ANI extends PotentialScript {
         double[] grad = new double[nAtoms * 3];
         // Construct a Polyglot Python environment.
         try (Context context = Context.newBuilder("python").allowAllAccess(true).
-                option("python.Executable", graalpy.toString()).build()) {
+            option("python.Executable", graalpy.toString()).build()) {
             // Place the coords and species arrays into the context.
             Value polyglotBindings = context.getPolyglotBindings();
             polyglotBindings.putMember("jcoords", jcoords);
@@ -142,7 +142,6 @@ class ANI extends PotentialScript {
             // Load and evaluate the ANI-2x forward method.
             torch += "ani = torch.jit.load('" + torchScript + "')\n"
             torch += "gradient = ani(species, coordinates)\n"
-            // logger.info(torch)
 
             // Evaluate ANI-2x and collect the energy and gradient.
             Value result = context.eval("python", torch);

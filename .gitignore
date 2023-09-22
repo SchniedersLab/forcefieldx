@@ -21,7 +21,6 @@ catalog.xml
 .classpath
 .project
 
-keystore/
 target/
 scripts/
 lib/
@@ -41,6 +40,7 @@ modules/forcefieldx/dependency-reduced-pom.xml
 /amoebabio18_cphmd.prm
 
 python/__pycache__
+python/ANI2x.pt
 
 bin/native-image
 bin/reports
