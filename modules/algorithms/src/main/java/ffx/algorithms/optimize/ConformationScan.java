@@ -387,7 +387,7 @@ public class ConformationScan {
         return refinedVector; // relative to hbond
     }
 
-    // This code causes issues for unknown reasons, so this class now expects pre-minimized molecules
+    // This used to be for minimization but caused issues
     private void systemEnergies(){
         // Monomer one energy
         for(Atom a: s2Atoms){ a.setUse(false); }

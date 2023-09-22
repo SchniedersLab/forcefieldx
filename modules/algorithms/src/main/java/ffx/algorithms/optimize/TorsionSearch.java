@@ -181,11 +181,19 @@ public class TorsionSearch {
         int progress = 0; // Worker jobs and specified start/end jobs cannot finish early -> can't know how many will exist
         while(start <= end && progress < numConfigs){
             long[] newState = HilbertCurveTransforms.hilbertIndexToCoordinates(nTorsionalBonds, nBits, start);
-            if(ArrayUtils.contains(newState, nTorsionsPerBond)){
+            boolean exit = false;
+            for(long ind: newState){
+                if (ind >= nTorsionsPerBond){
+                    exit = true;
+                    break;
+                }
+            }
+            if(exit){
+                logger.info(format("Skipped Hilbert Index: %d; Coordinate State: " + Arrays.toString(newState), start));
                 start++;
                 continue;
             }
-            //logger.info(format(" Hilbert Index: %d; Coordinate State: " + Arrays.toString(newState), start));
+            logger.info(format(" Hilbert Index: %d; Coordinate State: " + Arrays.toString(newState), start));
             // Permute from currentState to newState
             changeState(currentState, newState, nTorsionsPerBond, torsionalBonds, atomGroups);
             // Update coordinates
@@ -250,8 +258,7 @@ public class TorsionSearch {
                 if(newEnergy - initialE > eliminationThreshold && !remove.contains(i)){
                     remove.add(i);
                 } else {
-                    long index = HilbertCurveTransforms.coordinatesToHilbertIndex(nTorsionalBonds, nBits, state);
-                    queue.add(new StateContainer(new AssemblyState(molecularAssembly), newEnergy, index));
+                    queue.add(new StateContainer(new AssemblyState(molecularAssembly), newEnergy, -1));
                 }
                 changeState(state, oldState, nTorsionsPerBond, torsionalBonds, atomGroups);
             }

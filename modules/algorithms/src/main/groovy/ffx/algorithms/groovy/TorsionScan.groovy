@@ -195,6 +195,8 @@ class TorsionScan extends AlgorithmsScript {
             torsionSearch.runWorker()
         } else if(!staticCompare){
             endIndex = endIndex == 0 ? torsionSearch.getEnd() : endIndex
+            logger.info("Start Index: " + startIndex)
+            logger.info("End Index: " + endIndex)
             torsionSearch.spinTorsions(startIndex, endIndex)
         }
 
@@ -232,6 +234,7 @@ class TorsionScan extends AlgorithmsScript {
             xyzFilter.writeFile(saveLocation, true)
             count++
         }
+        logger.info("\n -1 indices come from static torsion scan.")
 
         // Create properties/key file
         File key = new File(FilenameUtils.removeExtension(filename) + ".key");
