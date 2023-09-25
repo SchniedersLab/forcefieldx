@@ -107,7 +107,7 @@ public class XrayOptions extends DataRefinementOptions {
   /**
    * Process input to collect Diffraction Files.
    *
-   * @param filenames Input filenames (first filename is ignored).
+   * @param filenames Input filename (first filename is ignored).
    * @param systems Currently open systems.
    * @return a list of DiffractionFile instances.
    */
@@ -273,7 +273,7 @@ public class XrayOptions extends DataRefinementOptions {
   /**
    * Process input from opened molecular assemblies to a DiffractionData.
    *
-   * @param filenames All filenames included in the diffraction data.
+   * @param filenames All filename included in the diffraction data.
    * @param assemblies All molecular assemblies included in the diffraction data.
    * @param parseResult A ParseResult option from a Groovy script.
    * @return An assembled DiffractionData

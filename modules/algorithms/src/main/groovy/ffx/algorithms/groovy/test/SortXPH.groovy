@@ -98,7 +98,7 @@ class SortXPH extends AlgorithmsScript {
     private double exponent = 0.05
 
     /**
-     * The final argument(s) should be filenames for lambda windows in order..
+     * The final argument(s) should be filename for lambda windows in order..
      */
     @Parameters(arity = "1", paramLabel = "file",
             description = 'Trajectory files for the first end of the window, followed by trajectories for the other end')

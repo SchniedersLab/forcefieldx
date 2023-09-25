@@ -40,6 +40,7 @@ package ffx.algorithms.groovy
 import edu.rit.pj.Comm
 import edu.rit.pj.ParallelTeam
 import ffx.algorithms.cli.*
+import ffx.algorithms.dynamics.MolecularDynamics
 import ffx.algorithms.thermodynamics.MonteCarloOST
 import ffx.algorithms.thermodynamics.OrthogonalSpaceTempering
 import ffx.crystal.CrystalPotential
@@ -110,7 +111,7 @@ class Thermodynamics extends AlgorithmsScript {
   boolean verbose = false
 
   /**
-   * The final argument(s) should be one or more filenames.
+   * The final argument(s) should be one or more filename.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = 'The atomic coordinate file in PDB or XYZ format.')
   List<String> filenames = null
@@ -308,8 +309,8 @@ class Thermodynamics extends AlgorithmsScript {
       orthogonalSpaceTempering = null
       potential = barostatOptions.checkNPT(topologies[0], potential)
       thermodynamicsOptions.
-          runFixedAlchemy(topologies, potential, dynamicsOptions, writeoutOptions, dyn,
-              algorithmListener)
+              runFixedAlchemy(topologies, potential, dynamicsOptions, writeoutOptions, dyn,
+                      algorithmListener)
       logger.info(" Done running Fixed")
     }
 

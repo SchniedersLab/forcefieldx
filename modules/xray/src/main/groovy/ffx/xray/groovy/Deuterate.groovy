@@ -59,7 +59,7 @@ import static org.apache.commons.io.FilenameUtils.removeExtension
 class Deuterate extends AlgorithmsScript {
 
   /**
-   * One or more filenames.
+   * One or more filename.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB input file.")
   private List<String> filenames
