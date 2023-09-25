@@ -50,6 +50,8 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Logger;
+
+import ffx.potential.extended.ExtendedSystem;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
 

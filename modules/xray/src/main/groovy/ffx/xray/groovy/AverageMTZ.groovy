@@ -62,7 +62,7 @@ class AverageMTZ extends AlgorithmsScript {
   int iteration = 1
 
   /**
-   * One or more filenames.
+   * One or more filename.
    */
   @Parameters(arity = "2", paramLabel = "MTZ", description = "Two diffraction input files.")
   private List<String> filenames

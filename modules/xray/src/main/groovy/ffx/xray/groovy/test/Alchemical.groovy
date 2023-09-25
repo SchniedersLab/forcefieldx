@@ -116,7 +116,7 @@ class Alchemical extends AlgorithmsScript {
   RefinementMode refinementMode = RefinementMode.COORDINATES
 
   /**
-   * One or more filenames.
+   * One or more filename.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Real Space input files.")
   private List<String> filenames

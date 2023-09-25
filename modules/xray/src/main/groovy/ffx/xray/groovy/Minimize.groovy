@@ -87,7 +87,7 @@ class Minimize extends AlgorithmsScript {
   double[] eps3 = [-1.0, -1.0, -1.0]
 
   /**
-   * One or more filenames.
+   * One or more filename.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
   private List<String> filenames

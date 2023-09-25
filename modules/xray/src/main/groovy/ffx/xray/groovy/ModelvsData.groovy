@@ -85,7 +85,7 @@ class ModelvsData extends AlgorithmsScript {
   boolean mtz = false
 
   /**
-   * One or more filenames.
+   * One or more filename.
    */
   @Parameters(arity = "1..*", paramLabel = "files", description = "PDB and Diffraction input files.")
   private List<String> filenames

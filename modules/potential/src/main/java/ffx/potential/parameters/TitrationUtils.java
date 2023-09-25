@@ -54,6 +54,10 @@ import static ffx.potential.parameters.MultipoleType.assignAxisAtoms;
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.log;
 
+import ffx.numerics.Potential;
+import ffx.numerics.optimization.LBFGS;
+import ffx.numerics.optimization.LineSearch;
+import ffx.numerics.optimization.OptimizationListener;
 import ffx.potential.bonded.AminoAcidUtils.AminoAcid3;
 import ffx.potential.bonded.Angle;
 import ffx.potential.bonded.AngleTorsion;
@@ -72,6 +76,10 @@ import ffx.potential.bonded.UreyBradley;
 import ffx.potential.parameters.MultipoleType.MultipoleFrameDefinition;
 import ffx.potential.parameters.SoluteType.SOLUTE_RADII_TYPE;
 import ffx.utilities.Constants;
+import org.apache.commons.math3.fitting.leastsquares.*;
+import org.apache.commons.math3.linear.*;
+import org.apache.commons.math3.util.Pair;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -1614,6 +1622,144 @@ public class TitrationUtils {
       }
     }
     return total;
+  }
+
+  /**
+   * Predict pKa from a set of residue fractions (deprotonated / (deprotonated + protonated)). This method minimizes
+   * the L2 loss between the the measured residue fractions and various pKa/Hill-coefficient values to get pKa/Hill-
+   * coefficient predictions.
+   *
+   * @param pHScale pH values at which the residue fractions were measured
+   * @param residueFractions a sorted array of residue fractions (deprotonated / (deprotonated + protonated))
+   * @return {n, pKa}
+   */
+  public static double[] predictHillCoeffandPka(double[] pHScale, double[] residueFractions) {
+
+    // Potentials for n and pKa, since LGBFS optimizer gradient is only for 1D array of gradients
+    Potential hendersonHasselbach = new Potential() {
+      static final double logb10 = Math.log(10);
+
+      @Override
+      public double energy(double[] x) {
+        return leastSquaresLoss(residueFractions, getValues(x));
+      }
+
+      public double leastSquaresLoss(double[] residueFractions, double[] guessedFractions) {
+        double loss = 0.0;
+        for (int i = 0; i < residueFractions.length; i++) {
+          loss += Math.pow(residueFractions[i] - guessedFractions[i], 2);
+        }
+        return loss;
+      }
+
+      public double[] getValues(double[] x) {
+        double[] values = new double[pHScale.length];
+        for (int i = 0; i < pHScale.length; i++) {
+          values[i] = 1 / (1 + Math.pow(10, x[0] * (x[1] - pHScale[i])));
+        }
+        return values;
+      }
+
+      public void gradient(double[] x, double[] gradient) {
+        // reset gradient
+        Arrays.fill(gradient, 0.0);
+        double[] values = getValues(x);
+        for (int i = 0; i < pHScale.length; i++) {
+          // term = 10^(n(pKa - pH))
+          double term = Math.pow(10, x[0] * (x[1] - pHScale[i]));
+
+          // d = (1 + term)^2
+          double d = (1 + term) * (1 + term);
+
+          // -sum(d(cost)/dn) across pH values
+          gradient[0] += 2*(residueFractions[i] - values[i]) * logb10 * (x[1] - pHScale[i]) * term / d;
+
+          // -sum(d(cost)/dpKa) across pH values
+          gradient[1] += 2*(residueFractions[i] - values[i]) * x[0] * logb10 * term / d;
+        }
+      }
+
+      @Override
+      public double energyAndGradient(double[] x, double[] g) {
+        gradient(x, g);
+        return energy(x);
+      }
+
+      @Override
+      public double[] getAcceleration(double[] acceleration) {
+        return new double[0];
+      }
+      @Override
+      public double[] getCoordinates(double[] parameters) {
+        return new double[0];
+      }
+      @Override
+      public STATE getEnergyTermState() {
+        return null;
+      }
+      @Override
+      public void setEnergyTermState(STATE state) {}
+      @Override
+      public double[] getMass() {
+        return new double[0];
+      }
+      @Override
+      public int getNumberOfVariables() {
+        return 0;
+      }
+      @Override
+      public double[] getPreviousAcceleration(double[] previousAcceleration) {
+        return new double[0];
+      }
+      @Override
+      public double[] getScaling() {
+        return null;
+      }
+      @Override
+      public void setScaling(double[] scaling) {}
+      @Override
+      public double getTotalEnergy() {
+        return 0;
+      }
+      @Override
+      public VARIABLE_TYPE[] getVariableTypes() {
+        return new VARIABLE_TYPE[0];
+      }
+      @Override
+      public double[] getVelocity(double[] velocity) {
+        return new double[0];
+      }
+      @Override
+      public void setAcceleration(double[] acceleration) {}
+      @Override
+      public void setPreviousAcceleration(double[] previousAcceleration) { }
+      @Override
+      public void setVelocity(double[] velocity) {}
+    };
+
+    // Call L-BFGS optimizer on hendersonHasselbach least squares potential
+    int n = 2;
+    double[] x = new double[]{1.0, 7.0}; // initial guess pKa
+    int m = 3;
+    double energy = hendersonHasselbach.energy(x);
+    double[] grad = new double[n];
+    hendersonHasselbach.energyAndGradient(x, grad);
+    hendersonHasselbach.setScaling(new double[]{1.0, 1.0});
+    double eps = 1e-5;
+    int maxIterations = 100;
+    OptimizationListener listener = new OptimizationListener() {
+      @Override
+      public boolean optimizationUpdate(int iter, int nBFGS, int nFunctionEvals, double gradientRMS,
+                                        double coordinateRMS, double f, double df, double angle,
+                                        LineSearch.LineSearchResult info) {
+        return true;
+      }
+    };
+
+    int statuspKa = LBFGS.minimize(n, m, x, energy, grad, eps, maxIterations,
+            hendersonHasselbach, listener);
+
+    return new double[]{x[0], x[1]};
   }
 
   /**
