@@ -137,7 +137,6 @@
 "txw2-2.3.5.jar",
 "vecmath-1.5.2.jar",
 "vecmath-1.7.1.jar"
-    "forcefieldx-$v.jar"
   ],
   "imports": [
     "ffx.Main",
