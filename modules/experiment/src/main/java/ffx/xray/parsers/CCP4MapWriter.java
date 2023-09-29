@@ -35,7 +35,9 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.crystal;
+package ffx.xray.parsers;
+
+import ffx.crystal.Crystal;
 
 import static ffx.utilities.TinkerUtils.version;
 import static java.lang.String.format;

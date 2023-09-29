@@ -50,6 +50,7 @@ import static org.apache.commons.math3.util.FastMath.rint;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
+
 import org.apache.commons.configuration2.CompositeConfiguration;
 
 /**
@@ -57,37 +58,57 @@ import org.apache.commons.configuration2.CompositeConfiguration;
  *
  * @author Timothy D. Fenn
  * @see <a href="http://dx.doi.org/10.1107/S0021889802013420" target="_blank"> Cowtan, K. 2002.
- *     Generic representation and evaluation of properties as a function of position in reciprocal
- *     space. J. Appl. Cryst. 35:655-663. </a>
+ * Generic representation and evaluation of properties as a function of position in reciprocal
+ * space. J. Appl. Cryst. 35:655-663. </a>
  * @since 1.0
  */
 public class ReflectionList {
 
-  /** The HKL list. */
+  /**
+   * The HKL list.
+   */
   public final ArrayList<HKL> hkllist = new ArrayList<>();
-  /** The Crystal instance. */
+  /**
+   * The Crystal instance.
+   */
   public final Crystal crystal;
-  /** The space group. */
+  /**
+   * The space group.
+   */
   public final SpaceGroup spaceGroup;
-  /** Resolution instance. */
+  /**
+   * Resolution instance.
+   */
   public final Resolution resolution;
-  /** String to HKL look-up. */
+  /**
+   * String to HKL look-up.
+   */
   final HashMap<String, HKL> hklmap = new HashMap<>();
-  /** The Laue System. */
+  /**
+   * The Laue System.
+   */
   private final LaueSystem laueSystem;
-  /** For binning reflections based on resolution */
+  /**
+   * For binning reflections based on resolution
+   */
   public int nbins = 10;
-  /** Histogram. */
+  /**
+   * Histogram.
+   */
   private final double[] hist = new double[1001];
-  /** Minimum resolution. */
+  /**
+   * Minimum resolution.
+   */
   private double minResolution;
-  /** Maximum resolution. */
+  /**
+   * Maximum resolution.
+   */
   private double maxResolution;
 
   /**
    * Constructor for ReflectionList.
    *
-   * @param crystal a {@link ffx.crystal.Crystal} object.
+   * @param crystal    a {@link ffx.crystal.Crystal} object.
    * @param resolution a {@link ffx.crystal.Resolution} object.
    */
   public ReflectionList(Crystal crystal, Resolution resolution) {
@@ -97,10 +118,10 @@ public class ReflectionList {
   /**
    * Constructor for ReflectionList.
    *
-   * @param crystal a {@link ffx.crystal.Crystal} object.
+   * @param crystal    a {@link ffx.crystal.Crystal} object.
    * @param resolution a {@link ffx.crystal.Resolution} object.
    * @param properties a {@link org.apache.commons.configuration2.CompositeConfiguration}
-   *     object.
+   *                   object.
    */
   public ReflectionList(Crystal crystal, Resolution resolution, CompositeConfiguration properties) {
     this.crystal = crystal;
@@ -171,13 +192,13 @@ public class ReflectionList {
   /**
    * Constructor for ReflectionList.
    *
-   * @param a a double.
-   * @param b a double.
-   * @param c a double.
-   * @param alpha a double.
-   * @param beta a double.
-   * @param gamma a double.
-   * @param sg a {@link java.lang.String} object.
+   * @param a          a double.
+   * @param b          a double.
+   * @param c          a double.
+   * @param alpha      a double.
+   * @param beta       a double.
+   * @param gamma      a double.
+   * @param sg         a {@link java.lang.String} object.
    * @param resolution a double.
    */
   public ReflectionList(
@@ -195,7 +216,7 @@ public class ReflectionList {
   /**
    * findSymHKL
    *
-   * @param hkl a {@link ffx.crystal.HKL} object.
+   * @param hkl  a {@link ffx.crystal.HKL} object.
    * @param mate a {@link ffx.crystal.HKL} object.
    * @return a boolean.
    */
@@ -206,9 +227,9 @@ public class ReflectionList {
   /**
    * findSymHKL
    *
-   * @param h an int.
-   * @param k an int.
-   * @param l an int.
+   * @param h    an int.
+   * @param k    an int.
+   * @param l    an int.
    * @param mate a {@link ffx.crystal.HKL} object.
    * @return a boolean.
    */
@@ -219,10 +240,10 @@ public class ReflectionList {
   /**
    * findSymHKL
    *
-   * @param h an int.
-   * @param k an int.
-   * @param l an int.
-   * @param mate a {@link ffx.crystal.HKL} object.
+   * @param h         an int.
+   * @param k         an int.
+   * @param l         an int.
+   * @param mate      a {@link ffx.crystal.HKL} object.
    * @param transpose a boolean.
    * @return a boolean.
    */
@@ -295,7 +316,9 @@ public class ReflectionList {
     return ((1.0 - r) * hist[i] + r * hist[i + 1]);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     return " Reflection list with "
@@ -309,8 +332,8 @@ public class ReflectionList {
   /**
    * findSymHKL
    *
-   * @param hkl a {@link ffx.crystal.HKL} object.
-   * @param mate a {@link ffx.crystal.HKL} object.
+   * @param hkl       a {@link ffx.crystal.HKL} object.
+   * @param mate      a {@link ffx.crystal.HKL} object.
    * @param transpose a boolean.
    * @return a boolean.
    */

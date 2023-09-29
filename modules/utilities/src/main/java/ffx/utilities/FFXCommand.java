@@ -296,9 +296,7 @@ public abstract class FFXCommand {
   }
 
   /**
-   * {@inheritDoc}
-   *
-   * <p>Execute the command.
+   * Execute the command.
    *
    * @return a {@link ffx.utilities.FFXCommand} object
    */

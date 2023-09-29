@@ -56,6 +56,13 @@ public class PortUtils {
   private static final int MIN_TCP_PORT = 0;
 
   /**
+   * Private constructor to prevent instantiation.
+   */
+  private PortUtils() {
+    // Empty constructor.
+  }
+
+  /**
    * Check if a port is available.
    *
    * @param port The port id.

@@ -44,7 +44,7 @@ import static java.util.Arrays.fill;
 import static org.apache.commons.io.FilenameUtils.removeExtension;
 
 import edu.rit.pj.ParallelTeam;
-import ffx.crystal.CCP4MapWriter;
+import ffx.xray.parsers.CCP4MapWriter;
 import ffx.crystal.Crystal;
 import ffx.crystal.HKL;
 import ffx.crystal.ReflectionList;

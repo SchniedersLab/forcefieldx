@@ -35,7 +35,9 @@
 // exception statement from your version.
 //
 // ******************************************************************************
-package ffx.crystal;
+package ffx.xray.parsers;
+
+import ffx.crystal.Crystal;
 
 import static org.apache.commons.math3.util.FastMath.pow;
 import static org.apache.commons.math3.util.FastMath.sqrt;

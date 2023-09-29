@@ -69,6 +69,13 @@ import javax.lang.model.type.TypeMirror;
 public class KeywordProcessor extends AbstractProcessor {
 
   /**
+   * Default constructor.
+   */
+  public KeywordProcessor() {
+    super();
+  }
+
+  /**
    * Processes a set of annotation types on type elements originating from the prior round and
    * returns whether these annotations are claimed by this processor. If true is returned, the
    * annotations are claimed and subsequent processors will not be asked to process them; if false is

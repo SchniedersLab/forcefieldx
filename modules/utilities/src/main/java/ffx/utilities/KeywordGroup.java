@@ -41,18 +41,55 @@ package ffx.utilities;
  * The Keyword Group for an FFX Keyword.
  *
  * @author Michael J. Schnieders
+ * @since 1.0
  */
 public enum KeywordGroup {
+  /**
+   * Energy unit conversion factors.
+   */
   EnergyUnitConversion,
+  /**
+   * Electrostatics functional form.
+   */
   ElectrostaticsFunctionalForm,
+  /**
+   * Implicit solvent functional form.
+   */
   ImplicitSolvent,
+  /**
+   * Local geometry functional form.
+   */
   LocalGeometryFunctionalForm,
+  /**
+   * Potential function parameter.
+   */
   PotentialFunctionParameter,
+  /**
+   * Potential function selection.
+   */
   PotentialFunctionSelection,
+  /**
+   * Unit cell and space group.
+   */
   UnitCellAndSpaceGroup,
+  /**
+   * Van der Waals functional form.
+   */
   VanDerWaalsFunctionalForm,
+  /**
+   * Non-bonded cutoff.
+   */
   NonBondedCutoff,
+  /**
+   * Particle-mesh Ewald parameters.
+   */
   ParticleMeshEwald,
+  /**
+   * Constant pH molecular dynamics parameters.
+   */
   ConstantPhMolecularDynamics,
-  Refinement,
+  /**
+   * Refinement parameters.
+   */
+  Refinement
 }
