@@ -62,7 +62,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.configuration2.MapConfiguration;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
