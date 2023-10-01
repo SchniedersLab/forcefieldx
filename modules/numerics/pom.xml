@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns="http://maven.apache.org/POM/4.0.0"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
@@ -66,11 +65,11 @@
       <artifactId>commons-math3</artifactId>
       <version>${commons-math3.version}</version>
     </dependency>
-    <dependency>
+    <!-- dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <version>${commons-io.version}</version>
-    </dependency>
+    </dependency -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>ffx-pj</artifactId>
@@ -81,11 +80,11 @@
       <artifactId>ffx-utilities</artifactId>
       <version>1.0.0-beta</version>
     </dependency>
-    <dependency>
+    <!-- dependency>
       <groupId>org.jogamp</groupId>
       <artifactId>jogamp-fat</artifactId>
       <version>${jogamp-fat.version}</version>
-    </dependency>
+    </dependency -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

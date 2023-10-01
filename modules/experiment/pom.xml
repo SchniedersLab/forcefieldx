@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns="http://maven.apache.org/POM/4.0.0"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
@@ -18,7 +17,7 @@
     <url>http://ffx.biochem.uiowa.edu</url>
   </organization>
   <description>
-    The Experiment module includes support for refinement of atomic resolution models against X-ray differaction data, 
+    The Experiment module includes support for refinement of atomic resolution models against X-ray differaction data,
     neutron diffraction data and/or real space maps such as those from CryoEM.
   </description>
   <developers>
@@ -45,16 +44,13 @@
             <phase>compile</phase>
             <configuration>
               <target>
-                <taskdef name="groovyc"
-                  classname="org.codehaus.groovy.ant.Groovyc">
+                <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc">
                   <classpath refid="maven.compile.classpath"/>
                 </taskdef>
                 <mkdir dir="${project.build.outputDirectory}"/>
-                <groovyc destdir="${project.build.outputDirectory}"
-                  srcdir="${basedir}/src/main/groovy/"
-                  listfiles="false" verbose="true"
-                  targetBytecode="${targetVersion}"
-                  stacktrace="true" parameters="true">
+                <groovyc destdir="${project.build.outputDirectory}" srcdir="${basedir}/src/main/groovy/"
+                         listfiles="false" verbose="true" targetBytecode="${targetVersion}" stacktrace="true"
+                         parameters="true">
                   <classpath refid="maven.compile.classpath"/>
                 </groovyc>
                 <!-- configscript="${basedir}/src/config/config.groovy" -->
@@ -169,6 +165,11 @@
   </build>
   <dependencies>
     <dependency>
+      <groupId>org.apache.groovy</groupId>
+      <artifactId>groovy</artifactId>
+      <version>${groovy-all.version}</version>
+    </dependency>
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>ffx-pj</artifactId>
       <version>${pj.version}</version>
@@ -225,19 +226,9 @@
       <version>${commons-math3.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.apporiented</groupId>
-      <artifactId>hierarchical-clustering</artifactId>
-      <version>${clustering.version}</version>
-    </dependency>
-    <dependency>
       <groupId>info.picocli</groupId>
       <artifactId>picocli</artifactId>
       <version>${picocli.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.jogamp.java3d</groupId>
-      <artifactId>j3dcore</artifactId>
-      <version>${java3d.version}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

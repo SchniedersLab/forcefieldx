@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns="http://maven.apache.org/POM/4.0.0"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
@@ -13,10 +12,27 @@
   <artifactId>ffx-algorithms</artifactId>
   <packaging>jar</packaging>
   <name>Algorithms</name>
-  <description>The Algorithms module includes support for local and global optimization, molecular dynamics simulations, and
+  <description>The Algorithms module includes support for local and global optimization, molecular dynamics simulations,
+    and
     calculation of free energy differences.
   </description>
   <build>
+    <resources>
+      <resource>
+        <directory>${basedir}/src/main/groovy/ffx/algorithms/groovy</directory>
+        <includes>
+          <include>*</include>
+        </includes>
+        <targetPath>${basedir}/../../scripts</targetPath>
+      </resource>
+      <resource>
+        <directory>${basedir}/src/main/groovy/ffx/algorithms/groovy</directory>
+        <includes>
+          <include>*</include>
+        </includes>
+        <targetPath>${basedir}/src/site/resources/scripts</targetPath>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
@@ -27,16 +43,13 @@
             <phase>compile</phase>
             <configuration>
               <target>
-                <taskdef name="groovyc"
-                  classname="org.codehaus.groovy.ant.Groovyc">
+                <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc">
                   <classpath refid="maven.compile.classpath"/>
                 </taskdef>
                 <mkdir dir="${project.build.outputDirectory}"/>
-                <groovyc destdir="${project.build.outputDirectory}"
-                  srcdir="${basedir}/src/main/groovy/"
-                  listfiles="false" verbose="true"
-                  targetBytecode="${targetVersion}"
-                  stacktrace="true" parameters="true">
+                <groovyc destdir="${project.build.outputDirectory}" srcdir="${basedir}/src/main/groovy/"
+                         listfiles="false" verbose="true" targetBytecode="${targetVersion}" stacktrace="true"
+                         parameters="true">
                   <classpath refid="maven.compile.classpath"/>
                 </groovyc>
                 <!-- configscript="${basedir}/src/config/config.groovy" -->
@@ -112,6 +125,21 @@
   </build>
   <dependencies>
     <dependency>
+      <groupId>org.apache.groovy</groupId>
+      <artifactId>groovy</artifactId>
+      <version>${groovy-all.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${commons-lang3.version}</version>
+    </dependency>
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>ffx-crystal</artifactId>
       <version>${project.version}</version>
@@ -143,11 +171,6 @@
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
-      <artifactId>commons-collections4</artifactId>
-      <version>${commons-collections4.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
       <artifactId>commons-configuration2</artifactId>
       <version>${commons-configuration2.version}</version>
       <exclusions>
@@ -163,39 +186,9 @@
       <version>${commons-math3.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.biojava</groupId>
-      <artifactId>biojava-structure</artifactId>
-      <version>${biojava.version}</version>
-      <exclusions>
-        <exclusion>
-          <artifactId>vecmath</artifactId>
-          <groupId>java3d</groupId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>edu.uiowa.jopenmm</groupId>
-      <artifactId>jopenmm-fat</artifactId>
-      <version>${jopenmm.version}</version>
-    </dependency>
-    <dependency>
       <groupId>info.picocli</groupId>
       <artifactId>picocli</artifactId>
       <version>${picocli.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.apporiented</groupId>
-      <artifactId>hierarchical-clustering</artifactId>
-      <version>${clustering.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>it.unimi.dsi</groupId>
-      <artifactId>fastutil</artifactId>
-      <version>${fastutil.version}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
