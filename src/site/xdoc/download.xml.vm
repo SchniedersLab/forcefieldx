@@ -21,7 +21,7 @@
         </ul>
         <p>System requirement:</p>
         <ul>
-          <li>Java Runtime Environment (JRE) version ${targetVersion} is supported.</li>
+          <li>Java Runtime Environment (JRE) version ${targetVersion}.</li>
         </ul>
         <table>
           <thead>

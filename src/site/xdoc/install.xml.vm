@@ -100,10 +100,9 @@
                 </li>
                 <li>
                   <p>Commands to unpack the distributions are:</p>
-                  <source>tar -xzf ffx-${project.version}-bin.tar.gz
-                    tar -xjf ffx-${project.version}-bin.tar.bz2
-                    unzip ffx-${project.version}-bin.zip
-                  </source>
+                  <source>tar -xzf ffx-${project.version}-bin.tar.gz</source>
+                  <source>tar -xjf ffx-${project.version}-bin.tar.bz2</source>
+                  <source>unzip ffx-${project.version}-bin.zip</source>
                 </li>
                 <li>
                   <p>Add the directory <code>ffx/bin</code> to your path.
@@ -119,10 +118,11 @@
                       <source>setenv PATH "/Users/shared/ffx/bin:$PATH"</source>
                     </li>
                   </ul>
-                  <p>To check please execute:</p>
-                  <source>echo $PATH
-                    which ffxc
-                  </source>
+                  <p>To check please execute:
+                    <source>echo $PATH</source>
+                    and
+                    <source>which ffxc</source>
+                  </p>
                   <!--
                   Both the graphical
                   <code>ffx</code> and command line

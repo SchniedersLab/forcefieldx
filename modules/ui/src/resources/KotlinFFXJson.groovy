@@ -14,8 +14,8 @@ header = """{
     "ffx.Main.*"
   ],
   "init": [
-   "System.setProperty(\"java.awt.headless\",\"true\")",
-   "System.setProperty(\"j3d.rend\",\"noop\")"
+   "System.setProperty(\\\"java.awt.headless\\\",\\\"true\\\")",
+   "System.setProperty(\\\"j3d.rend\\\",\\\"noop\\\")"
   ],
   "dependencies": [
 """
