@@ -49,7 +49,7 @@ Additional tests, ordinarily skipped due to length of running them (~15 minutes 
 
    mvn -DskipTests=false -Dffx.ci=true
 
-Currently, JDKs 17 to 21 are supported. 
+Currently, JDK 21 is supported. 
 After installing a supported JDK, point the JAVA\_HOME environment variable to the JDK directory, and then add the JDK bin directory to your path. 
 
 ---
