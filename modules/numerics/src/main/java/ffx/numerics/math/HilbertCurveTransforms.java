@@ -54,7 +54,7 @@ import java.util.Arrays;
 public class HilbertCurveTransforms {
     private static int adjust_rotation(int rotation, int nDims, int bits) {
         long nd1Ones = (ones(nDims) >> 1);
-        bits &= -bits & nd1Ones;
+        bits &= (int) (-bits & nd1Ones);
         while (bits != 0) {
             bits >>= 1;
             ++rotation;

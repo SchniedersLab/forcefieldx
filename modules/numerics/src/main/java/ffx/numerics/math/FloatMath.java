@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.numerics.math;
 
+import javax.annotation.Nullable;
+
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.acos;
@@ -75,9 +77,9 @@ public class FloatMath {
   /**
    * Compute a * b + c.
    *
-   * @param a First vector.
-   * @param b Scalar.
-   * @param c Second vector.
+   * @param a   First vector.
+   * @param b   Scalar.
+   * @param c   Second vector.
    * @param ret Result vector.
    * @return Returns a * b + c in the vector ret.
    */
@@ -102,8 +104,8 @@ public class FloatMath {
   /**
    * Finds the cross-product between two vectors.
    *
-   * @param a First vector.
-   * @param b Second vector.
+   * @param a   First vector.
+   * @param b   Second vector.
    * @param ret The cross-product of a x b.
    * @return Returns the cross-product ret.
    */
@@ -128,8 +130,8 @@ public class FloatMath {
   /**
    * sum
    *
-   * @param a an array of float.
-   * @param b an array of float.
+   * @param a   an array of float.
+   * @param b   an array of float.
    * @param ret an array of float.
    * @return Returns the array ret.
    */
@@ -273,7 +275,7 @@ public class FloatMath {
   /**
    * logVector.
    *
-   * @param v an array of {@link float} objects.
+   * @param v     an array of {@link float} objects.
    * @param label a {@link String} object.
    */
   public static void log(float[] v, String label) {
@@ -293,7 +295,7 @@ public class FloatMath {
   /**
    * Normalizes a vector.
    *
-   * @param n A vector to be normalized.
+   * @param n   A vector to be normalized.
    * @param ret The normalized vector.
    * @return Returns the normalized vector.
    */
@@ -315,8 +317,8 @@ public class FloatMath {
   /**
    * Scales a vector.
    *
-   * @param n A vector to be scaled.
-   * @param a A scalar value.
+   * @param n   A vector to be scaled.
+   * @param a   A scalar value.
    * @param ret The scaled Vector.
    * @return Returns the array ret.
    */
@@ -334,12 +336,14 @@ public class FloatMath {
    * @param n A vector to be squared.
    * @return Returns the squared vector.
    */
-  public static float[] square(float[] n) {return square(n, new float[3]);}
+  public static float[] square(float[] n) {
+    return square(n, new float[3]);
+  }
 
   /**
    * Squares values of a vector.
    *
-   * @param n A vector to be squared.
+   * @param n   A vector to be squared.
    * @param ret The squared vector.
    * @return Returns the array ret.
    */
@@ -356,12 +360,14 @@ public class FloatMath {
    * @param n A vector to determine square root.
    * @return Returns the rooted vector.
    */
-  public static float[] squareRoot(float[] n) {return squareRoot(n, new float[3]);}
+  public static float[] squareRoot(float[] n) {
+    return squareRoot(n, new float[3]);
+  }
 
   /**
    * Square root values of a vector.
    *
-   * @param n A vector to determine square root.
+   * @param n   A vector to determine square root.
    * @param ret The rooted vector.
    * @return Returns the array ret.
    */
@@ -386,8 +392,8 @@ public class FloatMath {
   /**
    * Finds the difference between two vectors
    *
-   * @param a First vector
-   * @param b Second vector
+   * @param a   First vector
+   * @param b   Second vector
    * @param ret Return Values
    * @return Returns the difference ret.
    */
@@ -416,11 +422,11 @@ public class FloatMath {
   /**
    * vectorToString.
    *
-   * @param v an array of {@link float} objects.
+   * @param v     an array of {@link float} objects.
    * @param label a {@link String} object.
    * @return Returns a String description of the vector.
    */
-  public static String toString(float[] v, String label) {
+  public static String toString(@Nullable float[] v, @Nullable String label) {
     if (v == null) {
       return null;
     }

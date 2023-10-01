@@ -55,8 +55,11 @@ public class ComplexNumber {
   private double re;
   private double im;
 
-  /** Constructor for ComplexNumber. */
-  public ComplexNumber() {}
+  /**
+   * Constructor for ComplexNumber.
+   */
+  public ComplexNumber() {
+  }
 
   /**
    * Constructor for ComplexNumber.
@@ -99,7 +102,9 @@ public class ComplexNumber {
     return new ComplexNumber(re, -im);
   }
 
-  /** conjugateIP */
+  /**
+   * conjugateIP
+   */
   public void conjugateIP() {
     this.im = -this.im;
   }
@@ -275,7 +280,9 @@ public class ComplexNumber {
     return new ComplexNumber(re * iScale, -im * iScale);
   }
 
-  /** reciprocalIP */
+  /**
+   * reciprocalIP
+   */
   public void reciprocalIP() {
     var scale = re * re + im * im;
     var iScale = 1.0 / scale;
@@ -348,7 +355,9 @@ public class ComplexNumber {
     a.im *= alpha;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     if (im == 0) {
