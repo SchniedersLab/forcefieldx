@@ -23,6 +23,7 @@ catalog.xml
 
 target/
 scripts/
+groovy/
 lib/
 release/
 website/

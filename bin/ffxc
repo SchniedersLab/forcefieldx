@@ -225,6 +225,7 @@ exec "$JAVACMD" $JAVA_OPTS $JAVA_FLAGS \
   -Djava.library.path="$JLP" \
   -Djava.awt.headless="true" \
   -Dj3d.rend="noop" \
+  -Dpolyglot.engine.WarnInterpreterOnly="false" \
   -Dapp.name="Force Field X" \
   -Dapp.pid="$$" \
   -Dapp.repo="$REPO" \

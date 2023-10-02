@@ -156,7 +156,7 @@
                 </resource>
               </resources>
               <overwrite>true</overwrite>
-              <outputDirectory>${basedir}/../../scripts</outputDirectory>
+              <outputDirectory>${basedir}/../../groovy</outputDirectory>
             </configuration>
           </execution>
         </executions>

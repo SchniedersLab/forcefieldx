@@ -102,33 +102,33 @@ class ANI extends PotentialScript {
 
         String FFX_HOME = System.getProperty("basedir")
         Path graalpy = Paths.get(FFX_HOME, "ffx_venv", "bin", "graalpy")
-        graalpyString = System.getProperty("graalpy", graalpy.toString());
+        graalpyString = System.getProperty("graalpy", graalpy.toString())
         graalpy = Paths.get(graalpyString)
         logger.info(" graalpy (-Dgraalpy=path.to.graalpy):             " + graalpy)
         String torchScript = "ANI2x.pt"
-        torchScript = System.getProperty("torchscript", torchScript);
-        logger.info(" torchscript (-Dtorchscript=path.to.torchscript): " + torchScript);
+        torchScript = System.getProperty("torchscript", torchScript)
+        logger.info(" torchscript (-Dtorchscript=path.to.torchscript): " + torchScript)
         // Collect atomic number and coordinates for each atom.
-        Atom[] atoms = activeAssembly.getAtomArray();
-        int nAtoms = atoms.length;
-        int[] jspecies = new int[nAtoms];
-        double[][] jcoords = new double[nAtoms][3];
+        Atom[] atoms = activeAssembly.getAtomArray()
+        int nAtoms = atoms.length
+        int[] jspecies = new int[nAtoms]
+        double[][] jcoords = new double[nAtoms][3]
         for (int i = 0; i < nAtoms; i++) {
             Atom a = atoms[i]
-            jspecies[i] = a.getAtomicNumber();
+            jspecies[i] = a.getAtomicNumber()
             jcoords[i][0] = a.getX()
             jcoords[i][1] = a.getY()
             jcoords[i][2] = a.getZ()
         }
-        double energy = 0.0;
-        double[] grad = new double[nAtoms * 3];
+        double energy = 0.0
+        double[] grad = new double[nAtoms * 3]
         // Construct a Polyglot Python environment.
         try (Context context = Context.newBuilder("python").allowAllAccess(true).
             option("python.Executable", graalpy.toString()).build()) {
             // Place the coords and species arrays into the context.
-            Value polyglotBindings = context.getPolyglotBindings();
-            polyglotBindings.putMember("jcoords", jcoords);
-            polyglotBindings.putMember("jspecies", jspecies);
+            Value polyglotBindings = context.getPolyglotBindings()
+            polyglotBindings.putMember("jcoords", jcoords)
+            polyglotBindings.putMember("jspecies", jspecies)
 
             // Construct the Python code to run ANI-2x using TorchScript.
             String torch = "import site\n"
@@ -144,13 +144,13 @@ class ANI extends PotentialScript {
             torch += "gradient = ani(species, coordinates)\n"
 
             // Evaluate ANI-2x and collect the energy and gradient.
-            Value result = context.eval("python", torch);
-            Value bindings = context.getBindings("python");
+            Value result = context.eval("python", torch)
+            Value bindings = context.getBindings("python")
             Value ret = bindings.getMember("gradient")
             for (int i = 0; i < nAtoms * 3; i++) {
-                grad[i] = ret.getArrayElement(i).asDouble();
+                grad[i] = ret.getArrayElement(i).asDouble()
             }
-            energy = ret.getArrayElement(nAtoms * 3).asDouble();
+            energy = ret.getArrayElement(nAtoms * 3).asDouble()
         } catch (Exception e) {
             logger.info(" Exception:\n" + e.toString())
         }

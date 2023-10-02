@@ -230,6 +230,7 @@ if $darwin; then
   -Dapp.pid="$$" \
   -Dapp.repo="$REPO" \
   -Dbasedir="$BASEDIR" \
+  -Dpolyglot.engine.WarnInterpreterOnly="false" \
   ffx.Main \
   "$@"
 else
@@ -241,6 +242,7 @@ else
   -Dapp.pid="$$" \
   -Dapp.repo="$REPO" \
   -Dbasedir="$BASEDIR" \
+  -Dpolyglot.engine.WarnInterpreterOnly="false" \
   ffx.Main \
   "$@"
 fi

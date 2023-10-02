@@ -35,14 +35,18 @@
 #
 # ******************************************************************************
 
+# This command can be executed as:
+# ffxc Command.py Energy -m ../examples/waterbox.xyz
+# or
+# ffxc Command.py Minimize -e 0.1 ../examples/waterbox.xyz
+
+import site
 import java
-from java.lang import System
 
-# This example only works with GraalPy when its been loaded into the GraalVM 
-# using the "gu" tool.
-classpath = System.getProperty("java.class.path")
-print(classpath)
-
-args = ["Energy", "-m", "../examples/peptide.pdb"]
+# Get a references to FFX Main to execute the script.
 main = java.type("ffx.Main")
+
+# Execute the FFX command and return the results to the Python context.
+# The "args" are passed into Python context by FFX.
 script = main.ffxScript(args) 
+

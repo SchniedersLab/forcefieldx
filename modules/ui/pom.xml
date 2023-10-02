@@ -6,7 +6,9 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
         <artifactId>appassembler-maven-plugin</artifactId>
+        <version>${appassembler.version}</version>
         <configuration>
           <!-- Set the target configuration directory to be used in the bin scripts -->
           <configurationDirectory>conf</configurationDirectory>
@@ -32,8 +34,6 @@
             </program>
           </programs>
         </configuration>
-        <groupId>org.codehaus.mojo</groupId>
-        <version>${appassembler.version}</version>
       </plugin>
       <plugin>
         <!-- Copy UI jar to the lib directory. -->
@@ -65,7 +65,6 @@
         <groupId>org.codehaus.gmavenplus</groupId>
         <artifactId>gmavenplus-plugin</artifactId>
         <version>${gmavenplus.version}</version>
-        <inherited>false</inherited>
         <executions>
           <execution>
             <phase>install</phase>
@@ -120,6 +119,18 @@
     </resources>
   </build>
   <dependencies>
+    <dependency>
+      <groupId>org.graalvm.polyglot</groupId>
+      <artifactId>polyglot</artifactId>
+      <version>23.1.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.graalvm.polyglot</groupId>
+      <artifactId>python</artifactId>
+      <version>23.1.0</version>
+      <scope>runtime</scope>
+      <type>pom</type>
+    </dependency>
     <dependency>
       <groupId>org.jogamp.java3d</groupId>
       <artifactId>j3dutils</artifactId>

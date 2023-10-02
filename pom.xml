@@ -84,11 +84,6 @@
           <version>${deploy.version}</version>
         </plugin>
         <plugin>
-          <groupId>io.github.git-commit-id</groupId>
-          <artifactId>git-commit-id-maven-plugin</artifactId>
-          <version>${git-commit-id.version}</version>
-        </plugin>
-        <plugin>
           <artifactId>maven-enforcer-plugin</artifactId>
           <version>${enforcer.version}</version>
         </plugin>
@@ -188,24 +183,39 @@
           <version>${resources.version}</version>
         </plugin>
         <plugin>
-          <artifactId>exec-maven-plugin</artifactId>
+          <groupId>io.github.git-commit-id</groupId>
+          <artifactId>git-commit-id-maven-plugin</artifactId>
+          <version>${git-commit-id.version}</version>
+        </plugin>
+        <plugin>
           <groupId>org.codehaus.mojo</groupId>
+          <artifactId>appassembler-maven-plugin</artifactId>
+          <version>${appassembler.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>exec-maven-plugin</artifactId>
           <version>${exec.version}</version>
         </plugin>
         <plugin>
-          <artifactId>jdepend-maven-plugin</artifactId>
           <groupId>org.codehaus.mojo</groupId>
+          <artifactId>jdepend-maven-plugin</artifactId>
           <version>${jdepend.version}</version>
         </plugin>
         <plugin>
-          <artifactId>properties-maven-plugin</artifactId>
           <groupId>org.codehaus.mojo</groupId>
+          <artifactId>properties-maven-plugin</artifactId>
           <version>${properties.version}</version>
         </plugin>
         <plugin>
-          <artifactId>versions-maven-plugin</artifactId>
           <groupId>org.codehaus.mojo</groupId>
+          <artifactId>versions-maven-plugin</artifactId>
           <version>${versions.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.gmavenplus</groupId>
+          <artifactId>gmavenplus-plugin</artifactId>
+          <version>${gmavenplus.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -310,7 +320,7 @@
               <directory>lib</directory>
             </fileset>
             <fileset>
-              <directory>scripts</directory>
+              <directory>groovy</directory>
             </fileset>
             <fileset>
               <directory>src/site/asciidoc/keywords</directory>
@@ -674,18 +684,6 @@
   </contributors>
   <dependencies>
     <dependency>
-      <groupId>org.graalvm.polyglot</groupId>
-      <artifactId>polyglot</artifactId>
-      <version>23.1.0</version>
-    </dependency>
-    <dependency>
-      <groupId>org.graalvm.polyglot</groupId>
-      <artifactId>python</artifactId>
-      <version>23.1.0</version>
-      <scope>runtime</scope>
-      <type>pom</type>
-    </dependency>
-    <dependency>
       <artifactId>groovy-all</artifactId>
       <groupId>org.apache.groovy</groupId>
       <type>pom</type>
@@ -1017,6 +1015,7 @@
     <findbugs.version>3.0.2</findbugs.version>
     <git-commit-id.version>6.0.0</git-commit-id.version>
     <gmavenplus.version>3.0.2</gmavenplus.version>
+    <graal.version>23.1.0</graal.version>
     <groovy-all.version>4.0.15</groovy-all.version>
     <!-- groovy-all.version>5.0.0-alpha-2</groovy-all.version -->
     <guava.version>32.1.2-jre</guava.version>
