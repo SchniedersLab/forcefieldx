@@ -14,12 +14,17 @@
                 using JLink.
             </p>
             <iframe
-                    src="https://www.wolframcloud.com/obj/3d1c7b4a-f614-438c-ba79-622813f14812?_embed=iframe"
+                    src="https://www.wolframcloud.com/obj/03ced6dc-307a-4b74-99ac-4804124216da?_embed=iframe"
                     width="800" height="800"></iframe>
             <p>
                 Please download this notebook to run on a local installation of Mathematica.
                 Use of the Wolfram Cloud (via "Make Your Own Copy") is not currently supported.
             </p>
+            <p>
+            This file is available in the Force Field X distribution "mathematica" directory and on
+            <a href="https://github.com/SchniedersLab/forcefieldx/blob/master/mathematica/ForceFieldX.nb">GitHub</a>.
+            </p>
+
         </section>
     </body>
 </document>

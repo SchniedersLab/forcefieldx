@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[   1063414,      17632]
-NotebookOptionsPosition[   1060379,      17576]
-NotebookOutlinePosition[   1060846,      17593]
-CellTagsIndexPosition[   1060803,      17590]
+NotebookDataLength[   1065849,      17677]
+NotebookOptionsPosition[   1063072,      17625]
+NotebookOutlinePosition[   1063539,      17642]
+CellTagsIndexPosition[   1063496,      17639]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -76,17 +76,21 @@ Classpath",
 2de1985be31f"],
 
 Cell[TextData[{
- StyleBox["Force Field X depends on ", "Text",
+ StyleBox["This file is available in the Force Field X distribution \
+\[OpenCurlyDoubleQuote]mathematica\[CloseCurlyDoubleQuote] directory and on \
+GitHub at:\[LineSeparator]https://github.com/SchniedersLab/forcefieldx/blob/\
+master/mathematica/ForceFieldX.nb\[LineSeparator]\nForce Field X depends on ",
+   "Text",
   FontSize->14,
   FontColor->GrayLevel[0]],
- StyleBox["Java version 17 or greater", "Text",
+ StyleBox["Java version 21", "Text",
   FontSize->14,
   FontWeight->"Bold",
   FontColor->GrayLevel[0]],
  StyleBox[". If your version of Mathematica is using an earlier version, \
 please either\[LineSeparator]1) Set the \[OpenCurlyDoubleQuote]JAVA_HOME\
-\[CloseCurlyDoubleQuote] environment variable to point to version 17 or \
-greater, and then start Mathematica from the command line ", "Text",
+\[CloseCurlyDoubleQuote] environment variable to point to version 21, and \
+then start Mathematica from the command line \n", "Text",
   FontSize->14,
   FontColor->GrayLevel[0]],
  StyleBox["or", "Text",
@@ -100,9 +104,8 @@ javacommand = \[OpenCurlyDoubleQuote]java \[OpenCurlyDoubleQuote]<>flags \nto \
   FontColor->GrayLevel[0]],
  StyleBox["\[OpenCurlyDoubleQuote]/your/path/to/jdk/bin/java \
 \[OpenCurlyDoubleQuote]<>flags\n\nThe first time this notebook is executed, \
-ffx-all.jar will be downloaded to the Mathematica User Base DIrectory for \
-reuse. \nTo update ffx-all.jar, please delete this file and it will be \
-re-downloaded.",
+FFX will be downloaded to the Mathematica User Base DIrectory for reuse. \nTo \
+update FFX, please delete this file and it will be re-downloaded.",
   FontSize->14,
   FontColor->GrayLevel[0]]
 }], "Text",
@@ -137,8 +140,13 @@ re-downloaded.",
    3.79776282181771*^9}, {3.903646602563777*^9, 3.903646653992766*^9}, {
    3.9036467035179043`*^9, 3.9036467046834383`*^9}, {3.903649414235866*^9, 
    3.903649417718832*^9}, {3.9036494968868856`*^9, 3.903649501067601*^9}, {
-   3.903696997212984*^9, 
-   3.903697000245569*^9}},ExpressionUUID->"729dd5db-3fa9-464c-b9f4-\
+   3.905338995124632*^9, 3.905339007184104*^9}, {3.9053391399147167`*^9, 
+   3.905339141200696*^9}, {3.905339183651991*^9, 3.905339197117332*^9}, 
+   3.905339300185074*^9, {3.905339462658434*^9, 3.905339464459494*^9}, {
+   3.905339515500813*^9, 3.905339516637343*^9}, {3.905342271877305*^9, 
+   3.905342281760508*^9}, {3.905342326815278*^9, 3.905342361593521*^9}, {
+   3.9053424198671703`*^9, 
+   3.9053424867299767`*^9}},ExpressionUUID->"729dd5db-3fa9-464c-b9f4-\
 d41d69407e55"],
 
 Cell[BoxData[{
@@ -155,21 +163,26 @@ Cell[BoxData[{
  RowBox[{
   RowBox[{"javacommand", " ", "=", 
    RowBox[{"\"\<java \>\"", "<>", "flags"}]}], ";"}], "\[IndentingNewLine]", 
- RowBox[{"If", "[", 
+ StyleBox[
   RowBox[{
-   RowBox[{"FailureQ", "[", 
-    RowBox[{"Environment", "[", "\"\<JAVA_HOME\>\"", "]"}], "]"}], ",", ",", 
-   RowBox[{"javacommand", "=", 
+   RowBox[{"If", "[", 
     RowBox[{
-     RowBox[{"Environment", "[", "\"\<JAVA_HOME\>\"", "]"}], "<>", 
-     "\"\</bin/java \>\"", "<>", "flags"}]}]}], 
-  "]"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"ReinstallJava", "[", 
-   RowBox[{
-    RowBox[{"CommandLine", "\[Rule]", "javacommand"}], ",", " ", 
-    RowBox[{"ClassPath", "\[Rule]", "None"}]}], "]"}], 
-  ";"}], "\[IndentingNewLine]", 
+     RowBox[{"FailureQ", "[", 
+      RowBox[{"Environment", "[", "\"\<JAVA_HOME\>\"", "]"}], "]"}], ",", ",", 
+     RowBox[{"javacommand", "=", 
+      RowBox[{
+       RowBox[{"Environment", "[", "\"\<JAVA_HOME\>\"", "]"}], "<>", 
+       "\"\</bin/java \>\"", "<>", "flags"}]}]}], "]"}], ";"}],
+  FontSize->14,
+  FontColor->GrayLevel[0]], "\[IndentingNewLine]", 
+ StyleBox[
+  RowBox[{
+   RowBox[{"ReinstallJava", "[", 
+    RowBox[{
+     RowBox[{"CommandLine", "\[Rule]", "javacommand"}], ",", " ", 
+     RowBox[{"ClassPath", "\[Rule]", "None"}]}], "]"}], ";"}],
+  FontSize->14,
+  FontColor->GrayLevel[0]], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"LoadJavaClass", "[", 
    RowBox[{"\"\<java.lang.Runtime\>\"", ",", " ", 
@@ -185,22 +198,30 @@ Cell[BoxData[{
  RowBox[{
   RowBox[{"ffxFile", " ", "=", " ", 
    RowBox[{
-   "\"\<forcefieldx-\>\"", "<>", "ffxVersion", "<>", "\"\<.jar\>\""}]}], 
+   "\"\<ffx-\>\"", "<>", "ffxVersion", "<>", "\"\<-bin.tar.gz\>\""}]}], 
   ";"}], "\[IndentingNewLine]", 
- RowBox[{"If", "[", 
-  RowBox[{
-   RowBox[{"FileExistsQ", "[", "ffxFile", "]"}], ",", 
-   RowBox[{"\"\<Using existing Force Field X jar file: \>\"", "<>", " ", 
-    RowBox[{"AbsoluteFileName", "[", "ffxFile", "]"}]}], ",", 
-   RowBox[{"URLDownload", "[", 
-    RowBox[{
-     RowBox[{"\"\<https://ffx.biochem.uiowa.edu/\>\"", "<>", "ffxFile"}], ",", 
-     RowBox[{"File", "[", "ffxFile", "]"}]}], "]"}]}], 
-  "]"}], "\[IndentingNewLine]", 
+ StyleBox[
+  RowBox[{"If", "[", 
+   RowBox[{
+    RowBox[{"FileExistsQ", "[", "ffxFile", "]"}], ",", 
+    RowBox[{"\"\<Using existing Force Field X download: \>\"", "<>", " ", 
+     RowBox[{"AbsoluteFileName", "[", "ffxFile", "]"}]}], ",", 
+    RowBox[{"ExtractArchive", "[", 
+     RowBox[{"URLDownload", "[", 
+      RowBox[{
+       RowBox[{"\"\<https://ffx.biochem.uiowa.edu/\>\"", "<>", "ffxFile"}], 
+       ",", " ", 
+       RowBox[{"File", "[", "ffxFile", "]"}]}], "]"}], "]"}]}], "]"}],
+  FontSize->14,
+  FontColor->GrayLevel[0]], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ffxLibDir", " ", "=", " ", 
+   RowBox[{"\"\<ffx-\>\"", "<>", "ffxVersion", "<>", "\"\</lib\>\""}]}], 
+  ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"AddToClassPath", "[", " ", 
    RowBox[{
-    RowBox[{"AbsoluteFileName", "[", "ffxFile", "]"}], ",", " ", 
+    RowBox[{"AbsoluteFileName", "[", "ffxLibDir", "]"}], ",", " ", 
     RowBox[{"\"\<Prepend\>\"", "\[Rule]", "True"}]}], "]"}], 
   ";"}], "\[IndentingNewLine]", 
  RowBox[{"\"\<Current Directory: \>\"", " ", "<>", 
@@ -256,33 +277,21 @@ Cell[BoxData[{
    3.7969817172866507`*^9, 3.796981753466632*^9}, 3.7969818234921303`*^9, 
    3.796982989357849*^9, {3.7969830615375013`*^9, 3.796983098663834*^9}, {
    3.797762560256112*^9, 3.797762661168561*^9}, {3.797762738275948*^9, 
-   3.7977627644860353`*^9}, {3.9036970452238693`*^9, 
-   3.9036970527220507`*^9}, {3.903711583270686*^9, 3.903711587513813*^9}, 
-   3.903711647024032*^9, {3.903711744869224*^9, 3.903711754983615*^9}},
- CellLabel->"In[51]:=",ExpressionUUID->"35023ec3-fca6-44c2-99ff-04b9c5c92ed4"],
-
-Cell[BoxData["\<\"Java version: 21+35-2513\"\>"], "Output",
- CellGroupingRules->{"GroupTogetherGrouping", 10000.},
- CellChangeTimes->{
-  3.903698398108489*^9, 3.903711598289384*^9, 3.903711654950096*^9, {
-   3.903711745928746*^9, 3.903711755996345*^9}},
- CellLabel->"Out[59]=",ExpressionUUID->"44469663-8090-4a6f-bcda-5a45b2e1bb43"],
-
-Cell[BoxData["\<\"Using existing Force Field X jar file: \
-/Users/mjschnie/Library/Mathematica/forcefieldx-1.0.0-beta.jar\"\>"], "Output",\
-
- CellGroupingRules->{"GroupTogetherGrouping", 10000.},
- CellChangeTimes->{
-  3.903698398108489*^9, 3.903711598289384*^9, 3.903711654950096*^9, {
-   3.903711745928746*^9, 3.903711755997242*^9}},
- CellLabel->"Out[62]=",ExpressionUUID->"6c189451-53db-4438-ae1e-04bd0d03ca37"],
-
-Cell[BoxData["\<\"Current Directory: /Users/mjschnie\"\>"], "Output",
- CellGroupingRules->{"GroupTogetherGrouping", 10000.},
- CellChangeTimes->{
-  3.903698398108489*^9, 3.903711598289384*^9, 3.903711654950096*^9, {
-   3.903711745928746*^9, 3.903711756000297*^9}},
- CellLabel->"Out[64]=",ExpressionUUID->"43cccdcf-0621-4ff1-9ff3-968d10ae9622"]
+   3.7977627644860353`*^9}, {3.9053390830904016`*^9, 3.905339096843597*^9}, {
+   3.905339181653613*^9, 3.905339204713315*^9}, {3.905339306554541*^9, 
+   3.905339306873982*^9}, {3.905339441899045*^9, 3.905339453239984*^9}, {
+   3.9053395254853277`*^9, 3.905339585218132*^9}, {3.905339642701544*^9, 
+   3.905339701669907*^9}, {3.905339863984556*^9, 3.905339911072768*^9}, 
+   3.905339968225754*^9, {3.9053400193486223`*^9, 3.905340047069253*^9}, {
+   3.905340128256154*^9, 3.905340135077114*^9}, {3.905340185018362*^9, 
+   3.905340193360313*^9}, {3.905340252492844*^9, 3.905340257443276*^9}, {
+   3.905340360111371*^9, 3.905340421475656*^9}, {3.9053405532029676`*^9, 
+   3.905340577007454*^9}, {3.905340607504911*^9, 3.905340681970117*^9}, {
+   3.905341397763958*^9, 3.905341466812743*^9}, {3.905341735446495*^9, 
+   3.905341751408176*^9}, {3.9053420121617613`*^9, 3.905342030329153*^9}, 
+   3.905342062857024*^9},
+ CellLabel->
+  "In[366]:=",ExpressionUUID->"35023ec3-fca6-44c2-99ff-04b9c5c92ed4"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -321,17 +330,14 @@ Cell[CellGroupData[{
 Cell[BoxData[{
  RowBox[{
   RowBox[{"pdbID", " ", "=", "\"\<1tf6\>\""}], ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"filename", " ", "=", " ", 
-   RowBox[{"pdbID", " ", "<>", "\"\<.pdb\>\""}]}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"URLDownload", "[", 
+ RowBox[{"filename", " ", "=", " ", 
+  RowBox[{"pdbID", " ", "<>", "\"\<.pdb\>\""}]}], "\[IndentingNewLine]", 
+ RowBox[{"URLDownload", "[", 
+  RowBox[{
    RowBox[{
-    RowBox[{
-    "\"\<http://www.rcsb.org/pdb/download/downloadFile.do?fileFormat=pdb&\
+   "\"\<http://www.rcsb.org/pdb/download/downloadFile.do?fileFormat=pdb&\
 compression=NO&structureId=\>\"", "<>", "pdbID"}], ",", " ", "filename"}], 
-   "]"}], ";"}], "\[IndentingNewLine]", 
+  "]"}], "\[IndentingNewLine]", 
  RowBox[{"Import", "[", 
   RowBox[{"filename", ",", " ", 
    RowBox[{"ImageSize", "\[Rule]", " ", "Medium"}]}], "]"}]}], "Input",
@@ -353,8 +359,40 @@ compression=NO&structureId=\>\"", "<>", "pdbID"}], ",", " ", "filename"}],
    3.903648636143364*^9, 3.90364864487643*^9}, {3.903648835642736*^9, 
    3.903648858713566*^9}, {3.9036491655488873`*^9, 3.9036491686780643`*^9}, {
    3.9036492546993523`*^9, 3.903649256339389*^9}, {3.903649288005855*^9, 
-   3.903649324484708*^9}, {3.9037117201586103`*^9, 3.9037117239181557`*^9}},
- CellLabel->"In[65]:=",ExpressionUUID->"1ddb25ca-80c6-4b0a-8e5c-4edb02f8015c"],
+   3.903649324484708*^9}},
+ CellLabel->
+  "In[349]:=",ExpressionUUID->"1ddb25ca-80c6-4b0a-8e5c-4edb02f8015c"],
+
+Cell[BoxData["\<\"1tf6.pdb\"\>"], "Output",
+ CellChangeTimes->{
+  3.9036468813810387`*^9, 3.903646962464459*^9, {3.90364734839963*^9, 
+   3.903647368707576*^9}, 3.90364743671804*^9, 3.90364754978714*^9, 
+   3.903647615380471*^9, 3.903647695323106*^9, 3.903647765218823*^9, 
+   3.903647893901226*^9, 3.903647938870594*^9, 3.9036481064937363`*^9, 
+   3.903648179478685*^9, 3.903648360050934*^9, {3.903648426249851*^9, 
+   3.90364843038447*^9}, 3.903648519578186*^9, {3.9036485875215893`*^9, 
+   3.903648602270464*^9}, 3.9036486461056232`*^9, {3.903648832511361*^9, 
+   3.903648859533268*^9}, 3.903649253340487*^9, 3.9036493253813667`*^9, 
+   3.90364943025076*^9, 3.905342069635797*^9},
+ CellLabel->
+  "Out[350]=",ExpressionUUID->"fca9c22e-ec45-49ed-b829-a9dc09cc6842"],
+
+Cell[BoxData[
+ RowBox[{"File", "[", 
+  TemplateBox[{"\"1tf6.pdb\""},
+   "FileArgument"], "]"}]], "Output",
+ CellChangeTimes->{
+  3.9036468813810387`*^9, 3.903646962464459*^9, {3.90364734839963*^9, 
+   3.903647368707576*^9}, 3.90364743671804*^9, 3.90364754978714*^9, 
+   3.903647615380471*^9, 3.903647695323106*^9, 3.903647765218823*^9, 
+   3.903647893901226*^9, 3.903647938870594*^9, 3.9036481064937363`*^9, 
+   3.903648179478685*^9, 3.903648360050934*^9, {3.903648426249851*^9, 
+   3.90364843038447*^9}, 3.903648519578186*^9, {3.9036485875215893`*^9, 
+   3.903648602270464*^9}, 3.9036486461056232`*^9, {3.903648832511361*^9, 
+   3.903648859533268*^9}, 3.903649253340487*^9, 3.9036493253813667`*^9, 
+   3.90364943025076*^9, 3.90534207094278*^9},
+ CellLabel->
+  "Out[351]=",ExpressionUUID->"73d6ed8d-9d99-4db2-bb97-ffb9d431488f"],
 
 Cell[BoxData[
  Graphics3DBox[{{{{
@@ -12715,9 +12753,16 @@ hv+v8f8DIonU2Q==
   ViewPoint->{-3.0701792007296858`, -0.8366249540815681, \
 -1.1394991713971736`}]], "Output",
  CellChangeTimes->{
-  3.903698848990313*^9, {3.903711712406012*^9, 3.903711726169396*^9}, 
-   3.903711764668598*^9},
- CellLabel->"Out[68]=",ImageCache->GraphicsData["CompressedBitmap", "\<\
+  3.9036468813810387`*^9, 3.903646962464459*^9, {3.90364734839963*^9, 
+   3.903647368707576*^9}, 3.90364743671804*^9, 3.90364754978714*^9, 
+   3.903647615380471*^9, 3.903647695323106*^9, 3.903647765218823*^9, 
+   3.903647893901226*^9, 3.903647938870594*^9, 3.9036481064937363`*^9, 
+   3.903648179478685*^9, 3.903648360050934*^9, {3.903648426249851*^9, 
+   3.90364843038447*^9}, 3.903648519578186*^9, {3.9036485875215893`*^9, 
+   3.903648602270464*^9}, 3.9036486461056232`*^9, {3.903648832511361*^9, 
+   3.903648859533268*^9}, 3.903649253340487*^9, 3.9036493253813667`*^9, 
+   3.90364943025076*^9, 3.905342071911056*^9},
+ CellLabel->"Out[352]=",ImageCache->GraphicsData["CompressedBitmap", "\<\
 eJzsvXlcU9f2Np7XtrZ1ZAgQIECAEAIECBAgQIADhHkeZRJBUFERcZ5Qt3Mt
 jnWss3XW1qHa2ta2u4PVWjvP82R723vbXjsPt7d93rXPOaF47/f3++/97+vn
 s5MQQvbez3rWs9bae59jadvMznFT2mZObG8z5E9v6+mc2D7DkDd1Or110//R
@@ -17374,7 +17419,7 @@ TniRzOXxUg+2nIhyRtuYc8jMVtpJThH571qowP6lcAl74n6NNute3iBd6pZM
 XG7vNUnIVVWyLqrQ91LRdyz/AzyS+TZ2up8Sa/XdP/3RUUVLGq072B1UHe9L
 fFUYTH/pJ9+7ceD9nw/8fODnAz8f+H96IORf/gkSBjoz\
 \>", "ImageResolution" -> \
-144.],ExpressionUUID->"5438a774-1615-4bab-9374-aee7dfdc04e6"]
+144.],ExpressionUUID->"a10c4a81-67eb-4458-9a4a-563f0f3778c8"]
 }, Open  ]]
 }, Open  ]],
 
@@ -17425,25 +17470,27 @@ Cell[BoxData[{
   3.7969825638034363`*^9}, {3.7969826155739193`*^9, 3.796982619961277*^9}, {
   3.796983153318821*^9, 3.796983161664558*^9}, {3.796983232362028*^9, 
   3.796983245950436*^9}},
- CellLabel->"In[69]:=",ExpressionUUID->"fec4361f-ec87-43a0-b2c5-527dc18b2a6f"],
+ CellLabel->
+  "In[353]:=",ExpressionUUID->"fec4361f-ec87-43a0-b2c5-527dc18b2a6f"],
 
 Cell[BoxData["\<\"  Bond Stretching            784.21711573        10167      \
-  0.002 ( 0.01372)\\n  Angle Bending             1923.49839878        18344   \
-     0.011 ( 2.48622)\\n  Stretch-Bend                28.64707121        \
-16057        0.010\\n  Out-of-Plane Bend           92.43149911         6120   \
-     0.003\\n  Torsional Angle           1071.61936146        26972        \
-0.013\\n  Pi-Orbital Torsion          43.51567538         1543        \
-0.001\\n  Stretch-Torsion             -7.21804026          364        \
+  0.003 ( 0.01372)\\n  Angle Bending             1923.49839878        18344   \
+     0.012 ( 2.48622)\\n  Stretch-Bend                28.64707121        \
+16057        0.008\\n  Out-of-Plane Bend           92.43149911         6120   \
+     0.005\\n  Torsional Angle           1071.61936146        26972        \
+0.022\\n  Pi-Orbital Torsion          43.51567538         1543        \
+0.003\\n  Stretch-Torsion             -7.21804026          364        \
 0.000\\n  Angle-Torsion              -25.07425159          604        \
-0.000\\n  Torsion-Torsion            -37.63520530           20        \
-0.000\\n  Van der Waals        185602571.96150760      5859255        \
-0.360\\n  Atomic Multipoles    129491208.86117943      1313976\\n  \
-Polarization            -17207.68533436      1313976        1.922\\n  Total \
-Potential      315080447.13897717  (Kcal/mole)        2.325 (sec)\\n  Unit \
-Cell           1260321788.55590870\\n  Replicates Cell     \
-1260321788.55590870\"\>"], "Output",
- CellChangeTimes->{3.903698859228609*^9, 3.9037117739938707`*^9},
- CellLabel->"Out[72]=",ExpressionUUID->"98164db7-c09e-4f36-884e-a03322d550ea"]
+0.001\\n  Torsion-Torsion            -37.63520530           20        \
+0.000\\n  Van der Waals        185602571.96150762      5859255        \
+0.639\\n  Atomic Multipoles    129491208.86117943      1313976\\n  \
+Polarization            -17207.68533436      1313976        2.139\\n  Total \
+Potential      315080447.13897720  (Kcal/mole)        2.832 (sec)\\n  Unit \
+Cell           1260321788.55590900\\n  Replicates Cell     \
+1260321788.55590900\"\>"], "Output",
+ CellChangeTimes->{3.9036493435528316`*^9, 3.905342084442025*^9},
+ CellLabel->
+  "Out[356]=",ExpressionUUID->"7b2870da-8f30-4c6f-ba4b-df2d516b698c"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -17551,35 +17598,37 @@ Cell[BoxData[{
    3.79656346848903*^9, 3.796563524114964*^9}, {3.796563685844124*^9, 
    3.796563710170115*^9}, {3.79663415419769*^9, 3.7966341645438843`*^9}, {
    3.79663489152673*^9, 3.796634892941928*^9}, 3.7968354286131487`*^9},
- CellLabel->"In[73]:=",ExpressionUUID->"d90c3204-f2a4-466a-856c-8c5836cbcfdc"],
+ CellLabel->
+  "In[357]:=",ExpressionUUID->"d90c3204-f2a4-466a-856c-8c5836cbcfdc"],
 
 Cell[BoxData["\<\"  Bond Stretching            784.21711573        10167      \
-  0.001 ( 0.01372)\\n  Angle Bending             1923.49839878        18344   \
-     0.002 ( 2.48622)\\n  Stretch-Bend                28.64707121        \
-16057        0.001\\n  Out-of-Plane Bend           92.43149911         6120   \
-     0.005\\n  Torsional Angle           1071.61936146        26972        \
-0.002\\n  Pi-Orbital Torsion          43.51567538         1543        \
-0.004\\n  Stretch-Torsion             -7.21804026          364        \
-0.001\\n  Angle-Torsion              -25.07425159          604        \
+  0.003 ( 0.01372)\\n  Angle Bending             1923.49839878        18344   \
+     0.006 ( 2.48622)\\n  Stretch-Bend                28.64707121        \
+16057        0.004\\n  Out-of-Plane Bend           92.43149911         6120   \
+     0.004\\n  Torsional Angle           1071.61936146        26972        \
+0.009\\n  Pi-Orbital Torsion          43.51567538         1543        \
+0.001\\n  Stretch-Torsion             -7.21804026          364        \
+0.000\\n  Angle-Torsion              -25.07425159          604        \
 0.001\\n  Torsion-Torsion            -37.63520530           20        \
 0.000\\n  Van der Waals        185602571.96150765      5859255        \
-0.306\\n  Atomic Multipoles    129491208.86117943      1313976\\n  \
-Polarization            -17207.68533437      1313976        0.675\\n  Total \
-Potential      315080447.13897720  (Kcal/mole)        0.997 (sec)\\n  Unit \
+0.608\\n  Atomic Multipoles    129491208.86117943      1313976\\n  \
+Polarization            -17207.68533436      1313976        2.097\\n  Total \
+Potential      315080447.13897720  (Kcal/mole)        2.734 (sec)\\n  Unit \
 Cell           1260321788.55590900\\n  Replicates Cell     \
 1260321788.55590900\"\>"], "Output",
  CellGroupingRules->{"GroupTogetherGrouping", 10000.},
- CellChangeTimes->{3.90369886432088*^9, 3.903711780147695*^9},
- CellLabel->"Out[81]=",ExpressionUUID->"c2debeac-7329-4c57-8021-33698811472f"]
+ CellChangeTimes->{3.903649353915227*^9, 3.905342115756802*^9},
+ CellLabel->
+  "Out[365]=",ExpressionUUID->"b4b1a616-5466-45e0-9eff-957a04e317f5"]
 }, Open  ]]
 }, Open  ]]
 },
-WindowSize->{1280, 1027},
+WindowSize->{1728, 1051},
 WindowMargins->{{0, Automatic}, {Automatic, 0}},
 PrivateNotebookOptions->{"CloudPublishPath"->"/Published/ForceFieldX.nb"},
 FrontEndVersion->"13.3 for Mac OS X ARM (64-bit) (June 3, 2023)",
 StyleDefinitions->"Default.nb",
-ExpressionUUID->"3d1d85e3-c65e-48e7-a4ca-5a7aa7fb6c02"
+ExpressionUUID->"42e5ea1e-77cb-42c6-9d18-4d6d94f332f0"
 ]
 (* End of Notebook Content *)
 
@@ -17597,40 +17646,36 @@ Cell[580, 22, 1718, 25, 84, "Title",ExpressionUUID->"e93404f3-2eba-4454-ba93-e14
  CellGroupingRules->{"GroupTogetherGrouping", 10000.}],
 Cell[2301, 49, 1762, 26, 67, "Section",ExpressionUUID->"77866921-0648-45f4-8a8a-2de1985be31f",
  CellGroupingRules->{"GroupTogetherGrouping", 10000.}],
-Cell[4066, 77, 3623, 64, 201, "Text",ExpressionUUID->"729dd5db-3fa9-464c-b9f4-d41d69407e55",
+Cell[4066, 77, 4224, 72, 285, "Text",ExpressionUUID->"729dd5db-3fa9-464c-b9f4-d41d69407e55",
  CellGroupingRules->{"GroupTogetherGrouping", 10000.}],
-Cell[7692, 143, 6486, 118, 325, "Input",ExpressionUUID->"35023ec3-fca6-44c2-99ff-04b9c5c92ed4",
- CellGroupingRules->{"GroupTogetherGrouping", 10000.}],
-Cell[14181, 263, 332, 5, 34, "Output",ExpressionUUID->"44469663-8090-4a6f-bcda-5a45b2e1bb43",
- CellGroupingRules->{"GroupTogetherGrouping", 10000.}],
-Cell[14516, 270, 413, 7, 34, "Output",ExpressionUUID->"6c189451-53db-4438-ae1e-04bd0d03ca37",
- CellGroupingRules->{"GroupTogetherGrouping", 10000.}],
-Cell[14932, 279, 342, 5, 34, "Output",ExpressionUUID->"43cccdcf-0621-4ff1-9ff3-968d10ae9622",
+Cell[8293, 151, 7623, 142, 325, "Input",ExpressionUUID->"35023ec3-fca6-44c2-99ff-04b9c5c92ed4",
  CellGroupingRules->{"GroupTogetherGrouping", 10000.}]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[15311, 289, 642, 10, 67, "Section",ExpressionUUID->"1da4a89c-57d6-4ac1-a439-63e90b0a6ff4"],
-Cell[15956, 301, 859, 15, 104, "Text",ExpressionUUID->"af1d4f61-2647-4ac5-b15b-262202004407"],
+Cell[15953, 298, 642, 10, 67, "Section",ExpressionUUID->"1da4a89c-57d6-4ac1-a439-63e90b0a6ff4"],
+Cell[16598, 310, 859, 15, 104, "Text",ExpressionUUID->"af1d4f61-2647-4ac5-b15b-262202004407"],
 Cell[CellGroupData[{
-Cell[16840, 320, 2107, 36, 94, "Input",ExpressionUUID->"1ddb25ca-80c6-4b0a-8e5c-4edb02f8015c"],
-Cell[18950, 358, 1031264, 17018, 350, 747044, 12357, "CachedBoxData", "BoxData", "Output",ExpressionUUID->"5438a774-1615-4bab-9374-aee7dfdc04e6"]
+Cell[17482, 329, 2017, 34, 94, "Input",ExpressionUUID->"1ddb25ca-80c6-4b0a-8e5c-4edb02f8015c"],
+Cell[19502, 365, 766, 12, 34, "Output",ExpressionUUID->"fca9c22e-ec45-49ed-b829-a9dc09cc6842"],
+Cell[20271, 379, 828, 15, 42, "Output",ExpressionUUID->"73d6ed8d-9d99-4db2-bb97-ffb9d431488f"],
+Cell[21102, 396, 1031788, 17025, 350, 747044, 12357, "CachedBoxData", "BoxData", "Output",ExpressionUUID->"a10c4a81-67eb-4458-9a4a-563f0f3778c8"]
 }, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[1050263, 17382, 282, 5, 67, "Section",ExpressionUUID->"5e5461e3-8d28-4bbb-b876-8dd2cc912ac6"],
-Cell[1050548, 17389, 671, 11, 104, "Text",ExpressionUUID->"1edc3151-5855-4f15-ac8e-6be403bb355e"],
+Cell[1052939, 17427, 282, 5, 67, "Section",ExpressionUUID->"5e5461e3-8d28-4bbb-b876-8dd2cc912ac6"],
+Cell[1053224, 17434, 671, 11, 104, "Text",ExpressionUUID->"1edc3151-5855-4f15-ac8e-6be403bb355e"],
 Cell[CellGroupData[{
-Cell[1051244, 17404, 1004, 23, 94, "Input",ExpressionUUID->"fec4361f-ec87-43a0-b2c5-527dc18b2a6f"],
-Cell[1052251, 17429, 1218, 16, 329, "Output",ExpressionUUID->"98164db7-c09e-4f36-884e-a03322d550ea"]
+Cell[1053920, 17449, 1008, 24, 94, "Input",ExpressionUUID->"fec4361f-ec87-43a0-b2c5-527dc18b2a6f"],
+Cell[1054931, 17475, 1222, 17, 329, "Output",ExpressionUUID->"7b2870da-8f30-4c6f-ba4b-df2d516b698c"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[1053506, 17450, 1085, 17, 67, "Section",ExpressionUUID->"b059f3dc-357a-4d3f-bca7-9d9b2f1befd5",
+Cell[1056190, 17497, 1085, 17, 67, "Section",ExpressionUUID->"b059f3dc-357a-4d3f-bca7-9d9b2f1befd5",
  CellGroupingRules->{"GroupTogetherGrouping", 10000.}],
-Cell[1054594, 17469, 1638, 24, 150, "Text",ExpressionUUID->"1fa8bbd0-f63a-4b8c-b4f3-380be2b96be9",
+Cell[1057278, 17516, 1638, 24, 150, "Text",ExpressionUUID->"1fa8bbd0-f63a-4b8c-b4f3-380be2b96be9",
  CellGroupingRules->{"GroupTogetherGrouping", 10000.}],
-Cell[1056235, 17495, 2843, 58, 199, "Input",ExpressionUUID->"d90c3204-f2a4-466a-856c-8c5836cbcfdc",
+Cell[1058919, 17542, 2847, 59, 199, "Input",ExpressionUUID->"d90c3204-f2a4-466a-856c-8c5836cbcfdc",
  CellGroupingRules->{"GroupTogetherGrouping", 10000.}],
-Cell[1059081, 17555, 1270, 17, 329, "Output",ExpressionUUID->"c2debeac-7329-4c57-8021-33698811472f",
+Cell[1061769, 17603, 1275, 18, 329, "Output",ExpressionUUID->"b4b1a616-5466-45e0-9eff-957a04e317f5",
  CellGroupingRules->{"GroupTogetherGrouping", 10000.}]
 }, Open  ]]
 }, Open  ]]
