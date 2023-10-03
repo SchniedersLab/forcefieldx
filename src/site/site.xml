@@ -226,6 +226,7 @@
     </menu>
     <menu name="Integrations" inherit="top">
       <item name="Binder" href="/binder.html"/>
+      <item name="Docker" href="/docker.html"/>
       <item name="Google Colab" href="/colab.html"/>
       <item name="Mathematica" href="/mathematica.html"/>
       <!-- item name="Matlab" href="/matlab.html"/ -->

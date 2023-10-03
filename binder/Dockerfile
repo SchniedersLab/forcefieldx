@@ -34,7 +34,7 @@ SHELL ["/usr/bin/bash", "-c"]
 
 RUN ([ -f binder/requirements.txt ] \
     && pip3 install --no-cache-dir -r binder/requirements.txt) \
-        || pip3 install --no-cache-dir jupyter==1.0.0 jupyterlab==2.2.0 kotlin-jupyter-kernel==0.8.0.28 
+        || pip3 install --no-cache-dir -r requirements.txt
 
 USER root
 
@@ -53,6 +53,7 @@ ENV FFX_HOME /ffx
 ENV FFX_BIN $FFX_HOME/bin
 ENV FFX_LIB $FFX_HOME/lib
 ENV CLASSPATH $FFX_LIB/
+ENV PATH="${FFX_BIN}:${PATH}"
 
 # Set IJava kernel environment variables.
 ENV IJAVA_CLASSPATH $CLASSPATH
