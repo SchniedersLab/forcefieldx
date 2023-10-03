@@ -279,7 +279,7 @@ public class OPLSAAEnergyTest extends PotentialTest {
     int atomID = (int) floor(random() * nAtoms) + 1;
     double stepSize = 1.0e-5;
     String[] args = {
-        // "--ga", Integer.toString(atomID),
+        "--ga", Integer.toString(atomID),
         "--tol", Double.toString(tolerance),
         "--dx", Double.toString(stepSize),
         filepath
@@ -302,7 +302,7 @@ public class OPLSAAEnergyTest extends PotentialTest {
     int atomID = (int) floor(random() * nAtoms) + 1;
     double stepSize = 1.0e-5;
     String[] args = {
-        // "--ga", Integer.toString(atomID),
+        "--ga", Integer.toString(atomID),
         "--dx", Double.toString(stepSize),
         "--tol", Double.toString(tolerance),
         "--ac", "ALL",
