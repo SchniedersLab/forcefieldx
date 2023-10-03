@@ -57,7 +57,6 @@ import org.junit.runners.Parameterized.Parameters;
 public class OPLSAAEnergyTest extends PotentialTest {
 
   private final String info;
-  private final String filename;
   private final String filepath;
   private final int nAtoms;
   private final int nBonds;
@@ -72,6 +71,9 @@ public class OPLSAAEnergyTest extends PotentialTest {
   private final double improperTorsionEnergy;
   private final double vanDerWaalsEnergy;
   private final double fixedChargeEnergy;
+
+  // The peptide coordinates under OPLS-AA and OPLS-AA/L result in a large gradient for some atoms,
+  // which necessitates a larger tolerance.
   private final double tolerance = 1.0e-2;
 
   public OPLSAAEnergyTest(
@@ -92,7 +94,6 @@ public class OPLSAAEnergyTest extends PotentialTest {
       int nFixedCharge) {
 
     this.info = info;
-    this.filename = filename;
     this.nAtoms = nAtoms;
     this.bondEnergy = bondEnergy;
     this.nBonds = nBonds;
@@ -277,7 +278,9 @@ public class OPLSAAEnergyTest extends PotentialTest {
     // Choose a random atom to test.
     int atomID = (int) floor(random() * nAtoms) + 1;
     double stepSize = 1.0e-5;
-    String[] args = {"--ga", Integer.toString(atomID),
+    String[] args = {
+        // "--ga", Integer.toString(atomID),
+        "--tol", Double.toString(tolerance),
         "--dx", Double.toString(stepSize),
         filepath
     };
@@ -299,7 +302,7 @@ public class OPLSAAEnergyTest extends PotentialTest {
     int atomID = (int) floor(random() * nAtoms) + 1;
     double stepSize = 1.0e-5;
     String[] args = {
-        "--ga", Integer.toString(atomID),
+        // "--ga", Integer.toString(atomID),
         "--dx", Double.toString(stepSize),
         "--tol", Double.toString(tolerance),
         "--ac", "ALL",
