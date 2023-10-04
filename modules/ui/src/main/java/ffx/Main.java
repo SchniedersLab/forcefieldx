@@ -300,7 +300,6 @@ public final class Main extends JFrame {
   /** Print out help for the command line version of Force Field X. */
   private static void commandLineInterfaceHelp(boolean listTestScripts) {
     logger.info(" usage: ffxc [-D<property=value>] <command> [-options] <PDB|XYZ>");
-    logger.info("  where commands include:");
     if (listTestScripts) {
       FFXScript.listGroovyScripts(false, true);
       logger.info("\n For help on an experimental or test command use:  ffxc <command> -h\n");

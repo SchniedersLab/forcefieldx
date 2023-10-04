@@ -46,6 +46,7 @@ import ffx.potential.cli.AlchemicalOptions
 import ffx.potential.cli.GradientOptions
 import ffx.potential.cli.PotentialScript
 import ffx.potential.cli.TopologyOptions
+import ffx.potential.utils.GradientUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Option

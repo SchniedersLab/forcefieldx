@@ -38,6 +38,7 @@
 package ffx.potential.parsers;
 
 import ffx.potential.parameters.ForceField;
+import ffx.utilities.FFXTest;
 import ffx.utilities.Keyword;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.junit.Test;
@@ -48,7 +49,7 @@ import org.junit.Test;
  * @author Michael J. Schnieders
  * @since 1.0
  */
-public class ForceFieldFilterTest {
+public class ForceFieldFilterTest extends FFXTest {
 
   public ForceFieldFilterTest() {}
 

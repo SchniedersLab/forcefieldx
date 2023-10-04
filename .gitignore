@@ -6,6 +6,7 @@
 #   The '*' does not match '/' (use '**' to match >1 nested directories).
 
 bin/ffx-all*.jar
+bin/forcefieldx*.jar
 bin/scheduler.log
 conf/*.jar
 
@@ -20,9 +21,9 @@ catalog.xml
 .classpath
 .project
 
-keystore/
 target/
 scripts/
+/groovy/
 lib/
 release/
 website/
@@ -35,10 +36,12 @@ velocity.log
 
 bin/build.properties
 modules/ffx-all/dependency-reduced-pom.xml
+modules/forcefieldx/dependency-reduced-pom.xml
 /archiveTesting/
 /amoebabio18_cphmd.prm
 
 python/__pycache__
+python/ANI2x.pt
 
 bin/native-image
 bin/reports
@@ -46,3 +49,5 @@ bin/META-INF
 
 src/site/asciidoc/commands
 src/site/asciidoc/keywords
+
+ffx_venv/

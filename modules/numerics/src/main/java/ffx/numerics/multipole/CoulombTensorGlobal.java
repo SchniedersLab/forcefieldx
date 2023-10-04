@@ -47,9 +47,9 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
  *
  * @author Michael J. Schnieders
  * @see <a href="http://doi.org/10.1142/9789812830364_0002" target="_blank"> Matt Challacombe, Eric
- *     Schwegler and Jan Almlof, Modern developments in Hartree-Fock theory: Fast methods for
- *     computing the Coulomb matrix. Computational Chemistry: Review of Current Trends. pp. 53-107,
- *     Ed. J. Leczszynski, World Scientifc, 1996. </a>
+ * Schwegler and Jan Almlof, Modern developments in Hartree-Fock theory: Fast methods for
+ * computing the Coulomb matrix. Computational Chemistry: Review of Current Trends. pp. 53-107,
+ * Ed. J. Leczszynski, World Scientifc, 1996. </a>
  * @since 1.0
  */
 public class CoulombTensorGlobal extends MultipoleTensor {
@@ -84,7 +84,9 @@ public class CoulombTensorGlobal extends MultipoleTensor {
     return 0.0;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void setR(double dx, double dy, double dz) {
     x = dx;
@@ -625,7 +627,9 @@ public class CoulombTensorGlobal extends MultipoleTensor {
     R501 = z * term5001;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @SuppressWarnings("fallthrough")
   @Override
   protected void multipoleIPotentialAtK(PolarizableMultipole mI, int order) {
@@ -887,7 +891,9 @@ public class CoulombTensorGlobal extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @SuppressWarnings("fallthrough")
   @Override
   protected void chargeIPotentialAtK(PolarizableMultipole mI, int order) {
@@ -926,7 +932,9 @@ public class CoulombTensorGlobal extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @SuppressWarnings("fallthrough")
   @Override
   protected void dipoleIPotentialAtK(double uxi, double uyi, double uzi, int order) {
@@ -1034,7 +1042,9 @@ public class CoulombTensorGlobal extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @SuppressWarnings("fallthrough")
   @Override
   protected void quadrupoleIPotentialAtK(PolarizableMultipole mI, int order) {
@@ -1216,7 +1226,9 @@ public class CoulombTensorGlobal extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @SuppressWarnings("fallthrough")
   @Override
   protected void multipoleKPotentialAtI(PolarizableMultipole mK, int order) {
@@ -1480,7 +1492,9 @@ public class CoulombTensorGlobal extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @SuppressWarnings("fallthrough")
   @Override
   protected void chargeKPotentialAtI(PolarizableMultipole mK, int order) {
@@ -1524,7 +1538,9 @@ public class CoulombTensorGlobal extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @SuppressWarnings("fallthrough")
   @Override
   protected void dipoleKPotentialAtI(double uxk, double uyk, double uzk, int order) {
@@ -1632,7 +1648,9 @@ public class CoulombTensorGlobal extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @SuppressWarnings("fallthrough")
   @Override
   protected void quadrupoleKPotentialAtI(PolarizableMultipole mK, int order) {
@@ -1816,7 +1834,9 @@ public class CoulombTensorGlobal extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   protected double Tlmnj(
       final int l, final int m, final int n, final int j, final double[] r, final double[] T000) {
@@ -1897,14 +1917,18 @@ public class CoulombTensorGlobal extends MultipoleTensor {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   protected void recursion(double[] r, double[] tensor) {
     setR(r);
     recursion(tensor);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   protected void recursion(double[] tensor) {
     source(work);

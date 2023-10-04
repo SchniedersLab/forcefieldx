@@ -142,8 +142,8 @@ public class PolarizableMultipole {
   /**
    * PolarizableMultipole constructor.
    *
-   * @param Q Multipole Q[q, dx, dy, dz, qxx, qyy, qzz, qxy, qxz, qyz]
-   * @param u Induced dipole u[ux, uy, uz]
+   * @param Q   Multipole Q[q, dx, dy, dz, qxx, qyy, qzz, qxy, qxz, qyz]
+   * @param u   Induced dipole u[ux, uy, uz]
    * @param uCR Induced dipole chain-rule uCR[ux, uy, uz]
    */
   public PolarizableMultipole(double[] Q, double[] u, double[] uCR) {
@@ -153,12 +153,12 @@ public class PolarizableMultipole {
 
   /**
    * Set the permanent multipole.
-   *
+   * <p>
    * Note that the quadrupole trace components are multiplied by 1/3 and the
    * off-diagonal components are multiplied by 2/3.
    *
-   * @param Q Multipole Q[q, dx, dy, dz, qxx, qyy, qzz, qxy, qxz, qyz]
-   * @param u Induced dipole u[ux, uy, uz]
+   * @param Q   Multipole Q[q, dx, dy, dz, qxx, qyy, qzz, qxy, qxz, qyz]
+   * @param u   Induced dipole u[ux, uy, uz]
    * @param uCR Induced dipole chain-rule uCR[ux, uy, uz]
    */
   public void set(double[] Q, double[] u, double[] uCR) {
@@ -168,13 +168,13 @@ public class PolarizableMultipole {
 
   /**
    * Set the permanent multipole.
-   *
+   * <p>
    * Note that the quadrupole trace components are multiplied by 1/3 and the
    * off-diagonal components are multiplied by 2/3.
    *
    * @param Q Multipole Q[q, dx, dy, dz, qxx, qyy, qzz, qxy, qxz, qyz]
    */
-  public void setPermanentMultipole(double[] Q) {
+  public final void setPermanentMultipole(double[] Q) {
     q = Q[0];
     dx = Q[1];
     dy = Q[2];
@@ -201,10 +201,10 @@ public class PolarizableMultipole {
   /**
    * Set the induced dipole.
    *
-   * @param u Induced dipole u[ux, uy, uz]
+   * @param u   Induced dipole u[ux, uy, uz]
    * @param uCR Induced dipole chain-rule uCR[ux, uy, uz]
    */
-  public void setInducedDipole(double[] u, double[] uCR) {
+  public final void setInducedDipole(double[] u, double[] uCR) {
     ux = u[0];
     uy = u[1];
     uz = u[2];
@@ -235,7 +235,7 @@ public class PolarizableMultipole {
    * Compute the scaled and averaged induced dipole.
    *
    * @param scaleInduction Induction mask scale factor.
-   * @param scaleEnergy Energy mask scale factor.
+   * @param scaleEnergy    Energy mask scale factor.
    */
   public final void applyMasks(double scaleInduction, double scaleEnergy) {
     // [Ux, Uy, Uz] resulted from induction masking rules, and we now apply the energy mask.

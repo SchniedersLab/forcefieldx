@@ -209,6 +209,12 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
    * Mixed second partial derivative with respect to coordinates and lambda.
    */
   private final double[] dUdXdL;
+
+  /**
+   * Gradient array needed when the OST Energy method is called.
+   */
+  private final double[] tempGradient;
+
   /**
    * Partial derivative of the force field energy with respect to lambda.
    */
@@ -255,23 +261,23 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
   /**
    * OST Constructor.
    *
-   * @param lambdaInterface defines Lambda and dU/dL.
-   * @param potential defines the Potential energy.
-   * @param lambdaFile contains the current Lambda particle position and velocity.
-   * @param histoSettings contains histogram-centric options.
-   * @param properties defines System properties.
-   * @param temperature the simulation temperature.
-   * @param dt the time step in femtoseconds.
-   * @param printInterval number of steps between logging updates.
-   * @param saveInterval number of steps between restart file updates.
-   * @param asynchronous set to true if walkers run asynchronously.
-   * @param resetNumSteps whether to reset energy counts to 0
+   * @param lambdaInterface   defines Lambda and dU/dL.
+   * @param potential         defines the Potential energy.
+   * @param lambdaFile        contains the current Lambda particle position and velocity.
+   * @param histoSettings     contains histogram-centric options.
+   * @param properties        defines System properties.
+   * @param temperature       the simulation temperature.
+   * @param dt                the time step in femtoseconds.
+   * @param printInterval     number of steps between logging updates.
+   * @param saveInterval      number of steps between restart file updates.
+   * @param asynchronous      set to true if walkers run asynchronously.
+   * @param resetNumSteps     whether to reset energy counts to 0
    * @param algorithmListener the AlgorithmListener to be notified of progress.
    */
   public OrthogonalSpaceTempering(LambdaInterface lambdaInterface, CrystalPotential potential,
-      File lambdaFile, HistogramSettings histoSettings, CompositeConfiguration properties,
-      double temperature, double dt, double printInterval, double saveInterval, boolean asynchronous,
-      boolean resetNumSteps, AlgorithmListener algorithmListener) {
+                                  File lambdaFile, HistogramSettings histoSettings, CompositeConfiguration properties,
+                                  double temperature, double dt, double printInterval, double saveInterval, boolean asynchronous,
+                                  boolean resetNumSteps, AlgorithmListener algorithmListener) {
     this(lambdaInterface, potential, lambdaFile, histoSettings, properties, temperature, dt,
         printInterval, saveInterval, asynchronous, resetNumSteps, algorithmListener, 0.0);
   }
@@ -279,24 +285,24 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
   /**
    * OST Constructor.
    *
-   * @param lambdaInterface defines Lambda and dU/dL.
-   * @param potential defines the Potential energy.
-   * @param lambdaFile contains the current Lambda particle position and velocity.
-   * @param histoSettings contains histogram-centric options.
-   * @param properties defines System properties.
-   * @param temperature the simulation temperature.
-   * @param dt the time step in femtoseconds.
-   * @param printInterval number of steps between logging updates.
-   * @param saveInterval number of steps between restart file updates.
-   * @param asynchronous set to true if walkers run asynchronously.
-   * @param resetNumSteps whether to reset energy counts to 0
+   * @param lambdaInterface   defines Lambda and dU/dL.
+   * @param potential         defines the Potential energy.
+   * @param lambdaFile        contains the current Lambda particle position and velocity.
+   * @param histoSettings     contains histogram-centric options.
+   * @param properties        defines System properties.
+   * @param temperature       the simulation temperature.
+   * @param dt                the time step in femtoseconds.
+   * @param printInterval     number of steps between logging updates.
+   * @param saveInterval      number of steps between restart file updates.
+   * @param asynchronous      set to true if walkers run asynchronously.
+   * @param resetNumSteps     whether to reset energy counts to 0
    * @param algorithmListener the AlgorithmListener to be notified of progress.
-   * @param lambdaWriteOut Minimum lambda value to print out snapshots.
+   * @param lambdaWriteOut    Minimum lambda value to print out snapshots.
    */
   public OrthogonalSpaceTempering(LambdaInterface lambdaInterface, CrystalPotential potential,
-      File lambdaFile, HistogramSettings histoSettings, CompositeConfiguration properties,
-      double temperature, double dt, double printInterval, double saveInterval, boolean asynchronous,
-      boolean resetNumSteps, AlgorithmListener algorithmListener, double lambdaWriteOut) {
+                                  File lambdaFile, HistogramSettings histoSettings, CompositeConfiguration properties,
+                                  double temperature, double dt, double printInterval, double saveInterval, boolean asynchronous,
+                                  boolean resetNumSteps, AlgorithmListener algorithmListener, double lambdaWriteOut) {
     this.lambdaInterface = lambdaInterface;
     this.potential = potential;
     this.lambdaFile = lambdaFile;
@@ -328,6 +334,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
     energyCount = -1;
     dUdXdL = new double[nVariables];
+    tempGradient = new double[nVariables];
 
     // Init the Histogram and read a restart file if it exists.
     this.properties = properties;
@@ -404,7 +411,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
    */
   public double energy(double[] x) {
 
-    forceFieldEnergy = potential.energy(x);
+    // We have to compute the energy and gradient, since we need dU/dL to be computed.
+    fill(tempGradient, 0.0);
+    forceFieldEnergy = potential.energyAndGradient(x, tempGradient);
 
     // OST is propagated with the slowly varying terms.
     if (state == Potential.STATE.FAST) {
@@ -460,7 +469,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
       // Metadynamics grid counts (every 'countInterval' steps).
       if (energyCount % histogram.countInterval == 0) {
-        histogram.addBias(dForceFieldEnergydL, x, null);
+        histogram.addBias(dForceFieldEnergydL, x, tempGradient);
       }
 
       histogram.langevin();
@@ -924,9 +933,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
    * sample is has not been seen.
    *
    * @param lambda The proposed lambda value.
-   * @param dUdL The proposed dU/dL value.
+   * @param dUdL   The proposed dU/dL value.
    * @return Returns false only if the dUdLHardWall flag is true, and the (lambda, dU/dL) sample has
-   *     not been seen.
+   * not been seen.
    */
   boolean insideHardWallConstraint(double lambda, double dUdL) {
     if (hardWallConstraint) {
@@ -1051,8 +1060,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     /**
      * Run a local optimization.
      *
-     * @param e Current energy.
-     * @param x Current atomic coordinates.
+     * @param e        Current energy.
+     * @param x        Current atomic coordinates.
      * @param gradient Work array for collecting the gradient.
      */
     public void optimize(double e, double[] x, double[] gradient) {
@@ -1144,7 +1153,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     /**
      * setOptimization.
      *
-     * @param doOptimization a boolean.
+     * @param doOptimization    a boolean.
      * @param molecularAssembly a {@link ffx.potential.MolecularAssembly} object.
      */
     public void setOptimization(boolean doOptimization, MolecularAssembly molecularAssembly) {
@@ -1472,7 +1481,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * Histogram constructor.
      *
      * @param properties a CompositeConfiguration used to configure the Histogram.
-     * @param settings An object containing the values this Histogram will be set to.
+     * @param settings   An object containing the values this Histogram will be set to.
      */
     Histogram(CompositeConfiguration properties, HistogramSettings settings) {
       this.temperature = settings.temperature;
@@ -1726,7 +1735,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * Update the free energy estimate for Meta Dynamics.
      *
      * @param print Whether to write the histogram to screen.
-     * @param save Whether to write the histogram to disk.
+     * @param save  Whether to write the histogram to disk.
      * @return Free energy (via integration of ensemble-average dU/dL)
      */
     public synchronized double updateMetaDynamicsFreeEnergyEstimate(boolean print, boolean save) {
@@ -1853,7 +1862,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * Eqs. 7 and 8 from the 2012 Crystal Thermodynamics paper.
      *
      * @param print Whether to write the histogram to screen.
-     * @param save Whether to write the histogram to disk.
+     * @param save  Whether to write the histogram to disk.
      * @return Free energy (via integration of ensemble-average dU/dL)
      */
     public synchronized double updateOSTFreeEnergyEstimate(boolean print, boolean save) {
@@ -2212,7 +2221,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * If the dUdLBin is outside the range of the count matrix, zero is returned.
      *
      * @param lambdaBin The lambda bin.
-     * @param dUdLBin The dU/dL bin.
+     * @param dUdLBin   The dU/dL bin.
      * @return The value of the bin.
      */
     double getRecursionKernelValue(int lambdaBin, int dUdLBin) {
@@ -2232,7 +2241,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * If the dUdL is outside the range of the count matrix, zero is returned.
      *
      * @param lambda the lambda value.
-     * @param dUdL the dU/dL value.
+     * @param dUdL   the dU/dL value.
      * @return The value of the Histogram.
      */
     double getRecursionKernelValue(double lambda, double dUdL) {
@@ -2242,9 +2251,9 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     /**
      * Set the value of a recursion kernel bin.
      *
-     * @param lambdaBin The lambda bin.
+     * @param lambdaBin  The lambda bin.
      * @param fLambdaBin The dU/dL bin.
-     * @param value The value of the bin.
+     * @param value      The value of the bin.
      */
     void setRecursionKernelValue(int lambdaBin, int fLambdaBin, double value) {
       recursionKernel[lambdaBin][fLambdaBin] = value;
@@ -2253,13 +2262,13 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     /**
      * Add to the value of a recursion kernel bin.
      *
-     * @param currentLambda The lambda bin.
-     * @param currentdUdL The dU/dL bin.
-     * @param value The value of the bin.
+     * @param currentLambda    The lambda bin.
+     * @param currentdUdL      The dU/dL bin.
+     * @param value            The value of the bin.
      * @param updateFreeEnergy If true, update the 1D bias and free energy estimate.
      */
     synchronized void addToRecursionKernelValue(double currentLambda, double currentdUdL,
-        double value, boolean updateFreeEnergy) {
+                                                double value, boolean updateFreeEnergy) {
 
       if (spreadBias) {
         // Expand the recursion kernel if necessary.
@@ -2342,7 +2351,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * lambda.
      *
      * @param dUdLs dUdL at the midpoint of each bin.
-     * @param type Integration type to use.
+     * @param type  Integration type to use.
      * @return Current delta-G estimate.
      */
     private double integrateNumeric(double[] dUdLs, IntegrationType type) {
@@ -2399,8 +2408,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     /**
      * Integrates a trapezoid.
      *
-     * @param x0 First x point
-     * @param x1 Second x point
+     * @param x0  First x point
+     * @param x1  Second x point
      * @param fx0 First f(x) point
      * @param fx1 Second f(x) point
      * @return The area under a trapezoid.
@@ -2421,8 +2430,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * maximum representable double value.
      *
      * @param lambda Value of Lambda to evaluate the kernal for.
-     * @param llFL Lower FLambda bin.
-     * @param ulFL Upper FLambda bin.
+     * @param llFL   Lower FLambda bin.
+     * @param ulFL   Upper FLambda bin.
      * @return the applied offset.
      */
     private double evaluateKernelforLambda(int lambda, int llFL, int ulFL) {
@@ -2504,7 +2513,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * Evaluate the bias at [currentLambdaBin, cF_lambda]
      */
     private double evaluateKernel(int currentLambdaBin, int currentdUdLBin,
-        double gaussianBiasMagnitude) {
+                                  double gaussianBiasMagnitude) {
       // Compute the value of L and FL for the center of the current bin.
       double currentLambda = currentLambdaBin * lambdaBinWidth;
       double currentdUdL = dUdLforBin(currentdUdLBin);
@@ -2545,7 +2554,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * Compute the total Bias energy at (currentLambda, currentdUdL).
      *
      * @param currentLambda The value of lambda.
-     * @param currentdUdL The value of dU/dL.
+     * @param currentdUdL   The value of dU/dL.
      * @return The bias energy.
      */
     double computeBiasEnergy(double currentLambda, double currentdUdL) {
@@ -2596,7 +2605,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     }
 
     double energyAndGradient2D(double currentLambda, double currentdUdLambda, double[] chainRule,
-        double gaussianBiasMagnitude) {
+                               double gaussianBiasMagnitude) {
 
       if (gaussianBiasMagnitude <= 0.0) {
         chainRule[0] = 0.0;
@@ -2916,7 +2925,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
 
     void destroy() {
       if (sendAsynchronous != null && sendAsynchronous.isAlive()) {
-        double[] killMessage = new double[] {Double.NaN, Double.NaN, Double.NaN, Double.NaN};
+        double[] killMessage = new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN};
         DoubleBuf killBuf = DoubleBuf.buffer(killMessage);
         try {
           logger.fine(" Sending the termination message.");

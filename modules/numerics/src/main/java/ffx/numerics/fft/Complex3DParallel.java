@@ -41,9 +41,13 @@ import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
+
+import javax.annotation.Nullable;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.Objects.requireNonNullElseGet;
 
 /**
  * Compute the 3D FFT of complex, double precision input of arbitrary dimensions via 1D Mixed Radix
@@ -84,9 +88,9 @@ public class Complex3DParallel {
   /**
    * Initialize the 3D FFT for complex 3D matrix.
    *
-   * @param nX X-dimension.
-   * @param nY Y-dimension.
-   * @param nZ Z-dimension.
+   * @param nX           X-dimension.
+   * @param nY           Y-dimension.
+   * @param nZ           Z-dimension.
    * @param parallelTeam A ParallelTeam instance.
    * @since 1.0
    */
@@ -97,15 +101,14 @@ public class Complex3DParallel {
   /**
    * Initialize the 3D FFT for complex 3D matrix.
    *
-   * @param nX X-dimension.
-   * @param nY Y-dimension.
-   * @param nZ Z-dimension.
-   * @param parallelTeam A ParallelTeam instance.
+   * @param nX              X-dimension.
+   * @param nY              Y-dimension.
+   * @param nZ              Z-dimension.
+   * @param parallelTeam    A ParallelTeam instance.
    * @param integerSchedule The IntegerSchedule to use.
    * @since 1.0
    */
-  public Complex3DParallel(
-      int nX, int nY, int nZ, ParallelTeam parallelTeam, IntegerSchedule integerSchedule) {
+  public Complex3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam, @Nullable IntegerSchedule integerSchedule) {
     this.nX = nX;
     this.nY = nY;
     this.nZ = nZ;
@@ -120,11 +123,7 @@ public class Complex3DParallel {
     nYm1 = this.nY - 1;
     nZm1 = this.nZ - 1;
     threadCount = parallelTeam.getThreadCount();
-    if (integerSchedule != null) {
-      schedule = integerSchedule;
-    } else {
-      schedule = IntegerSchedule.fixed();
-    }
+    schedule = requireNonNullElseGet(integerSchedule, IntegerSchedule::fixed);
     fftX = new Complex[threadCount];
     fftY = new Complex[threadCount];
     fftZ = new Complex[threadCount];
@@ -150,23 +149,21 @@ public class Complex3DParallel {
     int dimNotFinal = 128;
     int nCPU = ParallelTeam.getDefaultThreadCount();
     int reps = 5;
-    if (args != null) {
-      try {
-        dimNotFinal = Integer.parseInt(args[0]);
-        if (dimNotFinal < 1) {
-          dimNotFinal = 100;
-        }
-        nCPU = Integer.parseInt(args[1]);
-        if (nCPU < 1) {
-          nCPU = ParallelTeam.getDefaultThreadCount();
-        }
-        reps = Integer.parseInt(args[2]);
-        if (reps < 1) {
-          reps = 5;
-        }
-      } catch (Exception e) {
-        //
+    try {
+      dimNotFinal = Integer.parseInt(args[0]);
+      if (dimNotFinal < 1) {
+        dimNotFinal = 100;
       }
+      nCPU = Integer.parseInt(args[1]);
+      if (nCPU < 1) {
+        nCPU = ParallelTeam.getDefaultThreadCount();
+      }
+      reps = Integer.parseInt(args[2]);
+      if (reps < 1) {
+        reps = 5;
+      }
+    } catch (Exception e) {
+      //
     }
     final int dim = dimNotFinal;
     System.out.printf("Initializing a %d cubed grid for %d CPUs.\n"

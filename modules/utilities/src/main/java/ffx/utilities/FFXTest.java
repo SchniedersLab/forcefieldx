@@ -110,6 +110,13 @@ public abstract class FFXTest {
   }
 
   /**
+   * FFXTest constructor.
+   */
+  public FFXTest() {
+    // Empty constructor.
+  }
+
+  /**
    * afterClass.
    */
   @AfterClass

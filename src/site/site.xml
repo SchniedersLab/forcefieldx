@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<project
-  name="Force Field X"
-  xmlns="http://maven.apache.org/DECORATION/1.8.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/DECORATION/1.8.0 http://maven.apache.org/xsd/decoration-1.8.0.xsd">
+<project name="Force Field X" xmlns="http://maven.apache.org/DECORATION/1.8.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/DECORATION/1.8.0 http://maven.apache.org/xsd/decoration-1.8.0.xsd">
   <version position="right"/>
   <publishDate position="right" format="MMM dd yyyy"/>
   <skin>
@@ -12,12 +10,8 @@
     <version>1.11.1</version>
   </skin>
   <poweredBy>
-    <logo
-      target="_blank"
-      name="Force Field X Development"
-      href="https://github.com/schniederslab/forcefieldx"
-      img="/images/icon90.png"
-    />
+    <logo target="_blank" name="Force Field X Development" href="https://github.com/schniederslab/forcefieldx"
+          img="/images/icon90.png"/>
   </poweredBy>
   <bannerLeft>
     <name>
@@ -29,12 +23,13 @@
              </h4>
             ]]>
     </name>
-    <href>http://ffx.biochem.uiowa.edu</href>
+    <!-- name>Force Field X: Software for Molecular Biophysics</name -->
+    <!-- href>http://ffx.biochem.uiowa.edu</href -->
   </bannerLeft>
   <bannerRight>
     <name>The University of Iowa</name>
     <src>/images/UofI.png</src>
-    <href>http://www.uiowa.edu</href>
+    <href>https://www.uiowa.edu</href>
     <width>100px</width>
     <height>100px</height>
   </bannerRight>
@@ -87,13 +82,12 @@
                     window.dataLayer = window.dataLayer || [];
                     function gtag(){dataLayer.push(arguments)};
                     gtag('js', new Date());
-
                     gtag('config', 'UA-12576019-1');
                 </script>
             ]]>
     </head>
     <links>
-      <!-- item name="Biochemisty" href="http://www.medicine.uiowa.edu/biochemistry"/>
+      <!-- item name="Biochemisty and Molecular Biology" href="http://www.medicine.uiowa.edu/biochemistry"/>
       <item name="Biomedical Engineering"  href="http://www.engineering.uiowa.edu/bme"/>
       <item name="CBCB" href="https://genome.uiowa.edu/home"/>
       <item name="IIHG" href="https://www.medicine.uiowa.edu/humangenetics"/>
@@ -134,8 +128,7 @@
             <item name="SaveAsConstantPhPDB" href="/commands/test.SaveAsConstantPhPDB.html"/>
           </item>
         </item>
-        <item name="Optimization, Superposition, MD and Thermodynamics" href="/commands-opt.html"
-          collapse="true">
+        <item name="Optimization, Superposition, MD and Thermodynamics" href="/commands-opt.html" collapse="true">
           <item name="Anneal" href="/commands/Anneal.html"/>
           <item name="BAR" href="/commands/BAR.html"/>
           <item name="Cluster" href="/commands/Cluster.html"/>
@@ -161,10 +154,10 @@
             <item name="ManyBodyPhScan" href="/commands/test.ManyBodyPhScan.html"/>
             <item name="MinimizePh" href="/commands/test.MinimizePh.html"/>
             <!-- item name="MostBar" href="/commands/test.CoordShakeEnergy.html"/ -->
-            <item name="OSTBias" href="/commands/test.OSTBias.html"/>
+            <item name="OSTGradient" href="/commands/test.OSTGradient.html"/>
             <item name="PhBar" href="/commands/test.PhBar.html"/>
             <item name="PhDynamics" href="/commands/test.PhDynamics.html"/>
-            <!-- item name="RepexThermo" href="/commands/test.CoordShakeEnergy.html"/ -->
+            <!-- item name="RepexThermo" href="/commands/test.RepexThermo.html"/ -->
             <item name="SortXPH" href="/commands/test.SortXPH.html"/>
           </item>
         </item>
@@ -205,12 +198,10 @@
         </item>
       </item>
       <item name="Properties" href="/properties.html" collapse="true">
-        <item name="Electrostatics Functional Form"
-          href="/keywords/ElectrostaticsFunctionalForm.html"/>
+        <item name="Electrostatics Functional Form" href="/keywords/ElectrostaticsFunctionalForm.html"/>
         <item name="Energy Unit Conversion" href="/keywords/EnergyUnitConversion.html"/>
         <item name="Implicit Solvent" href="/keywords/ImplicitSolvent.html"/>
-        <item name="Local Geometry Functional Form"
-          href="/keywords/LocalGeometryFunctionalForm.html"/>
+        <item name="Local Geometry Functional Form" href="/keywords/LocalGeometryFunctionalForm.html"/>
         <item name="Non-Bonded Cutoff" href="/keywords/NonBondedCutoff.html"/>
         <item name="Particle-Mesh Ewald" href="/keywords/ParticleMeshEwald.html"/>
         <item name="Potential Function Parameter" href="/keywords/PotentialFunctionParameter.html"/>
@@ -223,20 +214,19 @@
         <item name="Input Files for FFX" href="/examples-input.html"/>
         <item name="Convert File Format" href="/examples-convertFileFormat.html"/>
         <item name="GPU Accelerated Side-Chain Optimization" href="/examples-gpuSideChain.html"/>
-        <item name="Side-Chain Optimization and Mutation via Many-Body DEE"
-          href="/examples-dee.html"/>
+        <item name="Side-Chain Optimization and Mutation via Many-Body DEE" href="/examples-dee.html"/>
         <item name="Organic Crystal Thermodynamics" href="/examples-gauche.html"/>
         <item name="AMOEBA-assisted X-ray Refinement" href="/examples-xray.html"/>
         <item name="Thermodynamic Polymorph Search" href="/examples-polymorphNPTsearch.html"/>
-        <item name="GPU Accelerated MC-OST Solvation Free Energy"
-          href="/examples-mcOSRWSolvationFreeEnergy.html"/>
+        <item name="GPU Accelerated MC-OST Solvation Free Energy" href="/examples-mcOSRWSolvationFreeEnergy.html"/>
       </item>
       <item name="Parallelization" href="/parallel.html"/>
       <item name="License" href="/licenses.html"/>
       <item name="FFX Team" href="/team.html"/>
     </menu>
-    <menu name="Integrations">
+    <menu name="Integrations" inherit="top">
       <item name="Binder" href="/binder.html"/>
+      <item name="Docker" href="/docker.html"/>
       <item name="Google Colab" href="/colab.html"/>
       <item name="Mathematica" href="/mathematica.html"/>
       <!-- item name="Matlab" href="/matlab.html"/ -->
@@ -245,13 +235,13 @@
       <item name="Modules" href="/modules.html"/>
       <item name="Algorithms" href="modules/algorithms/index.html"/>
       <item name="Crystal" href="modules/crystal/index.html"/>
+      <item name="Experiment" href="modules/experiment/index.html"/>
       <item name="Numerics" href="modules/numerics/index.html"/>
-      <item name="OpenMM Wrappers" href="modules/openmm/index.html"/>
+      <item name="OpenMM Wrappers" href="modules/jopenmm/index.html"/>
       <item name="Parallel Java" href="modules/pj/index.html"/>
       <item name="Potential" href="modules/potential/index.html"/>
       <item name="User Interfaces" href="modules/ui/index.html"/>
       <item name="Utilities" href="modules/utilities/index.html"/>
-      <item name="X-Ray Refinement" href="modules/xray/index.html"/>
     </menu>
     <menu name="Project Info" ref="reports"/>
   </body>

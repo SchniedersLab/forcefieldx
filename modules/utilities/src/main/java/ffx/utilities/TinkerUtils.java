@@ -73,6 +73,13 @@ public class TinkerUtils {
   private static final Pattern atomSingletonPattern = Pattern.compile("(\\d+)");
 
   /**
+   * Private constructor to prevent instantiation.
+   */
+  private TinkerUtils() {
+    // Empty constructor.
+  }
+
+  /**
    * Parse a Tinker selection list. No checking is done to make sure range i
    *
    * @param tokens A list of tokens to parse.

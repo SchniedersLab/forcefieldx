@@ -56,7 +56,8 @@ public class LambdaGradientTest extends PotentialTest {
   @Test
   public void testLambdaGradient() {
     // Prepare the Binding with input arguments.
-    String[] args = {"--ac", "1-26", "src/main/java/ffx/potential/structures/phenacetin.xyz"};
+    String xyzpath = getResourcePath("phenacetin.xyz");
+    String[] args = {"--ac", "1-26", xyzpath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the script.
@@ -91,7 +92,8 @@ public class LambdaGradientTest extends PotentialTest {
   @Test
   public void testLambdaGradientIntermolecularSoftcore() {
     // Set up the input arguments for the LambdaGradient script.
-    String[] args = {"--ac", "1-44", "src/main/java/ffx/potential/structures/ethylparaben.xyz"};
+    String xyzpath = getResourcePath("ethylparaben.xyz");
+    String[] args = {"--ac", "1-44", xyzpath};
     binding.setVariable("args", args);
 
     // Construct and evaluate the script.
@@ -115,8 +117,9 @@ public class LambdaGradientTest extends PotentialTest {
   @Test
   public void testLambdaGradientSymOp() {
     // Set up the input arguments for the LambdaGradient script.
-    String[] args = {"--sf", "TRIG", "--ls", "-l", "0.5",
-        "src/main/java/ffx/potential/structures/roy02_P1.xyz", "src/main/java/ffx/potential/structures/roy31.xyz"};
+    String roy02path = getResourcePath("roy02_P1.xyz");
+    String roy31path = getResourcePath("roy31.xyz");
+    String[] args = {"--sf", "TRIG", "--ls", "-l", "0.5", roy02path, roy31path};
     binding.setVariable("args", args);
 
     // Construct and evaluate the script.

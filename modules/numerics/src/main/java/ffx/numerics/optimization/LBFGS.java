@@ -50,6 +50,7 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 import ffx.numerics.OptimizationInterface;
 import ffx.numerics.optimization.LineSearch.LineSearchResult;
 
+import javax.annotation.Nullable;
 import java.util.logging.Logger;
 
 /**
@@ -164,7 +165,7 @@ public class LBFGS {
    */
   public static int minimize(final int n, int mSave, final double[] x, double f, double[] g,
                              final double eps, final int maxIterations, OptimizationInterface potential,
-                             OptimizationListener listener) {
+                             @Nullable OptimizationListener listener) {
 
     assert (n > 0);
     assert (mSave > -1);
@@ -215,8 +216,7 @@ public class LBFGS {
 
     // Notify the listeners of initial conditions.
     if (listener != null) {
-      if (!listener.optimizationUpdate(iterations, mSave, evaluations, grms, 0.0, f, 0.0, 0.0,
-          null)) {
+      if (!listener.optimizationUpdate(iterations, mSave, evaluations, grms, 0.0, f, 0.0, 0.0, null)) {
         // Terminate the optimization.
         return 1;
       }

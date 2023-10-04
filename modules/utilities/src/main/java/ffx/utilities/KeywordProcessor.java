@@ -65,8 +65,15 @@ import javax.lang.model.type.TypeMirror;
  */
 @SupportedAnnotationTypes({"ffx.utilities.FFXKeyword", "ffx.utilities.FFXKeywords"})
 @SupportedOptions({"keywordDir"})
-@SupportedSourceVersion(SourceVersion.RELEASE_17)
+@SupportedSourceVersion(SourceVersion.RELEASE_21)
 public class KeywordProcessor extends AbstractProcessor {
+
+  /**
+   * Default constructor.
+   */
+  public KeywordProcessor() {
+    super();
+  }
 
   /**
    * Processes a set of annotation types on type elements originating from the prior round and

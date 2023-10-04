@@ -35,497 +35,250 @@
 // exception statement from your version.
 //
 //******************************************************************************
-package ffx.algorithms.groovy;
+package ffx.algorithms.groovy
 
-import ffx.algorithms.cli.AlgorithmsScript;
-import ffx.numerics.math.Double3;
-import ffx.potential.ForceFieldEnergy;
+import edu.rit.pj.Comm
+import ffx.algorithms.cli.AlgorithmsScript
+import ffx.potential.AssemblyState
+import ffx.potential.ForceFieldEnergy
 import ffx.potential.MolecularAssembly
-import ffx.potential.utils.EnergyException;
-import ffx.potential.Utilities
-import ffx.potential.bonded.Atom;
-import ffx.potential.bonded.Bond
-import ffx.potential.parsers.SystemFilter;
+import ffx.potential.parsers.SystemFilter
 import ffx.potential.parsers.XYZFilter
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
+import org.apache.commons.math3.util.FastMath
+import picocli.CommandLine.Command
+import picocli.CommandLine.Option
 import picocli.CommandLine.Parameters
+import ffx.algorithms.optimize.TorsionSearch
 
-import java.util.logging.Level
-
-import static ffx.potential.utils.Superpose.applyRotation;
-import static ffx.potential.utils.Superpose.applyTranslation;
-import static ffx.potential.utils.Superpose.calculateTranslation;
-import static ffx.potential.utils.Superpose.translate;
-import static ffx.potential.utils.Superpose.rmsd;
-import static ffx.potential.utils.Superpose.rotate;
-import static java.lang.String.format;
-import static org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace;
-import static org.apache.commons.lang.ArrayUtils.toPrimitive;
-import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.cos;
-import static org.apache.commons.math3.util.FastMath.sin;
-import static org.apache.commons.math3.util.FastMath.toRadians;
+import static java.lang.String.format
 
 /**
- * The TorsionScan command enumerates conformations of a molecule using torsional scans around rotatable bonds.
+ * The TorsionSearch command enumerates conformations of a molecule using torsional scans around rotatable bonds.
  *
  * @author Aaron J. Nessler
+ * @author Matthew J. Speranza
  * @author Michael J. Schnieders
  * <br>
  * Usage:
  * <br>
- * ffxc TorsionScan &lt;filename&gt;
+ * ffxc TorsionSearch &lt;filename&gt;
  */
-@Command(description = " The TorsionScan command enumerates conformations of a molecule using torsional scans around rotatable bonds.",
-        name = "TorsionScan")
+@Command(description = " The TorsionSearch command enumerates conformations of a molecule using torsional scans around rotatable bonds.",
+    name = "TorsionSearch")
 class TorsionScan extends AlgorithmsScript {
 
-    /**
-     * --th or --theta Step size for bond rotations.
-     */
-    @Option(names = ['--th', '--theta'], paramLabel = '60.0', defaultValue = '60.0',
-            description = "Step size for bond rotations (in Degrees).")
-    private double increment
+  /**
+   * --th or --theta Step size for bond rotations.
+   */
+  @Option(names = ['--th', '--theta'], paramLabel = '60.0', defaultValue = '60.0',
+      description = "Step size for bond rotations (in Degrees).")
+  private double increment = 60.0
 
-    /**
-     * --ec or --energyCutoff Exclude conformations above this energy.
-     */
-    @Option(names = ['--ec', '--energyCutoff'], paramLabel = '30.0', defaultValue = '30.0',
-            description = "Exclude conformations with relative energies more than this cutoff (in kcal/mol).")
-    private double energyCutoff
+  /**
+   * --saveNumStates
+   */
+  @Option(names = ['--saveNumStates', "--sns"], paramLabel = '10', defaultValue = '10',
+      description = 'Save this many of the lowest energy states per worker. This is the default.')
+  private int saveNumStates = 10
 
-    /**
-     * --st or --saveTolerance Save conformations greater than this value.
-     */
-    @Option(names = ['--st', '--saveTolerance'], paramLabel = '-1.0', defaultValue = '-1.0',
-            description = "Save out conformations with an RMSD larger than this value.")
-    private double saveCutoff
+  /**
+   * --elimMax
+   */
+  @Option(names = ['--elimMax', "--em"], paramLabel = '2', defaultValue = '2',
+      description = 'Eliminate bonds where one torsion causes high energies. Reduces the complexity of the search.')
+  private int elimMax = 2
 
-    /**
-     * --sc or --staticComparison Hold angles fixed.
-     */
-    @Option(names = ['--sc', '--staticComparison'], paramLabel = "false", defaultValue = "false",
-            description = 'If set, each bond is rotated independently (faster, but fewer permutations).')
-    private static boolean staticCompare
+  /**
+   * --saveAll
+   */
+  @Option(names = ['--saveAll'], paramLabel = 'false', defaultValue = 'false',
+      description = 'Save out all states. Not recommended for large systems.')
+  private boolean saveAll = false
 
-    /** Minimum permutaiton energy encountered. */
-    private double minEnergy;
+  /**
+   * --sc or --staticComparison Hold angles fixed.
+   */
+  @Option(names = ['--sc', '--staticComparison'], paramLabel = "false", defaultValue = "false",
+      description = 'If set, each bond is rotated independently (faster, but fewer permutations).')
+  private static boolean staticCompare
 
-    /**
-     * The final argument should be the structure filename.
-     */
-    @Parameters(arity = "1", paramLabel = "files",
-            description = 'Atomic coordinate file(s) to permute in XYZ format.')
-    List<String> filenames = null
+  /**
+   * --eliminationThreshold
+   */
+  @Option(names = ['--eliminationThreshold', '--et'], paramLabel = '50.0', defaultValue = '50.0',
+      description = "Remove bonds that cause > this energy change during static analysis (kcal/mol).")
+  private double eliminationThreshold = 50.0
 
-    /** List to store conformations determined unique. */
-    List<double[]> uniqueConformations = new ArrayList<>();
+  /**
+   * --startIndex
+   */
+  @Option(names = ['--startIndex'], paramLabel = '0', defaultValue = '0',
+      description = "Start at this hilbert index.")
+  private long startIndex = 0
 
-    /**
-     * CrystalSuperpose Constructor.
-     */
-    TorsionScan() {
-        this(new Binding())
+  /**
+   * --endIndex
+   */
+  @Option(names = ['--endIndex'], paramLabel = '0', defaultValue = '0',
+      description = "End at this hilbert index.")
+  private long endIndex = 0
+
+  /**
+   * The final argument should be the structure filename.
+   */
+  @Parameters(arity = "1", paramLabel = "files",
+      description = 'Atomic coordinate file(s) to permute in XYZ format.')
+  String filename = null
+
+  /**
+   * CrystalSuperpose Constructor.
+   */
+  TorsionScan() {
+    this(new Binding())
+  }
+
+  /**
+   * CrystalSuperpose Constructor.
+   * @param binding Groovy Binding to use.
+   */
+  TorsionScan(Binding binding) {
+    super(binding)
+  }
+
+  /**
+   * Execute the script.
+   */
+  @Override
+  TorsionScan run() {
+    // Direct is sufficient to scan for atom clashes.
+    System.setProperty("polarization", "direct")
+
+    // Init the context and bind variables.
+    if (!init()) {
+      return this
     }
 
-    /**
-     * CrystalSuperpose Constructor.
-     * @param binding Groovy Binding to use.
-     */
-    TorsionScan(Binding binding) {
-        super(binding)
+    // Ensure file exists.
+    if (filename == null) {
+      logger.info(helpString())
+      return this
     }
 
-    /**
-     * Execute the script.
-     */
-    @Override
-    TorsionScan run() {
-        // Direct is sufficient to scan for atom clashes.
-        System.setProperty("polarization", "direct");
-
-        // Init the context and bind variables.
-        if (!init()) {
-            return this
-        }
-
-        // Ensure file exists.
-        if (filenames == null) {
-            logger.info(helpString())
-            return this
-        }
-        algorithmFunctions.openAll(filenames.get(0))
-        SystemFilter systemFilter = algorithmFunctions.getFilter()
-
-        // Define the filename to use for the RMSD values.
-        String filename = filenames.get(0)
-        MolecularAssembly ma = systemFilter.getActiveMolecularSystem();
-        int size = ma.getAtomArray().size();
-        double[] reference = new double[size * 3];
-        int index = 0;
-        Atom[] atoms = ma.getAtomArray();
-        for(int i = 0; i < size; i++){
-            Atom atom = atoms[i];
-            reference[index++] = atom.getX();
-            reference[index++] = atom.getY();
-            reference[index++] = atom.getZ();
-        }
-
-        uniqueConformations.add(reference);
-
-        List<Bond> bonds = ma.getBondList();
-        int end = bonds.size();
-        scanTorsions(ma, bonds, filename, 0, end);
-
-        if(saveCutoff >= 0.0){
-            for(double[] coords : uniqueConformations) {
-                saveCoordinatesAsAssembly(ma, coords, filename)
-            }
-        }
-        return this
+    // Setup
+    activeAssembly = getActiveAssembly(filename)
+    SystemFilter systemFilter = algorithmFunctions.getFilter()
+    MolecularAssembly ma = systemFilter.getActiveMolecularSystem()
+    logger.info("")
+    ForceFieldEnergy forceFieldEnergy = activeAssembly.potentialEnergy
+    double[] x = new double[forceFieldEnergy.getNumberOfVariables()]
+    Comm world = Comm.world()
+    int rank = world.rank()
+    int size = world.size()
+    if (saveAll) {
+      saveNumStates = -1
     }
 
-    /**
-     * Recursive method to spin torsions.
-     * @param ma Molecular assembly of interest
-     * @param bonds Bonds in the molecule
-     * @param filename Name of original file (altered before saving)
-     * @param start Starting bond index
-     * @param end Ending bond index
-     */
-    void scanTorsions(MolecularAssembly ma, List<Bond> bonds, String filename, int start, int end) {
-        for(int i = start; i < end; i++) {
-            Bond bond = bonds.get(i);
-            Atom a1 = bond.getAtom(0);
-            Atom a2 = bond.getAtom(1);
-            List<Bond> bond1 = a1.getBonds();
-            int b1 = bond1.size();
-            List<Bond> bond2 = a2.getBonds();
-            int b2 = bond2.size();
-            if (a1.isHydrogen() || a2.isHydrogen()) {
-                continue;
-            }
-            if(a1.getAtomicNumber() == 6 && a1.getNumberOfBondedHydrogen() == 3 || a2.getAtomicNumber() == 6 && a2.getNumberOfBondedHydrogen() == 3){
-                continue;
-            }
-            // No need to spin torsion if only bond...
-            if (b1 > 1 && b2 > 1) {
-                if (a1.isRing(a2)) {
-                    // Don't spin rings... seems messy
-                    if(logger.is(Level.FINER)){
-                        logger.finer("Ring detected");
-                    }
-
-                    continue;
-                }else{
-                    if(logger.is(Level.FINER)){
-                        logger.finer(" No rings detected.");
-                    }
-
-                }
-                // We should have two atoms with a spinnable bond
-                List<Atom> a1List = new ArrayList<>();
-                List<Atom> a2List = new ArrayList<>();
-                searchTorsions(a1, a1List, a2);
-                searchTorsions(a2, a2List, a1);
-                int listSize1 = a1List.size();
-                int listSize2 = a2List.size();
-                Atom[] aArray;
-                Atom[] otherAtoms;
-                if(listSize1 > listSize2){
-                    aArray = a2List.toArray() as Atom[];
-                    otherAtoms = a1List.toArray() as Atom[];
-                }else{
-                    aArray = a1List.toArray() as Atom[];
-                    otherAtoms = a2List.toArray() as Atom[];
-                }
-                Double3 a1XYZ = a1.getXYZ()
-                Double3 a2XYZ = a2.getXYZ()
-                double[] x = new double[]{a1XYZ.get(0), a1XYZ.get(1), a1XYZ.get(2), a2XYZ.get(0), a2XYZ.get(1), a2XYZ.get(2)}
-                double[] mass = new double[]{1.0,1.0}
-                double[] translation = calculateTranslation(x, mass);
-                applyTranslation(x, translation);
-                // Unit vector to rotate about.
-                double[] u = a2XYZ.sub(a1XYZ).normalize().get();
-                double turns = (increment < 360.0) ? 360.0/increment : 1.0;
-                for (int j = 0; j < turns; j++) {
-                    for (Atom a : aArray) {
-                        if (a == aArray[0]) {
-                            //First atom is what we are rotating about...
-                            continue;
-                        }
-                        a.move(translation);
-                        rotateAbout(u, a, increment);
-                        a.move(new double[]{-translation[0], -translation[1], -translation[2]});
-                    }
-                    // TODO Apply rotations above to molecule and add to MolecularAssembly to save out...
-                    // All atoms should be rotated... Save structure.
-                    Atom[] atoms = new Atom[listSize1 + listSize2];
-                    int targetIndex = 1;
-                    while(targetIndex <= (listSize1 + listSize2)){
-                        boolean found = false;
-                        for(Atom a: aArray){
-                            if(a.getIndex() == targetIndex){
-                                atoms[targetIndex++ - 1] = a;
-                                found = true;
-                                break;
-                            }
-                        }
-                        if(!found){
-                            for(Atom a: otherAtoms){
-                                if(a.getIndex() == targetIndex){
-                                    atoms[targetIndex++ - 1] = a;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if(saveCutoff >= 0.0){
-                        addUnique(atoms, listSize1+listSize2);
-                    }else{
-                        // Save all torsions.
-                        saveCoordinatesAsAssembly(ma, atoms, filename);
-                    }
-
-                    if (!staticCompare) {
-                        scanTorsions(ma, bonds, filename, i+1, end);
-                        if(i == end){
-                            return;
-                        }
-                    }
-                }
-            }else{
-                if(logger.is(Level.FINER)){
-                    logger.finer(" One bond.");
-                }
-            }
-        }
+    // Run the torsion search.
+    int numTorsions = FastMath.ceil(360 / increment) as int
+    TorsionSearch torsionSearch = new TorsionSearch(ma, ma.getMoleculeArray()[0], numTorsions, saveNumStates)
+    // Don't repeat static analysis if we're running multiple workers.
+    if (size > 1 && rank == 0) {
+      torsionSearch.staticAnalysis(elimMax, eliminationThreshold)
+    } else if (size == 1) {
+      torsionSearch.staticAnalysis(elimMax, eliminationThreshold)
     }
 
-    /**
-     * Add new torsinal conformations to list of acquired structures.
-     * @param atoms Atoms of the structure to be added.
-     * @param size Number of atoms.
-     * @return
-     */
-    boolean addUnique(final Atom[] atoms, int size){
-        // Set up potentially new system.
-        double[] test = new double[size * 3];
-        double[] mass = new double[size];
-        int index = 0;
-        for(int i = 0; i < size; i++){
-            Atom atom = atoms[i];
-            mass[i] = 1.0
-            test[index++] = atom.getX();
-            test[index++] = atom.getY();
-            test[index++] = atom.getZ();
-        }
-        double[] translation = calculateTranslation(test, mass);
-        applyTranslation(test, translation);
-        // Minimum difference between new structure and old list.
-        double minDiff = Double.MAX_VALUE;
-        for(Double[] reference0 : uniqueConformations){
-            double[] reference = toPrimitive(reference0)
-            translate(reference, mass);
-            // Reference is rotated to match test
-            rotate(test, reference, mass);
-
-            double diff = rmsd(test, reference, mass);
-            if(diff < minDiff){
-                minDiff = diff;
-            }
-        }
-        if(minDiff > saveCutoff){
-            applyTranslation(test, new double[]{-translation[0], -translation[1], -translation[2]});
-            uniqueConformations.add(test);
-        }
-        return true;
+    if (world.size() > 1 && !staticCompare) {
+      torsionSearch.buildWorker(rank, size)
+      torsionSearch.runWorker()
+    } else if (!staticCompare) {
+      endIndex = endIndex == 0 ? torsionSearch.getEnd() : endIndex
+      torsionSearch.spinTorsions(startIndex, endIndex)
     }
 
-    /**
-     * Rotate an atom about another.
-     *
-     * @param a0 a {@link ffx.potential.bonded.Atom} object to rotate about.
-     * @param a1 a {@link ffx.potential.bonded.Atom} object to create axis of rotation.
-     * @param theta Amount to rotate by (degrees).
-     */
-    static void rotateAbout(double[] u, Atom a2, double theta) {
+    // Get states, energies, and hilbert indices.
+    List<AssemblyState> states = torsionSearch.getStates()
+    List<Double> energies = torsionSearch.getEnergies()
+    List<Long> hilbertIndices = torsionSearch.getHilbertIndices()
 
-        theta = toRadians(theta);
-
-        double[][] rotation = new double[3][3];
-        rotation[0][0] = cos(theta) + (u[0] * u[0]) * (1-cos(theta));
-        rotation[0][1] = u[0]*u[1] * (1-cos(theta)) - u[2]*sin(theta);
-        rotation[0][2] = u[0]*u[2] * (1-cos(theta)) + u[1]*sin(theta);
-        rotation[1][0] = u[1]*u[0] * (1-cos(theta)) + u[2]*sin(theta);
-        rotation[1][1] = cos(theta) + (u[1] * u[1]) * (1-cos(theta));
-        rotation[1][2] = u[1]*u[2] * (1-cos(theta)) - u[0]*sin(theta);
-        rotation[2][0] = u[2]*u[0] * (1-cos(theta)) - u[1]*sin(theta);
-        rotation[2][1] = u[2]*u[1] * (1-cos(theta)) + u[0]*sin(theta);
-        rotation[2][2] = cos(theta) + (u[2] * u[2]) * (1-cos(theta));
-
-        double[] a2XYZ = new double[3];
-        a2.getXYZ(a2XYZ);
-        applyRotation(a2XYZ, rotation);
-        a2.setXYZ(a2XYZ);
+    // Save out states.
+    int count = 0
+    logger.info("\n Saving " + states.size() + " states.")
+    String extension = "_rot.arc"
+    if (world.size() > 1) {
+      extension = "_rank" + world.rank() + extension
+    }
+    File saveLocation = new File(FilenameUtils.removeExtension(filename) + extension)
+    logger.info(" Logging structures into: " + saveLocation)
+    XYZFilter xyzFilter = new XYZFilter(saveLocation,
+        activeAssembly,
+        activeAssembly.getForceField(),
+        activeAssembly.properties)
+    while (!states.empty) {
+      AssemblyState assembly = states.get(0)
+      states.remove(0)
+      assembly.revertState()
+      forceFieldEnergy.getCoordinates(x)
+      double e = energies.get(0)
+      energies.remove(0)
+      long hilbertIndex = hilbertIndices.get(0)
+      hilbertIndices.remove(0)
+      logger.info(format(" Writing to file. Configuration #%-6d energy: %-12.5f Hilbert index: %-15d",
+          (count + 1),
+          e,
+          hilbertIndex))
+      xyzFilter.writeFile(saveLocation, true)
+      count++
     }
 
-    /**
-     * Identify atoms that should be rotated.
-     *
-     * @param seed a {@link ffx.potential.bonded.Atom} object to rotate about.
-     * @param atoms a list of {@link ffx.potential.bonded.Atom} objects to rotate.
-     * @param searchDisulfide Whether to cross disulfides
-     * @param notAtom Avoid this atom (wrong side of bond).
-     */
-    void searchTorsions(Atom seed, List<Atom> atoms, Atom notAtom){
-        if (seed == null) {
-            return;
+    // Create properties/key file
+    File key = new File(FilenameUtils.removeExtension(filename) + ".key")
+    File properties = new File(FilenameUtils.removeExtension(filename) + ".properties")
+    try {
+      if (key.exists()) {
+        File keyComparison = new File(FilenameUtils.removeExtension(filename) + "_rot.key")
+        if (keyComparison.createNewFile()) {
+          FileUtils.copyFile(key, keyComparison)
         }
-        atoms.add(seed);
-        for (Bond b : seed.getBonds()) {
-            Atom nextAtom = b.get1_2(seed);
-            if (nextAtom == notAtom || atoms.contains(nextAtom)) { //nextAtom.getParent() != null ||
-                continue;
-            }
-            searchTorsions(nextAtom, atoms, notAtom);
+      } else if (properties.exists()) {
+        File propertiesComparison = new File(FilenameUtils.removeExtension(filename) + "_rot.properties")
+        if (propertiesComparison.createNewFile()) {
+          FileUtils.copyFile(properties, propertiesComparison)
         }
+      } else {
+        logger.info(" No key or properties file found.")
+      }
+    } catch (Exception e) {
+      e.printStackTrace()
     }
 
-    /**
-     * Save File from atom array.
-     * @param ma Starting MolecularAssembly object.
-     * @param aArray Atoms to save out.
-     * @param filename Location to save File.
-     * @return
-     */
-    boolean saveCoordinatesAsAssembly(MolecularAssembly ma, Atom[] aArray, String filename) {
-        // Add atoms from moved original to atom list.
-        ArrayList<Atom> atomList = new ArrayList<>();
-        for (Atom a : aArray) {
-            Atom newAtom = new Atom(a.getIndex(), a.getName(), a.getAtomType(), a.getXYZ(null));
-            atomList.add(newAtom);
+    if (world.rank() == 0 && world.size() > 1) {
+      // Combine all the rank's files into filename_rot.arc
+      logger.info("\n Combining all rank files into one file.")
+      File combined = new File(FilenameUtils.removeExtension(filename) + "_rot.arc")
+      try {
+        if (combined.createNewFile()) {
+          FileOutputStream fos = new FileOutputStream(combined)
+          for (int i = 0; i < world.size(); i++) {
+            File rankFile = new File(FilenameUtils.removeExtension(filename) + "_rank" + i + "_rot.arc")
+            if (rankFile.exists()) {
+              FileInputStream fis = new FileInputStream(rankFile)
+              byte[] buffer = new byte[1024]
+              int length
+              while ((length = fis.read(buffer)) > 0) {
+                fos.write(buffer, 0, length)
+              }
+              fis.close()
+            }
+          }
+          fos.close()
         }
-        saveAssemblyandFiles(ma, atomList, filename);
+      } catch (Exception e) {
+        e.printStackTrace()
+      }
     }
-
-    /**
-     * Save File from XYZ coordinates.
-     * @param ma Starting MolecularAssembly object.
-     * @param newXYZ Desired coordiantes for atoms.
-     * @param filename Location to save File.
-     * @return
-     */
-    boolean saveCoordinatesAsAssembly(MolecularAssembly ma, double[] newXYZ, String filename) {
-        // Add atoms from moved original to atom list.
-        ArrayList<Atom> atomList = new ArrayList<>();
-        Atom[] aArray = ma.getAtomArray();
-        int size = aArray.length;
-        for (int i = 0; i < size; i++) {
-            Atom a = aArray[i];
-            Atom newAtom = new Atom(a.getIndex(), a.getName(), a.getAtomType(), new double[]{newXYZ[i * 3], newXYZ[i * 3 + 1], newXYZ[i * 3 + 2]});
-            atomList.add(newAtom);
-        }
-        saveAssemblyandFiles(ma, atomList, filename);
-    }
-
-    boolean saveAssemblyandFiles(MolecularAssembly ma, ArrayList<Atom> atomList, String filename){
-        String fileName = FilenameUtils.removeExtension(filename);
-        String description = "_rot";
-        ArrayList<Bond> bondList = ma.getBondList();
-        for (Bond bond : bondList) {
-            Atom a1 = bond.getAtom(0);
-            Atom a2 = bond.getAtom(1);
-            //Indices stored as human-readable.
-            int a1Ind = a1.getIndex() - 1;
-            int a2Ind = a2.getIndex() - 1;
-            Atom newA1 = atomList.get(a1Ind);
-            Atom newA2 = atomList.get(a2Ind);
-            Bond b = new Bond(newA1, newA2);
-            b.setBondType(bond.getBondType());
-        }
-
-        File key = new File(fileName + ".key");
-        File properties = new File(fileName + ".properties");
-        if (key.exists()) {
-            File keyComparison = new File(fileName + description + ".key");
-            try {
-                if (keyComparison.createNewFile()) {
-                    FileUtils.copyFile(key, keyComparison);
-                } else {
-                    if(logger.is(Level.FINER)){
-                        logger.finer(" Could not create properties file.");
-                    }
-                }
-            } catch (Exception ex) {
-                // Likely using properties file.
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer(ex.toString());
-                }
-            }
-        } else if (properties.exists()) {
-            File propertiesComparison = new File(fileName + description + ".properties");
-            try {
-                if (propertiesComparison.createNewFile()) {
-                    FileUtils.copyFile(properties, propertiesComparison);
-                } else {
-                    if (logger.isLoggable(Level.FINER)) {
-                        logger.finer(" Could not create properties file.");
-                    }
-                }
-            } catch (Exception ex) {
-                // Likely not using a key/properties file... so PDB?
-                logger.info(" Neither key nor properties file detected therefore only creating XYZ.");
-                if (logger.isLoggable(Level.FINER)) {
-                    logger.finer(ex.toString());
-                    logger.finer(getStackTrace(ex));
-                }
-            }
-        }
-
-        MolecularAssembly saveAssembly = new MolecularAssembly(fileName);
-
-        // Construct the force field for the expanded set of molecules
-        saveAssembly.setForceField(ma.getForceField());
-        saveAssembly.setCrystal(ma.getCrystal());
-
-        // The biochemistry method is designed to load chemical entities into the
-        // Polymer, Molecule, Water and Ion data structure.
-        Utilities.biochemistry(saveAssembly, atomList);
-
-        try {
-            saveAssembly.setPotential(ForceFieldEnergy.energyFactory(saveAssembly));
-            double energy = saveAssembly.potentialEnergy.energy();
-            if(energy < minEnergy){
-                minEnergy = energy;
-            }
-            double relativeEnergy = abs(energy - minEnergy)
-            if( relativeEnergy > energyCutoff){
-                logger.info(format(" Conformation energy (%9.4f) is greater than cutoff (%9.4f > %9.4f).", energy, relativeEnergy, energyCutoff));
-                saveAssembly.destroy();
-                return false;
-            }else{
-                logger.info(format(" Energy: %9.4f", energy));
-                // superpose initial object for RMSD?
-                File saveLocation = new File(fileName + description + ".arc");
-                saveAssembly.setFile(saveLocation);
-                XYZFilter xyzFilter = new XYZFilter(saveLocation, saveAssembly, saveAssembly.getForceField(), saveAssembly.getProperties());
-                boolean success = xyzFilter.writeFile(saveLocation, true);
-
-                saveAssembly.destroy();
-                return success;
-            }
-        }catch(EnergyException eex){
-            logger.info(format(" Unstable conformation skipped."));
-            saveAssembly.destroy();
-            return false
-        }catch(Exception ex){
-            logger.severe(getStackTrace(ex))
-            saveAssembly.destroy();
-            return false;
-        }
-    }
+    return this
+  }
 }

@@ -49,7 +49,8 @@ public class MoveIntoUnitCellTest extends PotentialTest {
   @Test
   public void testMoveIntoUnitCell() {
     // Set-up the input arguments for the MoveIntoUnitCell script.
-    String[] args = {"src/main/java/ffx/potential/structures/watertiny.xyz"};
+    String filepath = getResourcePath("watertiny.xyz");
+    String[] args = {filepath};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 

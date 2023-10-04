@@ -39,6 +39,8 @@ package ffx.numerics.special;
 
 import java.util.Arrays;
 import java.util.Collection;
+
+import ffx.utilities.FFXTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,7 +49,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 /** @author Michael J. Schnieders */
 @RunWith(Parameterized.class)
-public class ErfTest {
+public class ErfTest extends FFXTest {
 
   /**
    * Java double precision follows the IEEE 754 Binary Floating-Point Arithmetic standard. Each

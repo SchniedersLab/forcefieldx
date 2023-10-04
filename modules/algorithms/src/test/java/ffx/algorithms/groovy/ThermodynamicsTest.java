@@ -203,7 +203,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
 
       String[] copiedExtensions = new String[] {"dyn", "key", "properties", "his", "lam", "prm"};
       for (int i = 0; i < nFiles; i++) {
-        File srcFile = new File("src/main/java/" + filenames[i]);
+        File srcFile = getResourceFile(filenames[i]);
         File tempFile = new File(tempDirName + FilenameUtils.getName(filenames[i]));
         copyFile(srcFile, tempFile);
         logger.fine(format(" Copied file %s to %s", srcFile, tempFile));
@@ -372,7 +372,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
             null, null, null, null, null, new String[] {}, new String[] {},
             new String[] {"-h", "true"}},
         {"Acetamide Implicit Solvation Free Energy: -10.5 kcal/mol",
-            new String[] {"ffx/algorithms/structures/acetamide.gk.xyz"}, ThermoTestMode.FREE, true,
+            new String[] {"acetamide.gk.xyz"}, ThermoTestMode.FREE, true,
             -9.2, 1.0, null, null, null, null, null, null,
             new String[] {"-C", "10", "--ac", "1-9", "-d", "1.0", "-n", "20000", "-w", "5", "--bM",
                 "0.25", "--tp", "2.0"},
@@ -382,10 +382,10 @@ public class ThermodynamicsTest extends AlgorithmsTest {
 //                // ions, and some water.
 //                "Calbindin D9k Ca/Mg Simultaneous Bookending: L = 0.0",
 //                new String[] {
-//                    "ffx/algorithms/structures/4icb_ca_a.xyz",
-//                    "ffx/algorithms/structures/4icb_ca_b.xyz",
-//                    "ffx/algorithms/structures/4icb_mg_a.xyz",
-//                    "ffx/algorithms/structures/4icb_mg_b.xyz"
+//                    "4icb_ca_a.xyz",
+//                    "4icb_ca_b.xyz",
+//                    "4icb_mg_a.xyz",
+//                    "4icb_mg_b.xyz"
 //                },
 //                ThermoTestMode.GRAD,
 //                true,
@@ -450,10 +450,10 @@ public class ThermodynamicsTest extends AlgorithmsTest {
 //                // ions, and some water.
 //                "Calbindin D9k Ca/Mg Simultaneous Bookending: L = 0.5",
 //                new String[] {
-//                    "ffx/algorithms/structures/4icb_ca_a.xyz",
-//                    "ffx/algorithms/structures/4icb_ca_b.xyz",
-//                    "ffx/algorithms/structures/4icb_mg_a.xyz",
-//                    "ffx/algorithms/structures/4icb_mg_b.xyz"
+//                    "4icb_ca_a.xyz",
+//                    "4icb_ca_b.xyz",
+//                    "4icb_mg_a.xyz",
+//                    "4icb_mg_b.xyz"
 //                },
 //                ThermoTestMode.GRAD,
 //                false,
@@ -517,9 +517,8 @@ public class ThermodynamicsTest extends AlgorithmsTest {
             // Gradient atoms: a few random protein atoms, some of the coordinating carboxyls, the
             // ions, and some water.
             "Calbindin D9k Ca/Mg Simultaneous Bookending: L = 1.0",
-            new String[] {"ffx/algorithms/structures/4icb_ca_a.xyz",
-                "ffx/algorithms/structures/4icb_ca_b.xyz", "ffx/algorithms/structures/4icb_mg_a.xyz",
-                "ffx/algorithms/structures/4icb_mg_b.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            new String[] {"4icb_ca_a.xyz", "4icb_ca_b.xyz", "4icb_mg_a.xyz", "4icb_mg_b.xyz"}, 
+            ThermoTestMode.GRAD, true, 0, 0,
             new int[] {1, 100, 421, 426, 919, 921, 1203, 1204, 1205, 1206, 1207, 1208},
             // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
             new double[] {-8478.143922064253, 0}, new double[] {0, 0},
@@ -558,9 +557,8 @@ public class ThermodynamicsTest extends AlgorithmsTest {
         // Gradient atoms: a few random protein atoms, some of the coordinating carboxyls, the
         // ions, and some water.
         "Carp Parvalbumin Ca/Mg Simultaneous Bookending: L = 0.0",
-        new String[] {"ffx/algorithms/structures/5cpv_ca_a.xyz",
-            "ffx/algorithms/structures/5cpv_ca_b.xyz", "ffx/algorithms/structures/5cpv_mg_a.xyz",
-            "ffx/algorithms/structures/5cpv_mg_b.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+        new String[] {"5cpv_ca_a.xyz", "5cpv_ca_b.xyz", "5cpv_mg_a.xyz", "5cpv_mg_b.xyz"},
+        ThermoTestMode.GRAD, true, 0, 0,
         new int[] {1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
         // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
         new double[] {-10389.28471472707, 0}, new double[] {0, 0},
@@ -597,9 +595,8 @@ public class ThermodynamicsTest extends AlgorithmsTest {
         "810-829.1339-1447.1476-1490.1603.1605-1610"},
         new String[] {"disable-neighbor-updates", "true"}, new String[] {}},
         {"Carp Parvalbumin Ca/Mg Simultaneous Bookending: L = 0.5",
-            new String[] {"ffx/algorithms/structures/5cpv_ca_a.xyz",
-                "ffx/algorithms/structures/5cpv_ca_b.xyz", "ffx/algorithms/structures/5cpv_mg_a.xyz",
-                "ffx/algorithms/structures/5cpv_mg_b.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            new String[] {"5cpv_ca_a.xyz", "5cpv_ca_b.xyz", "5cpv_mg_a.xyz", "5cpv_mg_b.xyz"},
+            ThermoTestMode.GRAD, true, 0, 0,
             new int[] {1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
             // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
             new double[] {-10409.965261439502, 0}, new double[] {-64.96985362393843, 0},
@@ -636,9 +633,8 @@ public class ThermodynamicsTest extends AlgorithmsTest {
             "810-829.1339-1447.1476-1490.1603.1605-1610"},
             new String[] {"disable-neighbor-updates", "true"}, new String[] {}},
         {"Carp Parvalbumin Ca/Mg Simultaneous Bookending: L = 1.0",
-            new String[] {"ffx/algorithms/structures/5cpv_ca_a.xyz",
-                "ffx/algorithms/structures/5cpv_ca_b.xyz", "ffx/algorithms/structures/5cpv_mg_a.xyz",
-                "ffx/algorithms/structures/5cpv_mg_b.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            new String[] {"5cpv_ca_a.xyz", "5cpv_ca_b.xyz", "5cpv_mg_a.xyz", "5cpv_mg_b.xyz"},
+            ThermoTestMode.GRAD, true, 0, 0,
             new int[] {1, 303, 1401, 1402, 1482, 1488, 1489, 1602, 1603, 1604, 1605, 1606},
             // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
             new double[] {-10430.645808151916, 0}, new double[] {0, 0},
@@ -675,8 +671,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
             "810-829.1339-1447.1476-1490.1603.1605-1610"},
             new String[] {"disable-neighbor-updates", "true"}, new String[] {}},
         {"Water-Sodium to Water Dimer Softcoring Test: L = 0.0",
-            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
-                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            new String[] {"water-dimer.xyz", "water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
             intRange(1, 8),
             // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
             new double[] {2.61926128937, 0}, new double[] {17.7107919457, 0},
@@ -699,8 +694,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
             new double[7][3]}, new String[] {"-l", "0.0", "--ac", "1-3", "--ac2", "1"},
             new String[] {}, new String[] {}},
         {"Water-Sodium to Water Dimer Softcoring Test: L = 0.1",
-            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
-                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            new String[] {"water-dimer.xyz", "water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
             intRange(1, 8),
             // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
             new double[] {2.850550906, 0}, new double[] {-8.71629068942, 0},
@@ -725,8 +719,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
             new double[7][3]}, new String[] {"-l", "0.1", "--ac", "1-3", "--ac2", "1"},
             new String[] {}, new String[] {}},
         {"Water-Sodium to Water Dimer Softcoring Test: L = 0.25",
-            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
-                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, false, 0, 0,
+            new String[] {"water-dimer.xyz", "water-na.xyz"}, ThermoTestMode.GRAD, false, 0, 0,
             intRange(1, 8),
             // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
             new double[] {0.974157909812, 0}, new double[] {-10.6503844408, 0},
@@ -751,8 +744,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
             new double[7][3]}, new String[] {"-l", "0.25", "--ac", "1-3", "--ac2", "1"},
             new String[] {}, new String[] {}},
         {"Water-Sodium to Water Dimer Softcoring Test: L = 0.4",
-            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
-                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            new String[] {"water-dimer.xyz", "water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
             intRange(1, 8),
             // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
             new double[] {0.110037916292, 0}, new double[] {-2.26607999096, 0},
@@ -777,8 +769,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
             new double[7][3]}, new String[] {"-l", "0.4", "--ac", "1-3", "--ac2", "1"},
             new String[] {}, new String[] {}},
         {"Water-Sodium to Water Dimer Softcoring Test: L = 0.5",
-            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
-                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            new String[] {"water-dimer.xyz", "water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
             intRange(1, 8),
             // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
             new double[] {-0.00563228503, 0}, new double[] {-0.384474276341, 0},
@@ -803,8 +794,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
             new double[7][3]}, new String[] {"-l", "0.5", "--ac", "1-3", "--ac2", "1"},
             new String[] {}, new String[] {}},
         {"Water-Sodium to Water Dimer Softcoring Test: L = 0.6",
-            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
-                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            new String[] {"water-dimer.xyz", "water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
             intRange(1, 8),
             // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
             new double[] {-0.010482021204, 0}, new double[] {0.180367758296, 0},
@@ -829,8 +819,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
             new double[7][3]}, new String[] {"-l", "0.6", "--ac", "1-3", "--ac2", "1"},
             new String[] {}, new String[] {}},
         {"Water-Sodium to Water Dimer Softcoring Test: L = 0.75",
-            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
-                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, false, 0, 0,
+            new String[] {"water-dimer.xyz", "water-na.xyz"}, ThermoTestMode.GRAD, false, 0, 0,
             intRange(1, 8),
             // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
             new double[] {0.0829830017977, 0}, new double[] {1.27996801166, 0},
@@ -855,8 +844,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
             new double[7][3]}, new String[] {"-l", "0.75", "--ac", "1-3", "--ac2", "1"},
             new String[] {}, new String[] {}},
         {"Water-Sodium to Water Dimer Softcoring Test: L = 0.9",
-            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
-                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            new String[] {"water-dimer.xyz", "water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
             intRange(1, 8),
             // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
             new double[] {0.397347160918, 0}, new double[] {2.75351951766, 0},
@@ -881,8 +869,7 @@ public class ThermodynamicsTest extends AlgorithmsTest {
             new double[7][3]}, new String[] {"-l", "0.9", "--ac", "1-3", "--ac2", "1"},
             new String[] {}, new String[] {}},
         {"Water-Sodium to Water Dimer Softcoring Test: L = 1.0",
-            new String[] {"ffx/algorithms/structures/water-dimer.xyz",
-                "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
+            new String[] {"water-dimer.xyz", "water-na.xyz"}, ThermoTestMode.GRAD, true, 0, 0,
             intRange(1, 8),
             // Fill in the post-bias PE and dU/dL once the test harness supports bias deposition.
             new double[] {0.678991455919, 0}, new double[] {2.62955540214, 0},
@@ -904,16 +891,14 @@ public class ThermodynamicsTest extends AlgorithmsTest {
             // Fill in once the test harness supports bias-deposition.
             new double[7][3]}, new String[] {"-l", "1.0", "--ac", "1-3", "--ac2", "1"},
             new String[] {}, new String[] {}}, {"Water-Sodium to Water Dimer Free Energy Test",
-        new String[] {"ffx/algorithms/structures/water-dimer.xyz",
-            "ffx/algorithms/structures/water-na.xyz"}, ThermoTestMode.FREE, true, 16.0, 16.0, null,
+        new String[] {"water-dimer.xyz", "water-na.xyz"}, ThermoTestMode.FREE, true, 16.0, 16.0, null,
         null, null, null, null, null,
         new String[] {"-d", "1.0", "-l", "0.5", "--ac", "1-3", "--ac2", "1", "-n", "20000", "-Q",
             "5000", "-k", "20.0", "-w", "20.0", "-r", "5.0", "-C", "10"},
         new String[] {"disable-neighbor-updates", "true", "lambda-bin-width", "0.025",
             "flambda-bin-width", "5.0", "randomseed", "2019"}, new String[] {}},
         {"Dual Well Gradient Test: L = 0.5",
-            new String[] {"ffx/algorithms/structures/dualWell-cis.xyz",
-                "ffx/algorithms/structures/dualWell-trans.xyz"}, ThermoTestMode.GRAD, false, 0, 0,
+            new String[] {"dualWell-cis.xyz", "dualWell-trans.xyz"}, ThermoTestMode.GRAD, false, 0, 0,
             new int[] {0, 1, 2, 3}, new double[] {1.0, 1.0}, new double[] {2.0, 2.0},
             new double[] {0, Double.NaN}, new double[][][] {
             {{8.561159028211611E-6, 5.743324479222663E-6, -1.4984967045837012E-10},
@@ -929,8 +914,8 @@ public class ThermodynamicsTest extends AlgorithmsTest {
             new String[] {"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20",
                 "disable-neighbor-updates", "true", "ost-temperOffset", "6.0", "randomseed", "2020"},
             new String[0]}, {"Dual Well 1-Step MC-OST Test",
-        new String[] {"ffx/algorithms/structures/dualWell-cis.xyz",
-            "ffx/algorithms/structures/dualWell-trans.xyz"}, ThermoTestMode.FREE, true, 0, 1.0, null,
+        new String[] {"dualWell-cis.xyz",
+            "dualWell-trans.xyz"}, ThermoTestMode.FREE, true, 0, 1.0, null,
         null, null, null, null, null,
         new String[] {"-l", "0.5", "--bM", "0.1", "-b", "ADIABATIC", "-i", "VERLET", "-d", "2.0",
             "-k", "1000.0", "-w", "1000.0", "-r", "1.0", "-Q", "1000", "-n", "250000", "-t",
@@ -938,8 +923,8 @@ public class ThermodynamicsTest extends AlgorithmsTest {
         new String[] {"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20",
             "disable-neighbor-updates", "true", "ost-temperOffset", "6.0", "randomseed", "445"},
         new String[] {"--mc", "true"}}, {"Dual Well 2-Step MC-OST Test",
-        new String[] {"ffx/algorithms/structures/dualWell-cis.xyz",
-            "ffx/algorithms/structures/dualWell-trans.xyz"}, ThermoTestMode.FREE, true, 0, 1.0, null,
+        new String[] {"dualWell-cis.xyz",
+            "dualWell-trans.xyz"}, ThermoTestMode.FREE, true, 0, 1.0, null,
         null, null, null, null, null,
         new String[] {"-l", "0.5", "--bM", "0.1", "-b", "ADIABATIC", "-i", "VERLET", "-d", "2.0",
             "-k", "1000.0", "-w", "1000.0", "-r", "1.0", "-Q", "1000", "-n", "250000", "-t",
@@ -947,8 +932,8 @@ public class ThermodynamicsTest extends AlgorithmsTest {
         new String[] {"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20",
             "disable-neighbor-updates", "true", "ost-temperOffset", "6.0", "randomseed", "445"},
         new String[] {"--mc", "true", "--ts", "true"}}, {"Short 1-Step MC-OST Test",
-        new String[] {"ffx/algorithms/structures/dualWell-cis.xyz",
-            "ffx/algorithms/structures/dualWell-trans.xyz"}, ThermoTestMode.FREE, true, 0, 2.0, null,
+        new String[] {"dualWell-cis.xyz",
+            "dualWell-trans.xyz"}, ThermoTestMode.FREE, true, 0, 2.0, null,
         null, null, null, null, null,
         new String[] {"-l", "0.5", "--bM", "0.1", "-b", "ADIABATIC", "-i", "VERLET", "-d", "2.0",
             "-k", "1000.0", "-w", "1000.0", "-r", "0.01", "-Q", "100", "-n", "200", "-t", "100.0",
@@ -956,8 +941,8 @@ public class ThermodynamicsTest extends AlgorithmsTest {
         new String[] {"pj.nt", "1", "lambda-bin-width", "0.02", "flambda-bin-width", "0.20",
             "disable-neighbor-updates", "true", "ost-temperOffset", "6.0", "randomseed", "445"},
         new String[] {"--mc", "true"}}, {"Short 2-Step MC-OST Test",
-        new String[] {"ffx/algorithms/structures/dualWell-cis.xyz",
-            "ffx/algorithms/structures/dualWell-trans.xyz"}, ThermoTestMode.FREE, true, 0, 2.0, null,
+        new String[] {"dualWell-cis.xyz",
+            "dualWell-trans.xyz"}, ThermoTestMode.FREE, true, 0, 2.0, null,
         null, null, null, null, null,
         new String[] {"-l", "0.5", "--bM", "0.1", "-b", "ADIABATIC", "-i", "VERLET", "-d", "2.0",
             "-k", "1000.0", "-w", "1000.0", "-r", "0.01", "-Q", "100", "-n", "200", "-t", "100.0",

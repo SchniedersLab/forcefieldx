@@ -57,6 +57,13 @@ public class Resources {
   private static final Logger logger = Logger.getLogger(Resources.class.getName());
 
   /**
+   * Private constructor to prevent instantiation.
+   */
+  private Resources() {
+    // Empty constructor.
+  }
+
+  /**
    * Log resources.
    */
   public static void logResources() {

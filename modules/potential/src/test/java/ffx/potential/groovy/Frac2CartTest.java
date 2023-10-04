@@ -49,7 +49,7 @@ public class Frac2CartTest extends PotentialTest {
   @Test
   public void testFrac2Cart() {
     // Set-up the input arguments for the Frac2Cart script.
-    String[] args = {"src/main/java/ffx/potential/structures/acetanilide.frac.xyz"};
+    String[] args = {getResourcePath("acetanilide.frac.xyz")};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 

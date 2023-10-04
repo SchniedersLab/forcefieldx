@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.numerics.math;
 
+import javax.annotation.Nullable;
+
 import static java.lang.String.format;
 import static org.apache.commons.math3.util.FastMath.abs;
 import static org.apache.commons.math3.util.FastMath.acos;
@@ -428,7 +430,7 @@ public final class DoubleMath {
    * @param label a {@link String} object.
    * @return Returns a String description of the vector.
    */
-  public static String toString(double[] v, String label) {
+  public static String toString(@Nullable double[] v, @Nullable String label) {
     if (v == null) {
       return null;
     }

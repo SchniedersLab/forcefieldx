@@ -41,6 +41,8 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.Collection;
+
+import ffx.utilities.FFXTest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -53,7 +55,7 @@ import org.junit.runners.Parameterized.Parameters;
  * @since 1.0
  */
 @RunWith(Parameterized.class)
-public class MultipoleTensorTest {
+public class MultipoleTensorTest extends FFXTest {
 
   private final int order;
   private final int tensorCount;

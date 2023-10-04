@@ -451,7 +451,7 @@ public class AtomicDoubleArray3D {
 
       /** {@inheritDoc} */
       @Override
-      public void run(int lb, int ub) throws Exception {
+      public void run(int lb, int ub) {
         int threadID = getThreadIndex();
         switch (operation) {
           case RESET -> reset(threadID, lb, ub);

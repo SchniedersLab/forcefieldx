@@ -55,6 +55,12 @@ import java.nio.file.attribute.BasicFileAttributes;
 public class DirectoryUtils {
 
   /**
+   * Private constructor to prevent instantiation.
+   */
+  private DirectoryUtils() {
+  }
+
+  /**
    * Recursively delete the contents of a directory.
    *
    * @param path a {@link java.nio.file.Path} object.

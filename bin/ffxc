@@ -101,9 +101,11 @@ then
 fi
 
 if [ "$CLASSPATH_PREFIX" != "" ]; then
-    CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR/bin/ffx-all-$VERSION.jar"
+#    CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR/bin/forcefieldx-$VERSION.jar"
+    CLASSPATH=$CLASSPATH_PREFIX:"$BASEDIR/lib/*"
 else
-    CLASSPATH="$BASEDIR/bin/ffx-all-$VERSION.jar"
+#    CLASSPATH="$BASEDIR/bin/forcefieldx-$VERSION.jar"
+    CLASSPATH="$BASEDIR/lib/*"
 fi
 JLP=modules/numerics/src/main/java/ffx/numerics/fft
 
@@ -139,13 +141,13 @@ if [ -x "$awkCmd" ]; then
     fi
 fi
 
-# Detect JDK version; disallow JDKs below 17 and above 21.
+# Detect JDK version; disallow JDKs other than 21.
 if [ $hasAwkSed ]; then
     JVERS="`java -version 2>&1 | awk '/version/ {print $3;}' | sed 's/\"//g'`"
     JVFIRST="`echo "$JVERS" | awk 'BEGIN { FS = "[.-]"; } { print $1 }'`"
 
-    if [ $JVFIRST -lt 11 -o $JVFIRST -gt 21 ]; then
-        echo " Illegal Java version detected (${JVERS}). Please use JDK 17 through JDK 21." 1>&2
+    if [ $JVFIRST -lt 21 -o $JVFIRST -gt 21 ]; then
+        echo " Illegal Java version detected (${JVERS}). Please use JDK 21." 1>&2
     fi
 
     EXTRA_JVM_ARGUMENTS="${EXTRA_JVM_ARGUMENTS} --add-opens=java.desktop/java.awt=ALL-UNNAMED --add-exports=java.base/java.lang=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.desktop/sun.java2d=ALL-UNNAMED"
@@ -167,7 +169,7 @@ if [ $hasAwkSed ]; then
       fi
     fi
 else
-    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 17 through JDK 21 and (optionally) CUDA toolkit 10.1 or later."
+    echo " The JRE and CUDA toolkit versions could not be autodetected. Please use JDK 21 and (optionally) CUDA toolkit 10.1 or later."
 fi
 
 # For Cygwin, switch paths to Windows format before running java
@@ -223,6 +225,7 @@ exec "$JAVACMD" $JAVA_OPTS $JAVA_FLAGS \
   -Djava.library.path="$JLP" \
   -Djava.awt.headless="true" \
   -Dj3d.rend="noop" \
+  -Dpolyglot.engine.WarnInterpreterOnly="false" \
   -Dapp.name="Force Field X" \
   -Dapp.pid="$$" \
   -Dapp.repo="$REPO" \

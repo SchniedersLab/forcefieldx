@@ -74,7 +74,7 @@ public class SimulatedAnnealingTest extends AlgorithmsTest {
   public static Collection<Object[]> data() {
     return Arrays.asList(
         new Object[][] {{"Acetamide with Stochastic integrator for Simulated Annealing Test", // info
-            "ffx/algorithms/structures/acetamide_annealing.xyz", // filename
+            "acetamide_annealing.xyz", // filename
             2.7348819613719866, // endKineticEnergy
             -30.162204159002336, // endPotentialEnergy
             -27.427322197628616, // endTotalEnergy
@@ -87,7 +87,7 @@ public class SimulatedAnnealingTest extends AlgorithmsTest {
 
     // Set-up the input arguments for the script.
     String[] args = {"-n", "200", "-i", "STOCHASTIC", "-r", "0.001", "--tl", "100", "--tu", "400",
-        "--tmS", "EXP", "-W", "10", "-w", "100", "-k", "100", "src/main/java/" + filename};
+        "--tmS", "EXP", "-W", "10", "-w", "100", "-k", "100", getResourcePath(filename)};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 

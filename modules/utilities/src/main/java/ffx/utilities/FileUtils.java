@@ -57,6 +57,13 @@ import java.nio.file.Path;
 public class FileUtils {
 
   /**
+   * Private constructor to prevent instantiation.
+   */
+  private FileUtils() {
+    // Empty constructor.
+  }
+
+  /**
    * Returns the file name of a temporary copy of <code>input</code> content.
    *
    * @param input The input stream contents are copied to a temporary file.

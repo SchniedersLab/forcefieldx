@@ -64,18 +64,17 @@ public class Real3D {
    * @param nZ Z-dimension.
    */
   public Real3D(int nX, int nY, int nZ) {
-    int n = nX;
     this.nX = nX / 2;
     this.nY = nY;
     this.nZ = nZ;
     nX1 = this.nX + 1;
     nZ2 = 2 * nZ;
     nextX = 2;
-    nextY = n + 2;
+    nextY = nX + 2;
     nextZ = nextY * nY;
     work = new double[nZ2];
     recip = new double[nX1 * nY * nZ];
-    fftX = new Real(n);
+    fftX = new Real(nX);
     fftY = new Complex(nY);
     fftZ = new Complex(nZ);
   }

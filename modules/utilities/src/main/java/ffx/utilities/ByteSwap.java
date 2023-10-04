@@ -46,6 +46,12 @@ package ffx.utilities;
 public class ByteSwap {
 
   /**
+   * Private constructor to prevent instantiation.
+   */
+  private ByteSwap() {
+  }
+
+  /**
    * Byte swap a single short value.
    *
    * @param value Value to byte swap.

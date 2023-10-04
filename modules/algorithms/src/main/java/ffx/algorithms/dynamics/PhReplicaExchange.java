@@ -37,10 +37,6 @@
 // ******************************************************************************
 package ffx.algorithms.dynamics;
 
-import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
-import static ffx.utilities.Constants.kB;
-import static org.apache.commons.math3.util.FastMath.exp;
-
 import edu.rit.mp.DoubleBuf;
 import edu.rit.mp.IntegerBuf;
 import edu.rit.mp.buf.IntegerMatrixBuf_1;
@@ -48,6 +44,10 @@ import edu.rit.pj.Comm;
 import ffx.algorithms.Terminatable;
 import ffx.numerics.Potential;
 import ffx.potential.extended.ExtendedSystem;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.math3.util.FastMath;
+
+import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -60,9 +60,10 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jline.internal.Nullable;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.math3.util.FastMath;
+
+import static ffx.utilities.Constants.KCAL_TO_GRAM_ANG2_PER_PS2;
+import static ffx.utilities.Constants.kB;
+import static org.apache.commons.math3.util.FastMath.exp;
 
 /**
  * The PhReplicaExchange implements pH replica exchange. Adapted from "ReplicaExchange.java" by

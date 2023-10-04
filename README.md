@@ -9,7 +9,7 @@ Force Field X is an atomic resolution molecular modeling application that target
 
 Please see the Force Field X [website](http://ffx.biochem.uiowa.edu) for more details.
 
-[![Build Status](https://travis-ci.com/SchniedersLab/forcefieldx.svg?branch=master)](https://travis-ci.com/SchniedersLab/forcefieldx/)
+[![Build Status](https://app.travis-ci.com/SchniedersLab/forcefieldx.svg?branch=master)](https://app.travis-ci.com/SchniedersLab/forcefieldx/)
 
 ---
 
@@ -49,7 +49,7 @@ Additional tests, ordinarily skipped due to length of running them (~15 minutes 
 
    mvn -DskipTests=false -Dffx.ci=true
 
-Currently, JDKs 17, 18 and 19 are supported. 
+Currently, JDK 21 is supported. 
 After installing a supported JDK, point the JAVA\_HOME environment variable to the JDK directory, and then add the JDK bin directory to your path. 
 
 ---

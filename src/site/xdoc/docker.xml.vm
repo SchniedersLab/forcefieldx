@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document xmlns="http://maven.apache.org/XDOC/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/XDOC/2.0
+    http://maven.apache.org/xsd/xdoc-2.0.xsd">
+  <properties>
+    <title>Docker</title>
+    <author email="michael-schnieders@uiowa.edu">Michael J. Schnieders</author>
+  </properties>
+  <body>
+    <section name="Build a Force Field X Docker Container">
+      <p>Force Field X can be run locally within a Docker container, which includes support for using Jupyter
+        Notebooks. First, clone the FFX <a href="source.html">source code</a> repository from Github.
+      </p>
+      <subsection name="Build the Docker Container">
+        <p>Download and install <a href="https://www.docker.com/products/docker-desktop/">Docker Desktop</a> onto
+          your local workstation.</p>
+        <p>After starting Docker Desktop, in a terminal window, change into the FFX binder directory and run the
+          following command:</p>
+        <source>docker build --no-cache -t ffxdocker:${project.version} -f Dockerfile .</source>
+      </subsection>
+      <subsection name="Run the Container in a Terminal Window">
+        <p>To launch the FFX container in a terminal window, run the command:</p>
+        <source>docker run -it --rm ffxdocker:${project.version} bash</source>
+        <p>Check that FFX is in your path:</p>
+        <source>which ffxc</source>
+      </subsection>
+      <subsection name="Use Jupyter Notebooks Locally in Web Browser">
+        <p>To launch the FFX Jupyter notebooks in web browser, run the command:</p>
+        <source>docker run -it --rm -p 8888:8888 ffxdocker:${project.version} jupyter notebook --NotebookApp.default_url=/lab/ --ip=0.0.0.0 --port=8888</source>
+        <p>Both Java and Kotlin notebooks are available.</p>
+      </subsection>
+    </section>
+  </body>
+</document>

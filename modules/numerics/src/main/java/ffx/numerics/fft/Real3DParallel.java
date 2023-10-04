@@ -41,9 +41,13 @@ import edu.rit.pj.IntegerForLoop;
 import edu.rit.pj.IntegerSchedule;
 import edu.rit.pj.ParallelRegion;
 import edu.rit.pj.ParallelTeam;
+
+import javax.annotation.Nullable;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.Objects.requireNonNullElseGet;
 
 /**
  * Compute the 3D FFT of real, double precision input of arbitrary dimensions in parallel.
@@ -70,9 +74,9 @@ public class Real3DParallel {
   /**
    * Initialize the FFT for real input.
    *
-   * @param nX X-dimension.
-   * @param nY Y-dimension.
-   * @param nZ Z-dimension.
+   * @param nX           X-dimension.
+   * @param nY           Y-dimension.
+   * @param nZ           Z-dimension.
    * @param parallelTeam a {@link edu.rit.pj.ParallelTeam} object.
    * @since 1.0
    */
@@ -98,15 +102,14 @@ public class Real3DParallel {
   /**
    * Initialize the FFT for real input.
    *
-   * @param nX X-dimension.
-   * @param nY Y-dimension.
-   * @param nZ Z-dimension.
-   * @param parallelTeam The ParallelTeam that will execute the transforms.
+   * @param nX              X-dimension.
+   * @param nY              Y-dimension.
+   * @param nZ              Z-dimension.
+   * @param parallelTeam    The ParallelTeam that will execute the transforms.
    * @param integerSchedule The IntegerSchedule to use.
    * @since 1.0
    */
-  public Real3DParallel(
-      int nX, int nY, int nZ, ParallelTeam parallelTeam, IntegerSchedule integerSchedule) {
+  public Real3DParallel(int nX, int nY, int nZ, ParallelTeam parallelTeam, @Nullable IntegerSchedule integerSchedule) {
     this.nX = nX / 2;
     this.nY = nY;
     this.nZ = nZ;
@@ -119,11 +122,7 @@ public class Real3DParallel {
     nextZ = nextY * nY;
     recip = new double[nX1 * nY * nZ];
     threadCount = parallelTeam.getThreadCount();
-    if (integerSchedule != null) {
-      schedule = integerSchedule;
-    } else {
-      schedule = IntegerSchedule.fixed();
-    }
+    schedule = requireNonNullElseGet(integerSchedule, IntegerSchedule::fixed);
     parallelFFT = new ParallelFFT();
     parallelIFFT = new ParallelIFFT();
     parallelConvolution = new ParallelConvolution();
@@ -139,23 +138,21 @@ public class Real3DParallel {
     int dimNotFinal = 128;
     int nCPU = ParallelTeam.getDefaultThreadCount();
     int reps = 5;
-    if (args != null) {
-      try {
-        dimNotFinal = Integer.parseInt(args[0]);
-        if (dimNotFinal < 1) {
-          dimNotFinal = 100;
-        }
-        nCPU = Integer.parseInt(args[1]);
-        if (nCPU < 1) {
-          nCPU = ParallelTeam.getDefaultThreadCount();
-        }
-        reps = Integer.parseInt(args[2]);
-        if (reps < 1) {
-          reps = 5;
-        }
-      } catch (Exception e) {
-        //
+    try {
+      dimNotFinal = Integer.parseInt(args[0]);
+      if (dimNotFinal < 1) {
+        dimNotFinal = 100;
       }
+      nCPU = Integer.parseInt(args[1]);
+      if (nCPU < 1) {
+        nCPU = ParallelTeam.getDefaultThreadCount();
+      }
+      reps = Integer.parseInt(args[2]);
+      if (reps < 1) {
+        reps = 5;
+      }
+    } catch (Exception e) {
+      //
     }
     if (dimNotFinal % 2 != 0) {
       dimNotFinal++;

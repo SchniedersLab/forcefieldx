@@ -123,6 +123,13 @@ public class StringUtils {
   }
 
   /**
+   * Private constructor to prevent instantiation.
+   */
+  private StringUtils() {
+    // Empty constructor.
+  }
+
+  /**
    * cifForID
    *
    * @param id a {@link java.lang.String} object.

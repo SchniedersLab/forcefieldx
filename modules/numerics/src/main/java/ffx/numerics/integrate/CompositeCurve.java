@@ -37,6 +37,8 @@
 // ******************************************************************************
 package ffx.numerics.integrate;
 
+import javax.annotation.Nullable;
+
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Arrays.copyOf;
@@ -66,7 +68,7 @@ public class CompositeCurve extends FunctionDataCurve {
    * @param componentCurves Underlying FunctionDataCurves
    * @param coefficients Weight to each component curve
    */
-  public CompositeCurve(List<FunctionDataCurve> componentCurves, List<Double> coefficients) {
+  public CompositeCurve(List<FunctionDataCurve> componentCurves, @Nullable List<Double> coefficients) {
     assert !componentCurves.isEmpty();
 
     nCurves = componentCurves.size();

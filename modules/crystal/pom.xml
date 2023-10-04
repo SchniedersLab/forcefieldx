@@ -6,17 +6,16 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>edu.uiowa.eng.ffx</groupId>
-        <artifactId>ffx</artifactId>
+        <artifactId>forcefieldx</artifactId>
         <version>1.0.0-beta</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <groupId>edu.uiowa.eng.ffx</groupId>
-    <artifactId>crystal</artifactId>
+    <artifactId>ffx-crystal</artifactId>
     <packaging>jar</packaging>
     <name>Crystal</name>
-    <description>The Crystal module includes support for the minimum image convention,
-        symmetry operators, all 230 space groups and transformations between Cartesian
-        and fractional coordinates.
+    <description>The Crystal module includes support for periodic boundary conditions,
+        the minimum image convention, symmetry operators, all 230 space groups,
+        and transformations between Cartesian and fractional coordinates.
     </description>
     <developers>
         <developer>
@@ -58,8 +57,8 @@
                     <useIncrementalCompilation>true</useIncrementalCompilation>
                     <annotationProcessorPaths>
                         <path>
-                            <groupId>edu.uiowa.eng.ffx</groupId>
-                            <artifactId>utilities</artifactId>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>ffx-utilities</artifactId>
                             <version>${project.version}</version>
                         </path>
                     </annotationProcessorPaths>
@@ -70,34 +69,35 @@
     </build>
     <dependencies>
         <dependency>
-            <groupId>edu.uiowa.eng.ffx</groupId>
-            <artifactId>numerics</artifactId>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>ffx-numerics</artifactId>
             <version>${project.version}</version>
-            <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>edu.uiowa.eng.ffx</groupId>
-            <artifactId>utilities</artifactId>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>ffx-utilities</artifactId>
             <version>${project.version}</version>
-            <type>jar</type>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-configuration2</artifactId>
-            <type>jar</type>
             <version>${commons-configuration2.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-lang3</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
-            <type>jar</type>
             <version>${commons-math3.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>${junit.version}</version>
-            <type>jar</type>
             <scope>test</scope>
         </dependency>
     </dependencies>

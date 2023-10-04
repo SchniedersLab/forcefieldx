@@ -49,14 +49,12 @@ import org.junit.Test;
 
 public class XYZtoQETest extends PotentialTest {
 
-  private final double tolerance = 0.001;
-  //TODO: add more tests with more parameters
-
   /** Tests the XYZtoQE script. */
   @Test
   public void testXYZtoQE() {
     // Set-up the input arguments for the SaveAsPDB script.
-    String[] args = {"src/main/java/ffx/potential/structures/cbz.xyz"};
+    String filepath = getResourcePath("cbz.xyz");
+    String[] args = {filepath};
     binding.setVariable("args", args);
     binding.setVariable("baseDir", registerTemporaryDirectory().toFile());
 

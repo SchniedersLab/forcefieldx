@@ -1,22 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns="http://maven.apache.org/POM/4.0.0"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>edu.uiowa.eng.ffx</groupId>
-    <artifactId>ffx</artifactId>
+    <artifactId>forcefieldx</artifactId>
     <version>1.0.0-beta</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <artifactId>algorithms</artifactId>
+  <artifactId>ffx-algorithms</artifactId>
   <packaging>jar</packaging>
   <name>Algorithms</name>
-  <description>The Algorithms module includes support for local optimization, molecular dynamics
-    and global optimization via simulated annealing.
+  <description>The Algorithms module includes support for local and global optimization, molecular dynamics simulations,
+    and
+    calculation of free energy differences.
   </description>
   <build>
+    <resources>
+      <resource>
+        <directory>${basedir}/src/main/groovy/ffx/algorithms/groovy</directory>
+        <includes>
+          <include>*</include>
+        </includes>
+        <targetPath>${basedir}/../../groovy</targetPath>
+      </resource>
+      <resource>
+        <directory>${basedir}/src/main/groovy/ffx/algorithms/groovy</directory>
+        <includes>
+          <include>*</include>
+        </includes>
+        <targetPath>${basedir}/src/site/resources/scripts</targetPath>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
@@ -27,16 +43,13 @@
             <phase>compile</phase>
             <configuration>
               <target>
-                <taskdef name="groovyc"
-                  classname="org.codehaus.groovy.ant.Groovyc">
+                <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc">
                   <classpath refid="maven.compile.classpath"/>
                 </taskdef>
                 <mkdir dir="${project.build.outputDirectory}"/>
-                <groovyc destdir="${project.build.outputDirectory}"
-                  srcdir="${basedir}/src/main/groovy/"
-                  listfiles="false" verbose="true"
-                  targetBytecode="${targetVersion}"
-                  stacktrace="true" parameters="true">
+                <groovyc destdir="${project.build.outputDirectory}" srcdir="${basedir}/src/main/groovy/"
+                         listfiles="false" verbose="true" targetBytecode="${targetVersion}" stacktrace="true"
+                         parameters="true">
                   <classpath refid="maven.compile.classpath"/>
                 </groovyc>
                 <!-- configscript="${basedir}/src/config/config.groovy" -->
@@ -85,13 +98,14 @@
             <argument>ffx.algorithms.groovy.Thermodynamics</argument>
             <argument>ffx.algorithms.groovy.TorsionScan</argument>
             <argument>ffx.algorithms.groovy.test.ApplyTorsions</argument>
+            <argument>ffx.algorithms.groovy.test.CoformerBindingSearch</argument>
             <argument>ffx.algorithms.groovy.test.CreateRotamers</argument>
             <argument>ffx.algorithms.groovy.test.CrystalSearch</argument>
             <argument>ffx.algorithms.groovy.test.IdentifyRotamers</argument>
             <argument>ffx.algorithms.groovy.test.ManyBodyPhScan</argument>
             <argument>ffx.algorithms.groovy.test.MinimizePh</argument>
             <argument>ffx.algorithms.groovy.test.MostBar</argument>
-            <argument>ffx.algorithms.groovy.test.OSTBias</argument>
+            <argument>ffx.algorithms.groovy.test.OSTGradient</argument>
             <argument>ffx.algorithms.groovy.test.PhBar</argument>
             <argument>ffx.algorithms.groovy.test.PhDynamics</argument>
             <argument>ffx.algorithms.groovy.test.RepexThermo</argument>
@@ -108,110 +122,78 @@
         </dependencies>
       </plugin>
     </plugins>
-    <resources>
-      <resource>
-        <directory>${basedir}/src/main/java/ffx/algorithms/structures</directory>
-        <targetPath>ffx/algorithms/structures</targetPath>
-        <includes>
-          <include>*</include>
-        </includes>
-      </resource>
-    </resources>
   </build>
   <dependencies>
     <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>crystal</artifactId>
-      <version>${project.version}</version>
-      <type>jar</type>
+      <groupId>org.apache.groovy</groupId>
+      <artifactId>groovy</artifactId>
+      <version>${groovy-all.version}</version>
     </dependency>
     <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>numerics</artifactId>
-      <version>${project.version}</version>
-      <type>jar</type>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
     </dependency>
     <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>pj</artifactId>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${commons-lang3.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-crystal</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-numerics</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-pj</artifactId>
       <version>${pj.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>potential</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-potential</artifactId>
       <version>${project.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
-      <groupId>edu.uiowa.eng.ffx</groupId>
-      <artifactId>utilities</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>ffx-utilities</artifactId>
       <version>${project.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
-      <type>jar</type>
       <version>${commons-io.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
-      <artifactId>commons-collections4</artifactId>
-      <type>jar</type>
-      <version>${commons-collections4.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
       <artifactId>commons-configuration2</artifactId>
-      <type>jar</type>
       <version>${commons-configuration2.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-math3</artifactId>
-      <type>jar</type>
-      <version>${commons-math3.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.biojava</groupId>
-      <artifactId>biojava-structure</artifactId>
-      <version>${biojava.version}</version>
-      <type>jar</type>
       <exclusions>
         <exclusion>
-          <artifactId>vecmath</artifactId>
-          <groupId>java3d</groupId>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>edu.uiowa.jopenmm</groupId>
-      <artifactId>jopenmm-fat</artifactId>
-      <version>${jopenmm.version}</version>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-math3</artifactId>
+      <version>${commons-math3.version}</version>
     </dependency>
     <dependency>
       <groupId>info.picocli</groupId>
       <artifactId>picocli</artifactId>
       <version>${picocli.version}</version>
-      <type>jar</type>
-    </dependency>
-    <dependency>
-      <groupId>com.apporiented</groupId>
-      <artifactId>hierarchical-clustering</artifactId>
-      <version>${clustering.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>it.unimi.dsi</groupId>
-      <artifactId>fastutil</artifactId>
-      <type>jar</type>
-      <version>${fastutil.version}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>${junit.version}</version>
-      <type>jar</type>
     </dependency>
   </dependencies>
 </project>

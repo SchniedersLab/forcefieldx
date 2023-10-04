@@ -55,6 +55,7 @@ public class PhGradientTest extends PotentialTest {
 
   private final String info;
   private final String filename;
+  private final String filepath;
   private final String key;
   private final int nBonds;
   private final int nAngles;
@@ -147,9 +148,8 @@ public class PhGradientTest extends PotentialTest {
     this.acidostatEnergy = acidostatEnergy;
 
     extendedSystemBias = discretizerEnergy + acidostatEnergy;
-
-    totalEnergy =
-        bondEnergy
+    filepath = getResourcePath(filename);
+    totalEnergy = bondEnergy
             + angleEnergy
             + stretchBendEnergy
             + ureyBradleyEnergy
@@ -171,7 +171,7 @@ public class PhGradientTest extends PotentialTest {
         new Object[][] {
             {
                 "HDECK peptide",
-                "src/main/java/ffx/potential/structures/HDECK.pdb",
+                "HDECK.pdb",
                 "\n  Titration Lambdas: 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, " +
                 "\n  Tautomer Lambdas: 0.0000, 0.0000, 0.0000",
                 28.05522192,
@@ -203,7 +203,7 @@ public class PhGradientTest extends PotentialTest {
             },
             {
                 "HDECK peptide",
-                "src/main/java/ffx/potential/structures/HDECK.pdb",
+                "HDECK.pdb",
                 "\n  Titration Lambdas: 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, " +
                 "\n  Tautomer Lambdas: 0.0000, 0.0000, 0.0000",
                 28.05522192,
@@ -245,7 +245,7 @@ public class PhGradientTest extends PotentialTest {
     Random random = new Random();
     String randomAtom = Integer.toString(random.nextInt(110) + 1);
 
-    String[] args = {"--testEndStateEnergies", "--esvLambda", "0.0", "-d", "0.000001", "--ga", randomAtom, filename};
+    String[] args = {"--testEndStateEnergies", "--esvLambda", "0.0", "-d", "0.000001", "--ga", randomAtom, filepath};
     binding.setVariable("args", args);
     // Construct and evaluate the Volume script.
     PhGradient pHGradient = new PhGradient(binding).run();

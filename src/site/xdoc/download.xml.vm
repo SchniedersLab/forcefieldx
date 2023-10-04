@@ -21,7 +21,7 @@
         </ul>
         <p>System requirement:</p>
         <ul>
-          <li>Java Runtime Environment (JRE) versions 17 through 20 are supported.</li>
+          <li>Java Runtime Environment (JRE) version ${targetVersion}.</li>
         </ul>
         <table>
           <thead>
@@ -56,7 +56,7 @@
           </tbody>
         </table>
       </subsection>
-      <subsection name="Force Field X Jar File">
+      <!-- subsection name="Force Field X Jar File">
         <p>Instead of the entire Force Field X distribution, a stand-alone jar file is available.
         </p>
         <table>
@@ -77,7 +77,7 @@
             </tr>
           </tbody>
         </table>
-      </subsection>
+      </subsection -->
     </section>
   </body>
 </document>

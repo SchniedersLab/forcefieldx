@@ -1,17 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns="http://maven.apache.org/POM/4.0.0"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>edu.uiowa.eng.ffx</groupId>
-    <artifactId>ffx</artifactId>
+    <artifactId>forcefieldx</artifactId>
     <version>1.0.0-beta</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <groupId>edu.uiowa.eng.ffx</groupId>
-  <artifactId>utilities</artifactId>
+  <artifactId>ffx-utilities</artifactId>
   <packaging>jar</packaging>
   <name>Utilities</name>
   <description>
@@ -28,16 +26,13 @@
             <phase>compile</phase>
             <configuration>
               <target>
-                <taskdef name="groovyc"
-                  classname="org.codehaus.groovy.ant.Groovyc">
+                <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc">
                   <classpath refid="maven.compile.classpath"/>
                 </taskdef>
                 <mkdir dir="${project.build.outputDirectory}"/>
-                <groovyc destdir="${project.build.outputDirectory}"
-                  srcdir="${basedir}/src/main/groovy/"
-                  listfiles="false" verbose="true"
-                  targetBytecode="${targetVersion}"
-                  stacktrace="true" parameters="true">
+                <groovyc destdir="${project.build.outputDirectory}" srcdir="${basedir}/src/main/groovy/"
+                         listfiles="false" verbose="true" targetBytecode="${targetVersion}" stacktrace="true"
+                         parameters="true">
                   <classpath refid="maven.compile.classpath"/>
                 </groovyc>
                 <!-- configscript="${basedir}/src/config/config.groovy" -->
@@ -56,18 +51,21 @@
       <groupId>info.picocli</groupId>
       <artifactId>picocli</artifactId>
       <version>${picocli.version}</version>
-      <type>jar</type>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-configuration2</artifactId>
-      <type>jar</type>
       <version>${commons-configuration2.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
-      <type>jar</type>
       <version>${commons-io.version}</version>
     </dependency>
     <dependency>
@@ -76,20 +74,55 @@
       <version>${commons-math3.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>${commons-lang3.version}</version>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>${junit.version}</version>
-      <type>jar</type>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>pj</artifactId>
-      <version>${pj.version}</version>
     </dependency>
     <dependency>
       <groupId>org.antlr</groupId>
       <artifactId>antlr4</artifactId>
       <version>${antlr4.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>antlr4-runtime</artifactId>
+      <version>${antlr4.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.groovy</groupId>
+      <artifactId>groovy</artifactId>
+      <version>${groovy-all.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.groovy</groupId>
+      <artifactId>groovy-console</artifactId>
+      <version>${groovy-all.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.groovy</groupId>
+      <artifactId>groovy-swing</artifactId>
+      <version>${groovy-all.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.groovy</groupId>
+      <artifactId>groovy-ant</artifactId>
+      <version>${groovy-all.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.javaparser</groupId>
+      <artifactId>javaparser-core</artifactId>
+      <version>${javaparser.version}</version>
+    </dependency>
+    <dependency>
+      <artifactId>commons-beanutils</artifactId>
+      <groupId>commons-beanutils</groupId>
+      <version>${commons-beanutils.version}</version>
+      <scope>runtime</scope>
     </dependency>
   </dependencies>
 </project>

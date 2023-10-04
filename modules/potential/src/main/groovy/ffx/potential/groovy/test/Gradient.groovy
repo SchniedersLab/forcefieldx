@@ -44,6 +44,7 @@ import ffx.potential.bonded.Atom
 import ffx.potential.cli.AtomSelectionOptions
 import ffx.potential.cli.GradientOptions
 import ffx.potential.cli.PotentialScript
+import ffx.potential.utils.GradientUtils
 import picocli.CommandLine.Command
 import picocli.CommandLine.Mixin
 import picocli.CommandLine.Parameters
@@ -117,162 +118,12 @@ class Gradient extends PotentialScript {
 
     logger.info("\n Testing the atomic coordinate gradient of " + filename + "\n")
 
-    energy = activeAssembly.getPotentialEnergy()
-    Atom[] atoms = activeAssembly.getAtomArray()
-    int nAtoms = atoms.length
-
     // Apply atom selections
     atomSelectionOptions.setActiveAtoms(activeAssembly)
 
-    // Finite-difference step size in Angstroms.
-    double step = gradientOptions.dx
-    logger.info(" Finite-difference step size:\t" + step)
-
-    // Print out the energy for each step.
-    boolean print = gradientOptions.verbose
-    logger.info(" Verbose printing:\t\t" + print)
-
-    // Collect atoms to test.
-    List<Integer> atomsToTest
-    if (gradientOptions.gradientAtoms.equalsIgnoreCase("NONE")) {
-      logger.info(" The gradient of no atoms will be evaluated.")
-      return this
-    } else if (gradientOptions.gradientAtoms.equalsIgnoreCase("ALL")) {
-      logger.info(" Checking gradient for all active atoms.\n")
-      atomsToTest = new ArrayList<>()
-      for (int i=0; i<nAtoms; i++) {
-        atomsToTest.add(i)
-      }
-    } else {
-      atomsToTest = parseAtomRanges(" Gradient atoms", gradientOptions.gradientAtoms, nAtoms)
-      logger.info(
-          " Checking gradient for active atoms in the range: " + gradientOptions.gradientAtoms + "\n")
-    }
-
-    // Map selected atom numbers to active atom numbers
-    Map<Integer, Integer> allToActive = new HashMap<>()
-    int nActive = 0
-    for (int i = 0; i < nAtoms; i++) {
-      Atom atom = atoms[i]
-      if (atom.isActive()) {
-        allToActive.put(i, nActive)
-        nActive++
-      }
-    }
-
-    // Collect analytic gradient.
-    double n = energy.getNumberOfVariables()
-    double[] x = new double[n]
-    double[] g = new double[n]
-    energy.getCoordinates(x)
-    energy.energyAndGradient(x, g)
-    int index = 0
-    double[][] allAnalytic = new double[nAtoms][3]
-    for (Atom a : atoms) {
-      a.getXYZGradient(allAnalytic[index++])
-    }
-
-    // Upper bound for a typical atomic gradient.
-    double expGrad = 1000.0
-    double gradientTolerance = gradientOptions.tolerance
-    double width = 2.0 * step
-    double avLen = 0.0
-    double avGrad = 0.0
-    double expGrad2 = expGrad * expGrad
-
-    int nTested = 0
-    for (int k : atomsToTest) {
-      Atom a0 = atoms[k]
-      if (!a0.isActive()) {
-        continue
-      }
-
-      nTested++
-      double[] analytic = allAnalytic[k]
-
-      // Coordinate array only includes active atoms.
-      int i = allToActive.get(k)
-      int i3 = i * 3
-      int i0 = i3 + 0
-      int i1 = i3 + 1
-      int i2 = i3 + 2
-      double[] numeric = new double[3]
-
-      // Find numeric dX
-      double orig = x[i0]
-      x[i0] = x[i0] + step
-      double e = energy.energy(x)
-      x[i0] = orig - step
-      e -= energy.energy(x)
-      x[i0] = orig
-      numeric[0] = e / width
-
-      // Find numeric dY
-      orig = x[i1]
-      x[i1] = x[i1] + step
-      e = energy.energy(x)
-      x[i1] = orig - step
-      e -= energy.energy(x)
-      x[i1] = orig
-      numeric[1] = e / width
-
-      // Find numeric dZ
-      orig = x[i2]
-      x[i2] = x[i2] + step
-      e = energy.energy(x)
-      x[i2] = orig - step
-      e -= energy.energy(x)
-      x[i2] = orig
-      numeric[2] = e / width
-
-      double dx = analytic[0] - numeric[0]
-      double dy = analytic[1] - numeric[1]
-      double dz = analytic[2] - numeric[2]
-      double len = dx * dx + dy * dy + dz * dz
-      avLen += len
-      len = sqrt(len)
-
-      double grad2 =
-          analytic[0] * analytic[0] + analytic[1] * analytic[1] + analytic[2] * analytic[2]
-      avGrad += grad2
-
-      if (len > gradientTolerance) {
-        logger.info(format(" %s\n Failed: %10.6f\n", a0.toString(), len) +
-                format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2]) +
-                format(" Numeric:  (%12.4f, %12.4f, %12.4f)\n", numeric[0], numeric[1], numeric[2]))
-        ++nFailures
-      } else {
-        logger.info(format(" %s\n Passed: %10.6f\n", a0.toString(), len) +
-                format(" Analytic: (%12.4f, %12.4f, %12.4f)\n", analytic[0], analytic[1], analytic[2]) +
-                format(" Numeric:  (%12.4f, %12.4f, %12.4f)", numeric[0], numeric[1], numeric[2]))
-      }
-
-      if (grad2 > expGrad2) {
-        logger.info(format(" Atom %d has an unusually large gradient: %10.6f", i + 1, Math.sqrt(
-            grad2)))
-      }
-      logger.info("\n")
-    }
-
-    avLen = avLen / nTested
-    avLen = sqrt(avLen)
-    if (avLen > gradientTolerance) {
-      logger.info(format(" Test failure: RMSD from analytic solution is %10.6f > %10.6f", avLen,
-          gradientTolerance))
-    } else {
-      logger.info(format(" Test success: RMSD from analytic solution is %10.6f < %10.6f", avLen,
-          gradientTolerance))
-    }
-    logger.info(format(" Number of atoms failing analytic test: %d", nFailures))
-
-    avGrad = avGrad / nTested
-    avGrad = sqrt(avGrad)
-    if (avGrad > expGrad) {
-      logger.info(format(" Unusually large RMS gradient: %10.6f > %10.6f", avGrad, expGrad))
-    } else {
-      logger.info(format(" RMS gradient: %10.6f", avGrad))
-    }
-
+    energy = activeAssembly.getPotentialEnergy()
+    GradientUtils gradientUtils = new GradientUtils(energy)
+    nFailures = gradientUtils.testGradient(gradientOptions)
     return this
   }
 

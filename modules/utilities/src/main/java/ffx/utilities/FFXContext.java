@@ -81,7 +81,8 @@ public class FFXContext extends CompositeConfiguration {
    */
   public FFXContext(String[] args) {
     this();
-    setVariable("args", args);
+    variables = new LinkedHashMap<>();
+    variables.put("args", args);
   }
 
   /**

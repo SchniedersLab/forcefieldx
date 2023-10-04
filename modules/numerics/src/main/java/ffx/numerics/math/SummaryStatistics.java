@@ -46,6 +46,8 @@ import static org.apache.commons.math3.util.FastMath.sqrt;
 
 import org.apache.commons.math3.distribution.TDistribution;
 
+import javax.annotation.Nullable;
+
 /**
  * The SummaryStatistics class uses online, stable algorithms to calculate summary statistics from
  * double arrays/lists, including mean, variance, standard deviation, max, min, sum, and count.
@@ -117,7 +119,7 @@ public class SummaryStatistics {
    * constant (1.0). Assumes all values from first to end will be used.
    *
    * @param values Values to summarize.
-   * @param first First value to use.
+   * @param first  First value to use.
    */
   public SummaryStatistics(double[] values, int first) {
     this(values, null, first, values.length, 1);
@@ -128,8 +130,8 @@ public class SummaryStatistics {
    * constant (1.0). Assumes a stride of 1.
    *
    * @param values Values to summarize.
-   * @param first First value to use.
-   * @param last Last value to use.
+   * @param first  First value to use.
+   * @param last   Last value to use.
    */
   public SummaryStatistics(double[] values, int first, int last) {
     this(values, null, first, last, 1);
@@ -140,8 +142,8 @@ public class SummaryStatistics {
    * constant (1.0).
    *
    * @param values Values to summarize.
-   * @param first First value to use.
-   * @param last Last value to use.
+   * @param first  First value to use.
+   * @param last   Last value to use.
    * @param stride Stride between values used.
    */
   public SummaryStatistics(double[] values, int first, int last, int stride) {
@@ -151,13 +153,13 @@ public class SummaryStatistics {
   /**
    * Constructs a static summary of a statistic from provided values.
    *
-   * @param values Values to summarize.
+   * @param values  Values to summarize.
    * @param weights Weights for each value.
-   * @param first First value to use.
-   * @param last Last value to use.
-   * @param stride Stride between values used.
+   * @param first   First value to use.
+   * @param last    Last value to use.
+   * @param stride  Stride between values used.
    */
-  public SummaryStatistics(double[] values, double[] weights, int first, int last, int stride) {
+  public SummaryStatistics(@Nullable double[] values, @Nullable double[] weights, int first, int last, int stride) {
     if (values == null) {
       throw new IllegalArgumentException(" Cannot have null values!");
     }
@@ -212,7 +214,7 @@ public class SummaryStatistics {
 
       for (int i = 0; i < count; i++) {
         int ii = first + (i * stride);
-        assert ii < last && ii < nVals;
+        assert ii < last;
         double val = values[ii];
         double priorMean = meanAcc;
         double weight = weights[ii];
@@ -307,7 +309,9 @@ public class SummaryStatistics {
     return var;
   }
 
-  /** ${@inheritDoc} */
+  /**
+   * ${@inheritDoc}
+   */
   @Override
   public String toString() {
     return descString;
