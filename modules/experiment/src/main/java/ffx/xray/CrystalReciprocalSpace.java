@@ -1122,7 +1122,7 @@ public class CrystalReciprocalSpace {
     ComplexNumber c = new ComplexNumber();
     ComplexNumber cj = new ComplexNumber();
     HKL ij = new HKL();
-    for (HKL ih : reflectionList.hkllist) {
+    for (HKL ih : reflectionList.hklList) {
       double[] fc = hklData[ih.getIndex()];
       if (Double.isNaN(fc[0])) {
         continue;
@@ -3449,7 +3449,7 @@ public class CrystalReciprocalSpace {
 
     InitLoop[] initLoops;
     FormFactorUpdateLoop[] formFactorUpdateLoops;
-    int nHKL = reflectionList.hkllist.size();
+    int nHKL = reflectionList.hklList.size();
     double[][] hkldata = null;
 
     public InitRegion(int nThreads) {
@@ -3515,7 +3515,7 @@ public class CrystalReciprocalSpace {
   private class AtomicScaleRegion extends ParallelRegion {
 
     AtomicScaleLoop[] atomicScaleLoops;
-    int nHKL = reflectionList.hkllist.size();
+    int nHKL = reflectionList.hklList.size();
     double[][] hklData = null;
     double scale;
 
@@ -3557,7 +3557,7 @@ public class CrystalReciprocalSpace {
       @Override
       public void run(int lb, int ub) throws Exception {
         for (int i = lb; i <= ub; i++) {
-          HKL ih = reflectionList.hkllist.get(i);
+          HKL ih = reflectionList.hklList.get(i);
           double[] fc = hklData[ih.getIndex()];
           c.re(fc[0]);
           c.im(fc[1]);
@@ -3575,7 +3575,7 @@ public class CrystalReciprocalSpace {
   private class SolventScaleRegion extends ParallelRegion {
 
     SolventScaleLoop[] solventScaleLoops;
-    int nHKL = reflectionList.hkllist.size();
+    int nHKL = reflectionList.hklList.size();
     double[][] hkldata = null;
     double scale;
 
@@ -3617,7 +3617,7 @@ public class CrystalReciprocalSpace {
       @Override
       public void run(int lb, int ub) throws Exception {
         for (int i = lb; i <= ub; i++) {
-          HKL ih = reflectionList.hkllist.get(i);
+          HKL ih = reflectionList.hklList.get(i);
           double[] fc = hkldata[ih.getIndex()];
           c.re(fc[0]);
           c.im(fc[1]);
@@ -3634,7 +3634,7 @@ public class CrystalReciprocalSpace {
   private class ExtractRegion extends ParallelRegion {
 
     ExtractLoop[] extractLoops;
-    int nHKL = reflectionList.hkllist.size();
+    int nHKL = reflectionList.hklList.size();
     double[][] hkldata = null;
 
     public ExtractRegion(int nThreads) {
@@ -3677,7 +3677,7 @@ public class CrystalReciprocalSpace {
       @Override
       public void run(int lb, int ub) throws Exception {
         for (int i = lb; i <= ub; i++) {
-          HKL ih = reflectionList.hkllist.get(i);
+          HKL ih = reflectionList.hklList.get(i);
           double[] fc = hkldata[ih.getIndex()];
           // Apply symmetry
           for (int j = 0; j < nsym; j++) {

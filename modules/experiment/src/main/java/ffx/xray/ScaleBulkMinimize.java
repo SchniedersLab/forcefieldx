@@ -336,7 +336,7 @@ public class ScaleBulkMinimize implements OptimizationListener, Terminatable {
 
     double sumfofc = 0.0;
     double sumfc = 0.0;
-    for (HKL ih : reflectionlist.hkllist) {
+    for (HKL ih : reflectionlist.hklList) {
       int i = ih.getIndex();
       if (isNaN(fc[i][0]) || isNaN(fSigf[i][0]) || fSigf[i][1] <= 0.0) {
         continue;

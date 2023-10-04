@@ -348,7 +348,7 @@ public class CNSFilter implements DiffractionFileFilter {
       sb.append(format(" HKL not read in (not in internal list?): %d\n", nIgnore));
       sb.append(format(" HKL not read in (F/sigF cutoff):         %d\n", nCut));
       sb.append(
-          format(" HKL in internal list:                    %d\n", reflectionList.hkllist.size()));
+          format(" HKL in internal list:                    %d\n", reflectionList.hklList.size()));
       logger.info(sb.toString());
     }
 

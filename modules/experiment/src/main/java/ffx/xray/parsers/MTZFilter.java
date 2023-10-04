@@ -126,7 +126,7 @@ public class MTZFilter implements DiffractionFileFilter {
 
     // compute running average using mtzFile1 as current average
     logger.info(format(" Iteration for averaging: %d.", iter));
-    for (int i = 0; i < reflectionlist.hkllist.size(); i++) {
+    for (int i = 0; i < reflectionlist.hklList.size(); i++) {
       fcdata1.fc[i][0] += (fcdata2.fc[i][0] - fcdata1.fc[i][0]) / iter;
       fcdata1.fc[i][1] += (fcdata2.fc[i][1] - fcdata1.fc[i][1]) / iter;
 
@@ -573,7 +573,7 @@ public class MTZFilter implements DiffractionFileFilter {
         sb.append(format(" HKL NOT read in (not in internal list?): %d\n", nIgnore));
         sb.append(format(" HKL NOT read in (F/sigF cutoff):         %d\n", nCut));
         sb.append(
-            format(" HKL in internal list:                    %d", reflectionList.hkllist.size()));
+            format(" HKL in internal list:                    %d", reflectionList.hklList.size()));
         logger.info(sb.toString());
       }
       if (rFree < 0 && rFreePlus < 0 && rFreeMinus < 0) {
@@ -727,7 +727,7 @@ public class MTZFilter implements DiffractionFileFilter {
         sb.append(
             format(
                 "  HKL in internal list:                       %d\n",
-                reflectionList.hkllist.size()));
+                reflectionList.hklList.size()));
         logger.info(sb.toString());
       }
     } catch (EOFException e) {

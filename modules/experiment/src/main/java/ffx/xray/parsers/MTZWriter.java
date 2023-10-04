@@ -249,7 +249,7 @@ public class MTZWriter {
         writeLen += 32;
       }
 
-      for (HKL ih : reflectionList.hkllist) {
+      for (HKL ih : reflectionList.hklList) {
         col = 0;
         int i = ih.getIndex();
 

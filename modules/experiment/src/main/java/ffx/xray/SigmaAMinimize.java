@@ -294,7 +294,7 @@ public class SigmaAMinimize implements OptimizationListener, Terminatable {
     double tot = 0.0;
     double[][] fcTot = refinementData.fcTot;
     double[][] fSigF = refinementData.fSigF;
-    for (HKL ih : reflectionList.hkllist) {
+    for (HKL ih : reflectionList.hklList) {
       int i = ih.getIndex();
       if (ih.getAllowed() == 0.0 || isNaN(fcTot[i][0]) || isNaN(fSigF[i][0])) {
         continue;

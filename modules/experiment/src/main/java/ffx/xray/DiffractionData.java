@@ -327,7 +327,7 @@ public class DiffractionData implements DataContainer {
       sb.append("  Reflections\n");
       sb.append("   F/sigF cutoff: ").append(fsigfCutoff).append("\n");
       sb.append("   R Free flag (-1 auto-determine from the data): ").append(rflag).append("\n");
-      sb.append("   Number of bins: ").append(reflectionList[0].nbins).append("\n");
+      sb.append("   Number of bins: ").append(reflectionList[0].nBins).append("\n");
       sb.append("  B-Factors\n");
       sb.append("   Similarity weight: ").append(bSimWeight).append("\n");
       // sb.append("  Non-zero weight (bnonzeroweight): ").append(bNonZeroWeight).append("\n");
@@ -1315,7 +1315,7 @@ public class DiffractionData implements DataContainer {
         PrintWriter cnsfile = new PrintWriter(new BufferedWriter(new FileWriter(filename)));
         cnsfile.println(" ANOMalous=FALSE");
         cnsfile.println(" DECLare NAME=FS DOMAin=RECIprocal TYPE=COMP END");
-        for (HKL ih : reflectionList[i].hkllist) {
+        for (HKL ih : reflectionList[i].hklList) {
           int j = ih.getIndex();
           cnsfile.printf(
               " INDE %d %d %d FS= %.4f %.4f\n",

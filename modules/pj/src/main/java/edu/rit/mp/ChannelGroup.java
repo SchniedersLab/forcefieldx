@@ -375,7 +375,7 @@ public class ChannelGroup {
         }
         myIORequestList = new IORequestList();
         myLoopbackChannel = new LoopbackChannel(this);
-        myChannelList = new LinkedList<Channel>();
+        myChannelList = new LinkedList<>();
         myChannelList.add(myLoopbackChannel);
         myLogger = theLogger;
         myTimerThread = new TimerThread();

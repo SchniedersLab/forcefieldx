@@ -110,7 +110,7 @@ public class CrystalStats {
     double sumfo = 0.0;
     double sumall = 0.0;
     double sumfoall = 0.0;
-    for (HKL ih : reflectionList.hkllist) {
+    for (HKL ih : reflectionList.hklList) {
       int i = ih.getIndex();
 
       // Ignored cases
@@ -149,7 +149,7 @@ public class CrystalStats {
     ReflectionSpline sigmaaspline =
         new ReflectionSpline(reflectionList, refinementData.sigmaA.length);
 
-    for (HKL ih : reflectionList.hkllist) {
+    for (HKL ih : reflectionList.hklList) {
       int i = ih.getIndex();
 
       // Ignored cases
@@ -298,7 +298,7 @@ public class CrystalStats {
   double getRFree() {
     double sum = 0.0;
     double sumfo = 0.0;
-    for (HKL ih : reflectionList.hkllist) {
+    for (HKL ih : reflectionList.hklList) {
       int i = ih.getIndex();
 
       // Ignored cases
@@ -332,7 +332,7 @@ public class CrystalStats {
     ReflectionSpline sigmaaspline =
         new ReflectionSpline(reflectionList, refinementData.sigmaA.length);
 
-    for (HKL ih : reflectionList.hkllist) {
+    for (HKL ih : reflectionList.hklList) {
       int i = ih.getIndex();
 
       // Ignored cases
@@ -367,7 +367,7 @@ public class CrystalStats {
     int nhklo = refinementData.n;
     double rfreefrac = getRFree() * 0.01;
     double res = reflectionList.resolution.resolutionLimit();
-    for (HKL ih : reflectionList.hkllist) {
+    for (HKL ih : reflectionList.hklList) {
       int i = ih.getIndex();
 
       // ignored cases
@@ -406,7 +406,7 @@ public class CrystalStats {
       res[i][1] = Double.POSITIVE_INFINITY;
     }
 
-    for (HKL ih : reflectionList.hkllist) {
+    for (HKL ih : reflectionList.hklList) {
       int i = ih.getIndex();
       int b = ih.getBin();
 
@@ -497,7 +497,7 @@ public class CrystalStats {
       res[i][1] = Double.POSITIVE_INFINITY;
     }
 
-    for (HKL ih : reflectionList.hkllist) {
+    for (HKL ih : reflectionList.hklList) {
       int i = ih.getIndex();
       int b = ih.getBin();
 
@@ -603,7 +603,7 @@ public class CrystalStats {
     int[] nhkl = new int[nBins];
     double[] scale = new double[nBins];
 
-    for (HKL ih : reflectionList.hkllist) {
+    for (HKL ih : reflectionList.hklList) {
       int i = ih.getIndex();
       int b = ih.getBin();
 
@@ -697,7 +697,7 @@ public class CrystalStats {
       res[i][1] = Double.POSITIVE_INFINITY;
     }
 
-    for (HKL ih : reflectionList.hkllist) {
+    for (HKL ih : reflectionList.hklList) {
       int i = ih.getIndex();
       int b = ih.getBin();
 

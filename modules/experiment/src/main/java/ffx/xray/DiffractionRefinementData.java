@@ -136,10 +136,10 @@ public class DiffractionRefinementData {
       fSigFCutoff = -1.0;
     }
 
-    this.n = reflectionList.hkllist.size();
+    this.n = reflectionList.hklList.size();
     this.nScale = reflectionList.crystal.scaleN;
     this.rFreeFlag = rflag;
-    this.nBins = reflectionList.nbins;
+    this.nBins = reflectionList.nBins;
     fSigF = new double[n][2];
     freeR = new int[n];
     fc = new double[n][2];

@@ -325,7 +325,7 @@ public class ScaleBulkEnergy implements OptimizationInterface {
       }
 
       try {
-        execute(0, reflectionList.hkllist.size() - 1, scaleBulkEnergyLoop[ti]);
+        execute(0, reflectionList.hklList.size() - 1, scaleBulkEnergyLoop[ti]);
       } catch (Exception e) {
         logger.info(e.toString());
       }
@@ -406,7 +406,7 @@ public class ScaleBulkEnergy implements OptimizationInterface {
       public void run(int lb, int ub) {
 
         for (int j = lb; j <= ub; j++) {
-          HKL ih = reflectionList.hkllist.get(j);
+          HKL ih = reflectionList.hklList.get(j);
           int i = ih.getIndex();
           if (isNaN(fc[i][0]) || isNaN(fSigF[i][0]) || fSigF[i][1] <= 0.0) {
             continue;
