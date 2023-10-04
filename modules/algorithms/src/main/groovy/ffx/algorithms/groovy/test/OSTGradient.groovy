@@ -54,7 +54,7 @@ import picocli.CommandLine.Parameters
 import static java.lang.String.format
 
 /**
- * The OSTGradient script tests the Orthogonal Space Tempering Potential.
+ * OSTGradient tests the Orthogonal Space Tempering Potential.
  * <br>
  * Usage:
  * <br>
@@ -75,8 +75,7 @@ class OSTGradient extends AlgorithmsScript {
   /**
    * An XYZ or PDB input file.
    */
-  @Parameters(arity = "1", paramLabel = "file",
-      description = "XYZ or PDB input file.")
+  @Parameters(arity = "1", paramLabel = "file", description = "XYZ or PDB input file.")
   private String filename
 
   private OrthogonalSpaceTempering orthogonalSpaceTempering
@@ -119,20 +118,19 @@ class OSTGradient extends AlgorithmsScript {
     }
 
     // Set the filename.
-    filename = activeAssembly.getFile().getAbsolutePath()
+    File structureFile = activeAssembly.getFile()
+    filename = structureFile.getAbsolutePath()
 
     logger.info("\n Evaluating OST Gradient for " + filename)
 
-    File structureFile = new File(FilenameUtils.normalize(filename))
-    structureFile = new File(structureFile.getAbsolutePath())
-    String baseFilename = FilenameUtils.removeExtension(structureFile.getName())
+    String baseFilename = FilenameUtils.removeExtension(filename)
     File histogramRestart = new File(baseFilename + ".his")
     File lambdaRestart = null
 
     if (!histogramRestart.exists()) {
-      logger.severe("\n Histogram restart file does not exist.")
+      logger.warning("\n Histogram restart file does not exist: " + histogramRestart.toString())
     } else if (!histogramRestart.canRead()) {
-      logger.severe("\n Histogram restart file can not be read.")
+      logger.warning("\n Histogram restart file can not be read." + histogramRestart.toString())
     }
 
     // Get a reference to the active system's ForceFieldEnergy and atom array.
