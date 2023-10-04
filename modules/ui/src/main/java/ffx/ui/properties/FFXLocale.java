@@ -112,7 +112,7 @@ public class FFXLocale {
    * @return a boolean.
    */
   public boolean setLocale(String language, String country) {
-    Locale locale = new Locale(language, country);
+    Locale locale = Locale.of(language, country);
     try {
       ffxLabels =
           (PropertyResourceBundle)

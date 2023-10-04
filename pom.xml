@@ -38,20 +38,13 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <configuration>
             <compilerArgs>
-              <arg>-Xlint:all,-serial,-processing</arg>
-              <arg>-Aproject=${project.groupId}/${project.artifactId}</arg>
+              <arg>-Xlint:all,-serial,-processing,-this-escape</arg>
+              <arg>-proc:none</arg>
             </compilerArgs>
             <debug>true</debug>
             <source>${compileVersion}</source>
             <target>${targetVersion}</target>
             <useIncrementalCompilation>true</useIncrementalCompilation>
-            <annotationProcessorPaths>
-              <path>
-                <groupId>info.picocli</groupId>
-                <artifactId>picocli-codegen</artifactId>
-                <version>${picocli.version}</version>
-              </path>
-            </annotationProcessorPaths>
           </configuration>
           <version>${compiler.version}</version>
         </plugin>
@@ -1127,6 +1120,7 @@
         <configuration>
           <failOnError>false</failOnError>
           <quiet>true</quiet>
+
           <!-- excludePackageNames>edu.rit.*</excludePackageNames -->
         </configuration>
         <inherited>true</inherited>
@@ -1194,7 +1188,7 @@
           <linkXRef>true</linkXRef>
           <minimumPriority>2</minimumPriority>
           <minimumTokens>500</minimumTokens>
-          <targetJdk>17</targetJdk>
+          <targetJdk>${targetVersion}</targetJdk>
           <typeResolution>true</typeResolution>
           <aggregate>true</aggregate>
         </configuration>

@@ -244,7 +244,6 @@ public class UIFileOpener implements FileOpener {
   private void startTimer() {
     Runtime runtime = Runtime.getRuntime();
     if (gc) {
-      runtime.runFinalization();
       runtime.gc();
     }
     occupiedMemory = runtime.totalMemory() - runtime.freeMemory();

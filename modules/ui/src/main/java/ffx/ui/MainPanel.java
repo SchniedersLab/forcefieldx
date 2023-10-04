@@ -87,6 +87,8 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Month;
 import java.util.ArrayList;
@@ -522,7 +524,6 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
         // Others
         break;
       case "GarbageCollect":
-        Runtime.getRuntime().runFinalization();
         Runtime.getRuntime().gc();
         break;
       case "Exit":
@@ -1737,8 +1738,9 @@ public final class MainPanel extends JPanel implements ActionListener, ChangeLis
     // Convert the string to a URL instance.
     URL fromURL;
     try {
-      fromURL = new URL(fromString);
-    } catch (MalformedURLException e) {
+      URI uri = new URI(fromString);
+      fromURL = uri.toURL();
+    } catch (MalformedURLException | URISyntaxException e) {
       String message = format(" URL incorrectly formatted %s.", fromString);
       logger.log(Level.INFO, message, e);
       return null;

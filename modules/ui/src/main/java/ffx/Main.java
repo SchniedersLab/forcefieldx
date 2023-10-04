@@ -37,8 +37,6 @@
 // ******************************************************************************
 package ffx;
 
-import static java.lang.String.format;
-
 import edu.rit.pj.Comm;
 import edu.rit.pj.cluster.Configuration;
 import ffx.ui.LogHandler;
@@ -47,13 +45,22 @@ import ffx.ui.ModelingShell;
 import ffx.ui.OSXAdapter;
 import ffx.utilities.FFXScript;
 import groovy.lang.Script;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.time.StopWatch;
+import org.apache.log4j.PropertyConfigurator;
+
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
@@ -66,16 +73,8 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.SystemUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.apache.commons.lang3.time.StopWatch;
-import org.apache.log4j.PropertyConfigurator;
-import sun.misc.Unsafe;
+
+import static java.lang.String.format;
 
 /**
  * The Main class is the entry point to the graphical user interface version of Force Field X.
@@ -182,7 +181,6 @@ public final class Main extends JFrame {
       StringBuilder sb = new StringBuilder();
       sb.append(format("\n Start-up Time (msec): %s.", stopWatch.getTime()));
       Runtime runtime = Runtime.getRuntime();
-      runtime.runFinalization();
       runtime.gc();
       long occupiedMemory = runtime.totalMemory() - runtime.freeMemory();
       long KB = 1024;
@@ -499,18 +497,6 @@ public final class Main extends JFrame {
     logHandler.setLevel(level);
     ffxLogger.addHandler(logHandler);
     ffxLogger.setLevel(level);
-
-    // This removes logger warnings about Illegal Access.
-    try {
-      Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-      theUnsafe.setAccessible(true);
-      Unsafe u = (Unsafe) theUnsafe.get(null);
-      Class<?> cls = Class.forName("jdk.internal.module.IllegalAccessLogger");
-      Field logger = cls.getDeclaredField("logger");
-      u.putObjectVolatile(cls, u.staticFieldOffset(logger), null);
-    } catch (Exception e) {
-      // ignore
-    }
   }
 
   /** Start up the Parallel Java communication layer. */

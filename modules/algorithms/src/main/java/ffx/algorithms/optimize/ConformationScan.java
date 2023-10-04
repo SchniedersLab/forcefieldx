@@ -1,7 +1,6 @@
 package ffx.algorithms.optimize;
 
 import com.google.common.collect.MinMaxPriorityQueue;
-import ffx.algorithms.AlgorithmListener;
 import ffx.potential.AssemblyState;
 import ffx.potential.ForceFieldEnergy;
 import ffx.potential.MolecularAssembly;
@@ -16,12 +15,16 @@ import java.io.File;
 import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static ffx.potential.utils.Superpose.applyRotation;
 import static java.lang.String.format;
-import static org.apache.commons.math3.util.FastMath.*;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.acos;
+import static org.apache.commons.math3.util.FastMath.cos;
+import static org.apache.commons.math3.util.FastMath.min;
+import static org.apache.commons.math3.util.FastMath.sin;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * This class is for a configuration optimization of two small systems. The search
@@ -43,7 +46,6 @@ public class ConformationScan {
     private final ForceFieldEnergy forceFieldEnergy;
     private final AssemblyState initState;
     private double[] x;
-    private AlgorithmListener algorithmListener;
 
     private final Molecule[] s1;
     private final Molecule[] s2;
@@ -128,7 +130,7 @@ public class ConformationScan {
                 hBondVector[2] += minimizeVector(hBondVector, -15, 15)[2];
                 logger.info(" Best H-bond distance: " + hBondVector[2]);
                 hBondDist = hBondVector[2] - (a.getZ() - b.getZ());
-                flatBottomRadius = Math.abs(hBondDist / 2.0);
+                flatBottomRadius = abs(hBondDist / 2.0);
                 logger.info(" Flat bottom radius: " + flatBottomRadius);
                 // Minimize the energy of the system subject to a harmonic restraint on the distance
                 // between the two atoms. Keep the state if minimization works.
@@ -295,13 +297,13 @@ public class ConformationScan {
     private double[] minimizeVector(double[] hBondVector, int lowBound, int highBound) {
         highBound += 1; // To include the highBound
         // Grid search from lowBound to highBound w/ 1 ang steps
-        double[] coarsePotentialSurface = new double[(int) Math.abs(highBound - lowBound)];
-        double[] zSearched = new double[(int) Math.abs(highBound - lowBound)]; // Relative to hBondVector[2]
+        double[] coarsePotentialSurface = new double[abs(highBound - lowBound)];
+        double[] zSearched = new double[abs(highBound - lowBound)]; // Relative to hBondVector[2]
         double[] coarseVector = new double[3];
         int minIndex = -1;
         double minE = Double.MAX_VALUE;
         coarseVector[2] = hBondVector[2] + lowBound; // Bounds depend on the hBondVector[2] value
-        for(int i = 0; i < Math.abs(highBound - lowBound); i++){
+        for(int i = 0; i < abs(highBound - lowBound); i++){
             zSearched[i] = i == 0 ? lowBound : zSearched[i - 1] + 1;
             // Move mol2 to new position
             for(Atom a: s2Atoms){
@@ -337,13 +339,13 @@ public class ConformationScan {
         } else {
             a = coarsePotentialSurface[minIndex - 1] < coarsePotentialSurface[minIndex + 1] ? // relative to hbond
                     zSearched[minIndex - 1] : zSearched[minIndex + 1];
-            aPotential = Math.min(coarsePotentialSurface[minIndex - 1], coarsePotentialSurface[minIndex + 1]);
+            aPotential = min(coarsePotentialSurface[minIndex - 1], coarsePotentialSurface[minIndex + 1]);
         }
         double b = zSearched[minIndex]; // relative to hbond
         double bPotential = coarsePotentialSurface[minIndex];
         double c = 0; // Store position of previous c
         double convergence = 1e-5;
-        while(Math.abs(aPotential - bPotential) > convergence){
+        while(abs(aPotential - bPotential) > convergence){
             refinedVector[2] = (a + b) / 2 - c;
             // Move mol2 to new position between a and b
             for(Atom a1: s2Atoms){
@@ -353,7 +355,7 @@ public class ConformationScan {
             forceFieldEnergy.getCoordinates(x);
             double e = forceFieldEnergy.energy(x, false);
             // Set up next step
-            minE = Math.min(e, minE);
+            minE = min(e, minE);
             if(aPotential > bPotential && e < aPotential){
                 a = (a+b)/2;
                 aPotential = e;
@@ -403,7 +405,7 @@ public class ConformationScan {
                     }
                 }
             }
-            monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
+            monomerMinEngine = new Minimize(mola, forceFieldEnergy, null);
             monomerMinEngine.minimize(eps, maxIter).getCoordinates(x);
             statOne = monomerMinEngine.getStatus();
         }
@@ -428,7 +430,7 @@ public class ConformationScan {
                     }
                 }
             }
-            monomerMinEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
+            monomerMinEngine = new Minimize(mola, forceFieldEnergy, null);
             monomerMinEngine.minimize(eps, maxIter).getCoordinates(x);
             statTwo = monomerMinEngine.getStatus();
         }
@@ -508,7 +510,7 @@ public class ConformationScan {
                 0.0, 0.0,
                 null);
         restraintBond.setBondType(restraint);
-        Minimize minEngine = new Minimize(mola, forceFieldEnergy, algorithmListener);
+        Minimize minEngine = new Minimize(mola, forceFieldEnergy, null);
         try {
             minEngine.minimize(this.eps, this.maxIter);
         } catch (Exception ex){
@@ -602,8 +604,8 @@ public class ConformationScan {
                 sumOfSquaresNoOutlier += (e - averageEnergyNoOutlier) * (e - averageEnergyNoOutlier);
             }
         }
-        stdOfEnergies = Math.sqrt(sumOfSquares / energies.size());
-        stdOfEnergiesNoOutlier = Math.sqrt(sumOfSquaresNoOutlier / count);
+        stdOfEnergies = sqrt(sumOfSquares / energies.size());
+        stdOfEnergiesNoOutlier = sqrt(sumOfSquaresNoOutlier / count);
     }
 
     private static void alignSystemCOMtoAtomVecWithAxis(Atom a, double[] axis, Atom[] mAtoms){
@@ -664,8 +666,8 @@ public class ConformationScan {
      */
     private static double[][] getRotationBetween(double[] v1, double[] v2){
         // Normalize v1 and v2
-        double v1Norm = 1/ Math.sqrt(v1[0] * v1[0] + v1[1] * v1[1] + v1[2] * v1[2]);
-        double v2Norm = 1 / Math.sqrt(v2[0] * v2[0] + v2[1] * v2[1] + v2[2] * v2[2]);
+        double v1Norm = 1/ sqrt(v1[0] * v1[0] + v1[1] * v1[1] + v1[2] * v1[2]);
+        double v2Norm = 1 / sqrt(v2[0] * v2[0] + v2[1] * v2[1] + v2[2] * v2[2]);
         for(int i = 0; i < 3; i++){
             v1[i] *= v1Norm;
             v2[i] *= v2Norm;
@@ -676,14 +678,14 @@ public class ConformationScan {
         crossProduct[1] = v1[2] * v2[0] - v1[0] * v2[2];
         crossProduct[2] = v1[0] * v2[1] - v1[1] * v2[0];
         // Normalize cross product
-        double crossProductNorm = 1 / Math.sqrt(crossProduct[0] * crossProduct[0] + crossProduct[1] * crossProduct[1] + crossProduct[2] * crossProduct[2]);
+        double crossProductNorm = 1 / sqrt(crossProduct[0] * crossProduct[0] + crossProduct[1] * crossProduct[1] + crossProduct[2] * crossProduct[2]);
         for(int i = 0; i < 3; i++){
             crossProduct[i] *= crossProductNorm;
         }
         // Dot product between v1 and z-axis
         double dotProduct = v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
         // Angle between v1 and z-axis
-        double theta = Math.acos(dotProduct);
+        double theta = acos(dotProduct);
         double[] u = crossProduct;
         // Define quaternion from axis-angle
         double[] quaternion = new double[4];
@@ -692,7 +694,7 @@ public class ConformationScan {
         quaternion[2] = u[1] * sin(theta/2);
         quaternion[3] = u[2] * sin(theta/2);
         // Normalize quaternion
-        double quaternionNorm = 1 / Math.sqrt(quaternion[0] * quaternion[0] + quaternion[1] * quaternion[1]
+        double quaternionNorm = 1 / sqrt(quaternion[0] * quaternion[0] + quaternion[1] * quaternion[1]
                 + quaternion[2] * quaternion[2] + quaternion[3] * quaternion[3]);
         for(int i = 0; i < 4; i++){ quaternion[i] *= quaternionNorm; }
         // Useful storage
