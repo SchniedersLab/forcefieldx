@@ -155,8 +155,14 @@ public class HistogramReader extends BufferedReader {
       }
 
       if (histogram != null) {
-        applyToHistogram();
+        histogram.dUdLBins = dUdLBins;
+        histogram.mindUdL = mindUdL;
+        // Allocate memory for the recursion kernel.
+        histogram.allocateRecursionKernel();
+        // Set the recursion kernel.
+        histogram.setRecursionKernel(counts);
       }
+
     } catch (Exception e) {
       String message = " Invalid OST Histogram file.";
       logger.log(Level.SEVERE, message, e);
@@ -169,18 +175,4 @@ public class HistogramReader extends BufferedReader {
     }
   }
 
-  /** Applies values to mutable histogram fields. */
-  private void applyToHistogram() {
-    histogram.dUdLBins = dUdLBins;
-    histogram.mindUdL = mindUdL;
-
-    // Allocate memory for the recursion kernel.
-    histogram.allocateRecursionKernel();
-
-    for (int i = 0; i < histogram.lambdaBins; i++) {
-      for (int j = 0; j < histogram.dUdLBins; j++) {
-        histogram.setRecursionKernelValue(i, j, counts[i][j]);
-      }
-    }
-  }
 }

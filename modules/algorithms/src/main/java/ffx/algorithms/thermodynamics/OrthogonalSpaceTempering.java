@@ -37,20 +37,6 @@
 // ******************************************************************************
 package ffx.algorithms.thermodynamics;
 
-import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationType.SIMPSONS;
-import static ffx.utilities.Constants.R;
-import static java.lang.String.format;
-import static java.lang.System.arraycopy;
-import static java.util.Arrays.fill;
-import static org.apache.commons.math3.util.FastMath.PI;
-import static org.apache.commons.math3.util.FastMath.abs;
-import static org.apache.commons.math3.util.FastMath.asin;
-import static org.apache.commons.math3.util.FastMath.exp;
-import static org.apache.commons.math3.util.FastMath.floor;
-import static org.apache.commons.math3.util.FastMath.round;
-import static org.apache.commons.math3.util.FastMath.sin;
-import static org.apache.commons.math3.util.FastMath.sqrt;
-
 import edu.rit.mp.DoubleBuf;
 import edu.rit.pj.Comm;
 import ffx.algorithms.AlgorithmListener;
@@ -71,7 +57,10 @@ import ffx.potential.parsers.SystemFilter;
 import ffx.potential.parsers.XYZFilter;
 import ffx.utilities.Constants;
 import ffx.utilities.FileUtils;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.io.FilenameUtils;
 
+import javax.annotation.Nullable;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -87,8 +76,19 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.configuration2.CompositeConfiguration;
-import org.apache.commons.io.FilenameUtils;
+import static ffx.numerics.integrate.Integrate1DNumeric.IntegrationType.SIMPSONS;
+import static ffx.utilities.Constants.R;
+import static java.lang.String.format;
+import static java.lang.System.arraycopy;
+import static java.util.Arrays.fill;
+import static org.apache.commons.math3.util.FastMath.PI;
+import static org.apache.commons.math3.util.FastMath.abs;
+import static org.apache.commons.math3.util.FastMath.asin;
+import static org.apache.commons.math3.util.FastMath.exp;
+import static org.apache.commons.math3.util.FastMath.floor;
+import static org.apache.commons.math3.util.FastMath.round;
+import static org.apache.commons.math3.util.FastMath.sin;
+import static org.apache.commons.math3.util.FastMath.sqrt;
 
 /**
  * An implementation of the Orthogonal Space Tempering algorithm.
@@ -300,7 +300,8 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
    * @param lambdaWriteOut    Minimum lambda value to print out snapshots.
    */
   public OrthogonalSpaceTempering(LambdaInterface lambdaInterface, CrystalPotential potential,
-                                  File lambdaFile, HistogramSettings histoSettings, CompositeConfiguration properties,
+                                  @Nullable File lambdaFile, HistogramSettings histoSettings,
+                                  CompositeConfiguration properties,
                                   double temperature, double dt, double printInterval, double saveInterval, boolean asynchronous,
                                   boolean resetNumSteps, AlgorithmListener algorithmListener, double lambdaWriteOut) {
     this.lambdaInterface = lambdaInterface;
@@ -681,15 +682,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
   }
 
   /**
-   * Getter for the field <code>lambdaInterface</code>.
-   *
-   * @return a {@link ffx.potential.bonded.LambdaInterface} object.
-   */
-  public LambdaInterface getLambdaInterface() {
-    return lambdaInterface;
-  }
-
-  /**
    * {@inheritDoc}
    */
   @Override
@@ -1064,7 +1056,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * @param x        Current atomic coordinates.
      * @param gradient Work array for collecting the gradient.
      */
-    public void optimize(double e, double[] x, double[] gradient) {
+    public void optimize(double e, double[] x, @Nullable double[] gradient) {
 
       // Return if the optimization flag is not set, or if lambda is not beyond the cutoff.
       if (doOptimization && lambda > lambdaCutoff && energyCount % frequency == 0) {
@@ -1475,7 +1467,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      */
     private final double[] lambdaLadder;
     private final boolean spreadBias;
-    //private final boolean spline;
 
     /**
      * Histogram constructor.
@@ -1492,11 +1483,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       discreteLambda = settings.discreteLambda;
       metaDynamics = settings.isMetaDynamics();
       biasCutoff = settings.biasCutoff;
-      /*if (discreteLambda) {
-        lambdaBiasCutoff = 0;
-      } else {
-        lambdaBiasCutoff = biasCutoff;
-      }*/
       lambdaBiasCutoff = settings.lambdaBiasCutoff;
       double gaussNormalization;
       if (lambdaBiasCutoff == 0 && !settings.histogramRead) {
@@ -1723,7 +1709,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
           "\n  Histogram restart:       %s", FileUtils.relativePathTo(histogramFile));
     }
 
-    public synchronized double updateFreeEnergyEstimate(boolean print, boolean save) {
+    public double updateFreeEnergyEstimate(boolean print, boolean save) {
       if (metaDynamics) {
         return updateMetaDynamicsFreeEnergyEstimate(print, save);
       } else {
@@ -1738,124 +1724,125 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * @param save  Whether to write the histogram to disk.
      * @return Free energy (via integration of ensemble-average dU/dL)
      */
-    public synchronized double updateMetaDynamicsFreeEnergyEstimate(boolean print, boolean save) {
+    public double updateMetaDynamicsFreeEnergyEstimate(boolean print, boolean save) {
+      synchronized (this) {
+        double freeEnergy = 0.0;
+        double freeEnergyOST = 0.0;
 
-      double freeEnergy = 0.0;
-      double freeEnergyOST = 0.0;
+        double minFL = Double.MAX_VALUE;
 
-      double minFL = Double.MAX_VALUE;
+        double[] metaFreeEnergy = new double[lambdaBins];
 
-      double[] metaFreeEnergy = new double[lambdaBins];
+        // Total histogram weight.
+        double totalWeight = 0;
+        StringBuilder stringBuilder = new StringBuilder();
 
-      // Total histogram weight.
-      double totalWeight = 0;
-      StringBuilder stringBuilder = new StringBuilder();
+        // Loop over lambda bins, computing <dU/dL> for each bin.
+        for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
+          int firstdUdLBin = firstdUdLBin(lambdaBin);
+          int lastdUdLBin = lastdUdLBin(lambdaBin);
+          double lambdaCount = 0;
+          // The dUdL range sampled for lambda.
+          double mindUdLForLambda = 0.0;
+          double maxdUdLforLambda = 0.0;
+          double maxBias = 0;
+          if (firstdUdLBin == -1 || lastdUdLBin == -1) {
+            ensembleAveragedUdL[lambdaBin] = 0.0;
+            minFL = 0.0;
+          } else {
+            double ensembleAverageFLambda = 0.0;
+            double partitionFunction = 0.0;
 
-      // Loop over lambda bins, computing <dU/dL> for each bin.
-      for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
-        int firstdUdLBin = firstdUdLBin(lambdaBin);
-        int lastdUdLBin = lastdUdLBin(lambdaBin);
-        double lambdaCount = 0;
-        // The dUdL range sampled for lambda.
-        double mindUdLForLambda = 0.0;
-        double maxdUdLforLambda = 0.0;
-        double maxBias = 0;
-        if (firstdUdLBin == -1 || lastdUdLBin == -1) {
-          ensembleAveragedUdL[lambdaBin] = 0.0;
-          minFL = 0.0;
-        } else {
-          double ensembleAverageFLambda = 0.0;
-          double partitionFunction = 0.0;
+            // Evaluate and regularize all kernel values for this value of lambda.
+            double offset = evaluateKernelforLambda(lambdaBin, firstdUdLBin, lastdUdLBin);
 
-          // Evaluate and regularize all kernel values for this value of lambda.
-          double offset = evaluateKernelforLambda(lambdaBin, firstdUdLBin, lastdUdLBin);
+            for (int dUdLBin = firstdUdLBin; dUdLBin <= lastdUdLBin; dUdLBin++) {
+              double kernel = kernelValues[dUdLBin];
 
-          for (int dUdLBin = firstdUdLBin; dUdLBin <= lastdUdLBin; dUdLBin++) {
-            double kernel = kernelValues[dUdLBin];
+              if (kernel - offset > maxBias) {
+                maxBias = kernel - offset;
+              }
 
-            if (kernel - offset > maxBias) {
-              maxBias = kernel - offset;
+              // The weight is just the kernel value for no 2D bias.
+              partitionFunction += kernel;
+
+              double currentdUdL = dUdLforBin(dUdLBin);
+              ensembleAverageFLambda += currentdUdL * kernel;
+              lambdaCount += getRecursionKernelValue(lambdaBin, dUdLBin);
+            }
+            if (minFL > maxBias) {
+              minFL = maxBias;
+            }
+            ensembleAveragedUdL[lambdaBin] =
+                (partitionFunction == 0) ? 0 : ensembleAverageFLambda / partitionFunction;
+            mindUdLForLambda = mindUdL + firstdUdLBin * dUdLBinWidth;
+            maxdUdLforLambda = mindUdL + (lastdUdLBin + 1) * dUdLBinWidth;
+          }
+
+          double deltaFreeEnergy = ensembleAveragedUdL[lambdaBin] * deltaForLambdaBin(lambdaBin);
+          freeEnergyOST += deltaFreeEnergy;
+          totalWeight += lambdaCount;
+
+          if (print || save) {
+            double llL = lambdaBin * lambdaBinWidth - lambdaBinWidth_2;
+            double ulL = llL + lambdaBinWidth;
+            if (llL < 0.0) {
+              llL = 0.0;
+            }
+            if (ulL > 1.0) {
+              ulL = 1.0;
             }
 
-            // The weight is just the kernel value for no 2D bias.
-            partitionFunction += kernel;
+            double midLambda = llL;
+            if (!discreteLambda) {
+              midLambda = (llL + ulL) / 2.0;
+            }
+            double bias1D = energyAndGradient1D(midLambda, false);
+            metaFreeEnergy[lambdaBin] = energyAndGradientMeta(midLambda, false);
+            freeEnergy = -(metaFreeEnergy[lambdaBin] - metaFreeEnergy[0]);
 
-            double currentdUdL = dUdLforBin(dUdLBin);
-            ensembleAverageFLambda += currentdUdL * kernel;
-            lambdaCount += getRecursionKernelValue(lambdaBin, dUdLBin);
+            stringBuilder.append(
+                format(" %6.2e %7.5f %7.1f %7.1f %9.2f %9.2f %9.2f %9.2f %9.2f\n", lambdaCount,
+                    midLambda, mindUdLForLambda, maxdUdLforLambda, ensembleAveragedUdL[lambdaBin],
+                    bias1D, freeEnergyOST, metaFreeEnergy[lambdaBin], freeEnergy));
           }
-          if (minFL > maxBias) {
-            minFL = maxBias;
-          }
-          ensembleAveragedUdL[lambdaBin] =
-              (partitionFunction == 0) ? 0 : ensembleAverageFLambda / partitionFunction;
-          mindUdLForLambda = mindUdL + firstdUdLBin * dUdLBinWidth;
-          maxdUdLforLambda = mindUdL + (lastdUdLBin + 1) * dUdLBinWidth;
         }
 
-        double deltaFreeEnergy = ensembleAveragedUdL[lambdaBin] * deltaForLambdaBin(lambdaBin);
-        freeEnergyOST += deltaFreeEnergy;
-        totalWeight += lambdaCount;
+        double temperEnergy = (minFL > temperOffset) ? temperOffset - minFL : 0;
+        temperingWeight = exp(temperEnergy / deltaT);
 
-        if (print || save) {
-          double llL = lambdaBin * lambdaBinWidth - lambdaBinWidth_2;
-          double ulL = llL + lambdaBinWidth;
-          if (llL < 0.0) {
-            llL = 0.0;
-          }
-          if (ulL > 1.0) {
-            ulL = 1.0;
-          }
-
-          double midLambda = llL;
-          if (!discreteLambda) {
-            midLambda = (llL + ulL) / 2.0;
-          }
-          double bias1D = energyAndGradient1D(midLambda, false);
-          metaFreeEnergy[lambdaBin] = energyAndGradientMeta(midLambda, false);
-          freeEnergy = -(metaFreeEnergy[lambdaBin] - metaFreeEnergy[0]);
-
-          stringBuilder.append(
-              format(" %6.2e %7.5f %7.1f %7.1f %9.2f %9.2f %9.2f %9.2f %9.2f\n", lambdaCount,
-                  midLambda, mindUdLForLambda, maxdUdLforLambda, ensembleAveragedUdL[lambdaBin],
-                  bias1D, freeEnergyOST, metaFreeEnergy[lambdaBin], freeEnergy));
+        if (print && abs(freeEnergy - previousFreeEnergy) > 0.001) {
+          logger.info(
+              "  Weight   Lambda      dU/dL Bins   <dU/dL>      g(L) dG_OST(L)  Meta(L) dG_Meta(L)");
+          logger.info(stringBuilder.toString());
+          logger.info(format(
+              " The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
+              freeEnergy, totalWeight, temperingWeight, biasCount));
+          logger.info(format(" Minimum Bias %8.3f", minFL));
+          previousFreeEnergy = freeEnergy;
+        } else if (!save && (print || biasCount % printFrequency == 0)) {
+          logger.info(format(
+              " The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
+              freeEnergy, totalWeight, temperingWeight, biasCount));
         }
-      }
 
-      double temperEnergy = (minFL > temperOffset) ? temperOffset - minFL : 0;
-      temperingWeight = exp(temperEnergy / deltaT);
-
-      if (print && abs(freeEnergy - previousFreeEnergy) > 0.001) {
-        logger.info(
-            "  Weight   Lambda      dU/dL Bins   <dU/dL>      g(L) dG_OST(L)  Meta(L) dG_Meta(L)");
-        logger.info(stringBuilder.toString());
-        logger.info(format(
-            " The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
-            freeEnergy, totalWeight, temperingWeight, biasCount));
-        logger.info(format(" Minimum Bias %8.3f", minFL));
-        previousFreeEnergy = freeEnergy;
-      } else if (!save && (print || biasCount % printFrequency == 0)) {
-        logger.info(format(
-            " The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
-            freeEnergy, totalWeight, temperingWeight, biasCount));
-      }
-
-      if (save) {
-        String modelFilename = molecularAssembly.getFile().getAbsolutePath();
-        File saveDir = new File(FilenameUtils.getFullPath(modelFilename));
-        String dirName = saveDir + File.separator;
-        String fileName = dirName + "histogram.txt";
-        try {
-          logger.info(" Writing " + fileName);
-          PrintWriter printWriter = new PrintWriter(fileName);
-          printWriter.write(stringBuilder.toString());
-          printWriter.close();
-        } catch (Exception e) {
-          logger.info(format(" Failed to write %s.", fileName));
+        if (save) {
+          String modelFilename = molecularAssembly.getFile().getAbsolutePath();
+          File saveDir = new File(FilenameUtils.getFullPath(modelFilename));
+          String dirName = saveDir + File.separator;
+          String fileName = dirName + "histogram.txt";
+          try {
+            logger.info(" Writing " + fileName);
+            PrintWriter printWriter = new PrintWriter(fileName);
+            printWriter.write(stringBuilder.toString());
+            printWriter.close();
+          } catch (Exception e) {
+            logger.info(format(" Failed to write %s.", fileName));
+          }
         }
-      }
 
-      return freeEnergy;
+        return freeEnergy;
+      }
     }
 
     /**
@@ -1865,138 +1852,139 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * @param save  Whether to write the histogram to disk.
      * @return Free energy (via integration of ensemble-average dU/dL)
      */
-    public synchronized double updateOSTFreeEnergyEstimate(boolean print, boolean save) {
-      double freeEnergy = 0.0;
-      double minFL = Double.MAX_VALUE;
+    public double updateOSTFreeEnergyEstimate(boolean print, boolean save) {
+      synchronized (this) {
+        double freeEnergy = 0.0;
+        double minFL = Double.MAX_VALUE;
 
-      // If the bias magnitude is zero, computing <dU/dL> from
-      // counts will not be correct. Assign a temporary non-zero bias magnitude.
-      boolean biasMagZero = biasMag <= 0.0;
+        // If the bias magnitude is zero, computing <dU/dL> from
+        // counts will not be correct. Assign a temporary non-zero bias magnitude.
+        boolean biasMagZero = biasMag <= 0.0;
 
-      // Total histogram weight.
-      double totalWeight = 0;
-      double beta = 1.0 / (R * temperature);
-      StringBuilder stringBuilder = new StringBuilder();
+        // Total histogram weight.
+        double totalWeight = 0;
+        double beta = 1.0 / (R * temperature);
+        StringBuilder stringBuilder = new StringBuilder();
 
-      // Loop over lambda bins, computing <dU/dL> for each bin.
-      for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
-        int firstdUdLBin = firstdUdLBin(lambdaBin);
-        int lastdUdLBin = lastdUdLBin(lambdaBin);
-        double lambdaCount = 0;
-        // The FL range sampled for lambda bin [iL*dL .. (iL+1)*dL]
-        double mindUdLforLambda = 0.0;
-        double maxdUdLforLambda = 0.0;
-        double maxBias = 0;
-        if (firstdUdLBin == -1 || lastdUdLBin == -1) {
-          ensembleAveragedUdL[lambdaBin] = 0.0;
-          minFL = 0.0;
-        } else {
-          double ensembleAverage = 0.0;
-          double partitionFunction = 0.0;
+        // Loop over lambda bins, computing <dU/dL> for each bin.
+        for (int lambdaBin = 0; lambdaBin < lambdaBins; lambdaBin++) {
+          int firstdUdLBin = firstdUdLBin(lambdaBin);
+          int lastdUdLBin = lastdUdLBin(lambdaBin);
+          double lambdaCount = 0;
+          // The FL range sampled for lambda bin [iL*dL .. (iL+1)*dL]
+          double mindUdLforLambda = 0.0;
+          double maxdUdLforLambda = 0.0;
+          double maxBias = 0;
+          if (firstdUdLBin == -1 || lastdUdLBin == -1) {
+            ensembleAveragedUdL[lambdaBin] = 0.0;
+            minFL = 0.0;
+          } else {
+            double ensembleAverage = 0.0;
+            double partitionFunction = 0.0;
 
-          // Evaluate and regularize all kernel values for this value of lambda.
-          double offset = evaluateKernelforLambda(lambdaBin, firstdUdLBin, lastdUdLBin);
+            // Evaluate and regularize all kernel values for this value of lambda.
+            double offset = evaluateKernelforLambda(lambdaBin, firstdUdLBin, lastdUdLBin);
 
-          for (int dUdLBin = firstdUdLBin; dUdLBin <= lastdUdLBin; dUdLBin++) {
-            double kernel = kernelValues[dUdLBin];
+            for (int dUdLBin = firstdUdLBin; dUdLBin <= lastdUdLBin; dUdLBin++) {
+              double kernel = kernelValues[dUdLBin];
 
-            if (kernel - offset > maxBias) {
-              maxBias = kernel - offset;
+              if (kernel - offset > maxBias) {
+                maxBias = kernel - offset;
+              }
+
+              double weight;
+              if (biasMagZero) {
+                // The weight is just the kernel value for no 2D bias.
+                weight = kernel;
+              } else {
+                // The Boltzmann weight based on temperature and the 2D bias height.
+                weight = exp(kernel * beta);
+              }
+              partitionFunction += weight;
+
+              double currentdUdL = dUdLforBin(dUdLBin);
+              ensembleAverage += currentdUdL * weight;
+              lambdaCount += getRecursionKernelValue(lambdaBin, dUdLBin);
+            }
+            if (minFL > maxBias) {
+              minFL = maxBias;
+            }
+            ensembleAveragedUdL[lambdaBin] = (partitionFunction == 0) ? 0 : ensembleAverage / partitionFunction;
+            mindUdLforLambda = mindUdL + firstdUdLBin * dUdLBinWidth;
+            maxdUdLforLambda = mindUdL + (lastdUdLBin + 1) * dUdLBinWidth;
+          }
+
+          double deltaFreeEnergy = ensembleAveragedUdL[lambdaBin] * deltaForLambdaBin(lambdaBin);
+          freeEnergy += deltaFreeEnergy;
+          totalWeight += lambdaCount;
+
+          if (print || save) {
+            double llL = lambdaBin * lambdaBinWidth - lambdaBinWidth_2;
+            double ulL = llL + lambdaBinWidth;
+            if (llL < 0.0) {
+              llL = 0.0;
+            }
+            if (ulL > 1.0) {
+              ulL = 1.0;
             }
 
-            double weight;
-            if (biasMagZero) {
-              // The weight is just the kernel value for no 2D bias.
-              weight = kernel;
-            } else {
-              // The Boltzmann weight based on temperature and the 2D bias height.
-              weight = exp(kernel * beta);
+            double midLambda = llL;
+            if (!discreteLambda) {
+              midLambda = (llL + ulL) / 2.0;
             }
-            partitionFunction += weight;
+            double bias1D = energyAndGradient1D(midLambda, false);
 
-            double currentdUdL = dUdLforBin(dUdLBin);
-            ensembleAverage += currentdUdL * weight;
-            lambdaCount += getRecursionKernelValue(lambdaBin, dUdLBin);
+            double bias2D = 0.0;
+            if (!biasMagZero) {
+              bias2D = computeBiasEnergy(midLambda, ensembleAveragedUdL[lambdaBin]) - bias1D;
+            }
+
+            stringBuilder.append(
+                format(" %6.2e %7.5f %7.1f %7.1f %8.2f %8.2f %8.2f %8.2f %8.2f   %8.2f\n", lambdaCount,
+                    midLambda, mindUdLforLambda, maxdUdLforLambda, ensembleAveragedUdL[lambdaBin],
+                    bias1D, bias2D, bias1D + bias2D, freeEnergy, bias1D + bias2D + freeEnergy));
           }
-          if (minFL > maxBias) {
-            minFL = maxBias;
-          }
-          ensembleAveragedUdL[lambdaBin] =
-              (partitionFunction == 0) ? 0 : ensembleAverage / partitionFunction;
-          mindUdLforLambda = mindUdL + firstdUdLBin * dUdLBinWidth;
-          maxdUdLforLambda = mindUdL + (lastdUdLBin + 1) * dUdLBinWidth;
         }
 
-        double deltaFreeEnergy = ensembleAveragedUdL[lambdaBin] * deltaForLambdaBin(lambdaBin);
-        freeEnergy += deltaFreeEnergy;
-        totalWeight += lambdaCount;
-
-        if (print || save) {
-          double llL = lambdaBin * lambdaBinWidth - lambdaBinWidth_2;
-          double ulL = llL + lambdaBinWidth;
-          if (llL < 0.0) {
-            llL = 0.0;
-          }
-          if (ulL > 1.0) {
-            ulL = 1.0;
-          }
-
-          double midLambda = llL;
-          if (!discreteLambda) {
-            midLambda = (llL + ulL) / 2.0;
-          }
-          double bias1D = energyAndGradient1D(midLambda, false);
-
-          double bias2D = 0.0;
-          if (!biasMagZero) {
-            bias2D = computeBiasEnergy(midLambda, ensembleAveragedUdL[lambdaBin]) - bias1D;
-          }
-
-          stringBuilder.append(
-              format(" %6.2e %7.5f %7.1f %7.1f %8.2f %8.2f %8.2f %8.2f %8.2f   %8.2f\n", lambdaCount,
-                  midLambda, mindUdLforLambda, maxdUdLforLambda, ensembleAveragedUdL[lambdaBin],
-                  bias1D, bias2D, bias1D + bias2D, freeEnergy, bias1D + bias2D + freeEnergy));
+        if (!biasMagZero) {
+          double temperEnergy = (minFL > temperOffset) ? temperOffset - minFL : 0;
+          temperingWeight = exp(temperEnergy / deltaT);
         }
-      }
 
-      if (!biasMagZero) {
-        double temperEnergy = (minFL > temperOffset) ? temperOffset - minFL : 0;
-        temperingWeight = exp(temperEnergy / deltaT);
-      }
+        freeEnergy = integrateNumeric(ensembleAveragedUdL, integrationType);
 
-      freeEnergy = integrateNumeric(ensembleAveragedUdL, integrationType);
-
-      if (print && abs(freeEnergy - previousFreeEnergy) > 0.001) {
-        logger.info(
-            "  Weight   Lambda      dU/dL Bins  <dU/dL>    g(L)  f(L,<dU/dL>) Bias    dG(L) Bias+dG(L)");
-        logger.info(stringBuilder.toString());
-        logger.info(format(
-            " The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
-            freeEnergy, totalWeight, temperingWeight, biasCount));
-        logger.info(format(" Minimum Bias %8.3f", minFL));
-        previousFreeEnergy = freeEnergy;
-      } else if (!save && (print || biasCount % printFrequency == 0)) {
-        logger.info(format(
-            " The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
-            freeEnergy, totalWeight, temperingWeight, biasCount));
-      }
-
-      if (save) {
-        String modelFilename = molecularAssembly.getFile().getAbsolutePath();
-        File saveDir = new File(FilenameUtils.getFullPath(modelFilename));
-        String dirName = saveDir + File.separator;
-        String fileName = dirName + "histogram.txt";
-        try {
-          logger.info(" Writing " + fileName);
-          PrintWriter printWriter = new PrintWriter(fileName);
-          printWriter.write(stringBuilder.toString());
-          printWriter.close();
-        } catch (Exception e) {
-          logger.info(format(" Failed to write %s.", fileName));
+        if (print && abs(freeEnergy - previousFreeEnergy) > 0.001) {
+          logger.info(
+              "  Weight   Lambda      dU/dL Bins  <dU/dL>    g(L)  f(L,<dU/dL>) Bias    dG(L) Bias+dG(L)");
+          logger.info(stringBuilder.toString());
+          logger.info(format(
+              " The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
+              freeEnergy, totalWeight, temperingWeight, biasCount));
+          logger.info(format(" Minimum Bias %8.3f", minFL));
+          previousFreeEnergy = freeEnergy;
+        } else if (!save && (print || biasCount % printFrequency == 0)) {
+          logger.info(format(
+              " The free energy is %12.4f kcal/mol (Total Weight: %6.2e, Tempering: %6.4f, Counts: %12d).",
+              freeEnergy, totalWeight, temperingWeight, biasCount));
         }
-      }
 
-      return freeEnergy;
+        if (save) {
+          String modelFilename = molecularAssembly.getFile().getAbsolutePath();
+          File saveDir = new File(FilenameUtils.getFullPath(modelFilename));
+          String dirName = saveDir + File.separator;
+          String fileName = dirName + "histogram.txt";
+          try {
+            logger.info(" Writing " + fileName);
+            PrintWriter printWriter = new PrintWriter(fileName);
+            printWriter.write(stringBuilder.toString());
+            printWriter.close();
+          } catch (Exception e) {
+            logger.info(format(" Failed to write %s.", fileName));
+          }
+        }
+
+        return freeEnergy;
+      }
     }
 
     /**
@@ -2025,14 +2013,17 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * @return Index of the first dUdL bin with counts.
      */
     private int firstdUdLBin(int lambdaBin) {
-      // Find the smallest FL bin that has counts.
-      for (int jFL = 0; jFL < dUdLBins; jFL++) {
-        double count = recursionKernel[lambdaBin][jFL];
-        if (count > 0) {
-          return jFL;
+      // Synchronize use of the recursion kernel.
+      synchronized (this) {
+        // Find the smallest FL bin that has counts.
+        for (int jFL = 0; jFL < dUdLBins; jFL++) {
+          double count = recursionKernel[lambdaBin][jFL];
+          if (count > 0) {
+            return jFL;
+          }
         }
+        return -1;
       }
-      return -1;
     }
 
     /**
@@ -2043,14 +2034,17 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * @return Index of the last dUdL bin with counts.
      */
     private int lastdUdLBin(int lambdaBin) {
-      // Find the largest FL bin that has counts.
-      for (int jFL = dUdLBins - 1; jFL >= 0; jFL--) {
-        double count = recursionKernel[lambdaBin][jFL];
-        if (count > 0) {
-          return jFL;
+      // Synchronize use of the recursion kernel.
+      synchronized (this) {
+        // Find the largest FL bin that has counts.
+        for (int jFL = dUdLBins - 1; jFL >= 0; jFL--) {
+          double count = recursionKernel[lambdaBin][jFL];
+          if (count > 0) {
+            return jFL;
+          }
         }
+        return -1;
       }
-      return -1;
     }
 
     /**
@@ -2106,8 +2100,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       }
       if (histogramToRead != null && histogramToRead.exists()) {
         try {
-          HistogramReader histogramReader = new HistogramReader(this,
-              new FileReader(histogramToRead));
+          HistogramReader histogramReader = new HistogramReader(this, new FileReader(histogramToRead));
           histogramReader.readHistogramFile();
           // Currently, the restart format does not include info on using discrete lambda values.
           updateFreeEnergyEstimate(true, false);
@@ -2225,15 +2218,18 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * @return The value of the bin.
      */
     double getRecursionKernelValue(int lambdaBin, int dUdLBin) {
-      // Apply lambda mirror condition.
-      lambdaBin = lambdaMirror(lambdaBin);
+      // Synchronize use of the recursion kernel.
+      synchronized (this) {
+        // Apply lambda mirror condition.
+        lambdaBin = lambdaMirror(lambdaBin);
 
-      // For dUdL outside the count matrix the weight is 0.
-      if (dUdLBin < 0 || dUdLBin >= dUdLBins) {
-        return 0.0;
+        // For dUdL outside the count matrix the weight is 0.
+        if (dUdLBin < 0 || dUdLBin >= dUdLBins) {
+          return 0.0;
+        }
+
+        return recursionKernel[lambdaBin][dUdLBin];
       }
-
-      return recursionKernel[lambdaBin][dUdLBin];
     }
 
     /**
@@ -2249,14 +2245,17 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     }
 
     /**
-     * Set the value of a recursion kernel bin.
-     *
-     * @param lambdaBin  The lambda bin.
-     * @param fLambdaBin The dU/dL bin.
-     * @param value      The value of the bin.
+     * Set the recursion kernel to the supplied value.
      */
-    void setRecursionKernelValue(int lambdaBin, int fLambdaBin, double value) {
-      recursionKernel[lambdaBin][fLambdaBin] = value;
+    void setRecursionKernel(double[][] counts) {
+      // Synchronize use of the recursion kernel.
+      synchronized (this) {
+        for (int i = 0; i < lambdaBins; i++) {
+          if (dUdLBins >= 0) {
+            arraycopy(counts[i], 0, recursionKernel[i], 0, dUdLBins);
+          }
+        }
+      }
     }
 
     /**
@@ -2267,80 +2266,84 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * @param value            The value of the bin.
      * @param updateFreeEnergy If true, update the 1D bias and free energy estimate.
      */
-    synchronized void addToRecursionKernelValue(double currentLambda, double currentdUdL,
-                                                double value, boolean updateFreeEnergy) {
+    void addToRecursionKernelValue(double currentLambda, double currentdUdL,
+                                   double value, boolean updateFreeEnergy) {
+      synchronized (this) {
+        if (spreadBias) {
+          // Expand the recursion kernel if necessary.
+          checkRecursionKernelSize(dUdLforBin(binFordUdL(currentdUdL) - biasCutoff));
+          checkRecursionKernelSize(dUdLforBin(binFordUdL(currentdUdL) + biasCutoff));
 
-      if (spreadBias) {
-        // Expand the recursion kernel if necessary.
-        checkRecursionKernelSize(dUdLforBin(binFordUdL(currentdUdL) - biasCutoff));
-        checkRecursionKernelSize(dUdLforBin(binFordUdL(currentdUdL) + biasCutoff));
+          int currentLambdaBin = indexForLambda(currentLambda);
+          int currentdUdLBin = binFordUdL(currentdUdL);
 
-        int currentLambdaBin = indexForLambda(currentLambda);
-        int currentdUdLBin = binFordUdL(currentdUdL);
+          // Variances are only used when dividing by twice their value.
+          double invLs2 = 0.5 / lambdaVariance;
+          double invFLs2 = 0.5 / dUdLVariance;
 
-        // Variances are only used when dividing by twice their value.
-        double invLs2 = 0.5 / lambdaVariance;
-        double invFLs2 = 0.5 / dUdLVariance;
+          // Compute the normalization.
+          double normalize = 0.0;
+          for (int iL = -lambdaBiasCutoff; iL <= lambdaBiasCutoff; iL++) {
+            int lambdaBin = currentLambdaBin + iL;
+            double deltaL = currentLambda - lambdaBin * lambdaBinWidth;
+            double deltaL2 = deltaL * deltaL;
+            // Pre-compute the lambda bias.
+            double L2exp = exp(-deltaL2 * invLs2);
+            for (int jFL = -biasCutoff; jFL <= biasCutoff; jFL++) {
+              int dUdLBin = currentdUdLBin + jFL;
+              double deltaFL = currentdUdL - dUdLforBin(dUdLBin);
+              double deltaFL2 = deltaFL * deltaFL;
+              normalize += L2exp * exp(-deltaFL2 * invFLs2);
+            }
+          }
 
-        // Compute the normalization.
-        double normalize = 0.0;
-        for (int iL = -lambdaBiasCutoff; iL <= lambdaBiasCutoff; iL++) {
-          int lambdaBin = currentLambdaBin + iL;
-          double deltaL = currentLambda - lambdaBin * lambdaBinWidth;
-          double deltaL2 = deltaL * deltaL;
-          // Pre-compute the lambda bias.
-          double L2exp = exp(-deltaL2 * invLs2);
-          for (int jFL = -biasCutoff; jFL <= biasCutoff; jFL++) {
-            int dUdLBin = currentdUdLBin + jFL;
-            double deltaFL = currentdUdL - dUdLforBin(dUdLBin);
-            double deltaFL2 = deltaFL * deltaFL;
-            normalize += L2exp * exp(-deltaFL2 * invFLs2);
+          for (int iL = -lambdaBiasCutoff; iL <= lambdaBiasCutoff; iL++) {
+            int lambdaBin = currentLambdaBin + iL;
+            double deltaL = currentLambda - lambdaBin * lambdaBinWidth;
+            double deltaL2 = deltaL * deltaL;
+            // Pre-compute the lambda bias.
+            double L2exp = exp(-deltaL2 * invLs2);
+            lambdaBin = lambdaMirror(lambdaBin);
+            for (int jFL = -biasCutoff; jFL <= biasCutoff; jFL++) {
+              int dUdLBin = currentdUdLBin + jFL;
+              double deltaFL = currentdUdL - dUdLforBin(dUdLBin);
+              double deltaFL2 = deltaFL * deltaFL;
+              double weight = value / normalize * L2exp * exp(-deltaFL2 * invFLs2);
+              recursionKernel[lambdaBin][dUdLBin] += weight;
+            }
+          }
+        } else {
+          // Check the recursion kernel size.
+          checkRecursionKernelSize(currentdUdL);
+
+          int lambdaBin = indexForLambda(currentLambda);
+          int dUdLBin = binFordUdL(currentdUdL);
+          try {
+            recursionKernel[lambdaBin][dUdLBin] += value;
+          } catch (IndexOutOfBoundsException e) {
+            logger.warning(format(
+                " Count skipped in addToRecursionKernelValue due to an index out of bounds exception.\n L=%10.8f (%d), dU/dL=%10.8f (%d) and count=%10.8f",
+                currentLambda, lambdaBin, currentdUdL, dUdLBin, value));
           }
         }
 
-        for (int iL = -lambdaBiasCutoff; iL <= lambdaBiasCutoff; iL++) {
-          int lambdaBin = currentLambdaBin + iL;
-          double deltaL = currentLambda - lambdaBin * lambdaBinWidth;
-          double deltaL2 = deltaL * deltaL;
-          // Pre-compute the lambda bias.
-          double L2exp = exp(-deltaL2 * invLs2);
-          lambdaBin = lambdaMirror(lambdaBin);
-          for (int jFL = -biasCutoff; jFL <= biasCutoff; jFL++) {
-            int dUdLBin = currentdUdLBin + jFL;
-            double deltaFL = currentdUdL - dUdLforBin(dUdLBin);
-            double deltaFL2 = deltaFL * deltaFL;
-            double weight = value / normalize * L2exp * exp(-deltaFL2 * invFLs2);
-            recursionKernel[lambdaBin][dUdLBin] += weight;
-          }
+        if (updateFreeEnergy) {
+          updateFreeEnergyEstimate(false, false);
         }
-      } else {
-        // Check the recursion kernel size.
-        checkRecursionKernelSize(currentdUdL);
 
-        int lambdaBin = indexForLambda(currentLambda);
-        int dUdLBin = binFordUdL(currentdUdL);
-        try {
-          recursionKernel[lambdaBin][dUdLBin] += value;
-        } catch (IndexOutOfBoundsException e) {
-          logger.warning(format(
-              " Count skipped in addToRecursionKernelValue due to an index out of bounds exception.\n L=%10.8f (%d), dU/dL=%10.8f (%d) and count=%10.8f",
-              currentLambda, lambdaBin, currentdUdL, dUdLBin, value));
-        }
+        ++biasCount;
       }
-
-      if (updateFreeEnergy) {
-        updateFreeEnergyEstimate(false, false);
-      }
-
-      ++biasCount;
     }
 
     /**
      * Allocate memory for the recursion kernel.
      */
     void allocateRecursionKernel() {
-      recursionKernel = new double[lambdaBins][dUdLBins];
-      kernelValues = new double[dUdLBins];
+      // Synchronize updates of the recursion kernel.
+      synchronized (this) {
+        recursionKernel = new double[lambdaBins][dUdLBins];
+        kernelValues = new double[dUdLBins];
+      }
     }
 
     /**
@@ -2512,8 +2515,7 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
     /**
      * Evaluate the bias at [currentLambdaBin, cF_lambda]
      */
-    private double evaluateKernel(int currentLambdaBin, int currentdUdLBin,
-                                  double gaussianBiasMagnitude) {
+    private double evaluateKernel(int currentLambdaBin, int currentdUdLBin, double gaussianBiasMagnitude) {
       // Compute the value of L and FL for the center of the current bin.
       double currentLambda = currentLambdaBin * lambdaBinWidth;
       double currentdUdL = dUdLforBin(currentdUdLBin);
@@ -2593,7 +2595,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
             }
           }
         }
-
         // Compute the energy for the recursion worker at F(L) using interpolation.
         bias1D = energyAndGradient1D(currentLambda, false);
       } else {
@@ -2620,29 +2621,10 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
       int currentLambdaBin = indexForLambda(currentLambda);
       int currentdUdLBin = binFordUdL(currentdUdLambda);
 
-      // TODO: create a "Hill" class for Lambda based on either Gaussian hills or b-Spline hills
-      //  Simple constructor.
-      //  init: initialize the instance based on the current lambda.
-      //  getWeight: return the weight given a bin offset.
-      //  getWeightDerivative: return the partial derivative of the weight.
-      // Example input
-      // double lambdaForBin = lambdaForIndex(currentLambdaBin);
-      // double x = (currentLambda - lambdaForBin) / lambdaBinWidth + 0.5;
-
-      // TODO: create a "Hill" class for dUdL based on either Gaussian hills or b-Spline hills
-      //  Simple constructor.
-      //  init: initialize the instance based on the current dUdL.
-      //  getWeight: return the weight given a bin offset.
-      //  getWeightDerivative: return the partial derivative of the weight.
-      // Example input
-      // double dUdLForBin = dUdLForIndex(currentdUdLBin);
-      // double x = (currentdUdL - dUdLForBin) / dUdLBinWidth + 0.5;
-
       for (int iL = -lambdaBiasCutoff; iL <= lambdaBiasCutoff; iL++) {
         int lambdaBin = currentLambdaBin + iL;
 
         // Pass in the bin offset to the weight instance.
-
         double deltaL = currentLambda - (lambdaBin * lambdaBinWidth);
         double deltaL2 = deltaL * deltaL;
         double expL2 = exp(-deltaL2 / (2.0 * lambdaVariance));
@@ -2653,23 +2635,14 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         for (int iFL = -biasCutoff; iFL <= biasCutoff; iFL++) {
           int dUdLBin = currentdUdLBin + iFL;
 
-          double weight;
-
-          //if(spline){
-          //  LambdaHill lambdaHill = new LambdaHill(currentLambda);
-          //weight = lambdaHill.getWeight();
-          //} else {
-          weight = mirrorFactor * getRecursionKernelValue(lambdaBin, dUdLBin);
-          //}
-
+          double weight = mirrorFactor * getRecursionKernelValue(lambdaBin, dUdLBin);
           if (weight <= 0.0) {
             continue;
           }
 
           double deltaFL = currentdUdLambda - dUdLforBin(dUdLBin);
           double deltaFL2 = deltaFL * deltaFL;
-          double bias =
-              weight * gaussianBiasMagnitude * expL2 * exp(-deltaFL2 / (2.0 * dUdLVariance));
+          double bias = weight * gaussianBiasMagnitude * expL2 * exp(-deltaFL2 / (2.0 * dUdLVariance));
           gLdEdL += bias;
           dGdLambda -= deltaL / lambdaVariance * bias;
           dGdFLambda -= deltaFL / dUdLVariance * bias;
@@ -2693,39 +2666,41 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * @return a double.
      */
     private double energyAndGradient1D(double currentLambda, boolean gradient) {
-      double biasEnergy = 0.0;
-      for (int iL0 = 0; iL0 < lambdaBins - 1; iL0++) {
-        int iL1 = iL0 + 1;
+      synchronized (this) {
+        double biasEnergy = 0.0;
+        for (int iL0 = 0; iL0 < lambdaBins - 1; iL0++) {
+          int iL1 = iL0 + 1;
 
-        // Find bin centers and values for interpolation / extrapolation points.
-        double L0 = iL0 * lambdaBinWidth;
-        double L1 = L0 + lambdaBinWidth;
-        double FL0 = ensembleAveragedUdL[iL0];
-        double FL1 = ensembleAveragedUdL[iL1];
-        double deltaFL = FL1 - FL0;
+          // Find bin centers and values for interpolation / extrapolation points.
+          double L0 = iL0 * lambdaBinWidth;
+          double L1 = L0 + lambdaBinWidth;
+          double FL0 = ensembleAveragedUdL[iL0];
+          double FL1 = ensembleAveragedUdL[iL1];
+          double deltaFL = FL1 - FL0;
         /*
          If the lambda is less than or equal to the upper limit, this is
          the final interval. Set the upper limit to L, compute the partial
          derivative and break.
         */
-        boolean done = false;
-        if (currentLambda <= L1) {
-          done = true;
-          L1 = currentLambda;
-        }
-
-        // Upper limit - lower limit of the integral of the extrapolation / interpolation.
-        biasEnergy += (FL0 * L1 + deltaFL * L1 * (0.5 * L1 - L0) / lambdaBinWidth);
-        biasEnergy -= (FL0 * L0 + deltaFL * L0 * (-0.5 * L0) / lambdaBinWidth);
-        if (done) {
-          // Compute the gradient d F(L) / dL at L.
-          if (gradient) {
-            dUdLambda -= FL0 + (L1 - L0) * deltaFL / lambdaBinWidth;
+          boolean done = false;
+          if (currentLambda <= L1) {
+            done = true;
+            L1 = currentLambda;
           }
-          break;
+
+          // Upper limit - lower limit of the integral of the extrapolation / interpolation.
+          biasEnergy += (FL0 * L1 + deltaFL * L1 * (0.5 * L1 - L0) / lambdaBinWidth);
+          biasEnergy -= (FL0 * L0 + deltaFL * L0 * (-0.5 * L0) / lambdaBinWidth);
+          if (done) {
+            // Compute the gradient d F(L) / dL at L.
+            if (gradient) {
+              dUdLambda -= FL0 + (L1 - L0) * deltaFL / lambdaBinWidth;
+            }
+            break;
+          }
         }
+        return -biasEnergy;
       }
-      return -biasEnergy;
     }
 
     /**
@@ -2769,72 +2744,75 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
      * @return Total number of counts.
      */
     private double countsForLambda(int lambdaBin) {
-      double count = 0.0;
-      for (int i = 0; i < dUdLBins; i++) {
-        count += recursionKernel[lambdaBin][i];
+      synchronized (this) {
+        double count = 0.0;
+        for (int i = 0; i < dUdLBins; i++) {
+          count += recursionKernel[lambdaBin][i];
+        }
+        return count;
       }
-      return count;
     }
 
     /**
      * If necessary, allocate more space.
      */
     void checkRecursionKernelSize(double currentdUdL) {
-      if (currentdUdL > maxdUdL) {
-        logger.info(
-            format(" Current F_lambda %8.2f > maximum histogram size %8.2f.", currentdUdL, maxdUdL));
+      // Synchronize updates of the recursion kernel.
+      synchronized (this) {
+        if (currentdUdL > maxdUdL) {
+          logger.info(format(" Current F_lambda %8.2f > maximum histogram size %8.2f.", currentdUdL, maxdUdL));
 
-        double origDeltaG = updateFreeEnergyEstimate(false, false);
+          double origDeltaG = updateFreeEnergyEstimate(false, false);
 
-        int newdUdLBins = dUdLBins;
-        while (mindUdL + newdUdLBins * dUdLBinWidth < currentdUdL) {
-          newdUdLBins += 100;
+          int newdUdLBins = dUdLBins;
+          while (mindUdL + newdUdLBins * dUdLBinWidth < currentdUdL) {
+            newdUdLBins += 100;
+          }
+          double[][] newRecursionKernel = new double[lambdaBins][newdUdLBins];
+
+          // We have added bins above the indices of the current counts just copy them into the new array.
+          for (int i = 0; i < lambdaBins; i++) {
+            arraycopy(recursionKernel[i], 0, newRecursionKernel[i], 0, dUdLBins);
+          }
+
+
+          recursionKernel = newRecursionKernel;
+          dUdLBins = newdUdLBins;
+          kernelValues = new double[dUdLBins];
+          maxdUdL = mindUdL + dUdLBinWidth * dUdLBins;
+          logger.info(format(" New histogram %8.2f to %8.2f with %d bins.\n", mindUdL, maxdUdL, dUdLBins));
+
+          double newFreeEnergy = updateFreeEnergyEstimate(false, false);
+          assert (origDeltaG == newFreeEnergy);
         }
-        double[][] newRecursionKernel = new double[lambdaBins][newdUdLBins];
+        if (currentdUdL < mindUdL) {
+          logger.info(
+              format(" Current F_lambda %8.2f < minimum histogram size %8.2f.", currentdUdL, mindUdL));
 
-        // We have added bins above the indeces of the current counts just copy them into the new
-        // array.
-        for (int i = 0; i < lambdaBins; i++) {
-          arraycopy(recursionKernel[i], 0, newRecursionKernel[i], 0, dUdLBins);
+          double origDeltaG = updateFreeEnergyEstimate(false, false);
+
+          int offset = 100;
+          while (currentdUdL < mindUdL - offset * dUdLBinWidth) {
+            offset += 100;
+          }
+          int newdUdLBins = dUdLBins + offset;
+          double[][] newRecursionKernel = new double[lambdaBins][newdUdLBins];
+
+          // We have added bins below the current counts,
+          // so their indices must be increased by: offset = newFLBins - FLBins
+          for (int i = 0; i < lambdaBins; i++) {
+            arraycopy(recursionKernel[i], 0, newRecursionKernel[i], offset, dUdLBins);
+          }
+
+          recursionKernel = newRecursionKernel;
+          mindUdL = mindUdL - offset * dUdLBinWidth;
+          dUdLBins = newdUdLBins;
+          kernelValues = new double[dUdLBins];
+          logger.info(format(" New histogram %8.2f to %8.2f with %d bins.\n", mindUdL, maxdUdL, dUdLBins));
+
+          double newFreeEnergy = updateFreeEnergyEstimate(false, false);
+          assert (origDeltaG == newFreeEnergy);
         }
-        recursionKernel = newRecursionKernel;
-        dUdLBins = newdUdLBins;
-        kernelValues = new double[dUdLBins];
-        maxdUdL = mindUdL + dUdLBinWidth * dUdLBins;
-        logger.info(
-            format(" New histogram %8.2f to %8.2f with %d bins.\n", mindUdL, maxdUdL, dUdLBins));
-
-        double newFreeEnergy = updateFreeEnergyEstimate(false, false);
-        assert (origDeltaG == newFreeEnergy);
-      }
-      if (currentdUdL < mindUdL) {
-        logger.info(
-            format(" Current F_lambda %8.2f < minimum histogram size %8.2f.", currentdUdL, mindUdL));
-
-        double origDeltaG = updateFreeEnergyEstimate(false, false);
-
-        int offset = 100;
-        while (currentdUdL < mindUdL - offset * dUdLBinWidth) {
-          offset += 100;
-        }
-        int newdUdLBins = dUdLBins + offset;
-        double[][] newRecursionKernel = new double[lambdaBins][newdUdLBins];
-
-        // We have added bins below the current counts,
-        // so their indices must be increased by: offset = newFLBins - FLBins
-        for (int i = 0; i < lambdaBins; i++) {
-          arraycopy(recursionKernel[i], 0, newRecursionKernel[i], offset, dUdLBins);
-        }
-        recursionKernel = newRecursionKernel;
-        mindUdL = mindUdL - offset * dUdLBinWidth;
-        dUdLBins = newdUdLBins;
-        kernelValues = new double[dUdLBins];
-
-        logger.info(
-            format(" New histogram %8.2f to %8.2f with %d bins.\n", mindUdL, maxdUdL, dUdLBins));
-
-        double newFreeEnergy = updateFreeEnergyEstimate(false, false);
-        assert (origDeltaG == newFreeEnergy);
       }
     }
 
@@ -2951,83 +2929,6 @@ public class OrthogonalSpaceTempering implements CrystalPotential, LambdaInterfa
         return sendSynchronous.getHistogramIndex();
       }
     }
-
-       /* public void init(double currentLambda){
-            LambdaHill lambdaHill = new LambdaHill(currentLambda);
-        }
-
-        public void init(){
-            DUDLHill dudlHill = new DUDLHill(dUdLambda);
-        }
-
-        private class LambdaHill {
-            private double currentLambda;
-            private double weight;
-            private double weightDerivative;
-            private double lambdaForBin;
-            private int order = 3;
-            private int derivativeOrder = 1;
-            UniformBSpline spline = new UniformBSpline();
-            double x;
-
-            LambdaHill(double currentLambda) {
-                this.currentLambda = currentLambda;
-            }
-
-            private void setX() {
-                //get lambda bin
-                lambdaForBin = lambdaForIndex(currentLambdaBin);
-                x = (currentLambda - lambdaForBin) / lambdaBinWidth + 0.5;
-            }
-
-            private double getWeight() {
-                double[] coefficients = new double[order];
-                coefficients = spline.bspline(x, order, coefficients);
-            }
-
-            private double getWeightDerivates() {
-                double[] weightCoeff = new double[order];
-                double[][] derivativeCoeff = new double[order][derivativeOrder + 1];
-                double[][] derivativeWork = new double[order][order];
-                weightCoeff = spline.bsplineDerivatives(x, order, derivativeOrder, derivativeCoeff, derivativeWork);
-            }
-
-
-        }
-
-
-        private class DUDLHill {
-            private double dUdLambda;
-            private double weight;
-            private double weightDerivative;
-            private int order = 3;
-            private int derivativeOrder = 1;
-            UniformBSpline spline = new UniformBSpline();
-            double x;
-
-            DUDLHill(double dUdLambda) {
-                this.dUdLambda = dUdLambda;
-            }
-
-            private void setX() {
-
-                double dUdLForBin = dUdLForIndex(currentdUdLBin);
-                x = (currentdUdL - dUdLForBin) / dUdLBinWidth + 0.5;
-            }
-
-            private double getWeight() {
-                UniformBSpline spline = new UniformBSpline();
-                double[] coefficients = new double[3];
-                coefficients = spline.bspline(x, 3, coefficients);
-            }
-
-            private double getWeightDerivative() {
-                double[] weightCoeff = new double[order];
-                double[][] derivativeCoeff = new double[order][derivativeOrder + 1];
-                double[][] derivativeWork = new double[order][order];
-                weightCoeff = spline.bsplineDerivatives(x, order, derivativeOrder, derivativeCoeff, derivativeWork);
-            }
-        }*/
   }
 
 }
