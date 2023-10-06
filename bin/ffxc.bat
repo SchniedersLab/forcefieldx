@@ -38,8 +38,6 @@
 
 @echo off
 
-set VERSION=1.0.0-beta
-
 set ERROR_CODE=0
 
 :init
@@ -65,7 +63,7 @@ goto WinNTGetScriptDir
 
 :Win9xArg
 @REM Slurp the command line arguments.  This loop allows for an unlimited number
-@REM of agruments (up to the command line limit, anyway).
+@REM of arguments (up to the command line limit, anyway).
 set CMD_LINE_ARGS=
 :Win9xApp
 if %1a==a goto Win9xGetScriptDir
@@ -87,12 +85,10 @@ set BASEDIR=%~dp0\..
 
 :repoSetup
 
-
 if "%JAVACMD%"=="" set JAVACMD=java
 
 if "%REPO%"=="" set REPO=%BASEDIR%
 
-@REM set CLASSPATH="%BASEDIR%"\etc;"%BASEDIR%"\bin\forcefieldx-"%VERSION%".jar
 set CLASSPATH="%BASEDIR%"\lib\*
 
 @REM TODO: Set this by the FFX_MEMORY environment variable.
